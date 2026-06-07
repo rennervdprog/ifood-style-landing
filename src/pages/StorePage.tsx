@@ -1323,6 +1323,7 @@ interface ProductCardProps {
   disabled: boolean;
   onClick: () => void;
   storeCategory?: string;
+  onQuickAdd?: (product: Product) => void;
 }
 
 const categoryEmoji: Record<string, string> = {
@@ -1331,13 +1332,16 @@ const categoryEmoji: Record<string, string> = {
   docerias: "🧁", saudavel: "🥗",
 };
 
-const ProductCard = memo(({ product, disabled, onClick, storeCategory }: ProductCardProps) => {
+const ProductCard = memo(({ product, disabled, onClick, storeCategory, onQuickAdd }: ProductCardProps) => {
   const meta = product.metadata || {};
   const cat = storeCategory || "";
   const isBeverage = !!meta.is_beverage;
   const emoji = categoryEmoji[cat] || "🍴";
   const isOutOfStock = !!meta.out_of_stock;
   const isBlocked = disabled || isOutOfStock;
+  const isAdegaCard = cat === "adegas";
+  const packQty = Number(meta.pack_qty) || 0;
+  const unitPrice = packQty > 0 ? Number(product.price) / packQty : 0;
 
   // ===== PIZZA =====
   // ===== FARMACIA =====
