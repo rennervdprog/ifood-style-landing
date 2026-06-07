@@ -420,7 +420,16 @@ const ProductCardImpl = (props: ProductCardProps) => {
       ) : null}
 
       {/* Action row */}
-      <div className="mt-2 flex gap-3">
+      {!hasAnyAddons && !showAddonActions && !showLinkAddon && !showAddonForm && (
+        <button
+          onClick={() => setShowAddonActions(true)}
+          className="mt-2 text-xs text-primary hover:underline flex items-center gap-1"
+        >
+          <ChevronDown className="h-3 w-3" /> Adicionais deste produto
+        </button>
+      )}
+      {(hasAnyAddons || showAddonActions || showLinkAddon || showAddonForm) && (
+      <div className="mt-2 flex flex-wrap gap-3">
         <button onClick={() => setShowLinkAddon(true)} className="text-xs text-primary hover:underline flex items-center gap-1" title="Reutiliza um grupo de adicionais já criado em outro produto">
           <Link2 className="h-3 w-3" /> Usar adicional existente
         </button>
@@ -452,6 +461,7 @@ const ProductCardImpl = (props: ProductCardProps) => {
           <button onClick={() => setShowAddonForm(true)} className="text-xs text-muted-foreground hover:underline" title="Cria adicionais que só aparecem neste produto">+ Criar adicional só deste produto</button>
         )}
       </div>
+      )}
     </div>
   );
 };
