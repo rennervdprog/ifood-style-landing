@@ -889,24 +889,64 @@ const StoreDirectory = () => {
        </section>
 
       {/* ══════ FEATURES GRID ══════ */}
-      <section className="py-20 px-4 bg-muted/20">
-        <div className="mx-auto max-w-5xl">
-          <h2 className="text-3xl font-bold text-center text-foreground mb-4">
-            Tudo que seu delivery precisa
-          </h2>
-          <p className="text-center text-muted-foreground mb-14 max-w-xl mx-auto">
-            Do pedido online ao caixa presencial. Tudo incluso em todos os planos.
-          </p>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {features.map((f) => (
-              <div key={f.title} className="rounded-2xl border border-border bg-card p-6 hover:shadow-md hover:-translate-y-1 transition-all">
-                <div className="rounded-xl bg-primary/10 w-14 h-14 flex items-center justify-center mb-4">
-                  <f.icon className="h-7 w-7 text-primary" />
+      <section className="py-24 md:py-32 px-4 bg-muted/20">
+        <div className="mx-auto max-w-6xl">
+          <div className="text-center mb-14">
+            <p className="text-[11px] font-black uppercase tracking-[0.25em] text-primary mb-3">Tudo incluso</p>
+            <h2 className="text-4xl md:text-6xl font-black tracking-tight text-foreground mb-4 leading-[0.95]">
+              Tudo que seu <br className="md:hidden" />
+              delivery precisa
+            </h2>
+            <p className="text-muted-foreground text-lg max-w-xl mx-auto font-medium">
+              Do pedido online ao caixa presencial. Sem upgrades escondidos.
+            </p>
+          </div>
+
+          {/* Bento grid assimétrico — 1 hero + médios + pequenos */}
+          <div className="grid grid-cols-6 gap-4 md:gap-5 auto-rows-[minmax(160px,auto)]">
+            {features.map((f, i) => {
+              // Padrão bento: hero card (2x grande), 4 médios, 3 pequenos
+              const layouts = [
+                "col-span-6 md:col-span-4 md:row-span-2 bg-gradient-to-br from-primary/10 via-card to-card border-primary/20", // 0 hero
+                "col-span-6 md:col-span-2", // 1
+                "col-span-3 md:col-span-2", // 2
+                "col-span-3 md:col-span-2 md:row-span-2", // 3 tall
+                "col-span-6 md:col-span-4", // 4 wide
+                "col-span-3 md:col-span-2", // 5
+                "col-span-3 md:col-span-2", // 6
+                "col-span-6 md:col-span-2", // 7
+                "col-span-6 md:col-span-2", // 8
+              ];
+              const isHero = i === 0;
+              return (
+                <div
+                  key={f.title}
+                  className={`group relative rounded-3xl border border-border bg-card p-5 md:p-6 overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-primary/30 ${layouts[i] ?? "col-span-3 md:col-span-2"}`}
+                >
+                  {/* Sutil gradient border on hover */}
+                  <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                  <div className="relative flex flex-col h-full">
+                    <div
+                      className={`rounded-2xl bg-primary/10 flex items-center justify-center mb-4 ${
+                        isHero ? "w-16 h-16" : "w-12 h-12"
+                      }`}
+                    >
+                      <f.icon className={`text-primary ${isHero ? "h-8 w-8" : "h-6 w-6"}`} />
+                    </div>
+                    <h3
+                      className={`font-black text-foreground mb-2 tracking-tight ${
+                        isHero ? "text-2xl md:text-3xl leading-tight" : "text-base md:text-lg"
+                      }`}
+                    >
+                      {f.title}
+                    </h3>
+                    <p className={`text-foreground/70 leading-relaxed font-medium ${isHero ? "text-base md:text-lg" : "text-sm"}`}>
+                      {f.desc}
+                    </p>
+                  </div>
                 </div>
-                <h3 className="font-bold text-foreground mb-2 text-lg">{f.title}</h3>
-                <p className="text-base text-foreground/70 leading-relaxed">{f.desc}</p>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>
@@ -1355,6 +1395,7 @@ const StoreDirectory = () => {
           <AsaasBadgeBar className="max-w-sm" />
         </div>
       </div>
+      <StickyMobileCTA onClick={handleCTA} />
     </div>
   );
 };
