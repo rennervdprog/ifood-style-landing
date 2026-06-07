@@ -1556,10 +1556,10 @@ const ProductCard = memo(({ product, disabled, onClick, storeCategory, onQuickAd
           </div>
 
           {/* Product name */}
-          <h3 className="font-bold text-sm text-foreground line-clamp-1 group-hover:text-primary transition-colors">
+          <h3 className={`font-bold text-sm line-clamp-1 transition-colors ${isAdegaCard ? "text-zinc-100 group-hover:text-amber-400" : "text-foreground group-hover:text-primary"}`}>
             {product.name}
             {volumeInfo && (
-              <span className="text-muted-foreground font-medium"> · {volumeInfo}</span>
+              <span className={`font-medium ${isAdegaCard ? "text-zinc-400" : "text-muted-foreground"}`}> · {volumeInfo}</span>
             )}
           </h3>
 
@@ -1680,11 +1680,11 @@ const ProductCard = memo(({ product, disabled, onClick, storeCategory, onQuickAd
         {/* Price + CTA */}
         <div className="flex items-center justify-between mt-2">
           <div className="flex flex-col">
-            <span className="text-sm font-black text-primary leading-tight">
+            <span className={`font-black leading-tight ${isAdegaCard ? "text-lg text-amber-400" : "text-sm text-primary"}`}>
               {priceDisplay}
             </span>
             {isAdegaCard && unitPrice > 0 && (
-              <span className="text-[10px] text-muted-foreground font-semibold">
+              <span className="text-[10px] text-zinc-400 font-semibold">
                 {formatBRL(unitPrice)}/un
               </span>
             )}
@@ -1693,10 +1693,10 @@ const ProductCard = memo(({ product, disabled, onClick, storeCategory, onQuickAd
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); onQuickAdd(product); }}
-              className="text-[11px] font-bold px-3 py-1.5 rounded-full bg-primary text-primary-foreground hover:opacity-90 active:scale-95 transition shadow-sm"
+              className="text-xs font-black w-9 h-9 rounded-full bg-amber-500 text-zinc-950 hover:bg-amber-400 active:scale-95 transition shadow-[0_0_12px_rgba(245,158,11,0.45)] flex items-center justify-center"
               aria-label={`Adicionar ${product.name} ao carrinho`}
             >
-              + Adicionar
+              +
             </button>
           ) : (
             <span className={`text-[10px] font-bold px-2 py-1 rounded-full transition-colors ${
