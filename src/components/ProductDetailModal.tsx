@@ -40,6 +40,7 @@ interface Props {
   product: Product | null;
   storeName: string;
   storeCategory?: string;
+  singleSize?: boolean;
   open: boolean;
   onClose: () => void;
   onAdd: (product: Product, addons: CartAddon[], observations: string, quantity: number, totalUnitPrice: number) => void;
@@ -58,7 +59,7 @@ const categoryEmoji: Record<string, string> = {
   saudavel: "🥗",
 };
 
-const ProductDetailModal = ({ product, storeName, storeCategory, open, onClose, onAdd }: Props) => {
+const ProductDetailModal = ({ product, storeName, storeCategory, singleSize = false, open, onClose, onAdd }: Props) => {
   // itemId → quantidade (0 = não selecionado)
   const [selectedAddons, setSelectedAddons] = useState<Record<string, Record<string, number>>>({});
   const [observations, setObservations] = useState("");
@@ -101,7 +102,7 @@ const ProductDetailModal = ({ product, storeName, storeCategory, open, onClose, 
 
   const isPizza = cat === "pizzas" && !isBeverage;
   const sizes: Array<{ name: string; price: number }> = meta.sizes || [];
-  const hasSizes = isPizza && sizes.some((s) => Number(s.price) > 0);
+  const hasSizes = isPizza && !singleSize && sizes.some((s) => Number(s.price) > 0);
 
   const isLanche = cat === "lanches" && !isBeverage;
   const meatOptions: string[] = meta.meat_doneness || [];
