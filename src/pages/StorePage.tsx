@@ -452,11 +452,6 @@ const StorePage = () => {
     });
   }, []);
 
-  const productsBySection = useCallback(
-    (sectionId: string | null) => applyAdegaFilters(sectionId ? sectionProductsMap[sectionId] || [] : []),
-    [sectionProductsMap, applyAdegaFilters]
-  );
-
   const isAdega = store?.category === "adegas";
 
   // Aplica filtro/ordenação de adega em qualquer lista de produtos
@@ -473,6 +468,11 @@ const StorePage = () => {
     }
     return out;
   }, [isAdega, adegaType, adegaSort]);
+
+  const productsBySection = useCallback(
+    (sectionId: string | null) => applyAdegaFilters(sectionId ? sectionProductsMap[sectionId] || [] : []),
+    [sectionProductsMap, applyAdegaFilters]
+  );
 
   // Tipos disponíveis no catálogo (apenas adega)
   const availableDrinkTypes = useMemo(() => {
