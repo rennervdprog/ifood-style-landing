@@ -363,13 +363,18 @@ export default function DashboardOverviewSection(props: Props) {
   {/* ── New Orders Queue ── */}
   {pendingCount > 0 && (
     <div className="space-y-3">
-      <div className="flex items-center gap-2">
-        <div className="relative">
-          <div className="w-3 h-3 bg-primary rounded-full animate-ping absolute" />
-          <div className="w-3 h-3 bg-primary rounded-full relative" />
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
+          <div className="relative">
+            <div className="w-3 h-3 bg-primary rounded-full animate-ping absolute" />
+            <div className="w-3 h-3 bg-primary rounded-full relative" />
+          </div>
+          <h3 className="font-black text-foreground text-base tracking-tight">Novos Pedidos</h3>
+          <span className="bg-primary text-primary-foreground text-[11px] font-black px-2.5 py-0.5 rounded-full shadow-sm shadow-primary/30">
+            {pendingCount}
+          </span>
         </div>
-        <h3 className="font-black text-foreground text-base">Novos Pedidos</h3>
-        <span className="bg-primary text-primary-foreground text-[11px] font-black px-2 py-0.5 rounded-full">{pendingCount}</span>
+        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">aguardando aceite</span>
       </div>
       <div className="space-y-3">
         {orders?.filter(o => o.status === "pendente").slice(0, 5).map((order: any) => (
