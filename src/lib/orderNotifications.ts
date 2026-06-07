@@ -131,13 +131,15 @@ const fetchCustomTemplate = async (storeId: string, status: string): Promise<str
  */
 const sendEvolutionMessage = async (storeId: string, phone: string, message: string) => {
   try {
+    console.log("[Evolution] 📤 invoke evolution-send-message", { storeId, phone, msgLen: message.length });
     const { data, error } = await supabase.functions.invoke("evolution-send-message", {
       body: { store_id: storeId, phone, message, kind: "order_status" },
     });
-    if (error) console.error("[Evolution] send error:", error);
+    if (error) console.error("[Evolution] ❌ send error:", error);
+    else console.log("[Evolution] ✅ response:", data);
     return data;
   } catch (e) {
-    console.error("[Evolution] invoke error:", e);
+    console.error("[Evolution] ❌ invoke exception:", e);
   }
 };
 
@@ -149,8 +151,19 @@ export const notifyOrderStatusChange = (
   params: OrderNotifyParams,
   options?: { skipWhatsApp?: boolean; evolutionEnabled?: boolean; zapiEnabled?: boolean }
 ) => {
+  console.log("[notifyOrderStatusChange] 🔔 trigger", {
+    newStatus,
+    orderId: params.orderId?.slice(0, 8),
+    storeId: params.storeId,
+    clientPhone: params.clientPhone,
+    clientId: params.clientId,
+    options,
+  });
   const config = STATUS_MESSAGES[newStatus];
-  if (!config) return;
+  if (!config) {
+    console.warn("[notifyOrderStatusChange] ⚠️ sem template para status:", newStatus);
+    return;
+  }
 
   // Push notification (sempre)
   sendPushNotification(
@@ -168,6 +181,7 @@ export const notifyOrderStatusChange = (
   // bloqueava o envio mesmo com o WhatsApp ativo.
   const whatsappEnabled = !options?.skipWhatsApp;
   if (whatsappEnabled && params.clientPhone && params.storeId) {
+    console.log("[notifyOrderStatusChange] → enviando WhatsApp via Evolution");
     // tenta usar template customizado do lojista; se não houver, usa o padrão
     (async () => {
       const customTpl = params.storeId
@@ -176,5 +190,11 @@ export const notifyOrderStatusChange = (
       const msg = customTpl ? applyTemplate(customTpl, params) : config.whatsApp(params);
       sendEvolutionMessage(params.storeId, params.clientPhone, msg);
     })();
+  } else {
+    console.warn("[notifyOrderStatusChange] ⛔ WhatsApp NÃO disparado", {
+      whatsappEnabled,
+      hasPhone: !!params.clientPhone,
+      hasStoreId: !!params.storeId,
+    });
   }
 };
