@@ -29,7 +29,7 @@ const sendPresence = async (baseUrl: string, instance: string, apiKey: string, n
   await fetch(`${baseUrl.replace(/\/$/, "")}/chat/sendPresence/${instance}`, {
     method: "POST",
     headers: { "Content-Type": "application/json", apikey: apiKey },
-    body: JSON.stringify({ number, presence: "composing", delay: 2500 }),
+    body: JSON.stringify({ number, presence: "composing", delay: 400 }),
   }).catch(() => undefined);
 };
 
@@ -172,27 +172,25 @@ Deno.serve(async (req) => {
       await sleep(300_000 + Math.floor(Math.random() * 600_000));
     }
 
-    // 3) Throttle: auto-reply curto; envios manuais/status continuam com intervalo anti-spam maior.
-    const { data: last } = await admin
-      .from("whatsapp_send_log")
-      .select("sent_at").eq("store_id", store_id)
-      .neq("message_hash", "greet_pending")
-      .order("sent_at", { ascending: false }).limit(1).maybeSingle();
-    if (last?.sent_at) {
-      const gap = Date.now() - new Date(last.sent_at).getTime();
-      const need = kind === "auto_reply"
-        ? 2_500 + Math.floor(Math.random() * 2_500)
-        : PER_STORE_MIN_GAP_MS + logNormalDelay();
-      if (gap < need) await sleep(need - gap);
-    } else {
-      await sleep(2500 + Math.floor(Math.random() * 3500));
+    // 3) Throttle: auto-reply deve sair quase imediata; envios manuais/status continuam com intervalo anti-spam maior.
+    if (kind !== "auto_reply") {
+      const { data: last } = await admin
+        .from("whatsapp_send_log")
+        .select("sent_at").eq("store_id", store_id)
+        .neq("message_hash", "greet_pending")
+        .order("sent_at", { ascending: false }).limit(1).maybeSingle();
+      if (last?.sent_at) {
+        const gap = Date.now() - new Date(last.sent_at).getTime();
+        const need = PER_STORE_MIN_GAP_MS + logNormalDelay();
+        if (gap < need) await sleep(need - gap);
+      } else {
+        await sleep(2500 + Math.floor(Math.random() * 3500));
+      }
     }
 
     if (kind === "auto_reply") {
-      // P2.4 — presença "digitando" curta para o teste não parecer travado.
-      const typingMs = Math.min(4_500, Math.max(1_200, message.length * 20));
-      await sendPresence(baseUrl, cfg.evolution_instance_name, apiKey, number);
-      await sleep(typingMs + Math.floor(Math.random() * 2000));
+      // P2.4 — presença "digitando" não bloqueia o envio da saudação.
+      sendPresence(baseUrl, cfg.evolution_instance_name, apiKey, number);
     }
 
     const r = await fetch(`${baseUrl.replace(/\/$/, "")}/message/sendText/${cfg.evolution_instance_name}`, {
