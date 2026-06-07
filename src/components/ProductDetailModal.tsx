@@ -616,11 +616,8 @@ const ProductDetailModal = ({ product, storeName, storeCategory, open, onClose, 
         </div>
       )}
 
-      {cat === "pizzas" && !isBeverage && (meta.sizes_available?.length > 0 || meta.slice_count || meta.has_stuffed_crust || meta.shareable) && (
+      {cat === "pizzas" && !isBeverage && (meta.slice_count || meta.has_stuffed_crust || meta.shareable || meta.is_combo) && (
         <div className="flex flex-wrap gap-1.5">
-          {meta.sizes_available?.length > 0 && meta.sizes_available.map((s: string, i: number) => (
-            <span key={i} className="rounded-full bg-primary/10 text-primary px-2.5 py-1 text-xs font-bold">{s}</span>
-          ))}
           {meta.slice_count && <span className="rounded-full bg-muted px-2 py-1 text-xs font-medium text-foreground">🍕 {meta.slice_count} fatias</span>}
           {meta.has_stuffed_crust && <span className="rounded-full bg-amber-500/10 text-amber-600 px-2.5 py-1 text-xs font-bold">Borda recheada</span>}
           {meta.shareable && <span className="rounded-full bg-green-500/10 text-green-600 px-2.5 py-1 text-xs font-bold">👥 Para compartilhar</span>}

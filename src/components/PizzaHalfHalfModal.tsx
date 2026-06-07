@@ -172,6 +172,16 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
   const unitPrice = pizzaPrice + borderPrice;
   const lineTotal = unitPrice * quantity;
 
+  // Aviso quando algum sabor escolhido não tem o tamanho selecionado cadastrado
+  const flavorsMissingSize: string[] = (selectedSize && allChosen)
+    ? (selectedFlavors as Product[])
+        .filter(p => {
+          const sizes: Array<{ name: string; price: number }> = Array.isArray(p.metadata?.sizes) ? p.metadata!.sizes : [];
+          return !sizes.some(s => s.name === selectedSize && Number(s.price) > 0);
+        })
+        .map(p => p.name)
+    : [];
+
   const handleAdd = () => {
     if (!allChosen) return;
     const flavors = selectedFlavors as Product[];
@@ -380,6 +390,11 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
                   {borderPrice > 0 && ` + Borda ${formatBRL(borderPrice)}`}
                   {" = " + formatBRL(unitPrice)}
                 </span>
+              )}
+              {flavorsMissingSize.length > 0 && (
+                <div className="mt-1.5 rounded-lg bg-amber-500/15 border border-amber-500/40 px-2 py-1 text-[10px] font-semibold text-amber-700 dark:text-amber-400">
+                  ⚠ {flavorsMissingSize.join(", ")} sem preço para "{selectedSize}". Usando preço base.
+                </div>
               )}
             </div>
           </div>
