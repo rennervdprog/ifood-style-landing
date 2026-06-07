@@ -160,10 +160,14 @@ export const notifyOrderStatusChange = (
     { link: "/pedidos", order_id: params.orderId }
   ).catch(console.error);
 
-  // Evolution API WhatsApp (se habilitado e telefone disponível)
-  // Aceita evolutionEnabled (novo) ou zapiEnabled (retrocompatibilidade)
-  const whatsappEnabled = !options?.skipWhatsApp && (options?.evolutionEnabled || options?.zapiEnabled);
-  if (whatsappEnabled && params.clientPhone) {
+  // Evolution API WhatsApp.
+  // Sempre tentamos enviar pelo backend; o edge function (evolution-send-message)
+  // já valida se a loja tem Evolution conectado e retorna erro silencioso caso
+  // contrário. Isso evita o bug em que o flag `evolutionConnected` do cliente
+  // estava desatualizado (ex.: keepalive marcou "disconnected" por 1 ping) e
+  // bloqueava o envio mesmo com o WhatsApp ativo.
+  const whatsappEnabled = !options?.skipWhatsApp;
+  if (whatsappEnabled && params.clientPhone && params.storeId) {
     // tenta usar template customizado do lojista; se não houver, usa o padrão
     (async () => {
       const customTpl = params.storeId
