@@ -226,6 +226,8 @@ const ProductCardImpl = (props: ProductCardProps) => {
   } = props;
 
   const isOOS = !!product?.metadata?.out_of_stock;
+  const [showAddonActions, setShowAddonActions] = useState(false);
+  const hasAnyAddons = (linkedGroups?.length || 0) + (addonGroups?.length || 0) > 0;
 
   if (isEditing) {
     return (
