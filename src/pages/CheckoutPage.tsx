@@ -577,7 +577,7 @@ const CheckoutPage = () => {
 
         if (couponId && user) {
           // Fire-and-forget: don't block UI on coupon registration
-          supabase.rpc("use_coupon", {
+          supabase.rpc("use_coupon" as any, {
             _coupon_id: couponId,
             _user_id: user.id,
             _order_id: order.id,

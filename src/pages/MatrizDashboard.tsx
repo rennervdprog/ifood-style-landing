@@ -48,7 +48,7 @@ const MatrizDashboard = () => {
     queryKey: ["matriz-network", user?.id],
     queryFn: async (): Promise<Network | null> => {
       const { data } = await (supabase as any)
-        .from("store_networks")
+        .from("store_networks" as any)
         .select("*")
         .eq("owner_id", user!.id)
         .maybeSingle();
