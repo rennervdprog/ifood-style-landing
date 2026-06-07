@@ -1728,6 +1728,7 @@ const AdminDashboard = () => {
                 getMainAction={getMainAction}
                 buildAcceptWhatsAppHref={buildAcceptWhatsAppHref}
                 buildReadyWhatsAppHref={buildReadyWhatsAppHref}
+                evolutionConnected={evolutionConnected}
                 updateOrderStatus={updateOrderStatus}
                 handleAcceptOrder={handleAcceptOrder}
                 handleCancelOrder={handleCancelOrder}
