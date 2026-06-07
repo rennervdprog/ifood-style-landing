@@ -1151,33 +1151,36 @@ const StorePage = () => {
 
       {/* ===== ADEGA: filtros + ordenação ===== */}
       {isAdega && !filteredProducts && (availableDrinkTypes.length > 0) && (
-        <div className="px-4 pt-3 space-y-2">
-          <div className="flex overflow-x-auto gap-1.5 no-scrollbar">
+        <div className="px-3 pt-3 space-y-2 bg-zinc-950 text-zinc-100">
+          <div className="flex overflow-x-auto gap-2 no-scrollbar pb-1">
             <button
               onClick={() => setAdegaType(null)}
-              className={`px-3 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap transition-all ${
-                !adegaType ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+              className={`flex flex-col items-center justify-center min-w-[64px] px-3 py-2 rounded-xl border whitespace-nowrap transition-all ${
+                !adegaType ? "bg-amber-500 text-zinc-950 border-amber-400 shadow-[0_0_12px_rgba(245,158,11,0.45)]" : "bg-zinc-900 text-zinc-300 border-zinc-800"
               }`}
             >
-              Todos
+              <span className="text-lg leading-none">🍻</span>
+              <span className="text-[10px] font-extrabold uppercase tracking-wider mt-1">Todos</span>
             </button>
             {availableDrinkTypes.map((t) => {
               const emoji = t === "Cerveja" ? "🍺" : t === "Vinho" ? "🍷" : t === "Destilado" ? "🥃"
                 : t === "Energético" ? "⚡" : t === "Refrigerante" ? "🥤" : t === "Água" ? "💧" : "🧃";
+              const active = adegaType === t;
               return (
                 <button
                   key={t}
-                  onClick={() => setAdegaType(t === adegaType ? null : t)}
-                  className={`px-3 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap transition-all ${
-                    adegaType === t ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                  onClick={() => setAdegaType(active ? null : t)}
+                  className={`flex flex-col items-center justify-center min-w-[64px] px-3 py-2 rounded-xl border whitespace-nowrap transition-all ${
+                    active ? "bg-amber-500 text-zinc-950 border-amber-400 shadow-[0_0_12px_rgba(245,158,11,0.45)]" : "bg-zinc-900 text-zinc-300 border-zinc-800"
                   }`}
                 >
-                  {emoji} {t}
+                  <span className="text-lg leading-none">{emoji}</span>
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider mt-1">{t}</span>
                 </button>
               );
             })}
           </div>
-          <div className="flex items-center gap-1.5 text-[11px]">
+          <div className="flex items-center gap-1.5 text-[11px] pb-2">
             <span className="text-muted-foreground">Ordenar:</span>
             {[
               { v: "default", l: "Padrão" },
@@ -1189,8 +1192,8 @@ const StorePage = () => {
                 onClick={() => setAdegaSort(o.v as any)}
                 className={`px-2.5 py-1 rounded-full font-semibold transition-all ${
                   adegaSort === o.v
-                    ? "bg-foreground/10 text-foreground"
-                    : "text-muted-foreground hover:text-foreground"
+                    ? "bg-amber-500/15 text-amber-400"
+                    : "text-zinc-400 hover:text-zinc-200"
                 }`}
               >
                 {o.l}
@@ -1201,7 +1204,7 @@ const StorePage = () => {
       )}
 
       {/* ===== PRODUCTS ===== */}
-      <div className="px-4 pt-4 space-y-6">
+      <div className={`px-4 pt-4 space-y-6 ${isAdega ? "bg-zinc-950 text-zinc-100 pb-8 min-h-[60vh]" : ""}`}>
         {isLoading ? (
           <div className="space-y-3">
             {Array.from({ length: 4 }).map((_, i) => (
@@ -1222,7 +1225,7 @@ const StorePage = () => {
               {filteredProducts.length} resultado{filteredProducts.length !== 1 ? "s" : ""} para "{searchQuery}"
             </p>
             {filteredProducts.length > 0 ? (
-              <div className="space-y-2.5">
+              <div className={isAdega ? "grid grid-cols-2 gap-2.5" : "space-y-2.5"}>
                 {filteredProducts.map(product => (
                   <ProductCard
                     key={product.id}
@@ -1254,12 +1257,12 @@ const StorePage = () => {
                   className="scroll-mt-16"
                 >
                   <div className="flex items-center gap-2 mb-3">
-                    <h2 className="text-base font-black text-foreground">{section.name}</h2>
-                    <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full font-bold">
+                    <h2 className={`text-base font-black ${isAdega ? "text-zinc-100" : "text-foreground"}`}>{section.name}</h2>
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${isAdega ? "bg-zinc-800 text-zinc-400" : "bg-muted text-muted-foreground"}`}>
                       {sectionProducts.length}
                     </span>
                   </div>
-                  <div className="space-y-2.5">
+                  <div className={isAdega ? "grid grid-cols-2 gap-2.5" : "space-y-2.5"}>
                     {sectionProducts.map(product => (
                       <ProductCard
                         key={product.id}
@@ -1279,13 +1282,13 @@ const StorePage = () => {
               <div>
                 {sections && sections.length > 0 && (
                   <div className="flex items-center gap-2 mb-3">
-                    <h2 className="text-base font-black text-foreground">Outros</h2>
-                    <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full font-bold">
+                    <h2 className={`text-base font-black ${isAdega ? "text-zinc-100" : "text-foreground"}`}>Outros</h2>
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${isAdega ? "bg-zinc-800 text-zinc-400" : "bg-muted text-muted-foreground"}`}>
                       {unsectionedProducts.length}
                     </span>
                   </div>
                 )}
-                <div className="space-y-2.5">
+                <div className={isAdega ? "grid grid-cols-2 gap-2.5" : "space-y-2.5"}>
                   {unsectionedProducts.map(product => (
                     <ProductCard
                       key={product.id}
@@ -1403,11 +1406,13 @@ const ProductCard = memo(({ product, disabled, onClick, storeCategory, onQuickAd
     <button
       onClick={isOutOfStock ? undefined : onClick}
       disabled={isOutOfStock}
-      className={`w-full flex gap-3 bg-card rounded-2xl p-3 border border-border text-left transition-all group ${
-        isBlocked ? "opacity-60" : "hover:shadow-lg hover:border-primary/20 active:scale-[0.98]"
+      className={`w-full text-left transition-all group rounded-2xl ${
+        isAdegaCard
+          ? `flex flex-col-reverse bg-zinc-900 border border-zinc-800 p-2.5 gap-2 ${isBlocked ? "opacity-60" : "hover:border-amber-500/40 active:scale-[0.98]"}`
+          : `flex gap-3 bg-card p-3 border border-border ${isBlocked ? "opacity-60" : "hover:shadow-lg hover:border-primary/20 active:scale-[0.98]"}`
       }`}
     >
-      <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
+      <div className={`flex-1 min-w-0 flex flex-col justify-between py-0.5 ${isAdegaCard ? "px-0.5" : ""}`}>
         <div>
           {/* Badges row */}
           <div className="flex flex-wrap gap-1 mb-1">
@@ -1551,10 +1556,10 @@ const ProductCard = memo(({ product, disabled, onClick, storeCategory, onQuickAd
           </div>
 
           {/* Product name */}
-          <h3 className="font-bold text-sm text-foreground line-clamp-1 group-hover:text-primary transition-colors">
+          <h3 className={`font-bold text-sm line-clamp-1 transition-colors ${isAdegaCard ? "text-zinc-100 group-hover:text-amber-400" : "text-foreground group-hover:text-primary"}`}>
             {product.name}
             {volumeInfo && (
-              <span className="text-muted-foreground font-medium"> · {volumeInfo}</span>
+              <span className={`font-medium ${isAdegaCard ? "text-zinc-400" : "text-muted-foreground"}`}> · {volumeInfo}</span>
             )}
           </h3>
 
@@ -1675,11 +1680,11 @@ const ProductCard = memo(({ product, disabled, onClick, storeCategory, onQuickAd
         {/* Price + CTA */}
         <div className="flex items-center justify-between mt-2">
           <div className="flex flex-col">
-            <span className="text-sm font-black text-primary leading-tight">
+            <span className={`font-black leading-tight ${isAdegaCard ? "text-lg text-amber-400" : "text-sm text-primary"}`}>
               {priceDisplay}
             </span>
             {isAdegaCard && unitPrice > 0 && (
-              <span className="text-[10px] text-muted-foreground font-semibold">
+              <span className="text-[10px] text-zinc-400 font-semibold">
                 {formatBRL(unitPrice)}/un
               </span>
             )}
@@ -1688,10 +1693,10 @@ const ProductCard = memo(({ product, disabled, onClick, storeCategory, onQuickAd
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); onQuickAdd(product); }}
-              className="text-[11px] font-bold px-3 py-1.5 rounded-full bg-primary text-primary-foreground hover:opacity-90 active:scale-95 transition shadow-sm"
+              className="text-xs font-black w-9 h-9 rounded-full bg-amber-500 text-zinc-950 hover:bg-amber-400 active:scale-95 transition shadow-[0_0_12px_rgba(245,158,11,0.45)] flex items-center justify-center"
               aria-label={`Adicionar ${product.name} ao carrinho`}
             >
-              + Adicionar
+              +
             </button>
           ) : (
             <span className={`text-[10px] font-bold px-2 py-1 rounded-full transition-colors ${
@@ -1708,7 +1713,7 @@ const ProductCard = memo(({ product, disabled, onClick, storeCategory, onQuickAd
       </div>
 
       {/* Image */}
-      <div className="flex-shrink-0 relative">
+      <div className={`relative ${isAdegaCard ? "w-full" : "flex-shrink-0"}`}>
         {isOutOfStock && (
           <div className="absolute inset-0 z-10 rounded-xl bg-black/55 flex items-center justify-center">
             <span className="text-[10px] font-black uppercase text-white bg-destructive px-2 py-1 rounded shadow-lg tracking-wider">
@@ -1720,14 +1725,14 @@ const ProductCard = memo(({ product, disabled, onClick, storeCategory, onQuickAd
           <img
             src={product.image_url}
             alt={product.name}
-            className={`w-24 h-24 rounded-xl object-cover shadow-sm group-hover:shadow-md transition-shadow ${isOutOfStock ? "grayscale" : ""}`}
+            className={`${isAdegaCard ? "w-full h-32 rounded-xl object-contain bg-zinc-950/60 p-2" : "w-24 h-24 rounded-xl object-cover shadow-sm group-hover:shadow-md transition-shadow"} ${isOutOfStock ? "grayscale" : ""}`}
             loading="lazy"
             decoding="async"
-            width={96}
-            height={96}
+            width={isAdegaCard ? 200 : 96}
+            height={isAdegaCard ? 128 : 96}
           />
         ) : (
-          <div className={`w-24 h-24 rounded-xl bg-muted flex items-center justify-center ${isOutOfStock ? "grayscale" : ""}`}>
+          <div className={`${isAdegaCard ? "w-full h-32 bg-zinc-950/60" : "w-24 h-24 bg-muted"} rounded-xl flex items-center justify-center ${isOutOfStock ? "grayscale" : ""}`}>
             <span className="text-3xl">{emoji}</span>
           </div>
         )}
