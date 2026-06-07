@@ -1021,8 +1021,8 @@ const DriverDashboard = () => {
                 <StatCard icon={Store} label="Abertas" value={String(openPlatformStores?.length || 0)} accent="emerald" />
               </div>
 
-              {/* Pix key warning */}
-              {!(driverProfile as any)?.pix_key && (
+              {/* Pix key warning — oculto para motoboy de loja (acerto direto com lojista) */}
+              {!(driverProfile as any)?.pix_key && !isStoreDriver && (
                 <button
                   onClick={() => setActiveTab("config")}
                   className="w-full bg-amber-500/10 border border-amber-500/20 rounded-2xl p-4 flex items-center gap-3 active:scale-[0.99] transition-all"
