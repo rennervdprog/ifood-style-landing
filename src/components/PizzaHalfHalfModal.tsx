@@ -391,6 +391,11 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
                   {" = " + formatBRL(unitPrice)}
                 </span>
               )}
+              {flavorsMissingSize.length > 0 && (
+                <div className="mt-1.5 rounded-lg bg-amber-500/15 border border-amber-500/40 px-2 py-1 text-[10px] font-semibold text-amber-700 dark:text-amber-400">
+                  ⚠ {flavorsMissingSize.join(", ")} sem preço para "{selectedSize}". Usando preço base.
+                </div>
+              )}
             </div>
           </div>
         )}
