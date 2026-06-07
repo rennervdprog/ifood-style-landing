@@ -315,10 +315,10 @@ Deno.serve(async (req) => {
         // EdgeRuntime a task era morta antes do fetch, deixando só o
         // `greet_pending` no log e o cliente sem resposta. Aguardamos aqui
         // (3-8s cabe no timeout) e qualquer envio extra também aguarda confirmação.
-        await sleep(150 + Math.floor(Math.random() * 250));
+        await sleep(800 + Math.floor(Math.random() * 700));
         await sendMsg(greeting);
         if (sendLinkNow) {
-          await sleep(600 + Math.floor(Math.random() * 700));
+          await sleep(1_200 + Math.floor(Math.random() * 800));
           await sendMsg(menuMessage);
         }
       }
