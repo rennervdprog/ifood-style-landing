@@ -172,6 +172,16 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
   const unitPrice = pizzaPrice + borderPrice;
   const lineTotal = unitPrice * quantity;
 
+  // Aviso quando algum sabor escolhido não tem o tamanho selecionado cadastrado
+  const flavorsMissingSize: string[] = (selectedSize && allChosen)
+    ? (selectedFlavors as Product[])
+        .filter(p => {
+          const sizes: Array<{ name: string; price: number }> = Array.isArray(p.metadata?.sizes) ? p.metadata!.sizes : [];
+          return !sizes.some(s => s.name === selectedSize && Number(s.price) > 0);
+        })
+        .map(p => p.name)
+    : [];
+
   const handleAdd = () => {
     if (!allChosen) return;
     const flavors = selectedFlavors as Product[];
