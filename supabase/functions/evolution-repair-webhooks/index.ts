@@ -66,7 +66,7 @@ Deno.serve(async (req) => {
       results.push({ store_id: (cfg as any).store_id, instance, status: (cfg as any).status, repaired });
     }
 
-    return json({ success: true, webhookUrl, count: results.length, results });
+    return json({ success: true, webhook: "configured", count: results.length, results });
   } catch (e) {
     console.error("evolution-repair-webhooks error:", e);
     return json({ error: "Internal error" }, 500);
