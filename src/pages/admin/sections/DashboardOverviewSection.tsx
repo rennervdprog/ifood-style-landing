@@ -489,21 +489,6 @@ export default function DashboardOverviewSection(props: Props) {
     </div>
   </div>
 
-   {/* ── Menu/Catalog Card ── */}
-   <div className="space-y-3">
-     <div className="flex items-center justify-between">
-       <h3 className="font-black text-foreground text-base">Visualização do Cardápio</h3>
-       <button onClick={() => setDashboardTab("menu")} className="text-xs text-primary font-bold hover:underline flex items-center gap-1">
-         Gerenciar itens <ChevronRight className="h-3 w-3" />
-       </button>
-     </div>
-     <div className="bg-card border border-border rounded-3xl overflow-hidden shadow-sm">
-       <div className="p-1">
-         <Suspense fallback={<div className="h-32 animate-pulse bg-muted/30 rounded-2xl" />}><MenuBuilder storeId={store.id} storeCategory={store.category} /></Suspense>
-       </div>
-     </div>
-   </div>
-
   {/* ── Empty state ── */}
   {pendingCount === 0 && preparingCount === 0 && readyCount === 0 && todayCount === 0 && clientAnalytics.length === 0 && (
     <div className="flex flex-col items-center justify-center py-16 text-center">
