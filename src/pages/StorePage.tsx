@@ -1713,7 +1713,7 @@ const ProductCard = memo(({ product, disabled, onClick, storeCategory, onQuickAd
       </div>
 
       {/* Image */}
-      <div className="flex-shrink-0 relative">
+      <div className={`relative ${isAdegaCard ? "w-full" : "flex-shrink-0"}`}>
         {isOutOfStock && (
           <div className="absolute inset-0 z-10 rounded-xl bg-black/55 flex items-center justify-center">
             <span className="text-[10px] font-black uppercase text-white bg-destructive px-2 py-1 rounded shadow-lg tracking-wider">
@@ -1725,14 +1725,14 @@ const ProductCard = memo(({ product, disabled, onClick, storeCategory, onQuickAd
           <img
             src={product.image_url}
             alt={product.name}
-            className={`w-24 h-24 rounded-xl object-cover shadow-sm group-hover:shadow-md transition-shadow ${isOutOfStock ? "grayscale" : ""}`}
+            className={`${isAdegaCard ? "w-full h-32 rounded-xl object-contain bg-zinc-950/60 p-2" : "w-24 h-24 rounded-xl object-cover shadow-sm group-hover:shadow-md transition-shadow"} ${isOutOfStock ? "grayscale" : ""}`}
             loading="lazy"
             decoding="async"
-            width={96}
-            height={96}
+            width={isAdegaCard ? 200 : 96}
+            height={isAdegaCard ? 128 : 96}
           />
         ) : (
-          <div className={`w-24 h-24 rounded-xl bg-muted flex items-center justify-center ${isOutOfStock ? "grayscale" : ""}`}>
+          <div className={`${isAdegaCard ? "w-full h-32 bg-zinc-950/60" : "w-24 h-24 bg-muted"} rounded-xl flex items-center justify-center ${isOutOfStock ? "grayscale" : ""}`}>
             <span className="text-3xl">{emoji}</span>
           </div>
         )}
