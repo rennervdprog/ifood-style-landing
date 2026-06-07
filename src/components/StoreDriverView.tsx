@@ -874,21 +874,6 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
         </div>
       )}
 
-      {/* Alerta PIX não cadastrado — necessário para saque automático */}
-      {!hasPix && (
-        <div className="relative overflow-hidden bg-warning/10 border border-warning/30 rounded-2xl p-4 flex items-start gap-3">
-          <div className="w-10 h-10 rounded-xl bg-warning/15 flex items-center justify-center shrink-0">
-            <AlertTriangle className="h-5 w-5 text-warning" strokeWidth={2.4} />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-black text-warning leading-tight">Chave PIX pendente</p>
-            <p className="text-[11px] text-warning/80 mt-1 leading-snug">
-              Cadastre nas Configurações para receber pagamentos automáticos.
-            </p>
-          </div>
-        </div>
-      )}
-
       {/* ── Online / Offline — HERO toggle (elemento mais proeminente) ── */}
       <DriverOnlineToggle isOnline={isOnline} toggling={togglingOnline} onToggle={toggleOnline} />
 
