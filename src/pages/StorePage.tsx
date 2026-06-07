@@ -13,6 +13,7 @@ import CartFAB from "@/components/CartFAB";
 import BottomNav from "@/components/BottomNav";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import ProductDetailModal from "@/components/ProductDetailModal";
+import AgeGateModal from "@/components/AgeGateModal";
 import { getStoreOpenStatus, type OpeningHour } from "@/lib/storeStatus";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStoreContext } from "@/contexts/StoreContext";
