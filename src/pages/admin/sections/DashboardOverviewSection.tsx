@@ -81,17 +81,26 @@ export default function DashboardOverviewSection(props: Props) {
   });
   const isPdvOpen = !!pdvSession?.id;
 
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite";
+  const greetingEmoji = hour < 12 ? "☀️" : hour < 18 ? "🌤️" : "🌙";
+
   return (
 <div className="p-4 lg:p-6 max-w-6xl mx-auto space-y-5 lg:space-y-6">
 
   {/* ── Welcome Header ── */}
-  <div className="bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/10 rounded-3xl p-5 lg:p-6">
-    <div className="flex items-center justify-between mb-3">
-      <div>
-        <h2 className="text-lg lg:text-xl font-black text-foreground">
-          Olá, {store.name}! 👋
+  <div className="relative overflow-hidden bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/10 rounded-3xl p-5 lg:p-6">
+    <div className="pointer-events-none absolute -top-16 -right-16 w-48 h-48 bg-primary/20 rounded-full blur-3xl" />
+    <div className="pointer-events-none absolute -bottom-20 -left-10 w-40 h-40 bg-primary/10 rounded-full blur-3xl" />
+    <div className="relative flex items-center justify-between mb-3 gap-3">
+      <div className="min-w-0">
+        <p className="text-[11px] font-bold text-primary/80 uppercase tracking-widest">
+          {greeting} {greetingEmoji}
+        </p>
+        <h2 className="text-xl lg:text-2xl font-black text-foreground tracking-tight truncate mt-0.5">
+          {store.name}
         </h2>
-        <p className="text-xs text-muted-foreground mt-1">
+        <p className="text-xs text-muted-foreground mt-1 capitalize">
           {new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" })}
         </p>
       </div>
