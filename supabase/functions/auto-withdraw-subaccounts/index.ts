@@ -25,14 +25,18 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Optional shared-secret check so this isn't trivially callable.
+    // SECURITY: shared-secret é OBRIGATÓRIO. Sem CRON_SECRET configurado o
+    // endpoint fica desativado (não pode sacar subcontas anonimamente).
     const expected = Deno.env.get("CRON_SECRET");
-    if (expected) {
-      const got =
-        req.headers.get("x-cron-secret") ||
-        new URL(req.url).searchParams.get("secret");
-      if (got !== expected) return json({ error: "Forbidden" }, 403);
+    if (!expected) {
+      console.error("[auto-withdraw-subaccounts] CRON_SECRET ausente — endpoint desativado");
+      return json({ error: "Cron secret not configured" }, 500);
     }
+    const got =
+      req.headers.get("x-cron-secret") ||
+      req.headers.get("Authorization")?.replace("Bearer ", "") ||
+      new URL(req.url).searchParams.get("secret");
+    if (got !== expected) return json({ error: "Forbidden" }, 403);
 
     const ASAAS_API_KEY = Deno.env.get("ASAAS_API_KEY");
     if (!ASAAS_API_KEY) return json({ error: "ASAAS_API_KEY missing" }, 500);
