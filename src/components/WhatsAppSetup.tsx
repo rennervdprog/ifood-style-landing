@@ -369,7 +369,7 @@ export default function WhatsAppSetup({ storeId, storeSlug, storeName, expectedP
               quando o cliente confirma interesse (ex: "sim", "quero", "cardápio"). Isso reduz o risco de spam e mantém o número seguro.
             </p>
             <p className="text-[11px] text-muted-foreground leading-relaxed">
-              Janela de resposta: <strong>08h às 22h</strong>. Clientes que respondem "PARAR" entram em lista de exclusão.
+              Janela de resposta: segue o horário de funcionamento cadastrado da loja. Clientes que respondem "PARAR" entram em lista de exclusão.
             </p>
           </div>
         )}
