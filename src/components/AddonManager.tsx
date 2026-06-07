@@ -222,16 +222,21 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-sm font-bold text-foreground/80 uppercase tracking-wider">Gestor de Adicionais</h2>
-          <p className="text-xs text-muted-foreground/70 mt-1">Crie grupos aqui e vincule aos produtos no Cardápio</p>
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-start gap-2.5 min-w-0">
+          <div className="bg-primary/15 text-primary rounded-xl p-2 flex-shrink-0">
+            <Layers className="h-4 w-4" />
+          </div>
+          <div className="min-w-0">
+            <h2 className="text-base font-bold text-foreground leading-tight">Adicionais</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">Crie grupos (ex: Molhos, Tamanhos) e vincule a produtos.</p>
+          </div>
         </div>
         <button
           onClick={() => setShowGroupForm(true)}
-          className="flex items-center gap-1.5 bg-primary/20 text-primary px-3 py-2 rounded-xl text-xs font-bold"
+          className="flex items-center gap-1.5 bg-primary text-primary-foreground px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap shadow-sm flex-shrink-0"
         >
-          <Plus className="h-3.5 w-3.5" /> Novo Grupo
+          <Plus className="h-3.5 w-3.5" /> Novo grupo
         </button>
       </div>
 
@@ -430,22 +435,35 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
                     </div>
                   ) : (
                     <div>
-                      <h3 className="font-bold text-sm text-foreground">{group.name}</h3>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className="text-xs text-muted-foreground/70">
-                          {group.min_select > 0 ? `Obrigatório (mín ${group.min_select})` : "Opcional"} • máx {group.max_select}
-                        </span>
-                        <span className="text-xs text-primary font-bold">
-                          {(group.addon_items as any[])?.length || 0} itens
-                        </span>
-                        {group.price_replaces_base && (
-                          <span className="text-[10px] bg-primary/20 text-primary px-2 py-0.5 rounded-full font-bold">
-                            💰 Define preço
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-bold text-base text-foreground">{group.name}</h3>
+                        {group.min_select > 0 ? (
+                          <span className="text-[10px] bg-amber-500/15 text-amber-600 dark:text-amber-400 px-2 py-0.5 rounded-full font-bold uppercase tracking-wide">
+                            Obrigatório
+                          </span>
+                        ) : (
+                          <span className="text-[10px] bg-muted text-muted-foreground px-2 py-0.5 rounded-full font-bold uppercase tracking-wide">
+                            Opcional
                           </span>
                         )}
+                      </div>
+                      <p className="text-[11px] text-muted-foreground mt-1">
+                        Cliente escolhe {group.min_select > 0 ? `de ${group.min_select} a ${group.max_select}` : `até ${group.max_select}`}
+                      </p>
+                      <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                        <span className="inline-flex items-center gap-1 text-[11px] bg-muted text-foreground/80 px-2 py-0.5 rounded-full font-semibold">
+                          <Package className="h-3 w-3" />
+                          {(group.addon_items as any[])?.length || 0} {((group.addon_items as any[])?.length || 0) === 1 ? "item" : "itens"}
+                        </span>
                         {linkedProducts.length > 0 && (
-                          <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full font-bold">
-                            🔗 {linkedProducts.length} produto{linkedProducts.length > 1 ? "s" : ""}
+                          <span className="inline-flex items-center gap-1 text-[11px] bg-primary/15 text-primary px-2 py-0.5 rounded-full font-semibold">
+                            <Link2 className="h-3 w-3" />
+                            {linkedProducts.length} produto{linkedProducts.length > 1 ? "s" : ""}
+                          </span>
+                        )}
+                        {group.price_replaces_base && (
+                          <span className="inline-flex items-center gap-1 text-[11px] bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-full font-semibold">
+                            💰 Define preço
                           </span>
                         )}
                       </div>
@@ -649,12 +667,23 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
           );
         })
       ) : (
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <Package className="h-14 w-14 text-muted-foreground mb-4" />
-          <h3 className="text-sm font-bold text-muted-foreground mb-1">Nenhum grupo de adicionais</h3>
-          <p className="text-xs text-muted-foreground/70 max-w-xs">
-            Crie grupos como "Extras de Hambúrguer" aqui e depois vincule aos produtos no Cardápio.
+        <div className="bg-card rounded-2xl p-6 text-center border border-dashed border-border">
+          <div className="text-4xl mb-3">🧀</div>
+          <h3 className="text-base font-bold text-foreground mb-1">Crie seu primeiro grupo de adicionais</h3>
+          <p className="text-xs text-muted-foreground max-w-xs mx-auto mb-4">
+            Grupos são opções que o cliente escolhe no produto: <b>Molhos</b>, <b>Tamanhos</b>, <b>Extras</b>, <b>Bordas</b>…
           </p>
+          <div className="text-left bg-muted/40 rounded-xl p-3 mb-4 space-y-2 max-w-xs mx-auto">
+            <div className="flex gap-2 text-xs"><span className="font-bold text-primary">1.</span><span>Crie um grupo (ex: "Molhos")</span></div>
+            <div className="flex gap-2 text-xs"><span className="font-bold text-primary">2.</span><span>Adicione os itens e preços</span></div>
+            <div className="flex gap-2 text-xs"><span className="font-bold text-primary">3.</span><span>Vincule aos produtos no Cardápio</span></div>
+          </div>
+          <button
+            onClick={() => setShowGroupForm(true)}
+            className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2.5 rounded-xl text-sm font-bold shadow-sm"
+          >
+            <Sparkles className="h-4 w-4" /> Criar primeiro grupo
+          </button>
         </div>
       )}
     </div>
