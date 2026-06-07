@@ -124,6 +124,30 @@ Deno.serve(async (req) => {
       });
     }
 
+    // SECURITY: valida que o valor solicitado não excede o saldo disponível.
+    const { data: balanceRow, error: balErr } = await serviceClient
+      .from("driver_balances")
+      .select("pending_amount")
+      .eq("driver_user_id", userId)
+      .maybeSingle();
+    if (balErr) {
+      console.error("[create-withdrawal-request] balance read error:", balErr);
+      return new Response(JSON.stringify({ error: "Erro ao verificar saldo." }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const available = Number(balanceRow?.pending_amount || 0);
+    if (amount > available + 0.001) {
+      return new Response(JSON.stringify({
+        error: `Valor solicitado (R$ ${amount.toFixed(2)}) é maior que o saldo disponível (R$ ${available.toFixed(2)}).`,
+        available_amount: available,
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // Count withdrawals (paid or pending) in the current week (Monday to Sunday)
     const now = new Date();
     const dayOfWeek = now.getDay(); // 0=Sun, 1=Mon...
