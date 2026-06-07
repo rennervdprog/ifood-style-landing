@@ -29,13 +29,18 @@ Deno.serve(async (req) => {
   // for the admin panel. Do NOT accept anon keys as admin credentials.
   const authHeader = req.headers.get("Authorization");
   const apikeyHeader = req.headers.get("apikey") || "";
-  const anonKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
   const serviceKey = Deno.env.get("SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
-  const externalAnon = Deno.env.get("EXTERNAL_SUPABASE_ANON_KEY") || anonKey || "";
+  const externalAnon = Deno.env.get("EXTERNAL_SUPABASE_ANON_KEY") || "";
+  const cronSecret = Deno.env.get("CRON_SECRET") || "";
   const token = authHeader?.replace("Bearer ", "") || apikeyHeader;
 
-  // Allow cron jobs that pass the anon key as Bearer (scheduled via pg_cron with anon)
-  let isAdminCaller = !!token && (token === serviceKey || token === EXTERNAL_KEY || token === anonKey || token === externalAnon);
+  // SECURITY: only accept service-role keys or an explicit CRON_SECRET for scheduled jobs.
+  // NEVER accept anon keys — they are publicly known and would be a privilege escalation.
+  let isAdminCaller =
+    !!token &&
+    (token === serviceKey ||
+      token === EXTERNAL_KEY ||
+      (cronSecret !== "" && token === cronSecret));
 
   if (!isAdminCaller && token) {
     // Try as a user JWT against the external project
