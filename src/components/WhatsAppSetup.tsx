@@ -35,7 +35,7 @@ const DEFAULT_TEMPLATES: Record<string, { label: string; emoji: string; template
     label: "Pedido pronto para entrega",
     emoji: "📦",
     template:
-      "📦 Olá {clientName}! Seu pedido da *{storeName}* está *PRONTO*! 🎉\n\nJá está em rota de entrega!\n\n🔑 *CÓDIGO DE ENTREGA: {pin}*\nInforme ao motoboy somente na entrega.",
+      "📦 Olá {clientName}! Seu pedido da *{storeName}* está *PRONTO*! 🎉\n\nO motoboy logo irá sair para entrega. 🛵\n\n🔑 *CÓDIGO DE ENTREGA: {pin}*\nInforme ao motoboy somente na entrega.",
   },
   saiu_entrega: {
     label: "Saiu para entrega",
