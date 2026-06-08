@@ -38,6 +38,29 @@ Deno.serve(async (req) => {
     : "https://api-sandbox.asaas.com/v3";
   if (!ASAAS_KEY) return json({ error: "ASAAS_API_KEY missing" }, 500);
 
+  // Retry com backoff exponencial (2 retries: 250ms, 750ms)
+  async function fetchAsaas(pid: string) {
+    let lastErr: any = null;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const r = await fetch(`${ASAAS_BASE}/payments/${pid}`, {
+          headers: { access_token: ASAAS_KEY },
+          signal: AbortSignal.timeout(8000),
+        });
+        if (r.status === 429 || r.status >= 500) {
+          await new Promise((res) => setTimeout(res, 250 * Math.pow(3, attempt)));
+          continue;
+        }
+        return r;
+      } catch (e) {
+        lastErr = e;
+        await new Promise((res) => setTimeout(res, 250 * Math.pow(3, attempt)));
+      }
+    }
+    if (lastErr) throw lastErr;
+    return null;
+  }
+
   // Pega últimas 200 transações pendentes das últimas 48h
   const since = new Date(Date.now() - 48 * 3600 * 1000).toISOString();
   const { data: pendings, error } = await supabase
@@ -54,10 +77,8 @@ Deno.serve(async (req) => {
     if (!pid || !String(pid).startsWith("pay_")) continue;
     checked++;
     try {
-      const r = await fetch(`${ASAAS_BASE}/payments/${pid}`, {
-        headers: { access_token: ASAAS_KEY },
-      });
-      if (!r.ok) continue;
+      const r = await fetchAsaas(pid);
+      if (!r || !r.ok) continue;
       const p = await r.json();
       const isPaid = ["RECEIVED", "CONFIRMED", "RECEIVED_IN_CASH"].includes(p?.status);
       if (!isPaid) continue;
@@ -97,6 +118,18 @@ Deno.serve(async (req) => {
       errors++;
       console.error("[reconcile-payments] err", pid, e);
     }
+  }
+
+  // Alerta de auditoria quando regulariza muitas de uma vez (sinal de webhook caído)
+  if (reconciled >= 5) {
+    await supabase.from("financial_audit_log").insert({
+      actor_type: "system",
+      action: "alert_high_reconciliation",
+      entity_type: "reconciliation_batch",
+      entity_id: new Date().toISOString(),
+      amount: null,
+      metadata: { reconciled, checked, scanned: pendings?.length || 0, severity: "warning" },
+    });
   }
 
   return json({ ok: true, checked, reconciled, errors, scanned: pendings?.length || 0 });
