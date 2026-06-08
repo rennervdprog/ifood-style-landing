@@ -1,6 +1,6 @@
 import StoreSettings from "@/components/StoreSettings";
 import WhatsAppSetup from "@/components/WhatsAppSetup";
-import { MessageCircle, Monitor, Copy, Loader2, RefreshCw } from "lucide-react";
+import { MessageCircle, Monitor, Copy, Loader2, RefreshCw, Ban } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -12,12 +12,13 @@ interface Props {
 const SettingsTab = ({ store }: Props) => {
   const [kdsToken, setKdsToken] = useState<string>("");
   const [kdsLoading, setKdsLoading] = useState(false);
+  const [kdsRevoking, setKdsRevoking] = useState(false);
 
-  const generateKdsLink = async () => {
-    setKdsLoading(true);
+  const callKds = async (action: "generate-token" | "revoke-token") => {
+    if (action === "revoke-token") setKdsRevoking(true); else setKdsLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("kds", {
-        body: { action: "generate-token", store_id: store.id },
+        body: { action, store_id: store.id },
       });
       if (error || (data as any)?.error) {
         throw new Error((data as any)?.error || error?.message || "Erro");
@@ -27,16 +28,20 @@ const SettingsTab = ({ store }: Props) => {
       const url = `${window.location.origin}/kds/${token}`;
       try {
         await navigator.clipboard.writeText(url);
-        toast.success("Link KDS gerado e copiado!");
+        toast.success(action === "revoke-token" ? "Link anterior desativado. Novo link copiado!" : "Link KDS gerado e copiado!");
       } catch {
-        toast.success("Link KDS gerado!");
+        toast.success(action === "revoke-token" ? "Link anterior desativado!" : "Link KDS gerado!");
       }
     } catch (e: any) {
-      toast.error(e?.message || "Falha ao gerar link KDS");
+      toast.error(e?.message || "Falha na operação");
     } finally {
       setKdsLoading(false);
+      setKdsRevoking(false);
     }
   };
+
+  const generateKdsLink = () => callKds("generate-token");
+  const revokeKdsLink = () => callKds("revoke-token");
 
   const kdsUrl = kdsToken ? `${window.location.origin}/kds/${kdsToken}` : "";
 
@@ -89,19 +94,28 @@ const SettingsTab = ({ store }: Props) => {
           </a>
         </div>
       )}
-      <button
-        onClick={generateKdsLink}
-        disabled={kdsLoading}
-        className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-bold disabled:opacity-50"
-      >
-        {kdsLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : kdsToken ? <RefreshCw className="h-4 w-4" /> : <Monitor className="h-4 w-4" />}
-        {kdsToken ? "Gerar novo link" : "Gerar link do KDS"}
-      </button>
-      {kdsToken && (
-        <p className="text-[11px] text-muted-foreground">
-          Ao gerar um novo link, este atual continua válido (o token usa assinatura permanente). Se precisar revogar, peça suporte.
-        </p>
-      )}
+      <div className="flex flex-col sm:flex-row gap-2">
+        <button
+          onClick={generateKdsLink}
+          disabled={kdsLoading || kdsRevoking}
+          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-bold disabled:opacity-50"
+        >
+          {kdsLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : kdsToken ? <RefreshCw className="h-4 w-4" /> : <Monitor className="h-4 w-4" />}
+          {kdsToken ? "Gerar novo link" : "Gerar link do KDS"}
+        </button>
+        <button
+          onClick={revokeKdsLink}
+          disabled={kdsLoading || kdsRevoking}
+          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-destructive text-destructive-foreground text-sm font-bold disabled:opacity-50"
+          title="Desativa o link atual e gera um novo. O link antigo deixa de funcionar imediatamente."
+        >
+          {kdsRevoking ? <Loader2 className="h-4 w-4 animate-spin" /> : <Ban className="h-4 w-4" />}
+          Desativar link atual
+        </button>
+      </div>
+      <p className="text-[11px] text-muted-foreground">
+        "Gerar novo link" mantém o atual válido. "Desativar link atual" invalida imediatamente o link anterior e cria um novo — use se o link vazar.
+      </p>
     </section>
     <StoreSettings 
       storeId={store.id} 
