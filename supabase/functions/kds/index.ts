@@ -26,10 +26,18 @@ const json = (b: unknown, s = 200) =>
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 
-const EXT_URL = Deno.env.get("EXTERNAL_SUPABASE_URL")!;
-const EXT_KEY = Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY")!;
+// Roda no projeto Supabase que hospeda esta função (externo, em produção).
+// Usa as env vars padrão disponíveis em qualquer projeto Supabase.
+const SB_URL =
+  Deno.env.get("SUPABASE_URL") ||
+  Deno.env.get("EXTERNAL_SUPABASE_URL") ||
+  "";
+const SB_KEY =
+  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ||
+  Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") ||
+  "";
 // Segredo HMAC (nunca sai do edge). Reusa a service key como base.
-const HMAC_SECRET = EXT_KEY;
+const HMAC_SECRET = SB_KEY;
 
 const enc = new TextEncoder();
 const b64url = (buf: ArrayBuffer | Uint8Array) => {
@@ -87,12 +95,12 @@ const ALLOWED_STATUSES = new Set([
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "method not allowed" }, 405);
-  if (!EXT_URL || !EXT_KEY) return json({ error: "external supabase not configured" }, 500);
+  if (!SB_URL || !SB_KEY) return json({ error: "supabase not configured" }, 500);
 
   let body: any = {};
   try { body = await req.json(); } catch { return json({ error: "invalid json" }, 400); }
 
-  const ext = createClient(EXT_URL, EXT_KEY, { auth: { persistSession: false } });
+  const ext = createClient(SB_URL, SB_KEY, { auth: { persistSession: false } });
 
   try {
     if (body.action === "generate-token") {
