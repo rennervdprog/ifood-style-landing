@@ -28,13 +28,9 @@ Deno.serve(async (req) => {
     // 🔁 EXTERNAL DB
     const EXTERNAL_URL = Deno.env.get("EXTERNAL_SUPABASE_URL")!;
     const EXTERNAL_KEY = Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY")!;
-    const EXTERNAL_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFramhndXppdWNocXNieHpydWVhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNDg4NTUsImV4cCI6MjA5MDYyNDg1NX0.2sTeKchqAEN2gCqnH1_Zn9cJmUSmZgryt05A66tgm2Y";
 
-    const supabase = createClient(
-      EXTERNAL_URL,
-      EXTERNAL_ANON,
-      { global: { headers: { Authorization: authHeader } } }
-    );
+    // Single service-role client; we enforce ownership manually with .eq("owner_id", userId).
+    const supabase = createClient(EXTERNAL_URL, EXTERNAL_KEY);
 
     const token = authHeader.replace("Bearer ", "");
     const { data: userData, error: userError } = await supabase.auth.getUser(token);
@@ -73,7 +69,7 @@ Deno.serve(async (req) => {
     }
 
     // Verify balance exists and has pending amount
-    const adminSupabase = createClient(EXTERNAL_URL, EXTERNAL_KEY);
+    const adminSupabase = supabase;
 
     const { data: balance } = await adminSupabase
       .from("store_balances")

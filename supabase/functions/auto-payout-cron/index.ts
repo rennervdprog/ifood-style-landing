@@ -60,13 +60,14 @@ Deno.serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const cronSecret = Deno.env.get("CRON_SECRET") || "";
 
-    // Auth: only service_role (cron) or platform admin
+    // Auth: CRON_SECRET (scheduler) or platform admin
     const authHeader = req.headers.get("Authorization");
     const token = authHeader?.replace("Bearer ", "") || "";
-    const isServiceRole = token === serviceKey;
+    const isCron = cronSecret.length > 0 && token === cronSecret;
 
-    if (!isServiceRole) {
+    if (!isCron) {
       if (!authHeader?.startsWith("Bearer ")) {
         return json({ error: "Unauthorized" }, 401);
       }

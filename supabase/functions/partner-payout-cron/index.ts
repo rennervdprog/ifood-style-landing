@@ -58,13 +58,14 @@ Deno.serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const cronSecret = Deno.env.get("CRON_SECRET") || "";
 
-    // Auth: only service_role (cron) or platform admin
+    // Auth: CRON_SECRET (scheduler) or platform admin
     const authHeader = req.headers.get("Authorization");
     const token = authHeader?.replace("Bearer ", "") || "";
-    const isServiceRole = token === serviceKey;
+    const isCron = cronSecret.length > 0 && token === cronSecret;
 
-    if (!isServiceRole) {
+    if (!isCron) {
       if (!authHeader?.startsWith("Bearer ")) {
         return json({ error: "Unauthorized" }, 401);
       }
@@ -103,14 +104,14 @@ Deno.serve(async (req) => {
       return json({ message: "Nenhum sócio ativo cadastrado." });
     }
 
-    // Calculate platform revenue since last payout
-    // Get all store_balances commissions as revenue proxy
+    // Calculate platform revenue: ONLY commission belongs to the platform.
+    // `repasse_pendente` is money owed TO stores (delivery split they collected in cash) — never count it as revenue.
     const { data: balances } = await supabase
       .from("store_balances")
-      .select("comissao_pendente, repasse_pendente");
+      .select("comissao_pendente");
 
     const totalRevenue = (balances || []).reduce(
-      (s, b) => s + Number(b.comissao_pendente || 0) + Number(b.repasse_pendente || 0), 0
+      (s, b) => s + Number(b.comissao_pendente || 0), 0
     );
 
     if (totalRevenue < 1) {
