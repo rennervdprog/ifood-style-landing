@@ -180,27 +180,31 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { data: inserted, error: insertError } = await supabase
-      .from("withdrawal_requests")
-      .insert({
-        driver_user_id: userId,
-        amount,
-        pix_key,
-        pix_type,
-      })
-      .select("id, amount, status, created_at, transaction_code")
-      .single();
+    // Saque atômico (lock de saldo + audit) via RPC
+    const { data: newId, error: rpcError } = await serviceClient.rpc("request_withdrawal_atomic", {
+      _driver_user_id: userId,
+      _amount: amount,
+      _pix_key: pix_key,
+      _pix_type: pix_type,
+    });
 
-    if (insertError) {
-      const message = insertError.message?.includes("ux_withdrawal_requests_one_active_per_driver")
+    if (rpcError) {
+      const raw = rpcError.message || "";
+      const message = raw.includes("ux_withdrawal_requests_one_active_per_driver")
         ? "Você já tem uma solicitação ativa. Aguarde o pagamento do ID anterior."
+        : raw.includes("Saldo insuficiente") ? raw
         : "Erro ao criar solicitação de saque.";
-
       return new Response(JSON.stringify({ error: message }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    const { data: inserted } = await serviceClient
+      .from("withdrawal_requests")
+      .select("id, amount, status, created_at, transaction_code")
+      .eq("id", newId)
+      .single();
 
     return new Response(JSON.stringify({ request: inserted }), {
       status: 200,

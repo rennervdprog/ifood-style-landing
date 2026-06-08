@@ -77,6 +77,22 @@ Deno.serve(async (req) => {
 
   console.log(`[asaas-webhook] event=${event} paymentId=${paymentId} extRef=${externalRef}`);
 
+  // ─── Idempotência: bloqueia reprocessamento do mesmo evento ───
+  const eventId: string | undefined = payload?.id || payload?.event_id;
+  if (eventId) {
+    const { error: dupErr } = await supabase
+      .from("asaas_webhook_events")
+      .insert({ event_id: eventId, event_type: event, payment_id: paymentId, payload });
+    if (dupErr) {
+      const msg = String(dupErr.message || "");
+      if (msg.includes("duplicate") || msg.includes("unique") || (dupErr as any).code === "23505") {
+        console.log(`[asaas-webhook] duplicate event ${eventId} — ignored`);
+        return json({ ok: true, idempotent: true, event_id: eventId });
+      }
+      console.error("[asaas-webhook] event log error", dupErr);
+    }
+  }
+
   // ─── Eventos de TRANSFER (repasses para lojistas/motoboys) ───
   if (event?.startsWith("TRANSFER_")) {
     console.log(`[asaas-webhook] transfer event ${event} for ${paymentId} — log only`);
