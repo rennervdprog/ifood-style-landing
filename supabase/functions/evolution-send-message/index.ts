@@ -103,7 +103,8 @@ Deno.serve(async (req) => {
       return json({ error: parsed.error.flatten().fieldErrors }, 400);
     }
     const { store_id, phone, message, kind = "manual" } = parsed.data;
-    console.log("[evolution-send-message] ▶ store_id=", store_id, "phone=", phone, "kind=", kind, "msgLen=", message.length);
+    const maskedPhone = phone ? `${phone.slice(0,4)}****${phone.slice(-2)}` : "";
+    console.log("[evolution-send-message] ▶ store_id=", store_id, "phone=", maskedPhone, "kind=", kind, "msgLen=", message.length);
 
     const admin = createClient(
       Deno.env.get("EXTERNAL_SUPABASE_URL") || Deno.env.get("SUPABASE_URL")!,
