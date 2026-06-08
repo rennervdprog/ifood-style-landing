@@ -277,8 +277,14 @@ const ScrollProgress = () => {
 const StickyMobileCTA = ({ onClick }: { onClick: () => void }) => {
   const [show, setShow] = useState(false);
   useEffect(() => {
-    const onScroll = () => setShow(window.scrollY > 600);
+    const onScroll = () => {
+      const scrolled = window.scrollY;
+      const nearBottom =
+        window.innerHeight + scrolled >= document.documentElement.scrollHeight - 320;
+      setShow(scrolled > 600 && !nearBottom);
+    };
     window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
   return (
