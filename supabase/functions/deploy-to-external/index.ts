@@ -49,37 +49,22 @@ async function deployOne(
   code: string,
   verifyJwt: boolean,
 ): Promise<Record<string, unknown>> {
-  // 1) descobrir se a função já existe
-  const listRes = await fetch(
-    `https://api.supabase.com/v1/projects/${PROJECT_REF}/functions`,
-    { headers: { Authorization: `Bearer ${TOKEN}` } },
+  const url = `https://api.supabase.com/v1/projects/${PROJECT_REF}/functions/deploy?slug=${encodeURIComponent(slug)}`;
+  const form = new FormData();
+  form.append(
+    "metadata",
+    new Blob([JSON.stringify({ name: slug, entrypoint_path: "index.ts", verify_jwt: verifyJwt })], {
+      type: "application/json",
+    }),
   );
-  const list = await listRes.json();
-  const exists = Array.isArray(list) && list.some((f: any) => f.slug === slug);
-
-  // 2) JSON body (legacy v1 simple format) — funciona p/ deploy single-file
-  const url = exists
-    ? `https://api.supabase.com/v1/projects/${PROJECT_REF}/functions/${slug}`
-    : `https://api.supabase.com/v1/projects/${PROJECT_REF}/functions`;
-
-  const method = exists ? "PATCH" : "POST";
-
-  const payload: Record<string, unknown> = {
-    body: code,
-    verify_jwt: verifyJwt,
-  };
-  if (!exists) {
-    payload.slug = slug;
-    payload.name = slug;
-  }
+  form.append("file", new File([code], "index.ts", { type: "application/typescript" }));
 
   const res = await fetch(url, {
-    method,
+    method: "POST",
     headers: {
       Authorization: `Bearer ${TOKEN}`,
-      "Content-Type": "application/json",
     },
-    body: JSON.stringify(payload),
+    body: form,
   });
 
   const body = await res.text();
@@ -92,8 +77,7 @@ async function deployOne(
 
   return {
     slug,
-    method,
-    existed: exists,
+    method: "POST multipart deploy",
     status: res.status,
     ok: res.ok,
     response: parsed,
