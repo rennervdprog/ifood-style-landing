@@ -864,20 +864,13 @@ const AdminDashboard = () => {
     // Quando Evolution API está conectado, NÃO abrimos wa.me — o backend envia automaticamente.
     if (evolutionConnected) return "#";
     const clientPhone = getClientWhatsApp(order.client_id);
-    console.log("[buildReadyWhatsAppHref] order:", order.id.slice(0, 8), "client_id:", order.client_id, "clientPhone:", clientPhone, "clientProfiles loaded?:", !!clientProfiles, "profiles count:", clientProfiles?.length);
     if (!clientPhone) {
-      const errorMsg = `ERRO: Telefone do cliente não encontrado para o pedido #${order.id.slice(0, 8)}. Verifique se o cliente cadastrou o WhatsApp.`;
-      console.warn("[buildReadyWhatsAppHref] ❌", errorMsg, "Profile encontrado:", clientProfiles?.find((c: any) => c.user_id === order.client_id));
-      // Fallback para avisar o usuário se for clicado
-      if (typeof window !== "undefined" && !clientPhone) {
-         // Apenas log, o alert seria intrusivo no render. O href '#' já sinaliza erro.
-      }
+      console.warn("[buildReadyWhatsAppHref] phone ausente p/ pedido", order.id.slice(0, 8));
       return "#";
     }
     const msg = buildReadyMessage(order);
     const phone = formatWhatsAppNumber(clientPhone);
     const href = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
-    console.log("[buildReadyWhatsAppHref] ✅ href gerado:", href);
     return href;
   }, [getClientWhatsApp, buildReadyMessage, clientProfiles, evolutionConnected]);
 
