@@ -1937,6 +1937,8 @@ const AdminDashboard = () => {
                           <Calendar className="h-4 w-4 text-muted-foreground shrink-0" />
                           {periods.map(p => (
                             <button key={p} onClick={() => setSelectedPeriod(p)}
+                              aria-pressed={selectedPeriod === p}
+                              aria-label={`Período de ${p} dias`}
                               className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
                                 selectedPeriod === p
                                   ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
