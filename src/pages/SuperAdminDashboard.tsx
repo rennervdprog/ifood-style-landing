@@ -1996,6 +1996,19 @@ export const FinanceTab = ({
         </select>
       )}
 
+      {/* Busca rápida (Lojas / Entregadores) */}
+      {financeSubTab !== "subaccounts" && (
+        <div className="relative">
+          <Search className="h-4 w-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
+          <input
+            value={financeSearch}
+            onChange={e => setFinanceSearch(e.target.value)}
+            placeholder={financeSubTab === "stores" ? "Buscar loja..." : "Buscar entregador..."}
+            className="w-full bg-card text-foreground border border-border rounded-xl pl-9 pr-3 py-2.5 text-sm"
+          />
+        </div>
+      )}
+
       {/* ═══ Store Cards ═══ */}
       {loading ? (
         <div className="space-y-3">
