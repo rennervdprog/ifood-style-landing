@@ -188,7 +188,14 @@ Deno.serve(async (req) => {
     dueDate.setDate(dueDate.getDate() + 1);
     const dueDateStr = dueDate.toISOString().split("T")[0];
 
-    const planLabel = plan.plan_type === "fixed" ? "Plano Essencial" : "Plano Crescimento";
+    const planLabel =
+      plan.plan_type === "fixed"
+        ? "Plano Essencial"
+        : plan.plan_type === "supporter"
+          ? "Plano Apoiador"
+          : plan.plan_type === "hybrid"
+            ? "Plano Crescimento"
+            : "Plano";
     const paymentBody = {
       customer: customerId,
       billingType: "PIX",
