@@ -88,6 +88,8 @@ const FIXED_PLAN_FEATURES = {
   },
   fixed: FIXED_PLAN_FEATURES,
 };
+// Apoiador = mesmos benefícios do Essencial (sem comissão, todas as ferramentas)
+PLAN_FEATURES.supporter = FIXED_PLAN_FEATURES;
 
 export function useStorePlan(storeId: string | undefined | null): StorePlanFeatures {
   const { data, isLoading } = useQuery({
