@@ -2289,9 +2289,9 @@ export const FinanceTab = ({
         )
       ) : (
         /* ═══ Driver Cards ═══ (financeSubTab === "drivers") */
-        driverSettlement.length > 0 ? (
+        visibleDriverSettlement.length > 0 ? (
           <div className="space-y-3">
-            {driverSettlement.map((entry) => {
+            {visibleDriverSettlement.map((entry) => {
               const bal = driverBalances?.find((b: any) => b.driver_user_id === entry.driverId);
               const pendingAmt = Number(bal?.pending_amount || 0);
               const paidAmt = Number(bal?.paid_amount || 0);
