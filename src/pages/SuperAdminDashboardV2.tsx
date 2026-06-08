@@ -12,13 +12,11 @@ import ModeratorManager from "@/components/ModeratorManager";
 import SupportAdminPanel from "@/components/SupportAdminPanel";
 import AppStorePageAdmin from "@/components/AppStorePageAdmin";
 import PartnerSplitPanel from "@/components/PartnerSplitPanel";
-import FixedPlanBillingHistory from "@/components/FixedPlanBillingHistory";
 import TestStoreFinancePanel from "@/components/TestStoreFinancePanel";
 import AppLinksManager from "@/components/AppLinksManager";
 import AdminBroadcastPush from "@/components/AdminBroadcastPush";
 import SalesCoachPanel from "@/components/SalesCoachPanel";
 import PageViewsCard from "@/components/PageViewsCard";
-import { AdminSubaccountsTab } from "@/components/AdminSubaccountsTab";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -65,7 +63,7 @@ const TabFallback = () => (
 );
 
 type DateFilter = "today" | "yesterday" | "week";
-type AdminTab = "dashboard" | "approvals" | "stores" | "financeiro" | "pagamentos" | "saques" | "sync" | "coupons" | "entrega" | "cidades" | "juridico" | "planos" | "moderadores" | "socios" | "suporte" | "app-page" | "test_finance" | "links" | "broadcast" | "logs" | "coach" | "performance" | "auditoria";
+type AdminTab = "dashboard" | "approvals" | "stores" | "financeiro" | "pagamentos" | "saques" | "sync" | "coupons" | "entrega" | "cidades" | "juridico" | "planos" | "moderadores" | "socios" | "suporte" | "app-page" | "test_finance" | "links" | "broadcast" | "logs" | "coach" | "auditoria";
 
 const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; group: string }[] = [
   { key: "dashboard", label: "Dashboard", icon: LayoutDashboard, group: "Principal" },
@@ -88,7 +86,6 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
   { key: "broadcast", label: "Notificações", icon: Megaphone, group: "Sistema" },
   { key: "coach", label: "Coach Vendas IA", icon: Sparkles, group: "Sistema" },
   { key: "sync", label: "Sincronizar", icon: RefreshCw, group: "Sistema" },
-  { key: "performance", label: "Performance", icon: TrendingUp, group: "Sistema" },
   { key: "logs", label: "Logs", icon: FileText, group: "Sistema" },
   { key: "auditoria", label: "Auditoria", icon: ShieldCheck, group: "Sistema" },
 ];
@@ -945,75 +942,6 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
                 <AuditoriaTab />
               </Suspense>
             )}
-            {activeTab === "performance" && (
-              <div className="space-y-4">
-                <div className="bg-card border border-border rounded-2xl p-5">
-                  <h3 className="text-sm font-black mb-1 flex items-center gap-2">
-                    <TrendingUp className="h-4 w-4 text-primary" />
-                    Web Vitals — Últimos 7 dias
-                  </h3>
-                  <p className="text-xs text-muted-foreground mb-4">
-                    Métricas coletadas via Sentry Performance. Acesse{" "}
-                    <a href="https://sentry.io" target="_blank" rel="noopener noreferrer" className="text-primary underline">
-                      sentry.io
-                    </a>{" "}
-                    → Performance → Web Vitals para ver p75 por rota.
-                  </p>
-                  <div className="grid grid-cols-2 gap-3">
-                    {[
-                      { label: "LCP", desc: "Largest Contentful Paint", target: "< 2.5s", icon: "🖼️" },
-                      { label: "INP", desc: "Interaction to Next Paint", target: "< 200ms", icon: "👆" },
-                      { label: "CLS", desc: "Cumulative Layout Shift", target: "< 0.1", icon: "📐" },
-                      { label: "FCP", desc: "First Contentful Paint", target: "< 1.8s", icon: "⚡" },
-                      { label: "TTFB", desc: "Time to First Byte", target: "< 800ms", icon: "🌐" },
-                    ].map(v => (
-                      <div key={v.label} className="bg-muted/30 rounded-xl p-3">
-                        <div className="flex items-center gap-1.5 mb-1">
-                          <span>{v.icon}</span>
-                          <span className="text-sm font-black">{v.label}</span>
-                          <span className="ml-auto text-[10px] text-emerald-600 font-bold bg-emerald-500/10 px-1.5 py-0.5 rounded">{v.target}</span>
-                        </div>
-                        <p className="text-[10px] text-muted-foreground">{v.desc}</p>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="mt-4 bg-blue-500/8 border border-blue-500/20 rounded-xl p-3">
-                    <p className="text-[11px] text-blue-700 dark:text-blue-400 font-bold mb-1">💡 Como monitorar</p>
-                    <ol className="text-[11px] text-muted-foreground space-y-1 list-decimal pl-4">
-                      <li>Abrir sentry.io → projeto ItaSuper</li>
-                      <li>Performance → Web Vitals</li>
-                      <li>Filtrar por rota: /loja, /admin, /pedidos</li>
-                      <li>Ver p75 — se LCP {">"} 2.5s ou INP {">"} 200ms, há oportunidade</li>
-                    </ol>
-                  </div>
-                </div>
-                <div className="bg-card border border-border rounded-2xl p-5">
-                  <h3 className="text-sm font-black mb-3">📦 Chunks do Bundle</h3>
-                  <div className="space-y-2">
-                    {[
-                      { name: "vendor (React+Router)", target: "< 50KB", color: "bg-blue-500" },
-                      { name: "supabase", target: "< 80KB", color: "bg-green-500" },
-                      { name: "icons (lucide)", target: "< 60KB", color: "bg-amber-500" },
-                      { name: "admin dashboard", target: "< 150KB", color: "bg-orange-500" },
-                      { name: "super-admin", target: "< 120KB", color: "bg-purple-500" },
-                      { name: "pdv", target: "< 80KB", color: "bg-cyan-500" },
-                    ].map(chunk => (
-                      <div key={chunk.name} className="flex items-center justify-between text-xs">
-                        <div className="flex items-center gap-2">
-                          <div className={`w-2 h-2 rounded-full ${chunk.color}`} />
-                          <span className="text-foreground">{chunk.name}</span>
-                        </div>
-                        <span className="text-muted-foreground font-mono">{chunk.target}</span>
-                      </div>
-                    ))}
-                  </div>
-                  <p className="text-[10px] text-muted-foreground mt-3">
-                    Verificar tamanhos reais em dist/stats.html após o próximo build de produção.
-                  </p>
-                </div>
-              </div>
-            )}
-
             {activeTab === "logs" && (
               <div className="space-y-4">
                 <div className="bg-card rounded-xl border border-border overflow-hidden">

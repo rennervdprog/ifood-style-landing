@@ -42,10 +42,6 @@ const MatrizDashboard = lazy(() => import("./pages/MatrizDashboard"));
 const PdvPage = lazy(() => import("./pages/PdvPage"));
 const DriverDashboard = lazy(() => import("./pages/DriverDashboard"));
 const DriverDashboardV2 = lazy(() => import("./pages/DriverDashboardV2"));
- const SuperAdminDashboard = lazy(() => import("./pages/SuperAdminDashboard").catch(() => {
-   window.location.reload();
-   return { default: () => null };
- }));
 const SuperAdminDashboardV2 = lazy(() => import("./pages/SuperAdminDashboardV2").catch(() => {
   window.location.reload();
   return { default: () => null };
@@ -351,14 +347,7 @@ const App = () => {
                     </RoleGuard>
                   }
                 />
-<Route
-  path="/super-admin1"
-  element={
-    <RoleGuard allowedRoles={["admin"]} redirectTo="/">
-      <SuperAdminDashboard />
-    </RoleGuard>
-  }
-/>
+                <Route path="/super-admin1" element={<Navigate to="/super-admin" replace />} />
                 <Route path="/super-admin2" element={<Navigate to="/super-admin" replace />} />
                 <Route path="/parceiro" element={<PartnerOnboarding />} />
                 {/* Cadastro de motoboy de plataforma descontinuado — redireciona para motoboy de loja */}
