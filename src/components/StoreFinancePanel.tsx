@@ -329,15 +329,24 @@ const DONUT_COLORS = [NEON_COLORS.pink, NEON_COLORS.blue, NEON_COLORS.amber];
   const hasPixKey = !!ownerProfile?.pix_key;
   const hasDocument = !!ownerProfile?.document;
 
-  const completedOrders = orders?.filter(o => ["entregue", "finalizado"].includes(o.status)) || [];
+  const completedOrders = useMemo(
+    () => orders?.filter(o => ["entregue", "finalizado"].includes(o.status)) || [],
+    [orders]
+  );
 
   // Hook de gráficos unificado — delivery + PDV
   // eslint-disable-next-line react-hooks/rules-of-hooks
   const chartUnified = useFinanceChartData(completedOrders, pdvMovementsForChart);
 
   // Separar por canal
-  const deliveryOrders = completedOrders.filter(o => (o as any).order_source !== "pdv");
-  const pdvOrders = completedOrders.filter(o => (o as any).order_source === "pdv");
+  const deliveryOrders = useMemo(
+    () => completedOrders.filter(o => (o as any).order_source !== "pdv"),
+    [completedOrders]
+  );
+  const pdvOrders = useMemo(
+    () => completedOrders.filter(o => (o as any).order_source === "pdv"),
+    [completedOrders]
+  );
   const hasPdv = pdvOrders.length > 0;
 
   const totalSales = sumMoney(completedOrders.map((order) => order.subtotal));
