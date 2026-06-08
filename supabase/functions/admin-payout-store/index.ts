@@ -167,10 +167,19 @@ Deno.serve(async (req) => {
       admin_user_id: userData.user.id,
     });
 
-    // Deduct from repasse_pendente
+    // Deduct ONLY repasse_pendente by the actual amount paid.
+    // Never touch comissao_pendente/pending_commission here — those represent
+    // money the store still owes the platform and are settled by a different flow.
+    const { data: curBal } = await serviceClient
+      .from("store_balances")
+      .select("repasse_pendente")
+      .eq("store_id", store_id)
+      .maybeSingle();
+    const curRepasse = Number(curBal?.repasse_pendente || 0);
+    const newRepasse = Math.max(0, curRepasse - Number(amount.toFixed(2)));
     await serviceClient
       .from("store_balances")
-      .update({ repasse_pendente: 0, comissao_pendente: 0, pending_commission: 0 })
+      .update({ repasse_pendente: newRepasse, updated_at: new Date().toISOString() })
       .eq("store_id", store_id);
 
     return json({
