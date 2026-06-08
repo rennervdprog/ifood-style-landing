@@ -343,6 +343,12 @@ Deno.serve(async (req) => {
 
     const oneSignalUserIds = [...new Set((osPlayers || []).map((player: any) => player.user_id).filter(Boolean))];
     const oneSignalUserSet = new Set(oneSignalUserIds);
+    // Per-device dedupe: skip FCM for devices that already have an active OneSignal player.
+    const oneSignalDeviceSet = new Set(
+      (osPlayers || [])
+        .map((p: any) => (p.device_info ? `${p.user_id}::${p.device_info}` : null))
+        .filter(Boolean) as string[]
+    );
 
     // ── Firebase Web Push (send to ALL users with FCM tokens, including Capacitor native) ──
     let fcmSent = 0;
@@ -355,12 +361,17 @@ Deno.serve(async (req) => {
     // Send FCM to ALL target users (don't skip users with OneSignal — they may also have Capacitor FCM tokens)
     const fcmTargetUserIds = requestedUserIds;
 
-    const { data: fcmTokens } = fcmTargetUserIds.length > 0
+    const { data: fcmTokensRaw } = fcmTargetUserIds.length > 0
       ? await supabaseAdmin
           .from("fcm_tokens")
           .select("token, user_id, device_info, updated_at")
           .in("user_id", fcmTargetUserIds)
       : { data: [] as Array<{ token: string; user_id: string }> };
+    // Drop FCM tokens whose (user_id, device_info) already has a OneSignal player — prevents double push on the same device.
+    const fcmTokens = (fcmTokensRaw || []).filter((row: any) => {
+      if (!row.device_info) return true;
+      return !oneSignalDeviceSet.has(`${row.user_id}::${row.device_info}`);
+    });
 
     if (Deno.env.get("DEBUG_PUSH") === "true") {
       console.log(`[send-push] 🔍 DEBUG: FCM tokens count=${(fcmTokens || []).length} for ${fcmTargetUserIds.length} target user(s)`);
