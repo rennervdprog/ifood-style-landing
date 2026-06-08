@@ -266,15 +266,29 @@ Deno.serve(async (req) => {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) return json({ error: "Unauthorized" }, 401);
 
-    const userClient = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_ANON_KEY")!,
-      { global: { headers: { Authorization: authHeader } } },
-    );
+    // Webhook bypass: when called by asaas-webhook with the service-role key
+    // and the x-webhook-bypass header, skip user auth/ownership checks.
+    const token = authHeader.replace("Bearer ", "");
+    const serviceKey = getServiceRoleKey();
+    const isWebhookBypass =
+      req.headers.get("x-webhook-bypass") === "asaas" &&
+      serviceKey.length > 0 &&
+      token === serviceKey;
 
-    const { data: userData, error: userErr } = await userClient.auth.getUser(authHeader.replace("Bearer ", ""));
-    if (userErr || !userData?.user) return json({ error: "Unauthorized" }, 401);
-    const userId = userData.user.id;
+    let userId: string | null = null;
+    let userClient: any;
+    if (isWebhookBypass) {
+      userClient = createClient(Deno.env.get("SUPABASE_URL")!, serviceKey);
+    } else {
+      userClient = createClient(
+        Deno.env.get("SUPABASE_URL")!,
+        Deno.env.get("SUPABASE_ANON_KEY")!,
+        { global: { headers: { Authorization: authHeader } } },
+      );
+      const { data: userData, error: userErr } = await userClient.auth.getUser(token);
+      if (userErr || !userData?.user) return json({ error: "Unauthorized" }, 401);
+      userId = userData.user.id;
+    }
 
     const body = await req.json().catch(() => ({}));
     const orderId = String(body?.order_id || "");
@@ -290,9 +304,12 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (!ord) return json({ error: "Pedido não encontrado" }, 404);
-    if (ord.client_id !== userId) return json({ error: "Sem permissão" }, 403);
+    if (!isWebhookBypass && ord.client_id !== userId) return json({ error: "Sem permissão" }, 403);
     if (ord.status !== "aguardando_pagamento") {
-      return json({ confirmed: true, status: ord.status, reason: "already_processed" });
+      // For cancelled/refused orders, confirmed must be false so the UI doesn't lie.
+      const failedStatuses = new Set(["cancelado", "recusado", "cancelled", "refused"]);
+      const isFailed = failedStatuses.has(String(ord.status));
+      return json({ confirmed: !isFailed, status: ord.status, reason: isFailed ? "failed" : "already_processed" });
     }
 
     // Query Asaas by externalReference
