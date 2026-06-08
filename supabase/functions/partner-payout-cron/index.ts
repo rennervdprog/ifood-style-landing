@@ -106,13 +106,16 @@ Deno.serve(async (req) => {
 
     // Calculate platform revenue: ONLY commission belongs to the platform.
     // `repasse_pendente` is money owed TO stores (delivery split they collected in cash) — never count it as revenue.
+    // Snapshot store_id + amount so we can deduct AFTER distributing — otherwise the same balance is
+    // counted again in the next cron run and partners get double-paid.
     const { data: balances } = await supabase
       .from("store_balances")
-      .select("comissao_pendente");
+      .select("store_id, comissao_pendente");
 
-    const totalRevenue = (balances || []).reduce(
-      (s, b) => s + Number(b.comissao_pendente || 0), 0
-    );
+    const snapshot = (balances || [])
+      .map((b) => ({ store_id: b.store_id as string, amount: Number(b.comissao_pendente || 0) }))
+      .filter((b) => b.amount > 0);
+    const totalRevenue = snapshot.reduce((s, b) => s + b.amount, 0);
 
     if (totalRevenue < 1) {
       return json({ message: "Receita pendente insuficiente para repasse.", revenue: totalRevenue });
@@ -194,6 +197,23 @@ Deno.serve(async (req) => {
     }
 
     console.log("Partner payout cron completed:", JSON.stringify(results));
+
+    // Deduct distributed amounts from store_balances so the next run doesn't double-count.
+    const nowIso = new Date().toISOString();
+    for (const item of snapshot) {
+      const { data: cur } = await supabase
+        .from("store_balances")
+        .select("comissao_pendente")
+        .eq("store_id", item.store_id)
+        .maybeSingle();
+      const curVal = Number(cur?.comissao_pendente || 0);
+      const newVal = Math.max(0, curVal - item.amount);
+      await supabase
+        .from("store_balances")
+        .update({ comissao_pendente: newVal, updated_at: nowIso })
+        .eq("store_id", item.store_id);
+    }
+
     return json({ message: "Repasse de sócios executado.", results, revenue: totalRevenue, timestamp: new Date().toISOString() });
   } catch (err) {
     console.error("Partner payout cron error:", err);
