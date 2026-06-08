@@ -39,6 +39,17 @@ const SB_KEY =
 // Segredo HMAC (nunca sai do edge). Reusa a service key como base.
 const HMAC_SECRET = SB_KEY;
 
+// Lê a versão atual do token KDS armazenada em stores.settings.kds_token_version (default 1).
+async function getTokenVersion(ext: any, storeId: string): Promise<number> {
+  const { data } = await ext
+    .from("stores")
+    .select("settings")
+    .eq("id", storeId)
+    .maybeSingle();
+  const v = Number((data?.settings as any)?.kds_token_version ?? 1);
+  return Number.isFinite(v) && v > 0 ? v : 1;
+}
+
 const enc = new TextEncoder();
 const b64url = (buf: ArrayBuffer | Uint8Array) => {
   const bytes = buf instanceof Uint8Array ? buf : new Uint8Array(buf);
@@ -64,23 +75,37 @@ async function hmac(payload: string): Promise<string> {
   return b64url(sig);
 }
 
-async function signToken(storeId: string): Promise<string> {
+async function signToken(storeId: string, version: number): Promise<string> {
   const head = b64url(enc.encode(storeId));
-  const sig = await hmac(storeId);
-  return `${head}.${sig}`;
+  const sig = await hmac(`${storeId}:${version}`);
+  return `${head}.${version}.${sig}`;
 }
 
-async function verifyToken(token: string): Promise<string | null> {
-  if (!token || !token.includes(".")) return null;
-  const [head, sig] = token.split(".");
+async function verifyToken(ext: any, token: string): Promise<string | null> {
+  if (!token) return null;
+  const parts = token.split(".");
+  if (parts.length < 2) return null;
   let storeId: string;
   try {
-    storeId = b64urlDecode(head);
+    storeId = b64urlDecode(parts[0]);
   } catch {
     return null;
   }
-  const expected = await hmac(storeId);
-  // timing-safe compare
+  // Backward-compat: tokens antigos sem versão (2 partes) — tratados como v1.
+  let version = 1;
+  let sig: string;
+  if (parts.length === 2) {
+    sig = parts[1];
+  } else {
+    version = Number(parts[1]);
+    sig = parts[2];
+    if (!Number.isFinite(version) || version < 1) return null;
+  }
+  const current = await getTokenVersion(ext, storeId);
+  if (version !== current) return null;
+  const expected = parts.length === 2
+    ? await hmac(storeId) // formato antigo
+    : await hmac(`${storeId}:${version}`);
   if (sig.length !== expected.length) return null;
   let ok = 0;
   for (let i = 0; i < sig.length; i++) ok |= sig.charCodeAt(i) ^ expected.charCodeAt(i);
@@ -103,7 +128,7 @@ Deno.serve(async (req) => {
   const ext = createClient(SB_URL, SB_KEY, { auth: { persistSession: false } });
 
   try {
-    if (body.action === "generate-token") {
+    if (body.action === "generate-token" || body.action === "revoke-token") {
       const storeId = String(body.store_id || "");
       if (!storeId) return json({ error: "store_id required" }, 400);
 
@@ -122,7 +147,7 @@ Deno.serve(async (req) => {
         .maybeSingle();
       if (sErr || !store) return json({ error: "store not found" }, 404);
 
-      if (store.owner_id !== uid) {
+      if ((store as any).owner_id !== uid) {
         const { data: roleRow } = await ext
           .from("user_roles")
           .select("role")
@@ -132,12 +157,28 @@ Deno.serve(async (req) => {
         if (!roleRow) return json({ error: "forbidden" }, 403);
       }
 
-      const token = await signToken(storeId);
-      return json({ token });
+      // Se revoke, incrementa a versão para invalidar o link atual.
+      let version = await getTokenVersion(ext, storeId);
+      if (body.action === "revoke-token") {
+        const { data: cur } = await ext
+          .from("stores")
+          .select("settings")
+          .eq("id", storeId)
+          .maybeSingle();
+        const settings = { ...((cur?.settings as any) || {}), kds_token_version: version + 1 };
+        const { error: upErr } = await ext
+          .from("stores")
+          .update({ settings })
+          .eq("id", storeId);
+        if (upErr) return json({ error: upErr.message }, 500);
+        version = version + 1;
+      }
+      const token = await signToken(storeId, version);
+      return json({ token, version });
     }
 
     if (body.action === "get-orders") {
-      const storeId = await verifyToken(String(body.token || ""));
+      const storeId = await verifyToken(ext, String(body.token || ""));
       if (!storeId) return json({ error: "invalid token" }, 401);
 
       const { data: orders, error } = await ext
@@ -159,7 +200,7 @@ Deno.serve(async (req) => {
     }
 
     if (body.action === "update-status") {
-      const storeId = await verifyToken(String(body.token || ""));
+      const storeId = await verifyToken(ext, String(body.token || ""));
       if (!storeId) return json({ error: "invalid token" }, 401);
       const orderId = String(body.order_id || "");
       const status = String(body.status || "");
