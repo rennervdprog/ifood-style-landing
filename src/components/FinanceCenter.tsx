@@ -153,6 +153,9 @@ export default function FinanceCenter({ storeId, storeName, hasCommission, isPla
                     <p className="text-sm text-muted-foreground max-w-[280px] mx-auto">
                       Identificamos que sua conta ainda não possui o PIX integrado via Asaas. Configure agora para receber direto na sua conta.
                     </p>
+                    <p className="text-[11px] text-muted-foreground/80 mt-1">
+                      As abas <strong>Saldo</strong>, <strong>Repasses</strong> e <strong>Subcontas</strong> serão desbloqueadas após a configuração.
+                    </p>
                   </div>
                   <Button 
                     className="w-full bg-destructive hover:bg-destructive/90 text-destructive-foreground font-bold h-11"
