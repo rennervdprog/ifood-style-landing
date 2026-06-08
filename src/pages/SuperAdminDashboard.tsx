@@ -1299,6 +1299,7 @@ export const FinanceTab = ({
   const [savingLimits, setSavingLimits] = useState(false);
   const [savingGateway, setSavingGateway] = useState(false);
   const [expandedStore, setExpandedStore] = useState<string | null>(null);
+  const [financeSearch, setFinanceSearch] = useState("");
 
   // 🔒 storePlans removida — usa parentStorePlans (queryKey "admin-store-plans") definida acima
   // Isso elimina a query duplicada para store_plans
@@ -1328,6 +1329,70 @@ export const FinanceTab = ({
         .map((p: any) => Number(p.monthly_fee))
     );
   }, [storePlans, stores]);
+
+  // Quantidade de lojas pagantes (mensalidade > 0, excl. testes)
+  const payingStoresCount = useMemo(() => {
+    if (!storePlans) return 0;
+    const testIds = new Set((stores || []).filter((s: any) => s.is_test).map((s: any) => s.id));
+    return storePlans.filter((p: any) => p.monthly_fee > 0 && !testIds.has(p.store_id)).length;
+  }, [storePlans, stores]);
+
+  // Filtragem por busca (aplica nas listas exibidas)
+  const visibleStoreSettlement = useMemo(() => {
+    if (!financeSearch.trim()) return storeSettlement;
+    const q = financeSearch.toLowerCase();
+    return storeSettlement.filter((e: any) => (e.name || "").toLowerCase().includes(q));
+  }, [storeSettlement, financeSearch]);
+  const visibleDriverSettlement = useMemo(() => {
+    if (!financeSearch.trim()) return driverSettlement;
+    const q = financeSearch.toLowerCase();
+    return driverSettlement.filter((e: any) => (e.name || "").toLowerCase().includes(q));
+  }, [driverSettlement, financeSearch]);
+
+  // Export CSV — escolhe colunas por sub-aba
+  const exportFinanceCsv = () => {
+    const period = financeFilter === "week" ? "7d" : "30d";
+    const stamp = new Date().toISOString().slice(0, 10);
+    const escape = (v: any) => {
+      const s = String(v ?? "");
+      return /[",\n;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    let header: string[] = [];
+    let rows: string[][] = [];
+    let filename = `financeiro-${stamp}-${period}.csv`;
+    if (financeSubTab === "stores") {
+      header = ["Loja", "Plano", "Pedidos", "Vendas Totais", "Vendas App", "Vendas Físicas", "PDV", "Comissão Pendente", "Comissão PDV"];
+      rows = visibleStoreSettlement.map((e: any) => {
+        const plan = getStorePlan(e.storeId);
+        const balance = storeBalances.find((b: any) => b.store_id === e.storeId);
+        const dbComissao = Number(balance?.comissao_pendente || balance?.pending_commission || 0);
+        return [
+          e.name, planLabel(plan?.plan_type || "commission_only"),
+          String(e.orderCount), e.totalSales.toFixed(2), e.appSales.toFixed(2),
+          e.physicalSales.toFixed(2), e.pdvSales.toFixed(2),
+          dbComissao.toFixed(2), Number(e.pdvCommission || 0).toFixed(2),
+        ];
+      });
+      filename = `lojas-${stamp}-${period}.csv`;
+    } else if (financeSubTab === "drivers") {
+      header = ["Entregador", "Entregas", "Total Ganho", "Em Mãos (dinheiro)", "Taxas App"];
+      rows = visibleDriverSettlement.map((e: any) => [
+        e.name, String(e.deliveryCount), e.totalFees.toFixed(2), e.cashFees.toFixed(2), e.appFees.toFixed(2),
+      ]);
+      filename = `entregadores-${stamp}-${period}.csv`;
+    } else {
+      toast.info("Export CSV: selecione Lojas ou Entregadores.");
+      return;
+    }
+    const csv = [header, ...rows].map(r => r.map(escape).join(",")).join("\n");
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a); URL.revokeObjectURL(url);
+    toast.success("CSV exportado.");
+  };
 
   const getStoreRate = (storeId: string) => {
     const plan = getStorePlan(storeId);
@@ -1649,6 +1714,11 @@ export const FinanceTab = ({
           ))}
         </div>
         <div className="flex-1" />
+        <button onClick={exportFinanceCsv}
+          className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all bg-muted/50 text-muted-foreground hover:text-foreground"
+          title="Exportar CSV">
+          <Download className="h-3.5 w-3.5" /> CSV
+        </button>
         <button onClick={() => setShowPayoutSettings(!showPayoutSettings)}
           className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all ${showPayoutSettings ? "bg-primary text-primary-foreground" : "bg-muted/50 text-muted-foreground hover:text-foreground"}`}>
           <Settings className="h-3.5 w-3.5" />
@@ -1706,6 +1776,7 @@ export const FinanceTab = ({
             </div>
             <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Assinaturas/Mês</p>
             <p className="text-xl font-black text-emerald-500 mt-0.5">{formatBRL(subscriptionRevenue)}</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5">{payingStoresCount} loja{payingStoresCount === 1 ? "" : "s"} pagante{payingStoresCount === 1 ? "" : "s"}</p>
           </div>
         </div>
       </div>
@@ -1925,6 +1996,19 @@ export const FinanceTab = ({
         </select>
       )}
 
+      {/* Busca rápida (Lojas / Entregadores) */}
+      {financeSubTab !== "subaccounts" && (
+        <div className="relative">
+          <Search className="h-4 w-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
+          <input
+            value={financeSearch}
+            onChange={e => setFinanceSearch(e.target.value)}
+            placeholder={financeSubTab === "stores" ? "Buscar loja..." : "Buscar entregador..."}
+            className="w-full bg-card text-foreground border border-border rounded-xl pl-9 pr-3 py-2.5 text-sm"
+          />
+        </div>
+      )}
+
       {/* ═══ Store Cards ═══ */}
       {loading ? (
         <div className="space-y-3">
@@ -1936,9 +2020,9 @@ export const FinanceTab = ({
         <AdminSubaccountsTab />
       ) : financeSubTab === "stores" ? (
         /* ═══ Store Cards ═══ */
-        storeSettlement.length > 0 ? (
+        visibleStoreSettlement.length > 0 ? (
           <div className="space-y-3">
-            {storeSettlement.map((entry) => {
+            {visibleStoreSettlement.map((entry) => {
               const balance = storeBalances.find((b: any) => b.store_id === entry.storeId);
               const dbComissao = Number(balance?.comissao_pendente || balance?.pending_commission || 0);
               const isExpanded = expandedStore === entry.storeId;
@@ -2205,9 +2289,9 @@ export const FinanceTab = ({
         )
       ) : (
         /* ═══ Driver Cards ═══ (financeSubTab === "drivers") */
-        driverSettlement.length > 0 ? (
+        visibleDriverSettlement.length > 0 ? (
           <div className="space-y-3">
-            {driverSettlement.map((entry) => {
+            {visibleDriverSettlement.map((entry) => {
               const bal = driverBalances?.find((b: any) => b.driver_user_id === entry.driverId);
               const pendingAmt = Number(bal?.pending_amount || 0);
               const paidAmt = Number(bal?.paid_amount || 0);
