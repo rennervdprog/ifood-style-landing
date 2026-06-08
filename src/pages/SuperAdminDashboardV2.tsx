@@ -415,18 +415,20 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
 
   const storeSettlement = useMemo(() => {
     if (!financeOrders || !stores) return [];
+    const testIds = new Set((stores || []).filter((s: any) => s.is_test).map((s: any) => s.id));
     const map = new Map<string, {
       name: string; storeId: string; physicalSales: number; appSales: number; totalSales: number;
       commissionDue: number; netTransfer: number; finalBalance: number; orderCount: number; deliveryFees: number;
       // PDV separado
       pdvSales: number; pdvOrders: number; pdvCommission: number;
     }>();
-    stores.forEach(s => map.set(s.id, {
+    stores.filter((s: any) => !s.is_test).forEach(s => map.set(s.id, {
       name: s.name, storeId: s.id, physicalSales: 0, appSales: 0, totalSales: 0,
       commissionDue: 0, netTransfer: 0, finalBalance: 0, orderCount: 0, deliveryFees: 0,
       pdvSales: 0, pdvOrders: 0, pdvCommission: 0,
     }));
-    const filtered = selectedStore === "all" ? financeOrders : financeOrders.filter(o => o.store_id === selectedStore);
+    const filtered = (selectedStore === "all" ? financeOrders : financeOrders.filter(o => o.store_id === selectedStore))
+      .filter(o => !testIds.has(o.store_id));
     filtered.forEach(o => {
       const entry = map.get(o.store_id);
       if (!entry) return;
@@ -463,6 +465,7 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
 
   const driverSettlement = useMemo(() => {
     if (!financeOrders || !drivers) return [];
+    const testIds = new Set((stores || []).filter((s: any) => s.is_test).map((s: any) => s.id));
     const map = new Map<string, {
       name: string; driverId: string; totalFees: number; cashFees: number; appFees: number; deliveryCount: number;
     }>();
@@ -471,6 +474,7 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
     }));
     financeOrders.forEach(o => {
       if (!o.driver_id) return;
+      if (testIds.has(o.store_id)) return;
       const entry = map.get(o.driver_id);
       if (!entry) return;
       const fee = o.delivery_fee;
@@ -480,7 +484,7 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
       else entry.appFees = addMoney(entry.appFees, fee);
     });
     return Array.from(map.values()).filter(e => e.deliveryCount > 0).sort((a, b) => b.totalFees - a.totalFees);
-  }, [financeOrders, drivers]);
+  }, [financeOrders, drivers, stores]);
 
   const financeTotals = useMemo(() => {
     const totalVolume = sumMoney(storeSettlement.map((entry) => entry.totalSales));
