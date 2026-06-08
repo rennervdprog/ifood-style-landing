@@ -61,6 +61,8 @@ export default function FinanceCenter({ storeId, storeName, hasCommission, isPla
     },
     enabled: !!store?.asaas_wallet_id,
     refetchInterval: 60000,
+    refetchIntervalInBackground: false,
+    refetchOnWindowFocus: false,
   });
 
   if (loadingStore) {
