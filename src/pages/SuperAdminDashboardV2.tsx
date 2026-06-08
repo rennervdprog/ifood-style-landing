@@ -662,33 +662,44 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
           <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[60] lg:hidden" onClick={() => setShowMoreSheet(false)} />
           <div className="fixed bottom-16 left-0 right-0 z-[70] bg-card border-t border-border rounded-t-3xl shadow-2xl lg:hidden animate-in slide-in-from-bottom-4 max-h-[60vh] overflow-y-auto" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
             <div className="w-12 h-1 bg-muted-foreground/20 rounded-full mx-auto mt-3 mb-2" />
-            <div className="px-4 pb-4 space-y-1">
-              {moreTabs.map((item) => {
-                const isActive = activeTab === item.key;
-                const Icon = item.icon;
+            <div className="px-4 pb-4 space-y-3">
+              {["Início", "Operação", "Financeiro", "Pessoas", "Marketing", "Sistema"].map((group) => {
+                const groupItems = moreTabs.filter((i) => i.group === group);
+                if (groupItems.length === 0) return null;
                 return (
-                  <button
-                    key={item.key}
-                    onClick={() => { handleTabChange(item.key); setShowMoreSheet(false); }}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all ${
-                      isActive ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent hover:text-foreground"
-                    }`}
-                  >
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${isActive ? "bg-primary-foreground/15" : "bg-muted/50"}`}>
-                      <Icon className="h-4 w-4" />
+                  <div key={group}>
+                    <p className="text-[10px] font-extrabold text-muted-foreground/60 uppercase tracking-[0.15em] px-2 mb-1.5">{group}</p>
+                    <div className="space-y-1">
+                      {groupItems.map((item) => {
+                        const isActive = activeTab === item.key;
+                        const Icon = item.icon;
+                        return (
+                          <button
+                            key={item.key}
+                            onClick={() => { handleTabChange(item.key); setShowMoreSheet(false); }}
+                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all ${
+                              isActive ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                            }`}
+                          >
+                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${isActive ? "bg-primary-foreground/15" : "bg-muted/50"}`}>
+                              <Icon className="h-4 w-4" />
+                            </div>
+                            <span>{item.label}</span>
+                            {item.key === "approvals" && pendingApprovalsCount > 0 && (
+                              <span className="ml-auto bg-destructive text-destructive-foreground text-[10px] font-black min-w-[20px] h-5 flex items-center justify-center px-1.5 rounded-full animate-pulse">
+                                {pendingApprovalsCount}
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
                     </div>
-                    <span>{item.label}</span>
-                    {item.key === "approvals" && pendingApprovalsCount > 0 && (
-                      <span className="ml-auto bg-destructive text-destructive-foreground text-[10px] font-black min-w-[20px] h-5 flex items-center justify-center px-1.5 rounded-full animate-pulse">
-                        {pendingApprovalsCount}
-                      </span>
-                    )}
-                  </button>
+                  </div>
                 );
               })}
               <button
                 onClick={() => { navigate("/"); setShowMoreSheet(false); }}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-muted-foreground hover:bg-accent hover:text-foreground"
+                className="w-full flex items-center gap-3 px-4 py-3 mt-2 rounded-xl text-sm font-semibold text-muted-foreground hover:bg-accent hover:text-foreground border-t border-border/50 pt-4"
               >
                 <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 bg-muted/50">
                   <ArrowLeft className="h-4 w-4" />
