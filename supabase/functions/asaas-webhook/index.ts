@@ -162,12 +162,22 @@ Deno.serve(async (req) => {
   if (PAID_EVENTS.has(event)) {
     const nowIso = new Date().toISOString();
 
-    // 1) marca a transação como paga
-    const { error: updErr } = await supabase
+    // 1) marca a transação como paga ATOMICAMENTE (guard: status != 'paid').
+    //    Se 0 linhas afetadas, outro worker já processou — encerra idempotente.
+    const { data: updRows, error: updErr } = await supabase
       .from("financial_transactions")
       .update({ status: "paid", settled_at: nowIso })
-      .eq("id", tx.id);
-    if (updErr) console.error("[asaas-webhook] tx update error", updErr);
+      .eq("id", tx.id)
+      .neq("status", "paid")
+      .select("id");
+    if (updErr) {
+      console.error("[asaas-webhook] tx update error", updErr);
+      return json({ ok: false, error: "tx_update_failed" }, 500);
+    }
+    if (!updRows || updRows.length === 0) {
+      console.log(`[asaas-webhook] tx ${tx.id} already paid by concurrent worker — idempotent`);
+      return json({ ok: true, idempotent: true, transaction_id: tx.id });
+    }
 
     const ref = String(tx.reference_code || "");
     const isMonthly = ref.startsWith("#MENS-") || ref.startsWith("#ASSIN-");
@@ -189,21 +199,37 @@ Deno.serve(async (req) => {
       console.log(`[asaas-webhook] mensalidade paga store=${tx.store_id} próxima=${next.toISOString()}`);
     } else {
       // 2b) cobrança de taxa física (auto-charge-physical-fees) → zera saldos
-      // Só zera o tipo cobrado para não apagar saldo acumulado em outro fluxo.
+      // SUBTRAI o valor cobrado (tx.amount) em vez de zerar — evita apagar
+      // saldo novo acumulado entre a emissão da cobrança e a confirmação.
       const meta: any = tx.metadata || {};
       const planType: string = meta.plan_type || "";
-      const updates: Record<string, unknown> = { updated_at: nowIso };
+      const paidAmount = Number(tx.amount || 0);
 
+      const { data: bal } = await supabase
+        .from("store_balances")
+        .select("repasse_pendente, comissao_pendente, pending_commission")
+        .eq("store_id", tx.store_id)
+        .maybeSingle();
+      const curRepasse = Number(bal?.repasse_pendente || 0);
+      const curCom = Number(bal?.comissao_pendente || 0);
+      const curPend = Number(bal?.pending_commission || 0);
+
+      const updates: Record<string, unknown> = { updated_at: nowIso };
       if (planType === "fixed" || planType === "supporter") {
-        updates.repasse_pendente = 0;
+        updates.repasse_pendente = Math.max(0, curRepasse - paidAmount);
       } else if (planType === "commission_only") {
-        updates.comissao_pendente = 0;
-        updates.pending_commission = 0;
+        updates.comissao_pendente = Math.max(0, curCom - paidAmount);
+        updates.pending_commission = Math.max(0, curPend - paidAmount);
       } else {
-        // Sem metadata — zera tudo (fallback seguro: a cobrança quitou todos os pendentes)
-        updates.repasse_pendente = 0;
-        updates.comissao_pendente = 0;
-        updates.pending_commission = 0;
+        // Sem metadata: deduz proporcionalmente, sem zerar.
+        const total = curRepasse + curCom;
+        if (total > 0) {
+          const repShare = (curRepasse / total) * paidAmount;
+          const comShare = paidAmount - repShare;
+          updates.repasse_pendente = Math.max(0, curRepasse - repShare);
+          updates.comissao_pendente = Math.max(0, curCom - comShare);
+          updates.pending_commission = Math.max(0, curPend - comShare);
+        }
       }
 
       const { error: balErr } = await supabase
@@ -211,7 +237,7 @@ Deno.serve(async (req) => {
         .update(updates)
         .eq("store_id", tx.store_id);
       if (balErr) console.error("[asaas-webhook] balance update error", balErr);
-      console.log(`[asaas-webhook] taxa física paga store=${tx.store_id} plan=${planType}`);
+      console.log(`[asaas-webhook] taxa física paga store=${tx.store_id} plan=${planType} valor=${paidAmount}`);
     }
 
     return json({ ok: true, type: "payment_confirmed", transaction_id: tx.id });
