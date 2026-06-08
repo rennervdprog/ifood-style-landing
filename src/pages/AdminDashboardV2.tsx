@@ -1122,29 +1122,32 @@ const AdminDashboard = () => {
 
       // Send notifications for each order
       const storeSettings = (store?.settings || {}) as Record<string, any>;
-      for (const orderId of ids) {
+      // Fire-and-forget em paralelo — antes rodava sequencial e travava UI com muitos pedidos
+      ids.forEach((orderId) => {
         const order = orders?.find((o: any) => o.id === orderId);
-        if (!order) continue;
+        if (!order) return;
         const clientPhone = getClientWhatsApp(order.client_id);
         const clientName = getClientName(order.client_id);
         const items = order.order_items?.map((i: any) => `${i.quantity}x ${getOrderItemDisplayName(i)}`).join("\n") || "";
-        notifyOrderStatusChange("saiu_entrega", {
-          orderId: order.id,
-          storeName: store?.name || "Loja",
-          storeId: store?.id || "",
-          clientId: order.client_id,
-          clientPhone,
-          clientName,
-          totalPrice: Number(order.total_price),
-          addressDetails: order.address_details,
-          items,
-          deliveryPin: order.delivery_pin,
-          paymentMethod: order.payment_method,
-        }, {
-          evolutionEnabled: evolutionConnected,
-          zapiEnabled: !!storeSettings.zapi_enabled,
-        });
-      }
+        try {
+          notifyOrderStatusChange("saiu_entrega", {
+            orderId: order.id,
+            storeName: store?.name || "Loja",
+            storeId: store?.id || "",
+            clientId: order.client_id,
+            clientPhone,
+            clientName,
+            totalPrice: Number(order.total_price),
+            addressDetails: order.address_details,
+            items,
+            deliveryPin: order.delivery_pin,
+            paymentMethod: order.payment_method,
+          }, {
+            evolutionEnabled: evolutionConnected,
+            zapiEnabled: !!storeSettings.zapi_enabled,
+          });
+        } catch (e) { console.warn("batch notify error", e); }
+      });
 
       setBatchSelected(new Set());
     } catch (e: any) {
