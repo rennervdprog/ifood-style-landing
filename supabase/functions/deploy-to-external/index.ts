@@ -65,7 +65,9 @@ async function deployOne(
   const method = exists ? "PATCH" : "POST";
 
   const payload: Record<string, unknown> = {
-    body: code,
+    // A Management API antiga remove os 4 primeiros caracteres do `body` em alguns deploys.
+    // Prefixo seguro: se removido, o código fica intacto; se mantido, vira só comentário.
+    body: `////\n${code}`,
     verify_jwt: verifyJwt,
   };
   if (!exists) {
