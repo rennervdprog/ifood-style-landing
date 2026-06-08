@@ -1321,8 +1321,13 @@ export const FinanceTab = ({
   // Subscription revenue KPI
   const subscriptionRevenue = useMemo(() => {
     if (!storePlans) return 0;
-    return sumMoney(storePlans.filter((p: any) => p.monthly_fee > 0).map((p: any) => Number(p.monthly_fee)));
-  }, [storePlans]);
+    const testIds = new Set((stores || []).filter((s: any) => s.is_test).map((s: any) => s.id));
+    return sumMoney(
+      storePlans
+        .filter((p: any) => p.monthly_fee > 0 && !testIds.has(p.store_id))
+        .map((p: any) => Number(p.monthly_fee))
+    );
+  }, [storePlans, stores]);
 
   const getStoreRate = (storeId: string) => {
     const plan = getStorePlan(storeId);
