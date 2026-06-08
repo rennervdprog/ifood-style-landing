@@ -35,7 +35,7 @@ Deno.serve(async (req) => {
   const ASAAS_KEY = Deno.env.get("ASAAS_API_KEY") || "";
   const ASAAS_BASE = ASAAS_KEY.startsWith("$aact_prod_")
     ? "https://api.asaas.com/v3"
-    : "https://api-sandbox.asaas.com/v3";
+    : "https://sandbox.asaas.com/api/v3";
   if (!ASAAS_KEY) return json({ error: "ASAAS_API_KEY missing" }, 500);
 
   // Retry com backoff exponencial (2 retries: 250ms, 750ms)
@@ -76,8 +76,8 @@ Deno.serve(async (req) => {
 
   let checked = 0, reconciled = 0, errors = 0;
   for (const tx of pendings || []) {
-    const pid = tx.mercado_pago_payment_id || tx.reference_code;
-    if (!pid || !String(pid).startsWith("pay_")) continue;
+    const pid = tx.mercado_pago_payment_id;
+    if (!pid) continue;
     checked++;
     try {
       const r = await fetchAsaas(pid);
@@ -101,10 +101,26 @@ Deno.serve(async (req) => {
       } else {
         const meta: any = tx.metadata || {};
         const planType: string = meta.plan_type || "";
+        const amt = Number(tx.amount || 0);
+        const { data: bal } = await supabase
+          .from("store_balances")
+          .select("repasse_pendente, comissao_pendente, pending_commission")
+          .eq("store_id", tx.store_id)
+          .maybeSingle();
         const upd: Record<string, unknown> = { updated_at: nowIso };
-        if (planType === "fixed" || planType === "supporter") upd.repasse_pendente = 0;
-        else if (planType === "commission_only") { upd.comissao_pendente = 0; upd.pending_commission = 0; }
-        else { upd.repasse_pendente = 0; upd.comissao_pendente = 0; upd.pending_commission = 0; }
+        const curRepasse = Number(bal?.repasse_pendente || 0);
+        const curComis = Number(bal?.comissao_pendente || 0);
+        const curPend = Number(bal?.pending_commission || 0);
+        if (planType === "fixed" || planType === "supporter") {
+          upd.repasse_pendente = Math.max(0, curRepasse - amt);
+        } else if (planType === "commission_only") {
+          upd.comissao_pendente = Math.max(0, curComis - amt);
+          upd.pending_commission = Math.max(0, curPend - amt);
+        } else {
+          upd.repasse_pendente = Math.max(0, curRepasse - amt);
+          upd.comissao_pendente = Math.max(0, curComis - amt);
+          upd.pending_commission = Math.max(0, curPend - amt);
+        }
         await supabase.from("store_balances").update(upd).eq("store_id", tx.store_id);
       }
 
