@@ -263,7 +263,7 @@ export default function StoreSubscription({ storeId, storeName }: Props) {
             </div>
             <div className="rounded-xl border border-border/60 bg-muted/30 p-4">
               <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
-                {plan.isFixedPlan ? "Taxa por PIX" : "Taxa por pedido"}
+                {plan.isFixedPlan ? "Taxa por pedido PIX" : "Taxa por pedido"}
               </p>
               <p className="text-2xl font-bold text-foreground mt-1">
                 {plan.isFixedPlan
@@ -271,7 +271,7 @@ export default function StoreSubscription({ storeId, storeName }: Props) {
                   : plan.commissionRate > 0 ? `${plan.commissionRate}%` : "Grátis"}
               </p>
               <p className="text-[10px] text-muted-foreground mt-0.5">
-                {plan.isFixedPlan ? "operacional PIX" : "sobre o subtotal"}
+                {plan.isFixedPlan ? "só em pedidos pagos via PIX" : "sobre o subtotal"}
               </p>
             </div>
           </div>
@@ -326,7 +326,7 @@ export default function StoreSubscription({ storeId, storeName }: Props) {
                 </p>
               </div>
             </div>
-            {(pendingCharge as any).pix_copy_paste && (
+            {(pendingCharge as any).pix_copy_paste ? (
               <div className="space-y-2">
                 <div className="rounded-lg bg-background border border-border p-2 max-h-20 overflow-auto">
                   <p className="text-[10px] font-mono break-all text-muted-foreground">
@@ -342,6 +342,10 @@ export default function StoreSubscription({ storeId, storeName }: Props) {
                   Copiar código PIX
                 </Button>
               </div>
+            ) : (
+              <p className="text-[11px] text-muted-foreground">
+                Código PIX ainda não disponível — atualize em alguns segundos.
+              </p>
             )}
           </CardContent>
         </Card>
