@@ -32,3 +32,5 @@ verify_jwt = false
 
 [functions.evolution-keepalive]
 verify_jwt = false
+[functions.kds]
+verify_jwt = false

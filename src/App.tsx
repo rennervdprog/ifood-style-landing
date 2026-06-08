@@ -57,6 +57,7 @@ const SupportAgentDashboard = lazy(() => import("./pages/SupportAgentDashboard")
 const LinksPage = lazy(() => import("./pages/LinksPage"));
  const DownloadApp = lazy(() => import("./pages/DownloadApp"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const KdsPage = lazy(() => import("./pages/KdsPage"));
 
 const PageLoader = () => (
   <div className="min-h-screen bg-background flex items-center justify-center">
@@ -361,6 +362,7 @@ const App = () => {
                 <Route path="/suporte" element={<RoleGuard allowedRoles={["suporte","admin"]} redirectTo="/auth"><SupportAgentDashboard /></RoleGuard>} />
                 <Route path="/links" element={<LinksPage />} />
                  <Route path="/download" element={<DownloadApp />} />
+                <Route path="/kds/:token" element={<KdsPage />} />
                 {/* Client store access via slug - must be last */}
                 <Route path="/:slug" element={<StorePage />} />
                 <Route path="*" element={<NotFound />} />
