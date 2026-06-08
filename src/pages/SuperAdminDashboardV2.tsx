@@ -63,7 +63,7 @@ const TabFallback = () => (
 );
 
 type DateFilter = "today" | "yesterday" | "week";
-type AdminTab = "dashboard" | "approvals" | "stores" | "financeiro" | "pagamentos" | "saques" | "sync" | "coupons" | "entrega" | "cidades" | "juridico" | "planos" | "moderadores" | "socios" | "suporte" | "app-page" | "test_finance" | "links" | "broadcast" | "logs" | "coach" | "performance" | "auditoria";
+type AdminTab = "dashboard" | "approvals" | "stores" | "financeiro" | "pagamentos" | "saques" | "sync" | "coupons" | "entrega" | "cidades" | "juridico" | "planos" | "moderadores" | "socios" | "suporte" | "app-page" | "test_finance" | "links" | "broadcast" | "logs" | "coach" | "auditoria";
 
 const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; group: string }[] = [
   { key: "dashboard", label: "Dashboard", icon: LayoutDashboard, group: "Principal" },
@@ -86,7 +86,6 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
   { key: "broadcast", label: "Notificações", icon: Megaphone, group: "Sistema" },
   { key: "coach", label: "Coach Vendas IA", icon: Sparkles, group: "Sistema" },
   { key: "sync", label: "Sincronizar", icon: RefreshCw, group: "Sistema" },
-  { key: "performance", label: "Performance", icon: TrendingUp, group: "Sistema" },
   { key: "logs", label: "Logs", icon: FileText, group: "Sistema" },
   { key: "auditoria", label: "Auditoria", icon: ShieldCheck, group: "Sistema" },
 ];
