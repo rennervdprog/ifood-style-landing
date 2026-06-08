@@ -66,28 +66,34 @@ type DateFilter = "today" | "yesterday" | "week";
 type AdminTab = "dashboard" | "approvals" | "stores" | "financeiro" | "pagamentos" | "saques" | "sync" | "coupons" | "entrega" | "cidades" | "juridico" | "planos" | "moderadores" | "socios" | "suporte" | "app-page" | "test_finance" | "links" | "broadcast" | "logs" | "coach" | "auditoria";
 
 const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; group: string }[] = [
-  { key: "dashboard", label: "Dashboard", icon: LayoutDashboard, group: "Principal" },
-  { key: "planos", label: "Planos", icon: Crown, group: "Principal" },
-  { key: "financeiro", label: "Financeiro", icon: DollarSign, group: "Principal" },
-  { key: "pagamentos", label: "Pagamentos", icon: CreditCard, group: "Principal" },
-  { key: "saques", label: "Saques", icon: Wallet, group: "Principal" },
-  { key: "entrega", label: "Entrega", icon: Truck, group: "Configurações" },
-  { key: "approvals", label: "Aprovações", icon: Shield, group: "Gerenciamento" },
-  { key: "stores", label: "Lojas", icon: Store, group: "Gerenciamento" },
-  { key: "cidades", label: "Cidades", icon: MapPin, group: "Gerenciamento" },
-  { key: "coupons", label: "Cupons", icon: Ticket, group: "Gerenciamento" },
-  { key: "moderadores", label: "Moderadores", icon: Users, group: "Gerenciamento" },
-  { key: "suporte", label: "Suporte", icon: MessageCircle, group: "Gerenciamento" },
-  { key: "app-page", label: "Página do App", icon: Smartphone, group: "Sistema" },
-  { key: "socios", label: "Sócios", icon: Handshake, group: "Principal" },
-  { key: "juridico", label: "Jurídico", icon: Scale, group: "Sistema" },
-  { key: "test_finance", label: "Finanças Teste", icon: FlaskConical, group: "Sistema" },
-  { key: "links", label: "Página /links", icon: LinkIcon, group: "Sistema" },
-  { key: "broadcast", label: "Notificações", icon: Megaphone, group: "Sistema" },
-  { key: "coach", label: "Coach Vendas IA", icon: Sparkles, group: "Sistema" },
+  // Início
+  { key: "dashboard", label: "Dashboard", icon: LayoutDashboard, group: "Início" },
+  // Operação
+  { key: "approvals", label: "Aprovações", icon: Shield, group: "Operação" },
+  { key: "stores", label: "Lojas", icon: Store, group: "Operação" },
+  { key: "cidades", label: "Cidades", icon: MapPin, group: "Operação" },
+  { key: "coupons", label: "Cupons", icon: Ticket, group: "Operação" },
+  { key: "entrega", label: "Entrega", icon: Truck, group: "Operação" },
+  // Financeiro
+  { key: "financeiro", label: "Financeiro", icon: DollarSign, group: "Financeiro" },
+  { key: "pagamentos", label: "Pagamentos", icon: CreditCard, group: "Financeiro" },
+  { key: "saques", label: "Saques", icon: Wallet, group: "Financeiro" },
+  { key: "planos", label: "Planos", icon: Crown, group: "Financeiro" },
+  { key: "socios", label: "Sócios", icon: Handshake, group: "Financeiro" },
+  { key: "test_finance", label: "Finanças Teste", icon: FlaskConical, group: "Financeiro" },
+  // Pessoas
+  { key: "moderadores", label: "Moderadores", icon: Users, group: "Pessoas" },
+  { key: "suporte", label: "Suporte", icon: MessageCircle, group: "Pessoas" },
+  // Marketing
+  { key: "app-page", label: "Página do App", icon: Smartphone, group: "Marketing" },
+  { key: "links", label: "Página /links", icon: LinkIcon, group: "Marketing" },
+  { key: "broadcast", label: "Notificações", icon: Megaphone, group: "Marketing" },
+  { key: "coach", label: "Coach Vendas IA", icon: Sparkles, group: "Marketing" },
+  // Sistema
   { key: "sync", label: "Sincronizar", icon: RefreshCw, group: "Sistema" },
-  { key: "logs", label: "Logs", icon: FileText, group: "Sistema" },
   { key: "auditoria", label: "Auditoria", icon: ShieldCheck, group: "Sistema" },
+  { key: "juridico", label: "Jurídico", icon: Scale, group: "Sistema" },
+  { key: "logs", label: "Logs", icon: FileText, group: "Sistema" },
 ];
 
  import { FinanceTab as FinanceTabFull, MetricCard } from "./SuperAdminDashboard";
@@ -742,7 +748,7 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
 
         {/* Navigation */}
         <nav className="flex-1 px-3 py-2 overflow-y-auto scrollbar-thin">
-          {["Principal", "Gerenciamento", "Configurações", "Sistema"].map(group => {
+          {["Início", "Operação", "Financeiro", "Pessoas", "Marketing", "Sistema"].map(group => {
             const items = sidebarItems.filter(i => i.group === group);
             if (items.length === 0) return null;
             return (
