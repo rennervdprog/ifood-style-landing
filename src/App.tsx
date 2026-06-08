@@ -57,6 +57,7 @@ const SupportAgentDashboard = lazy(() => import("./pages/SupportAgentDashboard")
 const LinksPage = lazy(() => import("./pages/LinksPage"));
  const DownloadApp = lazy(() => import("./pages/DownloadApp"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const KdsPage = lazy(() => import("./pages/KdsPage"));
 
 const PageLoader = () => (
   <div className="min-h-screen bg-background flex items-center justify-center">
