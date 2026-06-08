@@ -677,7 +677,7 @@ const DONUT_COLORS = [NEON_COLORS.pink, NEON_COLORS.blue, NEON_COLORS.amber];
             <p className="text-2xl font-black text-emerald-400 mt-1 tracking-tight">
               {formatBRL(storePart)}
             </p>
-            <p className="text-[10px] text-emerald-400/60 mt-1">{(storeData as any)?.plan_type === 'fixed' ? '100% do subtotal (- R$1 PIX)' : `${100 - commissionPct}% do faturamento`}</p>
+            <p className="text-[10px] text-emerald-400/60 mt-1">{`${100 - commissionPct}% do faturamento`}</p>
           </div>
         </div>
 

@@ -453,7 +453,7 @@ const PIE_COLORS = [COLORS.green, COLORS.blue, COLORS.amber];
       `📦 Pedidos: ${completedOrders.length}\n` +
       `🎫 Ticket Médio: ${formatBRL(ticketMedio)}\n\n` +
       `--- Custos Plataforma ---\n` +
-      `Taxa PIX (${pixOrders.length}x R$${storePlan.pixOperationalFee || 1}): ${formatBRL(pixOperationalCost)}\n` +
+      `Taxa PIX (${pixOrders.length}x R$${(storePlan.pixOperationalFee || 1.99).toFixed(2).replace(".", ",")}): ${formatBRL(pixOperationalCost)}\n` +
       `Taxa Entrega (${ordersWithDelivery.length}x R$${storePlan.platformDeliverySplit || 2}): ${formatBRL(deliveryPlatformCost)}\n\n` +
       `💵 Receita Líquida: ${formatBRL(netRevenue)}`;
     navigator.clipboard.writeText(text);
@@ -515,7 +515,7 @@ const PIE_COLORS = [COLORS.green, COLORS.blue, COLORS.amber];
             <p className="text-xs text-muted-foreground">
               {formatBRL(storePlan.monthlyFee)}/mês
               {storePlan.isFixedPlan
-                ? ` • R$${storePlan.pixOperationalFee || 1}/pedido PIX • R$${storePlan.platformDeliverySplit || 2}/entrega`
+                ? ` • R$${(storePlan.pixOperationalFee || 1.99).toFixed(2).replace(".", ",")}/pedido PIX • R$${(storePlan.platformDeliverySplit || 2).toFixed(2).replace(".", ",")}/entrega`
                 : storePlan.commissionRate > 0 ? ` + ${storePlan.commissionRate}% por pedido` : ""
               }
             </p>
@@ -699,7 +699,7 @@ const PIE_COLORS = [COLORS.green, COLORS.blue, COLORS.amber];
               </div>
               <p className="text-2xl font-black text-emerald-400">{formatBRL(paymentBreakdown.pix.total)}</p>
               <p className="text-[10px] text-muted-foreground mt-1">
-                {pixOrders.length} pedidos via PIX. Taxa operacional de R${storePlan.pixOperationalFee || 1}/pedido (total: {formatBRL(pixOperationalCost)}) descontada automaticamente.
+                {pixOrders.length} pedidos via PIX. Taxa operacional de R${(storePlan.pixOperationalFee || 1.99).toFixed(2).replace(".", ",")}/pedido (total: {formatBRL(pixOperationalCost)}) descontada automaticamente.
               </p>
               <div className="mt-2 rounded-xl bg-emerald-500/5 border border-emerald-500/10 p-2.5">
                 <p className="text-[10px] text-emerald-400 font-semibold">✅ Valor já depositado na sua conta — nada a fazer</p>
@@ -876,7 +876,7 @@ const PIE_COLORS = [COLORS.green, COLORS.blue, COLORS.amber];
                 <span className="text-sm font-bold text-foreground">{formatBRL(totalDeliveryFees)}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-xs text-muted-foreground">Taxa operacional PIX ({pixOrders.length}x R${storePlan.pixOperationalFee || 1})</span>
+                <span className="text-xs text-muted-foreground">Taxa operacional PIX ({pixOrders.length}x R${(storePlan.pixOperationalFee || 1.99).toFixed(2).replace(".", ",")})</span>
                 <span className="text-sm font-bold text-red-400">-{formatBRL(pixOperationalCost)}</span>
               </div>
               {ordersWithDelivery.length > 0 && (

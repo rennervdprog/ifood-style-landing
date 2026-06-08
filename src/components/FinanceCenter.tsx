@@ -53,19 +53,11 @@ export default function FinanceCenter({ storeId, storeName, hasCommission, isPla
     queryKey: ["asaas-activation-status-center", storeId],
     queryFn: async () => {
       if (!store?.asaas_wallet_id) return null;
-      const { data: { session } } = await supabase.auth.getSession();
-      const response = await fetch("https://qkjhguziuchqsbxzruea.supabase.co/functions/v1/get-asaas-subaccount-status", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session?.access_token}`,
-          apikey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFramhndXppdWNocXNieHpydWVhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNDg4NTUsImV4cCI6MjA5MDYyNDg1NX0.2sTeKchqAEN2gCqnH1_Zn9cJmUSmZgryt05A66tgm2Y",
-        },
-        body: JSON.stringify({ store_id: storeId }),
+      const { data, error } = await supabase.functions.invoke("get-asaas-subaccount-status", {
+        body: { store_id: storeId },
       });
-      if (!response.ok) return null;
-      const data = await response.json();
-      return data.status;
+      if (error) return null;
+      return (data as any)?.status ?? null;
     },
     enabled: !!store?.asaas_wallet_id,
     refetchInterval: 60000,
