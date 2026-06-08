@@ -132,7 +132,7 @@ async function confirmAndSplit(supabase: any, orderId: string, paymentId: string
         }
       } else if (isHybridPlan) {
         // Hybrid: cobra comissão % sobre subtotal + R$2 de entrega
-        const rate = (storePlan?.commission_rate ?? store.commission_rate ?? 5) / 100;
+        const rate = (storePlan?.commission_rate ?? store.commission_rate ?? 2.5) / 100;
         commissionAmount = Math.round(subtotal * rate * 100) / 100;
         if (isOwnDelivery) {
           const deliveryAfterSplit = Math.max(0, deliveryFee - platformSplit);
@@ -142,7 +142,7 @@ async function confirmAndSplit(supabase: any, orderId: string, paymentId: string
         }
       } else {
         // Commission_only: cobra comissão % sobre subtotal
-        const rate = (storePlan?.commission_rate ?? store.commission_rate ?? 5) / 100;
+        const rate = (storePlan?.commission_rate ?? store.commission_rate ?? 6) / 100;
         commissionAmount = Math.round(subtotal * rate * 100) / 100;
         storeShare = isOwnDelivery
           ? Math.round((subtotal * (1 - rate) + deliveryFee) * 100) / 100
