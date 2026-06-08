@@ -196,6 +196,15 @@ const AdminDashboard = () => {
   const queryClient = useQueryClient();
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const loopIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const cashSoundRef = useRef<HTMLAudioElement | null>(null);
+  useEffect(() => {
+    try {
+      cashSoundRef.current = new Audio(CASH_REGISTER_SOUND_URL);
+      cashSoundRef.current.volume = 1.0;
+      cashSoundRef.current.preload = "auto";
+    } catch {}
+    return () => { cashSoundRef.current = null; };
+  }, []);
 
   const [isOnline, setIsOnline] = useState(true);
   const [realtimeDriversConnected, setRealtimeDriversConnected] = useState(false);
