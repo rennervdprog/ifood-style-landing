@@ -244,7 +244,17 @@ Deno.serve(async (req) => {
     });
     const pixInfo = await pixRes.json();
 
-    const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+    // Use the real Asaas due date (typically next day 23:59:59) so the UI
+    // doesn't mark a still-valid QR code as expired after 5 minutes.
+    let expiresAt: string;
+    try {
+      const due = paymentData?.dueDate ? new Date(`${paymentData.dueDate}T23:59:59`) : null;
+      expiresAt = due && !isNaN(due.getTime())
+        ? due.toISOString()
+        : new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+    } catch {
+      expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+    }
 
     return json({
       payment_id: paymentData.id,

@@ -17,7 +17,7 @@ interface AttemptRecord {
 
 function getAttemptRecord(contextKey: string): AttemptRecord {
   try {
-    const raw = sessionStorage.getItem(`${PIX_ATTEMPT_KEY}_${contextKey}`);
+    const raw = localStorage.getItem(`${PIX_ATTEMPT_KEY}_${contextKey}`);
     if (!raw) return { count: 0, firstAttemptAt: 0 };
     return JSON.parse(raw);
   } catch {
@@ -26,7 +26,7 @@ function getAttemptRecord(contextKey: string): AttemptRecord {
 }
 
 function setAttemptRecord(contextKey: string, record: AttemptRecord) {
-  sessionStorage.setItem(`${PIX_ATTEMPT_KEY}_${contextKey}`, JSON.stringify(record));
+  localStorage.setItem(`${PIX_ATTEMPT_KEY}_${contextKey}`, JSON.stringify(record));
 }
 
 export function recordPixAttempt(contextKey: string): void {
@@ -40,12 +40,12 @@ export function recordPixAttempt(contextKey: string): void {
 }
 
 export function resetPixAttempts(contextKey: string): void {
-  sessionStorage.removeItem(`${PIX_ATTEMPT_KEY}_${contextKey}`);
+  localStorage.removeItem(`${PIX_ATTEMPT_KEY}_${contextKey}`);
 }
 
 export function isPixCooldownActive(contextKey: string): boolean {
   // Check explicit cooldown
-  const cooldownUntil = Number(sessionStorage.getItem(`${PIX_COOLDOWN_KEY}_${contextKey}`) || 0);
+  const cooldownUntil = Number(localStorage.getItem(`${PIX_COOLDOWN_KEY}_${contextKey}`) || 0);
   if (cooldownUntil > Date.now()) return true;
 
   // Check attempt-based cooldown
@@ -58,7 +58,7 @@ export function isPixCooldownActive(contextKey: string): boolean {
 }
 
 export function getPixCooldownRemainingMs(contextKey: string): number {
-  const cooldownUntil = Number(sessionStorage.getItem(`${PIX_COOLDOWN_KEY}_${contextKey}`) || 0);
+  const cooldownUntil = Number(localStorage.getItem(`${PIX_COOLDOWN_KEY}_${contextKey}`) || 0);
   const record = getAttemptRecord(contextKey);
 
   let remaining = 0;
@@ -75,7 +75,7 @@ export function getPixCooldownRemainingMs(contextKey: string): number {
 }
 
 export function activatePixCooldown(contextKey: string): void {
-  sessionStorage.setItem(`${PIX_COOLDOWN_KEY}_${contextKey}`, String(Date.now() + COOLDOWN_MS));
+  localStorage.setItem(`${PIX_COOLDOWN_KEY}_${contextKey}`, String(Date.now() + COOLDOWN_MS));
 }
 
 // Safety mode (429 handling)

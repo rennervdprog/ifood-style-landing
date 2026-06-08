@@ -80,7 +80,6 @@ const hybrid: PlanInfo = {
   highlight: false,
   features: [
     "Comissão reduzida (2,5%)",
-    "R$50/mês → sobe para R$100 após 2 meses faturando > R$5.000",
     "Relatórios financeiros completos",
     "Destaque na vitrine + banners",
   ],
@@ -104,7 +103,6 @@ const fixed: PlanInfo = {
   highlight: true,
   features: [
     "Sem comissão por pedido",
-    "R$90/mês → sobe para R$180 após 2 meses faturando > R$5.000",
     "Relatórios 100% detalhados",
     "Motoboy integrado + Suporte VIP",
   ],
