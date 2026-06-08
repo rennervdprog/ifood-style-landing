@@ -214,7 +214,7 @@ async function createAsaasPix(supabase: any, params: {
     ? "https://sandbox.asaas.com/api/v3"
     : "https://api.asaas.com/v3";
 
-  console.log(`[Asaas] Mode: ${isSandbox ? "SANDBOX" : "PRODUCTION"}, Key prefix: ${apiKey.substring(0, 10)}...`);
+  console.log(`[Asaas] Mode: ${isSandbox ? "SANDBOX" : "PRODUCTION"}, Key: [SET]`);
 
   try {
     // Asaas only generates PIX charges when the account has at least one active PIX key.
