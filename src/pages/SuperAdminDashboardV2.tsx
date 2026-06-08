@@ -57,6 +57,7 @@ const JuridicoTab = lazy(() => import("./super-admin/tabs/JuridicoTab"));
 const CidadesTab = lazy(() => import("./super-admin/tabs/CidadesTab"));
 const SaquesTab = lazy(() => import("./super-admin/tabs/SaquesTab"));
 const PagamentosSplitTab = lazy(() => import("./super-admin/tabs/PagamentosSplitTab"));
+const AuditoriaTab = lazy(() => import("./super-admin/tabs/AuditoriaTab"));
 const TabFallback = () => (
   <div className="flex items-center justify-center py-12">
     <Loader2 className="h-6 w-6 animate-spin text-primary" />
@@ -64,7 +65,7 @@ const TabFallback = () => (
 );
 
 type DateFilter = "today" | "yesterday" | "week";
- type AdminTab = "dashboard" | "approvals" | "stores" | "financeiro" | "pagamentos" | "saques" | "sync" | "coupons" | "entrega" | "cidades" | "juridico" | "planos" | "moderadores" | "socios" | "suporte" | "app-page" | "test_finance" | "links" | "broadcast" | "logs" | "coach" | "performance";
+type AdminTab = "dashboard" | "approvals" | "stores" | "financeiro" | "pagamentos" | "saques" | "sync" | "coupons" | "entrega" | "cidades" | "juridico" | "planos" | "moderadores" | "socios" | "suporte" | "app-page" | "test_finance" | "links" | "broadcast" | "logs" | "coach" | "performance" | "auditoria";
 
 const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; group: string }[] = [
   { key: "dashboard", label: "Dashboard", icon: LayoutDashboard, group: "Principal" },
@@ -89,6 +90,7 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
   { key: "sync", label: "Sincronizar", icon: RefreshCw, group: "Sistema" },
   { key: "performance", label: "Performance", icon: TrendingUp, group: "Sistema" },
   { key: "logs", label: "Logs", icon: FileText, group: "Sistema" },
+  { key: "auditoria", label: "Auditoria", icon: ShieldCheck, group: "Sistema" },
 ];
 
  import { FinanceTab as FinanceTabFull, MetricCard } from "./SuperAdminDashboard";
