@@ -807,9 +807,12 @@ const AdminDashboard = () => {
           toast.info("🔔 Novo pedido!", { duration: 8000 });
         }
         if (payload.eventType === "UPDATE" && (payload.new as any).status === "pendente" && previous?.status === "aguardando_pagamento") {
-          const cashSound = new Audio(CASH_REGISTER_SOUND_URL);
-          cashSound.volume = 1.0;
-          cashSound.play().catch(() => {});
+          try {
+            if (cashSoundRef.current) {
+              cashSoundRef.current.currentTime = 0;
+              cashSoundRef.current.play().catch(() => {});
+            }
+          } catch {}
           toast.success("💰 PIX confirmado!", { duration: 8000 });
           notifyNewOrder();
         }
