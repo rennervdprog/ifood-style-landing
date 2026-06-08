@@ -18,6 +18,8 @@ const SaquesTab = ({
 }) => {
   const [saquesSubTab, setSaquesSubTab] = useState<"pendentes" | "historico">("pendentes");
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const [processingId, setProcessingId] = useState<string | null>(null);
 
   const pendingList = pendingWithdrawals;
   const historyList = (withdrawalRequests || []).filter((w: any) => w.status !== "solicitado");
@@ -36,11 +38,19 @@ const SaquesTab = ({
   };
 
   const handleConfirmPayment = async (req: any, driverName: string) => {
+    // Two-tap confirmation to prevent accidental irreversible payment
+    if (confirmingId !== req.id) {
+      setConfirmingId(req.id);
+      setTimeout(() => setConfirmingId((cur) => (cur === req.id ? null : cur)), 5000);
+      return;
+    }
+    if (processingId === req.id) return;
+    setProcessingId(req.id);
     const { error: updateError } = await supabase
       .from("withdrawal_requests" as any)
       .update({ status: "pago", processed_at: new Date().toISOString() } as any)
       .eq("id", req.id);
-    if (updateError) { toast.error("Erro ao confirmar."); return; }
+    if (updateError) { toast.error("Erro ao confirmar."); setProcessingId(null); setConfirmingId(null); return; }
     const { data: currentBalance } = await supabase
       .from("driver_balances" as any)
       .select("paid_amount")
@@ -55,10 +65,15 @@ const SaquesTab = ({
         updated_at: new Date().toISOString()
       } as any)
       .eq("driver_user_id", req.driver_user_id);
-    if (balanceError) console.error("Balance update error:", balanceError);
+    if (balanceError) {
+      console.error("Balance update error:", balanceError);
+      toast.warning("Pagamento marcado, mas saldo do entregador pode estar fora de sincronia. Verifique manualmente.");
+    }
     await supabase.from("driver_earnings" as any).update({ status: "pago" } as any)
       .eq("driver_user_id", req.driver_user_id).eq("status", "pendente");
     toast.success(`✅ ${formatBRL(Number(req.amount))} para ${driverName} confirmada!`);
+    setConfirmingId(null);
+    setProcessingId(null);
     queryClient.invalidateQueries({ queryKey: ["withdrawal-requests"] });
   };
 
@@ -113,10 +128,23 @@ const SaquesTab = ({
           )}
         </div>
         {isPending && (
-          <button onClick={() => handleConfirmPayment(req, driverName)}
-            className="w-full flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white font-bold py-3 rounded-xl text-sm active:scale-95 transition-transform">
-            <CheckCircle2 className="h-4 w-4" /> Confirmar Pagamento
-          </button>
+          <>
+            {confirmingId === req.id && (
+              <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 mb-2 text-center">
+                <p className="text-xs text-amber-600 dark:text-amber-400 font-bold">
+                  ⚠️ Ação irreversível. Toque novamente para confirmar o pagamento de {formatBRL(Number(req.amount))}.
+                </p>
+              </div>
+            )}
+            <button onClick={() => handleConfirmPayment(req, driverName)}
+              disabled={processingId === req.id}
+              className={`w-full flex items-center justify-center gap-2 font-bold py-3 rounded-xl text-sm active:scale-95 transition-transform disabled:opacity-60 ${
+                confirmingId === req.id ? "bg-amber-500 hover:bg-amber-600 text-white" : "bg-green-500 hover:bg-green-600 text-white"
+              }`}>
+              <CheckCircle2 className="h-4 w-4" />
+              {processingId === req.id ? "Processando..." : confirmingId === req.id ? "Tocar novamente para confirmar" : "Confirmar Pagamento"}
+            </button>
+          </>
         )}
       </div>
     );
