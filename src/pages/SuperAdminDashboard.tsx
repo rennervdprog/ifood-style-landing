@@ -1714,6 +1714,11 @@ export const FinanceTab = ({
           ))}
         </div>
         <div className="flex-1" />
+        <button onClick={exportFinanceCsv}
+          className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all bg-muted/50 text-muted-foreground hover:text-foreground"
+          title="Exportar CSV">
+          <Download className="h-3.5 w-3.5" /> CSV
+        </button>
         <button onClick={() => setShowPayoutSettings(!showPayoutSettings)}
           className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all ${showPayoutSettings ? "bg-primary text-primary-foreground" : "bg-muted/50 text-muted-foreground hover:text-foreground"}`}>
           <Settings className="h-3.5 w-3.5" />
