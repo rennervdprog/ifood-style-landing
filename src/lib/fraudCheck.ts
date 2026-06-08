@@ -60,7 +60,9 @@ export async function checkStoreAccess(params: FraudCheckParams): Promise<FraudC
   const { storeLat, storeLng, storeCity, deliveryCity, deliveryCoords } = params;
 
   if (typeof storeLat !== "number" || typeof storeLng !== "number") {
-    return { allowed: true, distanceKm: null, reason: null, clientCoords: null };
+    const result: FraudCheckResult = { allowed: true, distanceKm: null, reason: "fail_open:store_coords_missing", clientCoords: null };
+    await logAttempt(params, result);
+    return result;
   }
 
   // 1. Tentar obter coordenadas: prioridade = deliveryCoords (endereço geocodificado) > GPS
@@ -81,7 +83,9 @@ export async function checkStoreAccess(params: FraudCheckParams): Promise<FraudC
 
   // 3. Sem coordenadas e cidade OK → permitir (não há dados suficientes para bloquear)
   if (!clientCoords) {
-    return { allowed: true, distanceKm: null, reason: null, clientCoords: null };
+    const result: FraudCheckResult = { allowed: true, distanceKm: null, reason: "fail_open:no_client_coords", clientCoords: null };
+    await logAttempt(params, result);
+    return result;
   }
 
   const distanceKm = haversineDistanceMeters(clientCoords, { lat: storeLat, lng: storeLng }) / 1000;
