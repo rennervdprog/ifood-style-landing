@@ -123,6 +123,24 @@ Deno.serve(async (req) => {
           .eq("status", "aguardando_pagamento");
         console.log(`[asaas-webhook] order ${externalRef} → pendente`);
       }
+
+      // Trigger split via confirm-order-payment using service-role bypass,
+      // so the store gets paid even when the user closes the app right after PIX.
+      try {
+        const projectUrl = Deno.env.get("SUPABASE_URL")!;
+        const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+        await fetch(`${projectUrl}/functions/v1/confirm-order-payment`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${serviceKey}`,
+            "x-webhook-bypass": "asaas",
+          },
+          body: JSON.stringify({ order_id: externalRef }),
+        });
+      } catch (splitErr) {
+        console.error("[asaas-webhook] split trigger failed", splitErr);
+      }
       return json({ ok: true, type: "order_payment", order_id: externalRef });
     } catch (e) {
       console.error("[asaas-webhook] order update error", e);
