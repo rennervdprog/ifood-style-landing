@@ -334,7 +334,7 @@ export interface DeliveryFeeResult {
 
   // District or rural without coordinates - estimate
   const estimatedKm = isDistrict ? 15 : 10;
-  const estimatedFee = config.rural_base_fee + config.rural_per_km * estimatedKm;
+  const estimatedFee = addMoney(config.rural_base_fee, config.rural_per_km * estimatedKm);
   return {
     fee: Math.round(estimatedFee * 100) / 100,
     isRural: true,
