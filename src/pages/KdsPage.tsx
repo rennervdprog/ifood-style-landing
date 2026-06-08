@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Clock, ChefHat, Package, AlertTriangle } from "lucide-react";
+import { Loader2, ChefHat, Package, AlertTriangle } from "lucide-react";
 
 type KdsOrder = {
   id: string;
   code: string | null;
-  status: "pendente" | "preparando" | "pronto_para_entrega";
+  status: "preparando" | "pronto_para_entrega";
   created_at: string;
   notes: string | null;
   order_items: Array<{
@@ -92,7 +92,6 @@ export default function KdsPage() {
   const cols = useMemo(() => {
     void tick;
     return {
-      pendente: orders.filter((o) => o.status === "pendente"),
       preparando: orders.filter((o) => o.status === "preparando"),
       pronto_para_entrega: orders.filter((o) => o.status === "pronto_para_entrega"),
     };
@@ -135,17 +134,7 @@ export default function KdsPage() {
         </button>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-3">
-        <Column
-          title="Novos"
-          icon={<Clock className="h-5 w-5" />}
-          accent="bg-primary/10 border-primary/30"
-          orders={cols.pendente}
-          actionLabel="Iniciar preparo"
-          nextStatus="preparando"
-          onAction={updateStatus}
-          busyIds={busyIds}
-        />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-3">
         <Column
           title="Em preparo"
           icon={<ChefHat className="h-5 w-5" />}
@@ -167,6 +156,9 @@ export default function KdsPage() {
           busyIds={busyIds}
         />
       </div>
+      <p className="text-[11px] text-muted-foreground text-center pb-3 px-3">
+        Os pedidos aparecem aqui após o admin aceitar. A cozinha só marca como prontos.
+      </p>
     </div>
   );
 }
