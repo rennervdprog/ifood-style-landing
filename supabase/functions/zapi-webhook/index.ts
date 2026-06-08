@@ -18,6 +18,21 @@ Deno.serve(async (req) => {
 
   try {
     const url = new URL(req.url);
+    // Validate webhook token via query param ?token=<ZAPI_WEBHOOK_SECRET>
+    const expectedToken = Deno.env.get("ZAPI_WEBHOOK_SECRET") || Deno.env.get("EVOLUTION_WEBHOOK_TOKEN") || "";
+    if (!expectedToken) {
+      console.error("[zapi-webhook] ZAPI_WEBHOOK_SECRET não configurado — rejeitando");
+      return new Response(JSON.stringify({ error: "Webhook not configured" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    if (url.searchParams.get("token") !== expectedToken) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
     // Identify which store this webhook is for via query param ?store=<uuid>
     const storeId = url.searchParams.get("store");
     if (!storeId) {
@@ -46,7 +61,8 @@ Deno.serve(async (req) => {
       });
     }
 
-    console.log("zapi-webhook in:", { storeId, phone, preview: incomingText.slice(0, 80) });
+    const maskedPhone = phone ? `${phone.slice(0,4)}****${phone.slice(-2)}` : "";
+    console.log("zapi-webhook in:", { storeId, phone: maskedPhone, preview: incomingText.slice(0, 80) });
 
     // Rate-limit replies per phone (avoid bot-vs-bot loop)
     const key = `${storeId}:${phone}`;
