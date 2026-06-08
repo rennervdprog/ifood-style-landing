@@ -162,7 +162,7 @@ function RepasseCard({ record }: { record: RepasseRecord }) {
 }
 
 export default function RepasseHistory({ storeId }: RepasseHistoryProps) {
-  const { data: records, isLoading } = useQuery({
+  const { data: records, isLoading, isError, error } = useQuery({
     queryKey: ["repasse-history", storeId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -294,6 +294,17 @@ export default function RepasseHistory({ storeId }: RepasseHistoryProps) {
           ))}
         </div>
       ) : !records?.length ? (
+        isError ? (
+        <Card className="border-destructive/30 bg-destructive/5">
+          <CardContent className="py-8 text-center">
+            <AlertCircle className="h-7 w-7 text-destructive/60 mx-auto mb-2" />
+            <p className="text-sm text-destructive">Não foi possível carregar os repasses.</p>
+            <p className="text-[11px] text-muted-foreground mt-1">
+              {(error as any)?.message?.includes("row-level") ? "Sem permissão de acesso." : "Tente novamente em alguns instantes."}
+            </p>
+          </CardContent>
+        </Card>
+        ) : (
         <Card className="border-border/30">
           <CardContent className="py-10 text-center">
             <History className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
@@ -303,6 +314,7 @@ export default function RepasseHistory({ storeId }: RepasseHistoryProps) {
             </p>
           </CardContent>
         </Card>
+        )
       ) : (
         <div className="space-y-3">
           {records.map(record => (
