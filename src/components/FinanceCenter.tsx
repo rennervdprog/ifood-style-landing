@@ -172,9 +172,21 @@ export default function FinanceCenter({ storeId, storeName, hasCommission, isPla
          <TabsContent value="balance" className="mt-6">
            {!store?.asaas_wallet_id ? (
              <AsaasSubaccountSetup storeId={storeId} />
-           ) : (
-             <AsaasFinancialPanel storeId={storeId} />
-           )}
+          ) : isAsaasPending ? (
+            <Card className="border-amber-500/30 bg-amber-500/5">
+              <CardContent className="pt-6 pb-6 text-center space-y-3">
+                <div className="mx-auto w-12 h-12 rounded-full bg-amber-500/10 flex items-center justify-center">
+                  <Clock className="h-6 w-6 text-amber-500 animate-pulse" />
+                </div>
+                <h3 className="font-bold text-foreground">Subconta em análise</h3>
+                <p className="text-sm text-muted-foreground max-w-[300px] mx-auto">
+                  Você já recebe pagamentos via PIX normalmente. O saque será liberado assim que a análise da subconta for concluída (em geral 1–2 dias úteis).
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <AsaasFinancialPanel storeId={storeId} />
+          )}
          </TabsContent>
 
          <TabsContent value="history" className="mt-6">
