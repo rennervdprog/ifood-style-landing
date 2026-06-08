@@ -79,8 +79,8 @@ async function verifyToken(token: string): Promise<string | null> {
   return ok === 0 ? storeId : null;
 }
 
+// Cozinha só pode marcar pedidos como prontos. Aceitar pedido continua exclusivo do admin.
 const ALLOWED_STATUSES = new Set([
-  "preparando",
   "pronto_para_entrega",
 ]);
 
@@ -136,7 +136,7 @@ Deno.serve(async (req) => {
         .from("orders")
         .select("id, code, status, created_at, total, notes, client_id, order_items(id, quantity, notes, products(name))")
         .eq("store_id", storeId)
-        .in("status", ["pendente", "preparando", "pronto_para_entrega"])
+        .in("status", ["preparando", "pronto_para_entrega"])
         .order("created_at", { ascending: true })
         .limit(60);
       if (error) return json({ error: error.message }, 500);
