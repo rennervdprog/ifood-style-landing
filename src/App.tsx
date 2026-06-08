@@ -362,6 +362,7 @@ const App = () => {
                 <Route path="/suporte" element={<RoleGuard allowedRoles={["suporte","admin"]} redirectTo="/auth"><SupportAgentDashboard /></RoleGuard>} />
                 <Route path="/links" element={<LinksPage />} />
                  <Route path="/download" element={<DownloadApp />} />
+                <Route path="/kds/:token" element={<KdsPage />} />
                 {/* Client store access via slug - must be last */}
                 <Route path="/:slug" element={<StorePage />} />
                 <Route path="*" element={<NotFound />} />
