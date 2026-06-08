@@ -940,6 +940,11 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
             {activeTab === "links" && <AppLinksManager />}
             {activeTab === "broadcast" && <AdminBroadcastPush />}
             {activeTab === "coach" && <SalesCoachPanel />}
+            {activeTab === "auditoria" && (
+              <Suspense fallback={<TabFallback />}>
+                <AuditoriaTab />
+              </Suspense>
+            )}
             {activeTab === "performance" && (
               <div className="space-y-4">
                 <div className="bg-card border border-border rounded-2xl p-5">
