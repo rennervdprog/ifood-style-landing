@@ -31,8 +31,11 @@ Deno.serve(async (req) => {
     }
 
     // 🔁 EXTERNAL DB
-    const EXTERNAL_URL = Deno.env.get("EXTERNAL_SUPABASE_URL")!;
-    const EXTERNAL_KEY = Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY")!;
+    const EXTERNAL_URL = Deno.env.get("EXTERNAL_SUPABASE_URL");
+    const EXTERNAL_KEY = Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY");
+    if (!EXTERNAL_URL || !EXTERNAL_KEY) {
+      return json({ error: "Config missing: EXTERNAL_SUPABASE_URL or EXTERNAL_SUPABASE_SERVICE_KEY not set" }, 500);
+    }
 
     // Single service-role client; ownership/role is enforced manually below.
     const supabase = createClient(EXTERNAL_URL, EXTERNAL_KEY);
