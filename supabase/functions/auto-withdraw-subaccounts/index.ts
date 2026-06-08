@@ -90,9 +90,17 @@ Deno.serve(async (req) => {
           continue;
         }
 
+        // Reserve R$1 buffer for the Asaas PIX transfer fee — never send the full balance.
+        const PIX_FEE_BUFFER = 1.0;
+        const transferValue = Math.max(0, Number((balance - PIX_FEE_BUFFER).toFixed(2)));
+        if (transferValue < minAmount) {
+          results.push({ store_id: store.id, skipped: "below_min_after_fee", balance, transferValue });
+          continue;
+        }
+
         // 2. Trigger PIX transfer to the lojista's own key
         const transferPayload: Record<string, unknown> = {
-          value: balance,
+          value: transferValue,
           pixAddressKey: pixKey,
           pixAddressKeyType: pixType,
           operationType: "PIX",
