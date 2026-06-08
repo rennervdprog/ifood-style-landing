@@ -1,8 +1,6 @@
 import { Search, XCircle, Truck, Loader2, Clock, ChefHat, Package, CheckCircle2, Bell } from "lucide-react";
 import { AdminOrderCard } from "../components/AdminOrderCard";
-
-type OrderStatus = any;
-type OrderTabKey = any;
+import type { OrderStatus, OrderTabKey } from "../types";
 
 interface Props {
   store: any;

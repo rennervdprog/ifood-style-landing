@@ -755,7 +755,10 @@ const AdminDashboard = () => {
     if (pendingCount > 0 && soundEnabled && !soundMuted) {
       playAlert();
       if (loopIntervalRef.current) clearInterval(loopIntervalRef.current);
-      loopIntervalRef.current = setInterval(() => playAlert(), 12000);
+      loopIntervalRef.current = setInterval(() => {
+        if (document.hidden) return;
+        playAlert();
+      }, 12000);
     } else {
       if (loopIntervalRef.current) { clearInterval(loopIntervalRef.current); loopIntervalRef.current = null; }
     }
