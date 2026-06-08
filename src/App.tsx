@@ -347,14 +347,7 @@ const App = () => {
                     </RoleGuard>
                   }
                 />
-<Route
-  path="/super-admin1"
-  element={
-    <RoleGuard allowedRoles={["admin"]} redirectTo="/">
-      <SuperAdminDashboard />
-    </RoleGuard>
-  }
-/>
+                <Route path="/super-admin1" element={<Navigate to="/super-admin" replace />} />
                 <Route path="/super-admin2" element={<Navigate to="/super-admin" replace />} />
                 <Route path="/parceiro" element={<PartnerOnboarding />} />
                 {/* Cadastro de motoboy de plataforma descontinuado — redireciona para motoboy de loja */}
