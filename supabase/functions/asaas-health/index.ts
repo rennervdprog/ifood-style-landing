@@ -18,6 +18,16 @@ const json = (b: unknown, s = 200) =>
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
+  // Auth: CRON_SECRET via Bearer ou x-cron-secret. Endpoint expõe dados da conta Asaas
+  // master (CPF/CNPJ, email), por isso não pode ficar público.
+  const cronSecret = Deno.env.get("CRON_SECRET") || "";
+  const auth = req.headers.get("authorization") || "";
+  const xs = req.headers.get("x-cron-secret") || "";
+  if (!cronSecret) return json({ ok: false, error: "CRON_SECRET not configured" }, 500);
+  if (auth !== `Bearer ${cronSecret}` && xs !== cronSecret) {
+    return json({ ok: false, error: "Unauthorized" }, 401);
+  }
+
   const key = Deno.env.get("ASAAS_API_KEY");
   const webhookToken = Deno.env.get("ASAAS_WEBHOOK_TOKEN");
 
