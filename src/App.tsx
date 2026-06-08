@@ -42,10 +42,6 @@ const MatrizDashboard = lazy(() => import("./pages/MatrizDashboard"));
 const PdvPage = lazy(() => import("./pages/PdvPage"));
 const DriverDashboard = lazy(() => import("./pages/DriverDashboard"));
 const DriverDashboardV2 = lazy(() => import("./pages/DriverDashboardV2"));
- const SuperAdminDashboard = lazy(() => import("./pages/SuperAdminDashboard").catch(() => {
-   window.location.reload();
-   return { default: () => null };
- }));
 const SuperAdminDashboardV2 = lazy(() => import("./pages/SuperAdminDashboardV2").catch(() => {
   window.location.reload();
   return { default: () => null };
