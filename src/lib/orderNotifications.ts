@@ -45,7 +45,7 @@ const STATUS_MESSAGES: Record<string, {
      pushBody: (p) => `Seu pedido #${p.orderId.slice(0, 8).toUpperCase()} está pronto e já está em rota de entrega!`,
      whatsApp: (p) =>
        `📦 Olá ${p.clientName}! Seu pedido da *${p.storeName}* está *PRONTO*! 🎉\n\n` +
-       `E Já esta em Rota De Entrega!!!` +
+       `Assim que um entregador aceitar a corrida, você será avisado novamente. 🛵` +
        (p.deliveryPin
          ? `\n\n🔑 *CÓDIGO DE ENTREGA: ${p.deliveryPin}*\nGuarde este código! Informe ao motoboy *somente* quando ele chegar com seu pedido.\n\n⚠️ Não compartilhe antes da entrega.`
          : ""),
