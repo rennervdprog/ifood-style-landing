@@ -105,7 +105,8 @@ Deno.serve(async (req) => {
       description: desc.substring(0, 140),
     };
 
-    console.log(`[Asaas] Creating transfer: R$${amount.toFixed(2)} to ${pix_key} (${pix_type})`);
+    const maskedPix = pix_key ? `${String(pix_key).slice(0,3)}***${String(pix_key).slice(-2)}` : "";
+    console.log(`[Asaas] Creating transfer: R$${amount.toFixed(2)} to ${maskedPix} (${pix_type})`);
 
     const transferRes = await fetch(`${baseUrl}/transfers`, {
       method: "POST",

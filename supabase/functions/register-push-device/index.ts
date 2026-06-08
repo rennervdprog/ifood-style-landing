@@ -54,7 +54,7 @@ Deno.serve(async (req) => {
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
     const { fcm_token, player_id, device_info } = parsed.data;
 
-    console.log(`[register-push-device] 🔍 user=${user.email} (${user.id}), token_prefix=${fcm_token?.slice(0,12) || "none"}..., device=${device_info || "none"}`);
+    console.log(`[register-push-device] 🔍 user=${user.id.slice(0,8)}, token_prefix=${fcm_token?.slice(0,12) || "none"}..., device=${device_info || "none"}`);
 
     // ── SINGLE-DEVICE ENFORCEMENT ──
     // When a user registers on a new device, remove ALL their tokens from
@@ -83,7 +83,7 @@ Deno.serve(async (req) => {
         .select("device_info");
 
       if (oldDeviceRows?.length) {
-        console.log(`[register-push-device] 🧹 Removed ${oldDeviceRows.length} old FCM token(s) from other devices for user ${user.email}`);
+        console.log(`[register-push-device] 🧹 Removed ${oldDeviceRows.length} old FCM token(s) for user ${user.id.slice(0,8)}`);
       }
 
       // 3. Upsert the current token
@@ -104,7 +104,7 @@ Deno.serve(async (req) => {
         throw error;
       }
 
-      console.log(`[register-push-device] ✅ FCM token registered for ${user.email} on device ${device_info || "unknown"}`);
+      console.log(`[register-push-device] ✅ FCM token registered for ${user.id.slice(0,8)} on device ${device_info || "unknown"}`);
     }
 
     if (player_id) {
@@ -124,7 +124,7 @@ Deno.serve(async (req) => {
         .select("device_info");
 
       if (oldPlayerRows?.length) {
-        console.log(`[register-push-device] 🧹 Removed ${oldPlayerRows.length} old OneSignal player(s) from other devices for user ${user.email}`);
+        console.log(`[register-push-device] 🧹 Removed ${oldPlayerRows.length} old OneSignal player(s) for user ${user.id.slice(0,8)}`);
       }
 
       // 3. Upsert the current player
@@ -145,7 +145,7 @@ Deno.serve(async (req) => {
         throw error;
       }
 
-      console.log(`[register-push-device] ✅ OneSignal player registered for ${user.email} on device ${device_info || "unknown"}`);
+      console.log(`[register-push-device] ✅ OneSignal player registered for ${user.id.slice(0,8)} on device ${device_info || "unknown"}`);
     }
 
     return new Response(JSON.stringify({

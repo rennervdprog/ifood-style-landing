@@ -69,7 +69,10 @@ Deno.serve(async (req) => {
     .eq("status", "pending")
     .gte("created_at", since)
     .limit(200);
-  if (error) return json({ error: error.message }, 500);
+  if (error) {
+    console.error("[reconcile-payments] db error:", error);
+    return json({ error: "Internal error" }, 500);
+  }
 
   let checked = 0, reconciled = 0, errors = 0;
   for (const tx of pendings || []) {

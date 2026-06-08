@@ -362,14 +362,9 @@ Deno.serve(async (req) => {
           .in("user_id", fcmTargetUserIds)
       : { data: [] as Array<{ token: string; user_id: string }> };
 
-    console.log(`[send-push] 🔍 DEBUG: All FCM tokens from DB for target users:`, JSON.stringify(
-      (fcmTokens || []).map((t: any) => ({
-        user_id: t.user_id,
-        token_prefix: t.token?.slice(0, 12) + "...",
-        device_info: t.device_info,
-        updated_at: t.updated_at,
-      }))
-    ));
+    if (Deno.env.get("DEBUG_PUSH") === "true") {
+      console.log(`[send-push] 🔍 DEBUG: FCM tokens count=${(fcmTokens || []).length} for ${fcmTargetUserIds.length} target user(s)`);
+    }
 
     const latestFcmTokens = Object.values(
       (fcmTokens || []).reduce((acc, row: any) => {
@@ -382,19 +377,12 @@ Deno.serve(async (req) => {
       }, {} as Record<string, any>)
     ) as Array<{ token: string; user_id: string; device_info?: string | null; updated_at?: string | null }>;
 
-    console.log(`[send-push] 🔍 DEBUG: After dedup (latest per device):`, JSON.stringify(
-      latestFcmTokens.map((t: any) => ({
-        user_id: t.user_id,
-        token_prefix: t.token?.slice(0, 12) + "...",
-        device_info: t.device_info,
-        updated_at: t.updated_at,
-      }))
-    ));
-    console.log(`[send-push] 🔍 DEBUG: Target user_ids=${JSON.stringify(requestedUserIds)}, FCM tokens selected=${latestFcmTokens.length}`);
+    if (Deno.env.get("DEBUG_PUSH") === "true") {
+      console.log(`[send-push] 🔍 DEBUG: After dedup, FCM tokens selected=${latestFcmTokens.length}`);
+    }
 
     if (latestFcmTokens.length > 0 && serviceAccountJson) {
       const serviceAccount = JSON.parse(serviceAccountJson);
-      console.log(`[send-push] 🔑 FCM Project ID from Secret: ${serviceAccount.project_id}`);
       // Accept both itasuper and itafood to avoid mismatch errors during transition
       const validProjectIds = ["itasuper-c71a1", "itafood-c71a1"];
       if (!validProjectIds.includes(serviceAccount.project_id)) {

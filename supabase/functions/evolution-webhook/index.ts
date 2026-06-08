@@ -87,7 +87,12 @@ Deno.serve(async (req) => {
   try {
     const url = new URL(req.url);
     const expected = Deno.env.get("EVOLUTION_WEBHOOK_TOKEN");
-    if (expected && url.searchParams.get("token") !== expected) return json({ error: "Forbidden" }, 403);
+    // FAIL-CLOSED: se secret não configurado, rejeita todas as chamadas.
+    if (!expected) {
+      console.error("[evolution-webhook] EVOLUTION_WEBHOOK_TOKEN não configurado — rejeitando");
+      return json({ error: "Webhook not configured" }, 500);
+    }
+    if (url.searchParams.get("token") !== expected) return json({ error: "Forbidden" }, 403);
 
     const body = await req.json().catch(() => ({} as any));
     const event: string = body?.event || body?.type || "";
