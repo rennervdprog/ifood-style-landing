@@ -142,7 +142,7 @@ Deno.serve(async (req) => {
 
       const { data: orders, error } = await ext
         .from("orders")
-        .select("id, code, status, created_at, total, notes, client_id, order_items(id, quantity, notes, products(name))")
+        .select("id, status, created_at, order_items(id, quantity, observations, addons, products(name))")
         .eq("store_id", storeId)
         .in("status", ["preparando", "pronto_para_entrega"])
         .order("created_at", { ascending: true })

@@ -2,17 +2,19 @@ import { useEffect, useMemo, useState, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, ChefHat, Package, AlertTriangle } from "lucide-react";
+import { getOrderItemDisplayName } from "@/lib/orderItemName";
 
 type KdsOrder = {
   id: string;
-  code: string | null;
+  code?: string | null;
   status: "preparando" | "pronto_para_entrega";
   created_at: string;
-  notes: string | null;
+  notes?: string | null;
   order_items: Array<{
     id: string;
     quantity: number;
-    notes: string | null;
+    observations?: string | null;
+    addons?: any[] | any | null;
     products: { name: string } | null;
   }>;
 };
@@ -216,9 +218,9 @@ function Column({
                 {o.order_items?.map((it) => (
                   <li key={it.id} className="text-sm">
                     <span className="font-black">{it.quantity}×</span>{" "}
-                    <span className="font-bold">{it.products?.name || "Item"}</span>
-                    {it.notes && (
-                      <div className="text-[11px] text-muted-foreground italic ml-5">obs: {it.notes}</div>
+                    <span className="font-bold">{getOrderItemDisplayName(it)}</span>
+                    {it.observations && (
+                      <div className="text-[11px] text-muted-foreground italic ml-5">obs: {it.observations}</div>
                     )}
                   </li>
                 ))}
