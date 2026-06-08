@@ -196,6 +196,15 @@ const AdminDashboard = () => {
   const queryClient = useQueryClient();
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const loopIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const cashSoundRef = useRef<HTMLAudioElement | null>(null);
+  useEffect(() => {
+    try {
+      cashSoundRef.current = new Audio(CASH_REGISTER_SOUND_URL);
+      cashSoundRef.current.volume = 1.0;
+      cashSoundRef.current.preload = "auto";
+    } catch {}
+    return () => { cashSoundRef.current = null; };
+  }, []);
 
   const [isOnline, setIsOnline] = useState(true);
   const [realtimeDriversConnected, setRealtimeDriversConnected] = useState(false);
@@ -798,9 +807,12 @@ const AdminDashboard = () => {
           toast.info("🔔 Novo pedido!", { duration: 8000 });
         }
         if (payload.eventType === "UPDATE" && (payload.new as any).status === "pendente" && previous?.status === "aguardando_pagamento") {
-          const cashSound = new Audio(CASH_REGISTER_SOUND_URL);
-          cashSound.volume = 1.0;
-          cashSound.play().catch(() => {});
+          try {
+            if (cashSoundRef.current) {
+              cashSoundRef.current.currentTime = 0;
+              cashSoundRef.current.play().catch(() => {});
+            }
+          } catch {}
           toast.success("💰 PIX confirmado!", { duration: 8000 });
           notifyNewOrder();
         }
@@ -864,20 +876,13 @@ const AdminDashboard = () => {
     // Quando Evolution API está conectado, NÃO abrimos wa.me — o backend envia automaticamente.
     if (evolutionConnected) return "#";
     const clientPhone = getClientWhatsApp(order.client_id);
-    console.log("[buildReadyWhatsAppHref] order:", order.id.slice(0, 8), "client_id:", order.client_id, "clientPhone:", clientPhone, "clientProfiles loaded?:", !!clientProfiles, "profiles count:", clientProfiles?.length);
     if (!clientPhone) {
-      const errorMsg = `ERRO: Telefone do cliente não encontrado para o pedido #${order.id.slice(0, 8)}. Verifique se o cliente cadastrou o WhatsApp.`;
-      console.warn("[buildReadyWhatsAppHref] ❌", errorMsg, "Profile encontrado:", clientProfiles?.find((c: any) => c.user_id === order.client_id));
-      // Fallback para avisar o usuário se for clicado
-      if (typeof window !== "undefined" && !clientPhone) {
-         // Apenas log, o alert seria intrusivo no render. O href '#' já sinaliza erro.
-      }
+      console.warn("[buildReadyWhatsAppHref] phone ausente p/ pedido", order.id.slice(0, 8));
       return "#";
     }
     const msg = buildReadyMessage(order);
     const phone = formatWhatsAppNumber(clientPhone);
     const href = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
-    console.log("[buildReadyWhatsAppHref] ✅ href gerado:", href);
     return href;
   }, [getClientWhatsApp, buildReadyMessage, clientProfiles, evolutionConnected]);
 
@@ -1129,29 +1134,32 @@ const AdminDashboard = () => {
 
       // Send notifications for each order
       const storeSettings = (store?.settings || {}) as Record<string, any>;
-      for (const orderId of ids) {
+      // Fire-and-forget em paralelo — antes rodava sequencial e travava UI com muitos pedidos
+      ids.forEach((orderId) => {
         const order = orders?.find((o: any) => o.id === orderId);
-        if (!order) continue;
+        if (!order) return;
         const clientPhone = getClientWhatsApp(order.client_id);
         const clientName = getClientName(order.client_id);
         const items = order.order_items?.map((i: any) => `${i.quantity}x ${getOrderItemDisplayName(i)}`).join("\n") || "";
-        notifyOrderStatusChange("saiu_entrega", {
-          orderId: order.id,
-          storeName: store?.name || "Loja",
-          storeId: store?.id || "",
-          clientId: order.client_id,
-          clientPhone,
-          clientName,
-          totalPrice: Number(order.total_price),
-          addressDetails: order.address_details,
-          items,
-          deliveryPin: order.delivery_pin,
-          paymentMethod: order.payment_method,
-        }, {
-          evolutionEnabled: evolutionConnected,
-          zapiEnabled: !!storeSettings.zapi_enabled,
-        });
-      }
+        try {
+          notifyOrderStatusChange("saiu_entrega", {
+            orderId: order.id,
+            storeName: store?.name || "Loja",
+            storeId: store?.id || "",
+            clientId: order.client_id,
+            clientPhone,
+            clientName,
+            totalPrice: Number(order.total_price),
+            addressDetails: order.address_details,
+            items,
+            deliveryPin: order.delivery_pin,
+            paymentMethod: order.payment_method,
+          }, {
+            evolutionEnabled: evolutionConnected,
+            zapiEnabled: !!storeSettings.zapi_enabled,
+          });
+        } catch (e) { console.warn("batch notify error", e); }
+      });
 
       setBatchSelected(new Set());
     } catch (e: any) {
