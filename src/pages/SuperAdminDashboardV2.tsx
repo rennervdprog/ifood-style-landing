@@ -484,7 +484,7 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
       else entry.appFees = addMoney(entry.appFees, fee);
     });
     return Array.from(map.values()).filter(e => e.deliveryCount > 0).sort((a, b) => b.totalFees - a.totalFees);
-  }, [financeOrders, drivers]);
+  }, [financeOrders, drivers, stores]);
 
   const financeTotals = useMemo(() => {
     const totalVolume = sumMoney(storeSettlement.map((entry) => entry.totalSales));
