@@ -27,7 +27,7 @@ import {
   ArrowLeft, DollarSign, ShoppingBag, TrendingUp, Clock,
   Store, Copy, AlertTriangle, Users, Bike, Wallet, CheckCircle2, Banknote, XCircle, Bell, Trash2, QrCode, Loader2, ArrowUpRight, ArrowDownRight, Settings,
   LayoutDashboard, Shield, Ticket, RefreshCw, Truck, Menu, X, MapPin, Eye, Scale, Search, FileText, Mail, Phone, User, Download, Calendar, CreditCard, Receipt, ChevronDown, ChevronUp, Percent, Crown, Handshake, FlaskConical, Link as LinkIcon, Megaphone, Monitor, Sparkles,
-  MessageCircle, Smartphone,
+  MessageCircle, Smartphone, ShieldCheck,
 } from "lucide-react";
  import { Switch } from "@/components/ui/switch";
  import { Badge } from "@/components/ui/badge";
@@ -57,6 +57,7 @@ const JuridicoTab = lazy(() => import("./super-admin/tabs/JuridicoTab"));
 const CidadesTab = lazy(() => import("./super-admin/tabs/CidadesTab"));
 const SaquesTab = lazy(() => import("./super-admin/tabs/SaquesTab"));
 const PagamentosSplitTab = lazy(() => import("./super-admin/tabs/PagamentosSplitTab"));
+const AuditoriaTab = lazy(() => import("./super-admin/tabs/AuditoriaTab"));
 const TabFallback = () => (
   <div className="flex items-center justify-center py-12">
     <Loader2 className="h-6 w-6 animate-spin text-primary" />
@@ -64,7 +65,7 @@ const TabFallback = () => (
 );
 
 type DateFilter = "today" | "yesterday" | "week";
- type AdminTab = "dashboard" | "approvals" | "stores" | "financeiro" | "pagamentos" | "saques" | "sync" | "coupons" | "entrega" | "cidades" | "juridico" | "planos" | "moderadores" | "socios" | "suporte" | "app-page" | "test_finance" | "links" | "broadcast" | "logs" | "coach" | "performance";
+type AdminTab = "dashboard" | "approvals" | "stores" | "financeiro" | "pagamentos" | "saques" | "sync" | "coupons" | "entrega" | "cidades" | "juridico" | "planos" | "moderadores" | "socios" | "suporte" | "app-page" | "test_finance" | "links" | "broadcast" | "logs" | "coach" | "performance" | "auditoria";
 
 const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; group: string }[] = [
   { key: "dashboard", label: "Dashboard", icon: LayoutDashboard, group: "Principal" },
@@ -89,6 +90,7 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
   { key: "sync", label: "Sincronizar", icon: RefreshCw, group: "Sistema" },
   { key: "performance", label: "Performance", icon: TrendingUp, group: "Sistema" },
   { key: "logs", label: "Logs", icon: FileText, group: "Sistema" },
+  { key: "auditoria", label: "Auditoria", icon: ShieldCheck, group: "Sistema" },
 ];
 
  import { FinanceTab as FinanceTabFull, MetricCard } from "./SuperAdminDashboard";
@@ -938,6 +940,11 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
             {activeTab === "links" && <AppLinksManager />}
             {activeTab === "broadcast" && <AdminBroadcastPush />}
             {activeTab === "coach" && <SalesCoachPanel />}
+            {activeTab === "auditoria" && (
+              <Suspense fallback={<TabFallback />}>
+                <AuditoriaTab />
+              </Suspense>
+            )}
             {activeTab === "performance" && (
               <div className="space-y-4">
                 <div className="bg-card border border-border rounded-2xl p-5">
