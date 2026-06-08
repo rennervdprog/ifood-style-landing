@@ -2020,9 +2020,9 @@ export const FinanceTab = ({
         <AdminSubaccountsTab />
       ) : financeSubTab === "stores" ? (
         /* ═══ Store Cards ═══ */
-        storeSettlement.length > 0 ? (
+        visibleStoreSettlement.length > 0 ? (
           <div className="space-y-3">
-            {storeSettlement.map((entry) => {
+            {visibleStoreSettlement.map((entry) => {
               const balance = storeBalances.find((b: any) => b.store_id === entry.storeId);
               const dbComissao = Number(balance?.comissao_pendente || balance?.pending_commission || 0);
               const isExpanded = expandedStore === entry.storeId;
