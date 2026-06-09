@@ -27,7 +27,23 @@ async function runBilling() {
   return { status: r.status, body: await r.text() };
 }
 
-Deno.serve(async () => {
+Deno.serve(async (req) => {
+  // SECURITY: this function deploys code to the EXTERNAL project and force-runs
+  // billing. It MUST only be callable by a service-role / cron secret. No anon JWTs.
+  const authHeader = req.headers.get("Authorization") || "";
+  const token = authHeader.replace("Bearer ", "");
+  const cronSecret = Deno.env.get("CRON_SECRET") || Deno.env.get("EXTERNAL_CRON_SECRET") || "";
+  const allowed =
+    !!token &&
+    (token === EXT_KEY ||
+      token === TOKEN ||
+      (cronSecret && token === cronSecret));
+  if (!allowed) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
   const deploy = await deployMonthlyBilling();
   const billing = await runBilling();
   return new Response(JSON.stringify({ deploy, billing }, null, 2), {
