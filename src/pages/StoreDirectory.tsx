@@ -543,16 +543,16 @@ const StoreDirectory = () => {
             </div>
 
             <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-[5.5rem] font-black tracking-tight text-foreground leading-[0.95] mb-6 animate-in fade-in slide-in-from-bottom-6 duration-1000">
-              Receba pedidos pelo celular,{" "}
+              Venda mais.{" "}
               <span className="text-primary relative inline-block">
-                sem complicação
+                Sem pagar comissão
                 <span className="absolute -bottom-2 left-0 w-full h-3 bg-primary/20 -z-10 rounded-full" />
               </span>
-              .
+              {" "}por cada pedido.
             </h1>
 
             <p className="text-lg md:text-xl text-muted-foreground max-w-xl mx-auto lg:mx-0 mb-8 leading-relaxed animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-200">
-              Feito para quem nunca usou aplicativo de delivery. Crie sua loja, mande o link no WhatsApp e{" "}
+              Cardápio digital, PIX automático, motoboy integrado e PDV do balcão — tudo num app só. Crie sua loja em 10 minutos e{" "}
               <span className="text-foreground font-bold">comece a vender hoje mesmo.</span>
             </p>
 
@@ -593,9 +593,17 @@ const StoreDirectory = () => {
             {/* Faixa de prova social — diferenciais */}
             <div className="mt-8 grid grid-cols-3 gap-3 max-w-xl mx-auto lg:mx-0">
               {[
+                {
+                  v: liveStats ? `+${liveStats.stores}` : "0%",
+                  l: liveStats ? "Lojas ativas" : "Comissão*",
+                  c: "text-primary",
+                },
+                {
+                  v: liveStats && liveStats.cities > 0 ? `${liveStats.cities}` : "10min",
+                  l: liveStats && liveStats.cities > 0 ? "Cidades atendidas" : "Pra começar",
+                  c: "text-foreground",
+                },
                 { v: "0%", l: "Comissão*", c: "text-primary" },
-                { v: "10min", l: "Pra começar", c: "text-foreground" },
-                { v: "Brasil", l: "Todo o país", c: "text-foreground" },
               ].map((s) => (
                 <div key={s.l} className="rounded-2xl border border-border/60 bg-card/60 backdrop-blur px-3 py-3 text-center">
                   <p className={`text-xl md:text-2xl font-black tracking-tight ${s.c}`}>{s.v}</p>
