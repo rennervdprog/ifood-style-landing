@@ -61,14 +61,14 @@ Deno.serve(async (req) => {
     return null;
   }
 
-  // Pega últimas 200 transações pendentes das últimas 48h
-  const since = new Date(Date.now() - 48 * 3600 * 1000).toISOString();
+  // Pega últimas 500 transações pendentes dos últimos 7 dias (cobertura estendida)
+  const since = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString();
   const { data: pendings, error } = await supabase
     .from("financial_transactions")
     .select("id, store_id, status, amount, reference_code, transaction_kind, metadata, mercado_pago_payment_id")
     .eq("status", "pending")
     .gte("created_at", since)
-    .limit(200);
+    .limit(500);
   if (error) {
     console.error("[reconcile-payments] db error:", error);
     return json({ error: "Internal error" }, 500);
