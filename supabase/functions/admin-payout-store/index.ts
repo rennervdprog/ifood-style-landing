@@ -164,20 +164,23 @@ Deno.serve(async (req) => {
       admin_user_id: userData.user.id,
     });
 
-    // Deduct ONLY repasse_pendente by the actual amount paid.
-    // Never touch comissao_pendente/pending_commission here — those represent
-    // money the store still owes the platform and are settled by a different flow.
-    const { data: curBal } = await serviceClient
-      .from("store_balances")
-      .select("repasse_pendente")
-      .eq("store_id", store_id)
-      .maybeSingle();
-    const curRepasse = Number(curBal?.repasse_pendente || 0);
-    const newRepasse = Math.max(0, curRepasse - Number(amount.toFixed(2)));
-    await serviceClient
-      .from("store_balances")
-      .update({ repasse_pendente: newRepasse, updated_at: new Date().toISOString() })
-      .eq("store_id", store_id);
+    // Débito atômico via RPC com FOR UPDATE — valida saldo suficiente e
+    // evita race-condition com auto-payout-cron (double payout).
+    const { error: debitErr } = await serviceClient.rpc("debit_store_repasse", {
+      _store_id: store_id,
+      _amount: Number(amount.toFixed(2)),
+    });
+    if (debitErr) {
+      console.error("[admin-payout-store] debit_store_repasse failed:", debitErr);
+      return json({
+        success: true,
+        reference_code: referenceCode,
+        transfer_id: transferData.id,
+        status: "approved_balance_warning",
+        amount: Number(amount.toFixed(2)),
+        warning: `Transferência feita, mas saldo não pôde ser debitado: ${debitErr.message}. Verifique manualmente.`,
+      });
+    }
 
     return json({
       success: true,
