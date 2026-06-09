@@ -7,54 +7,32 @@ const SQL = `
 -- mantém apenas SELECT (RLS continua bloqueando dados sensíveis).
 -- Garante grants corretos para authenticated/service_role.
 DO $$
-DECLARE r record;
+DECLARE
+  r record;
+  sensitive text[] := ARRAY[
+    'user_roles','profiles','store_secrets','financial_transactions',
+    'withdrawal_requests','store_balances','driver_balances','driver_earnings',
+    'store_driver_earnings','fcm_tokens','onesignal_players','user_active_devices',
+    'archived_accounts','fraud_attempts','asaas_webhook_events',
+    'asaas_transfer_review_queue','admin_logs','compliance_alerts','payout_history',
+    'partner_payouts','platform_partners','moderators','moderator_earnings',
+    'moderator_referrals','wallet_transactions','user_wallet','refund_requests',
+    'saved_addresses','terms_acceptance','cash_registers','cash_transactions',
+    'pdv_sessions','pdv_movements','emergency_fund','plan_change_requests',
+    'store_plans','store_drivers','drivers','coupon_uses','order_messages',
+    'order_ratings','loyalty_points','geocode_cache','admin_settings'
+  ];
 BEGIN
-  FOR r IN
-    SELECT tablename FROM pg_tables WHERE schemaname = 'public'
-  LOOP
-    EXECUTE format('REVOKE INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER ON public.%I FROM anon', r.tablename);
+  FOR r IN SELECT tablename FROM pg_tables WHERE schemaname = 'public' LOOP
+    IF r.tablename = ANY(sensitive) THEN
+      EXECUTE format('REVOKE ALL ON public.%I FROM anon', r.tablename);
+    ELSE
+      EXECUTE format('REVOKE INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER ON public.%I FROM anon', r.tablename);
+    END IF;
     EXECUTE format('GRANT SELECT, INSERT, UPDATE, DELETE ON public.%I TO authenticated', r.tablename);
     EXECUTE format('GRANT ALL ON public.%I TO service_role', r.tablename);
   END LOOP;
 END $$;
-
--- Tabelas sensíveis: remove até SELECT do anon (só authenticated/service_role).
-REVOKE ALL ON public.user_roles FROM anon;
-REVOKE ALL ON public.profiles FROM anon;
-REVOKE ALL ON public.store_secrets FROM anon;
-REVOKE ALL ON public.financial_transactions FROM anon;
-REVOKE ALL ON public.withdrawal_requests FROM anon;
-REVOKE ALL ON public.store_balances FROM anon;
-REVOKE ALL ON public.driver_balances FROM anon;
-REVOKE ALL ON public.driver_earnings FROM anon;
-REVOKE ALL ON public.store_driver_earnings FROM anon;
-REVOKE ALL ON public.fcm_tokens FROM anon;
-REVOKE ALL ON public.onesignal_players FROM anon;
-REVOKE ALL ON public.user_active_devices FROM anon;
-REVOKE ALL ON public.archived_accounts FROM anon;
-REVOKE ALL ON public.fraud_attempts FROM anon;
-REVOKE ALL ON public.asaas_webhook_events FROM anon;
-REVOKE ALL ON public.asaas_transfer_review_queue FROM anon;
-REVOKE ALL ON public.admin_logs FROM anon;
-REVOKE ALL ON public.compliance_alerts FROM anon;
-REVOKE ALL ON public.payout_history FROM anon;
-REVOKE ALL ON public.partner_payouts FROM anon;
-REVOKE ALL ON public.platform_partners FROM anon;
-REVOKE ALL ON public.moderators FROM anon;
-REVOKE ALL ON public.moderator_earnings FROM anon;
-REVOKE ALL ON public.moderator_referrals FROM anon;
-REVOKE ALL ON public.wallet_transactions FROM anon;
-REVOKE ALL ON public.user_wallet FROM anon;
-REVOKE ALL ON public.refund_requests FROM anon;
-REVOKE ALL ON public.saved_addresses FROM anon;
-REVOKE ALL ON public.terms_acceptance FROM anon;
-REVOKE ALL ON public.cash_registers FROM anon;
-REVOKE ALL ON public.cash_transactions FROM anon;
-REVOKE ALL ON public.pdv_sessions FROM anon;
-REVOKE ALL ON public.pdv_movements FROM anon;
-REVOKE ALL ON public.emergency_fund FROM anon;
-REVOKE ALL ON public.plan_change_requests FROM anon;
-REVOKE ALL ON public.store_plans FROM anon;
 
 -- B2: força o monthly-billing a tentar de novo nos planos vencidos
 UPDATE public.store_plans
