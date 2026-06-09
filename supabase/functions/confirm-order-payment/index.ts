@@ -238,24 +238,13 @@ async function confirmAndSplit(supabase: any, orderId: string, paymentId: string
       }
 
       if (commissionAmount > 0) {
-        const { data: existing } = await supabase
-          .from("store_balances")
-          .select("comissao_pendente, pending_commission")
-          .eq("store_id", order.store_id)
-          .single();
-        if (existing) {
-          await supabase.from("store_balances").update({
-            comissao_pendente: Number(existing.comissao_pendente || 0) + commissionAmount,
-            pending_commission: Number(existing.pending_commission || 0) + commissionAmount,
-            updated_at: new Date().toISOString(),
-          }).eq("store_id", order.store_id);
-        } else {
-          await supabase.from("store_balances").insert({
-            store_id: order.store_id,
-            comissao_pendente: commissionAmount,
-            pending_commission: commissionAmount,
-            updated_at: new Date().toISOString(),
-          });
+        // A-1: crédito atômico (evita race condition em confirmações simultâneas)
+        const { error: credErr } = await supabase.rpc("credit_store_commission", {
+          _store_id: order.store_id,
+          _amount: commissionAmount,
+        });
+        if (credErr) {
+          console.error("[confirm-order-payment] credit_store_commission error:", credErr);
         }
       }
     } else {
