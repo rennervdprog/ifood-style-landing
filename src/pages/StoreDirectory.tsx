@@ -114,8 +114,8 @@ const plans = [
   {
     id: "hybrid",
     name: "Crescimento",
-    tagline: "Comece por R$50 — cresce com você",
-    price: "50",
+    tagline: "Mensalidade fixa + comissão reduzida",
+    price: "100",
     period: "/mês",
     icon: TrendingUp,
     highlight: false,
@@ -130,7 +130,6 @@ const plans = [
     features: [
       "Tudo do plano Comissão",
       "Comissão reduzida para 2,5%",
-      "R$50/mês → R$100 após 2 meses faturando acima de R$5.000",
       "PDV — Caixa presencial (1% comissão)",
       "Banners ilimitados na loja",
       "Agendamento de pedidos",
