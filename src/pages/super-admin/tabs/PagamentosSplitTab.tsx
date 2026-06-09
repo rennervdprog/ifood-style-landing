@@ -5,10 +5,27 @@ import { toast } from "sonner";
 import { formatBRL } from "@/lib/utils";
 import { statusColors as globalStatusColors } from "@/lib/orderStatus";
 import { CreditCard, Store, CheckCircle2, Receipt, ChevronUp, ChevronDown, Wallet, Copy } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 
 const PagamentosSplitTab = ({ stores }: { stores: any[] }) => {
   const [expandedStore, setExpandedStore] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  // Dead-letter: pedidos com erro no split (repasse falhou e ficou preso)
+  const { data: failedSplits } = useQuery({
+    queryKey: ["orders-failed-splits"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("orders")
+        .select("id, store_id, subtotal, store_payout_error, store_payout_id, created_at, status")
+        .not("store_payout_error", "is", null)
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (error) throw error;
+      return data || [];
+    },
+    refetchInterval: 60_000,
+  });
 
   const { data: transactions, isLoading } = useQuery({
     queryKey: ["financial-transactions-all"],
@@ -115,6 +132,40 @@ const PagamentosSplitTab = ({ stores }: { stores: any[] }) => {
 
   return (
     <div className="space-y-4">
+      {/* Dead-letter: repasses com erro */}
+      {failedSplits && failedSplits.length > 0 && (
+        <div className="bg-destructive/10 border border-destructive/40 rounded-2xl p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <AlertTriangle className="h-4 w-4 text-destructive" />
+            <h3 className="text-sm font-bold text-destructive">
+              Repasses com falha ({failedSplits.length})
+            </h3>
+          </div>
+          <p className="text-xs text-muted-foreground mb-3">
+            Pedidos cujo repasse automático falhou — revisar manualmente no Asaas antes de reprocessar.
+          </p>
+          <div className="space-y-2 max-h-64 overflow-auto">
+            {failedSplits.map((o: any) => {
+              const store = stores?.find((s) => s.id === o.store_id);
+              return (
+                <div key={o.id} className="bg-card rounded-lg p-3 text-xs border border-destructive/20">
+                  <div className="flex justify-between gap-2 mb-1">
+                    <span className="font-semibold truncate">{store?.name || "Loja"}</span>
+                    <span className="text-muted-foreground shrink-0">
+                      {new Date(o.created_at).toLocaleString("pt-BR")}
+                    </span>
+                  </div>
+                  <div className="text-muted-foreground">
+                    Pedido #{String(o.id).slice(0, 8)} · {formatBRL(Number(o.subtotal || 0))} · status: {o.status}
+                  </div>
+                  <div className="mt-1 text-destructive/90 break-all">{o.store_payout_error}</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Summary */}
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
         <div className="bg-card rounded-2xl p-4 border border-border">
