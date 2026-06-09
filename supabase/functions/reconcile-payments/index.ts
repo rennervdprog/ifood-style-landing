@@ -111,26 +111,13 @@ Deno.serve(async (req) => {
         const meta: any = tx.metadata || {};
         const planType: string = meta.plan_type || "";
         const amt = Number(tx.amount || 0);
-        const { data: bal } = await supabase
-          .from("store_balances")
-          .select("repasse_pendente, comissao_pendente, pending_commission")
-          .eq("store_id", tx.store_id)
-          .maybeSingle();
-        const upd: Record<string, unknown> = { updated_at: nowIso };
-        const curRepasse = Number(bal?.repasse_pendente || 0);
-        const curComis = Number(bal?.comissao_pendente || 0);
-        const curPend = Number(bal?.pending_commission || 0);
-        if (planType === "fixed" || planType === "supporter") {
-          upd.repasse_pendente = Math.max(0, curRepasse - amt);
-        } else if (planType === "commission_only") {
-          upd.comissao_pendente = Math.max(0, curComis - amt);
-          upd.pending_commission = Math.max(0, curPend - amt);
-        } else {
-          upd.repasse_pendente = Math.max(0, curRepasse - amt);
-          upd.comissao_pendente = Math.max(0, curComis - amt);
-          upd.pending_commission = Math.max(0, curPend - amt);
-        }
-        await supabase.from("store_balances").update(upd).eq("store_id", tx.store_id);
+        // A-2: débito atômico + proporcional no híbrido (antes deduzia duplicado)
+        const { error: debErr } = await supabase.rpc("reconcile_debit_store_balance", {
+          _store_id: tx.store_id,
+          _amount: amt,
+          _plan_type: planType || "",
+        });
+        if (debErr) console.error("[reconcile-payments] debit rpc error:", debErr);
       }
 
       await supabase.from("financial_audit_log").insert({
