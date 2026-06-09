@@ -17,7 +17,13 @@ const json = (body: unknown, status = 200) =>
   });
 
 function getServiceRoleKey() {
-  return Deno.env.get("SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+  return (
+    Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") ||
+    Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY") ||
+    Deno.env.get("SERVICE_ROLE_KEY") ||
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ||
+    ""
+  );
 }
 
 async function confirmAndSplit(supabase: any, orderId: string, paymentId: string | null) {
