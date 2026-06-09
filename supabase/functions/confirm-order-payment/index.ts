@@ -283,11 +283,11 @@ Deno.serve(async (req) => {
     let userId: string | null = null;
     let userClient: any;
     if (isWebhookBypass) {
-      userClient = createClient(Deno.env.get("SUPABASE_URL")!, serviceKey);
+      userClient = createClient((Deno.env.get("EXTERNAL_SUPABASE_URL") || Deno.env.get("SUPABASE_URL"))!, serviceKey);
     } else {
       userClient = createClient(
-        Deno.env.get("SUPABASE_URL")!,
-        Deno.env.get("SUPABASE_ANON_KEY")!,
+        (Deno.env.get("EXTERNAL_SUPABASE_URL") || Deno.env.get("SUPABASE_URL"))!,
+        (Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_ANON_KEY"))!,
         { global: { headers: { Authorization: authHeader } } },
       );
       const { data: userData, error: userErr } = await userClient.auth.getUser(token);
@@ -345,7 +345,7 @@ Deno.serve(async (req) => {
 
     // Use service role to bypass RLS for the split logic
     const adminClient = createClient(
-      Deno.env.get("SUPABASE_URL")!,
+      (Deno.env.get("EXTERNAL_SUPABASE_URL") || Deno.env.get("SUPABASE_URL"))!,
       getServiceRoleKey(),
     );
 
