@@ -1240,7 +1240,7 @@ const StoreDirectory = () => {
             Escolha o plano ideal para sua loja
           </h2>
           <p className="text-center text-muted-foreground mb-4 max-w-2xl mx-auto text-base font-medium">
-             Comissão a partir de <span className="font-bold text-primary">6%</span> — ou <span className="font-bold text-primary">zero</span> nos planos Apoiador e Essencial.
+            Comissão de <span className="font-bold text-primary">6%</span> no plano grátis, <span className="font-bold text-primary">2,5%</span> no Crescimento ou <span className="font-bold text-primary">zero</span> no Essencial e Apoiador.
             Todos incluem cardápio completo, PIX online e notificações. Taxa PIX R$ 1,99/transação apenas nos planos Essencial e Apoiador.
           </p>
           <div className="flex justify-center mb-14">
