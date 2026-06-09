@@ -27,7 +27,13 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-    if (url.searchParams.get("token") !== expectedToken) {
+    // Aceita token via header (preferido) OU query string (compat com configs existentes)
+    const receivedToken =
+      req.headers.get("x-webhook-token") ||
+      req.headers.get("x-internal-token") ||
+      url.searchParams.get("token") ||
+      "";
+    if (receivedToken !== expectedToken) {
       return new Response(JSON.stringify({ error: "Forbidden" }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
