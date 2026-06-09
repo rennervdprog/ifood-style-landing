@@ -5,10 +5,27 @@ import { toast } from "sonner";
 import { formatBRL } from "@/lib/utils";
 import { statusColors as globalStatusColors } from "@/lib/orderStatus";
 import { CreditCard, Store, CheckCircle2, Receipt, ChevronUp, ChevronDown, Wallet, Copy } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 
 const PagamentosSplitTab = ({ stores }: { stores: any[] }) => {
   const [expandedStore, setExpandedStore] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  // Dead-letter: pedidos com erro no split (repasse falhou e ficou preso)
+  const { data: failedSplits } = useQuery({
+    queryKey: ["orders-failed-splits"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("orders")
+        .select("id, store_id, subtotal, store_payout_error, store_payout_id, created_at, status")
+        .not("store_payout_error", "is", null)
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (error) throw error;
+      return data || [];
+    },
+    refetchInterval: 60_000,
+  });
 
   const { data: transactions, isLoading } = useQuery({
     queryKey: ["financial-transactions-all"],
