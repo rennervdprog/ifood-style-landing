@@ -92,7 +92,13 @@ Deno.serve(async (req) => {
       console.error("[evolution-webhook] EVOLUTION_WEBHOOK_TOKEN não configurado — rejeitando");
       return json({ error: "Webhook not configured" }, 500);
     }
-    if (url.searchParams.get("token") !== expected) return json({ error: "Forbidden" }, 403);
+    // Aceita token via header (preferido) OU query string (compat com configs existentes)
+    const receivedToken =
+      req.headers.get("x-webhook-token") ||
+      req.headers.get("x-internal-token") ||
+      url.searchParams.get("token") ||
+      "";
+    if (receivedToken !== expected) return json({ error: "Forbidden" }, 403);
 
     const body = await req.json().catch(() => ({} as any));
     const event: string = body?.event || body?.type || "";

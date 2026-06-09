@@ -147,6 +147,30 @@ Deno.serve(async (req) => {
       if (!store || store.status !== "ativo") continue;
 
       try {
+        // Atomic lock: only one concurrent run may bill this plan.
+        // Conditional update succeeds only if last_billing_attempt_at is
+        // unchanged from what we read (null or older than the 20h cooldown).
+        const prevAttempt = (plan as any).last_billing_attempt_at ?? null;
+        const cooldownIso = new Date(now.getTime() - 20 * 60 * 60 * 1000).toISOString();
+        let lockQ = supabase
+          .from("store_plans")
+          .update({ last_billing_attempt_at: now.toISOString() })
+          .eq("id", plan.id);
+        lockQ = prevAttempt === null
+          ? lockQ.is("last_billing_attempt_at", null)
+          : lockQ.eq("last_billing_attempt_at", prevAttempt);
+        const { data: lockRows, error: lockErr } = await lockQ.select("id");
+        if (lockErr) {
+          console.error(`[monthly-billing] lock error for ${store.name}:`, lockErr);
+          continue;
+        }
+        if (!lockRows || lockRows.length === 0) {
+          // Another concurrent invocation already grabbed this plan; also
+          // covers the case where cooldown was bumped between read and write.
+          if (!force) continue;
+          // force=true bypasses the lock (manual admin trigger)
+        }
+
         // Generate reference
         const { data: refData } = await supabase.rpc("generate_financial_reference", {
           _prefix: "MENS",
@@ -302,19 +326,14 @@ Deno.serve(async (req) => {
           },
         });
 
-        // DON'T advance next_billing_date here — the Asaas webhook will advance it ONLY
-        // after payment is actually confirmed. Otherwise a charge that fails (or whose
-        // webhook never arrives) would silently skip an entire month of billing.
-        // To prevent re-billing the same period in the same day, mark this charge with
-        // a short cooldown via last_billing_attempt_at.
-        await supabase
-          .from("store_plans")
-          .update({
-            last_billing_attempt_at: now.toISOString(),
-            // Zera comissão PDV após incluir na fatura
-            ...(pdvPending > 0 ? { pdv_commission_pending: 0 } : {}),
-          })
-          .eq("id", plan.id);
+        // last_billing_attempt_at already set by the atomic lock above.
+        // Zera comissão PDV após incluir na fatura.
+        if (pdvPending > 0) {
+          await supabase
+            .from("store_plans")
+            .update({ pdv_commission_pending: 0 })
+            .eq("id", plan.id);
+        }
 
         billed++;
         results.push({ store: store.name, reference: referenceCode, status: "billed" });
