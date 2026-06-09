@@ -3,20 +3,66 @@ const TOKEN = Deno.env.get("EXTERNAL_SUPABASE_ACCESS_TOKEN")!;
 const PROJECT_REF = Deno.env.get("EXTERNAL_SUPABASE_PROJECT_REF") || "qkjhguziuchqsbxzruea";
 
 const SQL = `
-REVOKE ALL ON public.stores FROM anon;
+-- B1: remove escrita/trigger/truncate do anon em TODAS as tabelas public,
+-- mantém apenas SELECT (RLS continua bloqueando dados sensíveis).
+-- Garante grants corretos para authenticated/service_role.
+DO $$
+DECLARE r record;
+BEGIN
+  FOR r IN
+    SELECT tablename FROM pg_tables WHERE schemaname = 'public'
+  LOOP
+    EXECUTE format('REVOKE INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER ON public.%I FROM anon', r.tablename);
+    EXECUTE format('GRANT SELECT, INSERT, UPDATE, DELETE ON public.%I TO authenticated', r.tablename);
+    EXECUTE format('GRANT ALL ON public.%I TO service_role', r.tablename);
+  END LOOP;
+END $$;
 
-GRANT SELECT (
-  id, name, category, image_url, is_open, rating, created_at, owner_id, status,
-  force_closed, slug, address_street, address_number, address_complement,
-  address_neighborhood, address_reference, address_city, address_state, address_cep,
-  delivery_mode, own_delivery_fee, settings, commission_rate, app_enabled,
-  app_subscribed, latitude, longitude, is_test, categories, delivery_fee_type,
-  delivery_base_km, delivery_fee_base, delivery_fee_per_km, delivery_enabled,
-  delivery_fee, delivery_radius, minimum_order_value, estimated_delivery_time
-) ON public.stores TO anon;
+-- Tabelas sensíveis: remove até SELECT do anon (só authenticated/service_role).
+REVOKE ALL ON public.user_roles FROM anon;
+REVOKE ALL ON public.profiles FROM anon;
+REVOKE ALL ON public.store_secrets FROM anon;
+REVOKE ALL ON public.financial_transactions FROM anon;
+REVOKE ALL ON public.withdrawal_requests FROM anon;
+REVOKE ALL ON public.store_balances FROM anon;
+REVOKE ALL ON public.driver_balances FROM anon;
+REVOKE ALL ON public.driver_earnings FROM anon;
+REVOKE ALL ON public.store_driver_earnings FROM anon;
+REVOKE ALL ON public.fcm_tokens FROM anon;
+REVOKE ALL ON public.onesignal_players FROM anon;
+REVOKE ALL ON public.user_active_devices FROM anon;
+REVOKE ALL ON public.archived_accounts FROM anon;
+REVOKE ALL ON public.fraud_attempts FROM anon;
+REVOKE ALL ON public.asaas_webhook_events FROM anon;
+REVOKE ALL ON public.asaas_transfer_review_queue FROM anon;
+REVOKE ALL ON public.admin_logs FROM anon;
+REVOKE ALL ON public.compliance_alerts FROM anon;
+REVOKE ALL ON public.payout_history FROM anon;
+REVOKE ALL ON public.partner_payouts FROM anon;
+REVOKE ALL ON public.platform_partners FROM anon;
+REVOKE ALL ON public.moderators FROM anon;
+REVOKE ALL ON public.moderator_earnings FROM anon;
+REVOKE ALL ON public.moderator_referrals FROM anon;
+REVOKE ALL ON public.wallet_transactions FROM anon;
+REVOKE ALL ON public.user_wallet FROM anon;
+REVOKE ALL ON public.refund_requests FROM anon;
+REVOKE ALL ON public.saved_addresses FROM anon;
+REVOKE ALL ON public.terms_acceptance FROM anon;
+REVOKE ALL ON public.cash_registers FROM anon;
+REVOKE ALL ON public.cash_transactions FROM anon;
+REVOKE ALL ON public.pdv_sessions FROM anon;
+REVOKE ALL ON public.pdv_movements FROM anon;
+REVOKE ALL ON public.emergency_fund FROM anon;
+REVOKE ALL ON public.plan_change_requests FROM anon;
+REVOKE ALL ON public.store_plans FROM anon;
 
-GRANT SELECT, INSERT, UPDATE, DELETE ON public.stores TO authenticated;
-GRANT ALL ON public.stores TO service_role;
+-- B2: força o monthly-billing a tentar de novo nos planos vencidos
+UPDATE public.store_plans
+SET last_billing_attempt_at = NULL
+WHERE is_active = true
+  AND monthly_fee > 0
+  AND (next_billing_date IS NULL OR next_billing_date <= now())
+  AND (trial_ends_at IS NULL OR trial_ends_at <= now());
 `;
 
 Deno.serve(async () => {
