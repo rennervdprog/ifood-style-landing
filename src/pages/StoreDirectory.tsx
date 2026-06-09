@@ -420,6 +420,7 @@ const StoreDirectory = () => {
   const [roleChecked, setRoleChecked] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [supporterTaken, setSupporterTaken] = useState<number | null>(null);
+  const [liveStats, setLiveStats] = useState<{ stores: number; cities: number } | null>(null);
 
   // No fake stats — we use honest value props instead
 
@@ -453,6 +454,28 @@ const StoreDirectory = () => {
         const { data, error } = await supabase.rpc("count_supporter_plans");
         if (cancelled || error) return;
         setSupporterTaken(typeof data === "number" ? data : 0);
+      } catch {
+        /* silent */
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  // Live social proof: real number of active stores + cities
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data } = await supabase
+          .from("stores")
+          .select("address_city")
+          .eq("status", "ativo")
+          .eq("is_test", false);
+        if (cancelled || !data) return;
+        const cities = new Set(
+          data.map((s: any) => (s.address_city || "").trim().toLowerCase()).filter(Boolean),
+        );
+        setLiveStats({ stores: data.length, cities: cities.size });
       } catch {
         /* silent */
       }
@@ -520,16 +543,16 @@ const StoreDirectory = () => {
             </div>
 
             <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-[5.5rem] font-black tracking-tight text-foreground leading-[0.95] mb-6 animate-in fade-in slide-in-from-bottom-6 duration-1000">
-              Receba pedidos pelo celular,{" "}
+              Venda mais.{" "}
               <span className="text-primary relative inline-block">
-                sem complicação
+                Sem pagar comissão
                 <span className="absolute -bottom-2 left-0 w-full h-3 bg-primary/20 -z-10 rounded-full" />
               </span>
-              .
+              {" "}por cada pedido.
             </h1>
 
             <p className="text-lg md:text-xl text-muted-foreground max-w-xl mx-auto lg:mx-0 mb-8 leading-relaxed animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-200">
-              Feito para quem nunca usou aplicativo de delivery. Crie sua loja, mande o link no WhatsApp e{" "}
+              Cardápio digital, PIX automático, motoboy integrado e PDV do balcão — tudo num app só. Crie sua loja em 10 minutos e{" "}
               <span className="text-foreground font-bold">comece a vender hoje mesmo.</span>
             </p>
 
@@ -570,9 +593,17 @@ const StoreDirectory = () => {
             {/* Faixa de prova social — diferenciais */}
             <div className="mt-8 grid grid-cols-3 gap-3 max-w-xl mx-auto lg:mx-0">
               {[
+                {
+                  v: liveStats ? `+${liveStats.stores}` : "0%",
+                  l: liveStats ? "Lojas ativas" : "Comissão*",
+                  c: "text-primary",
+                },
+                {
+                  v: liveStats && liveStats.cities > 0 ? `${liveStats.cities}` : "10min",
+                  l: liveStats && liveStats.cities > 0 ? "Cidades atendidas" : "Pra começar",
+                  c: "text-foreground",
+                },
                 { v: "0%", l: "Comissão*", c: "text-primary" },
-                { v: "10min", l: "Pra começar", c: "text-foreground" },
-                { v: "Brasil", l: "Todo o país", c: "text-foreground" },
               ].map((s) => (
                 <div key={s.l} className="rounded-2xl border border-border/60 bg-card/60 backdrop-blur px-3 py-3 text-center">
                   <p className={`text-xl md:text-2xl font-black tracking-tight ${s.c}`}>{s.v}</p>
@@ -682,6 +713,80 @@ const StoreDirectory = () => {
             <span className="flex items-center gap-1.5">🍰 Docerias</span>
             <span className="flex items-center gap-1.5">🍺 Bares</span>
             <span className="flex items-center gap-1.5">💈 Serviços</span>
+          </div>
+        </div>
+      </section>
+
+      {/* ══════ ANTES vs DEPOIS — gatilho de contraste de status ══════ */}
+      <section className="py-20 px-4 bg-background border-b border-border">
+        <div className="mx-auto max-w-5xl">
+          <div className="text-center mb-12">
+            <p className="text-[11px] font-black uppercase tracking-[0.25em] text-primary mb-3">A diferença é gritante</p>
+            <h2 className="text-3xl md:text-5xl font-black text-foreground leading-[1.05]">
+              Sua rotina <span className="text-foreground/40">antes</span> e <span className="text-primary">depois</span> da ItaSuper
+            </h2>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-5">
+            {/* ANTES */}
+            <div className="rounded-3xl border border-border bg-muted/30 p-7">
+              <div className="inline-flex items-center gap-2 rounded-full bg-foreground/5 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-muted-foreground mb-6">
+                <X className="h-3 w-3" /> Antes
+              </div>
+              <ul className="space-y-4">
+                {[
+                  "Anota pedido no papel e perde o endereço",
+                  "Confere PIX um por um no extrato do banco",
+                  "Perde venda porque não viu a mensagem",
+                  "Cliente liga toda hora: 'já saiu?'",
+                  "Não sabe quanto vendeu no fim do dia",
+                  "Motoboy entrega no lugar errado",
+                ].map((t) => (
+                  <li key={t} className="flex items-start gap-3 text-foreground/60">
+                    <X className="h-5 w-5 text-foreground/40 shrink-0 mt-0.5" />
+                    <span className="text-base line-through decoration-foreground/20 font-medium">{t}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* DEPOIS */}
+            <div className="rounded-3xl border-2 border-primary/30 bg-card p-7 shadow-xl shadow-primary/5 relative overflow-hidden">
+              <div className="absolute -top-12 -right-12 w-40 h-40 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
+              <div className="relative inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-primary mb-6">
+                <CheckCircle2 className="h-3 w-3" /> Depois
+              </div>
+              <ul className="relative space-y-4">
+                {[
+                  "Pedido chega pronto, com endereço completo",
+                  "PIX cai na hora — você só confirma e prepara",
+                  "Celular toca alto a cada novo pedido",
+                  "WhatsApp avisa o cliente em cada etapa, sozinho",
+                  "Relatório do dia numa tela: vendas, lucro e top produtos",
+                  "Motoboy com mapa + código de confirmação",
+                ].map((t) => (
+                  <li key={t} className="flex items-start gap-3">
+                    <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center shrink-0 mt-0.5">
+                      <Check className="h-3 w-3 text-primary-foreground" />
+                    </div>
+                    <span className="text-base font-bold text-foreground">{t}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+
+          <div className="mt-10 text-center">
+            <Button
+              size="lg"
+              onClick={handleCTA}
+              className="text-base md:text-lg px-8 py-4 min-h-[56px] rounded-2xl shadow-2xl shadow-primary/25 hover:shadow-primary/40 transition-all hover:-translate-y-0.5 active:scale-[0.98] font-black"
+            >
+              <Store className="mr-2 h-5 w-5" />
+              Quero o lado direito
+              <ArrowRight className="ml-2 h-5 w-5" />
+            </Button>
+            <p className="mt-3 text-xs text-muted-foreground font-semibold">Grátis pra começar · Sem cartão · Cancele quando quiser</p>
           </div>
         </div>
       </section>
