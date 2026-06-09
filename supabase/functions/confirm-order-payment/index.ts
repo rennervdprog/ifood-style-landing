@@ -200,15 +200,20 @@ async function confirmAndSplit(supabase: any, orderId: string, paymentId: string
               }).eq("id", orderId);
             } else {
               console.error(`[confirm-order-payment] split failed:`, JSON.stringify(tData));
+              // Keep the lock to prevent duplicate splits on retry.
+              // The transfer may have partially succeeded server-side; a human
+              // must review before another attempt. Record the failure but do
+              // NOT clear store_payout_id.
               await supabase.from("orders").update({
-                store_payout_id: null,
                 store_payout_error: JSON.stringify(tData).substring(0, 500),
               }).eq("id", orderId);
             }
           } catch (e) {
             console.error("[confirm-order-payment] split exception:", e);
+            // Network/exception: the Asaas request may have reached the server.
+            // Keep the lock to avoid duplicate transfers; log the error for
+            // manual reconciliation.
             await supabase.from("orders").update({
-              store_payout_id: null,
               store_payout_error: String(e).substring(0, 500),
             }).eq("id", orderId);
           }
