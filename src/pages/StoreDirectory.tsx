@@ -888,7 +888,7 @@ const StoreDirectory = () => {
                Sistema de Motoboy <span className="text-primary italic">Integrado</span> 🛵
              </h2>
              <div className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold mb-4">
-               Disponível nos planos Crescimento, Apoiadores e Essencial
+                Disponível nos planos Crescimento, Essencial e Apoiador
              </div>
              <p className="text-muted-foreground max-w-2xl mx-auto text-base font-medium">
                Sua logística sob controle absoluto. Da cozinha à porta do cliente, tudo conectado em tempo real para uma operação sem falhas.
