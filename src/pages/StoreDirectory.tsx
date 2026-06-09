@@ -1172,7 +1172,7 @@ const StoreDirectory = () => {
                 <span className="text-primary">num só sistema.</span>
               </h2>
               <p className="text-xl text-muted-foreground mb-8 font-medium">
-                Registre vendas presenciais com caixa digital completo. Sem mensalidade extra, incluso em todos os planos.
+                Registre vendas presenciais com caixa digital completo. Sem mensalidade extra, incluso nos planos pagos.
               </p>
               <div className="space-y-3">
                 {[
