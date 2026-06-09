@@ -114,8 +114,8 @@ const plans = [
   {
     id: "hybrid",
     name: "Crescimento",
-    tagline: "Comece por R$50 — cresce com você",
-    price: "50",
+    tagline: "Mensalidade fixa + comissão reduzida",
+    price: "100",
     period: "/mês",
     icon: TrendingUp,
     highlight: false,
@@ -130,7 +130,6 @@ const plans = [
     features: [
       "Tudo do plano Comissão",
       "Comissão reduzida para 2,5%",
-      "R$50/mês → R$100 após 2 meses faturando acima de R$5.000",
       "PDV — Caixa presencial (1% comissão)",
       "Banners ilimitados na loja",
       "Agendamento de pedidos",
@@ -147,7 +146,7 @@ const plans = [
     id: "fixed",
     name: "Essencial",
     tagline: "O mais usado pelos lojistas",
-    price: "90",
+    price: "180",
     period: "/mês",
     icon: Crown,
     highlight: true,
@@ -162,7 +161,6 @@ const plans = [
     features: [
       "Todas as ferramentas inclusas",
       "Zero comissão por venda (0%)",
-      "R$90/mês → R$180 após 2 meses faturando acima de R$5.000",
       "PDV — Caixa presencial (0% comissão)",
       "Gestão completa de motoboys",
       "Relatórios financeiros avançados",
@@ -177,9 +175,9 @@ const plans = [
   },
   {
     id: "supporter",
-    name: "Apoiador",
+    name: "Apoiadores",
     tagline: "Preço travado pra sempre · Só 10 vagas",
-    price: "75",
+    price: "130",
     period: "/mês",
     icon: Sparkles,
     highlight: false,
@@ -190,13 +188,13 @@ const plans = [
     lightBg: "bg-accent",
     textColor: "text-primary",
     borderColor: "border-primary/30",
-     description: "Os mesmos benefícios do plano Essencial, com preço menor travado pra sempre. Só para os 10 primeiros.",
+     description: "Mesmos benefícios do Essencial com preço vitalício menor. Apenas 10 vagas no lançamento.",
     features: [
       "Tudo do plano Essencial",
       "Zero comissão por venda (0%)",
       "PDV — Caixa presencial (0% comissão)",
-      "Valor mensal de R$75 fixo vitalício",
-      "Selo exclusivo de Apoiador na sua loja",
+      "Valor mensal de R$130 fixo vitalício",
+      "Selo exclusivo de Apoiadores na sua loja",
       "Acesso antecipado a novidades",
       "Apenas 10 vagas disponíveis",
     ],
@@ -888,7 +886,7 @@ const StoreDirectory = () => {
                Sistema de Motoboy <span className="text-primary italic">Integrado</span> 🛵
              </h2>
              <div className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold mb-4">
-                Disponível nos planos Crescimento, Essencial e Apoiador
+                Disponível nos planos Crescimento, Essencial e Apoiadores
              </div>
              <p className="text-muted-foreground max-w-2xl mx-auto text-base font-medium">
                Sua logística sob controle absoluto. Da cozinha à porta do cliente, tudo conectado em tempo real para uma operação sem falhas.
@@ -1240,8 +1238,8 @@ const StoreDirectory = () => {
             Escolha o plano ideal para sua loja
           </h2>
           <p className="text-center text-muted-foreground mb-4 max-w-2xl mx-auto text-base font-medium">
-            Comissão de <span className="font-bold text-primary">6%</span> no plano grátis, <span className="font-bold text-primary">2,5%</span> no Crescimento ou <span className="font-bold text-primary">zero</span> no Essencial e Apoiador.
-            Todos incluem cardápio completo, PIX online e notificações. Taxa PIX R$ 1,99/transação apenas nos planos Essencial e Apoiador.
+            Comissão de <span className="font-bold text-primary">6%</span> no plano grátis, <span className="font-bold text-primary">2,5%</span> no Crescimento ou <span className="font-bold text-primary">zero</span> no Essencial e Apoiadores.
+            Todos incluem cardápio completo, PIX online e notificações. Taxa PIX R$ 1,99/transação apenas nos planos Essencial e Apoiadores.
           </p>
           <div className="flex justify-center mb-14">
             <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-4 py-2 text-xs font-bold text-emerald-600 border border-emerald-200">
