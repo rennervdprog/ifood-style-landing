@@ -545,7 +545,7 @@ const StoreDirectory = () => {
             <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-[5.5rem] font-black tracking-tight text-foreground leading-[0.95] mb-6 animate-in fade-in slide-in-from-bottom-6 duration-1000">
               Venda mais.{" "}
               <span className="text-primary relative inline-block">
-                Sem pagar comissão
+                Pague menos comissão
                 <span className="absolute -bottom-2 left-0 w-full h-3 bg-primary/20 -z-10 rounded-full" />
               </span>
               {" "}por cada pedido.
@@ -594,16 +594,16 @@ const StoreDirectory = () => {
             <div className="mt-8 grid grid-cols-3 gap-3 max-w-xl mx-auto lg:mx-0">
               {[
                 {
-                  v: liveStats ? `+${liveStats.stores}` : "0%",
-                  l: liveStats ? "Lojas ativas" : "Comissão*",
+                  v: liveStats ? `+${liveStats.stores}` : "10min",
+                  l: liveStats ? "Lojas ativas" : "Pra começar",
                   c: "text-primary",
                 },
                 {
-                  v: liveStats && liveStats.cities > 0 ? `${liveStats.cities}` : "10min",
-                  l: liveStats && liveStats.cities > 0 ? "Cidades atendidas" : "Pra começar",
+                  v: liveStats && liveStats.cities > 0 ? `${liveStats.cities}` : "R$0",
+                  l: liveStats && liveStats.cities > 0 ? "Cidades atendidas" : "Mensalidade pra começar",
                   c: "text-foreground",
                 },
-                { v: "0%", l: "Comissão*", c: "text-primary" },
+                { v: "0%", l: "Comissão nos planos pagos", c: "text-primary" },
               ].map((s) => (
                 <div key={s.l} className="rounded-2xl border border-border/60 bg-card/60 backdrop-blur px-3 py-3 text-center">
                   <p className={`text-xl md:text-2xl font-black tracking-tight ${s.c}`}>{s.v}</p>
