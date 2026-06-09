@@ -717,6 +717,80 @@ const StoreDirectory = () => {
         </div>
       </section>
 
+      {/* ══════ ANTES vs DEPOIS — gatilho de contraste de status ══════ */}
+      <section className="py-20 px-4 bg-background border-b border-border">
+        <div className="mx-auto max-w-5xl">
+          <div className="text-center mb-12">
+            <p className="text-[11px] font-black uppercase tracking-[0.25em] text-primary mb-3">A diferença é gritante</p>
+            <h2 className="text-3xl md:text-5xl font-black text-foreground leading-[1.05]">
+              Sua rotina <span className="text-foreground/40">antes</span> e <span className="text-primary">depois</span> da ItaSuper
+            </h2>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-5">
+            {/* ANTES */}
+            <div className="rounded-3xl border border-border bg-muted/30 p-7">
+              <div className="inline-flex items-center gap-2 rounded-full bg-foreground/5 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-muted-foreground mb-6">
+                <X className="h-3 w-3" /> Antes
+              </div>
+              <ul className="space-y-4">
+                {[
+                  "Anota pedido no papel e perde o endereço",
+                  "Confere PIX um por um no extrato do banco",
+                  "Perde venda porque não viu a mensagem",
+                  "Cliente liga toda hora: 'já saiu?'",
+                  "Não sabe quanto vendeu no fim do dia",
+                  "Motoboy entrega no lugar errado",
+                ].map((t) => (
+                  <li key={t} className="flex items-start gap-3 text-foreground/60">
+                    <X className="h-5 w-5 text-foreground/40 shrink-0 mt-0.5" />
+                    <span className="text-base line-through decoration-foreground/20 font-medium">{t}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* DEPOIS */}
+            <div className="rounded-3xl border-2 border-primary/30 bg-card p-7 shadow-xl shadow-primary/5 relative overflow-hidden">
+              <div className="absolute -top-12 -right-12 w-40 h-40 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
+              <div className="relative inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-primary mb-6">
+                <CheckCircle2 className="h-3 w-3" /> Depois
+              </div>
+              <ul className="relative space-y-4">
+                {[
+                  "Pedido chega pronto, com endereço completo",
+                  "PIX cai na hora — você só confirma e prepara",
+                  "Celular toca alto a cada novo pedido",
+                  "WhatsApp avisa o cliente em cada etapa, sozinho",
+                  "Relatório do dia numa tela: vendas, lucro e top produtos",
+                  "Motoboy com mapa + código de confirmação",
+                ].map((t) => (
+                  <li key={t} className="flex items-start gap-3">
+                    <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center shrink-0 mt-0.5">
+                      <Check className="h-3 w-3 text-primary-foreground" />
+                    </div>
+                    <span className="text-base font-bold text-foreground">{t}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+
+          <div className="mt-10 text-center">
+            <Button
+              size="lg"
+              onClick={handleCTA}
+              className="text-base md:text-lg px-8 py-4 min-h-[56px] rounded-2xl shadow-2xl shadow-primary/25 hover:shadow-primary/40 transition-all hover:-translate-y-0.5 active:scale-[0.98] font-black"
+            >
+              <Store className="mr-2 h-5 w-5" />
+              Quero o lado direito
+              <ArrowRight className="ml-2 h-5 w-5" />
+            </Button>
+            <p className="mt-3 text-xs text-muted-foreground font-semibold">Grátis pra começar · Sem cartão · Cancele quando quiser</p>
+          </div>
+        </div>
+      </section>
+
        {/* ══════ PAIN POINTS ══════ */}
        <section id="vantagens" className="py-24 px-4 bg-muted/30">
          <div className="mx-auto max-w-6xl">
