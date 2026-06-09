@@ -88,7 +88,7 @@ Deno.serve(async (req) => {
     // Verify the order belongs to this user and is awaiting payment
     const { data: order, error: orderError } = await supabase
       .from("orders")
-      .select("id, client_id, total_price, status, store_id, subtotal, delivery_fee, payment_method")
+      .select("id, client_id, total_price, status, store_id, subtotal, delivery_fee, payment_method, asaas_payment_id")
       .eq("id", order_id)
       .eq("client_id", userId)
       .single();
@@ -110,6 +110,55 @@ Deno.serve(async (req) => {
     const baseUrl = isSandbox
       ? "https://sandbox.asaas.com/api/v3"
       : "https://api.asaas.com/v3";
+
+    // Idempotency: if a PIX payment already exists for this order, reuse it
+    // instead of creating a new charge in Asaas. Avoids duplicate cobranças
+    // and duplicate splits when the client retries (network, refresh, etc).
+    if (order.asaas_payment_id) {
+      try {
+        const existingRes = await fetch(
+          `${baseUrl}/payments/${order.asaas_payment_id}`,
+          { headers: { "access_token": ASAAS_API_KEY } },
+        );
+        if (existingRes.ok) {
+          const existing = await existingRes.json();
+          const reusableStatuses = ["PENDING", "AWAITING_RISK_ANALYSIS"];
+          if (reusableStatuses.includes(existing.status)) {
+            const qrRes = await fetch(
+              `${baseUrl}/payments/${existing.id}/pixQrCode`,
+              { headers: { "access_token": ASAAS_API_KEY } },
+            );
+            const qrInfo = qrRes.ok ? await qrRes.json() : null;
+            let expiresAtExisting: string;
+            try {
+              const due = existing?.dueDate
+                ? new Date(`${existing.dueDate}T23:59:59`)
+                : null;
+              expiresAtExisting = due && !isNaN(due.getTime())
+                ? due.toISOString()
+                : new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+            } catch {
+              expiresAtExisting = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+            }
+            console.log(`[Idempotency] Reusing existing PIX ${existing.id} for order ${order_id}`);
+            return json({
+              payment_id: existing.id,
+              status: existing.status || "PENDING",
+              qr_code: qrInfo?.payload || null,
+              qr_code_base64: qrInfo?.encodedImage
+                ? `data:image/png;base64,${qrInfo.encodedImage}`
+                : null,
+              ticket_url: null,
+              expires_at: expiresAtExisting,
+              provider: "asaas",
+              reused: true,
+            });
+          }
+        }
+      } catch (e) {
+        console.warn("Could not check existing PIX, creating new one:", e);
+      }
+    }
 
     let cleanCpf = String(payer_cpf).replace(/\D/g, "");
     if (isSandbox && !isValidCpf(cleanCpf)) {
