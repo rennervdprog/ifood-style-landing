@@ -28,7 +28,7 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(
       (Deno.env.get("EXTERNAL_SUPABASE_URL") || Deno.env.get("SUPABASE_URL"))!,
-      (Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_ANON_KEY"))!,
+      (Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY"))!,
       { global: { headers: { Authorization: authHeader } } }
     );
 
@@ -55,7 +55,7 @@ Deno.serve(async (req) => {
     // SECURITY: Verify the user is actually a driver before allowing withdrawal
     const serviceClientAuth = createClient(
       (Deno.env.get("EXTERNAL_SUPABASE_URL") || Deno.env.get("SUPABASE_URL"))!,
-      (Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"))!
+      (Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY"))!
     );
     const { data: isDriver } = await serviceClientAuth.rpc("is_driver", { _user_id: userId });
     if (!isDriver) {
@@ -96,7 +96,7 @@ Deno.serve(async (req) => {
     // Get withdrawal limit settings from admin_settings via service client
     const serviceClient = createClient(
       (Deno.env.get("EXTERNAL_SUPABASE_URL") || Deno.env.get("SUPABASE_URL"))!,
-      (Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"))!
+      (Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY"))!
     );
 
     const { data: limitSettings } = await serviceClient

@@ -61,6 +61,38 @@ Deno.serve(async (req) => {
       );
     }
 
+    // SECURITY: only platform admins (on the EXTERNAL project) can run a full
+    // cross-project data migration. Without this gate, any signed-in user could
+    // overwrite production data.
+    const authHeader = req.headers.get("Authorization");
+    const cronSecret = Deno.env.get("CRON_SECRET") || "";
+    const token = authHeader?.replace("Bearer ", "") || "";
+    const isServiceCall = !!token && (token === extKey || (cronSecret && token === cronSecret));
+    if (!isServiceCall) {
+      if (!token) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const authClient = createClient(extUrl, extKey, {
+        global: { headers: { Authorization: `Bearer ${token}` } },
+        auth: { persistSession: false },
+      });
+      const { data: u } = await authClient.auth.getUser(token);
+      if (!u?.user) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const adminClient = createClient(extUrl, extKey, { auth: { persistSession: false } });
+      const { data: isAdmin } = await adminClient.rpc("is_platform_admin", { _user_id: u.user.id });
+      if (!isAdmin) {
+        return new Response(JSON.stringify({ error: "Forbidden: platform admin only" }), {
+          status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
+
     const cloud = createClient(cloudUrl, cloudKey, { auth: { persistSession: false } });
     const ext = createClient(extUrl, extKey, { auth: { persistSession: false } });
 
