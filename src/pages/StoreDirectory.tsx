@@ -146,7 +146,7 @@ const plans = [
     id: "fixed",
     name: "Essencial",
     tagline: "O mais usado pelos lojistas",
-    price: "90",
+    price: "180",
     period: "/mês",
     icon: Crown,
     highlight: true,
@@ -161,7 +161,6 @@ const plans = [
     features: [
       "Todas as ferramentas inclusas",
       "Zero comissão por venda (0%)",
-      "R$90/mês → R$180 após 2 meses faturando acima de R$5.000",
       "PDV — Caixa presencial (0% comissão)",
       "Gestão completa de motoboys",
       "Relatórios financeiros avançados",
