@@ -32,7 +32,8 @@ BEGIN
         'debit_store_commission'
       )
   LOOP
-    EXECUTE format('REVOKE EXECUTE ON FUNCTION %I.%I(%s) FROM authenticated, anon', r.schema, r.name, r.args);
+    EXECUTE format('REVOKE EXECUTE ON FUNCTION %I.%I(%s) FROM PUBLIC, anon, authenticated', r.schema, r.name, r.args);
+    EXECUTE format('GRANT EXECUTE ON FUNCTION %I.%I(%s) TO service_role', r.schema, r.name, r.args);
   END LOOP;
 END $$;
 SELECT n.nspname, p.proname, pg_get_function_identity_arguments(p.oid) AS args,
