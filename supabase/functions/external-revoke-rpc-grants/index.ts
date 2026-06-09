@@ -16,10 +16,32 @@ const EXT_KEY = Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY")
 const CRON = Deno.env.get("CRON_SECRET") || Deno.env.get("EXTERNAL_CRON_SECRET") || "";
 
 const SQL = `
-REVOKE EXECUTE ON FUNCTION public.reconcile_debit_store_balance(uuid, numeric, text) FROM authenticated;
-REVOKE EXECUTE ON FUNCTION public.credit_store_commission(uuid, numeric, text) FROM authenticated;
-REVOKE EXECUTE ON FUNCTION public.debit_store_repasse(uuid, numeric) FROM authenticated;
-REVOKE EXECUTE ON FUNCTION public.debit_store_commission(uuid, numeric) FROM authenticated;
+DO $$
+DECLARE r record;
+BEGIN
+  FOR r IN
+    SELECT n.nspname AS schema, p.proname AS name,
+           pg_get_function_identity_arguments(p.oid) AS args
+    FROM pg_proc p
+    JOIN pg_namespace n ON n.oid = p.pronamespace
+    WHERE n.nspname = 'public'
+      AND p.proname IN (
+        'reconcile_debit_store_balance',
+        'credit_store_commission',
+        'debit_store_repasse',
+        'debit_store_commission'
+      )
+  LOOP
+    EXECUTE format('REVOKE EXECUTE ON FUNCTION %I.%I(%s) FROM authenticated, anon', r.schema, r.name, r.args);
+  END LOOP;
+END $$;
+SELECT n.nspname, p.proname, pg_get_function_identity_arguments(p.oid) AS args,
+       pg_catalog.array_to_string(p.proacl, ',') AS acl
+FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+WHERE n.nspname='public' AND p.proname IN (
+  'reconcile_debit_store_balance','credit_store_commission',
+  'debit_store_repasse','debit_store_commission'
+);
 `;
 
 Deno.serve(async (req) => {
