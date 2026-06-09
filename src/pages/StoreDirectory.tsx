@@ -420,6 +420,7 @@ const StoreDirectory = () => {
   const [roleChecked, setRoleChecked] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [supporterTaken, setSupporterTaken] = useState<number | null>(null);
+  const [liveStats, setLiveStats] = useState<{ stores: number; cities: number } | null>(null);
 
   // No fake stats — we use honest value props instead
 
@@ -453,6 +454,28 @@ const StoreDirectory = () => {
         const { data, error } = await supabase.rpc("count_supporter_plans");
         if (cancelled || error) return;
         setSupporterTaken(typeof data === "number" ? data : 0);
+      } catch {
+        /* silent */
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  // Live social proof: real number of active stores + cities
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data } = await supabase
+          .from("stores")
+          .select("address_city")
+          .eq("status", "ativo")
+          .eq("is_test", false);
+        if (cancelled || !data) return;
+        const cities = new Set(
+          data.map((s: any) => (s.address_city || "").trim().toLowerCase()).filter(Boolean),
+        );
+        setLiveStats({ stores: data.length, cities: cities.size });
       } catch {
         /* silent */
       }
