@@ -545,7 +545,7 @@ const StoreDirectory = () => {
             <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-[5.5rem] font-black tracking-tight text-foreground leading-[0.95] mb-6 animate-in fade-in slide-in-from-bottom-6 duration-1000">
               Venda mais.{" "}
               <span className="text-primary relative inline-block">
-                Sem pagar comissão
+                Pague menos comissão
                 <span className="absolute -bottom-2 left-0 w-full h-3 bg-primary/20 -z-10 rounded-full" />
               </span>
               {" "}por cada pedido.
@@ -594,16 +594,16 @@ const StoreDirectory = () => {
             <div className="mt-8 grid grid-cols-3 gap-3 max-w-xl mx-auto lg:mx-0">
               {[
                 {
-                  v: liveStats ? `+${liveStats.stores}` : "0%",
-                  l: liveStats ? "Lojas ativas" : "Comissão*",
+                  v: liveStats ? `+${liveStats.stores}` : "10min",
+                  l: liveStats ? "Lojas ativas" : "Pra começar",
                   c: "text-primary",
                 },
                 {
-                  v: liveStats && liveStats.cities > 0 ? `${liveStats.cities}` : "10min",
-                  l: liveStats && liveStats.cities > 0 ? "Cidades atendidas" : "Pra começar",
+                  v: liveStats && liveStats.cities > 0 ? `${liveStats.cities}` : "R$0",
+                  l: liveStats && liveStats.cities > 0 ? "Cidades atendidas" : "Mensalidade pra começar",
                   c: "text-foreground",
                 },
-                { v: "0%", l: "Comissão*", c: "text-primary" },
+                { v: "0%", l: "Comissão nos planos pagos", c: "text-primary" },
               ].map((s) => (
                 <div key={s.l} className="rounded-2xl border border-border/60 bg-card/60 backdrop-blur px-3 py-3 text-center">
                   <p className={`text-xl md:text-2xl font-black tracking-tight ${s.c}`}>{s.v}</p>
@@ -783,7 +783,7 @@ const StoreDirectory = () => {
               className="text-base md:text-lg px-8 py-4 min-h-[56px] rounded-2xl shadow-2xl shadow-primary/25 hover:shadow-primary/40 transition-all hover:-translate-y-0.5 active:scale-[0.98] font-black"
             >
               <Store className="mr-2 h-5 w-5" />
-              Quero o lado direito
+              Quero a ItaSuper na minha loja
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
             <p className="mt-3 text-xs text-muted-foreground font-semibold">Grátis pra começar · Sem cartão · Cancele quando quiser</p>
@@ -888,7 +888,7 @@ const StoreDirectory = () => {
                Sistema de Motoboy <span className="text-primary italic">Integrado</span> 🛵
              </h2>
              <div className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold mb-4">
-               Disponível nos planos Crescimento, Apoiadores e Essencial
+                Disponível nos planos Crescimento, Essencial e Apoiador
              </div>
              <p className="text-muted-foreground max-w-2xl mx-auto text-base font-medium">
                Sua logística sob controle absoluto. Da cozinha à porta do cliente, tudo conectado em tempo real para uma operação sem falhas.
@@ -1172,7 +1172,7 @@ const StoreDirectory = () => {
                 <span className="text-primary">num só sistema.</span>
               </h2>
               <p className="text-xl text-muted-foreground mb-8 font-medium">
-                Registre vendas presenciais com caixa digital completo. Sem mensalidade extra, incluso em todos os planos.
+                Registre vendas presenciais com caixa digital completo. Sem mensalidade extra, incluso nos planos pagos.
               </p>
               <div className="space-y-3">
                 {[
@@ -1240,13 +1240,13 @@ const StoreDirectory = () => {
             Escolha o plano ideal para sua loja
           </h2>
           <p className="text-center text-muted-foreground mb-4 max-w-2xl mx-auto text-base font-medium">
-             Comissão a partir de <span className="font-bold text-primary">6%</span> — ou <span className="font-bold text-primary">zero</span> nos planos Apoiador e Essencial.
+            Comissão de <span className="font-bold text-primary">6%</span> no plano grátis, <span className="font-bold text-primary">2,5%</span> no Crescimento ou <span className="font-bold text-primary">zero</span> no Essencial e Apoiador.
             Todos incluem cardápio completo, PIX online e notificações. Taxa PIX R$ 1,99/transação apenas nos planos Essencial e Apoiador.
           </p>
           <div className="flex justify-center mb-14">
             <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-4 py-2 text-xs font-bold text-emerald-600 border border-emerald-200">
               <Sparkles className="h-3.5 w-3.5" />
-              🎁 Plano Comissão grátis para sempre! Planos pagos com 7 dias grátis. Módulo PDV incluso em todos.
+              🎁 Plano Comissão grátis para sempre! Planos pagos com 7 dias grátis. Módulo PDV incluso nos planos pagos.
             </div>
           </div>
 
@@ -1464,7 +1464,7 @@ const StoreDirectory = () => {
           </h2>
           <p className="text-muted-foreground mb-8 leading-relaxed text-base font-medium">
             Cardápio digital, PIX automático, gestão de motoboys e caixa PDV presencial.
-            Tudo pronto em menos de 5 minutos.
+            Tudo pronto em menos de 10 minutos.
             <span className="block mt-1 font-semibold text-primary">Comece grátis — sem cartão de crédito.</span>
           </p>
            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
