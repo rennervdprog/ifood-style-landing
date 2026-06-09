@@ -94,6 +94,26 @@ Deno.serve(async (req) => {
       return json({ message: `Hoje é dia ${today}. Repasses são nos dias 5 e 20.` });
     }
 
+    // Janela do período (mesma fórmula usada abaixo) — usada para guard de idempotência.
+    const periodEndPre = brasiliaDate.toISOString().split("T")[0];
+    const periodStartPre = today === 20
+      ? `${brasiliaDate.getUTCFullYear()}-${String(brasiliaDate.getUTCMonth() + 1).padStart(2, "0")}-05`
+      : brasiliaDate.getUTCMonth() === 0
+        ? `${brasiliaDate.getUTCFullYear() - 1}-12-20`
+        : `${brasiliaDate.getUTCFullYear()}-${String(brasiliaDate.getUTCMonth()).padStart(2, "0")}-20`;
+
+    // Guard global: se já existe QUALQUER partner_payout para este período, aborta —
+    // evita pagar sócios 2x se o cron disparar duas vezes no mesmo dia.
+    const { data: existingPayouts } = await supabase
+      .from("partner_payouts")
+      .select("id")
+      .eq("period_start", periodStartPre)
+      .eq("period_end", periodEndPre)
+      .limit(1);
+    if (!forceRun && existingPayouts && existingPayouts.length > 0) {
+      return json({ message: "Repasse de sócios já executado para este período.", period_start: periodStartPre, period_end: periodEndPre });
+    }
+
     // Get partners
     const { data: partners, error: pErr } = await supabase
       .from("platform_partners")

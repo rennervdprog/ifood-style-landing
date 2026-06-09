@@ -247,10 +247,17 @@ Deno.serve(async (req) => {
         });
 
         if (transfer.ok) {
-          await supabase
-            .from("store_balances")
-            .update({ repasse_pendente: 0, updated_at: new Date().toISOString() })
-            .eq("store_id", sb.store_id);
+          // Débito atômico — evita zerar saldo novo acumulado entre leitura e update,
+          // e evita race com admin-payout-store.
+          const { error: debitErr } = await supabase.rpc("debit_store_repasse", {
+            _store_id: sb.store_id,
+            _amount: amount,
+          });
+          if (debitErr) {
+            console.error("[auto-payout-cron] debit_store_repasse failed:", debitErr);
+            results.push({ type: "store", id: sb.store_id, status: "paid_balance_warning", amount, warning: debitErr.message });
+            continue;
+          }
 
           await supabase.from("payout_history").insert({
             admin_user_id: "00000000-0000-0000-0000-000000000000",

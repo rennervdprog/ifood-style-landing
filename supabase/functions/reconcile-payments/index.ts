@@ -87,9 +87,18 @@ Deno.serve(async (req) => {
       if (!isPaid) continue;
 
       const nowIso = new Date().toISOString();
-      await supabase.from("financial_transactions")
+      // Guard atômico: só processa se transação ainda está pending.
+      // Evita race com asaas-webhook (dedução dupla de saldo).
+      const { data: updRows } = await supabase
+        .from("financial_transactions")
         .update({ status: "paid", settled_at: nowIso })
-        .eq("id", tx.id);
+        .eq("id", tx.id)
+        .eq("status", "pending")
+        .select("id");
+      if (!updRows || updRows.length === 0) {
+        console.log(`[reconcile-payments] tx ${tx.id} já processado por outro worker — skip`);
+        continue;
+      }
 
       const ref = String(tx.reference_code || "");
       const isMonthly = ref.startsWith("#MENS-") || ref.startsWith("#ASSIN-");
