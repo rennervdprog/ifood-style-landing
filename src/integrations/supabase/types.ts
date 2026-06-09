@@ -3581,6 +3581,10 @@ export type Database = {
       }
       confirm_order_payment: { Args: { _order_id: string }; Returns: undefined }
       count_supporter_plans: { Args: never; Returns: number }
+      credit_store_commission: {
+        Args: { _amount: number; _store_id: string }
+        Returns: undefined
+      }
       driver_accept_order: { Args: { _order_id: string }; Returns: undefined }
       driver_confirm_earning_received: {
         Args: { _earning_id: string }
@@ -3679,6 +3683,10 @@ export type Database = {
           _approved_amount: number
           _refund_id: string
         }
+        Returns: undefined
+      }
+      reconcile_debit_store_balance: {
+        Args: { _amount: number; _plan_type: string; _store_id: string }
         Returns: undefined
       }
       record_page_view: {
