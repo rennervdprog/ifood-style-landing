@@ -783,7 +783,7 @@ const StoreDirectory = () => {
               className="text-base md:text-lg px-8 py-4 min-h-[56px] rounded-2xl shadow-2xl shadow-primary/25 hover:shadow-primary/40 transition-all hover:-translate-y-0.5 active:scale-[0.98] font-black"
             >
               <Store className="mr-2 h-5 w-5" />
-              Quero o lado direito
+              Quero a ItaSuper na minha loja
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
             <p className="mt-3 text-xs text-muted-foreground font-semibold">Grátis pra começar · Sem cartão · Cancele quando quiser</p>
