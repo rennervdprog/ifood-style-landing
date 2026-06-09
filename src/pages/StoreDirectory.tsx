@@ -1246,7 +1246,7 @@ const StoreDirectory = () => {
           <div className="flex justify-center mb-14">
             <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-4 py-2 text-xs font-bold text-emerald-600 border border-emerald-200">
               <Sparkles className="h-3.5 w-3.5" />
-              🎁 Plano Comissão grátis para sempre! Planos pagos com 7 dias grátis. Módulo PDV incluso em todos.
+              🎁 Plano Comissão grátis para sempre! Planos pagos com 7 dias grátis. Módulo PDV incluso nos planos pagos.
             </div>
           </div>
 
