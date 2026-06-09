@@ -1464,7 +1464,7 @@ const StoreDirectory = () => {
           </h2>
           <p className="text-muted-foreground mb-8 leading-relaxed text-base font-medium">
             Cardápio digital, PIX automático, gestão de motoboys e caixa PDV presencial.
-            Tudo pronto em menos de 5 minutos.
+            Tudo pronto em menos de 10 minutos.
             <span className="block mt-1 font-semibold text-primary">Comece grátis — sem cartão de crédito.</span>
           </p>
            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
