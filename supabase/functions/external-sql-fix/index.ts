@@ -56,8 +56,26 @@ Deno.serve(async () => {
     },
   );
   const text = await r.text();
+
+  // B2: dispara monthly-billing no projeto EXTERNO usando a service key.
+  const EXT_URL = Deno.env.get("EXTERNAL_SUPABASE_URL")!;
+  const EXT_KEY = Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY")!;
+  const billingRes = await fetch(`${EXT_URL}/functions/v1/monthly-billing`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${EXT_KEY}`,
+      apikey: EXT_KEY,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ force: true }),
+  });
+  const billingText = await billingRes.text();
+
   return new Response(
-    JSON.stringify({ status: r.status, body: text }, null, 2),
+    JSON.stringify({
+      sql: { status: r.status, body: text },
+      billing: { status: billingRes.status, body: billingText },
+    }, null, 2),
     { headers: { "Content-Type": "application/json" } },
   );
 });
