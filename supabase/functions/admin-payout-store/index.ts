@@ -31,23 +31,20 @@ Deno.serve(async (req) => {
       return json({ error: "Unauthorized" }, 401);
     }
 
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_ANON_KEY")!,
-      { global: { headers: { Authorization: authHeader } } }
-    );
+    // Banco de produção é o Supabase EXTERNO.
+    const EXTERNAL_URL = Deno.env.get("EXTERNAL_SUPABASE_URL")!;
+    const EXTERNAL_SERVICE_KEY = Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY")!;
+
+    const serviceClient = createClient(EXTERNAL_URL, EXTERNAL_SERVICE_KEY);
+    const supabase = serviceClient; // queries de leitura usadas abaixo
 
     const token = authHeader.replace("Bearer ", "");
-    const { data: userData, error: userError } = await supabase.auth.getUser(token);
+    const { data: userData, error: userError } = await serviceClient.auth.getUser(token);
     if (userError || !userData?.user) {
       return json({ error: "Unauthorized" }, 401);
     }
 
     // Only admin can do payouts
-    const serviceClient = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
     const { data: adminRole } = await serviceClient
       .from("user_roles")
       .select("role")
