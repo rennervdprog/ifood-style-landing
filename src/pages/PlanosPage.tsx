@@ -112,25 +112,7 @@ const faqs = [
  export default function PlanosPage() {
    const navigate = useNavigate();
    const [openFaq, setOpenFaq] = useState<number | null>(null);
-   const [supporterCount, setSupporterCount] = useState<number | null>(null);
-   const [supporterLoading, setSupporterLoading] = useState(true);
- 
-   useEffect(() => {
-     const fetchSupporterCount = async () => {
-       try {
-         const { data, error } = await supabase.rpc("count_supporter_plans");
-         if (!error && typeof data === "number") {
-           setSupporterCount(data);
-         }
-       } catch (err) {
-         console.error("Error fetching supporter count:", err);
-       } finally {
-         setSupporterLoading(false);
-       }
-     };
- 
-     fetchSupporterCount();
-   }, []);
+   const { count: supporterCount, loading: supporterLoading } = useSupporterCount();
 
   const statsRef = useInView(0.3);
   const storesCount = useCountUp(50, 2000, statsRef.visible);
@@ -296,13 +278,14 @@ const faqs = [
              {plans.map((plan) => {
                const Icon = plan.icon;
                const isSupporter = plan.id === "supporter";
-               const remaining = isSupporter && supporterCount !== null ? Math.max(0, 10 - supporterCount) : null;
+               const taken = isSupporter ? supporterCount ?? 0 : 0;
+               const remaining = isSupporter ? Math.max(0, 10 - taken) : null;
                const isSoldOut = isSupporter && remaining === 0;
-               
-               const planBadge = isSupporter 
-                 ? (supporterLoading 
-                     ? "🚀 Carregando vagas..." 
-                     : (isSoldOut ? "❌ Vagas esgotadas" : `🚀 Restam ${remaining} vagas`))
+
+               const planBadge = isSupporter
+                 ? (supporterLoading
+                     ? "🚀 Carregando vagas..."
+                     : (isSoldOut ? "❌ Vagas esgotadas" : `🚀 ${taken}/10 vagas preenchidas`))
                  : plan.badge;
  
                return (
