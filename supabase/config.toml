@@ -38,5 +38,3 @@ verify_jwt = false
 [functions.count-supporters]
 verify_jwt = false
 
-[functions.external-auto-approve-stores]
-verify_jwt = false
