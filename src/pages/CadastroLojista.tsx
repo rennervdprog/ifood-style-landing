@@ -350,7 +350,7 @@ const CadastroLojista = () => {
         }
       }
 
-       toast.success("Cadastro realizado com sucesso! Sua conta está em análise aguarde.");
+      toast.success("Cadastro realizado! Sua loja já está ativa. 🎉");
        navigate(accountType === "matriz" ? "/matriz" : "/admin", { replace: true });
     } catch (err: any) {
       toast.error(err.message || "Erro ao cadastrar.");
