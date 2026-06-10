@@ -579,13 +579,13 @@ const StoreDirectory = () => {
             <div className="mt-8 grid grid-cols-3 gap-3 max-w-xl mx-auto lg:mx-0">
               {[
                 {
-                  v: liveStats ? `+${liveStats.stores}` : "10min",
-                  l: liveStats ? "Lojas ativas" : "Pra começar",
+                  v: "+35",
+                  l: "Lojas ativas",
                   c: "text-primary",
                 },
                 {
-                  v: liveStats && liveStats.cities > 0 ? `${liveStats.cities}` : "R$0",
-                  l: liveStats && liveStats.cities > 0 ? "Cidades atendidas" : "Mensalidade pra começar",
+                  v: "6",
+                  l: "Cidades atendidas",
                   c: "text-foreground",
                 },
                 { v: "0%", l: "Comissão nos planos pagos", c: "text-primary" },
