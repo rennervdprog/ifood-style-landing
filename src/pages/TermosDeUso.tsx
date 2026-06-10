@@ -92,6 +92,7 @@ const TermosDeUso = () => {
           <p>5.3. <strong className="text-foreground">Comissão PDV:</strong> Incide sobre o subtotal das vendas presenciais. Acumulada ao longo do mês e incluída na fatura mensal junto à mensalidade.</p>
           <p>5.4. Planos Essencial e Crescimento incluem 7 dias de teste grátis. O plano Comissão pode ser utilizado imediatamente.</p>
           <p>5.5. Alterações gerais de valor serão comunicadas com 30 dias de antecedência, facultado ao Lojista rescindir sem multa antes da vigência. Inadimplência superior a 30 dias pode resultar em desativação automática de delivery e PDV, observado o procedimento de notificação previsto em 8.2.</p>
+          <p>5.6. <strong className="text-foreground">Sem fidelidade e sem multa de rescisão:</strong> O Lojista pode cancelar a assinatura ou migrar de plano a qualquer momento pelo painel da loja, sem fidelidade mínima, sem multa contratual e sem taxa de cancelamento. A cobrança é mensal e pré-paga; ao cancelar, o acesso permanece ativo até o fim do ciclo já pago e não há reembolso proporcional, salvo nos casos previstos no CDC. Saldos pendentes de taxas físicas (cláusula 8.2) e comissão PDV do mês corrente permanecem devidos.</p>
         </section>
 
         <section className="space-y-3">
