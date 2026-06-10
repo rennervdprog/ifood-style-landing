@@ -34,3 +34,6 @@ verify_jwt = false
 verify_jwt = false
 [functions.kds]
 verify_jwt = false
+
+[functions.count-supporters]
+verify_jwt = false

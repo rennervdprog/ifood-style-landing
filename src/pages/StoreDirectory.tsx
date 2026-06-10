@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { AsaasBadgeBar } from "@/components/AsaasBadge";
 import PartnerClientView from "@/components/PartnerClientView";
+import { useSupporterCount } from "@/hooks/useSupporterCount";
 import {
   Zap, Store, ShieldCheck, Smartphone, TrendingUp,
   ArrowRight, CheckCircle2, Star, MapPin, Clock, CreditCard,
@@ -417,7 +418,7 @@ const StoreDirectory = () => {
   const [partnerRole, setPartnerRole] = useState<string | null>(null);
   const [roleChecked, setRoleChecked] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
-  const [supporterTaken, setSupporterTaken] = useState<number | null>(null);
+  const { count: supporterTaken } = useSupporterCount();
   const [liveStats, setLiveStats] = useState<{ stores: number; cities: number } | null>(null);
 
   // No fake stats — we use honest value props instead
@@ -443,34 +444,6 @@ const StoreDirectory = () => {
     }
     supabase.rpc("record_page_view", { _page: "store_directory", _visitor_hash: visitorHash })
       .then(({ error }) => { if (!error) sessionStorage.setItem(KEY, String(Date.now())); });
-  }, []);
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const { data, error } = await supabase.rpc("count_supporter_plans");
-        if (cancelled || error) return;
-        setSupporterTaken(typeof data === "number" ? data : 0);
-      } catch {
-        /* silent */
-      }
-    })();
-    const channel = supabase
-      .channel("supporter-count-directory")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "store_plans", filter: "plan_type=eq.supporter" },
-        async () => {
-          const { data, error } = await supabase.rpc("count_supporter_plans");
-          if (!cancelled && !error) setSupporterTaken(typeof data === "number" ? data : 0);
-        }
-      )
-      .subscribe();
-    return () => {
-      cancelled = true;
-      supabase.removeChannel(channel);
-    };
   }, []);
 
   // Live social proof: real number of active stores + cities

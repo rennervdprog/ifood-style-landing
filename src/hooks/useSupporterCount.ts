@@ -4,8 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 export const SUPPORTER_LIMIT = 10;
 
 /**
- * Conta lojas no plano Apoiador (ativas) em tempo real.
- * Reassina via Realtime para refletir mudanças sem refresh.
+ * Conta lojas no plano Apoiador (ativas) consultando o Supabase EXTERNO
+ * (banco de produção) via edge function `count-supporters`.
+ * Faz polling a cada 30s para refletir novas assinaturas.
  */
 export function useSupporterCount() {
   const [count, setCount] = useState<number | null>(null);
@@ -16,9 +17,9 @@ export function useSupporterCount() {
 
     const fetchCount = async () => {
       try {
-        const { data, error } = await supabase.rpc("count_supporter_plans" as any);
+        const { data, error } = await supabase.functions.invoke("count-supporters");
         if (cancelled) return;
-        if (!error && typeof data === "number") setCount(data);
+        if (!error && data && typeof data.count === "number") setCount(data.count);
       } catch {
         /* silent */
       } finally {
@@ -27,19 +28,11 @@ export function useSupporterCount() {
     };
 
     fetchCount();
-
-    const channel = supabase
-      .channel("supporter-count")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "store_plans", filter: "plan_type=eq.supporter" },
-        () => fetchCount()
-      )
-      .subscribe();
+    const interval = setInterval(fetchCount, 30000);
 
     return () => {
       cancelled = true;
-      supabase.removeChannel(channel);
+      clearInterval(interval);
     };
   }, []);
 
