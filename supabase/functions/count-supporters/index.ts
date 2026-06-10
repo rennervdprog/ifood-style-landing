@@ -14,11 +14,10 @@ serve(async (req) => {
     const client = createClient(url, key);
     const { data, error } = await client
       .from("store_plans")
-      .select("store_id, plan_type, is_active")
-      .eq("plan_type", "supporter")
-      .eq("is_active", true);
+      .select("store_id, plan_type, is_active");
     if (error) throw error;
-    return new Response(JSON.stringify({ count: data?.length ?? 0, rows: data }), {
+    const supporters = (data ?? []).filter((r: any) => r.plan_type === "supporter" && r.is_active);
+    return new Response(JSON.stringify({ count: supporters.length, all: data, supporters }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
