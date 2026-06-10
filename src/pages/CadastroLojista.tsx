@@ -635,14 +635,14 @@ const CadastroLojista = () => {
                   {accountType === "matriz" && (
                     <div className="bg-blue-500/8 border border-blue-500/20 rounded-xl p-2.5">
                       <p className="text-[11px] text-blue-700 dark:text-blue-400 mb-2">
-                        💡 Você criará a conta matriz da rede. Depois poderá criar quantas unidades quiser, cada uma com email/senha do gerente.
+                        💡 A matriz é uma página-guia da rede (não vende). Depois você cria as unidades, cada uma com seu próprio gerente, cardápio e financeiro.
                       </p>
                       <FieldInput icon={Store} placeholder="Nome da Rede (ex: Itasuper Pizzaria)" value={networkName} onChange={setNetworkName} />
                     </div>
                   )}
                 </div>
 
-                <FieldInput icon={Store} placeholder={accountType === "matriz" ? "Nome da Primeira Unidade" : "Nome da Loja"} value={storeName} onChange={setStoreName} error={errors.storeName} />
+                <FieldInput icon={Store} placeholder={accountType === "matriz" ? "Nome da Página Matriz (ex: Itasuper Pizzaria)" : "Nome da Loja"} value={storeName} onChange={setStoreName} error={errors.storeName} />
 
                 <div>
                   <div className="relative">
