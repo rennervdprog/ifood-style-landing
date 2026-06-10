@@ -11,7 +11,7 @@ import {
   Loader2, AlertTriangle,
 } from "lucide-react";
 
-export const CURRENT_TERMS_VERSION = "4.1";
+export const CURRENT_TERMS_VERSION = "4.2";
 
 const CHANGES = [
   {
