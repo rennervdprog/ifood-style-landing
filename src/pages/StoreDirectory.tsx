@@ -456,7 +456,21 @@ const StoreDirectory = () => {
         /* silent */
       }
     })();
-    return () => { cancelled = true; };
+    const channel = supabase
+      .channel("supporter-count-directory")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "store_plans", filter: "plan_type=eq.supporter" },
+        async () => {
+          const { data, error } = await supabase.rpc("count_supporter_plans");
+          if (!cancelled && !error) setSupporterTaken(typeof data === "number" ? data : 0);
+        }
+      )
+      .subscribe();
+    return () => {
+      cancelled = true;
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   // Live social proof: real number of active stores + cities
@@ -1252,7 +1266,7 @@ const StoreDirectory = () => {
             {plans.map((plan) => {
               const Icon = plan.icon;
               const badgeText = plan.id === "supporter" && supporterTaken !== null
-                ? `🚀 Lançamento • ${Math.max(0, 10 - supporterTaken)} vagas`
+                ? `🚀 Lançamento • ${supporterTaken}/10 vagas`
                 : plan.badge;
 
               return (
