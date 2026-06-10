@@ -84,7 +84,7 @@ const StorePage = () => {
   const { data: store, isLoading: storeLoading } = useQuery({
     queryKey: ["store", id || slug],
     queryFn: async () => {
-      let query = (supabase.from("stores_public") as any).select("id, name, slug, image_url, category, rating, is_open, force_closed, status, delivery_mode, own_delivery_fee, delivery_fee, minimum_order_value, estimated_delivery_time, owner_id, address_cep, address_city, address_complement, address_neighborhood, address_number, address_reference, address_state, address_street, latitude, longitude, settings, network_id").in("status", ["ativo", "bloqueado"]);
+      let query = (supabase.from("stores_public") as any).select("id, name, slug, image_url, category, rating, is_open, force_closed, status, delivery_mode, own_delivery_fee, delivery_fee, minimum_order_value, estimated_delivery_time, owner_id, address_cep, address_city, address_complement, address_neighborhood, address_number, address_reference, address_state, address_street, latitude, longitude, settings, network_id, is_matriz").in("status", ["ativo", "bloqueado"]);
       if (id) query = query.eq("id", id);
       else if (slug) query = query.eq("slug", slug);
       const { data, error } = await query.maybeSingle();
@@ -912,7 +912,7 @@ const StorePage = () => {
           {store && <div className="px-5"><LoyaltyBanner storeId={store.id} storeName={store.name} /></div>}
 
           {/* Outras unidades da rede (matriz) */}
-          {store && (store as any).network_id && (
+          {store && (store as any).network_id && (store as any).is_matriz && (
             <NetworkUnitsCarousel networkId={(store as any).network_id} currentStoreId={store.id} />
           )}
 
