@@ -85,25 +85,8 @@ const CadastroLojista = () => {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [selectedPlan, setSelectedPlan] = useState<"supporter" | "fixed" | "hybrid" | "commission_only" | "">("");
-  const [supporterCount, setSupporterCount] = useState<number>(0);
-  const [supporterLoading, setSupporterLoading] = useState(true);
-
-  useEffect(() => {
-    let isMounted = true;
-    (async () => {
-      try {
-        const { data, error } = await supabase.rpc("count_supporter_plans" as any);
-        if (!isMounted) return;
-        if (!error && typeof data === "number") setSupporterCount(data);
-      } catch {
-        /* ignore */
-      } finally {
-        if (isMounted) setSupporterLoading(false);
-      }
-    })();
-    return () => { isMounted = false; };
-  }, []);
-
+  const { count: supporterCountRaw, loading: supporterLoading } = useSupporterCount();
+  const supporterCount = supporterCountRaw ?? 0;
   const supporterAvailable = !supporterLoading && supporterCount < 10;
   const supporterRemaining = Math.max(0, 10 - supporterCount);
 
@@ -468,7 +451,7 @@ const CadastroLojista = () => {
                         <span className={`absolute -top-2.5 right-3 text-[10px] font-bold px-2 py-0.5 rounded-full ${
                           isSupporter ? "bg-amber-500 text-white" : "bg-primary text-primary-foreground"
                         }`}>
-                          {isSupporter ? `🚀 ${supporterRemaining} vagas` : p.badge}
+                          {isSupporter ? `🚀 ${supporterCount}/10 vagas` : p.badge}
                         </span>
                       )}
                       <div className="flex items-center gap-3 mb-3">
