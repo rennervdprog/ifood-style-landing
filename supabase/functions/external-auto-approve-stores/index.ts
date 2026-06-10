@@ -77,6 +77,8 @@ END;
 $function$;
 
 -- 2) Backfill: tudo que estava pendente vira aprovado/ativo
+SET session_replication_role = replica;
+
 UPDATE public.profiles SET is_approved = true
  WHERE role IN ('lojista','lojista_matriz','lojista_unidade') AND is_approved = false;
 
@@ -89,6 +91,8 @@ DO $$ BEGIN
     EXECUTE 'UPDATE public.store_networks SET is_approved = true WHERE is_approved = false';
   END IF;
 END $$;
+
+SET session_replication_role = origin;
 `;
 
 Deno.serve(async (req) => {
