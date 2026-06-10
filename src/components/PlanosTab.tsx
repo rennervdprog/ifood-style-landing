@@ -53,8 +53,8 @@ export default function PlanosTab() {
       const [plans, requests] = await Promise.all([
         supabase
           .from("store_plans")
-          .select("store_id, plan_type, monthly_fee, active")
-          .eq("active", true),
+          .select("store_id, plan_type, monthly_fee, is_active")
+          .eq("is_active", true),
         supabase
           .from("plan_change_requests")
           .select("id", { count: "exact", head: true })
