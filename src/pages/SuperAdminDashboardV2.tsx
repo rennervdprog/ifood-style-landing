@@ -5,9 +5,7 @@ import CouponManager from "@/components/CouponManager";
 import AdminStoreManager from "@/components/AdminStoreManager";
 import DeliveryFeeConfigPanel from "@/components/DeliveryFeeConfig";
 import TestStoreCreator from "@/components/TestStoreCreator";
-import AdminPlanManager from "@/components/AdminPlanManager";
-import AdminFixedPlanReceivables from "@/components/AdminFixedPlanReceivables";
-import AdminPlanTemplatesEditor from "@/components/AdminPlanTemplatesEditor";
+import PlanosTab from "@/components/PlanosTab";
 import ModeratorManager from "@/components/ModeratorManager";
 import SupportAdminPanel from "@/components/SupportAdminPanel";
 import AppStorePageAdmin from "@/components/AppStorePageAdmin";
@@ -941,13 +939,7 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
               </div>
             )}
             {activeTab === "cidades" && <Suspense fallback={<TabFallback />}><CidadesTab stores={stores} /></Suspense>}
-            {activeTab === "planos" && (
-              <div className="space-y-6">
-                <AdminFixedPlanReceivables />
-                <AdminPlanTemplatesEditor />
-                <AdminPlanManager />
-              </div>
-            )}
+            {activeTab === "planos" && <PlanosTab />}
             {activeTab === "pagamentos" && <Suspense fallback={<TabFallback />}><PagamentosSplitTab stores={stores || []} /></Suspense>}
             {activeTab === "juridico" && <Suspense fallback={<TabFallback />}><JuridicoTab /></Suspense>}
             {activeTab === "moderadores" && <ModeratorManager />}
