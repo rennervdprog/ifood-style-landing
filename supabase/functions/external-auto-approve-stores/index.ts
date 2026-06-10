@@ -98,25 +98,24 @@ Deno.serve(async (req) => {
   const PROJECT_REF = Deno.env.get("EXTERNAL_SUPABASE_PROJECT_REF") || "qkjhguziuchqsbxzruea";
   const EXT_URL = Deno.env.get("EXTERNAL_SUPABASE_URL")!;
   const EXT_KEY = Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY")!;
-  const EXT_ANON = Deno.env.get("EXTERNAL_SUPABASE_ANON_KEY") || "";
+  const CRON = Deno.env.get("EXTERNAL_CRON_SECRET") || Deno.env.get("CRON_SECRET") || "";
 
   if (!TOKEN) return json({ error: "EXTERNAL_SUPABASE_ACCESS_TOKEN missing" }, 500);
 
-  // Admin gate
+  // Admin gate — service key, cron secret, or external admin JWT
   const auth = req.headers.get("Authorization")?.replace("Bearer ", "") || "";
-  let isAdmin = !!auth && (auth === EXT_KEY);
+  let isAdmin = !!auth && (auth === EXT_KEY || (!!CRON && auth === CRON));
   if (!isAdmin && auth) {
     try {
-      const user = createClient(EXT_URL, EXT_ANON, { global: { headers: { Authorization: `Bearer ${auth}` } } });
-      const { data: u } = await user.auth.getUser(auth);
+      const adm = createClient(EXT_URL, EXT_KEY);
+      const { data: u } = await adm.auth.getUser(auth);
       if (u?.user) {
-        const adm = createClient(EXT_URL, EXT_KEY);
         const { data } = await adm.rpc("is_platform_admin", { _user_id: u.user.id });
         isAdmin = !!data;
       }
-    } catch { /* ignore */ }
+    } catch (e) { console.warn("auth check failed", e); }
   }
-  if (!isAdmin) return json({ error: "Unauthorized" }, 401);
+  if (!isAdmin) return json({ error: "Unauthorized", hasAuth: !!auth }, 401);
 
   const res = await fetch(`https://api.supabase.com/v1/projects/${PROJECT_REF}/database/query`, {
     method: "POST",
