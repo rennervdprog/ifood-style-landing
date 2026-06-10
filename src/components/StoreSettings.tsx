@@ -224,6 +224,25 @@ type PizzaPriceMode = "maior" | "media" | "soma";
 
     // Update store
     const cleanSlug = slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, "").replace(/--+/g, "-");
+
+    // Verifica disponibilidade do slug ANTES de salvar — sem sufixo aleatório.
+    // Em caso de conflito, pede para o lojista escolher outro nome manualmente.
+    if (cleanSlug) {
+      const { data: slugTaken } = await supabase
+        .from("stores")
+        .select("id")
+        .eq("slug", cleanSlug)
+        .neq("id", storeId)
+        .maybeSingle();
+      if (slugTaken) {
+        toast.error(
+          `O link "${cleanSlug}" já está em uso por outra loja. Edite o campo "Link da loja" e escolha um nome diferente (ex.: ${cleanSlug}-${storeId.slice(0, 4)}).`
+        );
+        setSaving(false);
+        return;
+      }
+    }
+
     // Ensure primary category is always present in the list, and primary equals first selected
     const finalCategories = Array.from(new Set([category, ...categories].filter(Boolean)));
     const primaryCategory = finalCategories[0] || category;
