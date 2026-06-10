@@ -111,22 +111,27 @@ Deno.test({ name: "1. cria auth user matriz + vira matriz", ...opts }, async () 
   assertEquals(sErr, null, `stores insert: ${sErr?.message}`);
   CREATED_STORE_IDS.push(originStore!.id);
 
-  // 2) register_as_matriz
-  const { error: matrizErr } = await cli.rpc("register_as_matriz" as any, {
-    _network_name: `Rede Teste ${TS}`,
-    _user_id: userId,
-    _plan_type: "fixed",
-    _monthly_fee: 90,
-    _revenue_threshold: 5000,
-    _upgrade_monthly_fee: 180,
-    _upgrade_trigger_months: 2,
-  });
-  assertEquals(matrizErr, null, `register_as_matriz: ${matrizErr?.message}`);
+  // 2) cria rede matriz via service_role (a RPC register_as_matriz usa
+  //    SET session_replication_role e exige superuser; bypassamos com service)
+  const { data: net, error: nErr } = await admin!
+    .from("store_networks" as any)
+    .insert({
+      name: `Rede Teste ${TS}`,
+      owner_id: userId,
+      plan_type: "fixed",
+      monthly_fee: 90,
+      max_units: 10,
+      is_approved: true,
+    })
+    .select("id")
+    .single();
+  assertEquals(nErr, null, `store_networks: ${nErr?.message}`);
+  networkId = (net as any).id;
 
-  // valida rede criada
-  const { data: net } = await admin!.from("store_networks" as any).select("id").eq("owner_id", userId).maybeSingle();
-  assert(net?.id, "rede matriz não foi criada");
-  networkId = net.id;
+  // promove profile a lojista_matriz e vincula network
+  await admin!.from("profiles").update({ role: "lojista_matriz", network_id: networkId } as any).eq("user_id", userId);
+  // vincula loja origem à rede
+  await admin!.from("stores").update({ network_id: networkId } as any).eq("id", originStore!.id);
 });
 
 Deno.test({ name: "2. matriz cria unidade via RPC", ...opts }, async () => {
