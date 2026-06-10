@@ -82,8 +82,14 @@ SET session_replication_role = replica;
 UPDATE public.profiles SET is_approved = true
  WHERE role IN ('lojista','lojista_matriz','lojista_unidade') AND is_approved = false;
 
-UPDATE public.stores SET status = 'ativo'
- WHERE status IN ('pendente','bloqueado_aprovacao');
+-- Stores: ativa apenas as que ainda estão vinculadas a perfis aprovados agora
+UPDATE public.stores s SET status = 'ativo'::store_status
+ WHERE status <> 'ativo'::store_status
+   AND EXISTS (
+     SELECT 1 FROM public.profiles p
+      WHERE p.user_id = s.owner_id AND p.is_approved = true
+   )
+   AND status::text NOT IN ('bloqueado','suspenso','banido','excluido');
 
 -- 3) Matriz: aprovar todas as redes existentes (se a tabela existir)
 DO $$ BEGIN
