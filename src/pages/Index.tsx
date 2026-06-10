@@ -152,8 +152,8 @@ const Index = () => {
   const { data: stores, isLoading } = useQuery({
     queryKey: ["stores"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("stores")
+      const { data, error } = await (supabase
+        .from("stores") as any)
         .select(`
           id, name, slug, image_url, category, categories, rating, is_open, force_closed, status, delivery_mode, own_delivery_fee, latitude, longitude, address_city, address_state, is_matriz,
           opening_hours (*)
