@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCart, type CartAddon } from "@/contexts/CartContext";
 import { Star, Clock, ChevronRight, ChevronDown, ChevronUp, MapPin, Search, X, Navigation, CreditCard, Banknote, Smartphone, QrCode, RotateCcw, TrendingUp, ArrowLeft, Bike, Timer, Wallet } from "lucide-react";
 import LoyaltyBanner from "@/components/LoyaltyBanner";
+import NetworkUnitsCarousel from "@/components/NetworkUnitsCarousel";
 import { toast } from "sonner";
 import { useRef, useState, useEffect, memo, useCallback, useMemo } from "react";
 import CartFAB from "@/components/CartFAB";
@@ -909,6 +910,11 @@ const StorePage = () => {
 
           {/* Loyalty */}
           {store && <div className="px-5"><LoyaltyBanner storeId={store.id} storeName={store.name} /></div>}
+
+          {/* Outras unidades da rede (matriz) */}
+          {store && (store as any).network_id && (
+            <NetworkUnitsCarousel networkId={(store as any).network_id} currentStoreId={store.id} />
+          )}
 
           {/* Stats bar */}
           <div className={`mt-2 px-5 py-4 flex items-center justify-around border-t ${isAdega ? "bg-zinc-950/60 border-zinc-800" : "bg-muted/50 border-border/50"}`}>
