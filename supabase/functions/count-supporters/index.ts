@@ -12,13 +12,13 @@ serve(async (req) => {
     const url = Deno.env.get("EXTERNAL_SUPABASE_URL")!;
     const key = Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY")!;
     const client = createClient(url, key);
-    const [{ data: supRows, error: supErr }, { count: total }] = await Promise.all([
-      client.from("store_plans").select("store_id, plan_type, is_active, monthly_fee").eq("plan_type", "supporter"),
-      client.from("store_plans").select("*", { count: "exact", head: true }),
-    ]);
-    if (supErr) throw supErr;
-    const supporters = (supRows ?? []).filter((r: any) => r.is_active);
-    return new Response(JSON.stringify({ count: supporters.length, supporters, allSupporterRows: supRows, totalRows: total }), {
+    const { count, error } = await client
+      .from("store_plans")
+      .select("*", { count: "exact", head: true })
+      .eq("plan_type", "supporter")
+      .eq("is_active", true);
+    if (error) throw error;
+    return new Response(JSON.stringify({ count: count ?? 0 }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
