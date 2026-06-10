@@ -60,6 +60,11 @@ async function signUpAndLogin(email: string): Promise<{ userId: string; jwt: str
   if (cErr) throw new Error(`createUser ${email}: ${cErr.message}`);
   const userId = created!.user!.id;
 
+  // pré-cria profile via service_role para evitar trigger "alterar o próprio cargo"
+  await admin!.from("profiles").upsert({ user_id: userId, full_name: email, role: "cliente" } as any, {
+    onConflict: "user_id",
+  } as any);
+
   // login p/ obter JWT
   const anon = await getAnonKey();
   const loginC = createClient(URL_, anon, { auth: { persistSession: false } });
@@ -84,20 +89,27 @@ Deno.test({ name: "1. cria auth user matriz + vira matriz", ...opts }, async () 
   matrizUserId = userId;
   CREATED_USER_IDS.push(userId);
 
+  // o trigger "não alterar o próprio cargo" bloqueia o auth.uid() de mudar
+  // de 'cliente' → 'lojista'. Como service_role bypassa o trigger, fazemos a
+  // promoção fora do RPC e depois criamos a loja + plano manualmente.
+  await admin!.from("profiles").update({ role: "lojista", document: "00000000000" }).eq("user_id", userId);
+
   const cli = await clientAs(jwt);
-  // 1) register_as_lojista (cria 1ª loja "Primeira Unidade")
-  const { data: storeId, error: regErr } = await cli.rpc("register_as_lojista" as any, {
-    _full_name: "Teste Matriz",
-    _document: "00000000000",
-    _store_name: `Unidade Origem ${TS}`,
-    _store_category: "lanches",
-    _avatar_url: null,
-    _whatsapp: null,
-    _selected_plan: "fixed",
-  });
-  assertEquals(regErr, null, `register_as_lojista: ${regErr?.message}`);
-  assert(typeof storeId === "string", "storeId deve ser uuid");
-  CREATED_STORE_IDS.push(storeId as string);
+  // 1) cria loja "origem" via service (bypassa RLS/trigger de role)
+  const { data: originStore, error: sErr } = await admin!
+    .from("stores")
+    .insert({
+      name: `Unidade Origem ${TS}`,
+      category: "lanches",
+      owner_id: userId,
+      delivery_mode: "own",
+      status: "ativo",
+      is_test: true,
+    } as any)
+    .select("id")
+    .single();
+  assertEquals(sErr, null, `stores insert: ${sErr?.message}`);
+  CREATED_STORE_IDS.push(originStore!.id);
 
   // 2) register_as_matriz
   const { error: matrizErr } = await cli.rpc("register_as_matriz" as any, {
@@ -161,7 +173,7 @@ Deno.test({ name: "4. cria 1 produto na unidade", ...opts }, async () => {
   // seção do cardápio
   const { data: sec, error: secErr } = await admin!
     .from("menu_sections")
-    .insert({ store_id: unitStoreId, name: "Lanches", display_order: 0 } as any)
+    .insert({ store_id: unitStoreId, name: "Lanches", sort_order: 0 } as any)
     .select("id")
     .single();
   assertEquals(secErr, null, `menu_sections: ${secErr?.message}`);
