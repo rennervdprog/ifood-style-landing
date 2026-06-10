@@ -215,7 +215,8 @@ Deno.test({ name: "5. cliente faz pedido na unidade", ...opts }, async () => {
       delivery_fee: 5.0,
       total_price: 30.0,
       payment_method: "pix",
-      delivery_address: "Rua Teste, 123",
+      address_details: "Rua Teste, 123",
+      neighborhood: "Centro",
     } as any)
     .select("id")
     .single();
