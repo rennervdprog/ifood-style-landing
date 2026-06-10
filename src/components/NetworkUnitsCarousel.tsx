@@ -26,7 +26,7 @@ export default function NetworkUnitsCarousel({
   const { data: units } = useQuery({
     queryKey: ["network-units", networkId, currentStoreId],
     queryFn: async () => {
-      const { data } = await supabase
+      const { data } = await (supabase as any)
         .from("stores_public")
         .select("id, name, slug, image_url, address_city, address_neighborhood, is_open, force_closed")
         .eq("network_id", networkId)
