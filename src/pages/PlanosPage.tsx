@@ -286,7 +286,7 @@ const faqs = [
                const planBadge = isSupporter
                  ? (supporterLoading
                      ? "🚀 Carregando vagas..."
-                     : (isSoldOut ? "❌ Vagas esgotadas" : `🚀 ${remaining}/10 vagas restantes`))
+                      : (isSoldOut ? "❌ Vagas esgotadas" : `🚀 ${remaining} de 10 vagas restantes`))
                  : plan.badge;
  
                return (
