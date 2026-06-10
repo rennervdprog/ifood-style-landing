@@ -615,6 +615,42 @@ const StorePage = () => {
     );
   }
 
+  // Matriz é apenas um guia/hub para as unidades — não vende, não tem cardápio.
+  if (store && (store as any).is_matriz && (store as any).network_id) {
+    return (
+      <div className="min-h-screen bg-background pb-24">
+        <div className="relative h-48">
+          {store.image_url ? (
+            <img src={store.image_url} alt={store.name} className="w-full h-full object-cover" loading="eager" />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-primary/30 to-primary/5" />
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
+          <button
+            onClick={() => navigate("/")}
+            className="absolute top-4 left-4 h-10 w-10 rounded-full bg-background/90 backdrop-blur flex items-center justify-center shadow-md"
+            aria-label="Voltar"
+          >
+            <ArrowLeft className="h-5 w-5 text-foreground" />
+          </button>
+        </div>
+        <div className="-mt-10 relative">
+          <div className="px-5 text-center">
+            <span className="inline-block text-[10px] font-black tracking-widest uppercase text-primary bg-primary/10 px-3 py-1 rounded-full mb-2">
+              Rede oficial
+            </span>
+            <h1 className="text-2xl font-black text-foreground leading-tight">{store.name}</h1>
+            <p className="text-[13px] text-muted-foreground mt-1">
+              Escolha a unidade mais próxima de você para fazer seu pedido.
+            </p>
+          </div>
+          <NetworkUnitsCarousel networkId={(store as any).network_id} currentStoreId={store.id} />
+        </div>
+        <BottomNav />
+      </div>
+    );
+  }
+
   if (fraudBlock) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center text-center px-6">
