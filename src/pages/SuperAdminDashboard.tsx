@@ -47,7 +47,6 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
   { key: "pagamentos", label: "Pagamentos", icon: CreditCard, group: "Principal" },
   { key: "saques", label: "Saques", icon: Wallet, group: "Principal" },
   { key: "entrega", label: "Entrega", icon: Truck, group: "Configurações" },
-  { key: "approvals", label: "Aprovações", icon: Shield, group: "Gerenciamento" },
   { key: "stores", label: "Lojas", icon: Store, group: "Gerenciamento" },
   { key: "cidades", label: "Cidades", icon: MapPin, group: "Gerenciamento" },
   { key: "coupons", label: "Cupons", icon: Ticket, group: "Gerenciamento" },

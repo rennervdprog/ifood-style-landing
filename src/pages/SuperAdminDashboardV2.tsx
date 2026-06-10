@@ -67,7 +67,6 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
   // Início
   { key: "dashboard", label: "Dashboard", icon: LayoutDashboard, group: "Início" },
   // Operação
-  { key: "approvals", label: "Aprovações", icon: Shield, group: "Operação" },
   { key: "stores", label: "Lojas", icon: Store, group: "Operação" },
   { key: "cidades", label: "Cidades", icon: MapPin, group: "Operação" },
   { key: "coupons", label: "Cupons", icon: Ticket, group: "Operação" },

@@ -37,3 +37,4 @@ verify_jwt = false
 
 [functions.count-supporters]
 verify_jwt = false
+
