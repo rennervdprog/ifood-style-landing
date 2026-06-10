@@ -155,9 +155,10 @@ const Index = () => {
       const { data, error } = await supabase
         .from("stores")
         .select(`
-          id, name, slug, image_url, category, categories, rating, is_open, force_closed, status, delivery_mode, own_delivery_fee, latitude, longitude, address_city, address_state,
+          id, name, slug, image_url, category, categories, rating, is_open, force_closed, status, delivery_mode, own_delivery_fee, latitude, longitude, address_city, address_state, is_matriz,
           opening_hours (*)
         `)
+        .eq("is_matriz", false)
         .order("rating", { ascending: false });
       if (error) throw error;
       return (data || []).filter((s: any) => !s.status || s.status === "ativo");
