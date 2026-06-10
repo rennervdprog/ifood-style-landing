@@ -12,13 +12,13 @@ serve(async (req) => {
     const url = Deno.env.get("EXTERNAL_SUPABASE_URL")!;
     const key = Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY")!;
     const client = createClient(url, key);
-    const { count, error } = await client
+    const { data, error } = await client
       .from("store_plans")
-      .select("*", { count: "exact", head: true })
+      .select("store_id, plan_type, is_active")
       .eq("plan_type", "supporter")
       .eq("is_active", true);
     if (error) throw error;
-    return new Response(JSON.stringify({ count: count ?? 0 }), {
+    return new Response(JSON.stringify({ count: data?.length ?? 0, rows: data }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
