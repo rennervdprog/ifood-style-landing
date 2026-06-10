@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { AsaasBadgeBar } from "@/components/AsaasBadge";
 import PartnerClientView from "@/components/PartnerClientView";
+import { useSupporterCount } from "@/hooks/useSupporterCount";
 import {
   Zap, Store, ShieldCheck, Smartphone, TrendingUp,
   ArrowRight, CheckCircle2, Star, MapPin, Clock, CreditCard,
