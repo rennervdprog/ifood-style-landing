@@ -31,14 +31,9 @@ const admin = skip ? null : createClient(URL_, SERVICE_KEY, { auth: { persistSes
 
 // anon client é usado para sign-in com password (gera JWT real do usuário)
 async function getAnonKey(): Promise<string> {
-  // tenta env primeiro (publishable / anon)
-  const anonEnv =
-    Deno.env.get("EXTERNAL_SUPABASE_ANON_KEY") ||
-    Deno.env.get("VITE_SUPABASE_PUBLISHABLE_KEY") ||
-    "";
-  if (anonEnv) return anonEnv;
-  // fallback: usa a anon hardcoded no client (qkjhguziuchqsbxzruea)
-  return "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFramhndXppdWNocXNieHpydWVhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNDg4NTUsImV4cCI6MjA5MDYyNDg1NX0.2sTeKchqAEN2gCqnH1_Zn9cJmUSmZgryt05A66tgm2Y";
+  // service_role também é aceito como apikey pelo GoTrue; usamos ele
+  // para evitar dependência de um anon key separado (não exportado nos secrets).
+  return SERVICE_KEY;
 }
 
 async function clientAs(jwt: string) {
