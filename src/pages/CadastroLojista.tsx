@@ -452,7 +452,7 @@ const CadastroLojista = () => {
                         <span className={`absolute -top-2.5 right-3 text-[10px] font-bold px-2 py-0.5 rounded-full ${
                           isSupporter ? "bg-amber-500 text-white" : "bg-primary text-primary-foreground"
                         }`}>
-                          {isSupporter ? `🚀 ${supporterCount}/10 vagas` : p.badge}
+                          {isSupporter ? `🚀 ${supporterRemaining}/10 vagas` : p.badge}
                         </span>
                       )}
                       <div className="flex items-center gap-3 mb-3">

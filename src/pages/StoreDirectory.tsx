@@ -1266,7 +1266,7 @@ const StoreDirectory = () => {
             {plans.map((plan) => {
               const Icon = plan.icon;
               const badgeText = plan.id === "supporter" && supporterTaken !== null
-                ? `🚀 Lançamento • ${supporterTaken}/10 vagas`
+                ? `🚀 Lançamento • ${Math.max(0, 10 - supporterTaken)}/10 vagas`
                 : plan.badge;
 
               return (
