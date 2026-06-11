@@ -117,7 +117,11 @@ const MatrizDashboard = () => {
         _name: data.name,
         _slug: data.slug,
         _category: data.category,
+        _address_street: "",
+        _address_number: "",
+        _address_neighborhood: "",
         _address_city: data.city,
+        _address_state: "",
         _address_cep: data.cep,
       });
       if (error) throw error;
