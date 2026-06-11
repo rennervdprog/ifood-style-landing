@@ -642,7 +642,7 @@ const DriverDashboard = () => {
       } else {
         confetti({ particleCount: 150, spread: 90, origin: { y: 0.5 } });
         // Phase 3 (Adega): se o pedido tem itens retornáveis, abre dialog para registrar devolução
-        const orderItemsLite = (orderData?.order_items || []).map((it: any) => ({ product_id: it.product_id, quantity: it.quantity }));
+        const orderItemsLite = ((orderData as any)?.order_items || []).map((it: any) => ({ product_id: it.product_id, quantity: it.quantity }));
         const orderStoreId = (orderData as any)?.store_id;
         if (orderStoreId && orderItemsLite.length > 0) {
           setEmptiesDialog({ orderId, storeId: orderStoreId, items: orderItemsLite });
