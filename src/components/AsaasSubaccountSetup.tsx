@@ -563,14 +563,16 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
               <div className="grid gap-4">
                 <div className="space-y-2">
                   <Label>{isCpf ? "Nome completo" : "Razão social"}</Label>
-                  <Input value={form.name} onChange={(e) => update("name", e.target.value)} placeholder={isCpf ? "Como no RG/CNH" : "Como no Cartão CNPJ"} />
+                  <Input value={form.name} onChange={(e) => update("name", e.target.value)} onBlur={() => markTouched("name")} className={errClass("name")} placeholder={isCpf ? "Como no RG/CNH" : "Como no Cartão CNPJ"} />
+                  <FieldError k="name" />
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>{isCpf ? "CPF" : "CNPJ"}</Label>
                     <Input value={formatPixKeyDisplay(form.cpfCnpj, isCpf ? "cpf" : "cnpj")} 
-                           onChange={(e) => update("cpfCnpj", e.target.value)} placeholder="000.000.000-00" />
+                           onChange={(e) => update("cpfCnpj", e.target.value)} onBlur={() => markTouched("cpfCnpj")} className={errClass("cpfCnpj")} placeholder="000.000.000-00" />
+                    <FieldError k="cpfCnpj" />
                   </div>
                   <div className="space-y-2">
                     <Label>E-mail comercial</Label>
@@ -578,8 +580,11 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
                       type="email"
                       value={form.email}
                       onChange={(e) => update("email", e.target.value)}
+                      onBlur={() => markTouched("email")}
+                      className={errClass("email")}
                       placeholder="vendas@loja.com"
                     />
+                    <FieldError k="email" />
                   </div>
                 </div>
 
@@ -590,6 +595,7 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
                     type="email"
                     value={form.emailConfirm}
                     onChange={(e) => update("emailConfirm", e.target.value)}
+                    onBlur={() => markTouched("emailConfirm")}
                     placeholder="Digite o e-mail novamente"
                     className={
                       form.emailConfirm && form.email
@@ -618,7 +624,8 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
                 {isCpf ? (
                   <div className="space-y-2">
                     <Label>Data de nascimento</Label>
-                    <Input type="date" value={form.birthDate} onChange={(e) => update("birthDate", e.target.value)} />
+                    <Input type="date" value={form.birthDate} onChange={(e) => update("birthDate", e.target.value)} onBlur={() => markTouched("birthDate")} className={errClass("birthDate")} />
+                    <FieldError k="birthDate" />
                   </div>
                 ) : (
                   <div className="space-y-2">
@@ -640,29 +647,24 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
                     <Label>{isCpf ? "Renda mensal" : "Faturamento mensal"}</Label>
                     <div className="relative">
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-bold">R$</span>
-                      <Input className="pl-9" inputMode="decimal" value={form.incomeValue} onChange={(e) => update("incomeValue", e.target.value)} placeholder="0,00" />
+                      <Input className={`pl-9 ${errClass("incomeValue")}`} inputMode="decimal" value={form.incomeValue} onChange={(e) => update("incomeValue", e.target.value)} onBlur={() => markTouched("incomeValue")} placeholder="0,00" />
                     </div>
+                    <FieldError k="incomeValue" />
                   </div>
                   <div className="space-y-2">
                     <Label>WhatsApp</Label>
-                    <Input value={formatPixKeyDisplay(form.phone, "phone")} onChange={(e) => update("phone", e.target.value)} placeholder="(00) 00000-0000" />
+                    <Input value={formatPixKeyDisplay(form.phone, "phone")} onChange={(e) => update("phone", e.target.value)} onBlur={() => markTouched("phone")} className={errClass("phone")} placeholder="(00) 00000-0000" />
+                    <FieldError k="phone" />
                   </div>
                 </div>
               </div>
             </div>
             
             <Button className="w-full h-12 text-base font-bold" onClick={() => {
-              if (!form.name || !form.email || !form.cpfCnpj) {
-                toast.error("Preencha os campos básicos para continuar.");
-                return;
-              }
-              // 🔒 Validar e-mail antes de avançar
-              if (!form.emailConfirm) {
-                toast.error("Confirme seu e-mail antes de continuar.");
-                return;
-              }
-              if (form.email.toLowerCase().trim() !== form.emailConfirm.toLowerCase().trim()) {
-                toast.error("Os e-mails não coincidem. Verifique e tente novamente.");
+              const keys = ["name","email","emailConfirm","cpfCnpj","birthDate","incomeValue","phone"];
+              touchStep(keys);
+              if (hasStepErrors(keys)) {
+                toast.error("Corrija os campos destacados em vermelho.");
                 return;
               }
               setStep(2);
@@ -677,24 +679,28 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
             <div className="grid gap-4">
               <div className="space-y-2">
                 <Label>CEP</Label>
-                <Input value={form.postalCode} onChange={(e) => update("postalCode", e.target.value)} placeholder="00000-000" maxLength={9} />
+                <Input value={form.postalCode} onChange={(e) => update("postalCode", e.target.value)} onBlur={() => markTouched("postalCode")} className={errClass("postalCode")} placeholder="00000-000" maxLength={9} />
+                <FieldError k="postalCode" />
               </div>
 
               <div className="grid grid-cols-4 gap-4">
                 <div className="col-span-3 space-y-2">
                   <Label>Endereço</Label>
-                  <Input value={form.address} onChange={(e) => update("address", e.target.value)} placeholder="Rua, Avenida..." />
+                  <Input value={form.address} onChange={(e) => update("address", e.target.value)} onBlur={() => markTouched("address")} className={errClass("address")} placeholder="Rua, Avenida..." />
+                  <FieldError k="address" />
                 </div>
                 <div className="col-span-1 space-y-2">
                   <Label>Nº</Label>
-                  <Input value={form.addressNumber} onChange={(e) => update("addressNumber", e.target.value)} placeholder="123" />
+                  <Input value={form.addressNumber} onChange={(e) => update("addressNumber", e.target.value)} onBlur={() => markTouched("addressNumber")} className={errClass("addressNumber")} placeholder="123" />
+                  <FieldError k="addressNumber" />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Bairro</Label>
-                  <Input value={form.province} onChange={(e) => update("province", e.target.value)} />
+                  <Input value={form.province} onChange={(e) => update("province", e.target.value)} onBlur={() => markTouched("province")} className={errClass("province")} />
+                  <FieldError k="province" />
                 </div>
                 <div className="space-y-2">
                   <Label>Complemento</Label>
@@ -717,8 +723,10 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
             <div className="flex gap-3">
               <Button variant="outline" className="flex-1 h-12" onClick={() => setStep(1)}>Voltar</Button>
               <Button className="flex-[2] h-12 text-base font-bold" onClick={() => {
-                 if (!form.postalCode || !form.address || !form.addressNumber) {
-                   toast.error("Preencha os campos obrigatórios de endereço.");
+                 const keys = ["postalCode","address","addressNumber","province"];
+                 touchStep(keys);
+                 if (hasStepErrors(keys)) {
+                   toast.error("Corrija os campos destacados em vermelho.");
                    return;
                  }
                  setStep(3);
@@ -758,9 +766,11 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
                 <Input 
                   value={formatPixKeyDisplay(form.pixAddressKey, form.pixAddressKeyType.toLowerCase())} 
                   onChange={(e) => update("pixAddressKey", e.target.value)} 
+                  onBlur={() => markTouched("pixAddressKey")}
                   placeholder="Digite sua chave aqui"
-                  className="h-11"
+                  className={`h-11 ${errClass("pixAddressKey")}`}
                 />
+                <FieldError k="pixAddressKey" />
               </div>
             </div>
 
