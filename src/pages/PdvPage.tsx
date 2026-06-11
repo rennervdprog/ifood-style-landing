@@ -26,6 +26,8 @@ import { usePdvBarcodeScanner } from "@/components/pdv/usePdvBarcodeScanner";
 import { PdvSplitPayment, type SplitPayment } from "@/components/pdv/PdvSplitPayment";
 import { PdvDenominationCount } from "@/components/pdv/PdvDenominationCount";
 import PdvDeliveryAlerts from "@/components/pdv/PdvDeliveryAlerts";
+import PdvEmptiesCustomerDialog from "@/components/PdvEmptiesCustomerDialog";
+import EmptiesReturnDialog from "@/components/EmptiesReturnDialog";
 
 // Detecta se está em tela mobile (< 768px)
 const useIsMobile = () => {
