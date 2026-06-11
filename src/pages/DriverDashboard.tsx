@@ -30,6 +30,7 @@ import ProductTour, { motoboyTourSteps } from "@/components/ProductTour";
 import StoreDriverView from "@/components/StoreDriverView";
 import DriverPersistentAlert from "@/components/DriverPersistentAlert";
 import SignOutConfirm from "@/components/SignOutConfirm";
+import EmptiesReturnDialog from "@/components/EmptiesReturnDialog";
 type TabType = "entregas" | "historico" | "config";
 type DateFilter = "hoje" | "semana" | "mes" | "custom";
 
