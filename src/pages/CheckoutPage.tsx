@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useCart } from "@/contexts/CartContext";
@@ -23,6 +23,7 @@ import DeliveryTimeEstimate from "@/components/DeliveryTimeEstimate";
 import { resolveAddressContext, reverseGeocode, type Coordinates, type ReverseGeocodeResult } from "@/lib/addressGeocoding";
 import { getBestClientCoordinates, getDeviceGPS } from "@/lib/deviceLocation";
 import { checkStoreAccess, MAX_DISTANCE_KM } from "@/lib/fraudCheck";
+import EmptiesExchange, { type EmptiesExchangeSelection } from "@/components/EmptiesExchange";
 
 const allPaymentMethods = [
   { id: "pix",         label: "PIX Online",         desc: "Pagamento instantâneo",   icon: QrCode },
@@ -216,7 +217,13 @@ const CheckoutPage = () => {
     : (couponType === "free_shipping" ? freeShipPlatformAbsorb : activeDeliveryFee);
   const effectiveCouponDiscount = couponDiscount + freeShipPlatformAbsorb;
   const walletDiscount = useWallet ? Math.min(walletBalance, Math.max(0, addMoney(subtotal, effectiveDeliveryFee, -effectiveCouponDiscount, -loyaltyDiscount))) : 0;
-  const finalTotal = Math.max(0, addMoney(subtotal, effectiveDeliveryFee, -effectiveCouponDiscount, -loyaltyDiscount, -walletDiscount));
+  const [emptiesSelections, setEmptiesSelections] = useState<EmptiesExchangeSelection[]>([]);
+  const [emptiesDiscount, setEmptiesDiscount] = useState(0);
+  const handleEmptiesChange = useCallback((sel: EmptiesExchangeSelection[], disc: number) => {
+    setEmptiesSelections(sel);
+    setEmptiesDiscount(disc);
+  }, []);
+  const finalTotal = Math.max(0, addMoney(subtotal, effectiveDeliveryFee, -effectiveCouponDiscount, -loyaltyDiscount, -walletDiscount, -emptiesDiscount));
 
    // Background geocoding from address (initial estimate)
    useEffect(() => {
