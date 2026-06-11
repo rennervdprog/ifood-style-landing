@@ -443,6 +443,26 @@ const PdvPage = () => {
       setOrderDone(true);
       toast.success("✅ Venda finalizada!");
 
+      // Detecta itens retornáveis (garrafas) para abrir fluxo de troca de casquinhas
+      try {
+        const { data: prods } = await supabase
+          .from("products")
+          .select("id, metadata")
+          .in("id", cart.map((i) => i.id));
+        const hasReturnable = (prods || []).some(
+          (p: any) => p?.metadata?.returnable_bottle,
+        );
+        if (hasReturnable) {
+          setEmptiesFlow({
+            step: "lookup",
+            orderId: order.id,
+            items: cart.map((i) => ({ product_id: i.id, quantity: i.quantity })),
+          });
+        }
+      } catch (e) {
+        console.warn("Empties detection skipped:", e);
+      }
+
       // Imprimir nota PDV automaticamente
       try {
         printPdvReceipt({
