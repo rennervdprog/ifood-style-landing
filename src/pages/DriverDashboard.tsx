@@ -641,6 +641,12 @@ const DriverDashboard = () => {
         setVerifying(false);
       } else {
         confetti({ particleCount: 150, spread: 90, origin: { y: 0.5 } });
+        // Phase 3 (Adega): se o pedido tem itens retornáveis, abre dialog para registrar devolução
+        const orderItemsLite = (orderData?.order_items || []).map((it: any) => ({ product_id: it.product_id, quantity: it.quantity }));
+        const orderStoreId = (orderData as any)?.store_id;
+        if (orderStoreId && orderItemsLite.length > 0) {
+          setEmptiesDialog({ orderId, storeId: orderStoreId, items: orderItemsLite });
+        }
         const isPhysical = ["dinheiro", "cartao"].includes(orderData?.payment_method || "");
         if (isPhysical) {
           toast.success(`✅ Entrega confirmada! Retorne à loja para acertar ${formatBRL(deliveryFee)} em mãos.`, { duration: 8000, icon: "🏪" });
