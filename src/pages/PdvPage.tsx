@@ -1226,6 +1226,25 @@ const PdvPage = () => {
           </div>
         </div>
       )}
+
+      {/* Fluxo de troca de casquinhas no PDV */}
+      {emptiesFlow.step === "lookup" && (
+        <PdvEmptiesCustomerDialog
+          open
+          orderId={emptiesFlow.orderId}
+          onClose={() => setEmptiesFlow({ step: null, orderId: "", items: [] })}
+          onFound={(_id, name) => setEmptiesFlow((p) => ({ ...p, step: "return", customerName: name }))}
+        />
+      )}
+      {emptiesFlow.step === "return" && store?.id && (
+        <EmptiesReturnDialog
+          open
+          orderId={emptiesFlow.orderId}
+          storeId={store.id}
+          items={emptiesFlow.items}
+          onClose={() => setEmptiesFlow({ step: null, orderId: "", items: [] })}
+        />
+      )}
     </div>
   );
 };
