@@ -412,7 +412,11 @@ const CreateUnitModal = ({ onClose, onSubmit, submitting, networkId, sourceUnits
         _name: name.trim(),
         _slug: slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, "-"),
         _category: category,
+        _address_street: "",
+        _address_number: "",
+        _address_neighborhood: "",
         _address_city: city.trim(),
+        _address_state: "",
         _address_cep: cep.replace(/\D/g, "") || null,
       });
       if (error) throw error;
