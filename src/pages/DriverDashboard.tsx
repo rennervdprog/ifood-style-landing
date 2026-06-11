@@ -30,6 +30,7 @@ import ProductTour, { motoboyTourSteps } from "@/components/ProductTour";
 import StoreDriverView from "@/components/StoreDriverView";
 import DriverPersistentAlert from "@/components/DriverPersistentAlert";
 import SignOutConfirm from "@/components/SignOutConfirm";
+import EmptiesReturnDialog from "@/components/EmptiesReturnDialog";
 type TabType = "entregas" | "historico" | "config";
 type DateFilter = "hoje" | "semana" | "mes" | "custom";
 
@@ -640,6 +641,12 @@ const DriverDashboard = () => {
         setVerifying(false);
       } else {
         confetti({ particleCount: 150, spread: 90, origin: { y: 0.5 } });
+        // Phase 3 (Adega): se o pedido tem itens retornáveis, abre dialog para registrar devolução
+        const orderItemsLite = ((orderData as any)?.order_items || []).map((it: any) => ({ product_id: it.product_id, quantity: it.quantity }));
+        const orderStoreId = (orderData as any)?.store_id;
+        if (orderStoreId && orderItemsLite.length > 0) {
+          setEmptiesDialog({ orderId, storeId: orderStoreId, items: orderItemsLite });
+        }
         const isPhysical = ["dinheiro", "cartao"].includes(orderData?.payment_method || "");
         if (isPhysical) {
           toast.success(`✅ Entrega confirmada! Retorne à loja para acertar ${formatBRL(deliveryFee)} em mãos.`, { duration: 8000, icon: "🏪" });
@@ -669,6 +676,7 @@ const DriverDashboard = () => {
   const [settlementCodeInput, setSettlementCodeInput] = useState("");
   const [confirmingReturn, setConfirmingReturn] = useState(false);
   const [acceptingInvite, setAcceptingInvite] = useState<string | null>(null);
+  const [emptiesDialog, setEmptiesDialog] = useState<{ orderId: string; storeId: string; items: { product_id: string; quantity: number }[] } | null>(null);
 
   const acceptInvitation = async (linkId: string) => {
     setAcceptingInvite(linkId);
@@ -1719,6 +1727,15 @@ const DriverDashboard = () => {
       </nav>
     </div>
       <ProductTour steps={motoboyTourSteps} tourKey="motoboy" />
+      {emptiesDialog && (
+        <EmptiesReturnDialog
+          open={!!emptiesDialog}
+          orderId={emptiesDialog.orderId}
+          storeId={emptiesDialog.storeId}
+          items={emptiesDialog.items}
+          onClose={() => setEmptiesDialog(null)}
+        />
+      )}
     </>
   );
 };
