@@ -1147,11 +1147,28 @@ const CheckoutPage = () => {
               </div>
             ))}
 
+            {items[0] && (
+              <EmptiesExchange
+                storeId={items[0].store_id}
+                items={items}
+                onChange={handleEmptiesChange}
+              />
+            )}
+
             <div className="border-t border-border/50 pt-3 mt-3 space-y-2">
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Subtotal</span>
                 <span className="font-semibold text-foreground">{formatBRL(subtotal)}</span>
               </div>
+
+              {emptiesDiscount > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-emerald-600 flex items-center gap-1">
+                    ♻️ Troca de casquinhas
+                  </span>
+                  <span className="font-bold text-emerald-600">-{formatBRL(emptiesDiscount)}</span>
+                </div>
+              )}
 
               {couponDiscount > 0 && (
                 <div className="flex justify-between text-sm">
