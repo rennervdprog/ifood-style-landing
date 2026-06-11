@@ -504,6 +504,15 @@ const CategoryProductFields = ({ category, metadata, onChange, onNameChange, sto
               {metadata.drink_type && !["Água","Refrigerante","Energético"].includes(metadata.drink_type) &&
                 renderTextField("Teor alcoólico", "alcohol_content", "Ex: 4.5%, 13%, 40%...")}
               {renderToggle("♻️ Casco retornável", "returnable_bottle")}
+              {metadata.returnable_bottle && (
+                <div className="space-y-2 rounded-xl border border-primary/20 bg-primary/5 p-3">
+                  {renderTextField("Valor do casco (R$)", "deposit_price", "Ex: 3,00")}
+                  {renderTextField("Grupo do vasilhame", "returnable_group", "Ex: garrafa 600ml")}
+                  <p className="text-[10px] text-muted-foreground leading-relaxed">
+                    💡 Garrafas com o mesmo "grupo" são intercambiáveis na troca (Heineken 600ml ↔ Brahma 600ml).
+                  </p>
+                </div>
+              )}
 
               {/* Temperatura de serviço */}
               <div className="space-y-1.5">
