@@ -1727,6 +1727,15 @@ const DriverDashboard = () => {
       </nav>
     </div>
       <ProductTour steps={motoboyTourSteps} tourKey="motoboy" />
+      {emptiesDialog && (
+        <EmptiesReturnDialog
+          open={!!emptiesDialog}
+          orderId={emptiesDialog.orderId}
+          storeId={emptiesDialog.storeId}
+          items={emptiesDialog.items}
+          onClose={() => setEmptiesDialog(null)}
+        />
+      )}
     </>
   );
 };
