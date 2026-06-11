@@ -160,6 +160,14 @@ const PdvPage = () => {
   const [loading, setLoading] = useState(false);
   const [orderDone, setOrderDone] = useState(false);
 
+  // Fluxo de troca de casquinhas no PDV
+  const [emptiesFlow, setEmptiesFlow] = useState<{
+    step: "lookup" | "return" | null;
+    orderId: string;
+    items: { product_id: string; quantity: number }[];
+    customerName?: string;
+  }>({ step: null, orderId: "", items: [] });
+
   // Multi-pagamento (split)
   const [splitMode, setSplitMode] = useState(false);
   const [splitPayments, setSplitPayments] = useState<SplitPayment[]>([]);
