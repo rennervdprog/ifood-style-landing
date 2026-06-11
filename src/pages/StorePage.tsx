@@ -534,6 +534,7 @@ const StorePage = () => {
         image_url: product.image_url,
         addons,
         observations,
+        metadata: (product as any).metadata || undefined,
       },
       quantity
     );
@@ -571,6 +572,7 @@ const StorePage = () => {
         image_url: product.image_url,
         addons: [],
         observations: "",
+        metadata: (product as any).metadata || undefined,
       },
       1
     );

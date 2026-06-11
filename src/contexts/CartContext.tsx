@@ -20,6 +20,7 @@ export interface CartItem {
   image_url?: string | null;
   addons?: CartAddon[];
   observations?: string;
+  metadata?: Record<string, any>;
 }
 
 interface CartContextType {

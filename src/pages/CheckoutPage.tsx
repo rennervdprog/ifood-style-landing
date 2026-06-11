@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useCart } from "@/contexts/CartContext";
@@ -23,6 +23,7 @@ import DeliveryTimeEstimate from "@/components/DeliveryTimeEstimate";
 import { resolveAddressContext, reverseGeocode, type Coordinates, type ReverseGeocodeResult } from "@/lib/addressGeocoding";
 import { getBestClientCoordinates, getDeviceGPS } from "@/lib/deviceLocation";
 import { checkStoreAccess, MAX_DISTANCE_KM } from "@/lib/fraudCheck";
+import EmptiesExchange, { type EmptiesExchangeSelection } from "@/components/EmptiesExchange";
 
 const allPaymentMethods = [
   { id: "pix",         label: "PIX Online",         desc: "Pagamento instantâneo",   icon: QrCode },
@@ -216,7 +217,13 @@ const CheckoutPage = () => {
     : (couponType === "free_shipping" ? freeShipPlatformAbsorb : activeDeliveryFee);
   const effectiveCouponDiscount = couponDiscount + freeShipPlatformAbsorb;
   const walletDiscount = useWallet ? Math.min(walletBalance, Math.max(0, addMoney(subtotal, effectiveDeliveryFee, -effectiveCouponDiscount, -loyaltyDiscount))) : 0;
-  const finalTotal = Math.max(0, addMoney(subtotal, effectiveDeliveryFee, -effectiveCouponDiscount, -loyaltyDiscount, -walletDiscount));
+  const [emptiesSelections, setEmptiesSelections] = useState<EmptiesExchangeSelection[]>([]);
+  const [emptiesDiscount, setEmptiesDiscount] = useState(0);
+  const handleEmptiesChange = useCallback((sel: EmptiesExchangeSelection[], disc: number) => {
+    setEmptiesSelections(sel);
+    setEmptiesDiscount(disc);
+  }, []);
+  const finalTotal = Math.max(0, addMoney(subtotal, effectiveDeliveryFee, -effectiveCouponDiscount, -loyaltyDiscount, -walletDiscount, -emptiesDiscount));
 
    // Background geocoding from address (initial estimate)
    useEffect(() => {
@@ -503,7 +510,11 @@ const CheckoutPage = () => {
       for (const [storeId, storeItems] of Object.entries(storeGroups)) {
         const storeSubtotal = sumMoney(storeItems.map((item) => item.price * item.quantity));
         const appFee = 0; // Calculated by DB trigger using store's commission_rate
-        const storeTotalPrice = Math.max(0, addMoney(storeSubtotal, effectiveDeliveryFee, -effectiveCouponDiscount, -loyaltyDiscount));
+        const storeEmpties = emptiesSelections.filter(s =>
+          storeItems.some(it => (it.metadata as any)?.returnable_group === s.group)
+        );
+        const storeEmptiesDiscount = storeEmpties.reduce((sum, s) => sum + s.qty * s.unit_price, 0);
+        const storeTotalPrice = Math.max(0, addMoney(storeSubtotal, effectiveDeliveryFee, -effectiveCouponDiscount, -loyaltyDiscount, -storeEmptiesDiscount));
 
         const changeValue = paymentMethod === "dinheiro" && needsChange ? addMoney(parseFloat(changeFor)) : 0;
         const orderStatus = paymentMethod === "pix" ? "aguardando_pagamento" : "pendente";
@@ -526,6 +537,7 @@ const CheckoutPage = () => {
             change_for: changeValue,
             status: orderStatus,
             scheduled_for: scheduledFor ? new Date(scheduledFor).toISOString() : null,
+            metadata: storeEmpties.length > 0 ? { empties_exchange: storeEmpties } : null,
           } as any)
           .select("id")
           .single();
@@ -1140,11 +1152,28 @@ const CheckoutPage = () => {
               </div>
             ))}
 
+            {items[0] && (
+              <EmptiesExchange
+                storeId={items[0].store_id}
+                items={items}
+                onChange={handleEmptiesChange}
+              />
+            )}
+
             <div className="border-t border-border/50 pt-3 mt-3 space-y-2">
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Subtotal</span>
                 <span className="font-semibold text-foreground">{formatBRL(subtotal)}</span>
               </div>
+
+              {emptiesDiscount > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-emerald-600 flex items-center gap-1">
+                    ♻️ Troca de casquinhas
+                  </span>
+                  <span className="font-bold text-emerald-600">-{formatBRL(emptiesDiscount)}</span>
+                </div>
+              )}
 
               {couponDiscount > 0 && (
                 <div className="flex justify-between text-sm">
