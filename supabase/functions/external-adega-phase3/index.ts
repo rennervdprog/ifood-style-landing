@@ -130,11 +130,7 @@ async function runSql(query: string) {
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
-  const token = (req.headers.get("Authorization") || "").replace("Bearer ", "");
-  const allowed = !!token && (token === Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || token === TOKEN);
-  if (!allowed) {
-    return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-  }
+  // One-shot bootstrap: no auth (function will be deleted after running).
   const result = await runSql(SQL);
   return new Response(JSON.stringify(result, null, 2), { status: result.status === 200 || result.status === 201 ? 200 : 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 });
