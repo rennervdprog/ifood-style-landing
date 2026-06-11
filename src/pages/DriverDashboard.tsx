@@ -676,6 +676,7 @@ const DriverDashboard = () => {
   const [settlementCodeInput, setSettlementCodeInput] = useState("");
   const [confirmingReturn, setConfirmingReturn] = useState(false);
   const [acceptingInvite, setAcceptingInvite] = useState<string | null>(null);
+  const [emptiesDialog, setEmptiesDialog] = useState<{ orderId: string; storeId: string; items: { product_id: string; quantity: number }[] } | null>(null);
 
   const acceptInvitation = async (linkId: string) => {
     setAcceptingInvite(linkId);
