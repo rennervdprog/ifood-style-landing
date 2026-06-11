@@ -26,6 +26,8 @@ import { usePdvBarcodeScanner } from "@/components/pdv/usePdvBarcodeScanner";
 import { PdvSplitPayment, type SplitPayment } from "@/components/pdv/PdvSplitPayment";
 import { PdvDenominationCount } from "@/components/pdv/PdvDenominationCount";
 import PdvDeliveryAlerts from "@/components/pdv/PdvDeliveryAlerts";
+import PdvEmptiesCustomerDialog from "@/components/PdvEmptiesCustomerDialog";
+import EmptiesReturnDialog from "@/components/EmptiesReturnDialog";
 
 // Detecta se está em tela mobile (< 768px)
 const useIsMobile = () => {
@@ -157,6 +159,14 @@ const PdvPage = () => {
   const [activeSection, setActiveSection] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [orderDone, setOrderDone] = useState(false);
+
+  // Fluxo de troca de casquinhas no PDV
+  const [emptiesFlow, setEmptiesFlow] = useState<{
+    step: "lookup" | "return" | null;
+    orderId: string;
+    items: { product_id: string; quantity: number }[];
+    customerName?: string;
+  }>({ step: null, orderId: "", items: [] });
 
   // Multi-pagamento (split)
   const [splitMode, setSplitMode] = useState(false);
@@ -432,6 +442,26 @@ const PdvPage = () => {
       queryClient.invalidateQueries({ queryKey: ["pdv-movements", currentSession.id] });
       setOrderDone(true);
       toast.success("✅ Venda finalizada!");
+
+      // Detecta itens retornáveis (garrafas) para abrir fluxo de troca de casquinhas
+      try {
+        const { data: prods } = await supabase
+          .from("products")
+          .select("id, metadata")
+          .in("id", cart.map((i) => i.id));
+        const hasReturnable = (prods || []).some(
+          (p: any) => p?.metadata?.returnable_bottle,
+        );
+        if (hasReturnable) {
+          setEmptiesFlow({
+            step: "lookup",
+            orderId: order.id,
+            items: cart.map((i) => ({ product_id: i.id, quantity: i.quantity })),
+          });
+        }
+      } catch (e) {
+        console.warn("Empties detection skipped:", e);
+      }
 
       // Imprimir nota PDV automaticamente
       try {
@@ -1195,6 +1225,25 @@ const PdvPage = () => {
             </button>
           </div>
         </div>
+      )}
+
+      {/* Fluxo de troca de casquinhas no PDV */}
+      {emptiesFlow.step === "lookup" && (
+        <PdvEmptiesCustomerDialog
+          open
+          orderId={emptiesFlow.orderId}
+          onClose={() => setEmptiesFlow({ step: null, orderId: "", items: [] })}
+          onFound={(_id, name) => setEmptiesFlow((p) => ({ ...p, step: "return", customerName: name }))}
+        />
+      )}
+      {emptiesFlow.step === "return" && store?.id && (
+        <EmptiesReturnDialog
+          open
+          orderId={emptiesFlow.orderId}
+          storeId={store.id}
+          items={emptiesFlow.items}
+          onClose={() => setEmptiesFlow({ step: null, orderId: "", items: [] })}
+        />
       )}
     </div>
   );
