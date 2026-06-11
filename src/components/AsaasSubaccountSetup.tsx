@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import AsaasBadge, { AsaasBadgeBar } from "@/components/AsaasBadge";
@@ -62,6 +62,14 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
   const [submitting, setSubmitting] = useState(false);
   const [lastError, setLastError] = useState<string | null>(null);
   const [debugInfo, setDebugInfo] = useState<any>(null);
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const markTouched = (k: string) => setTouched((t) => (t[k] ? t : { ...t, [k]: true }));
+  const touchStep = (keys: string[]) =>
+    setTouched((t) => {
+      const next = { ...t };
+      keys.forEach((k) => (next[k] = true));
+      return next;
+    });
 
   const { data: store, isLoading } = useQuery({
     queryKey: ["store-asaas", storeId],
@@ -122,6 +130,59 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
 
   const isCpf = personType === "FISICA";
 
+  const errors = useMemo(() => {
+    const e: Record<string, string> = {};
+    const cpfCnpj = onlyDigits(form.cpfCnpj);
+    const phone = onlyDigits(form.phone);
+    const cep = onlyDigits(form.postalCode);
+    const income = Number(String(form.incomeValue).replace(/\./g, "").replace(",", "."));
+
+    if (!form.name.trim()) e.name = isCpf ? "Informe seu nome completo" : "Informe a razão social";
+    else if (form.name.trim().length < 3) e.name = "Mínimo 3 caracteres";
+
+    if (!form.email.trim()) e.email = "Informe o e-mail";
+    else if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(form.email.trim())) e.email = "E-mail inválido";
+
+    if (!form.emailConfirm.trim()) e.emailConfirm = "Confirme o e-mail";
+    else if (form.email.toLowerCase().trim() !== form.emailConfirm.toLowerCase().trim())
+      e.emailConfirm = "Os e-mails não coincidem";
+
+    if (isCpf) {
+      if (cpfCnpj.length !== 11) e.cpfCnpj = `CPF deve ter 11 dígitos (${cpfCnpj.length} digitados)`;
+      else if (!isValidCpf(cpfCnpj)) e.cpfCnpj = "CPF inválido";
+      if (!form.birthDate) e.birthDate = "Data de nascimento obrigatória";
+    } else {
+      if (cpfCnpj.length !== 14) e.cpfCnpj = `CNPJ deve ter 14 dígitos (${cpfCnpj.length} digitados)`;
+      else if (!isValidCnpj(cpfCnpj)) e.cpfCnpj = "CNPJ inválido";
+    }
+
+    if (!Number.isFinite(income) || income <= 0)
+      e.incomeValue = isCpf ? "Informe a renda mensal" : "Informe o faturamento mensal";
+
+    if (phone.length < 10 || phone.length > 11) e.phone = "Telefone inválido (DDD + número)";
+
+    if (cep.length !== 8) e.postalCode = "CEP deve ter 8 dígitos";
+    if (!form.address.trim()) e.address = "Informe o endereço";
+    if (!form.addressNumber.trim()) e.addressNumber = "Nº obrigatório";
+    if (!form.province.trim()) e.province = "Informe o bairro";
+
+    const cleanPix = sanitizePixKeyForAsaas(form.pixAddressKey, form.pixAddressKeyType.toLowerCase());
+    const pixErr = validatePixKey(cleanPix, form.pixAddressKeyType.toLowerCase());
+    if (pixErr) e.pixAddressKey = pixErr;
+
+    return e;
+  }, [form, isCpf, personType]);
+
+  const hasStepErrors = (keys: string[]) => keys.some((k) => errors[k]);
+  const errClass = (k: string) =>
+    touched[k] && errors[k] ? "border-destructive focus-visible:ring-destructive/30" : "";
+  const FieldError = ({ k }: { k: string }) =>
+    touched[k] && errors[k] ? (
+      <p className="text-[11px] text-destructive flex items-center gap-1 mt-1">
+        <AlertCircle className="h-3 w-3" /> {errors[k]}
+      </p>
+    ) : null;
+
   const update = (k: string, v: string) => {
     let val = v;
     if (k === "cpfCnpj") val = onlyDigits(v).slice(0, personType === "FISICA" ? 11 : 14);
@@ -155,6 +216,15 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
   };
 
   const submit = async () => {
+    // marcar tudo como touched para revelar todos os erros
+    touchStep([
+      "name","email","emailConfirm","cpfCnpj","birthDate","incomeValue","phone",
+      "postalCode","address","addressNumber","province","pixAddressKey",
+    ]);
+    if (Object.keys(errors).length > 0) {
+      toast.error("Corrija os campos destacados em vermelho.");
+      return;
+    }
     const cleanCpfCnpj = onlyDigits(form.cpfCnpj).slice(0, personType === "FISICA" ? 11 : 14);
     const cleanPhone = onlyDigits(form.phone);
     const cleanCep = onlyDigits(form.postalCode);
@@ -493,14 +563,16 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
               <div className="grid gap-4">
                 <div className="space-y-2">
                   <Label>{isCpf ? "Nome completo" : "Razão social"}</Label>
-                  <Input value={form.name} onChange={(e) => update("name", e.target.value)} placeholder={isCpf ? "Como no RG/CNH" : "Como no Cartão CNPJ"} />
+                  <Input value={form.name} onChange={(e) => update("name", e.target.value)} onBlur={() => markTouched("name")} className={errClass("name")} placeholder={isCpf ? "Como no RG/CNH" : "Como no Cartão CNPJ"} />
+                  <FieldError k="name" />
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>{isCpf ? "CPF" : "CNPJ"}</Label>
                     <Input value={formatPixKeyDisplay(form.cpfCnpj, isCpf ? "cpf" : "cnpj")} 
-                           onChange={(e) => update("cpfCnpj", e.target.value)} placeholder="000.000.000-00" />
+                           onChange={(e) => update("cpfCnpj", e.target.value)} onBlur={() => markTouched("cpfCnpj")} className={errClass("cpfCnpj")} placeholder="000.000.000-00" />
+                    <FieldError k="cpfCnpj" />
                   </div>
                   <div className="space-y-2">
                     <Label>E-mail comercial</Label>
@@ -508,8 +580,11 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
                       type="email"
                       value={form.email}
                       onChange={(e) => update("email", e.target.value)}
+                      onBlur={() => markTouched("email")}
+                      className={errClass("email")}
                       placeholder="vendas@loja.com"
                     />
+                    <FieldError k="email" />
                   </div>
                 </div>
 
@@ -520,6 +595,7 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
                     type="email"
                     value={form.emailConfirm}
                     onChange={(e) => update("emailConfirm", e.target.value)}
+                    onBlur={() => markTouched("emailConfirm")}
                     placeholder="Digite o e-mail novamente"
                     className={
                       form.emailConfirm && form.email
@@ -548,7 +624,8 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
                 {isCpf ? (
                   <div className="space-y-2">
                     <Label>Data de nascimento</Label>
-                    <Input type="date" value={form.birthDate} onChange={(e) => update("birthDate", e.target.value)} />
+                    <Input type="date" value={form.birthDate} onChange={(e) => update("birthDate", e.target.value)} onBlur={() => markTouched("birthDate")} className={errClass("birthDate")} />
+                    <FieldError k="birthDate" />
                   </div>
                 ) : (
                   <div className="space-y-2">
@@ -570,29 +647,24 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
                     <Label>{isCpf ? "Renda mensal" : "Faturamento mensal"}</Label>
                     <div className="relative">
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-bold">R$</span>
-                      <Input className="pl-9" inputMode="decimal" value={form.incomeValue} onChange={(e) => update("incomeValue", e.target.value)} placeholder="0,00" />
+                      <Input className={`pl-9 ${errClass("incomeValue")}`} inputMode="decimal" value={form.incomeValue} onChange={(e) => update("incomeValue", e.target.value)} onBlur={() => markTouched("incomeValue")} placeholder="0,00" />
                     </div>
+                    <FieldError k="incomeValue" />
                   </div>
                   <div className="space-y-2">
                     <Label>WhatsApp</Label>
-                    <Input value={formatPixKeyDisplay(form.phone, "phone")} onChange={(e) => update("phone", e.target.value)} placeholder="(00) 00000-0000" />
+                    <Input value={formatPixKeyDisplay(form.phone, "phone")} onChange={(e) => update("phone", e.target.value)} onBlur={() => markTouched("phone")} className={errClass("phone")} placeholder="(00) 00000-0000" />
+                    <FieldError k="phone" />
                   </div>
                 </div>
               </div>
             </div>
             
             <Button className="w-full h-12 text-base font-bold" onClick={() => {
-              if (!form.name || !form.email || !form.cpfCnpj) {
-                toast.error("Preencha os campos básicos para continuar.");
-                return;
-              }
-              // 🔒 Validar e-mail antes de avançar
-              if (!form.emailConfirm) {
-                toast.error("Confirme seu e-mail antes de continuar.");
-                return;
-              }
-              if (form.email.toLowerCase().trim() !== form.emailConfirm.toLowerCase().trim()) {
-                toast.error("Os e-mails não coincidem. Verifique e tente novamente.");
+              const keys = ["name","email","emailConfirm","cpfCnpj","birthDate","incomeValue","phone"];
+              touchStep(keys);
+              if (hasStepErrors(keys)) {
+                toast.error("Corrija os campos destacados em vermelho.");
                 return;
               }
               setStep(2);
@@ -607,24 +679,28 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
             <div className="grid gap-4">
               <div className="space-y-2">
                 <Label>CEP</Label>
-                <Input value={form.postalCode} onChange={(e) => update("postalCode", e.target.value)} placeholder="00000-000" maxLength={9} />
+                <Input value={form.postalCode} onChange={(e) => update("postalCode", e.target.value)} onBlur={() => markTouched("postalCode")} className={errClass("postalCode")} placeholder="00000-000" maxLength={9} />
+                <FieldError k="postalCode" />
               </div>
 
               <div className="grid grid-cols-4 gap-4">
                 <div className="col-span-3 space-y-2">
                   <Label>Endereço</Label>
-                  <Input value={form.address} onChange={(e) => update("address", e.target.value)} placeholder="Rua, Avenida..." />
+                  <Input value={form.address} onChange={(e) => update("address", e.target.value)} onBlur={() => markTouched("address")} className={errClass("address")} placeholder="Rua, Avenida..." />
+                  <FieldError k="address" />
                 </div>
                 <div className="col-span-1 space-y-2">
                   <Label>Nº</Label>
-                  <Input value={form.addressNumber} onChange={(e) => update("addressNumber", e.target.value)} placeholder="123" />
+                  <Input value={form.addressNumber} onChange={(e) => update("addressNumber", e.target.value)} onBlur={() => markTouched("addressNumber")} className={errClass("addressNumber")} placeholder="123" />
+                  <FieldError k="addressNumber" />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Bairro</Label>
-                  <Input value={form.province} onChange={(e) => update("province", e.target.value)} />
+                  <Input value={form.province} onChange={(e) => update("province", e.target.value)} onBlur={() => markTouched("province")} className={errClass("province")} />
+                  <FieldError k="province" />
                 </div>
                 <div className="space-y-2">
                   <Label>Complemento</Label>
@@ -647,8 +723,10 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
             <div className="flex gap-3">
               <Button variant="outline" className="flex-1 h-12" onClick={() => setStep(1)}>Voltar</Button>
               <Button className="flex-[2] h-12 text-base font-bold" onClick={() => {
-                 if (!form.postalCode || !form.address || !form.addressNumber) {
-                   toast.error("Preencha os campos obrigatórios de endereço.");
+                 const keys = ["postalCode","address","addressNumber","province"];
+                 touchStep(keys);
+                 if (hasStepErrors(keys)) {
+                   toast.error("Corrija os campos destacados em vermelho.");
                    return;
                  }
                  setStep(3);
@@ -688,9 +766,11 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
                 <Input 
                   value={formatPixKeyDisplay(form.pixAddressKey, form.pixAddressKeyType.toLowerCase())} 
                   onChange={(e) => update("pixAddressKey", e.target.value)} 
+                  onBlur={() => markTouched("pixAddressKey")}
                   placeholder="Digite sua chave aqui"
-                  className="h-11"
+                  className={`h-11 ${errClass("pixAddressKey")}`}
                 />
+                <FieldError k="pixAddressKey" />
               </div>
             </div>
 
