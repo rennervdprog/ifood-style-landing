@@ -44,10 +44,11 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
           .in("user_id", userIds),
       ]);
 
-      const { data: locRows } = await supabase
+      const { data: locRowsData } = await supabase
         .from("driver_locations")
         .select("driver_user_id, updated_at")
         .in("driver_user_id", userIds);
+      const locRows = (locRowsData as any[]) || [];
 
       return (data as any[]).map(sd => ({
         ...sd,
