@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { formatBRL } from "@/lib/utils";
-import { AlertTriangle, CheckCircle2, XCircle, Loader2, Clock, Eye } from "lucide-react";
+import { CheckCircle2, XCircle, Loader2, Clock, Download } from "lucide-react";
 
 const REASON_LABELS: Record<string, string> = {
   wrong_product: "Produto errado",
@@ -32,6 +32,7 @@ const AdminRefundPanel = ({ storeId }: Props) => {
   const [processing, setProcessing] = useState<string | null>(null);
   const [adminNotes, setAdminNotes] = useState<Record<string, string>>({});
   const [adjustedAmounts, setAdjustedAmounts] = useState<Record<string, string>>({});
+  const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "processed" | "rejected">("all");
 
   const { data: requests, isLoading } = useQuery({
     queryKey: ["refund-requests", storeId],
@@ -59,6 +60,52 @@ const AdminRefundPanel = ({ storeId }: Props) => {
     },
     enabled: !!user,
   });
+
+  const counts = useMemo(() => {
+    const list = requests || [];
+    return {
+      all: list.length,
+      pending: list.filter((r: any) => r.status === "pending").length,
+      processed: list.filter((r: any) => r.status === "processed").length,
+      rejected: list.filter((r: any) => r.status === "rejected").length,
+    };
+  }, [requests]);
+
+  const filtered = useMemo(() => {
+    const list = requests || [];
+    if (statusFilter === "all") return list;
+    if (statusFilter === "pending") return list.filter((r: any) => r.status === "pending" || r.status === "approved");
+    return list.filter((r: any) => r.status === statusFilter);
+  }, [requests, statusFilter]);
+
+  const exportCsv = () => {
+    const rows = filtered;
+    if (!rows.length) {
+      toast.info("Nada para exportar neste filtro.");
+      return;
+    }
+    const header = ["Data", "Pedido", "Cliente", "Motivo", "Solicitado", "Aprovado", "Status", "Pagamento"];
+    const escape = (v: any) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+    const lines = [header.join(",")].concat(
+      rows.map((r: any) => [
+        new Date(r.created_at).toLocaleString("pt-BR"),
+        r.order_id?.slice(0, 8).toUpperCase() || "",
+        r.profiles?.full_name || "",
+        REASON_LABELS[r.reason] || r.reason,
+        Number(r.requested_amount || 0).toFixed(2),
+        r.approved_amount != null ? Number(r.approved_amount).toFixed(2) : "",
+        STATUS_LABELS[r.status]?.label || r.status,
+        r.orders?.payment_method || "",
+      ].map(escape).join(","))
+    );
+    const blob = new Blob(["\uFEFF" + lines.join("\n")], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `reembolsos-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   const handleProcess = async (refundId: string, approve: boolean) => {
     setProcessing(refundId);
@@ -113,7 +160,37 @@ const AdminRefundPanel = ({ storeId }: Props) => {
 
   return (
     <div className="space-y-3">
-      {requests.map((req) => {
+      <div className="flex items-center gap-1.5 overflow-x-auto -mx-1 px-1">
+        {([
+          { key: "all", label: "Todos" },
+          { key: "pending", label: "Pendentes" },
+          { key: "processed", label: "Aprovados" },
+          { key: "rejected", label: "Recusados" },
+        ] as const).map(t => (
+          <button
+            key={t.key}
+            onClick={() => setStatusFilter(t.key)}
+            className={`shrink-0 px-3 py-1 rounded-full text-[11px] font-bold border ${
+              statusFilter === t.key
+                ? "bg-primary text-primary-foreground border-primary"
+                : "bg-card text-muted-foreground border-border"
+            }`}
+          >
+            {t.label} <span className="opacity-70">({counts[t.key]})</span>
+          </button>
+        ))}
+        <button
+          onClick={exportCsv}
+          className="shrink-0 ml-auto flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold border border-border bg-card text-foreground"
+        >
+          <Download className="h-3 w-3" /> CSV
+        </button>
+      </div>
+
+      {filtered.length === 0 && (
+        <p className="text-center text-xs text-muted-foreground py-6">Nenhuma solicitação neste filtro.</p>
+      )}
+      {filtered.map((req) => {
         const status = STATUS_LABELS[req.status] || STATUS_LABELS.pending;
         const isPending = req.status === "pending";
 
