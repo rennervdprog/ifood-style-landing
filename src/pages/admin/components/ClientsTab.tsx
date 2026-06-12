@@ -7,6 +7,22 @@ import { statusColors } from "../constants";
 
 export type ClientFilter = "all" | "loyal" | "inactive" | "location";
 
+type RfmSegment = "novo" | "recorrente" | "risco" | "inativo";
+
+const RFM_BADGES: Record<RfmSegment, { label: string; cls: string }> = {
+  novo:        { label: "Novo",       cls: "bg-blue-500/15 text-blue-600 dark:text-blue-400" },
+  recorrente:  { label: "Recorrente", cls: "bg-green-500/15 text-green-600 dark:text-green-400" },
+  risco:       { label: "Em risco",   cls: "bg-amber-500/15 text-amber-600 dark:text-amber-400" },
+  inativo:     { label: "Inativo",    cls: "bg-red-500/15 text-red-600 dark:text-red-400" },
+};
+
+const getRfmSegment = (totalOrders: number, daysSinceLastOrder: number): RfmSegment => {
+  if (daysSinceLastOrder > 60) return "inativo";
+  if (daysSinceLastOrder > 30 && totalOrders >= 2) return "risco";
+  if (totalOrders >= 3 && daysSinceLastOrder <= 30) return "recorrente";
+  return "novo";
+};
+
 interface ClientsTabProps {
   clientFilter: ClientFilter;
   setClientFilter: (f: ClientFilter) => void;
@@ -74,6 +90,15 @@ const ClientsTabImpl = ({
                   <div className="flex items-center gap-2">
                     <p className="text-sm font-bold text-foreground truncate">{client.name}</p>
                     <span className="bg-primary/10 text-primary text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0">{client.totalOrders}</span>
+                    {(() => {
+                      const seg = getRfmSegment(client.totalOrders, client.daysSinceLastOrder);
+                      const b = RFM_BADGES[seg];
+                      return (
+                        <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 ${b.cls}`}>
+                          {b.label}
+                        </span>
+                      );
+                    })()}
                   </div>
                   <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
                     <span>{client.daysSinceLastOrder === 0 ? "Hoje" : `${client.daysSinceLastOrder}d atrás`}</span>
