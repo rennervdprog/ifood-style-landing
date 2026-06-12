@@ -60,37 +60,65 @@ const TabFallback = () => (
   </div>
 );
 
+// Barra de sub-abas reutilizável (usada pelas seções consolidadas: Financeiro, Lojas, App, Auditoria)
+const SubTabsBar = ({
+  value,
+  onChange,
+  items,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  items: { key: string; label: string; icon?: React.ElementType; badge?: number }[];
+}) => (
+  <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-thin">
+    {items.map((it) => {
+      const Icon = it.icon;
+      const isActive = value === it.key;
+      return (
+        <button
+          key={it.key}
+          onClick={() => onChange(it.key)}
+          className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-colors ${
+            isActive
+              ? "bg-primary text-primary-foreground shadow-sm"
+              : "bg-muted text-muted-foreground hover:text-foreground hover:bg-muted/80"
+          }`}
+        >
+          {Icon && <Icon className="h-3.5 w-3.5" />}
+          <span>{it.label}</span>
+          {!!it.badge && it.badge > 0 && (
+            <span className={`ml-1 text-[10px] font-black rounded-full px-1.5 py-0.5 ${isActive ? "bg-primary-foreground/20" : "bg-destructive text-destructive-foreground"}`}>
+              {it.badge}
+            </span>
+          )}
+        </button>
+      );
+    })}
+  </div>
+);
+
 type DateFilter = "today" | "yesterday" | "week";
 type AdminTab = "dashboard" | "approvals" | "stores" | "financeiro" | "pagamentos" | "saques" | "sync" | "coupons" | "entrega" | "cidades" | "juridico" | "planos" | "moderadores" | "socios" | "suporte" | "app-page" | "test_finance" | "links" | "broadcast" | "logs" | "coach" | "auditoria";
 
 const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; group: string }[] = [
   // Início
   { key: "dashboard", label: "Dashboard", icon: LayoutDashboard, group: "Início" },
-  // Operação
+  // Operação (Cidades + Entrega agora vivem dentro de "Lojas")
   { key: "stores", label: "Lojas", icon: Store, group: "Operação" },
-  { key: "cidades", label: "Cidades", icon: MapPin, group: "Operação" },
   { key: "coupons", label: "Cupons", icon: Ticket, group: "Operação" },
-  { key: "entrega", label: "Entrega", icon: Truck, group: "Operação" },
-  // Financeiro
+  // Financeiro unificado (Pagamentos / Saques / Planos / Sócios / Teste viraram sub-abas)
   { key: "financeiro", label: "Financeiro", icon: DollarSign, group: "Financeiro" },
-  { key: "pagamentos", label: "Pagamentos", icon: CreditCard, group: "Financeiro" },
-  { key: "saques", label: "Saques", icon: Wallet, group: "Financeiro" },
-  { key: "planos", label: "Planos", icon: Crown, group: "Financeiro" },
-  { key: "socios", label: "Sócios", icon: Handshake, group: "Financeiro" },
-  { key: "test_finance", label: "Finanças Teste", icon: FlaskConical, group: "Financeiro" },
   // Pessoas
   { key: "moderadores", label: "Moderadores", icon: Users, group: "Pessoas" },
   { key: "suporte", label: "Suporte", icon: MessageCircle, group: "Pessoas" },
-  // Marketing
+  // Marketing (Links virou sub-aba de "Página do App")
   { key: "app-page", label: "Página do App", icon: Smartphone, group: "Marketing" },
-  { key: "links", label: "Página /links", icon: LinkIcon, group: "Marketing" },
   { key: "broadcast", label: "Notificações", icon: Megaphone, group: "Marketing" },
   { key: "coach", label: "Coach Vendas IA", icon: Sparkles, group: "Marketing" },
-  // Sistema
+  // Sistema (Logs virou sub-aba de "Auditoria")
   { key: "sync", label: "Sincronizar", icon: RefreshCw, group: "Sistema" },
   { key: "auditoria", label: "Auditoria", icon: ShieldCheck, group: "Sistema" },
   { key: "juridico", label: "Jurídico", icon: Scale, group: "Sistema" },
-  { key: "logs", label: "Logs", icon: FileText, group: "Sistema" },
 ];
 
  import { FinanceTab as FinanceTabFull, MetricCard } from "./SuperAdminDashboard";
@@ -106,6 +134,37 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
   const [selectedStore, setSelectedStore] = useState<string>("all");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showMoreSheet, setShowMoreSheet] = useState(false);
+  // Sub-seções dos grupos unificados
+  type FinanceSection = "overview" | "saques" | "pagamentos" | "planos" | "socios" | "test";
+  const [financeSection, setFinanceSection] = useState<FinanceSection>("overview");
+  type StoresSection = "lojas" | "cidades" | "entrega";
+  const [storesSection, setStoresSection] = useState<StoresSection>("lojas");
+  type AppPageSection = "page" | "links";
+  const [appPageSection, setAppPageSection] = useState<AppPageSection>("page");
+  type AuditoriaSection = "auditoria" | "logs";
+  const [auditoriaSection, setAuditoriaSection] = useState<AuditoriaSection>("auditoria");
+
+  // Redireciona deep-links de abas antigas para a aba consolidada correspondente
+  useEffect(() => {
+    const legacyFinance: AdminTab[] = ["pagamentos", "saques", "planos", "socios", "test_finance"];
+    const legacyMap: Partial<Record<AdminTab, { tab: AdminTab; apply: () => void }>> = {
+      pagamentos:   { tab: "financeiro", apply: () => setFinanceSection("pagamentos") },
+      saques:       { tab: "financeiro", apply: () => setFinanceSection("saques") },
+      planos:       { tab: "financeiro", apply: () => setFinanceSection("planos") },
+      socios:       { tab: "financeiro", apply: () => setFinanceSection("socios") },
+      test_finance: { tab: "financeiro", apply: () => setFinanceSection("test") },
+      cidades:      { tab: "stores",     apply: () => setStoresSection("cidades") },
+      entrega:      { tab: "stores",     apply: () => setStoresSection("entrega") },
+      links:        { tab: "app-page",   apply: () => setAppPageSection("links") },
+      logs:         { tab: "auditoria",  apply: () => setAuditoriaSection("logs") },
+    };
+    const hit = legacyMap[activeTab];
+    if (hit) {
+      hit.apply();
+      setActiveTab(hit.tab);
+    }
+    void legacyFinance;
+  }, [activeTab]);
 
   // Memoizado para evitar recriação a cada render (causava re-fetch de queries)
   const getDateRange = useMemo(() => (filter: DateFilter) => {
@@ -932,30 +991,67 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
             {activeTab === "sync" && <Suspense fallback={<TabFallback />}><SyncExternalTab /></Suspense>}
             {activeTab === "coupons" && <CouponManager isAdmin />}
             {activeTab === "stores" && (
-              <div className="space-y-6">
-                <TestStoreCreator />
-                <AdminStoreManager />
+              <div className="space-y-4">
+                <SubTabsBar
+                  value={storesSection}
+                  onChange={(v) => setStoresSection(v as StoresSection)}
+                  items={[
+                    { key: "lojas", label: "Lojas", icon: Store },
+                    { key: "cidades", label: "Cidades", icon: MapPin },
+                    { key: "entrega", label: "Entrega", icon: Truck },
+                  ]}
+                />
+                {storesSection === "lojas" && (
+                  <div className="space-y-6">
+                    <TestStoreCreator />
+                    <AdminStoreManager />
+                  </div>
+                )}
+                {storesSection === "cidades" && (
+                  <Suspense fallback={<TabFallback />}><CidadesTab stores={stores} /></Suspense>
+                )}
+                {storesSection === "entrega" && <DeliveryFeeConfigPanel />}
               </div>
             )}
-            {activeTab === "cidades" && <Suspense fallback={<TabFallback />}><CidadesTab stores={stores} /></Suspense>}
             {activeTab === "planos" && <PlanosTab />}
             {activeTab === "pagamentos" && <Suspense fallback={<TabFallback />}><PagamentosSplitTab stores={stores || []} /></Suspense>}
             {activeTab === "juridico" && <Suspense fallback={<TabFallback />}><JuridicoTab /></Suspense>}
             {activeTab === "moderadores" && <ModeratorManager />}
             {activeTab === "suporte" && <SupportAdminPanel />}
-            {activeTab === "app-page" && <AppStorePageAdmin />}
+            {activeTab === "app-page" && (
+              <div className="space-y-4">
+                <SubTabsBar
+                  value={appPageSection}
+                  onChange={(v) => setAppPageSection(v as AppPageSection)}
+                  items={[
+                    { key: "page", label: "Página do App", icon: Smartphone },
+                    { key: "links", label: "Página /links", icon: LinkIcon },
+                  ]}
+                />
+                {appPageSection === "page" && <AppStorePageAdmin />}
+                {appPageSection === "links" && <AppLinksManager />}
+              </div>
+            )}
             {activeTab === "socios" && <PartnerSplitPanel />}
             {activeTab === "test_finance" && <TestStoreFinancePanel />}
             {activeTab === "links" && <AppLinksManager />}
             {activeTab === "broadcast" && <AdminBroadcastPush />}
             {activeTab === "coach" && <SalesCoachPanel />}
             {activeTab === "auditoria" && (
-              <Suspense fallback={<TabFallback />}>
-                <AuditoriaTab />
-              </Suspense>
-            )}
-            {activeTab === "logs" && (
               <div className="space-y-4">
+                <SubTabsBar
+                  value={auditoriaSection}
+                  onChange={(v) => setAuditoriaSection(v as AuditoriaSection)}
+                  items={[
+                    { key: "auditoria", label: "Auditoria", icon: ShieldCheck },
+                    { key: "logs", label: "Logs", icon: FileText },
+                  ]}
+                />
+                {auditoriaSection === "auditoria" && (
+                  <Suspense fallback={<TabFallback />}><AuditoriaTab /></Suspense>
+                )}
+                {auditoriaSection === "logs" && (
+                  <div className="space-y-4">
                 <div className="bg-card rounded-xl border border-border overflow-hidden">
                   <div className="p-4 border-b border-border bg-muted/30">
                     <h3 className="font-bold flex items-center gap-2">
@@ -1003,37 +1099,61 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
                     </table>
                   </div>
                 </div>
+                  </div>
+                )}
               </div>
             )}
-            {activeTab === "saques" && (
-              <Suspense fallback={<TabFallback />}>
-                <SaquesTab
-                  withdrawalRequests={withdrawalRequests}
-                  pendingWithdrawals={pendingWithdrawals}
-                  drivers={drivers}
-                  queryClient={queryClient}
-                />
-              </Suspense>
-            )}
              {activeTab === "financeiro" && (
-               <FinanceTabFull
-                 storeSettlement={storeSettlement}
-                 driverSettlement={driverSettlement}
-                 financeTotals={financeTotals}
-                 financeFilter={financeFilter}
-                 setFinanceFilter={setFinanceFilter}
-                 financeSubTab={financeSubTab}
-                 setFinanceSubTab={setFinanceSubTab}
-                 selectedStore={selectedStore}
-                 setSelectedStore={setSelectedStore}
-                 stores={stores || []}
-                 loading={financeLoading}
-                 generateStoreWhatsApp={generateStoreWhatsApp}
-                 storeBalances={storeBalances || []}
-                 queryClient={queryClient}
-                 withdrawalRequests={withdrawalRequests || []}
-                 parentStorePlans={parentStorePlans || []}
-               />
+               <div className="space-y-4">
+                 <SubTabsBar
+                   value={financeSection}
+                   onChange={(v) => setFinanceSection(v as FinanceSection)}
+                   items={[
+                     { key: "overview", label: "Visão Geral", icon: LayoutDashboard },
+                     { key: "saques", label: "Saques", icon: Wallet, badge: pendingWithdrawals.length },
+                     { key: "pagamentos", label: "Pagamentos", icon: CreditCard },
+                     { key: "planos", label: "Planos", icon: Crown },
+                     { key: "socios", label: "Sócios", icon: Handshake },
+                     { key: "test", label: "Lojas Teste", icon: FlaskConical },
+                   ]}
+                 />
+                 {financeSection === "overview" && (
+                   <FinanceTabFull
+                     storeSettlement={storeSettlement}
+                     driverSettlement={driverSettlement}
+                     financeTotals={financeTotals}
+                     financeFilter={financeFilter}
+                     setFinanceFilter={setFinanceFilter}
+                     financeSubTab={financeSubTab}
+                     setFinanceSubTab={setFinanceSubTab}
+                     selectedStore={selectedStore}
+                     setSelectedStore={setSelectedStore}
+                     stores={stores || []}
+                     loading={financeLoading}
+                     generateStoreWhatsApp={generateStoreWhatsApp}
+                     storeBalances={storeBalances || []}
+                     queryClient={queryClient}
+                     withdrawalRequests={withdrawalRequests || []}
+                     parentStorePlans={parentStorePlans || []}
+                   />
+                 )}
+                 {financeSection === "saques" && (
+                   <Suspense fallback={<TabFallback />}>
+                     <SaquesTab
+                       withdrawalRequests={withdrawalRequests}
+                       pendingWithdrawals={pendingWithdrawals}
+                       drivers={drivers}
+                       queryClient={queryClient}
+                     />
+                   </Suspense>
+                 )}
+                 {financeSection === "pagamentos" && (
+                   <Suspense fallback={<TabFallback />}><PagamentosSplitTab stores={stores || []} /></Suspense>
+                 )}
+                 {financeSection === "planos" && <PlanosTab />}
+                 {financeSection === "socios" && <PartnerSplitPanel />}
+                 {financeSection === "test" && <TestStoreFinancePanel />}
+               </div>
              )}
              {activeTab === "dashboard" && (
                <div className="space-y-4">
