@@ -28,7 +28,7 @@ const AuditoriaFinanceiraPanel = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("admin_logs")
-        .select("id, created_at, admin_id, action, target_type, target_id, details")
+        .select("id, created_at, admin_user_id, action, target_type, target_id, details")
         .order("created_at", { ascending: false })
         .limit(500);
       if (error) throw error;
