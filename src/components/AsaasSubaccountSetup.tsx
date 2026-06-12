@@ -304,24 +304,21 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
     setLastError(null);
     setDebugInfo(null);
     try {
-       console.log("Chamando edge function create-asaas-subaccount manualmente via fetch...");
-       const { data: { session } } = await supabase.auth.getSession();
-       const response = await fetch("https://qkjhguziuchqsbxzruea.supabase.co/functions/v1/create-asaas-subaccount", {
-         method: "POST",
-         headers: {
-           "Content-Type": "application/json",
-           Authorization: `Bearer ${session?.access_token}`,
-            apikey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFramhndXppdWNocXNieHpydWVhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNDg4NTUsImV4cCI6MjA5MDYyNDg1NX0.2sTeKchqAEN2gCqnH1_Zn9cJmUSmZgryt05A66tgm2Y",
-         },
-         body: JSON.stringify(payload),
-       });
-       const data = await response.json();
+      console.log("Chamando edge function create-asaas-subaccount via cliente Supabase...");
+      const { data, error } = await supabase.functions.invoke("create-asaas-subaccount", {
+        body: payload,
+      });
 
-       if (!response.ok) {
-         console.error("Erro retornado pela função:", data);
-         setDebugInfo(data);
-         throw new Error((data as any)?.error || "Erro na comunicação com o servidor.");
-       }
+      if (error) {
+        let details: any = null;
+        const context = (error as any)?.context;
+        if (context instanceof Response) {
+          details = await context.json().catch(() => null);
+        }
+        console.error("Erro retornado pela função:", details || error);
+        setDebugInfo(details || error);
+        throw new Error(details?.error || error.message || "Erro na comunicação com o servidor.");
+      }
 
       console.log("Resposta da Edge Function:", data);
 
@@ -346,19 +343,11 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
     queryKey: ["asaas-activation-status", storeId],
     queryFn: async () => {
       if (!store?.asaas_wallet_id) return null;
-      const { data: { session } } = await supabase.auth.getSession();
-      const response = await fetch("https://qkjhguziuchqsbxzruea.supabase.co/functions/v1/get-asaas-subaccount-status", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session?.access_token}`,
-          apikey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFramhndXppdWNocXNieHpydWVhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNDg4NTUsImV4cCI6MjA5MDYyNDg1NX0.2sTeKchqAEN2gCqnH1_Zn9cJmUSmZgryt05A66tgm2Y",
-        },
-        body: JSON.stringify({ store_id: storeId }),
+      const { data, error } = await supabase.functions.invoke("get-asaas-subaccount-status", {
+        body: { store_id: storeId },
       });
-      if (!response.ok) return null;
-      const data = await response.json();
-      return data.status;
+      if (error) return null;
+      return (data as any)?.status || null;
     },
     enabled: !!store?.asaas_wallet_id,
     refetchInterval: 30000,
