@@ -60,6 +60,43 @@ const TabFallback = () => (
   </div>
 );
 
+// Barra de sub-abas reutilizável (usada pelas seções consolidadas: Financeiro, Lojas, App, Auditoria)
+const SubTabsBar = ({
+  value,
+  onChange,
+  items,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  items: { key: string; label: string; icon?: React.ElementType; badge?: number }[];
+}) => (
+  <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-thin">
+    {items.map((it) => {
+      const Icon = it.icon;
+      const isActive = value === it.key;
+      return (
+        <button
+          key={it.key}
+          onClick={() => onChange(it.key)}
+          className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-colors ${
+            isActive
+              ? "bg-primary text-primary-foreground shadow-sm"
+              : "bg-muted text-muted-foreground hover:text-foreground hover:bg-muted/80"
+          }`}
+        >
+          {Icon && <Icon className="h-3.5 w-3.5" />}
+          <span>{it.label}</span>
+          {!!it.badge && it.badge > 0 && (
+            <span className={`ml-1 text-[10px] font-black rounded-full px-1.5 py-0.5 ${isActive ? "bg-primary-foreground/20" : "bg-destructive text-destructive-foreground"}`}>
+              {it.badge}
+            </span>
+          )}
+        </button>
+      );
+    })}
+  </div>
+);
+
 type DateFilter = "today" | "yesterday" | "week";
 type AdminTab = "dashboard" | "approvals" | "stores" | "financeiro" | "pagamentos" | "saques" | "sync" | "coupons" | "entrega" | "cidades" | "juridico" | "planos" | "moderadores" | "socios" | "suporte" | "app-page" | "test_finance" | "links" | "broadcast" | "logs" | "coach" | "auditoria";
 
