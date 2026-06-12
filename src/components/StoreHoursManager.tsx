@@ -639,7 +639,7 @@ const StoreHoursManager = ({ storeId, forceClosed }: { storeId: string; forceClo
                         )}
                       </div>
                       <button
-                        onClick={() => removeHoliday(h.date)}
+                        onClick={() => removeHoliday(h)}
                         className="text-muted-foreground hover:text-destructive transition-colors p-1"
                       >
                         <Trash2 className="h-3 w-3" />
