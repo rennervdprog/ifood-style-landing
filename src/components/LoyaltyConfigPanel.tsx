@@ -123,6 +123,8 @@ const LoyaltyConfigPanel = ({ storeId }: LoyaltyConfigPanelProps) => {
 
   const totalClients = stats?.length || 0;
   const totalPointsIssued = stats?.reduce((sum: number, s: any) => sum + (s.points || 0), 0) || 0;
+  const totalRedemptions = stats?.reduce((sum: number, s: any) => sum + (s.total_orders || 0), 0) || 0;
+  const activeMembers = stats?.filter((s: any) => (s.points || 0) > 0).length || 0;
 
   const previewMinRedeem = parseInteger(minRedeem);
   const previewDiscountPerPoint = parseNum(discountPerPoint);
@@ -159,7 +161,15 @@ const LoyaltyConfigPanel = ({ storeId }: LoyaltyConfigPanelProps) => {
           </div>
           <div className="bg-muted/50 rounded-xl p-3 text-center">
             <p className="text-lg font-black text-foreground">{totalPointsIssued}</p>
-            <p className="text-[10px] text-muted-foreground">Pontos emitidos</p>
+            <p className="text-[10px] text-muted-foreground">Pontos em circulação</p>
+          </div>
+          <div className="bg-muted/50 rounded-xl p-3 text-center">
+            <p className="text-lg font-black text-foreground">{activeMembers}</p>
+            <p className="text-[10px] text-muted-foreground">Membros ativos</p>
+          </div>
+          <div className="bg-muted/50 rounded-xl p-3 text-center">
+            <p className="text-lg font-black text-foreground">{totalRedemptions}</p>
+            <p className="text-[10px] text-muted-foreground">Pedidos com pontos</p>
           </div>
         </div>
       )}
