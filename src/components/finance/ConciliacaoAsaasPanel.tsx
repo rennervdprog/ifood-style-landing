@@ -12,6 +12,8 @@ import { ConfirmActionDialog } from "./ConfirmActionDialog";
 
 const ConciliacaoAsaasPanel = () => {
   const [forceOpen, setForceOpen] = useState(false);
+  const [snapshot, setSnapshot] = useState<any[] | null>(null);
+  const [snapLoading, setSnapLoading] = useState(false);
 
   const subaccounts = useQuery({
     queryKey: ["finance-asaas-subaccounts"],
@@ -81,6 +83,20 @@ const ConciliacaoAsaasPanel = () => {
     subaccounts.refetch();
     reviewQueue.refetch();
     webhookErrors.refetch();
+  };
+
+  const runSnapshot = async () => {
+    setSnapLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("finance-reconcile-snapshot", { body: {} });
+      if (error) throw error;
+      setSnapshot((data as any)?.items || []);
+      toast.success("Snapshot Asaas atualizado");
+    } catch (e: any) {
+      toast.error("Falha ao gerar snapshot", { description: e?.message });
+    } finally {
+      setSnapLoading(false);
+    }
   };
 
   return (
@@ -156,9 +172,38 @@ const ConciliacaoAsaasPanel = () => {
               </div>
             </div>
           ))}
-          <p className="text-[10px] text-muted-foreground pt-2">
-            Saldo "no Asaas" será comparado via edge function <code>finance-reconcile-snapshot</code> na Fase 4.
-          </p>
+          <div className="flex items-center justify-between pt-2">
+            <p className="text-[10px] text-muted-foreground">
+              Compare saldo interno vs saldo real Asaas (chamada às subcontas).
+            </p>
+            <Button size="sm" onClick={runSnapshot} disabled={snapLoading}>
+              {snapLoading ? "Coletando…" : "Snapshot Asaas"}
+            </Button>
+          </div>
+          {snapshot && (
+            <div className="mt-2 space-y-1">
+              {snapshot.map((it: any) => {
+                const dangerous = it.diff !== null && Math.abs(it.diff) > 0.5;
+                return (
+                  <div
+                    key={it.store_id}
+                    className={`flex items-center justify-between text-xs border rounded px-2 py-1.5 ${
+                      dangerous ? "border-destructive bg-destructive/5" : "bg-background"
+                    }`}
+                  >
+                    <span className="font-medium truncate">{it.name}</span>
+                    <span className="flex gap-3">
+                      <span>Asaas: <strong>{it.asaas_balance == null ? "—" : brl(it.asaas_balance)}</strong></span>
+                      <span>Interno: <strong>{brl(it.internal_balance)}</strong></span>
+                      <span className={dangerous ? "text-destructive font-bold" : "text-muted-foreground"}>
+                        Δ {it.diff == null ? "—" : brl(it.diff)}
+                      </span>
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </CardContent>
       </Card>
 
