@@ -514,6 +514,11 @@ const StoreHoursManager = ({ storeId, forceClosed }: { storeId: string; forceClo
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>
                       )}
+                      {shift.close_time <= shift.open_time && (
+                        <span title="Atravessa a meia-noite" className="inline-flex items-center gap-1 text-[10px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded-md">
+                          <MoonStar className="h-3 w-3" /> +1d
+                        </span>
+                      )}
                     </div>
                   ))}
                   {/* Add shift button */}
