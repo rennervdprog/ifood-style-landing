@@ -208,3 +208,31 @@ $func$;
 -- Pronto. Quando a probation expirar, basta:
 --   UPDATE stores SET probation_until = NULL WHERE probation_until < now();
 -- (ou criar um cron). Saques pela subconta Asaas já dependem de KYC aprovado.
+
+-- 5) Esconder lojas em probation do catálogo público --------------------
+--    A view stores_public é a base do feed/diretório. Recriamos preservando
+--    as colunas existentes mas excluindo lojas com probation_until > now().
+DO $$
+DECLARE
+  _cols text;
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.views
+    WHERE table_schema='public' AND table_name='stores_public'
+  ) THEN
+    SELECT string_agg(quote_ident(column_name), ', ' ORDER BY ordinal_position)
+      INTO _cols
+    FROM information_schema.columns
+    WHERE table_schema='public' AND table_name='stores_public';
+
+    EXECUTE format($v$
+      CREATE OR REPLACE VIEW public.stores_public AS
+      SELECT %s FROM public.stores
+      WHERE status = 'ativo'
+        AND COALESCE(is_test, false) = false
+        AND (probation_until IS NULL OR probation_until < now())
+    $v$, _cols);
+
+    GRANT SELECT ON public.stores_public TO anon, authenticated;
+  END IF;
+END $$;
