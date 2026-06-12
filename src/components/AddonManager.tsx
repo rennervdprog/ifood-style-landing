@@ -3,7 +3,7 @@ import { useState, useCallback, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Plus, Trash2, Edit2, Save, X, ChevronDown, ChevronUp, Package, FileText, Layers, Link2, Sparkles } from "lucide-react";
+import { Plus, Trash2, Edit2, Save, X, ChevronDown, ChevronUp, Package, FileText, Layers, Link2, Sparkles, Copy, Eye, Search } from "lucide-react";
 import { formatBRLDisplay, parseBRLCentsInput } from "@/hooks/useBRLInput";
 import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 
@@ -26,6 +26,25 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
   const [bulkGroupId, setBulkGroupId] = useState<string | null>(null);
   const [bulkText, setBulkText] = useState("");
   const [bulkParsed, setBulkParsed] = useState<{ name: string; price: number }[]>([]);
+  const [linkModalGroupId, setLinkModalGroupId] = useState<string | null>(null);
+  const [linkSelected, setLinkSelected] = useState<Set<string>>(new Set());
+  const [linkSearch, setLinkSearch] = useState("");
+  const [linkSaving, setLinkSaving] = useState(false);
+  const [previewGroupId, setPreviewGroupId] = useState<string | null>(null);
+
+  // Fetch all store products for the link modal
+  const { data: storeProducts } = useQuery({
+    queryKey: ["store-products-for-addons", storeId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("products")
+        .select("id, name, image_url, price")
+        .eq("store_id", storeId)
+        .order("name");
+      if (error) throw error;
+      return data || [];
+    },
+  });
 
   // Fetch store-level addon groups (product_id IS NULL)
   const { data: groups, isLoading } = useQuery({
@@ -181,6 +200,91 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
 
   const getLinkedProducts = (groupId: string) =>
     (links as any[])?.filter((l: any) => l.addon_group_id === groupId) || [];
+
+  const openLinkModal = (groupId: string) => {
+    const current = new Set(getLinkedProducts(groupId).map((l: any) => l.product_id as string));
+    setLinkSelected(current);
+    setLinkSearch("");
+    setLinkModalGroupId(groupId);
+  };
+
+  const saveLinks = async () => {
+    if (!linkModalGroupId) return;
+    setLinkSaving(true);
+    try {
+      const current = new Set(getLinkedProducts(linkModalGroupId).map((l: any) => l.product_id as string));
+      const toAdd = [...linkSelected].filter((id) => !current.has(id));
+      const toRemove = [...current].filter((id) => !linkSelected.has(id));
+
+      if (toAdd.length > 0) {
+        const { error } = await supabase.from("product_addon_groups").insert(
+          toAdd.map((product_id) => ({
+            product_id,
+            addon_group_id: linkModalGroupId,
+          })) as any,
+        );
+        if (error) throw error;
+      }
+      if (toRemove.length > 0) {
+        const { error } = await supabase
+          .from("product_addon_groups")
+          .delete()
+          .eq("addon_group_id", linkModalGroupId)
+          .in("product_id", toRemove);
+        if (error) throw error;
+      }
+      toast.success(`Vínculos atualizados (${linkSelected.size} ${linkSelected.size === 1 ? "produto" : "produtos"})`);
+      setLinkModalGroupId(null);
+      invalidate();
+    } catch (e: any) {
+      toast.error(e?.message || "Erro ao atualizar vínculos");
+    } finally {
+      setLinkSaving(false);
+    }
+  };
+
+  const duplicateGroup = async (group: any) => {
+    const { data: newGroup, error } = await supabase
+      .from("addon_groups")
+      .insert({
+        store_id: storeId,
+        product_id: null,
+        name: `${group.name} (cópia)`,
+        min_select: group.min_select,
+        max_select: group.max_select,
+        price_replaces_base: group.price_replaces_base,
+        sort_order: (groups?.length || 0) + 1,
+      } as any)
+      .select("id")
+      .single();
+    if (error || !newGroup) {
+      toast.error("Erro ao duplicar grupo");
+      return;
+    }
+    const items = (group.addon_items as any[]) || [];
+    if (items.length > 0) {
+      const inserts = items.map((it, i) => ({
+        group_id: newGroup.id,
+        name: it.name,
+        price: it.price,
+        sort_order: i + 1,
+      }));
+      const { error: itemsErr } = await supabase.from("addon_items").insert(inserts as any);
+      if (itemsErr) {
+        toast.error("Grupo duplicado, mas erro ao copiar itens");
+        invalidate();
+        return;
+      }
+    }
+    toast.success(`Grupo duplicado com ${items.length} ${items.length === 1 ? "item" : "itens"}!`);
+    invalidate();
+  };
+
+  const linkModalGroup = groups?.find((g: any) => g.id === linkModalGroupId);
+  const previewGroup = groups?.find((g: any) => g.id === previewGroupId);
+  const filteredProductsForLink = (storeProducts || []).filter((p: any) =>
+    !linkSearch.trim() || (p.name || "").toLowerCase().includes(linkSearch.toLowerCase()),
+  );
 
   // Bulk text parser
   const parseBulkText = (text: string) => {
@@ -476,6 +580,27 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
                 {editingGroup !== group.id && (
                   <div className="flex items-center gap-2 ml-2">
                     <button
+                      onClick={(e) => { e.stopPropagation(); setPreviewGroupId(group.id); }}
+                      className="text-muted-foreground hover:text-foreground p-1.5"
+                      title="Pré-visualizar como o cliente vê"
+                    >
+                      <Eye className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); openLinkModal(group.id); }}
+                      className="text-muted-foreground hover:text-primary p-1.5"
+                      title="Vincular a produtos em lote"
+                    >
+                      <Link2 className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); duplicateGroup(group); }}
+                      className="text-muted-foreground hover:text-foreground p-1.5"
+                      title="Duplicar grupo"
+                    >
+                      <Copy className="h-3.5 w-3.5" />
+                    </button>
+                    <button
                       onClick={(e) => {
                         e.stopPropagation();
                         setEditingGroup(group.id);
@@ -707,6 +832,115 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
           >
             <Sparkles className="h-4 w-4" /> Criar primeiro grupo
           </button>
+        </div>
+      )}
+
+      {/* Link Products Modal */}
+      {linkModalGroupId && linkModalGroup && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={() => !linkSaving && setLinkModalGroupId(null)}>
+          <div className="bg-card w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl max-h-[85vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+            <div className="p-4 border-b border-border">
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <h3 className="text-base font-bold text-foreground truncate">Vincular "{linkModalGroup.name}"</h3>
+                  <p className="text-xs text-muted-foreground">Marque os produtos que devem usar este grupo.</p>
+                </div>
+                <button onClick={() => setLinkModalGroupId(null)} className="text-muted-foreground p-1"><X className="h-5 w-5" /></button>
+              </div>
+              <div className="relative mt-3">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <input
+                  type="text"
+                  value={linkSearch}
+                  onChange={(e) => setLinkSearch(e.target.value)}
+                  placeholder="Buscar produto..."
+                  className="w-full bg-secondary text-foreground pl-9 pr-3 py-2 rounded-lg text-sm border border-border focus:outline-none focus:border-primary"
+                />
+              </div>
+              <div className="flex gap-2 mt-2">
+                <button
+                  onClick={() => setLinkSelected(new Set(filteredProductsForLink.map((p: any) => p.id)))}
+                  className="text-xs text-primary font-bold"
+                >Marcar todos {linkSearch ? "filtrados" : ""}</button>
+                <span className="text-muted-foreground text-xs">·</span>
+                <button onClick={() => setLinkSelected(new Set())} className="text-xs text-muted-foreground font-bold">Limpar</button>
+                <span className="text-xs text-muted-foreground ml-auto">{linkSelected.size} selecionado{linkSelected.size === 1 ? "" : "s"}</span>
+              </div>
+            </div>
+            <div className="flex-1 overflow-y-auto p-3 space-y-1">
+              {filteredProductsForLink.length === 0 ? (
+                <p className="text-xs text-muted-foreground text-center py-6">Nenhum produto encontrado.</p>
+              ) : filteredProductsForLink.map((p: any) => {
+                const checked = linkSelected.has(p.id);
+                return (
+                  <button
+                    key={p.id}
+                    onClick={() => {
+                      const next = new Set(linkSelected);
+                      if (checked) next.delete(p.id); else next.add(p.id);
+                      setLinkSelected(next);
+                    }}
+                    className={`w-full flex items-center gap-3 p-2.5 rounded-lg border-2 transition-colors text-left ${checked ? "bg-primary/10 border-primary" : "bg-muted/40 border-transparent"}`}
+                  >
+                    {p.image_url ? (
+                      <img src={p.image_url} alt={p.name} className="w-10 h-10 rounded-lg object-cover flex-shrink-0" loading="lazy" />
+                    ) : (
+                      <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0"><Package className="h-4 w-4 text-muted-foreground" /></div>
+                    )}
+                    <span className="flex-1 text-sm text-foreground truncate">{p.name}</span>
+                    <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 ${checked ? "bg-primary border-primary" : "border-muted-foreground/40"}`}>
+                      {checked && <Save className="h-3 w-3 text-primary-foreground" />}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+            <div className="p-4 border-t border-border flex gap-2">
+              <button onClick={() => setLinkModalGroupId(null)} disabled={linkSaving} className="flex-1 py-2.5 rounded-xl text-sm font-bold bg-muted text-foreground">Cancelar</button>
+              <button onClick={saveLinks} disabled={linkSaving} className="flex-1 py-2.5 rounded-xl text-sm font-bold bg-primary text-primary-foreground disabled:opacity-50">
+                {linkSaving ? "Salvando..." : "Salvar vínculos"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Preview Modal */}
+      {previewGroupId && previewGroup && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={() => setPreviewGroupId(null)}>
+          <div className="bg-card w-full sm:max-w-sm rounded-t-2xl sm:rounded-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="p-4 border-b border-border flex items-center justify-between">
+              <h3 className="text-sm font-bold text-foreground">Pré-visualização (como o cliente vê)</h3>
+              <button onClick={() => setPreviewGroupId(null)} className="text-muted-foreground"><X className="h-5 w-5" /></button>
+            </div>
+            <div className="p-4 space-y-2 max-h-[70vh] overflow-y-auto">
+              <div className="flex items-baseline justify-between gap-2">
+                <h4 className="text-base font-bold text-foreground">{previewGroup.name}</h4>
+                {previewGroup.min_select > 0 && (
+                  <span className="text-[10px] bg-amber-500 text-white px-2 py-0.5 rounded-full font-bold uppercase">Obrigatório</span>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {previewGroup.min_select > 0 ? `Escolha de ${previewGroup.min_select} até ${previewGroup.max_select}` : `Escolha até ${previewGroup.max_select}`}
+              </p>
+              <div className="space-y-1.5 mt-2">
+                {((previewGroup.addon_items as any[]) || []).sort((a: any, b: any) => a.sort_order - b.sort_order).map((it: any) => (
+                  <div key={it.id} className="flex items-center justify-between bg-muted/50 rounded-lg p-3">
+                    <div className="flex items-center gap-2">
+                      <div className={`w-5 h-5 ${previewGroup.max_select === 1 ? "rounded-full" : "rounded"} border-2 border-muted-foreground/40`} />
+                      <span className="text-sm text-foreground">{it.name}</span>
+                    </div>
+                    <span className="text-sm text-primary font-bold">
+                      {Number(it.price) > 0 ? `+${formatBRL(Number(it.price))}` : "Grátis"}
+                    </span>
+                  </div>
+                ))}
+                {((previewGroup.addon_items as any[]) || []).length === 0 && (
+                  <p className="text-xs text-muted-foreground text-center py-4">Sem itens neste grupo.</p>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>
