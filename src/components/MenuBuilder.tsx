@@ -322,6 +322,23 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
     invalidateProducts();
   };
 
+  // Fase 3: duplicar produto (cria cópia na mesma seção com sufixo " (cópia)")
+  const duplicateProduct = async (product: any) => {
+    const { error } = await supabase.from("products").insert({
+      store_id: storeId,
+      section_id: product.section_id ?? null,
+      name: `${product.name} (cópia)`,
+      price: Number(product.price) || 0,
+      description: product.description ?? null,
+      image_url: product.image_url ?? null,
+      metadata: (product as any).metadata ?? {},
+      is_available: false, // sai pausado para o lojista revisar antes de publicar
+    } as any);
+    if (error) { toast.error("Erro ao duplicar produto"); return; }
+    toast.success("Produto duplicado (pausado para você revisar)");
+    invalidateProducts();
+  };
+
   const deleteProductConfirm = (id: string, name: string) => {
     setConfirmState({
       title: "Excluir produto?",
