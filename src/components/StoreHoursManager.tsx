@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
   Clock, Save, Power, Plus, Trash2, Copy, CalendarOff,
-  CalendarPlus, ChevronDown, ChevronUp, Zap,
+  CalendarPlus, ChevronDown, ChevronUp, Zap, Pause, MoonStar,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -34,8 +34,16 @@ interface DaySchedule {
 }
 
 interface HolidayClosure {
+  id?: string;
   date: string; // YYYY-MM-DD
   label: string;
+}
+
+interface ScheduledPause {
+  id?: string;
+  starts_at: string;
+  ends_at: string;
+  reason: string;
 }
 
 const defaultShift = (): Shift => ({ open_time: "08:00", close_time: "22:00" });
@@ -87,6 +95,9 @@ const StoreHoursManager = ({ storeId, forceClosed }: { storeId: string; forceClo
   const [showHolidays, setShowHolidays] = useState(false);
   const [holidayDate, setHolidayDate] = useState<Date | undefined>();
   const [holidayLabel, setHolidayLabel] = useState("");
+  const [pauses, setPauses] = useState<ScheduledPause[]>([]);
+  const [showPauses, setShowPauses] = useState(false);
+  const [pauseForm, setPauseForm] = useState({ date: format(new Date(), "yyyy-MM-dd"), starts: "14:00", ends: "16:00", reason: "" });
 
   const { data: savedHours } = useQuery({
     queryKey: ["opening-hours", storeId],
@@ -100,6 +111,56 @@ const StoreHoursManager = ({ storeId, forceClosed }: { storeId: string; forceClo
       return data;
     },
   });
+
+  // Load persisted holidays
+  const { data: savedHolidays } = useQuery({
+    queryKey: ["store-holidays", storeId],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("store_holidays")
+        .select("id, date, reason")
+        .eq("store_id", storeId)
+        .order("date");
+      if (error) return [];
+      return data || [];
+    },
+  });
+
+  useEffect(() => {
+    if (savedHolidays) {
+      setHolidays(
+        (savedHolidays as any[]).map((h) => ({ id: h.id, date: h.date, label: h.reason || "Feriado" })),
+      );
+    }
+  }, [savedHolidays]);
+
+  // Load scheduled pauses (future + ongoing)
+  const { data: savedPauses } = useQuery({
+    queryKey: ["store-pauses", storeId],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("store_pauses")
+        .select("id, starts_at, ends_at, reason")
+        .eq("store_id", storeId)
+        .gte("ends_at", new Date().toISOString())
+        .order("starts_at");
+      if (error) return [];
+      return data || [];
+    },
+  });
+
+  useEffect(() => {
+    if (savedPauses) {
+      setPauses(
+        (savedPauses as any[]).map((p) => ({
+          id: p.id,
+          starts_at: p.starts_at,
+          ends_at: p.ends_at,
+          reason: p.reason || "",
+        })),
+      );
+    }
+  }, [savedPauses]);
 
   // Merge saved hours into schedule (support multiple shifts per day)
   useEffect(() => {
@@ -205,21 +266,60 @@ const StoreHoursManager = ({ storeId, forceClosed }: { storeId: string; forceClo
     toast.success(`Horário de ${dayLabelsFull[sourceDay]} aplicado a todos os dias!`);
   };
 
-  const addHoliday = () => {
+  const addHoliday = async () => {
     if (!holidayDate) return;
     const dateStr = format(holidayDate, "yyyy-MM-dd");
     if (holidays.some((h) => h.date === dateStr)) {
       toast.error("Data já adicionada.");
       return;
     }
-    setHolidays((prev) => [...prev, { date: dateStr, label: holidayLabel || "Feriado" }]);
+    const reason = holidayLabel || "Feriado";
+    const { data, error } = await (supabase as any)
+      .from("store_holidays")
+      .insert({ store_id: storeId, date: dateStr, reason })
+      .select("id")
+      .single();
+    if (error) { toast.error("Erro ao salvar feriado."); return; }
+    setHolidays((prev) => [...prev, { id: data?.id, date: dateStr, label: reason }]);
     setHolidayDate(undefined);
     setHolidayLabel("");
-    toast.success("Feriado adicionado!");
+    toast.success("Feriado salvo!");
+    queryClient.invalidateQueries({ queryKey: ["store-holidays", storeId] });
   };
 
-  const removeHoliday = (date: string) => {
-    setHolidays((prev) => prev.filter((h) => h.date !== date));
+  const removeHoliday = async (h: HolidayClosure) => {
+    if (h.id) {
+      const { error } = await (supabase as any).from("store_holidays").delete().eq("id", h.id);
+      if (error) { toast.error("Erro ao remover."); return; }
+    }
+    setHolidays((prev) => prev.filter((x) => x.date !== h.date));
+    toast.success("Feriado removido.");
+    queryClient.invalidateQueries({ queryKey: ["store-holidays", storeId] });
+  };
+
+  const addPause = async () => {
+    const starts = new Date(`${pauseForm.date}T${pauseForm.starts}:00`).toISOString();
+    const ends = new Date(`${pauseForm.date}T${pauseForm.ends}:00`).toISOString();
+    if (new Date(ends) <= new Date(starts)) { toast.error("Horário final deve ser depois do início."); return; }
+    const { data, error } = await (supabase as any)
+      .from("store_pauses")
+      .insert({ store_id: storeId, starts_at: starts, ends_at: ends, reason: pauseForm.reason || null })
+      .select("id, starts_at, ends_at, reason")
+      .single();
+    if (error) { toast.error("Erro ao agendar pausa."); return; }
+    setPauses((prev) => [...prev, { id: data.id, starts_at: data.starts_at, ends_at: data.ends_at, reason: data.reason || "" }]);
+    setPauseForm({ ...pauseForm, reason: "" });
+    toast.success("Pausa programada!");
+    queryClient.invalidateQueries({ queryKey: ["store-pauses", storeId] });
+  };
+
+  const removePause = async (id?: string) => {
+    if (!id) return;
+    const { error } = await (supabase as any).from("store_pauses").delete().eq("id", id);
+    if (error) { toast.error("Erro ao remover."); return; }
+    setPauses((prev) => prev.filter((p) => p.id !== id));
+    toast.success("Pausa removida.");
+    queryClient.invalidateQueries({ queryKey: ["store-pauses", storeId] });
   };
 
   const saveSchedule = async () => {
@@ -414,6 +514,11 @@ const StoreHoursManager = ({ storeId, forceClosed }: { storeId: string; forceClo
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>
                       )}
+                      {shift.close_time <= shift.open_time && (
+                        <span title="Atravessa a meia-noite" className="inline-flex items-center gap-1 text-[10px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded-md">
+                          <MoonStar className="h-3 w-3" /> +1d
+                        </span>
+                      )}
                     </div>
                   ))}
                   {/* Add shift button */}
@@ -539,7 +644,7 @@ const StoreHoursManager = ({ storeId, forceClosed }: { storeId: string; forceClo
                         )}
                       </div>
                       <button
-                        onClick={() => removeHoliday(h.date)}
+                        onClick={() => removeHoliday(h)}
                         className="text-muted-foreground hover:text-destructive transition-colors p-1"
                       >
                         <Trash2 className="h-3 w-3" />
@@ -554,8 +659,98 @@ const StoreHoursManager = ({ storeId, forceClosed }: { storeId: string; forceClo
             )}
 
             <p className="text-[10px] text-muted-foreground/50 italic">
-              💡 Os feriados são salvos localmente. Funcionalidade de persistência em breve.
+              💡 Feriados ficam salvos no servidor e fecham a loja automaticamente na data.
             </p>
+          </div>
+        )}
+      </div>
+
+      {/* Pausa programada (hoje/data específica, sem mexer no recorrente) */}
+      <div className="bg-card/60 backdrop-blur-sm rounded-2xl border border-border/30 overflow-hidden">
+        <button
+          onClick={() => setShowPauses(!showPauses)}
+          className="w-full p-4 flex items-center justify-between hover:bg-card/40 transition-colors"
+        >
+          <div className="flex items-center gap-2">
+            <Pause className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm font-bold text-foreground">Pausa Programada</span>
+            {pauses.length > 0 && (
+              <Badge variant="secondary" className="text-[10px] bg-muted text-muted-foreground border-0">
+                {pauses.length}
+              </Badge>
+            )}
+          </div>
+          {showPauses ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+        </button>
+        {showPauses && (
+          <div className="p-4 pt-0 space-y-3">
+            <p className="text-[10px] text-muted-foreground">
+              Fecha a loja apenas em uma janela específica (ex: 14h às 16h hoje) sem mexer no horário recorrente.
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1">
+                <label className="text-[10px] text-muted-foreground font-semibold">Data</label>
+                <input
+                  type="date"
+                  value={pauseForm.date}
+                  onChange={(e) => setPauseForm({ ...pauseForm, date: e.target.value })}
+                  className="w-full bg-card text-foreground px-3 py-2 rounded-xl text-xs border border-border/50 focus:border-primary focus:outline-none min-h-[40px]"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] text-muted-foreground font-semibold">Motivo (opcional)</label>
+                <input
+                  type="text"
+                  value={pauseForm.reason}
+                  onChange={(e) => setPauseForm({ ...pauseForm, reason: e.target.value })}
+                  placeholder="Ex: Almoço da equipe"
+                  className="w-full bg-card text-foreground px-3 py-2 rounded-xl text-xs border border-border/50 focus:border-primary focus:outline-none min-h-[40px]"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] text-muted-foreground font-semibold">Início</label>
+                <select
+                  value={pauseForm.starts}
+                  onChange={(e) => setPauseForm({ ...pauseForm, starts: e.target.value })}
+                  className="w-full bg-card text-foreground px-3 py-2 rounded-xl text-xs border border-border/50 focus:border-primary focus:outline-none min-h-[40px]"
+                >
+                  {TIME_OPTIONS.map((t) => <option key={t} value={t}>{t}</option>)}
+                </select>
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] text-muted-foreground font-semibold">Fim</label>
+                <select
+                  value={pauseForm.ends}
+                  onChange={(e) => setPauseForm({ ...pauseForm, ends: e.target.value })}
+                  className="w-full bg-card text-foreground px-3 py-2 rounded-xl text-xs border border-border/50 focus:border-primary focus:outline-none min-h-[40px]"
+                >
+                  {TIME_OPTIONS.map((t) => <option key={t} value={t}>{t}</option>)}
+                </select>
+              </div>
+            </div>
+            <Button onClick={addPause} size="sm" className="w-full rounded-xl min-h-[40px] bg-primary hover:bg-primary/90 text-primary-foreground">
+              <Plus className="h-3.5 w-3.5" /> Agendar pausa
+            </Button>
+            {pauses.length > 0 ? (
+              <div className="space-y-1.5">
+                {pauses.map((p) => (
+                  <div key={p.id} className="flex items-center justify-between bg-muted rounded-xl p-2.5 border border-border">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Pause className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                      <span className="text-xs font-semibold text-foreground truncate">
+                        {format(new Date(p.starts_at), "dd/MM HH:mm", { locale: ptBR })} → {format(new Date(p.ends_at), "HH:mm", { locale: ptBR })}
+                      </span>
+                      {p.reason && <span className="text-[10px] text-muted-foreground truncate">— {p.reason}</span>}
+                    </div>
+                    <button onClick={() => removePause(p.id)} className="text-muted-foreground hover:text-destructive transition-colors p-1">
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-[10px] text-muted-foreground/50 text-center py-2">Nenhuma pausa programada.</p>
+            )}
           </div>
         )}
       </div>
