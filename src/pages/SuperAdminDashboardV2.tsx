@@ -59,6 +59,7 @@ const FluxoCaixaPanel = lazy(() => import("@/components/finance/FluxoCaixaPanel"
 const ComissoesPanel = lazy(() => import("@/components/finance/ComissoesPanel"));
 const ConciliacaoAsaasPanel = lazy(() => import("@/components/finance/ConciliacaoAsaasPanel"));
 const AuditoriaFinanceiraPanel = lazy(() => import("@/components/finance/AuditoriaFinanceiraPanel"));
+const MensalidadesPanel = lazy(() => import("@/components/finance/MensalidadesPanel"));
 const TabFallback = () => (
   <div className="flex items-center justify-center py-12">
     <Loader2 className="h-6 w-6 animate-spin text-primary" />
@@ -1169,7 +1170,9 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
                  {financeSection === "pagamentos" && (
                    <Suspense fallback={<TabFallback />}><PagamentosSplitTab stores={stores || []} /></Suspense>
                  )}
-                 {financeSection === "planos" && <PlanosTab />}
+                 {financeSection === "planos" && (
+                   <Suspense fallback={<TabFallback />}><MensalidadesPanel /></Suspense>
+                 )}
                  {financeSection === "socios" && <PartnerSplitPanel />}
                  {financeSection === "test" && <TestStoreFinancePanel />}
                  {financeSection === "fluxo" && (
