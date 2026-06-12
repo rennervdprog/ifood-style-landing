@@ -3,7 +3,7 @@ import { useState, useCallback, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Plus, Trash2, Edit2, Save, X, ChevronDown, ChevronUp, Package, FileText, Layers, Link2, Sparkles } from "lucide-react";
+import { Plus, Trash2, Edit2, Save, X, ChevronDown, ChevronUp, Package, FileText, Layers, Link2, Sparkles, Copy, Eye, Search } from "lucide-react";
 import { formatBRLDisplay, parseBRLCentsInput } from "@/hooks/useBRLInput";
 import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 
@@ -26,6 +26,25 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
   const [bulkGroupId, setBulkGroupId] = useState<string | null>(null);
   const [bulkText, setBulkText] = useState("");
   const [bulkParsed, setBulkParsed] = useState<{ name: string; price: number }[]>([]);
+  const [linkModalGroupId, setLinkModalGroupId] = useState<string | null>(null);
+  const [linkSelected, setLinkSelected] = useState<Set<string>>(new Set());
+  const [linkSearch, setLinkSearch] = useState("");
+  const [linkSaving, setLinkSaving] = useState(false);
+  const [previewGroupId, setPreviewGroupId] = useState<string | null>(null);
+
+  // Fetch all store products for the link modal
+  const { data: storeProducts } = useQuery({
+    queryKey: ["store-products-for-addons", storeId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("products")
+        .select("id, name, image_url, price")
+        .eq("store_id", storeId)
+        .order("name");
+      if (error) throw error;
+      return data || [];
+    },
+  });
 
   // Fetch store-level addon groups (product_id IS NULL)
   const { data: groups, isLoading } = useQuery({
@@ -181,6 +200,91 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
 
   const getLinkedProducts = (groupId: string) =>
     (links as any[])?.filter((l: any) => l.addon_group_id === groupId) || [];
+
+  const openLinkModal = (groupId: string) => {
+    const current = new Set(getLinkedProducts(groupId).map((l: any) => l.product_id as string));
+    setLinkSelected(current);
+    setLinkSearch("");
+    setLinkModalGroupId(groupId);
+  };
+
+  const saveLinks = async () => {
+    if (!linkModalGroupId) return;
+    setLinkSaving(true);
+    try {
+      const current = new Set(getLinkedProducts(linkModalGroupId).map((l: any) => l.product_id as string));
+      const toAdd = [...linkSelected].filter((id) => !current.has(id));
+      const toRemove = [...current].filter((id) => !linkSelected.has(id));
+
+      if (toAdd.length > 0) {
+        const { error } = await supabase.from("product_addon_groups").insert(
+          toAdd.map((product_id) => ({
+            product_id,
+            addon_group_id: linkModalGroupId,
+          })) as any,
+        );
+        if (error) throw error;
+      }
+      if (toRemove.length > 0) {
+        const { error } = await supabase
+          .from("product_addon_groups")
+          .delete()
+          .eq("addon_group_id", linkModalGroupId)
+          .in("product_id", toRemove);
+        if (error) throw error;
+      }
+      toast.success(`Vínculos atualizados (${linkSelected.size} ${linkSelected.size === 1 ? "produto" : "produtos"})`);
+      setLinkModalGroupId(null);
+      invalidate();
+    } catch (e: any) {
+      toast.error(e?.message || "Erro ao atualizar vínculos");
+    } finally {
+      setLinkSaving(false);
+    }
+  };
+
+  const duplicateGroup = async (group: any) => {
+    const { data: newGroup, error } = await supabase
+      .from("addon_groups")
+      .insert({
+        store_id: storeId,
+        product_id: null,
+        name: `${group.name} (cópia)`,
+        min_select: group.min_select,
+        max_select: group.max_select,
+        price_replaces_base: group.price_replaces_base,
+        sort_order: (groups?.length || 0) + 1,
+      } as any)
+      .select("id")
+      .single();
+    if (error || !newGroup) {
+      toast.error("Erro ao duplicar grupo");
+      return;
+    }
+    const items = (group.addon_items as any[]) || [];
+    if (items.length > 0) {
+      const inserts = items.map((it, i) => ({
+        group_id: newGroup.id,
+        name: it.name,
+        price: it.price,
+        sort_order: i + 1,
+      }));
+      const { error: itemsErr } = await supabase.from("addon_items").insert(inserts as any);
+      if (itemsErr) {
+        toast.error("Grupo duplicado, mas erro ao copiar itens");
+        invalidate();
+        return;
+      }
+    }
+    toast.success(`Grupo duplicado com ${items.length} ${items.length === 1 ? "item" : "itens"}!`);
+    invalidate();
+  };
+
+  const linkModalGroup = groups?.find((g: any) => g.id === linkModalGroupId);
+  const previewGroup = groups?.find((g: any) => g.id === previewGroupId);
+  const filteredProductsForLink = (storeProducts || []).filter((p: any) =>
+    !linkSearch.trim() || (p.name || "").toLowerCase().includes(linkSearch.toLowerCase()),
+  );
 
   // Bulk text parser
   const parseBulkText = (text: string) => {
