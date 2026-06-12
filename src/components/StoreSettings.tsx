@@ -765,6 +765,18 @@ const NotificationSection = () => {
           maxLength={256}
           className="w-full bg-secondary border border-border rounded-xl px-4 py-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
         />
+        {pixKey.trim() && pixType && (() => {
+          const err = validatePixKey(pixKey, pixType);
+          return err ? (
+            <p className="text-[11px] font-bold text-destructive flex items-center gap-1">
+              <span>⚠️</span> {err}
+            </p>
+          ) : (
+            <p className="text-[11px] font-bold text-primary flex items-center gap-1">
+              <span>✓</span> Formato válido para {PIX_TYPE_OPTIONS.find(o => o.value === pixType)?.label}
+            </p>
+          );
+        })()}
         {pixKey && (
           <div className="bg-primary/10 border border-primary/20 rounded-xl p-3 flex items-center gap-2">
             <Wallet className="h-4 w-4 text-primary flex-shrink-0" />
