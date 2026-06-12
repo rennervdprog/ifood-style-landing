@@ -580,6 +580,27 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
                 {editingGroup !== group.id && (
                   <div className="flex items-center gap-2 ml-2">
                     <button
+                      onClick={(e) => { e.stopPropagation(); setPreviewGroupId(group.id); }}
+                      className="text-muted-foreground hover:text-foreground p-1.5"
+                      title="Pré-visualizar como o cliente vê"
+                    >
+                      <Eye className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); openLinkModal(group.id); }}
+                      className="text-muted-foreground hover:text-primary p-1.5"
+                      title="Vincular a produtos em lote"
+                    >
+                      <Link2 className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); duplicateGroup(group); }}
+                      className="text-muted-foreground hover:text-foreground p-1.5"
+                      title="Duplicar grupo"
+                    >
+                      <Copy className="h-3.5 w-3.5" />
+                    </button>
+                    <button
                       onClick={(e) => {
                         e.stopPropagation();
                         setEditingGroup(group.id);
