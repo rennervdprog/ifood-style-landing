@@ -1,6 +1,6 @@
 import StoreSettings from "@/components/StoreSettings";
 import WhatsAppSetup from "@/components/WhatsAppSetup";
-import { MessageCircle, Monitor, Copy, Loader2, RefreshCw, Ban } from "lucide-react";
+import { MessageCircle, Monitor, Copy, Loader2, RefreshCw, Ban, Store as StoreIcon } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -9,7 +9,10 @@ interface Props {
   store: any;
 }
 
+type SubTab = "loja" | "whatsapp" | "kds";
+
 const SettingsTab = ({ store }: Props) => {
+  const [subTab, setSubTab] = useState<SubTab>("loja");
   const [kdsToken, setKdsToken] = useState<string>("");
   const [kdsLoading, setKdsLoading] = useState(false);
   const [kdsRevoking, setKdsRevoking] = useState(false);
@@ -47,6 +50,27 @@ const SettingsTab = ({ store }: Props) => {
 
   return (
   <div className="space-y-6">
+    <div className="flex gap-1.5 overflow-x-auto -mx-1 px-1 pb-1">
+      {([
+        { key: "loja" as SubTab, label: "Loja & Entrega", icon: StoreIcon },
+        { key: "whatsapp" as SubTab, label: "WhatsApp", icon: MessageCircle },
+        { key: "kds" as SubTab, label: "KDS", icon: Monitor },
+      ]).map(t => (
+        <button
+          key={t.key}
+          onClick={() => setSubTab(t.key)}
+          className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border ${
+            subTab === t.key
+              ? "bg-primary text-primary-foreground border-primary"
+              : "bg-card text-muted-foreground border-border"
+          }`}
+        >
+          <t.icon className="h-3.5 w-3.5" /> {t.label}
+        </button>
+      ))}
+    </div>
+
+    {subTab === "whatsapp" && (
     <section className="rounded-2xl border border-border bg-card p-4 space-y-3">
       <div className="flex items-center gap-2">
         <MessageCircle className="h-5 w-5 text-primary" />
@@ -59,6 +83,9 @@ const SettingsTab = ({ store }: Props) => {
         expectedPhone={store.whatsapp_number || store.whatsapp || store.phone || null}
       />
     </section>
+    )}
+
+    {subTab === "kds" && (
     <section className="rounded-2xl border border-border bg-card p-4 space-y-3">
       <div className="flex items-center gap-2">
         <Monitor className="h-5 w-5 text-primary" />
@@ -117,6 +144,9 @@ const SettingsTab = ({ store }: Props) => {
         "Gerar novo link" mantém o atual válido. "Desativar link atual" invalida imediatamente o link anterior e cria um novo — use se o link vazar.
       </p>
     </section>
+    )}
+
+    {subTab === "loja" && (
     <StoreSettings 
       storeId={store.id} 
       storeName={store.name} 
@@ -143,6 +173,7 @@ const SettingsTab = ({ store }: Props) => {
       storeMinimumOrderValue={store.minimum_order_value || 0}
       storeSettings={store.settings || null} 
     />
+    )}
   </div>
   );
 };
