@@ -190,6 +190,7 @@ interface ProductCardProps {
   onToggleOutOfStock: () => void;
   onDelete: () => void;
   onEdit: () => void;
+  onDuplicate?: () => void;
   isEditing: boolean;
   initialEditForm?: ProductFormData;
   onSaveEdit: (data: ProductFormData) => void;
@@ -218,7 +219,7 @@ const ProductCardImpl = (props: ProductCardProps) => {
   const {
     product, sections, addonGroups, linkedGroups, storeAddonGroups, linkedGroupIds,
     selected, onToggleSelect, onLinkGroup, onUnlinkGroup, showLinkAddon, setShowLinkAddon,
-    onToggleAvailable, onToggleOutOfStock, onDelete, onEdit, isEditing, initialEditForm, onSaveEdit, onCancelEdit,
+    onToggleAvailable, onToggleOutOfStock, onDelete, onEdit, onDuplicate, isEditing, initialEditForm, onSaveEdit, onCancelEdit,
     showAddonForm, setShowAddonForm, addonGroupForm, setAddonGroupForm,
     onAddAddonGroup, onDeleteAddonGroup, showAddonItemForm, setShowAddonItemForm,
     addonItemForm, setAddonItemForm, onAddAddonItem, onDeleteAddonItem,
@@ -295,6 +296,11 @@ const ProductCardImpl = (props: ProductCardProps) => {
                   <DropdownMenuItem onClick={onStartMove}>
                     <ArrowRightLeft className="h-4 w-4 mr-2 text-muted-foreground" /> Mover de seção
                   </DropdownMenuItem>
+                  {onDuplicate && (
+                    <DropdownMenuItem onClick={onDuplicate}>
+                      <Edit2 className="h-4 w-4 mr-2 text-muted-foreground" /> Duplicar produto
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem onClick={onDelete} className="text-destructive focus:text-destructive">
                     <Trash2 className="h-4 w-4 mr-2" /> Excluir produto
                   </DropdownMenuItem>
