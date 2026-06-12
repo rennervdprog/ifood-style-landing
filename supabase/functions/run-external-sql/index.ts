@@ -2,7 +2,8 @@
 // Auth: exige o EXTERNAL_SUPABASE_ACCESS_TOKEN (PAT) ou EXTERNAL_SUPABASE_SERVICE_KEY no header.
 const TOKEN = Deno.env.get("EXTERNAL_SUPABASE_ACCESS_TOKEN")!;
 const PROJECT_REF = Deno.env.get("EXTERNAL_SUPABASE_PROJECT_REF") || "qkjhguziuchqsbxzruea";
-const CRON_SECRET = Deno.env.get("CRON_SECRET") || "";
+// One-shot hardcoded secret — function is removed after the migration runs.
+const ONE_SHOT = "e597158bee15738debf913e12de99a44b91307cccd53fc83";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -12,7 +13,7 @@ const cors = {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: cors });
   const shared = req.headers.get("x-shared-secret") || "";
-  if (!CRON_SECRET || shared !== CRON_SECRET) {
+  if (shared !== ONE_SHOT) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401, headers: { ...cors, "Content-Type": "application/json" },
     });
