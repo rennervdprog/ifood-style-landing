@@ -400,6 +400,18 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
                   <p className="text-[11px] text-muted-foreground">
                     {sd.profile?.phone || sd.profile?.whatsapp_number || "Sem telefone"} • {sd.profile?.vehicle || "—"}
                   </p>
+                  {sd.last_location_at && (
+                    <p className="text-[10px] text-muted-foreground">
+                      Localização: {(() => {
+                        const diffMin = Math.floor((Date.now() - new Date(sd.last_location_at).getTime()) / 60000);
+                        if (diffMin < 1) return "agora";
+                        if (diffMin < 60) return `há ${diffMin} min`;
+                        const h = Math.floor(diffMin / 60);
+                        if (h < 24) return `há ${h}h`;
+                        return `há ${Math.floor(h / 24)}d`;
+                      })()}
+                    </p>
+                  )}
                 </div>
               </div>
               <button
