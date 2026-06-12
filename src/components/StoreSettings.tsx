@@ -264,11 +264,8 @@ type PizzaPriceMode = "maior" | "media" | "soma";
         // PIX Online: só permite ATIVAR se Asaas aprovado;
         // se conta ainda não está aprovada, preserva o valor anterior do banco
         // (não sobrescreve com false silenciosamente).
-        ...(isAsaasFullyApproved
-          ? { accept_pix_online: acceptPixOnline }
-          : (storeSettings && "accept_pix_online" in storeSettings
-              ? { accept_pix_online: (storeSettings as any).accept_pix_online }
-              : {})),
+        // PIX Online liberado sem exigir subconta Asaas (modo teste/sandbox).
+        accept_pix_online: acceptPixOnline,
         accept_pix_machine: acceptPixMachine,
         accept_card:        acceptCard,
         accept_cash:        acceptCash,
