@@ -834,6 +834,115 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
           </button>
         </div>
       )}
+
+      {/* Link Products Modal */}
+      {linkModalGroupId && linkModalGroup && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={() => !linkSaving && setLinkModalGroupId(null)}>
+          <div className="bg-card w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl max-h-[85vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+            <div className="p-4 border-b border-border">
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <h3 className="text-base font-bold text-foreground truncate">Vincular "{linkModalGroup.name}"</h3>
+                  <p className="text-xs text-muted-foreground">Marque os produtos que devem usar este grupo.</p>
+                </div>
+                <button onClick={() => setLinkModalGroupId(null)} className="text-muted-foreground p-1"><X className="h-5 w-5" /></button>
+              </div>
+              <div className="relative mt-3">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <input
+                  type="text"
+                  value={linkSearch}
+                  onChange={(e) => setLinkSearch(e.target.value)}
+                  placeholder="Buscar produto..."
+                  className="w-full bg-secondary text-foreground pl-9 pr-3 py-2 rounded-lg text-sm border border-border focus:outline-none focus:border-primary"
+                />
+              </div>
+              <div className="flex gap-2 mt-2">
+                <button
+                  onClick={() => setLinkSelected(new Set(filteredProductsForLink.map((p: any) => p.id)))}
+                  className="text-xs text-primary font-bold"
+                >Marcar todos {linkSearch ? "filtrados" : ""}</button>
+                <span className="text-muted-foreground text-xs">·</span>
+                <button onClick={() => setLinkSelected(new Set())} className="text-xs text-muted-foreground font-bold">Limpar</button>
+                <span className="text-xs text-muted-foreground ml-auto">{linkSelected.size} selecionado{linkSelected.size === 1 ? "" : "s"}</span>
+              </div>
+            </div>
+            <div className="flex-1 overflow-y-auto p-3 space-y-1">
+              {filteredProductsForLink.length === 0 ? (
+                <p className="text-xs text-muted-foreground text-center py-6">Nenhum produto encontrado.</p>
+              ) : filteredProductsForLink.map((p: any) => {
+                const checked = linkSelected.has(p.id);
+                return (
+                  <button
+                    key={p.id}
+                    onClick={() => {
+                      const next = new Set(linkSelected);
+                      if (checked) next.delete(p.id); else next.add(p.id);
+                      setLinkSelected(next);
+                    }}
+                    className={`w-full flex items-center gap-3 p-2.5 rounded-lg border-2 transition-colors text-left ${checked ? "bg-primary/10 border-primary" : "bg-muted/40 border-transparent"}`}
+                  >
+                    {p.image_url ? (
+                      <img src={p.image_url} alt={p.name} className="w-10 h-10 rounded-lg object-cover flex-shrink-0" loading="lazy" />
+                    ) : (
+                      <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0"><Package className="h-4 w-4 text-muted-foreground" /></div>
+                    )}
+                    <span className="flex-1 text-sm text-foreground truncate">{p.name}</span>
+                    <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 ${checked ? "bg-primary border-primary" : "border-muted-foreground/40"}`}>
+                      {checked && <Save className="h-3 w-3 text-primary-foreground" />}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+            <div className="p-4 border-t border-border flex gap-2">
+              <button onClick={() => setLinkModalGroupId(null)} disabled={linkSaving} className="flex-1 py-2.5 rounded-xl text-sm font-bold bg-muted text-foreground">Cancelar</button>
+              <button onClick={saveLinks} disabled={linkSaving} className="flex-1 py-2.5 rounded-xl text-sm font-bold bg-primary text-primary-foreground disabled:opacity-50">
+                {linkSaving ? "Salvando..." : "Salvar vínculos"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Preview Modal */}
+      {previewGroupId && previewGroup && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={() => setPreviewGroupId(null)}>
+          <div className="bg-card w-full sm:max-w-sm rounded-t-2xl sm:rounded-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="p-4 border-b border-border flex items-center justify-between">
+              <h3 className="text-sm font-bold text-foreground">Pré-visualização (como o cliente vê)</h3>
+              <button onClick={() => setPreviewGroupId(null)} className="text-muted-foreground"><X className="h-5 w-5" /></button>
+            </div>
+            <div className="p-4 space-y-2 max-h-[70vh] overflow-y-auto">
+              <div className="flex items-baseline justify-between gap-2">
+                <h4 className="text-base font-bold text-foreground">{previewGroup.name}</h4>
+                {previewGroup.min_select > 0 && (
+                  <span className="text-[10px] bg-amber-500 text-white px-2 py-0.5 rounded-full font-bold uppercase">Obrigatório</span>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {previewGroup.min_select > 0 ? `Escolha de ${previewGroup.min_select} até ${previewGroup.max_select}` : `Escolha até ${previewGroup.max_select}`}
+              </p>
+              <div className="space-y-1.5 mt-2">
+                {((previewGroup.addon_items as any[]) || []).sort((a: any, b: any) => a.sort_order - b.sort_order).map((it: any) => (
+                  <div key={it.id} className="flex items-center justify-between bg-muted/50 rounded-lg p-3">
+                    <div className="flex items-center gap-2">
+                      <div className={`w-5 h-5 ${previewGroup.max_select === 1 ? "rounded-full" : "rounded"} border-2 border-muted-foreground/40`} />
+                      <span className="text-sm text-foreground">{it.name}</span>
+                    </div>
+                    <span className="text-sm text-primary font-bold">
+                      {Number(it.price) > 0 ? `+${formatBRL(Number(it.price))}` : "Grátis"}
+                    </span>
+                  </div>
+                ))}
+                {((previewGroup.addon_items as any[]) || []).length === 0 && (
+                  <p className="text-xs text-muted-foreground text-center py-4">Sem itens neste grupo.</p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
