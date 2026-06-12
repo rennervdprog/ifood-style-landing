@@ -44,10 +44,16 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
           .in("user_id", userIds),
       ]);
 
+      const { data: locRows } = await supabase
+        .from("driver_locations")
+        .select("driver_id, updated_at")
+        .in("driver_id", userIds);
+
       return (data as any[]).map(sd => ({
         ...sd,
         profile: profiles?.find(p => p.user_id === sd.driver_user_id),
         is_online: !!driverRows?.find(d => d.user_id === sd.driver_user_id)?.is_online,
+        last_location_at: locRows?.find((l: any) => l.driver_id === sd.driver_user_id)?.updated_at || null,
       }));
     },
     refetchInterval: 15000,
