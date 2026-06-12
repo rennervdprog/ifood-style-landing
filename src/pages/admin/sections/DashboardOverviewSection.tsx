@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 type OrderStatus = any;
 type DashboardTab = any;
-import { CreditCard, AlertTriangle, ChevronRight, Clock, Bike, Monitor, ShoppingBag, DollarSign, Timer, Users, GraduationCap, ChevronUp, ChevronDown, User, MapPin, CheckCircle2, ArrowUpRight, UtensilsCrossed, Coins, Settings, Store } from "lucide-react";
+import { CreditCard, AlertTriangle, ChevronRight, Clock, Bike, Monitor, ShoppingBag, DollarSign, Timer, Users, GraduationCap, ChevronUp, ChevronDown, User, MapPin, CheckCircle2, ArrowUpRight, UtensilsCrossed, Coins, Settings, Store, XCircle, Download, TrendingUp } from "lucide-react";
 import { formatBRL } from "@/lib/utils";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import CommissionAlert from "@/components/CommissionAlert";
@@ -81,6 +81,47 @@ export default function DashboardOverviewSection(props: Props) {
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite";
   const greetingEmoji = hour < 12 ? "☀️" : hour < 18 ? "🌤️" : "🌙";
+
+  // ── Fase 1: métricas extras (ticket médio, cancelamento, tempo até saiu_entrega) ──
+  const todayKey = new Date().toDateString();
+  const todayOrders = (orders || []).filter((o: any) => new Date(o.created_at).toDateString() === todayKey);
+  const ticketMedio = todayCount > 0 ? todayTotal / todayCount : 0;
+  const cancelados = todayOrders.filter((o: any) => o.status === "cancelado" || o.status === "recusado").length;
+  const taxaCancel = todayOrders.length > 0 ? (cancelados / todayOrders.length) * 100 : 0;
+  const saidasComTempo = todayOrders
+    .filter((o: any) => ["saiu_entrega", "em_transito", "entregue", "finalizado"].includes(o.status))
+    .map((o: any) => {
+      const dispatched = o.dispatched_at || o.updated_at;
+      if (!dispatched) return null;
+      return (new Date(dispatched).getTime() - new Date(o.created_at).getTime()) / 60000;
+    })
+    .filter((m: any) => typeof m === "number" && m > 0 && m < 600);
+  const tempoAteSaida = saidasComTempo.length > 0
+    ? Math.round(saidasComTempo.reduce((a: number, b: number) => a + b, 0) / saidasComTempo.length)
+    : null;
+
+  const exportCsv = () => {
+    const rows = [
+      ["id", "criado_em", "status", "cliente", "bairro", "pagamento", "total"],
+      ...todayOrders.map((o: any) => [
+        o.id.slice(0, 8),
+        new Date(o.created_at).toLocaleString("pt-BR"),
+        o.status,
+        getClientName(o.client_id).split(",").join(" "),
+        (o.neighborhood || "").split(",").join(" "),
+        o.payment_method || "",
+        Number(o.total_price).toFixed(2),
+      ]),
+    ];
+    const csv = rows.map((r) => r.join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `pedidos-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   return (
 <div className="p-4 lg:p-6 max-w-6xl mx-auto space-y-5 lg:space-y-6">
@@ -253,6 +294,39 @@ export default function DashboardOverviewSection(props: Props) {
       onClick={() => setDashboardTab("clients")}
     />
   </div>
+
+  {/* ── Fase 1: KPIs avançados ── */}
+  {todayOrders.length > 0 && (
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <GlanceCard
+        icon={TrendingUp} label="Ticket Médio" value={formatBRL(ticketMedio)}
+        subValue="Por pedido hoje" color="text-foreground"
+      />
+      <GlanceCard
+        icon={XCircle} label="Taxa de Cancelamento"
+        value={`${taxaCancel.toFixed(1)}%`}
+        subValue={`${cancelados} de ${todayOrders.length} hoje`}
+        color={taxaCancel > 10 ? "text-destructive" : "text-muted-foreground"}
+      />
+      <GlanceCard
+        icon={Timer} label="Pedido → Saída"
+        value={tempoAteSaida ? `${tempoAteSaida} min` : "—"}
+        subValue="Tempo médio na cozinha" color="text-muted-foreground"
+      />
+    </div>
+  )}
+
+  {/* ── Fase 1: Exportar CSV ── */}
+  {todayOrders.length > 0 && (
+    <div className="flex justify-end">
+      <button
+        onClick={exportCsv}
+        className="inline-flex items-center gap-2 text-xs font-bold text-foreground bg-card border border-border hover:border-primary/40 px-4 py-2 rounded-xl transition-colors"
+      >
+        <Download className="h-3.5 w-3.5" /> Exportar pedidos de hoje (CSV)
+      </button>
+    </div>
+  )}
 
   {/* ── Tutorial Quick Access ── */}
   <button
