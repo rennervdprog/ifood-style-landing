@@ -457,6 +457,25 @@ const AdminDashboard = () => {
     };
   }, [refreshDashboardOrders, store?.id]);
 
+  // ── Fase 2: atalhos de teclado (desktop/KDS) ──
+  // D = dashboard, O = pedidos, P = pendentes, R = preparando, E = prontos
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (target && ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName)) return;
+      if (target?.isContentEditable) return;
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      const k = e.key.toLowerCase();
+      if (k === "d") setDashboardTab("dashboard");
+      else if (k === "o") setDashboardTab("orders");
+      else if (k === "p") { setDashboardTab("orders"); setActiveTab("pendente"); }
+      else if (k === "r") { setDashboardTab("orders"); setActiveTab("preparando"); }
+      else if (k === "e") { setDashboardTab("orders"); setActiveTab("pronto_para_entrega"); }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
   useEffect(() => {
     if (!store?.id) return;
 
