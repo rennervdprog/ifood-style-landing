@@ -199,6 +199,30 @@ const CadastroLojista = () => {
 
     setLoading(true);
     try {
+      // Antifraude: valida CNPJ na Receita (BrasilAPI) — bloqueia BAIXADA/INAPTA/SUSPENSA
+      const docDigits = sanitizeDocument(document);
+      if (docDigits.length === 14) {
+        try {
+          const resp = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${docDigits}`);
+          if (resp.ok) {
+            const cnpjData = await resp.json();
+            const sit = String(cnpjData?.descricao_situacao_cadastral || cnpjData?.situacao_cadastral || "").toUpperCase();
+            if (sit && !["ATIVA", "ATIVO"].includes(sit)) {
+              toast.error(`CNPJ com situação "${sit}" na Receita. Não é possível cadastrar.`);
+              setLoading(false);
+              return;
+            }
+          } else if (resp.status === 404) {
+            toast.error("CNPJ não encontrado na Receita Federal.");
+            setLoading(false);
+            return;
+          }
+          // outros erros (5xx/timeout) → fail-open, prossegue
+        } catch {
+          /* fail-open em erro de rede */
+        }
+      }
+
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email: email.trim(),
         password,
