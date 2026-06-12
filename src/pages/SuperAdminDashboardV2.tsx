@@ -54,6 +54,11 @@ const CidadesTab = lazy(() => import("./super-admin/tabs/CidadesTab"));
 const SaquesTab = lazy(() => import("./super-admin/tabs/SaquesTab"));
 const PagamentosSplitTab = lazy(() => import("./super-admin/tabs/PagamentosSplitTab"));
 const AuditoriaTab = lazy(() => import("./super-admin/tabs/AuditoriaTab"));
+// Painéis financeiros profissionais (Fase 1)
+const FluxoCaixaPanel = lazy(() => import("@/components/finance/FluxoCaixaPanel"));
+const ComissoesPanel = lazy(() => import("@/components/finance/ComissoesPanel"));
+const ConciliacaoAsaasPanel = lazy(() => import("@/components/finance/ConciliacaoAsaasPanel"));
+const AuditoriaFinanceiraPanel = lazy(() => import("@/components/finance/AuditoriaFinanceiraPanel"));
 const TabFallback = () => (
   <div className="flex items-center justify-center py-12">
     <Loader2 className="h-6 w-6 animate-spin text-primary" />
@@ -135,7 +140,17 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showMoreSheet, setShowMoreSheet] = useState(false);
   // Sub-seções dos grupos unificados
-  type FinanceSection = "overview" | "saques" | "pagamentos" | "planos" | "socios" | "test";
+  type FinanceSection =
+    | "overview"
+    | "fluxo"
+    | "saques"
+    | "pagamentos"
+    | "planos"
+    | "comissoes"
+    | "conciliacao"
+    | "socios"
+    | "test"
+    | "auditoria";
   const [financeSection, setFinanceSection] = useState<FinanceSection>("overview");
   type StoresSection = "lojas" | "cidades" | "entrega";
   const [storesSection, setStoresSection] = useState<StoresSection>("lojas");
@@ -1110,11 +1125,15 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
                    onChange={(v) => setFinanceSection(v as FinanceSection)}
                    items={[
                      { key: "overview", label: "Visão Geral", icon: LayoutDashboard },
+                     { key: "fluxo", label: "Fluxo de Caixa", icon: TrendingUp },
                      { key: "saques", label: "Saques", icon: Wallet, badge: pendingWithdrawals.length },
                      { key: "pagamentos", label: "Pagamentos", icon: CreditCard },
-                     { key: "planos", label: "Planos", icon: Crown },
+                     { key: "planos", label: "Mensalidades", icon: Crown },
+                     { key: "comissoes", label: "Comissões", icon: Percent },
+                     { key: "conciliacao", label: "Conciliação", icon: ShieldCheck },
                      { key: "socios", label: "Sócios", icon: Handshake },
                      { key: "test", label: "Lojas Teste", icon: FlaskConical },
+                     { key: "auditoria", label: "Auditoria", icon: FileText },
                    ]}
                  />
                  {financeSection === "overview" && (
@@ -1153,6 +1172,18 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
                  {financeSection === "planos" && <PlanosTab />}
                  {financeSection === "socios" && <PartnerSplitPanel />}
                  {financeSection === "test" && <TestStoreFinancePanel />}
+                 {financeSection === "fluxo" && (
+                   <Suspense fallback={<TabFallback />}><FluxoCaixaPanel /></Suspense>
+                 )}
+                 {financeSection === "comissoes" && (
+                   <Suspense fallback={<TabFallback />}><ComissoesPanel /></Suspense>
+                 )}
+                 {financeSection === "conciliacao" && (
+                   <Suspense fallback={<TabFallback />}><ConciliacaoAsaasPanel /></Suspense>
+                 )}
+                 {financeSection === "auditoria" && (
+                   <Suspense fallback={<TabFallback />}><AuditoriaFinanceiraPanel /></Suspense>
+                 )}
                </div>
              )}
              {activeTab === "dashboard" && (
