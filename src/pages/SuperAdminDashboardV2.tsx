@@ -66,31 +66,22 @@ type AdminTab = "dashboard" | "approvals" | "stores" | "financeiro" | "pagamento
 const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; group: string }[] = [
   // Início
   { key: "dashboard", label: "Dashboard", icon: LayoutDashboard, group: "Início" },
-  // Operação
+  // Operação (Cidades + Entrega agora vivem dentro de "Lojas")
   { key: "stores", label: "Lojas", icon: Store, group: "Operação" },
-  { key: "cidades", label: "Cidades", icon: MapPin, group: "Operação" },
   { key: "coupons", label: "Cupons", icon: Ticket, group: "Operação" },
-  { key: "entrega", label: "Entrega", icon: Truck, group: "Operação" },
-  // Financeiro
+  // Financeiro unificado (Pagamentos / Saques / Planos / Sócios / Teste viraram sub-abas)
   { key: "financeiro", label: "Financeiro", icon: DollarSign, group: "Financeiro" },
-  { key: "pagamentos", label: "Pagamentos", icon: CreditCard, group: "Financeiro" },
-  { key: "saques", label: "Saques", icon: Wallet, group: "Financeiro" },
-  { key: "planos", label: "Planos", icon: Crown, group: "Financeiro" },
-  { key: "socios", label: "Sócios", icon: Handshake, group: "Financeiro" },
-  { key: "test_finance", label: "Finanças Teste", icon: FlaskConical, group: "Financeiro" },
   // Pessoas
   { key: "moderadores", label: "Moderadores", icon: Users, group: "Pessoas" },
   { key: "suporte", label: "Suporte", icon: MessageCircle, group: "Pessoas" },
-  // Marketing
+  // Marketing (Links virou sub-aba de "Página do App")
   { key: "app-page", label: "Página do App", icon: Smartphone, group: "Marketing" },
-  { key: "links", label: "Página /links", icon: LinkIcon, group: "Marketing" },
   { key: "broadcast", label: "Notificações", icon: Megaphone, group: "Marketing" },
   { key: "coach", label: "Coach Vendas IA", icon: Sparkles, group: "Marketing" },
-  // Sistema
+  // Sistema (Logs virou sub-aba de "Auditoria")
   { key: "sync", label: "Sincronizar", icon: RefreshCw, group: "Sistema" },
   { key: "auditoria", label: "Auditoria", icon: ShieldCheck, group: "Sistema" },
   { key: "juridico", label: "Jurídico", icon: Scale, group: "Sistema" },
-  { key: "logs", label: "Logs", icon: FileText, group: "Sistema" },
 ];
 
  import { FinanceTab as FinanceTabFull, MetricCard } from "./SuperAdminDashboard";
@@ -106,6 +97,37 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
   const [selectedStore, setSelectedStore] = useState<string>("all");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showMoreSheet, setShowMoreSheet] = useState(false);
+  // Sub-seções dos grupos unificados
+  type FinanceSection = "overview" | "saques" | "pagamentos" | "planos" | "socios" | "test";
+  const [financeSection, setFinanceSection] = useState<FinanceSection>("overview");
+  type StoresSection = "lojas" | "cidades" | "entrega";
+  const [storesSection, setStoresSection] = useState<StoresSection>("lojas");
+  type AppPageSection = "page" | "links";
+  const [appPageSection, setAppPageSection] = useState<AppPageSection>("page");
+  type AuditoriaSection = "auditoria" | "logs";
+  const [auditoriaSection, setAuditoriaSection] = useState<AuditoriaSection>("auditoria");
+
+  // Redireciona deep-links de abas antigas para a aba consolidada correspondente
+  useEffect(() => {
+    const legacyFinance: AdminTab[] = ["pagamentos", "saques", "planos", "socios", "test_finance"];
+    const legacyMap: Partial<Record<AdminTab, { tab: AdminTab; apply: () => void }>> = {
+      pagamentos:   { tab: "financeiro", apply: () => setFinanceSection("pagamentos") },
+      saques:       { tab: "financeiro", apply: () => setFinanceSection("saques") },
+      planos:       { tab: "financeiro", apply: () => setFinanceSection("planos") },
+      socios:       { tab: "financeiro", apply: () => setFinanceSection("socios") },
+      test_finance: { tab: "financeiro", apply: () => setFinanceSection("test") },
+      cidades:      { tab: "stores",     apply: () => setStoresSection("cidades") },
+      entrega:      { tab: "stores",     apply: () => setStoresSection("entrega") },
+      links:        { tab: "app-page",   apply: () => setAppPageSection("links") },
+      logs:         { tab: "auditoria",  apply: () => setAuditoriaSection("logs") },
+    };
+    const hit = legacyMap[activeTab];
+    if (hit) {
+      hit.apply();
+      setActiveTab(hit.tab);
+    }
+    void legacyFinance;
+  }, [activeTab]);
 
   // Memoizado para evitar recriação a cada render (causava re-fetch de queries)
   const getDateRange = useMemo(() => (filter: DateFilter) => {
