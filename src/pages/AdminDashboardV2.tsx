@@ -457,6 +457,25 @@ const AdminDashboard = () => {
     };
   }, [refreshDashboardOrders, store?.id]);
 
+  // ── Fase 2: atalhos de teclado (desktop/KDS) ──
+  // D = dashboard, O = pedidos, P = pendentes, R = preparando, E = prontos
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (target && ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName)) return;
+      if (target?.isContentEditable) return;
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      const k = e.key.toLowerCase();
+      if (k === "d") setDashboardTab("dashboard");
+      else if (k === "o") setDashboardTab("orders");
+      else if (k === "p") { setDashboardTab("orders"); setActiveTab("pendente"); }
+      else if (k === "r") { setDashboardTab("orders"); setActiveTab("preparando"); }
+      else if (k === "e") { setDashboardTab("orders"); setActiveTab("pronto_para_entrega"); }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
   useEffect(() => {
     if (!store?.id) return;
 
@@ -1164,11 +1183,11 @@ const AdminDashboard = () => {
         } catch (e) { console.warn("batch notify error", e); }
       });
 
-      setBatchSelected(new Set());
     } catch (e: any) {
       toast.error(`Erro: ${e?.message}`);
     } finally {
       setBatchDispatching(false);
+      setBatchSelected(new Set());
     }
   };
 
@@ -1231,11 +1250,18 @@ const AdminDashboard = () => {
       if (activeTab === "delivery") return o.status === "saiu_entrega" || o.status === "em_transito";
       return o.status === activeTab;
     }) || []).filter(o => {
-      if (activeTab !== "entregue" || !settlementSearch.trim()) return true;
+      if (!settlementSearch.trim()) return true;
       const search = settlementSearch.toLowerCase().trim();
-      return o.id.slice(0, 8).toLowerCase().includes(search) || (o.driver_id ? getDriverName(o.driver_id).toLowerCase().includes(search) : false) || getClientName(o.client_id).toLowerCase().includes(search);
+      const phone = (getClientWhatsApp(o.client_id) || "").replace(/\D/g, "");
+      const searchDigits = search.replace(/\D/g, "");
+      return (
+        o.id.slice(0, 8).toLowerCase().includes(search) ||
+        (o.driver_id ? getDriverName(o.driver_id).toLowerCase().includes(search) : false) ||
+        getClientName(o.client_id).toLowerCase().includes(search) ||
+        (searchDigits.length >= 3 && phone.includes(searchDigits))
+      );
     });
-  }, [orders, activeTab, settlementSearch]);
+  }, [orders, activeTab, settlementSearch, getDriverName, getClientName, getClientWhatsApp]);
 
   // Contadores memoizados — antes eram recalculados 4x por render via IIFE inline
   const orderCounters = useMemo(() => {

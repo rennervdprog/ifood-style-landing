@@ -132,13 +132,13 @@ export default function OrdersSection(props: Props) {
     </div>
   </div>
 
-  {/* Settlement search */}
-  {activeTab === "entregue" && (orders?.filter(o => o.status === "entregue").length || 0) > 1 && (
+  {/* Busca universal (id, cliente, telefone, motoboy) — Fase 2 */}
+  {(orders?.length || 0) > 1 && (
     <div className="px-4 pt-3">
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <input type="text" value={settlementSearch} onChange={e => setSettlementSearch(e.target.value)}
-          placeholder="Buscar por ID, entregador ou cliente..."
+          placeholder="Buscar por ID, cliente, telefone ou entregador..."
           className="w-full pl-10 pr-9 py-2.5 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
         {settlementSearch && (
           <button onClick={() => setSettlementSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
