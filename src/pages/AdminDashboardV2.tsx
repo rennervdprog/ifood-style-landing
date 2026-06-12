@@ -1123,9 +1123,6 @@ const AdminDashboard = () => {
 
   const batchDispatch = async () => {
     if (batchSelected.size === 0) return;
-
-  // ── Fase 2: atalhos de teclado para desktop/KDS ──
-  // (declarado fora do batchDispatch via marcador — ver useEffect abaixo)
     setBatchDispatching(true);
     try {
       const ids = Array.from(batchSelected);
