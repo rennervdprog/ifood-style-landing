@@ -1,14 +1,19 @@
-import { useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Download, Truck, Wallet, AlertTriangle } from "lucide-react";
+import { Download, Truck, Wallet, AlertTriangle, Receipt } from "lucide-react";
 import { exportCSV, brl } from "./financeExport";
+import { ConfirmActionDialog } from "./ConfirmActionDialog";
+import { toast } from "sonner";
 
 const ComissoesPanel = () => {
+  const qc = useQueryClient();
+  const [target, setTarget] = useState<{ id: string; name: string } | null>(null);
+
   const { data, isLoading } = useQuery({
     queryKey: ["finance-comissoes"],
     queryFn: async () => {
@@ -52,6 +57,19 @@ const ComissoesPanel = () => {
   const risco = totals.repasse > totals.comissao;
 
   if (isLoading) return <Skeleton className="h-64 w-full" />;
+
+  const runCharge = async () => {
+    if (!target) return;
+    const { error } = await supabase.functions.invoke("generate-commission-charge", {
+      body: { store_id: target.id },
+    });
+    if (error) {
+      toast.error("Falha ao gerar cobrança", { description: error.message });
+      return;
+    }
+    toast.success(`Cobrança de comissão gerada para ${target.name}`);
+    qc.invalidateQueries({ queryKey: ["finance-comissoes"] });
+  };
 
   return (
     <div className="space-y-4">
@@ -111,6 +129,15 @@ const ComissoesPanel = () => {
                       {r.delivery_mode === "own" ? "🛵 Própria" : "🚚 Plataforma"}
                     </Badge>
                   </div>
+                  {r.comissao > 0 && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setTarget({ id: r.store_id, name: r.name })}
+                    >
+                      <Receipt className="h-3.5 w-3.5 mr-1" /> Cobrar
+                    </Button>
+                  )}
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   <div className="bg-background rounded px-2 py-1.5">
@@ -126,6 +153,19 @@ const ComissoesPanel = () => {
             ))}
         </CardContent>
       </Card>
+
+      <ConfirmActionDialog
+        open={!!target}
+        onOpenChange={(v) => !v && setTarget(null)}
+        title="Gerar cobrança de comissão"
+        description={
+          target
+            ? `Será emitida uma cobrança PIX da comissão pendente para "${target.name}". Esta ação é registrada em auditoria.`
+            : ""
+        }
+        confirmWord={target?.name || ""}
+        onConfirm={runCharge}
+      />
     </div>
   );
 };
