@@ -267,6 +267,10 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
     const finalPrice = parseFloat(formData.price) || 0;
     if (!formData.name.trim()) { toast.error("Preencha o nome do produto"); return; }
     if (!formData.price || finalPrice <= 0) { toast.error("Preencha o preço do produto"); return; }
+    if (!formData.image_url || !formData.image_url.trim()) {
+      toast.error("Adicione uma foto do produto — itens com foto vendem muito mais 📸");
+      return;
+    }
     const { error } = await supabase.from("products").insert({
       store_id: storeId,
       section_id: sectionId,
@@ -284,6 +288,10 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
 
   const updateProduct = async (id: string, formData: ProductFormData) => {
     const finalPrice = parseFloat(formData.price) || 0;
+    if (!formData.image_url || !formData.image_url.trim()) {
+      toast.error("Adicione uma foto do produto — itens com foto vendem muito mais 📸");
+      return;
+    }
     const { error } = await supabase.from("products").update({
       name: formData.name.trim(),
       price: finalPrice,
