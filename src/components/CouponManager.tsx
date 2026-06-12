@@ -1,5 +1,5 @@
 import { formatBRL } from "@/lib/utils";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -21,6 +21,7 @@ const CouponManager = ({ storeId, isAdmin }: CouponManagerProps) => {
   const queryClient = useQueryClient();
   const storePlan = useStorePlan(storeId);
   const [showForm, setShowForm] = useState(false);
+  const [filter, setFilter] = useState<"all" | "active" | "expired" | "exhausted">("all");
   const [form, setForm] = useState({
     code: "",
     description: "",
@@ -32,6 +33,11 @@ const CouponManager = ({ storeId, isAdmin }: CouponManagerProps) => {
     expires_at: "",
   });
 
+  const isExpired = (c: any) =>
+    c.expires_at && new Date(c.expires_at).getTime() < Date.now();
+  const isExhausted = (c: any) =>
+    c.max_uses != null && (c.used_count || 0) >= c.max_uses;
+
   const { data: coupons, isLoading } = useQuery({
     queryKey: ["coupons", storeId],
     queryFn: async () => {
@@ -42,6 +48,24 @@ const CouponManager = ({ storeId, isAdmin }: CouponManagerProps) => {
       return data || [];
     },
   });
+
+  const counts = useMemo(() => {
+    const list = coupons || [];
+    return {
+      all: list.length,
+      active: list.filter((c: any) => c.is_active && !isExpired(c) && !isExhausted(c)).length,
+      expired: list.filter((c: any) => isExpired(c)).length,
+      exhausted: list.filter((c: any) => isExhausted(c)).length,
+    };
+  }, [coupons]);
+
+  const filteredCoupons = useMemo(() => {
+    const list = coupons || [];
+    if (filter === "active") return list.filter((c: any) => c.is_active && !isExpired(c) && !isExhausted(c));
+    if (filter === "expired") return list.filter((c: any) => isExpired(c));
+    if (filter === "exhausted") return list.filter((c: any) => isExhausted(c));
+    return list;
+  }, [coupons, filter]);
 
   const handleCreate = async () => {
     if (!form.code.trim()) {
