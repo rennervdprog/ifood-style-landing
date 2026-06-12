@@ -1125,11 +1125,15 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
                    onChange={(v) => setFinanceSection(v as FinanceSection)}
                    items={[
                      { key: "overview", label: "Visão Geral", icon: LayoutDashboard },
+                     { key: "fluxo", label: "Fluxo de Caixa", icon: TrendingUp },
                      { key: "saques", label: "Saques", icon: Wallet, badge: pendingWithdrawals.length },
                      { key: "pagamentos", label: "Pagamentos", icon: CreditCard },
-                     { key: "planos", label: "Planos", icon: Crown },
+                     { key: "planos", label: "Mensalidades", icon: Crown },
+                     { key: "comissoes", label: "Comissões", icon: Percent },
+                     { key: "conciliacao", label: "Conciliação", icon: ShieldCheck },
                      { key: "socios", label: "Sócios", icon: Handshake },
                      { key: "test", label: "Lojas Teste", icon: FlaskConical },
+                     { key: "auditoria", label: "Auditoria", icon: FileText },
                    ]}
                  />
                  {financeSection === "overview" && (
@@ -1168,6 +1172,18 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
                  {financeSection === "planos" && <PlanosTab />}
                  {financeSection === "socios" && <PartnerSplitPanel />}
                  {financeSection === "test" && <TestStoreFinancePanel />}
+                 {financeSection === "fluxo" && (
+                   <Suspense fallback={<TabFallback />}><FluxoCaixaPanel /></Suspense>
+                 )}
+                 {financeSection === "comissoes" && (
+                   <Suspense fallback={<TabFallback />}><ComissoesPanel /></Suspense>
+                 )}
+                 {financeSection === "conciliacao" && (
+                   <Suspense fallback={<TabFallback />}><ConciliacaoAsaasPanel /></Suspense>
+                 )}
+                 {financeSection === "auditoria" && (
+                   <Suspense fallback={<TabFallback />}><AuditoriaFinanceiraPanel /></Suspense>
+                 )}
                </div>
              )}
              {activeTab === "dashboard" && (
