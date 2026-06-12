@@ -224,10 +224,37 @@ const CouponManager = ({ storeId, isAdmin }: CouponManagerProps) => {
           {[1, 2].map(i => <div key={i} className="h-16 bg-muted animate-pulse rounded-xl" />)}
         </div>
       ) : coupons && coupons.length > 0 ? (
+        <>
+        <div className="flex gap-1.5 overflow-x-auto -mx-1 px-1 pb-1">
+          {([
+            { key: "all", label: "Todos" },
+            { key: "active", label: "Ativos" },
+            { key: "expired", label: "Expirados" },
+            { key: "exhausted", label: "Esgotados" },
+          ] as const).map(t => (
+            <button
+              key={t.key}
+              onClick={() => setFilter(t.key)}
+              className={`shrink-0 px-3 py-1 rounded-full text-[11px] font-bold border ${
+                filter === t.key
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "bg-card text-muted-foreground border-border"
+              }`}
+            >
+              {t.label} <span className="opacity-70">({counts[t.key]})</span>
+            </button>
+          ))}
+        </div>
         <div className="space-y-2">
-          {coupons.map((c: any) => {
+          {filteredCoupons.length === 0 && (
+            <p className="text-center text-xs text-muted-foreground py-6">Nenhum cupom neste filtro.</p>
+          )}
+          {filteredCoupons.map((c: any) => {
             const typeInfo = discountTypeLabels[c.discount_type] || discountTypeLabels.percentage;
             const TypeIcon = typeInfo.icon;
+            const expired = isExpired(c);
+            const exhausted = isExhausted(c);
+            const usagePct = c.max_uses ? Math.min(100, ((c.used_count || 0) / c.max_uses) * 100) : 0;
             return (
               <div key={c.id} className={`bg-card border rounded-xl p-3 flex items-center justify-between ${c.is_active ? "border-border" : "border-red-500/30 opacity-60"}`}>
                 <div className="flex items-center gap-3">
@@ -235,14 +262,26 @@ const CouponManager = ({ storeId, isAdmin }: CouponManagerProps) => {
                     <TypeIcon className="h-4 w-4 text-primary" />
                   </div>
                   <div>
-                    <p className="font-bold text-sm text-foreground">{c.code}</p>
+                    <div className="flex items-center gap-1.5">
+                      <p className="font-bold text-sm text-foreground">{c.code}</p>
+                      {expired && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-600">EXPIRADO</span>}
+                      {exhausted && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-red-500/20 text-red-600">ESGOTADO</span>}
+                    </div>
                     <p className="text-[10px] text-muted-foreground">
                       {c.discount_type === "percentage" && `${c.discount_value}% off`}
                       {c.discount_type === "fixed" && `${formatBRL(Number(c.discount_value))} off`}
                       {c.discount_type === "free_shipping" && "Frete grátis"}
                       {c.min_order_value > 0 && ` · Min ${formatBRL(Number(c.min_order_value))}`}
-                      {` · ${c.used_count} usos`}
+                      {` · ${c.used_count || 0}${c.max_uses ? `/${c.max_uses}` : ""} usos`}
                     </p>
+                    {c.max_uses ? (
+                      <div className="w-32 h-1 bg-muted rounded-full overflow-hidden mt-1">
+                        <div
+                          className={`h-full rounded-full ${usagePct >= 100 ? "bg-red-500" : "bg-primary"}`}
+                          style={{ width: `${usagePct}%` }}
+                        />
+                      </div>
+                    ) : null}
                   </div>
                 </div>
                 <div className="flex items-center gap-1">
@@ -262,6 +301,7 @@ const CouponManager = ({ storeId, isAdmin }: CouponManagerProps) => {
             );
           })}
         </div>
+        </>
       ) : (
         <p className="text-center text-sm text-muted-foreground py-6">Nenhum cupom criado ainda.</p>
       )}
