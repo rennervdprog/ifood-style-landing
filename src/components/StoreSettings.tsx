@@ -1016,27 +1016,9 @@ const NotificationSection = () => {
             </div>
             <button
               type="button"
-              onClick={() => {
-                if (!hasAsaasAccount) {
-                  toast.error("Configure sua conta Asaas antes de ativar o PIX Online.", {
-                    description: "Vá em Meu Plano → Configurar conta de recebimento.",
-                    duration: 6000,
-                  });
-                  return;
-                }
-                if (!isAsaasFullyApproved) {
-                  toast.error("Sua conta Asaas ainda está em análise.", {
-                    description: "Aguarde a aprovação de todos os documentos para ativar o PIX Online.",
-                    duration: 6000,
-                  });
-                  return;
-                }
-                setAcceptPixOnline(!acceptPixOnline);
-              }}
+              onClick={() => setAcceptPixOnline(!acceptPixOnline)}
               className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${
-                !hasAsaasAccount || !isAsaasFullyApproved
-                  ? "bg-muted-foreground/20 cursor-not-allowed"
-                  : acceptPixOnline ? "bg-primary" : "bg-muted-foreground/30"
+                acceptPixOnline ? "bg-primary" : "bg-muted-foreground/30"
               }`}
             >
               <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${acceptPixOnline ? "translate-x-5" : "translate-x-0"}`} />
