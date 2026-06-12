@@ -576,6 +576,7 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
       onToggleAvailable={() => toggleProductAvailable(product.id, product.is_available)}
       onToggleOutOfStock={() => toggleProductOutOfStock(product.id, (product as any).metadata)}
       onDelete={() => deleteProductConfirm(product.id, product.name)}
+      onDuplicate={() => duplicateProduct(product)}
       onEdit={() => {
         setEditingProduct(product.id);
         setEditInitialForm({
