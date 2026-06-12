@@ -4,11 +4,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { ShieldCheck, AlertTriangle, RefreshCw, Download } from "lucide-react";
+import { ShieldCheck, AlertTriangle, RefreshCw, Download, Zap } from "lucide-react";
 import { exportCSV, brl } from "./financeExport";
 import { toast } from "sonner";
+import { useState } from "react";
+import { ConfirmActionDialog } from "./ConfirmActionDialog";
 
 const ConciliacaoAsaasPanel = () => {
+  const [forceOpen, setForceOpen] = useState(false);
+
   const subaccounts = useQuery({
     queryKey: ["finance-asaas-subaccounts"],
     queryFn: async () => {
@@ -67,6 +71,18 @@ const ConciliacaoAsaasPanel = () => {
   const queue = reviewQueue.data || [];
   const errors = webhookErrors.data || [];
 
+  const runReconcile = async () => {
+    const { error } = await supabase.functions.invoke("reconcile-payments", { body: {} });
+    if (error) {
+      toast.error("Falha na reconciliação", { description: error.message });
+      return;
+    }
+    toast.success("Reconciliação iniciada");
+    subaccounts.refetch();
+    reviewQueue.refetch();
+    webhookErrors.refetch();
+  };
+
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -111,6 +127,9 @@ const ConciliacaoAsaasPanel = () => {
               }}
             >
               <RefreshCw className="h-4 w-4 mr-1" /> Atualizar
+            </Button>
+            <Button size="sm" variant="destructive" onClick={() => setForceOpen(true)}>
+              <Zap className="h-4 w-4 mr-1" /> Forçar
             </Button>
             <Button size="sm" variant="outline" onClick={() => exportCSV("conciliacao-asaas", recRows)}>
               <Download className="h-4 w-4 mr-1" /> CSV
@@ -163,6 +182,16 @@ const ConciliacaoAsaasPanel = () => {
           </CardContent>
         </Card>
       )}
+
+      <ConfirmActionDialog
+        open={forceOpen}
+        onOpenChange={setForceOpen}
+        title="Forçar reconciliação Asaas"
+        description="Vai reprocessar pagamentos pendentes contra o Asaas e atualizar saldos internos. Pode levar alguns minutos."
+        confirmWord="RECONCILIAR"
+        destructive
+        onConfirm={runReconcile}
+      />
     </div>
   );
 };
