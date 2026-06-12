@@ -2,17 +2,17 @@
 // Auth: exige o EXTERNAL_SUPABASE_ACCESS_TOKEN (PAT) ou EXTERNAL_SUPABASE_SERVICE_KEY no header.
 const TOKEN = Deno.env.get("EXTERNAL_SUPABASE_ACCESS_TOKEN")!;
 const PROJECT_REF = Deno.env.get("EXTERNAL_SUPABASE_PROJECT_REF") || "qkjhguziuchqsbxzruea";
-const EXT_KEY = Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || "";
+const CRON_SECRET = Deno.env.get("CRON_SECRET") || "";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-shared-secret",
 };
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: cors });
-  const auth = (req.headers.get("Authorization") || "").replace("Bearer ", "");
-  if (!auth || (auth !== EXT_KEY && auth !== TOKEN)) {
+  const shared = req.headers.get("x-shared-secret") || "";
+  if (!CRON_SECRET || shared !== CRON_SECRET) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401, headers: { ...cors, "Content-Type": "application/json" },
     });
