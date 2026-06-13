@@ -132,7 +132,7 @@ Deno.serve(async (req) => {
           city: s.address_city || "Itatinga",
           state: s.address_state || "SP",
           pixAddressKey: prof.pix_key || cpfCnpj,
-          pixAddressKeyType: (prof.pix_type as string) || (isCnpj ? "CNPJ" : "CPF"),
+          pixAddressKeyType: (((prof.pix_type as string) || (isCnpj ? "CNPJ" : "CPF"))).toUpperCase(),
         };
         try {
           const r = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/create-asaas-subaccount`, {
@@ -229,7 +229,7 @@ Deno.serve(async (req) => {
         neighborhood: "Centro",
         whatsapp: "14999990000",
         phone: "14999990000",
-        pix_type: "CNPJ",
+        pix_type: "cnpj",
         pix_key: s.cnpj,
         selected_plan: "starter",
       });
@@ -241,7 +241,7 @@ Deno.serve(async (req) => {
           document: s.cnpj,
           phone: "14999990000",
           whatsapp_number: "14999990000",
-          pix_type: "CNPJ",
+          pix_type: "cnpj",
           pix_key: s.cnpj,
           street: "Rua Sandbox",
           number: "100",
@@ -345,7 +345,7 @@ Deno.serve(async (req) => {
           document: m.cpf,
           phone: "14999990000",
           whatsapp_number: "14999990000",
-          pix_type: "CPF",
+          pix_type: "cpf",
           pix_key: m.cpf,
         })
         .eq("user_id", user.id);
