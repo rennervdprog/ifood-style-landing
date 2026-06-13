@@ -231,8 +231,9 @@ Deno.serve(async (req) => {
     for (const m of SEEDS.motoboys) {
       const user = await createUser(m.email, {
         full_name: m.name,
-        role: "entregador",
+        role: "motoboy",
         document: m.cpf,
+        vehicle: "moto",
       });
       if (!user) continue;
       // Garante linha em drivers
