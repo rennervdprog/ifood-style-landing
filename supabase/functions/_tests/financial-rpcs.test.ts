@@ -26,7 +26,7 @@ async function setupStore() {
   // Cria loja-teste com saldos zerados
   const { data, error } = await sb!
     .from("stores")
-    .insert({ name: `__rpc_test_${Date.now()}`, slug: `__rpc_test_${Date.now()}`, status: "active" })
+    .insert({ name: `__rpc_test_${Date.now()}`, slug: `__rpc_test_${Date.now()}`, status: "ativo", category: "lanches" })
     .select("id")
     .single();
   if (error) throw error;
@@ -129,7 +129,7 @@ Deno.test({ name: "credit_store_commission: ignora valor <= 0", ...opts, fn: asy
 Deno.test({ name: "reconcile_debit_store_balance: plano comissao deduz só comissão", ...opts, fn: async () => {
   await setupStore();
   try {
-    await sb!.rpc("reconcile_debit_store_balance", { _store_id: storeId, _amount: 15, _plan_type: "comissao" });
+    await sb!.rpc("reconcile_debit_store_balance", { _store_id: storeId, _amount: 15, _plan_type: "commission_only" });
     const b = await getBal();
     assertEquals(Number(b.comissao_pendente), 35);
     assertEquals(Number(b.repasse_pendente), 100); // intacto
@@ -139,7 +139,7 @@ Deno.test({ name: "reconcile_debit_store_balance: plano comissao deduz só comis
 Deno.test({ name: "reconcile_debit_store_balance: plano repasse deduz só repasse", ...opts, fn: async () => {
   await setupStore();
   try {
-    await sb!.rpc("reconcile_debit_store_balance", { _store_id: storeId, _amount: 25, _plan_type: "repasse" });
+    await sb!.rpc("reconcile_debit_store_balance", { _store_id: storeId, _amount: 25, _plan_type: "fixed" });
     const b = await getBal();
     assertEquals(Number(b.repasse_pendente), 75);
     assertEquals(Number(b.comissao_pendente), 50); // intacto
