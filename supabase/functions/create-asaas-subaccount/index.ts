@@ -144,21 +144,29 @@ Deno.serve(async (req) => {
       else if (parsed.data.wallet_id) regQuery = regQuery.eq("wallet_id", parsed.data.wallet_id);
       else return json({ error: "Informe registry_id ou wallet_id." }, 400);
       const { data: reg } = await regQuery.maybeSingle();
-      if (!reg) return json({ error: "Registro de subconta não encontrado." }, 404);
+      const fallbackReg = !reg && parsed.data.wallet_id
+        ? { id: null, wallet_id: parsed.data.wallet_id, api_key: null, account_id: null }
+        : null;
+      const sourceReg = reg || fallbackReg;
+      if (!sourceReg) return json({ error: "Registro de subconta não encontrado." }, 404);
 
       const { savedAs, lastErr } = await persistToStore(
-        parsed.data.store_id, reg.wallet_id, reg.api_key, reg.account_id, null,
+        parsed.data.store_id, sourceReg.wallet_id, sourceReg.api_key, sourceReg.account_id, null,
       );
       if (!savedAs) {
-        await cloudClient.from("asaas_subaccounts_registry").update({
-          last_error: { message: lastErr?.message, code: lastErr?.code, details: lastErr?.details, hint: lastErr?.hint, when: "link-existing" },
-        }).eq("id", reg.id);
+        if (sourceReg.id) {
+          await cloudClient.from("asaas_subaccounts_registry").update({
+            last_error: { message: lastErr?.message, code: lastErr?.code, details: lastErr?.details, hint: lastErr?.hint, when: "link-existing" },
+          }).eq("id", sourceReg.id);
+        }
         return json({ error: "Falha ao vincular a subconta à loja.", debug: lastErr }, 500);
       }
-      await cloudClient.from("asaas_subaccounts_registry").update({
-        status: "linked", store_id: parsed.data.store_id, external_store_id: parsed.data.store_id, linked_at: new Date().toISOString(), last_error: null,
-      }).eq("id", reg.id);
-      return json({ success: true, walletId: reg.wallet_id, savedAs, recovered: true });
+      if (sourceReg.id) {
+        await cloudClient.from("asaas_subaccounts_registry").update({
+          status: "linked", store_id: parsed.data.store_id, external_store_id: parsed.data.store_id, linked_at: new Date().toISOString(), last_error: null,
+        }).eq("id", sourceReg.id);
+      }
+      return json({ success: true, walletId: sourceReg.wallet_id, savedAs, recovered: true });
     }
 
     // === MODE: create (padrão) ===
