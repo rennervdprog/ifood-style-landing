@@ -1121,7 +1121,7 @@ const CheckoutPage = () => {
             {!showSchedule && !isStoreClosed && (
               <div className="flex items-center gap-2">
                 <DeliveryTimeEstimate status="pendente" createdAt={new Date().toISOString()} />
-                <span className="text-xs text-muted-foreground">Estimativa de entrega</span>
+                <span className="text-xs text-muted-foreground">{isPickup ? "Estimativa de retirada" : "Estimativa de entrega"}</span>
               </div>
             )}
           </div>
