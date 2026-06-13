@@ -172,7 +172,16 @@ Deno.serve(async (req) => {
 
     if (updErr) {
       console.error("Failed to persist subaccount:", updErr);
-      return json({ error: "Subconta criada mas houve erro ao salvar. Contate o suporte.", walletId }, 500);
+      return json({
+        error: "Subconta criada mas houve erro ao salvar. Contate o suporte.",
+        walletId,
+        debug: {
+          message: updErr.message,
+          code: updErr.code,
+          details: updErr.details,
+          hint: updErr.hint,
+        },
+      }, 500);
     }
 
     return json({
