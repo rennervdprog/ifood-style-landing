@@ -26,7 +26,7 @@ async function setupStore() {
   // Cria loja-teste com saldos zerados
   const { data, error } = await sb!
     .from("stores")
-    .insert({ name: `__rpc_test_${Date.now()}`, slug: `__rpc_test_${Date.now()}`, status: "active" })
+    .insert({ name: `__rpc_test_${Date.now()}`, slug: `__rpc_test_${Date.now()}`, status: "ativo" })
     .select("id")
     .single();
   if (error) throw error;
