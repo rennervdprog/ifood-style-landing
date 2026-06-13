@@ -127,6 +127,9 @@ Deno.serve(async (req) => {
       // Trigger split via confirm-order-payment using service-role bypass,
       // so the store gets paid even when the user closes the app right after PIX.
       try {
+        // confirm-order-payment vive na MESMA edge platform (Lovable);
+        // SUPABASE_URL aqui é a URL das functions do projeto Lovable, não do banco.
+        // O banco em si já é o externo (cliente `supabase` acima).
         const projectUrl = Deno.env.get("SUPABASE_URL")!;
         const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
         await fetch(`${projectUrl}/functions/v1/confirm-order-payment`, {
