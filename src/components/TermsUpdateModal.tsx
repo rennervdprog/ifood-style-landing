@@ -129,7 +129,7 @@ export const TermsUpdateModal = ({ onAccepted }: Props) => {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-black text-foreground leading-tight">Termos atualizados</p>
-              <p className="text-[11px] text-muted-foreground">Versão 4.1 · Junho 2026</p>
+              <p className="text-[11px] text-muted-foreground">Versão {CURRENT_TERMS_VERSION} · Junho 2026</p>
             </div>
             <span className="text-[10px] font-black bg-amber-500/10 text-amber-600 border border-amber-500/20 px-2 py-1 rounded-full shrink-0">
               Obrigatório
@@ -218,7 +218,7 @@ export const TermsUpdateModal = ({ onAccepted }: Props) => {
                 className="font-bold text-primary underline underline-offset-2">
                 Termos de Uso
               </a>{" "}
-              versão 4.1, incluindo razão social atualizada do Asaas, Encarregado de Dados (DPO) e correções de numeração.
+              versão {CURRENT_TERMS_VERSION}, incluindo razão social atualizada do Asaas, Encarregado de Dados (DPO) e correções de numeração.
             </p>
           </button>
 
@@ -238,7 +238,7 @@ export const TermsUpdateModal = ({ onAccepted }: Props) => {
                 className="font-bold text-emerald-600 underline underline-offset-2">
                 Política de Privacidade
               </a>{" "}
-              versão 4.1.
+              versão {CURRENT_TERMS_VERSION}.
             </p>
           </button>
 
