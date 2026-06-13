@@ -19,9 +19,24 @@ const PASSWORD = "Sandbox#2026!";
 
 const SEEDS = {
   lojistas: [
-    { email: "sandbox+lojista1@itasuper.test", name: "Sandbox Burger", cnpj: "11222333000181", cat: "lanches" },
-    { email: "sandbox+lojista2@itasuper.test", name: "Sandbox Pizza",  cnpj: "11444777000161", cat: "pizzas" },
-    { email: "sandbox+lojista3@itasuper.test", name: "Sandbox Sushi",  cnpj: "19131243000197", cat: "japonesa" },
+    { email: "sandbox+lojista1@itasuper.test", name: "Sandbox Burger", cnpj: "11222333000181", cat: "lanches",
+      products: [
+        { name: "Sandbox Burger Clássico", price: 25.9, description: "Pão, blend 150g, queijo, alface, tomate" },
+        { name: "Sandbox Cheese Bacon", price: 32.5, description: "Blend 180g, cheddar, bacon crocante" },
+        { name: "Sandbox Batata Frita", price: 14.0, description: "Porção 300g" },
+      ] },
+    { email: "sandbox+lojista2@itasuper.test", name: "Sandbox Pizza",  cnpj: "11444777000161", cat: "pizzas",
+      products: [
+        { name: "Pizza Sandbox Calabresa", price: 49.9, description: "Mussarela, calabresa, cebola" },
+        { name: "Pizza Sandbox Margherita", price: 45.0, description: "Mussarela, tomate, manjericão" },
+        { name: "Refrigerante 2L", price: 12.0, description: "Coca-Cola 2L gelada" },
+      ] },
+    { email: "sandbox+lojista3@itasuper.test", name: "Sandbox Sushi",  cnpj: "19131243000197", cat: "japonesa",
+      products: [
+        { name: "Combo Sandbox 20pç", price: 79.9, description: "Sushi e sashimi variados" },
+        { name: "Temaki Salmão", price: 28.0, description: "Salmão fresco e cream cheese" },
+        { name: "Hot Roll 8pç", price: 32.0, description: "Empanado, recheio de salmão" },
+      ] },
   ],
   motoboys: [
     { email: "sandbox+moto1@itasuper.test", name: "Sandbox Motoboy 1", cpf: "11144477735" },
