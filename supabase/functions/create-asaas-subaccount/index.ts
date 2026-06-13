@@ -48,15 +48,17 @@ Deno.serve(async (req) => {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) return json({ error: "Unauthorized" }, 401);
 
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_ANON_KEY")!,
-      { global: { headers: { Authorization: authHeader } } }
-    );
-    const adminClient = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
+    // Banco de produção (lojas/usuários) vive no Supabase EXTERNO.
+    const EXTERNAL_URL = Deno.env.get("EXTERNAL_SUPABASE_URL") || Deno.env.get("SUPABASE_URL")!;
+    const EXTERNAL_ANON = Deno.env.get("EXTERNAL_SUPABASE_ANON_KEY") || Deno.env.get("SUPABASE_ANON_KEY")!;
+    const EXTERNAL_SERVICE = Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY")
+      || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY")
+      || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+    const supabase = createClient(EXTERNAL_URL, EXTERNAL_ANON, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const adminClient = createClient(EXTERNAL_URL, EXTERNAL_SERVICE);
 
     const token = authHeader.replace("Bearer ", "");
     const { data: userData, error: userErr } = await supabase.auth.getUser(token);
