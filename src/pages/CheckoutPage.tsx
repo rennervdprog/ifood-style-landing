@@ -28,8 +28,8 @@ import EmptiesExchange, { type EmptiesExchangeSelection } from "@/components/Emp
 const allPaymentMethods = [
   { id: "pix",         label: "PIX Online",         desc: "Pagamento instantâneo",   icon: QrCode },
   { id: "pix_machine", label: "PIX na Maquininha",   desc: "PIX pela maquininha do lojista", icon: QrCode },
-  { id: "cartao",      label: "Cartão na Entrega",   desc: "Débito ou crédito",       icon: CreditCard },
-  { id: "dinheiro",    label: "Dinheiro",             desc: "Pague na entrega",        icon: Banknote },
+  { id: "cartao",      label: "Cartão",               desc: "Débito ou crédito",       icon: CreditCard },
+  { id: "dinheiro",    label: "Dinheiro",             desc: "Em espécie",              icon: Banknote },
 ];
 
 const CheckoutPage = () => {
