@@ -144,21 +144,29 @@ Deno.serve(async (req) => {
       else if (parsed.data.wallet_id) regQuery = regQuery.eq("wallet_id", parsed.data.wallet_id);
       else return json({ error: "Informe registry_id ou wallet_id." }, 400);
       const { data: reg } = await regQuery.maybeSingle();
-      if (!reg) return json({ error: "Registro de subconta não encontrado." }, 404);
+      const fallbackReg = !reg && parsed.data.wallet_id
+        ? { id: null, wallet_id: parsed.data.wallet_id, api_key: null, account_id: null }
+        : null;
+      const sourceReg = reg || fallbackReg;
+      if (!sourceReg) return json({ error: "Registro de subconta não encontrado." }, 404);
 
       const { savedAs, lastErr } = await persistToStore(
-        parsed.data.store_id, reg.wallet_id, reg.api_key, reg.account_id, null,
+        parsed.data.store_id, sourceReg.wallet_id, sourceReg.api_key, sourceReg.account_id, null,
       );
       if (!savedAs) {
-        await cloudClient.from("asaas_subaccounts_registry").update({
-          last_error: { message: lastErr?.message, code: lastErr?.code, details: lastErr?.details, hint: lastErr?.hint, when: "link-existing" },
-        }).eq("id", reg.id);
+        if (sourceReg.id) {
+          await cloudClient.from("asaas_subaccounts_registry").update({
+            last_error: { message: lastErr?.message, code: lastErr?.code, details: lastErr?.details, hint: lastErr?.hint, when: "link-existing" },
+          }).eq("id", sourceReg.id);
+        }
         return json({ error: "Falha ao vincular a subconta à loja.", debug: lastErr }, 500);
       }
-      await cloudClient.from("asaas_subaccounts_registry").update({
-        status: "linked", store_id: parsed.data.store_id, external_store_id: parsed.data.store_id, linked_at: new Date().toISOString(), last_error: null,
-      }).eq("id", reg.id);
-      return json({ success: true, walletId: reg.wallet_id, savedAs, recovered: true });
+      if (sourceReg.id) {
+        await cloudClient.from("asaas_subaccounts_registry").update({
+          status: "linked", store_id: parsed.data.store_id, external_store_id: parsed.data.store_id, linked_at: new Date().toISOString(), last_error: null,
+        }).eq("id", sourceReg.id);
+      }
+      return json({ success: true, walletId: sourceReg.wallet_id, savedAs, recovered: true });
     }
 
     // === MODE: create (padrão) ===
@@ -233,6 +241,52 @@ Deno.serve(async (req) => {
     if (cpfCnpj.length === 11 && body.birthDate) subaccountPayload.birthDate = body.birthDate;
     if (cpfCnpj.length === 14 && body.companyType) subaccountPayload.companyType = body.companyType;
 
+    const existingRes = await fetch(`${baseUrl}/accounts?cpfCnpj=${encodeURIComponent(cpfCnpj)}`, {
+      headers: { access_token: ASAAS_API_KEY },
+    });
+    if (existingRes.ok) {
+      const existingData = await existingRes.json();
+      const existingAccount = existingData?.data?.[0];
+      if (existingAccount?.walletId) {
+        const { savedAs, lastErr } = await persistToStore(
+          body.store_id,
+          existingAccount.walletId,
+          existingAccount.apiKey || null,
+          existingAccount.id || null,
+          { key: body.pixAddressKey, type: body.pixAddressKeyType },
+        );
+        if (!savedAs) {
+          return json({
+            error: "Subconta encontrada no Asaas, mas o salvamento na loja falhou.",
+            walletId: existingAccount.walletId,
+            recoverable: true,
+            debug: { stage: "persist_existing", message: lastErr?.message, code: lastErr?.code, details: lastErr?.details, hint: lastErr?.hint },
+          }, 500);
+        }
+        await cloudClient.from("asaas_subaccounts_registry").upsert({
+          store_id: body.store_id,
+          external_store_id: body.store_id,
+          wallet_id: existingAccount.walletId,
+          account_id: existingAccount.id || null,
+          api_key: existingAccount.apiKey || null,
+          cpf_cnpj: cpfCnpj,
+          email: existingAccount.email || body.email,
+          status: "linked",
+          raw_response: existingAccount,
+          linked_at: new Date().toISOString(),
+          last_error: null,
+        }, { onConflict: "wallet_id" });
+        return json({
+          success: true,
+          walletId: existingAccount.walletId,
+          accountId: existingAccount.id,
+          savedAs,
+          recovered: true,
+          message: "Subconta Asaas existente vinculada à loja.",
+        });
+      }
+    }
+
     const accRes = await fetch(`${baseUrl}/accounts`, {
       method: "POST",
       headers: { "Content-Type": "application/json", access_token: ASAAS_API_KEY },
@@ -252,12 +306,12 @@ Deno.serve(async (req) => {
       return json({ error: "Resposta inesperada do Asaas (sem walletId/apiKey).", asaas: accData }, 500);
     }
 
-    // REGISTRO IMEDIATO no Lovable Cloud: nunca perdemos a subconta criada.
+    // REGISTRO IMEDIATO no banco externo: nunca perdemos a subconta criada.
     let registryId: string | null = null;
     try {
       const { data: regIns, error: regErr } = await cloudClient
         .from("asaas_subaccounts_registry")
-        .insert({
+        .upsert({
           store_id: body.store_id,
           external_store_id: body.store_id,
           wallet_id: walletId,
@@ -267,7 +321,7 @@ Deno.serve(async (req) => {
           email: body.email,
           status: "created",
           raw_response: accData,
-        })
+        }, { onConflict: "wallet_id" })
         .select("id").maybeSingle();
       if (regErr) console.error("registry insert error:", regErr);
       registryId = regIns?.id ?? null;
