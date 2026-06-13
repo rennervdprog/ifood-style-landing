@@ -58,6 +58,7 @@ const LinksPage = lazy(() => import("./pages/LinksPage"));
  const DownloadApp = lazy(() => import("./pages/DownloadApp"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const KdsPage = lazy(() => import("./pages/KdsPage"));
+const SandboxTestsPage = lazy(() => import("./pages/SandboxTestsPage"));
 
 const PageLoader = () => (
   <div className="min-h-screen bg-background flex items-center justify-center">
@@ -350,6 +351,7 @@ const App = () => {
                 />
                 <Route path="/super-admin1" element={<Navigate to="/super-admin" replace />} />
                 <Route path="/super-admin2" element={<Navigate to="/super-admin" replace />} />
+                <Route path="/super-admin/sandbox-tests" element={<RoleGuard allowedRoles={["admin"]} redirectTo="/"><SandboxTestsPage /></RoleGuard>} />
                 <Route path="/parceiro" element={<PartnerOnboarding />} />
                 {/* Cadastro de motoboy de plataforma descontinuado — redireciona para motoboy de loja */}
                 <Route path="/cadastro-entregador" element={<Navigate to="/cadastro-motoboy-loja" replace />} />
