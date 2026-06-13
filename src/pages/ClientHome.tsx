@@ -392,7 +392,12 @@ const ClientHomeContent = () => {
     queryKey: ["client-store-search", searchQuery, userLocation.coords?.lat, userLocation.coords?.lng],
     queryFn: async () => {
       const { data, error } = await supabase.functions.invoke("public-store-catalog", {
-        body: { query: searchQuery, limit: 50, fallback_to_all: true },
+        body: {
+          query: searchQuery,
+          limit: 50,
+          fallback_to_all: true,
+          include_test: !!user?.email?.endsWith("@itasuper.test"),
+        },
       });
       if (error) throw error;
       const stores = Array.isArray(data?.stores) ? data.stores : [];
