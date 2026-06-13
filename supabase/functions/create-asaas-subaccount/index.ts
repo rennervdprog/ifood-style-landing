@@ -15,7 +15,8 @@ const json = (body: unknown, status = 200) =>
 
 const onlyDigits = (value: unknown) => String(value ?? "").replace(/[^0-9]/g, "");
 
-const BodySchema = z.object({
+const CreateSchema = z.object({
+  mode: z.literal("create").optional(),
   store_id: z.string().uuid(),
   name: z.string().min(3).max(120),
   email: z.string().email(),
@@ -39,6 +40,18 @@ const BodySchema = z.object({
   pixAddressKeyType: z.enum(["CPF", "CNPJ", "EMAIL", "PHONE", "EVP"]),
 });
 
+const LinkSchema = z.object({
+  mode: z.literal("link-existing"),
+  store_id: z.string().uuid(),
+  registry_id: z.string().uuid().optional(),
+  wallet_id: z.string().min(5).optional(),
+});
+
+const ListSchema = z.object({
+  mode: z.literal("list-orphans"),
+  store_id: z.string().uuid(),
+});
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -55,6 +68,11 @@ Deno.serve(async (req) => {
       || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY")
       || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
+    // Lovable Cloud (registry de segurança para subcontas órfãs)
+    const CLOUD_URL = Deno.env.get("SUPABASE_URL")!;
+    const CLOUD_SERVICE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const cloudClient = createClient(CLOUD_URL, CLOUD_SERVICE);
+
     const supabase = createClient(EXTERNAL_URL, EXTERNAL_ANON, {
       global: { headers: { Authorization: authHeader } },
     });
@@ -65,7 +83,89 @@ Deno.serve(async (req) => {
     if (userErr || !userData?.user) return json({ error: "Unauthorized" }, 401);
     const userId = userData.user.id;
 
-    const parsed = BodySchema.safeParse(await req.json());
+    const rawBody = await req.json();
+    const mode = (rawBody?.mode as string) || "create";
+
+    // helper: persist em cascata na loja externa
+    async function persistToStore(storeId: string, walletId: string, apiKey: string | null, accountId: string | null, pix?: { key: string; type: string } | null) {
+      const fullPayload: Record<string, unknown> = {
+        asaas_wallet_id: walletId,
+        asaas_subaccount_api_key: apiKey,
+        asaas_account_id: accountId,
+      };
+      if (pix) {
+        fullPayload.asaas_pix_key = pix.key;
+        fullPayload.asaas_pix_key_type = pix.type;
+        fullPayload.asaas_auto_withdraw_enabled = true;
+      }
+      const attempts: Array<{ label: string; payload: Record<string, unknown> }> = [
+        { label: "full", payload: fullPayload },
+        { label: "no_pix_fields", payload: { asaas_wallet_id: walletId, asaas_subaccount_api_key: apiKey, asaas_account_id: accountId } },
+        { label: "wallet_and_key", payload: { asaas_wallet_id: walletId, asaas_subaccount_api_key: apiKey } },
+        { label: "wallet_only", payload: { asaas_wallet_id: walletId } },
+      ];
+      let savedAs: string | null = null;
+      let lastErr: any = null;
+      for (const attempt of attempts) {
+        const { error } = await adminClient.from("stores").update(attempt.payload).eq("id", storeId);
+        if (!error) { savedAs = attempt.label; break; }
+        lastErr = error;
+        console.warn(`persist attempt '${attempt.label}' failed:`, error);
+      }
+      return { savedAs, lastErr };
+    }
+
+    // === MODE: list-orphans (recovery UI) ===
+    if (mode === "list-orphans") {
+      const parsed = ListSchema.safeParse(rawBody);
+      if (!parsed.success) return json({ error: "Dados inválidos" }, 400);
+      const { data: storeRow } = await supabase
+        .from("stores").select("id, owner_id").eq("id", parsed.data.store_id).maybeSingle();
+      if (!storeRow || storeRow.owner_id !== userId) return json({ error: "Sem permissão" }, 403);
+      const { data, error } = await cloudClient
+        .from("asaas_subaccounts_registry")
+        .select("id, wallet_id, account_id, status, cpf_cnpj, email, created_at, last_error")
+        .or(`store_id.eq.${parsed.data.store_id},external_store_id.eq.${parsed.data.store_id}`)
+        .neq("status", "linked")
+        .order("created_at", { ascending: false });
+      if (error) return json({ error: error.message }, 500);
+      return json({ success: true, orphans: data || [] });
+    }
+
+    // === MODE: link-existing (recupera subconta órfã) ===
+    if (mode === "link-existing") {
+      const parsed = LinkSchema.safeParse(rawBody);
+      if (!parsed.success) return json({ error: "Dados inválidos", details: parsed.error.flatten().fieldErrors }, 400);
+      const { data: storeRow } = await supabase
+        .from("stores").select("id, owner_id, asaas_wallet_id").eq("id", parsed.data.store_id).maybeSingle();
+      if (!storeRow) return json({ error: "Loja não encontrada" }, 404);
+      if (storeRow.owner_id !== userId) return json({ error: "Sem permissão" }, 403);
+      if (storeRow.asaas_wallet_id) return json({ error: "Loja já vinculada a uma subconta." }, 400);
+
+      let regQuery = cloudClient.from("asaas_subaccounts_registry").select("*");
+      if (parsed.data.registry_id) regQuery = regQuery.eq("id", parsed.data.registry_id);
+      else if (parsed.data.wallet_id) regQuery = regQuery.eq("wallet_id", parsed.data.wallet_id);
+      else return json({ error: "Informe registry_id ou wallet_id." }, 400);
+      const { data: reg } = await regQuery.maybeSingle();
+      if (!reg) return json({ error: "Registro de subconta não encontrado." }, 404);
+
+      const { savedAs, lastErr } = await persistToStore(
+        parsed.data.store_id, reg.wallet_id, reg.api_key, reg.account_id, null,
+      );
+      if (!savedAs) {
+        await cloudClient.from("asaas_subaccounts_registry").update({
+          last_error: { message: lastErr?.message, code: lastErr?.code, details: lastErr?.details, hint: lastErr?.hint, when: "link-existing" },
+        }).eq("id", reg.id);
+        return json({ error: "Falha ao vincular a subconta à loja.", debug: lastErr }, 500);
+      }
+      await cloudClient.from("asaas_subaccounts_registry").update({
+        status: "linked", store_id: parsed.data.store_id, external_store_id: parsed.data.store_id, linked_at: new Date().toISOString(), last_error: null,
+      }).eq("id", reg.id);
+      return json({ success: true, walletId: reg.wallet_id, savedAs, recovered: true });
+    }
+
+    // === MODE: create (padrão) ===
+    const parsed = CreateSchema.safeParse(rawBody);
     if (!parsed.success) {
       return json({ error: "Dados inválidos", details: parsed.error.flatten().fieldErrors }, 400);
     }
@@ -81,6 +181,19 @@ Deno.serve(async (req) => {
     if (store.owner_id !== userId) return json({ error: "Sem permissão" }, 403);
     if (store.asaas_wallet_id) {
       return json({ error: "Esta loja já possui subconta Asaas configurada." }, 400);
+    }
+
+    // PRÉ-VALIDAÇÃO: testar gravação na loja externa ANTES de chamar o Asaas.
+    // Se o banco externo não aceitar nem um update no-op, não consumimos CPF.
+    {
+      const { error: preErr } = await adminClient
+        .from("stores").update({ updated_at: new Date().toISOString() }).eq("id", body.store_id);
+      if (preErr) {
+        return json({
+          error: "Banco externo recusou gravação na loja. Nenhuma subconta foi criada.",
+          debug: { stage: "pre_validate", message: preErr.message, code: preErr.code, details: preErr.details, hint: preErr.hint },
+        }, 500);
+      }
     }
 
     const ASAAS_API_KEY = Deno.env.get("ASAAS_API_KEY");
@@ -142,6 +255,29 @@ Deno.serve(async (req) => {
       return json({ error: "Resposta inesperada do Asaas (sem walletId/apiKey).", asaas: accData }, 500);
     }
 
+    // REGISTRO IMEDIATO no Lovable Cloud: nunca perdemos a subconta criada.
+    let registryId: string | null = null;
+    try {
+      const { data: regIns, error: regErr } = await cloudClient
+        .from("asaas_subaccounts_registry")
+        .insert({
+          store_id: body.store_id,
+          external_store_id: body.store_id,
+          wallet_id: walletId,
+          account_id: accData.id || null,
+          api_key: apiKey,
+          cpf_cnpj: cpfCnpj,
+          email: body.email,
+          status: "created",
+          raw_response: accData,
+        })
+        .select("id").maybeSingle();
+      if (regErr) console.error("registry insert error:", regErr);
+      registryId = regIns?.id ?? null;
+    } catch (e) {
+      console.error("registry insert exception:", e);
+    }
+
     // Optional: register PIX key on subaccount so lojista can withdraw to own bank
     try {
       await fetch(`${baseUrl}/pix/addressKeys`, {
@@ -157,61 +293,39 @@ Deno.serve(async (req) => {
       console.warn("PIX key registration soft-failed:", e);
     }
 
-    // Persist on store. Tenta com todos os campos; se alguma coluna ainda não
-    // existe no banco externo, vai removendo opcionais até conseguir salvar
-    // pelo menos o essencial (wallet_id), para nunca perder a subconta.
-    const fullPayload: Record<string, unknown> = {
-      asaas_wallet_id: walletId,
-      asaas_subaccount_api_key: apiKey,
-      asaas_account_id: accData.id || null,
-      asaas_pix_key: body.pixAddressKey,
-      asaas_pix_key_type: body.pixAddressKeyType,
-      asaas_auto_withdraw_enabled: true,
-    };
-    const attempts: Array<{ label: string; payload: Record<string, unknown> }> = [
-      { label: "full", payload: fullPayload },
-      { label: "no_pix_fields", payload: {
-        asaas_wallet_id: walletId,
-        asaas_subaccount_api_key: apiKey,
-        asaas_account_id: accData.id || null,
-      } },
-      { label: "wallet_and_key", payload: {
-        asaas_wallet_id: walletId,
-        asaas_subaccount_api_key: apiKey,
-      } },
-      { label: "wallet_only", payload: { asaas_wallet_id: walletId } },
-    ];
-
-    let savedAs: string | null = null;
-    let lastErr: any = null;
-    for (const attempt of attempts) {
-      const { error } = await adminClient
-        .from("stores")
-        .update(attempt.payload)
-        .eq("id", body.store_id);
-      if (!error) { savedAs = attempt.label; break; }
-      lastErr = error;
-      console.warn(`persist attempt '${attempt.label}' failed:`, error);
-    }
+    const { savedAs, lastErr } = await persistToStore(
+      body.store_id, walletId, apiKey, accData.id || null,
+      { key: body.pixAddressKey, type: body.pixAddressKeyType },
+    );
 
     if (!savedAs) {
       console.error("Failed to persist subaccount (all attempts):", lastErr);
+      if (registryId) {
+        await cloudClient.from("asaas_subaccounts_registry").update({
+          status: "failed",
+          last_error: { message: lastErr?.message, code: lastErr?.code, details: lastErr?.details, hint: lastErr?.hint, when: "create" },
+        }).eq("id", registryId);
+      }
       return json({
-        error: "Subconta criada mas houve erro ao salvar. Contate o suporte.",
+        error: "Subconta criada mas o salvamento na loja falhou. Use 'Recuperar subconta' para vincular sem perder o CPF.",
         walletId,
-        debug: {
-          message: lastErr?.message,
-          code: lastErr?.code,
-          details: lastErr?.details,
-          hint: lastErr?.hint,
-        },
+        registryId,
+        recoverable: true,
+        debug: { stage: "persist", message: lastErr?.message, code: lastErr?.code, details: lastErr?.details, hint: lastErr?.hint },
       }, 500);
+    }
+
+    if (registryId) {
+      await cloudClient.from("asaas_subaccounts_registry").update({
+        status: "linked", linked_at: new Date().toISOString(), last_error: null,
+      }).eq("id", registryId);
     }
 
     return json({
       success: true,
       walletId,
       accountId: accData.id,
+      savedAs,
       message: "Subconta Asaas criada! O split agora será automático em todas as suas vendas PIX.",
     });
   } catch (err) {

@@ -264,6 +264,57 @@ export type Database = {
         }
         Relationships: []
       }
+      asaas_subaccounts_registry: {
+        Row: {
+          account_id: string | null
+          api_key: string | null
+          cpf_cnpj: string | null
+          created_at: string
+          email: string | null
+          external_store_id: string | null
+          id: string
+          last_error: Json | null
+          linked_at: string | null
+          raw_response: Json | null
+          status: string
+          store_id: string | null
+          updated_at: string
+          wallet_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          api_key?: string | null
+          cpf_cnpj?: string | null
+          created_at?: string
+          email?: string | null
+          external_store_id?: string | null
+          id?: string
+          last_error?: Json | null
+          linked_at?: string | null
+          raw_response?: Json | null
+          status?: string
+          store_id?: string | null
+          updated_at?: string
+          wallet_id: string
+        }
+        Update: {
+          account_id?: string | null
+          api_key?: string | null
+          cpf_cnpj?: string | null
+          created_at?: string
+          email?: string | null
+          external_store_id?: string | null
+          id?: string
+          last_error?: Json | null
+          linked_at?: string | null
+          raw_response?: Json | null
+          status?: string
+          store_id?: string | null
+          updated_at?: string
+          wallet_id?: string
+        }
+        Relationships: []
+      }
       asaas_transfer_review_queue: {
         Row: {
           created_at: string
