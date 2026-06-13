@@ -157,29 +157,53 @@ Deno.serve(async (req) => {
       console.warn("PIX key registration soft-failed:", e);
     }
 
-    // Persist on store (use admin client to bypass RLS for asaas_subaccount_api_key column)
-    const { error: updErr } = await adminClient
-      .from("stores")
-      .update({
+    // Persist on store. Tenta com todos os campos; se alguma coluna ainda não
+    // existe no banco externo, vai removendo opcionais até conseguir salvar
+    // pelo menos o essencial (wallet_id), para nunca perder a subconta.
+    const fullPayload: Record<string, unknown> = {
+      asaas_wallet_id: walletId,
+      asaas_subaccount_api_key: apiKey,
+      asaas_account_id: accData.id || null,
+      asaas_pix_key: body.pixAddressKey,
+      asaas_pix_key_type: body.pixAddressKeyType,
+      asaas_auto_withdraw_enabled: true,
+    };
+    const attempts: Array<{ label: string; payload: Record<string, unknown> }> = [
+      { label: "full", payload: fullPayload },
+      { label: "no_pix_fields", payload: {
         asaas_wallet_id: walletId,
         asaas_subaccount_api_key: apiKey,
         asaas_account_id: accData.id || null,
-        asaas_pix_key: body.pixAddressKey,
-        asaas_pix_key_type: body.pixAddressKeyType,
-        asaas_auto_withdraw_enabled: true,
-      })
-      .eq("id", body.store_id);
+      } },
+      { label: "wallet_and_key", payload: {
+        asaas_wallet_id: walletId,
+        asaas_subaccount_api_key: apiKey,
+      } },
+      { label: "wallet_only", payload: { asaas_wallet_id: walletId } },
+    ];
 
-    if (updErr) {
-      console.error("Failed to persist subaccount:", updErr);
+    let savedAs: string | null = null;
+    let lastErr: any = null;
+    for (const attempt of attempts) {
+      const { error } = await adminClient
+        .from("stores")
+        .update(attempt.payload)
+        .eq("id", body.store_id);
+      if (!error) { savedAs = attempt.label; break; }
+      lastErr = error;
+      console.warn(`persist attempt '${attempt.label}' failed:`, error);
+    }
+
+    if (!savedAs) {
+      console.error("Failed to persist subaccount (all attempts):", lastErr);
       return json({
         error: "Subconta criada mas houve erro ao salvar. Contate o suporte.",
         walletId,
         debug: {
-          message: updErr.message,
-          code: updErr.code,
-          details: updErr.details,
-          hint: updErr.hint,
+          message: lastErr?.message,
+          code: lastErr?.code,
+          details: lastErr?.details,
+          hint: lastErr?.hint,
         },
       }, 500);
     }
