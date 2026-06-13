@@ -214,7 +214,6 @@ export const TermsUpdateModal = ({ onAccepted }: Props) => {
             <p className="text-xs text-muted-foreground leading-relaxed">
               Li e aceito os{" "}
               <a href="/termos" target="_blank" rel="noopener noreferrer"
-                onClick={e => e.stopPropagation()}
                 className="font-bold text-primary underline underline-offset-2">
                 Termos de Uso
               </a>{" "}
@@ -234,7 +233,6 @@ export const TermsUpdateModal = ({ onAccepted }: Props) => {
             <p className="text-xs text-muted-foreground leading-relaxed">
               Li e aceito a{" "}
               <a href="/privacidade" target="_blank" rel="noopener noreferrer"
-                onClick={e => e.stopPropagation()}
                 className="font-bold text-emerald-600 underline underline-offset-2">
                 Política de Privacidade
               </a>{" "}
