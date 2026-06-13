@@ -345,7 +345,7 @@ Deno.serve(async (req) => {
           document: m.cpf,
           phone: "14999990000",
           whatsapp_number: "14999990000",
-          pix_type: "CPF",
+          pix_type: "cpf",
           pix_key: m.cpf,
         })
         .eq("user_id", user.id);
