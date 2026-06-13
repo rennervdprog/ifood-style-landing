@@ -68,15 +68,12 @@ Deno.serve(async (req) => {
       || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY")
       || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-    // Lovable Cloud (registry de segurança para subcontas órfãs)
-    const CLOUD_URL = Deno.env.get("SUPABASE_URL")!;
-    const CLOUD_SERVICE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const cloudClient = createClient(CLOUD_URL, CLOUD_SERVICE);
-
     const supabase = createClient(EXTERNAL_URL, EXTERNAL_ANON, {
       global: { headers: { Authorization: authHeader } },
     });
     const adminClient = createClient(EXTERNAL_URL, EXTERNAL_SERVICE);
+    // Registry de subcontas vive no MESMO banco externo (única fonte de verdade).
+    const cloudClient = adminClient;
 
     const token = authHeader.replace("Bearer ", "");
     const { data: userData, error: userErr } = await supabase.auth.getUser(token);
