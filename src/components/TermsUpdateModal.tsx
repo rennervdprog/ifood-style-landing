@@ -84,21 +84,28 @@ export const TermsUpdateModal = ({ onAccepted }: Props) => {
     if (!canAccept || !user) return;
     setAccepting(true);
     try {
-      await supabase.from("terms_acceptance" as any).insert({
+      const { error: insErr } = await supabase.from("terms_acceptance" as any).insert({
         user_id: user.id,
         terms_version: CURRENT_TERMS_VERSION,
         privacy_version: CURRENT_TERMS_VERSION,
         user_agent: navigator.userAgent.slice(0, 200),
         accepted_at: new Date().toISOString(),
       });
-      await supabase
+      if (insErr) console.warn("[terms] insert error:", insErr);
+      const { error: updErr } = await supabase
         .from("profiles")
         .update({ terms_version_accepted: CURRENT_TERMS_VERSION } as any)
         .eq("user_id", user.id);
+      if (updErr) {
+        console.error("[terms] profile update error:", updErr);
+        toast.error("Erro ao salvar aceite: " + (updErr.message || "tente novamente"));
+        return;
+      }
       toast.success("Termos aceitos. Obrigado!");
       onAccepted();
     } catch (e: any) {
-      toast.error("Erro ao registrar aceite. Tente novamente.");
+      console.error("[terms] exception:", e);
+      toast.error("Erro ao registrar aceite: " + (e?.message || "tente novamente"));
     } finally {
       setAccepting(false);
     }
