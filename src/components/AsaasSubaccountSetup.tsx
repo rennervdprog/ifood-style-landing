@@ -851,6 +851,17 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
 
             {/* Ações */}
             <div className="flex flex-col gap-2">
+              {debugInfo?.recoverable && debugInfo?.walletId && (
+                <Button
+                  size="sm"
+                  className="w-full h-9 text-[12px] bg-emerald-600 hover:bg-emerald-700"
+                  onClick={recoverSubaccount}
+                  disabled={linking}
+                >
+                  {linking ? <Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5 mr-2" />}
+                  Vincular subconta já criada (sem novo CPF)
+                </Button>
+              )}
               <Button
                 variant="outline"
                 size="sm"
