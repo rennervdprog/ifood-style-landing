@@ -241,7 +241,7 @@ Deno.serve(async (req) => {
           document: s.cnpj,
           phone: "14999990000",
           whatsapp_number: "14999990000",
-          pix_type: "CNPJ",
+          pix_type: "cnpj",
           pix_key: s.cnpj,
           street: "Rua Sandbox",
           number: "100",
