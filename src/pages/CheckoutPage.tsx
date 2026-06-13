@@ -728,7 +728,7 @@ const CheckoutPage = () => {
               >
                 <Truck className={`h-6 w-6 ${!isPickup ? "text-primary" : "text-muted-foreground"}`} />
                 <div className="text-center">
-                <span className={`text-sm font-bold block ${!isPickup ? "text-primary" : "text-foreground"}`}>Taxa operacional</span>
+                <span className={`text-sm font-bold block ${!isPickup ? "text-primary" : "text-foreground"}`}>Entrega</span>
                   <span className="text-[10px] text-muted-foreground">Receba em casa</span>
                 </div>
               </button>
