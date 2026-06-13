@@ -58,6 +58,7 @@ const LinksPage = lazy(() => import("./pages/LinksPage"));
  const DownloadApp = lazy(() => import("./pages/DownloadApp"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const KdsPage = lazy(() => import("./pages/KdsPage"));
+const SandboxTestsPage = lazy(() => import("./pages/SandboxTestsPage"));
 
 const PageLoader = () => (
   <div className="min-h-screen bg-background flex items-center justify-center">
