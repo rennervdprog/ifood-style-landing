@@ -62,6 +62,7 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
   const [submitting, setSubmitting] = useState(false);
   const [lastError, setLastError] = useState<string | null>(null);
   const [debugInfo, setDebugInfo] = useState<any>(null);
+  const [linking, setLinking] = useState(false);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const markTouched = (k: string) => setTouched((t) => (t[k] ? t : { ...t, [k]: true }));
   const touchStep = (keys: string[]) =>
@@ -335,6 +336,31 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
       setLastError(e?.message || "Erro desconhecido"); toast.error(e?.message || "Falha ao criar subconta.");
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const recoverSubaccount = async () => {
+    const walletId = debugInfo?.walletId;
+    if (!walletId) return;
+    setLinking(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("create-asaas-subaccount", {
+        body: { mode: "link-existing", store_id: storeId, wallet_id: walletId },
+      });
+      if (error) {
+        let details: any = null;
+        const context = (error as any)?.context;
+        if (context instanceof Response) details = await context.json().catch(() => null);
+        throw new Error(details?.error || error.message || "Falha ao vincular.");
+      }
+      if ((data as any)?.error) throw new Error((data as any).error);
+      toast.success("Subconta vinculada! ✅");
+      setLastError(null); setDebugInfo(null);
+      qc.invalidateQueries({ queryKey: ["store-asaas", storeId] });
+    } catch (e: any) {
+      toast.error(e?.message || "Falha ao vincular subconta.");
+    } finally {
+      setLinking(false);
     }
   };
 
