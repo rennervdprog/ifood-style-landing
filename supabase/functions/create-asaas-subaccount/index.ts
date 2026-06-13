@@ -97,6 +97,12 @@ Deno.serve(async (req) => {
     const userId = userData.user.id;
     log("user_authenticated", { userId });
 
+    // Admin pode operar em qualquer loja (necessário para fluxo sandbox via seed-test-accounts).
+    const { data: adminRole } = await adminClient
+      .from("user_roles").select("role").eq("user_id", userId).eq("role", "admin").maybeSingle();
+    const isAdmin = !!adminRole;
+    log("admin_check", { isAdmin });
+
     const rawBody = await req.json();
     const mode = (rawBody?.mode as string) || "create";
     log("body_parsed", { mode, store_id: rawBody?.store_id, has_cpf: !!rawBody?.cpfCnpj });
@@ -136,7 +142,7 @@ Deno.serve(async (req) => {
       if (!parsed.success) return json({ error: "Dados inválidos" }, 400);
       const { data: storeRow } = await supabase
         .from("stores").select("id, owner_id").eq("id", parsed.data.store_id).maybeSingle();
-      if (!storeRow || storeRow.owner_id !== userId) return json({ error: "Sem permissão" }, 403);
+      if (!storeRow || (storeRow.owner_id !== userId && !isAdmin)) return json({ error: "Sem permissão" }, 403);
       const { data, error } = await cloudClient
         .from("asaas_subaccounts_registry")
         .select("id, wallet_id, account_id, status, cpf_cnpj, email, created_at, last_error")
@@ -154,7 +160,7 @@ Deno.serve(async (req) => {
       const { data: storeRow } = await supabase
         .from("stores").select("id, owner_id, asaas_wallet_id").eq("id", parsed.data.store_id).maybeSingle();
       if (!storeRow) return json({ error: "Loja não encontrada" }, 404);
-      if (storeRow.owner_id !== userId) return json({ error: "Sem permissão" }, 403);
+      if (storeRow.owner_id !== userId && !isAdmin) return json({ error: "Sem permissão" }, 403);
       if (storeRow.asaas_wallet_id) return json({ error: "Loja já vinculada a uma subconta." }, 400);
 
       let regQuery = cloudClient.from("asaas_subaccounts_registry").select("*");
@@ -201,7 +207,7 @@ Deno.serve(async (req) => {
       .eq("id", body.store_id)
       .maybeSingle();
     if (storeErr || !store) return json({ error: "Loja não encontrada" }, 404);
-    if (store.owner_id !== userId) return json({ error: "Sem permissão" }, 403);
+    if (store.owner_id !== userId && !isAdmin) return json({ error: "Sem permissão" }, 403);
     if (store.asaas_wallet_id) {
       return json({ error: "Esta loja já possui subconta Asaas configurada." }, 400);
     }
