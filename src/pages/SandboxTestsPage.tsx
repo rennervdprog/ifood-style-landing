@@ -3,16 +3,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, FlaskConical, Trash2, RefreshCw } from "lucide-react";
+import { Loader2, FlaskConical, Trash2, RefreshCw, Wallet, Receipt } from "lucide-react";
 import { toast } from "sonner";
 
-type Result = { ok?: boolean; created?: any[]; removed?: string[]; stores?: any[]; password?: string; error?: string };
+type Action = "seed" | "cleanup" | "status" | "provision-asaas" | "panel";
+type Result = { ok?: boolean; created?: any[]; removed?: string[]; stores?: any[]; results?: any[]; password?: string; error?: string };
 
 export default function SandboxTestsPage() {
-  const [loading, setLoading] = useState<string | null>(null);
+  const [loading, setLoading] = useState<Action | null>(null);
   const [result, setResult] = useState<Result | null>(null);
 
-  const run = async (action: "seed" | "cleanup" | "status") => {
+  const run = async (action: Action) => {
     setLoading(action);
     setResult(null);
     try {
@@ -52,6 +53,14 @@ export default function SandboxTestsPage() {
             <Button variant="secondary" disabled={!!loading} onClick={() => run("status")}>
               {loading === "status" ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <RefreshCw className="h-4 w-4 mr-2" />}
               Ver lojas de teste
+            </Button>
+            <Button variant="secondary" disabled={!!loading} onClick={() => run("provision-asaas")}>
+              {loading === "provision-asaas" ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Wallet className="h-4 w-4 mr-2" />}
+              Criar subcontas Asaas
+            </Button>
+            <Button variant="secondary" disabled={!!loading} onClick={() => run("panel")}>
+              {loading === "panel" ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Receipt className="h-4 w-4 mr-2" />}
+              Ver saldos sandbox
             </Button>
             <Button variant="destructive" disabled={!!loading} onClick={() => run("cleanup")}>
               {loading === "cleanup" ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Trash2 className="h-4 w-4 mr-2" />}
@@ -94,6 +103,22 @@ export default function SandboxTestsPage() {
                     </Badge>
                     <span>{s.name}</span>
                     <span className="text-muted-foreground">({s.status})</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            {Array.isArray(result.results) && (
+              <div className="space-y-1">
+                <p className="font-semibold">Resultados ({result.results.length}):</p>
+                {result.results.map((r, i) => (
+                  <div key={i} className="text-xs flex items-center gap-2 flex-wrap">
+                    <Badge variant={r.error ? "destructive" : r.skipped ? "secondary" : "default"}>
+                      {r.error ? "erro" : r.skipped ? "skip" : "ok"}
+                    </Badge>
+                    <span>{r.name}</span>
+                    {typeof r.balance === "number" && <span className="text-muted-foreground">R$ {r.balance.toFixed(2)}</span>}
+                    {r.error && <span className="text-destructive">{r.error}</span>}
+                    {r.skipped && <span className="text-muted-foreground">{r.skipped}</span>}
                   </div>
                 ))}
               </div>

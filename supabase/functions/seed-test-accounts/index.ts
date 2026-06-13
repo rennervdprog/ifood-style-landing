@@ -33,7 +33,7 @@ const SEEDS = {
   ],
 };
 
-const Body = z.object({ action: z.enum(["seed", "cleanup", "status"]) });
+const Body = z.object({ action: z.enum(["seed", "cleanup", "status", "provision-asaas", "panel"]) });
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -73,6 +73,90 @@ Deno.serve(async (req) => {
         .select("id, name, owner_id, status, is_test, asaas_wallet_id")
         .eq("is_test", true);
       return json({ ok: true, stores: stores ?? [] });
+    }
+
+    // Provisiona subconta Asaas (sandbox) para todas as lojas de teste sem wallet
+    if (parsed.data.action === "provision-asaas") {
+      const { data: stores } = await admin
+        .from("stores")
+        .select("id, name, owner_id, asaas_wallet_id, address_street, address_number, address_neighborhood, address_cep, address_city, address_state")
+        .eq("is_test", true);
+      const results: any[] = [];
+      for (const s of stores ?? []) {
+        if (s.asaas_wallet_id) {
+          results.push({ store_id: s.id, name: s.name, skipped: "já tem wallet" });
+          continue;
+        }
+        // descobre email/cnpj/etc do profile
+        const { data: prof } = await admin
+          .from("profiles")
+          .select("email, document, phone, whatsapp_number, pix_key, pix_type")
+          .eq("user_id", s.owner_id!)
+          .maybeSingle();
+        if (!prof?.email) {
+          results.push({ store_id: s.id, name: s.name, error: "profile sem email" });
+          continue;
+        }
+        const cpfCnpj = (prof.document || "").replace(/\D/g, "");
+        const isCnpj = cpfCnpj.length === 14;
+        const payload = {
+          store_id: s.id,
+          name: s.name,
+          email: prof.email,
+          cpfCnpj,
+          personType: isCnpj ? "JURIDICA" : "FISICA",
+          companyType: isCnpj ? "MEI" : "",
+          birthDate: isCnpj ? "" : "1990-01-01",
+          incomeValue: 5000,
+          phone: (prof.phone || prof.whatsapp_number || "1499990000").replace(/\D/g, "").slice(-11),
+          mobilePhone: (prof.whatsapp_number || prof.phone || "14999990000").replace(/\D/g, "").slice(-11),
+          address: s.address_street || "Rua Sandbox",
+          addressNumber: s.address_number || "100",
+          province: s.address_neighborhood || "Centro",
+          postalCode: (s.address_cep || "18250000").replace(/\D/g, ""),
+          city: s.address_city || "Itatinga",
+          state: s.address_state || "SP",
+          pixAddressKey: prof.pix_key || cpfCnpj,
+          pixAddressKeyType: (prof.pix_type as string) || (isCnpj ? "CNPJ" : "CPF"),
+        };
+        try {
+          const r = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/create-asaas-subaccount`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: auth },
+            body: JSON.stringify(payload),
+          });
+          const body = await r.json().catch(() => ({}));
+          results.push({ store_id: s.id, name: s.name, status: r.status, body });
+        } catch (e) {
+          results.push({ store_id: s.id, name: s.name, error: String((e as Error).message || e) });
+        }
+      }
+      return json({ ok: true, results });
+    }
+
+    // Resumo financeiro de cada loja de teste com subconta
+    if (parsed.data.action === "panel") {
+      const { data: stores } = await admin
+        .from("stores")
+        .select("id, name, asaas_wallet_id, asaas_subaccount_api_key")
+        .eq("is_test", true)
+        .not("asaas_wallet_id", "is", null);
+      const ASAAS_API_KEY = Deno.env.get("ASAAS_API_KEY");
+      const isSandbox = !ASAAS_API_KEY?.startsWith("$aact_prod_");
+      const baseUrl = isSandbox ? "https://sandbox.asaas.com/api/v3" : "https://api.asaas.com/v3";
+      const results: any[] = [];
+      for (const s of stores ?? []) {
+        const subKey = (s as any).asaas_subaccount_api_key;
+        if (!subKey) { results.push({ store_id: s.id, name: s.name, error: "sem subaccount api key" }); continue; }
+        try {
+          const r = await fetch(`${baseUrl}/finance/balance`, { headers: { access_token: subKey } });
+          const body = await r.json().catch(() => ({}));
+          results.push({ store_id: s.id, name: s.name, status: r.status, balance: Number(body?.balance ?? 0), totalBalance: Number(body?.totalBalance ?? 0) });
+        } catch (e) {
+          results.push({ store_id: s.id, name: s.name, error: String((e as Error).message || e) });
+        }
+      }
+      return json({ ok: true, results });
     }
 
     if (parsed.data.action === "cleanup") {
