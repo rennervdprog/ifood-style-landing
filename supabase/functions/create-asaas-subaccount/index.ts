@@ -241,6 +241,52 @@ Deno.serve(async (req) => {
     if (cpfCnpj.length === 11 && body.birthDate) subaccountPayload.birthDate = body.birthDate;
     if (cpfCnpj.length === 14 && body.companyType) subaccountPayload.companyType = body.companyType;
 
+    const existingRes = await fetch(`${baseUrl}/accounts?cpfCnpj=${encodeURIComponent(cpfCnpj)}`, {
+      headers: { access_token: ASAAS_API_KEY },
+    });
+    if (existingRes.ok) {
+      const existingData = await existingRes.json();
+      const existingAccount = existingData?.data?.[0];
+      if (existingAccount?.walletId) {
+        const { savedAs, lastErr } = await persistToStore(
+          body.store_id,
+          existingAccount.walletId,
+          existingAccount.apiKey || null,
+          existingAccount.id || null,
+          { key: body.pixAddressKey, type: body.pixAddressKeyType },
+        );
+        if (!savedAs) {
+          return json({
+            error: "Subconta encontrada no Asaas, mas o salvamento na loja falhou.",
+            walletId: existingAccount.walletId,
+            recoverable: true,
+            debug: { stage: "persist_existing", message: lastErr?.message, code: lastErr?.code, details: lastErr?.details, hint: lastErr?.hint },
+          }, 500);
+        }
+        await cloudClient.from("asaas_subaccounts_registry").upsert({
+          store_id: body.store_id,
+          external_store_id: body.store_id,
+          wallet_id: existingAccount.walletId,
+          account_id: existingAccount.id || null,
+          api_key: existingAccount.apiKey || null,
+          cpf_cnpj: cpfCnpj,
+          email: existingAccount.email || body.email,
+          status: "linked",
+          raw_response: existingAccount,
+          linked_at: new Date().toISOString(),
+          last_error: null,
+        }, { onConflict: "wallet_id" });
+        return json({
+          success: true,
+          walletId: existingAccount.walletId,
+          accountId: existingAccount.id,
+          savedAs,
+          recovered: true,
+          message: "Subconta Asaas existente vinculada à loja.",
+        });
+      }
+    }
+
     const accRes = await fetch(`${baseUrl}/accounts`, {
       method: "POST",
       headers: { "Content-Type": "application/json", access_token: ASAAS_API_KEY },
