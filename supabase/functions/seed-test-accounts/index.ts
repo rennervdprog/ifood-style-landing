@@ -229,7 +229,7 @@ Deno.serve(async (req) => {
         neighborhood: "Centro",
         whatsapp: "14999990000",
         phone: "14999990000",
-        pix_type: "CNPJ",
+        pix_type: "cnpj",
         pix_key: s.cnpj,
         selected_plan: "starter",
       });
