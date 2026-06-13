@@ -138,19 +138,20 @@ Deno.serve(async (req) => {
     if (parsed.data.action === "panel") {
       const { data: stores } = await admin
         .from("stores")
-        .select("id, name, asaas_wallet_id")
+        .select("id, name, asaas_wallet_id, asaas_subaccount_api_key")
         .eq("is_test", true)
         .not("asaas_wallet_id", "is", null);
+      const ASAAS_API_KEY = Deno.env.get("ASAAS_API_KEY");
+      const isSandbox = !ASAAS_API_KEY?.startsWith("$aact_prod_");
+      const baseUrl = isSandbox ? "https://sandbox.asaas.com/api/v3" : "https://api.asaas.com/v3";
       const results: any[] = [];
       for (const s of stores ?? []) {
+        const subKey = (s as any).asaas_subaccount_api_key;
+        if (!subKey) { results.push({ store_id: s.id, name: s.name, error: "sem subaccount api key" }); continue; }
         try {
-          const r = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/asaas-financial-panel`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json", Authorization: auth },
-            body: JSON.stringify({ store_id: s.id, action: "summary" }),
-          });
+          const r = await fetch(`${baseUrl}/finance/balance`, { headers: { access_token: subKey } });
           const body = await r.json().catch(() => ({}));
-          results.push({ store_id: s.id, name: s.name, status: r.status, balance: body?.balance, totalBalance: body?.totalBalance, error: body?.error });
+          results.push({ store_id: s.id, name: s.name, status: r.status, balance: Number(body?.balance ?? 0), totalBalance: Number(body?.totalBalance ?? 0) });
         } catch (e) {
           results.push({ store_id: s.id, name: s.name, error: String((e as Error).message || e) });
         }
