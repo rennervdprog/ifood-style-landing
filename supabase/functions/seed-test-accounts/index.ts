@@ -17,6 +17,28 @@ const json = (b: unknown, s = 200) =>
 const TEST_EMAIL_DOMAIN = "itasuper.test";
 const PASSWORD = "Sandbox#2026!";
 
+// Gera CPF/CNPJ válidos (com dígitos verificadores) e aleatórios,
+// evitando conflito de "CNPJ já em uso" em subcontas Asaas.
+function calcDV(nums: number[], weights: number[]): number {
+  const sum = nums.reduce((a, n, i) => a + n * weights[i], 0);
+  const r = sum % 11;
+  return r < 2 ? 0 : 11 - r;
+}
+function genCPF(): string {
+  const base = Array.from({ length: 9 }, () => Math.floor(Math.random() * 10));
+  const d1 = calcDV(base, [10, 9, 8, 7, 6, 5, 4, 3, 2]);
+  const d2 = calcDV([...base, d1], [11, 10, 9, 8, 7, 6, 5, 4, 3, 2]);
+  return [...base, d1, d2].join("");
+}
+function genCNPJ(): string {
+  const base = Array.from({ length: 8 }, () => Math.floor(Math.random() * 10)).concat([0, 0, 0, 1]);
+  const w1 = [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+  const w2 = [6, ...w1];
+  const d1 = calcDV(base, w1);
+  const d2 = calcDV([...base, d1], w2);
+  return [...base, d1, d2].join("");
+}
+
 const SEEDS = {
   lojistas: [
     { email: "sandbox+lojista1@itasuper.test", name: "Sandbox Burger", cnpj: "11222333000181", cat: "lanches",
@@ -200,6 +222,11 @@ Deno.serve(async (req) => {
     // seed
     const created: any[] = [];
 
+    // Randomiza CPF/CNPJ a cada seed para evitar colisão no Asaas PROD global.
+    const lojistas = SEEDS.lojistas.map((s) => ({ ...s, cnpj: genCNPJ() }));
+    const motoboys = SEEDS.motoboys.map((m) => ({ ...m, cpf: genCPF() }));
+    const clientes = SEEDS.clientes.map((c) => ({ ...c, cpf: genCPF() }));
+
     const createUser = async (email: string, metadata: Record<string, unknown>) => {
       const { data, error } = await admin.auth.admin.createUser({
         email,
@@ -215,7 +242,7 @@ Deno.serve(async (req) => {
     };
 
     // Lojistas
-    for (const s of SEEDS.lojistas) {
+    for (const s of lojistas) {
       const user = await createUser(s.email, {
         full_name: s.name,
         role: "lojista",
@@ -331,7 +358,7 @@ Deno.serve(async (req) => {
     }
 
     // Motoboys
-    for (const m of SEEDS.motoboys) {
+    for (const m of motoboys) {
       const user = await createUser(m.email, {
         full_name: m.name,
         role: "motoboy",
@@ -375,7 +402,7 @@ Deno.serve(async (req) => {
     }
 
     // Clientes
-    for (const c of SEEDS.clientes) {
+    for (const c of clientes) {
       const user = await createUser(c.email, {
         full_name: c.name,
         role: "cliente",
