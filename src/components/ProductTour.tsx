@@ -34,10 +34,12 @@ const ProductTour = ({ steps, tourKey, onComplete }: ProductTourProps) => {
     const checkOnboarding = async () => {
       const { data } = await supabase
         .from("profiles")
-        .select("has_seen_onboarding")
+        .select("has_seen_onboarding, terms_version_accepted")
         .eq("user_id", user.id)
         .maybeSingle();
-      if (data && !(data as any).has_seen_onboarding) {
+      const d = data as any;
+      const termsOk = (d?.terms_version_accepted || "1.0") >= "4.2";
+      if (d && !d.has_seen_onboarding && termsOk) {
         setTimeout(() => setVisible(true), 800);
       }
     };
