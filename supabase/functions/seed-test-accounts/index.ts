@@ -282,6 +282,28 @@ Deno.serve(async (req) => {
           address_state: "SP", address_cep: "18250000",
         }).eq("owner_id", user.id);
       }
+
+      // Seed horários 24/7 + produtos (idempotente)
+      const { data: storeRow } = await admin
+        .from("stores").select("id").eq("owner_id", user.id).maybeSingle();
+      if (storeRow?.id) {
+        const hours = Array.from({ length: 7 }).map((_, day) => ({
+          store_id: storeRow.id, day_of_week: day,
+          open_time: "00:00:00", close_time: "23:59:00", is_closed_all_day: false,
+        }));
+        await admin.from("opening_hours").upsert(hours, { onConflict: "store_id,day_of_week" });
+
+        const { count } = await admin
+          .from("products").select("id", { count: "exact", head: true }).eq("store_id", storeRow.id);
+        if (!count) {
+          await admin.from("products").insert(
+            (s.products || []).map((p) => ({
+              store_id: storeRow.id, name: p.name, price: p.price,
+              description: p.description, is_available: true,
+            })),
+          );
+        }
+      }
       created.push({ kind: "lojista", email: s.email, user_id: user.id });
     }
 
