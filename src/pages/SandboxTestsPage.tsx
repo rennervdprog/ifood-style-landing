@@ -18,11 +18,19 @@ export default function SandboxTestsPage() {
     setResult(null);
     try {
       const { data, error } = await supabase.functions.invoke("seed-test-accounts", { body: { action } });
-      if (error) throw error;
+      if (error) {
+        // tenta extrair body do erro
+        let bodyText = "";
+        try { bodyText = await (error as any).context?.text?.(); } catch {}
+        setResult({ error: `${error.message}${bodyText ? ` — ${bodyText}` : ""}` });
+        toast.error(error.message || "Falha");
+        return;
+      }
       setResult(data as Result);
       if ((data as any)?.error) toast.error((data as any).error);
       else toast.success(`Ação "${action}" concluída`);
     } catch (e: any) {
+      setResult({ error: e?.message || "Falha" });
       toast.error(e?.message || "Falha");
     } finally {
       setLoading(null);
