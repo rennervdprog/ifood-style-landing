@@ -287,21 +287,27 @@ Deno.serve(async (req) => {
       const { data: storeRow } = await admin
         .from("stores").select("id").eq("owner_id", user.id).maybeSingle();
       if (storeRow?.id) {
+        // Horários 24/7: delete + insert (mais robusto que upsert sem unique garantido)
+        const delH = await admin.from("opening_hours").delete().eq("store_id", storeRow.id);
+        if (delH.error) console.error("del hours", s.email, delH.error);
         const hours = Array.from({ length: 7 }).map((_, day) => ({
           store_id: storeRow.id, day_of_week: day,
           open_time: "00:00:00", close_time: "23:59:00", is_closed_all_day: false,
         }));
-        await admin.from("opening_hours").upsert(hours, { onConflict: "store_id,day_of_week" });
+        const insH = await admin.from("opening_hours").insert(hours);
+        if (insH.error) console.error("ins hours", s.email, insH.error);
 
-        const { count } = await admin
+        const { count, error: cErr } = await admin
           .from("products").select("id", { count: "exact", head: true }).eq("store_id", storeRow.id);
+        if (cErr) console.error("count products", s.email, cErr);
         if (!count) {
-          await admin.from("products").insert(
+          const insP = await admin.from("products").insert(
             (s.products || []).map((p) => ({
               store_id: storeRow.id, name: p.name, price: p.price,
               description: p.description, is_available: true,
             })),
           );
+          if (insP.error) console.error("ins products", s.email, insP.error);
         }
       }
       created.push({ kind: "lojista", email: s.email, user_id: user.id });
