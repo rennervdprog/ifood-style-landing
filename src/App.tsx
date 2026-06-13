@@ -179,7 +179,7 @@ const TermsChecker = () => {
   if (!needsTermsUpdate || !user) return null;
   return (
     <TermsUpdateModal
-      onAccepted={() => { setNeedsTermsUpdate(false); setTermsChecked(false); }}
+      onAccepted={() => { setNeedsTermsUpdate(false); }}
     />
   );
 };

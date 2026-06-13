@@ -28,8 +28,8 @@ import EmptiesExchange, { type EmptiesExchangeSelection } from "@/components/Emp
 const allPaymentMethods = [
   { id: "pix",         label: "PIX Online",         desc: "Pagamento instantâneo",   icon: QrCode },
   { id: "pix_machine", label: "PIX na Maquininha",   desc: "PIX pela maquininha do lojista", icon: QrCode },
-  { id: "cartao",      label: "Cartão na Entrega",   desc: "Débito ou crédito",       icon: CreditCard },
-  { id: "dinheiro",    label: "Dinheiro",             desc: "Pague na entrega",        icon: Banknote },
+  { id: "cartao",      label: "Cartão",               desc: "Débito ou crédito",       icon: CreditCard },
+  { id: "dinheiro",    label: "Dinheiro",             desc: "Em espécie",              icon: Banknote },
 ];
 
 const CheckoutPage = () => {
@@ -728,7 +728,7 @@ const CheckoutPage = () => {
               >
                 <Truck className={`h-6 w-6 ${!isPickup ? "text-primary" : "text-muted-foreground"}`} />
                 <div className="text-center">
-                <span className={`text-sm font-bold block ${!isPickup ? "text-primary" : "text-foreground"}`}>Taxa operacional</span>
+                <span className={`text-sm font-bold block ${!isPickup ? "text-primary" : "text-foreground"}`}>Entrega</span>
                   <span className="text-[10px] text-muted-foreground">Receba em casa</span>
                 </div>
               </button>
@@ -1121,7 +1121,7 @@ const CheckoutPage = () => {
             {!showSchedule && !isStoreClosed && (
               <div className="flex items-center gap-2">
                 <DeliveryTimeEstimate status="pendente" createdAt={new Date().toISOString()} />
-                <span className="text-xs text-muted-foreground">Estimativa de entrega</span>
+                <span className="text-xs text-muted-foreground">{isPickup ? "Estimativa de retirada" : "Estimativa de entrega"}</span>
               </div>
             )}
           </div>
