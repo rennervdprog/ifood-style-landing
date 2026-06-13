@@ -297,20 +297,20 @@ Deno.serve(async (req) => {
         const insH = await admin.from("opening_hours").insert(hours);
         if (insH.error) console.error("ins hours", s.email, insH.error);
 
+        // Garante uma seção "Cardápio" (idempotente, sempre)
+        let { data: sec } = await admin
+          .from("menu_sections").select("id").eq("store_id", storeRow.id).limit(1).maybeSingle();
+        if (!sec) {
+          const ins = await admin.from("menu_sections")
+            .insert({ store_id: storeRow.id, name: "Cardápio", sort_order: 0 })
+            .select("id").maybeSingle();
+          if (ins.error) console.error("ins section", s.email, ins.error);
+          sec = ins.data;
+        }
         const { count, error: cErr } = await admin
           .from("products").select("id", { count: "exact", head: true }).eq("store_id", storeRow.id);
         if (cErr) console.error("count products", s.email, cErr);
         if (!count) {
-          // Garante uma seção "Cardápio" para os produtos aparecerem na loja
-          let { data: sec } = await admin
-            .from("menu_sections").select("id").eq("store_id", storeRow.id).limit(1).maybeSingle();
-          if (!sec) {
-            const ins = await admin.from("menu_sections")
-              .insert({ store_id: storeRow.id, name: "Cardápio", sort_order: 0 })
-              .select("id").maybeSingle();
-            if (ins.error) console.error("ins section", s.email, ins.error);
-            sec = ins.data;
-          }
           const insP = await admin.from("products").insert(
             (s.products || []).map((p) => ({
               store_id: storeRow.id, name: p.name, price: p.price,
@@ -319,6 +319,12 @@ Deno.serve(async (req) => {
             })),
           );
           if (insP.error) console.error("ins products", s.email, insP.error);
+        } else if (sec?.id) {
+          // Backfill section_id em produtos que ficaram órfãos
+          const upd = await admin.from("products")
+            .update({ section_id: sec.id })
+            .eq("store_id", storeRow.id).is("section_id", null);
+          if (upd.error) console.error("backfill section_id", s.email, upd.error);
         }
       }
       created.push({ kind: "lojista", email: s.email, user_id: user.id });
