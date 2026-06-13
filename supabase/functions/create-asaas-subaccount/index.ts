@@ -252,12 +252,12 @@ Deno.serve(async (req) => {
       return json({ error: "Resposta inesperada do Asaas (sem walletId/apiKey).", asaas: accData }, 500);
     }
 
-    // REGISTRO IMEDIATO no Lovable Cloud: nunca perdemos a subconta criada.
+    // REGISTRO IMEDIATO no banco externo: nunca perdemos a subconta criada.
     let registryId: string | null = null;
     try {
       const { data: regIns, error: regErr } = await cloudClient
         .from("asaas_subaccounts_registry")
-        .insert({
+        .upsert({
           store_id: body.store_id,
           external_store_id: body.store_id,
           wallet_id: walletId,
@@ -267,7 +267,7 @@ Deno.serve(async (req) => {
           email: body.email,
           status: "created",
           raw_response: accData,
-        })
+        }, { onConflict: "wallet_id" })
         .select("id").maybeSingle();
       if (regErr) console.error("registry insert error:", regErr);
       registryId = regIns?.id ?? null;
