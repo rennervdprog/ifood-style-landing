@@ -210,7 +210,10 @@ Deno.serve(async (req) => {
     // Se o banco externo não aceitar nem um update no-op, não consumimos CPF.
     {
       const { error: preErr } = await adminClient
-        .from("stores").update({ updated_at: new Date().toISOString() }).eq("id", body.store_id);
+        .from("stores")
+        .update({ asaas_wallet_id: null })
+        .eq("id", body.store_id)
+        .is("asaas_wallet_id", null);
       if (preErr) {
         log("pre_validate_failed", { message: preErr.message, code: preErr.code, details: preErr.details, hint: preErr.hint });
         return json({
