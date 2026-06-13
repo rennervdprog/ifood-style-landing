@@ -301,10 +301,21 @@ Deno.serve(async (req) => {
           .from("products").select("id", { count: "exact", head: true }).eq("store_id", storeRow.id);
         if (cErr) console.error("count products", s.email, cErr);
         if (!count) {
+          // Garante uma seção "Cardápio" para os produtos aparecerem na loja
+          let { data: sec } = await admin
+            .from("menu_sections").select("id").eq("store_id", storeRow.id).limit(1).maybeSingle();
+          if (!sec) {
+            const ins = await admin.from("menu_sections")
+              .insert({ store_id: storeRow.id, name: "Cardápio", sort_order: 0 })
+              .select("id").maybeSingle();
+            if (ins.error) console.error("ins section", s.email, ins.error);
+            sec = ins.data;
+          }
           const insP = await admin.from("products").insert(
             (s.products || []).map((p) => ({
               store_id: storeRow.id, name: p.name, price: p.price,
               description: p.description, is_available: true,
+              section_id: sec?.id ?? null,
             })),
           );
           if (insP.error) console.error("ins products", s.email, insP.error);
@@ -339,6 +350,21 @@ Deno.serve(async (req) => {
           { user_id: user.id, name: m.name, is_active: true, is_online: false },
           { onConflict: "user_id" },
         );
+      // Vincula motoboy a TODAS lojas sandbox (status accepted, fim_do_dia)
+      const { data: sandboxStores } = await admin
+        .from("stores").select("id").eq("is_test", true);
+      for (const ss of sandboxStores ?? []) {
+        const { data: existsLink } = await admin
+          .from("store_drivers").select("id")
+          .eq("store_id", ss.id).eq("driver_user_id", user.id).maybeSingle();
+        if (!existsLink) {
+          const lk = await admin.from("store_drivers").insert({
+            store_id: ss.id, driver_user_id: user.id,
+            status: "accepted", payment_mode: "fim_do_dia",
+          });
+          if (lk.error) console.error("link driver", m.email, ss.id, lk.error);
+        }
+      }
       created.push({ kind: "motoboy", email: m.email, user_id: user.id });
     }
 
