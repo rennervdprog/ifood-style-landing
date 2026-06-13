@@ -228,12 +228,11 @@ Deno.serve(async (req) => {
           whatsapp_number: "14999990000",
           pix_type: "CNPJ",
           pix_key: s.cnpj,
-          address_street: "Rua Sandbox",
-          address_number: "100",
-          address_neighborhood: "Centro",
-          address_city: "Itatinga",
-          address_state: "SP",
-          address_cep: "18250000",
+          street: "Rua Sandbox",
+          number: "100",
+          neighborhood: "Centro",
+          city: "Itatinga",
+          cep: "18250000",
         })
         .eq("user_id", user.id);
       // Cria/atualiza store do lojista (não existia)
