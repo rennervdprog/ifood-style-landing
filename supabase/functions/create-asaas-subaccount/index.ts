@@ -97,6 +97,12 @@ Deno.serve(async (req) => {
     const userId = userData.user.id;
     log("user_authenticated", { userId });
 
+    // Admin pode operar em qualquer loja (necessário para fluxo sandbox via seed-test-accounts).
+    const { data: adminRole } = await adminClient
+      .from("user_roles").select("role").eq("user_id", userId).eq("role", "admin").maybeSingle();
+    const isAdmin = !!adminRole;
+    log("admin_check", { isAdmin });
+
     const rawBody = await req.json();
     const mode = (rawBody?.mode as string) || "create";
     log("body_parsed", { mode, store_id: rawBody?.store_id, has_cpf: !!rawBody?.cpfCnpj });
