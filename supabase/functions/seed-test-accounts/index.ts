@@ -219,11 +219,55 @@ Deno.serve(async (req) => {
         selected_plan: "starter",
       });
       if (!user) continue;
-      // Marca loja como teste
+      // Completa profile (trigger só preenche full_name/role)
       await admin
-        .from("stores")
-        .update({ is_test: true, status: "ativo", app_enabled: true })
-        .eq("owner_id", user.id);
+        .from("profiles")
+        .update({
+          document: s.cnpj,
+          phone: "14999990000",
+          whatsapp_number: "14999990000",
+          pix_type: "CNPJ",
+          pix_key: s.cnpj,
+          address_street: "Rua Sandbox",
+          address_number: "100",
+          address_neighborhood: "Centro",
+          address_city: "Itatinga",
+          address_state: "SP",
+          address_cep: "18250000",
+        })
+        .eq("user_id", user.id);
+      // Cria/atualiza store do lojista (não existia)
+      const { data: existing } = await admin
+        .from("stores").select("id").eq("owner_id", user.id).maybeSingle();
+      if (!existing) {
+        await admin.from("stores").insert({
+          name: s.name,
+          owner_id: user.id,
+          category: s.cat,
+          status: "ativo",
+          is_test: true,
+          app_enabled: true,
+          is_open: true,
+          delivery_mode: "own",
+          own_delivery_fee: 5,
+          settings: {},
+          commission_rate: 0.1,
+          categories: [s.cat],
+          address_street: "Rua Sandbox",
+          address_number: "100",
+          address_neighborhood: "Centro",
+          address_city: "Itatinga",
+          address_state: "SP",
+          address_cep: "18250000",
+        });
+      } else {
+        await admin.from("stores").update({
+          is_test: true, status: "ativo", app_enabled: true,
+          address_street: "Rua Sandbox", address_number: "100",
+          address_neighborhood: "Centro", address_city: "Itatinga",
+          address_state: "SP", address_cep: "18250000",
+        }).eq("owner_id", user.id);
+      }
       created.push({ kind: "lojista", email: s.email, user_id: user.id });
     }
 
@@ -236,6 +280,16 @@ Deno.serve(async (req) => {
         vehicle: "moto",
       });
       if (!user) continue;
+      await admin
+        .from("profiles")
+        .update({
+          document: m.cpf,
+          phone: "14999990000",
+          whatsapp_number: "14999990000",
+          pix_type: "CPF",
+          pix_key: m.cpf,
+        })
+        .eq("user_id", user.id);
       // Garante linha em drivers
       await admin
         .from("drivers")
@@ -254,6 +308,14 @@ Deno.serve(async (req) => {
         document: c.cpf,
       });
       if (!user) continue;
+      await admin
+        .from("profiles")
+        .update({
+          document: c.cpf,
+          phone: "14999990000",
+          whatsapp_number: "14999990000",
+        })
+        .eq("user_id", user.id);
       created.push({ kind: "cliente", email: c.email, user_id: user.id });
     }
 
