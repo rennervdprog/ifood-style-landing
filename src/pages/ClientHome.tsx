@@ -425,6 +425,7 @@ const ClientHomeContent = () => {
           city: effectiveCity,
           limit: 50,
           fallback_to_all: false,
+          include_test: !!user?.email?.endsWith("@itasuper.test"),
         },
       });
       if (error) throw error;
