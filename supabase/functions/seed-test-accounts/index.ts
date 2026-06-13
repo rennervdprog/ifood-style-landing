@@ -132,7 +132,7 @@ Deno.serve(async (req) => {
           city: s.address_city || "Itatinga",
           state: s.address_state || "SP",
           pixAddressKey: prof.pix_key || cpfCnpj,
-          pixAddressKeyType: (prof.pix_type as string) || (isCnpj ? "CNPJ" : "CPF"),
+          pixAddressKeyType: (((prof.pix_type as string) || (isCnpj ? "CNPJ" : "CPF"))).toUpperCase(),
         };
         try {
           const r = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/create-asaas-subaccount`, {
