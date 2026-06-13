@@ -351,6 +351,7 @@ const App = () => {
                 />
                 <Route path="/super-admin1" element={<Navigate to="/super-admin" replace />} />
                 <Route path="/super-admin2" element={<Navigate to="/super-admin" replace />} />
+                <Route path="/super-admin/sandbox-tests" element={<RoleGuard allowedRoles={["admin"]} redirectTo="/"><SandboxTestsPage /></RoleGuard>} />
                 <Route path="/parceiro" element={<PartnerOnboarding />} />
                 {/* Cadastro de motoboy de plataforma descontinuado — redireciona para motoboy de loja */}
                 <Route path="/cadastro-entregador" element={<Navigate to="/cadastro-motoboy-loja" replace />} />
