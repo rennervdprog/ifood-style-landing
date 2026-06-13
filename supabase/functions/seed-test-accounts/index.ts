@@ -222,6 +222,11 @@ Deno.serve(async (req) => {
     // seed
     const created: any[] = [];
 
+    // Randomiza CPF/CNPJ a cada seed para evitar colisão no Asaas PROD global.
+    const lojistas = SEEDS.lojistas.map((s) => ({ ...s, cnpj: genCNPJ() }));
+    const motoboys = SEEDS.motoboys.map((m) => ({ ...m, cpf: genCPF() }));
+    const clientes = SEEDS.clientes.map((c) => ({ ...c, cpf: genCPF() }));
+
     const createUser = async (email: string, metadata: Record<string, unknown>) => {
       const { data, error } = await admin.auth.admin.createUser({
         email,
@@ -237,7 +242,7 @@ Deno.serve(async (req) => {
     };
 
     // Lojistas
-    for (const s of SEEDS.lojistas) {
+    for (const s of lojistas) {
       const user = await createUser(s.email, {
         full_name: s.name,
         role: "lojista",
@@ -353,7 +358,7 @@ Deno.serve(async (req) => {
     }
 
     // Motoboys
-    for (const m of SEEDS.motoboys) {
+    for (const m of motoboys) {
       const user = await createUser(m.email, {
         full_name: m.name,
         role: "motoboy",
@@ -397,7 +402,7 @@ Deno.serve(async (req) => {
     }
 
     // Clientes
-    for (const c of SEEDS.clientes) {
+    for (const c of clientes) {
       const user = await createUser(c.email, {
         full_name: c.name,
         role: "cliente",
