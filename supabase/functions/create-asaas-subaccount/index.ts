@@ -57,7 +57,16 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const traceId = crypto.randomUUID().slice(0, 8);
+  const trace: Array<{ t: string; step: string; data?: unknown }> = [];
+  const log = (step: string, data?: unknown) => {
+    const entry = { t: new Date().toISOString(), step, data };
+    trace.push(entry);
+    console.log(`[asaas-sub ${traceId}] ${step}`, data !== undefined ? JSON.stringify(data) : "");
+  };
+
   try {
+    log("request_received", { method: req.method });
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) return json({ error: "Unauthorized" }, 401);
 
@@ -67,6 +76,13 @@ Deno.serve(async (req) => {
     const EXTERNAL_SERVICE = Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY")
       || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY")
       || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+    log("env_resolved", {
+      external_url: EXTERNAL_URL?.slice(0, 40) + "…",
+      has_anon: !!EXTERNAL_ANON,
+      has_service: !!EXTERNAL_SERVICE,
+      using_external: !!Deno.env.get("EXTERNAL_SUPABASE_URL"),
+    });
 
     const supabase = createClient(EXTERNAL_URL, EXTERNAL_ANON, {
       global: { headers: { Authorization: authHeader } },
@@ -79,9 +95,11 @@ Deno.serve(async (req) => {
     const { data: userData, error: userErr } = await supabase.auth.getUser(token);
     if (userErr || !userData?.user) return json({ error: "Unauthorized" }, 401);
     const userId = userData.user.id;
+    log("user_authenticated", { userId });
 
     const rawBody = await req.json();
     const mode = (rawBody?.mode as string) || "create";
+    log("body_parsed", { mode, store_id: rawBody?.store_id, has_cpf: !!rawBody?.cpfCnpj });
 
     // helper: persist em cascata na loja externa
     async function persistToStore(storeId: string, walletId: string, apiKey: string | null, accountId: string | null, pix?: { key: string; type: string } | null) {
@@ -105,9 +123,9 @@ Deno.serve(async (req) => {
       let lastErr: any = null;
       for (const attempt of attempts) {
         const { error } = await adminClient.from("stores").update(attempt.payload).eq("id", storeId);
-        if (!error) { savedAs = attempt.label; break; }
+        if (!error) { savedAs = attempt.label; log("persist_ok", { attempt: attempt.label }); break; }
         lastErr = error;
-        console.warn(`persist attempt '${attempt.label}' failed:`, error);
+        log("persist_attempt_failed", { attempt: attempt.label, message: error.message, code: error.code, details: error.details, hint: error.hint });
       }
       return { savedAs, lastErr };
     }
@@ -194,11 +212,14 @@ Deno.serve(async (req) => {
       const { error: preErr } = await adminClient
         .from("stores").update({ updated_at: new Date().toISOString() }).eq("id", body.store_id);
       if (preErr) {
+        log("pre_validate_failed", { message: preErr.message, code: preErr.code, details: preErr.details, hint: preErr.hint });
         return json({
           error: "Banco externo recusou gravação na loja. Nenhuma subconta foi criada.",
           debug: { stage: "pre_validate", message: preErr.message, code: preErr.code, details: preErr.details, hint: preErr.hint },
+          traceId, trace,
         }, 500);
       }
+      log("pre_validate_ok");
     }
 
     const ASAAS_API_KEY = Deno.env.get("ASAAS_API_KEY");
@@ -211,6 +232,7 @@ Deno.serve(async (req) => {
     const baseUrl = isSandbox
       ? "https://sandbox.asaas.com/api/v3"
       : "https://api.asaas.com/v3";
+    log("asaas_env", { isSandbox, baseUrl });
 
     const cpfCnpj = body.cpfCnpj;
     const phone = body.phone;
@@ -241,12 +263,14 @@ Deno.serve(async (req) => {
     if (cpfCnpj.length === 11 && body.birthDate) subaccountPayload.birthDate = body.birthDate;
     if (cpfCnpj.length === 14 && body.companyType) subaccountPayload.companyType = body.companyType;
 
+    log("asaas_lookup_existing", { cpfCnpj_len: cpfCnpj.length });
     const existingRes = await fetch(`${baseUrl}/accounts?cpfCnpj=${encodeURIComponent(cpfCnpj)}`, {
       headers: { access_token: ASAAS_API_KEY },
     });
     if (existingRes.ok) {
       const existingData = await existingRes.json();
       const existingAccount = existingData?.data?.[0];
+      log("asaas_lookup_result", { found: !!existingAccount, walletId: existingAccount?.walletId });
       if (existingAccount?.walletId) {
         const { savedAs, lastErr } = await persistToStore(
           body.store_id,
@@ -261,9 +285,10 @@ Deno.serve(async (req) => {
             walletId: existingAccount.walletId,
             recoverable: true,
             debug: { stage: "persist_existing", message: lastErr?.message, code: lastErr?.code, details: lastErr?.details, hint: lastErr?.hint },
+            traceId, trace,
           }, 500);
         }
-        await cloudClient.from("asaas_subaccounts_registry").upsert({
+        const { error: regUpErr } = await cloudClient.from("asaas_subaccounts_registry").upsert({
           store_id: body.store_id,
           external_store_id: body.store_id,
           wallet_id: existingAccount.walletId,
@@ -276,6 +301,8 @@ Deno.serve(async (req) => {
           linked_at: new Date().toISOString(),
           last_error: null,
         }, { onConflict: "wallet_id" });
+        if (regUpErr) log("registry_upsert_existing_failed", { message: regUpErr.message, code: regUpErr.code });
+        else log("registry_upsert_existing_ok");
         return json({
           success: true,
           walletId: existingAccount.walletId,
@@ -283,6 +310,7 @@ Deno.serve(async (req) => {
           savedAs,
           recovered: true,
           message: "Subconta Asaas existente vinculada à loja.",
+          traceId, trace,
         });
       }
     }
@@ -293,11 +321,11 @@ Deno.serve(async (req) => {
       body: JSON.stringify(subaccountPayload),
     });
     const accData = await accRes.json();
+    log("asaas_create_response", { status: accRes.status, ok: accRes.ok, walletId: accData?.walletId, id: accData?.id, errors: accData?.errors });
     if (!accRes.ok) {
-      console.error("Asaas /accounts error:", JSON.stringify(accData));
       const msg =
         accData?.errors?.[0]?.description || "Falha ao criar subconta no Asaas.";
-      return json({ error: msg, asaas: accData }, 400);
+      return json({ error: msg, asaas: accData, traceId, trace }, 400);
     }
 
     const walletId: string | undefined = accData.walletId;
@@ -323,10 +351,11 @@ Deno.serve(async (req) => {
           raw_response: accData,
         }, { onConflict: "wallet_id" })
         .select("id").maybeSingle();
-      if (regErr) console.error("registry insert error:", regErr);
+      if (regErr) log("registry_insert_failed", { message: regErr.message, code: regErr.code, details: regErr.details, hint: regErr.hint });
+      else log("registry_insert_ok", { registryId: regIns?.id });
       registryId = regIns?.id ?? null;
     } catch (e) {
-      console.error("registry insert exception:", e);
+      log("registry_insert_exception", { error: String(e) });
     }
 
     // Optional: register PIX key on subaccount so lojista can withdraw to own bank
@@ -350,7 +379,7 @@ Deno.serve(async (req) => {
     );
 
     if (!savedAs) {
-      console.error("Failed to persist subaccount (all attempts):", lastErr);
+      log("persist_all_failed", { message: lastErr?.message, code: lastErr?.code, details: lastErr?.details, hint: lastErr?.hint });
       if (registryId) {
         await cloudClient.from("asaas_subaccounts_registry").update({
           status: "failed",
@@ -363,6 +392,7 @@ Deno.serve(async (req) => {
         registryId,
         recoverable: true,
         debug: { stage: "persist", message: lastErr?.message, code: lastErr?.code, details: lastErr?.details, hint: lastErr?.hint },
+        traceId, trace,
       }, 500);
     }
 
@@ -378,9 +408,10 @@ Deno.serve(async (req) => {
       accountId: accData.id,
       savedAs,
       message: "Subconta Asaas criada! O split agora será automático em todas as suas vendas PIX.",
+      traceId, trace,
     });
   } catch (err) {
-    console.error("create-asaas-subaccount error:", err);
-    return json({ error: "Erro interno." }, 500);
+    log("unhandled_exception", { error: String(err), stack: (err as Error)?.stack });
+    return json({ error: "Erro interno.", traceId, trace }, 500);
   }
 });
