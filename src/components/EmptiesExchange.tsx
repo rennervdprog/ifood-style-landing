@@ -32,7 +32,7 @@ const EmptiesExchange = ({ storeId, items, onChange }: Props) => {
     for (const it of items) {
       const md: any = it.metadata || {};
       if (!md.returnable_bottle) continue;
-      const group = String(md.returnable_group || "").trim();
+      const group = String(md.returnable_group || "").trim().toLowerCase();
       const price = parseFloat(String(md.deposit_price || "0").replace(",", ".")) || 0;
       if (!group || price <= 0) continue;
       const cur = map.get(group) || { qty: 0, unit_price: price };
