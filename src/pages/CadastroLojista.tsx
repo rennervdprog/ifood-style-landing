@@ -454,7 +454,8 @@ const CadastroLojista = () => {
 
                 {/* Cards de plano — ordem: Comissão, Crescimento, Essencial, Apoiador */}
                 {(["commission_only", "hybrid", "fixed", "supporter"] as const).map((id) => {
-                  if (id === "supporter" && !supporterAvailable) return null;
+                  // Plano Apoiador desativado — ocultar do cadastro
+                  if (id === "supporter") return null;
                   const p = PLANS[id];
                   const Icon = p.icon;
                   const selected = selectedPlan === id;
