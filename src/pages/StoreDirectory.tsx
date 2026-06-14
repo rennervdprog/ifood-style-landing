@@ -872,9 +872,9 @@ const StoreDirectory = () => {
              <h2 className="text-3xl font-bold tracking-tight mb-2">
                Sistema de Motoboy <span className="text-primary italic">Integrado</span> 🛵
              </h2>
-             <div className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold mb-4">
-                Disponível nos planos Crescimento, Essencial e Apoiadores
-             </div>
+              <div className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold mb-4">
+                 Disponível nos planos Crescimento e Essencial
+              </div>
              <p className="text-muted-foreground max-w-2xl mx-auto text-base font-medium">
                Sua logística sob controle absoluto. Da cozinha à porta do cliente, tudo conectado em tempo real para uma operação sem falhas.
              </p>
@@ -1225,8 +1225,8 @@ const StoreDirectory = () => {
             Escolha o plano ideal para sua loja
           </h2>
           <p className="text-center text-muted-foreground mb-4 max-w-2xl mx-auto text-base font-medium">
-            Comissão de <span className="font-bold text-primary">6%</span> no plano grátis, <span className="font-bold text-primary">2,5%</span> no Crescimento ou <span className="font-bold text-primary">zero</span> no Essencial e Apoiadores.
-            Todos incluem cardápio completo, PIX online e notificações. Taxa PIX R$ 1,99/transação apenas nos planos Essencial e Apoiadores.
+            Comissão de <span className="font-bold text-primary">6%</span> no plano grátis, <span className="font-bold text-primary">2,5%</span> no Crescimento ou <span className="font-bold text-primary">zero</span> no Essencial.
+            Todos incluem cardápio completo, PIX online e notificações. Taxa PIX R$ 1,99/transação apenas no plano Essencial.
           </p>
           <div className="flex justify-center mb-14">
             <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-4 py-2 text-xs font-bold text-emerald-600 border border-emerald-200">
@@ -1235,8 +1235,8 @@ const StoreDirectory = () => {
             </div>
           </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 items-start">
-            {plans.map((plan) => {
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
+            {plans.filter((p) => p.id !== "supporter").map((plan) => {
               const Icon = plan.icon;
               const badgeText = plan.id === "supporter" && supporterTaken !== null
                 ? `🚀 Lançamento • ${Math.max(0, 10 - supporterTaken)} vagas restantes`
