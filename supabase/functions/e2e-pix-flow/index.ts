@@ -48,9 +48,11 @@ Deno.serve(async (req) => {
     const admin = createClient(EXTERNAL_URL, EXTERNAL_SVC);
 
     const token = auth.replace("Bearer ", "");
-    // Bypass: service-role key permite rodar o e2e via tooling/CI sem usuário logado
-    if (token === EXTERNAL_SVC) {
-      log("auth_admin", true, { via: "service_role" });
+    // Bypass: header x-e2e-secret == EXTERNAL_CRON_SECRET (ou service-role key) permite rodar via tooling/CI
+    const cronSecret = Deno.env.get("EXTERNAL_CRON_SECRET") || "";
+    const e2eHeader = req.headers.get("x-e2e-secret") || "";
+    if (token === EXTERNAL_SVC || (cronSecret && e2eHeader === cronSecret)) {
+      log("auth_admin", true, { via: "service_or_cron_secret" });
     } else {
       const { data: u } = await userClient.auth.getUser(token);
       if (!u?.user) return json({ error: "Unauthorized" }, 401);
