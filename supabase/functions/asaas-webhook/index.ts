@@ -151,6 +151,34 @@ Deno.serve(async (req) => {
     }
   }
 
+  // ─── PEDIDO: pagamento falhou / vencido / reembolsado ───
+  // Sem isso, REFUNDED/OVERDUE de um pedido caem no fluxo de financial_transactions
+  // (que não existe para pedidos) e o pedido fica preso em "pendente".
+  if (isOrderPayment && FAILED_EVENTS.has(event)) {
+    try {
+      const isRefund = event === "PAYMENT_REFUNDED" || event === "PAYMENT_CHARGEBACK_REQUESTED";
+      const newStatus = isRefund ? "cancelado" : "cancelado"; // pedido sempre cancelado quando pagamento não vinga
+      const { data: order } = await supabase
+        .from("orders").select("id, status").eq("id", externalRef).maybeSingle();
+      if (!order) return json({ ok: true, ignored: "order_not_found" });
+
+      // Só altera se ainda não foi entregue/finalizado
+      const terminal = ["entregue", "finalizado", "cancelado"];
+      if (terminal.includes(String(order.status))) {
+        return json({ ok: true, idempotent: true, order_id: externalRef, status: order.status });
+      }
+      await supabase.from("orders").update({
+        status: newStatus,
+        cancel_reason: isRefund ? "Pagamento reembolsado pelo Asaas" : `Pagamento ${event}`,
+      }).eq("id", externalRef);
+      console.log(`[asaas-webhook] order ${externalRef} → ${newStatus} (${event})`);
+      return json({ ok: true, type: "order_payment_failed", order_id: externalRef, event });
+    } catch (e) {
+      console.error("[asaas-webhook] order refund/fail error", e);
+      return json({ ok: true, error: String(e) });
+    }
+  }
+
   // ─── Localizar a financial_transaction ───
   // Pode estar em mercado_pago_payment_id (monthly-billing/subscribe) OU
   // em reference_code (auto-charge-physical-fees salva o paymentId aí).
