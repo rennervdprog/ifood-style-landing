@@ -1,8 +1,31 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
+import fs from "fs";
 import { componentTagger } from "lovable-tagger";
 import { visualizer } from "rollup-plugin-visualizer";
+
+function enforceExternalBackendOnly() {
+  return {
+    name: "enforce-external-backend-only",
+    buildStart() {
+      const forbidden = /VITE_SUPABASE_(URL|PUBLISHABLE_KEY|ANON_KEY)/;
+      const scan = (dir: string) => {
+        for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+          const fullPath = path.join(dir, entry.name);
+          if (entry.isDirectory()) scan(fullPath);
+          if (entry.isFile() && /\.(ts|tsx|js|jsx)$/.test(entry.name)) {
+            const content = fs.readFileSync(fullPath, "utf8");
+            if (forbidden.test(content)) {
+              throw new Error(`Use @/integrations/supabase/client para o backend externo: ${fullPath}`);
+            }
+          }
+        }
+      };
+      scan(path.resolve(__dirname, "src"));
+    },
+  };
+}
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
@@ -14,6 +37,7 @@ export default defineConfig(({ mode }) => ({
     },
   },
   plugins: [
+    enforceExternalBackendOnly(),
     react(),
     mode === "development" && componentTagger(),
     mode === "production" && visualizer({

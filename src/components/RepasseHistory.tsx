@@ -6,6 +6,7 @@
 
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { externalFunctionUrl } from "@/lib/externalBackend";
 import { useQuery } from "@tanstack/react-query";
 import { formatBRL } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -184,7 +185,7 @@ export default function RepasseHistory({ storeId }: RepasseHistoryProps) {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const res = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/repasse-manual-charge`,
+        externalFunctionUrl("repasse-manual-charge"),
         {
           method: "POST",
           headers: {

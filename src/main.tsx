@@ -1,4 +1,7 @@
 import { initSentry } from "./lib/sentry";
+import { assertExternalBackend } from "./lib/externalBackend";
+
+assertExternalBackend();
 
 // Declarar extensões do Window para gonative/median (apps nativos WebView)
 declare global {
