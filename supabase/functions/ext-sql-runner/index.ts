@@ -1,6 +1,7 @@
 // Utilitário do agente: roda SQL arbitrário no Supabase EXTERNO via service-role.
 // Protegido por EXTERNAL_CRON_SECRET no header x-admin-secret.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import postgres from "https://deno.land/x/postgresjs@v3.4.4/mod.js";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -17,6 +18,8 @@ Deno.serve(async (req) => {
   const EXT_URL = Deno.env.get("EXTERNAL_SUPABASE_URL")!;
   const SVC = Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY")!;
   const supabase = createClient(EXT_URL, SVC);
+  const DB_URL = Deno.env.get("EXTERNAL_DATABASE_URL") || "";
+  const sql = DB_URL ? postgres(DB_URL, { prepare: false }) : null;
 
   const body = await req.json().catch(() => ({}));
   const action = body?.action as string;
@@ -58,6 +61,30 @@ Deno.serve(async (req) => {
       // Manda NOTIFY pgrst para recarregar cache do PostgREST via rpc auxiliar (se existir).
       const { data, error } = await supabase.rpc("_agent_pgrst_reload");
       return json({ data, error });
+    }
+
+    if (action === "run_sql") {
+      if (!sql) return json({ error: "EXTERNAL_DATABASE_URL ausente" }, 400);
+      const query = body?.query as string;
+      if (!query) return json({ error: "query obrigatória" }, 400);
+      const rows = await sql.unsafe(query);
+      return json({ rows });
+    }
+
+    if (action === "inspect_fks") {
+      if (!sql) return json({ error: "EXTERNAL_DATABASE_URL ausente" }, 400);
+      const table = (body?.table as string) || "store_balances";
+      const rows = await sql`
+        SELECT conname, conrelid::regclass AS table_name,
+               a.attname AS column_name,
+               confrelid::regclass AS references_table,
+               af.attname AS references_column
+        FROM pg_constraint c
+        JOIN pg_attribute a ON a.attrelid = c.conrelid AND a.attnum = ANY(c.conkey)
+        JOIN pg_attribute af ON af.attrelid = c.confrelid AND af.attnum = ANY(c.confkey)
+        WHERE c.contype = 'f' AND c.conrelid = ('public.'||${table})::regclass
+      `;
+      return json({ rows });
     }
 
     return json({ error: "unknown action" }, 400);
