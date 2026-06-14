@@ -1287,7 +1287,7 @@ const CheckoutPage = () => {
               ? `${storeStatus.nextOpenDay === "Hoje" ? "Abre" : `Abre ${storeStatus.nextOpenDay}`} às ${storeStatus.nextOpenTime}`
               : "Loja fechada"}
           </button>
-        ) : !isPickup && !isLocationRequested && !clientCoords ? (
+        ) : !isPickup && !hasValidAddress && !isLocationRequested && !clientCoords ? (
           <button
             onClick={handleRequestLocation}
             disabled={requestingLocation}
