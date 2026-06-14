@@ -275,14 +275,25 @@ Deno.serve(async (req) => {
     // Persist asaas_payment_id and flag whether the native split was applied,
     // so the webhook / polling endpoint can skip the manual /transfers call
     // and avoid double-paying the store.
+    // IMPORTANT: use a service-role client. RLS policies on `orders` may not
+    // allow the client to update internal columns like asaas_payment_id, and
+    // a silent failure here was leaving `asaas_payment_id=null` + breaking
+    // the split idempotency in the webhook flow.
+    const adminSupabase = createClient(
+      (Deno.env.get("EXTERNAL_SUPABASE_URL") || Deno.env.get("SUPABASE_URL"))!,
+      (Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY")
+        || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY")
+        || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"))!,
+    );
     try {
-      await supabase
+      const { error: persistErr } = await adminSupabase
         .from("orders")
         .update({
           asaas_payment_id: paymentData.id,
           asaas_split_native: !!(splitArray && splitArray.length > 0),
         })
         .eq("id", order_id);
+      if (persistErr) console.error("Persist asaas_payment_id failed:", persistErr);
     } catch (e) {
       console.warn("Could not persist asaas_payment_id/split flag:", e);
     }
