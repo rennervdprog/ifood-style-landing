@@ -12,8 +12,15 @@ const json = (b: unknown, s = 200) =>
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: cors });
 
+  // Auth: aceita service-role do Lovable Cloud (auto-injetado em env) via Bearer,
+  // OU EXTERNAL_CRON_SECRET via header x-admin-secret.
+  const cloudSvc = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
   const expected = Deno.env.get("EXTERNAL_CRON_SECRET") || "";
-  if (!expected || req.headers.get("x-admin-secret") !== expected) {
+  const authHeader = req.headers.get("Authorization") || "";
+  const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
+  const okBearer = cloudSvc !== "" && token === cloudSvc;
+  const okSecret = expected !== "" && req.headers.get("x-admin-secret") === expected;
+  if (!okBearer && !okSecret) {
     return json({ error: "Unauthorized" }, 401);
   }
 
