@@ -976,6 +976,38 @@ const NotificationSection = () => {
          </div>
        </div>
 
+       {/* Frete grátis acima de X */}
+       <div className="bg-muted/50 border border-border rounded-2xl p-4 space-y-3">
+         <label className="text-sm font-bold text-foreground/80 flex items-center gap-2">
+           🚚 Frete grátis acima de um valor
+         </label>
+         <p className="text-[11px] text-muted-foreground -mt-1">
+           Quando o cliente atingir o subtotal definido, o frete fica <strong>R$ 0,00</strong> para ele. A taxa da entrega (motoboy/bairro) fica por sua conta como cortesia. A <strong>taxa da plataforma (R$ 2)</strong> continua sendo cobrada normalmente.
+         </p>
+         <label className="flex items-center gap-2 cursor-pointer select-none">
+           <input
+             type="checkbox"
+             checked={freeDeliveryEnabled}
+             onChange={(e) => setFreeDeliveryEnabled(e.target.checked)}
+             className="h-4 w-4 accent-primary"
+           />
+           <span className="text-xs font-bold text-foreground">Ativar frete grátis acima de um valor</span>
+         </label>
+         {freeDeliveryEnabled && (
+           <div>
+             <label className="text-xs font-bold text-foreground/80 mb-1 block">Subtotal mínimo para frete grátis (R$)</label>
+             <input
+               type="text"
+               inputMode="decimal"
+               value={freeDeliveryThreshold}
+               onChange={(e) => setFreeDeliveryThreshold(e.target.value.replace(/[^0-9.,]/g, ""))}
+               placeholder="Ex: 200,00"
+               className="w-full bg-card border border-border rounded-xl px-4 py-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
+             />
+           </div>
+         )}
+       </div>
+
       {/* Pizza Half-and-Half Settings */}
       {category === "pizzas" && (
         <div className="bg-muted/30 border border-dashed border-border rounded-2xl p-4">
