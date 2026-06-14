@@ -54,15 +54,19 @@ Deno.serve(async (req) => {
     const { data: stores, error: storesErr } = await admin
       .from("stores")
       .select(
-        "id, name, asaas_subaccount_api_key, asaas_pix_key, asaas_pix_key_type, asaas_min_withdraw_amount"
+        "id, name, asaas_subaccount_api_key, asaas_pix_key, asaas_pix_key_type"
       )
       .eq("asaas_auto_withdraw_enabled", true)
       .not("asaas_subaccount_api_key", "is", null)
       .not("asaas_pix_key", "is", null);
 
     if (storesErr) {
+      // Feature não provisionada no DB (coluna ausente) — não é erro fatal.
+      if ((storesErr as any).code === "42703") {
+        return json({ success: true, processed: 0, results: [], note: "auto_withdraw feature not provisioned on this database" });
+      }
       console.error("Failed to load stores:", storesErr);
-      return json({ error: "DB error" }, 500);
+      return json({ error: "DB error", detail: storesErr.message, code: (storesErr as any).code }, 500);
     }
 
     const results: Array<Record<string, unknown>> = [];
@@ -71,7 +75,7 @@ Deno.serve(async (req) => {
       const subKey = store.asaas_subaccount_api_key as string;
       const pixKey = store.asaas_pix_key as string;
       const pixType = (store.asaas_pix_key_type as string) || "EVP";
-      const minAmount = Number(store.asaas_min_withdraw_amount ?? 5);
+      const minAmount = 5;
 
       try {
         // 1. Check available balance on the subaccount
