@@ -157,13 +157,24 @@ Deno.serve(async (req) => {
           pixAddressKeyType: (((prof.pix_type as string) || (isCnpj ? "CNPJ" : "CPF"))).toUpperCase(),
         };
         try {
-          const r = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/create-asaas-subaccount`, {
+          const externalFnBase = (Deno.env.get("EXTERNAL_SUPABASE_URL") || Deno.env.get("SUPABASE_URL"))!;
+          const r = await fetch(`${externalFnBase}/functions/v1/create-asaas-subaccount`, {
             method: "POST",
-            headers: { "Content-Type": "application/json", Authorization: auth },
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: auth,
+              apikey: (Deno.env.get("EXTERNAL_SUPABASE_ANON_KEY") || Deno.env.get("SUPABASE_ANON_KEY"))!,
+            },
             body: JSON.stringify(payload),
           });
           const body = await r.json().catch(() => ({}));
-          results.push({ store_id: s.id, name: s.name, status: r.status, body });
+          results.push({
+            store_id: s.id,
+            name: s.name,
+            status: r.status,
+            ok: r.ok,
+            ...(r.ok ? { body } : { error: body?.error || `HTTP ${r.status}`, body }),
+          });
         } catch (e) {
           results.push({ store_id: s.id, name: s.name, error: String((e as Error).message || e) });
         }
