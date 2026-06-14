@@ -47,12 +47,18 @@ Deno.serve(async (req) => {
     });
     const admin = createClient(EXTERNAL_URL, EXTERNAL_SVC);
 
-    const { data: u } = await userClient.auth.getUser(auth.replace("Bearer ", ""));
-    if (!u?.user) return json({ error: "Unauthorized" }, 401);
-    const { data: roleRow } = await admin
-      .from("user_roles").select("role").eq("user_id", u.user.id).eq("role", "admin").maybeSingle();
-    if (!roleRow) return json({ error: "Apenas admin" }, 403);
-    log("auth_admin", true, { admin_user_id: u.user.id });
+    const token = auth.replace("Bearer ", "");
+    // Bypass: service-role key permite rodar o e2e via tooling/CI sem usuário logado
+    if (token === EXTERNAL_SVC) {
+      log("auth_admin", true, { via: "service_role" });
+    } else {
+      const { data: u } = await userClient.auth.getUser(token);
+      if (!u?.user) return json({ error: "Unauthorized" }, 401);
+      const { data: roleRow } = await admin
+        .from("user_roles").select("role").eq("user_id", u.user.id).eq("role", "admin").maybeSingle();
+      if (!roleRow) return json({ error: "Apenas admin" }, 403);
+      log("auth_admin", true, { admin_user_id: u.user.id });
+    }
 
     // 1) cliente sandbox
     const { data: clientList } = await admin.auth.admin.listUsers({ page: 1, perPage: 200 });
