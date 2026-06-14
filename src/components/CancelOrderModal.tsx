@@ -35,6 +35,9 @@ const CancelOrderModal = ({ order, onClose, onCancelled }: Props) => {
 
   const feeInfo = FEE_TABLE[order.status];
   const isPrepaid = ["pix", "wallet", "saldo"].includes(order.payment_method || "");
+  // PIX em "aguardando_pagamento" nunca foi pago — não há reembolso a fazer.
+  const paymentSettled = order.status !== "aguardando_pagamento" && !!order.confirmed_at;
+  const hasRefund = isPrepaid && paymentSettled;
 
   const { isTimeOverride, minutesElapsed, effectiveFeePercent } = useMemo(() => {
     if (!feeInfo) return { isTimeOverride: false, minutesElapsed: 0, effectiveFeePercent: 0 };
@@ -103,23 +106,25 @@ const CancelOrderModal = ({ order, onClose, onCancelled }: Props) => {
         </div>
 
         <div className="p-4 space-y-4">
-          {/* Cash/card: no refund needed */}
-          {!isPrepaid && (
+          {/* Sem reembolso: dinheiro/cartão na entrega OU PIX ainda não pago */}
+          {!hasRefund && (
             <div className="bg-primary/10 border border-primary/30 rounded-xl p-3 flex items-start gap-2">
               <Banknote className="h-5 w-5 text-primary mt-0.5 shrink-0" />
               <div>
                 <p className="text-sm font-semibold text-foreground">
-                  Pagamento na entrega
+                  {isPrepaid ? "PIX ainda não pago" : "Pagamento na entrega"}
                 </p>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Como o pagamento é em {order.payment_method === "cartao" ? "cartão" : "dinheiro"} na entrega, você ainda não pagou. O pedido será cancelado sem cobrança.
+                  {isPrepaid
+                    ? "Como o PIX ainda não foi confirmado, nenhum valor foi cobrado. O pedido será cancelado sem reembolso."
+                    : `Como o pagamento é em ${order.payment_method === "cartao" ? "cartão" : "dinheiro"} na entrega, você ainda não pagou. O pedido será cancelado sem cobrança.`}
                 </p>
               </div>
             </div>
           )}
 
-          {/* PIX/wallet: show refund details */}
-          {isPrepaid && (
+          {/* PIX/wallet PAGO: mostra detalhes do reembolso */}
+          {hasRefund && (
             <>
               {/* Time override banner */}
               {isTimeOverride && (
