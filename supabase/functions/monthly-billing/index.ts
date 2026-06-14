@@ -42,6 +42,13 @@ Deno.serve(async (req) => {
       token === EXTERNAL_KEY ||
       (cronSecret !== "" && token === cronSecret));
 
+  // Bypass adicional para E2E/tooling interno
+  const e2eSecret = Deno.env.get("E2E_ADMIN_SECRET") || "";
+  const e2eHdr = req.headers.get("x-e2e-secret") || "";
+  if (!isAdminCaller && e2eSecret && e2eHdr === e2eSecret) {
+    isAdminCaller = true;
+  }
+
   if (!isAdminCaller && token) {
     // Try as a user JWT against the external project
     try {
