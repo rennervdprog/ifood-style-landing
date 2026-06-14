@@ -1223,10 +1223,31 @@ const CheckoutPage = () => {
                     <p className="mt-2">Em pedidos para retirada na loja, não há taxa de entrega.</p>
                   </WhyThisCharge>
                 </span>
-                <span className={`font-semibold ${couponType === "free_shipping" ? "text-green-600 line-through" : "text-foreground"}`}>
+                <span className={`font-semibold ${(couponType === "free_shipping" || freeDeliveryByThreshold) ? "text-green-600 line-through" : "text-foreground"}`}>
                   {calculatingFee ? "..." : `${formatBRL(activeDeliveryFee)}`}
                 </span>
               </div>
+              )}
+
+              {!isPickup && freeDeliveryByThreshold && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-green-600 font-medium">🚚 Frete grátis (cortesia da loja)</span>
+                  <span className="font-bold text-green-600">R$ 0,00</span>
+                </div>
+              )}
+
+              {!isPickup && !freeDeliveryByThreshold && thresholdMissing > 0 && (
+                <div className="mt-1 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2">
+                  <p className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">
+                    Adicione mais <strong>{formatBRL(thresholdMissing)}</strong> e ganhe <strong>frete grátis</strong>!
+                  </p>
+                  <div className="mt-1.5 h-1.5 w-full rounded-full bg-emerald-500/20 overflow-hidden">
+                    <div
+                      className="h-full bg-emerald-500 transition-all"
+                      style={{ width: `${Math.min(100, (subtotal / storeFreeThreshold) * 100)}%` }}
+                    />
+                  </div>
+                </div>
               )}
 
               {!isPickup && feeBreakdown && couponType !== "free_shipping" && (
