@@ -378,6 +378,24 @@ const AuthPage = () => {
             </div>
           )}
 
+          {mode === "signup" && (
+            <div>
+              <label className="text-xs font-semibold text-slate-500 tracking-wide mb-1.5 block">WhatsApp</label>
+              <div className="relative">
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <input
+                  type="tel"
+                  inputMode="numeric"
+                  placeholder="(14) 99999-9999"
+                  value={whatsapp}
+                  onChange={(e) => setWhatsapp(maskWhatsApp(e.target.value))}
+                  maxLength={15}
+                  className={inputClass}
+                />
+              </div>
+            </div>
+          )}
+
           {mode !== "forgot" && (
             <>
               <div>
@@ -429,24 +447,6 @@ const AuthPage = () => {
                 </div>
               )}
             </>
-          )}
-
-          {mode === "signup" && (
-            <div>
-              <label className="text-xs font-semibold text-slate-500 tracking-wide mb-1.5 block">WhatsApp</label>
-              <div className="relative">
-                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                <input
-                  type="tel"
-                  inputMode="numeric"
-                  placeholder="(14) 99999-9999"
-                  value={whatsapp}
-                  onChange={(e) => setWhatsapp(maskWhatsApp(e.target.value))}
-                  maxLength={15}
-                  className={inputClass}
-                />
-              </div>
-            </div>
           )}
 
           {mode === "login" && (
