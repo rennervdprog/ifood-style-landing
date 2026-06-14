@@ -58,9 +58,19 @@ const planColors: Record<DisplayPlan, string> = {
   commission_only: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30",
 };
 
-function resolveDisplayPlan(plan: { plan_type: string; monthly_fee: number } | null | undefined): DisplayPlan | null {
+function resolveDisplayPlan(
+  plan: { plan_type: string; monthly_fee: number } | null | undefined,
+  supporterFee?: number,
+): DisplayPlan | null {
   if (!plan) return null;
-  if (plan.plan_type === "fixed" && (Number(plan.monthly_fee) === SUPPORTER_FEE || Number(plan.monthly_fee) === 130)) return "supporter";
+  // supporter é armazenado como plan_type='fixed'. Detectamos por:
+  //  - fee bate com o valor do template supporter (configurável); ou
+  //  - valores históricos (75 / 130) para retrocompatibilidade.
+  if (plan.plan_type === "fixed") {
+    const fee = Number(plan.monthly_fee);
+    if (fee === SUPPORTER_FEE || fee === 130) return "supporter";
+    if (supporterFee != null && fee === Number(supporterFee)) return "supporter";
+  }
   return plan.plan_type as PlanType;
 }
 
@@ -171,32 +181,46 @@ export default function AdminPlanManager() {
   const handleSetPlan = async (storeId: string, planType: PlanType, monthlyFee: number, commissionRate: number) => {
     setSaving(storeId);
     try {
-      // Delete existing plan (unique constraint on store_id)
-      await supabase
+      // Preserva overrides VIP, PDV e trial — UPDATE quando já existe, INSERT caso contrário.
+      const { data: existing } = await supabase
         .from("store_plans")
-        .delete()
-        .eq("store_id", storeId);
+        .select("id")
+        .eq("store_id", storeId)
+        .maybeSingle();
 
-      // Create new plan
-      const { error } = await supabase
-        .from("store_plans")
-        .insert({
-          store_id: storeId,
-          plan_type: planType,
-          monthly_fee: monthlyFee,
-          commission_rate: commissionRate,
-          is_active: true,
-          started_at: new Date().toISOString(),
-          next_billing_date: monthlyFee > 0
-            ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
-            : null,
-          // PDV defaults por plano
-          pdv_enabled: false,
-          pdv_commission_rate: planType === "fixed" ? 0 : planType === "hybrid" ? 1.0 : 2.0,
-          pdv_commission_pending: 0,
-        });
+      const nextBilling = monthlyFee > 0
+        ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+        : null;
 
-      if (error) throw error;
+      if (existing) {
+        const { error } = await supabase
+          .from("store_plans")
+          .update({
+            plan_type: planType,
+            monthly_fee: monthlyFee,
+            commission_rate: commissionRate,
+            is_active: true,
+            next_billing_date: nextBilling,
+          } as any)
+          .eq("store_id", storeId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from("store_plans")
+          .insert({
+            store_id: storeId,
+            plan_type: planType,
+            monthly_fee: monthlyFee,
+            commission_rate: commissionRate,
+            is_active: true,
+            started_at: new Date().toISOString(),
+            next_billing_date: nextBilling,
+            pdv_enabled: false,
+            pdv_commission_rate: planType === "fixed" ? 0 : planType === "hybrid" ? 1.0 : 2.0,
+            pdv_commission_pending: 0,
+          });
+        if (error) throw error;
+      }
 
       // Also update the store's commission_rate for backward compatibility
       await supabase
@@ -266,7 +290,7 @@ export default function AdminPlanManager() {
   };
   (stores || []).forEach(s => {
     const plan = getStorePlan(s.id);
-    const display = resolveDisplayPlan(plan);
+    const display = resolveDisplayPlan(plan, planDefaults.supporter.monthly_fee);
     if (display) planStats[display]++;
     else planStats.no_plan++;
   });
@@ -406,7 +430,7 @@ export default function AdminPlanManager() {
         {filteredStores.map(store => {
           const plan = getStorePlan(store.id);
           const isExpanded = expandedStore === store.id;
-          const currentDisplay = resolveDisplayPlan(plan);
+          const currentDisplay = resolveDisplayPlan(plan, planDefaults.supporter.monthly_fee);
 
           return (
             <div key={store.id} className="bg-card rounded-2xl border border-border overflow-hidden">
@@ -522,7 +546,8 @@ export default function AdminPlanManager() {
                       currentPixOverride={(plan as any).pix_operational_fee_override}
                       currentDeliveryOverride={(plan as any).platform_delivery_split_override}
                       currentPdvFixedFee={(plan as any).pdv_fixed_fee_per_sale}
-                      planType={(plan.plan_type as PlanType)}
+                      displayPlan={currentDisplay ?? (plan.plan_type as PlanType)}
+                      planDefault={planDefaults[currentDisplay ?? (plan.plan_type as PlanType)]}
                       onSave={() => {
                         queryClient.invalidateQueries({ queryKey: ["admin-store-plans"] });
                         queryClient.invalidateQueries({ queryKey: ["admin-all-stores"] });
@@ -592,16 +617,20 @@ export default function AdminPlanManager() {
   );
 }
 
-function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride, currentDeliveryOverride, currentPdvFixedFee, planType, onSave }: {
+function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride, currentDeliveryOverride, currentPdvFixedFee, displayPlan, planDefault, onSave }: {
   storeId: string;
   currentFee: number;
   currentRate: number;
   currentPixOverride: number | null | undefined;
   currentDeliveryOverride: number | null | undefined;
   currentPdvFixedFee: number | null | undefined;
-  planType: PlanType;
+  displayPlan: DisplayPlan;
+  planDefault: { monthly_fee: number; commission_rate: number };
   onSave: () => void;
 }) {
+  // supporter é gravado no banco como plan_type='fixed'
+  const dbPlanType: PlanType = displayPlan === "supporter" ? "fixed" : displayPlan;
+  const defaultPdvFixed = dbPlanType === "fixed" ? 1 : 0;
   const [fee, setFee] = useState(currentFee);
   const [rate, setRate] = useState(currentRate);
   const [pdvFixedFee, setPdvFixedFee] = useState(currentPdvFixedFee ?? 0);
@@ -622,11 +651,13 @@ function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride
     finalPix !== (currentPixOverride ?? null) ||
     finalDelivery !== (currentDeliveryOverride ?? null);
 
-  // Detectar se tem valores VIP ativos
+  // Detectar valores VIP comparando com o default REAL do plano (vindo de plan_templates).
   const isVip =
-    (currentFee !== (planType === 'fixed' ? 90 : planType === 'hybrid' ? 50 : 0)) ||
-    (currentPixOverride != null) || (currentDeliveryOverride != null) ||
-    (currentPdvFixedFee != null && currentPdvFixedFee !== 1);
+    Number(currentFee) !== Number(planDefault.monthly_fee) ||
+    Number(currentRate) !== Number(planDefault.commission_rate) ||
+    currentPixOverride != null ||
+    currentDeliveryOverride != null ||
+    (currentPdvFixedFee != null && Number(currentPdvFixedFee) !== defaultPdvFixed);
 
   const handleSave = async () => {
     setSaving(true);
@@ -654,16 +685,16 @@ function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride
   };
 
   const handleReset = async () => {
-    const defaults = { fixed: { fee: 90, rate: 0 }, hybrid: { fee: 50, rate: 2.5 }, commission_only: { fee: 0, rate: 6 } };
-    const d = defaults[planType] || defaults.commission_only;
+    // Usa o default REAL do plano (plan_templates) e respeita supporter.
+    const d = { fee: Number(planDefault.monthly_fee), rate: Number(planDefault.commission_rate) };
     setSaving(true);
     try {
       await supabase.from("store_plans").update({
-        monthly_fee: d.fee, commission_rate: d.rate, pdv_fixed_fee_per_sale: planType === 'fixed' ? 1.00 : 0,
+        monthly_fee: d.fee, commission_rate: d.rate, pdv_fixed_fee_per_sale: defaultPdvFixed,
         pix_operational_fee_override: null, platform_delivery_split_override: null,
       } as any).eq("store_id", storeId).eq("is_active", true);
       setFee(d.fee); setRate(d.rate);
-      setPdvFixedFee(planType === 'fixed' ? 1 : 0);
+      setPdvFixedFee(defaultPdvFixed);
       setPixOverrideEnabled(false); setDeliveryOverrideEnabled(false);
       toast.success("Valores resetados para o padrão do plano.");
       onSave();
