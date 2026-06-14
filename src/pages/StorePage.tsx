@@ -21,6 +21,7 @@ import { useStoreContext } from "@/contexts/StoreContext";
 import { useStorePlan } from "@/hooks/useStorePlan";
 import { getStoreAppSlug } from "@/components/StoreAppGuard";
 import { checkStoreAccess, MAX_DISTANCE_KM } from "@/lib/fraudCheck";
+import { getEffectivePrice, isPromoActive, getPromoDiscountPct } from "@/lib/promoPrice";
 
 interface Product {
   id: string;
@@ -32,12 +33,28 @@ interface Product {
   is_available: boolean;
   section_id: string | null;
   metadata?: Record<string, any>;
+  promo_active?: boolean | null;
+  promo_price?: number | null;
+  promo_starts_at?: string | null;
+  promo_ends_at?: string | null;
+  promo_collection_id?: string | null;
+  is_bestseller?: boolean | null;
 }
 
 interface MenuSection {
   id: string;
   name: string;
   sort_order: number;
+}
+
+interface PromoCollection {
+  id: string;
+  store_id: string;
+  name: string;
+  subtitle: string | null;
+  emoji: string | null;
+  sort_order: number;
+  is_active: boolean;
 }
 
 const getPageScrollElement = (): HTMLElement => {
@@ -219,6 +236,34 @@ const StorePage = () => {
     enabled: !!storeId,
     staleTime: 1000 * 60 * 3,
   });
+
+  // Coleções de promoção ativas (ex.: "PROMOÇÃO RUMO AO HEXA 🚀")
+  const { data: promoCollections = [] } = useQuery({
+    queryKey: ["store-promo-collections", storeId],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("promo_collections")
+        .select("*")
+        .eq("store_id", storeId!)
+        .eq("is_active", true)
+        .order("sort_order", { ascending: true });
+      if (error) throw error;
+      return (data || []) as PromoCollection[];
+    },
+    enabled: !!storeId,
+    staleTime: 1000 * 60 * 3,
+  });
+
+  // Mapa coleçãoId → produtos ativos
+  const productsByCollection = useMemo(() => {
+    const map: Record<string, Product[]> = {};
+    (promoCollections || []).forEach(c => { map[c.id] = []; });
+    (products || []).forEach(p => {
+      const cid = (p as any).promo_collection_id;
+      if (cid && map[cid]) map[cid].push(p);
+    });
+    return map;
+  }, [products, promoCollections]);
 
   // "Peça de novo" - products user has ordered before from this store
   const { data: reorderProducts } = useQuery({
