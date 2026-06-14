@@ -58,9 +58,19 @@ const planColors: Record<DisplayPlan, string> = {
   commission_only: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30",
 };
 
-function resolveDisplayPlan(plan: { plan_type: string; monthly_fee: number } | null | undefined): DisplayPlan | null {
+function resolveDisplayPlan(
+  plan: { plan_type: string; monthly_fee: number } | null | undefined,
+  supporterFee?: number,
+): DisplayPlan | null {
   if (!plan) return null;
-  if (plan.plan_type === "fixed" && (Number(plan.monthly_fee) === SUPPORTER_FEE || Number(plan.monthly_fee) === 130)) return "supporter";
+  // supporter é armazenado como plan_type='fixed'. Detectamos por:
+  //  - fee bate com o valor do template supporter (configurável); ou
+  //  - valores históricos (75 / 130) para retrocompatibilidade.
+  if (plan.plan_type === "fixed") {
+    const fee = Number(plan.monthly_fee);
+    if (fee === SUPPORTER_FEE || fee === 130) return "supporter";
+    if (supporterFee != null && fee === Number(supporterFee)) return "supporter";
+  }
   return plan.plan_type as PlanType;
 }
 
