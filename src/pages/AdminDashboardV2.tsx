@@ -416,10 +416,10 @@ const AdminDashboard = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orders")
-        .select("*, order_items(*, products(name))")
+        .select("*, order_items(id, quantity, unit_price, observations, addons, products(name))")
         .eq("store_id", store!.id)
         .order("created_at", { ascending: false })
-        .limit(500);
+        .limit(300);
       if (error) throw error;
       return data;
     },
