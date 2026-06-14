@@ -3,10 +3,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, FlaskConical, Trash2, RefreshCw, Wallet, Receipt, Zap } from "lucide-react";
+import { Loader2, FlaskConical, Trash2, RefreshCw, Wallet, Receipt, Zap, Recycle } from "lucide-react";
 import { toast } from "sonner";
 
-type Action = "seed" | "cleanup" | "status" | "provision-asaas" | "panel" | "e2e-pix";
+type Action = "seed" | "cleanup" | "status" | "provision-asaas" | "panel" | "e2e-pix" | "reuse-wallets";
 type Result = { ok?: boolean; created?: any[]; removed?: string[]; stores?: any[]; results?: any[]; password?: string; error?: string; steps?: any[]; issues?: string[]; final?: any; order_id?: string; asaas_payment_id?: string };
 
 export default function SandboxTestsPage() {
@@ -67,6 +67,10 @@ export default function SandboxTestsPage() {
             <Button variant="secondary" disabled={!!loading} onClick={() => run("provision-asaas")}>
               {loading === "provision-asaas" ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Wallet className="h-4 w-4 mr-2" />}
               Criar subcontas Asaas
+            </Button>
+            <Button variant="secondary" disabled={!!loading} onClick={() => run("reuse-wallets")}>
+              {loading === "reuse-wallets" ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Recycle className="h-4 w-4 mr-2" />}
+              Reaproveitar wallets
             </Button>
             <Button variant="secondary" disabled={!!loading} onClick={() => run("panel")}>
               {loading === "panel" ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Receipt className="h-4 w-4 mr-2" />}
