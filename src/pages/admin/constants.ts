@@ -3,7 +3,7 @@ import {
   LayoutDashboard, ListOrdered, Users, UtensilsCrossed,
   Plus, CircleDot, Coins, BarChart3, CreditCard, Star,
   Bike, AlertTriangle, GraduationCap, Settings,
-  MessageCircle, ShoppingCart, Headphones, Tag,
+  MessageCircle, ShoppingCart, Headphones, Tag, Flame,
 } from "lucide-react";
 import type { DashboardTab, OrderStatus } from "./types";
 
@@ -111,6 +111,7 @@ export const dashboardGroups: DashboardGroup[] = [
     subTabs: [
       { key: "menu", label: "Produtos", icon: UtensilsCrossed },
       { key: "addons", label: "Adicionais", icon: Plus },
+      { key: "promotions", label: "Promoções", icon: Flame },
       { key: "bordas", label: "Pizzaria", icon: CircleDot, pizzaOnly: true },
     ],
   },

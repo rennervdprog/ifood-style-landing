@@ -8,6 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { Minus, Plus, ShoppingCart, Pizza, AlertTriangle, X, ArrowLeft } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { CartAddon } from "@/contexts/CartContext";
+import { getEffectivePrice, isPromoActive, getPromoDiscountPct } from "@/lib/promoPrice";
 
 interface Product {
   id: string;
@@ -280,8 +281,8 @@ const ProductDetailModal = ({ product, storeName, storeCategory, singleSize = fa
       ? replacementPrice
       : 0
     : hasSizes && selectedSize
-      ? sizes.find((s) => s.name === selectedSize)?.price || product?.price || 0
-      : product?.price || 0;
+      ? sizes.find((s) => s.name === selectedSize)?.price || getEffectivePrice(product as any) || 0
+      : getEffectivePrice(product as any) || 0;
   const unitPrice = basePrice + addonsTotal;
   const lineTotal = unitPrice * quantity;
 
@@ -483,7 +484,22 @@ const ProductDetailModal = ({ product, storeName, storeCategory, singleSize = fa
 
       <section className="space-y-2">
         <h2 className="text-2xl font-extrabold leading-tight text-foreground sm:text-3xl">{product.name}</h2>
-        {!hasSizes && <p className="text-2xl font-black text-primary">{formatBRL(product.price)}</p>}
+        {!hasSizes && (() => {
+          const promo = isPromoActive(product as any);
+          const eff = getEffectivePrice(product as any);
+          const pct = getPromoDiscountPct(product as any);
+          return (
+            <div className="flex items-center gap-2 flex-wrap">
+              <p className={`text-2xl font-black ${promo ? "text-orange-600" : "text-primary"}`}>{formatBRL(eff)}</p>
+              {promo && (
+                <>
+                  <p className="text-base font-bold line-through text-destructive">{formatBRL(Number(product.price))}</p>
+                  {pct && <span className="text-[10px] font-black bg-foreground text-background px-2 py-1 rounded-full">Promoção! -{pct}%</span>}
+                </>
+              )}
+            </div>
+          );
+        })()}
         {product.description && <p className="text-sm font-medium leading-relaxed text-muted-foreground sm:text-base">{product.description}</p>}
       </section>
 

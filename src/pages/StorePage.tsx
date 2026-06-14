@@ -21,6 +21,7 @@ import { useStoreContext } from "@/contexts/StoreContext";
 import { useStorePlan } from "@/hooks/useStorePlan";
 import { getStoreAppSlug } from "@/components/StoreAppGuard";
 import { checkStoreAccess, MAX_DISTANCE_KM } from "@/lib/fraudCheck";
+import { getEffectivePrice, isPromoActive, getPromoDiscountPct } from "@/lib/promoPrice";
 
 interface Product {
   id: string;
@@ -32,12 +33,28 @@ interface Product {
   is_available: boolean;
   section_id: string | null;
   metadata?: Record<string, any>;
+  promo_active?: boolean | null;
+  promo_price?: number | null;
+  promo_starts_at?: string | null;
+  promo_ends_at?: string | null;
+  promo_collection_id?: string | null;
+  is_bestseller?: boolean | null;
 }
 
 interface MenuSection {
   id: string;
   name: string;
   sort_order: number;
+}
+
+interface PromoCollection {
+  id: string;
+  store_id: string;
+  name: string;
+  subtitle: string | null;
+  emoji: string | null;
+  sort_order: number;
+  is_active: boolean;
 }
 
 const getPageScrollElement = (): HTMLElement => {
@@ -219,6 +236,34 @@ const StorePage = () => {
     enabled: !!storeId,
     staleTime: 1000 * 60 * 3,
   });
+
+  // Coleções de promoção ativas (ex.: "PROMOÇÃO RUMO AO HEXA 🚀")
+  const { data: promoCollections = [] } = useQuery({
+    queryKey: ["store-promo-collections", storeId],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("promo_collections")
+        .select("*")
+        .eq("store_id", storeId!)
+        .eq("is_active", true)
+        .order("sort_order", { ascending: true });
+      if (error) throw error;
+      return (data || []) as PromoCollection[];
+    },
+    enabled: !!storeId,
+    staleTime: 1000 * 60 * 3,
+  });
+
+  // Mapa coleçãoId → produtos ativos
+  const productsByCollection = useMemo(() => {
+    const map: Record<string, Product[]> = {};
+    (promoCollections || []).forEach(c => { map[c.id] = []; });
+    (products || []).forEach(p => {
+      const cid = (p as any).promo_collection_id;
+      if (cid && map[cid]) map[cid].push(p);
+    });
+    return map;
+  }, [products, promoCollections]);
 
   // "Peça de novo" - products user has ordered before from this store
   const { data: reorderProducts } = useQuery({
@@ -564,13 +609,14 @@ const StorePage = () => {
       toast.error("Produto esgotado");
       return;
     }
+    const effective = getEffectivePrice(product as any);
     addItem(
       {
         id: product.id,
         store_id: product.store_id,
         store_name: store?.name || "",
         name: product.name,
-        price: Number(product.price),
+        price: effective,
         basePrice: Number(product.price),
         image_url: product.image_url,
         addons: [],
@@ -1301,6 +1347,44 @@ const StorePage = () => {
           </div>
         ) : (
           <>
+            {/* ===== PROMO COLLECTIONS ===== */}
+            {(promoCollections || [])
+              .filter(c => (productsByCollection[c.id]?.length || 0) > 0)
+              .map(collection => {
+                const colProducts = productsByCollection[collection.id] || [];
+                return (
+                  <div key={`promo-${collection.id}`} className="scroll-mt-16">
+                    <div className="rounded-2xl border-2 border-orange-500/30 bg-gradient-to-br from-orange-500/10 via-orange-500/5 to-transparent p-4 mb-3">
+                      <div className="flex items-center gap-2">
+                        {collection.emoji && <span className="text-2xl">{collection.emoji}</span>}
+                        <div className="flex-1 min-w-0">
+                          <h2 className="text-base font-black text-foreground leading-tight uppercase tracking-tight">
+                            {collection.name}
+                          </h2>
+                          {collection.subtitle && (
+                            <p className="text-[11px] font-bold text-orange-600 dark:text-orange-400 uppercase tracking-wider mt-0.5">
+                              {collection.subtitle}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <div className={isAdega ? "grid grid-cols-2 gap-2.5" : "space-y-2.5"}>
+                      {colProducts.map(product => (
+                        <ProductCard
+                          key={`promo-${collection.id}-${product.id}`}
+                          product={product}
+                          disabled={!storeStatus.isOpen}
+                          storeCategory={store?.category}
+                          onClick={() => openProduct(product)}
+                          onQuickAdd={isAdega ? quickAddAdega : undefined}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+
             {visibleSections.map(section => {
               const sectionProducts = productsBySection(section.id);
               return (
@@ -1433,14 +1517,17 @@ const ProductCard = memo(({ product, disabled, onClick, storeCategory, onQuickAd
   const isBlocked = disabled || isOutOfStock;
   const isAdegaCard = cat === "adegas";
   const packQty = Number(meta.pack_qty) || 0;
-  const unitPrice = packQty > 0 ? Number(product.price) / packQty : 0;
+  const promoActive = isPromoActive(product as any);
+  const effective = getEffectivePrice(product as any);
+  const promoPct = getPromoDiscountPct(product as any);
+  const unitPrice = packQty > 0 ? effective / packQty : 0;
 
   // ===== PIZZA =====
   // ===== FARMACIA =====
   const isPharmacy = cat === "farmacias";
 
   // Price display logic
-  const priceDisplay = `${formatBRL(product.price)}`;
+  const priceDisplay = `${formatBRL(effective)}`;
 
   // CTA label
   const ctaLabel = (() => {
@@ -1471,6 +1558,16 @@ const ProductCard = memo(({ product, disabled, onClick, storeCategory, onQuickAd
         <div>
           {/* Badges row */}
           <div className="flex flex-wrap gap-1 mb-1">
+            {promoActive && (
+              <span className="text-[10px] bg-foreground text-background px-1.5 py-0.5 rounded-full font-black">
+                Promoção!{promoPct ? ` -${promoPct}%` : ""}
+              </span>
+            )}
+            {(product as any).is_bestseller && (
+              <span className="text-[10px] bg-foreground text-background px-1.5 py-0.5 rounded-full font-black">
+                + Vendido!
+              </span>
+            )}
             {/* Pharmacy: prescription badge */}
             {isPharmacy && meta.requires_prescription && (
               <span className="text-[10px] bg-destructive/10 text-destructive px-1.5 py-0.5 rounded-full font-bold">
@@ -1735,9 +1832,16 @@ const ProductCard = memo(({ product, disabled, onClick, storeCategory, onQuickAd
         {/* Price + CTA */}
         <div className="flex items-center justify-between mt-2">
           <div className="flex flex-col">
-            <span className={`font-black leading-tight ${isAdegaCard ? "text-lg text-primary" : "text-sm text-primary"}`}>
-              {priceDisplay}
-            </span>
+            <div className="flex items-baseline gap-1.5 flex-wrap">
+              {promoActive && (
+                <span className="text-[11px] line-through text-destructive font-semibold">
+                  {formatBRL(Number(product.price))}
+                </span>
+              )}
+              <span className={`font-black leading-tight ${isAdegaCard ? "text-lg" : "text-sm"} ${promoActive ? "text-orange-600" : "text-primary"}`}>
+                {priceDisplay}
+              </span>
+            </div>
             {isAdegaCard && unitPrice > 0 && (
               <span className="text-[10px] text-muted-foreground font-semibold">
                 {formatBRL(unitPrice)}/un
