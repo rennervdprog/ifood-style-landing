@@ -1463,7 +1463,7 @@ const ProductCard = memo(({ product, disabled, onClick, storeCategory, onQuickAd
       disabled={isOutOfStock}
       className={`w-full text-left transition-all group rounded-2xl ${
         isAdegaCard
-          ? `flex flex-col-reverse bg-zinc-900 border border-zinc-800 p-2.5 gap-2 ${isBlocked ? "opacity-60" : "hover:border-amber-500/40 active:scale-[0.98]"}`
+          ? `flex flex-col-reverse bg-card border border-border p-2.5 gap-2 ${isBlocked ? "opacity-60" : "hover:border-primary/40 active:scale-[0.98]"}`
           : `flex gap-3 bg-card p-3 border border-border ${isBlocked ? "opacity-60" : "hover:shadow-lg hover:border-primary/20 active:scale-[0.98]"}`
       }`}
     >
@@ -1611,10 +1611,10 @@ const ProductCard = memo(({ product, disabled, onClick, storeCategory, onQuickAd
           </div>
 
           {/* Product name */}
-          <h3 className={`font-bold text-sm line-clamp-1 transition-colors ${isAdegaCard ? "text-zinc-100 group-hover:text-amber-400" : "text-foreground group-hover:text-primary"}`}>
+          <h3 className={`font-bold text-sm line-clamp-1 transition-colors ${isAdegaCard ? "text-foreground group-hover:text-primary" : "text-foreground group-hover:text-primary"}`}>
             {product.name}
             {volumeInfo && (
-              <span className={`font-medium ${isAdegaCard ? "text-zinc-400" : "text-muted-foreground"}`}> · {volumeInfo}</span>
+              <span className="font-medium text-muted-foreground"> · {volumeInfo}</span>
             )}
           </h3>
 
@@ -1735,11 +1735,11 @@ const ProductCard = memo(({ product, disabled, onClick, storeCategory, onQuickAd
         {/* Price + CTA */}
         <div className="flex items-center justify-between mt-2">
           <div className="flex flex-col">
-            <span className={`font-black leading-tight ${isAdegaCard ? "text-lg text-amber-400" : "text-sm text-primary"}`}>
+            <span className={`font-black leading-tight ${isAdegaCard ? "text-lg text-primary" : "text-sm text-primary"}`}>
               {priceDisplay}
             </span>
             {isAdegaCard && unitPrice > 0 && (
-              <span className="text-[10px] text-zinc-400 font-semibold">
+              <span className="text-[10px] text-muted-foreground font-semibold">
                 {formatBRL(unitPrice)}/un
               </span>
             )}
@@ -1748,7 +1748,7 @@ const ProductCard = memo(({ product, disabled, onClick, storeCategory, onQuickAd
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); onQuickAdd(product); }}
-              className="text-xs font-black w-9 h-9 rounded-full bg-amber-500 text-zinc-950 hover:bg-amber-400 active:scale-95 transition shadow-[0_0_12px_rgba(245,158,11,0.45)] flex items-center justify-center"
+              className="text-xs font-black w-9 h-9 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 active:scale-95 transition shadow-md flex items-center justify-center"
               aria-label={`Adicionar ${product.name} ao carrinho`}
             >
               +
@@ -1780,14 +1780,14 @@ const ProductCard = memo(({ product, disabled, onClick, storeCategory, onQuickAd
           <img
             src={product.image_url}
             alt={product.name}
-            className={`${isAdegaCard ? "w-full h-32 rounded-xl object-contain bg-zinc-950/60 p-2" : "w-24 h-24 rounded-xl object-cover shadow-sm group-hover:shadow-md transition-shadow"} ${isOutOfStock ? "grayscale" : ""}`}
+            className={`${isAdegaCard ? "w-full h-32 rounded-xl object-contain bg-muted p-2" : "w-24 h-24 rounded-xl object-cover shadow-sm group-hover:shadow-md transition-shadow"} ${isOutOfStock ? "grayscale" : ""}`}
             loading="lazy"
             decoding="async"
             width={isAdegaCard ? 200 : 96}
             height={isAdegaCard ? 128 : 96}
           />
         ) : (
-          <div className={`${isAdegaCard ? "w-full h-32 bg-zinc-950/60" : "w-24 h-24 bg-muted"} rounded-xl flex items-center justify-center ${isOutOfStock ? "grayscale" : ""}`}>
+          <div className={`${isAdegaCard ? "w-full h-32 bg-muted" : "w-24 h-24 bg-muted"} rounded-xl flex items-center justify-center ${isOutOfStock ? "grayscale" : ""}`}>
             <span className="text-3xl">{emoji}</span>
           </div>
         )}
