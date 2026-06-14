@@ -305,11 +305,21 @@ Deno.serve(async (req) => {
 
     if (!ord) return json({ error: "Pedido não encontrado" }, 404);
     if (!isWebhookBypass && ord.client_id !== userId) return json({ error: "Sem permissão" }, 403);
-    if (ord.status !== "aguardando_pagamento") {
+    // When called by the asaas-webhook, the order may already be in "pendente"
+    // (the webhook updates status before delegating here). We MUST still run
+    // the split/transfer logic — confirmAndSplit is idempotent and skips the
+    // status transition when already moved. Only short-circuit for end states.
+    if (!isWebhookBypass && ord.status !== "aguardando_pagamento") {
       // For cancelled/refused orders, confirmed must be false so the UI doesn't lie.
       const failedStatuses = new Set(["cancelado", "recusado", "cancelled", "refused"]);
       const isFailed = failedStatuses.has(String(ord.status));
       return json({ confirmed: !isFailed, status: ord.status, reason: isFailed ? "failed" : "already_processed" });
+    }
+    if (isWebhookBypass) {
+      const terminalStatuses = new Set(["cancelado", "recusado", "cancelled", "refused"]);
+      if (terminalStatuses.has(String(ord.status))) {
+        return json({ confirmed: false, status: ord.status, reason: "failed" });
+      }
     }
 
     // Query Asaas by externalReference
