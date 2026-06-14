@@ -39,10 +39,11 @@ const MensalidadesPanel = () => {
           const trialActive = p.trial_ends_at && new Date(p.trial_ends_at) > now;
           const nextBilling = p.next_billing_date ? new Date(p.next_billing_date) : null;
           const daysLate = nextBilling ? Math.floor((now.getTime() - nextBilling.getTime()) / 86400000) : 0;
+          const monthly = Number(p.monthly_fee || 0);
           let status: Status = "em_dia";
           if (!p.is_active) status = "inativo";
           else if (trialActive) status = "trial";
-          else if (daysLate > 0) status = "atrasado";
+          else if (daysLate > 0 && monthly > 0) status = "atrasado";
           const startedAt = p.started_at ? new Date(p.started_at) : null;
           const monthsActive = startedAt
             ? Math.max(1, Math.floor((now.getTime() - startedAt.getTime()) / (86400000 * 30)))
