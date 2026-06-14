@@ -546,7 +546,8 @@ export default function AdminPlanManager() {
                       currentPixOverride={(plan as any).pix_operational_fee_override}
                       currentDeliveryOverride={(plan as any).platform_delivery_split_override}
                       currentPdvFixedFee={(plan as any).pdv_fixed_fee_per_sale}
-                      planType={(plan.plan_type as PlanType)}
+                      displayPlan={currentDisplay ?? (plan.plan_type as PlanType)}
+                      planDefault={planDefaults[currentDisplay ?? (plan.plan_type as PlanType)]}
                       onSave={() => {
                         queryClient.invalidateQueries({ queryKey: ["admin-store-plans"] });
                         queryClient.invalidateQueries({ queryKey: ["admin-all-stores"] });
