@@ -56,6 +56,7 @@ Deno.serve(async (req) => {
         "Content-Type": "application/json",
         Authorization: `Bearer ${NATIVE_SVC}`,
         apikey: NATIVE_SVC,
+        "x-e2e-secret": e2eSecret,
       },
       body: JSON.stringify({ store_id: storeId, force: true }),
     });
