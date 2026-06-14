@@ -62,7 +62,7 @@ Deno.serve(async (req) => {
 
     if (storesErr) {
       console.error("Failed to load stores:", storesErr);
-      return json({ error: "DB error" }, 500);
+      return json({ error: "DB error", detail: storesErr.message, code: (storesErr as any).code }, 500);
     }
 
     const results: Array<Record<string, unknown>> = [];
