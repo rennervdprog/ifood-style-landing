@@ -142,7 +142,8 @@ export const PLANS: Record<StorePlanType, PlanInfo> = {
 };
 
 /** Ordem padrão para exibição (do mais barato pro mais completo). */
-export const PLANS_ORDER: StorePlanType[] = ["commission_only", "hybrid", "fixed", "supporter"];
+/** Plano "supporter" (Apoiador) está desativado para novos cadastros — oculto em toda a UI pública. */
+export const PLANS_ORDER: StorePlanType[] = ["commission_only", "hybrid", "fixed"];
 
 /** Linha única de explicação universal sobre a taxa de entrega. */
 export const DELIVERY_FEE_NOTE =
