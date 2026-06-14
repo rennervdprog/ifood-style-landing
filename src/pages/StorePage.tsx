@@ -1558,6 +1558,16 @@ const ProductCard = memo(({ product, disabled, onClick, storeCategory, onQuickAd
         <div>
           {/* Badges row */}
           <div className="flex flex-wrap gap-1 mb-1">
+            {promoActive && (
+              <span className="text-[10px] bg-foreground text-background px-1.5 py-0.5 rounded-full font-black">
+                Promoção!{promoPct ? ` -${promoPct}%` : ""}
+              </span>
+            )}
+            {(product as any).is_bestseller && (
+              <span className="text-[10px] bg-foreground text-background px-1.5 py-0.5 rounded-full font-black">
+                + Vendido!
+              </span>
+            )}
             {/* Pharmacy: prescription badge */}
             {isPharmacy && meta.requires_prescription && (
               <span className="text-[10px] bg-destructive/10 text-destructive px-1.5 py-0.5 rounded-full font-bold">
@@ -1822,9 +1832,16 @@ const ProductCard = memo(({ product, disabled, onClick, storeCategory, onQuickAd
         {/* Price + CTA */}
         <div className="flex items-center justify-between mt-2">
           <div className="flex flex-col">
-            <span className={`font-black leading-tight ${isAdegaCard ? "text-lg text-primary" : "text-sm text-primary"}`}>
-              {priceDisplay}
-            </span>
+            <div className="flex items-baseline gap-1.5 flex-wrap">
+              {promoActive && (
+                <span className="text-[11px] line-through text-destructive font-semibold">
+                  {formatBRL(Number(product.price))}
+                </span>
+              )}
+              <span className={`font-black leading-tight ${isAdegaCard ? "text-lg" : "text-sm"} ${promoActive ? "text-orange-600" : "text-primary"}`}>
+                {priceDisplay}
+              </span>
+            </div>
             {isAdegaCard && unitPrice > 0 && (
               <span className="text-[10px] text-muted-foreground font-semibold">
                 {formatBRL(unitPrice)}/un
