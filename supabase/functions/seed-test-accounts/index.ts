@@ -364,11 +364,28 @@ Deno.serve(async (req) => {
           neighborhood: "Centro",
           city: "Itatinga",
           cep: "18250000",
+          is_approved: true,
         })
         .eq("user_id", user.id);
-      // Cria/atualiza store do lojista (não existia)
-      const { data: existing } = await admin
-        .from("stores").select("id").eq("owner_id", user.id).maybeSingle();
+      // Cria/atualiza store do lojista. Dedupe defensivo: se houver MAIS DE
+      // UMA store para o mesmo owner OU com o mesmo nome `is_test`, mantém a
+      // mais antiga (com pedidos/wallet) e exclui as duplicadas vazias.
+      const { data: ownerStores } = await admin
+        .from("stores").select("id, created_at, asaas_wallet_id")
+        .eq("owner_id", user.id).order("created_at", { ascending: true });
+      const { data: sameNameStores } = await admin
+        .from("stores").select("id, owner_id, created_at, asaas_wallet_id")
+        .eq("name", s.name).eq("is_test", true).order("created_at", { ascending: true });
+      const allDup = [...(ownerStores || []), ...(sameNameStores || [])]
+        .filter((x, i, arr) => arr.findIndex((y) => y.id === x.id) === i);
+      // Keep the first row with a wallet, else the oldest
+      const keep = allDup.find((x: any) => x.asaas_wallet_id) || allDup[0];
+      for (const dup of allDup) {
+        if (keep && dup.id !== keep.id) {
+          try { await admin.from("stores").delete().eq("id", dup.id); } catch (_) {}
+        }
+      }
+      const existing = keep || null;
       if (!existing) {
         await admin.from("stores").insert({
           name: s.name,
@@ -463,6 +480,7 @@ Deno.serve(async (req) => {
           whatsapp_number: "14999990000",
           pix_type: "cpf",
           pix_key: m.cpf,
+          is_approved: true,
         })
         .eq("user_id", user.id);
       // Garante linha em drivers
@@ -504,6 +522,7 @@ Deno.serve(async (req) => {
           document: c.cpf,
           phone: "14999990000",
           whatsapp_number: "14999990000",
+          is_approved: true,
         })
         .eq("user_id", user.id);
       created.push({ kind: "cliente", email: c.email, user_id: user.id });
