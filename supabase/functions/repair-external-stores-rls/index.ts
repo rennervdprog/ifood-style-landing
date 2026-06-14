@@ -10,6 +10,11 @@ const json = (body: unknown, status = 200) =>
   });
 
 const REPAIR_SQL = `
+SELECT policyname, roles, cmd, qual
+FROM pg_policies
+WHERE schemaname = 'public' AND tablename = 'stores'
+ORDER BY policyname;
+
 DROP POLICY IF EXISTS "Store owners can read linked driver profiles" ON public.profiles;
 CREATE POLICY "Store owners can read linked driver profiles"
 ON public.profiles
@@ -29,8 +34,28 @@ DROP POLICY IF EXISTS "Platform admin can read all stores" ON public.stores;
 DROP POLICY IF EXISTS "Store drivers can read linked stores" ON public.stores;
 DROP POLICY IF EXISTS "Store drivers can read assigned store" ON public.stores;
 DROP POLICY IF EXISTS "Store owners can read own stores" ON public.stores;
+DROP POLICY IF EXISTS "Authenticated can read stores" ON public.stores;
+DROP POLICY IF EXISTS "Authenticated can read active stores" ON public.stores;
+DROP POLICY IF EXISTS "Authenticated can browse active stores" ON public.stores;
+DROP POLICY IF EXISTS "Authenticated can read stores for orders" ON public.stores;
+DROP POLICY IF EXISTS "Public can read active stores" ON public.stores;
+DROP POLICY IF EXISTS "Public can read active stores via view" ON public.stores;
+DROP POLICY IF EXISTS "Anyone can read active stores" ON public.stores;
+DROP POLICY IF EXISTS "Anyone can read stores" ON public.stores;
+DROP POLICY IF EXISTS "Qualquer pessoa pode visualizar lojas" ON public.stores;
+
+CREATE POLICY "Public can read stores"
+ON public.stores
+FOR SELECT
+TO public
+USING (true);
 
 NOTIFY pgrst, 'reload schema';
+
+SELECT policyname, roles, cmd, qual
+FROM pg_policies
+WHERE schemaname = 'public' AND tablename = 'stores'
+ORDER BY policyname;
 `;
 
 Deno.serve(async (req) => {
