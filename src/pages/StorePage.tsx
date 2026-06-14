@@ -1347,6 +1347,44 @@ const StorePage = () => {
           </div>
         ) : (
           <>
+            {/* ===== PROMO COLLECTIONS ===== */}
+            {(promoCollections || [])
+              .filter(c => (productsByCollection[c.id]?.length || 0) > 0)
+              .map(collection => {
+                const colProducts = productsByCollection[collection.id] || [];
+                return (
+                  <div key={`promo-${collection.id}`} className="scroll-mt-16">
+                    <div className="rounded-2xl border-2 border-orange-500/30 bg-gradient-to-br from-orange-500/10 via-orange-500/5 to-transparent p-4 mb-3">
+                      <div className="flex items-center gap-2">
+                        {collection.emoji && <span className="text-2xl">{collection.emoji}</span>}
+                        <div className="flex-1 min-w-0">
+                          <h2 className="text-base font-black text-foreground leading-tight uppercase tracking-tight">
+                            {collection.name}
+                          </h2>
+                          {collection.subtitle && (
+                            <p className="text-[11px] font-bold text-orange-600 dark:text-orange-400 uppercase tracking-wider mt-0.5">
+                              {collection.subtitle}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <div className={isAdega ? "grid grid-cols-2 gap-2.5" : "space-y-2.5"}>
+                      {colProducts.map(product => (
+                        <ProductCard
+                          key={`promo-${collection.id}-${product.id}`}
+                          product={product}
+                          disabled={!storeStatus.isOpen}
+                          storeCategory={store?.category}
+                          onClick={() => openProduct(product)}
+                          onQuickAdd={isAdega ? quickAddAdega : undefined}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+
             {visibleSections.map(section => {
               const sectionProducts = productsBySection(section.id);
               return (
