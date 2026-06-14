@@ -341,7 +341,27 @@ const AuthPage = () => {
           {mode === "login" && (
             <BiometricLoginButton onSuccess={() => navigate("/cliente", { replace: true })} />
           )}
-          {mode !== "reset" && (
+          {mode === "login" && (
+            <div>
+              <label className="text-xs font-semibold text-slate-500 tracking-wide mb-1.5 block">WhatsApp</label>
+              <div className="relative">
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <input
+                  type="tel"
+                  inputMode="text"
+                  placeholder="(14) 99999-9999"
+                  value={identifier}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setIdentifier(looksLikeEmail(v) ? v : maskWhatsApp(v));
+                  }}
+                  className={inputClass}
+                  autoComplete="username"
+                />
+              </div>
+            </div>
+          )}
+          {mode === "forgot" && (
             <div>
               <label className="text-xs font-semibold text-slate-500 tracking-wide mb-1.5 block">E-mail</label>
               <div className="relative">
@@ -409,42 +429,6 @@ const AuthPage = () => {
                 </div>
               )}
             </>
-          )}
-
-          {mode === "signup" && (
-            <div>
-              <label className="text-xs font-semibold text-slate-500 tracking-wide mb-1.5 block">Nome completo</label>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                <input
-                  type="text"
-                  placeholder="Seu nome"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  autoComplete="name"
-                  maxLength={80}
-                  className={inputClass}
-                />
-              </div>
-            </div>
-          )}
-
-          {mode === "signup" && (
-            <div>
-               <label className="text-xs font-semibold text-slate-500 tracking-wide mb-1.5 block">CPF ou CNPJ</label>
-              <div className="relative">
-                <FileText className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                <input
-                  type="text"
-                  inputMode="numeric"
-                   placeholder="CPF ou CNPJ"
-                   value={cpf}
-                   onChange={(e) => setCpf(formatDocument(e.target.value))}
-                   maxLength={18}
-                  className={inputClass}
-                />
-              </div>
-            </div>
           )}
 
           {mode === "signup" && (
