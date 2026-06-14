@@ -276,7 +276,7 @@ export default function AdminPlanManager() {
   };
   (stores || []).forEach(s => {
     const plan = getStorePlan(s.id);
-    const display = resolveDisplayPlan(plan);
+    const display = resolveDisplayPlan(plan, planDefaults.supporter.monthly_fee);
     if (display) planStats[display]++;
     else planStats.no_plan++;
   });
@@ -416,7 +416,7 @@ export default function AdminPlanManager() {
         {filteredStores.map(store => {
           const plan = getStorePlan(store.id);
           const isExpanded = expandedStore === store.id;
-          const currentDisplay = resolveDisplayPlan(plan);
+          const currentDisplay = resolveDisplayPlan(plan, planDefaults.supporter.monthly_fee);
 
           return (
             <div key={store.id} className="bg-card rounded-2xl border border-border overflow-hidden">
