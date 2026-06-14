@@ -58,6 +58,17 @@ const isValidCnpj = (value: string) => {
 
 export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
   const qc = useQueryClient();
+  // Chave de persistência local do rascunho — evita perder o que já foi digitado
+  // se o lojista fechar/recarregar o app antes de concluir. Inclui storeId para
+  // não vazar dados entre lojas no mesmo dispositivo.
+  const DRAFT_KEY = `asaas-subaccount-draft:${storeId}`;
+  const readDraft = (): { form?: any; personType?: "FISICA" | "JURIDICA"; step?: number } | null => {
+    try {
+      const raw = typeof window !== "undefined" ? window.localStorage.getItem(DRAFT_KEY) : null;
+      return raw ? JSON.parse(raw) : null;
+    } catch { return null; }
+  };
+  const draft = readDraft();
   const [step, setStep] = useState(1);
   const [submitting, setSubmitting] = useState(false);
   const [lastError, setLastError] = useState<string | null>(null);
@@ -87,7 +98,7 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
   });
 
   const [personType, setPersonType] = useState<"FISICA" | "JURIDICA">(
-    (onlyDigits(initialData?.cpfCnpj).length || 0) === 14 ? "JURIDICA" : "FISICA"
+    draft?.personType ?? ((onlyDigits(initialData?.cpfCnpj).length || 0) === 14 ? "JURIDICA" : "FISICA")
   );
 
   const [form, setForm] = useState({
@@ -109,7 +120,16 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
     site: "",
     pixAddressKey: onlyDigits(initialData?.cpfCnpj),
     pixAddressKeyType: "CPF" as PixKeyType,
+    ...(draft?.form || {}),
   });
+
+  // Persiste o rascunho em cada alteração (exceto o campo de confirmação de e-mail).
+  useEffect(() => {
+    try {
+      const { emailConfirm, ...safe } = form as any;
+      window.localStorage.setItem(DRAFT_KEY, JSON.stringify({ form: safe, personType, step }));
+    } catch {}
+  }, [form, personType, step, DRAFT_KEY]);
 
   useEffect(() => {
     if (initialData) {
@@ -330,6 +350,7 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
       }
 
       toast.success("Subconta criada! Split automático ativado. 🎉");
+      try { window.localStorage.removeItem(DRAFT_KEY); } catch {}
       qc.invalidateQueries({ queryKey: ["store-asaas", storeId] });
     } catch (e: any) {
       console.error("Erro ao criar subconta:", e);
@@ -355,6 +376,7 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
       }
       if ((data as any)?.error) throw new Error((data as any).error);
       toast.success("Subconta vinculada! ✅");
+      try { window.localStorage.removeItem(DRAFT_KEY); } catch {}
       setLastError(null); setDebugInfo(null);
       qc.invalidateQueries({ queryKey: ["store-asaas", storeId] });
     } catch (e: any) {
