@@ -819,6 +819,14 @@ const StorePage = () => {
             )}
 
             {/* Delivery info row: taxa, tempo, pedido mínimo */}
+            {Number((store as any)?.free_delivery_threshold) > 0 && (
+              <div className="mt-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 flex items-center gap-2">
+                <Bike className="h-4 w-4 text-emerald-500 shrink-0" />
+                <p className="text-[12px] font-bold text-emerald-700 dark:text-emerald-400 leading-tight">
+                  🚚 Frete grátis acima de {formatBRL(Number((store as any).free_delivery_threshold))}
+                </p>
+              </div>
+            )}
             {((store as any)?.own_delivery_fee != null ||
               (store as any)?.delivery_fee != null ||
               (store as any)?.estimated_delivery_time ||
