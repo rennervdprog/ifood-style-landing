@@ -61,6 +61,10 @@ Deno.serve(async (req) => {
       .not("asaas_pix_key", "is", null);
 
     if (storesErr) {
+      // Feature não provisionada no DB (coluna ausente) — não é erro fatal.
+      if ((storesErr as any).code === "42703") {
+        return json({ success: true, processed: 0, results: [], note: "auto_withdraw feature not provisioned on this database" });
+      }
       console.error("Failed to load stores:", storesErr);
       return json({ error: "DB error", detail: storesErr.message, code: (storesErr as any).code }, 500);
     }
