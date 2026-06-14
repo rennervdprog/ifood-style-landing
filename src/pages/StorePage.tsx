@@ -609,13 +609,14 @@ const StorePage = () => {
       toast.error("Produto esgotado");
       return;
     }
+    const effective = getEffectivePrice(product as any);
     addItem(
       {
         id: product.id,
         store_id: product.store_id,
         store_name: store?.name || "",
         name: product.name,
-        price: Number(product.price),
+        price: effective,
         basePrice: Number(product.price),
         image_url: product.image_url,
         addons: [],
