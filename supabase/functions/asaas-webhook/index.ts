@@ -169,7 +169,6 @@ Deno.serve(async (req) => {
       }
       await supabase.from("orders").update({
         status: newStatus,
-        cancelled_at: new Date().toISOString(),
         cancel_reason: isRefund ? "Pagamento reembolsado pelo Asaas" : `Pagamento ${event}`,
       }).eq("id", externalRef);
       console.log(`[asaas-webhook] order ${externalRef} → ${newStatus} (${event})`);
