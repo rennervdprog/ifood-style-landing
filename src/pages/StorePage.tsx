@@ -212,7 +212,7 @@ const StorePage = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("menu_sections")
-        .select("*")
+        .select("id, name, sort_order")
         .eq("store_id", storeId!)
         .order("sort_order");
       if (error) throw error;
@@ -243,7 +243,7 @@ const StorePage = () => {
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("promo_collections")
-        .select("*")
+        .select("id, store_id, name, subtitle, emoji, sort_order, is_active")
         .eq("store_id", storeId!)
         .eq("is_active", true)
         .order("sort_order", { ascending: true });
