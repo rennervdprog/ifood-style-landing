@@ -130,37 +130,61 @@ Deno.serve(async (req) => {
           .select("email, document, phone, whatsapp_number, pix_key, pix_type")
           .eq("user_id", s.owner_id!)
           .maybeSingle();
-        if (!prof?.email) {
-          results.push({ store_id: s.id, name: s.name, error: "profile sem email" });
-          continue;
-        }
-        // Sempre gera um CNPJ NOVO para lojas de teste (evita "CNPJ já em uso" no
-        // Asaas sandbox e também cobre lojas marcadas is_test que nunca tiveram
-        // document preenchido — antes davam "Dados inválidos").
+        // SANDBOX: força defaults válidos em TUDO (não depende de profile).
+        // Gera CNPJ novo por execução (evita "CNPJ já em uso") e completa o
+        // profile com os mesmos dados para a UI ficar consistente.
         const cpfCnpj = genCNPJ();
-        const isCnpj = true;
+        const sandboxEmail = (prof?.email && /@/.test(prof.email))
+          ? prof.email
+          : `sandbox+store-${s.id.slice(0, 8)}@itasuper.test`;
+        const sandboxPhone = "14999990000"; // 11 dígitos, válido p/ Asaas
+        const sandboxStreet = s.address_street || "Rua Sandbox";
+        const sandboxNumber = s.address_number || "100";
+        const sandboxProvince = s.address_neighborhood || "Centro";
+        const sandboxCep = (s.address_cep || "18250000").replace(/\D/g, "").padStart(8, "0").slice(-8);
+        const sandboxCity = s.address_city || "Itatinga";
+        const sandboxState = (s.address_state || "SP").slice(0, 2).toUpperCase();
+        const sandboxName = (s.name || "Loja Sandbox").slice(0, 120).padEnd(3, " ");
+
         await admin.from("profiles").update({
+          email: sandboxEmail,
           document: cpfCnpj,
+          phone: sandboxPhone,
+          whatsapp_number: sandboxPhone,
           pix_type: "cnpj",
           pix_key: cpfCnpj,
+          street: sandboxStreet,
+          number: sandboxNumber,
+          neighborhood: sandboxProvince,
+          city: sandboxCity,
+          cep: sandboxCep,
         }).eq("user_id", s.owner_id!);
+        await admin.from("stores").update({
+          address_street: sandboxStreet,
+          address_number: sandboxNumber,
+          address_neighborhood: sandboxProvince,
+          address_city: sandboxCity,
+          address_state: sandboxState,
+          address_cep: sandboxCep,
+        }).eq("id", s.id);
+
         const payload = {
           store_id: s.id,
-          name: s.name,
-          email: prof.email,
+          name: sandboxName,
+          email: sandboxEmail,
           cpfCnpj,
-          personType: isCnpj ? "JURIDICA" : "FISICA",
-          companyType: isCnpj ? "MEI" : "",
-          birthDate: isCnpj ? "" : "1990-01-01",
+          personType: "JURIDICA",
+          companyType: "MEI",
+          birthDate: "",
           incomeValue: 5000,
-          phone: (prof.phone || prof.whatsapp_number || "1499990000").replace(/\D/g, "").slice(-11),
-          mobilePhone: (prof.whatsapp_number || prof.phone || "14999990000").replace(/\D/g, "").slice(-11),
-          address: s.address_street || "Rua Sandbox",
-          addressNumber: s.address_number || "100",
-          province: s.address_neighborhood || "Centro",
-          postalCode: (s.address_cep || "18250000").replace(/\D/g, ""),
-          city: s.address_city || "Itatinga",
-          state: s.address_state || "SP",
+          phone: sandboxPhone,
+          mobilePhone: sandboxPhone,
+          address: sandboxStreet,
+          addressNumber: sandboxNumber,
+          province: sandboxProvince,
+          postalCode: sandboxCep,
+          city: sandboxCity,
+          state: sandboxState,
           pixAddressKey: cpfCnpj,
           pixAddressKeyType: "CNPJ",
         };
