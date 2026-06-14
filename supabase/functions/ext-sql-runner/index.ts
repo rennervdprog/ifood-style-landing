@@ -1,7 +1,6 @@
 // Utilitário do agente: roda SQL arbitrário no Supabase EXTERNO via service-role.
 // Protegido por EXTERNAL_CRON_SECRET no header x-admin-secret.
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import postgres from "https://deno.land/x/postgresjs@v3.4.4/mod.js";
+// Roda SQL no projeto externo via Supabase Management API.
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -15,76 +14,44 @@ Deno.serve(async (req) => {
 
   // Dev-only: sem auth. DELETAR após investigação.
 
-  const EXT_URL = Deno.env.get("EXTERNAL_SUPABASE_URL")!;
-  const SVC = Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY")!;
-  const supabase = createClient(EXT_URL, SVC);
-  const DB_URL = Deno.env.get("EXTERNAL_DATABASE_URL") || "";
-  const sql = DB_URL ? postgres(DB_URL, { prepare: false }) : null;
+  const REF = Deno.env.get("EXTERNAL_SUPABASE_PROJECT_REF")!;
+  const PAT = Deno.env.get("EXTERNAL_SUPABASE_ACCESS_TOKEN")!;
+
+  async function runSql(query: string) {
+    const r = await fetch(`https://api.supabase.com/v1/projects/${REF}/database/query`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${PAT}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ query }),
+    });
+    const text = await r.text();
+    let data: unknown = text;
+    try { data = JSON.parse(text); } catch {}
+    return { status: r.status, ok: r.ok, data };
+  }
 
   const body = await req.json().catch(() => ({}));
   const action = body?.action as string;
 
   try {
-    if (action === "inspect_store_balances_fks") {
-      // Lista constraints da tabela via rpc segura — usa pg_catalog através de uma view pública se existir.
-      // Fallback: tenta SELECT contra information_schema (geralmente bloqueado para anon, mas service-role OK via PostgREST? não).
-      // Estratégia: criar/usar função SQL `_introspect_fks` se existir. Como não temos, vamos chamar via .rpc.
-      const { data, error } = await supabase.rpc("_agent_introspect_fks", { _table: "store_balances" });
-      return json({ data, error });
-    }
-
-    if (action === "create_introspect_fn") {
-      // Cria a função de introspecção via PostgREST (se exposta) — não funciona sem SQL direto.
-      return json({ error: "use migration manually" }, 400);
-    }
-
-    if (action === "test_embed") {
-      // Tenta o mesmo select que auto-charge-physical-fees faz
-      const { data, error } = await supabase
-        .from("store_balances")
-        .select(`store_id, repasse_pendente, stores!inner(id, name, status)`)
-        .limit(1);
-      return json({ data, error });
-    }
-
-    if (action === "test_embed_alt") {
-      // Tenta sintaxe com FK explícito caso ele exista com outro nome
-      const fkName = body?.fk_name || "store_balances_store_id_fkey";
-      const { data, error } = await supabase
-        .from("store_balances")
-        .select(`store_id, repasse_pendente, stores!${fkName}(id, name, status)`)
-        .limit(1);
-      return json({ data, error });
-    }
-
-    if (action === "reload_schema") {
-      // Manda NOTIFY pgrst para recarregar cache do PostgREST via rpc auxiliar (se existir).
-      const { data, error } = await supabase.rpc("_agent_pgrst_reload");
-      return json({ data, error });
-    }
-
     if (action === "run_sql") {
-      if (!sql) return json({ error: "EXTERNAL_DATABASE_URL ausente" }, 400);
       const query = body?.query as string;
       if (!query) return json({ error: "query obrigatória" }, 400);
-      const rows = await sql.unsafe(query);
-      return json({ rows });
+      return json(await runSql(query));
     }
 
     if (action === "inspect_fks") {
-      if (!sql) return json({ error: "EXTERNAL_DATABASE_URL ausente" }, 400);
       const table = (body?.table as string) || "store_balances";
-      const rows = await sql`
-        SELECT conname, conrelid::regclass AS table_name,
+      const q = `
+        SELECT conname,
                a.attname AS column_name,
-               confrelid::regclass AS references_table,
+               confrelid::regclass::text AS references_table,
                af.attname AS references_column
         FROM pg_constraint c
         JOIN pg_attribute a ON a.attrelid = c.conrelid AND a.attnum = ANY(c.conkey)
         JOIN pg_attribute af ON af.attrelid = c.confrelid AND af.attnum = ANY(c.confkey)
-        WHERE c.contype = 'f' AND c.conrelid = ('public.'||${table})::regclass
+        WHERE c.contype = 'f' AND c.conrelid = ('public.${table}')::regclass
       `;
-      return json({ rows });
+      return json(await runSql(q));
     }
 
     return json({ error: "unknown action" }, 400);
