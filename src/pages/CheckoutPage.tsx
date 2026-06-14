@@ -537,6 +537,7 @@ const CheckoutPage = () => {
             store_id: storeId,
             subtotal: storeSubtotal,
             delivery_fee: effectiveDeliveryFee,
+            delivery_fee_absorbed_by_store: storeAbsorbedDeliveryFee,
             commission_rate: storePlan.commissionRate ?? 0,
             total_price: storeTotalPrice,
             wallet_discount: walletDiscount,
