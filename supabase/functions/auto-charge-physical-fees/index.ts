@@ -177,7 +177,7 @@ Deno.serve(async (req) => {
       const store = (balance as any).stores;
       if (!store) continue;
 
-      const plan = store.store_plans?.[0];
+      const plan = Array.isArray(store.store_plans) ? store.store_plans[0] : store.store_plans;
       if (!plan) continue;
 
       const planType = plan.plan_type;
