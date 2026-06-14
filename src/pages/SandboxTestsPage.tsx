@@ -131,7 +131,17 @@ export default function SandboxTestsPage() {
                     </Badge>
                     <span>{r.name}</span>
                     {typeof r.balance === "number" && <span className="text-muted-foreground">R$ {r.balance.toFixed(2)}</span>}
-                    {(r.error || r.body?.error) && <span className="text-destructive">{r.error || r.body?.error}</span>}
+                    {(r.error || r.body?.error) && (
+                      <span className="text-destructive break-all">
+                        {r.error || r.body?.error}
+                        {Array.isArray(r.body?.asaas?.errors) && r.body.asaas.errors.length > 0 && (
+                          <> — {r.body.asaas.errors.map((e: any) => `${e.code ?? ""}: ${e.description ?? ""}`).join(" | ")}</>
+                        )}
+                        {r.body?.asaas && !Array.isArray(r.body.asaas.errors) && (
+                          <> — <code className="text-[10px]">{JSON.stringify(r.body.asaas).slice(0, 200)}</code></>
+                        )}
+                      </span>
+                    )}
                     {r.skipped && <span className="text-muted-foreground">{r.skipped}</span>}
                   </div>
                 ))}
