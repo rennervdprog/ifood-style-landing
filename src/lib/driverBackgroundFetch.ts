@@ -9,6 +9,7 @@
  * ou as lojas vinculadas mudarem.
  */
 import { isCapacitorNative } from "@/lib/capacitorNative";
+import { SUPABASE_ANON_KEY, SUPABASE_URL } from "@/integrations/supabase/client";
 
 const KV = {
   SUPABASE_URL: "SUPABASE_URL",
@@ -62,12 +63,9 @@ export async function initDriverBackgroundFetch(opts: {
         }
       } catch {}
 
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
-      const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
-
       await dispatchState({
-        SUPABASE_URL: supabaseUrl || "",
-        SUPABASE_KEY: supabaseKey || "",
+        SUPABASE_URL,
+        SUPABASE_KEY: SUPABASE_ANON_KEY,
         USER_ID: opts.userId,
         LINKED_STORE_IDS: opts.linkedStoreIds.join(","),
         ONLINE: opts.isOnline ? "1" : "0",
