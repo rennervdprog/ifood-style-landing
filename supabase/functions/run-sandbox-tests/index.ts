@@ -21,13 +21,14 @@ Deno.serve(async (req) => {
 
   const results: Record<string, unknown> = {};
 
-  async function callFn(name: string, opts: { method?: string; body?: unknown; headers?: Record<string, string> } = {}) {
+  async function callFn(name: string, opts: { method?: string; body?: unknown; headers?: Record<string, string>; useCronBearer?: boolean } = {}) {
+    const bearer = opts.useCronBearer ? CRON : SVC;
     const r = await fetch(`${EXT_URL}/functions/v1/${name}`, {
       method: opts.method || "POST",
       headers: {
         "Content-Type": "application/json",
         apikey: ANON,
-        Authorization: `Bearer ${SVC}`,
+        Authorization: `Bearer ${bearer}`,
         ...(opts.headers || {}),
       },
       body: opts.body ? JSON.stringify(opts.body) : undefined,
@@ -49,17 +50,17 @@ Deno.serve(async (req) => {
     monthly_billing: () => callFn("monthly-billing", { method: "POST", headers: { "x-cron-secret": CRON } }),
     monthly_billing_replay: () => callFn("monthly-billing", { method: "POST", headers: { "x-cron-secret": CRON } }),
     // 5 auto-deactivate-stores
-    auto_deactivate: () => callFn("auto-deactivate-stores", { method: "POST", headers: { "x-cron-secret": CRON } }),
+    auto_deactivate: () => callFn("auto-deactivate-stores", { method: "POST", useCronBearer: true, headers: { "x-cron-secret": CRON } }),
     // 6 auto-charge-physical-fees
-    auto_charge_physical: () => callFn("auto-charge-physical-fees", { method: "POST", headers: { "x-cron-secret": CRON } }),
+    auto_charge_physical: () => callFn("auto-charge-physical-fees", { method: "POST", useCronBearer: true, headers: { "x-cron-secret": CRON } }),
     // 7 auto-withdraw-subaccounts
-    auto_withdraw: () => callFn("auto-withdraw-subaccounts", { method: "POST", headers: { "x-cron-secret": CRON } }),
+    auto_withdraw: () => callFn("auto-withdraw-subaccounts", { method: "POST", useCronBearer: true, headers: { "x-cron-secret": CRON } }),
     // 8 partner-payout-cron
-    partner_payout: () => callFn("partner-payout-cron", { method: "POST", headers: { "x-cron-secret": CRON } }),
+    partner_payout: () => callFn("partner-payout-cron", { method: "POST", useCronBearer: true, headers: { "x-cron-secret": CRON } }),
     // 9 auto-payout-cron
-    auto_payout: () => callFn("auto-payout-cron", { method: "POST", headers: { "x-cron-secret": CRON } }),
+    auto_payout: () => callFn("auto-payout-cron", { method: "POST", useCronBearer: true, headers: { "x-cron-secret": CRON } }),
     // 10 auto-finalize-orders
-    auto_finalize: () => callFn("auto-finalize-orders", { method: "POST", headers: { "x-cron-secret": CRON } }),
+    auto_finalize: () => callFn("auto-finalize-orders", { method: "POST", useCronBearer: true, headers: { "x-cron-secret": CRON } }),
     // 11 e2e-pix-flow
     e2e_pix: () => callFn("e2e-pix-flow", { method: "POST", headers: { "x-e2e-secret": E2E } }),
     // 12 e2e-monthly-flow
