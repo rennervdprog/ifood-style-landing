@@ -120,12 +120,12 @@ export default function SandboxTestsPage() {
                 <p className="font-semibold">Resultados ({result.results.length}):</p>
                 {result.results.map((r, i) => (
                   <div key={i} className="text-xs flex items-center gap-2 flex-wrap">
-                    <Badge variant={r.error ? "destructive" : r.skipped ? "secondary" : "default"}>
-                      {r.error ? "erro" : r.skipped ? "skip" : "ok"}
+                    <Badge variant={r.error || r.ok === false ? "destructive" : r.skipped ? "secondary" : "default"}>
+                      {r.error || r.ok === false ? "erro" : r.skipped ? "skip" : "ok"}
                     </Badge>
                     <span>{r.name}</span>
                     {typeof r.balance === "number" && <span className="text-muted-foreground">R$ {r.balance.toFixed(2)}</span>}
-                    {r.error && <span className="text-destructive">{r.error}</span>}
+                    {(r.error || r.body?.error) && <span className="text-destructive">{r.error || r.body?.error}</span>}
                     {r.skipped && <span className="text-muted-foreground">{r.skipped}</span>}
                   </div>
                 ))}
