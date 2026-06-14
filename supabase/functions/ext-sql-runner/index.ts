@@ -16,6 +16,10 @@ Deno.serve(async (req) => {
 
   const REF = Deno.env.get("EXTERNAL_SUPABASE_PROJECT_REF")!;
   const PAT = Deno.env.get("EXTERNAL_SUPABASE_ACCESS_TOKEN")!;
+  const EXT_URL = Deno.env.get("EXTERNAL_SUPABASE_URL")!;
+  const ANON = Deno.env.get("EXTERNAL_SUPABASE_ANON_KEY")!;
+  const SVC = Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY")!;
+  const CRON = Deno.env.get("EXTERNAL_CRON_SECRET") || "";
 
   async function runSql(query: string) {
     const r = await fetch(`https://api.supabase.com/v1/projects/${REF}/database/query`, {
@@ -52,6 +56,27 @@ Deno.serve(async (req) => {
         WHERE c.contype = 'f' AND c.conrelid = ('public.${table}')::regclass
       `;
       return json(await runSql(q));
+    }
+
+    if (action === "call_ext_fn") {
+      const name = body?.name as string;
+      const payload = body?.body;
+      const useCron = body?.use_cron === true;
+      const bearer = useCron ? CRON : SVC;
+      const r = await fetch(`${EXT_URL}/functions/v1/${name}`, {
+        method: body?.method || "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: ANON,
+          Authorization: `Bearer ${bearer}`,
+          "x-cron-secret": CRON,
+        },
+        body: payload ? JSON.stringify(payload) : undefined,
+      });
+      const t = await r.text();
+      let d: unknown = t;
+      try { d = JSON.parse(t); } catch {}
+      return json({ status: r.status, ok: r.ok, data: d });
     }
 
     return json({ error: "unknown action" }, 400);
