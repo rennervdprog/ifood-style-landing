@@ -699,7 +699,7 @@ const StorePage = () => {
          {/* Sticky Header Top Bar */}
          {!showHalfHalf && (
            <div className={`fixed top-0 left-0 right-0 flex items-center justify-between p-4 z-[70] transition-all duration-300 h-[64px] ${
-             scrolled ? (isAdega ? "bg-zinc-950 border-b border-zinc-800 shadow-sm py-2" : "bg-background border-b border-border shadow-sm py-2") : "bg-transparent"
+            scrolled ? "bg-background border-b border-border shadow-sm py-2" : "bg-transparent"
            }`}>
           <div className="flex items-center gap-3 min-w-0">
             {!getStoreAppSlug() && (
@@ -715,10 +715,10 @@ const StorePage = () => {
             )}
             {scrolled && (
               <div className="flex flex-col min-w-0 animate-in fade-in slide-in-from-left-2 duration-300">
-                <h2 className={`text-sm font-black truncate ${isAdega ? "text-zinc-100" : "text-foreground"}`}>{store?.name}</h2>
+                <h2 className="text-sm font-black truncate text-foreground">{store?.name}</h2>
                 <div className="flex items-center gap-1.5">
                   <div className={`w-1.5 h-1.5 rounded-full ${storeStatus.isOpen ? "bg-green-500" : "bg-destructive"}`} />
-                  <span className={`text-[10px] font-bold uppercase ${isAdega ? "text-zinc-400" : "text-muted-foreground"}`}>{storeStatus.isOpen ? "Aberto" : "Fechado"}</span>
+                  <span className="text-[10px] font-bold uppercase text-muted-foreground">{storeStatus.isOpen ? "Aberto" : "Fechado"}</span>
                 </div>
               </div>
             )}
@@ -748,7 +748,7 @@ const StorePage = () => {
 
       {/* ===== STORE INFO ===== */}
       <div className="relative -mt-12 mx-4 z-10">
-        <div className={`rounded-2xl border shadow-xl overflow-visible ${isAdega ? "bg-zinc-900 border-zinc-800" : "bg-card border-border"}`}>
+        <div className="rounded-2xl border shadow-xl overflow-visible bg-card border-border">
           <div className="p-5 pb-0 relative">
             <div className="flex flex-col items-center gap-3 sm:flex-row sm:items-start sm:gap-4">
               <div className="w-[100px] h-[100px] rounded-full bg-card border-[4px] border-card shadow-2xl flex-shrink-0 overflow-hidden -mt-[70px] relative z-[55] mx-auto sm:mx-0">
@@ -966,7 +966,7 @@ const StorePage = () => {
           )}
 
           {/* Stats bar */}
-          <div className={`mt-2 px-5 py-4 flex items-center justify-around border-t ${isAdega ? "bg-zinc-950/60 border-zinc-800" : "bg-muted/50 border-border/50"}`}>
+          <div className="mt-2 px-5 py-4 flex items-center justify-around border-t bg-muted/50 border-border/50">
             <div className="flex flex-col items-center">
               <span className="text-lg font-black text-foreground leading-none">{totalProducts}</span>
               <span className="text-[11px] font-semibold text-muted-foreground mt-1">Produtos</span>
@@ -1032,13 +1032,13 @@ const StorePage = () => {
       {/* ===== SEARCH BAR ===== */}
       <div className="mx-4 mt-3">
         <div className="relative">
-          <Search className={`absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 ${isAdega ? "text-zinc-500" : "text-muted-foreground"}`} />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <input
             type="text"
             placeholder="Buscar produtos..."
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            className={`w-full pl-10 pr-10 py-3 rounded-xl border text-sm focus:outline-none focus:ring-2 ${isAdega ? "bg-zinc-900 border-zinc-800 text-zinc-100 placeholder:text-zinc-500 focus:ring-amber-500/40" : "bg-card border-border text-foreground placeholder:text-muted-foreground focus:ring-primary/30"}`}
+            className="w-full pl-10 pr-10 py-3 rounded-xl border text-sm focus:outline-none focus:ring-2 bg-card border-border text-foreground placeholder:text-muted-foreground focus:ring-primary/30"
           />
           {searchQuery && (
             <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -1178,7 +1178,7 @@ const StorePage = () => {
           ref={navRef}
           className={`sticky z-[60] border-b mt-4 shadow-sm transition-all duration-300 ${
             scrolled ? "top-[63px]" : "top-0"
-          } ${isAdega ? "bg-zinc-950 border-zinc-800" : "bg-background border-border"}`}
+          } bg-background border-border`}
         >
           <div className="flex overflow-x-auto gap-1.5 px-4 py-2.5 no-scrollbar">
             {visibleSections.map(s => (
@@ -1193,12 +1193,8 @@ const StorePage = () => {
                 }}
                 className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all ${
                   activeSection === s.id
-                    ? (isAdega
-                        ? "bg-amber-500 text-zinc-950 shadow-[0_0_12px_rgba(245,158,11,0.45)] scale-105"
-                        : "bg-primary text-primary-foreground shadow-md scale-105")
-                    : (isAdega
-                        ? "bg-zinc-900 text-zinc-300 border border-zinc-800"
-                        : "bg-muted text-muted-foreground hover:bg-muted/80")
+                    ? "bg-primary text-primary-foreground shadow-md scale-105"
+                    : "bg-muted text-muted-foreground hover:bg-muted/80"
                 }`}
               >
                 {s.name}
@@ -1210,12 +1206,12 @@ const StorePage = () => {
 
       {/* ===== ADEGA: filtros + ordenação ===== */}
       {isAdega && !filteredProducts && (availableDrinkTypes.length > 0) && (
-        <div className="px-3 pt-3 space-y-2 bg-zinc-950 text-zinc-100">
+        <div className="px-3 pt-3 space-y-2 bg-background text-foreground">
           <div className="flex overflow-x-auto gap-2 no-scrollbar pb-1">
             <button
               onClick={() => setAdegaType(null)}
               className={`flex flex-col items-center justify-center min-w-[64px] px-3 py-2 rounded-xl border whitespace-nowrap transition-all ${
-                !adegaType ? "bg-amber-500 text-zinc-950 border-amber-400 shadow-[0_0_12px_rgba(245,158,11,0.45)]" : "bg-zinc-900 text-zinc-300 border-zinc-800"
+                !adegaType ? "bg-primary text-primary-foreground border-primary shadow-md" : "bg-card text-foreground border-border"
               }`}
             >
               <span className="text-lg leading-none">🍻</span>
@@ -1230,7 +1226,7 @@ const StorePage = () => {
                   key={t}
                   onClick={() => setAdegaType(active ? null : t)}
                   className={`flex flex-col items-center justify-center min-w-[64px] px-3 py-2 rounded-xl border whitespace-nowrap transition-all ${
-                    active ? "bg-amber-500 text-zinc-950 border-amber-400 shadow-[0_0_12px_rgba(245,158,11,0.45)]" : "bg-zinc-900 text-zinc-300 border-zinc-800"
+                    active ? "bg-primary text-primary-foreground border-primary shadow-md" : "bg-card text-foreground border-border"
                   }`}
                 >
                   <span className="text-lg leading-none">{emoji}</span>
@@ -1251,8 +1247,8 @@ const StorePage = () => {
                 onClick={() => setAdegaSort(o.v as any)}
                 className={`px-2.5 py-1 rounded-full font-semibold transition-all ${
                   adegaSort === o.v
-                    ? "bg-amber-500/15 text-amber-400"
-                    : "text-zinc-400 hover:text-zinc-200"
+                    ? "bg-primary/15 text-primary"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 {o.l}
@@ -1263,7 +1259,7 @@ const StorePage = () => {
       )}
 
       {/* ===== PRODUCTS ===== */}
-      <div className={`px-4 pt-4 space-y-6 ${isAdega ? "bg-zinc-950 text-zinc-100 pb-8 min-h-[60vh]" : ""}`}>
+      <div className={`px-4 pt-4 space-y-6 ${isAdega ? "bg-background text-foreground pb-8 min-h-[60vh]" : ""}`}>
         {isLoading ? (
           <div className="space-y-3">
             {Array.from({ length: 4 }).map((_, i) => (
@@ -1316,8 +1312,8 @@ const StorePage = () => {
                   className="scroll-mt-16"
                 >
                   <div className="flex items-center gap-2 mb-3">
-                    <h2 className={`text-base font-black ${isAdega ? "text-zinc-100" : "text-foreground"}`}>{section.name}</h2>
-                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${isAdega ? "bg-zinc-800 text-zinc-400" : "bg-muted text-muted-foreground"}`}>
+                    <h2 className="text-base font-black text-foreground">{section.name}</h2>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold bg-muted text-muted-foreground">
                       {sectionProducts.length}
                     </span>
                   </div>
@@ -1341,8 +1337,8 @@ const StorePage = () => {
               <div>
                 {sections && sections.length > 0 && (
                   <div className="flex items-center gap-2 mb-3">
-                    <h2 className={`text-base font-black ${isAdega ? "text-zinc-100" : "text-foreground"}`}>Outros</h2>
-                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${isAdega ? "bg-zinc-800 text-zinc-400" : "bg-muted text-muted-foreground"}`}>
+                    <h2 className="text-base font-black text-foreground">Outros</h2>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold bg-muted text-muted-foreground">
                       {unsectionedProducts.length}
                     </span>
                   </div>
@@ -1467,7 +1463,7 @@ const ProductCard = memo(({ product, disabled, onClick, storeCategory, onQuickAd
       disabled={isOutOfStock}
       className={`w-full text-left transition-all group rounded-2xl ${
         isAdegaCard
-          ? `flex flex-col-reverse bg-zinc-900 border border-zinc-800 p-2.5 gap-2 ${isBlocked ? "opacity-60" : "hover:border-amber-500/40 active:scale-[0.98]"}`
+          ? `flex flex-col-reverse bg-card border border-border p-2.5 gap-2 ${isBlocked ? "opacity-60" : "hover:border-primary/40 active:scale-[0.98]"}`
           : `flex gap-3 bg-card p-3 border border-border ${isBlocked ? "opacity-60" : "hover:shadow-lg hover:border-primary/20 active:scale-[0.98]"}`
       }`}
     >
@@ -1615,10 +1611,10 @@ const ProductCard = memo(({ product, disabled, onClick, storeCategory, onQuickAd
           </div>
 
           {/* Product name */}
-          <h3 className={`font-bold text-sm line-clamp-1 transition-colors ${isAdegaCard ? "text-zinc-100 group-hover:text-amber-400" : "text-foreground group-hover:text-primary"}`}>
+          <h3 className={`font-bold text-sm line-clamp-1 transition-colors ${isAdegaCard ? "text-foreground group-hover:text-primary" : "text-foreground group-hover:text-primary"}`}>
             {product.name}
             {volumeInfo && (
-              <span className={`font-medium ${isAdegaCard ? "text-zinc-400" : "text-muted-foreground"}`}> · {volumeInfo}</span>
+              <span className="font-medium text-muted-foreground"> · {volumeInfo}</span>
             )}
           </h3>
 
@@ -1739,11 +1735,11 @@ const ProductCard = memo(({ product, disabled, onClick, storeCategory, onQuickAd
         {/* Price + CTA */}
         <div className="flex items-center justify-between mt-2">
           <div className="flex flex-col">
-            <span className={`font-black leading-tight ${isAdegaCard ? "text-lg text-amber-400" : "text-sm text-primary"}`}>
+            <span className={`font-black leading-tight ${isAdegaCard ? "text-lg text-primary" : "text-sm text-primary"}`}>
               {priceDisplay}
             </span>
             {isAdegaCard && unitPrice > 0 && (
-              <span className="text-[10px] text-zinc-400 font-semibold">
+              <span className="text-[10px] text-muted-foreground font-semibold">
                 {formatBRL(unitPrice)}/un
               </span>
             )}
@@ -1752,7 +1748,7 @@ const ProductCard = memo(({ product, disabled, onClick, storeCategory, onQuickAd
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); onQuickAdd(product); }}
-              className="text-xs font-black w-9 h-9 rounded-full bg-amber-500 text-zinc-950 hover:bg-amber-400 active:scale-95 transition shadow-[0_0_12px_rgba(245,158,11,0.45)] flex items-center justify-center"
+              className="text-xs font-black w-9 h-9 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 active:scale-95 transition shadow-md flex items-center justify-center"
               aria-label={`Adicionar ${product.name} ao carrinho`}
             >
               +
@@ -1784,14 +1780,14 @@ const ProductCard = memo(({ product, disabled, onClick, storeCategory, onQuickAd
           <img
             src={product.image_url}
             alt={product.name}
-            className={`${isAdegaCard ? "w-full h-32 rounded-xl object-contain bg-zinc-950/60 p-2" : "w-24 h-24 rounded-xl object-cover shadow-sm group-hover:shadow-md transition-shadow"} ${isOutOfStock ? "grayscale" : ""}`}
+            className={`${isAdegaCard ? "w-full h-32 rounded-xl object-contain bg-muted p-2" : "w-24 h-24 rounded-xl object-cover shadow-sm group-hover:shadow-md transition-shadow"} ${isOutOfStock ? "grayscale" : ""}`}
             loading="lazy"
             decoding="async"
             width={isAdegaCard ? 200 : 96}
             height={isAdegaCard ? 128 : 96}
           />
         ) : (
-          <div className={`${isAdegaCard ? "w-full h-32 bg-zinc-950/60" : "w-24 h-24 bg-muted"} rounded-xl flex items-center justify-center ${isOutOfStock ? "grayscale" : ""}`}>
+          <div className={`${isAdegaCard ? "w-full h-32 bg-muted" : "w-24 h-24 bg-muted"} rounded-xl flex items-center justify-center ${isOutOfStock ? "grayscale" : ""}`}>
             <span className="text-3xl">{emoji}</span>
           </div>
         )}
