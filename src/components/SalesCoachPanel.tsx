@@ -7,6 +7,7 @@ import {
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
 import { supabase } from "@/integrations/supabase/client";
+import { EXTERNAL_BACKEND_ANON_KEY, externalFunctionUrl } from "@/lib/externalBackend";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
@@ -20,7 +21,7 @@ interface LeadProfile {
 
 const STORAGE_KEY = "sales_coach_history_v2";
 const LEAD_KEY    = "sales_coach_lead_v2";
-const CHAT_URL    = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sales-coach`;
+const CHAT_URL    = externalFunctionUrl("sales-coach");
 
 const SISTEMAS = [
   { value: "ifood",        label: "iFood",            desc: "Paga 20-30% por pedido" },
@@ -154,8 +155,8 @@ const SalesCoachPanel = () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${session?.access_token ?? import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          Authorization: `Bearer ${session?.access_token ?? EXTERNAL_BACKEND_ANON_KEY}`,
+          apikey: EXTERNAL_BACKEND_ANON_KEY,
         },
         body: JSON.stringify({ messages: payload, lead_context: leadSaved ? buildLeadContext() : undefined }),
         signal: controller.signal,
