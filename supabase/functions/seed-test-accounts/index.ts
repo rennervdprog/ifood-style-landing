@@ -70,7 +70,7 @@ const SEEDS = {
   ],
 };
 
-const Body = z.object({ action: z.enum(["seed", "cleanup", "status", "provision-asaas", "panel"]) });
+const Body = z.object({ action: z.enum(["seed", "cleanup", "status", "provision-asaas", "panel", "reuse-wallets"]) });
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -110,6 +110,52 @@ Deno.serve(async (req) => {
         .select("id, name, owner_id, status, is_test, asaas_wallet_id")
         .eq("is_test", true);
       return json({ ok: true, stores: stores ?? [] });
+    }
+
+    // Reaproveita wallets já criadas (das "Unidade Origem ..." de teste) e
+    // move para as lojas sandbox principais (Sandbox Burger/Pizza/Sushi) que
+    // ainda não têm wallet. Útil quando o Asaas bloqueia novas subcontas
+    // por limite do teste controlado. Também habilita PIX online.
+    if (parsed.data.action === "reuse-wallets") {
+      const { data: allTest } = await admin
+        .from("stores")
+        .select("id, name, owner_id, asaas_wallet_id, asaas_subaccount_api_key, asaas_account_id, settings")
+        .eq("is_test", true);
+      const need = (allTest ?? []).filter((s: any) =>
+        !s.asaas_wallet_id && /^Sandbox /.test(s.name || "")
+      );
+      const donors = (allTest ?? []).filter((s: any) =>
+        s.asaas_wallet_id && !/^Sandbox /.test(s.name || "")
+      );
+      const results: any[] = [];
+      for (const target of need) {
+        const donor = donors.shift();
+        if (!donor) {
+          results.push({ store_id: target.id, name: target.name, error: "sem wallet doadora disponível" });
+          continue;
+        }
+        const newSettings = { ...(target.settings || {}), accept_pix_online: true };
+        const upT = await admin.from("stores").update({
+          asaas_wallet_id: donor.asaas_wallet_id,
+          asaas_subaccount_api_key: (donor as any).asaas_subaccount_api_key ?? null,
+          asaas_account_id: (donor as any).asaas_account_id ?? null,
+          settings: newSettings,
+        }).eq("id", target.id);
+        if (upT.error) { results.push({ store_id: target.id, name: target.name, error: upT.error.message }); continue; }
+        const upD = await admin.from("stores").update({
+          asaas_wallet_id: null,
+          asaas_subaccount_api_key: null,
+          asaas_account_id: null,
+        }).eq("id", donor.id);
+        if (upD.error) results.push({ store_id: target.id, name: target.name, ok: true, warn: `doador não limpo: ${upD.error.message}`, donor: donor.name });
+        else results.push({ store_id: target.id, name: target.name, ok: true, donor: donor.name, wallet_id: donor.asaas_wallet_id });
+      }
+      // Garante PIX online nas demais sandbox que já tinham wallet
+      for (const s of (allTest ?? []).filter((s: any) => /^Sandbox /.test(s.name || "") && s.asaas_wallet_id)) {
+        const newSettings = { ...(s.settings || {}), accept_pix_online: true };
+        await admin.from("stores").update({ settings: newSettings }).eq("id", s.id);
+      }
+      return json({ ok: true, results });
     }
 
     // Provisiona subconta Asaas (sandbox) para todas as lojas de teste sem wallet
