@@ -134,8 +134,16 @@ Deno.serve(async (req) => {
           results.push({ store_id: s.id, name: s.name, error: "profile sem email" });
           continue;
         }
-        const cpfCnpj = (prof.document || "").replace(/\D/g, "");
-        const isCnpj = cpfCnpj.length === 14;
+        // Sempre gera um CNPJ NOVO para lojas de teste (evita "CNPJ já em uso" no
+        // Asaas sandbox e também cobre lojas marcadas is_test que nunca tiveram
+        // document preenchido — antes davam "Dados inválidos").
+        const cpfCnpj = genCNPJ();
+        const isCnpj = true;
+        await admin.from("profiles").update({
+          document: cpfCnpj,
+          pix_type: "cnpj",
+          pix_key: cpfCnpj,
+        }).eq("user_id", s.owner_id!);
         const payload = {
           store_id: s.id,
           name: s.name,
@@ -153,8 +161,8 @@ Deno.serve(async (req) => {
           postalCode: (s.address_cep || "18250000").replace(/\D/g, ""),
           city: s.address_city || "Itatinga",
           state: s.address_state || "SP",
-          pixAddressKey: prof.pix_key || cpfCnpj,
-          pixAddressKeyType: (((prof.pix_type as string) || (isCnpj ? "CNPJ" : "CPF"))).toUpperCase(),
+          pixAddressKey: cpfCnpj,
+          pixAddressKeyType: "CNPJ",
         };
         try {
           const externalFnBase = (Deno.env.get("EXTERNAL_SUPABASE_URL") || Deno.env.get("SUPABASE_URL"))!;
