@@ -1517,14 +1517,17 @@ const ProductCard = memo(({ product, disabled, onClick, storeCategory, onQuickAd
   const isBlocked = disabled || isOutOfStock;
   const isAdegaCard = cat === "adegas";
   const packQty = Number(meta.pack_qty) || 0;
-  const unitPrice = packQty > 0 ? Number(product.price) / packQty : 0;
+  const promoActive = isPromoActive(product as any);
+  const effective = getEffectivePrice(product as any);
+  const promoPct = getPromoDiscountPct(product as any);
+  const unitPrice = packQty > 0 ? effective / packQty : 0;
 
   // ===== PIZZA =====
   // ===== FARMACIA =====
   const isPharmacy = cat === "farmacias";
 
   // Price display logic
-  const priceDisplay = `${formatBRL(product.price)}`;
+  const priceDisplay = `${formatBRL(effective)}`;
 
   // CTA label
   const ctaLabel = (() => {
