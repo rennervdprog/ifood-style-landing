@@ -30,7 +30,7 @@ const json = (body: unknown, status = 200) =>
   });
 
 // Mínimo para gerar cobrança (evita PIX de centavos)
-const MIN_CHARGE_AMOUNT = 30.0;
+const MIN_CHARGE_AMOUNT = 5.0;
 
 // Dias de atraso antes de inativar a loja
 const OVERDUE_DAYS_TO_DEACTIVATE = 30;
