@@ -181,32 +181,46 @@ export default function AdminPlanManager() {
   const handleSetPlan = async (storeId: string, planType: PlanType, monthlyFee: number, commissionRate: number) => {
     setSaving(storeId);
     try {
-      // Delete existing plan (unique constraint on store_id)
-      await supabase
+      // Preserva overrides VIP, PDV e trial — UPDATE quando já existe, INSERT caso contrário.
+      const { data: existing } = await supabase
         .from("store_plans")
-        .delete()
-        .eq("store_id", storeId);
+        .select("id")
+        .eq("store_id", storeId)
+        .maybeSingle();
 
-      // Create new plan
-      const { error } = await supabase
-        .from("store_plans")
-        .insert({
-          store_id: storeId,
-          plan_type: planType,
-          monthly_fee: monthlyFee,
-          commission_rate: commissionRate,
-          is_active: true,
-          started_at: new Date().toISOString(),
-          next_billing_date: monthlyFee > 0
-            ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
-            : null,
-          // PDV defaults por plano
-          pdv_enabled: false,
-          pdv_commission_rate: planType === "fixed" ? 0 : planType === "hybrid" ? 1.0 : 2.0,
-          pdv_commission_pending: 0,
-        });
+      const nextBilling = monthlyFee > 0
+        ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+        : null;
 
-      if (error) throw error;
+      if (existing) {
+        const { error } = await supabase
+          .from("store_plans")
+          .update({
+            plan_type: planType,
+            monthly_fee: monthlyFee,
+            commission_rate: commissionRate,
+            is_active: true,
+            next_billing_date: nextBilling,
+          } as any)
+          .eq("store_id", storeId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from("store_plans")
+          .insert({
+            store_id: storeId,
+            plan_type: planType,
+            monthly_fee: monthlyFee,
+            commission_rate: commissionRate,
+            is_active: true,
+            started_at: new Date().toISOString(),
+            next_billing_date: nextBilling,
+            pdv_enabled: false,
+            pdv_commission_rate: planType === "fixed" ? 0 : planType === "hybrid" ? 1.0 : 2.0,
+            pdv_commission_pending: 0,
+          });
+        if (error) throw error;
+      }
 
       // Also update the store's commission_rate for backward compatibility
       await supabase
