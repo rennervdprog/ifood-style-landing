@@ -89,6 +89,25 @@ Deno.serve(async (req) => {
       return json({ status: r.status, ok: r.ok, data: d });
     }
 
+    if (action === "list_ext_fns") {
+      const r = await fetch(`https://api.supabase.com/v1/projects/${REF}/functions`, {
+        headers: { Authorization: `Bearer ${PAT}` },
+      });
+      const t = await r.text();
+      let d: unknown = t;
+      try { d = JSON.parse(t); } catch {}
+      return json({ status: r.status, data: d });
+    }
+
+    if (action === "get_ext_fn_body") {
+      const slug = body?.slug as string;
+      const r = await fetch(`https://api.supabase.com/v1/projects/${REF}/functions/${slug}/body`, {
+        headers: { Authorization: `Bearer ${PAT}` },
+      });
+      const text = await r.text();
+      return json({ status: r.status, body: text });
+    }
+
     return json({ error: "unknown action" }, 400);
   } catch (e) {
     return json({ error: String(e) }, 500);
