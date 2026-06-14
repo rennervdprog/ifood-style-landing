@@ -108,6 +108,30 @@ Deno.serve(async (req) => {
       return json({ status: r.status, body: text });
     }
 
+    if (action === "deploy_ext_fn") {
+      const slug = body?.slug as string;
+      const code = body?.code as string;
+      const verifyJwt = body?.verify_jwt === true;
+      if (!slug || !code) return json({ error: "slug e code obrigatórios" }, 400);
+      // PATCH atualiza função existente; usa multipart com file
+      const fd = new FormData();
+      fd.append("metadata", new Blob([JSON.stringify({
+        name: slug,
+        verify_jwt: verifyJwt,
+        entrypoint_path: "index.ts",
+      })], { type: "application/json" }));
+      fd.append("file", new Blob([code], { type: "application/typescript" }), "index.ts");
+      const r = await fetch(`https://api.supabase.com/v1/projects/${REF}/functions/${slug}?slug=${slug}&bundleOnly=false`, {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${PAT}` },
+        body: fd,
+      });
+      const t = await r.text();
+      let d: unknown = t;
+      try { d = JSON.parse(t); } catch {}
+      return json({ status: r.status, ok: r.ok, data: d });
+    }
+
     return json({ error: "unknown action" }, 400);
   } catch (e) {
     return json({ error: String(e) }, 500);
