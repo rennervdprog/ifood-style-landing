@@ -128,3 +128,5 @@ const OrderCardInner = ({
     </div>
   );
 };
+
+export const OrderCard = memo(OrderCardInner);
