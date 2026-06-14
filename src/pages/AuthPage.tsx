@@ -2,9 +2,8 @@ import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Mail, Lock, Eye, EyeOff, KeyRound, FileText, ShoppingBag, CheckCircle2, Zap, Check, X, Phone, User } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, KeyRound, ShoppingBag, CheckCircle2, Check, X, Phone } from "lucide-react";
  import { maskWhatsApp } from "@/lib/whatsapp";
- import { formatDocument, sanitizeDocument, validateDocument } from "@/lib/documentFormat";
 import { isPartnerCapacitorApp, persistCapacitorAppMode } from "@/lib/capacitorAppMode";
 import { PARTNER_ROUTES } from "@/components/CapacitorRouteGuard";
 import BiometricLoginButton from "@/components/BiometricLoginButton";
@@ -35,12 +34,18 @@ const PASSWORD_RULES: PasswordRule[] = [
 const REMEMBER_KEY = "itasuper_remember_until";
 const TWO_MONTHS_MS = 60 * 24 * 60 * 60 * 1000;
 
+/**
+ * Convert WhatsApp digits to a synthetic e-mail used internally by Supabase Auth.
+ * Login still accepts a real e-mail (legacy/admin/lojista accounts).
+ */
+const waToSynthEmail = (digits: string) => `wa${digits}@itasuper.app`;
+const looksLikeEmail = (v: string) => v.includes("@");
+
 const AuthPage = () => {
   const [mode, setMode] = useState<AuthMode>("login");
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState(""); // login: WhatsApp ou e-mail
+  const [email, setEmail] = useState(""); // usado só em "forgot"
   const [password, setPassword] = useState("");
-  const [fullName, setFullName] = useState("");
-  const [cpf, setCpf] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
@@ -92,29 +97,23 @@ const AuthPage = () => {
       return;
     }
 
-    if (!email.trim() || !password.trim()) {
-      toast.error("Preencha todos os campos.");
-      return;
+    if (mode === "login") {
+      if (!identifier.trim() || !password.trim()) {
+        toast.error("Preencha WhatsApp e senha.");
+        return;
+      }
     }
-    if (mode === "signup" && fullName.trim().length < 3) {
-      toast.error("Informe seu nome completo.");
-      return;
+    if (mode === "signup") {
+      const whatsDigits = whatsapp.replace(/\D/g, "");
+      if (whatsDigits.length < 10 || whatsDigits.length > 11) {
+        toast.error("Informe um WhatsApp válido com DDD.");
+        return;
+      }
+      if (!password.trim()) {
+        toast.error("Crie uma senha.");
+        return;
+      }
     }
-     if (mode === "signup" && !validateDocument(cpf)) {
-       toast.error("CPF ou CNPJ inválido.");
-       return;
-     }
-     if (mode === "signup") {
-       const whatsDigits = whatsapp.replace(/\D/g, "");
-       if (!whatsDigits) {
-         toast.error("O WhatsApp é obrigatório.");
-         return;
-       }
-       if (whatsDigits.length < 10 || whatsDigits.length > 11) {
-         toast.error("Informe um WhatsApp válido com DDD.");
-         return;
-       }
-     }
     if (mode === "signup" && !acceptedTerms) {
       toast.error("Você precisa aceitar os Termos de Uso e Política de Privacidade.");
       return;
@@ -131,7 +130,11 @@ const AuthPage = () => {
     setLoading(true);
     try {
       if (mode === "login") {
-        const { data: signInData, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+        const id = identifier.trim();
+        const loginEmail = looksLikeEmail(id)
+          ? id
+          : waToSynthEmail(`55${id.replace(/\D/g, "")}`);
+        const { data: signInData, error } = await supabase.auth.signInWithPassword({ email: loginEmail, password });
         if (error) throw error;
 
         // Offer to enable biometric login (Capacitor only, once per device)
@@ -147,7 +150,7 @@ const AuthPage = () => {
                 "Deseja ativar login por biometria?\n\nDa próxima vez, basta usar sua digital ou Face ID."
               );
               if (accept) {
-                const ok = await enableBiometricLogin(email.trim(), password);
+                const ok = await enableBiometricLogin(loginEmail, password);
                 if (ok) toast.success("Biometria ativada!");
               } else {
                 markBiometricPromptDismissed();
@@ -171,9 +174,11 @@ const AuthPage = () => {
         if (isMigrated && tempPwStillActive) {
           // Sign back out and send recovery email automatically
           await supabase.auth.signOut();
-          await supabase.auth.resetPasswordForEmail(email.trim(), {
-            redirectTo: `${window.location.origin}/auth?mode=reset`,
-          });
+          if (looksLikeEmail(id)) {
+            await supabase.auth.resetPasswordForEmail(id, {
+              redirectTo: `${window.location.origin}/auth?mode=reset`,
+            });
+          }
           toast.warning(
             "Sua conta foi migrada. Enviamos um e-mail para você redefinir sua senha.",
             { duration: 8000 }
@@ -232,16 +237,16 @@ const AuthPage = () => {
           navigate("/cliente", { replace: true });
         }
       } else if (mode === "signup") {
+        const whatsDigits = `55${whatsapp.replace(/\D/g, "")}`;
+        const synthEmail = waToSynthEmail(whatsDigits);
         const { data: signUpData, error } = await supabase.auth.signUp({
-          email: email.trim(),
+          email: synthEmail,
           password,
           options: {
             emailRedirectTo: window.location.origin,
             data: {
-              full_name: fullName.trim(),
               role: "cliente",
-               document: sanitizeDocument(cpf),
-              whatsapp: `55${whatsapp.replace(/\D/g, "")}`,
+              whatsapp: whatsDigits,
             },
           },
         });
@@ -255,9 +260,7 @@ const AuthPage = () => {
           });
           await supabase.from("profiles").update({
             terms_accepted_at: new Date().toISOString(),
-            full_name: fullName.trim(),
-             document: sanitizeDocument(cpf),
-            whatsapp_number: `55${whatsapp.replace(/\D/g, "")}`,
+            whatsapp_number: whatsDigits,
           }).eq("user_id", signUpData.user.id);
         }
         toast.success("Conta criada com sucesso!");
@@ -338,7 +341,27 @@ const AuthPage = () => {
           {mode === "login" && (
             <BiometricLoginButton onSuccess={() => navigate("/cliente", { replace: true })} />
           )}
-          {mode !== "reset" && (
+          {mode === "login" && (
+            <div>
+              <label className="text-xs font-semibold text-slate-500 tracking-wide mb-1.5 block">WhatsApp</label>
+              <div className="relative">
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <input
+                  type="tel"
+                  inputMode="text"
+                  placeholder="(14) 99999-9999"
+                  value={identifier}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setIdentifier(looksLikeEmail(v) ? v : maskWhatsApp(v));
+                  }}
+                  className={inputClass}
+                  autoComplete="username"
+                />
+              </div>
+            </div>
+          )}
+          {mode === "forgot" && (
             <div>
               <label className="text-xs font-semibold text-slate-500 tracking-wide mb-1.5 block">E-mail</label>
               <div className="relative">
@@ -406,42 +429,6 @@ const AuthPage = () => {
                 </div>
               )}
             </>
-          )}
-
-          {mode === "signup" && (
-            <div>
-              <label className="text-xs font-semibold text-slate-500 tracking-wide mb-1.5 block">Nome completo</label>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                <input
-                  type="text"
-                  placeholder="Seu nome"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  autoComplete="name"
-                  maxLength={80}
-                  className={inputClass}
-                />
-              </div>
-            </div>
-          )}
-
-          {mode === "signup" && (
-            <div>
-               <label className="text-xs font-semibold text-slate-500 tracking-wide mb-1.5 block">CPF ou CNPJ</label>
-              <div className="relative">
-                <FileText className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                <input
-                  type="text"
-                  inputMode="numeric"
-                   placeholder="CPF ou CNPJ"
-                   value={cpf}
-                   onChange={(e) => setCpf(formatDocument(e.target.value))}
-                   maxLength={18}
-                  className={inputClass}
-                />
-              </div>
-            </div>
           )}
 
           {mode === "signup" && (
