@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Clock, ChefHat, Package, Truck, CheckCircle2, AlertTriangle, Timer, Smartphone, Banknote } from "lucide-react";
 import { formatBRL } from "@/lib/utils";
 import { statusColors } from "@/lib/orderStatus";
@@ -30,7 +31,7 @@ const defaultPaymentLabels: Record<string, string> = {
   dinheiro: "Dinheiro",
 };
 
-export const OrderCard = ({
+const OrderCardInner = ({
   order,
   onStatusChange,
   showActions = true,
