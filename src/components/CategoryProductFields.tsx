@@ -504,15 +504,60 @@ const CategoryProductFields = ({ category, metadata, onChange, onNameChange, sto
               {metadata.drink_type && !["Água","Refrigerante","Energético"].includes(metadata.drink_type) &&
                 renderTextField("Teor alcoólico", "alcohol_content", "Ex: 4.5%, 13%, 40%...")}
               {renderToggle("♻️ Casco retornável", "returnable_bottle")}
-              {metadata.returnable_bottle && (
-                <div className="space-y-2 rounded-xl border border-primary/20 bg-primary/5 p-3">
-                  {renderTextField("Valor do casco (R$)", "deposit_price", "Ex: 3,00")}
-                  {renderTextField("Grupo do vasilhame", "returnable_group", "Ex: garrafa 600ml")}
-                  <p className="text-[10px] text-muted-foreground leading-relaxed">
-                    💡 Garrafas com o mesmo "grupo" são intercambiáveis na troca (Heineken 600ml ↔ Brahma 600ml).
-                  </p>
-                </div>
-              )}
+              {metadata.returnable_bottle && (() => {
+                const pkg = String(metadata.packaging || "").toLowerCase().trim();
+                const vol = String(metadata.volume || "").toLowerCase().replace(/\s+/g, "");
+                const suggested = pkg && vol ? `${pkg}-${vol}` : "";
+                const current = String(metadata.returnable_group || "").trim();
+                return (
+                  <div className="space-y-3 rounded-xl border border-primary/20 bg-primary/5 p-3">
+                    {renderTextField("Valor do casco (R$)", "deposit_price", "Ex: 3,00")}
+
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-foreground/70">
+                        Grupo do vasilhame
+                      </label>
+                      {suggested ? (
+                        <button
+                          type="button"
+                          onClick={() => set("returnable_group", suggested)}
+                          className={`w-full text-left text-xs px-3 py-2 rounded-lg border transition-all ${
+                            current === suggested
+                              ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-400 font-bold"
+                              : "bg-muted/40 border-border text-foreground hover:border-primary/40"
+                          }`}
+                        >
+                          {current === suggested ? "✓ " : "👉 Usar sugestão: "}
+                          <span className="font-mono">{suggested}</span>
+                        </button>
+                      ) : (
+                        <p className="text-[10px] text-amber-600 dark:text-amber-400">
+                          ⚠️ Preencha <strong>Embalagem</strong> e <strong>Volume</strong> acima para gerar o grupo automaticamente.
+                        </p>
+                      )}
+                      <input
+                        type="text"
+                        value={current}
+                        onChange={(e) => set("returnable_group", e.target.value.toLowerCase().trim())}
+                        placeholder="ou digite manualmente (ex: garrafa-600ml)"
+                        className="w-full bg-muted text-foreground px-3 py-1.5 rounded-lg text-xs border border-border focus:border-primary focus:outline-none font-mono"
+                      />
+                    </div>
+
+                    <div className="text-[10px] text-muted-foreground leading-relaxed space-y-1 border-t border-primary/10 pt-2">
+                      <p>
+                        💡 <strong>Como funciona:</strong> produtos com o <strong>mesmo grupo</strong> podem ser trocados entre si.
+                      </p>
+                      <p>
+                        Ex: <code className="bg-muted px-1 rounded">garrafa-600ml</code> aceita troca de Heineken ↔ Brahma ↔ Skol (todas garrafa 600ml).
+                      </p>
+                      <p className="text-amber-600 dark:text-amber-400">
+                        ⚠️ Use sempre o mesmo formato em todos os produtos — minúsculas, sem espaços.
+                      </p>
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* Temperatura de serviço */}
               <div className="space-y-1.5">
