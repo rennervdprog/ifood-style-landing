@@ -81,6 +81,28 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
     queryClient.invalidateQueries({ queryKey: ["addon-group-links"] });
   };
 
+  const moveItem = async (group: any, itemId: string, direction: -1 | 1) => {
+    const sorted = [...(group.addon_items as any[])].sort((a, b) => a.sort_order - b.sort_order);
+    const idx = sorted.findIndex((it) => it.id === itemId);
+    const target = idx + direction;
+    if (idx < 0 || target < 0 || target >= sorted.length) return;
+    [sorted[idx], sorted[target]] = [sorted[target], sorted[idx]];
+    // Reassign sort_order sequentially
+    const updates = sorted.map((it, i) => ({ id: it.id, sort_order: i + 1 }));
+    // Optimistic update
+    queryClient.setQueryData(["store-addon-groups", storeId], (old: any) =>
+      (old || []).map((g: any) =>
+        g.id === group.id
+          ? { ...g, addon_items: updates.map((u) => ({ ...sorted.find((s) => s.id === u.id), sort_order: u.sort_order })) }
+          : g
+      )
+    );
+    await Promise.all(
+      updates.map((u) => supabase.from("addon_items").update({ sort_order: u.sort_order } as any).eq("id", u.id))
+    );
+    invalidate();
+  };
+
   const addGroup = async () => {
     if (!groupForm.name.trim()) return;
     const { data: newGroup, error } = await supabase.from("addon_groups").insert({
