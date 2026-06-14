@@ -43,6 +43,7 @@ DROP POLICY IF EXISTS "Public can read active stores via view" ON public.stores;
 DROP POLICY IF EXISTS "Anyone can read active stores" ON public.stores;
 DROP POLICY IF EXISTS "Anyone can read stores" ON public.stores;
 DROP POLICY IF EXISTS "Qualquer pessoa pode visualizar lojas" ON public.stores;
+DROP POLICY IF EXISTS "Public can read stores" ON public.stores;
 DROP POLICY IF EXISTS "Clients can read stores from their orders" ON public.stores;
 DROP POLICY IF EXISTS "unit_manager_select" ON public.stores;
 
