@@ -32,8 +32,7 @@ Deno.serve(async (req) => {
   };
 
   try {
-    const auth = req.headers.get("Authorization");
-    if (!auth?.startsWith("Bearer ")) return json({ error: "Unauthorized" }, 401);
+    const auth = req.headers.get("Authorization") || "";
 
     const EXTERNAL_URL = Deno.env.get("EXTERNAL_SUPABASE_URL") || Deno.env.get("SUPABASE_URL")!;
     const EXTERNAL_ANON = Deno.env.get("EXTERNAL_SUPABASE_ANON_KEY") || Deno.env.get("SUPABASE_ANON_KEY")!;
@@ -48,6 +47,16 @@ Deno.serve(async (req) => {
     const admin = createClient(EXTERNAL_URL, EXTERNAL_SVC);
 
     const token = auth.replace("Bearer ", "");
+    console.log("[e2e-pix-flow] env keys:", {
+      hasExtSvc: !!Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY"),
+      hasExtSrv2: !!Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY"),
+      hasNativeSrv: !!Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"),
+      hasCron: !!Deno.env.get("EXTERNAL_CRON_SECRET"),
+      hasE2eHdr: !!req.headers.get("x-e2e-secret"),
+      tokenLen: token.length,
+      svcLen: EXTERNAL_SVC?.length,
+      tokenEqSvc: token === EXTERNAL_SVC,
+    });
     // Bypass: header x-e2e-secret == EXTERNAL_CRON_SECRET (ou service-role key) permite rodar via tooling/CI
     const cronSecret = Deno.env.get("EXTERNAL_CRON_SECRET") || "";
     const e2eHeader = req.headers.get("x-e2e-secret") || "";
