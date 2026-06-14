@@ -3,11 +3,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, FlaskConical, Trash2, RefreshCw, Wallet, Receipt } from "lucide-react";
+import { Loader2, FlaskConical, Trash2, RefreshCw, Wallet, Receipt, Zap } from "lucide-react";
 import { toast } from "sonner";
 
-type Action = "seed" | "cleanup" | "status" | "provision-asaas" | "panel";
-type Result = { ok?: boolean; created?: any[]; removed?: string[]; stores?: any[]; results?: any[]; password?: string; error?: string };
+type Action = "seed" | "cleanup" | "status" | "provision-asaas" | "panel" | "e2e-pix";
+type Result = { ok?: boolean; created?: any[]; removed?: string[]; stores?: any[]; results?: any[]; password?: string; error?: string; steps?: any[]; issues?: string[]; final?: any; order_id?: string; asaas_payment_id?: string };
 
 export default function SandboxTestsPage() {
   const [loading, setLoading] = useState<Action | null>(null);
@@ -17,7 +17,9 @@ export default function SandboxTestsPage() {
     setLoading(action);
     setResult(null);
     try {
-      const { data, error } = await supabase.functions.invoke("seed-test-accounts", { body: { action } });
+      const fn = action === "e2e-pix" ? "e2e-pix-flow" : "seed-test-accounts";
+      const body = action === "e2e-pix" ? {} : { action };
+      const { data, error } = await supabase.functions.invoke(fn, { body });
       if (error) {
         // tenta extrair body do erro
         let bodyText = "";
@@ -69,6 +71,10 @@ export default function SandboxTestsPage() {
             <Button variant="secondary" disabled={!!loading} onClick={() => run("panel")}>
               {loading === "panel" ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Receipt className="h-4 w-4 mr-2" />}
               Ver saldos sandbox
+            </Button>
+            <Button disabled={!!loading} onClick={() => run("e2e-pix")}>
+              {loading === "e2e-pix" ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Zap className="h-4 w-4 mr-2" />}
+              Rodar fluxo PIX E2E
             </Button>
             <Button variant="destructive" disabled={!!loading} onClick={() => run("cleanup")}>
               {loading === "cleanup" ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Trash2 className="h-4 w-4 mr-2" />}
@@ -132,6 +138,36 @@ export default function SandboxTestsPage() {
               </div>
             )}
             {result.error && <p className="text-destructive">{result.error}</p>}
+            {result.order_id && (
+              <div className="text-xs space-y-1 border-t pt-2">
+                <p><span className="font-semibold">Pedido:</span> <code>{result.order_id}</code></p>
+                {result.asaas_payment_id && <p><span className="font-semibold">PIX:</span> <code>{result.asaas_payment_id}</code></p>}
+                {result.final && (
+                  <pre className="bg-muted p-2 rounded overflow-x-auto">{JSON.stringify(result.final, null, 2)}</pre>
+                )}
+                {Array.isArray(result.issues) && result.issues.length > 0 && (
+                  <div className="space-y-1">
+                    <p className="font-semibold text-destructive">Problemas:</p>
+                    {result.issues.map((i, idx) => <p key={idx} className="text-destructive">• {i}</p>)}
+                  </div>
+                )}
+              </div>
+            )}
+            {Array.isArray(result.steps) && result.steps.length > 0 && (
+              <div className="space-y-1 border-t pt-2">
+                <p className="font-semibold">Passos:</p>
+                {result.steps.map((st, i) => (
+                  <div key={i} className="text-xs flex items-start gap-2">
+                    <Badge variant={st.ok ? "default" : "destructive"}>{st.ok ? "ok" : "erro"}</Badge>
+                    <div className="flex-1 min-w-0">
+                      <div>{st.step}</div>
+                      {st.error && <div className="text-destructive break-all">{st.error}</div>}
+                      {st.info && <pre className="text-[10px] text-muted-foreground overflow-x-auto">{typeof st.info === "string" ? st.info : JSON.stringify(st.info)}</pre>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
