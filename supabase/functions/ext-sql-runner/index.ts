@@ -79,6 +79,16 @@ Deno.serve(async (req) => {
       return json({ status: r.status, ok: r.ok, data: d });
     }
 
+    if (action === "test_embed") {
+      const r = await fetch(`${EXT_URL}/rest/v1/store_balances?select=store_id,repasse_pendente,stores!inner(id,name,status,store_plans!inner(plan_type,is_active))&stores.status=eq.ativo&stores.store_plans.is_active=eq.true`, {
+        headers: { apikey: SVC, Authorization: `Bearer ${SVC}` },
+      });
+      const t = await r.text();
+      let d: unknown = t;
+      try { d = JSON.parse(t); } catch {}
+      return json({ status: r.status, ok: r.ok, data: d });
+    }
+
     return json({ error: "unknown action" }, 400);
   } catch (e) {
     return json({ error: String(e) }, 500);
