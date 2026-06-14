@@ -39,7 +39,7 @@ const EmptiesReturnDialog = ({ open, orderId, storeId, items, onClose, onDone }:
       });
       if (eligible.length === 0) return [];
 
-      const groupNames = Array.from(new Set(eligible.map((p: any) => String(p.metadata.returnable_group).trim())));
+      const groupNames = Array.from(new Set(eligible.map((p: any) => String(p.metadata.returnable_group).trim().toLowerCase())));
       const { data: groups } = await (supabase as any)
         .from("returnable_groups")
         .select("id, name")
@@ -47,8 +47,8 @@ const EmptiesReturnDialog = ({ open, orderId, storeId, items, onClose, onDone }:
         .in("name", groupNames);
 
       return eligible.map((p: any) => {
-        const grpName = String(p.metadata.returnable_group).trim();
-        const grp = (groups || []).find((g: any) => g.name === grpName);
+        const grpName = String(p.metadata.returnable_group).trim().toLowerCase();
+        const grp = (groups || []).find((g: any) => String(g.name).toLowerCase() === grpName);
         const qtyOrdered = items.filter(i => i.product_id === p.id).reduce((s, i) => s + i.quantity, 0);
         return {
           product_id: p.id,
