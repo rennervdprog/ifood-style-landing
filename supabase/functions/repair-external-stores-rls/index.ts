@@ -37,8 +37,10 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   const serviceRole = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+  const externalCronSecret = Deno.env.get("EXTERNAL_CRON_SECRET") || "";
   const token = (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "");
-  if (!serviceRole || token !== serviceRole) return json({ error: "Unauthorized" }, 401);
+  const internalToken = req.headers.get("x-internal-token") || "";
+  if (token !== serviceRole && internalToken !== externalCronSecret) return json({ error: "Unauthorized" }, 401);
 
   const ref = Deno.env.get("EXTERNAL_SUPABASE_PROJECT_REF");
   const managementToken = Deno.env.get("EXTERNAL_SUPABASE_ACCESS_TOKEN");
