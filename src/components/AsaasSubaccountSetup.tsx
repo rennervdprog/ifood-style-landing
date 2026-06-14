@@ -350,6 +350,7 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
       }
 
       toast.success("Subconta criada! Split automático ativado. 🎉");
+      try { window.localStorage.removeItem(DRAFT_KEY); } catch {}
       qc.invalidateQueries({ queryKey: ["store-asaas", storeId] });
     } catch (e: any) {
       console.error("Erro ao criar subconta:", e);
@@ -375,6 +376,7 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
       }
       if ((data as any)?.error) throw new Error((data as any).error);
       toast.success("Subconta vinculada! ✅");
+      try { window.localStorage.removeItem(DRAFT_KEY); } catch {}
       setLastError(null); setDebugInfo(null);
       qc.invalidateQueries({ queryKey: ["store-asaas", storeId] });
     } catch (e: any) {
