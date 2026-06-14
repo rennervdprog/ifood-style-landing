@@ -106,6 +106,8 @@ type PizzaPriceMode = "maior" | "media" | "soma";
    const [deliveryFeeBase, setDeliveryFeeBase] = useState(storeDeliveryFeeBase?.toString() || "0");
    const [deliveryFeePerKm, setDeliveryFeePerKm] = useState(storeDeliveryFeePerKm?.toString() || "0");
   const [minimumOrderValue, setMinimumOrderValue] = useState(storeMinimumOrderValue?.toString() || "0");
+  const [freeDeliveryEnabled, setFreeDeliveryEnabled] = useState(false);
+  const [freeDeliveryThreshold, setFreeDeliveryThreshold] = useState("0");
   const storePlan = useStorePlan(storeId);
 
   // Verificar se conta Asaas está 100% aprovada para liberar PIX Online
@@ -156,6 +158,23 @@ type PizzaPriceMode = "maior" | "media" | "soma";
         if (data?.pix_type) setPixType(data.pix_type);
       });
   }, [user]);
+
+  // Carrega o limiar de frete grátis da loja
+  useEffect(() => {
+    if (!storeId) return;
+    (supabase as any)
+      .from("stores")
+      .select("free_delivery_threshold")
+      .eq("id", storeId)
+      .maybeSingle()
+      .then(({ data }: any) => {
+        const v = data?.free_delivery_threshold;
+        if (v != null && Number(v) > 0) {
+          setFreeDeliveryEnabled(true);
+          setFreeDeliveryThreshold(Number(v).toFixed(2));
+        }
+      });
+  }, [storeId]);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -277,6 +296,9 @@ type PizzaPriceMode = "maior" | "media" | "soma";
       delivery_fee_base: parseFloat(deliveryFeeBase.toString().replace(",", ".")) || 0,
       delivery_fee_per_km: parseFloat(deliveryFeePerKm.toString().replace(",", ".")) || 0,
       minimum_order_value: parseFloat(minimumOrderValue.toString().replace(",", ".")) || 0,
+      free_delivery_threshold: freeDeliveryEnabled
+        ? (parseFloat(freeDeliveryThreshold.toString().replace(",", ".")) || 0) || null
+        : null,
       address_street: addressStreet.trim() || null,
       address_number: addressNumber.trim() || null,
       address_complement: addressComplement.trim() || null,
@@ -952,6 +974,38 @@ const NotificationSection = () => {
              className="w-full bg-card border border-border rounded-xl px-4 py-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
            />
          </div>
+       </div>
+
+       {/* Frete grátis acima de X */}
+       <div className="bg-muted/50 border border-border rounded-2xl p-4 space-y-3">
+         <label className="text-sm font-bold text-foreground/80 flex items-center gap-2">
+           🚚 Frete grátis acima de um valor
+         </label>
+         <p className="text-[11px] text-muted-foreground -mt-1">
+           Quando o cliente atingir o subtotal definido, o frete fica <strong>R$ 0,00</strong> para ele. A taxa da entrega (motoboy/bairro) fica por sua conta como cortesia. A <strong>taxa da plataforma (R$ 2)</strong> continua sendo cobrada normalmente.
+         </p>
+         <label className="flex items-center gap-2 cursor-pointer select-none">
+           <input
+             type="checkbox"
+             checked={freeDeliveryEnabled}
+             onChange={(e) => setFreeDeliveryEnabled(e.target.checked)}
+             className="h-4 w-4 accent-primary"
+           />
+           <span className="text-xs font-bold text-foreground">Ativar frete grátis acima de um valor</span>
+         </label>
+         {freeDeliveryEnabled && (
+           <div>
+             <label className="text-xs font-bold text-foreground/80 mb-1 block">Subtotal mínimo para frete grátis (R$)</label>
+             <input
+               type="text"
+               inputMode="decimal"
+               value={freeDeliveryThreshold}
+               onChange={(e) => setFreeDeliveryThreshold(e.target.value.replace(/[^0-9.,]/g, ""))}
+               placeholder="Ex: 200,00"
+               className="w-full bg-card border border-border rounded-xl px-4 py-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
+             />
+           </div>
+         )}
        </div>
 
       {/* Pizza Half-and-Half Settings */}

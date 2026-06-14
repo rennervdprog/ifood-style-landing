@@ -122,7 +122,7 @@ const CheckoutPage = () => {
       const { data } = await supabase
          .from("stores_public")
          // 🔒 Inclui campos de km para cálculo correto da taxa de entrega
-          .select("name, address_cep, address_city, latitude, longitude, delivery_mode, own_delivery_fee, settings, is_open, force_closed, delivery_fee_type, delivery_base_km, delivery_fee_base, delivery_fee_per_km, minimum_order_value")
+           .select("name, address_cep, address_city, latitude, longitude, delivery_mode, own_delivery_fee, settings, is_open, force_closed, delivery_fee_type, delivery_base_km, delivery_fee_base, delivery_fee_per_km, minimum_order_value, free_delivery_threshold")
          .eq("id", storeId!)
         .maybeSingle();
       return data;
@@ -212,10 +212,21 @@ const CheckoutPage = () => {
   const freeShipPlatformAbsorb = (couponType === "free_shipping" && !isPickup)
     ? (storePlan.platformDeliverySplit > 0 ? storePlan.platformDeliverySplit : platformSplitFallback)
     : 0;
+  // Frete grátis por valor mínimo (configurado pela loja).
+  // Diferente do cupom: a LOJA absorve a taxa cheia da entrega (motoboy + plataforma),
+  // não só a parte da plataforma. Para o cliente, frete = R$ 0,00.
+  const storeFreeThreshold = Number((storeData as any)?.free_delivery_threshold || 0);
+  const freeDeliveryByThreshold = !isPickup && storeFreeThreshold > 0 && subtotal >= storeFreeThreshold;
+  const thresholdMissing = !isPickup && storeFreeThreshold > 0 && subtotal < storeFreeThreshold
+    ? storeFreeThreshold - subtotal
+    : 0;
+  const storeAbsorbedDeliveryFee = freeDeliveryByThreshold ? activeDeliveryFee : 0;
   const effectiveDeliveryFee = isPickup
     ? 0
-    : (couponType === "free_shipping" ? freeShipPlatformAbsorb : activeDeliveryFee);
-  const effectiveCouponDiscount = couponDiscount + freeShipPlatformAbsorb;
+    : freeDeliveryByThreshold
+      ? 0
+      : (couponType === "free_shipping" ? freeShipPlatformAbsorb : activeDeliveryFee);
+  const effectiveCouponDiscount = couponDiscount + (freeDeliveryByThreshold ? 0 : freeShipPlatformAbsorb);
   const walletDiscount = useWallet ? Math.min(walletBalance, Math.max(0, addMoney(subtotal, effectiveDeliveryFee, -effectiveCouponDiscount, -loyaltyDiscount))) : 0;
   const [emptiesSelections, setEmptiesSelections] = useState<EmptiesExchangeSelection[]>([]);
   const [emptiesDiscount, setEmptiesDiscount] = useState(0);
@@ -526,6 +537,7 @@ const CheckoutPage = () => {
             store_id: storeId,
             subtotal: storeSubtotal,
             delivery_fee: effectiveDeliveryFee,
+            delivery_fee_absorbed_by_store: storeAbsorbedDeliveryFee,
             commission_rate: storePlan.commissionRate ?? 0,
             total_price: storeTotalPrice,
             wallet_discount: walletDiscount,
@@ -1211,10 +1223,31 @@ const CheckoutPage = () => {
                     <p className="mt-2">Em pedidos para retirada na loja, não há taxa de entrega.</p>
                   </WhyThisCharge>
                 </span>
-                <span className={`font-semibold ${couponType === "free_shipping" ? "text-green-600 line-through" : "text-foreground"}`}>
+                <span className={`font-semibold ${(couponType === "free_shipping" || freeDeliveryByThreshold) ? "text-green-600 line-through" : "text-foreground"}`}>
                   {calculatingFee ? "..." : `${formatBRL(activeDeliveryFee)}`}
                 </span>
               </div>
+              )}
+
+              {!isPickup && freeDeliveryByThreshold && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-green-600 font-medium">🚚 Frete grátis (cortesia da loja)</span>
+                  <span className="font-bold text-green-600">R$ 0,00</span>
+                </div>
+              )}
+
+              {!isPickup && !freeDeliveryByThreshold && thresholdMissing > 0 && (
+                <div className="mt-1 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2">
+                  <p className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">
+                    Adicione mais <strong>{formatBRL(thresholdMissing)}</strong> e ganhe <strong>frete grátis</strong>!
+                  </p>
+                  <div className="mt-1.5 h-1.5 w-full rounded-full bg-emerald-500/20 overflow-hidden">
+                    <div
+                      className="h-full bg-emerald-500 transition-all"
+                      style={{ width: `${Math.min(100, (subtotal / storeFreeThreshold) * 100)}%` }}
+                    />
+                  </div>
+                </div>
               )}
 
               {!isPickup && feeBreakdown && couponType !== "free_shipping" && (
