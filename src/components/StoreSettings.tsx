@@ -159,6 +159,23 @@ type PizzaPriceMode = "maior" | "media" | "soma";
       });
   }, [user]);
 
+  // Carrega o limiar de frete grátis da loja
+  useEffect(() => {
+    if (!storeId) return;
+    (supabase as any)
+      .from("stores")
+      .select("free_delivery_threshold")
+      .eq("id", storeId)
+      .maybeSingle()
+      .then(({ data }: any) => {
+        const v = data?.free_delivery_threshold;
+        if (v != null && Number(v) > 0) {
+          setFreeDeliveryEnabled(true);
+          setFreeDeliveryThreshold(Number(v).toFixed(2));
+        }
+      });
+  }, [storeId]);
+
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
