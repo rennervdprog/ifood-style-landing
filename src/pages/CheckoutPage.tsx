@@ -212,10 +212,21 @@ const CheckoutPage = () => {
   const freeShipPlatformAbsorb = (couponType === "free_shipping" && !isPickup)
     ? (storePlan.platformDeliverySplit > 0 ? storePlan.platformDeliverySplit : platformSplitFallback)
     : 0;
+  // Frete grátis por valor mínimo (configurado pela loja).
+  // Diferente do cupom: a LOJA absorve a taxa cheia da entrega (motoboy + plataforma),
+  // não só a parte da plataforma. Para o cliente, frete = R$ 0,00.
+  const storeFreeThreshold = Number((storeData as any)?.free_delivery_threshold || 0);
+  const freeDeliveryByThreshold = !isPickup && storeFreeThreshold > 0 && subtotal >= storeFreeThreshold;
+  const thresholdMissing = !isPickup && storeFreeThreshold > 0 && subtotal < storeFreeThreshold
+    ? storeFreeThreshold - subtotal
+    : 0;
+  const storeAbsorbedDeliveryFee = freeDeliveryByThreshold ? activeDeliveryFee : 0;
   const effectiveDeliveryFee = isPickup
     ? 0
-    : (couponType === "free_shipping" ? freeShipPlatformAbsorb : activeDeliveryFee);
-  const effectiveCouponDiscount = couponDiscount + freeShipPlatformAbsorb;
+    : freeDeliveryByThreshold
+      ? 0
+      : (couponType === "free_shipping" ? freeShipPlatformAbsorb : activeDeliveryFee);
+  const effectiveCouponDiscount = couponDiscount + (freeDeliveryByThreshold ? 0 : freeShipPlatformAbsorb);
   const walletDiscount = useWallet ? Math.min(walletBalance, Math.max(0, addMoney(subtotal, effectiveDeliveryFee, -effectiveCouponDiscount, -loyaltyDiscount))) : 0;
   const [emptiesSelections, setEmptiesSelections] = useState<EmptiesExchangeSelection[]>([]);
   const [emptiesDiscount, setEmptiesDiscount] = useState(0);
