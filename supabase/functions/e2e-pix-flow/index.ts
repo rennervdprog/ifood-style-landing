@@ -58,7 +58,7 @@ Deno.serve(async (req) => {
       tokenEqSvc: token === EXTERNAL_SVC,
     });
     // Bypass: header x-e2e-secret == EXTERNAL_CRON_SECRET (ou service-role key) permite rodar via tooling/CI
-    const cronSecret = Deno.env.get("EXTERNAL_CRON_SECRET") || "";
+    const cronSecret = Deno.env.get("E2E_ADMIN_SECRET") || Deno.env.get("EXTERNAL_CRON_SECRET") || "";
     const e2eHeader = req.headers.get("x-e2e-secret") || "";
     if (token === EXTERNAL_SVC || (cronSecret && e2eHeader === cronSecret)) {
       log("auth_admin", true, { via: "service_or_cron_secret" });
