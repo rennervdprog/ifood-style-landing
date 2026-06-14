@@ -204,7 +204,7 @@ const DriverDashboard = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orders")
-        .select("*, stores(name, owner_id, address_street, address_number, address_neighborhood, address_city, address_state, address_cep), order_items(*, products(name))")
+        .select("*, stores(name, owner_id, address_street, address_number, address_neighborhood, address_city, address_state, address_cep), order_items(id, quantity, unit_price, observations, addons, products(name))")
         .eq("driver_id", user!.id)
         .in("status", ["pronto_para_entrega", "saiu_entrega", "em_transito"] as any)
         .maybeSingle();
