@@ -113,18 +113,10 @@ Deno.serve(async (req) => {
       const code = body?.code as string;
       const verifyJwt = body?.verify_jwt === true;
       if (!slug || !code) return json({ error: "slug e code obrigatórios" }, 400);
-      // PATCH atualiza função existente; usa multipart com file
-      const fd = new FormData();
-      fd.append("metadata", new Blob([JSON.stringify({
-        name: slug,
-        verify_jwt: verifyJwt,
-        entrypoint_path: "index.ts",
-      })], { type: "application/json" }));
-      fd.append("file", new Blob([code], { type: "application/typescript" }), "index.ts");
-      const r = await fetch(`https://api.supabase.com/v1/projects/${REF}/functions/${slug}?slug=${slug}&bundleOnly=false`, {
+      const r = await fetch(`https://api.supabase.com/v1/projects/${REF}/functions/${slug}`, {
         method: "PATCH",
-        headers: { Authorization: `Bearer ${PAT}` },
-        body: fd,
+        headers: { Authorization: `Bearer ${PAT}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ name: slug, verify_jwt: verifyJwt, body: code }),
       });
       const t = await r.text();
       let d: unknown = t;
