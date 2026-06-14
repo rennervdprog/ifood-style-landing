@@ -805,10 +805,7 @@ const ProductDetailModal = ({ product, storeName, storeCategory, singleSize = fa
       <DialogContent
         aria-describedby="product-detail-description"
         onOpenAutoFocus={(event) => event.preventDefault()}
-        className={cn(
-          "left-0 top-0 z-[110] m-0 flex h-[100dvh] w-full max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-none border-none bg-background p-0 shadow-2xl outline-none data-[state=closed]:slide-out-to-left-0 data-[state=closed]:slide-out-to-top-0 data-[state=open]:slide-in-from-left-0 data-[state=open]:slide-in-from-top-0 md:left-[50%] md:top-[50%] md:h-[90vh] md:max-w-lg md:translate-x-[-50%] md:translate-y-[-50%] md:rounded-3xl [&>button.absolute]:hidden",
-          cat === "adegas" && "adega-theme"
-        )}
+        className="left-0 top-0 z-[110] m-0 flex h-[100dvh] w-full max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-none border-none bg-background p-0 shadow-2xl outline-none data-[state=closed]:slide-out-to-left-0 data-[state=closed]:slide-out-to-top-0 data-[state=open]:slide-in-from-left-0 data-[state=open]:slide-in-from-top-0 md:left-[50%] md:top-[50%] md:h-[90vh] md:max-w-lg md:translate-x-[-50%] md:translate-y-[-50%] md:rounded-3xl [&>button.absolute]:hidden"
       >
         <DialogTitle className="sr-only">{product.name}</DialogTitle>
         <DialogDescription id="product-detail-description" className="sr-only">
