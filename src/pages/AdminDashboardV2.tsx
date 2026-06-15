@@ -1316,7 +1316,9 @@ const AdminDashboard = () => {
   };
 
   // ─── Navegação agrupada ───
-  const isPizza = store?.category === "pizzas" || ((store as any)?.categories || []).includes("pizzas");
+  // "isPizza" controla a aba Pizzaria/Pastel — true para qualquer das duas categorias.
+  const storeCats = [store?.category, ...((store as any)?.categories || [])].filter(Boolean) as string[];
+  const isPizza = storeCats.includes("pizzas") || storeCats.includes("pasteis");
   const allowFullReports = storePlan.allowFullReports;
 
   // Grupos visíveis (com pelo menos 1 sub-tab disponível)
