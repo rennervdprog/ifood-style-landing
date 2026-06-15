@@ -42,6 +42,7 @@ interface Props {
   sections?: MenuSection[];
   priceMode: "maior" | "media";
   maxFlavors?: FlavorCount;
+  maxComplements?: number;
   singleSize?: boolean;
   onAdd: (product: {
     id: string;
@@ -57,13 +58,13 @@ interface Props {
 // Step 0 = choose flavor count. Steps 1..flavorCount = pick each flavor. Last step = borders/observations.
 type Step = number;
 
-const PastelBuilderModal = ({ open, onClose, storeName, storeId, products, sections, priceMode, maxFlavors = 4, singleSize = false, onAdd }: Props) => {
+const PastelBuilderModal = ({ open, onClose, storeName, storeId, products, sections, priceMode, maxFlavors = 4, maxComplements = 3, singleSize = false, onAdd }: Props) => {
   const [flavorCount, setFlavorCount] = useState<FlavorCount>(2);
   // If lojista only allows meio a meio (max=2), skip the count picker entirely.
   const [step, setStep] = useState<Step>(maxFlavors === 2 ? 1 : 0);
   const [productIds, setProductIds] = useState<(string | null)[]>([null, null]);
   const [selectedComplementIds, setSelectedComplementIds] = useState<string[]>([]);
-  const MAX_COMPLEMENTS = 3;
+  const MAX_COMPLEMENTS = Math.max(1, Math.min(20, Number(maxComplements) || 3));
   const [observations, setObservations] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
