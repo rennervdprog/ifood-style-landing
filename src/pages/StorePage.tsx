@@ -1534,6 +1534,7 @@ const StorePage = () => {
             sections={sections || []}
             priceMode={storeSettings.pastel_price_mode || "maior"}
             maxFlavors={(storeSettings.pastel_config?.max_flavors as 2 | 3 | 4) || 4}
+            maxComplements={Number(storeSettings.pastel_config?.max_complements) || 3}
             singleSize={!!storeSettings.pastel_single_size}
             onAdd={handleAddToCart}
           />
