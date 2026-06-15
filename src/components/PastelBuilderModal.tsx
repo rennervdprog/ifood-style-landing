@@ -519,7 +519,7 @@ const PastelBuilderModal = ({ open, onClose, storeName, storeId, products, secti
             )}
 
             {/* When the store has no borders, show observations on the last flavor step (final step) */}
-            {step === flavorCount && !hasBorders && !bordersLoading && productIds[currentFlavorIdx] && (
+            {step === flavorCount && !hasComplements && !bordersLoading && productIds[currentFlavorIdx] && (
               <div className="pt-4">
                 <label className="text-sm font-bold text-foreground mb-1.5 block">Observações</label>
                 <Textarea
