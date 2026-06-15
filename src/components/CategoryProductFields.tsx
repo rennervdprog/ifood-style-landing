@@ -211,14 +211,19 @@ const CategoryProductFields = ({ category, metadata, onChange, onNameChange, sto
   // Lê configuração de "tamanho único" da loja (afeta apenas pizzaria)
   const { data: storeSettingsRow } = useQuery({
     queryKey: ["store-settings-for-category", storeId],
-    enabled: !!storeId && (category === "pizzas" || category === "pasteis"),
+    enabled: !!storeId,
     queryFn: async () => {
-      const { data } = await supabase.from("stores").select("settings").eq("id", storeId!).single();
+      const { data } = await supabase.from("stores").select("settings, category, categories").eq("id", storeId!).single();
       return data;
     },
   });
   const pizzaSingleSize: boolean = !!(storeSettingsRow?.settings as any)?.pizza_single_size;
   const pastelSingleSize: boolean = !!(storeSettingsRow?.settings as any)?.pastel_single_size;
+  const storeCats: string[] = [
+    (storeSettingsRow as any)?.category,
+    ...(((storeSettingsRow as any)?.categories || []) as string[]),
+  ].filter(Boolean);
+  const storeHasPastel = storeCats.includes("pasteis");
 
   const addToList = (key: string, value: string) => {
     if (!value.trim()) return;
@@ -303,6 +308,14 @@ const CategoryProductFields = ({ category, metadata, onChange, onNameChange, sto
           </div>
         )}
       </div>
+      {storeHasPastel && category !== "pasteis" && !metadata.is_beverage && (
+        <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 space-y-1">
+          {renderToggle("🥟 É sabor de pastel? (aparece no modal Monte seu Pastel)", "is_pastel_flavor")}
+          <p className="text-[10px] text-muted-foreground">
+            Ative para produtos que são <b>recheios de pastel</b> (ex.: Carne, Frango, Queijo), mesmo que estejam em outra categoria.
+          </p>
+        </div>
+      )}
       {!metadata.is_beverage && categoryFields}
     </>
   );
