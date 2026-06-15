@@ -25,6 +25,7 @@ const PIX_TYPE_OPTIONS = [
 const CATEGORY_OPTIONS = [
   { value: "lanches", label: "Lanches" },
   { value: "pizzas", label: "Pizzas" },
+  { value: "pasteis", label: "Pastéis" },
   { value: "adegas", label: "Adegas" },
   { value: "japonesa", label: "Japonesa" },
   { value: "saudavel", label: "Saudável" },
