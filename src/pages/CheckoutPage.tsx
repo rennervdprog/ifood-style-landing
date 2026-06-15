@@ -683,7 +683,7 @@ const CheckoutPage = () => {
   const stepsDone = [isPickup || hasValidAddress, !!paymentMethod];
 
   return (
-    <div className="min-h-screen bg-background pb-40 overflow-y-auto">
+    <div className="min-h-screen bg-background pb-56 overflow-y-auto">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-card/95 backdrop-blur-sm border-b border-border flex items-center h-14 px-4 gap-3">
         <button onClick={() => navigate(-1)} className="p-1 -ml-1">
