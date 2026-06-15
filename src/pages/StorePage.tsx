@@ -104,6 +104,8 @@ const StorePage = () => {
 
   const queryClient = useQueryClient();
 
+  const isSandbox = !!user?.email?.endsWith("@itasuper.test");
+
   // ⚡ Bootstrap: 1 round-trip que pré-popula store + hours + sections + products +
   // owner_profile + online_drivers_count. As useQuery() abaixo continuam existindo
   // como fallback / refetch — mas pegam initialData do cache e não mostram loading.
@@ -135,7 +137,6 @@ const StorePage = () => {
     gcTime: 1000 * 60 * 10,
   });
 
-   const isSandbox = !!user?.email?.endsWith("@itasuper.test");
    const { data: store, isLoading: storeLoading } = useQuery({
      queryKey: ["store", id || slug, isSandbox],
     queryFn: async () => {
