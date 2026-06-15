@@ -211,13 +211,14 @@ const CategoryProductFields = ({ category, metadata, onChange, onNameChange, sto
   // Lê configuração de "tamanho único" da loja (afeta apenas pizzaria)
   const { data: storeSettingsRow } = useQuery({
     queryKey: ["store-settings-for-category", storeId],
-    enabled: !!storeId && category === "pizzas",
+    enabled: !!storeId && (category === "pizzas" || category === "pasteis"),
     queryFn: async () => {
       const { data } = await supabase.from("stores").select("settings").eq("id", storeId!).single();
       return data;
     },
   });
   const pizzaSingleSize: boolean = !!(storeSettingsRow?.settings as any)?.pizza_single_size;
+  const pastelSingleSize: boolean = !!(storeSettingsRow?.settings as any)?.pastel_single_size;
 
   const addToList = (key: string, value: string) => {
     if (!value.trim()) return;
@@ -325,6 +326,24 @@ const CategoryProductFields = ({ category, metadata, onChange, onNameChange, sto
           <>
             <p className="text-[11px] text-muted-foreground -mt-1">
               Defina os tamanhos disponíveis (ex: P, M, G, Família) com o preço de cada um.
+              Aparecem para o cliente ao escolher 1 sabor e no modal meio-a-meio.
+            </p>
+            <PizzaSizesField metadata={metadata} onChange={onChange} />
+          </>
+        )}
+      </FieldBox>
+    ),
+    pasteis: (
+      <FieldBox emoji="🥟" title="Tamanhos do Pastel">
+        {pastelSingleSize ? (
+          <p className="text-[11px] text-muted-foreground -mt-1">
+            Sua pastelaria está configurada para <b>um único tamanho</b>. O cliente verá apenas o preço base do produto.
+            Para vender pastel em vários tamanhos, desative essa opção em <b>Pizzaria/Pastel → Regras de Combinação</b>.
+          </p>
+        ) : (
+          <>
+            <p className="text-[11px] text-muted-foreground -mt-1">
+              Defina os tamanhos disponíveis (ex: Pequeno, Grande) com o preço de cada um.
               Aparecem para o cliente ao escolher 1 sabor e no modal meio-a-meio.
             </p>
             <PizzaSizesField metadata={metadata} onChange={onChange} />

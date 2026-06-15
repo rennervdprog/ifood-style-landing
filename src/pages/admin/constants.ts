@@ -112,7 +112,7 @@ export const dashboardGroups: DashboardGroup[] = [
       { key: "menu", label: "Produtos", icon: UtensilsCrossed },
       { key: "addons", label: "Adicionais", icon: Plus },
       { key: "promotions", label: "Promoções", icon: Flame },
-      { key: "bordas", label: "Pizzaria", icon: CircleDot, pizzaOnly: true },
+      { key: "bordas", label: "Pizzaria/Pastel", icon: CircleDot, pizzaOnly: true },
     ],
   },
   {

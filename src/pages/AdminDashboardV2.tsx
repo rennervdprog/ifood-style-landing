@@ -1316,7 +1316,9 @@ const AdminDashboard = () => {
   };
 
   // ─── Navegação agrupada ───
-  const isPizza = store?.category === "pizzas" || ((store as any)?.categories || []).includes("pizzas");
+  // "isPizza" controla a aba Pizzaria/Pastel — true para qualquer das duas categorias.
+  const storeCats = [store?.category, ...((store as any)?.categories || [])].filter(Boolean) as string[];
+  const isPizza = storeCats.includes("pizzas") || storeCats.includes("pasteis");
   const allowFullReports = storePlan.allowFullReports;
 
   // Grupos visíveis (com pelo menos 1 sub-tab disponível)
@@ -1808,7 +1810,7 @@ const AdminDashboard = () => {
                 {dashboardTab === "cash_register" && <CashRegisterTab storeId={store.id} />}
                 {dashboardTab === "tutoriais" && <TutoriaisTab />}
                 {dashboardTab === "addons" && <AddonsTab storeId={store.id} />}
-                {dashboardTab === "bordas" && <BordasTab storeId={store.id} category={store.category} />}
+                {dashboardTab === "bordas" && <BordasTab storeId={store.id} category={store.category} categories={(store as any).categories} />}
                 {dashboardTab === "hours" && <HoursTab storeId={store.id} forceClosed={(store as any).force_closed || false} />}
                 {dashboardTab === "settings" && <SettingsTab store={store} />}
                 {dashboardTab === "finance" && (

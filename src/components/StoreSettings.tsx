@@ -25,6 +25,7 @@ const PIX_TYPE_OPTIONS = [
 const CATEGORY_OPTIONS = [
   { value: "lanches", label: "Lanches" },
   { value: "pizzas", label: "Pizzas" },
+  { value: "pasteis", label: "Pastéis" },
   { value: "adegas", label: "Adegas" },
   { value: "japonesa", label: "Japonesa" },
   { value: "saudavel", label: "Saudável" },
@@ -1013,6 +1014,15 @@ const NotificationSection = () => {
         <div className="bg-muted/30 border border-dashed border-border rounded-2xl p-4">
           <p className="text-xs text-muted-foreground">
             🍕 As configurações de pizza (sabores, meio a meio e cálculo de preço) ficam na aba <strong>Pizzaria</strong>.
+          </p>
+        </div>
+      )}
+
+      {/* Pastel Settings hint */}
+      {(category === "pasteis" || (storeCategories || []).includes("pasteis")) && (
+        <div className="bg-muted/30 border border-dashed border-border rounded-2xl p-4">
+          <p className="text-xs text-muted-foreground">
+            🥟 As configurações de pastel (sabores, meio a meio, bordas e cálculo de preço) ficam na aba <strong>Pizzaria/Pastel</strong>.
           </p>
         </div>
       )}
