@@ -24,7 +24,7 @@ const BordasTab = ({ storeId, category, categories }: Props) => {
 
   const tabs: { key: ConfigTab; label: string; icon: typeof Pizza }[] = [
     { key: "sabores", label: "Regras", icon: kind === "pizza" ? Pizza : UtensilsCrossed },
-    { key: "bordas", label: "Bordas", icon: Circle },
+    { key: "bordas", label: kind === "pastel" ? "Complementos" : "Bordas", icon: Circle },
   ];
 
   const title = kind === "pizza" ? "Configurações da Pizzaria" : "Configurações da Pastelaria";
