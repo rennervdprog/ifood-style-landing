@@ -1018,6 +1018,15 @@ const NotificationSection = () => {
         </div>
       )}
 
+      {/* Pastel Settings hint */}
+      {(category === "pasteis" || (storeCategories || []).includes("pasteis")) && (
+        <div className="bg-muted/30 border border-dashed border-border rounded-2xl p-4">
+          <p className="text-xs text-muted-foreground">
+            🥟 As configurações de pastel (sabores, meio a meio, bordas e cálculo de preço) ficam na aba <strong>Pizzaria/Pastel</strong>.
+          </p>
+        </div>
+      )}
+
 
       {/* ─── Métodos de Pagamento ──────────────────────────────────── */}
       <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
