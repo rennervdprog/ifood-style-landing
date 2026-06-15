@@ -387,7 +387,7 @@ const PastelBuilderModal = ({ open, onClose, storeName, storeId, products, secti
               </div>
               {allChosen && (
                 <span className="text-[10px] text-muted-foreground">
-                  Pizza {formatBRL(pastelPrice)}
+                  Pastel {formatBRL(pastelPrice)}
                   {borderPrice > 0 && ` + Borda ${formatBRL(borderPrice)}`}
                   {" = " + formatBRL(unitPrice)}
                 </span>

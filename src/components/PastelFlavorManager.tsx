@@ -88,7 +88,7 @@ const PastelFlavorManager = ({ storeId }: PastelFlavorManagerProps) => {
         </div>
       </div>
 
-      {/* Max flavors per pizza */}
+      {/* Max flavors per pastel */}
       <div className="bg-card border border-border rounded-2xl p-4 space-y-3">
         <h3 className="text-xs font-bold text-foreground/70 uppercase">Sabores por pastel</h3>
         <div className="grid grid-cols-3 gap-2">
@@ -113,7 +113,7 @@ const PastelFlavorManager = ({ storeId }: PastelFlavorManagerProps) => {
           })}
         </div>
         <p className="text-[10px] text-muted-foreground">
-          Define o máximo de sabores que o cliente pode combinar em uma única pizza.
+          Define o máximo de sabores que o cliente pode combinar em um único pastel.
         </p>
       </div>
 
@@ -122,7 +122,7 @@ const PastelFlavorManager = ({ storeId }: PastelFlavorManagerProps) => {
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm font-bold text-foreground">Permitir múltiplos sabores</p>
-            <p className="text-[10px] text-muted-foreground">Clientes poderão montar pizza com sabores diferentes</p>
+            <p className="text-[10px] text-muted-foreground">Clientes poderão montar pastel com sabores diferentes</p>
           </div>
           <button
             onClick={() => saveSettingField({ pastel_half_enabled: !halfEnabled })}
