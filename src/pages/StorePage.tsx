@@ -280,13 +280,15 @@ const StorePage = () => {
   const { data: reorderProducts } = useQuery({
     queryKey: ["reorder-products", storeId, user?.id],
     queryFn: async () => {
+      const since = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString();
       const { data: orderItems, error } = await supabase
         .from("order_items")
         .select("product_id, quantity, orders!inner(store_id, client_id, status)")
         .eq("orders.store_id", storeId!)
         .eq("orders.client_id", user!.id)
         .in("orders.status", ["entregue", "finalizado"])
-        .limit(300);
+        .gte("orders.created_at", since)
+        .limit(150);
       if (error) throw error;
       const countMap: Record<string, number> = {};
       (orderItems || []).forEach((item: any) => {
@@ -306,12 +308,14 @@ const StorePage = () => {
   const { data: popularProducts } = useQuery({
     queryKey: ["popular-products", storeId],
     queryFn: async () => {
+      const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
       const { data: orderItems, error } = await supabase
         .from("order_items")
         .select("product_id, quantity, orders!inner(store_id, status)")
         .eq("orders.store_id", storeId!)
         .in("orders.status", ["entregue", "finalizado"])
-        .limit(500);
+        .gte("orders.created_at", since)
+        .limit(200);
       if (error) throw error;
       const countMap: Record<string, number> = {};
       (orderItems || []).forEach((item: any) => {
