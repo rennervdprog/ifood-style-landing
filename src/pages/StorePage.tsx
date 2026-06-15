@@ -745,7 +745,7 @@ const StorePage = () => {
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
 
          {/* Sticky Header Top Bar */}
-         {!showHalfHalf && (
+         {!showHalfHalf && !showPastelBuilder && (
            <div className={`fixed top-0 left-0 right-0 flex items-center justify-between p-4 z-[70] transition-all duration-300 h-[64px] ${
             scrolled ? "bg-background border-b border-border shadow-sm py-2" : "bg-transparent"
            }`}>
