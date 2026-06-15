@@ -78,9 +78,11 @@ export function printThermalReceipt(
       const requiredAddons = addons.filter((a: any) => a.required && a.groupName);
       const isBorder = (a: any) => typeof a?.name === "string" && /^borda\s*:/i.test(a.name);
       const isSize = (a: any) => typeof a?.name === "string" && /^tamanho\s*:/i.test(a.name);
+      const isComplement = (a: any) => typeof a?.name === "string" && /^complemento\s*:/i.test(a.name);
       const sizeAddons = addons.filter((a: any) => !(a.required && a.groupName) && isSize(a));
       const borderAddons = addons.filter((a: any) => !(a.required && a.groupName) && isBorder(a));
-      const optionalAddons = addons.filter((a: any) => !(a.required && a.groupName) && !isBorder(a) && !isSize(a));
+      const complementAddons = addons.filter((a: any) => !(a.required && a.groupName) && isComplement(a));
+      const optionalAddons = addons.filter((a: any) => !(a.required && a.groupName) && !isBorder(a) && !isSize(a) && !isComplement(a));
 
       requiredAddons.forEach((a: any) => {
         const priceStr = Number(a.price) > 0 ? formatBRL(Number(a.price)) : "";
@@ -96,6 +98,12 @@ export function printThermalReceipt(
         const priceStr = Number(a.price) > 0 ? formatBRL(Number(a.price)) : "";
         const borderName = String(a.name).replace(/^borda\s*:\s*/i, "").toUpperCase();
         itemsHtml += `<div class="tp-border-addon" style="display:flex;justify-content:space-between;font-weight:bold;font-size:13px;border:1px solid #000;padding:2px 4px;margin:3px 0;background:#eee"><span>◆ BORDA: ${borderName}</span><span>${priceStr}</span></div>`;
+      });
+
+      complementAddons.forEach((a: any) => {
+        const priceStr = Number(a.price) > 0 ? formatBRL(Number(a.price)) : "GRÁTIS";
+        const cName = String(a.name).replace(/^complemento\s*:\s*/i, "").toUpperCase();
+        itemsHtml += `<div class="tp-complement-addon" style="display:flex;justify-content:space-between;font-weight:bold;font-size:13px;border:1px solid #000;padding:2px 4px;margin:3px 0;background:#eee"><span>✚ COMPLEMENTO: ${cName}</span><span>${priceStr}</span></div>`;
       });
 
       optionalAddons.forEach((a: any) => {
@@ -231,6 +239,7 @@ export function printPdvReceipt(order: PrintPdvOrder, storeName: string) {
     if (addons.length > 0) {
       const isBorder = (a: any) => typeof a?.name === "string" && /^borda\s*:/i.test(a.name);
       const isSize = (a: any) => typeof a?.name === "string" && /^tamanho\s*:/i.test(a.name);
+      const isComplement = (a: any) => typeof a?.name === "string" && /^complemento\s*:/i.test(a.name);
       addons.forEach((a: any) => {
         const priceStr = Number(a.price) > 0 ? formatBRL(Number(a.price)) : "";
         if (a.required && a.groupName) {
@@ -241,6 +250,10 @@ export function printPdvReceipt(order: PrintPdvOrder, storeName: string) {
         } else if (isBorder(a)) {
           const borderName = String(a.name).replace(/^borda\s*:\s*/i, "").toUpperCase();
           itemsHtml += `<div style="display:flex;justify-content:space-between;font-weight:bold;font-size:12px;border:1px solid #000;padding:2px 4px;margin:3px 0;background:#eee"><span>◆ BORDA: ${borderName}</span><span>${priceStr}</span></div>`;
+        } else if (isComplement(a)) {
+          const cName = String(a.name).replace(/^complemento\s*:\s*/i, "").toUpperCase();
+          const cPrice = Number(a.price) > 0 ? formatBRL(Number(a.price)) : "GRÁTIS";
+          itemsHtml += `<div style="display:flex;justify-content:space-between;font-weight:bold;font-size:12px;border:1px solid #000;padding:2px 4px;margin:3px 0;background:#eee"><span>✚ COMPLEMENTO: ${cName}</span><span>${cPrice}</span></div>`;
         } else {
           itemsHtml += `<div style="display:flex;justify-content:space-between;font-size:11px;padding-left:12px"><span>+ ${a.name}</span><span>${priceStr}</span></div>`;
         }
