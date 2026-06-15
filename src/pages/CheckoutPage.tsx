@@ -1328,11 +1328,11 @@ const CheckoutPage = () => {
       </div>
 
       {/* CTA — barra fixa no rodapé, estilo app profissional */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 bg-card/95 backdrop-blur-md border-t border-border shadow-[0_-4px_20px_-8px_rgba(0,0,0,0.15)] px-4 pt-3 pb-[max(env(safe-area-inset-bottom),12px)] space-y-2.5">
+      <div role="region" aria-label="Resumo e finalização do pedido" className="fixed bottom-0 left-0 right-0 z-40 bg-card/95 backdrop-blur-md border-t border-border shadow-[0_-4px_20px_-8px_rgba(0,0,0,0.15)] px-4 pt-3 pb-[max(env(safe-area-inset-bottom),12px)] space-y-2.5">
         {/* Total */}
-        <div className="flex items-center justify-between py-1">
+        <div className="flex items-center justify-between py-1" aria-live="polite" aria-atomic="true">
           <span className="text-base font-bold text-foreground">Total</span>
-          <span className="text-2xl font-black text-primary">{formatBRL(finalTotal)}</span>
+          <span className="text-2xl font-black text-primary" aria-label={`Total ${formatBRL(finalTotal)}`}>{formatBRL(finalTotal)}</span>
         </div>
 
         {belowMinimum && (
