@@ -17,7 +17,7 @@ import { Check } from "lucide-react";
 const storeCategories = Constants.public.Enums.store_category;
 
 const categoryLabels: Record<string, string> = {
-  lanches: "🍔 Lanches", pizzas: "🍕 Pizzas", restaurante: "🍽️ Restaurante",
+  lanches: "🍔 Lanches", pizzas: "🍕 Pizzas", pasteis: "🥟 Pastéis", restaurante: "🍽️ Restaurante",
   adegas: "🍷 Adegas", japonesa: "🍣 Japonesa", saudavel: "🥗 Saudável",
   sobremesas: "🍰 Sobremesas", cafeteria: "☕ Cafeteria", churrasco: "🥩 Churrasco",
   farmacias: "💊 Farmácia", docerias: "🍰 Doceria",
