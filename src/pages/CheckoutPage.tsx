@@ -24,6 +24,7 @@ import { resolveAddressContext, reverseGeocode, type Coordinates, type ReverseGe
 import { getBestClientCoordinates, getDeviceGPS } from "@/lib/deviceLocation";
 import { checkStoreAccess, MAX_DISTANCE_KM } from "@/lib/fraudCheck";
 import EmptiesExchange, { type EmptiesExchangeSelection } from "@/components/EmptiesExchange";
+import { haptic } from "@/lib/haptics";
 
 const allPaymentMethods = [
   { id: "pix",         label: "PIX Online",         desc: "Pagamento instantâneo",   icon: QrCode },
@@ -107,6 +108,19 @@ const CheckoutPage = () => {
 
   const storeId = items[0]?.store_id;
   const storePlan = useStorePlan(storeId);
+
+  // Smart default: lembra a última forma de pagamento usada pelo usuário nesta loja
+  const lastPaymentKey = user && storeId ? `last_payment_method:${user.id}:${storeId}` : null;
+  useEffect(() => {
+    if (!lastPaymentKey || paymentMethod) return;
+    try {
+      const saved = localStorage.getItem(lastPaymentKey);
+      if (saved && filteredPaymentMethods.some((pm) => pm.id === saved)) {
+        setPaymentMethod(saved);
+      }
+    } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lastPaymentKey, filteredPaymentMethods.length]);
 
   // Filtrar métodos — storePaymentSettings declarado abaixo após storeData
   const paymentMethods = useMemo(() => {
@@ -953,6 +967,10 @@ const CheckoutPage = () => {
                 key={pm.id}
                 onClick={() => {
                   setPaymentMethod(pm.id);
+                  haptic.light();
+                  if (lastPaymentKey) {
+                    try { localStorage.setItem(lastPaymentKey, pm.id); } catch {}
+                  }
                   if (pm.id !== "dinheiro") {
                     setNeedsChange(false);
                     setChangeFor("");
