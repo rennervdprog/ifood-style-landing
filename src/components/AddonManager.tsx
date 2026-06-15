@@ -81,6 +81,28 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
     queryClient.invalidateQueries({ queryKey: ["addon-group-links"] });
   };
 
+  const moveItem = async (group: any, itemId: string, direction: -1 | 1) => {
+    const sorted = [...(group.addon_items as any[])].sort((a, b) => a.sort_order - b.sort_order);
+    const idx = sorted.findIndex((it) => it.id === itemId);
+    const target = idx + direction;
+    if (idx < 0 || target < 0 || target >= sorted.length) return;
+    [sorted[idx], sorted[target]] = [sorted[target], sorted[idx]];
+    // Reassign sort_order sequentially
+    const updates = sorted.map((it, i) => ({ id: it.id, sort_order: i + 1 }));
+    // Optimistic update
+    queryClient.setQueryData(["store-addon-groups", storeId], (old: any) =>
+      (old || []).map((g: any) =>
+        g.id === group.id
+          ? { ...g, addon_items: updates.map((u) => ({ ...sorted.find((s) => s.id === u.id), sort_order: u.sort_order })) }
+          : g
+      )
+    );
+    await Promise.all(
+      updates.map((u) => supabase.from("addon_items").update({ sort_order: u.sort_order } as any).eq("id", u.id))
+    );
+    invalidate();
+  };
+
   const addGroup = async () => {
     if (!groupForm.name.trim()) return;
     const { data: newGroup, error } = await supabase.from("addon_groups").insert({
@@ -639,7 +661,9 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
               {isExpanded && (
                 <div className="px-4 pb-4 space-y-2">
                   {/* Items */}
-                  {(group.addon_items as any[])?.sort((a: any, b: any) => a.sort_order - b.sort_order).map((item: any) => (
+                   {(() => {
+                     const sortedItems = [...((group.addon_items as any[]) || [])].sort((a: any, b: any) => a.sort_order - b.sort_order);
+                     return sortedItems.map((item: any, itemIdx: number) => (
                     <div key={item.id} className="flex items-center justify-between bg-muted/50 rounded-lg px-3 py-2.5">
                       {editingItem === item.id ? (
                         <div className="flex gap-2 flex-1" onClick={(e) => e.stopPropagation()}>
@@ -669,6 +693,24 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
                             <span className="text-sm text-primary font-bold">
                               {item.price > 0 ? `+${formatBRL(Number(item.price))}` : "Grátis"}
                             </span>
+                            <div className="flex flex-col">
+                              <button
+                                onClick={() => moveItem(group, item.id, -1)}
+                                disabled={itemIdx === 0}
+                                className="text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed leading-none"
+                                title="Mover para cima"
+                              >
+                                <ChevronUp className="h-3.5 w-3.5" />
+                              </button>
+                              <button
+                                onClick={() => moveItem(group, item.id, 1)}
+                                disabled={itemIdx === sortedItems.length - 1}
+                                className="text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed leading-none"
+                                title="Mover para baixo"
+                              >
+                                <ChevronDown className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
                             <button
                               onClick={() => {
                                 setEditingItem(item.id);
@@ -696,7 +738,8 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
                         </>
                       )}
                     </div>
-                  ))}
+                     ));
+                   })()}
 
                   {/* Add Item */}
                   {showItemForm === group.id ? (
