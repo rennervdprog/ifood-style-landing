@@ -62,7 +62,8 @@ const PastelBuilderModal = ({ open, onClose, storeName, storeId, products, secti
   // If lojista only allows meio a meio (max=2), skip the count picker entirely.
   const [step, setStep] = useState<Step>(maxFlavors === 2 ? 1 : 0);
   const [productIds, setProductIds] = useState<(string | null)[]>([null, null]);
-  const [selectedBorderId, setSelectedBorderId] = useState<string | null>(null);
+  const [selectedComplementIds, setSelectedComplementIds] = useState<string[]>([]);
+  const MAX_COMPLEMENTS = 3;
   const [observations, setObservations] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
@@ -81,28 +82,16 @@ const PastelBuilderModal = ({ open, onClose, storeName, storeId, products, secti
     enabled: open && !!storeId,
   });
 
-  // Auto-select "Tradicional" border by default when borders are loaded
-  useEffect(() => {
-    if (open && borders.length > 0 && !selectedBorderId) {
-      const tradicional = borders.find(b => 
-        b.name.toLowerCase().includes("tradicional") || b.price === 0
-      );
-      if (tradicional) {
-        setSelectedBorderId(tradicional.id);
-      }
-    }
-  }, [borders, open, selectedBorderId]);
-
-  const hasBorders = borders.length > 0;
-  // Visible step count in the progress bar: N flavor picks + (borders if any). Step 0 (count) hidden.
-  const totalSteps = flavorCount + (hasBorders ? 1 : 0);
-  const borderStep = flavorCount + 1; // step index when borders are shown
+  const hasComplements = borders.length > 0;
+  // Visible step count in the progress bar: N flavor picks + (complementos if any). Step 0 (count) hidden.
+  const totalSteps = flavorCount + (hasComplements ? 1 : 0);
+  const complementStep = flavorCount + 1; // step index when complementos are shown
 
   const reset = () => {
     setStep(maxFlavors === 2 ? 1 : 0);
     setFlavorCount(2);
     setProductIds([null, null]);
-    setSelectedBorderId(null);
+    setSelectedComplementIds([]);
     setObservations("");
     setQuantity(1);
     setSelectedSize(null);
@@ -162,7 +151,7 @@ const PastelBuilderModal = ({ open, onClose, storeName, storeId, products, secti
 
   const selectedFlavors = productIds.map(id => (id ? pastelProducts.find(p => p.id === id) : undefined));
   const allChosen = selectedFlavors.every(Boolean) && selectedFlavors.length === flavorCount;
-  const selectedBorder = borders.find(b => b.id === selectedBorderId);
+  const selectedComplements = borders.filter(b => selectedComplementIds.includes(b.id));
 
   const calcPastelPrice = (): number => {
     if (!allChosen) return 0;
@@ -172,8 +161,8 @@ const PastelBuilderModal = ({ open, onClose, storeName, storeId, products, secti
   };
 
   const pastelPrice = calcPastelPrice();
-  const borderPrice = selectedBorder?.price || 0;
-  const unitPrice = pastelPrice + borderPrice;
+  const complementsPrice = selectedComplements.reduce((sum, c) => sum + (Number(c.price) || 0), 0);
+  const unitPrice = pastelPrice + complementsPrice;
   const lineTotal = unitPrice * quantity;
 
   // Aviso quando algum sabor escolhido não tem o tamanho selecionado cadastrado
@@ -196,8 +185,8 @@ const PastelBuilderModal = ({ open, onClose, storeName, storeId, products, secti
     if (selectedSize) {
       addons.unshift({ name: `Tamanho: ${selectedSize}`, price: 0 });
     }
-    if (selectedBorder) {
-      addons.push({ name: `Borda: ${selectedBorder.name}`, price: borderPrice });
+    for (const c of selectedComplements) {
+      addons.push({ name: `Complemento: ${c.name}`, price: Number(c.price) || 0 });
     }
     onAdd(
       {
@@ -212,7 +201,7 @@ const PastelBuilderModal = ({ open, onClose, storeName, storeId, products, secti
           is_multi_flavor: flavorCount > 2,
           flavor_count: flavorCount,
           flavor_ids: flavors.map(f => f.id),
-          border: selectedBorder?.name || null,
+          complements: selectedComplements.map(c => c.name),
           size: selectedSize || null,
         },
       },
@@ -252,7 +241,7 @@ const PastelBuilderModal = ({ open, onClose, storeName, storeId, products, secti
   const ordinal = (n: number) => ["1º", "2º", "3º", "4º"][n - 1] || `${n}º`;
   const stepLabel = (s: Step): string => {
     if (s === 0) return "Quantos sabores?";
-    if (s === borderStep) return "Escolha a borda";
+    if (s === complementStep) return `Complementos (até ${MAX_COMPLEMENTS}, opcional)`;
     return `Escolha o ${ordinal(s)} sabor`;
   };
 
@@ -262,7 +251,7 @@ const PastelBuilderModal = ({ open, onClose, storeName, storeId, products, secti
   const canAdvance = () => {
     if (step === 0) return true;
     if (isFlavorStep) return !!productIds[currentFlavorIdx];
-    if (step === borderStep) return hasBorders ? !!selectedBorderId : true;
+    if (step === complementStep) return true; // complementos são opcionais
     return false;
   };
 
@@ -284,7 +273,7 @@ const PastelBuilderModal = ({ open, onClose, storeName, storeId, products, secti
       setStep(step - 1);
       return;
     }
-    if (step === borderStep) { setSelectedBorderId(null); setStep(flavorCount); }
+    if (step === complementStep) { setSelectedComplementIds([]); setStep(flavorCount); }
   };
 
   const setCurrentFlavor = (id: string) => {
@@ -298,13 +287,13 @@ const PastelBuilderModal = ({ open, onClose, storeName, storeId, products, secti
   const handleFlavorCountChange = (n: FlavorCount) => {
     setFlavorCount(n);
     setProductIds(Array(n).fill(null));
-    setSelectedBorderId(null);
+    setSelectedComplementIds([]);
   };
 
-  // Final step: borders step OR last flavor step when there are no borders
+  // Final step: complementos step OR last flavor step when there are no complementos
   const isFinalStep =
-    step === borderStep ||
-    (step === flavorCount && !hasBorders && !bordersLoading);
+    step === complementStep ||
+    (step === flavorCount && !hasComplements && !bordersLoading);
 
    useEffect(() => {
      if (open) {
@@ -357,7 +346,7 @@ const PastelBuilderModal = ({ open, onClose, storeName, storeId, products, secti
         )}
         <div className="flex items-center gap-2">
           <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center">
-            {step === borderStep ? <Circle className="h-5 w-5 text-primary" /> : <Pastel className="h-5 w-5 text-primary" />}
+            {step === complementStep ? <Circle className="h-5 w-5 text-primary" /> : <Pastel className="h-5 w-5 text-primary" />}
           </div>
           <div>
             <p className="text-sm font-bold text-foreground">
@@ -368,7 +357,7 @@ const PastelBuilderModal = ({ open, onClose, storeName, storeId, products, secti
         </div>
 
         {/* Summary chip */}
-        {(selectedFlavors.some(Boolean) || selectedBorder) && step > 0 && (
+        {(selectedFlavors.some(Boolean) || selectedComplements.length > 0) && step > 0 && (
           <div className="flex items-center gap-2 mt-3 bg-muted/60 rounded-xl px-3 py-2.5">
             <span className="text-lg">🥟</span>
             <div className="flex-1 min-w-0">
@@ -381,17 +370,17 @@ const PastelBuilderModal = ({ open, onClose, storeName, storeId, products, secti
                     </span>
                   ) : null
                 )}
-                {selectedBorder && (
-                  <>
-                    <span className="text-muted-foreground">•</span>
-                    <span className="font-bold text-foreground">{selectedBorder.name}</span>
-                  </>
-                )}
+                {selectedComplements.map((c) => (
+                  <span key={c.id} className="font-bold text-foreground">
+                    <span className="text-muted-foreground mx-1">•</span>
+                    {c.name}
+                  </span>
+                ))}
               </div>
               {allChosen && (
                 <span className="text-[10px] text-muted-foreground">
                   Pastel {formatBRL(pastelPrice)}
-                  {borderPrice > 0 && ` + Borda ${formatBRL(borderPrice)}`}
+                  {complementsPrice > 0 && ` + Compl. ${formatBRL(complementsPrice)}`}
                   {" = " + formatBRL(unitPrice)}
                 </span>
               )}
@@ -530,7 +519,7 @@ const PastelBuilderModal = ({ open, onClose, storeName, storeId, products, secti
             )}
 
             {/* When the store has no borders, show observations on the last flavor step (final step) */}
-            {step === flavorCount && !hasBorders && !bordersLoading && productIds[currentFlavorIdx] && (
+            {step === flavorCount && !hasComplements && !bordersLoading && productIds[currentFlavorIdx] && (
               <div className="pt-4">
                 <label className="text-sm font-bold text-foreground mb-1.5 block">Observações</label>
                 <Textarea
@@ -547,36 +536,47 @@ const PastelBuilderModal = ({ open, onClose, storeName, storeId, products, secti
           </div>
         )}
 
-        {/* Border step + observations (only shown when store has borders) */}
-        {step === borderStep && hasBorders && (
+        {/* Complementos step + observations (only shown when store has complementos) */}
+        {step === complementStep && hasComplements && (
           <div className="space-y-4 pt-2">
+            <p className="text-xs text-muted-foreground">
+              Selecione até {MAX_COMPLEMENTS} complementos. Toque novamente para remover.
+            </p>
             <div className="space-y-2">
               {borders.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-12">Nenhuma borda disponível.</p>
+                <p className="text-sm text-muted-foreground text-center py-12">Nenhum complemento disponível.</p>
               ) : (
-                borders.map(border => {
-                  const isSelected = border.id === selectedBorderId;
+                borders.map(c => {
+                  const isSelected = selectedComplementIds.includes(c.id);
+                  const atLimit = !isSelected && selectedComplementIds.length >= MAX_COMPLEMENTS;
                   return (
                     <button
-                      key={border.id}
+                      key={c.id}
                       type="button"
-                      onClick={() => setSelectedBorderId(border.id)}
+                      disabled={atLimit}
+                      onClick={() => setSelectedComplementIds(prev =>
+                        prev.includes(c.id)
+                          ? prev.filter(id => id !== c.id)
+                          : prev.length < MAX_COMPLEMENTS ? [...prev, c.id] : prev
+                      )}
                       className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-left transition-all ${
                         isSelected
                           ? "bg-primary/10 border-2 border-primary shadow-sm"
-                          : "bg-card border-2 border-transparent hover:bg-muted shadow-sm"
+                          : atLimit
+                            ? "bg-card border-2 border-transparent opacity-50 cursor-not-allowed"
+                            : "bg-card border-2 border-transparent hover:bg-muted shadow-sm"
                       }`}
                     >
-                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
+                      <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 ${
                         isSelected ? "border-primary bg-primary" : "border-muted-foreground/40"
                       }`}>
                         {isSelected && <Check className="h-3 w-3 text-primary-foreground" />}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <span className="text-sm font-bold text-foreground">{border.name}</span>
+                        <span className="text-sm font-bold text-foreground">{c.name}</span>
                       </div>
                       <span className="text-sm font-black text-primary whitespace-nowrap">
-                        {border.price > 0 ? `+ ${formatBRL(border.price)}` : "Grátis"}
+                        {c.price > 0 ? `+ ${formatBRL(c.price)}` : "Grátis"}
                       </span>
                     </button>
                   );
@@ -651,12 +651,7 @@ const PastelBuilderModal = ({ open, onClose, storeName, storeId, products, secti
             </div>
             <button
               onClick={handleAdd}
-              disabled={hasBorders && !selectedBorderId}
-              className={`w-full py-4 rounded-xl font-bold text-base flex items-center justify-center gap-2 transition-all active:scale-[0.98] ${
-                (!hasBorders || selectedBorderId)
-                  ? "bg-primary text-primary-foreground shadow-lg"
-                  : "bg-muted text-muted-foreground cursor-not-allowed"
-              }`}
+              className="w-full py-4 rounded-xl font-bold text-base flex items-center justify-center gap-2 transition-all active:scale-[0.98] bg-primary text-primary-foreground shadow-lg"
             >
               <ShoppingCart className="h-5 w-5" />
               Adicionar • {formatBRL(lineTotal)}

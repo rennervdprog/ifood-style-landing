@@ -110,26 +110,26 @@ const PastelBorderManager = ({ storeId }: PastelBorderManagerProps) => {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Circle className="h-5 w-5 text-primary" />
-          <h2 className="text-sm font-bold text-foreground/80 uppercase tracking-wider">Bordas de Pastel</h2>
+          <h2 className="text-sm font-bold text-foreground/80 uppercase tracking-wider">Complementos de Pastel</h2>
         </div>
         <button
           onClick={() => setShowAdd(true)}
           className="flex items-center gap-1.5 bg-primary/20 text-primary px-3 py-2 rounded-xl text-xs font-bold"
         >
-          <Plus className="h-3.5 w-3.5" /> Nova Borda
+          <Plus className="h-3.5 w-3.5" /> Novo Complemento
         </button>
       </div>
 
       <p className="text-xs text-muted-foreground">
-        Configure as opções de borda que seus clientes podem escolher ao montar o pastel.
+        Configure os complementos (até 3 por pastel) que seus clientes podem adicionar. Deixe o preço em R$ 0,00 para complementos grátis.
       </p>
 
       {showAdd && (
         <div className="bg-card border border-primary/20 rounded-2xl p-4 space-y-3">
-          <h3 className="text-xs font-bold text-primary">Nova Borda</h3>
+          <h3 className="text-xs font-bold text-primary">Novo Complemento</h3>
           <input
             type="text"
-            placeholder="Nome da borda (ex: Catupiry)"
+            placeholder="Nome do complemento (ex: Orégano)"
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             className="w-full bg-muted text-foreground px-3 py-2 rounded-lg text-sm border border-border focus:border-primary focus:outline-none"
@@ -169,8 +169,8 @@ const PastelBorderManager = ({ storeId }: PastelBorderManagerProps) => {
       ) : borders.length === 0 ? (
         <div className="bg-card border border-dashed border-border rounded-2xl p-8 text-center space-y-2">
           <Circle className="h-8 w-8 text-muted-foreground mx-auto" />
-          <p className="text-sm text-muted-foreground font-medium">Nenhuma borda cadastrada</p>
-          <p className="text-xs text-muted-foreground">Adicione bordas para seus clientes escolherem</p>
+          <p className="text-sm text-muted-foreground font-medium">Nenhum complemento cadastrado</p>
+          <p className="text-xs text-muted-foreground">Adicione complementos para seus clientes escolherem</p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -257,7 +257,7 @@ const PastelBorderManager = ({ storeId }: PastelBorderManagerProps) => {
       )}
 
       <p className="text-[10px] text-muted-foreground text-center">
-        💡 A "Borda Simples" com preço R$ 0,00 é a opção padrão gratuita
+        💡 Cliente pode escolher até 3 complementos por pastel
       </p>
     </div>
   );
