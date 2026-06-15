@@ -669,7 +669,7 @@ const CheckoutPage = () => {
   const stepsDone = [isPickup || hasValidAddress, !!paymentMethod];
 
   return (
-    <div className="min-h-screen bg-background pb-8 overflow-y-auto">
+    <div className="min-h-screen bg-background pb-40 overflow-y-auto">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-card/95 backdrop-blur-sm border-b border-border flex items-center h-14 px-4 gap-3">
         <button onClick={() => navigate(-1)} className="p-1 -ml-1">
@@ -702,22 +702,44 @@ const CheckoutPage = () => {
         </div>
       )}
 
-      {/* Progress steps */}
+      {/* Progress steps — profissional, com checkmarks */}
       <div className="px-4 pt-4 pb-2">
-        <div className="flex items-center gap-2">
-          {[isPickup ? "Retirada" : "Endereço", "Pagamento", "Confirmar"].map((step, i) => (
-            <div key={step} className="flex-1 flex items-center gap-2">
-              <div className="flex-1">
-                <div className={`h-1.5 rounded-full transition-all ${
-                  i < stepsDone.filter(Boolean).length ? "bg-primary" :
-                  i === stepsDone.filter(Boolean).length ? "bg-primary/30" : "bg-muted"
-                }`} />
-                <p className={`text-[10px] mt-1 text-center font-medium ${
-                  i < stepsDone.filter(Boolean).length ? "text-primary" : "text-muted-foreground"
-                }`}>{step}</p>
+        <div className="flex items-center gap-1.5">
+          {[isPickup ? "Retirada" : "Endereço", "Pagamento", "Confirmar"].map((step, i) => {
+            const done = i < stepsDone.filter(Boolean).length;
+            const active = i === stepsDone.filter(Boolean).length;
+            return (
+              <div key={step} className="flex-1">
+                <div className="flex items-center gap-1.5">
+                  <div
+                    className={`h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-black shrink-0 transition-all ${
+                      done
+                        ? "bg-primary text-primary-foreground shadow-sm shadow-primary/30"
+                        : active
+                          ? "bg-primary/15 text-primary ring-2 ring-primary/40"
+                          : "bg-muted text-muted-foreground"
+                    }`}
+                  >
+                    {done ? <CheckCircle2 className="h-3.5 w-3.5" /> : i + 1}
+                  </div>
+                  {i < 2 && (
+                    <div
+                      className={`flex-1 h-0.5 rounded-full transition-all ${
+                        done ? "bg-primary" : "bg-muted"
+                      }`}
+                    />
+                  )}
+                </div>
+                <p
+                  className={`text-[10px] mt-1.5 font-bold ${
+                    done || active ? "text-foreground" : "text-muted-foreground"
+                  }`}
+                >
+                  {step}
+                </p>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
@@ -1283,8 +1305,8 @@ const CheckoutPage = () => {
         </section>
       </div>
 
-      {/* CTA final — inline, ao final da página */}
-      <div className="px-4 pt-4 pb-8 mt-4 border-t border-border/50 space-y-3">
+      {/* CTA — barra fixa no rodapé, estilo app profissional */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 bg-card/95 backdrop-blur-md border-t border-border shadow-[0_-4px_20px_-8px_rgba(0,0,0,0.15)] px-4 pt-3 pb-[max(env(safe-area-inset-bottom),12px)] space-y-2.5">
         {/* Total */}
         <div className="flex items-center justify-between py-1">
           <span className="text-base font-bold text-foreground">Total</span>
