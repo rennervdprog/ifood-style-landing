@@ -155,6 +155,18 @@ const CheckoutPage = () => {
     });
   }, [storePlan.allowPix, storePaymentSettings]);
 
+  // Smart default: lembra a última forma de pagamento usada pelo usuário nesta loja
+  useEffect(() => {
+    if (!lastPaymentKey || paymentMethod) return;
+    try {
+      const saved = localStorage.getItem(lastPaymentKey);
+      if (saved && filteredPaymentMethods.some((pm) => pm.id === saved)) {
+        setPaymentMethod(saved);
+      }
+    } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lastPaymentKey, filteredPaymentMethods.length]);
+
   const { data: storeHours } = useQuery({
     queryKey: ["store-hours-checkout", storeId],
     queryFn: async () => {
