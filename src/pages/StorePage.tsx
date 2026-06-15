@@ -239,6 +239,15 @@ const StorePage = () => {
     staleTime: 1000 * 60 * 3,
   });
 
+  // Produtos visíveis no cardápio (oculta itens marcados como "apenas no modal" de pastel)
+  const displayProducts = useMemo(
+    () =>
+      (products || []).filter(
+        (p) => !((p.metadata as any)?.modal_only && (p.metadata as any)?.is_pastel_flavor)
+      ),
+    [products]
+  );
+
   // Coleções de promoção ativas (ex.: "PROMOÇÃO RUMO AO HEXA 🚀")
   const { data: promoCollections = [] } = useQuery({
     queryKey: ["store-promo-collections", storeId],
@@ -260,12 +269,12 @@ const StorePage = () => {
   const productsByCollection = useMemo(() => {
     const map: Record<string, Product[]> = {};
     (promoCollections || []).forEach(c => { map[c.id] = []; });
-    (products || []).forEach(p => {
+    (displayProducts || []).forEach(p => {
       const cid = (p as any).promo_collection_id;
       if (cid && map[cid]) map[cid].push(p);
     });
     return map;
-  }, [products, promoCollections]);
+  }, [displayProducts, promoCollections]);
 
   // "Peça de novo" - products user has ordered before from this store
   const { data: reorderProducts } = useQuery({
@@ -384,18 +393,18 @@ const StorePage = () => {
     : "Horário não informado";
 
   const reorderProductsList = useMemo(
-    () => products?.filter((p) => reorderProducts?.includes(p.id)) || [],
-    [products, reorderProducts]
+    () => displayProducts?.filter((p) => reorderProducts?.includes(p.id)) || [],
+    [displayProducts, reorderProducts]
   );
   const popularProductsList = useMemo(
     () =>
       (popularProducts
         ?.map((pp) => {
-          const product = products?.find((p) => p.id === pp.productId);
+          const product = displayProducts?.find((p) => p.id === pp.productId);
           return product ? { ...product, orderCount: pp.count } : null;
         })
         .filter(Boolean) as (Product & { orderCount: number })[]) || [],
-    [popularProducts, products]
+    [popularProducts, displayProducts]
   );
 
   const sectionProductsMap = useMemo(() => {
@@ -403,13 +412,13 @@ const StorePage = () => {
     sections?.forEach((section) => {
       map[section.id] = [];
     });
-    products?.forEach((product) => {
+    displayProducts?.forEach((product) => {
       if (product.section_id && map[product.section_id]) {
         map[product.section_id].push(product);
       }
     });
     return map;
-  }, [sections, products]);
+  }, [sections, displayProducts]);
 
   const visibleSections = useMemo(
     () => (sections || []).filter((section) => (sectionProductsMap[section.id]?.length || 0) > 0),
@@ -537,8 +546,8 @@ const StorePage = () => {
   }, [isAdega, products]);
 
   const unsectionedProducts = useMemo(
-    () => applyAdegaFilters(products?.filter((p) => !p.section_id) || []),
-    [products, applyAdegaFilters]
+    () => applyAdegaFilters(displayProducts?.filter((p) => !p.section_id) || []),
+    [displayProducts, applyAdegaFilters]
   );
 
   // Search filter
@@ -546,13 +555,13 @@ const StorePage = () => {
     const q = debouncedSearch.trim().toLowerCase();
     if (!q) return null;
     const base =
-      products?.filter(
+      displayProducts?.filter(
         (p) =>
           p.name.toLowerCase().includes(q) ||
           p.description?.toLowerCase().includes(q)
       ) || [];
     return applyAdegaFilters(base);
-  }, [products, debouncedSearch, applyAdegaFilters]);
+  }, [displayProducts, debouncedSearch, applyAdegaFilters]);
 
   const handleAddToCart = (
     product: Product,
