@@ -30,6 +30,25 @@ const PastelBorderManager = ({ storeId }: PastelBorderManagerProps) => {
   const [editName, setEditName] = useState("");
   const [editPrice, setEditPrice] = useState("");
 
+  const { data: store } = useQuery({
+    queryKey: ["store-for-pastel-compl", storeId],
+    queryFn: async () => {
+      const { data } = await supabase.from("stores").select("settings").eq("id", storeId).single();
+      return data;
+    },
+  });
+  const settings = (store?.settings || {}) as Record<string, any>;
+  const pastelConfig = (settings.pastel_config || {}) as Record<string, any>;
+  const maxComplements: number = Number(pastelConfig.max_complements) || 3;
+
+  const setMaxComplements = async (n: number) => {
+    const newSettings = { ...settings, pastel_config: { ...pastelConfig, max_complements: n } };
+    const { error } = await supabase.from("stores").update({ settings: newSettings as any }).eq("id", storeId);
+    if (error) { toast.error("Erro ao salvar"); return; }
+    toast.success(`Cliente pode escolher até ${n} complemento${n > 1 ? "s" : ""}`);
+    queryClient.invalidateQueries({ queryKey: ["store-for-pastel-compl", storeId] });
+  };
+
   const { data: borders = [], isLoading } = useQuery({
     queryKey: ["pastel-borders", storeId],
     queryFn: async () => {
