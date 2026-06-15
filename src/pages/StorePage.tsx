@@ -1220,6 +1220,42 @@ const StorePage = () => {
         );
       })()}
 
+      {/* ===== MONTE SEU PASTEL ===== */}
+      {(() => {
+        const cats = [store?.category, ...((store as any)?.categories || [])].filter(Boolean) as string[];
+        if (!cats.includes("pasteis")) return null;
+        const storeSettings = (store?.settings || {}) as Record<string, any>;
+        const halfEnabled = storeSettings.pastel_half_enabled !== false;
+        if (!halfEnabled) return null;
+        if (!products || products.length === 0) return null;
+        return (
+          <div className="px-4 mt-4">
+            <button
+              onClick={() => {
+                if (!storeStatus.isOpen) { toast.error(`Loja fechada. ${storeStatus.reason}`); return; }
+                if (!products || products.length < 2) {
+                  toast.error("Cadastre pelo menos 2 sabores de pastel para usar o meio a meio.");
+                  return;
+                }
+                setShowPastelBuilder(true);
+              }}
+              className={`w-full bg-gradient-to-r from-primary/15 to-primary/5 border-2 border-primary/30 rounded-2xl p-4 flex items-center gap-4 text-left transition-all ${
+                !storeStatus.isOpen ? "opacity-50" : "hover:border-primary/50 active:scale-[0.98]"
+              }`}
+            >
+              <div className="w-14 h-14 rounded-2xl bg-primary/20 flex items-center justify-center flex-shrink-0">
+                <span className="text-3xl">🥟</span>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-sm font-black text-foreground">Monte seu Pastel</h3>
+                <p className="text-xs text-muted-foreground mt-0.5">Combine sabores diferentes em um pastel</p>
+              </div>
+              <ChevronRight className="h-5 w-5 text-primary flex-shrink-0" />
+            </button>
+          </div>
+        );
+      })()}
+
        {/* ===== CATEGORY NAV ===== */}
        {visibleSections.length > 0 && !filteredProducts && !showHalfHalf && (
         <div
