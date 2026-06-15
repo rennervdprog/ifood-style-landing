@@ -239,6 +239,15 @@ const StorePage = () => {
     staleTime: 1000 * 60 * 3,
   });
 
+  // Produtos visíveis no cardápio (oculta itens marcados como "apenas no modal" de pastel)
+  const displayProducts = useMemo(
+    () =>
+      (products || []).filter(
+        (p) => !((p.metadata as any)?.modal_only && (p.metadata as any)?.is_pastel_flavor)
+      ),
+    [products]
+  );
+
   // Coleções de promoção ativas (ex.: "PROMOÇÃO RUMO AO HEXA 🚀")
   const { data: promoCollections = [] } = useQuery({
     queryKey: ["store-promo-collections", storeId],
