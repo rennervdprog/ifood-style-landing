@@ -393,18 +393,18 @@ const StorePage = () => {
     : "Horário não informado";
 
   const reorderProductsList = useMemo(
-    () => products?.filter((p) => reorderProducts?.includes(p.id)) || [],
-    [products, reorderProducts]
+    () => displayProducts?.filter((p) => reorderProducts?.includes(p.id)) || [],
+    [displayProducts, reorderProducts]
   );
   const popularProductsList = useMemo(
     () =>
       (popularProducts
         ?.map((pp) => {
-          const product = products?.find((p) => p.id === pp.productId);
+          const product = displayProducts?.find((p) => p.id === pp.productId);
           return product ? { ...product, orderCount: pp.count } : null;
         })
         .filter(Boolean) as (Product & { orderCount: number })[]) || [],
-    [popularProducts, products]
+    [popularProducts, displayProducts]
   );
 
   const sectionProductsMap = useMemo(() => {
@@ -412,13 +412,13 @@ const StorePage = () => {
     sections?.forEach((section) => {
       map[section.id] = [];
     });
-    products?.forEach((product) => {
+    displayProducts?.forEach((product) => {
       if (product.section_id && map[product.section_id]) {
         map[product.section_id].push(product);
       }
     });
     return map;
-  }, [sections, products]);
+  }, [sections, displayProducts]);
 
   const visibleSections = useMemo(
     () => (sections || []).filter((section) => (sectionProductsMap[section.id]?.length || 0) > 0),
@@ -546,8 +546,8 @@ const StorePage = () => {
   }, [isAdega, products]);
 
   const unsectionedProducts = useMemo(
-    () => applyAdegaFilters(products?.filter((p) => !p.section_id) || []),
-    [products, applyAdegaFilters]
+    () => applyAdegaFilters(displayProducts?.filter((p) => !p.section_id) || []),
+    [displayProducts, applyAdegaFilters]
   );
 
   // Search filter
@@ -555,13 +555,13 @@ const StorePage = () => {
     const q = debouncedSearch.trim().toLowerCase();
     if (!q) return null;
     const base =
-      products?.filter(
+      displayProducts?.filter(
         (p) =>
           p.name.toLowerCase().includes(q) ||
           p.description?.toLowerCase().includes(q)
       ) || [];
     return applyAdegaFilters(base);
-  }, [products, debouncedSearch, applyAdegaFilters]);
+  }, [displayProducts, debouncedSearch, applyAdegaFilters]);
 
   const handleAddToCart = (
     product: Product,
