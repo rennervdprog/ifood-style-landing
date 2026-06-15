@@ -180,7 +180,7 @@ const PastelBuilderModal = ({ open, onClose, storeName, storeId, products, secti
     if (!allChosen) return;
     const flavors = selectedFlavors as Product[];
     const frac = FRACTION_LABEL[flavorCount];
-    const title = flavorCount === 2 ? "Pastel Meio a Meio" : `Pastel ${flavorCount} Sabores`;
+    const title = `Pastel ${flavorCount} Sabores`;
     const name = `${title}: ${flavors.map(f => f.name).join(" / ")}`;
     const addons: CartAddon[] = flavors.map(f => ({ name: `${frac} ${f.name}`, price: 0 }));
     if (selectedSize) {
@@ -417,7 +417,7 @@ const PastelBuilderModal = ({ open, onClose, storeName, storeId, products, secti
                   >
                     <span className="text-3xl font-black text-foreground">{n}</span>
                     <span className="text-xs font-bold text-muted-foreground mt-1">
-                      {n === 2 ? "Meio a meio" : `${n} sabores`}
+                      {`${n} sabores`}
                     </span>
                     <span className="text-[10px] text-muted-foreground mt-0.5">{FRACTION_LABEL[n]} cada</span>
                   </button>
