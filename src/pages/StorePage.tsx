@@ -1508,21 +1508,26 @@ const StorePage = () => {
         )}
       </div>
 
-      <ProductDetailModal
-        product={selectedProduct}
-        storeName={store?.name || ""}
-        storeCategory={store?.category}
-        singleSize={!!(store?.settings as any)?.pizza_single_size}
-        open={!!selectedProduct}
-        onClose={() => setSelectedProduct(null)}
-        onAdd={handleAddToCart}
-      />
+      {selectedProduct && (
+        <Suspense fallback={null}>
+          <ProductDetailModal
+            product={selectedProduct}
+            storeName={store?.name || ""}
+            storeCategory={store?.category}
+            singleSize={!!(store?.settings as any)?.pizza_single_size}
+            open={!!selectedProduct}
+            onClose={() => setSelectedProduct(null)}
+            onAdd={handleAddToCart}
+          />
+        </Suspense>
+      )}
 
       {/* ===== PIZZA HALF-HALF MODAL ===== */}
-      {store?.category === "pizzas" && (() => {
+      {store?.category === "pizzas" && showHalfHalf && (() => {
         const storeSettings = (store?.settings || {}) as Record<string, any>;
         return (
-           <PizzaHalfHalfModal
+          <Suspense fallback={null}>
+            <PizzaHalfHalfModal
             open={showHalfHalf}
             onClose={() => setShowHalfHalf(false)}
             storeName={store?.name || ""}
@@ -1533,17 +1538,19 @@ const StorePage = () => {
             maxFlavors={(storeSettings.pizza_config?.max_flavors as 2 | 3 | 4) || 4}
             singleSize={!!storeSettings.pizza_single_size}
             onAdd={handleAddToCart}
-          />
+            />
+          </Suspense>
         );
       })()}
 
       {/* ===== PASTEL BUILDER MODAL ===== */}
-      {(() => {
+      {showPastelBuilder && (() => {
         const cats = [store?.category, ...((store as any)?.categories || [])].filter(Boolean) as string[];
         if (!cats.includes("pasteis")) return null;
         const storeSettings = (store?.settings || {}) as Record<string, any>;
         return (
-          <PastelBuilderModal
+          <Suspense fallback={null}>
+            <PastelBuilderModal
             open={showPastelBuilder}
             onClose={() => setShowPastelBuilder(false)}
             storeName={store?.name || ""}
@@ -1555,18 +1562,23 @@ const StorePage = () => {
             maxComplements={Number(storeSettings.pastel_config?.max_complements) || 3}
             singleSize={!!storeSettings.pastel_single_size}
             onAdd={handleAddToCart}
-          />
+            />
+          </Suspense>
         );
       })()}
 
       <CartFAB />
       <BottomNav />
-      <AgeGateModal
-        storeId={store?.id || ""}
-        storeName={store?.name || ""}
-        active={isAdega && !!store?.id}
-        onBlock={() => navigate("/")}
-      />
+      {isAdega && !!store?.id && (
+        <Suspense fallback={null}>
+          <AgeGateModal
+            storeId={store?.id || ""}
+            storeName={store?.name || ""}
+            active={true}
+            onBlock={() => navigate("/")}
+          />
+        </Suspense>
+      )}
     </div>
   );
 };
