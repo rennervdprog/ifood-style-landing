@@ -119,9 +119,13 @@ const PastelBuilderModal = ({ open, onClose, storeName, storeId, products, secti
       .filter(s => beverageSectionKeywords.some(kw => s.name.toLowerCase().includes(kw)))
       .map(s => s.id)
   );
+  // Se a loja marcou algum produto como "sabor de pastel", usar só esses (modo curado).
+  // Caso contrário (legado), mostra todos os não-bebida — compatibilidade com lojas antigas.
+  const hasCuratedFlavors = products.some(p => p.metadata?.is_pastel_flavor);
   const pastelProducts = products.filter(p => {
     if (p.metadata?.is_beverage) return false;
     if (p.section_id && beverageSectionIds.has(p.section_id)) return false;
+    if (hasCuratedFlavors) return !!p.metadata?.is_pastel_flavor;
     return true;
   });
 
