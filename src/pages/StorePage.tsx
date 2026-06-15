@@ -1519,6 +1519,27 @@ const StorePage = () => {
         );
       })()}
 
+      {/* ===== PASTEL BUILDER MODAL ===== */}
+      {(() => {
+        const cats = [store?.category, ...((store as any)?.categories || [])].filter(Boolean) as string[];
+        if (!cats.includes("pasteis")) return null;
+        const storeSettings = (store?.settings || {}) as Record<string, any>;
+        return (
+          <PastelBuilderModal
+            open={showPastelBuilder}
+            onClose={() => setShowPastelBuilder(false)}
+            storeName={store?.name || ""}
+            storeId={store?.id || ""}
+            products={products || []}
+            sections={sections || []}
+            priceMode={storeSettings.pastel_price_mode || "maior"}
+            maxFlavors={(storeSettings.pastel_config?.max_flavors as 2 | 3 | 4) || 4}
+            singleSize={!!storeSettings.pastel_single_size}
+            onAdd={handleAddToCart}
+          />
+        );
+      })()}
+
       <CartFAB />
       <BottomNav />
       <AgeGateModal
