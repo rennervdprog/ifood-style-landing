@@ -2,6 +2,7 @@ import { formatBRL } from "@/lib/utils";
 import { useParams, useNavigate } from "react-router-dom";
 import NotFound from "@/pages/NotFound";
 import PizzaHalfHalfModal from "@/components/PizzaHalfHalfModal";
+import PastelBuilderModal from "@/components/PastelBuilderModal";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCart, type CartAddon } from "@/contexts/CartContext";
@@ -92,6 +93,7 @@ const StorePage = () => {
   const [showSearch, setShowSearch] = useState(false);
   const [showHours, setShowHours] = useState(false);
    const [showHalfHalf, setShowHalfHalf] = useState(false);
+   const [showPastelBuilder, setShowPastelBuilder] = useState(false);
    const [scrolled, setScrolled] = useState(false);
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const pageRef = useRef<HTMLDivElement>(null);
