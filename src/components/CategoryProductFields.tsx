@@ -349,6 +349,12 @@ const CategoryProductFields = ({ category, metadata, onChange, onNameChange, sto
             <PizzaSizesField metadata={metadata} onChange={onChange} />
           </>
         )}
+        <div className="mt-3 pt-3 border-t border-primary/15 space-y-1">
+          {renderToggle("🥟 É sabor de pastel? (aparece no modal Monte seu Pastel)", "is_pastel_flavor")}
+          <p className="text-[10px] text-muted-foreground">
+            Ative para produtos que são <b>recheios de pastel</b> (ex.: Carne, Frango, Queijo). Lanches, porções e bebidas devem ficar desativados para não aparecerem na seleção de sabores.
+          </p>
+        </div>
       </FieldBox>
     ),
     esfihas: (
