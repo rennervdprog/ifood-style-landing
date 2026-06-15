@@ -1,8 +1,6 @@
 import { formatBRL } from "@/lib/utils";
 import { useParams, useNavigate } from "react-router-dom";
 import NotFound from "@/pages/NotFound";
-import PizzaHalfHalfModal from "@/components/PizzaHalfHalfModal";
-import PastelBuilderModal from "@/components/PastelBuilderModal";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCart, type CartAddon } from "@/contexts/CartContext";
@@ -10,12 +8,16 @@ import { Star, Clock, ChevronRight, ChevronDown, ChevronUp, MapPin, Search, X, N
 import LoyaltyBanner from "@/components/LoyaltyBanner";
 import NetworkUnitsCarousel from "@/components/NetworkUnitsCarousel";
 import { toast } from "sonner";
-import { useRef, useState, useEffect, memo, useCallback, useMemo } from "react";
+import { useRef, useState, useEffect, memo, useCallback, useMemo, lazy, Suspense } from "react";
 import CartFAB from "@/components/CartFAB";
 import BottomNav from "@/components/BottomNav";
 import WhatsAppButton from "@/components/WhatsAppButton";
-import ProductDetailModal from "@/components/ProductDetailModal";
-import AgeGateModal from "@/components/AgeGateModal";
+
+// Lazy-load modais pesados — só baixam o JS quando realmente abrirem.
+const ProductDetailModal = lazy(() => import("@/components/ProductDetailModal"));
+const PizzaHalfHalfModal = lazy(() => import("@/components/PizzaHalfHalfModal"));
+const PastelBuilderModal = lazy(() => import("@/components/PastelBuilderModal"));
+const AgeGateModal = lazy(() => import("@/components/AgeGateModal"));
 import { getStoreOpenStatus, type OpeningHour } from "@/lib/storeStatus";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStoreContext } from "@/contexts/StoreContext";
