@@ -211,13 +211,14 @@ const CategoryProductFields = ({ category, metadata, onChange, onNameChange, sto
   // Lê configuração de "tamanho único" da loja (afeta apenas pizzaria)
   const { data: storeSettingsRow } = useQuery({
     queryKey: ["store-settings-for-category", storeId],
-    enabled: !!storeId && category === "pizzas",
+    enabled: !!storeId && (category === "pizzas" || category === "pasteis"),
     queryFn: async () => {
       const { data } = await supabase.from("stores").select("settings").eq("id", storeId!).single();
       return data;
     },
   });
   const pizzaSingleSize: boolean = !!(storeSettingsRow?.settings as any)?.pizza_single_size;
+  const pastelSingleSize: boolean = !!(storeSettingsRow?.settings as any)?.pastel_single_size;
 
   const addToList = (key: string, value: string) => {
     if (!value.trim()) return;
