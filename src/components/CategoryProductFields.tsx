@@ -333,6 +333,24 @@ const CategoryProductFields = ({ category, metadata, onChange, onNameChange, sto
         )}
       </FieldBox>
     ),
+    pasteis: (
+      <FieldBox emoji="🥟" title="Tamanhos do Pastel">
+        {pastelSingleSize ? (
+          <p className="text-[11px] text-muted-foreground -mt-1">
+            Sua pastelaria está configurada para <b>um único tamanho</b>. O cliente verá apenas o preço base do produto.
+            Para vender pastel em vários tamanhos, desative essa opção em <b>Pizzaria/Pastel → Regras de Combinação</b>.
+          </p>
+        ) : (
+          <>
+            <p className="text-[11px] text-muted-foreground -mt-1">
+              Defina os tamanhos disponíveis (ex: Pequeno, Grande) com o preço de cada um.
+              Aparecem para o cliente ao escolher 1 sabor e no modal meio-a-meio.
+            </p>
+            <PizzaSizesField metadata={metadata} onChange={onChange} />
+          </>
+        )}
+      </FieldBox>
+    ),
     esfihas: (
       <FieldBox emoji="🫓" title="Detalhes da Esfiha">
         {renderListField("Tipo de massa", "dough_types", "Ex: Aberta, Fechada...")}
