@@ -33,8 +33,7 @@ const PastelBorderManager = ({ storeId }: PastelBorderManagerProps) => {
   const { data: borders = [], isLoading } = useQuery({
     queryKey: ["pastel-borders", storeId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("pastel_borders")
+      const { data, error } = await (supabase as any).from("pastel_borders")
         .select("*")
         .eq("store_id", storeId)
         .order("sort_order");
@@ -49,7 +48,7 @@ const PastelBorderManager = ({ storeId }: PastelBorderManagerProps) => {
   useEffect(() => {
     const createDefaultBorder = async () => {
       if (!isLoading && borders.length === 0 && storeId) {
-        const { error } = await supabase.from("pastel_borders").insert({
+        const { error } = await (supabase as any).from("pastel_borders").insert({
           store_id: storeId,
           name: "Borda Simples",
           price: 0,
@@ -65,7 +64,7 @@ const PastelBorderManager = ({ storeId }: PastelBorderManagerProps) => {
   const addBorder = async () => {
     if (!newName.trim()) return;
     const price = parseFloat(newPrice.replace(",", ".")) || 0;
-    const { error } = await supabase.from("pastel_borders").insert({
+    const { error } = await (supabase as any).from("pastel_borders").insert({
       store_id: storeId,
       name: newName.trim(),
       price,
@@ -80,15 +79,14 @@ const PastelBorderManager = ({ storeId }: PastelBorderManagerProps) => {
   };
 
   const deleteBorder = async (id: string) => {
-    const { error } = await supabase.from("pastel_borders").delete().eq("id", id);
+    const { error } = await (supabase as any).from("pastel_borders").delete().eq("id", id);
     if (error) { toast.error("Erro ao excluir"); return; }
     toast.success("Borda excluída!");
     invalidate();
   };
 
   const toggleAvailable = async (border: Border) => {
-    const { error } = await supabase
-      .from("pastel_borders")
+    const { error } = await (supabase as any).from("pastel_borders")
       .update({ is_available: !border.is_available })
       .eq("id", border.id);
     if (error) { toast.error("Erro ao atualizar"); return; }
@@ -97,8 +95,7 @@ const PastelBorderManager = ({ storeId }: PastelBorderManagerProps) => {
 
   const saveEdit = async (id: string) => {
     const price = parseFloat(editPrice.replace(",", ".")) || 0;
-    const { error } = await supabase
-      .from("pastel_borders")
+    const { error } = await (supabase as any).from("pastel_borders")
       .update({ name: editName.trim(), price })
       .eq("id", id);
     if (error) { toast.error("Erro ao salvar"); return; }

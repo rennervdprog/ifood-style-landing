@@ -70,8 +70,7 @@ const PastelBuilderModal = ({ open, onClose, storeName, storeId, products, secti
   const { data: borders = [], isLoading: bordersLoading } = useQuery({
     queryKey: ["pastel-borders", storeId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("pastel_borders")
+      const { data, error } = await (supabase as any).from("pastel_borders")
         .select("*")
         .eq("store_id", storeId)
         .eq("is_available", true)
