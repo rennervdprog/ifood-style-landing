@@ -1810,7 +1810,7 @@ const AdminDashboard = () => {
                 {dashboardTab === "cash_register" && <CashRegisterTab storeId={store.id} />}
                 {dashboardTab === "tutoriais" && <TutoriaisTab />}
                 {dashboardTab === "addons" && <AddonsTab storeId={store.id} />}
-                {dashboardTab === "bordas" && <BordasTab storeId={store.id} category={store.category} />}
+                {dashboardTab === "bordas" && <BordasTab storeId={store.id} category={store.category} categories={(store as any).categories} />}
                 {dashboardTab === "hours" && <HoursTab storeId={store.id} forceClosed={(store as any).force_closed || false} />}
                 {dashboardTab === "settings" && <SettingsTab store={store} />}
                 {dashboardTab === "finance" && (
