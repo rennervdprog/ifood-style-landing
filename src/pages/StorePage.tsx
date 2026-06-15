@@ -260,12 +260,12 @@ const StorePage = () => {
   const productsByCollection = useMemo(() => {
     const map: Record<string, Product[]> = {};
     (promoCollections || []).forEach(c => { map[c.id] = []; });
-    (products || []).forEach(p => {
+    (displayProducts || []).forEach(p => {
       const cid = (p as any).promo_collection_id;
       if (cid && map[cid]) map[cid].push(p);
     });
     return map;
-  }, [products, promoCollections]);
+  }, [displayProducts, promoCollections]);
 
   // "Peça de novo" - products user has ordered before from this store
   const { data: reorderProducts } = useQuery({
