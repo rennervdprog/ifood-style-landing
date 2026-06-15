@@ -1246,7 +1246,11 @@ const CheckoutPage = () => {
                   </WhyThisCharge>
                 </span>
                 <span className={`font-semibold ${(couponType === "free_shipping" || freeDeliveryByThreshold) ? "text-green-600 line-through" : "text-foreground"}`}>
-                  {calculatingFee ? "..." : `${formatBRL(activeDeliveryFee)}`}
+                  {calculatingFee ? (
+                    <span className="inline-block h-3.5 w-16 rounded bg-muted animate-pulse align-middle" />
+                  ) : (
+                    formatBRL(activeDeliveryFee)
+                  )}
                 </span>
               </div>
               )}
@@ -1384,13 +1388,23 @@ const CheckoutPage = () => {
           </button>
         )}
 
-        {/* Asaas — Resolução Conjunta nº 16/2025 */}
-        <AsaasBadgeBar />
-        <p className="text-[9px] text-muted-foreground text-center">
-          Dúvidas sobre o pagamento? Contate o Asaas:{" "}
-          <a href="mailto:contato@asaas.com.br" className="underline">contato@asaas.com.br</a>
-          {" "}| 0800 009 0037
-        </p>
+        {/* Motivo inline quando o CTA não pode finalizar — evita toast e dá feedback claro */}
+        {!isStoreClosed && !belowMinimum && !loading && (
+          (!isPickup && !hasValidAddress) ? (
+            <p className="text-[11px] text-center text-muted-foreground">
+              Informe um endereço de entrega para continuar
+            </p>
+          ) : !paymentMethod ? (
+            <p className="text-[11px] text-center text-muted-foreground">
+              Escolha a forma de pagamento para continuar
+            </p>
+          ) : null
+        )}
+
+        {/* Asaas — selo discreto (Resolução Conjunta nº 16/2025) */}
+        <div className="flex items-center justify-center gap-2 pt-0.5">
+          <AsaasBadgeBar />
+        </div>
       </div>
 
       {showAddressModal && (
