@@ -661,7 +661,9 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
               {isExpanded && (
                 <div className="px-4 pb-4 space-y-2">
                   {/* Items */}
-                  {(group.addon_items as any[])?.sort((a: any, b: any) => a.sort_order - b.sort_order).map((item: any) => (
+                   {(() => {
+                     const sortedItems = [...((group.addon_items as any[]) || [])].sort((a: any, b: any) => a.sort_order - b.sort_order);
+                     return sortedItems.map((item: any, itemIdx: number) => (
                     <div key={item.id} className="flex items-center justify-between bg-muted/50 rounded-lg px-3 py-2.5">
                       {editingItem === item.id ? (
                         <div className="flex gap-2 flex-1" onClick={(e) => e.stopPropagation()}>
@@ -691,6 +693,24 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
                             <span className="text-sm text-primary font-bold">
                               {item.price > 0 ? `+${formatBRL(Number(item.price))}` : "Grátis"}
                             </span>
+                            <div className="flex flex-col">
+                              <button
+                                onClick={() => moveItem(group, item.id, -1)}
+                                disabled={itemIdx === 0}
+                                className="text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed leading-none"
+                                title="Mover para cima"
+                              >
+                                <ChevronUp className="h-3.5 w-3.5" />
+                              </button>
+                              <button
+                                onClick={() => moveItem(group, item.id, 1)}
+                                disabled={itemIdx === sortedItems.length - 1}
+                                className="text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed leading-none"
+                                title="Mover para baixo"
+                              >
+                                <ChevronDown className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
                             <button
                               onClick={() => {
                                 setEditingItem(item.id);
@@ -718,7 +738,8 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
                         </>
                       )}
                     </div>
-                  ))}
+                     ));
+                   })()}
 
                   {/* Add Item */}
                   {showItemForm === group.id ? (
