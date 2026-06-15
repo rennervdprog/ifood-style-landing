@@ -1,7 +1,7 @@
 import { formatBRL } from "@/lib/utils";
 import { useParams, useNavigate } from "react-router-dom";
 import NotFound from "@/pages/NotFound";
-import { useQuery, keepPreviousData } from "@tanstack/react-query";
+import { useQuery, keepPreviousData, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCart, type CartAddon } from "@/contexts/CartContext";
 import { Star, Clock, ChevronRight, ChevronDown, ChevronUp, MapPin, Search, X, Navigation, CreditCard, Banknote, Smartphone, QrCode, RotateCcw, TrendingUp, ArrowLeft, Bike, Timer, Wallet } from "lucide-react";
@@ -102,7 +102,41 @@ const StorePage = () => {
   const navRef = useRef<HTMLDivElement>(null);
   const [fraudBlock, setFraudBlock] = useState<{ distanceKm: number; storeCity: string | null } | null>(null);
 
-   const isSandbox = !!user?.email?.endsWith("@itasuper.test");
+  const queryClient = useQueryClient();
+
+  const isSandbox = !!user?.email?.endsWith("@itasuper.test");
+
+  // ⚡ Bootstrap: 1 round-trip que pré-popula store + hours + sections + products +
+  // owner_profile + online_drivers_count. As useQuery() abaixo continuam existindo
+  // como fallback / refetch — mas pegam initialData do cache e não mostram loading.
+  useQuery({
+    queryKey: ["store-bootstrap", id || slug, isSandbox],
+    queryFn: async () => {
+      const key = id || slug || "";
+      const { data, error } = await (supabase as any).rpc("store_bootstrap", { _slug: key });
+      if (error || !data) return null;
+      const boot: any = data;
+      const s = boot.store;
+      if (s) {
+        queryClient.setQueryData(["store", id || slug, isSandbox], s);
+        const sid = s.id;
+        queryClient.setQueryData(["store-hours", sid], boot.hours || []);
+        queryClient.setQueryData(["menu-sections", sid], boot.sections || []);
+        queryClient.setQueryData(["products", sid], boot.products || []);
+        if (s.owner_id && boot.owner_profile) {
+          queryClient.setQueryData(["store-owner", s.owner_id], boot.owner_profile);
+        }
+        if (s.delivery_mode === "own") {
+          queryClient.setQueryData(["store-online-drivers", sid], boot.online_drivers_count || 0);
+        }
+      }
+      return boot;
+    },
+    enabled: !!(id || slug),
+    staleTime: 1000 * 60 * 3,
+    gcTime: 1000 * 60 * 10,
+  });
+
    const { data: store, isLoading: storeLoading } = useQuery({
      queryKey: ["store", id || slug, isSandbox],
     queryFn: async () => {
