@@ -1,8 +1,6 @@
 import { formatBRL } from "@/lib/utils";
 import { useParams, useNavigate } from "react-router-dom";
 import NotFound from "@/pages/NotFound";
-import PizzaHalfHalfModal from "@/components/PizzaHalfHalfModal";
-import PastelBuilderModal from "@/components/PastelBuilderModal";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCart, type CartAddon } from "@/contexts/CartContext";
@@ -10,12 +8,16 @@ import { Star, Clock, ChevronRight, ChevronDown, ChevronUp, MapPin, Search, X, N
 import LoyaltyBanner from "@/components/LoyaltyBanner";
 import NetworkUnitsCarousel from "@/components/NetworkUnitsCarousel";
 import { toast } from "sonner";
-import { useRef, useState, useEffect, memo, useCallback, useMemo } from "react";
+import { useRef, useState, useEffect, memo, useCallback, useMemo, lazy, Suspense } from "react";
 import CartFAB from "@/components/CartFAB";
 import BottomNav from "@/components/BottomNav";
 import WhatsAppButton from "@/components/WhatsAppButton";
-import ProductDetailModal from "@/components/ProductDetailModal";
-import AgeGateModal from "@/components/AgeGateModal";
+
+// Lazy-load modais pesados — só baixam o JS quando realmente abrirem.
+const ProductDetailModal = lazy(() => import("@/components/ProductDetailModal"));
+const PizzaHalfHalfModal = lazy(() => import("@/components/PizzaHalfHalfModal"));
+const PastelBuilderModal = lazy(() => import("@/components/PastelBuilderModal"));
+const AgeGateModal = lazy(() => import("@/components/AgeGateModal"));
 import { getStoreOpenStatus, type OpeningHour } from "@/lib/storeStatus";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStoreContext } from "@/contexts/StoreContext";
@@ -1506,21 +1508,26 @@ const StorePage = () => {
         )}
       </div>
 
-      <ProductDetailModal
-        product={selectedProduct}
-        storeName={store?.name || ""}
-        storeCategory={store?.category}
-        singleSize={!!(store?.settings as any)?.pizza_single_size}
-        open={!!selectedProduct}
-        onClose={() => setSelectedProduct(null)}
-        onAdd={handleAddToCart}
-      />
+      {selectedProduct && (
+        <Suspense fallback={null}>
+          <ProductDetailModal
+            product={selectedProduct}
+            storeName={store?.name || ""}
+            storeCategory={store?.category}
+            singleSize={!!(store?.settings as any)?.pizza_single_size}
+            open={!!selectedProduct}
+            onClose={() => setSelectedProduct(null)}
+            onAdd={handleAddToCart}
+          />
+        </Suspense>
+      )}
 
       {/* ===== PIZZA HALF-HALF MODAL ===== */}
-      {store?.category === "pizzas" && (() => {
+      {store?.category === "pizzas" && showHalfHalf && (() => {
         const storeSettings = (store?.settings || {}) as Record<string, any>;
         return (
-           <PizzaHalfHalfModal
+          <Suspense fallback={null}>
+            <PizzaHalfHalfModal
             open={showHalfHalf}
             onClose={() => setShowHalfHalf(false)}
             storeName={store?.name || ""}
@@ -1531,17 +1538,19 @@ const StorePage = () => {
             maxFlavors={(storeSettings.pizza_config?.max_flavors as 2 | 3 | 4) || 4}
             singleSize={!!storeSettings.pizza_single_size}
             onAdd={handleAddToCart}
-          />
+            />
+          </Suspense>
         );
       })()}
 
       {/* ===== PASTEL BUILDER MODAL ===== */}
-      {(() => {
+      {showPastelBuilder && (() => {
         const cats = [store?.category, ...((store as any)?.categories || [])].filter(Boolean) as string[];
         if (!cats.includes("pasteis")) return null;
         const storeSettings = (store?.settings || {}) as Record<string, any>;
         return (
-          <PastelBuilderModal
+          <Suspense fallback={null}>
+            <PastelBuilderModal
             open={showPastelBuilder}
             onClose={() => setShowPastelBuilder(false)}
             storeName={store?.name || ""}
@@ -1553,18 +1562,23 @@ const StorePage = () => {
             maxComplements={Number(storeSettings.pastel_config?.max_complements) || 3}
             singleSize={!!storeSettings.pastel_single_size}
             onAdd={handleAddToCart}
-          />
+            />
+          </Suspense>
         );
       })()}
 
       <CartFAB />
       <BottomNav />
-      <AgeGateModal
-        storeId={store?.id || ""}
-        storeName={store?.name || ""}
-        active={isAdega && !!store?.id}
-        onBlock={() => navigate("/")}
-      />
+      {isAdega && !!store?.id && (
+        <Suspense fallback={null}>
+          <AgeGateModal
+            storeId={store?.id || ""}
+            storeName={store?.name || ""}
+            active={true}
+            onBlock={() => navigate("/")}
+          />
+        </Suspense>
+      )}
     </div>
   );
 };
