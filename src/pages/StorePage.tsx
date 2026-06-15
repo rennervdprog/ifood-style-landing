@@ -335,7 +335,7 @@ const StorePage = () => {
 
   // Verificar se tem driver online (apenas para lojas com motoboy próprio)
   const isOwnDeliveryStore = (store as any)?.delivery_mode === "own";
-  const { data: onlineDriversCount = 0 } = useQuery({
+  const { data: onlineDriversCount = 0, isSuccess: driversChecked } = useQuery({
     queryKey: ["store-online-drivers", store?.id],
     queryFn: async () => {
       const { data, error } = await supabase.rpc(
@@ -351,7 +351,10 @@ const StorePage = () => {
   });
 
   // Loja own sem nenhum driver vinculado = sem entrega disponível
-  const hasNoDrivers = isOwnDeliveryStore && onlineDriversCount === 0;
+  // Só consideramos "sem motoboy" depois que a contagem realmente carregou,
+  // para evitar flash do banner amarelo enquanto a query roda.
+  const hasNoDrivers =
+    isOwnDeliveryStore && driversChecked && onlineDriversCount === 0;
 
   const storeStatus = store
     ? getStoreOpenStatus(
