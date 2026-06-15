@@ -143,6 +143,29 @@ const PastelBorderManager = ({ storeId }: PastelBorderManagerProps) => {
         Configure os complementos (até 3 por pastel) que seus clientes podem adicionar. Deixe o preço em R$ 0,00 para complementos grátis.
       </p>
 
+      <div className="bg-card border border-border rounded-2xl p-4 space-y-3">
+        <h3 className="text-xs font-bold text-foreground/70 uppercase">Máximo de complementos por pastel</h3>
+        <div className="grid grid-cols-5 gap-2">
+          {[1, 2, 3, 4, 5].map(n => {
+            const active = maxComplements === n;
+            return (
+              <button
+                key={n}
+                onClick={() => setMaxComplements(n)}
+                className={`flex items-center justify-center py-3 rounded-xl border-2 text-lg font-black transition-all ${
+                  active ? "bg-primary/10 border-primary text-primary" : "bg-muted border-transparent text-muted-foreground"
+                }`}
+              >
+                {n}
+              </button>
+            );
+          })}
+        </div>
+        <p className="text-[10px] text-muted-foreground">
+          Quantos complementos o cliente pode selecionar ao montar o pastel.
+        </p>
+      </div>
+
       {showAdd && (
         <div className="bg-card border border-primary/20 rounded-2xl p-4 space-y-3">
           <h3 className="text-xs font-bold text-primary">Novo Complemento</h3>
