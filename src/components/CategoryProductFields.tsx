@@ -375,6 +375,14 @@ const CategoryProductFields = ({ category, metadata, onChange, onNameChange, sto
           <p className="text-[10px] text-muted-foreground">
             Ative para produtos que são <b>recheios de pastel</b> (ex.: Carne, Frango, Queijo). Lanches, porções e bebidas devem ficar desativados para não aparecerem na seleção de sabores.
           </p>
+          {metadata.is_pastel_flavor && (
+            <div className="pt-2 mt-1 border-t border-primary/15 space-y-1">
+              {renderToggle("👁️ Exibir apenas no modal do pastel?", "modal_only")}
+              <p className="text-[10px] text-muted-foreground">
+                Quando ativado, o produto <b>não aparece</b> no cardápio normal — só na seleção de sabores do modal.
+              </p>
+            </div>
+          )}
         </div>
       </FieldBox>
     ),
