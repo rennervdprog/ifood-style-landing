@@ -30,6 +30,25 @@ const PastelBorderManager = ({ storeId }: PastelBorderManagerProps) => {
   const [editName, setEditName] = useState("");
   const [editPrice, setEditPrice] = useState("");
 
+  const { data: store } = useQuery({
+    queryKey: ["store-for-pastel-compl", storeId],
+    queryFn: async () => {
+      const { data } = await supabase.from("stores").select("settings").eq("id", storeId).single();
+      return data;
+    },
+  });
+  const settings = (store?.settings || {}) as Record<string, any>;
+  const pastelConfig = (settings.pastel_config || {}) as Record<string, any>;
+  const maxComplements: number = Number(pastelConfig.max_complements) || 3;
+
+  const setMaxComplements = async (n: number) => {
+    const newSettings = { ...settings, pastel_config: { ...pastelConfig, max_complements: n } };
+    const { error } = await supabase.from("stores").update({ settings: newSettings as any }).eq("id", storeId);
+    if (error) { toast.error("Erro ao salvar"); return; }
+    toast.success(`Cliente pode escolher até ${n} complemento${n > 1 ? "s" : ""}`);
+    queryClient.invalidateQueries({ queryKey: ["store-for-pastel-compl", storeId] });
+  };
+
   const { data: borders = [], isLoading } = useQuery({
     queryKey: ["pastel-borders", storeId],
     queryFn: async () => {
@@ -123,6 +142,29 @@ const PastelBorderManager = ({ storeId }: PastelBorderManagerProps) => {
       <p className="text-xs text-muted-foreground">
         Configure os complementos (até 3 por pastel) que seus clientes podem adicionar. Deixe o preço em R$ 0,00 para complementos grátis.
       </p>
+
+      <div className="bg-card border border-border rounded-2xl p-4 space-y-3">
+        <h3 className="text-xs font-bold text-foreground/70 uppercase">Máximo de complementos por pastel</h3>
+        <div className="grid grid-cols-5 gap-2">
+          {[1, 2, 3, 4, 5].map(n => {
+            const active = maxComplements === n;
+            return (
+              <button
+                key={n}
+                onClick={() => setMaxComplements(n)}
+                className={`flex items-center justify-center py-3 rounded-xl border-2 text-lg font-black transition-all ${
+                  active ? "bg-primary/10 border-primary text-primary" : "bg-muted border-transparent text-muted-foreground"
+                }`}
+              >
+                {n}
+              </button>
+            );
+          })}
+        </div>
+        <p className="text-[10px] text-muted-foreground">
+          Quantos complementos o cliente pode selecionar ao montar o pastel.
+        </p>
+      </div>
 
       {showAdd && (
         <div className="bg-card border border-primary/20 rounded-2xl p-4 space-y-3">
