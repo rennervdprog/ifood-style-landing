@@ -711,7 +711,7 @@ const StorePage = () => {
         <h1 className="text-xl font-bold text-foreground mb-2">Loja indisponível</h1>
         <p className="text-sm text-muted-foreground mb-6">Esta loja não está ativa no momento.</p>
         <button
-          onClick={() => navigate("/")}
+          onClick={() => navigate("/lojas")}
           className="bg-primary text-primary-foreground rounded-2xl py-3 px-6 font-semibold hover:bg-primary/90 transition-colors"
         >
           Ver outras lojas
@@ -732,7 +732,7 @@ const StorePage = () => {
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
           <button
-            onClick={() => navigate("/")}
+            onClick={() => navigate("/lojas")}
             className="absolute top-4 left-4 h-10 w-10 rounded-full bg-background/90 backdrop-blur flex items-center justify-center shadow-md"
             aria-label="Voltar"
           >
@@ -769,7 +769,7 @@ const StorePage = () => {
           Por segurança, só permitimos pedidos a até {MAX_DISTANCE_KM} km da loja.
         </p>
         <button
-          onClick={() => navigate("/")}
+          onClick={() => navigate("/lojas")}
           className="bg-primary text-primary-foreground rounded-2xl py-3 px-6 font-semibold hover:bg-primary/90 transition-colors"
         >
           Ver lojas próximas
