@@ -18,6 +18,16 @@ const RoleGuard = ({ allowedRoles, redirectTo, children, requireApproval = false
   const navigate = useNavigate();
   const [checking, setChecking] = useState(true);
   const [authorized, setAuthorized] = useState(false);
+  const [slow, setSlow] = useState(false);
+
+  useEffect(() => {
+    if (!authLoading && !checking) {
+      setSlow(false);
+      return;
+    }
+    const t = setTimeout(() => setSlow(true), 8000);
+    return () => clearTimeout(t);
+  }, [authLoading, checking]);
 
   useEffect(() => {
     if (authLoading) return;
@@ -156,8 +166,21 @@ const RoleGuard = ({ allowedRoles, redirectTo, children, requireApproval = false
 
   if (authLoading || checking) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4 px-6 text-center">
         <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
+        {slow && (
+          <>
+            <p className="text-sm text-muted-foreground max-w-xs">
+              Está demorando mais que o normal. Verifique sua conexão e tente novamente.
+            </p>
+            <button
+              onClick={() => window.location.reload()}
+              className="bg-primary text-primary-foreground font-bold px-5 py-2.5 rounded-xl text-sm"
+            >
+              Tentar novamente
+            </button>
+          </>
+        )}
       </div>
     );
   }
