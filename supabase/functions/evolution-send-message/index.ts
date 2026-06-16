@@ -71,6 +71,9 @@ const isAuthorizedForStore = async (admin: any, req: Request, storeId: string) =
 // Anti-spam params
 const DEDUPE_WINDOW_SEC = 3600;        // mesma msg p/ mesmo número
 const PER_STORE_MIN_GAP_MS = 12_000;   // gap mínimo entre envios da loja
+const PER_PHONE_MIN_GAP_MS = 3_000;    // gap mínimo entre envios p/ mesmo número (anti-burst de status)
+const EVOLUTION_MAX_RETRIES = 2;        // tentativas extras em falha transitória
+const EVOLUTION_RETRY_DELAY_MS = 2_000; // base de espera entre retries
 // P1.3 — limites diários por fase do chip (dias após connected_at)
 const dailyLimitForAge = (days: number) => {
   if (days < 7) return 20;     // semana 1
