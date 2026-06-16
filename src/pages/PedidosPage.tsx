@@ -1031,8 +1031,8 @@ const PedidosPage = () => {
                   return (
                      <div key={order.id} className="bg-card rounded-2xl border border-border overflow-hidden shadow-sm">
                        {/* Status bar top */}
-                       <div className={`px-3 py-2 flex items-center justify-between gap-2 ${config.bg} border-b ${config.border}`}>
-                         <div className={`inline-flex items-center gap-1.5 rounded-full bg-background/80 backdrop-blur px-2.5 py-1 border ${config.border}`}>
+                       <div className="px-3 py-2 flex items-center justify-between gap-2 bg-card border-b border-border">
+                         <div className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 border ${config.border} ${config.bg}`}>
                            <StatusIcon className={`h-3.5 w-3.5 ${config.color}`} />
                            <span className={`text-[11px] font-bold leading-none ${config.color}`}>
                              {order.neighborhood === "RETIRADA" && order.status === "pronto_para_entrega" ? "Pronto p/ Retirada" : config.label}
