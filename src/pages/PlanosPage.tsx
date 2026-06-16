@@ -26,10 +26,12 @@ import {
    Package,
    Globe,
    Loader2,
+   Info,
  } from "lucide-react";
  import { Button } from "@/components/ui/button";
  import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { useNavigate } from "react-router-dom";
 import { PLANS, PLANS_ORDER, DELIVERY_FEE_NOTE, PIX_FEE_NOTE, type PlanInfo } from "@/lib/plansInfo";
 import PlansComparisonTable from "@/components/PlansComparisonTable";
