@@ -29,6 +29,7 @@ import { APP_VERSION } from "@/lib/appVersion";
 // Lazy-loaded pages — each becomes its own chunk
 const Index = lazy(() => import("./pages/Index"));
 const StoreDirectory = lazy(() => import("./pages/StoreDirectory"));
+const LandingPage = lazy(() => import("./pages/LandingPage"));
 const ClientHome = lazy(() => import("./pages/ClientHome"));
 const StorePage = lazy(() => import("./pages/StorePage"));
 const CartPage = lazy(() => import("./pages/CartPage"));
@@ -302,7 +303,8 @@ const App = () => {
             <Suspense fallback={<PageLoader />}>
               <Routes>
                 {/* Public landing / Client home */}
-                <Route path="/" element={<StoreDirectory />} />
+                <Route path="/" element={<LandingPage />} />
+                <Route path="/lojas" element={<StoreDirectory />} />
                 <Route path="/cliente" element={<ClientHome />} />
                 {/* Admin dashboard at /index */}
                 <Route

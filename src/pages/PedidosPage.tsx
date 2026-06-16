@@ -1405,14 +1405,14 @@ const PedidosPage = () => {
             <h2 className="text-lg font-bold text-foreground mb-1">Nenhum pedido ainda</h2>
             <p className="text-sm text-muted-foreground mb-6">Explore as lojas e faça seu primeiro pedido!</p>
              <button
-               onClick={() => navigate("/")}
+               onClick={() => navigate("/lojas")}
                className="bg-primary text-primary-foreground font-bold px-8 py-3 rounded-2xl text-sm shadow-lg active:scale-95 transition-transform"
              >
                Ver Restaurantes
              </button>
              <div className="mt-8 pt-8 border-t border-border w-full">
                <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold mb-4">Recomendado para você</p>
-               <div className="bg-primary/5 rounded-2xl p-4 border border-primary/10 flex items-center gap-4 text-left" onClick={() => navigate("/")}>
+               <div className="bg-primary/5 rounded-2xl p-4 border border-primary/10 flex items-center gap-4 text-left" onClick={() => navigate("/lojas")}>
                  <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center shrink-0 shadow-lg shadow-primary/20">
                    <Zap className="h-6 w-6 text-primary-foreground" />
                  </div>
