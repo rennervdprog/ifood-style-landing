@@ -12,16 +12,6 @@ import { maskWhatsApp } from "@/lib/whatsapp";
 import { formatCep, fetchCep } from "@/lib/cepLookup";
 import { formatBRL } from "@/lib/utils";
 import { useStorePlan } from "@/hooks/useStorePlan";
-import { formatPixKeyDisplay, sanitizePixKeyForAsaas, validatePixKey, PIX_PLACEHOLDERS } from "@/lib/pixFormat";
-
-const PIX_TYPE_OPTIONS = [
-  { value: "cpf", label: "CPF" },
-  { value: "cnpj", label: "CNPJ" },
-  { value: "email", label: "E-mail" },
-  { value: "phone", label: "Telefone" },
-  { value: "random", label: "Chave Aleatória" },
-];
-
 const CATEGORY_OPTIONS = [
   { value: "lanches", label: "Lanches" },
   { value: "pizzas", label: "Pizzas" },
@@ -87,8 +77,6 @@ type PizzaPriceMode = "maior" | "media" | "soma";
   const [slug, setSlug] = useState(storeSlug || storeName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""));
   const [whatsapp, setWhatsapp] = useState("");
   const [imageUrl, setImageUrl] = useState(storeImageUrl || "");
-  const [pixKey, setPixKey] = useState("");
-  const [pixType, setPixType] = useState("cpf");
   const [addressStreet, setAddressStreet] = useState(storeAddressStreet || "");
   const [addressNumber, setAddressNumber] = useState(storeAddressNumber || "");
   const [addressComplement, setAddressComplement] = useState(storeAddressComplement || "");
@@ -145,18 +133,16 @@ type PizzaPriceMode = "maior" | "media" | "soma";
 
   // Z-API foi substituído pela aba WhatsApp (Evolution API) — bloco removido.
 
-  // Load whatsapp + pix from profile
+  // Load whatsapp from profile
   useEffect(() => {
     if (!user) return;
     supabase
       .from("profiles")
-      .select("whatsapp_number, pix_key, pix_type")
+      .select("whatsapp_number")
       .eq("user_id", user.id)
       .single()
       .then(({ data }) => {
         if (data?.whatsapp_number) setWhatsapp(data.whatsapp_number);
-        if (data?.pix_key) setPixKey(data.pix_key);
-        if (data?.pix_type) setPixType(data.pix_type);
       });
   }, [user]);
 
@@ -1016,14 +1002,6 @@ const NotificationSection = () => {
               <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${acceptPixOnline ? "translate-x-5" : "translate-x-0"}`} />
             </button>
           </div>
-          {acceptPixOnline && !pixKey && (
-            <div className="flex items-start gap-2 bg-muted border border-border rounded-lg px-3 py-2">
-              <span className="text-muted-foreground text-xs">!</span>
-              <p className="text-[11px] text-muted-foreground">
-                Você ativou o PIX Online mas não tem chave PIX cadastrada. Vá em <strong>Meu Plano → Configurar conta</strong> para configurar.
-              </p>
-            </div>
-          )}
         </div>
 
         {/* PIX Maquininha */}
