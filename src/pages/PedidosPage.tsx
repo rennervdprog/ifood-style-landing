@@ -34,15 +34,15 @@ import { SIMULATION_MODE, createSimulatedPixCharge, simulatePaymentDelay } from 
 import SimulationBanner from "@/components/SimulationBanner";
 
 const statusConfig: Record<string, { label: string; icon: React.ElementType; color: string; bg: string; border: string }> = {
-   aguardando_pagamento: { label: "Aguardando Pagamento", icon: Clock, color: "text-amber-700 dark:text-amber-400", bg: "bg-white dark:bg-amber-900/20", border: "border-amber-200 dark:border-amber-800" },
-   pendente: { label: "Pedido Recebido", icon: Clock, color: "text-blue-700 dark:text-blue-400", bg: "bg-white dark:bg-blue-950/20", border: "border-blue-200 dark:border-blue-900/50" },
-   preparando: { label: "Preparando", icon: ChefHat, color: "text-orange-700 dark:text-orange-400", bg: "bg-white dark:bg-orange-950/20", border: "border-orange-200 dark:border-orange-900/50" },
-   pronto_para_entrega: { label: "Pronto p/ Entrega", icon: CheckCircle2, color: "text-indigo-700 dark:text-indigo-400", bg: "bg-white dark:bg-indigo-950/20", border: "border-indigo-200 dark:border-indigo-900/50" },
-    saiu_entrega: { label: "Saiu p/ Entrega", icon: Truck, color: "text-[#6A3B1F] dark:text-[#8B5E3C]", bg: "bg-white dark:bg-[#6A3B1F]/10", border: "border-[#6A3B1F]/20 dark:border-[#6A3B1F]/30" },
-    em_transito: { label: "Em Trânsito", icon: Truck, color: "text-[#6A3B1F] dark:text-[#8B5E3C]", bg: "bg-white dark:bg-[#6A3B1F]/10", border: "border-[#6A3B1F]/20 dark:border-[#6A3B1F]/30" },
-   entregue: { label: "Entregue", icon: CheckCircle2, color: "text-emerald-700 dark:text-emerald-400", bg: "bg-white dark:bg-emerald-900/20", border: "border-emerald-200 dark:border-emerald-800" },
-   finalizado: { label: "Finalizado", icon: CheckCircle2, color: "text-emerald-700 dark:text-emerald-400", bg: "bg-white dark:bg-emerald-900/20", border: "border-emerald-200 dark:border-emerald-800" },
-   cancelado: { label: "Cancelado", icon: XCircle, color: "text-red-700 dark:text-red-400", bg: "bg-white dark:bg-red-950/20", border: "border-red-200 dark:border-red-900/50" },
+   aguardando_pagamento: { label: "Aguardando Pagamento", icon: Clock, color: "text-amber-700 dark:text-amber-400", bg: "bg-amber-50 dark:bg-amber-900/20", border: "border-amber-200 dark:border-amber-800" },
+   pendente: { label: "Pedido Recebido", icon: Clock, color: "text-blue-700 dark:text-blue-400", bg: "bg-blue-50 dark:bg-blue-950/20", border: "border-blue-200 dark:border-blue-900/50" },
+   preparando: { label: "Preparando", icon: ChefHat, color: "text-orange-700 dark:text-orange-400", bg: "bg-orange-50 dark:bg-orange-950/20", border: "border-orange-200 dark:border-orange-900/50" },
+   pronto_para_entrega: { label: "Pronto p/ Entrega", icon: CheckCircle2, color: "text-indigo-700 dark:text-indigo-400", bg: "bg-indigo-50 dark:bg-indigo-950/20", border: "border-indigo-200 dark:border-indigo-900/50" },
+   saiu_entrega: { label: "Saiu p/ Entrega", icon: Truck, color: "text-[#6A3B1F] dark:text-[#8B5E3C]", bg: "bg-[#6A3B1F]/5 dark:bg-[#6A3B1F]/10", border: "border-[#6A3B1F]/20 dark:border-[#6A3B1F]/30" },
+   em_transito: { label: "Em Trânsito", icon: Truck, color: "text-[#6A3B1F] dark:text-[#8B5E3C]", bg: "bg-[#6A3B1F]/5 dark:bg-[#6A3B1F]/10", border: "border-[#6A3B1F]/20 dark:border-[#6A3B1F]/30" },
+   entregue: { label: "Entregue", icon: CheckCircle2, color: "text-emerald-700 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-900/20", border: "border-emerald-200 dark:border-emerald-800" },
+   finalizado: { label: "Finalizado", icon: CheckCircle2, color: "text-emerald-700 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-900/20", border: "border-emerald-200 dark:border-emerald-800" },
+   cancelado: { label: "Cancelado", icon: XCircle, color: "text-red-700 dark:text-red-400", bg: "bg-red-50 dark:bg-red-950/20", border: "border-red-200 dark:border-red-900/50" },
 };
 
 /* Status timeline steps for visual progress */
@@ -1029,22 +1029,22 @@ const PedidosPage = () => {
                   const showPin = order.delivery_pin && isPaid && !["entregue", "finalizado"].includes(order.status);
 
                   return (
-                    <div key={order.id} className="bg-card rounded-2xl border border-border overflow-hidden shadow-sm">
-                      {/* Status bar top */}
-                      <div className={`px-4 py-2.5 flex items-center justify-between ${config.bg} border-b ${config.border}`}>
-                        <div className="flex items-center gap-2">
-                          <StatusIcon className={`h-4 w-4 ${config.color}`} />
-                          <span className={`text-xs font-bold ${config.color}`}>
-                            {order.neighborhood === "RETIRADA" && order.status === "pronto_para_entrega" ? "Pronto p/ Retirada 🏪" : config.label}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <DeliveryTimeEstimate status={order.status} createdAt={order.created_at} confirmedAt={order.confirmed_at} />
-                          <span className="text-[10px] text-muted-foreground font-medium">
-                            #{order.id.substring(0, 6).toUpperCase()}
-                          </span>
-                        </div>
-                      </div>
+                     <div key={order.id} className="bg-card rounded-2xl border border-border overflow-hidden shadow-sm">
+                       {/* Status bar top */}
+                       <div className={`px-3 py-2 flex items-center justify-between gap-2 ${config.bg} border-b ${config.border}`}>
+                         <div className={`inline-flex items-center gap-1.5 rounded-full bg-background/80 backdrop-blur px-2.5 py-1 border ${config.border}`}>
+                           <StatusIcon className={`h-3.5 w-3.5 ${config.color}`} />
+                           <span className={`text-[11px] font-bold leading-none ${config.color}`}>
+                             {order.neighborhood === "RETIRADA" && order.status === "pronto_para_entrega" ? "Pronto p/ Retirada" : config.label}
+                           </span>
+                         </div>
+                         <div className="flex items-center gap-2 min-w-0">
+                           <DeliveryTimeEstimate status={order.status} createdAt={order.created_at} confirmedAt={order.confirmed_at} />
+                           <span className="text-[10px] text-muted-foreground font-mono tabular-nums truncate">
+                             #{order.id.substring(0, 6).toUpperCase()}
+                           </span>
+                         </div>
+                       </div>
 
                       <div className="p-4 space-y-3">
                         {/* Store name */}
