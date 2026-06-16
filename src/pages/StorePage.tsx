@@ -182,6 +182,8 @@ const StorePage = () => {
     const ogTitle = document.querySelector('meta[property="og:title"]');
     const ogDesc = document.querySelector('meta[property="og:description"]');
     const ogImage = document.querySelector('meta[property="og:image"]');
+    const ogUrl = document.querySelector('meta[property="og:url"]');
+    const canonical = document.querySelector('link[rel="canonical"]');
     const twTitle = document.querySelector('meta[name="twitter:title"]');
     const twDesc = document.querySelector('meta[name="twitter:description"]');
     const twImage = document.querySelector('meta[name="twitter:image"]');
@@ -189,15 +191,44 @@ const StorePage = () => {
     const title = `${store.name} - ItaSuper`;
     const desc = `Peça pelo ItaSuper: ${store.name} - ${store.category}. Entrega rápida!`;
     const img = store.image_url || "";
+    const storeSlug = (store as any).slug || slug || id;
+    const url = `https://itasuper.com.br/${storeSlug}`;
 
     document.title = title;
     if (ogTitle) ogTitle.setAttribute("content", title);
     if (ogDesc) ogDesc.setAttribute("content", desc);
     if (ogImage && img) ogImage.setAttribute("content", img);
+    if (ogUrl) ogUrl.setAttribute("content", url);
+    if (canonical) canonical.setAttribute("href", url);
     if (twTitle) twTitle.setAttribute("content", title);
     if (twDesc) twDesc.setAttribute("content", desc);
     if (twImage && img) twImage.setAttribute("content", img);
-  }, [store]);
+
+    // JSON-LD LocalBusiness/FoodEstablishment para cada loja
+    const existing = document.getElementById("store-jsonld");
+    if (existing) existing.remove();
+    const ld = document.createElement("script");
+    ld.id = "store-jsonld";
+    ld.type = "application/ld+json";
+    ld.textContent = JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FoodEstablishment",
+      name: store.name,
+      image: img || undefined,
+      url,
+      servesCuisine: store.category || undefined,
+      address: {
+        "@type": "PostalAddress",
+        streetAddress: [store.address_street, store.address_number].filter(Boolean).join(", ") || undefined,
+        addressLocality: store.address_city || undefined,
+        addressRegion: store.address_state || undefined,
+        addressCountry: "BR",
+        postalCode: store.address_cep || undefined,
+      },
+    });
+    document.head.appendChild(ld);
+    return () => { ld.remove(); };
+  }, [store, slug, id]);
 
   const storeId = store?.id || id;
    const storePlan = useStorePlan(storeId);
