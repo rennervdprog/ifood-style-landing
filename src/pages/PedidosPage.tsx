@@ -1029,22 +1029,22 @@ const PedidosPage = () => {
                   const showPin = order.delivery_pin && isPaid && !["entregue", "finalizado"].includes(order.status);
 
                   return (
-                    <div key={order.id} className="bg-card rounded-2xl border border-border overflow-hidden shadow-sm">
-                      {/* Status bar top */}
-                      <div className={`px-4 py-2.5 flex items-center justify-between ${config.bg} border-b ${config.border}`}>
-                        <div className="flex items-center gap-2">
-                          <StatusIcon className={`h-4 w-4 ${config.color}`} />
-                          <span className={`text-xs font-bold ${config.color}`}>
-                            {order.neighborhood === "RETIRADA" && order.status === "pronto_para_entrega" ? "Pronto p/ Retirada 🏪" : config.label}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <DeliveryTimeEstimate status={order.status} createdAt={order.created_at} confirmedAt={order.confirmed_at} />
-                          <span className="text-[10px] text-muted-foreground font-medium">
-                            #{order.id.substring(0, 6).toUpperCase()}
-                          </span>
-                        </div>
-                      </div>
+                     <div key={order.id} className="bg-card rounded-2xl border border-border overflow-hidden shadow-sm">
+                       {/* Status bar top */}
+                       <div className={`px-3 py-2 flex items-center justify-between gap-2 ${config.bg} border-b ${config.border}`}>
+                         <div className={`inline-flex items-center gap-1.5 rounded-full bg-background/80 backdrop-blur px-2.5 py-1 border ${config.border}`}>
+                           <StatusIcon className={`h-3.5 w-3.5 ${config.color}`} />
+                           <span className={`text-[11px] font-bold leading-none ${config.color}`}>
+                             {order.neighborhood === "RETIRADA" && order.status === "pronto_para_entrega" ? "Pronto p/ Retirada" : config.label}
+                           </span>
+                         </div>
+                         <div className="flex items-center gap-2 min-w-0">
+                           <DeliveryTimeEstimate status={order.status} createdAt={order.created_at} confirmedAt={order.confirmed_at} />
+                           <span className="text-[10px] text-muted-foreground font-mono tabular-nums truncate">
+                             #{order.id.substring(0, 6).toUpperCase()}
+                           </span>
+                         </div>
+                       </div>
 
                       <div className="p-4 space-y-3">
                         {/* Store name */}
