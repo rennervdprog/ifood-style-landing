@@ -57,12 +57,12 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Helmet>
-        <title>ItaSuper — Sistema de delivery e cardápio digital para restaurantes</title>
-        <meta name="description" content="Sistema completo de delivery, cardápio digital, pedidos online, PDV e motoboy próprio para restaurantes, pizzarias, adegas e mercados. Sem comissão por pedido." />
-        <link rel="canonical" href="https://itasuper.lovable.app/" />
+        <title>ItaSuper — Sistema de delivery e cardápio digital</title>
+        <meta name="description" content="Sistema de delivery e cardápio digital para restaurantes, pizzarias, adegas e mercados. Pedidos online, PDV e motoboy próprio — sem comissão." />
+        <link rel="canonical" href="https://itasuper.com.br/" />
         <meta property="og:title" content="ItaSuper — Sistema de delivery e cardápio digital" />
         <meta property="og:description" content="Sistema completo de delivery e cardápio digital sem comissão por pedido. Alternativa ao Anota AI, Menudino e iFood." />
-        <meta property="og:url" content="https://itasuper.lovable.app/" />
+        <meta property="og:url" content="https://itasuper.com.br/" />
         <meta property="og:type" content="website" />
         <script type="application/ld+json">{JSON.stringify(softwareJsonLd)}</script>
         <script type="application/ld+json">{JSON.stringify(faqJsonLd)}</script>

@@ -1,0 +1,19 @@
+# ItaSuper
+
+> Sistema de delivery e cardápio digital para restaurantes, pizzarias, adegas, mercados e farmácias — sem comissão por pedido.
+
+ItaSuper é uma plataforma brasileira de delivery que oferece cardápio digital, pedidos online, PDV, KDS de cozinha, motoboy próprio integrado e painel multi-unidade (matriz/filial). Alternativa ao Anota AI, Menudino e marketplaces como iFood, com modelo de cobrança por plano fixo mensal.
+
+## Pages
+
+- [Início](/): Sistema de delivery e cardápio digital para restaurantes.
+- [Lojas em Itanhaém](/lojas): Diretório de restaurantes e lojas que entregam pelo ItaSuper.
+- [Planos](/planos): Planos e preços para usar o ItaSuper na sua loja.
+- [Cadastrar minha loja](/cadastro-lojista): Cadastro gratuito para lojistas começarem a receber pedidos.
+- [Portal do parceiro](/portal-parceiro): Acesso para lojistas e entregadores parceiros.
+- [Baixar app](/download): Aplicativo Android do ItaSuper.
+
+## Optional
+
+- [Termos de uso](/termos-de-uso)
+- [Política de privacidade](/politica-de-privacidade)
