@@ -3698,6 +3698,10 @@ export type Database = {
       is_driver: { Args: { _user_id: string }; Returns: boolean }
       is_internal_account: { Args: { _user_id: string }; Returns: boolean }
       is_platform_admin: { Args: { _user_id: string }; Returns: boolean }
+      is_store_blocked_by_balance: {
+        Args: { _store_id: string }
+        Returns: boolean
+      }
       is_store_driver: {
         Args: { _store_id: string; _user_id: string }
         Returns: boolean
