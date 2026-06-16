@@ -303,8 +303,8 @@ const App = () => {
             <Suspense fallback={<PageLoader />}>
               <Routes>
                 {/* Public landing / Client home */}
-                <Route path="/" element={<LandingPage />} />
-                <Route path="/lojas" element={<StoreDirectory />} />
+                <Route path="/" element={<StoreDirectory />} />
+                <Route path="/lojas" element={<Navigate to="/" replace />} />
                 <Route path="/cliente" element={<ClientHome />} />
                 {/* Admin dashboard at /index */}
                 <Route

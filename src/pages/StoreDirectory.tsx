@@ -265,6 +265,19 @@ const StoreDirectory = () => {
 
   useEffect(() => {
     document.title = "ItaSuper — Cardápio digital, delivery e PDV para sua loja";
+    const setMeta = (name: string, content: string, attr: "name" | "property" = "name") => {
+      let el = document.head.querySelector<HTMLMetaElement>(`meta[${attr}="${name}"]`);
+      if (!el) { el = document.createElement("meta"); el.setAttribute(attr, name); document.head.appendChild(el); }
+      el.setAttribute("content", content);
+    };
+    const desc = "Cardápio digital, PIX automático, motoboy e PDV num app só. Sem comissão por pedido. Crie sua loja grátis em 10 minutos.";
+    setMeta("description", desc);
+    setMeta("og:title", "ItaSuper — Delivery profissional em 10 minutos", "property");
+    setMeta("og:description", desc, "property");
+    setMeta("og:url", "https://itasuper.com.br/", "property");
+    let canonical = document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]');
+    if (!canonical) { canonical = document.createElement("link"); canonical.rel = "canonical"; document.head.appendChild(canonical); }
+    canonical.href = "https://itasuper.com.br/";
   }, []);
 
   useEffect(() => {
