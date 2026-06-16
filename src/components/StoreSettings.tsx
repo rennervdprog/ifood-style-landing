@@ -752,63 +752,6 @@ const NotificationSection = () => {
       </div>
 
 
-      <div className="space-y-3">
-        <label className="text-sm font-bold text-foreground/80 flex items-center gap-2">
-          <Wallet className="h-4 w-4 text-primary" />
-          Dados para Recebimento (Pix)
-        </label>
-        <p className="text-[10px] text-muted-foreground/70 -mt-1">
-          Cadastre sua chave Pix para receber os repasses das vendas via App.
-        </p>
-        {!pixKey && (
-          <div className="bg-destructive/10 border-2 border-destructive/40 rounded-xl p-3 space-y-1">
-            <p className="text-xs font-bold text-destructive">⚠️ Sua chave Pix NÃO está cadastrada</p>
-            <p className="text-[11px] text-foreground/80 leading-snug">
-              Sem chave Pix, todo o valor das vendas em PIX fica retido na plataforma — você não recebe o repasse automático. Cadastre agora.
-            </p>
-          </div>
-        )}
-        <select
-          value={pixType}
-          onChange={(e) => setPixType(e.target.value)}
-          className="w-full bg-secondary border border-border rounded-xl px-4 py-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary appearance-none"
-        >
-          {PIX_TYPE_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value}>{opt.label}</option>
-          ))}
-        </select>
-        <input
-          type="text"
-          value={pixType ? formatPixKeyDisplay(pixKey, pixType) : pixKey}
-          onChange={(e) => setPixKey(e.target.value)}
-          placeholder={PIX_PLACEHOLDERS[pixType] || "Sua chave PIX"}
-          maxLength={256}
-          className="w-full bg-secondary border border-border rounded-xl px-4 py-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
-        />
-        {pixKey.trim() && pixType && (() => {
-          const err = validatePixKey(pixKey, pixType);
-          return err ? (
-            <p className="text-[11px] font-bold text-destructive flex items-center gap-1">
-              <span>⚠️</span> {err}
-            </p>
-          ) : (
-            <p className="text-[11px] font-bold text-primary flex items-center gap-1">
-              <span>✓</span> Formato válido para {PIX_TYPE_OPTIONS.find(o => o.value === pixType)?.label}
-            </p>
-          );
-        })()}
-        {pixKey && (
-          <div className="bg-primary/10 border border-primary/20 rounded-xl p-3 flex items-center gap-2">
-            <Wallet className="h-4 w-4 text-primary flex-shrink-0" />
-            <div className="flex-1 min-w-0">
-              <p className="text-xs text-primary font-bold">Chave Pix cadastrada</p>
-              <p className="text-xs text-foreground/80 truncate">{pixKey}</p>
-              <p className="text-[10px] text-muted-foreground/70">Tipo: {PIX_TYPE_OPTIONS.find(o => o.value === pixType)?.label}</p>
-            </div>
-          </div>
-        )}
-      </div>
-
       {/* Delivery Mode — motoboy da plataforma oculto, forçar "own" */}
       <div className="bg-muted/50 border border-border rounded-2xl p-4 space-y-3">
         <label className="text-sm font-bold text-foreground/80 flex items-center gap-2">
