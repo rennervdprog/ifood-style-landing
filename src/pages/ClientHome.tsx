@@ -534,16 +534,21 @@ const ClientHomeContent = () => {
             onClick={() => setShowSupport(true)}
             className="w-9 h-9 rounded-xl bg-primary-foreground/20 flex items-center justify-center active:scale-95 transition-all"
             title="Suporte"
+            aria-label="Entrar em contato com o suporte"
           >
             <MessageCircle className="h-4 w-4 text-primary-foreground" />
           </button>
         </div>
-        <h1 className="text-primary-foreground text-xl font-bold">Olá, {firstName}! 👋</h1>
+        <h1 className="text-primary-foreground text-xl font-bold">
+          <span className="sr-only">Painel do Cliente — Encontre os melhores restaurantes. </span>
+          Olá, {firstName}! 👋
+        </h1>
         <p className="text-primary-foreground/70 text-sm mt-0.5">O que vai pedir hoje?</p>
         <form onSubmit={(e) => e.preventDefault()} className="mt-4" data-tour="search">
           <div className="relative">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
+              aria-label="Pesquisar lojas pelo nome"
               onFocus={() => setSearchFocused(true)}
               onBlur={() => setTimeout(() => setSearchFocused(false), 200)}
               placeholder="Pesquisar loja pelo nome..."
