@@ -8,6 +8,7 @@ import { formatBRL } from "@/lib/utils";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import CommissionAlert from "@/components/CommissionAlert";
 import PlatformSplitAlert from "@/components/PlatformSplitAlert";
+import PlatformFeeExplainerCard from "@/components/PlatformFeeExplainerCard";
 import { GlanceCard } from "../components/GlanceCard";
 
 
@@ -226,6 +227,11 @@ export default function DashboardOverviewSection(props: Props) {
   )}
   {!storePlan.hasCommission && storePlan.isItatingaFixed && (
     <PlatformSplitAlert storeId={store.id} storeName={store.name} splitPerOrder={storePlan.platformDeliverySplit} onGoToFinance={() => setDashboardTab("finance")} />
+  )}
+
+  {/* Explicação permanente da taxa R$ X/entrega — visível para todos os planos */}
+  {storePlan.platformDeliverySplit > 0 && (
+    <PlatformFeeExplainerCard storeId={store.id} splitPerOrder={storePlan.platformDeliverySplit} />
   )}
 
   {/* ── Banner PDV ── */}
