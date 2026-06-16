@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
+import { Helmet } from "react-helmet-async";
 
 const PoliticaPrivacidade = () => {
   const navigate = useNavigate();
@@ -7,6 +8,14 @@ const PoliticaPrivacidade = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <Helmet>
+        <title>Política de Privacidade — ItaSuper</title>
+        <meta name="description" content="Como o ItaSuper coleta, usa e protege dados pessoais de clientes, lojistas e entregadores conforme a LGPD." />
+        <link rel="canonical" href="https://itasuper.com.br/politica-de-privacidade" />
+        <meta property="og:title" content="Política de Privacidade — ItaSuper" />
+        <meta property="og:description" content="Política de privacidade da plataforma ItaSuper em conformidade com a LGPD." />
+        <meta property="og:url" content="https://itasuper.com.br/politica-de-privacidade" />
+      </Helmet>
       <div className="sticky top-0 bg-card border-b border-border z-10 px-4 py-3 flex items-center gap-3">
         <button onClick={() => navigate(-1)} className="p-1.5 rounded-xl hover:bg-muted transition-colors">
           <ArrowLeft className="h-5 w-5 text-foreground" />

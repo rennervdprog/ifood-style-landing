@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
+import { Helmet } from "react-helmet-async";
 
 const TermosDeUso = () => {
   const navigate = useNavigate();
@@ -7,6 +8,14 @@ const TermosDeUso = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <Helmet>
+        <title>Termos de Uso — ItaSuper</title>
+        <meta name="description" content="Termos de uso do ItaSuper: regras para clientes, lojistas e entregadores na plataforma de delivery e cardápio digital." />
+        <link rel="canonical" href="https://itasuper.com.br/termos-de-uso" />
+        <meta property="og:title" content="Termos de Uso — ItaSuper" />
+        <meta property="og:description" content="Termos de uso da plataforma ItaSuper para clientes, lojistas e entregadores." />
+        <meta property="og:url" content="https://itasuper.com.br/termos-de-uso" />
+      </Helmet>
       <div className="sticky top-0 bg-card border-b border-border z-10 px-4 py-3 flex items-center gap-3">
         <button onClick={() => navigate(-1)} className="p-1.5 rounded-xl hover:bg-muted transition-colors">
           <ArrowLeft className="h-5 w-5 text-foreground" />

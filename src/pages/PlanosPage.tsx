@@ -123,6 +123,41 @@ const faqs = [
   const handleWhatsApp = () =>
     window.open("https://wa.me/5522992796291?text=Olá! Tenho interesse em cadastrar minha loja na plataforma.", "_blank");
 
+  useEffect(() => {
+    document.title = "Planos e Preços — ItaSuper";
+    const setMeta = (name: string, content: string, attr: "name" | "property" = "name") => {
+      let el = document.head.querySelector<HTMLMetaElement>(`meta[${attr}="${name}"]`);
+      if (!el) { el = document.createElement("meta"); el.setAttribute(attr, name); document.head.appendChild(el); }
+      el.setAttribute("content", content);
+    };
+    const desc = "Planos do ItaSuper: comece grátis ou escolha mensalidade fixa sem comissão por pedido. Cardápio digital, PIX e PDV para sua loja.";
+    setMeta("description", desc);
+    setMeta("og:title", "Planos e Preços — ItaSuper", "property");
+    setMeta("og:description", desc, "property");
+    setMeta("og:url", "https://itasuper.com.br/planos", "property");
+    let canonical = document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]');
+    if (!canonical) { canonical = document.createElement("link"); canonical.rel = "canonical"; document.head.appendChild(canonical); }
+    canonical.href = "https://itasuper.com.br/planos";
+
+    const SCRIPT_ID = "faq-jsonld-planos";
+    let s = document.getElementById(SCRIPT_ID) as HTMLScriptElement | null;
+    if (!s) {
+      s = document.createElement("script");
+      s.type = "application/ld+json";
+      s.id = SCRIPT_ID;
+      document.head.appendChild(s);
+    }
+    s.textContent = JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      mainEntity: faqs.map((f) => ({
+        "@type": "Question",
+        name: f.q,
+        acceptedAnswer: { "@type": "Answer", text: f.a },
+      })),
+    });
+  }, []);
+
   return (
     <div className="min-h-screen bg-background overflow-x-hidden">
       {/* ══════ HERO ══════ */}
