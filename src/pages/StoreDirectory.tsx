@@ -662,16 +662,16 @@ const StoreDirectory = () => {
 
       {/* ════ FINAL CTA ════ */}
       <section className="px-6 pb-24">
-        <div className="mx-auto max-w-6xl rounded-[2rem] bg-foreground text-background p-12 md:p-20 text-center relative overflow-hidden">
+        <div className="mx-auto max-w-6xl rounded-[2rem] bg-foreground text-background px-6 py-14 md:p-20 text-center relative overflow-hidden">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,hsl(var(--primary)/0.15),transparent_70%)] pointer-events-none" />
-          <div className="relative">
-            <h2 className="text-4xl md:text-6xl font-black tracking-tight leading-tight mb-4">
+          <div className="relative flex flex-col items-center">
+            <h2 className="text-3xl sm:text-4xl md:text-6xl font-black tracking-tight leading-[1.1] mb-4 text-balance max-w-3xl mx-auto">
               Comece a vender hoje.
             </h2>
-            <p className="text-background/70 text-lg max-w-xl mx-auto mb-10">
+            <p className="text-background/70 text-base md:text-lg max-w-xl mx-auto mb-10 text-balance">
               Crie sua loja grátis em 10 minutos. Sem cartão, sem fidelidade.
             </p>
-            <Button size="lg" onClick={handleCTA} className="min-h-[56px] px-10 rounded-2xl text-base font-black shadow-2xl shadow-primary/30">
+            <Button size="lg" onClick={handleCTA} className="w-full sm:w-auto min-h-[56px] px-10 rounded-2xl text-base font-black shadow-2xl shadow-primary/30">
               Criar minha loja grátis <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
             <p className="mt-4 text-xs text-background/50 font-semibold">
