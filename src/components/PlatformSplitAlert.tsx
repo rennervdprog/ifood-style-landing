@@ -6,7 +6,7 @@ import { Banknote, QrCode, Copy, Loader2, X, ChevronDown, ChevronUp, CircleCheck
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
-const LOCK_THRESHOLD = 150;  // R$150 → modal bloqueante
+const LOCK_THRESHOLD = 500;  // R$500 → modal bloqueante
 const MIN_CHARGE = 30;       // R$30 → aparece o alerta (cobrança toda segunda-feira)
 
 interface PlatformSplitAlertProps {
@@ -200,7 +200,7 @@ const PlatformSplitAlert = ({ storeId, storeName, splitPerOrder, onGoToFinance }
           <div className="text-xs font-medium text-blue-400 space-y-1">
             <p>Pedidos pagos em <strong>dinheiro, cartão ou PIX maquininha</strong> acumulam aqui.</p>
             <p>O sistema gera uma cobrança via PIX toda <strong>segunda-feira</strong> quando o saldo atingir <strong>R$30</strong>.</p>
-            <p>Se não pagar em 30 dias a loja é suspensa. Saldo acima de R$150 trava o painel imediatamente.</p>
+            <p>Se não pagar em 30 dias a loja é suspensa. Saldo acima de R$500 trava o painel imediatamente.</p>
             {repasse > 0 && comissao > 0 && (
               <div className="mt-1.5 space-y-0.5 text-[10px] text-blue-300">
                 <p>Taxa entrega ({formatBRL(splitPerOrder)}/pedido): <strong>{formatBRL(repasse)}</strong></p>
