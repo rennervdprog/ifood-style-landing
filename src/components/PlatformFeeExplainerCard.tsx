@@ -95,7 +95,7 @@ export default function PlatformFeeExplainerCard({ storeId, splitPerOrder }: Pro
           <div className="rounded-lg bg-amber-500/5 border border-amber-500/20 p-2.5 flex items-start gap-2">
             <CheckCircle2 className="h-3.5 w-3.5 text-amber-600 mt-0.5 shrink-0" />
             <p className="text-[10.5px] text-foreground leading-snug">
-              <strong>≥ R$ 150</strong> trava o painel até pagar · <strong>30 dias sem pagar</strong> suspende a loja.
+              <strong>≥ R$ 500</strong> trava o painel até pagar · <strong>30 dias sem pagar</strong> suspende a loja.
             </p>
           </div>
 
