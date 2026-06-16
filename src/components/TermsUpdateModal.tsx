@@ -34,7 +34,7 @@ const CHANGES = [
       {
         tag: "NOVO",
         tagColor: "bg-blue-500",
-        text: "Bloqueio por inadimplência: saldo acima de R$150 suspende acesso ao painel. Inadimplência acima de 30 dias suspende a loja.",
+        text: "Bloqueio por inadimplência: saldo acima de R$500 suspende acesso ao painel. Inadimplência acima de 30 dias suspende a loja.",
       },
       {
         tag: "ATUALIZADO",

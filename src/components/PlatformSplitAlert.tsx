@@ -84,11 +84,11 @@ const PlatformSplitAlert = ({ storeId, storeName, splitPerOrder, onGoToFinance }
     }
     };
 
-  const isLocked = total >= LOCK_THRESHOLD; // ≥ R$150 trava o painel
+  const isLocked = total >= LOCK_THRESHOLD; // ≥ R$500 trava o painel
 
   if (dismissed || total <= 0) return null;
 
-  // ── MODAL BLOQUEANTE (≥ R$150) ──────────────────────────────────────────
+  // ── MODAL BLOQUEANTE (≥ R$500) ──────────────────────────────────────────
   if (isLocked) {
     return (
       <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
