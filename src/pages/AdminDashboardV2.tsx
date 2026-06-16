@@ -253,7 +253,7 @@ const AdminDashboard = () => {
   const { data: myProfile, isLoading: profileLoading } = useQuery({
     queryKey: ["my-profile-approval", user?.id],
     queryFn: async () => {
-      const { data } = await supabase.from("profiles").select("is_approved, role, pix_key").eq("user_id", user!.id).maybeSingle();
+      const { data } = await supabase.from("profiles").select("is_approved, role").eq("user_id", user!.id).maybeSingle();
       return data;
     },
     enabled: !!user,
@@ -318,18 +318,6 @@ const AdminDashboard = () => {
     },
     enabled: !!user,
     staleTime: 1000 * 60 * 5, // 5min — catálogo muda raramente
-  });
-
-  // Pix key do dono da loja (para o banner de setup)
-  const { data: ownerPixKey } = useQuery({
-    queryKey: ["owner-pix-key", store?.owner_id],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("profiles").select("pix_key").eq("user_id", store!.owner_id).maybeSingle();
-      return (data as any)?.pix_key ?? null;
-    },
-    enabled: !!store?.owner_id,
-    staleTime: 60_000,
   });
 
   const storePlan = useStorePlan(store?.id);
@@ -1646,13 +1634,11 @@ const AdminDashboard = () => {
             <>
               {/* ── BANNER SETUP INCOMPLETO ── */}
               {(() => {
-                const missingPix    = !ownerPixKey;
                 const missingMenu   = menuProductCount === 0;
                 const missingHours  = !storeHours || storeHours.length === 0 || (storeHours as any[]).every((h: any) => h.is_closed_all_day === true);
                 const missingLogo   = !store.image_url;
                 const missingDriver = isOwnDelivery && !hasLinkedDrivers && !driversLoading;
                 const items = [
-                  missingPix    && { key: "pix",    label: "Cadastrar chave PIX",        desc: "Sem PIX você não recebe repasses automáticos", tab: "settings", urgente: true },
                   missingDriver && { key: "driver", label: "Vincular entregador",         desc: "Sem motoboy cadastrado clientes não conseguem pedir", tab: "drivers", urgente: true },
                   missingMenu   && { key: "menu",   label: "Adicionar produtos",          desc: "Seu cardápio está vazio — clientes não conseguem pedir", tab: "menu", urgente: true },
                   missingHours  && { key: "hours",  label: "Configurar horários",         desc: "Sem horários a loja aparece sempre fechada", tab: "hours", urgente: false },

@@ -67,13 +67,13 @@ const CommissionAlert = ({ storeId, storeName, onGoToFinance }: CommissionAlertP
     enabled: !!storeId,
   });
 
-  // Get owner profile for PIX key check
+  // Get owner profile for document check (CPF/CNPJ é exigido pelo Asaas)
   const { data: ownerProfile } = useQuery({
-    queryKey: ["owner-pix-alert", storeData?.owner_id],
+    queryKey: ["owner-doc-alert", storeData?.owner_id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("pix_key, pix_type, document")
+        .select("document")
         .eq("user_id", storeData!.owner_id!)
         .single();
       if (error) throw error;
@@ -102,7 +102,6 @@ const CommissionAlert = ({ storeId, storeName, onGoToFinance }: CommissionAlertP
   });
 
   const pendingCommission = Number(storeBalance?.comissao_pendente || storeBalance?.pending_commission || 0);
-  const hasPixKey = !!ownerProfile?.pix_key;
   const hasDocument = !!ownerProfile?.document;
   const isBlocked = storeData?.status === "bloqueado";
   const minPayout = minPayoutSetting ?? 100;
@@ -116,8 +115,8 @@ const CommissionAlert = ({ storeId, storeName, onGoToFinance }: CommissionAlertP
   if (dismissed || pendingCommission <= 0) return null;
 
   const handlePayCommission = async () => {
-    if (!hasPixKey || !hasDocument) {
-      toast.error("Cadastre sua chave PIX e CPF/CNPJ no perfil antes de pagar.");
+    if (!hasDocument) {
+      toast.error("Cadastre seu CPF/CNPJ no perfil antes de pagar.");
       return;
     }
     setGenerating(true);
@@ -275,7 +274,7 @@ const CommissionAlert = ({ storeId, storeName, onGoToFinance }: CommissionAlertP
         ) : canPay ? (
           <Button
             onClick={handlePayCommission}
-            disabled={generating || (!hasPixKey || !hasDocument)}
+            disabled={generating || !hasDocument}
             className={`w-full font-bold text-white shadow-lg ${
               isBlocked
                 ? "bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 shadow-red-500/20"
@@ -285,8 +284,8 @@ const CommissionAlert = ({ storeId, storeName, onGoToFinance }: CommissionAlertP
           >
             {generating ? (
               <><Loader2 className="h-4 w-4 animate-spin" /> Gerando PIX...</>
-            ) : !hasPixKey || !hasDocument ? (
-              <><AlertTriangle className="h-4 w-4" /> Cadastre PIX e CPF no perfil</>
+            ) : !hasDocument ? (
+              <><AlertTriangle className="h-4 w-4" /> Cadastre CPF/CNPJ no perfil</>
             ) : (
               <><QrCode className="h-4 w-4" /> Pagar Pendência via PIX</>
             )}

@@ -3,13 +3,12 @@ import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { z } from "zod";
-import { ArrowLeft, Mail, Lock, Eye, EyeOff, Store, FileText, CheckCircle, CheckCircle2, MapPin, Search, Loader2, Key, Phone, Shield, ChevronRight, User, Users, Package, TrendingUp, Zap, CreditCard, BarChart3, Crown } from "lucide-react";
+import { ArrowLeft, Mail, Lock, Eye, EyeOff, Store, FileText, CheckCircle, CheckCircle2, MapPin, Search, Loader2, Phone, Shield, ChevronRight, User, Users, Package, TrendingUp, Zap, CreditCard, BarChart3, Crown } from "lucide-react";
 import { PasswordStrengthIndicator, usePasswordStrength } from "@/components/PasswordStrengthIndicator";
 import { Constants } from "@/integrations/supabase/types";
 import { formatCep, fetchCep } from "@/lib/cepLookup";
- import { maskWhatsApp, formatWhatsAppNumber } from "@/lib/whatsapp";
- import { formatPixKeyDisplay, sanitizePixKeyForAsaas, validatePixKey, PIX_PLACEHOLDERS } from "@/lib/pixFormat";
- import { formatDocument, sanitizeDocument, validateDocument } from "@/lib/documentFormat";
+  import { maskWhatsApp, formatWhatsAppNumber } from "@/lib/whatsapp";
+  import { formatDocument, sanitizeDocument, validateDocument } from "@/lib/documentFormat";
 import { PLANS, PLANS_ORDER, DELIVERY_FEE_NOTE, PIX_FEE_NOTE } from "@/lib/plansInfo";
 import { useSupporterCount } from "@/hooks/useSupporterCount";
 import { Check } from "lucide-react";
@@ -23,10 +22,6 @@ const categoryLabels: Record<string, string> = {
   farmacias: "💊 Farmácia", docerias: "🍰 Doceria",
 };
 
-const pixTypeLabels: Record<string, string> = {
-  cpf: "CPF", cnpj: "CNPJ", email: "E-mail", phone: "Telefone", random: "Chave Aleatória",
-};
-
 const PLATFORM_CITIES = ["itatinga"];
 
    const schema = z.object({
@@ -37,8 +32,6 @@ const PLATFORM_CITIES = ["itatinga"];
       document: z.string().trim().refine(v => validateDocument(v), "CPF ou CNPJ inválido"),
      birthDate: z.string().min(10, "Data de nascimento obrigatória").max(10),
      whatsapp: z.string().trim().min(1, "WhatsApp é obrigatório").min(10, "WhatsApp inválido (ex: 14 99999-9999)").max(20),
-     pixType: z.enum(["cpf", "cnpj", "email", "phone", "random"] as const, { errorMap: () => ({ message: "Selecione o tipo da chave PIX" }) }),
-  pixKey: z.string().trim().min(1, "Chave PIX obrigatória").max(100),
   storeCategory: z.enum(storeCategories as unknown as [string, ...string[]], { errorMap: () => ({ message: "Selecione uma categoria" }) }),
   cep: z.string().min(8, "CEP inválido"),
   city: z.string().min(1, "Busque o CEP para identificar a cidade"),
@@ -70,8 +63,6 @@ const CadastroLojista = () => {
   const [document, setDocument] = useState("");
   const [storeCategory, setStoreCategory] = useState("");
   const [birthDate, setBirthDate] = useState("");
-  const [pixType, setPixType] = useState("");
-  const [pixKey, setPixKey] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
   const [cep, setCep] = useState("");
   const [city, setCity] = useState("");
@@ -168,15 +159,7 @@ const CadastroLojista = () => {
     e.preventDefault();
     setErrors({});
 
-    const result = schema.safeParse({ email, confirmEmail, password, storeName, document, birthDate, whatsapp, pixType, pixKey, storeCategory, cep, city, street, addressNumber, neighborhood, selectedPlan });
-    // Extra: valida formato da chave PIX conforme tipo (Asaas)
-    const pixErr = validatePixKey(pixKey, pixType);
-    if (pixErr && result.success) {
-      setErrors({ pixKey: pixErr });
-      toast.error(pixErr);
-      return;
-    }
-    const cleanPixKey = sanitizePixKeyForAsaas(pixKey, pixType);
+    const result = schema.safeParse({ email, confirmEmail, password, storeName, document, birthDate, whatsapp, storeCategory, cep, city, street, addressNumber, neighborhood, selectedPlan });
     // Validar nome da rede se for cadastro de matriz
     if (accountType === "matriz" && !networkName.trim()) {
       toast.error("Digite o nome da sua rede (ex: Itasuper Pizzaria).");
@@ -235,8 +218,6 @@ const CadastroLojista = () => {
                birth_date: birthDate,
                whatsapp: formatWhatsAppNumber(whatsapp),
                phone: formatWhatsAppNumber(whatsapp),
-               pix_type: pixType,
-               pix_key: cleanPixKey,
                store_name: storeName.trim(),
                store_category: storeCategory,
                city: normalizedCity,
@@ -322,8 +303,6 @@ const CadastroLojista = () => {
          await supabase.from("profiles").update({
            terms_accepted_at: new Date().toISOString(),
            birth_date: birthDate,
-           pix_type: pixType as any,
-           pix_key: cleanPixKey,
            cep: cep.replace(/\D/g, ""),
            street: street,
            address_number: addressNumber.trim(),
@@ -838,33 +817,6 @@ const CadastroLojista = () => {
                    />
                    <p className="text-[10px] text-muted-foreground mt-1 px-1">Usado para contato e Asaas.</p>
                  </div>
-
-                {/* PIX */}
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-muted-foreground px-1 block">Chave PIX para recebimento</label>
-                  <div className="relative">
-                    <Key className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <select
-                      value={pixType}
-                      onChange={(e) => setPixType(e.target.value)}
-                      className="w-full h-12 pl-10 pr-4 rounded-2xl border border-border bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm appearance-none"
-                    >
-                      <option value="">Tipo da chave PIX</option>
-                      {Object.entries(pixTypeLabels).map(([val, label]) => (
-                        <option key={val} value={val}>{label}</option>
-                      ))}
-                    </select>
-                  </div>
-                  {errors.pixType && <p className="text-xs text-destructive mt-1 px-1">{errors.pixType}</p>}
-                  <FieldInput
-                    icon={Key}
-                    placeholder={PIX_PLACEHOLDERS[pixType] || "Sua chave PIX"}
-                    value={pixType ? formatPixKeyDisplay(pixKey, pixType) : pixKey}
-                    onChange={setPixKey}
-                    error={errors.pixKey}
-                  />
-                  <p className="text-[10px] text-muted-foreground px-1">Chave PIX onde você receberá os pagamentos</p>
-                </div>
 
                 {/* Terms */}
                 <label className="flex items-start gap-3 cursor-pointer select-none bg-muted/50 rounded-2xl p-3.5">
