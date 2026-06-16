@@ -26,10 +26,12 @@ import {
    Package,
    Globe,
    Loader2,
+   Info,
  } from "lucide-react";
  import { Button } from "@/components/ui/button";
  import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { useNavigate } from "react-router-dom";
 import { PLANS, PLANS_ORDER, DELIVERY_FEE_NOTE, PIX_FEE_NOTE, type PlanInfo } from "@/lib/plansInfo";
 import PlansComparisonTable from "@/components/PlansComparisonTable";
@@ -385,7 +387,29 @@ const faqs = [
                       </div>
                       <div className="flex items-center justify-between text-xs">
                         <span className="text-muted-foreground">Entrega da plataforma</span>
-                        <span className="font-bold text-foreground">+ R$ 2,00</span>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <button type="button" className="font-bold text-foreground inline-flex items-center gap-1 underline decoration-dotted underline-offset-2">
+                              + R$ 2,00
+                              <Info className="h-3 w-3 text-muted-foreground" />
+                            </button>
+                          </PopoverTrigger>
+                          <PopoverContent side="top" align="end" className="w-72 text-xs space-y-2">
+                            <p className="font-bold text-foreground">Taxa de R$ 2,00 por entrega</p>
+                            <p className="text-muted-foreground leading-relaxed">
+                              <strong className="text-foreground">Pago pelo cliente</strong>, somado à sua taxa de entrega no checkout.
+                            </p>
+                            <p className="text-muted-foreground leading-relaxed">
+                              Você só repassa quando o pedido for em <strong className="text-foreground">dinheiro, cartão na entrega ou PIX maquininha</strong>.
+                            </p>
+                            <p className="text-muted-foreground leading-relaxed">
+                              PIX online no app: já descontado, sem repasse.
+                            </p>
+                            <p className="text-muted-foreground leading-relaxed pt-1 border-t border-border">
+                              Cobrança automática toda segunda quando o saldo chega a <strong className="text-foreground">R$ 30</strong>. Acompanhe no Dashboard e no Financeiro.
+                            </p>
+                          </PopoverContent>
+                        </Popover>
                       </div>
                       <p className="text-[10px] text-muted-foreground italic leading-snug pt-1">
                         Os R$ 2,00 são somados à sua taxa de entrega e pagos pelo cliente.

@@ -25,6 +25,7 @@ import StoreFinancePanel from "./StoreFinancePanel";
 import FinancialStatement from "./FinancialStatement";
 import AdminAsaasSubaccounts from "./AdminAsaasSubaccounts";
 import RepasseHistory from "./RepasseHistory";
+import PlatformFeeCycleBlock from "./PlatformFeeCycleBlock";
 
 interface FinanceCenterProps {
   storeId: string;
@@ -172,6 +173,7 @@ export default function FinanceCenter({ storeId, storeName, hasCommission, isPla
             ) : (
               <StoreFinanceBasic storeId={storeId} storeName={storeName} hideHistory={true} />
             )}
+            <PlatformFeeCycleBlock storeId={storeId} />
           </TabsContent>
  
          <TabsContent value="balance" className="mt-6">
