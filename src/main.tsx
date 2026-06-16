@@ -30,6 +30,7 @@ initSentry();
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
+import { HelmetProvider } from "react-helmet-async";
 
 // Apply native-app class globally for GoNative/Median/Capacitor apps
 import { Capacitor } from "@capacitor/core";
@@ -109,7 +110,9 @@ if ("serviceWorker" in navigator && !isPreviewHost && !isInIframe && !isCapacito
   });
 }
 
-createRoot(document.getElementById("root")!).render(<App />);
+createRoot(document.getElementById("root")!).render(
+  <HelmetProvider><App /></HelmetProvider>
+);
 
 // Web Vitals — chamado DEPOIS do React montar, nunca antes
 // Usa requestIdleCallback para não competir com o primeiro render
