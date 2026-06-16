@@ -538,6 +538,7 @@ const AuthPage = () => {
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row">
+      <h1 className="sr-only">Acesse sua conta no ItaSuper</h1>
       <div className="hidden md:flex md:w-[45%] bg-gradient-to-br from-slate-900 via-[#2D1810] to-orange-950 flex-col justify-between p-10 lg:p-14 relative overflow-hidden">
         <div className="absolute -top-20 -right-20 w-64 h-64 bg-primary/10 rounded-full blur-3xl" />
         <div className="absolute -bottom-20 -left-20 w-48 h-48 bg-primary/5 rounded-full blur-3xl" />
