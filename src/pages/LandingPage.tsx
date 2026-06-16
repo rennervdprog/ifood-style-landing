@@ -30,7 +30,7 @@ export default function LandingPage() {
   // App nativo (APK) abre direto no diretório de lojas — landing é só para web/SEO.
   useEffect(() => {
     if (isCapacitorNative()) {
-      navigate("/lojas", { replace: true });
+      navigate("/cliente", { replace: true });
     }
   }, [navigate]);
 
@@ -76,7 +76,7 @@ export default function LandingPage() {
             <span className="font-extrabold text-lg">ItaSuper</span>
           </Link>
           <nav className="flex items-center gap-3 text-sm font-semibold">
-            <Link to="/lojas" className="hidden sm:inline text-muted-foreground hover:text-foreground">Ver lojas</Link>
+            <Link to="/cliente" className="hidden sm:inline text-muted-foreground hover:text-foreground">Ver lojas</Link>
             <Link to="/planos" className="hidden sm:inline text-muted-foreground hover:text-foreground">Planos</Link>
             <Link to="/cadastro-lojista" className="bg-primary text-primary-foreground px-3 py-2 rounded-lg">Cadastrar loja</Link>
           </nav>
@@ -95,7 +95,7 @@ export default function LandingPage() {
           <Link to="/cadastro-lojista" className="bg-primary text-primary-foreground font-bold px-6 py-3 rounded-xl">
             Cadastrar minha loja grátis
           </Link>
-          <Link to="/lojas" className="bg-muted text-foreground font-bold px-6 py-3 rounded-xl">
+          <Link to="/cliente" className="bg-muted text-foreground font-bold px-6 py-3 rounded-xl">
             Ver lojas em Itanhaém
           </Link>
         </div>
@@ -173,7 +173,7 @@ export default function LandingPage() {
         <p className="mt-3 opacity-90 max-w-xl mx-auto">Crie sua loja em poucos minutos e comece a vender hoje.</p>
         <div className="mt-6 flex flex-wrap gap-3 justify-center">
           <Link to="/cadastro-lojista" className="bg-background text-foreground font-bold px-6 py-3 rounded-xl">Cadastrar minha loja</Link>
-          <Link to="/lojas" className="border border-primary-foreground/40 font-bold px-6 py-3 rounded-xl">Ver lojas ativas</Link>
+          <Link to="/cliente" className="border border-primary-foreground/40 font-bold px-6 py-3 rounded-xl">Ver lojas ativas</Link>
         </div>
       </section>
 
@@ -185,7 +185,7 @@ export default function LandingPage() {
             <div className="mt-1">Sistema de delivery e cardápio digital.</div>
           </div>
           <nav className="flex flex-wrap gap-4">
-            <Link to="/lojas" className="hover:text-foreground">Lojas</Link>
+            <Link to="/cliente" className="hover:text-foreground">Lojas</Link>
             <Link to="/planos" className="hover:text-foreground">Planos</Link>
             <Link to="/cadastro-lojista" className="hover:text-foreground">Cadastrar loja</Link>
             <Link to="/portal-parceiro" className="hover:text-foreground">Portal do parceiro</Link>
