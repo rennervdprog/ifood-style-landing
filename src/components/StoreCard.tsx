@@ -1,6 +1,8 @@
 import { memo } from "react";
 import { Star, Clock, MapPin } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 interface StoreCardProps {
   id: string;
@@ -42,6 +44,7 @@ const CATEGORY_GRADIENTS: Record<string, string> = {
 
 const StoreCard = memo(({ id, name, category, image_url, is_open, rating, statusReason, slug, distanceKm }: StoreCardProps) => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const icon = CATEGORY_ICONS[category] || "🍽️";
   const gradient = CATEGORY_GRADIENTS[category] || "from-primary/20 via-primary/10 to-primary/5";
   const distanceLabel =
@@ -51,9 +54,25 @@ const StoreCard = memo(({ id, name, category, image_url, is_open, rating, status
         : `${distanceKm.toFixed(1)} km`
       : null;
 
+  const prefetchBootstrap = () => {
+    const key = slug || id;
+    if (!key) return;
+    queryClient.prefetchQuery({
+      queryKey: ["store-bootstrap", key],
+      queryFn: async () => {
+        const { data, error } = await (supabase as any).rpc("store_bootstrap", { _slug: key });
+        if (error) throw error;
+        return data;
+      },
+      staleTime: 1000 * 60 * 3,
+    });
+  };
+
   return (
     <button
       onClick={() => navigate(slug ? `/${slug}` : `/loja/${id}`)}
+      onMouseEnter={prefetchBootstrap}
+      onTouchStart={prefetchBootstrap}
       className="w-full text-left rounded-[2.5rem] bg-card shadow-sm border border-border overflow-hidden transition-all active:scale-[0.96] hover:shadow-xl group flex flex-col h-full"
     >
       <div className="relative h-44 sm:h-48 bg-muted overflow-hidden shrink-0">
