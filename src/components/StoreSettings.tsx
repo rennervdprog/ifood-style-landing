@@ -326,28 +326,13 @@ type PizzaPriceMode = "maior" | "media" | "soma";
 
     // WhatsApp configurado via WhatsAppSetup component (Evolution API)
 
-    // Update whatsapp + pix on profile
+    // Update whatsapp on profile (chave Pix agora é gerenciada via Asaas)
     if (user) {
       const cleanWhatsapp = whatsapp.replace(/\D/g, "");
-      let cleanPix: string | null = null;
-      if (pixKey.trim() && pixType) {
-        const err = validatePixKey(pixKey, pixType);
-        if (err) {
-          toast.error(`PIX inválido: ${err}`);
-          setSaving(false);
-          return;
-        }
-        cleanPix = sanitizePixKeyForAsaas(pixKey, pixType);
-      }
       await supabase
         .from("profiles")
-        .update({
-          whatsapp_number: cleanWhatsapp || null,
-          pix_key: cleanPix,
-          pix_type: (pixType as any) || null,
-        })
+        .update({ whatsapp_number: cleanWhatsapp || null })
         .eq("user_id", user.id);
-      if (cleanPix) setPixKey(cleanPix);
     }
 
     queryClient.invalidateQueries({ queryKey: ["my-store"] });
