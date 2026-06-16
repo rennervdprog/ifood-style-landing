@@ -210,7 +210,6 @@ const AdminApprovals = () => {
       if (!p.cnh_front_url) missingFields.push("Foto CNH");
       if (!p.selfie_url) missingFields.push("Selfie");
     }
-    if (p.role === "lojista" && !p.pix_key) missingFields.push("Chave PIX");
 
     return (
       <div
@@ -283,13 +282,8 @@ const AdminApprovals = () => {
             <InfoRow icon={Phone} label="Telefone / WhatsApp" value={p.whatsapp_number || p.phone} warn={!p.whatsapp_number && !p.phone} masked={hide} />
             <InfoRow icon={MapPin} label="Cidade" value={p.city || "Não informado"} />
             <InfoRow icon={Calendar} label="Cadastro em" value={fmtDate(p.created_at)} />
-            {p.role === "lojista" && (
-              <>
-                <InfoRow icon={CreditCard} label="Chave PIX" value={p.pix_key ? `${(p.pix_type || "").toUpperCase()}: ${p.pix_key}` : null} warn={!p.pix_key} masked={hide} />
-                {store && (
-                  <InfoRow icon={Store} label="Categoria da loja" value={store.category} />
-                )}
-              </>
+            {p.role === "lojista" && store && (
+              <InfoRow icon={Store} label="Categoria da loja" value={store.category} />
             )}
             {p.role === "motoboy" && (
               <>
