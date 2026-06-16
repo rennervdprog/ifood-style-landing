@@ -161,20 +161,20 @@ const Navbar = ({ onNavigate, isLoggedIn }: { onNavigate: (p: string) => void; i
     return () => window.removeEventListener("scroll", h);
   }, []);
   const links = [
-    { label: "Como funciona", href: "#como-funciona" },
-    { label: "Recursos", href: "#recursos" },
-    { label: "Planos", href: "#planos" },
-    { label: "Dúvidas", href: "#faq" },
+    { label: "Como funciona", href: "#como-funciona", icon: Rocket },
+    { label: "Recursos", href: "#recursos", icon: Sparkles },
+    { label: "Planos", href: "#planos", icon: Crown },
+    { label: "Dúvidas", href: "#faq", icon: MessageCircle },
   ];
   const scrollTo = (id: string) => {
     setOpen(false);
     document.querySelector(id)?.scrollIntoView({ behavior: "smooth" });
   };
   return (
-    <nav className={`sticky top-0 z-50 backdrop-blur-xl transition-all duration-300 ${scrolled ? "bg-background/85 border-b border-border" : "bg-background/40 border-b border-transparent"}`}>
-      <div className="max-w-6xl mx-auto flex items-center justify-between px-6 h-16">
-        <button onClick={() => scrollTo("#hero")} aria-label="Início">
-          <img src="/itasuper-logo-horizontal.webp" alt="ItaSuper" width={170} height={40} className="h-10 w-auto object-contain" decoding="async" fetchPriority="high" />
+    <nav className={`sticky top-0 z-50 backdrop-blur-xl transition-all duration-300 ${scrolled ? "bg-background/90 border-b border-border shadow-sm" : "bg-background/60 border-b border-transparent"}`}>
+      <div className="max-w-6xl mx-auto flex items-center justify-between px-4 md:px-6 h-14 md:h-16">
+        <button onClick={() => scrollTo("#hero")} aria-label="Início" className="shrink-0">
+          <img src="/itasuper-logo-horizontal.webp" alt="ItaSuper" width={170} height={40} className="h-7 md:h-9 w-auto object-contain" decoding="async" fetchPriority="high" />
         </button>
         <div className="hidden md:flex items-center gap-7">
           {links.map((l) => (
@@ -197,35 +197,50 @@ const Navbar = ({ onNavigate, isLoggedIn }: { onNavigate: (p: string) => void; i
           )}
         </div>
         <div className="md:hidden flex items-center gap-2">
-          {!isLoggedIn && (
-            <Button size="sm" variant="outline" className="rounded-full font-bold text-xs px-4 h-9" onClick={() => onNavigate("/auth")}>Entrar</Button>
+          {!isLoggedIn ? (
+            <Button size="sm" className="rounded-full font-bold text-xs px-4 h-9 shadow-md shadow-primary/20" onClick={() => onNavigate("/cadastro-lojista")}>
+              Começar
+            </Button>
+          ) : (
+            <Button size="sm" variant="outline" className="rounded-full font-bold text-xs px-3 h-9" onClick={() => onNavigate("/pedidos")}>
+              <ShoppingBag className="h-3.5 w-3.5 mr-1.5" /> Pedidos
+            </Button>
           )}
-          <button onClick={() => setOpen(!open)} aria-label={open ? "Fechar" : "Menu"}>
-            {open ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          <button
+            onClick={() => setOpen(!open)}
+            aria-label={open ? "Fechar" : "Menu"}
+            className="h-9 w-9 inline-flex items-center justify-center rounded-full border border-border bg-card/60 active:scale-95 transition-transform"
+          >
+            {open ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
           </button>
         </div>
       </div>
       {open && (
-        <div className="md:hidden border-t border-border px-6 pb-4 pt-2 animate-in slide-in-from-top-2">
-          {links.map((l) => (
-            <button key={l.href} onClick={() => scrollTo(l.href)} className="block w-full text-left py-3 text-sm font-semibold text-muted-foreground">
-              {l.label}
-            </button>
-          ))}
-          {isLoggedIn ? (
-            <Button className="w-full min-h-[44px] rounded-full font-bold mt-2" onClick={() => { setOpen(false); onNavigate("/pedidos"); }}>
-              <ShoppingBag className="h-4 w-4 mr-2" /> Meus Pedidos
-            </Button>
-          ) : (
-            <>
-              <button onClick={() => { setOpen(false); onNavigate("/portal-parceiro"); }} className="block w-full text-left py-3 text-sm font-semibold text-muted-foreground">
+        <div className="md:hidden border-t border-border bg-background/95 backdrop-blur-xl px-3 py-3 animate-in slide-in-from-top-2 duration-200">
+          <div className="grid grid-cols-2 gap-2">
+            {links.map((l) => (
+              <button
+                key={l.href}
+                onClick={() => scrollTo(l.href)}
+                className="flex items-center gap-2 rounded-xl border border-border bg-card/60 px-3 py-2.5 text-left text-sm font-semibold text-foreground hover:border-primary/40 active:scale-[0.98] transition"
+              >
+                <l.icon className="h-4 w-4 text-primary shrink-0" />
+                <span className="truncate">{l.label}</span>
+              </button>
+            ))}
+          </div>
+          <div className="mt-3 flex flex-col gap-2">
+            {!isLoggedIn && (
+              <Button variant="outline" className="w-full h-11 rounded-xl font-bold" onClick={() => { setOpen(false); onNavigate("/auth"); }}>
+                Entrar
+              </Button>
+            )}
+            {!isLoggedIn && (
+              <button onClick={() => { setOpen(false); onNavigate("/portal-parceiro"); }} className="text-center text-xs font-semibold text-muted-foreground py-1">
                 Já sou parceiro
               </button>
-              <Button className="w-full min-h-[44px] rounded-full font-bold mt-2" onClick={() => { setOpen(false); onNavigate("/cadastro-lojista"); }}>
-                Começar grátis
-              </Button>
-            </>
-          )}
+            )}
+          </div>
         </div>
       )}
     </nav>
@@ -326,7 +341,7 @@ const StoreDirectory = () => {
       <Navbar onNavigate={navigate} isLoggedIn={!!user} />
 
       {/* ════ HERO ════ */}
-      <section id="hero" className="relative px-6 pt-20 pb-24 md:pt-28 md:pb-32">
+      <section id="hero" className="relative px-6 pt-10 pb-20 md:pt-24 md:pb-32">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,hsl(var(--primary)/0.08),transparent_55%)] pointer-events-none" />
         <div className="relative mx-auto max-w-6xl text-center">
           <div className="inline-flex items-center gap-2 rounded-full border border-border bg-card/60 px-4 py-1.5 text-xs font-semibold text-muted-foreground mb-8">
