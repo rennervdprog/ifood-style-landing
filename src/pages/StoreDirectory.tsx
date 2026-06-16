@@ -278,6 +278,25 @@ const StoreDirectory = () => {
     let canonical = document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]');
     if (!canonical) { canonical = document.createElement("link"); canonical.rel = "canonical"; document.head.appendChild(canonical); }
     canonical.href = "https://itasuper.com.br/";
+
+    // FAQPage JSON-LD
+    const SCRIPT_ID = "faq-jsonld-storedirectory";
+    let s = document.getElementById(SCRIPT_ID) as HTMLScriptElement | null;
+    if (!s) {
+      s = document.createElement("script");
+      s.type = "application/ld+json";
+      s.id = SCRIPT_ID;
+      document.head.appendChild(s);
+    }
+    s.textContent = JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      mainEntity: faqs.map((f) => ({
+        "@type": "Question",
+        name: f.q,
+        acceptedAnswer: { "@type": "Answer", text: f.a },
+      })),
+    });
   }, []);
 
   useEffect(() => {
@@ -366,7 +385,7 @@ const StoreDirectory = () => {
           </div>
 
           <h1 className="mx-auto max-w-3xl text-5xl md:text-7xl font-black tracking-tight text-foreground leading-[0.95] mb-6">
-            Seu delivery profissional<br />
+            Cardápio digital, PIX e motoboy<br />
             <span className="text-primary">em 10 minutos.</span>
           </h1>
 

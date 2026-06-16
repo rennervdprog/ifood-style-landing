@@ -139,11 +139,12 @@ const faqs = [
           </div>
 
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-foreground leading-[1.1] mb-6 animate-fade-in">
-            Pare de anotar pedido no{" "}
+            Planos e preços do{" "}
             <span className="relative inline-block">
-              <span className="relative z-10 text-primary">WhatsApp</span>
+              <span className="relative z-10 text-primary">ItaSuper</span>
               <span className="absolute bottom-1 left-0 w-full h-3 bg-primary/15 -z-0 rounded" />
             </span>
+            <span className="block text-2xl sm:text-3xl lg:text-4xl mt-2 text-muted-foreground font-bold">Cardápio digital, PIX e PDV sem comissão por pedido</span>
           </h1>
 
           <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 animate-fade-in leading-relaxed">
