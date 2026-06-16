@@ -71,6 +71,9 @@ const isAuthorizedForStore = async (admin: any, req: Request, storeId: string) =
 // Anti-spam params
 const DEDUPE_WINDOW_SEC = 3600;        // mesma msg p/ mesmo número
 const PER_STORE_MIN_GAP_MS = 12_000;   // gap mínimo entre envios da loja
+const PER_PHONE_MIN_GAP_MS = 3_000;    // gap mínimo entre envios p/ mesmo número (anti-burst de status)
+const EVOLUTION_MAX_RETRIES = 2;        // tentativas extras em falha transitória
+const EVOLUTION_RETRY_DELAY_MS = 2_000; // base de espera entre retries
 // P1.3 — limites diários por fase do chip (dias após connected_at)
 const dailyLimitForAge = (days: number) => {
   if (days < 7) return 20;     // semana 1
@@ -193,18 +196,53 @@ Deno.serve(async (req) => {
       await sleep(400 + Math.floor(Math.random() * 2600));
     }
 
+    // 3.b) Rate limit por NÚMERO: garante gap mínimo entre msgs para o mesmo destinatário
+    //      (evita rajada quando vários pedidos do mesmo cliente mudam de status quase juntos)
+    {
+      const { data: lastToPhone } = await admin
+        .from("whatsapp_send_log")
+        .select("sent_at").eq("store_id", store_id).eq("phone", number)
+        .order("sent_at", { ascending: false }).limit(1).maybeSingle();
+      if (lastToPhone?.sent_at) {
+        const gap = Date.now() - new Date(lastToPhone.sent_at).getTime();
+        if (gap < PER_PHONE_MIN_GAP_MS) await sleep(PER_PHONE_MIN_GAP_MS - gap);
+      }
+    }
+
     if (kind === "auto_reply") {
       // P2.4 — presença "digitando" não bloqueia o envio da saudação.
       sendPresence(baseUrl, cfg.evolution_instance_name, apiKey, number);
     }
 
-    const r = await fetch(`${baseUrl.replace(/\/$/, "")}/message/sendText/${cfg.evolution_instance_name}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", apikey: apiKey },
-      body: JSON.stringify({ number, text: message }),
-    });
-    const data = await r.json().catch(() => ({}));
-    if (!r.ok) return json({ error: "Falha Evolution", details: data }, 502);
+    // Envio com retry em falhas transitórias (5xx/network) — não retenta 4xx (erro de payload/instância)
+    let r: Response | null = null;
+    let data: any = {};
+    let attempt = 0;
+    let lastErr: unknown = null;
+    while (attempt <= EVOLUTION_MAX_RETRIES) {
+      try {
+        r = await fetch(`${baseUrl.replace(/\/$/, "")}/message/sendText/${cfg.evolution_instance_name}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", apikey: apiKey },
+          body: JSON.stringify({ number, text: message }),
+        });
+        data = await r.json().catch(() => ({}));
+        if (r.ok) break;
+        // 4xx: não adianta retentar
+        if (r.status >= 400 && r.status < 500) {
+          return json({ error: "Falha Evolution", details: data }, 502);
+        }
+      } catch (err) {
+        lastErr = err;
+      }
+      attempt++;
+      if (attempt > EVOLUTION_MAX_RETRIES) break;
+      await sleep(EVOLUTION_RETRY_DELAY_MS * attempt + Math.floor(Math.random() * 1000));
+    }
+    if (!r || !r.ok) {
+      console.error("[evolution-send-message] ❌ envio falhou após retries", { lastErr, status: r?.status, data });
+      return json({ error: "Falha Evolution", details: data || String(lastErr) }, 502);
+    }
 
     // 4) Registra envio (best-effort)
     await admin.from("whatsapp_send_log").insert({
