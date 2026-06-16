@@ -34,15 +34,15 @@ import { SIMULATION_MODE, createSimulatedPixCharge, simulatePaymentDelay } from 
 import SimulationBanner from "@/components/SimulationBanner";
 
 const statusConfig: Record<string, { label: string; icon: React.ElementType; color: string; bg: string; border: string }> = {
-   aguardando_pagamento: { label: "Aguardando Pagamento", icon: Clock, color: "text-amber-700 dark:text-amber-400", bg: "bg-white dark:bg-amber-900/20", border: "border-amber-200 dark:border-amber-800" },
-   pendente: { label: "Pedido Recebido", icon: Clock, color: "text-blue-700 dark:text-blue-400", bg: "bg-white dark:bg-blue-950/20", border: "border-blue-200 dark:border-blue-900/50" },
-   preparando: { label: "Preparando", icon: ChefHat, color: "text-orange-700 dark:text-orange-400", bg: "bg-white dark:bg-orange-950/20", border: "border-orange-200 dark:border-orange-900/50" },
-   pronto_para_entrega: { label: "Pronto p/ Entrega", icon: CheckCircle2, color: "text-indigo-700 dark:text-indigo-400", bg: "bg-white dark:bg-indigo-950/20", border: "border-indigo-200 dark:border-indigo-900/50" },
-    saiu_entrega: { label: "Saiu p/ Entrega", icon: Truck, color: "text-[#6A3B1F] dark:text-[#8B5E3C]", bg: "bg-white dark:bg-[#6A3B1F]/10", border: "border-[#6A3B1F]/20 dark:border-[#6A3B1F]/30" },
-    em_transito: { label: "Em Trânsito", icon: Truck, color: "text-[#6A3B1F] dark:text-[#8B5E3C]", bg: "bg-white dark:bg-[#6A3B1F]/10", border: "border-[#6A3B1F]/20 dark:border-[#6A3B1F]/30" },
-   entregue: { label: "Entregue", icon: CheckCircle2, color: "text-emerald-700 dark:text-emerald-400", bg: "bg-white dark:bg-emerald-900/20", border: "border-emerald-200 dark:border-emerald-800" },
-   finalizado: { label: "Finalizado", icon: CheckCircle2, color: "text-emerald-700 dark:text-emerald-400", bg: "bg-white dark:bg-emerald-900/20", border: "border-emerald-200 dark:border-emerald-800" },
-   cancelado: { label: "Cancelado", icon: XCircle, color: "text-red-700 dark:text-red-400", bg: "bg-white dark:bg-red-950/20", border: "border-red-200 dark:border-red-900/50" },
+   aguardando_pagamento: { label: "Aguardando Pagamento", icon: Clock, color: "text-amber-700 dark:text-amber-400", bg: "bg-amber-50 dark:bg-amber-900/20", border: "border-amber-200 dark:border-amber-800" },
+   pendente: { label: "Pedido Recebido", icon: Clock, color: "text-blue-700 dark:text-blue-400", bg: "bg-blue-50 dark:bg-blue-950/20", border: "border-blue-200 dark:border-blue-900/50" },
+   preparando: { label: "Preparando", icon: ChefHat, color: "text-orange-700 dark:text-orange-400", bg: "bg-orange-50 dark:bg-orange-950/20", border: "border-orange-200 dark:border-orange-900/50" },
+   pronto_para_entrega: { label: "Pronto p/ Entrega", icon: CheckCircle2, color: "text-indigo-700 dark:text-indigo-400", bg: "bg-indigo-50 dark:bg-indigo-950/20", border: "border-indigo-200 dark:border-indigo-900/50" },
+   saiu_entrega: { label: "Saiu p/ Entrega", icon: Truck, color: "text-[#6A3B1F] dark:text-[#8B5E3C]", bg: "bg-[#6A3B1F]/5 dark:bg-[#6A3B1F]/10", border: "border-[#6A3B1F]/20 dark:border-[#6A3B1F]/30" },
+   em_transito: { label: "Em Trânsito", icon: Truck, color: "text-[#6A3B1F] dark:text-[#8B5E3C]", bg: "bg-[#6A3B1F]/5 dark:bg-[#6A3B1F]/10", border: "border-[#6A3B1F]/20 dark:border-[#6A3B1F]/30" },
+   entregue: { label: "Entregue", icon: CheckCircle2, color: "text-emerald-700 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-900/20", border: "border-emerald-200 dark:border-emerald-800" },
+   finalizado: { label: "Finalizado", icon: CheckCircle2, color: "text-emerald-700 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-900/20", border: "border-emerald-200 dark:border-emerald-800" },
+   cancelado: { label: "Cancelado", icon: XCircle, color: "text-red-700 dark:text-red-400", bg: "bg-red-50 dark:bg-red-950/20", border: "border-red-200 dark:border-red-900/50" },
 };
 
 /* Status timeline steps for visual progress */
