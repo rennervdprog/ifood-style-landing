@@ -12,16 +12,6 @@ import { maskWhatsApp } from "@/lib/whatsapp";
 import { formatCep, fetchCep } from "@/lib/cepLookup";
 import { formatBRL } from "@/lib/utils";
 import { useStorePlan } from "@/hooks/useStorePlan";
-import { formatPixKeyDisplay, sanitizePixKeyForAsaas, validatePixKey, PIX_PLACEHOLDERS } from "@/lib/pixFormat";
-
-const PIX_TYPE_OPTIONS = [
-  { value: "cpf", label: "CPF" },
-  { value: "cnpj", label: "CNPJ" },
-  { value: "email", label: "E-mail" },
-  { value: "phone", label: "Telefone" },
-  { value: "random", label: "Chave Aleatória" },
-];
-
 const CATEGORY_OPTIONS = [
   { value: "lanches", label: "Lanches" },
   { value: "pizzas", label: "Pizzas" },
@@ -87,8 +77,6 @@ type PizzaPriceMode = "maior" | "media" | "soma";
   const [slug, setSlug] = useState(storeSlug || storeName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""));
   const [whatsapp, setWhatsapp] = useState("");
   const [imageUrl, setImageUrl] = useState(storeImageUrl || "");
-  const [pixKey, setPixKey] = useState("");
-  const [pixType, setPixType] = useState("cpf");
   const [addressStreet, setAddressStreet] = useState(storeAddressStreet || "");
   const [addressNumber, setAddressNumber] = useState(storeAddressNumber || "");
   const [addressComplement, setAddressComplement] = useState(storeAddressComplement || "");
@@ -145,18 +133,16 @@ type PizzaPriceMode = "maior" | "media" | "soma";
 
   // Z-API foi substituído pela aba WhatsApp (Evolution API) — bloco removido.
 
-  // Load whatsapp + pix from profile
+  // Load whatsapp from profile
   useEffect(() => {
     if (!user) return;
     supabase
       .from("profiles")
-      .select("whatsapp_number, pix_key, pix_type")
+      .select("whatsapp_number")
       .eq("user_id", user.id)
       .single()
       .then(({ data }) => {
         if (data?.whatsapp_number) setWhatsapp(data.whatsapp_number);
-        if (data?.pix_key) setPixKey(data.pix_key);
-        if (data?.pix_type) setPixType(data.pix_type);
       });
   }, [user]);
 
@@ -326,28 +312,13 @@ type PizzaPriceMode = "maior" | "media" | "soma";
 
     // WhatsApp configurado via WhatsAppSetup component (Evolution API)
 
-    // Update whatsapp + pix on profile
+    // Update whatsapp on profile (chave Pix agora é gerenciada via Asaas)
     if (user) {
       const cleanWhatsapp = whatsapp.replace(/\D/g, "");
-      let cleanPix: string | null = null;
-      if (pixKey.trim() && pixType) {
-        const err = validatePixKey(pixKey, pixType);
-        if (err) {
-          toast.error(`PIX inválido: ${err}`);
-          setSaving(false);
-          return;
-        }
-        cleanPix = sanitizePixKeyForAsaas(pixKey, pixType);
-      }
       await supabase
         .from("profiles")
-        .update({
-          whatsapp_number: cleanWhatsapp || null,
-          pix_key: cleanPix,
-          pix_type: (pixType as any) || null,
-        })
+        .update({ whatsapp_number: cleanWhatsapp || null })
         .eq("user_id", user.id);
-      if (cleanPix) setPixKey(cleanPix);
     }
 
     queryClient.invalidateQueries({ queryKey: ["my-store"] });
@@ -752,63 +723,6 @@ const NotificationSection = () => {
       </div>
 
 
-      <div className="space-y-3">
-        <label className="text-sm font-bold text-foreground/80 flex items-center gap-2">
-          <Wallet className="h-4 w-4 text-primary" />
-          Dados para Recebimento (Pix)
-        </label>
-        <p className="text-[10px] text-muted-foreground/70 -mt-1">
-          Cadastre sua chave Pix para receber os repasses das vendas via App.
-        </p>
-        {!pixKey && (
-          <div className="bg-destructive/10 border-2 border-destructive/40 rounded-xl p-3 space-y-1">
-            <p className="text-xs font-bold text-destructive">⚠️ Sua chave Pix NÃO está cadastrada</p>
-            <p className="text-[11px] text-foreground/80 leading-snug">
-              Sem chave Pix, todo o valor das vendas em PIX fica retido na plataforma — você não recebe o repasse automático. Cadastre agora.
-            </p>
-          </div>
-        )}
-        <select
-          value={pixType}
-          onChange={(e) => setPixType(e.target.value)}
-          className="w-full bg-secondary border border-border rounded-xl px-4 py-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary appearance-none"
-        >
-          {PIX_TYPE_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value}>{opt.label}</option>
-          ))}
-        </select>
-        <input
-          type="text"
-          value={pixType ? formatPixKeyDisplay(pixKey, pixType) : pixKey}
-          onChange={(e) => setPixKey(e.target.value)}
-          placeholder={PIX_PLACEHOLDERS[pixType] || "Sua chave PIX"}
-          maxLength={256}
-          className="w-full bg-secondary border border-border rounded-xl px-4 py-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
-        />
-        {pixKey.trim() && pixType && (() => {
-          const err = validatePixKey(pixKey, pixType);
-          return err ? (
-            <p className="text-[11px] font-bold text-destructive flex items-center gap-1">
-              <span>⚠️</span> {err}
-            </p>
-          ) : (
-            <p className="text-[11px] font-bold text-primary flex items-center gap-1">
-              <span>✓</span> Formato válido para {PIX_TYPE_OPTIONS.find(o => o.value === pixType)?.label}
-            </p>
-          );
-        })()}
-        {pixKey && (
-          <div className="bg-primary/10 border border-primary/20 rounded-xl p-3 flex items-center gap-2">
-            <Wallet className="h-4 w-4 text-primary flex-shrink-0" />
-            <div className="flex-1 min-w-0">
-              <p className="text-xs text-primary font-bold">Chave Pix cadastrada</p>
-              <p className="text-xs text-foreground/80 truncate">{pixKey}</p>
-              <p className="text-[10px] text-muted-foreground/70">Tipo: {PIX_TYPE_OPTIONS.find(o => o.value === pixType)?.label}</p>
-            </div>
-          </div>
-        )}
-      </div>
-
       {/* Delivery Mode — motoboy da plataforma oculto, forçar "own" */}
       <div className="bg-muted/50 border border-border rounded-2xl p-4 space-y-3">
         <label className="text-sm font-bold text-foreground/80 flex items-center gap-2">
@@ -1088,14 +1002,6 @@ const NotificationSection = () => {
               <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${acceptPixOnline ? "translate-x-5" : "translate-x-0"}`} />
             </button>
           </div>
-          {acceptPixOnline && !pixKey && (
-            <div className="flex items-start gap-2 bg-muted border border-border rounded-lg px-3 py-2">
-              <span className="text-muted-foreground text-xs">!</span>
-              <p className="text-[11px] text-muted-foreground">
-                Você ativou o PIX Online mas não tem chave PIX cadastrada. Vá em <strong>Meu Plano → Configurar conta</strong> para configurar.
-              </p>
-            </div>
-          )}
         </div>
 
         {/* PIX Maquininha */}
