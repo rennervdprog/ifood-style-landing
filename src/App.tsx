@@ -29,6 +29,7 @@ import { APP_VERSION } from "@/lib/appVersion";
 // Lazy-loaded pages — each becomes its own chunk
 const Index = lazy(() => import("./pages/Index"));
 const StoreDirectory = lazy(() => import("./pages/StoreDirectory"));
+const CityStoresPage = lazy(() => import("./pages/CityStoresPage"));
 const LandingPage = lazy(() => import("./pages/LandingPage"));
 const ClientHome = lazy(() => import("./pages/ClientHome"));
 const StorePage = lazy(() => import("./pages/StorePage"));
