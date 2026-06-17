@@ -12,7 +12,12 @@ const json = (b: unknown, s = 200) =>
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: cors });
 
-  // Dev-only: sem auth. DELETAR após investigação.
+  // SECURITY: exige header x-admin-secret === EXTERNAL_CRON_SECRET.
+  // Sem o secret configurado a função fica desativada (503).
+  const ADMIN_SECRET = Deno.env.get("EXTERNAL_CRON_SECRET") || "";
+  if (!ADMIN_SECRET) return json({ error: "EXTERNAL_CRON_SECRET not configured" }, 503);
+  const provided = req.headers.get("x-admin-secret") || "";
+  if (provided !== ADMIN_SECRET) return json({ error: "Unauthorized" }, 401);
 
   const REF = Deno.env.get("EXTERNAL_SUPABASE_PROJECT_REF")!;
   const PAT = Deno.env.get("EXTERNAL_SUPABASE_ACCESS_TOKEN")!;

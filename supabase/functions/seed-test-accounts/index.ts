@@ -76,6 +76,12 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
+    // SECURITY: gate adicional — seed só roda se ALLOW_SEED=1 estiver
+    // setado no ambiente. Em produção mantenha desabilitado.
+    if (Deno.env.get("ALLOW_SEED") !== "1") {
+      return json({ error: "Seed desabilitado neste ambiente (ALLOW_SEED!=1)." }, 403);
+    }
+
     const auth = req.headers.get("Authorization");
     if (!auth?.startsWith("Bearer ")) return json({ error: "Unauthorized" }, 401);
 
