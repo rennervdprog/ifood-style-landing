@@ -1,0 +1,31 @@
+name: version-check
+on:
+  pull_request:
+    paths:
+      - 'src/lib/appVersion.ts'
+      - 'android/app/build.gradle'
+  push:
+    branches: [main]
+    paths:
+      - 'src/lib/appVersion.ts'
+      - 'android/app/build.gradle'
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify appVersion.ts and build.gradle versionName match
+        run: |
+          TS_VERSION=$(grep -oE 'APP_VERSION\s*=\s*"[0-9]+\.[0-9]+\.[0-9]+"' src/lib/appVersion.ts | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
+          GRADLE_VERSION=$(grep -oE 'versionName\s+"[0-9]+\.[0-9]+\.[0-9]+"' android/app/build.gradle | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
+          echo "appVersion.ts: $TS_VERSION"
+          echo "build.gradle:  $GRADLE_VERSION"
+          if [ -z "$TS_VERSION" ] || [ -z "$GRADLE_VERSION" ]; then
+            echo "::error::Não consegui extrair versão de um dos arquivos"
+            exit 1
+          fi
+          if [ "$TS_VERSION" != "$GRADLE_VERSION" ]; then
+            echo "::error::Versão divergente: src/lib/appVersion.ts ($TS_VERSION) != android/app/build.gradle ($GRADLE_VERSION)"
+            exit 1
+          fi
+          echo "OK — versões sincronizadas: $TS_VERSION"
