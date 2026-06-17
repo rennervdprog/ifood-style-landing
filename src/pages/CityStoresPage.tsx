@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
-import { Store as StoreIcon, ArrowLeft, Heart, TrendingUp, Flame, Bike, CalendarClock } from "lucide-react";
+import { Store as StoreIcon, ArrowLeft, Heart, TrendingUp, Flame } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { citySlug, cityDisplay } from "@/lib/citySlug";
