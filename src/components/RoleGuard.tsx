@@ -151,11 +151,10 @@ const RoleGuard = ({ allowedRoles, redirectTo, children, requireApproval = false
         return;
       }
 
-      if (requireApproval && !resolvedApproved) {
-        setAuthorized(false);
-        setChecking(false);
-        return;
-      }
+      // Auto-aprovação ativa: lojistas/motoboys têm acesso imediato após cadastro.
+      // (mantemos o parâmetro requireApproval na API para compat, mas não bloqueia mais)
+      void resolvedApproved;
+      void requireApproval;
 
       setAuthorized(true);
       setChecking(false);
