@@ -330,17 +330,14 @@ Deno.serve(async (req) => {
             plan_label: planLabel,
             store_name: store.name,
             billing_period: now.toISOString(),
+            pdv_pending_billed: pdvPending, // webhook usa para zerar APÓS pagamento
           },
         });
 
-        // last_billing_attempt_at already set by the atomic lock above.
-        // Zera comissão PDV após incluir na fatura.
-        if (pdvPending > 0) {
-          await supabase
-            .from("store_plans")
-            .update({ pdv_commission_pending: 0 })
-            .eq("id", plan.id);
-        }
+        // NÃO zera pdv_commission_pending aqui — se o lojista não pagar o PIX,
+        // o valor seria perdido. Zeramento é feito pelo asaas-webhook ao confirmar
+        // o pagamento (via RPC decrement_pdv_commission_pending), subtraindo apenas
+        // o valor faturado e preservando comissão acumulada no período de espera.
 
         billed++;
         results.push({ store: store.name, reference: referenceCode, status: "billed" });

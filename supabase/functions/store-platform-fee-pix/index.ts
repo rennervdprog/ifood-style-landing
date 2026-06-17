@@ -221,7 +221,9 @@ Deno.serve(async (req) => {
       status: "pending",
       provider: "asaas",
       mercado_pago_payment_id: paymentData.id,
-      pix_qr_code: pixInfo?.payload || null,
+      // pix_qr_code legado guardava texto copy-paste em vez da imagem; agora
+      // o texto fica em pix_copy_paste e a imagem base64 em pix_qr_code_base64.
+      pix_qr_code: null,
       pix_qr_code_base64: pixInfo?.encodedImage || null,
       pix_copy_paste: pixInfo?.payload || null,
       metadata: { type: "platform_fee", store_name: store.name },
