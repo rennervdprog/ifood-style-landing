@@ -50,7 +50,7 @@ const DriverRideHistory = ({ storeIds }: Props) => {
         .select("id, store_id, order_id, fee_total, driver_amount, status, paid_at, created_at")
         .eq("driver_user_id", user!.id)
         .order("created_at", { ascending: false })
-        .limit(200);
+        .limit(period === "all" ? 1000 : 200);
       if (since) q = q.gte("created_at", since);
       const { data, error } = await q;
       if (error) throw error;
@@ -111,7 +111,9 @@ const DriverRideHistory = ({ storeIds }: Props) => {
       const s = storesById.get(o?.store_id || e.store_id);
       const km = haversineKm(s?.latitude, s?.longitude, o?.client_lat, o?.client_lng);
       const startISO = o?.confirmed_at || o?.created_at || e.created_at;
-      const endISO = e.paid_at || e.created_at;
+      // Usa created_at do earning (gerado no momento da entrega), não paid_at
+      // que reflete apenas quando o admin liberou o repasse.
+      const endISO = e.created_at;
       const durationMin =
         startISO && endISO ? (new Date(endISO).getTime() - new Date(startISO).getTime()) / 60000 : NaN;
       return { e, o, s, km, durationMin, startISO, endISO };
@@ -159,8 +161,8 @@ const DriverRideHistory = ({ storeIds }: Props) => {
 
       {/* Summary */}
       <div className="grid grid-cols-2 gap-2">
-        <SummaryCard icon={<Route className="h-4 w-4 text-primary" />} label="Distância" value={`${totals.totalKm.toFixed(1)} km`} sub={`Média ${totals.avgKm.toFixed(1)} km/entrega`} />
-        <SummaryCard icon={<Clock className="h-4 w-4 text-primary" />} label="Tempo total" value={formatDurationMin(totals.totalMin)} sub={`Média ${formatDurationMin(totals.avgMin)}/entrega`} />
+        <SummaryCard icon={<Route className="h-4 w-4 text-primary" />} label="Distância" value={`${totals.totalKm.toFixed(1)} km`} sub={`Média ${totals.avgKm.toFixed(1)} km/entrega`} tooltip="Linha reta loja → cliente (não é a rota real percorrida)." />
+        <SummaryCard icon={<Clock className="h-4 w-4 text-primary" />} label="Tempo total" value={formatDurationMin(totals.totalMin)} sub={`Média ${formatDurationMin(totals.avgMin)}/entrega`} tooltip="Do pedido confirmado até o registro da entrega." />
         <SummaryCard icon={<Bike className="h-4 w-4 text-success" />} label="Corridas" value={`${totals.count}`} sub="No período" />
         <SummaryCard icon={<StoreIcon className="h-4 w-4 text-success" />} label="Ganhos" value={formatBRL(totals.totalAmount)} sub="Sua parte" />
       </div>
@@ -229,9 +231,9 @@ const DriverRideHistory = ({ storeIds }: Props) => {
   );
 };
 
-function SummaryCard({ icon, label, value, sub }: { icon: React.ReactNode; label: string; value: string; sub?: string }) {
+function SummaryCard({ icon, label, value, sub, tooltip }: { icon: React.ReactNode; label: string; value: string; sub?: string; tooltip?: string }) {
   return (
-    <div className="bg-card border border-border rounded-2xl p-3">
+    <div className="bg-card border border-border rounded-2xl p-3" title={tooltip}>
       <div className="flex items-center gap-1.5 mb-1">{icon}<span className="text-[10px] font-bold text-muted-foreground uppercase">{label}</span></div>
       <p className="text-base font-black text-foreground">{value}</p>
       {sub && <p className="text-[10px] text-muted-foreground mt-0.5">{sub}</p>}
