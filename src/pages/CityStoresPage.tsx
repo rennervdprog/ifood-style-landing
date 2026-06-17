@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
-import { Store as StoreIcon, ArrowLeft, MapPin } from "lucide-react";
+import { Store as StoreIcon, ArrowLeft, MapPin, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import StoreCard from "@/components/StoreCard";
 import { citySlug, cityDisplay } from "@/lib/citySlug";
@@ -80,34 +80,54 @@ export default function CityStoresPage() {
         <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
       </Helmet>
 
-      <header className="sticky top-0 z-40 bg-card/90 backdrop-blur-xl border-b border-border/50">
-        <div className="flex items-center gap-3 px-4 h-14">
-          <Link to="/" className="p-2 -ml-2 rounded-full hover:bg-muted">
+      <header className="sticky top-0 z-40 bg-card/85 backdrop-blur-xl border-b border-border/40">
+        <div className="flex items-center gap-2 px-4 h-14">
+          <Link to="/" className="p-2 -ml-2 rounded-full hover:bg-muted active:scale-95 transition">
             <ArrowLeft className="h-5 w-5" />
           </Link>
-          <div className="flex items-center gap-2 min-w-0">
-            <MapPin className="h-4 w-4 text-primary shrink-0" />
-            <h1 className="text-base font-black truncate">
-              Lojas em {cityName || "..."}
-            </h1>
-          </div>
+          <h1 className="text-sm font-bold truncate text-muted-foreground">
+            {cityName || "Lojas"}
+          </h1>
         </div>
       </header>
 
-      <main className="px-4 pt-4">
-        <p className="text-xs text-muted-foreground mb-3">
-          {loading ? "Carregando..." : `${stores.length} loja${stores.length === 1 ? "" : "s"} encontrada${stores.length === 1 ? "" : "s"}`}
-        </p>
+      {/* Hero */}
+      <section className="relative overflow-hidden px-5 pt-8 pb-10 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent">
+        <div className="absolute -top-12 -right-12 w-44 h-44 rounded-full bg-primary/20 blur-3xl" />
+        <div className="absolute -bottom-16 -left-10 w-40 h-40 rounded-full bg-primary/10 blur-3xl" />
+        <div className="relative">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/15 border border-primary/20 mb-3">
+            <MapPin className="h-3.5 w-3.5 text-primary" />
+            <span className="text-[11px] font-black uppercase tracking-wider text-primary">Sua cidade</span>
+          </div>
+          <h2 className="text-3xl font-black leading-tight">
+            Lojas em <span className="text-primary">{cityName || "..."}</span>
+          </h2>
+          <p className="mt-2 text-sm text-muted-foreground flex items-center gap-1.5">
+            <Sparkles className="h-3.5 w-3.5 text-primary" />
+            {loading
+              ? "Carregando lojas..."
+              : `${stores.length} ${stores.length === 1 ? "loja disponível" : "lojas disponíveis"} agora`}
+          </p>
+        </div>
+      </section>
+
+      <main className="px-4 pt-5">
 
         {!loading && stores.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <StoreIcon className="h-12 w-12 text-muted-foreground mb-3" />
-            <p className="text-sm text-muted-foreground">Nenhuma loja ativa em {cityName} no momento.</p>
-            <Link to="/" className="mt-4 text-sm font-bold text-primary">Ver todas as lojas</Link>
+          <div className="flex flex-col items-center justify-center py-20 text-center rounded-3xl border border-dashed border-border bg-muted/30">
+            <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
+              <StoreIcon className="h-7 w-7 text-primary" />
+            </div>
+            <p className="text-sm font-semibold">Nenhuma loja ativa em {cityName}</p>
+            <p className="text-xs text-muted-foreground mt-1">Volte em breve, novidades chegando.</p>
+            <Link to="/" className="mt-5 inline-flex items-center gap-1.5 text-sm font-bold text-primary px-4 py-2 rounded-full bg-primary/10 active:scale-95 transition">
+              Ver todas as lojas
+            </Link>
           </div>
         )}
 
-        <div className="grid grid-cols-1 gap-3">
+        <div className="grid grid-cols-1 gap-4 pb-6">
           {stores.map((s) => (
             <StoreCard
               key={s.id}
