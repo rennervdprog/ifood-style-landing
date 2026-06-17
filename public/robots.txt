@@ -1,6 +1,7 @@
 User-agent: *
 Allow: /
 Allow: /loja/
+Allow: /blog
 Disallow: /admin
 Disallow: /super-admin
 Disallow: /entregador

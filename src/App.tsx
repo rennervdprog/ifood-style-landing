@@ -60,6 +60,8 @@ const LinksPage = lazy(() => import("./pages/LinksPage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const KdsPage = lazy(() => import("./pages/KdsPage"));
 const SandboxTestsPage = lazy(() => import("./pages/SandboxTestsPage"));
+const BlogIndex = lazy(() => import("./pages/blog/BlogIndex"));
+const BlogPost = lazy(() => import("./pages/blog/BlogPost"));
 
 const PageLoader = () => (
   <div className="min-h-screen bg-background flex items-center justify-center">
@@ -361,6 +363,9 @@ const App = () => {
                 <Route path="/links" element={<LinksPage />} />
                  <Route path="/download" element={<DownloadApp />} />
                 <Route path="/kds/:token" element={<KdsPage />} />
+                {/* Blog público — DEVE vir antes de /:slug */}
+                <Route path="/blog" element={<BlogIndex />} />
+                <Route path="/blog/:slug" element={<BlogPost />} />
                 {/* Client store access via slug - must be last */}
                 <Route path="/:slug" element={<StorePage />} />
                 <Route path="*" element={<NotFound />} />
