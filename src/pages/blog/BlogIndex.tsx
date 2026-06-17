@@ -44,6 +44,7 @@ export default function BlogIndex() {
           "id, slug, title, excerpt, cover_url, author, published_at, tags, category, reading_minutes, featured"
         )
         .eq("published", true)
+        .lte("published_at", new Date().toISOString())
         .order("featured", { ascending: false })
         .order("published_at", { ascending: false })
         .limit(50);
