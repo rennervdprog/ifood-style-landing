@@ -305,6 +305,7 @@ const App = () => {
                 {/* Public landing / Client home */}
                 <Route path="/" element={<StoreDirectory />} />
                 <Route path="/lojas" element={<Navigate to="/" replace />} />
+                <Route path="/lojas/:cidade" element={<CityStoresPage />} />
                 <Route path="/cliente" element={<ClientHome />} />
                 {/* Admin dashboard at /index */}
                 <Route
