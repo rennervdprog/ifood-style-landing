@@ -34,8 +34,7 @@ Deno.serve(async (req) => {
     }
     const got =
       req.headers.get("x-cron-secret") ||
-      req.headers.get("Authorization")?.replace("Bearer ", "") ||
-      new URL(req.url).searchParams.get("secret");
+      req.headers.get("Authorization")?.replace("Bearer ", "");
     if (got !== expected) return json({ error: "Forbidden" }, 403);
 
     const ASAAS_API_KEY = Deno.env.get("ASAAS_API_KEY");
