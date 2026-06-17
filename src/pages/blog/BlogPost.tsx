@@ -87,6 +87,7 @@ export default function BlogPostPage() {
         .select("*")
         .eq("slug", slug)
         .eq("published", true)
+        .lte("published_at", new Date().toISOString())
         .maybeSingle();
       setPost((data as BlogPost) || null);
       setLoading(false);
@@ -102,6 +103,7 @@ export default function BlogPostPage() {
         .from("blog_posts")
         .select("id, slug, title, excerpt, cover_url, category, reading_minutes")
         .eq("published", true)
+        .lte("published_at", new Date().toISOString())
         .neq("id", post.id)
         .order("published_at", { ascending: false })
         .limit(3);
