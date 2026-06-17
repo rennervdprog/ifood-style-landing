@@ -1,4 +1,10 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { z } from "https://esm.sh/zod@3.23.8";
+
+const BodySchema = z.object({
+  store_id: z.string().uuid().optional(),
+  force: z.boolean().optional(),
+}).partial();
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -99,9 +105,13 @@ Deno.serve(async (req) => {
     let force = false;
     if (req.method === "POST") {
       try {
-        const body = await req.json();
-        manualStoreId = body?.store_id ?? null;
-        force = !!body?.force;
+        const raw = await req.json();
+        const parsed = BodySchema.safeParse(raw);
+        if (!parsed.success) {
+          return json({ error: parsed.error.flatten().fieldErrors }, 400);
+        }
+        manualStoreId = parsed.data.store_id ?? null;
+        force = !!parsed.data.force;
       } catch (_) {
         // no body
       }

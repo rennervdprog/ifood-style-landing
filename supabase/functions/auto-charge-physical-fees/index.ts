@@ -17,6 +17,12 @@
  */
 
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { z } from "https://esm.sh/zod@3.23.8";
+
+const BodySchema = z.object({
+  store_id: z.string().uuid().optional(),
+  dry_run: z.boolean().optional(),
+}).partial();
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -142,9 +148,13 @@ Deno.serve(async (req) => {
       if (!isAdmin) return json({ error: "Apenas admins" }, 403);
     }
 
-    const body = await req.json().catch(() => ({}));
-    const manualStoreId = body?.store_id;
-    const dryRun = body?.dry_run === true; // true = simula sem gerar cobranças
+    const raw = await req.json().catch(() => ({}));
+    const parsed = BodySchema.safeParse(raw);
+    if (!parsed.success) {
+      return json({ error: parsed.error.flatten().fieldErrors }, 400);
+    }
+    const manualStoreId = parsed.data.store_id;
+    const dryRun = parsed.data.dry_run === true; // true = simula sem gerar cobranças
 
     const results: any[] = [];
     const now = new Date();
