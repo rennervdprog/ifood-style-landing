@@ -88,71 +88,88 @@ Deno.serve(async (req) => {
     let deactivatedCount = 0;
     const deactivatedStores: string[] = [];
 
+    // ─── Batch pre-fetch (P1-7: elimina N+1) ─────────────────────────────
+    // Antes: 4 queries por loja (recentPayment, oldestUnpaidCharge,
+    // oldestUnpaidMonthly, store). Agora: 4 queries totais usando .in().
+    const storeIds = (storesWithDebt || []).map((b: any) => b.store_id);
+    const threeDaysAgoMs = Date.now() - 3 * 24 * 60 * 60 * 1000;
+
+    const recentPaymentsP = serviceClient
+      .from("financial_transactions")
+      .select("store_id")
+      .in("store_id", storeIds)
+      .in("transaction_kind", ["commission_charge", "store_payout"])
+      .in("status", ["paid", "approved"])
+      .gte("created_at", threeDaysAgo);
+
+    const unpaidChargesP = serviceClient
+      .from("financial_transactions")
+      .select("store_id, created_at, transaction_kind, reference_code, amount")
+      .in("store_id", storeIds)
+      .in("transaction_kind", ["commission_charge", "store_payout"])
+      .eq("status", "pending")
+      .order("created_at", { ascending: true });
+
+    const storesInfoP = serviceClient
+      .from("stores")
+      .select("id, name, status")
+      .in("id", storeIds)
+      .eq("status", "ativo");
+
+    const balancesUpdatedP = serviceClient
+      .from("store_balances")
+      .select("store_id, updated_at")
+      .in("store_id", storeIds);
+
+    const [recentRes, unpaidRes, storesRes, balUpdRes] = await Promise.all([
+      recentPaymentsP, unpaidChargesP, storesInfoP, balancesUpdatedP,
+    ]);
+
+    const recentSet = new Set((recentRes.data || []).map((r: any) => r.store_id));
+    const storesById = new Map<string, any>(
+      (storesRes.data || []).map((s: any) => [s.id, s]),
+    );
+    const balUpdatedById = new Map<string, string>(
+      (balUpdRes.data || []).map((b: any) => [b.store_id, b.updated_at]),
+    );
+    // Primeira cobrança não-paga por loja, separando mensalidade de demais.
+    const oldestChargeByStore = new Map<string, any>();
+    const oldestMonthlyByStore = new Map<string, any>();
+    for (const tx of unpaidRes.data || []) {
+      const isMonthly = String(tx.reference_code || "").startsWith("#MENS-");
+      const target = isMonthly ? oldestMonthlyByStore : oldestChargeByStore;
+      if (!target.has(tx.store_id)) target.set(tx.store_id, tx);
+    }
+
     for (const balance of storesWithDebt || []) {
       const hasCommissionDebt = Number(balance.comissao_pendente || 0) > 0;
       const hasRepasseDebt = Number(balance.repasse_pendente || 0) > 0;
 
-      // Skip if store paid any platform charge (commission OR store_payout) in the last 3 days
-      const { data: recentPayment } = await serviceClient
-        .from("financial_transactions")
-        .select("id")
-        .eq("store_id", balance.store_id)
-        .in("transaction_kind", ["commission_charge", "store_payout"])
-        .in("status", ["paid", "approved"])
-        .gte("created_at", threeDaysAgo)
-        .limit(1)
-        .maybeSingle();
+      // Skip if store paid any platform charge in the last 3 days
+      if (recentSet.has(balance.store_id)) continue;
 
-      if (recentPayment) continue;
-
-      // Look for the oldest unpaid platform charge (commission, repasse OR monthly fee) older than 3 days
-      const { data: oldestUnpaidCharge } = await serviceClient
-        .from("financial_transactions")
-        .select("created_at, transaction_kind")
-        .eq("store_id", balance.store_id)
-        .in("transaction_kind", ["commission_charge", "store_payout"])
-        .eq("status", "pending")
-        .order("created_at", { ascending: true })
-        .limit(1)
-        .maybeSingle();
-
-      // ALSO check for unpaid monthly fees (reference_code starts with #MENS-).
-      // These are stored as commission_charge but represent overdue subscriptions.
-      const { data: oldestUnpaidMonthly } = await serviceClient
-        .from("financial_transactions")
-        .select("created_at, reference_code, amount")
-        .eq("store_id", balance.store_id)
-        .eq("transaction_kind", "commission_charge")
-        .eq("status", "pending")
-        .like("reference_code", "#MENS-%")
-        .order("created_at", { ascending: true })
-        .limit(1)
-        .maybeSingle();
+      const oldestUnpaidMonthly = oldestMonthlyByStore.get(balance.store_id);
+      const oldestUnpaidCharge = oldestChargeByStore.get(balance.store_id);
 
       let shouldDeactivate = false;
       let debtKind = "comissão";
       let debtAmount = 0;
 
       if (oldestUnpaidMonthly &&
-          new Date(oldestUnpaidMonthly.created_at).getTime() < Date.now() - 3 * 24 * 60 * 60 * 1000) {
+          new Date(oldestUnpaidMonthly.created_at).getTime() < threeDaysAgoMs) {
         shouldDeactivate = true;
         debtKind = "mensalidade";
         debtAmount = Number(oldestUnpaidMonthly.amount) || 0;
       } else if (oldestUnpaidCharge) {
         shouldDeactivate =
-          new Date(oldestUnpaidCharge.created_at).getTime() <
-          Date.now() - 3 * 24 * 60 * 60 * 1000;
+          new Date(oldestUnpaidCharge.created_at).getTime() < threeDaysAgoMs;
         debtKind = oldestUnpaidCharge.transaction_kind === "store_payout" ? "repasse" : "comissão";
       } else {
         // No charge ever generated, but balance keeps accumulating — check store_balances.updated_at
-        const { data: bRow } = await serviceClient
-          .from("store_balances")
-          .select("updated_at")
-          .eq("store_id", balance.store_id)
-          .single();
-        if (bRow?.updated_at) {
+        const updatedAt = balUpdatedById.get(balance.store_id);
+        if (updatedAt) {
           shouldDeactivate =
-            new Date(bRow.updated_at).getTime() < Date.now() - 7 * 24 * 60 * 60 * 1000;
+            new Date(updatedAt).getTime() < Date.now() - 7 * 24 * 60 * 60 * 1000;
         }
       }
 
@@ -166,13 +183,7 @@ Deno.serve(async (req) => {
       }
 
       // Check current store status - only deactivate active stores
-      const { data: store } = await serviceClient
-        .from("stores")
-        .select("id, name, status")
-        .eq("id", balance.store_id)
-        .eq("status", "ativo")
-        .single();
-
+      const store = storesById.get(balance.store_id);
       if (!store) continue;
 
       // Deactivate the store
