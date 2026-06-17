@@ -245,47 +245,30 @@ Deno.serve(async (req) => {
         .eq("store_id", tx.store_id)
         .eq("is_active", true);
       if (planErr) console.error("[asaas-webhook] plan update error", planErr);
+      // Zera comissão PDV apenas APÓS confirmação (era zerada antes em monthly-billing).
+      // Subtrai o valor exato cobrado, preservando comissão acumulada entre fatura e pagamento.
+      const pdvBilled = Number((tx.metadata as any)?.pdv_pending_billed || 0);
+      if (pdvBilled > 0) {
+        const { error: pdvErr } = await supabase.rpc("decrement_pdv_commission_pending", {
+          _store_id: tx.store_id,
+          _amount: pdvBilled,
+        });
+        if (pdvErr) console.error("[asaas-webhook] pdv decrement error", pdvErr);
+      }
       console.log(`[asaas-webhook] mensalidade paga store=${tx.store_id} próxima=${next.toISOString()}`);
     } else {
       // 2b) cobrança de taxa física (auto-charge-physical-fees) → zera saldos
-      // SUBTRAI o valor cobrado (tx.amount) em vez de zerar — evita apagar
-      // saldo novo acumulado entre a emissão da cobrança e a confirmação.
+      // Débito atômico via RPC com FOR UPDATE — elimina race com reconcile-payments
+      // e com webhooks concorrentes que antes liam→escreviam sem lock.
       const meta: any = tx.metadata || {};
       const planType: string = meta.plan_type || "";
       const paidAmount = Number(tx.amount || 0);
-
-      const { data: bal } = await supabase
-        .from("store_balances")
-        .select("repasse_pendente, comissao_pendente, pending_commission")
-        .eq("store_id", tx.store_id)
-        .maybeSingle();
-      const curRepasse = Number(bal?.repasse_pendente || 0);
-      const curCom = Number(bal?.comissao_pendente || 0);
-      const curPend = Number(bal?.pending_commission || 0);
-
-      const updates: Record<string, unknown> = { updated_at: nowIso };
-      if (planType === "fixed" || planType === "supporter") {
-        updates.repasse_pendente = Math.max(0, curRepasse - paidAmount);
-      } else if (planType === "commission_only") {
-        updates.comissao_pendente = Math.max(0, curCom - paidAmount);
-        updates.pending_commission = Math.max(0, curPend - paidAmount);
-      } else {
-        // Sem metadata: deduz proporcionalmente, sem zerar.
-        const total = curRepasse + curCom;
-        if (total > 0) {
-          const repShare = (curRepasse / total) * paidAmount;
-          const comShare = paidAmount - repShare;
-          updates.repasse_pendente = Math.max(0, curRepasse - repShare);
-          updates.comissao_pendente = Math.max(0, curCom - comShare);
-          updates.pending_commission = Math.max(0, curPend - comShare);
-        }
-      }
-
-      const { error: balErr } = await supabase
-        .from("store_balances")
-        .update(updates)
-        .eq("store_id", tx.store_id);
-      if (balErr) console.error("[asaas-webhook] balance update error", balErr);
+      const { error: balErr } = await supabase.rpc("reconcile_debit_store_balance", {
+        _store_id: tx.store_id,
+        _amount: paidAmount,
+        _plan_type: planType,
+      });
+      if (balErr) console.error("[asaas-webhook] debit rpc error", balErr);
       console.log(`[asaas-webhook] taxa física paga store=${tx.store_id} plan=${planType} valor=${paidAmount}`);
     }
 
