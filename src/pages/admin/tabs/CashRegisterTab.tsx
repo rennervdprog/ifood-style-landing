@@ -1,4 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { Monitor, Lock, Unlock, ArrowRight, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,6 +18,7 @@ interface Props {
  */
 const CashRegisterTab = ({ storeId }: Props) => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const { data: session, isLoading } = useQuery({
     queryKey: ["pdv-session-status", storeId],
@@ -31,8 +33,22 @@ const CashRegisterTab = ({ storeId }: Props) => {
         .maybeSingle();
       return data as any;
     },
-    refetchInterval: 15_000,
+    // Realtime substitui polling (P2-11); mantemos refetch lento como fallback do watchdog.
+    refetchInterval: 5 * 60_000,
   });
+
+  useEffect(() => {
+    if (!storeId) return;
+    const channel = supabase
+      .channel(`pdv-session-${storeId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "pdv_sessions", filter: `store_id=eq.${storeId}` },
+        () => queryClient.invalidateQueries({ queryKey: ["pdv-session-status", storeId] }),
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [storeId, queryClient]);
 
   if (isLoading) {
     return (
