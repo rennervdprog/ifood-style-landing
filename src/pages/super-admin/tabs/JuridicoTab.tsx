@@ -100,7 +100,8 @@ const JuridicoTab = () => {
         .from("terms_acceptance")
         .select("*")
         .eq("user_id", userId)
-        .order("accepted_at", { ascending: false });
+        .order("accepted_at", { ascending: false })
+        .limit(50);
       setUserTerms(terms || []);
     } catch (err) {
       console.error(err);
