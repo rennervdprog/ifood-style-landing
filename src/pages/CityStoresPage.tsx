@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
-import { Store as StoreIcon, ArrowLeft, MapPin, Sparkles } from "lucide-react";
+import { Store as StoreIcon, ArrowLeft, Heart, TrendingUp, Flame, Bike, CalendarClock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import StoreCard from "@/components/StoreCard";
+import { useNavigate } from "react-router-dom";
 import { citySlug, cityDisplay } from "@/lib/citySlug";
 
 interface StoreRow {
@@ -23,6 +23,7 @@ const BASE_URL = "https://itasuper.lovable.app";
 
 export default function CityStoresPage() {
   const { cidade } = useParams<{ cidade: string }>();
+  const navigate = useNavigate();
   const slug = (cidade || "").toLowerCase();
   const [stores, setStores] = useState<StoreRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -80,67 +81,119 @@ export default function CityStoresPage() {
         <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
       </Helmet>
 
-      <header className="sticky top-0 z-40 bg-card/85 backdrop-blur-xl border-b border-border/40">
-        <div className="flex items-center gap-2 px-4 h-14">
-          <Link to="/" className="p-2 -ml-2 rounded-full hover:bg-muted active:scale-95 transition">
+      <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-xl border-b border-border/60">
+        <div className="flex items-center gap-3 px-4 h-14">
+          <button
+            onClick={() => navigate(-1)}
+            className="p-2 -ml-2 rounded-full hover:bg-muted active:scale-95 transition"
+            aria-label="Voltar"
+          >
             <ArrowLeft className="h-5 w-5" />
-          </Link>
-          <h1 className="text-sm font-bold truncate text-muted-foreground">
-            {cityName || "Lojas"}
-          </h1>
+          </button>
+          <div className="flex-1 min-w-0">
+            <h1 className="text-[15px] font-bold truncate leading-tight">
+              Lojas em {cityName || "..."}
+            </h1>
+            <p className="text-[11px] text-muted-foreground leading-tight">
+              {loading ? "Carregando..." : `${stores.length} ${stores.length === 1 ? "estabelecimento" : "estabelecimentos"}`}
+            </p>
+          </div>
         </div>
       </header>
 
-      {/* Hero */}
-      <section className="relative overflow-hidden px-5 pt-8 pb-10 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent">
-        <div className="absolute -top-12 -right-12 w-44 h-44 rounded-full bg-primary/20 blur-3xl" />
-        <div className="absolute -bottom-16 -left-10 w-40 h-40 rounded-full bg-primary/10 blur-3xl" />
-        <div className="relative">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/15 border border-primary/20 mb-3">
-            <MapPin className="h-3.5 w-3.5 text-primary" />
-            <span className="text-[11px] font-black uppercase tracking-wider text-primary">Sua cidade</span>
-          </div>
-          <h2 className="text-3xl font-black leading-tight">
-            Lojas em <span className="text-primary">{cityName || "..."}</span>
-          </h2>
-          <p className="mt-2 text-sm text-muted-foreground flex items-center gap-1.5">
-            <Sparkles className="h-3.5 w-3.5 text-primary" />
-            {loading
-              ? "Carregando lojas..."
-              : `${stores.length} ${stores.length === 1 ? "loja disponível" : "lojas disponíveis"} agora`}
-          </p>
+      <main className="px-4 pt-4">
+        <div className="flex items-center gap-2 mb-4">
+          <StoreIcon className="h-6 w-6" strokeWidth={2.2} />
+          <h2 className="text-2xl font-black tracking-tight">Lojas</h2>
         </div>
-      </section>
-
-      <main className="px-4 pt-5">
 
         {!loading && stores.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-20 text-center rounded-3xl border border-dashed border-border bg-muted/30">
-            <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
-              <StoreIcon className="h-7 w-7 text-primary" />
+          <div className="flex flex-col items-center justify-center py-16 text-center rounded-2xl border border-dashed border-border bg-muted/20">
+            <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center mb-3">
+              <StoreIcon className="h-6 w-6 text-muted-foreground" />
             </div>
             <p className="text-sm font-semibold">Nenhuma loja ativa em {cityName}</p>
             <p className="text-xs text-muted-foreground mt-1">Volte em breve, novidades chegando.</p>
-            <Link to="/" className="mt-5 inline-flex items-center gap-1.5 text-sm font-bold text-primary px-4 py-2 rounded-full bg-primary/10 active:scale-95 transition">
+            <Link to="/" className="mt-4 inline-flex items-center text-sm font-bold text-primary px-4 py-2 rounded-full bg-primary/10 active:scale-95 transition">
               Ver todas as lojas
             </Link>
           </div>
         )}
 
-        <div className="grid grid-cols-1 gap-4 pb-6">
-          {stores.map((s) => (
-            <StoreCard
-              key={s.id}
-              id={s.id}
-              name={s.name}
-              category={s.category || ""}
-              image_url={s.image_url}
-              is_open={!s.force_closed && !!s.is_open}
-              rating={s.rating}
-              slug={s.slug}
-            />
-          ))}
-        </div>
+        <ul className="flex flex-col gap-3 pb-6">
+          {stores.map((s) => {
+            const open = !s.force_closed && !!s.is_open;
+            const target = s.slug ? `/${s.slug}` : `/loja/${s.id}`;
+            return (
+              <li key={s.id}>
+                <button
+                  onClick={() => navigate(target)}
+                  className="w-full text-left rounded-2xl bg-card border border-border/70 p-3 flex gap-3 active:scale-[0.99] transition hover:border-border hover:shadow-sm"
+                >
+                  <div className="shrink-0 w-[72px] h-[72px] rounded-2xl overflow-hidden bg-muted">
+                    {s.image_url ? (
+                      <img
+                        src={s.image_url}
+                        alt={s.name}
+                        loading="lazy"
+                        decoding="async"
+                        className={`w-full h-full object-cover ${!open ? "grayscale opacity-70" : ""}`}
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                        <StoreIcon className="h-6 w-6" />
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <h3 className={`font-bold text-[15px] leading-tight truncate ${!open ? "text-muted-foreground" : "text-foreground"}`}>
+                          {s.name}
+                        </h3>
+                        <p className="text-[12px] text-muted-foreground mt-0.5 capitalize truncate">
+                          {s.category || "Restaurante"}
+                        </p>
+                      </div>
+                      <Heart className="h-[18px] w-[18px] text-muted-foreground/60 shrink-0" />
+                    </div>
+
+                    <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+                      {open ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full border border-emerald-500/60 text-emerald-600 text-[11px] font-semibold">
+                          Aberto
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full border border-border text-muted-foreground text-[11px] font-semibold">
+                          Fechado
+                        </span>
+                      )}
+                      {typeof s.rating === "number" && s.rating > 0 && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-amber-300/70 bg-amber-50 dark:bg-amber-500/10 text-[11px] font-semibold text-amber-700 dark:text-amber-400">
+                          <span className="text-[10px]">★</span>
+                          {s.rating.toFixed(1).replace(".", ",")}
+                        </span>
+                      )}
+                      {open && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400 text-[11px] font-semibold">
+                          <Flame className="h-3 w-3" />
+                          Popular
+                        </span>
+                      )}
+                      {!open && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted text-muted-foreground text-[11px] font-semibold">
+                          <TrendingUp className="h-3 w-3" />
+                          Em breve
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
       </main>
     </div>
   );
