@@ -3636,6 +3636,10 @@ export type Database = {
         Args: { _amount: number; _store_id: string }
         Returns: undefined
       }
+      decrement_pdv_commission_pending: {
+        Args: { _amount: number; _store_id: string }
+        Returns: undefined
+      }
       driver_accept_order: { Args: { _order_id: string }; Returns: undefined }
       driver_confirm_earning_received: {
         Args: { _earning_id: string }
