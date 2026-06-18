@@ -3,14 +3,15 @@ import { Info } from "lucide-react";
 interface Props {
   mode: "store" | "client" | "driver";
   storeFee?: number;
+  /** Taxa da plataforma sobre a entrega (override do plano). Default R$ 2. */
+  platformFee?: number;
   className?: string;
 }
 
-const PLATFORM_FEE = 2;
-
-/** Texto curto e contextual sobre a R$2 da plataforma na taxa de entrega. */
-export default function DeliveryFeeExplainer({ mode, storeFee, className = "" }: Props) {
+/** Texto curto e contextual sobre a parte da plataforma na taxa de entrega. */
+export default function DeliveryFeeExplainer({ mode, storeFee, platformFee = 2, className = "" }: Props) {
   const fmt = (n: number) => `R$ ${n.toFixed(2).replace(".", ",")}`;
+  const PLATFORM_FEE = platformFee;
 
   const text = (() => {
     if (mode === "store") {
