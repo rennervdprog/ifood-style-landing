@@ -212,7 +212,7 @@ export default function StoreSubscription({ storeId, storeName }: Props) {
             </p>
           </div>
           <PlanFeeBreakdown planId={plan.planType} orderValue={50} viaPix />
-          <DeliveryFeeExplainer mode="store" />
+          <DeliveryFeeExplainer mode="store" platformFee={plan.platformDeliverySplit} />
         </CardContent>
       </Card>
 
