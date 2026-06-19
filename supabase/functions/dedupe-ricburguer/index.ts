@@ -35,12 +35,12 @@ Deno.serve(async (req) => {
     if (!stores?.length) return json({ error: "loja ricburguer não encontrada" }, 404);
     const storeId = stores[0].id;
 
-    // 2) Identifica duplicados: mesmo (section_id, lower(name)), mantém o mais antigo
+    // 2) Identifica duplicados: mesmo (store_id, lower(name)), mantém o mais antigo
     const dupRows = await runSql(`
       WITH ranked AS (
         SELECT id, name, section_id, created_at,
                ROW_NUMBER() OVER (
-                 PARTITION BY section_id, lower(btrim(name))
+                 PARTITION BY lower(btrim(name))
                  ORDER BY created_at ASC, id ASC
                ) AS rn
         FROM public.products
