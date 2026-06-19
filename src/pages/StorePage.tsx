@@ -555,6 +555,11 @@ const StorePage = () => {
      // Scroll apenas horizontal no container do nav — nunca mexer no scroll vertical da página
      const navRect = nav.getBoundingClientRect();
      const chipRect = chip.getBoundingClientRect();
+     const margin = 24;
+     const isFullyVisible =
+       chipRect.left >= navRect.left + margin &&
+       chipRect.right <= navRect.right - margin;
+     if (isFullyVisible) return;
      const delta = (chipRect.left - navRect.left) - (nav.clientWidth / 2 - chip.clientWidth / 2);
      nav.scrollTo({ left: nav.scrollLeft + delta, behavior: "smooth" });
    }, [activeSection]);
