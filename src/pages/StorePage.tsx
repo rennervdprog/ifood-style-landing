@@ -100,6 +100,7 @@ const StorePage = () => {
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const pageRef = useRef<HTMLDivElement>(null);
   const navRef = useRef<HTMLDivElement>(null);
+  const programmaticScrollRef = useRef<number>(0);
   const [fraudBlock, setFraudBlock] = useState<{ distanceKm: number; storeCity: string | null } | null>(null);
 
   const queryClient = useQueryClient();
