@@ -515,6 +515,8 @@ const StorePage = () => {
 
     const observer = new IntersectionObserver(
       (entries) => {
+        // Ignora atualizações enquanto um scroll programático está em andamento
+        if (programmaticScrollRef.current && Date.now() < programmaticScrollRef.current) return;
         // Encontra a seção que está mais próxima do topo da viewport (respeitando a margem do cabeçalho)
         const visible = entries
           .filter((e) => e.isIntersecting)
@@ -547,12 +549,14 @@ const StorePage = () => {
    // Scroll active category chip into view in the sticky nav
    useEffect(() => {
      if (!activeSection || !navRef.current) return;
-     const chip = navRef.current.querySelector<HTMLElement>(
-       `[data-chip-id="${activeSection}"]`
-     );
-     if (chip) {
-       chip.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
-     }
+     const nav = navRef.current;
+     const chip = nav.querySelector<HTMLElement>(`[data-chip-id="${activeSection}"]`);
+     if (!chip) return;
+     // Scroll apenas horizontal no container do nav — nunca mexer no scroll vertical da página
+     const navRect = nav.getBoundingClientRect();
+     const chipRect = chip.getBoundingClientRect();
+     const delta = (chipRect.left - navRect.left) - (nav.clientWidth / 2 - chip.clientWidth / 2);
+     nav.scrollTo({ left: nav.scrollLeft + delta, behavior: "smooth" });
    }, [activeSection]);
  
   const scrollToSection = useCallback((sectionId: string) => {
@@ -572,6 +576,8 @@ const StorePage = () => {
       const finalPosition = Math.max(targetTop - navHeight - extraGap, 0);
 
       setActiveSection(sectionId);
+      // Trava o observer por ~700ms para evitar que ele "puxe" a seção ativa de volta durante o smooth scroll
+      programmaticScrollRef.current = Date.now() + 800;
 
       if (isWindow) {
         window.scrollTo({
