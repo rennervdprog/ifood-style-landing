@@ -469,6 +469,7 @@ const CadastroLojista = () => {
                 </div>
 
                 {/* Cards de plano — ordem: Comissão, Crescimento, Essencial, Apoiador */}
+                <div className="space-y-5">
                 {(["commission_only", "hybrid", "fixed"] as const).map((id) => {
                   // Plano Apoiador desativado — ocultar do cadastro
                   const p = PLANS[id];
@@ -480,16 +481,16 @@ const CadastroLojista = () => {
                       key={id}
                       type="button"
                       onClick={() => setSelectedPlan(id)}
-                      className={`w-full text-left rounded-2xl border-2 p-4 transition-all relative ${
+                      className={`w-full text-left rounded-2xl border-2 p-5 transition-all relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
                         selected
-                          ? "border-primary bg-primary/5"
+                          ? "border-primary bg-primary/5 ring-2 ring-primary/30 shadow-lg shadow-primary/10 scale-[1.01]"
                           : isSupporter
                             ? "border-amber-500/40 bg-amber-500/5 hover:border-amber-500/70"
                             : "border-border bg-card hover:border-primary/40"
                       }`}
                     >
                       {p.badge && (
-                        <span className={`absolute -top-2.5 right-3 text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                        <span className={`absolute -top-3 right-4 text-[11px] font-bold px-2.5 py-1 rounded-full shadow-md whitespace-nowrap ${
                           isSupporter ? "bg-amber-500 text-white" : "bg-primary text-primary-foreground"
                         }`}>
                           {isSupporter ? `🚀 ${supporterRemaining}/10 vagas` : p.badge}
@@ -501,26 +502,26 @@ const CadastroLojista = () => {
                         </div>
                         <div className="flex-1 min-w-0">
                           <h3 className="font-bold text-sm text-foreground">Plano {p.name}</h3>
-                          <p className="text-[11px] text-muted-foreground truncate">{p.tagline}</p>
+                          <p className="text-xs text-foreground/70 leading-snug">{p.tagline}</p>
                         </div>
                         <div className="text-right shrink-0">
-                          <span className="text-lg font-black text-foreground">
+                          <span className="text-2xl font-black text-foreground tabular-nums">
                             {p.monthlyFee === 0 ? "Grátis" : `R$${p.monthlyFee}`}
                           </span>
-                          {p.monthlyFee > 0 && <span className="text-xs text-muted-foreground">/mês</span>}
+                          {p.monthlyFee > 0 && <span className="text-xs text-muted-foreground ml-0.5">/mês</span>}
                         </div>
                       </div>
 
                       {/* Trial badge — só planos pagos */}
                       {p.monthlyFee > 0 && (
-                        <div className="mb-3 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-2.5 py-2 space-y-1">
+                        <div className="mb-3 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3 py-2.5 space-y-1.5">
                           <div className="flex items-center gap-1.5">
                             <span className="text-base leading-none">🎁</span>
-                            <p className="text-[11px] font-extrabold text-emerald-700 dark:text-emerald-400 leading-tight">
+                            <p className="text-sm font-extrabold text-emerald-700 dark:text-emerald-400 leading-tight">
                               7 DIAS GRÁTIS para testar
                             </p>
                           </div>
-                          <ul className="text-[9.5px] text-emerald-700/90 dark:text-emerald-400/90 leading-snug space-y-0.5 pl-0.5">
+                          <ul className="text-[11px] text-emerald-800 dark:text-emerald-300 leading-relaxed space-y-0.5 pl-0.5">
                             <li>• <strong>Dia 1–7:</strong> liberado, sem cobrar nada</li>
                             <li>• <strong>Dia 8:</strong> 1ª cobrança de R${p.monthlyFee}/mês (se não cancelar)</li>
                             <li>• Cancele a qualquer hora antes do dia 8</li>
@@ -530,38 +531,38 @@ const CadastroLojista = () => {
 
                       {/* Quick costs */}
                       <div className="grid grid-cols-3 gap-2 mb-3">
-                        <div className="rounded-lg bg-muted/40 p-2 text-center">
-                          <p className="text-[9px] uppercase tracking-wider text-muted-foreground">Comissão</p>
-                          <p className="text-xs font-bold text-foreground">
+                        <div className="rounded-lg bg-muted/60 border border-border/50 p-2 text-center">
+                          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Comissão</p>
+                          <p className="text-sm font-extrabold text-foreground tabular-nums">
                             {p.commissionRate === 0 ? "0%" : `${p.commissionRate}%`}
                           </p>
                         </div>
-                        <div className="rounded-lg bg-muted/40 p-2 text-center">
-                          <p className="text-[9px] uppercase tracking-wider text-muted-foreground">PIX</p>
-                          <p className="text-xs font-bold text-foreground">
+                        <div className="rounded-lg bg-muted/60 border border-border/50 p-2 text-center">
+                          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">PIX</p>
+                          <p className="text-sm font-extrabold text-foreground tabular-nums">
                             {p.pixFee === 0 ? "Grátis" : `R$${p.pixFee.toFixed(2).replace(".", ",")}`}
                           </p>
                         </div>
-                        <div className="rounded-lg bg-muted/40 p-2 text-center">
-                          <p className="text-[9px] uppercase tracking-wider text-muted-foreground">Entrega</p>
-                          <p className="text-xs font-bold text-foreground">+R$2</p>
+                        <div className="rounded-lg bg-muted/60 border border-border/50 p-2 text-center">
+                          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Entrega</p>
+                          <p className="text-sm font-extrabold text-foreground tabular-nums">+R$2</p>
                           <p className="text-[10px] text-muted-foreground leading-tight">cliente paga</p>
                         </div>
                       </div>
 
-                      <p className="text-[10px] text-muted-foreground italic mb-2 leading-snug">
+                      <p className="text-[11px] text-foreground/70 mb-2 leading-relaxed">
                         💡 Os <strong>R$2 da entrega</strong> são somados à taxa que você cobra. Quem paga é o cliente — não sai do seu caixa.
                       </p>
                       {(id === "fixed" || id === "hybrid") && (
-                        <p className="text-[10px] text-amber-700 dark:text-amber-400 italic mb-2 leading-snug bg-amber-500/8 rounded-lg px-2 py-1.5">
+                        <p className="text-[11px] text-amber-900 dark:text-amber-200 mb-2 leading-relaxed bg-amber-100 dark:bg-amber-500/15 border border-amber-300/60 dark:border-amber-500/30 rounded-lg px-2.5 py-1.5">
                           📈 Plano dinâmico: se faturar mais de R$5.000/mês por 2 meses seguidos, a mensalidade sobe para R${id === "fixed" ? "180" : "100"}. Só acontece quando seu negócio já estiver crescendo!
                         </p>
                       )}
 
-                      <ul className="space-y-1">
+                      <ul className="space-y-1.5 mt-1">
                         {p.features.slice(0, 3).map(f => (
-                          <li key={f} className="flex items-start gap-1.5 text-[11px] text-foreground">
-                            <Check className="h-3 w-3 text-primary mt-0.5 shrink-0" />
+                          <li key={f} className="flex items-start gap-2 text-[13px] text-foreground leading-relaxed">
+                            <Check className="h-3.5 w-3.5 text-primary mt-0.5 shrink-0" />
                             <span>{f}</span>
                           </li>
                         ))}
@@ -569,6 +570,7 @@ const CadastroLojista = () => {
                     </button>
                   );
                 })}
+                </div>
 
                 {selectedPlan && (
                   <div className="rounded-xl bg-primary/5 border border-primary/15 p-3 space-y-1.5">
