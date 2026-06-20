@@ -126,7 +126,8 @@ type PizzaPriceMode = "maior" | "media" | "soma";
   const [pizzaPriceMode, setPizzaPriceMode] = useState<PizzaPriceMode>(storeSettings?.pizza_price_mode || "maior");
 
   // Métodos de pagamento aceitos — inicializados direto do storeSettings
-  const [acceptPixOnline,  setAcceptPixOnline]  = useState<boolean>(storeSettings?.accept_pix_online  !== false);
+  // PIX Online é OPT-IN: começa desligado e só pode ser ativado após Asaas 100% aprovado.
+  const [acceptPixOnline,  setAcceptPixOnline]  = useState<boolean>(storeSettings?.accept_pix_online === true);
   const [acceptPixMachine, setAcceptPixMachine] = useState<boolean>(storeSettings?.accept_pix_machine === true);
   const [acceptCard,       setAcceptCard]       = useState<boolean>(storeSettings?.accept_card        !== false);
   const [acceptCash,       setAcceptCash]       = useState<boolean>(storeSettings?.accept_cash        !== false);
@@ -267,11 +268,9 @@ type PizzaPriceMode = "maior" | "media" | "soma";
         delivery_fee_base: parseFloat(deliveryFeeBase.toString().replace(",", ".")) || 0,
         delivery_fee_per_km: parseFloat(deliveryFeePerKm.toString().replace(",", ".")) || 0,
         // Métodos de pagamento aceitos
-        // PIX Online: só permite ATIVAR se Asaas aprovado;
-        // se conta ainda não está aprovada, preserva o valor anterior do banco
-        // (não sobrescreve com false silenciosamente).
-        // PIX Online liberado sem exigir subconta Asaas (modo teste/sandbox).
-        accept_pix_online: acceptPixOnline,
+        // PIX Online: só pode ficar ATIVO se a conta Asaas estiver 100% aprovada.
+        // Caso contrário, força false (lojista pode optar por só receber na entrega).
+        accept_pix_online: isAsaasFullyApproved ? acceptPixOnline : false,
         accept_pix_machine: acceptPixMachine,
         accept_card:        acceptCard,
         accept_cash:        acceptCash,
@@ -994,12 +993,25 @@ const NotificationSection = () => {
             </div>
             <button
               type="button"
-              onClick={() => setAcceptPixOnline(!acceptPixOnline)}
+              disabled={!isAsaasFullyApproved}
+              onClick={() => {
+                if (!isAsaasFullyApproved) {
+                  toast.error(
+                    !hasAsaasAccount
+                      ? "Configure sua conta Asaas em Financeiro → Saldo para ativar o PIX Online."
+                      : "Aguarde a aprovação da sua conta Asaas para ativar o PIX Online."
+                  );
+                  return;
+                }
+                setAcceptPixOnline(!acceptPixOnline);
+              }}
               className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${
-                acceptPixOnline ? "bg-primary" : "bg-muted-foreground/30"
+                !isAsaasFullyApproved
+                  ? "bg-muted-foreground/20 cursor-not-allowed opacity-60"
+                  : acceptPixOnline ? "bg-primary" : "bg-muted-foreground/30"
               }`}
             >
-              <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${acceptPixOnline ? "translate-x-5" : "translate-x-0"}`} />
+              <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${isAsaasFullyApproved && acceptPixOnline ? "translate-x-5" : "translate-x-0"}`} />
             </button>
           </div>
         </div>
