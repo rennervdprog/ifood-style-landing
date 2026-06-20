@@ -62,6 +62,7 @@ const KdsPage = lazy(() => import("./pages/KdsPage"));
 const SandboxTestsPage = lazy(() => import("./pages/SandboxTestsPage"));
 const BlogIndex = lazy(() => import("./pages/blog/BlogIndex"));
 const BlogPost = lazy(() => import("./pages/blog/BlogPost"));
+const VagaPromoPage = lazy(() => import("./pages/VagaPromoPage"));
 
 const PageLoader = () => (
   <div className="min-h-screen bg-background flex items-center justify-center">
@@ -366,6 +367,8 @@ const App = () => {
                 {/* Blog público — DEVE vir antes de /:slug */}
                 <Route path="/blog" element={<BlogIndex />} />
                 <Route path="/blog/:slug" element={<BlogPost />} />
+                {/* Campanha promocional de captação de lojistas por cidade */}
+                <Route path="/vaga/:cidade" element={<VagaPromoPage />} />
                 {/* Client store access via slug - must be last */}
                 <Route path="/:slug" element={<StorePage />} />
                 <Route path="*" element={<NotFound />} />

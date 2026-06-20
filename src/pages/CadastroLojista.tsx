@@ -55,6 +55,8 @@ const CadastroLojista = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const referralCode = searchParams.get("ref") || "";
+  const promoCode = (searchParams.get("promo") || "").toUpperCase();
+  const promoCity = searchParams.get("city") || "";
   const [step, setStep] = useState(0);
   const [email, setEmail] = useState("");
   const [confirmEmail, setConfirmEmail] = useState("");
@@ -77,6 +79,13 @@ const CadastroLojista = () => {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [selectedPlan, setSelectedPlan] = useState<"supporter" | "fixed" | "hybrid" | "commission_only" | "">("");
+  // Promo de captação: força plano Essencial (fixed) e pula a etapa de plano.
+  useEffect(() => {
+    if (promoCode) {
+      setSelectedPlan("fixed");
+      setStep((s) => (s === 0 ? 1 : s));
+    }
+  }, [promoCode]);
   const { count: supporterCountRaw, loading: supporterLoading } = useSupporterCount();
   const supporterCount = supporterCountRaw ?? 0;
   const supporterAvailable = !supporterLoading && supporterCount < 10;
@@ -331,6 +340,23 @@ const CadastroLojista = () => {
             address_city: city,
           } as any).eq("id", storeRow.id);
 
+          // Aplica promo de captação (ex: LONDRINA10 — Essencial R$ 0/mês travado)
+          if (promoCode) {
+            try {
+              const { data: promoRes } = await (supabase as any).rpc("apply_promo_to_store", {
+                _store_id: storeRow.id,
+                _code: promoCode,
+              });
+              if (promoRes?.success) {
+                toast.success(`🎉 Vaga garantida! Plano Essencial R$ 0/mês ativado.`);
+              } else if (promoRes?.error === "sold_out") {
+                toast.warning("Vagas da promoção esgotadas — sua loja ficou no plano Essencial padrão.");
+              }
+            } catch {
+              // não bloqueia o cadastro
+            }
+          }
+
           // Link store to moderator if referral code present
           if (referralCode && storeRow.id) {
             try {
@@ -380,6 +406,17 @@ const CadastroLojista = () => {
         <div className="mx-4 mt-2 bg-accent/20 border border-accent rounded-xl px-4 py-2 text-xs text-accent-foreground flex items-center gap-2">
           <Users className="h-4 w-4" />
           <span>Cadastro via indicação: <span className="font-bold font-mono">{referralCode}</span></span>
+        </div>
+      )}
+
+      {/* Promo Banner — campanha de captação */}
+      {promoCode && (
+        <div className="mx-4 mt-2 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl px-4 py-3 text-xs flex items-center gap-2 shadow-md">
+          <Crown className="h-5 w-5 text-yellow-300 shrink-0" />
+          <span className="leading-snug">
+            🎉 <strong>Vaga {promoCity || "promocional"} garantida!</strong><br />
+            Plano Essencial travado em <strong>R$ 0/mês</strong> — sem comissão.
+          </span>
         </div>
       )}
 
