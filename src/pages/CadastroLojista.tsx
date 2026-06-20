@@ -409,6 +409,17 @@ const CadastroLojista = () => {
         </div>
       )}
 
+      {/* Promo Banner — campanha de captação */}
+      {promoCode && (
+        <div className="mx-4 mt-2 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl px-4 py-3 text-xs flex items-center gap-2 shadow-md">
+          <Crown className="h-5 w-5 text-yellow-300 shrink-0" />
+          <span className="leading-snug">
+            🎉 <strong>Vaga {promoCity || "promocional"} garantida!</strong><br />
+            Plano Essencial travado em <strong>R$ 0/mês</strong> — sem comissão.
+          </span>
+        </div>
+      )}
+
       {/* Stepper */}
       <div className="px-6 pt-5 pb-2">
         <div className="flex items-center justify-between gap-2">
