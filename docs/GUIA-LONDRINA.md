@@ -153,3 +153,54 @@ Quer que eu já libere sua vaga? Te mando o link de cadastro agora. 🚀
 - [ ] Você disponível pra responder entre 10h-23h
 
 Boa sorte! 🚀
+
+---
+
+## 🛡️ CONFORMIDADE META ADS — análise oficial (jun/2026)
+
+Análise feita diretamente na documentação oficial do Meta Transparency Center
+(Advertising Standards → "Privacy Violations and Personal Attributes" e políticas
+relacionadas). Este guia **está em conformidade** e não deve gerar reprovação
+nem risco jurídico. Resumo do que foi verificado:
+
+### ✅ O que a Meta permite e este guia respeita
+- **Profissão / ramo de negócio NÃO é atributo protegido.** A lista oficial e
+  fechada da Meta cobre apenas: raça, etnia, religião, crenças, idade,
+  orientação sexual, identidade de gênero, deficiência, saúde física/mental,
+  situação financeira vulnerável, status de voto, filiação sindical, ficha
+  criminal e nome. "Dono de restaurante / pizzaria / lanchonete" está liberado.
+- **"Você" sem atributo pessoal é permitido** (texto oficial: *"Use 'you/your'
+  language without a personal attribute"*).
+- **Localização ampla ("Londrina") é permitida** (texto oficial cita
+  "American" / "New Yorker" como exemplo OK).
+- **Não citamos concorrente pelo nome** no anúncio (iFood aparece apenas como
+  *interesse de segmentação*, o que é liberado). Sem violação de marca.
+- **Oferta "grátis" / "R$ 0/mês"**: a Política de Práticas Comerciais
+  Inaceitáveis exige divulgação clara de todos os custos no destino — a landing
+  `itasuper.com.br/vaga/londrina` já mostra os R$ 2/pedido e R$ 1,99/PIX. ✅
+- **Objetivo "Mensagens" via WhatsApp**: permitido para B2B SaaS, desde que o
+  número conectado seja o WhatsApp Business oficial do anunciante.
+
+### ⚠️ Ajustes finos opcionais (performance, não compliance)
+1. **CAIXA ALTA**: a política de qualidade do anúncio penaliza maiúsculas
+   excessivas com CPM mais caro (não reprova). Manter no máximo 1 palavra
+   em caixa alta por bloco.
+2. **Janela de 24h do WhatsApp Business**: depois da primeira conversa, só é
+   possível enviar mensagem fora da janela de 24h usando *template* aprovado.
+   Responda rápido pra não perder o lead.
+
+### 🚫 O que NÃO fazer (gatilhos clássicos de reprovação)
+- ❌ Frases pessoais tipo *"Você está endividado?"*, *"Está perdendo dinheiro?"*
+  (cai em "situação financeira vulnerável").
+- ❌ Comparar com iFood/Rappi pelo nome dentro do criativo ou texto
+  (violação de marca registrada).
+- ❌ Promessas absolutas de resultado ("ganhe X reais", "dobre suas vendas").
+- ❌ Imagem de pessoa real sem autorização ou foto com texto > 20% da área
+  (regra antiga relaxada, mas ainda reduz entrega).
+
+### 📎 Fontes oficiais consultadas
+- https://transparency.meta.com/policies/ad-standards/
+- https://transparency.meta.com/policies/ad-standards/objectionable-content/privacy-violations-personal-attributes/
+- WhatsApp Business Messaging Policy (janela 24h e templates)
+
+**Veredito:** guia aprovado para subir sem alterações obrigatórias.
