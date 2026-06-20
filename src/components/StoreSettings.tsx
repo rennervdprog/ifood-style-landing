@@ -126,7 +126,8 @@ type PizzaPriceMode = "maior" | "media" | "soma";
   const [pizzaPriceMode, setPizzaPriceMode] = useState<PizzaPriceMode>(storeSettings?.pizza_price_mode || "maior");
 
   // Métodos de pagamento aceitos — inicializados direto do storeSettings
-  const [acceptPixOnline,  setAcceptPixOnline]  = useState<boolean>(storeSettings?.accept_pix_online  !== false);
+  // PIX Online é OPT-IN: começa desligado e só pode ser ativado após Asaas 100% aprovado.
+  const [acceptPixOnline,  setAcceptPixOnline]  = useState<boolean>(storeSettings?.accept_pix_online === true);
   const [acceptPixMachine, setAcceptPixMachine] = useState<boolean>(storeSettings?.accept_pix_machine === true);
   const [acceptCard,       setAcceptCard]       = useState<boolean>(storeSettings?.accept_card        !== false);
   const [acceptCash,       setAcceptCash]       = useState<boolean>(storeSettings?.accept_cash        !== false);
