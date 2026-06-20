@@ -514,14 +514,14 @@ const CadastroLojista = () => {
 
                       {/* Trial badge — só planos pagos */}
                       {p.monthlyFee > 0 && (
-                        <div className="mb-3 rounded-lg border border-emerald-600/50 bg-emerald-600/15 dark:bg-emerald-500/15 px-3 py-2.5 space-y-1.5">
+                        <div className="mb-3 rounded-lg border-2 border-primary/40 bg-primary/10 px-3 py-2.5 space-y-1.5">
                           <div className="flex items-center gap-1.5">
                             <span className="text-base leading-none">🎁</span>
-                            <p className="text-sm font-extrabold text-emerald-800 dark:text-emerald-300 leading-tight">
+                            <p className="text-sm font-extrabold text-foreground leading-tight">
                               7 DIAS GRÁTIS para testar
                             </p>
                           </div>
-                          <ul className="text-[12px] text-emerald-900 dark:text-emerald-200 leading-relaxed space-y-0.5 pl-0.5">
+                          <ul className="text-[12px] text-foreground leading-relaxed space-y-0.5 pl-0.5">
                             <li>• <strong>Dia 1–7:</strong> liberado, sem cobrar nada</li>
                             <li>• <strong>Dia 8:</strong> 1ª cobrança de R${p.monthlyFee}/mês (se não cancelar)</li>
                             <li>• Cancele a qualquer hora antes do dia 8</li>
@@ -554,7 +554,7 @@ const CadastroLojista = () => {
                         💡 Os <strong>R$2 da entrega</strong> são somados à taxa que você cobra. Quem paga é o cliente — não sai do seu caixa.
                       </p>
                       {(id === "fixed" || id === "hybrid") && (
-                        <p className="text-[12px] text-amber-950 dark:text-amber-100 mb-2 leading-relaxed bg-amber-200/80 dark:bg-amber-500/20 border border-amber-500/60 dark:border-amber-400/40 rounded-lg px-2.5 py-1.5">
+                        <p className="text-[12px] text-foreground mb-2 leading-relaxed bg-primary/10 border-2 border-primary/40 rounded-lg px-2.5 py-1.5">
                           📈 Plano dinâmico: se faturar mais de R$5.000/mês por 2 meses seguidos, a mensalidade sobe para R${id === "fixed" ? "180" : "100"}. Só acontece quando seu negócio já estiver crescendo!
                         </p>
                       )}
