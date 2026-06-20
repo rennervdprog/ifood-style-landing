@@ -268,11 +268,9 @@ type PizzaPriceMode = "maior" | "media" | "soma";
         delivery_fee_base: parseFloat(deliveryFeeBase.toString().replace(",", ".")) || 0,
         delivery_fee_per_km: parseFloat(deliveryFeePerKm.toString().replace(",", ".")) || 0,
         // Métodos de pagamento aceitos
-        // PIX Online: só permite ATIVAR se Asaas aprovado;
-        // se conta ainda não está aprovada, preserva o valor anterior do banco
-        // (não sobrescreve com false silenciosamente).
-        // PIX Online liberado sem exigir subconta Asaas (modo teste/sandbox).
-        accept_pix_online: acceptPixOnline,
+        // PIX Online: só pode ficar ATIVO se a conta Asaas estiver 100% aprovada.
+        // Caso contrário, força false (lojista pode optar por só receber na entrega).
+        accept_pix_online: isAsaasFullyApproved ? acceptPixOnline : false,
         accept_pix_machine: acceptPixMachine,
         accept_card:        acceptCard,
         accept_cash:        acceptCash,
