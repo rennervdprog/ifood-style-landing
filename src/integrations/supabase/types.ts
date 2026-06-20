@@ -2563,6 +2563,77 @@ export type Database = {
         }
         Relationships: []
       }
+      promo_campaigns: {
+        Row: {
+          active: boolean
+          city: string
+          code: string
+          commission_rate_override: number
+          created_at: string
+          expires_at: string | null
+          id: string
+          max_uses: number
+          monthly_fee_override: number
+          plan_type: string
+          uses_count: number
+        }
+        Insert: {
+          active?: boolean
+          city: string
+          code: string
+          commission_rate_override?: number
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          max_uses?: number
+          monthly_fee_override?: number
+          plan_type?: string
+          uses_count?: number
+        }
+        Update: {
+          active?: boolean
+          city?: string
+          code?: string
+          commission_rate_override?: number
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          max_uses?: number
+          monthly_fee_override?: number
+          plan_type?: string
+          uses_count?: number
+        }
+        Relationships: []
+      }
+      promo_redemptions: {
+        Row: {
+          campaign_id: string
+          id: string
+          redeemed_at: string
+          store_id: string
+        }
+        Insert: {
+          campaign_id: string
+          id?: string
+          redeemed_at?: string
+          store_id: string
+        }
+        Update: {
+          campaign_id?: string
+          id?: string
+          redeemed_at?: string
+          store_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promo_redemptions_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "promo_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       refund_requests: {
         Row: {
           admin_notes: string | null
@@ -3656,6 +3727,10 @@ export type Database = {
         Args: { _order_id: string; _reason?: string }
         Returns: Json
       }
+      apply_promo_to_store: {
+        Args: { _code: string; _store_id: string }
+        Returns: Json
+      }
       approve_plan_change: {
         Args: { _admin_notes?: string; _request_id: string }
         Returns: undefined
@@ -3733,6 +3808,7 @@ export type Database = {
       get_owned_store_ids: { Args: { _user_id: string }; Returns: string[] }
       get_page_view_stats: { Args: { _page?: string }; Returns: Json }
       get_pdv_session_summary: { Args: { _session_id: string }; Returns: Json }
+      get_promo_remaining: { Args: { _code: string }; Returns: Json }
       get_store_commission_rate: {
         Args: { _store_id: string }
         Returns: number
