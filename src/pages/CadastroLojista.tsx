@@ -55,6 +55,8 @@ const CadastroLojista = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const referralCode = searchParams.get("ref") || "";
+  const promoCode = (searchParams.get("promo") || "").toUpperCase();
+  const promoCity = searchParams.get("city") || "";
   const [step, setStep] = useState(0);
   const [email, setEmail] = useState("");
   const [confirmEmail, setConfirmEmail] = useState("");
@@ -77,6 +79,13 @@ const CadastroLojista = () => {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [selectedPlan, setSelectedPlan] = useState<"supporter" | "fixed" | "hybrid" | "commission_only" | "">("");
+  // Promo de captação: força plano Essencial (fixed) e pula a etapa de plano.
+  useEffect(() => {
+    if (promoCode) {
+      setSelectedPlan("fixed");
+      setStep((s) => (s === 0 ? 1 : s));
+    }
+  }, [promoCode]);
   const { count: supporterCountRaw, loading: supporterLoading } = useSupporterCount();
   const supporterCount = supporterCountRaw ?? 0;
   const supporterAvailable = !supporterLoading && supporterCount < 10;
