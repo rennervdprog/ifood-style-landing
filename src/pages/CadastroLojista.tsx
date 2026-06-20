@@ -340,6 +340,23 @@ const CadastroLojista = () => {
             address_city: city,
           } as any).eq("id", storeRow.id);
 
+          // Aplica promo de captação (ex: LONDRINA10 — Essencial R$ 0/mês travado)
+          if (promoCode) {
+            try {
+              const { data: promoRes } = await (supabase as any).rpc("apply_promo_to_store", {
+                _store_id: storeRow.id,
+                _code: promoCode,
+              });
+              if (promoRes?.success) {
+                toast.success(`🎉 Vaga garantida! Plano Essencial R$ 0/mês ativado.`);
+              } else if (promoRes?.error === "sold_out") {
+                toast.warning("Vagas da promoção esgotadas — sua loja ficou no plano Essencial padrão.");
+              }
+            } catch {
+              // não bloqueia o cadastro
+            }
+          }
+
           // Link store to moderator if referral code present
           if (referralCode && storeRow.id) {
             try {
