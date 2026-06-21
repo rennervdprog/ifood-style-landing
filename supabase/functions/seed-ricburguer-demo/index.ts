@@ -69,8 +69,6 @@ Deno.serve(async (req) => {
             status: spec.status,
             neighborhood: spec.neighborhood,
             address_details: `Rua Demo, ${100 + created.length}`,
-            customer_name: `Cliente Demo ${created.length + 1}`,
-            customer_phone: "11999990000",
           }),
         }) as Array<any>;
         const orderId = ord[0].id;
