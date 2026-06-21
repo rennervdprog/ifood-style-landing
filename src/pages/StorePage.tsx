@@ -177,6 +177,12 @@ const StorePage = () => {
     }
   }, [store, slug, setCurrentStore]);
 
+  // Tracking de visita à página da loja
+  useEffect(() => {
+    if (!store?.id) return;
+    import("@/lib/pageView").then((m) => m.trackPageView("store_page", { storeId: store.id }));
+  }, [store?.id]);
+
   // Dynamic OG meta tags for social sharing (WhatsApp, Facebook, etc.)
   useEffect(() => {
     if (!store) return;

@@ -86,6 +86,11 @@ const CadastroLojista = () => {
       setStep((s) => (s === 0 ? 1 : s));
     }
   }, [promoCode]);
+
+  // Tracking: visita ao cadastro de lojista (etapa final do funil de aquisição)
+  useEffect(() => {
+    import("@/lib/pageView").then((m) => m.trackPageView("cadastro_lojista"));
+  }, []);
   const { count: supporterCountRaw, loading: supporterLoading } = useSupporterCount();
   const supporterCount = supporterCountRaw ?? 0;
   const supporterAvailable = !supporterLoading && supporterCount < 10;
