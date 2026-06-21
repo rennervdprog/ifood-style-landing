@@ -46,6 +46,12 @@ export interface StorePlanFeatures {
   platformDeliverySplit: number;
   /** Driver split from delivery fee */
   driverDeliverySplit: number;
+  /** Modo de divisão da taxa R$2 da plataforma (entrega própria): cliente | meio_a_meio | lojista */
+  platformFeeSplit: "cliente" | "meio_a_meio" | "lojista";
+  /** Quanto a LOJA absorve por pedido (acumula em repasse_pendente) */
+  platformFeeStoreAbsorb: number;
+  /** Quanto aparece a MAIS pro cliente no checkout (em cima da taxa de entrega da loja) */
+  platformFeeCustomerExtra: number;
   /** PDV (Ponto de Venda) ativo para esta loja */
   pdvEnabled: boolean;
   /** Taxa de comissão PDV (menor que delivery) */
@@ -104,7 +110,7 @@ export function useStorePlan(storeId: string | undefined | null): StorePlanFeatu
           .maybeSingle(),
         supabase
           .from("stores_public")
-          .select("address_city, delivery_mode")
+          .select("address_city, delivery_mode, platform_fee_split")
           .eq("id", storeId!)
           .maybeSingle(),
         supabase
@@ -119,6 +125,7 @@ export function useStorePlan(storeId: string | undefined | null): StorePlanFeatu
         plan: planResult.data,
         city: (storeResult.data as any)?.address_city || "itatinga",
         deliveryMode: (storeResult.data as any)?.delivery_mode || "platform",
+        platformFeeSplit: ((storeResult.data as any)?.platform_fee_split || "cliente") as "cliente" | "meio_a_meio" | "lojista",
         feeConfig,
       };
     },
@@ -130,6 +137,18 @@ export function useStorePlan(storeId: string | undefined | null): StorePlanFeatu
   // "fixed" = Essencial | "supporter" = Apoiador — ambos pagam PIX R$1,99 e 0% comissão
   const isFixedPlan = planType === "fixed" || planType === "supporter";
   const features = PLAN_FEATURES[planType];
+
+  // Base do split da plataforma (R$ por pedido em entrega própria)
+  const _isOwn = data?.deliveryMode === "own";
+  const _override = (data?.plan as any)?.platform_delivery_split_override;
+  const _baseSplit = _isOwn
+    ? (_override ?? 2.0)
+    : (data?.feeConfig?.platform_split ?? 2.0);
+  const _splitMode = (data?.platformFeeSplit || "cliente") as "cliente" | "meio_a_meio" | "lojista";
+  const _storeAbsorb = _isOwn
+    ? (_splitMode === "lojista" ? _baseSplit : _splitMode === "meio_a_meio" ? Math.round((_baseSplit / 2) * 100) / 100 : 0)
+    : 0;
+  const _customerExtra = _isOwn ? Math.max(0, Math.round((_baseSplit - _storeAbsorb) * 100) / 100) : 0;
 
   const trialEndsAt = (data?.plan as any)?.trial_ends_at ?? null;
   const now = new Date();
@@ -163,6 +182,9 @@ export function useStorePlan(storeId: string | undefined | null): StorePlanFeatu
       : (data?.feeConfig?.platform_split ?? 2.00),
     // Driver split: todos os planos que usam plataforma de entrega têm split pro motoboy
     driverDeliverySplit: data?.feeConfig?.driver_split ?? DEFAULT_DELIVERY_FEE_CONFIG.driver_split,
+    platformFeeSplit: _splitMode,
+    platformFeeStoreAbsorb: _storeAbsorb,
+    platformFeeCustomerExtra: _customerExtra,
     // PDV
     pdvEnabled: (data?.plan as any)?.pdv_enabled ?? false,
     pdvCommissionRate: (data?.plan as any)?.pdv_commission_rate ?? 0,
