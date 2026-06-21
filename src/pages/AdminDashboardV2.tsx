@@ -1819,7 +1819,7 @@ const AdminDashboard = () => {
           )}
 
           {/* ══════ OTHER TABS ══════ */}
-          {!["dashboard", "orders", "clients"].includes(dashboardTab) && store && (
+          {!["dashboard", "avisos", "orders", "clients"].includes(dashboardTab) && store && (
             <div className="p-4 lg:p-6 max-w-6xl mx-auto">
               <Suspense fallback={<TabFallback />}>
                 {dashboardTab === "menu" && <MenuTab storeId={store.id} storeCategory={store.category} />}
