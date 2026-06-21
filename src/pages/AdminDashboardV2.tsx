@@ -1719,6 +1719,7 @@ const AdminDashboard = () => {
                 setDashboardTab={setDashboardTab}
                 setActiveTab={setActiveTab}
                 navigate={navigate}
+                avisosCount={avisosCount}
                 getClientName={getClientName}
                 getClientWhatsApp={getClientWhatsApp}
                 getOrderItemDisplayName={getOrderItemDisplayName}
