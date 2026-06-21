@@ -1539,6 +1539,7 @@ const AdminDashboard = () => {
               {/* Desktop subtitle */}
               <p className="text-xs text-muted-foreground hidden lg:block">
                 {dashboardTab === "dashboard" && "Resumo do dia em tempo real"}
+                {dashboardTab === "avisos" && (avisosCount > 0 ? `${avisosCount} pendência${avisosCount > 1 ? "s" : ""} para resolver` : "Sem pendências")}
                 {dashboardTab === "orders" && `${orders?.length || 0} pedidos ativos`}
                 {dashboardTab === "clients" && `${clientAnalytics.length} clientes registrados`}
                 {dashboardTab === "menu" && "Gerencie seu cardápio"}
