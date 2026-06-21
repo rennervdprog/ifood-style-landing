@@ -11,6 +11,7 @@ export type OrderTabKey = OrderStatus | "delivery";
 
 export type DashboardTab =
   | "dashboard"
+  | "avisos"
   | "orders"
   | "menu"
   | "addons"
