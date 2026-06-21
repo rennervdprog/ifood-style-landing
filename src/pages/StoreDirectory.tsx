@@ -300,16 +300,7 @@ const StoreDirectory = () => {
   }, []);
 
   useEffect(() => {
-    const KEY = "pv_store_directory_at";
-    const last = Number(sessionStorage.getItem(KEY) || 0);
-    if (Date.now() - last < 30 * 60 * 1000) return;
-    let visitorHash = localStorage.getItem("visitor_hash");
-    if (!visitorHash) {
-      visitorHash = crypto.randomUUID();
-      localStorage.setItem("visitor_hash", visitorHash);
-    }
-    supabase.rpc("record_page_view", { _page: "store_directory", _visitor_hash: visitorHash })
-      .then(({ error }) => { if (!error) sessionStorage.setItem(KEY, String(Date.now())); });
+    import("@/lib/pageView").then((m) => m.trackPageView("store_directory"));
   }, []);
 
   useEffect(() => {
