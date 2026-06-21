@@ -97,6 +97,7 @@ type PizzaPriceMode = "maior" | "media" | "soma";
   const [minimumOrderValue, setMinimumOrderValue] = useState(storeMinimumOrderValue?.toString() || "0");
   const [freeDeliveryEnabled, setFreeDeliveryEnabled] = useState(false);
   const [freeDeliveryThreshold, setFreeDeliveryThreshold] = useState("0");
+  const [platformFeeSplit, setPlatformFeeSplit] = useState<"cliente" | "meio_a_meio" | "lojista">("cliente");
   const storePlan = useStorePlan(storeId);
 
   // Verificar se conta Asaas está 100% aprovada para liberar PIX Online
@@ -152,7 +153,7 @@ type PizzaPriceMode = "maior" | "media" | "soma";
     if (!storeId) return;
     (supabase as any)
       .from("stores")
-      .select("free_delivery_threshold")
+      .select("free_delivery_threshold, platform_fee_split")
       .eq("id", storeId)
       .maybeSingle()
       .then(({ data }: any) => {
@@ -160,6 +161,10 @@ type PizzaPriceMode = "maior" | "media" | "soma";
         if (v != null && Number(v) > 0) {
           setFreeDeliveryEnabled(true);
           setFreeDeliveryThreshold(Number(v).toFixed(2));
+        }
+        const s = data?.platform_fee_split;
+        if (s === "cliente" || s === "meio_a_meio" || s === "lojista") {
+          setPlatformFeeSplit(s);
         }
       });
   }, [storeId]);
@@ -277,6 +282,7 @@ type PizzaPriceMode = "maior" | "media" | "soma";
       },
       delivery_mode: deliveryMode,
       own_delivery_fee: parseFloat(ownDeliveryFee.toString().replace(",", ".")) || 0,
+      platform_fee_split: platformFeeSplit,
       delivery_fee_type: deliveryFeeType,
       delivery_base_km: parseFloat(deliveryBaseKm.toString().replace(",", ".")) || 0,
       delivery_fee_base: parseFloat(deliveryFeeBase.toString().replace(",", ".")) || 0,
