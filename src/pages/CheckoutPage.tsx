@@ -217,7 +217,7 @@ const CheckoutPage = () => {
   // or hasn't computed the split yet, so the customer always sees the correct total.
   const platformSplitFallback = config.platform_split ?? DEFAULT_DELIVERY_FEE_CONFIG.platform_split;
   const effectivePlatformSplit = isOwnDelivery
-    ? (storePlan.platformDeliverySplit > 0 ? storePlan.platformDeliverySplit : platformSplitFallback)
+    ? (storePlan.platformFeeCustomerExtra ?? (storePlan.platformDeliverySplit > 0 ? storePlan.platformDeliverySplit : platformSplitFallback))
     : 0;
   const ownDeliveryFallbackFee = isKmOwnDelivery
     ? addMoney(storeDeliveryFeeBase, effectivePlatformSplit)
@@ -230,7 +230,7 @@ const CheckoutPage = () => {
   // no pedido (rota normalmente para a plataforma via split) e neutralizamos no
   // cálculo do total para o cliente somando R$ 2 ao desconto do cupom.
   const freeShipPlatformAbsorb = (couponType === "free_shipping" && !isPickup)
-    ? (storePlan.platformDeliverySplit > 0 ? storePlan.platformDeliverySplit : platformSplitFallback)
+    ? (storePlan.platformFeeCustomerExtra ?? (storePlan.platformDeliverySplit > 0 ? storePlan.platformDeliverySplit : platformSplitFallback))
     : 0;
   // Frete grátis por valor mínimo (configurado pela loja).
   // Diferente do cupom: a LOJA absorve a taxa cheia da entrega (motoboy + plataforma),

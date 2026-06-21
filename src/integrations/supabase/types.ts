@@ -3142,6 +3142,7 @@ export type Database = {
           name: string
           own_delivery_fee: number
           owner_id: string | null
+          platform_fee_split: string
           rating: number | null
           settings: Json
           slug: string | null
@@ -3192,6 +3193,7 @@ export type Database = {
           name: string
           own_delivery_fee?: number
           owner_id?: string | null
+          platform_fee_split?: string
           rating?: number | null
           settings?: Json
           slug?: string | null
@@ -3242,6 +3244,7 @@ export type Database = {
           name?: string
           own_delivery_fee?: number
           owner_id?: string | null
+          platform_fee_split?: string
           rating?: number | null
           settings?: Json
           slug?: string | null
@@ -3638,6 +3641,7 @@ export type Database = {
           name: string | null
           own_delivery_fee: number | null
           owner_id: string | null
+          platform_fee_split: string | null
           rating: number | null
           settings: Json | null
           slug: string | null
@@ -3665,6 +3669,7 @@ export type Database = {
           name?: string | null
           own_delivery_fee?: number | null
           owner_id?: string | null
+          platform_fee_split?: string | null
           rating?: number | null
           settings?: Json | null
           slug?: string | null
@@ -3692,6 +3697,7 @@ export type Database = {
           name?: string | null
           own_delivery_fee?: number | null
           owner_id?: string | null
+          platform_fee_split?: string | null
           rating?: number | null
           settings?: Json | null
           slug?: string | null
@@ -3810,6 +3816,10 @@ export type Database = {
       get_pdv_session_summary: { Args: { _session_id: string }; Returns: Json }
       get_promo_remaining: { Args: { _code: string }; Returns: Json }
       get_store_commission_rate: {
+        Args: { _store_id: string }
+        Returns: number
+      }
+      get_store_platform_fee_charge: {
         Args: { _store_id: string }
         Returns: number
       }
