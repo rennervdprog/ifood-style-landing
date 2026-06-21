@@ -74,6 +74,7 @@ import { sendPushNotification } from "@/lib/firebase";
 import { addMoney, averageMoney, formatBRL, formatCurrency, sumMoney } from "@/lib/utils";
 import ProductTour, { lojistaTourSteps } from "@/components/ProductTour";
 import { useStorePlan } from "@/hooks/useStorePlan";
+import { useAvisosCount } from "./admin/useAvisosCount";
 import TrialExpiredGuard from "@/components/TrialExpiredGuard";
 import CommissionAlert from "@/components/CommissionAlert";
 import PlatformSplitAlert from "@/components/PlatformSplitAlert";
