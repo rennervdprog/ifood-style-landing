@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo } from "react";
+import { useState, useRef, useMemo, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -71,6 +71,11 @@ const CadastroEntregador = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+
+  // Tracking: visita ao cadastro de entregador
+  useEffect(() => {
+    import("@/lib/pageView").then((m) => m.trackPageView("cadastro_entregador"));
+  }, []);
 
   const handleFileSelect = (file: File | null, setter: (f: File | null) => void, previewSetter: (s: string | null) => void) => {
     if (!file) return;
