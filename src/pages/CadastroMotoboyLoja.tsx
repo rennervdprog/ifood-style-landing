@@ -3,7 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { z } from "zod";
-import { ArrowLeft, Mail, Lock, Eye, EyeOff, User, Phone, Bike, CheckCircle, Store, Loader2 } from "lucide-react";
+import { ArrowLeft, Mail, Lock, Eye, EyeOff, User, Phone, Bike, CheckCircle, Store, Loader2, Shield } from "lucide-react";
  import { maskWhatsApp, formatWhatsAppNumber } from "@/lib/whatsapp";
 import { PasswordStrengthIndicator, usePasswordStrength } from "@/components/PasswordStrengthIndicator";
 
@@ -173,6 +173,19 @@ const CadastroMotoboyLoja = () => {
                 <li>O dono da loja vai te adicionar como motoboy próprio</li>
                 <li>Acesse o painel de entregas e veja apenas os pedidos da sua loja</li>
               </ol>
+            </div>
+          </div>
+        </div>
+
+        {/* Aviso de responsabilidade */}
+        <div className="bg-amber-500/5 border border-amber-500/20 rounded-2xl p-4 mb-6">
+          <div className="flex items-start gap-3">
+            <Shield className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="text-xs font-bold text-foreground mb-1">Importante: vínculo com a loja</p>
+              <p className="text-[11px] text-muted-foreground leading-relaxed">
+                Este app é uma <span className="font-bold text-foreground">ferramenta da loja</span> para organizar suas entregas. O ItaSuper <span className="font-bold text-foreground">não contrata, não paga e não fiscaliza</span> motoboys de loja — toda relação (pagamento, horário, seguro, documentos) é de responsabilidade do <span className="font-bold text-foreground">dono da loja</span>. Sem vínculo ativo aceito pelo lojista, o app não libera entregas.
+              </p>
             </div>
           </div>
         </div>
