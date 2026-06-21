@@ -1737,6 +1737,22 @@ const AdminDashboard = () => {
             </>
           )}
 
+          {/* ══════ AVISOS TAB ══════ */}
+          {dashboardTab === "avisos" && store && (
+            <Suspense fallback={<TabFallback />}>
+              <AvisosSection
+                store={store}
+                storePlan={storePlan}
+                allHoursClosed={allHoursClosed}
+                isOwnDelivery={isOwnDelivery}
+                driversLoading={driversLoading}
+                hasLinkedDrivers={hasLinkedDrivers}
+                setDashboardTab={setDashboardTab}
+                count={avisosCount}
+              />
+            </Suspense>
+          )}
+
           {/* ══════ CLIENTS TAB ══════ */}
           {dashboardTab === "clients" && store && (
             <ClientsTab
