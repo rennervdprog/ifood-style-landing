@@ -3641,6 +3641,7 @@ export type Database = {
           name: string | null
           own_delivery_fee: number | null
           owner_id: string | null
+          platform_fee_split: string | null
           rating: number | null
           settings: Json | null
           slug: string | null
@@ -3668,6 +3669,7 @@ export type Database = {
           name?: string | null
           own_delivery_fee?: number | null
           owner_id?: string | null
+          platform_fee_split?: string | null
           rating?: number | null
           settings?: Json | null
           slug?: string | null
@@ -3695,6 +3697,7 @@ export type Database = {
           name?: string | null
           own_delivery_fee?: number | null
           owner_id?: string | null
+          platform_fee_split?: string | null
           rating?: number | null
           settings?: Json | null
           slug?: string | null
