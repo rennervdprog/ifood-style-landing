@@ -22,9 +22,16 @@ export const GlanceCard = ({
   onClick,
   highlight,
 }: GlanceCardProps) => {
-  const bgColor = color.includes("primary")
-    ? "bg-primary/10"
-    : color.replace("text-", "bg-").replace("500", "500/15");
+  // Mapa explícito para evitar gerar classes inválidas/sólidas (ex.: bg-muted-foreground)
+  const bgColor = (() => {
+    if (color.includes("primary")) return "bg-primary/10";
+    if (color.includes("destructive")) return "bg-destructive/10";
+    if (color.includes("muted-foreground")) return "bg-muted";
+    if (color.includes("foreground")) return "bg-muted";
+    const m = color.match(/text-([a-z]+)-500/);
+    if (m) return `bg-${m[1]}-500/15`;
+    return "bg-muted";
+  })();
 
   return (
     <div
