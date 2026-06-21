@@ -57,6 +57,7 @@ const SettingsTab = lazy(() => import("./admin/tabs/SettingsTab"));
 const CouponsTab = lazy(() => import("./admin/tabs/CouponsTab"));
 const PromotionsTab = lazy(() => import("./admin/tabs/PromotionsTab"));
 const DashboardOverviewSection = lazy(() => import("./admin/sections/DashboardOverviewSection"));
+const AvisosSection = lazy(() => import("./admin/sections/AvisosSection"));
 const OrdersSection = lazy(() => import("./admin/sections/OrdersSection"));
 import AdminOrderCard from "./admin/components/AdminOrderCard";
 import ClientsTab from "./admin/components/ClientsTab";
@@ -73,6 +74,7 @@ import { sendPushNotification } from "@/lib/firebase";
 import { addMoney, averageMoney, formatBRL, formatCurrency, sumMoney } from "@/lib/utils";
 import ProductTour, { lojistaTourSteps } from "@/components/ProductTour";
 import { useStorePlan } from "@/hooks/useStorePlan";
+import { useAvisosCount } from "./admin/useAvisosCount";
 import TrialExpiredGuard from "@/components/TrialExpiredGuard";
 import CommissionAlert from "@/components/CommissionAlert";
 import PlatformSplitAlert from "@/components/PlatformSplitAlert";
@@ -1269,6 +1271,15 @@ const AdminDashboard = () => {
 
   const hasLinkedDrivers = (linkedStoreDrivers?.length || 0) > 0;
 
+  const avisosCount = useAvisosCount({
+    store,
+    storePlan,
+    allHoursClosed,
+    isOwnDelivery,
+    hasLinkedDrivers,
+    driversLoading,
+  });
+
   const getMainAction = (status: OrderStatus, order?: any): { label: string; next: OrderStatus; emoji: string } | null => {
     const isPickupOrder = order?.neighborhood === "RETIRADA";
     switch (status) {
@@ -1528,6 +1539,7 @@ const AdminDashboard = () => {
               {/* Desktop subtitle */}
               <p className="text-xs text-muted-foreground hidden lg:block">
                 {dashboardTab === "dashboard" && "Resumo do dia em tempo real"}
+                {dashboardTab === "avisos" && (avisosCount > 0 ? `${avisosCount} pendência${avisosCount > 1 ? "s" : ""} para resolver` : "Sem pendências")}
                 {dashboardTab === "orders" && `${orders?.length || 0} pedidos ativos`}
                 {dashboardTab === "clients" && `${clientAnalytics.length} clientes registrados`}
                 {dashboardTab === "menu" && "Gerencie seu cardápio"}
@@ -1578,6 +1590,7 @@ const AdminDashboard = () => {
               onSelect={handleTabChange}
               isPizza={isPizza}
               allowFullReports={allowFullReports}
+              badges={{ avisos: avisosCount }}
             />
           )}
           {!storeLoading && isApproved && !store && (
@@ -1708,6 +1721,7 @@ const AdminDashboard = () => {
                 setDashboardTab={setDashboardTab}
                 setActiveTab={setActiveTab}
                 navigate={navigate}
+                avisosCount={avisosCount}
                 getClientName={getClientName}
                 getClientWhatsApp={getClientWhatsApp}
                 getOrderItemDisplayName={getOrderItemDisplayName}
@@ -1721,6 +1735,22 @@ const AdminDashboard = () => {
               />
             </Suspense>
             </>
+          )}
+
+          {/* ══════ AVISOS TAB ══════ */}
+          {dashboardTab === "avisos" && store && (
+            <Suspense fallback={<TabFallback />}>
+              <AvisosSection
+                store={store}
+                storePlan={storePlan}
+                allHoursClosed={allHoursClosed}
+                isOwnDelivery={isOwnDelivery}
+                driversLoading={driversLoading}
+                hasLinkedDrivers={hasLinkedDrivers}
+                setDashboardTab={setDashboardTab}
+                count={avisosCount}
+              />
+            </Suspense>
           )}
 
           {/* ══════ CLIENTS TAB ══════ */}
@@ -1789,7 +1819,7 @@ const AdminDashboard = () => {
           )}
 
           {/* ══════ OTHER TABS ══════ */}
-          {!["dashboard", "orders", "clients"].includes(dashboardTab) && store && (
+          {!["dashboard", "avisos", "orders", "clients"].includes(dashboardTab) && store && (
             <div className="p-4 lg:p-6 max-w-6xl mx-auto">
               <Suspense fallback={<TabFallback />}>
                 {dashboardTab === "menu" && <MenuTab storeId={store.id} storeCategory={store.category} />}

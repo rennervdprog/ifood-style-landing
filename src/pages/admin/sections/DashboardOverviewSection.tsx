@@ -3,11 +3,9 @@ import { supabase } from "@/integrations/supabase/client";
 
 type OrderStatus = any;
 type DashboardTab = any;
-import { CreditCard, AlertTriangle, ChevronRight, Clock, Bike, Monitor, ShoppingBag, DollarSign, Timer, Users, GraduationCap, ChevronUp, ChevronDown, User, MapPin, CheckCircle2, ArrowUpRight, UtensilsCrossed, Coins, Settings, Store, XCircle, Download, TrendingUp } from "lucide-react";
+import { CreditCard, AlertTriangle, ChevronRight, Clock, Bike, Monitor, ShoppingBag, DollarSign, Timer, Users, GraduationCap, ChevronUp, ChevronDown, User, MapPin, CheckCircle2, ArrowUpRight, UtensilsCrossed, Coins, Settings, Store, XCircle, Download, TrendingUp, Bell } from "lucide-react";
 import { formatBRL } from "@/lib/utils";
 import WhatsAppButton from "@/components/WhatsAppButton";
-import CommissionAlert from "@/components/CommissionAlert";
-import PlatformSplitAlert from "@/components/PlatformSplitAlert";
 import PlatformFeeExplainerCard from "@/components/PlatformFeeExplainerCard";
 import { GlanceCard } from "../components/GlanceCard";
 
@@ -38,6 +36,7 @@ interface Props {
   setDashboardTab: (t: any) => void;
   setActiveTab: (t: any) => void;
   navigate: (p: string) => void;
+  avisosCount: number;
   getClientName: (id: string) => string;
   getClientWhatsApp: (id: string) => string;
   getOrderItemDisplayName: (item: any) => string;
@@ -56,6 +55,7 @@ export default function DashboardOverviewSection(props: Props) {
     hasLinkedDrivers, pendingCount, preparingCount, readyCount, todayCount, todayTotal,
     avgDeliveryTime, clientAnalytics, delayedOrders, showDelayedPanel, setShowDelayedPanel,
     orders, statusColors, paymentIcons, paymentLabels, setDashboardTab, setActiveTab, navigate,
+    avisosCount,
     getClientName, getClientWhatsApp, getOrderItemDisplayName, buildAcceptWhatsAppHref,
     buildReadyMessage, openWhatsApp, evolutionConnected, updateOrderStatus, handleAcceptOrder, handleCancelOrder,
   } = props;
@@ -168,65 +168,25 @@ export default function DashboardOverviewSection(props: Props) {
     </div>
   </div>
 
-  {!(store as any).asaas_wallet_id && (
+  {avisosCount > 0 && (
     <button
-      onClick={() => setDashboardTab("finance")}
-      className="w-full text-left bg-destructive/10 border-2 border-destructive/40 rounded-2xl p-4 flex items-start gap-3 active:scale-[0.99] transition-transform"
+      onClick={() => setDashboardTab("avisos")}
+      className="w-full text-left bg-amber-500/10 border-2 border-amber-500/30 rounded-2xl p-3.5 flex items-center gap-3 active:scale-[0.99] transition-transform"
     >
-      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-destructive text-destructive-foreground flex-shrink-0">
-        <AlertTriangle className="h-5 w-5" />
-      </div>
-      <div className="flex-1 min-w-0">
-        <h3 className="font-black text-destructive text-sm">
-          Configure sua conta de recebimento (prioridade)
-        </h3>
-        <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-          Você ainda não criou sua subconta Asaas. <strong>Sem ela, você não recebe os pagamentos PIX</strong> dos pedidos.
-          Leva 2 minutos e é gratuito.
-        </p>
-        <span className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-destructive-foreground bg-destructive px-3 py-1.5 rounded-lg">
-          Configurar agora <ChevronRight className="h-3 w-3" />
+      <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500 text-white flex-shrink-0">
+        <Bell className="h-5 w-5" />
+        <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-destructive text-destructive-foreground text-[10px] font-black flex items-center justify-center border-2 border-background">
+          {avisosCount}
         </span>
       </div>
+      <div className="flex-1 min-w-0">
+        <h3 className="text-sm font-black text-foreground">
+          Você tem {avisosCount} aviso{avisosCount > 1 ? "s" : ""} pendente{avisosCount > 1 ? "s" : ""}
+        </h3>
+        <p className="text-xs text-muted-foreground mt-0.5">Toque para ver e resolver</p>
+      </div>
+      <ChevronRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
     </button>
-  )}
-
-  {allHoursClosed && (
-    <div className="bg-muted border border-border rounded-2xl p-4 flex items-start gap-3">
-      <AlertTriangle className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
-      <div className="flex-1">
-        <h3 className="font-bold text-foreground text-sm">Configure seus horários</h3>
-        <p className="text-xs text-muted-foreground mt-1">Sua loja está com todos os horários fechados.</p>
-        <button onClick={() => setDashboardTab("hours")}
-          className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-primary-foreground bg-primary hover:bg-primary/90 px-3 py-1.5 rounded-lg transition-colors">
-          <Clock className="inline h-3 w-3 mr-1" /> Configurar Horários
-        </button>
-      </div>
-    </div>
-  )}
-
-  {isOwnDelivery && !driversLoading && !hasLinkedDrivers && (
-    <div className="bg-destructive/10 border-2 border-destructive/30 rounded-2xl p-4 flex items-start gap-3 animate-pulse-subtle">
-      <AlertTriangle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
-      <div className="flex-1">
-        <h3 className="font-bold text-destructive text-sm">Cadastre um motoboy para receber pedidos</h3>
-        <p className="text-xs text-muted-foreground mt-1">
-          Sua loja está configurada como <strong>Entrega Própria</strong>, mas você ainda não vinculou nenhum motoboy.
-          Sem um entregador cadastrado, <strong>você não conseguirá despachar pedidos</strong> e os clientes podem não conseguir finalizar a compra.
-        </p>
-        <button onClick={() => setDashboardTab("drivers")}
-          className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-destructive-foreground bg-destructive hover:bg-destructive/90 px-3 py-1.5 rounded-lg transition-colors">
-          <Bike className="inline h-3 w-3 mr-1" /> Cadastrar Motoboy Agora
-        </button>
-      </div>
-    </div>
-  )}
-
-  {storePlan.hasCommission && (
-    <CommissionAlert storeId={store.id} storeName={store.name} onGoToFinance={() => setDashboardTab("finance")} />
-  )}
-  {!storePlan.hasCommission && storePlan.isItatingaFixed && (
-    <PlatformSplitAlert storeId={store.id} storeName={store.name} splitPerOrder={storePlan.platformDeliverySplit} onGoToFinance={() => setDashboardTab("finance")} />
   )}
 
   {/* Explicação permanente da taxa R$ X/entrega — visível para todos os planos */}
