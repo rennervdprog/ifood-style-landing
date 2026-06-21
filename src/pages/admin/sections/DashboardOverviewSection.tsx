@@ -127,47 +127,6 @@ export default function DashboardOverviewSection(props: Props) {
   return (
 <div className="p-4 lg:p-6 max-w-6xl mx-auto space-y-5 lg:space-y-6">
 
-  {/* ── Welcome Header ── */}
-  <div className="relative overflow-hidden bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/10 rounded-3xl p-5 lg:p-6">
-    <div className="pointer-events-none absolute -top-16 -right-16 w-48 h-48 bg-primary/20 rounded-full blur-3xl" />
-    <div className="pointer-events-none absolute -bottom-20 -left-10 w-40 h-40 bg-primary/10 rounded-full blur-3xl" />
-    <div className="relative flex items-center justify-between mb-3 gap-3">
-      <div className="min-w-0">
-        <p className="text-[11px] font-bold text-primary/80 uppercase tracking-widest">
-          {greeting} {greetingEmoji}
-        </p>
-        <h2 className="text-xl lg:text-2xl font-black text-foreground tracking-tight truncate mt-0.5">
-          {store.name}
-        </h2>
-        <p className="text-xs text-muted-foreground mt-1 capitalize">
-          {new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" })}
-        </p>
-      </div>
-      <div className="flex flex-col items-end gap-1">
-        {(() => {
-          // Tri-state: Aberta (online + horário) / Fora do Horário (online + fora) / Pausada (offline)
-          const state = !store.is_open
-            ? { label: "Pausada", cls: "bg-muted text-muted-foreground border-border", dot: "bg-muted-foreground", pulse: false }
-            : isStoreReallyOpen
-              ? { label: "Aberta", cls: "bg-primary/10 text-primary border-primary/20", dot: "bg-primary", pulse: true }
-              : { label: "Fora do Horário", cls: "bg-amber-500/10 text-amber-600 border-amber-500/20", dot: "bg-amber-500", pulse: false };
-          return (
-            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold border ${state.cls}`}>
-              <div className={`w-2 h-2 rounded-full ${state.dot} ${state.pulse ? "animate-pulse" : ""}`} />
-              {state.label}
-            </div>
-          );
-        })()}
-      </div>
-    </div>
-    <div className="relative inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-[11px] font-bold bg-background/60 backdrop-blur-sm text-foreground border border-border/60 shadow-sm">
-      <CreditCard className="h-3 w-3" />
-      {storePlan.planType === "fixed" && `Plano Fixo • R$ ${storePlan.monthlyFee.toFixed(0)}/mês`}
-      {storePlan.planType === "hybrid" && `Crescimento • ${storePlan.commissionRate}% + R$ ${storePlan.monthlyFee.toFixed(0)}/mês`}
-      {storePlan.planType === "commission_only" && `Comissão ${storePlan.commissionRate}%`}
-    </div>
-  </div>
-
   {avisosCount > 0 && (
     <button
       onClick={() => setDashboardTab("avisos")}
