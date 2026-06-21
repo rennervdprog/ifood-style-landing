@@ -1590,6 +1590,7 @@ const AdminDashboard = () => {
               onSelect={handleTabChange}
               isPizza={isPizza}
               allowFullReports={allowFullReports}
+              badges={{ avisos: avisosCount }}
             />
           )}
           {!storeLoading && isApproved && !store && (
