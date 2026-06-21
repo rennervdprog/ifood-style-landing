@@ -605,7 +605,7 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
   );
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 max-w-5xl mx-auto w-full">
       {storeCategory !== "adegas" && (
         <DailyMenuManager storeId={storeId} products={products || []} onUpdate={invalidateProducts} />
       )}
