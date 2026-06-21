@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Bike, Plus, Trash2, Search, UserCheck, UserX, Loader2, Share2, Copy, Users, Wallet, Zap, Clock } from "lucide-react";
+import { Bike, Plus, Trash2, Search, UserCheck, UserX, Loader2, Share2, Copy, Users, Wallet, Zap, Clock, Info, CheckCircle2, Smartphone, UserPlus, MapPin } from "lucide-react";
 import StoreDriverFinance from "@/components/StoreDriverFinance";
 
 interface StoreDriverManagerProps {
@@ -184,12 +184,50 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
       ) : (
         <>
 
-      <div className="bg-muted border border-border rounded-2xl p-4 space-y-3">
-        <p className="text-xs text-muted-foreground">
-          🏍️ Adicione motoboys que já se cadastraram na plataforma. 
-          Eles poderão ver e entregar <strong>apenas os pedidos da sua loja</strong>, 
-          com confirmação de entrega via código PIN do cliente.
-        </p>
+      {/* Como funciona — passo a passo */}
+      <div className="bg-primary/5 border border-primary/20 rounded-2xl p-4 space-y-3">
+        <div className="flex items-center gap-2">
+          <Info className="h-4 w-4 text-primary" />
+          <h3 className="text-sm font-bold text-foreground">Como funciona</h3>
+        </div>
+        <ol className="space-y-2.5">
+          <li className="flex gap-2.5">
+            <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center">1</span>
+            <p className="text-xs text-foreground leading-relaxed">
+              <strong>Envie o link de cadastro</strong> para o motoboy. Ele se cadastra como entregador da plataforma.
+            </p>
+          </li>
+          <li className="flex gap-2.5">
+            <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center">2</span>
+            <p className="text-xs text-foreground leading-relaxed">
+              <strong>Envie o APK Parceiro</strong> (Android) para ele instalar no celular e receber pedidos em tempo real.
+            </p>
+          </li>
+          <li className="flex gap-2.5">
+            <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center">3</span>
+            <p className="text-xs text-foreground leading-relaxed">
+              <strong>Busque pelo nome/telefone</strong> dele abaixo e adicione à sua equipe, escolhendo o modo de pagamento da taxa.
+            </p>
+          </li>
+          <li className="flex gap-2.5">
+            <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center">4</span>
+            <p className="text-xs text-foreground leading-relaxed">
+              Pronto! Ele verá <strong>apenas os pedidos da sua loja</strong> e confirma entrega com o <strong>PIN do cliente</strong>.
+            </p>
+          </li>
+        </ol>
+      </div>
+
+      {/* Links de compartilhamento */}
+      <div className="bg-muted border border-border rounded-2xl p-4 space-y-4">
+        <div>
+          <div className="flex items-center gap-2 mb-1.5">
+            <UserPlus className="h-4 w-4 text-primary" />
+            <p className="text-xs font-bold text-foreground">1. Link de cadastro do motoboy</p>
+          </div>
+          <p className="text-[11px] text-muted-foreground mb-2">
+            Compartilhe para o motoboy criar a conta dele na plataforma.
+          </p>
         <div className="flex items-center gap-2">
           <div className="flex-1 bg-muted/50 border border-border rounded-lg px-3 py-2">
             <p className="text-[11px] text-muted-foreground truncate">https://itasuper.com.br/cadastro-motoboy-loja</p>
@@ -216,11 +254,16 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
             <Share2 className="h-4 w-4" />
           </button>
         </div>
+        </div>
 
         {/* APK Parceiro download link */}
         <div className="pt-2 border-t border-border">
+          <div className="flex items-center gap-2 mb-1.5">
+            <Smartphone className="h-4 w-4 text-primary" />
+            <p className="text-xs font-bold text-foreground">2. Link do app Parceiro (APK Android)</p>
+          </div>
           <p className="text-[11px] text-muted-foreground mb-2">
-            📲 <strong>Link do app:</strong> envie para o motoboy baixar o APK Parceiro (Android).
+            Envie para o motoboy instalar o app e receber os pedidos no celular.
           </p>
           <div className="flex items-center gap-2">
             <div className="flex-1 bg-muted/50 border border-border rounded-lg px-3 py-2">
@@ -253,9 +296,14 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
 
       {/* Search & Add */}
       <div className="bg-card border border-border rounded-2xl p-4 space-y-3">
-        <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
-          <Plus className="h-4 w-4 text-primary" /> Adicionar Motoboy
-        </h3>
+        <div>
+          <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+            <Plus className="h-4 w-4 text-primary" /> 3. Adicionar motoboy à equipe
+          </h3>
+          <p className="text-[11px] text-muted-foreground mt-1">
+            Busque pelo <strong>nome, e-mail ou telefone</strong> que ele usou no cadastro.
+          </p>
+        </div>
         <div className="flex gap-2">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -297,7 +345,7 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
 
               {/* Payment mode chooser */}
               <div className="space-y-1.5">
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Modo de pagamento da taxa</p>
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Como você vai pagar a taxa de entrega para ele?</p>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     onClick={() => setPaymentModeChoice(p => ({ ...p, [driver.user_id]: "instantaneo" }))}
@@ -309,7 +357,7 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
                   >
                     <Zap className={`h-4 w-4 mb-1 ${chosen === "instantaneo" ? "text-primary" : "text-muted-foreground"}`} />
                     <p className="text-[11px] font-bold text-foreground">Pagamento na hora</p>
-                    <p className="text-[9px] text-muted-foreground">Você acerta a cada entrega</p>
+                    <p className="text-[9px] text-muted-foreground">Acerta em dinheiro/Pix a cada entrega</p>
                   </button>
                   <button
                     onClick={() => setPaymentModeChoice(p => ({ ...p, [driver.user_id]: "fim_do_dia" }))}
@@ -321,7 +369,7 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
                   >
                     <Clock className={`h-4 w-4 mb-1 ${chosen === "fim_do_dia" ? "text-primary" : "text-muted-foreground"}`} />
                     <p className="text-[11px] font-bold text-foreground">Acerto fim do dia</p>
-                    <p className="text-[9px] text-muted-foreground">Acumula e paga junto</p>
+                    <p className="text-[9px] text-muted-foreground">Acumula tudo e paga de uma vez</p>
                   </button>
                 </div>
               </div>
@@ -341,9 +389,14 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
 
       {/* Linked Drivers List */}
       <div className="space-y-2">
-        <h3 className="text-sm font-bold text-foreground px-1">
-          Equipe ({storeDrivers?.length || 0})
-        </h3>
+        <div className="px-1">
+          <h3 className="text-sm font-bold text-foreground">
+            Sua equipe ({storeDrivers?.length || 0})
+          </h3>
+          <p className="text-[11px] text-muted-foreground mt-0.5">
+            Motoboys que recebem os pedidos da sua loja. O ponto verde indica que está <strong>online</strong> e pronto para entregar.
+          </p>
+        </div>
 
         {isLoading && (
           <div className="flex items-center justify-center py-8">
@@ -358,7 +411,7 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
             </div>
             <p className="text-sm font-bold text-foreground mb-1">Nenhum motoboy vinculado</p>
             <p className="text-xs text-muted-foreground max-w-xs">
-              Busque pelo telefone de um motoboy cadastrado na plataforma para adicioná-lo à sua equipe.
+              Siga os passos acima: envie o link de cadastro, depois o app, e busque por ele aqui para vincular.
             </p>
           </div>
         )}
