@@ -826,7 +826,12 @@ const NotificationSection = () => {
                  previewLabel = `Sua taxa base (até ${deliveryBaseKm}km):`;
                }
  
-               const platformFee = storePlan.platformDeliverySplit || 0;
+               const baseFee = storePlan.platformDeliverySplit || 0;
+               const storeAbsorb =
+                 platformFeeSplit === "lojista" ? baseFee :
+                 platformFeeSplit === "meio_a_meio" ? Math.round((baseFee / 2) * 100) / 100 :
+                 0;
+               const platformFee = Math.max(0, baseFee - storeAbsorb);
                const totalCliente = lojistaFee + platformFee;
                
                return (
@@ -859,9 +864,12 @@ const NotificationSection = () => {
                        </span>
                      </div>
                    </div>
-                   {platformFee > 0 ? (
+                   {baseFee > 0 ? (
                      <p className="text-[10px] text-muted-foreground/80 leading-relaxed">
-                       ℹ️ A plataforma adiciona automaticamente <strong>{formatBRL(platformFee)}</strong> em cima da sua taxa para custear a operação. Você recebe os <strong>{formatBRL(lojistaFee)}</strong> integrais.
+                       ℹ️ Taxa da plataforma: <strong>{formatBRL(baseFee)}</strong>/pedido.
+                       {storeAbsorb > 0
+                         ? <> Você absorve <strong>{formatBRL(storeAbsorb)}</strong> (acumula no seu repasse) e o cliente vê <strong>+{formatBRL(platformFee)}</strong>.</>
+                         : <> Cobrada 100% do cliente — você recebe os <strong>{formatBRL(lojistaFee)}</strong> integrais.</>}
                      </p>
                    ) : (
                      <p className="text-[10px] text-muted-foreground/80 leading-relaxed">
@@ -871,6 +879,35 @@ const NotificationSection = () => {
                  </div>
                );
              })()}
+
+             {/* Divisão da taxa da plataforma */}
+             <div className="space-y-2 pt-2 border-t border-border">
+               <label className="text-xs font-bold text-foreground/80">Quem paga a taxa de R$ 2,00 da plataforma?</label>
+               <div className="grid grid-cols-1 gap-2">
+                 {([
+                   { v: "cliente",     t: "Cliente paga",     d: "Cliente vê +R$ 2,00 no checkout. Você não absorve nada." },
+                   { v: "meio_a_meio", t: "Meio a meio",      d: "Cliente vê +R$ 1,00 e você absorve R$ 1,00 (acumula no repasse)." },
+                   { v: "lojista",     t: "Você paga (loja)", d: "Cliente não vê acréscimo. Você absorve R$ 2,00 por pedido (acumula no repasse)." },
+                 ] as const).map(opt => (
+                   <button
+                     key={opt.v}
+                     type="button"
+                     onClick={() => setPlatformFeeSplit(opt.v)}
+                     className={`text-left p-3 rounded-xl border-2 transition-all ${
+                       platformFeeSplit === opt.v
+                         ? "border-primary bg-primary/10"
+                         : "border-border bg-card"
+                     }`}
+                   >
+                     <div className="text-xs font-bold text-foreground">{opt.t}</div>
+                     <div className="text-[10px] text-muted-foreground mt-0.5">{opt.d}</div>
+                   </button>
+                 ))}
+               </div>
+               <p className="text-[10px] text-muted-foreground/70">
+                 O valor absorvido por você acumula em <strong>Repasse à plataforma</strong> e é cobrado junto com sua comissão/PIX da plataforma.
+               </p>
+             </div>
           </div>
         )}
       </div>
