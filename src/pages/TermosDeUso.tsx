@@ -120,6 +120,8 @@ const TermosDeUso = () => {
           <h2 className="text-base font-bold text-foreground">7. Entregador Autônomo</h2>
           <p>7.1. O Entregador é profissional autônomo independente. Não há vínculo empregatício com o ItaSuper.</p>
           <p>7.2. O Entregador deve manter CNH regularizada, zelar pelos produtos, coletar o PIN de coleta e entregá-lo ao cliente para confirmação.</p>
+          <p>7.3. <strong className="text-foreground">Motoboy próprio de loja:</strong> a modalidade "Motoboy de Loja" destina-se exclusivamente a entregadores contratados, gerenciados e remunerados pelo Lojista. O ItaSuper atua apenas como <strong className="text-foreground">ferramenta tecnológica</strong> de roteirização e comunicação, não contrata, não remunera, não fiscaliza nem responde por esses entregadores. Qualquer vínculo (trabalhista, civil, tributário, previdenciário ou de qualquer outra natureza) é de responsabilidade exclusiva do Lojista contratante. O acesso do motoboy ao painel só é liberado após vínculo expresso criado e aceito pelo Lojista; sem vínculo ativo, o app não opera.</p>
+          <p>7.4. O Lojista é o único responsável por exigir, verificar e arquivar a documentação (CNH, habilitação, seguro, regularidade da moto, etc.) de seus motoboys próprios, isentando integralmente o ItaSuper de qualquer responsabilidade decorrente de acidentes, infrações, danos a terceiros ou inadimplemento contratual envolvendo o motoboy de loja.</p>
         </section>
 
         <section className="space-y-3">
