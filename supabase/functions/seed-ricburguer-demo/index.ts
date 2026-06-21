@@ -38,9 +38,8 @@ Deno.serve(async (req) => {
     const prods = await rest(`products?store_id=eq.${store.id}&is_available=eq.true&select=id,name,price&limit=6`) as Array<any>;
     if (!prods.length) return json({ error: "Sem produtos disponíveis" }, 404);
 
-    // pega um client_id qualquer (owner serve como placeholder se não houver outro)
-    const anyClient = await rest(`profiles?select=id&limit=1`) as Array<any>;
-    const clientId = anyClient[0]?.id || store.owner_id;
+    // usa owner_id da loja (existe em auth.users) como cliente fictício
+    const clientId = store.owner_id;
 
     const orderSpecs: Array<{ status: string; count: number; neighborhood: string }> = [
       { status: "pendente", count: 3, neighborhood: "Centro" },
