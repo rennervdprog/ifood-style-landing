@@ -57,6 +57,7 @@ const SettingsTab = lazy(() => import("./admin/tabs/SettingsTab"));
 const CouponsTab = lazy(() => import("./admin/tabs/CouponsTab"));
 const PromotionsTab = lazy(() => import("./admin/tabs/PromotionsTab"));
 const DashboardOverviewSection = lazy(() => import("./admin/sections/DashboardOverviewSection"));
+const AvisosSection = lazy(() => import("./admin/sections/AvisosSection"));
 const OrdersSection = lazy(() => import("./admin/sections/OrdersSection"));
 import AdminOrderCard from "./admin/components/AdminOrderCard";
 import ClientsTab from "./admin/components/ClientsTab";
