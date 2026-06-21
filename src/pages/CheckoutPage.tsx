@@ -167,6 +167,12 @@ const CheckoutPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lastPaymentKey, filteredPaymentMethods.length]);
 
+  // Tracking: visita ao checkout (etapa de funil)
+  useEffect(() => {
+    import("@/lib/pageView").then((m) => m.trackPageView("checkout", { storeId: currentStoreId || null }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const { data: storeHours } = useQuery({
     queryKey: ["store-hours-checkout", storeId],
     queryFn: async () => {
