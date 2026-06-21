@@ -3,11 +3,9 @@ import { supabase } from "@/integrations/supabase/client";
 
 type OrderStatus = any;
 type DashboardTab = any;
-import { CreditCard, AlertTriangle, ChevronRight, Clock, Bike, Monitor, ShoppingBag, DollarSign, Timer, Users, GraduationCap, ChevronUp, ChevronDown, User, MapPin, CheckCircle2, ArrowUpRight, UtensilsCrossed, Coins, Settings, Store, XCircle, Download, TrendingUp } from "lucide-react";
+import { CreditCard, AlertTriangle, ChevronRight, Clock, Bike, Monitor, ShoppingBag, DollarSign, Timer, Users, GraduationCap, ChevronUp, ChevronDown, User, MapPin, CheckCircle2, ArrowUpRight, UtensilsCrossed, Coins, Settings, Store, XCircle, Download, TrendingUp, Bell } from "lucide-react";
 import { formatBRL } from "@/lib/utils";
 import WhatsAppButton from "@/components/WhatsAppButton";
-import CommissionAlert from "@/components/CommissionAlert";
-import PlatformSplitAlert from "@/components/PlatformSplitAlert";
 import PlatformFeeExplainerCard from "@/components/PlatformFeeExplainerCard";
 import { GlanceCard } from "../components/GlanceCard";
 
@@ -38,6 +36,7 @@ interface Props {
   setDashboardTab: (t: any) => void;
   setActiveTab: (t: any) => void;
   navigate: (p: string) => void;
+  avisosCount: number;
   getClientName: (id: string) => string;
   getClientWhatsApp: (id: string) => string;
   getOrderItemDisplayName: (item: any) => string;
@@ -56,6 +55,7 @@ export default function DashboardOverviewSection(props: Props) {
     hasLinkedDrivers, pendingCount, preparingCount, readyCount, todayCount, todayTotal,
     avgDeliveryTime, clientAnalytics, delayedOrders, showDelayedPanel, setShowDelayedPanel,
     orders, statusColors, paymentIcons, paymentLabels, setDashboardTab, setActiveTab, navigate,
+    avisosCount,
     getClientName, getClientWhatsApp, getOrderItemDisplayName, buildAcceptWhatsAppHref,
     buildReadyMessage, openWhatsApp, evolutionConnected, updateOrderStatus, handleAcceptOrder, handleCancelOrder,
   } = props;
