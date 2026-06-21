@@ -731,7 +731,7 @@ const StoreDirectory = () => {
           </div>
           <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
             <button onClick={() => navigate("/termos-de-uso")} className="hover:text-foreground font-semibold">Termos</button>
-            <button onClick={() => navigate("/politica-privacidade")} className="hover:text-foreground font-semibold">Privacidade</button>
+            <button onClick={() => navigate("/politica-de-privacidade")} className="hover:text-foreground font-semibold">Privacidade</button>
             <button onClick={() => navigate("/portal-parceiro")} className="hover:text-foreground font-semibold">Já sou parceiro</button>
             <button onClick={handleWhatsApp} className="hover:text-foreground font-semibold">Contato</button>
           </div>
