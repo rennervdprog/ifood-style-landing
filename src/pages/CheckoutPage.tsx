@@ -169,7 +169,7 @@ const CheckoutPage = () => {
 
   // Tracking: visita ao checkout (etapa de funil)
   useEffect(() => {
-    import("@/lib/pageView").then((m) => m.trackPageView("checkout", { storeId: currentStoreId || null }));
+    import("@/lib/pageView").then((m) => m.trackPageView("checkout", { storeId: storeId || null }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
