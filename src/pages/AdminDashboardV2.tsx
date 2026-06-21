@@ -1271,6 +1271,15 @@ const AdminDashboard = () => {
 
   const hasLinkedDrivers = (linkedStoreDrivers?.length || 0) > 0;
 
+  const avisosCount = useAvisosCount({
+    store,
+    storePlan,
+    allHoursClosed,
+    isOwnDelivery,
+    hasLinkedDrivers,
+    driversLoading,
+  });
+
   const getMainAction = (status: OrderStatus, order?: any): { label: string; next: OrderStatus; emoji: string } | null => {
     const isPickupOrder = order?.neighborhood === "RETIRADA";
     switch (status) {
