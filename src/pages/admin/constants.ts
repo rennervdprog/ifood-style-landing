@@ -4,6 +4,7 @@ import {
   Plus, CircleDot, Coins, BarChart3, CreditCard, Star,
   Bike, AlertTriangle, GraduationCap, Settings,
   MessageCircle, ShoppingCart, Headphones, Tag, Flame,
+  Bell,
 } from "lucide-react";
 import type { DashboardTab, OrderStatus } from "./types";
 
@@ -92,7 +93,10 @@ export const dashboardGroups: DashboardGroup[] = [
     key: "inicio",
     label: "Início",
     icon: LayoutDashboard,
-    subTabs: [{ key: "dashboard", label: "Visão Geral", icon: LayoutDashboard }],
+    subTabs: [
+      { key: "dashboard", label: "Visão Geral", icon: LayoutDashboard },
+      { key: "avisos", label: "Avisos", icon: Bell },
+    ],
   },
   {
     key: "pedidos",
