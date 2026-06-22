@@ -1,3 +1,6 @@
+# ItaSuper — robots.txt
+# Permite indexação por buscadores tradicionais e crawlers de IA generativa.
+
 User-agent: *
 Allow: /
 Allow: /loja/
@@ -10,5 +13,96 @@ Disallow: /checkout
 Disallow: /carrinho
 Disallow: /perfil
 Disallow: /auth
+Disallow: /matriz
+Disallow: /moderador
+Disallow: /suporte
+Disallow: /parceiro
+Disallow: /portal-parceiro
+Disallow: /kds/
+
+# ===== Buscadores tradicionais =====
+User-agent: Googlebot
+Allow: /
+
+User-agent: Googlebot-Image
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: DuckDuckBot
+Allow: /
+
+User-agent: Yandex
+Allow: /
+
+User-agent: Baiduspider
+Allow: /
+
+# ===== Crawlers de IA generativa (treino + busca em tempo real) =====
+# OpenAI / ChatGPT
+User-agent: GPTBot
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+# Google AI (Gemini, AI Overviews)
+User-agent: Google-Extended
+Allow: /
+
+# Anthropic / Claude
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+# Perplexity
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Perplexity-User
+Allow: /
+
+# Apple Intelligence
+User-agent: Applebot
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+# Meta AI
+User-agent: Meta-ExternalAgent
+Allow: /
+
+User-agent: FacebookBot
+Allow: /
+
+# Common Crawl (usado por vários LLMs)
+User-agent: CCBot
+Allow: /
+
+# Outros
+User-agent: Amazonbot
+Allow: /
+
+User-agent: Bytespider
+Allow: /
+
+User-agent: DuckAssistBot
+Allow: /
+
+User-agent: cohere-ai
+Allow: /
+
+User-agent: YouBot
+Allow: /
 
 Sitemap: https://itasuper.com.br/sitemap.xml

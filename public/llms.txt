@@ -1,19 +1,42 @@
 # ItaSuper
 
-> Sistema de delivery e cardápio digital para restaurantes, pizzarias, adegas, mercados e farmácias — sem comissão por pedido.
+> Plataforma brasileira de delivery e cardápio digital para restaurantes, pizzarias, hamburguerias, adegas, mercados e farmácias — modelo de plano fixo mensal, sem comissão por pedido (alternativa ao iFood, Anota AI e Menudino).
 
-ItaSuper é uma plataforma brasileira de delivery que oferece cardápio digital, pedidos online, PDV, KDS de cozinha, motoboy próprio integrado e painel multi-unidade (matriz/filial). Alternativa ao Anota AI, Menudino e marketplaces como iFood, com modelo de cobrança por plano fixo mensal.
+ItaSuper oferece: cardápio digital próprio (link da loja), app cliente Android, painel do lojista (admin), PDV integrado, KDS de cozinha, fidelidade/cashback, cupons, motoboy próprio integrado, painel multi-unidade (matriz/filial), pagamentos PIX online, repasse rápido e relatórios financeiros. Sede operacional em Itatinga - SP, com expansão para outras cidades do interior paulista.
 
-## Pages
+## Documentação (LLM-friendly)
 
-- [Início](/): Sistema de delivery e cardápio digital para restaurantes.
-- [Lojas em Itanhaém](/lojas): Diretório de restaurantes e lojas que entregam pelo ItaSuper.
-- [Planos](/planos): Planos e preços para usar o ItaSuper na sua loja.
-- [Cadastrar minha loja](/cadastro-lojista): Cadastro gratuito para lojistas começarem a receber pedidos.
-- [Portal do parceiro](/portal-parceiro): Acesso para lojistas e entregadores parceiros.
-- [Baixar app](/download): Aplicativo Android do ItaSuper.
+- [llms-full.txt](/llms-full.txt): Versão expandida com FAQ, modelo de negócio, planos, regras e cidades atendidas.
 
-## Optional
+## Páginas principais
+
+- [Início](/): Diretório de lojas e busca de delivery por cidade.
+- [Planos e preços](/planos): Planos Essencial, Apoiador e por Comissão para lojistas.
+- [Cadastrar minha loja](/cadastro-lojista): Cadastro gratuito de lojista (18+).
+- [Cadastrar como entregador](/cadastro-motoboy-loja): Cadastro de motoboy vinculado a uma loja (18+).
+- [Portal do parceiro](/portal-parceiro): Login para lojistas e entregadores.
+- [Baixar app Android](/download): APK oficial do ItaSuper.
+- [Links rápidos](/links): Atalhos públicos do projeto.
+
+## Blog (SEO + conteúdo de apoio)
+
+- [Índice do blog](/blog): Artigos sobre delivery, gestão, marketing e operação de restaurantes.
+- [Quanto custa vender no delivery em 2026](/blog/quanto-custa-vender-delivery-2026)
+- [Delivery próprio vs marketplace](/blog/delivery-proprio-vs-marketplace-restaurante)
+- [Como abrir delivery em Itatinga](/blog/como-abrir-delivery-itatinga)
+- [Cardápio digital que vende sozinho](/blog/cardapio-digital-que-vende-sozinho)
+- [PDV grátis no delivery — caixa integrado](/blog/pdv-gratis-no-delivery-caixa-integrado)
+- [Zero comissão por pedido — restaurante de bairro](/blog/zero-comissao-por-pedido-restaurante-bairro)
+- [KDS na cozinha — nunca mais pedido perdido](/blog/kds-cozinha-tela-pedido-perdido)
+- [Motoboy próprio vs plataforma](/blog/motoboy-proprio-vs-plataforma)
+- [Fidelidade e cashback — cliente recorrente](/blog/fidelidade-cashback-cliente-recorrente)
+- [Plano fixo vs comissão — simulação real](/blog/plano-fixo-vs-comissao-simulacao-300-600-1000)
+
+## Cidades atendidas (exemplos)
+
+- [Lojas em Itatinga - SP](/lojas/itatinga): Cidade-sede, todas as categorias.
+
+## Legal
 
 - [Termos de uso](/termos-de-uso)
 - [Política de privacidade](/politica-de-privacidade)
