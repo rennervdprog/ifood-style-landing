@@ -195,8 +195,9 @@ const StorePage = () => {
     const twDesc = document.querySelector('meta[name="twitter:description"]');
     const twImage = document.querySelector('meta[name="twitter:image"]');
 
-    const title = `${store.name} - ItaSuper`;
-    const desc = `Peça pelo ItaSuper: ${store.name} - ${store.category}. Entrega rápida!`;
+    const cityPart = (store as any).address_city ? ` em ${(store as any).address_city}` : "";
+    const title = `${store.name}${cityPart} — Delivery online | ItaSuper`;
+    const desc = `Peça ${store.category || "delivery"} online de ${store.name}${cityPart}. Cardápio, preços, pagamento PIX e entrega rápida pelo ItaSuper.`;
     const img = store.image_url || "";
     const storeSlug = (store as any).slug || slug || id;
     const url = `https://itasuper.com.br/${storeSlug}`;
@@ -211,18 +212,60 @@ const StorePage = () => {
     if (twDesc) twDesc.setAttribute("content", desc);
     if (twImage && img) twImage.setAttribute("content", img);
 
-    // JSON-LD LocalBusiness/FoodEstablishment para cada loja
+    // JSON-LD FoodEstablishment enriquecido — usado por Google, Bing e LLMs
     const existing = document.getElementById("store-jsonld");
     if (existing) existing.remove();
     const ld = document.createElement("script");
     ld.id = "store-jsonld";
     ld.type = "application/ld+json";
+
+    // openingHoursSpecification a partir de storeHours
+    const DAY_MAP: Record<number, string> = {
+      0: "Sunday", 1: "Monday", 2: "Tuesday", 3: "Wednesday",
+      4: "Thursday", 5: "Friday", 6: "Saturday",
+    };
+    const hoursSpec = Array.isArray(storeHours)
+      ? storeHours
+          .filter((h: any) => h && h.is_open && h.open_time && h.close_time && DAY_MAP[h.day_of_week] !== undefined)
+          .map((h: any) => ({
+            "@type": "OpeningHoursSpecification",
+            dayOfWeek: DAY_MAP[h.day_of_week],
+            opens: String(h.open_time).slice(0, 5),
+            closes: String(h.close_time).slice(0, 5),
+          }))
+      : [];
+
+    const telephoneRaw = (ownerProfile as any)?.whatsapp_number;
+    const telephone = telephoneRaw
+      ? `+55${String(telephoneRaw).replace(/\D/g, "")}`
+      : undefined;
+
+    const minOrder = Number((store as any).minimum_order_value || 0);
+    const priceRange = minOrder > 0
+      ? (minOrder < 30 ? "$" : minOrder < 60 ? "$$" : "$$$")
+      : "$$";
+
+    const ratingNum = Number((store as any).rating || 0);
+    const aggregateRating = ratingNum > 0
+      ? { "@type": "AggregateRating", ratingValue: ratingNum.toFixed(1), bestRating: "5", worstRating: "1", reviewCount: "1" }
+      : undefined;
+
+    const lat = Number((store as any).latitude || 0);
+    const lng = Number((store as any).longitude || 0);
+    const geo = lat && lng
+      ? { "@type": "GeoCoordinates", latitude: lat, longitude: lng }
+      : undefined;
+
     ld.textContent = JSON.stringify({
       "@context": "https://schema.org",
       "@type": "FoodEstablishment",
+      "@id": url,
       name: store.name,
       image: img || undefined,
       url,
+      priceRange,
+      telephone,
+      acceptsReservations: false,
       servesCuisine: store.category || undefined,
       address: {
         "@type": "PostalAddress",
@@ -232,10 +275,19 @@ const StorePage = () => {
         addressCountry: "BR",
         postalCode: store.address_cep || undefined,
       },
+      geo,
+      aggregateRating,
+      openingHoursSpecification: hoursSpec.length > 0 ? hoursSpec : undefined,
+      hasMenu: url,
+      potentialAction: {
+        "@type": "OrderAction",
+        target: url,
+        deliveryMethod: ["http://purl.org/goodrelations/v1#DeliveryModeOwnFleet"],
+      },
     });
     document.head.appendChild(ld);
     return () => { ld.remove(); };
-  }, [store, slug, id]);
+  }, [store, slug, id, storeHours, ownerProfile]);
 
   const storeId = store?.id || id;
    const storePlan = useStorePlan(storeId);
