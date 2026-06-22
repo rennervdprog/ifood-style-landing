@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Helmet } from "react-helmet-async";
 import { supabase } from "@/integrations/supabase/client";
 import { APP_VERSION } from "@/lib/appVersion";
 import { Link } from "react-router-dom";
@@ -103,6 +104,39 @@ const DownloadApp = () => {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
+
+      <Helmet>
+        <title>{`Baixar ${data.app_name} (APK Android) — ItaSuper`}</title>
+        <meta name="description" content={`Baixe grátis o ${data.app_name}: ${data.tagline}. APK Android oficial, versão ${data.version}, ${data.size_mb}.`} />
+        <link rel="canonical" href="https://itasuper.com.br/download" />
+        <meta property="og:title" content={`Baixar ${data.app_name} — ItaSuper`} />
+        <meta property="og:description" content={data.tagline} />
+        <meta property="og:url" content="https://itasuper.com.br/download" />
+        <meta property="og:type" content="website" />
+        {data.icon_url && <meta property="og:image" content={data.icon_url} />}
+        <script type="application/ld+json">{JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "MobileApplication",
+          name: data.app_name,
+          description: data.description || data.tagline,
+          operatingSystem: "Android",
+          applicationCategory: "BusinessApplication",
+          softwareVersion: data.version,
+          fileSize: data.size_mb,
+          downloadUrl: data.apk_url || undefined,
+          installUrl: "https://itasuper.com.br/download",
+          image: data.icon_url || undefined,
+          author: { "@type": "Organization", name: data.developer || "ItaSuper" },
+          offers: { "@type": "Offer", price: "0", priceCurrency: "BRL" },
+          aggregateRating: data.rating > 0 ? {
+            "@type": "AggregateRating",
+            ratingValue: data.rating.toFixed(1),
+            bestRating: "5",
+            worstRating: "1",
+            ratingCount: "1",
+          } : undefined,
+        })}</script>
+      </Helmet>
 
       {/* ── Topbar ── */}
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border/60">
