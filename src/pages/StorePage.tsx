@@ -183,7 +183,53 @@ const StorePage = () => {
     import("@/lib/pageView").then((m) => m.trackPageView("store_page", { storeId: store.id }));
   }, [store?.id]);
 
-  // Dynamic OG meta tags for social sharing (WhatsApp, Facebook, etc.)
+  const storeId = store?.id || id;
+   const storePlan = useStorePlan(storeId);
+
+   // Track scroll to show name in header
+   useEffect(() => {
+     let ticking = false;
+     const handleScroll = () => {
+       if (ticking) return;
+       ticking = true;
+       window.requestAnimationFrame(() => {
+         const isScrolled = window.scrollY > 150;
+         setScrolled((prev) => (prev !== isScrolled ? isScrolled : prev));
+         ticking = false;
+       });
+     };
+
+     window.addEventListener("scroll", handleScroll, { passive: true });
+     return () => window.removeEventListener("scroll", handleScroll);
+   }, []);
+
+  const { data: storeHours } = useQuery({
+    queryKey: ["store-hours", storeId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("opening_hours").select("*").eq("store_id", storeId!);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!storeId,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const { data: ownerProfile } = useQuery({
+    queryKey: ["store-owner", store?.owner_id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("whatsapp_number")
+        .eq("user_id", store!.owner_id!)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!store?.owner_id,
+    staleTime: 1000 * 60 * 10,
+  });
+
+  // Dynamic OG meta + JSON-LD FoodEstablishment (SEO + LLM citation)
   useEffect(() => {
     if (!store) return;
     const ogTitle = document.querySelector('meta[property="og:title"]');
@@ -212,14 +258,12 @@ const StorePage = () => {
     if (twDesc) twDesc.setAttribute("content", desc);
     if (twImage && img) twImage.setAttribute("content", img);
 
-    // JSON-LD FoodEstablishment enriquecido — usado por Google, Bing e LLMs
     const existing = document.getElementById("store-jsonld");
     if (existing) existing.remove();
     const ld = document.createElement("script");
     ld.id = "store-jsonld";
     ld.type = "application/ld+json";
 
-    // openingHoursSpecification a partir de storeHours
     const DAY_MAP: Record<number, string> = {
       0: "Sunday", 1: "Monday", 2: "Tuesday", 3: "Wednesday",
       4: "Thursday", 5: "Friday", 6: "Saturday",
@@ -288,52 +332,6 @@ const StorePage = () => {
     document.head.appendChild(ld);
     return () => { ld.remove(); };
   }, [store, slug, id, storeHours, ownerProfile]);
-
-  const storeId = store?.id || id;
-   const storePlan = useStorePlan(storeId);
-
-   // Track scroll to show name in header
-   useEffect(() => {
-     let ticking = false;
-     const handleScroll = () => {
-       if (ticking) return;
-       ticking = true;
-       window.requestAnimationFrame(() => {
-         const isScrolled = window.scrollY > 150;
-         setScrolled((prev) => (prev !== isScrolled ? isScrolled : prev));
-         ticking = false;
-       });
-     };
-
-     window.addEventListener("scroll", handleScroll, { passive: true });
-     return () => window.removeEventListener("scroll", handleScroll);
-   }, []);
-
-  const { data: storeHours } = useQuery({
-    queryKey: ["store-hours", storeId],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("opening_hours").select("*").eq("store_id", storeId!);
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!storeId,
-    staleTime: 1000 * 60 * 5,
-  });
-
-  const { data: ownerProfile } = useQuery({
-    queryKey: ["store-owner", store?.owner_id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("whatsapp_number")
-        .eq("user_id", store!.owner_id!)
-        .maybeSingle();
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!store?.owner_id,
-    staleTime: 1000 * 60 * 10,
-  });
 
   const { data: sections } = useQuery({
     queryKey: ["menu-sections", storeId],
