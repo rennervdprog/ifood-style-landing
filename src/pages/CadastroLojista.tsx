@@ -30,7 +30,16 @@ const PLATFORM_CITIES = ["itatinga"];
      password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres").max(100),
      storeName: z.string().trim().min(3, "Nome da loja deve ter pelo menos 3 caracteres").max(100),
       document: z.string().trim().refine(v => validateDocument(v), "CPF ou CNPJ inválido"),
-     birthDate: z.string().min(10, "Data de nascimento obrigatória").max(10),
+     birthDate: z.string().min(10, "Data de nascimento obrigatória").max(10)
+       .refine((v) => {
+         const d = new Date(v);
+         if (isNaN(d.getTime())) return false;
+         const today = new Date();
+         let age = today.getFullYear() - d.getFullYear();
+         const m = today.getMonth() - d.getMonth();
+         if (m < 0 || (m === 0 && today.getDate() < d.getDate())) age--;
+         return age >= 18 && age <= 120;
+       }, "Lojista deve ter 18 anos ou mais (cláusula 2.2 dos Termos)"),
      whatsapp: z.string().trim().min(1, "WhatsApp é obrigatório").min(10, "WhatsApp inválido (ex: 14 99999-9999)").max(20),
   storeCategory: z.enum(storeCategories as unknown as [string, ...string[]], { errorMap: () => ({ message: "Selecione uma categoria" }) }),
   cep: z.string().min(8, "CEP inválido"),

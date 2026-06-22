@@ -26,6 +26,16 @@ const schema = z.object({
   fullName: z.string().trim().min(3, "Nome deve ter pelo menos 3 caracteres").max(100),
    document: z.string().trim().refine(v => validateDocument(v), "CPF ou CNPJ inválido"),
   phone: z.string().trim().min(10, "Telefone inválido").max(20),
+  birthDate: z.string().min(10, "Data de nascimento obrigatória").max(10)
+    .refine((v) => {
+      const d = new Date(v);
+      if (isNaN(d.getTime())) return false;
+      const today = new Date();
+      let age = today.getFullYear() - d.getFullYear();
+      const m = today.getMonth() - d.getMonth();
+      if (m < 0 || (m === 0 && today.getDate() < d.getDate())) age--;
+      return age >= 18 && age <= 120;
+    }, "Entregador deve ter 18 anos ou mais (cláusula 2.2 dos Termos)"),
   vehicle: z.string().trim()
     .min(7, "Placa deve ter 7 caracteres (ex: ABC-1234 ou ABC1D23)")
     .max(8, "Placa inválida")
@@ -52,6 +62,7 @@ const CadastroEntregador = () => {
   const [fullName, setFullName] = useState("");
   const [document, setDocument] = useState("");
   const [phone, setPhone] = useState("");
+  const [birthDate, setBirthDate] = useState("");
   const [vehicle, setVehicle] = useState("");
   const [cnhNumber, setCnhNumber] = useState("");
   const [city, setCity] = useState("itatinga");
@@ -137,7 +148,7 @@ const CadastroEntregador = () => {
   const validateStep = (stepIndex: number): boolean => {
     setErrors({});
     if (stepIndex === 0) {
-      const partial = schema.safeParse({ email, emailConfirm, password, fullName: "temp", document: "00000000000", phone: "0000000000", vehicle: "ABC-1234", cnhNumber: "00000000000", city: "itatinga" });
+      const partial = schema.safeParse({ email, emailConfirm, password, fullName: "temp", document: "00000000000", phone: "0000000000", birthDate: "2000-01-01", vehicle: "ABC-1234", cnhNumber: "00000000000", city: "itatinga" });
       if (!partial.success) {
         const fieldErrors: Record<string, string> = {};
         partial.error.errors.forEach((err) => {
@@ -157,6 +168,20 @@ const CadastroEntregador = () => {
       if (fullName.trim().length < 3) fieldErrors.fullName = "Nome deve ter pelo menos 3 caracteres";
        if (!validateDocument(document)) fieldErrors.document = "CPF ou CNPJ inválido";
       if (phone.trim().length < 10) fieldErrors.phone = "Telefone inválido";
+      if (!birthDate || birthDate.length < 10) {
+        fieldErrors.birthDate = "Data de nascimento obrigatória";
+      } else {
+        const d = new Date(birthDate);
+        if (isNaN(d.getTime())) {
+          fieldErrors.birthDate = "Data inválida";
+        } else {
+          const today = new Date();
+          let age = today.getFullYear() - d.getFullYear();
+          const m = today.getMonth() - d.getMonth();
+          if (m < 0 || (m === 0 && today.getDate() < d.getDate())) age--;
+          if (age < 18 || age > 120) fieldErrors.birthDate = "Entregador deve ter 18 anos ou mais (cláusula 2.2 dos Termos)";
+        }
+      }
       if (!PLATE_REGEX.test(vehicle.replace(/\s/g, ""))) fieldErrors.vehicle = "Placa inválida";
       if (cnhNumber.replace(/\D/g, "").length !== 11) fieldErrors.cnhNumber = "CNH deve ter 11 dígitos";
       if (Object.keys(fieldErrors).length > 0) { setErrors(fieldErrors); return false; }
@@ -172,7 +197,7 @@ const CadastroEntregador = () => {
     e.preventDefault();
     setErrors({});
 
-    const result = schema.safeParse({ email, emailConfirm, password, fullName, document, phone, vehicle, cnhNumber, city });
+    const result = schema.safeParse({ email, emailConfirm, password, fullName, document, phone, birthDate, vehicle, cnhNumber, city });
     if (!result.success) {
       const fieldErrors: Record<string, string> = {};
       result.error.errors.forEach((err) => { fieldErrors[err.path[0] as string] = err.message; });
@@ -199,6 +224,7 @@ const CadastroEntregador = () => {
                whatsapp: formatWhatsAppNumber(phone),
                phone: formatWhatsAppNumber(phone),
                city: city,
+               birth_date: birthDate,
              },
         },
       });
@@ -213,7 +239,7 @@ const CadastroEntregador = () => {
         uploadDocument(selfieFile, userId, "selfie"),
       ]);
 
-       await supabase.from("profiles").update({
+       await (supabase.from("profiles") as any).update({
          cnh_number: cnhNumber.trim(),
          cnh_front_url: cnhFrontPath,
          cnh_back_url: cnhBackPath,
@@ -221,6 +247,7 @@ const CadastroEntregador = () => {
          terms_accepted_at: new Date().toISOString(),
          phone: formatWhatsAppNumber(phone),
          whatsapp_number: formatWhatsAppNumber(phone),
+         birth_date: birthDate,
        }).eq("user_id", userId);
 
       await supabase.from("terms_acceptance").insert({
@@ -396,6 +423,20 @@ const CadastroEntregador = () => {
                    inputMode="tel" 
                    isPhone={true}
                  />
+                <div>
+                  <div className="relative">
+                    <FileText className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <input
+                      type="date"
+                      placeholder="Data de Nascimento"
+                      value={birthDate}
+                      onChange={(e) => setBirthDate(e.target.value)}
+                      className="w-full h-12 pl-10 pr-4 rounded-2xl border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                    />
+                  </div>
+                  <p className="text-[10px] text-muted-foreground mt-1 px-1">Você precisa ter 18 anos ou mais para ser entregador (cláusula 2.2 dos Termos).</p>
+                  {errors.birthDate && <p className="text-xs text-destructive mt-1 px-1">{errors.birthDate}</p>}
+                </div>
                 <FieldInput icon={Bike} placeholder="Placa (ABC-1234 ou ABC1D23)" value={vehicle} onChange={(v) => {
                   let raw = v.replace(/[^A-Za-z0-9-]/g, "").toUpperCase();
                   if (raw.length === 4 && /^[A-Z]{3}\d$/.test(raw)) raw = raw.slice(0, 3) + "-" + raw.slice(3);
