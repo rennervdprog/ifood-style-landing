@@ -4,7 +4,7 @@ import { Helmet } from "react-helmet-async";
 
 const TermosDeUso = () => {
   const navigate = useNavigate();
-  const dataAtualizacao = "10 de junho de 2026";
+  const dataAtualizacao = "22 de junho de 2026";
 
   return (
     <div className="min-h-screen bg-background">
@@ -21,7 +21,7 @@ const TermosDeUso = () => {
           <ArrowLeft className="h-5 w-5 text-foreground" />
         </button>
         <h1 className="font-bold text-foreground">Termos de Uso</h1>
-        <span className="text-xs text-muted-foreground ml-auto">Atualizado em {dataAtualizacao} · v4.2</span>
+        <span className="text-xs text-muted-foreground ml-auto">Atualizado em {dataAtualizacao} · v4.3</span>
       </div>
 
       <div className="max-w-3xl mx-auto px-4 py-6 space-y-6 text-sm text-muted-foreground">
@@ -49,7 +49,7 @@ const TermosDeUso = () => {
         <section className="space-y-3">
           <h2 className="text-base font-bold text-foreground">2. Acesso e Cadastro</h2>
           <p>2.1. O cadastro é gratuito para Clientes e Entregadores. Lojistas devem escolher um plano de assinatura.</p>
-          <p>2.2. O cadastro é permitido a maiores de 18 anos. Adolescentes entre 16 e 18 anos podem utilizar mediante assistência dos responsáveis legais, nos termos do Art. 4º do Código Civil. Menores de 16 anos não podem cadastrar-se.</p>
+          <p>2.2. O cadastro é permitido a maiores de 18 anos. Adolescentes entre 16 e 18 anos podem utilizar a Plataforma <strong className="text-foreground">apenas como Clientes</strong>, mediante assistência dos responsáveis legais, nos termos do Art. 4º do Código Civil. O cadastro como <strong className="text-foreground">Lojista</strong> ou <strong className="text-foreground">Entregador</strong> exige maioridade civil (18 anos), em razão das obrigações fiscais, regulatórias (Asaas/Banco Central) e da exigência de CNH no caso do entregador. Menores de 16 anos não podem cadastrar-se.</p>
           <p>2.3. Cada Usuário pode manter apenas uma conta ativa. Contas duplicadas poderão ser unificadas ou desativadas mediante <strong className="text-foreground">notificação prévia por e-mail/WhatsApp, com prazo de 5 dias úteis para manifestação</strong> do titular, em respeito ao contraditório e à boa-fé objetiva (Art. 422 do CC e Art. 7º, X do Marco Civil).</p>
           <p>2.4. O Usuário é responsável pela confidencialidade de suas credenciais. Acessos não autorizados devem ser comunicados imediatamente.</p>
           <p>2.5. O ItaSuper implementa controle de sessão única: ao fazer login em novo dispositivo, sessões anteriores são encerradas automaticamente. IP e identificadores de dispositivo são tratados com base no legítimo interesse de segurança (Art. 7º, IX da LGPD).</p>
@@ -136,7 +136,7 @@ const TermosDeUso = () => {
           </p>
 
           <p>8.1. <strong className="text-foreground">PIX Online:</strong> processado pelo Asaas com split automático entre plataforma e lojista. Disponível apenas para lojistas com conta Asaas configurada no painel.</p>
-          <p>8.2. <strong className="text-foreground">Métodos físicos (Dinheiro, Cartão na entrega e PIX Maquininha):</strong> o cliente paga diretamente ao lojista ou ao entregador. A taxa da plataforma (R$ 2,00 por entrega para planos Essencial/Apoiador, ou % sobre subtotal para planos Crescimento/Comissão) é acumulada como Saldo Pendente. Quando o Saldo Pendente atingir <strong className="text-foreground">R$ 30,00</strong>, a plataforma gera uma cobrança PIX (QR Code/copia-cola) com vencimento na <strong className="text-foreground">segunda-feira</strong> seguinte, enviada ao Lojista por e-mail/WhatsApp/painel. O débito automático recorrente só ocorrerá caso o Lojista ative expressamente o Pix Automático (Res. BCB nº 403/2024). Saldo superior a <strong className="text-foreground">R$ 500,00</strong> gera notificação com prazo de <strong className="text-foreground">5 dias úteis</strong> para regularização; persistindo a inadimplência, o acesso ao painel é restrito às funções de regularização financeira e atendimento aos pedidos em andamento, preservando o consumidor final. Inadimplência superior a 30 dias implica suspensão completa da loja, após nova notificação.</p>
+          <p>8.2. <strong className="text-foreground">Métodos físicos (Dinheiro, Cartão na entrega e PIX Maquininha):</strong> o cliente paga diretamente ao lojista ou ao entregador. A taxa da plataforma (R$ 2,00 por entrega para planos Essencial/Apoiador, ou % sobre subtotal para planos Crescimento/Comissão) é acumulada como Saldo Pendente. Quando o Saldo Pendente atingir <strong className="text-foreground">R$ 30,00</strong>, a plataforma gera uma cobrança PIX (QR Code/copia-cola) com vencimento na <strong className="text-foreground">segunda-feira</strong> seguinte, enviada ao Lojista por e-mail/WhatsApp/painel. O débito automático recorrente só ocorrerá caso o Lojista ative expressamente o Pix Automático (Res. BCB nº 103/2024). Saldo superior a <strong className="text-foreground">R$ 500,00</strong> gera notificação com prazo de <strong className="text-foreground">5 dias úteis</strong> para regularização; persistindo a inadimplência, o acesso ao painel é restrito às funções de regularização financeira e atendimento aos pedidos em andamento, preservando o consumidor final. Inadimplência superior a 30 dias implica suspensão completa da loja, após nova notificação.</p>
           <p>8.3. <strong className="text-foreground">PIX Maquininha:</strong> modalidade em que o cliente paga via PIX pelo leitor do lojista na entrega, sem integração com Asaas. Tratado como pagamento físico para fins de cobrança de repasse.</p>
           <p>8.4. Vendas PDV: plataforma não intermedia valores presenciais — apenas cobra comissão PDV na fatura mensal.</p>
           <p>8.5. Cancelamentos com PIX Online: reembolso automático via Asaas em até 7 dias úteis, creditado como saldo na carteira da plataforma. Pedidos pagos em dinheiro, cartão ou PIX Maquininha não são elegíveis para reembolso automático — a resolução é entre cliente e lojista, sem prejuízo do direito do consumidor previsto no CDC.</p>
@@ -168,7 +168,9 @@ const TermosDeUso = () => {
             <p>10-A.2. Tentativas de fraude são registradas e podem resultar em suspensão, bloqueio permanente e comunicação às autoridades (Art. 171 do Código Penal).</p>
             <p>10-A.3. Em respeito ao Art. 20 da LGPD, o Usuário que considerar um bloqueio indevido tem direito à <strong className="text-foreground">revisão humana</strong>, mediante solicitação pelo sistema de suporte. A análise será concluída em até <strong className="text-foreground">48 horas úteis</strong>, com resposta fundamentada e canal de recurso à Ouvidoria.</p>
           </div>
+        </section>
 
+        <section className="space-y-3">
           <h2 className="text-base font-bold text-foreground">11. Condutas Proibidas</h2>
           <ul className="list-disc pl-4 space-y-1">
             <li>Usar a Plataforma para fins ilegais ou fraudulentos.</li>
@@ -188,7 +190,7 @@ const TermosDeUso = () => {
 
         <section className="space-y-3">
           <h2 className="text-base font-bold text-foreground">13. Limitação de Responsabilidade</h2>
-          <p>13.1. O ItaSuper não se responsabiliza por: qualidade dos produtos, atrasos por força maior, dados incorretos fornecidos pelos Usuários, falhas de terceiros (Supabase, Asaas, Firebase, Evolution API, WhatsApp/Meta), uso indevido de credenciais, ou conformidade fiscal das vendas PDV.</p>
+          <p>13.1. O ItaSuper não se responsabiliza por: qualidade dos produtos, atrasos por força maior, dados incorretos fornecidos pelos Usuários, falhas de terceiros (Supabase, Asaas, Firebase, Evolution API, WhatsApp/Meta), uso indevido de credenciais, ou conformidade fiscal das vendas PDV. <strong className="text-foreground">Esta exclusão não se aplica</strong> a violações de dados pessoais e a falhas de segurança da informação imputáveis ao ItaSuper, hipóteses regidas pela LGPD e demais normas aplicáveis.</p>
           <p>13.2. Nas relações empresariais (Lojistas e Entregadores PJ), a responsabilidade máxima do ItaSuper limita-se ao valor pago à Plataforma nos últimos 30 dias.</p>
           <p>13.3. <strong className="text-foreground">A limitação prevista em 13.2 não se aplica</strong> às relações de consumo regidas pelo CDC, aos casos de dolo, culpa grave, violação de dados pessoais ou descumprimento de obrigação legal, hipóteses em que a responsabilidade observará integralmente a legislação aplicável.</p>
         </section>
@@ -216,7 +218,7 @@ const TermosDeUso = () => {
         <section className="border-t border-border pt-4">
           <p className="text-xs text-muted-foreground text-center">
             ItaSuper — Plataforma de Intermediação Digital · Itatinga/SP · Brasil<br />
-            Versão 4.2 · Última atualização: {dataAtualizacao} · Dúvidas: WhatsApp (22) 99279-6291
+            Versão 4.3 · Última atualização: {dataAtualizacao} · Dúvidas: WhatsApp (22) 99279-6291
           </p>
         </section>
 
