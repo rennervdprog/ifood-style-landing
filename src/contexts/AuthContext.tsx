@@ -20,6 +20,38 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const DEVICE_CHECK_INTERVAL = 60_000; // 60s (was 30s — less aggressive)
 
+const REMEMBER_FLAG = "itasuper_remember";
+const REMEMBER_UNTIL = "itasuper_remember_until";
+const SESSION_ALIVE_KEY = "itasuper_session_alive";
+
+/**
+ * Enforce the user's "Lembrar-me" choice BEFORE restoring the session.
+ * - remember=1 + expired → sign out (>2 months since login).
+ * - remember=0 + no session-alive marker → tab/app was closed → sign out.
+ * Returns true when the stored session was invalidated and must not be restored.
+ */
+const enforceRememberMe = async (): Promise<boolean> => {
+  try {
+    const remember = localStorage.getItem(REMEMBER_FLAG);
+    const alive = sessionStorage.getItem(SESSION_ALIVE_KEY);
+    const until = localStorage.getItem(REMEMBER_UNTIL);
+    let shouldSignOut = false;
+    if (remember === "1" && until && Date.now() > Number(until)) shouldSignOut = true;
+    if (remember === "0" && !alive) shouldSignOut = true;
+    if (shouldSignOut) {
+      await supabase.auth.signOut();
+      localStorage.removeItem(REMEMBER_FLAG);
+      localStorage.removeItem(REMEMBER_UNTIL);
+      return true;
+    }
+    // Mark this tab/app session as alive so reloads keep the user logged in.
+    if (remember) sessionStorage.setItem(SESSION_ALIVE_KEY, "1");
+    return false;
+  } catch {
+    return false;
+  }
+};
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
@@ -90,7 +122,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // This prevents the race condition where onAuthStateChange fires 
     // INITIAL_SESSION before the stored session is fully hydrated.
     
-    supabase.auth.getSession().then(({ data: { session: restoredSession } }) => {
+    enforceRememberMe().then(() => supabase.auth.getSession()).then(({ data: { session: restoredSession } }) => {
       console.log("[Auth] 🔄 Session restored from storage:", restoredSession?.user?.email ?? "none");
       currentUserIdRef.current = restoredSession?.user?.id ?? null;
       setSession(restoredSession);
