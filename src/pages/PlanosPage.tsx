@@ -484,7 +484,7 @@ const faqs = [
             Faça as contas 🧮
           </h2>
           <p className="text-center text-muted-foreground mb-10">
-            Veja quanto você economiza com o plano Essencial vs. Comissão
+            Simule seu volume mensal e veja o custo real em cada plano
           </p>
           <ROICalculator />
         </div>
