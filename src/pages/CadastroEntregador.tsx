@@ -62,6 +62,7 @@ const CadastroEntregador = () => {
   const [fullName, setFullName] = useState("");
   const [document, setDocument] = useState("");
   const [phone, setPhone] = useState("");
+  const [birthDate, setBirthDate] = useState("");
   const [vehicle, setVehicle] = useState("");
   const [cnhNumber, setCnhNumber] = useState("");
   const [city, setCity] = useState("itatinga");
