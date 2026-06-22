@@ -183,60 +183,6 @@ const StorePage = () => {
     import("@/lib/pageView").then((m) => m.trackPageView("store_page", { storeId: store.id }));
   }, [store?.id]);
 
-  // Dynamic OG meta tags for social sharing (WhatsApp, Facebook, etc.)
-  useEffect(() => {
-    if (!store) return;
-    const ogTitle = document.querySelector('meta[property="og:title"]');
-    const ogDesc = document.querySelector('meta[property="og:description"]');
-    const ogImage = document.querySelector('meta[property="og:image"]');
-    const ogUrl = document.querySelector('meta[property="og:url"]');
-    const canonical = document.querySelector('link[rel="canonical"]');
-    const twTitle = document.querySelector('meta[name="twitter:title"]');
-    const twDesc = document.querySelector('meta[name="twitter:description"]');
-    const twImage = document.querySelector('meta[name="twitter:image"]');
-
-    const title = `${store.name} - ItaSuper`;
-    const desc = `Peça pelo ItaSuper: ${store.name} - ${store.category}. Entrega rápida!`;
-    const img = store.image_url || "";
-    const storeSlug = (store as any).slug || slug || id;
-    const url = `https://itasuper.com.br/${storeSlug}`;
-
-    document.title = title;
-    if (ogTitle) ogTitle.setAttribute("content", title);
-    if (ogDesc) ogDesc.setAttribute("content", desc);
-    if (ogImage && img) ogImage.setAttribute("content", img);
-    if (ogUrl) ogUrl.setAttribute("content", url);
-    if (canonical) canonical.setAttribute("href", url);
-    if (twTitle) twTitle.setAttribute("content", title);
-    if (twDesc) twDesc.setAttribute("content", desc);
-    if (twImage && img) twImage.setAttribute("content", img);
-
-    // JSON-LD LocalBusiness/FoodEstablishment para cada loja
-    const existing = document.getElementById("store-jsonld");
-    if (existing) existing.remove();
-    const ld = document.createElement("script");
-    ld.id = "store-jsonld";
-    ld.type = "application/ld+json";
-    ld.textContent = JSON.stringify({
-      "@context": "https://schema.org",
-      "@type": "FoodEstablishment",
-      name: store.name,
-      image: img || undefined,
-      url,
-      servesCuisine: store.category || undefined,
-      address: {
-        "@type": "PostalAddress",
-        streetAddress: [store.address_street, store.address_number].filter(Boolean).join(", ") || undefined,
-        addressLocality: store.address_city || undefined,
-        addressRegion: store.address_state || undefined,
-        addressCountry: "BR",
-        postalCode: store.address_cep || undefined,
-      },
-    });
-    document.head.appendChild(ld);
-    return () => { ld.remove(); };
-  }, [store, slug, id]);
-
   const storeId = store?.id || id;
    const storePlan = useStorePlan(storeId);
 
@@ -282,6 +228,110 @@ const StorePage = () => {
     enabled: !!store?.owner_id,
     staleTime: 1000 * 60 * 10,
   });
+
+  // Dynamic OG meta + JSON-LD FoodEstablishment (SEO + LLM citation)
+  useEffect(() => {
+    if (!store) return;
+    const ogTitle = document.querySelector('meta[property="og:title"]');
+    const ogDesc = document.querySelector('meta[property="og:description"]');
+    const ogImage = document.querySelector('meta[property="og:image"]');
+    const ogUrl = document.querySelector('meta[property="og:url"]');
+    const canonical = document.querySelector('link[rel="canonical"]');
+    const twTitle = document.querySelector('meta[name="twitter:title"]');
+    const twDesc = document.querySelector('meta[name="twitter:description"]');
+    const twImage = document.querySelector('meta[name="twitter:image"]');
+
+    const cityPart = (store as any).address_city ? ` em ${(store as any).address_city}` : "";
+    const title = `${store.name}${cityPart} — Delivery online | ItaSuper`;
+    const desc = `Peça ${store.category || "delivery"} online de ${store.name}${cityPart}. Cardápio, preços, pagamento PIX e entrega rápida pelo ItaSuper.`;
+    const img = store.image_url || "";
+    const storeSlug = (store as any).slug || slug || id;
+    const url = `https://itasuper.com.br/${storeSlug}`;
+
+    document.title = title;
+    if (ogTitle) ogTitle.setAttribute("content", title);
+    if (ogDesc) ogDesc.setAttribute("content", desc);
+    if (ogImage && img) ogImage.setAttribute("content", img);
+    if (ogUrl) ogUrl.setAttribute("content", url);
+    if (canonical) canonical.setAttribute("href", url);
+    if (twTitle) twTitle.setAttribute("content", title);
+    if (twDesc) twDesc.setAttribute("content", desc);
+    if (twImage && img) twImage.setAttribute("content", img);
+
+    const existing = document.getElementById("store-jsonld");
+    if (existing) existing.remove();
+    const ld = document.createElement("script");
+    ld.id = "store-jsonld";
+    ld.type = "application/ld+json";
+
+    const DAY_MAP: Record<number, string> = {
+      0: "Sunday", 1: "Monday", 2: "Tuesday", 3: "Wednesday",
+      4: "Thursday", 5: "Friday", 6: "Saturday",
+    };
+    const hoursSpec = Array.isArray(storeHours)
+      ? storeHours
+          .filter((h: any) => h && h.is_open && h.open_time && h.close_time && DAY_MAP[h.day_of_week] !== undefined)
+          .map((h: any) => ({
+            "@type": "OpeningHoursSpecification",
+            dayOfWeek: DAY_MAP[h.day_of_week],
+            opens: String(h.open_time).slice(0, 5),
+            closes: String(h.close_time).slice(0, 5),
+          }))
+      : [];
+
+    const telephoneRaw = (ownerProfile as any)?.whatsapp_number;
+    const telephone = telephoneRaw
+      ? `+55${String(telephoneRaw).replace(/\D/g, "")}`
+      : undefined;
+
+    const minOrder = Number((store as any).minimum_order_value || 0);
+    const priceRange = minOrder > 0
+      ? (minOrder < 30 ? "$" : minOrder < 60 ? "$$" : "$$$")
+      : "$$";
+
+    const ratingNum = Number((store as any).rating || 0);
+    const aggregateRating = ratingNum > 0
+      ? { "@type": "AggregateRating", ratingValue: ratingNum.toFixed(1), bestRating: "5", worstRating: "1", reviewCount: "1" }
+      : undefined;
+
+    const lat = Number((store as any).latitude || 0);
+    const lng = Number((store as any).longitude || 0);
+    const geo = lat && lng
+      ? { "@type": "GeoCoordinates", latitude: lat, longitude: lng }
+      : undefined;
+
+    ld.textContent = JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FoodEstablishment",
+      "@id": url,
+      name: store.name,
+      image: img || undefined,
+      url,
+      priceRange,
+      telephone,
+      acceptsReservations: false,
+      servesCuisine: store.category || undefined,
+      address: {
+        "@type": "PostalAddress",
+        streetAddress: [store.address_street, store.address_number].filter(Boolean).join(", ") || undefined,
+        addressLocality: store.address_city || undefined,
+        addressRegion: store.address_state || undefined,
+        addressCountry: "BR",
+        postalCode: store.address_cep || undefined,
+      },
+      geo,
+      aggregateRating,
+      openingHoursSpecification: hoursSpec.length > 0 ? hoursSpec : undefined,
+      hasMenu: url,
+      potentialAction: {
+        "@type": "OrderAction",
+        target: url,
+        deliveryMethod: ["http://purl.org/goodrelations/v1#DeliveryModeOwnFleet"],
+      },
+    });
+    document.head.appendChild(ld);
+    return () => { ld.remove(); };
+  }, [store, slug, id, storeHours, ownerProfile]);
 
   const { data: sections } = useQuery({
     queryKey: ["menu-sections", storeId],
