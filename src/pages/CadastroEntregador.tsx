@@ -148,7 +148,7 @@ const CadastroEntregador = () => {
   const validateStep = (stepIndex: number): boolean => {
     setErrors({});
     if (stepIndex === 0) {
-      const partial = schema.safeParse({ email, emailConfirm, password, fullName: "temp", document: "00000000000", phone: "0000000000", vehicle: "ABC-1234", cnhNumber: "00000000000", city: "itatinga" });
+      const partial = schema.safeParse({ email, emailConfirm, password, fullName: "temp", document: "00000000000", phone: "0000000000", birthDate: "2000-01-01", vehicle: "ABC-1234", cnhNumber: "00000000000", city: "itatinga" });
       if (!partial.success) {
         const fieldErrors: Record<string, string> = {};
         partial.error.errors.forEach((err) => {
@@ -168,6 +168,20 @@ const CadastroEntregador = () => {
       if (fullName.trim().length < 3) fieldErrors.fullName = "Nome deve ter pelo menos 3 caracteres";
        if (!validateDocument(document)) fieldErrors.document = "CPF ou CNPJ inválido";
       if (phone.trim().length < 10) fieldErrors.phone = "Telefone inválido";
+      if (!birthDate || birthDate.length < 10) {
+        fieldErrors.birthDate = "Data de nascimento obrigatória";
+      } else {
+        const d = new Date(birthDate);
+        if (isNaN(d.getTime())) {
+          fieldErrors.birthDate = "Data inválida";
+        } else {
+          const today = new Date();
+          let age = today.getFullYear() - d.getFullYear();
+          const m = today.getMonth() - d.getMonth();
+          if (m < 0 || (m === 0 && today.getDate() < d.getDate())) age--;
+          if (age < 18 || age > 120) fieldErrors.birthDate = "Entregador deve ter 18 anos ou mais (cláusula 2.2 dos Termos)";
+        }
+      }
       if (!PLATE_REGEX.test(vehicle.replace(/\s/g, ""))) fieldErrors.vehicle = "Placa inválida";
       if (cnhNumber.replace(/\D/g, "").length !== 11) fieldErrors.cnhNumber = "CNH deve ter 11 dígitos";
       if (Object.keys(fieldErrors).length > 0) { setErrors(fieldErrors); return false; }
