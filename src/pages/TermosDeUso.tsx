@@ -21,7 +21,7 @@ const TermosDeUso = () => {
           <ArrowLeft className="h-5 w-5 text-foreground" />
         </button>
         <h1 className="font-bold text-foreground">Termos de Uso</h1>
-        <span className="text-xs text-muted-foreground ml-auto">Atualizado em {dataAtualizacao} · v4.3</span>
+        <span className="text-xs text-muted-foreground ml-auto">Atualizado em {dataAtualizacao} · v4.4</span>
       </div>
 
       <div className="max-w-3xl mx-auto px-4 py-6 space-y-6 text-sm text-muted-foreground">
@@ -185,7 +185,7 @@ const TermosDeUso = () => {
         <section className="space-y-3">
           <h2 className="text-base font-bold text-foreground">12. Propriedade Intelectual</h2>
           <p>12.1. Todo o conteúdo da Plataforma (marca, layout, código, design) é propriedade do ItaSuper, protegido pela Lei nº 9.279/1996 e Lei nº 9.610/1998.</p>
-          <p>12.2. Lojistas concedem ao ItaSuper licença <strong className="text-foreground">não exclusiva, gratuita e territorialmente limitada ao Brasil</strong>, de uso de suas marcas, logotipos e imagens de produtos, exclusivamente para divulgação na Plataforma, com vigência durante a relação contratual e por até <strong className="text-foreground">90 dias após o encerramento</strong>, prazo necessário para remoção dos materiais em cache, índices de busca e backups operacionais.</p>
+          <p>12.2. Lojistas concedem ao ItaSuper licença <strong className="text-foreground">não exclusiva, gratuita e territorialmente limitada ao Brasil</strong>, de uso de suas marcas, logotipos e imagens de produtos, exclusivamente para divulgação na Plataforma, com vigência durante a relação contratual e por até <strong className="text-foreground">30 dias após o encerramento</strong>, prazo restrito à remoção dos materiais em cache, índices de busca e backups operacionais, bem como à finalização de entregas e relatórios pendentes. Após esse prazo, o ItaSuper compromete-se a remover ativamente os materiais identificáveis.</p>
         </section>
 
         <section className="space-y-3">
