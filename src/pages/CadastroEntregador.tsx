@@ -224,6 +224,7 @@ const CadastroEntregador = () => {
                whatsapp: formatWhatsAppNumber(phone),
                phone: formatWhatsAppNumber(phone),
                city: city,
+               birth_date: birthDate,
              },
         },
       });
@@ -246,6 +247,7 @@ const CadastroEntregador = () => {
          terms_accepted_at: new Date().toISOString(),
          phone: formatWhatsAppNumber(phone),
          whatsapp_number: formatWhatsAppNumber(phone),
+         birth_date: birthDate,
        }).eq("user_id", userId);
 
       await supabase.from("terms_acceptance").insert({
