@@ -68,6 +68,24 @@ export default function CityStoresPage() {
     })),
   }), [stores, title]);
 
+  const breadcrumbLd = useMemo(() => ({
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Início", item: BASE_URL },
+      { "@type": "ListItem", position: 2, name: "Lojas", item: `${BASE_URL}/cliente` },
+      { "@type": "ListItem", position: 3, name: cityName || slug, item: canonical },
+    ],
+  }), [cityName, slug, canonical]);
+
+  const categories = useMemo(() => {
+    const set = new Set<string>();
+    stores.forEach((s) => s.category && set.add(s.category));
+    return Array.from(set).slice(0, 6);
+  }, [stores]);
+
+  const openCount = stores.filter((s) => !s.force_closed && !!s.is_open).length;
+
   return (
     <div className="min-h-screen bg-background pb-20">
       <Helmet>
@@ -79,6 +97,7 @@ export default function CityStoresPage() {
         <meta property="og:url" content={canonical} />
         <meta property="og:type" content="website" />
         <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
+        <script type="application/ld+json">{JSON.stringify(breadcrumbLd)}</script>
       </Helmet>
 
       <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-xl border-b border-border/60">
@@ -102,6 +121,21 @@ export default function CityStoresPage() {
       </header>
 
       <main className="px-4 pt-4">
+        {cityName && stores.length > 0 && (
+          <section className="mb-5 rounded-2xl border border-border/60 bg-card p-4">
+            <h2 className="text-base font-extrabold leading-tight">
+              Delivery em {cityName}: peça em {stores.length} {stores.length === 1 ? "loja" : "lojas"} pelo ItaSuper
+            </h2>
+            <p className="mt-2 text-[13px] text-muted-foreground leading-relaxed">
+              O ItaSuper reúne {stores.length === 1 ? "a loja ativa" : `as ${stores.length} lojas ativas`} de {cityName}
+              {openCount > 0 ? ` (${openCount} aberta${openCount === 1 ? "" : "s"} agora)` : ""}
+              {categories.length > 0 ? `, incluindo ${categories.join(", ").toLowerCase()}` : ""}.
+              {" "}Faça pedido pelo app ou pelo site, pague no Pix, cartão ou na entrega, e acompanhe o motoboy em tempo real.
+              Os estabelecimentos são locais — você apoia o comércio de {cityName} a cada pedido.
+            </p>
+          </section>
+        )}
+
         <div className="flex items-center gap-2 mb-4">
           <StoreIcon className="h-6 w-6" strokeWidth={2.2} />
           <h2 className="text-2xl font-black tracking-tight">Lojas</h2>
