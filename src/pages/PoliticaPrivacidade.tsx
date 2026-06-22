@@ -4,7 +4,7 @@ import { Helmet } from "react-helmet-async";
 
 const PoliticaPrivacidade = () => {
   const navigate = useNavigate();
-  const dataAtualizacao = "10 de junho de 2026";
+  const dataAtualizacao = "22 de junho de 2026";
 
   return (
     <div className="min-h-screen bg-background">
@@ -21,7 +21,7 @@ const PoliticaPrivacidade = () => {
           <ArrowLeft className="h-5 w-5 text-foreground" />
         </button>
         <h1 className="font-bold text-foreground">Política de Privacidade</h1>
-        <span className="text-xs text-muted-foreground ml-auto">Atualizado em {dataAtualizacao} · v4.2</span>
+        <span className="text-xs text-muted-foreground ml-auto">Atualizado em {dataAtualizacao} · v4.3</span>
       </div>
 
       <div className="max-w-3xl mx-auto px-4 py-6 space-y-6 text-sm text-muted-foreground">
@@ -44,6 +44,7 @@ const PoliticaPrivacidade = () => {
             <li>Geolocalização aproximada (apenas para cálculo de frete, com consentimento)</li>
           </ul>
           <p><strong className="text-foreground">1.2. Lojistas:</strong></p>
+          <p className="text-[12px] italic">O Lojista, ao tratar dados de seus clientes finais por meio da Plataforma (incluindo nome, telefone, endereço e conteúdo de mensagens trocadas via WhatsApp), atua como <strong className="text-foreground not-italic">controlador conjunto</strong> dos referidos dados, respondendo solidariamente pelo cumprimento da LGPD em relação aos seus consumidores.</p>
           <ul className="list-disc pl-4 space-y-1">
             <li>Nome completo, CPF/CNPJ, data de nascimento, e-mail, telefone</li>
             <li>Endereço comercial completo</li>
@@ -82,9 +83,12 @@ const PoliticaPrivacidade = () => {
           <p>Os dados são compartilhados apenas quando necessário:</p>
           <ul className="list-disc pl-4 space-y-2">
             <li><strong className="text-foreground">Asaas Gestão Financeira Instituição de Pagamentos S.A. (CNPJ 19.540.550/0001-21):</strong> Instituição de pagamento autorizada pelo Banco Central do Brasil. Recebe os dados financeiros necessários para criação e operação da subconta de pagamento do lojista (nome, CPF/CNPJ, endereço, documentos).</li>
+            <li><strong className="text-foreground">Mercado Pago (Mercado Pago.com Representações Ltda.):</strong> Operador de pagamento utilizado de forma residual em fluxos legados de checkout. Recebe dados mínimos da transação (valor, identificador do pedido, e-mail do cliente quando aplicável).</li>
             <li><strong className="text-foreground">Firebase (Google):</strong> Token de dispositivo para envio de notificações push (sem dados pessoais identificáveis).</li>
             <li><strong className="text-foreground">Supabase:</strong> Infraestrutura de banco de dados e autenticação — dados armazenados com criptografia.</li>
             <li><strong className="text-foreground">Vercel:</strong> Infraestrutura de hospedagem da aplicação.</li>
+            <li><strong className="text-foreground">Sentry (Functional Software, Inc.):</strong> Monitoramento de erros e performance. Recebe stack traces, identificador interno do usuário, rota acessada e métricas técnicas (Web Vitals) para diagnóstico de falhas. Base legal: legítimo interesse (Art. 7º, IX da LGPD) para garantia da estabilidade do serviço.</li>
+            <li><strong className="text-foreground">OpenStreetMap/Nominatim:</strong> Serviço de geocodificação utilizado para converter endereços em coordenadas e calcular distância de entrega. Recebe somente o endereço (rua, número, bairro, cidade, CEP), sem identificação do titular.</li>
             <li><strong className="text-foreground">Evolution API (WhatsApp):</strong> Servidor de integração com o WhatsApp utilizado para envio das mensagens automáticas. Recebe o número do destinatário e o conteúdo da mensagem, processados em servidor próprio da plataforma. O lojista é corresponsável pelo número conectado e pelo cumprimento dos Termos do WhatsApp/Meta.</li>
             <li><strong className="text-foreground">Entre usuários da plataforma:</strong> Lojistas veem nome e telefone do cliente para fins de entrega (apenas campos necessários via view de segurança). Clientes veem nome e avaliação da loja.</li>
             <li><strong className="text-foreground">Autoridades competentes:</strong> Quando exigido por lei ou ordem judicial.</li>
@@ -148,7 +152,7 @@ const PoliticaPrivacidade = () => {
 
         <section className="space-y-3">
           <h2 className="text-base font-bold text-foreground">8. Transferência Internacional</h2>
-          <p>Dados podem ser processados em servidores fora do Brasil (Supabase, Firebase, Vercel). As transferências ocorrem com base em <strong className="text-foreground">cláusulas contratuais específicas</strong> firmadas com os operadores (Art. 33, II da LGPD), que aderem a frameworks reconhecidos de segurança e privacidade (SOC 2, ISO 27001, GDPR), garantindo padrões equivalentes ou superiores aos exigidos pela LGPD.</p>
+          <p>Dados podem ser processados em servidores fora do Brasil (Supabase, Firebase, Vercel, Sentry). As transferências ocorrem com base em <strong className="text-foreground">cláusulas contratuais específicas</strong> firmadas com os operadores (Art. 33, II da LGPD), equivalentes às <em>Standard Contractual Clauses (SCC)</em> da Comissão Europeia, e em certificações de segurança da informação dos referidos operadores (a exemplo de <strong className="text-foreground">SOC 2 Tipo II</strong> e <strong className="text-foreground">ISO/IEC 27001</strong>), garantindo padrões de proteção equivalentes ou superiores aos exigidos pela LGPD.</p>
         </section>
 
         <section className="space-y-3">
@@ -158,7 +162,7 @@ const PoliticaPrivacidade = () => {
 
         <section className="space-y-3">
           <h2 className="text-base font-bold text-foreground">10. Incidentes de Segurança</h2>
-          <p>Em caso de incidente que possa acarretar risco relevante aos titulares, comunicaremos a Autoridade Nacional de Proteção de Dados (ANPD) e os titulares afetados em prazo razoável (até 3 dias úteis da ciência), conforme Art. 48 da LGPD e Resolução CD/ANPD nº 15/2024.</p>
+          <p>Em caso de incidente que possa acarretar risco relevante aos titulares, comunicaremos a Autoridade Nacional de Proteção de Dados (ANPD) e os titulares afetados em prazo razoável (até 3 dias úteis da ciência), conforme Art. 48 da LGPD, Resolução CD/ANPD nº 15/2024 e Resolução CD/ANPD nº 18/2024 (que regula a atuação do Encarregado pelo Tratamento de Dados).</p>
         </section>
 
         <section className="space-y-3">
@@ -169,7 +173,7 @@ const PoliticaPrivacidade = () => {
         <section className="border-t border-border pt-4">
           <p className="text-xs text-muted-foreground text-center">
             ItaSuper — Controlador de Dados · Itatinga/SP · Brasil<br />
-            Versão 4.2 · Última atualização: {dataAtualizacao}<br />
+            Versão 4.3 · Última atualização: {dataAtualizacao}<br />
             Contato LGPD: dpo@itasuper.app · WhatsApp (22) 99279-6291
           </p>
         </section>
