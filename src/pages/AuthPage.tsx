@@ -32,6 +32,8 @@ const PASSWORD_RULES: PasswordRule[] = [
 ];
 
 const REMEMBER_KEY = "itasuper_remember_until";
+const REMEMBER_FLAG = "itasuper_remember";
+const SESSION_ALIVE_KEY = "itasuper_session_alive";
 const TWO_MONTHS_MS = 60 * 24 * 60 * 60 * 1000;
 
 /**
@@ -60,13 +62,7 @@ const AuthPage = () => {
   const strengthPercent = (passedCount / PASSWORD_RULES.length) * 100;
   const strengthColor = strengthPercent <= 20 ? "bg-red-500" : strengthPercent <= 60 ? "bg-yellow-500" : strengthPercent < 100 ? "bg-blue-500" : "bg-green-500";
 
-  useEffect(() => {
-    const until = localStorage.getItem(REMEMBER_KEY);
-    if (until && Date.now() > Number(until)) {
-      supabase.auth.signOut();
-      localStorage.removeItem(REMEMBER_KEY);
-    }
-  }, []);
+  // Expiry / session-only enforcement is handled centrally in AuthContext.
 
   useEffect(() => {
     // If we're in the partner app, but trying to access the client auth page, 
@@ -188,6 +184,12 @@ const AuthPage = () => {
           return;
         }
 
+        // Persist the user's choice and mark this tab/app session as alive.
+        // - rememberMe=true  → session persists across browser restarts up to 2 months.
+        // - rememberMe=false → session lives only until the browser/app is closed
+        //   (sessionStorage is cleared on close; AuthContext will sign out on next launch).
+        localStorage.setItem(REMEMBER_FLAG, rememberMe ? "1" : "0");
+        sessionStorage.setItem(SESSION_ALIVE_KEY, "1");
         if (rememberMe) {
           localStorage.setItem(REMEMBER_KEY, String(Date.now() + TWO_MONTHS_MS));
         } else {
