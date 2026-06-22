@@ -22,29 +22,24 @@ const CHANGES = [
     border: "border-primary/20",
     items: [
       {
-        tag: "NOVO",
-        tagColor: "bg-blue-500",
-        text: "PIX Maquininha: novo método de pagamento. O cliente paga via PIX pelo leitor do lojista na entrega, sem integração com Asaas.",
-      },
-      {
-        tag: "NOVO",
-        tagColor: "bg-blue-500",
-        text: "Repasse físico: dinheiro, cartão e PIX Maquininha acumulam taxa de plataforma. Cobrança automática toda segunda-feira a partir de R$30.",
-      },
-      {
-        tag: "NOVO",
-        tagColor: "bg-blue-500",
-        text: "Bloqueio por inadimplência: saldo acima de R$500 suspende acesso ao painel. Inadimplência acima de 30 dias suspende a loja.",
-      },
-      {
-        tag: "ATUALIZADO",
+        tag: "CORREÇÃO",
         tagColor: "bg-amber-500",
-        text: "PIX Online agora exige conta Asaas configurada. Disponível apenas para lojistas com subconta ativa.",
+        text: "Cláusula 2.2: cadastro de Lojista e Entregador agora exige 18 anos. Menores 16-17 podem usar apenas como Cliente, com assistência dos responsáveis.",
       },
       {
-        tag: "ATUALIZADO",
+        tag: "CORREÇÃO",
         tagColor: "bg-amber-500",
-        text: "Métodos de pagamento: o lojista escolhe quais aceita no painel de configurações. Cartão, dinheiro e PIX Maquininha ativos por padrão.",
+        text: "Cláusula 8.2: corrigida a citação do Pix Automático para Resolução BCB nº 103/2024 (texto anterior citava nº 403/2024).",
+      },
+      {
+        tag: "CORREÇÃO",
+        tagColor: "bg-amber-500",
+        text: "Cláusula 13.1: exclusão de responsabilidade não se aplica a violações de dados pessoais nem a falhas de segurança imputáveis ao ItaSuper.",
+      },
+      {
+        tag: "AJUSTE",
+        tagColor: "bg-muted-foreground",
+        text: "Estrutura HTML da seção 10-A / 11 corrigida (Condutas Proibidas agora é seção independente).",
       },
     ],
   },
@@ -56,14 +51,24 @@ const CHANGES = [
     border: "border-emerald-500/20",
     items: [
       {
-        tag: "ATUALIZADO",
-        tagColor: "bg-amber-500",
-        text: "Dados de transações físicas (dinheiro/cartão/PIX Maquininha) são registrados para cálculo de repasse à plataforma.",
+        tag: "NOVO",
+        tagColor: "bg-blue-500",
+        text: "Seção 3: declarados novos operadores — Mercado Pago (residual), Sentry (monitoramento de erros) e OpenStreetMap/Nominatim (geocodificação de endereços).",
       },
       {
-        tag: "MANTIDO",
+        tag: "NOVO",
+        tagColor: "bg-blue-500",
+        text: "Seção 1.2: Lojista reconhecido como controlador conjunto dos dados de seus clientes finais (LGPD).",
+      },
+      {
+        tag: "ATUALIZADO",
+        tagColor: "bg-amber-500",
+        text: "Seção 8: transferência internacional reescrita com base em SCC da Comissão Europeia + SOC 2 / ISO 27001 (em vez de citar GDPR como framework).",
+      },
+      {
+        tag: "ATUALIZADO",
         tagColor: "bg-muted-foreground",
-        text: "Dados de suporte, tickets, Sales Coach e retenção de dados permanecem conforme versão anterior (v2.0).",
+        text: "Seção 10: incidentes de segurança passam a citar também a Resolução CD/ANPD nº 18/2024 (atuação do DPO).",
       },
     ],
   },
