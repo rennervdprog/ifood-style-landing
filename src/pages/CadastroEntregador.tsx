@@ -423,6 +423,20 @@ const CadastroEntregador = () => {
                    inputMode="tel" 
                    isPhone={true}
                  />
+                <div>
+                  <div className="relative">
+                    <FileText className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <input
+                      type="date"
+                      placeholder="Data de Nascimento"
+                      value={birthDate}
+                      onChange={(e) => setBirthDate(e.target.value)}
+                      className="w-full h-12 pl-10 pr-4 rounded-2xl border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                    />
+                  </div>
+                  <p className="text-[10px] text-muted-foreground mt-1 px-1">Você precisa ter 18 anos ou mais para ser entregador (cláusula 2.2 dos Termos).</p>
+                  {errors.birthDate && <p className="text-xs text-destructive mt-1 px-1">{errors.birthDate}</p>}
+                </div>
                 <FieldInput icon={Bike} placeholder="Placa (ABC-1234 ou ABC1D23)" value={vehicle} onChange={(v) => {
                   let raw = v.replace(/[^A-Za-z0-9-]/g, "").toUpperCase();
                   if (raw.length === 4 && /^[A-Z]{3}\d$/.test(raw)) raw = raw.slice(0, 3) + "-" + raw.slice(3);
