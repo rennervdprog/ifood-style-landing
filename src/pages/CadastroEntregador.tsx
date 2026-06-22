@@ -239,7 +239,7 @@ const CadastroEntregador = () => {
         uploadDocument(selfieFile, userId, "selfie"),
       ]);
 
-       await supabase.from("profiles").update({
+       await (supabase.from("profiles") as any).update({
          cnh_number: cnhNumber.trim(),
          cnh_front_url: cnhFrontPath,
          cnh_back_url: cnhBackPath,
