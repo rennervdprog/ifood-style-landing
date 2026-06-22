@@ -11,7 +11,7 @@ import {
   Loader2, AlertTriangle,
 } from "lucide-react";
 
-export const CURRENT_TERMS_VERSION = "4.3";
+export const CURRENT_TERMS_VERSION = "4.4";
 
 const CHANGES = [
   {
@@ -35,6 +35,11 @@ const CHANGES = [
         tag: "CORREÇÃO",
         tagColor: "bg-amber-500",
         text: "Cláusula 13.1: exclusão de responsabilidade não se aplica a violações de dados pessoais nem a falhas de segurança imputáveis ao ItaSuper.",
+      },
+      {
+        tag: "AJUSTE",
+        tagColor: "bg-amber-500",
+        text: "Cláusula 12.2: licença de uso de marca pós-contrato reduzida de 90 para 30 dias, restrita à remoção de cache/backups e finalização de entregas pendentes (CDC, Art. 51).",
       },
       {
         tag: "AJUSTE",
