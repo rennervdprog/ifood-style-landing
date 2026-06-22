@@ -617,15 +617,30 @@ const faqs = [
 function ROICalculator() {
   const [orders, setOrders] = useState(200);
   const [ticket, setTicket] = useState(40);
+  const [pixShare, setPixShare] = useState(70);
 
   const revenue = orders * ticket;
-  const commissionCost = revenue * 0.06;
-  const fixedCost = 180 + orders * 2 + orders * 1.99; // R$180 + R$2 delivery + R$1.99 PIX per order
-  const savings = commissionCost - fixedCost;
+  const pixOrders = orders * (pixShare / 100);
+
+  const brl = (n: number) =>
+    n.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  const results = PLANS_ORDER.map((id) => {
+    const p = PLANS[id];
+    const commission = revenue * (p.commissionRate / 100);
+    const pixCost = pixOrders * p.pixFee;
+    const total = p.monthlyFee + commission + pixCost;
+    return { plan: p, commission, pixCost, total, monthlyFee: p.monthlyFee };
+  });
+
+  const cheapest = results.reduce((a, b) => (a.total <= b.total ? a : b));
+  const mostExpensive = results.reduce((a, b) => (a.total >= b.total ? a : b));
+  const savings = mostExpensive.total - cheapest.total;
 
   return (
     <div className="rounded-3xl border border-border bg-card p-6 md:p-8">
-      <div className="grid sm:grid-cols-2 gap-6 mb-8">
+      {/* Inputs */}
+      <div className="grid sm:grid-cols-3 gap-6 mb-8">
         <div>
           <label className="text-sm font-semibold text-foreground mb-2 block">
             Pedidos por mês
@@ -633,7 +648,7 @@ function ROICalculator() {
           <input
             type="range"
             min={50}
-            max={1000}
+            max={1500}
             step={10}
             value={orders}
             onChange={(e) => setOrders(Number(e.target.value))}
@@ -648,7 +663,7 @@ function ROICalculator() {
           <input
             type="range"
             min={15}
-            max={150}
+            max={200}
             step={5}
             value={ticket}
             onChange={(e) => setTicket(Number(e.target.value))}
@@ -656,43 +671,95 @@ function ROICalculator() {
           />
           <p className="text-2xl font-bold text-primary mt-1">R$ {ticket}</p>
         </div>
+        <div>
+          <label className="text-sm font-semibold text-foreground mb-2 block">
+            % pago via PIX
+          </label>
+          <input
+            type="range"
+            min={0}
+            max={100}
+            step={5}
+            value={pixShare}
+            onChange={(e) => setPixShare(Number(e.target.value))}
+            className="w-full accent-primary"
+          />
+          <p className="text-2xl font-bold text-primary mt-1">{pixShare}%</p>
+        </div>
       </div>
 
+      <div className="rounded-2xl bg-muted/40 p-3 text-center text-xs text-muted-foreground mb-6">
+        Faturamento estimado: <strong className="text-foreground">R$ {brl(revenue)}/mês</strong>
+      </div>
+
+      {/* Plan cards */}
       <div className="grid sm:grid-cols-3 gap-4">
-        <div className="rounded-2xl bg-muted/50 p-4 text-center">
-          <p className="text-xs text-muted-foreground mb-1">Faturamento/mês</p>
-          <p className="text-xl font-bold text-foreground">R$ {revenue.toLocaleString("pt-BR")}</p>
-        </div>
-        <div className="rounded-2xl bg-destructive/5 p-4 text-center">
-          <p className="text-xs text-muted-foreground mb-1">Custo Comissão (6%)</p>
-          <p className="text-xl font-bold text-destructive">- R$ {commissionCost.toLocaleString("pt-BR")}</p>
-        </div>
-        <div className="rounded-2xl bg-primary/5 p-4 text-center">
-          <p className="text-xs text-muted-foreground mb-1">Custo Essencial</p>
-          <p className="text-xl font-bold text-primary">- R$ {fixedCost.toLocaleString("pt-BR")}</p>
-        </div>
+        {results.map((r) => {
+          const isBest = r.plan.id === cheapest.plan.id;
+          return (
+            <div
+              key={r.plan.id}
+              className={`rounded-2xl p-4 border-2 transition ${
+                isBest
+                  ? "border-primary bg-primary/5 shadow-lg"
+                  : "border-border bg-muted/30"
+              }`}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm font-bold text-foreground">{r.plan.name}</p>
+                {isBest && (
+                  <span className="text-[10px] font-bold uppercase tracking-wider bg-primary text-primary-foreground px-2 py-0.5 rounded-full">
+                    Melhor
+                  </span>
+                )}
+              </div>
+              <div className="space-y-1 text-xs text-muted-foreground">
+                <div className="flex justify-between">
+                  <span>Mensalidade</span>
+                  <span className="tabular-nums">R$ {brl(r.monthlyFee)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Comissão ({r.plan.commissionRate}%)</span>
+                  <span className="tabular-nums">R$ {brl(r.commission)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>PIX ({pixShare}%)</span>
+                  <span className="tabular-nums">R$ {brl(r.pixCost)}</span>
+                </div>
+              </div>
+              <div className="h-px bg-border my-2" />
+              <div className="flex justify-between items-baseline">
+                <span className="text-xs text-muted-foreground">Custo/mês</span>
+                <span
+                  className={`text-lg font-extrabold tabular-nums ${
+                    isBest ? "text-primary" : "text-foreground"
+                  }`}
+                >
+                  R$ {brl(r.total)}
+                </span>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
-      {savings > 0 ? (
+      {savings > 0.01 && (
         <div className="mt-6 rounded-2xl bg-gradient-to-r from-primary/10 to-accent/30 p-5 text-center">
-          <p className="text-sm text-muted-foreground mb-1">💰 Com o plano Essencial você economiza</p>
-          <p className="text-3xl font-extrabold text-primary">
-            R$ {savings.toLocaleString("pt-BR")}/mês
-          </p>
-          <p className="text-xs text-muted-foreground mt-1">
-            = R$ {(savings * 12).toLocaleString("pt-BR")} por ano
-          </p>
-        </div>
-      ) : (
-        <div className="mt-6 rounded-2xl bg-muted/50 p-5 text-center">
           <p className="text-sm text-muted-foreground mb-1">
-            Para esse volume, o <strong className="text-foreground">plano Comissão</strong> é mais vantajoso!
+            💰 No <strong className="text-foreground">{cheapest.plan.name}</strong> você economiza
+          </p>
+          <p className="text-3xl font-extrabold text-primary">
+            R$ {brl(savings)}/mês
           </p>
           <p className="text-xs text-muted-foreground mt-1">
-            Aumente o volume de pedidos para ver quando o Essencial compensa.
+            vs. {mostExpensive.plan.name} · = R$ {brl(savings * 12)} por ano
           </p>
         </div>
       )}
+
+      <p className="text-[11px] text-muted-foreground text-center mt-4">
+        Simulação aproximada. Não inclui a taxa de entrega da plataforma (paga pelo cliente).
+      </p>
     </div>
   );
 }
