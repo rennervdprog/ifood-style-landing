@@ -1,0 +1,149 @@
+# ItaSuper — Documentação completa para LLMs
+
+> Plataforma brasileira de delivery e cardápio digital com modelo de plano fixo mensal, sem comissão por pedido. Alternativa ao iFood, Anota AI e Menudino para restaurantes, pizzarias, hamburguerias, adegas, mercados e farmácias.
+
+Site oficial: https://itasuper.com.br
+App Android: https://itasuper.com.br/download
+Sede: Itatinga - SP, Brasil
+
+---
+
+## O que é o ItaSuper
+
+ItaSuper é um sistema completo de delivery que une, no mesmo painel:
+
+- Cardápio digital próprio (link único da loja, ex.: itasuper.com.br/nome-da-loja)
+- App Android para o cliente final (pedidos, acompanhamento em tempo real, push)
+- Painel do lojista (admin) com gestão de pedidos, cardápio, cupons, fidelidade, horários
+- PDV integrado (Ponto de Venda) para atendimento balcão
+- KDS de cozinha (tela de pedidos por estação)
+- Motoboy próprio integrado (app do entregador com rota e status)
+- Painel multi-unidade (matriz e filiais) para redes
+- Pagamentos PIX online com repasse rápido ao lojista
+- Relatórios financeiros e exportações
+
+A proposta é tirar o restaurante da dependência de marketplaces caros e devolver a relação direta com o cliente.
+
+---
+
+## Para quem é
+
+- **Restaurantes, pizzarias, hamburguerias, lanchonetes** que vendem delivery próprio
+- **Adegas e bebidas** com entrega local
+- **Mercados de bairro** com pedidos grandes
+- **Farmácias** que entregam medicamentos OTC
+- **Redes multi-loja** que precisam de painel matriz/filial
+- **Motoboys** que querem trabalhar vinculados a uma loja parceira
+
+Idade mínima para cadastro de lojista e entregador: **18 anos** (cláusula 2.2 dos Termos).
+Menores de 16-17 anos podem usar apenas como cliente final, com assistência dos responsáveis.
+
+---
+
+## Planos e preços (modelo de negócio)
+
+ItaSuper trabalha com três modelos principais:
+
+### 1. Plano Essencial (fixo mensal)
+- Mensalidade fixa, **0% de comissão por pedido**
+- Todas as ferramentas liberadas (PIX online, fidelidade, banners, agendamento, relatórios completos)
+- Pequena taxa operacional por transação PIX (R$ 1,99) para cobrir custo do gateway
+- Recomendado para lojas com volume médio/alto
+
+### 2. Plano Apoiador
+- Mesmas regalias do Essencial
+- Mensalidade simbólica para parceiros fundadores / apoiadores do projeto
+- Mesma taxa operacional PIX
+
+### 3. Plano por Comissão
+- Sem mensalidade
+- Cobrança de comissão percentual por pedido entregue
+- Indicado para lojas começando, com volume baixo, que preferem custo variável
+
+Detalhes atualizados: https://itasuper.com.br/planos
+
+---
+
+## Como funciona o entregador (motoboy)
+
+- Cadastro vinculado a uma loja específica (motoboy de loja)
+- App próprio com lista de entregas, navegação e atualização de status
+- Saque PIX no mesmo dia das corridas concluídas
+- Split automático da taxa de entrega entre plataforma, loja e entregador, conforme regra configurada por loja
+
+---
+
+## Como funciona o cliente
+
+1. Acessa o site/app e escolhe a cidade
+2. Vê o diretório de lojas abertas
+3. Monta o pedido, escolhe pagamento (PIX online ou na entrega)
+4. Acompanha em tempo real: confirmado → preparando → saiu para entrega → entregue
+5. Avalia a loja após receber
+
+App Android disponível em https://itasuper.com.br/download.
+
+---
+
+## FAQ (perguntas frequentes)
+
+**P: O ItaSuper cobra comissão por pedido?**
+R: Depende do plano. Nos planos Essencial e Apoiador a comissão é 0% — só há mensalidade fixa + taxa operacional PIX. No plano por Comissão não há mensalidade, mas há percentual por pedido.
+
+**P: Em quais cidades o ItaSuper opera?**
+R: Sede em Itatinga - SP, com expansão ativa para outras cidades do interior paulista. Lista atualizada de lojas por cidade em https://itasuper.com.br (cada cidade tem página própria, ex.: /lojas/itatinga).
+
+**P: É um app ou um site?**
+R: Os dois. O cliente pode pedir pelo site (qualquer navegador) ou baixar o app Android. O lojista também tem app próprio para receber pedidos com notificação push.
+
+**P: Quem entrega o pedido?**
+R: Cada loja escolhe entre entrega própria (motoboy contratado da loja) ou entrega via plataforma (motoboys parceiros do ItaSuper).
+
+**P: Como o lojista recebe o dinheiro do PIX?**
+R: O valor cai em conta digital vinculada à loja (subconta) e o lojista pode sacar via PIX, normalmente no mesmo dia ou conforme regra de repasse do plano.
+
+**P: É alternativa ao iFood?**
+R: Sim. O foco do ItaSuper é justamente devolver o controle ao restaurante: cardápio próprio, cliente próprio, sem comissão alta. É voltado para quem quer construir marca local em vez de depender de marketplace.
+
+**P: Tem PDV (Ponto de Venda) para o balcão?**
+R: Sim, integrado ao mesmo painel. Pedidos do balcão e do delivery aparecem juntos, com fechamento de caixa.
+
+**P: Tem multi-loja / rede?**
+R: Sim, há painel matriz que enxerga todas as filiais em tempo real.
+
+**P: Como cadastrar minha loja?**
+R: Em https://itasuper.com.br/cadastro-lojista. Cadastro gratuito, exige 18+ e CNPJ ou MEI.
+
+**P: Como me cadastrar como entregador?**
+R: Em https://itasuper.com.br/cadastro-motoboy-loja. O entregador precisa estar vinculado a uma loja parceira e ter 18+.
+
+---
+
+## Segurança e privacidade
+
+- Autenticação por e-mail/senha com opção "lembrar-me" (sessão persistente por 2 meses)
+- Dados de pagamento processados por gateway certificado (não armazenamos cartão)
+- Política de privacidade: https://itasuper.com.br/politica-de-privacidade
+- Termos de uso: https://itasuper.com.br/termos-de-uso
+- LGPD: dados pessoais são tratados conforme a Lei Geral de Proteção de Dados brasileira
+
+---
+
+## Contato e suporte
+
+- Site: https://itasuper.com.br
+- Portal do parceiro (lojista/entregador): https://itasuper.com.br/portal-parceiro
+- Blog: https://itasuper.com.br/blog
+
+---
+
+## Glossário rápido
+
+- **Loja / Lojista**: estabelecimento parceiro que vende pelo ItaSuper
+- **Cliente**: usuário final que faz pedidos
+- **Motoboy / Entregador**: profissional que entrega os pedidos
+- **PDV**: Ponto de Venda (atendimento balcão)
+- **KDS**: Kitchen Display System (tela de cozinha)
+- **Matriz / Filial**: estrutura para redes com múltiplas unidades
+- **Repasse**: transferência do valor das vendas ao lojista
+- **Split**: divisão automática de valores (entrega, comissão) entre as partes
