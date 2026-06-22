@@ -305,6 +305,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       resetPushRegistrationState();
     }
     await supabase.auth.signOut();
+    try {
+      localStorage.removeItem(REMEMBER_FLAG);
+      localStorage.removeItem(REMEMBER_UNTIL);
+      sessionStorage.removeItem(SESSION_ALIVE_KEY);
+    } catch {}
   }, [session?.user?.id]);
 
   const contextValue = useMemo(() => ({
