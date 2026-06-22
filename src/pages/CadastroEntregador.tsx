@@ -26,6 +26,16 @@ const schema = z.object({
   fullName: z.string().trim().min(3, "Nome deve ter pelo menos 3 caracteres").max(100),
    document: z.string().trim().refine(v => validateDocument(v), "CPF ou CNPJ inválido"),
   phone: z.string().trim().min(10, "Telefone inválido").max(20),
+  birthDate: z.string().min(10, "Data de nascimento obrigatória").max(10)
+    .refine((v) => {
+      const d = new Date(v);
+      if (isNaN(d.getTime())) return false;
+      const today = new Date();
+      let age = today.getFullYear() - d.getFullYear();
+      const m = today.getMonth() - d.getMonth();
+      if (m < 0 || (m === 0 && today.getDate() < d.getDate())) age--;
+      return age >= 18 && age <= 120;
+    }, "Entregador deve ter 18 anos ou mais (cláusula 2.2 dos Termos)"),
   vehicle: z.string().trim()
     .min(7, "Placa deve ter 7 caracteres (ex: ABC-1234 ou ABC1D23)")
     .max(8, "Placa inválida")
