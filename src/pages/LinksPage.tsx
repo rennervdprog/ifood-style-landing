@@ -14,6 +14,7 @@ import {
   Smartphone,
   Heart,
   Link as LinkIcon,
+  BookOpen,
 } from "lucide-react";
 
 const ICON_MAP: Record<string, React.ElementType> = {
@@ -28,6 +29,7 @@ const ICON_MAP: Record<string, React.ElementType> = {
   FileText,
   Shield,
   Link: LinkIcon,
+  BookOpen,
 };
 
 interface AppLink {
