@@ -1184,6 +1184,11 @@ const AdminDashboard = () => {
 
   const toggleStoreOpen = async () => {
     if (!store) return;
+    // Bloqueio: não permitir abrir a loja sem motoboy ativo
+    if (!store.is_open && (onlineDrivers?.length || 0) === 0) {
+      toast.error("Sem motoboy ativo. Ative um entregador antes de abrir a loja.");
+      return;
+    }
     const { error } = await supabase.from("stores").update({ is_open: !store.is_open }).eq("id", store.id);
     if (error) toast.error("Erro ao atualizar status.");
     else { toast.success(store.is_open ? "Loja pausada" : "Loja reaberta!"); queryClient.invalidateQueries({ queryKey: ["my-store", user?.id] }); }
