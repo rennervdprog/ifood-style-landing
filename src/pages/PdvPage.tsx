@@ -591,6 +591,13 @@ const PdvPage = () => {
               {/* Etapa: carrinho + pagamento */}
               {mobileStep === "cart" && (
                 <>
+                  {/* Total fixo no topo (PDV de mão — Fase 5) */}
+                  <div className="border-b border-border bg-primary/5 px-3 py-2 flex items-center justify-between shrink-0">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                      Total · {totalItems} {totalItems === 1 ? "item" : "itens"}
+                    </span>
+                    <span className="text-xl font-black text-primary pdv-mono">{formatBRL(finalTotal)}</span>
+                  </div>
                   <div className="flex-1 overflow-hidden flex flex-col">
                     <PdvCartSection
                       cart={cart} tableId={tableId} setTableId={setTableId}
