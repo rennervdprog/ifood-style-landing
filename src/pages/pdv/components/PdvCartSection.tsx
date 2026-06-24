@@ -235,7 +235,7 @@ export const PdvCartSection = ({
               <span className={`text-xs font-bold ${trocoNegativo ? "text-red-500" : "text-emerald-700 dark:text-emerald-400"} flex items-center gap-1`}>
                 {trocoNegativo ? "⚠️ Falta" : <><Wallet className="h-3.5 w-3.5" /> Troco</>}
               </span>
-              <span className={`text-xl font-black ${trocoNegativo ? "text-red-500" : "text-emerald-600 dark:text-emerald-400 pdv-mono"}`}>
+              <span className={`text-xl font-black pdv-mono ${trocoNegativo ? "text-red-500" : "text-emerald-600 dark:text-emerald-400"}`}>
                 {trocoNegativo ? formatBRL(finalTotal_ - (parseBRL(cashReceived))) : formatBRL(troco)}
               </span>
             </div>
