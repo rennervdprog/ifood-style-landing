@@ -180,7 +180,19 @@ const GlanceCard = ({ icon: Icon, label, value, subValue, color = "text-primary"
 };
 
 // ── Client Filter type ──
-type ClientFilter = "all" | "loyal" | "inactive" | "location";
+type ClientFilter =
+  | "all"
+  | "new"
+  | "weekly"
+  | "vip"
+  | "atrisk"
+  | "inactive30"
+  | "inactive45"
+  | "inactive60"
+  | "highticket"
+  | "location";
+
+export type ClientSort = "orders" | "spent" | "recent" | "inactive";
 
 const AdminDashboard = () => {
   const { user, signOut } = useAuth();
@@ -231,6 +243,7 @@ const AdminDashboard = () => {
   const [clientFilter, setClientFilter] = useState<ClientFilter>("all");
   const [clientSearch, setClientSearch] = useState("");
   const [expandedClient, setExpandedClient] = useState<string | null>(null);
+  const [clientSort, setClientSort] = useState<ClientSort>("orders");
   const [cancelConfirm, setCancelConfirm] = useState<string | null>(null);
   const [cancelReason, setCancelReason] = useState<string>("");
   const [cancellingOrder, setCancellingOrder] = useState(false);
@@ -667,38 +680,60 @@ const AdminDashboard = () => {
     return highlights;
   }, [requiredAddonGroupsByProduct]);
 
-  // ── CLIENT ANALYTICS ──
+  // ── CLIENT ANALYTICS (mini-CRM) ──
   const clientAnalytics = useMemo(() => {
     if (!allOrders || !clientProfiles) return [];
-    const map = new Map<string, { orders: any[]; totalSpent: number; lastOrder: string; neighborhood: string }>();
+    const now = Date.now();
+    const DAY = 1000 * 60 * 60 * 24;
+    const map = new Map<string, { orders: any[]; totalSpent: number; lastOrder: string; firstOrder: string; neighborhood: string }>();
 
     allOrders.forEach((order: any) => {
       if (order.status === "aguardando_pagamento") return;
-      const existing = map.get(order.client_id) || { orders: [], totalSpent: 0, lastOrder: "", neighborhood: "" };
+      const existing = map.get(order.client_id) || { orders: [], totalSpent: 0, lastOrder: "", firstOrder: "", neighborhood: "" };
       existing.orders.push(order);
       if (order.status !== "cancelado") existing.totalSpent = addMoney(existing.totalSpent, order.total_price);
       if (!existing.lastOrder || order.created_at > existing.lastOrder) existing.lastOrder = order.created_at;
+      if (!existing.firstOrder || order.created_at < existing.firstOrder) existing.firstOrder = order.created_at;
       const profile = clientProfiles.find((p: any) => p.user_id === order.client_id);
       if (profile) existing.neighborhood = (profile as any).neighborhood || order.neighborhood || "";
       map.set(order.client_id, existing);
     });
 
-    return Array.from(map.entries()).map(([clientId, data]) => {
+    const list = Array.from(map.entries()).map(([clientId, data]) => {
       const completedOrders = data.orders.filter((o: any) => !["cancelado", "aguardando_pagamento"].includes(o.status));
+      const cancelledOrders = data.orders.filter((o: any) => o.status === "cancelado");
       const ticketMedio = averageMoney(data.totalSpent, completedOrders.length);
 
       const productCount = new Map<string, number>();
+      const paymentCount = new Map<string, number>();
       data.orders.forEach((o: any) => {
+        if (o.payment_method) paymentCount.set(o.payment_method, (paymentCount.get(o.payment_method) || 0) + 1);
         o.order_items?.forEach((item: any) => {
           const name = getOrderItemDisplayName(item);
           productCount.set(name, (productCount.get(name) || 0) + item.quantity);
         });
       });
-      let favProduct = "N/A";
-      let maxCount = 0;
-      productCount.forEach((count, name) => { if (count > maxCount) { maxCount = count; favProduct = name; } });
+      let favProduct = "N/A"; let maxC = 0;
+      productCount.forEach((c, n) => { if (c > maxC) { maxC = c; favProduct = n; } });
+      let preferredPayment = ""; let maxP = 0;
+      paymentCount.forEach((c, n) => { if (c > maxP) { maxP = c; preferredPayment = n; } });
 
-      const daysSinceLastOrder = Math.floor((Date.now() - new Date(data.lastOrder).getTime()) / (1000 * 60 * 60 * 24));
+      const daysSinceLastOrder = Math.floor((now - new Date(data.lastOrder).getTime()) / DAY);
+      const daysSinceFirstOrder = Math.floor((now - new Date(data.firstOrder).getTime()) / DAY);
+      const ordersLast30 = completedOrders.filter((o: any) => (now - new Date(o.created_at).getTime()) / DAY <= 30).length;
+
+      // Frequência média entre pedidos (em dias)
+      let avgFrequencyDays = 0;
+      if (completedOrders.length >= 2) {
+        const sorted = [...completedOrders].sort((a: any, b: any) => a.created_at.localeCompare(b.created_at));
+        let totalGap = 0;
+        for (let i = 1; i < sorted.length; i++) {
+          totalGap += (new Date(sorted[i].created_at).getTime() - new Date(sorted[i - 1].created_at).getTime()) / DAY;
+        }
+        avgFrequencyDays = Math.round(totalGap / (sorted.length - 1));
+      }
+      const nextOrderInDays = avgFrequencyDays > 0 ? avgFrequencyDays - daysSinceLastOrder : null;
+      const cancelRate = data.orders.length > 0 ? (cancelledOrders.length / data.orders.length) * 100 : 0;
 
       return {
         clientId,
@@ -709,25 +744,79 @@ const AdminDashboard = () => {
         totalSpent: data.totalSpent,
         ticketMedio,
         favProduct,
+        preferredPayment,
         lastOrder: data.lastOrder,
+        firstOrder: data.firstOrder,
         daysSinceLastOrder,
+        daysSinceFirstOrder,
+        ordersLast30,
+        avgFrequencyDays,
+        nextOrderInDays,
+        cancelRate,
         orders: data.orders,
       };
+    });
+
+    // segment + isVip dependem da média da loja
+    const avgTicketStore = list.length > 0 ? list.reduce((s, c) => s + c.ticketMedio, 0) / list.length : 0;
+
+    return list.map((c) => {
+      const isHighTicket = avgTicketStore > 0 && c.ticketMedio > avgTicketStore * 1.2;
+      const isVip = c.totalOrders >= 10 && c.daysSinceLastOrder <= 30;
+      const isWeekly = c.ordersLast30 >= 4;
+      const isNew = c.daysSinceFirstOrder <= 30;
+      let segment: "vip" | "weekly" | "new" | "atrisk" | "inactive" | "active" = "active";
+      if (c.daysSinceLastOrder >= 30) segment = "inactive";
+      else if (c.daysSinceLastOrder >= 15) segment = "atrisk";
+      else if (isVip) segment = "vip";
+      else if (isWeekly) segment = "weekly";
+      else if (isNew) segment = "new";
+      return { ...c, isHighTicket, isVip, isWeekly, isNew, segment };
     }).sort((a, b) => b.totalOrders - a.totalOrders);
   }, [allOrders, clientProfiles]);
 
+  // contagens por segmento (para mini-cards e badges dos chips)
+  const clientCounts = useMemo(() => ({
+    total: clientAnalytics.length,
+    new: clientAnalytics.filter(c => c.isNew).length,
+    weekly: clientAnalytics.filter(c => c.isWeekly).length,
+    vip: clientAnalytics.filter(c => c.isVip).length,
+    atrisk: clientAnalytics.filter(c => c.daysSinceLastOrder >= 15 && c.daysSinceLastOrder < 30).length,
+    inactive30: clientAnalytics.filter(c => c.daysSinceLastOrder >= 30 && c.daysSinceLastOrder < 45).length,
+    inactive45: clientAnalytics.filter(c => c.daysSinceLastOrder >= 45 && c.daysSinceLastOrder < 60).length,
+    inactive60: clientAnalytics.filter(c => c.daysSinceLastOrder >= 60).length,
+    highticket: clientAnalytics.filter(c => c.isHighTicket).length,
+  }), [clientAnalytics]);
+
   const filteredClients = useMemo(() => {
-    let list = clientAnalytics;
-    if (clientFilter === "loyal") list = list.filter(c => c.totalOrders >= 3);
-    else if (clientFilter === "inactive") list = list.filter(c => c.daysSinceLastOrder >= 15);
-    else if (clientFilter === "location") list = list.sort((a, b) => a.neighborhood.localeCompare(b.neighborhood));
+    let list = [...clientAnalytics];
+    switch (clientFilter) {
+      case "new": list = list.filter(c => c.isNew); break;
+      case "weekly": list = list.filter(c => c.isWeekly); break;
+      case "vip": list = list.filter(c => c.isVip); break;
+      case "atrisk": list = list.filter(c => c.daysSinceLastOrder >= 15 && c.daysSinceLastOrder < 30); break;
+      case "inactive30": list = list.filter(c => c.daysSinceLastOrder >= 30 && c.daysSinceLastOrder < 45); break;
+      case "inactive45": list = list.filter(c => c.daysSinceLastOrder >= 45 && c.daysSinceLastOrder < 60); break;
+      case "inactive60": list = list.filter(c => c.daysSinceLastOrder >= 60); break;
+      case "highticket": list = list.filter(c => c.isHighTicket); break;
+      case "location": list.sort((a, b) => (a.neighborhood || "zzz").localeCompare(b.neighborhood || "zzz")); break;
+    }
 
     if (clientSearch.trim()) {
       const s = clientSearch.toLowerCase();
-      list = list.filter(c => c.name.toLowerCase().includes(s) || c.neighborhood.toLowerCase().includes(s) || c.phone.includes(s));
+      list = list.filter(c => c.name.toLowerCase().includes(s) || (c.neighborhood || "").toLowerCase().includes(s) || c.phone.includes(s));
+    }
+
+    if (clientFilter !== "location") {
+      switch (clientSort) {
+        case "orders": list.sort((a, b) => b.totalOrders - a.totalOrders); break;
+        case "spent": list.sort((a, b) => b.totalSpent - a.totalSpent); break;
+        case "recent": list.sort((a, b) => a.daysSinceLastOrder - b.daysSinceLastOrder); break;
+        case "inactive": list.sort((a, b) => b.daysSinceLastOrder - a.daysSinceLastOrder); break;
+      }
     }
     return list;
-  }, [clientAnalytics, clientFilter, clientSearch]);
+  }, [clientAnalytics, clientFilter, clientSearch, clientSort]);
 
   // ── SOUND SYSTEM ──
    const playAlert = useCallback(async () => {
@@ -1774,6 +1863,9 @@ const AdminDashboard = () => {
               expandedClient={expandedClient}
               setExpandedClient={setExpandedClient}
               storeName={store?.name}
+              clientCounts={clientCounts}
+              clientSort={clientSort}
+              setClientSort={setClientSort}
             />
           )}
 

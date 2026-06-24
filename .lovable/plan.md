@@ -1,84 +1,74 @@
-# Reformulação UI/UX — /cadastro-lojista
+# Profissionalização da aba Clientes
 
-## Diagnóstico do estado atual
+Hoje a aba tem só 4 filtros simples (Todos / Fiéis 3+ / Inativos 15d / Localização) e um cartão com poucas métricas. Vamos transformar em um mini-CRM real, no padrão de iFood Gestor / Anota AI / Goomer, **usando 100% dados reais já presentes em `orders` + `profiles`** — sem novas tabelas.
 
-O Step 0 (Plano) hoje empilha por card: badge + ícone + tagline + preço + bloco trial (3 linhas) + grid 3 colunas (comissão/PIX/entrega) + parágrafo R$2 + parágrafo plano dinâmico + 3 features. Resultado: ~12 blocos de texto por card × 4 cards = parede de informação em tela 384px. Depois ainda vem um card "Como funciona", outro "Plano dinâmico" e o CTA. O lojista cansa antes de escolher.
+## 1. Métricas em destaque (cabeçalho da aba)
 
-Os Steps 1–3 (Conta, Loja, Dados) estão bem dimensionados — o problema é concentrado no Step 0.
+4 mini-cards no topo, clicáveis (cada um vira um filtro):
 
-## Princípios da reformulação
+- **Total de clientes** — `clientAnalytics.length`
+- **Recorrentes** — compraram ≥4× nos últimos 30 dias (≈1×/semana)
+- **Em risco** — último pedido entre 15 e 30 dias
+- **Inativos** — sem pedido há 30+ dias (com sub-corte 45/60)
 
-1. **Progressive disclosure**: mostrar o mínimo para decidir; detalhe sob demanda (tap "Ver detalhes").
-2. **Uma frase de valor por plano**, não 5.
-3. **Comparação visual rápida** em vez de leitura linear.
-4. **Detalhes completos preservados** — nada de remover informação legal/comercial, só reorganizar.
-5. Reutilizar componentes já existentes em `src/components/fees/` (PlanFeeBreakdown, WhyThisCharge).
+## 2. Segmentação RFM real (chips de filtro)
 
-## Mudanças por seção
+Substituir os 4 chips atuais por segmentos profissionais, todos calculados em memória a partir de `orders`:
 
-### Step 0 — Plano (foco da reformulação)
-
-**Topo enxuto** (3 linhas em vez de 5):
-- Título "Escolha seu plano"
-- Subtítulo único: "7 dias grátis · sem contrato · troque quando quiser"
-
-**Card de plano compacto (estado fechado)** — apenas:
-- Ícone + Nome do plano + badge (se houver)
-- Preço grande à direita
-- 1 frase de posicionamento ("Pra quem está começando", etc.)
-- 3 chips horizontais: `Comissão X%` · `PIX Y` · `Entrega +R$2`
-- Link "Ver detalhes ▾" (accordion)
-
-**Card expandido (ao tocar "Ver detalhes")** revela:
-- Bloco trial 7 dias (só planos pagos)
-- Explicação dos R$2 da entrega
-- Aviso de plano dinâmico (fixed/hybrid)
-- Lista completa de features (5 itens, não 3)
-- Exemplo numérico via `<PlanFeeBreakdown>` (pedido R$50)
-
-**Card selecionado** auto-expande (usuário vê tudo do escolhido sem precisar tocar de novo).
-
-**Remover** o bloco redundante "Como funciona o {plano}" abaixo dos cards — essa info passa a viver dentro do card expandido.
-
-**Plano dinâmico**: o checkbox de aceite continua, mas só aparece depois do plano ser selecionado E o card expandido. Hoje fica solto no fim.
-
-### Steps 1–3
-Sem mudanças estruturais. Apenas:
-- Unificar espaçamento (`space-y-4` consistente)
-- Remover dois campos do mesmo passo quando couber lado a lado (CEP + número já está bom)
-- Microcopy: trocar "Lojista deve ter 18 anos ou mais (cláusula 2.2 dos Termos)" por "Você precisa ter 18+" e mover a referência da cláusula para tooltip.
-
-### Header / Stepper
-- Manter o stepper visual atual (já é bom)
-- Adicionar abaixo do stepper uma única linha: "Passo X de 4 · ~2 min" para dar previsibilidade
-
-## Microcopy — antes/depois (exemplos)
-
-| Antes | Depois |
+| Segmento | Regra |
 |---|---|
-| "Sem contrato. Troque quando quiser. Sem multa." + badge "Teste 7 dias grátis · só paga depois" | "7 dias grátis · sem contrato · troque quando quiser" |
-| Bloco trial completo visível sempre | Chip "🎁 7 dias grátis" no card fechado; bloco completo no expandido |
-| "💡 Os R$2 da entrega são somados à taxa que você cobra. Quem paga é o cliente — não sai do seu caixa." | Chip "Entrega +R$2" com `<WhyThisCharge>` (?) explicando no popover |
-| "📈 Plano dinâmico: se faturar mais de R$5.000/mês..." (parágrafo) | Selo "📈 Dinâmico" no header do card; explicação completa só no expandido |
+| **Novos** | 1º pedido nos últimos 30 dias |
+| **Recorrentes semanais** | ≥4 pedidos nos últimos 30 dias |
+| **Fiéis VIP** | ≥10 pedidos no total **e** ativo nos últimos 30 dias |
+| **Em risco** | última compra entre 15–30 dias |
+| **Inativos 30d / 45d / 60d+** | sub-chips com contagem |
+| **Alto ticket** | ticket médio acima da média da loja |
+| **Aniversariantes do mês** | `profiles.birth_date` (se preenchido) |
 
-## Resultado esperado
+Os badges RFM já existentes (`novo / recorrente / risco / inativo`) em `ClientsTab.tsx` passam a refletir essas mesmas regras (hoje têm corte único 15/30/60 — vai virar 15/30/45).
 
-- Step 0 cabe em ~1.5 scrolls em vez de ~4
-- Decisão guiada: chip-comparison > leitura linear
-- Informação completa preservada (acessível em 1 toque)
-- Zero mudança em validação, schema Zod, fluxo de submit ou regra de negócio
+## 3. Card do cliente — mais informação acionável
 
-## Detalhes técnicos
+Adicionar no card expandido (além do que já tem):
 
-- Estado novo: `expandedPlan: StorePlanType | null` (auto-set ao selecionar)
-- Refatorar card para componente local `<PlanCard plan expanded onToggle onSelect selected />` dentro do mesmo arquivo (não criar arquivo novo — escopo cirúrgico)
-- Usar `<details>`/`<summary>` nativo ou estado controlado + `max-h` transition para o expandido (sem libs novas)
-- Reaproveitar `PLANS`, `DELIVERY_FEE_NOTE`, `PIX_FEE_NOTE` de `plansInfo.ts` (fonte única já existe)
-- Reaproveitar `PlanFeeBreakdown` e `WhyThisCharge` de `src/components/fees/`
-- Sem mudanças em `plansInfo.ts`, `useStorePlan.ts`, `schema` Zod, edge functions ou banco
-- Bump de versão ao final (appVersion.ts + build.gradle versionName/versionCode)
+- **Frequência média** entre pedidos (ex: "compra a cada 6 dias")
+- **Previsão da próxima compra** = `últimoPedido + frequênciaMédia` (mostra "atrasado há X dias" se passou)
+- **% cancelamentos** do cliente
+- **Forma de pagamento preferida** (mais usada)
+- **Bairro + nº pedidos por bairro** (já temos `neighborhood`)
+- **LTV** (já temos como "Total Gasto") + **meses ativo**
+
+## 4. Ações em massa (campanhas)
+
+Botão flutuante "📢 Campanha" quando há filtro ativo:
+
+- Selecionar todos do segmento atual
+- Disparar mensagem WhatsApp **um a um** (reusa `WhatsAppButton` já presente) com template pronto por segmento:
+  - Inativos 30d → "Sentimos sua falta, cupom 15%"
+  - Recorrentes → "Obrigado pela fidelidade, brinde no próximo pedido"
+  - Aniversariantes → "Parabéns! Cupom de presente"
+- Opção de gerar **cupom único** vinculado à campanha (usa tabela `coupons` existente)
+
+## 5. Exportação
+
+Botão "Exportar CSV" do segmento filtrado (nome, telefone, bairro, pedidos, total, último pedido, dias inativo). Geração 100% client-side — sem backend.
+
+## 6. UX / layout
+
+- Cabeçalho com os 4 mini-cards de métricas (grid 2×2 no mobile, 4 col no desktop)
+- Chips de segmento em scroll horizontal (mantém padrão atual)
+- Ordenação: dropdown "Mais pedidos / Maior ticket / Mais recente / Mais inativo"
+- Empty state melhor por segmento ("Nenhum cliente em risco — bom trabalho!")
+
+## Técnico (resumo)
+
+- **Sem migração de schema.** Tudo derivado de `allOrders` + `clientProfiles` já carregados em `AdminDashboardV2.tsx`.
+- Expandir `clientAnalytics` (linhas 670–717) para calcular: `ordersLast30`, `avgFrequencyDays`, `nextOrderPrediction`, `cancelRate`, `preferredPayment`, `isVip`, `segment`.
+- `ClientsTab.tsx`: novo header de métricas, novos chips, novo card expandido, barra de ações em massa, export CSV.
+- Filtro/ordenação no mesmo `useMemo` `filteredClients`.
+- Tipo `ClientFilter` ampliado com os novos segmentos.
 
 ## Fora de escopo
-- Steps 1–3 ganham só ajustes de microcopy, não redesign
-- Não alterar lógica de supporter (já oculto)
-- Não criar nova rota /ajuda/taxas (fase F do plano antigo, separado)
+
+- Novas tabelas, edge functions, push automático, integração com Evolution para envio em lote (WhatsApp continua 1-a-1 via link, como hoje).
+- Aba Fidelidade e Cupons (ficam como estão).
