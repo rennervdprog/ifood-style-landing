@@ -609,6 +609,9 @@ const PdvPage = () => {
         onAdd={handleModalAdd}
       />
 
+      {/* ── BARRA DE ATALHOS (rodapé estilo keycap, só desktop) ── */}
+      {screen === "venda" && tab === "venda" && <PdvStatusBar />}
+
       {/* ── MODAL SANGRIA / SUPRIMENTO ── */}
       {movModal && (
         <PdvMovementDialog
