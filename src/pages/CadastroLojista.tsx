@@ -12,6 +12,9 @@ import { formatCep, fetchCep } from "@/lib/cepLookup";
 import { PLANS, PLANS_ORDER, DELIVERY_FEE_NOTE, PIX_FEE_NOTE } from "@/lib/plansInfo";
 import { useSupporterCount } from "@/hooks/useSupporterCount";
 import { Check } from "lucide-react";
+import PlanFeeBreakdown from "@/components/fees/PlanFeeBreakdown";
+import WhyThisCharge from "@/components/fees/WhyThisCharge";
+import { ChevronDown } from "lucide-react";
 
 const storeCategories = Constants.public.Enums.store_category;
 
