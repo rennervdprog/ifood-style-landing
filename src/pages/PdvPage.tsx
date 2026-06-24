@@ -348,27 +348,12 @@ const PdvPage = () => {
     );
     if (found) {
       // Adiciona direto ao carrinho (sem abrir modal de adicionais)
-      setCart(prev => {
-        const existing = prev.find(i => i.id === found.id && !i.addons && !i.observations);
-        if (existing) {
-          return prev.map(i => i.id === found.id && !i.addons && !i.observations
-            ? { ...i, quantity: i.quantity + 1 }
-            : i);
-        }
-        return [...prev, {
-          id: found.id,
-          name: found.name,
-          basePrice: Number(found.price),
-          price: Number(found.price),
-          quantity: 1,
-          image_url: found.image_url,
-        }];
-      });
+      addScannedProduct(found);
       toast.success(`+ ${found.name}`, { duration: 1200 });
     } else {
       toast.warning(`Código não encontrado: ${code}`);
     }
-  }, [products]);
+  }, [products, addScannedProduct]);
 
   usePdvBarcodeScanner(handleBarcodeScan, screen === "venda" && tab === "venda");
 
