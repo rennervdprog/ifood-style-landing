@@ -52,6 +52,7 @@ import { PdvMovementDialog } from "@/pages/pdv/components/PdvMovementDialog";
 import { PdvShortcutsDialog } from "@/pages/pdv/components/PdvShortcutsDialog";
 import { PdvTopbar } from "@/pages/pdv/components/PdvTopbar";
 import { PdvTabs } from "@/pages/pdv/components/PdvTabs";
+import { PdvStatusBar } from "@/pages/pdv/components/PdvStatusBar";
 
 // Detecta se está em tela mobile (< 768px)
 const useIsMobile = () => {
@@ -345,6 +346,10 @@ const PdvPage = () => {
         if (window.confirm("Limpar venda atual?")) clearSale();
       }
     },
+    onHelp: () => setShowShortcuts(true),
+    onSangria: () => setMovModal("sangria"),
+    onSuprimento: () => setMovModal("suprimento"),
+    onCloseSession: () => { if (!loading) handleIniciarFechamento(); },
   });
 
   // ── Leitor de código de barras (USB HID) ──
@@ -603,6 +608,9 @@ const PdvPage = () => {
         onClose={() => setProductModal(null)}
         onAdd={handleModalAdd}
       />
+
+      {/* ── BARRA DE ATALHOS (rodapé estilo keycap, só desktop) ── */}
+      {screen === "venda" && tab === "venda" && <PdvStatusBar />}
 
       {/* ── MODAL SANGRIA / SUPRIMENTO ── */}
       {movModal && (

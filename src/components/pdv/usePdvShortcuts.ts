@@ -6,6 +6,10 @@ interface ShortcutHandlers {
   onCyclePayment?: () => void;
   onFinalize?: () => void;
   onClearSale?: () => void;
+  onHelp?: () => void;          // F1
+  onSangria?: () => void;       // F6
+  onSuprimento?: () => void;    // F7
+  onCloseSession?: () => void;  // F10
   enabled?: boolean;
 }
 
@@ -26,6 +30,10 @@ export function usePdvShortcuts({
   onCyclePayment,
   onFinalize,
   onClearSale,
+  onHelp,
+  onSangria,
+  onSuprimento,
+  onCloseSession,
   enabled = true,
 }: ShortcutHandlers) {
   useEffect(() => {
@@ -51,10 +59,21 @@ export function usePdvShortcuts({
         return;
       }
 
+      // F10 sempre funciona (fechar caixa) — operação sagrada
+      if (e.key === "F10") {
+        e.preventDefault();
+        onCloseSession?.();
+        return;
+      }
+
       // Demais atalhos não funcionam enquanto está digitando
       if (isTyping(e) && e.key !== "Escape") return;
 
       switch (e.key) {
+        case "F1":
+          e.preventDefault();
+          onHelp?.();
+          break;
         case "F2":
           e.preventDefault();
           onSearchFocus?.();
@@ -66,6 +85,14 @@ export function usePdvShortcuts({
         case "F4":
           e.preventDefault();
           onCyclePayment?.();
+          break;
+        case "F6":
+          e.preventDefault();
+          onSangria?.();
+          break;
+        case "F7":
+          e.preventDefault();
+          onSuprimento?.();
           break;
         case "Escape":
           // Permite ESC dentro de input para "blur"
@@ -81,5 +108,5 @@ export function usePdvShortcuts({
 
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [enabled, onSearchFocus, onToggleDiscount, onCyclePayment, onFinalize, onClearSale]);
+  }, [enabled, onSearchFocus, onToggleDiscount, onCyclePayment, onFinalize, onClearSale, onHelp, onSangria, onSuprimento, onCloseSession]);
 }
