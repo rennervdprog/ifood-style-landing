@@ -92,6 +92,7 @@ const CadastroLojista = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [selectedPlan, setSelectedPlan] = useState<"supporter" | "fixed" | "hybrid" | "commission_only" | "autonomy" | "">("");
   const [acceptedDynamic, setAcceptedDynamic] = useState(false);
+  const [expandedPlan, setExpandedPlan] = useState<"supporter" | "fixed" | "hybrid" | "commission_only" | "autonomy" | "">("");
 
   const isDynamicPlan = selectedPlan === "fixed" || selectedPlan === "hybrid";
   useEffect(() => {
