@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Pizza } from "lucide-react";
+import PizzaSizesCatalogManager from "@/components/pizza/PizzaSizesCatalogManager";
 
 interface PizzaFlavorManagerProps {
   storeId: string;
@@ -54,6 +55,9 @@ const PizzaFlavorManager = ({ storeId }: PizzaFlavorManagerProps) => {
 
   return (
     <div className="space-y-6">
+      {/* Catálogo profissional (tamanhos + categorias + matriz) */}
+      <PizzaSizesCatalogManager storeId={storeId} />
+
       {/* Explanation banner */}
       <div className="bg-primary/5 border border-primary/20 rounded-2xl p-4 space-y-1.5">
         <p className="text-xs font-bold text-primary uppercase tracking-wider">Como funciona?</p>

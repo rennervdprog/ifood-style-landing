@@ -5,6 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Pizza, ShoppingCart, Check, Minus, Plus, ChevronLeft, Circle, X } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import type { CartAddon } from "@/contexts/CartContext";
+import { readPizzaCatalogConfig, hasPizzaCatalog, type PizzaSizeCatalogItem } from "@/types/pizza";
+import { priceForFlavorInSize, isFlavorAvailableInSize, combinePricesByMode } from "@/lib/pizzaPricing";
 
 type FlavorCount = 2 | 3 | 4;
 const FRACTION_LABEL: Record<FlavorCount, string> = { 2: "½", 3: "⅓", 4: "¼" };
@@ -82,6 +84,19 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
     enabled: open && !!storeId,
   });
 
+  // Catálogo profissional (tamanhos + matriz). Quando ausente, cai no modo legado.
+  const { data: storeSettingsRow } = useQuery({
+    queryKey: ["pizza-modal-store-settings", storeId],
+    queryFn: async () => {
+      const { data } = await supabase.from("stores").select("settings").eq("id", storeId).single();
+      return data;
+    },
+    enabled: open && !!storeId,
+  });
+  const catalog = readPizzaCatalogConfig((storeSettingsRow as any)?.settings);
+  const catalogActive = !singleSize && hasPizzaCatalog(catalog);
+  const catalogActiveSizes = catalog.sizes.filter((s) => s.active);
+
   // Auto-select "Tradicional" border by default when borders are loaded
   useEffect(() => {
     if (open && borders.length > 0 && !selectedBorderId) {
@@ -126,8 +141,11 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
     return true;
   });
 
-  // Collect size names that appear on any pizza product (union, preserving first-seen order)
+  // Lista de tamanhos exibidos no passo 1.
+  // - Catálogo profissional: usa o catálogo da loja (nomes consistentes).
+  // - Legado: união dos `metadata.sizes` dos sabores.
   const availableSizes: string[] = (() => {
+    if (catalogActive) return catalogActiveSizes.map((s) => s.name);
     const order: string[] = [];
     const seen = new Set<string>();
     for (const p of pizzaProducts) {
@@ -149,6 +167,16 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
   }, [open, hasSizes, selectedSize, availableSizes]);
 
   const priceForFlavor = (p: Product): number => {
+    if (catalogActive) {
+      const sizeItem: PizzaSizeCatalogItem | null = selectedSize
+        ? catalogActiveSizes.find((s) => s.name === selectedSize) || null
+        : null;
+      return priceForFlavorInSize(
+        { id: p.id, price: p.price, metadata: p.metadata as any },
+        sizeItem,
+        catalog,
+      );
+    }
     const sizes: Array<{ name: string; price: number }> = Array.isArray(p.metadata?.sizes) ? p.metadata!.sizes : [];
     if (selectedSize) {
       const match = sizes.find(s => s.name === selectedSize && Number(s.price) > 0);
@@ -164,8 +192,7 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
   const calcPizzaPrice = (): number => {
     if (!allChosen) return 0;
     const prices = selectedFlavors.map(p => priceForFlavor(p!));
-    if (priceMode === "media") return prices.reduce((a, b) => a + b, 0) / prices.length;
-    return Math.max(...prices);
+    return combinePricesByMode(prices, priceMode);
   };
 
   const pizzaPrice = calcPizzaPrice();
@@ -174,7 +201,7 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
   const lineTotal = unitPrice * quantity;
 
   // Aviso quando algum sabor escolhido não tem o tamanho selecionado cadastrado
-  const flavorsMissingSize: string[] = (selectedSize && allChosen)
+  const flavorsMissingSize: string[] = (selectedSize && allChosen && !catalogActive)
     ? (selectedFlavors as Product[])
         .filter(p => {
           const sizes: Array<{ name: string; price: number }> = Array.isArray(p.metadata?.sizes) ? p.metadata!.sizes : [];
@@ -470,7 +497,16 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
                   .map((id, i) => (i !== currentFlavorIdx ? id : null))
                   .filter(Boolean) as string[]
               );
-              const items = group.items.filter(p => !chosenIds.has(p.id));
+              const sizeId = catalogActive && selectedSize
+                ? (catalogActiveSizes.find((s) => s.name === selectedSize)?.id || null)
+                : null;
+              const items = group.items.filter((p) => {
+                if (chosenIds.has(p.id)) return false;
+                if (catalogActive && sizeId) {
+                  return isFlavorAvailableInSize({ id: p.id, price: p.price, metadata: p.metadata as any }, sizeId);
+                }
+                return true;
+              });
               if (items.length === 0) return null;
               const selectedId = productIds[currentFlavorIdx];
               const onSelect = setCurrentFlavor;
