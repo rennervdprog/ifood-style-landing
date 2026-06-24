@@ -215,81 +215,11 @@ const PdvPage = () => {
     refetchInterval: 30_000,
   });
 
-  // ── Cálculos do carrinho ──
-  const subtotal = sumMoney(cart.map(i => i.price * i.quantity));
-  // Nota: i.price já inclui o valor dos adicionais (totalUnitPrice do modal)
-  const totalItems = cart.reduce((a, i) => a + i.quantity, 0);
-
-  const discountAmount = useMemo(() => {
-    const v = parseBRL(discountInput);
-    if (discountType === "%") return Math.min(subtotal, subtotal * (v / 100));
-    return Math.min(subtotal, v);
-  }, [discountInput, discountType, subtotal]);
-
-  const finalTotal = subtractMoney(subtotal, discountAmount);
-
-  const cashVal = parseBRL(cashReceived);
-  const troco = cashReceived ? Math.max(0, cashVal - finalTotal) : 0;
-  const trocoNegativo = cashReceived && cashVal < finalTotal;
-
-  const getQty = (id: string) => cart.find(i => i.id === id)?.quantity ?? 0;
-
-  // ── Ações carrinho ──
-  // Abre o modal de produto para configurar adicionais
-  // Se o produto não tem adicionais (verificado depois do modal), adiciona direto
-  const openProduct = (p: Product) => setProductModal(p);
-
-  // Adicionar ao carrinho após configurar no modal
-  const handleModalAdd = (
-    product: any,
-    addons: CartAddon[],
-    observations: string,
-    quantity: number,
-    totalUnitPrice: number
-  ) => {
-    // Gera uma chave única incluindo adicionais (permite mesmo produto com configurações diferentes)
-    const addonKey = addons.map(a => a.name).sort().join(",");
-    const cartKey = `${product.id}__${addonKey}__${observations}`;
-    setCart(prev => {
-      const existing = prev.find(i => i.id === product.id && (i.addons?.map(a=>a.name).sort().join(",") || "") === addonKey && (i.observations||"") === observations);
-      if (existing) {
-        return prev.map(i =>
-          i.id === product.id && (i.addons?.map(a=>a.name).sort().join(",") || "") === addonKey
-            ? { ...i, quantity: i.quantity + quantity }
-            : i
-        );
-      }
-      return [...prev, {
-        id: product.id,
-        name: product.name,
-        basePrice: Number(product.price),
-        price: totalUnitPrice,
-        quantity,
-        addons: addons.length > 0 ? addons : undefined,
-        observations: observations || undefined,
-        image_url: product.image_url,
-      }];
-    });
-    setProductModal(null);
-  };
-
-  // addItem simples (sem adicionais) — mantido para compatibilidade com +/- no carrinho
+  // Cart, derivados e ações foram extraídos para `usePdvCart`.
+  // Mantemos só o wrapper `clearSale` para que ele também resete o passo mobile.
   const addItem = (p: Product) => openProduct(p);
-
-  const decItem = (id: string) => setCart(prev => {
-    const it = prev.find(i => i.id === id);
-    if (!it) return prev;
-    if (it.quantity === 1) return prev.filter(i => i.id !== id);
-    return prev.map(i => i.id === id ? { ...i, quantity: i.quantity - 1 } : i);
-  });
-
-  const removeItem = (id: string) => setCart(prev => prev.filter(i => i.id !== id));
-
   const clearSale = () => {
-    setCart([]); setPaymentMethod(""); setTableId("");
-    setDiscountInput(""); setShowDiscount(false);
-    setCashReceived(""); setOrderDone(false);
-    setSplitMode(false); setSplitPayments([]);
+    clearSaleCart();
     if (isMobile) setMobileStep("catalog");
   };
 
