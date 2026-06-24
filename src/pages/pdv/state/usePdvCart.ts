@@ -32,9 +32,15 @@ export function usePdvCart() {
   const [splitPayments, setSplitPayments] = useState<SplitPayment[]>([]);
   const [productModal, setProductModal] = useState<any | null>(null);
 
-  // ── Cálculos derivados ──
-  const subtotal = sumMoney(cart.map((i) => i.price * i.quantity));
-  const totalItems = cart.reduce((a, i) => a + i.quantity, 0);
+  // ── Cálculos derivados (memoizados — Fase 6 perf) ──
+  const subtotal = useMemo(
+    () => sumMoney(cart.map((i) => i.price * i.quantity)),
+    [cart],
+  );
+  const totalItems = useMemo(
+    () => cart.reduce((a, i) => a + i.quantity, 0),
+    [cart],
+  );
 
   const discountAmount = useMemo(() => {
     const v = parseBRL(discountInput);
@@ -42,10 +48,16 @@ export function usePdvCart() {
     return Math.min(subtotal, v);
   }, [discountInput, discountType, subtotal]);
 
-  const finalTotal = subtractMoney(subtotal, discountAmount);
+  const finalTotal = useMemo(
+    () => subtractMoney(subtotal, discountAmount),
+    [subtotal, discountAmount],
+  );
 
-  const cashVal = parseBRL(cashReceived);
-  const troco = cashReceived ? Math.max(0, cashVal - finalTotal) : 0;
+  const cashVal = useMemo(() => parseBRL(cashReceived), [cashReceived]);
+  const troco = useMemo(
+    () => (cashReceived ? Math.max(0, cashVal - finalTotal) : 0),
+    [cashReceived, cashVal, finalTotal],
+  );
   const trocoNegativo = !!cashReceived && cashVal < finalTotal;
 
   const getQty = useCallback(
