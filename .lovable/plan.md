@@ -1,74 +1,69 @@
-# Profissionalização da aba Clientes
 
-Hoje a aba tem só 4 filtros simples (Todos / Fiéis 3+ / Inativos 15d / Localização) e um cartão com poucas métricas. Vamos transformar em um mini-CRM real, no padrão de iFood Gestor / Anota AI / Goomer, **usando 100% dados reais já presentes em `orders` + `profiles`** — sem novas tabelas.
+# Profissionalização do cadastro de tamanhos da pizza
 
-## 1. Métricas em destaque (cabeçalho da aba)
+## Problema atual
+Hoje cada sabor cadastra seus próprios tamanhos em `metadata.sizes`. Isso gera:
+- Nomes divergentes ("Grande 35cm" num sabor, "G" em outro) → o modal de meio a meio quebra ou some tamanhos.
+- Trabalho manual repetido em cada novo sabor.
+- Sem garantia de que todos os sabores tenham o mesmo tamanho.
+- Sem fator de preço, sem preço por categoria, sem "tamanho indisponível".
 
-4 mini-cards no topo, clicáveis (cada um vira um filtro):
+## Como os grandes fazem
+- **iFood / Anota AI / Goomer / Delivery Direto:** tamanhos são **catálogo da loja** (não do produto). Cada tamanho tem: nome, descrição (fatias/cm), e os sabores recebem **uma tabela de preço por tamanho**, geralmente por **categoria de sabor** (Tradicional, Especial, Premium, Doce).
+- Preço final do pedido = regra da loja (maior valor / média) aplicada sobre os preços daquela categoria naquele tamanho.
+- Sabor pode ser marcado como **indisponível em um tamanho específico** (ex: doce só no Grande).
 
-- **Total de clientes** — `clientAnalytics.length`
-- **Recorrentes** — compraram ≥4× nos últimos 30 dias (≈1×/semana)
-- **Em risco** — último pedido entre 15 e 30 dias
-- **Inativos** — sem pedido há 30+ dias (com sub-corte 45/60)
+## Plano (3 etapas, sem migração destrutiva)
 
-## 2. Segmentação RFM real (chips de filtro)
+### Etapa 1 — Catálogo de Tamanhos da loja
+Nova seção em **Cardápio → Pizzaria → Regras**: "Tamanhos da pizzaria".
+- Lista de tamanhos da loja, cada um com: `id`, `nome` (Broto/Média/Grande/Família), `descrição` (ex: "8 fatias · 35cm"), `max_sabores` (sobrescreve o global), `ativo`.
+- Drag-to-reorder.
+- Guardado em `stores.settings.pizza_sizes_catalog: [{id, name, description, maxFlavors, active}]`.
 
-Substituir os 4 chips atuais por segmentos profissionais, todos calculados em memória a partir de `orders`:
+### Etapa 2 — Categorias de sabor + tabela de preço
+Nova seção: "Categorias de sabor" (Tradicional, Especial, Premium, Doce — editável).
+- Cada categoria tem **preço por tamanho** numa matriz:
+```text
+              Broto   Média   Grande   Família
+Tradicional   29,90   39,90    49,90    59,90
+Especial      34,90   45,90    55,90    65,90
+Premium       39,90   52,90    62,90    74,90
+```
+- Guardado em `stores.settings.pizza_price_matrix: { categoryId: { sizeId: price } }`.
+- No cadastro do sabor, em vez de digitar `metadata.sizes`, o lojista só escolhe a **categoria** → preço vem da matriz.
+- Opção avançada por sabor: "Sobrescrever preço deste sabor" (override pontual, mantém flexibilidade).
+- Toggle por sabor: "Indisponível neste tamanho" (checkbox por tamanho).
 
-| Segmento | Regra |
-|---|---|
-| **Novos** | 1º pedido nos últimos 30 dias |
-| **Recorrentes semanais** | ≥4 pedidos nos últimos 30 dias |
-| **Fiéis VIP** | ≥10 pedidos no total **e** ativo nos últimos 30 dias |
-| **Em risco** | última compra entre 15–30 dias |
-| **Inativos 30d / 45d / 60d+** | sub-chips com contagem |
-| **Alto ticket** | ticket médio acima da média da loja |
-| **Aniversariantes do mês** | `profiles.birth_date` (se preenchido) |
+### Etapa 3 — Modal do cliente + cálculo
+- Passo "Tamanhos" lê do catálogo da loja (não da união dos produtos) → ordem e nomes consistentes.
+- Cada tamanho mostra "X fatias · até Y sabores" a partir do `description` e `maxFlavors`.
+- Ao escolher sabores, preço = regra da loja (maior/média) aplicada sobre **matriz[categoria][tamanho]** de cada sabor escolhido, respeitando overrides.
+- Sabor com `unavailableSizes` some do passo de sabores quando o tamanho escolhido bater.
 
-Os badges RFM já existentes (`novo / recorrente / risco / inativo`) em `ClientsTab.tsx` passam a refletir essas mesmas regras (hoje têm corte único 15/30/60 — vai virar 15/30/45).
+## Compatibilidade
+- Migração transparente: se `pizza_sizes_catalog` não existir, sistema continua lendo `metadata.sizes` por produto (modo legado).
+- Botão one-click "Importar tamanhos existentes" → varre todos os sabores, unifica nomes parecidos e popula o catálogo + matriz com a média/moda dos preços já cadastrados. Lojista revisa e salva.
+- Após adoção, o editor de `metadata.sizes` no produto vira somente "categoria + overrides".
 
-## 3. Card do cliente — mais informação acionável
+## Detalhes técnicos
+- Tudo em `stores.settings` (JSONB) — **sem migração de schema, sem nova tabela**.
+- Tipos novos em `src/types/pizza.ts`: `PizzaSizeCatalogItem`, `PizzaFlavorCategory`, `PizzaPriceMatrix`.
+- Componentes novos:
+  - `src/components/pizza/PizzaSizesCatalog.tsx` (CRUD do catálogo)
+  - `src/components/pizza/PizzaCategoriesMatrix.tsx` (categorias + matriz de preço)
+  - `src/components/pizza/PizzaImportLegacyButton.tsx` (importador one-click)
+- Alterações:
+  - `PizzaFlavorManager.tsx` — adiciona as duas novas seções acima dos blocos atuais.
+  - `CategoryProductFields.tsx` — quando o catálogo existir, substitui `PizzaSizesField` por "Categoria + overrides".
+  - `PizzaHalfHalfModal.tsx` — passa a ler `pizza_sizes_catalog` + `pizza_price_matrix` quando presentes; fallback no legado.
+  - `src/lib/pizzaPricing.ts` (novo) — função pura `computePizzaPrice({sizeId, flavorIds, mode, store})` usada pelo modal e pelo PDV.
+- Sem mudança em backend/edge functions — preços já trafegam dentro dos `addons`/`items` do pedido.
 
-Adicionar no card expandido (além do que já tem):
+## Fora de escopo desta entrega
+- Bordas por categoria (continua usando `PizzaBorderManager`).
+- Promoções específicas por tamanho.
+- Replicar o mesmo modelo para pastel (fica pra próxima, mesma arquitetura).
 
-- **Frequência média** entre pedidos (ex: "compra a cada 6 dias")
-- **Previsão da próxima compra** = `últimoPedido + frequênciaMédia` (mostra "atrasado há X dias" se passou)
-- **% cancelamentos** do cliente
-- **Forma de pagamento preferida** (mais usada)
-- **Bairro + nº pedidos por bairro** (já temos `neighborhood`)
-- **LTV** (já temos como "Total Gasto") + **meses ativo**
-
-## 4. Ações em massa (campanhas)
-
-Botão flutuante "📢 Campanha" quando há filtro ativo:
-
-- Selecionar todos do segmento atual
-- Disparar mensagem WhatsApp **um a um** (reusa `WhatsAppButton` já presente) com template pronto por segmento:
-  - Inativos 30d → "Sentimos sua falta, cupom 15%"
-  - Recorrentes → "Obrigado pela fidelidade, brinde no próximo pedido"
-  - Aniversariantes → "Parabéns! Cupom de presente"
-- Opção de gerar **cupom único** vinculado à campanha (usa tabela `coupons` existente)
-
-## 5. Exportação
-
-Botão "Exportar CSV" do segmento filtrado (nome, telefone, bairro, pedidos, total, último pedido, dias inativo). Geração 100% client-side — sem backend.
-
-## 6. UX / layout
-
-- Cabeçalho com os 4 mini-cards de métricas (grid 2×2 no mobile, 4 col no desktop)
-- Chips de segmento em scroll horizontal (mantém padrão atual)
-- Ordenação: dropdown "Mais pedidos / Maior ticket / Mais recente / Mais inativo"
-- Empty state melhor por segmento ("Nenhum cliente em risco — bom trabalho!")
-
-## Técnico (resumo)
-
-- **Sem migração de schema.** Tudo derivado de `allOrders` + `clientProfiles` já carregados em `AdminDashboardV2.tsx`.
-- Expandir `clientAnalytics` (linhas 670–717) para calcular: `ordersLast30`, `avgFrequencyDays`, `nextOrderPrediction`, `cancelRate`, `preferredPayment`, `isVip`, `segment`.
-- `ClientsTab.tsx`: novo header de métricas, novos chips, novo card expandido, barra de ações em massa, export CSV.
-- Filtro/ordenação no mesmo `useMemo` `filteredClients`.
-- Tipo `ClientFilter` ampliado com os novos segmentos.
-
-## Fora de escopo
-
-- Novas tabelas, edge functions, push automático, integração com Evolution para envio em lote (WhatsApp continua 1-a-1 via link, como hoje).
-- Aba Fidelidade e Cupons (ficam como estão).
+## Versão
+Ao implementar: bump `1.10.259` + `versionCode 589`.
