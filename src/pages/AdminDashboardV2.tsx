@@ -180,7 +180,19 @@ const GlanceCard = ({ icon: Icon, label, value, subValue, color = "text-primary"
 };
 
 // ── Client Filter type ──
-type ClientFilter = "all" | "loyal" | "inactive" | "location";
+type ClientFilter =
+  | "all"
+  | "new"
+  | "weekly"
+  | "vip"
+  | "atrisk"
+  | "inactive30"
+  | "inactive45"
+  | "inactive60"
+  | "highticket"
+  | "location";
+
+export type ClientSort = "orders" | "spent" | "recent" | "inactive";
 
 const AdminDashboard = () => {
   const { user, signOut } = useAuth();
@@ -231,6 +243,7 @@ const AdminDashboard = () => {
   const [clientFilter, setClientFilter] = useState<ClientFilter>("all");
   const [clientSearch, setClientSearch] = useState("");
   const [expandedClient, setExpandedClient] = useState<string | null>(null);
+  const [clientSort, setClientSort] = useState<ClientSort>("orders");
   const [cancelConfirm, setCancelConfirm] = useState<string | null>(null);
   const [cancelReason, setCancelReason] = useState<string>("");
   const [cancellingOrder, setCancellingOrder] = useState(false);
