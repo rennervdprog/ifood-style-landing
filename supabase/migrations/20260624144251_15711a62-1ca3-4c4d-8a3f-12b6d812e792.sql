@@ -1,0 +1,1 @@
+UPDATE public.store_plans SET pdv_fixed_fee_per_sale = 1.00 WHERE plan_type = 'autonomy' AND is_active = true;
