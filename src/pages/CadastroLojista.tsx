@@ -485,144 +485,148 @@ const CadastroLojista = () => {
               <div className="space-y-4">
                 <div className="text-center mb-2">
                   <h2 className="text-lg font-black text-foreground">Escolha seu plano</h2>
-                  <p className="text-xs text-muted-foreground mt-1">Sem contrato. Troque quando quiser. Sem multa.</p>
-                  <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30">
-                    <Zap className="h-3.5 w-3.5 text-emerald-500" />
-                    <span className="text-xs font-bold text-emerald-600">Teste 7 dias grátis · só paga depois</span>
-                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    7 dias grátis · sem contrato · troque quando quiser
+                  </p>
                 </div>
 
-                {/* Cards de plano — ordem: Comissão, Crescimento, Essencial, Apoiador */}
-                <div className="space-y-5">
+                {/* Cards compactos — toque em "Ver detalhes" para expandir */}
+                <div className="space-y-3">
                 {(["commission_only", "hybrid", "fixed", "autonomy"] as const).map((id) => {
-                  // Plano Apoiador desativado — ocultar do cadastro
                   const p = PLANS[id];
                   const Icon = p.icon;
                   const selected = selectedPlan === id;
-                  const isSupporter = false;
+                  const isExpanded = expandedPlan === id || selected;
+                  const isDynamic = id === "fixed" || id === "hybrid";
                   return (
-                    <button
+                    <div
                       key={id}
-                      type="button"
-                      onClick={() => setSelectedPlan(id)}
-                      className={`w-full text-left rounded-2xl border-2 p-5 transition-all relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+                      className={`w-full rounded-2xl border-2 transition-all relative ${
                         selected
-                          ? "border-primary bg-primary/5 ring-2 ring-primary/30 shadow-lg shadow-primary/10 scale-[1.01]"
-                          : isSupporter
-                            ? "border-amber-500/40 bg-amber-500/5 hover:border-amber-500/70"
-                            : "border-border bg-card hover:border-primary/40"
+                          ? "border-primary bg-primary/5 ring-2 ring-primary/30 shadow-lg shadow-primary/10"
+                          : "border-border bg-card hover:border-primary/40"
                       }`}
                     >
                       {p.badge && (
-                        <span className={`absolute -top-3 right-4 text-[11px] font-bold px-2.5 py-1 rounded-full shadow-md whitespace-nowrap ${
-                          isSupporter ? "bg-amber-500 text-white" : "bg-primary text-primary-foreground"
-                        }`}>
-                          {isSupporter ? `🚀 ${supporterRemaining}/10 vagas` : p.badge}
+                        <span className="absolute -top-2.5 right-4 text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md whitespace-nowrap bg-primary text-primary-foreground">
+                          {p.badge}
                         </span>
                       )}
-                      <div className="flex items-center gap-3 mb-3">
-                        <div className={`w-10 h-10 rounded-xl ${p.accentBg} flex items-center justify-center`}>
-                          <Icon className={`h-5 w-5 ${p.accent}`} />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-bold text-sm text-foreground">Plano {p.name}</h3>
-                          <p className="text-xs text-foreground/70 leading-snug">{p.tagline}</p>
-                        </div>
-                        <div className="text-right shrink-0">
-                          <span className="text-2xl font-black text-foreground tabular-nums">
-                            {p.monthlyFee === 0 ? "Grátis" : `R$${p.monthlyFee}`}
-                          </span>
-                          {p.monthlyFee > 0 && <span className="text-xs text-muted-foreground ml-0.5">/mês</span>}
-                        </div>
-                      </div>
-
-                      {/* Trial badge — só planos pagos */}
-                      {p.monthlyFee > 0 && (
-                        <div className="mb-3 rounded-lg border-2 border-primary/40 bg-primary/10 px-3 py-2.5 space-y-1.5">
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-base leading-none">🎁</span>
-                            <p className="text-sm font-extrabold text-foreground leading-tight">
-                              7 DIAS GRÁTIS para testar
-                            </p>
+                      {/* Header compacto — sempre visível, seleciona o plano */}
+                      <button
+                        type="button"
+                        onClick={() => setSelectedPlan(id)}
+                        className="w-full text-left p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-2xl"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={`w-10 h-10 rounded-xl ${p.accentBg} flex items-center justify-center shrink-0`}>
+                            <Icon className={`h-5 w-5 ${p.accent}`} />
                           </div>
-                          <ul className="text-[12px] text-foreground leading-relaxed space-y-0.5 pl-0.5">
-                            <li>• <strong>Dia 1–7:</strong> liberado, sem cobrar nada</li>
-                            <li>• <strong>Dia 8:</strong> 1ª cobrança de R${p.monthlyFee}/mês (se não cancelar)</li>
-                            <li>• Cancele a qualquer hora antes do dia 8</li>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-bold text-sm text-foreground">Plano {p.name}</h3>
+                            <p className="text-[11px] text-muted-foreground leading-snug truncate">{p.forWho}</p>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <span className="text-xl font-black text-foreground tabular-nums">
+                              {p.monthlyFee === 0 ? "Grátis" : `R$${p.monthlyFee}`}
+                            </span>
+                            {p.monthlyFee > 0 && <span className="text-[10px] text-muted-foreground ml-0.5">/mês</span>}
+                          </div>
+                        </div>
+
+                        {/* Chips comparativos */}
+                        <div className="flex flex-wrap gap-1.5 mt-3">
+                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted text-foreground/80">
+                            Comissão {p.commissionRate === 0 ? "0%" : `${p.commissionRate}%`}
+                          </span>
+                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted text-foreground/80">
+                            PIX {p.pixFee === 0 ? "grátis" : `R$${p.pixFee.toFixed(2).replace(".", ",")}`}
+                          </span>
+                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted text-foreground/80">
+                            Entrega {id === "autonomy" ? "sem taxa" : "+R$2"}
+                          </span>
+                          {p.monthlyFee > 0 && (
+                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-400">
+                              🎁 7 dias grátis
+                            </span>
+                          )}
+                          {isDynamic && (
+                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-400">
+                              📈 Dinâmico
+                            </span>
+                          )}
+                        </div>
+                      </button>
+
+                      {/* Toggle "Ver detalhes" */}
+                      <button
+                        type="button"
+                        onClick={() => setExpandedPlan(isExpanded && !selected ? "" : id)}
+                        className="w-full px-4 py-2 text-[11px] font-semibold text-primary flex items-center justify-center gap-1 border-t border-border/50 hover:bg-muted/30 transition-colors rounded-b-2xl"
+                        aria-expanded={isExpanded}
+                      >
+                        {isExpanded ? "Ocultar detalhes" : "Ver detalhes"}
+                        <ChevronDown className={`h-3.5 w-3.5 transition-transform ${isExpanded ? "rotate-180" : ""}`} />
+                      </button>
+
+                      {/* Conteúdo expandido */}
+                      {isExpanded && (
+                        <div className="px-4 pb-4 pt-1 space-y-3 border-t border-border/50">
+                          {p.monthlyFee > 0 && (
+                            <div className="rounded-lg bg-primary/5 border border-primary/20 px-3 py-2">
+                              <p className="text-[12px] font-bold text-foreground mb-1">🎁 7 dias grátis para testar</p>
+                              <ul className="text-[11px] text-muted-foreground leading-relaxed space-y-0.5">
+                                <li>• Dia 1–7: liberado, sem cobrar nada</li>
+                                <li>• Dia 8: 1ª cobrança de R${p.monthlyFee}/mês (se não cancelar)</li>
+                                <li>• Cancele a qualquer hora antes do dia 8</li>
+                              </ul>
+                            </div>
+                          )}
+
+                          <ul className="space-y-1.5">
+                            {p.features.map(f => (
+                              <li key={f} className="flex items-start gap-2 text-[12px] text-foreground leading-relaxed">
+                                <Check className="h-3.5 w-3.5 text-primary mt-0.5 shrink-0" />
+                                <span>{f}</span>
+                              </li>
+                            ))}
                           </ul>
+
+                          <PlanFeeBreakdown planId={id} orderValue={50} viaPix={true} />
+
+                          <div className="flex items-start gap-1.5 text-[11px] text-muted-foreground leading-relaxed">
+                            <span>
+                              {id === "autonomy"
+                                ? <>✨ Sem os R$2 da plataforma: você define a taxa de entrega e fica com 100%.</>
+                                : <>Entrega: cliente paga sua taxa + R$2 da plataforma. Nada sai do seu caixa.</>}
+                            </span>
+                            <WhyThisCharge title="Taxa de entrega">{DELIVERY_FEE_NOTE}</WhyThisCharge>
+                          </div>
+
+                          {p.pixFee > 0 && (
+                            <div className="flex items-start gap-1.5 text-[11px] text-muted-foreground leading-relaxed">
+                              <span>PIX: R${p.pixFee.toFixed(2).replace(".", ",")} por pedido pago via PIX.</span>
+                              <WhyThisCharge title="Taxa PIX">{PIX_FEE_NOTE}</WhyThisCharge>
+                            </div>
+                          )}
+
+                          {isDynamic && (
+                            <div className="rounded-lg border border-amber-500/40 bg-amber-500/5 px-3 py-2">
+                              <p className="text-[11px] text-foreground leading-relaxed">
+                                <strong>📈 Plano dinâmico:</strong> se faturar mais de R$5.000/mês por 2 meses seguidos, a mensalidade sobe para <strong>R${id === "fixed" ? "180" : "100"}/mês</strong>. Você é avisado antes.
+                              </p>
+                            </div>
+                          )}
                         </div>
                       )}
-
-                      {/* Quick costs */}
-                      <div className="grid grid-cols-3 gap-2 mb-3">
-                        <div className="rounded-lg bg-muted/60 border border-border/50 p-2 text-center">
-                          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Comissão</p>
-                          <p className="text-sm font-extrabold text-foreground tabular-nums">
-                            {p.commissionRate === 0 ? "0%" : `${p.commissionRate}%`}
-                          </p>
-                        </div>
-                        <div className="rounded-lg bg-muted/60 border border-border/50 p-2 text-center">
-                          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">PIX</p>
-                          <p className="text-sm font-extrabold text-foreground tabular-nums">
-                            {p.pixFee === 0 ? "Grátis" : `R$${p.pixFee.toFixed(2).replace(".", ",")}`}
-                          </p>
-                        </div>
-                         <div className="rounded-lg bg-muted/60 border border-border/50 p-2 text-center">
-                           <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Entrega</p>
-                           <p className="text-sm font-extrabold text-foreground tabular-nums">{id === "autonomy" ? "Sem taxa" : "+R$2"}</p>
-                           <p className="text-[10px] text-muted-foreground leading-tight">{id === "autonomy" ? "da plataforma" : "cliente paga"}</p>
-                         </div>
-                      </div>
-
-                       <p className="text-[11px] text-foreground/70 mb-2 leading-relaxed">
-                         {id === "autonomy"
-                           ? <>✨ <strong>Sem os R$2 da plataforma:</strong> você define a taxa de entrega e o cliente vê exatamente esse valor. Você fica com 100%.</>
-                           : <>💡 Os <strong>R$2 da entrega</strong> são somados à taxa que você cobra. Quem paga é o cliente — não sai do seu caixa.</>}
-                       </p>
-                      {(id === "fixed" || id === "hybrid") && (
-                        <p className="text-[12px] text-foreground mb-2 leading-relaxed bg-primary/10 border-2 border-primary/40 rounded-lg px-2.5 py-1.5">
-                          📈 Plano dinâmico: se faturar mais de R$5.000/mês por 2 meses seguidos, a mensalidade sobe para R${id === "fixed" ? "180" : "100"}. Só acontece quando seu negócio já estiver crescendo!
-                        </p>
-                      )}
-
-                      <ul className="space-y-1.5 mt-1">
-                        {p.features.slice(0, 3).map(f => (
-                          <li key={f} className="flex items-start gap-2 text-[13px] text-foreground leading-relaxed">
-                            <Check className="h-3.5 w-3.5 text-primary mt-0.5 shrink-0" />
-                            <span>{f}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </button>
+                    </div>
                   );
                 })}
                 </div>
 
-                {selectedPlan && (
-                  <div className="rounded-xl bg-primary/5 border border-primary/15 p-3 space-y-1.5">
-                    <p className="text-xs font-bold text-foreground">Como funciona o {PLANS[selectedPlan].name}</p>
-                    <p className="text-[11px] text-muted-foreground leading-relaxed">
-                      <strong>Exemplo:</strong> {PLANS[selectedPlan].example(50)}.
-                    </p>
-                    <p className="text-[10px] text-muted-foreground leading-relaxed">💡 {DELIVERY_FEE_NOTE}</p>
-                    {PLANS[selectedPlan].pixFee > 0 && (
-                      <p className="text-[10px] text-muted-foreground leading-relaxed">💡 {PIX_FEE_NOTE}</p>
-                    )}
-                  </div>
-                )}
-
                 {isDynamicPlan && (
-                  <div className="rounded-2xl border-2 border-amber-500/50 bg-amber-500/10 p-4 space-y-2">
-                    <p className="text-sm font-extrabold text-foreground flex items-center gap-1.5">
-                      📈 Este é um plano dinâmico
-                    </p>
-                    <p className="text-[12px] text-foreground leading-relaxed">
-                      A mensalidade pode aumentar conforme seu faturamento. Se você faturar mais de <strong>R$5.000/mês por 2 meses seguidos</strong>, a mensalidade sobe automaticamente para <strong>R${selectedPlan === "fixed" ? "180" : "100"}/mês</strong>.
-                    </p>
-                    <p className="text-[11px] text-muted-foreground leading-relaxed">
-                      Isso só acontece quando seu negócio já estiver crescendo — você sempre será avisado antes.
-                    </p>
-                    <label className="flex items-start gap-2 cursor-pointer pt-1">
+                  <div className="rounded-xl border-2 border-amber-500/50 bg-amber-500/10 p-3">
+                    <label className="flex items-start gap-2 cursor-pointer">
                       <input
                         type="checkbox"
                         checked={acceptedDynamic}
@@ -630,7 +634,7 @@ const CadastroLojista = () => {
                         className="mt-0.5 h-4 w-4 rounded border-2 border-amber-600 accent-amber-600 cursor-pointer shrink-0"
                       />
                       <span className="text-[12px] font-semibold text-foreground leading-snug">
-                        Entendi e aceito que a mensalidade pode aumentar conforme o faturamento
+                        Entendi e aceito que a mensalidade pode aumentar conforme o faturamento (plano dinâmico)
                       </span>
                     </label>
                   </div>
