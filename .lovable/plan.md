@@ -1,100 +1,84 @@
-# Auditoria — Como explicamos Planos, Taxas e Entregas
+# Reformulação UI/UX — /cadastro-lojista
 
-Objetivo: garantir que lojista, cliente e entregador entendam **na hora**, sem precisar perguntar no WhatsApp, **quanto pagam, quanto recebem e por quê**. Hoje a informação existe mas está **espalhada, repetida com números diferentes e em jargão técnico**.
+## Diagnóstico do estado atual
 
----
+O Step 0 (Plano) hoje empilha por card: badge + ícone + tagline + preço + bloco trial (3 linhas) + grid 3 colunas (comissão/PIX/entrega) + parágrafo R$2 + parágrafo plano dinâmico + 3 features. Resultado: ~12 blocos de texto por card × 4 cards = parede de informação em tela 384px. Depois ainda vem um card "Como funciona", outro "Plano dinâmico" e o CTA. O lojista cansa antes de escolher.
 
-## 1. Mapeamento — onde os planos/taxas aparecem hoje
+Os Steps 1–3 (Conta, Loja, Dados) estão bem dimensionados — o problema é concentrado no Step 0.
 
-| Tela / componente | Para quem | O que mostra hoje | Problema |
-|---|---|---|---|
-| `PlanosPage.tsx` | Lojista (público) | 4 planos lado a lado | Falta exemplo prático "se vender R$X, recebe R$Y" no topo |
-| `CadastroLojista.tsx` | Lojista (signup) | Seleção de plano | Repete tabela, não amarra com PlanosPage |
-| `PlansComparisonTable.tsx` | Lojista | Tabela comparativa | OK — mas é a única fonte clara. Deveria ser reusada em todo lugar |
-| `StoreSubscription.tsx` | Lojista logado | Plano atual + cobrança | Não mostra "quanto você economizou esse mês" |
-| `StoreFinancePanel.tsx` / `StoreFinanceBasic.tsx` | Lojista | Saldo, taxas descontadas | Mostra valores mas não **explica** de onde vem cada desconto |
-| `StoreSettings.tsx` (taxa de entrega) | Lojista | Input de taxa | Não avisa "+R$2 da plataforma será somado" no input |
-| `DeliveryFeeConfig.tsx` | Admin global | Configura split | Interno — ok |
-| `CheckoutPage.tsx` | **Cliente** | Subtotal + taxa entrega + total | **Cliente vê só "Taxa de entrega R$7" — não sabe que R$5 vai pro lojista e R$2 pra plataforma** (e nem precisa, mas hoje gera dúvida) |
-| `CartPage.tsx` | Cliente | Resumo | Idem |
-| `PedidosPage.tsx` | Cliente | Histórico | Mesma quebra |
-| `DriverDashboard.tsx` | Entregador | Ganho por corrida | Não explica split (R$5 do lojista, quanto fica pro motoboy) |
-| `Index.tsx` (landing) | Visitante | Pitch geral | Sem menção a "como cobramos" |
-| `TermosDeUso.tsx` / `PoliticaPrivacidade.tsx` | Todos | Texto legal | Não bate com PlansComparisonTable |
-| `CommissionAlert.tsx` / `PlatformSplitAlert.tsx` | Lojista | Avisos pontuais | Linguagem técnica ("split", "subaccount") |
+## Princípios da reformulação
 
-**Fonte de verdade técnica:** `src/lib/plansInfo.ts` (✅ já existe — bom) + `useStorePlan.ts` (✅).
-**Constantes-chave já centralizadas:** `DELIVERY_FEE_NOTE`, `PIX_FEE_NOTE`.
+1. **Progressive disclosure**: mostrar o mínimo para decidir; detalhe sob demanda (tap "Ver detalhes").
+2. **Uma frase de valor por plano**, não 5.
+3. **Comparação visual rápida** em vez de leitura linear.
+4. **Detalhes completos preservados** — nada de remover informação legal/comercial, só reorganizar.
+5. Reutilizar componentes já existentes em `src/components/fees/` (PlanFeeBreakdown, WhyThisCharge).
 
----
+## Mudanças por seção
 
-## 2. Problemas que a auditoria encontrou
+### Step 0 — Plano (foco da reformulação)
 
-1. **3 lugares dizem coisas diferentes sobre a R$2 da plataforma**
-   - PlansComparisonTable: "somada à sua taxa, paga pelo cliente" ✅
-   - StoreSettings: input "Taxa de entrega" sem aviso → lojista acha que está cobrando a mais
-   - CheckoutPage (cliente): só mostra o total final → cliente acha que a loja cobra R$7
-2. **Taxa PIX R$1,99** aparece só na tabela. No painel financeiro o lojista vê o desconto mas **não vê o porquê** linkado ao plano.
-3. **Comissão (2,5% / 6%)** aparece como número, nunca como exemplo: "Pedido R$50 → comissão R$3"
-4. **Trial / mudança de plano** — `StoreSubscription` não diz claramente "se mudar agora, paga proporcional a X dias"
-5. **Entregador** não tem nenhuma tela explicando "você recebe R$X por corrida porque o split é Y"
-6. **Landing (Index)** não vende a transparência — concorrentes (iFood) escondem; podemos ganhar mostrando
+**Topo enxuto** (3 linhas em vez de 5):
+- Título "Escolha seu plano"
+- Subtítulo único: "7 dias grátis · sem contrato · troque quando quiser"
 
----
+**Card de plano compacto (estado fechado)** — apenas:
+- Ícone + Nome do plano + badge (se houver)
+- Preço grande à direita
+- 1 frase de posicionamento ("Pra quem está começando", etc.)
+- 3 chips horizontais: `Comissão X%` · `PIX Y` · `Entrega +R$2`
+- Link "Ver detalhes ▾" (accordion)
 
-## 3. Plano de melhorias (por fases, sem mudar regra de negócio)
+**Card expandido (ao tocar "Ver detalhes")** revela:
+- Bloco trial 7 dias (só planos pagos)
+- Explicação dos R$2 da entrega
+- Aviso de plano dinâmico (fixed/hybrid)
+- Lista completa de features (5 itens, não 3)
+- Exemplo numérico via `<PlanFeeBreakdown>` (pedido R$50)
 
-### Fase A — Componentes reutilizáveis de explicação (1 dia)
-Criar 3 componentes pequenos em `src/components/fees/`:
-- `<PlanFeeBreakdown plan orderValue payment />` → tabela "Pedido R$50 via PIX no plano Crescimento → você recebe R$48,75"
-- `<DeliveryFeeExplainer mode="store" | "client" | "driver" />` → texto curto contextual, lê de `plansInfo.ts`
-- `<WhyThisCharge tooltip />` → ícone (?) com popover explicando cada linha de cobrança
+**Card selecionado** auto-expande (usuário vê tudo do escolhido sem precisar tocar de novo).
 
-Tudo lê de `plansInfo.ts` e `useStorePlan.ts` — zero duplicação.
+**Remover** o bloco redundante "Como funciona o {plano}" abaixo dos cards — essa info passa a viver dentro do card expandido.
 
-### Fase B — Lojista (tela por tela)
-- **StoreSettings** (taxa de entrega): abaixo do input mostrar live "Cliente verá: R$ {sua_taxa + 2,00}". Usar `DeliveryFeeExplainer mode=store`.
-- **StoreFinancePanel / Basic**: cada linha de desconto tem `<WhyThisCharge>` (comissão, PIX, R$2 entrega). Card no topo "Plano atual: Crescimento — economia esse mês vs Comissão: R$X".
-- **StoreSubscription**: incluir `<PlansComparisonTable>` colapsado + cálculo "no seu volume (últimos 30d = R$X), o plano ideal seria Y, economia R$Z".
-- **CadastroLojista**: substituir tabela duplicada por `<PlansComparisonTable>`.
-- **CommissionAlert / PlatformSplitAlert**: reescrever em PT-BR claro, sem "split/subaccount".
+**Plano dinâmico**: o checkbox de aceite continua, mas só aparece depois do plano ser selecionado E o card expandido. Hoje fica solto no fim.
 
-### Fase C — Cliente
-- **CheckoutPage / CartPage**: linha "Taxa de entrega" com `<WhyThisCharge>` discreto: "R$5 vai pra loja (entrega), R$2 mantém o app funcionando". Sem ser invasivo.
-- **PedidosPage** (detalhe): mesmo tooltip no histórico.
+### Steps 1–3
+Sem mudanças estruturais. Apenas:
+- Unificar espaçamento (`space-y-4` consistente)
+- Remover dois campos do mesmo passo quando couber lado a lado (CEP + número já está bom)
+- Microcopy: trocar "Lojista deve ter 18 anos ou mais (cláusula 2.2 dos Termos)" por "Você precisa ter 18+" e mover a referência da cláusula para tooltip.
 
-### Fase D — Entregador
-- **DriverDashboard**: card de ganho de corrida com breakdown "Taxa da loja R$5 → motoboy R$X, plataforma R$Y". Usar `DeliveryFeeExplainer mode=driver`.
+### Header / Stepper
+- Manter o stepper visual atual (já é bom)
+- Adicionar abaixo do stepper uma única linha: "Passo X de 4 · ~2 min" para dar previsibilidade
 
-### Fase E — Público / institucional
-- **Index.tsx**: seção "Como cobramos — sem letra miúda" reusando `<PlansComparisonTable>` resumida + 1 frase por plano.
-- **PlanosPage**: adicionar calculadora interativa no topo (slider de faturamento mensal → mostra qual plano paga menos). Maior conversão.
-- **TermosDeUso**: sincronizar valores com `plansInfo.ts` (importar constantes em vez de hardcode).
+## Microcopy — antes/depois (exemplos)
 
-### Fase F — Glossário único
-Criar `/ajuda/taxas` (rota pública) com FAQ curto: "O que é a R$2 da plataforma?", "Por que PIX tem taxa?", "Quando muda meu plano?". Linkar de todos os `<WhyThisCharge>`.
+| Antes | Depois |
+|---|---|
+| "Sem contrato. Troque quando quiser. Sem multa." + badge "Teste 7 dias grátis · só paga depois" | "7 dias grátis · sem contrato · troque quando quiser" |
+| Bloco trial completo visível sempre | Chip "🎁 7 dias grátis" no card fechado; bloco completo no expandido |
+| "💡 Os R$2 da entrega são somados à taxa que você cobra. Quem paga é o cliente — não sai do seu caixa." | Chip "Entrega +R$2" com `<WhyThisCharge>` (?) explicando no popover |
+| "📈 Plano dinâmico: se faturar mais de R$5.000/mês..." (parágrafo) | Selo "📈 Dinâmico" no header do card; explicação completa só no expandido |
 
----
+## Resultado esperado
 
-## 4. Princípios de copy (aplicar em tudo)
+- Step 0 cabe em ~1.5 scrolls em vez de ~4
+- Decisão guiada: chip-comparison > leitura linear
+- Informação completa preservada (acessível em 1 toque)
+- Zero mudança em validação, schema Zod, fluxo de submit ou regra de negócio
 
-1. **Sempre exemplo numérico** — nunca só %.
-2. **Sempre dizer quem paga** — "você (lojista)", "o cliente", "a plataforma".
-3. **Zero jargão** — proibido: split, subaccount, gateway, MDR. Permitido: taxa, repasse, comissão.
-4. **Uma fonte de verdade** — `plansInfo.ts`. Qualquer valor hardcoded em outro arquivo é bug.
-5. **Mostrar economia, não custo** — "você economiza R$X" converte melhor que "você paga R$Y".
+## Detalhes técnicos
 
----
+- Estado novo: `expandedPlan: StorePlanType | null` (auto-set ao selecionar)
+- Refatorar card para componente local `<PlanCard plan expanded onToggle onSelect selected />` dentro do mesmo arquivo (não criar arquivo novo — escopo cirúrgico)
+- Usar `<details>`/`<summary>` nativo ou estado controlado + `max-h` transition para o expandido (sem libs novas)
+- Reaproveitar `PLANS`, `DELIVERY_FEE_NOTE`, `PIX_FEE_NOTE` de `plansInfo.ts` (fonte única já existe)
+- Reaproveitar `PlanFeeBreakdown` e `WhyThisCharge` de `src/components/fees/`
+- Sem mudanças em `plansInfo.ts`, `useStorePlan.ts`, `schema` Zod, edge functions ou banco
+- Bump de versão ao final (appVersion.ts + build.gradle versionName/versionCode)
 
-## 5. Detalhes técnicos
-
-- Linter para evitar regressão: regra ESLint custom proibindo strings `"R$ 2"`, `"2,5%"`, `"6%"`, `"R$ 1,99"`, `"R$ 180"`, `"R$ 100"` fora de `src/lib/plansInfo.ts` e testes.
-- Testes: snapshot de `<PlanFeeBreakdown>` para os 4 planos × 3 valores de pedido.
-- Sem migration de banco. Sem mudança em edge function. Apenas frontend + copy.
-- Versionar normalmente a cada fase concluída (`appVersion.ts` + `build.gradle`).
-
----
-
-## 6. Ordem sugerida
-
-A (componentes) → B (lojista, maior dor) → C (cliente, maior volume) → E (landing/conversão) → D (entregador) → F (glossário). Cada fase entrega valor sozinha.
+## Fora de escopo
+- Steps 1–3 ganham só ajustes de microcopy, não redesign
+- Não alterar lógica de supporter (já oculto)
+- Não criar nova rota /ajuda/taxas (fase F do plano antigo, separado)
