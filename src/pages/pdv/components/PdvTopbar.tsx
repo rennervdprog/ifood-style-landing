@@ -29,8 +29,8 @@ export const PdvTopbar = ({
       <div className="flex-1 min-w-0">
         <span className="text-xs font-bold text-foreground truncate">{storeName}</span>
         <span className="text-[10px] text-emerald-500 font-semibold ml-2 hidden sm:inline">
-          ● {turnoVendasCount} vendas · {formatBRL(turnoVendido)}
-          {ticketMedio > 0 && <span className="text-muted-foreground ml-1.5">· tkt {formatBRL(ticketMedio)}</span>}
+          ● {turnoVendasCount} vendas · <span className="pdv-mono">{formatBRL(turnoVendido)}</span>
+          {ticketMedio > 0 && <span className="text-muted-foreground ml-1.5">· tkt <span className="pdv-mono">{formatBRL(ticketMedio)}</span></span>}
         </span>
       </div>
 
