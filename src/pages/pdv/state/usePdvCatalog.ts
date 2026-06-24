@@ -36,7 +36,7 @@ export function usePdvCatalog(params: {
     queryFn: async () => {
       const { data } = await supabase
         .from("products")
-        .select("id, name, price, image_url, section_id, is_available")
+        .select("id, name, price, image_url, section_id, is_available, store_id, description, metadata")
         .eq("store_id", storeId!)
         .eq("is_available", true)
         .order("name");
