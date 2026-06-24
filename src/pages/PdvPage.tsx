@@ -85,9 +85,6 @@ const PdvPage = () => {
     if (isMobile) setMobileStep("catalog");
   }, [isMobile]);
 
-  const [screen, setScreen] = useState<Screen>("loading");
-  const [currentSession, setCurrentSession] = useState<PdvSession | null>(null);
-
   // Mobile: etapas de venda
   const [mobileStep, setMobileStep] = useState<MobileStep>("catalog");
 
@@ -176,18 +173,19 @@ const PdvPage = () => {
 
   const storePlan = useStorePlan(store?.id);
 
-  // ── Sessão ──
-  const checkSession = useCallback(async () => {
-    if (!store?.id) return;
-    const { data } = await supabase
-      .from("pdv_sessions" as any)
-      .select("*").eq("store_id", store.id).eq("status", "open")
-      .order("opened_at", { ascending: false }).limit(1).maybeSingle();
-     if (data) { setCurrentSession(data as any as PdvSession); setScreen("venda"); }
-    else setScreen("abertura");
-  }, [store?.id]);
+  // ── Sessão (extraída na Fase 1 da refatoração) ──
+  const {
+    screen,
+    setScreen,
+    currentSession,
+    setCurrentSession,
+    openSession,
+    closeSession,
+    loading: sessionLoading,
+  } = usePdvSession({ storeId: store?.id, userId: user?.id });
 
-  useEffect(() => { if (store?.id) checkSession(); }, [store?.id, checkSession]);
+  // Hook de finalização de venda.
+  const { handleVenda: runCheckout, checkoutLoading } = usePdvCheckout();
 
   // ── Catálogo (extraído na Fase 1 da refatoração) ──
   const {
