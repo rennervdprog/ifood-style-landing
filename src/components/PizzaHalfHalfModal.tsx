@@ -95,7 +95,8 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
   });
   const catalog = readPizzaCatalogConfig((storeSettingsRow as any)?.settings);
   const catalogActive = !singleSize && hasPizzaCatalog(catalog);
-  const catalogActiveSizes = catalog.sizes.filter((s) => s.active);
+  // Tamanhos com maxFlavors === 1 não entram no "Monte sua pizza" (não permitem divisão).
+  const catalogActiveSizes = catalog.sizes.filter((s) => s.active && (s.maxFlavors ?? 4) >= 2);
 
   // Auto-select "Tradicional" border by default when borders are loaded
   useEffect(() => {
@@ -165,6 +166,22 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
   useEffect(() => {
     if (open && hasSizes && !selectedSize) setSelectedSize(availableSizes[0]);
   }, [open, hasSizes, selectedSize, availableSizes]);
+
+  // Máx. de sabores efetivo: respeita o limite do tamanho escolhido (catálogo) E o limite global da loja.
+  const sizeMaxFlavors: FlavorCount = (() => {
+    if (!catalogActive || !selectedSize) return maxFlavors;
+    const size = catalogActiveSizes.find((s) => s.name === selectedSize);
+    const cap = (size?.maxFlavors ?? 4) as 2 | 3 | 4;
+    return Math.min(cap, maxFlavors) as FlavorCount;
+  })();
+
+  // Clampa flavorCount se o tamanho escolhido não suporta a quantidade atual.
+  useEffect(() => {
+    if (flavorCount > sizeMaxFlavors) {
+      setFlavorCount(sizeMaxFlavors);
+      setProductIds(Array(sizeMaxFlavors).fill(null));
+    }
+  }, [sizeMaxFlavors, flavorCount]);
 
   const priceForFlavor = (p: Product): number => {
     if (catalogActive) {
@@ -434,9 +451,37 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
         {/* Step 0: choose flavor count */}
         {step === 0 && (
           <div className="space-y-3 pt-4">
+            {/* Tamanho primeiro, para limitar a quantidade de sabores conforme cadastro do tamanho */}
+            {catalogActive && hasSizes && availableSizes.length > 1 && (
+              <div className="bg-card border-2 border-border rounded-2xl p-3 space-y-2 shadow-sm">
+                <p className="text-xs font-bold text-foreground/80">📏 Escolha o tamanho</p>
+                <div className="flex flex-wrap gap-2">
+                  {catalogActiveSizes.map((sz) => {
+                    const isSel = selectedSize === sz.name;
+                    return (
+                      <button
+                        key={sz.id}
+                        type="button"
+                        onClick={() => setSelectedSize(sz.name)}
+                        className={`px-3 py-2 rounded-xl border-2 text-left transition-all ${
+                          isSel
+                            ? "bg-primary/10 border-primary text-primary"
+                            : "bg-muted/40 border-transparent text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        <div className="text-sm font-bold leading-tight">{sz.name}</div>
+                        <div className="text-[10px] opacity-80">
+                          {sz.description ? `${sz.description} · ` : ""}até {sz.maxFlavors ?? 4} sabores
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
             <p className="text-sm text-muted-foreground">Escolha quantos sabores diferentes você quer na sua pizza:</p>
             <div className="grid grid-cols-3 gap-3">
-              {([2, 3, 4] as FlavorCount[]).filter(n => n <= maxFlavors).map(n => {
+              {([2, 3, 4] as FlavorCount[]).filter(n => n <= sizeMaxFlavors).map(n => {
                 const isSel = flavorCount === n;
                 return (
                   <button
