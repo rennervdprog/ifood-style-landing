@@ -43,6 +43,7 @@ import { PDV_METHODS, COLOR_MAP } from "@/pages/pdv/constants";
 import { usePdvCatalog } from "@/pages/pdv/state/usePdvCatalog";
 import { usePdvSession } from "@/pages/pdv/state/usePdvSession";
 import { usePdvCart } from "@/pages/pdv/state/usePdvCart";
+import { usePdvCheckout } from "@/pages/pdv/state/usePdvCheckout";
 
 // Detecta se está em tela mobile (< 768px)
 const useIsMobile = () => {
@@ -83,9 +84,6 @@ const PdvPage = () => {
   useEffect(() => {
     if (isMobile) setMobileStep("catalog");
   }, [isMobile]);
-
-  const [screen, setScreen] = useState<Screen>("loading");
-  const [currentSession, setCurrentSession] = useState<PdvSession | null>(null);
 
   // Mobile: etapas de venda
   const [mobileStep, setMobileStep] = useState<MobileStep>("catalog");
@@ -175,18 +173,19 @@ const PdvPage = () => {
 
   const storePlan = useStorePlan(store?.id);
 
-  // ── Sessão ──
-  const checkSession = useCallback(async () => {
-    if (!store?.id) return;
-    const { data } = await supabase
-      .from("pdv_sessions" as any)
-      .select("*").eq("store_id", store.id).eq("status", "open")
-      .order("opened_at", { ascending: false }).limit(1).maybeSingle();
-     if (data) { setCurrentSession(data as any as PdvSession); setScreen("venda"); }
-    else setScreen("abertura");
-  }, [store?.id]);
+  // ── Sessão (extraída na Fase 1 da refatoração) ──
+  const {
+    screen,
+    setScreen,
+    currentSession,
+    setCurrentSession,
+    openSession,
+    closeSession,
+    loading: sessionLoading,
+  } = usePdvSession({ storeId: store?.id, userId: user?.id });
 
-  useEffect(() => { if (store?.id) checkSession(); }, [store?.id, checkSession]);
+  // Hook de finalização de venda.
+  const { handleVenda: runCheckout, checkoutLoading } = usePdvCheckout();
 
   // ── Catálogo (extraído na Fase 1 da refatoração) ──
   const {
@@ -223,139 +222,33 @@ const PdvPage = () => {
     if (isMobile) setMobileStep("catalog");
   };
 
-  // ── Abrir caixa ──
+  // ── Abrir caixa (delegado a usePdvSession) ──
   const handleAbrirCaixa = async () => {
-    if (!store?.id || !user?.id) return;
-    const amount = parseBRL(openingAmount);
-    setLoading(true);
-    try {
-      const { data, error } = await supabase.from("pdv_sessions" as any)
-        .insert({ store_id: store.id, opened_by: user.id, opening_amount: amount, status: "open" })
-        .select().single();
-      if (error) throw error;
-       setCurrentSession(data as any as PdvSession);
-      setScreen("venda");
-      toast.success(`Caixa aberto! Troco inicial: ${formatBRL(amount)}`);
-    } catch (e: any) { toast.error(e.message || "Erro ao abrir caixa."); }
-    finally { setLoading(false); }
+    await openSession(parseBRL(openingAmount));
   };
 
-  // ── Finalizar venda ──
+  // ── Finalizar venda (delegado a usePdvCheckout) ──
   const handleVenda = async () => {
-    if (!store?.id || !currentSession) return;
-    if (cart.length === 0) { toast.error("Carrinho vazio."); return; }
-
-    // Modo split: validar que pagamentos somam o total
-    if (splitMode) {
-      const splitTotal = sumMoney(splitPayments.map((p) => p.amount));
-      if (Math.abs(splitTotal - finalTotal) > 0.01) {
-        toast.error("Pagamentos não fecham o total."); return;
-      }
-    } else {
-      if (!paymentMethod) { toast.error("Selecione o pagamento."); return; }
-      if (paymentMethod === "dinheiro" && cashReceived && cashVal < finalTotal) {
-        toast.error("Valor recebido menor que o total."); return;
-      }
-    }
-
-    setLoading(true);
-    try {
-      // Forma de pagamento principal: a 1ª do split, ou a única selecionada
-      const primaryMethod = splitMode ? (splitPayments[0]?.method || "dinheiro") : paymentMethod;
-      const paymentsPayload = splitMode
-        ? splitPayments
-        : [{ method: paymentMethod, amount: finalTotal }];
-
-      const { data: order, error: oe } = await supabase.from("orders")
-        .insert({
-          store_id: store.id, client_id: null, order_source: "pdv",
-          pdv_session_id: currentSession.id,
-          table_identifier: tableId || null,
-          subtotal, delivery_fee: 0,
-          pdv_discount: discountAmount,
-          commission_rate: storePlan.pdvCommissionRate ?? 0,
-          total_price: finalTotal, app_fee: 0,
-          payment_method: primaryMethod,
-          payments: paymentsPayload,
-          neighborhood: "Balcão",
-          address_details: tableId ? `${tableId} — Presencial` : "Pedido presencial",
-          status: "finalizado",
-        } as any).select("id").single();
-      if (oe) throw oe;
-
-      await supabase.from("order_items").insert(
-        cart.map(item => ({
-          order_id: order.id,
-          product_id: item.id,
-          quantity: item.quantity,
-          unit_price: item.price,
-          addons: item.addons && item.addons.length > 0 ? JSON.stringify(item.addons) : null,
-          observations: item.observations || null,
-        }))
-      );
-
-      // Insere uma movimentação por forma de pagamento (suporta split)
-      await supabase.from("pdv_movements" as any).insert(
-        paymentsPayload.map((p) => ({
-          session_id: currentSession.id,
-          store_id: store.id,
-          type: "sale",
-          amount: p.amount,
-          payment_method: p.method,
-          description: tableId || "Venda balcão",
-          order_id: order.id,
-        }))
-      );
-
-      queryClient.invalidateQueries({ queryKey: ["pdv-movements", currentSession.id] });
-      setOrderDone(true);
-      toast.success("✅ Venda finalizada!");
-
-      // Detecta itens retornáveis (garrafas) para abrir fluxo de troca de casquinhas
-      try {
-        const { data: prods } = await supabase
-          .from("products")
-          .select("id, metadata")
-          .in("id", cart.map((i) => i.id));
-        const hasReturnable = (prods || []).some(
-          (p: any) => p?.metadata?.returnable_bottle,
-        );
-        if (hasReturnable) {
-          setEmptiesFlow({
-            step: "lookup",
-            orderId: order.id,
-            items: cart.map((i) => ({ product_id: i.id, quantity: i.quantity })),
-          });
-        }
-      } catch (e) {
-        console.warn("Empties detection skipped:", e);
-      }
-
-      // Imprimir nota PDV automaticamente
-      try {
-        printPdvReceipt({
-          id: order.id,
-          created_at: new Date().toISOString(),
-          subtotal,
-          pdv_discount: discountAmount,
-          total_price: finalTotal,
-          payment_method: primaryMethod,
-          cash_received: !splitMode && paymentMethod === "dinheiro" && cashReceived ? parseBRL(cashReceived) : undefined,
-          troco: !splitMode && paymentMethod === "dinheiro" && cashReceived ? troco : undefined,
-          table_identifier: tableId || null,
-          order_items: cart.map(item => ({
-            quantity: item.quantity,
-            unit_price: item.price,
-            products: { name: item.name },
-          })),
-        }, store?.name || "Loja");
-      } catch (e) {
-        console.warn("Erro ao imprimir:", e);
-      }
-
-      setTimeout(clearSale, 2000);
-    } catch (e: any) { toast.error(e.message || "Erro ao finalizar."); }
-    finally { setLoading(false); }
+    await runCheckout({
+      store: store ?? null,
+      session: currentSession,
+      cart,
+      splitMode,
+      splitPayments,
+      paymentMethod,
+      cashReceived,
+      cashVal,
+      subtotal,
+      finalTotal,
+      discountAmount,
+      troco,
+      tableId,
+      pdvCommissionRate: storePlan.pdvCommissionRate ?? 0,
+      onSuccess: () => setOrderDone(true),
+      onClearScheduled: clearSale,
+      onEmptiesFlowStart: ({ orderId, items }) =>
+        setEmptiesFlow({ step: "lookup", orderId, items }),
+    });
   };
 
   // ── Movimentação ──
@@ -394,30 +287,22 @@ const PdvPage = () => {
     finally { setLoading(false); }
   };
 
-  // ── Fechar caixa ──
+  // ── Fechar caixa (delegado a usePdvSession) ──
   const handleFecharCaixa = async () => {
     if (!currentSession) return;
-    setLoading(true);
-    try {
-      const counted = parseBRL(closingAmount);
-      // Calcula esperado aqui (não dá pra confiar em saldoEsperado se for blind close)
-      const expected = saldoEsperado;
-      const diff = counted - expected;
-      await supabase.from("pdv_sessions" as any)
-        .update({
-          status: "closed",
-          closed_at: new Date().toISOString(),
-          closing_amount: counted,
-          closing_difference: diff,
-          closing_method: blindClose ? "blind" : "open",
-          denomination_count: Object.keys(denominationCounts).length > 0 ? denominationCounts : null,
-        })
-        .eq("id", currentSession.id);
-      toast.success("Caixa fechado.");
-      setCurrentSession(null); setSessionSummary(null); setScreen("abertura"); clearSale();
-      setBlindClose(false); setDenominationCounts({}); setClosingAmount("");
-    } catch (e: any) { toast.error(e.message); }
-    finally { setLoading(false); }
+    const ok = await closeSession({
+      countedAmount: parseBRL(closingAmount),
+      expectedAmount: saldoEsperado,
+      blindClose,
+      denominationCounts,
+    });
+    if (ok) {
+      setSessionSummary(null);
+      clearSale();
+      setBlindClose(false);
+      setDenominationCounts({});
+      setClosingAmount("");
+    }
   };
 
   // ── Totais do turno ──
@@ -463,27 +348,12 @@ const PdvPage = () => {
     );
     if (found) {
       // Adiciona direto ao carrinho (sem abrir modal de adicionais)
-      setCart(prev => {
-        const existing = prev.find(i => i.id === found.id && !i.addons && !i.observations);
-        if (existing) {
-          return prev.map(i => i.id === found.id && !i.addons && !i.observations
-            ? { ...i, quantity: i.quantity + 1 }
-            : i);
-        }
-        return [...prev, {
-          id: found.id,
-          name: found.name,
-          basePrice: Number(found.price),
-          price: Number(found.price),
-          quantity: 1,
-          image_url: found.image_url,
-        }];
-      });
+      addScannedProduct(found);
       toast.success(`+ ${found.name}`, { duration: 1200 });
     } else {
       toast.warning(`Código não encontrado: ${code}`);
     }
-  }, [products]);
+  }, [products, addScannedProduct]);
 
   usePdvBarcodeScanner(handleBarcodeScan, screen === "venda" && tab === "venda");
 
