@@ -509,7 +509,7 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
         {/* Flavor pick step */}
         {isFlavorStep && (
           <div className="space-y-3 pt-2">
-            {hasSizes && step === 1 && (
+            {!catalogActive && hasSizes && step === 1 && (
               <div className="bg-card border-2 border-border rounded-2xl p-3 space-y-2 shadow-sm">
                 <p className="text-xs font-bold text-foreground/80">📏 Escolha o tamanho</p>
                 <div className="flex flex-wrap gap-2">
