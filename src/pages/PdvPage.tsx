@@ -169,16 +169,54 @@ const PdvPage = () => {
   const [blindClose, setBlindClose] = useState(false);
   const [denominationCounts, setDenominationCounts] = useState<Record<string, number>>({});
 
+  // ── Admin: seletor de loja (super admin opera qualquer loja, ex.: lojas fake) ──
+  const { data: isAdmin } = useQuery({
+    queryKey: ["pdv-is-admin", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("user_roles").select("role")
+        .eq("user_id", user!.id).eq("role", "admin").maybeSingle();
+      return !!data;
+    },
+    enabled: !!user,
+    staleTime: 5 * 60_000,
+  });
+
+  const ADMIN_STORE_KEY = "pdv_admin_selected_store";
+  const [adminStoreId, setAdminStoreId] = useState<string | null>(() => {
+    try { return localStorage.getItem(ADMIN_STORE_KEY); } catch { return null; }
+  });
+
   // ── Loja ──
   const { data: store, isFetched: storeFetched } = useQuery({
-    queryKey: ["pdv-store", user?.id],
+    queryKey: ["pdv-store", user?.id, isAdmin ? adminStoreId : null],
     queryFn: async () => {
+      // Super admin com loja escolhida → busca direto por id (qualquer status)
+      if (isAdmin && adminStoreId) {
+        const { data } = await supabase
+          .from("stores").select("id, name")
+          .eq("id", adminStoreId).maybeSingle();
+        return data;
+      }
       const { data } = await supabase
         .from("stores").select("id, name")
         .eq("owner_id", user!.id).eq("status", "ativo").maybeSingle();
       return data;
     },
-    enabled: !!user,
+    enabled: !!user && (isAdmin !== undefined),
+  });
+
+  // Lista de lojas para o seletor (apenas admin, apenas quando sem loja ativa)
+  const { data: adminStores } = useQuery({
+    queryKey: ["pdv-admin-stores"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("stores").select("id, name, status")
+        .order("name", { ascending: true });
+      return data || [];
+    },
+    enabled: !!isAdmin && storeFetched && !store,
+    staleTime: 60_000,
   });
 
   // ── Operador (Fase 4) ──
@@ -392,22 +430,53 @@ const PdvPage = () => {
   if (screen === "loading") return (
     <div className="min-h-screen bg-background flex items-center justify-center">
       {storeFetched && !store ? (
-        <div className="max-w-sm text-center px-6 py-10">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-amber-500/10 flex items-center justify-center">
-            <Lock className="h-8 w-8 text-amber-500" />
+        isAdmin ? (
+          <div className="max-w-sm w-full px-6 py-8">
+            <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-primary/10 flex items-center justify-center">
+              <Layers className="h-7 w-7 text-primary" />
+            </div>
+            <h1 className="text-lg font-black text-foreground mb-1 text-center">Escolher loja</h1>
+            <p className="text-xs text-muted-foreground mb-5 text-center">
+              Modo super admin — selecione qual loja operar no PDV.
+            </p>
+            <div className="max-h-[60vh] overflow-y-auto space-y-2">
+              {(adminStores || []).map((s: any) => (
+                <button
+                  key={s.id}
+                  onClick={() => {
+                    try { localStorage.setItem(ADMIN_STORE_KEY, s.id); } catch {}
+                    setAdminStoreId(s.id);
+                    queryClient.invalidateQueries({ queryKey: ["pdv-store"] });
+                  }}
+                  className="w-full text-left bg-card border border-border rounded-xl px-4 py-3 hover:border-primary transition-colors"
+                >
+                  <div className="font-bold text-sm text-foreground truncate">{s.name}</div>
+                  <div className="text-[11px] text-muted-foreground">{s.status}</div>
+                </button>
+              ))}
+              {adminStores && adminStores.length === 0 && (
+                <p className="text-xs text-muted-foreground text-center py-4">Nenhuma loja cadastrada.</p>
+              )}
+            </div>
           </div>
-          <h1 className="text-lg font-black text-foreground mb-1">PDV indisponível</h1>
-          <p className="text-sm text-muted-foreground mb-5">
-            Nenhuma loja ativa vinculada a este usuário. Faça login com a conta do lojista
-            ou entre em contato com o administrador.
-          </p>
-          <button
-            onClick={() => navigate("/admin")}
-            className="bg-primary text-primary-foreground font-bold px-5 py-2.5 rounded-xl text-sm"
-          >
-            Voltar ao painel
-          </button>
-        </div>
+        ) : (
+          <div className="max-w-sm text-center px-6 py-10">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-amber-500/10 flex items-center justify-center">
+              <Lock className="h-8 w-8 text-amber-500" />
+            </div>
+            <h1 className="text-lg font-black text-foreground mb-1">PDV indisponível</h1>
+            <p className="text-sm text-muted-foreground mb-5">
+              Nenhuma loja ativa vinculada a este usuário. Faça login com a conta do lojista
+              ou entre em contato com o administrador.
+            </p>
+            <button
+              onClick={() => navigate("/admin")}
+              className="bg-primary text-primary-foreground font-bold px-5 py-2.5 rounded-xl text-sm"
+            >
+              Voltar ao painel
+            </button>
+          </div>
+        )
       ) : (
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       )}
