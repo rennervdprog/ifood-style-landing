@@ -93,7 +93,7 @@ export const PdvCatalogSection = ({
                     )}
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-foreground leading-tight truncate">{product.name}</p>
-                      <p className={`text-sm font-black mt-0.5 ${qty > 0 ? "text-primary" : "text-muted-foreground"}`}>{formatBRL(Number(product.price))}</p>
+                      <p className={`text-sm font-black mt-0.5 pdv-mono ${qty > 0 ? "text-primary" : "text-muted-foreground"}`}>{formatBRL(Number(product.price))}</p>
                     </div>
                     <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
                       {qty > 0 && (
