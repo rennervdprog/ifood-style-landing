@@ -65,6 +65,18 @@ export const ProductFormInline = ({ initial, onSave, onCancel, storeCategory, st
     initial?.price ? formatBRLDisplay(Number(initial.price)) : ""
   );
 
+  // Se houver override de preço por tamanho, o preço base do produto vira o MENOR override.
+  useEffect(() => {
+    const ov = (form.metadata?.pizza_size_overrides || {}) as Record<string, number>;
+    const vals = Object.values(ov).map((v) => Number(v)).filter((n) => n > 0);
+    if (!vals.length) return;
+    const min = Math.min(...vals);
+    const current = Number(form.price) || 0;
+    if (Math.abs(current - min) < 0.005) return;
+    setForm((p) => ({ ...p, price: min.toFixed(2) }));
+    setPriceDisplay(formatBRLDisplay(min));
+  }, [form.metadata?.pizza_size_overrides, form.price]);
+
   const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value;
     if (!raw.replace(/\D/g, "")) {
