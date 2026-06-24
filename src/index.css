@@ -596,3 +596,34 @@ svg.lucide {
   outline: 2px solid hsl(var(--primary));
   outline-offset: 1px;
 }
+
+/* ─── Densidade "pro" dentro do PDV ──────────────────────────────────
+ * Aperta espaçamentos de listas/cards no balcão sem mexer no resto do app.
+ * Hit targets de botões permanecem ≥ 40px para uso com mãos molhadas/touch.
+ * ──────────────────────────────────────────────────────────────────── */
+.pdv-shell {
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+/* Cards/painéis: bordas mais finas, sombras quase nulas (PDV não é dashboard) */
+.pdv-shell [class*="rounded-2xl"][class*="border"],
+.pdv-shell [class*="rounded-xl"][class*="border"] {
+  box-shadow: 0 1px 0 0 hsl(var(--border) / 0.6);
+}
+
+/* Tabular nums por padrão em qualquer span/td com classe "tabular" */
+.pdv-shell .tabular,
+.pdv-shell [class*="text-2xl"][class*="font-black"],
+.pdv-shell [class*="text-xl"][class*="font-black"] {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+/* Scrollbar fina e discreta no PDV */
+.pdv-shell *::-webkit-scrollbar { width: 8px; height: 8px; }
+.pdv-shell *::-webkit-scrollbar-thumb {
+  background: hsl(var(--border));
+  border-radius: 8px;
+}
+.pdv-shell *::-webkit-scrollbar-thumb:hover { background: hsl(var(--muted-foreground) / 0.4); }
