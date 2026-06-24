@@ -544,7 +544,7 @@ const PdvPage = () => {
             <div className="flex flex-1 overflow-hidden">
               {/* Catálogo */}
               <div className="flex flex-col flex-1 min-w-0 overflow-hidden border-r border-border">
-                <CatalogSection
+                <PdvCatalogSection
                   search={search} setSearch={setSearch}
                   sections={sections} activeSection={activeSection} setActiveSection={setActiveSection}
                   grouped={grouped} prodLoading={prodLoading}
@@ -554,7 +554,7 @@ const PdvPage = () => {
               </div>
               {/* Caixa */}
               <aside className="w-72 lg:w-80 xl:w-96 flex flex-col bg-card shrink-0 overflow-hidden">
-                <CartSection
+                <PdvCartSection
                   cart={cart} tableId={tableId} setTableId={setTableId}
                   totalItems={totalItems} clearSale={clearSale}
                   subtotal={subtotal} discountAmount={discountAmount} finalTotal={finalTotal}
@@ -565,7 +565,7 @@ const PdvPage = () => {
                   setCashReceived={setCashReceived} cashReceived={cashReceived}
                   troco={troco} trocoNegativo={trocoNegativo} finalTotal_={finalTotal}
                   removeItem={removeItem} onFinalize={handleVenda}
-                  loading={loading} orderDone={orderDone}
+                  loading={loading || checkoutLoading} orderDone={orderDone}
                   splitMode={splitMode} setSplitMode={setSplitMode}
                   splitPayments={splitPayments} setSplitPayments={setSplitPayments}
                 />
@@ -580,7 +580,7 @@ const PdvPage = () => {
               {mobileStep === "catalog" && (
                 <>
                   <div className="flex-1 overflow-hidden flex flex-col">
-                    <CatalogSection
+                    <PdvCatalogSection
                       search={search} setSearch={setSearch}
                       sections={sections} activeSection={activeSection} setActiveSection={setActiveSection}
                       grouped={grouped} prodLoading={prodLoading}
@@ -610,7 +610,7 @@ const PdvPage = () => {
               {mobileStep === "cart" && (
                 <>
                   <div className="flex-1 overflow-hidden flex flex-col">
-                    <CartSection
+                    <PdvCartSection
                       cart={cart} tableId={tableId} setTableId={setTableId}
                       totalItems={totalItems} clearSale={clearSale}
                       subtotal={subtotal} discountAmount={discountAmount} finalTotal={finalTotal}
@@ -621,7 +621,7 @@ const PdvPage = () => {
                       setCashReceived={setCashReceived} cashReceived={cashReceived}
                       troco={troco} trocoNegativo={trocoNegativo} finalTotal_={finalTotal}
                       removeItem={removeItem} onFinalize={handleVenda}
-                      loading={loading} orderDone={orderDone}
+                      loading={loading || checkoutLoading} orderDone={orderDone}
                       splitMode={splitMode} setSplitMode={setSplitMode}
                       splitPayments={splitPayments} setSplitPayments={setSplitPayments}
                     />
