@@ -110,18 +110,10 @@ const PdvPage = () => {
   // Abertura
   const [openingAmount, setOpeningAmount] = useState("0");
 
-  // Venda
-  const [cart, setCart] = useState<CartItem[]>([]);
-  const [paymentMethod, setPaymentMethod] = useState("");
-  const [tableId, setTableId] = useState("");
-  const [discountType, setDiscountType] = useState<"R$" | "%">("R$");
-  const [discountInput, setDiscountInput] = useState("");
-  const [showDiscount, setShowDiscount] = useState(false);
-  const [cashReceived, setCashReceived] = useState(""); // valor entregue pelo cliente
+  // Venda — estado de carrinho/pagamento agora vive em usePdvCart.
   const [search, setSearch] = useState("");
   const [activeSection, setActiveSection] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [orderDone, setOrderDone] = useState(false);
 
   // Fluxo de troca de casquinhas no PDV
   const [emptiesFlow, setEmptiesFlow] = useState<{
@@ -131,18 +123,11 @@ const PdvPage = () => {
     customerName?: string;
   }>({ step: null, orderId: "", items: [] });
 
-  // Multi-pagamento (split)
-  const [splitMode, setSplitMode] = useState(false);
-  const [splitPayments, setSplitPayments] = useState<SplitPayment[]>([]);
-
   // Mostrar guia de atalhos
   const [showShortcuts, setShowShortcuts] = useState(false);
 
   // Ref do input de busca para foco com F2
   const searchInputRef = useRef<HTMLInputElement | null>(null);
-
-  // Modal de produto (adicionais, bordas, observações)
-  const [productModal, setProductModal] = useState<any | null>(null);
 
   // Modais
   const [movModal, setMovModal] = useState<"sangria" | "suprimento" | null>(null);
