@@ -1634,6 +1634,7 @@ const StorePage = () => {
             storeName={store?.name || ""}
             storeCategory={store?.category}
             singleSize={!!(store?.settings as any)?.pizza_single_size}
+            storeSettings={(store?.settings as any) || null}
             open={!!selectedProduct}
             onClose={() => setSelectedProduct(null)}
             onAdd={handleAddToCart}

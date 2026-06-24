@@ -9,6 +9,8 @@ import { Minus, Plus, ShoppingCart, Pizza, AlertTriangle, X, ArrowLeft } from "l
 import { motion, AnimatePresence } from "framer-motion";
 import type { CartAddon } from "@/contexts/CartContext";
 import { getEffectivePrice, isPromoActive, getPromoDiscountPct } from "@/lib/promoPrice";
+import { readPizzaCatalogConfig, hasPizzaCatalog } from "@/types/pizza";
+import { priceForFlavorInSize, isFlavorAvailableInSize } from "@/lib/pizzaPricing";
 
 interface Product {
   id: string;
@@ -42,6 +44,7 @@ interface Props {
   storeName: string;
   storeCategory?: string;
   singleSize?: boolean;
+  storeSettings?: Record<string, any> | null;
   open: boolean;
   onClose: () => void;
   onAdd: (product: Product, addons: CartAddon[], observations: string, quantity: number, totalUnitPrice: number) => void;
@@ -60,7 +63,7 @@ const categoryEmoji: Record<string, string> = {
   saudavel: "🥗",
 };
 
-const ProductDetailModal = ({ product, storeName, storeCategory, singleSize = false, open, onClose, onAdd }: Props) => {
+const ProductDetailModal = ({ product, storeName, storeCategory, singleSize = false, storeSettings, open, onClose, onAdd }: Props) => {
   // itemId → quantidade (0 = não selecionado)
   const [selectedAddons, setSelectedAddons] = useState<Record<string, Record<string, number>>>({});
   const [observations, setObservations] = useState("");
@@ -102,7 +105,17 @@ const ProductDetailModal = ({ product, storeName, storeCategory, singleSize = fa
   const emoji = categoryEmoji[cat] || "🍴";
 
   const isPizza = cat === "pizzas" && !isBeverage;
-  const sizes: Array<{ name: string; price: number }> = meta.sizes || [];
+  const pizzaCatalogConfig = useMemo(() => readPizzaCatalogConfig(storeSettings || {}), [storeSettings]);
+  const catalogSizes = useMemo(() => {
+    if (!isPizza || singleSize) return [] as Array<{ name: string; price: number }>;
+    if (!hasPizzaCatalog(pizzaCatalogConfig)) return [];
+    const flavor = { id: product?.id || "", price: Number(product?.price) || 0, metadata: meta };
+    return pizzaCatalogConfig.sizes
+      .filter((s) => s.active && isFlavorAvailableInSize(flavor as any, s.id))
+      .map((s) => ({ name: s.name, price: priceForFlavorInSize(flavor as any, s, pizzaCatalogConfig) }));
+  }, [isPizza, singleSize, pizzaCatalogConfig, product?.id, product?.price, meta]);
+  const legacySizes: Array<{ name: string; price: number }> = meta.sizes || [];
+  const sizes: Array<{ name: string; price: number }> = catalogSizes.length > 0 ? catalogSizes : legacySizes;
   const hasSizes = isPizza && !singleSize && sizes.some((s) => Number(s.price) > 0);
 
   const isLanche = cat === "lanches" && !isBeverage;
