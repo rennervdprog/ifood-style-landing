@@ -198,7 +198,7 @@ const PdvPage = () => {
       // Super admin com loja escolhida → busca direto por id (qualquer status)
       if (isAdmin && adminStoreId) {
         const { data } = await supabase
-          .from("stores").select("id, name")
+          .from("stores").select("id, name, category, categories, settings")
           .eq("id", adminStoreId).maybeSingle();
         return data;
       }
