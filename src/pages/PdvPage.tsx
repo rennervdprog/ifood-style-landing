@@ -115,6 +115,25 @@ const PdvPage = () => {
   const [activeSection, setActiveSection] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  // Hook do carrinho (extraído na Fase 1 da refatoração).
+  const {
+    cart, setCart,
+    paymentMethod, setPaymentMethod,
+    tableId, setTableId,
+    discountType, setDiscountType,
+    discountInput, setDiscountInput,
+    showDiscount, setShowDiscount,
+    cashReceived, setCashReceived,
+    orderDone, setOrderDone,
+    splitMode, setSplitMode,
+    splitPayments, setSplitPayments,
+    productModal, setProductModal,
+    subtotal, totalItems, discountAmount, finalTotal, cashVal, troco, trocoNegativo,
+    getQty,
+    openProduct, handleModalAdd, addScannedProduct, decItem, removeItem,
+    clearSale: clearSaleCart,
+  } = usePdvCart();
+
   // Fluxo de troca de casquinhas no PDV
   const [emptiesFlow, setEmptiesFlow] = useState<{
     step: "lookup" | "return" | null;
