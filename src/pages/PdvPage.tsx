@@ -169,16 +169,54 @@ const PdvPage = () => {
   const [blindClose, setBlindClose] = useState(false);
   const [denominationCounts, setDenominationCounts] = useState<Record<string, number>>({});
 
+  // ── Admin: seletor de loja (super admin opera qualquer loja, ex.: lojas fake) ──
+  const { data: isAdmin } = useQuery({
+    queryKey: ["pdv-is-admin", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("user_roles").select("role")
+        .eq("user_id", user!.id).eq("role", "admin").maybeSingle();
+      return !!data;
+    },
+    enabled: !!user,
+    staleTime: 5 * 60_000,
+  });
+
+  const ADMIN_STORE_KEY = "pdv_admin_selected_store";
+  const [adminStoreId, setAdminStoreId] = useState<string | null>(() => {
+    try { return localStorage.getItem(ADMIN_STORE_KEY); } catch { return null; }
+  });
+
   // ── Loja ──
   const { data: store, isFetched: storeFetched } = useQuery({
-    queryKey: ["pdv-store", user?.id],
+    queryKey: ["pdv-store", user?.id, isAdmin ? adminStoreId : null],
     queryFn: async () => {
+      // Super admin com loja escolhida → busca direto por id (qualquer status)
+      if (isAdmin && adminStoreId) {
+        const { data } = await supabase
+          .from("stores").select("id, name")
+          .eq("id", adminStoreId).maybeSingle();
+        return data;
+      }
       const { data } = await supabase
         .from("stores").select("id, name")
         .eq("owner_id", user!.id).eq("status", "ativo").maybeSingle();
       return data;
     },
-    enabled: !!user,
+    enabled: !!user && (isAdmin !== undefined),
+  });
+
+  // Lista de lojas para o seletor (apenas admin, apenas quando sem loja ativa)
+  const { data: adminStores } = useQuery({
+    queryKey: ["pdv-admin-stores"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("stores").select("id, name, status")
+        .order("name", { ascending: true });
+      return data || [];
+    },
+    enabled: !!isAdmin && storeFetched && !store,
+    staleTime: 60_000,
   });
 
   // ── Operador (Fase 4) ──
