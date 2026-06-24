@@ -497,7 +497,16 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
                   .map((id, i) => (i !== currentFlavorIdx ? id : null))
                   .filter(Boolean) as string[]
               );
-              const items = group.items.filter(p => !chosenIds.has(p.id));
+              const sizeId = catalogActive && selectedSize
+                ? (catalogActiveSizes.find((s) => s.name === selectedSize)?.id || null)
+                : null;
+              const items = group.items.filter((p) => {
+                if (chosenIds.has(p.id)) return false;
+                if (catalogActive && sizeId) {
+                  return isFlavorAvailableInSize({ id: p.id, price: p.price, metadata: p.metadata as any }, sizeId);
+                }
+                return true;
+              });
               if (items.length === 0) return null;
               const selectedId = productIds[currentFlavorIdx];
               const onSelect = setCurrentFlavor;
