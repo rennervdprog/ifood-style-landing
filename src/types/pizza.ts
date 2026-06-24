@@ -18,7 +18,7 @@ export interface PizzaSizeCatalogItem {
   /** Descrição curta (ex.: "8 fatias · serve 3 pessoas"). */
   description?: string;
   /** Sobrescreve o máximo global de sabores neste tamanho. */
-  maxFlavors?: 2 | 3 | 4;
+  maxFlavors?: 1 | 2 | 3 | 4;
   /** Se false, não aparece no cliente. */
   active: boolean;
 }
