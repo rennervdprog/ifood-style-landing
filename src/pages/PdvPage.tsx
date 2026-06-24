@@ -203,7 +203,7 @@ const PdvPage = () => {
         return data;
       }
       const { data } = await supabase
-        .from("stores").select("id, name")
+        .from("stores").select("id, name, category, categories, settings")
         .eq("owner_id", user!.id).eq("status", "ativo").maybeSingle();
       return data;
     },
