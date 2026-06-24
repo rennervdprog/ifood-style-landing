@@ -15,7 +15,7 @@ const ROWS: Row[] = [
       hybrid: "R$ 50*",
       fixed: "R$ 90*",
       supporter: "R$ 75",
-      autonomy: "R$ 229,90",
+      autonomy: "R$ 149,90",
     },
   },
   {

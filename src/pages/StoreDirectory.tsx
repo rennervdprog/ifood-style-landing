@@ -99,7 +99,7 @@ const plans = [
     id: "autonomy",
     name: "Autonomia",
     tagline: "Você cobra, o cliente paga. Sem acréscimo da plataforma.",
-    price: "229,90",
+    price: "149,90",
     commission: "0%",
     icon: Crown,
     highlight: false,
@@ -130,8 +130,8 @@ const faqs = [
     a: "É o quanto a plataforma cobra por pedido pra manter o motoboy integrado, o rastreamento e o suporte. Nos planos Comissão, Crescimento e Essencial ela aparece pro cliente como acréscimo em cima da sua taxa de entrega. No plano Autonomia esse acréscimo é zero — o cliente paga exatamente a taxa que você define.",
   },
   {
-    q: "Quando vale a pena o plano Autonomia (R$229,90)?",
-    a: 'Se você sente que os R$2 extras estão afastando cliente, ou se prefere mostrar um preço de entrega "redondo" sem acréscimo, o Autonomia compensa a partir de ~115 pedidos/mês (R$2 × 115 = R$230). Tem 7 dias grátis pra testar.',
+    q: "Quando vale a pena o plano Autonomia (R$149,90)?",
+    a: 'Se você sente que os R$2 extras estão afastando cliente, ou se prefere mostrar um preço de entrega "redondo" sem acréscimo, o Autonomia compensa a partir de ~75 pedidos/mês (R$2 × 75 = R$150). Tem 7 dias grátis pra testar.',
   },
 ];
 
