@@ -170,7 +170,7 @@ const PdvPage = () => {
   const [denominationCounts, setDenominationCounts] = useState<Record<string, number>>({});
 
   // ── Loja ──
-  const { data: store } = useQuery({
+  const { data: store, isFetched: storeFetched } = useQuery({
     queryKey: ["pdv-store", user?.id],
     queryFn: async () => {
       const { data } = await supabase
