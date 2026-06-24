@@ -527,6 +527,15 @@ const PdvPage = () => {
               </div>
               {/* Caixa */}
               <aside className="w-72 lg:w-80 xl:w-96 flex flex-col bg-card shrink-0 overflow-hidden">
+                <PdvSessionCard
+                  openingAmount={currentSession?.opening_amount ?? 0}
+                  vendasTotal={turnoVendido}
+                  vendasCount={turnoVendasCount}
+                  dinheiro={turnoDinheiro}
+                  sangrias={turnoSangrias}
+                  suprimentos={turnoSuprimentos}
+                  saldoEsperado={saldoEsperado}
+                />
                 <PdvCartSection
                   cart={cart} tableId={tableId} setTableId={setTableId}
                   totalItems={totalItems} clearSale={clearSale}
