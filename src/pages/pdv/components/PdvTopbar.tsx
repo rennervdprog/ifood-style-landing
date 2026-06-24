@@ -1,9 +1,10 @@
-import { ArrowLeft, Monitor, Keyboard, ArrowUpCircle, ArrowDownCircle, Lock, Loader2 } from "lucide-react";
+import { ArrowLeft, Monitor, Keyboard, ArrowUpCircle, ArrowDownCircle, Lock, Loader2, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { formatBRL } from "@/lib/utils";
 
 interface Props {
   storeName?: string;
+  operatorName?: string;
   turnoVendasCount: number;
   turnoVendido: number;
   ticketMedio: number;
@@ -15,10 +16,11 @@ interface Props {
 }
 
 export const PdvTopbar = ({
-  storeName, turnoVendasCount, turnoVendido, ticketMedio,
+  storeName, operatorName, turnoVendasCount, turnoVendido, ticketMedio,
   loading, onShowShortcuts, onSuprimento, onSangria, onFechar,
 }: Props) => {
   const navigate = useNavigate();
+  const initial = (operatorName || "").trim().charAt(0).toUpperCase() || "?";
   return (
     <header className="h-12 border-b border-border bg-card flex items-center px-3 gap-2 shrink-0">
       <button onClick={() => navigate("/admin")} className="p-1.5 rounded-lg hover:bg-muted transition-colors">
@@ -35,6 +37,22 @@ export const PdvTopbar = ({
       </div>
 
       <div className="flex items-center gap-1">
+        {operatorName && (
+          <div
+            title={`Operador: ${operatorName}`}
+            className="hidden sm:flex items-center gap-1.5 pl-1.5 pr-2 py-1 rounded-lg bg-muted/40 border border-border"
+          >
+            <span className="w-5 h-5 rounded-full bg-primary text-primary-foreground text-[10px] font-black flex items-center justify-center">
+              {initial}
+            </span>
+            <span className="text-[11px] font-bold text-foreground max-w-[120px] truncate">{operatorName}</span>
+          </div>
+        )}
+        {operatorName && (
+          <div title={operatorName} className="sm:hidden w-6 h-6 rounded-full bg-primary text-primary-foreground text-[10px] font-black flex items-center justify-center">
+            {initial}
+          </div>
+        )}
         <button
           onClick={onShowShortcuts}
           title="Atalhos de teclado"

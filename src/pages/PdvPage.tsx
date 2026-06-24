@@ -53,6 +53,7 @@ import { PdvShortcutsDialog } from "@/pages/pdv/components/PdvShortcutsDialog";
 import { PdvTopbar } from "@/pages/pdv/components/PdvTopbar";
 import { PdvTabs } from "@/pages/pdv/components/PdvTabs";
 import { PdvStatusBar } from "@/pages/pdv/components/PdvStatusBar";
+import { PdvSessionCard } from "@/pages/pdv/components/PdvSessionCard";
 
 // Detecta se está em tela mobile (< 768px)
 const useIsMobile = () => {
@@ -179,6 +180,20 @@ const PdvPage = () => {
     },
     enabled: !!user,
   });
+
+  // ── Operador (Fase 4) ──
+  const { data: operatorProfile } = useQuery({
+    queryKey: ["pdv-operator", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("profiles").select("full_name")
+        .eq("user_id", user!.id).maybeSingle();
+      return data;
+    },
+    enabled: !!user,
+    staleTime: 5 * 60_000,
+  });
+  const operatorName = (operatorProfile as any)?.full_name || user?.email?.split("@")[0];
 
   const storePlan = useStorePlan(store?.id);
 
@@ -429,6 +444,7 @@ const PdvPage = () => {
 
       <PdvTopbar
         storeName={store?.name}
+        operatorName={operatorName}
         turnoVendasCount={turnoVendasCount}
         turnoVendido={turnoVendido}
         ticketMedio={ticketMedio}
@@ -511,6 +527,15 @@ const PdvPage = () => {
               </div>
               {/* Caixa */}
               <aside className="w-72 lg:w-80 xl:w-96 flex flex-col bg-card shrink-0 overflow-hidden">
+                <PdvSessionCard
+                  openingAmount={currentSession?.opening_amount ?? 0}
+                  vendasTotal={turnoVendido}
+                  vendasCount={turnoVendasCount}
+                  dinheiro={turnoDinheiro}
+                  sangrias={turnoSangrias}
+                  suprimentos={turnoSuprimentos}
+                  saldoEsperado={saldoEsperado}
+                />
                 <PdvCartSection
                   cart={cart} tableId={tableId} setTableId={setTableId}
                   totalItems={totalItems} clearSale={clearSale}
