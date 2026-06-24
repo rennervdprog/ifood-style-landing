@@ -1863,6 +1863,9 @@ const AdminDashboard = () => {
               expandedClient={expandedClient}
               setExpandedClient={setExpandedClient}
               storeName={store?.name}
+              clientCounts={clientCounts}
+              clientSort={clientSort}
+              setClientSort={setClientSort}
             />
           )}
 
