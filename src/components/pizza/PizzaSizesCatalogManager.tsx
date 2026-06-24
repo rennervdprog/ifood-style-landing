@@ -235,48 +235,63 @@ const PizzaSizesCatalogManager = ({ storeId }: Props) => {
 
         <div className="space-y-2">
           {cfg.sizes.map((s) => (
-            <div key={s.id} className="flex items-center gap-2 rounded-xl border border-border bg-muted/30 p-2">
-              <div className="flex-1 min-w-0 space-y-1">
-                <input
-                  type="text"
-                  defaultValue={s.name}
-                  onBlur={(e) => { if (e.target.value.trim() && e.target.value !== s.name) updateSize(s.id, { name: e.target.value.trim() }); }}
-                  className="w-full bg-transparent text-sm font-bold text-foreground focus:outline-none"
-                />
-                <input
-                  type="text"
-                  defaultValue={s.description || ""}
-                  placeholder="Descrição (ex: 8 fatias · 35cm)"
-                  onBlur={(e) => { if (e.target.value !== (s.description || "")) updateSize(s.id, { description: e.target.value.trim() || undefined }); }}
-                  className="w-full bg-transparent text-[11px] text-muted-foreground focus:outline-none"
-                />
+            <div key={s.id} className="rounded-xl border border-border bg-muted/30 p-2.5 space-y-2">
+              <div className="flex items-start gap-2">
+                <div className="flex-1 min-w-0 space-y-1">
+                  <input
+                    type="text"
+                    defaultValue={s.name}
+                    onBlur={(e) => { if (e.target.value.trim() && e.target.value !== s.name) updateSize(s.id, { name: e.target.value.trim() }); }}
+                    className="w-full bg-transparent text-sm font-bold text-foreground focus:outline-none"
+                  />
+                  <input
+                    type="text"
+                    defaultValue={s.description || ""}
+                    placeholder="Descrição (ex: 8 fatias · 35cm)"
+                    onBlur={(e) => { if (e.target.value !== (s.description || "")) updateSize(s.id, { description: e.target.value.trim() || undefined }); }}
+                    className="w-full bg-transparent text-[11px] text-muted-foreground focus:outline-none"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => updateSize(s.id, { active: !s.active })}
+                  className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-primary"
+                  title={s.active ? "Ocultar do cliente" : "Mostrar"}
+                >
+                  {s.active ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4 opacity-50" />}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => removeSize(s.id)}
+                  className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-destructive"
+                >
+                  <X className="h-4 w-4" />
+                </button>
               </div>
-              <select
-                value={s.maxFlavors || 0}
-                onChange={(e) => updateSize(s.id, { maxFlavors: Number(e.target.value) ? Number(e.target.value) as 2|3|4 : undefined })}
-                className="text-[10px] bg-background border border-border rounded-lg px-1.5 py-1"
-                title="Máx. sabores neste tamanho"
-              >
-                <option value={0}>auto</option>
-                <option value={2}>2</option>
-                <option value={3}>3</option>
-                <option value={4}>4</option>
-              </select>
-              <button
-                type="button"
-                onClick={() => updateSize(s.id, { active: !s.active })}
-                className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-primary"
-                title={s.active ? "Ocultar do cliente" : "Mostrar"}
-              >
-                {s.active ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4 opacity-50" />}
-              </button>
-              <button
-                type="button"
-                onClick={() => removeSize(s.id)}
-                className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-destructive"
-              >
-                <X className="h-4 w-4" />
-              </button>
+              <div className="flex items-center gap-1.5 flex-wrap pt-2 border-t border-border/50">
+                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mr-1">
+                  Máx. sabores:
+                </span>
+                {([1, 2, 3, 4] as const).map((n) => {
+                  const current = s.maxFlavors ?? 4;
+                  const isSel = current === n;
+                  return (
+                    <button
+                      key={n}
+                      type="button"
+                      onClick={() => updateSize(s.id, { maxFlavors: (n as 1 | 2 | 3 | 4) })}
+                      className={`min-w-[36px] h-7 px-2 rounded-lg text-[11px] font-black transition-all ${
+                        isSel
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-background border border-border text-muted-foreground hover:text-foreground"
+                      }`}
+                      title={n === 1 ? "Apenas 1 sabor (sem divisão)" : `Até ${n} sabores`}
+                    >
+                      {n === 1 ? "1" : `até ${n}`}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           ))}
         </div>
