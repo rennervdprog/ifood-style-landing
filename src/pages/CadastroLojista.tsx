@@ -47,7 +47,7 @@ const PLATFORM_CITIES = ["itatinga"];
   street: z.string().trim().min(2, "Rua é obrigatória"),
   addressNumber: z.string().trim().min(1, "Número é obrigatório"),
   neighborhood: z.string().trim().min(2, "Bairro é obrigatório"),
-  selectedPlan: z.enum(["supporter", "fixed", "hybrid", "commission_only"], { errorMap: () => ({ message: "Selecione um plano" }) }),
+  selectedPlan: z.enum(["supporter", "fixed", "hybrid", "commission_only", "autonomy"], { errorMap: () => ({ message: "Selecione um plano" }) }),
 }).refine((data) => data.email === data.confirmEmail, {
   message: "Os e-mails não coincidem",
   path: ["confirmEmail"],
@@ -87,7 +87,7 @@ const CadastroLojista = () => {
   const [networkName, setNetworkName] = useState("");
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [selectedPlan, setSelectedPlan] = useState<"supporter" | "fixed" | "hybrid" | "commission_only" | "">("");
+  const [selectedPlan, setSelectedPlan] = useState<"supporter" | "fixed" | "hybrid" | "commission_only" | "autonomy" | "">("");
   // Promo de captação: força plano Essencial (fixed) e pula a etapa de plano.
   useEffect(() => {
     if (promoCode) {
@@ -304,7 +304,7 @@ const CadastroLojista = () => {
               _network_name: networkName.trim(),
               _user_id: signUpData.user.id, // passar explícito — auth.uid() pode ser null neste momento
               _plan_type: selectedPlan,
-              _monthly_fee: selectedPlan === "fixed" ? 90 : selectedPlan === "hybrid" ? 50 : selectedPlan === "supporter" ? 75 : 0,
+              _monthly_fee: selectedPlan === "fixed" ? 90 : selectedPlan === "hybrid" ? 50 : selectedPlan === "supporter" ? 75 : selectedPlan === "autonomy" ? 229.90 : 0,
               _revenue_threshold: (selectedPlan === "fixed" || selectedPlan === "hybrid") ? 5000 : null,
               _upgrade_monthly_fee: selectedPlan === "fixed" ? 180 : selectedPlan === "hybrid" ? 100 : null,
               _upgrade_trigger_months: (selectedPlan === "fixed" || selectedPlan === "hybrid") ? 2 : null,
@@ -484,7 +484,7 @@ const CadastroLojista = () => {
 
                 {/* Cards de plano — ordem: Comissão, Crescimento, Essencial, Apoiador */}
                 <div className="space-y-5">
-                {(["commission_only", "hybrid", "fixed"] as const).map((id) => {
+                {(["commission_only", "hybrid", "fixed", "autonomy"] as const).map((id) => {
                   // Plano Apoiador desativado — ocultar do cadastro
                   const p = PLANS[id];
                   const Icon = p.icon;
@@ -557,16 +557,18 @@ const CadastroLojista = () => {
                             {p.pixFee === 0 ? "Grátis" : `R$${p.pixFee.toFixed(2).replace(".", ",")}`}
                           </p>
                         </div>
-                        <div className="rounded-lg bg-muted/60 border border-border/50 p-2 text-center">
-                          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Entrega</p>
-                          <p className="text-sm font-extrabold text-foreground tabular-nums">+R$2</p>
-                          <p className="text-[10px] text-muted-foreground leading-tight">cliente paga</p>
-                        </div>
+                         <div className="rounded-lg bg-muted/60 border border-border/50 p-2 text-center">
+                           <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Entrega</p>
+                           <p className="text-sm font-extrabold text-foreground tabular-nums">{id === "autonomy" ? "Sem taxa" : "+R$2"}</p>
+                           <p className="text-[10px] text-muted-foreground leading-tight">{id === "autonomy" ? "da plataforma" : "cliente paga"}</p>
+                         </div>
                       </div>
 
-                      <p className="text-[11px] text-foreground/70 mb-2 leading-relaxed">
-                        💡 Os <strong>R$2 da entrega</strong> são somados à taxa que você cobra. Quem paga é o cliente — não sai do seu caixa.
-                      </p>
+                       <p className="text-[11px] text-foreground/70 mb-2 leading-relaxed">
+                         {id === "autonomy"
+                           ? <>✨ <strong>Sem os R$2 da plataforma:</strong> você define a taxa de entrega e o cliente vê exatamente esse valor. Você fica com 100%.</>
+                           : <>💡 Os <strong>R$2 da entrega</strong> são somados à taxa que você cobra. Quem paga é o cliente — não sai do seu caixa.</>}
+                       </p>
                       {(id === "fixed" || id === "hybrid") && (
                         <p className="text-[12px] text-foreground mb-2 leading-relaxed bg-primary/10 border-2 border-primary/40 rounded-lg px-2.5 py-1.5">
                           📈 Plano dinâmico: se faturar mais de R$5.000/mês por 2 meses seguidos, a mensalidade sobe para R${id === "fixed" ? "180" : "100"}. Só acontece quando seu negócio já estiver crescendo!
