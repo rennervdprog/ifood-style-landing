@@ -157,6 +157,10 @@ const PdvPage = () => {
   // Mostrar guia de atalhos
   const [showShortcuts, setShowShortcuts] = useState(false);
 
+  // Builders Pizza/Pastel (compartilhados com app cliente).
+  const [showHalfHalf, setShowHalfHalf] = useState(false);
+  const [showPastelBuilder, setShowPastelBuilder] = useState(false);
+
   // Ref do input de busca para foco com F2
   const searchInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -528,6 +532,51 @@ const PdvPage = () => {
   // ─────────────────────────────────────────────────────────────────────────
 
   const selectedMethod = PDV_METHODS.find(m => m.id === paymentMethod);
+
+  // ── Builders Pizza/Pastel: detecta categoria + settings da loja ──
+  const storeSettings = ((store as any)?.settings || {}) as Record<string, any>;
+  const storeCats: string[] = [
+    (store as any)?.category,
+    ...(((store as any)?.categories || []) as string[]),
+  ].filter(Boolean);
+  const isPizzaria = (store as any)?.category === "pizzas";
+  const isPastelaria = storeCats.includes("pasteis");
+  const pizzaHalfEnabled = isPizzaria && !!storeSettings.pizza_half_enabled && products.length >= 2;
+  const pastelHalfEnabled =
+    isPastelaria && storeSettings.pastel_half_enabled !== false && products.length >= 2;
+
+  const builderActions = (pizzaHalfEnabled || pastelHalfEnabled) ? (
+    <div className="px-3 pt-2.5 flex flex-col gap-1.5">
+      {pizzaHalfEnabled && (
+        <button
+          type="button"
+          onClick={() => setShowHalfHalf(true)}
+          className="w-full bg-gradient-to-r from-primary/15 to-primary/5 border border-primary/30 rounded-xl px-3 py-2 flex items-center gap-2 text-left active:scale-[0.98] transition-all"
+        >
+          <span className="text-lg">🍕</span>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-black text-foreground leading-tight">Monte a Pizza</p>
+            <p className="text-[10px] text-muted-foreground leading-tight">Meio a meio · bordas</p>
+          </div>
+          <ChevronRight className="h-4 w-4 text-primary shrink-0" />
+        </button>
+      )}
+      {pastelHalfEnabled && (
+        <button
+          type="button"
+          onClick={() => setShowPastelBuilder(true)}
+          className="w-full bg-gradient-to-r from-primary/15 to-primary/5 border border-primary/30 rounded-xl px-3 py-2 flex items-center gap-2 text-left active:scale-[0.98] transition-all"
+        >
+          <span className="text-lg">🥟</span>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-black text-foreground leading-tight">Monte o Pastel</p>
+            <p className="text-[10px] text-muted-foreground leading-tight">Sabores · adicionais</p>
+          </div>
+          <ChevronRight className="h-4 w-4 text-primary shrink-0" />
+        </button>
+      )}
+    </div>
+  ) : null;
 
   return (
     <div className="pdv-shell h-screen bg-background flex flex-col overflow-hidden">
