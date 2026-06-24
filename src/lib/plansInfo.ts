@@ -173,7 +173,7 @@ export const PLANS_ORDER: StorePlanType[] = ["commission_only", "hybrid", "fixed
 
 /** Linha única de explicação universal sobre a taxa de entrega. */
 export const DELIVERY_FEE_NOTE =
-  "Taxa de entrega: a plataforma adiciona R$ 2,00 EM CIMA da taxa que você (lojista) cobra. Ex.: você cobra R$ 5 → cliente paga R$ 7. Os R$ 2 ficam com a plataforma, os R$ 5 são seus. Nada sai do seu caixa.";
+  "Taxa de entrega: nos planos Comissão, Crescimento e Essencial a plataforma adiciona R$ 2,00 EM CIMA da taxa que você (lojista) cobra. Ex.: você cobra R$ 5 → cliente paga R$ 7. Os R$ 2 ficam com a plataforma, os R$ 5 são seus. Nada sai do seu caixa. No plano Autonomia esse acréscimo é zero — o cliente paga exatamente a taxa que você define.";
 
 /** Linha única para a taxa PIX (apenas Essencial/Apoiador). */
 export const PIX_FEE_NOTE =
