@@ -182,27 +182,18 @@ const PdvPage = () => {
 
   useEffect(() => { if (store?.id) checkSession(); }, [store?.id, checkSession]);
 
-  // ── Catálogo ──
-  const { data: sections = [] } = useQuery({
-    queryKey: ["pdv-sections", store?.id],
-    queryFn: async () => {
-      const { data } = await supabase.from("menu_sections")
-        .select("id, name, sort_order").eq("store_id", store!.id).order("sort_order");
-      return (data || []) as MenuSection[];
-    },
-    enabled: !!store?.id,
-  });
-
-  const { data: products = [], isLoading: prodLoading } = useQuery({
-    queryKey: ["pdv-products", store?.id],
-    queryFn: async () => {
-      const { data } = await supabase.from("products")
-        .select("id, name, price, image_url, section_id, is_available")
-        .eq("store_id", store!.id).eq("is_available", true).order("name");
-      return (data || []) as Product[];
-    },
-    enabled: !!store?.id,
-    staleTime: 60_000,
+  // ── Catálogo (extraído na Fase 1 da refatoração) ──
+  const {
+    sections,
+    products,
+    prodLoading,
+    sectionMap,
+    filtered,
+    grouped,
+  } = usePdvCatalog({
+    storeId: store?.id,
+    search,
+    activeSection,
   });
 
   // ── Movimentações ──
@@ -234,26 +225,6 @@ const PdvPage = () => {
   const cashVal = parseBRL(cashReceived);
   const troco = cashReceived ? Math.max(0, cashVal - finalTotal) : 0;
   const trocoNegativo = cashReceived && cashVal < finalTotal;
-
-  // ── Catálogo filtrado ──
-  const sectionMap = useMemo(() => new Map(sections.map(s => [s.id, s.name])), [sections]);
-
-  const filtered = useMemo(() => {
-    const q = search.toLowerCase().trim();
-    let list = q ? products.filter(p => p.name.toLowerCase().includes(q)) : products;
-    if (activeSection && !q) list = list.filter(p => p.section_id === activeSection);
-    return list;
-  }, [products, search, activeSection]);
-
-  const grouped = useMemo(() => {
-    const result: Record<string, Product[]> = {};
-    filtered.forEach(p => {
-      const s = p.section_id ? (sectionMap.get(p.section_id) || "Outros") : "Sem categoria";
-      if (!result[s]) result[s] = [];
-      result[s].push(p);
-    });
-    return result;
-  }, [filtered, sectionMap]);
 
   const getQty = (id: string) => cart.find(i => i.id === id)?.quantity ?? 0;
 
