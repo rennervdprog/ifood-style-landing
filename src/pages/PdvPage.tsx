@@ -44,6 +44,12 @@ import { usePdvCatalog } from "@/pages/pdv/state/usePdvCatalog";
 import { usePdvSession } from "@/pages/pdv/state/usePdvSession";
 import { usePdvCart } from "@/pages/pdv/state/usePdvCart";
 import { usePdvCheckout } from "@/pages/pdv/state/usePdvCheckout";
+import { PdvCatalogSection } from "@/pages/pdv/components/PdvCatalogSection";
+import { PdvCartSection } from "@/pages/pdv/components/PdvCartSection";
+import { PdvAberturaScreen } from "@/pages/pdv/components/PdvAberturaScreen";
+import { PdvFechamentoScreen } from "@/pages/pdv/components/PdvFechamentoScreen";
+import { PdvMovementDialog } from "@/pages/pdv/components/PdvMovementDialog";
+import { PdvShortcutsDialog } from "@/pages/pdv/components/PdvShortcutsDialog";
 
 // Detecta se está em tela mobile (< 768px)
 const useIsMobile = () => {
@@ -372,224 +378,36 @@ const PdvPage = () => {
   // ─────────────────────────────────────────────────────────────────────────
 
   if (screen === "abertura") return (
-    <div className="min-h-screen bg-background flex flex-col">
-      {/* Header */}
-      <header className="h-14 border-b border-border flex items-center px-4 gap-3 bg-card">
-        <button onClick={() => navigate("/admin")} className="p-1.5 rounded-xl hover:bg-muted transition-colors">
-          <ArrowLeft className="h-5 w-5" />
-        </button>
-        <Monitor className="h-5 w-5 text-primary" />
-        <div className="flex-1">
-          <p className="text-sm font-bold">{store?.name}</p>
-          <p className="text-[10px] text-muted-foreground">PDV · Caixa fechado</p>
-        </div>
-      </header>
-
-      <div className="flex-1 flex items-center justify-center p-6">
-        <div className="w-full max-w-xs space-y-6">
-          {/* Ícone */}
-          <div className="text-center space-y-3">
-            <div className="w-20 h-20 rounded-3xl bg-primary/10 border-2 border-primary/20 flex items-center justify-center mx-auto">
-              <Unlock className="h-9 w-9 text-primary" />
-            </div>
-            <div>
-              <h2 className="text-2xl font-black text-foreground">Abrir Caixa</h2>
-              <p className="text-sm text-muted-foreground mt-1">Informe o troco disponível para começar</p>
-            </div>
-          </div>
-
-          {/* Input */}
-          <div className="bg-card rounded-2xl border border-border p-5 space-y-5">
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                Dinheiro inicial (troco)
-              </label>
-              <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-bold text-muted-foreground">R$</span>
-                <input
-                  type="text" inputMode="decimal"
-                  value={openingAmount}
-                  onChange={e => setOpeningAmount(e.target.value.replace(/[^0-9.,]/g, ""))}
-                  placeholder="0,00"
-                  className="w-full pl-10 pr-4 py-4 bg-muted/40 rounded-xl text-2xl font-black text-center text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
-                />
-              </div>
-              <p className="text-[11px] text-muted-foreground text-center">Deixe 0,00 se não tiver troco inicial</p>
-            </div>
-
-            <button
-              onClick={handleAbrirCaixa} disabled={loading}
-              className="w-full h-14 bg-primary text-primary-foreground font-black text-base rounded-2xl flex items-center justify-center gap-2.5 active:scale-[0.98] transition-all shadow-lg shadow-primary/30 disabled:opacity-60"
-            >
-              {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Unlock className="h-5 w-5" />}
-              Abrir Caixa
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+    <PdvAberturaScreen
+      storeName={store?.name}
+      openingAmount={openingAmount}
+      setOpeningAmount={setOpeningAmount}
+      onOpen={handleAbrirCaixa}
+      loading={sessionLoading || loading}
+    />
   );
 
   // ─────────────────────────────────────────────────────────────────────────
   // TELA 3 — FECHAMENTO
   // ─────────────────────────────────────────────────────────────────────────
 
-  if (screen === "fechamento") {
-    const byPayment: Record<string, number> = sessionSummary?.by_payment || {};
-    const diffAmount = parseBRL(closingAmount) - saldoEsperado;
-    const isOk = closingAmount && Math.abs(diffAmount) < 0.05;
-
-    return (
-      <div className="min-h-screen bg-background flex flex-col">
-        <header className="h-14 border-b border-border flex items-center px-4 gap-3 bg-card">
-          <button onClick={() => setScreen("venda")} className="p-1.5 rounded-xl hover:bg-muted">
-            <ArrowLeft className="h-5 w-5" />
-          </button>
-          <Lock className="h-5 w-5 text-destructive" />
-          <div className="flex-1">
-            <p className="text-sm font-bold">Fechamento de Caixa</p>
-            <p className="text-[10px] text-muted-foreground">
-              Aberto às {currentSession && new Date(currentSession.opened_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
-            </p>
-          </div>
-        </header>
-
-        <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-28">
-          {/* Resumo do turno */}
-          <div className="bg-card rounded-2xl border border-border p-4 space-y-4">
-            <h3 className="text-sm font-black flex items-center gap-2">
-              <Receipt className="h-4 w-4 text-primary" /> Resumo do Turno
-            </h3>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div className="bg-emerald-500/8 border border-emerald-500/15 rounded-xl p-3 space-y-0.5">
-                <p className="text-[10px] text-muted-foreground uppercase font-semibold tracking-wider">Total Vendido</p>
-                <p className="text-xl font-black text-emerald-500">{formatBRL(sessionSummary?.total_sales ?? 0)}</p>
-                <p className="text-[10px] text-muted-foreground">{sessionSummary?.total_orders ?? 0} vendas</p>
-              </div>
-              <div className="bg-muted/40 rounded-xl p-3 space-y-0.5">
-                <p className="text-[10px] text-muted-foreground uppercase font-semibold tracking-wider">Abertura</p>
-                <p className="text-xl font-black text-foreground">{formatBRL(currentSession?.opening_amount ?? 0)}</p>
-                <p className="text-[10px] text-muted-foreground">troco inicial</p>
-              </div>
-              {turnoSangrias > 0 && (
-                <div className="bg-red-500/8 border border-red-500/15 rounded-xl p-3">
-                  <p className="text-[10px] text-muted-foreground uppercase font-semibold">Sangrias</p>
-                  <p className="text-lg font-black text-red-500">−{formatBRL(turnoSangrias)}</p>
-                </div>
-              )}
-              {turnoSuprimentos > 0 && (
-                <div className="bg-blue-500/8 border border-blue-500/15 rounded-xl p-3">
-                  <p className="text-[10px] text-muted-foreground uppercase font-semibold">Suprimentos</p>
-                  <p className="text-lg font-black text-blue-500">+{formatBRL(turnoSuprimentos)}</p>
-                </div>
-              )}
-            </div>
-
-            {/* Por forma de pagamento */}
-            {Object.keys(byPayment).length > 0 && (
-              <div className="border-t border-border/40 pt-3 space-y-2">
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Por pagamento</p>
-                {Object.entries(byPayment).map(([m, v]) => {
-                  const pm = PDV_METHODS.find(p => p.id === m);
-                  return (
-                    <div key={m} className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">{pm?.label || m}</span>
-                      <span className="text-sm font-bold">{formatBRL(Number(v))}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-
-            {/* Saldo esperado — esconder se for fechamento cego e ainda não tiver contado */}
-            {!blindClose ? (
-              <div className="bg-amber-500/8 border border-amber-500/20 rounded-xl p-3.5 flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-bold text-amber-700 dark:text-amber-400">Dinheiro esperado no caixa</p>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">Abertura + vendas − sangrias + suprimentos</p>
-                </div>
-                <p className="text-xl font-black text-amber-500">{formatBRL(saldoEsperado)}</p>
-              </div>
-            ) : (
-              <div className="bg-purple-500/8 border border-purple-500/30 rounded-xl p-3.5 flex items-center gap-3">
-                <EyeOff className="h-5 w-5 text-purple-500 shrink-0" />
-                <div className="flex-1">
-                  <p className="text-xs font-bold text-purple-700 dark:text-purple-300">Fechamento cego ativo</p>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">
-                    O valor esperado fica oculto até você confirmar o fechamento. Padrão antifraude.
-                  </p>
-                </div>
-              </div>
-            )}
-
-            <button
-              type="button"
-              onClick={() => setBlindClose(v => !v)}
-              className="w-full text-[11px] font-bold text-muted-foreground hover:text-foreground transition-colors flex items-center justify-center gap-1.5"
-            >
-              {blindClose ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
-              {blindClose ? "Mostrar valor esperado" : "Ativar fechamento cego (anti-fraude)"}
-            </button>
-          </div>
-
-          {/* Conferência */}
-          <div className="bg-card rounded-2xl border border-border p-4 space-y-3">
-            <h3 className="text-sm font-black">Conferência</h3>
-            <div>
-              <label className="text-xs font-bold text-muted-foreground">Dinheiro contado no caixa</label>
-              <div className="relative mt-2">
-                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-muted-foreground">R$</span>
-                <input
-                  type="text" inputMode="decimal" placeholder="0,00"
-                  value={closingAmount}
-                  onChange={e => setClosingAmount(e.target.value.replace(/[^0-9.,]/g, ""))}
-                  className="w-full pl-10 pr-4 py-3.5 bg-muted/40 rounded-xl text-xl font-bold focus:outline-none focus:ring-2 focus:ring-primary/40"
-                />
-              </div>
-            </div>
-
-            {/* Conferência por cédula (auto-soma) */}
-            <PdvDenominationCount
-              onChange={(total, counts) => {
-                setDenominationCounts(counts);
-                if (total > 0) setClosingAmount(total.toFixed(2).replace(".", ","));
-              }}
-            />
-
-            {/* Diferença — só revelada quando não é blind ou já confirmou */}
-            {closingAmount && !blindClose && (
-              <div className={`rounded-xl p-3 flex justify-between items-center border ${isOk ? "bg-emerald-500/8 border-emerald-500/20" : "bg-red-500/8 border-red-500/20"}`}>
-                <p className={`text-sm font-bold ${isOk ? "text-emerald-600" : "text-red-500"}`}>
-                  {isOk ? "✅ Caixa conferido" : diffAmount > 0 ? "⚠️ Sobra" : "⚠️ Falta"}
-                </p>
-                <p className={`text-lg font-black ${isOk ? "text-emerald-500" : "text-red-500"}`}>
-                  {isOk ? "—" : formatBRL(Math.abs(diffAmount))}
-                </p>
-              </div>
-            )}
-            {closingAmount && blindClose && (
-              <div className="rounded-xl p-3 bg-purple-500/8 border border-purple-500/20">
-                <p className="text-xs text-purple-600 dark:text-purple-400 font-bold flex items-center gap-1.5">
-                  <EyeOff className="h-3.5 w-3.5" /> A diferença será calculada após confirmar
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="fixed bottom-0 left-0 right-0 p-4 bg-card/95 backdrop-blur-sm border-t border-border">
-          <button
-            onClick={handleFecharCaixa} disabled={loading}
-            className="w-full h-14 bg-destructive text-destructive-foreground font-black text-base rounded-2xl flex items-center justify-center gap-2 active:scale-[0.98] transition-all disabled:opacity-60"
-          >
-            {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Lock className="h-5 w-5" />}
-            Confirmar Fechamento
-          </button>
-        </div>
-      </div>
-    );
-  }
+  if (screen === "fechamento") return (
+    <PdvFechamentoScreen
+      currentSession={currentSession}
+      sessionSummary={sessionSummary}
+      closingAmount={closingAmount}
+      setClosingAmount={setClosingAmount}
+      saldoEsperado={saldoEsperado}
+      turnoSangrias={turnoSangrias}
+      turnoSuprimentos={turnoSuprimentos}
+      blindClose={blindClose}
+      setBlindClose={setBlindClose}
+      setDenominationCounts={setDenominationCounts}
+      onBack={() => setScreen("venda")}
+      onConfirm={handleFecharCaixa}
+      loading={sessionLoading || loading}
+    />
+  );
 
   // ─────────────────────────────────────────────────────────────────────────
   // TELA 2 — VENDA (layout PDV profissional)
