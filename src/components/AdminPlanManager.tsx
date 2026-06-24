@@ -15,7 +15,7 @@ import {
   Calendar, Pause, Play, Receipt, Send, History, Settings2
 } from "lucide-react";
 
-type PlanType = "fixed" | "hybrid" | "commission_only";
+type PlanType = "fixed" | "hybrid" | "commission_only" | "autonomy";
 type DisplayPlan = PlanType | "supporter";
 
 const SUPPORTER_FEE = 75;
@@ -28,6 +28,7 @@ const FALLBACK_LABELS: Record<DisplayPlan, string> = {
   fixed: "Essencial",
   hybrid: "Crescimento",
   commission_only: "Comissão",
+  autonomy: "Autonomia",
 };
 
 const FALLBACK_DESCRIPTIONS: Record<DisplayPlan, string> = {
@@ -35,6 +36,7 @@ const FALLBACK_DESCRIPTIONS: Record<DisplayPlan, string> = {
   fixed: "Mensalidade fixa, sem comissão, funcionalidades básicas",
   hybrid: "Mensalidade + taxa por pedido, todas funcionalidades",
   commission_only: "Apenas comissão por pedido, todas funcionalidades",
+  autonomy: "Mensalidade fixa, sem taxa de R$2 da plataforma para o cliente",
 };
 
 const FALLBACK_DEFAULTS: Record<DisplayPlan, { monthly_fee: number; commission_rate: number }> = {
@@ -42,6 +44,7 @@ const FALLBACK_DEFAULTS: Record<DisplayPlan, { monthly_fee: number; commission_r
   fixed: { monthly_fee: 90, commission_rate: 0 },
   hybrid: { monthly_fee: 50, commission_rate: 2.5 },
   commission_only: { monthly_fee: 0, commission_rate: 6 },
+  autonomy: { monthly_fee: 149.9, commission_rate: 0 },
 };
 
 const FALLBACK_FEATURES: Record<DisplayPlan, string[]> = {
@@ -49,6 +52,7 @@ const FALLBACK_FEATURES: Record<DisplayPlan, string[]> = {
   fixed: ["Cardápio digital", "Pedidos online", "Dinheiro/Cartão", "Até 3 cupons"],
   hybrid: ["Tudo do Fixo +", "PIX Online", "Entrega plataforma*", "Fidelidade", "Banners", "Relatórios completos", "Cupons ilimitados"],
   commission_only: ["Tudo do Híbrido", "Sem mensalidade"],
+  autonomy: ["Tudo do Essencial", "Sem taxa R$2 da plataforma", "Cliente paga a taxa exata"],
 };
 
 const planColors: Record<DisplayPlan, string> = {
@@ -56,6 +60,7 @@ const planColors: Record<DisplayPlan, string> = {
   fixed: "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30",
   hybrid: "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/30",
   commission_only: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30",
+  autonomy: "bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/30",
 };
 
 function resolveDisplayPlan(
@@ -104,6 +109,7 @@ export default function AdminPlanManager() {
     fixed: getTemplate("fixed")?.label || FALLBACK_LABELS.fixed,
     hybrid: getTemplate("hybrid")?.label || FALLBACK_LABELS.hybrid,
     commission_only: getTemplate("commission_only")?.label || FALLBACK_LABELS.commission_only,
+    autonomy: getTemplate("autonomy")?.label || FALLBACK_LABELS.autonomy,
   };
 
   const planDescriptions: Record<DisplayPlan, string> = {
@@ -111,6 +117,7 @@ export default function AdminPlanManager() {
     fixed: getTemplate("fixed")?.description || FALLBACK_DESCRIPTIONS.fixed,
     hybrid: getTemplate("hybrid")?.description || FALLBACK_DESCRIPTIONS.hybrid,
     commission_only: getTemplate("commission_only")?.description || FALLBACK_DESCRIPTIONS.commission_only,
+    autonomy: getTemplate("autonomy")?.description || FALLBACK_DESCRIPTIONS.autonomy,
   };
 
   const planDefaults: Record<DisplayPlan, { monthly_fee: number; commission_rate: number }> = {
@@ -130,6 +137,10 @@ export default function AdminPlanManager() {
       monthly_fee: Number(getTemplate("commission_only")?.monthly_fee ?? FALLBACK_DEFAULTS.commission_only.monthly_fee),
       commission_rate: Number(getTemplate("commission_only")?.commission_rate ?? FALLBACK_DEFAULTS.commission_only.commission_rate),
     },
+    autonomy: {
+      monthly_fee: Number(getTemplate("autonomy")?.monthly_fee ?? FALLBACK_DEFAULTS.autonomy.monthly_fee),
+      commission_rate: Number(getTemplate("autonomy")?.commission_rate ?? FALLBACK_DEFAULTS.autonomy.commission_rate),
+    },
   };
 
   const featuresByPlan: Record<DisplayPlan, string[]> = {
@@ -137,6 +148,7 @@ export default function AdminPlanManager() {
     fixed: getTemplate("fixed")?.features || FALLBACK_FEATURES.fixed,
     hybrid: getTemplate("hybrid")?.features || FALLBACK_FEATURES.hybrid,
     commission_only: getTemplate("commission_only")?.features || FALLBACK_FEATURES.commission_only,
+    autonomy: getTemplate("autonomy")?.features || FALLBACK_FEATURES.autonomy,
   };
 
   const { data: stores } = useQuery({
@@ -287,6 +299,7 @@ export default function AdminPlanManager() {
     fixed: 0,
     hybrid: 0,
     commission_only: 0,
+    autonomy: 0,
     no_plan: 0,
   };
   (stores || []).forEach(s => {
@@ -358,14 +371,14 @@ export default function AdminPlanManager() {
           <p className="text-xl font-black text-foreground mt-0.5">{supporterUsed}/{SUPPORTER_LIMIT}</p>
           <p className="text-[10px] text-muted-foreground">{supporterAvailable} vagas restantes</p>
         </div>
-        {(["fixed", "hybrid", "commission_only"] as PlanType[]).map(pt => (
+        {(["fixed", "hybrid", "commission_only", "autonomy"] as PlanType[]).map(pt => (
           <div key={pt} className="bg-card rounded-2xl p-4 border border-border">
             <div className="flex items-center gap-2 mb-2">
               <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${
-                pt === "fixed" ? "bg-amber-500/10" : pt === "hybrid" ? "bg-blue-500/10" : "bg-emerald-500/10"
+                pt === "fixed" ? "bg-amber-500/10" : pt === "hybrid" ? "bg-blue-500/10" : pt === "autonomy" ? "bg-purple-500/10" : "bg-emerald-500/10"
               }`}>
                 <Crown className={`h-4 w-4 ${
-                  pt === "fixed" ? "text-amber-500" : pt === "hybrid" ? "text-blue-500" : "text-emerald-500"
+                  pt === "fixed" ? "text-amber-500" : pt === "hybrid" ? "text-blue-500" : pt === "autonomy" ? "text-purple-500" : "text-emerald-500"
                 }`} />
               </div>
             </div>
@@ -377,12 +390,13 @@ export default function AdminPlanManager() {
       </div>
 
       {/* Plan Overview Cards */}
-      <div className="grid lg:grid-cols-4 gap-3">
-        {(["supporter", "fixed", "hybrid", "commission_only"] as DisplayPlan[]).map(pt => (
+      <div className="grid lg:grid-cols-5 gap-3">
+        {(["supporter", "fixed", "hybrid", "commission_only", "autonomy"] as DisplayPlan[]).map(pt => (
           <div key={pt} className={`bg-card rounded-2xl border-2 p-4 space-y-3 ${
             pt === "supporter" ? "border-pink-500/30" :
             pt === "fixed" ? "border-amber-500/20" :
-            pt === "hybrid" ? "border-blue-500/20" : "border-emerald-500/20"
+            pt === "hybrid" ? "border-blue-500/20" :
+            pt === "autonomy" ? "border-purple-500/30" : "border-emerald-500/20"
           }`}>
             <div className="flex items-center justify-between">
               <h3 className="font-bold text-foreground text-sm flex items-center gap-1">
