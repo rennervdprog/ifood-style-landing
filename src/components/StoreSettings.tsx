@@ -880,15 +880,20 @@ const NotificationSection = () => {
                );
              })()}
 
-             {/* Divisão da taxa da plataforma */}
-             <div className="space-y-2 pt-2 border-t border-border">
-               <label className="text-xs font-bold text-foreground/80">Quem paga a taxa de R$ 2,00 da plataforma?</label>
-               <div className="grid grid-cols-1 gap-2">
-                 {([
-                   { v: "cliente",     t: "Cliente paga",     d: "Cliente vê +R$ 2,00 no checkout. Você não absorve nada." },
-                   { v: "meio_a_meio", t: "Meio a meio",      d: "Cliente vê +R$ 1,00 e você absorve R$ 1,00 (acumula no repasse)." },
-                   { v: "lojista",     t: "Você paga (loja)", d: "Cliente não vê acréscimo. Você absorve R$ 2,00 por pedido (acumula no repasse)." },
-                 ] as const).map(opt => (
+              {/* Divisão da taxa da plataforma — só aparece se houver split > 0 */}
+              {(storePlan.platformDeliverySplit || 0) > 0 && (() => {
+                const _base = storePlan.platformDeliverySplit;
+                const _half = Math.round((_base / 2) * 100) / 100;
+                const _fmt = (n: number) => formatBRL(n);
+                return (
+                <div className="space-y-2 pt-2 border-t border-border">
+                  <label className="text-xs font-bold text-foreground/80">Quem paga a taxa de {_fmt(_base)} da plataforma?</label>
+                  <div className="grid grid-cols-1 gap-2">
+                    {([
+                      { v: "cliente",     t: "Cliente paga",     d: `Cliente vê +${_fmt(_base)} no checkout. Você não absorve nada.` },
+                      { v: "meio_a_meio", t: "Meio a meio",      d: `Cliente vê +${_fmt(_half)} e você absorve ${_fmt(_half)} (acumula no repasse).` },
+                      { v: "lojista",     t: "Você paga (loja)", d: `Cliente não vê acréscimo. Você absorve ${_fmt(_base)} por pedido (acumula no repasse).` },
+                    ] as const).map(opt => (
                    <button
                      key={opt.v}
                      type="button"
@@ -902,12 +907,14 @@ const NotificationSection = () => {
                      <div className="text-xs font-bold text-foreground">{opt.t}</div>
                      <div className="text-[10px] text-muted-foreground mt-0.5">{opt.d}</div>
                    </button>
-                 ))}
-               </div>
-               <p className="text-[10px] text-muted-foreground/70">
-                 O valor absorvido por você acumula em <strong>Repasse à plataforma</strong> e é cobrado junto com sua comissão/PIX da plataforma.
-               </p>
-             </div>
+                    ))}
+                  </div>
+                  <p className="text-[10px] text-muted-foreground/70">
+                    O valor absorvido por você acumula em <strong>Repasse à plataforma</strong> e é cobrado junto com sua comissão/PIX da plataforma.
+                  </p>
+                </div>
+                );
+              })()}
           </div>
         )}
       </div>

@@ -114,7 +114,7 @@ export default function AvisosSection({
           onGoToFinance={() => setDashboardTab("finance")}
         />
       )}
-      {!storePlan.hasCommission && storePlan.isItatingaFixed && (
+      {!storePlan.hasCommission && storePlan.isItatingaFixed && (storePlan.platformDeliverySplit || 0) > 0 && (
         <PlatformSplitAlert
           storeId={store.id}
           storeName={store.name}
