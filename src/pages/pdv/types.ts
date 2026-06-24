@@ -8,6 +8,10 @@ export interface Product {
   image_url: string | null;
   section_id: string | null;
   is_available: boolean;
+  /** Campos extras necessários para os builders Pizza/Pastel. */
+  store_id?: string;
+  description?: string | null;
+  metadata?: Record<string, any> | null;
 }
 
 /** Seção/categoria do cardápio. */
