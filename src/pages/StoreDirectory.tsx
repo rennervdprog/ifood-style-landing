@@ -615,13 +615,94 @@ const StoreDirectory = () => {
       </section>
 
       {/* ════ PLANOS ════ */}
+      {/* ════ POR QUE AUTONOMIA ════ */}
+      <section className="py-20 md:py-24 px-6 bg-muted/30 border-y border-border">
+        <div className="mx-auto max-w-5xl">
+          <div className="text-center max-w-2xl mx-auto mb-10">
+            <p className="inline-block text-[10px] font-black uppercase tracking-[0.2em] text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full mb-4">
+              Novidade • Plano Autonomia
+            </p>
+            <h2 className="text-3xl md:text-5xl font-black tracking-tight text-foreground text-balance">
+              Seus clientes reclamavam dos <span className="text-emerald-600 dark:text-emerald-400">R$2 a mais</span>? Agora você escolhe.
+            </h2>
+            <p className="mt-4 text-sm md:text-base text-muted-foreground">
+              Vários lojistas pediram: "queria que o cliente pagasse exatamente a taxa que eu cobro, sem acréscimo da plataforma". Ouvimos. Nasceu o <strong className="text-foreground">Autonomia</strong>.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-4 md:gap-5 max-w-3xl mx-auto">
+            {/* Planos normais */}
+            <div className="rounded-2xl border border-border bg-card p-6">
+              <p className="text-[10px] font-black uppercase tracking-wider text-muted-foreground mb-4">Planos normais</p>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Sua taxa de entrega</span>
+                  <span className="font-bold text-foreground">R$ 5,00</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">+ Taxa plataforma</span>
+                  <span className="font-bold text-foreground">R$ 2,00</span>
+                </div>
+                <div className="border-t border-border pt-2 flex justify-between">
+                  <span className="font-bold text-foreground">Cliente paga</span>
+                  <span className="font-black text-foreground text-lg">R$ 7,00</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Autonomia */}
+            <div className="rounded-2xl border-2 border-emerald-500 bg-card p-6 relative">
+              <div className="absolute -top-3 left-6 px-2.5 py-1 rounded-full bg-emerald-500 text-white text-[10px] font-black uppercase tracking-wider">
+                Plano Autonomia
+              </div>
+              <p className="text-[10px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400 mb-4">Sem acréscimo</p>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Sua taxa de entrega</span>
+                  <span className="font-bold text-foreground">R$ 5,00</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">+ Taxa plataforma</span>
+                  <span className="font-bold text-emerald-600 dark:text-emerald-400">R$ 0,00 ✓</span>
+                </div>
+                <div className="border-t border-emerald-500/30 pt-2 flex justify-between">
+                  <span className="font-bold text-foreground">Cliente paga</span>
+                  <span className="font-black text-emerald-600 dark:text-emerald-400 text-lg">R$ 5,00</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <ul className="mt-10 grid sm:grid-cols-3 gap-3 max-w-3xl mx-auto text-sm">
+            <li className="flex items-start gap-2 text-foreground/80">
+              <Check className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
+              <span>Você define a taxa, o cliente vê exatamente isso</span>
+            </li>
+            <li className="flex items-start gap-2 text-foreground/80">
+              <Check className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
+              <span>Zero comissão por pedido</span>
+            </li>
+            <li className="flex items-start gap-2 text-foreground/80">
+              <Check className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
+              <span>PIX online: R$1,99 só quando o cliente paga via PIX</span>
+            </li>
+          </ul>
+
+          <div className="text-center mt-8">
+            <a href="#planos" className="inline-flex items-center gap-2 text-sm font-black text-primary hover:underline">
+              Ver plano Autonomia <ArrowRight className="h-4 w-4" />
+            </a>
+          </div>
+        </div>
+      </section>
+
       <section id="planos" className="py-24 md:py-28 px-6">
         <div className="mx-auto max-w-6xl">
           <div className="text-center max-w-xl mx-auto mb-14">
             <p className="text-xs font-black uppercase tracking-[0.2em] text-primary mb-3">Planos</p>
             <h2 className="text-4xl md:text-5xl font-black tracking-tight text-foreground">Preço justo. Cancele quando quiser.</h2>
           </div>
-          <div className="grid md:grid-cols-3 gap-5">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5">
             {plans.map((p) => (
               <div
                 key={p.id}
@@ -634,6 +715,11 @@ const StoreDirectory = () => {
                     Mais escolhido
                   </div>
                 )}
+                {p.badge && (
+                  <div className="absolute -top-3 right-4 px-2.5 py-1 rounded-full bg-emerald-500 text-white text-[10px] font-black uppercase tracking-wider">
+                    {p.badge}
+                  </div>
+                )}
                 <div className="flex items-center gap-3 mb-1">
                   <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
                     <p.icon className="h-5 w-5 text-primary" />
@@ -643,7 +729,7 @@ const StoreDirectory = () => {
                 <p className="text-sm text-muted-foreground mb-6">{p.tagline}</p>
                 <div className="flex items-baseline gap-1 mb-1">
                   <span className="text-sm font-bold text-muted-foreground">R$</span>
-                  <span className="text-5xl font-black tracking-tight text-foreground">{p.price}</span>
+                  <span className={`${p.price.length > 2 ? "text-4xl" : "text-5xl"} font-black tracking-tight text-foreground`}>{p.price}</span>
                   <span className="text-sm font-semibold text-muted-foreground">/mês</span>
                 </div>
                 <p className="text-sm font-bold text-primary mb-6">{p.commission} comissão por pedido</p>
@@ -665,6 +751,9 @@ const StoreDirectory = () => {
             <button onClick={handleWhatsApp} className="text-primary font-bold hover:underline">
               Falar no WhatsApp ({Math.max(0, 10 - (supporterTaken ?? 0))} restantes)
             </button>
+          </p>
+          <p className="mt-3 text-center text-xs text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+            💡 Apenas no plano <strong className="text-foreground">Autonomia</strong> a taxa de R$2,00 da plataforma some. Nos outros 3 planos ela continua sendo somada à sua taxa de entrega (paga pelo cliente, não sai do seu caixa).
           </p>
         </div>
       </section>
