@@ -4,7 +4,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { AsaasBadgeBar } from "@/components/AsaasBadge";
 import PartnerClientView from "@/components/PartnerClientView";
-import { useSupporterCount } from "@/hooks/useSupporterCount";
 import {
   Store, ShieldCheck, Smartphone, TrendingUp,
   ArrowRight, CheckCircle2, MapPin, Clock, CreditCard,
@@ -284,7 +283,6 @@ const StoreDirectory = () => {
   const [roleChecked, setRoleChecked] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [activeSegment, setActiveSegment] = useState(0);
-  const { count: supporterTaken } = useSupporterCount();
   const [liveStats, setLiveStats] = useState<{ stores: number; cities: number } | null>(null);
 
   const handleCTA = useCallback(() => navigate("/cadastro-lojista"), [navigate]);
@@ -665,13 +663,7 @@ const StoreDirectory = () => {
               </div>
             ))}
           </div>
-          <p className="mt-8 text-center text-sm text-muted-foreground">
-            Tem 10 vagas para o plano <strong className="text-foreground">Apoiadores</strong> — R$ 75/mês vitalício, 0% comissão.{" "}
-            <button onClick={handleWhatsApp} className="text-primary font-bold hover:underline">
-              Falar no WhatsApp ({Math.max(0, 10 - (supporterTaken ?? 0))} restantes)
-            </button>
-          </p>
-          <p className="mt-3 text-center text-xs text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+          <p className="mt-8 text-center text-xs text-muted-foreground max-w-2xl mx-auto leading-relaxed">
             💡 Nos planos <strong className="text-foreground">Comissão, Crescimento e Essencial</strong> a plataforma soma R$2,00 à sua taxa de entrega (o cliente paga, não sai do seu caixa). Apenas no <strong className="text-foreground">Autonomia</strong> esse acréscimo é zero — o cliente paga exatamente a taxa que você define.
           </p>
         </div>
