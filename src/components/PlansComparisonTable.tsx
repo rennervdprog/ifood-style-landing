@@ -15,6 +15,7 @@ const ROWS: Row[] = [
       hybrid: "R$ 50*",
       fixed: "R$ 90*",
       supporter: "R$ 75",
+      autonomy: "R$ 229,90",
     },
   },
   {
@@ -24,6 +25,7 @@ const ROWS: Row[] = [
       hybrid: "2,5%",
       fixed: "0%",
       supporter: "0%",
+      autonomy: "0%",
     },
   },
   {
@@ -33,6 +35,7 @@ const ROWS: Row[] = [
       hybrid: "Grátis",
       fixed: "R$ 1,99",
       supporter: "R$ 1,99",
+      autonomy: "R$ 1,99",
     },
   },
   {
@@ -42,27 +45,28 @@ const ROWS: Row[] = [
       hybrid: "+ R$ 2,00",
       fixed: "+ R$ 2,00",
       supporter: "+ R$ 2,00",
+      autonomy: "Não cobra",
     },
   },
   {
     label: "Cardápio digital",
-    values: { commission_only: true, hybrid: true, fixed: true, supporter: true },
+    values: { commission_only: true, hybrid: true, fixed: true, supporter: true, autonomy: true },
   },
   {
     label: "Relatórios completos",
-    values: { commission_only: false, hybrid: true, fixed: true, supporter: true },
+    values: { commission_only: false, hybrid: true, fixed: true, supporter: true, autonomy: true },
   },
   {
     label: "Banners e destaque",
-    values: { commission_only: false, hybrid: true, fixed: true, supporter: true },
+    values: { commission_only: false, hybrid: true, fixed: true, supporter: true, autonomy: true },
   },
   {
     label: "Motoboy integrado",
-    values: { commission_only: false, hybrid: true, fixed: true, supporter: true },
+    values: { commission_only: false, hybrid: true, fixed: true, supporter: true, autonomy: true },
   },
   {
     label: "Suporte VIP",
-    values: { commission_only: false, hybrid: false, fixed: true, supporter: true },
+    values: { commission_only: false, hybrid: false, fixed: true, supporter: true, autonomy: true },
   },
 ];
 

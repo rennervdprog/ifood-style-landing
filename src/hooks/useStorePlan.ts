@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { DEFAULT_DELIVERY_FEE_CONFIG, type DeliveryFeeConfig } from "@/lib/deliveryFee";
 
- export type StorePlanType = "fixed" | "hybrid" | "commission_only" | "supporter";
+ export type StorePlanType = "fixed" | "hybrid" | "commission_only" | "supporter" | "autonomy";
 
 export interface StorePlanFeatures {
   planType: StorePlanType;
@@ -96,6 +96,8 @@ const FIXED_PLAN_FEATURES = {
 };
 // Apoiador = mesmos benefícios do Essencial (sem comissão, todas as ferramentas)
 PLAN_FEATURES.supporter = FIXED_PLAN_FEATURES;
+// Autonomia = mesmos benefícios do Essencial (sem comissão, todas as ferramentas)
+PLAN_FEATURES.autonomy = FIXED_PLAN_FEATURES;
 
 export function useStorePlan(storeId: string | undefined | null): StorePlanFeatures {
   const { data, isLoading } = useQuery({
@@ -135,15 +137,20 @@ export function useStorePlan(storeId: string | undefined | null): StorePlanFeatu
 
   const planType: StorePlanType = (data?.plan?.plan_type as StorePlanType) || "commission_only";
   // "fixed" = Essencial | "supporter" = Apoiador — ambos pagam PIX R$1,99 e 0% comissão
-  const isFixedPlan = planType === "fixed" || planType === "supporter";
+  // "autonomy" = Autonomia — também é plano fixo (PIX R$1,99, 0% comissão)
+  const isFixedPlan = planType === "fixed" || planType === "supporter" || planType === "autonomy";
   const features = PLAN_FEATURES[planType];
 
   // Base do split da plataforma (R$ por pedido em entrega própria)
+  const _isAutonomy = planType === "autonomy";
   const _isOwn = data?.deliveryMode === "own";
   const _override = (data?.plan as any)?.platform_delivery_split_override;
-  const _baseSplit = _isOwn
-    ? (_override ?? 2.0)
-    : (data?.feeConfig?.platform_split ?? 2.0);
+  // Autonomia: NUNCA cobra a taxa de R$2 da plataforma (em entrega própria nem na plataforma)
+  const _baseSplit = _isAutonomy
+    ? 0
+    : _isOwn
+      ? (_override ?? 2.0)
+      : (data?.feeConfig?.platform_split ?? 2.0);
   const _splitMode = (data?.platformFeeSplit || "cliente") as "cliente" | "meio_a_meio" | "lojista";
   const _storeAbsorb = _isOwn
     ? (_splitMode === "lojista" ? _baseSplit : _splitMode === "meio_a_meio" ? Math.round((_baseSplit / 2) * 100) / 100 : 0)
@@ -177,9 +184,11 @@ export function useStorePlan(storeId: string | undefined | null): StorePlanFeatu
     // 🔒 R$2 plataforma se aplica a TODOS os planos (regra de negócio global)
     // own delivery: somado em cima da taxa do lojista no CheckoutPage
     // platform delivery: incluso no cálculo via deliveryFee.ts config.platform_split
-    platformDeliverySplit: data?.deliveryMode === "own"
-      ? ((data?.plan as any)?.platform_delivery_split_override ?? 2.00)
-      : (data?.feeConfig?.platform_split ?? 2.00),
+    platformDeliverySplit: _isAutonomy
+      ? 0
+      : data?.deliveryMode === "own"
+        ? ((data?.plan as any)?.platform_delivery_split_override ?? 2.00)
+        : (data?.feeConfig?.platform_split ?? 2.00),
     // Driver split: todos os planos que usam plataforma de entrega têm split pro motoboy
     driverDeliverySplit: data?.feeConfig?.driver_split ?? DEFAULT_DELIVERY_FEE_CONFIG.driver_split,
     platformFeeSplit: _splitMode,

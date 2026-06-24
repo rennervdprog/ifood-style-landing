@@ -3999,7 +3999,12 @@ export type Database = {
         | "restaurante"
         | "esfihas"
       store_driver_status: "pending" | "accepted" | "rejected"
-      store_plan_type: "fixed" | "hybrid" | "commission_only" | "supporter"
+      store_plan_type:
+        | "fixed"
+        | "hybrid"
+        | "commission_only"
+        | "supporter"
+        | "autonomy"
       store_status: "analise" | "ativo" | "bloqueado"
       wallet_transaction_type: "credit" | "debit"
     }
@@ -4180,7 +4185,13 @@ export const Constants = {
         "esfihas",
       ],
       store_driver_status: ["pending", "accepted", "rejected"],
-      store_plan_type: ["fixed", "hybrid", "commission_only", "supporter"],
+      store_plan_type: [
+        "fixed",
+        "hybrid",
+        "commission_only",
+        "supporter",
+        "autonomy",
+      ],
       store_status: ["analise", "ativo", "bloqueado"],
       wallet_transaction_type: ["credit", "debit"],
     },
