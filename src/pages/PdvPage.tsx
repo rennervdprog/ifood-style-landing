@@ -784,6 +784,43 @@ const PdvPage = () => {
         onAdd={handleModalAdd}
       />
 
+      {/* ── MONTE A PIZZA (meio a meio + bordas) ── */}
+      {pizzaHalfEnabled && showHalfHalf && store?.id && (
+        <Suspense fallback={null}>
+          <PizzaHalfHalfModal
+            open={showHalfHalf}
+            onClose={() => setShowHalfHalf(false)}
+            storeName={store?.name || ""}
+            storeId={store.id}
+            products={products as any}
+            sections={sections}
+            priceMode={storeSettings.pizza_price_mode || "maior"}
+            maxFlavors={(storeSettings.pizza_config?.max_flavors as 2 | 3 | 4) || 4}
+            singleSize={!!storeSettings.pizza_single_size}
+            onAdd={handleModalAdd}
+          />
+        </Suspense>
+      )}
+
+      {/* ── MONTE O PASTEL ── */}
+      {pastelHalfEnabled && showPastelBuilder && store?.id && (
+        <Suspense fallback={null}>
+          <PastelBuilderModal
+            open={showPastelBuilder}
+            onClose={() => setShowPastelBuilder(false)}
+            storeName={store?.name || ""}
+            storeId={store.id}
+            products={products as any}
+            sections={sections}
+            priceMode={storeSettings.pastel_price_mode || "maior"}
+            maxFlavors={(storeSettings.pastel_config?.max_flavors as 2 | 3 | 4) || 4}
+            maxComplements={Number(storeSettings.pastel_config?.max_complements) || 3}
+            singleSize={!!storeSettings.pastel_single_size}
+            onAdd={handleModalAdd}
+          />
+        </Suspense>
+      )}
+
       {/* ── BARRA DE ATALHOS (rodapé estilo keycap, só desktop) ── */}
       {screen === "venda" && tab === "venda" && <PdvStatusBar />}
 
