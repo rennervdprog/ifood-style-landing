@@ -20,10 +20,14 @@ export const PdvShortcutsDialog = ({ onClose }: { onClose: () => void }) => (
       </div>
       <div className="space-y-2">
         {[
+          ["F1", "Mostrar esta ajuda"],
           ["F2", "Focar busca de produtos"],
           ["F3", "Abrir/fechar desconto"],
           ["F4", "Trocar forma de pagamento"],
+          ["F6", "Sangria (retirar dinheiro)"],
+          ["F7", "Suprimento (reforço de caixa)"],
           ["F8", "Finalizar venda"],
+          ["F10", "Iniciar fechamento de caixa"],
           ["ESC", "Limpar venda atual"],
           ["Scanner", "Leitor USB adiciona ao carrinho"],
         ].map(([k, desc]) => (
