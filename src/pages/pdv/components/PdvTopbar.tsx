@@ -1,5 +1,6 @@
-import { ArrowLeft, Monitor, Keyboard, ArrowUpCircle, ArrowDownCircle, Lock, Loader2, User } from "lucide-react";
+import { ArrowLeft, Monitor, Keyboard, ArrowUpCircle, ArrowDownCircle, Lock, Loader2, User, Wifi, WifiOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 import { formatBRL } from "@/lib/utils";
 
 interface Props {
@@ -21,6 +22,20 @@ export const PdvTopbar = ({
 }: Props) => {
   const navigate = useNavigate();
   const initial = (operatorName || "").trim().charAt(0).toUpperCase() || "?";
+  // Indicador de sincronização — Fase 7
+  const [online, setOnline] = useState<boolean>(
+    typeof navigator !== "undefined" ? navigator.onLine : true,
+  );
+  useEffect(() => {
+    const up = () => setOnline(true);
+    const down = () => setOnline(false);
+    window.addEventListener("online", up);
+    window.addEventListener("offline", down);
+    return () => {
+      window.removeEventListener("online", up);
+      window.removeEventListener("offline", down);
+    };
+  }, []);
   return (
     <header className="h-12 border-b border-border bg-card flex items-center px-3 gap-2 shrink-0">
       <button onClick={() => navigate("/admin")} className="p-1.5 rounded-lg hover:bg-muted transition-colors">
@@ -37,6 +52,16 @@ export const PdvTopbar = ({
       </div>
 
       <div className="flex items-center gap-1">
+        <div
+          title={online ? "Online — sincronizado" : "Offline — sem conexão"}
+          className={`flex items-center gap-1 px-1.5 py-1 rounded-lg border ${
+            online
+              ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-600"
+              : "bg-red-500/10 border-red-500/30 text-red-600 animate-pulse"
+          }`}
+        >
+          {online ? <Wifi className="h-3.5 w-3.5" /> : <WifiOff className="h-3.5 w-3.5" />}
+        </div>
         {operatorName && (
           <div
             title={`Operador: ${operatorName}`}
