@@ -94,7 +94,7 @@ export const PdvCartSection = ({
                 <p className="text-[10px] text-amber-600 italic truncate">"{item.observations}"</p>
               )}
             </div>
-            <p className="text-xs font-black text-foreground shrink-0">{formatBRL(item.price * item.quantity)}</p>
+            <p className="text-xs font-black text-foreground shrink-0 pdv-mono">{formatBRL(item.price * item.quantity)}</p>
             <button onClick={() => removeItem(item.id)} className="p-0.5 text-muted-foreground hover:text-destructive transition-colors opacity-100 md:opacity-0 md:group-hover:opacity-100">
               <X className="h-3.5 w-3.5" />
             </button>
@@ -133,17 +133,17 @@ export const PdvCartSection = ({
       <div className="px-3 pt-2 pb-1 space-y-0.5">
         <div className="flex justify-between text-xs">
           <span className="text-muted-foreground">Subtotal</span>
-          <span className="font-semibold">{formatBRL(subtotal)}</span>
+          <span className="font-semibold pdv-mono">{formatBRL(subtotal)}</span>
         </div>
         {discountAmount > 0 && (
           <div className="flex justify-between text-xs">
             <span className="text-emerald-500">Desconto</span>
-            <span className="font-bold text-emerald-500">−{formatBRL(discountAmount)}</span>
+            <span className="font-bold text-emerald-500 pdv-mono">−{formatBRL(discountAmount)}</span>
           </div>
         )}
         <div className="flex justify-between items-baseline pt-1 border-t border-border/40">
           <span className="text-sm font-black">Total</span>
-          <span className="text-2xl font-black text-primary">{formatBRL(finalTotal)}</span>
+          <span className="text-2xl font-black text-primary pdv-mono">{formatBRL(finalTotal)}</span>
         </div>
       </div>
 
@@ -235,7 +235,7 @@ export const PdvCartSection = ({
               <span className={`text-xs font-bold ${trocoNegativo ? "text-red-500" : "text-emerald-700 dark:text-emerald-400"} flex items-center gap-1`}>
                 {trocoNegativo ? "⚠️ Falta" : <><Wallet className="h-3.5 w-3.5" /> Troco</>}
               </span>
-              <span className={`text-xl font-black ${trocoNegativo ? "text-red-500" : "text-emerald-600 dark:text-emerald-400"}`}>
+              <span className={`text-xl font-black ${trocoNegativo ? "text-red-500" : "text-emerald-600 dark:text-emerald-400 pdv-mono"}`}>
                 {trocoNegativo ? formatBRL(finalTotal_ - (parseBRL(cashReceived))) : formatBRL(troco)}
               </span>
             </div>
