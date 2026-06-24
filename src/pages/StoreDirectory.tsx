@@ -284,7 +284,6 @@ const StoreDirectory = () => {
   const [roleChecked, setRoleChecked] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [activeSegment, setActiveSegment] = useState(0);
-  const { count: supporterTaken } = useSupporterCount();
   const [liveStats, setLiveStats] = useState<{ stores: number; cities: number } | null>(null);
 
   const handleCTA = useCallback(() => navigate("/cadastro-lojista"), [navigate]);
