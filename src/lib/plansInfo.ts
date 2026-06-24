@@ -153,6 +153,7 @@ const autonomy: PlanInfo = {
     "Sem taxa de R$2 da plataforma na entrega",
     "Você fica com 100% da taxa que cobra",
     "PIX online: R$1,99 por pedido (só se usar)",
+    "PDV: R$1,00 por venda presencial",
     "Todas as ferramentas + Suporte VIP",
   ],
   example: (_: number) => "",
