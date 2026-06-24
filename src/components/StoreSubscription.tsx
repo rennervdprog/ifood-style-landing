@@ -31,6 +31,7 @@ interface Props {
     hybrid: "Crescimento",
     commission_only: "Comissão",
     supporter: "Apoiador",
+    autonomy: "Autonomia",
  };
 
  const planSubtitles: Record<StorePlanType, string> = {
@@ -38,6 +39,7 @@ interface Props {
    hybrid: "Mensalidade reduzida + taxa por venda",
    commission_only: "Sem mensalidade, paga só quando vende",
    supporter: "Plano exclusivo de lançamento",
+   autonomy: "Sem comissão e sem taxa de R$2 da plataforma",
  };
 
  const planIcons: Record<StorePlanType, React.ElementType> = {
@@ -45,6 +47,7 @@ interface Props {
    hybrid: Rocket,
    commission_only: Sparkles,
    supporter: Crown,
+   autonomy: Crown,
  };
 
  const planAccent: Record<StorePlanType, string> = {
@@ -52,6 +55,7 @@ interface Props {
    hybrid: "text-primary",
    commission_only: "text-primary",
    supporter: "text-primary",
+   autonomy: "text-primary",
  };
 
  const planAccentBg: Record<StorePlanType, string> = {
@@ -59,6 +63,7 @@ interface Props {
    hybrid: "bg-primary/10",
    commission_only: "bg-primary/10",
    supporter: "bg-primary/10",
+   autonomy: "bg-primary/10",
  };
 
 /** Opções de plano para troca — vem direto de plansInfo (fonte única). */
