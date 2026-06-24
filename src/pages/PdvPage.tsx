@@ -29,6 +29,19 @@ import PdvDeliveryAlerts from "@/components/pdv/PdvDeliveryAlerts";
 import PdvEmptiesCustomerDialog from "@/components/PdvEmptiesCustomerDialog";
 import EmptiesReturnDialog from "@/components/EmptiesReturnDialog";
 
+// Refatoração Fase 1: módulos extraídos para src/pages/pdv/
+import type {
+  Product,
+  MenuSection,
+  CartItem,
+  PdvSession,
+  PdvScreen as Screen,
+  PdvMobileStep as MobileStep,
+  PdvTab as Tab,
+} from "@/pages/pdv/types";
+import { PDV_METHODS, COLOR_MAP } from "@/pages/pdv/constants";
+import { usePdvCatalog } from "@/pages/pdv/state/usePdvCatalog";
+
 // Detecta se está em tela mobile (< 768px)
 const useIsMobile = () => {
   const query = "(max-width: 767px)";
@@ -51,57 +64,8 @@ const useIsMobile = () => {
 // TIPOS
 // ─────────────────────────────────────────────────────────────────────────────
 
-interface Product {
-  id: string;
-  name: string;
-  price: number;
-  image_url: string | null;
-  section_id: string | null;
-  is_available: boolean;
-}
-
-interface MenuSection {
-  id: string;
-  name: string;
-  sort_order: number;
-}
-
-interface CartItem {
-  id: string;
-  name: string;
-  price: number;         // preço unitário total (base + addons)
-  basePrice: number;     // preço base sem adicionais
-  quantity: number;
-  addons?: CartAddon[];
-  observations?: string;
-  image_url?: string | null;
-}
-
-interface PdvSession {
-  id: string;
-  store_id: string;
-  opened_at: string;
-  opening_amount: number;
-  status: string;
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// CONSTANTES
-// ─────────────────────────────────────────────────────────────────────────────
-
-const PDV_METHODS = [
-  { id: "dinheiro",           label: "Dinheiro",    icon: Banknote,   color: "emerald", needsChange: true  },
-  { id: "maquininha_credito", label: "Crédito",     icon: CreditCard, color: "blue",    needsChange: false },
-  { id: "maquininha_debito",  label: "Débito",      icon: CreditCard, color: "indigo",  needsChange: false },
-  { id: "maquininha_pix",     label: "PIX",         icon: Smartphone, color: "orange",  needsChange: false },
-];
-
-const COLOR_MAP: Record<string, string> = {
-  emerald: "bg-emerald-500/10 text-emerald-600 border-emerald-500/25 data-[sel=true]:bg-emerald-500 data-[sel=true]:text-white data-[sel=true]:border-emerald-500",
-  blue:    "bg-blue-500/10 text-blue-600 border-blue-500/25 data-[sel=true]:bg-blue-500 data-[sel=true]:text-white data-[sel=true]:border-blue-500",
-  indigo:  "bg-indigo-500/10 text-indigo-600 border-indigo-500/25 data-[sel=true]:bg-indigo-500 data-[sel=true]:text-white data-[sel=true]:border-indigo-500",
-  orange:  "bg-primary/10 text-primary border-primary/25 data-[sel=true]:bg-primary data-[sel=true]:text-white data-[sel=true]:border-primary",
-};
+// (Tipos e constantes movidos para `src/pages/pdv/types.ts` e
+//  `src/pages/pdv/constants.ts` na Fase 1 da refatoração do PDV.)
 
 // ─────────────────────────────────────────────────────────────────────────────
 // COMPONENTE PRINCIPAL
@@ -118,16 +82,13 @@ const PdvPage = () => {
     if (isMobile) setMobileStep("catalog");
   }, [isMobile]);
 
-  type Screen = "loading" | "abertura" | "venda" | "fechamento";
   const [screen, setScreen] = useState<Screen>("loading");
   const [currentSession, setCurrentSession] = useState<PdvSession | null>(null);
 
   // Mobile: etapas de venda
-  type MobileStep = "catalog" | "cart";
   const [mobileStep, setMobileStep] = useState<MobileStep>("catalog");
 
   // Abas da tela de venda
-  type Tab = "venda" | "historico" | "turnos" | "relatorios";
   const [tab, setTab] = useState<Tab>("venda");
   // Turno selecionado para drill-down no relatório (null = geral)
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
