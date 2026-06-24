@@ -1324,7 +1324,8 @@ const StorePage = () => {
       {/* ===== MONTE SUA PIZZA MEIO A MEIO ===== */}
       {store?.category === "pizzas" && (() => {
         const storeSettings = (store?.settings || {}) as Record<string, any>;
-        const halfEnabled = !!storeSettings.pizza_half_enabled;
+        // Default: habilitado (mesmo padrão do PizzaFlavorManager). Só desliga se explicitamente false.
+        const halfEnabled = storeSettings.pizza_half_enabled !== false;
         if (!halfEnabled) return null;
         // Need at least one product to montar meio a meio
         if (!products || products.length === 0) return null;
