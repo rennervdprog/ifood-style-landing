@@ -32,7 +32,7 @@ export const PdvFechamentoScreen = ({
   const isOk = !!closingAmount && Math.abs(diffAmount) < 0.05;
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="pdv-shell min-h-screen bg-background flex flex-col">
       <header className="h-14 border-b border-border flex items-center px-4 gap-3 bg-card">
         <button onClick={onBack} className="p-1.5 rounded-xl hover:bg-muted">
           <ArrowLeft className="h-5 w-5" />

@@ -12,7 +12,7 @@ interface Props {
 export const PdvAberturaScreen = ({ storeName, openingAmount, setOpeningAmount, onOpen, loading }: Props) => {
   const navigate = useNavigate();
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="pdv-shell min-h-screen bg-background flex flex-col">
       <header className="h-14 border-b border-border flex items-center px-4 gap-3 bg-card">
         <button onClick={() => navigate("/admin")} className="p-1.5 rounded-xl hover:bg-muted transition-colors">
           <ArrowLeft className="h-5 w-5" />

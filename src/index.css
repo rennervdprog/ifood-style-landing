@@ -546,3 +546,53 @@ svg.lucide {
   z-index: 50;
   will-change: transform;
 }
+
+/* ─────────────────────────────────────────────────────────────────────
+ * PDV — tema "Claro alto contraste" (escolha do operador)
+ * Tipografia: Inter (UI) + JetBrains Mono (valores tabulares)
+ * Densidade: compacta profissional (Linx/Square-like)
+ * Aplica em wrappers com classe `.pdv-shell`, sem afetar o resto do app.
+ * ──────────────────────────────────────────────────────────────────── */
+.pdv-shell {
+  --background: 220 16% 97%;          /* #F4F6F9 — fundo balcão */
+  --foreground: 222 47% 11%;          /* #111827 — texto principal */
+  --card: 0 0% 100%;                  /* #FFFFFF — cards/painéis */
+  --card-foreground: 222 47% 11%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222 47% 11%;
+  --primary: 24 100% 50%;             /* #FF7A00 — laranja ItaSuper */
+  --primary-foreground: 0 0% 100%;
+  --secondary: 220 14% 96%;
+  --secondary-foreground: 222 47% 11%;
+  --muted: 220 14% 94%;
+  --muted-foreground: 220 9% 38%;     /* contraste alto para leitura rápida */
+  --accent: 24 100% 96%;
+  --accent-foreground: 24 100% 35%;
+  --destructive: 0 84% 55%;
+  --destructive-foreground: 0 0% 100%;
+  --success: 152 76% 36%;
+  --success-foreground: 0 0% 100%;
+  --border: 220 13% 88%;
+  --input: 220 13% 88%;
+  --ring: 24 100% 50%;
+  --radius: 0.75rem;                  /* mais sóbrio que o app (1rem) */
+
+  font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-feature-settings: "cv11", "ss01", "ss03";
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Números tabulares (valores R$, troco, totais) — JetBrains Mono */
+.pdv-shell .pdv-mono,
+.pdv-mono {
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+/* Inputs do PDV — anel mais discreto, foco visível em alto contraste */
+.pdv-shell input:focus-visible,
+.pdv-shell button:focus-visible {
+  outline: 2px solid hsl(var(--primary));
+  outline-offset: 1px;
+}
