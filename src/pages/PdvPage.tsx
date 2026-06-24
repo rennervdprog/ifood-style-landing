@@ -654,134 +654,19 @@ const PdvPage = () => {
 
       {/* ── MODAL SANGRIA / SUPRIMENTO ── */}
       {movModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-card rounded-2xl border border-border w-full max-w-xs p-5 space-y-4 shadow-2xl">
-            <div className="flex items-center gap-3">
-              {movModal === "sangria"
-                ? <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center"><ArrowDownCircle className="h-5 w-5 text-red-500" /></div>
-                : <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center"><ArrowUpCircle className="h-5 w-5 text-blue-500" /></div>
-              }
-              <div>
-                <h3 className="font-black text-base capitalize">{movModal}</h3>
-                <p className="text-[11px] text-muted-foreground">
-                  {movModal === "sangria" ? "Retirada de dinheiro do caixa" : "Entrada de dinheiro no caixa"}
-                </p>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <div>
-                <label className="text-xs font-bold text-muted-foreground">Valor (R$)</label>
-                <div className="relative mt-1.5">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-muted-foreground">R$</span>
-                  <input
-                    type="text" inputMode="decimal" placeholder="0,00"
-                    value={movValue} onChange={e => setMovValue(e.target.value.replace(/[^0-9.,]/g, ""))}
-                    className="w-full pl-9 pr-3 py-3 bg-muted/40 rounded-xl text-xl font-black text-center focus:outline-none focus:ring-2 focus:ring-primary/30 border border-border/50"
-                  />
-                </div>
-              </div>
-
-              {/* Motivos preset (só sangria) */}
-              {movModal === "sangria" && (
-                <div>
-                  <label className="text-xs font-bold text-muted-foreground">Motivo *</label>
-                  <div className="grid grid-cols-2 gap-1.5 mt-1.5">
-                    {["Cofre", "Despesa", "Pagto fornecedor", "Outro"].map((r) => (
-                      <button
-                        key={r}
-                        type="button"
-                        onClick={() => setMovReason(r)}
-                        className={`px-2 py-1.5 rounded-lg text-[11px] font-bold transition-colors border ${
-                          movReason === r
-                            ? "bg-red-500 text-white border-red-500"
-                            : "bg-muted/50 text-muted-foreground border-border hover:bg-muted"
-                        }`}
-                      >
-                        {r}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <div>
-                <label className="text-xs font-bold text-muted-foreground">
-                  Observação {movModal === "sangria" ? "(opcional)" : ""}
-                </label>
-                <input
-                  type="text"
-                  placeholder={movModal === "sangria" ? "Ex: Enviado ao cofre" : "Ex: Reforço de troco"}
-                  value={movDesc} onChange={e => setMovDesc(e.target.value)}
-                  className="w-full mt-1.5 px-3 py-2.5 bg-muted/40 rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 border border-border/50"
-                />
-              </div>
-            </div>
-
-            <div className="flex gap-2">
-              <button
-                onClick={() => { setMovModal(null); setMovValue(""); setMovDesc(""); setMovReason(""); }}
-                className="flex-1 h-11 rounded-xl bg-muted font-bold text-sm"
-              >Cancelar</button>
-              <button
-                onClick={() => handleMoviment(movModal)}
-                disabled={loading}
-                className={`flex-1 h-11 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-1.5 ${
-                  movModal === "sangria" ? "bg-red-500 hover:bg-red-600" : "bg-blue-500 hover:bg-blue-600"
-                } transition-colors`}
-              >
-                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Confirmar"}
-              </button>
-            </div>
-          </div>
-        </div>
+        <PdvMovementDialog
+          type={movModal}
+          movValue={movValue} setMovValue={setMovValue}
+          movDesc={movDesc} setMovDesc={setMovDesc}
+          movReason={movReason} setMovReason={setMovReason}
+          loading={loading}
+          onCancel={() => { setMovModal(null); setMovValue(""); setMovDesc(""); setMovReason(""); }}
+          onConfirm={() => handleMoviment(movModal)}
+        />
       )}
 
       {/* ── MODAL ATALHOS DE TECLADO ── */}
-      {showShortcuts && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
-          onClick={() => setShowShortcuts(false)}
-        >
-          <div
-            className="bg-card rounded-2xl border border-border w-full max-w-sm p-5 space-y-3 shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                <Keyboard className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <h3 className="font-black text-base">Atalhos de teclado</h3>
-                <p className="text-[11px] text-muted-foreground">Acelere o atendimento</p>
-              </div>
-            </div>
-            <div className="space-y-2">
-              {[
-                ["F2", "Focar busca de produtos"],
-                ["F3", "Abrir/fechar desconto"],
-                ["F4", "Trocar forma de pagamento"],
-                ["F8", "Finalizar venda"],
-                ["ESC", "Limpar venda atual"],
-                ["Scanner", "Leitor USB adiciona ao carrinho"],
-              ].map(([k, desc]) => (
-                <div key={k} className="flex items-center justify-between bg-muted/30 px-3 py-2 rounded-lg">
-                  <span className="text-xs text-muted-foreground">{desc}</span>
-                  <kbd className="px-2 py-0.5 rounded-md bg-background border border-border text-[11px] font-black text-foreground">
-                    {k}
-                  </kbd>
-                </div>
-              ))}
-            </div>
-            <button
-              onClick={() => setShowShortcuts(false)}
-              className="w-full h-10 rounded-xl bg-primary text-primary-foreground font-bold text-sm"
-            >
-              Entendi
-            </button>
-          </div>
-        </div>
-      )}
+      {showShortcuts && <PdvShortcutsDialog onClose={() => setShowShortcuts(false)} />}
 
       {/* Fluxo de troca de casquinhas no PDV */}
       {emptiesFlow.step === "lookup" && (
