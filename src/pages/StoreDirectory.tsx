@@ -125,6 +125,14 @@ const faqs = [
   { q: "Como o cliente paga?", a: "PIX direto no celular. O dinheiro cai na sua conta na hora." },
   { q: "Posso cancelar quando quiser?", a: "Sim. Sem multa, sem fidelidade, sem pegadinha." },
   { q: "E se eu tiver dificuldade?", a: "Nossa equipe responde no WhatsApp em minutos." },
+  {
+    q: 'O que é essa "taxa de R$2 da plataforma" na entrega?',
+    a: "É o quanto a plataforma cobra por pedido pra manter o motoboy integrado, o rastreamento e o suporte. Nos planos Comissão, Crescimento e Essencial ela aparece pro cliente como acréscimo em cima da sua taxa de entrega. No plano Autonomia esse acréscimo é zero — o cliente paga exatamente a taxa que você define.",
+  },
+  {
+    q: "Quando vale a pena o plano Autonomia (R$229,90)?",
+    a: 'Se você sente que os R$2 extras estão afastando cliente, ou se prefere mostrar um preço de entrega "redondo" sem acréscimo, o Autonomia compensa a partir de ~115 pedidos/mês (R$2 × 115 = R$230). Tem 7 dias grátis pra testar.',
+  },
 ];
 
 /* ───────────────────────── HELPERS ───────────────────────── */
