@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback, useRef } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef, lazy, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -20,6 +20,10 @@ import {
 import { PdvHistorico, PdvSessionsList } from "@/components/pdv/PdvHistorico";
 import ProductDetailModal from "@/components/ProductDetailModal";
 import type { CartAddon } from "@/contexts/CartContext";
+
+// Builders compartilhados com o app cliente — lazy para não pesar no PDV.
+const PizzaHalfHalfModal = lazy(() => import("@/components/PizzaHalfHalfModal"));
+const PastelBuilderModal = lazy(() => import("@/components/PastelBuilderModal"));
 import { PdvRelatorios } from "@/components/pdv/PdvRelatorios";
 import { usePdvShortcuts } from "@/components/pdv/usePdvShortcuts";
 import { usePdvBarcodeScanner } from "@/components/pdv/usePdvBarcodeScanner";
