@@ -418,7 +418,7 @@ const PdvPage = () => {
   const selectedMethod = PDV_METHODS.find(m => m.id === paymentMethod);
 
   return (
-    <div className="h-screen bg-background flex flex-col overflow-hidden">
+    <div className="pdv-shell h-screen bg-background flex flex-col overflow-hidden">
 
       {store?.id && <PdvDeliveryAlerts storeId={store.id} />}
 
