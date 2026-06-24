@@ -664,6 +664,7 @@ const PdvPage = () => {
                   grouped={grouped} prodLoading={prodLoading}
                   getQty={getQty} addItem={addItem} decItem={decItem}
                   searchInputRef={searchInputRef}
+                  topSlot={builderActions}
                 />
               </div>
               {/* Caixa */}
@@ -709,6 +710,7 @@ const PdvPage = () => {
                       grouped={grouped} prodLoading={prodLoading}
                       getQty={getQty} addItem={addItem} decItem={decItem}
                       searchInputRef={searchInputRef}
+                      topSlot={builderActions}
                     />
                   </div>
                   {/* Bottom bar — ir ao carrinho */}
