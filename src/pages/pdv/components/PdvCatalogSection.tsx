@@ -1,6 +1,6 @@
 import { Search, Plus, Minus, Layers, Loader2, X } from "lucide-react";
 import { formatBRL } from "@/lib/utils";
-import type { RefObject } from "react";
+import type { RefObject, ReactNode } from "react";
 import type { Product, MenuSection } from "@/pages/pdv/types";
 
 interface Props {
@@ -15,13 +15,16 @@ interface Props {
   addItem: (p: Product) => void;
   decItem: (id: string) => void;
   searchInputRef: RefObject<HTMLInputElement | null>;
+  /** Slot opcional renderizado acima da busca (ex.: Monte sua Pizza/Pastel). */
+  topSlot?: ReactNode;
 }
 
 export const PdvCatalogSection = ({
   search, setSearch, sections, activeSection, setActiveSection,
-  grouped, prodLoading, getQty, addItem, decItem, searchInputRef,
+  grouped, prodLoading, getQty, addItem, decItem, searchInputRef, topSlot,
 }: Props) => (
   <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
+    {topSlot && <div className="shrink-0">{topSlot}</div>}
     {/* Busca */}
     <div className="px-3 pt-2.5 pb-2 shrink-0">
       <div className="relative">
