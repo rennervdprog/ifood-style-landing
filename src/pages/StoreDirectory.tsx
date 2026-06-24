@@ -55,6 +55,7 @@ const plans = [
     commission: "6%",
     icon: Rocket,
     highlight: false,
+    badge: undefined as string | undefined,
     features: [
       "Cardápio digital ilimitado",
       "PIX online integrado",
@@ -70,6 +71,7 @@ const plans = [
     commission: "2,5%",
     icon: TrendingUp,
     highlight: false,
+    badge: undefined as string | undefined,
     features: [
       "Tudo do plano Comissão",
       "Banners e cupons",
@@ -85,11 +87,29 @@ const plans = [
     commission: "0%",
     icon: Crown,
     highlight: true,
+    badge: undefined as string | undefined,
     features: [
       "Tudo do plano Crescimento",
       "Zero comissão por venda",
       "PDV (R$ 1 por venda)",
       "Suporte prioritário",
+    ],
+  },
+  {
+    id: "autonomy",
+    name: "Autonomia",
+    tagline: "Você cobra, o cliente paga. Sem acréscimo da plataforma.",
+    price: "229,90",
+    commission: "0%",
+    icon: Crown,
+    highlight: false,
+    badge: "Sem taxa de R$2" as string | undefined,
+    features: [
+      "Tudo do plano Essencial",
+      "SEM taxa de R$2 da plataforma na entrega",
+      "Cliente paga exatamente a taxa que você define",
+      "PIX online: R$1,99/pedido (só se usar)",
+      "7 dias grátis para testar",
     ],
   },
 ];
