@@ -41,6 +41,8 @@ import type {
 } from "@/pages/pdv/types";
 import { PDV_METHODS, COLOR_MAP } from "@/pages/pdv/constants";
 import { usePdvCatalog } from "@/pages/pdv/state/usePdvCatalog";
+import { usePdvSession } from "@/pages/pdv/state/usePdvSession";
+import { usePdvCart } from "@/pages/pdv/state/usePdvCart";
 
 // Detecta se está em tela mobile (< 768px)
 const useIsMobile = () => {
