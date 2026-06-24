@@ -134,16 +134,42 @@ const supporter: PlanInfo = {
 };
 supporter.example = exampleText(supporter);
 
+const autonomy: PlanInfo = {
+  id: "autonomy",
+  name: "Autonomia",
+  tagline: "R$229,90/mês — sem comissão e SEM taxa de R$2 da plataforma",
+  forWho: "Pra quem quer máxima autonomia: fica com 100% da taxa de entrega que cobra",
+  monthlyFee: 229.90,
+  commissionRate: 0,
+  pixFee: 1.99,
+  deliveryFee: 0,
+  icon: Crown,
+  accent: "text-primary",
+  accentBg: "bg-primary/10",
+  badge: "🚀 Máxima autonomia",
+  highlight: false,
+  features: [
+    "Sem comissão por pedido",
+    "Sem taxa de R$2 da plataforma na entrega",
+    "Você fica com 100% da taxa que cobra",
+    "PIX online: R$1,99 por pedido (só se usar)",
+    "Todas as ferramentas + Suporte VIP",
+  ],
+  example: (_: number) => "",
+};
+autonomy.example = exampleText(autonomy);
+
 export const PLANS: Record<StorePlanType, PlanInfo> = {
   commission_only,
   hybrid,
   fixed,
   supporter,
+  autonomy,
 };
 
 /** Ordem padrão para exibição (do mais barato pro mais completo). */
 /** Plano "supporter" (Apoiador) está desativado para novos cadastros — oculto em toda a UI pública. */
-export const PLANS_ORDER: StorePlanType[] = ["commission_only", "hybrid", "fixed"];
+export const PLANS_ORDER: StorePlanType[] = ["commission_only", "hybrid", "fixed", "autonomy"];
 
 /** Linha única de explicação universal sobre a taxa de entrega. */
 export const DELIVERY_FEE_NOTE =
