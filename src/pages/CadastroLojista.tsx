@@ -88,6 +88,12 @@ const CadastroLojista = () => {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [selectedPlan, setSelectedPlan] = useState<"supporter" | "fixed" | "hybrid" | "commission_only" | "autonomy" | "">("");
+  const [acceptedDynamic, setAcceptedDynamic] = useState(false);
+
+  const isDynamicPlan = selectedPlan === "fixed" || selectedPlan === "hybrid";
+  useEffect(() => {
+    setAcceptedDynamic(false);
+  }, [selectedPlan]);
   // Promo de captação: força plano Essencial (fixed) e pula a etapa de plano.
   useEffect(() => {
     if (promoCode) {
@@ -601,10 +607,35 @@ const CadastroLojista = () => {
                   </div>
                 )}
 
+                {isDynamicPlan && (
+                  <div className="rounded-2xl border-2 border-amber-500/50 bg-amber-500/10 p-4 space-y-2">
+                    <p className="text-sm font-extrabold text-foreground flex items-center gap-1.5">
+                      📈 Este é um plano dinâmico
+                    </p>
+                    <p className="text-[12px] text-foreground leading-relaxed">
+                      A mensalidade pode aumentar conforme seu faturamento. Se você faturar mais de <strong>R$5.000/mês por 2 meses seguidos</strong>, a mensalidade sobe automaticamente para <strong>R${selectedPlan === "fixed" ? "180" : "100"}/mês</strong>.
+                    </p>
+                    <p className="text-[11px] text-muted-foreground leading-relaxed">
+                      Isso só acontece quando seu negócio já estiver crescendo — você sempre será avisado antes.
+                    </p>
+                    <label className="flex items-start gap-2 cursor-pointer pt-1">
+                      <input
+                        type="checkbox"
+                        checked={acceptedDynamic}
+                        onChange={(e) => setAcceptedDynamic(e.target.checked)}
+                        className="mt-0.5 h-4 w-4 rounded border-2 border-amber-600 accent-amber-600 cursor-pointer shrink-0"
+                      />
+                      <span className="text-[12px] font-semibold text-foreground leading-snug">
+                        Entendi e aceito que a mensalidade pode aumentar conforme o faturamento
+                      </span>
+                    </label>
+                  </div>
+                )}
+
                 <button
                   type="button"
                   onClick={nextStep}
-                  disabled={!selectedPlan}
+                  disabled={!selectedPlan || (isDynamicPlan && !acceptedDynamic)}
                   className="w-full bg-primary text-primary-foreground font-bold py-3.5 rounded-2xl active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                 >
                   Próximo <ChevronRight className="h-4 w-4" />
