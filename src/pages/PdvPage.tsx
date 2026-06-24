@@ -391,7 +391,26 @@ const PdvPage = () => {
 
   if (screen === "loading") return (
     <div className="min-h-screen bg-background flex items-center justify-center">
-      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      {storeFetched && !store ? (
+        <div className="max-w-sm text-center px-6 py-10">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-amber-500/10 flex items-center justify-center">
+            <Lock className="h-8 w-8 text-amber-500" />
+          </div>
+          <h1 className="text-lg font-black text-foreground mb-1">PDV indisponível</h1>
+          <p className="text-sm text-muted-foreground mb-5">
+            Nenhuma loja ativa vinculada a este usuário. Faça login com a conta do lojista
+            ou entre em contato com o administrador.
+          </p>
+          <button
+            onClick={() => navigate("/admin")}
+            className="bg-primary text-primary-foreground font-bold px-5 py-2.5 rounded-xl text-sm"
+          >
+            Voltar ao painel
+          </button>
+        </div>
+      ) : (
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      )}
     </div>
   );
 
