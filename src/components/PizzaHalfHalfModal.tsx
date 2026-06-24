@@ -95,7 +95,8 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
   });
   const catalog = readPizzaCatalogConfig((storeSettingsRow as any)?.settings);
   const catalogActive = !singleSize && hasPizzaCatalog(catalog);
-  const catalogActiveSizes = catalog.sizes.filter((s) => s.active);
+  // Tamanhos com maxFlavors === 1 não entram no "Monte sua pizza" (não permitem divisão).
+  const catalogActiveSizes = catalog.sizes.filter((s) => s.active && (s.maxFlavors ?? 4) >= 2);
 
   // Auto-select "Tradicional" border by default when borders are loaded
   useEffect(() => {
@@ -165,6 +166,22 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
   useEffect(() => {
     if (open && hasSizes && !selectedSize) setSelectedSize(availableSizes[0]);
   }, [open, hasSizes, selectedSize, availableSizes]);
+
+  // Máx. de sabores efetivo: respeita o limite do tamanho escolhido (catálogo) E o limite global da loja.
+  const sizeMaxFlavors: FlavorCount = (() => {
+    if (!catalogActive || !selectedSize) return maxFlavors;
+    const size = catalogActiveSizes.find((s) => s.name === selectedSize);
+    const cap = (size?.maxFlavors ?? 4) as 2 | 3 | 4;
+    return Math.min(cap, maxFlavors) as FlavorCount;
+  })();
+
+  // Clampa flavorCount se o tamanho escolhido não suporta a quantidade atual.
+  useEffect(() => {
+    if (flavorCount > sizeMaxFlavors) {
+      setFlavorCount(sizeMaxFlavors);
+      setProductIds(Array(sizeMaxFlavors).fill(null));
+    }
+  }, [sizeMaxFlavors, flavorCount]);
 
   const priceForFlavor = (p: Product): number => {
     if (catalogActive) {
