@@ -446,6 +446,13 @@ const CategoryProductFields = ({ category, metadata, onChange, onNameChange, sto
             Sua pizzaria está configurada para <b>um único tamanho</b>. O cliente verá apenas o preço base do produto.
             Para vender pizza em vários tamanhos, desative essa opção em <b>Bordas/Sabores → Regras de Combinação</b>.
           </p>
+        ) : pizzaCatalogActive ? (
+          <>
+            <p className="text-[11px] text-muted-foreground -mt-1">
+              Esta pizzaria usa o <b>catálogo profissional</b>. Escolha a categoria deste sabor — o preço sai da matriz.
+            </p>
+            <PizzaCatalogField metadata={metadata} onChange={onChange} catalog={pizzaCatalog} />
+          </>
         ) : (
           <>
             <p className="text-[11px] text-muted-foreground -mt-1">
