@@ -206,6 +206,106 @@ const PizzaSizesField = ({
   );
 };
 
+/**
+ * Editor "catálogo profissional": escolhe categoria do sabor e (opcional) sobrescreve
+ * preços por tamanho. Aparece quando a loja tem `pizza_sizes_catalog`+`pizza_flavor_categories`.
+ */
+const PizzaCatalogField = ({
+  metadata,
+  onChange,
+  catalog,
+}: {
+  metadata: Record<string, any>;
+  onChange: (metadata: Record<string, any>) => void;
+  catalog: ReturnType<typeof readPizzaCatalogConfig>;
+}) => {
+  const categoryId: string | undefined = metadata.pizza_category_id;
+  const overrides: Record<string, number> = (metadata.pizza_size_overrides || {}) as Record<string, number>;
+  const unavailable: string[] = Array.isArray(metadata.pizza_unavailable_sizes) ? metadata.pizza_unavailable_sizes : [];
+
+  const setCategory = (id: string) => onChange({ ...metadata, pizza_category_id: id });
+  const setOverride = (sizeId: string, value: number) => {
+    const next = { ...overrides };
+    if (value > 0) next[sizeId] = value;
+    else delete next[sizeId];
+    onChange({ ...metadata, pizza_size_overrides: next });
+  };
+  const toggleUnavailable = (sizeId: string) => {
+    const has = unavailable.includes(sizeId);
+    const next = has ? unavailable.filter((id) => id !== sizeId) : [...unavailable, sizeId];
+    onChange({ ...metadata, pizza_unavailable_sizes: next });
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="space-y-1.5">
+        <label className="text-xs font-bold text-foreground/70">Categoria do sabor</label>
+        <div className="flex flex-wrap gap-1.5">
+          {catalog.categories.map((c) => {
+            const sel = categoryId === c.id;
+            return (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => setCategory(c.id)}
+                className={`text-xs font-bold px-3 py-1.5 rounded-full border-2 transition-colors ${
+                  sel ? "bg-primary text-primary-foreground border-primary" : "bg-muted/40 border-transparent text-muted-foreground"
+                }`}
+              >
+                {c.name}
+              </button>
+            );
+          })}
+        </div>
+        {!categoryId && (
+          <p className="text-[10px] text-amber-600 dark:text-amber-400">
+            ⚠ Sem categoria, o sistema usa o preço base do produto.
+          </p>
+        )}
+      </div>
+
+      <details className="rounded-xl border border-border/60 bg-muted/20">
+        <summary className="cursor-pointer list-none px-3 py-2 text-xs font-semibold text-foreground/80">
+          Sobrescrever preço por tamanho (opcional)
+        </summary>
+        <div className="px-3 pb-3 pt-1 space-y-2 border-t border-border/40">
+          {catalog.sizes.filter((s) => s.active).map((s) => {
+            const base = (categoryId && catalog.priceMatrix[categoryId]?.[s.id]) || 0;
+            const override = overrides[s.id] || 0;
+            const isUnav = unavailable.includes(s.id);
+            return (
+              <div key={s.id} className="flex items-center gap-2">
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-bold text-foreground">{s.name}</p>
+                  <p className="text-[10px] text-muted-foreground">
+                    {isUnav ? "Indisponível neste tamanho" : base > 0 ? `Base: ${formatBRLDisplay(base)}` : "Sem preço base"}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => toggleUnavailable(s.id)}
+                  className={`text-[10px] px-2 py-1 rounded-md font-bold ${
+                    isUnav ? "bg-destructive/15 text-destructive" : "bg-muted text-muted-foreground"
+                  }`}
+                >
+                  {isUnav ? "Indisponível" : "Disponível"}
+                </button>
+                <div className="w-24 flex items-center gap-1 bg-background text-foreground px-2 py-1.5 rounded-lg text-xs border border-border focus-within:border-primary">
+                  <span className="text-muted-foreground">R$</span>
+                  <BRLPriceRowInput value={override} onCommit={(v) => setOverride(s.id, v)} />
+                </div>
+              </div>
+            );
+          })}
+          <p className="text-[10px] text-muted-foreground">
+            Deixe em branco para usar o preço base da matriz da loja.
+          </p>
+        </div>
+      </details>
+    </div>
+  );
+};
+
 const CategoryProductFields = ({ category, metadata, onChange, onNameChange, storeId }: CategoryProductFieldsProps) => {
   const set = (key: string, value: any) => onChange({ ...metadata, [key]: value });
 
