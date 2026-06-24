@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback, useRef } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef, lazy, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -20,6 +20,10 @@ import {
 import { PdvHistorico, PdvSessionsList } from "@/components/pdv/PdvHistorico";
 import ProductDetailModal from "@/components/ProductDetailModal";
 import type { CartAddon } from "@/contexts/CartContext";
+
+// Builders compartilhados com o app cliente — lazy para não pesar no PDV.
+const PizzaHalfHalfModal = lazy(() => import("@/components/PizzaHalfHalfModal"));
+const PastelBuilderModal = lazy(() => import("@/components/PastelBuilderModal"));
 import { PdvRelatorios } from "@/components/pdv/PdvRelatorios";
 import { usePdvShortcuts } from "@/components/pdv/usePdvShortcuts";
 import { usePdvBarcodeScanner } from "@/components/pdv/usePdvBarcodeScanner";
@@ -153,6 +157,10 @@ const PdvPage = () => {
   // Mostrar guia de atalhos
   const [showShortcuts, setShowShortcuts] = useState(false);
 
+  // Builders Pizza/Pastel (compartilhados com app cliente).
+  const [showHalfHalf, setShowHalfHalf] = useState(false);
+  const [showPastelBuilder, setShowPastelBuilder] = useState(false);
+
   // Ref do input de busca para foco com F2
   const searchInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -194,12 +202,12 @@ const PdvPage = () => {
       // Super admin com loja escolhida → busca direto por id (qualquer status)
       if (isAdmin && adminStoreId) {
         const { data } = await supabase
-          .from("stores").select("id, name")
+          .from("stores").select("id, name, category, categories, settings")
           .eq("id", adminStoreId).maybeSingle();
         return data;
       }
       const { data } = await supabase
-        .from("stores").select("id, name")
+        .from("stores").select("id, name, category, categories, settings")
         .eq("owner_id", user!.id).eq("status", "ativo").maybeSingle();
       return data;
     },
@@ -525,6 +533,51 @@ const PdvPage = () => {
 
   const selectedMethod = PDV_METHODS.find(m => m.id === paymentMethod);
 
+  // ── Builders Pizza/Pastel: detecta categoria + settings da loja ──
+  const storeSettings = ((store as any)?.settings || {}) as Record<string, any>;
+  const storeCats: string[] = [
+    (store as any)?.category,
+    ...(((store as any)?.categories || []) as string[]),
+  ].filter(Boolean);
+  const isPizzaria = (store as any)?.category === "pizzas";
+  const isPastelaria = storeCats.includes("pasteis");
+  const pizzaHalfEnabled = isPizzaria && !!storeSettings.pizza_half_enabled && products.length >= 2;
+  const pastelHalfEnabled =
+    isPastelaria && storeSettings.pastel_half_enabled !== false && products.length >= 2;
+
+  const builderActions = (pizzaHalfEnabled || pastelHalfEnabled) ? (
+    <div className="px-3 pt-2.5 flex flex-col gap-1.5">
+      {pizzaHalfEnabled && (
+        <button
+          type="button"
+          onClick={() => setShowHalfHalf(true)}
+          className="w-full bg-gradient-to-r from-primary/15 to-primary/5 border border-primary/30 rounded-xl px-3 py-2 flex items-center gap-2 text-left active:scale-[0.98] transition-all"
+        >
+          <span className="text-lg">🍕</span>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-black text-foreground leading-tight">Monte a Pizza</p>
+            <p className="text-[10px] text-muted-foreground leading-tight">Meio a meio · bordas</p>
+          </div>
+          <ChevronRight className="h-4 w-4 text-primary shrink-0" />
+        </button>
+      )}
+      {pastelHalfEnabled && (
+        <button
+          type="button"
+          onClick={() => setShowPastelBuilder(true)}
+          className="w-full bg-gradient-to-r from-primary/15 to-primary/5 border border-primary/30 rounded-xl px-3 py-2 flex items-center gap-2 text-left active:scale-[0.98] transition-all"
+        >
+          <span className="text-lg">🥟</span>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-black text-foreground leading-tight">Monte o Pastel</p>
+            <p className="text-[10px] text-muted-foreground leading-tight">Sabores · adicionais</p>
+          </div>
+          <ChevronRight className="h-4 w-4 text-primary shrink-0" />
+        </button>
+      )}
+    </div>
+  ) : null;
+
   return (
     <div className="pdv-shell h-screen bg-background flex flex-col overflow-hidden">
 
@@ -611,6 +664,7 @@ const PdvPage = () => {
                   grouped={grouped} prodLoading={prodLoading}
                   getQty={getQty} addItem={addItem} decItem={decItem}
                   searchInputRef={searchInputRef}
+                  topSlot={builderActions}
                 />
               </div>
               {/* Caixa */}
@@ -656,6 +710,7 @@ const PdvPage = () => {
                       grouped={grouped} prodLoading={prodLoading}
                       getQty={getQty} addItem={addItem} decItem={decItem}
                       searchInputRef={searchInputRef}
+                      topSlot={builderActions}
                     />
                   </div>
                   {/* Bottom bar — ir ao carrinho */}
@@ -728,6 +783,43 @@ const PdvPage = () => {
         onClose={() => setProductModal(null)}
         onAdd={handleModalAdd}
       />
+
+      {/* ── MONTE A PIZZA (meio a meio + bordas) ── */}
+      {pizzaHalfEnabled && showHalfHalf && store?.id && (
+        <Suspense fallback={null}>
+          <PizzaHalfHalfModal
+            open={showHalfHalf}
+            onClose={() => setShowHalfHalf(false)}
+            storeName={store?.name || ""}
+            storeId={store.id}
+            products={products as any}
+            sections={sections}
+            priceMode={storeSettings.pizza_price_mode || "maior"}
+            maxFlavors={(storeSettings.pizza_config?.max_flavors as 2 | 3 | 4) || 4}
+            singleSize={!!storeSettings.pizza_single_size}
+            onAdd={handleModalAdd}
+          />
+        </Suspense>
+      )}
+
+      {/* ── MONTE O PASTEL ── */}
+      {pastelHalfEnabled && showPastelBuilder && store?.id && (
+        <Suspense fallback={null}>
+          <PastelBuilderModal
+            open={showPastelBuilder}
+            onClose={() => setShowPastelBuilder(false)}
+            storeName={store?.name || ""}
+            storeId={store.id}
+            products={products as any}
+            sections={sections}
+            priceMode={storeSettings.pastel_price_mode || "maior"}
+            maxFlavors={(storeSettings.pastel_config?.max_flavors as 2 | 3 | 4) || 4}
+            maxComplements={Number(storeSettings.pastel_config?.max_complements) || 3}
+            singleSize={!!storeSettings.pastel_single_size}
+            onAdd={handleModalAdd}
+          />
+        </Suspense>
+      )}
 
       {/* ── BARRA DE ATALHOS (rodapé estilo keycap, só desktop) ── */}
       {screen === "venda" && tab === "venda" && <PdvStatusBar />}
