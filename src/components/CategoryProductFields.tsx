@@ -3,6 +3,7 @@ import { Plus, X } from "lucide-react";
 import { useBRLInput, formatBRLDisplay, parseBRLCentsInput } from "@/hooks/useBRLInput";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { readPizzaCatalogConfig, hasPizzaCatalog } from "@/types/pizza";
 
 interface CategoryProductFieldsProps {
   category: string;
@@ -219,6 +220,8 @@ const CategoryProductFields = ({ category, metadata, onChange, onNameChange, sto
   });
   const pizzaSingleSize: boolean = !!(storeSettingsRow?.settings as any)?.pizza_single_size;
   const pastelSingleSize: boolean = !!(storeSettingsRow?.settings as any)?.pastel_single_size;
+  const pizzaCatalog = readPizzaCatalogConfig((storeSettingsRow as any)?.settings);
+  const pizzaCatalogActive = hasPizzaCatalog(pizzaCatalog);
   const storeCats: string[] = [
     (storeSettingsRow as any)?.category,
     ...(((storeSettingsRow as any)?.categories || []) as string[]),
