@@ -1189,6 +1189,11 @@ const AdminDashboard = () => {
       toast.error("Sem motoboy ativo. Ative um entregador antes de abrir a loja.");
       return;
     }
+    // Bloqueio: não permitir abrir a loja fora do horário de funcionamento
+    if (!store.is_open && !isCurrentlyOpenByHours) {
+      toast.error("Fora do horário de funcionamento. Ajuste os horários para abrir a loja.");
+      return;
+    }
     const { error } = await supabase.from("stores").update({ is_open: !store.is_open }).eq("id", store.id);
     if (error) toast.error("Erro ao atualizar status.");
     else { toast.success(store.is_open ? "Loja pausada" : "Loja reaberta!"); queryClient.invalidateQueries({ queryKey: ["my-store", user?.id] }); }
