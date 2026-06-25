@@ -2,7 +2,7 @@ import { formatBRL } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Pizza, ShoppingCart, Check, Minus, Plus, ChevronLeft, Circle, X } from "lucide-react";
+import { Pizza, ShoppingCart, Check, Minus, Plus, ChevronLeft, Circle, X, PlusCircle } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import type { CartAddon } from "@/contexts/CartContext";
 import { readPizzaCatalogConfig, hasPizzaCatalog, type PizzaSizeCatalogItem } from "@/types/pizza";
@@ -33,6 +33,16 @@ interface Border {
   name: string;
   price: number;
   is_available: boolean;
+}
+
+interface AddonItem { id: string; name: string; price: number }
+interface AddonGroup {
+  id: string;
+  name: string;
+  min_select: number;
+  max_select: number;
+  price_replaces_base: boolean;
+  addon_items: AddonItem[];
 }
 
 interface Props {
@@ -68,6 +78,7 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
   const [observations, setObservations] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
+  const [selectedAddonIds, setSelectedAddonIds] = useState<Set<string>>(new Set());
 
   const { data: borders = [], isLoading: bordersLoading } = useQuery({
     queryKey: ["pizza-borders", storeId],
@@ -82,6 +93,28 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
       return (data || []) as Border[];
     },
     enabled: open && !!storeId,
+  });
+
+  // Adicionais ligados aos sabores escolhidos (groups deduplicados).
+  const flavorIdsKey = productIds.filter(Boolean).join(",");
+  const { data: addonGroups = [] } = useQuery({
+    queryKey: ["pizza-addons", storeId, flavorIdsKey],
+    queryFn: async () => {
+      const ids = flavorIdsKey.split(",").filter(Boolean);
+      if (!ids.length) return [] as AddonGroup[];
+      const { data, error } = await supabase
+        .from("product_addon_groups")
+        .select("addon_group:addon_groups(id,name,min_select,max_select,price_replaces_base,addon_items(id,name,price))")
+        .in("product_id", ids);
+      if (error) throw error;
+      const map = new Map<string, AddonGroup>();
+      for (const r of (data || []) as any[]) {
+        const g = r.addon_group as AddonGroup | null;
+        if (g && !map.has(g.id)) map.set(g.id, g);
+      }
+      return Array.from(map.values());
+    },
+    enabled: open && !!storeId && flavorIdsKey.length > 0,
   });
 
   // Catálogo profissional (tamanhos + matriz). Quando ausente, cai no modo legado.
@@ -111,9 +144,12 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
   }, [borders, open, selectedBorderId]);
 
   const hasBorders = borders.length > 0;
-  // Visible step count in the progress bar: N flavor picks + (borders if any). Step 0 (count) hidden.
-  const totalSteps = flavorCount + (hasBorders ? 1 : 0);
-  const borderStep = flavorCount + 1; // step index when borders are shown
+  const hasAddons = addonGroups.length > 0;
+  // Visible step count: N flavor picks + (addons if any) + (borders if any). Step 0 (count) hidden.
+  const totalSteps = flavorCount + (hasAddons ? 1 : 0) + (hasBorders ? 1 : 0);
+  const addonStep = hasAddons ? flavorCount + 1 : -1;
+  const borderStep = hasBorders ? flavorCount + (hasAddons ? 1 : 0) + 1 : -1;
+  const lastStep = flavorCount + (hasAddons ? 1 : 0) + (hasBorders ? 1 : 0);
 
   const reset = () => {
     setStep(maxFlavors === 2 ? 1 : 0);
@@ -123,6 +159,7 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
     setObservations("");
     setQuantity(1);
     setSelectedSize(null);
+    setSelectedAddonIds(new Set());
   };
 
   const handleClose = () => {
@@ -214,7 +251,13 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
 
   const pizzaPrice = calcPizzaPrice();
   const borderPrice = selectedBorder?.price || 0;
-  const unitPrice = pizzaPrice + borderPrice;
+  const addonItemsById = new Map<string, AddonItem>();
+  for (const g of addonGroups) for (const it of (g.addon_items || [])) addonItemsById.set(it.id, it);
+  const selectedAddonsList: AddonItem[] = Array.from(selectedAddonIds)
+    .map((id) => addonItemsById.get(id))
+    .filter(Boolean) as AddonItem[];
+  const addonsTotal = selectedAddonsList.reduce((s, a) => s + Number(a.price || 0), 0);
+  const unitPrice = pizzaPrice + borderPrice + addonsTotal;
   const lineTotal = unitPrice * quantity;
 
   // Aviso quando algum sabor escolhido não tem o tamanho selecionado cadastrado
@@ -240,6 +283,9 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
     if (selectedBorder) {
       addons.push({ name: `Borda: ${selectedBorder.name}`, price: borderPrice });
     }
+    for (const a of selectedAddonsList) {
+      addons.push({ name: a.name, price: Number(a.price || 0) });
+    }
     onAdd(
       {
         id: flavors[0].id,
@@ -255,6 +301,7 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
           flavor_ids: flavors.map(f => f.id),
           border: selectedBorder?.name || null,
           size: selectedSize || null,
+          addons: selectedAddonsList.map((a) => ({ id: a.id, name: a.name, price: a.price })),
         },
       },
       addons,
@@ -293,6 +340,7 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
   const ordinal = (n: number) => ["1º", "2º", "3º", "4º"][n - 1] || `${n}º`;
   const stepLabel = (s: Step): string => {
     if (s === 0) return "Quantos sabores?";
+    if (s === addonStep) return "Adicionais (opcional)";
     if (s === borderStep) return "Escolha a borda";
     return `Escolha o ${ordinal(s)} sabor`;
   };
@@ -300,9 +348,18 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
   const isFlavorStep = step >= 1 && step <= flavorCount;
   const currentFlavorIdx = isFlavorStep ? step - 1 : -1;
 
+  const addonGroupsValid = () => {
+    for (const g of addonGroups) {
+      const count = (g.addon_items || []).filter((it) => selectedAddonIds.has(it.id)).length;
+      if (count < (g.min_select || 0)) return false;
+    }
+    return true;
+  };
+
   const canAdvance = () => {
     if (step === 0) return true;
     if (isFlavorStep) return !!productIds[currentFlavorIdx];
+    if (step === addonStep) return addonGroupsValid();
     if (step === borderStep) return hasBorders ? !!selectedBorderId : true;
     return false;
   };
@@ -325,7 +382,8 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
       setStep(step - 1);
       return;
     }
-    if (step === borderStep) { setSelectedBorderId(null); setStep(flavorCount); }
+    if (step === addonStep) { setSelectedAddonIds(new Set()); setStep(flavorCount); return; }
+    if (step === borderStep) { setSelectedBorderId(null); setStep(hasAddons ? addonStep : flavorCount); return; }
   };
 
   const setCurrentFlavor = (id: string) => {
@@ -342,10 +400,24 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
     setSelectedBorderId(null);
   };
 
-  // Final step: borders step OR last flavor step when there are no borders
-  const isFinalStep =
-    step === borderStep ||
-    (step === flavorCount && !hasBorders && !bordersLoading);
+  // Final step = última etapa visível (borda > adicionais > sabor)
+  const isFinalStep = step >= 1 && step === lastStep && !bordersLoading;
+
+  const toggleAddon = (group: AddonGroup, itemId: string) => {
+    setSelectedAddonIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(itemId)) {
+        next.delete(itemId);
+        return next;
+      }
+      // respeita max_select por grupo
+      const max = group.max_select || 99;
+      const currentInGroup = (group.addon_items || []).filter((it) => next.has(it.id)).length;
+      if (currentInGroup >= max) return prev;
+      next.add(itemId);
+      return next;
+    });
+  };
 
    useEffect(() => {
      if (open) {
@@ -607,9 +679,84 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
               <p className="text-sm text-muted-foreground text-center py-12">Nenhum sabor cadastrado ainda.</p>
             )}
 
-            {/* When the store has no borders, show observations on the last flavor step (final step) */}
-            {step === flavorCount && !hasBorders && !bordersLoading && productIds[currentFlavorIdx] && (
+            {/* When the last visible step is the last flavor, show observations there */}
+            {step === flavorCount && !hasAddons && !hasBorders && !bordersLoading && productIds[currentFlavorIdx] && (
               <div className="pt-4">
+                <label className="text-sm font-bold text-foreground mb-1.5 block">Observações</label>
+                <Textarea
+                  placeholder="Ex: Sem cebola..."
+                  value={observations}
+                  onChange={(e) => setObservations(e.target.value)}
+                  className="resize-none h-20 rounded-xl"
+                  maxLength={200}
+                  autoFocus={false}
+                  tabIndex={-1}
+                />
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Addons step */}
+        {step === addonStep && hasAddons && (
+          <div className="space-y-4 pt-2">
+            {addonGroups.map((g) => {
+              const items = (g.addon_items || []).slice().sort((a, b) => a.name.localeCompare(b.name));
+              const countInGroup = items.filter((it) => selectedAddonIds.has(it.id)).length;
+              return (
+                <div key={g.id} className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-bold text-foreground/80">
+                      {g.name}
+                      {g.min_select > 0 && (
+                        <span className="ml-1 text-[10px] font-semibold text-amber-600">
+                          (mín. {g.min_select})
+                        </span>
+                      )}
+                    </p>
+                    {g.max_select > 0 && g.max_select < 99 && (
+                      <span className="text-[10px] text-muted-foreground">
+                        {countInGroup}/{g.max_select}
+                      </span>
+                    )}
+                  </div>
+                  {items.length === 0 ? (
+                    <p className="text-xs text-muted-foreground">Nenhum adicional disponível.</p>
+                  ) : (
+                    items.map((it) => {
+                      const isSel = selectedAddonIds.has(it.id);
+                      return (
+                        <button
+                          key={it.id}
+                          type="button"
+                          onClick={() => toggleAddon(g, it.id)}
+                          className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-left transition-all ${
+                            isSel
+                              ? "bg-primary/10 border-2 border-primary shadow-sm"
+                              : "bg-card border-2 border-transparent hover:bg-muted shadow-sm"
+                          }`}
+                        >
+                          <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 ${
+                            isSel ? "border-primary bg-primary" : "border-muted-foreground/40"
+                          }`}>
+                            {isSel && <Check className="h-3 w-3 text-primary-foreground" />}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <span className="text-sm font-bold text-foreground">{it.name}</span>
+                          </div>
+                          <span className="text-sm font-black text-primary whitespace-nowrap">
+                            {Number(it.price) > 0 ? `+ ${formatBRL(Number(it.price))}` : "Grátis"}
+                          </span>
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
+              );
+            })}
+
+            {!hasBorders && (
+              <div>
                 <label className="text-sm font-bold text-foreground mb-1.5 block">Observações</label>
                 <Textarea
                   placeholder="Ex: Sem cebola..."
