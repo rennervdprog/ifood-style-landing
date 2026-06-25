@@ -22,6 +22,9 @@ interface PrintOrder {
   needs_change?: boolean;
   change_for?: number | null;
   scheduled_for?: string | null;
+  pdv_discount?: number | null;
+  coupon_code?: string | null;
+  client_phone?: string | null;
   order_items?: PrintOrderItem[];
 }
 
@@ -29,6 +32,9 @@ const paymentLabels: Record<string, string> = {
   pix: "PIX",
   cartao: "Cartão",
   dinheiro: "Dinheiro",
+  maquininha_credito: "Cartão Crédito (maquininha)",
+  maquininha_debito: "Cartão Débito (maquininha)",
+  maquininha_pix: "PIX (maquininha)",
 };
 
 const PRINT_CONTAINER_ID = "thermal-print-container";
@@ -55,10 +61,23 @@ function getOrCreatePrintContainer(): HTMLDivElement {
 export function printThermalReceipt(
   order: PrintOrder,
   storeName: string,
-  clientName: string
+  clientName: string,
+  clientPhone?: string | null
 ) {
   const date = new Date(order.created_at).toLocaleString("pt-BR");
   const orderId = order.id.slice(0, 8).toUpperCase();
+  const phone = clientPhone || order.client_phone || "";
+  const subtotalNum = Number(order.subtotal) || 0;
+  const deliveryNum = Number(order.delivery_fee) || 0;
+  const totalNum = Number(order.total_price) || 0;
+  // Desconto = (subtotal + entrega) - total, com fallback para pdv_discount
+  const computedDiscount = Math.max(0, subtotalNum + deliveryNum - totalNum);
+  const discountNum = Number(order.pdv_discount || 0) > 0
+    ? Number(order.pdv_discount)
+    : computedDiscount;
+  const discountHtml = discountNum > 0.009
+    ? `<div class="tp-total-row"><span>Desconto${order.coupon_code ? ` (${order.coupon_code})` : ""}:</span><span>-${formatBRL(discountNum)}</span></div>`
+    : "";
 
   let itemsHtml = "";
   order.order_items?.forEach((item) => {
@@ -150,11 +169,13 @@ ${itemsHtml}
 <div class="tp-divider"></div>
 <div class="tp-total-row"><span>Subtotal:</span><span>${formatBRL(Number(order.subtotal))}</span></div>
 <div class="tp-total-row"><span>Entrega:</span><span>${formatBRL(Number(order.delivery_fee))}</span></div>
+${discountHtml}
 <div class="tp-total-big"><span>TOTAL:</span><span>${formatBRL(Number(order.total_price))}</span></div>
 <div class="tp-divider"></div>
 <div class="tp-info"><b>Pagamento:</b> ${paymentLabels[order.payment_method] || order.payment_method} ${order.payment_method === "pix" ? '<span style="font-weight:bold">(PAGO ONLINE)</span>' : '<span style="font-weight:bold">(RECEBER NA ENTREGA)</span>'}</div>
 ${changeHtml}
 <div class="tp-info"><b>Cliente:</b> ${clientName}</div>
+${phone ? `<div class="tp-info"><b>Telefone:</b> ${phone}</div>` : ""}
 <div class="tp-info"><b>Bairro:</b> ${order.neighborhood}</div>
 <div class="tp-info"><b>Endereço:</b> ${order.address_details}</div>
 <div class="tp-divider"></div>
