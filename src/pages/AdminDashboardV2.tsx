@@ -934,8 +934,8 @@ const AdminDashboard = () => {
 
   // ── ACTIONS ──
   const handlePrint = useCallback((order: any) => {
-    printThermalReceipt(order, store?.name || "Loja", getClientName(order.client_id));
-  }, [store?.name, getClientName]);
+    printThermalReceipt(order, store?.name || "Loja", getClientName(order.client_id), getClientWhatsApp(order.client_id));
+  }, [store?.name, getClientName, getClientWhatsApp]);
 
   /**
    * Mensagem de ACEITE do pedido — sem PIN.
@@ -1010,11 +1010,11 @@ const AdminDashboard = () => {
   const handleAcceptOrder = useCallback((order: any) => {
     // Print da notinha
     try {
-      printThermalReceipt(order, store?.name || "Loja", getClientName(order.client_id));
+      printThermalReceipt(order, store?.name || "Loja", getClientName(order.client_id), getClientWhatsApp(order.client_id));
     } catch (e) {
       console.warn("print error", e);
     }
-  }, [store?.name, getClientName]);
+  }, [store?.name, getClientName, getClientWhatsApp]);
 
   const toggleAutoPrint = () => {
     const next = !autoPrint;
