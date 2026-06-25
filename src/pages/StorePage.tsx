@@ -1322,7 +1322,9 @@ const StorePage = () => {
       )}
 
       {/* ===== MONTE SUA PIZZA MEIO A MEIO ===== */}
-      {store?.category === "pizzas" && (() => {
+      {(() => {
+        const cats = [store?.category, ...((store as any)?.categories || [])].filter(Boolean) as string[];
+        if (!cats.includes("pizzas")) return null;
         const storeSettings = (store?.settings || {}) as Record<string, any>;
         // Default: habilitado (mesmo padrão do PizzaFlavorManager). Só desliga se explicitamente false.
         const halfEnabled = storeSettings.pizza_half_enabled !== false;
