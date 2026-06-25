@@ -367,6 +367,7 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
   const handleNext = () => {
     if (step === 0) { setStep(1); return; }
     if (isFlavorStep && productIds[currentFlavorIdx]) setStep(step + 1);
+    else if (step === addonStep && addonGroupsValid()) setStep(step + 1);
   };
 
   const handleBack = () => {
@@ -470,7 +471,7 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
         )}
         <div className="flex items-center gap-2">
           <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center">
-            {step === borderStep ? <Circle className="h-5 w-5 text-primary" /> : <Pizza className="h-5 w-5 text-primary" />}
+            {step === borderStep ? <Circle className="h-5 w-5 text-primary" /> : step === addonStep ? <PlusCircle className="h-5 w-5 text-primary" /> : <Pizza className="h-5 w-5 text-primary" />}
           </div>
           <div>
             <p className="text-sm font-bold text-foreground">
