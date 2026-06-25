@@ -219,6 +219,7 @@ interface PrintPdvOrder {
   cash_received?: number;
   troco?: number;
   table_identifier?: string | null;
+  payments?: { method: string; amount: number }[] | null;
   order_items?: {
     quantity: number;
     unit_price: number;
@@ -235,6 +236,8 @@ export function printPdvReceipt(order: PrintPdvOrder, storeName: string) {
   const orderId = order.id.slice(0, 8).toUpperCase();
   const discount = Number(order.pdv_discount || 0);
   const payLabel = pdvPaymentLabels[order.payment_method] || order.payment_method;
+  const splits = Array.isArray(order.payments) ? order.payments : [];
+  const hasSplit = splits.length > 1;
 
   // Itens
   let itemsHtml = "";
@@ -303,6 +306,12 @@ export function printPdvReceipt(order: PrintPdvOrder, storeName: string) {
       <div style="display:flex;justify-content:space-between;font-size:14px;font-weight:bold"><span>Troco:</span><span>${formatBRL(order.troco ?? 0)}</span></div>`;
   }
 
+  // Bloco de pagamentos (split ou simples)
+  const paymentBlockHtml = hasSplit
+    ? `<div class="tp-info"><b>Pagamento (dividido):</b></div>` +
+      splits.map(p => `<div style="display:flex;justify-content:space-between;font-size:12px;padding-left:8px"><span>• ${pdvPaymentLabels[p.method] || p.method}</span><span>${formatBRL(Number(p.amount) || 0)}</span></div>`).join("")
+    : `<div class="tp-info"><b>Pagamento:</b> ${payLabel}</div>`;
+
   const container = getOrCreatePrintContainer();
   container.innerHTML = `
 <div class="tp-center">
@@ -316,11 +325,11 @@ ${tableHtml}
 <div class="tp-divider"></div>
 ${itemsHtml}
 <div class="tp-divider"></div>
-${discountHtml}
 <div class="tp-total-row"><span>Subtotal:</span><span>${formatBRL(Number(order.subtotal))}</span></div>
+${discountHtml}
 <div class="tp-total-big"><span>TOTAL:</span><span>${formatBRL(Number(order.total_price))}</span></div>
 <div class="tp-divider"></div>
-<div class="tp-info"><b>Pagamento:</b> ${payLabel}</div>
+${paymentBlockHtml}
 ${trocoHtml}
 <div class="tp-divider"></div>
 <div class="tp-footer"><p>Obrigado pela preferência!</p><p>ItaSuper</p></div>
