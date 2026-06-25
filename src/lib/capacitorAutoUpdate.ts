@@ -100,11 +100,14 @@ async function checkForUpdate(opts: { silent?: boolean } = {}) {
 
       await clearAllCaches();
 
-      // Pequeno delay para o storage descarregar antes do reload
+      // Preserva a rota atual (pathname + search + hash) para que o usuário
+      // continue na mesma tela após o reload da nova versão.
       setTimeout(() => {
-        // Bypass de cache + cache-buster na URL
-        const sep = window.location.pathname.includes("?") ? "&" : "?";
-        window.location.replace(window.location.pathname + sep + "_v=" + Date.now());
+        const { pathname, search, hash } = window.location;
+        const params = new URLSearchParams(search);
+        params.set("_v", String(Date.now()));
+        const qs = params.toString();
+        window.location.replace(pathname + (qs ? "?" + qs : "") + (hash || ""));
       }, 300);
     } else if (!opts.silent) {
       console.log("[AutoUpdate] ✓ App atualizado");
