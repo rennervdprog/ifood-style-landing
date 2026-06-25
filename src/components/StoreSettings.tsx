@@ -75,6 +75,7 @@ type PizzaPriceMode = "maior" | "media" | "soma";
     return Array.from(new Set(initial.filter(Boolean)));
   });
   const [slug, setSlug] = useState(storeSlug || storeName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""));
+  const [slugStatus, setSlugStatus] = useState<"idle" | "checking" | "available" | "taken" | "invalid">("idle");
   const [whatsapp, setWhatsapp] = useState("");
   const [imageUrl, setImageUrl] = useState(storeImageUrl || "");
   const [addressStreet, setAddressStreet] = useState(storeAddressStreet || "");
@@ -99,6 +100,25 @@ type PizzaPriceMode = "maior" | "media" | "soma";
   const [freeDeliveryThreshold, setFreeDeliveryThreshold] = useState("0");
   const [platformFeeSplit, setPlatformFeeSplit] = useState<"cliente" | "meio_a_meio" | "lojista">("cliente");
   const storePlan = useStorePlan(storeId);
+
+  // Verifica disponibilidade do slug em tempo real (debounce 500ms)
+  useEffect(() => {
+    const cleanSlug = slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, "").replace(/--+/g, "-").replace(/^-|-$/g, "");
+    if (!cleanSlug) { setSlugStatus("idle"); return; }
+    if (cleanSlug.length < 3) { setSlugStatus("invalid"); return; }
+    if (cleanSlug === (storeSlug || "")) { setSlugStatus("available"); return; }
+    setSlugStatus("checking");
+    const t = setTimeout(async () => {
+      const { data } = await supabase
+        .from("stores")
+        .select("id")
+        .eq("slug", cleanSlug)
+        .neq("id", storeId)
+        .maybeSingle();
+      setSlugStatus(data ? "taken" : "available");
+    }, 500);
+    return () => clearTimeout(t);
+  }, [slug, storeId, storeSlug]);
 
   // Verificar se conta Asaas está 100% aprovada para liberar PIX Online
   const { data: asaasStatusData } = useQuery({
@@ -573,7 +593,11 @@ const NotificationSection = () => {
           Link Exclusivo da Loja
         </label>
         <div className="flex gap-2">
-          <div className="flex-1 flex items-center bg-secondary border border-border rounded-xl overflow-hidden">
+          <div className={`flex-1 flex items-center bg-secondary border rounded-xl overflow-hidden ${
+            slugStatus === "taken" ? "border-red-500" :
+            slugStatus === "available" ? "border-emerald-500" :
+            slugStatus === "invalid" ? "border-amber-500" : "border-border"
+          }`}>
             <span className="text-xs text-muted-foreground/70 pl-3 whitespace-nowrap">itasuper.com.br/</span>
             <input
               type="text"
@@ -583,8 +607,22 @@ const NotificationSection = () => {
               maxLength={50}
               className="flex-1 bg-transparent px-1 py-3 text-foreground text-sm focus:outline-none"
             />
+            <span className="pr-3 text-xs font-bold flex items-center gap-1">
+              {slugStatus === "checking" && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
+              {slugStatus === "available" && <span className="text-emerald-500">Disponível</span>}
+              {slugStatus === "taken" && <span className="text-red-500">Em uso</span>}
+              {slugStatus === "invalid" && <span className="text-amber-500">Curto</span>}
+            </span>
           </div>
         </div>
+        {slugStatus === "taken" && (
+          <p className="text-[11px] font-bold text-red-500">
+            Este link já pertence a outra loja. Escolha outro (ex.: {slug}-{storeId.slice(0, 4)}).
+          </p>
+        )}
+        {slugStatus === "invalid" && (
+          <p className="text-[11px] font-bold text-amber-500">Mínimo 3 caracteres.</p>
+        )}
         {slug && (
           <div className="flex items-center gap-2 bg-primary/10 border border-primary/30 rounded-xl p-3">
             <Link className="h-4 w-4 text-primary flex-shrink-0" />
