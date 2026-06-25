@@ -205,6 +205,7 @@ export function usePdvCheckout() {
                   ? troco
                   : undefined,
               table_identifier: tableId || null,
+              payments: paymentsPayload,
               order_items: cart.map((item) => ({
                 quantity: item.quantity,
                 unit_price: item.price,
