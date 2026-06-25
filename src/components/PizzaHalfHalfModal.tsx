@@ -594,7 +594,7 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
                             )}
                           </div>
                           <span className="text-sm font-black text-primary whitespace-nowrap">
-                            {formatBRL(product.price)}
+                            {formatBRL(priceForFlavor(product))}
                           </span>
                         </button>
                       );
