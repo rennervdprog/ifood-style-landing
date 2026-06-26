@@ -10,9 +10,15 @@ const SUPABASE_ANON_KEY =
 
 export default async function handler(req: Request): Promise<Response> {
   const url = new URL(req.url);
-  // /api/store/<slug>
-  const parts = url.pathname.split("/").filter(Boolean);
-  const slug = decodeURIComponent(parts[parts.length - 1] || "").trim();
+  // Aceita /api/store?slug=foo (vindo do rewrite) ou /api/store/foo (path direto)
+  let slug = (url.searchParams.get("slug") || "").trim();
+  if (!slug) {
+    const parts = url.pathname.split("/").filter(Boolean);
+    // parts = ["api","store", "<slug>"] quando chamado direto pelo path
+    if (parts.length >= 3 && parts[0] === "api" && parts[1] === "store") {
+      slug = decodeURIComponent(parts[2] || "").trim();
+    }
+  }
 
   const cors = {
     "Access-Control-Allow-Origin": "*",

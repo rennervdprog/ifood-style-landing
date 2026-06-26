@@ -18,7 +18,8 @@
     }
   ],
   "rewrites": [
-    { "source": "/((?!api/).*)", "destination": "/index.html" }
+    { "source": "/api/store/:slug", "destination": "/api/store?slug=:slug" },
+    { "source": "/((?!api/|assets/|icon-|favicon|robots|sitemap|manifest|sw\\.js|registerSW\\.js|firebase-messaging-sw\\.js).*)", "destination": "/index.html" }
   ],
   "crons": [
     {
