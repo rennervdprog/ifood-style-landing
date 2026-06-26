@@ -594,8 +594,14 @@ const AdminDashboard = () => {
       const { data } = await supabase.rpc("get_delivery_contacts");
       return data || [];
     },
-    enabled: !!store,
-    staleTime: 1000 * 60 * 3,
+    // ⚡ Perf: RPC pesada (mean ~130ms, max 5s no banco). Só roda quando há
+    // pedidos no painel (clientIds > 0) e cache amplo de 15min, já que
+    // contato do cliente raramente muda durante uma sessão.
+    enabled: !!store && clientIds.length > 0,
+    staleTime: 1000 * 60 * 15,
+    gcTime: 1000 * 60 * 30,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
   });
 
   const getClientWhatsApp = useCallback((clientId: string) => {
