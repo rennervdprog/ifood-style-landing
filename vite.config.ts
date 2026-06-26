@@ -62,6 +62,7 @@ export default defineConfig(({ mode }) => ({
       manifest: false, // já existe manifest manual no projeto
       workbox: {
         globPatterns: ["**/*.{js,css,html,svg,woff2}"],
+        globIgnores: ["**/stats.html"],
         navigateFallback: "/index.html",
         navigateFallbackDenylist: [
           /^\/~oauth/,
