@@ -18,9 +18,21 @@
     }
   ],
   "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
+    { "source": "/((?!api/).*)", "destination": "/index.html" }
+  ],
+  "crons": [
+    {
+      "path": "/api/keep-alive",
+      "schedule": "*/5 10-23 * * *"
+    }
   ],
   "headers": [
+    {
+      "source": "/api/store/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=0, s-maxage=60, stale-while-revalidate=600" }
+      ]
+    },
     {
       "source": "/assets/(.*)",
       "headers": [

@@ -128,7 +128,8 @@ PWA manifest-only **+** cache `NetworkFirst` apenas para `/api/store/*` e imagen
 
 ## Por onde começar?
 
-Recomendo **Fase 1 + Fase 3** primeiro (1 dia, impacto imediato e sem risco).
-Depois Fase 2 (edge cache) que é a maior virada de chave.
+**Status:** Fase 1 ✅ (v1.10.276) e Fase 2+3 ✅ (v1.10.277 — `api/store/[slug].ts` com cache CDN 60s/SWR 10min + `api/keep-alive.ts` em cron a cada 5min 10h-23h).
 
-Confirma que posso iniciar pela Fase 1+3?
+Próximo: plugar `fetchStoreBootstrap()` (em `src/lib/storeBootstrap.ts`) no `StorePage.tsx` para consumir o cache da edge, depois Fase 5 (SW opcional).
+
+**Pendência manual:** rodar `scripts/store-bootstrap-external.sql` no SQL editor do Supabase externo se ainda não foi feito (cria a RPC `store_bootstrap`).
