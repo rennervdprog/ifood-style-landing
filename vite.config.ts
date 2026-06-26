@@ -4,6 +4,7 @@ import path from "path";
 import fs from "fs";
 import { componentTagger } from "lovable-tagger";
 import { visualizer } from "rollup-plugin-visualizer";
+import { VitePWA } from "vite-plugin-pwa";
 
 function enforceExternalBackendOnly() {
   return {
@@ -45,6 +46,67 @@ export default defineConfig(({ mode }) => ({
       gzipSize: true,
       brotliSize: true,
       template: "treemap",
+    }),
+    VitePWA({
+      registerType: "autoUpdate",
+      injectRegister: null,
+      filename: "sw.js",
+      devOptions: { enabled: false },
+      includeAssets: [
+        "favicon.ico",
+        "favicon.png",
+        "apple-touch-icon.png",
+        "icon-192.png",
+        "icon-512.png",
+      ],
+      manifest: false, // já existe manifest manual no projeto
+      workbox: {
+        globPatterns: ["**/*.{js,css,html,svg,woff2}"],
+        navigateFallback: "/index.html",
+        navigateFallbackDenylist: [
+          /^\/~oauth/,
+          /^\/api\//,
+          /^\/functions\//,
+        ],
+        cleanupOutdatedCaches: true,
+        skipWaiting: true,
+        clientsClaim: true,
+        runtimeCaching: [
+          {
+            // Cardápio bootstrap servido pela Edge da Vercel
+            urlPattern: ({ url }) => url.pathname.startsWith("/api/store/"),
+            handler: "NetworkFirst",
+            options: {
+              cacheName: "store-bootstrap",
+              networkTimeoutSeconds: 3,
+              expiration: { maxEntries: 60, maxAgeSeconds: 60 * 10 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          {
+            // Imagens de produto do Unsplash
+            urlPattern: ({ url }) =>
+              url.hostname === "images.unsplash.com" ||
+              url.hostname === "i.unsplash.com",
+            handler: "CacheFirst",
+            options: {
+              cacheName: "unsplash-images",
+              expiration: { maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 30 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          {
+            // Imagens do Supabase Storage
+            urlPattern: ({ url }) => url.pathname.includes("/storage/v1/object/"),
+            handler: "CacheFirst",
+            options: {
+              cacheName: "supabase-images",
+              expiration: { maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 7 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+        ],
+      },
     }),
   ].filter(Boolean),
   build: {
