@@ -63,6 +63,8 @@
     "@tanstack/react-query": "^5.83.0",
     "@types/leaflet": "^1.9.21",
     "@types/papaparse": "^5.5.2",
+    "@vercel/analytics": "^2.0.1",
+    "@vercel/speed-insights": "^2.0.0",
     "canvas-confetti": "^1.9.3",
     "capacitor-native-biometric": "^4.2.2",
     "capacitor-native-settings": "^8.1.0",
