@@ -51,29 +51,11 @@ const isPreviewHost =
 
 const isCapacitor = Capacitor.isNativePlatform();
 
-if (isPreviewHost || isInIframe || isCapacitor) {
-  navigator.serviceWorker?.getRegistrations().then(async (registrations) => {
-    if (registrations.length === 0) return;
-
-    await Promise.all(registrations.map((registration) => registration.unregister()));
-
-    // Inside Capacitor we don't reload — the WebView would loop. The next launch is clean.
-    if (isCapacitor) return;
-
-    const reloadKey = "preview-sw-reset";
-    if (!sessionStorage.getItem(reloadKey)) {
-      sessionStorage.setItem(reloadKey, "1");
-      window.location.reload();
-      return;
-    }
-
-    sessionStorage.removeItem(reloadKey);
-  });
-
-  // Also wipe any caches the SW left behind (Capacitor only — preview reload above already triggers fetch).
-  if (isCapacitor && "caches" in window) {
-    caches.keys().then((keys) => Promise.all(keys.map((k) => caches.delete(k)))).catch(() => {});
-  }
+// PWA: registro guardado em src/lib/registerPWA.ts (NetworkFirst em /api/store/*
+// + cache de imagens). Em preview/iframe/Capacitor o wrapper desregistra
+// qualquer /sw.js antigo. firebase-messaging-sw.js permanece intacto.
+if (typeof window !== "undefined" && "serviceWorker" in navigator) {
+  import("./lib/registerPWA").then(({ registerPWA }) => registerPWA()).catch(() => {});
 }
 
 if (window.gonative || window.median || isCapacitor) {
