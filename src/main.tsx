@@ -108,6 +108,32 @@ if (typeof requestIdleCallback !== "undefined") {
   }, 2000);
 }
 
+// Fase 6 — Vercel Analytics + Speed Insights (Web Vitals reais p/ dashboard Vercel)
+// Só roda em produção web (não em dev, iframe preview Lovable ou Capacitor nativo).
+(() => {
+  try {
+    if (import.meta.env.DEV) return;
+    if (typeof window === "undefined") return;
+    if (Capacitor.isNativePlatform?.()) return;
+    if (window.self !== window.top) return; // iframe (preview Lovable)
+    const host = window.location.hostname;
+    if (host.endsWith("lovable.app") || host.endsWith("lovableproject.com")) return;
+    const load = () => {
+      Promise.all([
+        import("@vercel/analytics"),
+        import("@vercel/speed-insights"),
+      ])
+        .then(([a, s]) => {
+          a.inject?.();
+          s.injectSpeedInsights?.();
+        })
+        .catch(() => {});
+    };
+    if (typeof requestIdleCallback !== "undefined") requestIdleCallback(load, { timeout: 4000 });
+    else setTimeout(load, 2500);
+  } catch {}
+})();
+
 // Remove o shell estático assim que o React montar.
 // requestAnimationFrame garante que rodamos depois do primeiro paint do React,
 // evitando "flash branco" entre a remoção do shell e o primeiro frame da SPA.
