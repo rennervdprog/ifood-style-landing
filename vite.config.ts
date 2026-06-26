@@ -70,6 +70,17 @@ export default defineConfig(({ mode }) => ({
             "@radix-ui/react-dropdown-menu",
             "@radix-ui/react-tooltip",
           ],
+          forms: [
+            "react-hook-form",
+            "@hookform/resolvers",
+            "zod",
+          ],
+          motion: ["framer-motion"],
+          capacitor: [
+            "@capacitor/core",
+            "@capacitor/app",
+            "@capacitor/preferences",
+          ],
         },
       },
     },
