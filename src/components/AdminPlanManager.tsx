@@ -645,7 +645,15 @@ function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride
 }) {
   // supporter é gravado no banco como plan_type='fixed'
   const dbPlanType: PlanType = displayPlan === "supporter" ? "fixed" : displayPlan;
-  const defaultPdvFixed = dbPlanType === "fixed" ? 1 : 0;
+  // Default da taxa fixa PDV por plano (planos com cobrança fixa por venda).
+  const DEFAULT_PDV_FIXED_BY_PLAN: Record<DisplayPlan, number> = {
+    supporter: 0,
+    fixed: 1,
+    autonomy: 1,
+    hybrid: 0,
+    commission_only: 0,
+  };
+  const defaultPdvFixed = DEFAULT_PDV_FIXED_BY_PLAN[displayPlan] ?? (dbPlanType === "fixed" ? 1 : 0);
   const [fee, setFee] = useState(currentFee);
   const [rate, setRate] = useState(currentRate);
   const [pdvFixedFee, setPdvFixedFee] = useState(currentPdvFixedFee ?? 0);
@@ -819,7 +827,7 @@ function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride
                 <label className="flex items-center justify-between cursor-pointer">
                   <div>
                     <p className="text-xs font-bold text-foreground">Taxa de entrega personalizada</p>
-                    <p className="text-[10px] text-muted-foreground">Padrão: R$ 2,00 por entrega (cliente paga)</p>
+                    <p className="text-[10px] text-muted-foreground">Padrão: R$ 2,00 por entrega — só cobrada quando a loja absorve a taxa (split ≠ cliente)</p>
                   </div>
                   <button
                     onClick={() => setDeliveryOverrideEnabled(!deliveryOverrideEnabled)}
@@ -872,9 +880,12 @@ function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride
               <div className="flex justify-between text-xs">
                 <span className="text-muted-foreground">Taxa entrega</span>
                 <span className="font-bold text-foreground">
-                  {finalDelivery === null ? "R$ 2,00 (padrão, cliente paga)" : `R$ ${Number(finalDelivery).toFixed(2).replace(".", ",")} (cliente paga)`}
+                  {finalDelivery === null ? "R$ 2,00 (padrão)" : `R$ ${Number(finalDelivery).toFixed(2).replace(".", ",")}`}
                 </span>
               </div>
+              <p className="text-[10px] text-muted-foreground italic">
+                ℹ️ Taxa de entrega só é cobrada da loja quando o split de plataforma é "loja". Se o cliente paga a taxa, este valor não é debitado.
+              </p>
             </div>
           </div>
 
