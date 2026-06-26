@@ -1350,8 +1350,8 @@ const StorePage = () => {
                 <span className="text-3xl">🍕</span>
               </div>
               <div className="flex-1">
-                <h3 className="text-sm font-black text-foreground">Monte sua Pizza Meio a Meio</h3>
-                <p className="text-xs text-muted-foreground mt-0.5">Escolha 2 sabores diferentes em uma pizza</p>
+                <h3 className="text-sm font-black text-foreground">Monte Sua Pizza</h3>
+                <p className="text-xs text-muted-foreground mt-0.5">Escolha o tamanho e combine até 4 sabores na mesma pizza</p>
               </div>
               <ChevronRight className="h-5 w-5 text-primary flex-shrink-0" />
             </button>
