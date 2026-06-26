@@ -645,7 +645,15 @@ function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride
 }) {
   // supporter é gravado no banco como plan_type='fixed'
   const dbPlanType: PlanType = displayPlan === "supporter" ? "fixed" : displayPlan;
-  const defaultPdvFixed = dbPlanType === "fixed" ? 1 : 0;
+  // Default da taxa fixa PDV por plano (planos com cobrança fixa por venda).
+  const DEFAULT_PDV_FIXED_BY_PLAN: Record<DisplayPlan, number> = {
+    supporter: 0,
+    fixed: 1,
+    autonomy: 1,
+    hybrid: 0,
+    commission_only: 0,
+  };
+  const defaultPdvFixed = DEFAULT_PDV_FIXED_BY_PLAN[displayPlan] ?? (dbPlanType === "fixed" ? 1 : 0);
   const [fee, setFee] = useState(currentFee);
   const [rate, setRate] = useState(currentRate);
   const [pdvFixedFee, setPdvFixedFee] = useState(currentPdvFixedFee ?? 0);
