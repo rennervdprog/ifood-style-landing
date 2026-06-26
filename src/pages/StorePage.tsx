@@ -114,9 +114,9 @@ const StorePage = () => {
     queryKey: ["store-bootstrap", id || slug, isSandbox],
     queryFn: async () => {
       const key = id || slug || "";
-      const { data, error } = await (supabase as any).rpc("store_bootstrap", { _slug: key });
-      if (error || !data) return null;
-      const boot: any = data;
+      const { fetchStoreBootstrap } = await import("@/lib/storeBootstrap");
+      const boot: any = await fetchStoreBootstrap(key);
+      if (!boot) return null;
       const s = boot.store;
       if (s) {
         queryClient.setQueryData(["store", id || slug, isSandbox], s);
