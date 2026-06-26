@@ -1,69 +1,134 @@
+# Plano Profissional de Otimização — ItaSuper
 
-# Profissionalização do cadastro de tamanhos da pizza
+**Stack atual:** Vercel (free) + GitHub + Supabase externo (free).
+**Objetivo:** abrir a página da loja (`/:slug`) em < 1.5s no 4G, sem pagar nada a mais.
 
-## Problema atual
-Hoje cada sabor cadastra seus próprios tamanhos em `metadata.sizes`. Isso gera:
-- Nomes divergentes ("Grande 35cm" num sabor, "G" em outro) → o modal de meio a meio quebra ou some tamanhos.
-- Trabalho manual repetido em cada novo sabor.
-- Sem garantia de que todos os sabores tenham o mesmo tamanho.
-- Sem fator de preço, sem preço por categoria, sem "tamanho indisponível".
+---
 
-## Como os grandes fazem
-- **iFood / Anota AI / Goomer / Delivery Direto:** tamanhos são **catálogo da loja** (não do produto). Cada tamanho tem: nome, descrição (fatias/cm), e os sabores recebem **uma tabela de preço por tamanho**, geralmente por **categoria de sabor** (Tradicional, Especial, Premium, Doce).
-- Preço final do pedido = regra da loja (maior valor / média) aplicada sobre os preços daquela categoria naquele tamanho.
-- Sabor pode ser marcado como **indisponível em um tamanho específico** (ex: doce só no Grande).
+## Diagnóstico (onde o tempo se perde hoje)
 
-## Plano (3 etapas, sem migração destrutiva)
+1. **Bundle JS gigante** — PdvPage tem 1.588 linhas, muitos modais carregam junto, libs pesadas no main chunk.
+2. **Cold start Supabase free** — a primeira query após inatividade leva 1–3s (instância free hiberna).
+3. **Cascata de queries** na loja do cliente: `stores` → `products` → `addon_groups` → `pizza_borders` → `opening_hours` → `loyalty_config` (6 round-trips serializados).
+4. **Imagens não otimizadas** — Unsplash full-res, sem `webp`, sem `loading=lazy`, sem dimensões.
+5. **Sem CDN cache** nas respostas da API (toda request bate no Postgres).
+6. **Fontes e CSS bloqueando render**.
 
-### Etapa 1 — Catálogo de Tamanhos da loja
-Nova seção em **Cardápio → Pizzaria → Regras**: "Tamanhos da pizzaria".
-- Lista de tamanhos da loja, cada um com: `id`, `nome` (Broto/Média/Grande/Família), `descrição` (ex: "8 fatias · 35cm"), `max_sabores` (sobrescreve o global), `ativo`.
-- Drag-to-reorder.
-- Guardado em `stores.settings.pizza_sizes_catalog: [{id, name, description, maxFlavors, active}]`.
+---
 
-### Etapa 2 — Categorias de sabor + tabela de preço
-Nova seção: "Categorias de sabor" (Tradicional, Especial, Premium, Doce — editável).
-- Cada categoria tem **preço por tamanho** numa matriz:
-```text
-              Broto   Média   Grande   Família
-Tradicional   29,90   39,90    49,90    59,90
-Especial      34,90   45,90    55,90    65,90
-Premium       39,90   52,90    62,90    74,90
+## Fase 1 — Quick wins (1 dia, impacto enorme)
+
+### 1.1 Code splitting agressivo
+- Lazy load por rota já existe; estender para **modais pesados** (PizzaHalfHalf, Pastel, PDV builders, Charts do Admin).
+- `manualChunks` no `vite.config.ts` separando: `react-vendor`, `supabase`, `radix-ui`, `recharts`, `capacitor`.
+- Meta: main chunk < 200KB gzipped.
+
+### 1.2 Preconnect e preload
+No `index.html`:
+```html
+<link rel="preconnect" href="https://qkjhguziuchqsbxzruea.supabase.co" crossorigin>
+<link rel="dns-prefetch" href="https://qkjhguziuchqsbxzruea.supabase.co">
 ```
-- Guardado em `stores.settings.pizza_price_matrix: { categoryId: { sizeId: price } }`.
-- No cadastro do sabor, em vez de digitar `metadata.sizes`, o lojista só escolhe a **categoria** → preço vem da matriz.
-- Opção avançada por sabor: "Sobrescrever preço deste sabor" (override pontual, mantém flexibilidade).
-- Toggle por sabor: "Indisponível neste tamanho" (checkbox por tamanho).
 
-### Etapa 3 — Modal do cliente + cálculo
-- Passo "Tamanhos" lê do catálogo da loja (não da união dos produtos) → ordem e nomes consistentes.
-- Cada tamanho mostra "X fatias · até Y sabores" a partir do `description` e `maxFlavors`.
-- Ao escolher sabores, preço = regra da loja (maior/média) aplicada sobre **matriz[categoria][tamanho]** de cada sabor escolhido, respeitando overrides.
-- Sabor com `unavailableSizes` some do passo de sabores quando o tamanho escolhido bater.
+### 1.3 Imagens
+- Loader `<img loading="lazy" decoding="async" width height>` em ProductCard.
+- Proxy Unsplash via `?w=400&fm=webp&q=75` (Unsplash já entrega webp gratuito).
+- Logo da loja com `fetchpriority="high"`.
 
-## Compatibilidade
-- Migração transparente: se `pizza_sizes_catalog` não existir, sistema continua lendo `metadata.sizes` por produto (modo legado).
-- Botão one-click "Importar tamanhos existentes" → varre todos os sabores, unifica nomes parecidos e popula o catálogo + matriz com a média/moda dos preços já cadastrados. Lojista revisa e salva.
-- Após adoção, o editor de `metadata.sizes` no produto vira somente "categoria + overrides".
+### 1.4 Fontes
+- `font-display: swap` + preload só do peso usado no LCP.
 
-## Detalhes técnicos
-- Tudo em `stores.settings` (JSONB) — **sem migração de schema, sem nova tabela**.
-- Tipos novos em `src/types/pizza.ts`: `PizzaSizeCatalogItem`, `PizzaFlavorCategory`, `PizzaPriceMatrix`.
-- Componentes novos:
-  - `src/components/pizza/PizzaSizesCatalog.tsx` (CRUD do catálogo)
-  - `src/components/pizza/PizzaCategoriesMatrix.tsx` (categorias + matriz de preço)
-  - `src/components/pizza/PizzaImportLegacyButton.tsx` (importador one-click)
-- Alterações:
-  - `PizzaFlavorManager.tsx` — adiciona as duas novas seções acima dos blocos atuais.
-  - `CategoryProductFields.tsx` — quando o catálogo existir, substitui `PizzaSizesField` por "Categoria + overrides".
-  - `PizzaHalfHalfModal.tsx` — passa a ler `pizza_sizes_catalog` + `pizza_price_matrix` quando presentes; fallback no legado.
-  - `src/lib/pizzaPricing.ts` (novo) — função pura `computePizzaPrice({sizeId, flavorIds, mode, store})` usada pelo modal e pelo PDV.
-- Sem mudança em backend/edge functions — preços já trafegam dentro dos `addons`/`items` do pedido.
+---
 
-## Fora de escopo desta entrega
-- Bordas por categoria (continua usando `PizzaBorderManager`).
-- Promoções específicas por tamanho.
-- Replicar o mesmo modelo para pastel (fica pra próxima, mesma arquitetura).
+## Fase 2 — Cache na borda da Vercel (1 dia, mata cold start)
 
-## Versão
-Ao implementar: bump `1.10.259` + `versionCode 589`.
+A Vercel free dá **Edge Network ilimitada** e **ISR/Data Cache**. Vamos usar.
+
+### 2.1 Edge Function `/api/store/[slug]`
+Cria uma rota Vercel Edge que:
+- Faz **uma** query agregada no Supabase (stores + products + addons + horários em um único RPC).
+- Retorna com header `Cache-Control: public, s-maxage=60, stale-while-revalidate=600`.
+- Resultado: 99% dos hits servidos pela CDN da Vercel em ~30ms, sem tocar no Postgres.
+
+### 2.2 RPC agregada no Supabase
+```sql
+create function public.get_store_bootstrap(_slug text)
+returns jsonb language sql stable as $$
+  select jsonb_build_object(
+    'store', (select row_to_json(s) from stores s where slug=_slug),
+    'products', (select coalesce(jsonb_agg(p), '[]') from products p ...),
+    'addons', ...,
+    'hours', ...
+  )
+$$;
+```
+Uma única ida ao banco em vez de 6.
+
+### 2.3 Invalidação
+- Webhook do Supabase (insert/update em `products`, `stores`) → chama `/api/revalidate?slug=...` na Vercel.
+- Sem webhook = TTL de 60s já resolve 95% dos casos.
+
+---
+
+## Fase 3 — Anti cold-start Supabase free (grátis)
+
+O plano free hiberna após ~5min sem requests.
+
+### 3.1 Cron de keep-alive
+- Cron Vercel (free: 2 jobs) faz `SELECT 1` a cada 4min em horário comercial (10h–23h).
+- Custo: 0. Mantém Postgres "morno".
+
+### 3.2 Connection pooling
+- Forçar uso do **pooler na porta 6543** (transaction mode) em todas as edge functions — já vem no Supabase, só conferir URL.
+
+---
+
+## Fase 4 — Índices e queries (meio dia)
+
+Rodar `supabase--slow_queries` e criar índices nos campos mais filtrados:
+- `products(store_id, is_available)` — composto
+- `orders(store_id, created_at desc)` — para painel
+- `stores(slug)` — único, já deve existir
+- `opening_hours(store_id)`
+
+Migration única com `CREATE INDEX IF NOT EXISTS`.
+
+---
+
+## Fase 5 — Service Worker leve (opcional, 1 dia)
+
+PWA manifest-only **+** cache `NetworkFirst` apenas para `/api/store/*` e imagens de produto.
+- 2ª visita do cliente abre **instantânea** (offline-first do cardápio).
+- Não mexe em rotas autenticadas (PDV/Admin).
+
+---
+
+## Fase 6 — Monitoramento (contínuo)
+
+- `analytics--read_project_analytics` semanal.
+- `supabase--slow_queries` mensal.
+- Web Vitals via Vercel Analytics (free tier: 2.5k events/mês).
+
+---
+
+## Cronograma sugerido
+
+| Fase | Esforço | Ganho estimado no TTI |
+|------|---------|------------------------|
+| 1 — Quick wins | 1 dia | -40% |
+| 2 — Edge cache | 1 dia | -60% no 2º hit |
+| 3 — Keep-alive | 1h | elimina spikes de 2s |
+| 4 — Índices | 0.5 dia | -30% nas queries lentas |
+| 5 — SW cache | 1 dia | abertura quase instantânea |
+| 6 — Monitor | contínuo | — |
+
+**Total: ~4 dias de trabalho, custo R$ 0 (continua tudo free).**
+
+---
+
+## Por onde começar?
+
+Recomendo **Fase 1 + Fase 3** primeiro (1 dia, impacto imediato e sem risco).
+Depois Fase 2 (edge cache) que é a maior virada de chave.
+
+Confirma que posso iniciar pela Fase 1+3?
