@@ -110,7 +110,7 @@ const StorePage = () => {
   // ⚡ Bootstrap: 1 round-trip que pré-popula store + hours + sections + products +
   // owner_profile + online_drivers_count. As useQuery() abaixo continuam existindo
   // como fallback / refetch — mas pegam initialData do cache e não mostram loading.
-  useQuery({
+  const { isFetched: bootstrapDone } = useQuery({
     queryKey: ["store-bootstrap", id || slug, isSandbox],
     queryFn: async () => {
       const key = id || slug || "";
@@ -210,7 +210,7 @@ const StorePage = () => {
       if (error) throw error;
       return data || [];
     },
-    enabled: !!storeId,
+    enabled: !!storeId && bootstrapDone,
     staleTime: 1000 * 60 * 5,
   });
 
