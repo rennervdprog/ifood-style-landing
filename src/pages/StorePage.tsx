@@ -166,7 +166,7 @@ const StorePage = () => {
       if (error) throw error;
       return null;
     },
-    enabled: !!(id || slug),
+    enabled: !!(id || slug) && bootstrapDone,
     staleTime: 1000 * 60 * 3,
   });
 
@@ -344,7 +344,7 @@ const StorePage = () => {
       if (error) throw error;
       return (data || []) as MenuSection[];
     },
-    enabled: !!storeId,
+    enabled: !!storeId && bootstrapDone,
     staleTime: 1000 * 60 * 5,
   });
 
@@ -359,7 +359,7 @@ const StorePage = () => {
       if (error) throw error;
       return (data || []) as Product[];
     },
-    enabled: !!storeId,
+    enabled: !!storeId && bootstrapDone,
     staleTime: 1000 * 60 * 3,
   });
 
