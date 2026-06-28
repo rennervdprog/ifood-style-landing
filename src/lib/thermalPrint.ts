@@ -1,17 +1,42 @@
 import { formatBRL } from "@/lib/utils";
 import { getOrderItemDisplayName } from "./orderItemName";
 
+/**
+ * Motor de impressão térmica unificado (delivery + PDV).
+ *
+ * Mantém os dois entry-points públicos (`printThermalReceipt`,
+ * `printPdvReceipt`) como wrappers que apenas montam o HTML via os
+ * mesmos helpers (`renderItems`, `renderPaymentBlock`, `renderAddress`,
+ * `renderFooter`, `wrapCopies`, `applyPaperWidth`). Toda a regra de
+ * itens/addons/bordas/tamanhos/complementos/observações/pagamento/troco/
+ * endereço fica num único lugar — evita divergência entre fluxos.
+ *
+ * Recursos:
+ *  - Nº de pedido sequencial (`order_number`) com fallback para UUID curto.
+ *  - Banner de origem (DELIVERY / BALCÃO / MESA / RETIRADA).
+ *  - Endereço quebrado em linhas (rua/nº/compl/bairro/cidade/CEP/ref).
+ *  - Observação geral do pedido + observação por item.
+ *  - Cupom em linha própria + desconto manual.
+ *  - Split de pagamento e Recebido/Troco nos dois fluxos.
+ *  - Telefone/CNPJ da loja no cabeçalho (quando informados).
+ *  - 2 vias por padrão (cozinha + cliente) com page-break.
+ *  - Largura configurável 58mm/80mm via `@page`.
+ */
+
+// ─── Tipos ────────────────────────────────────────────────────────────────
+
 interface PrintOrderItem {
-  id: string;
+  id?: string;
   quantity: number;
   unit_price: number;
   observations?: string | null;
-  addons?: { name: string; price: number; required?: boolean; groupName?: string }[] | null;
+  addons?: { name: string; price: number; required?: boolean; groupName?: string }[] | any | null;
   products?: { name: string } | null;
 }
 
 interface PrintOrder {
   id: string;
+  order_number?: number | null;
   created_at: string;
   subtotal: number;
   delivery_fee: number;
@@ -19,14 +44,60 @@ interface PrintOrder {
   payment_method: string;
   neighborhood: string;
   address_details: string;
+  /** Endereço estruturado (opcional). */
+  delivery_address?: {
+    street?: string | null;
+    number?: string | null;
+    complement?: string | null;
+    neighborhood?: string | null;
+    city?: string | null;
+    state?: string | null;
+    cep?: string | null;
+    reference?: string | null;
+  } | null;
+  notes?: string | null;
+  observations?: string | null;
   needs_change?: boolean;
   change_for?: number | null;
+  cash_received?: number | null;
+  troco?: number | null;
   scheduled_for?: string | null;
   pdv_discount?: number | null;
   coupon_code?: string | null;
+  coupon_discount?: number | null;
+  delivery_mode?: string | null;
   client_phone?: string | null;
+  payments?: { method: string; amount: number }[] | null;
   order_items?: PrintOrderItem[];
 }
+
+interface PrintPdvOrder {
+  id: string;
+  order_number?: number | null;
+  created_at: string;
+  subtotal: number;
+  pdv_discount?: number | null;
+  total_price: number;
+  payment_method: string;
+  cash_received?: number;
+  troco?: number;
+  table_identifier?: string | null;
+  notes?: string | null;
+  observations?: string | null;
+  payments?: { method: string; amount: number }[] | null;
+  order_items?: PrintOrderItem[];
+}
+
+export interface PrintOptions {
+  storePhone?: string | null;
+  storeCnpj?: string | null;
+  /** Largura da bobina; padrão 80mm. */
+  paperWidth?: 58 | 80;
+  /** Quantidade de vias (1 = só cliente; 2 = cozinha + cliente). Padrão 2. */
+  copies?: 1 | 2;
+}
+
+// ─── Labels ───────────────────────────────────────────────────────────────
 
 const paymentLabels: Record<string, string> = {
   pix: "PIX",
@@ -36,6 +107,17 @@ const paymentLabels: Record<string, string> = {
   maquininha_debito: "Cartão Débito (maquininha)",
   maquininha_pix: "PIX (maquininha)",
 };
+
+const pdvPaymentLabels: Record<string, string> = {
+  dinheiro: "Dinheiro",
+  maquininha_credito: "Cartão Crédito",
+  maquininha_debito: "Cartão Débito",
+  maquininha_pix: "PIX Maquininha",
+  pix: "PIX Online",
+  cartao: "Cartão na Entrega",
+};
+
+// ─── Infra de container/CSS ───────────────────────────────────────────────
 
 const PRINT_CONTAINER_ID = "thermal-print-container";
 
@@ -50,296 +132,339 @@ function getOrCreatePrintContainer(): HTMLDivElement {
   return container;
 }
 
+/** Injeta @page com largura da bobina. */
+function applyPaperWidth(width: 58 | 80) {
+  if (typeof document === "undefined") return;
+  const id = "thermal-print-page-style";
+  let tag = document.getElementById(id) as HTMLStyleElement | null;
+  if (!tag) {
+    tag = document.createElement("style");
+    tag.id = id;
+    document.head.appendChild(tag);
+  }
+  tag.textContent = `@media print { @page { size: ${width}mm auto; margin: 2mm; } }`;
+}
+
+// ─── Helpers de render ────────────────────────────────────────────────────
+
+function originBanner(label: string): string {
+  return `<div class="tp-origin" style="text-align:center;font-weight:bold;font-size:14px;letter-spacing:2px;background:#000;color:#fff;padding:4px;margin:4px 0">${label}</div>`;
+}
+
+function formatOrderNumber(order: { id: string; order_number?: number | null }): { big: string; small: string } {
+  if (order.order_number && order.order_number > 0) {
+    return { big: `#${order.order_number}`, small: `ref: ${order.id.slice(0, 8).toUpperCase()}` };
+  }
+  return { big: `#${order.id.slice(0, 8).toUpperCase()}`, small: "" };
+}
+
+function renderAddress(order: PrintOrder): string {
+  const a = order.delivery_address;
+  const lines: string[] = [];
+  if (a && (a.street || a.number || a.neighborhood || a.cep)) {
+    if (a.street || a.number) lines.push(`${a.street || ""}${a.number ? ", " + a.number : ""}`.trim());
+    if (a.complement) lines.push(`Compl.: ${a.complement}`);
+    if (a.neighborhood || order.neighborhood) lines.push(`Bairro: ${a.neighborhood || order.neighborhood}`);
+    if (a.city || a.state) lines.push(`${a.city || ""}${a.state ? "/" + a.state : ""}`.trim());
+    if (a.cep) lines.push(`CEP: ${a.cep}`);
+    if (a.reference) lines.push(`Ref.: ${a.reference}`);
+  } else {
+    if (order.neighborhood) lines.push(`<b>Bairro:</b> ${order.neighborhood}`);
+    if (order.address_details) lines.push(`<b>Endereço:</b> ${order.address_details}`);
+  }
+  return lines.map((l) => `<div class="tp-info">${l}</div>`).join("");
+}
+
+function renderItems(items: PrintOrderItem[] | undefined): string {
+  let html = "";
+  (items || []).forEach((item) => {
+    const displayName = getOrderItemDisplayName(item as any);
+    let rawAddons: any = item.addons;
+    if (typeof rawAddons === "string") {
+      try { rawAddons = JSON.parse(rawAddons); } catch { rawAddons = []; }
+    }
+    const addons: any[] = Array.isArray(rawAddons) ? rawAddons : [];
+    const addonsTotal = addons.reduce((s: number, a: any) => s + (Number(a?.price) || 0), 0);
+    const baseUnitPrice = Number(item.unit_price) - addonsTotal;
+    const lineTotal = baseUnitPrice * item.quantity;
+
+    html += `<div class="tp-item-row" style="display:flex;justify-content:space-between"><span><b>${item.quantity}x</b> ${displayName}</span><span>${formatBRL(lineTotal)}</span></div>`;
+    if (item.quantity > 1 && baseUnitPrice > 0) {
+      html += `<div style="font-size:11px;color:#444;padding-left:14px">Unit.: ${formatBRL(baseUnitPrice)}</div>`;
+    }
+
+    if (addons.length > 0) {
+      const isBorder = (a: any) => typeof a?.name === "string" && /^borda\s*:/i.test(a.name);
+      const isSize = (a: any) => typeof a?.name === "string" && /^tamanho\s*:/i.test(a.name);
+      const isComplement = (a: any) => typeof a?.name === "string" && /^complemento\s*:/i.test(a.name);
+
+      const required = addons.filter((a) => a.required && a.groupName);
+      const sizes = addons.filter((a) => !(a.required && a.groupName) && isSize(a));
+      const borders = addons.filter((a) => !(a.required && a.groupName) && isBorder(a));
+      const complements = addons.filter((a) => !(a.required && a.groupName) && isComplement(a));
+      const optional = addons.filter((a) => !(a.required && a.groupName) && !isBorder(a) && !isSize(a) && !isComplement(a));
+
+      required.forEach((a) => {
+        const priceStr = Number(a.price) > 0 ? formatBRL(Number(a.price)) : "";
+        html += `<div style="display:flex;justify-content:space-between;font-weight:bold;font-size:13px;border:1px solid #000;padding:2px 4px;margin:3px 0;background:#eee"><span>★ ${a.groupName}: ${String(a.name).toUpperCase()}</span><span>${priceStr}</span></div>`;
+      });
+      sizes.forEach((a) => {
+        const sizeName = String(a.name).replace(/^tamanho\s*:\s*/i, "").toUpperCase();
+        html += `<div style="display:flex;justify-content:space-between;font-weight:bold;font-size:13px;border:1px solid #000;padding:2px 4px;margin:3px 0;background:#eee"><span>▣ TAMANHO: ${sizeName}</span><span></span></div>`;
+      });
+      borders.forEach((a) => {
+        const priceStr = Number(a.price) > 0 ? formatBRL(Number(a.price)) : "";
+        const borderName = String(a.name).replace(/^borda\s*:\s*/i, "").toUpperCase();
+        html += `<div style="display:flex;justify-content:space-between;font-weight:bold;font-size:13px;border:1px solid #000;padding:2px 4px;margin:3px 0;background:#eee"><span>◆ BORDA: ${borderName}</span><span>${priceStr}</span></div>`;
+      });
+      complements.forEach((a) => {
+        const cName = String(a.name).replace(/^complemento\s*:\s*/i, "").toUpperCase();
+        const cPrice = Number(a.price) > 0 ? formatBRL(Number(a.price)) : "GRÁTIS";
+        html += `<div style="display:flex;justify-content:space-between;font-weight:bold;font-size:13px;border:1px solid #000;padding:2px 4px;margin:3px 0;background:#eee"><span>✚ COMPLEMENTO: ${cName}</span><span>${cPrice}</span></div>`;
+      });
+      optional.forEach((a) => {
+        const priceStr = Number(a.price) > 0 ? formatBRL(Number(a.price)) : "";
+        html += `<div style="display:flex;justify-content:space-between;font-size:12px;padding-left:12px"><span>+ ${a.name}</span><span>${priceStr}</span></div>`;
+      });
+    }
+
+    if (item.observations) {
+      html += `<div class="tp-obs" style="font-size:12px;font-weight:bold;border:1px dashed #000;padding:3px 5px;margin:3px 0">⚠ OBS: ${item.observations}</div>`;
+    }
+  });
+  return html;
+}
+
+function renderPaymentBlock(args: {
+  primaryMethod: string;
+  splits: { method: string; amount: number }[];
+  labels: Record<string, string>;
+  isOnlinePaid: boolean;
+  cashReceived?: number | null;
+  troco?: number | null;
+  changeFor?: number | null;
+}): string {
+  const { primaryMethod, splits, labels, isOnlinePaid, cashReceived, troco, changeFor } = args;
+  const hasSplit = splits.length > 1;
+  let html = "";
+  if (hasSplit) {
+    html += `<div class="tp-info"><b>Pagamento (dividido):</b></div>`;
+    splits.forEach((p) => {
+      html += `<div style="display:flex;justify-content:space-between;font-size:12px;padding-left:8px"><span>• ${labels[p.method] || p.method}</span><span>${formatBRL(Number(p.amount) || 0)}</span></div>`;
+    });
+  } else {
+    const tag = primaryMethod === "pix" && isOnlinePaid
+      ? ' <span style="font-weight:bold">(PAGO ONLINE)</span>'
+      : (primaryMethod === "dinheiro" || primaryMethod === "cartao")
+        ? ' <span style="font-weight:bold">(RECEBER NA ENTREGA)</span>'
+        : "";
+    html += `<div class="tp-info"><b>Pagamento:</b> ${labels[primaryMethod] || primaryMethod}${tag}</div>`;
+  }
+  if (primaryMethod === "dinheiro") {
+    if (cashReceived && cashReceived > 0) {
+      html += `<div style="display:flex;justify-content:space-between;font-size:13px"><span>Recebido:</span><span>${formatBRL(cashReceived)}</span></div>`;
+      html += `<div style="display:flex;justify-content:space-between;font-size:14px;font-weight:bold"><span>Troco:</span><span>${formatBRL(Number(troco) || 0)}</span></div>`;
+    } else if (changeFor && changeFor > 0) {
+      html += `<div class="tp-change" style="font-weight:bold;border:2px solid #000;padding:4px;margin:4px 0;text-align:center">TROCO PARA: ${formatBRL(changeFor)}</div>`;
+    }
+  }
+  return html;
+}
+
+function renderFooter(): string {
+  return `
+<div class="tp-footer"><p>Obrigado pela preferência!</p><p>ItaSuper</p></div>
+<div class="tp-divider"></div>
+<div style="text-align:center;font-size:9px;color:#666;line-height:1.4;padding:4px 0">
+  <div>Serv. financeiros processados por</div>
+  <div style="font-weight:bold">Asaas Gestão Financeira Inst. de Pagamento S.A.</div>
+  <div>Autorizada pelo Banco Central do Brasil</div>
+</div>`;
+}
+
+function wrapCopies(html: string, copies: number, viaLabels?: string[]): string {
+  const n = Math.max(1, Math.min(2, copies));
+  if (n === 1) return html;
+  const labels = viaLabels ?? ["VIA COZINHA", "VIA CLIENTE"];
+  return Array.from({ length: n })
+    .map((_, i) => {
+      const label = `<div style="text-align:center;font-size:10px;font-weight:bold;letter-spacing:2px;padding:2px 0;border-top:1px dashed #000;border-bottom:1px dashed #000;margin-bottom:4px">${labels[i] || ""}</div>`;
+      const pageBreak = i < n - 1 ? `<div style="page-break-after:always"></div>` : "";
+      return label + html + pageBreak;
+    })
+    .join("");
+}
+
+function storeHeader(storeName: string, opt: PrintOptions): string {
+  const extra = [
+    opt.storePhone ? `<div class="tp-info">Tel.: ${opt.storePhone}</div>` : "",
+    opt.storeCnpj ? `<div class="tp-info">CNPJ: ${opt.storeCnpj}</div>` : "",
+  ].join("");
+  return `<div class="tp-center"><div class="tp-title">ITASUPER</div><div class="tp-store">${storeName}</div>${extra}</div>`;
+}
+
+// ─── Wrappers públicos ────────────────────────────────────────────────────
+
 /**
- * CORREÇÃO: Removido o uso de onAfterPrint com setTimeout que matava o token
- * de gesto do usuário e impedia o WhatsApp de abrir no navegador.
- *
- * A função agora apenas renderiza o HTML e dispara window.print().
- * O WhatsApp deve ser aberto pelo chamador ANTES de chamar esta função,
- * usando um link <a target="_blank"> no JSX (não window.open).
+ * Recibo de pedido delivery / retirada.
+ * `options` permite passar telefone/CNPJ da loja, largura (58/80mm) e nº de vias.
  */
 export function printThermalReceipt(
   order: PrintOrder,
   storeName: string,
   clientName: string,
-  clientPhone?: string | null
+  clientPhone?: string | null,
+  options: PrintOptions = {},
 ) {
+  const paperWidth = options.paperWidth ?? 80;
+  const copies = options.copies ?? 2;
+  applyPaperWidth(paperWidth);
+
   const date = new Date(order.created_at).toLocaleString("pt-BR");
-  const orderId = order.id.slice(0, 8).toUpperCase();
+  const num = formatOrderNumber(order);
   const phone = clientPhone || order.client_phone || "";
   const subtotalNum = Number(order.subtotal) || 0;
   const deliveryNum = Number(order.delivery_fee) || 0;
   const totalNum = Number(order.total_price) || 0;
-  // Desconto = (subtotal + entrega) - total, com fallback para pdv_discount
+
+  // Cupom e desconto em linhas separadas.
+  const couponNum = Number(order.coupon_discount || 0);
+  const manualDiscount = Number(order.pdv_discount || 0);
   const computedDiscount = Math.max(0, subtotalNum + deliveryNum - totalNum);
-  const discountNum = Number(order.pdv_discount || 0) > 0
-    ? Number(order.pdv_discount)
-    : computedDiscount;
-  const discountHtml = discountNum > 0.009
-    ? `<div class="tp-total-row"><span>Desconto${order.coupon_code ? ` (${order.coupon_code})` : ""}:</span><span>-${formatBRL(discountNum)}</span></div>`
+  const fallback = couponNum <= 0 && manualDiscount <= 0 ? computedDiscount : 0;
+
+  const couponShown = couponNum > 0 ? couponNum : (order.coupon_code && fallback > 0 ? fallback : 0);
+  const discountShown = manualDiscount > 0 ? manualDiscount : (!order.coupon_code && fallback > 0 ? fallback : 0);
+
+  const couponHtml = couponShown > 0.009
+    ? `<div class="tp-total-row" style="display:flex;justify-content:space-between"><span>Cupom${order.coupon_code ? ` (${order.coupon_code})` : ""}:</span><span>-${formatBRL(couponShown)}</span></div>`
     : "";
-
-  let itemsHtml = "";
-  order.order_items?.forEach((item) => {
-    const displayName = getOrderItemDisplayName(item);
-
-    let rawAddons = item.addons as any;
-    if (typeof rawAddons === "string") {
-      try { rawAddons = JSON.parse(rawAddons); } catch { rawAddons = []; }
-    }
-    const addons = Array.isArray(rawAddons) ? rawAddons : [];
-    const addonsTotal = addons.reduce((s: number, a: any) => s + (Number(a?.price) || 0), 0);
-    const baseUnitPrice = item.unit_price - addonsTotal;
-    const lineTotal = (baseUnitPrice * item.quantity).toFixed(2);
-    itemsHtml += `<div class="tp-item-row"><span><b>${item.quantity}x</b> ${displayName}</span><span>R$ ${lineTotal}</span></div>`;
-
-    if (addons.length > 0) {
-      const requiredAddons = addons.filter((a: any) => a.required && a.groupName);
-      const isBorder = (a: any) => typeof a?.name === "string" && /^borda\s*:/i.test(a.name);
-      const isSize = (a: any) => typeof a?.name === "string" && /^tamanho\s*:/i.test(a.name);
-      const isComplement = (a: any) => typeof a?.name === "string" && /^complemento\s*:/i.test(a.name);
-      const sizeAddons = addons.filter((a: any) => !(a.required && a.groupName) && isSize(a));
-      const borderAddons = addons.filter((a: any) => !(a.required && a.groupName) && isBorder(a));
-      const complementAddons = addons.filter((a: any) => !(a.required && a.groupName) && isComplement(a));
-      const optionalAddons = addons.filter((a: any) => !(a.required && a.groupName) && !isBorder(a) && !isSize(a) && !isComplement(a));
-
-      requiredAddons.forEach((a: any) => {
-        const priceStr = Number(a.price) > 0 ? formatBRL(Number(a.price)) : "";
-        itemsHtml += `<div class="tp-required-addon" style="display:flex;justify-content:space-between;font-weight:bold;font-size:13px;border:1px solid #000;padding:2px 4px;margin:3px 0;background:#eee"><span>★ ${a.groupName}: ${a.name.toUpperCase()}</span><span>${priceStr}</span></div>`;
-      });
-
-      sizeAddons.forEach((a: any) => {
-        const sizeName = String(a.name).replace(/^tamanho\s*:\s*/i, "").toUpperCase();
-        itemsHtml += `<div class="tp-size-addon" style="display:flex;justify-content:space-between;font-weight:bold;font-size:13px;border:1px solid #000;padding:2px 4px;margin:3px 0;background:#eee"><span>▣ TAMANHO: ${sizeName}</span><span></span></div>`;
-      });
-
-      borderAddons.forEach((a: any) => {
-        const priceStr = Number(a.price) > 0 ? formatBRL(Number(a.price)) : "";
-        const borderName = String(a.name).replace(/^borda\s*:\s*/i, "").toUpperCase();
-        itemsHtml += `<div class="tp-border-addon" style="display:flex;justify-content:space-between;font-weight:bold;font-size:13px;border:1px solid #000;padding:2px 4px;margin:3px 0;background:#eee"><span>◆ BORDA: ${borderName}</span><span>${priceStr}</span></div>`;
-      });
-
-      complementAddons.forEach((a: any) => {
-        const priceStr = Number(a.price) > 0 ? formatBRL(Number(a.price)) : "GRÁTIS";
-        const cName = String(a.name).replace(/^complemento\s*:\s*/i, "").toUpperCase();
-        itemsHtml += `<div class="tp-complement-addon" style="display:flex;justify-content:space-between;font-weight:bold;font-size:13px;border:1px solid #000;padding:2px 4px;margin:3px 0;background:#eee"><span>✚ COMPLEMENTO: ${cName}</span><span>${priceStr}</span></div>`;
-      });
-
-      optionalAddons.forEach((a: any) => {
-        const priceStr = Number(a.price) > 0 ? formatBRL(Number(a.price)) : "";
-        itemsHtml += `<div class="tp-addon" style="display:flex;justify-content:space-between"><span>+ ${a.name}</span><span>${priceStr}</span></div>`;
-      });
-    }
-    if (item.observations) {
-      itemsHtml += `<div class="tp-obs">⚠ OBS: ${item.observations}</div>`;
-    }
-  });
-
-  let changeHtml = "";
-  if (order.payment_method === "dinheiro" && order.needs_change && Number(order.change_for) > 0) {
-    changeHtml = `<div class="tp-change"><b>TROCO PARA: ${formatBRL(Number(order.change_for))}</b></div>`;
-  }
+  const discountHtml = discountShown > 0.009
+    ? `<div class="tp-total-row" style="display:flex;justify-content:space-between"><span>Desconto:</span><span>-${formatBRL(discountShown)}</span></div>`
+    : "";
 
   let scheduledHtml = "";
   if (order.scheduled_for) {
-    const scheduledDate = new Date(order.scheduled_for);
-    const scheduledStr = scheduledDate.toLocaleString("pt-BR", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
+    const d = new Date(order.scheduled_for);
+    const s = d.toLocaleString("pt-BR", {
+      day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit",
     });
     scheduledHtml = `
 <div class="tp-scheduled" style="border:3px solid #000;padding:8px;margin:8px 0;text-align:center;background:#000;color:#fff;font-size:16px;font-weight:bold;letter-spacing:1px">
   ⏰ PEDIDO AGENDADO ⏰<br/>
-  <span style="font-size:18px">${scheduledStr}</span><br/>
+  <span style="font-size:18px">${s}</span><br/>
   <span style="font-size:12px">⚠ NÃO PREPARAR AGORA ⚠</span>
 </div>`;
   }
 
-  const container = getOrCreatePrintContainer();
-  container.innerHTML = `
-<div class="tp-center"><div class="tp-title">ITASUPER</div><div class="tp-store">${storeName}</div><div class="tp-date">${date}</div></div>
-<div class="tp-divider"></div>
-<div class="tp-order-id">PEDIDO #${orderId}</div>
+  const generalObs = order.notes || order.observations;
+  const generalObsHtml = generalObs
+    ? `<div class="tp-obs-general" style="border:2px dashed #000;padding:6px;margin:6px 0;font-size:13px"><b>⚠ OBSERVAÇÃO DO PEDIDO:</b><br/>${generalObs}</div>`
+    : "";
+
+  const splits = Array.isArray(order.payments) ? order.payments : [];
+  const paymentHtml = renderPaymentBlock({
+    primaryMethod: order.payment_method,
+    splits,
+    labels: paymentLabels,
+    isOnlinePaid: order.payment_method === "pix",
+    cashReceived: order.cash_received,
+    troco: order.troco,
+    changeFor: order.needs_change ? Number(order.change_for) : null,
+  });
+
+  const isPickup = ["retirada", "pickup"].includes(String(order.delivery_mode || "").toLowerCase());
+  const origin = isPickup ? "RETIRADA NO BALCÃO" : "DELIVERY";
+
+  const body = `
+${storeHeader(storeName, options)}
+<div class="tp-info" style="text-align:center">${date}</div>
+${originBanner(origin)}
+<div class="tp-order-id" style="text-align:center;font-size:22px;font-weight:bold">PEDIDO ${num.big}</div>
+${num.small ? `<div style="text-align:center;font-size:10px;color:#666">${num.small}</div>` : ""}
 ${scheduledHtml}
 <div class="tp-divider"></div>
-${itemsHtml}
+${renderItems(order.order_items)}
+${generalObsHtml}
 <div class="tp-divider"></div>
-<div class="tp-total-row"><span>Subtotal:</span><span>${formatBRL(Number(order.subtotal))}</span></div>
-<div class="tp-total-row"><span>Entrega:</span><span>${formatBRL(Number(order.delivery_fee))}</span></div>
+<div class="tp-total-row" style="display:flex;justify-content:space-between"><span>Subtotal:</span><span>${formatBRL(subtotalNum)}</span></div>
+<div class="tp-total-row" style="display:flex;justify-content:space-between"><span>Entrega:</span><span>${formatBRL(deliveryNum)}</span></div>
+${couponHtml}
 ${discountHtml}
-<div class="tp-total-big"><span>TOTAL:</span><span>${formatBRL(Number(order.total_price))}</span></div>
+<div class="tp-total-big" style="display:flex;justify-content:space-between;font-weight:bold;font-size:18px"><span>TOTAL:</span><span>${formatBRL(totalNum)}</span></div>
 <div class="tp-divider"></div>
-<div class="tp-info"><b>Pagamento:</b> ${paymentLabels[order.payment_method] || order.payment_method} ${order.payment_method === "pix" ? '<span style="font-weight:bold">(PAGO ONLINE)</span>' : '<span style="font-weight:bold">(RECEBER NA ENTREGA)</span>'}</div>
-${changeHtml}
+${paymentHtml}
+<div class="tp-divider"></div>
 <div class="tp-info"><b>Cliente:</b> ${clientName}</div>
 ${phone ? `<div class="tp-info"><b>Telefone:</b> ${phone}</div>` : ""}
-<div class="tp-info"><b>Bairro:</b> ${order.neighborhood}</div>
-<div class="tp-info"><b>Endereço:</b> ${order.address_details}</div>
+${isPickup ? `<div class="tp-info" style="font-weight:bold">✓ Cliente vai retirar no balcão</div>` : renderAddress(order)}
 <div class="tp-divider"></div>
-<div class="tp-footer"><p>Obrigado pela preferência!</p><p>ItaSuper</p></div>
-<div class="tp-divider"></div>
-<div style="text-align:center;font-size:9px;color:#666;line-height:1.4;padding:4px 0">
-  <div>Serv. financeiros processados por</div>
-  <div style="font-weight:bold">Asaas Gestão Financeira Inst. de Pagamento S.A.</div>
-  <div>Autorizada pelo Banco Central do Brasil</div>
-</div>
+${renderFooter()}
 `;
 
-  // requestAnimationFrame garante 1 frame de render do DOM antes de imprimir
-  // sem usar setTimeout (que mataria o token de gesto do usuário e bloquearia o WhatsApp)
+  const container = getOrCreatePrintContainer();
+  container.innerHTML = wrapCopies(body, copies, ["VIA COZINHA", "VIA CLIENTE"]);
+
   requestAnimationFrame(() => {
     window.print();
   });
 }
 
-// ─── Labels de pagamento PDV ───────────────────────────────────────────────
+/** Recibo do PDV (balcão / mesa). */
+export function printPdvReceipt(order: PrintPdvOrder, storeName: string, options: PrintOptions = {}) {
+  const paperWidth = options.paperWidth ?? 80;
+  const copies = options.copies ?? 2;
+  applyPaperWidth(paperWidth);
 
-const pdvPaymentLabels: Record<string, string> = {
-  dinheiro:           "Dinheiro",
-  maquininha_credito: "Cartão Crédito",
-  maquininha_debito:  "Cartão Débito",
-  maquininha_pix:     "PIX Maquininha",
-  // compatibilidade com labels do delivery
-  pix:    "PIX Online",
-  cartao: "Cartão na Entrega",
-};
-
-// ─── Interface do recibo PDV ───────────────────────────────────────────────
-
-interface PrintPdvOrder {
-  id: string;
-  created_at: string;
-  subtotal: number;
-  pdv_discount?: number | null;
-  total_price: number;
-  payment_method: string;
-  cash_received?: number;
-  troco?: number;
-  table_identifier?: string | null;
-  payments?: { method: string; amount: number }[] | null;
-  order_items?: {
-    quantity: number;
-    unit_price: number;
-    products?: { name: string } | null;
-    observations?: string | null;
-    addons?: any;
-  }[];
-}
-
-// ─── Função de impressão PDV ───────────────────────────────────────────────
-
-export function printPdvReceipt(order: PrintPdvOrder, storeName: string) {
   const date = new Date(order.created_at).toLocaleString("pt-BR");
-  const orderId = order.id.slice(0, 8).toUpperCase();
+  const num = formatOrderNumber(order);
   const discount = Number(order.pdv_discount || 0);
-  const payLabel = pdvPaymentLabels[order.payment_method] || order.payment_method;
   const splits = Array.isArray(order.payments) ? order.payments : [];
-  const hasSplit = splits.length > 1;
 
-  // Itens
-  let itemsHtml = "";
-  order.order_items?.forEach(item => {
-    const name = getOrderItemDisplayName(item as any);
-    let rawAddons = (item as any).addons;
-    if (typeof rawAddons === "string") {
-      try { rawAddons = JSON.parse(rawAddons); } catch { rawAddons = []; }
-    }
-    const addons = Array.isArray(rawAddons) ? rawAddons : [];
-    const addonsTotal = addons.reduce((s: number, a: any) => s + (Number(a?.price) || 0), 0);
-    const baseUnitPrice = Number(item.unit_price) - addonsTotal;
-    const unitPrice = formatBRL(baseUnitPrice);
-    const totalItem = formatBRL(baseUnitPrice * item.quantity);
-    itemsHtml += `
-      <div style="display:flex;justify-content:space-between;padding:3px 0;font-size:13px">
-        <span><b>${item.quantity}x</b> ${name}</span>
-        <span>${totalItem}</span>
-      </div>`;
-    if (baseUnitPrice > 0) {
-      itemsHtml += `<div style="font-size:11px;color:#555;padding-left:16px">Unitário: ${unitPrice}</div>`;
-    }
-    if (addons.length > 0) {
-      const isBorder = (a: any) => typeof a?.name === "string" && /^borda\s*:/i.test(a.name);
-      const isSize = (a: any) => typeof a?.name === "string" && /^tamanho\s*:/i.test(a.name);
-      const isComplement = (a: any) => typeof a?.name === "string" && /^complemento\s*:/i.test(a.name);
-      addons.forEach((a: any) => {
-        const priceStr = Number(a.price) > 0 ? formatBRL(Number(a.price)) : "";
-        if (a.required && a.groupName) {
-          itemsHtml += `<div style="display:flex;justify-content:space-between;font-weight:bold;font-size:12px;border:1px solid #000;padding:2px 4px;margin:3px 0;background:#eee"><span>★ ${a.groupName}: ${String(a.name).toUpperCase()}</span><span>${priceStr}</span></div>`;
-        } else if (isSize(a)) {
-          const sizeName = String(a.name).replace(/^tamanho\s*:\s*/i, "").toUpperCase();
-          itemsHtml += `<div style="display:flex;justify-content:space-between;font-weight:bold;font-size:12px;border:1px solid #000;padding:2px 4px;margin:3px 0;background:#eee"><span>▣ TAMANHO: ${sizeName}</span><span></span></div>`;
-        } else if (isBorder(a)) {
-          const borderName = String(a.name).replace(/^borda\s*:\s*/i, "").toUpperCase();
-          itemsHtml += `<div style="display:flex;justify-content:space-between;font-weight:bold;font-size:12px;border:1px solid #000;padding:2px 4px;margin:3px 0;background:#eee"><span>◆ BORDA: ${borderName}</span><span>${priceStr}</span></div>`;
-        } else if (isComplement(a)) {
-          const cName = String(a.name).replace(/^complemento\s*:\s*/i, "").toUpperCase();
-          const cPrice = Number(a.price) > 0 ? formatBRL(Number(a.price)) : "GRÁTIS";
-          itemsHtml += `<div style="display:flex;justify-content:space-between;font-weight:bold;font-size:12px;border:1px solid #000;padding:2px 4px;margin:3px 0;background:#eee"><span>✚ COMPLEMENTO: ${cName}</span><span>${cPrice}</span></div>`;
-        } else {
-          itemsHtml += `<div style="display:flex;justify-content:space-between;font-size:11px;padding-left:12px"><span>+ ${a.name}</span><span>${priceStr}</span></div>`;
-        }
-      });
-    }
-    if (item.observations) {
-      itemsHtml += `<div style="font-size:11px;font-style:italic;padding-left:16px">Obs: ${item.observations}</div>`;
-    }
-  });
+  const origin = order.table_identifier
+    ? `MESA / COMANDA ${String(order.table_identifier).toUpperCase()}`
+    : "BALCÃO";
 
-  // Mesa/comanda
-  const tableHtml = order.table_identifier
-    ? `<div style="font-size:14px;font-weight:bold;text-align:center;border:2px solid #000;padding:4px;margin:4px 0">${order.table_identifier}</div>`
-    : "";
-
-  // Desconto
   const discountHtml = discount > 0
     ? `<div style="display:flex;justify-content:space-between;font-size:13px"><span>Desconto:</span><span>-${formatBRL(discount)}</span></div>`
     : "";
 
-  // Troco
-  let trocoHtml = "";
-  if (order.payment_method === "dinheiro" && order.cash_received) {
-    trocoHtml = `
-      <div style="display:flex;justify-content:space-between;font-size:13px"><span>Recebido:</span><span>${formatBRL(order.cash_received)}</span></div>
-      <div style="display:flex;justify-content:space-between;font-size:14px;font-weight:bold"><span>Troco:</span><span>${formatBRL(order.troco ?? 0)}</span></div>`;
-  }
+  const paymentHtml = renderPaymentBlock({
+    primaryMethod: order.payment_method,
+    splits,
+    labels: pdvPaymentLabels,
+    isOnlinePaid: false,
+    cashReceived: order.cash_received,
+    troco: order.troco,
+    changeFor: null,
+  });
 
-  // Bloco de pagamentos (split ou simples)
-  const paymentBlockHtml = hasSplit
-    ? `<div class="tp-info"><b>Pagamento (dividido):</b></div>` +
-      splits.map(p => `<div style="display:flex;justify-content:space-between;font-size:12px;padding-left:8px"><span>• ${pdvPaymentLabels[p.method] || p.method}</span><span>${formatBRL(Number(p.amount) || 0)}</span></div>`).join("")
-    : `<div class="tp-info"><b>Pagamento:</b> ${payLabel}</div>`;
+  const generalObs = order.notes || order.observations;
+  const generalObsHtml = generalObs
+    ? `<div class="tp-obs-general" style="border:2px dashed #000;padding:6px;margin:6px 0;font-size:13px"><b>⚠ OBSERVAÇÃO:</b><br/>${generalObs}</div>`
+    : "";
+
+  const body = `
+${storeHeader(storeName, options)}
+<div class="tp-info" style="text-align:center">${date}</div>
+${originBanner(origin)}
+<div class="tp-order-id" style="text-align:center;font-size:22px;font-weight:bold">VENDA PDV ${num.big}</div>
+${num.small ? `<div style="text-align:center;font-size:10px;color:#666">${num.small}</div>` : ""}
+<div class="tp-divider"></div>
+${renderItems(order.order_items)}
+${generalObsHtml}
+<div class="tp-divider"></div>
+<div class="tp-total-row" style="display:flex;justify-content:space-between"><span>Subtotal:</span><span>${formatBRL(Number(order.subtotal))}</span></div>
+${discountHtml}
+<div class="tp-total-big" style="display:flex;justify-content:space-between;font-weight:bold;font-size:18px"><span>TOTAL:</span><span>${formatBRL(Number(order.total_price))}</span></div>
+<div class="tp-divider"></div>
+${paymentHtml}
+<div class="tp-divider"></div>
+${renderFooter()}
+`;
 
   const container = getOrCreatePrintContainer();
-  container.innerHTML = `
-<div class="tp-center">
-  <div class="tp-title">ITASUPER</div>
-  <div class="tp-store">${storeName}</div>
-  <div class="tp-date">${date}</div>
-</div>
-<div class="tp-divider"></div>
-<div class="tp-order-id">VENDA PDV #${orderId}</div>
-${tableHtml}
-<div class="tp-divider"></div>
-${itemsHtml}
-<div class="tp-divider"></div>
-<div class="tp-total-row"><span>Subtotal:</span><span>${formatBRL(Number(order.subtotal))}</span></div>
-${discountHtml}
-<div class="tp-total-big"><span>TOTAL:</span><span>${formatBRL(Number(order.total_price))}</span></div>
-<div class="tp-divider"></div>
-${paymentBlockHtml}
-${trocoHtml}
-<div class="tp-divider"></div>
-<div class="tp-footer"><p>Obrigado pela preferência!</p><p>ItaSuper</p></div>
-<div class="tp-divider"></div>
-<div style="text-align:center;font-size:9px;color:#666;line-height:1.4;padding:4px 0">
-  <div>Serv. financeiros processados por</div>
-  <div style="font-weight:bold">Asaas Gestão Financeira Inst. de Pagamento S.A.</div>
-  <div>Autorizada pelo Banco Central do Brasil</div>
-</div>
-`;
+  container.innerHTML = wrapCopies(body, copies, ["VIA INTERNA", "VIA CLIENTE"]);
 
   requestAnimationFrame(() => {
     window.print();
