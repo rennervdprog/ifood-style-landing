@@ -1,5 +1,5 @@
 import { formatBRL } from "@/lib/utils";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import NotFound from "@/pages/NotFound";
 import { useQuery, keepPreviousData, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -74,6 +74,10 @@ const isDocumentScrollElement = (element: HTMLElement) =>
 const StorePage = () => {
   const { id, slug } = useParams<{ id?: string; slug?: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+  // Esconde o botão "voltar" quando o usuário entra diretamente pelo link da loja
+  // (sem ter passado por /cliente ou outra página interna).
+  const hasInternalHistory = location.key !== "default";
   const { addItem } = useCart();
   const { user } = useAuth();
   const { setCurrentStore } = useStoreContext();
@@ -886,7 +890,7 @@ const StorePage = () => {
             scrolled ? "bg-background border-b border-border shadow-sm py-2" : "bg-transparent"
            }`}>
           <div className="flex items-center gap-3 min-w-0">
-            {!getStoreAppSlug() && (
+            {!getStoreAppSlug() && hasInternalHistory && (
               <button
                 onClick={() => navigate("/cliente")}
                aria-label="Voltar"
