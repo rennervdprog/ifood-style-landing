@@ -159,10 +159,10 @@ const AddressModal = ({ onClose, onSaved }: AddressModalProps) => {
           
           {/* Bairro auto-preenchido pelo CEP */}
           <div>
-            <label className="text-xs font-bold text-muted-foreground mb-1 block">Bairro (preenchido pelo CEP)</label>
+            <label className="text-xs font-bold text-muted-foreground mb-1 block">Bairro</label>
             <input
               type="text"
-              placeholder="Digite o CEP acima para preencher"
+              placeholder="Digite seu bairro"
               value={neighborhood}
               onChange={(e) => setNeighborhoodLocal(e.target.value)}
               className="w-full px-3 py-2.5 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
