@@ -3,9 +3,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
-import { MapPin, Save, ArrowLeft, Search, Loader2 } from "lucide-react";
+import { MapPin, Save, ArrowLeft, Search, Loader2, Navigation } from "lucide-react";
 import { toast } from "sonner";
-import { formatCep, fetchCep } from "@/lib/location";
+import { formatCep, fetchCep, readGps, reverseGeocode } from "@/lib/location";
 import { maskWhatsApp } from "@/lib/whatsapp";
 
 interface AddressModalProps {
@@ -25,6 +25,8 @@ const AddressModal = ({ onClose, onSaved }: AddressModalProps) => {
   const [phone, setPhone] = useState("");
   const [saving, setSaving] = useState(false);
   const [loadingCep, setLoadingCep] = useState(false);
+  const [loadingGps, setLoadingGps] = useState(false);
+  const [showGpsHint, setShowGpsHint] = useState(false);
 
   const { data: neighborhoodFees } = useQuery({
     queryKey: ["neighborhoods"],
@@ -60,8 +62,10 @@ const AddressModal = ({ onClose, onSaved }: AddressModalProps) => {
       if (result.complemento) setComplement(result.complemento);
       if (result.bairro) setNeighborhoodLocal(result.bairro);
       if (!result.logradouro && !result.bairro) {
-        toast.info("CEP genérico da cidade — preencha rua e bairro manualmente.");
+        setShowGpsHint(true);
+        toast.info("CEP genérico — use o GPS para preencher com precisão.");
       } else {
+        setShowGpsHint(false);
         toast.success("Endereço preenchido pelo CEP!");
       }
     } catch {
