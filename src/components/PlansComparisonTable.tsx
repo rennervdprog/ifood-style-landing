@@ -77,7 +77,7 @@ interface Props {
 }
 
 export default function PlansComparisonTable({
-  plans = ["commission_only", "hybrid", "fixed"],
+  plans = ["commission_only", "fixed", "autonomy"],
   className = "",
 }: Props) {
   const cols = plans.map((id) => PLANS[id]);
