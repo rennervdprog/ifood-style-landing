@@ -109,6 +109,30 @@ const CheckoutPage = () => {
   const storePlan = useStorePlan(storeId);
   const lastPaymentKey = user && storeId ? `last_payment_method:${user.id}:${storeId}` : null;
 
+  // 🔒 PIX Online só fica liberado quando a subconta Asaas da loja está
+  // 100% ativa (commercialInfo + bankAccount + document == APPROVED).
+  // Enquanto a ativação não completa, o método "pix" é ocultado do checkout.
+  const { data: asaasReady } = useQuery({
+    queryKey: ["asaas-ready-checkout", storeId],
+    queryFn: async () => {
+      if (!storeId) return false;
+      const { data, error } = await supabase.functions.invoke(
+        "get-asaas-subaccount-status",
+        { body: { store_id: storeId } },
+      );
+      if (error) return false;
+      const s: any = (data as any)?.status;
+      if (!s) return false;
+      return (
+        s.commercialInfo === "APPROVED" &&
+        s.bankAccount === "APPROVED" &&
+        s.document === "APPROVED"
+      );
+    },
+    enabled: !!storeId,
+    staleTime: 1000 * 60 * 5,
+  });
+
   // Filtrar métodos — storePaymentSettings declarado abaixo após storeData
   const paymentMethods = useMemo(() => {
     if (!storePlan.allowPix) {
@@ -146,13 +170,13 @@ const CheckoutPage = () => {
   // Re-declarar paymentMethods usando storePaymentSettings (agora declarado na ordem certa)
   const filteredPaymentMethods = useMemo(() => {
     return allPaymentMethods.filter(pm => {
-      if (pm.id === "pix")         return storePlan.allowPix && storePaymentSettings.accept_pix_online;
+      if (pm.id === "pix")         return storePlan.allowPix && storePaymentSettings.accept_pix_online && asaasReady === true;
       if (pm.id === "pix_machine") return storePaymentSettings.accept_pix_machine;
       if (pm.id === "cartao")      return storePaymentSettings.accept_card;
       if (pm.id === "dinheiro")    return storePaymentSettings.accept_cash;
       return true;
     });
-  }, [storePlan.allowPix, storePaymentSettings]);
+  }, [storePlan.allowPix, storePaymentSettings, asaasReady]);
 
   // Smart default: lembra a última forma de pagamento usada pelo usuário nesta loja
   useEffect(() => {
