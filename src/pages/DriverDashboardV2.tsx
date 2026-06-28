@@ -4,13 +4,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Bike, Store, Check, X, MapPin, Clock, ShieldCheck, RefreshCw, MessageCircle, LogOut, Headphones, Smartphone } from "lucide-react";
+import { Bike, Store, Check, X, MapPin, Clock, ShieldCheck, RefreshCw, MessageCircle, LogOut, Headphones, Smartphone, User as UserIcon, Package } from "lucide-react";
 import SupportTicketModal from "@/components/SupportTicketModal";
 import { toast } from "sonner";
 import StoreDriverView from "@/components/StoreDriverView";
 import DriverPersistentAlert from "@/components/DriverPersistentAlert";
 import SignOutConfirm from "@/components/SignOutConfirm";
 import { haptic } from "@/lib/haptics";
+import NativeShell from "@/components/native/NativeShell";
+import NativeBottomTabs, { type NativeTab } from "@/components/native/NativeBottomTabs";
+import { useRuntime } from "@/lib/runtime";
 
 /**
  * DriverDashboard V2 — exclusivo para Motoboy de Loja.
@@ -29,6 +32,8 @@ const DriverDashboardV2 = () => {
   const queryClient = useQueryClient();
   const [acceptingInvite, setAcceptingInvite] = useState<string | null>(null);
   const [showSupport, setShowSupport] = useState(false);
+  const { isPartnerNative } = useRuntime();
+  const [activeTab, setActiveTab] = useState<"orders" | "support" | "profile">("orders");
 
   const { data: driverProfile } = useQuery({
     queryKey: ["v2-driver-profile", user?.id],
@@ -316,7 +321,24 @@ const DriverDashboardV2 = () => {
   // Motoboy de loja com vínculo aceito → render direto
   const driverFirstName = (driverProfile as any)?.full_name?.split(" ")[0] || "Entregador";
 
-  return (
+  const tabs: NativeTab[] = [
+    { key: "orders", label: "Pedidos", icon: <Package className="h-5 w-5" strokeWidth={2.2} /> },
+    { key: "support", label: "Suporte", icon: <Headphones className="h-5 w-5" strokeWidth={2.2} /> },
+    { key: "profile", label: "Perfil", icon: <UserIcon className="h-5 w-5" strokeWidth={2.2} /> },
+  ];
+
+  const handleTabChange = (key: string) => {
+    if (key === "support") {
+      setShowSupport(true);
+      return;
+    }
+    setActiveTab(key as typeof activeTab);
+    if (key === "orders") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
+
+  const mainContent = (
     <>
       {driverProfile && (
         <SupportTicketModal
@@ -326,7 +348,7 @@ const DriverDashboardV2 = () => {
         />
       )}
       <DriverPersistentAlert availableCount={0} hasActiveDelivery={false} isOnline onReview={() => {}} />
-      <div className="min-h-screen bg-background text-foreground pb-[5.5rem] native-app">
+      <div className={`min-h-screen bg-background text-foreground native-app ${isPartnerNative ? "" : "pb-[5.5rem]"}`}>
         <header className="sticky top-0 z-50 md3-appbar pt-safe">
           <div className="px-4 h-16 flex items-center justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -347,7 +369,7 @@ const DriverDashboardV2 = () => {
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2 shrink-0">
+            {!isPartnerNative && <div className="flex items-center gap-2 shrink-0">
               <button
                 onClick={() => { haptic.light(); setShowSupport(true); }}
                 aria-label="Suporte"
@@ -361,14 +383,49 @@ const DriverDashboardV2 = () => {
               >
                 <LogOut className="h-[18px] w-[18px] text-foreground" strokeWidth={2.2} />
               </SignOutConfirm>
-            </div>
+            </div>}
           </div>
         </header>
 
-        <StoreDriverView linkedStoreIds={linkedStoreIds} />
+        {(!isPartnerNative || activeTab === "orders") && (
+          <StoreDriverView linkedStoreIds={linkedStoreIds} />
+        )}
+        {isPartnerNative && activeTab === "profile" && (
+          <div className="px-5 py-8 space-y-4 max-w-md mx-auto">
+            <div className="bg-card rounded-2xl border border-border/60 p-5 flex items-center gap-4">
+              <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center">
+                <span className="text-lg font-black text-primary-foreground">
+                  {(driverFirstName || "E").trim().charAt(0).toUpperCase()}
+                </span>
+              </div>
+              <div className="min-w-0">
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Entregador</p>
+                <p className="text-base font-black text-foreground truncate">{(driverProfile as any)?.full_name || driverFirstName}</p>
+              </div>
+            </div>
+            <SignOutConfirm
+              redirectTo="/portal-parceiro"
+              triggerClassName="w-full h-14 rounded-2xl bg-destructive/10 text-destructive font-black flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
+            >
+              <LogOut className="h-5 w-5" strokeWidth={2.5} />
+              Sair da conta
+            </SignOutConfirm>
+          </div>
+        )}
       </div>
     </>
   );
+
+  if (isPartnerNative) {
+    return (
+      <NativeShell withBottomTabs>
+        {mainContent}
+        <NativeBottomTabs tabs={tabs} activeKey={activeTab} onChange={handleTabChange} />
+      </NativeShell>
+    );
+  }
+
+  return mainContent;
 };
 
 export default DriverDashboardV2;
