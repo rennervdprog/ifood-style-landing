@@ -48,7 +48,11 @@ export default defineConfig(({ mode }) => ({
       template: "treemap",
     }),
     VitePWA({
-      registerType: "autoUpdate",
+      // "prompt" em vez de "autoUpdate" para NÃO recarregar a página sozinho
+      // quando há nova versão (evita perder o que o cliente está montando num
+      // modal de produto / checkout). A atualização é aplicada no próximo
+      // refresh natural do usuário.
+      registerType: "prompt",
       injectRegister: null,
       filename: "sw.js",
       devOptions: { enabled: false },
@@ -70,8 +74,11 @@ export default defineConfig(({ mode }) => ({
           /^\/functions\//,
         ],
         cleanupOutdatedCaches: true,
-        skipWaiting: true,
-        clientsClaim: true,
+        // Não pular o waiting nem reivindicar clientes: o SW novo só assume
+        // após o usuário fechar/abrir a aba (ou aceitar o prompt manual),
+        // evitando reload no meio de um pedido.
+        skipWaiting: false,
+        clientsClaim: false,
         runtimeCaching: [
           {
             // Cardápio bootstrap servido pela Edge da Vercel
