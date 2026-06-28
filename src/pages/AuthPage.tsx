@@ -124,7 +124,6 @@ const AuthPage = () => {
         return;
       }
       if (fullName.trim().length < 3) { toast.error("Informe seu nome completo."); return; }
-      if (!validateDocument(cpf)) { toast.error("CPF ou CNPJ inválido."); return; }
       if (!/^\d{4}$/.test(deliveryPin)) { toast.error("Defina um PIN de entrega com 4 dígitos numéricos."); return; }
       if (deliveryPin !== confirmPin) { toast.error("Os PINs informados não coincidem."); return; }
       if (!pinAcknowledged) { toast.error("Confirme que este PIN será usado em todas as suas entregas."); return; }
@@ -275,7 +274,6 @@ const AuthPage = () => {
               role: "cliente",
               whatsapp: whatsDigits,
               full_name: fullName.trim(),
-              document: sanitizeDocument(cpf),
               delivery_pin: deliveryPin,
             },
           },
@@ -292,7 +290,6 @@ const AuthPage = () => {
             terms_accepted_at: new Date().toISOString(),
             whatsapp_number: whatsDigits,
             full_name: fullName.trim(),
-            document: sanitizeDocument(cpf),
             delivery_pin: deliveryPin,
           }).eq("user_id", signUpData.user.id);
           await supabase.from("saved_addresses").insert({
@@ -453,21 +450,6 @@ const AuthPage = () => {
                     onChange={(e) => setFullName(e.target.value)}
                     maxLength={80}
                     autoComplete="name"
-                    className={inputClass}
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="text-xs font-semibold text-slate-500 tracking-wide mb-1.5 block">CPF ou CNPJ</label>
-                <div className="relative">
-                  <FileText className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    placeholder="CPF ou CNPJ"
-                    value={cpf}
-                    onChange={(e) => setCpf(formatDocument(e.target.value))}
-                    maxLength={18}
                     className={inputClass}
                   />
                 </div>
