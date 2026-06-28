@@ -1,53 +1,99 @@
-## Objetivo
+## Plano para fazer o `- 1 +` funcionar corretamente nos adicionais
 
-Permitir que adicionais "comuns" tenham um stepper **− 1 +** (quantidade > 1 por linha), sem quebrar os fluxos especiais (Pizza meio/meio, Pastel builder, sabores, bordas, escolha única tipo "tamanho").
+### Problema atual
+Na imagem, a Coca está selecionada com quantidade 3 e a linha mostra `+ R$ 27,00`, mas o botão final continua `Adicionar • R$ 9,00`.
 
-## Onde mexer
+Isso indica que a interface já multiplica visualmente o adicional, mas o cálculo final usado pelo botão/carrinho ainda está caindo em uma dessas situações:
 
-Apenas no fluxo do `ProductDetailModal.tsx` (modal padrão do cliente). Pizza (`PizzaHalfHalfModal`) e Pastel (`PastelBuilderModal`) **não entram nesta mudança** — eles têm UI própria de seleção de sabores e não usam o stepper de addon.
+1. O grupo está marcado como `price_replaces_base`, então o preço base é substituído, mas o total final não está sincronizado com a quantidade do item selecionado.
+2. O produto base tem preço zerado ou substituível, e o cálculo do botão está usando apenas uma unidade.
+3. O carrinho recebe addons repetidos, mas o `totalUnitPrice` enviado ainda não representa a soma real dos addons escolhidos.
 
-## Regra de quando exibir o stepper
+### Correção proposta
 
-Um grupo de addon mostra **− qty +** por item somente se TODAS as condições baixo forem verdadeiras:
+#### 1. Criar um cálculo único e auditável para adicionais
+Em `ProductDetailModal.tsx`, trocar os cálculos soltos por um resumo único:
 
-1. `max_select > 1` (grupo permite mais de uma escolha no total).
-2. Grupo **não é** de tamanho/sabor/borda (heurística: nome do grupo não bate `/tamanho|sabor|borda|meio/i` e produto não é pizza/pastel).
-3. `price_replaces_base` é falso (grupos que substituem preço base = escolha única, sempre qty 1).
+```text
+selectedAddonRows = [
+  grupo,
+  item,
+  quantidade,
+  preço unitário,
+  total da linha,
+  se substitui preço base
+]
+```
 
-Se qualquer condição falhar → comportamento atual (checkbox/radio, qty implícita = 1). Isso preserva 100% dos casos hoje funcionando.
+A partir disso calcular:
 
-## Comportamento do stepper
+```text
+replacementTotal = soma dos adicionais que substituem o preço base
+normalAddonsTotal = soma dos adicionais normais
+unitPrice = preço base correto + normalAddonsTotal
+lineTotal = unitPrice * quantidade do produto
+```
 
-- Default qty = 0 (não selecionado). Clicar `+` pela 1ª vez = seleciona com qty 1.
-- Soma de quantidades do grupo respeita `max_select` (`+` desabilita ao atingir o teto).
-- `min_select` valida soma total (não nº de itens distintos).
-- `−` em qty 1 remove o item da seleção.
+#### 2. Regra para `price_replaces_base`
+Quando o grupo for “define valor final”, o item selecionado passa a ser o preço do produto configurado.
 
-## Impacto em estruturas de dados
+Exemplo correto:
 
-- `CartAddon` ganha campo opcional `quantity?: number` (default 1, retrocompatível).
-- Ao montar `addons[]` para `onAdd`, expandir/colapsar:
-  - **Opção A (escolhida):** repetir o addon N vezes no array (`[{name:"Coca",price:9}, {name:"Coca",price:9}]`). Zero impacto em: cálculo de preço (`reduce sum`), chave de carrinho (`addonKeyOf`/`generateCartKey`), thermal print, KDS, pedidos. **Não precisa migração nem alterar tipos compartilhados.**
-- Chave de agrupamento do carrinho (`addonKeyOf` no PDV e `generateCartKey` no Cart) já ordena por nome → mesmo conjunto qty=2 agrupa corretamente.
+```text
+Coca zero R$ 9,00 x 3
+Botão: Adicionar • R$ 27,00
+Carrinho: item com preço unitário R$ 27,00 se a quantidade principal for 1
+```
 
-## Itens fora do escopo (não tocar)
+Se o cliente também aumentar a quantidade principal do produto para 2:
 
-- `PizzaHalfHalfModal.tsx` — fluxo de meio/meio intocado.
-- `PastelBuilderModal.tsx` — fluxo de sabores intocado.
-- Admin/AddonManager — sem mudança de schema.
-- Thermal print / KDS / PDV — funcionam por repetição (Opção A).
+```text
+3 Cocas no adicional x quantidade 2 do produto
+Botão: Adicionar • R$ 54,00
+```
 
-## Validação
+#### 3. Manter compatibilidade com carrinho, checkout, PDV e thermal
+Para não quebrar o sistema atual:
 
-- Testes manuais: bebida com qty 2, grupo required com min_select=2 (selecionar 1 item qty 2), tentar exceder `max_select`, abrir Pizza/Pastel para confirmar que UI deles continua igual.
-- Rodar `bun test` (cobre `CartContext`, `usePdvCart`, thermalPrint — devem permanecer verdes pois addons repetidos é comportamento já suportado).
+- Continuar repetindo os addons no array `CartAddon[]`, como já é feito hoje.
+- Enviar `totalUnitPrice` já consolidado para o carrinho.
+- Não mudar banco de dados.
+- Não mudar schema de pedido.
+- Não mexer em Pizza/Pastel builders.
+- Não alterar impressão térmica agora, porque ela já lê os addons repetidos.
 
-## Versão
+#### 4. Ajustar a UI para evitar confusão
+Na linha selecionada mostrar:
 
-Bump `1.10.309` (build 639) ao implementar.
+```text
+Coca zero        R$ 9,00 x 3 = R$ 27,00
+```
 
----
+Ou, em layout mobile compacto:
 
-Confirmar antes de implementar:
-1. OK manter Pizza/Pastel sem stepper?
-2. OK Opção A (repetir addon no array, sem mudar schema)?
+```text
+Coca zero
+R$ 9,00 x 3
+```
+
+O botão final sempre deve bater com o que aparece na seleção.
+
+#### 5. Validar casos principais
+Testar manualmente estes cenários:
+
+1. Bebida com `define valor final`, 1 unidade: botão `R$ 9,00`.
+2. Bebida com `define valor final`, 3 unidades: botão `R$ 27,00`.
+3. Bebida com `define valor final`, 3 unidades + quantidade principal 2: botão `R$ 54,00`.
+4. Adicional normal, exemplo bacon R$ 4 x 2, somar ao preço base.
+5. Grupo obrigatório `Escolha 1` continua validando como selecionado quando há quantidade maior que 1.
+6. Pizza e Pastel continuam sem mudança no fluxo.
+
+#### 6. Versão
+Após aplicar a correção:
+
+- Subir para `1.10.314`.
+- Incrementar `versionCode` Android para `644`.
+- Manter versão sincronizada no app.
+
+### Resultado esperado
+O `- 1 +` dos adicionais vai alterar visual, botão final, carrinho, checkout e impressão térmica de forma consistente, sem mexer em APIs internas nem quebrar Pizza/Pastel.
