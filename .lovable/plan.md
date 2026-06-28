@@ -1,99 +1,101 @@
-## Plano para fazer o `- 1 +` funcionar corretamente nos adicionais
+## Profissionalização do Blog ItaSuper
 
-### Problema atual
-Na imagem, a Coca está selecionada com quantidade 3 e a linha mostra `+ R$ 27,00`, mas o botão final continua `Adicionar • R$ 9,00`.
+Hoje o blog tem 2 arquivos (`BlogIndex.tsx` 319 linhas, `BlogPost.tsx` 422 linhas) consumindo `blog_posts` do Supabase, sem editor admin, sem SEO estruturado, sem categorias navegáveis, sem comentários, sem newsletter e sem analytics. O objetivo é transformá-lo em uma **fonte de autoridade do nicho (delivery, PDV, restaurante)** que traga lojistas organicamente.
 
-Isso indica que a interface já multiplica visualmente o adicional, mas o cálculo final usado pelo botão/carrinho ainda está caindo em uma dessas situações:
+---
 
-1. O grupo está marcado como `price_replaces_base`, então o preço base é substituído, mas o total final não está sincronizado com a quantidade do item selecionado.
-2. O produto base tem preço zerado ou substituível, e o cálculo do botão está usando apenas uma unidade.
-3. O carrinho recebe addons repetidos, mas o `totalUnitPrice` enviado ainda não representa a soma real dos addons escolhidos.
+### Fase 1 — Fundação SEO (alta prioridade)
 
-### Correção proposta
+Sem isso o blog não cresce no Google.
 
-#### 1. Criar um cálculo único e auditável para adicionais
-Em `ProductDetailModal.tsx`, trocar os cálculos soltos por um resumo único:
+- **Sitemap dinâmico** `/sitemap.xml` via Edge Function listando todos os posts publicados
+- **RSS feed** `/blog/rss.xml` (gera autoridade + indexação rápida)
+- **JSON-LD `Article`** em cada post (autor, data, imagem, organização)
+- **Breadcrumbs JSON-LD** (Home > Blog > Categoria > Post)
+- **Open Graph + Twitter Cards** dinâmicos por post
+- **Canonical URL** correto (resolve duplicação)
+- **robots.txt** liberando `/blog/*` e apontando para o sitemap
+- **Imagens em WebP** com `width`/`height` definidos (Core Web Vitals)
 
-```text
-selectedAddonRows = [
-  grupo,
-  item,
-  quantidade,
-  preço unitário,
-  total da linha,
-  se substitui preço base
-]
-```
+### Fase 2 — Editor Profissional para Lojista/Admin
 
-A partir disso calcular:
+Hoje só dá pra criar post direto no banco — barreira enorme.
 
-```text
-replacementTotal = soma dos adicionais que substituem o preço base
-normalAddonsTotal = soma dos adicionais normais
-unitPrice = preço base correto + normalAddonsTotal
-lineTotal = unitPrice * quantidade do produto
-```
+- Página `/admin/blog` com lista, busca, filtros (rascunho/publicado/agendado)
+- Editor rich text (TipTap) com: cabeçalhos, listas, imagens, links, código, citações, embeds (YouTube/Instagram)
+- **Upload de imagens** para Supabase Storage (bucket `blog-media`) com compressão automática (WebP, máx 1200px)
+- **Capa do post** com crop 16:9
+- Campos: título, slug auto-gerado, excerpt, categoria, tags, autor, tempo de leitura (auto), data de publicação (agendamento)
+- **Preview** antes de publicar
+- **Auto-save** a cada 10s
+- Validação de slug único (igual fizemos pra lojas)
 
-#### 2. Regra para `price_replaces_base`
-Quando o grupo for “define valor final”, o item selecionado passa a ser o preço do produto configurado.
+### Fase 3 — Navegação e Descoberta
 
-Exemplo correto:
+Transformar de "lista de posts" em "biblioteca navegável".
 
-```text
-Coca zero R$ 9,00 x 3
-Botão: Adicionar • R$ 27,00
-Carrinho: item com preço unitário R$ 27,00 se a quantidade principal for 1
-```
+- **Categorias** com páginas próprias `/blog/categoria/:slug` (Gestão, Marketing, Operação, Cases, Novidades)
+- **Tags** clicáveis com `/blog/tag/:slug`
+- **Posts relacionados** no final (mesmo categoria, ordenado por data)
+- **"Mais lidos da semana"** (precisa de contador de views)
+- **Newsletter inline** ("receba o melhor do blog")
+- **Paginação** real (não scroll infinito) — melhor pra SEO
+- **Busca melhorada** com Fuse.js já presente, mas indexando tags+categoria
 
-Se o cliente também aumentar a quantidade principal do produto para 2:
+### Fase 4 — Engajamento e Conversão
 
-```text
-3 Cocas no adicional x quantidade 2 do produto
-Botão: Adicionar • R$ 54,00
-```
+O blog precisa **gerar cadastros de lojista**.
 
-#### 3. Manter compatibilidade com carrinho, checkout, PDV e thermal
-Para não quebrar o sistema atual:
+- **CTA inteligente** no meio e fim do post: "Crie sua loja grátis" → `/cadastro-lojista`
+- **Banner de plano** contextual (post sobre PDV → mostra plano Autonomia)
+- **Tempo de leitura** real (já existe campo, validar)
+- **Barra de progresso** de leitura no topo
+- **Compartilhamento social** (WhatsApp, X, LinkedIn, copiar link)
+- **Newsletter** com double opt-in (tabela `newsletter_subscribers`, Edge Function envio via Resend)
+- **Comentários** opcionais via Disqus ou tabela própria moderada
 
-- Continuar repetindo os addons no array `CartAddon[]`, como já é feito hoje.
-- Enviar `totalUnitPrice` já consolidado para o carrinho.
-- Não mudar banco de dados.
-- Não mudar schema de pedido.
-- Não mexer em Pizza/Pastel builders.
-- Não alterar impressão térmica agora, porque ela já lê os addons repetidos.
+### Fase 5 — Performance e Imagens
 
-#### 4. Ajustar a UI para evitar confusão
-Na linha selecionada mostrar:
+- **Lazy-load** de imagens abaixo da dobra (`loading="lazy"`)
+- **LCP preload** da capa do post
+- **Code split**: editor TipTap só carrega em `/admin/blog`
+- **Cache Edge** nas listagens (`Cache-Control: s-maxage=300`)
+- **Skeleton loaders** em vez de spinners
+- Migrar imagens existentes para WebP no Storage
 
-```text
-Coca zero        R$ 9,00 x 3 = R$ 27,00
-```
+### Fase 6 — Analytics e Autoridade
 
-Ou, em layout mobile compacto:
+- Tabela `blog_post_views` com IP hash + user_agent (LGPD-safe)
+- Dashboard admin: top posts, tempo médio, taxa de conversão para cadastro
+- **UTM tracking** nos CTAs (saber qual post converte mais lojista)
+- **Schema `Organization`** + `Person` (autor) — autoridade Google
+- **Backlinks internos** automáticos (link de "PDV" sempre aponta para post âncora)
+- Submeter sitemap ao Google Search Console + Bing Webmaster
 
-```text
-Coca zero
-R$ 9,00 x 3
-```
+---
 
-O botão final sempre deve bater com o que aparece na seleção.
+### Estratégia de execução
 
-#### 5. Validar casos principais
-Testar manualmente estes cenários:
+"Trocar o pneu com o carro andando" — `BlogIndex.tsx` e `BlogPost.tsx` continuam funcionando enquanto refatoramos.
 
-1. Bebida com `define valor final`, 1 unidade: botão `R$ 9,00`.
-2. Bebida com `define valor final`, 3 unidades: botão `R$ 27,00`.
-3. Bebida com `define valor final`, 3 unidades + quantidade principal 2: botão `R$ 54,00`.
-4. Adicional normal, exemplo bacon R$ 4 x 2, somar ao preço base.
-5. Grupo obrigatório `Escolha 1` continua validando como selecionado quando há quantidade maior que 1.
-6. Pizza e Pastel continuam sem mudança no fluxo.
+**Ordem sugerida:** Fase 1 (SEO, ganho imediato sem mexer em UI) → Fase 2 (editor, destrava produção de conteúdo) → Fase 3 → resto conforme demanda.
 
-#### 6. Versão
-Após aplicar a correção:
+### Detalhes técnicos
 
-- Subir para `1.10.314`.
-- Incrementar `versionCode` Android para `644`.
-- Manter versão sincronizada no app.
+- Banco: adicionar colunas `view_count`, `meta_description`, `meta_keywords`, `scheduled_at`, `author_id` (FK profiles), `updated_at` em `blog_posts`
+- Nova tabela: `blog_categories` (slug, nome, descrição, cor)
+- Nova tabela: `newsletter_subscribers` (email, confirmed_at, unsubscribe_token)
+- Nova tabela: `blog_post_views` (post_id, viewed_at, ip_hash)
+- Bucket Storage: `blog-media` (público, 5MB max, WebP/JPG/PNG)
+- Edge Functions: `sitemap-blog`, `rss-blog`, `newsletter-subscribe`, `newsletter-confirm`
+- Lib nova: `src/lib/blogSchema.ts` (geradores JSON-LD)
+- RLS: leitura pública para `published=true`; escrita só super_admin
 
-### Resultado esperado
-O `- 1 +` dos adicionais vai alterar visual, botão final, carrinho, checkout e impressão térmica de forma consistente, sem mexer em APIs internas nem quebrar Pizza/Pastel.
+---
+
+### Perguntas
+
+1. **Quem vai escrever?** Só você (super admin) ou lojistas também publicam?
+2. **Newsletter:** usar Resend (já no projeto?) ou Mailchimp/Brevo?
+3. **Comentários:** ativar agora ou deixar pra depois?
+4. **Por onde começar:** Fase 1 (SEO) ou Fase 2 (editor) primeiro?
