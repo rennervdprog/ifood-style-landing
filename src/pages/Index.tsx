@@ -184,7 +184,7 @@ const Index = () => {
       const lng = (store as any).longitude;
       const distanceKm =
         userLocation.coords && typeof lat === "number" && typeof lng === "number"
-          ? haversineDistanceMeters(userLocation.coords, { lat, lng }) / 1000
+          ? haversineMeters(userLocation.coords, { lat, lng }) / 1000
           : null;
       return { ...store, computedOpen: status.isOpen, statusReason: status.reason, distanceKm };
     });

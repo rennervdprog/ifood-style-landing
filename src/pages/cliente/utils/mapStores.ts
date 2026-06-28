@@ -16,7 +16,7 @@ export const mapStoresWithHours = (
       const lng = store.longitude;
       const distanceKm =
         userCoords && typeof lat === "number" && typeof lng === "number"
-          ? haversineDistanceMeters(userCoords, { lat, lng }) / 1000
+          ? haversineMeters(userCoords, { lat, lng }) / 1000
           : null;
       return { ...store, realIsOpen: status.isOpen, statusReason: status.reason, distanceKm };
     })
