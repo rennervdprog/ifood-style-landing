@@ -304,6 +304,8 @@ type PizzaPriceMode = "maior" | "media" | "soma";
         accept_pix_machine: acceptPixMachine,
         accept_card:        acceptCard,
         accept_cash:        acceptCash,
+        // Quantidade de vias da impressão térmica (1 = só cliente, 2 = cozinha + cliente)
+        print_copies: printCopies,
       },
       delivery_mode: deliveryMode,
       own_delivery_fee: parseFloat(ownDeliveryFee.toString().replace(",", ".")) || 0,
