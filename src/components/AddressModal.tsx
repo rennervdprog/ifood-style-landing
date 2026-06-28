@@ -58,10 +58,12 @@ const AddressModal = ({ onClose, onSaved }: AddressModalProps) => {
       }
       setStreet(result.logradouro || "");
       if (result.complemento) setComplement(result.complemento);
-      if (result.bairro) {
-        setNeighborhoodLocal(result.bairro);
+      if (result.bairro) setNeighborhoodLocal(result.bairro);
+      if (!result.logradouro && !result.bairro) {
+        toast.info("CEP genérico da cidade — preencha rua e bairro manualmente.");
+      } else {
+        toast.success("Endereço preenchido pelo CEP!");
       }
-      toast.success("Endereço preenchido pelo CEP!");
     } catch {
       toast.error("Erro ao buscar CEP.");
     } finally {
@@ -157,10 +159,10 @@ const AddressModal = ({ onClose, onSaved }: AddressModalProps) => {
           
           {/* Bairro auto-preenchido pelo CEP */}
           <div>
-            <label className="text-xs font-bold text-muted-foreground mb-1 block">Bairro (preenchido pelo CEP)</label>
+            <label className="text-xs font-bold text-muted-foreground mb-1 block">Bairro</label>
             <input
               type="text"
-              placeholder="Digite o CEP acima para preencher"
+              placeholder="Digite seu bairro"
               value={neighborhood}
               onChange={(e) => setNeighborhoodLocal(e.target.value)}
               className="w-full px-3 py-2.5 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
