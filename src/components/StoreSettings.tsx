@@ -323,6 +323,29 @@ type PizzaPriceMode = "maior" | "media" | "soma";
 
     console.log("[DEBUG] Salvando configurações da loja:", { storeId, updateData });
 
+    // Geocoda endereço para gravar latitude/longitude (não-bloqueante).
+    try {
+      const resolved = await resolveAddress({
+        prefer: "address",
+        fallback: ["cep"],
+        address: {
+          street: addressStreet.trim() || null,
+          number: addressNumber.trim() || null,
+          neighborhood: addressNeighborhood.trim() || null,
+          city: addressCity.trim() || "Itatinga",
+          state: addressState.trim() || "SP",
+          postalcode: addressCep.replace(/\D/g, "") || null,
+          country: "Brasil",
+        },
+      });
+      if (resolved.coords) {
+        (updateData as any).latitude = resolved.coords.lat;
+        (updateData as any).longitude = resolved.coords.lng;
+      }
+    } catch (e) {
+      console.warn("[StoreSettings] geocode falhou:", e);
+    }
+
     const { error: storeError } = await supabase
       .from("stores")
       .update(updateData as any)
