@@ -56,7 +56,7 @@ import { getStoreOpenStatus, type OpeningHour } from "@/lib/storeStatus";
 import ProductTour, { clienteTourSteps } from "@/components/ProductTour";
 import { useNavigate } from "react-router-dom";
 import { useUserLocation } from "@/hooks/useUserLocation";
-import { haversineDistanceMeters } from "@/lib/addressGeocoding";
+import { haversineMeters } from "@/lib/location";
 
 /* ─── hooks ─── */
 function useCountUp(end: number, duration = 2000, start = false) {

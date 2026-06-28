@@ -1,5 +1,5 @@
 import { getStoreOpenStatus, type OpeningHour } from "@/lib/storeStatus";
-import { haversineDistanceMeters } from "@/lib/addressGeocoding";
+import { haversineMeters } from "@/lib/location";
 
 export const mapStoresWithHours = (
   stores: any[],

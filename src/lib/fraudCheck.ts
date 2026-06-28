@@ -3,8 +3,7 @@
  * Bloqueia pedidos quando o cliente (GPS) está muito distante da loja.
  */
 import { supabase } from "@/integrations/supabase/client";
-import { getDeviceGPS } from "@/lib/deviceLocation";
-import { haversineDistanceMeters, type Coordinates } from "@/lib/addressGeocoding";
+import { readGps, haversineMeters, type Coordinates } from "@/lib/location";
 
 export const MAX_DISTANCE_KM = 50;
 
@@ -66,7 +65,7 @@ export async function checkStoreAccess(params: FraudCheckParams): Promise<FraudC
   }
 
   // 1. Tentar obter coordenadas: prioridade = deliveryCoords (endereço geocodificado) > GPS
-  const clientCoords = deliveryCoords || (await getDeviceGPS());
+  const clientCoords = deliveryCoords || (await readGps()).coords;
 
   // 2. Validação por cidade — funciona SEM GPS
   // Se o endereço de entrega é em cidade diferente da loja → bloquear diretamente
@@ -88,7 +87,7 @@ export async function checkStoreAccess(params: FraudCheckParams): Promise<FraudC
     return result;
   }
 
-  const distanceKm = haversineDistanceMeters(clientCoords, { lat: storeLat, lng: storeLng }) / 1000;
+  const distanceKm = haversineMeters(clientCoords, { lat: storeLat, lng: storeLng }) / 1000;
 
   let reason: string | null = null;
   let allowed = true;
