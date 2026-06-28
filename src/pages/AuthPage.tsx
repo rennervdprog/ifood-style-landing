@@ -123,6 +123,17 @@ const AuthPage = () => {
         toast.error("Crie uma senha.");
         return;
       }
+      if (fullName.trim().length < 3) { toast.error("Informe seu nome completo."); return; }
+      if (!validateDocument(cpf)) { toast.error("CPF ou CNPJ inválido."); return; }
+      if (!/^\d{4}$/.test(deliveryPin)) { toast.error("Defina um PIN de entrega com 4 dígitos numéricos."); return; }
+      if (deliveryPin !== confirmPin) { toast.error("Os PINs informados não coincidem."); return; }
+      if (!pinAcknowledged) { toast.error("Confirme que este PIN será usado em todas as suas entregas."); return; }
+      const cepDigits = cep.replace(/\D/g, "");
+      if (cepDigits.length !== 8) { toast.error("CEP inválido."); return; }
+      if (!street.trim() || !number.trim() || !neighborhood.trim()) {
+        toast.error("Preencha rua, número e bairro do endereço.");
+        return;
+      }
     }
     if (mode === "signup" && !acceptedTerms) {
       toast.error("Você precisa aceitar os Termos de Uso e Política de Privacidade.");
