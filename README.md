@@ -43,9 +43,9 @@ A plataforma oferece 3 modalidades para lojistas:
 
 | Plano       | Mensalidade | Comissão por pedido | Taxa fixa de entrega |
 |-------------|-------------|---------------------|----------------------|
-| Essencial   | R$ 180/mês  | 0%                  | R$ 2,00              |
-| Crescimento | R$ 100/mês  | 2,5% do subtotal    | R$ 2,00              |
+| Essencial   | R$ 90/mês   | 0%                  | R$ 2,00              |
 | Comissão    | R$ 0/mês    | 6% do subtotal      | R$ 2,00              |
+| Autonomia   | R$ 229,90/mês | 0%                | Sem acréscimo da plataforma |
 
 A taxa de R$ 2,00 da plataforma é sempre adicionada à taxa de entrega do lojista e cobrada do cliente.
 
