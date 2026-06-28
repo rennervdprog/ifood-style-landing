@@ -749,6 +749,23 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
   const departForDelivery = async (orderId: string) => {
     haptic.medium();
     setDepartingId(orderId);
+    // Arma o geofence de chegada (50m) para abrir o card de PIN
+    // automaticamente quando o motoboy chegar.
+    const order = (filteredDeliveries || []).find((o: any) => o.id === orderId);
+    if (order?.client_lat && order?.client_lng) {
+      startArrivalWatch(
+        { orderId, lat: Number(order.client_lat), lng: Number(order.client_lng), radiusM: 50 },
+        (oid) => {
+          haptic.heavy();
+          setArrivedOrderId(oid);
+          setExpandedOrder(oid);
+          toast.success("📍 Chegou ao cliente! Peça o PIN de 4 dígitos.", { duration: 8000 });
+          setTimeout(() => {
+            document.getElementById(`stop-${oid}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+          }, 250);
+        },
+      );
+    }
     // Optimistic UI: update status in cache immediately
     const myKey = ["store-driver-my-deliveries", user?.id];
     const previousMy = queryClient.getQueryData<any[]>(myKey);
