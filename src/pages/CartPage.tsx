@@ -6,10 +6,30 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { getStoreOpenStatus, type OpeningHour } from "@/lib/storeStatus";
 import BottomNav from "@/components/BottomNav";
+import { useAuth } from "@/contexts/AuthContext";
+import { useEffect } from "react";
 
 const CartPage = () => {
   const { items, neighborhood, neighborhoodFee, subtotal, total, updateQuantity, removeItem, clearCart } = useCart();
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  // Pré-carrega o chunk da próxima tela (auth ou checkout) para evitar tela branca de ~5s
+  useEffect(() => {
+    if (user) {
+      import("./CheckoutPage");
+    } else {
+      import("./AuthPage");
+    }
+  }, [user]);
+
+  const handleFinalize = () => {
+    if (!user) {
+      navigate("/auth", { state: { from: "/checkout" } });
+    } else {
+      navigate("/checkout");
+    }
+  };
 
   const storeId = items[0]?.store_id;
 
@@ -233,7 +253,7 @@ const CartPage = () => {
             </button>
           ) : (
             <button
-              onClick={() => navigate("/checkout")}
+              onClick={handleFinalize}
               className="w-full bg-primary text-primary-foreground font-bold py-4 rounded-2xl active:scale-[0.98] transition-all shadow-lg shadow-primary/25 text-base flex items-center justify-center gap-2"
             >
               Finalizar pedido
