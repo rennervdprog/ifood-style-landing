@@ -107,7 +107,7 @@ const faqs = [
   { q: "Quanto tempo leva para começar a vender?", a: "Após o cadastro, sua loja pode estar ativa em menos de 24 horas. Basta montar seu cardápio e começar a receber pedidos." },
   { q: "Preciso de computador para gerenciar?", a: "Não! Tudo funciona perfeitamente pelo celular. O painel é 100% responsivo e otimizado para mobile." },
   { q: "Posso trocar de plano depois?", a: "Sim! Você pode mudar de plano a qualquer momento, sem multa ou fidelidade. Basta solicitar pelo painel." },
-  { q: "Como funciona o período de teste?", a: "Nos planos pagos (Essencial e Crescimento), você ganha 7 dias grátis para testar tudo. O plano Comissão já é gratuito — sem mensalidade!" },
+  { q: "Como funciona o período de teste?", a: "No plano Essencial você ganha 7 dias grátis para testar tudo. O plano Comissão já é gratuito — sem mensalidade!" },
   { q: "Como faço para receber meus pagamentos?", a: "Os pagamentos via PIX são depositados diretamente na sua conta. Para pedidos em dinheiro/cartão, o repasse é semanal." },
 ];
 
