@@ -3,9 +3,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
-import { MapPin, Save, ArrowLeft, Search, Loader2 } from "lucide-react";
+import { MapPin, Save, ArrowLeft, Search, Loader2, Navigation } from "lucide-react";
 import { toast } from "sonner";
-import { formatCep, fetchCep } from "@/lib/location";
+import { formatCep, fetchCep, readGps, reverseGeocode } from "@/lib/location";
 import { maskWhatsApp } from "@/lib/whatsapp";
 
 interface AddressModalProps {
@@ -25,6 +25,8 @@ const AddressModal = ({ onClose, onSaved }: AddressModalProps) => {
   const [phone, setPhone] = useState("");
   const [saving, setSaving] = useState(false);
   const [loadingCep, setLoadingCep] = useState(false);
+  const [loadingGps, setLoadingGps] = useState(false);
+  const [showGpsHint, setShowGpsHint] = useState(false);
 
   const { data: neighborhoodFees } = useQuery({
     queryKey: ["neighborhoods"],
@@ -60,14 +62,42 @@ const AddressModal = ({ onClose, onSaved }: AddressModalProps) => {
       if (result.complemento) setComplement(result.complemento);
       if (result.bairro) setNeighborhoodLocal(result.bairro);
       if (!result.logradouro && !result.bairro) {
-        toast.info("CEP genérico da cidade — preencha rua e bairro manualmente.");
+        setShowGpsHint(true);
+        toast.info("CEP genérico — use o GPS para preencher com precisão.");
       } else {
+        setShowGpsHint(false);
         toast.success("Endereço preenchido pelo CEP!");
       }
     } catch {
       toast.error("Erro ao buscar CEP.");
     } finally {
       setLoadingCep(false);
+    }
+  };
+
+  const handleUseGps = async () => {
+    setLoadingGps(true);
+    try {
+      const gps = await readGps({ forceFresh: true });
+      if (!gps?.coords) {
+        toast.error("Não foi possível obter a localização. Verifique a permissão de GPS.");
+        return;
+      }
+      const rev = await reverseGeocode(gps.coords);
+      if (!rev) {
+        toast.error("Localização obtida, mas não foi possível identificar o endereço.");
+        return;
+      }
+      if (rev.street) setStreet(rev.street);
+      if (rev.number) setNumber(String(rev.number));
+      if (rev.neighborhood) setNeighborhoodLocal(rev.neighborhood);
+      if (rev.postalcode && !cep) setCep(formatCep(rev.postalcode));
+      setShowGpsHint(false);
+      toast.success("Endereço preenchido pelo GPS! Confira e ajuste se necessário.");
+    } catch (err: any) {
+      toast.error(err?.message || "Falha ao usar GPS.");
+    } finally {
+      setLoadingGps(false);
     }
   };
 
@@ -144,6 +174,23 @@ const AddressModal = ({ onClose, onSaved }: AddressModalProps) => {
               {loadingCep ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
             </button>
           </div>
+
+          {showGpsHint && (
+            <div className="rounded-xl border border-primary/30 bg-primary/5 p-3 space-y-2">
+              <p className="text-xs text-foreground/80">
+                Este CEP é genérico da cidade. Use o GPS para preencher rua e bairro com precisão.
+              </p>
+              <button
+                type="button"
+                onClick={handleUseGps}
+                disabled={loadingGps}
+                className="w-full flex items-center justify-center gap-2 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-bold disabled:opacity-50"
+              >
+                {loadingGps ? <Loader2 className="h-4 w-4 animate-spin" /> : <Navigation className="h-4 w-4" />}
+                {loadingGps ? "Obtendo localização..." : "Usar minha localização (GPS)"}
+              </button>
+            </div>
+          )}
 
           <div className="grid grid-cols-3 gap-2">
             <div className="col-span-2">
