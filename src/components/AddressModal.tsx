@@ -76,6 +76,7 @@ const AddressModal = ({ onClose, onSaved }: AddressModalProps) => {
   };
 
   const handleSave = async () => {
+    void 0;
     if (!street.trim() || !number.trim() || !neighborhood.trim()) {
       toast.error("Preencha rua, número e bairro (use o CEP).");
       return;
