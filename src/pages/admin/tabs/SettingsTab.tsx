@@ -171,6 +171,7 @@ const SettingsTab = ({ store }: Props) => {
       storeDeliveryFeeBase={store.delivery_fee_base || 0}
       storeDeliveryFeePerKm={store.delivery_fee_per_km || 0}
       storeMinimumOrderValue={store.minimum_order_value || 0}
+      storeEstimatedDeliveryTime={store.estimated_delivery_time || null}
       storeSettings={store.settings || null} 
     />
     )}
