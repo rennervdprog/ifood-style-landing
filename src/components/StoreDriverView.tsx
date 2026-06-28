@@ -53,7 +53,18 @@ import {
 
 
 /* ── Helpers ── */
-import { buildWazeUrl, buildGoogleMapsUrl, type NavTarget } from "@/lib/navUrls";
+import {
+  buildWazeUrl,
+  buildGoogleMapsUrl,
+  buildGoogleMapsMultiStopUrl,
+  buildPreferredNavUrl,
+  getPreferredNavigator,
+  setPreferredNavigator,
+  type NavApp,
+  type NavTarget,
+} from "@/lib/navUrls";
+import { optimizeRouteOsrm } from "@/lib/osrmRouting";
+import { startArrivalWatch, stopArrivalWatch } from "@/lib/arrivalGeofence";
 
 const NavigationLinks = ({ target }: { target: NavTarget }) => {
   return (
@@ -239,6 +250,15 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
   const [activeStoreId, setActiveStoreId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"routes" | "earnings" | "history">("routes");
   const [declinedMap, setDeclinedMap] = useState<Record<string, number>>(() => user ? loadDeclined(user.id) : {});
+  const [navApp, setNavApp] = useState<NavApp>(() => getPreferredNavigator());
+  const [osrmOrder, setOsrmOrder] = useState<Record<string, number>>({}); // orderId -> posição otimizada
+  const [osrmStats, setOsrmStats] = useState<{ km: number; min: number } | null>(null);
+  const [arrivedOrderId, setArrivedOrderId] = useState<string | null>(null);
+
+  const chooseNavApp = useCallback((app: NavApp) => {
+    setNavApp(app);
+    setPreferredNavigator(app);
+  }, []);
 
   const multiStore = linkedStoreIds.length > 1;
 
@@ -529,8 +549,14 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
     const list = multiStore && effectiveStoreId
       ? myDeliveries.filter((o: any) => o.store_id === effectiveStoreId)
       : myDeliveries;
-    return useOptimized ? optimizeRoute(list, activeStoreCoords) : list;
-  }, [myDeliveries, multiStore, effectiveStoreId, useOptimized, activeStoreCoords]);
+    const base = useOptimized ? optimizeRoute(list, activeStoreCoords) : list;
+    // Sobreposição OSRM (rota por ruas): se temos uma ordem refinada para
+    // este conjunto, aplicamos. Caso contrário ficamos com a base haversine.
+    if (!useOptimized || !Object.keys(osrmOrder).length) return base;
+    const hasAll = base.every((o: any) => osrmOrder[o.id] !== undefined);
+    if (!hasAll) return base;
+    return [...base].sort((a: any, b: any) => osrmOrder[a.id] - osrmOrder[b.id]);
+  }, [myDeliveries, multiStore, effectiveStoreId, useOptimized, activeStoreCoords, osrmOrder]);
 
   const filteredAvailable = useMemo(() => {
     if (!availableOrders) return [];
@@ -545,8 +571,9 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
   const routeDistanceKm = useMemo(() => {
     const orders = filteredDeliveries.length > 0 ? filteredDeliveries : filteredAvailable;
     if (!useOptimized || orders.length < 2) return 0;
+    if (osrmStats && filteredDeliveries.length > 0) return osrmStats.km;
     return calculateRouteDistance(orders, activeStoreCoords);
-  }, [filteredDeliveries, filteredAvailable, useOptimized, activeStoreCoords]);
+  }, [filteredDeliveries, filteredAvailable, useOptimized, activeStoreCoords, osrmStats]);
 
   // Per-store order counts for badges
   const storeOrderCounts = useMemo(() => {
@@ -722,6 +749,23 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
   const departForDelivery = async (orderId: string) => {
     haptic.medium();
     setDepartingId(orderId);
+    // Arma o geofence de chegada (50m) para abrir o card de PIN
+    // automaticamente quando o motoboy chegar.
+    const order = (filteredDeliveries || []).find((o: any) => o.id === orderId);
+    if (order?.client_lat && order?.client_lng) {
+      startArrivalWatch(
+        { orderId, lat: Number(order.client_lat), lng: Number(order.client_lng), radiusM: 50 },
+        (oid) => {
+          haptic.heavy();
+          setArrivedOrderId(oid);
+          setExpandedOrder(oid);
+          toast.success("📍 Chegou ao cliente! Peça o PIN de 4 dígitos.", { duration: 8000 });
+          setTimeout(() => {
+            document.getElementById(`stop-${oid}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+          }, 250);
+        },
+      );
+    }
     // Optimistic UI: update status in cache immediately
     const myKey = ["store-driver-my-deliveries", user?.id];
     const previousMy = queryClient.getQueryData<any[]>(myKey);
@@ -843,6 +887,38 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
       updateTrackingOrderId(myDeliveries[0]?.id || null);
     }
   }, [myDeliveries?.[0]?.id]);
+
+  /* ─── Fase 1 — OSRM async: refina a rota com distâncias reais por ruas ─── */
+  useEffect(() => {
+    if (!useOptimized) { setOsrmOrder({}); setOsrmStats(null); return; }
+    const list = (filteredDeliveries || []).filter((o: any) => o.client_lat && o.client_lng);
+    if (list.length < 2) { setOsrmOrder({}); setOsrmStats(null); return; }
+    if (!activeStoreCoords) return;
+    let cancelled = false;
+    (async () => {
+      const result = await optimizeRouteOsrm(
+        activeStoreCoords,
+        list.map((o: any) => [Number(o.client_lat), Number(o.client_lng)] as [number, number]),
+      );
+      if (cancelled || !result) return;
+      const map: Record<string, number> = {};
+      result.order.forEach((origIdx, newPos) => {
+        const o = list[origIdx];
+        if (o) map[o.id] = newPos;
+      });
+      setOsrmOrder(map);
+      setOsrmStats({ km: result.totalKm, min: result.totalMin });
+    })();
+    return () => { cancelled = true; };
+    // Re-roda quando o conjunto de IDs muda
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [useOptimized, activeStoreCoords?.[0], activeStoreCoords?.[1], (filteredDeliveries || []).map((o: any) => o.id).join("|")]);
+
+  /* Para o geofence quando o motoboy não tem mais entregas em trânsito */
+  useEffect(() => {
+    const inTransit = (filteredDeliveries || []).some((o: any) => o.status === "saiu_entrega" || o.status === "em_transito");
+    if (!inTransit) stopArrivalWatch();
+  }, [filteredDeliveries]);
 
 
   const hasPix = !!(driverProfile as any)?.pix_key;
@@ -1014,14 +1090,14 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
           nextStop.neighborhood,
           (nextStop.stores as any)?.address_city,
         ].filter(Boolean).join(", ");
-        const wazeUrl = buildWazeUrl({
+        const navUrl = buildPreferredNavUrl({
           lat: nextStop.client_lat,
           lng: nextStop.client_lng,
           fallbackAddress: nextStop.address_details,
           neighborhood: nextStop.neighborhood,
           city: (nextStop.stores as any)?.address_city,
           state: (nextStop.stores as any)?.address_state,
-        });
+        }, navApp);
         const contactName = (getContact(nextStop.client_id) as any)?.full_name || "Cliente";
 
         return (
@@ -1051,15 +1127,37 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
             </div>
 
             <a
-              href={wazeUrl}
+              href={navUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="w-full flex items-center justify-center gap-2 bg-white text-primary font-black text-sm px-4 py-3 rounded-xl active:scale-[0.97] transition-all shadow-md"
             >
               <Navigation className="h-4 w-4" />
-              Iniciar no Waze
+              {navApp === "google" ? "Iniciar no Google Maps" : "Iniciar no Waze"}
               <ArrowRight className="h-4 w-4" />
             </a>
+
+            {/* Seletor de navegador preferido */}
+            <div className="flex gap-1.5 mt-2">
+              <button
+                type="button"
+                onClick={() => chooseNavApp("waze")}
+                className={`flex-1 text-[10px] font-black uppercase tracking-wider py-1.5 rounded-lg transition-all ${
+                  navApp === "waze" ? "bg-white/25 text-white" : "bg-white/5 text-white/60"
+                }`}
+              >
+                Waze
+              </button>
+              <button
+                type="button"
+                onClick={() => chooseNavApp("google")}
+                className={`flex-1 text-[10px] font-black uppercase tracking-wider py-1.5 rounded-lg transition-all ${
+                  navApp === "google" ? "bg-white/25 text-white" : "bg-white/5 text-white/60"
+                }`}
+              >
+                Maps
+              </button>
+            </div>
 
             <button
               onClick={() => {
@@ -1107,6 +1205,37 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
               </button>
             )}
           </div>
+
+          {/* Rota completa multi-parada (Google Maps, até 10 paradas) */}
+          {filteredDeliveries.length >= 2 && (() => {
+            const stops = filteredDeliveries
+              .filter((o: any) => o.client_lat && o.client_lng)
+              .slice(0, 10)
+              .map((o: any) => ({
+                lat: Number(o.client_lat),
+                lng: Number(o.client_lng),
+                fallbackAddress: o.address_details,
+                neighborhood: o.neighborhood,
+                city: (o.stores as any)?.address_city,
+                state: (o.stores as any)?.address_state,
+              } as NavTarget));
+            if (stops.length < 2) return null;
+            const origin: NavTarget | undefined = activeStoreCoords
+              ? { lat: activeStoreCoords[0], lng: activeStoreCoords[1] }
+              : undefined;
+            const url = buildGoogleMapsMultiStopUrl(stops, origin);
+            return (
+              <a
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full flex items-center justify-center gap-2 bg-foreground text-background font-black text-sm px-4 py-3 rounded-2xl shadow-md active:scale-[0.97] transition-all"
+              >
+                <Route className="h-4 w-4" strokeWidth={2.5} />
+                Navegar rota completa ({stops.length}) no Google Maps
+              </a>
+            );
+          })()}
 
           {filteredDeliveries.map((order: any, index: number) => {
             const isExpanded = expandedOrder === order.id;

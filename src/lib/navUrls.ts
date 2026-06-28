@@ -77,3 +77,67 @@ export function buildGoogleMapsUrl(t: NavTarget): string {
   }
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(buildFullAddress(t))}`;
 }
+
+/* ──────────────────────────────────────────────────────────────────────────
+ * Fase 3 — Multi-parada (rota completa via deep link)
+ * ────────────────────────────────────────────────────────────────────────── */
+
+/**
+ * Constrói a URL do Google Maps com até 9 paradas intermediárias (limite
+ * do deep link `dir`).
+ *
+ * - O primeiro alvo da lista vira o `destination`; os demais vão para
+ *   `waypoints` na ordem fornecida (otimização já feita pelo nosso 2-opt).
+ * - Se houver `origin` (a loja), ele entra como ponto de partida; caso
+ *   contrário o Maps usa a localização atual do usuário.
+ */
+export function buildGoogleMapsMultiStopUrl(stops: NavTarget[], origin?: NavTarget): string {
+  if (stops.length === 0) return "https://www.google.com/maps";
+  // Maps aceita até 9 waypoints + 1 destination => no máximo 10 paradas
+  const capped = stops.slice(0, 10);
+  const fmt = (t: NavTarget) =>
+    isValidCoord(t.lat, t.lng) ? `${t.lat},${t.lng}` : encodeURIComponent(buildFullAddress(t));
+
+  const destination = fmt(capped[capped.length - 1]);
+  const waypoints = capped
+    .slice(0, -1)
+    .map(fmt)
+    .join("|");
+
+  const params: string[] = [
+    "api=1",
+    "travelmode=driving",
+    `destination=${destination}`,
+  ];
+  if (waypoints) params.push(`waypoints=${waypoints}`);
+  if (origin && (isValidCoord(origin.lat, origin.lng) || origin.fallbackAddress || origin.street)) {
+    params.push(`origin=${fmt(origin)}`);
+  }
+
+  return `https://www.google.com/maps/dir/?${params.join("&")}`;
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+ * Preferência de navegador (Waze | Maps) — Fase 4
+ * ────────────────────────────────────────────────────────────────────────── */
+
+export type NavApp = "waze" | "google";
+const PREF_KEY = "driver_nav_pref_v1";
+
+export function getPreferredNavigator(): NavApp {
+  try {
+    const v = localStorage.getItem(PREF_KEY);
+    return v === "google" ? "google" : "waze";
+  } catch {
+    return "waze";
+  }
+}
+
+export function setPreferredNavigator(app: NavApp) {
+  try { localStorage.setItem(PREF_KEY, app); } catch { /* noop */ }
+}
+
+export function buildPreferredNavUrl(t: NavTarget, app?: NavApp): string {
+  const choice = app ?? getPreferredNavigator();
+  return choice === "google" ? buildGoogleMapsUrl(t) : buildWazeUrl(t);
+}
