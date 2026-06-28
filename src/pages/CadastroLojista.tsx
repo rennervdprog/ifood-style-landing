@@ -519,12 +519,12 @@ const CadastroLojista = () => {
 
                 {/* Cards compactos — toque em "Ver detalhes" para expandir */}
                 <div className="space-y-3">
-                {(["commission_only", "hybrid", "fixed", "autonomy"] as const).map((id) => {
+                {(["commission_only", "fixed", "autonomy"] as const).map((id) => {
                   const p = PLANS[id];
                   const Icon = p.icon;
                   const selected = selectedPlan === id;
                   const isExpanded = expandedPlan === id || selected;
-                  const isDynamic = id === "fixed" || id === "hybrid";
+                  const isDynamic = id === "fixed";
                   return (
                     <div
                       key={id}

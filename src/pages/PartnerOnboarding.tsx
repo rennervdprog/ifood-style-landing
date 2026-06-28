@@ -107,7 +107,7 @@ const faqs = [
   { q: "Quanto tempo leva para começar a vender?", a: "Após o cadastro, sua loja pode estar ativa em menos de 24 horas. Basta montar seu cardápio e começar a receber pedidos." },
   { q: "Preciso de computador para gerenciar?", a: "Não! Tudo funciona perfeitamente pelo celular. O painel é 100% responsivo e otimizado para mobile." },
   { q: "Posso trocar de plano depois?", a: "Sim! Você pode mudar de plano a qualquer momento, sem multa ou fidelidade. Basta solicitar pelo painel." },
-  { q: "Como funciona o período de teste?", a: "Nos planos pagos (Essencial e Crescimento), você ganha 7 dias grátis para testar tudo. O plano Comissão já é gratuito — sem mensalidade!" },
+  { q: "Como funciona o período de teste?", a: "No plano Essencial você ganha 7 dias grátis para testar tudo. O plano Comissão já é gratuito — sem mensalidade!" },
   { q: "Como faço para receber meus pagamentos?", a: "Os pagamentos via PIX são depositados diretamente na sua conta. Para pedidos em dinheiro/cartão, o repasse é semanal." },
 ];
 
@@ -130,7 +130,7 @@ const PartnerOnboarding = () => {
   const [storeCategory, setStoreCategory] = useState("");
   const [vehicle, setVehicle] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
-  const [selectedPlan, setSelectedPlan] = useState<"fixed" | "hybrid" | "">("");
+  const [selectedPlan, setSelectedPlan] = useState<"fixed" | "">("");
 
   const statsRef = useInView(0.3);
   const storesCount = useCountUp(50, 2000, statsRef.visible);
@@ -368,8 +368,7 @@ const PartnerOnboarding = () => {
             <div className="grid sm:grid-cols-3 gap-5">
               {[
                 { name: "Comissão", price: "R$0", sub: "/mês", desc: "6% por pedido", icon: Rocket, tags: ["Sem mensalidade", "PIX integrado", "Ideal para testar"], popular: false },
-                { name: "Crescimento", price: "R$100", sub: "/mês", desc: "+ 2,5% por pedido", icon: TrendingUp, tags: ["PIX integrado", "CRM completo", "Menor comissão"], popular: true },
-                { name: "Essencial", price: "R$90*", sub: "/mês", desc: "0% de comissão", icon: Crown, tags: ["Zero comissão", "Lucro máximo", "Alto volume"], popular: false },
+                { name: "Essencial", price: "R$90", sub: "/mês", desc: "0% de comissão", icon: Crown, tags: ["Zero comissão", "Lucro máximo", "Alto volume"], popular: true },
               ].map((plan) => (
                 <Card key={plan.name} className={`rounded-2xl border-2 transition-all hover:shadow-lg relative ${plan.popular ? "border-primary shadow-md" : "border-border"}`}>
                   {plan.popular && (
@@ -597,25 +596,6 @@ const PartnerOnboarding = () => {
               <div className="flex flex-wrap gap-1.5 mt-2">
                 {["0% taxa", "Dinheiro/Cartão", "Apenas motoboy próprio"].map(tag => (
                   <span key={tag} className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted text-muted-foreground">{tag}</span>
-                ))}
-              </div>
-            </button>
-
-            <button type="button" onClick={() => setSelectedPlan("hybrid")}
-              className={`w-full text-left rounded-2xl border-2 p-4 transition-all relative ${selectedPlan === "hybrid" ? "border-primary bg-primary/5" : "border-border bg-card hover:border-primary/40"}`}>
-              <span className="absolute -top-2.5 right-3 text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary text-primary-foreground">⭐ Popular</span>
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center"><TrendingUp className="h-5 w-5 text-primary" /></div>
-                <div className="flex-1">
-                  <h3 className="font-bold text-sm text-foreground">Plano Crescimento</h3>
-                  <p className="text-xs text-muted-foreground">Ideal para começar</p>
-                </div>
-                <div className="text-right"><span className="text-lg font-black text-foreground">R$100</span><span className="text-xs text-muted-foreground">/mês</span></div>
-              </div>
-              <p className="text-[10px] font-semibold text-primary mb-2">+ 2,5% por pedido entregue</p>
-              <div className="flex flex-wrap gap-1.5">
-                {["PIX integrado", "CRM completo", "Entrega plataforma*"].map(tag => (
-                  <span key={tag} className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">{tag}</span>
                 ))}
               </div>
             </button>

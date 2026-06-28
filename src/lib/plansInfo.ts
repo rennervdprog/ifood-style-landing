@@ -170,11 +170,13 @@ export const PLANS: Record<StorePlanType, PlanInfo> = {
 
 /** Ordem padrão para exibição (do mais barato pro mais completo). */
 /** Plano "supporter" (Apoiador) está desativado para novos cadastros — oculto em toda a UI pública. */
-export const PLANS_ORDER: StorePlanType[] = ["commission_only", "hybrid", "fixed", "autonomy"];
+/** Plano "hybrid" (Crescimento) descontinuado para novos cadastros — oculto na UI pública.
+ *  Lojas já vinculadas ao Crescimento continuam funcionando normalmente. */
+export const PLANS_ORDER: StorePlanType[] = ["commission_only", "fixed", "autonomy"];
 
 /** Linha única de explicação universal sobre a taxa de entrega. */
 export const DELIVERY_FEE_NOTE =
-  "Taxa de entrega: nos planos Comissão, Crescimento e Essencial a plataforma adiciona R$ 2,00 EM CIMA da taxa que você (lojista) cobra. Ex.: você cobra R$ 5 → cliente paga R$ 7. Os R$ 2 ficam com a plataforma, os R$ 5 são seus. Nada sai do seu caixa. No plano Autonomia esse acréscimo é zero — o cliente paga exatamente a taxa que você define.";
+  "Taxa de entrega: nos planos Comissão e Essencial a plataforma adiciona R$ 2,00 EM CIMA da taxa que você (lojista) cobra. Ex.: você cobra R$ 5 → cliente paga R$ 7. Os R$ 2 ficam com a plataforma, os R$ 5 são seus. Nada sai do seu caixa. No plano Autonomia esse acréscimo é zero — o cliente paga exatamente a taxa que você define.";
 
 /** Linha única para a taxa PIX (apenas Essencial/Apoiador). */
 export const PIX_FEE_NOTE =

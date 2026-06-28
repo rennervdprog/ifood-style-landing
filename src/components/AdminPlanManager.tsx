@@ -371,7 +371,7 @@ export default function AdminPlanManager() {
           <p className="text-xl font-black text-foreground mt-0.5">{supporterUsed}/{SUPPORTER_LIMIT}</p>
           <p className="text-[10px] text-muted-foreground">{supporterAvailable} vagas restantes</p>
         </div>
-        {(["fixed", "hybrid", "commission_only", "autonomy"] as PlanType[]).map(pt => (
+        {(["fixed", "commission_only", "autonomy"] as PlanType[]).map(pt => (
           <div key={pt} className="bg-card rounded-2xl p-4 border border-border">
             <div className="flex items-center gap-2 mb-2">
               <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${
