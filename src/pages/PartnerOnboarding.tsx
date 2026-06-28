@@ -130,7 +130,7 @@ const PartnerOnboarding = () => {
   const [storeCategory, setStoreCategory] = useState("");
   const [vehicle, setVehicle] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
-  const [selectedPlan, setSelectedPlan] = useState<"fixed" | "hybrid" | "">("");
+  const [selectedPlan, setSelectedPlan] = useState<"fixed" | "">("");
 
   const statsRef = useInView(0.3);
   const storesCount = useCountUp(50, 2000, statsRef.visible);
