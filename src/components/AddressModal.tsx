@@ -75,6 +75,32 @@ const AddressModal = ({ onClose, onSaved }: AddressModalProps) => {
     }
   };
 
+  const handleUseGps = async () => {
+    setLoadingGps(true);
+    try {
+      const gps = await readGps({ highAccuracy: true, timeoutMs: 15000 });
+      if (!gps?.coords) {
+        toast.error("Não foi possível obter a localização. Verifique a permissão de GPS.");
+        return;
+      }
+      const rev = await reverseGeocode(gps.coords);
+      if (!rev) {
+        toast.error("Localização obtida, mas não foi possível identificar o endereço.");
+        return;
+      }
+      if (rev.street) setStreet(rev.street);
+      if (rev.number) setNumber(String(rev.number));
+      if (rev.neighborhood) setNeighborhoodLocal(rev.neighborhood);
+      if (rev.postalcode && !cep) setCep(formatCep(rev.postalcode));
+      setShowGpsHint(false);
+      toast.success("Endereço preenchido pelo GPS! Confira e ajuste se necessário.");
+    } catch (err: any) {
+      toast.error(err?.message || "Falha ao usar GPS.");
+    } finally {
+      setLoadingGps(false);
+    }
+  };
+
   const handleSave = async () => {
     if (!street.trim() || !number.trim() || !neighborhood.trim()) {
       toast.error("Preencha rua, número e bairro (use o CEP).");
