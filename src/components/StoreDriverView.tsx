@@ -53,7 +53,18 @@ import {
 
 
 /* ── Helpers ── */
-import { buildWazeUrl, buildGoogleMapsUrl, type NavTarget } from "@/lib/navUrls";
+import {
+  buildWazeUrl,
+  buildGoogleMapsUrl,
+  buildGoogleMapsMultiStopUrl,
+  buildPreferredNavUrl,
+  getPreferredNavigator,
+  setPreferredNavigator,
+  type NavApp,
+  type NavTarget,
+} from "@/lib/navUrls";
+import { optimizeRouteOsrm } from "@/lib/osrmRouting";
+import { startArrivalWatch, stopArrivalWatch } from "@/lib/arrivalGeofence";
 
 const NavigationLinks = ({ target }: { target: NavTarget }) => {
   return (
