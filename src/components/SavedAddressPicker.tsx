@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { MapPin, Plus, Trash2, Check, Home, Briefcase, MapPinned, Search, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { formatCep, fetchCep } from "@/lib/cepLookup";
+import { formatCep, fetchCep } from "@/lib/location";
 
 interface SavedAddress {
   id: string;
