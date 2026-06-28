@@ -63,6 +63,8 @@ const KdsPage = lazy(() => import("./pages/KdsPage"));
 const SandboxTestsPage = lazy(() => import("./pages/SandboxTestsPage"));
 const BlogIndex = lazy(() => import("./pages/blog/BlogIndex"));
 const BlogPost = lazy(() => import("./pages/blog/BlogPost"));
+const BlogAdmin = lazy(() => import("./pages/admin/BlogAdmin"));
+const BlogAdminEditor = lazy(() => import("./pages/admin/BlogAdminEditor"));
 const VagaPromoPage = lazy(() => import("./pages/VagaPromoPage"));
 
 const PageLoader = () => (
@@ -374,6 +376,10 @@ const App = () => {
                 {/* Blog público — DEVE vir antes de /:slug */}
                 <Route path="/blog" element={<BlogIndex />} />
                 <Route path="/blog/:slug" element={<BlogPost />} />
+                {/* Admin do blog (super admin) */}
+                <Route path="/admin/blog" element={<RoleGuard allowedRoles={["admin"]} redirectTo="/"><BlogAdmin /></RoleGuard>} />
+                <Route path="/admin/blog/novo" element={<RoleGuard allowedRoles={["admin"]} redirectTo="/"><BlogAdminEditor /></RoleGuard>} />
+                <Route path="/admin/blog/:id" element={<RoleGuard allowedRoles={["admin"]} redirectTo="/"><BlogAdminEditor /></RoleGuard>} />
                 {/* Campanha promocional de captação de lojistas por cidade */}
                 <Route path="/vaga/:cidade" element={<VagaPromoPage />} />
                 {/* Client store access via slug - must be last */}
