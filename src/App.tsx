@@ -235,6 +235,7 @@ const App = () => {
     // is never blocked by native setup or auto-update checks.
     initCapacitorNative().catch(() => {});
     initCapacitorLifecycle().catch(() => {});
+    import("@/lib/nativeBoot").then(({ nativeBoot }) => nativeBoot()).catch(() => {});
     initRealtimeWatchdog();
     // Auto-update inicia imediatamente — agenda interno usa 1s antes do 1º check
     try { initAutoUpdate(); } catch {}
