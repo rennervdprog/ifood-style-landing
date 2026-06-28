@@ -1090,14 +1090,14 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
           nextStop.neighborhood,
           (nextStop.stores as any)?.address_city,
         ].filter(Boolean).join(", ");
-        const wazeUrl = buildWazeUrl({
+        const navUrl = buildPreferredNavUrl({
           lat: nextStop.client_lat,
           lng: nextStop.client_lng,
           fallbackAddress: nextStop.address_details,
           neighborhood: nextStop.neighborhood,
           city: (nextStop.stores as any)?.address_city,
           state: (nextStop.stores as any)?.address_state,
-        });
+        }, navApp);
         const contactName = (getContact(nextStop.client_id) as any)?.full_name || "Cliente";
 
         return (
@@ -1127,15 +1127,37 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
             </div>
 
             <a
-              href={wazeUrl}
+              href={navUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="w-full flex items-center justify-center gap-2 bg-white text-primary font-black text-sm px-4 py-3 rounded-xl active:scale-[0.97] transition-all shadow-md"
             >
               <Navigation className="h-4 w-4" />
-              Iniciar no Waze
+              {navApp === "google" ? "Iniciar no Google Maps" : "Iniciar no Waze"}
               <ArrowRight className="h-4 w-4" />
             </a>
+
+            {/* Seletor de navegador preferido */}
+            <div className="flex gap-1.5 mt-2">
+              <button
+                type="button"
+                onClick={() => chooseNavApp("waze")}
+                className={`flex-1 text-[10px] font-black uppercase tracking-wider py-1.5 rounded-lg transition-all ${
+                  navApp === "waze" ? "bg-white/25 text-white" : "bg-white/5 text-white/60"
+                }`}
+              >
+                Waze
+              </button>
+              <button
+                type="button"
+                onClick={() => chooseNavApp("google")}
+                className={`flex-1 text-[10px] font-black uppercase tracking-wider py-1.5 rounded-lg transition-all ${
+                  navApp === "google" ? "bg-white/25 text-white" : "bg-white/5 text-white/60"
+                }`}
+              >
+                Maps
+              </button>
+            </div>
 
             <button
               onClick={() => {
