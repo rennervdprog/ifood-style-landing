@@ -549,8 +549,14 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
     const list = multiStore && effectiveStoreId
       ? myDeliveries.filter((o: any) => o.store_id === effectiveStoreId)
       : myDeliveries;
-    return useOptimized ? optimizeRoute(list, activeStoreCoords) : list;
-  }, [myDeliveries, multiStore, effectiveStoreId, useOptimized, activeStoreCoords]);
+    const base = useOptimized ? optimizeRoute(list, activeStoreCoords) : list;
+    // Sobreposição OSRM (rota por ruas): se temos uma ordem refinada para
+    // este conjunto, aplicamos. Caso contrário ficamos com a base haversine.
+    if (!useOptimized || !Object.keys(osrmOrder).length) return base;
+    const hasAll = base.every((o: any) => osrmOrder[o.id] !== undefined);
+    if (!hasAll) return base;
+    return [...base].sort((a: any, b: any) => osrmOrder[a.id] - osrmOrder[b.id]);
+  }, [myDeliveries, multiStore, effectiveStoreId, useOptimized, activeStoreCoords, osrmOrder]);
 
   const filteredAvailable = useMemo(() => {
     if (!availableOrders) return [];
@@ -565,8 +571,9 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
   const routeDistanceKm = useMemo(() => {
     const orders = filteredDeliveries.length > 0 ? filteredDeliveries : filteredAvailable;
     if (!useOptimized || orders.length < 2) return 0;
+    if (osrmStats && filteredDeliveries.length > 0) return osrmStats.km;
     return calculateRouteDistance(orders, activeStoreCoords);
-  }, [filteredDeliveries, filteredAvailable, useOptimized, activeStoreCoords]);
+  }, [filteredDeliveries, filteredAvailable, useOptimized, activeStoreCoords, osrmStats]);
 
   // Per-store order counts for badges
   const storeOrderCounts = useMemo(() => {
