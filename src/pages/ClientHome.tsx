@@ -3,6 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import ClientHomeContent from "./cliente/home/ClientHomeContent";
 
 const ClientAuthScreen = lazy(() => import("./cliente/auth/ClientAuthScreen"));
+const DeliveryPinSetupGate = lazy(() => import("./cliente/auth/DeliveryPinSetupGate"));
 
 const ClientHome = () => {
   const { user, loading } = useAuth();
@@ -28,7 +29,17 @@ const ClientHome = () => {
     );
   }
 
-  return <ClientHomeContent />;
+  return (
+    <Suspense fallback={
+      <div className="min-h-dvh bg-background flex items-center justify-center">
+        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    }>
+      <DeliveryPinSetupGate>
+        <ClientHomeContent />
+      </DeliveryPinSetupGate>
+    </Suspense>
+  );
 };
 
 export default ClientHome;
