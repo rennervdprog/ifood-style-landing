@@ -1206,6 +1206,37 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
             )}
           </div>
 
+          {/* Rota completa multi-parada (Google Maps, até 10 paradas) */}
+          {filteredDeliveries.length >= 2 && (() => {
+            const stops = filteredDeliveries
+              .filter((o: any) => o.client_lat && o.client_lng)
+              .slice(0, 10)
+              .map((o: any) => ({
+                lat: Number(o.client_lat),
+                lng: Number(o.client_lng),
+                fallbackAddress: o.address_details,
+                neighborhood: o.neighborhood,
+                city: (o.stores as any)?.address_city,
+                state: (o.stores as any)?.address_state,
+              } as NavTarget));
+            if (stops.length < 2) return null;
+            const origin: NavTarget | undefined = activeStoreCoords
+              ? { lat: activeStoreCoords[0], lng: activeStoreCoords[1] }
+              : undefined;
+            const url = buildGoogleMapsMultiStopUrl(stops, origin);
+            return (
+              <a
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full flex items-center justify-center gap-2 bg-foreground text-background font-black text-sm px-4 py-3 rounded-2xl shadow-md active:scale-[0.97] transition-all"
+              >
+                <Route className="h-4 w-4" strokeWidth={2.5} />
+                Navegar rota completa ({stops.length}) no Google Maps
+              </a>
+            );
+          })()}
+
           {filteredDeliveries.map((order: any, index: number) => {
             const isExpanded = expandedOrder === order.id;
             const contact = getContact(order.client_id);
