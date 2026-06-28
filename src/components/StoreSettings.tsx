@@ -1013,6 +1013,39 @@ const NotificationSection = () => {
        </div>
 
        {/* Frete grátis acima de X */}
+       {/* Tempo estimado de entrega */}
+       <div className="bg-muted/50 border border-border rounded-2xl p-4 space-y-3">
+         <label className="text-sm font-bold text-foreground/80 flex items-center gap-2">
+           ⏱️ Tempo estimado de entrega
+         </label>
+         <p className="text-[11px] text-muted-foreground -mt-1">
+           Aparece no card <strong>TEMPO</strong> da página da loja. Use um intervalo curto (ex: <strong>30–45 min</strong>) ou deixe vazio para esconder.
+         </p>
+         <div className="grid grid-cols-3 gap-2">
+           {["20–30 min", "30–45 min", "45–60 min"].map((preset) => (
+             <button
+               key={preset}
+               type="button"
+               onClick={() => setEstimatedDeliveryTime(preset)}
+               className={`text-xs font-bold py-2 rounded-xl border transition-colors ${
+                 estimatedDeliveryTime === preset
+                   ? "bg-primary text-primary-foreground border-primary"
+                   : "bg-card border-border text-foreground/70 hover:border-primary/50"
+               }`}
+             >
+               {preset}
+             </button>
+           ))}
+         </div>
+         <input
+           type="text"
+           value={estimatedDeliveryTime}
+           onChange={(e) => setEstimatedDeliveryTime(e.target.value.slice(0, 30))}
+           placeholder="Ex: 30–45 min"
+           className="w-full bg-card border border-border rounded-xl px-4 py-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
+         />
+       </div>
+
        <div className="bg-muted/50 border border-border rounded-2xl p-4 space-y-3">
          <label className="text-sm font-bold text-foreground/80 flex items-center gap-2">
            🚚 Frete grátis acima de um valor
