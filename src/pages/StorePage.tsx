@@ -14,7 +14,8 @@ import BottomNav from "@/components/BottomNav";
 import WhatsAppButton from "@/components/WhatsAppButton";
 
 // Lazy-load modais pesados — só baixam o JS quando realmente abrirem.
-const ProductDetailModal = lazy(() => import("@/components/ProductDetailModal"));
+const loadProductDetailModal = () => import("@/components/ProductDetailModal");
+const ProductDetailModal = lazy(loadProductDetailModal);
 const PizzaHalfHalfModal = lazy(() => import("@/components/PizzaHalfHalfModal"));
 const PastelBuilderModal = lazy(() => import("@/components/PastelBuilderModal"));
 const AgeGateModal = lazy(() => import("@/components/AgeGateModal"));
@@ -188,6 +189,19 @@ const StorePage = () => {
   }, [store?.id]);
 
   const storeId = store?.id || id;
+
+  useEffect(() => {
+    if (!storeId) return;
+    const warmProductModal = () => { void loadProductDetailModal(); };
+    const idleId = typeof window.requestIdleCallback === "function"
+      ? window.requestIdleCallback(warmProductModal, { timeout: 1200 })
+      : window.setTimeout(warmProductModal, 700);
+    return () => {
+      if (typeof window.cancelIdleCallback === "function") window.cancelIdleCallback(idleId as number);
+      else window.clearTimeout(idleId as number);
+    };
+  }, [storeId]);
+
    const storePlan = useStorePlan(storeId);
 
    // Track scroll to show name in header
