@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  Mail, Lock, Eye, EyeOff, KeyRound, FileText, Phone, User, ShoppingBag, Zap,
+  Mail, Lock, Eye, EyeOff, KeyRound, FileText, Phone, User, ShoppingBag, Zap, ShieldCheck,
 } from "lucide-react";
 import { maskWhatsApp } from "@/lib/whatsapp";
 import { formatDocument, sanitizeDocument, validateDocument } from "@/lib/documentFormat";
@@ -20,6 +20,9 @@ const ClientAuthScreen = ({ onSuccess }: { onSuccess: () => void }) => {
   const [fullName, setFullName] = useState("");
   const [cpf, setCpf] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
+  const [deliveryPin, setDeliveryPin] = useState("");
+  const [confirmPin, setConfirmPin] = useState("");
+  const [pinAcknowledged, setPinAcknowledged] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
@@ -58,6 +61,11 @@ const ClientAuthScreen = ({ onSuccess }: { onSuccess: () => void }) => {
       }
     }
     if (mode === "signup" && !acceptedTerms) { toast.error("Aceite os Termos de Uso."); return; }
+    if (mode === "signup") {
+      if (!/^\d{4}$/.test(deliveryPin)) { toast.error("Defina um PIN de entrega com 4 dígitos numéricos."); return; }
+      if (deliveryPin !== confirmPin) { toast.error("Os PINs informados não coincidem."); return; }
+      if (!pinAcknowledged) { toast.error("Confirme que este PIN será usado em todas as entregas."); return; }
+    }
     if (password.length < 6) { toast.error("Senha: mínimo 6 caracteres."); return; }
 
     setLoading(true);
@@ -80,6 +88,7 @@ const ClientAuthScreen = ({ onSuccess }: { onSuccess: () => void }) => {
               role: "cliente",
               document: sanitizeDocument(cpf),
               whatsapp: `55${whatsapp.replace(/\D/g, "")}`,
+                delivery_pin: deliveryPin,
             },
           },
         });
@@ -96,6 +105,7 @@ const ClientAuthScreen = ({ onSuccess }: { onSuccess: () => void }) => {
             full_name: fullName.trim(),
             document: sanitizeDocument(cpf),
             whatsapp_number: `55${whatsapp.replace(/\D/g, "")}`,
+            delivery_pin: deliveryPin,
           }).eq("user_id", signUpData.user.id);
         }
         toast.success("Conta criada!");
