@@ -8,12 +8,13 @@ const config: CapacitorConfig = {
     // 🔒 Não permite recursos HTTP dentro de HTTPS
     allowMixedContent: false,
     webContentsDebuggingEnabled: false,
+    captureInput: true,
+    backgroundColor: '#0B0F14',
   },
   server: {
-    // 🌐 APK carrega o site publicado para receber updates de UI sem
-    // precisar gerar novo APK. O bundle empacotado em dist serve apenas
-    // como fallback offline inicial.
-    url: 'https://itasuper.com.br',
+    // 🚀 Bundle local servido pelo Capacitor (sem hot-reload remoto).
+    // Atualizações de JS/CSS chegam via @capgo/capacitor-updater (OTA),
+    // sem precisar gerar APK novo a cada release.
     hostname: 'itasuper.com.br',
     androidScheme: 'https',
     cleartext: false,
@@ -22,7 +23,7 @@ const config: CapacitorConfig = {
       'itasuper.com.br',
       '*.supabase.co',
       'qkjhguziuchqsbxzruea.supabase.co',
-    ]
+    ],
   },
   plugins: {
     SplashScreen: {
@@ -52,6 +53,16 @@ const config: CapacitorConfig = {
       // iOS: BGTask só roda quando o sistema decide (~horas).
       interval: 15,
       autoStart: true,
+    },
+    CapacitorUpdater: {
+      // OTA de bundle JS sem precisar subir APK na Play Store.
+      // O app baixa o bundle novo em background e aplica no próximo cold start.
+      autoUpdate: true,
+      autoDeleteFailed: true,
+      autoDeletePrevious: true,
+      directUpdate: false,
+      resetWhenUpdate: true,
+      keepUrlPathAfterReload: true,
     },
   },
 };
