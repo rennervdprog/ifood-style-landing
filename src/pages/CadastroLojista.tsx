@@ -524,7 +524,7 @@ const CadastroLojista = () => {
                   const Icon = p.icon;
                   const selected = selectedPlan === id;
                   const isExpanded = expandedPlan === id || selected;
-                  const isDynamic = id === "fixed" || id === "hybrid";
+                  const isDynamic = id === "fixed";
                   return (
                     <div
                       key={id}
