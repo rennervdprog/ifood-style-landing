@@ -9,7 +9,7 @@ import { requestPushPermissionAndRegister } from "@/lib/firebase";
 import { isGoNative, registerGoNativePlayer } from "@/lib/gonative";
 import { isCapacitorNative, registerCapacitorPush } from "@/lib/capacitorNative";
 import { maskWhatsApp } from "@/lib/whatsapp";
-import { formatCep, fetchCep } from "@/lib/cepLookup";
+import { formatCep, fetchCep, resolveAddress } from "@/lib/location";
 import { formatBRL } from "@/lib/utils";
 import { useStorePlan } from "@/hooks/useStorePlan";
 const CATEGORY_OPTIONS = [

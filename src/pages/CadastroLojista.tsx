@@ -6,7 +6,7 @@ import { z } from "zod";
 import { ArrowLeft, Mail, Lock, Eye, EyeOff, Store, FileText, CheckCircle, CheckCircle2, MapPin, Search, Loader2, Phone, Shield, ChevronRight, User, Users, Package, TrendingUp, Zap, CreditCard, BarChart3, Crown } from "lucide-react";
 import { PasswordStrengthIndicator, usePasswordStrength } from "@/components/PasswordStrengthIndicator";
 import { Constants } from "@/integrations/supabase/types";
-import { formatCep, fetchCep } from "@/lib/cepLookup";
+import { formatCep, fetchCep, resolveAddress } from "@/lib/location";
   import { maskWhatsApp, formatWhatsAppNumber } from "@/lib/whatsapp";
   import { formatDocument, sanitizeDocument, validateDocument } from "@/lib/documentFormat";
 import { PLANS, PLANS_ORDER, DELIVERY_FEE_NOTE, PIX_FEE_NOTE } from "@/lib/plansInfo";
@@ -356,12 +356,39 @@ const CadastroLojista = () => {
           storeRow = data as any;
         }
         if (storeRow?.id) {
+          // Geocoda o endereço (CEP+rua+número) para já gravar latitude/longitude.
+          // Não bloqueia o cadastro se falhar — a loja salva mesmo sem coords.
+          let storeLat: number | null = null;
+          let storeLng: number | null = null;
+          try {
+            const resolved = await resolveAddress({
+              prefer: "address",
+              fallback: ["cep"],
+              address: {
+                street: street.trim(),
+                number: addressNumber.trim(),
+                neighborhood: neighborhood.trim(),
+                city: normalizedCity,
+                postalcode: cep.replace(/\D/g, ""),
+                country: "Brasil",
+              },
+            });
+            if (resolved.coords) {
+              storeLat = resolved.coords.lat;
+              storeLng = resolved.coords.lng;
+            }
+          } catch (e) {
+            console.warn("[CadastroLojista] geocode falhou:", e);
+          }
           await supabase.from("stores").update({
             address_street: street.trim(),
             address_number: addressNumber.trim(),
             address_neighborhood: neighborhood.trim(),
             address_cep: cep.replace(/\D/g, ""),
             address_city: city,
+            ...(storeLat !== null && storeLng !== null
+              ? { latitude: storeLat, longitude: storeLng }
+              : {}),
           } as any).eq("id", storeRow.id);
 
           // Aplica promo de captação (ex: LONDRINA10 — Essencial R$ 0/mês travado)
