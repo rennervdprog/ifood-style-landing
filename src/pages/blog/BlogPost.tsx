@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import ReactMarkdown from "react-markdown";
@@ -7,6 +7,9 @@ import rehypeSlug from "rehype-slug";
 import { Clock, Share2, Link as LinkIcon, ArrowRight, ListOrdered } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import NewsletterSignup from "@/components/blog/NewsletterSignup";
+
+const BlogComments = lazy(() => import("@/components/blog/BlogComments"));
 
 interface BlogPost {
   id: string;
