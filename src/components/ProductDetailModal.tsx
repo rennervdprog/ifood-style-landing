@@ -138,48 +138,50 @@ const ProductDetailModal = ({ product, storeName, storeCategory, singleSize = fa
   const isDessert = (cat === "sobremesas" || cat === "docerias") && !isBeverage;
   const flavors: string[] = meta.flavors || [];
 
-  const { data: addonData } = useQuery({
+  const { data: addonData, isLoading: addonsLoading, isFetching: addonsFetching } = useQuery({
     queryKey: ["addon-all", product?.id],
     queryFn: async () => {
+      const groupSelect = "id,name,min_select,max_select,sort_order,price_replaces_base,addon_items(id,group_id,name,price,sort_order)";
       const [directRes, linksRes] = await Promise.all([
-        supabase.from("addon_groups").select("id,name,min_select,max_select,sort_order,price_replaces_base").eq("product_id", product!.id).order("sort_order"),
+        supabase.from("addon_groups").select(groupSelect).eq("product_id", product!.id).order("sort_order"),
         supabase.from("product_addon_groups").select("addon_group_id").eq("product_id", product!.id),
       ]);
       if (directRes.error) throw directRes.error;
       if (linksRes.error) throw linksRes.error;
 
-      const direct = (directRes.data || []) as AddonGroup[];
+      const directRows = (directRes.data || []) as Array<AddonGroup & { addon_items?: AddonItem[] | null }>;
+      const direct = directRows.map(({ addon_items: _addonItems, ...group }) => group as AddonGroup);
       const linkedIds = (linksRes.data || []).map((l: any) => l.addon_group_id as string);
       const directIds = new Set(direct.map((g) => g.id));
 
       let linked: AddonGroup[] = [];
+      let linkedRows: Array<AddonGroup & { addon_items?: AddonItem[] | null }> = [];
       if (linkedIds.length > 0) {
         const linkedRes = await supabase
           .from("addon_groups")
-          .select("id,name,min_select,max_select,sort_order,price_replaces_base")
+          .select(groupSelect)
           .in("id", linkedIds)
           .order("sort_order");
         if (linkedRes.error) throw linkedRes.error;
-        linked = ((linkedRes.data || []) as AddonGroup[]).filter((g) => !directIds.has(g.id));
+        linkedRows = ((linkedRes.data || []) as Array<AddonGroup & { addon_items?: AddonItem[] | null }>).filter((g) => !directIds.has(g.id));
+        linked = linkedRows.map(({ addon_items: _addonItems, ...group }) => group as AddonGroup);
       }
 
       const allGroups = [...direct, ...linked];
-      const allIds = allGroups.map((g) => g.id);
-
-      let items: AddonItem[] = [];
-      if (allIds.length > 0) {
-        const itemsRes = await supabase.from("addon_items").select("id,group_id,name,price,sort_order").in("group_id", allIds).order("sort_order");
-        if (itemsRes.error) throw itemsRes.error;
-        items = (itemsRes.data || []) as AddonItem[];
-      }
+      const items = [...directRows, ...linkedRows]
+        .flatMap((group) => group.addon_items || [])
+        .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)) as AddonItem[];
 
       return { groups: allGroups, items };
     },
     enabled: !!product?.id && open,
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 10,
   });
 
   const addonGroups = addonData?.groups || [];
   const addonItems = addonData?.items || [];
+  const addonsPending = !!product?.id && open && !addonData && (addonsLoading || addonsFetching);
 
   const requiredAddonGroups = useMemo(() => addonGroups.filter((g) => g.min_select > 0), [addonGroups]);
   const optionalAddonGroups = useMemo(() => addonGroups.filter((g) => g.min_select === 0), [addonGroups]);
@@ -193,11 +195,16 @@ const ProductDetailModal = ({ product, storeName, storeCategory, singleSize = fa
     (isCafe && isCakeLike && cafeFlavors.length > 0);
 
   const calculateTotalSteps = () => {
+    if (addonsPending) return 2;
     if (requiredAddonGroups.length > 0 || hasSyntheticRequired) return 2;
     return 1;
   };
 
   const totalSteps = calculateTotalSteps();
+
+  useEffect(() => {
+    if (!addonsPending && step === 2 && totalSteps === 1) setStep(1);
+  }, [addonsPending, step, totalSteps]);
 
   // Total de itens selecionados num grupo (soma das quantidades)
   const groupTotal = (groupId: string) =>
@@ -802,6 +809,17 @@ const ProductDetailModal = ({ product, storeName, storeCategory, singleSize = fa
         <p className="text-sm text-muted-foreground">Selecione as opções necessárias para finalizar.</p>
       </section>
 
+      {addonsPending && (
+        <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+          <div className="mb-3 h-4 w-40 animate-pulse rounded bg-muted" />
+          <div className="space-y-2">
+            <div className="h-12 animate-pulse rounded-xl bg-muted" />
+            <div className="h-12 animate-pulse rounded-xl bg-muted" />
+            <div className="h-12 animate-pulse rounded-xl bg-muted" />
+          </div>
+        </section>
+      )}
+
       {hasSizes && (
         <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
           <div className="mb-3 flex items-center gap-2">
@@ -884,9 +902,11 @@ const ProductDetailModal = ({ product, storeName, storeCategory, singleSize = fa
     ? "Próximo: Personalizar"
     : isOutOfStock
       ? "Esgotado"
+      : addonsPending
+        ? "Carregando opções..."
       : `Adicionar • ${formatBRL(lineTotal)}`;
 
-  const primaryEnabled = totalSteps === 2 && step === 1 ? !isOutOfStock : allRequiredMet && !isOutOfStock;
+  const primaryEnabled = totalSteps === 2 && step === 1 ? !isOutOfStock : !addonsPending && allRequiredMet && !isOutOfStock;
 
   return (
     <Dialog open={open} onOpenChange={(nextOpen) => { if (!nextOpen) closeAndReset(); }}>
