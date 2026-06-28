@@ -153,6 +153,11 @@ type PizzaPriceMode = "maior" | "media" | "soma";
   const [acceptCard,       setAcceptCard]       = useState<boolean>(storeSettings?.accept_card        !== false);
   const [acceptCash,       setAcceptCash]       = useState<boolean>(storeSettings?.accept_cash        !== false);
 
+  // Quantas vias o cupom térmico imprime (1 = só cliente / 2 = cozinha + cliente)
+  const [printCopies, setPrintCopies] = useState<1 | 2>(
+    storeSettings?.print_copies === 1 ? 1 : 2
+  );
+
   // Z-API foi substituído pela aba WhatsApp (Evolution API) — bloco removido.
 
   // Load whatsapp from profile
