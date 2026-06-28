@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
   import { CheckCircle2, Loader2, Banknote, ShieldCheck, Copy, AlertCircle, FileText, ExternalLink, RefreshCw, User, MapPin, Landmark, ArrowRight, Wallet, Info } from "lucide-react";
 import { toast } from "sonner";
 import { formatPixKeyDisplay, sanitizePixKeyForAsaas, validatePixKey } from "@/lib/pixFormat";
-import { fetchCep } from "@/lib/cepLookup";
+import { fetchCep } from "@/lib/location";
 import AsaasDocumentsUpload from "./AsaasDocumentsUpload";
 
 interface Props {

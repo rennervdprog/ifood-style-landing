@@ -1,5 +1,5 @@
 import { getStoreOpenStatus, type OpeningHour } from "@/lib/storeStatus";
-import { haversineDistanceMeters } from "@/lib/addressGeocoding";
+import { haversineMeters } from "@/lib/location";
 
 export const mapStoresWithHours = (
   stores: any[],
@@ -16,7 +16,7 @@ export const mapStoresWithHours = (
       const lng = store.longitude;
       const distanceKm =
         userCoords && typeof lat === "number" && typeof lng === "number"
-          ? haversineDistanceMeters(userCoords, { lat, lng }) / 1000
+          ? haversineMeters(userCoords, { lat, lng }) / 1000
           : null;
       return { ...store, realIsOpen: status.isOpen, statusReason: status.reason, distanceKm };
     })

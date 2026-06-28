@@ -40,7 +40,7 @@
 
     // 🛣️ Tenta rota real (OSRM) via edge function — fonte única de verdade
     try {
-      const { resolveDistance } = await import("./deliveryDistance");
+      const { resolveDistance } = await import("./location");
       const routeRes = await resolveDistance({
         store: {
           lat: config.store_coords?.lat ?? null,
@@ -89,7 +89,7 @@
     if (!customerCoords) {
       // Tenta com rua + número primeiro (mais preciso)
       if (config.customer_street) {
-        customerCoords = await geocodeAddressPrecise({
+        customerCoords = await geocodeAddress({
           postalcode: customerCep,
           street: config.customer_number
             ? `${config.customer_street}, ${config.customer_number}`
@@ -98,13 +98,13 @@
       }
       // Fallback: só pelo CEP
       if (!customerCoords) {
-        customerCoords = await geocodeAddressPrecise({ postalcode: customerCep });
+        customerCoords = await geocodeAddress({ postalcode: customerCep });
       }
     }
 
     // 2. Coordenadas da loja: geocoding pelo CEP da loja
     const storeCoords = storeCep
-      ? await geocodeAddressPrecise({ postalcode: storeCep })
+      ? await geocodeAddress({ postalcode: storeCep })
       : ITATINGA_CENTER;
 
     if (!customerCoords || !storeCoords) {
@@ -147,8 +147,8 @@
   }
  
 import { formatBRL, addMoney } from "@/lib/utils";
-import { fetchCep } from "./cepLookup";
-import { geocodeAddressPrecise } from "./addressGeocoding";
+import { fetchCep } from "./location";
+import { geocodeAddress } from "./location";
 
 export interface DeliveryFeeConfig {
   city_name: string;
@@ -200,10 +200,10 @@ function haversineDistance(
 }
 
 /**
- * Geocode an address (DEPRECATED - Use geocodeAddressPrecise instead)
+ * Geocode an address (DEPRECATED - Use geocodeAddress instead)
  */
 async function geocodeAddress(cep: string, street?: string, number?: string): Promise<{ lat: number; lng: number } | null> {
-  return geocodeAddressPrecise({
+  return geocodeAddress({
     postalcode: cep,
     street: street && number ? `${street}, ${number}` : street || undefined
   });

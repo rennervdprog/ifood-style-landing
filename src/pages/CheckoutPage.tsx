@@ -16,13 +16,11 @@ import CouponInput from "@/components/CouponInput";
  import { calculateDeliveryFee, calculateStoreOwnDeliveryFee, DEFAULT_DELIVERY_FEE_CONFIG, type DeliveryFeeConfig } from "@/lib/deliveryFee";
 import WhyThisCharge from "@/components/fees/WhyThisCharge";
 import DeliveryAccuracyBadge from "@/components/fees/DeliveryAccuracyBadge";
-import { formatCep, fetchCep } from "@/lib/cepLookup";
 import { addMoney, multiplyMoney, sumMoney, formatBRL } from "@/lib/utils";
 import { useStorePlan } from "@/hooks/useStorePlan";
 import LoyaltyRedemption from "@/components/LoyaltyRedemption";
 import DeliveryTimeEstimate from "@/components/DeliveryTimeEstimate";
-import { resolveAddressContext, reverseGeocode, type Coordinates, type ReverseGeocodeResult } from "@/lib/addressGeocoding";
-import { getBestClientCoordinates, getDeviceGPS } from "@/lib/deviceLocation";
+import { formatCep, fetchCep, reverseGeocode, readGps, resolveAddress, type Coordinates, type ReverseResult } from "@/lib/location";
 import { checkStoreAccess, MAX_DISTANCE_KM } from "@/lib/fraudCheck";
 import EmptiesExchange, { type EmptiesExchangeSelection } from "@/components/EmptiesExchange";
 import { haptic } from "@/lib/haptics";
@@ -54,7 +52,7 @@ const CheckoutPage = () => {
    const [clientCoords, setClientCoords] = useState<Coordinates | null>(null);
    const [isLocationRequested, setIsLocationRequested] = useState(false);
    const [requestingLocation, setRequestingLocation] = useState(false);
-   const [gpsAddress, setGpsAddress] = useState<ReverseGeocodeResult | null>(null);
+   const [gpsAddress, setGpsAddress] = useState<ReverseResult | null>(null);
    const [coordsSource, setCoordsSource] = useState<"gps" | "address" | null>(null);
   const [calculatingFee, setCalculatingFee] = useState(false);
   const [feeBreakdown, setFeeBreakdown] = useState<string | null>(null);
@@ -266,27 +264,26 @@ const CheckoutPage = () => {
          : [profileStreet, profileNumber].filter(Boolean).join(" ");
        const geoNeighborhood = selectedSavedAddressId && savedAddressData?.neighborhood ? savedAddressData.neighborhood : profileNeighborhood;
  
-       resolveAddressContext({
-         street: geoStreet,
-         neighborhood: geoNeighborhood,
-         postalcode: geoCep,
-       }).then(context => {
-         getBestClientCoordinates(context).then(coords => {
-           if (coords && !clientCoords) {
-             console.log("[Checkout] Address geocoding fallback set:", coords);
-             setClientCoords(coords);
-           }
-         });
-       });
+      resolveAddress({
+        prefer: "gps",
+        fallback: ["address", "cep"],
+        address: { street: geoStreet, neighborhood: geoNeighborhood, postalcode: geoCep },
+      }).then((r) => {
+        if (r.coords && !clientCoords) {
+          console.log("[Checkout] Address geocoding fallback set:", r.coords);
+          setClientCoords(r.coords);
+        }
+      });
      }
    }, [hasAddress, selectedSavedAddressId, savedAddressData, profileCep, profileStreet, profileNumber, profileNeighborhood, clientCoords]);
  
    const handleRequestLocation = async () => {
      setRequestingLocation(true);
      try {
-       const gps = await getDeviceGPS();
-       if (gps) {
-         setClientCoords(gps);
+      const gpsRead = await readGps({ forceFresh: true });
+      const gps = gpsRead.coords;
+      if (gps) {
+        setClientCoords(gps);
          setIsLocationRequested(true);
          setCoordsSource("gps");
          // Reverse geocode para mostrar o endereço real do GPS
@@ -311,7 +308,7 @@ const CheckoutPage = () => {
        try {
          if (typeof navigator === "undefined" || !navigator.geolocation) return;
          // Em web: só dispara se permissão já está "granted" (não pede prompt)
-         if (navigator.permissions?.query) {
+        if (navigator.permissions?.query) {
            try {
              const status = await navigator.permissions.query({ name: "geolocation" as PermissionName });
              if (status.state !== "granted") return;
@@ -319,7 +316,7 @@ const CheckoutPage = () => {
              return;
            }
          }
-         const gps = await getDeviceGPS();
+        const gps = (await readGps()).coords;
          if (cancelled || !gps) return;
          setClientCoords(gps);
          setIsLocationRequested(true);
@@ -517,15 +514,12 @@ const CheckoutPage = () => {
             : [profileStreet, profileNumber].filter(Boolean).join(" ");
           const geoNeighborhood = useSavedAddr ? savedAddressData?.neighborhood : profileNeighborhood;
 
-          const context = await resolveAddressContext({
-            street: geoStreet,
-            neighborhood: geoNeighborhood,
-            city: undefined,
-            state: undefined,
-            postalcode: geoCep,
+          const r = await resolveAddress({
+            prefer: "gps",
+            fallback: ["address", "cep"],
+            address: { street: geoStreet, neighborhood: geoNeighborhood, postalcode: geoCep },
           });
-          const preciseGeo = await getBestClientCoordinates(context);
-          return preciseGeo ? { lat: preciseGeo.lat, lng: preciseGeo.lng } : null;
+          return r.coords ? { lat: r.coords.lat, lng: r.coords.lng } : null;
         } catch {
           return null;
         }

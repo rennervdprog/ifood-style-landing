@@ -56,7 +56,7 @@ import { getStoreOpenStatus, type OpeningHour } from "@/lib/storeStatus";
 import ProductTour, { clienteTourSteps } from "@/components/ProductTour";
 import { useNavigate } from "react-router-dom";
 import { useUserLocation } from "@/hooks/useUserLocation";
-import { haversineDistanceMeters } from "@/lib/addressGeocoding";
+import { haversineMeters } from "@/lib/location";
 
 /* ─── hooks ─── */
 function useCountUp(end: number, duration = 2000, start = false) {
@@ -184,7 +184,7 @@ const Index = () => {
       const lng = (store as any).longitude;
       const distanceKm =
         userLocation.coords && typeof lat === "number" && typeof lng === "number"
-          ? haversineDistanceMeters(userLocation.coords, { lat, lng }) / 1000
+          ? haversineMeters(userLocation.coords, { lat, lng }) / 1000
           : null;
       return { ...store, computedOpen: status.isOpen, statusReason: status.reason, distanceKm };
     });
