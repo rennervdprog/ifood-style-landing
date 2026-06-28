@@ -550,6 +550,156 @@ const AuthPage = () => {
           )}
 
           {mode === "signup" && (
+            <div className="space-y-3 pt-1">
+              <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 flex gap-2.5">
+                <MapPin className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                <div className="text-xs text-slate-600 leading-relaxed">
+                  <strong className="text-foreground">Endereço de entrega</strong> — usaremos para calcular frete e mostrar lojas perto de você.
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="col-span-1">
+                  <label className="text-xs font-semibold text-slate-500 tracking-wide mb-1.5 block">CEP</label>
+                  <input
+                    type="tel"
+                    inputMode="numeric"
+                    placeholder="00000-000"
+                    value={cep}
+                    onChange={async (e) => {
+                      const v = formatCep(e.target.value);
+                      setCep(v);
+                      const digits = v.replace(/\D/g, "");
+                      if (digits.length === 8) {
+                        setCepLoading(true);
+                        try {
+                          const r = await fetchCep(digits);
+                          if (r) {
+                            if (!street) setStreet(r.logradouro || "");
+                            if (!neighborhood) setNeighborhood(r.bairro || "");
+                          }
+                        } finally { setCepLoading(false); }
+                      }
+                    }}
+                    maxLength={9}
+                    className="w-full h-11 px-3 rounded-xl border border-border bg-white text-foreground placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm"
+                  />
+                </div>
+                <div className="col-span-1">
+                  <label className="text-xs font-semibold text-slate-500 tracking-wide mb-1.5 block">Número</label>
+                  <input
+                    type="text"
+                    placeholder="123"
+                    value={number}
+                    onChange={(e) => setNumber(e.target.value)}
+                    maxLength={10}
+                    className="w-full h-11 px-3 rounded-xl border border-border bg-white text-foreground placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-slate-500 tracking-wide mb-1.5 block">Rua / Logradouro {cepLoading && <span className="text-slate-400 font-normal">(buscando...)</span>}</label>
+                <input
+                  type="text"
+                  placeholder="Rua das Flores"
+                  value={street}
+                  onChange={(e) => setStreet(e.target.value)}
+                  maxLength={120}
+                  className="w-full h-11 px-3 rounded-xl border border-border bg-white text-foreground placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-slate-500 tracking-wide mb-1.5 block">Bairro</label>
+                <input
+                  type="text"
+                  placeholder="Centro"
+                  value={neighborhood}
+                  onChange={(e) => setNeighborhood(e.target.value)}
+                  maxLength={80}
+                  className="w-full h-11 px-3 rounded-xl border border-border bg-white text-foreground placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-slate-500 tracking-wide mb-1.5 block">Complemento (opcional)</label>
+                <input
+                  type="text"
+                  placeholder="Apto 101, Bloco B"
+                  value={complement}
+                  onChange={(e) => setComplement(e.target.value)}
+                  maxLength={80}
+                  className="w-full h-11 px-3 rounded-xl border border-border bg-white text-foreground placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-slate-500 tracking-wide mb-1.5 block">Ponto de referência (opcional)</label>
+                <input
+                  type="text"
+                  placeholder="Ao lado da padaria"
+                  value={referencePoint}
+                  onChange={(e) => setReferencePoint(e.target.value)}
+                  maxLength={120}
+                  className="w-full h-11 px-3 rounded-xl border border-border bg-white text-foreground placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm"
+                />
+              </div>
+            </div>
+          )}
+
+          {mode === "signup" && (
+            <div className="space-y-3 pt-1">
+              <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 flex gap-2.5">
+                <ShieldCheck className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                <div className="text-xs text-slate-600 leading-relaxed">
+                  <strong className="text-foreground">PIN de entrega pessoal:</strong> escolha 4 dígitos que só você sabe. O entregador vai pedir esse mesmo código em <strong>todas</strong> as suas entregas. Evite datas óbvias (aniversário, ano de nascimento).
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-semibold text-slate-500 tracking-wide mb-1.5 block">PIN (4 dígitos)</label>
+                  <div className="relative">
+                    <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <input
+                      type="tel"
+                      inputMode="numeric"
+                      placeholder="••••"
+                      value={deliveryPin}
+                      onChange={(e) => setDeliveryPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                      maxLength={4}
+                      className={inputClass}
+                      autoComplete="off"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-slate-500 tracking-wide mb-1.5 block">Confirme</label>
+                  <div className="relative">
+                    <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <input
+                      type="tel"
+                      inputMode="numeric"
+                      placeholder="••••"
+                      value={confirmPin}
+                      onChange={(e) => setConfirmPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                      maxLength={4}
+                      className={inputClass}
+                      autoComplete="off"
+                    />
+                  </div>
+                </div>
+              </div>
+              <label className="flex items-start gap-2.5 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={pinAcknowledged}
+                  onChange={(e) => setPinAcknowledged(e.target.checked)}
+                  className="w-4 h-4 rounded border-border accent-primary mt-0.5 shrink-0"
+                />
+                <span className="text-xs text-slate-500 leading-relaxed">
+                  Entendi que <strong>este PIN será usado em todas as minhas entregas</strong> e é minha responsabilidade mantê-lo em sigilo.
+                </span>
+              </label>
+            </div>
+          )}
+
+          {mode === "signup" && (
             <label className="flex items-start gap-2.5 cursor-pointer select-none">
               <input
                 type="checkbox"
