@@ -12,61 +12,57 @@ const ROWS: Row[] = [
     label: "Mensalidade",
     values: {
       commission_only: "R$ 0",
-      hybrid: "R$ 50*",
       fixed: "R$ 90*",
       supporter: "R$ 75",
       autonomy: "R$ 229,90",
-    },
+    } as Record<StorePlanType, string>,
   },
   {
     label: "Comissão por pedido",
     values: {
       commission_only: "6%",
-      hybrid: "2,5%",
       fixed: "0%",
       supporter: "0%",
       autonomy: "0%",
-    },
+    } as Record<StorePlanType, string>,
   },
   {
     label: "Taxa por PIX (lojista)",
     values: {
       commission_only: "Grátis",
-      hybrid: "Grátis",
       fixed: "R$ 1,99",
       supporter: "R$ 1,99",
       autonomy: "R$ 1,99",
-    },
+    } as Record<StorePlanType, string>,
   },
   {
     label: "Taxa da plataforma na entrega (somada à sua taxa, paga pelo cliente)",
     values: {
       commission_only: "+ R$ 2,00",
-      hybrid: "+ R$ 2,00",
       fixed: "+ R$ 2,00",
       supporter: "+ R$ 2,00",
       autonomy: "Não cobra",
-    },
+    } as Record<StorePlanType, string>,
   },
   {
     label: "Cardápio digital",
-    values: { commission_only: true, hybrid: true, fixed: true, supporter: true, autonomy: true },
+    values: { commission_only: true, fixed: true, supporter: true, autonomy: true } as Record<StorePlanType, boolean>,
   },
   {
     label: "Relatórios completos",
-    values: { commission_only: false, hybrid: true, fixed: true, supporter: true, autonomy: true },
+    values: { commission_only: false, fixed: true, supporter: true, autonomy: true } as Record<StorePlanType, boolean>,
   },
   {
     label: "Banners e destaque",
-    values: { commission_only: false, hybrid: true, fixed: true, supporter: true, autonomy: true },
+    values: { commission_only: false, fixed: true, supporter: true, autonomy: true } as Record<StorePlanType, boolean>,
   },
   {
     label: "Motoboy integrado",
-    values: { commission_only: false, hybrid: true, fixed: true, supporter: true, autonomy: true },
+    values: { commission_only: false, fixed: true, supporter: true, autonomy: true } as Record<StorePlanType, boolean>,
   },
   {
     label: "Suporte VIP",
-    values: { commission_only: false, hybrid: false, fixed: true, supporter: true, autonomy: true },
+    values: { commission_only: false, fixed: true, supporter: true, autonomy: true } as Record<StorePlanType, boolean>,
   },
 ];
 
