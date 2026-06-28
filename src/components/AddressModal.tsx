@@ -78,7 +78,7 @@ const AddressModal = ({ onClose, onSaved }: AddressModalProps) => {
   const handleUseGps = async () => {
     setLoadingGps(true);
     try {
-      const gps = await readGps({ highAccuracy: true, timeoutMs: 15000 });
+      const gps = await readGps({ forceFresh: true });
       if (!gps?.coords) {
         toast.error("Não foi possível obter a localização. Verifique a permissão de GPS.");
         return;
