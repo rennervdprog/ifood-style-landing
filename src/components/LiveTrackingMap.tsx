@@ -2,7 +2,9 @@ import { useEffect, useState, useRef, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Bike, Navigation } from "lucide-react";
-import { geocodeAddressPrecise, haversineDistanceMeters, isValidCoordinate, resolveAddressContext } from "@/lib/addressGeocoding";
+import { geocodeAddress, haversineMeters, isValidCoordinate } from "@/lib/location";
+import { fetchOsrmRoute } from "@/lib/osrmRouting";
+import { toast } from "sonner";
 
 let leafletCSSLoaded = false;
 function ensureLeafletCSS() {
@@ -66,6 +68,7 @@ const LiveTrackingMap = ({ orderId, driverId, storeId, clientAddress, clientLat,
   const clientMarkerRef = useRef<any>(null);
   const storeMarkerRef = useRef<any>(null);
   const routeLineRef = useRef<any>(null);
+  const arrivalNotifiedRef = useRef(false);
   const [mapReady, setMapReady] = useState(false);
   const [L, setL] = useState<any>(null);
   const [now, setNow] = useState(Date.now());
@@ -153,14 +156,13 @@ const LiveTrackingMap = ({ orderId, driverId, storeId, clientAddress, clientLat,
         return { name: data.name, lat: data.latitude, lng: data.longitude };
       }
 
-      const context = await resolveAddressContext({
+      const geo = await geocodeAddress({
         street: [data.address_street, data.address_number].filter(Boolean).join(" "),
         neighborhood: data.address_neighborhood || undefined,
         city: data.address_city || undefined,
         state: data.address_state || undefined,
         postalcode: data.address_cep || undefined,
       });
-      const geo = await geocodeAddressPrecise(context);
 
       if (geo) {
         supabase
@@ -208,14 +210,13 @@ const LiveTrackingMap = ({ orderId, driverId, storeId, clientAddress, clientLat,
         ? `${parts[0]} ${parts[1]}`
         : parts[0];
 
-      const context = await resolveAddressContext({
+      const geo = await geocodeAddress({
         street: streetWithNumber,
         neighborhood: orderData?.neighborhood || undefined,
         city: storeAddr?.address_city || undefined,
         state: storeAddr?.address_state || undefined,
         postalcode: undefined,
       });
-      const geo = await geocodeAddressPrecise(context);
 
       if (geo) {
         supabase
@@ -326,25 +327,32 @@ const LiveTrackingMap = ({ orderId, driverId, storeId, clientAddress, clientLat,
       }
     }
 
-    // Draw route line (store → driver → client)
+    // Draw real-street route (OSRM) driver → client. Fallback to straight line.
     if (driverLocation && clientGeo && isRecentDriverLocation) {
-      const routePoints: [number, number][] = [];
-      if (storeData?.lat && storeData?.lng) {
-        routePoints.push([storeData.lat, storeData.lng]);
-      }
-      routePoints.push([driverLocation.latitude, driverLocation.longitude]);
-      routePoints.push([clientGeo.lat, clientGeo.lng]);
+      const driverPt: [number, number] = [driverLocation.latitude, driverLocation.longitude];
+      const clientPt: [number, number] = [clientGeo.lat, clientGeo.lng];
+      const fallback: [number, number][] = storeData?.lat && storeData?.lng
+        ? [[storeData.lat, storeData.lng], driverPt, clientPt]
+        : [driverPt, clientPt];
 
-      if (routeLineRef.current) {
-        routeLineRef.current.setLatLngs(routePoints);
-      } else {
-        routeLineRef.current = L.polyline(routePoints, {
-          color: "#3b82f6",
-          weight: 4,
-          opacity: 0.7,
-          dashArray: "10, 8",
-        }).addTo(map);
-      }
+      const apply = (latlngs: [number, number][]) => {
+        if (routeLineRef.current) {
+          routeLineRef.current.setLatLngs(latlngs);
+        } else {
+          routeLineRef.current = L.polyline(latlngs, {
+            color: "#3b82f6",
+            weight: 4,
+            opacity: 0.75,
+          }).addTo(map);
+        }
+      };
+
+      apply(fallback);
+      fetchOsrmRoute([driverPt, clientPt]).then((r) => {
+        if (r && routeLineRef.current && mapInstanceRef.current) {
+          apply(r.geometry);
+        }
+      });
     } else if (routeLineRef.current) {
       map.removeLayer(routeLineRef.current);
       routeLineRef.current = null;
@@ -369,11 +377,31 @@ const LiveTrackingMap = ({ orderId, driverId, storeId, clientAddress, clientLat,
 
   const routeDistanceKm = useMemo(() => {
     if (!isRecentDriverLocation || !driverLocation || !clientGeo) return null;
-    const meters = haversineDistanceMeters(
+    const meters = haversineMeters(
       { lat: driverLocation.latitude, lng: driverLocation.longitude },
       { lat: clientGeo.lat, lng: clientGeo.lng },
     );
     return Math.round((meters / 1000) * 10) / 10;
+  }, [driverLocation, clientGeo, isRecentDriverLocation]);
+
+  // Geofence reverso: avisar cliente quando motoboy chega perto (≤120m).
+  useEffect(() => {
+    if (!driverLocation || !clientGeo || !isRecentDriverLocation) return;
+    const meters = haversineMeters(
+      { lat: driverLocation.latitude, lng: driverLocation.longitude },
+      { lat: clientGeo.lat, lng: clientGeo.lng },
+    );
+    if (meters <= 120 && !arrivalNotifiedRef.current) {
+      arrivalNotifiedRef.current = true;
+      try {
+        toast.success("🛵 Seu motoboy está chegando!", {
+          description: "Tenha o código de entrega em mãos.",
+          duration: 8000,
+        });
+      } catch {
+        /* noop */
+      }
+    }
   }, [driverLocation, clientGeo, isRecentDriverLocation]);
 
   // ETA calculation based on speed and distance
