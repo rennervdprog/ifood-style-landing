@@ -181,9 +181,11 @@ const PoliticaPrivacidade = () => {
 
         <section className="border-t border-border pt-4">
           <p className="text-xs text-muted-foreground text-center">
-            ItaSuper — Controlador de Dados · Itatinga/SP · Brasil<br />
-            Versão 4.3 · Última atualização: {dataAtualizacao}<br />
-            Contato LGPD: dpo@itasuper.app · WhatsApp (22) 99279-6291
+            ItaSuper — Controlador de Dados<br />
+            66.155.289 Renner Vinicius Dias · CNPJ 66.155.289/0001-26 · Itatinga/SP · Brasil<br />
+            Versão 5.0 · Última atualização: {dataAtualizacao}<br />
+            Contato LGPD: vinivias13@gmail.com · WhatsApp (22) 99279-6291<br />
+            <span className="text-amber-600 dark:text-amber-400">Sujeito a revisão jurídica final pela OAB.</span>
           </p>
         </section>
 
