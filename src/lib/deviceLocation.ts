@@ -1,12 +1,21 @@
 /**
- * Device GPS location helper.
- * Uses Capacitor Geolocation on native, browser Geolocation API on web.
- * Falls back to Nominatim geocoding if GPS is unavailable.
- * Shows user-friendly prompts when GPS is disabled.
+ * @deprecated Use `@/lib/location` (resolveAddress / readGps / requestLocationPermission).
+ * Mantido como shim com a mesma API pública.
  */
-import { isCapacitorNative } from "@/lib/capacitorNative";
-import { geocodeAddressPrecise, type AddressContext, type Coordinates } from "@/lib/addressGeocoding";
-import { toast } from "sonner";
+import { geocodeAddress } from "@/lib/location";
+import { getDeviceGPS } from "@/lib/location/gps";
+import type { AddressContext, Coordinates } from "@/lib/location";
+
+export { getDeviceGPS };
+
+/**
+ * Compat: tenta GPS primeiro, depois geocode do endereço.
+ */
+export async function getBestClientCoordinates(address: AddressContext): Promise<Coordinates | null> {
+  const gps = await getDeviceGPS();
+  if (gps) return gps;
+  return geocodeAddress(address);
+}
 
 /** Open the device's location settings (native only) */
 async function openLocationSettings() {
