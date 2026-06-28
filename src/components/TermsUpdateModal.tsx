@@ -1,116 +1,87 @@
 /**
- * TermsUpdateModal — v3.0 — mobile-first
- * Bottom sheet em mobile, modal centrado em desktop
+ * TermsUpdateModal — v4.0 — diff dinâmico
+ * Bottom sheet em mobile, modal em desktop. Renderiza SOMENTE as mudanças
+ * entre a versão aceita pelo usuário e a versão atual (vindas do banco).
  */
 import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import {
   FileText, Shield, CheckCircle2, ChevronDown, ChevronUp,
   Loader2, AlertTriangle,
 } from "lucide-react";
+import {
+  LegalChange,
+  PendingLegalChanges,
+  recordLegalAcceptance,
+} from "@/lib/legalDocuments";
 
-export const CURRENT_TERMS_VERSION = "4.4";
+// Mantido por compatibilidade — o App.tsx ainda importa esta constante.
+// O versionamento real agora vive no banco (legal_documents.is_current).
+export const CURRENT_TERMS_VERSION = "dynamic";
 
-const CHANGES = [
-  {
-    section: "Termos de Uso",
-    icon: FileText,
-    color: "text-primary",
-    bg: "bg-primary/8",
-    border: "border-primary/20",
-    items: [
-      {
-        tag: "CORREÇÃO",
-        tagColor: "bg-amber-500",
-        text: "Cláusula 2.2: cadastro de Lojista e Entregador agora exige 18 anos. Menores 16-17 podem usar apenas como Cliente, com assistência dos responsáveis.",
-      },
-      {
-        tag: "CORREÇÃO",
-        tagColor: "bg-amber-500",
-        text: "Cláusula 8.2: corrigida a citação do Pix Automático para Resolução BCB nº 103/2024 (texto anterior citava nº 403/2024).",
-      },
-      {
-        tag: "CORREÇÃO",
-        tagColor: "bg-amber-500",
-        text: "Cláusula 13.1: exclusão de responsabilidade não se aplica a violações de dados pessoais nem a falhas de segurança imputáveis ao ItaSuper.",
-      },
-      {
-        tag: "AJUSTE",
-        tagColor: "bg-amber-500",
-        text: "Cláusula 12.2: licença de uso de marca pós-contrato reduzida de 90 para 30 dias, restrita à remoção de cache/backups e finalização de entregas pendentes (CDC, Art. 51).",
-      },
-      {
-        tag: "AJUSTE",
-        tagColor: "bg-muted-foreground",
-        text: "Estrutura HTML da seção 10-A / 11 corrigida (Condutas Proibidas agora é seção independente).",
-      },
-    ],
-  },
-  {
-    section: "Política de Privacidade",
-    icon: Shield,
-    color: "text-emerald-600",
-    bg: "bg-emerald-500/8",
-    border: "border-emerald-500/20",
-    items: [
-      {
-        tag: "NOVO",
-        tagColor: "bg-blue-500",
-        text: "Seção 3: declarados novos operadores — Mercado Pago (residual), Sentry (monitoramento de erros) e OpenStreetMap/Nominatim (geocodificação de endereços).",
-      },
-      {
-        tag: "NOVO",
-        tagColor: "bg-blue-500",
-        text: "Seção 1.2: Lojista reconhecido como controlador conjunto dos dados de seus clientes finais (LGPD).",
-      },
-      {
-        tag: "ATUALIZADO",
-        tagColor: "bg-amber-500",
-        text: "Seção 8: transferência internacional reescrita com base em SCC da Comissão Europeia + SOC 2 / ISO 27001 (em vez de citar GDPR como framework).",
-      },
-      {
-        tag: "ATUALIZADO",
-        tagColor: "bg-muted-foreground",
-        text: "Seção 10: incidentes de segurança passam a citar também a Resolução CD/ANPD nº 18/2024 (atuação do DPO).",
-      },
-    ],
-  },
-];
+const CHANGE_TAG: Record<LegalChange["change_type"], { label: string; color: string }> = {
+  added: { label: "NOVO", color: "bg-blue-500" },
+  modified: { label: "ATUALIZADO", color: "bg-amber-500" },
+  removed: { label: "REMOVIDO", color: "bg-rose-500" },
+  fix: { label: "CORREÇÃO", color: "bg-muted-foreground" },
+};
 
-interface Props { onAccepted: () => void; }
+interface Props {
+  pending: PendingLegalChanges;
+  onAccepted: () => void;
+}
 
-export const TermsUpdateModal = ({ onAccepted }: Props) => {
+export const TermsUpdateModal = ({ pending, onAccepted }: Props) => {
   const { user } = useAuth();
   const [expanded, setExpanded] = useState<number | null>(0);
-  const [checkedTerms, setCheckedTerms] = useState(false);
-  const [checkedPrivacy, setCheckedPrivacy] = useState(false);
+  const [checkedTerms, setCheckedTerms] = useState(!pending.needs_terms);
+  const [checkedPrivacy, setCheckedPrivacy] = useState(!pending.needs_privacy);
   const [accepting, setAccepting] = useState(false);
 
-  const canAccept = checkedTerms && checkedPrivacy;
+  const termsVer = pending.current_terms_version || "—";
+  const privacyVer = pending.current_privacy_version || "—";
+  const canAccept =
+    (!pending.needs_terms || checkedTerms) &&
+    (!pending.needs_privacy || checkedPrivacy);
+
+  const sections = [
+    pending.needs_terms && {
+      kind: "terms" as const,
+      title: "Termos de Uso",
+      version: termsVer,
+      icon: FileText,
+      color: "text-primary",
+      bg: "bg-primary/8",
+      border: "border-primary/20",
+      changes: pending.terms_changes,
+    },
+    pending.needs_privacy && {
+      kind: "privacy" as const,
+      title: "Política de Privacidade",
+      version: privacyVer,
+      icon: Shield,
+      color: "text-emerald-600",
+      bg: "bg-emerald-500/8",
+      border: "border-emerald-500/20",
+      changes: pending.privacy_changes,
+    },
+  ].filter(Boolean) as Array<{
+    kind: "terms" | "privacy";
+    title: string;
+    version: string;
+    icon: typeof FileText;
+    color: string;
+    bg: string;
+    border: string;
+    changes: LegalChange[];
+  }>;
 
   const handleAccept = async () => {
     if (!canAccept || !user) return;
     setAccepting(true);
     try {
-      const { error: insErr } = await supabase.from("terms_acceptance" as any).insert({
-        user_id: user.id,
-        terms_version: CURRENT_TERMS_VERSION,
-        privacy_version: CURRENT_TERMS_VERSION,
-        user_agent: navigator.userAgent.slice(0, 200),
-        accepted_at: new Date().toISOString(),
-      });
-      if (insErr) console.warn("[terms] insert error:", insErr);
-      const { error: updErr } = await supabase
-        .from("profiles")
-        .update({ terms_version_accepted: CURRENT_TERMS_VERSION } as any)
-        .eq("user_id", user.id);
-      if (updErr) {
-        console.error("[terms] profile update error:", updErr);
-        toast.error("Erro ao salvar aceite: " + (updErr.message || "tente novamente"));
-        return;
-      }
+      await recordLegalAcceptance(user.id, termsVer, privacyVer);
       toast.success("Termos aceitos. Obrigado!");
       onAccepted();
     } catch (e: any) {
@@ -146,14 +117,16 @@ export const TermsUpdateModal = ({ onAccepted }: Props) => {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-black text-foreground leading-tight">Termos atualizados</p>
-              <p className="text-[11px] text-muted-foreground">Versão {CURRENT_TERMS_VERSION} · Junho 2026</p>
+              <p className="text-[11px] text-muted-foreground">
+                Termos v{termsVer} · Privacidade v{privacyVer}
+              </p>
             </div>
             <span className="text-[10px] font-black bg-amber-500/10 text-amber-600 border border-amber-500/20 px-2 py-1 rounded-full shrink-0">
               Obrigatório
             </span>
           </div>
           <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
-            Novos métodos de pagamento (PIX Maquininha) e regras de repasse foram adicionados.
+            Veja abaixo somente o que mudou desde o seu último aceite.
           </p>
         </div>
 
@@ -168,8 +141,8 @@ export const TermsUpdateModal = ({ onAccepted }: Props) => {
             </p>
           </div>
 
-          {/* Seções expansíveis */}
-          {CHANGES.map((section, idx) => {
+          {/* Seções expansíveis — só renderiza o que de fato mudou */}
+          {sections.map((section, idx) => {
             const Icon = section.icon;
             const isOpen = expanded === idx;
             return (
@@ -178,9 +151,11 @@ export const TermsUpdateModal = ({ onAccepted }: Props) => {
                   className={`w-full flex items-center gap-2.5 px-3.5 py-3 ${section.bg} text-left`}
                   onClick={() => setExpanded(isOpen ? null : idx)}>
                   <Icon className={`h-3.5 w-3.5 ${section.color} shrink-0`} />
-                  <p className={`text-sm font-bold ${section.color} flex-1`}>{section.section}</p>
+                  <p className={`text-sm font-bold ${section.color} flex-1`}>
+                    {section.title} <span className="text-muted-foreground font-normal">v{section.version}</span>
+                  </p>
                   <span className="text-[10px] text-muted-foreground">
-                    {section.items.length} mudança{section.items.length > 1 ? "s" : ""}
+                    {section.changes.length} mudança{section.changes.length !== 1 ? "s" : ""}
                   </span>
                   {isOpen
                     ? <ChevronUp className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
@@ -188,14 +163,28 @@ export const TermsUpdateModal = ({ onAccepted }: Props) => {
                 </button>
                 {isOpen && (
                   <div className="px-3.5 py-3 space-y-3 bg-card/50">
-                    {section.items.map((item, i) => (
-                      <div key={i} className="flex items-start gap-2">
-                        <span className={`${item.tagColor} text-white text-[9px] font-black px-1.5 py-0.5 rounded shrink-0 mt-0.5`}>
-                          {item.tag}
-                        </span>
-                        <p className="text-xs text-muted-foreground leading-relaxed">{item.text}</p>
-                      </div>
-                    ))}
+                    {section.changes.length === 0 && (
+                      <p className="text-xs text-muted-foreground italic">Sem detalhes registrados.</p>
+                    )}
+                    {section.changes.map((c, i) => {
+                      const tag = CHANGE_TAG[c.change_type];
+                      return (
+                        <div key={i} className="flex items-start gap-2">
+                          <span className={`${tag.color} text-white text-[9px] font-black px-1.5 py-0.5 rounded shrink-0 mt-0.5`}>
+                            {tag.label}
+                          </span>
+                          <div className="flex-1">
+                            <p className="text-[10px] text-muted-foreground/70 font-semibold mb-0.5">
+                              v{c.version} · {c.section}
+                            </p>
+                            <p className="text-xs text-muted-foreground leading-relaxed">{c.summary}</p>
+                            {c.legal_basis && (
+                              <p className="text-[10px] text-primary/70 mt-1 font-medium">📖 {c.legal_basis}</p>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -219,43 +208,39 @@ export const TermsUpdateModal = ({ onAccepted }: Props) => {
         <div className="px-4 pt-3 pb-safe-bottom sm:pb-4 border-t border-border shrink-0 space-y-2.5"
           style={{ paddingBottom: "max(16px, env(safe-area-inset-bottom))" }}>
 
-          {/* Checkbox Termos */}
-          <button
-            onClick={() => setCheckedTerms(!checkedTerms)}
-            className="w-full flex items-start gap-3 text-left">
-            <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 mt-0.5 transition-colors ${
-              checkedTerms ? "bg-primary border-primary" : "bg-background border-border"
-            }`}>
-              {checkedTerms && <CheckCircle2 className="h-3.5 w-3.5 text-primary-foreground" />}
-            </div>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Li e aceito os{" "}
-              <a href="/termos" target="_blank" rel="noopener noreferrer"
-                className="font-bold text-primary underline underline-offset-2">
-                Termos de Uso
-              </a>{" "}
-              versão {CURRENT_TERMS_VERSION}, incluindo razão social atualizada do Asaas, Encarregado de Dados (DPO) e correções de numeração.
-            </p>
-          </button>
+          {pending.needs_terms && (
+            <button onClick={() => setCheckedTerms(!checkedTerms)} className="w-full flex items-start gap-3 text-left">
+              <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 mt-0.5 transition-colors ${
+                checkedTerms ? "bg-primary border-primary" : "bg-background border-border"
+              }`}>
+                {checkedTerms && <CheckCircle2 className="h-3.5 w-3.5 text-primary-foreground" />}
+              </div>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Li e aceito os{" "}
+                <a href="/termos" target="_blank" rel="noopener noreferrer" className="font-bold text-primary underline underline-offset-2">
+                  Termos de Uso
+                </a>{" "}
+                versão {termsVer}.
+              </p>
+            </button>
+          )}
 
-          {/* Checkbox Privacidade */}
-          <button
-            onClick={() => setCheckedPrivacy(!checkedPrivacy)}
-            className="w-full flex items-start gap-3 text-left">
-            <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 mt-0.5 transition-colors ${
-              checkedPrivacy ? "bg-emerald-500 border-emerald-500" : "bg-background border-border"
-            }`}>
-              {checkedPrivacy && <CheckCircle2 className="h-3.5 w-3.5 text-white" />}
-            </div>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Li e aceito a{" "}
-              <a href="/privacidade" target="_blank" rel="noopener noreferrer"
-                className="font-bold text-emerald-600 underline underline-offset-2">
-                Política de Privacidade
-              </a>{" "}
-              versão {CURRENT_TERMS_VERSION}.
-            </p>
-          </button>
+          {pending.needs_privacy && (
+            <button onClick={() => setCheckedPrivacy(!checkedPrivacy)} className="w-full flex items-start gap-3 text-left">
+              <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 mt-0.5 transition-colors ${
+                checkedPrivacy ? "bg-emerald-500 border-emerald-500" : "bg-background border-border"
+              }`}>
+                {checkedPrivacy && <CheckCircle2 className="h-3.5 w-3.5 text-white" />}
+              </div>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Li e aceito a{" "}
+                <a href="/privacidade" target="_blank" rel="noopener noreferrer" className="font-bold text-emerald-600 underline underline-offset-2">
+                  Política de Privacidade
+                </a>{" "}
+                versão {privacyVer}.
+              </p>
+            </button>
+          )}
 
           {/* Botão aceitar */}
           <button
