@@ -62,11 +62,11 @@ describe("usePdvCart", () => {
   it("troco = recebido - total, e detecta valor insuficiente", () => {
     const { result } = renderHook(() => usePdvCart());
     act(() => result.current.addScannedProduct(prod({ price: 30 })));
-    act(() => result.current.setCashReceived("5000")); // R$ 50,00
+    act(() => result.current.setCashReceived("50,00"));
     expect(result.current.troco).toBeCloseTo(20, 2);
     expect(result.current.trocoNegativo).toBe(false);
 
-    act(() => result.current.setCashReceived("1000")); // R$ 10,00
+    act(() => result.current.setCashReceived("10,00"));
     expect(result.current.trocoNegativo).toBe(true);
   });
 
