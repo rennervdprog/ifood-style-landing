@@ -493,8 +493,13 @@ const ProductDetailModal = ({ product, storeName, storeCategory, singleSize = fa
                 </button>
 
                 {item.price > 0 && (
-                  <span className={cn("shrink-0 text-right text-sm font-bold", isChecked ? "text-primary" : "text-muted-foreground")}>
-                    {qty > 1 ? `+ ${formatBRL(Number(item.price || 0))} × ${qty} = ${formatBRL(itemLineTotal)}` : `+ ${formatBRL(Number(item.price || 0))}`}
+                  <span className={cn("shrink-0 text-right text-sm font-bold leading-tight", isChecked ? "text-primary" : "text-muted-foreground")}>
+                    {qty > 1 ? (
+                      <>
+                        <span className="block text-[11px] font-bold text-muted-foreground">{formatBRL(Number(item.price || 0))} × {qty}</span>
+                        <span className="block">+ {formatBRL(itemLineTotal)}</span>
+                      </>
+                    ) : `+ ${formatBRL(Number(item.price || 0))}`}
                   </span>
                 )}
 
