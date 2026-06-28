@@ -23,7 +23,8 @@ import { getCapacitorAppMode } from "@/lib/capacitorAppMode";
 import CapacitorRouteGuard from "@/components/CapacitorRouteGuard";
 import StoreAppGuard from "@/components/StoreAppGuard";
 import ErrorBoundary from "@/components/ErrorBoundary";
-import { TermsUpdateModal, CURRENT_TERMS_VERSION } from "@/components/TermsUpdateModal";
+import { TermsUpdateModal } from "@/components/TermsUpdateModal";
+import { fetchPendingLegalChanges, type PendingLegalChanges } from "@/lib/legalDocuments";
 import { APP_VERSION } from "@/lib/appVersion";
 
 // Lazy-loaded pages — each becomes its own chunk
@@ -162,7 +163,7 @@ const PushNavigator = () => {
 /** Verifica e exibe modal de novos termos — precisa estar dentro do AuthProvider */
 const TermsChecker = () => {
   const { user } = useAuth();
-  const [needsTermsUpdate, setNeedsTermsUpdate] = useState(false);
+  const [pending, setPending] = useState<PendingLegalChanges | null>(null);
   const [termsChecked, setTermsChecked] = useState(false);
 
   useEffect(() => {
@@ -170,20 +171,25 @@ const TermsChecker = () => {
     const check = async () => {
       const { data } = await supabase
         .from("profiles")
-        .select("terms_version_accepted")
+        .select("terms_version_accepted, privacy_version_accepted")
         .eq("user_id", user.id)
         .maybeSingle();
-      const v = (data as any)?.terms_version_accepted || "1.0";
-      if (v < CURRENT_TERMS_VERSION) setNeedsTermsUpdate(true);
+      const termsAcc = (data as any)?.terms_version_accepted || null;
+      const privAcc = (data as any)?.privacy_version_accepted || termsAcc || null;
+      const result = await fetchPendingLegalChanges(termsAcc, privAcc);
+      if (result && (result.needs_terms || result.needs_privacy)) {
+        setPending(result);
+      }
       setTermsChecked(true);
     };
     check();
   }, [user, termsChecked]);
 
-  if (!needsTermsUpdate || !user) return null;
+  if (!pending || !user) return null;
   return (
     <TermsUpdateModal
-      onAccepted={() => { setNeedsTermsUpdate(false); }}
+      pending={pending}
+      onAccepted={() => { setPending(null); }}
     />
   );
 };

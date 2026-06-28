@@ -1204,6 +1204,83 @@ export type Database = {
         }
         Relationships: []
       }
+      legal_document_changes: {
+        Row: {
+          change_type: string
+          created_at: string
+          display_order: number
+          document_id: string
+          id: string
+          legal_basis: string | null
+          section: string
+          summary: string
+        }
+        Insert: {
+          change_type: string
+          created_at?: string
+          display_order?: number
+          document_id: string
+          id?: string
+          legal_basis?: string | null
+          section: string
+          summary: string
+        }
+        Update: {
+          change_type?: string
+          created_at?: string
+          display_order?: number
+          document_id?: string
+          id?: string
+          legal_basis?: string | null
+          section?: string
+          summary?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "legal_document_changes_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "legal_documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      legal_documents: {
+        Row: {
+          content_md: string
+          created_at: string
+          effective_date: string
+          id: string
+          is_current: boolean
+          kind: string
+          summary: string | null
+          version: string
+          version_num: number
+        }
+        Insert: {
+          content_md: string
+          created_at?: string
+          effective_date?: string
+          id?: string
+          is_current?: boolean
+          kind: string
+          summary?: string | null
+          version: string
+          version_num: number
+        }
+        Update: {
+          content_md?: string
+          created_at?: string
+          effective_date?: string
+          id?: string
+          is_current?: boolean
+          kind?: string
+          summary?: string | null
+          version?: string
+          version_num?: number
+        }
+        Relationships: []
+      }
       loyalty_config: {
         Row: {
           created_at: string
@@ -2492,6 +2569,7 @@ export type Database = {
           phone: string | null
           pix_key: string | null
           pix_type: Database["public"]["Enums"]["pix_type"] | null
+          privacy_version_accepted: string | null
           reference_point: string | null
           role: Database["public"]["Enums"]["partner_role"]
           selfie_url: string | null
@@ -2522,6 +2600,7 @@ export type Database = {
           phone?: string | null
           pix_key?: string | null
           pix_type?: Database["public"]["Enums"]["pix_type"] | null
+          privacy_version_accepted?: string | null
           reference_point?: string | null
           role?: Database["public"]["Enums"]["partner_role"]
           selfie_url?: string | null
@@ -2552,6 +2631,7 @@ export type Database = {
           phone?: string | null
           pix_key?: string | null
           pix_type?: Database["public"]["Enums"]["pix_type"] | null
+          privacy_version_accepted?: string | null
           reference_point?: string | null
           role?: Database["public"]["Enums"]["partner_role"]
           selfie_url?: string | null
@@ -3814,6 +3894,10 @@ export type Database = {
       get_owned_store_ids: { Args: { _user_id: string }; Returns: string[] }
       get_page_view_stats: { Args: { _page?: string }; Returns: Json }
       get_pdv_session_summary: { Args: { _session_id: string }; Returns: Json }
+      get_pending_legal_changes: {
+        Args: { _privacy_accepted: string; _terms_accepted: string }
+        Returns: Json
+      }
       get_promo_remaining: { Args: { _code: string }; Returns: Json }
       get_store_commission_rate: {
         Args: { _store_id: string }
