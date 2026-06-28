@@ -15,6 +15,7 @@ import SavedAddressPicker from "@/components/SavedAddressPicker";
 import CouponInput from "@/components/CouponInput";
  import { calculateDeliveryFee, calculateStoreOwnDeliveryFee, DEFAULT_DELIVERY_FEE_CONFIG, type DeliveryFeeConfig } from "@/lib/deliveryFee";
 import WhyThisCharge from "@/components/fees/WhyThisCharge";
+import DeliveryAccuracyBadge from "@/components/fees/DeliveryAccuracyBadge";
 import { formatCep, fetchCep } from "@/lib/cepLookup";
 import { addMoney, multiplyMoney, sumMoney, formatBRL } from "@/lib/utils";
 import { useStorePlan } from "@/hooks/useStorePlan";
@@ -1301,9 +1302,10 @@ const CheckoutPage = () => {
               )}
 
               {!isPickup && feeBreakdown && couponType !== "free_shipping" && (
-                <p className="text-[11px] text-muted-foreground/80 -mt-1 pl-4">
-                  {feeBreakdown}
-                </p>
+                <div className="-mt-1 pl-4 flex flex-col gap-1">
+                  <DeliveryAccuracyBadge breakdown={feeBreakdown} />
+                  <p className="text-[11px] text-muted-foreground/80">{feeBreakdown}</p>
+                </div>
               )}
 
               {!isPickup && couponType === "free_shipping" && (
