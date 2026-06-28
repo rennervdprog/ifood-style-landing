@@ -175,6 +175,23 @@ const AddressModal = ({ onClose, onSaved }: AddressModalProps) => {
             </button>
           </div>
 
+          {showGpsHint && (
+            <div className="rounded-xl border border-primary/30 bg-primary/5 p-3 space-y-2">
+              <p className="text-xs text-foreground/80">
+                Este CEP é genérico da cidade. Use o GPS para preencher rua e bairro com precisão.
+              </p>
+              <button
+                type="button"
+                onClick={handleUseGps}
+                disabled={loadingGps}
+                className="w-full flex items-center justify-center gap-2 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-bold disabled:opacity-50"
+              >
+                {loadingGps ? <Loader2 className="h-4 w-4 animate-spin" /> : <Navigation className="h-4 w-4" />}
+                {loadingGps ? "Obtendo localização..." : "Usar minha localização (GPS)"}
+              </button>
+            </div>
+          )}
+
           <div className="grid grid-cols-3 gap-2">
             <div className="col-span-2">
               <input type="text" placeholder="Rua" value={street} onChange={(e) => setStreet(e.target.value)}
