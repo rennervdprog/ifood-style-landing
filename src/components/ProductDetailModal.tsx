@@ -211,10 +211,12 @@ const ProductDetailModal = ({ product, storeName, storeCategory, singleSize = fa
       const groupQtys = prev[groupId] || {};
       const currentQty = groupQtys[itemId] || 0;
       const total = Object.values(groupQtys).reduce((s, q) => s + q, 0);
+      // max_select 0 ou nulo = ilimitado
+      const cap = maxSelect && maxSelect > 0 ? maxSelect : Infinity;
       // Atingiu o máximo do grupo
-      if (total >= maxSelect) {
+      if (total >= cap) {
         // Máximo 1: substitui o atual pelo novo
-        if (maxSelect === 1) return { ...prev, [groupId]: { [itemId]: 1 } };
+        if (cap === 1) return { ...prev, [groupId]: { [itemId]: 1 } };
         return prev;
       }
       return { ...prev, [groupId]: { ...groupQtys, [itemId]: currentQty + 1 } };
