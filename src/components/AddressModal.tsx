@@ -58,10 +58,12 @@ const AddressModal = ({ onClose, onSaved }: AddressModalProps) => {
       }
       setStreet(result.logradouro || "");
       if (result.complemento) setComplement(result.complemento);
-      if (result.bairro) {
-        setNeighborhoodLocal(result.bairro);
+      if (result.bairro) setNeighborhoodLocal(result.bairro);
+      if (!result.logradouro && !result.bairro) {
+        toast.info("CEP genérico da cidade — preencha rua e bairro manualmente.");
+      } else {
+        toast.success("Endereço preenchido pelo CEP!");
       }
-      toast.success("Endereço preenchido pelo CEP!");
     } catch {
       toast.error("Erro ao buscar CEP.");
     } finally {
