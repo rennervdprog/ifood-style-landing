@@ -368,8 +368,7 @@ const PartnerOnboarding = () => {
             <div className="grid sm:grid-cols-3 gap-5">
               {[
                 { name: "Comissão", price: "R$0", sub: "/mês", desc: "6% por pedido", icon: Rocket, tags: ["Sem mensalidade", "PIX integrado", "Ideal para testar"], popular: false },
-                { name: "Crescimento", price: "R$100", sub: "/mês", desc: "+ 2,5% por pedido", icon: TrendingUp, tags: ["PIX integrado", "CRM completo", "Menor comissão"], popular: true },
-                { name: "Essencial", price: "R$90*", sub: "/mês", desc: "0% de comissão", icon: Crown, tags: ["Zero comissão", "Lucro máximo", "Alto volume"], popular: false },
+                { name: "Essencial", price: "R$90", sub: "/mês", desc: "0% de comissão", icon: Crown, tags: ["Zero comissão", "Lucro máximo", "Alto volume"], popular: true },
               ].map((plan) => (
                 <Card key={plan.name} className={`rounded-2xl border-2 transition-all hover:shadow-lg relative ${plan.popular ? "border-primary shadow-md" : "border-border"}`}>
                   {plan.popular && (
