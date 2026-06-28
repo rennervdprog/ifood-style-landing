@@ -211,10 +211,12 @@ const ProductDetailModal = ({ product, storeName, storeCategory, singleSize = fa
       const groupQtys = prev[groupId] || {};
       const currentQty = groupQtys[itemId] || 0;
       const total = Object.values(groupQtys).reduce((s, q) => s + q, 0);
+      // max_select 0 ou nulo = ilimitado
+      const cap = maxSelect && maxSelect > 0 ? maxSelect : Infinity;
       // Atingiu o máximo do grupo
-      if (total >= maxSelect) {
+      if (total >= cap) {
         // Máximo 1: substitui o atual pelo novo
-        if (maxSelect === 1) return { ...prev, [groupId]: { [itemId]: 1 } };
+        if (cap === 1) return { ...prev, [groupId]: { [itemId]: 1 } };
         return prev;
       }
       return { ...prev, [groupId]: { ...groupQtys, [itemId]: currentQty + 1 } };
@@ -406,7 +408,10 @@ const ProductDetailModal = ({ product, storeName, storeCategory, singleSize = fa
           {items.map((item) => {
             const qty = getAddonQty(group.id, item.id);
             const isChecked = qty > 0;
-            const allowMultiple = group.max_select > 1;
+            // max_select === 1 → seleção única (checkbox). Qualquer outro (0=ilimitado ou >1) → stepper.
+            const allowMultiple = group.max_select !== 1;
+            const groupCap = group.max_select && group.max_select > 0 ? group.max_select : Infinity;
+            const atCap = groupTotal(group.id) >= groupCap;
             return (
               <div
                 key={item.id}
@@ -447,10 +452,10 @@ const ProductDetailModal = ({ product, storeName, storeCategory, singleSize = fa
                     <button
                       type="button"
                       onClick={() => addAddon(group.id, item.id, group.max_select)}
-                      disabled={groupTotal(group.id) >= group.max_select}
+                      disabled={atCap}
                       className={cn(
                         "flex h-7 w-7 items-center justify-center rounded-lg border-2 transition active:scale-90",
-                        groupTotal(group.id) < group.max_select ? "border-primary bg-primary text-white" : "border-muted-foreground/20 text-muted-foreground/30"
+                        !atCap ? "border-primary bg-primary text-white" : "border-muted-foreground/20 text-muted-foreground/30"
                       )}
                     >
                       <Plus className="h-3.5 w-3.5" />
