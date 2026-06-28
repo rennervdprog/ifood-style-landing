@@ -26,6 +26,7 @@ import { useStorePlan } from "@/hooks/useStorePlan";
 import { getStoreAppSlug } from "@/components/StoreAppGuard";
 import { checkStoreAccess, MAX_DISTANCE_KM } from "@/lib/fraudCheck";
 import { getEffectivePrice, isPromoActive, getPromoDiscountPct } from "@/lib/promoPrice";
+import { fetchProductAddons } from "@/lib/productAddons";
 
 interface Product {
   id: string;
@@ -193,13 +194,8 @@ const StorePage = () => {
   useEffect(() => {
     if (!storeId) return;
     const warmProductModal = () => { void loadProductDetailModal(); };
-    const idleId = typeof window.requestIdleCallback === "function"
-      ? window.requestIdleCallback(warmProductModal, { timeout: 1200 })
-      : window.setTimeout(warmProductModal, 700);
-    return () => {
-      if (typeof window.cancelIdleCallback === "function") window.cancelIdleCallback(idleId as number);
-      else window.clearTimeout(idleId as number);
-    };
+    const timer = window.setTimeout(warmProductModal, 120);
+    return () => window.clearTimeout(timer);
   }, [storeId]);
 
    const storePlan = useStorePlan(storeId);
@@ -763,8 +759,24 @@ const StorePage = () => {
   const openProduct = useCallback((product: Product) => {
     // Allow opening modal even when closed/out-of-stock (for browsing).
     // The "Add to cart" button inside the modal already validates.
+    void queryClient.prefetchQuery({
+      queryKey: ["addon-all", product.id],
+      queryFn: () => fetchProductAddons(product.id),
+      staleTime: 1000 * 60 * 5,
+      gcTime: 1000 * 60 * 10,
+    });
     setSelectedProduct(product);
-  }, []);
+  }, [queryClient]);
+
+  const prefetchProduct = useCallback((product: Product) => {
+    void loadProductDetailModal();
+    void queryClient.prefetchQuery({
+      queryKey: ["addon-all", product.id],
+      queryFn: () => fetchProductAddons(product.id),
+      staleTime: 1000 * 60 * 5,
+      gcTime: 1000 * 60 * 10,
+    });
+  }, [queryClient]);
 
   // Adega: adicionar 1un direto, sem abrir modal. Se houver addons obrigatórios o modal ainda é a melhor rota.
   const quickAddAdega = useCallback((product: Product) => {
@@ -1529,6 +1541,7 @@ const StorePage = () => {
                     disabled={!storeStatus.isOpen}
                     storeCategory={store?.category}
                     onClick={() => openProduct(product)}
+                    onPrefetch={() => prefetchProduct(product)}
                     onQuickAdd={isAdega ? quickAddAdega : undefined}
                   />
                 ))}
@@ -1572,6 +1585,7 @@ const StorePage = () => {
                           disabled={!storeStatus.isOpen}
                           storeCategory={store?.category}
                           onClick={() => openProduct(product)}
+                          onPrefetch={() => prefetchProduct(product)}
                           onQuickAdd={isAdega ? quickAddAdega : undefined}
                         />
                       ))}
@@ -1604,6 +1618,7 @@ const StorePage = () => {
                         disabled={!storeStatus.isOpen}
                         storeCategory={store?.category}
                         onClick={() => openProduct(product)}
+                        onPrefetch={() => prefetchProduct(product)}
                         onQuickAdd={isAdega ? quickAddAdega : undefined}
                       />
                     ))}
@@ -1630,6 +1645,7 @@ const StorePage = () => {
                       disabled={!storeStatus.isOpen}
                       storeCategory={store?.category}
                       onClick={() => openProduct(product)}
+                      onPrefetch={() => prefetchProduct(product)}
                       onQuickAdd={isAdega ? quickAddAdega : undefined}
                     />
                   ))}
@@ -1728,6 +1744,7 @@ interface ProductCardProps {
   product: Product;
   disabled: boolean;
   onClick: () => void;
+  onPrefetch?: () => void;
   storeCategory?: string;
   onQuickAdd?: (product: Product) => void;
 }
@@ -1738,7 +1755,7 @@ const categoryEmoji: Record<string, string> = {
   docerias: "🧁", saudavel: "🥗",
 };
 
-const ProductCard = memo(({ product, disabled, onClick, storeCategory, onQuickAdd }: ProductCardProps) => {
+const ProductCard = memo(({ product, disabled, onClick, onPrefetch, storeCategory, onQuickAdd }: ProductCardProps) => {
   const meta = product.metadata || {};
   const cat = storeCategory || "";
   const isBeverage = !!meta.is_beverage;
@@ -1777,6 +1794,9 @@ const ProductCard = memo(({ product, disabled, onClick, storeCategory, onQuickAd
   return (
     <button
       onClick={isOutOfStock ? undefined : onClick}
+      onPointerDown={isOutOfStock ? undefined : onPrefetch}
+      onMouseEnter={isOutOfStock ? undefined : onPrefetch}
+      onFocus={isOutOfStock ? undefined : onPrefetch}
       disabled={isOutOfStock}
       className={`w-full text-left transition-all group rounded-2xl ${
         isAdegaCard
