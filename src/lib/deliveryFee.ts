@@ -199,16 +199,6 @@ function haversineDistance(
   return R * c;
 }
 
-/**
- * Geocode an address (DEPRECATED - Use geocodeAddress instead)
- */
-async function geocodeAddress(cep: string, street?: string, number?: string): Promise<{ lat: number; lng: number } | null> {
-  return geocodeAddress({
-    postalcode: cep,
-    street: street && number ? `${street}, ${number}` : street || undefined
-  });
-}
-
 function isDistrictNeighborhood(bairro: string | undefined): boolean {
   if (!bairro) return false;
   return /\(.+\)/.test(bairro);
