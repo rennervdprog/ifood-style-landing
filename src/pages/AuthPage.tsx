@@ -2,8 +2,10 @@ import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Mail, Lock, Eye, EyeOff, KeyRound, ShoppingBag, CheckCircle2, Check, X, Phone } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, KeyRound, ShoppingBag, CheckCircle2, Check, X, Phone, User, FileText, ShieldCheck, MapPin } from "lucide-react";
  import { maskWhatsApp } from "@/lib/whatsapp";
+import { formatDocument, sanitizeDocument, validateDocument } from "@/lib/documentFormat";
+import { fetchCep, formatCep } from "@/lib/location/cep";
 import { isPartnerCapacitorApp, persistCapacitorAppMode } from "@/lib/capacitorAppMode";
 import { PARTNER_ROUTES } from "@/components/CapacitorRouteGuard";
 import BiometricLoginButton from "@/components/BiometricLoginButton";
@@ -49,6 +51,18 @@ const AuthPage = () => {
   const [email, setEmail] = useState(""); // usado só em "forgot"
   const [password, setPassword] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [cpf, setCpf] = useState("");
+  const [deliveryPin, setDeliveryPin] = useState("");
+  const [confirmPin, setConfirmPin] = useState("");
+  const [pinAcknowledged, setPinAcknowledged] = useState(false);
+  const [cep, setCep] = useState("");
+  const [street, setStreet] = useState("");
+  const [number, setNumber] = useState("");
+  const [complement, setComplement] = useState("");
+  const [neighborhood, setNeighborhood] = useState("");
+  const [referencePoint, setReferencePoint] = useState("");
+  const [cepLoading, setCepLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
@@ -107,6 +121,17 @@ const AuthPage = () => {
       }
       if (!password.trim()) {
         toast.error("Crie uma senha.");
+        return;
+      }
+      if (fullName.trim().length < 3) { toast.error("Informe seu nome completo."); return; }
+      if (!validateDocument(cpf)) { toast.error("CPF ou CNPJ inválido."); return; }
+      if (!/^\d{4}$/.test(deliveryPin)) { toast.error("Defina um PIN de entrega com 4 dígitos numéricos."); return; }
+      if (deliveryPin !== confirmPin) { toast.error("Os PINs informados não coincidem."); return; }
+      if (!pinAcknowledged) { toast.error("Confirme que este PIN será usado em todas as suas entregas."); return; }
+      const cepDigits = cep.replace(/\D/g, "");
+      if (cepDigits.length !== 8) { toast.error("CEP inválido."); return; }
+      if (!street.trim() || !number.trim() || !neighborhood.trim()) {
+        toast.error("Preencha rua, número e bairro do endereço.");
         return;
       }
     }
@@ -249,6 +274,9 @@ const AuthPage = () => {
             data: {
               role: "cliente",
               whatsapp: whatsDigits,
+              full_name: fullName.trim(),
+              document: sanitizeDocument(cpf),
+              delivery_pin: deliveryPin,
             },
           },
         });
@@ -263,7 +291,21 @@ const AuthPage = () => {
           await supabase.from("profiles").update({
             terms_accepted_at: new Date().toISOString(),
             whatsapp_number: whatsDigits,
+            full_name: fullName.trim(),
+            document: sanitizeDocument(cpf),
+            delivery_pin: deliveryPin,
           }).eq("user_id", signUpData.user.id);
+          await supabase.from("saved_addresses").insert({
+            user_id: signUpData.user.id,
+            label: "Casa",
+            cep: formatCep(cep),
+            street: street.trim(),
+            number: number.trim(),
+            complement: complement.trim() || null,
+            neighborhood: neighborhood.trim(),
+            reference_point: referencePoint.trim() || null,
+            is_default: true,
+          });
         }
         toast.success("Conta criada com sucesso!");
         if (isPartnerCapacitorApp()) {
@@ -398,6 +440,41 @@ const AuthPage = () => {
             </div>
           )}
 
+          {mode === "signup" && (
+            <>
+              <div>
+                <label className="text-xs font-semibold text-slate-500 tracking-wide mb-1.5 block">Nome completo</label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder="Seu nome"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    maxLength={80}
+                    autoComplete="name"
+                    className={inputClass}
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-slate-500 tracking-wide mb-1.5 block">CPF ou CNPJ</label>
+                <div className="relative">
+                  <FileText className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="CPF ou CNPJ"
+                    value={cpf}
+                    onChange={(e) => setCpf(formatDocument(e.target.value))}
+                    maxLength={18}
+                    className={inputClass}
+                  />
+                </div>
+              </div>
+            </>
+          )}
+
           {mode !== "forgot" && (
             <>
               <div>
@@ -469,6 +546,156 @@ const AuthPage = () => {
               >
                 Esqueceu a senha?
               </button>
+            </div>
+          )}
+
+          {mode === "signup" && (
+            <div className="space-y-3 pt-1">
+              <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 flex gap-2.5">
+                <MapPin className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                <div className="text-xs text-slate-600 leading-relaxed">
+                  <strong className="text-foreground">Endereço de entrega</strong> — usaremos para calcular frete e mostrar lojas perto de você.
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="col-span-1">
+                  <label className="text-xs font-semibold text-slate-500 tracking-wide mb-1.5 block">CEP</label>
+                  <input
+                    type="tel"
+                    inputMode="numeric"
+                    placeholder="00000-000"
+                    value={cep}
+                    onChange={async (e) => {
+                      const v = formatCep(e.target.value);
+                      setCep(v);
+                      const digits = v.replace(/\D/g, "");
+                      if (digits.length === 8) {
+                        setCepLoading(true);
+                        try {
+                          const r = await fetchCep(digits);
+                          if (r) {
+                            if (!street) setStreet(r.logradouro || "");
+                            if (!neighborhood) setNeighborhood(r.bairro || "");
+                          }
+                        } finally { setCepLoading(false); }
+                      }
+                    }}
+                    maxLength={9}
+                    className="w-full h-11 px-3 rounded-xl border border-border bg-white text-foreground placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm"
+                  />
+                </div>
+                <div className="col-span-1">
+                  <label className="text-xs font-semibold text-slate-500 tracking-wide mb-1.5 block">Número</label>
+                  <input
+                    type="text"
+                    placeholder="123"
+                    value={number}
+                    onChange={(e) => setNumber(e.target.value)}
+                    maxLength={10}
+                    className="w-full h-11 px-3 rounded-xl border border-border bg-white text-foreground placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-slate-500 tracking-wide mb-1.5 block">Rua / Logradouro {cepLoading && <span className="text-slate-400 font-normal">(buscando...)</span>}</label>
+                <input
+                  type="text"
+                  placeholder="Rua das Flores"
+                  value={street}
+                  onChange={(e) => setStreet(e.target.value)}
+                  maxLength={120}
+                  className="w-full h-11 px-3 rounded-xl border border-border bg-white text-foreground placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-slate-500 tracking-wide mb-1.5 block">Bairro</label>
+                <input
+                  type="text"
+                  placeholder="Centro"
+                  value={neighborhood}
+                  onChange={(e) => setNeighborhood(e.target.value)}
+                  maxLength={80}
+                  className="w-full h-11 px-3 rounded-xl border border-border bg-white text-foreground placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-slate-500 tracking-wide mb-1.5 block">Complemento (opcional)</label>
+                <input
+                  type="text"
+                  placeholder="Apto 101, Bloco B"
+                  value={complement}
+                  onChange={(e) => setComplement(e.target.value)}
+                  maxLength={80}
+                  className="w-full h-11 px-3 rounded-xl border border-border bg-white text-foreground placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-slate-500 tracking-wide mb-1.5 block">Ponto de referência (opcional)</label>
+                <input
+                  type="text"
+                  placeholder="Ao lado da padaria"
+                  value={referencePoint}
+                  onChange={(e) => setReferencePoint(e.target.value)}
+                  maxLength={120}
+                  className="w-full h-11 px-3 rounded-xl border border-border bg-white text-foreground placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm"
+                />
+              </div>
+            </div>
+          )}
+
+          {mode === "signup" && (
+            <div className="space-y-3 pt-1">
+              <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 flex gap-2.5">
+                <ShieldCheck className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                <div className="text-xs text-slate-600 leading-relaxed">
+                  <strong className="text-foreground">PIN de entrega pessoal:</strong> escolha 4 dígitos que só você sabe. O entregador vai pedir esse mesmo código em <strong>todas</strong> as suas entregas. Evite datas óbvias (aniversário, ano de nascimento).
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-semibold text-slate-500 tracking-wide mb-1.5 block">PIN (4 dígitos)</label>
+                  <div className="relative">
+                    <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <input
+                      type="tel"
+                      inputMode="numeric"
+                      placeholder="••••"
+                      value={deliveryPin}
+                      onChange={(e) => setDeliveryPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                      maxLength={4}
+                      className={inputClass}
+                      autoComplete="off"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-slate-500 tracking-wide mb-1.5 block">Confirme</label>
+                  <div className="relative">
+                    <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <input
+                      type="tel"
+                      inputMode="numeric"
+                      placeholder="••••"
+                      value={confirmPin}
+                      onChange={(e) => setConfirmPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                      maxLength={4}
+                      className={inputClass}
+                      autoComplete="off"
+                    />
+                  </div>
+                </div>
+              </div>
+              <label className="flex items-start gap-2.5 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={pinAcknowledged}
+                  onChange={(e) => setPinAcknowledged(e.target.checked)}
+                  className="w-4 h-4 rounded border-border accent-primary mt-0.5 shrink-0"
+                />
+                <span className="text-xs text-slate-500 leading-relaxed">
+                  Entendi que <strong>este PIN será usado em todas as minhas entregas</strong> e é minha responsabilidade mantê-lo em sigilo.
+                </span>
+              </label>
             </div>
           )}
 
