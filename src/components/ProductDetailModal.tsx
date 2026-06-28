@@ -489,6 +489,29 @@ const ProductDetailModal = ({ product, storeName, storeCategory, singleSize = fa
                     + {formatBRL(item.price * (qty > 1 ? qty : 1))}
                   </span>
                 )}
+
+                {/* Stepper de quantidade para grupos de escolha única, após selecionado (ex: 2x Coca) */}
+                {!allowMultiple && isChecked && (
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); removeAddon(group.id, item.id); }}
+                      className="flex h-7 w-7 items-center justify-center rounded-lg border-2 border-primary bg-primary text-white transition active:scale-90"
+                      aria-label="Diminuir quantidade"
+                    >
+                      <Minus className="h-3.5 w-3.5" />
+                    </button>
+                    <span className="w-5 text-center text-sm font-black text-primary">{qty}</span>
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); bumpAddonQty(group.id, item.id); }}
+                      className="flex h-7 w-7 items-center justify-center rounded-lg border-2 border-primary bg-primary text-white transition active:scale-90"
+                      aria-label="Aumentar quantidade"
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                )}
               </div>
             );
           })}
