@@ -2732,6 +2732,7 @@ export type Database = {
           complement: string | null
           created_at: string
           deleted_at: string | null
+          delivery_pin: string | null
           document: string | null
           email: string | null
           full_name: string
@@ -2765,6 +2766,7 @@ export type Database = {
           complement?: string | null
           created_at?: string
           deleted_at?: string | null
+          delivery_pin?: string | null
           document?: string | null
           email?: string | null
           full_name?: string
@@ -2798,6 +2800,7 @@ export type Database = {
           complement?: string | null
           created_at?: string
           deleted_at?: string | null
+          delivery_pin?: string | null
           document?: string | null
           email?: string | null
           full_name?: string
