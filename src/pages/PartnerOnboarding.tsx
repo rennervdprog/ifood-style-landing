@@ -600,25 +600,6 @@ const PartnerOnboarding = () => {
               </div>
             </button>
 
-            <button type="button" onClick={() => setSelectedPlan("hybrid")}
-              className={`w-full text-left rounded-2xl border-2 p-4 transition-all relative ${selectedPlan === "hybrid" ? "border-primary bg-primary/5" : "border-border bg-card hover:border-primary/40"}`}>
-              <span className="absolute -top-2.5 right-3 text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary text-primary-foreground">⭐ Popular</span>
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center"><TrendingUp className="h-5 w-5 text-primary" /></div>
-                <div className="flex-1">
-                  <h3 className="font-bold text-sm text-foreground">Plano Crescimento</h3>
-                  <p className="text-xs text-muted-foreground">Ideal para começar</p>
-                </div>
-                <div className="text-right"><span className="text-lg font-black text-foreground">R$100</span><span className="text-xs text-muted-foreground">/mês</span></div>
-              </div>
-              <p className="text-[10px] font-semibold text-primary mb-2">+ 2,5% por pedido entregue</p>
-              <div className="flex flex-wrap gap-1.5">
-                {["PIX integrado", "CRM completo", "Entrega plataforma*"].map(tag => (
-                  <span key={tag} className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">{tag}</span>
-                ))}
-              </div>
-            </button>
-
             <button type="button"
               onClick={() => { if (selectedPlan) setStep(3); else toast.error("Selecione um plano."); }}
               disabled={!selectedPlan}
