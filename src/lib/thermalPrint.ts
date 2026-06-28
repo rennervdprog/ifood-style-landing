@@ -1,5 +1,5 @@
 import { formatBRL } from "@/lib/utils";
-import { getOrderItemDisplayName } from "./orderItemName";
+import { getOrderItemDisplayName, getOrderItemFlavors, getFractionAddonNames } from "./orderItemName";
 
 /**
  * Motor de impressão térmica unificado (delivery + PDV).
@@ -179,11 +179,15 @@ function renderItems(items: PrintOrderItem[] | undefined): string {
   let html = "";
   (items || []).forEach((item) => {
     const displayName = getOrderItemDisplayName(item as any);
+    const flavors = getOrderItemFlavors(item as any);
+    const fractionNames = getFractionAddonNames(item as any);
     let rawAddons: any = item.addons;
     if (typeof rawAddons === "string") {
       try { rawAddons = JSON.parse(rawAddons); } catch { rawAddons = []; }
     }
-    const addons: any[] = Array.isArray(rawAddons) ? rawAddons : [];
+    const addonsAll: any[] = Array.isArray(rawAddons) ? rawAddons : [];
+    // Frações vão pra um bloco próprio de "SABORES" — não duplicar nos opcionais.
+    const addons: any[] = addonsAll.filter((a: any) => !fractionNames.has(String(a?.name)));
     const addonsTotal = addons.reduce((s: number, a: any) => s + (Number(a?.price) || 0), 0);
     const baseUnitPrice = Number(item.unit_price) - addonsTotal;
     const lineTotal = baseUnitPrice * item.quantity;
@@ -191,6 +195,16 @@ function renderItems(items: PrintOrderItem[] | undefined): string {
     html += `<div class="tp-item-row" style="display:flex;justify-content:space-between"><span><b>${item.quantity}x</b> ${displayName}</span><span>${formatBRL(lineTotal)}</span></div>`;
     if (item.quantity > 1 && baseUnitPrice > 0) {
       html += `<div style="font-size:11px;color:#444;padding-left:14px">Unit.: ${formatBRL(baseUnitPrice)}</div>`;
+    }
+
+    // Bloco de sabores (meio a meio / 3 ou 4 sabores) — uma linha por sabor, destacado.
+    if (flavors.length > 0) {
+      html += `<div style="border:1px solid #000;margin:3px 0;padding:3px 4px;background:#eee">`;
+      html += `<div style="font-size:11px;font-weight:bold;letter-spacing:1px;text-align:center;border-bottom:1px dashed #000;padding-bottom:2px;margin-bottom:3px">SABORES</div>`;
+      flavors.forEach((f) => {
+        html += `<div style="font-size:13px;font-weight:bold;padding:1px 0">▣ ${f}</div>`;
+      });
+      html += `</div>`;
     }
 
     if (addons.length > 0) {
