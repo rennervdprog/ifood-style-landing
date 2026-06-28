@@ -890,7 +890,7 @@ const StorePage = () => {
             scrolled ? "bg-background border-b border-border shadow-sm py-2" : "bg-transparent"
            }`}>
           <div className="flex items-center gap-3 min-w-0">
-            {!getStoreAppSlug() && (
+            {!getStoreAppSlug() && hasInternalHistory && (
               <button
                 onClick={() => navigate("/cliente")}
                aria-label="Voltar"
