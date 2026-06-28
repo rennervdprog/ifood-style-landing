@@ -25,7 +25,14 @@ import type { SplitPayment } from "@/components/pdv/PdvSplitPayment";
  * mais pesada que ganho.
  */
 export interface CheckoutContext {
-  store: { id: string; name?: string | null } | null | undefined;
+  store:
+    | {
+        id: string;
+        name?: string | null;
+        settings?: Record<string, any> | any | null;
+      }
+    | null
+    | undefined;
   session: PdvSession | null;
   cart: CartItem[];
   splitMode: boolean;
@@ -213,6 +220,7 @@ export function usePdvCheckout() {
               })),
             },
             store?.name || "Loja",
+            { copies: (store?.settings as any)?.print_copies === 1 ? 1 : 2 },
           );
         } catch (e) {
           console.warn("Erro ao imprimir:", e);

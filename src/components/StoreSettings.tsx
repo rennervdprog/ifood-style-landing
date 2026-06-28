@@ -153,6 +153,11 @@ type PizzaPriceMode = "maior" | "media" | "soma";
   const [acceptCard,       setAcceptCard]       = useState<boolean>(storeSettings?.accept_card        !== false);
   const [acceptCash,       setAcceptCash]       = useState<boolean>(storeSettings?.accept_cash        !== false);
 
+  // Quantas vias o cupom térmico imprime (1 = só cliente / 2 = cozinha + cliente)
+  const [printCopies, setPrintCopies] = useState<1 | 2>(
+    storeSettings?.print_copies === 1 ? 1 : 2
+  );
+
   // Z-API foi substituído pela aba WhatsApp (Evolution API) — bloco removido.
 
   // Load whatsapp from profile
@@ -299,6 +304,8 @@ type PizzaPriceMode = "maior" | "media" | "soma";
         accept_pix_machine: acceptPixMachine,
         accept_card:        acceptCard,
         accept_cash:        acceptCash,
+        // Quantidade de vias da impressão térmica (1 = só cliente, 2 = cozinha + cliente)
+        print_copies: printCopies,
       },
       delivery_mode: deliveryMode,
       own_delivery_fee: parseFloat(ownDeliveryFee.toString().replace(",", ".")) || 0,
@@ -1197,6 +1204,42 @@ const NotificationSection = () => {
 
       {/* Notifications Section */}
       <NotificationSection />
+
+      {/* Impressão térmica */}
+      <div className="space-y-3">
+        <div className="flex items-center gap-2">
+          <h3 className="text-base font-bold text-foreground">Impressão Térmica</h3>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Defina quantas vias do cupom serão impressas a cada pedido (delivery e PDV).
+        </p>
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => setPrintCopies(1)}
+            className={`rounded-xl border p-3 text-left transition ${
+              printCopies === 1
+                ? "border-primary bg-primary/10"
+                : "border-border bg-muted/20 hover:border-primary/40"
+            }`}
+          >
+            <p className="text-sm font-bold text-foreground">1 via</p>
+            <p className="text-[11px] text-muted-foreground">Somente cliente</p>
+          </button>
+          <button
+            type="button"
+            onClick={() => setPrintCopies(2)}
+            className={`rounded-xl border p-3 text-left transition ${
+              printCopies === 2
+                ? "border-primary bg-primary/10"
+                : "border-border bg-muted/20 hover:border-primary/40"
+            }`}
+          >
+            <p className="text-sm font-bold text-foreground">2 vias</p>
+            <p className="text-[11px] text-muted-foreground">Cozinha + cliente</p>
+          </button>
+        </div>
+      </div>
 
       {/* Save Button */}
       <button
