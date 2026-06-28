@@ -888,6 +888,38 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
     }
   }, [myDeliveries?.[0]?.id]);
 
+  /* ─── Fase 1 — OSRM async: refina a rota com distâncias reais por ruas ─── */
+  useEffect(() => {
+    if (!useOptimized) { setOsrmOrder({}); setOsrmStats(null); return; }
+    const list = (filteredDeliveries || []).filter((o: any) => o.client_lat && o.client_lng);
+    if (list.length < 2) { setOsrmOrder({}); setOsrmStats(null); return; }
+    if (!activeStoreCoords) return;
+    let cancelled = false;
+    (async () => {
+      const result = await optimizeRouteOsrm(
+        activeStoreCoords,
+        list.map((o: any) => [Number(o.client_lat), Number(o.client_lng)] as [number, number]),
+      );
+      if (cancelled || !result) return;
+      const map: Record<string, number> = {};
+      result.order.forEach((origIdx, newPos) => {
+        const o = list[origIdx];
+        if (o) map[o.id] = newPos;
+      });
+      setOsrmOrder(map);
+      setOsrmStats({ km: result.totalKm, min: result.totalMin });
+    })();
+    return () => { cancelled = true; };
+    // Re-roda quando o conjunto de IDs muda
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [useOptimized, activeStoreCoords?.[0], activeStoreCoords?.[1], (filteredDeliveries || []).map((o: any) => o.id).join("|")]);
+
+  /* Para o geofence quando o motoboy não tem mais entregas em trânsito */
+  useEffect(() => {
+    const inTransit = (filteredDeliveries || []).some((o: any) => o.status === "saiu_entrega" || o.status === "em_transito");
+    if (!inTransit) stopArrivalWatch();
+  }, [filteredDeliveries]);
+
 
   const hasPix = !!(driverProfile as any)?.pix_key;
 
