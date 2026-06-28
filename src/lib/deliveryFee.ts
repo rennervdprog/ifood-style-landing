@@ -199,16 +199,6 @@ function haversineDistance(
   return R * c;
 }
 
-/**
- * Geocode an address (DEPRECATED - Use geocodeAddress instead)
- */
-async function geocodeAddress(cep: string, street?: string, number?: string): Promise<{ lat: number; lng: number } | null> {
-  return geocodeAddress({
-    postalcode: cep,
-    street: street && number ? `${street}, ${number}` : street || undefined
-  });
-}
-
 function isDistrictNeighborhood(bairro: string | undefined): boolean {
   if (!bairro) return false;
   return /\(.+\)/.test(bairro);
@@ -264,7 +254,7 @@ export interface DeliveryFeeResult {
   // → This is definitely urban Itatinga, apply fixed fee regardless of geocoding
    if (isInCity && !isDistrict && isUrbanCep) {
      // Still try to get distance for display purposes
-     const customerCoords = await geocodeAddress(customerCep);
+     const customerCoords = await geocodeAddress({ postalcode: customerCep });
      const distFromCenter = customerCoords
        ? haversineDistance(ITATINGA_CENTER.lat, ITATINGA_CENTER.lng, customerCoords.lat, customerCoords.lng)
        : null;
@@ -278,7 +268,7 @@ export interface DeliveryFeeResult {
   }
 
    // PRIORITY 2: Use provided coords (GPS) or geocoding to check radius
-   const customerCoords = customerCoordsInput || await geocodeAddress(customerCep);
+   const customerCoords = customerCoordsInput || await geocodeAddress({ postalcode: customerCep });
  
    if (customerCoords) {
     const distFromCenter = haversineDistance(
@@ -297,7 +287,7 @@ export interface DeliveryFeeResult {
     }
 
      // Outside urban area = distance-based fee from store/center to customer
-     let storeCoords = storeCep ? await geocodeAddress(storeCep) : null;
+     let storeCoords = storeCep ? await geocodeAddress({ postalcode: storeCep }) : null;
      const referencePoint = storeCoords || ITATINGA_CENTER;
      const referenceLabel = storeCoords ? "loja" : "centro";
 
