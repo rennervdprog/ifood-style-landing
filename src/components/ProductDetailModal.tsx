@@ -1,16 +1,15 @@
 import { formatBRL, cn, multiplyMoney, sumMoney } from "@/lib/utils";
 import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Minus, Plus, ShoppingCart, Pizza, AlertTriangle, X, ArrowLeft } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
 import type { CartAddon } from "@/contexts/CartContext";
 import { getEffectivePrice, isPromoActive, getPromoDiscountPct } from "@/lib/promoPrice";
 import { readPizzaCatalogConfig, hasPizzaCatalog } from "@/types/pizza";
 import { priceForFlavorInSize, isFlavorAvailableInSize } from "@/lib/pizzaPricing";
+import { fetchProductAddons, type ProductAddonGroup, type ProductAddonItem } from "@/lib/productAddons";
 
 interface Product {
   id: string;
@@ -22,22 +21,8 @@ interface Product {
   metadata?: Record<string, any>;
 }
 
-interface AddonGroup {
-  id: string;
-  name: string;
-  min_select: number;
-  max_select: number;
-  sort_order: number;
-  price_replaces_base?: boolean;
-}
-
-interface AddonItem {
-  id: string;
-  group_id: string;
-  name: string;
-  price: number;
-  sort_order: number;
-}
+type AddonGroup = ProductAddonGroup;
+type AddonItem = ProductAddonItem;
 
 interface Props {
   product: Product | null;
@@ -140,40 +125,7 @@ const ProductDetailModal = ({ product, storeName, storeCategory, singleSize = fa
 
   const { data: addonData, isLoading: addonsLoading, isFetching: addonsFetching } = useQuery({
     queryKey: ["addon-all", product?.id],
-    queryFn: async () => {
-      const groupSelect = "id,name,min_select,max_select,sort_order,price_replaces_base,addon_items(id,group_id,name,price,sort_order)";
-      const [directRes, linksRes] = await Promise.all([
-        supabase.from("addon_groups").select(groupSelect).eq("product_id", product!.id).order("sort_order"),
-        supabase.from("product_addon_groups").select("addon_group_id").eq("product_id", product!.id),
-      ]);
-      if (directRes.error) throw directRes.error;
-      if (linksRes.error) throw linksRes.error;
-
-      const directRows = (directRes.data || []) as Array<AddonGroup & { addon_items?: AddonItem[] | null }>;
-      const direct = directRows.map(({ addon_items: _addonItems, ...group }) => group as AddonGroup);
-      const linkedIds = (linksRes.data || []).map((l: any) => l.addon_group_id as string);
-      const directIds = new Set(direct.map((g) => g.id));
-
-      let linked: AddonGroup[] = [];
-      let linkedRows: Array<AddonGroup & { addon_items?: AddonItem[] | null }> = [];
-      if (linkedIds.length > 0) {
-        const linkedRes = await supabase
-          .from("addon_groups")
-          .select(groupSelect)
-          .in("id", linkedIds)
-          .order("sort_order");
-        if (linkedRes.error) throw linkedRes.error;
-        linkedRows = ((linkedRes.data || []) as Array<AddonGroup & { addon_items?: AddonItem[] | null }>).filter((g) => !directIds.has(g.id));
-        linked = linkedRows.map(({ addon_items: _addonItems, ...group }) => group as AddonGroup);
-      }
-
-      const allGroups = [...direct, ...linked];
-      const items = [...directRows, ...linkedRows]
-        .flatMap((group) => group.addon_items || [])
-        .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)) as AddonItem[];
-
-      return { groups: allGroups, items };
-    },
+    queryFn: () => fetchProductAddons(product!.id),
     enabled: !!product?.id && open,
     staleTime: 1000 * 60 * 5,
     gcTime: 1000 * 60 * 10,
@@ -185,6 +137,13 @@ const ProductDetailModal = ({ product, storeName, storeCategory, singleSize = fa
 
   const requiredAddonGroups = useMemo(() => addonGroups.filter((g) => g.min_select > 0), [addonGroups]);
   const optionalAddonGroups = useMemo(() => addonGroups.filter((g) => g.min_select === 0), [addonGroups]);
+  const addonItemsByGroup = useMemo(() => {
+    const map: Record<string, AddonItem[]> = {};
+    addonItems.forEach((item) => {
+      (map[item.group_id] ||= []).push(item);
+    });
+    return map;
+  }, [addonItems]);
 
   const hasSyntheticRequired =
     hasSizes ||
@@ -307,6 +266,12 @@ const ProductDetailModal = ({ product, storeName, storeCategory, singleSize = fa
     );
   }, [selectedAddonRows]);
 
+  const selectedRowsByItem = useMemo(() => {
+    const map = new Map<string, (typeof selectedAddonRows)[number]>();
+    selectedAddonRows.forEach((row) => map.set(`${row.groupId}:${row.itemId}`, row));
+    return map;
+  }, [selectedAddonRows]);
+
   const priceSummary = useMemo(() => {
     const hasPriceReplacingGroup = addonGroups.some((g) => g.price_replaces_base);
     const replacementRows = selectedAddonRows.filter((row) => row.replacesBasePrice);
@@ -415,7 +380,7 @@ const ProductDetailModal = ({ product, storeName, storeCategory, singleSize = fa
   );
 
   const renderAddonGroup = (group: AddonGroup) => {
-    const items = addonItems.filter((ai) => ai.group_id === group.id);
+    const items = addonItemsByGroup[group.id] || [];
     const isRequired = group.min_select > 0;
     const currentSelected = Object.values(selectedAddons[group.id] || {}).reduce((s, q) => s + q, 0);
 
@@ -443,7 +408,7 @@ const ProductDetailModal = ({ product, storeName, storeCategory, singleSize = fa
             const allowMultiple = group.max_select !== 1;
             const groupCap = group.max_select && group.max_select > 0 ? group.max_select : Infinity;
             const atCap = groupTotal(group.id) >= groupCap;
-            const selectedRow = selectedAddonRows.find((row) => row.groupId === group.id && row.itemId === item.id);
+            const selectedRow = selectedRowsByItem.get(`${group.id}:${item.id}`);
             const itemLineTotal = selectedRow?.lineTotal ?? Number(item.price || 0);
             return (
               <div
@@ -945,17 +910,9 @@ const ProductDetailModal = ({ product, storeName, storeCategory, singleSize = fa
         </header>
 
         <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 pb-6 sm:px-6 sm:py-6">
-          <AnimatePresence mode="wait" initial={false}>
-            <motion.div
-              key={step}
-              initial={{ opacity: 0, x: step === 2 ? 36 : -36 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: step === 2 ? -36 : 36 }}
-              transition={{ duration: 0.22, ease: "easeOut" }}
-            >
-              {step === 1 ? Step1Content : Step2Content}
-            </motion.div>
-          </AnimatePresence>
+          <div key={step} className="animate-in fade-in slide-in-from-right-2 duration-150">
+            {step === 1 ? Step1Content : Step2Content}
+          </div>
         </main>
 
         <footer className="sticky bottom-0 z-[60] shrink-0 border-t border-border bg-background/90 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur-lg">
