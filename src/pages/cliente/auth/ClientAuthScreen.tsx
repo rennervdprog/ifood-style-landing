@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  Mail, Lock, Eye, EyeOff, KeyRound, FileText, Phone, User, ShoppingBag, Zap,
+  Mail, Lock, Eye, EyeOff, KeyRound, FileText, Phone, User, ShoppingBag, Zap, ShieldCheck,
 } from "lucide-react";
 import { maskWhatsApp } from "@/lib/whatsapp";
 import { formatDocument, sanitizeDocument, validateDocument } from "@/lib/documentFormat";
@@ -20,6 +20,9 @@ const ClientAuthScreen = ({ onSuccess }: { onSuccess: () => void }) => {
   const [fullName, setFullName] = useState("");
   const [cpf, setCpf] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
+  const [deliveryPin, setDeliveryPin] = useState("");
+  const [confirmPin, setConfirmPin] = useState("");
+  const [pinAcknowledged, setPinAcknowledged] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
@@ -58,6 +61,11 @@ const ClientAuthScreen = ({ onSuccess }: { onSuccess: () => void }) => {
       }
     }
     if (mode === "signup" && !acceptedTerms) { toast.error("Aceite os Termos de Uso."); return; }
+    if (mode === "signup") {
+      if (!/^\d{4}$/.test(deliveryPin)) { toast.error("Defina um PIN de entrega com 4 dígitos numéricos."); return; }
+      if (deliveryPin !== confirmPin) { toast.error("Os PINs informados não coincidem."); return; }
+      if (!pinAcknowledged) { toast.error("Confirme que este PIN será usado em todas as entregas."); return; }
+    }
     if (password.length < 6) { toast.error("Senha: mínimo 6 caracteres."); return; }
 
     setLoading(true);
@@ -80,6 +88,7 @@ const ClientAuthScreen = ({ onSuccess }: { onSuccess: () => void }) => {
               role: "cliente",
               document: sanitizeDocument(cpf),
               whatsapp: `55${whatsapp.replace(/\D/g, "")}`,
+                delivery_pin: deliveryPin,
             },
           },
         });
@@ -96,6 +105,7 @@ const ClientAuthScreen = ({ onSuccess }: { onSuccess: () => void }) => {
             full_name: fullName.trim(),
             document: sanitizeDocument(cpf),
             whatsapp_number: `55${whatsapp.replace(/\D/g, "")}`,
+            delivery_pin: deliveryPin,
           }).eq("user_id", signUpData.user.id);
         }
         toast.success("Conta criada!");
@@ -253,6 +263,54 @@ const ClientAuthScreen = ({ onSuccess }: { onSuccess: () => void }) => {
                       <Link to="/politica-de-privacidade" target="_blank" className="text-primary font-semibold underline">Política de Privacidade</Link>
                     </span>
                   </label>
+                )}
+                {mode === "signup" && (
+                  <div className="space-y-3 pt-1">
+                    <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 flex gap-2.5">
+                      <ShieldCheck className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                      <div className="text-xs text-slate-600 leading-relaxed">
+                        <strong className="text-foreground">PIN de entrega pessoal:</strong> escolha 4 dígitos que só você sabe. O entregador vai pedir esse mesmo código em <strong>todas</strong> as suas entregas para confirmar quem está recebendo. Evite datas óbvias (aniversário, ano de nascimento).
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-slate-500 tracking-wide mb-1.5 block">PIN de entrega (4 dígitos)</label>
+                      <div className="relative">
+                        <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                        <input
+                          type="tel"
+                          inputMode="numeric"
+                          placeholder="••••"
+                          value={deliveryPin}
+                          onChange={(e) => setDeliveryPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                          maxLength={4}
+                          className={inputClass}
+                          autoComplete="off"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-slate-500 tracking-wide mb-1.5 block">Confirme o PIN</label>
+                      <div className="relative">
+                        <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                        <input
+                          type="tel"
+                          inputMode="numeric"
+                          placeholder="••••"
+                          value={confirmPin}
+                          onChange={(e) => setConfirmPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                          maxLength={4}
+                          className={inputClass}
+                          autoComplete="off"
+                        />
+                      </div>
+                    </div>
+                    <label className="flex items-start gap-2.5 cursor-pointer select-none">
+                      <input type="checkbox" checked={pinAcknowledged} onChange={(e) => setPinAcknowledged(e.target.checked)} className="w-4 h-4 rounded border-border accent-primary mt-0.5 shrink-0" />
+                      <span className="text-xs text-slate-500 leading-relaxed">
+                        Entendi que <strong>este PIN será usado em todas as minhas entregas</strong> e é minha responsabilidade mantê-lo em sigilo.
+                      </span>
+                    </label>
+                  </div>
                 )}
                 <button disabled={loading} className="w-full h-11 bg-primary text-primary-foreground font-bold rounded-xl active:scale-[0.98] transition-all disabled:opacity-50 shadow-md shadow-primary/20 hover:brightness-105">
                   {loading ? (
