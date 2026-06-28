@@ -274,6 +274,9 @@ const AuthPage = () => {
             data: {
               role: "cliente",
               whatsapp: whatsDigits,
+              full_name: fullName.trim(),
+              document: sanitizeDocument(cpf),
+              delivery_pin: deliveryPin,
             },
           },
         });
@@ -288,7 +291,21 @@ const AuthPage = () => {
           await supabase.from("profiles").update({
             terms_accepted_at: new Date().toISOString(),
             whatsapp_number: whatsDigits,
+            full_name: fullName.trim(),
+            document: sanitizeDocument(cpf),
+            delivery_pin: deliveryPin,
           }).eq("user_id", signUpData.user.id);
+          await supabase.from("saved_addresses").insert({
+            user_id: signUpData.user.id,
+            label: "Casa",
+            cep: formatCep(cep),
+            street: street.trim(),
+            number: number.trim(),
+            complement: complement.trim() || null,
+            neighborhood: neighborhood.trim(),
+            reference_point: referencePoint.trim() || null,
+            is_default: true,
+          });
         }
         toast.success("Conta criada com sucesso!");
         if (isPartnerCapacitorApp()) {
