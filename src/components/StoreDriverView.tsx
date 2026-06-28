@@ -250,6 +250,15 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
   const [activeStoreId, setActiveStoreId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"routes" | "earnings" | "history">("routes");
   const [declinedMap, setDeclinedMap] = useState<Record<string, number>>(() => user ? loadDeclined(user.id) : {});
+  const [navApp, setNavApp] = useState<NavApp>(() => getPreferredNavigator());
+  const [osrmOrder, setOsrmOrder] = useState<Record<string, number>>({}); // orderId -> posição otimizada
+  const [osrmStats, setOsrmStats] = useState<{ km: number; min: number } | null>(null);
+  const [arrivedOrderId, setArrivedOrderId] = useState<string | null>(null);
+
+  const chooseNavApp = useCallback((app: NavApp) => {
+    setNavApp(app);
+    setPreferredNavigator(app);
+  }, []);
 
   const multiStore = linkedStoreIds.length > 1;
 
