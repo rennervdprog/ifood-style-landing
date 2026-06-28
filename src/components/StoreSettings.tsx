@@ -1205,6 +1205,42 @@ const NotificationSection = () => {
       {/* Notifications Section */}
       <NotificationSection />
 
+      {/* Impressão térmica */}
+      <div className="space-y-3">
+        <div className="flex items-center gap-2">
+          <h3 className="text-base font-bold text-foreground">Impressão Térmica</h3>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Defina quantas vias do cupom serão impressas a cada pedido (delivery e PDV).
+        </p>
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => setPrintCopies(1)}
+            className={`rounded-xl border p-3 text-left transition ${
+              printCopies === 1
+                ? "border-primary bg-primary/10"
+                : "border-border bg-muted/20 hover:border-primary/40"
+            }`}
+          >
+            <p className="text-sm font-bold text-foreground">1 via</p>
+            <p className="text-[11px] text-muted-foreground">Somente cliente</p>
+          </button>
+          <button
+            type="button"
+            onClick={() => setPrintCopies(2)}
+            className={`rounded-xl border p-3 text-left transition ${
+              printCopies === 2
+                ? "border-primary bg-primary/10"
+                : "border-border bg-muted/20 hover:border-primary/40"
+            }`}
+          >
+            <p className="text-sm font-bold text-foreground">2 vias</p>
+            <p className="text-[11px] text-muted-foreground">Cozinha + cliente</p>
+          </button>
+        </div>
+      </div>
+
       {/* Save Button */}
       <button
         onClick={handleSave}
