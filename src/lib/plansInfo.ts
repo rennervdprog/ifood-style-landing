@@ -137,9 +137,9 @@ supporter.example = exampleText(supporter);
 const autonomy: PlanInfo = {
   id: "autonomy",
   name: "Autonomia",
-  tagline: "R$149,90/mês — sem comissão e SEM taxa de R$2 da plataforma",
+  tagline: "R$229,90/mês — sem comissão e SEM taxa de R$2 da plataforma",
   forWho: "Pra quem quer máxima autonomia: fica com 100% da taxa de entrega que cobra",
-  monthlyFee: 149.90,
+  monthlyFee: 229.90,
   commissionRate: 0,
   pixFee: 1.99,
   deliveryFee: 0,
