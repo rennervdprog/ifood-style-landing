@@ -24,6 +24,7 @@ import CapacitorRouteGuard from "@/components/CapacitorRouteGuard";
 import StoreAppGuard from "@/components/StoreAppGuard";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { TermsUpdateModal } from "@/components/TermsUpdateModal";
+import ClientPinChecker from "@/components/ClientPinChecker";
 import { fetchPendingLegalChanges, type PendingLegalChanges } from "@/lib/legalDocuments";
 import { APP_VERSION } from "@/lib/appVersion";
 
@@ -310,6 +311,7 @@ const App = () => {
             <CapacitorRouteGuard />
             <StoreAppGuard />
             <TermsChecker />
+            <ClientPinChecker />
             <DownloadAppPrompt />
             <ErrorBoundary>
             <Suspense fallback={<PageLoader />}>
