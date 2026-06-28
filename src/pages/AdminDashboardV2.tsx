@@ -940,8 +940,9 @@ const AdminDashboard = () => {
 
   // ── ACTIONS ──
   const handlePrint = useCallback((order: any) => {
-    printThermalReceipt(order, store?.name || "Loja", getClientName(order.client_id), getClientWhatsApp(order.client_id));
-  }, [store?.name, getClientName, getClientWhatsApp]);
+    const copies = (store?.settings as any)?.print_copies === 1 ? 1 : 2;
+    printThermalReceipt(order, store?.name || "Loja", getClientName(order.client_id), getClientWhatsApp(order.client_id), { copies });
+  }, [store?.name, store?.settings, getClientName, getClientWhatsApp]);
 
   /**
    * Mensagem de ACEITE do pedido — sem PIN.
@@ -1016,11 +1017,12 @@ const AdminDashboard = () => {
   const handleAcceptOrder = useCallback((order: any) => {
     // Print da notinha
     try {
-      printThermalReceipt(order, store?.name || "Loja", getClientName(order.client_id), getClientWhatsApp(order.client_id));
+      const copies = (store?.settings as any)?.print_copies === 1 ? 1 : 2;
+      printThermalReceipt(order, store?.name || "Loja", getClientName(order.client_id), getClientWhatsApp(order.client_id), { copies });
     } catch (e) {
       console.warn("print error", e);
     }
-  }, [store?.name, getClientName, getClientWhatsApp]);
+  }, [store?.name, store?.settings, getClientName, getClientWhatsApp]);
 
   const toggleAutoPrint = () => {
     const next = !autoPrint;
