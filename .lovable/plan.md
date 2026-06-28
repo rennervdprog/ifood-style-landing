@@ -1,102 +1,105 @@
-# Plano: Unificação do Sistema GPS / CEP / Endereço
+# Plano — Profissionalização da Thermal Print
 
-Hoje a lógica de localização está espalhada: `useUserLocation`, `deviceLocation`, `addressGeocoding`, `cepLookup`, `deliveryDistance`, `arrivalGeofence`, `osrmRouting` + reverse geocode inline em várias páginas. Cada tela trata permissão GPS, fallback CEP e cache do seu jeito. Vamos consolidar tudo num único módulo `@/lib/location/*` com API estável e usar em todos os fluxos (lojista, cliente, taxa, rota do motoboy).
+Objetivo: garantir que **todo pedido** (delivery e PDV) imprima de forma consistente, completa e legível em impressoras 58/80mm, sem perder nenhum dado (adicionais, bordas, tamanhos, complementos, observações, endereço completo, formas de pagamento, troco, agendamento, cupom).
 
----
+Hoje há **2 funções separadas** (`printThermalReceipt` para delivery e `printPdvReceipt` para PDV) que duplicam lógica de itens/addons e divergem em pequenos detalhes (ex.: PDV não imprime endereço, delivery não suporta split de pagamento, número do pedido aparece como "#ABCDEF12" curto, observações ficam quase invisíveis).
 
-## Fase 1 — Núcleo `@/lib/location` (fundação)
+## Fase 1 — Auditoria (sem alterar código)
 
-Criar um módulo único, sem mudar comportamento ainda:
+Comparar **linha a linha** o que cada fluxo envia vs o que a impressão exibe. Saída: tabela com gaps por categoria.
+
+Checklist mínimo a validar em cada fluxo:
+
+| Campo                          | Delivery | PDV | Hoje | Esperado |
+|--------------------------------|----------|-----|------|----------|
+| Número do pedido (sequencial)  | sim      | sim | só os 8 primeiros chars do UUID | nº curto + UUID curto |
+| Data/hora                      | sim      | sim | ok   | ok |
+| Loja                           | sim      | sim | ok   | + CNPJ/telefone/endereço da loja |
+| Cliente (nome/telefone)        | sim      | n/a | ok   | ok |
+| Endereço completo (rua, nº, compl., bairro, cidade, CEP, referência) | sim | n/a | só `address_details + neighborhood` | quebrar em campos |
+| Mesa/comanda                   | n/a      | sim | ok   | ok |
+| Itens (qtd, nome, unit., total)| sim      | sim | unit. só no PDV | mostrar nos dois |
+| Tamanho da pizza               | sim      | sim | ok   | ok |
+| Borda                          | sim      | sim | ok   | ok |
+| Sabores (pizza meio-a-meio)    | sim      | sim | depende de `getOrderItemDisplayName` | validar com pedido 1/2 + 1/2 |
+| Adicionais obrigatórios        | sim      | sim | ok   | ok |
+| Adicionais opcionais           | sim      | sim | ok   | ok |
+| Complementos / brindes         | sim      | sim | ok   | ok |
+| Observações do item            | sim      | sim | fonte pequena | destacar igual delivery (⚠ OBS) |
+| Observação geral do pedido     | sim      | sim | **não imprime** | adicionar |
+| Subtotal                       | sim      | sim | ok   | ok |
+| Taxa de entrega                | sim      | n/a | ok   | ok |
+| Cupom aplicado                 | sim      | n/a | só nome no desconto | linha própria |
+| Desconto                       | sim      | sim | ok   | ok |
+| Total                          | sim      | sim | ok   | ok |
+| Forma de pagamento             | sim      | sim | delivery não suporta split | unificar |
+| Split de pagamento             | n/a      | sim | só PDV | manter |
+| Troco para / recebido / troco  | sim parcial | sim | delivery só "troco para" | imprimir recebido+troco quando houver |
+| Pago online (Pix) vs receber   | sim      | sim | ok   | ok |
+| Agendamento                    | sim      | n/a | ok   | ok |
+| Origem (delivery/balcão/mesa)  | implícito| implícito | confuso | banner explícito |
+| QR Code do pedido (rastreio)   | não      | não | -    | opcional, fase 4 |
+| Rodapé Asaas                   | sim      | sim | ok   | ok |
+
+## Fase 2 — Núcleo único de impressão
+
+Extrair para `src/lib/thermalPrint/` um único motor:
 
 ```text
-src/lib/location/
-  index.ts              // API pública
-  permissions.ts        // checar/solicitar/forçar GPS (Capacitor + Web)
-  gps.ts                // getDeviceGPS + watchPosition + cache
-  cep.ts                // fetchCep (ViaCEP → BrasilAPI), cache persistente
-  geocode.ts            // address → coords (Nominatim, com fila + retry)
-  reverse.ts            // coords → endereço BR (Nominatim, com cache)
-  distance.ts           // resolveDistance (OSRM + haversine fallback)
-  cache.ts              // cache unificado (sessionStorage + memória + TTL)
-  types.ts              // Coordinates, AddressContext, Resolved*, etc.
+src/lib/thermalPrint/
+  index.ts            // re-exports
+  types.ts            // ReceiptModel (normalizado)
+  normalize.ts        // PrintOrder/PrintPdvOrder -> ReceiptModel
+  renderItems.ts      // bloco de itens (addons, borda, tamanho, complemento, obs)
+  renderTotals.ts     // subtotal, entrega, cupom, desconto, total
+  renderPayment.ts    // simples + split + troco
+  renderHeader.ts     // loja, data, nº pedido, mesa, agendamento, origem
+  renderAddress.ts    // endereço completo do cliente
+  renderFooter.ts     // agradecimento + Asaas
+  print.ts            // monta HTML final e chama window.print()
+  styles.css          // tokens 58mm/80mm
 ```
 
-Regras:
-- **Cache único** com TTL por tipo (GPS 5min, reverse 24h, CEP permanente, geocode 7 dias).
-- **Fila serializada** para Nominatim (1 req/s, evita 429).
-- **Telemetria** opcional via `console.debug` com prefixo `[loc]`.
+Os dois entry-points públicos atuais (`printThermalReceipt`, `printPdvReceipt`) viram wrappers finos que só fazem `normalize → render`. Zero quebra de chamadores.
 
-## Fase 2 — Permissão GPS "forçada" no navegador
+## Fase 3 — Correções pontuais (junto com Fase 2)
 
-Não dá pra ativar GPS do SO via JS, mas dá pra resolver 90% dos casos:
+1. **Número do pedido**: usar `order_number` (sequencial por loja) quando existir, com fallback ao UUID curto. Imprimir nos 2 fluxos como `PEDIDO #1234` em fonte grande + `ref: ABCDEF12` pequeno.
+2. **Endereço**: dividir em linhas — `Rua/Nº`, `Complemento`, `Bairro`, `Cidade/UF`, `CEP`, `Referência`. Hoje vem tudo concatenado em `address_details`; ler de `delivery_address` quando disponível.
+3. **Observação geral do pedido** (`orders.notes` / `observations`): imprimir bloco destacado antes do total.
+4. **Cupom**: linha própria `Cupom (CODIGO): -R$ X,XX` separada do desconto manual.
+5. **Split no delivery**: aceitar `payments[]` igual ao PDV.
+6. **Recebido / Troco no delivery**: quando `payment_method=dinheiro` e tiver `change_for`, imprimir bloco igual PDV.
+7. **Banner de origem**: faixa preta no topo — `DELIVERY`, `BALCÃO`, `MESA 03`, `RETIRADA`.
+8. **Loja**: imprimir telefone e CNPJ da loja no cabeçalho (útil pro cliente).
+9. **CSS dedicado**: mover estilos inline para `thermalPrint.css` com `@media print` e largura 58mm/80mm parametrizável.
+10. **Quebra de página por via**: opção de imprimir 2 vias (cozinha + cliente) com `page-break-after`.
 
-- **Web:** chamar `navigator.permissions.query({name:'geolocation'})`. Se `denied`, abrir modal explicativo com instruções específicas por navegador (Chrome/Safari/Firefox) e botão "Tentar novamente" que re-chama `getCurrentPosition` (browsers como Chrome reabrem o prompt se o usuário limpou a permissão). Detectar `chrome://settings/content/location` e mostrar print/passo a passo.
-- **PWA instalado / Android Chrome:** se permissão do site OK mas SO desligado, capturar `POSITION_UNAVAILABLE` e oferecer CTA "Usar endereço cadastrado" automaticamente.
-- **Capacitor (APK):** já temos `capacitor-native-settings` — manter, e adicionar abertura direta para `LOCATION_SOURCE_SETTINGS` quando `code=2`.
-- Componente único `<LocationPermissionDialog />` reutilizável em todas as telas.
+## Fase 4 — Cobertura por testes (Vitest)
 
-## Fase 3 — Resolver de endereço unificado (`resolveAddress`)
+Estender `src/lib/__tests__/thermalPrint.test.ts` com cenários reais:
 
-API única que toda tela chama:
+- Pedido delivery completo com endereço, cupom, troco para, observação geral.
+- Pedido com pizza meio-a-meio + borda + complemento grátis.
+- PDV com split (3 métodos) e desconto.
+- Pedido agendado.
+- Pedido só Pix online (sem troco, marca PAGO).
+- Garantir que **nenhum campo do banco é silenciosamente descartado** (snapshot do HTML).
 
-```ts
-resolveAddress({
-  prefer: "gps" | "address" | "auto",
-  fallback: ["gps", "cep", "address"],
-  address?: AddressContext,
-}) => { coords, address, source, accuracy, warnings }
-```
+Meta: ~15 testes novos. Após verde, bump de versão.
 
-Funciona assim:
-1. Tenta `prefer` primeiro.
-2. Se falhar, percorre `fallback` em ordem.
-3. GPS → `reverse()` para popular `address`.
-4. CEP/endereço → `geocode()` para popular `coords`.
-5. Retorna sempre o melhor disponível + nível de confiança.
+## Fase 5 — Opcionais (acordar depois)
 
-## Fase 4 — Migrar cadastros
+- QR code pequeno com link de acompanhamento do pedido.
+- Logo da loja no topo (configurável em `store_settings`).
+- Modo 58mm vs 80mm automático (detectar via setting da loja).
+- Suporte ESC/POS nativo via Capacitor para impressoras Bluetooth (hoje usa `window.print`).
 
-- **Lojista (`StoreSettings`, `CadastroLojista`):** trocar geocoder inline pelo `resolveAddress({prefer:"address"})`. Após salvar CEP, autopreencher lat/lng e mostrar pin num mini-mapa Leaflet (já temos) pra lojista corrigir arrastando.
-- **Cliente (`CheckoutPage`, `saved_addresses`, `ClientHomeContent`):** mesmo helper. Botão "Usar minha localização" usa `prefer:"gps"` com fallback CEP. Reverse automático preenche rua/bairro.
-- **Endereços salvos:** garantir que toda gravação em `saved_addresses` tenha `lat/lng`. Migration leve pra completar registros antigos via job.
+## Decisões a confirmar antes de codar
 
-## Fase 5 — Taxa de entrega à prova de falha
+1. Quer manter `printThermalReceipt` e `printPdvReceipt` como API pública (wrappers) ou pode trocar para `printReceipt(model)` único?
+2. Posso usar `orders.order_number` (sequencial por loja) — confirmar que essa coluna existe no banco externo, senão crio.
+3. Imprimir 2 vias (cozinha + cliente) por padrão ou só sob configuração?
+4. Largura padrão: 58mm ou 80mm?
 
-`calculate-delivery-distance` (edge) já existe. Vamos:
-- Aceitar **qualquer combinação**: gps cliente, endereço cliente, só CEP.
-- Tentar cadeia: GPS+OSRM → endereço+OSRM → CEP+OSRM (centroide) → haversine.
-- Retornar `accuracy` ("gps" / "address" / "cep" / "fallback") pro front mostrar selo "📍 Localização precisa" / "⚠ Estimativa por CEP".
-- Cache no `geocode_cache` (tabela já existe) por hash da entrada.
-- Front (`CheckoutPage`) chama uma única vez via `resolveDistance()` e mostra estado claro: calculando / preciso / estimado / falhou (com botão tentar GPS).
-
-## Fase 6 — Rastreio do motoboy (aba Pedidos)
-
-Hoje o cliente vê pouca info quando motoboy sai. Vamos:
-
-- Página `PedidoTracking` (cliente) + card na aba Pedidos do admin com **mapa Leaflet** mostrando:
-  - Pin do motoboy (atualiza via realtime `driver_locations`).
-  - Pin do cliente.
-  - Linha da rota OSRM (cacheada).
-  - ETA recalculado a cada update GPS do motoboy (km restante ÷ 25km/h, ajustado por trânsito básico).
-- Subscription única em `driver_locations` filtrada por `order_id`.
-- Geofence reverso: quando motoboy entra em 80m do cliente, push "Seu pedido chegou!" + status visual.
-- Reuso 100% do novo `@/lib/location`.
-
-## Fase 7 — Limpeza
-
-- Remover `useUserLocation`, `deviceLocation.ts`, `addressGeocoding.ts`, `cepLookup.ts` (re-exports temporários por 1 versão pra não quebrar imports).
-- Substituir todos os `fetch("https://nominatim...")` espalhados.
-- Testes: `src/lib/location/__tests__/` cobrindo permissão negada, CEP inválido, fallback, cache.
-- Atualizar `mem://` com a nova API.
-
----
-
-## Estratégia de rollout
-
-Trocar o pneu com o carro andando: cada fase é independente e mantém os módulos antigos como shim re-exportando. Sem big bang. Versão bumpa a cada fase entregue.
-
-## Perguntas antes de começar
-
-1. **Mapa do motoboy (Fase 6)** já confirmado Leaflet+OSM (gratuito), ok?
-2. **Ordem de execução:** começar pela Fase 1+2+3 (fundação + permissões), depois 5 (taxa), 6 (tracking) e por último 4 (migração de telas)?
-3. Posso **manter shims** dos módulos antigos por 1 versão ou prefere quebrar tudo de uma vez?
+Após aprovação executo Fases 1→4 numa única release, com bump de versão e suíte de testes verde.
