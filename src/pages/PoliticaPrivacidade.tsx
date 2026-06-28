@@ -4,7 +4,7 @@ import { Helmet } from "react-helmet-async";
 
 const PoliticaPrivacidade = () => {
   const navigate = useNavigate();
-  const dataAtualizacao = "22 de junho de 2026";
+  const dataAtualizacao = "28 de junho de 2026";
 
   return (
     <div className="min-h-screen bg-background">
@@ -21,15 +21,24 @@ const PoliticaPrivacidade = () => {
           <ArrowLeft className="h-5 w-5 text-foreground" />
         </button>
         <h1 className="font-bold text-foreground">Política de Privacidade</h1>
-        <span className="text-xs text-muted-foreground ml-auto">Atualizado em {dataAtualizacao} · v4.3</span>
+        <span className="text-xs text-muted-foreground ml-auto">Atualizado em {dataAtualizacao} · v5.0</span>
       </div>
 
       <div className="max-w-3xl mx-auto px-4 py-6 space-y-6 text-sm text-muted-foreground">
 
         <section className="space-y-3">
           <p>O <strong className="text-foreground">ItaSuper</strong>, na qualidade de controlador dos dados pessoais (conforme Art. 5º, VI da LGPD), é responsável pelas decisões referentes ao tratamento dos dados coletados através da Plataforma, em conformidade com a Lei Geral de Proteção de Dados Pessoais (Lei nº 13.709/2018 — LGPD).</p>
-          <p><strong className="text-foreground">Controlador:</strong> ItaSuper · Itatinga/SP · Brasil · WhatsApp (22) 99279-6291.</p>
-          <p><strong className="text-foreground">Encarregado pelo Tratamento de Dados (DPO — Art. 41 LGPD):</strong> Vinícius de Oliveira Vieira · e-mail dedicado <strong className="text-foreground">dpo@itasuper.app</strong> · WhatsApp (22) 99279-6291. O DPO é o canal oficial para o titular exercer seus direitos e para a ANPD em eventuais comunicações.</p>
+          <div className="rounded-xl border border-border bg-card/60 p-4 space-y-1.5 text-xs">
+            <p className="font-bold text-foreground">Identificação do Controlador (Art. 41 LGPD)</p>
+            <p><strong className="text-foreground">Razão social:</strong> 66.155.289 Renner Vinicius Dias (MEI)</p>
+            <p><strong className="text-foreground">CNPJ:</strong> 66.155.289/0001-26</p>
+            <p><strong className="text-foreground">Endereço:</strong> Rua São Francisco, nº 635, Itatinga/SP, Brasil</p>
+            <p><strong className="text-foreground">Encarregado de Dados (DPO):</strong> Renner Vinicius Dias · <a href="mailto:vinivias13@gmail.com" className="text-primary underline">vinivias13@gmail.com</a> · WhatsApp (22) 99279-6291</p>
+            <p className="text-[10px] text-muted-foreground pt-1">Os Lojistas figuram como <strong className="text-foreground">controladores conjuntos</strong> em relação aos dados de seus clientes finais (Art. 5º, IX LGPD).</p>
+            <p className="text-[10px] text-amber-600 dark:text-amber-400 pt-1 border-t border-border/60 mt-2">
+              ⚠️ Documento técnico sujeito a revisão jurídica por advogado registrado na OAB antes da consolidação final.
+            </p>
+          </div>
         </section>
 
         <section className="space-y-3">
@@ -172,9 +181,11 @@ const PoliticaPrivacidade = () => {
 
         <section className="border-t border-border pt-4">
           <p className="text-xs text-muted-foreground text-center">
-            ItaSuper — Controlador de Dados · Itatinga/SP · Brasil<br />
-            Versão 4.3 · Última atualização: {dataAtualizacao}<br />
-            Contato LGPD: dpo@itasuper.app · WhatsApp (22) 99279-6291
+            ItaSuper — Controlador de Dados<br />
+            66.155.289 Renner Vinicius Dias · CNPJ 66.155.289/0001-26 · Itatinga/SP · Brasil<br />
+            Versão 5.0 · Última atualização: {dataAtualizacao}<br />
+            Contato LGPD: vinivias13@gmail.com · WhatsApp (22) 99279-6291<br />
+            <span className="text-amber-600 dark:text-amber-400">Sujeito a revisão jurídica final pela OAB.</span>
           </p>
         </section>
 
