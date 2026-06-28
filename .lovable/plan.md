@@ -1,125 +1,102 @@
-## Rota Otimizada Profissional — 100% gratuito, app-first
+# Plano: Unificação do Sistema GPS / CEP / Endereço
 
-Filosofia: o **app é o cérebro** (rota, pins, dados do cliente, confirmação por código). O **Maps/Waze é só o GPS turn-by-turn**, aberto sob demanda e devolvendo o entregador pro nosso app assim que ele chega na parada.
-
----
-
-### Fase 1 — Roteamento real por ruas (OSRM público, grátis)
-
-Trocar Haversine (linha reta) pela matriz real de tempo/distância via `router.project-osrm.org` — sem chave, sem cota prática.
-
-- Novo `src/lib/routing/osrmClient.ts`: `getDistanceMatrix(points)` + `getRouteGeometry(points)` (polyline real desenhada no mapa).
-- Cache em `localStorage` (24h, chaveado por par lat/lng arredondado a 5 decimais) → zera chamadas repetidas.
-- Fallback automático pra Haversine se OSRM falhar (badge "rota aproximada").
-
-### Fase 2 — Otimizador melhor (até 50 paradas)
-
-Manter `optimizeRoute` atual, mas extrair pra `src/lib/routing/optimizer.ts` e somar:
-
-- **Or-opt** (move blocos de 1–3 paradas) em cima do 2-opt já existente.
-- Subir o teto de 20 → 50 paradas.
-- Re-otimização automática quando: novo pedido entra, parada concluída, ou GPS deslocou > 300m da última otimização (com debounce 5s pra não tremer).
-
-### Fase 3 — Mapa próprio no app com pins por cliente
-
-Adicionar **Leaflet + tiles OSM** (gratuitos, sem chave, ~40KB lazy-loaded só na tela do entregador) num novo `src/components/driver/DriverRouteMap.tsx`:
-
-- Pin **numerado 1, 2, 3...** em cada cliente, na ordem otimizada.
-- Cor por status: azul=pendente, amarelo=em rota, verde=entregue.
-- **Tap no pin** → bottom-sheet `DriverStopSheet.tsx` com: nome, telefone (ligar/WhatsApp), valor, forma de pagamento, troco, observação, endereço.
-- Polyline OSRM desenhada conectando todas as paradas.
-- Pin ao vivo do entregador (já temos `driverGeolocation.ts`, refresh 8s) + pin da loja como origem.
-
-> Por que mapa próprio: Maps/Waze externos **não** permitem pins customizados nem mostrar nome/telefone/valor por parada. Esses dados precisam viver no nosso app.
-
-### Fase 4 — Fluxo "Navegar → Maps → Voltar pro app → Código de entrega"
-
-Esse é o coração do pedido. Cada bottom-sheet de parada tem **um botão grande "Iniciar navegação"** que:
-
-1. Marca a parada como `em_rota` no banco (status visual amarelo).
-2. Dispara deep link Waze/Maps **apenas pra essa parada** (`waze://?ll=lat,lng&navigate=yes` ou Google Maps `geo:lat,lng?q=lat,lng`).
-3. Em paralelo, ativa um **watcher de geolocalização** (`watchPosition`) com raio de 80m da parada.
-
-Quando o entregador chega (GPS entra no raio) **ou** ele volta manualmente pro app:
-
-- Disparamos `Capacitor LocalNotifications` + haptic médio: **"Você chegou — digite o código de entrega"**.
-- Bottom-sheet abre automaticamente em `DeliveryCodeSheet.tsx` com:
-  - Teclado numérico grande (4 dígitos).
-  - Foto opcional do comprovante (cliente assinou, embalagem entregue).
-  - Botão "Cliente ausente" (registra tentativa e mantém na rota).
-- Código validado contra `orders.delivery_code` (campo já existe). Marca `entregue` + grava `delivered_at` + libera ganho do entregador.
-- Re-otimização automática da rota restante.
-
-Botão secundário no card: **"Rota completa no Maps"** (deep link com até 9 waypoints) — pra quem prefere navegação contínua sem voltar entre paradas. Mas o fluxo padrão é parada-a-parada com retorno (mais confiável pro código).
-
-### Fase 5 — ETA real e progresso
-
-Usar tempos da matriz OSRM:
-
-- Card topo: "Rota: 4 paradas • 8,4 km • 23 min".
-- Cada pedido: "chega em ~7 min".
-- Cliente vê ETA real dele no `LiveTrackingMap.tsx` (público).
-- Atualiza a cada movimento significativo do GPS.
-
-### Fase 6 — Geocoding de fallback (pedidos sem lat/lng)
-
-Hoje cai num centroide de bairro. Melhorar:
-
-- Nova edge function `geocode-order-address` chama **Nominatim** (OSM, grátis, 1 req/s) com rua+número+bairro+cidade.
-- Resultado salvo em `geocode_cache` (já existe) + grava `orders.client_lat/lng`.
-- Roda em background quando pedido passa pra "Pronto pra rota" — não bloqueia UI.
-
-### Fase 7 — Offline e resiliência
-
-- Cache OSRM persistido em IndexedDB (matrizes por região, 7 dias).
-- Tiles Leaflet via service worker (PWA já configurado).
-- Watcher de geofence continua rodando em background com `BackgroundGeolocation` já presente.
-- Se OSRM cair: Haversine + badge discreto "rota aproximada".
-
-### Fase 8 — UX final no card "Sua Rota"
-
-- Mapa em cima (45% da tela), lista numerada de paradas embaixo.
-- **Drag-and-drop** pra reordenar manualmente (override do algoritmo).
-- Swipe-to-complete em cada item.
-- Botão "Re-otimizar" se entregador pegou pedido novo no meio.
-- Indicador "Próxima parada em 280m" sempre visível no topo.
+Hoje a lógica de localização está espalhada: `useUserLocation`, `deviceLocation`, `addressGeocoding`, `cepLookup`, `deliveryDistance`, `arrivalGeofence`, `osrmRouting` + reverse geocode inline em várias páginas. Cada tela trata permissão GPS, fallback CEP e cache do seu jeito. Vamos consolidar tudo num único módulo `@/lib/location/*` com API estável e usar em todos os fluxos (lojista, cliente, taxa, rota do motoboy).
 
 ---
 
-### Arquivos afetados
+## Fase 1 — Núcleo `@/lib/location` (fundação)
 
-**Novos:**
-- `src/lib/routing/osrmClient.ts` — matriz + geometria OSRM
-- `src/lib/routing/optimizer.ts` — 2-opt + Or-opt (extrair de StoreDriverView)
-- `src/lib/routing/cache.ts` — localStorage + IndexedDB
-- `src/lib/routing/navDeepLinks.ts` — Waze/Maps deep links + return-to-app
-- `src/lib/routing/arrivalWatcher.ts` — geofence 80m + dispara notificação
-- `src/components/driver/DriverRouteMap.tsx` — Leaflet com pins próprios
-- `src/components/driver/DriverStopSheet.tsx` — dados do cliente
-- `src/components/driver/DeliveryCodeSheet.tsx` — teclado de código + foto
-- `supabase/functions/geocode-order-address/index.ts`
+Criar um módulo único, sem mudar comportamento ainda:
 
-**Editados:**
-- `src/components/StoreDriverView.tsx` — usa novo otimizador, embute mapa, integra fluxo
-- `src/lib/driverGeolocation.ts` — gatilho de re-otimização e geofence
-- `src/components/LiveTrackingMap.tsx` — ETA real pro cliente
+```text
+src/lib/location/
+  index.ts              // API pública
+  permissions.ts        // checar/solicitar/forçar GPS (Capacitor + Web)
+  gps.ts                // getDeviceGPS + watchPosition + cache
+  cep.ts                // fetchCep (ViaCEP → BrasilAPI), cache persistente
+  geocode.ts            // address → coords (Nominatim, com fila + retry)
+  reverse.ts            // coords → endereço BR (Nominatim, com cache)
+  distance.ts           // resolveDistance (OSRM + haversine fallback)
+  cache.ts              // cache unificado (sessionStorage + memória + TTL)
+  types.ts              // Coordinates, AddressContext, Resolved*, etc.
+```
 
-**Banco:** zero migração. Usa `orders.delivery_code`, `client_lat/lng`, `geocode_cache`, `driver_locations` — já existem.
+Regras:
+- **Cache único** com TTL por tipo (GPS 5min, reverse 24h, CEP permanente, geocode 7 dias).
+- **Fila serializada** para Nominatim (1 req/s, evita 429).
+- **Telemetria** opcional via `console.debug` com prefixo `[loc]`.
 
-**Dependência nova:** `leaflet` + `react-leaflet` (lazy só na tela do entregador).
+## Fase 2 — Permissão GPS "forçada" no navegador
+
+Não dá pra ativar GPS do SO via JS, mas dá pra resolver 90% dos casos:
+
+- **Web:** chamar `navigator.permissions.query({name:'geolocation'})`. Se `denied`, abrir modal explicativo com instruções específicas por navegador (Chrome/Safari/Firefox) e botão "Tentar novamente" que re-chama `getCurrentPosition` (browsers como Chrome reabrem o prompt se o usuário limpou a permissão). Detectar `chrome://settings/content/location` e mostrar print/passo a passo.
+- **PWA instalado / Android Chrome:** se permissão do site OK mas SO desligado, capturar `POSITION_UNAVAILABLE` e oferecer CTA "Usar endereço cadastrado" automaticamente.
+- **Capacitor (APK):** já temos `capacitor-native-settings` — manter, e adicionar abertura direta para `LOCATION_SOURCE_SETTINGS` quando `code=2`.
+- Componente único `<LocationPermissionDialog />` reutilizável em todas as telas.
+
+## Fase 3 — Resolver de endereço unificado (`resolveAddress`)
+
+API única que toda tela chama:
+
+```ts
+resolveAddress({
+  prefer: "gps" | "address" | "auto",
+  fallback: ["gps", "cep", "address"],
+  address?: AddressContext,
+}) => { coords, address, source, accuracy, warnings }
+```
+
+Funciona assim:
+1. Tenta `prefer` primeiro.
+2. Se falhar, percorre `fallback` em ordem.
+3. GPS → `reverse()` para popular `address`.
+4. CEP/endereço → `geocode()` para popular `coords`.
+5. Retorna sempre o melhor disponível + nível de confiança.
+
+## Fase 4 — Migrar cadastros
+
+- **Lojista (`StoreSettings`, `CadastroLojista`):** trocar geocoder inline pelo `resolveAddress({prefer:"address"})`. Após salvar CEP, autopreencher lat/lng e mostrar pin num mini-mapa Leaflet (já temos) pra lojista corrigir arrastando.
+- **Cliente (`CheckoutPage`, `saved_addresses`, `ClientHomeContent`):** mesmo helper. Botão "Usar minha localização" usa `prefer:"gps"` com fallback CEP. Reverse automático preenche rua/bairro.
+- **Endereços salvos:** garantir que toda gravação em `saved_addresses` tenha `lat/lng`. Migration leve pra completar registros antigos via job.
+
+## Fase 5 — Taxa de entrega à prova de falha
+
+`calculate-delivery-distance` (edge) já existe. Vamos:
+- Aceitar **qualquer combinação**: gps cliente, endereço cliente, só CEP.
+- Tentar cadeia: GPS+OSRM → endereço+OSRM → CEP+OSRM (centroide) → haversine.
+- Retornar `accuracy` ("gps" / "address" / "cep" / "fallback") pro front mostrar selo "📍 Localização precisa" / "⚠ Estimativa por CEP".
+- Cache no `geocode_cache` (tabela já existe) por hash da entrada.
+- Front (`CheckoutPage`) chama uma única vez via `resolveDistance()` e mostra estado claro: calculando / preciso / estimado / falhou (com botão tentar GPS).
+
+## Fase 6 — Rastreio do motoboy (aba Pedidos)
+
+Hoje o cliente vê pouca info quando motoboy sai. Vamos:
+
+- Página `PedidoTracking` (cliente) + card na aba Pedidos do admin com **mapa Leaflet** mostrando:
+  - Pin do motoboy (atualiza via realtime `driver_locations`).
+  - Pin do cliente.
+  - Linha da rota OSRM (cacheada).
+  - ETA recalculado a cada update GPS do motoboy (km restante ÷ 25km/h, ajustado por trânsito básico).
+- Subscription única em `driver_locations` filtrada por `order_id`.
+- Geofence reverso: quando motoboy entra em 80m do cliente, push "Seu pedido chegou!" + status visual.
+- Reuso 100% do novo `@/lib/location`.
+
+## Fase 7 — Limpeza
+
+- Remover `useUserLocation`, `deviceLocation.ts`, `addressGeocoding.ts`, `cepLookup.ts` (re-exports temporários por 1 versão pra não quebrar imports).
+- Substituir todos os `fetch("https://nominatim...")` espalhados.
+- Testes: `src/lib/location/__tests__/` cobrindo permissão negada, CEP inválido, fallback, cache.
+- Atualizar `mem://` com a nova API.
 
 ---
 
-### Custo
-**Zero.** OSRM público + tiles OSM + Nominatim + deep links Waze/Maps são gratuitos e sem chave.
+## Estratégia de rollout
 
-### Ordem sugerida
-**Fase 1 + 3 + 4 primeiro** — esse é o salto: rota real, mapa com pins, fluxo navegar-e-voltar com código. Depois 2, 5, 6, 7, 8.
+Trocar o pneu com o carro andando: cada fase é independente e mantém os módulos antigos como shim re-exportando. Sem big bang. Versão bumpa a cada fase entregue.
 
----
+## Perguntas antes de começar
 
-**Perguntas antes de implementar:**
-
-1. **Geofence de chegada:** raio padrão de 80m está bom, ou prefere 50m (mais preciso, mais falso-negativo em prédios) / 120m (mais tolerante, dispara antes)?
-2. **Código de entrega:** já temos `orders.delivery_code` no banco — ele é gerado automaticamente hoje pra todo pedido, ou só pra alguns? Se for opcional, deixo o fluxo aceitar "sem código" (só foto/assinatura)?
-3. **Maps ou Waze:** abrir sempre o Waze (padrão motoboy), sempre Google Maps, ou deixar o entregador escolher na primeira vez e lembrar?
+1. **Mapa do motoboy (Fase 6)** já confirmado Leaflet+OSM (gratuito), ok?
+2. **Ordem de execução:** começar pela Fase 1+2+3 (fundação + permissões), depois 5 (taxa), 6 (tracking) e por último 4 (migração de telas)?
+3. Posso **manter shims** dos módulos antigos por 1 versão ou prefere quebrar tudo de uma vez?
