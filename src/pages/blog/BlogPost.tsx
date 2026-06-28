@@ -98,6 +98,20 @@ export default function BlogPostPage() {
     })();
   }, [slug]);
 
+  // Track view (anonymous, throttled per session)
+  useEffect(() => {
+    if (!slug) return;
+    const key = `blog_view_${slug}`;
+    if (sessionStorage.getItem(key)) return;
+    sessionStorage.setItem(key, "1");
+    (supabase as any).rpc("blog_increment_view", {
+      _slug: slug,
+      _ip_hash: null,
+      _user_agent: navigator.userAgent.slice(0, 200),
+      _referrer: document.referrer ? document.referrer.slice(0, 500) : null,
+    }).then(() => {}, () => {});
+  }, [slug]);
+
   // load related (same category, different slug)
   useEffect(() => {
     if (!post) return;
