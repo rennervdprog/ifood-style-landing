@@ -2549,6 +2549,8 @@ export type Database = {
       }
       profiles: {
         Row: {
+          auto_approval_last_run_at: string | null
+          auto_approval_meta: Json | null
           avatar_url: string | null
           cep: string | null
           city: string | null
@@ -2580,6 +2582,8 @@ export type Database = {
           whatsapp_number: string | null
         }
         Insert: {
+          auto_approval_last_run_at?: string | null
+          auto_approval_meta?: Json | null
           avatar_url?: string | null
           cep?: string | null
           city?: string | null
@@ -2611,6 +2615,8 @@ export type Database = {
           whatsapp_number?: string | null
         }
         Update: {
+          auto_approval_last_run_at?: string | null
+          auto_approval_meta?: Json | null
           avatar_url?: string | null
           cep?: string | null
           city?: string | null
@@ -3934,6 +3940,8 @@ export type Database = {
         Returns: boolean
       }
       is_test_store: { Args: { _store_id: string }; Returns: boolean }
+      is_valid_cnpj: { Args: { _doc: string }; Returns: boolean }
+      is_valid_cpf: { Args: { _doc: string }; Returns: boolean }
       log_admin_action: {
         Args: {
           _action: string
@@ -4027,6 +4035,7 @@ export type Database = {
         Args: { _earning_id: string; _notes?: string }
         Returns: undefined
       }
+      try_auto_approve_partner: { Args: { _user_id: string }; Returns: Json }
       use_coupon: {
         Args: { _coupon_id: string; _order_id: string; _user_id: string }
         Returns: boolean
@@ -4035,6 +4044,7 @@ export type Database = {
         Args: { _amount: number; _order_id: string; _user_id: string }
         Returns: number
       }
+      validate_partner_profile: { Args: { _user_id: string }; Returns: Json }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"

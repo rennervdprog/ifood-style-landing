@@ -1,7 +1,7 @@
 import {
   Shield, Clock, Store, Bike, CheckCircle2, XCircle, Loader2, Trash2,
   FileText, ChevronDown, ChevronUp, User, Phone, Mail, MapPin,
-  Calendar, CreditCard, Hash, Eye, EyeOff, AlertTriangle, Search, Filter,
+  Calendar, CreditCard, Hash, Eye, EyeOff, AlertTriangle, Search, Filter, Zap, RefreshCw,
 } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -76,6 +76,53 @@ const AdminApprovals = () => {
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<"all" | "lojista" | "motoboy">("all");
   const [visibleSensitive, setVisibleSensitive] = useState<Set<string>>(new Set());
+  const [savingFlag, setSavingFlag] = useState(false);
+  const [reprocessing, setReprocessing] = useState(false);
+
+  const { data: autoCfg } = useQuery({
+    queryKey: ["admin-auto-approval-flag"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("admin_settings")
+        .select("value")
+        .eq("key", "auto_approval")
+        .maybeSingle();
+      return (data?.value as any) || { enabled: false, shadow: true };
+    },
+  });
+
+  const setAutoCfg = async (next: { enabled: boolean; shadow: boolean }) => {
+    setSavingFlag(true);
+    try {
+      const { error } = await supabase
+        .from("admin_settings")
+        .upsert({ key: "auto_approval", value: next }, { onConflict: "key" });
+      if (error) { toast.error(error.message); return; }
+      toast.success("Configuração atualizada");
+      queryClient.invalidateQueries({ queryKey: ["admin-auto-approval-flag"] });
+    } finally { setSavingFlag(false); }
+  };
+
+  const reprocessPending = async () => {
+    setReprocessing(true);
+    try {
+      const { data: pendingIds, error } = await supabase
+        .from("profiles")
+        .select("user_id")
+        .in("role", ["lojista", "motoboy"])
+        .eq("is_approved", false);
+      if (error) { toast.error(error.message); return; }
+      let approved = 0;
+      for (const row of pendingIds || []) {
+        const { data: res } = await supabase.rpc("try_auto_approve_partner" as any, {
+          _user_id: (row as any).user_id,
+        });
+        if ((res as any)?.ok) approved++;
+      }
+      toast.success(`Reprocessados ${pendingIds?.length || 0} cadastros — ${approved} elegíveis`);
+      queryClient.invalidateQueries({ queryKey: ["admin-pending-profiles"] });
+    } finally { setReprocessing(false); }
+  };
 
   const { data: allProfiles, isLoading } = useQuery({
     queryKey: ["admin-pending-profiles"],
@@ -351,6 +398,70 @@ const AdminApprovals = () => {
 
   return (
     <div className="space-y-4">
+      {/* Auto-approval control */}
+      <div className="bg-card rounded-2xl border border-border p-3 space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="h-8 w-8 rounded-full bg-primary/15 text-primary flex items-center justify-center shrink-0">
+              <Zap className="h-4 w-4" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-bold text-foreground">Aprovação automática</p>
+              <p className="text-[10px] text-muted-foreground">
+                {autoCfg?.enabled && !autoCfg?.shadow
+                  ? "✅ Ativa — aprovando parceiros válidos automaticamente"
+                  : autoCfg?.enabled && autoCfg?.shadow
+                  ? "👁 Shadow — só avalia, não aprova"
+                  : "⏸ Desligada — todas as aprovações são manuais"}
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className="flex gap-2 flex-wrap">
+          <button
+            disabled={savingFlag}
+            onClick={() => setAutoCfg({ enabled: false, shadow: true })}
+            className={`flex-1 min-w-[90px] text-[11px] font-bold py-2 rounded-lg border transition-colors ${
+              !autoCfg?.enabled
+                ? "bg-muted text-foreground border-border"
+                : "bg-transparent text-muted-foreground border-border hover:text-foreground"
+            }`}
+          >
+            Desligada
+          </button>
+          <button
+            disabled={savingFlag}
+            onClick={() => setAutoCfg({ enabled: true, shadow: true })}
+            className={`flex-1 min-w-[90px] text-[11px] font-bold py-2 rounded-lg border transition-colors ${
+              autoCfg?.enabled && autoCfg?.shadow
+                ? "bg-yellow-500/15 text-yellow-600 border-yellow-500/40"
+                : "bg-transparent text-muted-foreground border-border hover:text-foreground"
+            }`}
+          >
+            Shadow
+          </button>
+          <button
+            disabled={savingFlag}
+            onClick={() => setAutoCfg({ enabled: true, shadow: false })}
+            className={`flex-1 min-w-[90px] text-[11px] font-bold py-2 rounded-lg border transition-colors ${
+              autoCfg?.enabled && !autoCfg?.shadow
+                ? "bg-green-500/15 text-green-600 border-green-500/40"
+                : "bg-transparent text-muted-foreground border-border hover:text-foreground"
+            }`}
+          >
+            Ativa
+          </button>
+          <button
+            disabled={reprocessing}
+            onClick={reprocessPending}
+            className="flex items-center gap-1.5 px-3 text-[11px] font-bold py-2 rounded-lg bg-primary/10 text-primary border border-primary/30 hover:bg-primary/20 disabled:opacity-50"
+          >
+            {reprocessing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+            Reprocessar
+          </button>
+        </div>
+      </div>
+
       {/* Summary cards */}
       <div className="grid grid-cols-3 gap-2">
         <div className="bg-card rounded-xl border border-border p-3 text-center">
