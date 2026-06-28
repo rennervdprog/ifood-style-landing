@@ -440,6 +440,41 @@ const AuthPage = () => {
             </div>
           )}
 
+          {mode === "signup" && (
+            <>
+              <div>
+                <label className="text-xs font-semibold text-slate-500 tracking-wide mb-1.5 block">Nome completo</label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder="Seu nome"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    maxLength={80}
+                    autoComplete="name"
+                    className={inputClass}
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-slate-500 tracking-wide mb-1.5 block">CPF ou CNPJ</label>
+                <div className="relative">
+                  <FileText className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="CPF ou CNPJ"
+                    value={cpf}
+                    onChange={(e) => setCpf(formatDocument(e.target.value))}
+                    maxLength={18}
+                    className={inputClass}
+                  />
+                </div>
+              </div>
+            </>
+          )}
+
           {mode !== "forgot" && (
             <>
               <div>
