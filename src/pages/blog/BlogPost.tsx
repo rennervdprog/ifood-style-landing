@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import ReactMarkdown from "react-markdown";
@@ -7,6 +7,9 @@ import rehypeSlug from "rehype-slug";
 import { Clock, Share2, Link as LinkIcon, ArrowRight, ListOrdered } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import NewsletterSignup from "@/components/blog/NewsletterSignup";
+
+const BlogComments = lazy(() => import("@/components/blog/BlogComments"));
 
 interface BlogPost {
   id: string;
@@ -93,6 +96,20 @@ export default function BlogPostPage() {
       setLoading(false);
       window.scrollTo({ top: 0 });
     })();
+  }, [slug]);
+
+  // Track view (anonymous, throttled per session)
+  useEffect(() => {
+    if (!slug) return;
+    const key = `blog_view_${slug}`;
+    if (sessionStorage.getItem(key)) return;
+    sessionStorage.setItem(key, "1");
+    (supabase as any).rpc("blog_increment_view", {
+      _slug: slug,
+      _ip_hash: null,
+      _user_agent: navigator.userAgent.slice(0, 200),
+      _referrer: document.referrer ? document.referrer.slice(0, 500) : null,
+    }).then(() => {}, () => {});
   }, [slug]);
 
   // load related (same category, different slug)
@@ -417,6 +434,18 @@ export default function BlogPostPage() {
             </div>
           </section>
         )}
+
+        {/* NEWSLETTER */}
+        <section className="border-t border-border bg-background">
+          <div className="container mx-auto max-w-3xl px-4 py-12">
+            <NewsletterSignup source={`post:${post.slug}`} />
+          </div>
+        </section>
+
+        {/* COMMENTS */}
+        <Suspense fallback={null}>
+          <BlogComments postId={post.id} />
+        </Suspense>
       </main>
     </>
   );

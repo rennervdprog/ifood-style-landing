@@ -449,48 +449,187 @@ export type Database = {
           },
         ]
       }
+      blog_categories: {
+        Row: {
+          color: string
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          slug: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          slug: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          slug?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      blog_comments: {
+        Row: {
+          author_email: string
+          author_name: string
+          content: string
+          created_at: string
+          id: string
+          ip_hash: string | null
+          post_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          author_email: string
+          author_name: string
+          content: string
+          created_at?: string
+          id?: string
+          ip_hash?: string | null
+          post_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          author_email?: string
+          author_name?: string
+          content?: string
+          created_at?: string
+          id?: string
+          ip_hash?: string | null
+          post_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blog_comments_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "blog_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      blog_post_views: {
+        Row: {
+          id: number
+          ip_hash: string | null
+          post_id: string
+          referrer: string | null
+          user_agent: string | null
+          viewed_at: string
+        }
+        Insert: {
+          id?: number
+          ip_hash?: string | null
+          post_id: string
+          referrer?: string | null
+          user_agent?: string | null
+          viewed_at?: string
+        }
+        Update: {
+          id?: number
+          ip_hash?: string | null
+          post_id?: string
+          referrer?: string | null
+          user_agent?: string | null
+          viewed_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blog_post_views_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "blog_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       blog_posts: {
         Row: {
           author: string | null
+          author_id: string | null
+          category: string | null
           content_md: string
           cover_url: string | null
           created_at: string
           excerpt: string | null
+          featured: boolean
           id: string
+          meta_description: string | null
+          meta_keywords: string[] | null
+          og_image: string | null
           published: boolean
           published_at: string | null
+          reading_minutes: number | null
+          scheduled_at: string | null
           slug: string
           tags: string[]
           title: string
           updated_at: string
+          view_count: number
         }
         Insert: {
           author?: string | null
+          author_id?: string | null
+          category?: string | null
           content_md?: string
           cover_url?: string | null
           created_at?: string
           excerpt?: string | null
+          featured?: boolean
           id?: string
+          meta_description?: string | null
+          meta_keywords?: string[] | null
+          og_image?: string | null
           published?: boolean
           published_at?: string | null
+          reading_minutes?: number | null
+          scheduled_at?: string | null
           slug: string
           tags?: string[]
           title: string
           updated_at?: string
+          view_count?: number
         }
         Update: {
           author?: string | null
+          author_id?: string | null
+          category?: string | null
           content_md?: string
           cover_url?: string | null
           created_at?: string
           excerpt?: string | null
+          featured?: boolean
           id?: string
+          meta_description?: string | null
+          meta_keywords?: string[] | null
+          og_image?: string | null
           published?: boolean
           published_at?: string | null
+          reading_minutes?: number | null
+          scheduled_at?: string | null
           slug?: string
           tags?: string[]
           title?: string
           updated_at?: string
+          view_count?: number
         }
         Relationships: []
       }
@@ -1657,6 +1796,39 @@ export type Database = {
           fee?: number
           id?: string
           name?: string
+        }
+        Relationships: []
+      }
+      newsletter_subscribers: {
+        Row: {
+          confirmation_token: string
+          confirmed_at: string | null
+          created_at: string
+          email: string
+          id: string
+          source: string | null
+          unsubscribe_token: string
+          unsubscribed_at: string | null
+        }
+        Insert: {
+          confirmation_token?: string
+          confirmed_at?: string | null
+          created_at?: string
+          email: string
+          id?: string
+          source?: string | null
+          unsubscribe_token?: string
+          unsubscribed_at?: string | null
+        }
+        Update: {
+          confirmation_token?: string
+          confirmed_at?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          source?: string | null
+          unsubscribe_token?: string
+          unsubscribed_at?: string | null
         }
         Relationships: []
       }
@@ -3828,6 +4000,15 @@ export type Database = {
         Returns: undefined
       }
       auto_finalize_stale_orders: { Args: never; Returns: Json }
+      blog_increment_view: {
+        Args: {
+          _ip_hash?: string
+          _referrer?: string
+          _slug: string
+          _user_agent?: string
+        }
+        Returns: undefined
+      }
       calculate_prorata_credit: { Args: { _store_id: string }; Returns: number }
       check_device_active: { Args: { _device_id: string }; Returns: boolean }
       claim_push_device: {
