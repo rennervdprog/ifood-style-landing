@@ -1,4 +1,4 @@
-import { formatBRL, cn } from "@/lib/utils";
+import { formatBRL, cn, multiplyMoney, sumMoney } from "@/lib/utils";
 import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -300,21 +300,30 @@ const ProductDetailModal = ({ product, storeName, storeCategory, singleSize = fa
     );
   }, [selectedAddonRows]);
 
-  const hasPriceReplacingGroup = addonGroups.some((g) => g.price_replaces_base);
-  const replacementTotal = selectedAddonRows
-    .filter((row) => row.replacesBasePrice)
-    .reduce((sum, row) => sum + row.lineTotal, 0);
-  const hasReplacementSelected = selectedAddonRows.some((row) => row.replacesBasePrice);
-  const normalAddonsTotal = selectedAddonRows
-    .filter((row) => !row.replacesBasePrice)
-    .reduce((sum, row) => sum + row.lineTotal, 0);
+  const priceSummary = useMemo(() => {
+    const hasPriceReplacingGroup = addonGroups.some((g) => g.price_replaces_base);
+    const replacementRows = selectedAddonRows.filter((row) => row.replacesBasePrice);
+    const normalRows = selectedAddonRows.filter((row) => !row.replacesBasePrice);
+    const replacementTotal = sumMoney(replacementRows.map((row) => row.lineTotal));
+    const normalAddonsTotal = sumMoney(normalRows.map((row) => row.lineTotal));
+    const hasReplacementSelected = replacementRows.length > 0;
+    const effectiveProductPrice = product ? getEffectivePrice(product as any) || 0 : 0;
+    const productBasePrice = hasSizes && selectedSize
+      ? sizes.find((s) => s.name === selectedSize)?.price || effectiveProductPrice
+      : effectiveProductPrice;
+    const basePrice = hasPriceReplacingGroup
+      ? (hasReplacementSelected ? replacementTotal : 0)
+      : productBasePrice;
+    const unitPrice = sumMoney([basePrice, normalAddonsTotal]);
 
-  const productBasePrice = hasSizes && selectedSize
-    ? sizes.find((s) => s.name === selectedSize)?.price || getEffectivePrice(product as any) || 0
-    : getEffectivePrice(product as any) || 0;
-  const basePrice = hasPriceReplacingGroup ? (hasReplacementSelected ? replacementTotal : 0) : productBasePrice;
-  const unitPrice = basePrice + normalAddonsTotal;
-  const lineTotal = unitPrice * quantity;
+    return {
+      basePrice,
+      unitPrice,
+      lineTotal: multiplyMoney(unitPrice, quantity),
+    };
+  }, [addonGroups, hasSizes, product, quantity, selectedAddonRows, selectedSize, sizes]);
+
+  const { unitPrice, lineTotal } = priceSummary;
 
   if (!product) return null;
 
