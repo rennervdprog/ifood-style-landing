@@ -2,11 +2,13 @@ import { describe, it, expect } from "vitest";
 import { renderHook, act } from "@testing-library/react";
 import { usePdvCart } from "../usePdvCart";
 
-const prod = (over: Partial<any> = {}) => ({
+const prod = (over: Partial<any> = {}): any => ({
   id: "p1",
   name: "Coca 2L",
   price: 10,
   image_url: null,
+  section_id: "s1",
+  is_available: true,
   ...over,
 });
 
