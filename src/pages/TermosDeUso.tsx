@@ -4,7 +4,7 @@ import { Helmet } from "react-helmet-async";
 
 const TermosDeUso = () => {
   const navigate = useNavigate();
-  const dataAtualizacao = "22 de junho de 2026";
+  const dataAtualizacao = "28 de junho de 2026";
 
   return (
     <div className="min-h-screen bg-background">
@@ -21,10 +21,23 @@ const TermosDeUso = () => {
           <ArrowLeft className="h-5 w-5 text-foreground" />
         </button>
         <h1 className="font-bold text-foreground">Termos de Uso</h1>
-        <span className="text-xs text-muted-foreground ml-auto">Atualizado em {dataAtualizacao} · v4.4</span>
+        <span className="text-xs text-muted-foreground ml-auto">Atualizado em {dataAtualizacao} · v5.0</span>
       </div>
 
       <div className="max-w-3xl mx-auto px-4 py-6 space-y-6 text-sm text-muted-foreground">
+
+        <section className="space-y-2 rounded-xl border border-border bg-card/60 p-4">
+          <p className="text-xs font-bold text-foreground">Identificação do Controlador</p>
+          <p className="text-xs">
+            <strong className="text-foreground">Razão social:</strong> 66.155.289 Renner Vinicius Dias (MEI)<br />
+            <strong className="text-foreground">CNPJ:</strong> 66.155.289/0001-26<br />
+            <strong className="text-foreground">Endereço:</strong> Rua São Francisco, nº 635, Itatinga/SP, Brasil<br />
+            <strong className="text-foreground">Encarregado de Dados (DPO — Art. 41 LGPD):</strong> Renner Vinicius Dias · <a href="mailto:vinivias13@gmail.com" className="text-primary underline">vinivias13@gmail.com</a>
+          </p>
+          <p className="text-[10px] text-amber-600 dark:text-amber-400 pt-1 border-t border-border/60 mt-2">
+            ⚠️ Documento técnico sujeito a revisão jurídica por advogado registrado na OAB antes da consolidação final.
+          </p>
+        </section>
 
         <section className="space-y-3">
           <p>A plataforma <strong className="text-foreground">ItaSuper</strong> é um serviço de intermediação digital que conecta consumidores, lojistas e entregadores para pedidos com entrega ou retirada. Inclui também o módulo <strong className="text-foreground">PDV (Ponto de Venda)</strong>, que permite ao lojista registrar vendas presenciais no próprio estabelecimento.</p>
@@ -217,8 +230,10 @@ const TermosDeUso = () => {
 
         <section className="border-t border-border pt-4">
           <p className="text-xs text-muted-foreground text-center">
-            ItaSuper — Plataforma de Intermediação Digital · Itatinga/SP · Brasil<br />
-            Versão 4.3 · Última atualização: {dataAtualizacao} · Dúvidas: WhatsApp (22) 99279-6291
+            ItaSuper — Plataforma de Intermediação Digital<br />
+            66.155.289 Renner Vinicius Dias · CNPJ 66.155.289/0001-26 · Itatinga/SP · Brasil<br />
+            Versão 5.0 · Última atualização: {dataAtualizacao} · Dúvidas: WhatsApp (22) 99279-6291<br />
+            <span className="text-amber-600 dark:text-amber-400">Sujeito a revisão jurídica final pela OAB.</span>
           </p>
         </section>
 
