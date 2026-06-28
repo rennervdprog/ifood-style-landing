@@ -40,7 +40,7 @@
 
     // 🛣️ Tenta rota real (OSRM) via edge function — fonte única de verdade
     try {
-      const { resolveDistance } = await import("./deliveryDistance");
+      const { resolveDistance } = await import("./location");
       const routeRes = await resolveDistance({
         store: {
           lat: config.store_coords?.lat ?? null,
@@ -147,8 +147,8 @@
   }
  
 import { formatBRL, addMoney } from "@/lib/utils";
-import { fetchCep } from "./cepLookup";
-import { geocodeAddressPrecise } from "./addressGeocoding";
+import { fetchCep } from "./location";
+import { geocodeAddressPrecise } from "./location";
 
 export interface DeliveryFeeConfig {
   city_name: string;
