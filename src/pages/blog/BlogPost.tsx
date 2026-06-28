@@ -434,6 +434,18 @@ export default function BlogPostPage() {
             </div>
           </section>
         )}
+
+        {/* NEWSLETTER */}
+        <section className="border-t border-border bg-background">
+          <div className="container mx-auto max-w-3xl px-4 py-12">
+            <NewsletterSignup source={`post:${post.slug}`} />
+          </div>
+        </section>
+
+        {/* COMMENTS */}
+        <Suspense fallback={null}>
+          <BlogComments postId={post.id} />
+        </Suspense>
       </main>
     </>
   );
