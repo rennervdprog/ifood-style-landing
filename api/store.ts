@@ -62,10 +62,10 @@ export default async function handler(req: Request): Promise<Response> {
       headers: {
         ...cors,
         "Content-Type": "application/json",
-        // CDN cacheia por 60s, serve stale por até 10min enquanto revalida.
-        "Cache-Control": "public, s-maxage=60, stale-while-revalidate=600",
-        "CDN-Cache-Control": "public, s-maxage=60, stale-while-revalidate=600",
-        "Vercel-CDN-Cache-Control": "public, s-maxage=60, stale-while-revalidate=600",
+        // CDN cacheia por 10min, serve stale por até 24h enquanto revalida em background.
+        "Cache-Control": "public, s-maxage=600, stale-while-revalidate=86400",
+        "CDN-Cache-Control": "public, s-maxage=600, stale-while-revalidate=86400",
+        "Vercel-CDN-Cache-Control": "public, s-maxage=600, stale-while-revalidate=86400",
       },
     });
   } catch (err) {
