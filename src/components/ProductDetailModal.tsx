@@ -266,53 +266,54 @@ const ProductDetailModal = ({ product, storeName, storeCategory, singleSize = fa
     return addonsMet;
   }, [addonGroups, selectedAddons, hasSizes, selectedSize, isLanche, meatOptions, selectedMeatDoneness, breadTypes, selectedBread, isBBQ, bbqMeatOptions, isDessert, flavors, selectedFlavor, isCafe, isCakeLike, cafeFlavors]);
 
-  const selectedAddonsList: CartAddon[] = useMemo(() => {
+  const selectedAddonRows = useMemo(() => {
     return addonGroups.flatMap((group) => {
       const groupQtys = selectedAddons[group.id] || {};
       return addonItems
         .filter((ai) => ai.group_id === group.id && (groupQtys[ai.id] || 0) > 0)
-        .flatMap((ai) => {
-          const qty = groupQtys[ai.id] || 1;
-          // Repete o addon N vezes para manter compatibilidade com CartAddon[]
-          // ou usa qty como multiplicador no preço
-          return Array.from({ length: qty }, () => ({
-            name: ai.name,
-            price: ai.price,
-            required: group.min_select > 0,
+        .map((ai) => {
+          const qty = groupQtys[ai.id] || 0;
+          const unitPrice = Number(ai.price || 0);
+          return {
+            groupId: group.id,
             groupName: group.name,
-          }));
+            itemId: ai.id,
+            name: ai.name,
+            qty,
+            unitPrice,
+            lineTotal: unitPrice * qty,
+            required: group.min_select > 0,
+            replacesBasePrice: !!group.price_replaces_base,
+          };
         });
     });
   }, [addonItems, addonGroups, selectedAddons]);
 
-  const priceReplacingGroups = addonGroups.filter((g) => g.price_replaces_base);
-  const hasPriceReplacingGroup = priceReplacingGroups.length > 0;
-  const priceReplacingSelected = priceReplacingGroups.flatMap((g) =>
-    addonItems
-      .filter((ai) => ai.group_id === g.id && (selectedAddons[g.id]?.[ai.id] || 0) > 0)
-      .map((ai) => ({ ...ai, qty: selectedAddons[g.id]?.[ai.id] || 0 })),
-  );
-  const replacementPrice = priceReplacingSelected.reduce(
-    (s, a) => s + Number(a.price || 0) * (a.qty || 1),
-    0,
-  );
+  const selectedAddonsList: CartAddon[] = useMemo(() => {
+    return selectedAddonRows.flatMap((row) =>
+      Array.from({ length: row.qty }, () => ({
+        name: row.name,
+        price: row.unitPrice,
+        required: row.required,
+        groupName: row.groupName,
+      })),
+    );
+  }, [selectedAddonRows]);
 
-  const replacingGroupIds = new Set(priceReplacingGroups.map((g) => g.id));
-  const addonsTotal = selectedAddonsList
-    .filter((a) => {
-      const group = addonGroups.find((g) => g.name === a.groupName);
-      return !group || !replacingGroupIds.has(group.id);
-    })
-    .reduce((s, a) => s + a.price, 0);
+  const hasPriceReplacingGroup = addonGroups.some((g) => g.price_replaces_base);
+  const replacementTotal = selectedAddonRows
+    .filter((row) => row.replacesBasePrice)
+    .reduce((sum, row) => sum + row.lineTotal, 0);
+  const hasReplacementSelected = selectedAddonRows.some((row) => row.replacesBasePrice);
+  const normalAddonsTotal = selectedAddonRows
+    .filter((row) => !row.replacesBasePrice)
+    .reduce((sum, row) => sum + row.lineTotal, 0);
 
-  const basePrice = hasPriceReplacingGroup
-    ? priceReplacingSelected.length > 0
-      ? replacementPrice
-      : 0
-    : hasSizes && selectedSize
-      ? sizes.find((s) => s.name === selectedSize)?.price || getEffectivePrice(product as any) || 0
-      : getEffectivePrice(product as any) || 0;
-  const unitPrice = basePrice + addonsTotal;
+  const productBasePrice = hasSizes && selectedSize
+    ? sizes.find((s) => s.name === selectedSize)?.price || getEffectivePrice(product as any) || 0
+    : getEffectivePrice(product as any) || 0;
+  const basePrice = hasPriceReplacingGroup ? (hasReplacementSelected ? replacementTotal : 0) : productBasePrice;
+  const unitPrice = basePrice + normalAddonsTotal;
   const lineTotal = unitPrice * quantity;
 
   if (!product) return null;
@@ -426,6 +427,8 @@ const ProductDetailModal = ({ product, storeName, storeCategory, singleSize = fa
             const allowMultiple = group.max_select !== 1;
             const groupCap = group.max_select && group.max_select > 0 ? group.max_select : Infinity;
             const atCap = groupTotal(group.id) >= groupCap;
+            const selectedRow = selectedAddonRows.find((row) => row.groupId === group.id && row.itemId === item.id);
+            const itemLineTotal = selectedRow?.lineTotal ?? Number(item.price || 0);
             return (
               <div
                 key={item.id}
@@ -490,8 +493,8 @@ const ProductDetailModal = ({ product, storeName, storeCategory, singleSize = fa
                 </button>
 
                 {item.price > 0 && (
-                  <span className={cn("shrink-0 text-sm font-bold", isChecked ? "text-primary" : "text-muted-foreground")}>
-                    + {formatBRL(item.price * (qty > 1 ? qty : 1))}
+                  <span className={cn("shrink-0 text-right text-sm font-bold", isChecked ? "text-primary" : "text-muted-foreground")}>
+                    {qty > 1 ? `+ ${formatBRL(Number(item.price || 0))} × ${qty} = ${formatBRL(itemLineTotal)}` : `+ ${formatBRL(Number(item.price || 0))}`}
                   </span>
                 )}
 
