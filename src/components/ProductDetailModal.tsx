@@ -288,9 +288,14 @@ const ProductDetailModal = ({ product, storeName, storeCategory, singleSize = fa
   const priceReplacingGroups = addonGroups.filter((g) => g.price_replaces_base);
   const hasPriceReplacingGroup = priceReplacingGroups.length > 0;
   const priceReplacingSelected = priceReplacingGroups.flatMap((g) =>
-    addonItems.filter((ai) => ai.group_id === g.id && !!selectedAddons[g.id]?.[ai.id]),
+    addonItems
+      .filter((ai) => ai.group_id === g.id && (selectedAddons[g.id]?.[ai.id] || 0) > 0)
+      .map((ai) => ({ ...ai, qty: selectedAddons[g.id]?.[ai.id] || 0 })),
   );
-  const replacementPrice = priceReplacingSelected.reduce((s, a) => s + Number(a.price || 0), 0);
+  const replacementPrice = priceReplacingSelected.reduce(
+    (s, a) => s + Number(a.price || 0) * (a.qty || 1),
+    0,
+  );
 
   const replacingGroupIds = new Set(priceReplacingGroups.map((g) => g.id));
   const addonsTotal = selectedAddonsList
