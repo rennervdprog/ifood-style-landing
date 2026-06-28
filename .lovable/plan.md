@@ -1,92 +1,119 @@
-## Objetivo
-Eliminar a etapa manual em `AdminApprovals` e aprovar lojistas/entregadores automaticamente assim que o cadastro estiver **completo + validado**, mantendo trilha de auditoria e antifraude para reverter casos suspeitos.
 
-## Estado atual
-- Hoje todo cadastro entra com `profiles.is_approved = false` e fica aguardando um clique do admin em `src/components/AdminApprovals.tsx` → RPC `admin_approve_partner`.
-- Não há validação automática de documento, CNH, foto ou unicidade. Aprovação é 100% baseada em "olho do admin".
-- WhatsApp de boas-vindas só dispara depois do clique.
+# Plano — App Parceiro Nativo (foco Entregador)
 
-## Critérios de aprovação automática
+Objetivo: transformar o APK Parceiro num app que **parece e responde como nativo** quando rodando em Capacitor, mantém o design web atual quando aberto no navegador, e extrai 100% de desempenho da WebView Android.
 
-### Lojista (`role = 'lojista'`)
-1. `full_name`, `document` (CPF ou CNPJ válido — dígito verificador), `email`, `whatsapp_number`, `cep`, `street`, `number`, `neighborhood`, `city` preenchidos.
-2. Endereço geocodificado com sucesso (`stores.lat/lng` não nulos via núcleo `@/lib/location`).
-3. Documento aceito pelo Asaas (cria/valida subconta — se Asaas devolver `commercialInfo: APPROVED`, libera).
-4. Antifraude: documento + e-mail únicos em `profiles` e `archived_accounts`; IP/dispositivo não na blacklist de `fraud_attempts`.
-5. Loja criada em `stores` com `category` definida.
+---
 
-### Entregador (`role = 'motoboy'`)
-1. `full_name`, `document` (CPF válido), `whatsapp_number`, `city`, `vehicle`, `cnh_number`, `cnh_front_url`, `selfie_url` preenchidos.
-2. CNH em formato válido (11 dígitos) e foto/selfie acessíveis no Storage (verificação de tamanho/MIME).
-3. Antifraude: CPF + CNH únicos; selfie vs CNH com score mínimo (opcional — Lovable AI Vision).
-4. Cidade dentro das cidades ativas em `cities`.
+## 1. Detecção de runtime + design duplo (Native vs Web)
 
-## Arquitetura
+Hoje o mesmo JSX é usado em browser e APK. Vamos introduzir uma camada de "shell":
 
-```text
-Cadastro (Lojista/Entregador)
-        │
-        ▼
-INSERT profiles + stores/drivers
-        │
-        ▼  trigger AFTER INSERT/UPDATE
-auto_approve_partner()  ──► chama edge function "auto-approve-partner"
-        │                         │
-        │                         ├─ valida doc (mod11)
-        │                         ├─ checa duplicidade
-        │                         ├─ chama Asaas (lojista) / valida storage (entregador)
-        │                         ├─ geocode check
-        │                         └─ opcional: Lovable AI Vision (selfie x CNH)
-        ▼
-score >= threshold  ──► UPDATE profiles SET is_approved=true
-                         + log_admin_action('auto_approve_partner')
-                         + dispara WhatsApp de boas-vindas
-score < threshold   ──► mantém pendente + insere linha em compliance_alerts
-                         (admin revisa manualmente como hoje)
-```
+- Criar `src/lib/runtime.ts` com `isNative()`, `isPartnerNative()`, `getPlatform()` (já temos `capacitorNative.ts` + `capacitorAppMode.ts` — vamos consolidar e exportar um hook único `useRuntime()`).
+- Criar `src/components/native/` com primitivas com cara de app:
+  - `NativeShell` (status bar colorida, safe-area `env(safe-area-inset-*)`, sem header web)
+  - `NativeTopBar` (back nativo + título centralizado, altura 56dp)
+  - `NativeBottomTabs` (tabs fixas: Pedidos / Mapa / Ganhos / Perfil) — só monta se `isNative()`
+  - `NativeListRow`, `NativeSheet` (bottom-sheet com gesto), `NativeFab`
+- `DriverDashboardV2` vira um **router visual**:
+  - `isNative()` → renderiza `<DriverNativeShell>` (layout de app, gestos, haptics, sem scroll horizontal, sem hover states)
+  - senão → mantém layout web atual
+- Tokens próprios em `index.css` sob `.native-app { … }`: tipografia maior (16px base), toque mínimo 48dp, espaçamento compacto, sombras flat estilo Material 3 / iOS.
 
-## Implementação por fases
+## 2. Boas práticas Capacitor (config + bootstrap)
 
-**Fase 1 — Núcleo de validação (backend)**
-- Migration: função `public.validate_partner_profile(_user_id uuid)` → retorna `jsonb` com `{ ok, score, missing[], reasons[] }`. Implementa dígito verificador CPF/CNPJ e checa completeness.
-- Edge function `auto-approve-partner/index.ts` (verify_jwt=false, chamada por trigger via `pg_net`):
-  - Recebe `user_id`.
-  - Roda `validate_partner_profile`.
-  - Para lojista: chama Asaas (`createSubaccount` ou `myAccount/status` se já existe).
-  - Para entregador: HEAD nas URLs de `cnh_front_url`/`selfie_url` para confirmar upload.
-  - Se aprovado: `UPDATE profiles SET is_approved = true`, registra `admin_logs` com `action='auto_approve_partner'`, dispara `send-whatsapp-message` (já existe).
-  - Se reprovado: insere em `compliance_alerts` com motivo.
+- `capacitor.config.ts`:
+  - **Remover `server.url`** do APK de produção do entregador. Hot-reload via URL remoto mata performance, perde offline e quebra deep-links. Manter só para o app cliente se necessário; entregador roda bundle local + auto-update via `@capacitor/app` checando versão.
+  - `android.useLegacyBridge: false`, `android.captureInput: true`, `android.backgroundColor: "#0B0F14"`.
+  - `webContentsDebuggingEnabled: false` em release (já está).
+- Bootstrap nativo (`src/lib/nativeBoot.ts`):
+  - `StatusBar.setStyle({ style: Dark })`, `setBackgroundColor`, `setOverlaysWebView(false)`.
+  - `Keyboard.setResizeMode({ mode: 'native' })` + `setScroll({ isDisabled: true })`.
+  - `SplashScreen.hide()` só depois do primeiro paint útil (após auth resolvido).
+  - `App.addListener('backButton')` controlado (sair = double-tap, voltar = router).
+  - `Network.addListener('networkStatusChange')` → banner offline + pausa de polling.
 
-**Fase 2 — Disparo automático**
-- Trigger `AFTER INSERT OR UPDATE OF document, cnh_front_url, selfie_url, address, cep ON profiles` → chama `auto-approve-partner` via `pg_net.http_post` (somente quando `is_approved=false` e `role IN ('lojista','motoboy')`).
-- Trigger equivalente em `stores` (lat/lng preenchidos) e `drivers` (vínculo criado).
-- Debounce simples: campo `profiles.auto_approval_last_run_at` para evitar reentrância.
+## 3. Performance da WebView (alvo: 60fps)
 
-**Fase 3 — Antifraude reforçada**
-- Migration: unique index parcial em `profiles.document` (entre não-arquivados).
-- Função `public.is_duplicate_document(_doc text, _exclude uuid)` consultando `profiles` + `archived_accounts` + `fraud_attempts`.
-- Bloqueio automático com `is_blocked = true` e alerta em `compliance_alerts` quando duplicidade for detectada.
+- **Code-splitting agressivo do APK Parceiro**: criar `src/main.partner.tsx` com rotas só de parceiro (entregador / admin / pdv), via `VITE_CAPACITOR_APP_MODE=partner` no build Android. Hoje o APK baixa bundle inteiro (loja cliente, blog, landing) — corte estimado: ~40-60% do JS.
+- **Lazy-load** de `recharts`, `framer-motion`, `LiveTrackingMap`, builders de pizza/pastel — nada disso é usado pelo entregador.
+- **React Query no APK**: `staleTime` maior (30s), `gcTime` 5min, `refetchOnWindowFocus: false` (não existe focus em mobile do mesmo jeito), usar `refetchOnReconnect` via `@capacitor/network`.
+- Substituir `setInterval` de polling do entregador por **Realtime + Background Geolocation push** (já temos canal — auditar se ainda existe polling redundante em `DriverDashboardV2`).
+- Imagens: `<img loading="lazy" decoding="async">` em todo lugar; pré-baixar avatares de cliente no aceite do pedido.
+- Animações: trocar `framer-motion` por CSS transforms em telas do entregador (lista de pedidos, badges) — `framer-motion` sozinho é ~50kb gzip.
+- Habilitar `content-visibility: auto` em listas longas (pedidos do dia, histórico, ganhos).
 
-**Fase 4 — UI Admin (revisão de exceções)**
-- `AdminApprovals.tsx` passa a mostrar **apenas** os cadastros que falharam na automação, com a lista de `reasons` vinda de `compliance_alerts`.
-- Novo badge "Auto-aprovado" e filtro para auditar últimas 24h.
-- Mantém botões Aprovar/Recusar para o fluxo de exceção.
+## 4. Plugins recomendados (adicionar / consolidar)
 
-**Fase 5 — Observabilidade**
-- View `public.partner_auto_approval_stats` (total, aprovados, reprovados, motivos top-5) consumida pelo `SuperAdminDashboardV2` em um card novo.
-- Logs estruturados na edge function (Sentry já configurado).
+Já temos a base boa. Adicionar:
 
-## Detalhes técnicos
-- Reutilizar `src/lib/documentFormat.ts` para validar CPF/CNPJ no front e portar a mesma lógica em SQL.
-- Asaas: usar `supabase/functions/asaas-create-subaccount` existente; só consumir resposta.
-- Geocoding: já gravado pelo núcleo `@/lib/location` durante o cadastro; basta checar `lat IS NOT NULL`.
-- Storage check: `supabase.storage.from('cnh').createSignedUrl(...)` para garantir que o objeto existe.
-- WhatsApp: extrair o template atual do `handleApprove` em `AdminApprovals` para função compartilhada em `src/lib/partnerWelcome.ts`, reutilizada pela edge function via REST.
-- Versionar (`appVersion.ts` + `build.gradle`) e adicionar testes em `src/lib/__tests__/documentFormat.test.ts` cobrindo casos novos.
+| Plugin | Uso |
+|---|---|
+| `@capacitor/share` | Compartilhar comprovante de entrega, código PIX de saque |
+| `@capacitor/browser` | Abrir Asaas/links externos sem sair do app (in-app browser) |
+| `@capacitor/clipboard` | Copiar endereço / PIX (já usamos web API, padronizar) |
+| `@capacitor/device` | Telemetria (modelo, Android version) p/ debug de bugs do entregador |
+| `@capacitor/filesystem` | Salvar comprovante de entrega offline antes de enviar |
+| `@capacitor-mlkit/barcode-scanning` | Scanner de QR de pedido (futuro pickup) — usa câmera nativa, muito mais rápido que ZXing-web |
+| `@capacitor/screen-orientation` | Travar entregador em portrait |
+| `@capgo/capacitor-updater` (avaliar) | OTA de bundle JS sem subir APK na Play Store |
 
-## Rollout seguro
-1. Deploy com flag `admin_settings.auto_approval_enabled = false` (default).
-2. Modo "shadow": função roda e só registra decisão em `admin_logs` sem alterar `is_approved`.
-3. Comparar 50 cadastros reais com decisão manual.
-4. Ativar flag em produção; manter painel de exceções por 30 dias.
-5. Kill switch: setar flag para `false` reverte ao fluxo manual atual sem mudança de código.
+Remover/avaliar:
+- `@capacitor/background-runner` — limitação grave (15min Android, horas iOS); o que realmente entrega notificação rápida é **FCM data-message** (já temos `firebase-messaging-sw.js`). Manter o runner só como fallback de "última milha".
+
+## 5. UX nativa do Entregador (fluxo)
+
+Telas reorganizadas em **bottom tabs**:
+
+1. **Hoje** — pedido ativo grande no topo (card cheio), próximos pedidos em fila, botão "Online/Offline" gigante, status do GPS.
+2. **Mapa** — `LiveTrackingMap` em fullscreen, rota OSRM já implementada; botão flutuante Waze/Maps.
+3. **Ganhos** — saldo, saques, histórico do dia/semana.
+4. **Perfil** — documentos, conta Asaas, ajuda.
+
+Padrões nativos:
+- Pull-to-refresh em todas as listas (`overscroll-behavior: contain` + handler).
+- Swipe-actions no card de pedido (arrastar p/ direita = aceitar, esquerda = recusar).
+- Haptics (já temos `@capacitor/haptics`) em todo aceite/rejeição/chegada — `Impact.Medium`.
+- Toasts não-bloqueantes (já temos sonner) com posição `top-center` no nativo.
+- Modais viram **bottom-sheets** no nativo (criar `<NativeSheet>`).
+- Sons curtos para "novo pedido", "pedido cancelado" — assets locais, não rede.
+
+## 6. Offline-first do Entregador
+
+- Fila `offlineDeliveryQueue.ts` já existe — auditar e expandir:
+  - Aceite de pedido offline → registra intenção, sincroniza ao reconectar.
+  - Foto/assinatura de entrega → grava em `Filesystem` + sobe quando online.
+  - Última localização → cache local + envia em batch.
+- Banner persistente "Sem internet — X ações pendentes" quando `Network.status.connected === false`.
+
+## 7. Background tracking confiável
+
+- Já usamos `@capacitor-community/background-geolocation`. Auditar:
+  - `distanceFilter` por velocidade (parado = 50m, andando = 30m, moto = 100m).
+  - `stationaryRadius`, desligar quando offline na app de entregador.
+  - Notificação foreground service customizada ("ItaSuper — Entregando pedido #1234").
+
+## 8. Build & release
+
+- Workflow Android: 2 builds separados (`partner` e `client`) já existem; garantir que `VITE_CAPACITOR_APP_MODE` corta árvore de rotas em build time.
+- ProGuard/R8: habilitar shrink (`minifyEnabled true`, `shrinkResources true`) em release — checar `proguard-rules.pro` atual.
+- `targetSdk 35`, `compileSdk 35`, Gradle 8.x — confirmar.
+- Tamanho-alvo do APK Parceiro: < 8 MB.
+
+---
+
+## Fases sugeridas de execução
+
+1. **Fase 1 — Fundação (sem mudança visível):** runtime/hook unificado, `nativeBoot`, remoção do `server.url`, split de bundle por modo, ProGuard. **Ganho: 40% menos JS, splash mais rápido, sem reload remoto.**
+2. **Fase 2 — Shell nativa do entregador:** `NativeShell`, bottom tabs, status bar, safe areas, haptics, bottom-sheets. **Ganho visual: parece app de verdade.**
+3. **Fase 3 — Plugins novos:** share, browser, device, screen-orientation, mlkit-barcode (opcional).
+4. **Fase 4 — Offline-first + tracking refinado.**
+5. **Fase 5 — OTA (capgo updater) para parar de depender de Play Store em mudanças JS.**
+
+---
+
+## Perguntas antes de codar
+
+1. Posso **remover `server.url`** do `capacitor.config.ts` do APK Parceiro? Isso é o maior ganho de performance, mas você perde o hot-reload remoto (passa a depender de OTA ou novo APK).
+2. Começamos pela **Fase 1 (técnica, ganho de performance imediato)** ou pela **Fase 2 (visual nativo, impacto que o entregador vê na hora)**?
+3. Quer que eu adicione **OTA via `@capgo/capacitor-updater`** já na Fase 1 (resolve o "como atualizar sem Play Store" antes de remover o `server.url`)?
