@@ -223,6 +223,15 @@ const ProductDetailModal = ({ product, storeName, storeCategory, singleSize = fa
     });
   };
 
+  /** Incrementa quantidade do MESMO item ignorando o cap do grupo (usado em max_select=1 para permitir 2x do item já escolhido). */
+  const bumpAddonQty = (groupId: string, itemId: string) => {
+    setSelectedAddons((prev) => {
+      const groupQtys = prev[groupId] || {};
+      const currentQty = groupQtys[itemId] || 0;
+      return { ...prev, [groupId]: { ...groupQtys, [itemId]: currentQty + 1 } };
+    });
+  };
+
   const removeAddon = (groupId: string, itemId: string) => {
     setSelectedAddons((prev) => {
       const groupQtys = { ...(prev[groupId] || {}) };
