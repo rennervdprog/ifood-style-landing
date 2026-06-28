@@ -25,6 +25,7 @@ import StoreAppGuard from "@/components/StoreAppGuard";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { TermsUpdateModal } from "@/components/TermsUpdateModal";
 import ClientPinChecker from "@/components/ClientPinChecker";
+import RecoveryRedirect from "@/components/RecoveryRedirect";
 import { fetchPendingLegalChanges, type PendingLegalChanges } from "@/lib/legalDocuments";
 import { APP_VERSION } from "@/lib/appVersion";
 
@@ -308,6 +309,7 @@ const App = () => {
           <DebugOverlay />
           <BrowserRouter>
             <PushNavigator />
+            <RecoveryRedirect />
             <CapacitorRouteGuard />
             <StoreAppGuard />
             <TermsChecker />
