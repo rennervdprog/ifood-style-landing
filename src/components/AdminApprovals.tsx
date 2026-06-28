@@ -1,7 +1,7 @@
 import {
   Shield, Clock, Store, Bike, CheckCircle2, XCircle, Loader2, Trash2,
   FileText, ChevronDown, ChevronUp, User, Phone, Mail, MapPin,
-  Calendar, CreditCard, Hash, Eye, EyeOff, AlertTriangle, Search, Filter,
+  Calendar, CreditCard, Hash, Eye, EyeOff, AlertTriangle, Search, Filter, Zap, RefreshCw,
 } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -76,6 +76,53 @@ const AdminApprovals = () => {
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<"all" | "lojista" | "motoboy">("all");
   const [visibleSensitive, setVisibleSensitive] = useState<Set<string>>(new Set());
+  const [savingFlag, setSavingFlag] = useState(false);
+  const [reprocessing, setReprocessing] = useState(false);
+
+  const { data: autoCfg } = useQuery({
+    queryKey: ["admin-auto-approval-flag"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("admin_settings")
+        .select("value")
+        .eq("key", "auto_approval")
+        .maybeSingle();
+      return (data?.value as any) || { enabled: false, shadow: true };
+    },
+  });
+
+  const setAutoCfg = async (next: { enabled: boolean; shadow: boolean }) => {
+    setSavingFlag(true);
+    try {
+      const { error } = await supabase
+        .from("admin_settings")
+        .upsert({ key: "auto_approval", value: next }, { onConflict: "key" });
+      if (error) { toast.error(error.message); return; }
+      toast.success("Configuração atualizada");
+      queryClient.invalidateQueries({ queryKey: ["admin-auto-approval-flag"] });
+    } finally { setSavingFlag(false); }
+  };
+
+  const reprocessPending = async () => {
+    setReprocessing(true);
+    try {
+      const { data: pendingIds, error } = await supabase
+        .from("profiles")
+        .select("user_id")
+        .in("role", ["lojista", "motoboy"])
+        .eq("is_approved", false);
+      if (error) { toast.error(error.message); return; }
+      let approved = 0;
+      for (const row of pendingIds || []) {
+        const { data: res } = await supabase.rpc("try_auto_approve_partner" as any, {
+          _user_id: (row as any).user_id,
+        });
+        if ((res as any)?.ok) approved++;
+      }
+      toast.success(`Reprocessados ${pendingIds?.length || 0} cadastros — ${approved} elegíveis`);
+      queryClient.invalidateQueries({ queryKey: ["admin-pending-profiles"] });
+    } finally { setReprocessing(false); }
+  };
 
   const { data: allProfiles, isLoading } = useQuery({
     queryKey: ["admin-pending-profiles"],
