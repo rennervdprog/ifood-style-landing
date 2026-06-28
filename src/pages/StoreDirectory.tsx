@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { AsaasBadgeBar } from "@/components/AsaasBadge";
 import PartnerClientView from "@/components/PartnerClientView";
 import {
-  Store, ShieldCheck, Smartphone, TrendingUp,
+  Store, ShieldCheck, Smartphone,
   ArrowRight, CheckCircle2, MapPin, Clock, CreditCard,
   BarChart3, Menu, X, Rocket, Sparkles, ChevronDown,
   ShoppingBag, Truck, Crown, Bell, MessageCircle, Check,
@@ -63,22 +63,6 @@ const plans = [
     ],
   },
   {
-    id: "hybrid",
-    name: "Crescimento",
-    tagline: "Mensalidade baixa + comissão reduzida",
-    price: "50",
-    commission: "2,5%",
-    icon: TrendingUp,
-    highlight: false,
-    badge: undefined as string | undefined,
-    features: [
-      "Tudo do plano Comissão",
-      "Banners e cupons",
-      "Programa de fidelidade",
-      "PDV (1% comissão)",
-    ],
-  },
-  {
     id: "fixed",
     name: "Essencial",
     tagline: "Zero comissão por pedido",
@@ -88,7 +72,7 @@ const plans = [
     highlight: true,
     badge: undefined as string | undefined,
     features: [
-      "Tudo do plano Crescimento",
+      "Tudo do plano Comissão",
       "Zero comissão por venda",
       "PDV (R$ 1 por venda)",
       "Suporte prioritário",
@@ -126,7 +110,7 @@ const faqs = [
   { q: "E se eu tiver dificuldade?", a: "Nossa equipe responde no WhatsApp em minutos." },
   {
     q: 'O que é essa "taxa de R$2 da plataforma" na entrega?',
-    a: "É o quanto a plataforma cobra por pedido pra manter o motoboy integrado, o rastreamento e o suporte. Nos planos Comissão, Crescimento e Essencial ela aparece pro cliente como acréscimo em cima da sua taxa de entrega. No plano Autonomia esse acréscimo é zero — o cliente paga exatamente a taxa que você define.",
+    a: "É o quanto a plataforma cobra por pedido pra manter o motoboy integrado, o rastreamento e o suporte. Nos planos Comissão e Essencial ela aparece pro cliente como acréscimo em cima da sua taxa de entrega. No plano Autonomia esse acréscimo é zero — o cliente paga exatamente a taxa que você define.",
   },
   {
     q: "Quando vale a pena o plano Autonomia (R$229,90)?",
@@ -664,7 +648,7 @@ const StoreDirectory = () => {
             ))}
           </div>
           <p className="mt-8 text-center text-xs text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            💡 Nos planos <strong className="text-foreground">Comissão, Crescimento e Essencial</strong> a plataforma soma R$2,00 à sua taxa de entrega (o cliente paga, não sai do seu caixa). Apenas no <strong className="text-foreground">Autonomia</strong> esse acréscimo é zero — o cliente paga exatamente a taxa que você define.
+            💡 Nos planos <strong className="text-foreground">Comissão e Essencial</strong> a plataforma soma R$2,00 à sua taxa de entrega (o cliente paga, não sai do seu caixa). Apenas no <strong className="text-foreground">Autonomia</strong> esse acréscimo é zero — o cliente paga exatamente a taxa que você define.
           </p>
         </div>
       </section>
@@ -687,7 +671,7 @@ const StoreDirectory = () => {
           <div className="grid md:grid-cols-2 gap-4 md:gap-5 max-w-3xl mx-auto">
             {/* Planos normais */}
             <div className="rounded-2xl border border-border bg-card p-6">
-              <p className="text-[10px] font-black uppercase tracking-wider text-muted-foreground mb-4">Comissão · Crescimento · Essencial</p>
+              <p className="text-[10px] font-black uppercase tracking-wider text-muted-foreground mb-4">Comissão · Essencial</p>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Sua taxa de entrega</span>
