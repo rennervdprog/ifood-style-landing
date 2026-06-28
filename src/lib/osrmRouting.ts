@@ -182,3 +182,97 @@ export async function optimizeRouteOsrm(store: Coord, stops: Coord[]): Promise<O
     totalMin: totalS / 60,
   };
 }
+
+/**
+ * Busca a geometria real de uma rota entre 2+ pontos no OSRM.
+ * Retorna a polyline decodificada como `[lat,lng][]` + distância (m) e duração (s).
+ * Cache curto (10 min) em sessionStorage para não martelar o servidor público.
+ */
+const ROUTE_CACHE_PREFIX = "osrm_route_v1:";
+const ROUTE_CACHE_TTL_MS = 1000 * 60 * 10;
+
+interface CachedRoute {
+  geometry: Coord[];
+  distanceM: number;
+  durationS: number;
+  ts: number;
+}
+
+function decodePolyline(str: string, precision = 5): Coord[] {
+  let index = 0,
+    lat = 0,
+    lng = 0;
+  const coords: Coord[] = [];
+  const factor = Math.pow(10, precision);
+  while (index < str.length) {
+    let b: number,
+      shift = 0,
+      result = 0;
+    do {
+      b = str.charCodeAt(index++) - 63;
+      result |= (b & 0x1f) << shift;
+      shift += 5;
+    } while (b >= 0x20);
+    const dlat = result & 1 ? ~(result >> 1) : result >> 1;
+    lat += dlat;
+    shift = 0;
+    result = 0;
+    do {
+      b = str.charCodeAt(index++) - 63;
+      result |= (b & 0x1f) << shift;
+      shift += 5;
+    } while (b >= 0x20);
+    const dlng = result & 1 ? ~(result >> 1) : result >> 1;
+    lng += dlng;
+    coords.push([lat / factor, lng / factor]);
+  }
+  return coords;
+}
+
+export interface OsrmRouteResult {
+  geometry: Coord[];
+  distanceM: number;
+  durationS: number;
+}
+
+export async function fetchOsrmRoute(points: Coord[]): Promise<OsrmRouteResult | null> {
+  if (points.length < 2) return null;
+  const key =
+    ROUTE_CACHE_PREFIX +
+    points.map(([la, ln]) => `${la.toFixed(4)},${ln.toFixed(4)}`).join(";");
+  try {
+    const raw = sessionStorage.getItem(key);
+    if (raw) {
+      const parsed = JSON.parse(raw) as CachedRoute;
+      if (Date.now() - parsed.ts < ROUTE_CACHE_TTL_MS) {
+        return { geometry: parsed.geometry, distanceM: parsed.distanceM, durationS: parsed.durationS };
+      }
+    }
+  } catch {
+    /* noop */
+  }
+
+  const coords = points.map(([la, ln]) => `${ln},${la}`).join(";");
+  const url = `${OSRM_BASE}/route/v1/driving/${coords}?overview=full&geometries=polyline`;
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 8000);
+    const res = await fetch(url, { signal: ctrl.signal });
+    clearTimeout(timer);
+    if (!res.ok) return null;
+    const data = await res.json();
+    const route = data?.routes?.[0];
+    if (!route?.geometry) return null;
+    const geometry = decodePolyline(route.geometry);
+    const distanceM = Number(route.distance) || 0;
+    const durationS = Number(route.duration) || 0;
+    try {
+      sessionStorage.setItem(key, JSON.stringify({ geometry, distanceM, durationS, ts: Date.now() }));
+    } catch {
+      /* quota */
+    }
+    return { geometry, distanceM, durationS };
+  } catch {
+    return null;
+  }
+}
