@@ -917,27 +917,6 @@ const ProductDetailModal = ({ product, storeName, storeCategory, singleSize = fa
 
         <footer className="sticky bottom-0 z-[60] shrink-0 border-t border-border bg-background/90 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur-lg">
           <div className="flex items-center gap-3">
-            <div className="flex shrink-0 items-center gap-1 rounded-2xl border border-border bg-muted p-1">
-              <button
-                type="button"
-                onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                disabled={quantity <= 1}
-                className="flex h-10 w-10 items-center justify-center rounded-xl bg-background text-foreground shadow-sm transition active:scale-95 disabled:opacity-40"
-                aria-label="Diminuir"
-              >
-                <Minus className="h-4 w-4" />
-              </button>
-              <span className="w-8 text-center text-base font-black text-foreground">{quantity}</span>
-              <button
-                type="button"
-                onClick={() => setQuantity((q) => q + 1)}
-                className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm transition active:scale-95"
-                aria-label="Aumentar"
-              >
-                <Plus className="h-4 w-4" />
-              </button>
-            </div>
-
             <button
               type="button"
               onClick={handlePrimary}
