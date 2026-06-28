@@ -725,7 +725,7 @@ const ProductDetailModal = ({ product, storeName, storeCategory, singleSize = fa
 
       {optionalAddonGroups.map((group) => renderAddonGroup(group))}
 
-      {cat !== "adegas" && (
+      {cat !== "adegas" && !isBeverage && (
         <section>
           <label className="mb-2 block text-sm font-bold text-foreground">Observações</label>
           <Textarea
