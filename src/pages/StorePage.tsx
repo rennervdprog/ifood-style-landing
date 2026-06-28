@@ -74,6 +74,10 @@ const isDocumentScrollElement = (element: HTMLElement) =>
 const StorePage = () => {
   const { id, slug } = useParams<{ id?: string; slug?: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+  // Esconde o botão "voltar" quando o usuário entra diretamente pelo link da loja
+  // (sem ter passado por /cliente ou outra página interna).
+  const hasInternalHistory = location.key !== "default";
   const { addItem } = useCart();
   const { user } = useAuth();
   const { setCurrentStore } = useStoreContext();
