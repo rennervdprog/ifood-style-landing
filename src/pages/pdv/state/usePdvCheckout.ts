@@ -220,7 +220,10 @@ export function usePdvCheckout() {
               })),
             },
             store?.name || "Loja",
-            { copies: (store?.settings as any)?.print_copies === 1 ? 1 : 2 },
+            {
+              copies: (store?.settings as any)?.print_copies === 1 ? 1 : 2,
+              paperWidth: (store?.settings as any)?.print_paper_width === 58 ? 58 : 80,
+            },
           );
         } catch (e) {
           console.warn("Erro ao imprimir:", e);
