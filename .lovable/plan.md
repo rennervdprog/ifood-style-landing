@@ -1,52 +1,82 @@
-## Teste executado
+# Plano: Profissionalização da aba WhatsApp
 
-Loguei como `16 99162-4997` no navegador headless, abri `/loja/pastelao-carioca`, tentei adicionar produtos (Pastel Doce e Refrigerante 600ml) e abrir o carrinho. Capturei console, network e screenshots.
+Hoje o `WhatsAppSetup.tsx` (480 linhas) mistura status, guia, QR, toggles, auto-resposta e templates num scroll único. Falta hierarquia visual, feedback em tempo real e o lojista se perde entre "o que precisa fazer agora" vs "configurações avançadas".
 
-## Bugs encontrados (em ordem de gravidade)
+## Diagnóstico atual
 
-### 1. CRÍTICO — Modal de produto trava em "Carregando opções…" e não adiciona ao carrinho
-`src/components/ProductDetailModal.tsx` força `totalSteps = 2` enquanto a query de addons está pendente (`addonsPending → return 2`). Resultado: TODO produto (mesmo sem addons, ex.: Refrigerante 600ml) entra em "Etapa 1 de 2 → Próximo: Personalizar → Carregando opções…" e o botão final fica desabilitado até o fetch terminar. Em produto sem addons, o `addonData` volta com arrays vazios mas o usuário já desistiu. Carrinho fica vazio.
+- Status, QR e configurações empilhados sem prioridade — lojista desconectado vê toggles antes de conectar.
+- Templates de mensagem ficam escondidos num accordion, sem preview real do WhatsApp.
+- Sem indicador "última mensagem enviada" / "saúde do número" (envios hoje, limite diário, banimento risk).
+- Sem teste rápido ("enviar mensagem de teste pro meu número").
+- QR Code não atualiza sozinho — precisa clicar em "Verificar conexão".
+- Guia passo a passo é texto cru, sem ilustração.
 
-**Correção**: enquanto `addonsPending`, manter `totalSteps = 1` (sem segundo passo) e desabilitar/labelar o botão como "Carregando…". Só virar 2 etapas DEPOIS que sabidamente existem `requiredAddonGroups` ou `hasSyntheticRequired`. Também garantir que produto sem addon nunca exija etapa 2.
+## Fase 1 — Arquitetura em abas internas (Wizard + Settings)
 
-### 2. CRÍTICO — `storeId` usa o slug antes da loja carregar → cascata de erros 400
-`src/pages/StorePage.tsx:192` faz `const storeId = store?.id || id;`. Como a rota é `/loja/:id`, o param `id` é na verdade o slug `"pastelao-carioca"`. Antes de `store` resolver, todos os hooks rodam com slug no lugar de UUID e o Supabase devolve `22P02 invalid input syntax for type uuid`:
+Quebrar a tela em 3 abas dentro da própria aba WhatsApp:
 
-- `store_plans?store_id=eq.pastelao-carioca` (via `useStorePlan`)
-- `stores_public?id=eq.pastelao-carioca`
-- `promo_collections?store_id=eq.pastelao-carioca`
-- `order_items?orders.store_id=eq.pastelao-carioca` (popular + reorder)
+```text
+[ Conexão ] [ Notificações ] [ Mensagens ]
+```
 
-**Correção**: `const storeId = store?.id ?? null;` e em todos os `useQuery` colocar `enabled: !!store?.id && ...`. Hooks afetados: `useStorePlan(storeId)`, `store-hours`, `menu-sections`, `products`, `promo-collections`, `popular-products`, `reorder-products`.
+- **Conexão**: status grande + QR + guia ilustrado + botão "Enviar teste".
+- **Notificações**: toggles por etapa + auto-resposta + horários de silêncio (futuro).
+- **Mensagens**: editor de templates com preview tipo bolha de WhatsApp ao lado.
 
-### 3. ALTO — Tabela `fraud_attempts` não existe no Supabase externo
-`src/lib/fraudCheck.ts` (usado em `StorePage`/`CheckoutPage`) chama `POST /rest/v1/fraud_attempts` → `PGRST205 Could not find the table 'public.fraud_attempts' (hint: signup_attempts)`. Cada abertura de loja gera erro.
+Divisão em componentes:
+- `WhatsAppSetup.tsx` → orquestrador (carrega config, troca aba).
+- `WhatsAppConnection.tsx`
+- `WhatsAppNotifications.tsx`
+- `WhatsAppTemplates.tsx`
+- `WhatsAppHealthCard.tsx` (compartilhado)
 
-**Correção (escolher um)**:
-- (a) Criar tabela `public.fraud_attempts` no banco externo, com GRANTs + RLS, OU
-- (b) Trocar a referência no código para a tabela existente `public.signup_attempts` se for o mesmo propósito.
+## Fase 2 — Card de Status Profissional
 
-Recomendo (a) — manter o nome do código, criar a tabela com schema idêntico ao usado por `fraudCheck.ts`.
+Substituir a barrinha atual por um card-hero com:
 
-### 4. MÉDIO — Tela de carrinho não persiste item entre rotas no fluxo testado
-Mesmo quando o modal de produto consegue concluir, ao navegar para `/carrinho` o estado às vezes aparece "Seu carrinho está vazio". Suspeita: `CartContext` chaveia por `storeId` e o reset de `storeId` (bug #2) limpa o carrinho. Provavelmente desaparece sozinho ao corrigir #2 — revalidar depois.
+- Avatar verde do WhatsApp + nome da loja + número conectado mascarado (+55 14 99687-****).
+- Pill de status animado (Conectado / Conectando / Desconectado / Número divergente).
+- Métricas em linha: "Mensagens hoje: 14 / 50", "Última msg: há 2min", "Conectado há 8 dias".
+- Botão primário contextual: muda entre "Gerar QR Code" / "Enviar teste" / "Reconectar".
 
-### 5. BAIXO — Warning React `fetchPriority`
-`<img fetchPriority="…">` deve ser `fetchpriority` (minúsculo) ou usar a prop como atributo customizado. Aparece em `StorePage` e `StoreDirectory`. Cosmético, mas polui console em produção.
+## Fase 3 — Polling automático do QR + onboarding visual
 
-## Plano de execução (na ordem)
+- Quando QR está visível, fazer polling a cada 3s no status (sem precisar clicar "Verificar").
+- Auto-fechar QR e mostrar confete + toast "Conectado!" quando virar `connected`.
+- Guia passo a passo com mini-screenshots reais do WhatsApp (4 imagens) em carrossel, não emoji.
+- Countdown visual dos 60s de expiração do QR.
 
-1. Corrigir #2 em `StorePage.tsx` (storeId + `enabled` nos useQuery).
-2. Corrigir #1 em `ProductDetailModal.tsx` (`calculateTotalSteps` não retornar 2 quando só `addonsPending`).
-3. Resolver #3 criando `public.fraud_attempts` no banco externo via migração (com GRANT + RLS por `user_id`).
-4. Re-rodar o teste end-to-end (login → adicionar produto sem addon → carrinho → finalizar pedido em dinheiro). Confirmar que `orders.delivery_pin` recebe o PIN do perfil (sistema novo de PIN fixo).
-5. Limpar warning #5 (`fetchPriority` → `fetchpriority` ou remover).
-6. Bump de versão para `1.10.335` em `PerfilPage.tsx` + `android/app/build.gradle` (versionCode +1).
+## Fase 4 — Editor de Mensagens com Preview
+
+- Lista das 5 mensagens (aceito, pronto, saiu, entregue, cancelado) como cards.
+- Ao abrir: split view — esquerda editor com chips clicáveis das variáveis (`{clientName}`, `{pin}`, etc), direita bolha verde estilo WhatsApp renderizando o resultado com dados de exemplo.
+- Botão "Restaurar padrão" por mensagem.
+- Botão "Enviar pra mim" testando o template no próprio número do lojista.
+- Validação: avisa se removeu `{pin}` da mensagem de entrega.
+
+## Fase 5 — Saúde do número (anti-banimento)
+
+Card visual com:
+- Barra de progresso "Envios hoje: 14/50".
+- Etapa de aquecimento atual ("Semana 2 de 4 — limite 50/dia").
+- Histórico simples: últimos 10 envios (status, cliente, hora) lidos de logs.
+- Alerta amarelo se taxa de erro > 10% nos últimos envios.
 
 ## Detalhes técnicos
 
-- Login synth-email confirmado: `wa55<digitos>@itasuper.app`. PIN do perfil já é replicado no trigger `set_order_number`/`generate_delivery_pin` (corrigido nas rodadas anteriores).
-- Backend é o Supabase externo `EXTERNAL_SUPABASE_*` — vou aplicar a migração da `fraud_attempts` lá direto via Management API.
-- Não tocar em UX da Pastelão Carioca além das correções acima.
+- Reusar `store_whatsapp_config` + `message_templates` (sem mudança de schema na fase 1–4).
+- Fase 5 precisa de tabela `whatsapp_message_log` (id, store_id, to, template_key, status, sent_at) — adicionar com GRANTs e RLS por `store_id`.
+- Polling do QR: `setInterval` 3s com cleanup, parar quando `status === 'connected'` ou componente desmontar.
+- Preview da bolha: componente puro renderizando markdown leve do WhatsApp (`*bold*`, quebras de linha).
+- Edge function nova: `whatsapp-send-test` — recebe `{ store_id, template_key }`, envia pelo Evolution pro próprio número conectado.
+- Mobile: abas viram seletor horizontal com scroll-snap; cards mantêm densidade.
+- Manter compatibilidade total com webhook e `orderNotifications.ts` (nenhuma assinatura muda).
 
-Posso prosseguir aplicando os 6 passos?
+## Ordem sugerida de execução
+
+1. Fase 1 (split de arquivos) — base limpa sem mudar UX.
+2. Fase 2 (card status) + Fase 3 (polling QR) — ganho visual imediato.
+3. Fase 4 (editor com preview) — maior valor pro lojista.
+4. Fase 5 (saúde) — depende de log novo.
+
+Posso começar pela Fase 1+2 juntas (mesma PR) ou já mergulhar direto na Fase 4 se preferir o ganho visual primeiro. Qual prefere?
