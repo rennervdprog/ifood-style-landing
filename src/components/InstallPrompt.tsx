@@ -13,6 +13,25 @@ const InstallPrompt = () => {
   const [showPrompt, setShowPrompt] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [showIOSGuide, setShowIOSGuide] = useState(false);
+  const [pathname, setPathname] = useState<string>(() =>
+    typeof window !== "undefined" ? window.location.pathname : "/"
+  );
+
+  useEffect(() => {
+    const update = () => setPathname(window.location.pathname);
+    window.addEventListener("popstate", update);
+    window.addEventListener("pushstate", update);
+    // SPA navega via history.pushState — escuta polling leve (250ms) só enquanto montado
+    const id = window.setInterval(update, 500);
+    return () => {
+      window.removeEventListener("popstate", update);
+      window.removeEventListener("pushstate", update);
+      window.clearInterval(id);
+    };
+  }, []);
+
+  // Não exibir em rotas de conversão (cobre botão "Finalizar pedido" no mobile)
+  const isCheckoutFlow = /^\/(carrinho|checkout|pedido|finalizar)/i.test(pathname);
 
   useEffect(() => {
     // Don't show inside GoNative or Capacitor native app
@@ -74,7 +93,7 @@ const InstallPrompt = () => {
     localStorage.setItem("pwa-install-dismissed", String(Date.now()));
   };
 
-  if (!showPrompt) return null;
+  if (!showPrompt || isCheckoutFlow) return null;
 
   if (showIOSGuide) {
     return (
