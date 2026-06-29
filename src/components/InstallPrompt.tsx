@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Download, X, Smartphone } from "lucide-react";
+import { useLocation } from "react-router-dom";
 import { isGoNative } from "@/lib/gonative";
 import { isCapacitorNative } from "@/lib/capacitorNative";
 
@@ -13,6 +14,9 @@ const InstallPrompt = () => {
   const [showPrompt, setShowPrompt] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [showIOSGuide, setShowIOSGuide] = useState(false);
+  const { pathname } = useLocation();
+  // Não exibir em rotas de conversão (cobre botão "Finalizar pedido" no mobile)
+  const isCheckoutFlow = /^\/(carrinho|checkout|pedido|finalizar)/i.test(pathname);
 
   useEffect(() => {
     // Don't show inside GoNative or Capacitor native app
@@ -74,7 +78,7 @@ const InstallPrompt = () => {
     localStorage.setItem("pwa-install-dismissed", String(Date.now()));
   };
 
-  if (!showPrompt) return null;
+  if (!showPrompt || isCheckoutFlow) return null;
 
   if (showIOSGuide) {
     return (
