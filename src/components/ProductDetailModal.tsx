@@ -154,7 +154,10 @@ const ProductDetailModal = ({ product, storeName, storeCategory, singleSize = fa
     (isCafe && isCakeLike && cafeFlavors.length > 0);
 
   const calculateTotalSteps = () => {
-    if (addonsPending) return 2;
+    // Enquanto os addons carregam, NÃO forçar 2 etapas. Caso contrário,
+    // produtos sem addons (ex.: Refrigerante) caíam em "Etapa 2 → Carregando opções…"
+    // e o cliente desistia. O botão fica desabilitado via `primaryEnabled` enquanto pending.
+    if (addonsPending) return 1;
     if (requiredAddonGroups.length > 0 || hasSyntheticRequired) return 2;
     return 1;
   };
