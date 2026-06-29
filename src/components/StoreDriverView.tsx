@@ -805,8 +805,8 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
     setDepartingId(null);
   };
 
-  const finishDelivery = async (orderId: string) => {
-    const pin = pinInputs[orderId];
+  const finishDelivery = async (orderId: string, overridePin?: string) => {
+    const pin = overridePin || pinInputs[orderId];
     if (!pin || pin.length !== 4) { toast.error("Digite o PIN de 4 dígitos."); return; }
 
     // Sem sinal — validar PIN localmente antes de salvar na fila
