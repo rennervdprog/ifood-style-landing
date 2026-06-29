@@ -941,7 +941,8 @@ const AdminDashboard = () => {
   // ── ACTIONS ──
   const handlePrint = useCallback((order: any) => {
     const copies = (store?.settings as any)?.print_copies === 1 ? 1 : 2;
-    printThermalReceipt(order, store?.name || "Loja", getClientName(order.client_id), getClientWhatsApp(order.client_id), { copies });
+    const paperWidth = (store?.settings as any)?.print_paper_width === 58 ? 58 : 80;
+    printThermalReceipt(order, store?.name || "Loja", getClientName(order.client_id), getClientWhatsApp(order.client_id), { copies, paperWidth });
   }, [store?.name, store?.settings, getClientName, getClientWhatsApp]);
 
   /**
@@ -1018,7 +1019,8 @@ const AdminDashboard = () => {
     // Print da notinha
     try {
       const copies = (store?.settings as any)?.print_copies === 1 ? 1 : 2;
-      printThermalReceipt(order, store?.name || "Loja", getClientName(order.client_id), getClientWhatsApp(order.client_id), { copies });
+      const paperWidth = (store?.settings as any)?.print_paper_width === 58 ? 58 : 80;
+      printThermalReceipt(order, store?.name || "Loja", getClientName(order.client_id), getClientWhatsApp(order.client_id), { copies, paperWidth });
     } catch (e) {
       console.warn("print error", e);
     }

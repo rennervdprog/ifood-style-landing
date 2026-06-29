@@ -161,6 +161,11 @@ type PizzaPriceMode = "maior" | "media" | "soma";
     storeSettings?.print_copies === 1 ? 1 : 2
   );
 
+  // Largura da bobina térmica (58mm ou 80mm)
+  const [printPaperWidth, setPrintPaperWidth] = useState<58 | 80>(
+    storeSettings?.print_paper_width === 58 ? 58 : 80
+  );
+
   // Z-API foi substituído pela aba WhatsApp (Evolution API) — bloco removido.
 
   // Load whatsapp from profile
@@ -309,6 +314,8 @@ type PizzaPriceMode = "maior" | "media" | "soma";
         accept_cash:        acceptCash,
         // Quantidade de vias da impressão térmica (1 = só cliente, 2 = cozinha + cliente)
         print_copies: printCopies,
+        // Largura da bobina térmica (58mm ou 80mm)
+        print_paper_width: printPaperWidth,
       },
       delivery_mode: deliveryMode,
       own_delivery_fee: parseFloat(ownDeliveryFee.toString().replace(",", ".")) || 0,
@@ -1274,6 +1281,36 @@ const NotificationSection = () => {
           >
             <p className="text-sm font-bold text-foreground">2 vias</p>
             <p className="text-[11px] text-muted-foreground">Cozinha + cliente</p>
+          </button>
+        </div>
+
+        <p className="text-xs text-muted-foreground pt-2">
+          Tamanho da bobina da sua impressora térmica.
+        </p>
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => setPrintPaperWidth(58)}
+            className={`rounded-xl border p-3 text-left transition ${
+              printPaperWidth === 58
+                ? "border-primary bg-primary/10"
+                : "border-border bg-muted/20 hover:border-primary/40"
+            }`}
+          >
+            <p className="text-sm font-bold text-foreground">58 mm</p>
+            <p className="text-[11px] text-muted-foreground">Bobina compacta</p>
+          </button>
+          <button
+            type="button"
+            onClick={() => setPrintPaperWidth(80)}
+            className={`rounded-xl border p-3 text-left transition ${
+              printPaperWidth === 80
+                ? "border-primary bg-primary/10"
+                : "border-border bg-muted/20 hover:border-primary/40"
+            }`}
+          >
+            <p className="text-sm font-bold text-foreground">80 mm</p>
+            <p className="text-[11px] text-muted-foreground">Padrão (recomendado)</p>
           </button>
         </div>
       </div>
