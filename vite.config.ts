@@ -66,7 +66,16 @@ export default defineConfig(({ mode }) => ({
       manifest: false, // já existe manifest manual no projeto
       workbox: {
         globPatterns: ["**/*.{js,css,html,svg,woff2}"],
-        globIgnores: ["**/stats.html"],
+        globIgnores: [
+          "**/stats.html",
+          // Chunks pesados ficam de fora do precache (servidos sob demanda)
+          "**/charts-*.js",
+          "**/SuperAdmin*.js",
+          "**/leaflet*.js",
+          "**/motion-*.js",
+        ],
+        // Não pré-cacheia arquivos > 500KB — vão via cache runtime/network
+        maximumFileSizeToCacheInBytes: 500_000,
         navigateFallback: "/index.html",
         navigateFallbackDenylist: [
           /^\/~oauth/,
