@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { Download, X, Smartphone } from "lucide-react";
-import { useLocation } from "react-router-dom";
 import { isGoNative } from "@/lib/gonative";
 import { isCapacitorNative } from "@/lib/capacitorNative";
 
@@ -14,7 +13,23 @@ const InstallPrompt = () => {
   const [showPrompt, setShowPrompt] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [showIOSGuide, setShowIOSGuide] = useState(false);
-  const { pathname } = useLocation();
+  const [pathname, setPathname] = useState<string>(() =>
+    typeof window !== "undefined" ? window.location.pathname : "/"
+  );
+
+  useEffect(() => {
+    const update = () => setPathname(window.location.pathname);
+    window.addEventListener("popstate", update);
+    window.addEventListener("pushstate", update);
+    // SPA navega via history.pushState — escuta polling leve (250ms) só enquanto montado
+    const id = window.setInterval(update, 500);
+    return () => {
+      window.removeEventListener("popstate", update);
+      window.removeEventListener("pushstate", update);
+      window.clearInterval(id);
+    };
+  }, []);
+
   // Não exibir em rotas de conversão (cobre botão "Finalizar pedido" no mobile)
   const isCheckoutFlow = /^\/(carrinho|checkout|pedido|finalizar)/i.test(pathname);
 
