@@ -403,12 +403,14 @@ const DriverDashboardV2 = () => {
                 <p className="text-base font-black text-foreground truncate">{(driverProfile as any)?.full_name || driverFirstName}</p>
               </div>
             </div>
-            <SignOutConfirm
-              redirectTo="/portal-parceiro"
-              triggerClassName="w-full h-14 rounded-2xl bg-destructive/10 text-destructive font-black flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
-            >
-              <LogOut className="h-5 w-5" strokeWidth={2.5} />
-              Sair da conta
+            <SignOutConfirm redirectTo="/portal-parceiro">
+              <button
+                type="button"
+                className="w-full h-14 rounded-2xl bg-destructive/10 text-destructive font-black flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
+              >
+                <LogOut className="h-5 w-5" strokeWidth={2.5} />
+                Sair da conta
+              </button>
             </SignOutConfirm>
           </div>
         )}
