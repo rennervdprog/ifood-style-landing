@@ -121,6 +121,27 @@ const pdvPaymentLabels: Record<string, string> = {
 
 const PRINT_CONTAINER_ID = "thermal-print-container";
 
+/**
+ * Dispara `window.print()` de forma resiliente.
+ * Chrome/Edge invalidam o callback de `requestAnimationFrame` se a aba perde
+ * foco ou há re-render entre frames, causando:
+ *   "Failed to execute 'print' on 'Window': The provided callback is no longer runnable"
+ * Usamos setTimeout (não depende do RAF scheduler) + try/catch + retry curto.
+ */
+function safePrint(attempt = 0) {
+  setTimeout(() => {
+    try {
+      window.print();
+    } catch (err) {
+      if (attempt < 2) {
+        safePrint(attempt + 1);
+      } else {
+        console.warn("[thermalPrint] window.print() falhou:", err);
+      }
+    }
+  }, 50);
+}
+
 function getOrCreatePrintContainer(): HTMLDivElement {
   let container = document.getElementById(PRINT_CONTAINER_ID) as HTMLDivElement | null;
   if (!container) {
