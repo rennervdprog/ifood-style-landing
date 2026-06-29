@@ -1404,10 +1404,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
                         />
                         <button
                           onClick={() => {
-                            if (autofill && orderPin) {
-                              setPinInputs((prev) => ({ ...prev, [order.id]: orderPin }));
-                            }
-                            finishDelivery(order.id);
+                            finishDelivery(order.id, autofill && orderPin ? orderPin : undefined);
                           }}
                           disabled={!effectivePin || effectivePin.length !== 4 || verifyingId === order.id}
                           className="w-full h-14 bg-success text-success-foreground font-black rounded-2xl text-base shadow-md shadow-success/25 disabled:opacity-40 flex items-center justify-center gap-2.5 active:scale-[0.97] transition-transform"
