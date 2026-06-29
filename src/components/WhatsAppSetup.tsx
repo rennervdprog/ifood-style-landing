@@ -382,7 +382,7 @@ export default function WhatsAppSetup({ storeId, storeSlug, storeName, expectedP
           </button>
         </div>
         <p className="text-xs text-muted-foreground">
-          Quando um cliente mandar mensagem no seu WhatsApp, o sistema responde com uma saudação humanizada e, só após o cliente confirmar interesse, envia o link do cardápio.
+          Quando um cliente mandar mensagem no seu WhatsApp, o sistema responde com uma saudação humanizada e, <strong>2 segundos depois, envia automaticamente o link do cardápio</strong> — sem pedir confirmação ao cliente.
         </p>
         {autoReply && (
           <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2.5 space-y-1">
@@ -390,7 +390,7 @@ export default function WhatsAppSetup({ storeId, storeSlug, storeName, expectedP
               🛡️ Modo anti-bloqueio ativo
             </p>
             <p className="text-[11px] text-muted-foreground leading-relaxed">
-              Para evitar banimento do WhatsApp, o sistema usa <strong>5 saudações rotativas</strong> (variando por horário: bom dia / boa tarde / boa noite) e <strong>só envia o link do cardápio</strong> ({`itasuper.com.br/${storeSlug}`}) depois que o cliente confirma interesse (ex.: "sim", "quero", "cardápio", "menu").
+              Para evitar banimento do WhatsApp, o sistema usa <strong>5 saudações rotativas</strong> (variando por horário: bom dia / boa tarde / boa noite) e, em seguida, <strong>envia automaticamente o link do cardápio</strong> ({`itasuper.com.br/${storeSlug}`}) após 2 segundos — o cliente não precisa responder "sim" ou "cardápio" para receber.
             </p>
             <p className="text-[11px] text-muted-foreground leading-relaxed">
               Fora do horário de funcionamento cadastrado, a resposta avisa que a loja está fechada e informa o próximo horário de abertura. Cada cliente recebe no máximo uma saudação por janela de cooldown — respostas repetidas no mesmo dia não geram nova saudação. Clientes que respondem <strong>PARAR</strong> entram em lista de exclusão e não recebem mais mensagens automáticas.
