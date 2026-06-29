@@ -14,7 +14,7 @@ interface Props {
 
 export default function WhatsAppTemplates({ storeName, templates, setTemplates }: Props) {
   const [openKey, setOpenKey] = useState<TemplateKey | null>("preparando");
-  const sample = { ...SAMPLE_DATA, storeName };
+  const sample: Record<string, string> = { ...SAMPLE_DATA, storeName };
 
   const updateTemplate = (key: TemplateKey, value: string) => {
     setTemplates({ ...templates, [key]: value });
