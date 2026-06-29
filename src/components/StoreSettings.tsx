@@ -1283,6 +1283,36 @@ const NotificationSection = () => {
             <p className="text-[11px] text-muted-foreground">Cozinha + cliente</p>
           </button>
         </div>
+
+        <p className="text-xs text-muted-foreground pt-2">
+          Tamanho da bobina da sua impressora térmica.
+        </p>
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => setPrintPaperWidth(58)}
+            className={`rounded-xl border p-3 text-left transition ${
+              printPaperWidth === 58
+                ? "border-primary bg-primary/10"
+                : "border-border bg-muted/20 hover:border-primary/40"
+            }`}
+          >
+            <p className="text-sm font-bold text-foreground">58 mm</p>
+            <p className="text-[11px] text-muted-foreground">Bobina compacta</p>
+          </button>
+          <button
+            type="button"
+            onClick={() => setPrintPaperWidth(80)}
+            className={`rounded-xl border p-3 text-left transition ${
+              printPaperWidth === 80
+                ? "border-primary bg-primary/10"
+                : "border-border bg-muted/20 hover:border-primary/40"
+            }`}
+          >
+            <p className="text-sm font-bold text-foreground">80 mm</p>
+            <p className="text-[11px] text-muted-foreground">Padrão (recomendado)</p>
+          </button>
+        </div>
       </div>
 
       {/* Save Button */}
