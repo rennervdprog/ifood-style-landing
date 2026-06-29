@@ -279,12 +279,12 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
   });
 
   // Fetch store names and coordinates
-  const { data: storeNames } = useQuery<{id: string; name: string; latitude: number | null; longitude: number | null}[]>({
+  const { data: storeNames } = useQuery<{id: string; name: string; latitude: number | null; longitude: number | null; driver_pin_autofill?: boolean}[]>({
     queryKey: ["store-driver-store-names", linkedStoreIds],
     queryFn: async () => {
       const { data } = await supabase
         .from("stores_driver_view" as any)
-        .select("id, name, latitude, longitude")
+        .select("id, name, latitude, longitude, driver_pin_autofill")
         .in("id", linkedStoreIds);
       return (data as any) || [];
     },
@@ -805,8 +805,8 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
     setDepartingId(null);
   };
 
-  const finishDelivery = async (orderId: string) => {
-    const pin = pinInputs[orderId];
+  const finishDelivery = async (orderId: string, overridePin?: string) => {
+    const pin = overridePin || pinInputs[orderId];
     if (!pin || pin.length !== 4) { toast.error("Digite o PIN de 4 dígitos."); return; }
 
     // Sem sinal — validar PIN localmente antes de salvar na fila
@@ -1370,6 +1370,12 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
                     )}
 
                     {inDelivery && (
+                      (() => {
+                        const storeMeta = storeNames?.find((s) => s.id === order.store_id);
+                        const autofill = !!storeMeta?.driver_pin_autofill;
+                        const orderPin = (order as any).delivery_pin as string | undefined;
+                        const effectivePin = autofill && orderPin ? orderPin : (pinInputs[order.id] || "");
+                        return (
                       <div className="relative overflow-hidden bg-success/8 border border-success/30 rounded-2xl p-4 space-y-3.5">
                         <div className="absolute -top-10 -right-10 w-32 h-32 bg-success/15 rounded-full blur-2xl" />
                         <div className="relative flex items-center gap-2.5">
@@ -1381,23 +1387,34 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
                             <p className="text-sm font-black text-foreground mt-0.5">Confirmar Entrega</p>
                           </div>
                         </div>
-                        <p className="relative text-xs text-muted-foreground leading-snug">
-                          Peça ao cliente o <span className="font-black text-foreground">PIN de 4 dígitos</span> e digite abaixo.
-                        </p>
+                        {autofill && orderPin ? (
+                          <p className="relative text-xs text-muted-foreground leading-snug">
+                            Confirme apenas com o cliente o PIN abaixo e clique em <span className="font-black text-foreground">Confirmar entrega</span>.
+                          </p>
+                        ) : (
+                          <p className="relative text-xs text-muted-foreground leading-snug">
+                            Peça ao cliente o <span className="font-black text-foreground">PIN de 4 dígitos</span> e digite abaixo.
+                          </p>
+                        )}
                         <PinBoxes
-                          value={pinInputs[order.id] || ""}
+                          value={effectivePin}
                           onChange={(v) => setPinInputs((prev) => ({ ...prev, [order.id]: v }))}
                           accent="success"
+                          disabled={autofill && !!orderPin}
                         />
                         <button
-                          onClick={() => finishDelivery(order.id)}
-                          disabled={!pinInputs[order.id] || pinInputs[order.id].length !== 4 || verifyingId === order.id}
+                          onClick={() => {
+                            finishDelivery(order.id, autofill && orderPin ? orderPin : undefined);
+                          }}
+                          disabled={!effectivePin || effectivePin.length !== 4 || verifyingId === order.id}
                           className="w-full h-14 bg-success text-success-foreground font-black rounded-2xl text-base shadow-md shadow-success/25 disabled:opacity-40 flex items-center justify-center gap-2.5 active:scale-[0.97] transition-transform"
                         >
                           {verifyingId === order.id ? <Loader2 className="h-5 w-5 animate-spin" /> : <CheckCircle2 className="h-5 w-5" strokeWidth={2.5} />}
                           Confirmar entrega
                         </button>
                       </div>
+                        );
+                      })()
                     )}
 
                   </div>
