@@ -161,6 +161,11 @@ type PizzaPriceMode = "maior" | "media" | "soma";
     storeSettings?.print_copies === 1 ? 1 : 2
   );
 
+  // Largura da bobina térmica (58mm ou 80mm)
+  const [printPaperWidth, setPrintPaperWidth] = useState<58 | 80>(
+    storeSettings?.print_paper_width === 58 ? 58 : 80
+  );
+
   // Z-API foi substituído pela aba WhatsApp (Evolution API) — bloco removido.
 
   // Load whatsapp from profile
@@ -309,6 +314,8 @@ type PizzaPriceMode = "maior" | "media" | "soma";
         accept_cash:        acceptCash,
         // Quantidade de vias da impressão térmica (1 = só cliente, 2 = cozinha + cliente)
         print_copies: printCopies,
+        // Largura da bobina térmica (58mm ou 80mm)
+        print_paper_width: printPaperWidth,
       },
       delivery_mode: deliveryMode,
       own_delivery_fee: parseFloat(ownDeliveryFee.toString().replace(",", ".")) || 0,
