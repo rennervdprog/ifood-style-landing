@@ -5,6 +5,7 @@ import { isCapacitorNative } from "@/lib/capacitorNative";
 import { useNavigate } from "react-router-dom";
 
 const features = [
+  { t: "Atendente IA no WhatsApp", d: "Robô responde o cliente automaticamente, envia o cardápio em segundos e tira pedido sozinho — 24h por dia, sem você precisar digitar." },
   { t: "Cardápio digital", d: "Sua loja com link próprio, fotos dos produtos, categorias e busca — pronto para receber pedidos em minutos." },
   { t: "Pedidos online 24h", d: "Cliente pede sozinho pelo celular, sem precisar atendente no WhatsApp. Notificação automática quando entra pedido." },
   { t: "Painel da loja", d: "Acompanhe pedidos em tempo real, edite cardápio, controle horários, formas de pagamento e taxas de entrega." },
@@ -86,10 +87,10 @@ export default function LandingPage() {
       {/* Hero */}
       <section className="px-4 py-14 sm:py-20 max-w-6xl mx-auto text-center">
         <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight leading-tight">
-          Sistema de delivery e cardápio digital para restaurantes
+          Atendente de IA no WhatsApp + cardápio digital para o seu delivery
         </h1>
         <p className="mt-5 text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto">
-          Receba pedidos online direto pelo seu link próprio. Sem comissão por pedido, com painel completo, PDV, KDS e motoboy próprio integrados.
+          A IA atende seu cliente no WhatsApp, manda o cardápio e fecha o pedido sozinha. Você recebe tudo organizado no painel, com PDV, KDS e motoboy próprio integrados — sem comissão por pedido.
         </p>
         <div className="mt-8 flex flex-wrap gap-3 justify-center">
           <Link to="/cadastro-lojista" className="bg-primary text-primary-foreground font-bold px-6 py-3 rounded-xl">
