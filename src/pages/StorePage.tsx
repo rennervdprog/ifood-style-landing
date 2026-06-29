@@ -189,7 +189,9 @@ const StorePage = () => {
     import("@/lib/pageView").then((m) => m.trackPageView("store_page", { storeId: store.id }));
   }, [store?.id]);
 
-  const storeId = store?.id || id;
+  // IMPORTANTE: nunca usar `id` (param de rota = slug) como storeId.
+  // Isso disparava queries Supabase com slug onde se espera UUID (400 22P02).
+  const storeId = store?.id ?? null;
 
   useEffect(() => {
     if (!storeId) return;
@@ -903,7 +905,7 @@ const StorePage = () => {
                className={`w-full h-full object-cover ${!storeStatus.isOpen ? "grayscale brightness-75" : ""}`}
                loading="eager"
                decoding="async"
-               fetchPriority="high"
+               {...({ fetchpriority: "high" } as any)}
              />
         ) : (
           <div className={`w-full h-full bg-gradient-to-br from-primary/30 to-primary/5 ${!storeStatus.isOpen ? "grayscale" : ""}`} />
