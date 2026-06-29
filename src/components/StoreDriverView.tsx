@@ -279,12 +279,12 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
   });
 
   // Fetch store names and coordinates
-  const { data: storeNames } = useQuery<{id: string; name: string; latitude: number | null; longitude: number | null}[]>({
+  const { data: storeNames } = useQuery<{id: string; name: string; latitude: number | null; longitude: number | null; driver_pin_autofill?: boolean}[]>({
     queryKey: ["store-driver-store-names", linkedStoreIds],
     queryFn: async () => {
       const { data } = await supabase
         .from("stores_driver_view" as any)
-        .select("id, name, latitude, longitude")
+        .select("id, name, latitude, longitude, driver_pin_autofill")
         .in("id", linkedStoreIds);
       return (data as any) || [];
     },
