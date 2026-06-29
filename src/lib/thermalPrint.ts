@@ -419,9 +419,7 @@ ${renderFooter()}
   const container = getOrCreatePrintContainer();
   container.innerHTML = wrapCopies(body, copies, ["VIA COZINHA", "VIA CLIENTE"]);
 
-  requestAnimationFrame(() => {
-    window.print();
-  });
+  safePrint();
 }
 
 /** Recibo do PDV (balcão / mesa). */
@@ -480,7 +478,5 @@ ${renderFooter()}
   const container = getOrCreatePrintContainer();
   container.innerHTML = wrapCopies(body, copies, ["VIA INTERNA", "VIA CLIENTE"]);
 
-  requestAnimationFrame(() => {
-    window.print();
-  });
+  safePrint();
 }
