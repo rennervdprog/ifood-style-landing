@@ -131,7 +131,6 @@ export function usePdvCheckout() {
             total_price: finalTotal,
             app_fee: 0,
             payment_method: primaryMethod,
-            payments: paymentsPayload,
             neighborhood: "Balcão",
             address_details: tableId ? `${tableId} — Presencial` : "Pedido presencial",
             status: "finalizado",
