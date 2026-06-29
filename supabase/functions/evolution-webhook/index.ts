@@ -69,15 +69,15 @@ const greetingPrefix = (h: number) =>
 
 const pick = <T,>(arr: T[]) => arr[Math.floor(Math.random() * arr.length)];
 
-// 5 variações de saudação (spintax) — SEM link, com pergunta p/ forçar resposta
+// 5 variações de saudação (spintax) — sem pergunta. O link é enviado em seguida automaticamente.
 const buildGreeting = (storeName: string) => {
   const prefix = greetingPrefix(spHour());
   const templates = [
-    `${prefix}! 😊 Aqui é da ${storeName}. Posso te ajudar com seu pedido?`,
-    `${prefix}! Tudo bem? 👋 Seja bem-vindo(a) à ${storeName}. Gostaria de ver nosso cardápio?`,
-    `Olá! ${prefix} 🙂 Aqui é a ${storeName}. Me diz, posso te mandar o cardápio de hoje?`,
-    `${prefix}! 🍽️ ${storeName} na escuta. Quer dar uma olhada no nosso menu?`,
-    `Oi! ${prefix} 😄 Sou da ${storeName}. Posso te enviar o cardápio com os preços?`,
+    `${prefix}! 😊 Aqui é da ${storeName}. Já vou te mandar nosso cardápio.`,
+    `${prefix}! Tudo bem? 👋 Seja bem-vindo(a) à ${storeName}. Segue nosso cardápio:`,
+    `Olá! ${prefix} 🙂 Aqui é a ${storeName}. Te mando o cardápio agora.`,
+    `${prefix}! 🍽️ ${storeName} na escuta. Olha só nosso cardápio:`,
+    `Oi! ${prefix} 😄 Sou da ${storeName}. Já te envio o cardápio com os preços.`,
   ];
   return pick(templates);
 };
@@ -328,8 +328,8 @@ Deno.serve(async (req) => {
         // (3-8s cabe no timeout) e qualquer envio extra também aguarda confirmação.
         await sleep(800 + Math.floor(Math.random() * 700));
         await sendMsg(greeting);
-        if (sendLinkNow) {
-          await sleep(1_200 + Math.floor(Math.random() * 800));
+        if (link) {
+          await sleep(2_000);
           await sendMsg(menuMessage);
         }
       }
