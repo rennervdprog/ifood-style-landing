@@ -255,9 +255,9 @@ Deno.serve(async (req) => {
           .from("stores").select("slug, name").eq("id", cfg.store_id).maybeSingle();
         const storeName = store?.name || "nossa loja";
         const link = store?.slug ? `https://itasuper.com.br/${store.slug}` : "";
-        const greeting = `${buildGreeting(storeName)}\n\n_Responda PARAR para não receber._`;
+        const greeting = buildGreeting(storeName);
         const closedMessage = storeClosedInfo
-          ? `Olá! 😊 Aqui é da *${storeName}*. No momento estamos *fechados*. Voltamos a atender ${storeClosedInfo.nextOpenLabel}. Assim que abrirmos, te respondemos por aqui! 🙏\n\n_Responda PARAR para não receber._`
+          ? `Olá! 😊 Aqui é da *${storeName}*. No momento estamos *fechados*. Voltamos a atender ${storeClosedInfo.nextOpenLabel}. Assim que abrirmos, te respondemos por aqui! 🙏`
           : "";
         const sendLinkNow = asksForMenu(text) && !!link;
         const menuMessage = `Aqui está nosso cardápio:\n${link}`;
