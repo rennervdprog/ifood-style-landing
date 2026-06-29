@@ -19,6 +19,13 @@
   ],
   "rewrites": [
     { "source": "/api/store/:slug", "destination": "/api/store?slug=:slug" },
+    {
+      "source": "/:slug((?!api/|assets/|icon-|favicon|robots|sitemap|manifest|sw\\.js|registerSW\\.js|firebase-messaging-sw\\.js)[a-z0-9-]+)",
+      "has": [
+        { "type": "header", "key": "user-agent", "value": "(?i).*(facebookexternalhit|WhatsApp|Twitterbot|TelegramBot|Slackbot|LinkedInBot|Discordbot|SkypeUriPreview|redditbot|Embedly|Applebot|Pinterest).*" }
+      ],
+      "destination": "/api/og?slug=:slug"
+    },
     { "source": "/((?!api/|assets/|icon-|favicon|robots|sitemap|manifest|sw\\.js|registerSW\\.js|firebase-messaging-sw\\.js).*)", "destination": "/index.html" }
   ],
   "headers": [
