@@ -905,7 +905,7 @@ const StorePage = () => {
                className={`w-full h-full object-cover ${!storeStatus.isOpen ? "grayscale brightness-75" : ""}`}
                loading="eager"
                decoding="async"
-               fetchPriority="high"
+               {...({ fetchpriority: "high" } as any)}
              />
         ) : (
           <div className={`w-full h-full bg-gradient-to-br from-primary/30 to-primary/5 ${!storeStatus.isOpen ? "grayscale" : ""}`} />
