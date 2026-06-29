@@ -349,7 +349,7 @@ const DriverDashboardV2 = () => {
       )}
       <DriverPersistentAlert availableCount={0} hasActiveDelivery={false} isOnline onReview={() => {}} />
       <div className={`min-h-screen bg-background text-foreground native-app ${isPartnerNative ? "" : "pb-[5.5rem]"}`}>
-        <header className="sticky top-0 z-50 md3-appbar pt-safe">
+        <header className="sticky top-0 z-50 md3-appbar">
           <div className="px-4 h-16 flex items-center justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0 flex-1">
               <div className="relative w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shrink-0 md3-elev-2">
@@ -403,12 +403,14 @@ const DriverDashboardV2 = () => {
                 <p className="text-base font-black text-foreground truncate">{(driverProfile as any)?.full_name || driverFirstName}</p>
               </div>
             </div>
-            <SignOutConfirm
-              redirectTo="/portal-parceiro"
-              triggerClassName="w-full h-14 rounded-2xl bg-destructive/10 text-destructive font-black flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
-            >
-              <LogOut className="h-5 w-5" strokeWidth={2.5} />
-              Sair da conta
+            <SignOutConfirm redirectTo="/portal-parceiro">
+              <button
+                type="button"
+                className="w-full h-14 rounded-2xl bg-destructive/10 text-destructive font-black flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
+              >
+                <LogOut className="h-5 w-5" strokeWidth={2.5} />
+                Sair da conta
+              </button>
             </SignOutConfirm>
           </div>
         )}
