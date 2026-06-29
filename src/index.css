@@ -244,13 +244,17 @@ html {
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
   overscroll-behavior: none;
-  /* Respeita as áreas seguras (notch, status bar, gesture bar) */
+  background: hsl(var(--background));
+  min-height: 100vh;
+}
+
+/* Safe-area aplicada APENAS no body para evitar empilhamento de padding
+   quando elementos internos também recebem a classe .native-app. */
+body.native-app {
   padding-top: env(safe-area-inset-top);
   padding-bottom: env(safe-area-inset-bottom);
   padding-left: env(safe-area-inset-left);
   padding-right: env(safe-area-inset-right);
-  background: hsl(var(--background));
-  min-height: 100vh;
 }
 
 /* Elimina delay de 300ms em TODOS os botões e links no app nativo */
