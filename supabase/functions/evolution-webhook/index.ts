@@ -328,8 +328,8 @@ Deno.serve(async (req) => {
         // (3-8s cabe no timeout) e qualquer envio extra também aguarda confirmação.
         await sleep(800 + Math.floor(Math.random() * 700));
         await sendMsg(greeting);
-        if (sendLinkNow) {
-          await sleep(1_200 + Math.floor(Math.random() * 800));
+        if (link) {
+          await sleep(2_000);
           await sendMsg(menuMessage);
         }
       }
