@@ -45,14 +45,14 @@ export async function registerPWA() {
   }
   try {
     const { registerSW } = await import("virtual:pwa-register");
-    // Modo "prompt": NÃO recarrega sozinho. O novo SW fica em waiting até
-    // o próximo refresh natural do usuário, evitando perder o que ele
-    // estava montando (modal de produto, checkout, etc.).
-    registerSW({
+    // Modo auto-update: assim que o novo SW entra em "waiting", chamamos
+    // updateSW() que dispara skipWaiting + reload — garante que mudanças
+    // de UI apareçam no próximo refresh sem precisar Ctrl+Shift+R.
+    const updateSW = registerSW({
       immediate: true,
       onNeedRefresh() {
-        // Silencioso de propósito — o update entra na próxima abertura.
-        console.info("[PWA] Nova versão disponível (será aplicada no próximo refresh)");
+        console.info("[PWA] Nova versão detectada — aplicando...");
+        try { updateSW(true); } catch {}
       },
       onOfflineReady() {
         console.info("[PWA] Pronto para uso offline");
