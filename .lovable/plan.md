@@ -1,80 +1,52 @@
+## Teste executado
 
-## Diagnóstico
+Loguei como `16 99162-4997` no navegador headless, abri `/loja/pastelao-carioca`, tentei adicionar produtos (Pastel Doce e Refrigerante 600ml) e abrir o carrinho. Capturei console, network e screenshots.
 
-Hoje existem **dois cadastros diferentes** de cliente:
+## Bugs encontrados (em ordem de gravidade)
 
-- `/auth` (`src/pages/AuthPage.tsx`) — o da sua screenshot: pede só WhatsApp + senha. **Não pede PIN, nome, CPF nem endereço.**
-- `/cliente` (`src/pages/cliente/auth/ClientAuthScreen.tsx`) — já pede nome, CPF, WhatsApp e PIN (4 dígitos + confirmação + alerta).
+### 1. CRÍTICO — Modal de produto trava em "Carregando opções…" e não adiciona ao carrinho
+`src/components/ProductDetailModal.tsx` força `totalSteps = 2` enquanto a query de addons está pendente (`addonsPending → return 2`). Resultado: TODO produto (mesmo sem addons, ex.: Refrigerante 600ml) entra em "Etapa 1 de 2 → Próximo: Personalizar → Carregando opções…" e o botão final fica desabilitado até o fetch terminar. Em produto sem addons, o `addonData` volta com arrays vazios mas o usuário já desistiu. Carrinho fica vazio.
 
-O **backend já está pronto** e funcionando:
+**Correção**: enquanto `addonsPending`, manter `totalSteps = 1` (sem segundo passo) e desabilitar/labelar o botão como "Carregando…". Só virar 2 etapas DEPOIS que sabidamente existem `requiredAddonGroups` ou `hasSyntheticRequired`. Também garantir que produto sem addon nunca exija etapa 2.
 
-- `profiles.delivery_pin` existe (CHECK `^[0-9]{4}$`).
-- Trigger `generate_delivery_pin` em `orders` busca o PIN do `profiles` do cliente daquele pedido — cada pedido nasce com o PIN próprio do dono.
-- RPC `driver_finish_delivery(_order_id, _pin)` compara o PIN digitado com `orders.delivery_pin` e só finaliza se bater.
-- Entregador (`StoreDriverView.tsx`) já tem campo de PIN, geofence de chegada e validação offline.
-- `ClientPinChecker` global força clientes antigos a definir PIN antes de qualquer ação.
+### 2. CRÍTICO — `storeId` usa o slug antes da loja carregar → cascata de erros 400
+`src/pages/StorePage.tsx:192` faz `const storeId = store?.id || id;`. Como a rota é `/loja/:id`, o param `id` é na verdade o slug `"pastelao-carioca"`. Antes de `store` resolver, todos os hooks rodam com slug no lugar de UUID e o Supabase devolve `22P02 invalid input syntax for type uuid`:
 
-**Conclusão:** o fluxo do PIN próprio por cliente já está 100% funcional no banco e no app do entregador. O que falta é só a tela `/auth` coletar PIN + endereço no cadastro novo.
+- `store_plans?store_id=eq.pastelao-carioca` (via `useStorePlan`)
+- `stores_public?id=eq.pastelao-carioca`
+- `promo_collections?store_id=eq.pastelao-carioca`
+- `order_items?orders.store_id=eq.pastelao-carioca` (popular + reorder)
 
-## Objetivo
+**Correção**: `const storeId = store?.id ?? null;` e em todos os `useQuery` colocar `enabled: !!store?.id && ...`. Hooks afetados: `useStorePlan(storeId)`, `store-hours`, `menu-sections`, `products`, `promo-collections`, `popular-products`, `reorder-products`.
 
-Cadastro único, completo e funcional em `/auth`, igual ao do `/cliente`, com:
+### 3. ALTO — Tabela `fraud_attempts` não existe no Supabase externo
+`src/lib/fraudCheck.ts` (usado em `StorePage`/`CheckoutPage`) chama `POST /rest/v1/fraud_attempts` → `PGRST205 Could not find the table 'public.fraud_attempts' (hint: signup_attempts)`. Cada abertura de loja gera erro.
 
-1. Nome completo
-2. CPF/CNPJ
-3. WhatsApp
-4. **Endereço principal** (CEP, rua, número, complemento, bairro, ponto de referência)
-5. **PIN de 4 dígitos + confirmação + checkbox de ciência**
-6. Aceite de Termos
+**Correção (escolher um)**:
+- (a) Criar tabela `public.fraud_attempts` no banco externo, com GRANTs + RLS, OU
+- (b) Trocar a referência no código para a tabela existente `public.signup_attempts` se for o mesmo propósito.
 
-## Plano de execução
+Recomendo (a) — manter o nome do código, criar a tabela com schema idêntico ao usado por `fraudCheck.ts`.
 
-### Passo 1 — Reescrever o formulário de signup em `src/pages/AuthPage.tsx`
-Adicionar ao modo `signup` os mesmos campos do `ClientAuthScreen.tsx`:
+### 4. MÉDIO — Tela de carrinho não persiste item entre rotas no fluxo testado
+Mesmo quando o modal de produto consegue concluir, ao navegar para `/carrinho` o estado às vezes aparece "Seu carrinho está vazio". Suspeita: `CartContext` chaveia por `storeId` e o reset de `storeId` (bug #2) limpa o carrinho. Provavelmente desaparece sozinho ao corrigir #2 — revalidar depois.
 
-- Nome completo, CPF/CNPJ (com `formatDocument` / `validateDocument`).
-- Bloco "PIN de entrega" reutilizando o componente visual atual (alerta `ShieldCheck` + 2 inputs `tel` numéricos + checkbox `pinAcknowledged`).
-- Bloco "Endereço principal" com: CEP (busca via `@/lib/location/cep`), rua, número, complemento, bairro, ponto de referência. Auto-preenche rua/bairro ao digitar CEP válido.
-- Mesmas validações: PIN 4 dígitos, PINs iguais, checkbox marcado, endereço com pelo menos CEP + rua + número + bairro.
+### 5. BAIXO — Warning React `fetchPriority`
+`<img fetchPriority="…">` deve ser `fetchpriority` (minúsculo) ou usar a prop como atributo customizado. Aparece em `StorePage` e `StoreDirectory`. Cosmético, mas polui console em produção.
 
-### Passo 2 — Persistir tudo no signup
-No bloco `mode === "signup"` já existente (linhas 241-267):
+## Plano de execução (na ordem)
 
-- Passar `full_name`, `document`, `delivery_pin` em `options.data` do `supabase.auth.signUp`.
-- Após criar usuário, fazer:
-  - `UPDATE profiles` com `full_name`, `document`, `whatsapp_number`, `delivery_pin`, `terms_accepted_at`.
-  - `INSERT INTO saved_addresses` com `is_default: true` e os campos do endereço informado.
-- `terms_acceptance` continua como hoje.
-
-### Passo 3 — Garantia de PIN no pedido (já existe, só conferir)
-Nenhuma alteração de código necessária. Conferir após o passo 2:
-
-- `profiles.delivery_pin` gravado no signup → trigger copia para `orders.delivery_pin` em todo novo pedido → entregador digita o PIN → RPC compara com `orders.delivery_pin` (PIN do dono daquele pedido). Cliente A não consegue liberar pedido do cliente B.
-
-### Passo 4 — Versão e revisão de segurança
-- Bump de `APP_VERSION` em `src/lib/appVersion.ts` e `android/app/build.gradle` (versionName + versionCode).
-- Revisão rápida: validar input client-side (já com zod-like checks manuais), CEP via Nominatim/ViaCEP sem expor secrets, RLS de `saved_addresses` (cliente só insere o próprio — confirmar a policy existente cobre `auth.uid() = user_id`).
+1. Corrigir #2 em `StorePage.tsx` (storeId + `enabled` nos useQuery).
+2. Corrigir #1 em `ProductDetailModal.tsx` (`calculateTotalSteps` não retornar 2 quando só `addonsPending`).
+3. Resolver #3 criando `public.fraud_attempts` no banco externo via migração (com GRANT + RLS por `user_id`).
+4. Re-rodar o teste end-to-end (login → adicionar produto sem addon → carrinho → finalizar pedido em dinheiro). Confirmar que `orders.delivery_pin` recebe o PIN do perfil (sistema novo de PIN fixo).
+5. Limpar warning #5 (`fetchPriority` → `fetchpriority` ou remover).
+6. Bump de versão para `1.10.335` em `PerfilPage.tsx` + `android/app/build.gradle` (versionCode +1).
 
 ## Detalhes técnicos
 
-- Arquivos tocados: **apenas** `src/pages/AuthPage.tsx`, `src/lib/appVersion.ts`, `android/app/build.gradle`.
-- **Sem migração de banco**, sem mudar trigger nem RPC, sem mexer em `StoreDriverView`, `ClientPinChecker`, `ClientAuthScreen`. Zero risco de quebrar fluxo do entregador.
-- Reaproveita helpers já existentes: `formatDocument`, `validateDocument`, `maskWhatsApp`, `@/lib/location/cep`.
-- O `ClientPinChecker` global continua sendo a rede de segurança para qualquer conta antiga que entre por `/auth` sem PIN.
+- Login synth-email confirmado: `wa55<digitos>@itasuper.app`. PIN do perfil já é replicado no trigger `set_order_number`/`generate_delivery_pin` (corrigido nas rodadas anteriores).
+- Backend é o Supabase externo `EXTERNAL_SUPABASE_*` — vou aplicar a migração da `fraud_attempts` lá direto via Management API.
+- Não tocar em UX da Pastelão Carioca além das correções acima.
 
-## Fluxo final do PIN (após o plano)
-
-```text
-Cadastro /auth ──► profiles.delivery_pin = "1234"
-                         │
-Cliente faz pedido ──► trigger copia para orders.delivery_pin = "1234"
-                         │
-Entregador chega ──► geofence abre card de PIN
-                         │
-Digita "1234" ──► driver_finish_delivery valida contra orders.delivery_pin
-                         │
-              ✅ confere → entrega finalizada
-              ❌ não confere → erro "Código inválido"
-```
-
-PIN é **por cliente**, não global, não aleatório.
+Posso prosseguir aplicando os 6 passos?
