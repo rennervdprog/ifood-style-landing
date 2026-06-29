@@ -5,6 +5,7 @@ import { isCapacitorNative } from "@/lib/capacitorNative";
 import { useNavigate } from "react-router-dom";
 
 const features = [
+  { t: "Atendente IA no WhatsApp", d: "Robô responde o cliente automaticamente, envia o cardápio em segundos e tira pedido sozinho — 24h por dia, sem você precisar digitar." },
   { t: "Cardápio digital", d: "Sua loja com link próprio, fotos dos produtos, categorias e busca — pronto para receber pedidos em minutos." },
   { t: "Pedidos online 24h", d: "Cliente pede sozinho pelo celular, sem precisar atendente no WhatsApp. Notificação automática quando entra pedido." },
   { t: "Painel da loja", d: "Acompanhe pedidos em tempo real, edite cardápio, controle horários, formas de pagamento e taxas de entrega." },
@@ -19,7 +20,7 @@ const faq = [
   { q: "Quanto custa o ItaSuper?", a: "O ItaSuper trabalha com plano fixo mensal, sem cobrar comissão por pedido. Veja os planos atuais na página /planos." },
   { q: "Preciso de site próprio?", a: "Não. Sua loja recebe um link próprio (itasuper.com.br/sua-loja) que você compartilha no Instagram, WhatsApp e Google." },
   { q: "Funciona para qualquer tipo de loja?", a: "Sim. Atende pizzaria, hamburgueria, restaurante, adega, açaí, padaria, farmácia, mercado e qualquer negócio que entrega ou retira no balcão." },
-  { q: "É melhor que o iFood ou Anota AI?", a: "Diferente do iFood, você não paga comissão por pedido. Diferente do Anota AI que só envia para o WhatsApp, o ItaSuper tem painel completo, KDS, PDV e motoboy próprio integrados." },
+  { q: "Como o ItaSuper se compara a marketplaces de delivery?", a: "Você não paga comissão por pedido — só uma mensalidade fixa. E diferente de soluções que só repassam o pedido pro WhatsApp, o ItaSuper entrega o pacote completo: atendente IA, painel, KDS, PDV e motoboy próprio integrados." },
   { q: "Como o cliente paga?", a: "Pix, cartão na entrega, dinheiro ou pagamento online — você define as opções no painel." },
   { q: "Tem app para o entregador?", a: "Sim, app Android para os motoboys com mapa, status de entrega e notificações em tempo real." },
 ];
@@ -61,7 +62,7 @@ export default function LandingPage() {
         <meta name="description" content="Sistema de delivery e cardápio digital para restaurantes, pizzarias, adegas e mercados. Pedidos online, PDV e motoboy próprio — sem comissão." />
         <link rel="canonical" href="https://itasuper.com.br/" />
         <meta property="og:title" content="ItaSuper — Sistema de delivery e cardápio digital" />
-        <meta property="og:description" content="Sistema completo de delivery e cardápio digital sem comissão por pedido. Alternativa ao Anota AI, Menudino e iFood." />
+        <meta property="og:description" content="Atendente IA no WhatsApp + cardápio digital, PDV, KDS e motoboy próprio integrados. Sem comissão por pedido." />
         <meta property="og:url" content="https://itasuper.com.br/" />
         <meta property="og:type" content="website" />
         <script type="application/ld+json">{JSON.stringify(softwareJsonLd)}</script>
@@ -86,10 +87,10 @@ export default function LandingPage() {
       {/* Hero */}
       <section className="px-4 py-14 sm:py-20 max-w-6xl mx-auto text-center">
         <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight leading-tight">
-          Sistema de delivery e cardápio digital para restaurantes
+          Atendente de IA no WhatsApp + cardápio digital para o seu delivery
         </h1>
         <p className="mt-5 text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto">
-          Receba pedidos online direto pelo seu link próprio. Sem comissão por pedido, com painel completo, PDV, KDS e motoboy próprio integrados.
+          A IA atende seu cliente no WhatsApp, manda o cardápio e fecha o pedido sozinha. Você recebe tudo organizado no painel, com PDV, KDS e motoboy próprio integrados — sem comissão por pedido.
         </p>
         <div className="mt-8 flex flex-wrap gap-3 justify-center">
           <Link to="/cadastro-lojista" className="bg-primary text-primary-foreground font-bold px-6 py-3 rounded-xl">
@@ -127,29 +128,23 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Comparativo */}
+      {/* Por que ItaSuper */}
       <section className="px-4 py-14 bg-muted/30 border-y border-border/40">
-        <div className="max-w-4xl mx-auto">
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-center">Alternativa ao Anota AI, Menudino e marketplaces</h2>
-          <p className="text-center text-muted-foreground mt-2">Comparado com as opções mais conhecidas do mercado:</p>
-          <div className="mt-8 overflow-x-auto">
-            <table className="w-full text-sm border-collapse">
-              <thead>
-                <tr className="text-left border-b border-border/40">
-                  <th className="py-3 pr-3"></th>
-                  <th className="py-3 px-3 font-bold">ItaSuper</th>
-                  <th className="py-3 px-3 text-muted-foreground">Anota AI</th>
-                  <th className="py-3 px-3 text-muted-foreground">iFood</th>
-                </tr>
-              </thead>
-              <tbody className="[&>tr]:border-b [&>tr]:border-border/30">
-                <tr><td className="py-3 pr-3">Comissão por pedido</td><td className="px-3 font-bold text-primary">Não cobra</td><td className="px-3 text-muted-foreground">Não cobra</td><td className="px-3 text-muted-foreground">12–30%</td></tr>
-                <tr><td className="py-3 pr-3">Painel completo + PDV + KDS</td><td className="px-3 font-bold text-primary">Sim</td><td className="px-3 text-muted-foreground">Parcial</td><td className="px-3 text-muted-foreground">Não</td></tr>
-                <tr><td className="py-3 pr-3">Motoboy próprio integrado</td><td className="px-3 font-bold text-primary">Sim</td><td className="px-3 text-muted-foreground">Não</td><td className="px-3 text-muted-foreground">Próprio iFood</td></tr>
-                <tr><td className="py-3 pr-3">Multi-unidade (matriz/filial)</td><td className="px-3 font-bold text-primary">Sim</td><td className="px-3 text-muted-foreground">Não</td><td className="px-3 text-muted-foreground">Sim</td></tr>
-                <tr><td className="py-3 pr-3">Dados do cliente são seus</td><td className="px-3 font-bold text-primary">Sim</td><td className="px-3 text-muted-foreground">Sim</td><td className="px-3 text-muted-foreground">Não</td></tr>
-              </tbody>
-            </table>
+        <div className="max-w-4xl mx-auto text-center">
+          <h2 className="text-2xl sm:text-3xl font-extrabold">Por que escolher o ItaSuper</h2>
+          <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">Plano fixo mensal, sem comissão por pedido. Tudo o que você precisa pra operar o delivery em um único sistema.</p>
+          <div className="mt-8 grid sm:grid-cols-2 gap-4 text-left">
+            {[
+              { t: "0% de comissão por pedido", d: "Você fica com 100% do valor de cada venda. Cobramos apenas uma mensalidade fixa." },
+              { t: "Atendente IA no WhatsApp", d: "Responde o cliente em segundos, envia o cardápio e converte conversa em pedido — 24h por dia." },
+              { t: "PDV + KDS + Motoboy próprio", d: "Caixa, cozinha e entrega no mesmo sistema. Sem precisar contratar 3 ferramentas separadas." },
+              { t: "Dados do cliente são seus", d: "Histórico, telefone e endereço ficam com a sua loja — pra fidelizar e remarketing." },
+            ].map((b) => (
+              <div key={b.t} className="bg-card border border-border/40 rounded-2xl p-5">
+                <div className="font-bold">{b.t}</div>
+                <p className="text-sm text-muted-foreground mt-1 leading-relaxed">{b.d}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>

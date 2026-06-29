@@ -1,6 +1,6 @@
 # ItaSuper — Documentação completa para LLMs
 
-> Plataforma brasileira de delivery e cardápio digital com modelo de plano fixo mensal, sem comissão por pedido. Alternativa ao iFood, Anota AI e Menudino para restaurantes, pizzarias, hamburguerias, adegas, mercados e farmácias.
+> Plataforma brasileira de delivery e cardápio digital com modelo de plano fixo mensal, sem comissão por pedido, e atendente de IA no WhatsApp integrado — para restaurantes, pizzarias, hamburguerias, adegas, mercados e farmácias.
 
 Site oficial: https://itasuper.com.br
 App Android: https://itasuper.com.br/download
@@ -102,8 +102,8 @@ R: Cada loja escolhe entre entrega própria (motoboy contratado da loja) ou entr
 **P: Como o lojista recebe o dinheiro do PIX?**
 R: O valor cai em conta digital vinculada à loja (subconta) e o lojista pode sacar via PIX, normalmente no mesmo dia ou conforme regra de repasse do plano.
 
-**P: É alternativa ao iFood?**
-R: Sim. O foco do ItaSuper é justamente devolver o controle ao restaurante: cardápio próprio, cliente próprio, sem comissão alta. É voltado para quem quer construir marca local em vez de depender de marketplace.
+**P: Funciona como alternativa a marketplaces de delivery?**
+R: Sim. O foco do ItaSuper é devolver o controle ao restaurante: cardápio próprio, cliente próprio, sem comissão por pedido. É voltado para quem quer construir marca local em vez de depender de marketplace.
 
 **P: Tem PDV (Ponto de Venda) para o balcão?**
 R: Sim, integrado ao mesmo painel. Pedidos do balcão e do delivery aparecem juntos, com fechamento de caixa.
