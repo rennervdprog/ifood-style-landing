@@ -189,7 +189,9 @@ const StorePage = () => {
     import("@/lib/pageView").then((m) => m.trackPageView("store_page", { storeId: store.id }));
   }, [store?.id]);
 
-  const storeId = store?.id || id;
+  // IMPORTANTE: nunca usar `id` (param de rota = slug) como storeId.
+  // Isso disparava queries Supabase com slug onde se espera UUID (400 22P02).
+  const storeId = store?.id ?? null;
 
   useEffect(() => {
     if (!storeId) return;
