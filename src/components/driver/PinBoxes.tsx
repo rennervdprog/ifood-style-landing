@@ -5,6 +5,7 @@ export interface PinBoxesProps {
   onChange: (v: string) => void;
   accent?: "success" | "warning";
   length?: number;
+  disabled?: boolean;
 }
 
 /**
@@ -16,6 +17,7 @@ export const PinBoxes = ({
   onChange,
   accent = "success",
   length = 4,
+  disabled = false,
 }: PinBoxesProps) => {
   const refs = useRef<(HTMLInputElement | null)[]>([]);
   const digits = Array.from({ length }, (_, i) => value[i] || "");
@@ -63,6 +65,7 @@ export const PinBoxes = ({
           maxLength={1}
           aria-label={`Dígito ${i + 1}`}
           value={d}
+          readOnly={disabled}
           onChange={(e) => setDigit(i, e.target.value)}
           onKeyDown={(e) => handleKey(i, e)}
           onPaste={handlePaste}
