@@ -393,7 +393,7 @@ export default function WhatsAppSetup({ storeId, storeSlug, storeName, expectedP
               Para evitar banimento do WhatsApp, o sistema usa <strong>5 saudações rotativas</strong> (variando por horário: bom dia / boa tarde / boa noite) e, em seguida, <strong>envia automaticamente o link do cardápio</strong> ({`itasuper.com.br/${storeSlug}`}) após 2 segundos — o cliente não precisa responder "sim" ou "cardápio" para receber.
             </p>
             <p className="text-[11px] text-muted-foreground leading-relaxed">
-              Fora do horário de funcionamento cadastrado, a resposta avisa que a loja está fechada e informa o próximo horário de abertura. Cada cliente recebe no máximo uma saudação por janela de cooldown — respostas repetidas no mesmo dia não geram nova saudação. Clientes que respondem <strong>PARAR</strong> entram em lista de exclusão e não recebem mais mensagens automáticas.
+              Fora do horário de funcionamento cadastrado, a resposta avisa que a loja está fechada e informa o próximo horário de abertura. Cada cliente recebe no máximo uma saudação por janela de cooldown — respostas repetidas no mesmo dia não geram nova saudação.
             </p>
           </div>
         )}
