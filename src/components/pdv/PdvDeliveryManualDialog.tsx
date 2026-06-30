@@ -30,6 +30,15 @@ function genPin() {
   return String(Math.floor(1000 + Math.random() * 9000));
 }
 
+function formatPhoneBR(raw: string) {
+  const d = raw.replace(/\D/g, "").slice(0, 11);
+  if (d.length === 0) return "";
+  if (d.length <= 2) return `(${d}`;
+  if (d.length <= 6) return `(${d.slice(0, 2)}) ${d.slice(2)}`;
+  if (d.length <= 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
+  return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
+}
+
 export function PdvDeliveryManualDialog({
   open, onClose, storeId, storeName, storeSettings, cart, subtotal, discountAmount, onSuccess,
 }: Props) {
@@ -53,6 +62,7 @@ export function PdvDeliveryManualDialog({
   const [fee, setFee] = useState<number | null>(null);
   const [feeBreakdown, setFeeBreakdown] = useState<string | null>(null);
   const [calcFee, setCalcFee] = useState(false);
+  const [manualFee, setManualFee] = useState<string>("");
   const [saving, setSaving] = useState(false);
 
   // Reset ao abrir
@@ -62,7 +72,7 @@ export function PdvDeliveryManualDialog({
       setCep(""); setStreet(""); setNumber(""); setNeighborhood("");
       setComplement(""); setReference("");
       setPaymentMethod("dinheiro"); setChangeFor("");
-      setFee(null); setFeeBreakdown(null);
+      setFee(null); setFeeBreakdown(null); setManualFee("");
     }
   }, [open]);
 
@@ -110,14 +120,31 @@ export function PdvDeliveryManualDialog({
   // Recalcula a taxa quando temos CEP e dados da loja
   useEffect(() => {
     const customerCep = cep.replace(/\D/g, "");
-    if (!open || !storeFull || customerCep.length !== 8) {
-      setFee(null); setFeeBreakdown(null); return;
+    if (!open || !storeFull) {
+      return;
     }
     const s: any = storeFull;
     const isOwn = s.delivery_mode === "own";
     const storeCep = (s.address_cep || "").replace(/\D/g, "");
-    if (!storeCep) {
-      setFee(null); setFeeBreakdown("Loja sem CEP configurado."); return;
+
+    // Fallback: loja sem CEP, ou cliente sem CEP, ou modo fixo → usa own_delivery_fee diretamente
+    const isFixedMode = (s.delivery_fee_type || "fixed") === "fixed";
+    if (!storeCep || customerCep.length !== 8 || (isOwn && isFixedMode)) {
+      if (isOwn) {
+        const fixed = Number(s.own_delivery_fee || 0);
+        setFee(fixed);
+        setFeeBreakdown(
+          fixed > 0
+            ? `Taxa fixa da loja: ${formatBRL(fixed)}`
+            : "Loja sem taxa configurada — defina manualmente abaixo.",
+        );
+      } else {
+        const cfg = DEFAULT_DELIVERY_FEE_CONFIG;
+        setFee(cfg.city_fee || 0);
+        setFeeBreakdown(`Entrega plataforma: ${formatBRL(cfg.city_fee || 0)}`);
+      }
+      setCalcFee(false);
+      return;
     }
 
     let cancelled = false;
@@ -159,21 +186,20 @@ export function PdvDeliveryManualDialog({
     return () => { cancelled = true; };
   }, [cep, street, number, neighborhood, storeFull, open, storePlan.platformFeeCustomerExtra, storePlan.platformDeliverySplit]);
 
-  const deliveryFee = fee ?? 0;
+  // Permite override manual da taxa (lojista pode digitar)
+  const manualFeeNum = manualFee.trim() ? Number(manualFee.replace(",", ".")) : null;
+  const deliveryFee = manualFeeNum !== null && !Number.isNaN(manualFeeNum) ? manualFeeNum : (fee ?? 0);
   const finalTotal = Math.max(0, addMoney(subtotal, deliveryFee, -discountAmount));
 
   const canSave = useMemo(() => {
     return (
       cart.length > 0 &&
       name.trim().length >= 2 &&
-      cep.replace(/\D/g, "").length === 8 &&
       street.trim().length > 0 &&
       number.trim().length > 0 &&
-      neighborhood.trim().length > 0 &&
-      pin.length === 4 &&
-      fee !== null
+      pin.length === 4
     );
-  }, [cart.length, name, cep, street, number, neighborhood, pin, fee]);
+  }, [cart.length, name, street, number, pin]);
 
   const handleConfirm = async () => {
     if (!canSave || saving) return;
@@ -298,7 +324,13 @@ export function PdvDeliveryManualDialog({
                 </div>
                 <div>
                   <Label className="flex items-center gap-1"><Phone className="h-3 w-3" /> WhatsApp</Label>
-                  <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="(14) 99999-9999" />
+                  <Input
+                    value={phone}
+                    onChange={(e) => setPhone(formatPhoneBR(e.target.value))}
+                    placeholder="(14) 99999-9999"
+                    inputMode="tel"
+                    maxLength={16}
+                  />
                 </div>
                 <div>
                   <Label className="flex items-center gap-1"><Lock className="h-3 w-3" /> PIN do cliente *</Label>
@@ -327,7 +359,7 @@ export function PdvDeliveryManualDialog({
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="sm:col-span-1">
-                  <Label>CEP *</Label>
+                  <Label>CEP <span className="text-muted-foreground text-[10px]">(opcional)</span></Label>
                   <div className="flex gap-2">
                     <Input
                       value={cep}
@@ -349,7 +381,7 @@ export function PdvDeliveryManualDialog({
                   <Input value={number} onChange={(e) => setNumber(e.target.value)} />
                 </div>
                 <div className="sm:col-span-2">
-                  <Label>Bairro *</Label>
+                  <Label>Bairro</Label>
                   <Input value={neighborhood} onChange={(e) => setNeighborhood(e.target.value)} />
                 </div>
                 <div className="sm:col-span-1">
@@ -372,6 +404,16 @@ export function PdvDeliveryManualDialog({
                 {feeBreakdown && (
                   <p className="text-[11px] text-muted-foreground mt-1">{feeBreakdown}</p>
                 )}
+                <div className="mt-2 flex items-center gap-2">
+                  <Label className="text-[11px] text-muted-foreground whitespace-nowrap">Ajustar taxa (R$)</Label>
+                  <Input
+                    value={manualFee}
+                    onChange={(e) => setManualFee(e.target.value)}
+                    placeholder={fee !== null ? fee.toFixed(2) : "0.00"}
+                    inputMode="decimal"
+                    className="h-8 text-sm"
+                  />
+                </div>
               </div>
             </section>
 
