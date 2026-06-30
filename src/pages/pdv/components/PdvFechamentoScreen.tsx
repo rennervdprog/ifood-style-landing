@@ -1,4 +1,6 @@
-import { ArrowLeft, Lock, Loader2, Receipt, EyeOff, Eye } from "lucide-react";
+import { ArrowLeft, Lock, Loader2, Receipt, EyeOff, Eye, Scale } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { formatBRL } from "@/lib/utils";
 import { parseBRL } from "@/hooks/useBRLInput";
 import { PdvDenominationCount } from "@/components/pdv/PdvDenominationCount";
