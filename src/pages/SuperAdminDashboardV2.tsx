@@ -60,6 +60,7 @@ const HistoricoRepassesTab = lazy(() => import("./super-admin/tabs/HistoricoRepa
 const FluxoCaixaPanel = lazy(() => import("@/components/finance/FluxoCaixaPanel"));
 const ConciliacaoAsaasPanel = lazy(() => import("@/components/finance/ConciliacaoAsaasPanel"));
 const AuditoriaFinanceiraPanel = lazy(() => import("@/components/finance/AuditoriaFinanceiraPanel"));
+const MensalidadesPanel = lazy(() => import("@/components/finance/MensalidadesPanel"));
 const TabFallback = () => (
   <div className="flex items-center justify-center py-12">
     <Loader2 className="h-6 w-6 animate-spin text-primary" />
@@ -150,6 +151,7 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
     | "conciliacao"
     | "socios"
     | "test"
+    | "mensalidades"
     | "auditoria";
   const [financeSection, setFinanceSection] = useState<FinanceSection>("overview");
   type StoresSection = "lojas" | "cidades" | "entrega";
@@ -165,7 +167,7 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
     const legacyMap: Partial<Record<AdminTab, { tab: AdminTab; apply: () => void }>> = {
       pagamentos:   { tab: "financeiro", apply: () => setFinanceSection("areceber") },
       saques:       { tab: "financeiro", apply: () => setFinanceSection("saques") },
-      planos:       { tab: "financeiro", apply: () => setFinanceSection("areceber") },
+      planos:       { tab: "financeiro", apply: () => setFinanceSection("mensalidades") },
       socios:       { tab: "financeiro", apply: () => setFinanceSection("socios") },
       test_finance: { tab: "financeiro", apply: () => setFinanceSection("test") },
       cidades:      { tab: "stores",     apply: () => setStoresSection("cidades") },
@@ -1126,6 +1128,7 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
                    items={[
                      { key: "overview", label: "Visão Geral", icon: LayoutDashboard },
                      { key: "areceber", label: "A Receber", icon: Wallet },
+                      { key: "mensalidades", label: "Mensalidades", icon: Crown },
                      { key: "historico", label: "Histórico Pago", icon: CheckCircle2 },
                      { key: "fluxo", label: "Fluxo de Caixa", icon: TrendingUp },
                      { key: "saques", label: "Saques", icon: Wallet, badge: pendingWithdrawals.length },
@@ -1182,6 +1185,9 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
                  {financeSection === "auditoria" && (
                    <Suspense fallback={<TabFallback />}><AuditoriaFinanceiraPanel /></Suspense>
                  )}
+                  {financeSection === "mensalidades" && (
+                    <Suspense fallback={<TabFallback />}><MensalidadesPanel /></Suspense>
+                  )}
                </div>
              )}
              {activeTab === "dashboard" && (
