@@ -172,11 +172,19 @@ export default function FinanceCenter({ storeId, storeName, hasCommission, isPla
               </Card>
             )}
 
-            {/* Visão clara: Plano, A pagar, Recebido */}
-            <div className="grid gap-3 sm:grid-cols-3">
-              <PlanSummaryCard storeId={storeId} />
-              <ValorAPagarCard storeId={storeId} onPayClick={() => setActiveTab("balance")} />
-              <RecebidoNoMesCard storeId={storeId} />
+            {/* Visão clara: A pagar (prioridade), Plano e Recebido */}
+            <div className="space-y-2">
+              <div className="flex items-baseline justify-between px-1">
+                <h3 className="text-sm font-bold text-foreground tracking-tight">Painel do mês</h3>
+                <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold">
+                  Resumo financeiro
+                </span>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-3">
+                <ValorAPagarCard storeId={storeId} onPayClick={() => setActiveTab("balance")} />
+                <PlanSummaryCard storeId={storeId} />
+                <RecebidoNoMesCard storeId={storeId} />
+              </div>
             </div>
 
             <ComoFuncionaCobranca />
