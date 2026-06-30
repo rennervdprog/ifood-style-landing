@@ -12,6 +12,10 @@ export interface StoreStatusResult {
   reason: string; // e.g. "Abre às 15:00" or "Aberto até 22:00"
   nextOpenTime?: string;
   nextOpenDay?: string;
+  /** Loja fechada, mas aceitando pré-pedidos que serão disparados na abertura */
+  acceptingPreorder?: boolean;
+  /** ISO string do momento em que o pré-pedido será liberado para o lojista */
+  releaseAt?: string;
 }
 
 const dayNames = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
@@ -19,7 +23,8 @@ const dayNames = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "
 export function getStoreOpenStatus(
   hours: OpeningHour[],
   forceClosed: boolean,
-  isOpenManual: boolean
+  isOpenManual: boolean,
+  preorder?: { enabled: boolean; minutesBefore: number }
 ): StoreStatusResult {
   if (forceClosed) {
     return { isOpen: false, reason: "Fechado temporariamente" };
@@ -78,8 +83,16 @@ export function getStoreOpenStatus(
 
     // Store is closed now but opens later today
     if (currentMinutes < openMinutes) {
+      const preorderActive =
+        preorder?.enabled === true &&
+        (preorder.minutesBefore ?? 0) > 0 &&
+        currentMinutes >= openMinutes - (preorder.minutesBefore ?? 0);
+      const releaseDate = new Date(brDate);
+      releaseDate.setHours(openH, openM, 0, 0);
       return {
         isOpen: false,
+        acceptingPreorder: preorderActive,
+        releaseAt: preorderActive ? releaseDate.toISOString() : undefined,
         reason: `Abre hoje às ${todayHours.open_time.slice(0, 5)}`,
         nextOpenTime: todayHours.open_time.slice(0, 5),
         nextOpenDay: "Hoje",

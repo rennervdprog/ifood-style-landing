@@ -147,7 +147,7 @@ const CheckoutPage = () => {
       const { data } = await supabase
          .from("stores_public")
          // 🔒 Inclui campos de km para cálculo correto da taxa de entrega
-           .select("name, address_cep, address_city, latitude, longitude, delivery_mode, own_delivery_fee, settings, is_open, force_closed, delivery_fee_type, delivery_base_km, delivery_fee_base, delivery_fee_per_km, minimum_order_value, free_delivery_threshold")
+           .select("name, address_cep, address_city, latitude, longitude, delivery_mode, own_delivery_fee, settings, is_open, force_closed, delivery_fee_type, delivery_base_km, delivery_fee_base, delivery_fee_per_km, minimum_order_value, free_delivery_threshold, preorder_enabled, preorder_minutes_before")
          .eq("id", storeId!)
         .maybeSingle();
       return data;
@@ -210,9 +210,20 @@ const CheckoutPage = () => {
   });
 
    const storeStatus = storeData && storeHours && !('error' in storeData)
-     ? getStoreOpenStatus(storeHours, (storeData as any).force_closed ?? false, (storeData as any).is_open ?? true)
+     ? getStoreOpenStatus(
+         storeHours,
+         (storeData as any).force_closed ?? false,
+         (storeData as any).is_open ?? true,
+         {
+           enabled: !!(storeData as any).preorder_enabled,
+           minutesBefore: Number((storeData as any).preorder_minutes_before ?? 0),
+         },
+       )
      : null;
-  const isStoreClosed = storeStatus ? !storeStatus.isOpen : false;
+  const isPreorder = !!(storeStatus?.acceptingPreorder && storeStatus.releaseAt);
+  // Loja "fechada" para o checkout só se realmente não puder receber pedidos
+  // (ou seja: fechada e SEM janela de pré-pedido ativa).
+  const isStoreClosed = storeStatus ? (!storeStatus.isOpen && !isPreorder) : false;
 
   const profileNeighborhood = (userProfile as any)?.neighborhood;
   const profileStreet = (userProfile as any)?.street;
@@ -567,7 +578,13 @@ const CheckoutPage = () => {
         const storeTotalPrice = Math.max(0, addMoney(storeSubtotal, effectiveDeliveryFee, -effectiveCouponDiscount, -loyaltyDiscount, -storeEmptiesDiscount));
 
         const changeValue = paymentMethod === "dinheiro" && needsChange ? addMoney(parseFloat(changeFor)) : 0;
-        const orderStatus = paymentMethod === "pix" ? "aguardando_pagamento" : "pendente";
+        // Pré-pedido: se a loja ainda não abriu mas aceita pedidos agendados,
+        // grava com status `scheduled` e `release_at`. O cron
+        // `release_scheduled_orders()` migra para `pendente` no horário.
+        const orderStatus = paymentMethod === "pix"
+          ? "aguardando_pagamento"
+          : (isPreorder ? "scheduled" : "pendente");
+        const releaseAt = isPreorder && paymentMethod !== "pix" ? storeStatus?.releaseAt : null;
         // pix_machine = físico (igual cartão/dinheiro) — não aguarda confirmação Asaas
         const { data: order, error: orderError } = await supabase
           .from("orders")
@@ -588,6 +605,7 @@ const CheckoutPage = () => {
             change_for: changeValue,
             status: orderStatus,
             scheduled_for: scheduledFor ? new Date(scheduledFor).toISOString() : null,
+            release_at: releaseAt,
             metadata: storeEmpties.length > 0 ? { empties_exchange: storeEmpties } : null,
           } as any)
           .select("id")
@@ -737,6 +755,29 @@ const CheckoutPage = () => {
                 {storeStatus.reason}
               </span>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Pré-pedido (loja ainda não abriu, mas aceita agendamento) */}
+      {!isStoreClosed && isPreorder && storeStatus?.releaseAt && (
+        <div className="mx-4 mt-4 bg-primary/10 border border-primary/30 rounded-2xl p-4 flex items-start gap-3">
+          <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center shrink-0 mt-0.5">
+            <Calendar className="h-5 w-5 text-primary" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="text-sm font-bold text-primary">Pré-pedido aceito</h3>
+            <p className="text-xs text-foreground/80 mt-0.5">
+              A loja ainda não abriu, mas você já pode finalizar.
+              Seu pedido será enviado para a cozinha automaticamente às{" "}
+              <strong>
+                {new Date(storeStatus.releaseAt).toLocaleTimeString("pt-BR", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  timeZone: "America/Sao_Paulo",
+                })}
+              </strong>.
+            </p>
           </div>
         </div>
       )}

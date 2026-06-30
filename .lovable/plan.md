@@ -1,81 +1,72 @@
+# Plano: Pré-Pedido com Disparo Agendado
 
-# Plano: alinhamento financeiro Lojista ↔ Super Admin
+> Backend: **Supabase EXTERNO** (`qkjhguziuchqsbxzruea`). Lovable Cloud não será tocado.
 
-## Diagnóstico (banco externo `qkjhguziuchqsbxzruea`)
+## Objetivo
 
-Consultei agora e confirmei:
+Permitir que o lojista aceite pedidos até **X minutos antes** de abrir. O cliente faz o pedido normalmente, mas a loja **só recebe o alerta sonoro, WhatsApp e impressão no horário oficial de abertura** — evitando que o motoboy/atendente seja acordado fora do expediente.
 
-- **`store_balances`** do Cantinho da Silvia tem `repasse_pendente = R$ 6,00` corretamente salvo.
-- A aba "A Receber" do Super Admin mostra zero porque **a tabela `user_roles` não tem NENHUMA linha com role `admin`**. A política RLS de `store_balances` exige `is_platform_admin(auth.uid())` (que checa `role = 'admin'`) — sem essa linha, a query do super admin retorna 0 linhas.
-- `payout_history` está vazia, então "Histórico Pago" também fica em branco — esperado, mas precisa ficar claro.
-- Lojista lê o próprio balanço via outra policy ("Store owners can read own balance") — por isso o card do lojista mostra os R$ 6, mas o super admin não.
+## Como o cliente e o lojista verão
 
-Ou seja: **os dois lados leem a MESMA tabela, só que o super admin está sendo bloqueado por RLS**. Plano abaixo resolve isso e blinda as 4 fontes financeiras para sempre baterem.
+**Cliente:**
+- Card da loja mostra badge azul "Pré-pedido · abre 18:00"
+- Checkout exibe aviso: *"Sua loja abre às 18:00. Confirmaremos seu pedido nesse horário."*
+- Pedido aparece em "Meus pedidos" com status **Agendado**
 
-## Fontes de verdade (vamos travar em uma única tabela cada)
+**Lojista:**
+- Em *Configurações → Horários*: novo toggle **"Aceitar pré-pedido"** + campo "minutos antes" (padrão 60)
+- Pedidos agendados ficam em uma aba separada **"Agendados"** (sem som, sem impressão) até o horário
+- No horário de abertura, o pedido **migra automaticamente** para "Novos" → toca som, imprime e dispara WhatsApp normal
 
-```text
-Fonte                       Tabela / Coluna no externo
---------------------------- -------------------------------------------
-Taxa R$2/entrega acumulada  store_balances.repasse_pendente
-Comissão % acumulada        store_balances.comissao_pendente
-Taxa PDV R$1/venda          store_plans.pdv_commission_pending
-Mensalidade vigente         store_plans.monthly_fee + next_billing_date
-Pagamentos já feitos        payout_history (com coluna `kind`)
-```
+## Fases
 
-Lojista e Super Admin vão ler EXATAMENTE essas colunas. Nada de cálculo duplicado.
+### Fase 1 — Banco externo (migração SQL)
+- `stores`: adicionar `preorder_enabled boolean default false`, `preorder_minutes_before int default 60`
+- `orders`: adicionar `release_at timestamptz null` + novo valor `'scheduled'` em status
+- Função `release_scheduled_orders()` (SECURITY DEFINER) que move pedidos `scheduled` com `release_at <= now()` para `pending` e dispara os triggers existentes de notificação
+- Cron `pg_cron` rodando a cada 1 minuto chamando a função
+- Atualizar `getStoreOpenStatus` para retornar `acceptingPreorder: true` quando faltarem ≤ N min para abrir
 
-## Fase 1 — Corrigir RLS / role do super admin (banco externo)
+### Fase 2 — Lojista (UI)
+- `StoreHoursManager.tsx`: bloco "Pré-pedido" com switch + input de minutos
+- `OrdersSection.tsx`: nova sub-aba "Agendados" com contagem e horário de disparo de cada pedido
+- Persistência via update direto em `stores` no banco externo
 
-1. Promover o(s) usuário(s) super admin a `role = 'admin'` em `user_roles` (idempotente: ON CONFLICT DO NOTHING). Vou listar os candidatos (`profiles.is_super_admin = true` ou e‑mail do dono) e inserir.
-2. Conferir que `is_platform_admin` está retornando true via `SELECT is_platform_admin('<uid>')`.
-3. Reexecutar a query do AReceberTab via Management API para validar que volta com os R$ 6 do Cantinho da Silvia antes de mexer no frontend.
+### Fase 3 — Cliente (UI)
+- `StoreCard` / `stores_public`: badge "Pré-pedido · abre HH:MM" quando `acceptingPreorder`
+- `CheckoutPage`: aviso amarelo explicando o agendamento + checkbox de confirmação
+- Ao criar pedido, calcular `release_at` = próximo horário de abertura e gravar `status='scheduled'`
 
-## Fase 2 — Garantir que toda taxa R$2 e comissão caiam em `store_balances`
+### Fase 4 — Disparo & notificações
+- Trigger `on_order_released` já existente: garantir que dispara som/WhatsApp/print só quando vem de `scheduled → pending` (não duplicar)
+- Edge function `evolution-webhook`: ignorar pedidos `scheduled` no envio inicial
+- Realtime: cliente recebe push "Seu pedido foi confirmado" quando soltar
 
-Auditoria das triggers que alimentam `store_balances`:
-
-- `trg_accrue_delivery_fee` (R$2 por entrega da loja) — checar se dispara em TODA loja com `delivery_mode='own'`, não só plano fixo.
-- `trg_accrue_commission_on_paid` — checar se grava `comissao_pendente` sempre que `commission_rate > 0`.
-- `trg_accrue_pdv_fixed_fee` — confirmar `pdv_commission_pending` por venda PDV.
-
-Se alguma trigger estiver com filtro incorreto, corrijo via migration (sem apagar dados). Backfill por SQL onde necessário.
-
-## Fase 3 — Lojista usa a MESMA fonte
-
-`ValorAPagarCard.tsx` hoje já lê `store_balances` + `store_plans`. Vou:
-
-- Remover qualquer cálculo paralelo (somar pedidos manualmente) e usar SÓ as colunas oficiais.
-- Adicionar legenda mostrando "Atualizado em <updated_at de store_balances>" — assim lojista e admin veem o mesmo timestamp e nunca discordam.
-
-## Fase 4 — Super Admin "A Receber" robusto
-
-`AReceberTab.tsx`:
-
-- Migrar a query agregada para uma **VIEW** `v_platform_receivables` no externo, com `security_invoker=off` + SECURITY DEFINER função, retornando uma linha por loja com `mensalidade`, `comissao`, `entrega_fee`, `pdv_fee`, `total`, `phone`. Assim a leitura não depende de RLS de 3 tabelas distintas.
-- O botão "Marcar como pago" continua gravando em `payout_history` (com `kind`) e zerando a coluna correspondente — isso já está implementado, só precisa funcionar agora que a leitura voltou.
-
-## Fase 5 — Histórico amarrado
-
-`HistoricoRepassesTab.tsx` e o histórico do lojista vão ler a MESMA `payout_history` filtrando por `entity_id = store_id`. Assim quando admin marca pago, o lojista vê na hora.
-
-## Fase 6 — Verificação E2E
-
-1. Login como super admin → ver R$ 6,00 do Cantinho.
-2. Clicar "Pago" na linha de entrega.
-3. Login como lojista (Cantinho) → card "Valor a pagar" deve zerar e "Histórico Pago" deve mostrar a linha.
-4. Bump versão `1.10.363` (`versionCode` 690), atualizar `src/lib/appVersion.ts` e `android/app/build.gradle`.
+### Fase 5 — Rollout seguro
+- Feature ligada **por loja** (desativada por padrão) — Cantinho da Silvia ativa primeiro como piloto
+- Botão "Cancelar pré-pedido" para o cliente até 15 min antes do disparo
+- Log em `admin_logs` de cada release automático
+- Bump de versão (1.10.365) + versionCode 694
 
 ## Detalhes técnicos
 
-- Migrations só no banco EXTERNO via `supabase--migration` (não Lovable Cloud).
-- Sem mexer em `src/integrations/supabase/client.ts` nem `.env`.
-- Sem alterar fluxo de cobrança, Asaas ou regra dos planos — só corrigindo leitura e fechando furo de RLS.
-- Risco baixo: nenhuma coluna é removida; alterações são GRANT/POLICY/VIEW + backfill.
+**Status flow:**
+```text
+cliente cria → scheduled (release_at = 18:00)
+                    ↓ pg_cron 1min
+                  pending (18:00) → toca som/print/WhatsApp
+                    ↓
+                  accepted → ... → delivered
+```
 
-## Fora de escopo
+**Cálculo do `release_at`:** usa `opening_hours` da loja + timezone `America/Sao_Paulo`; se a loja já está aberta, vira pedido normal (`pending`) — sem agendamento.
 
-- Não vou redesenhar o painel financeiro de novo.
-- Não vou trocar provedor de pagamento.
-- Não vou criar cobrança automática de mensalidade (continua manual via PIX).
+**Segurança:**
+- RLS em `orders` mantida; cliente só vê os próprios `scheduled`
+- Função `release_scheduled_orders` com `SECURITY DEFINER` + `search_path = public`
+- Validação no trigger para impedir `release_at` > 24h no futuro (evita abuso)
+
+## Fora de escopo (próxima fase)
+- Agendamento para data futura (ex: pedido para amanhã)
+- Pré-pedido recorrente
+- Pré-pedido com pagamento Pix segurado (autoriza só no disparo)
