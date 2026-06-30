@@ -73,11 +73,21 @@ Deno.serve(async (req) => {
 
     const { data: balance } = await adminSupabase
       .from("store_balances")
-      .select("repasse_pendente")
+      .select("repasse_pendente, comissao_pendente")
       .eq("store_id", store_id)
       .single();
 
-    const pendingAmount = Number(balance?.repasse_pendente || 0);
+    const { data: planRow } = await adminSupabase
+      .from("store_plans")
+      .select("pdv_commission_pending")
+      .eq("store_id", store_id)
+      .eq("is_active", true)
+      .maybeSingle();
+
+    const repassePending = Number(balance?.repasse_pendente || 0);
+    const comissaoPending = Number(balance?.comissao_pendente || 0);
+    const pdvPending = Number(planRow?.pdv_commission_pending || 0);
+    const pendingAmount = repassePending + comissaoPending + pdvPending;
     if (pendingAmount <= 0) {
       return new Response(JSON.stringify({ error: "Sem saldo pendente." }), {
         status: 400,
@@ -92,6 +102,13 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    // Split amount across buckets: prioritize store_balances (repasse+comissao) first,
+    // then PDV. We record the PDV portion in metadata so the webhook can decrement it
+    // on confirmation (store_balances already handled by reconcile_debit_store_balance).
+    const balanceBucket = repassePending + comissaoPending;
+    const amountToBalance = Math.min(amount, balanceBucket);
+    const amountToPdv = Math.max(0, Number((amount - amountToBalance).toFixed(2)));
 
     // Generate PIX charge via Asaas
     const ASAAS_API_KEY = Deno.env.get("ASAAS_API_KEY");
@@ -226,7 +243,12 @@ Deno.serve(async (req) => {
       pix_qr_code: null,
       pix_qr_code_base64: pixInfo?.encodedImage || null,
       pix_copy_paste: pixInfo?.payload || null,
-      metadata: { type: "platform_fee", store_name: store.name },
+      metadata: {
+        type: "platform_fee",
+        store_name: store.name,
+        balance_billed: amountToBalance,
+        pdv_pending_billed: amountToPdv,
+      },
     });
 
     return new Response(
