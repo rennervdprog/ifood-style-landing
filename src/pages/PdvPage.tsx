@@ -55,6 +55,7 @@ import { PdvFechamentoScreen } from "@/pages/pdv/components/PdvFechamentoScreen"
 import { PdvMovementDialog } from "@/pages/pdv/components/PdvMovementDialog";
 import { PdvWeightDialog } from "@/pages/pdv/components/PdvWeightDialog";
 import { PdvCreateWeightProductDialog } from "@/pages/pdv/components/PdvCreateWeightProductDialog";
+import PdvDeliveryManualDialog from "@/components/pdv/PdvDeliveryManualDialog";
 import { PdvShortcutsDialog } from "@/pages/pdv/components/PdvShortcutsDialog";
 import { PdvTopbar } from "@/pages/pdv/components/PdvTopbar";
 import { PdvTabs } from "@/pages/pdv/components/PdvTabs";
@@ -164,6 +165,9 @@ const PdvPage = () => {
 
   // Modal: criar novo produto por peso (exclusivo do PDV)
   const [showCreateWeight, setShowCreateWeight] = useState(false);
+
+  // Modal: pedido delivery manual (lojista cria pedido para cliente que pediu por fora)
+  const [showManualDelivery, setShowManualDelivery] = useState(false);
 
   // Builders Pizza/Pastel (compartilhados com app cliente).
   const [showHalfHalf, setShowHalfHalf] = useState(false);
@@ -601,6 +605,21 @@ const PdvPage = () => {
         </div>
         <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
       </button>
+      <button
+        type="button"
+        onClick={() => setShowManualDelivery(true)}
+        disabled={cart.length === 0}
+        className="w-full bg-gradient-to-r from-success/15 to-success/5 border border-success/30 rounded-xl px-3 py-2 flex items-center gap-2 text-left active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        <span className="text-lg">🛵</span>
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-black text-foreground leading-tight">Pedido Delivery Manual</p>
+          <p className="text-[10px] text-muted-foreground leading-tight">
+            {cart.length === 0 ? "Adicione itens primeiro" : "Cliente pediu pelo WhatsApp"}
+          </p>
+        </div>
+        <ChevronRight className="h-4 w-4 text-success shrink-0" />
+      </button>
     </div>
   );
 
@@ -825,6 +844,21 @@ const PdvPage = () => {
           onClose={() => setShowCreateWeight(false)}
           storeId={store.id}
           onCreated={() => queryClient.invalidateQueries({ queryKey: ["pdv-products", store.id] })}
+        />
+      )}
+
+      {/* ── MODAL PEDIDO DELIVERY MANUAL ── */}
+      {store?.id && (
+        <PdvDeliveryManualDialog
+          open={showManualDelivery}
+          onClose={() => setShowManualDelivery(false)}
+          storeId={store.id}
+          storeName={store?.name}
+          storeSettings={(store as any)?.settings || null}
+          cart={cart}
+          subtotal={subtotal}
+          discountAmount={discountAmount}
+          onSuccess={() => { clearSaleCart(); }}
         />
       )}
 

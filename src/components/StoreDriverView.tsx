@@ -592,8 +592,9 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
     if (!order) return;
     const storeName = order.stores?.name || getStoreName(order.store_id) || "Loja";
     const contact = contactProfiles?.find((c: any) => c.user_id === order.client_id);
-    const clientPhone = (contact as any)?.whatsapp_number || (contact as any)?.phone || "";
-    const clientName = (contact as any)?.full_name || "Cliente";
+    const manualCustomer = (order as any)?.metadata?.manual_customer || null;
+    const clientPhone = (contact as any)?.whatsapp_number || (contact as any)?.phone || manualCustomer?.phone || "";
+    const clientName = (contact as any)?.full_name || manualCustomer?.name || "Cliente";
     const items = order.order_items?.map((i: any) => `${i.quantity}x ${getOrderItemDisplayName(i)}`).join("\n") || "";
     const evolutionConnected = whatsappConfigs?.some((cfg: any) => cfg.store_id === order.store_id && cfg.status === "connected") || false;
 
@@ -1098,7 +1099,9 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
           city: (nextStop.stores as any)?.address_city,
           state: (nextStop.stores as any)?.address_state,
         }, navApp);
-        const contactName = (getContact(nextStop.client_id) as any)?.full_name || "Cliente";
+        const contactName = (getContact(nextStop.client_id) as any)?.full_name
+          || (nextStop as any)?.metadata?.manual_customer?.name
+          || "Cliente";
 
         return (
           <div className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground rounded-2xl p-4 shadow-lg">
@@ -1240,8 +1243,9 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
           {filteredDeliveries.map((order: any, index: number) => {
             const isExpanded = expandedOrder === order.id;
             const contact = getContact(order.client_id);
-            const contactPhone = (contact as any)?.whatsapp_number || (contact as any)?.phone || "";
-            const contactName = (contact as any)?.full_name || "Cliente";
+            const manualCustomer = (order as any)?.metadata?.manual_customer || null;
+            const contactPhone = (contact as any)?.whatsapp_number || (contact as any)?.phone || manualCustomer?.phone || "";
+            const contactName = (contact as any)?.full_name || manualCustomer?.name || "Cliente";
             const readyToDepart = order.status === "pronto_para_entrega";
             const inDelivery = order.status === "saiu_entrega" || order.status === "em_transito";
 
