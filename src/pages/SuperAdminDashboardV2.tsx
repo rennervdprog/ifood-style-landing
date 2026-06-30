@@ -1128,11 +1128,10 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
                    onChange={(v) => setFinanceSection(v as FinanceSection)}
                    items={[
                      { key: "overview", label: "Visão Geral", icon: LayoutDashboard },
+                     { key: "areceber", label: "A Receber", icon: Wallet },
+                     { key: "historico", label: "Histórico Pago", icon: CheckCircle2 },
                      { key: "fluxo", label: "Fluxo de Caixa", icon: TrendingUp },
                      { key: "saques", label: "Saques", icon: Wallet, badge: pendingWithdrawals.length },
-                     { key: "pagamentos", label: "Pagamentos", icon: CreditCard },
-                     { key: "planos", label: "Mensalidades", icon: Crown },
-                     { key: "comissoes", label: "Comissões", icon: Percent },
                      { key: "conciliacao", label: "Conciliação", icon: ShieldCheck },
                      { key: "socios", label: "Sócios", icon: Handshake },
                      { key: "test", label: "Lojas Teste", icon: FlaskConical },
@@ -1169,19 +1168,16 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
                      />
                    </Suspense>
                  )}
-                 {financeSection === "pagamentos" && (
-                   <Suspense fallback={<TabFallback />}><PagamentosSplitTab stores={stores || []} /></Suspense>
+                 {financeSection === "areceber" && (
+                   <Suspense fallback={<TabFallback />}><AReceberTab /></Suspense>
                  )}
-                 {financeSection === "planos" && (
-                   <Suspense fallback={<TabFallback />}><MensalidadesPanel /></Suspense>
+                 {financeSection === "historico" && (
+                   <Suspense fallback={<TabFallback />}><HistoricoRepassesTab /></Suspense>
                  )}
                  {financeSection === "socios" && <PartnerSplitPanel />}
                  {financeSection === "test" && <TestStoreFinancePanel />}
                  {financeSection === "fluxo" && (
                    <Suspense fallback={<TabFallback />}><FluxoCaixaPanel /></Suspense>
-                 )}
-                 {financeSection === "comissoes" && (
-                   <Suspense fallback={<TabFallback />}><ComissoesPanel /></Suspense>
                  )}
                  {financeSection === "conciliacao" && (
                    <Suspense fallback={<TabFallback />}><ConciliacaoAsaasPanel /></Suspense>
