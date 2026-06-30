@@ -60,7 +60,7 @@ const WeightToggleField = ({
   const [display, setDisplay] = useState(priceKg > 0 ? formatBRLDisplay(priceKg) : "");
 
   const setEnabled = (v: boolean) => {
-    const next = { ...metadata, sold_by_weight: v };
+    const next: Record<string, any> = { ...metadata, sold_by_weight: v };
     if (!v) {
       delete next.price_per_kg;
       delete next.weight_unit;
