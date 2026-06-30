@@ -26,6 +26,10 @@ import FinancialStatement from "./FinancialStatement";
 import AdminAsaasSubaccounts from "./AdminAsaasSubaccounts";
 import RepasseHistory from "./RepasseHistory";
 import PlatformFeeCycleBlock from "./PlatformFeeCycleBlock";
+import PlanSummaryCard from "./finance/PlanSummaryCard";
+import ValorAPagarCard from "./finance/ValorAPagarCard";
+import RecebidoNoMesCard from "./finance/RecebidoNoMesCard";
+import ComoFuncionaCobranca from "./finance/ComoFuncionaCobranca";
 
 interface FinanceCenterProps {
   storeId: string;
@@ -110,8 +114,8 @@ export default function FinanceCenter({ storeId, storeName, hasCommission, isPla
             <TabsTrigger value="balance" aria-label="Saldo Asaas" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all flex-col sm:flex-row gap-0.5 sm:gap-0 py-2 sm:py-1.5 min-h-[44px]">
               <Wallet className="h-4 w-4 sm:mr-2" />
               <span className="text-[10px] sm:text-sm sm:inline">
-                <span className="hidden sm:inline">Saldo Asaas</span>
-                <span className="sm:hidden">Saldo</span>
+              <span className="hidden sm:inline">Recebimentos</span>
+              <span className="sm:hidden">Receb.</span>
               </span>
             </TabsTrigger>
           )}
@@ -122,8 +126,8 @@ export default function FinanceCenter({ storeId, storeName, hasCommission, isPla
           <TabsTrigger value="repasse" aria-label="Histórico de repasses" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all flex-col sm:flex-row gap-0.5 sm:gap-0 py-2 sm:py-1.5 min-h-[44px]">
             <Truck className="h-4 w-4 sm:mr-2" />
             <span className="text-[10px] sm:text-sm sm:inline">
-              <span className="hidden sm:inline">Repasses</span>
-              <span className="sm:hidden">Repasse</span>
+              <span className="hidden sm:inline">Histórico Pago</span>
+              <span className="sm:hidden">Histórico</span>
             </span>
           </TabsTrigger>
           {isPlatformAdmin && (
@@ -167,7 +171,16 @@ export default function FinanceCenter({ storeId, storeName, hasCommission, isPla
                 </CardContent>
               </Card>
             )}
- 
+
+            {/* Visão clara: Plano, A pagar, Recebido */}
+            <div className="grid gap-3 sm:grid-cols-3">
+              <PlanSummaryCard storeId={storeId} />
+              <ValorAPagarCard storeId={storeId} onPayClick={() => setActiveTab("balance")} />
+              <RecebidoNoMesCard storeId={storeId} />
+            </div>
+
+            <ComoFuncionaCobranca />
+
             {hasCommission ? (
               <StoreFinancePanel storeId={storeId} storeName={storeName} hideHistory={true} />
             ) : (
