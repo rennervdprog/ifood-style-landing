@@ -85,7 +85,11 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
         .eq("store_id", storeId)
         .order("name");
       if (error) throw error;
-      return data;
+      // Produtos exclusivos do PDV (vendidos por peso, criados pela tela do PDV)
+      // não devem aparecer no cardápio do lojista.
+      return (data || []).filter(
+        (p: any) => !(p?.metadata?.pdv_only) && !p?.sold_by_weight && !(p?.metadata?.sold_by_weight)
+      );
     },
   });
 
