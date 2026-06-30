@@ -54,6 +54,8 @@ const CidadesTab = lazy(() => import("./super-admin/tabs/CidadesTab"));
 const SaquesTab = lazy(() => import("./super-admin/tabs/SaquesTab"));
 const PagamentosSplitTab = lazy(() => import("./super-admin/tabs/PagamentosSplitTab"));
 const AuditoriaTab = lazy(() => import("./super-admin/tabs/AuditoriaTab"));
+const AReceberTab = lazy(() => import("./super-admin/tabs/AReceberTab"));
+const HistoricoRepassesTab = lazy(() => import("./super-admin/tabs/HistoricoRepassesTab"));
 // Painéis financeiros profissionais (Fase 1)
 const FluxoCaixaPanel = lazy(() => import("@/components/finance/FluxoCaixaPanel"));
 const ComissoesPanel = lazy(() => import("@/components/finance/ComissoesPanel"));
