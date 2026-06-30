@@ -7,6 +7,18 @@ const cors = {
 };
 
 const SQL = `
+-- ============== ENUM ==============
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_enum e
+    JOIN pg_type t ON t.oid = e.enumtypid
+    WHERE t.typname = 'order_status' AND e.enumlabel = 'scheduled'
+  ) THEN
+    ALTER TYPE public.order_status ADD VALUE 'scheduled';
+  END IF;
+END $$;
+
 -- ============== STORES ==============
 ALTER TABLE public.stores
   ADD COLUMN IF NOT EXISTS preorder_enabled boolean NOT NULL DEFAULT false,
