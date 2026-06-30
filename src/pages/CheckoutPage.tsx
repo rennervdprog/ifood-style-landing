@@ -578,7 +578,13 @@ const CheckoutPage = () => {
         const storeTotalPrice = Math.max(0, addMoney(storeSubtotal, effectiveDeliveryFee, -effectiveCouponDiscount, -loyaltyDiscount, -storeEmptiesDiscount));
 
         const changeValue = paymentMethod === "dinheiro" && needsChange ? addMoney(parseFloat(changeFor)) : 0;
-        const orderStatus = paymentMethod === "pix" ? "aguardando_pagamento" : "pendente";
+        // Pré-pedido: se a loja ainda não abriu mas aceita pedidos agendados,
+        // grava com status `scheduled` e `release_at`. O cron
+        // `release_scheduled_orders()` migra para `pendente` no horário.
+        const orderStatus = paymentMethod === "pix"
+          ? "aguardando_pagamento"
+          : (isPreorder ? "scheduled" : "pendente");
+        const releaseAt = isPreorder && paymentMethod !== "pix" ? storeStatus?.releaseAt : null;
         // pix_machine = físico (igual cartão/dinheiro) — não aguarda confirmação Asaas
         const { data: order, error: orderError } = await supabase
           .from("orders")
@@ -599,6 +605,7 @@ const CheckoutPage = () => {
             change_for: changeValue,
             status: orderStatus,
             scheduled_for: scheduledFor ? new Date(scheduledFor).toISOString() : null,
+            release_at: releaseAt,
             metadata: storeEmpties.length > 0 ? { empties_exchange: storeEmpties } : null,
           } as any)
           .select("id")
