@@ -818,6 +818,16 @@ const PdvPage = () => {
         onAdd={handleModalAdd}
       />
 
+      {/* ── MODAL CRIAR PRODUTO POR PESO (PDV-only) ── */}
+      {store?.id && (
+        <PdvCreateWeightProductDialog
+          open={showCreateWeight}
+          onClose={() => setShowCreateWeight(false)}
+          storeId={store.id}
+          onCreated={() => queryClient.invalidateQueries({ queryKey: ["pdv-products", store.id] })}
+        />
+      )}
+
       {/* ── MONTE A PIZZA (meio a meio + bordas) ── */}
       {pizzaHalfEnabled && showHalfHalf && store?.id && (
         <Suspense fallback={null}>
