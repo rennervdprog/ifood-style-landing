@@ -755,6 +755,9 @@ const StoreHoursManager = ({ storeId, forceClosed }: { storeId: string; forceClo
           </div>
         )}
       </div>
+
+      {/* Pré-pedido (agendamento de abertura) */}
+      <PreorderSettingsCard storeId={storeId} />
     </div>
   );
 };
