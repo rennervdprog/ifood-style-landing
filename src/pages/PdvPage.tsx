@@ -54,6 +54,7 @@ import { PdvAberturaScreen } from "@/pages/pdv/components/PdvAberturaScreen";
 import { PdvFechamentoScreen } from "@/pages/pdv/components/PdvFechamentoScreen";
 import { PdvMovementDialog } from "@/pages/pdv/components/PdvMovementDialog";
 import { PdvWeightDialog } from "@/pages/pdv/components/PdvWeightDialog";
+import { PdvCreateWeightProductDialog } from "@/pages/pdv/components/PdvCreateWeightProductDialog";
 import { PdvShortcutsDialog } from "@/pages/pdv/components/PdvShortcutsDialog";
 import { PdvTopbar } from "@/pages/pdv/components/PdvTopbar";
 import { PdvTabs } from "@/pages/pdv/components/PdvTabs";
@@ -160,6 +161,9 @@ const PdvPage = () => {
 
   // Modal de venda por peso (produto com sold_by_weight = true)
   const [weightProduct, setWeightProduct] = useState<Product | null>(null);
+
+  // Modal: criar novo produto por peso (exclusivo do PDV)
+  const [showCreateWeight, setShowCreateWeight] = useState(false);
 
   // Builders Pizza/Pastel (compartilhados com app cliente).
   const [showHalfHalf, setShowHalfHalf] = useState(false);
@@ -555,7 +559,7 @@ const PdvPage = () => {
   const pastelHalfEnabled =
     isPastelaria && storeSettings.pastel_half_enabled !== false && products.length >= 2;
 
-  const builderActions = (pizzaHalfEnabled || pastelHalfEnabled) ? (
+  const builderActions = (
     <div className="px-3 pt-2.5 flex flex-col gap-1.5">
       {pizzaHalfEnabled && (
         <button
@@ -585,8 +589,20 @@ const PdvPage = () => {
           <ChevronRight className="h-4 w-4 text-primary shrink-0" />
         </button>
       )}
+      <button
+        type="button"
+        onClick={() => setShowCreateWeight(true)}
+        className="w-full bg-muted/40 hover:bg-muted/60 border border-dashed border-border rounded-xl px-3 py-2 flex items-center gap-2 text-left active:scale-[0.98] transition-all"
+      >
+        <span className="text-lg">⚖️</span>
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-black text-foreground leading-tight">Novo produto por peso</p>
+          <p className="text-[10px] text-muted-foreground leading-tight">Exclusivo do PDV · não vai pro cardápio</p>
+        </div>
+        <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+      </button>
     </div>
-  ) : null;
+  );
 
   return (
     <div className="pdv-shell h-screen bg-background flex flex-col overflow-hidden">
@@ -801,6 +817,16 @@ const PdvPage = () => {
         onClose={() => setWeightProduct(null)}
         onAdd={handleModalAdd}
       />
+
+      {/* ── MODAL CRIAR PRODUTO POR PESO (PDV-only) ── */}
+      {store?.id && (
+        <PdvCreateWeightProductDialog
+          open={showCreateWeight}
+          onClose={() => setShowCreateWeight(false)}
+          storeId={store.id}
+          onCreated={() => queryClient.invalidateQueries({ queryKey: ["pdv-products", store.id] })}
+        />
+      )}
 
       {/* ── MONTE A PIZZA (meio a meio + bordas) ── */}
       {pizzaHalfEnabled && showHalfHalf && store?.id && (
