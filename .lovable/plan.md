@@ -1,98 +1,91 @@
-# Plano: Produto por Peso no PDV (100% Supabase Externo)
 
-> ⚠️ **Backend:** TODAS as operações de banco neste plano rodam exclusivamente no **Supabase externo `qkjhguziuchqsbxzruea`** via `EXTERNAL_SUPABASE_URL` / `EXTERNAL_SUPABASE_SERVICE_KEY`. Lovable Cloud **não é usado** neste projeto — nenhum `supabase--migration` interno será disparado. Migrations vão para `scripts/*.sql` e são aplicadas via `ext-sql-runner` (mesmo padrão já usado em `order-number-external.sql`, `antifraud-external.sql`, etc.).
+# Plano: Financeiro do Super Admin — Clareza Total
 
-## Pedido da lojista (Cantinho da Silvia)
+Hoje a tela está confusa: misturamos "Comissão a Receber" (de pedido), "R$2/Entrega a Pagar", "Net Plataforma negativo", mensalidades e ainda mostramos ganhos de motoboys (que não nos pertencem). Vamos reorganizar para responder 3 perguntas objetivas:
 
-Vender itens por peso (ex: R$ 59,90/kg) direto no PDV, **sem balança integrada**, com o resultado aparecendo no relatório do fechamento do dia.
+1. **Quanto a plataforma tem a receber das lojas hoje?**
+2. **Quanto já foi pago (histórico)?**
+3. **Quem está devendo e há quanto tempo?**
 
-## Análise do PDV atual
+---
 
-- `usePdvCatalog`: lê `products` do **externo** via `supabase.from("products")` (cliente já apontado para o externo).
-- `usePdvCart`: agrega por `id + addons + observations`, com `basePrice`, `price` (unitário) e `quantity`.
-- `usePdvCheckout`: grava `orders` + `order_items` + `pdv_movements` no externo.
-- `PdvFechamentoScreen`: total vendido, abertura, sangrias, suprimentos e quebra por método — tudo de `pdv_movements` da sessão.
-- `products` externo: hoje só tem `price` único, sem flag de peso.
+## Fase 1 — Nova aba "A Receber" (substitui Comissões/Mensalidades soltas)
 
-Tudo compatível — faltam só 2 campos no produto, 1 modal no PDV e 1 card no relatório.
+Card único no topo agregando TUDO que a plataforma tem a receber das lojas:
 
-## Fase 1 — Banco externo (`qkjhguziuchqsbxzruea`)
-
-Novo arquivo `scripts/pdv-weight-external.sql`, aplicado via `ext-sql-runner`:
-
-```sql
-ALTER TABLE public.products
-  ADD COLUMN IF NOT EXISTS sold_by_weight boolean NOT NULL DEFAULT false,
-  ADD COLUMN IF NOT EXISTS price_per_kg numeric(10,2),
-  ADD COLUMN IF NOT EXISTS weight_unit text NOT NULL DEFAULT 'kg';
-
-NOTIFY pgrst, 'reload schema';
+```text
+┌─────────────────────────────────────────┐
+│ 💰 TOTAL A RECEBER DAS LOJAS            │
+│           R$ 1.247,00                   │
+│                                         │
+│ • Mensalidades pendentes:  R$ 1.080,00  │
+│ • Taxa R$2/entrega:        R$    96,00  │
+│ • Comissão sobre pedidos:  R$    65,00  │
+│ • PDV (R$1/venda):         R$     6,00  │
+└─────────────────────────────────────────┘
 ```
 
-Em `order_items`, aproveitamos o `metadata jsonb` já existente: `{ weight_grams: 450, price_per_kg: 59.90 }`. **Sem nova coluna, sem nova policy** (RLS atual de `products` e `order_items` no externo já cobre).
+Abaixo, lista por loja (ordenada pelo maior devedor) mostrando:
+- Nome da loja + plano
+- Quanto deve, separado por tipo
+- Dias em atraso (se mensalidade vencida)
+- Botão **"Marcar como Pago"** → registra em `payout_history` e zera o pendente
+- Botão **"Cobrar via WhatsApp"** (abre mensagem pronta)
 
-## Fase 2 — Cadastro do produto (admin)
+Remove o card vermelho "Net Plataforma -R$6,00" — era confuso (sinal invertido).
 
-`MenuTab` (admin) — toda escrita continua indo para o externo via `supabase.from("products").upsert(...)`:
+## Fase 2 — Aba "Histórico de Repasses Pagos"
 
-- Toggle **"Vender por peso"**.
-- Quando ligado: campo `price_per_kg` substitui o `price` fixo; preview "R$ X,XX a cada 100 g".
-- Ao salvar: gravar `price = price_per_kg` também, para não quebrar telas legadas que somam por preço unitário.
+Nova aba lateral mostrando **tudo que a plataforma já recebeu**:
+- Data | Loja | Tipo (mensalidade/comissão/entrega) | Valor | Método (PIX/dinheiro/Asaas)
+- Filtros por período (hoje, 7d, 30d, custom) e por loja
+- Total recebido no período em destaque no topo
+- Exportar CSV
 
-## Fase 3 — PDV: novo modal de peso
+Fonte de dados: tabela `payout_history` (já existe) + ampliar para registrar mensalidades pagas.
 
-Novo `src/components/pdv/PdvWeightDialog.tsx`:
+## Fase 3 — Remover aba "Entregadores" do Financeiro
 
-- Abre ao tocar num produto com `sold_by_weight = true` (em vez do modal de addons).
-- Teclado numérico grande (mesma DS dos outros dialogs do PDV) pedindo **gramas**.
-- Em tempo real: `(gramas / 1000) × price_per_kg = R$ Y,YY`.
-- "Adicionar" → `handleModalAdd` com:
-  - `quantity = 1`
-  - `price = total calculado`
-  - `observations = "450 g"`
-  - `metadata.weight_grams = 450`
-  - `metadata.price_per_kg = 59.90`
+Confirmado: o pagamento ao motoboy é feito **pela loja** (lojista define o valor e paga direto). A plataforma NÃO intermedia esse dinheiro, então mostrar "Pendente R$ 1.700" de motoboy no painel da plataforma é enganoso (parece que devemos algo).
 
-No `PdvCartSection`, item por peso é **não-incrementável** (+/− escondidos): mostra peso + botão remover/editar peso.
+Ação: **remover totalmente a aba Entregadores** do Financeiro do Super Admin. Esses dados continuam disponíveis para a LOJA no painel dela (que é quem realmente paga).
 
-No checkout (`usePdvCheckout`), o `metadata` é repassado intacto no `insert` de `order_items` no externo.
+## Fase 4 — Reorganizar abas do Financeiro
 
-## Fase 4 — Impressão térmica
+Antes (6+ abas confusas): Pagamentos · Mensalidades · Comissões · Entregadores · Subcontas · Lojas...
 
-Em `src/lib/thermalPrint.ts`, se `item.metadata?.weight_grams`:
+Depois (3 abas claras):
 
+```text
+┌──────────────┬──────────────┬──────────────┐
+│ 💰 A Receber │ ✅ Histórico │ 🏦 Subcontas │
+│              │   (pagos)    │   (Asaas)    │
+└──────────────┴──────────────┴──────────────┘
 ```
-PICANHA          450 g x R$ 59,90/kg
-                                R$ 26,96
-```
 
-Validado nos dois layouts (58 mm e 80 mm) já cobertos pelos testes de `thermalPrint.test.ts`.
+## Fase 5 — Detalhes técnicos (Supabase EXTERNO)
 
-## Fase 5 — Relatório de fechamento
+- Criar view `v_platform_receivables` agregando: `store_plans.monthly_fee` (vencidos) + `store_balances.comissao_pendente` + saldo de `R$2/entrega` + `pdv_commission_pending`.
+- Ampliar `payout_history` para incluir `kind` ('mensalidade' | 'comissao' | 'entrega_fee' | 'pdv_fee') e `paid_at`.
+- RPC `admin_mark_receivable_paid(store_id, kind, amount)` que insere em `payout_history` e debita do `store_balances`.
+- Tudo via `ext-sql-runner` no Supabase externo (não usamos Lovable Cloud).
 
-`PdvFechamentoScreen` + aba **Relatórios**:
+## Fase 6 — Arquivos a tocar
 
-- Novo card **"Vendas por peso"** (só aparece se houver): total de **gramas** vendidas e valor.
-- "Mais vendidos": produtos por peso aparecem como "X,XX kg vendidos" no lugar de "N un".
+- `src/pages/super-admin/tabs/PagamentosSplitTab.tsx` — substituir conteúdo das abas.
+- Criar `src/pages/super-admin/tabs/AReceberTab.tsx` (Fase 1).
+- Criar `src/pages/super-admin/tabs/HistoricoRepassesTab.tsx` (Fase 2).
+- Remover/ocultar a aba "Entregadores" (Fase 3).
+- Migração SQL no externo: view + colunas em `payout_history` + RPC.
 
-Cálculo client-side a partir dos `order_items.metadata` dos pedidos da sessão (já buscados do externo). **Zero alteração** em `pdv_movements`.
+---
 
-## Fase 6 — Versão, testes e validação
+## Resultado final
 
-- Bump patch em `src/lib/appVersion.ts` + `android/app/build.gradle` (`versionName` e `versionCode +1`).
-- Vitest em `usePdvCart`: item por peso não duplica, não incrementa, e respeita `metadata`.
-- Smoke manual no Cantinho da Silvia (loja real no externo): cadastrar produto teste, venda de 250 g, fechar caixa, conferir card.
+Em 5 segundos o super admin sabe:
+✅ Quanto tem a receber hoje (1 número grande)
+✅ De quem (lista ordenada por maior devedor)
+✅ Quanto já recebeu este mês (aba Histórico)
+✅ Sem ruído de motoboy (não é problema nosso)
 
-## Segurança
-
-- Migration roda no externo com `IF NOT EXISTS` (idempotente).
-- Sem nova RLS porque reaproveita `products` / `order_items`.
-- Conferir lint do externo após aplicar (sem novas tabelas, expectativa = 0 warnings novos).
-
-## Fora de escopo (intencional)
-
-- Integração com balança Toledo/Filizola via SDK.
-- Integração Stone/Ton (maquininha) — plano separado.
-- Qualquer escrita em Lovable Cloud — **não usamos**.
-
-Posso seguir e implementar?
+Aprovando, começo pela Fase 5 (SQL no externo) e depois Fases 1-4 em sequência.
