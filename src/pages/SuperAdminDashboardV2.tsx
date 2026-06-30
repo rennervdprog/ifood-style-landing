@@ -147,9 +147,8 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
     | "overview"
     | "fluxo"
     | "saques"
-    | "pagamentos"
-    | "planos"
-    | "comissoes"
+    | "areceber"
+    | "historico"
     | "conciliacao"
     | "socios"
     | "test"
@@ -166,9 +165,9 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
   useEffect(() => {
     const legacyFinance: AdminTab[] = ["pagamentos", "saques", "planos", "socios", "test_finance"];
     const legacyMap: Partial<Record<AdminTab, { tab: AdminTab; apply: () => void }>> = {
-      pagamentos:   { tab: "financeiro", apply: () => setFinanceSection("pagamentos") },
+      pagamentos:   { tab: "financeiro", apply: () => setFinanceSection("areceber") },
       saques:       { tab: "financeiro", apply: () => setFinanceSection("saques") },
-      planos:       { tab: "financeiro", apply: () => setFinanceSection("planos") },
+      planos:       { tab: "financeiro", apply: () => setFinanceSection("areceber") },
       socios:       { tab: "financeiro", apply: () => setFinanceSection("socios") },
       test_finance: { tab: "financeiro", apply: () => setFinanceSection("test") },
       cidades:      { tab: "stores",     apply: () => setStoresSection("cidades") },
