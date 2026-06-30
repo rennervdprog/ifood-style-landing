@@ -168,7 +168,10 @@ export function useStorePlan(storeId: string | undefined | null): StorePlanFeatu
   return {
     planType,
     monthlyFee: data?.plan?.monthly_fee ?? 0,
-    commissionRate: data?.plan?.commission_rate ?? 6,
+    // Fonte da verdade é o plano. Default 0 — o trigger validate_order_prices
+    // sobrescreve commission_rate de cada pedido com get_store_commission_rate(store_id),
+    // que retorna 0 para fixed/supporter/autonomy. NUNCA assumir 6% como fallback.
+    commissionRate: isFixedPlan ? 0 : (data?.plan?.commission_rate ?? 0),
     ...features,
     trialEndsAt,
     isInTrial,
