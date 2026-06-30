@@ -55,6 +55,7 @@ import { PdvFechamentoScreen } from "@/pages/pdv/components/PdvFechamentoScreen"
 import { PdvMovementDialog } from "@/pages/pdv/components/PdvMovementDialog";
 import { PdvWeightDialog } from "@/pages/pdv/components/PdvWeightDialog";
 import { PdvCreateWeightProductDialog } from "@/pages/pdv/components/PdvCreateWeightProductDialog";
+import PdvDeliveryManualDialog from "@/components/pdv/PdvDeliveryManualDialog";
 import { PdvShortcutsDialog } from "@/pages/pdv/components/PdvShortcutsDialog";
 import { PdvTopbar } from "@/pages/pdv/components/PdvTopbar";
 import { PdvTabs } from "@/pages/pdv/components/PdvTabs";
@@ -164,6 +165,9 @@ const PdvPage = () => {
 
   // Modal: criar novo produto por peso (exclusivo do PDV)
   const [showCreateWeight, setShowCreateWeight] = useState(false);
+
+  // Modal: pedido delivery manual (lojista cria pedido para cliente que pediu por fora)
+  const [showManualDelivery, setShowManualDelivery] = useState(false);
 
   // Builders Pizza/Pastel (compartilhados com app cliente).
   const [showHalfHalf, setShowHalfHalf] = useState(false);
