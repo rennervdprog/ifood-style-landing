@@ -759,6 +759,29 @@ const CheckoutPage = () => {
         </div>
       )}
 
+      {/* Pré-pedido (loja ainda não abriu, mas aceita agendamento) */}
+      {!isStoreClosed && isPreorder && storeStatus?.releaseAt && (
+        <div className="mx-4 mt-4 bg-primary/10 border border-primary/30 rounded-2xl p-4 flex items-start gap-3">
+          <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center shrink-0 mt-0.5">
+            <Calendar className="h-5 w-5 text-primary" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="text-sm font-bold text-primary">Pré-pedido aceito</h3>
+            <p className="text-xs text-foreground/80 mt-0.5">
+              A loja ainda não abriu, mas você já pode finalizar.
+              Seu pedido será enviado para a cozinha automaticamente às{" "}
+              <strong>
+                {new Date(storeStatus.releaseAt).toLocaleTimeString("pt-BR", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  timeZone: "America/Sao_Paulo",
+                })}
+              </strong>.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Progress steps — profissional, com checkmarks */}
       <div className="px-4 pt-4 pb-2">
         <div className="flex items-center gap-1.5">
