@@ -267,14 +267,23 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
     const finalPrice = parseFloat(formData.price) || 0;
     if (!formData.name.trim()) { toast.error("Preencha o nome do produto"); return; }
     if (!formData.price || finalPrice <= 0) { toast.error("Preencha o preço do produto"); return; }
+    const soldByWeight = !!formData.metadata?.sold_by_weight;
+    const pricePerKg = Number(formData.metadata?.price_per_kg ?? 0) || null;
+    if (soldByWeight && (!pricePerKg || pricePerKg <= 0)) {
+      toast.error("Defina o preço por kg para vender por peso");
+      return;
+    }
     const { error } = await supabase.from("products").insert({
       store_id: storeId,
       section_id: sectionId,
       name: formData.name.trim(),
-      price: finalPrice,
+      price: soldByWeight ? (pricePerKg || finalPrice) : finalPrice,
       description: formData.description.trim() || null,
       image_url: formData.image_url.trim() || null,
       metadata: formData.metadata || {},
+      sold_by_weight: soldByWeight,
+      price_per_kg: soldByWeight ? pricePerKg : null,
+      weight_unit: soldByWeight ? "kg" : "kg",
     } as any);
     if (error) { toast.error("Erro ao adicionar produto"); return; }
     toast.success("Produto adicionado!");
@@ -284,12 +293,20 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
 
   const updateProduct = async (id: string, formData: ProductFormData) => {
     const finalPrice = parseFloat(formData.price) || 0;
+    const soldByWeight = !!formData.metadata?.sold_by_weight;
+    const pricePerKg = Number(formData.metadata?.price_per_kg ?? 0) || null;
+    if (soldByWeight && (!pricePerKg || pricePerKg <= 0)) {
+      toast.error("Defina o preço por kg para vender por peso");
+      return;
+    }
     const { error } = await supabase.from("products").update({
       name: formData.name.trim(),
-      price: finalPrice,
+      price: soldByWeight ? (pricePerKg || finalPrice) : finalPrice,
       description: formData.description.trim() || null,
       image_url: formData.image_url.trim() || null,
       metadata: formData.metadata || {},
+      sold_by_weight: soldByWeight,
+      price_per_kg: soldByWeight ? pricePerKg : null,
     } as any).eq("id", id);
     if (error) { toast.error("Erro ao atualizar"); return; }
     toast.success("Produto atualizado!");
