@@ -1099,7 +1099,9 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
           city: (nextStop.stores as any)?.address_city,
           state: (nextStop.stores as any)?.address_state,
         }, navApp);
-        const contactName = (getContact(nextStop.client_id) as any)?.full_name || "Cliente";
+        const contactName = (getContact(nextStop.client_id) as any)?.full_name
+          || (nextStop as any)?.metadata?.manual_customer?.name
+          || "Cliente";
 
         return (
           <div className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground rounded-2xl p-4 shadow-lg">
