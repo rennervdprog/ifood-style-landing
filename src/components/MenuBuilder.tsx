@@ -593,7 +593,17 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
           price: Number(product.price).toFixed(2),
           description: product.description || "",
           image_url: product.image_url || "",
-          metadata: (product as any).metadata || {},
+          metadata: {
+            ...((product as any).metadata || {}),
+            // Prioriza colunas dedicadas se existirem (PDV por peso).
+            ...((product as any).sold_by_weight
+              ? {
+                  sold_by_weight: true,
+                  price_per_kg: Number((product as any).price_per_kg ?? (product as any).metadata?.price_per_kg ?? 0),
+                  weight_unit: (product as any).weight_unit || "kg",
+                }
+              : {}),
+          },
         });
       }}
       isEditing={editingProduct === product.id}
