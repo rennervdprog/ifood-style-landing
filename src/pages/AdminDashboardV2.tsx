@@ -251,6 +251,7 @@ const AdminDashboard = () => {
   const [showMoreSheet, setShowMoreSheet] = useState(false);
   const [showSupportModal, setShowSupportModal] = useState(false);
   const [selectedReportPeriod, setSelectedReportPeriod] = useState(30);
+  const [reportSubTab, setReportSubTab] = useState<"overview" | "sales" | "products" | "hours">("overview");
   const [batchSelected, setBatchSelected] = useState<Set<string>>(new Set());
   const [batchDispatching, setBatchDispatching] = useState(false);
 
@@ -2107,6 +2108,29 @@ const AdminDashboard = () => {
                           ))}
                         </div>
 
+                        {/* Sub-tabs */}
+                        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 -mx-1 px-1">
+                          {[
+                            { key: "overview", label: "Visão geral" },
+                            { key: "sales", label: "Vendas" },
+                            { key: "products", label: "Produtos" },
+                            { key: "hours", label: "Horários" },
+                          ].map((s) => (
+                            <button
+                              key={s.key}
+                              onClick={() => setReportSubTab(s.key as typeof reportSubTab)}
+                              aria-pressed={reportSubTab === s.key}
+                              className={`px-3.5 py-1.5 rounded-full text-[11px] font-bold transition-all whitespace-nowrap ${
+                                reportSubTab === s.key
+                                  ? "bg-foreground text-background"
+                                  : "bg-card text-muted-foreground hover:bg-accent border border-border/60"
+                              }`}
+                            >
+                              {s.label}
+                            </button>
+                          ))}
+                        </div>
+
                         {firstAvailableDateKey && lastAvailableDateKey && (
                           <p className="text-xs text-muted-foreground">
                             Dados disponíveis: {formatDateKeyPtBR(firstAvailableDateKey)} até {formatDateKeyPtBR(lastAvailableDateKey)}.
@@ -2115,6 +2139,7 @@ const AdminDashboard = () => {
                         )}
 
                         {/* KPI Cards with comparison */}
+                        {(reportSubTab === "overview" || reportSubTab === "sales") && (
                         <div className="grid grid-cols-2 gap-3">
                           {[
                             { label: "Receita Total", value: formatCurrency(totalRevenue), growth: revenueGrowth, color: "emerald" },
@@ -2137,8 +2162,10 @@ const AdminDashboard = () => {
                             </div>
                           ))}
                         </div>
+                        )}
 
                         {/* Insights Cards */}
+                        {reportSubTab === "overview" && (
                         <div className="grid grid-cols-2 gap-3">
                           <div className="bg-card/60 rounded-2xl p-4 border border-border/30">
                             <p className="text-[10px] text-muted-foreground font-semibold uppercase">🔥 Horário de Pico</p>
@@ -2151,9 +2178,10 @@ const AdminDashboard = () => {
                             <p className="text-[10px] text-muted-foreground">{bestDay ? `${formatCurrency(bestDay.vendas)}` : "Sem dados"}</p>
                           </div>
                         </div>
+                        )}
 
                         {/* Revenue Chart */}
-                        {dailyChart.length > 1 && (
+                        {(reportSubTab === "overview" || reportSubTab === "sales") && dailyChart.length > 1 && (
                           <div className="bg-card/60 backdrop-blur-sm rounded-2xl p-5 border border-border/30">
                             <p className="text-xs font-bold text-foreground mb-4">📈 Evolução de Vendas ({selectedPeriod} dias)</p>
                             <div className="h-48">
@@ -2165,7 +2193,7 @@ const AdminDashboard = () => {
                         )}
 
                         {/* Hourly Distribution */}
-                        {hourlyChart.length > 0 && (
+                        {(reportSubTab === "overview" || reportSubTab === "hours") && hourlyChart.length > 0 && (
                           <div className="bg-card/60 backdrop-blur-sm rounded-2xl p-5 border border-border/30">
                             <p className="text-xs font-bold text-foreground mb-4">🕐 Distribuição por Horário</p>
                             <div className="h-36">
@@ -2177,6 +2205,7 @@ const AdminDashboard = () => {
                         )}
 
                         {/* Weekday Performance */}
+                        {(reportSubTab === "overview" || reportSubTab === "hours") && (
                         <div className="bg-card/60 backdrop-blur-sm rounded-2xl p-5 border border-border/30">
                           <p className="text-xs font-bold text-foreground mb-4">📊 Desempenho por Dia da Semana</p>
                           <div className="h-36">
@@ -2185,9 +2214,10 @@ const AdminDashboard = () => {
                             </Suspense>
                           </div>
                         </div>
+                        )}
 
                         {/* Payment Distribution */}
-                        {paymentPie.length > 0 && (
+                        {(reportSubTab === "overview" || reportSubTab === "sales") && paymentPie.length > 0 && (
                           <div className="bg-card/60 backdrop-blur-sm rounded-2xl p-5 border border-border/30">
                             <p className="text-xs font-bold text-foreground mb-4">💳 Métodos de Pagamento</p>
                             <div className="flex items-center gap-4">
@@ -2213,6 +2243,7 @@ const AdminDashboard = () => {
                         )}
 
                         {/* Top Products */}
+                        {(reportSubTab === "overview" || reportSubTab === "products") && (
                         <div className="bg-card/60 backdrop-blur-sm rounded-2xl p-5 border border-border/30">
                           <p className="text-xs font-bold text-foreground mb-4">🏆 Produtos Mais Vendidos</p>
                           <div className="space-y-2.5">
@@ -2241,6 +2272,7 @@ const AdminDashboard = () => {
                             {sortedProducts.length === 0 && <p className="text-xs text-muted-foreground text-center py-6">Sem dados de produtos neste período</p>}
                           </div>
                         </div>
+                        )}
 
                         {/* Export */}
                         <button onClick={exportCSV}
