@@ -6,8 +6,7 @@ const cors = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const SQL = `
--- ============== ENUM ==============
+const SQL_ENUM = `
 DO $$
 BEGIN
   IF NOT EXISTS (
@@ -18,7 +17,9 @@ BEGIN
     ALTER TYPE public.order_status ADD VALUE 'scheduled';
   END IF;
 END $$;
+`;
 
+const SQL = `
 -- ============== STORES ==============
 ALTER TABLE public.stores
   ADD COLUMN IF NOT EXISTS preorder_enabled boolean NOT NULL DEFAULT false,
@@ -112,16 +113,23 @@ Deno.serve(async (req) => {
     });
   }
 
-  const r = await fetch(`https://api.supabase.com/v1/projects/${REF}/database/query`, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${PAT}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ query: SQL }),
-  });
-  const text = await r.text();
-  let data: unknown = text;
-  try { data = JSON.parse(text); } catch {}
-  return new Response(JSON.stringify({ status: r.status, ok: r.ok, data }, null, 2), {
-    status: r.ok ? 200 : 500,
+  async function run(q: string) {
+    const r = await fetch(`https://api.supabase.com/v1/projects/${REF}/database/query`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${PAT}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ query: q }),
+    });
+    const t = await r.text();
+    let d: unknown = t;
+    try { d = JSON.parse(t); } catch {}
+    return { status: r.status, ok: r.ok, data: d };
+  }
+
+  const step1 = await run(SQL_ENUM);
+  if (!step1.ok) return new Response(JSON.stringify({ step: 1, ...step1 }, null, 2), { status: 500, headers: { ...cors, "Content-Type": "application/json" } });
+  const step2 = await run(SQL);
+  return new Response(JSON.stringify({ step1, step2 }, null, 2), {
+    status: step2.ok ? 200 : 500,
     headers: { ...cors, "Content-Type": "application/json" },
   });
 });
