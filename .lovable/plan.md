@@ -1,87 +1,81 @@
 
-# Painel do Lojista — Plano de Clareza Financeira (não-destrutivo)
+# Plano: alinhamento financeiro Lojista ↔ Super Admin
 
-## Diagnóstico atual
+## Diagnóstico (banco externo `qkjhguziuchqsbxzruea`)
 
-Hoje o grupo **Financeiro** tem 3 sub-abas (Resumo, Relatórios, Meu Plano) e dentro de "Resumo" existe um `FinanceCenter` com mais 4 abas internas (Resumo, Saldo Asaas, Extrato, Repasses) + `PlatformFeeCycleBlock` + `StoreFinancePanel` (1.357 linhas). Resultado: o lojista não consegue responder em 3 segundos as 3 perguntas que importam:
+Consultei agora e confirmei:
 
-1. **Quanto eu devo à plataforma agora?**
-2. **Quando vence e como pago?**
-3. **Quanto eu já paguei?**
+- **`store_balances`** do Cantinho da Silvia tem `repasse_pendente = R$ 6,00` corretamente salvo.
+- A aba "A Receber" do Super Admin mostra zero porque **a tabela `user_roles` não tem NENHUMA linha com role `admin`**. A política RLS de `store_balances` exige `is_platform_admin(auth.uid())` (que checa `role = 'admin'`) — sem essa linha, a query do super admin retorna 0 linhas.
+- `payout_history` está vazia, então "Histórico Pago" também fica em branco — esperado, mas precisa ficar claro.
+- Lojista lê o próprio balanço via outra policy ("Store owners can read own balance") — por isso o card do lojista mostra os R$ 6, mas o super admin não.
 
-A informação existe (`store_plans.monthly_fee`, `next_billing_date`, `store_balances.repasse_pendente/comissao_pendente`, `pdv_commission_pending`, `payout_history`), só está espalhada.
+Ou seja: **os dois lados leem a MESMA tabela, só que o super admin está sendo bloqueado por RLS**. Plano abaixo resolve isso e blinda as 4 fontes financeiras para sempre baterem.
 
-Os **Relatórios** hoje reusam o mesmo painel de finanças, sem visão operacional (ticket médio, top produtos, horários de pico, taxa de cancelamento).
-
-## Objetivos
-
-- Sem quebrar nenhuma rota, hook ou edge function existente.
-- Reorganizar **apenas o frontend** do grupo Financeiro e Relatórios.
-- Mostrar o **plano contratado** com valores reais (mensalidade, % comissão, R$ por entrega, taxa PDV) em destaque.
-- Centralizar **"O que eu devo agora"** num único card com botão **"Pagar via PIX"** e **"Ver histórico"**.
-- Separar **Relatórios** (operacional) de **Financeiro** (a pagar/recebido).
-
-## Nova arquitetura do grupo Financeiro
+## Fontes de verdade (vamos travar em uma única tabela cada)
 
 ```text
-Financeiro
-├── Resumo         ← NOVO: 3 cards (Plano, A Pagar, Recebido no mês)
-├── A Pagar        ← NOVO: detalha mensalidade + R$2/entrega + comissão + PDV, botão "Pagar PIX"
-├── Recebimentos   ← renomeia "Saldo Asaas" + Extrato (PIX recebidos dos clientes)
-├── Histórico      ← payout_history (o que já paguei à plataforma) + extrato Asaas
-└── Meu Plano      ← mantém StoreSubscription, com card destacando valores do plano
+Fonte                       Tabela / Coluna no externo
+--------------------------- -------------------------------------------
+Taxa R$2/entrega acumulada  store_balances.repasse_pendente
+Comissão % acumulada        store_balances.comissao_pendente
+Taxa PDV R$1/venda          store_plans.pdv_commission_pending
+Mensalidade vigente         store_plans.monthly_fee + next_billing_date
+Pagamentos já feitos        payout_history (com coluna `kind`)
 ```
 
-E **Relatórios** sai do grupo Financeiro e vira grupo próprio com foco operacional:
+Lojista e Super Admin vão ler EXATAMENTE essas colunas. Nada de cálculo duplicado.
 
-```text
-Relatórios
-├── Vendas         ← gráfico diário, ticket médio, comparativo semana anterior
-├── Produtos       ← top 10, mais cancelados, mais avaliados
-├── Horários       ← pico por hora/dia, tempo médio de preparo
-└── Clientes       ← novos x recorrentes, frequência, LTV (reaproveita ClientsTab)
-```
+## Fase 1 — Corrigir RLS / role do super admin (banco externo)
 
-## Componentes a criar (frontend puro)
+1. Promover o(s) usuário(s) super admin a `role = 'admin'` em `user_roles` (idempotente: ON CONFLICT DO NOTHING). Vou listar os candidatos (`profiles.is_super_admin = true` ou e‑mail do dono) e inserir.
+2. Conferir que `is_platform_admin` está retornando true via `SELECT is_platform_admin('<uid>')`.
+3. Reexecutar a query do AReceberTab via Management API para validar que volta com os R$ 6 do Cantinho da Silvia antes de mexer no frontend.
 
-1. `src/components/finance/PlanSummaryCard.tsx` — lê `store_plans` e mostra plano, mensalidade, % comissão, R$/entrega, taxa PDV, próximo vencimento. Reaproveita query existente.
-2. `src/components/finance/ValorAPagarCard.tsx` — soma `store_balances.repasse_pendente + comissao_pendente + store_plans.pdv_commission_pending + (mensalidade se vencida)`, mostra breakdown linha a linha, botão **"Pagar via PIX"** (reusa o fluxo PIX já existente em `StoreFinancePanel`).
-3. `src/components/finance/RecebidoNoMesCard.tsx` — total de vendas pagas no mês corrente (já calculado em `StoreFinancePanel`, só extraímos o número).
-4. `src/components/finance/ComoFuncionaCobranca.tsx` — bloco explicativo fixo: "Você está no plano X. A cada entrega da plataforma cobramos Y. A mensalidade Z vence dia W. Acumulando R$500 a loja é bloqueada."
-5. `src/pages/admin/tabs/finance/ResumoTab.tsx`, `AReceberTab.tsx`, `RecebimentosTab.tsx`, `HistoricoTab.tsx` — orquestram os cards acima.
-6. `src/pages/admin/tabs/reports/VendasTab.tsx`, `ProdutosTab.tsx`, `HorariosTab.tsx` — extraem gráficos já existentes em `StoreFinancePanel` e `FinanceCharts.tsx` sem duplicar lógica (importam dos hooks que já temos).
+## Fase 2 — Garantir que toda taxa R$2 e comissão caiam em `store_balances`
 
-## Mudanças em arquivos existentes
+Auditoria das triggers que alimentam `store_balances`:
 
-- `src/pages/admin/constants.ts`: novo grupo `relatorios` separado de `financeiro`; sub-abas atualizadas conforme acima. Mantém as chaves antigas (`finance`, `reports`, `subscription`) como aliases para não quebrar deep-links.
-- `src/components/FinanceCenter.tsx`: vira shell fino que decide qual sub-aba renderizar. `StoreFinancePanel` e `StoreFinanceBasic` continuam intactos — só passam a ser usados internamente pelas novas abas.
-- `src/pages/AdminDashboardV2.tsx`: troca apenas o roteamento das subTabs (`reports` → novo `ReportsVendas`, etc.). Nenhuma lógica de pedidos/PDV é tocada.
+- `trg_accrue_delivery_fee` (R$2 por entrega da loja) — checar se dispara em TODA loja com `delivery_mode='own'`, não só plano fixo.
+- `trg_accrue_commission_on_paid` — checar se grava `comissao_pendente` sempre que `commission_rate > 0`.
+- `trg_accrue_pdv_fixed_fee` — confirmar `pdv_commission_pending` por venda PDV.
 
-## O que NÃO será alterado
+Se alguma trigger estiver com filtro incorreto, corrijo via migration (sem apagar dados). Backfill por SQL onde necessário.
 
-- Banco de dados externo: **zero migrações**. Tudo já existe.
-- Edge functions, RLS, triggers de cobrança (`trg_accrue_pdv_fixed_fee`, `client_confirm_delivery`).
-- Fluxo PIX (`StoreFinancePanel` continua sendo a fonte da verdade do botão pagar).
-- `StoreSubscription` (Meu Plano) — só ganha o `PlanSummaryCard` no topo.
+## Fase 3 — Lojista usa a MESMA fonte
 
-## Segurança
+`ValorAPagarCard.tsx` hoje já lê `store_balances` + `store_plans`. Vou:
 
-- Apenas leitura de tabelas já permitidas pelas RLS atuais (`stores`, `store_plans`, `store_balances`, `payout_history`, `orders`).
-- Nenhum novo endpoint, nenhuma elevação de privilégio.
-- Cobrança continua disparada pelos triggers do banco — UI só **exibe** valores.
+- Remover qualquer cálculo paralelo (somar pedidos manualmente) e usar SÓ as colunas oficiais.
+- Adicionar legenda mostrando "Atualizado em <updated_at de store_balances>" — assim lojista e admin veem o mesmo timestamp e nunca discordam.
 
-## Versionamento
+## Fase 4 — Super Admin "A Receber" robusto
 
-Bump para **v1.10.360** em `src/lib/appVersion.ts` e `android/app/build.gradle` (`versionCode 689`).
+`AReceberTab.tsx`:
 
-## Entrega faseada (cada fase é um deploy seguro)
+- Migrar a query agregada para uma **VIEW** `v_platform_receivables` no externo, com `security_invoker=off` + SECURITY DEFINER função, retornando uma linha por loja com `mensalidade`, `comissao`, `entrega_fee`, `pdv_fee`, `total`, `phone`. Assim a leitura não depende de RLS de 3 tabelas distintas.
+- O botão "Marcar como pago" continua gravando em `payout_history` (com `kind`) e zerando a coluna correspondente — isso já está implementado, só precisa funcionar agora que a leitura voltou.
 
-| Fase | Escopo | Risco |
-|---|---|---|
-| 1 | Criar `PlanSummaryCard` + `ValorAPagarCard` + `ComoFuncionaCobranca` | Zero |
-| 2 | Nova aba **Resumo** do Financeiro usando os 3 cards | Baixo |
-| 3 | Renomear sub-abas internas do `FinanceCenter` (Recebimentos/Histórico) | Baixo |
-| 4 | Separar grupo **Relatórios** com Vendas/Produtos/Horários | Médio (mexe em constants.ts + navegação) |
-| 5 | Polimento: copy, ícones, empty states, testes E2E rápidos no Cantinho da Silvia | Zero |
+## Fase 5 — Histórico amarrado
 
-Confirme se posso seguir e eu começo pela Fase 1.
+`HistoricoRepassesTab.tsx` e o histórico do lojista vão ler a MESMA `payout_history` filtrando por `entity_id = store_id`. Assim quando admin marca pago, o lojista vê na hora.
+
+## Fase 6 — Verificação E2E
+
+1. Login como super admin → ver R$ 6,00 do Cantinho.
+2. Clicar "Pago" na linha de entrega.
+3. Login como lojista (Cantinho) → card "Valor a pagar" deve zerar e "Histórico Pago" deve mostrar a linha.
+4. Bump versão `1.10.363` (`versionCode` 690), atualizar `src/lib/appVersion.ts` e `android/app/build.gradle`.
+
+## Detalhes técnicos
+
+- Migrations só no banco EXTERNO via `supabase--migration` (não Lovable Cloud).
+- Sem mexer em `src/integrations/supabase/client.ts` nem `.env`.
+- Sem alterar fluxo de cobrança, Asaas ou regra dos planos — só corrigindo leitura e fechando furo de RLS.
+- Risco baixo: nenhuma coluna é removida; alterações são GRANT/POLICY/VIEW + backfill.
+
+## Fora de escopo
+
+- Não vou redesenhar o painel financeiro de novo.
+- Não vou trocar provedor de pagamento.
+- Não vou criar cobrança automática de mensalidade (continua manual via PIX).

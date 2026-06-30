@@ -14,17 +14,18 @@ export default function ValorAPagarCard({ storeId, onPayClick }: Props) {
   const { data } = useQuery({
     queryKey: ["valor-a-pagar", storeId],
     queryFn: async () => {
-      const [bal, plan] = await Promise.all([
-        supabase.from("store_balances").select("repasse_pendente, comissao_pendente").eq("store_id", storeId).maybeSingle(),
-        supabase.from("store_plans").select("monthly_fee, pdv_commission_pending, next_billing_date").eq("store_id", storeId).eq("is_active", true).maybeSingle(),
-      ]);
-      const repasse = Number(bal.data?.repasse_pendente ?? 0);
-      const comissao = Number(bal.data?.comissao_pendente ?? 0);
-      const pdv = Number(plan.data?.pdv_commission_pending ?? 0);
-      const monthlyFee = Number(plan.data?.monthly_fee ?? 0);
-      const due = plan.data?.next_billing_date ? new Date(plan.data.next_billing_date) <= new Date() : false;
-      const mensalidade = due ? monthlyFee : 0;
-      const total = repasse + comissao + pdv + mensalidade;
+      // MESMA fonte que o Super Admin (RPC get_store_financial_summary).
+      // Garante que os valores aqui e na aba "A Receber" do admin sempre batam.
+      const { data: r, error } = await (supabase as any).rpc("get_store_financial_summary", {
+        p_store_id: storeId,
+      });
+      if (error) throw error;
+      const row = Array.isArray(r) ? r[0] : r;
+      const repasse = Number(row?.entrega_fee ?? 0);
+      const comissao = Number(row?.comissao ?? 0);
+      const pdv = Number(row?.pdv_fee ?? 0);
+      const mensalidade = Number(row?.mensalidade ?? 0);
+      const total = Number(row?.total ?? repasse + comissao + pdv + mensalidade);
       return { repasse, comissao, pdv, mensalidade, total };
     },
     refetchInterval: 60_000,

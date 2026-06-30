@@ -38,50 +38,31 @@ const AReceberTab = () => {
   const { data, isLoading } = useQuery({
     queryKey: ["areceber-platform"],
     queryFn: async () => {
-      const [balRes, storesRes, plansRes] = await Promise.all([
-        supabase.from("store_balances").select("store_id, repasse_pendente, comissao_pendente"),
-        supabase.from("stores").select("id, name, is_test, phone"),
-        supabase
-          .from("store_plans")
-          .select("store_id, plan_type, monthly_fee, next_billing_date, pdv_commission_pending, is_active")
-          .eq("is_active", true),
-      ]);
-      if (balRes.error) throw balRes.error;
-      const balances = balRes.data || [];
-      const stores = (storesRes.data || []).filter((s: any) => !s.is_test);
-      const plans = plansRes.data || [];
+      // Fonte única de verdade: RPC SECURITY DEFINER no banco externo.
+      // Garante que Super Admin e Lojista enxerguem exatamente os mesmos números,
+      // sem depender de variações de RLS entre store_balances / store_plans / stores.
+      const { data: rpcRows, error } = await (supabase as any).rpc("get_platform_receivables");
+      if (error) throw error;
       const now = Date.now();
-
-      const rows: StoreReceivable[] = stores
-        .map((s: any) => {
-          const b = balances.find((x: any) => x.store_id === s.id);
-          const p = plans.find((x: any) => x.store_id === s.id);
-          const planType = (p?.plan_type as string) || "—";
-          const fixedPlan = planType === "fixed" || planType === "supporter" || planType === "autonomy";
-          const due = p?.next_billing_date ? new Date(p.next_billing_date).getTime() : 0;
-          const overdueDays =
-            fixedPlan && due && due < now ? Math.floor((now - due) / 86400000) : 0;
-          const mensalidade = fixedPlan && overdueDays > 0 ? Number(p?.monthly_fee || 0) : 0;
-          const comissao = Number(b?.comissao_pendente || 0);
-          const entrega_fee = Number(b?.repasse_pendente || 0);
-          const pdv_fee = Number(p?.pdv_commission_pending || 0);
-          const total = mensalidade + comissao + entrega_fee + pdv_fee;
+      const rows: StoreReceivable[] = (rpcRows || [])
+        .map((r: any) => {
+          const due = r.next_billing_date ? new Date(r.next_billing_date).getTime() : 0;
+          const overdueDays = due && due < now ? Math.floor((now - due) / 86400000) : 0;
           return {
-            store_id: s.id,
-            name: s.name,
-            phone: s.phone,
-            plan_type: planType,
-            mensalidade,
+            store_id: r.store_id,
+            name: r.store_name,
+            phone: r.phone,
+            plan_type: r.plan_type || "—",
+            mensalidade: Number(r.mensalidade || 0),
             mensalidade_overdue_days: overdueDays,
-            comissao,
-            entrega_fee,
-            pdv_fee,
-            total,
+            comissao: Number(r.comissao || 0),
+            entrega_fee: Number(r.entrega_fee || 0),
+            pdv_fee: Number(r.pdv_fee || 0),
+            total: Number(r.total || 0),
           };
         })
-        .filter((r) => r.total > 0)
-        .sort((a, b) => b.total - a.total);
-
+        .filter((r: StoreReceivable) => r.total > 0)
+        .sort((a: StoreReceivable, b: StoreReceivable) => b.total - a.total);
       return rows;
     },
     staleTime: 30_000,
