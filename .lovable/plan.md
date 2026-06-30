@@ -1,91 +1,87 @@
 
-# Plano: Financeiro do Super Admin — Clareza Total
+# Painel do Lojista — Plano de Clareza Financeira (não-destrutivo)
 
-Hoje a tela está confusa: misturamos "Comissão a Receber" (de pedido), "R$2/Entrega a Pagar", "Net Plataforma negativo", mensalidades e ainda mostramos ganhos de motoboys (que não nos pertencem). Vamos reorganizar para responder 3 perguntas objetivas:
+## Diagnóstico atual
 
-1. **Quanto a plataforma tem a receber das lojas hoje?**
-2. **Quanto já foi pago (histórico)?**
-3. **Quem está devendo e há quanto tempo?**
+Hoje o grupo **Financeiro** tem 3 sub-abas (Resumo, Relatórios, Meu Plano) e dentro de "Resumo" existe um `FinanceCenter` com mais 4 abas internas (Resumo, Saldo Asaas, Extrato, Repasses) + `PlatformFeeCycleBlock` + `StoreFinancePanel` (1.357 linhas). Resultado: o lojista não consegue responder em 3 segundos as 3 perguntas que importam:
 
----
+1. **Quanto eu devo à plataforma agora?**
+2. **Quando vence e como pago?**
+3. **Quanto eu já paguei?**
 
-## Fase 1 — Nova aba "A Receber" (substitui Comissões/Mensalidades soltas)
+A informação existe (`store_plans.monthly_fee`, `next_billing_date`, `store_balances.repasse_pendente/comissao_pendente`, `pdv_commission_pending`, `payout_history`), só está espalhada.
 
-Card único no topo agregando TUDO que a plataforma tem a receber das lojas:
+Os **Relatórios** hoje reusam o mesmo painel de finanças, sem visão operacional (ticket médio, top produtos, horários de pico, taxa de cancelamento).
 
-```text
-┌─────────────────────────────────────────┐
-│ 💰 TOTAL A RECEBER DAS LOJAS            │
-│           R$ 1.247,00                   │
-│                                         │
-│ • Mensalidades pendentes:  R$ 1.080,00  │
-│ • Taxa R$2/entrega:        R$    96,00  │
-│ • Comissão sobre pedidos:  R$    65,00  │
-│ • PDV (R$1/venda):         R$     6,00  │
-└─────────────────────────────────────────┘
-```
+## Objetivos
 
-Abaixo, lista por loja (ordenada pelo maior devedor) mostrando:
-- Nome da loja + plano
-- Quanto deve, separado por tipo
-- Dias em atraso (se mensalidade vencida)
-- Botão **"Marcar como Pago"** → registra em `payout_history` e zera o pendente
-- Botão **"Cobrar via WhatsApp"** (abre mensagem pronta)
+- Sem quebrar nenhuma rota, hook ou edge function existente.
+- Reorganizar **apenas o frontend** do grupo Financeiro e Relatórios.
+- Mostrar o **plano contratado** com valores reais (mensalidade, % comissão, R$ por entrega, taxa PDV) em destaque.
+- Centralizar **"O que eu devo agora"** num único card com botão **"Pagar via PIX"** e **"Ver histórico"**.
+- Separar **Relatórios** (operacional) de **Financeiro** (a pagar/recebido).
 
-Remove o card vermelho "Net Plataforma -R$6,00" — era confuso (sinal invertido).
-
-## Fase 2 — Aba "Histórico de Repasses Pagos"
-
-Nova aba lateral mostrando **tudo que a plataforma já recebeu**:
-- Data | Loja | Tipo (mensalidade/comissão/entrega) | Valor | Método (PIX/dinheiro/Asaas)
-- Filtros por período (hoje, 7d, 30d, custom) e por loja
-- Total recebido no período em destaque no topo
-- Exportar CSV
-
-Fonte de dados: tabela `payout_history` (já existe) + ampliar para registrar mensalidades pagas.
-
-## Fase 3 — Remover aba "Entregadores" do Financeiro
-
-Confirmado: o pagamento ao motoboy é feito **pela loja** (lojista define o valor e paga direto). A plataforma NÃO intermedia esse dinheiro, então mostrar "Pendente R$ 1.700" de motoboy no painel da plataforma é enganoso (parece que devemos algo).
-
-Ação: **remover totalmente a aba Entregadores** do Financeiro do Super Admin. Esses dados continuam disponíveis para a LOJA no painel dela (que é quem realmente paga).
-
-## Fase 4 — Reorganizar abas do Financeiro
-
-Antes (6+ abas confusas): Pagamentos · Mensalidades · Comissões · Entregadores · Subcontas · Lojas...
-
-Depois (3 abas claras):
+## Nova arquitetura do grupo Financeiro
 
 ```text
-┌──────────────┬──────────────┬──────────────┐
-│ 💰 A Receber │ ✅ Histórico │ 🏦 Subcontas │
-│              │   (pagos)    │   (Asaas)    │
-└──────────────┴──────────────┴──────────────┘
+Financeiro
+├── Resumo         ← NOVO: 3 cards (Plano, A Pagar, Recebido no mês)
+├── A Pagar        ← NOVO: detalha mensalidade + R$2/entrega + comissão + PDV, botão "Pagar PIX"
+├── Recebimentos   ← renomeia "Saldo Asaas" + Extrato (PIX recebidos dos clientes)
+├── Histórico      ← payout_history (o que já paguei à plataforma) + extrato Asaas
+└── Meu Plano      ← mantém StoreSubscription, com card destacando valores do plano
 ```
 
-## Fase 5 — Detalhes técnicos (Supabase EXTERNO)
+E **Relatórios** sai do grupo Financeiro e vira grupo próprio com foco operacional:
 
-- Criar view `v_platform_receivables` agregando: `store_plans.monthly_fee` (vencidos) + `store_balances.comissao_pendente` + saldo de `R$2/entrega` + `pdv_commission_pending`.
-- Ampliar `payout_history` para incluir `kind` ('mensalidade' | 'comissao' | 'entrega_fee' | 'pdv_fee') e `paid_at`.
-- RPC `admin_mark_receivable_paid(store_id, kind, amount)` que insere em `payout_history` e debita do `store_balances`.
-- Tudo via `ext-sql-runner` no Supabase externo (não usamos Lovable Cloud).
+```text
+Relatórios
+├── Vendas         ← gráfico diário, ticket médio, comparativo semana anterior
+├── Produtos       ← top 10, mais cancelados, mais avaliados
+├── Horários       ← pico por hora/dia, tempo médio de preparo
+└── Clientes       ← novos x recorrentes, frequência, LTV (reaproveita ClientsTab)
+```
 
-## Fase 6 — Arquivos a tocar
+## Componentes a criar (frontend puro)
 
-- `src/pages/super-admin/tabs/PagamentosSplitTab.tsx` — substituir conteúdo das abas.
-- Criar `src/pages/super-admin/tabs/AReceberTab.tsx` (Fase 1).
-- Criar `src/pages/super-admin/tabs/HistoricoRepassesTab.tsx` (Fase 2).
-- Remover/ocultar a aba "Entregadores" (Fase 3).
-- Migração SQL no externo: view + colunas em `payout_history` + RPC.
+1. `src/components/finance/PlanSummaryCard.tsx` — lê `store_plans` e mostra plano, mensalidade, % comissão, R$/entrega, taxa PDV, próximo vencimento. Reaproveita query existente.
+2. `src/components/finance/ValorAPagarCard.tsx` — soma `store_balances.repasse_pendente + comissao_pendente + store_plans.pdv_commission_pending + (mensalidade se vencida)`, mostra breakdown linha a linha, botão **"Pagar via PIX"** (reusa o fluxo PIX já existente em `StoreFinancePanel`).
+3. `src/components/finance/RecebidoNoMesCard.tsx` — total de vendas pagas no mês corrente (já calculado em `StoreFinancePanel`, só extraímos o número).
+4. `src/components/finance/ComoFuncionaCobranca.tsx` — bloco explicativo fixo: "Você está no plano X. A cada entrega da plataforma cobramos Y. A mensalidade Z vence dia W. Acumulando R$500 a loja é bloqueada."
+5. `src/pages/admin/tabs/finance/ResumoTab.tsx`, `AReceberTab.tsx`, `RecebimentosTab.tsx`, `HistoricoTab.tsx` — orquestram os cards acima.
+6. `src/pages/admin/tabs/reports/VendasTab.tsx`, `ProdutosTab.tsx`, `HorariosTab.tsx` — extraem gráficos já existentes em `StoreFinancePanel` e `FinanceCharts.tsx` sem duplicar lógica (importam dos hooks que já temos).
 
----
+## Mudanças em arquivos existentes
 
-## Resultado final
+- `src/pages/admin/constants.ts`: novo grupo `relatorios` separado de `financeiro`; sub-abas atualizadas conforme acima. Mantém as chaves antigas (`finance`, `reports`, `subscription`) como aliases para não quebrar deep-links.
+- `src/components/FinanceCenter.tsx`: vira shell fino que decide qual sub-aba renderizar. `StoreFinancePanel` e `StoreFinanceBasic` continuam intactos — só passam a ser usados internamente pelas novas abas.
+- `src/pages/AdminDashboardV2.tsx`: troca apenas o roteamento das subTabs (`reports` → novo `ReportsVendas`, etc.). Nenhuma lógica de pedidos/PDV é tocada.
 
-Em 5 segundos o super admin sabe:
-✅ Quanto tem a receber hoje (1 número grande)
-✅ De quem (lista ordenada por maior devedor)
-✅ Quanto já recebeu este mês (aba Histórico)
-✅ Sem ruído de motoboy (não é problema nosso)
+## O que NÃO será alterado
 
-Aprovando, começo pela Fase 5 (SQL no externo) e depois Fases 1-4 em sequência.
+- Banco de dados externo: **zero migrações**. Tudo já existe.
+- Edge functions, RLS, triggers de cobrança (`trg_accrue_pdv_fixed_fee`, `client_confirm_delivery`).
+- Fluxo PIX (`StoreFinancePanel` continua sendo a fonte da verdade do botão pagar).
+- `StoreSubscription` (Meu Plano) — só ganha o `PlanSummaryCard` no topo.
+
+## Segurança
+
+- Apenas leitura de tabelas já permitidas pelas RLS atuais (`stores`, `store_plans`, `store_balances`, `payout_history`, `orders`).
+- Nenhum novo endpoint, nenhuma elevação de privilégio.
+- Cobrança continua disparada pelos triggers do banco — UI só **exibe** valores.
+
+## Versionamento
+
+Bump para **v1.10.360** em `src/lib/appVersion.ts` e `android/app/build.gradle` (`versionCode 689`).
+
+## Entrega faseada (cada fase é um deploy seguro)
+
+| Fase | Escopo | Risco |
+|---|---|---|
+| 1 | Criar `PlanSummaryCard` + `ValorAPagarCard` + `ComoFuncionaCobranca` | Zero |
+| 2 | Nova aba **Resumo** do Financeiro usando os 3 cards | Baixo |
+| 3 | Renomear sub-abas internas do `FinanceCenter` (Recebimentos/Histórico) | Baixo |
+| 4 | Separar grupo **Relatórios** com Vendas/Produtos/Horários | Médio (mexe em constants.ts + navegação) |
+| 5 | Polimento: copy, ícones, empty states, testes E2E rápidos no Cantinho da Silvia | Zero |
+
+Confirme se posso seguir e eu começo pela Fase 1.
