@@ -20,6 +20,9 @@ const RoleGuard = ({ allowedRoles, redirectTo, children, requireApproval = false
   const [authorized, setAuthorized] = useState(false);
   const [slow, setSlow] = useState(false);
 
+  // Estabiliza allowedRoles (array literal em JSX recria a referência a cada render)
+  const allowedRolesKey = allowedRoles.join(",");
+
   useEffect(() => {
     if (!authLoading && !checking) {
       setSlow(false);
@@ -161,7 +164,8 @@ const RoleGuard = ({ allowedRoles, redirectTo, children, requireApproval = false
     };
 
     checkRole();
-  }, [user?.id, authLoading, allowedRoles, redirectTo, navigate, requireApproval]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, authLoading, allowedRolesKey, redirectTo, requireApproval]);
 
   if (authLoading || checking) {
     return (
