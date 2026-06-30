@@ -1243,8 +1243,9 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
           {filteredDeliveries.map((order: any, index: number) => {
             const isExpanded = expandedOrder === order.id;
             const contact = getContact(order.client_id);
-            const contactPhone = (contact as any)?.whatsapp_number || (contact as any)?.phone || "";
-            const contactName = (contact as any)?.full_name || "Cliente";
+            const manualCustomer = (order as any)?.metadata?.manual_customer || null;
+            const contactPhone = (contact as any)?.whatsapp_number || (contact as any)?.phone || manualCustomer?.phone || "";
+            const contactName = (contact as any)?.full_name || manualCustomer?.name || "Cliente";
             const readyToDepart = order.status === "pronto_para_entrega";
             const inDelivery = order.status === "saiu_entrega" || order.status === "em_transito";
 
