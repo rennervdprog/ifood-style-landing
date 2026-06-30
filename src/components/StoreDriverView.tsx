@@ -985,15 +985,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
           Entregas
           {totalActive > 0 && <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full ${activeTab === "routes" ? "bg-primary text-white" : "bg-muted text-muted-foreground"}`}>{totalActive}</span>}
         </button>
-        <button
-          onClick={() => setActiveTab("earnings")}
-          className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all ${
-            activeTab === "earnings" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
-          }`}
-        >
-          <Wallet className="h-4 w-4" strokeWidth={2.5} />
-          Ganhos
-        </button>
+        {/* Aba "Ganhos" oculta: motoboy de loja recebe direto do lojista, não há saque no app */}
         <button
           onClick={() => setActiveTab("history")}
           className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all ${
@@ -1005,10 +997,8 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
         </button>
       </div>
 
-      {activeTab === "history" ? (
+      {activeTab === "history" || activeTab === "earnings" ? (
         <DriverRideHistory storeIds={linkedStoreIds} />
-      ) : activeTab === "earnings" ? (
-        <StoreDriverEarnings storeIds={linkedStoreIds} />
       ) : (
         <>
 
