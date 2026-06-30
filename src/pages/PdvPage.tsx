@@ -847,6 +847,21 @@ const PdvPage = () => {
         />
       )}
 
+      {/* ── MODAL PEDIDO DELIVERY MANUAL ── */}
+      {store?.id && (
+        <PdvDeliveryManualDialog
+          open={showManualDelivery}
+          onClose={() => setShowManualDelivery(false)}
+          storeId={store.id}
+          storeName={store?.name}
+          storeSettings={(store as any)?.settings || null}
+          cart={cart}
+          subtotal={subtotal}
+          discountAmount={discountAmount}
+          onSuccess={() => { clearSaleCart(); }}
+        />
+      )}
+
       {/* ── MONTE A PIZZA (meio a meio + bordas) ── */}
       {pizzaHalfEnabled && showHalfHalf && store?.id && (
         <Suspense fallback={null}>
