@@ -1,6 +1,8 @@
-import { Search, XCircle, Truck, Loader2, Clock, ChefHat, Package, CheckCircle2, Bell } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Search, XCircle, Truck, Loader2, Clock, ChefHat, Package, CheckCircle2, Bell, Calendar, Store as StoreIcon } from "lucide-react";
 import { AdminOrderCard } from "../components/AdminOrderCard";
 import type { OrderStatus, OrderTabKey } from "../types";
+import { formatBRL } from "@/lib/utils";
 
 interface Props {
   store: any;
@@ -60,6 +62,56 @@ export default function OrdersSection(props: Props) {
     buildAcceptWhatsAppHref, buildReadyWhatsAppHref, updateOrderStatus, handleAcceptOrder,
     handleCancelOrder, handlePrint, invalidateOrders, evolutionConnected,
   } = props;
+
+  // Filtros locais: período + origem (Delivery / PDV / Manual)
+  const [period, setPeriod] = useState<"today" | "yesterday" | "7d" | "all">("today");
+  const [sourceFilter, setSourceFilter] = useState<"all" | "delivery" | "pdv" | "manual">("all");
+
+  const periodRange = useMemo(() => {
+    const now = new Date();
+    const start = new Date(now); start.setHours(0, 0, 0, 0);
+    if (period === "today") return { from: start.getTime(), to: Infinity };
+    if (period === "yesterday") {
+      const y = new Date(start); y.setDate(y.getDate() - 1);
+      return { from: y.getTime(), to: start.getTime() };
+    }
+    if (period === "7d") {
+      const s = new Date(start); s.setDate(s.getDate() - 6);
+      return { from: s.getTime(), to: Infinity };
+    }
+    return { from: -Infinity, to: Infinity };
+  }, [period]);
+
+  const finalOrders = useMemo(() => {
+    return filteredOrders.filter((o: any) => {
+      const t = new Date(o.created_at).getTime();
+      if (t < periodRange.from || t >= periodRange.to) return false;
+      if (sourceFilter !== "all") {
+        const src = o.order_source || "delivery";
+        if (src !== sourceFilter) return false;
+      }
+      return true;
+    });
+  }, [filteredOrders, periodRange, sourceFilter]);
+
+  // Resumo do período visível (todas as origens, dentro do período escolhido)
+  const periodSummary = useMemo(() => {
+    const base = (orders || []).filter((o: any) => {
+      const t = new Date(o.created_at).getTime();
+      if (t < periodRange.from || t >= periodRange.to) return false;
+      return o.status !== "cancelado";
+    });
+    let total = 0, pdvCount = 0, pdvTotal = 0, deliveryCount = 0, deliveryTotal = 0, manualCount = 0, manualTotal = 0;
+    for (const o of base) {
+      const price = Number(o.total_price || 0);
+      total += price;
+      const src = o.order_source || "delivery";
+      if (src === "pdv") { pdvCount++; pdvTotal += price; }
+      else if (src === "manual") { manualCount++; manualTotal += price; }
+      else { deliveryCount++; deliveryTotal += price; }
+    }
+    return { count: base.length, total, pdvCount, pdvTotal, deliveryCount, deliveryTotal, manualCount, manualTotal };
+  }, [orders, periodRange]);
 
   return (
 <>
@@ -149,6 +201,64 @@ export default function OrdersSection(props: Props) {
     </div>
   )}
 
+  {/* Filtros: Período + Origem (Delivery / PDV / Manual) */}
+  <div className="px-4 pt-3 space-y-2">
+    <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+      <Calendar className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+      {([
+        { id: "today", label: "Hoje" },
+        { id: "yesterday", label: "Ontem" },
+        { id: "7d", label: "7 dias" },
+        { id: "all", label: "Tudo" },
+      ] as const).map((p) => (
+        <button key={p.id} onClick={() => setPeriod(p.id)}
+          className={`px-2.5 py-1 rounded-lg text-[11px] font-bold whitespace-nowrap transition-all ${
+            period === p.id ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-accent"
+          }`}>
+          {p.label}
+        </button>
+      ))}
+      <div className="w-px h-4 bg-border mx-1 shrink-0" />
+      <StoreIcon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+      {([
+        { id: "all", label: "Todas" },
+        { id: "delivery", label: "Delivery" },
+        { id: "pdv", label: "PDV" },
+        { id: "manual", label: "Manual" },
+      ] as const).map((s) => (
+        <button key={s.id} onClick={() => setSourceFilter(s.id)}
+          className={`px-2.5 py-1 rounded-lg text-[11px] font-bold whitespace-nowrap transition-all ${
+            sourceFilter === s.id ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-accent"
+          }`}>
+          {s.label}
+        </button>
+      ))}
+    </div>
+
+    {/* Resumo do período (não conta cancelados) */}
+    <div className="rounded-xl border border-border bg-card/60 px-3 py-2 flex items-center justify-between gap-2 text-[11px]">
+      <div className="flex flex-col">
+        <span className="text-muted-foreground">
+          {period === "today" ? "Hoje" : period === "yesterday" ? "Ontem" : period === "7d" ? "Últimos 7 dias" : "Total"} · {periodSummary.count} pedido{periodSummary.count === 1 ? "" : "s"}
+        </span>
+        <span className="font-black text-foreground text-sm">{formatBRL(periodSummary.total)}</span>
+      </div>
+      <div className="flex items-center gap-1.5 text-[10px]">
+        <span className="px-2 py-1 rounded-lg bg-muted text-muted-foreground">
+          Delivery <span className="font-bold text-foreground">{periodSummary.deliveryCount}</span> · {formatBRL(periodSummary.deliveryTotal)}
+        </span>
+        <span className="px-2 py-1 rounded-lg bg-muted text-muted-foreground">
+          PDV <span className="font-bold text-foreground">{periodSummary.pdvCount}</span> · {formatBRL(periodSummary.pdvTotal)}
+        </span>
+        {periodSummary.manualCount > 0 && (
+          <span className="px-2 py-1 rounded-lg bg-muted text-muted-foreground">
+            Manual <span className="font-bold text-foreground">{periodSummary.manualCount}</span> · {formatBRL(periodSummary.manualTotal)}
+          </span>
+        )}
+      </div>
+    </div>
+  </div>
+
   {/* Batch dispatch bar (own delivery WITHOUT linked drivers + pronto_para_entrega) */}
   {isOwnDelivery && !hasLinkedDrivers && !driversLoading && activeTab === "pronto_para_entrega" && (filteredOrders.length > 0) && (
     <div className="px-4 pt-3">
@@ -214,8 +324,8 @@ export default function OrdersSection(props: Props) {
           </div>
         ))}
       </div>
-    ) : filteredOrders.length > 0 ? (
-      filteredOrders.map((order: any, index: number) => (
+    ) : finalOrders.length > 0 ? (
+      finalOrders.map((order: any, index: number) => (
         <AdminOrderCard
           key={order.id}
           order={order}
