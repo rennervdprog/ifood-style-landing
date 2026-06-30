@@ -2272,6 +2272,7 @@ const AdminDashboard = () => {
                             {sortedProducts.length === 0 && <p className="text-xs text-muted-foreground text-center py-6">Sem dados de produtos neste período</p>}
                           </div>
                         </div>
+                        )}
 
                         {/* Export */}
                         <button onClick={exportCSV}
