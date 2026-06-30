@@ -54,12 +54,12 @@ const CidadesTab = lazy(() => import("./super-admin/tabs/CidadesTab"));
 const SaquesTab = lazy(() => import("./super-admin/tabs/SaquesTab"));
 const PagamentosSplitTab = lazy(() => import("./super-admin/tabs/PagamentosSplitTab"));
 const AuditoriaTab = lazy(() => import("./super-admin/tabs/AuditoriaTab"));
+const AReceberTab = lazy(() => import("./super-admin/tabs/AReceberTab"));
+const HistoricoRepassesTab = lazy(() => import("./super-admin/tabs/HistoricoRepassesTab"));
 // Painéis financeiros profissionais (Fase 1)
 const FluxoCaixaPanel = lazy(() => import("@/components/finance/FluxoCaixaPanel"));
-const ComissoesPanel = lazy(() => import("@/components/finance/ComissoesPanel"));
 const ConciliacaoAsaasPanel = lazy(() => import("@/components/finance/ConciliacaoAsaasPanel"));
 const AuditoriaFinanceiraPanel = lazy(() => import("@/components/finance/AuditoriaFinanceiraPanel"));
-const MensalidadesPanel = lazy(() => import("@/components/finance/MensalidadesPanel"));
 const TabFallback = () => (
   <div className="flex items-center justify-center py-12">
     <Loader2 className="h-6 w-6 animate-spin text-primary" />
@@ -145,9 +145,8 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
     | "overview"
     | "fluxo"
     | "saques"
-    | "pagamentos"
-    | "planos"
-    | "comissoes"
+    | "areceber"
+    | "historico"
     | "conciliacao"
     | "socios"
     | "test"
@@ -164,9 +163,9 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
   useEffect(() => {
     const legacyFinance: AdminTab[] = ["pagamentos", "saques", "planos", "socios", "test_finance"];
     const legacyMap: Partial<Record<AdminTab, { tab: AdminTab; apply: () => void }>> = {
-      pagamentos:   { tab: "financeiro", apply: () => setFinanceSection("pagamentos") },
+      pagamentos:   { tab: "financeiro", apply: () => setFinanceSection("areceber") },
       saques:       { tab: "financeiro", apply: () => setFinanceSection("saques") },
-      planos:       { tab: "financeiro", apply: () => setFinanceSection("planos") },
+      planos:       { tab: "financeiro", apply: () => setFinanceSection("areceber") },
       socios:       { tab: "financeiro", apply: () => setFinanceSection("socios") },
       test_finance: { tab: "financeiro", apply: () => setFinanceSection("test") },
       cidades:      { tab: "stores",     apply: () => setStoresSection("cidades") },
@@ -1126,11 +1125,10 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
                    onChange={(v) => setFinanceSection(v as FinanceSection)}
                    items={[
                      { key: "overview", label: "Visão Geral", icon: LayoutDashboard },
+                     { key: "areceber", label: "A Receber", icon: Wallet },
+                     { key: "historico", label: "Histórico Pago", icon: CheckCircle2 },
                      { key: "fluxo", label: "Fluxo de Caixa", icon: TrendingUp },
                      { key: "saques", label: "Saques", icon: Wallet, badge: pendingWithdrawals.length },
-                     { key: "pagamentos", label: "Pagamentos", icon: CreditCard },
-                     { key: "planos", label: "Mensalidades", icon: Crown },
-                     { key: "comissoes", label: "Comissões", icon: Percent },
                      { key: "conciliacao", label: "Conciliação", icon: ShieldCheck },
                      { key: "socios", label: "Sócios", icon: Handshake },
                      { key: "test", label: "Lojas Teste", icon: FlaskConical },
@@ -1167,19 +1165,16 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
                      />
                    </Suspense>
                  )}
-                 {financeSection === "pagamentos" && (
-                   <Suspense fallback={<TabFallback />}><PagamentosSplitTab stores={stores || []} /></Suspense>
+                 {financeSection === "areceber" && (
+                   <Suspense fallback={<TabFallback />}><AReceberTab /></Suspense>
                  )}
-                 {financeSection === "planos" && (
-                   <Suspense fallback={<TabFallback />}><MensalidadesPanel /></Suspense>
+                 {financeSection === "historico" && (
+                   <Suspense fallback={<TabFallback />}><HistoricoRepassesTab /></Suspense>
                  )}
                  {financeSection === "socios" && <PartnerSplitPanel />}
                  {financeSection === "test" && <TestStoreFinancePanel />}
                  {financeSection === "fluxo" && (
                    <Suspense fallback={<TabFallback />}><FluxoCaixaPanel /></Suspense>
-                 )}
-                 {financeSection === "comissoes" && (
-                   <Suspense fallback={<TabFallback />}><ComissoesPanel /></Suspense>
                  )}
                  {financeSection === "conciliacao" && (
                    <Suspense fallback={<TabFallback />}><ConciliacaoAsaasPanel /></Suspense>

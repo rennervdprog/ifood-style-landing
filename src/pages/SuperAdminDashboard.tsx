@@ -1978,11 +1978,7 @@ export const FinanceTab = ({
             <Store className="h-3.5 w-3.5" /> Lojas
             <span className={`ml-1 text-[10px] font-black px-1.5 py-0.5 rounded-md ${financeSubTab === "stores" ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>{storeSettlement.length}</span>
           </button>
-          <button onClick={() => setFinanceSubTab("drivers")}
-            className={`flex-1 py-2.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${financeSubTab === "drivers" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
-            <Bike className="h-3.5 w-3.5" /> Entregadores
-            <span className={`ml-1 text-[10px] font-black px-1.5 py-0.5 rounded-md ${financeSubTab === "drivers" ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>{driverSettlement.length}</span>
-          </button>
+          {/* Aba "Entregadores" removida: pagamento ao motoboy é feito direto pela loja, não pela plataforma. */}
           <button onClick={() => setFinanceSubTab("subaccounts")}
             className={`flex-1 py-2.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${financeSubTab === "subaccounts" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
             <Shield className="h-3.5 w-3.5" /> Subcontas
