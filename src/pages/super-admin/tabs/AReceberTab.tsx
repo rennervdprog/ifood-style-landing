@@ -107,7 +107,7 @@ const AReceberTab = () => {
       const adminId = u.user?.id;
       if (!adminId) throw new Error("Sem usuário");
 
-      const ins = await supabase.from("payout_history").insert({
+      const ins = await supabase.from("payout_history").insert([{
         entity_type: "store",
         entity_id: row.store_id,
         entity_name: row.name,
@@ -116,7 +116,7 @@ const AReceberTab = () => {
         kind,
         notes: `Marcado como pago manualmente pelo super admin (${KIND_META[kind].label})`,
         admin_user_id: adminId,
-      });
+      } as any]);
       if (ins.error) throw ins.error;
 
       if (kind === "comissao") {
