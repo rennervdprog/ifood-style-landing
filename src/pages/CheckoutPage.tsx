@@ -147,7 +147,7 @@ const CheckoutPage = () => {
       const { data } = await supabase
          .from("stores_public")
          // 🔒 Inclui campos de km para cálculo correto da taxa de entrega
-           .select("name, address_cep, address_city, latitude, longitude, delivery_mode, own_delivery_fee, settings, is_open, force_closed, delivery_fee_type, delivery_base_km, delivery_fee_base, delivery_fee_per_km, minimum_order_value, free_delivery_threshold")
+           .select("name, address_cep, address_city, latitude, longitude, delivery_mode, own_delivery_fee, settings, is_open, force_closed, delivery_fee_type, delivery_base_km, delivery_fee_base, delivery_fee_per_km, minimum_order_value, free_delivery_threshold, preorder_enabled, preorder_minutes_before")
          .eq("id", storeId!)
         .maybeSingle();
       return data;
@@ -210,9 +210,20 @@ const CheckoutPage = () => {
   });
 
    const storeStatus = storeData && storeHours && !('error' in storeData)
-     ? getStoreOpenStatus(storeHours, (storeData as any).force_closed ?? false, (storeData as any).is_open ?? true)
+     ? getStoreOpenStatus(
+         storeHours,
+         (storeData as any).force_closed ?? false,
+         (storeData as any).is_open ?? true,
+         {
+           enabled: !!(storeData as any).preorder_enabled,
+           minutesBefore: Number((storeData as any).preorder_minutes_before ?? 0),
+         },
+       )
      : null;
-  const isStoreClosed = storeStatus ? !storeStatus.isOpen : false;
+  const isPreorder = !!(storeStatus?.acceptingPreorder && storeStatus.releaseAt);
+  // Loja "fechada" para o checkout só se realmente não puder receber pedidos
+  // (ou seja: fechada e SEM janela de pré-pedido ativa).
+  const isStoreClosed = storeStatus ? (!storeStatus.isOpen && !isPreorder) : false;
 
   const profileNeighborhood = (userProfile as any)?.neighborhood;
   const profileStreet = (userProfile as any)?.street;
