@@ -592,8 +592,9 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
     if (!order) return;
     const storeName = order.stores?.name || getStoreName(order.store_id) || "Loja";
     const contact = contactProfiles?.find((c: any) => c.user_id === order.client_id);
-    const clientPhone = (contact as any)?.whatsapp_number || (contact as any)?.phone || "";
-    const clientName = (contact as any)?.full_name || "Cliente";
+    const manualCustomer = (order as any)?.metadata?.manual_customer || null;
+    const clientPhone = (contact as any)?.whatsapp_number || (contact as any)?.phone || manualCustomer?.phone || "";
+    const clientName = (contact as any)?.full_name || manualCustomer?.name || "Cliente";
     const items = order.order_items?.map((i: any) => `${i.quantity}x ${getOrderItemDisplayName(i)}`).join("\n") || "";
     const evolutionConnected = whatsappConfigs?.some((cfg: any) => cfg.store_id === order.store_id && cfg.status === "connected") || false;
 
