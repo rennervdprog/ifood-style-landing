@@ -47,6 +47,81 @@ export interface ProductFormData {
 }
 const EMPTY_FORM: ProductFormData = { name: "", price: "", description: "", image_url: "", metadata: {} };
 
+// ---------- Vender por peso (PDV) ----------
+const WeightToggleField = ({
+  metadata,
+  onChange,
+}: {
+  metadata: Record<string, any>;
+  onChange: (m: Record<string, any>) => void;
+}) => {
+  const enabled = !!metadata?.sold_by_weight;
+  const priceKg = Number(metadata?.price_per_kg ?? 0);
+  const [display, setDisplay] = useState(priceKg > 0 ? formatBRLDisplay(priceKg) : "");
+
+  const setEnabled = (v: boolean) => {
+    const next = { ...metadata, sold_by_weight: v };
+    if (!v) {
+      delete next.price_per_kg;
+      delete next.weight_unit;
+    } else {
+      next.weight_unit = "kg";
+    }
+    onChange(next);
+  };
+
+  const setPricePerKg = (raw: string) => {
+    if (!raw.replace(/\D/g, "")) {
+      setDisplay("");
+      onChange({ ...metadata, price_per_kg: 0, sold_by_weight: true, weight_unit: "kg" });
+      return;
+    }
+    const n = parseBRLCentsInput(raw);
+    setDisplay(formatBRLDisplay(n));
+    onChange({ ...metadata, price_per_kg: n, sold_by_weight: true, weight_unit: "kg" });
+  };
+
+  const per100 = priceKg / 10;
+
+  return (
+    <div className="bg-background border border-border rounded-lg p-3 space-y-2">
+      <label className="flex items-center justify-between gap-2 cursor-pointer">
+        <span className="text-xs font-bold text-foreground">⚖️ Vender por peso (PDV)</span>
+        <input
+          type="checkbox"
+          checked={enabled}
+          onChange={(e) => setEnabled(e.target.checked)}
+          className="h-4 w-4 accent-primary cursor-pointer"
+        />
+      </label>
+      {enabled && (
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-1.5 bg-muted/40 px-3 py-2 rounded-lg border border-border focus-within:border-primary">
+            <span className="text-muted-foreground font-bold text-xs">R$</span>
+            <input
+              type="text"
+              inputMode="numeric"
+              placeholder="0,00"
+              value={display}
+              onChange={(e) => setPricePerKg(e.target.value)}
+              className="flex-1 min-w-0 bg-transparent focus:outline-none text-sm"
+            />
+            <span className="text-[11px] text-muted-foreground">por kg</span>
+          </div>
+          {priceKg > 0 && (
+            <p className="text-[11px] text-muted-foreground">
+              Equivale a <b>R$ {formatBRLDisplay(per100)}</b> a cada 100 g.
+            </p>
+          )}
+          <p className="text-[10px] text-muted-foreground">
+            No PDV o operador digita o peso em gramas e o sistema calcula o valor.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+};
+
 interface ProductFormInlineProps {
   initial?: ProductFormData;
   onSave: (data: ProductFormData) => void;
