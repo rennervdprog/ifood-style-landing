@@ -24,7 +24,7 @@ type ConfirmState = {
   onConfirm: () => void;
 } | null;
 
-const PRODUCT_FIELDS = "id, store_id, section_id, name, price, description, image_url, is_available, metadata, created_at";
+const PRODUCT_FIELDS = "id, store_id, section_id, name, price, description, image_url, is_available, metadata, sold_by_weight, price_per_kg, weight_unit, created_at";
 
 const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
   const queryClient = useQueryClient();
