@@ -37,6 +37,22 @@ const PlatformSplitAlert = ({ storeId, storeName, splitPerOrder, onGoToFinance }
     refetchInterval: 30000,
   });
 
+  const { data: pdvPending } = useQuery({
+    queryKey: ["store-pdv-pending", storeId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("store_plans")
+        .select("pdv_commission_pending")
+        .eq("store_id", storeId)
+        .eq("is_active", true)
+        .maybeSingle();
+      if (error) throw error;
+      return Number(data?.pdv_commission_pending || 0);
+    },
+    enabled: !!storeId,
+    refetchInterval: 30000,
+  });
+
   const { data: minPayoutSetting } = useQuery({
     queryKey: ["min-payout-amount"],
     queryFn: async () => {
@@ -53,8 +69,9 @@ const PlatformSplitAlert = ({ storeId, storeName, splitPerOrder, onGoToFinance }
   const minPayout = minPayoutSetting ?? 100;
   const repasse = Number(storeBalance?.repasse_pendente || 0);
   const comissao = Number(storeBalance?.comissao_pendente || 0);
-  // Total pendente: repasse (R$2/entrega plano fixo) + comissão (% plano comissão)
-  const pendingFee = repasse + comissao;
+  const pdv = Number(pdvPending || 0);
+  // Total pendente: repasse (R$/entrega) + comissão (%) + PDV (R$/venda PDV)
+  const pendingFee = repasse + comissao + pdv;
   const total = pendingFee;
   // Cobrança automática a partir de R$30 toda segunda-feira
   const canPay = pendingFee >= 30;
@@ -117,10 +134,11 @@ const PlatformSplitAlert = ({ storeId, storeName, splitPerOrder, onGoToFinance }
             </p>
 
             {/* Detalhamento */}
-            {repasse > 0 && comissao > 0 && (
+            {(Number(repasse > 0) + Number(comissao > 0) + Number(pdv > 0)) >= 2 && (
               <div className="space-y-1.5">
-                {repasse > 0 && <div className="flex justify-between text-xs px-1"><span className="text-muted-foreground">Taxa de entrega</span><span className="font-bold">{formatBRL(repasse)}</span></div>}
+                {repasse > 0 && <div className="flex justify-between text-xs px-1"><span className="text-muted-foreground">Taxa de entrega (delivery)</span><span className="font-bold">{formatBRL(repasse)}</span></div>}
                 {comissao > 0 && <div className="flex justify-between text-xs px-1"><span className="text-muted-foreground">Comissão sobre vendas</span><span className="font-bold">{formatBRL(comissao)}</span></div>}
+                {pdv > 0 && <div className="flex justify-between text-xs px-1"><span className="text-muted-foreground">Taxa PDV (R$/venda)</span><span className="font-bold">{formatBRL(pdv)}</span></div>}
               </div>
             )}
 
@@ -201,10 +219,12 @@ const PlatformSplitAlert = ({ storeId, storeName, splitPerOrder, onGoToFinance }
             <p>Pedidos pagos em <strong>dinheiro, cartão ou PIX maquininha</strong> acumulam aqui.</p>
             <p>O sistema gera uma cobrança via PIX toda <strong>segunda-feira</strong> quando o saldo atingir <strong>R$30</strong>.</p>
             <p>Se não pagar em 30 dias a loja é suspensa. Saldo acima de R$500 trava o painel imediatamente.</p>
-            {repasse > 0 && comissao > 0 && (
-              <div className="mt-1.5 space-y-0.5 text-[10px] text-blue-300">
-                <p>Taxa entrega ({formatBRL(splitPerOrder)}/pedido): <strong>{formatBRL(repasse)}</strong></p>
-                <p>Comissão sobre vendas: <strong>{formatBRL(comissao)}</strong></p>
+            {(Number(repasse > 0) + Number(comissao > 0) + Number(pdv > 0)) >= 1 && (
+              <div className="mt-1.5 space-y-0.5 text-[10px] text-blue-300 border-t border-blue-500/20 pt-1.5">
+                {repasse > 0 && <p>Delivery ({formatBRL(splitPerOrder)}/entrega): <strong>{formatBRL(repasse)}</strong></p>}
+                {comissao > 0 && <p>Comissão sobre vendas: <strong>{formatBRL(comissao)}</strong></p>}
+                {pdv > 0 && <p>PDV (R$/venda no balcão): <strong>{formatBRL(pdv)}</strong></p>}
+                <p className="text-blue-200 pt-0.5">Total: <strong>{formatBRL(pendingFee)}</strong></p>
               </div>
             )}
           </div>

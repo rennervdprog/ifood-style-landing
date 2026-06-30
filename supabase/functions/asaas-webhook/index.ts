@@ -263,12 +263,25 @@ Deno.serve(async (req) => {
       const meta: any = tx.metadata || {};
       const planType: string = meta.plan_type || "";
       const paidAmount = Number(tx.amount || 0);
-      const { error: balErr } = await supabase.rpc("reconcile_debit_store_balance", {
-        _store_id: tx.store_id,
-        _amount: paidAmount,
-        _plan_type: planType,
-      });
-      if (balErr) console.error("[asaas-webhook] debit rpc error", balErr);
+      // Split: balance bucket (repasse + comissão) vs PDV bucket.
+      // store-platform-fee-pix grava balance_billed / pdv_pending_billed em metadata.
+      const balanceBilled = Number(meta.balance_billed ?? paidAmount);
+      const pdvBilled = Number(meta.pdv_pending_billed ?? 0);
+      if (balanceBilled > 0) {
+        const { error: balErr } = await supabase.rpc("reconcile_debit_store_balance", {
+          _store_id: tx.store_id,
+          _amount: balanceBilled,
+          _plan_type: planType,
+        });
+        if (balErr) console.error("[asaas-webhook] debit rpc error", balErr);
+      }
+      if (pdvBilled > 0) {
+        const { error: pdvErr } = await supabase.rpc("decrement_pdv_commission_pending", {
+          _store_id: tx.store_id,
+          _amount: pdvBilled,
+        });
+        if (pdvErr) console.error("[asaas-webhook] pdv decrement error", pdvErr);
+      }
       console.log(`[asaas-webhook] taxa física paga store=${tx.store_id} plan=${planType} valor=${paidAmount}`);
     }
 
