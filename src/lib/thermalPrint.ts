@@ -32,6 +32,8 @@ interface PrintOrderItem {
   observations?: string | null;
   addons?: { name: string; price: number; required?: boolean; groupName?: string }[] | any | null;
   products?: { name: string } | null;
+  /** Metadados livres (ex.: { weight_grams, price_per_kg }) usados na venda por peso. */
+  metadata?: Record<string, any> | null;
 }
 
 interface PrintOrder {
@@ -216,6 +218,12 @@ function renderItems(items: PrintOrderItem[] | undefined): string {
     html += `<div class="tp-item-row" style="display:flex;justify-content:space-between"><span><b>${item.quantity}x</b> ${displayName}</span><span>${formatBRL(lineTotal)}</span></div>`;
     if (item.quantity > 1 && baseUnitPrice > 0) {
       html += `<div style="font-size:11px;color:#444;padding-left:14px">Unit.: ${formatBRL(baseUnitPrice)}</div>`;
+    }
+    // Linha extra para itens vendidos por peso (mostra gramas e R$/kg).
+    const wg = Number((item as any)?.metadata?.weight_grams || 0);
+    const ppk = Number((item as any)?.metadata?.price_per_kg || 0);
+    if (wg > 0 && ppk > 0) {
+      html += `<div style="font-size:11px;color:#444;padding-left:14px">${wg} g × ${formatBRL(ppk)}/kg</div>`;
     }
 
     // Bloco de sabores (meio a meio / 3 ou 4 sabores) — uma linha por sabor, destacado.

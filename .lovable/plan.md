@@ -1,82 +1,98 @@
-# Plano: Profissionalização da aba WhatsApp
+# Plano: Produto por Peso no PDV (100% Supabase Externo)
 
-Hoje o `WhatsAppSetup.tsx` (480 linhas) mistura status, guia, QR, toggles, auto-resposta e templates num scroll único. Falta hierarquia visual, feedback em tempo real e o lojista se perde entre "o que precisa fazer agora" vs "configurações avançadas".
+> ⚠️ **Backend:** TODAS as operações de banco neste plano rodam exclusivamente no **Supabase externo `qkjhguziuchqsbxzruea`** via `EXTERNAL_SUPABASE_URL` / `EXTERNAL_SUPABASE_SERVICE_KEY`. Lovable Cloud **não é usado** neste projeto — nenhum `supabase--migration` interno será disparado. Migrations vão para `scripts/*.sql` e são aplicadas via `ext-sql-runner` (mesmo padrão já usado em `order-number-external.sql`, `antifraud-external.sql`, etc.).
 
-## Diagnóstico atual
+## Pedido da lojista (Cantinho da Silvia)
 
-- Status, QR e configurações empilhados sem prioridade — lojista desconectado vê toggles antes de conectar.
-- Templates de mensagem ficam escondidos num accordion, sem preview real do WhatsApp.
-- Sem indicador "última mensagem enviada" / "saúde do número" (envios hoje, limite diário, banimento risk).
-- Sem teste rápido ("enviar mensagem de teste pro meu número").
-- QR Code não atualiza sozinho — precisa clicar em "Verificar conexão".
-- Guia passo a passo é texto cru, sem ilustração.
+Vender itens por peso (ex: R$ 59,90/kg) direto no PDV, **sem balança integrada**, com o resultado aparecendo no relatório do fechamento do dia.
 
-## Fase 1 — Arquitetura em abas internas (Wizard + Settings)
+## Análise do PDV atual
 
-Quebrar a tela em 3 abas dentro da própria aba WhatsApp:
+- `usePdvCatalog`: lê `products` do **externo** via `supabase.from("products")` (cliente já apontado para o externo).
+- `usePdvCart`: agrega por `id + addons + observations`, com `basePrice`, `price` (unitário) e `quantity`.
+- `usePdvCheckout`: grava `orders` + `order_items` + `pdv_movements` no externo.
+- `PdvFechamentoScreen`: total vendido, abertura, sangrias, suprimentos e quebra por método — tudo de `pdv_movements` da sessão.
+- `products` externo: hoje só tem `price` único, sem flag de peso.
 
-```text
-[ Conexão ] [ Notificações ] [ Mensagens ]
+Tudo compatível — faltam só 2 campos no produto, 1 modal no PDV e 1 card no relatório.
+
+## Fase 1 — Banco externo (`qkjhguziuchqsbxzruea`)
+
+Novo arquivo `scripts/pdv-weight-external.sql`, aplicado via `ext-sql-runner`:
+
+```sql
+ALTER TABLE public.products
+  ADD COLUMN IF NOT EXISTS sold_by_weight boolean NOT NULL DEFAULT false,
+  ADD COLUMN IF NOT EXISTS price_per_kg numeric(10,2),
+  ADD COLUMN IF NOT EXISTS weight_unit text NOT NULL DEFAULT 'kg';
+
+NOTIFY pgrst, 'reload schema';
 ```
 
-- **Conexão**: status grande + QR + guia ilustrado + botão "Enviar teste".
-- **Notificações**: toggles por etapa + auto-resposta + horários de silêncio (futuro).
-- **Mensagens**: editor de templates com preview tipo bolha de WhatsApp ao lado.
+Em `order_items`, aproveitamos o `metadata jsonb` já existente: `{ weight_grams: 450, price_per_kg: 59.90 }`. **Sem nova coluna, sem nova policy** (RLS atual de `products` e `order_items` no externo já cobre).
 
-Divisão em componentes:
-- `WhatsAppSetup.tsx` → orquestrador (carrega config, troca aba).
-- `WhatsAppConnection.tsx`
-- `WhatsAppNotifications.tsx`
-- `WhatsAppTemplates.tsx`
-- `WhatsAppHealthCard.tsx` (compartilhado)
+## Fase 2 — Cadastro do produto (admin)
 
-## Fase 2 — Card de Status Profissional
+`MenuTab` (admin) — toda escrita continua indo para o externo via `supabase.from("products").upsert(...)`:
 
-Substituir a barrinha atual por um card-hero com:
+- Toggle **"Vender por peso"**.
+- Quando ligado: campo `price_per_kg` substitui o `price` fixo; preview "R$ X,XX a cada 100 g".
+- Ao salvar: gravar `price = price_per_kg` também, para não quebrar telas legadas que somam por preço unitário.
 
-- Avatar verde do WhatsApp + nome da loja + número conectado mascarado (+55 14 99687-****).
-- Pill de status animado (Conectado / Conectando / Desconectado / Número divergente).
-- Métricas em linha: "Mensagens hoje: 14 / 50", "Última msg: há 2min", "Conectado há 8 dias".
-- Botão primário contextual: muda entre "Gerar QR Code" / "Enviar teste" / "Reconectar".
+## Fase 3 — PDV: novo modal de peso
 
-## Fase 3 — Polling automático do QR + onboarding visual
+Novo `src/components/pdv/PdvWeightDialog.tsx`:
 
-- Quando QR está visível, fazer polling a cada 3s no status (sem precisar clicar "Verificar").
-- Auto-fechar QR e mostrar confete + toast "Conectado!" quando virar `connected`.
-- Guia passo a passo com mini-screenshots reais do WhatsApp (4 imagens) em carrossel, não emoji.
-- Countdown visual dos 60s de expiração do QR.
+- Abre ao tocar num produto com `sold_by_weight = true` (em vez do modal de addons).
+- Teclado numérico grande (mesma DS dos outros dialogs do PDV) pedindo **gramas**.
+- Em tempo real: `(gramas / 1000) × price_per_kg = R$ Y,YY`.
+- "Adicionar" → `handleModalAdd` com:
+  - `quantity = 1`
+  - `price = total calculado`
+  - `observations = "450 g"`
+  - `metadata.weight_grams = 450`
+  - `metadata.price_per_kg = 59.90`
 
-## Fase 4 — Editor de Mensagens com Preview
+No `PdvCartSection`, item por peso é **não-incrementável** (+/− escondidos): mostra peso + botão remover/editar peso.
 
-- Lista das 5 mensagens (aceito, pronto, saiu, entregue, cancelado) como cards.
-- Ao abrir: split view — esquerda editor com chips clicáveis das variáveis (`{clientName}`, `{pin}`, etc), direita bolha verde estilo WhatsApp renderizando o resultado com dados de exemplo.
-- Botão "Restaurar padrão" por mensagem.
-- Botão "Enviar pra mim" testando o template no próprio número do lojista.
-- Validação: avisa se removeu `{pin}` da mensagem de entrega.
+No checkout (`usePdvCheckout`), o `metadata` é repassado intacto no `insert` de `order_items` no externo.
 
-## Fase 5 — Saúde do número (anti-banimento)
+## Fase 4 — Impressão térmica
 
-Card visual com:
-- Barra de progresso "Envios hoje: 14/50".
-- Etapa de aquecimento atual ("Semana 2 de 4 — limite 50/dia").
-- Histórico simples: últimos 10 envios (status, cliente, hora) lidos de logs.
-- Alerta amarelo se taxa de erro > 10% nos últimos envios.
+Em `src/lib/thermalPrint.ts`, se `item.metadata?.weight_grams`:
 
-## Detalhes técnicos
+```
+PICANHA          450 g x R$ 59,90/kg
+                                R$ 26,96
+```
 
-- Reusar `store_whatsapp_config` + `message_templates` (sem mudança de schema na fase 1–4).
-- Fase 5 precisa de tabela `whatsapp_message_log` (id, store_id, to, template_key, status, sent_at) — adicionar com GRANTs e RLS por `store_id`.
-- Polling do QR: `setInterval` 3s com cleanup, parar quando `status === 'connected'` ou componente desmontar.
-- Preview da bolha: componente puro renderizando markdown leve do WhatsApp (`*bold*`, quebras de linha).
-- Edge function nova: `whatsapp-send-test` — recebe `{ store_id, template_key }`, envia pelo Evolution pro próprio número conectado.
-- Mobile: abas viram seletor horizontal com scroll-snap; cards mantêm densidade.
-- Manter compatibilidade total com webhook e `orderNotifications.ts` (nenhuma assinatura muda).
+Validado nos dois layouts (58 mm e 80 mm) já cobertos pelos testes de `thermalPrint.test.ts`.
 
-## Ordem sugerida de execução
+## Fase 5 — Relatório de fechamento
 
-1. Fase 1 (split de arquivos) — base limpa sem mudar UX.
-2. Fase 2 (card status) + Fase 3 (polling QR) — ganho visual imediato.
-3. Fase 4 (editor com preview) — maior valor pro lojista.
-4. Fase 5 (saúde) — depende de log novo.
+`PdvFechamentoScreen` + aba **Relatórios**:
 
-Posso começar pela Fase 1+2 juntas (mesma PR) ou já mergulhar direto na Fase 4 se preferir o ganho visual primeiro. Qual prefere?
+- Novo card **"Vendas por peso"** (só aparece se houver): total de **gramas** vendidas e valor.
+- "Mais vendidos": produtos por peso aparecem como "X,XX kg vendidos" no lugar de "N un".
+
+Cálculo client-side a partir dos `order_items.metadata` dos pedidos da sessão (já buscados do externo). **Zero alteração** em `pdv_movements`.
+
+## Fase 6 — Versão, testes e validação
+
+- Bump patch em `src/lib/appVersion.ts` + `android/app/build.gradle` (`versionName` e `versionCode +1`).
+- Vitest em `usePdvCart`: item por peso não duplica, não incrementa, e respeita `metadata`.
+- Smoke manual no Cantinho da Silvia (loja real no externo): cadastrar produto teste, venda de 250 g, fechar caixa, conferir card.
+
+## Segurança
+
+- Migration roda no externo com `IF NOT EXISTS` (idempotente).
+- Sem nova RLS porque reaproveita `products` / `order_items`.
+- Conferir lint do externo após aplicar (sem novas tabelas, expectativa = 0 warnings novos).
+
+## Fora de escopo (intencional)
+
+- Integração com balança Toledo/Filizola via SDK.
+- Integração Stone/Ton (maquininha) — plano separado.
+- Qualquer escrita em Lovable Cloud — **não usamos**.
+
+Posso seguir e implementar?

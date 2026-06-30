@@ -152,7 +152,10 @@ export function usePdvCheckout() {
                 ? JSON.stringify(item.addons)
                 : null,
             observations: item.observations || null,
-          })),
+            metadata: item.metadata && Object.keys(item.metadata).length > 0
+              ? item.metadata
+              : null,
+          })) as any,
         );
 
         // 3) Movements (uma por forma de pagamento)
@@ -217,6 +220,7 @@ export function usePdvCheckout() {
                 quantity: item.quantity,
                 unit_price: item.price,
                 products: { name: item.name },
+                metadata: item.metadata || null,
               })),
             },
             store?.name || "Loja",

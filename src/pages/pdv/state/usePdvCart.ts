@@ -76,9 +76,28 @@ export function usePdvCart() {
       observations: string,
       quantity: number,
       totalUnitPrice: number,
+      metadata?: Record<string, any>,
     ) => {
       const newKey = addonKeyOf(addons);
+      const isWeightItem = !!metadata?.weight_grams;
       setCart((prev) => {
+        // Itens vendidos por peso nunca agregam: cada pesagem é uma linha nova.
+        if (isWeightItem) {
+          return [
+            ...prev,
+            {
+              id: product.id,
+              name: product.name,
+              basePrice: Number(product.price),
+              price: totalUnitPrice,
+              quantity: 1,
+              addons: addons.length > 0 ? addons : undefined,
+              observations: observations || undefined,
+              image_url: product.image_url,
+              metadata,
+            },
+          ];
+        }
         const existing = prev.find(
           (i) =>
             i.id === product.id &&
@@ -103,6 +122,7 @@ export function usePdvCart() {
             addons: addons.length > 0 ? addons : undefined,
             observations: observations || undefined,
             image_url: product.image_url,
+            metadata,
           },
         ];
       });

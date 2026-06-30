@@ -12,6 +12,10 @@ export interface Product {
   store_id?: string;
   description?: string | null;
   metadata?: Record<string, any> | null;
+  /** Venda por peso (kg). Quando true, `price_per_kg` define o preço base. */
+  sold_by_weight?: boolean | null;
+  price_per_kg?: number | null;
+  weight_unit?: string | null;
 }
 
 /** Seção/categoria do cardápio. */
@@ -33,6 +37,8 @@ export interface CartItem {
   addons?: CartAddon[];
   observations?: string;
   image_url?: string | null;
+  /** Metadados livres do item (ex.: { weight_grams, price_per_kg }). */
+  metadata?: Record<string, any>;
 }
 
 /** Sessão de caixa aberta. */

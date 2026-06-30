@@ -172,6 +172,12 @@ export const ProductFormInline = ({ initial, onSave, onCancel, storeCategory, st
         />
       )}
 
+      {/* Vender por peso (PDV) */}
+      <WeightToggleField
+        metadata={form.metadata || {}}
+        onChange={(meta) => setForm((p) => ({ ...p, metadata: meta }))}
+      />
+
       <div className="flex gap-2 pt-1">
         <button type="button" onClick={() => onSave(form)} className="flex-1 bg-primary text-primary-foreground py-2.5 rounded-lg text-sm font-bold hover:bg-primary/90 transition-colors">
           Salvar Produto
