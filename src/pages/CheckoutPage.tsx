@@ -387,6 +387,9 @@ const CheckoutPage = () => {
           delivery_fee_base: storeDeliveryFeeBase,
           delivery_fee_per_km: storeDeliveryFeePerKm,
           own_delivery_fee: storeOwnFee,
+          // Respeita o split escolhido pelo lojista (cliente | meio_a_meio | lojista).
+          // Quando = 'lojista', effectivePlatformSplit é 0 e o cliente NÃO paga +R$2.
+          platform_split: effectivePlatformSplit,
           customer_street: selectedSavedAddressId && savedAddressData ? savedAddressData.street : profileStreet,
           customer_number: selectedSavedAddressId && savedAddressData ? savedAddressData.number : profileNumber,
           customer_coords: clientCoords,
