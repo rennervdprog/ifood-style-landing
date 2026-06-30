@@ -251,6 +251,7 @@ const AdminDashboard = () => {
   const [showMoreSheet, setShowMoreSheet] = useState(false);
   const [showSupportModal, setShowSupportModal] = useState(false);
   const [selectedReportPeriod, setSelectedReportPeriod] = useState(30);
+  const [reportSubTab, setReportSubTab] = useState<"overview" | "sales" | "products" | "hours">("overview");
   const [batchSelected, setBatchSelected] = useState<Set<string>>(new Set());
   const [batchDispatching, setBatchDispatching] = useState(false);
 
