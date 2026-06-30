@@ -101,6 +101,15 @@ Deno.serve(async (req) => {
     return { status: r.status, ok: r.ok, data: d };
   }
 
+  // One-off SQL via body { sql: "..." }
+  try {
+    const body = await req.clone().json().catch(() => ({}));
+    if (body && typeof body.sql === "string") {
+      const out = await run(body.sql);
+      return new Response(JSON.stringify(out, null, 2), { status: 200, headers: { ...cors, "Content-Type": "application/json" } });
+    }
+  } catch {}
+
   const step1 = await run(SQL_ENUM);
   if (!step1.ok) return new Response(JSON.stringify({ step: 1, ...step1 }, null, 2), { status: 500, headers: { ...cors, "Content-Type": "application/json" } });
   const step2 = await run(SQL);
