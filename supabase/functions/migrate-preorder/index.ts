@@ -34,31 +34,7 @@ CREATE INDEX IF NOT EXISTS idx_orders_release_at
   ON public.orders (release_at)
   WHERE status = 'scheduled' AND release_at IS NOT NULL;
 
--- ============== EXPOSE NO stores_public ==============
--- Recria a view incluindo as flags de pré-pedido (sem quebrar colunas existentes).
-DO $$
-DECLARE
-  has_view boolean;
-BEGIN
-  SELECT EXISTS (
-    SELECT 1 FROM pg_views WHERE schemaname='public' AND viewname='stores_public'
-  ) INTO has_view;
-  IF has_view THEN
-    EXECUTE 'DROP VIEW public.stores_public CASCADE';
-  END IF;
-END $$;
-
-CREATE VIEW public.stores_public AS
-SELECT
-  id, owner_id, name, slug, category, description, image_url, banner_url,
-  address, address_city, address_state, address_neighborhood, latitude, longitude,
-  is_open, force_closed, status, rating, delivery_fee, min_order, accepts_pickup,
-  pdv_enabled, commission_rate, created_at,
-  preorder_enabled, preorder_minutes_before
-FROM public.stores
-WHERE status IN ('ativo','bloqueado');
-
-GRANT SELECT ON public.stores_public TO anon, authenticated;
+-- (stores_public será regenerada em passo separado, fora desta função, lendo a definição atual)
 
 -- ============== FUNÇÃO DE RELEASE ==============
 CREATE OR REPLACE FUNCTION public.release_scheduled_orders()
