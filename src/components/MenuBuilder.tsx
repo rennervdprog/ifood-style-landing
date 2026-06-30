@@ -24,7 +24,7 @@ type ConfirmState = {
   onConfirm: () => void;
 } | null;
 
-const PRODUCT_FIELDS = "id, store_id, section_id, name, price, description, image_url, is_available, metadata, created_at";
+const PRODUCT_FIELDS = "id, store_id, section_id, name, price, description, image_url, is_available, metadata, sold_by_weight, price_per_kg, weight_unit, created_at";
 
 const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
   const queryClient = useQueryClient();
@@ -267,14 +267,23 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
     const finalPrice = parseFloat(formData.price) || 0;
     if (!formData.name.trim()) { toast.error("Preencha o nome do produto"); return; }
     if (!formData.price || finalPrice <= 0) { toast.error("Preencha o preço do produto"); return; }
+    const soldByWeight = !!formData.metadata?.sold_by_weight;
+    const pricePerKg = Number(formData.metadata?.price_per_kg ?? 0) || null;
+    if (soldByWeight && (!pricePerKg || pricePerKg <= 0)) {
+      toast.error("Defina o preço por kg para vender por peso");
+      return;
+    }
     const { error } = await supabase.from("products").insert({
       store_id: storeId,
       section_id: sectionId,
       name: formData.name.trim(),
-      price: finalPrice,
+      price: soldByWeight ? (pricePerKg || finalPrice) : finalPrice,
       description: formData.description.trim() || null,
       image_url: formData.image_url.trim() || null,
       metadata: formData.metadata || {},
+      sold_by_weight: soldByWeight,
+      price_per_kg: soldByWeight ? pricePerKg : null,
+      weight_unit: soldByWeight ? "kg" : "kg",
     } as any);
     if (error) { toast.error("Erro ao adicionar produto"); return; }
     toast.success("Produto adicionado!");
@@ -284,12 +293,20 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
 
   const updateProduct = async (id: string, formData: ProductFormData) => {
     const finalPrice = parseFloat(formData.price) || 0;
+    const soldByWeight = !!formData.metadata?.sold_by_weight;
+    const pricePerKg = Number(formData.metadata?.price_per_kg ?? 0) || null;
+    if (soldByWeight && (!pricePerKg || pricePerKg <= 0)) {
+      toast.error("Defina o preço por kg para vender por peso");
+      return;
+    }
     const { error } = await supabase.from("products").update({
       name: formData.name.trim(),
-      price: finalPrice,
+      price: soldByWeight ? (pricePerKg || finalPrice) : finalPrice,
       description: formData.description.trim() || null,
       image_url: formData.image_url.trim() || null,
       metadata: formData.metadata || {},
+      sold_by_weight: soldByWeight,
+      price_per_kg: soldByWeight ? pricePerKg : null,
     } as any).eq("id", id);
     if (error) { toast.error("Erro ao atualizar"); return; }
     toast.success("Produto atualizado!");
@@ -576,7 +593,17 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
           price: Number(product.price).toFixed(2),
           description: product.description || "",
           image_url: product.image_url || "",
-          metadata: (product as any).metadata || {},
+          metadata: {
+            ...((product as any).metadata || {}),
+            // Prioriza colunas dedicadas se existirem (PDV por peso).
+            ...((product as any).sold_by_weight
+              ? {
+                  sold_by_weight: true,
+                  price_per_kg: Number((product as any).price_per_kg ?? (product as any).metadata?.price_per_kg ?? 0),
+                  weight_unit: (product as any).weight_unit || "kg",
+                }
+              : {}),
+          },
         });
       }}
       isEditing={editingProduct === product.id}

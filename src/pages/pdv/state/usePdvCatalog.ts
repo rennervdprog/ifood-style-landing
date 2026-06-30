@@ -36,11 +36,23 @@ export function usePdvCatalog(params: {
     queryFn: async () => {
       const { data } = await supabase
         .from("products")
-        .select("id, name, price, image_url, section_id, is_available, store_id, description, metadata")
+        .select("id, name, price, image_url, section_id, is_available, store_id, description, metadata, sold_by_weight, price_per_kg, weight_unit")
         .eq("store_id", storeId!)
         .eq("is_available", true)
         .order("name");
-      return (data || []) as Product[];
+      // Backwards-compat: alguns produtos só têm sold_by_weight/price_per_kg
+      // armazenados em metadata. Normalizamos para os campos top-level.
+      return ((data || []) as any[]).map((p) => ({
+        ...p,
+        sold_by_weight: !!(p.sold_by_weight ?? p.metadata?.sold_by_weight),
+        price_per_kg:
+          p.price_per_kg != null
+            ? Number(p.price_per_kg)
+            : p.metadata?.price_per_kg != null
+              ? Number(p.metadata.price_per_kg)
+              : null,
+        weight_unit: p.weight_unit || p.metadata?.weight_unit || "kg",
+      })) as Product[];
     },
     enabled: !!storeId,
     staleTime: 60_000,

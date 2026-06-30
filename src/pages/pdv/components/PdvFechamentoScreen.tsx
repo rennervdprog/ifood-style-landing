@@ -1,4 +1,6 @@
-import { ArrowLeft, Lock, Loader2, Receipt, EyeOff, Eye } from "lucide-react";
+import { ArrowLeft, Lock, Loader2, Receipt, EyeOff, Eye, Scale } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { formatBRL } from "@/lib/utils";
 import { parseBRL } from "@/hooks/useBRLInput";
 import { PdvDenominationCount } from "@/components/pdv/PdvDenominationCount";
@@ -30,6 +32,46 @@ export const PdvFechamentoScreen = ({
   const byPayment: Record<string, number> = sessionSummary?.by_payment || {};
   const diffAmount = parseBRL(closingAmount) - saldoEsperado;
   const isOk = !!closingAmount && Math.abs(diffAmount) < 0.05;
+
+  // Vendas por peso — agrega gramas/valor a partir de order_items.metadata
+  // dos pedidos do turno (PDV). Sem schema novo.
+  const { data: weightSummary } = useQuery({
+    queryKey: ["pdv-weight-summary", currentSession?.id],
+    enabled: !!currentSession?.id,
+    queryFn: async () => {
+      const { data: orders } = await supabase
+        .from("orders")
+        .select("id")
+        .eq("pdv_session_id", currentSession!.id);
+      const ids = (orders || []).map((o: any) => o.id);
+      if (ids.length === 0) return { totalGrams: 0, totalValue: 0, byProduct: [] as any[] };
+      const { data: items } = await supabase
+        .from("order_items")
+        .select("product_id, quantity, unit_price, metadata, products(name)")
+        .in("order_id", ids);
+      let totalGrams = 0;
+      let totalValue = 0;
+      const byProduct = new Map<string, { name: string; grams: number; value: number }>();
+      (items || []).forEach((it: any) => {
+        const g = Number(it?.metadata?.weight_grams || 0);
+        if (g <= 0) return;
+        const v = Number(it.unit_price) * Number(it.quantity || 1);
+        totalGrams += g;
+        totalValue += v;
+        const name = it.products?.name || "Produto";
+        const cur = byProduct.get(it.product_id) || { name, grams: 0, value: 0 };
+        cur.grams += g;
+        cur.value += v;
+        byProduct.set(it.product_id, cur);
+      });
+      return {
+        totalGrams,
+        totalValue,
+        byProduct: Array.from(byProduct.values()).sort((a, b) => b.value - a.value),
+      };
+    },
+    staleTime: 30_000,
+  });
 
   return (
     <div className="pdv-shell min-h-screen bg-background flex flex-col">
@@ -121,6 +163,43 @@ export const PdvFechamentoScreen = ({
             {blindClose ? "Mostrar valor esperado" : "Ativar fechamento cego (anti-fraude)"}
           </button>
         </div>
+
+        {weightSummary && weightSummary.totalGrams > 0 && (
+          <div className="bg-card rounded-2xl border border-border p-4 space-y-3">
+            <h3 className="text-sm font-black flex items-center gap-2">
+              <Scale className="h-4 w-4 text-primary" /> Vendas por peso
+            </h3>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-primary/8 border border-primary/15 rounded-xl p-3">
+                <p className="text-[10px] text-muted-foreground uppercase font-semibold">Peso total</p>
+                <p className="text-lg font-black text-primary">
+                  {(weightSummary.totalGrams / 1000).toFixed(3).replace(".", ",")} kg
+                </p>
+              </div>
+              <div className="bg-emerald-500/8 border border-emerald-500/15 rounded-xl p-3">
+                <p className="text-[10px] text-muted-foreground uppercase font-semibold">Valor</p>
+                <p className="text-lg font-black text-emerald-500">
+                  {formatBRL(weightSummary.totalValue)}
+                </p>
+              </div>
+            </div>
+            {weightSummary.byProduct.length > 0 && (
+              <div className="border-t border-border/40 pt-2 space-y-1.5">
+                {weightSummary.byProduct.map((p: any, i: number) => (
+                  <div key={i} className="flex justify-between items-center text-sm">
+                    <span className="text-foreground truncate pr-2">
+                      {p.name}
+                      <span className="text-[10px] text-muted-foreground ml-1">
+                        · {(p.grams / 1000).toFixed(3).replace(".", ",")} kg
+                      </span>
+                    </span>
+                    <span className="font-bold tabular-nums">{formatBRL(p.value)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="bg-card rounded-2xl border border-border p-4 space-y-3">
           <h3 className="text-sm font-black">Conferência</h3>

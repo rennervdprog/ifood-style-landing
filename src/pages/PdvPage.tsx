@@ -53,6 +53,7 @@ import { PdvCartSection } from "@/pages/pdv/components/PdvCartSection";
 import { PdvAberturaScreen } from "@/pages/pdv/components/PdvAberturaScreen";
 import { PdvFechamentoScreen } from "@/pages/pdv/components/PdvFechamentoScreen";
 import { PdvMovementDialog } from "@/pages/pdv/components/PdvMovementDialog";
+import { PdvWeightDialog } from "@/pages/pdv/components/PdvWeightDialog";
 import { PdvShortcutsDialog } from "@/pages/pdv/components/PdvShortcutsDialog";
 import { PdvTopbar } from "@/pages/pdv/components/PdvTopbar";
 import { PdvTabs } from "@/pages/pdv/components/PdvTabs";
@@ -156,6 +157,9 @@ const PdvPage = () => {
 
   // Mostrar guia de atalhos
   const [showShortcuts, setShowShortcuts] = useState(false);
+
+  // Modal de venda por peso (produto com sold_by_weight = true)
+  const [weightProduct, setWeightProduct] = useState<Product | null>(null);
 
   // Builders Pizza/Pastel (compartilhados com app cliente).
   const [showHalfHalf, setShowHalfHalf] = useState(false);
@@ -286,7 +290,13 @@ const PdvPage = () => {
 
   // Cart, derivados e ações foram extraídos para `usePdvCart`.
   // Mantemos só o wrapper `clearSale` para que ele também resete o passo mobile.
-  const addItem = (p: Product) => openProduct(p);
+  const addItem = (p: Product) => {
+    if (p.sold_by_weight) {
+      setWeightProduct(p);
+      return;
+    }
+    openProduct(p);
+  };
   const clearSale = () => {
     clearSaleCart();
     if (isMobile) setMobileStep("catalog");
@@ -781,6 +791,14 @@ const PdvPage = () => {
         storeName={store?.name || ""}
         open={!!productModal}
         onClose={() => setProductModal(null)}
+        onAdd={handleModalAdd}
+      />
+
+      {/* ── MODAL VENDA POR PESO ── */}
+      <PdvWeightDialog
+        product={weightProduct}
+        open={!!weightProduct}
+        onClose={() => setWeightProduct(null)}
         onAdd={handleModalAdd}
       />
 
