@@ -608,14 +608,13 @@ const PdvPage = () => {
       <button
         type="button"
         onClick={() => setShowManualDelivery(true)}
-        disabled={cart.length === 0}
-        className="w-full bg-gradient-to-r from-success/15 to-success/5 border border-success/30 rounded-xl px-3 py-2 flex items-center gap-2 text-left active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full bg-gradient-to-r from-success/15 to-success/5 border border-success/30 rounded-xl px-3 py-2 flex items-center gap-2 text-left active:scale-[0.98] transition-all"
       >
         <span className="text-lg">🛵</span>
         <div className="flex-1 min-w-0">
           <p className="text-xs font-black text-foreground leading-tight">Pedido Delivery Manual</p>
           <p className="text-[10px] text-muted-foreground leading-tight">
-            {cart.length === 0 ? "Adicione itens primeiro" : "Cliente pediu pelo WhatsApp"}
+            Cliente pediu pelo WhatsApp
           </p>
         </div>
         <ChevronRight className="h-4 w-4 text-success shrink-0" />
