@@ -58,6 +58,7 @@ const CouponsTab = lazy(() => import("./admin/tabs/CouponsTab"));
 const PromotionsTab = lazy(() => import("./admin/tabs/PromotionsTab"));
 const DashboardOverviewSection = lazy(() => import("./admin/sections/DashboardOverviewSection"));
 const AvisosSection = lazy(() => import("./admin/sections/AvisosSection"));
+const RepasseSection = lazy(() => import("./admin/sections/RepasseSection"));
 const OrdersSection = lazy(() => import("./admin/sections/OrdersSection"));
 import AdminOrderCard from "./admin/components/AdminOrderCard";
 import ClientsTab from "./admin/components/ClientsTab";
@@ -76,6 +77,7 @@ import { addMoney, averageMoney, formatBRL, formatCurrency, sumMoney } from "@/l
 import ProductTour, { lojistaTourSteps } from "@/components/ProductTour";
 import { useStorePlan } from "@/hooks/useStorePlan";
 import { useAvisosCount } from "./admin/useAvisosCount";
+import { useRepassePending } from "./admin/useRepassePending";
 import TrialExpiredGuard from "@/components/TrialExpiredGuard";
 import CommissionAlert from "@/components/CommissionAlert";
 import PlatformSplitAlert from "@/components/PlatformSplitAlert";
@@ -1391,6 +1393,8 @@ const AdminDashboard = () => {
     driversLoading,
   });
 
+  const repassePending = useRepassePending(store?.id);
+
   const getMainAction = (status: OrderStatus, order?: any): { label: string; next: OrderStatus; emoji: string } | null => {
     const isPickupOrder = order?.neighborhood === "RETIRADA";
     switch (status) {
@@ -1658,6 +1662,7 @@ const AdminDashboard = () => {
                 {dashboardTab === "bordas" && "Opções de borda para pizzas"}
                 {dashboardTab === "hours" && "Horários de funcionamento"}
                 {dashboardTab === "finance" && "Resumo financeiro"}
+                {dashboardTab === "repasse" && (repassePending > 0 ? `Repasse pendente à plataforma` : "Nenhum repasse pendente")}
                 {dashboardTab === "settings" && "Configurações da loja"}
                 {dashboardTab === "subscription" && "Seu plano e mensalidade"}
                 {dashboardTab === "loyalty" && "Programa de pontos para clientes"}
@@ -1702,6 +1707,7 @@ const AdminDashboard = () => {
               isPizza={isPizza}
               allowFullReports={allowFullReports}
               badges={{ avisos: avisosCount }}
+              pulseTabs={{ repasse: repassePending > 0 }}
             />
           )}
           {!storeLoading && isApproved && !store && (
@@ -1864,6 +1870,18 @@ const AdminDashboard = () => {
             </Suspense>
           )}
 
+          {/* ══════ REPASSE TAB ══════ */}
+          {dashboardTab === "repasse" && store && (
+            <Suspense fallback={<TabFallback />}>
+              <RepasseSection
+                store={store}
+                storePlan={storePlan}
+                setDashboardTab={setDashboardTab}
+                pendingTotal={repassePending}
+              />
+            </Suspense>
+          )}
+
           {/* ══════ CLIENTS TAB ══════ */}
           {dashboardTab === "clients" && store && (
             <ClientsTab
@@ -1933,7 +1951,7 @@ const AdminDashboard = () => {
           )}
 
           {/* ══════ OTHER TABS ══════ */}
-          {!["dashboard", "avisos", "orders", "clients"].includes(dashboardTab) && store && (
+          {!["dashboard", "avisos", "repasse", "orders", "clients"].includes(dashboardTab) && store && (
             <div className="p-4 lg:p-6 max-w-6xl mx-auto">
               <Suspense fallback={<TabFallback />}>
                 {dashboardTab === "menu" && <MenuTab storeId={store.id} storeCategory={store.category} />}

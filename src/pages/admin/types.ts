@@ -19,6 +19,7 @@ export type DashboardTab =
   | "hours"
   | "settings"
   | "finance"
+  | "repasse"
   | "clients"
   | "reports"
   | "subscription"

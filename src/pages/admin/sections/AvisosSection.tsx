@@ -1,6 +1,4 @@
 import { AlertTriangle, ChevronRight, Clock, Bike, Bell, CheckCircle2 } from "lucide-react";
-import CommissionAlert from "@/components/CommissionAlert";
-import PlatformSplitAlert from "@/components/PlatformSplitAlert";
 
 interface Props {
   store: any;
@@ -107,21 +105,6 @@ export default function AvisosSection({
         </div>
       )}
 
-      {storePlan.hasCommission && (
-        <CommissionAlert
-          storeId={store.id}
-          storeName={store.name}
-          onGoToFinance={() => setDashboardTab("finance")}
-        />
-      )}
-      {!storePlan.hasCommission && storePlan.isItatingaFixed && (storePlan.platformDeliverySplit || 0) > 0 && (
-        <PlatformSplitAlert
-          storeId={store.id}
-          storeName={store.name}
-          splitPerOrder={storePlan.platformDeliverySplit}
-          onGoToFinance={() => setDashboardTab("finance")}
-        />
-      )}
     </div>
   );
 }
