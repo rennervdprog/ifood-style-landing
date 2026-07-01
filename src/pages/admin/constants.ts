@@ -96,6 +96,7 @@ export const dashboardGroups: DashboardGroup[] = [
     subTabs: [
       { key: "dashboard", label: "Visão Geral", icon: LayoutDashboard },
       { key: "avisos", label: "Avisos", icon: Bell },
+      { key: "repasse", label: "Repasse", icon: Banknote },
     ],
   },
   {
