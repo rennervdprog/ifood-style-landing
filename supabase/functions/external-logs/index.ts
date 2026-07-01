@@ -40,11 +40,10 @@ Deno.serve(async (req) => {
   if (!fnRes.ok) return json({ step: "get_function", error: fnData }, 500);
 
   const sql = `
-    select id, function_edge_logs.timestamp, event_message, response.status_code, m.function_id, m.execution_time_ms
+    select id, function_edge_logs.timestamp, event_message, response.status_code, m.function_id
     from function_edge_logs
     cross join unnest(metadata) as m
     cross join unnest(m.response) as response
-    where m.function_id = '${fnData.id}'
     order by timestamp desc
     limit 30
   `;
