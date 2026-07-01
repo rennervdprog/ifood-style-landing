@@ -10,9 +10,11 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   User, LogOut, Store, Shield, UserPlus, MapPin, Save, Bike, Wallet, Copy,
   AlertTriangle, MessageCircle, Truck, Download, Smartphone, X, Share2,
-  Search, Loader2, ChevronRight, Phone, Mail, CreditCard, Package, Settings, HelpCircle, Trash2, CheckCircle2, Users
+  Search, Loader2, ChevronRight, Phone, Mail, CreditCard, Package, Settings, HelpCircle, Trash2, CheckCircle2, Users,
+  KeyRound, Bell, Moon, Sun, Newspaper, Sparkles, Send, FileText, ExternalLink
 } from "lucide-react";
 import { toast } from "sonner";
+import ThemeToggle from "@/components/ThemeToggle";
 import { maskWhatsApp, formatWhatsAppNumber, isValidWhatsApp } from "@/lib/whatsapp";
 import { formatCep, fetchCep } from "@/lib/location";
 import { calculateDeliveryFee, DEFAULT_DELIVERY_FEE_CONFIG, type DeliveryFeeConfig } from "@/lib/deliveryFee";
@@ -169,6 +171,15 @@ const PerfilPage = () => {
   const [savingPersonal, setSavingPersonal] = useState(false);
    const [personalLoaded, setPersonalLoaded] = useState(false);
   const [appVersion, setAppVersion] = useState(APP_VERSION);
+
+  /* PIN de entrega */
+  const [pinValue, setPinValue] = useState("");
+  const [pinConfirm, setPinConfirm] = useState("");
+  const [savingPin, setSavingPin] = useState(false);
+  const [showPinEdit, setShowPinEdit] = useState(false);
+  const [notifStatus, setNotifStatus] = useState<NotificationPermission | "unsupported">(
+    typeof Notification !== "undefined" ? Notification.permission : "unsupported"
+  );
 
   /* ── Effects ── */
   useEffect(() => {
@@ -360,6 +371,43 @@ const PerfilPage = () => {
 
   const copyPixKey = () => { if (pixKey) { navigator.clipboard.writeText(pixKey); toast.success("Chave PIX copiada!"); } };
 
+  const handleSavePin = async () => {
+    if (!/^\d{4}$/.test(pinValue)) { toast.error("O PIN deve ter 4 dígitos."); return; }
+    if (pinValue !== pinConfirm) { toast.error("Os PINs não coincidem."); return; }
+    setSavingPin(true);
+    try {
+      const { error } = await supabase.from("profiles").update({ delivery_pin: pinValue } as any).eq("user_id", user!.id);
+      if (error) throw error;
+      toast.success("PIN atualizado! Será usado em todas as próximas entregas.");
+      setShowPinEdit(false); setPinValue(""); setPinConfirm("");
+      queryClient.invalidateQueries({ queryKey: ["my-profile", user?.id] });
+    } catch (err: any) { toast.error(err.message || "Erro ao salvar PIN."); }
+    finally { setSavingPin(false); }
+  };
+
+  const handleEnableNotifications = async () => {
+    if (typeof Notification === "undefined") { toast.error("Este dispositivo não suporta notificações."); return; }
+    try {
+      const perm = await Notification.requestPermission();
+      setNotifStatus(perm);
+      if (perm === "granted") {
+        toast.success("Notificações ativadas!");
+        new Notification("ItaSuper", { body: "Notificações funcionando ✅", icon: "/logo-itasuper-128.webp" });
+      } else if (perm === "denied") {
+        toast.error("Permissão negada. Ative nas configurações do navegador.");
+      }
+    } catch { toast.error("Erro ao ativar notificações."); }
+  };
+
+  const handleShareApp = async () => {
+    const url = "https://itasuper.com.br";
+    const shareData = { title: "ItaSuper", text: "Peça no ItaSuper — delivery rápido e sem taxas absurdas.", url };
+    try {
+      if (navigator.share) { await navigator.share(shareData); }
+      else { await navigator.clipboard.writeText(url); toast.success("Link copiado!"); }
+    } catch {}
+  };
+
   const handleDeleteAccount = async () => {
     setDeletingAccount(true);
     try {
@@ -427,6 +475,9 @@ const PerfilPage = () => {
   const roleLabel = profileRole === "lojista" ? "Lojista" : profileRole === "motoboy" ? "Entregador" : "Cliente";
   const hasAddress = !!(street && number && neighborhood);
   const hasPix = !!(pixKey && pixType);
+  const currentPin = (profile as any)?.delivery_pin as string | undefined;
+  const hasPin = !!currentPin && /^\d{4}$/.test(currentPin);
+  const isClient = !profileRole || profileRole === "cliente";
 
   return (
     <div className="min-h-screen bg-background pb-32 overflow-y-auto">
@@ -720,18 +771,82 @@ const PerfilPage = () => {
           </Card>
         )}
 
-        {/* ── Mais Opções ── */}
-        <div className="pt-1">
-          <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground px-1 mb-2">Mais Opções</p>
-        </div>
+        {/* PIN de Entrega — só clientes */}
+        {isClient && (
+          <Card>
+            <div className="w-full flex items-center gap-3.5 px-4 py-3.5">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                <KeyRound className="h-[18px] w-[18px] text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-semibold text-foreground">PIN de Entrega</p>
+                  <StatusBadge done={hasPin} label={hasPin ? "OK" : "Pendente"} />
+                </div>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {hasPin ? "•• •• (código exigido pelo entregador)" : "Defina um PIN de 4 dígitos"}
+                </p>
+              </div>
+              <button onClick={() => setShowPinEdit(true)} className="text-xs font-bold text-primary px-3 py-2 rounded-lg hover:bg-primary/5">
+                {hasPin ? "Alterar" : "Definir"}
+              </button>
+            </div>
+          </Card>
+        )}
 
+        {/* ── Preferências ── */}
+        <div className="pt-1">
+          <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground px-1 mb-2">Preferências</p>
+        </div>
         <Card>
           <div className="divide-y divide-border/50">
-            {/* Become partner */}
-            {!myStore && !myDriver && profileRole !== "lojista" && profileRole !== "motoboy" && (
-              <MenuRow icon={UserPlus} title="Seja um Parceiro" subtitle="Cadastre sua loja" onClick={() => navigate("/cadastro-lojista")} />
-            )}
-            <MenuRow icon={HelpCircle} title="Ver tutorial novamente" subtitle="Reveja o guia de uso do app"
+            <div className="flex items-center gap-3.5 px-4 py-3.5">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                <Moon className="h-[18px] w-[18px] text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-foreground">Tema</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Alternar entre claro e escuro</p>
+              </div>
+              <ThemeToggle />
+            </div>
+            <MenuRow
+              icon={Bell}
+              title="Notificações"
+              subtitle={
+                notifStatus === "granted" ? "Ativadas neste dispositivo"
+                : notifStatus === "denied" ? "Bloqueadas — ative nas config. do navegador"
+                : notifStatus === "unsupported" ? "Não suportado neste dispositivo"
+                : "Toque para ativar alertas de pedido"
+              }
+              onClick={handleEnableNotifications}
+              trailing={
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${notifStatus === "granted" ? "bg-green-500/10 text-green-600" : "bg-muted text-muted-foreground"}`}>
+                  {notifStatus === "granted" ? "ATIVO" : "ATIVAR"}
+                </span>
+              }
+            />
+          </div>
+        </Card>
+
+        {/* ── Ajuda & Suporte ── */}
+        <div className="pt-1">
+          <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground px-1 mb-2">Ajuda & Suporte</p>
+        </div>
+        <Card>
+          <div className="divide-y divide-border/50">
+            <MenuRow
+              icon={MessageCircle}
+              iconBg="bg-green-500/10"
+              iconColor="text-green-600"
+              title="Falar com o Suporte"
+              subtitle="WhatsApp — resposta em minutos"
+              onClick={() => window.open(`https://wa.me/5522992796291?text=${encodeURIComponent(`Olá! Sou ${userName} (${user.email}) e preciso de ajuda no ItaSuper.`)}`, "_blank")}
+            />
+            <MenuRow
+              icon={HelpCircle}
+              title="Ver tutorial novamente"
+              subtitle="Reveja o guia de uso do app"
               onClick={async () => {
                 if (user) {
                   await supabase.from("profiles").update({ has_seen_onboarding: false } as any).eq("user_id", user.id);
@@ -740,6 +855,41 @@ const PerfilPage = () => {
                 }
               }}
             />
+            <MenuRow
+              icon={AlertTriangle}
+              iconBg="bg-amber-500/10"
+              iconColor="text-amber-600"
+              title="Reportar um problema"
+              subtitle="Envie um relato via WhatsApp"
+              onClick={() => window.open(`https://wa.me/5522992796291?text=${encodeURIComponent(`[BUG] ItaSuper v${appVersion}\nUsuário: ${userName}\nE-mail: ${user.email}\n\nDescreva o problema:`)}`, "_blank")}
+            />
+          </div>
+        </Card>
+
+        {/* ── Sobre o App ── */}
+        <div className="pt-1">
+          <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground px-1 mb-2">Sobre o ItaSuper</p>
+        </div>
+        <Card>
+          <div className="divide-y divide-border/50">
+            <MenuRow icon={Share2} title="Compartilhar o app" subtitle="Convide amigos e lojas" onClick={handleShareApp} />
+            <MenuRow icon={Newspaper} title="Blog & Novidades" subtitle="Dicas, atualizações e cases" onClick={() => navigate("/blog")} />
+            {!isCapacitorNative() && (
+              <MenuRow icon={Smartphone} title="Baixar aplicativo" subtitle="APK Android oficial" onClick={() => navigate("/download")} />
+            )}
+            {isClient && !myStore && !myDriver && (
+              <MenuRow
+                icon={UserPlus}
+                iconBg="bg-amber-500/10"
+                iconColor="text-amber-600"
+                title="Seja um Parceiro"
+                subtitle="Cadastre sua loja gratuitamente"
+                onClick={() => navigate("/cadastro-lojista")}
+              />
+            )}
+            {(profileRole === "lojista" || myStore) && (
+              <MenuRow icon={Sparkles} title="Ver Planos" subtitle="Compare os planos disponíveis" onClick={() => navigate("/planos")} />
+            )}
           </div>
         </Card>
 
@@ -760,6 +910,45 @@ const PerfilPage = () => {
           open={showSignOutConfirm}
           onOpenChange={setShowSignOutConfirm}
         />
+
+        {/* PIN edit modal */}
+        {showPinEdit && (
+          <div className="fixed inset-0 z-[100] bg-black/60 flex items-center justify-center p-4" onClick={() => !savingPin && setShowPinEdit(false)}>
+            <div className="bg-card w-full max-w-sm rounded-2xl p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+                  <KeyRound className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-foreground">{hasPin ? "Alterar PIN" : "Definir PIN"}</h3>
+                  <p className="text-xs text-muted-foreground">Usado pelo entregador em todas as entregas</p>
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Novo PIN (4 dígitos)</label>
+                <input inputMode="numeric" autoFocus value={pinValue}
+                  onChange={(e) => setPinValue(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                  placeholder="0000"
+                  className="w-full h-12 px-4 rounded-xl border border-border bg-background text-center text-2xl tracking-[0.5em] font-bold focus:outline-none focus:ring-2 focus:ring-primary/50" />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Confirmar PIN</label>
+                <input inputMode="numeric" value={pinConfirm}
+                  onChange={(e) => setPinConfirm(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                  placeholder="0000"
+                  className="w-full h-12 px-4 rounded-xl border border-border bg-background text-center text-2xl tracking-[0.5em] font-bold focus:outline-none focus:ring-2 focus:ring-primary/50" />
+              </div>
+              <button onClick={handleSavePin} disabled={savingPin}
+                className="w-full py-3.5 rounded-xl bg-primary text-primary-foreground font-bold text-sm disabled:opacity-50">
+                {savingPin ? "Salvando..." : "Salvar PIN"}
+              </button>
+              <button onClick={() => setShowPinEdit(false)} disabled={savingPin}
+                className="w-full py-3 rounded-xl border border-border text-muted-foreground font-bold text-sm disabled:opacity-50">
+                Cancelar
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Delete account confirmation modal */}
         {showDeleteConfirm && (
