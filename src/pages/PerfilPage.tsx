@@ -475,6 +475,9 @@ const PerfilPage = () => {
   const roleLabel = profileRole === "lojista" ? "Lojista" : profileRole === "motoboy" ? "Entregador" : "Cliente";
   const hasAddress = !!(street && number && neighborhood);
   const hasPix = !!(pixKey && pixType);
+  const currentPin = (profile as any)?.delivery_pin as string | undefined;
+  const hasPin = !!currentPin && /^\d{4}$/.test(currentPin);
+  const isClient = !profileRole || profileRole === "cliente";
 
   return (
     <div className="min-h-screen bg-background pb-32 overflow-y-auto">
