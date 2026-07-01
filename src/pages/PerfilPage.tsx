@@ -911,6 +911,45 @@ const PerfilPage = () => {
           onOpenChange={setShowSignOutConfirm}
         />
 
+        {/* PIN edit modal */}
+        {showPinEdit && (
+          <div className="fixed inset-0 z-[100] bg-black/60 flex items-center justify-center p-4" onClick={() => !savingPin && setShowPinEdit(false)}>
+            <div className="bg-card w-full max-w-sm rounded-2xl p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+                  <KeyRound className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-foreground">{hasPin ? "Alterar PIN" : "Definir PIN"}</h3>
+                  <p className="text-xs text-muted-foreground">Usado pelo entregador em todas as entregas</p>
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Novo PIN (4 dígitos)</label>
+                <input inputMode="numeric" autoFocus value={pinValue}
+                  onChange={(e) => setPinValue(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                  placeholder="0000"
+                  className="w-full h-12 px-4 rounded-xl border border-border bg-background text-center text-2xl tracking-[0.5em] font-bold focus:outline-none focus:ring-2 focus:ring-primary/50" />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Confirmar PIN</label>
+                <input inputMode="numeric" value={pinConfirm}
+                  onChange={(e) => setPinConfirm(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                  placeholder="0000"
+                  className="w-full h-12 px-4 rounded-xl border border-border bg-background text-center text-2xl tracking-[0.5em] font-bold focus:outline-none focus:ring-2 focus:ring-primary/50" />
+              </div>
+              <button onClick={handleSavePin} disabled={savingPin}
+                className="w-full py-3.5 rounded-xl bg-primary text-primary-foreground font-bold text-sm disabled:opacity-50">
+                {savingPin ? "Salvando..." : "Salvar PIN"}
+              </button>
+              <button onClick={() => setShowPinEdit(false)} disabled={savingPin}
+                className="w-full py-3 rounded-xl border border-border text-muted-foreground font-bold text-sm disabled:opacity-50">
+                Cancelar
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Delete account confirmation modal */}
         {showDeleteConfirm && (
           <div className="fixed inset-0 z-[100] bg-black/60 flex items-center justify-center p-4" onClick={() => !deletingAccount && setShowDeleteConfirm(false)}>
