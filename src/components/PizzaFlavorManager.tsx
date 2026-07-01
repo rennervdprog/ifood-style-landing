@@ -55,6 +55,27 @@ const PizzaFlavorManager = ({ storeId }: PizzaFlavorManagerProps) => {
 
   return (
     <div className="space-y-6">
+      {/* Toggle: ativar modal de múltiplos sabores (fica no topo pra achar fácil) */}
+      <div className="bg-primary/5 border-2 border-primary/30 rounded-2xl p-4">
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-sm font-bold text-foreground flex items-center gap-1.5">
+              🍕 Ativar modal de pizza (múltiplos sabores)
+            </p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">
+              Quando ativo, o cliente pode montar pizzas com 2, 3 ou 4 sabores (meio a meio). Se desativar, cada pizza é vendida como produto único.
+            </p>
+          </div>
+          <button
+            onClick={() => saveSettingField({ pizza_half_enabled: !halfEnabled })}
+            className={`w-12 h-6 rounded-full transition-colors relative flex-shrink-0 ${halfEnabled ? "bg-primary" : "bg-muted-foreground/30"}`}
+            aria-label="Ativar modal de pizza"
+          >
+            <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform ${halfEnabled ? "translate-x-6" : "translate-x-0.5"}`} />
+          </button>
+        </div>
+      </div>
+
       {/* Catálogo profissional (tamanhos + categorias + matriz) */}
       <PizzaSizesCatalogManager storeId={storeId} />
 
