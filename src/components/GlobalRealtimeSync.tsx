@@ -81,7 +81,9 @@ const GlobalRealtimeSync = () => {
         "store-promo-collections",
         "pdv-products",
         "pdv-sections",
+        "store-products",
         "store-products-for-addons",
+        "menu-product-count",
         "promo-products",
         "promo-collections",
         "store-hours-check",
@@ -92,6 +94,11 @@ const GlobalRealtimeSync = () => {
       // o prefixo inteiro evita página de loja presa em cache antigo.
       invalidatePrefix("store-bootstrap");
       invalidatePrefix("store");
+      invalidatePrefix("stores");
+      invalidatePrefix("stores-client");
+      invalidatePrefix("available-stores");
+      invalidatePrefix("client-store-search");
+      invalidatePrefix("all-products-search");
       invalidatePrefix("network-units");
       invalidatePrefix("network-units-hours");
       invalidatePrefix("client-recent-orders");
@@ -192,6 +199,7 @@ const GlobalRealtimeSync = () => {
         "store-finance-prev-orders",
         "store-finance-basic",
         "store-finance-basic-prev",
+        "store-report",
         "reorder-products",
         "popular-products",
       ].forEach((prefix) => invalidateScoped(prefix, storeId));
@@ -201,6 +209,7 @@ const GlobalRealtimeSync = () => {
       }
 
       invalidatePrefix("admin-all-orders");
+      invalidatePrefix("admin-orders");
       invalidatePrefix("finance-orders");
       invalidatePrefix("orders-failed-splits");
       invalidatePrefix("pdv-relatorio-orders");
@@ -225,6 +234,7 @@ const GlobalRealtimeSync = () => {
       invalidateScoped("pdv-relatorio-orders", storeId);
       invalidateScoped("pdv-relatorio-movements", storeId);
       invalidateScoped("pdv-movements-chart", storeId);
+      invalidateScoped("store-report", storeId);
       invalidateFinancial(storeId);
     }, 400);
   };
