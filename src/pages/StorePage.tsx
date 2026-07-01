@@ -1367,6 +1367,13 @@ const StorePage = () => {
         if (!halfEnabled) return null;
         // Need at least one product to montar meio a meio
         if (!products || products.length === 0) return null;
+        const maxFlavors = Number(storeSettings?.pizza_config?.max_flavors) || 4;
+        const singleSize = !!storeSettings.pizza_single_size;
+        const sizePart = singleSize ? "" : "Escolha o tamanho e ";
+        const flavorPart = maxFlavors === 2
+          ? "monte sua pizza meio a meio (2 sabores)"
+          : `combine até ${maxFlavors} sabores na mesma pizza`;
+        const subtitle = (sizePart + flavorPart).replace(/^./, (c) => c.toUpperCase());
         return (
           <div className="px-4 mt-4">
             <button
@@ -1387,7 +1394,7 @@ const StorePage = () => {
               </div>
               <div className="flex-1">
                 <h3 className="text-sm font-black text-foreground">Monte Sua Pizza</h3>
-                <p className="text-xs text-muted-foreground mt-0.5">Escolha o tamanho e combine até 4 sabores na mesma pizza</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>
               </div>
               <ChevronRight className="h-5 w-5 text-primary flex-shrink-0" />
             </button>
