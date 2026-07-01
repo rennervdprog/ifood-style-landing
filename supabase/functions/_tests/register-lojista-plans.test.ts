@@ -48,7 +48,7 @@ const SPECS: PlanSpec[] = [
   {
     selected: "fixed",
     planType: "fixed",
-    monthlyFee: 180,
+    monthlyFee: 90, // inicial R$90 (upgrade para R$180 depois via revenue_threshold)
     commissionRate: 0,
     pixOperationalFee: 1.99,
     platformDeliveryExtra: 2,
