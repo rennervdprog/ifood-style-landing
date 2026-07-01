@@ -53,12 +53,28 @@ async function fetchRemoteBuildId(): Promise<string | null> {
 }
 
 async function applyUpdate(remoteId: string) {
+  // Anti-loop: se já tentamos aplicar este mesmo buildId nesta aba
+  // e após o reload ainda estamos no BUILD_ID antigo (SW servindo cache velho),
+  // não recarrega de novo — evita tela branca em loop.
+  try {
+    const lastTried = sessionStorage.getItem("vw:lastTriedBuildId");
+    if (lastTried === remoteId) {
+      console.warn(`[VersionWatcher] Build ${remoteId} já tentado nesta sessão. Abortando loop.`);
+      return;
+    }
+    sessionStorage.setItem("vw:lastTriedBuildId", remoteId);
+  } catch {}
+
   console.info(`[VersionWatcher] Nova versão: ${BUILD_ID} → ${remoteId}. Recarregando...`);
-  // Se houver SW em waiting, pede skipWaiting antes do reload
   try {
     if ("serviceWorker" in navigator) {
       const reg = await navigator.serviceWorker.getRegistration();
       reg?.waiting?.postMessage({ type: "SKIP_WAITING" });
+      // Limpa caches do workbox pra garantir que o novo bundle seja baixado
+      if ("caches" in window) {
+        const keys = await caches.keys();
+        await Promise.all(keys.map((k) => caches.delete(k)));
+      }
     }
   } catch {}
   setTimeout(() => {
