@@ -1393,6 +1393,8 @@ const AdminDashboard = () => {
     driversLoading,
   });
 
+  const repassePending = useRepassePending(store?.id);
+
   const getMainAction = (status: OrderStatus, order?: any): { label: string; next: OrderStatus; emoji: string } | null => {
     const isPickupOrder = order?.neighborhood === "RETIRADA";
     switch (status) {
