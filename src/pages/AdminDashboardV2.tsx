@@ -1450,12 +1450,22 @@ const AdminDashboard = () => {
     [visibleGroups],
   );
 
-  const activeGroup = getGroupForTab(dashboardTab);
+  const [preferredGroupKey, setPreferredGroupKey] = useState<DashboardGroupKey | null>(null);
+  const activeGroup = useMemo(() => {
+    if (preferredGroupKey) {
+      const g = dashboardGroups.find(
+        gr => gr.key === preferredGroupKey && gr.subTabs.some(s => s.key === dashboardTab),
+      );
+      if (g) return g;
+    }
+    return getGroupForTab(dashboardTab);
+  }, [preferredGroupKey, dashboardTab]);
   const activeGroupKey = activeGroup?.key;
 
   const handleGroupChange = (groupKey: DashboardGroupKey) => {
     const g = visibleGroupMap.get(groupKey);
     if (!g || g.subTabs.length === 0) return;
+    setPreferredGroupKey(groupKey);
     // Se já estou no grupo, mantém a sub-tab atual; senão abre a primeira
     const inGroup = g.subTabs.some(s => s.key === dashboardTab);
     handleTabChange(inGroup ? dashboardTab : g.subTabs[0].key);
