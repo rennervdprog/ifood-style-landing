@@ -158,6 +158,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setSession(newSession);
       setLoading(false);
 
+      // Realtime precisa do JWT atualizado para respeitar RLS nos payloads.
+      // Sem isso, updates simplesmente não chegam mesmo com o canal SUBSCRIBED.
+      try {
+        (supabase.realtime as any).setAuth?.(newSession?.access_token ?? null);
+      } catch {}
+
       if (newSession?.user) {
         setSentryUser({ id: newSession.user.id, email: newSession.user.email });
       } else {

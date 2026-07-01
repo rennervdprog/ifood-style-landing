@@ -17,6 +17,7 @@ import DebugOverlay from "@/components/DebugOverlay";
 import { initCapacitorNative, isCapacitorNative, consumePendingPushNavigation } from "@/lib/capacitorNative";
 import { initCapacitorLifecycle } from "@/lib/capacitorLifecycle";
 import { initRealtimeWatchdog } from "@/lib/realtimeWatchdog";
+import { initVersionWatcher } from "@/lib/versionWatcher";
 import { initAutoUpdate } from "@/lib/capacitorAutoUpdate";
 import { checkAppVersion } from "@/lib/appVersionCheck";
 import { getCapacitorAppMode } from "@/lib/capacitorAppMode";
@@ -241,6 +242,7 @@ const App = () => {
     initCapacitorLifecycle().catch(() => {});
     import("@/lib/nativeBoot").then(({ nativeBoot }) => nativeBoot()).catch(() => {});
     initRealtimeWatchdog();
+    initVersionWatcher();
     // Auto-update inicia imediatamente — agenda interno usa 1s antes do 1º check
     try { initAutoUpdate(); } catch {}
     // Aviso não-bloqueante de nova versão nativa disponível.

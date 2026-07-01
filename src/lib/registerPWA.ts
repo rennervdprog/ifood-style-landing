@@ -45,19 +45,29 @@ export async function registerPWA() {
   }
   try {
     const { registerSW } = await import("virtual:pwa-register");
+    // Garante que o browser sempre revalide o SW no servidor (não usa cache HTTP)
+    try {
+      const reg = await navigator.serviceWorker.getRegistration();
+      if (reg && "updateViaCache" in reg) {
+        // Best-effort: alguns navegadores não permitem setar depois
+        (reg as any).updateViaCache = "none";
+      }
+    } catch {}
     // Modo auto-update: assim que o novo SW entra em "waiting", chamamos
     // updateSW() que dispara skipWaiting + reload — garante que mudanças
     // de UI apareçam no próximo refresh sem precisar Ctrl+Shift+R.
     const updateSW = registerSW({
       immediate: true,
       onNeedRefresh() {
-        console.info("[PWA] Nova versão detectada — aplicando...");
-        try { updateSW(true); } catch {}
+        console.info("[PWA] Nova versão detectada — versionWatcher aplicará no momento seguro.");
+        // Não recarregamos aqui: o versionWatcher aplica fora de rotas críticas.
       },
       onOfflineReady() {
         console.info("[PWA] Pronto para uso offline");
       },
     });
+    // Checa updates a cada 60s
+    setInterval(() => { try { (updateSW as any); const reg = navigator.serviceWorker.getRegistration(); reg && (reg as any).then?.((r: any) => r?.update?.()); } catch {} }, 60_000);
   } catch {
     /* noop */
   }
