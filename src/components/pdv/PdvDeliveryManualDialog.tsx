@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, MapPin, Search, Truck, User, Phone, Lock } from "lucide-react";
+import { Loader2, MapPin, Search, Truck, User, Phone, Lock, ShoppingCart, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { formatBRL, addMoney } from "@/lib/utils";
@@ -307,10 +307,49 @@ export function PdvDeliveryManualDialog({
         </DialogHeader>
 
         {cart.length === 0 ? (
-          <div className="py-8 text-center text-muted-foreground">
-            Adicione itens ao carrinho antes de criar um pedido manual.
+          <div className="py-6 space-y-4">
+            {/* Stepper */}
+            <div className="flex items-center justify-center gap-2 text-xs font-semibold">
+              <span className="flex items-center gap-1 text-primary">
+                <span className="h-6 w-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center">1</span>
+                Selecionar itens
+              </span>
+              <span className="h-px w-8 bg-border" />
+              <span className="flex items-center gap-1 text-muted-foreground">
+                <span className="h-6 w-6 rounded-full bg-muted text-muted-foreground flex items-center justify-center">2</span>
+                Dados do cliente
+              </span>
+            </div>
+            <div className="rounded-xl border-2 border-dashed border-primary/40 bg-primary/5 p-5 text-center space-y-3">
+              <ShoppingCart className="h-10 w-10 text-primary mx-auto" />
+              <div>
+                <p className="text-sm font-bold text-foreground">Passo 1 · Adicione os produtos</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Feche este aviso, toque nos produtos que o cliente pediu e depois volte aqui para preencher nome, endereço e PIN.
+                </p>
+              </div>
+              <Button onClick={onClose} className="w-full">
+                Selecionar itens no PDV
+              </Button>
+            </div>
           </div>
         ) : (
+          <div className="space-y-5">
+            {/* Stepper */}
+            <div className="flex items-center justify-center gap-2 text-xs font-semibold">
+              <span className="flex items-center gap-1 text-success">
+                <CheckCircle2 className="h-4 w-4" />
+                {cart.length} {cart.length === 1 ? "item" : "itens"}
+              </span>
+              <span className="h-px w-8 bg-border" />
+              <span className="flex items-center gap-1 text-primary">
+                <span className="h-6 w-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center">2</span>
+                Dados do cliente
+              </span>
+            </div>
+          </div>
+        )}
+        {cart.length > 0 && (
           <div className="space-y-5">
             {/* Cliente */}
             <section className="space-y-3">
