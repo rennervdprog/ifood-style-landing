@@ -40,12 +40,13 @@ Deno.serve(async (req) => {
   if (!fnRes.ok) return json({ step: "get_function", error: fnData }, 500);
 
   const sql = `
-    select id, function_logs.timestamp, event_message, m.function_id, m.level
-    from function_logs
+    select id, function_edge_logs.timestamp, event_message, response.status_code, m.function_id, m.execution_time_ms
+    from function_edge_logs
     cross join unnest(metadata) as m
+    cross join unnest(m.response) as response
     where m.function_id = '${fnData.id}'
     order by timestamp desc
-    limit 60
+    limit 30
   `;
 
   const url = `https://api.supabase.com/v1/projects/${PROJECT_REF}/analytics/endpoints/logs.all?sql=${encodeURIComponent(sql)}`;
