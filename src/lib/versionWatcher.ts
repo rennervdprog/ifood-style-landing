@@ -7,6 +7,7 @@
  */
 import { BUILD_ID } from "@/lib/buildInfo";
 import { Capacitor } from "@capacitor/core";
+import { toast } from "sonner";
 
 const POLL_MS = 60_000;
 const CRITICAL_ROUTES = [
@@ -52,34 +53,45 @@ async function fetchRemoteBuildId(): Promise<string | null> {
   }
 }
 
+let notifiedForBuild: string | null = null;
+
 async function applyUpdate(remoteId: string) {
-  // Anti-loop: se já tentamos aplicar este mesmo buildId nesta aba
-  // e após o reload ainda estamos no BUILD_ID antigo (SW servindo cache velho),
-  // não recarrega de novo — evita tela branca em loop.
+  // Anti-loop persistente (entre reloads): se já tentamos este build
+  // recentemente e ainda estamos no BUILD_ID antigo, não força reload
+  // — apenas avisa o usuário para evitar tela preta/laranja em loop.
+  const key = "vw:lastTriedBuildId";
+  let alreadyTried = false;
   try {
-    const lastTried = sessionStorage.getItem("vw:lastTriedBuildId");
-    if (lastTried === remoteId) {
-      console.warn(`[VersionWatcher] Build ${remoteId} já tentado nesta sessão. Abortando loop.`);
-      return;
-    }
-    sessionStorage.setItem("vw:lastTriedBuildId", remoteId);
+    alreadyTried = localStorage.getItem(key) === remoteId;
+    localStorage.setItem(key, remoteId);
   } catch {}
 
-  console.info(`[VersionWatcher] Nova versão: ${BUILD_ID} → ${remoteId}. Recarregando...`);
-  try {
-    if ("serviceWorker" in navigator) {
-      const reg = await navigator.serviceWorker.getRegistration();
-      reg?.waiting?.postMessage({ type: "SKIP_WAITING" });
-      // Limpa caches do workbox pra garantir que o novo bundle seja baixado
-      if ("caches" in window) {
-        const keys = await caches.keys();
-        await Promise.all(keys.map((k) => caches.delete(k)));
-      }
-    }
-  } catch {}
-  setTimeout(() => {
-    try { window.location.reload(); } catch {}
-  }, 500);
+  if (notifiedForBuild === remoteId) return;
+  notifiedForBuild = remoteId;
+
+  console.info(`[VersionWatcher] Nova versão detectada: ${BUILD_ID} → ${remoteId}${alreadyTried ? " (já tentada)" : ""}`);
+
+  // Notificação não-bloqueante — o usuário decide quando atualizar.
+  toast("Nova versão disponível", {
+    description: "Toque em Atualizar quando quiser recarregar.",
+    duration: 15_000,
+    action: {
+      label: "Atualizar",
+      onClick: async () => {
+        try {
+          if ("serviceWorker" in navigator) {
+            const reg = await navigator.serviceWorker.getRegistration();
+            reg?.waiting?.postMessage({ type: "SKIP_WAITING" });
+            if ("caches" in window) {
+              const keys = await caches.keys();
+              await Promise.all(keys.map((k) => caches.delete(k)));
+            }
+          }
+        } catch {}
+        try { window.location.reload(); } catch {}
+      },
+    },
+  });
 }
 
 async function tick() {
