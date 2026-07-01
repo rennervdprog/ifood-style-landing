@@ -197,11 +197,6 @@ const PlatformSplitAlert = ({ storeId, storeName, splitPerOrder, onGoToFinance }
               </div>
             </div>
           </div>
-          {!pixData && (
-            <button onClick={() => setDismissed(true)} className="text-muted-foreground hover:text-foreground">
-              <X className="h-4 w-4" />
-            </button>
-          )}
         </div>
 
         {/* Amount */}
