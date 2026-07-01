@@ -10,9 +10,11 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   User, LogOut, Store, Shield, UserPlus, MapPin, Save, Bike, Wallet, Copy,
   AlertTriangle, MessageCircle, Truck, Download, Smartphone, X, Share2,
-  Search, Loader2, ChevronRight, Phone, Mail, CreditCard, Package, Settings, HelpCircle, Trash2, CheckCircle2, Users
+  Search, Loader2, ChevronRight, Phone, Mail, CreditCard, Package, Settings, HelpCircle, Trash2, CheckCircle2, Users,
+  KeyRound, Bell, Moon, Sun, Newspaper, Sparkles, Send, FileText, ExternalLink
 } from "lucide-react";
 import { toast } from "sonner";
+import ThemeToggle from "@/components/ThemeToggle";
 import { maskWhatsApp, formatWhatsAppNumber, isValidWhatsApp } from "@/lib/whatsapp";
 import { formatCep, fetchCep } from "@/lib/location";
 import { calculateDeliveryFee, DEFAULT_DELIVERY_FEE_CONFIG, type DeliveryFeeConfig } from "@/lib/deliveryFee";
