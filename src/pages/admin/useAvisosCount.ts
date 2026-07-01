@@ -2,9 +2,6 @@
  * useAvisosCount — calcula quantos avisos/pendências o lojista tem em aberto.
  * Espelha exatamente os cards renderizados em AvisosSection.
  */
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-
 interface Params {
   store: any;
   storePlan: any;
