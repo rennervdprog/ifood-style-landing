@@ -264,7 +264,8 @@ Deno.serve(async (req) => {
     );
   } catch (err) {
     console.error("store-platform-fee-pix error:", err);
-    return new Response(JSON.stringify({ error: "Erro interno." }), {
+    const msg = err instanceof Error ? err.message : String(err);
+    return new Response(JSON.stringify({ error: `Erro interno: ${msg}` }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
