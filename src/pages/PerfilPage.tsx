@@ -771,18 +771,82 @@ const PerfilPage = () => {
           </Card>
         )}
 
-        {/* ── Mais Opções ── */}
-        <div className="pt-1">
-          <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground px-1 mb-2">Mais Opções</p>
-        </div>
+        {/* PIN de Entrega — só clientes */}
+        {isClient && (
+          <Card>
+            <div className="w-full flex items-center gap-3.5 px-4 py-3.5">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                <KeyRound className="h-[18px] w-[18px] text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-semibold text-foreground">PIN de Entrega</p>
+                  <StatusBadge done={hasPin} label={hasPin ? "OK" : "Pendente"} />
+                </div>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {hasPin ? "•• •• (código exigido pelo entregador)" : "Defina um PIN de 4 dígitos"}
+                </p>
+              </div>
+              <button onClick={() => setShowPinEdit(true)} className="text-xs font-bold text-primary px-3 py-2 rounded-lg hover:bg-primary/5">
+                {hasPin ? "Alterar" : "Definir"}
+              </button>
+            </div>
+          </Card>
+        )}
 
+        {/* ── Preferências ── */}
+        <div className="pt-1">
+          <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground px-1 mb-2">Preferências</p>
+        </div>
         <Card>
           <div className="divide-y divide-border/50">
-            {/* Become partner */}
-            {!myStore && !myDriver && profileRole !== "lojista" && profileRole !== "motoboy" && (
-              <MenuRow icon={UserPlus} title="Seja um Parceiro" subtitle="Cadastre sua loja" onClick={() => navigate("/cadastro-lojista")} />
-            )}
-            <MenuRow icon={HelpCircle} title="Ver tutorial novamente" subtitle="Reveja o guia de uso do app"
+            <div className="flex items-center gap-3.5 px-4 py-3.5">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                <Moon className="h-[18px] w-[18px] text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-foreground">Tema</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Alternar entre claro e escuro</p>
+              </div>
+              <ThemeToggle />
+            </div>
+            <MenuRow
+              icon={Bell}
+              title="Notificações"
+              subtitle={
+                notifStatus === "granted" ? "Ativadas neste dispositivo"
+                : notifStatus === "denied" ? "Bloqueadas — ative nas config. do navegador"
+                : notifStatus === "unsupported" ? "Não suportado neste dispositivo"
+                : "Toque para ativar alertas de pedido"
+              }
+              onClick={handleEnableNotifications}
+              trailing={
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${notifStatus === "granted" ? "bg-green-500/10 text-green-600" : "bg-muted text-muted-foreground"}`}>
+                  {notifStatus === "granted" ? "ATIVO" : "ATIVAR"}
+                </span>
+              }
+            />
+          </div>
+        </Card>
+
+        {/* ── Ajuda & Suporte ── */}
+        <div className="pt-1">
+          <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground px-1 mb-2">Ajuda & Suporte</p>
+        </div>
+        <Card>
+          <div className="divide-y divide-border/50">
+            <MenuRow
+              icon={MessageCircle}
+              iconBg="bg-green-500/10"
+              iconColor="text-green-600"
+              title="Falar com o Suporte"
+              subtitle="WhatsApp — resposta em minutos"
+              onClick={() => window.open(`https://wa.me/5522992796291?text=${encodeURIComponent(`Olá! Sou ${userName} (${user.email}) e preciso de ajuda no ItaSuper.`)}`, "_blank")}
+            />
+            <MenuRow
+              icon={HelpCircle}
+              title="Ver tutorial novamente"
+              subtitle="Reveja o guia de uso do app"
               onClick={async () => {
                 if (user) {
                   await supabase.from("profiles").update({ has_seen_onboarding: false } as any).eq("user_id", user.id);
@@ -791,6 +855,41 @@ const PerfilPage = () => {
                 }
               }}
             />
+            <MenuRow
+              icon={AlertTriangle}
+              iconBg="bg-amber-500/10"
+              iconColor="text-amber-600"
+              title="Reportar um problema"
+              subtitle="Envie um relato via WhatsApp"
+              onClick={() => window.open(`https://wa.me/5522992796291?text=${encodeURIComponent(`[BUG] ItaSuper v${appVersion}\nUsuário: ${userName}\nE-mail: ${user.email}\n\nDescreva o problema:`)}`, "_blank")}
+            />
+          </div>
+        </Card>
+
+        {/* ── Sobre o App ── */}
+        <div className="pt-1">
+          <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground px-1 mb-2">Sobre o ItaSuper</p>
+        </div>
+        <Card>
+          <div className="divide-y divide-border/50">
+            <MenuRow icon={Share2} title="Compartilhar o app" subtitle="Convide amigos e lojas" onClick={handleShareApp} />
+            <MenuRow icon={Newspaper} title="Blog & Novidades" subtitle="Dicas, atualizações e cases" onClick={() => navigate("/blog")} />
+            {!isCapacitorNative() && (
+              <MenuRow icon={Smartphone} title="Baixar aplicativo" subtitle="APK Android oficial" onClick={() => navigate("/download")} />
+            )}
+            {isClient && !myStore && !myDriver && (
+              <MenuRow
+                icon={UserPlus}
+                iconBg="bg-amber-500/10"
+                iconColor="text-amber-600"
+                title="Seja um Parceiro"
+                subtitle="Cadastre sua loja gratuitamente"
+                onClick={() => navigate("/cadastro-lojista")}
+              />
+            )}
+            {(profileRole === "lojista" || myStore) && (
+              <MenuRow icon={Sparkles} title="Ver Planos" subtitle="Compare os planos disponíveis" onClick={() => navigate("/planos")} />
+            )}
           </div>
         </Card>
 
