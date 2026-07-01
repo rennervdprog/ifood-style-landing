@@ -1,57 +1,70 @@
-# Plano: Aba Relatórios Profissional (Lojista)
-
 ## Objetivo
-Substituir a aba "Relatórios Avançados" atual (que mostra zeros e não filtra por dia) por um painel real, com seletor de data específico, ranking de produtos vendidos por dia e comparativos úteis para operação.
+Deixar a `/perfil` profissional, sem "opções decorativas". Cada item leva a uma rota/função real que já existe no ItaSuper.
 
-## 1. Backend (Supabase Externo)
+## Nova estrutura (mobile-first)
 
-Criar RPC única `get_store_daily_report(_store_id uuid, _date date)` retornando JSON com:
-- `resumo`: receita_total, pedidos_count, ticket_medio, cancelados, taxa_cancelamento
-- `origem`: separação Delivery / PDV / Manual (receita e qtd)
-- `pagamentos`: totais por método (pix, dinheiro, cartão, pix_machine)
-- `horarios`: array 0..23h com receita e qtd
-- `produtos`: ranking com { product_id, nome, qtd_vendida, receita_total, ticket_medio } ordenado por qtd desc
-- `comparativo`: mesmos totais do dia anterior + variação %
+### 1. Hero (mantém)
+Avatar + nome + e-mail + badge do papel (Cliente/Lojista/Entregador/Admin) + contador de pedidos.
 
-Fonte: `orders` + `order_items` filtrando `store_id`, `created_at::date = _date`, `status <> 'cancelado'` (cancelados contam apenas em taxa_cancelamento). SECURITY DEFINER com checagem `store owner OR admin`.
+### 2. Acesso Rápido (contextual por papel)
+Só aparece o que faz sentido para o usuário:
+- **Cliente:** Meus Pedidos (`/pedidos`), Lojas (`/lojas`), Programa de Fidelidade (mostra selos por loja)
+- **Lojista:** Painel da Loja (`/admin`), Financeiro, PDV (`/pdv`), KDS (`/kds`)
+- **Entregador:** Painel do Entregador (`/entregador`), Ganhos (se autônomo)
+- **Moderador:** Painel do Moderador (`/moderador`)
+- **Admin:** Painel Administrativo (`/super-admin`)
 
-Criar também `get_store_period_report(_store_id, _start, _end)` para os presets 7d/14d/30d/90d reutilizando a mesma estrutura agregada.
+### 3. Meus Dados (colapsável — já existe)
+- Dados Pessoais (nome + CPF/CNPJ)
+- Endereço de Entrega (com CEP + taxa estimada)
+- Dados PIX (só lojista/motoboy)
+- **Novo:** WhatsApp verificado (badge OK/Pendente)
+- **Novo:** PIN de Entrega (mostra 4 dígitos mascarados + botão Alterar) — usa `delivery_pin` já existente
 
-## 2. Frontend
+### 4. Preferências
+- Tema Claro/Escuro (usa `ThemeToggle` já existente)
+- Notificações Push (ativar/testar — chama `register-push-device`)
+- Idioma/Região (informativo por enquanto — só PT-BR)
 
-Refatorar a aba Relatórios em `StoreDashboard`:
+### 5. Ajuda & Suporte
+- Central de Ajuda / FAQ (link para `/blog` categoria ajuda)
+- Falar no WhatsApp (abre `wa.me` do suporte)
+- Ver Tutorial Novamente (já existe)
+- Reportar Problema (abre WhatsApp com contexto do usuário)
 
-**Filtro superior:**
-- Seletor de dia único (date picker padrão pt-BR, default = hoje)
-- Presets rápidos: Hoje, Ontem, 7d, 14d, 30d, 90d, Personalizado (intervalo)
-- Botão "Exportar CSV"
+### 6. Sobre o ItaSuper
+- Baixar Aplicativo (`/download` — só se web)
+- Instalar PWA (já existe — só se elegível)
+- Compartilhar o app (Web Share API com deep link)
+- Blog / Novidades (`/blog`)
+- Seja um Parceiro (`/cadastro-lojista` — só clientes)
+- Planos (`/planos` — só lojistas)
 
-**Sub-abas:**
-1. **Visão geral** — Cards: Receita, Pedidos, Ticket médio, Cancelamentos, + comparativo com dia/período anterior
-2. **Vendas** — gráfico de barras por hora (dia) ou por dia (período), split por origem (Delivery/PDV/Manual), tabela de pagamentos
-3. **Produtos** — tabela ranqueada: #, Produto, Qtd vendida, Receita, % do total; destaque top 3; gráfico de pizza
-4. **Horários** — heatmap hora×qtd, horário de pico real, melhor dia da semana
+### 7. Legal
+- Termos de Uso
+- Política de Privacidade
+- Versão do app + botão "Verificar atualizações" (native)
 
-**Componentes novos:**
-- `src/components/store/reports/DayPicker.tsx`
-- `src/components/store/reports/ReportOverview.tsx`
-- `src/components/store/reports/ReportSales.tsx`
-- `src/components/store/reports/ReportProducts.tsx` (ranking com quantidade por produto no dia)
-- `src/components/store/reports/ReportHours.tsx`
-- `src/hooks/useStoreReport.ts` (React Query, cache 60s, invalidação ao trocar data)
+### 8. Conta (perigo)
+- Sair
+- Excluir Conta (fluxo LGPD já existente)
 
-Estado vazio real: "Nenhuma venda em DD/MM/AAAA" (não mostrar R$ 0,00 como se fosse resultado).
+## Regras de exibição
+- Nada de item "coming soon". Se a rota não existe → não renderiza.
+- Cada seção com header pequeno em uppercase (padrão atual).
+- Badges de status (OK/Pendente) para Dados Pessoais, Endereço, PIX, PIN, WhatsApp.
+- Contador dinâmico em Meus Pedidos (últimos 30 dias).
 
-## 3. Performance
-- RPCs agregam no banco (sem trazer linhas cruas)
-- React Query com `staleTime: 60_000`
-- Lazy-load da aba Relatórios
-- Gráficos com `recharts` já instalado
+## Detalhes técnicos
+- Arquivo: `src/pages/PerfilPage.tsx` (refactor incremental — mantém queries existentes).
+- Adicionar novas queries: `useUserRole`, contagem de pedidos ativos, status do PIN.
+- Novo componente `PinEditModal` reaproveitando `ClientPinChecker`.
+- Botão "Notificações push" chama `pushRegistration.ts` já existente.
+- Botão "Compartilhar app" usa `navigator.share` com fallback copiar link.
+- Zero alteração de schema — tudo já está no Supabase externo.
+- Bump de versão + `versionCode` no `build.gradle` ao concluir.
 
-## 4. Entrega
-- Migração criando as 2 RPCs + GRANT EXECUTE para authenticated
-- Refactor da aba com as 4 sub-abas funcionando
-- Teste com Águia Pizzaria e Cantinho da Silvia (dados reais)
-- Bump versão 1.10.382 (versionCode 711) em `PerfilPage.tsx` + `build.gradle`
-
-Confirma que sigo com a implementação?
+## Fora do escopo
+- Alterar CartContext, AuthContext ou roteamento.
+- Criar novas Edge Functions ou tabelas.
+- Redesign do Hero (mantido igual).
