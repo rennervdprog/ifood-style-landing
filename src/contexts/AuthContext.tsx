@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { Session, User } from "@supabase/supabase-js";
-import { supabase } from "@/integrations/supabase/client";
+import { SUPABASE_ANON_KEY, supabase } from "@/integrations/supabase/client";
 import { requestPushPermissionAndRegister, onForegroundMessage } from "@/lib/firebase";
 import { registerGoNativePlayer } from "@/lib/gonative";
 import { registerCapacitorPush, isCapacitorNative, reclaimStoredToken, resetPushRegistrationState } from "@/lib/capacitorNative";
@@ -124,6 +124,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     enforceRememberMe().then(() => supabase.auth.getSession()).then(({ data: { session: restoredSession } }) => {
       console.log("[Auth] 🔄 Session restored from storage:", restoredSession?.user?.email ?? "none");
+      try {
+        (supabase.realtime as any).setAuth?.(restoredSession?.access_token ?? SUPABASE_ANON_KEY);
+      } catch {}
       currentUserIdRef.current = restoredSession?.user?.id ?? null;
       setSession(restoredSession);
       setLoading(false);
@@ -148,21 +151,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.log("[Auth] ⏭️ Skipping INITIAL_SESSION (already restored via getSession)");
         // Still update session in case token was refreshed
         if (newSession) {
+          try {
+            (supabase.realtime as any).setAuth?.(newSession.access_token ?? SUPABASE_ANON_KEY);
+          } catch {}
           setSession(newSession);
           currentUserIdRef.current = nextUserId;
         }
         return;
       }
 
+      try {
+        (supabase.realtime as any).setAuth?.(newSession?.access_token ?? SUPABASE_ANON_KEY);
+      } catch {}
       currentUserIdRef.current = nextUserId;
       setSession(newSession);
       setLoading(false);
-
-      // Realtime precisa do JWT atualizado para respeitar RLS nos payloads.
-      // Sem isso, updates simplesmente não chegam mesmo com o canal SUBSCRIBED.
-      try {
-        (supabase.realtime as any).setAuth?.(newSession?.access_token ?? null);
-      } catch {}
 
       if (newSession?.user) {
         setSentryUser({ id: newSession.user.id, email: newSession.user.email });

@@ -27,6 +27,7 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import { TermsUpdateModal } from "@/components/TermsUpdateModal";
 import ClientPinChecker from "@/components/ClientPinChecker";
 import RecoveryRedirect from "@/components/RecoveryRedirect";
+import GlobalRealtimeSync from "@/components/GlobalRealtimeSync";
 import { fetchPendingLegalChanges, type PendingLegalChanges } from "@/lib/legalDocuments";
 import { APP_VERSION } from "@/lib/appVersion";
 
@@ -305,6 +306,7 @@ const App = () => {
         <StoreProvider>
         <CartProvider>
           <Toaster />
+          <GlobalRealtimeSync />
           <CapacitorPermissionsOnboarding />
           <InstallPrompt />
           <NotificationPrompt />
