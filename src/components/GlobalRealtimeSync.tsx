@@ -78,6 +78,8 @@ const GlobalRealtimeSync = () => {
         "products",
         "menu-sections",
         "store-hours",
+        "opening-hours",
+        "opening-hours-all",
         "store-promo-collections",
         "pdv-products",
         "pdv-sections",
@@ -87,7 +89,10 @@ const GlobalRealtimeSync = () => {
         "promo-products",
         "promo-collections",
         "store-hours-check",
+        "store-hours-checkout",
         "store-preorder",
+        "cart-store-status",
+        "store-checkout",
       ].forEach((prefix) => invalidateScoped(prefix, storeId));
 
       // Bootstrap e store por slug/id guardam cópia de cardápio/loja; invalidar
