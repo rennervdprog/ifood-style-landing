@@ -6,6 +6,42 @@ import { componentTagger } from "lovable-tagger";
 import { visualizer } from "rollup-plugin-visualizer";
 import { VitePWA } from "vite-plugin-pwa";
 
+// BUILD_ID único por build — usado pelo versionWatcher para detectar
+// novos deploys sem depender de bump manual de versão.
+const BUILD_ID = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+const BUILT_AT = new Date().toISOString();
+
+function emitVersionJson(appVersion: string) {
+  return {
+    name: "emit-version-json",
+    apply: "build" as const,
+    generateBundle(this: any) {
+      this.emitFile({
+        type: "asset",
+        fileName: "version.json",
+        source: JSON.stringify(
+          { buildId: BUILD_ID, version: appVersion, builtAt: BUILT_AT },
+          null,
+          2,
+        ),
+      });
+    },
+  };
+}
+
+function readAppVersion(): string {
+  try {
+    const src = fs.readFileSync(
+      path.resolve(__dirname, "src/lib/appVersion.ts"),
+      "utf8",
+    );
+    const m = src.match(/APP_VERSION\s*=\s*"([^"]+)"/);
+    return m?.[1] ?? "0.0.0";
+  } catch {
+    return "0.0.0";
+  }
+}
+
 function enforceExternalBackendOnly() {
   return {
     name: "enforce-external-backend-only",
@@ -37,8 +73,13 @@ export default defineConfig(({ mode }) => ({
       overlay: false,
     },
   },
+  define: {
+    __BUILD_ID__: JSON.stringify(BUILD_ID),
+    __BUILT_AT__: JSON.stringify(BUILT_AT),
+  },
   plugins: [
     enforceExternalBackendOnly(),
+    emitVersionJson(readAppVersion()),
     react(),
     mode === "development" && componentTagger(),
     mode === "production" && visualizer({
