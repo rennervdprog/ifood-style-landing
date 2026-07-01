@@ -172,6 +172,15 @@ const PerfilPage = () => {
    const [personalLoaded, setPersonalLoaded] = useState(false);
   const [appVersion, setAppVersion] = useState(APP_VERSION);
 
+  /* PIN de entrega */
+  const [pinValue, setPinValue] = useState("");
+  const [pinConfirm, setPinConfirm] = useState("");
+  const [savingPin, setSavingPin] = useState(false);
+  const [showPinEdit, setShowPinEdit] = useState(false);
+  const [notifStatus, setNotifStatus] = useState<NotificationPermission | "unsupported">(
+    typeof Notification !== "undefined" ? Notification.permission : "unsupported"
+  );
+
   /* ── Effects ── */
   useEffect(() => {
     if (!isCapacitorNative()) return;
