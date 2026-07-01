@@ -25,12 +25,23 @@ Deno.serve(async (req) => {
       });
     }
 
-    // 🔁 EXTERNAL DB
-    const EXTERNAL_URL = Deno.env.get("EXTERNAL_SUPABASE_URL")!;
-    const EXTERNAL_KEY = Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY")!;
-
-    // Single service-role client; we enforce ownership manually with .eq("owner_id", userId).
-    const supabase = createClient(EXTERNAL_URL, EXTERNAL_KEY);
+    // Function roda no MESMO projeto do banco (external). Usa os secrets
+    // padrão que o edge runtime injeta automaticamente.
+    const SB_URL =
+      Deno.env.get("SUPABASE_URL") ||
+      Deno.env.get("EXTERNAL_SUPABASE_URL") ||
+      "";
+    const SB_KEY =
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ||
+      Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") ||
+      "";
+    if (!SB_URL || !SB_KEY) {
+      return new Response(JSON.stringify({ error: "Backend não configurado." }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const supabase = createClient(SB_URL, SB_KEY);
 
     const token = authHeader.replace("Bearer ", "");
     const { data: userData, error: userError } = await supabase.auth.getUser(token);
