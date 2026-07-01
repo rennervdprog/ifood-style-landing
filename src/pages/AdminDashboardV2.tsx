@@ -1662,6 +1662,7 @@ const AdminDashboard = () => {
                 {dashboardTab === "bordas" && "Opções de borda para pizzas"}
                 {dashboardTab === "hours" && "Horários de funcionamento"}
                 {dashboardTab === "finance" && "Resumo financeiro"}
+                {dashboardTab === "repasse" && (repassePending > 0 ? `Repasse pendente à plataforma` : "Nenhum repasse pendente")}
                 {dashboardTab === "settings" && "Configurações da loja"}
                 {dashboardTab === "subscription" && "Seu plano e mensalidade"}
                 {dashboardTab === "loyalty" && "Programa de pontos para clientes"}
