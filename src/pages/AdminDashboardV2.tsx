@@ -58,6 +58,7 @@ const CouponsTab = lazy(() => import("./admin/tabs/CouponsTab"));
 const PromotionsTab = lazy(() => import("./admin/tabs/PromotionsTab"));
 const DashboardOverviewSection = lazy(() => import("./admin/sections/DashboardOverviewSection"));
 const AvisosSection = lazy(() => import("./admin/sections/AvisosSection"));
+const RepasseSection = lazy(() => import("./admin/sections/RepasseSection"));
 const OrdersSection = lazy(() => import("./admin/sections/OrdersSection"));
 import AdminOrderCard from "./admin/components/AdminOrderCard";
 import ClientsTab from "./admin/components/ClientsTab";
@@ -76,6 +77,7 @@ import { addMoney, averageMoney, formatBRL, formatCurrency, sumMoney } from "@/l
 import ProductTour, { lojistaTourSteps } from "@/components/ProductTour";
 import { useStorePlan } from "@/hooks/useStorePlan";
 import { useAvisosCount } from "./admin/useAvisosCount";
+import { useRepassePending } from "./admin/useRepassePending";
 import TrialExpiredGuard from "@/components/TrialExpiredGuard";
 import CommissionAlert from "@/components/CommissionAlert";
 import PlatformSplitAlert from "@/components/PlatformSplitAlert";
