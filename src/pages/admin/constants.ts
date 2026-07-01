@@ -4,7 +4,7 @@ import {
   Plus, CircleDot, Coins, BarChart3, CreditCard, Star,
   Bike, AlertTriangle, GraduationCap, Settings,
   MessageCircle, ShoppingCart, Headphones, Tag, Flame,
-  Bell,
+  Bell, Banknote,
 } from "lucide-react";
 import type { DashboardTab, OrderStatus } from "./types";
 
@@ -144,6 +144,7 @@ export const dashboardGroups: DashboardGroup[] = [
     icon: Coins,
     subTabs: [
       { key: "finance", label: "Resumo", icon: Coins },
+      { key: "repasse", label: "Repasse", icon: Banknote },
       { key: "reports", label: "Relatórios", icon: BarChart3, requiresFullReports: true },
       { key: "subscription", label: "Meu Plano", icon: CreditCard },
     ],
