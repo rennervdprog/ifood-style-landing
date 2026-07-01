@@ -89,11 +89,10 @@ export default defineConfig(({ mode }) => ({
       template: "treemap",
     }),
     VitePWA({
-      // "prompt" em vez de "autoUpdate" para NÃO recarregar a página sozinho
-      // quando há nova versão (evita perder o que o cliente está montando num
-      // modal de produto / checkout). A atualização é aplicada no próximo
-      // refresh natural do usuário.
-      registerType: "prompt",
+      // "autoUpdate" com skipWaiting=false: o SW novo instala em background,
+      // e o versionWatcher decide o momento certo de recarregar (fora de
+      // rotas críticas como checkout/PDV/motoboy em rota).
+      registerType: "autoUpdate",
       injectRegister: null,
       filename: "sw.js",
       devOptions: { enabled: false },
