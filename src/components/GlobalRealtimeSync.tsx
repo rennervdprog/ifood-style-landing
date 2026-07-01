@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { SUPABASE_ANON_KEY, supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { cleanupChannel, subscribeWithRejoin } from "@/lib/realtimeChannel";
 
@@ -40,7 +40,7 @@ const GlobalRealtimeSync = () => {
 
   useEffect(() => {
     try {
-      (supabase.realtime as any).setAuth?.(session?.access_token ?? null);
+      (supabase.realtime as any).setAuth?.(session?.access_token ?? SUPABASE_ANON_KEY);
     } catch {}
   }, [session?.access_token]);
 
