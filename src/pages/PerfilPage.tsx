@@ -371,6 +371,43 @@ const PerfilPage = () => {
 
   const copyPixKey = () => { if (pixKey) { navigator.clipboard.writeText(pixKey); toast.success("Chave PIX copiada!"); } };
 
+  const handleSavePin = async () => {
+    if (!/^\d{4}$/.test(pinValue)) { toast.error("O PIN deve ter 4 dígitos."); return; }
+    if (pinValue !== pinConfirm) { toast.error("Os PINs não coincidem."); return; }
+    setSavingPin(true);
+    try {
+      const { error } = await supabase.from("profiles").update({ delivery_pin: pinValue } as any).eq("user_id", user!.id);
+      if (error) throw error;
+      toast.success("PIN atualizado! Será usado em todas as próximas entregas.");
+      setShowPinEdit(false); setPinValue(""); setPinConfirm("");
+      queryClient.invalidateQueries({ queryKey: ["my-profile", user?.id] });
+    } catch (err: any) { toast.error(err.message || "Erro ao salvar PIN."); }
+    finally { setSavingPin(false); }
+  };
+
+  const handleEnableNotifications = async () => {
+    if (typeof Notification === "undefined") { toast.error("Este dispositivo não suporta notificações."); return; }
+    try {
+      const perm = await Notification.requestPermission();
+      setNotifStatus(perm);
+      if (perm === "granted") {
+        toast.success("Notificações ativadas!");
+        new Notification("ItaSuper", { body: "Notificações funcionando ✅", icon: "/logo-itasuper-128.webp" });
+      } else if (perm === "denied") {
+        toast.error("Permissão negada. Ative nas configurações do navegador.");
+      }
+    } catch { toast.error("Erro ao ativar notificações."); }
+  };
+
+  const handleShareApp = async () => {
+    const url = "https://itasuper.com.br";
+    const shareData = { title: "ItaSuper", text: "Peça no ItaSuper — delivery rápido e sem taxas absurdas.", url };
+    try {
+      if (navigator.share) { await navigator.share(shareData); }
+      else { await navigator.clipboard.writeText(url); toast.success("Link copiado!"); }
+    } catch {}
+  };
+
   const handleDeleteAccount = async () => {
     setDeletingAccount(true);
     try {
