@@ -61,6 +61,7 @@ const AvisosSection = lazy(() => import("./admin/sections/AvisosSection"));
 const OrdersSection = lazy(() => import("./admin/sections/OrdersSection"));
 import AdminOrderCard from "./admin/components/AdminOrderCard";
 import ClientsTab from "./admin/components/ClientsTab";
+const StoreReportsPanel = lazy(() => import("@/components/store/StoreReportsPanel"));
 
 const TabFallback = () => (
   <div className="flex items-center justify-center py-12">
