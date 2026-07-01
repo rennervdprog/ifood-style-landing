@@ -124,6 +124,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     enforceRememberMe().then(() => supabase.auth.getSession()).then(({ data: { session: restoredSession } }) => {
       console.log("[Auth] 🔄 Session restored from storage:", restoredSession?.user?.email ?? "none");
+      try {
+        (supabase.realtime as any).setAuth?.(restoredSession?.access_token ?? null);
+      } catch {}
       currentUserIdRef.current = restoredSession?.user?.id ?? null;
       setSession(restoredSession);
       setLoading(false);
@@ -148,12 +151,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.log("[Auth] ⏭️ Skipping INITIAL_SESSION (already restored via getSession)");
         // Still update session in case token was refreshed
         if (newSession) {
+          try {
+            (supabase.realtime as any).setAuth?.(newSession.access_token);
+          } catch {}
           setSession(newSession);
           currentUserIdRef.current = nextUserId;
         }
         return;
       }
 
+      try {
+        (supabase.realtime as any).setAuth?.(newSession?.access_token ?? null);
+      } catch {}
       currentUserIdRef.current = nextUserId;
       setSession(newSession);
       setLoading(false);
