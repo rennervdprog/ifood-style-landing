@@ -150,6 +150,15 @@ const GlobalRealtimeSync = () => {
         "store-financial-transactions",
         "store-pdv-plan",
         "store-pdv-pending",
+        "store-balance-repasse",
+        "valor-a-pagar",
+        "store-billing-history",
+        "fixed-plan-billing-history",
+        "repasse-history",
+        "recebido-mes",
+        "oldest-pending-commission",
+        "pending-plan-charge",
+        "pending-subscription-payment",
       ].forEach((prefix) => invalidateScoped(prefix, storeId));
 
       invalidatePrefix("store-balances");
