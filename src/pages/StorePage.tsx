@@ -1064,7 +1064,7 @@ const StorePage = () => {
                         ? (store as any)?.own_delivery_fee
                         : (store as any)?.delivery_fee;
                       if (baseFee == null) return "—";
-                      const platformAdd = mode === "own" ? 2 : 0;
+                      const platformAdd = mode === "own" ? (storePlan.platformFeeCustomerExtra ?? 0) : 0;
                       const total = Number(baseFee) + platformAdd;
                       return total === 0 ? "Grátis" : `A partir de ${formatBRL(total)}`;
                     })()}
