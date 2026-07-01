@@ -111,7 +111,7 @@ for (const spec of SPECS) {
       const { data: plan, error: e2 } = await admin!
         .from("store_plans")
         .select(
-          "plan_type, monthly_fee, commission_rate, pix_operational_fee_override, platform_delivery_split_override, pdv_enabled, pdv_commission_rate, pdv_fixed_fee_override"
+          "plan_type, monthly_fee, commission_rate, pix_operational_fee_override, platform_delivery_split_override, pdv_enabled, pdv_commission_rate"
         )
         .eq("store_id", storeId as string)
         .single();
@@ -131,16 +131,8 @@ for (const spec of SPECS) {
         `pdv_commission_rate (esperado ${spec.pdvCommissionRate}%)`
       );
 
-      // Taxa PDV fixa (R$): fixed e autonomy = R$1
-      // (pode estar num override na tabela; se coluna não existir, o teste apenas registra)
-      if ("pdv_fixed_fee_override" in (plan as any)) {
-        const fixed = Number((plan as any).pdv_fixed_fee_override ?? 0);
-        // aceita R$1 configurado explicitamente OU trigger accrue_pdv_fixed_fee (default 1)
-        assert(
-          spec.pdvFixedFee === 0 || fixed === spec.pdvFixedFee || fixed === 0,
-          `pdv_fixed_fee override esperado ${spec.pdvFixedFee}, veio ${fixed}`
-        );
-      }
+      // Taxa PDV fixa (R$1) para fixed/autonomy é cobrada via trigger
+      // trg_accrue_pdv_fixed_fee (não fica em coluna) — validado em outros testes.
 
       // Split da plataforma na entrega própria
       const splitOverride = plan.platform_delivery_split_override;
