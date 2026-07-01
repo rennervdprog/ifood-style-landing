@@ -11,7 +11,10 @@ type PgPayload = {
 };
 
 const getStoreId = (payload: PgPayload) =>
-  (payload.new?.store_id || payload.old?.store_id || payload.new?.id || payload.old?.id || null) as string | null;
+  (payload.new?.store_id || payload.old?.store_id || null) as string | null;
+
+const getStoreRowId = (payload: PgPayload) =>
+  (payload.new?.id || payload.old?.id || null) as string | null;
 
 const getClientId = (payload: PgPayload) =>
   (payload.new?.client_id || payload.old?.client_id || null) as string | null;
@@ -221,7 +224,7 @@ const GlobalRealtimeSync = () => {
     const channel = supabase
       .channel("global-public-catalog-sync")
       .on("postgres_changes" as any, { event: "*", schema: "public", table: "stores" }, (payload: PgPayload) =>
-        invalidateStoreSettings(getStoreId(payload)),
+        invalidateStoreSettings(getStoreRowId(payload)),
       )
       .on("postgres_changes" as any, { event: "*", schema: "public", table: "products" }, (payload: PgPayload) =>
         invalidateStoreCatalog(getStoreId(payload)),
