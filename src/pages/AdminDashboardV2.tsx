@@ -1706,6 +1706,7 @@ const AdminDashboard = () => {
               isPizza={isPizza}
               allowFullReports={allowFullReports}
               badges={{ avisos: avisosCount }}
+              pulseTabs={{ repasse: repassePending > 0 }}
             />
           )}
           {!storeLoading && isApproved && !store && (
