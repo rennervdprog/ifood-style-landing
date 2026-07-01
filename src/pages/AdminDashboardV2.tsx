@@ -1870,6 +1870,18 @@ const AdminDashboard = () => {
             </Suspense>
           )}
 
+          {/* ══════ REPASSE TAB ══════ */}
+          {dashboardTab === "repasse" && store && (
+            <Suspense fallback={<TabFallback />}>
+              <RepasseSection
+                store={store}
+                storePlan={storePlan}
+                setDashboardTab={setDashboardTab}
+                pendingTotal={repassePending}
+              />
+            </Suspense>
+          )}
+
           {/* ══════ CLIENTS TAB ══════ */}
           {dashboardTab === "clients" && store && (
             <ClientsTab
@@ -1939,7 +1951,7 @@ const AdminDashboard = () => {
           )}
 
           {/* ══════ OTHER TABS ══════ */}
-          {!["dashboard", "avisos", "orders", "clients"].includes(dashboardTab) && store && (
+          {!["dashboard", "avisos", "repasse", "orders", "clients"].includes(dashboardTab) && store && (
             <div className="p-4 lg:p-6 max-w-6xl mx-auto">
               <Suspense fallback={<TabFallback />}>
                 {dashboardTab === "menu" && <MenuTab storeId={store.id} storeCategory={store.category} />}
