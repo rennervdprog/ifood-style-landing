@@ -20,36 +20,23 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const DEVICE_CHECK_INTERVAL = 60_000; // 60s (was 30s — less aggressive)
 
+// Chaves legadas do sistema antigo "Lembrar-me" — mantidas apenas para limpeza.
 const REMEMBER_FLAG = "itasuper_remember";
 const REMEMBER_UNTIL = "itasuper_remember_until";
 const SESSION_ALIVE_KEY = "itasuper_session_alive";
+const REFRESH_INTERVAL = 30 * 60_000; // 30 min — refresh proativo do token
 
 /**
- * Enforce the user's "Lembrar-me" choice BEFORE restoring the session.
- * - remember=1 + expired → sign out (>2 months since login).
- * - remember=0 + no session-alive marker → tab/app was closed → sign out.
- * Returns true when the stored session was invalidated and must not be restored.
+ * Limpa artefatos do antigo sistema de expiração "Lembrar-me".
+ * A partir da v1.10.399 a sessão é perpétua para todos os perfis: usuário só
+ * sai por clique explícito em "Sair" ou por troca de senha.
  */
-const enforceRememberMe = async (): Promise<boolean> => {
+const clearLegacyRememberMeArtifacts = () => {
   try {
-    const remember = localStorage.getItem(REMEMBER_FLAG);
-    const alive = sessionStorage.getItem(SESSION_ALIVE_KEY);
-    const until = localStorage.getItem(REMEMBER_UNTIL);
-    let shouldSignOut = false;
-    if (remember === "1" && until && Date.now() > Number(until)) shouldSignOut = true;
-    if (remember === "0" && !alive) shouldSignOut = true;
-    if (shouldSignOut) {
-      await supabase.auth.signOut();
-      localStorage.removeItem(REMEMBER_FLAG);
-      localStorage.removeItem(REMEMBER_UNTIL);
-      return true;
-    }
-    // Mark this tab/app session as alive so reloads keep the user logged in.
-    if (remember) sessionStorage.setItem(SESSION_ALIVE_KEY, "1");
-    return false;
-  } catch {
-    return false;
-  }
+    localStorage.removeItem(REMEMBER_FLAG);
+    localStorage.removeItem(REMEMBER_UNTIL);
+    sessionStorage.removeItem(SESSION_ALIVE_KEY);
+  } catch {}
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -57,8 +44,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
   const currentUserIdRef = useRef<string | null>(null);
   const deviceCheckRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const refreshIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const sessionRestoredRef = useRef(false);
   const deviceCheckFailCountRef = useRef(0);
+  const shouldTrackDeviceRef = useRef(false);
+
+  // Device tracking (kick de outra sessão) só faz sentido para admin/lojista/super_admin.
+  // Cliente e entregador podem usar múltiplos dispositivos livremente (padrão Anota.ai).
+  const evaluateDeviceTracking = async (userId: string): Promise<boolean> => {
+    try {
+      const { data } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", userId);
+      const roles = (data || []).map((r: any) => r.role);
+      return roles.some((r: string) => r === "admin" || r === "admin_loja" || r === "super_admin");
+    } catch {
+      return false;
+    }
+  };
 
   // Register this device as the active one for the user
   const registerDevice = async () => {
@@ -106,6 +110,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const startDeviceCheck = () => {
+    if (!shouldTrackDeviceRef.current) return;
     stopDeviceCheck();
     deviceCheckRef.current = setInterval(checkDeviceStillActive, DEVICE_CHECK_INTERVAL);
   };
@@ -117,12 +122,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Refresh proativo do JWT enquanto o app está visível
+  const startProactiveRefresh = () => {
+    if (refreshIntervalRef.current) return;
+    refreshIntervalRef.current = setInterval(() => {
+      if (document.visibilityState !== "visible") return;
+      supabase.auth.refreshSession().catch((e) => {
+        console.warn("[Auth] proactive refreshSession failed:", e);
+      });
+    }, REFRESH_INTERVAL);
+  };
+  const stopProactiveRefresh = () => {
+    if (refreshIntervalRef.current) {
+      clearInterval(refreshIntervalRef.current);
+      refreshIntervalRef.current = null;
+    }
+  };
+
   useEffect(() => {
     // CRITICAL: Restore session from storage FIRST, then set up listener.
     // This prevents the race condition where onAuthStateChange fires 
     // INITIAL_SESSION before the stored session is fully hydrated.
-    
-    enforceRememberMe().then(() => supabase.auth.getSession()).then(({ data: { session: restoredSession } }) => {
+    clearLegacyRememberMeArtifacts();
+
+    supabase.auth.getSession().then(async ({ data: { session: restoredSession }, error }) => {
+      // Se o token salvo estiver corrompido (bad_jwt de projeto antigo), limpa e segue.
+      if (error) {
+        console.warn("[Auth] getSession error, clearing local session:", error.message);
+        try { await supabase.auth.signOut({ scope: "local" as any }); } catch {}
+      }
       console.log("[Auth] 🔄 Session restored from storage:", restoredSession?.user?.email ?? "none");
       try {
         (supabase.realtime as any).setAuth?.(restoredSession?.access_token ?? SUPABASE_ANON_KEY);
@@ -134,7 +162,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (restoredSession?.user) {
         setSentryUser({ id: restoredSession.user.id, email: restoredSession.user.email });
+        shouldTrackDeviceRef.current = await evaluateDeviceTracking(restoredSession.user.id);
         registerDevice().then(() => startDeviceCheck());
+        startProactiveRefresh();
       }
     });
 
@@ -181,6 +211,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (event === "SIGNED_OUT" && previousUserId) {
         stopDeviceCheck();
+        stopProactiveRefresh();
+        shouldTrackDeviceRef.current = false;
         if (!isCapacitorNative()) {
           clearStoredPushState();
         }
@@ -191,12 +223,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       // Register device on explicit sign in (not token refresh)
       if (event === "SIGNED_IN" && nextUserId) {
-        registerDevice().then(() => startDeviceCheck());
+        evaluateDeviceTracking(nextUserId).then((track) => {
+          shouldTrackDeviceRef.current = track;
+          registerDevice().then(() => startDeviceCheck());
+        });
+        startProactiveRefresh();
       }
 
       // On token refresh, just ensure device check is running
       if (event === "TOKEN_REFRESHED" && nextUserId) {
-        if (!deviceCheckRef.current) {
+        if (shouldTrackDeviceRef.current && !deviceCheckRef.current) {
           startDeviceCheck();
         }
       }
@@ -205,6 +241,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => {
       subscription.unsubscribe();
       stopDeviceCheck();
+      stopProactiveRefresh();
     };
   }, []);
 
@@ -217,6 +254,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const handleVisibility = () => {
       if (document.visibilityState === "visible" && session?.user) {
+        // Ao voltar do background, força um refresh do JWT para evitar
+        // que a próxima query use um token já expirado.
+        supabase.auth.refreshSession().catch(() => {});
         const now = Date.now();
         if (now - lastCheck < DEBOUNCE_MS) return;
         lastCheck = now;

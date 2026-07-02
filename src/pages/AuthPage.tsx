@@ -36,7 +36,6 @@ const PASSWORD_RULES: PasswordRule[] = [
 const REMEMBER_KEY = "itasuper_remember_until";
 const REMEMBER_FLAG = "itasuper_remember";
 const SESSION_ALIVE_KEY = "itasuper_session_alive";
-const TWO_MONTHS_MS = 60 * 24 * 60 * 60 * 1000;
 
 /**
  * Convert WhatsApp digits to a synthetic e-mail used internally by Supabase Auth.
@@ -64,7 +63,6 @@ const AuthPage = () => {
   const [referencePoint, setReferencePoint] = useState("");
   const [cepLoading, setCepLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(true);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [loading, setLoading] = useState(false);
   const [resetSent, setResetSent] = useState(false);
@@ -208,17 +206,14 @@ const AuthPage = () => {
           return;
         }
 
-        // Persist the user's choice and mark this tab/app session as alive.
-        // - rememberMe=true  → session persists across browser restarts up to 2 months.
-        // - rememberMe=false → session lives only until the browser/app is closed
-        //   (sessionStorage is cleared on close; AuthContext will sign out on next launch).
-        localStorage.setItem(REMEMBER_FLAG, rememberMe ? "1" : "0");
-        sessionStorage.setItem(SESSION_ALIVE_KEY, "1");
-        if (rememberMe) {
-          localStorage.setItem(REMEMBER_KEY, String(Date.now() + TWO_MONTHS_MS));
-        } else {
+        // Sessão perpétua (v1.10.399+): cliente/lojista/entregador ficam logados
+        // até clicarem em "Sair" ou trocarem a senha. Limpa artefatos legados
+        // do antigo sistema "Lembrar-me" para evitar deslogar em novos boots.
+        try {
+          localStorage.removeItem(REMEMBER_FLAG);
           localStorage.removeItem(REMEMBER_KEY);
-        }
+          sessionStorage.removeItem(SESSION_ALIVE_KEY);
+        } catch {}
         toast.success("Login realizado com sucesso!");
         
         const { data: { user: loggedUser } } = await supabase.auth.getUser();
@@ -511,16 +506,7 @@ const AuthPage = () => {
           )}
 
           {mode === "login" && (
-            <div className="flex items-center justify-between">
-              <label className="flex items-center gap-2 cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                  className="w-4 h-4 rounded border-border accent-primary"
-                />
-                <span className="text-sm text-slate-500">Lembrar-me</span>
-              </label>
+            <div className="flex items-center justify-end">
               <button
                 type="button"
                 onClick={() => setMode("forgot")}
