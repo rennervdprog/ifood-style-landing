@@ -1,5 +1,10 @@
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "./types";
+import { authStorage, purgeOrphanSupabaseTokens } from "./authStorage";
+
+// Limpa tokens de projetos Supabase antigos que causavam `bad_jwt` silencioso
+// e forçavam clientes a re-logar. Executa uma vez no boot do módulo.
+purgeOrphanSupabaseTokens();
 
 // 🔁 Cérebro apontado para o Supabase EXTERNO (não Lovable Cloud)
 // Projeto externo: qkjhguziuchqsbxzruea (necessário para integração com Vercel)
@@ -12,9 +17,11 @@ export const supabase = createClient<Database>(
   SUPABASE_ANON_KEY,
   {
     auth: {
-      storage: localStorage,
+      storage: authStorage,
       persistSession: true,
       autoRefreshToken: true,
+      // Sem detecção de sessão em URL (evita conflitos com nosso RecoveryRedirect)
+      detectSessionInUrl: false,
     },
     realtime: {
       // Heartbeat every 25s (default 30s) — keeps WebSocket alive through
