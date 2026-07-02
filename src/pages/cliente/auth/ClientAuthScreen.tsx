@@ -109,6 +109,8 @@ const ClientAuthScreen = ({ onSuccess }: { onSuccess: () => void }) => {
           }).eq("user_id", signUpData.user.id);
         }
         toast.success("Conta criada!");
+        if (rememberMe) localStorage.setItem(REMEMBER_KEY, String(Date.now() + TWO_MONTHS_MS));
+        else localStorage.removeItem(REMEMBER_KEY);
         onSuccess();
       } else if (mode === "reset") {
         const { error } = await supabase.auth.updateUser({ password });
@@ -244,13 +246,15 @@ const ClientAuthScreen = ({ onSuccess }: { onSuccess: () => void }) => {
                     </div>
                   </div>
                 )}
-                {mode === "login" && (
+                {(mode === "login" || mode === "signup") && (
                   <div className="flex items-center justify-between">
                     <label className="flex items-center gap-2 cursor-pointer select-none">
                       <input type="checkbox" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} className="w-4 h-4 rounded border-border accent-primary" />
                       <span className="text-sm text-slate-500">Lembrar-me</span>
                     </label>
-                    <button type="button" onClick={() => setMode("forgot")} className="text-sm text-primary font-medium">Esqueceu a senha?</button>
+                    {mode === "login" && (
+                      <button type="button" onClick={() => setMode("forgot")} className="text-sm text-primary font-medium">Esqueceu a senha?</button>
+                    )}
                   </div>
                 )}
                 {mode === "signup" && (
