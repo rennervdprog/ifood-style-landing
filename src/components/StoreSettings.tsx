@@ -324,6 +324,9 @@ type PizzaPriceMode = "maior" | "media" | "soma";
         print_copies: printCopies,
         // Largura da bobina térmica (58mm ou 80mm)
         print_paper_width: printPaperWidth,
+        // Impressão automática — se false, o lojista imprime manualmente.
+        auto_print_pdv: autoPrintPdv,
+        auto_print_delivery: autoPrintDelivery,
       },
       delivery_mode: deliveryMode,
       own_delivery_fee: parseFloat(ownDeliveryFee.toString().replace(",", ".")) || 0,
