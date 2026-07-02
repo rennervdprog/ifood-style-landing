@@ -166,6 +166,14 @@ type PizzaPriceMode = "maior" | "media" | "soma";
     storeSettings?.print_paper_width === 58 ? 58 : 80
   );
 
+  // Impressão automática — padrão ligado (comportamento atual das lojas).
+  const [autoPrintPdv, setAutoPrintPdv] = useState<boolean>(
+    storeSettings?.auto_print_pdv !== false
+  );
+  const [autoPrintDelivery, setAutoPrintDelivery] = useState<boolean>(
+    storeSettings?.auto_print_delivery !== false
+  );
+
   // Z-API foi substituído pela aba WhatsApp (Evolution API) — bloco removido.
 
   // Load whatsapp from profile
