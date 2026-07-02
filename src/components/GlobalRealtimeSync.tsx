@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { SUPABASE_ANON_KEY, supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useUserRole } from "@/hooks/useUserRole";
 import { cleanupChannel, subscribeWithRejoin } from "@/lib/realtimeChannel";
 
 type PgPayload = {
@@ -36,6 +37,12 @@ const getSessionId = (payload: PgPayload) =>
 const GlobalRealtimeSync = () => {
   const queryClient = useQueryClient();
   const { user, session } = useAuth();
+  const { role } = useUserRole();
+  // Clientes só precisam ouvir os próprios pedidos e o próprio perfil — não
+  // faz sentido receber eventos de PDV, saldos de loja, planos, drivers,
+  // vínculos motoboy-loja etc. Isso reduz drasticamente payload/CPU/custo
+  // Realtime nos aparelhos dos clientes finais.
+  const isBackofficeUser = role !== null && role !== "cliente";
   const timersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
   useEffect(() => {
@@ -288,28 +295,33 @@ const GlobalRealtimeSync = () => {
   useEffect(() => {
     if (!user?.id) return;
 
-    const channel = supabase
-      .channel(`global-private-sync-${user.id}`)
+    let channel = supabase
+      .channel(`global-private-sync-${user.id}-${isBackofficeUser ? "bo" : "cli"}`)
       .on("postgres_changes" as any, { event: "*", schema: "public", table: "orders" }, invalidateOrders)
-      .on("postgres_changes" as any, { event: "*", schema: "public", table: "order_items" }, invalidateOrders)
-      .on("postgres_changes" as any, { event: "*", schema: "public", table: "store_balances" }, (payload: PgPayload) =>
-        invalidateFinancial(getStoreId(payload)),
-      )
-      .on("postgres_changes" as any, { event: "*", schema: "public", table: "store_plans" }, (payload: PgPayload) =>
-        invalidateStoreSettings(getStoreId(payload)),
-      )
-      .on("postgres_changes" as any, { event: "*", schema: "public", table: "pdv_movements" }, invalidatePdv)
-      .on("postgres_changes" as any, { event: "*", schema: "public", table: "pdv_sessions" }, invalidatePdv)
-      .on("postgres_changes" as any, { event: "*", schema: "public", table: "drivers" }, () => {
-        invalidatePrefix("online-drivers-count");
-        invalidatePrefix("store-online-drivers");
-        invalidatePrefix("driver-profiles");
-      })
-      .on("postgres_changes" as any, { event: "*", schema: "public", table: "store_drivers" }, () => {
-        invalidatePrefix("store-drivers-list");
-        invalidatePrefix("own-store-pedidos");
-      })
-      .on("postgres_changes" as any, { event: "*", schema: "public", table: "profiles" }, () => {
+      .on("postgres_changes" as any, { event: "*", schema: "public", table: "order_items" }, invalidateOrders);
+
+    if (isBackofficeUser) {
+      channel = channel
+        .on("postgres_changes" as any, { event: "*", schema: "public", table: "store_balances" }, (payload: PgPayload) =>
+          invalidateFinancial(getStoreId(payload)),
+        )
+        .on("postgres_changes" as any, { event: "*", schema: "public", table: "store_plans" }, (payload: PgPayload) =>
+          invalidateStoreSettings(getStoreId(payload)),
+        )
+        .on("postgres_changes" as any, { event: "*", schema: "public", table: "pdv_movements" }, invalidatePdv)
+        .on("postgres_changes" as any, { event: "*", schema: "public", table: "pdv_sessions" }, invalidatePdv)
+        .on("postgres_changes" as any, { event: "*", schema: "public", table: "drivers" }, () => {
+          invalidatePrefix("online-drivers-count");
+          invalidatePrefix("store-online-drivers");
+          invalidatePrefix("driver-profiles");
+        })
+        .on("postgres_changes" as any, { event: "*", schema: "public", table: "store_drivers" }, () => {
+          invalidatePrefix("store-drivers-list");
+          invalidatePrefix("own-store-pedidos");
+        });
+    }
+
+    channel = channel.on("postgres_changes" as any, { event: "*", schema: "public", table: "profiles" }, () => {
         invalidatePrefix("user-role");
         invalidatePrefix("my-profile-approval");
         invalidatePrefix("bottom-nav-profile");
@@ -320,13 +332,13 @@ const GlobalRealtimeSync = () => {
 
     subscribeWithRejoin(channel, (status) => {
       if (status === "SUBSCRIBED") {
-        console.log("[Realtime] ✅ Dados privados sincronizados");
+        console.log(`[Realtime] ✅ Dados privados sincronizados (${isBackofficeUser ? "backoffice" : "cliente"})`);
       }
     });
 
     return () => cleanupChannel(channel);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [queryClient, user?.id]);
+  }, [queryClient, user?.id, isBackofficeUser]);
 
   return null;
 };
