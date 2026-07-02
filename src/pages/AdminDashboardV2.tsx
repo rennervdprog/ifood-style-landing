@@ -593,14 +593,16 @@ const AdminDashboard = () => {
 
   const clientIds = [...new Set(orders?.map(o => o.client_id) || [])];
   const { data: clientProfiles } = useQuery({
-    queryKey: ["client-profiles", store?.id],
+    queryKey: ["client-profiles", store?.id, orders?.length ?? 0],
     queryFn: async () => {
-      const { data } = await supabase.rpc("get_delivery_contacts");
+      const ids = (orders?.map((o: any) => o.id) || []).filter(Boolean);
+      const { data } = await supabase.rpc("get_delivery_contacts", {
+        _order_ids: ids.length ? ids : null,
+      });
       return data || [];
     },
-    // ⚡ Perf: RPC pesada (mean ~130ms, max 5s no banco). Só roda quando há
-    // pedidos no painel (clientIds > 0) e cache amplo de 15min, já que
-    // contato do cliente raramente muda durante uma sessão.
+    // ⚡ Perf: RPC agora filtra pelos IDs visíveis (evita varrer todos os
+    // pedidos da loja). Cache amplo de 15min — contato raramente muda.
     enabled: !!store && clientIds.length > 0,
     staleTime: 1000 * 60 * 15,
     gcTime: 1000 * 60 * 30,
