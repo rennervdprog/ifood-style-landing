@@ -290,7 +290,6 @@ Deno.serve(async (req) => {
           .from("whatsapp_send_log")
           .select("id, sent_at")
           .eq("store_id", cfg.store_id).eq("phone", number).eq("kind", "auto_reply")
-          .neq("message_hash", "greet_pending")
           .gte("sent_at", greetingCooldownAgo)
           .order("sent_at", { ascending: false })
           .limit(1);
