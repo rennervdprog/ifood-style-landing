@@ -68,7 +68,26 @@ jobs:
           javac -version
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci --no-audit --no-fund
+
+      - name: Read target version
+        id: version
+        run: |
+          APP_VERSION=$(grep -oP 'APP_VERSION\s*=\s*"\K[^"]+' src/lib/appVersion.ts)
+          ANDROID_VERSION=$(grep -oP 'versionName\s+"\K[^"]+' android/app/build.gradle)
+          ANDROID_CODE=$(grep -oP 'versionCode\s+\K[0-9]+' android/app/build.gradle)
+          echo "📌 Web version: $APP_VERSION"
+          echo "📌 Android version: $ANDROID_VERSION ($ANDROID_CODE)"
+          if [ -z "$APP_VERSION" ] || [ -z "$ANDROID_VERSION" ] || [ -z "$ANDROID_CODE" ]; then
+            echo "::error::Não consegui ler APP_VERSION/versionName/versionCode"
+            exit 1
+          fi
+          if [ "$APP_VERSION" != "$ANDROID_VERSION" ]; then
+            echo "::error::Versões divergentes: APP_VERSION=$APP_VERSION e Android=$ANDROID_VERSION"
+            exit 1
+          fi
+          echo "name=$APP_VERSION" >> "$GITHUB_OUTPUT"
+          echo "code=$ANDROID_CODE" >> "$GITHUB_OUTPUT"
 
       - name: Configure Capacitor for Cliente
         run: |
@@ -161,6 +180,12 @@ jobs:
             echo "✅ build.gradle updated with correct package name"
           fi
 
+      - name: Assert Gradle version before build
+        run: |
+          grep -q "versionName \"${{ steps.version.outputs.name }}\"" android/app/build.gradle
+          grep -q "versionCode ${{ steps.version.outputs.code }}" android/app/build.gradle
+          echo "✅ Gradle version locked at ${{ steps.version.outputs.name }} (${{ steps.version.outputs.code }})"
+
       - name: Fix Android app labels (Cliente)
         run: |
           APP_NAME=$(grep -oP "appName: '\K[^']+" capacitor.config.ts || echo "ItaSuper")
@@ -223,17 +248,38 @@ jobs:
       - name: Build Release APK (unsigned)
         run: cd android && ./gradlew --version && ./gradlew assembleRelease
 
-      - name: Upload Release APK to Supabase Storage
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-        if: ${{ env.SUPABASE_SERVICE_ROLE_KEY != '' }}
+      - name: Verify and rename APK (Cliente)
+        id: apk
         run: |
           APK_PATH="android/app/build/outputs/apk/release/app-release-unsigned.apk"
           if [ ! -f "$APK_PATH" ]; then
              APK_PATH="android/app/build/outputs/apk/release/app-release.apk"
           fi
-          VERSION=$(grep -oP 'APP_VERSION = "\K[^"]+' src/lib/appVersion.ts || echo "1.0.0")
+          AAPT=$(ls "$ANDROID_HOME"/build-tools/*/aapt | sort -V | tail -1)
+          BADGING=$($AAPT dump badging "$APK_PATH" | head -1)
+          echo "$BADGING"
+          if [[ "$BADGING" != *"versionCode='${{ steps.version.outputs.code }}'"* ]]; then
+            echo "::error::APK gerado com versionCode incorreto; esperado ${{ steps.version.outputs.code }}"
+            exit 1
+          fi
+          if [[ "$BADGING" != *"versionName='${{ steps.version.outputs.name }}'"* ]]; then
+            echo "::error::APK gerado com versionName incorreto; esperado ${{ steps.version.outputs.name }}"
+            exit 1
+          fi
+          OUT="android/app/build/outputs/apk/release/itasuper-cliente-v${{ steps.version.outputs.name }}-${{ steps.version.outputs.code }}.apk"
+          cp "$APK_PATH" "$OUT"
+          echo "path=$OUT" >> "$GITHUB_OUTPUT"
+          echo "✅ APK validado: $OUT"
+
+      - name: Upload Release APK to Supabase Storage
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.EXTERNAL_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || secrets.EXTERNAL_SUPABASE_SERVICE_KEY }}
+        if: ${{ env.SUPABASE_SERVICE_ROLE_KEY != '' }}
+        run: |
+          APK_PATH="${{ steps.apk.outputs.path }}"
+          VERSION="${{ steps.version.outputs.name }}"
+          VERSION_CODE="${{ steps.version.outputs.code }}"
           
           echo "🚀 Uploading Cliente APK v$VERSION to Supabase..."
           
@@ -248,6 +294,7 @@ jobs:
           cat > version-cliente.json << EOF
           {
             "version": "$VERSION",
+            "versionCode": $VERSION_CODE,
             "url": "${SUPABASE_URL}/storage/v1/object/public/app-releases/itasuper-cliente.apk",
             "updated_at": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
             "app_name": "itasuper-cliente"
@@ -265,8 +312,8 @@ jobs:
 
       - uses: actions/upload-artifact@v7
         with:
-          name: itasuper-cliente-release
-          path: android/app/build/outputs/apk/release/app-release*.apk
+          name: itasuper-cliente-v${{ steps.version.outputs.name }}-${{ steps.version.outputs.code }}
+          path: ${{ steps.apk.outputs.path }}
           retention-days: 30
 
   build-parceiro:
@@ -293,7 +340,26 @@ jobs:
           javac -version
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci --no-audit --no-fund
+
+      - name: Read target version
+        id: version
+        run: |
+          APP_VERSION=$(grep -oP 'APP_VERSION\s*=\s*"\K[^"]+' src/lib/appVersion.ts)
+          ANDROID_VERSION=$(grep -oP 'versionName\s+"\K[^"]+' android/app/build.gradle)
+          ANDROID_CODE=$(grep -oP 'versionCode\s+\K[0-9]+' android/app/build.gradle)
+          echo "📌 Web version: $APP_VERSION"
+          echo "📌 Android version: $ANDROID_VERSION ($ANDROID_CODE)"
+          if [ -z "$APP_VERSION" ] || [ -z "$ANDROID_VERSION" ] || [ -z "$ANDROID_CODE" ]; then
+            echo "::error::Não consegui ler APP_VERSION/versionName/versionCode"
+            exit 1
+          fi
+          if [ "$APP_VERSION" != "$ANDROID_VERSION" ]; then
+            echo "::error::Versões divergentes: APP_VERSION=$APP_VERSION e Android=$ANDROID_VERSION"
+            exit 1
+          fi
+          echo "name=$APP_VERSION" >> "$GITHUB_OUTPUT"
+          echo "code=$ANDROID_CODE" >> "$GITHUB_OUTPUT"
 
       - name: Configure Capacitor for Parceiro
         run: |
@@ -382,6 +448,12 @@ jobs:
             echo "✅ build.gradle updated with correct package name"
           fi
 
+      - name: Assert Gradle version before build
+        run: |
+          grep -q "versionName \"${{ steps.version.outputs.name }}\"" android/app/build.gradle
+          grep -q "versionCode ${{ steps.version.outputs.code }}" android/app/build.gradle
+          echo "✅ Gradle version locked at ${{ steps.version.outputs.name }} (${{ steps.version.outputs.code }})"
+
       - name: Fix Android app labels (Parceiro)
         run: |
           APP_NAME=$(grep -oP "appName: '\K[^']+" capacitor.config.ts || echo "ItaSuper Parceiro")
@@ -458,14 +530,35 @@ jobs:
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: cd android && ./gradlew --version && ./gradlew assembleRelease
 
-      - name: Upload Release APK to Supabase Storage
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-        if: ${{ env.SUPABASE_SERVICE_ROLE_KEY != '' }}
+      - name: Verify and rename APK (Parceiro)
+        id: apk
         run: |
           APK_PATH="android/app/build/outputs/apk/release/app-release.apk"
-          VERSION=$(grep -oP 'APP_VERSION = "\K[^"]+' src/lib/appVersion.ts || echo "1.0.0")
+          AAPT=$(ls "$ANDROID_HOME"/build-tools/*/aapt | sort -V | tail -1)
+          BADGING=$($AAPT dump badging "$APK_PATH" | head -1)
+          echo "$BADGING"
+          if [[ "$BADGING" != *"versionCode='${{ steps.version.outputs.code }}'"* ]]; then
+            echo "::error::APK gerado com versionCode incorreto; esperado ${{ steps.version.outputs.code }}"
+            exit 1
+          fi
+          if [[ "$BADGING" != *"versionName='${{ steps.version.outputs.name }}'"* ]]; then
+            echo "::error::APK gerado com versionName incorreto; esperado ${{ steps.version.outputs.name }}"
+            exit 1
+          fi
+          OUT="android/app/build/outputs/apk/release/itasuper-parceiro-v${{ steps.version.outputs.name }}-${{ steps.version.outputs.code }}.apk"
+          cp "$APK_PATH" "$OUT"
+          echo "path=$OUT" >> "$GITHUB_OUTPUT"
+          echo "✅ APK validado: $OUT"
+
+      - name: Upload Release APK to Supabase Storage
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.EXTERNAL_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || secrets.EXTERNAL_SUPABASE_SERVICE_KEY }}
+        if: ${{ env.SUPABASE_SERVICE_ROLE_KEY != '' }}
+        run: |
+          APK_PATH="${{ steps.apk.outputs.path }}"
+          VERSION="${{ steps.version.outputs.name }}"
+          VERSION_CODE="${{ steps.version.outputs.code }}"
           
           echo "🚀 Uploading Parceiro APK v$VERSION to Supabase..."
           
@@ -480,6 +573,7 @@ jobs:
           cat > version-parceiro.json << EOF
           {
             "version": "$VERSION",
+            "versionCode": $VERSION_CODE,
             "url": "${SUPABASE_URL}/storage/v1/object/public/app-releases/itasuper-parceiro.apk",
             "updated_at": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
             "app_name": "itasuper-parceiro"
@@ -497,8 +591,8 @@ jobs:
 
       - uses: actions/upload-artifact@v7
         with:
-          name: itasuper-parceiro-release
-          path: android/app/build/outputs/apk/release/app-release.apk
+          name: itasuper-parceiro-v${{ steps.version.outputs.name }}-${{ steps.version.outputs.code }}
+          path: ${{ steps.apk.outputs.path }}
           retention-days: 30
 
   build-white-label:
