@@ -923,7 +923,10 @@ const AdminDashboard = () => {
           // Ignora pedidos do PDV (têm impressão própria no fechamento).
           const src = (payload.new as any).order_source;
           const storeAutoDelivery = (store?.settings as any)?.auto_print_delivery !== false;
-          if (autoPrint && storeAutoDelivery && src !== "pdv") {
+          // Lê autoPrint direto do localStorage — evita stale closure na subscription.
+          const stored = localStorage.getItem("autoPrint");
+          const autoPrintNow = stored === null ? true : stored === "true";
+          if (autoPrintNow && storeAutoDelivery && src !== "pdv") {
             const orderId = (payload.new as any).id as string;
             const dedupeKey = `printed-order:${orderId}`;
             if (!sessionStorage.getItem(dedupeKey)) {
