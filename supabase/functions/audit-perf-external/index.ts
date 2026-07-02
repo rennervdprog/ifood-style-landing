@@ -33,6 +33,15 @@ Deno.serve(async (req) => {
     catch { return { ok: r.ok, status: r.status, data: text }; }
   }
 
+  // Modo passthrough: POST { sql: "..." } roda SQL arbitrária
+  const body = await req.json().catch(() => ({}));
+  if (body && typeof body.sql === "string") {
+    const r = await runSql(body.sql);
+    return new Response(JSON.stringify(r, null, 2), {
+      headers: { ...cors, "Content-Type": "application/json" },
+    });
+  }
+
   const tableList = TABLES.map((t) => `'${t}'`).join(",");
 
   const queries: Record<string, string> = {
