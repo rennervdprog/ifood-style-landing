@@ -9,6 +9,7 @@ import SupportTicketModal from "@/components/SupportTicketModal";
 import { toast } from "sonner";
 import StoreDriverView from "@/components/StoreDriverView";
 import DriverPersistentAlert from "@/components/DriverPersistentAlert";
+import DriverUpdateBanner from "@/components/DriverUpdateBanner";
 import SignOutConfirm from "@/components/SignOutConfirm";
 import { haptic } from "@/lib/haptics";
 import NativeShell from "@/components/native/NativeShell";
@@ -348,6 +349,7 @@ const DriverDashboardV2 = () => {
         />
       )}
       <DriverPersistentAlert availableCount={0} hasActiveDelivery={false} isOnline onReview={() => {}} />
+      <DriverUpdateBanner />
       <div className={`min-h-screen bg-background text-foreground native-app ${isPartnerNative ? "" : "pb-[5.5rem]"}`}>
         <header className="sticky top-0 z-50 md3-appbar">
           <div className="px-4 h-16 flex items-center justify-between gap-3">
