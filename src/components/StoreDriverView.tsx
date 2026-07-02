@@ -279,12 +279,12 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
   });
 
   // Fetch store names and coordinates
-  const { data: storeNames } = useQuery<{id: string; name: string; latitude: number | null; longitude: number | null; driver_pin_autofill?: boolean}[]>({
+  const { data: storeNames } = useQuery<{id: string; name: string; latitude: number | null; longitude: number | null; address_city?: string | null; driver_pin_autofill?: boolean}[]>({
     queryKey: ["store-driver-store-names", linkedStoreIds],
     queryFn: async () => {
       const { data } = await supabase
         .from("stores_driver_view" as any)
-        .select("id, name, latitude, longitude, driver_pin_autofill")
+        .select("id, name, latitude, longitude, address_city")
         .in("id", linkedStoreIds);
       return (data as any) || [];
     },
@@ -1366,7 +1366,10 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
                     {inDelivery && (
                       (() => {
                         const storeMeta = storeNames?.find((s) => s.id === order.store_id);
-                        const autofill = !!storeMeta?.driver_pin_autofill;
+                        const cityNorm = (storeMeta?.address_city || "")
+                          .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+                          .trim().toLowerCase();
+                        const autofill = !!storeMeta?.driver_pin_autofill || cityNorm === "itatinga";
                         const orderPin = (order as any).delivery_pin as string | undefined;
                         const effectivePin = autofill && orderPin ? orderPin : (pinInputs[order.id] || "");
                         return (
