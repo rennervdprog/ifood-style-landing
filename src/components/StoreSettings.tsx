@@ -166,6 +166,14 @@ type PizzaPriceMode = "maior" | "media" | "soma";
     storeSettings?.print_paper_width === 58 ? 58 : 80
   );
 
+  // Impressão automática — padrão ligado (comportamento atual das lojas).
+  const [autoPrintPdv, setAutoPrintPdv] = useState<boolean>(
+    storeSettings?.auto_print_pdv !== false
+  );
+  const [autoPrintDelivery, setAutoPrintDelivery] = useState<boolean>(
+    storeSettings?.auto_print_delivery !== false
+  );
+
   // Z-API foi substituído pela aba WhatsApp (Evolution API) — bloco removido.
 
   // Load whatsapp from profile
@@ -316,6 +324,9 @@ type PizzaPriceMode = "maior" | "media" | "soma";
         print_copies: printCopies,
         // Largura da bobina térmica (58mm ou 80mm)
         print_paper_width: printPaperWidth,
+        // Impressão automática — se false, o lojista imprime manualmente.
+        auto_print_pdv: autoPrintPdv,
+        auto_print_delivery: autoPrintDelivery,
       },
       delivery_mode: deliveryMode,
       own_delivery_fee: parseFloat(ownDeliveryFee.toString().replace(",", ".")) || 0,
@@ -1312,6 +1323,45 @@ const NotificationSection = () => {
             <p className="text-sm font-bold text-foreground">80 mm</p>
             <p className="text-[11px] text-muted-foreground">Padrão (recomendado)</p>
           </button>
+        </div>
+
+        <div className="pt-4 border-t border-border/60 space-y-3">
+          <div>
+            <h4 className="text-sm font-bold text-foreground">Impressão automática</h4>
+            <p className="text-[11px] text-muted-foreground">
+              Quando ligado, o cupom sai sozinho — sem precisar clicar em "Imprimir".
+            </p>
+          </div>
+
+          <label className="flex items-start gap-3 rounded-xl border border-border bg-muted/20 p-3 cursor-pointer">
+            <input
+              type="checkbox"
+              className="mt-1 h-4 w-4 accent-primary"
+              checked={autoPrintPdv}
+              onChange={(e) => setAutoPrintPdv(e.target.checked)}
+            />
+            <div>
+              <p className="text-sm font-bold text-foreground">PDV — imprimir ao finalizar venda</p>
+              <p className="text-[11px] text-muted-foreground">
+                O cupom sai automaticamente assim que você fecha a venda no balcão.
+              </p>
+            </div>
+          </label>
+
+          <label className="flex items-start gap-3 rounded-xl border border-border bg-muted/20 p-3 cursor-pointer">
+            <input
+              type="checkbox"
+              className="mt-1 h-4 w-4 accent-primary"
+              checked={autoPrintDelivery}
+              onChange={(e) => setAutoPrintDelivery(e.target.checked)}
+            />
+            <div>
+              <p className="text-sm font-bold text-foreground">Delivery — imprimir ao chegar pedido novo</p>
+              <p className="text-[11px] text-muted-foreground">
+                Assim que um pedido entra no painel, o cupom sai sozinho na térmica.
+              </p>
+            </div>
+          </label>
         </div>
       </div>
 

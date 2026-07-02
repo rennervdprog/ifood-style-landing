@@ -917,6 +917,44 @@ const AdminDashboard = () => {
           playAlert();
           notifyNewOrder();
           toast.info("🔔 Novo pedido!", { duration: 8000 });
+          // Impressão automática do cupom para pedidos de delivery.
+          // Respeita: (1) toggle rápido da sidebar (autoPrint) e
+          //          (2) preferência da loja (settings.auto_print_delivery).
+          // Ignora pedidos do PDV (têm impressão própria no fechamento).
+          const src = (payload.new as any).order_source;
+          const storeAutoDelivery = (store?.settings as any)?.auto_print_delivery !== false;
+          // Lê autoPrint direto do localStorage — evita stale closure na subscription.
+          const stored = localStorage.getItem("autoPrint");
+          const autoPrintNow = stored === null ? true : stored === "true";
+          if (autoPrintNow && storeAutoDelivery && src !== "pdv") {
+            const orderId = (payload.new as any).id as string;
+            const dedupeKey = `printed-order:${orderId}`;
+            if (!sessionStorage.getItem(dedupeKey)) {
+              sessionStorage.setItem(dedupeKey, "1");
+              // Aguarda o refresh trazer order_items e depois imprime.
+              setTimeout(async () => {
+                try {
+                  const { data: full } = await supabase
+                    .from("orders")
+                    .select("*, order_items(*, products(name))")
+                    .eq("id", orderId)
+                    .maybeSingle();
+                  if (!full) return;
+                  const copies = (store?.settings as any)?.print_copies === 1 ? 1 : 2;
+                  const paperWidth = (store?.settings as any)?.print_paper_width === 58 ? 58 : 80;
+                  printThermalReceipt(
+                    full as any,
+                    store?.name || "Loja",
+                    getClientName(full.client_id),
+                    getClientWhatsApp(full.client_id),
+                    { copies, paperWidth },
+                  );
+                } catch (e) {
+                  console.warn("[auto-print] falhou", e);
+                }
+              }, 1200);
+            }
+          }
         }
         if (payload.eventType === "UPDATE" && (payload.new as any).status === "pendente" && previous?.status === "aguardando_pagamento") {
           try {
