@@ -20,8 +20,6 @@ export const supabase = createClient<Database>(
       storage: authStorage,
       persistSession: true,
       autoRefreshToken: true,
-      // Sem detecção de sessão em URL (evita conflitos com nosso RecoveryRedirect)
-      detectSessionInUrl: false,
     },
     realtime: {
       // Heartbeat every 25s (default 30s) — keeps WebSocket alive through
