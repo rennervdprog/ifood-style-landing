@@ -1,61 +1,65 @@
-# Plano: Impressão Automática de Cupom (PDV + Delivery)
+## Diagnóstico — por que estão sendo deslogados hoje
+
+Auditei o fluxo de auth e achei **4 causas reais**:
+
+1. **Checkbox "Lembre-me" com prazo de 2 meses** (`AuthContext.tsx` linhas 33-52): mesmo marcando "lembrar", após 60 dias o `enforceRememberMe` força `signOut()`. Cliente que pede uma vez por mês passa perto do limite.
+2. **"Lembre-me" desmarcado = logout ao fechar aba/app** (linha 40): `remember="0" + !session_alive → signOut`. No app Capacitor, quando o Android mata o processo em background, o `sessionStorage` some e o cliente é deslogado no próximo abrir. Muitos clientes desmarcaram sem entender.
+3. **Device único forçado** (`check_device_active` linhas 75-106): a cada 30s roda RPC; se o cliente abre no celular depois no navegador do PC, ou depois de trocar de celular, é deslogado com "Sua conta foi acessada em outro dispositivo". Anota.ai/MenuDino **não fazem isso** para cliente.
+4. **Tokens antigos inválidos** (auth logs: `bad_jwt: token signature is invalid`): tokens salvos antes da migração pro Supabase externo continuam no `localStorage` e falham silenciosamente sem tentar refresh — o cliente vê "sessão expirada".
 
 ## Objetivo
-Eliminar o clique manual em "Imprimir". Assim que a venda for finalizada (PDV) ou o pedido de delivery mudar para o status configurado, o cupom sai sozinho na térmica. A lojista escolhe entre **Automático** ou **Manual** por canal.
 
-## 1. Configurações da Loja (aba Configurações → Impressão)
-Adicionar novo bloco "Impressão automática" com:
+Cliente/Lojista/Entregador logam **uma vez** e permanecem logados por tempo indefinido, igual Anota.ai. Só saem se clicarem em "Sair" ou trocarem a senha.
 
-- **PDV**: toggle `Imprimir automaticamente ao finalizar venda` (padrão: ligado)
-- **Delivery**: toggle `Imprimir automaticamente ao receber pedido` (padrão: ligado)
-- **Gatilho do delivery**: seletor com opções
-  - Ao chegar (`recebido`) — recomendado
-  - Ao aceitar (`preparando`)
-  - Ao sair para entrega (`entrega`)
-- **Cópias** e **largura (58/80mm)**: já existem, mantidos.
-- Botão "Testar impressão" que emite um cupom de teste.
+## Mudanças
 
-Persistir em `stores.settings`:
-```
-auto_print_pdv: boolean
-auto_print_delivery: boolean
-auto_print_delivery_trigger: 'recebido' | 'preparando' | 'entrega'
-```
+### Fase 1 — Sessão perpétua para clientes
+Arquivo: `src/contexts/AuthContext.tsx`
 
-## 2. PDV — impressão automática
-Em `usePdvCheckout.ts` a impressão já roda hoje ao finalizar. Vamos:
-- Respeitar `settings.auto_print_pdv`. Se `false`, não imprime automaticamente — apenas mostra botão "Imprimir cupom" no toast/sucesso.
-- Manter o `safePrint` com retry (já existente) para não travar a venda se a impressora falhar.
+- Remover o corte de 2 meses (`REMEMBER_UNTIL`).
+- Remover o modo `remember="0"` (deslogar ao fechar). Cliente **sempre** persiste.
+- Manter `persistSession: true` + `autoRefreshToken: true` (já ok em `client.ts`).
+- Ao detectar token inválido no `getSession()` inicial (`bad_jwt`, `refresh_token_not_found`), **limpar apenas o localStorage do supabase** e redirecionar para `/auth` sem toast agressivo — hoje só falha silenciosamente.
 
-## 3. Delivery — impressão automática
-Criar hook `useAutoPrintDelivery(storeId)` em `src/hooks/useAutoPrintDelivery.ts` montado no `AdminDashboardV2`:
-- Assina Realtime em `orders` filtrado por `store_id`.
-- Quando um pedido entra no status configurado (`auto_print_delivery_trigger`), busca `order_items` + produtos e chama `printDeliveryReceipt` (novo helper em `thermalPrint.ts`, espelhando `printPdvReceipt`).
-- Deduplicação por `order_id` em `sessionStorage` (`printed:<orderId>`) para evitar reimpressão em reconexões do Realtime ou refresh da aba.
-- Se `auto_print_delivery = false`, hook não faz nada; o botão manual continua funcionando no card do pedido.
+### Fase 2 — Device único só para lojista/admin (opcional)
+Arquivo: `src/contexts/AuthContext.tsx`, `AuthPage.tsx`
 
-## 4. Fallback e robustez
-- Se o navegador bloquear (janela sem foco / popup), mostrar toast "Impressora não respondeu — clique para reimprimir" com botão de reprint.
-- Log em `admin_logs` opcional (impressões falhas) — só se ficar simples, senão fica de fora.
-- Manter compatibilidade total: lojas sem os novos flags assumem `true` (comportamento atual da Cantinho, sem quebrar).
+- Rodar `check_device_active` **apenas quando o usuário for role `admin_loja` ou `super_admin`** (checagem via `user_roles`). Cliente e entregador nunca são deslogados por device.
+- Motivo: cliente precisa poder usar o app no celular e no PC ao mesmo tempo (mesmo caso do WhatsApp Web).
 
-## 5. QA na Cantinho da Silvia (piloto)
-- Ativar os dois toggles.
-- Criar pedido teste PDV → cupom sai sem clique.
-- Criar pedido teste Delivery manual → cupom sai ao entrar em `recebido`.
-- Validar: 1 impressão por pedido mesmo com reload/reconexão.
-- Bump versão para **v1.10.398** nos dois lugares (PerfilPage + build.gradle).
+### Fase 3 — Remover checkbox "Lembre-me" da tela do cliente
+Arquivo: `src/pages/AuthPage.tsx`
 
-## Arquivos tocados
-- `src/pages/admin/tabs/SettingsTab.tsx` — UI dos toggles + teste
-- `src/lib/thermalPrint.ts` — novo `printDeliveryReceipt` (se não existir equivalente)
-- `src/hooks/useAutoPrintDelivery.ts` — novo, hook global
-- `src/pages/AdminDashboardV2.tsx` — montar o hook
-- `src/pages/pdv/state/usePdvCheckout.ts` — respeitar flag `auto_print_pdv`
-- `src/pages/PerfilPage.tsx` + `android/app/build.gradle` — versão
+- Ocultar o checkbox (default = sempre lembrar).
+- Manter o checkbox visível **só na aba lojista/admin**, onde faz sentido por segurança.
+
+### Fase 4 — Refresh proativo em background
+Arquivo: `src/contexts/AuthContext.tsx`
+
+- Adicionar `setInterval` de 30 min chamando `supabase.auth.refreshSession()` quando o app está visível — evita que o token expire silenciosamente em abas paradas ou apps Capacitor em background prolongado.
+- Ao voltar do background (`visibilitychange` → `visible`), forçar `refreshSession()` uma vez para renovar o JWT antes de qualquer query.
+
+### Fase 5 — Capacitor: storage nativo persistente
+Arquivo: `src/integrations/supabase/client.ts`
+
+- No app nativo, usar `@capacitor/preferences` como `storage` em vez de `localStorage`. Sobrevive a limpeza de cache do Android/iOS e a atualização do APK.
+- Web continua com `localStorage` normal.
+
+### Fase 6 — Limpeza dos tokens órfãos
+- Migration one-shot no bootstrap: se detectar chave `sb-<PROJETO_ANTIGO>-auth-token` no localStorage, remover. Elimina os `bad_jwt` que hoje aparecem nos logs.
+
+## Detalhes técnicos
+
+- Supabase JWT expira em 1h por padrão; `autoRefreshToken` já cuida enquanto o app está aberto. O problema é o **refresh token** que também expira (padrão 30 dias sem uso). Vou verificar `configure_auth` para elevar o `refresh_token_reuse_interval` e garantir sliding window (cada refresh renova por mais 30 dias — assim quem abre o app pelo menos 1x/mês nunca é deslogado).
+- Device tracking permanece em `user_active_devices` mas passa a ser **auditoria** (registra), não **kick** (não expulsa), para clientes/entregadores.
+- Toda mudança no Supabase externo (via secrets `EXTERNAL_SUPABASE_*`).
 
 ## Fora de escopo
-- Impressão via servidor / cloud print (continua sendo navegador local com a térmica configurada).
-- NFC-e / SAT fiscal (é cupom não fiscal).
 
-Posso implementar direto quando aprovar.
+- Não mexer em fluxo de recuperação de senha (`RecoveryRedirect` já ok).
+- Não mexer no PIN do cliente.
+- Não mudar o comportamento do `SignOutConfirm` (botão "Sair" continua funcional).
+
+## Versão
+
+Bump para **v1.10.399** ao final, com aviso "Atualização: agora você fica logado permanentemente".
