@@ -36,7 +36,6 @@ const PASSWORD_RULES: PasswordRule[] = [
 const REMEMBER_KEY = "itasuper_remember_until";
 const REMEMBER_FLAG = "itasuper_remember";
 const SESSION_ALIVE_KEY = "itasuper_session_alive";
-const TWO_MONTHS_MS = 60 * 24 * 60 * 60 * 1000;
 
 /**
  * Convert WhatsApp digits to a synthetic e-mail used internally by Supabase Auth.
@@ -64,7 +63,6 @@ const AuthPage = () => {
   const [referencePoint, setReferencePoint] = useState("");
   const [cepLoading, setCepLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(true);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [loading, setLoading] = useState(false);
   const [resetSent, setResetSent] = useState(false);
