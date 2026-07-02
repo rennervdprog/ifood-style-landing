@@ -887,13 +887,16 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
   // GPS tracking for store drivers
   useEffect(() => {
     if (!user) return;
-    if (totalActive > 0) {
+    // Rastreamento fica ativo enquanto o motoboy está online — mesmo sem entrega
+    // em andamento — pra loja/cliente saberem que ele está disponível e para
+    // validarmos que o plugin nativo está inserindo em `driver_locations`.
+    if (isOnline || totalActive > 0) {
       const firstOrderId = myDeliveries?.[0]?.id || null;
       startDriverTracking(firstOrderId);
     } else {
       stopDriverTracking();
     }
-  }, [user, totalActive, myDeliveries?.[0]?.id]);
+  }, [user, isOnline, totalActive, myDeliveries?.[0]?.id]);
 
   useEffect(() => {
     if (myDeliveries?.length) {
