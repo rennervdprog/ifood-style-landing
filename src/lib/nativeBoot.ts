@@ -12,13 +12,29 @@ export async function nativeBoot() {
   if (!isCapacitorNative() || booted) return;
   booted = true;
 
-  // 1) OTA — sinaliza que o bundle atual está OK e busca atualização.
+  // 1) OTA — self-hosted via bucket app-releases.
+  //    - notifyAppReady evita rollback automático do bundle atual.
+  //    - Listeners emitem toast quando um bundle novo é baixado.
+  //    - getLatest força um check em foreground.
   try {
     const { CapacitorUpdater } = await import("@capgo/capacitor-updater");
-    // Marca esta versão como "ready" (evita rollback automático).
     await CapacitorUpdater.notifyAppReady();
-    // Dispara verificação em background; se houver bundle novo será
-    // aplicado no próximo cold start (autoUpdate=true no config).
+
+    CapacitorUpdater.addListener("updateAvailable", async (info: any) => {
+      console.log("[OTA] Novo bundle disponível:", info?.bundle?.version);
+      try {
+        const { toast } = await import("sonner");
+        toast.success("Atualização baixada", {
+          description: "Será aplicada ao reabrir o app.",
+          duration: 6000,
+        });
+      } catch {}
+    });
+
+    CapacitorUpdater.addListener("downloadFailed", (info: any) => {
+      console.warn("[OTA] Download falhou:", info);
+    });
+
     CapacitorUpdater.getLatest().catch(() => {});
   } catch (e) {
     console.warn("[NativeBoot] CapacitorUpdater not available:", e);
