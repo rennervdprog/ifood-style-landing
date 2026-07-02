@@ -1,70 +1,61 @@
+# Plano: Impressão Automática de Cupom (PDV + Delivery)
+
 ## Objetivo
-Deixar a `/perfil` profissional, sem "opções decorativas". Cada item leva a uma rota/função real que já existe no ItaSuper.
+Eliminar o clique manual em "Imprimir". Assim que a venda for finalizada (PDV) ou o pedido de delivery mudar para o status configurado, o cupom sai sozinho na térmica. A lojista escolhe entre **Automático** ou **Manual** por canal.
 
-## Nova estrutura (mobile-first)
+## 1. Configurações da Loja (aba Configurações → Impressão)
+Adicionar novo bloco "Impressão automática" com:
 
-### 1. Hero (mantém)
-Avatar + nome + e-mail + badge do papel (Cliente/Lojista/Entregador/Admin) + contador de pedidos.
+- **PDV**: toggle `Imprimir automaticamente ao finalizar venda` (padrão: ligado)
+- **Delivery**: toggle `Imprimir automaticamente ao receber pedido` (padrão: ligado)
+- **Gatilho do delivery**: seletor com opções
+  - Ao chegar (`recebido`) — recomendado
+  - Ao aceitar (`preparando`)
+  - Ao sair para entrega (`entrega`)
+- **Cópias** e **largura (58/80mm)**: já existem, mantidos.
+- Botão "Testar impressão" que emite um cupom de teste.
 
-### 2. Acesso Rápido (contextual por papel)
-Só aparece o que faz sentido para o usuário:
-- **Cliente:** Meus Pedidos (`/pedidos`), Lojas (`/lojas`), Programa de Fidelidade (mostra selos por loja)
-- **Lojista:** Painel da Loja (`/admin`), Financeiro, PDV (`/pdv`), KDS (`/kds`)
-- **Entregador:** Painel do Entregador (`/entregador`), Ganhos (se autônomo)
-- **Moderador:** Painel do Moderador (`/moderador`)
-- **Admin:** Painel Administrativo (`/super-admin`)
+Persistir em `stores.settings`:
+```
+auto_print_pdv: boolean
+auto_print_delivery: boolean
+auto_print_delivery_trigger: 'recebido' | 'preparando' | 'entrega'
+```
 
-### 3. Meus Dados (colapsável — já existe)
-- Dados Pessoais (nome + CPF/CNPJ)
-- Endereço de Entrega (com CEP + taxa estimada)
-- Dados PIX (só lojista/motoboy)
-- **Novo:** WhatsApp verificado (badge OK/Pendente)
-- **Novo:** PIN de Entrega (mostra 4 dígitos mascarados + botão Alterar) — usa `delivery_pin` já existente
+## 2. PDV — impressão automática
+Em `usePdvCheckout.ts` a impressão já roda hoje ao finalizar. Vamos:
+- Respeitar `settings.auto_print_pdv`. Se `false`, não imprime automaticamente — apenas mostra botão "Imprimir cupom" no toast/sucesso.
+- Manter o `safePrint` com retry (já existente) para não travar a venda se a impressora falhar.
 
-### 4. Preferências
-- Tema Claro/Escuro (usa `ThemeToggle` já existente)
-- Notificações Push (ativar/testar — chama `register-push-device`)
-- Idioma/Região (informativo por enquanto — só PT-BR)
+## 3. Delivery — impressão automática
+Criar hook `useAutoPrintDelivery(storeId)` em `src/hooks/useAutoPrintDelivery.ts` montado no `AdminDashboardV2`:
+- Assina Realtime em `orders` filtrado por `store_id`.
+- Quando um pedido entra no status configurado (`auto_print_delivery_trigger`), busca `order_items` + produtos e chama `printDeliveryReceipt` (novo helper em `thermalPrint.ts`, espelhando `printPdvReceipt`).
+- Deduplicação por `order_id` em `sessionStorage` (`printed:<orderId>`) para evitar reimpressão em reconexões do Realtime ou refresh da aba.
+- Se `auto_print_delivery = false`, hook não faz nada; o botão manual continua funcionando no card do pedido.
 
-### 5. Ajuda & Suporte
-- Central de Ajuda / FAQ (link para `/blog` categoria ajuda)
-- Falar no WhatsApp (abre `wa.me` do suporte)
-- Ver Tutorial Novamente (já existe)
-- Reportar Problema (abre WhatsApp com contexto do usuário)
+## 4. Fallback e robustez
+- Se o navegador bloquear (janela sem foco / popup), mostrar toast "Impressora não respondeu — clique para reimprimir" com botão de reprint.
+- Log em `admin_logs` opcional (impressões falhas) — só se ficar simples, senão fica de fora.
+- Manter compatibilidade total: lojas sem os novos flags assumem `true` (comportamento atual da Cantinho, sem quebrar).
 
-### 6. Sobre o ItaSuper
-- Baixar Aplicativo (`/download` — só se web)
-- Instalar PWA (já existe — só se elegível)
-- Compartilhar o app (Web Share API com deep link)
-- Blog / Novidades (`/blog`)
-- Seja um Parceiro (`/cadastro-lojista` — só clientes)
-- Planos (`/planos` — só lojistas)
+## 5. QA na Cantinho da Silvia (piloto)
+- Ativar os dois toggles.
+- Criar pedido teste PDV → cupom sai sem clique.
+- Criar pedido teste Delivery manual → cupom sai ao entrar em `recebido`.
+- Validar: 1 impressão por pedido mesmo com reload/reconexão.
+- Bump versão para **v1.10.398** nos dois lugares (PerfilPage + build.gradle).
 
-### 7. Legal
-- Termos de Uso
-- Política de Privacidade
-- Versão do app + botão "Verificar atualizações" (native)
+## Arquivos tocados
+- `src/pages/admin/tabs/SettingsTab.tsx` — UI dos toggles + teste
+- `src/lib/thermalPrint.ts` — novo `printDeliveryReceipt` (se não existir equivalente)
+- `src/hooks/useAutoPrintDelivery.ts` — novo, hook global
+- `src/pages/AdminDashboardV2.tsx` — montar o hook
+- `src/pages/pdv/state/usePdvCheckout.ts` — respeitar flag `auto_print_pdv`
+- `src/pages/PerfilPage.tsx` + `android/app/build.gradle` — versão
 
-### 8. Conta (perigo)
-- Sair
-- Excluir Conta (fluxo LGPD já existente)
+## Fora de escopo
+- Impressão via servidor / cloud print (continua sendo navegador local com a térmica configurada).
+- NFC-e / SAT fiscal (é cupom não fiscal).
 
-## Regras de exibição
-- Nada de item "coming soon". Se a rota não existe → não renderiza.
-- Cada seção com header pequeno em uppercase (padrão atual).
-- Badges de status (OK/Pendente) para Dados Pessoais, Endereço, PIX, PIN, WhatsApp.
-- Contador dinâmico em Meus Pedidos (últimos 30 dias).
-
-## Detalhes técnicos
-- Arquivo: `src/pages/PerfilPage.tsx` (refactor incremental — mantém queries existentes).
-- Adicionar novas queries: `useUserRole`, contagem de pedidos ativos, status do PIN.
-- Novo componente `PinEditModal` reaproveitando `ClientPinChecker`.
-- Botão "Notificações push" chama `pushRegistration.ts` já existente.
-- Botão "Compartilhar app" usa `navigator.share` com fallback copiar link.
-- Zero alteração de schema — tudo já está no Supabase externo.
-- Bump de versão + `versionCode` no `build.gradle` ao concluir.
-
-## Fora do escopo
-- Alterar CartContext, AuthContext ou roteamento.
-- Criar novas Edge Functions ou tabelas.
-- Redesign do Hero (mantido igual).
+Posso implementar direto quando aprovar.
