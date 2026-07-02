@@ -24,8 +24,8 @@ CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_fcm_tokens_user_token
   ON public.fcm_tokens (user_id, token);
 
 -- profiles: lookups por role/aprovação no super-admin
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_profiles_role_approval
-  ON public.profiles (role, approval_status);
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_profiles_role_approved
+  ON public.profiles (role, is_approved);
 
 -- store_balances: painel financeiro do lojista
 CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_store_balances_store
