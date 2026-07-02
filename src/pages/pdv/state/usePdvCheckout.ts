@@ -198,6 +198,51 @@ export function usePdvCheckout() {
 
         // 5) Impressão térmica — best-effort
         try {
+          const autoPrint = (store?.settings as any)?.auto_print_pdv !== false;
+          if (!autoPrint) {
+            // Lojista optou por imprimir manualmente — deixamos o CTA no toast.
+            toast("Cupom pronto — clique para imprimir", {
+              action: {
+                label: "Imprimir",
+                onClick: () => {
+                  try {
+                    printPdvReceipt(
+                      {
+                        id: order.id,
+                        created_at: new Date().toISOString(),
+                        subtotal,
+                        pdv_discount: discountAmount,
+                        total_price: finalTotal,
+                        payment_method: primaryMethod,
+                        cash_received:
+                          !splitMode && paymentMethod === "dinheiro" && cashReceived
+                            ? parseBRL(cashReceived)
+                            : undefined,
+                        troco:
+                          !splitMode && paymentMethod === "dinheiro" && cashReceived
+                            ? troco
+                            : undefined,
+                        table_identifier: tableId || null,
+                        payments: paymentsPayload,
+                        order_items: cart.map((item) => ({
+                          quantity: item.quantity,
+                          unit_price: item.price,
+                          products: { name: item.name },
+                          metadata: item.metadata || null,
+                        })),
+                      },
+                      store?.name || "Loja",
+                      {
+                        copies: (store?.settings as any)?.print_copies === 1 ? 1 : 2,
+                        paperWidth: (store?.settings as any)?.print_paper_width === 58 ? 58 : 80,
+                      },
+                    );
+                  } catch (e) { console.warn("print error", e); }
+                },
+              },
+              duration: 8000,
+            });
+          } else {
           printPdvReceipt(
             {
               id: order.id,
@@ -229,6 +274,7 @@ export function usePdvCheckout() {
               paperWidth: (store?.settings as any)?.print_paper_width === 58 ? 58 : 80,
             },
           );
+          }
         } catch (e) {
           console.warn("Erro ao imprimir:", e);
         }
