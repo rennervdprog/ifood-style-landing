@@ -636,10 +636,21 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
     haptic.light();
     setTogglingOnline(true);
     const previousStatus = (driverStatus as any) || createFallbackDriverStatus(isOnline);
+    // Upsert garante persistência mesmo se o motoboy de loja ainda não tiver
+    // linha em `drivers` (caso comum — só o vínculo em `store_drivers` existe).
+    // Sem isso, o UPDATE atingia 0 linhas silenciosamente e o status voltava
+    // para offline no próximo cold start do app.
     const { error } = await supabase
       .from("drivers")
-      .update({ is_online: next } as any)
-      .eq("user_id", user.id);
+      .upsert(
+        {
+          user_id: user.id,
+          is_online: next,
+          name: (driverProfile as any)?.full_name || "Motoboy",
+          is_active: true,
+        } as any,
+        { onConflict: "user_id" },
+      );
     setTogglingOnline(false);
     if (error) {
       queryClient.setQueryData(["store-driver-online-status", user.id], previousStatus);
