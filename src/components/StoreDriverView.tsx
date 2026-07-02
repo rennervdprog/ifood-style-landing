@@ -1366,7 +1366,13 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
                     {inDelivery && (
                       (() => {
                         const storeMeta = storeNames?.find((s) => s.id === order.store_id);
-                        const cityNorm = (storeMeta?.address_city || "")
+                        // Fallback: usa a cidade que já vem embutida no join `stores(...)` do próprio pedido,
+                        // caso `storeNames` ainda não tenha carregado ou não contenha essa loja.
+                        const rawCity =
+                          storeMeta?.address_city ||
+                          ((order as any).stores?.address_city as string | undefined) ||
+                          "";
+                        const cityNorm = rawCity
                           .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
                           .trim().toLowerCase();
                         const autofill = !!storeMeta?.driver_pin_autofill || cityNorm === "itatinga";
