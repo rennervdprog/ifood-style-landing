@@ -12,7 +12,7 @@ const STATEMENTS: string[] = [
   `CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_store_drivers_store ON public.store_drivers (store_id)`,
   `CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_store_drivers_driver ON public.store_drivers (driver_user_id)`,
   `CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_fcm_tokens_user_token ON public.fcm_tokens (user_id, token)`,
-  `CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_profiles_role_approval ON public.profiles (role, approval_status)`,
+  `SELECT column_name FROM information_schema.columns WHERE table_schema='public' AND table_name='profiles' AND column_name IN ('role','approval_status','status','approved','is_approved')`,
   `CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_store_balances_store ON public.store_balances (store_id)`,
   `CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_financial_transactions_store_created ON public.financial_transactions (store_id, created_at DESC)`,
   `ANALYZE public.drivers`,
