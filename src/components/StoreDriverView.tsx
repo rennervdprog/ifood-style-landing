@@ -654,7 +654,8 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
     setTogglingOnline(false);
     if (error) {
       queryClient.setQueryData(["store-driver-online-status", user.id], previousStatus);
-      toast.error("Não foi possível atualizar status.");
+      console.error("[toggleOnline] erro ao upsert drivers:", error);
+      toast.error(`Não foi possível atualizar status: ${error.message}`);
       return;
     }
     queryClient.setQueryData(["store-driver-online-status", user.id], { ...previousStatus, user_id: user.id, is_online: next });
