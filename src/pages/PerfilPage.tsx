@@ -23,7 +23,7 @@ import SignOutConfirm from "@/components/SignOutConfirm";
  import { formatDocument, sanitizeDocument, validateDocument } from "@/lib/documentFormat";
  import { checkAppVersion } from "@/lib/appVersionCheck";
  import { APP_VERSION } from "@/lib/appVersion";
- import { forceCheckForUpdate } from "@/lib/capacitorAutoUpdate";
+ import { forceCheckForOtaUpdate } from "@/lib/otaUpdate";
 
 /* ── Reusable UI atoms ─────────────────────────────────── */
 
@@ -1031,12 +1031,12 @@ const PerfilPage = () => {
               onClick={async () => {
                 toast.promise(
                   Promise.all([
-                    forceCheckForUpdate(),
+                    forceCheckForOtaUpdate(),
                     checkAppVersion((import.meta.env.VITE_CAPACITOR_APP_MODE || "cliente") as "cliente" | "parceiro")
                   ]),
                   {
                     loading: 'Verificando atualizações...',
-                    success: 'Verificação concluída',
+                    success: 'Verificação concluída — reabra o app se houver atualização',
                     error: 'Erro ao verificar atualizações'
                   }
                 );
