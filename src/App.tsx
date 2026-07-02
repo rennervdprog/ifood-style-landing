@@ -18,7 +18,6 @@ import { initCapacitorNative, isCapacitorNative, consumePendingPushNavigation } 
 import { initCapacitorLifecycle } from "@/lib/capacitorLifecycle";
 import { initRealtimeWatchdog } from "@/lib/realtimeWatchdog";
 import { initVersionWatcher } from "@/lib/versionWatcher";
-import { initAutoUpdate } from "@/lib/capacitorAutoUpdate";
 import { checkAppVersion } from "@/lib/appVersionCheck";
 import { getCapacitorAppMode } from "@/lib/capacitorAppMode";
 import CapacitorRouteGuard from "@/components/CapacitorRouteGuard";
@@ -204,9 +203,8 @@ const App = () => {
   // Anti-cache: força atualização completa quando a versão do app muda.
   // Limpa localStorage, caches do Service Worker e recarrega a página.
   useEffect(() => {
-    // Em Capacitor o capacitorAutoUpdate.ts já cuida de detectar bundle novo
-    // (compara hash de /assets/*) e limpar caches. Rodar este efeito também
-    // causa reload duplo / conflito com o SW controllerchange.
+    // Em Capacitor o plugin @capgo/capacitor-updater cuida de baixar bundle
+    // novo em background e aplicar no próximo cold start.
     if (isNativeApp) return;
 
     const storedVersion = localStorage.getItem("app_version");
@@ -244,8 +242,6 @@ const App = () => {
     import("@/lib/nativeBoot").then(({ nativeBoot }) => nativeBoot()).catch(() => {});
     initRealtimeWatchdog();
     initVersionWatcher();
-    // Auto-update inicia imediatamente — agenda interno usa 1s antes do 1º check
-    try { initAutoUpdate(); } catch {}
     // Aviso não-bloqueante de nova versão nativa disponível.
     setTimeout(() => { 
       const mode = (import.meta.env.VITE_CAPACITOR_APP_MODE || "cliente") as "cliente" | "parceiro";

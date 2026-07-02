@@ -1,0 +1,47 @@
+name: OTA Release
+
+# Publica um novo bundle OTA no bucket app-releases sempre que
+# houver push em main que altere código web (src/public/index.html).
+# O plugin @capgo/capacitor-updater baixa e aplica no próximo cold start.
+#
+# Não precisa gerar APK — o APK só muda quando código nativo mudar
+# (workflow build-android.yml).
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'public/**'
+      - 'index.html'
+      - 'vite.config.ts'
+      - 'package.json'
+      - 'bun.lockb'
+      - 'package-lock.json'
+  workflow_dispatch:
+
+concurrency:
+  group: ota-release
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install deps
+        run: npm ci --no-audit --no-fund
+
+      - name: Build
+        run: npm run build
+
+      - name: Publish OTA bundle
+        env:
+          EXTERNAL_SUPABASE_URL: ${{ secrets.EXTERNAL_SUPABASE_URL }}
+          EXTERNAL_SUPABASE_SERVICE_KEY: ${{ secrets.EXTERNAL_SUPABASE_SERVICE_KEY }}
+        run: node scripts/publish-ota.mjs

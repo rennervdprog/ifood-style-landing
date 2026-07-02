@@ -55,14 +55,23 @@ const config: CapacitorConfig = {
       autoStart: true,
     },
     CapacitorUpdater: {
-      // OTA de bundle JS sem precisar subir APK na Play Store.
-      // O app baixa o bundle novo em background e aplica no próximo cold start.
+      // OTA self-hosted no bucket `app-releases` do Supabase externo.
+      // manifest.json é reescrito pelo workflow ota-release.yml a cada push
+      // em main que altere código web. Sem custo, sem dependência do serviço
+      // pago do Capgo — o plugin nativo cuida de download/checksum/rollback.
       autoUpdate: true,
       autoDeleteFailed: true,
       autoDeletePrevious: true,
       directUpdate: false,
       resetWhenUpdate: true,
       keepUrlPathAfterReload: true,
+      updateUrl:
+        'https://qkjhguziuchqsbxzruea.supabase.co/storage/v1/object/public/app-releases/manifest.json',
+      // Estatísticas/canais do serviço pago desligados.
+      statsUrl: '',
+      channelUrl: '',
+      // Sem assinatura RSA — validação por SHA-256 no manifest.
+      publicKey: '',
     },
   },
 };
