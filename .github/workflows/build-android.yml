@@ -287,8 +287,11 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.EXTERNAL_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || secrets.EXTERNAL_SUPABASE_SERVICE_KEY }}
-        if: ${{ env.SUPABASE_SERVICE_ROLE_KEY != '' }}
         run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
+            echo "ℹ️ Secrets do storage ausentes; pulando upload do APK. Artifact do GitHub continua disponível."
+            exit 0
+          fi
           APK_PATH="${{ steps.apk.outputs.path }}"
           VERSION="${{ steps.version.outputs.name }}"
           VERSION_CODE="${{ steps.version.outputs.code }}"
@@ -578,8 +581,11 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.EXTERNAL_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || secrets.EXTERNAL_SUPABASE_SERVICE_KEY }}
-        if: ${{ env.SUPABASE_SERVICE_ROLE_KEY != '' }}
         run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
+            echo "ℹ️ Secrets do storage ausentes; pulando upload do APK. Artifact do GitHub continua disponível."
+            exit 0
+          fi
           APK_PATH="${{ steps.apk.outputs.path }}"
           VERSION="${{ steps.version.outputs.name }}"
           VERSION_CODE="${{ steps.version.outputs.code }}"
