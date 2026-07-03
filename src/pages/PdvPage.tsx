@@ -48,6 +48,7 @@ import { usePdvCatalog } from "@/pages/pdv/state/usePdvCatalog";
 import { usePdvSession } from "@/pages/pdv/state/usePdvSession";
 import { usePdvCart } from "@/pages/pdv/state/usePdvCart";
 import { usePdvCheckout } from "@/pages/pdv/state/usePdvCheckout";
+import { usePdvOutbox } from "@/pages/pdv/state/usePdvOutbox";
 import { PdvCatalogSection } from "@/pages/pdv/components/PdvCatalogSection";
 import { PdvCartSection } from "@/pages/pdv/components/PdvCartSection";
 import { PdvAberturaScreen } from "@/pages/pdv/components/PdvAberturaScreen";
@@ -268,6 +269,11 @@ const PdvPage = () => {
 
   // Hook de finalização de venda.
   const { handleVenda: runCheckout, checkoutLoading } = usePdvCheckout();
+  const {
+    count: outboxCount,
+    flushing: outboxFlushing,
+    flushNow: flushOutbox,
+  } = usePdvOutbox(store?.id);
 
   // ── Catálogo (extraído na Fase 1 da refatoração) ──
   const {
@@ -642,6 +648,9 @@ const PdvPage = () => {
         onSuprimento={() => setMovModal("suprimento")}
         onSangria={() => setMovModal("sangria")}
         onFechar={handleIniciarFechamento}
+        outboxCount={outboxCount}
+        outboxFlushing={outboxFlushing}
+        onSyncOutbox={() => flushOutbox(false)}
       />
 
       <PdvTabs
