@@ -222,6 +222,7 @@ export const PdvCartSection = ({
               placeholder={finalTotal_.toFixed(2).replace(".", ",")}
               value={cashReceived}
               onChange={(e) => setCashReceived(e.target.value.replace(/[^0-9.,]/g, ""))}
+              data-pdv-no-hotkey
               className={`w-full pl-8 pr-3 py-2.5 rounded-xl text-xl font-black text-center focus:outline-none focus:ring-2 transition-colors ${trocoNegativo ? "bg-red-500/10 text-red-500 border border-red-500/30" : "bg-white dark:bg-muted/50 border border-border/50 focus:ring-primary/30"}`}
             />
           </div>
