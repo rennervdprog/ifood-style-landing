@@ -7,6 +7,20 @@ import { parseBRL } from "@/hooks/useBRLInput";
 import { printPdvReceipt } from "@/lib/thermalPrint";
 import type { CartItem, PdvSession } from "../types";
 import type { SplitPayment } from "@/components/pdv/PdvSplitPayment";
+import { enqueue as outboxEnqueue, isOfflineQueueEnabled } from "./pdvOutbox";
+
+/** Timeout de rede para a RPC (Fase 3). */
+const RPC_TIMEOUT_MS = 3000;
+
+function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const t = setTimeout(() => reject(new Error("rpc_timeout")), ms);
+    p.then(
+      (v) => { clearTimeout(t); resolve(v); },
+      (e) => { clearTimeout(t); reject(e); },
+    );
+  });
+}
 
 /**
  * Finalização da venda do PDV — extraído na Fase 1 da refatoração.
@@ -124,35 +138,42 @@ export function usePdvCheckout() {
         //    Se a RPC ainda não foi aplicada no banco externo, cai no fluxo
         //    antigo de 3 inserts (backward-compat).
         let orderId: string | null = null;
+        // Fase 3: client_uuid garante idempotência no banco quando a fila
+        // offline reenviar o mesmo payload.
+        const clientUuid =
+          typeof crypto !== "undefined" && "randomUUID" in crypto
+            ? crypto.randomUUID()
+            : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        const rpcPayload = {
+          client_uuid: clientUuid,
+          store_id: store.id,
+          session_id: session.id,
+          table_identifier: tableId || null,
+          subtotal,
+          pdv_discount: discountAmount,
+          commission_rate: pdvCommissionRate ?? 0,
+          total_price: finalTotal,
+          payment_method: primaryMethod,
+          payments: paymentsPayload,
+          created_by: createdBy,
+          items: cart.map((item) => ({
+            product_id: item.id,
+            quantity: item.quantity,
+            unit_price: item.price,
+            addons:
+              item.addons && item.addons.length > 0 ? item.addons : null,
+            observations: item.observations || null,
+            metadata:
+              item.metadata && Object.keys(item.metadata).length > 0
+                ? item.metadata
+                : null,
+          })),
+        };
+        let rpcTimedOut = false;
         try {
-          const { data: rpcRes, error: rpcErr } = await supabase.rpc(
-            "pdv_finalize_sale" as any,
-            {
-              _payload: {
-                store_id: store.id,
-                session_id: session.id,
-                table_identifier: tableId || null,
-                subtotal,
-                pdv_discount: discountAmount,
-                commission_rate: pdvCommissionRate ?? 0,
-                total_price: finalTotal,
-                payment_method: primaryMethod,
-                payments: paymentsPayload,
-                created_by: createdBy,
-                items: cart.map((item) => ({
-                  product_id: item.id,
-                  quantity: item.quantity,
-                  unit_price: item.price,
-                  addons:
-                    item.addons && item.addons.length > 0 ? item.addons : null,
-                  observations: item.observations || null,
-                  metadata:
-                    item.metadata && Object.keys(item.metadata).length > 0
-                      ? item.metadata
-                      : null,
-                })),
-              },
-            } as any,
+          const { data: rpcRes, error: rpcErr } = await withTimeout(
+            supabase.rpc("pdv_finalize_sale" as any, { _payload: rpcPayload } as any),
+            RPC_TIMEOUT_MS,
           );
           if (!rpcErr && rpcRes) {
             orderId =
@@ -161,7 +182,28 @@ export function usePdvCheckout() {
                 : (rpcRes as any)?.order_id ?? (rpcRes as any)?.id ?? null;
           }
         } catch (rpcCatch) {
-          console.warn("[PDV] RPC pdv_finalize_sale indisponível, usando fallback:", rpcCatch);
+          rpcTimedOut = (rpcCatch as any)?.message === "rpc_timeout";
+          console.warn("[PDV] RPC pdv_finalize_sale falhou:", rpcCatch);
+        }
+
+        // Fase 3: se a RPC não voltou (timeout / offline) e a feature flag
+        // está ativa, enfileira e trata como sucesso — o cupom é impresso e
+        // o operador entrega o produto. A fila reenvia depois.
+        if (!orderId && rpcTimedOut && isOfflineQueueEnabled()) {
+          const enqueued = outboxEnqueue({
+            client_uuid: clientUuid,
+            store_id: store.id,
+            payload: rpcPayload,
+          });
+          if (enqueued) {
+            try {
+              window.dispatchEvent(new Event("pdv-outbox-changed"));
+            } catch {}
+            orderId = clientUuid; // placeholder para o cupom / fluxos seguintes
+            toast.warning("Venda salva offline — sincroniza quando voltar.");
+          } else {
+            toast.error("Fila offline cheia (200). Verifique a conexão.");
+          }
         }
 
         if (!orderId) {
