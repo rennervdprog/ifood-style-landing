@@ -171,10 +171,12 @@ export function usePdvCheckout() {
         };
         let rpcTimedOut = false;
         try {
-          const { data: rpcRes, error: rpcErr } = await withTimeout(
-            supabase.rpc("pdv_finalize_sale" as any, { _payload: rpcPayload } as any),
+          const rpcPromise = (async () =>
+            supabase.rpc("pdv_finalize_sale" as any, { _payload: rpcPayload } as any))();
+          const { data: rpcRes, error: rpcErr } = (await withTimeout(
+            rpcPromise,
             RPC_TIMEOUT_MS,
-          );
+          )) as any;
           if (!rpcErr && rpcRes) {
             orderId =
               typeof rpcRes === "string"
