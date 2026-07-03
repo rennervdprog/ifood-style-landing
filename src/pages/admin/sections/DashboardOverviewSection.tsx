@@ -8,6 +8,7 @@ import { formatBRL } from "@/lib/utils";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import PlatformFeeExplainerCard from "@/components/PlatformFeeExplainerCard";
 import { GlanceCard } from "../components/GlanceCard";
+import DriverDeliveriesCard from "../components/DriverDeliveriesCard";
 
 
 interface Props {
@@ -251,6 +252,14 @@ export default function DashboardOverviewSection(props: Props) {
         <Download className="h-3.5 w-3.5" /> Exportar pedidos de hoje (CSV)
       </button>
     </div>
+  )}
+
+  {/* ── Entregas por motoboy (delivery normal + manual) ── */}
+  {store?.id && hasLinkedDrivers && (
+    <DriverDeliveriesCard
+      storeId={store.id}
+      onClick={() => setDashboardTab("drivers")}
+    />
   )}
 
   {/* ── Tutorial Quick Access ── */}
