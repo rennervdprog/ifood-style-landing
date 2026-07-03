@@ -269,6 +269,11 @@ const PdvPage = () => {
 
   // Hook de finalização de venda.
   const { handleVenda: runCheckout, checkoutLoading } = usePdvCheckout();
+  const {
+    count: outboxCount,
+    flushing: outboxFlushing,
+    flushNow: flushOutbox,
+  } = usePdvOutbox(store?.id);
 
   // ── Catálogo (extraído na Fase 1 da refatoração) ──
   const {
