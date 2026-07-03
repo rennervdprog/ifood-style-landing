@@ -41,6 +41,10 @@
 # ── Background Geolocation ────────────────────────────────────────
 -keep class com.capacitorjs.plugins.backgroundgeolocation.** { *; }
 
+# ── Sentry (crash reporting nativo) ───────────────────────────────
+-keep class io.sentry.** { *; }
+-dontwarn io.sentry.**
+
 # ── Preservar info de stack trace para Sentry ────────────────────
 -keepattributes SourceFile,LineNumberTable
 -renamesourcefileattribute SourceFile

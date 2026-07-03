@@ -1,4 +1,7 @@
 import * as Sentry from "@sentry/react";
+import * as SentryCapacitor from "@sentry/capacitor";
+import { Capacitor } from "@capacitor/core";
+import { APP_VERSION } from "./appVersion";
 
 export const initSentry = () => {
   const SENTRY_DSN = import.meta.env.VITE_SENTRY_DSN;
@@ -8,20 +11,30 @@ export const initSentry = () => {
     return;
   }
 
-  Sentry.init({
-    dsn: SENTRY_DSN,
-    integrations: [
-      Sentry.browserTracingIntegration(),
-      Sentry.replayIntegration(),
-    ],
-    tracesSampleRate: import.meta.env.MODE === "production" ? 0.2 : 1.0, // 20% em prod — economiza cota
-    tracePropagationTargets: ["localhost", /^https:\/\/qkjhguziuchqsbxzruea\.supabase\.co/],
-    replaysSessionSampleRate: 0.1, 
-    replaysOnErrorSampleRate: 1.0,
-    environment: import.meta.env.MODE,
-  });
+  const isNative = Capacitor.isNativePlatform?.() ?? false;
 
-  console.log("[Sentry] Monitoramento de erros inicializado.");
+  const options = {
+    dsn: SENTRY_DSN,
+    release: `itasuper@${APP_VERSION}`,
+    environment: import.meta.env.MODE,
+    tracesSampleRate: import.meta.env.MODE === "production" ? 0.2 : 1.0,
+    // Integrações web-only (browserTracing/replay não fazem sentido no webview nativo)
+    integrations: isNative
+      ? []
+      : [Sentry.browserTracingIntegration(), Sentry.replayIntegration()],
+    tracePropagationTargets: ["localhost", /^https:\/\/qkjhguziuchqsbxzruea\.supabase\.co/],
+    replaysSessionSampleRate: 0.1,
+    replaysOnErrorSampleRate: 1.0,
+  } as const;
+
+  if (isNative) {
+    // Envelopa o SDK React com a camada nativa (captura crashes Java/Kotlin/NDK + ANR)
+    SentryCapacitor.init(options as any, Sentry.init);
+    console.log("[Sentry] Inicializado (Capacitor + React).");
+  } else {
+    Sentry.init(options as any);
+    console.log("[Sentry] Inicializado (Web).");
+  }
 };
 
 export const setUser = (user: { id: string; email?: string } | null) => {
