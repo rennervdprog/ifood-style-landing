@@ -648,6 +648,9 @@ const PdvPage = () => {
         onSuprimento={() => setMovModal("suprimento")}
         onSangria={() => setMovModal("sangria")}
         onFechar={handleIniciarFechamento}
+        outboxCount={outboxCount}
+        outboxFlushing={outboxFlushing}
+        onSyncOutbox={() => flushOutbox(false)}
       />
 
       <PdvTabs
