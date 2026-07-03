@@ -14,10 +14,17 @@ const TABS: { id: PdvTab; label: string; icon: any }[] = [
 ];
 
 export const PdvTabs = ({ tab, onChange }: Props) => (
-  <div className="flex border-b border-border bg-card shrink-0">
+  <div
+    role="tablist"
+    aria-label="Seções do PDV"
+    className="flex border-b border-border bg-card shrink-0"
+  >
     {TABS.map(({ id, label, icon: Icon }) => (
       <button
         key={id}
+        role="tab"
+        aria-selected={tab === id}
+        aria-label={label}
         onClick={() => onChange(id)}
         className={`flex-1 sm:flex-initial px-4 py-2 text-xs font-bold flex items-center justify-center gap-1.5 border-b-2 transition-colors ${
           tab === id

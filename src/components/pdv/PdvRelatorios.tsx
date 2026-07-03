@@ -183,7 +183,7 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
       byHour, byDay, dayNames,
       peakHour: peakHour ? { hour: Number(peakHour[0]), count: Number(peakHour[1]) } : null,
     };
-  }, [orders]);
+  }, [orders, movements]);
 
   const periodLabels: Record<Period, string> = {
     today: "Hoje",
