@@ -106,6 +106,7 @@ export const PdvCartSection = ({
             </div>
             <p className="text-xs font-black text-foreground shrink-0 pdv-mono">{formatBRL(item.price * item.quantity)}</p>
             <button onClick={() => removeItem(item.id)} className="p-0.5 text-muted-foreground hover:text-destructive transition-colors opacity-100 md:opacity-0 md:group-hover:opacity-100">
+            {/* removeItem(idx) — não idx do produto (Bug P0 report) */}
               <X className="h-3.5 w-3.5" />
             </button>
           </div>
