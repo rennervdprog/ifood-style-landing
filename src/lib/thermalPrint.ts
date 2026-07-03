@@ -1,6 +1,29 @@
 import { formatBRL } from "@/lib/utils";
 import { getOrderItemDisplayName, getOrderItemFlavors, getFractionAddonNames } from "./orderItemName";
 
+// ─── Sanitização (XSS) ──────────────────────────────────────────────────
+// Todo dado vindo do banco / cliente / operador passa por `esc()` antes de
+// entrar em `innerHTML`. Sem isso, um nome de produto com `<script>` (ou
+// observação enviada pelo cliente no checkout) era executado como HTML.
+function esc(v: unknown): string {
+  if (v === null || v === undefined) return "";
+  return String(v)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+/** Formata data/hora sempre no fuso de São Paulo (evita cupom com hora errada). */
+function fmtDate(iso: string): string {
+  try {
+    return new Date(iso).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
+  } catch {
+    return new Date(iso).toLocaleString("pt-BR");
+  }
+}
+
 /**
  * Motor de impressão térmica unificado (delivery + PDV).
  *
