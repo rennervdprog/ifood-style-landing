@@ -1,83 +1,61 @@
-# Plano: Sentry completo no Capacitor (ItaSuper)
+# Plano: acelerar cold start do APK (Supabase Free + Vercel Free)
 
-Objetivo: capturar **erros JS do webview** + **crashes nativos Android** (Java/Kotlin/NDK) + **ANRs** com stack trace, versão do app e device, sem quebrar nada do que já funciona.
+Hoje o APK abre, mostra splash → tela branca com spinner por ~10s → entra. O gargalo não é infra paga: é **o que o bundle JS carrega antes do primeiro render**. Dá pra cair para 2-3s sem gastar nada.
 
-## O que muda
+## Causas prováveis (a validar)
 
-1. Trocar `@sentry/react` por `@sentry/capacitor` + `@sentry/react` (o Capacitor SDK envelopa o React SDK e adiciona a camada nativa).
-2. Inicializar o Sentry uma única vez em `src/main.tsx` (hoje a init está espalhada / só no botão de teste).
-3. Configurar o plugin nativo no Android para symbolication e crashes nativos.
-4. Enviar `release` = versão do app (`APP_VERSION`) pra casar com o que aparece hoje no Sentry.
-5. Atualizar o botão "Testar Sentry" no `PerfilPage` pra usar o cliente global já iniciado (sem `import()` dinâmico).
-6. Bump de versão (1.10.413 → 1.10.414) em `appVersion.ts` e `build.gradle` conforme regra do projeto.
+1. **Bundle inicial gordo** — `App.tsx` importa muitas páginas/contextos direto em vez de `React.lazy`.
+2. **Trabalho síncrono no boot** — Sentry, Analytics, Firebase, Realtime, Auth restore, versionWatcher, storeBootstrap rodando antes do primeiro paint.
+3. **Cold start do Supabase Free** — projeto pausa após inatividade; primeira query demora 3-5s (o `AuthContext` bloqueia UI esperando `getSession`).
+4. **Splash escondendo cedo demais** — sai antes do React montar, revelando tela branca do WebView.
+5. **Realtime + push listeners** competindo com o primeiro render.
 
-## Passos
+## O que vou fazer
 
-### 1. Dependências
-```bash
-npm i @sentry/capacitor @sentry/react
+### 1. Bundle splitting agressivo (maior ganho)
+- Converter rotas em `React.lazy` no `App.tsx` (ClientHome, AdminDashboardV2, DriverDashboardV2, PdvPage, KdsPage, todas as landing/blog).
+- Só a rota inicial (`/` ou store) entra no bundle principal.
+- Adicionar `<Suspense>` com o mesmo spinner já usado.
+
+### 2. Adiar tudo que não é crítico para o primeiro paint
+- Mover para `requestIdleCallback` / depois do mount: Firebase init, Realtime watchdog, versionWatcher, storeBootstrap, analytics extras.
+- `AuthContext`: renderizar filhos imediatamente com `loading=true` em vez de bloquear a árvore inteira esperando `getSession()` (hoje trava se Supabase estiver frio).
+
+### 3. Splash Capacitor controlado
+- Configurar `SplashScreen` com `autoHide: false` no `capacitor.config.ts`.
+- Chamar `hideSplash()` só depois do **primeiro render real** (dentro de `useEffect` do App root, não no `main.tsx`).
+- Resultado: usuário vê splash laranja da marca até o app estar pronto, sem flash branco.
+
+### 4. Manter Supabase Free "quente" (grátis)
+- Já existe `api/keep-alive.ts` na Vercel. Confirmar que está no `vercel.json` como cron a cada 5 min (Vercel Free permite 2 crons diários — usar GitHub Actions cron a cada 5min chamando a rota, que é grátis).
+- Isso elimina o cold start de 3-5s do primeiro `getSession`.
+
+### 5. Pré-carregar assets críticos
+- `<link rel="preload">` no `index.html` para a fonte principal e o logo.
+- Remover imports de fontes não usadas no primeiro render.
+
+### 6. Vite build tuning
+- `build.target: 'es2020'` (Android WebView moderno) → menos polyfills.
+- `manualChunks` para separar `supabase`, `firebase`, `react-vendor`.
+- Confirmar `minify: 'esbuild'` e `cssCodeSplit: true`.
+
+## Como vou medir
+
+Antes/depois em log no console nativo:
 ```
-(mantém `@sentry/react` — o `@sentry/capacitor` depende dele.)
-
-### 2. Init única — `src/main.tsx`
-```ts
-import * as Sentry from "@sentry/capacitor";
-import * as SentryReact from "@sentry/react";
-import { APP_VERSION } from "@/lib/appVersion";
-
-Sentry.init(
-  {
-    dsn: "<DSN_ATUAL_DO_PROJETO>",
-    release: `itasuper@${APP_VERSION}`,
-    dist: String(<versionCode>),
-    environment: import.meta.env.PROD ? "production" : "development",
-    tracesSampleRate: 0.1,
-  },
-  SentryReact.init,
-);
+[Boot] mainStart → firstPaint = Xms
+[Boot] firstPaint → appReady = Yms
 ```
-DSN: reuso do que já está no código hoje. Não precisa de secret (DSN é público).
+Meta: firstPaint <800ms, appReady <2.5s no APK release.
 
-### 3. Android nativo
-- `android/app/build.gradle`: aplicar plugin `io.sentry.android.gradle` (upload automático de ProGuard/mapping e símbolos nativos).
-- `android/build.gradle`: adicionar classpath do plugin.
-- `sentry.properties` em `android/` com `auth.token` (secret) — só necessário se quisermos upload automático de mapping. Se o usuário não quiser lidar com token agora, pulamos e crashes nativos ainda chegam, só ficam sem símbolos bonitos.
+## Fora de escopo (não vou fazer agora)
 
-### 4. Botão "Testar Sentry" (`PerfilPage.tsx`)
-Simplificar: usar `Sentry.captureException(new Error(...))` do cliente já iniciado, sem `import()` dinâmico nem `getClient()` check. Manter `Sentry.flush(2000)` e toast.
+- Trocar Supabase/Vercel de plano (usuário pediu grátis).
+- Reescrever para SSR/Next.
+- Otimizações de imagem no catálogo (não afeta cold start).
 
-### 5. Sync Capacitor
-Após merge, o usuário roda localmente:
-```bash
-git pull
-npm install
-npx cap sync android
-npx cap run android
-```
+## Detalhes técnicos
 
-### 6. Versão
-- `src/lib/appVersion.ts`: `1.10.414`
-- `android/app/build.gradle`: `versionName "1.10.414"`, `versionCode 743`
-
-## O que passa a ser capturado
-
-| Tipo de erro | Antes (só @sentry/react) | Depois (@sentry/capacitor) |
-|---|---|---|
-| Erro JS / React | Sim | Sim |
-| Promise rejeitada | Sim | Sim |
-| Crash nativo Android (Java/Kotlin) | Não | **Sim** |
-| Crash NDK (C/C++) | Não | **Sim** |
-| ANR (app travado) | Não | **Sim** |
-| Offline (envia quando voltar net) | Parcial | **Sim, fila nativa** |
-
-## Segurança
-- DSN é público por design, ok no bundle.
-- Nenhum PII enviado (sem `sendDefaultPii`).
-- `auth.token` do Sentry (upload de mapping) vai como secret, nunca no repo.
-
-## Fora de escopo (não faço agora)
-- iOS (não há pasta `ios/` no projeto).
-- Source maps do bundle web (posso adicionar depois se quiser stack JS desofuscada).
-- Performance/tracing detalhado (fica em 10% de amostra).
-
-Confirma que posso executar?
+- Arquivos: `src/App.tsx`, `src/main.tsx`, `src/contexts/AuthContext.tsx`, `src/lib/capacitorNative.ts`, `capacitor.config.ts`, `vite.config.ts`, `index.html`, `.github/workflows/keep-alive.yml` (novo).
+- Sem mudança de backend, sem migrations, sem novas dependências.
+- Vou versionar (patch bump) e sincronizar `PerfilPage` + `build.gradle` (versionName + versionCode) ao final.
