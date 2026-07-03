@@ -65,6 +65,10 @@ export async function registerPWA() {
       onOfflineReady() {
         console.info("[PWA] Pronto para uso offline");
       },
+      onRegisterError(error: unknown) {
+        // SW pode falhar em rede intermitente / CDN cold — silencia p/ não spamar Sentry.
+        console.warn("[PWA] Falha ao registrar SW (ignorada):", error);
+      },
     });
     // Checa updates a cada 60s
     setInterval(() => { try { (updateSW as any); const reg = navigator.serviceWorker.getRegistration(); reg && (reg as any).then?.((r: any) => r?.update?.()); } catch {} }, 60_000);
