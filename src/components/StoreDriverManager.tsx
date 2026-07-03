@@ -530,6 +530,34 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
                 <Clock className="h-3 w-3" /> Fim do dia
               </button>
             </div>
+
+            {/* Contagem de entregas (delivery + manual) */}
+            {(() => {
+              const s = deliveryStats?.[sd.driver_user_id];
+              const total = s?.total || 0;
+              const today = s?.today || 0;
+              const pending = s?.pending || 0;
+              const pendingAmount = s?.pendingAmount || 0;
+              return (
+                <div className="grid grid-cols-3 gap-2 pt-1 border-t border-border">
+                  <div className="bg-muted/40 rounded-lg px-2 py-1.5 text-center">
+                    <p className="text-[9px] font-bold text-muted-foreground uppercase">Hoje</p>
+                    <p className="text-sm font-black text-foreground tabular-nums">{today}</p>
+                  </div>
+                  <div className="bg-muted/40 rounded-lg px-2 py-1.5 text-center">
+                    <p className="text-[9px] font-bold text-muted-foreground uppercase">Total</p>
+                    <p className="text-sm font-black text-foreground tabular-nums">{total}</p>
+                  </div>
+                  <div className={`rounded-lg px-2 py-1.5 text-center ${pending > 0 ? "bg-primary/10" : "bg-muted/40"}`}>
+                    <p className={`text-[9px] font-bold uppercase ${pending > 0 ? "text-primary" : "text-muted-foreground"}`}>A pagar</p>
+                    <p className={`text-sm font-black tabular-nums ${pending > 0 ? "text-primary" : "text-foreground"}`}>{pending}</p>
+                    {pendingAmount > 0 && (
+                      <p className="text-[9px] font-bold text-primary tabular-nums leading-none mt-0.5">{formatBRL(pendingAmount)}</p>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         ))}
       </div>
