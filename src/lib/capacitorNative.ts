@@ -412,18 +412,15 @@ export async function initCapacitorNative() {
 
   console.log("[Capacitor] Platform:", Capacitor.getPlatform());
 
-  // ⚡ CRITICAL: Register push listeners SYNCHRONOUSLY (await) so notification
-  // taps received during cold start are not lost. The pushNotificationActionPerformed
-  // event fires very early on Android cold start.
-  try {
-    await setupPushListeners();
-    console.log("[Capacitor] ✅ Push listeners ready");
-  } catch (e) {
-    console.warn("[Capacitor] Push listener setup failed:", e);
-  }
-
-  // ⚡ Hide splash IMMEDIATELY — React is already mounted at this point.
+  // ⚡ Hide splash FIRST — React is already mounted, don't wait on plugin imports.
   hideSplash().catch(() => {});
+
+  // Push listeners: fire-and-forget. Cold-start taps are captured via the
+  // persisted `pending_push_nav_v2` in localStorage, so awaiting here is
+  // unnecessary and only delays the first interactive frame.
+  setupPushListeners()
+    .then(() => console.log("[Capacitor] ✅ Push listeners ready"))
+    .catch((e) => console.warn("[Capacitor] Push listener setup failed:", e));
 
   // Visual setup runs in parallel
   configureStatusBar().catch(() => {});

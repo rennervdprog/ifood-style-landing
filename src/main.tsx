@@ -56,7 +56,9 @@ const isCapacitor = Capacitor.isNativePlatform();
 // PWA: registro guardado em src/lib/registerPWA.ts (NetworkFirst em /api/store/*
 // + cache de imagens). Em preview/iframe/Capacitor o wrapper desregistra
 // qualquer /sw.js antigo. firebase-messaging-sw.js permanece intacto.
-if (typeof window !== "undefined" && "serviceWorker" in navigator) {
+// Pular no APK Capacitor — Service Worker é redundante lá (o Android já cacheia
+// o bundle local + Capgo cuida de OTA). Evita import + trabalho no cold start.
+if (typeof window !== "undefined" && "serviceWorker" in navigator && !isCapacitor) {
   import("./lib/registerPWA").then(({ registerPWA }) => registerPWA()).catch(() => {});
 }
 

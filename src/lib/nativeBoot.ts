@@ -35,7 +35,15 @@ export async function nativeBoot() {
       console.warn("[OTA] Download falhou:", info);
     });
 
-    CapacitorUpdater.getLatest().catch(() => {});
+    // Adiar checagem de OTA pra depois do primeiro paint — não competir
+    // com o render inicial nem com a hidratação de dados.
+    const scheduleLatest = () => CapacitorUpdater.getLatest().catch(() => {});
+    const w = window as any;
+    if (typeof w.requestIdleCallback === "function") {
+      w.requestIdleCallback(scheduleLatest, { timeout: 5000 });
+    } else {
+      setTimeout(scheduleLatest, 3000);
+    }
   } catch (e) {
     console.warn("[NativeBoot] CapacitorUpdater not available:", e);
   }
