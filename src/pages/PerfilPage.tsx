@@ -1026,6 +1026,20 @@ const PerfilPage = () => {
 
         <div className="flex flex-col items-center gap-1 pb-4">
           <p className="text-center text-[10px] text-muted-foreground/50">ItaSuper v{appVersion}</p>
+          <button
+            onClick={() => {
+              const s = (window as any).Sentry;
+              if (s?.captureException) {
+                s.captureException(new Error("Teste manual Sentry - ItaSuper"));
+                toast.success("Erro de teste enviado ao Sentry!");
+              } else {
+                toast.error("Sentry não carregado");
+              }
+            }}
+            className="text-[10px] text-muted-foreground/40 underline"
+          >
+            Testar Sentry
+          </button>
           {isCapacitorNative() && (
             <button 
               onClick={async () => {
