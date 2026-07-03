@@ -30,7 +30,8 @@ interface Props {
   troco: number;
   trocoNegativo: boolean;
   finalTotal_: number;
-  removeItem: (id: string) => void;
+  /** Recebe o índice da linha (permite remover linhas diferentes do mesmo produto). */
+  removeItem: (index: number) => void;
   onFinalize: () => void;
   loading: boolean;
   orderDone: boolean;
