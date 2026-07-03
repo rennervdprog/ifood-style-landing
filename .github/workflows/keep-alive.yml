@@ -1,0 +1,23 @@
+name: keep-alive
+
+# Mantém o Postgres do Supabase Free "morno" pingando o endpoint
+# /api/keep-alive da Vercel a cada 10 minutos. Evita cold start de 3-5s
+# na primeira query (getSession) quando o app abre depois de horas parado.
+# GitHub Actions grátis: até 2000 min/mês em repos privados — usamos ~5min/mês.
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Ping keep-alive
+        run: |
+          curl -fsS --max-time 20 https://www.itasuper.com.br/api/keep-alive \
+            || curl -fsS --max-time 20 https://itasuper.com.br/api/keep-alive
+          echo ""
+          echo "OK $(date -u +%FT%TZ)"
