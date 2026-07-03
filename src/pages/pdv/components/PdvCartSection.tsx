@@ -30,7 +30,8 @@ interface Props {
   troco: number;
   trocoNegativo: boolean;
   finalTotal_: number;
-  removeItem: (id: string) => void;
+  /** Recebe o índice da linha (permite remover linhas diferentes do mesmo produto). */
+  removeItem: (index: number) => void;
   onFinalize: () => void;
   loading: boolean;
   orderDone: boolean;
@@ -60,7 +61,7 @@ export const PdvCartSection = ({
         <div className="flex items-center gap-1.5">
           <span className="text-[10px] text-muted-foreground">{totalItems} itens</span>
           {cart.length > 0 && (
-            <button onClick={clearSale} className="p-1 rounded-lg hover:bg-muted transition-colors">
+            <button onClick={() => { if (window.confirm("Limpar toda a venda atual?")) clearSale(); }} aria-label="Limpar venda" className="p-1 rounded-lg hover:bg-muted transition-colors">
               <RotateCcw className="h-3.5 w-3.5 text-muted-foreground" />
             </button>
           )}
@@ -104,7 +105,8 @@ export const PdvCartSection = ({
               )}
             </div>
             <p className="text-xs font-black text-foreground shrink-0 pdv-mono">{formatBRL(item.price * item.quantity)}</p>
-            <button onClick={() => removeItem(item.id)} className="p-0.5 text-muted-foreground hover:text-destructive transition-colors opacity-100 md:opacity-0 md:group-hover:opacity-100">
+            <button onClick={() => removeItem(idx)} className="p-0.5 text-muted-foreground hover:text-destructive transition-colors opacity-100 md:opacity-0 md:group-hover:opacity-100">
+            {/* removeItem(idx) — não idx do produto (Bug P0 report) */}
               <X className="h-3.5 w-3.5" />
             </button>
           </div>
@@ -220,6 +222,7 @@ export const PdvCartSection = ({
               placeholder={finalTotal_.toFixed(2).replace(".", ",")}
               value={cashReceived}
               onChange={(e) => setCashReceived(e.target.value.replace(/[^0-9.,]/g, ""))}
+              data-pdv-no-hotkey
               className={`w-full pl-8 pr-3 py-2.5 rounded-xl text-xl font-black text-center focus:outline-none focus:ring-2 transition-colors ${trocoNegativo ? "bg-red-500/10 text-red-500 border border-red-500/30" : "bg-white dark:bg-muted/50 border border-border/50 focus:ring-primary/30"}`}
             />
           </div>

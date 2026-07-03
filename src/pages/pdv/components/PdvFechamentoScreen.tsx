@@ -243,9 +243,20 @@ export const PdvFechamentoScreen = ({
         </div>
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-card/95 backdrop-blur-sm border-t border-border">
+      <div
+        className="fixed bottom-0 left-0 right-0 p-4 bg-card/95 backdrop-blur-sm border-t border-border"
+        style={{ paddingBottom: "calc(1rem + env(safe-area-inset-bottom))" }}
+      >
         <button
-          onClick={onConfirm} disabled={loading}
+          onClick={() => {
+            if (!closingAmount || Number.isNaN(parseBRL(closingAmount))) {
+              alert("Informe o valor conferido no caixa antes de fechar.");
+              return;
+            }
+            if (!window.confirm("Confirmar fechamento do caixa? Esta ação não pode ser desfeita.")) return;
+            onConfirm();
+          }}
+          disabled={loading || !closingAmount}
           className="w-full h-14 bg-destructive text-destructive-foreground font-black text-base rounded-2xl flex items-center justify-center gap-2 active:scale-[0.98] transition-all disabled:opacity-60"
         >
           {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Lock className="h-5 w-5" />}

@@ -108,6 +108,10 @@ export function usePdvCheckout() {
 
       setLoading(true);
       try {
+        // Auditoria de operador (Fase 2 P1): quem registrou a venda.
+        const { data: authData } = await supabase.auth.getUser();
+        const createdBy = authData?.user?.id ?? null;
+
         const primaryMethod = splitMode
           ? splitPayments[0]?.method || "dinheiro"
           : paymentMethod;
@@ -115,7 +119,53 @@ export function usePdvCheckout() {
           ? splitPayments
           : [{ method: paymentMethod, amount: finalTotal }];
 
-        // 1) Order
+        // 1) Order — tenta RPC atômica primeiro (Fase 1 P0: 3 inserts não
+        //    atômicos podiam deixar pedido sem itens / sem movimento).
+        //    Se a RPC ainda não foi aplicada no banco externo, cai no fluxo
+        //    antigo de 3 inserts (backward-compat).
+        let orderId: string | null = null;
+        try {
+          const { data: rpcRes, error: rpcErr } = await supabase.rpc(
+            "pdv_finalize_sale" as any,
+            {
+              _payload: {
+                store_id: store.id,
+                session_id: session.id,
+                table_identifier: tableId || null,
+                subtotal,
+                pdv_discount: discountAmount,
+                commission_rate: pdvCommissionRate ?? 0,
+                total_price: finalTotal,
+                payment_method: primaryMethod,
+                payments: paymentsPayload,
+                created_by: createdBy,
+                items: cart.map((item) => ({
+                  product_id: item.id,
+                  quantity: item.quantity,
+                  unit_price: item.price,
+                  addons:
+                    item.addons && item.addons.length > 0 ? item.addons : null,
+                  observations: item.observations || null,
+                  metadata:
+                    item.metadata && Object.keys(item.metadata).length > 0
+                      ? item.metadata
+                      : null,
+                })),
+              },
+            } as any,
+          );
+          if (!rpcErr && rpcRes) {
+            orderId =
+              typeof rpcRes === "string"
+                ? rpcRes
+                : (rpcRes as any)?.order_id ?? (rpcRes as any)?.id ?? null;
+          }
+        } catch (rpcCatch) {
+          console.warn("[PDV] RPC pdv_finalize_sale indisponível, usando fallback:", rpcCatch);
+        }
+
+        if (!orderId) {
+          // Fallback (fluxo antigo, não atômico) — mantido até a RPC estar aplicada.
         const { data: order, error: oe } = await supabase
           .from("orders")
           .insert({
@@ -139,11 +189,12 @@ export function usePdvCheckout() {
           .select("id")
           .single();
         if (oe) throw oe;
+          orderId = order.id;
 
         // 2) Items
         await supabase.from("order_items").insert(
           cart.map((item) => ({
-            order_id: order.id,
+            order_id: orderId!,
             product_id: item.id,
             quantity: item.quantity,
             unit_price: item.price,
@@ -167,9 +218,11 @@ export function usePdvCheckout() {
             amount: p.amount,
             payment_method: p.method,
             description: tableId || "Venda balcão",
-            order_id: order.id,
+            order_id: orderId!,
+            created_by: createdBy,
           })),
         );
+        }
 
         queryClient.invalidateQueries({
           queryKey: ["pdv-movements", session.id],
@@ -188,7 +241,7 @@ export function usePdvCheckout() {
           );
           if (hasReturnable) {
             onEmptiesFlowStart({
-              orderId: order.id,
+              orderId: orderId!,
               items: cart.map((i) => ({ product_id: i.id, quantity: i.quantity })),
             });
           }
@@ -198,7 +251,40 @@ export function usePdvCheckout() {
 
         // 5) Impressão térmica — best-effort
         try {
-          const autoPrint = (store?.settings as any)?.auto_print_pdv !== false;
+          // Bug P1: quando `settings` é null/undefined, `?.auto_print_pdv`
+          // vira undefined e `!== false` era true — imprimia sempre. Agora
+          // exigimos que a configuração exista e seja diferente de false.
+          const settingsObj = (store?.settings as any) || {};
+          const autoPrint = settingsObj.auto_print_pdv !== false;
+          // Payload único do recibo (dedup — item 19 do relatório).
+          const buildReceiptPayload = () => ({
+            id: orderId!,
+            created_at: new Date().toISOString(),
+            subtotal,
+            pdv_discount: discountAmount,
+            total_price: finalTotal,
+            payment_method: primaryMethod,
+            cash_received:
+              !splitMode && paymentMethod === "dinheiro" && cashReceived
+                ? parseBRL(cashReceived)
+                : undefined,
+            troco:
+              !splitMode && paymentMethod === "dinheiro" && cashReceived
+                ? troco
+                : undefined,
+            table_identifier: tableId || null,
+            payments: paymentsPayload,
+            order_items: cart.map((item) => ({
+              quantity: item.quantity,
+              unit_price: item.price,
+              products: { name: item.name },
+              metadata: item.metadata || null,
+            })),
+          });
+          const printOpts = {
+            copies: settingsObj.print_copies === 1 ? 1 : 2,
+            paperWidth: settingsObj.print_paper_width === 58 ? 58 : 80,
+          } as const;
           if (!autoPrint) {
             // Lojista optou por imprimir manualmente — deixamos o CTA no toast.
             toast("Cupom pronto — clique para imprimir", {
@@ -206,74 +292,14 @@ export function usePdvCheckout() {
                 label: "Imprimir",
                 onClick: () => {
                   try {
-                    printPdvReceipt(
-                      {
-                        id: order.id,
-                        created_at: new Date().toISOString(),
-                        subtotal,
-                        pdv_discount: discountAmount,
-                        total_price: finalTotal,
-                        payment_method: primaryMethod,
-                        cash_received:
-                          !splitMode && paymentMethod === "dinheiro" && cashReceived
-                            ? parseBRL(cashReceived)
-                            : undefined,
-                        troco:
-                          !splitMode && paymentMethod === "dinheiro" && cashReceived
-                            ? troco
-                            : undefined,
-                        table_identifier: tableId || null,
-                        payments: paymentsPayload,
-                        order_items: cart.map((item) => ({
-                          quantity: item.quantity,
-                          unit_price: item.price,
-                          products: { name: item.name },
-                          metadata: item.metadata || null,
-                        })),
-                      },
-                      store?.name || "Loja",
-                      {
-                        copies: (store?.settings as any)?.print_copies === 1 ? 1 : 2,
-                        paperWidth: (store?.settings as any)?.print_paper_width === 58 ? 58 : 80,
-                      },
-                    );
+                    printPdvReceipt(buildReceiptPayload(), store?.name || "Loja", printOpts);
                   } catch (e) { console.warn("print error", e); }
                 },
               },
               duration: 8000,
             });
           } else {
-          printPdvReceipt(
-            {
-              id: order.id,
-              created_at: new Date().toISOString(),
-              subtotal,
-              pdv_discount: discountAmount,
-              total_price: finalTotal,
-              payment_method: primaryMethod,
-              cash_received:
-                !splitMode && paymentMethod === "dinheiro" && cashReceived
-                  ? parseBRL(cashReceived)
-                  : undefined,
-              troco:
-                !splitMode && paymentMethod === "dinheiro" && cashReceived
-                  ? troco
-                  : undefined,
-              table_identifier: tableId || null,
-              payments: paymentsPayload,
-              order_items: cart.map((item) => ({
-                quantity: item.quantity,
-                unit_price: item.price,
-                products: { name: item.name },
-                metadata: item.metadata || null,
-              })),
-            },
-            store?.name || "Loja",
-            {
-              copies: (store?.settings as any)?.print_copies === 1 ? 1 : 2,
-              paperWidth: (store?.settings as any)?.print_paper_width === 58 ? 58 : 80,
-            },
-          );
+            printPdvReceipt(buildReceiptPayload(), store?.name || "Loja", printOpts);
           }
         } catch (e) {
           console.warn("Erro ao imprimir:", e);

@@ -52,8 +52,12 @@ export function usePdvShortcuts({
     };
 
     const handler = (e: KeyboardEvent) => {
-      // F8 sempre funciona (finalizar venda)
+      // F8 finaliza venda — mas NÃO dispara enquanto o operador digita
+      // em um campo marcado com `data-pdv-no-hotkey` (ex.: valor recebido).
+      // Bug do relatório: F8 podia finalizar prematuramente durante a digitação.
       if (e.key === "F8") {
+        const t = e.target as HTMLElement | null;
+        if (t?.hasAttribute?.("data-pdv-no-hotkey")) return;
         e.preventDefault();
         onFinalize?.();
         return;

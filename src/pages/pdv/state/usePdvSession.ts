@@ -54,6 +54,21 @@ export function usePdvSession(params: {
       if (!storeId || !userId) return false;
       setLoading(true);
       try {
+        // Bug P1 corrigido: antes do INSERT, checa se já não existe uma
+        // sessão aberta (evita dois caixas abertos em tabs distintas).
+        const { data: existing } = await supabase
+          .from("pdv_sessions" as any)
+          .select("id")
+          .eq("store_id", storeId)
+          .eq("status", "open")
+          .maybeSingle();
+        if (existing) {
+          const s = existing as any;
+          toast.error("Já existe um caixa aberto para esta loja.");
+          setCurrentSession(s as any as PdvSession);
+          setScreen("venda");
+          return false;
+        }
         const { data, error } = await supabase
           .from("pdv_sessions" as any)
           .insert({
@@ -92,11 +107,15 @@ export function usePdvSession(params: {
       setLoading(true);
       try {
         const diff = countedAmount - expectedAmount;
+        // Auditoria: registra qual operador fechou o caixa.
+        const { data: authData } = await supabase.auth.getUser();
+        const closedBy = authData?.user?.id ?? null;
         const { error } = await supabase
           .from("pdv_sessions" as any)
           .update({
             status: "closed",
             closed_at: new Date().toISOString(),
+            closed_by: closedBy,
             closing_amount: countedAmount,
             closing_difference: diff,
             closing_method: blindClose ? "blind" : "open",
