@@ -1,4 +1,4 @@
-import { ArrowLeft, Monitor, Keyboard, ArrowUpCircle, ArrowDownCircle, Lock, Loader2, User, Wifi, WifiOff } from "lucide-react";
+import { ArrowLeft, Monitor, Keyboard, ArrowUpCircle, ArrowDownCircle, Lock, Loader2, User, Wifi, WifiOff, RefreshCw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { formatBRL } from "@/lib/utils";
@@ -14,11 +14,16 @@ interface Props {
   onSuprimento: () => void;
   onSangria: () => void;
   onFechar: () => void;
+  /** Fase 3 — vendas na fila offline aguardando sync. */
+  outboxCount?: number;
+  outboxFlushing?: boolean;
+  onSyncOutbox?: () => void;
 }
 
 export const PdvTopbar = ({
   storeName, operatorName, turnoVendasCount, turnoVendido, ticketMedio,
   loading, onShowShortcuts, onSuprimento, onSangria, onFechar,
+  outboxCount = 0, outboxFlushing = false, onSyncOutbox,
 }: Props) => {
   const navigate = useNavigate();
   const initial = (operatorName || "").trim().charAt(0).toUpperCase() || "?";
@@ -62,6 +67,20 @@ export const PdvTopbar = ({
         >
           {online ? <Wifi className="h-3.5 w-3.5" /> : <WifiOff className="h-3.5 w-3.5" />}
         </div>
+        {outboxCount > 0 && (
+          <button
+            type="button"
+            onClick={onSyncOutbox}
+            disabled={outboxFlushing}
+            title={`${outboxCount} venda(s) offline aguardando sincronização`}
+            className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-bold text-amber-700 bg-amber-500/10 hover:bg-amber-500/20 transition-colors border border-amber-500/30"
+          >
+            {outboxFlushing
+              ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              : <RefreshCw className="h-3.5 w-3.5" />}
+            <span>Sincronizar ({outboxCount})</span>
+          </button>
+        )}
         {operatorName && (
           <div
             title={`Operador: ${operatorName}`}
