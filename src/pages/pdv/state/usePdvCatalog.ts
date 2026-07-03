@@ -4,6 +4,32 @@ import { supabase } from "@/integrations/supabase/client";
 import type { MenuSection, Product } from "../types";
 
 /**
+ * Cache local (localStorage) de seções + produtos por loja.
+ * Serve para o PDV abrir imediatamente após um reload sem internet
+ * (ou com rede lenta) usando o snapshot do último carregamento.
+ * TTL de 24h — se ficar velho, é ignorado.
+ */
+const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+function cacheKey(kind: "products" | "sections", storeId: string) {
+  return `pdv_catalog_v1:${kind}:${storeId}`;
+}
+function readCache<T>(kind: "products" | "sections", storeId?: string): T | undefined {
+  if (!storeId) return undefined;
+  try {
+    const raw = localStorage.getItem(cacheKey(kind, storeId));
+    if (!raw) return undefined;
+    const parsed = JSON.parse(raw) as { at: number; data: T };
+    if (Date.now() - parsed.at > CACHE_TTL_MS) return undefined;
+    return parsed.data;
+  } catch { return undefined; }
+}
+function writeCache<T>(kind: "products" | "sections", storeId: string, data: T) {
+  try {
+    localStorage.setItem(cacheKey(kind, storeId), JSON.stringify({ at: Date.now(), data }));
+  } catch {}
+}
+
+/**
  * Carrega seções + produtos da loja e expõe utilitários de filtro/agrupamento.
  *
  * - `sections`: seções ativas, ordenadas.
@@ -26,9 +52,13 @@ export function usePdvCatalog(params: {
         .select("id, name, sort_order")
         .eq("store_id", storeId!)
         .order("sort_order");
-      return (data || []) as MenuSection[];
+      const list = (data || []) as MenuSection[];
+      if (storeId) writeCache("sections", storeId, list);
+      return list;
     },
     enabled: !!storeId,
+    initialData: () => readCache<MenuSection[]>("sections", storeId),
+    initialDataUpdatedAt: 0, // força refetch em background, mas mostra cache já
   });
 
   const { data: products = [], isLoading: prodLoading } = useQuery({
@@ -42,7 +72,7 @@ export function usePdvCatalog(params: {
         .order("name");
       // Backwards-compat: alguns produtos só têm sold_by_weight/price_per_kg
       // armazenados em metadata. Normalizamos para os campos top-level.
-      return ((data || []) as any[]).map((p) => ({
+      const list = ((data || []) as any[]).map((p) => ({
         ...p,
         sold_by_weight: !!(p.sold_by_weight ?? p.metadata?.sold_by_weight),
         price_per_kg:
@@ -53,9 +83,13 @@ export function usePdvCatalog(params: {
               : null,
         weight_unit: p.weight_unit || p.metadata?.weight_unit || "kg",
       })) as Product[];
+      if (storeId) writeCache("products", storeId, list);
+      return list;
     },
     enabled: !!storeId,
     staleTime: 60_000,
+    initialData: () => readCache<Product[]>("products", storeId),
+    initialDataUpdatedAt: 0,
   });
 
   const sectionMap = useMemo(
