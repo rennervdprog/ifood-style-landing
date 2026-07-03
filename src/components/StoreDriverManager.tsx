@@ -4,7 +4,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Bike, Plus, Trash2, Search, UserCheck, UserX, Loader2, Share2, Copy, Users, Wallet, Zap, Clock, Info, CheckCircle2, Smartphone, UserPlus, MapPin } from "lucide-react";
 import StoreDriverFinance from "@/components/StoreDriverFinance";
-import { formatBRL } from "@/lib/utils";
 
 interface StoreDriverManagerProps {
   storeId: string;
