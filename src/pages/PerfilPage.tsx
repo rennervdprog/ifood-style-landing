@@ -181,6 +181,34 @@ const PerfilPage = () => {
     typeof Notification !== "undefined" ? Notification.permission : "unsupported"
   );
 
+  const handleSentryTest = useCallback(async () => {
+    try {
+      const Sentry = await import("@sentry/react");
+      const sentryClient = Sentry.getClient?.();
+
+      if (!sentryClient) {
+        toast.error("Sentry inicializou sem cliente ativo");
+        return;
+      }
+
+      const eventId = Sentry.captureException(new Error(`Teste manual Sentry - ItaSuper v${appVersion}`), {
+        tags: { source: "perfil-test-button", app_version: appVersion },
+        extra: { testedAt: new Date().toISOString(), path: window.location.pathname },
+        fingerprint: ["manual-sentry-test", appVersion],
+      });
+
+      const delivered = await Sentry.flush(5000);
+
+      if (delivered) {
+        toast.success(`Sentry enviado: ${eventId.slice(0, 8)}`);
+      } else {
+        toast.error("Sentry não confirmou o envio");
+      }
+    } catch {
+      toast.error("Falha ao enviar teste ao Sentry");
+    }
+  }, [appVersion]);
+
   /* ── Effects ── */
   useEffect(() => {
     if (!isCapacitorNative()) return;
@@ -1027,13 +1055,7 @@ const PerfilPage = () => {
         <div className="flex flex-col items-center gap-1 pb-4">
           <p className="text-center text-[10px] text-muted-foreground/50">ItaSuper v{appVersion}</p>
           <button
-            onClick={() => {
-              import("@sentry/react").then((Sentry) => {
-                Sentry.captureException(new Error("Teste manual Sentry - ItaSuper"));
-                Sentry.captureMessage("Teste manual Sentry - ItaSuper", "error");
-                toast.success("Erro de teste enviado ao Sentry!");
-              }).catch(() => toast.error("Falha ao carregar Sentry"));
-            }}
+            onClick={handleSentryTest}
             className="text-[10px] text-muted-foreground/40 underline"
           >
             Testar Sentry
