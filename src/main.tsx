@@ -1,4 +1,5 @@
 import { initSentry } from "./lib/sentry";
+import { initAnalytics } from "./lib/analytics";
 import { assertExternalBackend } from "./lib/externalBackend";
 
 assertExternalBackend();
@@ -26,6 +27,7 @@ declare global {
 }
 
 initSentry();
+initAnalytics();
 
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
