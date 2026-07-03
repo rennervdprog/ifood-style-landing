@@ -19,9 +19,14 @@ const KEY =
 const sb = createClient(URL, KEY, { auth: { persistSession: false } });
 
 async function getFixture() {
-  const { data: stores } = await sb.from("stores").select("id").limit(1);
+  const { data: stores } = await sb
+    .from("stores")
+    .select("id, owner_id")
+    .limit(1);
   const storeId = stores?.[0]?.id;
+  const ownerId = (stores?.[0] as any)?.owner_id;
   if (!storeId) throw new Error("No store to test against");
+  if (!ownerId) throw new Error("Store has no owner_id");
   const { data: products } = await sb
     .from("products")
     .select("id")
@@ -31,7 +36,12 @@ async function getFixture() {
   if (!productId) throw new Error("No product for store");
   const { data: session, error: se } = await sb
     .from("pdv_sessions")
-    .insert({ store_id: storeId, status: "open", opening_amount: 0 } as any)
+    .insert({
+      store_id: storeId,
+      status: "open",
+      opening_amount: 0,
+      opened_by: ownerId,
+    } as any)
     .select("id")
     .single();
   if (se) throw se;
