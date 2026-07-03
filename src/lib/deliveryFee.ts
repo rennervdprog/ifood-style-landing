@@ -245,7 +245,7 @@ export interface DeliveryFeeResult {
   }
 
   const customerCity = customerAddr.localidade?.toLowerCase().trim() || "";
-  const configCity = config.city_name.toLowerCase().trim();
+  const configCity = (config.city_name || DEFAULT_DELIVERY_FEE_CONFIG.city_name).toLowerCase().trim();
   const isInCity = customerCity === configCity;
   const isDistrict = isDistrictNeighborhood(customerAddr.bairro);
   const isUrbanCep = isUrbanItatingaCep(customerCep);
