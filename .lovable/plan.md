@@ -1,61 +1,52 @@
-# Plano: acelerar cold start do APK (Supabase Free + Vercel Free)
+# Plano PDV ItaSuper — correções do relatório
 
-Hoje o APK abre, mostra splash → tela branca com spinner por ~10s → entra. O gargalo não é infra paga: é **o que o bundle JS carrega antes do primeiro render**. Dá pra cair para 2-3s sem gastar nada.
+Baseado no `Relatorio-PDV-ItaSuper_1.md`. Só o que já existe no código atual (`src/pages/pdv/*`, `src/lib/thermalPrint.ts`, tabelas `pdv_sessions` / `pdv_movements` / `orders`) — nada novo de mercado (KDS, totem, NFC-e, TEF, balança, código de barras ficam fora).
 
-## Causas prováveis (a validar)
+## Fase 1 — Bugs P0 (crítico, mesmo dia)
 
-1. **Bundle inicial gordo** — `App.tsx` importa muitas páginas/contextos direto em vez de `React.lazy`.
-2. **Trabalho síncrono no boot** — Sentry, Analytics, Firebase, Realtime, Auth restore, versionWatcher, storeBootstrap rodando antes do primeiro paint.
-3. **Cold start do Supabase Free** — projeto pausa após inatividade; primeira query demora 3-5s (o `AuthContext` bloqueia UI esperando `getSession`).
-4. **Splash escondendo cedo demais** — sai antes do React montar, revelando tela branca do WebView.
-5. **Realtime + push listeners** competindo com o primeiro render.
+1. **XSS na impressão térmica** (`src/lib/thermalPrint.ts:507`)
+   - Trocar `innerHTML` de campos do pedido por `textContent` / builder DOM. Nome do cliente, observação e nome do produto hoje entram crus.
+2. **Checkout não-atômico** (`src/pages/pdv/state/usePdvCheckout.ts:119-172`)
+   - 3 inserts sequenciais (order → items → movements). Se cair no meio, fica pedido sem itens ou sem movimento.
+   - Criar RPC `pdv_finalize_sale(payload jsonb)` no Supabase externo que faz tudo em uma transação. Client chama só a RPC.
+3. **`removeItem` apaga todas as linhas do produto** (`PdvCartSection.tsx:107`)
+   - Passar `cartIndex` em vez de `id` para o remover; ajustar `usePdvCart.removeItem`.
+4. **Merge errado no carrinho** (`usePdvCart.ts:109`)
+   - Chave de agregação precisa incluir `observations` além de `id + addons`.
+5. **Closure stale no atalho F4** (`PdvPage.tsx:413`)
+   - Corrigir deps do `useCallback cyclePayment` (incluir `paymentMethod`, `splitMode`).
 
-## O que vou fazer
+## Fase 2 — P1 (semana)
 
-### 1. Bundle splitting agressivo (maior ganho)
-- Converter rotas em `React.lazy` no `App.tsx` (ClientHome, AdminDashboardV2, DriverDashboardV2, PdvPage, KdsPage, todas as landing/blog).
-- Só a rota inicial (`/` ou store) entra no bundle principal.
-- Adicionar `<Suspense>` com o mesmo spinner já usado.
+6. **Sessão duplicada** (`usePdvSession.ts:57`): antes do insert, `checkSession()` de novo; e criar `UNIQUE INDEX pdv_sessions (store_id) WHERE status='open'` (migration no banco externo).
+7. **`created_by` / `closed_by`** em `pdv_movements` e `pdv_sessions` — auditoria de operador.
+8. **F8 dentro de input** (`usePdvShortcuts.ts:56`): ignorar quando `document.activeElement` for input/textarea.
+9. **Timezone no cupom** (`thermalPrint.ts:363`): usar `toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })`.
+10. **`auto_print_pdv` com settings null** (`usePdvCheckout.ts:201`): default explícito.
+11. **Confirmação ao limpar carrinho / sair do PDV com carrinho cheio** (`PdvCartSection`, `PdvTopbar`) via `useConfirmDialog` já existente.
+12. **Enter abre caixa / bloqueio de fechamento vazio / autoFocus em sangria** — pequenos ajustes de forms nas telas de abertura, fechamento e movimento.
+13. **CHECK constraints** em `pdv_movements` (`amount > 0`, `type IN (...)`).
 
-### 2. Adiar tudo que não é crítico para o primeiro paint
-- Mover para `requestIdleCallback` / depois do mount: Firebase init, Realtime watchdog, versionWatcher, storeBootstrap, analytics extras.
-- `AuthContext`: renderizar filhos imediatamente com `loading=true` em vez de bloquear a árvore inteira esperando `getSession()` (hoje trava se Supabase estiver frio).
+## Fase 3 — Resiliência offline (Quick win já discutido antes)
 
-### 3. Splash Capacitor controlado
-- Configurar `SplashScreen` com `autoHide: false` no `capacitor.config.ts`.
-- Chamar `hideSplash()` só depois do **primeiro render real** (dentro de `useEffect` do App root, não no `main.tsx`).
-- Resultado: usuário vê splash laranja da marca até o app estar pronto, sem flash branco.
+Já conversamos disso pro Cantinho. Entra aqui sem inventar nada novo:
 
-### 4. Manter Supabase Free "quente" (grátis)
-- Já existe `api/keep-alive.ts` na Vercel. Confirmar que está no `vercel.json` como cron a cada 5 min (Vercel Free permite 2 crons diários — usar GitHub Actions cron a cada 5min chamando a rota, que é grátis).
-- Isso elimina o cold start de 3-5s do primeiro `getSession`.
+14. Wrapper `AbortController` + timeout 3s no `handleVenda` e `handleMovement`.
+15. Fila em `localStorage` (`pdv:pending:<sessionId>`) para vendas que falharem.
+16. Badge "Sincronizar (N)" no `PdvStatusBar` + botão flush manual.
+17. Quando a RPC da Fase 1.2 existir, ela vira idempotente por `client_uuid` — flush fica seguro.
 
-### 5. Pré-carregar assets críticos
-- `<link rel="preload">` no `index.html` para a fonte principal e o logo.
-- Remover imports de fontes não usadas no primeiro render.
+## Fase 4 — UX / acessibilidade pequenas
 
-### 6. Vite build tuning
-- `build.target: 'es2020'` (Android WebView moderno) → menos polyfills.
-- `manualChunks` para separar `supabase`, `firebase`, `react-vendor`.
-- Confirmar `minify: 'esbuild'` e `cssCodeSplit: true`.
+18. `aria-label` nos +/- do catálogo, `role=tablist` nas abas do PDV, `padding-bottom` safe-area no fechamento (iOS).
+19. Dedup do bloco de impressão em `buildReceiptPayload()` dentro de `usePdvCheckout`.
+20. `movements` nas deps do `useMemo` em `PdvRelatorios.tsx:186`.
 
-## Como vou medir
+## Fora de escopo (mesmo estando no relatório)
 
-Antes/depois em log no console nativo:
-```
-[Boot] mainStart → firstPaint = Xms
-[Boot] firstPaint → appReady = Yms
-```
-Meta: firstPaint <800ms, appReady <2.5s no APK release.
+- KDS, autoatendimento/totem, cardápio QR, NFC-e/SAT, TEF, balança, código de barras, IA/chatbot, multi-terminal em LAN. São features novas de mercado — só entram se você pedir.
 
-## Fora de escopo (não vou fazer agora)
+## Entrega
 
-- Trocar Supabase/Vercel de plano (usuário pediu grátis).
-- Reescrever para SSR/Next.
-- Otimizações de imagem no catálogo (não afeta cold start).
-
-## Detalhes técnicos
-
-- Arquivos: `src/App.tsx`, `src/main.tsx`, `src/contexts/AuthContext.tsx`, `src/lib/capacitorNative.ts`, `capacitor.config.ts`, `vite.config.ts`, `index.html`, `.github/workflows/keep-alive.yml` (novo).
-- Sem mudança de backend, sem migrations, sem novas dependências.
-- Vou versionar (patch bump) e sincronizar `PerfilPage` + `build.gradle` (versionName + versionCode) ao final.
+- Cada fase = um commit + bump de versão (patch) no `appVersion.ts` + `build.gradle` (versionName + versionCode).
+- Sem mudança de plano de infra, sem novas dependências além do que já está no projeto (`DOMPurify` só se você preferir sanitizar em vez de reescrever com `textContent`).
