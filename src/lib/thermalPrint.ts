@@ -208,15 +208,15 @@ function renderAddress(order: PrintOrder): string {
   const a = order.delivery_address;
   const lines: string[] = [];
   if (a && (a.street || a.number || a.neighborhood || a.cep)) {
-    if (a.street || a.number) lines.push(`${a.street || ""}${a.number ? ", " + a.number : ""}`.trim());
-    if (a.complement) lines.push(`Compl.: ${a.complement}`);
-    if (a.neighborhood || order.neighborhood) lines.push(`Bairro: ${a.neighborhood || order.neighborhood}`);
-    if (a.city || a.state) lines.push(`${a.city || ""}${a.state ? "/" + a.state : ""}`.trim());
-    if (a.cep) lines.push(`CEP: ${a.cep}`);
-    if (a.reference) lines.push(`Ref.: ${a.reference}`);
+    if (a.street || a.number) lines.push(`${esc(a.street || "")}${a.number ? ", " + esc(a.number) : ""}`.trim());
+    if (a.complement) lines.push(`Compl.: ${esc(a.complement)}`);
+    if (a.neighborhood || order.neighborhood) lines.push(`Bairro: ${esc(a.neighborhood || order.neighborhood)}`);
+    if (a.city || a.state) lines.push(`${esc(a.city || "")}${a.state ? "/" + esc(a.state) : ""}`.trim());
+    if (a.cep) lines.push(`CEP: ${esc(a.cep)}`);
+    if (a.reference) lines.push(`Ref.: ${esc(a.reference)}`);
   } else {
-    if (order.neighborhood) lines.push(`<b>Bairro:</b> ${order.neighborhood}`);
-    if (order.address_details) lines.push(`<b>Endereço:</b> ${order.address_details}`);
+    if (order.neighborhood) lines.push(`<b>Bairro:</b> ${esc(order.neighborhood)}`);
+    if (order.address_details) lines.push(`<b>Endereço:</b> ${esc(order.address_details)}`);
   }
   return lines.map((l) => `<div class="tp-info">${l}</div>`).join("");
 }
@@ -238,7 +238,7 @@ function renderItems(items: PrintOrderItem[] | undefined): string {
     const baseUnitPrice = Number(item.unit_price) - addonsTotal;
     const lineTotal = baseUnitPrice * item.quantity;
 
-    html += `<div class="tp-item-row" style="display:flex;justify-content:space-between"><span><b>${item.quantity}x</b> ${displayName}</span><span>${formatBRL(lineTotal)}</span></div>`;
+    html += `<div class="tp-item-row" style="display:flex;justify-content:space-between"><span><b>${item.quantity}x</b> ${esc(displayName)}</span><span>${formatBRL(lineTotal)}</span></div>`;
     if (item.quantity > 1 && baseUnitPrice > 0) {
       html += `<div style="font-size:11px;color:#444;padding-left:14px">Unit.: ${formatBRL(baseUnitPrice)}</div>`;
     }
@@ -254,7 +254,7 @@ function renderItems(items: PrintOrderItem[] | undefined): string {
       html += `<div style="border:1px solid #000;margin:3px 0;padding:3px 4px;background:#eee">`;
       html += `<div style="font-size:11px;font-weight:bold;letter-spacing:1px;text-align:center;border-bottom:1px dashed #000;padding-bottom:2px;margin-bottom:3px">SABORES</div>`;
       flavors.forEach((f) => {
-        html += `<div style="font-size:13px;font-weight:bold;padding:1px 0">▣ ${f}</div>`;
+        html += `<div style="font-size:13px;font-weight:bold;padding:1px 0">▣ ${esc(f)}</div>`;
       });
       html += `</div>`;
     }
@@ -272,30 +272,30 @@ function renderItems(items: PrintOrderItem[] | undefined): string {
 
       required.forEach((a) => {
         const priceStr = Number(a.price) > 0 ? formatBRL(Number(a.price)) : "";
-        html += `<div style="display:flex;justify-content:space-between;font-weight:bold;font-size:13px;border:1px solid #000;padding:2px 4px;margin:3px 0;background:#eee"><span>★ ${a.groupName}: ${String(a.name).toUpperCase()}</span><span>${priceStr}</span></div>`;
+        html += `<div style="display:flex;justify-content:space-between;font-weight:bold;font-size:13px;border:1px solid #000;padding:2px 4px;margin:3px 0;background:#eee"><span>★ ${esc(a.groupName)}: ${esc(String(a.name).toUpperCase())}</span><span>${priceStr}</span></div>`;
       });
       sizes.forEach((a) => {
         const sizeName = String(a.name).replace(/^tamanho\s*:\s*/i, "").toUpperCase();
-        html += `<div style="display:flex;justify-content:space-between;font-weight:bold;font-size:13px;border:1px solid #000;padding:2px 4px;margin:3px 0;background:#eee"><span>▣ TAMANHO: ${sizeName}</span><span></span></div>`;
+        html += `<div style="display:flex;justify-content:space-between;font-weight:bold;font-size:13px;border:1px solid #000;padding:2px 4px;margin:3px 0;background:#eee"><span>▣ TAMANHO: ${esc(sizeName)}</span><span></span></div>`;
       });
       borders.forEach((a) => {
         const priceStr = Number(a.price) > 0 ? formatBRL(Number(a.price)) : "";
         const borderName = String(a.name).replace(/^borda\s*:\s*/i, "").toUpperCase();
-        html += `<div style="display:flex;justify-content:space-between;font-weight:bold;font-size:13px;border:1px solid #000;padding:2px 4px;margin:3px 0;background:#eee"><span>◆ BORDA: ${borderName}</span><span>${priceStr}</span></div>`;
+        html += `<div style="display:flex;justify-content:space-between;font-weight:bold;font-size:13px;border:1px solid #000;padding:2px 4px;margin:3px 0;background:#eee"><span>◆ BORDA: ${esc(borderName)}</span><span>${priceStr}</span></div>`;
       });
       complements.forEach((a) => {
         const cName = String(a.name).replace(/^complemento\s*:\s*/i, "").toUpperCase();
         const cPrice = Number(a.price) > 0 ? formatBRL(Number(a.price)) : "GRÁTIS";
-        html += `<div style="display:flex;justify-content:space-between;font-weight:bold;font-size:13px;border:1px solid #000;padding:2px 4px;margin:3px 0;background:#eee"><span>✚ COMPLEMENTO: ${cName}</span><span>${cPrice}</span></div>`;
+        html += `<div style="display:flex;justify-content:space-between;font-weight:bold;font-size:13px;border:1px solid #000;padding:2px 4px;margin:3px 0;background:#eee"><span>✚ COMPLEMENTO: ${esc(cName)}</span><span>${cPrice}</span></div>`;
       });
       optional.forEach((a) => {
         const priceStr = Number(a.price) > 0 ? formatBRL(Number(a.price)) : "";
-        html += `<div style="display:flex;justify-content:space-between;font-size:12px;padding-left:12px"><span>+ ${a.name}</span><span>${priceStr}</span></div>`;
+        html += `<div style="display:flex;justify-content:space-between;font-size:12px;padding-left:12px"><span>+ ${esc(a.name)}</span><span>${priceStr}</span></div>`;
       });
     }
 
     if (item.observations) {
-      html += `<div class="tp-obs" style="font-size:12px;font-weight:bold;border:1px dashed #000;padding:3px 5px;margin:3px 0">⚠ OBS: ${item.observations}</div>`;
+      html += `<div class="tp-obs" style="font-size:12px;font-weight:bold;border:1px dashed #000;padding:3px 5px;margin:3px 0">⚠ OBS: ${esc(item.observations)}</div>`;
     }
   });
   return html;
@@ -363,10 +363,10 @@ function wrapCopies(html: string, copies: number, viaLabels?: string[]): string 
 
 function storeHeader(storeName: string, opt: PrintOptions): string {
   const extra = [
-    opt.storePhone ? `<div class="tp-info">Tel.: ${opt.storePhone}</div>` : "",
-    opt.storeCnpj ? `<div class="tp-info">CNPJ: ${opt.storeCnpj}</div>` : "",
+    opt.storePhone ? `<div class="tp-info">Tel.: ${esc(opt.storePhone)}</div>` : "",
+    opt.storeCnpj ? `<div class="tp-info">CNPJ: ${esc(opt.storeCnpj)}</div>` : "",
   ].join("");
-  return `<div class="tp-center"><div class="tp-title">ITASUPER</div><div class="tp-store">${storeName}</div>${extra}</div>`;
+  return `<div class="tp-center"><div class="tp-title">ITASUPER</div><div class="tp-store">${esc(storeName)}</div>${extra}</div>`;
 }
 
 // ─── Wrappers públicos ────────────────────────────────────────────────────
@@ -386,7 +386,7 @@ export function printThermalReceipt(
   const copies = options.copies ?? 2;
   applyPaperWidth(paperWidth);
 
-  const date = new Date(order.created_at).toLocaleString("pt-BR");
+  const date = fmtDate(order.created_at);
   const num = formatOrderNumber(order);
   const phone = clientPhone || order.client_phone || "";
   const subtotalNum = Number(order.subtotal) || 0;
@@ -414,6 +414,7 @@ export function printThermalReceipt(
     const d = new Date(order.scheduled_for);
     const s = d.toLocaleString("pt-BR", {
       day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit",
+      timeZone: "America/Sao_Paulo",
     });
     scheduledHtml = `
 <div class="tp-scheduled" style="border:3px solid #000;padding:8px;margin:8px 0;text-align:center;background:#000;color:#fff;font-size:16px;font-weight:bold;letter-spacing:1px">
@@ -425,7 +426,7 @@ export function printThermalReceipt(
 
   const generalObs = order.notes || order.observations;
   const generalObsHtml = generalObs
-    ? `<div class="tp-obs-general" style="border:2px dashed #000;padding:6px;margin:6px 0;font-size:13px"><b>⚠ OBSERVAÇÃO DO PEDIDO:</b><br/>${generalObs}</div>`
+    ? `<div class="tp-obs-general" style="border:2px dashed #000;padding:6px;margin:6px 0;font-size:13px"><b>⚠ OBSERVAÇÃO DO PEDIDO:</b><br/>${esc(generalObs)}</div>`
     : "";
 
   const splits = Array.isArray(order.payments) ? order.payments : [];
@@ -461,8 +462,8 @@ ${discountHtml}
 <div class="tp-divider"></div>
 ${paymentHtml}
 <div class="tp-divider"></div>
-<div class="tp-info"><b>Cliente:</b> ${clientName}</div>
-${phone ? `<div class="tp-info"><b>Telefone:</b> ${phone}</div>` : ""}
+<div class="tp-info"><b>Cliente:</b> ${esc(clientName)}</div>
+${phone ? `<div class="tp-info"><b>Telefone:</b> ${esc(phone)}</div>` : ""}
 ${isPickup ? `<div class="tp-info" style="font-weight:bold">✓ Cliente vai retirar no balcão</div>` : renderAddress(order)}
 <div class="tp-divider"></div>
 ${renderFooter()}
@@ -480,13 +481,13 @@ export function printPdvReceipt(order: PrintPdvOrder, storeName: string, options
   const copies = options.copies ?? 2;
   applyPaperWidth(paperWidth);
 
-  const date = new Date(order.created_at).toLocaleString("pt-BR");
+  const date = fmtDate(order.created_at);
   const num = formatOrderNumber(order);
   const discount = Number(order.pdv_discount || 0);
   const splits = Array.isArray(order.payments) ? order.payments : [];
 
   const origin = order.table_identifier
-    ? `MESA / COMANDA ${String(order.table_identifier).toUpperCase()}`
+    ? `MESA / COMANDA ${esc(String(order.table_identifier).toUpperCase())}`
     : "BALCÃO";
 
   const discountHtml = discount > 0
@@ -505,7 +506,7 @@ export function printPdvReceipt(order: PrintPdvOrder, storeName: string, options
 
   const generalObs = order.notes || order.observations;
   const generalObsHtml = generalObs
-    ? `<div class="tp-obs-general" style="border:2px dashed #000;padding:6px;margin:6px 0;font-size:13px"><b>⚠ OBSERVAÇÃO:</b><br/>${generalObs}</div>`
+    ? `<div class="tp-obs-general" style="border:2px dashed #000;padding:6px;margin:6px 0;font-size:13px"><b>⚠ OBSERVAÇÃO:</b><br/>${esc(generalObs)}</div>`
     : "";
 
   const body = `

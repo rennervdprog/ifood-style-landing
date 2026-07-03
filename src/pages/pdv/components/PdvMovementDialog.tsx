@@ -39,6 +39,7 @@ export const PdvMovementDialog = ({
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-muted-foreground">R$</span>
             <input
               type="text" inputMode="decimal" placeholder="0,00"
+              autoFocus
               value={movValue} onChange={e => setMovValue(e.target.value.replace(/[^0-9.,]/g, ""))}
               className="w-full pl-9 pr-3 py-3 bg-muted/40 rounded-xl text-xl font-black text-center focus:outline-none focus:ring-2 focus:ring-primary/30 border border-border/50"
             />

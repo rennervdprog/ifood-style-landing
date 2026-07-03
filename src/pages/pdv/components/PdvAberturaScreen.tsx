@@ -25,7 +25,13 @@ export const PdvAberturaScreen = ({ storeName, openingAmount, setOpeningAmount, 
       </header>
 
       <div className="flex-1 flex items-center justify-center p-6">
-        <div className="w-full max-w-xs space-y-6">
+        <form
+          className="w-full max-w-xs space-y-6"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!loading) onOpen();
+          }}
+        >
           <div className="text-center space-y-3">
             <div className="w-20 h-20 rounded-3xl bg-primary/10 border-2 border-primary/20 flex items-center justify-center mx-auto">
               <Unlock className="h-9 w-9 text-primary" />
@@ -45,6 +51,7 @@ export const PdvAberturaScreen = ({ storeName, openingAmount, setOpeningAmount, 
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-bold text-muted-foreground">R$</span>
                 <input
                   type="text" inputMode="decimal"
+                  autoFocus
                   value={openingAmount}
                   onChange={e => setOpeningAmount(e.target.value.replace(/[^0-9.,]/g, ""))}
                   placeholder="0,00"
@@ -55,14 +62,14 @@ export const PdvAberturaScreen = ({ storeName, openingAmount, setOpeningAmount, 
             </div>
 
             <button
-              onClick={onOpen} disabled={loading}
+              type="submit" disabled={loading}
               className="w-full h-14 bg-primary text-primary-foreground font-black text-base rounded-2xl flex items-center justify-center gap-2.5 active:scale-[0.98] transition-all shadow-lg shadow-primary/30 disabled:opacity-60"
             >
               {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Unlock className="h-5 w-5" />}
               Abrir Caixa
             </button>
           </div>
-        </div>
+        </form>
       </div>
     </div>
   );
