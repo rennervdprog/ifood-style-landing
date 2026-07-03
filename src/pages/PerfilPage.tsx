@@ -1028,13 +1028,11 @@ const PerfilPage = () => {
           <p className="text-center text-[10px] text-muted-foreground/50">ItaSuper v{appVersion}</p>
           <button
             onClick={() => {
-              const s = (window as any).Sentry;
-              if (s?.captureException) {
-                s.captureException(new Error("Teste manual Sentry - ItaSuper"));
+              import("@sentry/react").then((Sentry) => {
+                Sentry.captureException(new Error("Teste manual Sentry - ItaSuper"));
+                Sentry.captureMessage("Teste manual Sentry - ItaSuper", "error");
                 toast.success("Erro de teste enviado ao Sentry!");
-              } else {
-                toast.error("Sentry não carregado");
-              }
+              }).catch(() => toast.error("Falha ao carregar Sentry"));
             }}
             className="text-[10px] text-muted-foreground/40 underline"
           >
