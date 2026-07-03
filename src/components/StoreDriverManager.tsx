@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Bike, Plus, Trash2, Search, UserCheck, UserX, Loader2, Share2, Copy, Users, Wallet, Zap, Clock, Info, CheckCircle2, Smartphone, UserPlus, MapPin } from "lucide-react";
 import StoreDriverFinance from "@/components/StoreDriverFinance";
+import { formatBRL } from "@/lib/utils";
 
 interface StoreDriverManagerProps {
   storeId: string;
@@ -58,6 +59,37 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
       }));
     },
     refetchInterval: 15000,
+  });
+
+  // Contagem de entregas por motoboy (delivery + manual, ambos gravam em store_driver_earnings)
+  const driverIds = (storeDrivers || []).map((s: any) => s.driver_user_id);
+  const { data: deliveryStats } = useQuery({
+    queryKey: ["store-driver-delivery-stats", storeId, driverIds.join(",")],
+    enabled: driverIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("store_driver_earnings" as any)
+        .select("driver_user_id, driver_amount, status, created_at")
+        .eq("store_id", storeId)
+        .in("driver_user_id", driverIds);
+      if (error) throw error;
+      const now = new Date();
+      const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+      const map: Record<string, { total: number; today: number; pending: number; pendingAmount: number; totalAmount: number }> = {};
+      (data as any[] || []).forEach((r) => {
+        const k = r.driver_user_id;
+        if (!map[k]) map[k] = { total: 0, today: 0, pending: 0, pendingAmount: 0, totalAmount: 0 };
+        map[k].total += 1;
+        map[k].totalAmount += Number(r.driver_amount || 0);
+        if (new Date(r.created_at).getTime() >= startOfToday) map[k].today += 1;
+        if (r.status !== "pago") {
+          map[k].pending += 1;
+          map[k].pendingAmount += Number(r.driver_amount || 0);
+        }
+      });
+      return map;
+    },
+    refetchInterval: 30000,
   });
 
   const handleSearch = async () => {
