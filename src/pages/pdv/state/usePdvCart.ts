@@ -105,8 +105,13 @@ export function usePdvCart() {
             (i.observations || "") === observations,
         );
         if (existing) {
+          // Bug P0 corrigido: o `map` também precisa checar `observations`,
+          // senão duas linhas com mesmo produto+addons mas obs diferentes
+          // eram somadas erroneamente na primeira que casasse.
           return prev.map((i) =>
-            i.id === product.id && addonKeyOf(i.addons) === newKey
+            i.id === product.id &&
+            addonKeyOf(i.addons) === newKey &&
+            (i.observations || "") === observations
               ? { ...i, quantity: i.quantity + quantity }
               : i,
           );
@@ -167,8 +172,13 @@ export function usePdvCart() {
     });
   }, []);
 
-  const removeItem = useCallback((id: string) => {
-    setCart((prev) => prev.filter((i) => i.id !== id));
+  /**
+   * Remove UMA linha do carrinho pelo índice. Antes recebia `id`, o que
+   * apagava TODAS as linhas do mesmo produto (mesmo com addons/obs
+   * diferentes). Bug P0 do relatório PDV.
+   */
+  const removeItem = useCallback((index: number) => {
+    setCart((prev) => prev.filter((_, i) => i !== index));
   }, []);
 
   /** Zera o estado de venda (chamado após finalizar ou ao cancelar). */
@@ -176,6 +186,7 @@ export function usePdvCart() {
     setCart([]);
     setPaymentMethod("");
     setTableId("");
+    setDiscountType("R$");
     setDiscountInput("");
     setShowDiscount(false);
     setCashReceived("");

@@ -405,12 +405,16 @@ const PdvPage = () => {
   const ticketMedio = turnoVendasCount > 0 ? turnoVendido / turnoVendasCount : 0;
 
   // ── Atalhos de teclado (PDV profissional) ──
+  // Bug P0 corrigido: usa functional updater para não depender de `paymentMethod`
+  // no closure — antes o F4 podia ciclar a partir de um valor stale.
   const cyclePayment = useCallback(() => {
     const ids = PDV_METHODS.map(m => m.id);
-    if (!paymentMethod) { setPaymentMethod(ids[0]); return; }
-    const idx = ids.indexOf(paymentMethod);
-    setPaymentMethod(ids[(idx + 1) % ids.length]);
-  }, [paymentMethod]);
+    setPaymentMethod((prev: string) => {
+      if (!prev) return ids[0];
+      const idx = ids.indexOf(prev);
+      return ids[(idx + 1) % ids.length];
+    });
+  }, [setPaymentMethod]);
 
   usePdvShortcuts({
     enabled: screen === "venda" && tab === "venda",
