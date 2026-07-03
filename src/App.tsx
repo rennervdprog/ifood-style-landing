@@ -14,7 +14,7 @@ import NotificationPrompt from "@/components/NotificationPrompt";
 import DownloadAppPrompt from "@/components/DownloadAppPrompt";
 import CapacitorPermissionsOnboarding from "@/components/CapacitorPermissionsOnboarding";
 import DebugOverlay from "@/components/DebugOverlay";
-import { initCapacitorNative, isCapacitorNative, consumePendingPushNavigation } from "@/lib/capacitorNative";
+import { initCapacitorNative, isCapacitorNative, consumePendingPushNavigation, hideSplash } from "@/lib/capacitorNative";
 import { initCapacitorLifecycle } from "@/lib/capacitorLifecycle";
 import { initRealtimeWatchdog } from "@/lib/realtimeWatchdog";
 import { initVersionWatcher } from "@/lib/versionWatcher";
@@ -235,18 +235,45 @@ const App = () => {
   }, []);
 
   useEffect(() => {
-    // ⚡ Fire-and-forget: don't chain these, run in parallel so first paint
-    // is never blocked by native setup or auto-update checks.
+    // ⚡ Ordem crítica para cold start fluido em Capacitor:
+    // 1) initCapacitorNative → registra push listeners (precisa cedo p/ cold-start taps).
+    // 2) hideSplash → chamado logo após o primeiro paint (RAF x2) para
+    //    remover a tela laranja assim que o React estiver montado com conteúdo.
+    // 3) Todo o resto (watchdog, version check, nativeBoot, lifecycle)
+    //    vai para requestIdleCallback — não compete com o primeiro render.
     initCapacitorNative().catch(() => {});
-    initCapacitorLifecycle().catch(() => {});
-    import("@/lib/nativeBoot").then(({ nativeBoot }) => nativeBoot()).catch(() => {});
-    initRealtimeWatchdog();
-    initVersionWatcher();
-    // Aviso não-bloqueante de nova versão nativa disponível.
-    setTimeout(() => { 
+
+    // Hide splash após 2 RAFs (primeiro paint) + micro delay pra rota renderizar.
+    // Fallback também garantido em capacitor.config (launchShowDuration).
+    if (isCapacitorNative()) {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setTimeout(() => { hideSplash().catch(() => {}); }, 250);
+        });
+      });
+    }
+
+    const w = window as any;
+    const runIdle = (fn: () => void, timeout = 2500) => {
+      if (typeof w.requestIdleCallback === "function") {
+        w.requestIdleCallback(fn, { timeout });
+      } else {
+        setTimeout(fn, 500);
+      }
+    };
+
+    runIdle(() => {
+      initCapacitorLifecycle().catch(() => {});
+      import("@/lib/nativeBoot").then(({ nativeBoot }) => nativeBoot()).catch(() => {});
+      initRealtimeWatchdog();
+      initVersionWatcher();
+    });
+
+    // Aviso não-bloqueante de nova versão nativa — mais tarde ainda.
+    setTimeout(() => {
       const mode = (import.meta.env.VITE_CAPACITOR_APP_MODE || "cliente") as "cliente" | "parceiro";
-      checkAppVersion(mode).catch(() => {}); 
-    }, 4000);
+      checkAppVersion(mode).catch(() => {});
+    }, 6000);
 
     const handleVisibility = () => {
       if (document.visibilityState !== "visible") return;

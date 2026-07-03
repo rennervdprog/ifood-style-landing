@@ -418,11 +418,9 @@ export async function initCapacitorNative() {
     .then(() => console.log("[Capacitor] ✅ Push listeners ready"))
     .catch((e) => console.warn("[Capacitor] Push listener setup failed:", e));
 
-  // Splash sai só depois de 1 frame renderizado — evita "flash branco"
-  // percebido como lentidão entre splash laranja e o primeiro paint da SPA.
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => hideSplash().catch(() => {}));
-  });
+  // Splash NÃO é escondido aqui — quem controla é o App root (após rota
+  // inicial montar). Evita "tela branca com spinner" entre splash e o
+  // primeiro paint real. Fallback: launchShowDuration em capacitor.config.
 
   // Visual setup runs in parallel
   configureStatusBar().catch(() => {});

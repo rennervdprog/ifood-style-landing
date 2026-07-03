@@ -27,9 +27,10 @@ const config: CapacitorConfig = {
   },
   plugins: {
     SplashScreen: {
-      // Reduzido para 1000ms — o hide manual (hideSplash) está implementado
-      // então esse valor só é o fallback máximo, não o tempo real exibido.
-      launchShowDuration: 1000,
+      // Fallback máximo — na prática o App root chama hideSplash() assim que
+      // a primeira rota monta (tipicamente 600-1200ms). Este valor evita
+      // splash "preso" caso o JS crashe antes de chamar hideSplash.
+      launchShowDuration: 3500,
       launchAutoHide: false,
       launchFadeOutDuration: 200,
       backgroundColor: '#FF6B00',
