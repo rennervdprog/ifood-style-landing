@@ -284,7 +284,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
     queryFn: async () => {
       const { data } = await supabase
         .from("stores_driver_view" as any)
-        .select("id, name, latitude, longitude, address_city")
+        .select("id, name, latitude, longitude, address_city, driver_pin_autofill")
         .in("id", linkedStoreIds);
       return (data as any) || [];
     },
@@ -560,12 +560,13 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
 
   const filteredAvailable = useMemo(() => {
     if (!availableOrders) return [];
-    const notDeclined = availableOrders.filter((o: any) => !declinedMap[o.id]);
+    const activeIds = new Set((myDeliveries || []).map((o: any) => o.id));
+    const notDeclined = availableOrders.filter((o: any) => !declinedMap[o.id] && !activeIds.has(o.id));
     const list = multiStore && effectiveStoreId
       ? notDeclined.filter((o: any) => o.store_id === effectiveStoreId)
       : notDeclined;
     return useOptimized ? optimizeRoute(list, activeStoreCoords) : list;
-  }, [availableOrders, multiStore, effectiveStoreId, useOptimized, activeStoreCoords, declinedMap]);
+  }, [availableOrders, myDeliveries, multiStore, effectiveStoreId, useOptimized, activeStoreCoords, declinedMap]);
 
   // Calculate total route distance
   const routeDistanceKm = useMemo(() => {
@@ -577,11 +578,20 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
 
   // Per-store order counts for badges
   const storeOrderCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
-    (myDeliveries || []).forEach((o: any) => { counts[o.store_id] = (counts[o.store_id] || 0) + 1; });
-    (availableOrders || []).forEach((o: any) => { counts[o.store_id] = (counts[o.store_id] || 0) + 1; });
-    return counts;
-  }, [myDeliveries, availableOrders]);
+    const counts: Record<string, Set<string>> = {};
+    const activeIds = new Set((myDeliveries || []).map((o: any) => o.id));
+    const add = (o: any) => {
+      if (!counts[o.store_id]) counts[o.store_id] = new Set();
+      counts[o.store_id].add(o.id);
+    };
+    (myDeliveries || []).forEach(add);
+    (availableOrders || [])
+      .filter((o: any) => !declinedMap[o.id] && !activeIds.has(o.id))
+      .forEach(add);
+    const result: Record<string, number> = {};
+    Object.entries(counts).forEach(([storeId, ids]) => { result[storeId] = ids.size; });
+    return result;
+  }, [myDeliveries, availableOrders, declinedMap]);
 
   const getStoreName = (storeId: string) => {
     return storeNames?.find((s: any) => s.id === storeId)?.name || "Loja";
@@ -1381,16 +1391,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
                     {inDelivery && (
                       (() => {
                         const storeMeta = storeNames?.find((s) => s.id === order.store_id);
-                        // Fallback: usa a cidade que já vem embutida no join `stores(...)` do próprio pedido,
-                        // caso `storeNames` ainda não tenha carregado ou não contenha essa loja.
-                        const rawCity =
-                          storeMeta?.address_city ||
-                          ((order as any).stores?.address_city as string | undefined) ||
-                          "";
-                        const cityNorm = rawCity
-                          .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-                          .trim().toLowerCase();
-                        const autofill = !!storeMeta?.driver_pin_autofill || cityNorm === "itatinga";
+                        const autofill = !!storeMeta?.driver_pin_autofill;
                         const orderPin = (order as any).delivery_pin as string | undefined;
                         const effectivePin = autofill && orderPin ? orderPin : (pinInputs[order.id] || "");
                         return (
