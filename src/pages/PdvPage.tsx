@@ -197,10 +197,20 @@ const PdvPage = () => {
       const { data } = await supabase
         .from("user_roles").select("role")
         .eq("user_id", user!.id).eq("role", "admin").maybeSingle();
-      return !!data;
+      const v = !!data;
+      try { localStorage.setItem(`pdv_is_admin_v1:${user!.id}`, v ? "1" : "0"); } catch {}
+      return v;
     },
     enabled: !!user,
     staleTime: 5 * 60_000,
+    initialData: () => {
+      if (!user?.id) return undefined;
+      try {
+        const raw = localStorage.getItem(`pdv_is_admin_v1:${user.id}`);
+        return raw == null ? undefined : raw === "1";
+      } catch { return undefined; }
+    },
+    initialDataUpdatedAt: 0,
   });
 
   const ADMIN_STORE_KEY = "pdv_admin_selected_store";
