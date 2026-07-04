@@ -145,15 +145,11 @@ export function usePdvSession(params: {
       setLoading(true);
       try {
         const diff = countedAmount - expectedAmount;
-        // Auditoria: registra qual operador fechou o caixa.
-        const { data: authData } = await supabase.auth.getUser();
-        const closedBy = authData?.user?.id ?? null;
         const { error } = await supabase
           .from("pdv_sessions" as any)
           .update({
             status: "closed",
             closed_at: new Date().toISOString(),
-            closed_by: closedBy,
             closing_amount: countedAmount,
             closing_difference: diff,
             closing_method: blindClose ? "blind" : "open",
