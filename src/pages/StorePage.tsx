@@ -2106,11 +2106,11 @@ const ProductCard = memo(({ product, disabled, onClick, onPrefetch, storeCategor
                   {formatBRL(Number(product.price))}
                 </span>
               )}
-              <span className={`font-black leading-tight ${isAdegaCard ? "text-lg" : "text-sm"} ${promoActive ? "text-orange-600" : "text-primary"}`}>
+              <span className={`font-black leading-tight ${isAdegaCard ? "text-lg" : isAdega ? "text-base" : "text-sm"} ${promoActive ? "text-orange-600" : "text-primary"}`}>
                 {priceDisplay}
               </span>
             </div>
-            {isAdegaCard && unitPrice > 0 && (
+            {(isAdegaCard || isAdega) && unitPrice > 0 && (
               <span className="text-[10px] text-muted-foreground font-semibold">
                 {formatBRL(unitPrice)}/un
               </span>
