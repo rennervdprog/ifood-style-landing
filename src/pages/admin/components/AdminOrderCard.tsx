@@ -409,10 +409,52 @@ const AdminOrderCardImpl = (props: AdminOrderCardProps) => {
               >
                 {order.payment_method === "pix" ? "🍳 COMEÇAR PRODUÇÃO" : "✓ ACEITAR PEDIDO"}
               </a>
-              <button onClick={() => handleCancelOrder(order)}
-                className="w-full text-center text-xs text-destructive hover:text-destructive/80 py-1">
-                Recusar pedido
-              </button>
+              {cancelConfirm === order.id ? (
+                <div className="space-y-2 bg-destructive/5 border border-destructive/20 rounded-xl p-3">
+                  <p className="text-xs font-bold text-destructive">Motivo do cancelamento</p>
+                  {[
+                    { value: "out_of_stock",   label: "📦 Acabou no estoque" },
+                    { value: "client_request", label: "👤 Cliente solicitou" },
+                    { value: "out_of_area",    label: "📍 Fora da área de entrega" },
+                    { value: "closed",         label: "🔒 Loja fechada / sem entregador" },
+                    { value: "other",          label: "📝 Outro motivo" },
+                  ].map(opt => (
+                    <button key={opt.value} type="button"
+                      onClick={() => setCancelReason(opt.value)}
+                      className={`w-full text-left text-xs px-3 py-2 rounded-lg border transition-colors ${
+                        cancelReason === opt.value
+                          ? "bg-destructive/10 border-destructive/30 text-destructive font-bold"
+                          : "border-border text-muted-foreground hover:text-foreground"
+                      }`}>
+                      {opt.label}
+                    </button>
+                  ))}
+                  {order.payment_method === "pix" && (
+                    <div className="flex items-start gap-1.5 bg-amber-500/10 border border-amber-500/20 rounded-lg px-2.5 py-2 mt-1">
+                      <span className="text-[10px] text-amber-600">💡</span>
+                      <p className="text-[10px] text-amber-700 dark:text-amber-400">
+                        Pagamento via PIX Online — o reembolso será processado automaticamente via Asaas.
+                      </p>
+                    </div>
+                  )}
+                  <div className="flex gap-1.5 pt-1">
+                    <button onClick={() => handleCancelOrder(order)}
+                      disabled={!cancelReason || cancellingOrder}
+                      className="flex-1 bg-destructive text-destructive-foreground text-xs font-bold py-2.5 rounded-xl disabled:opacity-40">
+                      {cancellingOrder ? "Cancelando..." : "Confirmar Cancelamento"}
+                    </button>
+                    <button onClick={() => { setCancelConfirm(null); setCancelReason(""); }}
+                      className="px-3 py-2 rounded-xl border border-border text-xs text-muted-foreground">
+                      Voltar
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button onClick={() => { setCancelConfirm(order.id); setCancelReason(""); }}
+                  className="w-full text-center text-xs text-destructive hover:text-destructive/80 py-1">
+                  Recusar pedido
+                </button>
+              )}
             </div>
           ) : action ? (
             <div className="space-y-1">
