@@ -22,6 +22,88 @@ export interface GpsReadResult {
 
 let inflight: Promise<GpsReadResult> | null = null;
 
+function gpsErrorState(err: GeolocationPositionError): PermissionResult["state"] {
+  if (err.code === err.PERMISSION_DENIED) return "denied";
+  if (err.code === err.POSITION_UNAVAILABLE) return "services_off";
+  return "prompt";
+}
+
+function readBrowserPosition(options: PositionOptions): Promise<GpsReadResult> {
+  return new Promise<GpsReadResult>((resolve) => {
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const coords: Coordinates = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        cacheSet(KEY, coords, TTL.gps, { persist: true });
+        resolve({ coords, fromCache: false, permission: "granted" });
+      },
+      (err) =>
+        resolve({
+          coords: null,
+          fromCache: false,
+          permission: gpsErrorState(err),
+          error: err.message,
+        }),
+      options,
+    );
+  });
+}
+
+async function readBrowserWithFallback(): Promise<GpsReadResult> {
+  const precise = await readBrowserPosition({
+    enableHighAccuracy: true,
+    timeout: 15_000,
+    maximumAge: 60_000,
+  });
+
+  if (precise.coords || precise.permission === "denied") return precise;
+
+  // Em celulares, o GPS pode estar ativo mas sem fix de alta precisão no prazo.
+  // Tenta localização de rede/última posição antes de mostrar erro ao usuário.
+  return readBrowserPosition({
+    enableHighAccuracy: false,
+    timeout: 12_000,
+    maximumAge: 5 * 60_000,
+  });
+}
+
+async function readNativeWithFallback(): Promise<GpsReadResult> {
+  try {
+    const { Geolocation } = await import("@capacitor/geolocation");
+    try {
+      const pos = await Geolocation.getCurrentPosition({
+        enableHighAccuracy: true,
+        timeout: 15_000,
+        maximumAge: 60_000,
+      });
+      const coords: Coordinates = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      cacheSet(KEY, coords, TTL.gps, { persist: true });
+      return { coords, fromCache: false, permission: "granted" };
+    } catch (firstError: any) {
+      try {
+        const pos = await Geolocation.getCurrentPosition({
+          enableHighAccuracy: false,
+          timeout: 12_000,
+          maximumAge: 5 * 60_000,
+        });
+        const coords: Coordinates = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        cacheSet(KEY, coords, TTL.gps, { persist: true });
+        return { coords, fromCache: false, permission: "granted" };
+      } catch (fallbackError: any) {
+        const error = String(fallbackError?.message || firstError?.message || fallbackError || firstError);
+        const state: PermissionResult["state"] =
+          error.includes("0007") || /not enabled|location disabled|unavailable/i.test(error)
+            ? "services_off"
+            : /denied|permission/i.test(error)
+              ? "denied"
+              : "prompt";
+        return { coords: null, fromCache: false, permission: state, error };
+      }
+    }
+  } catch (e: any) {
+    return { coords: null, fromCache: false, permission: "unsupported", error: String(e?.message || e) };
+  }
+}
+
 async function readNow(): Promise<GpsReadResult> {
   // 1) Garante permissão (sem disparar prompt agressivo se já granted).
   const check = await checkLocationPermission();
@@ -35,37 +117,10 @@ async function readNow(): Promise<GpsReadResult> {
 
   // 2) Lê posição.
   if (isCapacitorNative()) {
-    try {
-      const { Geolocation } = await import("@capacitor/geolocation");
-      const pos = await Geolocation.getCurrentPosition({
-        enableHighAccuracy: true,
-        timeout: 10_000,
-      });
-      const coords: Coordinates = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-      cacheSet(KEY, coords, TTL.gps, { persist: true });
-      return { coords, fromCache: false, permission: "granted" };
-    } catch (e: any) {
-      return { coords: null, fromCache: false, permission: "granted", error: String(e?.message || e) };
-    }
+    return readNativeWithFallback();
   }
 
-  return await new Promise<GpsReadResult>((resolve) => {
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const coords: Coordinates = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-        cacheSet(KEY, coords, TTL.gps, { persist: true });
-        resolve({ coords, fromCache: false, permission: "granted" });
-      },
-      (err) =>
-        resolve({
-          coords: null,
-          fromCache: false,
-          permission: "granted",
-          error: err.message,
-        }),
-      { enableHighAccuracy: true, timeout: 10_000, maximumAge: 60_000 },
-    );
-  });
+  return readBrowserWithFallback();
 }
 
 /**
@@ -89,26 +144,11 @@ export async function readGps(opts: { forceFresh?: boolean } = {}): Promise<GpsR
  * o "user gesture" que o Chrome/Safari exigem para exibir o prompt.
  */
 export function readGpsFromGesture(): Promise<GpsReadResult> {
-  if (isCapacitorNative() || typeof navigator === "undefined" || !("geolocation" in navigator)) {
+  if (isCapacitorNative()) return readGps({ forceFresh: true });
+  if (typeof navigator === "undefined" || !("geolocation" in navigator)) {
     return readGps({ forceFresh: true });
   }
-  return new Promise<GpsReadResult>((resolve) => {
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const coords: Coordinates = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-        cacheSet(KEY, coords, TTL.gps, { persist: true });
-        resolve({ coords, fromCache: false, permission: "granted" });
-      },
-      (err) => {
-        const state: PermissionResult["state"] =
-          err.code === err.PERMISSION_DENIED ? "denied"
-          : err.code === err.POSITION_UNAVAILABLE ? "services_off"
-          : "prompt";
-        resolve({ coords: null, fromCache: false, permission: state, error: err.message });
-      },
-      { enableHighAccuracy: true, timeout: 15_000, maximumAge: 60_000 },
-    );
-  });
+  return readBrowserWithFallback();
 }
 
 /** Compat: equivale ao antigo getDeviceGPS — retorna só as coords. */

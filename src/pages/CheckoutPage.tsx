@@ -329,8 +329,8 @@ const CheckoutPage = () => {
            if (res) setGpsAddress(res);
          });
          toast.success("Localização ativada com sucesso!");
-       } else {
-         toast.error("Não foi possível obter sua localização exata. Verifique se o GPS está ativado.");
+        } else {
+          toast.error(gpsRead.error || "Não foi possível obter sua localização exata. Verifique se o GPS está ativado.");
        }
      } catch (e) {
        console.error("Error requesting location:", e);
