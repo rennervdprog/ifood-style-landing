@@ -130,7 +130,7 @@ export function usePdvCheckout() {
         // Nunca deixa o PDV travado offline por causa da checagem de auth.
         let createdBy: string | null = null;
         try {
-          const authPromise = browserOffline
+          const authPromise: Promise<any> = browserOffline
             ? supabase.auth.getSession()
             : supabase.auth.getUser();
           const { data: authData } = (await withTimeout(
@@ -305,10 +305,11 @@ export function usePdvCheckout() {
         if (!offlineQueued && !browserOffline) {
           try {
             const { data: prods } = await withTimeout(
-              supabase
-                .from("products")
-                .select("id, metadata")
-                .in("id", cart.map((i) => i.id)),
+              (async () =>
+                supabase
+                  .from("products")
+                  .select("id, metadata")
+                  .in("id", cart.map((i) => i.id)))(),
               RPC_TIMEOUT_MS,
             ) as any;
             const hasReturnable = (prods || []).some(
