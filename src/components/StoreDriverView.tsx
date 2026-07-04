@@ -889,11 +889,12 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
 
   const hasActiveDeliveries = filteredDeliveries.length > 0;
   const hasAvailable = filteredAvailable.length > 0;
-  const totalActive = (myDeliveries?.length || 0);
-  const totalAvailable = (availableOrders?.length || 0);
+  const totalActiveAllStores = myDeliveries?.length || 0;
+  const totalActive = filteredDeliveries.length;
+  const totalAvailable = filteredAvailable.length;
 
   // Block accepting new orders while driver has any active (non-finalized) deliveries
-  const hasActiveRoutes = totalActive > 0;
+  const hasActiveRoutes = totalActiveAllStores > 0;
 
   // (Listener Realtime duplicado removido — consolidado no listener por loja
   // declarado mais acima nesta página, que faz updates de cache mais precisos
@@ -905,13 +906,13 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
     // Rastreamento fica ativo enquanto o motoboy está online — mesmo sem entrega
     // em andamento — pra loja/cliente saberem que ele está disponível e para
     // validarmos que o plugin nativo está inserindo em `driver_locations`.
-    if (isOnline || totalActive > 0) {
+    if (isOnline || totalActiveAllStores > 0) {
       const firstOrderId = myDeliveries?.[0]?.id || null;
       startDriverTracking(firstOrderId);
     } else {
       stopDriverTracking();
     }
-  }, [user, isOnline, totalActive, myDeliveries?.[0]?.id]);
+  }, [user, isOnline, totalActiveAllStores, myDeliveries?.[0]?.id]);
 
   useEffect(() => {
     if (myDeliveries?.length) {
