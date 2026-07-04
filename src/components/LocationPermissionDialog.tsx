@@ -29,7 +29,6 @@ import { MapPin, Settings2, RefreshCw } from "lucide-react";
 import {
   checkLocationPermission,
   readGpsFromGesture,
-  readGps,
 } from "@/lib/location";
 import type { Coordinates, PermissionResult } from "@/lib/location";
 
@@ -80,14 +79,14 @@ export function LocationPermissionDialog({
     setBusy(true);
     gpsPromise.then((g) => {
       try {
-      setPerm({ state: g.permission, message: g.error });
-      if (g.coords) {
-        onGranted?.(g.coords);
-        onOpenChange(false);
+        setPerm({ state: g.permission, message: g.error });
+        if (g.coords) {
+          onGranted?.(g.coords);
+          onOpenChange(false);
+        }
+      } finally {
+        setBusy(false);
       }
-    } finally {
-      setBusy(false);
-    }
     });
   }
 

@@ -66,6 +66,44 @@ async function readBrowserWithFallback(): Promise<GpsReadResult> {
   });
 }
 
+async function readNativeWithFallback(): Promise<GpsReadResult> {
+  try {
+    const { Geolocation } = await import("@capacitor/geolocation");
+    try {
+      const pos = await Geolocation.getCurrentPosition({
+        enableHighAccuracy: true,
+        timeout: 15_000,
+        maximumAge: 60_000,
+      });
+      const coords: Coordinates = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      cacheSet(KEY, coords, TTL.gps, { persist: true });
+      return { coords, fromCache: false, permission: "granted" };
+    } catch (firstError: any) {
+      try {
+        const pos = await Geolocation.getCurrentPosition({
+          enableHighAccuracy: false,
+          timeout: 12_000,
+          maximumAge: 5 * 60_000,
+        });
+        const coords: Coordinates = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        cacheSet(KEY, coords, TTL.gps, { persist: true });
+        return { coords, fromCache: false, permission: "granted" };
+      } catch (fallbackError: any) {
+        const error = String(fallbackError?.message || firstError?.message || fallbackError || firstError);
+        const state: PermissionResult["state"] =
+          error.includes("0007") || /not enabled|location disabled|unavailable/i.test(error)
+            ? "services_off"
+            : /denied|permission/i.test(error)
+              ? "denied"
+              : "prompt";
+        return { coords: null, fromCache: false, permission: state, error };
+      }
+    }
+  } catch (e: any) {
+    return { coords: null, fromCache: false, permission: "unsupported", error: String(e?.message || e) };
+  }
+}
+
 async function readNow(): Promise<GpsReadResult> {
   // 1) Garante permissão (sem disparar prompt agressivo se já granted).
   const check = await checkLocationPermission();
@@ -79,18 +117,7 @@ async function readNow(): Promise<GpsReadResult> {
 
   // 2) Lê posição.
   if (isCapacitorNative()) {
-    try {
-      const { Geolocation } = await import("@capacitor/geolocation");
-      const pos = await Geolocation.getCurrentPosition({
-        enableHighAccuracy: true,
-        timeout: 10_000,
-      });
-      const coords: Coordinates = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-      cacheSet(KEY, coords, TTL.gps, { persist: true });
-      return { coords, fromCache: false, permission: "granted" };
-    } catch (e: any) {
-      return { coords: null, fromCache: false, permission: "granted", error: String(e?.message || e) };
-    }
+    return readNativeWithFallback();
   }
 
   return readBrowserWithFallback();
@@ -117,7 +144,8 @@ export async function readGps(opts: { forceFresh?: boolean } = {}): Promise<GpsR
  * o "user gesture" que o Chrome/Safari exigem para exibir o prompt.
  */
 export function readGpsFromGesture(): Promise<GpsReadResult> {
-  if (isCapacitorNative() || typeof navigator === "undefined" || !("geolocation" in navigator)) {
+  if (isCapacitorNative()) return readGps({ forceFresh: true });
+  if (typeof navigator === "undefined" || !("geolocation" in navigator)) {
     return readGps({ forceFresh: true });
   }
   return readBrowserWithFallback();
