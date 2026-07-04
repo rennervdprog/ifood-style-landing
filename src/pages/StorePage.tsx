@@ -1973,7 +1973,7 @@ const ProductCard = memo(({ product, disabled, onClick, onPrefetch, storeCategor
           </div>
 
           {/* Product name */}
-          <h3 className={`font-bold text-sm line-clamp-1 transition-colors ${isAdegaCard ? "text-foreground group-hover:text-primary" : "text-foreground group-hover:text-primary"}`}>
+          <h3 className={`font-bold text-sm ${isAdega ? "line-clamp-2 leading-snug" : "line-clamp-1"} text-foreground group-hover:text-primary transition-colors`}>
             {product.name}
             {volumeInfo && (
               <span className="font-medium text-muted-foreground"> · {volumeInfo}</span>
