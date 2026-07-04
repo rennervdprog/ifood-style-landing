@@ -1898,6 +1898,11 @@ const AdminDashboard = () => {
                 buildReadyMessage={buildReadyMessage}
                 openWhatsApp={openWhatsApp}
                 evolutionConnected={evolutionConnected}
+                cancelConfirm={cancelConfirm}
+                cancelReason={cancelReason}
+                setCancelConfirm={setCancelConfirm}
+                setCancelReason={setCancelReason}
+                cancellingOrder={cancellingOrder}
                 updateOrderStatus={updateOrderStatus}
                 handleAcceptOrder={handleAcceptOrder}
                 handleCancelOrder={handleCancelOrder}

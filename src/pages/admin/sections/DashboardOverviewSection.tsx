@@ -45,6 +45,11 @@ interface Props {
   buildReadyMessage: (o: any) => string;
   openWhatsApp: (phone: string, msg: string) => void;
   evolutionConnected?: boolean;
+  cancelConfirm: string | null;
+  cancelReason: string;
+  setCancelConfirm: (v: string | null) => void;
+  setCancelReason: (v: string) => void;
+  cancellingOrder?: boolean;
   updateOrderStatus: (id: string, status: any) => void;
   handleAcceptOrder: (o: any) => void;
   handleCancelOrder: (o: any) => void;
@@ -58,7 +63,8 @@ export default function DashboardOverviewSection(props: Props) {
     orders, statusColors, paymentIcons, paymentLabels, setDashboardTab, setActiveTab, navigate,
     avisosCount,
     getClientName, getClientWhatsApp, getOrderItemDisplayName, buildAcceptWhatsAppHref,
-    buildReadyMessage, openWhatsApp, evolutionConnected, updateOrderStatus, handleAcceptOrder, handleCancelOrder,
+    buildReadyMessage, openWhatsApp, evolutionConnected, cancelConfirm, cancelReason,
+    setCancelConfirm, setCancelReason, cancellingOrder, updateOrderStatus, handleAcceptOrder, handleCancelOrder,
   } = props;
 
   // Status do PDV (sincronizado com a tela /admin/pdv via tabela pdv_sessions)
@@ -440,10 +446,51 @@ export default function DashboardOverviewSection(props: Props) {
             >
               {order.payment_method === "pix" ? "🍳 COMEÇAR PRODUÇÃO" : "✓ ACEITAR PEDIDO"}
             </a>
-            <button onClick={() => handleCancelOrder(order)}
-              className="w-full text-center text-xs text-muted-foreground hover:text-destructive py-1.5 mt-1 transition-colors">
-              Recusar pedido
-            </button>
+            {cancelConfirm === order.id ? (
+              <div className="mt-2 space-y-2 rounded-xl border border-destructive/20 bg-destructive/5 p-3">
+                <p className="text-xs font-bold text-destructive">Motivo do cancelamento</p>
+                {[
+                  { value: "out_of_stock", label: "📦 Acabou no estoque" },
+                  { value: "client_request", label: "👤 Cliente solicitou" },
+                  { value: "out_of_area", label: "📍 Fora da área de entrega" },
+                  { value: "closed", label: "🔒 Loja fechada / sem entregador" },
+                  { value: "other", label: "📝 Outro motivo" },
+                ].map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setCancelReason(opt.value)}
+                    className={`w-full rounded-lg border px-3 py-2 text-left text-xs transition-colors ${
+                      cancelReason === opt.value
+                        ? "border-destructive/30 bg-destructive/10 font-bold text-destructive"
+                        : "border-border text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+                <div className="flex gap-1.5 pt-1">
+                  <button
+                    onClick={() => handleCancelOrder(order)}
+                    disabled={!cancelReason || cancellingOrder}
+                    className="flex-1 rounded-xl bg-destructive py-2.5 text-xs font-bold text-destructive-foreground disabled:opacity-40"
+                  >
+                    {cancellingOrder ? "Cancelando..." : "Confirmar Cancelamento"}
+                  </button>
+                  <button
+                    onClick={() => { setCancelConfirm(null); setCancelReason(""); }}
+                    className="rounded-xl border border-border px-3 py-2 text-xs text-muted-foreground"
+                  >
+                    Voltar
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button onClick={() => { setCancelConfirm(order.id); setCancelReason(""); }}
+                className="w-full text-center text-xs text-muted-foreground hover:text-destructive py-1.5 mt-1 transition-colors">
+                Recusar pedido
+              </button>
+            )}
           </div>
         ))}
       </div>
