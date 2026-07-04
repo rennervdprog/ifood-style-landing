@@ -1546,7 +1546,7 @@ const StorePage = () => {
               {filteredProducts.length} resultado{filteredProducts.length !== 1 ? "s" : ""} para "{searchQuery}"
             </p>
             {filteredProducts.length > 0 ? (
-              <div className={isAdega ? "grid grid-cols-2 gap-2.5" : "space-y-2.5"}>
+              <div className={"space-y-2.5"}>
                 {filteredProducts.map(product => (
                   <ProductCard
                     key={product.id}
@@ -1590,7 +1590,7 @@ const StorePage = () => {
                         </div>
                       </div>
                     </div>
-                    <div className={isAdega ? "grid grid-cols-2 gap-2.5" : "space-y-2.5"}>
+                    <div className={"space-y-2.5"}>
                       {colProducts.map(product => (
                         <ProductCard
                           key={`promo-${collection.id}-${product.id}`}
@@ -1623,7 +1623,7 @@ const StorePage = () => {
                       {sectionProducts.length}
                     </span>
                   </div>
-                  <div className={isAdega ? "grid grid-cols-2 gap-2.5" : "space-y-2.5"}>
+                  <div className={"space-y-2.5"}>
                     {sectionProducts.map(product => (
                       <ProductCard
                         key={product.id}
@@ -1650,7 +1650,7 @@ const StorePage = () => {
                     </span>
                   </div>
                 )}
-                <div className={isAdega ? "grid grid-cols-2 gap-2.5" : "space-y-2.5"}>
+                <div className={"space-y-2.5"}>
                   {unsectionedProducts.map(product => (
                     <ProductCard
                       key={product.id}
@@ -1775,7 +1775,9 @@ const ProductCard = memo(({ product, disabled, onClick, onPrefetch, storeCategor
   const emoji = categoryEmoji[cat] || "🍴";
   const isOutOfStock = !!meta.out_of_stock;
   const isBlocked = disabled || isOutOfStock;
-  const isAdegaCard = cat === "adegas";
+  // Layout de adega agora usa o mesmo card horizontal das demais categorias
+  const isAdegaCard = false;
+  const isAdega = cat === "adegas";
   const packQty = Number(meta.pack_qty) || 0;
   const promoActive = isPromoActive(product as any);
   const effective = getEffectivePrice(product as any);
@@ -1814,7 +1816,7 @@ const ProductCard = memo(({ product, disabled, onClick, onPrefetch, storeCategor
       className={`w-full text-left transition-all group rounded-2xl ${
         isAdegaCard
           ? `flex flex-col-reverse bg-card border border-border p-2.5 gap-2 ${isBlocked ? "opacity-60" : "hover:border-primary/40 active:scale-[0.98]"}`
-          : `flex gap-3 bg-card p-3 border border-border ${isBlocked ? "opacity-60" : "hover:shadow-lg hover:border-primary/20 active:scale-[0.98]"}`
+          : `flex gap-3 bg-card border border-border ${isAdega ? "p-2.5" : "p-3"} ${isBlocked ? "opacity-60" : "hover:shadow-lg hover:border-primary/20 active:scale-[0.98]"}`
       }`}
     >
       <div className={`flex-1 min-w-0 flex flex-col justify-between py-0.5 ${isAdegaCard ? "px-0.5" : ""}`}>
@@ -1971,7 +1973,7 @@ const ProductCard = memo(({ product, disabled, onClick, onPrefetch, storeCategor
           </div>
 
           {/* Product name */}
-          <h3 className={`font-bold text-sm line-clamp-1 transition-colors ${isAdegaCard ? "text-foreground group-hover:text-primary" : "text-foreground group-hover:text-primary"}`}>
+          <h3 className={`font-bold text-sm ${isAdega ? "line-clamp-2 leading-snug" : "line-clamp-1"} text-foreground group-hover:text-primary transition-colors`}>
             {product.name}
             {volumeInfo && (
               <span className="font-medium text-muted-foreground"> · {volumeInfo}</span>
@@ -1979,7 +1981,7 @@ const ProductCard = memo(({ product, disabled, onClick, onPrefetch, storeCategor
           </h3>
 
           {/* Description / category-specific subtitle */}
-          {product.description && (
+          {product.description && !isAdega && (
             <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2 leading-relaxed">{product.description}</p>
           )}
 
@@ -2083,11 +2085,14 @@ const ProductCard = memo(({ product, disabled, onClick, onPrefetch, storeCategor
             </div>
           )}
 
-          {/* Adegas: type + alcohol */}
-          {cat === "adegas" && meta.brand && (
-            <p className="text-[10px] text-muted-foreground mt-1">
-              <span className="font-medium">{meta.brand}</span>
-              {meta.volume && <span> · {meta.volume}</span>}
+          {/* Adegas: marca · volume · teor alcoólico */}
+          {isAdega && (meta.brand || meta.volume || meta.alcohol_content) && (
+            <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-1">
+              {meta.brand && <span className="font-medium">{meta.brand}</span>}
+              {meta.brand && (meta.volume || meta.alcohol_content) && " · "}
+              {meta.volume && <span>{meta.volume}</span>}
+              {meta.volume && meta.alcohol_content && " · "}
+              {meta.alcohol_content && <span>{meta.alcohol_content}</span>}
             </p>
           )}
         </div>
@@ -2101,11 +2106,11 @@ const ProductCard = memo(({ product, disabled, onClick, onPrefetch, storeCategor
                   {formatBRL(Number(product.price))}
                 </span>
               )}
-              <span className={`font-black leading-tight ${isAdegaCard ? "text-lg" : "text-sm"} ${promoActive ? "text-orange-600" : "text-primary"}`}>
+              <span className={`font-black leading-tight ${isAdegaCard ? "text-lg" : isAdega ? "text-base" : "text-sm"} ${promoActive ? "text-orange-600" : "text-primary"}`}>
                 {priceDisplay}
               </span>
             </div>
-            {isAdegaCard && unitPrice > 0 && (
+            {(isAdegaCard || isAdega) && unitPrice > 0 && (
               <span className="text-[10px] text-muted-foreground font-semibold">
                 {formatBRL(unitPrice)}/un
               </span>
@@ -2147,14 +2152,14 @@ const ProductCard = memo(({ product, disabled, onClick, onPrefetch, storeCategor
           <img
             src={product.image_url}
             alt={product.name}
-            className={`${isAdegaCard ? "w-full h-32 rounded-xl object-contain bg-muted p-2" : "w-24 h-24 rounded-xl object-cover shadow-sm group-hover:shadow-md transition-shadow"} ${isOutOfStock ? "grayscale" : ""}`}
+            className={`${isAdegaCard ? "w-full h-32 rounded-xl object-contain bg-muted p-2" : isAdega ? "w-28 h-28 rounded-xl object-contain bg-muted p-1.5" : "w-24 h-24 rounded-xl object-cover shadow-sm group-hover:shadow-md transition-shadow"} ${isOutOfStock ? "grayscale" : ""}`}
             loading="lazy"
             decoding="async"
-            width={isAdegaCard ? 200 : 96}
-            height={isAdegaCard ? 128 : 96}
+            width={isAdegaCard ? 200 : isAdega ? 112 : 96}
+            height={isAdegaCard ? 128 : isAdega ? 112 : 96}
           />
         ) : (
-          <div className={`${isAdegaCard ? "w-full h-32 bg-muted" : "w-24 h-24 bg-muted"} rounded-xl flex items-center justify-center ${isOutOfStock ? "grayscale" : ""}`}>
+          <div className={`${isAdegaCard ? "w-full h-32 bg-muted" : isAdega ? "w-28 h-28 bg-muted" : "w-24 h-24 bg-muted"} rounded-xl flex items-center justify-center ${isOutOfStock ? "grayscale" : ""}`}>
             <span className="text-3xl">{emoji}</span>
           </div>
         )}
