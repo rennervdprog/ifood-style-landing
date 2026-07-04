@@ -52,7 +52,7 @@ export async function fetchProductAddons(productId: string): Promise<ProductAddo
   // mas sem conectividade real), não deixamos o modal travar em spinner.
   // Após 4s, cai no cache local (ou vazio).
   const timeout = new Promise<{ timedOut: true }>((resolve) =>
-    setTimeout(() => resolve({ timedOut: true }), 4000),
+    setTimeout(() => resolve({ timedOut: true }), 1500),
   );
   const fetchAll = Promise.all([
     supabase
