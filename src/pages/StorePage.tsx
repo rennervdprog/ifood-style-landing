@@ -1775,7 +1775,8 @@ const ProductCard = memo(({ product, disabled, onClick, onPrefetch, storeCategor
   const emoji = categoryEmoji[cat] || "🍴";
   const isOutOfStock = !!meta.out_of_stock;
   const isBlocked = disabled || isOutOfStock;
-  const isAdegaCard = cat === "adegas";
+  // Layout de adega agora usa o mesmo card horizontal das demais categorias
+  const isAdegaCard = false;
   const packQty = Number(meta.pack_qty) || 0;
   const promoActive = isPromoActive(product as any);
   const effective = getEffectivePrice(product as any);
