@@ -20,7 +20,7 @@ import { addMoney, multiplyMoney, sumMoney, formatBRL } from "@/lib/utils";
 import { useStorePlan } from "@/hooks/useStorePlan";
 import LoyaltyRedemption from "@/components/LoyaltyRedemption";
 import DeliveryTimeEstimate from "@/components/DeliveryTimeEstimate";
-import { formatCep, fetchCep, reverseGeocode, readGps, resolveAddress, type Coordinates, type ReverseResult } from "@/lib/location";
+import { formatCep, fetchCep, reverseGeocode, readGps, readGpsFromGesture, resolveAddress, type Coordinates, type ReverseResult } from "@/lib/location";
 import { checkStoreAccess, MAX_DISTANCE_KM } from "@/lib/fraudCheck";
 import EmptiesExchange, { type EmptiesExchangeSelection } from "@/components/EmptiesExchange";
 import { haptic } from "@/lib/haptics";
@@ -312,11 +312,14 @@ const CheckoutPage = () => {
      }
    }, [hasAddress, selectedSavedAddressId, savedAddressData, profileCep, profileStreet, profileNumber, profileNeighborhood, clientCoords]);
  
-   const handleRequestLocation = async () => {
+   const handleRequestLocation = () => {
+     // IMPORTANTE: chamar SÍNCRONO no clique — sem await antes — pra
+     // preservar o "user gesture" que o browser exige pro prompt de GPS.
+     const gpsPromise = readGpsFromGesture();
      setRequestingLocation(true);
-     try {
-      const gpsRead = await readGps({ forceFresh: true });
-      const gps = gpsRead.coords;
+     gpsPromise.then(async (gpsRead) => {
+       try {
+       const gps = gpsRead.coords;
       if (gps) {
         setClientCoords(gps);
          setIsLocationRequested(true);
@@ -334,6 +337,7 @@ const CheckoutPage = () => {
      } finally {
        setRequestingLocation(false);
      }
+     });
    };
 
    // Auto-tentar GPS no mount se permissão já estiver concedida (sem prompt)
