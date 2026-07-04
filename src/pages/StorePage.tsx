@@ -2152,14 +2152,14 @@ const ProductCard = memo(({ product, disabled, onClick, onPrefetch, storeCategor
           <img
             src={product.image_url}
             alt={product.name}
-            className={`${isAdegaCard ? "w-full h-32 rounded-xl object-contain bg-muted p-2" : "w-24 h-24 rounded-xl object-cover shadow-sm group-hover:shadow-md transition-shadow"} ${isOutOfStock ? "grayscale" : ""}`}
+            className={`${isAdegaCard ? "w-full h-32 rounded-xl object-contain bg-muted p-2" : isAdega ? "w-28 h-28 rounded-xl object-contain bg-muted p-1.5" : "w-24 h-24 rounded-xl object-cover shadow-sm group-hover:shadow-md transition-shadow"} ${isOutOfStock ? "grayscale" : ""}`}
             loading="lazy"
             decoding="async"
-            width={isAdegaCard ? 200 : 96}
-            height={isAdegaCard ? 128 : 96}
+            width={isAdegaCard ? 200 : isAdega ? 112 : 96}
+            height={isAdegaCard ? 128 : isAdega ? 112 : 96}
           />
         ) : (
-          <div className={`${isAdegaCard ? "w-full h-32 bg-muted" : "w-24 h-24 bg-muted"} rounded-xl flex items-center justify-center ${isOutOfStock ? "grayscale" : ""}`}>
+          <div className={`${isAdegaCard ? "w-full h-32 bg-muted" : isAdega ? "w-28 h-28 bg-muted" : "w-24 h-24 bg-muted"} rounded-xl flex items-center justify-center ${isOutOfStock ? "grayscale" : ""}`}>
             <span className="text-3xl">{emoji}</span>
           </div>
         )}
