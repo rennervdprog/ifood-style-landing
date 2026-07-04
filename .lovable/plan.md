@@ -1,141 +1,95 @@
-# Fase 3 — Resiliência offline do PDV
+# Plano de correção — Supabase externo (qkjhguziuchqsbxzruea)
 
-Objetivo: uma venda de PDV nunca se perde por queda de internet, timeout ou erro transiente, e nunca é duplicada quando reenviada.
+Execução 100% via edge function `ext-sql-runner` (já existe, protegida por `x-admin-secret`). Cada fase é um SQL idempotente aplicado por Management API, com verificação depois via `supabase--linter` externo (ou re-audit).
 
-Estratégia: fila local no navegador + idempotência garantida no banco. Zero mudança visível para o operador em rede boa. Rollout com backup e feature flag para reverter em 1 clique.
+Ordem estudada para minimizar risco: começa por correções que não afetam runtime (search_path, buckets), depois RLS/policies, depois views SECURITY DEFINER (mudança de comportamento), e por último a otimização de performance (a maior, mas totalmente reversível).
+
+---
+
+## Fase 1 — Segurança de baixo risco (rápido, sem risco de quebrar app)
+
+**1.1 Fixar `search_path` nas 7 funções sem search_path**
+- Levantar a lista exata via linter (`function_search_path_mutable`).
+- Para cada uma: `ALTER FUNCTION public.<fn>(<args>) SET search_path = public, pg_temp;`
+
+**1.2 Mover extensão `unaccent` para schema `extensions`**
+```sql
+CREATE SCHEMA IF NOT EXISTS extensions;
+ALTER EXTENSION unaccent SET SCHEMA extensions;
+GRANT USAGE ON SCHEMA extensions TO anon, authenticated, service_role;
+```
+Verificar se algum código chama `unaccent(...)` sem schema — ajustar para `extensions.unaccent(...)` OU adicionar `extensions` ao `search_path` global.
+
+**1.3 Ativar proteção de senhas vazadas (HIBP)**
+- Via Management API: `PATCH /v1/projects/{ref}/config/auth` com `password_hibp_enabled: true` (ou setting equivalente do Auth).
+
+**1.4 Buckets públicos — desabilitar listagem**
+Para `avatars`, `products`, `store-banners`, `store-logos`: manter `public = true` (leitura por URL continua ok) e revisar a policy de `storage.objects` que permite `SELECT` (listagem) por anon. Substituir por policy que só permite leitura direta por path conhecido (i.e., remover a policy de listagem anon; a leitura via CDN pública não depende dela).
 
 ---
 
-## Escopo (5 entregas)
+## Fase 2 — RLS ausente (3 tabelas)
 
-### 1. Idempotência no banco (Supabase externo)
-- Nova coluna `orders.client_uuid uuid` + índice único parcial `WHERE order_source = 'pdv' AND client_uuid IS NOT NULL`.
-- RPC `pdv_finalize_sale` passa a aceitar `client_uuid` no payload. Se já existir um `orders` com esse `client_uuid`, a RPC retorna o `order_id` existente sem inserir nada (idempotente).
-- Sem `client_uuid`, comportamento atual é preservado (compat).
+Sem policies com RLS ligada → tabela invisível para clientes. Decidir por tabela:
 
-### 2. Timeout + AbortController no checkout
-- `usePdvCheckout` chama a RPC com `AbortController` de 3s.
-- Timeout ou erro de rede não mostra erro ao operador: cai direto no passo 3 (enfileira).
+- **`_sync_test`** → tabela de teste. Ação: `DROP TABLE public._sync_test` (se realmente não usada) OU manter bloqueada.
+- **`asaas_subaccounts_registry`** → só backend/edge functions. Manter RLS on, sem policy (service_role já bypassa RLS). Sem ação necessária além de documentar.
+- **`whatsapp_send_log`** → idem, só backend. Manter RLS on sem policy.
 
-### 3. Fila local `pdv_outbox` em `localStorage`
-- Chave: `pdv_outbox_v1` (array de `{ client_uuid, payload, created_at, attempts }`).
-- Escopo por loja (`pdv_outbox_v1:<store_id>`) para não misturar entre lojas.
-- Limite defensivo: 200 entradas — se estourar, avisa e bloqueia novas vendas offline (evita corromper `localStorage`).
-- Cupom térmico é impresso mesmo enfileirado (operador entrega o produto normalmente).
-
-### 4. Badge "Sincronizar (N)" no `PdvTopbar`
-- Contador da fila. Clique dispara flush manual (chama RPC uma por uma, remove da fila em caso de sucesso).
-- Flush automático: no `mount`, em `window.addEventListener('online', ...)`, e a cada 30s enquanto houver itens.
-- Toast de erro só depois de 3 tentativas falhas seguidas por item.
-
-### 5. Feature flag + backup
-- Flag no client: `localStorage.pdv_offline_queue_enabled` (default `true`, mas checável). Se `false`, comportamento antigo (erro na tela).
-- Backup: migration inicia com `CREATE TABLE public.pdv_outbox_backup` (id, client_uuid, payload jsonb, store_id, created_at) — se algo der errado na RPC idempotente, um trigger `BEFORE INSERT` em `orders` salva cópia do payload para recuperação manual.
-- Script de rollback pronto: `scripts/pdv-fase3-rollback.sql` (drop da coluna, drop do índice, revert da RPC para a versão da fase 1).
+Entregável: comentário `COMMENT ON TABLE ... IS 'Backend-only, acessada apenas via service_role';` nas duas últimas.
 
 ---
+
+## Fase 3 — Views `SECURITY DEFINER`
+
+`stores_public` e `stores_driver_view` executam com privilégios do dono, ignorando RLS de `stores`.
+
+Ação:
+```sql
+ALTER VIEW public.stores_public SET (security_invoker = true);
+ALTER VIEW public.stores_driver_view SET (security_invoker = true);
+```
+Depois validar que as policies de `stores` permitem os acessos que essas views precisam (anon lê loja pública, driver lê lojas atribuídas). Se algo quebrar, adicionar policy correspondente em `stores` em vez de reverter para DEFINER.
+
+Teste após deploy: abrir home do cliente (lista lojas) e painel do entregador.
+
+---
+
+## Fase 4 — Performance (493 achados)
+
+**4.1 `auth_rls_initplan` (249 policies)**
+Trocar `auth.uid()` por `(select auth.uid())` em cada policy — força o Postgres a avaliar uma vez por query em vez de por linha. Ganho enorme em `orders`, `order_items`, `products`, `profiles`.
+
+Estratégia: gerar script que lê `pg_policies`, para cada policy com `auth.uid()` no `qual`/`with_check` faz `ALTER POLICY ... USING ((select auth.uid()) = ...)`. Aplicar por tabela, começando pelas maiores.
+
+**4.2 Policies duplicadas (173)**
+Consolidar policies múltiplas da mesma ação/role em uma única. Levantar via linter (`multiple_permissive_policies`) e unificar com `OR` entre as condições. Um `DROP POLICY` + `CREATE POLICY` por grupo.
+
+**4.3 FKs sem índice (31)**
+Para cada FK reportada:
+```sql
+CREATE INDEX IF NOT EXISTS idx_<tabela>_<coluna> ON public.<tabela>(<coluna>);
+```
+(Sem `CONCURRENTLY` para caber em migration; se preferir zero-lock, roda avulso via ext-sql-runner.)
+
+**4.4 Índices não usados (34) + duplicados (6)**
+- Duplicados: dropar o redundante (`DROP INDEX ...`).
+- Não usados: revisar caso a caso — alguns podem ser recentes (pouca amostra). Dropar apenas os com >30 dias e `idx_scan = 0`.
+
+---
+
+## Execução e verificação
+
+Cada fase = 1 chamada a `ext-sql-runner` (`action: run_sql`). Depois de cada fase:
+1. Re-rodar linter externo (mesma rota do audit anterior).
+2. Sanity check no app: home cliente, painel loja, painel entregador, checkout.
+3. Reportar delta (quantos findings caíram).
+
+Reversibilidade: fase 1–3 têm rollback trivial. Fase 4.1/4.2 mantém snapshot das definições antigas em comentário antes do ALTER.
 
 ## Detalhes técnicos
 
-### SQL (aplico no Supabase externo)
-
-```sql
-BEGIN;
-
--- 5.1 Backup: cópia de segurança de todo payload que passa pela RPC
-CREATE TABLE IF NOT EXISTS public.pdv_outbox_backup (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  client_uuid uuid,
-  store_id uuid,
-  session_id uuid,
-  payload jsonb NOT NULL,
-  order_id uuid,
-  created_at timestamptz NOT NULL DEFAULT now()
-);
-GRANT SELECT, INSERT ON public.pdv_outbox_backup TO authenticated;
-GRANT ALL ON public.pdv_outbox_backup TO service_role;
-ALTER TABLE public.pdv_outbox_backup ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "pdv_outbox_backup owner" ON public.pdv_outbox_backup
-  FOR SELECT TO authenticated USING (true);
-
--- 1. Idempotência: client_uuid em orders
-ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS client_uuid uuid;
-CREATE UNIQUE INDEX IF NOT EXISTS orders_pdv_client_uuid_uniq
-  ON public.orders (client_uuid)
-  WHERE order_source = 'pdv' AND client_uuid IS NOT NULL;
-
--- 2. RPC v2: idempotente + salva backup
-CREATE OR REPLACE FUNCTION public.pdv_finalize_sale(_payload jsonb)
-RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-DECLARE
-  v_client_uuid uuid := NULLIF(_payload->>'client_uuid','')::uuid;
-  v_existing_order uuid;
-  v_order_id uuid;
-  -- ... demais variáveis iguais à v1
-BEGIN
-  -- Idempotência: se client_uuid já foi processado, retorna o mesmo order_id
-  IF v_client_uuid IS NOT NULL THEN
-    SELECT id INTO v_existing_order FROM orders
-     WHERE client_uuid = v_client_uuid AND order_source = 'pdv' LIMIT 1;
-    IF v_existing_order IS NOT NULL THEN
-      RETURN jsonb_build_object('order_id', v_existing_order, 'idempotent', true);
-    END IF;
-  END IF;
-
-  -- Backup do payload (best-effort)
-  BEGIN
-    INSERT INTO pdv_outbox_backup (client_uuid, store_id, session_id, payload)
-    VALUES (v_client_uuid, (_payload->>'store_id')::uuid,
-            (_payload->>'session_id')::uuid, _payload);
-  EXCEPTION WHEN OTHERS THEN NULL; END;
-
-  -- ... mesma lógica da v1 (insert orders/items/movements),
-  -- mas passando client_uuid = v_client_uuid no INSERT de orders
-  RETURN jsonb_build_object('order_id', v_order_id, 'idempotent', false);
-END; $$;
-COMMIT;
-```
-
-### Client — arquivos novos/alterados
-
-- `src/pages/pdv/state/pdvOutbox.ts` (novo): API pura da fila — `enqueue()`, `list()`, `remove()`, `flush(rpcCall)`.
-- `src/pages/pdv/state/usePdvOutbox.ts` (novo): hook React que expõe `count`, `flushing`, `flushNow()`, e escuta `online`.
-- `src/pages/pdv/state/usePdvCheckout.ts`: gera `client_uuid = crypto.randomUUID()`, tenta RPC com timeout de 3s, on-fail enfileira e retorna sucesso.
-- `src/pages/pdv/components/PdvTopbar.tsx`: badge "Sincronizar (N)" quando `count > 0`.
-
-### Testes Deno
-
-Rodam via `supabase--test_edge_functions` (permissões `--allow-net --allow-env`). Estrutura escolhida para não exigir criação de edge function nova: os testes vivem em `supabase/functions/_shared/pdv_finalize_sale_test.ts` e batem direto na RPC do Supabase externo via `EXTERNAL_SUPABASE_URL` + `EXTERNAL_SERVICE_ROLE_KEY`.
-
-Casos cobertos:
-
-```
-supabase/functions/_shared/pdv_finalize_sale_test.ts
-  ✓ RPC retorna order_id em venda válida
-  ✓ Reenviar mesmo client_uuid retorna { idempotent: true } e o MESMO order_id
-  ✓ client_uuid null continua funcionando (backward-compat, cria order novo)
-  ✓ Sessão fechada rejeita com erro claro
-  ✓ Amount <= 0 é bloqueado pelo CHECK de pdv_movements
-  ✓ Backup em pdv_outbox_backup foi gravado
-```
-
-Cleanup: cada teste usa um `session_id` de fixture criada no `beforeAll` e deleta no `afterAll` (orders/items/movements/backup).
-
----
-
-## Rollout / rollback
-
-1. Aplico SQL no Supabase externo (com backup ativo desde o insert 1).
-2. Rodo testes Deno — se qualquer um falhar, executo `scripts/pdv-fase3-rollback.sql` e paro.
-3. Deploy do client com feature flag `pdv_offline_queue_enabled=true`.
-4. Se aparecer bug em produção: usuário abre DevTools e roda `localStorage.setItem('pdv_offline_queue_enabled','false')` → volta ao comportamento da Fase 2 sem redeploy.
-
-## Fora de escopo (não entra nesta fase)
-
-- Sincronização entre múltiplos terminais na mesma loja (fila é local por navegador).
-- UI para inspecionar/editar o `pdv_outbox_backup` (só existe como rede de segurança).
-- Reimpressão de cupom da fila (o cupom já foi impresso no momento da venda).
-
-## Versão
-
-Bump para `1.11.0` (feature) + `versionCode 754`.
+- Todas as mudanças rodam contra ref `qkjhguziuchqsbxzruea` via `EXTERNAL_SUPABASE_ACCESS_TOKEN` (secret já configurado).
+- Nenhuma migration do Lovable Cloud é criada — o projeto interno segue intocado.
+- Nenhuma mudança de código do app é esperada, exceto se `unaccent` for chamada sem schema (grep em `supabase/functions` e `src/`).
+- Sem bump de versão do app (é infra).
