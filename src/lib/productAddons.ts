@@ -48,7 +48,13 @@ export async function fetchProductAddons(productId: string): Promise<ProductAddo
     return readCache() || { groups: [], items: [] };
   }
 
-  const [directRes, linkedRes] = await Promise.all([
+  // Timeout defensivo: se a rede estiver "meio-caída" (navigator.onLine=true
+  // mas sem conectividade real), não deixamos o modal travar em spinner.
+  // Após 4s, cai no cache local (ou vazio).
+  const timeout = new Promise<{ timedOut: true }>((resolve) =>
+    setTimeout(() => resolve({ timedOut: true }), 4000),
+  );
+  const fetchAll = Promise.all([
     supabase
       .from("addon_groups")
       .select(groupWithItemsSelect)
@@ -59,6 +65,11 @@ export async function fetchProductAddons(productId: string): Promise<ProductAddo
       .select(`addon_group_id,addon_groups(${groupWithItemsSelect})`)
       .eq("product_id", productId),
   ]);
+  const raced = await Promise.race([fetchAll, timeout]);
+  if ((raced as any).timedOut) {
+    return readCache() || { groups: [], items: [] };
+  }
+  const [directRes, linkedRes] = raced as Awaited<typeof fetchAll>;
 
   if (directRes.error || linkedRes.error) {
     const cached = readCache();
