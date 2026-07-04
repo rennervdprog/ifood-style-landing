@@ -101,6 +101,8 @@ const ClientHomeContent = () => {
     },
     enabled: true,
     staleTime: 1000 * 60 * 5,
+    retry: 3,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 8000),
   });
 
   const { data: searchResults } = useQuery({
@@ -126,6 +128,8 @@ const ClientHomeContent = () => {
     },
     enabled: searchQuery.length >= 2,
     staleTime: 1000 * 60,
+    retry: 2,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 5000),
   });
 
   const visibleStores = useMemo(() => {
