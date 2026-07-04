@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -101,13 +101,11 @@ export const CashRegister = ({ storeId }: CashRegisterProps) => {
 
   const closeMutation = useMutation({
     mutationFn: async () => {
-      const { data: userData } = await supabase.auth.getUser();
       const { error } = await supabase
         .from("cash_registers")
         .update({
           status: "closed",
           closed_at: new Date().toISOString(),
-          closed_by: userData.user?.id,
         })
         .eq("id", activeRegister?.id);
       if (error) throw error;
