@@ -5,6 +5,8 @@ import { formatBRL } from "@/lib/utils";
 import { parseBRL } from "@/hooks/useBRLInput";
 import { PdvDenominationCount } from "@/components/pdv/PdvDenominationCount";
 import { PDV_METHODS } from "@/pages/pdv/constants";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
+import { toast } from "sonner";
 import type { PdvSession } from "@/pages/pdv/types";
 
 interface Props {
@@ -32,6 +34,7 @@ export const PdvFechamentoScreen = ({
   const byPayment: Record<string, number> = sessionSummary?.by_payment || {};
   const diffAmount = parseBRL(closingAmount) - saldoEsperado;
   const isOk = !!closingAmount && Math.abs(diffAmount) < 0.05;
+  const { confirm, ConfirmDialog } = useConfirmDialog();
 
   // Vendas por peso — agrega gramas/valor a partir de order_items.metadata
   // dos pedidos do turno (PDV). Sem schema novo.
@@ -248,12 +251,18 @@ export const PdvFechamentoScreen = ({
         style={{ paddingBottom: "calc(1rem + env(safe-area-inset-bottom))" }}
       >
         <button
-          onClick={() => {
+          onClick={async () => {
             if (!closingAmount || Number.isNaN(parseBRL(closingAmount))) {
-              alert("Informe o valor conferido no caixa antes de fechar.");
+              toast.error("Informe o valor conferido no caixa antes de fechar.");
               return;
             }
-            if (!window.confirm("Confirmar fechamento do caixa? Esta ação não pode ser desfeita.")) return;
+            const ok = await confirm({
+              title: "Confirmar fechamento do caixa?",
+              description: "Esta ação não pode ser desfeita.",
+              confirmText: "Fechar caixa",
+              variant: "destructive",
+            });
+            if (!ok) return;
             onConfirm();
           }}
           disabled={loading || !closingAmount}
@@ -263,6 +272,7 @@ export const PdvFechamentoScreen = ({
           Confirmar Fechamento
         </button>
       </div>
+      <ConfirmDialog />
     </div>
   );
 };
