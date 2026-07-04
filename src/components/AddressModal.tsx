@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { MapPin, Save, ArrowLeft, Search, Loader2, Navigation } from "lucide-react";
 import { toast } from "sonner";
-import { formatCep, fetchCep, readGps, reverseGeocode } from "@/lib/location";
+import { formatCep, fetchCep, readGpsFromGesture, reverseGeocode } from "@/lib/location";
 import { maskWhatsApp } from "@/lib/whatsapp";
 
 interface AddressModalProps {
@@ -75,12 +75,13 @@ const AddressModal = ({ onClose, onSaved }: AddressModalProps) => {
     }
   };
 
-  const handleUseGps = async () => {
+  const handleUseGps = () => {
+    const gpsPromise = readGpsFromGesture();
     setLoadingGps(true);
-    try {
-      const gps = await readGps({ forceFresh: true });
+    gpsPromise.then(async (gps) => {
+      try {
       if (!gps?.coords) {
-        toast.error("Não foi possível obter a localização. Verifique a permissão de GPS.");
+        toast.error(gps?.error || "Não foi possível obter a localização. Verifique a permissão de GPS.");
         return;
       }
       const rev = await reverseGeocode(gps.coords);
@@ -99,6 +100,7 @@ const AddressModal = ({ onClose, onSaved }: AddressModalProps) => {
     } finally {
       setLoadingGps(false);
     }
+    });
   };
 
   const handleSave = async () => {

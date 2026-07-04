@@ -28,7 +28,7 @@ import { Button } from "@/components/ui/button";
 import { MapPin, Settings2, RefreshCw } from "lucide-react";
 import {
   checkLocationPermission,
-  requestLocationPermission,
+  readGpsFromGesture,
   readGps,
 } from "@/lib/location";
 import type { Coordinates, PermissionResult } from "@/lib/location";
@@ -75,21 +75,20 @@ export function LocationPermissionDialog({
     };
   }, [open]);
 
-  async function handleAllow() {
+  function handleAllow() {
+    const gpsPromise = readGpsFromGesture();
     setBusy(true);
-    try {
-      const r = await requestLocationPermission();
-      setPerm(r);
-      if (r.state === "granted") {
-        const g = await readGps({ forceFresh: true });
-        if (g.coords) {
-          onGranted?.(g.coords);
-          onOpenChange(false);
-        }
+    gpsPromise.then((g) => {
+      try {
+      setPerm({ state: g.permission, message: g.error });
+      if (g.coords) {
+        onGranted?.(g.coords);
+        onOpenChange(false);
       }
     } finally {
       setBusy(false);
     }
+    });
   }
 
   const state = perm?.state ?? "prompt";

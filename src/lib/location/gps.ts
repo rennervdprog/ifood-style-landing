@@ -22,6 +22,50 @@ export interface GpsReadResult {
 
 let inflight: Promise<GpsReadResult> | null = null;
 
+function gpsErrorState(err: GeolocationPositionError): PermissionResult["state"] {
+  if (err.code === err.PERMISSION_DENIED) return "denied";
+  if (err.code === err.POSITION_UNAVAILABLE) return "services_off";
+  return "prompt";
+}
+
+function readBrowserPosition(options: PositionOptions): Promise<GpsReadResult> {
+  return new Promise<GpsReadResult>((resolve) => {
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const coords: Coordinates = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        cacheSet(KEY, coords, TTL.gps, { persist: true });
+        resolve({ coords, fromCache: false, permission: "granted" });
+      },
+      (err) =>
+        resolve({
+          coords: null,
+          fromCache: false,
+          permission: gpsErrorState(err),
+          error: err.message,
+        }),
+      options,
+    );
+  });
+}
+
+async function readBrowserWithFallback(): Promise<GpsReadResult> {
+  const precise = await readBrowserPosition({
+    enableHighAccuracy: true,
+    timeout: 15_000,
+    maximumAge: 60_000,
+  });
+
+  if (precise.coords || precise.permission === "denied") return precise;
+
+  // Em celulares, o GPS pode estar ativo mas sem fix de alta precisão no prazo.
+  // Tenta localização de rede/última posição antes de mostrar erro ao usuário.
+  return readBrowserPosition({
+    enableHighAccuracy: false,
+    timeout: 12_000,
+    maximumAge: 5 * 60_000,
+  });
+}
+
 async function readNow(): Promise<GpsReadResult> {
   // 1) Garante permissão (sem disparar prompt agressivo se já granted).
   const check = await checkLocationPermission();
@@ -49,23 +93,7 @@ async function readNow(): Promise<GpsReadResult> {
     }
   }
 
-  return await new Promise<GpsReadResult>((resolve) => {
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const coords: Coordinates = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-        cacheSet(KEY, coords, TTL.gps, { persist: true });
-        resolve({ coords, fromCache: false, permission: "granted" });
-      },
-      (err) =>
-        resolve({
-          coords: null,
-          fromCache: false,
-          permission: "granted",
-          error: err.message,
-        }),
-      { enableHighAccuracy: true, timeout: 10_000, maximumAge: 60_000 },
-    );
-  });
+  return readBrowserWithFallback();
 }
 
 /**
@@ -92,23 +120,7 @@ export function readGpsFromGesture(): Promise<GpsReadResult> {
   if (isCapacitorNative() || typeof navigator === "undefined" || !("geolocation" in navigator)) {
     return readGps({ forceFresh: true });
   }
-  return new Promise<GpsReadResult>((resolve) => {
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const coords: Coordinates = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-        cacheSet(KEY, coords, TTL.gps, { persist: true });
-        resolve({ coords, fromCache: false, permission: "granted" });
-      },
-      (err) => {
-        const state: PermissionResult["state"] =
-          err.code === err.PERMISSION_DENIED ? "denied"
-          : err.code === err.POSITION_UNAVAILABLE ? "services_off"
-          : "prompt";
-        resolve({ coords: null, fromCache: false, permission: state, error: err.message });
-      },
-      { enableHighAccuracy: true, timeout: 15_000, maximumAge: 60_000 },
-    );
-  });
+  return readBrowserWithFallback();
 }
 
 /** Compat: equivale ao antigo getDeviceGPS — retorna só as coords. */
