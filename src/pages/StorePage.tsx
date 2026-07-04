@@ -1981,7 +1981,7 @@ const ProductCard = memo(({ product, disabled, onClick, onPrefetch, storeCategor
           </h3>
 
           {/* Description / category-specific subtitle */}
-          {product.description && (
+          {product.description && !isAdega && (
             <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2 leading-relaxed">{product.description}</p>
           )}
 
