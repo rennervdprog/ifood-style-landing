@@ -1777,6 +1777,7 @@ const ProductCard = memo(({ product, disabled, onClick, onPrefetch, storeCategor
   const isBlocked = disabled || isOutOfStock;
   // Layout de adega agora usa o mesmo card horizontal das demais categorias
   const isAdegaCard = false;
+  const isAdega = cat === "adegas";
   const packQty = Number(meta.pack_qty) || 0;
   const promoActive = isPromoActive(product as any);
   const effective = getEffectivePrice(product as any);
@@ -1815,7 +1816,7 @@ const ProductCard = memo(({ product, disabled, onClick, onPrefetch, storeCategor
       className={`w-full text-left transition-all group rounded-2xl ${
         isAdegaCard
           ? `flex flex-col-reverse bg-card border border-border p-2.5 gap-2 ${isBlocked ? "opacity-60" : "hover:border-primary/40 active:scale-[0.98]"}`
-          : `flex gap-3 bg-card p-3 border border-border ${isBlocked ? "opacity-60" : "hover:shadow-lg hover:border-primary/20 active:scale-[0.98]"}`
+          : `flex gap-3 bg-card border border-border ${isAdega ? "p-2.5" : "p-3"} ${isBlocked ? "opacity-60" : "hover:shadow-lg hover:border-primary/20 active:scale-[0.98]"}`
       }`}
     >
       <div className={`flex-1 min-w-0 flex flex-col justify-between py-0.5 ${isAdegaCard ? "px-0.5" : ""}`}>
