@@ -116,7 +116,25 @@ export function usePdvSession(params: {
           })
           .select()
           .single();
-        if (error) throw error;
+        if (error) {
+          // 23505 = unique_violation → outra aba/dispositivo abriu caixa antes.
+          if ((error as any).code === "23505") {
+            const { data: existingOpen } = await supabase
+              .from("pdv_sessions" as any)
+              .select("*")
+              .eq("store_id", storeId)
+              .eq("status", "open")
+              .maybeSingle();
+            if (existingOpen) {
+              toast.error("Já existe um caixa aberto para esta loja.");
+              setCurrentSession(existingOpen as any as PdvSession);
+              writeCachedSession(storeId, existingOpen as any as PdvSession);
+              setScreen("venda");
+              return false;
+            }
+          }
+          throw error;
+        }
         setCurrentSession(data as any as PdvSession);
         writeCachedSession(storeId, data as any as PdvSession);
         setScreen("venda");
