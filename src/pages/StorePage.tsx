@@ -834,7 +834,7 @@ const StorePage = () => {
 
   const totalProducts = products?.length || 0;
 
-  if (!storeLoading && !store && (id || slug)) {
+  if (bootstrapDone && !storeLoading && !store && (id || slug)) {
     // Acessou via slug e não existe → tratar como rota inválida (evita catch-all confuso)
     if (slug && !id) {
       return <NotFound />;
