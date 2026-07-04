@@ -6,7 +6,9 @@ import { count as outboxCount, flush as outboxFlush } from "./pdvOutbox";
 
 /**
  * Hook React que expõe o estado da fila offline do PDV (Fase 3).
- * Auto-flush no mount, no evento `online` e a cada 30s enquanto houver itens.
+ * Auto-flush no mount, quando a rede volta e com backoff enquanto houver
+ * itens. Nunca dispara RPC se estiver offline — evita travar o app com
+ * requests que já vão falhar.
  */
 export function usePdvOutbox(storeId: string | undefined | null) {
   const [count, setCount] = useState(0);
@@ -24,6 +26,9 @@ export function usePdvOutbox(storeId: string | undefined | null) {
   const flushNow = useCallback(
     async (silent = false) => {
       if (!storeId || flushing) return;
+      // Não tenta se está offline — só gasta tempo e trava a UI.
+      if (typeof navigator !== "undefined" && navigator.onLine === false) return;
+      if (outboxCount(storeId) === 0) return;
       setFlushing(true);
       try {
         const res = await outboxFlush(storeId, async (payload) => {
@@ -73,25 +78,34 @@ export function usePdvOutbox(storeId: string | undefined | null) {
   // Auto-flush no mount + em cada online + polling.
   useEffect(() => {
     if (!storeId) return;
-    // mount
+    // mount: tenta uma vez
     flushNow(true);
     const onOnline = () => flushNow(true);
     window.addEventListener("online", onOnline);
     // Evento custom disparado quando checkout enfileira uma venda:
-    // tenta sincronizar imediatamente (se houver rede real, resolve na hora).
+    // tenta sincronizar imediatamente.
     const onLocal = () => {
       if (outboxCount(storeId) > 0) flushNow(true);
     };
     window.addEventListener("pdv-outbox-changed", onLocal);
-    const interval = window.setInterval(() => {
-      // Tenta a cada 10s enquanto houver itens — não confia só em
-      // navigator.onLine porque em Android/webview ele pode ficar preso.
-      if (outboxCount(storeId) > 0) flushNow(true);
-    }, 10_000);
+    // Polling adaptativo: só agenda o próximo tick se houver itens.
+    // Começa em 15s e dobra até 2min — não dispara nada com fila vazia
+    // ou offline, então não pesa no app em uso normal.
+    let delay = 15_000;
+    let timer: number | undefined;
+    const tick = () => {
+      if (outboxCount(storeId) === 0) { delay = 15_000; return; }
+      const online =
+        typeof navigator === "undefined" || navigator.onLine !== false;
+      if (online) flushNow(true);
+      delay = Math.min(delay * 2, 120_000);
+      timer = window.setTimeout(tick, delay);
+    };
+    timer = window.setTimeout(tick, delay);
     return () => {
       window.removeEventListener("online", onOnline);
       window.removeEventListener("pdv-outbox-changed", onLocal);
-      window.clearInterval(interval);
+      if (timer) window.clearTimeout(timer);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storeId]);
