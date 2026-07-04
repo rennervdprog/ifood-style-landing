@@ -503,6 +503,7 @@ export function printPdvReceipt(order: PrintPdvOrder, storeName: string, options
     cashReceived: order.cash_received,
     troco: order.troco,
     changeFor: null,
+    isPdv: true,
   });
 
   const generalObs = order.notes || order.observations;
