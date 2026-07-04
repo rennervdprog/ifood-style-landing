@@ -4,6 +4,22 @@ import { toast } from "sonner";
 import { formatBRL } from "@/lib/utils";
 import type { PdvScreen, PdvSession } from "../types";
 
+// Cache local da sessão aberta, para que o PDV suba offline após reload.
+const SESSION_CACHE_KEY = (storeId: string) => `pdv_open_session_v1:${storeId}`;
+function readCachedSession(storeId?: string): PdvSession | null {
+  if (!storeId) return null;
+  try {
+    const raw = localStorage.getItem(SESSION_CACHE_KEY(storeId));
+    return raw ? (JSON.parse(raw) as PdvSession) : null;
+  } catch { return null; }
+}
+function writeCachedSession(storeId: string, session: PdvSession | null) {
+  try {
+    if (session) localStorage.setItem(SESSION_CACHE_KEY(storeId), JSON.stringify(session));
+    else localStorage.removeItem(SESSION_CACHE_KEY(storeId));
+  } catch {}
+}
+
 /**
  * Estado da sessão de caixa do PDV.
  *
@@ -28,6 +44,16 @@ export function usePdvSession(params: {
   // ── Carrega sessão aberta da loja ──
   const checkSession = useCallback(async () => {
     if (!storeId) return;
+    // 1) Fallback imediato ao cache — evita spinner infinito offline.
+    const cached = readCachedSession(storeId);
+    if (cached) {
+      setCurrentSession(cached);
+      setScreen("venda");
+    } else if (!navigator.onLine) {
+      setScreen("abertura");
+      return;
+    }
+    try {
     const { data } = await supabase
       .from("pdv_sessions" as any)
       .select("*")
@@ -38,9 +64,20 @@ export function usePdvSession(params: {
       .maybeSingle();
     if (data) {
       setCurrentSession(data as any as PdvSession);
+        writeCachedSession(storeId, data as any as PdvSession);
       setScreen("venda");
-    } else {
-      setScreen("abertura");
+      } else {
+        writeCachedSession(storeId, null);
+        if (!cached) setScreen("abertura");
+        else {
+          // servidor diz que não há sessão aberta → limpa cache stale
+          setCurrentSession(null);
+          setScreen("abertura");
+        }
+      }
+    } catch {
+      // Offline/erro: mantém o que já resolvemos acima.
+      if (!cached) setScreen("abertura");
     }
   }, [storeId]);
 
@@ -81,6 +118,7 @@ export function usePdvSession(params: {
           .single();
         if (error) throw error;
         setCurrentSession(data as any as PdvSession);
+        writeCachedSession(storeId, data as any as PdvSession);
         setScreen("venda");
         toast.success(`Caixa aberto! Troco inicial: ${formatBRL(openingAmount)}`);
         return true;
@@ -125,6 +163,7 @@ export function usePdvSession(params: {
           .eq("id", currentSession.id);
         if (error) throw error;
         toast.success("Caixa fechado.");
+        if (storeId) writeCachedSession(storeId, null);
         setCurrentSession(null);
         setScreen("abertura");
         return true;
@@ -135,7 +174,7 @@ export function usePdvSession(params: {
         setLoading(false);
       }
     },
-    [currentSession],
+    [currentSession, storeId],
   );
 
   return {

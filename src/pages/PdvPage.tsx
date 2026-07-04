@@ -197,10 +197,20 @@ const PdvPage = () => {
       const { data } = await supabase
         .from("user_roles").select("role")
         .eq("user_id", user!.id).eq("role", "admin").maybeSingle();
-      return !!data;
+      const v = !!data;
+      try { localStorage.setItem(`pdv_is_admin_v1:${user!.id}`, v ? "1" : "0"); } catch {}
+      return v;
     },
     enabled: !!user,
     staleTime: 5 * 60_000,
+    initialData: () => {
+      if (!user?.id) return undefined;
+      try {
+        const raw = localStorage.getItem(`pdv_is_admin_v1:${user.id}`);
+        return raw == null ? undefined : raw === "1";
+      } catch { return undefined; }
+    },
+    initialDataUpdatedAt: 0,
   });
 
   const ADMIN_STORE_KEY = "pdv_admin_selected_store";
@@ -217,14 +227,23 @@ const PdvPage = () => {
         const { data } = await supabase
           .from("stores").select("id, name, category, categories, settings")
           .eq("id", adminStoreId).maybeSingle();
+        try { if (data) localStorage.setItem("pdv_store_v1", JSON.stringify(data)); } catch {}
         return data;
       }
       const { data } = await supabase
         .from("stores").select("id, name, category, categories, settings")
         .eq("owner_id", user!.id).eq("status", "ativo").maybeSingle();
+      try { if (data) localStorage.setItem("pdv_store_v1", JSON.stringify(data)); } catch {}
       return data;
     },
     enabled: !!user && (isAdmin !== undefined),
+    initialData: () => {
+      try {
+        const raw = localStorage.getItem("pdv_store_v1");
+        return raw ? JSON.parse(raw) : undefined;
+      } catch { return undefined; }
+    },
+    initialDataUpdatedAt: 0,
   });
 
   // Lista de lojas para o seletor (apenas admin, apenas quando sem loja ativa)
