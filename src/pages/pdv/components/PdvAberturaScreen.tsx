@@ -1,5 +1,6 @@
 import { ArrowLeft, Loader2, Monitor, Unlock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { formatBRLDisplay, parseBRLCentsInput } from "@/hooks/useBRLInput";
 
 interface Props {
   storeName?: string;
@@ -53,7 +54,10 @@ export const PdvAberturaScreen = ({ storeName, openingAmount, setOpeningAmount, 
                   type="text" inputMode="decimal"
                   autoFocus
                   value={openingAmount}
-                  onChange={e => setOpeningAmount(e.target.value.replace(/[^0-9.,]/g, ""))}
+                  onChange={e => {
+                    const n = parseBRLCentsInput(e.target.value);
+                    setOpeningAmount(n > 0 ? formatBRLDisplay(n) : "");
+                  }}
                   placeholder="0,00"
                   className="w-full pl-10 pr-4 py-4 bg-muted/40 rounded-xl text-2xl font-black text-center text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
                 />

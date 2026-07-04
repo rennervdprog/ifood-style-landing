@@ -124,7 +124,7 @@ const PdvPage = () => {
   };
 
   // Abertura
-  const [openingAmount, setOpeningAmount] = useState("0");
+  const [openingAmount, setOpeningAmount] = useState("");
 
   // Venda — estado de carrinho/pagamento agora vive em usePdvCart.
   const [search, setSearch] = useState("");
