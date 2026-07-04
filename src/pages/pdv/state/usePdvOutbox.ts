@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import { count as outboxCount, flush as outboxFlush } from "./pdvOutbox";
 
 /**
@@ -10,6 +11,7 @@ import { count as outboxCount, flush as outboxFlush } from "./pdvOutbox";
 export function usePdvOutbox(storeId: string | undefined | null) {
   const [count, setCount] = useState(0);
   const [flushing, setFlushing] = useState(false);
+  const { connected } = useNetworkStatus();
 
   const refresh = useCallback(() => {
     if (!storeId) {
@@ -75,15 +77,32 @@ export function usePdvOutbox(storeId: string | undefined | null) {
     flushNow(true);
     const onOnline = () => flushNow(true);
     window.addEventListener("online", onOnline);
+    // Evento custom disparado quando checkout enfileira uma venda:
+    // tenta sincronizar imediatamente (se houver rede real, resolve na hora).
+    const onLocal = () => {
+      if (outboxCount(storeId) > 0) flushNow(true);
+    };
+    window.addEventListener("pdv-outbox-changed", onLocal);
     const interval = window.setInterval(() => {
-      if (outboxCount(storeId) > 0 && navigator.onLine) flushNow(true);
-    }, 30_000);
+      // Tenta a cada 10s enquanto houver itens — não confia só em
+      // navigator.onLine porque em Android/webview ele pode ficar preso.
+      if (outboxCount(storeId) > 0) flushNow(true);
+    }, 10_000);
     return () => {
       window.removeEventListener("online", onOnline);
+      window.removeEventListener("pdv-outbox-changed", onLocal);
       window.clearInterval(interval);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storeId]);
+
+  // Sempre que a rede voltar (detecção nativa via Capacitor Network),
+  // dispara flush imediato — muito mais confiável que o evento `online`.
+  useEffect(() => {
+    if (!storeId) return;
+    if (connected && outboxCount(storeId) > 0) flushNow(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [connected, storeId]);
 
   return { count, flushing, flushNow, refresh };
 }
