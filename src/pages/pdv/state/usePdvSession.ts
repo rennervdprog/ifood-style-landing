@@ -174,7 +174,7 @@ export function usePdvSession(params: {
         setLoading(false);
       }
     },
-    [currentSession],
+    [currentSession, storeId],
   );
 
   return {
