@@ -10,7 +10,8 @@ import type { SplitPayment } from "@/components/pdv/PdvSplitPayment";
 import { enqueue as outboxEnqueue, isOfflineQueueEnabled } from "./pdvOutbox";
 
 /** Timeout de rede para a RPC (Fase 3). */
-const RPC_TIMEOUT_MS = 3000;
+const RPC_TIMEOUT_MS = 1500;
+const AUTH_TIMEOUT_MS = 800;
 
 function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
   return new Promise<T>((resolve, reject) => {
@@ -122,9 +123,24 @@ export function usePdvCheckout() {
 
       setLoading(true);
       try {
+        const browserOffline =
+          typeof navigator !== "undefined" && navigator.onLine === false;
+
         // Auditoria de operador (Fase 2 P1): quem registrou a venda.
-        const { data: authData } = await supabase.auth.getUser();
-        const createdBy = authData?.user?.id ?? null;
+        // Nunca deixa o PDV travado offline por causa da checagem de auth.
+        let createdBy: string | null = null;
+        try {
+          const authPromise: Promise<any> = browserOffline
+            ? supabase.auth.getSession()
+            : supabase.auth.getUser();
+          const { data: authData } = (await withTimeout(
+            authPromise,
+            AUTH_TIMEOUT_MS,
+          )) as any;
+          createdBy = authData?.user?.id ?? authData?.session?.user?.id ?? null;
+        } catch (authError) {
+          console.warn("[PDV] Auth audit skipped:", authError);
+        }
 
         const primaryMethod = splitMode
           ? splitPayments[0]?.method || "dinheiro"
@@ -169,29 +185,39 @@ export function usePdvCheckout() {
                 : null,
           })),
         };
-        let rpcTimedOut = false;
-        try {
-          const rpcPromise = (async () =>
-            supabase.rpc("pdv_finalize_sale" as any, { _payload: rpcPayload } as any))();
-          const { data: rpcRes, error: rpcErr } = (await withTimeout(
-            rpcPromise,
-            RPC_TIMEOUT_MS,
-          )) as any;
-          if (!rpcErr && rpcRes) {
-            orderId =
-              typeof rpcRes === "string"
-                ? rpcRes
-                : (rpcRes as any)?.order_id ?? (rpcRes as any)?.id ?? null;
+        let shouldQueueOffline = browserOffline;
+        let offlineQueued = false;
+
+        if (!shouldQueueOffline) {
+          try {
+            const rpcPromise = (async () =>
+              supabase.rpc("pdv_finalize_sale" as any, { _payload: rpcPayload } as any))();
+            const { data: rpcRes, error: rpcErr } = (await withTimeout(
+              rpcPromise,
+              RPC_TIMEOUT_MS,
+            )) as any;
+            if (!rpcErr && rpcRes) {
+              orderId =
+                typeof rpcRes === "string"
+                  ? rpcRes
+                  : (rpcRes as any)?.order_id ?? (rpcRes as any)?.id ?? null;
+            } else if (rpcErr) {
+              const message = String(rpcErr.message ?? rpcErr);
+              shouldQueueOffline = /fetch|network|timeout|failed to fetch/i.test(message);
+              if (!shouldQueueOffline) {
+                console.warn("[PDV] RPC pdv_finalize_sale falhou:", rpcErr);
+              }
+            }
+          } catch (rpcCatch) {
+            shouldQueueOffline = true;
+            console.warn("[PDV] RPC pdv_finalize_sale falhou:", rpcCatch);
           }
-        } catch (rpcCatch) {
-          rpcTimedOut = (rpcCatch as any)?.message === "rpc_timeout";
-          console.warn("[PDV] RPC pdv_finalize_sale falhou:", rpcCatch);
         }
 
         // Fase 3: se a RPC não voltou (timeout / offline) e a feature flag
         // está ativa, enfileira e trata como sucesso — o cupom é impresso e
         // o operador entrega o produto. A fila reenvia depois.
-        if (!orderId && rpcTimedOut && isOfflineQueueEnabled()) {
+        if (!orderId && shouldQueueOffline && isOfflineQueueEnabled()) {
           const enqueued = outboxEnqueue({
             client_uuid: clientUuid,
             store_id: store.id,
@@ -202,6 +228,7 @@ export function usePdvCheckout() {
               window.dispatchEvent(new Event("pdv-outbox-changed"));
             } catch {}
             orderId = clientUuid; // placeholder para o cupom / fluxos seguintes
+            offlineQueued = true;
             toast.warning("Venda salva offline — sincroniza quando voltar.");
           } else {
             toast.error("Fila offline cheia (200). Verifique a conexão.");
@@ -272,25 +299,31 @@ export function usePdvCheckout() {
           queryKey: ["pdv-movements", session.id],
         });
         onSuccess();
-        toast.success("✅ Venda finalizada!");
+        if (!offlineQueued) toast.success("✅ Venda finalizada!");
 
         // 4) Empties (garrafas retornáveis) — best-effort
-        try {
-          const { data: prods } = await supabase
-            .from("products")
-            .select("id, metadata")
-            .in("id", cart.map((i) => i.id));
-          const hasReturnable = (prods || []).some(
-            (p: any) => p?.metadata?.returnable_bottle,
-          );
-          if (hasReturnable) {
-            onEmptiesFlowStart({
-              orderId: orderId!,
-              items: cart.map((i) => ({ product_id: i.id, quantity: i.quantity })),
-            });
+        if (!offlineQueued && !browserOffline) {
+          try {
+            const { data: prods } = await withTimeout(
+              (async () =>
+                supabase
+                  .from("products")
+                  .select("id, metadata")
+                  .in("id", cart.map((i) => i.id)))(),
+              RPC_TIMEOUT_MS,
+            ) as any;
+            const hasReturnable = (prods || []).some(
+              (p: any) => p?.metadata?.returnable_bottle,
+            );
+            if (hasReturnable) {
+              onEmptiesFlowStart({
+                orderId: orderId!,
+                items: cart.map((i) => ({ product_id: i.id, quantity: i.quantity })),
+              });
+            }
+          } catch (e) {
+            console.warn("Empties detection skipped:", e);
           }
-        } catch (e) {
-          console.warn("Empties detection skipped:", e);
         }
 
         // 5) Impressão térmica — best-effort
