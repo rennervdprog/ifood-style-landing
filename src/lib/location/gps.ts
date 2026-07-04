@@ -11,6 +11,7 @@ import {
 import type { Coordinates, PermissionResult } from "./types";
 
 const KEY = "loc:gps:last";
+export const GPS_CACHE_KEY = KEY;
 
 export interface GpsReadResult {
   coords: Coordinates | null;
@@ -80,6 +81,34 @@ export async function readGps(opts: { forceFresh?: boolean } = {}): Promise<GpsR
     inflight = null;
   });
   return inflight;
+}
+
+/**
+ * Chamar DIRETO de um onClick (sem await antes). No Web, chama
+ * navigator.geolocation.getCurrentPosition de forma síncrona para preservar
+ * o "user gesture" que o Chrome/Safari exigem para exibir o prompt.
+ */
+export function readGpsFromGesture(): Promise<GpsReadResult> {
+  if (isCapacitorNative() || typeof navigator === "undefined" || !("geolocation" in navigator)) {
+    return readGps({ forceFresh: true });
+  }
+  return new Promise<GpsReadResult>((resolve) => {
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const coords: Coordinates = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        cacheSet(KEY, coords, TTL.gps, { persist: true });
+        resolve({ coords, fromCache: false, permission: "granted" });
+      },
+      (err) => {
+        const state: PermissionResult["state"] =
+          err.code === err.PERMISSION_DENIED ? "denied"
+          : err.code === err.POSITION_UNAVAILABLE ? "services_off"
+          : "prompt";
+        resolve({ coords: null, fromCache: false, permission: state, error: err.message });
+      },
+      { enableHighAccuracy: true, timeout: 15_000, maximumAge: 60_000 },
+    );
+  });
 }
 
 /** Compat: equivale ao antigo getDeviceGPS — retorna só as coords. */
