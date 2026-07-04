@@ -2085,11 +2085,14 @@ const ProductCard = memo(({ product, disabled, onClick, onPrefetch, storeCategor
             </div>
           )}
 
-          {/* Adegas: type + alcohol */}
-          {cat === "adegas" && meta.brand && (
-            <p className="text-[10px] text-muted-foreground mt-1">
-              <span className="font-medium">{meta.brand}</span>
-              {meta.volume && <span> · {meta.volume}</span>}
+          {/* Adegas: marca · volume · teor alcoólico */}
+          {isAdega && (meta.brand || meta.volume || meta.alcohol_content) && (
+            <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-1">
+              {meta.brand && <span className="font-medium">{meta.brand}</span>}
+              {meta.brand && (meta.volume || meta.alcohol_content) && " · "}
+              {meta.volume && <span>{meta.volume}</span>}
+              {meta.volume && meta.alcohol_content && " · "}
+              {meta.alcohol_content && <span>{meta.alcohol_content}</span>}
             </p>
           )}
         </div>
