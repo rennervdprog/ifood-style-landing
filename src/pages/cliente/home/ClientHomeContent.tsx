@@ -25,6 +25,60 @@ const ROTATING_PLACEHOLDERS = [
   "Buscar açaí...",
 ];
 
+const PUBLIC_STORE_SELECT = "id, name, image_url, slug, category, categories, is_open, force_closed, rating, status, delivery_mode, own_delivery_fee, address_cep, address_city, address_complement, address_neighborhood, address_number, address_reference, address_state, address_street, latitude, longitude, settings";
+
+const normalizeCity = (value?: string | null) =>
+  (value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase();
+
+const loadPublicStores = async ({
+  city,
+  query,
+  fallbackToAll,
+  includeTest,
+}: {
+  city?: string | null;
+  query?: string;
+  fallbackToAll: boolean;
+  includeTest: boolean;
+}) => {
+  const cityNorm = normalizeCity(city);
+  const table = includeTest ? "stores" : "stores_public";
+  let dbQuery = (supabase as any)
+    .from(table)
+    .select(PUBLIC_STORE_SELECT)
+    .eq("status", "ativo")
+    .limit(50);
+
+  if (query?.trim()) dbQuery = dbQuery.ilike("name", `%${query.trim()}%`);
+
+  const { data, error } = await dbQuery;
+  if (error) {
+    const { data: functionData, error: functionError } = await supabase.functions.invoke("public-store-catalog", {
+      body: {
+        city,
+        query,
+        limit: 50,
+        fallback_to_all: fallbackToAll,
+        include_test: includeTest,
+      },
+    });
+    if (functionError) throw functionError;
+    return Array.isArray(functionData?.stores) ? functionData.stores : [];
+  }
+
+  let stores = Array.isArray(data) ? data : [];
+  if (cityNorm) {
+    const filtered = stores.filter((store: any) => normalizeCity(store.address_city) === cityNorm);
+    stores = filtered.length > 0 || !fallbackToAll ? filtered : stores;
+  }
+
+  return stores;
+};
+
 const greeting = () => {
   const h = new Date().getHours();
   if (h < 12) return "Bom dia";
@@ -81,16 +135,11 @@ const ClientHomeContent = () => {
   const { data: suggestedStores, isLoading: loadingStores } = useQuery({
     queryKey: ["available-stores", effectiveCity || "all", userLocation.coords?.lat, userLocation.coords?.lng],
     queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke("public-store-catalog", {
-        body: {
-          city: effectiveCity,
-          limit: 50,
-          fallback_to_all: false,
-          include_test: !!user?.email?.endsWith("@itasuper.test"),
-        },
+      const rows = await loadPublicStores({
+        city: effectiveCity,
+        fallbackToAll: false,
+        includeTest: !!user?.email?.endsWith("@itasuper.test"),
       });
-      if (error) throw error;
-      const rows = Array.isArray(data?.stores) ? data.stores : [];
       const storeIds = rows.map((s: any) => s.id);
       if (storeIds.length === 0) return [];
       const { data: allHours } = await supabase
@@ -108,16 +157,11 @@ const ClientHomeContent = () => {
   const { data: searchResults } = useQuery({
     queryKey: ["client-store-search", searchQuery, userLocation.coords?.lat, userLocation.coords?.lng],
     queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke("public-store-catalog", {
-        body: {
-          query: searchQuery,
-          limit: 50,
-          fallback_to_all: true,
-          include_test: !!user?.email?.endsWith("@itasuper.test"),
-        },
+      const stores = await loadPublicStores({
+        query: searchQuery,
+        fallbackToAll: true,
+        includeTest: !!user?.email?.endsWith("@itasuper.test"),
       });
-      if (error) throw error;
-      const stores = Array.isArray(data?.stores) ? data.stores : [];
       if (stores.length === 0) return [];
       const storeIds = stores.map((s: any) => s.id);
       const { data: allHours } = await supabase
