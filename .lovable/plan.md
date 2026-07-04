@@ -1,40 +1,44 @@
-# Plano — Investigar por que /cliente não mostra lojas
+## Objetivo
+Refinar o card horizontal da categoria **adegas** para ficar mais agradável visualmente, sem alterar cores da loja/tema.
 
-Sintoma: na home do cliente aparece "LOJAS EM ARARUAMA — 0 lojas / Nenhuma loja disponível em Araruama", enquanto "SUAS LOJAS" (Águia Pizzaria) aparece normalmente vindo do histórico de pedidos.
+## Escopo
+Apenas `src/pages/StorePage.tsx` no componente `ProductCard`, condicionado a `cat === "adegas"`. Nenhuma alteração em outras categorias, nenhum token de cor novo.
 
-Isso indica que a lista principal (`suggestedStores`) está vindo vazia da edge function `public-store-catalog`, mesmo com lojas existindo na cidade. O plano abaixo isola em que camada a lista some.
+## O que muda visualmente (apenas adega)
 
-## Passos de diagnóstico
+1. **Imagem à direita mais respirável**
+   - Trocar `w-24 h-24 object-cover` por `w-28 h-28 object-contain bg-muted p-1.5` — garrafas/latas de bebida ficam melhor com `contain` (não corta gargalo) e com leve fundo neutro.
+   - Sem sombra pesada; borda arredondada mantida.
 
-1. **Confirmar o que o cliente pede**
-   - Em `ClientHomeContent.tsx` a query `available-stores` chama `supabase.functions.invoke("public-store-catalog", { body: { city: effectiveCity, limit: 50, fallback_to_all: false, include_test: ... } })`.
-   - `effectiveCity` = `userLocation.city` ou `profile.city`. Verificar o valor exato enviado ("Araruama", "araruama", com acento etc.).
+2. **Hierarquia do texto**
+   - Nome do produto: manter `text-sm font-bold`, mas permitir `line-clamp-2` (hoje é 1) — nomes de bebidas costumam ter marca + volume.
+   - Subtítulo unificado da adega (marca · volume · teor alcoólico quando houver) em uma única linha `text-[11px] text-muted-foreground`, substituindo o bloco atual solto.
 
-2. **Testar a edge function diretamente**
-   - Chamar `public-store-catalog` com `{ city: "Araruama", limit: 50, fallback_to_all: false }` e comparar com `{ fallback_to_all: true }` e sem `city`.
-   - Se sem `city` retorna lojas e com `city: "Araruama"` retorna 0 → problema é o filtro de cidade (normalização/acento/coluna errada).
+3. **Badges enxutas**
+   - Mostrar no máximo 2 badges na linha superior para adega (prioridade: Promoção → Pack → Temperatura). As demais (Casco, Bestseller) descem para a linha do subtítulo como texto discreto, evitando poluição.
+   - Nenhuma cor nova — reutilizar as classes já existentes.
 
-3. **Inspecionar o código da função**
-   - Ler `supabase/functions/public-store-catalog/index.ts`: como filtra `city` (igualdade exata? `ilike`? qual coluna: `stores.city` vs `store_addresses.city`?), se filtra por `is_active`, `is_approved`, `plan_status`, etc.
-   - Checar se recentemente algum campo (ex.: `is_visible`, `onboarding_status`) passou a ser exigido e derrubou as lojas.
+4. **Preço + CTA melhor alinhados**
+   - Preço em `text-base font-black` (hoje `text-sm`), com preço/unidade (`R$ x,xx/un`) logo abaixo quando `pack_qty > 0`.
+   - Botão "Adicionar" continua com o mesmo estilo/cor já usado nas outras categorias.
 
-4. **Conferir os dados no banco**
-   - `select id, name, city, is_active, is_open from stores where city ilike '%arar%'` para ver quantas lojas existem e como a cidade está escrita.
-   - Se a função lê de outra tabela/coluna (ex.: `store_addresses.city`, `service_cities`), consultar essa também.
+5. **Espaçamento do card**
+   - Padding do card: `p-3` → `p-2.5` no adega para compactar levemente e caber melhor a imagem 28.
+   - `gap-3` mantido entre texto e imagem.
 
-5. **Checar logs da edge function**
-   - `supabase--edge_function_logs` de `public-store-catalog` durante uma chamada real do app para ver `city` recebida, quantidade retornada e eventuais erros.
+## O que NÃO muda
+- Nenhuma cor, gradiente, sombra ou token do design system.
+- Nenhum comportamento (clique, quick-add, modal, filtros de tipo/ordenação de adega).
+- Nenhuma outra categoria.
+- Nenhuma alteração de dados/schema.
 
-6. **Validar RLS / GRANTs**
-   - Rodar `supabase--linter` e conferir se `stores` (e tabelas relacionadas) têm policy de SELECT pública e GRANT para `anon` — regressão comum após migrações recentes.
+## Detalhes técnicos
+- Introduzir uma flag local `const isAdega = cat === "adegas"` dentro de `ProductCard` (já existe `cat`), usada só para ajustar classes de imagem, clamp do nome, tamanho do preço e limite de badges.
+- Manter `isAdegaCard = false` (layout horizontal), como está hoje.
+- Consolidar o subtítulo de adega (marca/volume/álcool) em um único `<p>`; remover o bloco duplicado atual em `~L2087-2093`.
+- Bump de versão (`APP_VERSION` + `versionName`/`versionCode`) ao aplicar.
 
-7. **Fechar o diagnóstico**
-   - Com base nos passos 2–6, apontar a causa (uma das três hipóteses mais prováveis):
-     a. Filtro de cidade case/acento-sensível na função.
-     b. Novo filtro (is_active/plan_status/visibilidade) excluindo todas as lojas de Araruama.
-     c. RLS/GRANT bloqueando SELECT anônimo em `stores`.
-   - Só então propor o fix pontual (sem alterar UI).
-
-## Observações
-- Nada será alterado nesta etapa — é só auditoria. Depois do diagnóstico eu volto com o ajuste mínimo.
-- Não mexer no fluxo de GPS já corrigido na v1.11.16.
+## Verificações após implementar
+- Abrir loja Gelobol (`/gelobol`) na aba "Refrigerantes e Sucos" e conferir alinhamento.
+- Conferir que categorias não-adega (`pastelao-carioca`, restaurante, etc.) continuam idênticas.
+- Revisão rápida de segurança: sem mudança de dados/RLS/edge, apenas UI — nada a ajustar.
