@@ -309,8 +309,9 @@ function renderPaymentBlock(args: {
   cashReceived?: number | null;
   troco?: number | null;
   changeFor?: number | null;
+  isPdv?: boolean;
 }): string {
-  const { primaryMethod, splits, labels, isOnlinePaid, cashReceived, troco, changeFor } = args;
+  const { primaryMethod, splits, labels, isOnlinePaid, cashReceived, troco, changeFor, isPdv } = args;
   const hasSplit = splits.length > 1;
   let html = "";
   if (hasSplit) {
@@ -321,7 +322,7 @@ function renderPaymentBlock(args: {
   } else {
     const tag = primaryMethod === "pix" && isOnlinePaid
       ? ' <span style="font-weight:bold">(PAGO ONLINE)</span>'
-      : (primaryMethod === "dinheiro" || primaryMethod === "cartao")
+      : (!isPdv && (primaryMethod === "dinheiro" || primaryMethod === "cartao"))
         ? ' <span style="font-weight:bold">(RECEBER NA ENTREGA)</span>'
         : "";
     html += `<div class="tp-info"><b>Pagamento:</b> ${labels[primaryMethod] || primaryMethod}${tag}</div>`;
