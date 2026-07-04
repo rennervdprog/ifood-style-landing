@@ -1546,7 +1546,7 @@ const StorePage = () => {
               {filteredProducts.length} resultado{filteredProducts.length !== 1 ? "s" : ""} para "{searchQuery}"
             </p>
             {filteredProducts.length > 0 ? (
-              <div className={isAdega ? "grid grid-cols-2 gap-2.5" : "space-y-2.5"}>
+              <div className={"space-y-2.5"}>
                 {filteredProducts.map(product => (
                   <ProductCard
                     key={product.id}
@@ -1590,7 +1590,7 @@ const StorePage = () => {
                         </div>
                       </div>
                     </div>
-                    <div className={isAdega ? "grid grid-cols-2 gap-2.5" : "space-y-2.5"}>
+                    <div className={"space-y-2.5"}>
                       {colProducts.map(product => (
                         <ProductCard
                           key={`promo-${collection.id}-${product.id}`}
@@ -1623,7 +1623,7 @@ const StorePage = () => {
                       {sectionProducts.length}
                     </span>
                   </div>
-                  <div className={isAdega ? "grid grid-cols-2 gap-2.5" : "space-y-2.5"}>
+                  <div className={"space-y-2.5"}>
                     {sectionProducts.map(product => (
                       <ProductCard
                         key={product.id}
@@ -1650,7 +1650,7 @@ const StorePage = () => {
                     </span>
                   </div>
                 )}
-                <div className={isAdega ? "grid grid-cols-2 gap-2.5" : "space-y-2.5"}>
+                <div className={"space-y-2.5"}>
                   {unsectionedProducts.map(product => (
                     <ProductCard
                       key={product.id}
@@ -1775,7 +1775,8 @@ const ProductCard = memo(({ product, disabled, onClick, onPrefetch, storeCategor
   const emoji = categoryEmoji[cat] || "🍴";
   const isOutOfStock = !!meta.out_of_stock;
   const isBlocked = disabled || isOutOfStock;
-  const isAdegaCard = cat === "adegas";
+  // Layout de adega agora usa o mesmo card horizontal das demais categorias
+  const isAdegaCard = false;
   const packQty = Number(meta.pack_qty) || 0;
   const promoActive = isPromoActive(product as any);
   const effective = getEffectivePrice(product as any);
