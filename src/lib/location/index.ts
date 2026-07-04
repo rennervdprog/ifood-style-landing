@@ -14,7 +14,7 @@ export type { CepResult } from "./cep";
 export { geocodeAddress } from "./geocode";
 export { reverseGeocode } from "./reverse";
 export type { ReverseResult } from "./reverse";
-export { readGps, getDeviceGPS } from "./gps";
+export { readGps, getDeviceGPS, readGpsFromGesture } from "./gps";
 export type { GpsReadResult } from "./gps";
 export {
   checkLocationPermission,

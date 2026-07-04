@@ -3,7 +3,7 @@
  * Mantém a API original ({ coords, city, state, ready, refresh }).
  */
 import { useEffect, useState } from "react";
-import { readGps, reverseGeocode } from "@/lib/location";
+import { readGps, readGpsFromGesture, reverseGeocode } from "@/lib/location";
 import type { Coordinates } from "@/lib/location";
 
 export interface UserLocation {
@@ -15,10 +15,10 @@ export interface UserLocation {
 
 let inflight: Promise<UserLocation> | null = null;
 
-async function detect(forceFresh = false): Promise<UserLocation> {
+async function detect(forceFresh = false, gesturePromise?: Promise<any>): Promise<UserLocation> {
   if (inflight && !forceFresh) return inflight;
   inflight = (async () => {
-    const g = await readGps({ forceFresh });
+    const g = gesturePromise ? await gesturePromise : await readGps({ forceFresh });
     if (!g.coords) return { coords: null, city: null, state: null, ready: true };
     const rev = await reverseGeocode(g.coords);
     return {
@@ -52,8 +52,11 @@ export function useUserLocation(): UserLocation & { refresh: () => void } {
   }, []);
 
   const refresh = () => {
+    // IMPORTANTE: chamar readGpsFromGesture() SÍNCRONO no clique — sem await
+    // antes — para o Chrome/Safari não descartarem o prompt de permissão.
+    const p = readGpsFromGesture();
     setState({ coords: null, city: null, state: null, ready: false });
-    detect(true).then(setState);
+    detect(true, p).then(setState);
   };
 
   return { ...state, refresh };
