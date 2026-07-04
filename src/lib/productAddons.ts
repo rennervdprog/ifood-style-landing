@@ -35,6 +35,19 @@ const normalizeLinkedGroup = (value: unknown) => {
 };
 
 export async function fetchProductAddons(productId: string): Promise<ProductAddonsData> {
+  const cacheKey = `pdv_addons_v1:${productId}`;
+  const readCache = (): ProductAddonsData | null => {
+    try {
+      const raw = localStorage.getItem(cacheKey);
+      return raw ? (JSON.parse(raw) as ProductAddonsData) : null;
+    } catch { return null; }
+  };
+
+  // Offline: devolve cache imediatamente, ou vazio (sem travar em "Carregando opções…")
+  if (typeof navigator !== "undefined" && navigator.onLine === false) {
+    return readCache() || { groups: [], items: [] };
+  }
+
   const [directRes, linkedRes] = await Promise.all([
     supabase
       .from("addon_groups")
@@ -47,8 +60,11 @@ export async function fetchProductAddons(productId: string): Promise<ProductAddo
       .eq("product_id", productId),
   ]);
 
-  if (directRes.error) throw directRes.error;
-  if (linkedRes.error) throw linkedRes.error;
+  if (directRes.error || linkedRes.error) {
+    const cached = readCache();
+    if (cached) return cached;
+    throw directRes.error || linkedRes.error;
+  }
 
   const directRows = (directRes.data || []) as Array<ProductAddonGroup & { addon_items?: ProductAddonItem[] | null }>;
   const directIds = new Set(directRows.map((group) => group.id));
@@ -64,5 +80,7 @@ export async function fetchProductAddons(productId: string): Promise<ProductAddo
     .flatMap((group) => group.addon_items || [])
     .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)) as ProductAddonItem[];
 
-  return { groups, items };
+  const result: ProductAddonsData = { groups, items };
+  try { localStorage.setItem(cacheKey, JSON.stringify(result)); } catch {}
+  return result;
 }
