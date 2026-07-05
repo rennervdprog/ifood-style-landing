@@ -63,7 +63,11 @@ const config: CapacitorConfig = {
       autoUpdate: true,
       autoDeleteFailed: true,
       autoDeletePrevious: true,
-      directUpdate: false,
+      // ⚡ Aplica o bundle assim que o download termina (webview reload
+      // automático). Sem isso o usuário precisaria matar o app na lista
+      // de recentes para o novo JS entrar — muitos não fazem, e reclamam
+      // que "OTA não funciona".
+      directUpdate: true,
       resetWhenUpdate: true,
       keepUrlPathAfterReload: true,
       updateUrl:
