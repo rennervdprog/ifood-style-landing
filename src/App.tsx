@@ -14,7 +14,7 @@ import NotificationPrompt from "@/components/NotificationPrompt";
 import DownloadAppPrompt from "@/components/DownloadAppPrompt";
 import CapacitorPermissionsOnboarding from "@/components/CapacitorPermissionsOnboarding";
 import DebugOverlay from "@/components/DebugOverlay";
-import { initCapacitorNative, isCapacitorNative, consumePendingPushNavigation, hideSplash } from "@/lib/capacitorNative";
+import { initCapacitorNative, isCapacitorNative, consumePendingPushNavigation } from "@/lib/capacitorNative";
 import { initCapacitorLifecycle } from "@/lib/capacitorLifecycle";
 import { initRealtimeWatchdog } from "@/lib/realtimeWatchdog";
 import { initVersionWatcher } from "@/lib/versionWatcher";
@@ -243,15 +243,8 @@ const App = () => {
     //    vai para requestIdleCallback — não compete com o primeiro render.
     initCapacitorNative().catch(() => {});
 
-    // Hide splash após 2 RAFs (primeiro paint) + micro delay pra rota renderizar.
-    // Fallback também garantido em capacitor.config (launchShowDuration).
-    if (isCapacitorNative()) {
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          setTimeout(() => { hideSplash().catch(() => {}); }, 250);
-        });
-      });
-    }
+    // (hideSplash já foi chamado em main.tsx logo após o primeiro paint —
+    // não repetir aqui pra não competir com o useEffect dos Providers.)
 
     const w = window as any;
     const runIdle = (fn: () => void, timeout = 2500) => {

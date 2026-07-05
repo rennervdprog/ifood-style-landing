@@ -32,6 +32,12 @@ import { HelmetProvider } from "react-helmet-async";
 // Apply native-app class globally for GoNative/Median/Capacitor apps
 import { Capacitor } from "@capacitor/core";
 
+// 🚀 OTA: chama notifyAppReady cedo — impede rollback do bundle no próximo boot.
+// É barato (<5ms) e desbloqueia o watchdog do plugin.
+if (Capacitor.isNativePlatform?.()) {
+  import("./lib/nativeBoot").then(({ notifyOtaAppReady }) => notifyOtaAppReady()).catch(() => {});
+}
+
 // 🚀 Cold-start: no APK Parceiro, se a URL inicial é "/" (rota padrão do
 // Capacitor), reescreve para /portal-parceiro ANTES do React montar.
 // Evita carregar o chunk pesado de StoreDirectory + queries de lojas/cidades
@@ -121,6 +127,17 @@ if ("serviceWorker" in navigator && !isPreviewHost && !isInIframe && !isCapacito
 createRoot(document.getElementById("root")!).render(
   <HelmetProvider><App /></HelmetProvider>
 );
+
+// 🚀 Splash: esconde IMEDIATAMENTE após o primeiro paint do React —
+// não espera useEffect dos Providers (que só disparam depois do mount de
+// AuthProvider/StoreProvider/CartProvider). Ganha 400-800ms de percepção.
+if (Capacitor.isNativePlatform?.()) {
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      import("./lib/capacitorNative").then(({ hideSplash }) => hideSplash()).catch(() => {});
+    });
+  });
+}
 
 // Web Vitals — chamado DEPOIS do React montar, nunca antes
 // Usa requestIdleCallback para não competir com o primeiro render

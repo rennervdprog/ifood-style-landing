@@ -7,18 +7,36 @@ import { isCapacitorNative } from "@/lib/capacitorNative";
 import { getCapacitorAppMode } from "@/lib/capacitorAppMode";
 
 let booted = false;
+let otaReadyCalled = false;
+
+/**
+ * Deve ser chamado o MAIS CEDO possível no cold start (antes de qualquer
+ * requestIdleCallback). `notifyAppReady` é uma chamada barata (<5ms) que
+ * impede o rollback automático do bundle atual pelo watchdog do plugin.
+ * Isolado de `nativeBoot()` porque aquele roda em idle e pode não disparar
+ * a tempo em execuções lentas — resultado seria "OTA não aplica".
+ */
+export async function notifyOtaAppReady() {
+  if (!isCapacitorNative() || otaReadyCalled) return;
+  otaReadyCalled = true;
+  try {
+    const { CapacitorUpdater } = await import("@capgo/capacitor-updater");
+    await CapacitorUpdater.notifyAppReady();
+  } catch (e) {
+    console.warn("[OTA] notifyAppReady falhou:", e);
+  }
+}
 
 export async function nativeBoot() {
   if (!isCapacitorNative() || booted) return;
   booted = true;
 
   // 1) OTA — self-hosted via bucket app-releases.
-  //    - notifyAppReady evita rollback automático do bundle atual.
+  //    (notifyAppReady já foi chamado cedo em main.tsx via notifyOtaAppReady)
   //    - Listeners emitem toast quando um bundle novo é baixado.
   //    - getLatest força um check em foreground.
   try {
     const { CapacitorUpdater } = await import("@capgo/capacitor-updater");
-    await CapacitorUpdater.notifyAppReady();
 
     CapacitorUpdater.addListener("updateAvailable", async (info: any) => {
       console.log("[OTA] Novo bundle disponível:", info?.bundle?.version);

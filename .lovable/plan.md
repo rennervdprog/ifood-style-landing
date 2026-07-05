@@ -1,108 +1,106 @@
-# Plano WhatsApp ItaSuper — bot como "placa", não atendente
+# Plano — Cold start nativo no APK Parceiro (meta: 5-6s)
 
-## Princípio
-O WhatsApp do lojista é a porta de entrada; o cardápio é o destino. O bot só precisa **converter mensagem em clique**. Quanto menos ele fala, mais o chip dura.
+Hoje o APK Parceiro leva **8-12s** para ficar utilizável. A auditoria do repositório + pesquisa (Capgo, Ionic/Capacitor docs, Android startup vitals) mostra que o problema não é OTA nem CPU do dispositivo — é a **quantidade de JS que precisa ser baixada, parseada e executada antes do primeiro paint interativo**, agravada por trabalho eager em módulos e providers que o Parceiro nem usa.
 
----
-
-## Fase 1 — Parar o sangramento (P0, esta semana)
-
-**Backend (`evolution-send-message` + Supabase externo)**
-
-1. **Fix warm-up**: `Math.max(80, dailyLimitForAge)` → `Math.min` para `auto_reply` respeitar 20/50/100 por fase.
-2. **Lock anti-duplicata da saudação**: unique index parcial em `whatsapp_send_log(store_id, phone, kind)` para janela de 60s + `INSERT … ON CONFLICT DO NOTHING` antes de disparar. Fim das 6 msgs em 8s.
-3. **Self-heal do status**: quando Evolution retorna 200, `UPDATE store_whatsapp_config SET status='connected'`.
-4. **Coffee break também no `auto_reply`**: pausa 5-15min a cada 10 envios (hoje só `manual`).
-5. **Dedupe da saudação: 1h → 24h** (`dedupeWindowSec` em `auto_reply`).
-
-**Índices SQL (Supabase externo `qkjhguziuchqsbxzruea`)**
-- `whatsapp_send_log(store_id, phone, sent_at desc)`
-- unique parcial `(store_id, phone, kind)` where `sent_at > now() - interval '60s'`
+O plano ataca isso em 5 frentes, na ordem de maior impacto por esforço.
 
 ---
 
-## Fase 2 — Uma saudação, sempre a mesma (P1)
+## Frente 1 — Splash sob controle (fim do "buraco preto")
 
-**Backend (`evolution-webhook` / handler de auto-reply)**
+**Problema.** `capacitor.config.ts` define `launchAutoHide: false` + `launchShowDuration: 3500`. O React chama `hideSplash()` só depois de 2× `requestAnimationFrame` + `setTimeout(250)` **de dentro do App**. Enquanto o bundle não termina de parsear/hidratar Providers, a splash laranja fica travada e o usuário sente 8-12s. Além disso, quando o `hideSplash` finalmente roda, a tela abaixo ainda está montando os Providers → aparece o `lcp-shell` preto por mais alguns frames.
 
-1. **Uma mensagem única e imutável** por cliente por dia:
-   > "Olá! 👋 Cardápio, preços e status da *{storeName}* aqui: {link}\n\n{status_horario}\n\n_Responda PARAR para não receber._"
-2. **Zero intent detection.** Remove regex de "cardápio/oi/sim/quero". Qualquer inbound = mesma resposta (1x/24h).
-3. **Silêncio após o link.** Se já enviou saudação nas últimas 24h para aquele número, o bot **não responde nada** — nem `menu`, nem "posso ajudar". Corta o loop bot↔cliente.
-4. **Skip primeiro contato**: número sem histórico só recebe saudação na **2ª msg em 10min**. Curioso/engano/spam nem gera envio.
-5. **Confirmação de pedido substitui saudação**: se o número tem pedido ativo no dia, marca `greeted_today=true` e pula qualquer auto-reply — cliente só recebe transacional.
-6. **Opt-out global**: qualquer msg contendo "parar/sair/pare/remover" grava `opt_out=true` em `whatsapp_send_log` (nova coluna ou tabela `whatsapp_optouts`); consulta obrigatória antes de qualquer `auto_reply`.
+**Ação.**
+- Reduzir `launchShowDuration` para `2000` como cinto de segurança.
+- Chamar `hideSplash()` **imediatamente após o primeiro `render` do React** (dentro do `main.tsx`, antes mesmo dos Providers montarem os useEffects) — hoje ele está dentro do `useEffect` do `App`, o que só dispara depois do mount.
+- Remover o `setTimeout(250)` do App — o RAF duplo já garante o primeiro paint.
+- Substituir o `lcp-shell` preto por um shell que **combina com a splash laranja** (mesmo `#FF6B00`), de modo que a troca visual seja invisível.
 
-**Templates transacionais (`templates.ts`)**
-- Manter os 5 templates atuais (preparando, pronto, saiu, entregue, cancelado).
-- Adicionar **rodapé opt-out** só na primeira msg de um pedido: "_Responda PARAR para não receber._"
+**Ganho estimado:** percepção de -1 a -1,5s (o app "abre" quando o primeiro paint acontece, não quando terminam todos os providers).
 
 ---
 
-## Fase 3 — UI do painel WhatsApp (mesma janela)
+## Frente 2 — Firebase Web SDK fora do boot do APK
 
-**`WhatsAppNotifications.tsx` — reescrever a seção "Resposta automática"**
-- Trocar copy atual (que promete "5 saudações rotativas + link após 2s") por:
-  > "Quando um cliente manda mensagem, o bot envia **uma vez por dia** uma saudação com o link do seu cardápio e o status (aberto/fechado). Se o cliente insistir, o bot fica em silêncio — o atendimento fica com você."
-- Remover a caixa "Modo anti-bloqueio ativo" mentirosa (o modo passa a ser o padrão real).
-- Adicionar bullets curtos: "1 saudação por cliente / 24h · Silêncio após o link · Respeita PARAR · Pula clientes com pedido do dia".
+**Problema.** `src/contexts/AuthContext.tsx` faz `import { requestPushPermissionAndRegister, onForegroundMessage } from "@/lib/firebase"` **síncrono no topo**. Isso puxa `firebase/app` + `firebase/messaging` (~120-180KB gz) para dentro do chunk crítico do boot — em Capacitor eles nunca são usados (push nativo é `@capacitor/push-notifications`).
 
-**Novo card "Saúde do chip" (topo da aba Conexão)**
-- Dias conectado, envios hoje / limite da fase (20 semana 1 · 50 semana 2 · 100 semana 3-4 · 150 mês 2 · 200 mês 3+).
-- Barra de progresso: verde <70% · amarelo 70-90% · vermelho >90%.
-- Última desconexão + botão "Reconectar (novo QR)" quando `status != connected`.
-- Taxa de opt-out (últimos 30 dias).
+**Ação.**
+- Trocar por `import()` dinâmico dentro do `useEffect` que registra push, **e só executá-lo quando `!isCapacitorNative()`** (no APK Parceiro, Firebase Web nunca precisa carregar).
+- Fazer o mesmo com `gonative` (só faz sentido em wrapper GoNative/Median, não em Capacitor).
 
-**`WhatsAppTemplates.tsx`** — sem mudança estrutural, só ajustar a copy do banner azul topo para reforçar que **templates só são enviados em eventos de pedido**, nunca em resposta a msg do cliente.
-
-**Nova aba (opcional, futuro) "Histórico"** — placeholder por enquanto, alimentada quando `whatsapp_messages` for populada.
+**Ganho estimado:** -400ms a -800ms de parse+execute no bundle crítico.
 
 ---
 
-## Fase 4 — Observabilidade (paralelo à Fase 2)
+## Frente 3 — Enxugar o `App.tsx` para o APK Parceiro
 
-- Popular `whatsapp_messages` (in + out) no `evolution-webhook` e no `evolution-send-message`.
-- Coluna `skip_reason` em `whatsapp_send_log` com valores: `dedupe_24h`, `first_contact`, `opt_out`, `daily_limit`, `has_active_order`, `outside_hours`. Lojista entende por que uma msg não saiu.
+**Problema.** Antes de qualquer rota renderizar, o `App` monta em cadeia: `QueryClientProvider → TooltipProvider → ThemeProvider → AuthProvider → StoreProvider → CartProvider → Toaster → GlobalRealtimeSync → CapacitorPermissionsOnboarding → InstallPrompt → NotificationPrompt → DebugOverlay → BrowserRouter → PushNavigator → RecoveryRedirect → CapacitorRouteGuard → StoreAppGuard → TermsChecker → ClientPinChecker → DownloadAppPrompt → ErrorBoundary → Suspense → Routes`. No Parceiro, vários **não têm razão de existir**: `InstallPrompt` (PWA), `DownloadAppPrompt` (banner "baixe o app"), `StoreAppGuard` (guard de app cliente/loja) e `CartProvider` (carrinho de cliente).
 
----
+**Ação.** Adicionar um único gate no `App` (`isPartnerNative`) e:
+- Não montar `InstallPrompt`, `DownloadAppPrompt`, `NotificationPrompt` (web-only), nem `CartProvider` no Parceiro.
+- Fazer `GlobalRealtimeSync`, `CapacitorPermissionsOnboarding`, `TermsChecker`, `ClientPinChecker`, `RecoveryRedirect` serem lazy via `React.lazy` + montados **depois** do primeiro paint (via `useEffect` com `requestIdleCallback` que troca um `showAncillary` de false → true).
+- Manter apenas o essencial no caminho crítico: `Query → Theme → Auth → Router → Routes`.
 
-## Fase 5 — Escala (só quando precisar, P3)
-
-- Rotação de instância por loja quando volume real > 150/dia consistente.
-- **Cloud API oficial** como upgrade pago (BSP: Z-API Cloud, Take Blip, Gupshup). Migração do número existente exige deslogar do WhatsApp app + verificação CNPJ + downtime de horas — só oferecer para lojas que realmente precisam.
-
----
-
-## O que NÃO vamos fazer
-- IA gerando resposta livre para cada msg do cliente.
-- Broadcast/promoção pelo Baileys.
-- Menu "digite 1 para…" no auto-reply.
-- Múltiplas saudações rotativas fingindo ser humano (não engana e queima chip).
+**Ganho estimado:** -600ms a -1,2s (menos árvore para reconciliar no primeiro render).
 
 ---
 
-## Volume esperado (Cantinho da Silvia)
-- Hoje: 72 msgs/dia, 97% saudação → trajetória de ban em 2-4 semanas.
-- Com o plano: ~30-50 msgs/dia (1 saudação por número único + 2-3 transacionais por pedido real) → chip vive meses.
+## Frente 4 — Chunk específico do Parceiro + preload da rota inicial
+
+**Problema.**
+- O `manualChunks` do `vite.config.ts` agrupa vendors bem, mas o **chunk da rota inicial** (`PartnerLogin`) só começa a baixar depois que o `main.tsx` executa e o `Suspense` percebe a rota. Zero overlap com o boot.
+- O APK carrega recharts/leaflet/lucide inteiros mesmo em telas do Parceiro que não usam.
+- `lucide-react` como manualChunk único força o bundle inteiro dos ícones no boot; tree-shaking morre quando você usa manualChunks estático.
+
+**Ação.**
+- Emitir `<link rel="modulepreload">` para o chunk de `PartnerLogin` (e `DriverDashboardV2` / `AdminDashboardV2` conforme heurística de "última rota") direto no `index.html` gerado — via um plugin Vite pequeno que lê o `manifest.json` do build.
+- Remover `icons: ["lucide-react"]` do `manualChunks` para permitir tree-shaking real. Reagrupar `charts: ["recharts"]` só como chunk async (já é usado só em telas admin).
+- Adicionar variável `VITE_CAPACITOR_APP_MODE=parceiro` no workflow `build-android.yml` e usar um pequeno plugin de build que **remove imports** de rotas de cliente (`StoreDirectory`, `StorePage`, `CartPage`, `CheckoutPage`, `ClientHome`, `LandingPage`, `BlogIndex`, `BlogPost`, `VagaPromoPage`) do bundle Parceiro, deixando stubs que redirecionam. Isso corta ~30-40% do JS distribuído.
+
+**Ganho estimado:** -1s a -2s no cold start real (menos bytes para baixar do storage local do webview, menos parse).
 
 ---
 
-## Ordem de deploy
-1. **Deploy 1 (esta semana)**: Fase 1 completa (backend + índices).
-2. **Deploy 2 (3-5 dias depois, após ver métricas)**: Fase 2 (uma-msg + silêncio) + Fase 3 (UI do painel) + Fase 4 (observabilidade).
-3. **Fase 5**: sob demanda, loja a loja.
+## Frente 5 — OTA verdadeiramente "background-only"
+
+**Problema.** OTA já está bem configurado (`autoUpdate: true`, `directUpdate: true`, `getLatest` em `requestIdleCallback`). Porém `directUpdate: true` **aplica** o bundle assim que o download termina — se isso cai no meio da primeira sessão, o webview recarrega e o usuário vê "abriu de novo". E `notifyAppReady()` está dentro de `nativeBoot()` que roda **depois** do `requestIdleCallback` — em execuções muito lentas isso pode passar do watchdog de 10s do plugin e disparar rollback no próximo boot (falso "OTA não funciona").
+
+**Ação.**
+- Trocar `directUpdate: true` por `directUpdate: false` e aplicar somente no próximo `appStateChange` para `background` (já é o comportamento default do plugin) — evita reload no meio da sessão.
+- Mover `CapacitorUpdater.notifyAppReady()` para **antes** de qualquer `requestIdleCallback`, logo depois do `initCapacitorNative()`. É uma chamada barata (<5ms) e é o que impede rollback.
+- Manter `getLatest()` em idle callback (já está).
+
+**Ganho estimado:** confiabilidade do OTA (zero rollbacks acidentais) + fim do reload no meio da sessão.
+
+---
+
+## Ordem de execução
+
+1. Frente 1 (splash) + Frente 5 (OTA `notifyAppReady`) — 15 min, ganho imediato de percepção.
+2. Frente 2 (Firebase lazy) — 20 min, ganho de bytes no chunk crítico.
+3. Frente 3 (enxugar App.tsx para Parceiro) — 40 min, ganho de tempo de render.
+4. Frente 4 (chunk do Parceiro + modulepreload) — 60 min, maior ganho de tempo de download/parse.
+
+Cada frente é independente e pode ser validada isoladamente medindo o cold start com `adb shell am start -W` no APK.
 
 ---
 
 ## Detalhes técnicos
-- Todas as mudanças de dados em **Supabase externo `qkjhguziuchqsbxzruea`** (não Lovable Cloud).
-- Migração via `scripts/*.sql` executada pelo caminho já usado no projeto.
-- Edge functions afetadas: `evolution-send-message`, `evolution-webhook`, `zapi-webhook` (paridade).
-- Nenhuma mudança em `orderNotifications.ts` (transacional continua igual).
-- Bump de versão do app conforme regra do projeto ao final do Deploy 2 (Perfil + `build.gradle`).
 
----
+**Arquivos que mudam:**
+- `capacitor.config.ts` — `launchShowDuration: 2000`, `directUpdate: false`.
+- `src/main.tsx` — chamar `hideSplash()` logo após `createRoot(...).render(...)`, atrás de um `requestAnimationFrame` duplo.
+- `src/App.tsx` — remover `hideSplash` do useEffect (já feito acima); introduzir `isPartnerNative` gate; envolver Providers cliente-only em condicional; `React.lazy` + montagem deferida para components ancillary.
+- `src/contexts/AuthContext.tsx` — remover imports estáticos de `@/lib/firebase` e `@/lib/gonative`; usar `import()` dinâmico dentro dos `useEffect` guardado por `!isCapacitorNative()`.
+- `src/lib/nativeBoot.ts` — mover `notifyAppReady()` para fora do `nativeBoot`, exposto como função separada chamada logo em `initCapacitorNative()`.
+- `vite.config.ts` — remover `icons` de `manualChunks`; adicionar plugin `modulepreload` para rota inicial baseado em `VITE_CAPACITOR_APP_MODE`; opcionalmente plugin `virtual:client-stub` que substitui páginas de cliente por redirect no build Parceiro.
+- `.github/workflows/build-android.yml` — passar `VITE_CAPACITOR_APP_MODE=parceiro` para o `vite build` do APK Parceiro.
+- Bump de versão `1.11.41 → 1.11.42` + `versionCode 795 → 796`.
 
-## Segurança (checagem obrigatória ao final)
-- Confirmar que `whatsapp_send_log` e `whatsapp_messages` continuam com RLS restrito ao `store_id` do lojista + service role.
-- Rodar `security--run_security_scan` após o Deploy 2.
+**Medição.** Antes/depois com:
+```text
+adb shell am start -W -n app.lovable.e8d28aded6334d74be2161c8dbe24765/.MainActivity
+```
+Métrica `TotalTime` no output. Meta: < 6000ms na Frente 4 concluída.
+
+**Sem risco de regressão:** todas as alterações são aditivas ou removem código do caminho crítico. OTA continua funcional (na verdade fica mais estável), rotas de cliente continuam existindo no APK Cliente. Nenhuma mudança de esquema, backend ou segurança.
