@@ -1,82 +1,77 @@
-# Plano — Frentes 3 + 4 (cold start Parceiro) sem quebrar nada
+# Plano — Checkout sem login por WhatsApp (piloto Itatinga)
 
-Objetivo: cortar mais **1–2 s** no cold start do APK Parceiro **sem** afetar o APK Cliente nem a versão web. Estratégia: mudanças **aditivas e reversíveis**, cada uma por trás de um gate explícito (`isPartnerNative` em runtime ou `VITE_CAPACITOR_APP_MODE` em build), com validação de build entre etapas.
+Ouvi o áudio. Resumo do que a lojista pediu: cliente reclama que precisa se cadastrar. Ela quer o fluxo do "Insta Delivery": monta o pedido, e só no fim informa nome, telefone (WhatsApp) e endereço (com CEP). Se o telefone já for reconhecido, puxar o endereço automaticamente. Ligar isso **apenas para Itatinga** por enquanto e, se der certo, expandir.
 
----
+## Objetivo
+Permitir finalizar pedido **sem criar conta**. Identificação por telefone; endereço salvo por telefone é reaproveitado nas próximas compras.
 
-## Etapa A — Detecção síncrona do modo Parceiro
+## Escopo do piloto
+- Ativar somente em lojas da cidade **Itatinga** (feature flag por `city_slug` ou por loja).
+- Nada muda para as demais cidades.
+- Cliente logado continua usando o fluxo atual (endereços salvos, fidelidade etc.).
 
-**Por quê.** Hoje `getCapacitorAppMode()` mistura runtime + storage + `App.getInfo()` async. Para gate no `App.tsx` precisamos de um booleano **síncrono e estável** no primeiro render, senão os componentes ancillary vão montar e desmontar (pior que não fazer nada).
+## Fluxo proposto (guest)
+1. Carrinho → botão "Finalizar pedido" **não pede login**.
+2. Tela única de checkout com 3 blocos:
+   - **WhatsApp** (input com máscara). Ao digitar 11 dígitos → busca perfil guest pelo telefone.
+     - Se achar: pré-preenche nome + último endereço, mostrando "Olá, {nome} 👋 — usar o mesmo endereço?".
+     - Se não achar: pede nome.
+   - **Endereço**: CEP → autofill (rua/bairro), nº, complemento, referência. Bairro deve bater com `neighborhood_fees` da loja (tarifa de entrega).
+   - **Pagamento**: PIX / dinheiro / cartão na entrega (mesmo do fluxo atual).
+3. Confirmar → cria pedido vinculado ao telefone (sem `user_id`).
+4. Acompanhamento do pedido via link enviado no WhatsApp + tela `/pedido/{codigo}` acessível por telefone+código (sem login).
 
-**Ação.** Adicionar em `capacitorAppMode.ts` uma função `isPartnerNativeSync()` que só olha:
-1. `import.meta.env.VITE_CAPACITOR_APP_MODE === "parceiro"` (build time — infalível quando o workflow setar), OU
-2. `window.__CAP_PARTNER_REDIRECTED` (já setado pelo `main.tsx` no rewrite de `/` → `/portal-parceiro`), OU
-3. `localStorage.cap_app_mode === "partner"` (sessão anterior).
+## Backend (Supabase externo `qkjhguziuchqsbxzruea`)
+- Nova tabela `guest_customers` (telefone normalizado E.164 como chave):
+  - `phone` (unique), `name`, `last_address_json`, `store_id_first_seen`, `city_slug`, `created_at`, `updated_at`.
+- Nova tabela `guest_addresses` (histórico, 1 telefone → N endereços):
+  - `phone`, `label`, `cep`, `street`, `number`, `complement`, `neighborhood`, `reference_point`, `is_last_used`.
+- Ajuste em `orders`:
+  - `guest_phone`, `guest_name` (nullable) — usados quando `user_id IS NULL`.
+- **RLS**: leitura/gravação somente via **Edge Function** `guest-checkout` com `service_role`. Nada exposto ao cliente via PostgREST anon (evita enumerar telefones).
+- Edge Functions novas:
+  - `guest-lookup` (POST `{phone}`) → devolve `{name, lastAddress}` **ou 404**. Rate-limit por IP (ex.: 10/min) para não virar vetor de enumeração.
+  - `guest-checkout` (POST): valida telefone, cria/atualiza `guest_customers`+`guest_addresses`, cria `order`, retorna `orderCode` + token curto de acompanhamento.
+  - `guest-order-status` (GET `{code, phoneLast4}`) → status do pedido sem login.
 
-Sem async, sem `App.getInfo()`. Se qualquer um for true → partner. Falso-negativo é seguro (só perde a otimização, não quebra nada).
+## Frontend
+- Feature flag: `store.city_slug === "itatinga"` **e** `store.guest_checkout_enabled = true` (novo bool, default false).
+- Novo componente `<GuestCheckoutForm />` reaproveitando `SavedAddressPicker`/`fetchCep`.
+- Roteamento: se flag ativa e usuário deslogado, `CheckoutPage` renderiza fluxo guest em vez de redirecionar para `/auth`.
+- Página pública `/p/{orderCode}` para acompanhamento (sem sessão).
+- Notificação WhatsApp com link do pedido (usa fluxo existente `src/lib/whatsapp.ts`).
 
-**Risco.** Zero — é uma função nova, não altera comportamento existente.
+## Segurança
+- Telefone normalizado + validado (regex BR).
+- `guest-lookup` **não** revela se telefone existe para outra loja — só devolve dados se a última compra for na mesma loja/cidade.
+- Rate-limit + captcha invisível se abusar.
+- LGPD: aviso curto "ao continuar você concorda com os Termos". Guardar `consent_at`.
+- Pedidos guest **não** entram em programa de fidelidade nem cupom recorrente (evita fraude).
+- Fraude: reaproveitar `src/lib/fraudCheck.ts` por telefone + IP.
 
----
+## Rollout
+1. Migration + Edge Functions no Supabase externo.
+2. Ativar flag apenas para as lojas de Itatinga.
+3. Monitorar por 1–2 semanas: taxa de conversão carrinho→pedido, chamados de suporte, fraude.
+4. Se ok, expor a flag para lojistas de outras cidades habilitarem.
 
-## Etapa B — Gate `showAncillary` no `App.tsx`
+## Fora do escopo (agora)
+- Login mágico por SMS/OTP (fica para v2 se necessário).
+- Migrar guest para conta permanente (fluxo "criar conta a partir do último pedido" — v2).
+- Mudança do fluxo padrão em outras cidades.
 
-**Por quê.** Hoje todos estes componentes montam no primeiro render, mesmo no Parceiro: `InstallPrompt`, `NotificationPrompt`, `DownloadAppPrompt`, `GlobalRealtimeSync`, `CapacitorPermissionsOnboarding`, `TermsChecker`, `ClientPinChecker`, `RecoveryRedirect`, `StoreAppGuard`, `DebugOverlay`.
+## Detalhes técnicos (resumo)
 
-**Ação.**
-- Introduzir `const [showAncillary, setShowAncillary] = useState(false)` que vira `true` via `requestIdleCallback` (fallback `setTimeout(800)`).
-- Envolver o bloco de componentes ancillary em `{showAncillary && <>…</>}`.
-- Adicionalmente, no Parceiro (`isPartnerNativeSync()`), **nunca** montar: `InstallPrompt`, `NotificationPrompt`, `DownloadAppPrompt` (banners web-only).
-- `CartProvider`, `StoreProvider` continuam eager — muitos hooks dependem deles (StorePage, CartPage), remover quebraria rotas de cliente do bundle compartilhado. Mantidos.
+```text
+[Carrinho] → [Checkout Guest]
+                │
+                ├─ phone(11d) ──► guest-lookup ──► preenche nome+endereço
+                │
+                ├─ CEP ──► viacep ──► autofill
+                │
+                └─ [Confirmar] ──► guest-checkout ──► order criada
+                                                        │
+                                                        └─► WhatsApp com link /p/{code}
+```
 
-**Risco baixo.** Componentes ancillary não são visíveis nos primeiros 800 ms de qualquer forma (splash cobre). O único efeito colateral possível: `TermsChecker` mostra modal 800 ms depois — aceitável. `RecoveryRedirect` só age quando URL tem token de recovery — deferir 800 ms é irrelevante.
-
-**Validação:** build + smoke-test na rota `/portal-parceiro` no preview.
-
----
-
-## Etapa C — Prefetch inteligente ao invés de "excluir chunks"
-
-**Por quê.** O plano original propunha um plugin Vite que substituía páginas de cliente por stubs no APK Parceiro. **Isso é frágil**: quebra fácil qualquer `import` cruzado (ex.: um util que uma página cliente exporta e uma partner importa), força manter duas listas paralelas de rotas e complica debugging. **Não vale o risco.**
-
-**Ação alternativa (mais segura, ganho quase igual).** Como as rotas já são todas `React.lazy`, cada página é um chunk async separado. O que importa no cold start é **quais chunks o webview baixa nos primeiros 2 s**. Vamos:
-
-1. Emitir `<link rel="modulepreload">` para os chunks certos **no `index.html` gerado**, via plugin Vite mínimo:
-   - Se `VITE_CAPACITOR_APP_MODE=parceiro` → preload `PartnerLogin` + `AdminDashboardV2` + `DriverDashboardV2`.
-   - Se `cliente` ou vazio → preload `StoreDirectory` + `ClientHome`.
-2. Garantir no workflow `build-android.yml` que o build Parceiro roda com `VITE_CAPACITOR_APP_MODE=parceiro`.
-3. Confirmar que `App.tsx` já faz o prefetch das outras rotas do parceiro em idle (já faz — linhas 291-316).
-
-**Risco.** Zero — `modulepreload` é meramente uma dica ao browser, mesmo se apontar para chunk errado o app funciona (só perde a otimização).
-
-**Ganho estimado:** -800 ms a -1,5 s no tempo até a rota inicial ser interativa (chunks baixam em paralelo com o parse do main bundle, não sequencialmente).
-
----
-
-## Etapa D — Auditoria pós-mudança
-
-Após A+B+C:
-1. `bun run build` local (garante build passa).
-2. Verificar visualmente `/portal-parceiro` e `/` no preview web (nenhum banner deve sumir na web — o gate é `isPartnerNativeSync`, que retorna false no browser).
-3. Bump para **v1.11.43** / `versionCode 797`.
-4. Rodar o workflow Android e medir cold start real com `adb shell am start -W` na próxima abertura.
-5. Rápida revisão de segurança conforme sua preferência: confirmar que o gate `isPartnerNativeSync` não expõe nenhum path admin ao usuário errado (é só sobre montar UI ancillary, não sobre RoleGuard/policies — estes ficam intactos).
-
----
-
-## O que NÃO vou fazer
-
-- ❌ Plugin Vite que remove/stubba páginas — alto risco de quebrar imports cruzados.
-- ❌ Remover `StoreProvider` ou `CartProvider` do Parceiro — hooks espalhados em rotas compartilhadas quebrariam.
-- ❌ Mexer em `RoleGuard`, RLS, edge functions ou qualquer camada de segurança.
-- ❌ Trocar router, QueryClient, tema ou qualquer coisa que force retest de tudo.
-
-## Arquivos que mudam
-
-- `src/lib/capacitorAppMode.ts` — adiciona `isPartnerNativeSync()`.
-- `src/App.tsx` — gate `showAncillary` + gate `isPartnerNative` para banners.
-- `vite.config.ts` — pequeno plugin `modulepreload-initial-route` que lê `VITE_CAPACITOR_APP_MODE` e injeta `<link rel="modulepreload">` no HTML final.
-- `.github/workflows/build-android.yml` — passar `VITE_CAPACITOR_APP_MODE=parceiro` (se ainda não passa) no step do build Parceiro.
-- `src/lib/appVersion.ts` + `android/app/build.gradle` — bump 1.11.43 / vc 797.
-
-Tudo reversível com um único revert por arquivo.
+Aguardo aprovação para implementar. Nada foi alterado ainda.
