@@ -23,8 +23,12 @@ Deno.serve(async (req) => {
     if (!orderId || last4.length !== 4) return json({ error: "invalid_params" }, 400);
 
     const sb = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+      (Deno.env.get("EXTERNAL_SUPABASE_URL") || Deno.env.get("SUPABASE_URL"))!,
+      (
+        Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") ||
+        Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY") ||
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")
+      )!,
       { auth: { persistSession: false } },
     );
 
