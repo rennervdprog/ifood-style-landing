@@ -72,7 +72,13 @@ const GuestCheckoutPage = () => {
 
   const matchedFee = useMemo(() => {
     if (!neighborhood || !fees) return 0;
-    const m = (fees as any[]).find((f) => f.name.toLowerCase() === neighborhood.trim().toLowerCase());
+    const norm = (s: string) =>
+      s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s+/g, " ").trim();
+    const target = norm(neighborhood);
+    const list = fees as any[];
+    const m =
+      list.find((f) => norm(f.name) === target) ||
+      list.find((f) => norm(f.name).includes(target) || target.includes(norm(f.name)));
     return Number(m?.fee || 0);
   }, [neighborhood, fees]);
 
