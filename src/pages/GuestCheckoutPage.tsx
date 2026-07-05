@@ -10,6 +10,8 @@ import { ArrowLeft, MapPin, CreditCard, Banknote, QrCode, Search, Loader2, Shopp
 import { formatCep, fetchCep } from "@/lib/location";
 import { maskWhatsApp } from "@/lib/whatsapp";
 import { formatBRL, addMoney } from "@/lib/utils";
+import { calculateStoreOwnDeliveryFee, calculateDeliveryFee, DEFAULT_DELIVERY_FEE_CONFIG, type DeliveryFeeConfig } from "@/lib/deliveryFee";
+import { useStorePlan } from "@/hooks/useStorePlan";
 import confetti from "canvas-confetti";
 
 const PAY_METHODS = [
@@ -22,6 +24,7 @@ const GuestCheckoutPage = () => {
   const navigate = useNavigate();
   const { items, subtotal, clearCart } = useCart();
   const storeId = items[0]?.store_id;
+  const storePlan = useStorePlan(storeId);
 
   const [phone, setPhone] = useState("");
   const [name, setName] = useState("");
@@ -50,44 +53,79 @@ const GuestCheckoutPage = () => {
     queryFn: async () => {
       const { data } = await supabase
         .from("stores")
-        .select("id, name, address_city, minimum_order_value, own_delivery_fee, delivery_mode")
+        .select("id, name, address_city, minimum_order_value, own_delivery_fee, delivery_mode, delivery_fee_type, delivery_base_km, delivery_fee_base, delivery_fee_per_km, address_cep, latitude, longitude, free_delivery_threshold")
         .eq("id", storeId!).maybeSingle();
       // guest_checkout_enabled não está em stores_public; consultamos direto
       const { data: gc } = await (supabase as any)
         .from("stores")
         .select("guest_checkout_enabled")
         .eq("id", storeId!).maybeSingle();
-      return { ...(data || {}), guest_checkout_enabled: gc?.guest_checkout_enabled ?? false };
+      return { ...((data as any) || {}), guest_checkout_enabled: (gc as any)?.guest_checkout_enabled ?? false };
     },
     enabled: !!storeId,
   });
 
-  const { data: fees } = useQuery({
-    queryKey: ["nb-fees"],
+  const { data: deliveryFeeConfig } = useQuery({
+    queryKey: ["delivery-fee-config-guest"],
     queryFn: async () => {
-      const { data } = await supabase.from("neighborhood_fees").select("*").order("name");
-      return data || [];
+      const { data } = await supabase
+        .from("admin_settings").select("value").eq("key", "delivery_fee_config").maybeSingle();
+      return data?.value as unknown as DeliveryFeeConfig | null;
     },
+    staleTime: 1000 * 60 * 10,
   });
 
-  const PLATFORM_FEE = 2;
-  const matchedFee = useMemo(() => {
-    // 1) tenta pela tabela neighborhood_fees (legado Itatinga)
-    if (neighborhood && fees && (fees as any[]).length > 0) {
-      const norm = (s: string) =>
-        s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s+/g, " ").trim();
-      const target = norm(neighborhood);
-      const list = fees as any[];
-      const m =
-        list.find((f) => norm(f.name) === target) ||
-        list.find((f) => norm(f.name).includes(target) || target.includes(norm(f.name)));
-      if (m) return Number(m.fee || 0);
-    }
-    // 2) fallback: taxa fixa da própria loja + taxa operacional da plataforma
-    const ownFee = Number((store as any)?.own_delivery_fee || 0);
-    if (ownFee > 0) return addMoney(ownFee, PLATFORM_FEE);
-    return 0;
-  }, [neighborhood, fees, store]);
+  const [calculatedFee, setCalculatedFee] = useState<number | null>(null);
+  const [calculatingFee, setCalculatingFee] = useState(false);
+
+  // Quanto a plataforma cobra a MAIS do cliente (respeita split "cliente/meio_a_meio/lojista")
+  const platformCustomerExtra = storePlan.platformFeeCustomerExtra ?? 2;
+  const isOwnDelivery = ((store as any)?.delivery_mode || "platform") === "own";
+  const config = deliveryFeeConfig || DEFAULT_DELIVERY_FEE_CONFIG;
+
+  // Fee: mesma lógica do checkout normal
+  //  - entrega própria (own): calculateStoreOwnDeliveryFee (fixa OU km) + platformCustomerExtra
+  //  - entrega da plataforma: calculateDeliveryFee (config global city_fee / rural)
+  useEffect(() => {
+    const s: any = store;
+    if (!s) return;
+    const customerCep = cep.replace(/\D/g, "");
+    const storeCep = (s.address_cep || "").replace(/\D/g, "");
+    let cancelled = false;
+    setCalculatingFee(true);
+    const promise = isOwnDelivery
+      ? (() => {
+          const feeType = (s.delivery_fee_type as "fixed" | "km") || "fixed";
+          if (feeType === "km" && (!customerCep || !street.trim())) {
+            return Promise.resolve<{ fee: number } | null>(null);
+          }
+          return calculateStoreOwnDeliveryFee(customerCep, storeCep, {
+            delivery_fee_type: feeType,
+            delivery_base_km: Number(s.delivery_base_km || 0),
+            delivery_fee_base: Number(s.delivery_fee_base || 0),
+            delivery_fee_per_km: Number(s.delivery_fee_per_km || 0),
+            own_delivery_fee: Number(s.own_delivery_fee || 0),
+            platform_split: platformCustomerExtra,
+            customer_street: street || null,
+            customer_number: number || null,
+            customer_neighborhood: neighborhood || null,
+            store_coords: s.latitude && s.longitude ? { lat: Number(s.latitude), lng: Number(s.longitude) } : null,
+          });
+        })()
+      : (customerCep
+          ? calculateDeliveryFee(customerCep, storeCep, config)
+          : Promise.resolve<{ fee: number } | null>(null));
+    Promise.resolve(promise)
+      .then((r) => { if (!cancelled) setCalculatedFee(r ? r.fee : null); })
+      .catch(() => { if (!cancelled) setCalculatedFee(null); })
+      .finally(() => { if (!cancelled) setCalculatingFee(false); });
+    return () => { cancelled = true; };
+  }, [store, cep, street, number, neighborhood, platformCustomerExtra, isOwnDelivery, config]);
+
+  // Frete grátis por valor mínimo (loja absorve) — igual checkout normal
+  const storeFreeThreshold = Number((store as any)?.free_delivery_threshold || 0);
+  const freeDeliveryByThreshold = storeFreeThreshold > 0 && subtotal >= storeFreeThreshold;
+  const matchedFee = freeDeliveryByThreshold ? 0 : (calculatedFee ?? 0);
 
   const total = useMemo(() => addMoney(subtotal, matchedFee), [subtotal, matchedFee]);
 
@@ -178,7 +216,7 @@ const GuestCheckoutPage = () => {
         },
         is_pickup: false,
         needs_change: payment === "dinheiro" && needsChange,
-        change_for: payment === "dinheiro" && needsChange ? Number(changeFor) : 0,
+        change_for: payment === "dinheiro" && needsChange ? Number(String(changeFor).replace(",", ".")) : 0,
         scheduled_for: null,
         consent: true,
       };
@@ -286,8 +324,22 @@ const GuestCheckoutPage = () => {
                 Preciso de troco
               </label>
               {needsChange && (
-                <input type="number" placeholder="Troco para R$" value={changeFor} onChange={(e) => setChangeFor(e.target.value)}
-                  className="w-full h-10 px-3 rounded-xl border border-border bg-background text-sm" />
+                <>
+                  <input
+                    type="text" inputMode="decimal" placeholder="Troco para R$"
+                    value={changeFor}
+                    onChange={(e) => setChangeFor(e.target.value.replace(/[^0-9.,]/g, ""))}
+                    className="w-full h-10 px-3 rounded-xl border border-border bg-background text-sm"
+                  />
+                  {changeFor && parseFloat(changeFor.replace(",", ".")) >= total && (
+                    <p className="text-xs text-muted-foreground">
+                      Seu troco: <span className="font-bold text-foreground">{formatBRL(parseFloat(changeFor.replace(",", ".")) - total)}</span>
+                    </p>
+                  )}
+                  {changeFor && parseFloat(changeFor.replace(",", ".")) < total && (
+                    <p className="text-xs text-destructive">Valor do troco deve ser maior que o total.</p>
+                  )}
+                </>
               )}
             </div>
           )}
