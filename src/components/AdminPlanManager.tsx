@@ -665,6 +665,39 @@ function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride
   const [saving, setSaving] = useState(false);
   const [expanded, setExpanded] = useState(false);
 
+  // Toggle operacional: preenchimento automático do PIN de entrega (por loja)
+  const { data: storeFlags, refetch: refetchStoreFlags } = useQuery({
+    queryKey: ["admin-store-flags", storeId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("stores")
+        .select("driver_pin_autofill" as any)
+        .eq("id", storeId)
+        .maybeSingle();
+      if (error) throw error;
+      return (data as any) as { driver_pin_autofill: boolean | null } | null;
+    },
+    enabled: expanded,
+  });
+  const pinAutofill = !!storeFlags?.driver_pin_autofill;
+  const [pinAutofillSaving, setPinAutofillSaving] = useState(false);
+  const togglePinAutofill = async () => {
+    setPinAutofillSaving(true);
+    try {
+      const { error } = await supabase
+        .from("stores")
+        .update({ driver_pin_autofill: !pinAutofill } as any)
+        .eq("id", storeId);
+      if (error) throw error;
+      await refetchStoreFlags();
+      toast.success(!pinAutofill ? "Auto-PIN ativado para esta loja." : "Auto-PIN desativado.");
+    } catch {
+      toast.error("Erro ao atualizar auto-PIN.");
+    } finally {
+      setPinAutofillSaving(false);
+    }
+  };
+
   const finalPix = pixOverrideEnabled ? pixOverride : null;
   const finalDelivery = deliveryOverrideEnabled ? deliveryOverride : null;
 
@@ -787,6 +820,26 @@ function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride
                 <span className="text-[10px] text-muted-foreground">por venda</span>
               </div>
               <p className="text-[10px] text-muted-foreground mt-1">Padrão: R$ 1,00. Use 0 para isentar.</p>
+            </div>
+          </div>
+
+          {/* Seção 2b: Operacional — Auto-PIN por loja */}
+          <div>
+            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2">🔐 Operacional</p>
+            <div className="bg-muted/20 rounded-xl p-3">
+              <label className="flex items-center justify-between cursor-pointer gap-3">
+                <div className="min-w-0">
+                  <p className="text-xs font-bold text-foreground">Auto-preencher PIN de entrega</p>
+                  <p className="text-[10px] text-muted-foreground">Quando ativo, o entregador vê o PIN já preenchido ao finalizar a entrega desta loja.</p>
+                </div>
+                <button
+                  onClick={togglePinAutofill}
+                  disabled={pinAutofillSaving}
+                  className={`relative w-10 h-5 rounded-full transition-colors shrink-0 ${pinAutofill ? "bg-primary" : "bg-muted-foreground/30"} ${pinAutofillSaving ? "opacity-50" : ""}`}
+                >
+                  <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${pinAutofill ? "left-5" : "left-0.5"}`} />
+                </button>
+              </label>
             </div>
           </div>
 
