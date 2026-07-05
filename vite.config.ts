@@ -179,7 +179,8 @@ export default defineConfig(({ mode }) => ({
           vendor:   ["react", "react-dom", "react-router-dom"],
           query:    ["@tanstack/react-query"],
           supabase: ["@supabase/supabase-js"],
-          icons:    ["lucide-react"],
+          // icons: lucide-react removido de manualChunks para permitir
+          // tree-shaking real — chunk único force o bundle inteiro no boot.
           charts:   ["recharts"],
           ui: [
             "@radix-ui/react-dialog",

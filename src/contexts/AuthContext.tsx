@@ -279,7 +279,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         registerCapacitorPush({ requestPermission: false }).catch(console.error);
         return;
       }
-      registerGoNativePlayer().catch(console.error);
+      import("@/lib/gonative")
+        .then(({ registerGoNativePlayer }) => registerGoNativePlayer().catch(console.error))
+        .catch(console.error);
     };
 
     const handleVisibilityChange = () => {
