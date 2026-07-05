@@ -104,7 +104,11 @@ Deno.serve(async (req) => {
       addressString = parts.join(", ");
     }
 
-    const deliveryPin = String(Math.floor(1000 + Math.random() * 9000));
+    const { data: pinProfile } = await sb.from("profiles")
+      .select("delivery_pin")
+      .eq("user_id", userId)
+      .maybeSingle();
+    const deliveryPin = (pinProfile as any)?.delivery_pin || String(Math.floor(1000 + Math.random() * 9000));
 
     // 3) Pedido (crítico — bloqueia a resposta)
     const { data: order, error: orderErr } = await sb.from("orders").insert({
@@ -165,8 +169,7 @@ Deno.serve(async (req) => {
             { onConflict: "user_id" },
           );
         } else {
-          const { data: prof } = await sb.from("profiles").select("delivery_pin").eq("user_id", userId).maybeSingle();
-          if (!prof || !(prof as any).delivery_pin) {
+          if (!pinProfile || !(pinProfile as any).delivery_pin) {
             await sb.from("profiles").upsert(
               { user_id: userId, delivery_pin: deliveryPin } as any,
               { onConflict: "user_id" },
