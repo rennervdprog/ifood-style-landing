@@ -4,7 +4,7 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2, RefreshCw, Info, ChevronDown, ChevronUp } from "lucide-react";
+import { Loader2, RefreshCw, Info, ChevronDown, ChevronUp, Shield } from "lucide-react";
 import WhatsAppStatusCard from "./WhatsAppStatusCard";
 
 interface Props {
@@ -20,6 +20,15 @@ const samePhone = (a?: string | null, b?: string | null) => {
   const left = onlyDigits(a).replace(/^55/, "");
   const right = onlyDigits(b).replace(/^55/, "");
   return !!left && !!right && left === right;
+};
+
+// Fases de aquecimento (P0 — mesmas do edge function evolution-send-message)
+const phaseFor = (days: number) => {
+  if (days < 7)  return { label: "Semana 1 (aquecimento)", limit: 20 };
+  if (days < 14) return { label: "Semana 2", limit: 50 };
+  if (days < 28) return { label: "Semanas 3-4", limit: 100 };
+  if (days < 56) return { label: "Mês 2", limit: 150 };
+  return { label: "Mês 3+ (chip maduro)", limit: 200 };
 };
 
 const STEPS = [
@@ -120,6 +129,44 @@ export default function WhatsAppConnection({ storeId, storeName, expectedPhone, 
         primaryLoading={qrLoading}
       />
 
+      {/* Saúde do chip — só faz sentido quando está conectado */}
+      {status === "connected" && config?.connected_at && (() => {
+        const days = Math.floor((Date.now() - new Date(config.connected_at).getTime()) / 86_400_000);
+        const phase = phaseFor(days);
+        const nextThreshold = days < 7 ? 7 : days < 14 ? 14 : days < 28 ? 28 : days < 56 ? 56 : null;
+        const daysToNext = nextThreshold ? Math.max(0, nextThreshold - days) : 0;
+        return (
+          <div className="rounded-2xl border border-border p-4 space-y-2.5">
+            <div className="flex items-center gap-2">
+              <Shield className="h-4 w-4 text-emerald-500" />
+              <p className="text-sm font-bold text-foreground flex-1">Saúde do chip</p>
+              <span className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300">
+                {days === 0 ? "Novo" : `${days}d`}
+              </span>
+            </div>
+            <div className="flex items-baseline justify-between">
+              <p className="text-xs text-muted-foreground">{phase.label}</p>
+              <p className="text-xs font-bold text-foreground">Até <span className="text-primary">{phase.limit}</span> msgs/dia</p>
+            </div>
+            <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+              <div
+                className="h-full bg-emerald-500 transition-all"
+                style={{ width: `${Math.min(100, (phase.limit / 200) * 100)}%` }}
+              />
+            </div>
+            {nextThreshold ? (
+              <p className="text-[10px] text-muted-foreground">
+                Faltam <strong>{daysToNext} dia{daysToNext !== 1 ? "s" : ""}</strong> para desbloquear a próxima fase e aumentar o limite diário.
+              </p>
+            ) : (
+              <p className="text-[10px] text-muted-foreground">
+                Chip totalmente maduro — limite máximo liberado. Mantenha o bot enxuto (1 msg/24h por cliente) e ele dura meses.
+              </p>
+            )}
+          </div>
+        );
+      })()}
+
       {/* QR Code visível durante "connecting" */}
       {status === "connecting" && config?.qr_code && (
         <div className="flex flex-col items-center gap-2 p-4 bg-white rounded-2xl border border-border">
@@ -179,7 +226,7 @@ export default function WhatsAppConnection({ storeId, storeName, expectedPhone, 
                 ⚠️ Use um número de WhatsApp <strong>exclusivo da loja</strong>. Não use seu número pessoal — ele ficará conectado neste painel.
               </p>
               <p className="text-[10px] text-muted-foreground leading-relaxed">
-                Para proteger o chip de banimento, o sistema aplica intervalos automáticos, deduplicação (1h) e limite diário progressivo: semana 1: 20/dia · semana 2: 50/dia · 3ª–4ª: 100/dia · mês 2: 150/dia · mês 3+: 200/dia.
+                Para proteger o chip de banimento, o sistema aplica intervalos automáticos, dedupe de 24h por cliente e limite diário progressivo: semana 1: 20/dia · semana 2: 50/dia · 3ª–4ª: 100/dia · mês 2: 150/dia · mês 3+: 200/dia.
               </p>
             </div>
           </div>
