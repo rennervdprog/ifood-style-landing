@@ -118,24 +118,35 @@ Deno.serve(async (req) => {
       consent_at: new Date().toISOString(),
     } as any, { onConflict: "phone" });
 
-    // 2) Endereço
+    // 2) Endereço (evita duplicar: só insere se não existir igual)
     let addressString = "Retirada na loja";
     const neighborhood = p.is_pickup ? "RETIRADA" : p.neighborhood;
     if (!p.is_pickup && p.address) {
       const a = p.address;
+      const street = a.street.trim();
+      const number = a.number.trim();
+      const nb = p.neighborhood.trim();
       try {
-        await sb.from("saved_addresses").insert({
-          user_id: userId,
-          label: a.label || "Casa",
-          cep: (a.cep || "").replace(/\D/g, "") || null,
-          street: a.street, number: a.number,
-          complement: a.complement || null,
-          neighborhood: p.neighborhood,
-          reference_point: a.reference_point || null,
-          is_default: true,
-        } as any);
+        const { data: dup } = await sb.from("saved_addresses")
+          .select("id").eq("user_id", userId)
+          .eq("street", street).eq("number", number).eq("neighborhood", nb)
+          .limit(1).maybeSingle();
+        if (!dup) {
+          // marca antigos como não-default
+          await sb.from("saved_addresses").update({ is_default: false }).eq("user_id", userId);
+          await sb.from("saved_addresses").insert({
+            user_id: userId,
+            label: a.label || "Casa",
+            cep: (a.cep || "").replace(/\D/g, "") || null,
+            street, number,
+            complement: a.complement || null,
+            neighborhood: nb,
+            reference_point: a.reference_point || null,
+            is_default: true,
+          } as any);
+        }
       } catch (_) {}
-      const parts = [a.street, a.number, a.complement, a.reference_point ? `Ref: ${a.reference_point}` : ""].filter(Boolean);
+      const parts = [street, number, a.complement, a.reference_point ? `Ref: ${a.reference_point}` : ""].filter(Boolean);
       addressString = parts.join(", ");
     }
 
