@@ -20,6 +20,7 @@ import { initRealtimeWatchdog } from "@/lib/realtimeWatchdog";
 import { initVersionWatcher } from "@/lib/versionWatcher";
 import { checkAppVersion } from "@/lib/appVersionCheck";
 import { getCapacitorAppMode } from "@/lib/capacitorAppMode";
+import { isPartnerNativeSync } from "@/lib/capacitorAppMode";
 import CapacitorRouteGuard from "@/components/CapacitorRouteGuard";
 import StoreAppGuard from "@/components/StoreAppGuard";
 import ErrorBoundary from "@/components/ErrorBoundary";
@@ -200,6 +201,23 @@ const TermsChecker = () => {
 };
 
 const App = () => {
+  // Gate síncrono para não montar UI ancillary no caminho crítico do boot.
+  // No APK Parceiro nunca mostramos banners de instalação/download/notificação
+  // de web. Os demais só sobem depois do primeiro paint (idle callback).
+  const partnerNative = isPartnerNativeSync();
+  const [showAncillary, setShowAncillary] = useState(false);
+
+  useEffect(() => {
+    const w = window as any;
+    const raise = () => setShowAncillary(true);
+    if (typeof w.requestIdleCallback === "function") {
+      const id = w.requestIdleCallback(raise, { timeout: 1200 });
+      return () => { try { w.cancelIdleCallback?.(id); } catch {} };
+    }
+    const t = setTimeout(raise, 800);
+    return () => clearTimeout(t);
+  }, []);
+
   // Anti-cache: força atualização completa quando a versão do app muda.
   // Limpa localStorage, caches do Service Worker e recarrega a página.
   useEffect(() => {
@@ -322,19 +340,19 @@ const App = () => {
         <StoreProvider>
         <CartProvider>
           <Toaster />
-          <GlobalRealtimeSync />
-          <CapacitorPermissionsOnboarding />
-          <InstallPrompt />
-          <NotificationPrompt />
-          <DebugOverlay />
+          {showAncillary && <GlobalRealtimeSync />}
+          {showAncillary && <CapacitorPermissionsOnboarding />}
+          {showAncillary && !partnerNative && <InstallPrompt />}
+          {showAncillary && !partnerNative && <NotificationPrompt />}
+          {showAncillary && <DebugOverlay />}
           <BrowserRouter>
             <PushNavigator />
-            <RecoveryRedirect />
+            {showAncillary && <RecoveryRedirect />}
             <CapacitorRouteGuard />
-            <StoreAppGuard />
-            <TermsChecker />
-            <ClientPinChecker />
-            <DownloadAppPrompt />
+            {showAncillary && !partnerNative && <StoreAppGuard />}
+            {showAncillary && <TermsChecker />}
+            {showAncillary && !partnerNative && <ClientPinChecker />}
+            {showAncillary && !partnerNative && <DownloadAppPrompt />}
             <ErrorBoundary>
             <Suspense fallback={<PageLoader />}>
               <Routes>
