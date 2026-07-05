@@ -1084,7 +1084,19 @@ const StorePage = () => {
                         ? (store as any)?.own_delivery_fee
                         : (store as any)?.delivery_fee;
                       if (baseFee == null) return "—";
-                      const platformAdd = mode === "own" ? (storePlan.platformFeeCustomerExtra ?? 0) : 0;
+                      let platformAdd = 0;
+                      if (mode === "own") {
+                        const isAutonomy = platformInfo?.plan_type === "autonomy";
+                        const baseSplit = isAutonomy
+                          ? 0
+                          : Number(platformInfo?.platform_delivery_split_override ?? storePlan.platformDeliverySplit ?? 2);
+                        const splitMode = (platformInfo?.platform_fee_split || storePlan.platformFeeSplit || "cliente") as "cliente" | "meio_a_meio" | "lojista";
+                        platformAdd = splitMode === "lojista"
+                          ? 0
+                          : splitMode === "meio_a_meio"
+                            ? Math.round((baseSplit / 2) * 100) / 100
+                            : baseSplit;
+                      }
                       const total = Number(baseFee) + platformAdd;
                       return total === 0 ? "Grátis" : `A partir de ${formatBRL(total)}`;
                     })()}
