@@ -70,6 +70,7 @@ const isAuthorizedForStore = async (admin: any, req: Request, storeId: string) =
 
 // Anti-spam params
 const DEDUPE_WINDOW_SEC = 3600;        // mesma msg p/ mesmo número
+const AUTO_REPLY_DEDUPE_WINDOW_SEC = 86400; // P0: saudação 1x por número / 24h
 const PER_STORE_MIN_GAP_MS = 12_000;   // gap mínimo entre envios da loja
 const PER_PHONE_MIN_GAP_MS = 3_000;    // gap mínimo entre envios p/ mesmo número (anti-burst de status)
 const EVOLUTION_MAX_RETRIES = 2;        // tentativas extras em falha transitória
