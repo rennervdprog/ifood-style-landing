@@ -10,6 +10,7 @@ import { ArrowLeft, MapPin, CreditCard, Banknote, QrCode, Search, Loader2, Shopp
 import { formatCep, fetchCep } from "@/lib/location";
 import { maskWhatsApp } from "@/lib/whatsapp";
 import { formatBRL, addMoney } from "@/lib/utils";
+import { calculateStoreOwnDeliveryFee } from "@/lib/deliveryFee";
 import confetti from "canvas-confetti";
 
 const PAY_METHODS = [
@@ -50,7 +51,7 @@ const GuestCheckoutPage = () => {
     queryFn: async () => {
       const { data } = await supabase
         .from("stores")
-        .select("id, name, address_city, minimum_order_value, own_delivery_fee, delivery_mode")
+        .select("id, name, address_city, minimum_order_value, own_delivery_fee, delivery_mode, delivery_fee_type, delivery_base_km, delivery_fee_base, delivery_fee_per_km, address_cep, latitude, longitude")
         .eq("id", storeId!).maybeSingle();
       // guest_checkout_enabled não está em stores_public; consultamos direto
       const { data: gc } = await (supabase as any)
@@ -71,23 +72,54 @@ const GuestCheckoutPage = () => {
   });
 
   const PLATFORM_FEE = 2;
-  const matchedFee = useMemo(() => {
-    // 1) tenta pela tabela neighborhood_fees (legado Itatinga)
-    if (neighborhood && fees && (fees as any[]).length > 0) {
-      const norm = (s: string) =>
-        s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s+/g, " ").trim();
-      const target = norm(neighborhood);
-      const list = fees as any[];
-      const m =
-        list.find((f) => norm(f.name) === target) ||
-        list.find((f) => norm(f.name).includes(target) || target.includes(norm(f.name)));
-      if (m) return Number(m.fee || 0);
+  const [calculatedFee, setCalculatedFee] = useState<number | null>(null);
+  const [calculatingFee, setCalculatingFee] = useState(false);
+
+  // 1) legado Itatinga: tabela neighborhood_fees por bairro
+  const legacyFee = useMemo(() => {
+    if (!neighborhood || !fees || (fees as any[]).length === 0) return null;
+    const norm = (s: string) =>
+      s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s+/g, " ").trim();
+    const target = norm(neighborhood);
+    const list = fees as any[];
+    const m =
+      list.find((f) => norm(f.name) === target) ||
+      list.find((f) => norm(f.name).includes(target) || target.includes(norm(f.name)));
+    return m ? Number(m.fee || 0) : null;
+  }, [neighborhood, fees]);
+
+  // 2) lógica do lojista (fixa OU por km) — mesma do checkout normal
+  useEffect(() => {
+    if (legacyFee != null) { setCalculatedFee(legacyFee); return; }
+    const s: any = store;
+    if (!s) return;
+    const customerCep = cep.replace(/\D/g, "");
+    const storeCep = (s.address_cep || "").replace(/\D/g, "");
+    const feeType = (s.delivery_fee_type as "fixed" | "km") || "fixed";
+    // fixa: dá pra calcular sem CEP; km: precisa CEP + rua
+    if (feeType === "km" && (!customerCep || !street.trim())) {
+      setCalculatedFee(null); return;
     }
-    // 2) fallback: taxa fixa da própria loja + taxa operacional da plataforma
-    const ownFee = Number((store as any)?.own_delivery_fee || 0);
-    if (ownFee > 0) return addMoney(ownFee, PLATFORM_FEE);
-    return 0;
-  }, [neighborhood, fees, store]);
+    let cancelled = false;
+    setCalculatingFee(true);
+    calculateStoreOwnDeliveryFee(customerCep, storeCep, {
+      delivery_fee_type: feeType,
+      delivery_base_km: Number(s.delivery_base_km || 0),
+      delivery_fee_base: Number(s.delivery_fee_base || 0),
+      delivery_fee_per_km: Number(s.delivery_fee_per_km || 0),
+      own_delivery_fee: Number(s.own_delivery_fee || 0),
+      platform_split: PLATFORM_FEE,
+      customer_street: street || null,
+      customer_number: number || null,
+      customer_neighborhood: neighborhood || null,
+      store_coords: s.latitude && s.longitude ? { lat: Number(s.latitude), lng: Number(s.longitude) } : null,
+    }).then((r) => { if (!cancelled) setCalculatedFee(r.fee); })
+      .catch(() => { if (!cancelled) setCalculatedFee(null); })
+      .finally(() => { if (!cancelled) setCalculatingFee(false); });
+    return () => { cancelled = true; };
+  }, [store, legacyFee, cep, street, number, neighborhood]);
+
+  const matchedFee = calculatedFee ?? 0;
 
   const total = useMemo(() => addMoney(subtotal, matchedFee), [subtotal, matchedFee]);
 
