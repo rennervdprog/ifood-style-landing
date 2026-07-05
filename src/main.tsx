@@ -1,5 +1,3 @@
-import { initSentry } from "./lib/sentry";
-import { initAnalytics } from "./lib/analytics";
 import { assertExternalBackend } from "./lib/externalBackend";
 
 assertExternalBackend();
@@ -26,9 +24,6 @@ declare global {
   }
 }
 
-initSentry();
-initAnalytics();
-
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
@@ -36,6 +31,33 @@ import { HelmetProvider } from "react-helmet-async";
 
 // Apply native-app class globally for GoNative/Median/Capacitor apps
 import { Capacitor } from "@capacitor/core";
+
+// 🚀 Cold-start: no APK Parceiro, se a URL inicial é "/" (rota padrão do
+// Capacitor), reescreve para /portal-parceiro ANTES do React montar.
+// Evita carregar o chunk pesado de StoreDirectory + queries de lojas/cidades
+// só pra o RouteGuard redirecionar depois. Economiza ~1-2s no cold start.
+try {
+  const isCap = Capacitor.isNativePlatform?.();
+  const appId = (Capacitor as any).getAppId?.() || "";
+  const mode = import.meta.env.VITE_CAPACITOR_APP_MODE;
+  const isPartner = mode === "parceiro" || appId.includes("parceiro");
+  if (isCap && isPartner && (location.pathname === "/" || location.pathname === "/index")) {
+    history.replaceState(null, "", "/portal-parceiro" + location.search + location.hash);
+  }
+} catch {}
+
+// 🚀 Sentry + Analytics saem do caminho crítico do boot — carregados só
+// depois do primeiro paint via requestIdleCallback (evita bloquear ~150KB
+// de JS no cold start do APK).
+const bootObservability = () => {
+  import("./lib/sentry").then(({ initSentry }) => initSentry()).catch(() => {});
+  import("./lib/analytics").then(({ initAnalytics }) => initAnalytics()).catch(() => {});
+};
+if (typeof (window as any).requestIdleCallback === "function") {
+  (window as any).requestIdleCallback(bootObservability, { timeout: 3000 });
+} else {
+  setTimeout(bootObservability, 1500);
+}
 
 // PWA: aggressively reset stale service workers in preview/iframe contexts
 // AND inside Capacitor native (PWA features are redundant — the OS handles install/push).
