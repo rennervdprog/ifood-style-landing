@@ -29,7 +29,7 @@ Deno.serve(async (req) => {
     );
 
     const { data: order } = await sb.from("orders")
-      .select("id, client_id, status, total_price, subtotal, delivery_fee, payment_method, address_details, neighborhood, created_at, store_id, is_guest")
+      .select("id, client_id, status, total_price, subtotal, delivery_fee, payment_method, address_details, neighborhood, created_at, store_id, is_guest, delivery_pin")
       .eq("id", orderId).maybeSingle();
     if (!order || !(order as any).is_guest) return json({ error: "not_found" }, 404);
 
@@ -44,7 +44,7 @@ Deno.serve(async (req) => {
     const { data: profile } = await sb.from("profiles")
       .select("delivery_pin").eq("user_id", (order as any).client_id).maybeSingle();
 
-    let deliveryPin = (profile as any)?.delivery_pin || null;
+    let deliveryPin = (order as any)?.delivery_pin || (profile as any)?.delivery_pin || null;
     if (!deliveryPin) {
       deliveryPin = makePin();
       const { error: pinErr } = await sb.from("profiles").upsert(
