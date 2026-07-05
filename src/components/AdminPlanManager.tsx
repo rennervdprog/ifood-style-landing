@@ -936,6 +936,12 @@ function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride
                   {finalDelivery === null ? "R$ 2,00 (padrão)" : `R$ ${Number(finalDelivery).toFixed(2).replace(".", ",")}`}
                 </span>
               </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-muted-foreground">Auto-PIN entrega</span>
+                <span className={`font-bold ${pinAutofill ? "text-emerald-500" : "text-foreground"}`}>
+                  {pinAutofill ? "Ativado" : "Desativado"}
+                </span>
+              </div>
               <p className="text-[10px] text-muted-foreground italic">
                 ℹ️ Taxa de entrega só é cobrada da loja quando o split de plataforma é "loja". Se o cliente paga a taxa, este valor não é debitado.
               </p>
