@@ -259,7 +259,10 @@ const GuestCheckoutPage = () => {
         confetti({ particleCount: 120, spread: 80, origin: { y: 0.7 } });
       }).catch(() => {});
       toast.success("Pedido enviado!");
-      navigate(`/p/${res.order_id}?t=${res.phone_last4}`, { replace: true });
+      navigate(`/p/${res.order_id}?t=${res.phone_last4}`, {
+        replace: true,
+        state: { delivery_pin: res.delivery_pin || null },
+      });
     } catch (e: any) {
       toast.error(e?.message || "Erro ao finalizar pedido.");
     } finally { setSubmitting(false); }
