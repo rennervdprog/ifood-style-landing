@@ -665,6 +665,39 @@ function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride
   const [saving, setSaving] = useState(false);
   const [expanded, setExpanded] = useState(false);
 
+  // Toggle operacional: preenchimento automático do PIN de entrega (por loja)
+  const { data: storeFlags, refetch: refetchStoreFlags } = useQuery({
+    queryKey: ["admin-store-flags", storeId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("stores")
+        .select("driver_pin_autofill")
+        .eq("id", storeId)
+        .maybeSingle();
+      if (error) throw error;
+      return data as { driver_pin_autofill: boolean | null } | null;
+    },
+    enabled: expanded,
+  });
+  const pinAutofill = !!storeFlags?.driver_pin_autofill;
+  const [pinAutofillSaving, setPinAutofillSaving] = useState(false);
+  const togglePinAutofill = async () => {
+    setPinAutofillSaving(true);
+    try {
+      const { error } = await supabase
+        .from("stores")
+        .update({ driver_pin_autofill: !pinAutofill } as any)
+        .eq("id", storeId);
+      if (error) throw error;
+      await refetchStoreFlags();
+      toast.success(!pinAutofill ? "Auto-PIN ativado para esta loja." : "Auto-PIN desativado.");
+    } catch {
+      toast.error("Erro ao atualizar auto-PIN.");
+    } finally {
+      setPinAutofillSaving(false);
+    }
+  };
+
   const finalPix = pixOverrideEnabled ? pixOverride : null;
   const finalDelivery = deliveryOverrideEnabled ? deliveryOverride : null;
 
