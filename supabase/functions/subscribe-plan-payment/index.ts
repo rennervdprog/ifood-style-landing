@@ -199,6 +199,7 @@ Deno.serve(async (req) => {
     const paymentBody = {
       customer: customerId,
       billingType: "PIX",
+      notificationDisabled: true,
       value: Number(plan.monthly_fee),
       dueDate: dueDateStr,
       description: `${planLabel} - ${store.name} - ${referenceCode}`.substring(0, 140),

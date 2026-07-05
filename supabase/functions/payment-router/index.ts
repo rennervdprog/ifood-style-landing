@@ -347,6 +347,7 @@ async function createAsaasPix(supabase: any, params: {
     const paymentBody: Record<string, unknown> = {
       customer: customerId,
       billingType: "PIX",
+      notificationDisabled: true,
       value: params.amount,
       dueDate: dueDateStr,
       description: params.description.substring(0, 500),

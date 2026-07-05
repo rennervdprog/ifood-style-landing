@@ -282,6 +282,7 @@ Deno.serve(async (req) => {
         const chargeBody: any = {
           customer: customerId,
           billingType: "PIX",
+      notificationDisabled: true,
           value: totalAmount,  // mensalidade + comissão PDV acumulada
           dueDate: dueDateStr,
           description: description.substring(0, 256),

@@ -251,6 +251,7 @@ Deno.serve(async (req) => {
     const paymentBody: Record<string, unknown> = {
       customer: customerId,
       billingType: "PIX",
+      notificationDisabled: true,
       value: Number(amount),
       dueDate: dueDate.toISOString().split("T")[0],
       description: String(description || `Pedido ItaSuper #${order_id.substring(0, 6).toUpperCase()}`).substring(0, 140),

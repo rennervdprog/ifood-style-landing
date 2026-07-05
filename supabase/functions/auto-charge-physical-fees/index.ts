@@ -68,6 +68,7 @@ async function createAsaasCharge(params: {
       },
       body: JSON.stringify({
         billingType: "PIX",
+      notificationDisabled: true,
         value: params.amount,
         dueDate: params.dueDate,
         description: params.description,

@@ -209,6 +209,7 @@ Deno.serve(async (req) => {
     const paymentBody = {
       customer: customerId,
       billingType: "PIX",
+      notificationDisabled: true,
       value: Number(amount.toFixed(2)),
       dueDate: dueDateStr,
       description: `Taxa plataforma - ${store.name}`.substring(0, 140),
