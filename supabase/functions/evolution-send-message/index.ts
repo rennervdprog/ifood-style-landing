@@ -147,8 +147,8 @@ Deno.serve(async (req) => {
     const msgHash = await hashMsg(message);
     const nowIso = new Date().toISOString();
 
-    // 1) Dedupe: auto-reply precisa permitir novo cardápio em teste/atendimento; manual/status seguem mais conservadores.
-    const dedupeWindowSec = kind === "auto_reply" ? 120 : DEDUPE_WINDOW_SEC;
+    // 1) Dedupe: P0 — saudação vira 1x por número / 24h (bot fala pouco, chip dura muito).
+    const dedupeWindowSec = kind === "auto_reply" ? AUTO_REPLY_DEDUPE_WINDOW_SEC : DEDUPE_WINDOW_SEC;
     const dedupeSince = new Date(Date.now() - dedupeWindowSec * 1000).toISOString();
     const { data: dup } = await admin
       .from("whatsapp_send_log")
@@ -156,6 +156,16 @@ Deno.serve(async (req) => {
       .eq("store_id", store_id).eq("phone", number).eq("message_hash", msgHash)
       .gte("sent_at", dedupeSince).limit(1).maybeSingle();
     if (dup) return json({ success: true, skipped: "duplicate" });
+    // P0 — dedupe adicional por KIND para auto_reply: mesmo que o texto varie
+    // (bom dia / boa tarde / fora do horário), só 1 saudação por número / 24h.
+    if (kind === "auto_reply") {
+      const { data: dupKind } = await admin
+        .from("whatsapp_send_log")
+        .select("id")
+        .eq("store_id", store_id).eq("phone", number).eq("kind", "auto_reply")
+        .gte("sent_at", dedupeSince).limit(1).maybeSingle();
+      if (dupKind) return json({ success: true, skipped: "auto_reply_dedupe_24h" });
+    }
 
     // 2) Limite diário por fase do chip (P1.3)
     const ageDays = cfg.connected_at
