@@ -59,18 +59,22 @@ Deno.serve(async (req) => {
       { auth: { persistSession: false } },
     );
 
-    const { data: store } = await sb
-      .from("stores")
-      .select("id, guest_checkout_enabled, address_city, slug")
-      .eq("id", p.store_id).maybeSingle();
+    // Store + guest lookup em paralelo (independentes).
+    const [storeRes, existingRes] = await Promise.all([
+      sb.from("stores").select("id, guest_checkout_enabled, address_city, slug").eq("id", p.store_id).maybeSingle(),
+      sb.from("guest_customers").select("user_id").eq("phone", phone).maybeSingle(),
+    ]);
+    const store = storeRes.data;
+    const existing = existingRes.data;
     if (!store || !(store as any).guest_checkout_enabled) return json({ error: "guest_not_enabled" }, 403);
 
     // 1) Reutilizar ou criar auth.user sintético
     let userId: string | null = null;
-    const { data: existing } = await sb.from("guest_customers").select("user_id").eq("phone", phone).maybeSingle();
+    let isNewUser = false;
     if (existing?.user_id) {
       userId = existing.user_id;
     } else {
+      isNewUser = true;
       const email = `guest+${phone}@guest.itasuper.app`;
       const password = crypto.randomUUID() + crypto.randomUUID();
       const { data: created, error: createErr } = await sb.auth.admin.createUser({
@@ -78,80 +82,29 @@ Deno.serve(async (req) => {
         user_metadata: { guest: true, phone, name },
       });
       if (createErr || !created?.user?.id) {
-        // race: procurar por email
-        const { data: list } = await sb.auth.admin.listUsers();
-        const found = list?.users?.find((u: any) => u.email === email);
-        if (!found) {
+        // race: procura em profiles pelo phone (evita listUsers full-scan)
+        const { data: prof } = await sb.from("profiles").select("user_id").eq("phone", phone).maybeSingle();
+        if (!prof?.user_id) {
           console.error("[guest-checkout] createUser error:", createErr);
           return json({ error: "user_create_failed" }, 500);
         }
-        userId = found.id;
+        userId = (prof as any).user_id;
+        isNewUser = false;
       } else {
         userId = created.user.id;
       }
-      // profile mínimo + delivery_pin (obrigatório pelo trigger set_delivery_pin)
-      try {
-        const pin = String(Math.floor(1000 + Math.random() * 9000));
-        await sb.from("profiles").upsert(
-          { user_id: userId, full_name: name, phone, delivery_pin: pin } as any,
-          { onConflict: "user_id" },
-        );
-      } catch (_) {}
     }
 
-    // Garante que o profile tem delivery_pin (usuário reaproveitado sem pin)
-    {
-      const { data: prof } = await sb.from("profiles").select("delivery_pin").eq("user_id", userId).maybeSingle();
-      if (!prof || !(prof as any).delivery_pin) {
-        const pin = String(Math.floor(1000 + Math.random() * 9000));
-        await sb.from("profiles").upsert(
-          { user_id: userId, delivery_pin: pin } as any,
-          { onConflict: "user_id" },
-        );
-      }
-    }
-
-    await sb.from("guest_customers").upsert({
-      phone, user_id: userId, name,
-      city_slug: (store as any).address_city || null,
-      last_store_id: p.store_id,
-      consent_at: new Date().toISOString(),
-    } as any, { onConflict: "phone" });
-
-    // 2) Endereço (evita duplicar: só insere se não existir igual)
+    // 2) Endereço → string a partir do payload (não bate no DB)
     let addressString = "Retirada na loja";
     const neighborhood = p.is_pickup ? "RETIRADA" : p.neighborhood;
     if (!p.is_pickup && p.address) {
       const a = p.address;
-      const street = a.street.trim();
-      const number = a.number.trim();
-      const nb = p.neighborhood.trim();
-      try {
-        const { data: dup } = await sb.from("saved_addresses")
-          .select("id").eq("user_id", userId)
-          .eq("street", street).eq("number", number).eq("neighborhood", nb)
-          .limit(1).maybeSingle();
-        if (!dup) {
-          // marca antigos como não-default
-          await sb.from("saved_addresses").update({ is_default: false }).eq("user_id", userId);
-          await sb.from("saved_addresses").insert({
-            user_id: userId,
-            label: a.label || "Casa",
-            cep: (a.cep || "").replace(/\D/g, "") || null,
-            street, number,
-            complement: a.complement || null,
-            neighborhood: nb,
-            reference_point: a.reference_point || null,
-            is_default: true,
-          } as any);
-        }
-      } catch (_) {}
-      const parts = [street, number, a.complement, a.reference_point ? `Ref: ${a.reference_point}` : ""].filter(Boolean);
+      const parts = [a.street.trim(), a.number.trim(), a.complement, a.reference_point ? `Ref: ${a.reference_point}` : ""].filter(Boolean);
       addressString = parts.join(", ");
     }
 
-    // 3) Pedido
-    const orderStatus = "pendente";
+    // 3) Pedido (crítico — bloqueia a resposta)
     const { data: order, error: orderErr } = await sb.from("orders").insert({
       client_id: userId,
       store_id: p.store_id,
@@ -164,7 +117,7 @@ Deno.serve(async (req) => {
       address_details: addressString,
       needs_change: !!p.needs_change,
       change_for: p.change_for || 0,
-      status: orderStatus,
+      status: "pendente",
       scheduled_for: p.scheduled_for || null,
       is_guest: true,
     } as any).select("id").single();
@@ -174,7 +127,7 @@ Deno.serve(async (req) => {
       return json({ error: "order_create_failed", detail: orderErr?.message }, 500);
     }
 
-    // 4) Itens
+    // 4) Itens (crítico)
     const rows = p.items.map((it) => ({
       order_id: order.id,
       product_id: it.product_id,
@@ -185,6 +138,62 @@ Deno.serve(async (req) => {
     }));
     const { error: itemsErr } = await sb.from("order_items").insert(rows);
     if (itemsErr) console.error("[guest-checkout] items insert error:", itemsErr);
+
+    // 5) Trabalho não-crítico → em background (não bloqueia a resposta).
+    //    Profile pin, guest_customers upsert, saved_addresses.
+    const bgTask = (async () => {
+      try {
+        const pin = String(Math.floor(1000 + Math.random() * 9000));
+        if (isNewUser) {
+          await sb.from("profiles").upsert(
+            { user_id: userId, full_name: name, phone, delivery_pin: pin } as any,
+            { onConflict: "user_id" },
+          );
+        } else {
+          const { data: prof } = await sb.from("profiles").select("delivery_pin").eq("user_id", userId).maybeSingle();
+          if (!prof || !(prof as any).delivery_pin) {
+            await sb.from("profiles").upsert(
+              { user_id: userId, delivery_pin: pin } as any,
+              { onConflict: "user_id" },
+            );
+          }
+        }
+
+        await sb.from("guest_customers").upsert({
+          phone, user_id: userId, name,
+          city_slug: (store as any).address_city || null,
+          last_store_id: p.store_id,
+          consent_at: new Date().toISOString(),
+        } as any, { onConflict: "phone" });
+
+        if (!p.is_pickup && p.address) {
+          const a = p.address;
+          const street = a.street.trim();
+          const number = a.number.trim();
+          const nb = p.neighborhood.trim();
+          const { data: dup } = await sb.from("saved_addresses")
+            .select("id").eq("user_id", userId)
+            .eq("street", street).eq("number", number).eq("neighborhood", nb)
+            .limit(1).maybeSingle();
+          if (!dup) {
+            await sb.from("saved_addresses").update({ is_default: false }).eq("user_id", userId);
+            await sb.from("saved_addresses").insert({
+              user_id: userId,
+              label: a.label || "Casa",
+              cep: (a.cep || "").replace(/\D/g, "") || null,
+              street, number,
+              complement: a.complement || null,
+              neighborhood: nb,
+              reference_point: a.reference_point || null,
+              is_default: true,
+            } as any);
+          }
+        }
+      } catch (e) {
+        console.error("[guest-checkout] bg task error:", e);
+      }
+    })();
+    try { (globalThis as any).EdgeRuntime?.waitUntil?.(bgTask); } catch { /* fire-and-forget fallback */ }
 
     return json({ ok: true, order_id: order.id, phone_last4: phone.slice(-4) });
   } catch (e) {
