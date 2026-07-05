@@ -11,6 +11,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:pdv": "vitest run src/pages/pdv",
     "deploy:external": "node scripts/deploy-external.mjs"
   },
   "dependencies": {
