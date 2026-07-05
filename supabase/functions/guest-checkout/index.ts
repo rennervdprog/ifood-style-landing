@@ -104,6 +104,12 @@ Deno.serve(async (req) => {
       addressString = parts.join(", ");
     }
 
+    const { data: pinProfile } = await sb.from("profiles")
+      .select("delivery_pin")
+      .eq("user_id", userId)
+      .maybeSingle();
+    const deliveryPin = (pinProfile as any)?.delivery_pin || String(Math.floor(1000 + Math.random() * 9000));
+
     // 3) Pedido (crítico — bloqueia a resposta)
     const { data: order, error: orderErr } = await sb.from("orders").insert({
       client_id: userId,
@@ -120,6 +126,7 @@ Deno.serve(async (req) => {
       status: "pendente",
       scheduled_for: p.scheduled_for || null,
       is_guest: true,
+      delivery_pin: deliveryPin,
     } as any).select("id").single();
 
     if (orderErr || !order?.id) {
@@ -139,32 +146,36 @@ Deno.serve(async (req) => {
     const { error: itemsErr } = await sb.from("order_items").insert(rows);
     if (itemsErr) console.error("[guest-checkout] items insert error:", itemsErr);
 
-    // 5) Trabalho não-crítico → em background (não bloqueia a resposta).
-    //    Profile pin, guest_customers upsert, saved_addresses.
+    // 5) Dados mínimos do guest necessários para a tela pública validar e mostrar o PIN.
+    //    Mantém esta parte síncrona para evitar a página /p/:orderId abrir antes do vínculo existir.
+    const { error: guestErr } = await sb.from("guest_customers").upsert({
+      phone, user_id: userId, name,
+      city_slug: (store as any).address_city || null,
+      last_store_id: p.store_id,
+      consent_at: new Date().toISOString(),
+    } as any, { onConflict: "phone" });
+    if (guestErr) {
+      console.error("[guest-checkout] guest upsert error:", guestErr);
+      return json({ error: "guest_link_failed" }, 500);
+    }
+
+    // 6) Trabalho não-crítico → em background (não bloqueia a resposta).
+    //    Profile pin e saved_addresses.
     const bgTask = (async () => {
       try {
-        const pin = String(Math.floor(1000 + Math.random() * 9000));
         if (isNewUser) {
           await sb.from("profiles").upsert(
-            { user_id: userId, full_name: name, phone, delivery_pin: pin } as any,
+            { user_id: userId, full_name: name, phone, delivery_pin: deliveryPin } as any,
             { onConflict: "user_id" },
           );
         } else {
-          const { data: prof } = await sb.from("profiles").select("delivery_pin").eq("user_id", userId).maybeSingle();
-          if (!prof || !(prof as any).delivery_pin) {
+          if (!pinProfile || !(pinProfile as any).delivery_pin) {
             await sb.from("profiles").upsert(
-              { user_id: userId, delivery_pin: pin } as any,
+              { user_id: userId, delivery_pin: deliveryPin } as any,
               { onConflict: "user_id" },
             );
           }
         }
-
-        await sb.from("guest_customers").upsert({
-          phone, user_id: userId, name,
-          city_slug: (store as any).address_city || null,
-          last_store_id: p.store_id,
-          consent_at: new Date().toISOString(),
-        } as any, { onConflict: "phone" });
 
         if (!p.is_pickup && p.address) {
           const a = p.address;
@@ -195,7 +206,7 @@ Deno.serve(async (req) => {
     })();
     try { (globalThis as any).EdgeRuntime?.waitUntil?.(bgTask); } catch { /* fire-and-forget fallback */ }
 
-    return json({ ok: true, order_id: order.id, phone_last4: phone.slice(-4) });
+    return json({ ok: true, order_id: order.id, phone_last4: phone.slice(-4), delivery_pin: deliveryPin });
   } catch (e) {
     console.error("[guest-checkout] unhandled:", e);
     return json({ error: "internal_error" }, 500);

@@ -37,31 +37,40 @@ Deno.serve(async (req) => {
       .eq("id", orderId).maybeSingle();
     if (!order || !(order as any).is_guest) return json({ error: "not_found" }, 404);
 
-    const { data: guest } = await sb.from("guest_customers")
-      .select("phone, name").eq("user_id", (order as any).client_id).maybeSingle();
-    if (!guest || String((guest as any).phone).slice(-4) !== last4) return json({ error: "not_found" }, 404);
+    const [{ data: guest }, { data: profile }] = await Promise.all([
+      sb.from("guest_customers")
+        .select("phone, name").eq("user_id", (order as any).client_id).maybeSingle(),
+      sb.from("profiles")
+        .select("phone, full_name, delivery_pin").eq("user_id", (order as any).client_id).maybeSingle(),
+    ]);
+    const customerPhone = String((guest as any)?.phone || (profile as any)?.phone || "");
+    const customerName = (guest as any)?.name || (profile as any)?.full_name || null;
+    if (!customerPhone || customerPhone.slice(-4) !== last4) return json({ error: "not_found" }, 404);
 
-    const { data: store } = await sb.from("stores")
-      .select("name, slug, whatsapp_number").eq("id", (order as any).store_id).maybeSingle();
-    const { data: items } = await sb.from("order_items")
-      .select("quantity, unit_price, products(name)").eq("order_id", orderId);
-    const { data: profile } = await sb.from("profiles")
-      .select("delivery_pin").eq("user_id", (order as any).client_id).maybeSingle();
+    const [{ data: store }, { data: items }] = await Promise.all([
+      sb.from("stores")
+        .select("name, slug, whatsapp_number").eq("id", (order as any).store_id).maybeSingle(),
+      sb.from("order_items")
+        .select("quantity, unit_price, products(name)").eq("order_id", orderId),
+    ]);
 
     let deliveryPin = (order as any)?.delivery_pin || (profile as any)?.delivery_pin || null;
     if (!deliveryPin) {
       deliveryPin = makePin();
-      const { error: pinErr } = await sb.from("profiles").upsert(
-        {
-          user_id: (order as any).client_id,
-          full_name: (guest as any).name || null,
-          phone: (guest as any).phone || null,
-          delivery_pin: deliveryPin,
-        } as any,
-        { onConflict: "user_id" },
-      );
-      if (pinErr) {
-        console.error("[guest-order-status] pin upsert error:", pinErr);
+      const [{ error: orderPinErr }, { error: profilePinErr }] = await Promise.all([
+        sb.from("orders").update({ delivery_pin: deliveryPin } as any).eq("id", orderId),
+        sb.from("profiles").upsert(
+          {
+            user_id: (order as any).client_id,
+            full_name: customerName,
+            phone: customerPhone,
+            delivery_pin: deliveryPin,
+          } as any,
+          { onConflict: "user_id" },
+        ),
+      ]);
+      if (orderPinErr && profilePinErr) {
+        console.error("[guest-order-status] pin persist error:", { orderPinErr, profilePinErr });
         deliveryPin = null;
       }
     }
@@ -70,7 +79,7 @@ Deno.serve(async (req) => {
       order,
       store,
       items,
-      customer_name: (guest as any).name || null,
+      customer_name: customerName,
       delivery_pin: deliveryPin,
     });
   } catch (e) {
