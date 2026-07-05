@@ -398,6 +398,9 @@ const App = () => {
                 <Route path="/cadastro-motoboy-loja" element={<CadastroMotoboyLoja />} />
                 <Route path="/termos-de-uso" element={<TermosDeUso />} />
                 <Route path="/politica-de-privacidade" element={<PoliticaPrivacidade />} />
+                <Route path="/termos" element={<Navigate to="/termos-de-uso" replace />} />
+                <Route path="/privacidade" element={<Navigate to="/politica-de-privacidade" replace />} />
+                <Route path="/parceiro/login" element={<Navigate to="/portal-parceiro" replace />} />
                 <Route path="/planos" element={<PlanosPage />} />
                 <Route path="/moderador" element={<ModeradorDashboard />} />
                 <Route path="/suporte" element={<RoleGuard allowedRoles={["suporte","admin"]} redirectTo="/auth"><SupportAgentDashboard /></RoleGuard>} />
