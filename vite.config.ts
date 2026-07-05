@@ -87,7 +87,10 @@ function preloadInitialRouteChunks(appMode: string) {
       order: "post" as const,
       handler(html: string, ctx: any) {
         const bundle = ctx?.bundle;
-        if (!bundle) return html;
+        if (!bundle) {
+          console.warn("[preload-plugin] ctx.bundle vazio — pulando");
+          return html;
+        }
         const links: string[] = [];
         for (const [fileName, chunk] of Object.entries<any>(bundle)) {
           if (chunk.type !== "chunk") continue;
@@ -96,6 +99,7 @@ function preloadInitialRouteChunks(appMode: string) {
             links.push(`    <link rel="modulepreload" href="/${fileName}" />`);
           }
         }
+        console.log(`[preload-plugin] mode=${appMode} targets=${targets.join(",")} matched=${links.length}`);
         if (!links.length) return html;
         // O Vite reescreve o preload de /src/main.tsx para /assets/main-*.js
         // ANTES desse handler rodar. Casamos o novo href via regex e injetamos
