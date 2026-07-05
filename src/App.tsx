@@ -40,6 +40,8 @@ const ClientHome = lazy(() => import("./pages/ClientHome"));
 const StorePage = lazy(() => import("./pages/StorePage"));
 const CartPage = lazy(() => import("./pages/CartPage"));
 const CheckoutPage = lazy(() => import("./pages/CheckoutPage"));
+const GuestCheckoutPage = lazy(() => import("./pages/GuestCheckoutPage"));
+const PublicOrderTracking = lazy(() => import("./pages/PublicOrderTracking"));
 const PedidosPage = lazy(() => import("./pages/PedidosPage"));
 const PerfilPage = lazy(() => import("./pages/PerfilPage"));
 const AuthPage = lazy(() => import("./pages/AuthPage"));
@@ -373,6 +375,8 @@ const App = () => {
                 <Route path="/loja/:id" element={<StorePage />} />
                 <Route path="/carrinho" element={<CartPage />} />
                 <Route path="/checkout" element={<CheckoutPage />} />
+                <Route path="/checkout-rapido" element={<GuestCheckoutPage />} />
+                <Route path="/p/:orderId" element={<PublicOrderTracking />} />
                 <Route path="/pedidos" element={<PedidosPage />} />
                 <Route path="/perfil" element={<PerfilPage />} />
                 <Route path="/auth" element={<AuthPage />} />
