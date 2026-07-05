@@ -27,10 +27,10 @@ const config: CapacitorConfig = {
   },
   plugins: {
     SplashScreen: {
-      // Fallback máximo — na prática o App root chama hideSplash() assim que
-      // a primeira rota monta (tipicamente 600-1200ms). Este valor evita
-      // splash "preso" caso o JS crashe antes de chamar hideSplash.
-      launchShowDuration: 3500,
+      // Fallback máximo — main.tsx chama hideSplash() logo após o primeiro
+      // render (RAF x2), tipicamente 400-900ms. 2000ms é só cinto de segurança
+      // caso o JS crashe antes de chamar hideSplash.
+      launchShowDuration: 2000,
       launchAutoHide: false,
       launchFadeOutDuration: 200,
       backgroundColor: '#FF6B00',
@@ -63,11 +63,11 @@ const config: CapacitorConfig = {
       autoUpdate: true,
       autoDeleteFailed: true,
       autoDeletePrevious: true,
-      // ⚡ Aplica o bundle assim que o download termina (webview reload
-      // automático). Sem isso o usuário precisaria matar o app na lista
-      // de recentes para o novo JS entrar — muitos não fazem, e reclamam
-      // que "OTA não funciona".
-      directUpdate: true,
+      // ⚠️ directUpdate=false: NUNCA recarregar o webview no meio da sessão.
+      // O bundle novo é aplicado somente no próximo cold start (após o app
+      // ir pra background). Evita "reload no meio da rota" e sensação de
+      // instabilidade. OTA continua funcionando — só chega 1 abertura depois.
+      directUpdate: false,
       resetWhenUpdate: true,
       keepUrlPathAfterReload: true,
       updateUrl:

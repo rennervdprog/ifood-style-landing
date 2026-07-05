@@ -98,7 +98,7 @@
   <meta name="twitter:description" content="Sistema de delivery e cardápio digital sem comissão por pedido. Alternativa ao Anota AI e iFood.">
 </head>
 
-  <body style="margin:0;background:#0a0a0a">
+  <body style="margin:0;background:#FF6B00">
     <div id="root">
       <!--
         LCP shell — pinta um placeholder discreto até o React montar.
@@ -106,15 +106,11 @@
         para não "piscar" laranja em telas internas como /pedidos onde o conteúdo
         usa bg-background. Removido pelo main.tsx assim que o React monta.
       -->
-      <div id="lcp-shell" style="min-height:100vh;background:#0a0a0a;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem 1rem;text-align:center;gap:1rem">
-        <div style="display:inline-block;width:28px;height:28px;border:3px solid rgba(255,107,0,.25);border-top-color:#FF6B00;border-radius:50%;animation:lcp-spin .8s linear infinite" role="status" aria-label="Carregando"></div>
+      <div id="lcp-shell" style="min-height:100vh;background:#FF6B00;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem 1rem;text-align:center;gap:1rem">
+        <div style="display:inline-block;width:28px;height:28px;border:3px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:lcp-spin .8s linear infinite" role="status" aria-label="Carregando"></div>
       </div>
       <style>
         @keyframes lcp-spin{to{transform:rotate(360deg)}}
-        @media (prefers-color-scheme: light){
-          body{background:#ffffff !important}
-          #lcp-shell{background:#ffffff !important;color:#0a0a0a !important}
-        }
       </style>
     </div>
     <script type="module" src="/src/main.tsx"></script>
