@@ -218,7 +218,7 @@ const GuestCheckoutPage = () => {
         },
         is_pickup: false,
         needs_change: payment === "dinheiro" && needsChange,
-        change_for: payment === "dinheiro" && needsChange ? Number(changeFor) : 0,
+        change_for: payment === "dinheiro" && needsChange ? Number(String(changeFor).replace(",", ".")) : 0,
         scheduled_for: null,
         consent: true,
       };
