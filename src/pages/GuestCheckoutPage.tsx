@@ -60,7 +60,7 @@ const GuestCheckoutPage = () => {
         .from("stores")
         .select("guest_checkout_enabled")
         .eq("id", storeId!).maybeSingle();
-      return { ...(data || {}), guest_checkout_enabled: gc?.guest_checkout_enabled ?? false };
+      return { ...((data as any) || {}), guest_checkout_enabled: (gc as any)?.guest_checkout_enabled ?? false };
     },
     enabled: !!storeId,
   });
