@@ -45,6 +45,13 @@ const GuestCheckoutPage = () => {
     if (items.length === 0) navigate("/carrinho", { replace: true });
   }, [items.length, navigate]);
 
+  // Loja sem guest habilitado → manda pro fluxo com login
+  useEffect(() => {
+    if (store && (store as any).guest_checkout_enabled !== true) {
+      navigate("/auth", { state: { from: "/checkout" }, replace: true });
+    }
+  }, [store, navigate]);
+
   const { data: store } = useQuery({
     queryKey: ["guest-store", storeId],
     queryFn: async () => {
