@@ -61,7 +61,7 @@ Deno.serve(async (req) => {
       .select("id, label, cep, street, number, complement, neighborhood, reference_point")
       .eq("user_id", (guest as any).user_id)
       .order("is_default", { ascending: false })
-      .order("updated_at", { ascending: false })
+      .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
 

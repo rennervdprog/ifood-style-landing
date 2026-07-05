@@ -36,7 +36,7 @@ Deno.serve(async (req) => {
     if (!guest || String((guest as any).phone).slice(-4) !== last4) return json({ error: "not_found" }, 404);
 
     const { data: store } = await sb.from("stores")
-      .select("name, slug, whatsapp_number").eq("id", (order as any).store_id).maybeSingle();
+      .select("name, slug").eq("id", (order as any).store_id).maybeSingle();
     const { data: items } = await sb.from("order_items")
       .select("quantity, unit_price, products(name)").eq("order_id", orderId);
 
