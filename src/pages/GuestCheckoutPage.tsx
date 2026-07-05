@@ -11,6 +11,7 @@ import { formatCep, fetchCep } from "@/lib/location";
 import { maskWhatsApp } from "@/lib/whatsapp";
 import { formatBRL, addMoney } from "@/lib/utils";
 import { calculateStoreOwnDeliveryFee } from "@/lib/deliveryFee";
+import { useStorePlan } from "@/hooks/useStorePlan";
 import confetti from "canvas-confetti";
 
 const PAY_METHODS = [
@@ -23,6 +24,7 @@ const GuestCheckoutPage = () => {
   const navigate = useNavigate();
   const { items, subtotal, clearCart } = useCart();
   const storeId = items[0]?.store_id;
+  const storePlan = useStorePlan(storeId);
 
   const [phone, setPhone] = useState("");
   const [name, setName] = useState("");
@@ -71,9 +73,11 @@ const GuestCheckoutPage = () => {
     },
   });
 
-  const PLATFORM_FEE = 2;
   const [calculatedFee, setCalculatedFee] = useState<number | null>(null);
   const [calculatingFee, setCalculatingFee] = useState(false);
+
+  // Quanto a plataforma cobra a MAIS do cliente (respeita split "cliente/meio_a_meio/lojista")
+  const platformCustomerExtra = storePlan.platformFeeCustomerExtra ?? 2;
 
   // 1) legado Itatinga: tabela neighborhood_fees por bairro
   const legacyFee = useMemo(() => {
@@ -90,7 +94,11 @@ const GuestCheckoutPage = () => {
 
   // 2) lógica do lojista (fixa OU por km) — mesma do checkout normal
   useEffect(() => {
-    if (legacyFee != null) { setCalculatedFee(legacyFee); return; }
+    if (legacyFee != null) {
+      // legacy neighborhood_fees já é taxa da loja; soma a parte da plataforma
+      setCalculatedFee(addMoney(legacyFee, platformCustomerExtra));
+      return;
+    }
     const s: any = store;
     if (!s) return;
     const customerCep = cep.replace(/\D/g, "");
@@ -108,7 +116,7 @@ const GuestCheckoutPage = () => {
       delivery_fee_base: Number(s.delivery_fee_base || 0),
       delivery_fee_per_km: Number(s.delivery_fee_per_km || 0),
       own_delivery_fee: Number(s.own_delivery_fee || 0),
-      platform_split: PLATFORM_FEE,
+      platform_split: platformCustomerExtra,
       customer_street: street || null,
       customer_number: number || null,
       customer_neighborhood: neighborhood || null,
@@ -117,7 +125,7 @@ const GuestCheckoutPage = () => {
       .catch(() => { if (!cancelled) setCalculatedFee(null); })
       .finally(() => { if (!cancelled) setCalculatingFee(false); });
     return () => { cancelled = true; };
-  }, [store, legacyFee, cep, street, number, neighborhood]);
+  }, [store, legacyFee, cep, street, number, neighborhood, platformCustomerExtra]);
 
   const matchedFee = calculatedFee ?? 0;
 
@@ -318,8 +326,22 @@ const GuestCheckoutPage = () => {
                 Preciso de troco
               </label>
               {needsChange && (
-                <input type="number" placeholder="Troco para R$" value={changeFor} onChange={(e) => setChangeFor(e.target.value)}
-                  className="w-full h-10 px-3 rounded-xl border border-border bg-background text-sm" />
+                <>
+                  <input
+                    type="text" inputMode="decimal" placeholder="Troco para R$"
+                    value={changeFor}
+                    onChange={(e) => setChangeFor(e.target.value.replace(/[^0-9.,]/g, ""))}
+                    className="w-full h-10 px-3 rounded-xl border border-border bg-background text-sm"
+                  />
+                  {changeFor && parseFloat(changeFor.replace(",", ".")) >= total && (
+                    <p className="text-xs text-muted-foreground">
+                      Seu troco: <span className="font-bold text-foreground">{formatBRL(parseFloat(changeFor.replace(",", ".")) - total)}</span>
+                    </p>
+                  )}
+                  {changeFor && parseFloat(changeFor.replace(",", ".")) < total && (
+                    <p className="text-xs text-destructive">Valor do troco deve ser maior que o total.</p>
+                  )}
+                </>
               )}
             </div>
           )}
