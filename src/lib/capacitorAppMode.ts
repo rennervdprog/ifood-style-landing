@@ -139,3 +139,28 @@ export function getCapacitorAppMode(): CapacitorAppMode | null {
 export function isPartnerCapacitorApp(): boolean {
   return getCapacitorAppMode() === "partner";
 }
+
+/**
+ * Detecção 100% síncrona e barata do modo Parceiro — segura para usar no
+ * primeiro render do <App/> sem causar mount/unmount de componentes.
+ * Não consulta App.getInfo() (async). Falso-negativo é seguro (só perde
+ * otimização, não quebra nada); nunca dá falso-positivo em cliente.
+ */
+export function isPartnerNativeSync(): boolean {
+  try {
+    if (!isCapacitorNative()) return false;
+    if (getBuildTimeAppMode() === "partner") return true;
+    if ((window as any).__CAP_PARTNER_REDIRECTED) return true;
+    if (nativeDetectedMode === "partner") return true;
+    const stored =
+      (typeof sessionStorage !== "undefined" && sessionStorage.getItem(APP_MODE_KEY)) ||
+      (typeof localStorage !== "undefined" && localStorage.getItem(APP_MODE_KEY));
+    if (stored === "partner") return true;
+    const legacy =
+      (typeof sessionStorage !== "undefined" && sessionStorage.getItem(LEGACY_PARTNER_KEY) === "1") ||
+      (typeof localStorage !== "undefined" && localStorage.getItem(LEGACY_PARTNER_KEY) === "1");
+    return legacy;
+  } catch {
+    return false;
+  }
+}

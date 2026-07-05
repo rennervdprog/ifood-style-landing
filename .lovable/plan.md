@@ -1,108 +1,82 @@
-# Plano WhatsApp ItaSuper — bot como "placa", não atendente
+# Plano — Frentes 3 + 4 (cold start Parceiro) sem quebrar nada
 
-## Princípio
-O WhatsApp do lojista é a porta de entrada; o cardápio é o destino. O bot só precisa **converter mensagem em clique**. Quanto menos ele fala, mais o chip dura.
-
----
-
-## Fase 1 — Parar o sangramento (P0, esta semana)
-
-**Backend (`evolution-send-message` + Supabase externo)**
-
-1. **Fix warm-up**: `Math.max(80, dailyLimitForAge)` → `Math.min` para `auto_reply` respeitar 20/50/100 por fase.
-2. **Lock anti-duplicata da saudação**: unique index parcial em `whatsapp_send_log(store_id, phone, kind)` para janela de 60s + `INSERT … ON CONFLICT DO NOTHING` antes de disparar. Fim das 6 msgs em 8s.
-3. **Self-heal do status**: quando Evolution retorna 200, `UPDATE store_whatsapp_config SET status='connected'`.
-4. **Coffee break também no `auto_reply`**: pausa 5-15min a cada 10 envios (hoje só `manual`).
-5. **Dedupe da saudação: 1h → 24h** (`dedupeWindowSec` em `auto_reply`).
-
-**Índices SQL (Supabase externo `qkjhguziuchqsbxzruea`)**
-- `whatsapp_send_log(store_id, phone, sent_at desc)`
-- unique parcial `(store_id, phone, kind)` where `sent_at > now() - interval '60s'`
+Objetivo: cortar mais **1–2 s** no cold start do APK Parceiro **sem** afetar o APK Cliente nem a versão web. Estratégia: mudanças **aditivas e reversíveis**, cada uma por trás de um gate explícito (`isPartnerNative` em runtime ou `VITE_CAPACITOR_APP_MODE` em build), com validação de build entre etapas.
 
 ---
 
-## Fase 2 — Uma saudação, sempre a mesma (P1)
+## Etapa A — Detecção síncrona do modo Parceiro
 
-**Backend (`evolution-webhook` / handler de auto-reply)**
+**Por quê.** Hoje `getCapacitorAppMode()` mistura runtime + storage + `App.getInfo()` async. Para gate no `App.tsx` precisamos de um booleano **síncrono e estável** no primeiro render, senão os componentes ancillary vão montar e desmontar (pior que não fazer nada).
 
-1. **Uma mensagem única e imutável** por cliente por dia:
-   > "Olá! 👋 Cardápio, preços e status da *{storeName}* aqui: {link}\n\n{status_horario}\n\n_Responda PARAR para não receber._"
-2. **Zero intent detection.** Remove regex de "cardápio/oi/sim/quero". Qualquer inbound = mesma resposta (1x/24h).
-3. **Silêncio após o link.** Se já enviou saudação nas últimas 24h para aquele número, o bot **não responde nada** — nem `menu`, nem "posso ajudar". Corta o loop bot↔cliente.
-4. **Skip primeiro contato**: número sem histórico só recebe saudação na **2ª msg em 10min**. Curioso/engano/spam nem gera envio.
-5. **Confirmação de pedido substitui saudação**: se o número tem pedido ativo no dia, marca `greeted_today=true` e pula qualquer auto-reply — cliente só recebe transacional.
-6. **Opt-out global**: qualquer msg contendo "parar/sair/pare/remover" grava `opt_out=true` em `whatsapp_send_log` (nova coluna ou tabela `whatsapp_optouts`); consulta obrigatória antes de qualquer `auto_reply`.
+**Ação.** Adicionar em `capacitorAppMode.ts` uma função `isPartnerNativeSync()` que só olha:
+1. `import.meta.env.VITE_CAPACITOR_APP_MODE === "parceiro"` (build time — infalível quando o workflow setar), OU
+2. `window.__CAP_PARTNER_REDIRECTED` (já setado pelo `main.tsx` no rewrite de `/` → `/portal-parceiro`), OU
+3. `localStorage.cap_app_mode === "partner"` (sessão anterior).
 
-**Templates transacionais (`templates.ts`)**
-- Manter os 5 templates atuais (preparando, pronto, saiu, entregue, cancelado).
-- Adicionar **rodapé opt-out** só na primeira msg de um pedido: "_Responda PARAR para não receber._"
+Sem async, sem `App.getInfo()`. Se qualquer um for true → partner. Falso-negativo é seguro (só perde a otimização, não quebra nada).
+
+**Risco.** Zero — é uma função nova, não altera comportamento existente.
 
 ---
 
-## Fase 3 — UI do painel WhatsApp (mesma janela)
+## Etapa B — Gate `showAncillary` no `App.tsx`
 
-**`WhatsAppNotifications.tsx` — reescrever a seção "Resposta automática"**
-- Trocar copy atual (que promete "5 saudações rotativas + link após 2s") por:
-  > "Quando um cliente manda mensagem, o bot envia **uma vez por dia** uma saudação com o link do seu cardápio e o status (aberto/fechado). Se o cliente insistir, o bot fica em silêncio — o atendimento fica com você."
-- Remover a caixa "Modo anti-bloqueio ativo" mentirosa (o modo passa a ser o padrão real).
-- Adicionar bullets curtos: "1 saudação por cliente / 24h · Silêncio após o link · Respeita PARAR · Pula clientes com pedido do dia".
+**Por quê.** Hoje todos estes componentes montam no primeiro render, mesmo no Parceiro: `InstallPrompt`, `NotificationPrompt`, `DownloadAppPrompt`, `GlobalRealtimeSync`, `CapacitorPermissionsOnboarding`, `TermsChecker`, `ClientPinChecker`, `RecoveryRedirect`, `StoreAppGuard`, `DebugOverlay`.
 
-**Novo card "Saúde do chip" (topo da aba Conexão)**
-- Dias conectado, envios hoje / limite da fase (20 semana 1 · 50 semana 2 · 100 semana 3-4 · 150 mês 2 · 200 mês 3+).
-- Barra de progresso: verde <70% · amarelo 70-90% · vermelho >90%.
-- Última desconexão + botão "Reconectar (novo QR)" quando `status != connected`.
-- Taxa de opt-out (últimos 30 dias).
+**Ação.**
+- Introduzir `const [showAncillary, setShowAncillary] = useState(false)` que vira `true` via `requestIdleCallback` (fallback `setTimeout(800)`).
+- Envolver o bloco de componentes ancillary em `{showAncillary && <>…</>}`.
+- Adicionalmente, no Parceiro (`isPartnerNativeSync()`), **nunca** montar: `InstallPrompt`, `NotificationPrompt`, `DownloadAppPrompt` (banners web-only).
+- `CartProvider`, `StoreProvider` continuam eager — muitos hooks dependem deles (StorePage, CartPage), remover quebraria rotas de cliente do bundle compartilhado. Mantidos.
 
-**`WhatsAppTemplates.tsx`** — sem mudança estrutural, só ajustar a copy do banner azul topo para reforçar que **templates só são enviados em eventos de pedido**, nunca em resposta a msg do cliente.
+**Risco baixo.** Componentes ancillary não são visíveis nos primeiros 800 ms de qualquer forma (splash cobre). O único efeito colateral possível: `TermsChecker` mostra modal 800 ms depois — aceitável. `RecoveryRedirect` só age quando URL tem token de recovery — deferir 800 ms é irrelevante.
 
-**Nova aba (opcional, futuro) "Histórico"** — placeholder por enquanto, alimentada quando `whatsapp_messages` for populada.
+**Validação:** build + smoke-test na rota `/portal-parceiro` no preview.
 
 ---
 
-## Fase 4 — Observabilidade (paralelo à Fase 2)
+## Etapa C — Prefetch inteligente ao invés de "excluir chunks"
 
-- Popular `whatsapp_messages` (in + out) no `evolution-webhook` e no `evolution-send-message`.
-- Coluna `skip_reason` em `whatsapp_send_log` com valores: `dedupe_24h`, `first_contact`, `opt_out`, `daily_limit`, `has_active_order`, `outside_hours`. Lojista entende por que uma msg não saiu.
+**Por quê.** O plano original propunha um plugin Vite que substituía páginas de cliente por stubs no APK Parceiro. **Isso é frágil**: quebra fácil qualquer `import` cruzado (ex.: um util que uma página cliente exporta e uma partner importa), força manter duas listas paralelas de rotas e complica debugging. **Não vale o risco.**
 
----
+**Ação alternativa (mais segura, ganho quase igual).** Como as rotas já são todas `React.lazy`, cada página é um chunk async separado. O que importa no cold start é **quais chunks o webview baixa nos primeiros 2 s**. Vamos:
 
-## Fase 5 — Escala (só quando precisar, P3)
+1. Emitir `<link rel="modulepreload">` para os chunks certos **no `index.html` gerado**, via plugin Vite mínimo:
+   - Se `VITE_CAPACITOR_APP_MODE=parceiro` → preload `PartnerLogin` + `AdminDashboardV2` + `DriverDashboardV2`.
+   - Se `cliente` ou vazio → preload `StoreDirectory` + `ClientHome`.
+2. Garantir no workflow `build-android.yml` que o build Parceiro roda com `VITE_CAPACITOR_APP_MODE=parceiro`.
+3. Confirmar que `App.tsx` já faz o prefetch das outras rotas do parceiro em idle (já faz — linhas 291-316).
 
-- Rotação de instância por loja quando volume real > 150/dia consistente.
-- **Cloud API oficial** como upgrade pago (BSP: Z-API Cloud, Take Blip, Gupshup). Migração do número existente exige deslogar do WhatsApp app + verificação CNPJ + downtime de horas — só oferecer para lojas que realmente precisam.
+**Risco.** Zero — `modulepreload` é meramente uma dica ao browser, mesmo se apontar para chunk errado o app funciona (só perde a otimização).
 
----
-
-## O que NÃO vamos fazer
-- IA gerando resposta livre para cada msg do cliente.
-- Broadcast/promoção pelo Baileys.
-- Menu "digite 1 para…" no auto-reply.
-- Múltiplas saudações rotativas fingindo ser humano (não engana e queima chip).
+**Ganho estimado:** -800 ms a -1,5 s no tempo até a rota inicial ser interativa (chunks baixam em paralelo com o parse do main bundle, não sequencialmente).
 
 ---
 
-## Volume esperado (Cantinho da Silvia)
-- Hoje: 72 msgs/dia, 97% saudação → trajetória de ban em 2-4 semanas.
-- Com o plano: ~30-50 msgs/dia (1 saudação por número único + 2-3 transacionais por pedido real) → chip vive meses.
+## Etapa D — Auditoria pós-mudança
+
+Após A+B+C:
+1. `bun run build` local (garante build passa).
+2. Verificar visualmente `/portal-parceiro` e `/` no preview web (nenhum banner deve sumir na web — o gate é `isPartnerNativeSync`, que retorna false no browser).
+3. Bump para **v1.11.43** / `versionCode 797`.
+4. Rodar o workflow Android e medir cold start real com `adb shell am start -W` na próxima abertura.
+5. Rápida revisão de segurança conforme sua preferência: confirmar que o gate `isPartnerNativeSync` não expõe nenhum path admin ao usuário errado (é só sobre montar UI ancillary, não sobre RoleGuard/policies — estes ficam intactos).
 
 ---
 
-## Ordem de deploy
-1. **Deploy 1 (esta semana)**: Fase 1 completa (backend + índices).
-2. **Deploy 2 (3-5 dias depois, após ver métricas)**: Fase 2 (uma-msg + silêncio) + Fase 3 (UI do painel) + Fase 4 (observabilidade).
-3. **Fase 5**: sob demanda, loja a loja.
+## O que NÃO vou fazer
 
----
+- ❌ Plugin Vite que remove/stubba páginas — alto risco de quebrar imports cruzados.
+- ❌ Remover `StoreProvider` ou `CartProvider` do Parceiro — hooks espalhados em rotas compartilhadas quebrariam.
+- ❌ Mexer em `RoleGuard`, RLS, edge functions ou qualquer camada de segurança.
+- ❌ Trocar router, QueryClient, tema ou qualquer coisa que force retest de tudo.
 
-## Detalhes técnicos
-- Todas as mudanças de dados em **Supabase externo `qkjhguziuchqsbxzruea`** (não Lovable Cloud).
-- Migração via `scripts/*.sql` executada pelo caminho já usado no projeto.
-- Edge functions afetadas: `evolution-send-message`, `evolution-webhook`, `zapi-webhook` (paridade).
-- Nenhuma mudança em `orderNotifications.ts` (transacional continua igual).
-- Bump de versão do app conforme regra do projeto ao final do Deploy 2 (Perfil + `build.gradle`).
+## Arquivos que mudam
 
----
+- `src/lib/capacitorAppMode.ts` — adiciona `isPartnerNativeSync()`.
+- `src/App.tsx` — gate `showAncillary` + gate `isPartnerNative` para banners.
+- `vite.config.ts` — pequeno plugin `modulepreload-initial-route` que lê `VITE_CAPACITOR_APP_MODE` e injeta `<link rel="modulepreload">` no HTML final.
+- `.github/workflows/build-android.yml` — passar `VITE_CAPACITOR_APP_MODE=parceiro` (se ainda não passa) no step do build Parceiro.
+- `src/lib/appVersion.ts` + `android/app/build.gradle` — bump 1.11.43 / vc 797.
 
-## Segurança (checagem obrigatória ao final)
-- Confirmar que `whatsapp_send_log` e `whatsapp_messages` continuam com RLS restrito ao `store_id` do lojista + service role.
-- Rodar `security--run_security_scan` após o Deploy 2.
+Tudo reversível com um único revert por arquivo.

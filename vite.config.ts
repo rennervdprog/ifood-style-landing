@@ -64,6 +64,59 @@ function enforceExternalBackendOnly() {
   };
 }
 
+/**
+ * Injeta <link rel="modulepreload"> no index.html final para os chunks das
+ * rotas iniciais prováveis, com base em VITE_CAPACITOR_APP_MODE. Isso faz
+ * o download dos chunks acontecer em paralelo com o parse do main bundle,
+ * cortando 800ms-1.5s do cold start no APK Capacitor.
+ *
+ * Seguro: modulepreload é apenas uma dica ao browser — se o chunk não for
+ * usado o app funciona igual, só não ganha o boost.
+ */
+function preloadInitialRouteChunks(appMode: string) {
+  const targetsByMode: Record<string, string[]> = {
+    parceiro: ["PartnerLogin", "AdminDashboardV2", "DriverDashboardV2"],
+    cliente:  ["StoreDirectory", "ClientHome"],
+    "":       ["StoreDirectory"],
+  };
+  const targets = targetsByMode[appMode] ?? targetsByMode[""];
+  return {
+    name: "preload-initial-route-chunks",
+    apply: "build" as const,
+    // Roda após o Vite emitir tudo (index.html + chunks). Lê o dist/index.html,
+    // encontra os chunks por facadeModuleId no bundle capturado, e injeta
+    // <link rel="modulepreload"> para as rotas iniciais.
+    writeBundle(this: any, options: any, bundle: any) {
+      try {
+        const outDir = options?.dir || path.resolve(__dirname, "dist");
+        const htmlPath = path.join(outDir, "index.html");
+        if (!fs.existsSync(htmlPath)) return;
+        const links: string[] = [];
+        for (const [fileName, chunk] of Object.entries<any>(bundle)) {
+          if (!chunk || chunk.type !== "chunk") continue;
+          const facade = chunk.facadeModuleId || "";
+          if (targets.some((t) =>
+            facade.endsWith(`/pages/${t}.tsx`) || facade.endsWith(`/pages/${t}.ts`)
+          )) {
+            links.push(`    <link rel="modulepreload" href="/${fileName}" />`);
+          }
+        }
+        console.log(`[preload-plugin] mode=${appMode || "(none)"} targets=${targets.join(",")} matched=${links.length}`);
+        if (!links.length) return;
+        let html = fs.readFileSync(htmlPath, "utf8");
+        if (html.includes("<!--__PRELOADS__-->")) return;
+        html = html.replace(
+          "</head>",
+          `${links.join("\n")}\n    <!--__PRELOADS__-->\n  </head>`,
+        );
+        fs.writeFileSync(htmlPath, html);
+      } catch (e) {
+        console.warn("[preload-plugin] erro:", e);
+      }
+    },
+  };
+}
+
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   server: {
@@ -80,6 +133,7 @@ export default defineConfig(({ mode }) => ({
   plugins: [
     enforceExternalBackendOnly(),
     emitVersionJson(readAppVersion()),
+    preloadInitialRouteChunks((process.env.VITE_CAPACITOR_APP_MODE || "").toLowerCase()),
     react(),
     mode === "development" && componentTagger(),
     mode === "production" && visualizer({
@@ -179,7 +233,8 @@ export default defineConfig(({ mode }) => ({
           vendor:   ["react", "react-dom", "react-router-dom"],
           query:    ["@tanstack/react-query"],
           supabase: ["@supabase/supabase-js"],
-          icons:    ["lucide-react"],
+          // icons: lucide-react removido de manualChunks para permitir
+          // tree-shaking real — chunk único force o bundle inteiro no boot.
           charts:   ["recharts"],
           ui: [
             "@radix-ui/react-dialog",
