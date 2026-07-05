@@ -226,7 +226,7 @@ export default function WhatsAppConnection({ storeId, storeName, expectedPhone, 
                 ⚠️ Use um número de WhatsApp <strong>exclusivo da loja</strong>. Não use seu número pessoal — ele ficará conectado neste painel.
               </p>
               <p className="text-[10px] text-muted-foreground leading-relaxed">
-                Para proteger o chip de banimento, o sistema aplica intervalos automáticos, deduplicação (1h) e limite diário progressivo: semana 1: 20/dia · semana 2: 50/dia · 3ª–4ª: 100/dia · mês 2: 150/dia · mês 3+: 200/dia.
+                Para proteger o chip de banimento, o sistema aplica intervalos automáticos, dedupe de 24h por cliente e limite diário progressivo: semana 1: 20/dia · semana 2: 50/dia · 3ª–4ª: 100/dia · mês 2: 150/dia · mês 3+: 200/dia.
               </p>
             </div>
           </div>
