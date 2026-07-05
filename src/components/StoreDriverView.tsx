@@ -245,6 +245,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
   const [offlineQueue, setOfflineQueue] = useState(getQueue());
   const [syncingQueue, setSyncingQueue] = useState(false);
   const [verifyingId, setVerifyingId] = useState<string | null>(null);
+  const [acceptingOrderIds, setAcceptingOrderIds] = useState<Set<string>>(() => new Set());
   const [useOptimized, setUseOptimized] = useState(true);
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
   const [activeStoreId, setActiveStoreId] = useState<string | null>(null);
@@ -284,7 +285,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
     queryFn: async () => {
       const { data } = await supabase
         .from("stores_driver_view" as any)
-        .select("id, name, latitude, longitude, address_city")
+        .select("id, name, latitude, longitude, address_city, driver_pin_autofill")
         .in("id", linkedStoreIds);
       return (data as any) || [];
     },
@@ -560,12 +561,13 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
 
   const filteredAvailable = useMemo(() => {
     if (!availableOrders) return [];
-    const notDeclined = availableOrders.filter((o: any) => !declinedMap[o.id]);
+    const activeIds = new Set((myDeliveries || []).map((o: any) => o.id));
+    const notDeclined = availableOrders.filter((o: any) => !declinedMap[o.id] && !activeIds.has(o.id));
     const list = multiStore && effectiveStoreId
       ? notDeclined.filter((o: any) => o.store_id === effectiveStoreId)
       : notDeclined;
     return useOptimized ? optimizeRoute(list, activeStoreCoords) : list;
-  }, [availableOrders, multiStore, effectiveStoreId, useOptimized, activeStoreCoords, declinedMap]);
+  }, [availableOrders, myDeliveries, multiStore, effectiveStoreId, useOptimized, activeStoreCoords, declinedMap]);
 
   // Calculate total route distance
   const routeDistanceKm = useMemo(() => {
@@ -577,11 +579,20 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
 
   // Per-store order counts for badges
   const storeOrderCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
-    (myDeliveries || []).forEach((o: any) => { counts[o.store_id] = (counts[o.store_id] || 0) + 1; });
-    (availableOrders || []).forEach((o: any) => { counts[o.store_id] = (counts[o.store_id] || 0) + 1; });
-    return counts;
-  }, [myDeliveries, availableOrders]);
+    const counts: Record<string, Set<string>> = {};
+    const activeIds = new Set((myDeliveries || []).map((o: any) => o.id));
+    const add = (o: any) => {
+      if (!counts[o.store_id]) counts[o.store_id] = new Set();
+      counts[o.store_id].add(o.id);
+    };
+    (myDeliveries || []).forEach(add);
+    (availableOrders || [])
+      .filter((o: any) => !declinedMap[o.id] && !activeIds.has(o.id))
+      .forEach(add);
+    const result: Record<string, number> = {};
+    Object.entries(counts).forEach(([storeId, ids]) => { result[storeId] = ids.size; });
+    return result;
+  }, [myDeliveries, availableOrders, declinedMap]);
 
   const getStoreName = (storeId: string) => {
     return storeNames?.find((s: any) => s.id === storeId)?.name || "Loja";
@@ -679,7 +690,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
 
   const acceptOrder = async (orderId: string) => {
     haptic.medium();
-    // Optimistic UI: remove from available list immediately
+    setAcceptingOrderIds((prev) => new Set(prev).add(orderId));
     const availableKey = ["store-driver-available", linkedStoreIds, user?.id];
     const myKey = ["store-driver-my-deliveries", user?.id];
     const previousAvailable = queryClient.getQueryData<any[]>(availableKey);
@@ -688,14 +699,6 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
       queryClient.setQueryData(
         availableKey,
         previousAvailable.filter((o: any) => o.id !== orderId),
-      );
-    }
-    // Add to my deliveries cache com status saiu_entrega (RPC já muda no banco)
-    if (acceptedOrder) {
-      const previousMy = queryClient.getQueryData<any[]>(myKey) || [];
-      queryClient.setQueryData(
-        myKey,
-        [{ ...acceptedOrder, driver_id: user?.id, status: "saiu_entrega" }, ...previousMy],
       );
     }
 
@@ -707,6 +710,13 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
       toast.error("Não foi possível aceitar o pedido.");
     } else {
       toast.success("🛵 Saindo para entrega!");
+      if (acceptedOrder) {
+        const previousMy = queryClient.getQueryData<any[]>(myKey) || [];
+        queryClient.setQueryData(
+          myKey,
+          [{ ...acceptedOrder, driver_id: user?.id, status: "saiu_entrega" }, ...previousMy.filter((o: any) => o.id !== orderId)],
+        );
+      }
       // Sync with server in background
       queryClient.invalidateQueries({ queryKey: availableKey });
       queryClient.invalidateQueries({ queryKey: myKey });
@@ -718,6 +728,11 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
         notifyClientFromDriver(acceptedOrder, "saiu_entrega");
       }
     }
+    setAcceptingOrderIds((prev) => {
+      const next = new Set(prev);
+      next.delete(orderId);
+      return next;
+    });
   };
 
   const acceptAllFiltered = async () => {
@@ -874,11 +889,12 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
 
   const hasActiveDeliveries = filteredDeliveries.length > 0;
   const hasAvailable = filteredAvailable.length > 0;
-  const totalActive = (myDeliveries?.length || 0);
-  const totalAvailable = (availableOrders?.length || 0);
+  const totalActiveAllStores = myDeliveries?.length || 0;
+  const totalActive = filteredDeliveries.length;
+  const totalAvailable = filteredAvailable.length;
 
   // Block accepting new orders while driver has any active (non-finalized) deliveries
-  const hasActiveRoutes = totalActive > 0;
+  const hasActiveRoutes = totalActiveAllStores > 0;
 
   // (Listener Realtime duplicado removido — consolidado no listener por loja
   // declarado mais acima nesta página, que faz updates de cache mais precisos
@@ -890,13 +906,13 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
     // Rastreamento fica ativo enquanto o motoboy está online — mesmo sem entrega
     // em andamento — pra loja/cliente saberem que ele está disponível e para
     // validarmos que o plugin nativo está inserindo em `driver_locations`.
-    if (isOnline || totalActive > 0) {
+    if (isOnline || totalActiveAllStores > 0) {
       const firstOrderId = myDeliveries?.[0]?.id || null;
       startDriverTracking(firstOrderId);
     } else {
       stopDriverTracking();
     }
-  }, [user, isOnline, totalActive, myDeliveries?.[0]?.id]);
+  }, [user, isOnline, totalActiveAllStores, myDeliveries?.[0]?.id]);
 
   useEffect(() => {
     if (myDeliveries?.length) {
@@ -1381,16 +1397,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
                     {inDelivery && (
                       (() => {
                         const storeMeta = storeNames?.find((s) => s.id === order.store_id);
-                        // Fallback: usa a cidade que já vem embutida no join `stores(...)` do próprio pedido,
-                        // caso `storeNames` ainda não tenha carregado ou não contenha essa loja.
-                        const rawCity =
-                          storeMeta?.address_city ||
-                          ((order as any).stores?.address_city as string | undefined) ||
-                          "";
-                        const cityNorm = rawCity
-                          .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-                          .trim().toLowerCase();
-                        const autofill = !!storeMeta?.driver_pin_autofill || cityNorm === "itatinga";
+                        const autofill = !!storeMeta?.driver_pin_autofill;
                         const orderPin = (order as any).delivery_pin as string | undefined;
                         const effectivePin = autofill && orderPin ? orderPin : (pinInputs[order.id] || "");
                         return (
@@ -1486,6 +1493,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
           {filteredAvailable.map((order: any, index: number) => {
             const itemsCount = (order.order_items || []).reduce((s: number, it: any) => s + (it.quantity || 1), 0);
             const canDecline = (storeDriverCounts?.[order.store_id] || 0) >= 2 && !hasActiveRoutes;
+            const acceptingThisOrder = acceptingOrderIds.has(order.id);
             return (
               <div
                 key={order.id}
@@ -1542,14 +1550,19 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
                   <div className="pt-1 space-y-2">
                     <button
                       onClick={() => acceptOrder(order.id)}
-                      disabled={hasActiveRoutes}
+                        disabled={hasActiveRoutes || acceptingThisOrder}
                       className={`w-full h-14 font-black rounded-2xl text-base flex items-center justify-center gap-2 transition-transform ${
-                        hasActiveRoutes
+                        hasActiveRoutes || acceptingThisOrder
                           ? "bg-muted text-muted-foreground cursor-not-allowed"
                           : "bg-primary text-primary-foreground shadow-md shadow-primary/25 active:scale-[0.97]"
                       }`}
                     >
-                      {hasActiveRoutes ? "Finalize a rota atual" : (
+                      {acceptingThisOrder ? (
+                        <>
+                          <Loader2 className="h-5 w-5 animate-spin" />
+                          Aceitando...
+                        </>
+                      ) : hasActiveRoutes ? "Finalize a rota atual" : (
                         <>
                           Aceitar entrega
                           <ArrowRight className="h-5 w-5" strokeWidth={2.5} />

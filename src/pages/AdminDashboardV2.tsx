@@ -1229,8 +1229,10 @@ const AdminDashboard = () => {
         headers: { Authorization: `Bearer ${session?.access_token}` },
       });
 
-      if (res.error) throw new Error(res.error.message);
+      // supabase-js retorna mensagem genérica em res.error; o motivo real
+      // vem no corpo (res.data.error). Preferir o corpo quando existir.
       if (res.data?.error) throw new Error(res.data.error);
+      if (res.error) throw new Error(res.error.message || "Falha ao cancelar pedido");
 
       queryClient.invalidateQueries({ queryKey: ["store-orders", store?.id] });
       setCancelConfirm(null);
@@ -1896,6 +1898,11 @@ const AdminDashboard = () => {
                 buildReadyMessage={buildReadyMessage}
                 openWhatsApp={openWhatsApp}
                 evolutionConnected={evolutionConnected}
+                cancelConfirm={cancelConfirm}
+                cancelReason={cancelReason}
+                setCancelConfirm={setCancelConfirm}
+                setCancelReason={setCancelReason}
+                cancellingOrder={cancellingOrder}
                 updateOrderStatus={updateOrderStatus}
                 handleAcceptOrder={handleAcceptOrder}
                 handleCancelOrder={handleCancelOrder}
