@@ -65,40 +65,14 @@ const GuestCheckoutPage = () => {
     enabled: !!storeId,
   });
 
-  const { data: fees } = useQuery({
-    queryKey: ["nb-fees"],
-    queryFn: async () => {
-      const { data } = await supabase.from("neighborhood_fees").select("*").order("name");
-      return data || [];
-    },
-  });
-
   const [calculatedFee, setCalculatedFee] = useState<number | null>(null);
   const [calculatingFee, setCalculatingFee] = useState(false);
 
   // Quanto a plataforma cobra a MAIS do cliente (respeita split "cliente/meio_a_meio/lojista")
   const platformCustomerExtra = storePlan.platformFeeCustomerExtra ?? 2;
 
-  // 1) legado Itatinga: tabela neighborhood_fees por bairro
-  const legacyFee = useMemo(() => {
-    if (!neighborhood || !fees || (fees as any[]).length === 0) return null;
-    const norm = (s: string) =>
-      s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s+/g, " ").trim();
-    const target = norm(neighborhood);
-    const list = fees as any[];
-    const m =
-      list.find((f) => norm(f.name) === target) ||
-      list.find((f) => norm(f.name).includes(target) || target.includes(norm(f.name)));
-    return m ? Number(m.fee || 0) : null;
-  }, [neighborhood, fees]);
-
-  // 2) lógica do lojista (fixa OU por km) — mesma do checkout normal
+  // Lógica do lojista (fixa OU por km) — mesma do checkout normal
   useEffect(() => {
-    if (legacyFee != null) {
-      // legacy neighborhood_fees já é taxa da loja; soma a parte da plataforma
-      setCalculatedFee(addMoney(legacyFee, platformCustomerExtra));
-      return;
-    }
     const s: any = store;
     if (!s) return;
     const customerCep = cep.replace(/\D/g, "");
@@ -125,7 +99,7 @@ const GuestCheckoutPage = () => {
       .catch(() => { if (!cancelled) setCalculatedFee(null); })
       .finally(() => { if (!cancelled) setCalculatingFee(false); });
     return () => { cancelled = true; };
-  }, [store, legacyFee, cep, street, number, neighborhood, platformCustomerExtra]);
+  }, [store, cep, street, number, neighborhood, platformCustomerExtra]);
 
   const matchedFee = calculatedFee ?? 0;
 
