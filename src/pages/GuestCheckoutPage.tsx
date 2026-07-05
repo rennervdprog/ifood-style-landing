@@ -1,6 +1,6 @@
 // Checkout guest (sem login) — piloto Itatinga.
 // Chama a edge function `guest-checkout` no Supabase externo.
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,8 +11,6 @@ import { formatCep, fetchCep } from "@/lib/location";
 import { maskWhatsApp } from "@/lib/whatsapp";
 import { formatBRL, addMoney } from "@/lib/utils";
 import { calculateStoreOwnDeliveryFee, calculateDeliveryFee, DEFAULT_DELIVERY_FEE_CONFIG, type DeliveryFeeConfig } from "@/lib/deliveryFee";
-import { useStorePlan } from "@/hooks/useStorePlan";
-import confetti from "canvas-confetti";
 
 const PAY_METHODS = [
   { id: "pix_machine", label: "PIX na maquininha", icon: QrCode },
@@ -24,7 +22,6 @@ const GuestCheckoutPage = () => {
   const navigate = useNavigate();
   const { items, subtotal, clearCart } = useCart();
   const storeId = items[0]?.store_id;
-  const storePlan = useStorePlan(storeId);
 
   const [phone, setPhone] = useState("");
   const [name, setName] = useState("");
@@ -53,16 +50,12 @@ const GuestCheckoutPage = () => {
     queryFn: async () => {
       const { data } = await supabase
         .from("stores")
-        .select("id, name, address_city, minimum_order_value, own_delivery_fee, delivery_mode, delivery_fee_type, delivery_base_km, delivery_fee_base, delivery_fee_per_km, address_cep, latitude, longitude, free_delivery_threshold")
+        .select("id, name, address_city, minimum_order_value, own_delivery_fee, delivery_mode, delivery_fee_type, delivery_base_km, delivery_fee_base, delivery_fee_per_km, address_cep, latitude, longitude, free_delivery_threshold, guest_checkout_enabled")
         .eq("id", storeId!).maybeSingle();
-      // guest_checkout_enabled não está em stores_public; consultamos direto
-      const { data: gc } = await (supabase as any)
-        .from("stores")
-        .select("guest_checkout_enabled")
-        .eq("id", storeId!).maybeSingle();
-      return { ...((data as any) || {}), guest_checkout_enabled: (gc as any)?.guest_checkout_enabled ?? false };
+      return (data as any) || null;
     },
     enabled: !!storeId,
+    staleTime: 1000 * 60 * 5,
   });
 
   // Split efetivo da plataforma para esta loja (respeita override do plano).
@@ -84,21 +77,13 @@ const GuestCheckoutPage = () => {
     staleTime: 1000 * 60 * 5,
   });
 
-  const { data: deliveryFeeConfig } = useQuery({
-    queryKey: ["delivery-fee-config-guest"],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("admin_settings").select("value").eq("key", "delivery_fee_config").maybeSingle();
-      return data?.value as unknown as DeliveryFeeConfig | null;
-    },
-    staleTime: 1000 * 60 * 10,
-  });
-
   const [calculatedFee, setCalculatedFee] = useState<number | null>(null);
   const [calculatingFee, setCalculatingFee] = useState(false);
 
   const isOwnDelivery = ((store as any)?.delivery_mode || "platform") === "own";
-  const config = deliveryFeeConfig || DEFAULT_DELIVERY_FEE_CONFIG;
+  // Anon não tem RLS em admin_settings; usamos default e cobrimos platform_split
+  // via RPC get_store_platform_split (respeita override do lojista).
+  const config = DEFAULT_DELIVERY_FEE_CONFIG;
   // Split efetivo: override do plano da loja > default (2). Autonomia = 0.
   const isAutonomy = platformInfo?.plan_type === "autonomy";
   const baseSplit = isAutonomy
@@ -116,17 +101,24 @@ const GuestCheckoutPage = () => {
   // Fee: mesma lógica do checkout normal
   //  - entrega própria (own): calculateStoreOwnDeliveryFee (fixa OU km) + platformCustomerExtra
   //  - entrega da plataforma: calculateDeliveryFee (config global city_fee / rural)
+  // Debounce dos inputs de endereço pra não geocodificar/rotear a cada tecla.
+  const [debouncedAddr, setDebouncedAddr] = useState({ cep, street, number, neighborhood });
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedAddr({ cep, street, number, neighborhood }), 400);
+    return () => clearTimeout(t);
+  }, [cep, street, number, neighborhood]);
+
   useEffect(() => {
     const s: any = store;
     if (!s) return;
-    const customerCep = cep.replace(/\D/g, "");
+    const customerCep = debouncedAddr.cep.replace(/\D/g, "");
     const storeCep = (s.address_cep || "").replace(/\D/g, "");
     let cancelled = false;
     setCalculatingFee(true);
     const promise = isOwnDelivery
       ? (() => {
           const feeType = (s.delivery_fee_type as "fixed" | "km") || "fixed";
-          if (feeType === "km" && (!customerCep || !street.trim())) {
+          if (feeType === "km" && (!customerCep || !debouncedAddr.street.trim())) {
             return Promise.resolve<{ fee: number } | null>(null);
           }
           return calculateStoreOwnDeliveryFee(customerCep, storeCep, {
@@ -136,9 +128,9 @@ const GuestCheckoutPage = () => {
             delivery_fee_per_km: Number(s.delivery_fee_per_km || 0),
             own_delivery_fee: Number(s.own_delivery_fee || 0),
             platform_split: platformCustomerExtra,
-            customer_street: street || null,
-            customer_number: number || null,
-            customer_neighborhood: neighborhood || null,
+            customer_street: debouncedAddr.street || null,
+            customer_number: debouncedAddr.number || null,
+            customer_neighborhood: debouncedAddr.neighborhood || null,
             store_coords: s.latitude && s.longitude ? { lat: Number(s.latitude), lng: Number(s.longitude) } : null,
           });
         })()
@@ -150,7 +142,7 @@ const GuestCheckoutPage = () => {
       .catch(() => { if (!cancelled) setCalculatedFee(null); })
       .finally(() => { if (!cancelled) setCalculatingFee(false); });
     return () => { cancelled = true; };
-  }, [store, cep, street, number, neighborhood, platformCustomerExtra, isOwnDelivery, config]);
+  }, [store, debouncedAddr, platformCustomerExtra, isOwnDelivery, config]);
 
   // Frete grátis por valor mínimo (loja absorve) — igual checkout normal
   const storeFreeThreshold = Number((store as any)?.free_delivery_threshold || 0);
@@ -255,7 +247,10 @@ const GuestCheckoutPage = () => {
       const res = data as any;
       if (!res?.ok) throw new Error(res?.error || "Falha ao criar pedido");
       clearCart();
-      confetti({ particleCount: 120, spread: 80, origin: { y: 0.7 } });
+      // Lazy-load canvas-confetti só no sucesso (economiza ~7 KB gzip no bundle inicial)
+      import("canvas-confetti").then(({ default: confetti }) => {
+        confetti({ particleCount: 120, spread: 80, origin: { y: 0.7 } });
+      }).catch(() => {});
       toast.success("Pedido enviado!");
       navigate(`/p/${res.order_id}?t=${res.phone_last4}`, { replace: true });
     } catch (e: any) {
