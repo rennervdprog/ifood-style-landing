@@ -78,10 +78,14 @@ const GuestCheckoutPage = () => {
   const [calculatedFee, setCalculatedFee] = useState<number | null>(null);
   const [calculatingFee, setCalculatingFee] = useState(false);
 
-  // Quanto a plataforma cobra a MAIS do cliente (respeita split "cliente/meio_a_meio/lojista")
-  const platformCustomerExtra = storePlan.platformFeeCustomerExtra ?? 2;
   const isOwnDelivery = ((store as any)?.delivery_mode || "platform") === "own";
   const config = deliveryFeeConfig || DEFAULT_DELIVERY_FEE_CONFIG;
+  // Mesma cadeia do checkout normal: respeita split escolhido pela loja, com
+  // fallback para platformDeliverySplit e depois admin_settings.platform_split.
+  const platformSplitFallback = config.platform_split ?? DEFAULT_DELIVERY_FEE_CONFIG.platform_split;
+  const platformCustomerExtra = isOwnDelivery
+    ? (storePlan.platformFeeCustomerExtra ?? (storePlan.platformDeliverySplit > 0 ? storePlan.platformDeliverySplit : platformSplitFallback))
+    : 0;
 
   // Fee: mesma lógica do checkout normal
   //  - entrega própria (own): calculateStoreOwnDeliveryFee (fixa OU km) + platformCustomerExtra
