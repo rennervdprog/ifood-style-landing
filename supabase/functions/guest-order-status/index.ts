@@ -36,11 +36,19 @@ Deno.serve(async (req) => {
     if (!guest || String((guest as any).phone).slice(-4) !== last4) return json({ error: "not_found" }, 404);
 
     const { data: store } = await sb.from("stores")
-      .select("name, slug").eq("id", (order as any).store_id).maybeSingle();
+      .select("name, slug, whatsapp_number").eq("id", (order as any).store_id).maybeSingle();
     const { data: items } = await sb.from("order_items")
       .select("quantity, unit_price, products(name)").eq("order_id", orderId);
+    const { data: profile } = await sb.from("profiles")
+      .select("delivery_pin").eq("user_id", (order as any).client_id).maybeSingle();
 
-    return json({ order, store, items, customer_name: (guest as any).name || null });
+    return json({
+      order,
+      store,
+      items,
+      customer_name: (guest as any).name || null,
+      delivery_pin: (profile as any)?.delivery_pin || null,
+    });
   } catch (e) {
     console.error("[guest-order-status] error:", e);
     return json({ error: "internal_error" }, 500);
