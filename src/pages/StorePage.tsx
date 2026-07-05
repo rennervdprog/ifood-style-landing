@@ -202,6 +202,26 @@ const StorePage = () => {
 
    const storePlan = useStorePlan(storeId);
 
+   // Guest (anon) não enxerga store_plans/admin_settings via RLS, então o
+   // storePlan.platformFeeCustomerExtra cai para o default (R$2) e a taxa
+   // exibida no card fica errada. Buscamos o split real via RPC SECURITY DEFINER
+   // (mesmo padrão do GuestCheckoutPage) para respeitar o override do lojista.
+   const { data: platformInfo } = useQuery({
+     queryKey: ["store-platform-split", storeId],
+     queryFn: async () => {
+       const { data } = await (supabase as any).rpc("get_store_platform_split", { _store_id: storeId });
+       const row = Array.isArray(data) ? data[0] : data;
+       return row as {
+         plan_type: string | null;
+         platform_delivery_split_override: number | null;
+         platform_fee_split: "cliente" | "meio_a_meio" | "lojista" | null;
+         delivery_mode: string | null;
+       } | null;
+     },
+     enabled: !!storeId,
+     staleTime: 1000 * 60 * 5,
+   });
+
    // Track scroll to show name in header
    useEffect(() => {
      let ticking = false;
