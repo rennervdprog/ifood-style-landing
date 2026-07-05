@@ -97,10 +97,15 @@ function preloadInitialRouteChunks(appMode: string) {
           }
         }
         if (!links.length) return html;
-        return html.replace(
-          '<link rel="modulepreload" href="/src/main.tsx" />',
-          '<link rel="modulepreload" href="/src/main.tsx" />\n' + links.join("\n"),
-        );
+        // O Vite reescreve o preload de /src/main.tsx para /assets/main-*.js
+        // ANTES desse handler rodar. Casamos o novo href via regex e injetamos
+        // as pistas de preload das rotas iniciais logo depois.
+        const re = /<link rel="modulepreload"[^>]*href="[^"]*\/assets\/main-[^"]+"[^>]*>/;
+        if (re.test(html)) {
+          return html.replace(re, (match) => `${match}\n${links.join("\n")}`);
+        }
+        // Fallback: injeta antes de </head>
+        return html.replace("</head>", `${links.join("\n")}\n  </head>`);
       },
     },
   };
