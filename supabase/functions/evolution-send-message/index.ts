@@ -161,7 +161,9 @@ Deno.serve(async (req) => {
     const ageDays = cfg.connected_at
       ? (Date.now() - new Date(cfg.connected_at).getTime()) / 86_400_000
       : 999;
-    const dailyLimit = kind === "auto_reply" ? Math.max(80, dailyLimitForAge(ageDays)) : dailyLimitForAge(ageDays);
+    // P0: warm-up honesto — auto_reply respeita o mesmo limite da fase.
+    // (antes: Math.max(80,…) anulava o warm-up e chip novo já disparava 80/dia → banimento)
+    const dailyLimit = dailyLimitForAge(ageDays);
     const dayStart = new Date(); dayStart.setHours(0, 0, 0, 0);
     const { count: sentToday } = await admin
       .from("whatsapp_send_log")
@@ -172,8 +174,8 @@ Deno.serve(async (req) => {
     if ((sentToday ?? 0) >= dailyLimit) {
       return json({ error: `Limite diário de envios atingido (${dailyLimit}). Aguarde amanhã.` }, 429);
     }
-    // Coffee break: a cada 10 msgs no dia, pausa 5-15min (P1.2)
-    if (kind !== "auto_reply" && (sentToday ?? 0) > 0 && (sentToday ?? 0) % 10 === 0) {
+    // P0 — coffee break também para auto_reply: a cada 10 msgs no dia, pausa 5-15min.
+    if ((sentToday ?? 0) > 0 && (sentToday ?? 0) % 10 === 0) {
       await sleep(300_000 + Math.floor(Math.random() * 600_000));
     }
 
