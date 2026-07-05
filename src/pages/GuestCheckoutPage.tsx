@@ -10,7 +10,7 @@ import { ArrowLeft, MapPin, CreditCard, Banknote, QrCode, Search, Loader2, Shopp
 import { formatCep, fetchCep } from "@/lib/location";
 import { maskWhatsApp } from "@/lib/whatsapp";
 import { formatBRL, addMoney } from "@/lib/utils";
-import { calculateStoreOwnDeliveryFee } from "@/lib/deliveryFee";
+import { calculateStoreOwnDeliveryFee, calculateDeliveryFee, DEFAULT_DELIVERY_FEE_CONFIG, type DeliveryFeeConfig } from "@/lib/deliveryFee";
 import { useStorePlan } from "@/hooks/useStorePlan";
 import confetti from "canvas-confetti";
 
@@ -53,16 +53,26 @@ const GuestCheckoutPage = () => {
     queryFn: async () => {
       const { data } = await supabase
         .from("stores")
-        .select("id, name, address_city, minimum_order_value, own_delivery_fee, delivery_mode, delivery_fee_type, delivery_base_km, delivery_fee_base, delivery_fee_per_km, address_cep, latitude, longitude")
+        .select("id, name, address_city, minimum_order_value, own_delivery_fee, delivery_mode, delivery_fee_type, delivery_base_km, delivery_fee_base, delivery_fee_per_km, address_cep, latitude, longitude, free_delivery_threshold")
         .eq("id", storeId!).maybeSingle();
       // guest_checkout_enabled não está em stores_public; consultamos direto
       const { data: gc } = await (supabase as any)
         .from("stores")
         .select("guest_checkout_enabled")
         .eq("id", storeId!).maybeSingle();
-      return { ...(data || {}), guest_checkout_enabled: gc?.guest_checkout_enabled ?? false };
+      return { ...((data as any) || {}), guest_checkout_enabled: (gc as any)?.guest_checkout_enabled ?? false };
     },
     enabled: !!storeId,
+  });
+
+  const { data: deliveryFeeConfig } = useQuery({
+    queryKey: ["delivery-fee-config-guest"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("admin_settings").select("value").eq("key", "delivery_fee_config").maybeSingle();
+      return data?.value as unknown as DeliveryFeeConfig | null;
+    },
+    staleTime: 1000 * 60 * 10,
   });
 
   const [calculatedFee, setCalculatedFee] = useState<number | null>(null);
@@ -70,38 +80,52 @@ const GuestCheckoutPage = () => {
 
   // Quanto a plataforma cobra a MAIS do cliente (respeita split "cliente/meio_a_meio/lojista")
   const platformCustomerExtra = storePlan.platformFeeCustomerExtra ?? 2;
+  const isOwnDelivery = ((store as any)?.delivery_mode || "platform") === "own";
+  const config = deliveryFeeConfig || DEFAULT_DELIVERY_FEE_CONFIG;
 
-  // Lógica do lojista (fixa OU por km) — mesma do checkout normal
+  // Fee: mesma lógica do checkout normal
+  //  - entrega própria (own): calculateStoreOwnDeliveryFee (fixa OU km) + platformCustomerExtra
+  //  - entrega da plataforma: calculateDeliveryFee (config global city_fee / rural)
   useEffect(() => {
     const s: any = store;
     if (!s) return;
     const customerCep = cep.replace(/\D/g, "");
     const storeCep = (s.address_cep || "").replace(/\D/g, "");
-    const feeType = (s.delivery_fee_type as "fixed" | "km") || "fixed";
-    // fixa: dá pra calcular sem CEP; km: precisa CEP + rua
-    if (feeType === "km" && (!customerCep || !street.trim())) {
-      setCalculatedFee(null); return;
-    }
     let cancelled = false;
     setCalculatingFee(true);
-    calculateStoreOwnDeliveryFee(customerCep, storeCep, {
-      delivery_fee_type: feeType,
-      delivery_base_km: Number(s.delivery_base_km || 0),
-      delivery_fee_base: Number(s.delivery_fee_base || 0),
-      delivery_fee_per_km: Number(s.delivery_fee_per_km || 0),
-      own_delivery_fee: Number(s.own_delivery_fee || 0),
-      platform_split: platformCustomerExtra,
-      customer_street: street || null,
-      customer_number: number || null,
-      customer_neighborhood: neighborhood || null,
-      store_coords: s.latitude && s.longitude ? { lat: Number(s.latitude), lng: Number(s.longitude) } : null,
-    }).then((r) => { if (!cancelled) setCalculatedFee(r.fee); })
+    const promise = isOwnDelivery
+      ? (() => {
+          const feeType = (s.delivery_fee_type as "fixed" | "km") || "fixed";
+          if (feeType === "km" && (!customerCep || !street.trim())) {
+            return Promise.resolve<{ fee: number } | null>(null);
+          }
+          return calculateStoreOwnDeliveryFee(customerCep, storeCep, {
+            delivery_fee_type: feeType,
+            delivery_base_km: Number(s.delivery_base_km || 0),
+            delivery_fee_base: Number(s.delivery_fee_base || 0),
+            delivery_fee_per_km: Number(s.delivery_fee_per_km || 0),
+            own_delivery_fee: Number(s.own_delivery_fee || 0),
+            platform_split: platformCustomerExtra,
+            customer_street: street || null,
+            customer_number: number || null,
+            customer_neighborhood: neighborhood || null,
+            store_coords: s.latitude && s.longitude ? { lat: Number(s.latitude), lng: Number(s.longitude) } : null,
+          });
+        })()
+      : (customerCep
+          ? calculateDeliveryFee(customerCep, storeCep, config)
+          : Promise.resolve<{ fee: number } | null>(null));
+    Promise.resolve(promise)
+      .then((r) => { if (!cancelled) setCalculatedFee(r ? r.fee : null); })
       .catch(() => { if (!cancelled) setCalculatedFee(null); })
       .finally(() => { if (!cancelled) setCalculatingFee(false); });
     return () => { cancelled = true; };
-  }, [store, cep, street, number, neighborhood, platformCustomerExtra]);
+  }, [store, cep, street, number, neighborhood, platformCustomerExtra, isOwnDelivery, config]);
 
-  const matchedFee = calculatedFee ?? 0;
+  // Frete grátis por valor mínimo (loja absorve) — igual checkout normal
+  const storeFreeThreshold = Number((store as any)?.free_delivery_threshold || 0);
+  const freeDeliveryByThreshold = storeFreeThreshold > 0 && subtotal >= storeFreeThreshold;
+  const matchedFee = freeDeliveryByThreshold ? 0 : (calculatedFee ?? 0);
 
   const total = useMemo(() => addMoney(subtotal, matchedFee), [subtotal, matchedFee]);
 
