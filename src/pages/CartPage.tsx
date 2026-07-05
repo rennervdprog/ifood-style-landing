@@ -14,24 +14,37 @@ const CartPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  // Pré-carrega o chunk da próxima tela (auth ou checkout) para evitar tela branca de ~5s
+  const storeId = items[0]?.store_id;
+
+  // Pré-carrega o chunk da próxima tela (auth/checkout/guest)
   useEffect(() => {
-    if (user) {
-      import("./CheckoutPage");
-    } else {
-      import("./AuthPage");
-    }
+    if (user) import("./CheckoutPage");
+    else import("./GuestCheckoutPage");
   }, [user]);
 
+  // Guest checkout habilitado por loja (piloto Itatinga)
+  const { data: guestFlag } = useQuery({
+    queryKey: ["store-guest-flag", storeId],
+    queryFn: async () => {
+      const { data } = await (supabase as any)
+        .from("stores")
+        .select("guest_checkout_enabled")
+        .eq("id", storeId!).maybeSingle();
+      return !!data?.guest_checkout_enabled;
+    },
+    enabled: !!storeId,
+    staleTime: 60_000,
+  });
+
   const handleFinalize = () => {
-    if (!user) {
-      navigate("/auth", { state: { from: "/checkout" } });
-    } else {
+    if (user) {
       navigate("/checkout");
+    } else if (guestFlag) {
+      navigate("/checkout-rapido");
+    } else {
+      navigate("/auth", { state: { from: "/checkout" } });
     }
   };
-
-  const storeId = items[0]?.store_id;
 
   const { data: storeInfo } = useQuery({
     queryKey: ["cart-store-status", storeId],
