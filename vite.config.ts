@@ -83,34 +83,36 @@ function preloadInitialRouteChunks(appMode: string) {
   return {
     name: "preload-initial-route-chunks",
     apply: "build" as const,
-    transformIndexHtml: {
-      order: "post" as const,
-      handler(html: string, ctx: any) {
-        const bundle = ctx?.bundle;
-        if (!bundle) {
-          console.warn("[preload-plugin] ctx.bundle vazio — pulando");
-          return html;
-        }
+    // Roda após o Vite emitir tudo (index.html + chunks). Lê o dist/index.html,
+    // encontra os chunks por facadeModuleId no bundle capturado, e injeta
+    // <link rel="modulepreload"> para as rotas iniciais.
+    writeBundle(this: any, options: any, bundle: any) {
+      try {
+        const outDir = options?.dir || path.resolve(__dirname, "dist");
+        const htmlPath = path.join(outDir, "index.html");
+        if (!fs.existsSync(htmlPath)) return;
         const links: string[] = [];
         for (const [fileName, chunk] of Object.entries<any>(bundle)) {
-          if (chunk.type !== "chunk") continue;
+          if (!chunk || chunk.type !== "chunk") continue;
           const facade = chunk.facadeModuleId || "";
-          if (targets.some((t) => facade.endsWith(`/pages/${t}.tsx`) || facade.endsWith(`/pages/${t}.ts`))) {
+          if (targets.some((t) =>
+            facade.endsWith(`/pages/${t}.tsx`) || facade.endsWith(`/pages/${t}.ts`)
+          )) {
             links.push(`    <link rel="modulepreload" href="/${fileName}" />`);
           }
         }
-        console.log(`[preload-plugin] mode=${appMode} targets=${targets.join(",")} matched=${links.length}`);
-        if (!links.length) return html;
-        // O Vite reescreve o preload de /src/main.tsx para /assets/main-*.js
-        // ANTES desse handler rodar. Casamos o novo href via regex e injetamos
-        // as pistas de preload das rotas iniciais logo depois.
-        const re = /<link rel="modulepreload"[^>]*href="[^"]*\/assets\/main-[^"]+"[^>]*>/;
-        if (re.test(html)) {
-          return html.replace(re, (match) => `${match}\n${links.join("\n")}`);
-        }
-        // Fallback: injeta antes de </head>
-        return html.replace("</head>", `${links.join("\n")}\n  </head>`);
-      },
+        console.log(`[preload-plugin] mode=${appMode || "(none)"} targets=${targets.join(",")} matched=${links.length}`);
+        if (!links.length) return;
+        let html = fs.readFileSync(htmlPath, "utf8");
+        if (html.includes("<!--__PRELOADS__-->")) return;
+        html = html.replace(
+          "</head>",
+          `${links.join("\n")}\n    <!--__PRELOADS__-->\n  </head>`,
+        );
+        fs.writeFileSync(htmlPath, html);
+      } catch (e) {
+        console.warn("[preload-plugin] erro:", e);
+      }
     },
   };
 }
