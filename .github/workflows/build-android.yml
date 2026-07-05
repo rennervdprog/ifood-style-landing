@@ -115,12 +115,13 @@ jobs:
                 showSpinner: true,
                 spinnerColor: '#FFFFFF',
                 launchFadeOutDuration: 500,
+                launchShowDuration: 2000,
               },
               CapacitorUpdater: {
                 autoUpdate: true,
                 autoDeleteFailed: true,
                 autoDeletePrevious: true,
-                directUpdate: true,
+                directUpdate: false,
                 resetWhenUpdate: true,
                 keepUrlPathAfterReload: true,
                 updateUrl: 'https://qkjhguziuchqsbxzruea.supabase.co/storage/v1/object/public/app-releases/manifest.json',
@@ -398,12 +399,13 @@ jobs:
             plugins: {
               SplashScreen: {
                 launchAutoHide: false,
+                launchShowDuration: 2000,
               },
               CapacitorUpdater: {
                 autoUpdate: true,
                 autoDeleteFailed: true,
                 autoDeletePrevious: true,
-                directUpdate: true,
+                directUpdate: false,
                 resetWhenUpdate: true,
                 keepUrlPathAfterReload: true,
                 updateUrl: 'https://qkjhguziuchqsbxzruea.supabase.co/storage/v1/object/public/app-releases/manifest.json',
