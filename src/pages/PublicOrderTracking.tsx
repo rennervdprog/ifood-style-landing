@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useSearchParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { formatBRL } from "@/lib/utils";
-import { ArrowLeft, MapPin, MessageCircle, Loader2, CheckCircle2, Clock, Truck } from "lucide-react";
+import { ArrowLeft, MapPin, MessageCircle, Loader2, CheckCircle2, Clock, Truck, KeyRound, ShieldAlert } from "lucide-react";
 
 const STATUS_LABEL: Record<string, { label: string; color: string; icon: any }> = {
   pendente: { label: "Recebido pela loja", color: "text-blue-600", icon: Clock },
@@ -77,6 +77,25 @@ const PublicOrderTracking = () => {
           <p className="text-xs text-muted-foreground">Pedido #{String(data.order.id).slice(0, 8)}</p>
           {data.customer_name && <p className="text-sm">Olá, {data.customer_name}</p>}
         </div>
+
+        {data.delivery_pin && data.order.status !== "entregue" && data.order.status !== "cancelado" && (
+          <div className="rounded-2xl border-2 border-primary/30 bg-primary/5 p-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <div className="w-9 h-9 rounded-xl bg-primary/15 flex items-center justify-center">
+                <KeyRound className="h-4 w-4 text-primary" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-foreground">Seu PIN de entrega</p>
+                <p className="text-[11px] text-muted-foreground">Informe ao entregador para liberar o pedido</p>
+              </div>
+            </div>
+            <p className="text-4xl font-black tracking-[0.5em] text-center text-primary">{data.delivery_pin}</p>
+            <div className="flex items-start gap-2 rounded-xl bg-amber-50 border border-amber-200 p-2.5">
+              <ShieldAlert className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+              <p className="text-[11px] text-amber-800">Não compartilhe este código com ninguém além do entregador na hora da entrega.</p>
+            </div>
+          </div>
+        )}
 
         <div className="bg-card border border-border rounded-2xl p-4 space-y-2">
           <h2 className="text-sm font-bold">{data.store?.name || "Loja"}</h2>
