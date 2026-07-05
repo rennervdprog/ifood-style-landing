@@ -68,6 +68,7 @@ async function createAsaasCharge(params: {
       },
       body: JSON.stringify({
         billingType: "PIX",
+      notificationDisabled: true,
         value: params.amount,
         dueDate: params.dueDate,
         description: params.description,
@@ -170,7 +171,7 @@ Deno.serve(async (req) => {
         comissao_pendente,
         stores!inner(
           id, name, status, asaas_account_id, asaas_wallet_id,
-          store_plans!inner(plan_type, is_active, commission_rate)
+          store_plans!inner(plan_type, is_active, commission_rate, pdv_commission_pending)
         )
       `)
       .eq("stores.status", "ativo")
@@ -193,36 +194,41 @@ Deno.serve(async (req) => {
       const planType = plan.plan_type;
       const repasse = Number(balance.repasse_pendente || 0);
       const comissao = Number(balance.comissao_pendente || 0);
+      const pdvPending = Number(plan.pdv_commission_pending || 0);
 
       // Calcular valor a cobrar por tipo de plano
       let chargeAmount = 0;
       let chargeDescription = "";
+      // Base (balance): repasse + comissao — depende do plano.
+      let baseAmount = 0;
 
       if (planType === "fixed" || planType === "supporter") {
         // Cobrar repasse_pendente (R$2 por entrega)
-        if (repasse >= MIN_CHARGE_AMOUNT) {
-          chargeAmount = repasse;
-          chargeDescription = `Taxa de entrega ItaSuper — ${store.name} (${repasse.toFixed(0)} entregas × R$2,00)`;
-        }
+        baseAmount = repasse;
+        chargeDescription = `Taxa de entrega ItaSuper — ${store.name} (${repasse.toFixed(0)} entregas × R$2,00)`;
       } else if (planType === "hybrid") {
         // Hybrid: cobrar repasse_pendente (R$2/entrega) + comissao_pendente (2,5% físico)
-        const total = repasse + comissao;
-        if (total >= MIN_CHARGE_AMOUNT) {
-          chargeAmount = total;
-          const parts = [];
-          if (repasse > 0) parts.push(`R$${repasse.toFixed(2)} taxa entrega`);
-          if (comissao > 0) parts.push(`R$${comissao.toFixed(2)} comissão (2,5%)`);
-          chargeDescription = `ItaSuper — ${store.name}: ${parts.join(" + ")}`;
-        }
+        baseAmount = repasse + comissao;
+        const parts = [];
+        if (repasse > 0) parts.push(`R$${repasse.toFixed(2)} taxa entrega`);
+        if (comissao > 0) parts.push(`R$${comissao.toFixed(2)} comissão (2,5%)`);
+        chargeDescription = `ItaSuper — ${store.name}: ${parts.join(" + ")}`;
       } else if (planType === "commission_only") {
         // Cobrar comissao_pendente (% sobre vendas físicas)
-        if (comissao >= MIN_CHARGE_AMOUNT) {
-          chargeAmount = comissao;
-          chargeDescription = `Comissão ItaSuper — ${store.name} (vendas em dinheiro/cartão)`;
-        }
+        baseAmount = comissao;
+        chargeDescription = `Comissão ItaSuper — ${store.name} (vendas em dinheiro/cartão)`;
       }
 
-      if (chargeAmount <= 0) {
+      // Soma o pendente do PDV (independente do plano). Webhook decrementa
+      // via metadata.pdv_pending_billed quando o PIX é confirmado.
+      chargeAmount = baseAmount + pdvPending;
+      if (pdvPending > 0) {
+        chargeDescription = chargeDescription
+          ? `${chargeDescription} + R$${pdvPending.toFixed(2)} comissão PDV`
+          : `Comissão PDV ItaSuper — ${store.name}`;
+      }
+
+      if (chargeAmount < MIN_CHARGE_AMOUNT) {
         results.push({ store: store.name, status: "skip", reason: `Saldo abaixo de R$${MIN_CHARGE_AMOUNT}` });
         continue;
       }
@@ -317,6 +323,9 @@ Deno.serve(async (req) => {
           plan_type: planType,
           repasse_pendente: repasse,
           comissao_pendente: comissao,
+          pdv_commission_pending: pdvPending,
+          balance_billed: baseAmount,
+          pdv_pending_billed: pdvPending,
           due_date: dueDateStr,
           asaas_payment_id: charge.paymentId,
         },
