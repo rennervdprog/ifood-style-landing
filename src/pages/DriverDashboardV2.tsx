@@ -364,7 +364,7 @@ const DriverDashboardV2 = () => {
               </div>
               <div className="min-w-0">
                 <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest leading-none">
-                  Entregador
+                  Olá 👋
                 </p>
                 <p className="text-base font-black text-foreground leading-tight truncate mt-0.5">
                   {driverFirstName}
