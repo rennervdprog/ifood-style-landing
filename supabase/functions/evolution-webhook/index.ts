@@ -67,15 +67,43 @@ const spHour = () => {
 const greetingPrefix = (h: number) =>
   h >= 6 && h < 12 ? "Bom dia" : h >= 12 && h < 18 ? "Boa tarde" : "Boa noite";
 
-// P2 — mensagem única e imutável: saudação + link em UM envio, sem pergunta,
-// sem variação. Menos texto = menos rajada = chip vive mais.
+// Fase 3 — rotação de templates + micro-variação invisível para evitar
+// detecção de "mesma mensagem" pela Meta. Cada envio combina um template
+// aleatório com pequenas variações de emoji/pontuação e um caractere
+// zero-width no fim (invisível), gerando hash único a cada envio.
+const pick = <T,>(arr: T[]) => arr[Math.floor(Math.random() * arr.length)];
+const ZW = ["\u200B", "\u200C", "\u200D", "\uFEFF"]; // zero-width chars
+const EMOJIS_OPEN = ["🍽️", "🍕", "🍔", "😋", "🛵", "✨", "🥘"];
+const OPT_OUT = [
+  "_(Responda PARAR para não receber mais mensagens)_",
+  "_(Envie PARAR se não quiser mais receber)_",
+  "_(Digite PARAR para sair desta lista)_",
+];
+
 const buildOneShot = (storeName: string, link: string) => {
   const prefix = greetingPrefix(spHour());
-  return `${prefix}! Aqui é da *${storeName}*. 🍽️\n\nNosso cardápio com preços e pedidos:\n${link}\n\n_(Responda PARAR para não receber mais mensagens)_`;
+  const emoji = pick(EMOJIS_OPEN);
+  const opt = pick(OPT_OUT);
+  const zw = pick(ZW);
+  const templates = [
+    `${prefix}! Aqui é da *${storeName}*. ${emoji}\n\nNosso cardápio com preços e pedidos:\n${link}\n\n${opt}`,
+    `${prefix}! ${emoji} Somos a *${storeName}*.\n\nDá uma olhada no cardápio e peça por aqui:\n${link}\n\n${opt}`,
+    `${prefix}, tudo bem? ${emoji}\nAqui é a *${storeName}* — cardápio, preços e pedido online:\n${link}\n\n${opt}`,
+    `${prefix}! Obrigado pelo contato com a *${storeName}* ${emoji}\n\nVeja o cardápio completo:\n${link}\n\n${opt}`,
+  ];
+  return pick(templates) + zw;
 };
 
-const buildClosedOneShot = (storeName: string, link: string, nextOpen: string) =>
-  `Olá! Aqui é da *${storeName}*. No momento estamos *fechados* — voltamos ${nextOpen}.\n\nEnquanto isso, dá pra ver o cardápio:\n${link}\n\n_(Responda PARAR para não receber mais mensagens)_`;
+const buildClosedOneShot = (storeName: string, link: string, nextOpen: string) => {
+  const opt = pick(OPT_OUT);
+  const zw = pick(ZW);
+  const templates = [
+    `Olá! Aqui é da *${storeName}*. No momento estamos *fechados* — voltamos ${nextOpen}.\n\nEnquanto isso, dá pra ver o cardápio:\n${link}\n\n${opt}`,
+    `Oi! A *${storeName}* está *fechada* agora, voltamos ${nextOpen}.\n\nJá deixe seu pedido separado no cardápio:\n${link}\n\n${opt}`,
+    `Olá 👋 Estamos *fora do horário* na *${storeName}*, retornamos ${nextOpen}.\n\nCardápio para adiantar:\n${link}\n\n${opt}`,
+  ];
+  return pick(templates) + zw;
+};
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
