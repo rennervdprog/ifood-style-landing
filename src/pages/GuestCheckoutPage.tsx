@@ -50,7 +50,7 @@ const GuestCheckoutPage = () => {
     queryFn: async () => {
       const { data } = await supabase
         .from("stores")
-        .select("id, name, address_city, minimum_order_value")
+        .select("id, name, address_city, minimum_order_value, own_delivery_fee, delivery_mode")
         .eq("id", storeId!).maybeSingle();
       // guest_checkout_enabled não está em stores_public; consultamos direto
       const { data: gc } = await (supabase as any)
@@ -70,11 +70,24 @@ const GuestCheckoutPage = () => {
     },
   });
 
+  const PLATFORM_FEE = 2;
   const matchedFee = useMemo(() => {
-    if (!neighborhood || !fees) return 0;
-    const m = (fees as any[]).find((f) => f.name.toLowerCase() === neighborhood.trim().toLowerCase());
-    return Number(m?.fee || 0);
-  }, [neighborhood, fees]);
+    // 1) tenta pela tabela neighborhood_fees (legado Itatinga)
+    if (neighborhood && fees && (fees as any[]).length > 0) {
+      const norm = (s: string) =>
+        s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s+/g, " ").trim();
+      const target = norm(neighborhood);
+      const list = fees as any[];
+      const m =
+        list.find((f) => norm(f.name) === target) ||
+        list.find((f) => norm(f.name).includes(target) || target.includes(norm(f.name)));
+      if (m) return Number(m.fee || 0);
+    }
+    // 2) fallback: taxa fixa da própria loja + taxa operacional da plataforma
+    const ownFee = Number((store as any)?.own_delivery_fee || 0);
+    if (ownFee > 0) return addMoney(ownFee, PLATFORM_FEE);
+    return 0;
+  }, [neighborhood, fees, store]);
 
   const total = useMemo(() => addMoney(subtotal, matchedFee), [subtotal, matchedFee]);
 
