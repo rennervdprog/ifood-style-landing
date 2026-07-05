@@ -192,6 +192,7 @@ Deno.serve(async (req) => {
     const payBody: Record<string, unknown> = {
       customer: customerId,
       billingType: "PIX",
+      notificationDisabled: true,
       value: total,
       dueDate: dueDate.toISOString().split("T")[0],
       description: `E2E ${orderId.slice(0, 8)}`,
