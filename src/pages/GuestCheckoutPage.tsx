@@ -65,6 +65,25 @@ const GuestCheckoutPage = () => {
     enabled: !!storeId,
   });
 
+  // Split efetivo da plataforma para esta loja (respeita override do plano).
+  // Guest (anon) não tem acesso a store_plans/admin_settings via RLS, então
+  // usamos uma RPC SECURITY DEFINER dedicada.
+  const { data: platformInfo } = useQuery({
+    queryKey: ["guest-platform-split", storeId],
+    queryFn: async () => {
+      const { data } = await (supabase as any).rpc("get_store_platform_split", { _store_id: storeId });
+      const row = Array.isArray(data) ? data[0] : data;
+      return row as {
+        plan_type: string | null;
+        platform_delivery_split_override: number | null;
+        platform_fee_split: "cliente" | "meio_a_meio" | "lojista" | null;
+        delivery_mode: string | null;
+      } | null;
+    },
+    enabled: !!storeId,
+    staleTime: 1000 * 60 * 5,
+  });
+
   const { data: deliveryFeeConfig } = useQuery({
     queryKey: ["delivery-fee-config-guest"],
     queryFn: async () => {
@@ -80,11 +99,18 @@ const GuestCheckoutPage = () => {
 
   const isOwnDelivery = ((store as any)?.delivery_mode || "platform") === "own";
   const config = deliveryFeeConfig || DEFAULT_DELIVERY_FEE_CONFIG;
-  // Mesma cadeia do checkout normal: respeita split escolhido pela loja, com
-  // fallback para platformDeliverySplit e depois admin_settings.platform_split.
-  const platformSplitFallback = config.platform_split ?? DEFAULT_DELIVERY_FEE_CONFIG.platform_split;
+  // Split efetivo: override do plano da loja > default (2). Autonomia = 0.
+  const isAutonomy = platformInfo?.plan_type === "autonomy";
+  const baseSplit = isAutonomy
+    ? 0
+    : (Number(platformInfo?.platform_delivery_split_override ?? 2));
+  const splitMode = (platformInfo?.platform_fee_split || "cliente") as "cliente" | "meio_a_meio" | "lojista";
   const platformCustomerExtra = isOwnDelivery
-    ? (storePlan.platformFeeCustomerExtra ?? (storePlan.platformDeliverySplit > 0 ? storePlan.platformDeliverySplit : platformSplitFallback))
+    ? (splitMode === "lojista"
+        ? 0
+        : splitMode === "meio_a_meio"
+          ? Math.round((baseSplit / 2) * 100) / 100
+          : baseSplit)
     : 0;
 
   // Fee: mesma lógica do checkout normal
