@@ -89,10 +89,26 @@ Deno.serve(async (req) => {
       } else {
         userId = created.user.id;
       }
-      // profile mínimo (se falhar não bloqueia)
+      // profile mínimo + delivery_pin (obrigatório pelo trigger set_delivery_pin)
       try {
-        await sb.from("profiles").upsert({ user_id: userId, full_name: name, phone } as any, { onConflict: "user_id" });
+        const pin = String(Math.floor(1000 + Math.random() * 9000));
+        await sb.from("profiles").upsert(
+          { user_id: userId, full_name: name, phone, delivery_pin: pin } as any,
+          { onConflict: "user_id" },
+        );
       } catch (_) {}
+    }
+
+    // Garante que o profile tem delivery_pin (usuário reaproveitado sem pin)
+    {
+      const { data: prof } = await sb.from("profiles").select("delivery_pin").eq("user_id", userId).maybeSingle();
+      if (!prof || !(prof as any).delivery_pin) {
+        const pin = String(Math.floor(1000 + Math.random() * 9000));
+        await sb.from("profiles").upsert(
+          { user_id: userId, delivery_pin: pin } as any,
+          { onConflict: "user_id" },
+        );
+      }
     }
 
     await sb.from("guest_customers").upsert({
