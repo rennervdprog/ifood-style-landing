@@ -258,11 +258,11 @@ Deno.serve(async (req) => {
     }
 
     // 4) Registra envio (best-effort). ignoreDuplicates aproveita o unique index
-    // parcial (store_id, phone, kind) WHERE sent_at > now()-'60s' para cortar
-    // a corrida de saudações duplicadas em rajada.
+    // (store_id, phone, kind, sent_bucket_min) — bucket determinístico por
+    // minuto que corta a corrida de saudações duplicadas em rajada.
     await admin.from("whatsapp_send_log").upsert(
       { store_id, phone: number, message_hash: msgHash, kind, sent_at: nowIso },
-      { onConflict: "store_id,phone,kind", ignoreDuplicates: true } as any,
+      { onConflict: "store_id,phone,kind,sent_bucket_min", ignoreDuplicates: true } as any,
     );
 
     // P0 — self-heal: envio OK ⇒ chip está conectado. Destrava status preso em disconnected/connecting.
