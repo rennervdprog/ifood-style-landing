@@ -70,6 +70,7 @@ const isAuthorizedForStore = async (admin: any, req: Request, storeId: string) =
 
 // Anti-spam params
 const DEDUPE_WINDOW_SEC = 3600;        // mesma msg p/ mesmo número
+const AUTO_REPLY_DEDUPE_WINDOW_SEC = 86400; // P0: saudação 1x por número / 24h
 const PER_STORE_MIN_GAP_MS = 12_000;   // gap mínimo entre envios da loja
 const PER_PHONE_MIN_GAP_MS = 3_000;    // gap mínimo entre envios p/ mesmo número (anti-burst de status)
 const EVOLUTION_MAX_RETRIES = 2;        // tentativas extras em falha transitória
@@ -146,8 +147,8 @@ Deno.serve(async (req) => {
     const msgHash = await hashMsg(message);
     const nowIso = new Date().toISOString();
 
-    // 1) Dedupe: auto-reply precisa permitir novo cardápio em teste/atendimento; manual/status seguem mais conservadores.
-    const dedupeWindowSec = kind === "auto_reply" ? 120 : DEDUPE_WINDOW_SEC;
+    // 1) Dedupe: P0 — saudação vira 1x por número / 24h (bot fala pouco, chip dura muito).
+    const dedupeWindowSec = kind === "auto_reply" ? AUTO_REPLY_DEDUPE_WINDOW_SEC : DEDUPE_WINDOW_SEC;
     const dedupeSince = new Date(Date.now() - dedupeWindowSec * 1000).toISOString();
     const { data: dup } = await admin
       .from("whatsapp_send_log")
@@ -155,12 +156,24 @@ Deno.serve(async (req) => {
       .eq("store_id", store_id).eq("phone", number).eq("message_hash", msgHash)
       .gte("sent_at", dedupeSince).limit(1).maybeSingle();
     if (dup) return json({ success: true, skipped: "duplicate" });
+    // P0 — dedupe adicional por KIND para auto_reply: mesmo que o texto varie
+    // (bom dia / boa tarde / fora do horário), só 1 saudação por número / 24h.
+    if (kind === "auto_reply") {
+      const { data: dupKind } = await admin
+        .from("whatsapp_send_log")
+        .select("id")
+        .eq("store_id", store_id).eq("phone", number).eq("kind", "auto_reply")
+        .gte("sent_at", dedupeSince).limit(1).maybeSingle();
+      if (dupKind) return json({ success: true, skipped: "auto_reply_dedupe_24h" });
+    }
 
     // 2) Limite diário por fase do chip (P1.3)
     const ageDays = cfg.connected_at
       ? (Date.now() - new Date(cfg.connected_at).getTime()) / 86_400_000
       : 999;
-    const dailyLimit = kind === "auto_reply" ? Math.max(80, dailyLimitForAge(ageDays)) : dailyLimitForAge(ageDays);
+    // P0: warm-up honesto — auto_reply respeita o mesmo limite da fase.
+    // (antes: Math.max(80,…) anulava o warm-up e chip novo já disparava 80/dia → banimento)
+    const dailyLimit = dailyLimitForAge(ageDays);
     const dayStart = new Date(); dayStart.setHours(0, 0, 0, 0);
     const { count: sentToday } = await admin
       .from("whatsapp_send_log")
@@ -171,8 +184,8 @@ Deno.serve(async (req) => {
     if ((sentToday ?? 0) >= dailyLimit) {
       return json({ error: `Limite diário de envios atingido (${dailyLimit}). Aguarde amanhã.` }, 429);
     }
-    // Coffee break: a cada 10 msgs no dia, pausa 5-15min (P1.2)
-    if (kind !== "auto_reply" && (sentToday ?? 0) > 0 && (sentToday ?? 0) % 10 === 0) {
+    // P0 — coffee break também para auto_reply: a cada 10 msgs no dia, pausa 5-15min.
+    if ((sentToday ?? 0) > 0 && (sentToday ?? 0) % 10 === 0) {
       await sleep(300_000 + Math.floor(Math.random() * 600_000));
     }
 
@@ -244,10 +257,21 @@ Deno.serve(async (req) => {
       return json({ error: "Falha Evolution", details: data || String(lastErr) }, 502);
     }
 
-    // 4) Registra envio (best-effort)
-    await admin.from("whatsapp_send_log").insert({
-      store_id, phone: number, message_hash: msgHash, kind, sent_at: nowIso,
-    });
+    // 4) Registra envio (best-effort). ignoreDuplicates aproveita o unique index
+    // (store_id, phone, kind, sent_bucket_min) — bucket determinístico por
+    // minuto que corta a corrida de saudações duplicadas em rajada.
+    await admin.from("whatsapp_send_log").upsert(
+      { store_id, phone: number, message_hash: msgHash, kind, sent_at: nowIso },
+      { onConflict: "store_id,phone,kind,sent_bucket_min", ignoreDuplicates: true } as any,
+    );
+
+    // P0 — self-heal: envio OK ⇒ chip está conectado. Destrava status preso em disconnected/connecting.
+    if (cfg.status !== "connected") {
+      await admin
+        .from("store_whatsapp_config")
+        .update({ status: "connected", updated_at: nowIso })
+        .eq("store_id", store_id);
+    }
 
     return json({ success: true, data });
   } catch (e) {

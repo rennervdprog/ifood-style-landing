@@ -49,14 +49,14 @@ const incomingPhone = (data: any) => {
 const normalize = (text: string) =>
   text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 
-const asksForMenu = (text: string) =>
-  /(^|\s)(1|sim|s|cardapio|catalogo|menu|pedido|pedir|comprar|link|quero|manda|envia|ok)(\s|$|!|\.|,|\?)/i.test(normalize(text));
-
 const isOptOut = (text: string) =>
   /(^|\s)(parar|stop|cancelar|sair|remover|nao receber)(\s|$|!|\.|,)/i.test(normalize(text));
 
-const GREETING_COOLDOWN_MS = 6 * 60 * 60_000; // 6h
-const FAST_COOLDOWN_MS = 2 * 60_000;
+// P2 — "placa de entre aqui": bot fala 1x por número / 24h e some.
+const SILENCE_AFTER_LINK_MS = 24 * 60 * 60_000; // 24h
+// P2 — pula 1º contato: só responde se cliente mandar ≥2 msgs em 10min
+// (filtra desengano/erro de digitação sem gastar envio).
+const FIRST_CONTACT_WINDOW_MS = 10 * 60_000;
 
 // Pega hora atual no fuso de São Paulo (UTC-3)
 const spHour = () => {
@@ -67,19 +67,42 @@ const spHour = () => {
 const greetingPrefix = (h: number) =>
   h >= 6 && h < 12 ? "Bom dia" : h >= 12 && h < 18 ? "Boa tarde" : "Boa noite";
 
+// Fase 3 — rotação de templates + micro-variação invisível para evitar
+// detecção de "mesma mensagem" pela Meta. Cada envio combina um template
+// aleatório com pequenas variações de emoji/pontuação e um caractere
+// zero-width no fim (invisível), gerando hash único a cada envio.
 const pick = <T,>(arr: T[]) => arr[Math.floor(Math.random() * arr.length)];
+const ZW = ["\u200B", "\u200C", "\u200D", "\uFEFF"]; // zero-width chars
+const EMOJIS_OPEN = ["🍽️", "🍕", "🍔", "😋", "🛵", "✨", "🥘"];
+const OPT_OUT = [
+  "_(Responda PARAR para não receber mais mensagens)_",
+  "_(Envie PARAR se não quiser mais receber)_",
+  "_(Digite PARAR para sair desta lista)_",
+];
 
-// 5 variações de saudação (spintax) — sem pergunta. O link é enviado em seguida automaticamente.
-const buildGreeting = (storeName: string) => {
+const buildOneShot = (storeName: string, link: string) => {
   const prefix = greetingPrefix(spHour());
+  const emoji = pick(EMOJIS_OPEN);
+  const opt = pick(OPT_OUT);
+  const zw = pick(ZW);
   const templates = [
-    `${prefix}! 😊 Aqui é da ${storeName}. Já vou te mandar nosso cardápio.`,
-    `${prefix}! Tudo bem? 👋 Seja bem-vindo(a) à ${storeName}. Segue nosso cardápio:`,
-    `Olá! ${prefix} 🙂 Aqui é a ${storeName}. Te mando o cardápio agora.`,
-    `${prefix}! 🍽️ ${storeName} na escuta. Olha só nosso cardápio:`,
-    `Oi! ${prefix} 😄 Sou da ${storeName}. Já te envio o cardápio com os preços.`,
+    `${prefix}! Aqui é da *${storeName}*. ${emoji}\n\nNosso cardápio com preços e pedidos:\n${link}\n\n${opt}`,
+    `${prefix}! ${emoji} Somos a *${storeName}*.\n\nDá uma olhada no cardápio e peça por aqui:\n${link}\n\n${opt}`,
+    `${prefix}, tudo bem? ${emoji}\nAqui é a *${storeName}* — cardápio, preços e pedido online:\n${link}\n\n${opt}`,
+    `${prefix}! Obrigado pelo contato com a *${storeName}* ${emoji}\n\nVeja o cardápio completo:\n${link}\n\n${opt}`,
   ];
-  return pick(templates);
+  return pick(templates) + zw;
+};
+
+const buildClosedOneShot = (storeName: string, link: string, nextOpen: string) => {
+  const opt = pick(OPT_OUT);
+  const zw = pick(ZW);
+  const templates = [
+    `Olá! Aqui é da *${storeName}*. No momento estamos *fechados* — voltamos ${nextOpen}.\n\nEnquanto isso, dá pra ver o cardápio:\n${link}\n\n${opt}`,
+    `Oi! A *${storeName}* está *fechada* agora, voltamos ${nextOpen}.\n\nJá deixe seu pedido separado no cardápio:\n${link}\n\n${opt}`,
+    `Olá 👋 Estamos *fora do horário* na *${storeName}*, retornamos ${nextOpen}.\n\nCardápio para adiantar:\n${link}\n\n${opt}`,
+  ];
+  return pick(templates) + zw;
 };
 
 Deno.serve(async (req) => {
@@ -168,7 +191,12 @@ Deno.serve(async (req) => {
 
         const text = incomingText(data);
 
-        // P1.5 — opt-out: cliente digita PARAR -> registra blacklist e não responde
+        // Log inbound SEMPRE (antes de qualquer skip) — usado para first-contact.
+        await admin.from("whatsapp_inbound_log").insert({
+          store_id: cfg.store_id, phone: number,
+        }).catch(() => undefined);
+
+        // P2 — opt-out: cliente digita PARAR -> registra blacklist e não responde
         if (isOptOut(text)) {
           await admin.from("whatsapp_send_log").insert({
             store_id: cfg.store_id, phone: number, message_hash: "optout",
@@ -184,9 +212,27 @@ Deno.serve(async (req) => {
           .limit(1).maybeSingle();
         if (blocked) return json({ ok: true, skipped: "blacklisted" });
 
-        // P1.4 — janela de operação baseada nos horários do lojista (fuso SP).
+        // P2 — silêncio 24h: se já mandamos saudação nas últimas 24h, some.
+        //  Bot é placa de "entre aqui" — não é atendente.
+        const silenceSince = new Date(Date.now() - SILENCE_AFTER_LINK_MS).toISOString();
+        const { data: recentGreet } = await admin
+          .from("whatsapp_send_log")
+          .select("id").eq("store_id", cfg.store_id).eq("phone", number).eq("kind", "auto_reply")
+          .gte("sent_at", silenceSince).limit(1).maybeSingle();
+        if (recentGreet) return json({ ok: true, skipped: "silence_24h" });
+
+        // P2 — skip 1º contato: só responde na 2ª msg em 10min.
+        //  Evita gastar envio com quem mandou "oi" por engano e sumiu.
+        const firstContactSince = new Date(Date.now() - FIRST_CONTACT_WINDOW_MS).toISOString();
+        const { count: inboundCount } = await admin
+          .from("whatsapp_inbound_log")
+          .select("id", { count: "exact", head: true })
+          .eq("store_id", cfg.store_id).eq("phone", number)
+          .gte("received_at", firstContactSince);
+        if ((inboundCount ?? 0) < 2) return json({ ok: true, skipped: "first_contact" });
+
+        // Janela de operação baseada nos horários do lojista (fuso SP).
         // Se não houver horários cadastrados, cai no fallback 08h-22h.
-        // Quando fechado, envia 1 aviso "estamos fechados" por cliente (cooldown 6h).
         let storeClosedInfo: { nextOpenLabel: string } | null = null;
         {
           const now = new Date();
@@ -250,17 +296,15 @@ Deno.serve(async (req) => {
           }
         }
 
-        // P0.3 + P0.5 — saudação SEM link, com pergunta. Link só quando o cliente pedir.
+        // P2 — UMA mensagem só (saudação + link) ou aviso de fechado com link.
         const { data: store } = await admin
           .from("stores").select("slug, name").eq("id", cfg.store_id).maybeSingle();
         const storeName = store?.name || "nossa loja";
         const link = store?.slug ? `https://itasuper.com.br/${store.slug}` : "";
-        const greeting = buildGreeting(storeName);
-        const closedMessage = storeClosedInfo
-          ? `Olá! 😊 Aqui é da *${storeName}*. No momento estamos *fechados*. Voltamos a atender ${storeClosedInfo.nextOpenLabel}. Assim que abrirmos, te respondemos por aqui! 🙏`
-          : "";
-        const sendLinkNow = asksForMenu(text) && !!link;
-        const menuMessage = `Aqui está nosso cardápio:\n${link}`;
+        if (!link) return json({ ok: true, skipped: "no_link_configured" });
+        const oneShotMessage = storeClosedInfo
+          ? buildClosedOneShot(storeName, link, storeClosedInfo.nextOpenLabel)
+          : buildOneShot(storeName, link);
 
         const sendMsg = async (message: string) => {
           const functionBaseUrl = Deno.env.get("EXTERNAL_SUPABASE_URL") || Deno.env.get("SUPABASE_URL")!;
@@ -282,55 +326,17 @@ Deno.serve(async (req) => {
           }
         };
 
-        // Não repetir saudação na mesma conversa. Se o cliente responder "sim"
-        // depois da saudação, manda só o cardápio/link.
-        const fastCooldownAgo = new Date(Date.now() - FAST_COOLDOWN_MS).toISOString();
-        const greetingCooldownAgo = new Date(Date.now() - GREETING_COOLDOWN_MS).toISOString();
-        const { data: recentReplies } = await admin
-          .from("whatsapp_send_log")
-          .select("id, sent_at")
-          .eq("store_id", cfg.store_id).eq("phone", number).eq("kind", "auto_reply")
-          .gte("sent_at", greetingCooldownAgo)
-          .order("sent_at", { ascending: false })
-          .limit(1);
-        const lastAutoReply = recentReplies?.[0];
-        const hasFastRecentReply = !!lastAutoReply && new Date(lastAutoReply.sent_at).getTime() >= Date.now() - FAST_COOLDOWN_MS;
-        if (lastAutoReply) {
-          if (storeClosedInfo) return json({ ok: true, skipped: "closed_cooldown" });
-          if (sendLinkNow) {
-            await sleep(hasFastRecentReply ? 1_200 + Math.floor(Math.random() * 1_500) : 400);
-            await sendMsg(menuMessage);
-            return json({ ok: true, sent: "menu_only_after_greeting" });
-          }
-          return json({ ok: true, skipped: hasFastRecentReply ? "fast_cooldown" : "greeting_cooldown" });
-        }
-
-        // Pré-registra IMEDIATAMENTE para evitar saudação duplicada quando o
-        // cliente manda 2 mensagens em sequência (a 2ª chega antes da 1ª
-        // resposta terminar o sleep e ser logada).
+        // Pré-registra IMEDIATAMENTE (greet_pending) para bloquear rajada
+        // via unique index (store_id, phone, kind, sent_bucket_min) da Fase 1.
         await admin.from("whatsapp_send_log").insert({
           store_id: cfg.store_id, phone: number, message_hash: "greet_pending",
           kind: "auto_reply", sent_at: new Date().toISOString(),
-        });
+        }).catch(() => undefined);
 
-        // Loja fechada → envia 1 aviso (sem cardápio) e encerra.
-        if (storeClosedInfo) {
-          await sleep(1_000 + Math.floor(Math.random() * 1_500));
-          await sendMsg(closedMessage);
-          return json({ ok: true, sent: "closed_notice" });
-        }
-
-        // Humaniza: aguarda antes da saudação; só envia link se cliente já pediu.
-        // P0.6 — NÃO mandar a saudação em background: em runs curtos do
-        // EdgeRuntime a task era morta antes do fetch, deixando só o
-        // `greet_pending` no log e o cliente sem resposta. Aguardamos aqui
-        // (3-8s cabe no timeout) e qualquer envio extra também aguarda confirmação.
-        await sleep(800 + Math.floor(Math.random() * 700));
-        await sendMsg(greeting);
-        if (link) {
-          await sleep(2_000);
-          await sendMsg(menuMessage);
-        }
+        // Um envio só, com pequeno delay humano (2-4s).
+        await sleep(2_000 + Math.floor(Math.random() * 2_000));
+        await sendMsg(oneShotMessage);
+        return json({ ok: true, sent: storeClosedInfo ? "closed_oneshot" : "oneshot" });
       }
     }
 
