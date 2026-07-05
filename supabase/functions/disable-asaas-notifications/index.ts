@@ -22,6 +22,7 @@ Deno.serve(async (req) => {
   let customersProcessed = 0;
   let notificationsDisabled = 0;
   const errors: string[] = [];
+  let sampleNotification: unknown = null;
 
   try {
     while (true) {
@@ -48,6 +49,7 @@ Deno.serve(async (req) => {
             continue;
           }
           for (const n of (notifData.data || [])) {
+            if (!sampleNotification) sampleNotification = n;
             if (!n.smsEnabledForProvider && !n.phoneCallEnabledForProvider && !n.whatsappEnabledForProvider) continue;
             const upd = await fetch(`${baseUrl}/notifications/${n.id}`, {
               method: "PUT",
@@ -85,5 +87,6 @@ Deno.serve(async (req) => {
     notificationsDisabled,
     errors: errors.slice(0, 50),
     errorCount: errors.length,
+    sampleNotification,
   }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
 });
