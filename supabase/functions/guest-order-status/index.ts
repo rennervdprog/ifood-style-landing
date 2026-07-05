@@ -51,17 +51,20 @@ Deno.serve(async (req) => {
     let deliveryPin = (order as any)?.delivery_pin || (profile as any)?.delivery_pin || null;
     if (!deliveryPin) {
       deliveryPin = makePin();
-      const { error: pinErr } = await sb.from("profiles").upsert(
-        {
-          user_id: (order as any).client_id,
-          full_name: (guest as any).name || null,
-          phone: (guest as any).phone || null,
-          delivery_pin: deliveryPin,
-        } as any,
-        { onConflict: "user_id" },
-      );
-      if (pinErr) {
-        console.error("[guest-order-status] pin upsert error:", pinErr);
+      const [{ error: orderPinErr }, { error: profilePinErr }] = await Promise.all([
+        sb.from("orders").update({ delivery_pin: deliveryPin } as any).eq("id", orderId),
+        sb.from("profiles").upsert(
+          {
+            user_id: (order as any).client_id,
+            full_name: (guest as any).name || null,
+            phone: (guest as any).phone || null,
+            delivery_pin: deliveryPin,
+          } as any,
+          { onConflict: "user_id" },
+        ),
+      ]);
+      if (orderPinErr && profilePinErr) {
+        console.error("[guest-order-status] pin persist error:", { orderPinErr, profilePinErr });
         deliveryPin = null;
       }
     }

@@ -1,7 +1,7 @@
 // Acompanhamento público de pedido guest — sem login.
 // URL: /p/:orderId?t=<últimos4 do WhatsApp>
 import { useEffect, useState } from "react";
-import { useParams, useSearchParams, Link } from "react-router-dom";
+import { useParams, useSearchParams, Link, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { formatBRL } from "@/lib/utils";
 import { ArrowLeft, MapPin, MessageCircle, Loader2, CheckCircle2, Clock, Truck, KeyRound, ShieldAlert } from "lucide-react";
@@ -17,9 +17,11 @@ const STATUS_LABEL: Record<string, { label: string; color: string; icon: any }> 
 
 const PublicOrderTracking = () => {
   const { orderId } = useParams();
+  const location = useLocation();
   const [params] = useSearchParams();
   const last4 = params.get("t") || "";
-  const [data, setData] = useState<any>(null);
+  const navPin = (location.state as any)?.delivery_pin || null;
+  const [data, setData] = useState<any>(navPin ? { delivery_pin: navPin } : null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -31,8 +33,8 @@ const PublicOrderTracking = () => {
         headers: { Authorization: `Bearer ${(supabase as any).supabaseKey}` },
       });
       const j = await res.json();
-      if (!res.ok) { setError(j?.error || "not_found"); setData(null); }
-      else { setData(j); setError(null); }
+      if (!res.ok) { setError(j?.error || "not_found"); setData((prev: any) => prev?.delivery_pin ? prev : null); }
+      else { setData({ ...j, delivery_pin: j?.delivery_pin || navPin }); setError(null); }
     } catch (e: any) { setError(e?.message || "erro"); }
     finally { setLoading(false); }
   };
@@ -43,7 +45,7 @@ const PublicOrderTracking = () => {
     const t = setInterval(load, 20_000);
     return () => clearInterval(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [orderId, last4]);
+  }, [orderId, last4, navPin]);
 
   if (loading) {
     return <div className="min-h-screen bg-background flex items-center justify-center">
@@ -78,7 +80,7 @@ const PublicOrderTracking = () => {
           {data.customer_name && <p className="text-sm">Olá, {data.customer_name}</p>}
         </div>
 
-        {data.delivery_pin && data.order.status !== "entregue" && data.order.status !== "cancelado" && (
+        {(data.delivery_pin || data.order.delivery_pin) && data.order.status !== "entregue" && data.order.status !== "cancelado" && (
           <div className="rounded-2xl border-2 border-primary/30 bg-primary/5 p-4 space-y-3">
             <div className="flex items-center gap-2">
               <div className="w-9 h-9 rounded-xl bg-primary/15 flex items-center justify-center">
@@ -89,7 +91,7 @@ const PublicOrderTracking = () => {
                 <p className="text-[11px] text-muted-foreground">Informe ao entregador para liberar o pedido</p>
               </div>
             </div>
-            <p className="text-4xl font-black tracking-[0.5em] text-center text-primary">{data.delivery_pin}</p>
+            <p className="text-4xl font-black tracking-[0.5em] text-center text-primary">{data.delivery_pin || data.order.delivery_pin}</p>
             <div className="flex items-start gap-2 rounded-xl bg-amber-50 border border-amber-200 p-2.5">
               <ShieldAlert className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
               <p className="text-[11px] text-amber-800">Não compartilhe este código com ninguém além do entregador na hora da entrega.</p>
