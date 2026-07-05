@@ -257,10 +257,21 @@ Deno.serve(async (req) => {
       return json({ error: "Falha Evolution", details: data || String(lastErr) }, 502);
     }
 
-    // 4) Registra envio (best-effort)
-    await admin.from("whatsapp_send_log").insert({
-      store_id, phone: number, message_hash: msgHash, kind, sent_at: nowIso,
-    });
+    // 4) Registra envio (best-effort). ignoreDuplicates aproveita o unique index
+    // parcial (store_id, phone, kind) WHERE sent_at > now()-'60s' para cortar
+    // a corrida de saudações duplicadas em rajada.
+    await admin.from("whatsapp_send_log").upsert(
+      { store_id, phone: number, message_hash: msgHash, kind, sent_at: nowIso },
+      { onConflict: "store_id,phone,kind", ignoreDuplicates: true } as any,
+    );
+
+    // P0 — self-heal: envio OK ⇒ chip está conectado. Destrava status preso em disconnected/connecting.
+    if (cfg.status !== "connected") {
+      await admin
+        .from("store_whatsapp_config")
+        .update({ status: "connected", updated_at: nowIso })
+        .eq("store_id", store_id);
+    }
 
     return json({ success: true, data });
   } catch (e) {
