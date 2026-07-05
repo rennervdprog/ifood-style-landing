@@ -153,7 +153,7 @@ Deno.serve(async (req) => {
       product_id: it.product_id,
       quantity: it.quantity,
       unit_price: it.unit_price,
-      addons: it.addons ? JSON.stringify(it.addons) : null,
+      addons: it.addons ?? null,
       observations: it.observations || null,
     }));
     const { error: itemsErr } = await sb.from("order_items").insert(rows);
