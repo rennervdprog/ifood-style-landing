@@ -45,13 +45,6 @@ const GuestCheckoutPage = () => {
     if (items.length === 0) navigate("/carrinho", { replace: true });
   }, [items.length, navigate]);
 
-  // Loja sem guest habilitado → manda pro fluxo com login
-  useEffect(() => {
-    if (store && (store as any).guest_checkout_enabled !== true) {
-      navigate("/auth", { state: { from: "/checkout" }, replace: true });
-    }
-  }, [store, navigate]);
-
   const { data: store } = useQuery({
     queryKey: ["guest-store", storeId],
     queryFn: async () => {
@@ -64,6 +57,13 @@ const GuestCheckoutPage = () => {
     enabled: !!storeId,
     staleTime: 1000 * 60 * 5,
   });
+
+  // Loja sem guest habilitado → manda pro fluxo com login
+  useEffect(() => {
+    if (store && (store as any).guest_checkout_enabled !== true) {
+      navigate("/auth", { state: { from: "/checkout" }, replace: true });
+    }
+  }, [store, navigate]);
 
   // Split efetivo da plataforma para esta loja (respeita override do plano).
   // Guest (anon) não tem acesso a store_plans/admin_settings via RLS, então
