@@ -1,8 +1,9 @@
 import React, { createContext, useContext, useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { SUPABASE_ANON_KEY, supabase } from "@/integrations/supabase/client";
-import { requestPushPermissionAndRegister, onForegroundMessage } from "@/lib/firebase";
-import { registerGoNativePlayer } from "@/lib/gonative";
+// Firebase Web SDK (~150KB) + GoNative helpers ficam fora do bundle crítico.
+// São carregados via dynamic import apenas quando NÃO estamos em Capacitor
+// (no APK nativo push é @capacitor/push-notifications, Firebase Web nunca roda).
 import { registerCapacitorPush, isCapacitorNative, reclaimStoredToken, resetPushRegistrationState } from "@/lib/capacitorNative";
 import { clearStoredPushState } from "@/lib/pushSession";
 import { getDeviceId } from "@/lib/deviceSession";
@@ -295,30 +296,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
 
-      requestPushPermissionAndRegister().catch(console.error);
-      syncCurrentPushDevice();
-
-      onForegroundMessage((payload) => {
-        const title = payload.notification?.title || "ItaSuper";
-        const body = payload.notification?.body || "";
-        const orderId = payload.data?.order_id;
-        
-        toast(title, {
-          description: body,
-          action: orderId
-            ? {
-                label: "Ver Pedido",
-                onClick: () => {
-                  window.location.href = `/pedidos`;
-                },
-              }
-            : undefined,
+      // Web: importar Firebase sob demanda, nunca no boot do APK.
+      import("@/lib/firebase").then(({ requestPushPermissionAndRegister, onForegroundMessage }) => {
+        requestPushPermissionAndRegister().catch(console.error);
+        syncCurrentPushDevice();
+        onForegroundMessage((payload) => {
+          const title = payload.notification?.title || "ItaSuper";
+          const body = payload.notification?.body || "";
+          const orderId = payload.data?.order_id;
+          toast(title, {
+            description: body,
+            action: orderId
+              ? { label: "Ver Pedido", onClick: () => { window.location.href = `/pedidos`; } }
+              : undefined,
+          });
+          if ("vibrate" in navigator) {
+            navigator.vibrate([200, 100, 200]);
+          }
         });
-
-        if ("vibrate" in navigator) {
-          navigator.vibrate([200, 100, 200]);
-        }
-      });
+      }).catch(console.error);
     }, isCapacitorNative() ? 300 : 2000);
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
