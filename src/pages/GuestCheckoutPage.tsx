@@ -261,11 +261,6 @@ const GuestCheckoutPage = () => {
   if (!storeId || !items.length) return null;
 
   const guestEnabled = (store as any)?.guest_checkout_enabled === true;
-  if (store && !guestEnabled) {
-    // Loja não habilitada para guest → manda pro fluxo normal (login)
-    navigate("/auth", { state: { from: "/checkout" }, replace: true });
-    return null;
-  }
 
   return (
     <div className="min-h-screen bg-background pb-32">
