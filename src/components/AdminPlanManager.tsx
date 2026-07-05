@@ -671,11 +671,11 @@ function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride
     queryFn: async () => {
       const { data, error } = await supabase
         .from("stores")
-        .select("driver_pin_autofill")
+        .select("driver_pin_autofill" as any)
         .eq("id", storeId)
         .maybeSingle();
       if (error) throw error;
-      return data as { driver_pin_autofill: boolean | null } | null;
+      return (data as any) as { driver_pin_autofill: boolean | null } | null;
     },
     enabled: expanded,
   });
