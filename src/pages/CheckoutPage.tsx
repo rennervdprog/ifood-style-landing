@@ -34,7 +34,7 @@ const allPaymentMethods = [
 
 const CheckoutPage = () => {
   const { items, neighborhood, neighborhoodFee, subtotal, total, clearCart, setNeighborhood } = useCart();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [paymentMethod, setPaymentMethod] = useState("");
   const [isPickup, setIsPickup] = useState(false);
@@ -459,14 +459,21 @@ const CheckoutPage = () => {
 
   const addressString = buildAddressString();
 
-  if (!user) {
-    navigate("/auth", { state: { from: "/checkout" }, replace: true });
-    return null;
-  }
+  useEffect(() => {
+    if (authLoading) return;
+    if (!user) {
+      navigate("/auth", { state: { from: "/checkout" }, replace: true });
+    } else if (items.length === 0) {
+      navigate("/carrinho", { replace: true });
+    }
+  }, [authLoading, user, items.length, navigate]);
 
-  if (items.length === 0) {
-    navigate("/carrinho", { replace: true });
-    return null;
+  if (authLoading || !user || items.length === 0) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
   }
 
    useEffect(() => {
