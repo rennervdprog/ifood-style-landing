@@ -823,6 +823,26 @@ function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride
             </div>
           </div>
 
+          {/* Seção 2b: Operacional — Auto-PIN por loja */}
+          <div>
+            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2">🔐 Operacional</p>
+            <div className="bg-muted/20 rounded-xl p-3">
+              <label className="flex items-center justify-between cursor-pointer gap-3">
+                <div className="min-w-0">
+                  <p className="text-xs font-bold text-foreground">Auto-preencher PIN de entrega</p>
+                  <p className="text-[10px] text-muted-foreground">Quando ativo, o entregador vê o PIN já preenchido ao finalizar a entrega desta loja.</p>
+                </div>
+                <button
+                  onClick={togglePinAutofill}
+                  disabled={pinAutofillSaving}
+                  className={`relative w-10 h-5 rounded-full transition-colors shrink-0 ${pinAutofill ? "bg-primary" : "bg-muted-foreground/30"} ${pinAutofillSaving ? "opacity-50" : ""}`}
+                >
+                  <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${pinAutofill ? "left-5" : "left-0.5"}`} />
+                </button>
+              </label>
+            </div>
+          </div>
+
           {/* Seção 3: Taxas por transação */}
           <div>
             <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2">⚡ Taxas por transação</p>
