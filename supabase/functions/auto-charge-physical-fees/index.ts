@@ -375,6 +375,20 @@ Deno.serve(async (req) => {
         },
       } as any);
 
+      // ── 3.1 Notificar lojista via push ──
+      try {
+        await supabase.functions.invoke("send-push", {
+          body: {
+            user_ids: [store.owner_id],
+            title: "💰 Nova cobrança de repasse",
+            body: `${store.name}: R$${chargeAmount.toFixed(2)} — vence em ${dueDateStr.split("-").reverse().join("/")}. Pague pelo app.`,
+            data: { type: "commission_charge", store_id: balance.store_id },
+          },
+        });
+      } catch (e) {
+        console.warn("[auto-charge] push falhou:", e);
+      }
+
       results.push({
         store: store.name,
         status: "charged",
