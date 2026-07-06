@@ -19,7 +19,7 @@ interface PlatformSplitAlertProps {
 const PlatformSplitAlert = ({ storeId, storeName, splitPerOrder, onGoToFinance }: PlatformSplitAlertProps) => {
   const [generating, setGenerating] = useState(false);
   const [dismissed, setDismissed] = useState(false);
-  const [pixData, setPixData] = useState<{ qr_code: string; qr_code_base64: string; amount: number } | null>(null);
+  const [pixData, setPixData] = useState<{ qr_code: string; qr_code_base64: string; amount: number; reference_code?: string } | null>(null);
   const queryClient = useQueryClient();
 
   const { data: storeBalance } = useQuery({
@@ -66,6 +66,25 @@ const PlatformSplitAlert = ({ storeId, storeName, splitPerOrder, onGoToFinance }
     staleTime: 1000 * 60 * 10,
   });
 
+  const { data: pendingCharge } = useQuery({
+    queryKey: ["repasse-pending-charge", storeId],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("financial_transactions")
+        .select("amount, reference_code, pix_copy_paste, pix_qr_code, pix_qr_code_base64")
+        .eq("store_id", storeId)
+        .eq("transaction_kind", "commission_charge")
+        .eq("status", "pending")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!storeId,
+    refetchInterval: 30000,
+  });
+
   const minPayout = minPayoutSetting ?? 100;
   const repasse = Number(storeBalance?.repasse_pendente || 0);
   const comissao = Number(storeBalance?.comissao_pendente || 0);
@@ -79,14 +98,28 @@ const PlatformSplitAlert = ({ storeId, storeName, splitPerOrder, onGoToFinance }
   const handlePayFee = async () => {
     setGenerating(true);
     try {
-    const { data, error } = await supabase.functions.invoke("store-platform-fee-pix", {
+      const existingPixCode = pendingCharge?.pix_copy_paste || pendingCharge?.pix_qr_code;
+      if (pendingCharge && existingPixCode) {
+        setPixData({
+          qr_code: existingPixCode,
+          qr_code_base64: pendingCharge.pix_qr_code_base64 || "",
+          amount: Number(pendingCharge.amount || pendingFee),
+          reference_code: pendingCharge.reference_code,
+        });
+        toast.info("Cobrança PIX já gerada. Use o QR Code existente.");
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke("store-platform-fee-pix", {
         body: { store_id: storeId, amount: pendingFee },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
-      setPixData({ qr_code: data.qr_code, qr_code_base64: data.qr_code_base64, amount: data.amount });
+      setPixData({ qr_code: data.qr_code, qr_code_base64: data.qr_code_base64, amount: data.amount, reference_code: data.reference_code });
       toast.success("PIX gerado! Escaneie o QR Code para pagar.");
       queryClient.invalidateQueries({ queryKey: ["store-balance-split", storeId] });
+      queryClient.invalidateQueries({ queryKey: ["repasse-pending-charge", storeId] });
+      queryClient.invalidateQueries({ queryKey: ["repasse-charges", storeId] });
     } catch (err: any) {
       toast.error(err.message || "Erro ao gerar PIX.");
     } finally {
