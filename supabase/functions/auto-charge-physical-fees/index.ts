@@ -48,6 +48,9 @@ async function createAsaasCharge(params: {
   description: string;
   dueDate: string; // YYYY-MM-DD
   storeAccountId: string;
+  customerName: string;
+  customerEmail: string;
+  customerCpfCnpj: string;
 }): Promise<{ ok: boolean; paymentId?: string; pixCopyPaste?: string; pixQrCode?: string; error?: string }> {
   const apiKey = Deno.env.get("ASAAS_API_KEY");
   if (!apiKey) return { ok: false, error: "ASAAS_API_KEY não configurado" };
@@ -67,12 +70,17 @@ async function createAsaasCharge(params: {
     let customerId: string | null = customerData?.data?.[0]?.id || null;
 
     if (!customerId) {
+      const cpf = (params.customerCpfCnpj || "").replace(/\D/g, "");
+      if (cpf.length < 11) {
+        return { ok: false, error: "Loja sem CPF/CNPJ cadastrado — preencha no perfil do lojista." };
+      }
       const createRes = await fetch(`${baseUrl}/customers`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "access_token": apiKey },
         body: JSON.stringify({
-          name: `Loja ${params.storeAccountId.substring(0, 8)}`,
-          email: `loja-${params.storeAccountId.substring(0, 8)}@itasuper.com`,
+          name: params.customerName || `Loja ${params.storeAccountId.substring(0, 8)}`,
+          email: params.customerEmail || `loja-${params.storeAccountId.substring(0, 8)}@itasuper.com`,
+          cpfCnpj: cpf,
           externalReference: `store_${params.storeAccountId}`,
         }),
       });
@@ -194,7 +202,7 @@ Deno.serve(async (req) => {
         repasse_pendente,
         comissao_pendente,
         stores!inner(
-          id, name, status, asaas_account_id, asaas_wallet_id,
+          id, name, status, owner_id, asaas_account_id, asaas_wallet_id,
           store_plans!inner(plan_type, is_active, commission_rate, pdv_commission_pending)
         )
       `)
@@ -317,6 +325,16 @@ Deno.serve(async (req) => {
         amount: chargeAmount,
         description: chargeDescription,
         dueDate: dueDateStr,
+        customerName: store.name,
+        customerEmail: "",
+        customerCpfCnpj: await (async () => {
+          const { data: prof } = await supabase
+            .from("profiles")
+            .select("document, email, full_name")
+            .eq("user_id", store.owner_id)
+            .maybeSingle();
+          return String((prof as any)?.document || "");
+        })(),
       });
 
       if (!charge.ok) {
