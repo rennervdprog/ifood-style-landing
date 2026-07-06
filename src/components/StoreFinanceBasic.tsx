@@ -367,6 +367,12 @@ const PIE_COLORS = [COLORS.green, COLORS.blue, COLORS.amber];
       toast.error("Sistema de pagamentos em manutenção temporária.");
       return;
     }
+    // Se já existe cobrança pendente válida, apenas reexibe — não gera outra no Asaas.
+    if (chargeResult && chargeResult.status === "pending" && !isChargeExpired) {
+      toast.info("Você já tem uma cobrança PIX em aberto. Use o QR abaixo.");
+      setDismissedChargeReference(null);
+      return;
+    }
     if (!SIMULATION_MODE && isPixCooldownActive(pixContextKey)) {
       toast.error("Muitas tentativas. Aguarde alguns minutos.");
       return;
