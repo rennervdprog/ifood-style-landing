@@ -26,6 +26,7 @@ const GuestCheckoutPage = () => {
   const [phone, setPhone] = useState("");
   const [name, setName] = useState("");
   const [lookedUp, setLookedUp] = useState(false);
+  const lastLookupRef = useRef<string>("");
   const [cep, setCep] = useState("");
   const [street, setStreet] = useState("");
   const [number, setNumber] = useState("");
@@ -182,6 +183,8 @@ const GuestCheckoutPage = () => {
   const handlePhoneBlur = async () => {
     const digits = phone.replace(/\D/g, "");
     if (digits.length < 10 || !storeId) return;
+    if (lastLookupRef.current === digits) return;
+    lastLookupRef.current = digits;
     setLoadingLookup(true);
     try {
       const { data, error } = await supabase.functions.invoke("guest-lookup", {
@@ -204,6 +207,18 @@ const GuestCheckoutPage = () => {
       }
     } finally { setLoadingLookup(false); }
   };
+
+  // Auto-lookup enquanto digita: dispara quando atinge 10 ou 11 dígitos (debounce 300ms).
+  // Evita esperar o blur/confirmar — busca já ao terminar de digitar.
+  useEffect(() => {
+    const digits = phone.replace(/\D/g, "");
+    if (!storeId) return;
+    if (digits.length < 10 || digits.length > 11) return;
+    if (lastLookupRef.current === digits) return;
+    const t = setTimeout(() => { handlePhoneBlur(); }, 300);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phone, storeId]);
 
   const handleConfirm = async () => {
     const digits = phone.replace(/\D/g, "");
@@ -387,7 +402,13 @@ const GuestCheckoutPage = () => {
               className="w-full h-12 px-4 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
             />
             {loadingLookup && (
-              <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs text-primary font-medium">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Buscando…</span>
+              </div>
+            )}
+            {!loadingLookup && lookedUp && (
+              <CheckCircle2 className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-primary" />
             )}
           </div>
           <input
