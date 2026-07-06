@@ -55,7 +55,9 @@ type FinancialTransaction = {
   transaction_kind: string;
 };
 
-const PIX_CHARGE_TTL_MS = 5 * 60 * 1000;
+// PIX Asaas dueDate = 7 dias; após vencer, o QR/copia-e-cola ainda é pagável.
+// Mantemos a cobrança "válida" no UI por 7 dias para não gerar duplicidade no Asaas.
+const PIX_CHARGE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 const getPendingChargeRemainingMs = (createdAt: string, nowMs = Date.now()) =>
   Math.max(0, new Date(createdAt).getTime() + PIX_CHARGE_TTL_MS - nowMs);
@@ -363,6 +365,12 @@ const PIE_COLORS = [COLORS.green, COLORS.blue, COLORS.amber];
   const handlePayPlatformFee = async () => {
     if (!SIMULATION_MODE && isSafetyModeActive()) {
       toast.error("Sistema de pagamentos em manutenção temporária.");
+      return;
+    }
+    // Se já existe cobrança pendente válida, apenas reexibe — não gera outra no Asaas.
+    if (chargeResult && chargeResult.status === "pending" && !isChargeExpired) {
+      toast.info("Você já tem uma cobrança PIX em aberto. Use o QR abaixo.");
+      setDismissedChargeReference(null);
       return;
     }
     if (!SIMULATION_MODE && isPixCooldownActive(pixContextKey)) {
