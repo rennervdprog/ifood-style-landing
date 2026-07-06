@@ -1,6 +1,7 @@
 import { Banknote, CheckCircle2 } from "lucide-react";
 import CommissionAlert from "@/components/CommissionAlert";
 import PlatformSplitAlert from "@/components/PlatformSplitAlert";
+import RepassePendingCharges from "@/components/RepassePendingCharges";
 
 interface Props {
   store: any;
@@ -60,6 +61,8 @@ export default function RepasseSection({ store, storePlan, setDashboardTab, pend
           onGoToFinance={() => setDashboardTab("finance")}
         />
       )}
+
+      <RepassePendingCharges storeId={store.id} />
     </div>
   );
 }
