@@ -36,6 +36,13 @@ export const supabase = createClient<Database>(
       // Importante: respeita o signal já vindo do caller (React Query, etc) encadeando-os,
       // assim não perdemos o cancelamento natural quando a query é desmontada.
       fetch: (url, options) => {
+        // Edge Functions podem levar mais tempo (Asaas/MP cold start, etc).
+        // Não aplicar o timeout curto de 25s em chamadas a /functions/v1/.
+        const href = typeof url === "string" ? url : (url as URL).toString?.() ?? String(url);
+        if (href.includes("/functions/v1/")) {
+          return fetch(url, options);
+        }
+
         const timeoutCtrl = new AbortController();
         const timer = setTimeout(
           () => timeoutCtrl.abort(new DOMException("Supabase fetch timeout (25s)", "TimeoutError")),
