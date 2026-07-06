@@ -1,9 +1,11 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "npm:@supabase/supabase-js@2";
+import { corsHeaders as baseCorsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { z } from "https://esm.sh/zod@3.23.8";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  ...baseCorsHeaders,
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 const BodySchema = z.object({
@@ -203,7 +205,7 @@ Deno.serve(async (req) => {
 
     // Step 2: Create PIX payment
     const dueDate = new Date();
-    dueDate.setDate(dueDate.getDate() + 1); // due tomorrow
+    dueDate.setDate(dueDate.getDate() + 7); // 7 dias para pagar, alinhado ao cron automático
     const dueDateStr = dueDate.toISOString().split("T")[0];
 
     const paymentBody = {
@@ -244,7 +246,7 @@ Deno.serve(async (req) => {
     // Record the transaction
     await adminSupabase.from("financial_transactions").insert({
       store_id,
-      transaction_kind: "store_payout" as any,
+      transaction_kind: "commission_charge" as any,
       amount,
       reference_code: referenceCode,
       status: "pending",
@@ -260,6 +262,8 @@ Deno.serve(async (req) => {
         store_name: store.name,
         balance_billed: amountToBalance,
         pdv_pending_billed: amountToPdv,
+        due_date: dueDateStr,
+        asaas_payment_id: paymentData.id,
       },
     });
 

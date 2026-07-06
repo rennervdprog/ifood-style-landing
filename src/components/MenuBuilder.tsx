@@ -88,7 +88,11 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
       // Produtos exclusivos do PDV (vendidos por peso, criados pela tela do PDV)
       // não devem aparecer no cardápio do lojista.
       return (data || []).filter(
-        (p: any) => !(p?.metadata?.pdv_only) && !p?.sold_by_weight && !(p?.metadata?.sold_by_weight)
+        (p: any) =>
+          !(p?.metadata?.pdv_only) &&
+          !p?.sold_by_weight &&
+          !(p?.metadata?.sold_by_weight) &&
+          !(p?.metadata?.hidden)
       );
     },
   });
@@ -360,7 +364,28 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
       confirmText: "Excluir",
       onConfirm: async () => {
         const { error } = await supabase.from("products").delete().eq("id", id);
-        if (error) { toast.error("Erro ao excluir"); return; }
+        if (error) {
+          // FK: produto já foi usado em pedidos históricos e não pode ser removido.
+          // Fazemos "arquivamento" (soft-delete): some do cardápio e do gerenciador.
+          const isFk =
+            (error as any)?.code === "23503" ||
+            /foreign key|violates/i.test(error.message || "");
+          if (isFk) {
+            const current = (products || []).find((p: any) => p.id === id) as any;
+            const newMeta = { ...(current?.metadata || {}), hidden: true };
+            const { error: updErr } = await supabase
+              .from("products")
+              .update({ is_available: false, metadata: newMeta } as any)
+              .eq("id", id);
+            if (updErr) { toast.error(updErr.message || "Erro ao arquivar"); return; }
+            toast.success("Produto arquivado (tinha pedidos antigos e não pôde ser excluído)");
+            setConfirmState(null);
+            invalidateProducts();
+            return;
+          }
+          toast.error(error.message || "Erro ao excluir");
+          return;
+        }
         toast.success("Produto excluído!");
         setConfirmState(null);
         invalidateProducts();
