@@ -67,10 +67,20 @@ async function createAsaasCharge(params: {
       headers: { "access_token": apiKey },
     });
     const customerData = await customerRes.json();
-    let customerId: string | null = customerData?.data?.[0]?.id || null;
+    const existing = customerData?.data?.[0];
+    let customerId: string | null = existing?.id || null;
+    const cpf = (params.customerCpfCnpj || "").replace(/\D/g, "");
+
+    // Se customer existe mas sem CPF/CNPJ, atualiza antes de cobrar
+    if (customerId && !existing?.cpfCnpj && cpf.length >= 11) {
+      await fetch(`${baseUrl}/customers/${customerId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "access_token": apiKey },
+        body: JSON.stringify({ cpfCnpj: cpf }),
+      });
+    }
 
     if (!customerId) {
-      const cpf = (params.customerCpfCnpj || "").replace(/\D/g, "");
       if (cpf.length < 11) {
         return { ok: false, error: "Loja sem CPF/CNPJ cadastrado — preencha no perfil do lojista." };
       }
