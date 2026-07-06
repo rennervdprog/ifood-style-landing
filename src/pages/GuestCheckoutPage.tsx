@@ -436,7 +436,7 @@ const GuestCheckoutPage = () => {
           </div>
           <div className="p-4 space-y-3">
           <div className="flex gap-2">
-            <input type="text" placeholder="CEP" value={cep}
+            <input type="text" placeholder="CEP (opcional)" value={cep}
               onChange={(e) => handleCepChange(e.target.value)}
               inputMode="numeric" maxLength={9}
               className="flex-1 h-11 px-3 rounded-xl border border-border bg-background text-sm" />
@@ -445,6 +445,7 @@ const GuestCheckoutPage = () => {
               {loadingCep ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
             </button>
           </div>
+          <p className="text-[11px] text-muted-foreground -mt-1">Não sabe o CEP? Pode deixar em branco.</p>
           <div className="grid grid-cols-3 gap-2">
             <input type="text" placeholder="Rua" value={street} onChange={(e) => setStreet(e.target.value)}
               className="col-span-2 h-11 px-3 rounded-xl border border-border bg-background text-sm" />
