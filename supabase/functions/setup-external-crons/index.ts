@@ -10,6 +10,7 @@ Deno.serve(async (req) => {
       Deno.env.get('EXTERNAL_SERVICE_ROLE_KEY') ??
       Deno.env.get('EXTERNAL_SUPABASE_SERVICE_KEY')!
     const anonKey = Deno.env.get('EXTERNAL_SUPABASE_ANON_KEY')!
+    const cronSecret = Deno.env.get('EXTERNAL_CRON_SECRET')!
     const base = `https://${ref}.supabase.co`
 
     const sql = `
@@ -36,7 +37,8 @@ Deno.serve(async (req) => {
             url := '${base}/functions/v1/weekly-platform-report',
             headers := jsonb_build_object(
               'Content-Type','application/json',
-              'Authorization','Bearer ${serviceKey}'
+              'apikey','${anonKey}',
+              'Authorization','Bearer ${cronSecret}'
             ),
             body := '{}'::jsonb
           );
@@ -52,7 +54,7 @@ Deno.serve(async (req) => {
             headers := jsonb_build_object(
               'Content-Type','application/json',
               'apikey','${anonKey}',
-              'Authorization','Bearer ${serviceKey}'
+              'Authorization','Bearer ${cronSecret}'
             ),
             body := '{}'::jsonb
           );
@@ -69,7 +71,7 @@ Deno.serve(async (req) => {
             headers := jsonb_build_object(
               'Content-Type','application/json',
               'apikey','${anonKey}',
-              'Authorization','Bearer ${serviceKey}'
+              'Authorization','Bearer ${cronSecret}'
             ),
             body := '{}'::jsonb
           );
