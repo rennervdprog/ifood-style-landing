@@ -57,7 +57,7 @@ type FinancialTransaction = {
   transaction_kind: string;
 };
 
-const PIX_CHARGE_TTL_MS = 5 * 60 * 1000;
+const PIX_CHARGE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 const getPendingChargeRemainingMs = (createdAt: string, nowMs = Date.now()) =>
   Math.max(0, new Date(createdAt).getTime() + PIX_CHARGE_TTL_MS - nowMs);
