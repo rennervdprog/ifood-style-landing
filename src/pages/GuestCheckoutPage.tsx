@@ -402,7 +402,13 @@ const GuestCheckoutPage = () => {
               className="w-full h-12 px-4 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
             />
             {loadingLookup && (
-              <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs text-primary font-medium">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Buscando…</span>
+              </div>
+            )}
+            {!loadingLookup && lookedUp && (
+              <CheckCircle2 className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-primary" />
             )}
           </div>
           <input
