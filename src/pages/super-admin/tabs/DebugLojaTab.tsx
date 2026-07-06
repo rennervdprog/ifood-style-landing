@@ -4,7 +4,7 @@ import { DEBUG_STORE_IDS } from "@/lib/debugStoreLogger";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Loader2, RefreshCw, Trash2, AlertTriangle, ArrowRight, CheckCircle2, XCircle } from "lucide-react";
-import { useState } from "react";
+import { useState, Fragment } from "react";
 import { toast } from "sonner";
 
 interface DebugLog {
@@ -106,9 +106,8 @@ const DebugLojaTab = () => {
               ) : (logs ?? []).length === 0 ? (
                 <tr><td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">Sem logs ainda — dispare uma ação na loja monitorada.</td></tr>
               ) : logs!.map((l) => (
-                <>
+                <Fragment key={l.id}>
                   <tr
-                    key={l.id}
                     className={`hover:bg-muted/30 cursor-pointer ${l.direction === "error" ? "bg-destructive/5" : ""}`}
                     onClick={() => setExpandedId(expandedId === l.id ? null : l.id)}
                   >
@@ -139,7 +138,7 @@ const DebugLojaTab = () => {
                       </td>
                     </tr>
                   )}
-                </>
+                </Fragment>
               ))}
             </tbody>
           </table>
