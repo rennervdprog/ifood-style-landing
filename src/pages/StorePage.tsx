@@ -407,7 +407,9 @@ const StorePage = () => {
           !((p.metadata as any)?.modal_only && (p.metadata as any)?.is_pastel_flavor) &&
           !(p as any).sold_by_weight &&
           !((p.metadata as any)?.pdv_only) &&
-          !((p.metadata as any)?.sold_by_weight)
+          !((p.metadata as any)?.sold_by_weight) &&
+          !((p.metadata as any)?.hidden) &&
+          !!(p.name && String(p.name).trim())
       ),
     [products]
   );
