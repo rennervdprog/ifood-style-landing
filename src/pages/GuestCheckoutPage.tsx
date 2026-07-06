@@ -26,6 +26,7 @@ const GuestCheckoutPage = () => {
   const [phone, setPhone] = useState("");
   const [name, setName] = useState("");
   const [lookedUp, setLookedUp] = useState(false);
+  const lastLookupRef = useRef<string>("");
   const [cep, setCep] = useState("");
   const [street, setStreet] = useState("");
   const [number, setNumber] = useState("");
@@ -182,6 +183,8 @@ const GuestCheckoutPage = () => {
   const handlePhoneBlur = async () => {
     const digits = phone.replace(/\D/g, "");
     if (digits.length < 10 || !storeId) return;
+    if (lastLookupRef.current === digits) return;
+    lastLookupRef.current = digits;
     setLoadingLookup(true);
     try {
       const { data, error } = await supabase.functions.invoke("guest-lookup", {
@@ -204,6 +207,18 @@ const GuestCheckoutPage = () => {
       }
     } finally { setLoadingLookup(false); }
   };
+
+  // Auto-lookup enquanto digita: dispara quando atinge 10 ou 11 dígitos (debounce 300ms).
+  // Evita esperar o blur/confirmar — busca já ao terminar de digitar.
+  useEffect(() => {
+    const digits = phone.replace(/\D/g, "");
+    if (!storeId) return;
+    if (digits.length < 10 || digits.length > 11) return;
+    if (lastLookupRef.current === digits) return;
+    const t = setTimeout(() => { handlePhoneBlur(); }, 300);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phone, storeId]);
 
   const handleConfirm = async () => {
     const digits = phone.replace(/\D/g, "");
