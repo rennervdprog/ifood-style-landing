@@ -478,6 +478,11 @@ const DONUT_COLORS = [NEON_COLORS.pink, NEON_COLORS.blue, NEON_COLORS.amber];
       toast.error("Sistema de pagamentos em manutenção temporária.");
       return;
     }
+    if (chargeResult && chargeResult.status === "pending" && !isChargeExpired) {
+      toast.info("Você já tem uma cobrança PIX em aberto. Use o QR abaixo.");
+      setDismissedChargeReference(null);
+      return;
+    }
     if (!SIMULATION_MODE && isPixCooldownActive(pixContextKey)) {
       toast.error("Muitas tentativas. Aguarde alguns minutos.");
       return;
