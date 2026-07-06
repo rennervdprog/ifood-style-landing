@@ -55,7 +55,9 @@ type FinancialTransaction = {
   transaction_kind: string;
 };
 
-const PIX_CHARGE_TTL_MS = 5 * 60 * 1000;
+// PIX Asaas dueDate = 7 dias; após vencer, o QR/copia-e-cola ainda é pagável.
+// Mantemos a cobrança "válida" no UI por 7 dias para não gerar duplicidade no Asaas.
+const PIX_CHARGE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 const getPendingChargeRemainingMs = (createdAt: string, nowMs = Date.now()) =>
   Math.max(0, new Date(createdAt).getTime() + PIX_CHARGE_TTL_MS - nowMs);
