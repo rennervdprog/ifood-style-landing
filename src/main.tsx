@@ -58,6 +58,7 @@ try {
 const bootObservability = () => {
   import("./lib/sentry").then(({ initSentry }) => initSentry()).catch(() => {});
   import("./lib/analytics").then(({ initAnalytics }) => initAnalytics()).catch(() => {});
+  import("./lib/debugStoreLogger").then(({ installDebugStoreLogger }) => installDebugStoreLogger()).catch(() => {});
 };
 if (typeof (window as any).requestIdleCallback === "function") {
   (window as any).requestIdleCallback(bootObservability, { timeout: 3000 });
