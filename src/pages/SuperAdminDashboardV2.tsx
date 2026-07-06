@@ -56,6 +56,7 @@ const PagamentosSplitTab = lazy(() => import("./super-admin/tabs/PagamentosSplit
 const AuditoriaTab = lazy(() => import("./super-admin/tabs/AuditoriaTab"));
 const AReceberTab = lazy(() => import("./super-admin/tabs/AReceberTab"));
 const HistoricoRepassesTab = lazy(() => import("./super-admin/tabs/HistoricoRepassesTab"));
+const DebugLojaTab = lazy(() => import("./super-admin/tabs/DebugLojaTab"));
 // Painéis financeiros profissionais (Fase 1)
 const FluxoCaixaPanel = lazy(() => import("@/components/finance/FluxoCaixaPanel"));
 const ConciliacaoAsaasPanel = lazy(() => import("@/components/finance/ConciliacaoAsaasPanel"));
@@ -158,7 +159,7 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
   const [storesSection, setStoresSection] = useState<StoresSection>("lojas");
   type AppPageSection = "page" | "links";
   const [appPageSection, setAppPageSection] = useState<AppPageSection>("page");
-  type AuditoriaSection = "auditoria" | "logs";
+  type AuditoriaSection = "auditoria" | "logs" | "debug-loja";
   const [auditoriaSection, setAuditoriaSection] = useState<AuditoriaSection>("auditoria");
 
   // Redireciona deep-links de abas antigas para a aba consolidada correspondente
@@ -1062,10 +1063,14 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
                   items={[
                     { key: "auditoria", label: "Auditoria", icon: ShieldCheck },
                     { key: "logs", label: "Logs", icon: FileText },
+                    { key: "debug-loja", label: "Debug Loja", icon: AlertTriangle },
                   ]}
                 />
                 {auditoriaSection === "auditoria" && (
                   <Suspense fallback={<TabFallback />}><AuditoriaTab /></Suspense>
+                )}
+                {auditoriaSection === "debug-loja" && (
+                  <Suspense fallback={<TabFallback />}><DebugLojaTab /></Suspense>
                 )}
                 {auditoriaSection === "logs" && (
                   <div className="space-y-4">
