@@ -44,11 +44,13 @@ const OVERDUE_DAYS_TO_DEACTIVATE = 30;
 // ─── Gerar cobrança PIX no Asaas ──────────────────────────────────────────────
 
 async function createAsaasCharge(params: {
-  walletId: string;
   amount: number;
   description: string;
   dueDate: string; // YYYY-MM-DD
   storeAccountId: string;
+  customerName: string;
+  customerEmail: string;
+  customerCpfCnpj: string;
 }): Promise<{ ok: boolean; paymentId?: string; pixCopyPaste?: string; pixQrCode?: string; error?: string }> {
   const apiKey = Deno.env.get("ASAAS_API_KEY");
   if (!apiKey) return { ok: false, error: "ASAAS_API_KEY não configurado" };
@@ -58,15 +60,55 @@ async function createAsaasCharge(params: {
     : "https://sandbox.asaas.com/api/v3";
 
   try {
+    // Cobrança do repasse cai na CONTA PRINCIPAL Asaas (super admin).
+    // Não é split, não usa walletId do lojista.
+    // Precisamos de um customer: buscar/criar pelo externalReference da loja.
+    const customerRes = await fetch(`${baseUrl}/customers?externalReference=store_${params.storeAccountId}`, {
+      headers: { "access_token": apiKey },
+    });
+    const customerData = await customerRes.json();
+    const existing = customerData?.data?.[0];
+    let customerId: string | null = existing?.id || null;
+    const cpf = (params.customerCpfCnpj || "").replace(/\D/g, "");
+
+    // Se customer existe mas sem CPF/CNPJ, atualiza antes de cobrar
+    if (customerId && !existing?.cpfCnpj && cpf.length >= 11) {
+      await fetch(`${baseUrl}/customers/${customerId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "access_token": apiKey },
+        body: JSON.stringify({ cpfCnpj: cpf }),
+      });
+    }
+
+    if (!customerId) {
+      if (cpf.length < 11) {
+        return { ok: false, error: "Loja sem CPF/CNPJ cadastrado — preencha no perfil do lojista." };
+      }
+      const createRes = await fetch(`${baseUrl}/customers`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "access_token": apiKey },
+        body: JSON.stringify({
+          name: params.customerName || `Loja ${params.storeAccountId.substring(0, 8)}`,
+          email: params.customerEmail || `loja-${params.storeAccountId.substring(0, 8)}@itasuper.com`,
+          cpfCnpj: cpf,
+          externalReference: `store_${params.storeAccountId}`,
+        }),
+      });
+      const created = await createRes.json();
+      if (!createRes.ok) {
+        return { ok: false, error: created?.errors?.[0]?.description || "Erro ao criar customer" };
+      }
+      customerId = created.id;
+    }
+
     const res = await fetch(`${baseUrl}/payments`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "access_token": apiKey,
-        // Criar cobrança na subconta do lojista via walletId
-        "asaas-wallet-id": params.walletId,
       },
       body: JSON.stringify({
+        customer: customerId,
         billingType: "PIX",
       notificationDisabled: true,
         value: params.amount,
@@ -170,7 +212,7 @@ Deno.serve(async (req) => {
         repasse_pendente,
         comissao_pendente,
         stores!inner(
-          id, name, status, asaas_account_id, asaas_wallet_id,
+          id, name, status, owner_id, asaas_account_id, asaas_wallet_id,
           store_plans!inner(plan_type, is_active, commission_rate, pdv_commission_pending)
         )
       `)
@@ -282,25 +324,27 @@ Deno.serve(async (req) => {
       }
 
       // ── 2. Gerar PIX Asaas ──
-      if (!store.asaas_wallet_id || !store.asaas_account_id) {
-        results.push({
-          store: store.name,
-          status: "error",
-          reason: "Sem conta Asaas configurada — cobrar manualmente",
-        });
-        continue;
-      }
+      // Cobrança cai na conta principal (super admin). Não requer subconta do lojista.
 
       const dueDate = new Date(now);
       dueDate.setDate(dueDate.getDate() + 7); // 7 dias para pagar
       const dueDateStr = dueDate.toISOString().split("T")[0];
 
       const charge = await createAsaasCharge({
-        walletId: store.asaas_wallet_id,
-        storeAccountId: store.asaas_account_id,
+        storeAccountId: balance.store_id,
         amount: chargeAmount,
         description: chargeDescription,
         dueDate: dueDateStr,
+        customerName: store.name,
+        customerEmail: "",
+        customerCpfCnpj: await (async () => {
+          const { data: prof } = await supabase
+            .from("profiles")
+            .select("document, email, full_name")
+            .eq("user_id", store.owner_id)
+            .maybeSingle();
+          return String((prof as any)?.document || "");
+        })(),
       });
 
       if (!charge.ok) {
@@ -330,6 +374,20 @@ Deno.serve(async (req) => {
           asaas_payment_id: charge.paymentId,
         },
       } as any);
+
+      // ── 3.1 Notificar lojista via push ──
+      try {
+        await supabase.functions.invoke("send-push", {
+          body: {
+            user_ids: [store.owner_id],
+            title: "💰 Nova cobrança de repasse",
+            body: `${store.name}: R$${chargeAmount.toFixed(2)} — vence em ${dueDateStr.split("-").reverse().join("/")}. Pague pelo app.`,
+            data: { type: "commission_charge", store_id: balance.store_id },
+          },
+        });
+      } catch (e) {
+        console.warn("[auto-charge] push falhou:", e);
+      }
 
       results.push({
         store: store.name,

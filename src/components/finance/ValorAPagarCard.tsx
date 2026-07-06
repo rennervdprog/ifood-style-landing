@@ -14,18 +14,26 @@ export default function ValorAPagarCard({ storeId, onPayClick }: Props) {
   const { data } = useQuery({
     queryKey: ["valor-a-pagar", storeId],
     queryFn: async () => {
-      // MESMA fonte que o Super Admin (RPC get_store_financial_summary).
-      // Garante que os valores aqui e na aba "A Receber" do admin sempre batam.
-      const { data: r, error } = await (supabase as any).rpc("get_store_financial_summary", {
-        p_store_id: storeId,
-      });
-      if (error) throw error;
-      const row = Array.isArray(r) ? r[0] : r;
-      const repasse = Number(row?.entrega_fee ?? 0);
-      const comissao = Number(row?.comissao ?? 0);
-      const pdv = Number(row?.pdv_fee ?? 0);
-      const mensalidade = Number(row?.mensalidade ?? 0);
-      const total = Number(row?.total ?? repasse + comissao + pdv + mensalidade);
+      // Fonte única da verdade: mesmo saldo usado na aba Repasse e pelo cron
+      // (store_balances + store_plans.pdv_commission_pending).
+      const [{ data: bal }, { data: plan }] = await Promise.all([
+        (supabase as any)
+          .from("store_balances")
+          .select("repasse_pendente, comissao_pendente")
+          .eq("store_id", storeId)
+          .maybeSingle(),
+        (supabase as any)
+          .from("store_plans")
+          .select("pdv_commission_pending")
+          .eq("store_id", storeId)
+          .eq("is_active", true)
+          .maybeSingle(),
+      ]);
+      const repasse = Number(bal?.repasse_pendente || 0);
+      const comissao = Number(bal?.comissao_pendente || 0);
+      const pdv = Number(plan?.pdv_commission_pending || 0);
+      const mensalidade = 0;
+      const total = repasse + comissao + pdv + mensalidade;
       return { repasse, comissao, pdv, mensalidade, total };
     },
     refetchInterval: 60_000,

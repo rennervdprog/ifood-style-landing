@@ -10,6 +10,7 @@ Deno.serve(async (req) => {
       Deno.env.get('EXTERNAL_SERVICE_ROLE_KEY') ??
       Deno.env.get('EXTERNAL_SUPABASE_SERVICE_KEY')!
     const anonKey = Deno.env.get('EXTERNAL_SUPABASE_ANON_KEY')!
+    const cronSecret = Deno.env.get('EXTERNAL_CRON_SECRET')!
     const base = `https://${ref}.supabase.co`
 
     const sql = `
@@ -23,6 +24,9 @@ Deno.serve(async (req) => {
         if exists (select 1 from cron.job where jobname = 'auto-withdraw-asaas-daily') then
           perform cron.unschedule('auto-withdraw-asaas-daily');
         end if;
+        if exists (select 1 from cron.job where jobname = 'auto-charge-physical-fees-monday') then
+          perform cron.unschedule('auto-charge-physical-fees-monday');
+        end if;
       end $$;
 
       select cron.schedule(
@@ -33,7 +37,8 @@ Deno.serve(async (req) => {
             url := '${base}/functions/v1/weekly-platform-report',
             headers := jsonb_build_object(
               'Content-Type','application/json',
-              'Authorization','Bearer ${serviceKey}'
+              'apikey','${anonKey}',
+              'Authorization','Bearer ${cronSecret}'
             ),
             body := '{}'::jsonb
           );
@@ -49,7 +54,24 @@ Deno.serve(async (req) => {
             headers := jsonb_build_object(
               'Content-Type','application/json',
               'apikey','${anonKey}',
-              'Authorization','Bearer ${serviceKey}'
+              'Authorization','Bearer ${cronSecret}'
+            ),
+            body := '{}'::jsonb
+          );
+        $cron$
+      );
+
+      -- Cobrança automática de taxas físicas (delivery/PDV) toda segunda 09:30 BRT (12:30 UTC)
+      select cron.schedule(
+        'auto-charge-physical-fees-monday',
+        '30 12 * * 1',
+        $cron$
+          select net.http_post(
+            url := '${base}/functions/v1/auto-charge-physical-fees',
+            headers := jsonb_build_object(
+              'Content-Type','application/json',
+              'apikey','${anonKey}',
+              'Authorization','Bearer ${cronSecret}'
             ),
             body := '{}'::jsonb
           );
@@ -77,7 +99,7 @@ Deno.serve(async (req) => {
       method: 'POST',
       headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        query: `select jobname, schedule from cron.job where jobname in ('weekly-platform-report','auto-withdraw-asaas-daily') order by jobname;`,
+        query: `select jobname, schedule from cron.job where jobname in ('weekly-platform-report','auto-withdraw-asaas-daily','auto-charge-physical-fees-monday') order by jobname;`,
       }),
     })
     const jobs = await verify.json()
