@@ -6,7 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCart } from "@/contexts/CartContext";
 import { toast } from "sonner";
-import { ArrowLeft, MapPin, CreditCard, Banknote, QrCode, Search, Loader2, ShoppingBag, MessageCircle } from "lucide-react";
+import { ArrowLeft, MapPin, CreditCard, Banknote, QrCode, Search, Loader2, ShoppingBag, MessageCircle, Truck, Store, CheckCircle2, User } from "lucide-react";
 import { formatCep, fetchCep } from "@/lib/location";
 import { maskWhatsApp } from "@/lib/whatsapp";
 import { formatBRL, addMoney } from "@/lib/utils";
@@ -26,6 +26,7 @@ const GuestCheckoutPage = () => {
   const [phone, setPhone] = useState("");
   const [name, setName] = useState("");
   const [lookedUp, setLookedUp] = useState(false);
+  const lastLookupRef = useRef<string>("");
   const [cep, setCep] = useState("");
   const [street, setStreet] = useState("");
   const [number, setNumber] = useState("");
@@ -39,6 +40,7 @@ const GuestCheckoutPage = () => {
   const [loadingLookup, setLoadingLookup] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [consent, setConsent] = useState(true);
+  const [isPickup, setIsPickup] = useState(false);
 
   // Guarda: sem itens ou loja não habilitada -> volta
   useEffect(() => {
@@ -118,6 +120,7 @@ const GuestCheckoutPage = () => {
   useEffect(() => {
     const s: any = store;
     if (!s) return;
+    if (isPickup) { setCalculatedFee(0); setCalculatingFee(false); return; }
     const customerCep = debouncedAddr.cep.replace(/\D/g, "");
     const storeCep = (s.address_cep || "").replace(/\D/g, "");
     let cancelled = false;
@@ -149,12 +152,12 @@ const GuestCheckoutPage = () => {
       .catch(() => { if (!cancelled) setCalculatedFee(null); })
       .finally(() => { if (!cancelled) setCalculatingFee(false); });
     return () => { cancelled = true; };
-  }, [store, debouncedAddr, platformCustomerExtra, isOwnDelivery, config]);
+  }, [store, debouncedAddr, platformCustomerExtra, isOwnDelivery, config, isPickup]);
 
   // Frete grátis por valor mínimo (loja absorve) — igual checkout normal
   const storeFreeThreshold = Number((store as any)?.free_delivery_threshold || 0);
-  const freeDeliveryByThreshold = storeFreeThreshold > 0 && subtotal >= storeFreeThreshold;
-  const matchedFee = freeDeliveryByThreshold ? 0 : (calculatedFee ?? 0);
+  const freeDeliveryByThreshold = !isPickup && storeFreeThreshold > 0 && subtotal >= storeFreeThreshold;
+  const matchedFee = isPickup ? 0 : (freeDeliveryByThreshold ? 0 : (calculatedFee ?? 0));
 
   const total = useMemo(() => addMoney(subtotal, matchedFee), [subtotal, matchedFee]);
 
@@ -180,6 +183,8 @@ const GuestCheckoutPage = () => {
   const handlePhoneBlur = async () => {
     const digits = phone.replace(/\D/g, "");
     if (digits.length < 10 || !storeId) return;
+    if (lastLookupRef.current === digits) return;
+    lastLookupRef.current = digits;
     setLoadingLookup(true);
     try {
       const { data, error } = await supabase.functions.invoke("guest-lookup", {
@@ -203,11 +208,23 @@ const GuestCheckoutPage = () => {
     } finally { setLoadingLookup(false); }
   };
 
+  // Auto-lookup enquanto digita: dispara quando atinge 10 ou 11 dígitos (debounce 300ms).
+  // Evita esperar o blur/confirmar — busca já ao terminar de digitar.
+  useEffect(() => {
+    const digits = phone.replace(/\D/g, "");
+    if (!storeId) return;
+    if (digits.length < 10 || digits.length > 11) return;
+    if (lastLookupRef.current === digits) return;
+    const t = setTimeout(() => { handlePhoneBlur(); }, 300);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phone, storeId]);
+
   const handleConfirm = async () => {
     const digits = phone.replace(/\D/g, "");
     if (digits.length < 10) { toast.error("Informe um WhatsApp válido."); return; }
     if (!name.trim() || name.trim().length < 2) { toast.error("Informe seu nome."); return; }
-    if (!street.trim() || !number.trim() || !neighborhood.trim()) {
+    if (!isPickup && (!street.trim() || !number.trim() || !neighborhood.trim())) {
       toast.error("Preencha rua, número e bairro."); return;
     }
     if (!payment) { toast.error("Escolha a forma de pagamento."); return; }
@@ -234,8 +251,8 @@ const GuestCheckoutPage = () => {
         total_price: total,
         commission_rate: 0,
         payment_method: payment,
-        neighborhood: neighborhood.trim(),
-        address: {
+        neighborhood: isPickup ? "RETIRADA" : neighborhood.trim(),
+        address: isPickup ? null : {
           label: "Casa",
           cep: cep.replace(/\D/g, "") || null,
           street: street.trim(),
@@ -243,7 +260,7 @@ const GuestCheckoutPage = () => {
           complement: complement.trim() || null,
           reference_point: reference.trim() || null,
         },
-        is_pickup: false,
+        is_pickup: isPickup,
         needs_change: payment === "dinheiro" && needsChange,
         change_for: payment === "dinheiro" && needsChange ? Number(String(changeFor).replace(",", ".")) : 0,
         scheduled_for: null,
@@ -272,6 +289,11 @@ const GuestCheckoutPage = () => {
 
   const guestEnabled = (store as any)?.guest_checkout_enabled === true;
 
+  const contactOk = phone.replace(/\D/g, "").length >= 10 && name.trim().length >= 2;
+  const addressOk = isPickup || (!!street.trim() && !!number.trim() && !!neighborhood.trim());
+  const stepsDone = [contactOk, addressOk, !!payment];
+  const stepLabels = ["Contato", isPickup ? "Retirada" : "Endereço", "Pagamento"];
+
   return (
     <div className="min-h-screen bg-background pb-32">
       <header className="sticky top-0 z-40 bg-card border-b border-border h-14 flex items-center px-4 gap-3">
@@ -279,10 +301,97 @@ const GuestCheckoutPage = () => {
         <h1 className="text-base font-bold">Finalizar pedido</h1>
       </header>
 
-      <div className="p-4 space-y-4">
-        {/* WhatsApp */}
-        <div className="bg-card border border-border rounded-2xl p-4 space-y-3">
-          <h2 className="text-sm font-bold flex items-center gap-2"><MessageCircle className="h-4 w-4 text-primary" /> Seu WhatsApp</h2>
+      {/* Progress steps — igual ao checkout normal */}
+      <div className="px-4 pt-4 pb-2">
+        <div className="flex items-center gap-1.5">
+          {stepLabels.map((step, i) => {
+            const done = stepsDone[i];
+            const active = !done && stepsDone.slice(0, i).every(Boolean);
+            return (
+              <div key={step} className="flex-1">
+                <div className="flex items-center gap-1.5">
+                  <div
+                    className={`h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-black shrink-0 transition-all ${
+                      done
+                        ? "bg-primary text-primary-foreground shadow-sm shadow-primary/30"
+                        : active
+                          ? "bg-primary/15 text-primary ring-2 ring-primary/40"
+                          : "bg-muted text-muted-foreground"
+                    }`}
+                  >
+                    {done ? <CheckCircle2 className="h-3.5 w-3.5" /> : i + 1}
+                  </div>
+                  {i < stepLabels.length - 1 && (
+                    <div className={`flex-1 h-0.5 rounded-full transition-all ${done ? "bg-primary" : "bg-muted"}`} />
+                  )}
+                </div>
+                <p className={`text-[10px] mt-1.5 font-bold ${done || active ? "text-foreground" : "text-muted-foreground"}`}>{step}</p>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="px-4 py-2 space-y-4">
+        {/* SECTION: Tipo de pedido (Entrega x Retirada) */}
+        <section className="bg-card rounded-2xl border border-border overflow-hidden">
+          <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border/50">
+            <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center">
+              <Truck className="h-4 w-4 text-primary" />
+            </div>
+            <h2 className="text-sm font-bold text-foreground">Tipo de pedido</h2>
+          </div>
+          <div className="p-4">
+            <div className="flex gap-2">
+              <button
+                onClick={() => setIsPickup(false)}
+                className={`flex-1 flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
+                  !isPickup ? "border-primary bg-primary/5" : "border-transparent bg-muted/50"
+                }`}
+              >
+                <Truck className={`h-6 w-6 ${!isPickup ? "text-primary" : "text-muted-foreground"}`} />
+                <div className="text-center">
+                  <span className={`text-sm font-bold block ${!isPickup ? "text-primary" : "text-foreground"}`}>Entrega</span>
+                  <span className="text-[10px] text-muted-foreground">Receba em casa</span>
+                </div>
+              </button>
+              <button
+                onClick={() => setIsPickup(true)}
+                className={`flex-1 flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
+                  isPickup ? "border-primary bg-primary/5" : "border-transparent bg-muted/50"
+                }`}
+              >
+                <Store className={`h-6 w-6 ${isPickup ? "text-primary" : "text-muted-foreground"}`} />
+                <div className="text-center">
+                  <span className={`text-sm font-bold block ${isPickup ? "text-primary" : "text-foreground"}`}>Retirada</span>
+                  <span className="text-[10px] text-muted-foreground">Retire na loja</span>
+                </div>
+              </button>
+            </div>
+            {isPickup && (
+              <div className="mt-3 bg-primary/5 border border-primary/10 rounded-xl p-3 flex items-start gap-2">
+                <Store className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-xs font-bold text-foreground">Retirada na loja</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">Seu pedido ficará pronto para retirada. Sem taxa de entrega! 🎉</p>
+                </div>
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* SECTION: Contato */}
+        <section className="bg-card rounded-2xl border border-border overflow-hidden">
+          <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border/50">
+            <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${contactOk ? "bg-primary/10" : "bg-muted"}`}>
+              <MessageCircle className={`h-4 w-4 ${contactOk ? "text-primary" : "text-muted-foreground"}`} />
+            </div>
+            <div className="flex-1">
+              <h2 className="text-sm font-bold text-foreground">Seus dados</h2>
+            </div>
+            {contactOk && <CheckCircle2 className="h-4 w-4 text-primary" />}
+          </div>
+          <div className="p-4 space-y-3">
           <div className="relative">
             <input
               type="tel" inputMode="tel" autoComplete="tel"
@@ -293,7 +402,13 @@ const GuestCheckoutPage = () => {
               className="w-full h-12 px-4 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
             />
             {loadingLookup && (
-              <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs text-primary font-medium">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Buscando…</span>
+              </div>
+            )}
+            {!loadingLookup && lookedUp && (
+              <CheckCircle2 className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-primary" />
             )}
           </div>
           <input
@@ -304,13 +419,24 @@ const GuestCheckoutPage = () => {
           {lookedUp && (
             <p className="text-xs text-primary">Reconhecemos seu número — endereço preenchido automaticamente.</p>
           )}
-        </div>
+          </div>
+        </section>
 
-        {/* Endereço */}
-        <div className="bg-card border border-border rounded-2xl p-4 space-y-3">
-          <h2 className="text-sm font-bold flex items-center gap-2"><MapPin className="h-4 w-4 text-primary" /> Endereço de entrega</h2>
+        {/* SECTION: Endereço (oculto na retirada) */}
+        {!isPickup && (
+        <section className="bg-card rounded-2xl border border-border overflow-hidden">
+          <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border/50">
+            <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${addressOk ? "bg-primary/10" : "bg-muted"}`}>
+              <MapPin className={`h-4 w-4 ${addressOk ? "text-primary" : "text-muted-foreground"}`} />
+            </div>
+            <div className="flex-1">
+              <h2 className="text-sm font-bold text-foreground">Endereço de entrega</h2>
+            </div>
+            {addressOk && <CheckCircle2 className="h-4 w-4 text-primary" />}
+          </div>
+          <div className="p-4 space-y-3">
           <div className="flex gap-2">
-            <input type="text" placeholder="CEP" value={cep}
+            <input type="text" placeholder="CEP (opcional)" value={cep}
               onChange={(e) => handleCepChange(e.target.value)}
               inputMode="numeric" maxLength={9}
               className="flex-1 h-11 px-3 rounded-xl border border-border bg-background text-sm" />
@@ -319,6 +445,7 @@ const GuestCheckoutPage = () => {
               {loadingCep ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
             </button>
           </div>
+          <p className="text-[11px] text-muted-foreground -mt-1">Não sabe o CEP? Pode deixar em branco.</p>
           <div className="grid grid-cols-3 gap-2">
             <input type="text" placeholder="Rua" value={street} onChange={(e) => setStreet(e.target.value)}
               className="col-span-2 h-11 px-3 rounded-xl border border-border bg-background text-sm" />
@@ -331,19 +458,31 @@ const GuestCheckoutPage = () => {
             className="w-full h-11 px-3 rounded-xl border border-border bg-background text-sm" />
           <input type="text" placeholder="Ponto de referência" value={reference} onChange={(e) => setReference(e.target.value)}
             className="w-full h-11 px-3 rounded-xl border border-border bg-background text-sm" />
-        </div>
+          </div>
+        </section>
+        )}
 
-        {/* Pagamento */}
-        <div className="bg-card border border-border rounded-2xl p-4 space-y-2">
-          <h2 className="text-sm font-bold">Pagamento</h2>
+        {/* SECTION: Pagamento */}
+        <section className="bg-card rounded-2xl border border-border overflow-hidden">
+          <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border/50">
+            <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${payment ? "bg-primary/10" : "bg-muted"}`}>
+              <CreditCard className={`h-4 w-4 ${payment ? "text-primary" : "text-muted-foreground"}`} />
+            </div>
+            <div className="flex-1">
+              <h2 className="text-sm font-bold text-foreground">Pagamento</h2>
+            </div>
+            {payment && <CheckCircle2 className="h-4 w-4 text-primary" />}
+          </div>
+          <div className="p-4 space-y-2">
           {PAY_METHODS.map((m) => {
             const Icon = m.icon;
             const active = payment === m.id;
             return (
               <button key={m.id} onClick={() => setPayment(m.id)}
-                className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-all ${active ? "border-primary bg-primary/5" : "border-border"}`}>
+                className={`w-full flex items-center gap-3 p-3 rounded-xl border-2 transition-all ${active ? "border-primary bg-primary/5" : "border-transparent bg-muted/50"}`}>
                 <Icon className={`h-5 w-5 ${active ? "text-primary" : "text-muted-foreground"}`} />
-                <span className="text-sm font-medium">{m.label}</span>
+                <span className={`text-sm font-medium ${active ? "text-primary" : "text-foreground"}`}>{m.label}</span>
+                {active && <CheckCircle2 className="h-4 w-4 text-primary ml-auto" />}
               </button>
             );
           })}
@@ -373,15 +512,28 @@ const GuestCheckoutPage = () => {
               )}
             </div>
           )}
-        </div>
+          </div>
+        </section>
 
-        {/* Resumo */}
-        <div className="bg-card border border-border rounded-2xl p-4 space-y-2">
-          <h2 className="text-sm font-bold flex items-center gap-2"><ShoppingBag className="h-4 w-4 text-primary" /> Resumo</h2>
-          <div className="flex justify-between text-sm"><span>Subtotal</span><span>{formatBRL(subtotal)}</span></div>
-          <div className="flex justify-between text-sm"><span>Entrega</span><span>{matchedFee > 0 ? formatBRL(matchedFee) : "—"}</span></div>
-          <div className="flex justify-between text-base font-bold pt-2 border-t border-border"><span>Total</span><span>{formatBRL(total)}</span></div>
-        </div>
+        {/* SECTION: Resumo */}
+        <section className="bg-card rounded-2xl border border-border overflow-hidden">
+          <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border/50">
+            <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center">
+              <ShoppingBag className="h-4 w-4 text-primary" />
+            </div>
+            <h2 className="text-sm font-bold text-foreground">Resumo</h2>
+          </div>
+          <div className="p-4 space-y-2">
+            <div className="flex justify-between text-sm"><span className="text-muted-foreground">Subtotal</span><span className="font-medium">{formatBRL(subtotal)}</span></div>
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground flex items-center gap-1.5">
+                {isPickup ? <><Store className="h-3 w-3" /> Retirada</> : <>Entrega</>}
+              </span>
+              <span className="font-medium">{isPickup ? "Grátis" : (matchedFee > 0 ? formatBRL(matchedFee) : (calculatingFee ? "..." : "—"))}</span>
+            </div>
+            <div className="flex justify-between text-base font-bold pt-2 border-t border-border"><span>Total</span><span className="text-primary">{formatBRL(total)}</span></div>
+          </div>
+        </section>
 
         <label className="flex items-start gap-2 text-xs text-muted-foreground px-1">
           <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-0.5" />
