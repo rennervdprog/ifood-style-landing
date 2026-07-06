@@ -6,7 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCart } from "@/contexts/CartContext";
 import { toast } from "sonner";
-import { ArrowLeft, MapPin, CreditCard, Banknote, QrCode, Search, Loader2, ShoppingBag, MessageCircle } from "lucide-react";
+import { ArrowLeft, MapPin, CreditCard, Banknote, QrCode, Search, Loader2, ShoppingBag, MessageCircle, Truck, Store, CheckCircle2, User } from "lucide-react";
 import { formatCep, fetchCep } from "@/lib/location";
 import { maskWhatsApp } from "@/lib/whatsapp";
 import { formatBRL, addMoney } from "@/lib/utils";
@@ -39,6 +39,7 @@ const GuestCheckoutPage = () => {
   const [loadingLookup, setLoadingLookup] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [consent, setConsent] = useState(true);
+  const [isPickup, setIsPickup] = useState(false);
 
   // Guarda: sem itens ou loja não habilitada -> volta
   useEffect(() => {
@@ -118,6 +119,7 @@ const GuestCheckoutPage = () => {
   useEffect(() => {
     const s: any = store;
     if (!s) return;
+    if (isPickup) { setCalculatedFee(0); setCalculatingFee(false); return; }
     const customerCep = debouncedAddr.cep.replace(/\D/g, "");
     const storeCep = (s.address_cep || "").replace(/\D/g, "");
     let cancelled = false;
@@ -149,12 +151,12 @@ const GuestCheckoutPage = () => {
       .catch(() => { if (!cancelled) setCalculatedFee(null); })
       .finally(() => { if (!cancelled) setCalculatingFee(false); });
     return () => { cancelled = true; };
-  }, [store, debouncedAddr, platformCustomerExtra, isOwnDelivery, config]);
+  }, [store, debouncedAddr, platformCustomerExtra, isOwnDelivery, config, isPickup]);
 
   // Frete grátis por valor mínimo (loja absorve) — igual checkout normal
   const storeFreeThreshold = Number((store as any)?.free_delivery_threshold || 0);
-  const freeDeliveryByThreshold = storeFreeThreshold > 0 && subtotal >= storeFreeThreshold;
-  const matchedFee = freeDeliveryByThreshold ? 0 : (calculatedFee ?? 0);
+  const freeDeliveryByThreshold = !isPickup && storeFreeThreshold > 0 && subtotal >= storeFreeThreshold;
+  const matchedFee = isPickup ? 0 : (freeDeliveryByThreshold ? 0 : (calculatedFee ?? 0));
 
   const total = useMemo(() => addMoney(subtotal, matchedFee), [subtotal, matchedFee]);
 
@@ -207,7 +209,7 @@ const GuestCheckoutPage = () => {
     const digits = phone.replace(/\D/g, "");
     if (digits.length < 10) { toast.error("Informe um WhatsApp válido."); return; }
     if (!name.trim() || name.trim().length < 2) { toast.error("Informe seu nome."); return; }
-    if (!street.trim() || !number.trim() || !neighborhood.trim()) {
+    if (!isPickup && (!street.trim() || !number.trim() || !neighborhood.trim())) {
       toast.error("Preencha rua, número e bairro."); return;
     }
     if (!payment) { toast.error("Escolha a forma de pagamento."); return; }
@@ -234,8 +236,8 @@ const GuestCheckoutPage = () => {
         total_price: total,
         commission_rate: 0,
         payment_method: payment,
-        neighborhood: neighborhood.trim(),
-        address: {
+        neighborhood: isPickup ? "RETIRADA" : neighborhood.trim(),
+        address: isPickup ? null : {
           label: "Casa",
           cep: cep.replace(/\D/g, "") || null,
           street: street.trim(),
@@ -243,7 +245,7 @@ const GuestCheckoutPage = () => {
           complement: complement.trim() || null,
           reference_point: reference.trim() || null,
         },
-        is_pickup: false,
+        is_pickup: isPickup,
         needs_change: payment === "dinheiro" && needsChange,
         change_for: payment === "dinheiro" && needsChange ? Number(String(changeFor).replace(",", ".")) : 0,
         scheduled_for: null,
