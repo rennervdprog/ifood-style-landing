@@ -44,7 +44,6 @@ const OVERDUE_DAYS_TO_DEACTIVATE = 30;
 // ─── Gerar cobrança PIX no Asaas ──────────────────────────────────────────────
 
 async function createAsaasCharge(params: {
-  walletId: string;
   amount: number;
   description: string;
   dueDate: string; // YYYY-MM-DD
@@ -58,15 +57,40 @@ async function createAsaasCharge(params: {
     : "https://sandbox.asaas.com/api/v3";
 
   try {
+    // Cobrança do repasse cai na CONTA PRINCIPAL Asaas (super admin).
+    // Não é split, não usa walletId do lojista.
+    // Precisamos de um customer: buscar/criar pelo externalReference da loja.
+    const customerRes = await fetch(`${baseUrl}/customers?externalReference=store_${params.storeAccountId}`, {
+      headers: { "access_token": apiKey },
+    });
+    const customerData = await customerRes.json();
+    let customerId: string | null = customerData?.data?.[0]?.id || null;
+
+    if (!customerId) {
+      const createRes = await fetch(`${baseUrl}/customers`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "access_token": apiKey },
+        body: JSON.stringify({
+          name: `Loja ${params.storeAccountId.substring(0, 8)}`,
+          email: `loja-${params.storeAccountId.substring(0, 8)}@itasuper.com`,
+          externalReference: `store_${params.storeAccountId}`,
+        }),
+      });
+      const created = await createRes.json();
+      if (!createRes.ok) {
+        return { ok: false, error: created?.errors?.[0]?.description || "Erro ao criar customer" };
+      }
+      customerId = created.id;
+    }
+
     const res = await fetch(`${baseUrl}/payments`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "access_token": apiKey,
-        // Criar cobrança na subconta do lojista via walletId
-        "asaas-wallet-id": params.walletId,
       },
       body: JSON.stringify({
+        customer: customerId,
         billingType: "PIX",
       notificationDisabled: true,
         value: params.amount,
@@ -282,22 +306,14 @@ Deno.serve(async (req) => {
       }
 
       // ── 2. Gerar PIX Asaas ──
-      if (!store.asaas_wallet_id || !store.asaas_account_id) {
-        results.push({
-          store: store.name,
-          status: "error",
-          reason: "Sem conta Asaas configurada — cobrar manualmente",
-        });
-        continue;
-      }
+      // Cobrança cai na conta principal (super admin). Não requer subconta do lojista.
 
       const dueDate = new Date(now);
       dueDate.setDate(dueDate.getDate() + 7); // 7 dias para pagar
       const dueDateStr = dueDate.toISOString().split("T")[0];
 
       const charge = await createAsaasCharge({
-        walletId: store.asaas_wallet_id,
-        storeAccountId: store.asaas_account_id,
+        storeAccountId: balance.store_id,
         amount: chargeAmount,
         description: chargeDescription,
         dueDate: dueDateStr,
