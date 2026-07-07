@@ -57,16 +57,29 @@ export default async function handler(req: Request): Promise<Response> {
 
     const data = await upstream.text();
 
+    // Se a loja não existe (store=null), NÃO cacheia — evita fixar um 404
+    // em cache quando um slug alias é adicionado depois.
+    let hasStore = true;
+    try {
+      const parsed = JSON.parse(data);
+      hasStore = !!parsed?.store;
+    } catch { /* mantém default */ }
+
+    const cacheHeaders = hasStore
+      ? {
+          "Cache-Control": "public, s-maxage=600, stale-while-revalidate=86400",
+          "CDN-Cache-Control": "public, s-maxage=600, stale-while-revalidate=86400",
+          "Vercel-CDN-Cache-Control": "public, s-maxage=600, stale-while-revalidate=86400",
+        }
+      : {
+          "Cache-Control": "no-store",
+          "CDN-Cache-Control": "no-store",
+          "Vercel-CDN-Cache-Control": "no-store",
+        };
+
     return new Response(data, {
       status: 200,
-      headers: {
-        ...cors,
-        "Content-Type": "application/json",
-        // CDN cacheia por 10min, serve stale por até 24h enquanto revalida em background.
-        "Cache-Control": "public, s-maxage=600, stale-while-revalidate=86400",
-        "CDN-Cache-Control": "public, s-maxage=600, stale-while-revalidate=86400",
-        "Vercel-CDN-Cache-Control": "public, s-maxage=600, stale-while-revalidate=86400",
-      },
+      headers: { ...cors, "Content-Type": "application/json", ...cacheHeaders },
     });
   } catch (err) {
     return new Response(
