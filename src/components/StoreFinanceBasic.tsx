@@ -1029,6 +1029,21 @@ const PIE_COLORS = [COLORS.green, COLORS.blue, COLORS.amber];
             <div className="bg-card/60 backdrop-blur-sm rounded-2xl border border-border/30 overflow-hidden">
               <div className="p-4 border-b border-border/30">
                 <p className="text-xs font-bold text-foreground">Extrato de Pedidos</p>
+                {(() => {
+                  const neg = completedOrders.filter(o => {
+                    const sub = Number(o.subtotal);
+                    const isPix = o.payment_method === "pix";
+                    const fee = isPix ? (storePlan.pixOperationalFee || 1) : 0;
+                    const dFee = Number(o.delivery_fee) > 0 ? (storePlan.platformDeliverySplit || 2) : 0;
+                    return sub - fee - dFee < 0;
+                  }).length;
+                  if (neg === 0) return null;
+                  return (
+                    <p className="text-[11px] text-red-400 mt-1 flex items-center gap-1">
+                      ⚠ {neg} {neg === 1 ? "pedido está" : "pedidos estão"} gerando prejuízo — considere definir valor mínimo.
+                    </p>
+                  );
+                })()}
               </div>
               <div className="divide-y divide-border/20">
                 {completedOrders.map(order => {
@@ -1038,14 +1053,18 @@ const PIE_COLORS = [COLORS.green, COLORS.blue, COLORS.amber];
                   const deliveryFee = Number(order.delivery_fee) > 0 ? (storePlan.platformDeliverySplit || 2) : 0;
                   const totalFees = fee + deliveryFee;
                   const net = sub - totalFees;
+                  const isNeg = net < 0;
                   return (
-                    <div key={order.id} className="p-3 flex items-center gap-3 hover:bg-card/40 transition-colors">
+                    <div key={order.id} className={`p-3 flex items-center gap-3 hover:bg-card/40 transition-colors ${isNeg ? "bg-red-500/5 border-l-2 border-red-500" : ""}`} title={isNeg ? "Este pedido está gerando prejuízo (taxas maiores que o subtotal)" : undefined}>
                       <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 ${isPix ? "bg-emerald-500/10" : "bg-amber-500/10"}`}>
                         {isPix ? <Smartphone className="h-4 w-4 text-emerald-400" /> : <Banknote className="h-4 w-4 text-amber-400" />}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between">
-                          <span className="text-xs font-semibold text-foreground">#{order.id.substring(0, 6).toUpperCase()}</span>
+                          <span className="text-xs font-semibold text-foreground flex items-center gap-1">
+                            #{order.id.substring(0, 6).toUpperCase()}
+                            {isNeg && <span className="text-[9px] font-bold text-red-400 bg-red-500/10 px-1.5 py-0.5 rounded">PREJUÍZO</span>}
+                          </span>
                           <span className="text-[10px] text-muted-foreground">{format(new Date(order.created_at), "dd/MM HH:mm")}</span>
                         </div>
                         <div className="flex items-center justify-between mt-0.5">
@@ -1060,7 +1079,7 @@ const PIE_COLORS = [COLORS.green, COLORS.blue, COLORS.amber];
                             {fee > 0 ? ` (PIX R$${fee})` : ""}
                             {deliveryFee > 0 ? ` (Entrega R$${deliveryFee})` : ""}
                           </span>
-                          <span className="text-xs font-semibold text-emerald-400">Líquido: {formatBRL(net)}</span>
+                          <span className={`text-xs font-semibold ${isNeg ? "text-red-400" : "text-emerald-400"}`}>Líquido: {formatBRL(net)}</span>
                         </div>
                       </div>
                     </div>
