@@ -1,68 +1,59 @@
-## Estratégia: A → B em duas fases separadas
+# Plano: Bot responde no 1º contato + Slugs rotativos anti-spam
 
-Faz sentido separar porque os bugs de UI são visuais/sem risco financeiro, já os 2 e 3 mexem em dinheiro real (saldo devido de lojista). Misturar tudo num commit dificulta reverter se algo der errado na parte sensível.
-
----
-
-### FASE A — Correções de UI (baixo risco, sem tocar em dinheiro)
-
-**A1. `RecebidoNoMesCard` mostrar líquido**
-- Trocar soma de `total_price` por `total_price - delivery_fee - platform_fee` (mesma fórmula da "Receita líquida estimada" logo abaixo).
-- Renomear label para "Recebido líquido no mês" para casar com o valor.
-
-**A4. Badge "Acumulando" com saldo 0**
-- Em `PlatformFeeCycleBlock.tsx`, adicionar 4º estado `"zerado"` quando `pendente === 0` → label "Ciclo aberto", ícone neutro.
-- "Acumulando" só aparece quando `0 < pendente < 30`.
-
-**A5. Divergência 5×R$5 ≠ R$27**
-- No bloco "Composição da Receita", quando `soma(delivery_fee dos pedidos) ≠ split_esperado`, mostrar linha extra "⚠ Ajuste/diferença: R$ X,XX" com tooltip explicando (pedido com taxa fora do padrão).
-- Não altera cálculo, só torna visível a diferença.
-
-**A6. Pedido com líquido negativo**
-- Em `AdminOrderCard` (ou onde renderiza líquido do pedido), quando `liquido < 0`, envolver em badge vermelho com ícone de alerta e tooltip: "Este pedido está gerando prejuízo — considere valor mínimo."
-- Adicionar aviso agregado no topo do Financeiro: "N pedidos com prejuízo este mês" se houver.
-- (Sem bloquear criação — validação de valor mínimo fica pra fase futura, se o usuário quiser.)
-
-**A7. `PlanSummaryCard` esconder taxa PIX por pedido**
-- Adicionar linha "Taxa por pedido PIX: R$ 1,99" logo abaixo de "Taxa por entrega", lendo do mesmo `store_plans` (`pix_fee_per_order` ou campo equivalente — a confirmar na exploração).
-- Se `commission_rate === 0` mas `pix_fee > 0`, ainda mostra o bloco de taxas em vez de esconder tudo.
+## Objetivo
+1. Bot enviar saudação já na **primeira** mensagem do cliente (hoje só responde na 2ª).
+2. Reduzir risco de WhatsApp marcar o link como spam usando **4 slugs diferentes** por loja (1 principal + 3 aliases curtos), sorteados a cada envio.
 
 ---
 
-### FASE B — Investigação de saldos zerados (alto risco, banco externo)
+## Parte 1 — Remover filtro de "primeiro contato"
 
-**Antes de qualquer mudança de código**, rodar diagnóstico read-only no banco externo (`qkjhguziuchqsbxzruea`) para a loja Pastelão Carioca:
+**Onde:** `supabase/functions/evolution-webhook/index.ts`
 
-1. **Consultas de auditoria** (via `scripts/audit-store-balances-external.sql` ou queries diretas):
-   - `SELECT * FROM store_balances WHERE store_id = <pastelao>` — estado atual.
-   - `SELECT id, status, amount, reference_code, metadata, created_at, settled_at FROM financial_transactions WHERE store_id = <pastelao> ORDER BY created_at DESC LIMIT 50` — ver as 3 "Falhou" e o que aconteceu.
-   - `SELECT id, delivery_fee, total_price, status, created_at FROM orders WHERE store_id = <pastelao> AND status IN ('entregue','finalizado')` — somar splits reais.
-   - `SELECT * FROM financial_audit_log WHERE entity_id IN (...) OR metadata->>'store_id' = <pastelao>` — rastrear quem debitou o quê.
+- Localizar o bloco que checa se é a 1ª mensagem em 10 min e ignora.
+- Remover essa checagem **apenas para a saudação inicial** (mensagem com link da loja).
+- Manter intactas as outras 5 camadas anti-ban:
+  - dedupe de saudação por 24h (mesmo número não recebe 2x)
+  - opt-out (`pare`, `sair`, `stop`)
+  - limite diário progressivo por chip
+  - delay aleatório 2–4s antes de enviar
+  - rotação de 4 templates de texto + caracteres zero-width
 
-2. **Reproduzir a origem dos R$0**. Hipóteses ordenadas por probabilidade:
-   - **H1 — Split não está sendo lançado em `store_balances.repasse_pendente`** ao entregar pedido. Verificar trigger/edge `finalize-order` ou `driver-confirm-delivery`.
-   - **H2 — `asaas-webhook` trata `PAYMENT_FAILED` como sucesso** ou não faz rollback ao receber `PAYMENT_REFUNDED`/`PAYMENT_OVERDUE`.
-   - **H3 — `reconcile-payments` + `reconcile_debit_store_balance` debitam mesmo quando cobrança acaba falhando depois** (débito otimista sem estorno).
-
-3. **Só depois do diagnóstico**, propor correções específicas com escopo mínimo:
-   - Se H1: adicionar/consertar o INSERT em `store_balances`.
-   - Se H2/H3: adicionar handler de FAILED que faz `UPDATE store_balances SET repasse_pendente = repasse_pendente + amount` e loga em `financial_audit_log` com `action='payment_failed_rollback'`.
-   - Migration de correção retroativa para restaurar os R$25 + R$143 sumidos da Pastelão (com trilha de auditoria).
-
-**Regra da Fase B**: cada mudança em código financeiro vem acompanhada de (a) query de "antes", (b) mudança, (c) query de "depois", tudo mostrado ao usuário para aprovação antes de aplicar em produção.
+Resultado: cliente manda "oi" → recebe saudação com link em segundos.
 
 ---
 
-### Ordem sugerida
-1. Aprovação deste plano.
-2. Implementar A1–A7 (um commit único, versão bump).
-3. Verificar visualmente no painel da Pastelão.
-4. Abrir Fase B com o diagnóstico read-only e voltar com achados + plano de correção fino antes de tocar em edge functions.
+## Parte 2 — Slugs alias rotativos
 
-### Fora de escopo (desta rodada)
-- Unificação `useStoreDue` dos 3 cálculos paralelos (bug #6 do diagnóstico anterior).
-- Consolidar "Extrato" + "Histórico Pago".
-- Buscar threshold de bloqueio de `admin_settings` no `ValorAPagarCard`.
-- Bloqueio hard de pedido com prejuízo (só aviso agora).
+### 2.1 Banco (migration)
+- Adicionar coluna `slug_aliases text[] default '{}'` em `public.stores`.
+- Backfill: para cada loja existente, gerar 3 aliases no formato `<prefixo>-<hash4>` (ex.: `past-a4f9`, `past-c9783`, `past-7b21`) a partir das 4 primeiras letras do slug principal + 4 chars aleatórios hex.
+- Índice GIN em `slug_aliases` para lookup rápido.
 
-Esses ficam pra depois que a Fase B estiver estável.
+### 2.2 Resolver de rota
+- Ajustar a query que resolve `/:slug` para aceitar `slug = $1 OR $1 = ANY(slug_aliases)`.
+- Todos os aliases apontam para a mesma loja — mesma página, mesmo cardápio.
+
+### 2.3 Sorteio no envio da saudação
+- Em `evolution-send-message` (ou onde monta a URL da saudação), montar array `[slug, ...slug_aliases]` e sortear 1 aleatório por envio.
+- URL final: `https://itasuper.com.br/<sorteado>`.
+
+### 2.4 Painel do lojista
+- Card "Links anti-spam" mostrando os 4 slugs ativos.
+- Botão **"Regenerar aliases"** (caso um link seja marcado como spam) → chama edge function que sobrescreve `slug_aliases` com 3 novos hashes.
+
+---
+
+## Detalhes técnicos
+- Slugs alias são somente para **saudação inicial via WhatsApp**. Divulgação normal continua usando o slug principal (SEO).
+- Aliases não indexáveis: adicionar `<meta name="robots" content="noindex">` quando a rota casar por alias (não pelo slug principal), para não fragmentar SEO.
+- Uniqueness: alias precisa ser único no sistema — checar contra `slug` e `slug_aliases` de todas as lojas antes de inserir; se colidir, regenera.
+- Segurança: função de regenerar aliases exige `auth.uid()` = dono da loja (RLS já cobre `stores`).
+
+---
+
+## Versão
+Após aplicar: bump para **1.11.85** em `src/lib/appVersion.ts`, `android/app/build.gradle` (versionName + versionCode 839) e `src/pages/PerfilPage.tsx`.
+
+## Confirmar antes de executar
+Posso seguir com as 2 partes juntas?

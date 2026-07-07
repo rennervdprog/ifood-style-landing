@@ -2,7 +2,7 @@ import { createClient } from "npm:@supabase/supabase-js@2.49.4";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, sentry-trace, baggage",
 };
 const json = (b: unknown, s = 200) =>
   new Response(JSON.stringify(b), { status: s, headers: { ...corsHeaders, "Content-Type": "application/json" } });
@@ -221,15 +221,9 @@ Deno.serve(async (req) => {
           .gte("sent_at", silenceSince).limit(1).maybeSingle();
         if (recentGreet) return json({ ok: true, skipped: "silence_24h" });
 
-        // P2 — skip 1º contato: só responde na 2ª msg em 10min.
-        //  Evita gastar envio com quem mandou "oi" por engano e sumiu.
-        const firstContactSince = new Date(Date.now() - FIRST_CONTACT_WINDOW_MS).toISOString();
-        const { count: inboundCount } = await admin
-          .from("whatsapp_inbound_log")
-          .select("id", { count: "exact", head: true })
-          .eq("store_id", cfg.store_id).eq("phone", number)
-          .gte("received_at", firstContactSince);
-        if ((inboundCount ?? 0) < 2) return json({ ok: true, skipped: "first_contact" });
+        // P2 — 1º contato: agora respondemos imediatamente na 1ª mensagem.
+        //  Camadas anti-ban restantes: dedupe 24h, opt-out, limite diário,
+        //  delay 2-4s, rotação de templates + zero-width e slug alias rotativo.
 
         // Janela de operação baseada nos horários do lojista (fuso SP).
         // Se não houver horários cadastrados, cai no fallback 08h-22h.
@@ -298,9 +292,15 @@ Deno.serve(async (req) => {
 
         // P2 — UMA mensagem só (saudação + link) ou aviso de fechado com link.
         const { data: store } = await admin
-          .from("stores").select("slug, name").eq("id", cfg.store_id).maybeSingle();
+          .from("stores").select("slug, slug_aliases, name").eq("id", cfg.store_id).maybeSingle();
         const storeName = store?.name || "nossa loja";
-        const link = store?.slug ? `https://itasuper.com.br/${store.slug}` : "";
+        // Anti-spam: sorteia entre slug principal e aliases para variar o link.
+        const slugPool: string[] = [store?.slug, ...((store as any)?.slug_aliases || [])]
+          .filter((s: any) => typeof s === "string" && s.length > 0);
+        const pickedSlug = slugPool.length > 0
+          ? slugPool[Math.floor(Math.random() * slugPool.length)]
+          : "";
+        const link = pickedSlug ? `https://itasuper.com.br/${pickedSlug}` : "";
         if (!link) return json({ ok: true, skipped: "no_link_configured" });
         const oneShotMessage = storeClosedInfo
           ? buildClosedOneShot(storeName, link, storeClosedInfo.nextOpenLabel)
