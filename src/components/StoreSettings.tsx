@@ -734,6 +734,44 @@ const NotificationSection = () => {
         <p className="text-[10px] text-muted-foreground/70">Compartilhe esse link para clientes acessarem direto seu cardápio.</p>
       </div>
 
+      {/* Slugs alias — anti-spam WhatsApp */}
+      <div className="space-y-2">
+        <label className="text-sm font-bold text-muted-foreground flex items-center gap-2">
+          <MessageSquare className="h-4 w-4 text-primary" />
+          Links anti-spam (WhatsApp)
+        </label>
+        <p className="text-[10px] text-muted-foreground -mt-1">
+          A saudação automática sorteia entre estes links para o WhatsApp não marcar como spam. Todos abrem seu cardápio.
+        </p>
+        <div className="space-y-1.5">
+          {slugAliases.length === 0 && (
+            <p className="text-[11px] text-muted-foreground italic">Nenhum alias gerado ainda.</p>
+          )}
+          {slugAliases.map((a) => (
+            <div key={a} className="flex items-center gap-2 bg-muted/40 border border-border rounded-lg px-3 py-2">
+              <Link className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+              <span className="text-xs font-mono truncate">itasuper.com.br/{a}</span>
+              <button
+                type="button"
+                onClick={() => { navigator.clipboard.writeText(`https://itasuper.com.br/${a}`); toast.success("Link copiado!"); }}
+                className="ml-auto text-primary text-[11px] font-bold active:scale-95"
+              >
+                Copiar
+              </button>
+            </div>
+          ))}
+        </div>
+        <button
+          type="button"
+          onClick={regenerateAliases}
+          disabled={regeneratingAliases}
+          className="w-full flex items-center justify-center gap-2 bg-primary/10 text-primary font-bold text-xs px-3 py-2 rounded-lg active:scale-95 disabled:opacity-50"
+        >
+          {regeneratingAliases ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+          Regenerar aliases
+        </button>
+      </div>
+
       {/* Store Address */}
       <div className="space-y-3">
         <label className="text-sm font-bold text-muted-foreground flex items-center gap-2">
