@@ -308,7 +308,10 @@ Deno.serve(async (req) => {
           : buildOneShot(storeName, link);
 
         const sendMsg = async (message: string) => {
-          const functionBaseUrl = Deno.env.get("EXTERNAL_SUPABASE_URL") || Deno.env.get("SUPABASE_URL")!;
+          // Functions must call the current Cloud functions host. EXTERNAL_SUPABASE_URL
+          // is only the production data backend; using it here can route webhooks to
+          // stale external functions and make incoming WhatsApp messages disappear.
+          const functionBaseUrl = Deno.env.get("SUPABASE_URL") || Deno.env.get("EXTERNAL_SUPABASE_URL")!;
           const functionKey = Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
           const response = await fetch(`${functionBaseUrl}/functions/v1/evolution-send-message`, {
             method: "POST",
