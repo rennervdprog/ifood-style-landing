@@ -221,15 +221,9 @@ Deno.serve(async (req) => {
           .gte("sent_at", silenceSince).limit(1).maybeSingle();
         if (recentGreet) return json({ ok: true, skipped: "silence_24h" });
 
-        // P2 — skip 1º contato: só responde na 2ª msg em 10min.
-        //  Evita gastar envio com quem mandou "oi" por engano e sumiu.
-        const firstContactSince = new Date(Date.now() - FIRST_CONTACT_WINDOW_MS).toISOString();
-        const { count: inboundCount } = await admin
-          .from("whatsapp_inbound_log")
-          .select("id", { count: "exact", head: true })
-          .eq("store_id", cfg.store_id).eq("phone", number)
-          .gte("received_at", firstContactSince);
-        if ((inboundCount ?? 0) < 2) return json({ ok: true, skipped: "first_contact" });
+        // P2 — 1º contato: agora respondemos imediatamente na 1ª mensagem.
+        //  Camadas anti-ban restantes: dedupe 24h, opt-out, limite diário,
+        //  delay 2-4s, rotação de templates + zero-width e slug alias rotativo.
 
         // Janela de operação baseada nos horários do lojista (fuso SP).
         // Se não houver horários cadastrados, cai no fallback 08h-22h.
