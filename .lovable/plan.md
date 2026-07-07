@@ -1,68 +1,61 @@
-## Estratégia: A → B em duas fases separadas
+## Diagnóstico (causa raiz confirmada)
 
-Faz sentido separar porque os bugs de UI são visuais/sem risco financeiro, já os 2 e 3 mexem em dinheiro real (saldo devido de lojista). Misturar tudo num commit dificulta reverter se algo der errado na parte sensível.
+Rodei o preflight CORS real que o navegador envia:
 
----
+```
+OPTIONS /functions/v1/evolution-qr-code
+Access-Control-Request-Headers: authorization, content-type, apikey, x-client-info, sentry-trace, baggage
+```
 
-### FASE A — Correções de UI (baixo risco, sem tocar em dinheiro)
+Resposta do servidor:
+```
+access-control-allow-headers: authorization, x-client-info, apikey, content-type
+```
 
-**A1. `RecebidoNoMesCard` mostrar líquido**
-- Trocar soma de `total_price` por `total_price - delivery_fee - platform_fee` (mesma fórmula da "Receita líquida estimada" logo abaixo).
-- Renomear label para "Recebido líquido no mês" para casar com o valor.
+Faltam `sentry-trace` e `baggage` na allow-list. Como o Sentry (que está ativo no app) injeta esses headers em toda chamada `supabase.functions.invoke(...)`, **o navegador bloqueia a requisição antes de sair** — resultando exatamente no erro do console:
 
-**A4. Badge "Acumulando" com saldo 0**
-- Em `PlatformFeeCycleBlock.tsx`, adicionar 4º estado `"zerado"` quando `pendente === 0` → label "Ciclo aberto", ícone neutro.
-- "Acumulando" só aparece quando `0 < pendente < 30`.
+```
+TypeError: Failed to fetch (qkjhguziuchqsbxzruea.supabase.co)
+FunctionsFetchError: Failed to send a request to the Edge Function
+```
 
-**A5. Divergência 5×R$5 ≠ R$27**
-- No bloco "Composição da Receita", quando `soma(delivery_fee dos pedidos) ≠ split_esperado`, mostrar linha extra "⚠ Ajuste/diferença: R$ X,XX" com tooltip explicando (pedido com taxa fora do padrão).
-- Não altera cálculo, só torna visível a diferença.
+Por isso o toast mostra "Erro ao gerar QR Code. Verifique a configuração do servidor." sem detalhe (não é FunctionsHttpError, é FunctionsFetchError = preflight barrado).
 
-**A6. Pedido com líquido negativo**
-- Em `AdminOrderCard` (ou onde renderiza líquido do pedido), quando `liquido < 0`, envolver em badge vermelho com ícone de alerta e tooltip: "Este pedido está gerando prejuízo — considere valor mínimo."
-- Adicionar aviso agregado no topo do Financeiro: "N pedidos com prejuízo este mês" se houver.
-- (Sem bloquear criação — validação de valor mínimo fica pra fase futura, se o usuário quiser.)
+O QR que aparece na tela e dá "não foi possível conectar esse dispositivo" é o QR **antigo** persistido em `store_whatsapp_config.qr_code` de tentativas anteriores — já expirou (QR do WhatsApp vive ~60s). Como o "Recarregar" está quebrado pelo CORS, nunca chega um QR novo. Confirmei via `whatsapp-diag` que o Evolution na Hostinger está **saudável** e devolve `base64+code` normalmente.
 
-**A7. `PlanSummaryCard` esconder taxa PIX por pedido**
-- Adicionar linha "Taxa por pedido PIX: R$ 1,99" logo abaixo de "Taxa por entrega", lendo do mesmo `store_plans` (`pix_fee_per_order` ou campo equivalente — a confirmar na exploração).
-- Se `commission_rate === 0` mas `pix_fee > 0`, ainda mostra o bloco de taxas em vez de esconder tudo.
+## Correções (2 arquivos + limpeza do QR travado)
 
----
+### 1) `supabase/functions/evolution-qr-code/index.ts`
+Trocar o objeto `corsHeaders` local por:
+```
+"Access-Control-Allow-Headers":
+  "authorization, x-client-info, apikey, content-type, sentry-trace, baggage"
+```
+e garantir que TODAS as respostas (inclusive erros 401/403/404/500) incluam esses headers (já fazem via `json(...)`).
 
-### FASE B — Investigação de saldos zerados (alto risco, banco externo)
+### 2) `supabase/functions/evolution-keepalive/index.ts`
+Mesma correção — o network log já mostra este endpoint também com "Failed to fetch" pelo mesmo motivo.
 
-**Antes de qualquer mudança de código**, rodar diagnóstico read-only no banco externo (`qkjhguziuchqsbxzruea`) para a loja Pastelão Carioca:
+### 3) Varredura preventiva das demais functions do WhatsApp/Evolution
+Fazer o mesmo ajuste em `whatsapp-diag`, `evolution-webhook`, `evolution-send-message` (qualquer uma chamada pelo navegador do lojista). Server-to-server (webhook do Evolution) não precisa, mas o custo é zero.
 
-1. **Consultas de auditoria** (via `scripts/audit-store-balances-external.sql` ou queries diretas):
-   - `SELECT * FROM store_balances WHERE store_id = <pastelao>` — estado atual.
-   - `SELECT id, status, amount, reference_code, metadata, created_at, settled_at FROM financial_transactions WHERE store_id = <pastelao> ORDER BY created_at DESC LIMIT 50` — ver as 3 "Falhou" e o que aconteceu.
-   - `SELECT id, delivery_fee, total_price, status, created_at FROM orders WHERE store_id = <pastelao> AND status IN ('entregue','finalizado')` — somar splits reais.
-   - `SELECT * FROM financial_audit_log WHERE entity_id IN (...) OR metadata->>'store_id' = <pastelao>` — rastrear quem debitou o quê.
+### 4) Redeploy no backend externo
+Rodar `node scripts/deploy-external.mjs evolution-qr-code evolution-keepalive whatsapp-diag evolution-send-message` para publicar no projeto `qkjhguziuchqsbxzruea`.
 
-2. **Reproduzir a origem dos R$0**. Hipóteses ordenadas por probabilidade:
-   - **H1 — Split não está sendo lançado em `store_balances.repasse_pendente`** ao entregar pedido. Verificar trigger/edge `finalize-order` ou `driver-confirm-delivery`.
-   - **H2 — `asaas-webhook` trata `PAYMENT_FAILED` como sucesso** ou não faz rollback ao receber `PAYMENT_REFUNDED`/`PAYMENT_OVERDUE`.
-   - **H3 — `reconcile-payments` + `reconcile_debit_store_balance` debitam mesmo quando cobrança acaba falhando depois** (débito otimista sem estorno).
+### 5) Limpar o QR travado da Pastelão Carioca
+`UPDATE store_whatsapp_config SET qr_code=NULL, status='disconnected' WHERE store_id='b97f3a1a-d558-41e5-b8a2-ebd65b5381b4'` no banco externo — força a UI a esconder o QR expirado até o próximo clique gerar um novo.
 
-3. **Só depois do diagnóstico**, propor correções específicas com escopo mínimo:
-   - Se H1: adicionar/consertar o INSERT em `store_balances`.
-   - Se H2/H3: adicionar handler de FAILED que faz `UPDATE store_balances SET repasse_pendente = repasse_pendente + amount` e loga em `financial_audit_log` com `action='payment_failed_rollback'`.
-   - Migration de correção retroativa para restaurar os R$25 + R$143 sumidos da Pastelão (com trilha de auditoria).
+### 6) Verificação pós-deploy
+- `curl -X OPTIONS ... -H "Access-Control-Request-Headers: sentry-trace,baggage"` → deve listar os dois headers em `access-control-allow-headers`.
+- Pedir para o lojista clicar em "Recarregar QR Code" e escanear em <60s.
+- Confirmar via `whatsapp-diag` que `connectionStatus` vira `open`.
 
-**Regra da Fase B**: cada mudança em código financeiro vem acompanhada de (a) query de "antes", (b) mudança, (c) query de "depois", tudo mostrado ao usuário para aprovação antes de aplicar em produção.
+## Bump de versão
+`1.11.83` → `1.11.84` em `src/lib/appVersion.ts`, `src/pages/PerfilPage.tsx` e `android/app/build.gradle` (versionCode 837 → 838).
 
----
+## Segurança
+Nenhum impacto: adicionar `sentry-trace` e `baggage` só permite que headers de tracing passem no preflight — não altera autenticação (continua exigindo Bearer JWT) nem RLS. Nenhuma nova superfície de ataque.
 
-### Ordem sugerida
-1. Aprovação deste plano.
-2. Implementar A1–A7 (um commit único, versão bump).
-3. Verificar visualmente no painel da Pastelão.
-4. Abrir Fase B com o diagnóstico read-only e voltar com achados + plano de correção fino antes de tocar em edge functions.
-
-### Fora de escopo (desta rodada)
-- Unificação `useStoreDue` dos 3 cálculos paralelos (bug #6 do diagnóstico anterior).
-- Consolidar "Extrato" + "Histórico Pago".
-- Buscar threshold de bloqueio de `admin_settings` no `ValorAPagarCard`.
-- Bloqueio hard de pedido com prejuízo (só aviso agora).
-
-Esses ficam pra depois que a Fase B estiver estável.
+## Escopo NÃO incluído
+- Não vou mexer no fluxo do Evolution (VPS Hostinger está OK conforme diag).
+- Não vou refatorar o polling do QR (funciona depois da correção CORS).
