@@ -54,7 +54,17 @@ Deno.serve(async (req) => {
 
     const { data: store } = await supabase
       .from("stores").select("id, owner_id").eq("id", store_id).maybeSingle();
-    if (!store || store.owner_id !== userData.user.id) return json({ error: "Forbidden" }, 403);
+    if (!store) return json({ error: "Store not found" }, 404);
+    if (store.owner_id !== userData.user.id) {
+      // Permite super_admin e moderator agirem em nome da loja
+      const { data: isAdmin } = await supabase.rpc("has_role", {
+        _user_id: userData.user.id, _role: "super_admin",
+      });
+      const { data: isMod } = await supabase.rpc("has_role", {
+        _user_id: userData.user.id, _role: "moderator",
+      });
+      if (!isAdmin && !isMod) return json({ error: "Forbidden" }, 403);
+    }
 
     const baseUrl = Deno.env.get("EVOLUTION_API_URL");
     const apiKey = Deno.env.get("EVOLUTION_GLOBAL_API_KEY");
