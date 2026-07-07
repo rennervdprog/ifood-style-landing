@@ -63,13 +63,16 @@ Deno.serve(async (req) => {
     if (store.owner_id !== userData.user.id) {
       // Permite super_admin e moderator agirem em nome da loja
       // (user_roles vive no projeto Lovable Cloud, então usa o client autenticado)
-      const { data: isAdmin } = await supabase.rpc("has_role", {
-        _user_id: userData.user.id, _role: "super_admin",
+      const { data: isAdmin } = await externalAdmin.rpc("has_role", {
+        _user_id: userData.user.id, _role: "admin",
       });
-      const { data: isMod } = await supabase.rpc("has_role", {
+      const { data: isSuper } = await externalAdmin.rpc("has_role", {
+        _user_id: userData.user.id, _role: "super_admin",
+      }).catch(() => ({ data: false }));
+      const { data: isMod } = await externalAdmin.rpc("has_role", {
         _user_id: userData.user.id, _role: "moderator",
       });
-      if (!isAdmin && !isMod) return json({ error: "Forbidden" }, 403);
+      if (!isAdmin && !isSuper && !isMod) return json({ error: "Forbidden" }, 403);
     }
 
     const baseUrl = Deno.env.get("EVOLUTION_API_URL");
