@@ -3,6 +3,7 @@
  */
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { FunctionsHttpError } from "@supabase/supabase-js";
 import { toast } from "sonner";
 import { Loader2, RefreshCw, Info, ChevronDown, ChevronUp, Shield } from "lucide-react";
 import WhatsAppStatusCard from "./WhatsAppStatusCard";
@@ -70,8 +71,18 @@ export default function WhatsAppConnection({ storeId, storeName, expectedPhone, 
         setCountdown(60);
         toast.success("QR Code gerado! Escaneie com seu WhatsApp.");
       }
-    } catch {
-      toast.error("Erro ao gerar QR Code. Verifique a configuração do servidor.");
+    } catch (err: any) {
+      let detail = "";
+      try {
+        if (err instanceof FunctionsHttpError) {
+          const body = await err.context.json().catch(() => null);
+          detail = body?.error
+            ? (typeof body.error === "string" ? body.error : JSON.stringify(body.error))
+            : "";
+        }
+      } catch {}
+      toast.error(detail ? `QR Code: ${detail}` : "Erro ao gerar QR Code. Verifique a configuração do servidor.");
+      console.error("[evolution-qr-code]", err, detail);
     }
     setQrLoading(false);
   };
