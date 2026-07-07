@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Crown, Calendar, Percent, Truck, ShoppingCart } from "lucide-react";
+import { Crown, Calendar, Percent, Truck, ShoppingCart, Smartphone } from "lucide-react";
 import { formatBRL } from "@/lib/utils";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -44,6 +44,8 @@ export default function PlanSummaryCard({ storeId }: Props) {
 
   const deliverySplit = plan.platform_delivery_split_override ?? globalSplit ?? 2;
   const showDelivery = plan.plan_type !== "autonomy";
+  const isFixedPlan = ["fixed", "supporter", "autonomy"].includes(plan.plan_type);
+  const pixFeePerOrder = isFixedPlan ? 1.99 : 0;
 
   return (
     <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
@@ -63,6 +65,9 @@ export default function PlanSummaryCard({ storeId }: Props) {
           )}
           {showDelivery && (
             <Row icon={<Truck className="h-3.5 w-3.5" />} label="Taxa por entrega" value={`${formatBRL(Number(deliverySplit))}`} />
+          )}
+          {pixFeePerOrder > 0 && (
+            <Row icon={<Smartphone className="h-3.5 w-3.5" />} label="Taxa PIX / pedido" value={`${formatBRL(pixFeePerOrder)}`} />
           )}
           {plan.pdv_enabled && Number(plan.pdv_fixed_fee_per_sale) > 0 && (
             <Row icon={<ShoppingCart className="h-3.5 w-3.5" />} label="Taxa PDV" value={`${formatBRL(Number(plan.pdv_fixed_fee_per_sale))}/venda`} />
