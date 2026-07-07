@@ -292,9 +292,15 @@ Deno.serve(async (req) => {
 
         // P2 — UMA mensagem só (saudação + link) ou aviso de fechado com link.
         const { data: store } = await admin
-          .from("stores").select("slug, name").eq("id", cfg.store_id).maybeSingle();
+          .from("stores").select("slug, slug_aliases, name").eq("id", cfg.store_id).maybeSingle();
         const storeName = store?.name || "nossa loja";
-        const link = store?.slug ? `https://itasuper.com.br/${store.slug}` : "";
+        // Anti-spam: sorteia entre slug principal e aliases para variar o link.
+        const slugPool: string[] = [store?.slug, ...((store as any)?.slug_aliases || [])]
+          .filter((s: any) => typeof s === "string" && s.length > 0);
+        const pickedSlug = slugPool.length > 0
+          ? slugPool[Math.floor(Math.random() * slugPool.length)]
+          : "";
+        const link = pickedSlug ? `https://itasuper.com.br/${pickedSlug}` : "";
         if (!link) return json({ ok: true, skipped: "no_link_configured" });
         const oneShotMessage = storeClosedInfo
           ? buildClosedOneShot(storeName, link, storeClosedInfo.nextOpenLabel)
