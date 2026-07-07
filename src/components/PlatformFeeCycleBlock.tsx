@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { nextMonday, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Calendar, QrCode, TrendingUp } from "lucide-react";
+import { Calendar, QrCode, TrendingUp, CircleDashed } from "lucide-react";
 import { formatBRL } from "@/lib/utils";
 
 interface Props {
@@ -31,10 +31,11 @@ export default function PlatformFeeCycleBlock({ storeId }: Props) {
   const pendente = Number(data?.repasse_pendente || 0);
   const proximaSegunda = format(nextMonday(new Date()), "EEEE, dd/MM", { locale: ptBR });
 
-  type Estado = "acumulando" | "pronto" | "pix";
-  const estado: Estado = pendente >= 30 ? "pronto" : pendente > 0 ? "acumulando" : "acumulando";
+  type Estado = "zerado" | "acumulando" | "pronto" | "pix";
+  const estado: Estado = pendente >= 30 ? "pronto" : pendente > 0 ? "acumulando" : "zerado";
 
   const estados: Record<Estado, { label: string; cls: string; Icon: typeof Calendar }> = {
+    zerado:     { label: "Ciclo aberto (sem saldo)", cls: "bg-emerald-500/10 text-emerald-700 border-emerald-500/30", Icon: CircleDashed },
     acumulando: { label: "Acumulando", cls: "bg-muted text-muted-foreground border-border", Icon: TrendingUp },
     pronto:     { label: "Pronto para cobrar (≥ R$ 30)", cls: "bg-amber-500/10 text-amber-700 border-amber-500/30", Icon: Calendar },
     pix:        { label: "PIX gerado", cls: "bg-primary/10 text-primary border-primary/30", Icon: QrCode },
