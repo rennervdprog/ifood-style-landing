@@ -893,6 +893,12 @@ const PIE_COLORS = [COLORS.green, COLORS.blue, COLORS.amber];
                   <span className="text-sm font-bold text-red-400">-{formatBRL(deliveryPlatformCost)}</span>
                 </div>
               )}
+              {ordersWithDelivery.length > 0 && totalDeliveryFees - deliveryPlatformCost > 0.01 && (
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">Repasse ao entregador (diferença da taxa cobrada)</span>
+                  <span className="text-sm font-bold text-muted-foreground">{formatBRL(totalDeliveryFees - deliveryPlatformCost)}</span>
+                </div>
+              )}
               <div className="h-px bg-border" />
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-foreground">Receita líquida estimada</span>
