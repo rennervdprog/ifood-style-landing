@@ -72,7 +72,7 @@ const StoreAppGuard = () => {
       const { data } = await supabase
         .from("stores")
         .select("id")
-        .eq("slug", slug)
+        .or(`slug.eq.${slug},slug_aliases.cs.{${slug}}`)
         .maybeSingle();
       if (data?.id) {
         localStorage.setItem(STORE_APP_ID_KEY, data.id);
