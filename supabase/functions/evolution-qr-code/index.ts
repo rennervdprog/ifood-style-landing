@@ -52,11 +52,17 @@ Deno.serve(async (req) => {
     if (!parsed.success) return json({ error: parsed.error.flatten().fieldErrors }, 400);
     const { store_id, force_reconnect = false } = parsed.data;
 
-    const { data: store } = await supabase
+    // stores data lives on the EXTERNAL Supabase project — use the admin client
+    const externalAdmin = createClient(
+      Deno.env.get("EXTERNAL_SUPABASE_URL") || Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
+    const { data: store } = await externalAdmin
       .from("stores").select("id, owner_id").eq("id", store_id).maybeSingle();
     if (!store) return json({ error: "Store not found" }, 404);
     if (store.owner_id !== userData.user.id) {
       // Permite super_admin e moderator agirem em nome da loja
+      // (user_roles vive no projeto Lovable Cloud, então usa o client autenticado)
       const { data: isAdmin } = await supabase.rpc("has_role", {
         _user_id: userData.user.id, _role: "super_admin",
       });
@@ -147,12 +153,8 @@ Deno.serve(async (req) => {
       } catch (_) {}
     }
 
-    // 3) persiste
-    const admin = createClient(
-      Deno.env.get("EXTERNAL_SUPABASE_URL") || Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-    );
-    await admin.from("store_whatsapp_config").upsert({
+    // 3) persiste (mesmo projeto external)
+    await externalAdmin.from("store_whatsapp_config").upsert({
       store_id,
       evolution_api_url: baseUrl,
       evolution_instance_name: instance,
