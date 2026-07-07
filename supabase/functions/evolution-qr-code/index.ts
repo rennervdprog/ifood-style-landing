@@ -124,11 +124,36 @@ Deno.serve(async (req) => {
       }),
     }).catch(() => {});
 
-    // 2) conecta e pega QR
-    const r = await fetch(`${baseUrl.replace(/\/$/, "")}/instance/connect/${instance}`, {
-      headers: { apikey: apiKey },
-    });
-    const data = await r.json().catch(() => ({}));
+    // 2) conecta e pega QR — com retry automático via logout se falhar
+    const root = baseUrl.replace(/\/$/, "");
+    const doConnect = async () => {
+      const r = await fetch(`${root}/instance/connect/${instance}`, { headers: { apikey: apiKey } });
+      const data = await r.json().catch(() => ({}));
+      return { r, data };
+    };
+    let { r, data } = await doConnect();
+    let qrPeek: string | null = (data?.base64 || data?.qrcode?.base64 || data?.code || data?.qrcode?.code) ?? null;
+    if (!r.ok || !qrPeek) {
+      // instância provavelmente presa em "connecting" antigo — força logout + delete e recria
+      await fetch(`${root}/instance/logout/${instance}`, { method: "DELETE", headers: { apikey: apiKey } }).catch(() => {});
+      await fetch(`${root}/instance/delete/${instance}`, { method: "DELETE", headers: { apikey: apiKey } }).catch(() => {});
+      await new Promise((res) => setTimeout(res, 1500));
+      await fetch(`${root}/instance/create`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", apikey: apiKey },
+        body: JSON.stringify({
+          instanceName: instance,
+          qrcode: true,
+          integration: "WHATSAPP-BAILEYS",
+          webhook: {
+            enabled: true, url: webhookUrl, webhook_by_events: false, webhook_base64: false,
+            events: ["CONNECTION_UPDATE", "MESSAGES_UPSERT"],
+          },
+        }),
+      }).catch(() => {});
+      await setWebhook(baseUrl, instance, apiKey, webhookUrl);
+      ({ r, data } = await doConnect());
+    }
     if (!r.ok) return json({ error: "Falha ao gerar QR", details: data }, 502);
 
     // IMPORTANT: only use the base64 IMAGE; `code` is the raw QR text (not an image)
