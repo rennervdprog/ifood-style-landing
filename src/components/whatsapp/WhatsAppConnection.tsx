@@ -63,13 +63,13 @@ export default function WhatsAppConnection({ storeId, storeName, expectedPhone, 
       });
       if (error) throw error;
       if (data?.qr_code) {
-        await (supabase as any)
-          .from("store_whatsapp_config")
-          .update({ qr_code: data.qr_code, status: "connecting" })
-          .eq("store_id", storeId);
-        await reload();
+        // A edge function já faz upsert em store_whatsapp_config com service role.
+        // Só recarregamos o config local; falha aqui NÃO deve virar erro pro usuário.
+        try { await reload(); } catch (e) { console.warn("[evolution-qr-code] reload falhou", e); }
         setCountdown(60);
         toast.success("QR Code gerado! Escaneie com seu WhatsApp.");
+      } else {
+        toast.error("Servidor não retornou QR Code. Tente novamente.");
       }
     } catch (err: any) {
       let detail = "";
