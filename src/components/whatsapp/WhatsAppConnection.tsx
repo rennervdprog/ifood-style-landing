@@ -136,7 +136,7 @@ export default function WhatsAppConnection({ storeId, storeName, expectedPhone, 
         expectedPhone={expectedStorePhone}
         phoneMismatch={phoneMismatch}
         connectedAt={config?.connected_at}
-        onPrimaryAction={() => getQrCode(status === "connected")}
+        onPrimaryAction={() => getQrCode(status !== "disconnected")}
         primaryLoading={qrLoading}
       />
 
