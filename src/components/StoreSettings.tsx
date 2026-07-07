@@ -13,6 +13,7 @@ import { formatCep, fetchCep, resolveAddress } from "@/lib/location";
 import { formatBRL } from "@/lib/utils";
 import { useStorePlan } from "@/hooks/useStorePlan";
 import { RefreshCw } from "lucide-react";
+import { copyToClipboard } from "@/lib/clipboard";
 const CATEGORY_OPTIONS = [
   { value: "lanches", label: "Lanches" },
   { value: "pizzas", label: "Pizzas" },
@@ -720,9 +721,9 @@ const NotificationSection = () => {
               itasuper.com.br/{slug}
             </span>
             <button
-              onClick={() => {
-                navigator.clipboard.writeText(`https://itasuper.com.br/${slug}`);
-                toast.success("Link copiado!");
+              onClick={async () => {
+                const ok = await copyToClipboard(`https://itasuper.com.br/${slug}`);
+                ok ? toast.success("Link copiado!") : toast.error("Não foi possível copiar");
               }}
               className="ml-auto flex items-center gap-1 bg-primary/20 text-primary font-bold px-2.5 py-1.5 rounded-lg text-xs active:scale-95 transition-transform"
             >
@@ -753,7 +754,10 @@ const NotificationSection = () => {
               <span className="text-xs font-mono truncate">itasuper.com.br/{a}</span>
               <button
                 type="button"
-                onClick={() => { navigator.clipboard.writeText(`https://itasuper.com.br/${a}`); toast.success("Link copiado!"); }}
+                onClick={async () => {
+                  const ok = await copyToClipboard(`https://itasuper.com.br/${a}`);
+                  ok ? toast.success("Link copiado!") : toast.error("Não foi possível copiar");
+                }}
                 className="ml-auto text-primary text-[11px] font-bold active:scale-95"
               >
                 Copiar
