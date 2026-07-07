@@ -32,6 +32,9 @@ verify_jwt = false
 
 [functions.evolution-keepalive]
 verify_jwt = false
+
+[functions.whatsapp-diag]
+verify_jwt = false
 [functions.kds]
 verify_jwt = false
 
