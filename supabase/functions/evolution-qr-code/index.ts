@@ -52,9 +52,23 @@ Deno.serve(async (req) => {
     if (!parsed.success) return json({ error: parsed.error.flatten().fieldErrors }, 400);
     const { store_id, force_reconnect = false } = parsed.data;
 
-    const { data: store } = await supabase
+    // stores data lives on the EXTERNAL Supabase project — use the admin client
+    const externalAdmin = createClient(
+      Deno.env.get("EXTERNAL_SUPABASE_URL") || Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
+    const { data: store } = await externalAdmin
       .from("stores").select("id, owner_id").eq("id", store_id).maybeSingle();
-    if (!store || store.owner_id !== userData.user.id) return json({ error: "Forbidden" }, 403);
+    if (!store) return json({ error: "Store not found" }, 404);
+    if (store.owner_id !== userData.user.id) {
+      // Permite super_admin e moderator agirem em nome da loja
+      // (user_roles vive no projeto Lovable Cloud, então usa o client autenticado)
+      const { data: roleRows } = await externalAdmin
+        .from("user_roles").select("role").eq("user_id", userData.user.id);
+      const roles = (roleRows || []).map((r: any) => r.role);
+      const privileged = roles.some((r) => ["admin", "super_admin", "moderator"].includes(r));
+      if (!privileged) return json({ error: "Forbidden" }, 403);
+    }
 
     const baseUrl = Deno.env.get("EVOLUTION_API_URL");
     const apiKey = Deno.env.get("EVOLUTION_GLOBAL_API_KEY");
@@ -110,11 +124,36 @@ Deno.serve(async (req) => {
       }),
     }).catch(() => {});
 
-    // 2) conecta e pega QR
-    const r = await fetch(`${baseUrl.replace(/\/$/, "")}/instance/connect/${instance}`, {
-      headers: { apikey: apiKey },
-    });
-    const data = await r.json().catch(() => ({}));
+    // 2) conecta e pega QR — com retry automático via logout se falhar
+    const root = baseUrl.replace(/\/$/, "");
+    const doConnect = async () => {
+      const r = await fetch(`${root}/instance/connect/${instance}`, { headers: { apikey: apiKey } });
+      const data = await r.json().catch(() => ({}));
+      return { r, data };
+    };
+    let { r, data } = await doConnect();
+    let qrPeek: string | null = (data?.base64 || data?.qrcode?.base64 || data?.code || data?.qrcode?.code) ?? null;
+    if (!r.ok || !qrPeek) {
+      // instância provavelmente presa em "connecting" antigo — força logout + delete e recria
+      await fetch(`${root}/instance/logout/${instance}`, { method: "DELETE", headers: { apikey: apiKey } }).catch(() => {});
+      await fetch(`${root}/instance/delete/${instance}`, { method: "DELETE", headers: { apikey: apiKey } }).catch(() => {});
+      await new Promise((res) => setTimeout(res, 1500));
+      await fetch(`${root}/instance/create`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", apikey: apiKey },
+        body: JSON.stringify({
+          instanceName: instance,
+          qrcode: true,
+          integration: "WHATSAPP-BAILEYS",
+          webhook: {
+            enabled: true, url: webhookUrl, webhook_by_events: false, webhook_base64: false,
+            events: ["CONNECTION_UPDATE", "MESSAGES_UPSERT"],
+          },
+        }),
+      }).catch(() => {});
+      await setWebhook(baseUrl, instance, apiKey, webhookUrl);
+      ({ r, data } = await doConnect());
+    }
     if (!r.ok) return json({ error: "Falha ao gerar QR", details: data }, 502);
 
     // IMPORTANT: only use the base64 IMAGE; `code` is the raw QR text (not an image)
@@ -137,12 +176,8 @@ Deno.serve(async (req) => {
       } catch (_) {}
     }
 
-    // 3) persiste
-    const admin = createClient(
-      Deno.env.get("EXTERNAL_SUPABASE_URL") || Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-    );
-    await admin.from("store_whatsapp_config").upsert({
+    // 3) persiste (mesmo projeto external)
+    await externalAdmin.from("store_whatsapp_config").upsert({
       store_id,
       evolution_api_url: baseUrl,
       evolution_instance_name: instance,
