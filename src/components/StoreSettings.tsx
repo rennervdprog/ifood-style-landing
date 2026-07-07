@@ -12,6 +12,7 @@ import { maskWhatsApp } from "@/lib/whatsapp";
 import { formatCep, fetchCep, resolveAddress } from "@/lib/location";
 import { formatBRL } from "@/lib/utils";
 import { useStorePlan } from "@/hooks/useStorePlan";
+import { RefreshCw } from "lucide-react";
 const CATEGORY_OPTIONS = [
   { value: "lanches", label: "Lanches" },
   { value: "pizzas", label: "Pizzas" },
@@ -103,6 +104,43 @@ type PizzaPriceMode = "maior" | "media" | "soma";
   const [freeDeliveryThreshold, setFreeDeliveryThreshold] = useState("0");
   const [platformFeeSplit, setPlatformFeeSplit] = useState<"cliente" | "meio_a_meio" | "lojista">("cliente");
   const storePlan = useStorePlan(storeId);
+
+  // Aliases anti-spam (slugs alternativos usados na saudação WhatsApp)
+  const [slugAliases, setSlugAliases] = useState<string[]>([]);
+  const [regeneratingAliases, setRegeneratingAliases] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("stores")
+        .select("slug_aliases")
+        .eq("id", storeId)
+        .maybeSingle();
+      if (!cancelled) setSlugAliases(((data as any)?.slug_aliases as string[]) || []);
+    })();
+    return () => { cancelled = true; };
+  }, [storeId]);
+
+  async function regenerateAliases() {
+    if (!slug) { toast.error("Defina o link principal primeiro."); return; }
+    setRegeneratingAliases(true);
+    try {
+      const prefix = slug.replace(/[^a-z0-9]/g, "").slice(0, 4) || "loja";
+      const rand = () => Math.floor(Math.random() * 0xffff).toString(16).padStart(4, "0");
+      const next = [`${prefix}-${rand()}`, `${prefix}-${rand()}`, `${prefix}-${rand()}`];
+      const { error } = await (supabase.from("stores") as any)
+        .update({ slug_aliases: next })
+        .eq("id", storeId);
+      if (error) throw error;
+      setSlugAliases(next);
+      toast.success("Novos links anti-spam gerados!");
+    } catch (e: any) {
+      toast.error(e?.message || "Falha ao regenerar aliases");
+    } finally {
+      setRegeneratingAliases(false);
+    }
+  }
 
   // Verifica disponibilidade do slug em tempo real (debounce 500ms)
   useEffect(() => {
@@ -694,6 +732,44 @@ const NotificationSection = () => {
           </div>
         )}
         <p className="text-[10px] text-muted-foreground/70">Compartilhe esse link para clientes acessarem direto seu cardápio.</p>
+      </div>
+
+      {/* Slugs alias — anti-spam WhatsApp */}
+      <div className="space-y-2">
+        <label className="text-sm font-bold text-muted-foreground flex items-center gap-2">
+          <MessageSquare className="h-4 w-4 text-primary" />
+          Links anti-spam (WhatsApp)
+        </label>
+        <p className="text-[10px] text-muted-foreground -mt-1">
+          A saudação automática sorteia entre estes links para o WhatsApp não marcar como spam. Todos abrem seu cardápio.
+        </p>
+        <div className="space-y-1.5">
+          {slugAliases.length === 0 && (
+            <p className="text-[11px] text-muted-foreground italic">Nenhum alias gerado ainda.</p>
+          )}
+          {slugAliases.map((a) => (
+            <div key={a} className="flex items-center gap-2 bg-muted/40 border border-border rounded-lg px-3 py-2">
+              <Link className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+              <span className="text-xs font-mono truncate">itasuper.com.br/{a}</span>
+              <button
+                type="button"
+                onClick={() => { navigator.clipboard.writeText(`https://itasuper.com.br/${a}`); toast.success("Link copiado!"); }}
+                className="ml-auto text-primary text-[11px] font-bold active:scale-95"
+              >
+                Copiar
+              </button>
+            </div>
+          ))}
+        </div>
+        <button
+          type="button"
+          onClick={regenerateAliases}
+          disabled={regeneratingAliases}
+          className="w-full flex items-center justify-center gap-2 bg-primary/10 text-primary font-bold text-xs px-3 py-2 rounded-lg active:scale-95 disabled:opacity-50"
+        >
+          {regeneratingAliases ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+          Regenerar aliases
+        </button>
       </div>
 
       {/* Store Address */}

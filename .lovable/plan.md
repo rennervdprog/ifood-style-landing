@@ -1,61 +1,59 @@
-## Diagnóstico (causa raiz confirmada)
+# Plano: Bot responde no 1º contato + Slugs rotativos anti-spam
 
-Rodei o preflight CORS real que o navegador envia:
+## Objetivo
+1. Bot enviar saudação já na **primeira** mensagem do cliente (hoje só responde na 2ª).
+2. Reduzir risco de WhatsApp marcar o link como spam usando **4 slugs diferentes** por loja (1 principal + 3 aliases curtos), sorteados a cada envio.
 
-```
-OPTIONS /functions/v1/evolution-qr-code
-Access-Control-Request-Headers: authorization, content-type, apikey, x-client-info, sentry-trace, baggage
-```
+---
 
-Resposta do servidor:
-```
-access-control-allow-headers: authorization, x-client-info, apikey, content-type
-```
+## Parte 1 — Remover filtro de "primeiro contato"
 
-Faltam `sentry-trace` e `baggage` na allow-list. Como o Sentry (que está ativo no app) injeta esses headers em toda chamada `supabase.functions.invoke(...)`, **o navegador bloqueia a requisição antes de sair** — resultando exatamente no erro do console:
+**Onde:** `supabase/functions/evolution-webhook/index.ts`
 
-```
-TypeError: Failed to fetch (qkjhguziuchqsbxzruea.supabase.co)
-FunctionsFetchError: Failed to send a request to the Edge Function
-```
+- Localizar o bloco que checa se é a 1ª mensagem em 10 min e ignora.
+- Remover essa checagem **apenas para a saudação inicial** (mensagem com link da loja).
+- Manter intactas as outras 5 camadas anti-ban:
+  - dedupe de saudação por 24h (mesmo número não recebe 2x)
+  - opt-out (`pare`, `sair`, `stop`)
+  - limite diário progressivo por chip
+  - delay aleatório 2–4s antes de enviar
+  - rotação de 4 templates de texto + caracteres zero-width
 
-Por isso o toast mostra "Erro ao gerar QR Code. Verifique a configuração do servidor." sem detalhe (não é FunctionsHttpError, é FunctionsFetchError = preflight barrado).
+Resultado: cliente manda "oi" → recebe saudação com link em segundos.
 
-O QR que aparece na tela e dá "não foi possível conectar esse dispositivo" é o QR **antigo** persistido em `store_whatsapp_config.qr_code` de tentativas anteriores — já expirou (QR do WhatsApp vive ~60s). Como o "Recarregar" está quebrado pelo CORS, nunca chega um QR novo. Confirmei via `whatsapp-diag` que o Evolution na Hostinger está **saudável** e devolve `base64+code` normalmente.
+---
 
-## Correções (2 arquivos + limpeza do QR travado)
+## Parte 2 — Slugs alias rotativos
 
-### 1) `supabase/functions/evolution-qr-code/index.ts`
-Trocar o objeto `corsHeaders` local por:
-```
-"Access-Control-Allow-Headers":
-  "authorization, x-client-info, apikey, content-type, sentry-trace, baggage"
-```
-e garantir que TODAS as respostas (inclusive erros 401/403/404/500) incluam esses headers (já fazem via `json(...)`).
+### 2.1 Banco (migration)
+- Adicionar coluna `slug_aliases text[] default '{}'` em `public.stores`.
+- Backfill: para cada loja existente, gerar 3 aliases no formato `<prefixo>-<hash4>` (ex.: `past-a4f9`, `past-c9783`, `past-7b21`) a partir das 4 primeiras letras do slug principal + 4 chars aleatórios hex.
+- Índice GIN em `slug_aliases` para lookup rápido.
 
-### 2) `supabase/functions/evolution-keepalive/index.ts`
-Mesma correção — o network log já mostra este endpoint também com "Failed to fetch" pelo mesmo motivo.
+### 2.2 Resolver de rota
+- Ajustar a query que resolve `/:slug` para aceitar `slug = $1 OR $1 = ANY(slug_aliases)`.
+- Todos os aliases apontam para a mesma loja — mesma página, mesmo cardápio.
 
-### 3) Varredura preventiva das demais functions do WhatsApp/Evolution
-Fazer o mesmo ajuste em `whatsapp-diag`, `evolution-webhook`, `evolution-send-message` (qualquer uma chamada pelo navegador do lojista). Server-to-server (webhook do Evolution) não precisa, mas o custo é zero.
+### 2.3 Sorteio no envio da saudação
+- Em `evolution-send-message` (ou onde monta a URL da saudação), montar array `[slug, ...slug_aliases]` e sortear 1 aleatório por envio.
+- URL final: `https://itasuper.com.br/<sorteado>`.
 
-### 4) Redeploy no backend externo
-Rodar `node scripts/deploy-external.mjs evolution-qr-code evolution-keepalive whatsapp-diag evolution-send-message` para publicar no projeto `qkjhguziuchqsbxzruea`.
+### 2.4 Painel do lojista
+- Card "Links anti-spam" mostrando os 4 slugs ativos.
+- Botão **"Regenerar aliases"** (caso um link seja marcado como spam) → chama edge function que sobrescreve `slug_aliases` com 3 novos hashes.
 
-### 5) Limpar o QR travado da Pastelão Carioca
-`UPDATE store_whatsapp_config SET qr_code=NULL, status='disconnected' WHERE store_id='b97f3a1a-d558-41e5-b8a2-ebd65b5381b4'` no banco externo — força a UI a esconder o QR expirado até o próximo clique gerar um novo.
+---
 
-### 6) Verificação pós-deploy
-- `curl -X OPTIONS ... -H "Access-Control-Request-Headers: sentry-trace,baggage"` → deve listar os dois headers em `access-control-allow-headers`.
-- Pedir para o lojista clicar em "Recarregar QR Code" e escanear em <60s.
-- Confirmar via `whatsapp-diag` que `connectionStatus` vira `open`.
+## Detalhes técnicos
+- Slugs alias são somente para **saudação inicial via WhatsApp**. Divulgação normal continua usando o slug principal (SEO).
+- Aliases não indexáveis: adicionar `<meta name="robots" content="noindex">` quando a rota casar por alias (não pelo slug principal), para não fragmentar SEO.
+- Uniqueness: alias precisa ser único no sistema — checar contra `slug` e `slug_aliases` de todas as lojas antes de inserir; se colidir, regenera.
+- Segurança: função de regenerar aliases exige `auth.uid()` = dono da loja (RLS já cobre `stores`).
 
-## Bump de versão
-`1.11.83` → `1.11.84` em `src/lib/appVersion.ts`, `src/pages/PerfilPage.tsx` e `android/app/build.gradle` (versionCode 837 → 838).
+---
 
-## Segurança
-Nenhum impacto: adicionar `sentry-trace` e `baggage` só permite que headers de tracing passem no preflight — não altera autenticação (continua exigindo Bearer JWT) nem RLS. Nenhuma nova superfície de ataque.
+## Versão
+Após aplicar: bump para **1.11.85** em `src/lib/appVersion.ts`, `android/app/build.gradle` (versionName + versionCode 839) e `src/pages/PerfilPage.tsx`.
 
-## Escopo NÃO incluído
-- Não vou mexer no fluxo do Evolution (VPS Hostinger está OK conforme diag).
-- Não vou refatorar o polling do QR (funciona depois da correção CORS).
+## Confirmar antes de executar
+Posso seguir com as 2 partes juntas?
