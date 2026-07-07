@@ -27,6 +27,9 @@ Deno.serve(async (req) => {
         if exists (select 1 from cron.job where jobname = 'auto-charge-physical-fees-monday') then
           perform cron.unschedule('auto-charge-physical-fees-monday');
         end if;
+        if exists (select 1 from cron.job where jobname = 'evolution-keepalive-3min') then
+          perform cron.unschedule('evolution-keepalive-3min');
+        end if;
       end $$;
 
       select cron.schedule(
@@ -77,6 +80,20 @@ Deno.serve(async (req) => {
           );
         $cron$
       );
+
+      -- Mantém sessões Evolution/WhatsApp vivas: a cada 3 min chama evolution-keepalive
+      -- na Lovable Cloud (que lê configs do banco externo e reconecta se caiu).
+      select cron.schedule(
+        'evolution-keepalive-3min',
+        '*/3 * * * *',
+        $cron$
+          select net.http_post(
+            url := 'https://lktzrqjvqoojlrhqnxuz.supabase.co/functions/v1/evolution-keepalive',
+            headers := jsonb_build_object('Content-Type','application/json'),
+            body := '{}'::jsonb
+          );
+        $cron$
+      );
     `
 
     const r = await fetch(`https://api.supabase.com/v1/projects/${ref}/database/query`, {
@@ -99,7 +116,7 @@ Deno.serve(async (req) => {
       method: 'POST',
       headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        query: `select jobname, schedule from cron.job where jobname in ('weekly-platform-report','auto-withdraw-asaas-daily','auto-charge-physical-fees-monday') order by jobname;`,
+        query: `select jobname, schedule from cron.job where jobname in ('weekly-platform-report','auto-withdraw-asaas-daily','auto-charge-physical-fees-monday','evolution-keepalive-3min') order by jobname;`,
       }),
     })
     const jobs = await verify.json()
