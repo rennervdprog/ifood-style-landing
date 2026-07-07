@@ -12,6 +12,7 @@ import { maskWhatsApp } from "@/lib/whatsapp";
 import { formatCep, fetchCep, resolveAddress } from "@/lib/location";
 import { formatBRL } from "@/lib/utils";
 import { useStorePlan } from "@/hooks/useStorePlan";
+import { RefreshCw } from "lucide-react";
 const CATEGORY_OPTIONS = [
   { value: "lanches", label: "Lanches" },
   { value: "pizzas", label: "Pizzas" },
