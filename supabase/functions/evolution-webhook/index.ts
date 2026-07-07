@@ -218,6 +218,7 @@ Deno.serve(async (req) => {
         const { data: recentGreet } = await admin
           .from("whatsapp_send_log")
           .select("id").eq("store_id", cfg.store_id).eq("phone", number).eq("kind", "auto_reply")
+          .neq("message_hash", "greet_pending")
           .gte("sent_at", silenceSince).limit(1).maybeSingle();
         if (recentGreet) return json({ ok: true, skipped: "silence_24h" });
 

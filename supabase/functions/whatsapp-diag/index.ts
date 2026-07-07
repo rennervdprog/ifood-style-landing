@@ -28,7 +28,7 @@ Deno.serve(async (req) => {
   if (extUrl && extKey) {
     try {
       const ext = createClient(extUrl, extKey);
-      const { data: store } = await ext.from("stores").select("id, name, owner_id, phone").eq("id", storeId).maybeSingle();
+      const { data: store } = await ext.from("stores").select("id, name, slug, owner_id, status, is_open, force_closed").eq("id", storeId).maybeSingle();
       out.store = store;
       const { data: cfg } = await ext.from("store_whatsapp_config").select("*").eq("store_id", storeId).maybeSingle();
       out.store_whatsapp_config = cfg;
