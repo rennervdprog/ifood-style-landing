@@ -192,9 +192,10 @@ Deno.serve(async (req) => {
         const text = incomingText(data);
 
         // Log inbound SEMPRE (antes de qualquer skip) — usado para first-contact.
-        await admin.from("whatsapp_inbound_log").insert({
+        const { error: inboundLogError } = await admin.from("whatsapp_inbound_log").insert({
           store_id: cfg.store_id, phone: number,
-        }).catch(() => undefined);
+        });
+        if (inboundLogError) console.warn("[evolution-webhook] inbound log skipped", inboundLogError.message);
 
         // P2 — opt-out: cliente digita PARAR -> registra blacklist e não responde
         if (isOptOut(text)) {
@@ -332,10 +333,11 @@ Deno.serve(async (req) => {
 
         // Pré-registra IMEDIATAMENTE (greet_pending) para bloquear rajada
         // via unique index (store_id, phone, kind, sent_bucket_min) da Fase 1.
-        await admin.from("whatsapp_send_log").insert({
+        const { error: pendingLogError } = await admin.from("whatsapp_send_log").insert({
           store_id: cfg.store_id, phone: number, message_hash: "greet_pending",
           kind: "auto_reply", sent_at: new Date().toISOString(),
-        }).catch(() => undefined);
+        });
+        if (pendingLogError) console.warn("[evolution-webhook] pending log skipped", pendingLogError.message);
 
         // Um envio só, com pequeno delay humano (2-4s).
         await sleep(2_000 + Math.floor(Math.random() * 2_000));
