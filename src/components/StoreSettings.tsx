@@ -105,6 +105,43 @@ type PizzaPriceMode = "maior" | "media" | "soma";
   const [platformFeeSplit, setPlatformFeeSplit] = useState<"cliente" | "meio_a_meio" | "lojista">("cliente");
   const storePlan = useStorePlan(storeId);
 
+  // Aliases anti-spam (slugs alternativos usados na saudação WhatsApp)
+  const [slugAliases, setSlugAliases] = useState<string[]>([]);
+  const [regeneratingAliases, setRegeneratingAliases] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("stores")
+        .select("slug_aliases")
+        .eq("id", storeId)
+        .maybeSingle();
+      if (!cancelled) setSlugAliases(((data as any)?.slug_aliases as string[]) || []);
+    })();
+    return () => { cancelled = true; };
+  }, [storeId]);
+
+  async function regenerateAliases() {
+    if (!slug) { toast.error("Defina o link principal primeiro."); return; }
+    setRegeneratingAliases(true);
+    try {
+      const prefix = slug.replace(/[^a-z0-9]/g, "").slice(0, 4) || "loja";
+      const rand = () => Math.floor(Math.random() * 0xffff).toString(16).padStart(4, "0");
+      const next = [`${prefix}-${rand()}`, `${prefix}-${rand()}`, `${prefix}-${rand()}`];
+      const { error } = await (supabase.from("stores") as any)
+        .update({ slug_aliases: next })
+        .eq("id", storeId);
+      if (error) throw error;
+      setSlugAliases(next);
+      toast.success("Novos links anti-spam gerados!");
+    } catch (e: any) {
+      toast.error(e?.message || "Falha ao regenerar aliases");
+    } finally {
+      setRegeneratingAliases(false);
+    }
+  }
+
   // Verifica disponibilidade do slug em tempo real (debounce 500ms)
   useEffect(() => {
     const cleanSlug = slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, "").replace(/--+/g, "-").replace(/^-|-$/g, "");
