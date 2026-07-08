@@ -1035,7 +1035,7 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
                 {storesSection === "entrega" && <DeliveryFeeConfigPanel />}
               </div>
             )}
-            {activeTab === "planos" && <PlanosTab />}
+            {activeTab === "planos" && <AdminPlanManager />}
             {activeTab === "pagamentos" && <Suspense fallback={<TabFallback />}><PagamentosSplitTab stores={stores || []} /></Suspense>}
             {activeTab === "juridico" && <Suspense fallback={<TabFallback />}><JuridicoTab /></Suspense>}
             {activeTab === "moderadores" && <ModeratorManager />}
