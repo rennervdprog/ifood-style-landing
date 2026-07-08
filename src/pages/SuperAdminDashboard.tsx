@@ -529,7 +529,7 @@ const SuperAdminDashboard = () => {
         ? `✅ O ItaSuper deve transferir ${formatBRL(entry.finalBalance)} para você.`
         : `⚠️ Valor a acertar com o ItaSuper: ${formatBRL(Math.abs(entry.finalBalance))}.`;
       msg = `💰 *Fechamento ItaSuper (${period})*\n\nOlá *${entry.name}*!\n\n` +
-        `📋 Plano: ${storePlan?.plan_type === "hybrid" ? "Assinatura + Taxa" : "Comissão"}\n\n` +
+        `📋 Plano: ${planNameLabel(storePlan?.plan_type)}\n\n` +
         `📦 Total de Pedidos: ${entry.orderCount}\n` +
         `💵 Vendas Físicas (Dinheiro/Cartão): ${formatBRL(entry.physicalSales)}\n` +
         `📱 Vendas App (Pix): ${formatBRL(entry.appSales)}\n` +
