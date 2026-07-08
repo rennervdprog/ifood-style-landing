@@ -1,83 +1,108 @@
-# Alinhar "Meu Plano" e "Repasse" à configuração VIP real
+# Plano: Auditar Super Admin, mapear função real de cada aba e corrigir divergências
 
-## Diagnóstico das divergências atuais
+Antes de sair corrigindo texto por texto, precisamos primeiro **entender e documentar o que cada aba realmente faz** — porque hoje há sub-abas com propósitos parecidos mostrando números diferentes, e sem esse mapa qualquer "correção" vira remendo.
 
-**O que já respeita VIP (via `useStorePlan`):**
-- `monthlyFee`, `commissionRate`, `pixOperationalFee` (override), `platformDeliverySplit` (override) — leem de `store_plans` da loja, portanto refletem o VIP.
-- Hero da aba "Meu Plano" (mensalidade, taxa PIX, próxima cobrança) — OK.
-- `PlatformSplitAlert` recebe `splitPerOrder` do `storePlan.platformDeliverySplit` — OK.
+O plano tem 3 fases: **Mapear → Padronizar → Corrigir**.
 
-**O que NÃO respeita VIP (fonte errada — usa `plansInfo.ts` hardcoded):**
+---
 
-1. **`PlanFeeBreakdown`** (usado no topo da aba Meu Plano) — lê `PLANS[planId]` (`plansInfo.ts`), ignorando `monthly_fee`, `commission_rate`, `pix_operational_fee_override` da loja. Mostra 2,5% para Crescimento mesmo se o VIP zerou.
-2. **StoreSubscription — bloco "Taxa de entrega: R$ 2,00 por pedido"** (linha 292) — texto hardcoded. Se o VIP alterou `platform_delivery_split_override` (ex.: 0 ou 1,50) o texto continua "R$ 2,00".
-3. **StoreSubscription — bloco "Taxa por pedido PIX"** — mostra `plan.pixOperationalFee` corretamente, mas o subtítulo "só em pedidos pagos via PIX" não diz o valor real; e se VIP zerou PIX, ainda aparece o card.
-4. **Painel de troca de plano** — usa `PLANS` para os bullets, o que é aceitável (são planos-alvo, não o atual), mas o resumo do "plano atual" abaixo mistura o nome bonito com valor VIP sem indicar personalização.
-5. **CommissionAlert** — texto "comissão sobre produtos e taxa de entrega da plataforma" é genérico; para lojas VIP com `commission_rate=0` isso é enganoso (a pendência vem só de delivery/PDV).
-6. **PlatformSplitAlert** — texto "Taxa de R$X por entrega" usa `splitPerOrder` correto ✓, MAS: "Cobrança automática a partir de R$30 toda segunda-feira" e "R$500 trava" são hardcoded; se admin mudar essas regras via VIP futuramente, ficam divergentes (baixa prioridade — regra global, não VIP por loja).
-7. **RepasseSection header** — "Repasse da Plataforma" está OK, mas não indica se a loja tem condições VIP ativas.
-8. **Nenhum lugar mostra "Você está em condição VIP personalizada"** — o lojista não sabe que os valores são diferentes do plano padrão, o que gera desconfiança quando vê o `plansInfo` em outro lugar.
+## Fase 1 — Mapa funcional do Super Admin (entregável: 1 documento)
 
-## Mudanças
+Objetivo: para cada aba e sub-aba do painel Super Admin, responder em 1 linha:
+- **O que ela faz** (propósito real de negócio)
+- **De onde lê os dados** (tabela/RPC/edge function)
+- **Quem é o "dono" da informação** (fonte da verdade)
+- **Sobreposição** com outras abas (se existir)
 
-### 1. `PlanFeeBreakdown` passa a receber overrides reais
+Abas a mapear (baseado no que já vimos no código):
 
-Trocar assinatura para aceitar `monthlyFee`, `commissionRate`, `pixFee` opcionais que sobrescrevem `PLANS[planId]`. `StoreSubscription` passa os valores de `useStorePlan`. Assim o exemplo "Pedido R$50 → você recebe R$X" reflete o VIP.
+```text
+Super Admin
+├── Dashboard / Visão Geral
+├── Lojas (AdminPlanManager + card de loja)
+├── Planos
+│   ├── Lojas
+│   ├── Templates
+│   └── A Receber
+├── Financeiro
+│   ├── Visão Geral
+│   ├── A Receber
+│   ├── Histórico Repasses
+│   ├── Pagamentos/Split
+│   └── Saques
+├── Cidades
+├── Jurídico
+├── Auditoria
+├── Debug Loja
+└── Sync External
+```
 
-### 2. Bloco "Taxa de entrega" (StoreSubscription) usa valor real
+Saída dessa fase: arquivo `docs/super-admin-map.md` com uma tabela do tipo:
 
-- Ler `plan.platformDeliverySplit`.
-- Se `== 0` → esconder o bloco (VIP sem taxa de plataforma).
-- Se `> 0` → "Taxa de entrega: R$ X,XX por pedido" com o valor real.
+| Aba | Sub-aba | Função | Fonte de dados | Sobreposição |
+|-----|---------|--------|----------------|--------------|
+| Planos | A Receber | Mensalidade a cobrar do mês | `store_plans` (fixed+supporter) | ⚠️ igual à "Financeiro > A Receber"? |
+| Financeiro | A Receber | Repasses de comissão/entrega pendentes | `orders.repasse_pendente` | ⚠️ ver acima |
+| ... | ... | ... | ... | ... |
 
-### 3. Bloco "Taxa por pedido PIX" reflete VIP
+Só depois desse mapa a gente decide: **fundir**, **renomear** ou **manter separado com escopo claro**.
 
-- Se `plan.pixOperationalFee == 0` (VIP zerou) → mostrar "Grátis" e subtítulo "PIX sem taxa nesta loja".
-- Senão → valor atual.
+---
 
-### 4. Selo "Condições VIP" quando houver override
+## Fase 2 — Regras de padronização (entregável: constantes + memória)
 
-Comparar valores da loja com defaults do `plan_templates` (mesma lógica que `AdminPlanManager` já usa em `isVip`). Quando houver diferença, exibir um badge discreto "Condições personalizadas" no hero e no bloco "Detalhes da cobrança", com tooltip "Sua loja tem valores negociados diferentes do plano padrão".
+Com o mapa em mãos, fixar as regras que hoje divergem:
 
-Fonte: expor uma flag `isVip` no `useStorePlan` (buscar `plan_templates` e comparar). Assim qualquer tela consome de uma única fonte.
+1. **Nomenclatura única de planos** (uma fonte só):
+   - `fixed` → "Essencial"
+   - `supporter` → "Apoiador"
+   - `autonomy` → "Autonomia"
+   - `commission_only` → "Só Comissão"
+   - `hybrid` → "Híbrido"
+   Centralizar em `src/lib/plansInfo.ts` (já existe) e remover strings soltas ("Fixo Mensal", "Comissão", etc.) dos componentes.
 
-### 5. CommissionAlert — texto contextual
+2. **Regra de exibição VIP** (uma só, para todo card/lista):
+   - Sempre mostrar o **valor real** (mesmo quando é `R$ 0` ou `0%`).
+   - Quando `isVip = true`, adicionar badge "VIP" ao lado do valor.
+   - Nunca esconder linha por ser zero.
 
-- Se `plan.commissionRate == 0` e a pendência é só de delivery/PDV → título "Repasse Pendente — Taxa de Entrega/PDV" e remover menção a "comissão sobre produtos".
-- Senão manter texto atual.
+3. **Regra de filtro de listas vs KPI**:
+   - KPI e lista **precisam usar o mesmo filtro**. Se KPI conta 4 lojas pagantes, a lista mostra as 4 (mesmo que uma esteja com valor 0 por VIP).
+   - Documentar o filtro em um helper único (`isPagante(store)`).
 
-### 6. RepasseSection — mostrar composição real
+4. **Fonte única para VIP**: `useStorePlan` já expõe `isVip` + `vipDiffs`. Toda tela do Super Admin passa a consumir daqui (não recalcular localmente).
 
-Abaixo do subtítulo, exibir uma linha de contexto do plano ativo:
-"Plano Essencial · Taxa entrega R$2,00 · PIX R$1,99" (com valores do `useStorePlan`, refletindo VIP). Se VIP zerou algo, mostra "Grátis" naquela parte.
+---
 
-### 7. Versão
+## Fase 3 — Correções pontuais (baseadas nas divergências já vistas)
 
-Bump `1.11.93` → `1.11.94` em `src/pages/PerfilPage.tsx`, `src/lib/appVersion.ts` e `android/app/build.gradle` (versionCode 847 → 848).
+Só depois do mapa e das regras, aplicar:
+
+1. **Card de loja (AdminPlanManager)** — nunca esconder linha de taxa quando VIP zerou; mostrar `R$ 0,00` + badge VIP.
+2. **Badge "Fixo Mensal"** — trocar por nome real do plano (`plansInfo.label`) + valor real (mesmo se 0).
+3. **KPI "Visão Geral" do Financeiro** — alinhar filtro com a lista abaixo (mesma função `isPagante`).
+4. **Textos de plano** — remover variantes ("Comissão" vs "Só Comissão", "Fixo" vs "Essencial") e usar `plansInfo.label` em todo canto.
+5. **Sub-abas duplicadas** (definido pelo mapa): fundir ou renomear com escopo claro no título (ex: "A Receber (Mensalidade)" vs "A Receber (Repasse de Pedidos)").
+
+Bump de versão: `1.11.95` → `1.11.96` em `src/lib/appVersion.ts`, `src/pages/PerfilPage.tsx` e `android/app/build.gradle` (versionCode +1).
+
+---
 
 ## Detalhes técnicos
 
-**Fonte única de VIP:** ampliar `useStorePlan` para retornar:
-```
-planTemplateDefaults: { monthly_fee, commission_rate, pix_fee, delivery_split, pdv_fixed }
-isVip: boolean
-vipDiffs: { fee?: {default, actual}, commission?: {...}, pix?: {...}, delivery?: {...} }
-```
-Buscando `plan_templates` por `plan_type` na mesma query. Todas as telas (Meu Plano, Repasse, Finance, Checkout) passam a consumir daqui — sem `PLANS[planType]` hardcoded para valores.
+**Arquivos que serão lidos na Fase 1** (só leitura, gera o `.md`):
+- `src/pages/SuperAdminDashboardV2.tsx`
+- `src/pages/admin/tabs/*` e `src/pages/super-admin/tabs/*`
+- `src/components/AdminPlanManager.tsx`, `PlanosTab.tsx`, `FinanceCenter.tsx`
+- `src/components/AdminFixedPlanReceivables.tsx`
 
-**Arquivos alterados:**
-- `src/hooks/useStorePlan.ts` — adiciona query de `plan_templates`, expõe `isVip` + defaults + valores efetivos.
-- `src/components/fees/PlanFeeBreakdown.tsx` — aceita props opcionais de override; usa quando presentes.
-- `src/components/StoreSubscription.tsx` — passa overrides para `PlanFeeBreakdown`, mostra bloco de entrega condicional, badge "Condições personalizadas", subtítulo PIX correto.
-- `src/components/CommissionAlert.tsx` — título/descrição condicional a `commissionRate`.
-- `src/pages/admin/sections/RepasseSection.tsx` — linha de contexto do plano com valores reais.
-- Bump de versão nos 3 arquivos.
-
-**Sem mudanças de banco** — tudo é leitura de `store_plans` + `plan_templates` existentes.
+**Fase 2 e 3** editam código; Fase 1 é só documentação.
 
 ## Fora do escopo
+- Não mexer em edge functions (já validadas na auditoria anterior).
+- Não mudar schema do banco.
+- Não redesenhar layout — só corrigir textos, valores e agrupamento de abas.
 
-- Regras globais (R$30 de disparo automático, R$500 de trava, min_payout) permanecem hardcoded — não são VIP por loja.
-- `plansInfo.ts` continua sendo fonte para telas públicas (landing, cadastro) — só as telas *do lojista logado* passam a usar `useStorePlan`.
+---
 
-Aprova para eu implementar?
+**Confirma que eu começo pela Fase 1 (mapa em `docs/super-admin-map.md`) antes de qualquer código?**
