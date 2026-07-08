@@ -6,6 +6,11 @@ interface Props {
   orderValue?: number;
   viaPix?: boolean;
   className?: string;
+  /** Overrides VIP — quando presentes, substituem os valores padrão do plano. */
+  monthlyFeeOverride?: number;
+  commissionRateOverride?: number;
+  pixFeeOverride?: number;
+  isVip?: boolean;
 }
 
 /** Mostra um exemplo numérico: "Pedido R$X via PIX no plano Y → você recebe R$Z" */
@@ -14,12 +19,17 @@ export default function PlanFeeBreakdown({
   orderValue = 50,
   viaPix = true,
   className = "",
+  monthlyFeeOverride,
+  commissionRateOverride,
+  pixFeeOverride,
+  isVip = false,
 }: Props) {
-  const plan = PLANS[planId];
-  if (!plan) return null;
-  const commission = (orderValue * plan.commissionRate) / 100;
-  const pixFee = viaPix ? plan.pixFee : 0;
-  const net = netPerOrder(plan, orderValue, viaPix);
+  const base = PLANS[planId];
+  if (!base) return null;
+  const commissionRate = commissionRateOverride ?? base.commissionRate;
+  const pixFee = viaPix ? (pixFeeOverride ?? base.pixFee) : 0;
+  const commission = (orderValue * commissionRate) / 100;
+  const net = Math.max(0, orderValue - commission - pixFee);
 
   const fmt = (n: number) =>
     `R$ ${n.toFixed(2).replace(".", ",")}`;
@@ -28,19 +38,26 @@ export default function PlanFeeBreakdown({
     <div
       className={`rounded-xl border border-border bg-card p-3 text-sm ${className}`}
     >
-      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-        Exemplo no plano {plan.name}
-      </p>
+      <div className="flex items-center justify-between mb-2">
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          Exemplo no plano {base.name}
+        </p>
+        {isVip && (
+          <span className="text-[9px] font-black bg-amber-500/15 text-amber-600 border border-amber-500/25 px-1.5 py-0.5 rounded-full">
+            Condições VIP
+          </span>
+        )}
+      </div>
       <div className="space-y-1 text-foreground">
         <Row label={`Pedido${viaPix ? " via PIX" : ""}`} value={fmt(orderValue)} />
-        {plan.commissionRate > 0 && (
+        {commissionRate > 0 && (
           <Row
-            label={`Comissão (${plan.commissionRate}%)`}
+            label={`Comissão (${commissionRate}%)`}
             value={`− ${fmt(commission)}`}
             muted
           />
         )}
-        {viaPix && plan.pixFee > 0 && (
+        {viaPix && pixFee > 0 && (
           <Row label="Taxa PIX" value={`− ${fmt(pixFee)}`} muted />
         )}
         <div className="h-px bg-border my-1" />
