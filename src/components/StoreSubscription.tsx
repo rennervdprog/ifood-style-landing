@@ -218,6 +218,14 @@ export default function StoreSubscription({ storeId, storeName }: Props) {
           </div>
           <PlanFeeBreakdown planId={plan.planType} orderValue={50} viaPix />
           <DeliveryFeeExplainer mode="store" platformFee={plan.platformDeliverySplit} />
+          {plan.isVip && (
+            <div className="flex items-start gap-2 rounded-lg bg-amber-500/10 border border-amber-500/25 p-2.5">
+              <Crown className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+              <p className="text-[11px] text-amber-700 dark:text-amber-400 leading-relaxed">
+                <strong>Condições personalizadas</strong> — sua loja tem valores negociados diferentes do plano padrão. Os números abaixo já refletem o seu acordo.
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
 
