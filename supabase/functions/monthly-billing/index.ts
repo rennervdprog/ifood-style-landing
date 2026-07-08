@@ -162,6 +162,13 @@ Deno.serve(async (req) => {
     let failed = 0;
     const results: any[] = [];
 
+    // Load plan templates to detect VIP (personalized) conditions per store
+    const { data: templates } = await supabase
+      .from("plan_templates")
+      .select("plan_type, monthly_fee, commission_rate, pix_fee, delivery_split, pdv_fixed");
+    const templateByType = new Map<string, any>();
+    (templates || []).forEach((t: any) => templateByType.set(t.plan_type, t));
+
     for (const plan of duePlans) {
       const store = (plan as any).stores;
       if (!store || store.status !== "ativo") continue;
@@ -218,7 +225,18 @@ Deno.serve(async (req) => {
         // Para todos os planos: somar mensalidade + pdvPending
         const totalAmount = Number(plan.monthly_fee) + pdvPending;
         const pdvLine = pdvPending > 0 ? ` + Comissão PDV R$${pdvPending.toFixed(2)}` : "";
-        const description = `${planLabel}${pdvLine} - ${store.name} - ${referenceCode}`;
+
+        // Detect VIP: any store_plans value diverges from plan_templates default
+        const tpl = templateByType.get(plan.plan_type);
+        const isVip = !!tpl && (
+          Number(tpl.monthly_fee ?? 0) !== Number(plan.monthly_fee ?? 0) ||
+          Number(tpl.commission_rate ?? 0) !== Number(plan.commission_rate ?? 0) ||
+          Number(tpl.pix_fee ?? 0) !== Number(plan.pix_operational_fee_override ?? tpl.pix_fee ?? 0) ||
+          Number(tpl.delivery_split ?? 0) !== Number(plan.platform_delivery_split_override ?? tpl.delivery_split ?? 0) ||
+          Number(tpl.pdv_fixed ?? 0) !== Number(plan.pdv_fixed_fee_per_sale ?? tpl.pdv_fixed ?? 0)
+        );
+        const vipTag = isVip ? " (condição VIP)" : "";
+        const description = `${planLabel}${vipTag}${pdvLine} - ${store.name} - ${referenceCode}`;
 
         // Resolve Asaas customer for this store
         let customerId: string | null = store.asaas_account_id || null;
