@@ -1,56 +1,26 @@
-# Plano — string-sweep de planos + alinhamento KPI×lista no FinanceTabFull
+## Objetivo
+Fechar os pontos que ainda mostram texto de plano cru ("Assinatura + Taxa", "Fixo/Comissão", `plan_type` em uppercase) e usar os componentes/helpers já padronizados (`PlanBadge`, `plansInfo`).
 
-Fecha os 2 itens restantes das Fases 2/3. Baixo risco se feito em passos pequenos e validado após cada arquivo.
+## Alterações
 
----
+1. **`src/pages/SuperAdminDashboardV2.tsx`** (linha ~653)
+   - Substituir o texto hardcoded "Assinatura + Taxa" pelo `<PlanBadge planType={...} />` (mesma correção já aplicada na versão legacy do dashboard).
 
-## Parte A — String-sweep: usar `planLabel()` em vez de strings hardcoded
+2. **`src/components/finance/ComissoesPanel.tsx`** (linha ~125)
+   - Trocar o ternário "Fixo/Comissão" pelo `<PlanBadge />` ou pelo label vindo de `plansInfo`, mantendo o comportamento visual da coluna.
 
-Objetivo: uma única fonte para o nome do plano em todo o Super Admin/lojista.
+3. **`src/pages/super-admin/MatrizDashboard.tsx`** (linha ~308)
+   - Renderizar `plan_type` via `<PlanBadge />` em vez de string uppercase crua.
 
-**Método:** para cada arquivo, localizar mapas locais (`planLabels`, `KIND_META.label`, ternários `plan_type === 'fixed' ? 'Fixo' : ...`) e substituir por `planLabel(planType)` de `@/lib/plansInfo`. Não mexer em ícones/cores locais — só o texto.
+4. **`src/components/PartnerSplitPanel.tsx` e `src/components/PlanSummaryCard.tsx`**
+   - Remover os mapas locais de nomes de plano e consumir `plansInfo` (fonte única), evitando divergência futura.
 
-**Arquivos a varrer (nesta ordem, um patch por arquivo):**
+5. **Versão**
+   - Incrementar patch em `src/lib/appVersion.ts` e `android/app/build.gradle` (versionName + versionCode).
 
-1. `src/components/AdminPlanManager.tsx` — substituir mapa `planLabels` interno por `planLabel()` nos pontos de exibição (mantém labels internos só onde forem chave de UI, não texto).
-2. `src/components/StoreSubscription.tsx` — hero + card de detalhes.
-3. `src/components/finance/MensalidadesPanel.tsx` — já feito (confirmar).
-4. `src/pages/super-admin/tabs/AReceberTab.tsx` — coluna "Plano" e badges de linha.
-5. `src/pages/super-admin/tabs/HistoricoRepassesTab.tsx` — coluna "Plano/Kind" (só a parte do plano, não `KIND_LABEL` que descreve o tipo de repasse).
-6. `src/components/FinanceCenter.tsx` — cabeçalho e chips.
-7. `src/pages/SuperAdminDashboard.tsx` (`FinanceTabFull`) — badges de linha da lista de lojas.
+## Fora de escopo
+- Nenhuma mudança de lógica de negócio, cálculo de mensalidade/comissão ou schema.
+- Sem alterações de RLS/backend.
 
-**Regra:** não tocar em `plansInfo.ts` nem no editor VIP (`AdminPlanManager > VIP config`) — lá o nome vem do template, já correto.
-
-**Validação:** após cada arquivo, `tsgo --noEmit`; ao final, verificar no preview (headless) que cada tela abre sem erro e o nome do plano aparece igual em card de loja, hero do lojista e "A Receber".
-
----
-
-## Parte B — Alinhar KPI × lista no `FinanceTabFull`
-
-Objetivo: KPI "lojas pagantes" da Visão Geral bater com a quantidade exibida na listagem logo abaixo.
-
-**Método:**
-1. Ler `src/pages/SuperAdminDashboard.tsx` do bloco `FinanceTabFull` — localizar os dois filtros (o do KPI e o do `.map` da lista de lojas).
-2. Substituir ambos por `isPagante(store, plan)` de `@/lib/pagante.ts`.
-3. Passar `parentStorePlans` (já disponível) para o helper — cruzar por `store_id`.
-4. Onde houver dedupe/soma financeira, garantir que usa a mesma lista filtrada (não recontar).
-
-**Edge cases a testar:**
-- Loja VIP com `monthly_fee = 0` → aparece na lista **e** conta no KPI (não é isento de "pagante", só isento de mensalidade).
-- Loja `is_test = true` → fora dos dois.
-- Loja sem plano ativo → fora dos dois.
-
-**Validação:** Playwright headless logado como super admin → aba Financeiro > Visão Geral → conferir `qtdLojas` do KPI == `.length` visível da lista.
-
----
-
-## Versão
-Bump `1.11.96` → `1.11.97` em `src/lib/appVersion.ts` e `android/app/build.gradle` (versionCode 850 → 851).
-
-## Fora do escopo
-- `KIND_LABEL` de tipos de repasse (mensalidade/comissão/entrega_fee/pdv_fee) permanecem — descrevem o tipo de receita, não o plano.
-- Redesign visual, cores, ícones.
-- Edge functions / schema.
-
-Aprova?
+## Verificação
+- `rg` final por strings antigas ("Assinatura + Taxa", "Fixo", `plan_type` cru em JSX) para confirmar que sobrou zero ocorrência fora dos helpers centrais.
