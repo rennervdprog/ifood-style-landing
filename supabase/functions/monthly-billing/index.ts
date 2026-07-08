@@ -9,7 +9,7 @@ const BodySchema = z.object({
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+    "authorization, x-client-info, apikey, content-type, baggage, sentry-trace, x-supabase-api-version",
 };
 
 const json = (body: unknown, status = 200) =>
