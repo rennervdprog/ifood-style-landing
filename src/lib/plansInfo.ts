@@ -181,3 +181,13 @@ export const DELIVERY_FEE_NOTE =
 /** Linha única para a taxa PIX (apenas Essencial/Apoiador). */
 export const PIX_FEE_NOTE =
   "Apenas pedidos pagos via PIX têm taxa de R$ 1,99 (cobrada no repasse). Dinheiro e cartão não têm taxa.";
+
+/**
+ * Label canônico do plano. Use SEMPRE isto em vez de strings soltas
+ * ("Fixo Mensal", "Comissão", "Só Comissão", etc.) para garantir
+ * consistência em todo o painel Super Admin e telas do lojista.
+ */
+export function planLabel(planType?: string | null): string {
+  if (!planType) return "—";
+  return PLANS[planType as StorePlanType]?.name ?? planType;
+}
