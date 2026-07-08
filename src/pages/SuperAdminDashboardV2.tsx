@@ -6,6 +6,8 @@ import AdminStoreManager from "@/components/AdminStoreManager";
 import DeliveryFeeConfigPanel from "@/components/DeliveryFeeConfig";
 import TestStoreCreator from "@/components/TestStoreCreator";
 import PlanosTab from "@/components/PlanosTab";
+import AdminPlanManager from "@/components/AdminPlanManager";
+import AdminPlanTemplatesEditor from "@/components/AdminPlanTemplatesEditor";
 import ModeratorManager from "@/components/ModeratorManager";
 import SupportAdminPanel from "@/components/SupportAdminPanel";
 import AppStorePageAdmin from "@/components/AppStorePageAdmin";
@@ -153,6 +155,8 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
     | "socios"
     | "test"
     | "mensalidades"
+    | "planos-lojas"
+    | "planos-templates"
     | "auditoria";
   const [financeSection, setFinanceSection] = useState<FinanceSection>("overview");
   type StoresSection = "lojas" | "cidades" | "entrega";
@@ -168,7 +172,7 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
     const legacyMap: Partial<Record<AdminTab, { tab: AdminTab; apply: () => void }>> = {
       pagamentos:   { tab: "financeiro", apply: () => setFinanceSection("areceber") },
       saques:       { tab: "financeiro", apply: () => setFinanceSection("saques") },
-      planos:       { tab: "financeiro", apply: () => setFinanceSection("mensalidades") },
+      planos:       { tab: "financeiro", apply: () => setFinanceSection("planos-lojas") },
       socios:       { tab: "financeiro", apply: () => setFinanceSection("socios") },
       test_finance: { tab: "financeiro", apply: () => setFinanceSection("test") },
       cidades:      { tab: "stores",     apply: () => setStoresSection("cidades") },
@@ -1031,7 +1035,7 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
                 {storesSection === "entrega" && <DeliveryFeeConfigPanel />}
               </div>
             )}
-            {activeTab === "planos" && <PlanosTab />}
+            {activeTab === "planos" && <AdminPlanManager />}
             {activeTab === "pagamentos" && <Suspense fallback={<TabFallback />}><PagamentosSplitTab stores={stores || []} /></Suspense>}
             {activeTab === "juridico" && <Suspense fallback={<TabFallback />}><JuridicoTab /></Suspense>}
             {activeTab === "moderadores" && <ModeratorManager />}
@@ -1134,13 +1138,15 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
                      { key: "overview", label: "Visão Geral", icon: LayoutDashboard },
                      { key: "areceber", label: "A Receber", icon: Wallet },
                       { key: "mensalidades", label: "Mensalidades", icon: Crown },
+                     { key: "planos-lojas", label: "Planos (Lojas)", icon: Store },
+                     { key: "planos-templates", label: "Planos (Templates)", icon: FileText },
                      { key: "historico", label: "Histórico Pago", icon: CheckCircle2 },
                      { key: "fluxo", label: "Fluxo de Caixa", icon: TrendingUp },
                      { key: "saques", label: "Saques", icon: Wallet, badge: pendingWithdrawals.length },
                      { key: "conciliacao", label: "Conciliação", icon: ShieldCheck },
                      { key: "socios", label: "Sócios", icon: Handshake },
                      { key: "test", label: "Lojas Teste", icon: FlaskConical },
-                     { key: "auditoria", label: "Auditoria", icon: FileText },
+                     { key: "auditoria", label: "Auditoria Financeira", icon: FileText },
                    ]}
                  />
                  {financeSection === "overview" && (
@@ -1193,6 +1199,8 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
                   {financeSection === "mensalidades" && (
                     <Suspense fallback={<TabFallback />}><MensalidadesPanel /></Suspense>
                   )}
+                  {financeSection === "planos-lojas" && <AdminPlanManager />}
+                  {financeSection === "planos-templates" && <AdminPlanTemplatesEditor />}
                </div>
              )}
              {activeTab === "dashboard" && (

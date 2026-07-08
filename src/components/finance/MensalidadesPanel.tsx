@@ -7,7 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Crown, AlertTriangle, CheckCircle2, Clock, TrendingDown, Download } from "lucide-react";
 import { exportCSV, brl } from "./financeExport";
-import PlanosTab from "@/components/PlanosTab";
+import { planLabel } from "@/lib/plansInfo";
 
 type Status = "em_dia" | "atrasado" | "trial" | "inativo";
 
@@ -26,7 +26,7 @@ const MensalidadesPanel = () => {
         supabase
           .from("store_plans")
           .select("store_id, plan_type, monthly_fee, next_billing_date, last_billed_at, trial_ends_at, started_at, is_active")
-          .eq("plan_type", "fixed"),
+          .in("plan_type", ["fixed", "supporter", "autonomy"]),
         supabase.from("stores").select("id, name, is_test, status"),
       ]);
       const plans = plansRes.data || [];
@@ -52,6 +52,7 @@ const MensalidadesPanel = () => {
             store_id: p.store_id,
             name: s.name as string,
             store_status: s.status as string,
+            plan_type: p.plan_type as string,
             monthly: Number(p.monthly_fee || 0),
             status,
             daysLate: Math.max(0, daysLate),
@@ -129,7 +130,7 @@ const MensalidadesPanel = () => {
         </CardHeader>
         <CardContent className="space-y-2">
           {rows.length === 0 && (
-            <p className="text-sm text-muted-foreground text-center py-8">Sem planos fixos ativos.</p>
+            <p className="text-sm text-muted-foreground text-center py-8">Sem planos com mensalidade ativa.</p>
           )}
           {rows
             .sort((a, b) => b.daysLate - a.daysLate || b.monthly - a.monthly)
@@ -140,6 +141,7 @@ const MensalidadesPanel = () => {
                 <div key={r.store_id} className="border rounded-lg p-3 bg-muted/30 flex items-center justify-between flex-wrap gap-2">
                   <div className="flex items-center gap-2 flex-wrap min-w-0">
                     <span className="font-semibold truncate">{r.name}</span>
+                    <Badge variant="outline" className="text-[10px]">{planLabel(r.plan_type)}</Badge>
                     <Badge variant="outline" className={`text-[10px] ${info.color}`}>
                       <Icon className="w-3 h-3 mr-1" /> {info.label}
                     </Badge>
@@ -156,13 +158,6 @@ const MensalidadesPanel = () => {
             })}
         </CardContent>
       </Card>
-
-      <details className="bg-muted/30 rounded-lg p-3">
-        <summary className="cursor-pointer text-sm font-semibold">Gestão completa de planos (avançado)</summary>
-        <div className="mt-3">
-          <PlanosTab />
-        </div>
-      </details>
     </div>
   );
 };

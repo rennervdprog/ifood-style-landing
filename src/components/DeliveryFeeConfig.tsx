@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Truck, Save, MapPin, DollarSign, Users } from "lucide-react";
+import { Truck, Save, MapPin, DollarSign, Users, Crown } from "lucide-react";
 import { DEFAULT_DELIVERY_FEE_CONFIG, type DeliveryFeeConfig as FeeConfig } from "@/lib/deliveryFee";
 import { formatBRLDisplay, parseBRLCentsInput } from "@/hooks/useBRLInput";
 
@@ -63,6 +63,20 @@ const DeliveryFeeConfigPanel = () => {
         .maybeSingle();
       return data?.value as unknown as FeeConfig | null;
     },
+  });
+
+  // Contagem de lojas com override VIP na taxa da plataforma
+  const { data: vipOverrideCount = 0 } = useQuery({
+    queryKey: ["delivery-fee-vip-overrides"],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from("store_plans")
+        .select("store_id", { count: "exact", head: true })
+        .eq("is_active", true)
+        .not("platform_delivery_split_override", "is", null);
+      return count ?? 0;
+    },
+    staleTime: 60_000,
   });
 
   useEffect(() => {
@@ -131,6 +145,15 @@ const DeliveryFeeConfigPanel = () => {
       <h2 className="text-sm font-bold text-foreground uppercase tracking-wider flex items-center gap-2">
         <Truck className="h-4 w-4" /> Configuração de Taxa de Entrega
       </h2>
+
+      {vipOverrideCount > 0 && (
+        <div className="flex items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[11px] text-amber-700 dark:text-amber-300">
+          <Crown className="h-3.5 w-3.5" />
+          <span>
+            <b>{vipOverrideCount}</b> loja(s) com <b>override VIP</b> na taxa da plataforma — a config global abaixo NÃO se aplica a elas.
+          </span>
+        </div>
+      )}
 
       <div className="bg-card rounded-2xl border border-border p-4 space-y-4">
         {/* City Name */}

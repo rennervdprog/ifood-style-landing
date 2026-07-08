@@ -470,8 +470,8 @@ export default function AdminPlanManager() {
                   {currentDisplay ? (
                     <Badge className={`border text-[10px] ${planColors[currentDisplay]}`}>
                       {planLabels[currentDisplay]}
-                      {plan?.monthly_fee ? ` • R$ ${plan.monthly_fee}/mês` : ""}
-                      {plan?.commission_rate ? ` + ${plan.commission_rate}%` : ""}
+                      {plan ? ` • R$ ${Number(plan.monthly_fee ?? 0)}/mês` : ""}
+                      {plan ? ` + ${Number(plan.commission_rate ?? 0)}%` : ""}
                     </Badge>
                   ) : (
                     <Badge variant="outline" className="text-[10px] text-muted-foreground">
