@@ -155,6 +155,8 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
     | "socios"
     | "test"
     | "mensalidades"
+    | "planos-lojas"
+    | "planos-templates"
     | "auditoria";
   const [financeSection, setFinanceSection] = useState<FinanceSection>("overview");
   type StoresSection = "lojas" | "cidades" | "entrega";
