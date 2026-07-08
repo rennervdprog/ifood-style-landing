@@ -6,6 +6,8 @@ import AdminStoreManager from "@/components/AdminStoreManager";
 import DeliveryFeeConfigPanel from "@/components/DeliveryFeeConfig";
 import TestStoreCreator from "@/components/TestStoreCreator";
 import PlanosTab from "@/components/PlanosTab";
+import AdminPlanManager from "@/components/AdminPlanManager";
+import AdminPlanTemplatesEditor from "@/components/AdminPlanTemplatesEditor";
 import ModeratorManager from "@/components/ModeratorManager";
 import SupportAdminPanel from "@/components/SupportAdminPanel";
 import AppStorePageAdmin from "@/components/AppStorePageAdmin";
