@@ -47,7 +47,6 @@ Deno.serve(async (req) => {
     (token === serviceKey ||
       token === EXTERNAL_KEY ||
       (cronSecret !== "" && token === cronSecret));
-  const debug: any = { hasToken: !!token, matchedServiceKey: token===serviceKey, matchedExtKey: token===EXTERNAL_KEY };
 
   // Bypass adicional para E2E/tooling interno
   const e2eSecret = Deno.env.get("E2E_ADMIN_SECRET") || "";
@@ -65,14 +64,11 @@ Deno.serve(async (req) => {
       const authKey = externalAnon || EXTERNAL_KEY;
       const userClient = createClient(EXTERNAL_URL, authKey);
       const { data: u, error: uErr } = await userClient.auth.getUser(token);
-      debug.userErr = uErr?.message || null;
-      debug.userId = u?.user?.id || null;
+      if (uErr) console.warn("[monthly-billing] getUser err", uErr.message);
       if (u?.user) {
         const adminClient = createClient(EXTERNAL_URL, EXTERNAL_KEY);
         const { data: isPlatformAdmin, error: rpcError } = await adminClient
           .rpc("is_platform_admin", { _user_id: u.user.id });
-        debug.isPlatformAdmin = isPlatformAdmin;
-        debug.rpcErr = rpcError?.message || null;
 
         if (!rpcError) {
           isAdminCaller = !!isPlatformAdmin;
@@ -87,12 +83,12 @@ Deno.serve(async (req) => {
         }
       }
     } catch (authError) {
-      debug.exception = String(authError);
+      console.warn("[monthly-billing] admin auth failed", authError);
     }
   }
 
   if (!isAdminCaller) {
-    return json({ error: "Unauthorized", debug }, 401);
+    return json({ error: "Unauthorized" }, 401);
   }
 
   try {
