@@ -1138,13 +1138,15 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
                      { key: "overview", label: "Visão Geral", icon: LayoutDashboard },
                      { key: "areceber", label: "A Receber", icon: Wallet },
                       { key: "mensalidades", label: "Mensalidades", icon: Crown },
+                     { key: "planos-lojas", label: "Planos (Lojas)", icon: Store },
+                     { key: "planos-templates", label: "Planos (Templates)", icon: FileText },
                      { key: "historico", label: "Histórico Pago", icon: CheckCircle2 },
                      { key: "fluxo", label: "Fluxo de Caixa", icon: TrendingUp },
                      { key: "saques", label: "Saques", icon: Wallet, badge: pendingWithdrawals.length },
                      { key: "conciliacao", label: "Conciliação", icon: ShieldCheck },
                      { key: "socios", label: "Sócios", icon: Handshake },
                      { key: "test", label: "Lojas Teste", icon: FlaskConical },
-                     { key: "auditoria", label: "Auditoria", icon: FileText },
+                     { key: "auditoria", label: "Auditoria Financeira", icon: FileText },
                    ]}
                  />
                  {financeSection === "overview" && (
