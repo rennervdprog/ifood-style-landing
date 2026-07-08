@@ -9,7 +9,7 @@ const BodySchema = z.object({
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+    "authorization, x-client-info, apikey, content-type, baggage, sentry-trace, x-supabase-api-version",
 };
 
 const json = (body: unknown, status = 200) =>
@@ -56,12 +56,15 @@ Deno.serve(async (req) => {
   }
 
   if (!isAdminCaller && token) {
-    // Try as a user JWT against the external project
+    // Try as a user JWT against the external project.
+    // Use the service key here — getUser() validates the passed token
+    // regardless of the key used to construct the client, and the anon
+    // key may not be exposed as a secret on the external runtime.
     try {
-      const userClient = createClient(EXTERNAL_URL, externalAnon, {
-        global: { headers: { Authorization: `Bearer ${token}` } },
-      });
-      const { data: u } = await userClient.auth.getUser(token);
+      const authKey = externalAnon || EXTERNAL_KEY;
+      const userClient = createClient(EXTERNAL_URL, authKey);
+      const { data: u, error: uErr } = await userClient.auth.getUser(token);
+      if (uErr) console.warn("[monthly-billing] getUser err", uErr.message);
       if (u?.user) {
         const adminClient = createClient(EXTERNAL_URL, EXTERNAL_KEY);
         const { data: isPlatformAdmin, error: rpcError } = await adminClient
