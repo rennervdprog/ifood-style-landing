@@ -70,8 +70,17 @@ export async function registerPWA() {
         console.warn("[PWA] Falha ao registrar SW (ignorada):", error);
       },
     });
-    // Checa updates a cada 60s
-    setInterval(() => { try { (updateSW as any); const reg = navigator.serviceWorker.getRegistration(); reg && (reg as any).then?.((r: any) => r?.update?.()); } catch {} }, 60_000);
+    // Checa updates a cada 60s — captura erros p/ não vazar unhandled rejection ao Sentry.
+    setInterval(() => {
+      void (async () => {
+        try {
+          const reg = await navigator.serviceWorker.getRegistration();
+          await reg?.update?.();
+        } catch {
+          /* falha transiente de rede — ignorada */
+        }
+      })();
+    }, 60_000);
   } catch {
     /* noop */
   }
