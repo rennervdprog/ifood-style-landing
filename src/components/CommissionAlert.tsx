@@ -5,6 +5,7 @@ import { AlertTriangle, QrCode, Copy, Loader2, CheckCircle2, X, ShieldAlert, Clo
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
  import { formatBRL } from "@/lib/utils";
+import { useStorePlan } from "@/hooks/useStorePlan";
 
 interface CommissionAlertProps {
   storeId: string;
@@ -13,6 +14,8 @@ interface CommissionAlertProps {
 }
 
 const CommissionAlert = ({ storeId, storeName, onGoToFinance }: CommissionAlertProps) => {
+  const plan = useStorePlan(storeId);
+  const isFeeOnly = plan.commissionRate === 0; // VIP ou plano fixo — pendência é só delivery/PDV
   const [generating, setGenerating] = useState(false);
   const [chargeResult, setChargeResult] = useState<{
     qr_code: string | null;
@@ -187,15 +190,21 @@ const CommissionAlert = ({ storeId, storeName, onGoToFinance }: CommissionAlertP
               <h3 className={`font-bold text-sm ${isBlocked ? "text-red-500" : "text-foreground"}`}>
                 {isBlocked
                   ? "⛔ Loja Suspensa — Comissão Pendente"
-                  : "Comissão Pendente — Repasse Plataforma"}
+                  : (isFeeOnly ? "Repasse Pendente — Taxa da Plataforma" : "Comissão Pendente — Repasse Plataforma")}
               </h3>
               <div className="text-[10px] text-muted-foreground mt-0.5 space-y-0.5">
                 <p>
                   {isBlocked
                     ? "Sua loja foi suspensa por falta de pagamento. Pague para reativar imediatamente."
-                    : "Você possui taxas e comissões pendentes de vendas físicas (dinheiro/cartão)."}
+                    : (isFeeOnly
+                        ? "Você possui taxas de entrega e PDV pendentes de vendas físicas (dinheiro/cartão)."
+                        : "Você possui taxas e comissões pendentes de vendas físicas (dinheiro/cartão).")}
                 </p>
-                <p>O valor inclui a comissão sobre produtos e a taxa de entrega da plataforma.</p>
+                <p>
+                  {isFeeOnly
+                    ? "O valor corresponde à taxa da plataforma sobre entregas e vendas no PDV."
+                    : "O valor inclui a comissão sobre produtos e a taxa de entrega da plataforma."}
+                </p>
               </div>
             </div>
           </div>
