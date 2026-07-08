@@ -18,6 +18,9 @@ verify_jwt = false
 [functions.monthly-billing]
 verify_jwt = false
 
+[functions.admin-set-pin-autofill]
+verify_jwt = false
+
 [functions.auto-withdraw-subaccounts]
 verify_jwt = false
 

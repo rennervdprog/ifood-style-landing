@@ -684,15 +684,18 @@ function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride
   const togglePinAutofill = async () => {
     setPinAutofillSaving(true);
     try {
-      const { error } = await supabase
-        .from("stores")
-        .update({ driver_pin_autofill: !pinAutofill } as any)
-        .eq("id", storeId);
+      const target = !pinAutofill;
+      const { data, error } = await supabase.functions.invoke("admin-set-pin-autofill", {
+        body: { store_id: storeId, enabled: target },
+      });
       if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      const persisted = (data as any)?.driver_pin_autofill;
+      if (persisted !== target) throw new Error("Alteração não persistida.");
       await refetchStoreFlags();
-      toast.success(!pinAutofill ? "Auto-PIN ativado para esta loja." : "Auto-PIN desativado.");
-    } catch {
-      toast.error("Erro ao atualizar auto-PIN.");
+      toast.success(target ? "Auto-PIN ativado para esta loja." : "Auto-PIN desativado.");
+    } catch (e: any) {
+      toast.error(e?.message || "Erro ao atualizar auto-PIN.");
     } finally {
       setPinAutofillSaving(false);
     }
