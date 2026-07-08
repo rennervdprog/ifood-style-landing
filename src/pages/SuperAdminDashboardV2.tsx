@@ -1199,6 +1199,8 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
                   {financeSection === "mensalidades" && (
                     <Suspense fallback={<TabFallback />}><MensalidadesPanel /></Suspense>
                   )}
+                  {financeSection === "planos-lojas" && <AdminPlanManager />}
+                  {financeSection === "planos-templates" && <AdminPlanTemplatesEditor />}
                </div>
              )}
              {activeTab === "dashboard" && (
