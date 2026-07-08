@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Wallet, Crown, Truck, Percent, ShoppingCart, CheckCircle2, MessageCircle, AlertTriangle } from "lucide-react";
 import { brl } from "@/components/finance/financeExport";
+import { planLabel } from "@/lib/plansInfo";
 import { toast } from "sonner";
 
 type ReceivableKind = "mensalidade" | "comissao" | "entrega_fee" | "pdv_fee";
@@ -187,7 +188,7 @@ const AReceberTab = () => {
                 <div className="flex items-center justify-between gap-2 flex-wrap">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-bold text-foreground">{r.name}</span>
-                    <Badge variant="outline" className="text-[10px] capitalize">{r.plan_type}</Badge>
+                    <Badge variant="outline" className="text-[10px]">{planLabel(r.plan_type)}</Badge>
                     {r.mensalidade_overdue_days > 0 && (
                       <Badge variant="destructive" className="text-[10px] gap-1">
                         <AlertTriangle className="w-3 h-3" /> {r.mensalidade_overdue_days}d atraso
