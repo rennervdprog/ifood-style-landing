@@ -9,6 +9,7 @@ import { Download, Truck, Wallet, AlertTriangle, Receipt } from "lucide-react";
 import { exportCSV, brl } from "./financeExport";
 import { ConfirmActionDialog } from "./ConfirmActionDialog";
 import { toast } from "sonner";
+import { planLabel } from "@/lib/plansInfo";
 
 const ComissoesPanel = () => {
   const qc = useQueryClient();
@@ -122,7 +123,7 @@ const ComissoesPanel = () => {
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-semibold">{r.name}</span>
                     <Badge variant="outline" className="text-xs">
-                      {r.plan_type === "fixed" ? "Fixo" : r.plan_type === "commission" ? "Comissão" : "—"}
+                      {planLabel(r.plan_type)}
                       {r.commission_rate > 0 ? ` · ${(r.commission_rate * 100).toFixed(1)}%` : ""}
                     </Badge>
                     <Badge variant="outline" className="text-xs">
