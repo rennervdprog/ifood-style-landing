@@ -1773,7 +1773,7 @@ export const FinanceTab = ({
             </div>
             <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Assinaturas/Mês</p>
             <p className="text-xl font-black text-emerald-500 mt-0.5">{formatBRL(subscriptionRevenue)}</p>
-            <p className="text-[10px] text-muted-foreground mt-0.5">{payingStoresCount} loja{payingStoresCount === 1 ? "" : "s"} pagante{payingStoresCount === 1 ? "" : "s"}</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5">{payingStoresCount} loja{payingStoresCount === 1 ? "" : "s"} com mensalidade &gt; 0</p>
           </div>
         </div>
       </div>
