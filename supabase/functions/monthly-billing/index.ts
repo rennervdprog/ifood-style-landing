@@ -57,16 +57,16 @@ Deno.serve(async (req) => {
   }
 
   if (!isAdminCaller && token) {
-    // Try as a user JWT against the external project
+    // Try as a user JWT against the external project.
+    // Use the service key here — getUser() validates the passed token
+    // regardless of the key used to construct the client, and the anon
+    // key may not be exposed as a secret on the external runtime.
     try {
-      const userClient = createClient(EXTERNAL_URL, externalAnon, {
-        global: { headers: { Authorization: `Bearer ${token}` } },
-      });
+      const authKey = externalAnon || EXTERNAL_KEY;
+      const userClient = createClient(EXTERNAL_URL, authKey);
       const { data: u, error: uErr } = await userClient.auth.getUser(token);
       debug.userErr = uErr?.message || null;
       debug.userId = u?.user?.id || null;
-      debug.externalAnonSet = !!externalAnon;
-      debug.externalKeySet = !!EXTERNAL_KEY;
       if (u?.user) {
         const adminClient = createClient(EXTERNAL_URL, EXTERNAL_KEY);
         const { data: isPlatformAdmin, error: rpcError } = await adminClient
