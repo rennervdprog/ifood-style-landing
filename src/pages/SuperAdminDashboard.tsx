@@ -16,6 +16,7 @@ import AppLinksManager from "@/components/AppLinksManager";
 import AdminBroadcastPush from "@/components/AdminBroadcastPush";
 import PageViewsCard from "@/components/PageViewsCard";
 import { AdminSubaccountsTab } from "@/components/AdminSubaccountsTab";
+import { planLabel as planNameLabel } from "@/lib/plansInfo";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -528,7 +529,7 @@ const SuperAdminDashboard = () => {
         ? `✅ O ItaSuper deve transferir ${formatBRL(entry.finalBalance)} para você.`
         : `⚠️ Valor a acertar com o ItaSuper: ${formatBRL(Math.abs(entry.finalBalance))}.`;
       msg = `💰 *Fechamento ItaSuper (${period})*\n\nOlá *${entry.name}*!\n\n` +
-        `📋 Plano: ${storePlan?.plan_type === "hybrid" ? "Assinatura + Taxa" : "Comissão"}\n\n` +
+        `📋 Plano: ${planNameLabel(storePlan?.plan_type)}\n\n` +
         `📦 Total de Pedidos: ${entry.orderCount}\n` +
         `💵 Vendas Físicas (Dinheiro/Cartão): ${formatBRL(entry.physicalSales)}\n` +
         `📱 Vendas App (Pix): ${formatBRL(entry.appSales)}\n` +
@@ -1306,11 +1307,8 @@ export const FinanceTab = ({
 
   const getStorePlan = (storeId: string) => storePlans?.find((p: any) => p.store_id === storeId);
 
-  const planLabel = (planType: string) => {
-    if (planType === "fixed") return "Fixo";
-    if (planType === "hybrid") return "Híbrido";
-    return "Comissão";
-  };
+  // Nome canônico do plano — vem da fonte única em plansInfo.
+  const planLabel = (planType: string) => planNameLabel(planType);
 
   const planColor = (planType: string) => {
     if (planType === "fixed") return "bg-blue-500/10 text-blue-500 border-blue-500/20";
@@ -1775,7 +1773,7 @@ export const FinanceTab = ({
             </div>
             <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Assinaturas/Mês</p>
             <p className="text-xl font-black text-emerald-500 mt-0.5">{formatBRL(subscriptionRevenue)}</p>
-            <p className="text-[10px] text-muted-foreground mt-0.5">{payingStoresCount} loja{payingStoresCount === 1 ? "" : "s"} pagante{payingStoresCount === 1 ? "" : "s"}</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5">{payingStoresCount} loja{payingStoresCount === 1 ? "" : "s"} com mensalidade &gt; 0</p>
           </div>
         </div>
       </div>
