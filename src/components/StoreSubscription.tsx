@@ -251,9 +251,16 @@ export default function StoreSubscription({ storeId, storeName }: Props) {
                 <p className="text-xs text-muted-foreground truncate">{planSubtitles[plan.planType]}</p>
               </div>
             </div>
-            <Badge className="bg-background text-foreground border border-border/60 shrink-0">
-              {plan.isInTrial ? `Trial · ${plan.trialDaysLeft}d` : "Ativo"}
-            </Badge>
+            <div className="flex flex-col items-end gap-1 shrink-0">
+              <Badge className="bg-background text-foreground border border-border/60">
+                {plan.isInTrial ? `Trial · ${plan.trialDaysLeft}d` : "Ativo"}
+              </Badge>
+              {plan.isVip && (
+                <Badge className="bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30 gap-1">
+                  <Crown className="h-3 w-3" /> VIP
+                </Badge>
+              )}
+            </div>
           </div>
         </div>
 
