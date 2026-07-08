@@ -56,6 +56,18 @@ export interface StorePlanFeatures {
   pdvEnabled: boolean;
   /** Taxa de comissão PDV (menor que delivery) */
   pdvCommissionRate: number;
+  /** Valores-padrão do plano (vindos de plan_templates) para comparação VIP */
+  defaultMonthlyFee: number;
+  defaultCommissionRate: number;
+  /** True quando a loja tem qualquer override (VIP / condição personalizada) */
+  isVip: boolean;
+  /** Detalhes dos overrides ativos */
+  vipDiffs: {
+    fee: boolean;
+    commission: boolean;
+    pix: boolean;
+    delivery: boolean;
+  };
   isLoading: boolean;
 }
 
@@ -123,12 +135,25 @@ export function useStorePlan(storeId: string | undefined | null): StorePlanFeatu
       ]);
       if (planResult.error) throw planResult.error;
       const feeConfig = configResult.data?.value as unknown as DeliveryFeeConfig | null;
+      // Buscar template do plano para saber os defaults e detectar VIP
+      const planType = (planResult.data as any)?.plan_type as string | undefined;
+      let template: { monthly_fee: number; commission_rate: number } | null = null;
+      if (planType) {
+        const { data: tpl } = await supabase
+          .from("plan_templates")
+          .select("monthly_fee, commission_rate")
+          .eq("plan_type", planType)
+          .eq("is_active", true)
+          .maybeSingle();
+        if (tpl) template = { monthly_fee: Number(tpl.monthly_fee), commission_rate: Number(tpl.commission_rate) };
+      }
       return {
         plan: planResult.data,
         city: (storeResult.data as any)?.address_city || "itatinga",
         deliveryMode: (storeResult.data as any)?.delivery_mode || "platform",
         platformFeeSplit: ((storeResult.data as any)?.platform_fee_split || "cliente") as "cliente" | "meio_a_meio" | "lojista",
         feeConfig,
+        template,
       };
     },
     enabled: !!storeId,
@@ -165,6 +190,21 @@ export function useStorePlan(storeId: string | undefined | null): StorePlanFeatu
     ? Math.ceil((trialEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
     : 0;
 
+  // ── Detecção VIP ──────────────────────────────────────────────────
+  // Compara valores efetivos da loja com o template padrão do plano.
+  // Qualquer override não-nulo em pix/delivery também caracteriza VIP.
+  const _tplFee = data?.template?.monthly_fee ?? null;
+  const _tplRate = data?.template?.commission_rate ?? null;
+  const _actualFee = Number(data?.plan?.monthly_fee ?? 0);
+  const _actualRate = Number(data?.plan?.commission_rate ?? 0);
+  const _pixOverride = (data?.plan as any)?.pix_operational_fee_override;
+  const _deliveryOverride = (data?.plan as any)?.platform_delivery_split_override;
+  const _vipFee = _tplFee != null && Number(_tplFee) !== _actualFee;
+  const _vipCommission = _tplRate != null && Number(_tplRate) !== _actualRate;
+  const _vipPix = _pixOverride != null;
+  const _vipDelivery = _deliveryOverride != null;
+  const _isVip = _vipFee || _vipCommission || _vipPix || _vipDelivery;
+
   return {
     planType,
     monthlyFee: data?.plan?.monthly_fee ?? 0,
@@ -200,6 +240,15 @@ export function useStorePlan(storeId: string | undefined | null): StorePlanFeatu
     // PDV
     pdvEnabled: (data?.plan as any)?.pdv_enabled ?? false,
     pdvCommissionRate: (data?.plan as any)?.pdv_commission_rate ?? 0,
+    defaultMonthlyFee: _tplFee != null ? Number(_tplFee) : _actualFee,
+    defaultCommissionRate: _tplRate != null ? Number(_tplRate) : _actualRate,
+    isVip: _isVip,
+    vipDiffs: {
+      fee: _vipFee,
+      commission: _vipCommission,
+      pix: _vipPix,
+      delivery: _vipDelivery,
+    },
     isLoading,
   };
 }
