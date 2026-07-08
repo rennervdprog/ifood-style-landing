@@ -16,6 +16,7 @@ import AppLinksManager from "@/components/AppLinksManager";
 import AdminBroadcastPush from "@/components/AdminBroadcastPush";
 import PageViewsCard from "@/components/PageViewsCard";
 import { AdminSubaccountsTab } from "@/components/AdminSubaccountsTab";
+import { planLabel as planNameLabel } from "@/lib/plansInfo";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -1306,11 +1307,8 @@ export const FinanceTab = ({
 
   const getStorePlan = (storeId: string) => storePlans?.find((p: any) => p.store_id === storeId);
 
-  const planLabel = (planType: string) => {
-    if (planType === "fixed") return "Fixo";
-    if (planType === "hybrid") return "Híbrido";
-    return "Comissão";
-  };
+  // Nome canônico do plano — vem da fonte única em plansInfo.
+  const planLabel = (planType: string) => planNameLabel(planType);
 
   const planColor = (planType: string) => {
     if (planType === "fixed") return "bg-blue-500/10 text-blue-500 border-blue-500/20";
