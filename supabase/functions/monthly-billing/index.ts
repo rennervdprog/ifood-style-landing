@@ -61,11 +61,14 @@ Deno.serve(async (req) => {
       const userClient = createClient(EXTERNAL_URL, externalAnon, {
         global: { headers: { Authorization: `Bearer ${token}` } },
       });
-      const { data: u } = await userClient.auth.getUser(token);
+      const { data: u, error: uErr } = await userClient.auth.getUser(token);
+      if (uErr) console.warn("[monthly-billing] getUser err", uErr.message);
+      console.log("[monthly-billing] resolved user", u?.user?.id, "tokenPrefix", token.slice(0,20));
       if (u?.user) {
         const adminClient = createClient(EXTERNAL_URL, EXTERNAL_KEY);
         const { data: isPlatformAdmin, error: rpcError } = await adminClient
           .rpc("is_platform_admin", { _user_id: u.user.id });
+        console.log("[monthly-billing] is_platform_admin", isPlatformAdmin, "rpcErr", rpcError?.message);
 
         if (!rpcError) {
           isAdminCaller = !!isPlatformAdmin;
