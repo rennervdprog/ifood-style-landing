@@ -288,26 +288,45 @@ export default function StoreSubscription({ storeId, storeName }: Props) {
               </p>
               <p className="text-2xl font-bold text-foreground mt-1">
                 {plan.isFixedPlan
-                  ? formatBRL(plan.pixOperationalFee)
+                  ? (plan.pixOperationalFee > 0 ? formatBRL(plan.pixOperationalFee) : "Grátis")
                   : plan.commissionRate > 0 ? `${plan.commissionRate}%` : "Grátis"}
               </p>
               <p className="text-[10px] text-muted-foreground mt-0.5">
-                {plan.isFixedPlan ? "só em pedidos pagos via PIX" : "sobre o subtotal"}
+                {plan.isFixedPlan
+                  ? (plan.pixOperationalFee > 0 ? "só em pedidos pagos via PIX" : "PIX sem taxa nesta loja")
+                  : "sobre o subtotal"}
               </p>
             </div>
           </div>
 
-          {/* Essencial: delivery fee disclosure (paid by client) */}
-          {plan.isFixedPlan && (
+          {/* Delivery fee disclosure (paid by client) — reflete override VIP */}
+          {plan.isFixedPlan && plan.platformDeliverySplit > 0 && (
             <div className="rounded-xl border border-primary/30 bg-primary/5 p-3">
               <div className="flex items-start gap-3">
                 <div className="h-9 w-9 rounded-xl bg-primary/15 flex items-center justify-center shrink-0">
                   <Truck className="h-4 w-4 text-primary" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-xs font-semibold text-foreground">Taxa de entrega: R$ 2,00 por pedido</p>
+                  <p className="text-xs font-semibold text-foreground">
+                    Taxa de entrega: {formatBRL(plan.platformDeliverySplit)} por pedido
+                  </p>
                   <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">
                     Cobrada do <strong>cliente</strong> no checkout (não sai do seu caixa). Destinada à manutenção da infraestrutura, tecnologia e suporte da plataforma.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+          {plan.isFixedPlan && plan.platformDeliverySplit === 0 && (
+            <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-3">
+              <div className="flex items-start gap-3">
+                <div className="h-9 w-9 rounded-xl bg-emerald-500/15 flex items-center justify-center shrink-0">
+                  <Truck className="h-4 w-4 text-emerald-600" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-semibold text-foreground">Sem taxa de plataforma na entrega</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">
+                    Sua loja tem condição especial: o cliente paga exatamente a taxa que você define, sem acréscimo da plataforma.
                   </p>
                 </div>
               </div>
