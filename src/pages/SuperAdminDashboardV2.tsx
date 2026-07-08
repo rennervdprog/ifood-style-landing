@@ -21,6 +21,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { planLabel } from "@/lib/plansInfo";
 import {
   ArrowLeft, DollarSign, ShoppingBag, TrendingUp, Clock,
   Store, Copy, AlertTriangle, Users, Bike, Wallet, CheckCircle2, Banknote, XCircle, Bell, Trash2, QrCode, Loader2, ArrowUpRight, ArrowDownRight, Settings,
@@ -640,7 +641,7 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
     let msg: string;
     if (isFixed) {
       msg = `💰 *Resumo ItaSuper (${period})*\n\nOlá *${entry.name}*!\n\n` +
-        `📋 Plano: Fixo Mensal — ${formatBRL(Number(storePlan?.monthly_fee || 90))}/mês\n\n` +
+        `📋 Plano: ${planLabel(storePlan?.plan_type)} — ${formatBRL(Number(storePlan?.monthly_fee || 90))}/mês\n\n` +
         `📦 Total de Pedidos: ${entry.orderCount}\n` +
         `💵 Vendas Totais: ${formatBRL(entry.totalSales)}\n\n` +
         `✅ Sem taxas por pedido. Toda receita é sua!\n` +
@@ -650,7 +651,7 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
         ? `✅ O ItaSuper deve transferir ${formatBRL(entry.finalBalance)} para você.`
         : `⚠️ Valor a acertar com o ItaSuper: ${formatBRL(Math.abs(entry.finalBalance))}.`;
       msg = `💰 *Fechamento ItaSuper (${period})*\n\nOlá *${entry.name}*!\n\n` +
-        `📋 Plano: ${storePlan?.plan_type === "hybrid" ? "Assinatura + Taxa" : "Comissão"}\n\n` +
+        `📋 Plano: ${planLabel(storePlan?.plan_type)}\n\n` +
         `📦 Total de Pedidos: ${entry.orderCount}\n` +
         `💵 Vendas Físicas (Dinheiro/Cartão): ${formatBRL(entry.physicalSales)}\n` +
         `📱 Vendas App (Pix): ${formatBRL(entry.appSales)}\n` +
