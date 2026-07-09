@@ -1483,7 +1483,13 @@ const AdminDashboard = () => {
     () => {
       const ctx = { isPizza, allowFullReports, isPdvOnly };
       return dashboardGroups
-        .map(g => ({ ...g, subTabs: g.subTabs.filter(s => filterSubTab(s, ctx)) }))
+        .map(g => ({
+          ...g,
+          label: isPdvOnly && g.pdvLabel ? g.pdvLabel : g.label,
+          subTabs: g.subTabs
+            .filter(s => filterSubTab(s, ctx))
+            .map(s => ({ ...s, label: isPdvOnly && s.pdvLabel ? s.pdvLabel : s.label })),
+        }))
         .filter(g => g.subTabs.length > 0);
     },
     [isPizza, allowFullReports, isPdvOnly],
@@ -1744,7 +1750,7 @@ const AdminDashboard = () => {
                 <Bell className="h-3.5 w-3.5" /> Alertas
               </button>
             )}
-            {pendingCount > 0 && dashboardTab !== "orders" && (
+            {pendingCount > 0 && dashboardTab !== "orders" && !isPdvOnly && (
               <button onClick={() => { setDashboardTab("orders"); setActiveTab("pendente"); }}
                 className="flex items-center gap-1 bg-amber-400 text-amber-900 px-2.5 py-1.5 rounded-xl text-[11px] font-bold animate-bounce">
                 <Clock className="h-3.5 w-3.5" /> {pendingCount}
