@@ -1,84 +1,65 @@
-# Plano — Cadastro PDV Standalone
+## Objetivo
+Quando a loja for **PDV Standalone** (`plan_type = 'pdv_only'`), o painel do lojista precisa parecer um sistema de PDV — sem termos de "delivery", "entrega", "pedidos online", "motoboy", "vitrine", "cliente do app" espalhados pela UI — e o layout deve priorizar o Caixa/PDV como tela principal.
 
-Novo fluxo de cadastro para lojistas que querem **apenas o PDV** (frente de caixa), sem cardápio online, sem delivery, sem vitrine pública.
+## Escopo (apenas frontend)
 
-## Sugestões de preço
+### 1. Landing do painel = Caixa/PDV
+- Em `AdminDashboardV2.tsx`, quando `isPdvOnly`:
+  - `defaultTab` = `cash_register` (hoje cai em `dashboard`/`orders`).
+  - Grupo inicial do bottom nav = **Pedidos → PDV/Caixa**.
+  - Esconder o card "Pedidos do dia / Delivery" da `DashboardOverviewSection` e trocar por card "Vendas do caixa hoje" (só leitura de `pdv_sales`).
 
-Referência de mercado (PDV SaaS para pequeno comércio/food): Colibri ~R$ 90, Ciss ~R$ 120, Bling PDV ~R$ 40, Stone/Ton PDV ~R$ 30–70, iFood Shop ~R$ 50.
-
-Três cenários possíveis:
-
-| Plano | Preço | Racional |
+### 2. Textos e rótulos condicionais
+Substituir strings quando `isPdvOnly === true`:
+| Onde | Texto atual (delivery) | Texto PDV |
 |---|---|---|
-| **Agressivo (entrada)** | R$ 49/mês | Mesmo preço do add-on. Simples de comunicar ("PDV é sempre R$ 49"), mas não captura valor extra de quem não usa delivery. |
-| **Recomendado** | R$ 69/mês | +R$ 20 sobre o add-on. Justifica suporte dedicado, relatórios e o fato de ser produto "cabeça" (não add-on). Ainda abaixo dos concorrentes diretos. |
-| **Premium** | R$ 89/mês | Alinhado com Colibri. Só faz sentido se incluir algo a mais (multi-caixa, sangria avançada, integração fiscal). |
+| AppHeader / título painel | "Painel do Lojista" | "Painel PDV" |
+| Aba "Pedidos" | "Pedidos" | "Vendas" |
+| GlanceCard "Pedidos hoje" | idem | "Vendas hoje" |
+| SettingsTab seção entrega | ocultar bloco inteiro | — |
+| SubscriptionTab / PlanFeeBreakdown | "R$ X por pedido entregue" | "Mensalidade PDV R$ 69, sem taxa por venda" |
+| RepasseSection | ocultar (já feito via `hideOnPdvOnly`) | — |
+| AvisosSection | filtrar avisos com `category='delivery'` | — |
+| Onboarding tips / tutoriais | esconder cards de "Configurar entrega/raio/motoboy" | mostrar só trilha PDV |
 
-**Minha recomendação: R$ 69/mês**, com desconto de R$ 59 no primeiro mês ou anual (R$ 690 = 2 meses grátis). Deixa espaço para upsell futuro ("+ delivery por R$ 30" — vira Essencial R$ 99, coerente).
+### 3. Sub-tabs a esconder (revisar `constants.ts`)
+Já marcadas com `hideOnPdvOnly`: `orders`, `refunds`, `promotions`, `clients`, `loyalty`, `coupons`, `hours`, `drivers`, `repasse`, `reports`. Confirmar e adicionar as faltantes:
+- `avisos` → manter, mas filtrar conteúdo.
+- Grupo **Clientes** inteiro: se todas as sub-tabs sumirem, esconder o grupo no bottom nav e no sheet "Mais".
+- Grupo **Operação** idem (fica vazio sem `hours`/`drivers`).
 
-Trial: 7 dias grátis, igual aos outros planos.
+### 4. Configurações (`SettingsTab`)
+Ocultar blocos quando `isPdvOnly`:
+- Raio de entrega, taxa de entrega, tempo de preparo delivery.
+- Integrações WhatsApp de pedido online → manter só "notificações internas".
+- Aceitar pedidos online / pausar loja no app → esconder (loja nem aparece no marketplace).
+- Manter: dados fiscais, impressora, gaveta, atalhos PDV, usuários operadores.
 
-## Escopo funcional
+### 5. Cardápio (`MenuTab` / `MenuBuilder`)
+- Esconder switches "Disponível no delivery", "Foto obrigatória para app", "Descrição p/ vitrine".
+- Rótulo do preço: "Preço no PDV" em vez de "Preço no cardápio".
+- Esconder aba **Promoções** (já hideOnPdvOnly) e badge "Aparece no app".
 
-Loja `pdv_only` tem:
-- ✅ PDV completo (vendas, sangria, fechamento, relatórios)
-- ✅ Cadastro de produtos (usado no PDV)
-- ✅ Financeiro / caixa
-- ✅ WhatsApp (grátis, igual aos outros)
-- ❌ Vitrine pública / link da loja
-- ❌ Cardápio online / pedidos delivery
-- ❌ Entregadores, taxa de entrega, área de atendimento
-- ❌ Comissão por pedido (não existe pedido online)
+### 6. Meu Plano (`SubscriptionTab` + `StoreAddonsPanel`)
+- Mostrar plano como "PDV Standalone — R$ 69/mês".
+- Esconder linhas "Taxa por pedido entregue", "Repasse semanal", "Split Asaas por venda online".
+- StoreAddonsPanel: manter PDV (marcado como incluso no plano, sem botão ativar/cancelar).
 
-## Mudanças técnicas
+### 7. Header/menu do cliente
+- `PartnerClientView`: se o `profile.role === 'lojista'` e a loja dele é `pdv_only`, esconder o próprio link "Voltar como cliente" e não sugerir /admin com ícone "Delivery". Trocar ícone/label para "Painel PDV".
 
-### 1. Banco (externo)
-- Adicionar `'pdv_only'` ao enum `plan_type` (ou usar string livre se já for text).
-- `stores.is_visible` default `false` quando `plan_type='pdv_only'`.
-- Preço no `store_plans` ou hardcoded no `plansInfo.ts` (R$ 69).
-- Ao criar loja `pdv_only`, inserir automaticamente `store_addons` com `addon_key='pdv'` ativo e `price_override=0` (PDV já embutido no preço do plano, não cobrar duas vezes).
+## Implementação técnica
+- Criar util `isPdvOnlyStore(plan)` em `src/lib/plansInfo.ts` (já existe algo similar; consolidar).
+- Propagar `isPdvOnly` via `AdminContext` para não recomputar em cada tab.
+- Cada tab lê `useAdminContext().isPdvOnly` e faz early-return / conditional render.
+- Zero mudança em backend, migrations ou lógica de billing.
 
-### 2. `src/lib/plansInfo.ts`
-- Adicionar entrada `pdv_only`: label "Somente PDV", preço R$ 69, features (PDV completo, WhatsApp grátis, sem delivery/vitrine).
-- `isPagante('pdv_only') = true`.
+## Fora de escopo
+- Não mexer em edge functions, RLS, cobrança.
+- Não remover código de delivery — apenas ocultar por flag (loja pode migrar de plano depois).
+- Não redesenhar componentes; só condicionar textos/blocos.
 
-### 3. `CadastroLojista.tsx`
-- Novo card no step de seleção de plano: **"Somente PDV — R$ 69/mês"** com selo "Sem delivery".
-- Quando selecionado:
-  - Pular steps de: horário de funcionamento, área de entrega, taxa de entrega, upload de cardápio.
-  - Manter: dados da loja, endereço (só p/ nota/cadastro), dados do responsável, pagamento.
-- Copy explicando: "Sua loja não aparecerá na vitrine ItaSuper. Você usará apenas o PDV para vendas presenciais."
-
-### 4. Guards de rota
-- `useStorePdvAccess`: já libera. Adicionar `plan_type==='pdv_only'` como acesso total ao PDV.
-- Criar guard `useStoreDeliveryEnabled()` que retorna `false` para `pdv_only` e esconde no menu do lojista: "Pedidos online", "Entregadores", "Cardápio público", "Horários", "Taxa de entrega".
-- Rota pública `/{slug}` deve retornar 404 (ou redirect) se `plan_type='pdv_only'`.
-
-### 5. Super Admin
-- Filtro no `StoreList` por tipo de plano (incluir "Somente PDV").
-- `AdminPlanManager`: mostrar plano `pdv_only` e permitir migração (upgrade para Essencial adiciona delivery).
-
-### 6. Cobrança (`monthly-billing`)
-- Loja `pdv_only`: cobrar R$ 69 fixo. Não somar add-on PDV (já embutido). Não aplicar comissão/repasse.
-
-### 7. Landing (`StoreDirectory.tsx`)
-- Novo bloco/plano na seção de planos: "Somente PDV — R$ 69/mês". Copy: "Já tem sua clientela na loja física? Use só o caixa."
-- FAQ: "Posso assinar só o PDV? Sim, R$ 69/mês, sem delivery, sem vitrine."
-
-### 8. Termos
-- Cláusula: plano `pdv_only` não gera presença na vitrine e não inclui serviço de intermediação de pedidos.
-
-## Ondas de entrega
-
-1. **Onda 1** — Banco + `plansInfo` + guard de acesso PDV + cobrança.
-2. **Onda 2** — Fluxo de cadastro (`CadastroLojista`) com skip de steps.
-3. **Onda 3** — Guards no painel do lojista (esconder menus de delivery) + rota pública 404.
-4. **Onda 4** — Super Admin (filtro, gestão) + landing + termos + FAQ.
-
-Cada onda incrementa versão e mantém `versionCode` sincronizado.
-
-## Perguntas antes de codar
-
-1. **Preço final**: fico com R$ 69 sugerido, ou prefere R$ 49 / R$ 89?
-2. **Trial**: 7 dias grátis igual aos outros, ok?
-3. **Upgrade futuro**: lojista `pdv_only` que quiser ativar delivery vira `essencial` (R$ 99) mantendo o PDV embutido? (recomendo sim)
+## Entregáveis
+1. Patch em ~10 arquivos de UI (`AdminDashboardV2`, `AdminContext`, `constants.ts`, `SettingsTab`, `MenuTab`/`MenuBuilder`, `SubscriptionTab`, `PlanFeeBreakdown`, `DashboardOverviewSection`, `GlanceCard`, `PartnerClientView`).
+2. Bump de versão (patch) conforme regra do projeto.
+3. Teste manual: abrir loja PDV → painel abre no Caixa, sem qualquer menção a entrega/motoboy/vitrine.
