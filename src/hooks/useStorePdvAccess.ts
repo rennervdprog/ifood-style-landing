@@ -5,7 +5,7 @@ export interface PdvAccess {
   /** true = pode usar PDV (legacy, add-on ativo ou VIP) */
   enabled: boolean;
   /** origem da liberação */
-  source: "legacy" | "addon" | "vip" | "none";
+  source: "legacy" | "addon" | "vip" | "pdv_only" | "none";
   /** R$ cobrado por venda no PDV (legacy = 1, addon = 0) */
   pricePerOrder: number;
   /** Preço mensal cobrado (0 quando legacy/vip) */
@@ -31,7 +31,7 @@ export function useStorePdvAccess(storeId: string | undefined | null): PdvAccess
       const [storeRes, addonRes, catalogRes] = await Promise.all([
         supabase
           .from("stores" as any)
-          .select("legacy_pdv")
+          .select("legacy_pdv, plan_type")
           .eq("id", storeId!)
           .maybeSingle(),
         supabase
@@ -48,6 +48,7 @@ export function useStorePdvAccess(storeId: string | undefined | null): PdvAccess
       ]);
       return {
         legacy: !!(storeRes.data as any)?.legacy_pdv,
+        planType: (storeRes.data as any)?.plan_type as string | undefined,
         addon: addonRes.data as any,
         catalogPrice: Number((catalogRes.data as any)?.monthly_price ?? 49),
       };
@@ -57,6 +58,19 @@ export function useStorePdvAccess(storeId: string | undefined | null): PdvAccess
   const legacy = !!data?.legacy;
   const addon = data?.addon as any;
   const catalogPrice = data?.catalogPrice ?? 49;
+  const isPdvOnly = data?.planType === "pdv_only";
+
+  // Plano "Somente PDV": PDV já embutido no preço do plano (R$ 69/mês)
+  if (isPdvOnly) {
+    return {
+      enabled: true,
+      source: "pdv_only",
+      pricePerOrder: 0,
+      monthlyPrice: 0, // já cobrado como plano, não como add-on
+      cancelsAt: null,
+      isLoading,
+    };
+  }
 
   if (legacy) {
     return {
