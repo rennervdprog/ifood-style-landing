@@ -1,89 +1,53 @@
+# Alinhamento de textos do PDV na landing (StoreDirectory)
+
+Depois de virar o PDV em módulo pago opcional (R$ 49/mês para novas lojas, R$ 1/venda para lojas legacy), a landing pública ainda tem textos inconsistentes entre os 3 planos. Só o Essencial menciona o PDV; Comissão e Autonomia ficam mudos, o que confunde o lojista na comparação.
+
 ## Objetivo
-Transformar o **PDV** em módulo pago separado (R$ 49,00/mês) para lojas **novas**, sem quebrar nada nas lojas atuais. **WhatsApp Automático continua gratuito** pra todo mundo (fora do escopo de módulo pago).
+Deixar a linha do PDV **idêntica e explícita nos 3 planos** — mesma frase, mesmo preço, mesma posição no card — para que o lojista entenda que PDV é um módulo à parte, independente do plano escolhido.
 
----
+## Mudanças de texto (só `src/pages/StoreDirectory.tsx`)
 
-## Regras de negócio
+### 1. Bloco `features` (linha 36) — seção "O que vem no app"
+De:
+`"PDV de balcão" — "Módulo opcional (R$ 49/mês) — caixa, troco e fechamento do dia."`
 
-### Lojas novas (criadas após a data de corte da migration)
-- PDV vem **desativado** por padrão.
-- Botão/aba do PDV vira **upsell** ("Ative o PDV — R$ 49/mês").
-- Contratação libera imediatamente; cobrança proporcional na primeira fatura.
+Para:
+`"PDV de balcão (opcional)" — "Módulo à parte por R$ 49/mês. Caixa, troco e fechamento do dia."`
 
-### Lojas antigas (grandfathered — todas existentes na data da migration)
-- Recebem flag `legacy_pdv = true` na migration.
-- Mantêm o comportamento atual: PDV liberado com regra de **R$ 1/pedido**.
-- Não veem tela de contratação nem upsell.
+Motivo: reforçar "à parte" para não parecer incluso.
 
-### Super Admin (VIP)
-- Pode forçar `enabled = true` com `price_override = 0` (PDV grátis pra loja específica).
-- Pode ativar/desativar/alterar preço por loja a qualquer momento.
+### 2. Bloco `plans` (linhas 48–98) — adicionar linha de PDV nos 3 cards, no mesmo formato
 
-### Plano Autonomia
-- Segue regra padrão: se for loja nova, PDV é add-on pago.
+- **Comissão** (`features`): adicionar como último item
+  `"PDV: módulo opcional (+ R$ 49/mês)"`
 
----
+- **Essencial** (`features`, linha 77): trocar
+  `"PDV: módulo opcional (R$ 49/mês)"` → `"PDV: módulo opcional (+ R$ 49/mês)"`
+  (padroniza com o "+" dos outros)
 
-## Alterações técnicas
+- **Autonomia** (`features`): adicionar como último item, antes do "7 dias grátis"
+  `"PDV: módulo opcional (+ R$ 49/mês)"`
 
-### 1. Banco (migration no Supabase externo `qkjhguziuchqsbxzruea`)
-- Nova tabela `plan_addons` (catálogo global): `id, code ('pdv'), name, monthly_price, is_active`.
-  - Seed: `('pdv', 'PDV', 49.00, true)`.
-- Nova tabela `store_addons` (contratações por loja): `store_id, addon_code, enabled, price_override, activated_at, cancels_at, created_by`.
-- Coluna nova em `stores`: `legacy_pdv boolean default false`.
-- Migration inicial: `UPDATE stores SET legacy_pdv = true WHERE created_at < now()`.
-- Nova entrada em `admin_settings`: `addons_module_enabled = false` (feature flag).
-- GRANTs + RLS: leitura pelo dono da loja; escrita só via edge function com service role.
+### 3. FAQ (linhas 106–119) — nova pergunta ao final
 
-### 2. Helper central
-- `src/lib/storeAddons.ts` (novo): `hasPdvAccess(storeId)` retorna `{ enabled, source: 'legacy' | 'addon' | 'vip' | 'none', pricePerOrder }`.
-- Hook `useStoreAddons(storeId)` com React Query.
+```
+{
+  q: "O PDV está incluso em algum plano?",
+  a: "Não. O PDV é um módulo opcional, contratado à parte por R$ 49/mês, e funciona com qualquer plano (Comissão, Essencial ou Autonomia). Lojas antigas que já usavam o PDV mantêm a regra anterior de R$ 1 por venda presencial.",
+}
+```
 
-### 3. Edge functions
-- `manage-store-addon` (nova, service role): ativa/cancela add-on, calcula proporcional, grava em `store_addons`.
-- `monthly-billing`: soma add-ons ativos na fatura mensal do Asaas (linha separada "PDV — R$ 49,00").
-- PDV atual (`pdv-*`): adicionar guard `hasPdvAccess()` — se `none`, retorna 403.
+### 4. Meta description (linha 283)
+De: `"Cardápio digital, PIX automático, motoboy e PDV num app só..."`
+Para: `"Cardápio digital, PIX automático e motoboy num app só. PDV de balcão como módulo opcional. Sem comissão por pedido..."`
 
-### 4. Frontend
-- `src/pages/PdvPage.tsx` + entrada no menu admin: se `hasPdvAccess().enabled === false`, mostrar tela de upsell com CTA "Ativar PDV — R$ 49/mês".
-- Aba **Meu Plano** (`StoreSubscription.tsx`): nova seção "Módulos" listando add-ons contratados, preço, botão cancelar. Lojas legacy veem badge "PDV incluso (condição antiga)".
-- **Super Admin → AdminPlanManager**: nova aba/seção "Add-ons" com toggle enabled + campo `price_override` + badge "Legacy" nas lojas antigas.
-- **Landing `StoreDirectory.tsx`**: adicionar bloco/menção do PDV como módulo opcional R$ 49/mês na seção de planos (junto ao CTA "Seja um lojista"). Atualizar copy pra deixar claro que PDV é add-on, não incluso no plano base.
-- **`PlansComparisonTable.tsx`**: adicionar linha "PDV (módulo opcional)" mostrando "+ R$ 49/mês" em todas as colunas, com nota de rodapé explicando que lojas antigas mantêm R$ 1/pedido.
-- **`PlanosPage.tsx`**: card separado "Módulos adicionais" abaixo dos planos, destacando PDV R$ 49/mês.
+Motivo: PDV não é "incluso no app" — é add-on.
 
-### 5. Termos e privacidade
-- Adicionar cláusula curta em `TermosDeUso.tsx` sobre módulos opcionais e cobrança proporcional.
-
-### 6. Feature flag
-- Toda a UI de contratação/upsell lê `addons_module_enabled`. Enquanto `false`, nada aparece pro lojista nem na landing (permite deploy silencioso e ativação depois).
-
-### 7. Versão
-- Incrementar patch em `src/lib/appVersion.ts` e `android/app/build.gradle` (versionName + versionCode) ao final.
-
----
-
-## Fluxos-chave
-
-- **Ativação:** lojista clica "Ativar PDV" → `manage-store-addon` grava `enabled=true`, `activated_at=now()`, calcula proporcional (R$ 49 × dias_restantes/dias_do_mês) → adiciona à próxima fatura Asaas → libera PDV imediatamente.
-- **Cancelamento:** lojista clica "Cancelar" → `cancels_at = fim do ciclo atual` → PDV segue ativo até o fim do mês pago → não renova.
-- **VIP:** super admin define `price_override = 0` → cobrança zera, PDV continua ativo.
-- **Legacy:** `legacy_pdv = true` → `hasPdvAccess` retorna `{ enabled: true, source: 'legacy', pricePerOrder: 1 }` → PDV funciona igual hoje, sem cobrança mensal.
-
----
+### 5. Hero (linha 394)
+De: `"Cardápio, PIX, motoboy e PDV num app só. Sem mensalidade pra começar."`
+Para: `"Cardápio, PIX e motoboy num app só — com PDV de balcão opcional. Sem mensalidade pra começar."`
 
 ## Fora de escopo
-- WhatsApp Automático (continua gratuito — nenhuma alteração).
-- Plano base (Essencial/Crescimento/Comissão/Apoiador/Autonomia) — inalterado.
-- Comissão de pedidos delivery.
-- Regra R$ 1/pedido das lojas legacy.
-- Migração do Evolution API.
-
----
-
-## Verificação
-- Loja nova de teste: PDV bloqueado até contratar; após ativar, libera e aparece na fatura.
-- Loja legacy: PDV funciona igual hoje, sem upsell, sem cobrança mensal extra.
-- VIP com `price_override = 0`: PDV ativo, fatura sem linha PDV.
-- Feature flag `false`: nada aparece pro lojista nem na landing (`StoreDirectory`, `PlanosPage`).
-- Landing `StoreDirectory` mostra o módulo PDV corretamente quando flag `true`.
+- Não mexer em `plansInfo.ts`, `PlansComparisonTable`, `PlanosPage` (já foram alinhados nas ondas anteriores).
+- Sem mudança de lógica, componente ou estilo — só copy.
+- Versão sobe pro patch seguinte (v1.12.3, build 857) conforme regra do projeto.

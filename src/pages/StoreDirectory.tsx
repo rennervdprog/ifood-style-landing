@@ -33,7 +33,7 @@ const features = [
   { icon: CreditCard, title: "PIX automático", desc: "Cliente paga, dinheiro cai na hora." },
   { icon: Truck, title: "Motoboy integrado", desc: "Mapa em tempo real e código de confirmação." },
   { icon: BarChart3, title: "Relatório do dia", desc: "Vendas, lucro e mais pedidos numa tela." },
-  { icon: Store, title: "PDV de balcão", desc: "Módulo opcional (R$ 49/mês) — caixa, troco e fechamento do dia." },
+  { icon: Store, title: "PDV de balcão (opcional)", desc: "Módulo à parte por R$ 49/mês. Caixa, troco e fechamento do dia." },
 ];
 
 const segments = [
@@ -60,6 +60,7 @@ const plans = [
       "PIX online integrado",
       "Gestão de pedidos e motoboys",
       "Relatórios e financeiro",
+      "PDV: módulo opcional (+ R$ 49/mês)",
     ],
   },
   {
@@ -74,7 +75,7 @@ const plans = [
     features: [
       "Tudo do plano Comissão",
       "Zero comissão por venda",
-      "PDV: módulo opcional (R$ 49/mês)",
+      "PDV: módulo opcional (+ R$ 49/mês)",
       "Suporte prioritário",
     ],
   },
@@ -92,6 +93,7 @@ const plans = [
       "SEM taxa de R$2 da plataforma na entrega",
       "Cliente paga exatamente a taxa que você define",
       "PIX online: R$1,99/pedido (só se usar)",
+      "PDV: módulo opcional (+ R$ 49/mês)",
       "7 dias grátis para testar",
     ],
   },
@@ -115,6 +117,10 @@ const faqs = [
   {
     q: "Quando vale a pena o plano Autonomia (R$229,90)?",
     a: 'Se você sente que os R$2 extras estão afastando cliente, ou se prefere mostrar um preço de entrega "redondo" sem acréscimo, o Autonomia compensa a partir de ~115 pedidos/mês (R$2 × 115 = R$230). Tem 7 dias grátis pra testar.',
+  },
+  {
+    q: "O PDV está incluso em algum plano?",
+    a: "Não. O PDV é um módulo opcional, contratado à parte por R$ 49/mês, e funciona com qualquer plano (Comissão, Essencial ou Autonomia). Lojas antigas que já usavam o PDV mantêm a regra anterior de R$ 1 por venda presencial.",
   },
 ];
 
@@ -280,7 +286,7 @@ const StoreDirectory = () => {
       if (!el) { el = document.createElement("meta"); el.setAttribute(attr, name); document.head.appendChild(el); }
       el.setAttribute("content", content);
     };
-    const desc = "Cardápio digital, PIX automático, motoboy e PDV num app só. Sem comissão por pedido. Crie sua loja grátis em 10 minutos.";
+    const desc = "Cardápio digital, PIX automático e motoboy num app só. PDV de balcão como módulo opcional. Sem comissão por pedido. Crie sua loja grátis em 10 minutos.";
     setMeta("description", desc);
     setMeta("og:title", "ItaSuper — Delivery profissional em 10 minutos", "property");
     setMeta("og:description", desc, "property");
@@ -391,7 +397,7 @@ const StoreDirectory = () => {
           </h1>
 
           <p className="mx-auto max-w-xl text-lg md:text-xl text-muted-foreground leading-relaxed mb-10">
-            Cardápio, PIX, motoboy e PDV num app só. Sem mensalidade pra começar.
+            Cardápio, PIX e motoboy num app só — com PDV de balcão opcional. Sem mensalidade pra começar.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
