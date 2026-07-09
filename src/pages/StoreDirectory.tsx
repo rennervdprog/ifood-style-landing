@@ -122,6 +122,10 @@ const faqs = [
     q: "O PDV está incluso em algum plano?",
     a: "Não. O PDV é um módulo opcional, contratado à parte por R$ 49/mês, e funciona com qualquer plano (Comissão, Essencial ou Autonomia). Lojas antigas que já usavam o PDV mantêm a regra anterior de R$ 1 por venda presencial.",
   },
+  {
+    q: "Tenho só loja física, sem delivery. Dá pra usar só o PDV?",
+    a: "Dá sim. Existe o plano Somente PDV por R$ 69/mês: você usa o caixa completo (vendas, sangria, fechamento do dia) sem vitrine pública, sem cardápio online e sem comissão por pedido. Depois, se quiser abrir delivery, migra pra Comissão/Essencial/Autonomia num clique.",
+  },
 ];
 
 /* ───────────────────────── HELPERS ───────────────────────── */

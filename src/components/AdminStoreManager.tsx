@@ -14,19 +14,21 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-type StoreFilter = "all" | "pending" | "active" | "blocked";
-type PlanType = "commission_only" | "fixed" | "hybrid";
+type StoreFilter = "all" | "pending" | "active" | "blocked" | "pdv_only";
+type PlanType = "commission_only" | "fixed" | "hybrid" | "pdv_only";
 
 const planLabels: Record<PlanType, string> = {
   commission_only: "Só Comissão",
   fixed: "Fixo Mensal",
   hybrid: "Híbrido",
+  pdv_only: "Somente PDV",
 };
 
 const planColors: Record<PlanType, string> = {
   commission_only: "bg-amber-500/20 text-amber-600",
   fixed: "bg-blue-500/20 text-blue-600",
   hybrid: "bg-purple-500/20 text-purple-600",
+  pdv_only: "bg-emerald-500/20 text-emerald-600",
 };
 
 const AdminStoreManager = () => {
@@ -172,6 +174,9 @@ const AdminStoreManager = () => {
       case "hybrid":
         setPlanForm({ plan_type: type, monthly_fee: 100, commission_rate: 2.5 });
         break;
+      case "pdv_only":
+        setPlanForm({ plan_type: type, monthly_fee: 0, commission_rate: 0 });
+        break;
     }
   };
 
@@ -179,6 +184,10 @@ const AdminStoreManager = () => {
     if (filter === "pending") return s.status === "analise";
     if (filter === "active") return s.status === "ativo";
     if (filter === "blocked") return s.status === "bloqueado";
+    if (filter === "pdv_only") {
+      const p = getStorePlan(s.id);
+      return p?.plan_type === "pdv_only";
+    }
     return true;
   });
 
@@ -232,6 +241,7 @@ const AdminStoreManager = () => {
     pending: stores?.filter((s) => s.status === "analise").length || 0,
     active: stores?.filter((s) => s.status === "ativo").length || 0,
     blocked: stores?.filter((s) => s.status === "bloqueado").length || 0,
+    pdv_only: (storePlans as any[])?.filter((p: any) => p.plan_type === "pdv_only").length || 0,
   };
 
   // Subaccount system removed — split is now automatic via webhook transfers
@@ -241,6 +251,7 @@ const AdminStoreManager = () => {
     { key: "pending", label: `Pendentes (${counts.pending})` },
     { key: "active", label: `Aprovadas (${counts.active})` },
     { key: "blocked", label: `Bloqueadas (${counts.blocked})` },
+    { key: "pdv_only", label: `Somente PDV (${counts.pdv_only})` },
   ];
 
   return (
@@ -360,8 +371,8 @@ const AdminStoreManager = () => {
                     <p className="text-xs font-bold text-foreground">Plano de {store.name}</p>
 
                     {/* Plan type selector */}
-                    <div className="grid grid-cols-3 gap-2">
-                      {(["commission_only", "fixed", "hybrid"] as PlanType[]).map((type) => (
+                    <div className="grid grid-cols-2 gap-2">
+                      {(["commission_only", "fixed", "hybrid", "pdv_only"] as PlanType[]).map((type) => (
                         <button
                           key={type}
                           onClick={() => handlePlanTypeChange(type)}
@@ -375,6 +386,22 @@ const AdminStoreManager = () => {
                         </button>
                       ))}
                     </div>
+
+                    {planForm.plan_type === "pdv_only" && (
+                      <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-[11px] text-emerald-700 dark:text-emerald-400 space-y-2">
+                        <p>
+                          Loja <strong>Somente PDV</strong>: sem vitrine pública, sem delivery, sem comissão.
+                          Cobrança do módulo PDV (R$ 49/mês) é feita por fora via add-on.
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => handlePlanTypeChange("commission_only")}
+                          className="w-full py-1.5 rounded-md bg-emerald-600 text-white text-[11px] font-bold"
+                        >
+                          Migrar para Só Comissão (habilitar delivery)
+                        </button>
+                      </div>
+                    )}
 
                     {/* Monthly fee */}
                     {(planForm.plan_type === "fixed" || planForm.plan_type === "hybrid") && (
