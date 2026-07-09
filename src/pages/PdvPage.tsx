@@ -652,6 +652,7 @@ const PdvPage = () => {
         </div>
         <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
       </button>
+      {pdvAccess.source !== "pdv_only" && (
       <button
         type="button"
         onClick={() => setShowManualDelivery(true)}
@@ -666,6 +667,7 @@ const PdvPage = () => {
         </div>
         <ChevronRight className="h-4 w-4 text-success shrink-0" />
       </button>
+      )}
     </div>
   );
 
