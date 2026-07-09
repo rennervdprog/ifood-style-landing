@@ -877,6 +877,11 @@ const StorePage = () => {
     );
   }
 
+  // Plano "Somente PDV" não tem vitrine pública — trata como rota inexistente.
+  if (store && platformInfo?.plan_type === "pdv_only") {
+    return <NotFound />;
+  }
+
   // Matriz é apenas um guia/hub para as unidades — não vende, não tem cardápio.
   if (store && (store as any).is_matriz && (store as any).network_id) {
     return (
