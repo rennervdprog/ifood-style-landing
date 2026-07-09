@@ -32,6 +32,7 @@ Deno.serve(async (req) => {
     const pdvTemplate = {
       plan_type: "pdv_only",
       plan_key: "pdv_only",
+      label: "Somente PDV",
       monthly_fee: 69,
       commission_rate: 0,
       is_active: true,
