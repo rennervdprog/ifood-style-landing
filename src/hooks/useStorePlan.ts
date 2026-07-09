@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { DEFAULT_DELIVERY_FEE_CONFIG, type DeliveryFeeConfig } from "@/lib/deliveryFee";
 
- export type StorePlanType = "fixed" | "hybrid" | "commission_only" | "supporter" | "autonomy";
+ export type StorePlanType = "fixed" | "hybrid" | "commission_only" | "supporter" | "autonomy" | "pdv_only";
 
 export interface StorePlanFeatures {
   planType: StorePlanType;
@@ -110,6 +110,17 @@ const FIXED_PLAN_FEATURES = {
 PLAN_FEATURES.supporter = FIXED_PLAN_FEATURES;
 // Autonomia = mesmos benefícios do Essencial (sem comissão, todas as ferramentas)
 PLAN_FEATURES.autonomy = FIXED_PLAN_FEATURES;
+// PDV Only = plano de balcão sem delivery/vitrine
+PLAN_FEATURES.pdv_only = {
+  allowPix: false,
+  allowPlatformDelivery: false,
+  allowLoyalty: false,
+  allowBanners: false,
+  allowScheduling: false,
+  allowFullReports: true,
+  hasCommission: false,
+  maxCoupons: 0,
+};
 
 export function useStorePlan(storeId: string | undefined | null): StorePlanFeatures {
   const { data, isLoading } = useQuery({

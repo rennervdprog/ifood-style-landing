@@ -253,7 +253,11 @@ Deno.serve(async (req) => {
             ? "Plano Essencial"
             : plan.plan_type === "hybrid"
               ? "Plano Crescimento"
-              : "Plano Comissão";
+              : plan.plan_type === "autonomy"
+                ? "Plano Autonomia"
+                : plan.plan_type === "pdv_only"
+                  ? "Plano Somente PDV"
+                  : "Plano Comissão";
 
         // Incluir comissão PDV acumulada no período
         const pdvPending = Number((plan as any).pdv_commission_pending || 0);

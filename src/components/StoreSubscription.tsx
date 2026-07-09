@@ -33,6 +33,7 @@ interface Props {
     commission_only: "Comissão",
     supporter: "Apoiador",
     autonomy: "Autonomia",
+    pdv_only: "Somente PDV",
  };
 
  const planSubtitles: Record<StorePlanType, string> = {
@@ -41,6 +42,7 @@ interface Props {
    commission_only: "Sem mensalidade, paga só quando vende",
    supporter: "Plano exclusivo de lançamento",
    autonomy: "Sem comissão e sem taxa de R$2 da plataforma",
+   pdv_only: "Só balcão — sem delivery, sem vitrine",
  };
 
  const planIcons: Record<StorePlanType, React.ElementType> = {
@@ -49,6 +51,7 @@ interface Props {
    commission_only: Sparkles,
    supporter: Crown,
    autonomy: Crown,
+   pdv_only: CreditCard,
  };
 
  const planAccent: Record<StorePlanType, string> = {
@@ -57,6 +60,7 @@ interface Props {
    commission_only: "text-primary",
    supporter: "text-primary",
    autonomy: "text-primary",
+   pdv_only: "text-primary",
  };
 
  const planAccentBg: Record<StorePlanType, string> = {
@@ -65,6 +69,7 @@ interface Props {
    commission_only: "bg-primary/10",
    supporter: "bg-primary/10",
    autonomy: "bg-primary/10",
+   pdv_only: "bg-primary/10",
  };
 
 /** Opções de plano para troca — vem direto de plansInfo (fonte única). */

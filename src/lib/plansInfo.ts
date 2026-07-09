@@ -1,4 +1,4 @@
-import { Rocket, TrendingUp, Crown, Sparkles, type LucideIcon } from "lucide-react";
+import { Rocket, TrendingUp, Crown, Sparkles, CreditCard, type LucideIcon } from "lucide-react";
 import type { StorePlanType } from "@/hooks/useStorePlan";
 
 /**
@@ -162,12 +162,37 @@ const autonomy: PlanInfo = {
 };
 autonomy.example = exampleText(autonomy);
 
+const pdv_only: PlanInfo = {
+  id: "pdv_only",
+  name: "Somente PDV",
+  tagline: "R$ 69/mês — só o caixa, sem delivery",
+  forWho: "Pra quem já tem clientela na loja física e quer só a frente de caixa",
+  monthlyFee: 69,
+  commissionRate: 0,
+  pixFee: 0,
+  deliveryFee: 0,
+  icon: CreditCard,
+  accent: "text-primary",
+  accentBg: "bg-primary/10",
+  badge: "🏪 Balcão",
+  highlight: false,
+  features: [
+    "PDV completo (vendas, sangria, fechamento)",
+    "Cadastro de produtos ilimitado",
+    "Relatórios financeiros do caixa",
+    "WhatsApp integrado (grátis)",
+    "Sem vitrine pública, sem delivery",
+  ],
+  example: (_: number) => "Sem pedidos online — você usa só o caixa presencial.",
+};
+
 export const PLANS: Record<StorePlanType, PlanInfo> = {
   commission_only,
   hybrid,
   fixed,
   supporter,
   autonomy,
+  pdv_only,
 };
 
 /** Ordem padrão para exibição (do mais barato pro mais completo). */
