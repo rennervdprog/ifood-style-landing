@@ -69,8 +69,7 @@ Deno.serve(async (req) => {
         COALESCE(_tpl_rate, 0),
         true,
         _effective_plan = 'pdv_only'
-      )
-      ON CONFLICT DO NOTHING;
+      );
 
       INSERT INTO public.menu_sections (store_id, name, sort_order)
       VALUES (_store_id, 'Destaques', 0);
