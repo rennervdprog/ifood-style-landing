@@ -415,6 +415,11 @@ const CadastroLojista = () => {
             } catch (e) {
               console.warn("[CadastroLojista] pdv_only setup falhou:", e);
             }
+            // Telemetria: conversão finalizada do plano Somente PDV
+            try {
+              const m = await import("@/lib/pageView");
+              await m.trackPageView("cadastro_pdv_only_created", { storeId: storeRow.id });
+            } catch { /* ignore */ }
           }
 
           // Aplica promo de captação (ex: LONDRINA10 — Essencial R$ 0/mês travado)
