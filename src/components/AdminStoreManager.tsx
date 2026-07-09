@@ -174,6 +174,9 @@ const AdminStoreManager = () => {
       case "hybrid":
         setPlanForm({ plan_type: type, monthly_fee: 100, commission_rate: 2.5 });
         break;
+      case "pdv_only":
+        setPlanForm({ plan_type: type, monthly_fee: 0, commission_rate: 0 });
+        break;
     }
   };
 
