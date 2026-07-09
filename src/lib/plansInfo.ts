@@ -59,6 +59,7 @@ const commission_only: PlanInfo = {
     "PIX automático (sem taxa pra você)",
     "Notificação de pedidos no celular",
     "Todas as ferramentas básicas",
+    "PDV: módulo opcional (+ R$ 49/mês)",
   ],
   example: (_: number) => "",
 };
@@ -105,6 +106,7 @@ const fixed: PlanInfo = {
     "Sem comissão por pedido",
     "Relatórios 100% detalhados",
     "Motoboy integrado + Suporte VIP",
+    "PDV: módulo opcional (+ R$ 49/mês)",
   ],
   example: (_: number) => "",
 };
@@ -153,7 +155,7 @@ const autonomy: PlanInfo = {
     "Sem taxa de R$2 da plataforma na entrega",
     "Você fica com 100% da taxa que cobra",
     "PIX online: R$1,99 por pedido (só se usar)",
-    "PDV: R$1,00 por venda presencial",
+    "PDV: módulo opcional (+ R$ 49/mês)",
     "Todas as ferramentas + Suporte VIP",
   ],
   example: (_: number) => "",
