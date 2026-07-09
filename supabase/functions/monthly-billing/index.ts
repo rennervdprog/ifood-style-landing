@@ -127,11 +127,27 @@ Deno.serve(async (req) => {
     // Nota: commission_only tem monthly_fee=0 mas pode ter comissão pendente
     const now = new Date();
 
-    // Buscar planos com mensalidade OU comissão PDV pendente
+    // Pré-carrega add-ons ativos p/ incluir também lojas com plano grátis
+    // porém com add-on pago contratado.
+    const { data: preAddons } = await supabase
+      .from("store_addons")
+      .select("store_id, enabled, cancels_at, price_override, addon_code")
+      .eq("enabled", true);
+    const activeAddonStoreIds = Array.from(new Set(
+      (preAddons || [])
+        .filter((a: any) => !a.cancels_at || new Date(a.cancels_at) > now)
+        .map((a: any) => a.store_id),
+    ));
+
+    // Buscar planos com mensalidade, comissão PDV pendente ou add-on ativo.
+    const orClauses = ["monthly_fee.gt.0", "pdv_commission_pending.gt.0"];
+    if (activeAddonStoreIds.length) {
+      orClauses.push(`store_id.in.(${activeAddonStoreIds.join(",")})`);
+    }
     let query = supabase
       .from("store_plans")
       .select("*, stores!inner(id, name, owner_id, asaas_account_id, status)")
-      .or("monthly_fee.gt.0,pdv_commission_pending.gt.0")
+      .or(orClauses.join(","))
       .eq("is_active", true);
 
     if (manualStoreId) {
