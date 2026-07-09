@@ -398,6 +398,25 @@ const CadastroLojista = () => {
               : {}),
           } as any).eq("id", storeRow.id);
 
+          // Plano Somente PDV: esconde da vitrine + ativa add-on PDV embutido (grátis)
+          if (selectedPlan === "pdv_only") {
+            try {
+              await supabase.from("stores").update({
+                is_visible: false,
+                is_open: false,
+                plan_type: "pdv_only",
+              } as any).eq("id", storeRow.id);
+              await (supabase as any).from("store_addons").upsert({
+                store_id: storeRow.id,
+                addon_key: "pdv",
+                status: "active",
+                price_override: 0,
+              }, { onConflict: "store_id,addon_key" });
+            } catch (e) {
+              console.warn("[CadastroLojista] pdv_only setup falhou:", e);
+            }
+          }
+
           // Aplica promo de captação (ex: LONDRINA10 — Essencial R$ 0/mês travado)
           if (promoCode) {
             try {
