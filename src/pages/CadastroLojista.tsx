@@ -50,7 +50,7 @@ const PLATFORM_CITIES = ["itatinga"];
   street: z.string().trim().min(2, "Rua é obrigatória"),
   addressNumber: z.string().trim().min(1, "Número é obrigatório"),
   neighborhood: z.string().trim().min(2, "Bairro é obrigatório"),
-  selectedPlan: z.enum(["supporter", "fixed", "hybrid", "commission_only", "autonomy"], { errorMap: () => ({ message: "Selecione um plano" }) }),
+  selectedPlan: z.enum(["supporter", "fixed", "hybrid", "commission_only", "autonomy", "pdv_only"], { errorMap: () => ({ message: "Selecione um plano" }) }),
 }).refine((data) => data.email === data.confirmEmail, {
   message: "Os e-mails não coincidem",
   path: ["confirmEmail"],
