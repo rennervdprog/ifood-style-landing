@@ -59,11 +59,11 @@ NOTIFY pgrst, 'reload schema';
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   try {
-    const url = Deno.env.get("EXTERNAL_SUPABASE_URL")!;
-    const key = Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") ?? Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY")!;
-    const resp = await fetch(`${url}/rest/v1/rpc/exec_sql`, {
+    const ref = Deno.env.get("EXTERNAL_SUPABASE_PROJECT_REF")!;
+    const token = Deno.env.get("EXTERNAL_SUPABASE_ACCESS_TOKEN")!;
+    const resp = await fetch(`https://api.supabase.com/v1/projects/${ref}/database/query`, {
       method: "POST",
-      headers: { apikey: key, Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       body: JSON.stringify({ query: SQL }),
     });
     const text = await resp.text();
