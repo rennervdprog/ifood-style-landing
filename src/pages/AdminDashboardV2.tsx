@@ -1476,21 +1476,33 @@ const AdminDashboard = () => {
   const storeCats = [store?.category, ...((store as any)?.categories || [])].filter(Boolean) as string[];
   const isPizza = storeCats.includes("pizzas") || storeCats.includes("pasteis");
   const allowFullReports = storePlan.allowFullReports;
+  const isPdvOnly = storePlan.planType === "pdv_only";
 
   // Grupos visíveis (com pelo menos 1 sub-tab disponível)
   const visibleGroups: DashboardGroup[] = useMemo(
     () => {
-      const ctx = { isPizza, allowFullReports };
+      const ctx = { isPizza, allowFullReports, isPdvOnly };
       return dashboardGroups
         .map(g => ({ ...g, subTabs: g.subTabs.filter(s => filterSubTab(s, ctx)) }))
         .filter(g => g.subTabs.length > 0);
     },
-    [isPizza, allowFullReports],
+    [isPizza, allowFullReports, isPdvOnly],
   );
   const visibleGroupMap = useMemo(
     () => new Map(visibleGroups.map(g => [g.key, g])),
     [visibleGroups],
   );
+
+  // Se a aba atual ficou oculta (ex.: loja migrada pra pdv_only), redireciona pra
+  // primeira aba visível — evita tela em branco sem menu ativo.
+  useEffect(() => {
+    if (!visibleGroups.length) return;
+    const allVisibleKeys = visibleGroups.flatMap(g => g.subTabs.map(s => s.key));
+    if (!allVisibleKeys.includes(dashboardTab)) {
+      const fallback = isPdvOnly ? "cash_register" : "dashboard";
+      setDashboardTab(allVisibleKeys.includes(fallback as any) ? (fallback as any) : allVisibleKeys[0]);
+    }
+  }, [visibleGroups, dashboardTab, isPdvOnly]);
 
   const [preferredGroupKey, setPreferredGroupKey] = useState<DashboardGroupKey | null>(null);
   const activeGroup = useMemo(() => {
