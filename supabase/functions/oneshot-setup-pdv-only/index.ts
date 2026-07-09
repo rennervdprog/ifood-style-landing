@@ -31,6 +31,7 @@ Deno.serve(async (req) => {
     // 2) Tenta inserir template pdv_only (idempotente via upsert em plan_type)
     const pdvTemplate = {
       plan_type: "pdv_only",
+      plan_key: "pdv_only",
       monthly_fee: 69,
       commission_rate: 0,
       is_active: true,
