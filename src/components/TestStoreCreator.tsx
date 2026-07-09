@@ -42,15 +42,16 @@ const TestStoreCreator = () => {
     enabled: !!user,
   });
 
-  const handleCreate = async (cat: typeof CATEGORIES[0]) => {
+  const handleCreate = async (cat: typeof CATEGORIES[0], planType?: string) => {
     setCreating(true);
     try {
       const { error } = await supabase.rpc("admin_create_test_store", {
-        _name: `Teste ${cat.label.replace(/[^\w\s]/g, "").trim()}`,
+        _name: `Teste ${planType === "pdv_only" ? "PDV " : ""}${cat.label.replace(/[^\w\s]/g, "").trim()}`,
         _category: cat.value as any,
-      });
+        ...(planType ? { _plan_type: planType } : {}),
+      } as any);
       if (error) throw error;
-      toast.success(`Loja teste "${cat.label}" criada!`);
+      toast.success(`Loja teste ${planType === "pdv_only" ? "(Somente PDV) " : ""}"${cat.label}" criada!`);
       refetch();
       queryClient.invalidateQueries({ queryKey: ["admin-stores-list"] });
       queryClient.invalidateQueries({ queryKey: ["admin-all-stores"] });
@@ -108,6 +109,23 @@ const TestStoreCreator = () => {
             </button>
           );
         })}
+      </div>
+
+      <div className="pt-3 border-t border-border space-y-2">
+        <p className="text-xs font-bold text-foreground/70">🖥️ Plano Somente PDV (sem delivery/vitrine)</p>
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+          {CATEGORIES.map((cat) => (
+            <button
+              key={`pdv-${cat.value}`}
+              onClick={() => handleCreate(cat, "pdv_only")}
+              disabled={creating}
+              className="flex flex-col items-center gap-1 p-3 rounded-xl border-2 border-emerald-500/40 bg-emerald-500/5 text-emerald-700 dark:text-emerald-400 text-xs font-bold transition-all active:scale-95 hover:border-emerald-500/70"
+            >
+              <span className="text-lg">{cat.emoji}</span>
+              <span>PDV {cat.label.replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu, "").trim()}</span>
+            </button>
+          ))}
+        </div>
       </div>
 
       {testStores && testStores.length > 0 && (
