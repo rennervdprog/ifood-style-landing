@@ -68,6 +68,31 @@ const AdminStoreManager = () => {
     },
   });
 
+  // Funil de conversão do plano Somente PDV (últimos 30 dias)
+  const { data: pdvFunnel } = useQuery({
+    queryKey: ["admin-pdv-only-funnel"],
+    queryFn: async () => {
+      const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+      const [selects, created] = await Promise.all([
+        supabase
+          .from("page_views" as any)
+          .select("visitor_hash", { count: "exact", head: true })
+          .eq("page", "cadastro_pdv_only_select")
+          .gte("created_at", since),
+        supabase
+          .from("page_views" as any)
+          .select("visitor_hash", { count: "exact", head: true })
+          .eq("page", "cadastro_pdv_only_created")
+          .gte("created_at", since),
+      ]);
+      return {
+        selects: selects.count || 0,
+        created: created.count || 0,
+      };
+    },
+    staleTime: 60_000,
+  });
+
   const getStorePlan = (storeId: string) => {
     return (storePlans as any[])?.find((p: any) => p.store_id === storeId);
   };
@@ -274,6 +299,35 @@ const AdminStoreManager = () => {
         ))}
       </div>
 
+      {/* Funil Somente PDV — últimos 30 dias */}
+      <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3">
+        <div className="flex items-center justify-between mb-2">
+          <div className="text-xs font-bold text-emerald-700 dark:text-emerald-400">
+            Funil Somente PDV · 30 dias
+          </div>
+          <div className="text-[10px] text-muted-foreground">
+            Ativas: <span className="font-bold text-foreground">{counts.pdv_only}</span>
+          </div>
+        </div>
+        <div className="grid grid-cols-3 gap-2 text-center">
+          <div className="rounded-lg bg-background/60 p-2">
+            <div className="text-[10px] text-muted-foreground">Selecionaram</div>
+            <div className="text-lg font-black tabular-nums">{pdvFunnel?.selects ?? "—"}</div>
+          </div>
+          <div className="rounded-lg bg-background/60 p-2">
+            <div className="text-[10px] text-muted-foreground">Criaram loja</div>
+            <div className="text-lg font-black tabular-nums">{pdvFunnel?.created ?? "—"}</div>
+          </div>
+          <div className="rounded-lg bg-background/60 p-2">
+            <div className="text-[10px] text-muted-foreground">Conversão</div>
+            <div className="text-lg font-black tabular-nums">
+              {pdvFunnel && pdvFunnel.selects > 0
+                ? `${Math.round((pdvFunnel.created / pdvFunnel.selects) * 100)}%`
+                : "—"}
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Store list */}
       {isLoading ? (

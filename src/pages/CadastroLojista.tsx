@@ -415,6 +415,11 @@ const CadastroLojista = () => {
             } catch (e) {
               console.warn("[CadastroLojista] pdv_only setup falhou:", e);
             }
+            // Telemetria: conversão finalizada do plano Somente PDV
+            try {
+              const m = await import("@/lib/pageView");
+              await m.trackPageView("cadastro_pdv_only_created", { storeId: storeRow.id });
+            } catch { /* ignore */ }
           }
 
           // Aplica promo de captação (ex: LONDRINA10 — Essencial R$ 0/mês travado)
@@ -568,7 +573,14 @@ const CadastroLojista = () => {
                       {/* Header compacto — sempre visível, seleciona o plano */}
                       <button
                         type="button"
-                        onClick={() => setSelectedPlan(id)}
+                        onClick={() => {
+                          setSelectedPlan(id);
+                          if (id === "pdv_only") {
+                            import("@/lib/pageView").then((m) =>
+                              m.trackPageView("cadastro_pdv_only_select")
+                            ).catch(() => {});
+                          }
+                        }}
                         className="w-full text-left p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-2xl"
                       >
                         <div className="flex items-center gap-3">
