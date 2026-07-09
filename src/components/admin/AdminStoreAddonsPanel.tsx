@@ -4,19 +4,21 @@ import { Loader2, Crown, Package } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-export function AdminStoreAddonsPanel({ storeId, isLegacyPdv }: { storeId: string; isLegacyPdv: boolean }) {
+export function AdminStoreAddonsPanel({ storeId }: { storeId: string }) {
   const qc = useQueryClient();
   const [saving, setSaving] = useState(false);
   const { data } = useQuery({
     queryKey: ["admin-store-addons", storeId],
     queryFn: async () => {
-      const [catRes, subRes] = await Promise.all([
+      const [catRes, subRes, storeRes] = await Promise.all([
         supabase.from("plan_addons" as any).select("code, name, monthly_price").eq("code", "pdv").maybeSingle(),
         supabase.from("store_addons" as any).select("enabled, price_override, cancels_at, activated_at").eq("store_id", storeId).eq("addon_code", "pdv").maybeSingle(),
+        supabase.from("stores" as any).select("legacy_pdv").eq("id", storeId).maybeSingle(),
       ]);
-      return { catalog: catRes.data as any, sub: subRes.data as any };
+      return { catalog: catRes.data as any, sub: subRes.data as any, legacy: !!(storeRes.data as any)?.legacy_pdv };
     },
   });
+  const isLegacyPdv = !!data?.legacy;
 
   const [enabled, setEnabled] = useState(false);
   const [override, setOverride] = useState<string>("");
