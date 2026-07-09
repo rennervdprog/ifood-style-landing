@@ -169,6 +169,26 @@ Deno.serve(async (req) => {
     const templateByType = new Map<string, any>();
     (templates || []).forEach((t: any) => templateByType.set(t.plan_type, t));
 
+    // Add-on catálogo + assinaturas ativas (não legado) para somar na fatura.
+    const { data: addonCatalog } = await supabase
+      .from("plan_addons")
+      .select("code, name, monthly_price");
+    const addonPriceByCode = new Map<string, { name: string; price: number }>();
+    (addonCatalog || []).forEach((a: any) =>
+      addonPriceByCode.set(a.code, { name: a.name, price: Number(a.monthly_price) }),
+    );
+    const { data: allStoreAddons } = await supabase
+      .from("store_addons")
+      .select("store_id, addon_code, enabled, price_override, cancels_at");
+    const addonsByStore = new Map<string, any[]>();
+    (allStoreAddons || []).forEach((sa: any) => {
+      if (!sa.enabled) return;
+      if (sa.cancels_at && new Date(sa.cancels_at) <= now) return;
+      const arr = addonsByStore.get(sa.store_id) || [];
+      arr.push(sa);
+      addonsByStore.set(sa.store_id, arr);
+    });
+
     for (const plan of duePlans) {
       const store = (plan as any).stores;
       if (!store || store.status !== "ativo") continue;
@@ -221,10 +241,22 @@ Deno.serve(async (req) => {
 
         // Incluir comissão PDV acumulada no período
         const pdvPending = Number((plan as any).pdv_commission_pending || 0);
-        // Para commission_only: cobrar também comissao_pendente de pagamentos físicos (dinheiro/cartão)
-        // Para todos os planos: somar mensalidade + pdvPending
-        const totalAmount = Number(plan.monthly_fee) + pdvPending;
         const pdvLine = pdvPending > 0 ? ` + Comissão PDV R$${pdvPending.toFixed(2)}` : "";
+
+        // Add-ons ativos (ex.: PDV R$49) — só se loja NÃO for legada.
+        const storeAddons = addonsByStore.get(store.id) || [];
+        let addonsTotal = 0;
+        const addonLines: string[] = [];
+        for (const sa of storeAddons) {
+          const cat = addonPriceByCode.get(sa.addon_code);
+          if (!cat) continue;
+          const price = sa.price_override !== null && sa.price_override !== undefined
+            ? Number(sa.price_override) : cat.price;
+          if (price <= 0) continue; // VIP grátis
+          addonsTotal += price;
+          addonLines.push(`${cat.name} R$${price.toFixed(2)}`);
+        }
+        const totalAmount = Number(plan.monthly_fee) + pdvPending + addonsTotal;
 
         // Detect VIP: any store_plans value diverges from plan_templates default
         const tpl = templateByType.get(plan.plan_type);
@@ -236,7 +268,8 @@ Deno.serve(async (req) => {
           Number(tpl.pdv_fixed ?? 0) !== Number(plan.pdv_fixed_fee_per_sale ?? tpl.pdv_fixed ?? 0)
         );
         const vipTag = isVip ? " (condição VIP)" : "";
-        const description = `${planLabel}${vipTag}${pdvLine} - ${store.name} - ${referenceCode}`;
+        const addonsDesc = addonLines.length ? ` + ${addonLines.join(" + ")}` : "";
+        const description = `${planLabel}${vipTag}${pdvLine}${addonsDesc} - ${store.name} - ${referenceCode}`;
 
         // Resolve Asaas customer for this store
         let customerId: string | null = store.asaas_account_id || null;
