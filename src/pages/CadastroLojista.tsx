@@ -779,6 +779,7 @@ const CadastroLojista = () => {
 
                 <FieldInput icon={Store} placeholder={accountType === "matriz" ? "Nome da Página Matriz (ex: Itasuper Pizzaria)" : "Nome da Loja"} value={storeName} onChange={setStoreName} error={errors.storeName} />
 
+                {!isPdvOnly && (
                 <div>
                   <div className="relative">
                     <Store className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -795,6 +796,12 @@ const CadastroLojista = () => {
                   </div>
                   {errors.storeCategory && <p className="text-xs text-destructive mt-1 px-1">{errors.storeCategory}</p>}
                 </div>
+                )}
+                {isPdvOnly && (
+                  <div className="rounded-xl bg-primary/5 border border-primary/20 p-3 text-[11px] text-muted-foreground">
+                    ℹ️ Plano <strong>Somente PDV</strong>: sua loja não aparecerá na vitrine pública. Categoria e delivery não são usados.
+                  </div>
+                )}
 
                 {/* CEP */}
                 <div>
