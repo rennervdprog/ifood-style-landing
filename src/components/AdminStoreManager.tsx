@@ -68,6 +68,31 @@ const AdminStoreManager = () => {
     },
   });
 
+  // Funil de conversão do plano Somente PDV (últimos 30 dias)
+  const { data: pdvFunnel } = useQuery({
+    queryKey: ["admin-pdv-only-funnel"],
+    queryFn: async () => {
+      const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+      const [selects, created] = await Promise.all([
+        supabase
+          .from("page_views" as any)
+          .select("visitor_hash", { count: "exact", head: true })
+          .eq("page", "cadastro_pdv_only_select")
+          .gte("created_at", since),
+        supabase
+          .from("page_views" as any)
+          .select("visitor_hash", { count: "exact", head: true })
+          .eq("page", "cadastro_pdv_only_created")
+          .gte("created_at", since),
+      ]);
+      return {
+        selects: selects.count || 0,
+        created: created.count || 0,
+      };
+    },
+    staleTime: 60_000,
+  });
+
   const getStorePlan = (storeId: string) => {
     return (storePlans as any[])?.find((p: any) => p.store_id === storeId);
   };
