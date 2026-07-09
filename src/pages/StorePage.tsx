@@ -877,9 +877,38 @@ const StorePage = () => {
     );
   }
 
-  // Plano "Somente PDV" não tem vitrine pública — trata como rota inexistente.
+  // Plano "Somente PDV" não tem vitrine pública — mostra tela dedicada.
   if (store && platformInfo?.plan_type === "pdv_only") {
-    return <NotFound />;
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 text-center">
+        <div className="max-w-sm space-y-4">
+          {store.image_url ? (
+            <img
+              src={store.image_url}
+              alt={store.name}
+              className="w-20 h-20 rounded-2xl object-cover mx-auto"
+              loading="eager"
+            />
+          ) : (
+            <div className="w-20 h-20 rounded-2xl bg-muted mx-auto" />
+          )}
+          <h1 className="text-xl font-bold text-foreground">{store.name}</h1>
+          <p className="text-sm text-muted-foreground">
+            Esta loja atende <strong className="text-foreground">apenas presencialmente</strong>.
+            Não há delivery nem cardápio online no ItaSuper.
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Passe na loja pra fazer seu pedido pessoalmente.
+          </p>
+          <button
+            onClick={() => navigate("/lojas")}
+            className="w-full bg-primary text-primary-foreground rounded-2xl py-3 px-6 font-semibold hover:bg-primary/90 transition-colors"
+          >
+            Ver lojas com entrega
+          </button>
+        </div>
+      </div>
+    );
   }
 
   // Matriz é apenas um guia/hub para as unidades — não vende, não tem cardápio.
