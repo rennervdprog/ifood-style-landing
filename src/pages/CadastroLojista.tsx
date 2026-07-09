@@ -99,6 +99,12 @@ const CadastroLojista = () => {
   useEffect(() => {
     setAcceptedDynamic(false);
   }, [selectedPlan]);
+  // PDV Somente: auto-seleciona categoria (não usada) para passar validação
+  useEffect(() => {
+    if (selectedPlan === "pdv_only" && !storeCategory) {
+      setStoreCategory("restaurante");
+    }
+  }, [selectedPlan, storeCategory]);
   // Promo de captação: força plano Essencial (fixed) e pula a etapa de plano.
   useEffect(() => {
     if (promoCode) {
