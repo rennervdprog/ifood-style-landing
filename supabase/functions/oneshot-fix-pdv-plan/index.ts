@@ -21,10 +21,10 @@ Deno.serve(async (req) => {
 
   // 2) Recria a RPC pra também popular store_plans e (se faltar) inserir template padrão
   out.fn = await run(`
-    -- garante template padrão pdv_only na tabela plan_templates
+    -- garante template padrão pdv_only na tabela plan_templates (sem unique em plan_type)
     INSERT INTO public.plan_templates (plan_type, monthly_fee, commission_rate, is_active)
-    VALUES ('pdv_only', 69.00, 0, true)
-    ON CONFLICT (plan_type) DO NOTHING;
+    SELECT 'pdv_only', 69.00, 0, true
+    WHERE NOT EXISTS (SELECT 1 FROM public.plan_templates WHERE plan_type='pdv_only');
 
     CREATE OR REPLACE FUNCTION public.admin_create_test_store(
       _name text,
