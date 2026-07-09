@@ -181,6 +181,10 @@ const AdminStoreManager = () => {
     if (filter === "pending") return s.status === "analise";
     if (filter === "active") return s.status === "ativo";
     if (filter === "blocked") return s.status === "bloqueado";
+    if (filter === "pdv_only") {
+      const p = getStorePlan(s.id);
+      return p?.plan_type === "pdv_only";
+    }
     return true;
   });
 
@@ -234,6 +238,7 @@ const AdminStoreManager = () => {
     pending: stores?.filter((s) => s.status === "analise").length || 0,
     active: stores?.filter((s) => s.status === "ativo").length || 0,
     blocked: stores?.filter((s) => s.status === "bloqueado").length || 0,
+    pdv_only: (storePlans as any[])?.filter((p: any) => p.plan_type === "pdv_only").length || 0,
   };
 
   // Subaccount system removed — split is now automatic via webhook transfers
@@ -243,6 +248,7 @@ const AdminStoreManager = () => {
     { key: "pending", label: `Pendentes (${counts.pending})` },
     { key: "active", label: `Aprovadas (${counts.active})` },
     { key: "blocked", label: `Bloqueadas (${counts.blocked})` },
+    { key: "pdv_only", label: `Somente PDV (${counts.pdv_only})` },
   ];
 
   return (
