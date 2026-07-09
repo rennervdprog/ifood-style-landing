@@ -4,6 +4,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStorePlan } from "@/hooks/useStorePlan";
+import { useStorePdvAccess, useAddonsFlag } from "@/hooks/useStorePdvAccess";
+import PdvUpsellScreen from "@/components/pdv/PdvUpsellScreen";
 import { toast } from "sonner";
 import { formatBRL, addMoney, sumMoney, subtractMoney } from "@/lib/utils";
 import { parseBRL } from "@/hooks/useBRLInput";
@@ -274,6 +276,12 @@ const PdvPage = () => {
   const operatorName = (operatorProfile as any)?.full_name || user?.email?.split("@")[0];
 
   const storePlan = useStorePlan(store?.id);
+  const pdvAccess = useStorePdvAccess(store?.id);
+  const addonsFlag = useAddonsFlag();
+  // Bloqueia PDV quando: flag ativa + loja NÃO tem acesso (não-legacy, sem add-on).
+  // Enquanto flag estiver desligada, tudo segue como hoje.
+  const showPdvUpsell =
+    addonsFlag && !!store?.id && !pdvAccess.isLoading && !pdvAccess.enabled;
 
   // ── Sessão (extraída na Fase 1 da refatoração) ──
   const {
@@ -537,6 +545,16 @@ const PdvPage = () => {
       )}
     </div>
   );
+
+  if (showPdvUpsell) {
+    return (
+      <PdvUpsellScreen
+        storeId={store!.id}
+        monthlyPrice={pdvAccess.monthlyPrice}
+        onBack={() => navigate("/admin")}
+      />
+    );
+  }
 
   // ─────────────────────────────────────────────────────────────────────────
   // TELA 1 — ABERTURA

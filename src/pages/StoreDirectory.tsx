@@ -33,7 +33,7 @@ const features = [
   { icon: CreditCard, title: "PIX automático", desc: "Cliente paga, dinheiro cai na hora." },
   { icon: Truck, title: "Motoboy integrado", desc: "Mapa em tempo real e código de confirmação." },
   { icon: BarChart3, title: "Relatório do dia", desc: "Vendas, lucro e mais pedidos numa tela." },
-  { icon: Store, title: "PDV de balcão", desc: "Caixa, troco e fechamento do dia inclusos." },
+  { icon: Store, title: "PDV de balcão", desc: "Módulo opcional (R$ 49/mês) — caixa, troco e fechamento do dia." },
 ];
 
 const segments = [
@@ -74,7 +74,7 @@ const plans = [
     features: [
       "Tudo do plano Comissão",
       "Zero comissão por venda",
-      "PDV (R$ 1 por venda)",
+      "PDV: módulo opcional (R$ 49/mês)",
       "Suporte prioritário",
     ],
   },

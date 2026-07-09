@@ -44,6 +44,9 @@ verify_jwt = false
 [functions.count-supporters]
 verify_jwt = false
 
+[functions.manage-store-addon]
+verify_jwt = false
+
 [functions.migrate-preorder]
 verify_jwt = false
 

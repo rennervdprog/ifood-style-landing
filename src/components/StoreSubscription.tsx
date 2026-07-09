@@ -20,6 +20,7 @@ import { PLANS, DELIVERY_FEE_NOTE, PIX_FEE_NOTE } from "@/lib/plansInfo";
 import PlansComparisonTable from "@/components/PlansComparisonTable";
 import PlanFeeBreakdown from "@/components/fees/PlanFeeBreakdown";
 import DeliveryFeeExplainer from "@/components/fees/DeliveryFeeExplainer";
+import StoreAddonsPanel from "@/components/StoreAddonsPanel";
 
 interface Props {
   storeId: string;
@@ -527,6 +528,9 @@ export default function StoreSubscription({ storeId, storeName }: Props) {
 
       {/* ───────── APP ADDON ───────── */}
       <AppAddonCard storeId={storeId} />
+
+      {/* ───────── MÓDULOS (PDV etc.) ───────── */}
+      <StoreAddonsPanel storeId={storeId} />
 
       {/* ───────── CHANGE PLAN CTA ───────── */}
       {!showChangePlan && !hasPendingRequest && (
