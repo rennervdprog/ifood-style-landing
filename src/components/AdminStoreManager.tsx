@@ -14,19 +14,21 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-type StoreFilter = "all" | "pending" | "active" | "blocked";
-type PlanType = "commission_only" | "fixed" | "hybrid";
+type StoreFilter = "all" | "pending" | "active" | "blocked" | "pdv_only";
+type PlanType = "commission_only" | "fixed" | "hybrid" | "pdv_only";
 
 const planLabels: Record<PlanType, string> = {
   commission_only: "Só Comissão",
   fixed: "Fixo Mensal",
   hybrid: "Híbrido",
+  pdv_only: "Somente PDV",
 };
 
 const planColors: Record<PlanType, string> = {
   commission_only: "bg-amber-500/20 text-amber-600",
   fixed: "bg-blue-500/20 text-blue-600",
   hybrid: "bg-purple-500/20 text-purple-600",
+  pdv_only: "bg-emerald-500/20 text-emerald-600",
 };
 
 const AdminStoreManager = () => {
