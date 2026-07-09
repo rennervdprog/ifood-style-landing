@@ -619,6 +619,10 @@ const CadastroLojista = () => {
                             ))}
                           </ul>
 
+                          <p className="text-[11px] text-muted-foreground leading-relaxed">
+                            💡 O <strong>PDV de balcão</strong> é um módulo à parte (R$ 49/mês), independente do plano. Você pode ativar/cancelar quando quiser em "Meu Plano".
+                          </p>
+
                           <PlanFeeBreakdown planId={id} orderValue={50} viaPix={true} />
 
                           <div className="flex items-start gap-1.5 text-[11px] text-muted-foreground leading-relaxed">
