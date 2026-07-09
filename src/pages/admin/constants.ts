@@ -81,6 +81,8 @@ export type DashboardSubTab = {
   requiresFullReports?: boolean;
   /** Ocultar quando o plano da loja é PDV Standalone (sem delivery/vitrine) */
   hideOnPdvOnly?: boolean;
+  /** Label alternativo exibido quando o plano é PDV Standalone. */
+  pdvLabel?: string;
 };
 
 export type DashboardGroup = {
@@ -88,6 +90,8 @@ export type DashboardGroup = {
   label: string;
   icon: React.ElementType;
   subTabs: DashboardSubTab[];
+  /** Label alternativo exibido quando o plano é PDV Standalone. */
+  pdvLabel?: string;
 };
 
 export const dashboardGroups: DashboardGroup[] = [
@@ -96,7 +100,7 @@ export const dashboardGroups: DashboardGroup[] = [
     label: "Início",
     icon: LayoutDashboard,
     subTabs: [
-      { key: "dashboard", label: "Visão Geral", icon: LayoutDashboard },
+      { key: "dashboard", label: "Visão Geral", icon: LayoutDashboard, hideOnPdvOnly: true },
       { key: "avisos", label: "Avisos", icon: Bell },
       { key: "repasse", label: "Repasse", icon: Banknote, hideOnPdvOnly: true },
     ],
@@ -104,10 +108,11 @@ export const dashboardGroups: DashboardGroup[] = [
   {
     key: "pedidos",
     label: "Pedidos",
+    pdvLabel: "PDV",
     icon: ListOrdered,
     subTabs: [
       { key: "orders", label: "Pedidos", icon: ListOrdered, hideOnPdvOnly: true },
-      { key: "cash_register", label: "PDV / Caixa", icon: ShoppingCart },
+      { key: "cash_register", label: "PDV / Caixa", icon: ShoppingCart, pdvLabel: "Caixa" },
       { key: "refunds", label: "Reembolsos", icon: AlertTriangle, hideOnPdvOnly: true },
     ],
   },
