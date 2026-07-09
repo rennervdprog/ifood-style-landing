@@ -573,7 +573,14 @@ const CadastroLojista = () => {
                       {/* Header compacto — sempre visível, seleciona o plano */}
                       <button
                         type="button"
-                        onClick={() => setSelectedPlan(id)}
+                        onClick={() => {
+                          setSelectedPlan(id);
+                          if (id === "pdv_only") {
+                            import("@/lib/pageView").then((m) =>
+                              m.trackPageView("cadastro_pdv_only_select")
+                            ).catch(() => {});
+                          }
+                        }}
                         className="w-full text-left p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-2xl"
                       >
                         <div className="flex items-center gap-3">
