@@ -36,6 +36,8 @@ import { useNavigate } from "react-router-dom";
 import { PLANS, PLANS_ORDER, DELIVERY_FEE_NOTE, PIX_FEE_NOTE, type PlanInfo } from "@/lib/plansInfo";
 import PlansComparisonTable from "@/components/PlansComparisonTable";
 import { useSupporterCount } from "@/hooks/useSupporterCount";
+import { useAddonsFlag } from "@/hooks/useStorePdvAccess";
+import { Monitor } from "lucide-react";
 
 /* ─── animated counter hook ─── */
 function useCountUp(end: number, duration = 2000, start = false) {
@@ -476,6 +478,8 @@ const faqs = [
           <PlansComparisonTable />
         </div>
       </section>
+
+      <AddonsSection />
 
       {/* ══════ ROI CALCULATOR ══════ */}
       <section className="py-20 px-4">
