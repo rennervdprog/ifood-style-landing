@@ -966,6 +966,7 @@ function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride
               {saving ? "Salvando..." : "Salvar Configuração VIP"}
             </button>
           </div>
+          <AdminStoreAddonsPanel storeId={storeId} />
         </div>
       )}
     </div>
