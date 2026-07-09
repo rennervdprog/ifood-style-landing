@@ -90,9 +90,10 @@ const CadastroLojista = () => {
   const [networkName, setNetworkName] = useState("");
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [selectedPlan, setSelectedPlan] = useState<"supporter" | "fixed" | "hybrid" | "commission_only" | "autonomy" | "">("");
+  const [selectedPlan, setSelectedPlan] = useState<"supporter" | "fixed" | "hybrid" | "commission_only" | "autonomy" | "pdv_only" | "">("");
   const [acceptedDynamic, setAcceptedDynamic] = useState(false);
-  const [expandedPlan, setExpandedPlan] = useState<"supporter" | "fixed" | "hybrid" | "commission_only" | "autonomy" | "">("");
+  const [expandedPlan, setExpandedPlan] = useState<"supporter" | "fixed" | "hybrid" | "commission_only" | "autonomy" | "pdv_only" | "">("");
+  const isPdvOnly = selectedPlan === "pdv_only";
 
   const isDynamicPlan = selectedPlan === "fixed" || selectedPlan === "hybrid";
   useEffect(() => {
