@@ -1483,7 +1483,13 @@ const AdminDashboard = () => {
     () => {
       const ctx = { isPizza, allowFullReports, isPdvOnly };
       return dashboardGroups
-        .map(g => ({ ...g, subTabs: g.subTabs.filter(s => filterSubTab(s, ctx)) }))
+        .map(g => ({
+          ...g,
+          label: isPdvOnly && g.pdvLabel ? g.pdvLabel : g.label,
+          subTabs: g.subTabs
+            .filter(s => filterSubTab(s, ctx))
+            .map(s => ({ ...s, label: isPdvOnly && s.pdvLabel ? s.pdvLabel : s.label })),
+        }))
         .filter(g => g.subTabs.length > 0);
     },
     [isPizza, allowFullReports, isPdvOnly],
