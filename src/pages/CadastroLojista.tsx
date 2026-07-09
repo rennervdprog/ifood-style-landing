@@ -50,7 +50,7 @@ const PLATFORM_CITIES = ["itatinga"];
   street: z.string().trim().min(2, "Rua é obrigatória"),
   addressNumber: z.string().trim().min(1, "Número é obrigatório"),
   neighborhood: z.string().trim().min(2, "Bairro é obrigatório"),
-  selectedPlan: z.enum(["supporter", "fixed", "hybrid", "commission_only", "autonomy"], { errorMap: () => ({ message: "Selecione um plano" }) }),
+  selectedPlan: z.enum(["supporter", "fixed", "hybrid", "commission_only", "autonomy", "pdv_only"], { errorMap: () => ({ message: "Selecione um plano" }) }),
 }).refine((data) => data.email === data.confirmEmail, {
   message: "Os e-mails não coincidem",
   path: ["confirmEmail"],
@@ -90,14 +90,21 @@ const CadastroLojista = () => {
   const [networkName, setNetworkName] = useState("");
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [selectedPlan, setSelectedPlan] = useState<"supporter" | "fixed" | "hybrid" | "commission_only" | "autonomy" | "">("");
+  const [selectedPlan, setSelectedPlan] = useState<"supporter" | "fixed" | "hybrid" | "commission_only" | "autonomy" | "pdv_only" | "">("");
   const [acceptedDynamic, setAcceptedDynamic] = useState(false);
-  const [expandedPlan, setExpandedPlan] = useState<"supporter" | "fixed" | "hybrid" | "commission_only" | "autonomy" | "">("");
+  const [expandedPlan, setExpandedPlan] = useState<"supporter" | "fixed" | "hybrid" | "commission_only" | "autonomy" | "pdv_only" | "">("");
+  const isPdvOnly = selectedPlan === "pdv_only";
 
   const isDynamicPlan = selectedPlan === "fixed" || selectedPlan === "hybrid";
   useEffect(() => {
     setAcceptedDynamic(false);
   }, [selectedPlan]);
+  // PDV Somente: auto-seleciona categoria (não usada) para passar validação
+  useEffect(() => {
+    if (selectedPlan === "pdv_only" && !storeCategory) {
+      setStoreCategory("restaurante");
+    }
+  }, [selectedPlan, storeCategory]);
   // Promo de captação: força plano Essencial (fixed) e pula a etapa de plano.
   useEffect(() => {
     if (promoCode) {
@@ -391,6 +398,25 @@ const CadastroLojista = () => {
               : {}),
           } as any).eq("id", storeRow.id);
 
+          // Plano Somente PDV: esconde da vitrine + ativa add-on PDV embutido (grátis)
+          if (selectedPlan === "pdv_only") {
+            try {
+              await supabase.from("stores").update({
+                is_visible: false,
+                is_open: false,
+                plan_type: "pdv_only",
+              } as any).eq("id", storeRow.id);
+              await (supabase as any).from("store_addons").upsert({
+                store_id: storeRow.id,
+                addon_key: "pdv",
+                status: "active",
+                price_override: 0,
+              }, { onConflict: "store_id,addon_key" });
+            } catch (e) {
+              console.warn("[CadastroLojista] pdv_only setup falhou:", e);
+            }
+          }
+
           // Aplica promo de captação (ex: LONDRINA10 — Essencial R$ 0/mês travado)
           if (promoCode) {
             try {
@@ -519,7 +545,7 @@ const CadastroLojista = () => {
 
                 {/* Cards compactos — toque em "Ver detalhes" para expandir */}
                 <div className="space-y-3">
-                {(["commission_only", "fixed", "autonomy"] as const).map((id) => {
+                {(["commission_only", "fixed", "autonomy", "pdv_only"] as const).map((id) => {
                   const p = PLANS[id];
                   const Icon = p.icon;
                   const selected = selectedPlan === id;
@@ -570,7 +596,7 @@ const CadastroLojista = () => {
                             PIX {p.pixFee === 0 ? "grátis" : `R$${p.pixFee.toFixed(2).replace(".", ",")}`}
                           </span>
                           <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted text-foreground/80">
-                            Entrega {id === "autonomy" ? "sem taxa" : "+R$2"}
+                            {id === "pdv_only" ? "Sem delivery" : `Entrega ${id === "autonomy" ? "sem taxa" : "+R$2"}`}
                           </span>
                           {p.monthlyFee > 0 && (
                             <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-400">
@@ -772,6 +798,7 @@ const CadastroLojista = () => {
 
                 <FieldInput icon={Store} placeholder={accountType === "matriz" ? "Nome da Página Matriz (ex: Itasuper Pizzaria)" : "Nome da Loja"} value={storeName} onChange={setStoreName} error={errors.storeName} />
 
+                {!isPdvOnly && (
                 <div>
                   <div className="relative">
                     <Store className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -788,6 +815,12 @@ const CadastroLojista = () => {
                   </div>
                   {errors.storeCategory && <p className="text-xs text-destructive mt-1 px-1">{errors.storeCategory}</p>}
                 </div>
+                )}
+                {isPdvOnly && (
+                  <div className="rounded-xl bg-primary/5 border border-primary/20 p-3 text-[11px] text-muted-foreground">
+                    ℹ️ Plano <strong>Somente PDV</strong>: sua loja não aparecerá na vitrine pública. Categoria e delivery não são usados.
+                  </div>
+                )}
 
                 {/* CEP */}
                 <div>
