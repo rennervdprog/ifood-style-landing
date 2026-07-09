@@ -35,7 +35,7 @@ Deno.serve(async (req) => {
     const store_id = String(body?.store_id || "");
     const addon_code = String(body?.addon_code || "");
     const action = String(body?.action || "");
-    if (!store_id || !addon_code || !["activate", "cancel"].includes(action)) {
+    if (!store_id || !addon_code || !["activate", "cancel", "admin_set"].includes(action)) {
       return json({ error: "Parâmetros inválidos." }, 400);
     }
     if (addon_code !== "pdv") return json({ error: "Add-on não suportado." }, 400);
@@ -50,8 +50,27 @@ Deno.serve(async (req) => {
     const isAdmin = !!role;
     if (!store) return json({ error: "Loja não encontrada." }, 404);
     if (!isAdmin && store.owner_id !== user.id) return json({ error: "Sem permissão." }, 403);
-    if (store.legacy_pdv && !isAdmin) {
+    if (store.legacy_pdv && !isAdmin && action !== "admin_set") {
       return json({ error: "Loja legada — PDV já está incluso." }, 400);
+    }
+
+    // Super Admin: força estado/override de preço (VIP: 0 = grátis).
+    if (action === "admin_set") {
+      if (!isAdmin) return json({ error: "Apenas admin." }, 403);
+      const enabled = body?.enabled === true;
+      const priceOverride = body?.price_override === null || body?.price_override === undefined
+        ? null
+        : Number(body.price_override);
+      const { error } = await admin.from("store_addons").upsert({
+        store_id, addon_code,
+        enabled,
+        price_override: priceOverride,
+        activated_at: new Date().toISOString(),
+        cancels_at: null,
+        created_by: user.id,
+      }, { onConflict: "store_id,addon_code" });
+      if (error) throw error;
+      return json({ ok: true, action, enabled, price_override: priceOverride });
     }
 
     if (action === "activate") {

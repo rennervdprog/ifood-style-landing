@@ -7,6 +7,7 @@ import { parseBRL, parsePercent } from "@/hooks/useBRLInput";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { AdminStoreAddonsPanel } from "@/components/admin/AdminStoreAddonsPanel";
 import {
   Store, Crown, Search, Loader2, Check, X,
   CreditCard, TrendingUp, Zap, Truck, Heart,
@@ -965,6 +966,7 @@ function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride
               {saving ? "Salvando..." : "Salvar Configuração VIP"}
             </button>
           </div>
+          <AdminStoreAddonsPanel storeId={storeId} />
         </div>
       )}
     </div>
