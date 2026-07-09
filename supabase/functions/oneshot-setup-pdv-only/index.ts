@@ -31,12 +31,8 @@ Deno.serve(async (req) => {
     // 2) Tenta inserir template pdv_only (idempotente via upsert em plan_type)
     const pdvTemplate = {
       plan_type: "pdv_only",
-      name: "Somente PDV",
       monthly_fee: 69,
       commission_rate: 0,
-      pix_fee: 0,
-      delivery_split: 0,
-      pdv_fixed: 0,
       is_active: true,
     };
     const { data: upserted, error: upErr } = await svc
