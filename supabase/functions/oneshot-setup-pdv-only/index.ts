@@ -35,12 +35,22 @@ Deno.serve(async (req) => {
       commission_rate: 0,
       is_active: true,
     };
-    const { data: upserted, error: upErr } = await svc
+    // Idempotência manual: só insere se ainda não existe
+    const { data: existing } = await svc
       .from("plan_templates")
-      .upsert(pdvTemplate, { onConflict: "plan_type" })
-      .select();
-    if (upErr) report.template_error = upErr.message;
-    else report.template_upserted = upserted;
+      .select("id")
+      .eq("plan_type", "pdv_only")
+      .maybeSingle();
+    if (existing) {
+      report.template_already_exists = true;
+    } else {
+      const { data: inserted, error: insErr } = await svc
+        .from("plan_templates")
+        .insert(pdvTemplate)
+        .select();
+      if (insErr) report.template_error = insErr.message;
+      else report.template_inserted = inserted;
+    }
 
     // 3) Diagnóstico: coluna plan_type em stores aceita 'pdv_only'?
     //    Testa criando uma linha efêmera via consulta select
