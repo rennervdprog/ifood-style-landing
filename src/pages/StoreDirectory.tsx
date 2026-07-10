@@ -222,7 +222,7 @@ const Navbar = ({ onNavigate, isLoggedIn }: { onNavigate: (p: string) => void; i
     <nav className={`sticky top-0 z-50 backdrop-blur-xl transition-all duration-300 ${scrolled ? "bg-background/90 border-b border-border shadow-sm" : "bg-background/60 border-b border-transparent"}`}>
       <div className="max-w-6xl mx-auto flex items-center justify-between px-4 md:px-6 h-14 md:h-16">
         <button onClick={() => scrollTo("#hero")} aria-label="Início" className="shrink-0">
-          <img src="/itasuper-logo-horizontal.webp" alt="ItaSuper" width={170} height={40} className="h-7 md:h-9 w-auto object-contain" decoding="async" {...({ fetchpriority: "high" } as any)} />
+          <img src="/itasuper-logo-horizontal.webp" alt="ItaSuper — sistema de delivery e PDV" width={170} height={40} className="h-7 md:h-9 w-auto object-contain" decoding="async" {...({ fetchpriority: "high" } as any)} />
         </button>
         <div className="hidden md:flex items-center gap-7">
           {links.map((l) => (
@@ -465,12 +465,12 @@ const StoreDirectory = () => {
           </div>
 
           <h1 className="mx-auto max-w-3xl text-5xl md:text-7xl font-black tracking-tight text-foreground leading-[0.95] mb-6">
-            Cardápio digital, PIX e motoboy<br />
-            <span className="text-primary">em 10 minutos.</span>
+            Sistema de delivery e PDV<br />
+            <span className="text-primary">pronto em 10 minutos.</span>
           </h1>
 
           <p className="mx-auto max-w-xl text-lg md:text-xl text-muted-foreground leading-relaxed mb-10">
-            Cardápio, PIX e motoboy num app só — com PDV de balcão opcional. Sem mensalidade pra começar.
+            Cardápio digital, PIX automático, motoboy integrado e frente de caixa (PDV) num app só. Sem mensalidade pra começar.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
@@ -514,7 +514,7 @@ const StoreDirectory = () => {
           <div className="max-w-2xl mb-14">
             <p className="text-xs font-black uppercase tracking-[0.2em] text-primary mb-3">A diferença</p>
             <h2 className="text-4xl md:text-5xl font-black tracking-tight text-foreground leading-tight">
-              O fim da bagunça <br /> do delivery no WhatsApp.
+              Chega de anotar pedido no papel <br /> e conferir PIX no banco.
             </h2>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -534,7 +534,7 @@ const StoreDirectory = () => {
           <div className="text-center max-w-xl mx-auto mb-16">
             <p className="text-xs font-black uppercase tracking-[0.2em] text-primary mb-3">Como funciona</p>
             <h2 className="text-4xl md:text-5xl font-black tracking-tight text-foreground">
-              Do cadastro ao primeiro pedido <br /> em menos de 10 minutos.
+              Como montar seu delivery <br /> em 10 minutos.
             </h2>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -556,7 +556,7 @@ const StoreDirectory = () => {
           <div className="max-w-2xl mb-14">
             <p className="text-xs font-black uppercase tracking-[0.2em] text-primary mb-3">Recursos</p>
             <h2 className="text-4xl md:text-5xl font-black tracking-tight text-foreground leading-tight">
-              Tudo que seu delivery <br /> precisa, num app só.
+              Tudo que restaurante, mercado <br /> e loja física precisam.
             </h2>
           </div>
           <div className="grid grid-cols-6 gap-4 auto-rows-[180px]">
@@ -590,7 +590,7 @@ const StoreDirectory = () => {
         <div className="mx-auto max-w-6xl">
           <div className="text-center max-w-xl mx-auto mb-12">
             <p className="text-xs font-black uppercase tracking-[0.2em] text-primary mb-3">Para o seu negócio</p>
-            <h2 className="text-4xl md:text-5xl font-black tracking-tight text-foreground">Feito sob medida.</h2>
+            <h2 className="text-4xl md:text-5xl font-black tracking-tight text-foreground">Feito para pizzarias, mercados, docerias, bares e lojas físicas.</h2>
           </div>
           <div className="flex flex-wrap justify-center gap-2 mb-10">
             {segments.map((s, i) => (
@@ -619,7 +619,7 @@ const StoreDirectory = () => {
           <div>
             <p className="text-xs font-black uppercase tracking-[0.2em] text-primary mb-3">Logística integrada</p>
             <h2 className="text-4xl md:text-5xl font-black tracking-tight leading-tight mb-6">
-              Motoboy com mapa <br /> e código de confirmação.
+              Motoboy integrado com mapa <br /> e código de entrega.
             </h2>
             <p className="text-background/70 text-lg leading-relaxed mb-8">
               Da cozinha à porta do cliente, tudo conectado em tempo real. Sem ligação, sem erro de endereço.
@@ -680,7 +680,7 @@ const StoreDirectory = () => {
         <div className="mx-auto max-w-6xl">
           <div className="text-center max-w-xl mx-auto mb-14">
             <p className="text-xs font-black uppercase tracking-[0.2em] text-primary mb-3">Planos</p>
-            <h2 className="text-4xl md:text-5xl font-black tracking-tight text-foreground">Preço justo. Cancele quando quiser.</h2>
+            <h2 className="text-4xl md:text-5xl font-black tracking-tight text-foreground">Planos de delivery e PDV — cancele quando quiser.</h2>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5">
             {plans.map((p) => (
@@ -812,7 +812,7 @@ const StoreDirectory = () => {
         <div className="mx-auto max-w-6xl">
           <div className="text-center max-w-xl mx-auto mb-14">
             <p className="text-xs font-black uppercase tracking-[0.2em] text-primary mb-3">Quem usa, recomenda</p>
-            <h2 className="text-4xl md:text-5xl font-black tracking-tight text-foreground">Lojistas reais.</h2>
+            <h2 className="text-4xl md:text-5xl font-black tracking-tight text-foreground">O que os lojistas dizem sobre o ItaSuper.</h2>
           </div>
           <div className="grid md:grid-cols-3 gap-5">
             {testimonials.map((t) => (
@@ -843,7 +843,7 @@ const StoreDirectory = () => {
         <div className="mx-auto max-w-3xl">
           <div className="text-center mb-12">
             <p className="text-xs font-black uppercase tracking-[0.2em] text-primary mb-3">Dúvidas</p>
-            <h2 className="text-4xl md:text-5xl font-black tracking-tight text-foreground">Perguntas frequentes.</h2>
+            <h2 className="text-4xl md:text-5xl font-black tracking-tight text-foreground">Perguntas frequentes sobre o sistema.</h2>
           </div>
           <div className="space-y-3">
             {faqs.map((f, i) => (
@@ -870,7 +870,7 @@ const StoreDirectory = () => {
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,hsl(var(--primary)/0.15),transparent_70%)] pointer-events-none" />
           <div className="relative flex flex-col items-center">
             <h2 className="text-3xl sm:text-4xl md:text-6xl font-black tracking-tight leading-[1.1] mb-4 text-balance max-w-3xl mx-auto">
-              Comece a vender hoje.
+              Cadastre sua loja e comece a vender hoje.
             </h2>
             <p className="text-background/70 text-base md:text-lg max-w-xl mx-auto mb-10 text-balance">
               Crie sua loja grátis em 10 minutos. Sem cartão, sem fidelidade.
