@@ -690,6 +690,7 @@ const PdvPage = () => {
         outboxCount={outboxCount}
         outboxFlushing={outboxFlushing}
         onSyncOutbox={() => flushOutbox(false)}
+        isPdvOnly={pdvAccess.source === "pdv_only"}
       />
 
       <PdvTabs
