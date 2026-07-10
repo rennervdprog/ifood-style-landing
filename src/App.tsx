@@ -378,6 +378,7 @@ const App = () => {
                 <Route path="/carrinho" element={<CartPage />} />
                 <Route path="/checkout" element={<CheckoutPage />} />
                 <Route path="/checkout-rapido" element={<GuestCheckoutPage />} />
+                <Route path="/pix-direto/:orderId" element={<PixDiretoPaymentPage />} />
                 <Route path="/p/:orderId" element={<PublicOrderTracking />} />
                 <Route path="/pedidos" element={<PedidosPage />} />
                 <Route path="/perfil" element={<PerfilPage />} />
