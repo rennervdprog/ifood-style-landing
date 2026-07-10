@@ -17,7 +17,7 @@ import {
   ArrowDownCircle, ArrowUpCircle, Lock, Unlock,
   Receipt, ChevronDown, ChevronRight, RotateCcw,
   Layers, ShoppingCart, ChevronLeft, Calculator, Wallet,
-  History, Printer, BarChart3, Split, EyeOff, Eye, Keyboard,
+  History, Printer, BarChart3, Split, EyeOff, Eye, Keyboard, BookOpen,
 } from "lucide-react";
 import { PdvHistorico, PdvSessionsList } from "@/components/pdv/PdvHistorico";
 import ProductDetailModal from "@/components/ProductDetailModal";
@@ -988,6 +988,17 @@ const PdvPage = () => {
           onClose={() => setEmptiesFlow({ step: null, orderId: "", items: [] })}
         />
       )}
+
+      {/* FAB — gerenciar cardápio (principalmente pra lojas pdv_only, que não têm painel) */}
+      <button
+        type="button"
+        onClick={() => navigate("/admin/cardapio")}
+        title="Gerenciar cardápio"
+        aria-label="Gerenciar cardápio"
+        className="fixed bottom-4 right-4 z-40 h-12 w-12 rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center justify-center border-2 border-background"
+      >
+        <Plus className="h-6 w-6" />
+      </button>
     </div>
   );
 };
