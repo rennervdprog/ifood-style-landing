@@ -178,6 +178,72 @@ export default function OrdersSection(props: Props) {
 
   return (
 <>
+  {pixProofPreview && (
+    <div
+      className="fixed inset-0 z-[200] flex flex-col bg-black/90 backdrop-blur-sm animate-in fade-in"
+      onClick={() => setPixProofPreview(null)}
+    >
+      <div className="flex items-center justify-between px-4 py-3 text-white">
+        <div className="min-w-0">
+          <p className="text-xs font-black uppercase tracking-wide opacity-70">Comprovante Pix</p>
+          <p className="text-sm font-bold truncate">
+            #{String(pixProofPreview.order.id).slice(0, 6)} · {formatBRL(Number(pixProofPreview.order.total_price || 0))}
+          </p>
+        </div>
+        <button
+          onClick={(e) => { e.stopPropagation(); setPixProofPreview(null); }}
+          className="ml-2 rounded-full bg-white/10 hover:bg-white/20 p-2"
+          aria-label="Fechar"
+        >
+          <XCircle className="h-5 w-5 text-white" />
+        </button>
+      </div>
+      <div
+        className="flex-1 flex items-center justify-center p-4 overflow-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <img
+          src={pixProofPreview.url}
+          alt="Comprovante Pix"
+          className="max-w-full max-h-full object-contain rounded-xl shadow-2xl"
+        />
+      </div>
+      <div
+        className="flex items-center justify-center gap-2 px-4 py-3 bg-black/60"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <a
+          href={pixProofPreview.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-[11px] font-bold px-3 py-2 rounded-lg bg-white/10 text-white hover:bg-white/20"
+        >
+          Abrir original
+        </a>
+        <button
+          onClick={() => {
+            const o = pixProofPreview.order;
+            setPixProofPreview(null);
+            setPixConfirmOrder(o);
+          }}
+          className="text-[11px] font-black px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white"
+        >
+          Confirmar recebimento
+        </button>
+        <button
+          onClick={() => {
+            const o = pixProofPreview.order;
+            setPixProofPreview(null);
+            refusePix(o);
+          }}
+          className="text-[11px] font-bold px-3 py-2 rounded-lg bg-destructive text-destructive-foreground"
+        >
+          Recusar
+        </button>
+      </div>
+    </div>
+  )}
+
   <AlertDialog open={!!pixConfirmOrder} onOpenChange={(v) => !v && setPixConfirmOrder(null)}>
     <AlertDialogContent className="rounded-2xl">
       <AlertDialogHeader>
