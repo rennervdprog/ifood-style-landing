@@ -14,19 +14,21 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-type StoreFilter = "all" | "pending" | "active" | "blocked";
-type PlanType = "commission_only" | "fixed" | "hybrid";
+type StoreFilter = "all" | "pending" | "active" | "blocked" | "pdv_only";
+type PlanType = "commission_only" | "fixed" | "hybrid" | "pdv_only";
 
 const planLabels: Record<PlanType, string> = {
   commission_only: "Só Comissão",
   fixed: "Fixo Mensal",
   hybrid: "Híbrido",
+  pdv_only: "Somente PDV",
 };
 
 const planColors: Record<PlanType, string> = {
   commission_only: "bg-amber-500/20 text-amber-600",
   fixed: "bg-blue-500/20 text-blue-600",
   hybrid: "bg-purple-500/20 text-purple-600",
+  pdv_only: "bg-emerald-500/20 text-emerald-600",
 };
 
 const AdminStoreManager = () => {
@@ -64,6 +66,31 @@ const AdminStoreManager = () => {
       if (error) throw error;
       return data || [];
     },
+  });
+
+  // Funil de conversão do plano Somente PDV (últimos 30 dias)
+  const { data: pdvFunnel } = useQuery({
+    queryKey: ["admin-pdv-only-funnel"],
+    queryFn: async () => {
+      const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+      const [selects, created] = await Promise.all([
+        supabase
+          .from("page_views" as any)
+          .select("visitor_hash", { count: "exact", head: true })
+          .eq("page", "cadastro_pdv_only_select")
+          .gte("created_at", since),
+        supabase
+          .from("page_views" as any)
+          .select("visitor_hash", { count: "exact", head: true })
+          .eq("page", "cadastro_pdv_only_created")
+          .gte("created_at", since),
+      ]);
+      return {
+        selects: selects.count || 0,
+        created: created.count || 0,
+      };
+    },
+    staleTime: 60_000,
   });
 
   const getStorePlan = (storeId: string) => {
@@ -172,6 +199,9 @@ const AdminStoreManager = () => {
       case "hybrid":
         setPlanForm({ plan_type: type, monthly_fee: 100, commission_rate: 2.5 });
         break;
+      case "pdv_only":
+        setPlanForm({ plan_type: type, monthly_fee: 0, commission_rate: 0 });
+        break;
     }
   };
 
@@ -179,6 +209,10 @@ const AdminStoreManager = () => {
     if (filter === "pending") return s.status === "analise";
     if (filter === "active") return s.status === "ativo";
     if (filter === "blocked") return s.status === "bloqueado";
+    if (filter === "pdv_only") {
+      const p = getStorePlan(s.id);
+      return p?.plan_type === "pdv_only";
+    }
     return true;
   });
 
@@ -232,6 +266,7 @@ const AdminStoreManager = () => {
     pending: stores?.filter((s) => s.status === "analise").length || 0,
     active: stores?.filter((s) => s.status === "ativo").length || 0,
     blocked: stores?.filter((s) => s.status === "bloqueado").length || 0,
+    pdv_only: (storePlans as any[])?.filter((p: any) => p.plan_type === "pdv_only").length || 0,
   };
 
   // Subaccount system removed — split is now automatic via webhook transfers
@@ -241,6 +276,7 @@ const AdminStoreManager = () => {
     { key: "pending", label: `Pendentes (${counts.pending})` },
     { key: "active", label: `Aprovadas (${counts.active})` },
     { key: "blocked", label: `Bloqueadas (${counts.blocked})` },
+    { key: "pdv_only", label: `Somente PDV (${counts.pdv_only})` },
   ];
 
   return (
@@ -263,6 +299,35 @@ const AdminStoreManager = () => {
         ))}
       </div>
 
+      {/* Funil Somente PDV — últimos 30 dias */}
+      <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3">
+        <div className="flex items-center justify-between mb-2">
+          <div className="text-xs font-bold text-emerald-700 dark:text-emerald-400">
+            Funil Somente PDV · 30 dias
+          </div>
+          <div className="text-[10px] text-muted-foreground">
+            Ativas: <span className="font-bold text-foreground">{counts.pdv_only}</span>
+          </div>
+        </div>
+        <div className="grid grid-cols-3 gap-2 text-center">
+          <div className="rounded-lg bg-background/60 p-2">
+            <div className="text-[10px] text-muted-foreground">Selecionaram</div>
+            <div className="text-lg font-black tabular-nums">{pdvFunnel?.selects ?? "—"}</div>
+          </div>
+          <div className="rounded-lg bg-background/60 p-2">
+            <div className="text-[10px] text-muted-foreground">Criaram loja</div>
+            <div className="text-lg font-black tabular-nums">{pdvFunnel?.created ?? "—"}</div>
+          </div>
+          <div className="rounded-lg bg-background/60 p-2">
+            <div className="text-[10px] text-muted-foreground">Conversão</div>
+            <div className="text-lg font-black tabular-nums">
+              {pdvFunnel && pdvFunnel.selects > 0
+                ? `${Math.round((pdvFunnel.created / pdvFunnel.selects) * 100)}%`
+                : "—"}
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Store list */}
       {isLoading ? (
@@ -360,8 +425,8 @@ const AdminStoreManager = () => {
                     <p className="text-xs font-bold text-foreground">Plano de {store.name}</p>
 
                     {/* Plan type selector */}
-                    <div className="grid grid-cols-3 gap-2">
-                      {(["commission_only", "fixed", "hybrid"] as PlanType[]).map((type) => (
+                    <div className="grid grid-cols-2 gap-2">
+                      {(["commission_only", "fixed", "hybrid", "pdv_only"] as PlanType[]).map((type) => (
                         <button
                           key={type}
                           onClick={() => handlePlanTypeChange(type)}
@@ -375,6 +440,22 @@ const AdminStoreManager = () => {
                         </button>
                       ))}
                     </div>
+
+                    {planForm.plan_type === "pdv_only" && (
+                      <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-[11px] text-emerald-700 dark:text-emerald-400 space-y-2">
+                        <p>
+                          Loja <strong>Somente PDV</strong>: sem vitrine pública, sem delivery, sem comissão.
+                          Cobrança do módulo PDV (R$ 49/mês) é feita por fora via add-on.
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => handlePlanTypeChange("commission_only")}
+                          className="w-full py-1.5 rounded-md bg-emerald-600 text-white text-[11px] font-bold"
+                        >
+                          Migrar para Só Comissão (habilitar delivery)
+                        </button>
+                      </div>
+                    )}
 
                     {/* Monthly fee */}
                     {(planForm.plan_type === "fixed" || planForm.plan_type === "hybrid") && (

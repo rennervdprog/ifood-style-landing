@@ -41,6 +41,7 @@ const StorePage = lazy(() => import("./pages/StorePage"));
 const CartPage = lazy(() => import("./pages/CartPage"));
 const CheckoutPage = lazy(() => import("./pages/CheckoutPage"));
 const GuestCheckoutPage = lazy(() => import("./pages/GuestCheckoutPage"));
+const PixDiretoPaymentPage = lazy(() => import("./pages/PixDiretoPaymentPage"));
 const PublicOrderTracking = lazy(() => import("./pages/PublicOrderTracking"));
 const PedidosPage = lazy(() => import("./pages/PedidosPage"));
 const PerfilPage = lazy(() => import("./pages/PerfilPage"));
@@ -49,6 +50,7 @@ const PartnerLogin = lazy(() => import("./pages/PartnerLogin"));
 const AdminDashboardV2 = lazy(() => import("./pages/AdminDashboardV2"));
 const MatrizDashboard = lazy(() => import("./pages/MatrizDashboard"));
 const PdvPage = lazy(() => import("./pages/PdvPage"));
+const PdvCardapioPage = lazy(() => import("./pages/PdvCardapioPage"));
 const DriverDashboardV2 = lazy(() => import("./pages/DriverDashboardV2"));
 const SuperAdminDashboardV2 = lazy(() => import("./pages/SuperAdminDashboardV2").catch(() => {
   window.location.reload();
@@ -376,6 +378,7 @@ const App = () => {
                 <Route path="/carrinho" element={<CartPage />} />
                 <Route path="/checkout" element={<CheckoutPage />} />
                 <Route path="/checkout-rapido" element={<GuestCheckoutPage />} />
+                <Route path="/pix-direto/:orderId" element={<PixDiretoPaymentPage />} />
                 <Route path="/p/:orderId" element={<PublicOrderTracking />} />
                 <Route path="/pedidos" element={<PedidosPage />} />
                 <Route path="/perfil" element={<PerfilPage />} />
@@ -385,6 +388,7 @@ const App = () => {
                 <Route path="/matriz" element={<RoleGuard allowedRoles={["lojista_matriz", "admin"]} redirectTo="/"><MatrizDashboard /></RoleGuard>} />
                 <Route path="/admin2" element={<Navigate to="/admin" replace />} />
                 <Route path="/admin/pdv" element={<RoleGuard allowedRoles={["lojista", "admin"]} redirectTo="/" requireApproval><PdvPage /></RoleGuard>} />
+                <Route path="/admin/cardapio" element={<RoleGuard allowedRoles={["lojista", "admin"]} redirectTo="/" requireApproval><PdvCardapioPage /></RoleGuard>} />
                 <Route
                   path="/entregador"
                   element={

@@ -7,6 +7,7 @@ import { parseBRL, parsePercent } from "@/hooks/useBRLInput";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { AdminStoreAddonsPanel } from "@/components/admin/AdminStoreAddonsPanel";
 import {
   Store, Crown, Search, Loader2, Check, X,
   CreditCard, TrendingUp, Zap, Truck, Heart,
@@ -470,8 +471,8 @@ export default function AdminPlanManager() {
                   {currentDisplay ? (
                     <Badge className={`border text-[10px] ${planColors[currentDisplay]}`}>
                       {planLabels[currentDisplay]}
-                      {plan?.monthly_fee ? ` • R$ ${plan.monthly_fee}/mês` : ""}
-                      {plan?.commission_rate ? ` + ${plan.commission_rate}%` : ""}
+                      {plan ? ` • R$ ${Number(plan.monthly_fee ?? 0)}/mês` : ""}
+                      {plan ? ` + ${Number(plan.commission_rate ?? 0)}%` : ""}
                     </Badge>
                   ) : (
                     <Badge variant="outline" className="text-[10px] text-muted-foreground">
@@ -684,15 +685,18 @@ function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride
   const togglePinAutofill = async () => {
     setPinAutofillSaving(true);
     try {
-      const { error } = await supabase
-        .from("stores")
-        .update({ driver_pin_autofill: !pinAutofill } as any)
-        .eq("id", storeId);
+      const target = !pinAutofill;
+      const { data, error } = await supabase.functions.invoke("admin-set-pin-autofill", {
+        body: { store_id: storeId, enabled: target },
+      });
       if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      const persisted = (data as any)?.driver_pin_autofill;
+      if (persisted !== target) throw new Error("Alteração não persistida.");
       await refetchStoreFlags();
-      toast.success(!pinAutofill ? "Auto-PIN ativado para esta loja." : "Auto-PIN desativado.");
-    } catch {
-      toast.error("Erro ao atualizar auto-PIN.");
+      toast.success(target ? "Auto-PIN ativado para esta loja." : "Auto-PIN desativado.");
+    } catch (e: any) {
+      toast.error(e?.message || "Erro ao atualizar auto-PIN.");
     } finally {
       setPinAutofillSaving(false);
     }
@@ -962,6 +966,7 @@ function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride
               {saving ? "Salvando..." : "Salvar Configuração VIP"}
             </button>
           </div>
+          <AdminStoreAddonsPanel storeId={storeId} />
         </div>
       )}
     </div>

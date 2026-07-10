@@ -1,4 +1,4 @@
-import { Rocket, TrendingUp, Crown, Sparkles, type LucideIcon } from "lucide-react";
+import { Rocket, TrendingUp, Crown, Sparkles, CreditCard, type LucideIcon } from "lucide-react";
 import type { StorePlanType } from "@/hooks/useStorePlan";
 
 /**
@@ -59,6 +59,7 @@ const commission_only: PlanInfo = {
     "PIX automático (sem taxa pra você)",
     "Notificação de pedidos no celular",
     "Todas as ferramentas básicas",
+    "PDV: módulo opcional (+ R$ 49/mês)",
   ],
   example: (_: number) => "",
 };
@@ -105,6 +106,7 @@ const fixed: PlanInfo = {
     "Sem comissão por pedido",
     "Relatórios 100% detalhados",
     "Motoboy integrado + Suporte VIP",
+    "PDV: módulo opcional (+ R$ 49/mês)",
   ],
   example: (_: number) => "",
 };
@@ -153,12 +155,36 @@ const autonomy: PlanInfo = {
     "Sem taxa de R$2 da plataforma na entrega",
     "Você fica com 100% da taxa que cobra",
     "PIX online: R$1,99 por pedido (só se usar)",
-    "PDV: R$1,00 por venda presencial",
+    "PDV: módulo opcional (+ R$ 49/mês)",
     "Todas as ferramentas + Suporte VIP",
   ],
   example: (_: number) => "",
 };
 autonomy.example = exampleText(autonomy);
+
+const pdv_only: PlanInfo = {
+  id: "pdv_only",
+  name: "Somente PDV",
+  tagline: "R$ 69/mês — só o caixa, sem delivery",
+  forWho: "Pra quem já tem clientela na loja física e quer só a frente de caixa",
+  monthlyFee: 69,
+  commissionRate: 0,
+  pixFee: 0,
+  deliveryFee: 0,
+  icon: CreditCard,
+  accent: "text-primary",
+  accentBg: "bg-primary/10",
+  badge: "🏪 Balcão",
+  highlight: false,
+  features: [
+    "PDV completo (vendas, sangria, fechamento)",
+    "Cadastro de produtos ilimitado",
+    "Relatórios financeiros do caixa",
+    "WhatsApp integrado (grátis)",
+    "Sem vitrine pública, sem delivery",
+  ],
+  example: (_: number) => "Sem pedidos online — você usa só o caixa presencial.",
+};
 
 export const PLANS: Record<StorePlanType, PlanInfo> = {
   commission_only,
@@ -166,6 +192,7 @@ export const PLANS: Record<StorePlanType, PlanInfo> = {
   fixed,
   supporter,
   autonomy,
+  pdv_only,
 };
 
 /** Ordem padrão para exibição (do mais barato pro mais completo). */
@@ -181,3 +208,13 @@ export const DELIVERY_FEE_NOTE =
 /** Linha única para a taxa PIX (apenas Essencial/Apoiador). */
 export const PIX_FEE_NOTE =
   "Apenas pedidos pagos via PIX têm taxa de R$ 1,99 (cobrada no repasse). Dinheiro e cartão não têm taxa.";
+
+/**
+ * Label canônico do plano. Use SEMPRE isto em vez de strings soltas
+ * ("Fixo Mensal", "Comissão", "Só Comissão", etc.) para garantir
+ * consistência em todo o painel Super Admin e telas do lojista.
+ */
+export function planLabel(planType?: string | null): string {
+  if (!planType) return "—";
+  return PLANS[planType as StorePlanType]?.name ?? planType;
+}

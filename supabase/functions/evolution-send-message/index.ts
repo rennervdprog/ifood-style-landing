@@ -163,6 +163,7 @@ Deno.serve(async (req) => {
         .from("whatsapp_send_log")
         .select("id")
         .eq("store_id", store_id).eq("phone", number).eq("kind", "auto_reply")
+        .neq("message_hash", "greet_pending")
         .gte("sent_at", dedupeSince).limit(1).maybeSingle();
       if (dupKind) return json({ success: true, skipped: "auto_reply_dedupe_24h" });
     }
@@ -215,6 +216,7 @@ Deno.serve(async (req) => {
       const { data: lastToPhone } = await admin
         .from("whatsapp_send_log")
         .select("sent_at").eq("store_id", store_id).eq("phone", number)
+        .neq("message_hash", "greet_pending")
         .order("sent_at", { ascending: false }).limit(1).maybeSingle();
       if (lastToPhone?.sent_at) {
         const gap = Date.now() - new Date(lastToPhone.sent_at).getTime();
@@ -262,7 +264,7 @@ Deno.serve(async (req) => {
     // minuto que corta a corrida de saudações duplicadas em rajada.
     await admin.from("whatsapp_send_log").upsert(
       { store_id, phone: number, message_hash: msgHash, kind, sent_at: nowIso },
-      { onConflict: "store_id,phone,kind,sent_bucket_min", ignoreDuplicates: true } as any,
+      { onConflict: "store_id,phone,kind,sent_bucket_min", ignoreDuplicates: kind !== "auto_reply" } as any,
     );
 
     // P0 — self-heal: envio OK ⇒ chip está conectado. Destrava status preso em disconnected/connecting.

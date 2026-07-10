@@ -1,8 +1,20 @@
 import { useMemo, useState } from "react";
-import { Search, XCircle, Truck, Loader2, Clock, ChefHat, Package, CheckCircle2, Bell, Calendar, Store as StoreIcon } from "lucide-react";
+import { Search, XCircle, Truck, Loader2, Clock, ChefHat, Package, CheckCircle2, Bell, Calendar, Store as StoreIcon, QrCode } from "lucide-react";
 import { AdminOrderCard } from "../components/AdminOrderCard";
 import type { OrderStatus, OrderTabKey } from "../types";
 import { formatBRL } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface Props {
   store: any;
@@ -67,6 +79,57 @@ export default function OrdersSection(props: Props) {
   const [period, setPeriod] = useState<"today" | "yesterday" | "7d" | "all">("today");
   const [sourceFilter, setSourceFilter] = useState<"all" | "delivery" | "pdv" | "manual">("all");
 
+  // Pedidos aguardando confirmação Pix Direto (comprovante enviado)
+  const pixPending = useMemo(
+    () => (orders || []).filter((o: any) => o.status === "comprovante_enviado" || o.status === "aguardando_comprovante"),
+    [orders]
+  );
+  const [pixBusyId, setPixBusyId] = useState<string | null>(null);
+  const [proofUrls, setProofUrls] = useState<Record<string, string>>({});
+  const [pixConfirmOrder, setPixConfirmOrder] = useState<any | null>(null);
+  const [pixProofPreview, setPixProofPreview] = useState<{ url: string; order: any } | null>(null);
+
+  const openProof = async (order: any) => {
+    if (!order?.pix_proof_url) return;
+    if (proofUrls[order.id]) { setPixProofPreview({ url: proofUrls[order.id], order }); return; }
+    const { data, error } = await supabase.storage
+      .from("pix-proofs")
+      .createSignedUrl(order.pix_proof_url, 60 * 10);
+    if (error || !data?.signedUrl) { toast.error("Não foi possível abrir o comprovante"); return; }
+    setProofUrls((p) => ({ ...p, [order.id]: data.signedUrl }));
+    setPixProofPreview({ url: data.signedUrl, order });
+  };
+
+  const confirmPix = async (order: any) => {
+    setPixBusyId(order.id);
+    try {
+      const { error } = await (supabase as any).rpc("confirm_pix_proof", { p_order_id: order.id });
+      if (error) throw error;
+      toast.success("Pagamento confirmado! Pedido em preparo.");
+      invalidateOrders();
+    } catch (e: any) {
+      toast.error(e?.message || "Erro ao confirmar");
+    } finally {
+      setPixBusyId(null);
+    }
+  };
+
+  const refusePix = async (order: any) => {
+    const reason = prompt("Motivo da recusa (será visível ao cliente):");
+    if (!reason || !reason.trim()) return;
+    setPixBusyId(order.id);
+    try {
+      const { error } = await (supabase as any).rpc("refuse_pix_proof", { p_order_id: order.id, p_reason: reason.trim() });
+      if (error) throw error;
+      toast.success("Comprovante recusado.");
+      invalidateOrders();
+    } catch (e: any) {
+      toast.error(e?.message || "Erro ao recusar");
+    } finally {
+      setPixBusyId(null);
+    }
+  };
+
   const periodRange = useMemo(() => {
     const now = new Date();
     const start = new Date(now); start.setHours(0, 0, 0, 0);
@@ -115,6 +178,152 @@ export default function OrdersSection(props: Props) {
 
   return (
 <>
+  {pixProofPreview && (
+    <div
+      className="fixed inset-0 z-[200] flex flex-col bg-black/90 backdrop-blur-sm animate-in fade-in"
+      onClick={() => setPixProofPreview(null)}
+    >
+      <div className="flex items-center justify-between px-4 py-3 text-white">
+        <div className="min-w-0">
+          <p className="text-xs font-black uppercase tracking-wide opacity-70">Comprovante Pix</p>
+          <p className="text-sm font-bold truncate">
+            #{String(pixProofPreview.order.id).slice(0, 6)} · {formatBRL(Number(pixProofPreview.order.total_price || 0))}
+          </p>
+        </div>
+        <button
+          onClick={(e) => { e.stopPropagation(); setPixProofPreview(null); }}
+          className="ml-2 rounded-full bg-white/10 hover:bg-white/20 p-2"
+          aria-label="Fechar"
+        >
+          <XCircle className="h-5 w-5 text-white" />
+        </button>
+      </div>
+      <div
+        className="flex-1 flex items-center justify-center p-4 overflow-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <img
+          src={pixProofPreview.url}
+          alt="Comprovante Pix"
+          className="max-w-full max-h-full object-contain rounded-xl shadow-2xl"
+        />
+      </div>
+      <div
+        className="flex items-center justify-center gap-2 px-4 py-3 bg-black/60"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <a
+          href={pixProofPreview.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-[11px] font-bold px-3 py-2 rounded-lg bg-white/10 text-white hover:bg-white/20"
+        >
+          Abrir original
+        </a>
+        <button
+          onClick={() => {
+            const o = pixProofPreview.order;
+            setPixProofPreview(null);
+            setTimeout(() => setPixConfirmOrder(o), 50);
+          }}
+          className="text-[11px] font-black px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white"
+        >
+          Confirmar recebimento
+        </button>
+        <button
+          onClick={() => {
+            const o = pixProofPreview.order;
+            setPixProofPreview(null);
+            refusePix(o);
+          }}
+          className="text-[11px] font-bold px-3 py-2 rounded-lg bg-destructive text-destructive-foreground"
+        >
+          Recusar
+        </button>
+      </div>
+    </div>
+  )}
+
+  <AlertDialog open={!!pixConfirmOrder} onOpenChange={(v) => !v && setPixConfirmOrder(null)}>
+    <AlertDialogContent className="rounded-2xl">
+      <AlertDialogHeader>
+        <AlertDialogTitle>Confirmar recebimento do Pix?</AlertDialogTitle>
+        <AlertDialogDescription>
+          Confirme apenas se o valor de <strong>{pixConfirmOrder ? formatBRL(Number(pixConfirmOrder.total_price || 0)) : ""}</strong> já caiu na sua conta. Essa ação libera o pedido para preparo e não pode ser desfeita.
+        </AlertDialogDescription>
+      </AlertDialogHeader>
+      <AlertDialogFooter>
+        <AlertDialogCancel className="rounded-xl">Cancelar</AlertDialogCancel>
+        <AlertDialogAction
+          className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white"
+          onClick={async () => {
+            const o = pixConfirmOrder;
+            setPixConfirmOrder(null);
+            if (o) await confirmPix(o);
+          }}
+        >
+          Sim, recebi
+        </AlertDialogAction>
+      </AlertDialogFooter>
+    </AlertDialogContent>
+  </AlertDialog>
+
+  {/* 🚨 Prioridade: Pix Direto aguardando confirmação */}
+  {pixPending.length > 0 && (
+    <div className="px-4 pt-3">
+      <div className="rounded-2xl border-2 border-primary/40 bg-primary/5 p-3 space-y-2">
+        <div className="flex items-center gap-2">
+          <QrCode className="h-4 w-4 text-primary" />
+          <p className="text-xs font-black text-primary uppercase tracking-wide">Pix Direto — aguardando você</p>
+          <span className="ml-auto text-[10px] font-bold bg-primary text-primary-foreground px-2 py-0.5 rounded-full">{pixPending.length}</span>
+        </div>
+        <div className="space-y-2">
+          {pixPending.map((o: any) => {
+            const proofSent = o.status === "comprovante_enviado";
+            return (
+              <div key={o.id} className="rounded-xl bg-card border border-border p-2.5 flex items-center gap-2">
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-bold text-foreground truncate">
+                    #{String(o.id).slice(0, 6)} · {formatBRL(Number(o.total_price || 0))}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground truncate">
+                    {proofSent ? "Comprovante enviado — revise e confirme" : "Aguardando cliente enviar comprovante"}
+                  </p>
+                </div>
+                {proofSent && o.pix_proof_url && (
+                  <button
+                    onClick={() => openProof(o)}
+                    className="text-[11px] font-bold px-2 py-1.5 rounded-lg bg-muted text-foreground"
+                  >
+                    Ver
+                  </button>
+                )}
+                {proofSent && (
+                  <>
+                     <button
+                       onClick={() => setPixConfirmOrder(o)}
+                       disabled={pixBusyId === o.id}
+                       className="text-[11px] font-black px-2.5 py-1.5 rounded-lg bg-emerald-600 text-white disabled:opacity-50"
+                     >
+                       {pixBusyId === o.id ? "..." : "Confirmar"}
+                     </button>
+                    <button
+                      onClick={() => refusePix(o)}
+                      disabled={pixBusyId === o.id}
+                      className="text-[11px] font-bold px-2 py-1.5 rounded-lg bg-destructive text-destructive-foreground disabled:opacity-50"
+                    >
+                      Recusar
+                    </button>
+                  </>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  )}
+
   {/* Quick summary counters */}
   {orderCounters.total > 0 && (
       <div className="px-4 pt-3 pb-1">

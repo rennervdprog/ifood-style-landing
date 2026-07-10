@@ -15,6 +15,7 @@ import {
   Users, Percent, PiggyBank, DollarSign, Send, Plus, Trash2, Edit2, Check, X, Wallet, TrendingUp, Shield, Calendar, ArrowRight, CreditCard, BarChart3, Building2
 } from "lucide-react";
 import { formatBRL } from "@/lib/utils";
+import { planLabel } from "@/lib/plansInfo";
 
 interface Partner {
   id: string;
@@ -106,11 +107,7 @@ const RevenueBreakdownCard = ({ planBreakdown, pendingCommission, pendingRepasse
   const totalPendingReceivables = pendingCommission + pendingRepasse;
   const totalRevenue = totalRecurring + totalPendingReceivables;
 
-  const planLabels: Record<string, string> = {
-    fixed: "Essencial",
-    hybrid: "Híbrido",
-    commission_only: "Comissão",
-  };
+  // labels vêm do helper central `planLabel` para manter uma única fonte de verdade
 
   return (
     <Card className="border-primary/20">
@@ -130,7 +127,7 @@ const RevenueBreakdownCard = ({ planBreakdown, pendingCommission, pendingRepasse
               <div key={p.plan_type} className="flex justify-between text-sm bg-muted/50 rounded px-3 py-2">
                 <span>
                   <Badge variant="outline" className="mr-2 text-xs">{p.qty}</Badge>
-                  {planLabels[p.plan_type] || p.plan_type}
+                  {planLabel(p.plan_type)}
                   {Number(p.avg_commission) > 0 && (
                     <span className="text-muted-foreground ml-1">(+{Number(p.avg_commission).toFixed(1)}% comissão)</span>
                   )}

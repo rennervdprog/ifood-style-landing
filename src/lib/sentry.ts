@@ -25,6 +25,13 @@ export const initSentry = () => {
     tracePropagationTargets: ["localhost", /^https:\/\/qkjhguziuchqsbxzruea\.supabase\.co/],
     replaysSessionSampleRate: 0.1,
     replaysOnErrorSampleRate: 1.0,
+    // Ruído conhecido: falhas transientes de update do Service Worker
+    // (rede intermitente / CDN cold). Não são acionáveis.
+    ignoreErrors: [
+      /Failed to (update|register) a ServiceWorker/i,
+      /ServiceWorker script.*failed to fetch/i,
+      /The script has an unsupported MIME type/i,
+    ],
   } as const;
 
   if (isNative) {

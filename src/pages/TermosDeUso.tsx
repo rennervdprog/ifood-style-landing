@@ -44,6 +44,18 @@ const TermosDeUso = () => {
           <p>Ao utilizar o ItaSuper, o Usuário declara que leu, compreendeu e concorda com estes Termos. Estes Termos regulam a relação entre o ItaSuper e os Usuários, nos termos do CDC (Lei nº 8.078/1990), Marco Civil da Internet (Lei nº 12.965/2014), Código Civil (Lei nº 10.406/2002) e LGPD (Lei nº 13.709/2018).</p>
         </section>
 
+        <section className="space-y-2 rounded-xl border border-border bg-card/60 p-4">
+          <h2 className="text-base font-bold text-foreground">Módulos Opcionais (Add-ons)</h2>
+          <p className="text-xs">Além do plano base, o Lojista pode contratar módulos adicionais com cobrança mensal separada, somada à fatura Asaas do plano:</p>
+          <ul className="list-disc pl-4 space-y-1 text-xs">
+            <li><strong className="text-foreground">PDV — Ponto de Venda:</strong> R$ 49,00/mês para lojas cadastradas após a implantação desta cláusula. Lojas cadastradas anteriormente mantêm a regra vigente na data do cadastro (cobrança por venda) enquanto o cadastro permanecer ativo.</li>
+            <li><strong className="text-foreground">Plano Somente PDV:</strong> R$ 69,00/mês. Modalidade destinada ao Lojista que deseja utilizar apenas o caixa presencial, <strong className="text-foreground">sem vitrine pública, sem cardápio digital e sem serviço de delivery</strong>. Não há comissão por pedido nesta modalidade. O Lojista pode migrar a qualquer momento para os planos de delivery (Comissão, Essencial ou Autonomia); ao migrar, o módulo PDV passa a seguir a regra de add-on (R$ 49,00/mês adicional).</li>
+          </ul>
+          <p className="text-xs"><strong className="text-foreground">Ativação no meio do mês:</strong> cobrança proporcional aos dias restantes até a próxima fatura.</p>
+          <p className="text-xs"><strong className="text-foreground">Cancelamento:</strong> gera crédito proporcional aos dias não utilizados, abatido na próxima fatura. O módulo continua ativo até o fim do ciclo já pago.</p>
+          <p className="text-xs"><strong className="text-foreground">Reajuste:</strong> preços podem ser reajustados anualmente, com aviso prévio de 30 dias.</p>
+        </section>
+
         <section className="space-y-3">
           <h2 className="text-base font-bold text-foreground">1. Definições</h2>
           <ul className="list-disc pl-4 space-y-2">

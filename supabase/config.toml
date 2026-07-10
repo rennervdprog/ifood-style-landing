@@ -18,6 +18,12 @@ verify_jwt = false
 [functions.monthly-billing]
 verify_jwt = false
 
+[functions.admin-set-pin-autofill]
+verify_jwt = false
+
+[functions.oneshot-setup-pdv-only]
+verify_jwt = false
+
 [functions.auto-withdraw-subaccounts]
 verify_jwt = false
 
@@ -39,6 +45,9 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.count-supporters]
+verify_jwt = false
+
+[functions.manage-store-addon]
 verify_jwt = false
 
 [functions.migrate-preorder]

@@ -36,6 +36,8 @@ import { useNavigate } from "react-router-dom";
 import { PLANS, PLANS_ORDER, DELIVERY_FEE_NOTE, PIX_FEE_NOTE, type PlanInfo } from "@/lib/plansInfo";
 import PlansComparisonTable from "@/components/PlansComparisonTable";
 import { useSupporterCount } from "@/hooks/useSupporterCount";
+import { useAddonsFlag } from "@/hooks/useStorePdvAccess";
+import { Monitor } from "lucide-react";
 
 /* ─── animated counter hook ─── */
 function useCountUp(end: number, duration = 2000, start = false) {
@@ -477,6 +479,8 @@ const faqs = [
         </div>
       </section>
 
+      <AddonsSection />
+
       {/* ══════ ROI CALCULATOR ══════ */}
       <section className="py-20 px-4">
         <div className="mx-auto max-w-3xl">
@@ -614,6 +618,53 @@ const faqs = [
 }
 
 /* ─── ROI Calculator sub-component ─── */
+
+function AddonsSection() {
+  const flag = useAddonsFlag();
+  if (!flag) return null;
+  return (
+    <section className="py-16 px-4">
+      <div className="mx-auto max-w-3xl">
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold mb-3">
+            <Sparkles className="h-3.5 w-3.5" /> Módulos opcionais
+          </div>
+          <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
+            Turbine com módulos extras
+          </h2>
+          <p className="text-muted-foreground text-sm max-w-lg mx-auto">
+            Adicione recursos avançados ao seu plano quando precisar. Contrate ou cancele quando quiser.
+          </p>
+        </div>
+
+        <Card className="border-2 border-primary/20">
+          <CardContent className="p-6 flex flex-col sm:flex-row sm:items-center gap-4">
+            <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0">
+              <Monitor className="h-7 w-7 text-primary" />
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <h3 className="font-bold text-base text-foreground">PDV — Ponto de Venda</h3>
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                  + R$ 49/mês
+                </span>
+              </div>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Vendas presenciais no balcão, controle de caixa e integração com impressoras.
+                Cobrança proporcional na 1ª fatura. Sem fidelidade.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <p className="text-[11px] text-muted-foreground text-center mt-3">
+          Lojas cadastradas antes do lançamento do módulo mantêm a regra atual (R$ 1 por venda no PDV, sem mensalidade extra).
+        </p>
+      </div>
+    </section>
+  );
+}
+
 function ROICalculator() {
   const [orders, setOrders] = useState(200);
   const [ticket, setTicket] = useState(40);

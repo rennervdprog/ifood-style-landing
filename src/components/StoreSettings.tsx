@@ -195,6 +195,13 @@ type PizzaPriceMode = "maior" | "media" | "soma";
   const [acceptCard,       setAcceptCard]       = useState<boolean>(storeSettings?.accept_card        !== false);
   const [acceptCash,       setAcceptCash]       = useState<boolean>(storeSettings?.accept_cash        !== false);
 
+  // Pix Direto (chave PIX do lojista, comprovante manual). Campos top-level em `stores`.
+  const [pixDiretoEnabled, setPixDiretoEnabled] = useState<boolean>(false);
+  const [pixDiretoKey, setPixDiretoKey] = useState<string>("");
+  const [pixDiretoKeyType, setPixDiretoKeyType] = useState<string>("cpf");
+  const [pixDiretoBeneficiary, setPixDiretoBeneficiary] = useState<string>("");
+  const [pixDiretoInstructions, setPixDiretoInstructions] = useState<string>("");
+
   // Quantas vias o cupom térmico imprime (1 = só cliente / 2 = cozinha + cliente)
   const [printCopies, setPrintCopies] = useState<1 | 2>(
     storeSettings?.print_copies === 1 ? 1 : 2
@@ -233,7 +240,7 @@ type PizzaPriceMode = "maior" | "media" | "soma";
     if (!storeId) return;
     (supabase as any)
       .from("stores")
-      .select("free_delivery_threshold, platform_fee_split")
+      .select("free_delivery_threshold, platform_fee_split, pix_direto_enabled, pix_direto_key, pix_direto_key_type, pix_direto_beneficiary, pix_direto_instructions")
       .eq("id", storeId)
       .maybeSingle()
       .then(({ data }: any) => {
@@ -246,6 +253,11 @@ type PizzaPriceMode = "maior" | "media" | "soma";
         if (s === "cliente" || s === "meio_a_meio" || s === "lojista") {
           setPlatformFeeSplit(s);
         }
+        setPixDiretoEnabled(!!data?.pix_direto_enabled);
+        if (data?.pix_direto_key) setPixDiretoKey(String(data.pix_direto_key));
+        if (data?.pix_direto_key_type) setPixDiretoKeyType(String(data.pix_direto_key_type));
+        if (data?.pix_direto_beneficiary) setPixDiretoBeneficiary(String(data.pix_direto_beneficiary));
+        if (data?.pix_direto_instructions) setPixDiretoInstructions(String(data.pix_direto_instructions));
       });
   }, [storeId]);
 
@@ -387,6 +399,12 @@ type PizzaPriceMode = "maior" | "media" | "soma";
       address_city: addressCity.trim() || "Itatinga",
       address_state: addressState.trim() || "SP",
       address_cep: addressCep.replace(/\D/g, "") || null,
+      // Pix Direto (chave manual do lojista)
+      pix_direto_enabled: pixDiretoEnabled && !!pixDiretoKey.trim(),
+      pix_direto_key: pixDiretoKey.trim() || null,
+      pix_direto_key_type: pixDiretoKey.trim() ? pixDiretoKeyType : null,
+      pix_direto_beneficiary: pixDiretoBeneficiary.trim() || null,
+      pix_direto_instructions: pixDiretoInstructions.trim() || null,
     };
 
     console.log("[DEBUG] Salvando configurações da loja:", { storeId, updateData });
@@ -1307,6 +1325,65 @@ const NotificationSection = () => {
               <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${acceptCard ? "translate-x-5" : "translate-x-0"}`} />
             </button>
           </div>
+        </div>
+
+        {/* Pix Direto (chave do lojista + comprovante manual) */}
+        <div className={`rounded-xl border p-3.5 space-y-3 ${pixDiretoEnabled ? "border-primary/30 bg-primary/5" : "border-border bg-muted/20"}`}>
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <QrCode className="h-4 w-4 text-primary shrink-0" />
+              <div>
+                <p className="text-sm font-bold text-foreground">Pix Direto (com comprovante)</p>
+                <p className="text-[11px] text-muted-foreground">Cliente paga na sua chave PIX e envia o comprovante. Você confirma manualmente no painel. Sem taxa Asaas.</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setPixDiretoEnabled(!pixDiretoEnabled)}
+              className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${pixDiretoEnabled ? "bg-primary" : "bg-muted-foreground/30"}`}
+            >
+              <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${pixDiretoEnabled ? "translate-x-5" : "translate-x-0"}`} />
+            </button>
+          </div>
+          {pixDiretoEnabled && (
+            <div className="space-y-2">
+              <div className="grid grid-cols-2 gap-2">
+                <select
+                  value={pixDiretoKeyType}
+                  onChange={(e) => setPixDiretoKeyType(e.target.value)}
+                  className="px-3 py-2 rounded-lg border border-border bg-background text-sm"
+                >
+                  <option value="cpf">CPF</option>
+                  <option value="cnpj">CNPJ</option>
+                  <option value="email">E-mail</option>
+                  <option value="phone">Telefone</option>
+                  <option value="random">Aleatória</option>
+                </select>
+                <input
+                  type="text"
+                  value={pixDiretoBeneficiary}
+                  onChange={(e) => setPixDiretoBeneficiary(e.target.value)}
+                  placeholder="Beneficiário (nome)"
+                  className="px-3 py-2 rounded-lg border border-border bg-background text-sm"
+                />
+              </div>
+              <input
+                type="text"
+                value={pixDiretoKey}
+                onChange={(e) => setPixDiretoKey(e.target.value)}
+                placeholder="Sua chave PIX"
+                className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm font-mono"
+              />
+              <textarea
+                value={pixDiretoInstructions}
+                onChange={(e) => setPixDiretoInstructions(e.target.value)}
+                placeholder="Instruções extras para o cliente (opcional)"
+                rows={2}
+                className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm"
+              />
+              <p className="text-[10px] text-muted-foreground">⏱️ O cliente tem 20 minutos para enviar o comprovante. Você confirma o recebimento no painel de pedidos.</p>
+            </div>
+          )}
         </div>
 
         {/* Dinheiro */}

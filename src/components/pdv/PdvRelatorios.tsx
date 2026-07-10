@@ -29,24 +29,34 @@ const PAYMENT_LABELS: Record<string, { label: string; icon: any; color: string }
 
 const getDateRange = (period: Period, custom?: { start: string; end: string }) => {
   const now = new Date();
-  const pad = (n: number) => String(n).padStart(2, "0");
-  const fmt = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+  // Converte limites do dia LOCAL para ISO em UTC (evita cortar vendas por diferença de fuso).
+  const startOfLocalDay = (d: Date) =>
+    new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0, 0).toISOString();
+  const endOfLocalDay = (d: Date) =>
+    new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999).toISOString();
+  const parseLocalDate = (s: string) => {
+    const [y, m, day] = s.split("-").map(Number);
+    return new Date(y, (m || 1) - 1, day || 1);
+  };
 
   if (period === "today") {
-    return { start: fmt(now) + "T00:00:00", end: fmt(now) + "T23:59:59" };
+    return { start: startOfLocalDay(now), end: endOfLocalDay(now) };
   }
   if (period === "week") {
     const d = new Date(now); d.setDate(d.getDate() - 6);
-    return { start: fmt(d) + "T00:00:00", end: fmt(now) + "T23:59:59" };
+    return { start: startOfLocalDay(d), end: endOfLocalDay(now) };
   }
   if (period === "month") {
     const d = new Date(now.getFullYear(), now.getMonth(), 1);
-    return { start: fmt(d) + "T00:00:00", end: fmt(now) + "T23:59:59" };
+    return { start: startOfLocalDay(d), end: endOfLocalDay(now) };
   }
-  if (period === "custom" && custom) {
-    return { start: custom.start + "T00:00:00", end: custom.end + "T23:59:59" };
+  if (period === "custom" && custom && custom.start && custom.end) {
+    return {
+      start: startOfLocalDay(parseLocalDate(custom.start)),
+      end: endOfLocalDay(parseLocalDate(custom.end)),
+    };
   }
-  return { start: fmt(now) + "T00:00:00", end: fmt(now) + "T23:59:59" };
+  return { start: startOfLocalDay(now), end: endOfLocalDay(now) };
 };
 
 // ─── componente principal ──────────────────────────────────────────────────────

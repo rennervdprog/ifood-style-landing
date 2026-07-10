@@ -20,15 +20,15 @@ Deno.serve(async (req) => {
   out.evolution_configured = !!(baseUrl && apiKey);
   out.evolution_url = baseUrl || null;
 
-  const extUrl = Deno.env.get("EXTERNAL_SUPABASE_URL");
-  const extKey = Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY");
+  const extUrl = Deno.env.get("EXTERNAL_SUPABASE_URL") || Deno.env.get("SUPABASE_URL");
+  const extKey = Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   out.external_configured = !!(extUrl && extKey);
 
   // 1) Config no external
   if (extUrl && extKey) {
     try {
       const ext = createClient(extUrl, extKey);
-      const { data: store } = await ext.from("stores").select("id, name, owner_id, phone").eq("id", storeId).maybeSingle();
+      const { data: store } = await ext.from("stores").select("id, name, slug, owner_id, status, is_open, force_closed").eq("id", storeId).maybeSingle();
       out.store = store;
       const { data: cfg } = await ext.from("store_whatsapp_config").select("*").eq("store_id", storeId).maybeSingle();
       out.store_whatsapp_config = cfg;

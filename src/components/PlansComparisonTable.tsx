@@ -64,6 +64,15 @@ const ROWS: Row[] = [
     label: "Suporte VIP",
     values: { commission_only: false, fixed: true, supporter: true, autonomy: true } as Record<StorePlanType, boolean>,
   },
+  {
+    label: "PDV (módulo opcional)",
+    values: {
+      commission_only: "+ R$ 49/mês",
+      fixed: "+ R$ 49/mês",
+      supporter: "+ R$ 49/mês",
+      autonomy: "+ R$ 49/mês",
+    } as Record<StorePlanType, string>,
+  },
 ];
 
 interface Props {
@@ -135,6 +144,7 @@ export default function PlansComparisonTable({
       <div className="space-y-1 text-[11px] text-muted-foreground px-1">
         <p>💡 {DELIVERY_FEE_NOTE}</p>
         <p>💡 {PIX_FEE_NOTE}</p>
+        <p>💡 PDV é um módulo opcional: novas lojas contratam por R$ 49/mês. Lojas antigas mantêm a regra atual de R$ 1 por venda.</p>
       </div>
     </div>
   );

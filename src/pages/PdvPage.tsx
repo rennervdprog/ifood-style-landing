@@ -4,6 +4,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStorePlan } from "@/hooks/useStorePlan";
+import { useStorePdvAccess, useAddonsFlag } from "@/hooks/useStorePdvAccess";
+import PdvUpsellScreen from "@/components/pdv/PdvUpsellScreen";
 import { toast } from "sonner";
 import { formatBRL, addMoney, sumMoney, subtractMoney } from "@/lib/utils";
 import { parseBRL } from "@/hooks/useBRLInput";
@@ -15,7 +17,7 @@ import {
   ArrowDownCircle, ArrowUpCircle, Lock, Unlock,
   Receipt, ChevronDown, ChevronRight, RotateCcw,
   Layers, ShoppingCart, ChevronLeft, Calculator, Wallet,
-  History, Printer, BarChart3, Split, EyeOff, Eye, Keyboard,
+  History, Printer, BarChart3, Split, EyeOff, Eye, Keyboard, BookOpen,
 } from "lucide-react";
 import { PdvHistorico, PdvSessionsList } from "@/components/pdv/PdvHistorico";
 import ProductDetailModal from "@/components/ProductDetailModal";
@@ -274,6 +276,12 @@ const PdvPage = () => {
   const operatorName = (operatorProfile as any)?.full_name || user?.email?.split("@")[0];
 
   const storePlan = useStorePlan(store?.id);
+  const pdvAccess = useStorePdvAccess(store?.id);
+  const addonsFlag = useAddonsFlag();
+  // Bloqueia PDV quando: flag ativa + loja NÃO tem acesso (não-legacy, sem add-on).
+  // Enquanto flag estiver desligada, tudo segue como hoje.
+  const showPdvUpsell =
+    addonsFlag && !!store?.id && !pdvAccess.isLoading && !pdvAccess.enabled;
 
   // ── Sessão (extraída na Fase 1 da refatoração) ──
   const {
@@ -538,6 +546,16 @@ const PdvPage = () => {
     </div>
   );
 
+  if (showPdvUpsell) {
+    return (
+      <PdvUpsellScreen
+        storeId={store!.id}
+        monthlyPrice={pdvAccess.monthlyPrice}
+        onBack={() => navigate("/admin")}
+      />
+    );
+  }
+
   // ─────────────────────────────────────────────────────────────────────────
   // TELA 1 — ABERTURA
   // ─────────────────────────────────────────────────────────────────────────
@@ -634,6 +652,7 @@ const PdvPage = () => {
         </div>
         <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
       </button>
+      {pdvAccess.source !== "pdv_only" && (
       <button
         type="button"
         onClick={() => setShowManualDelivery(true)}
@@ -648,6 +667,7 @@ const PdvPage = () => {
         </div>
         <ChevronRight className="h-4 w-4 text-success shrink-0" />
       </button>
+      )}
     </div>
   );
 
@@ -670,6 +690,7 @@ const PdvPage = () => {
         outboxCount={outboxCount}
         outboxFlushing={outboxFlushing}
         onSyncOutbox={() => flushOutbox(false)}
+        isPdvOnly={pdvAccess.source === "pdv_only"}
       />
 
       <PdvTabs
@@ -967,6 +988,17 @@ const PdvPage = () => {
           onClose={() => setEmptiesFlow({ step: null, orderId: "", items: [] })}
         />
       )}
+
+      {/* FAB — gerenciar cardápio (principalmente pra lojas pdv_only, que não têm painel) */}
+      <button
+        type="button"
+        onClick={() => navigate("/admin/cardapio")}
+        title="Gerenciar cardápio"
+        aria-label="Gerenciar cardápio"
+        className="fixed bottom-4 right-4 z-40 h-12 w-12 rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center justify-center border-2 border-background"
+      >
+        <Plus className="h-6 w-6" />
+      </button>
     </div>
   );
 };

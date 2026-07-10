@@ -20,6 +20,7 @@ import { PLANS, DELIVERY_FEE_NOTE, PIX_FEE_NOTE } from "@/lib/plansInfo";
 import PlansComparisonTable from "@/components/PlansComparisonTable";
 import PlanFeeBreakdown from "@/components/fees/PlanFeeBreakdown";
 import DeliveryFeeExplainer from "@/components/fees/DeliveryFeeExplainer";
+import StoreAddonsPanel from "@/components/StoreAddonsPanel";
 
 interface Props {
   storeId: string;
@@ -32,6 +33,7 @@ interface Props {
     commission_only: "Comissão",
     supporter: "Apoiador",
     autonomy: "Autonomia",
+    pdv_only: "Somente PDV",
  };
 
  const planSubtitles: Record<StorePlanType, string> = {
@@ -40,6 +42,7 @@ interface Props {
    commission_only: "Sem mensalidade, paga só quando vende",
    supporter: "Plano exclusivo de lançamento",
    autonomy: "Sem comissão e sem taxa de R$2 da plataforma",
+   pdv_only: "Só balcão — sem delivery, sem vitrine",
  };
 
  const planIcons: Record<StorePlanType, React.ElementType> = {
@@ -48,6 +51,7 @@ interface Props {
    commission_only: Sparkles,
    supporter: Crown,
    autonomy: Crown,
+   pdv_only: CreditCard,
  };
 
  const planAccent: Record<StorePlanType, string> = {
@@ -56,6 +60,7 @@ interface Props {
    commission_only: "text-primary",
    supporter: "text-primary",
    autonomy: "text-primary",
+   pdv_only: "text-primary",
  };
 
  const planAccentBg: Record<StorePlanType, string> = {
@@ -64,6 +69,7 @@ interface Props {
    commission_only: "bg-primary/10",
    supporter: "bg-primary/10",
    autonomy: "bg-primary/10",
+   pdv_only: "bg-primary/10",
  };
 
 /** Opções de plano para troca — vem direto de plansInfo (fonte única). */
@@ -216,8 +222,24 @@ export default function StoreSubscription({ storeId, storeName }: Props) {
               Como cobramos no seu plano
             </p>
           </div>
-          <PlanFeeBreakdown planId={plan.planType} orderValue={50} viaPix />
+          <PlanFeeBreakdown
+            planId={plan.planType}
+            orderValue={50}
+            viaPix
+            monthlyFeeOverride={plan.monthlyFee}
+            commissionRateOverride={plan.commissionRate}
+            pixFeeOverride={plan.pixOperationalFee}
+            isVip={plan.isVip}
+          />
           <DeliveryFeeExplainer mode="store" platformFee={plan.platformDeliverySplit} />
+          {plan.isVip && (
+            <div className="flex items-start gap-2 rounded-lg bg-amber-500/10 border border-amber-500/25 p-2.5">
+              <Crown className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+              <p className="text-[11px] text-amber-700 dark:text-amber-400 leading-relaxed">
+                <strong>Condições personalizadas</strong> — sua loja tem valores negociados diferentes do plano padrão. Os números abaixo já refletem o seu acordo.
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -235,9 +257,16 @@ export default function StoreSubscription({ storeId, storeName }: Props) {
                 <p className="text-xs text-muted-foreground truncate">{planSubtitles[plan.planType]}</p>
               </div>
             </div>
-            <Badge className="bg-background text-foreground border border-border/60 shrink-0">
-              {plan.isInTrial ? `Trial · ${plan.trialDaysLeft}d` : "Ativo"}
-            </Badge>
+            <div className="flex flex-col items-end gap-1 shrink-0">
+              <Badge className="bg-background text-foreground border border-border/60">
+                {plan.isInTrial ? `Trial · ${plan.trialDaysLeft}d` : "Ativo"}
+              </Badge>
+              {plan.isVip && (
+                <Badge className="bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30 gap-1">
+                  <Crown className="h-3 w-3" /> VIP
+                </Badge>
+              )}
+            </div>
           </div>
         </div>
 
@@ -272,26 +301,45 @@ export default function StoreSubscription({ storeId, storeName }: Props) {
               </p>
               <p className="text-2xl font-bold text-foreground mt-1">
                 {plan.isFixedPlan
-                  ? formatBRL(plan.pixOperationalFee)
+                  ? (plan.pixOperationalFee > 0 ? formatBRL(plan.pixOperationalFee) : "Grátis")
                   : plan.commissionRate > 0 ? `${plan.commissionRate}%` : "Grátis"}
               </p>
               <p className="text-[10px] text-muted-foreground mt-0.5">
-                {plan.isFixedPlan ? "só em pedidos pagos via PIX" : "sobre o subtotal"}
+                {plan.isFixedPlan
+                  ? (plan.pixOperationalFee > 0 ? "só em pedidos pagos via PIX" : "PIX sem taxa nesta loja")
+                  : "sobre o subtotal"}
               </p>
             </div>
           </div>
 
-          {/* Essencial: delivery fee disclosure (paid by client) */}
-          {plan.isFixedPlan && (
+          {/* Delivery fee disclosure (paid by client) — reflete override VIP */}
+          {plan.isFixedPlan && plan.platformDeliverySplit > 0 && (
             <div className="rounded-xl border border-primary/30 bg-primary/5 p-3">
               <div className="flex items-start gap-3">
                 <div className="h-9 w-9 rounded-xl bg-primary/15 flex items-center justify-center shrink-0">
                   <Truck className="h-4 w-4 text-primary" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-xs font-semibold text-foreground">Taxa de entrega: R$ 2,00 por pedido</p>
+                  <p className="text-xs font-semibold text-foreground">
+                    Taxa de entrega: {formatBRL(plan.platformDeliverySplit)} por pedido
+                  </p>
                   <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">
                     Cobrada do <strong>cliente</strong> no checkout (não sai do seu caixa). Destinada à manutenção da infraestrutura, tecnologia e suporte da plataforma.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+          {plan.isFixedPlan && plan.platformDeliverySplit === 0 && (
+            <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-3">
+              <div className="flex items-start gap-3">
+                <div className="h-9 w-9 rounded-xl bg-emerald-500/15 flex items-center justify-center shrink-0">
+                  <Truck className="h-4 w-4 text-emerald-600" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-semibold text-foreground">Sem taxa de plataforma na entrega</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">
+                    Sua loja tem condição especial: o cliente paga exatamente a taxa que você define, sem acréscimo da plataforma.
                   </p>
                 </div>
               </div>
@@ -485,6 +533,9 @@ export default function StoreSubscription({ storeId, storeName }: Props) {
 
       {/* ───────── APP ADDON ───────── */}
       <AppAddonCard storeId={storeId} />
+
+      {/* ───────── MÓDULOS (PDV etc.) ───────── */}
+      <StoreAddonsPanel storeId={storeId} />
 
       {/* ───────── CHANGE PLAN CTA ───────── */}
       {!showChangePlan && !hasPendingRequest && (

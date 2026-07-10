@@ -192,9 +192,10 @@ Deno.serve(async (req) => {
         const text = incomingText(data);
 
         // Log inbound SEMPRE (antes de qualquer skip) — usado para first-contact.
-        await admin.from("whatsapp_inbound_log").insert({
+        const { error: inboundLogError } = await admin.from("whatsapp_inbound_log").insert({
           store_id: cfg.store_id, phone: number,
-        }).catch(() => undefined);
+        });
+        if (inboundLogError) console.warn("[evolution-webhook] inbound log skipped", inboundLogError.message);
 
         // P2 — opt-out: cliente digita PARAR -> registra blacklist e não responde
         if (isOptOut(text)) {
@@ -218,6 +219,7 @@ Deno.serve(async (req) => {
         const { data: recentGreet } = await admin
           .from("whatsapp_send_log")
           .select("id").eq("store_id", cfg.store_id).eq("phone", number).eq("kind", "auto_reply")
+          .neq("message_hash", "greet_pending")
           .gte("sent_at", silenceSince).limit(1).maybeSingle();
         if (recentGreet) return json({ ok: true, skipped: "silence_24h" });
 
@@ -307,7 +309,10 @@ Deno.serve(async (req) => {
           : buildOneShot(storeName, link);
 
         const sendMsg = async (message: string) => {
-          const functionBaseUrl = Deno.env.get("EXTERNAL_SUPABASE_URL") || Deno.env.get("SUPABASE_URL")!;
+          // Functions must call the current Cloud functions host. EXTERNAL_SUPABASE_URL
+          // is only the production data backend; using it here can route webhooks to
+          // stale external functions and make incoming WhatsApp messages disappear.
+          const functionBaseUrl = Deno.env.get("SUPABASE_URL") || Deno.env.get("EXTERNAL_SUPABASE_URL")!;
           const functionKey = Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
           const response = await fetch(`${functionBaseUrl}/functions/v1/evolution-send-message`, {
             method: "POST",
@@ -328,10 +333,11 @@ Deno.serve(async (req) => {
 
         // Pré-registra IMEDIATAMENTE (greet_pending) para bloquear rajada
         // via unique index (store_id, phone, kind, sent_bucket_min) da Fase 1.
-        await admin.from("whatsapp_send_log").insert({
+        const { error: pendingLogError } = await admin.from("whatsapp_send_log").insert({
           store_id: cfg.store_id, phone: number, message_hash: "greet_pending",
           kind: "auto_reply", sent_at: new Date().toISOString(),
-        }).catch(() => undefined);
+        });
+        if (pendingLogError) console.warn("[evolution-webhook] pending log skipped", pendingLogError.message);
 
         // Um envio só, com pequeno delay humano (2-4s).
         await sleep(2_000 + Math.floor(Math.random() * 2_000));

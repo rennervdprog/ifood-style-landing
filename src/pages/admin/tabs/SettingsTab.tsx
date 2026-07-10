@@ -4,6 +4,7 @@ import { MessageCircle, Monitor, Copy, Loader2, RefreshCw, Ban, Store as StoreIc
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useStorePlan } from "@/hooks/useStorePlan";
 
 interface Props {
   store: any;
@@ -12,6 +13,8 @@ interface Props {
 type SubTab = "loja" | "whatsapp" | "kds";
 
 const SettingsTab = ({ store }: Props) => {
+  const storePlan = useStorePlan(store?.id);
+  const isPdvOnly = storePlan.planType === "pdv_only";
   const [subTab, setSubTab] = useState<SubTab>("loja");
   const [kdsToken, setKdsToken] = useState<string>("");
   const [kdsLoading, setKdsLoading] = useState(false);
@@ -52,7 +55,7 @@ const SettingsTab = ({ store }: Props) => {
   <div className="space-y-6">
     <div className="flex gap-1.5 overflow-x-auto -mx-1 px-1 pb-1">
       {([
-        { key: "loja" as SubTab, label: "Loja & Entrega", icon: StoreIcon },
+        { key: "loja" as SubTab, label: isPdvOnly ? "Loja" : "Loja & Entrega", icon: StoreIcon },
         { key: "whatsapp" as SubTab, label: "WhatsApp", icon: MessageCircle },
         { key: "kds" as SubTab, label: "KDS", icon: Monitor },
       ]).map(t => (

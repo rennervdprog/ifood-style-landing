@@ -9,7 +9,7 @@ const BodySchema = z.object({
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+    "authorization, x-client-info, apikey, content-type, baggage, sentry-trace, x-supabase-api-version",
 };
 
 const json = (body: unknown, status = 200) =>
@@ -56,12 +56,15 @@ Deno.serve(async (req) => {
   }
 
   if (!isAdminCaller && token) {
-    // Try as a user JWT against the external project
+    // Try as a user JWT against the external project.
+    // Use the service key here — getUser() validates the passed token
+    // regardless of the key used to construct the client, and the anon
+    // key may not be exposed as a secret on the external runtime.
     try {
-      const userClient = createClient(EXTERNAL_URL, externalAnon, {
-        global: { headers: { Authorization: `Bearer ${token}` } },
-      });
-      const { data: u } = await userClient.auth.getUser(token);
+      const authKey = externalAnon || EXTERNAL_KEY;
+      const userClient = createClient(EXTERNAL_URL, authKey);
+      const { data: u, error: uErr } = await userClient.auth.getUser(token);
+      if (uErr) console.warn("[monthly-billing] getUser err", uErr.message);
       if (u?.user) {
         const adminClient = createClient(EXTERNAL_URL, EXTERNAL_KEY);
         const { data: isPlatformAdmin, error: rpcError } = await adminClient
@@ -124,11 +127,27 @@ Deno.serve(async (req) => {
     // Nota: commission_only tem monthly_fee=0 mas pode ter comissão pendente
     const now = new Date();
 
-    // Buscar planos com mensalidade OU comissão PDV pendente
+    // Pré-carrega add-ons ativos p/ incluir também lojas com plano grátis
+    // porém com add-on pago contratado.
+    const { data: preAddons } = await supabase
+      .from("store_addons")
+      .select("store_id, enabled, cancels_at, price_override, addon_code")
+      .eq("enabled", true);
+    const activeAddonStoreIds = Array.from(new Set(
+      (preAddons || [])
+        .filter((a: any) => !a.cancels_at || new Date(a.cancels_at) > now)
+        .map((a: any) => a.store_id),
+    ));
+
+    // Buscar planos com mensalidade, comissão PDV pendente ou add-on ativo.
+    const orClauses = ["monthly_fee.gt.0", "pdv_commission_pending.gt.0"];
+    if (activeAddonStoreIds.length) {
+      orClauses.push(`store_id.in.(${activeAddonStoreIds.join(",")})`);
+    }
     let query = supabase
       .from("store_plans")
       .select("*, stores!inner(id, name, owner_id, asaas_account_id, status)")
-      .or("monthly_fee.gt.0,pdv_commission_pending.gt.0")
+      .or(orClauses.join(","))
       .eq("is_active", true);
 
     if (manualStoreId) {
@@ -158,6 +177,33 @@ Deno.serve(async (req) => {
     let billed = 0;
     let failed = 0;
     const results: any[] = [];
+
+    // Load plan templates to detect VIP (personalized) conditions per store
+    const { data: templates } = await supabase
+      .from("plan_templates")
+      .select("plan_type, monthly_fee, commission_rate, pix_fee, delivery_split, pdv_fixed");
+    const templateByType = new Map<string, any>();
+    (templates || []).forEach((t: any) => templateByType.set(t.plan_type, t));
+
+    // Add-on catálogo + assinaturas ativas (não legado) para somar na fatura.
+    const { data: addonCatalog } = await supabase
+      .from("plan_addons")
+      .select("code, name, monthly_price");
+    const addonPriceByCode = new Map<string, { name: string; price: number }>();
+    (addonCatalog || []).forEach((a: any) =>
+      addonPriceByCode.set(a.code, { name: a.name, price: Number(a.monthly_price) }),
+    );
+    const { data: allStoreAddons } = await supabase
+      .from("store_addons")
+      .select("store_id, addon_code, enabled, price_override, cancels_at");
+    const addonsByStore = new Map<string, any[]>();
+    (allStoreAddons || []).forEach((sa: any) => {
+      if (!sa.enabled) return;
+      if (sa.cancels_at && new Date(sa.cancels_at) <= now) return;
+      const arr = addonsByStore.get(sa.store_id) || [];
+      arr.push(sa);
+      addonsByStore.set(sa.store_id, arr);
+    });
 
     for (const plan of duePlans) {
       const store = (plan as any).stores;
@@ -207,15 +253,43 @@ Deno.serve(async (req) => {
             ? "Plano Essencial"
             : plan.plan_type === "hybrid"
               ? "Plano Crescimento"
-              : "Plano Comissão";
+              : plan.plan_type === "autonomy"
+                ? "Plano Autonomia"
+                : plan.plan_type === "pdv_only"
+                  ? "Plano Somente PDV"
+                  : "Plano Comissão";
 
         // Incluir comissão PDV acumulada no período
         const pdvPending = Number((plan as any).pdv_commission_pending || 0);
-        // Para commission_only: cobrar também comissao_pendente de pagamentos físicos (dinheiro/cartão)
-        // Para todos os planos: somar mensalidade + pdvPending
-        const totalAmount = Number(plan.monthly_fee) + pdvPending;
         const pdvLine = pdvPending > 0 ? ` + Comissão PDV R$${pdvPending.toFixed(2)}` : "";
-        const description = `${planLabel}${pdvLine} - ${store.name} - ${referenceCode}`;
+
+        // Add-ons ativos (ex.: PDV R$49) — só se loja NÃO for legada.
+        const storeAddons = addonsByStore.get(store.id) || [];
+        let addonsTotal = 0;
+        const addonLines: string[] = [];
+        for (const sa of storeAddons) {
+          const cat = addonPriceByCode.get(sa.addon_code);
+          if (!cat) continue;
+          const price = sa.price_override !== null && sa.price_override !== undefined
+            ? Number(sa.price_override) : cat.price;
+          if (price <= 0) continue; // VIP grátis
+          addonsTotal += price;
+          addonLines.push(`${cat.name} R$${price.toFixed(2)}`);
+        }
+        const totalAmount = Number(plan.monthly_fee) + pdvPending + addonsTotal;
+
+        // Detect VIP: any store_plans value diverges from plan_templates default
+        const tpl = templateByType.get(plan.plan_type);
+        const isVip = !!tpl && (
+          Number(tpl.monthly_fee ?? 0) !== Number(plan.monthly_fee ?? 0) ||
+          Number(tpl.commission_rate ?? 0) !== Number(plan.commission_rate ?? 0) ||
+          Number(tpl.pix_fee ?? 0) !== Number(plan.pix_operational_fee_override ?? tpl.pix_fee ?? 0) ||
+          Number(tpl.delivery_split ?? 0) !== Number(plan.platform_delivery_split_override ?? tpl.delivery_split ?? 0) ||
+          Number(tpl.pdv_fixed ?? 0) !== Number(plan.pdv_fixed_fee_per_sale ?? tpl.pdv_fixed ?? 0)
+        );
+        const vipTag = isVip ? " (condição VIP)" : "";
+        const addonsDesc = addonLines.length ? ` + ${addonLines.join(" + ")}` : "";
+        const description = `${planLabel}${vipTag}${pdvLine}${addonsDesc} - ${store.name} - ${referenceCode}`;
 
         // Resolve Asaas customer for this store
         let customerId: string | null = store.asaas_account_id || null;

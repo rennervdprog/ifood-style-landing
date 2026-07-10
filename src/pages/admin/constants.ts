@@ -79,6 +79,10 @@ export type DashboardSubTab = {
   icon: React.ElementType;
   pizzaOnly?: boolean;
   requiresFullReports?: boolean;
+  /** Ocultar quando o plano da loja é PDV Standalone (sem delivery/vitrine) */
+  hideOnPdvOnly?: boolean;
+  /** Label alternativo exibido quando o plano é PDV Standalone. */
+  pdvLabel?: string;
 };
 
 export type DashboardGroup = {
@@ -86,6 +90,8 @@ export type DashboardGroup = {
   label: string;
   icon: React.ElementType;
   subTabs: DashboardSubTab[];
+  /** Label alternativo exibido quando o plano é PDV Standalone. */
+  pdvLabel?: string;
 };
 
 export const dashboardGroups: DashboardGroup[] = [
@@ -94,19 +100,20 @@ export const dashboardGroups: DashboardGroup[] = [
     label: "Início",
     icon: LayoutDashboard,
     subTabs: [
-      { key: "dashboard", label: "Visão Geral", icon: LayoutDashboard },
+      { key: "dashboard", label: "Visão Geral", icon: LayoutDashboard, hideOnPdvOnly: true },
       { key: "avisos", label: "Avisos", icon: Bell },
-      { key: "repasse", label: "Repasse", icon: Banknote },
+      { key: "repasse", label: "Repasse", icon: Banknote, hideOnPdvOnly: true },
     ],
   },
   {
     key: "pedidos",
     label: "Pedidos",
+    pdvLabel: "PDV",
     icon: ListOrdered,
     subTabs: [
-      { key: "orders", label: "Pedidos", icon: ListOrdered },
-      { key: "cash_register", label: "PDV / Caixa", icon: ShoppingCart },
-      { key: "refunds", label: "Reembolsos", icon: AlertTriangle },
+      { key: "orders", label: "Pedidos", icon: ListOrdered, hideOnPdvOnly: true },
+      { key: "cash_register", label: "PDV / Caixa", icon: ShoppingCart, pdvLabel: "Caixa" },
+      { key: "refunds", label: "Reembolsos", icon: AlertTriangle, hideOnPdvOnly: true },
     ],
   },
   {
@@ -116,7 +123,7 @@ export const dashboardGroups: DashboardGroup[] = [
     subTabs: [
       { key: "menu", label: "Produtos", icon: UtensilsCrossed },
       { key: "addons", label: "Adicionais", icon: Plus },
-      { key: "promotions", label: "Promoções", icon: Flame },
+      { key: "promotions", label: "Promoções", icon: Flame, hideOnPdvOnly: true },
       { key: "bordas", label: "Pizzaria/Pastel", icon: CircleDot, pizzaOnly: true },
     ],
   },
@@ -125,9 +132,9 @@ export const dashboardGroups: DashboardGroup[] = [
     label: "Clientes",
     icon: Users,
     subTabs: [
-      { key: "clients", label: "Clientes", icon: Users, requiresFullReports: true },
-      { key: "loyalty", label: "Fidelidade", icon: Star },
-      { key: "coupons", label: "Cupons", icon: Tag },
+      { key: "clients", label: "Clientes", icon: Users, requiresFullReports: true, hideOnPdvOnly: true },
+      { key: "loyalty", label: "Fidelidade", icon: Star, hideOnPdvOnly: true },
+      { key: "coupons", label: "Cupons", icon: Tag, hideOnPdvOnly: true },
     ],
   },
   {
@@ -135,8 +142,8 @@ export const dashboardGroups: DashboardGroup[] = [
     label: "Operação",
     icon: Clock,
     subTabs: [
-      { key: "hours", label: "Horários", icon: Clock },
-      { key: "drivers", label: "Motoboys", icon: Bike },
+      { key: "hours", label: "Horários", icon: Clock, hideOnPdvOnly: true },
+      { key: "drivers", label: "Motoboys", icon: Bike, hideOnPdvOnly: true },
     ],
   },
   {
@@ -145,8 +152,8 @@ export const dashboardGroups: DashboardGroup[] = [
     icon: Coins,
     subTabs: [
       { key: "finance", label: "Resumo", icon: Coins },
-      { key: "repasse", label: "Repasse", icon: Banknote },
-      { key: "reports", label: "Relatórios", icon: BarChart3, requiresFullReports: true },
+      { key: "repasse", label: "Repasse", icon: Banknote, hideOnPdvOnly: true },
+      { key: "reports", label: "Relatórios", icon: BarChart3, requiresFullReports: true, hideOnPdvOnly: true },
       { key: "subscription", label: "Meu Plano", icon: CreditCard },
     ],
   },
@@ -179,10 +186,11 @@ export const moreSheetGroupKeys: DashboardGroupKey[] = [
 
 export function filterSubTab(
   sub: DashboardSubTab,
-  ctx: { isPizza: boolean; allowFullReports: boolean },
+  ctx: { isPizza: boolean; allowFullReports: boolean; isPdvOnly?: boolean },
 ): boolean {
   if (sub.pizzaOnly && !ctx.isPizza) return false;
   if (sub.requiresFullReports && !ctx.allowFullReports) return false;
+  if (ctx.isPdvOnly && sub.hideOnPdvOnly) return false;
   return true;
 }
 
