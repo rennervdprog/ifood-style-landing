@@ -12,7 +12,7 @@ import { maskWhatsApp } from "@/lib/whatsapp";
 import { formatBRL, addMoney } from "@/lib/utils";
 import { calculateStoreOwnDeliveryFee, calculateDeliveryFee, DEFAULT_DELIVERY_FEE_CONFIG, type DeliveryFeeConfig } from "@/lib/deliveryFee";
 
-const PAY_METHODS = [
+const BASE_PAY_METHODS = [
   { id: "pix_machine", label: "PIX na maquininha", icon: QrCode },
   { id: "cartao",      label: "Cartão na entrega", icon: CreditCard },
   { id: "dinheiro",    label: "Dinheiro",           icon: Banknote },
@@ -52,7 +52,7 @@ const GuestCheckoutPage = () => {
     queryFn: async () => {
       const { data } = await supabase
         .from("stores")
-        .select("id, name, address_city, minimum_order_value, own_delivery_fee, delivery_mode, delivery_fee_type, delivery_base_km, delivery_fee_base, delivery_fee_per_km, address_cep, latitude, longitude, free_delivery_threshold, guest_checkout_enabled")
+        .select("id, name, address_city, minimum_order_value, own_delivery_fee, delivery_mode, delivery_fee_type, delivery_base_km, delivery_fee_base, delivery_fee_per_km, address_cep, latitude, longitude, free_delivery_threshold, guest_checkout_enabled, pix_direto_enabled, pix_direto_key")
         .eq("id", storeId!).maybeSingle();
       return (data as any) || null;
     },
