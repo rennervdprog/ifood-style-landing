@@ -321,10 +321,10 @@ const StoreDirectory = () => {
     setMeta("description", desc);
     setMeta("og:title", "ItaSuper — Delivery e PDV num app só", "property");
     setMeta("og:description", desc, "property");
-    setMeta("og:url", "https://itasuper.lovable.app/", "property");
+    setMeta("og:url", "https://itasuper.com.br/", "property");
     let canonical = document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]');
     if (!canonical) { canonical = document.createElement("link"); canonical.rel = "canonical"; document.head.appendChild(canonical); }
-    canonical.href = "https://itasuper.lovable.app/";
+    canonical.href = "https://itasuper.com.br/";
 
     // FAQPage JSON-LD
     const SCRIPT_ID = "faq-jsonld-storedirectory";
@@ -361,7 +361,7 @@ const StoreDirectory = () => {
       applicationCategory: "BusinessApplication",
       operatingSystem: "Web, Android",
       description: desc,
-      url: "https://itasuper.lovable.app/",
+      url: "https://itasuper.com.br/",
       offers: [
         { "@type": "Offer", name: "Comissão", price: "0", priceCurrency: "BRL" },
         { "@type": "Offer", name: "Essencial", price: "90", priceCurrency: "BRL" },
@@ -383,8 +383,8 @@ const StoreDirectory = () => {
       "@context": "https://schema.org",
       "@type": "Organization",
       name: "ItaSuper",
-      url: "https://itasuper.lovable.app/",
-      logo: "https://itasuper.lovable.app/itasuper-logo-horizontal.webp",
+      url: "https://itasuper.com.br/",
+      logo: "https://itasuper.com.br/itasuper-logo-horizontal.webp",
     });
   }, []);
 
