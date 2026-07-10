@@ -39,6 +39,28 @@ Deno.serve(async () => {
     const base = key.startsWith("$aact_prod_") ? "https://api.asaas.com/v3" : "https://sandbox.asaas.com/api/v3";
     const r = await fetch(`${base}/customers?cpfCnpj=53142159851`, { headers: { access_token: key } });
     out.asaas_ping = { status: r.status, body: (await r.text()).slice(0, 500) };
+    // Try to create the actual PIX payment like subscribe does
+    const customerId = "cus_000185613637";
+    const due = new Date(); due.setDate(due.getDate() + 1);
+    const pr = await fetch(`${base}/payments`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", access_token: key },
+      body: JSON.stringify({
+        customer: customerId, billingType: "PIX", notificationDisabled: true,
+        value: 90, dueDate: due.toISOString().split("T")[0],
+        description: "TEST DIAG",
+        externalReference: `#DIAG-${Date.now()}`,
+      }),
+    });
+    const prBody = await pr.text();
+    out.asaas_payment = { status: pr.status, body: prBody.slice(0, 1500) };
+    try {
+      const pj = JSON.parse(prBody);
+      if (pj?.id) {
+        const qr = await fetch(`${base}/payments/${pj.id}/pixQrCode`, { headers: { access_token: key } });
+        out.asaas_qr = { status: qr.status, body: (await qr.text()).slice(0, 500) };
+      }
+    } catch {}
   }
   return new Response(JSON.stringify(out, null, 2), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
 });
