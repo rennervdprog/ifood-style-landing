@@ -99,6 +99,25 @@ const plans = [
   },
 ];
 
+// Plano Somente PDV (loja física sem delivery)
+plans.push({
+  id: "pdv_only",
+  name: "Somente PDV",
+  tagline: "Só o caixa, sem delivery",
+  price: "69",
+  commission: "Sem",
+  icon: CreditCard,
+  highlight: false,
+  badge: "Balcão" as string | undefined,
+  features: [
+    "PDV completo (vendas, sangria, fechamento)",
+    "Cadastro de produtos ilimitado",
+    "Relatórios do caixa",
+    "WhatsApp integrado (grátis)",
+    "Sem vitrine pública, sem delivery",
+  ],
+});
+
 const testimonials = [
   { name: "Carlos M.", store: "Pizzaria do Carlinho", quote: "Em 2 semanas dobrei os pedidos. O PIX cair na hora mudou minha vida." },
   { name: "Juliana R.", store: "Doceria Júlia", quote: "Saí do WhatsApp e parei de perder pedido. Agora vendo até dormindo." },
