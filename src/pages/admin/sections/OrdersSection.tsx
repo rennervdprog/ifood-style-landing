@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Search, XCircle, Truck, Loader2, Clock, ChefHat, Package, CheckCircle2, Bell, Calendar, Store as StoreIcon, QrCode } from "lucide-react";
+import { Search, XCircle, Truck, Loader2, Clock, ChefHat, Package, CheckCircle2, Bell, Calendar, Store as StoreIcon, QrCode, MessageCircle } from "lucide-react";
 import { AdminOrderCard } from "../components/AdminOrderCard";
 import type { OrderStatus, OrderTabKey } from "../types";
 import { formatBRL } from "@/lib/utils";
@@ -87,6 +87,7 @@ export default function OrdersSection(props: Props) {
   const [pixBusyId, setPixBusyId] = useState<string | null>(null);
   const [proofUrls, setProofUrls] = useState<Record<string, string>>({});
   const [pixConfirmOrder, setPixConfirmOrder] = useState<any | null>(null);
+  const [pixWhatsAppOrder, setPixWhatsAppOrder] = useState<any | null>(null);
   const [pixProofPreview, setPixProofPreview] = useState<{ url: string; order: any } | null>(null);
 
   const openProof = async (order: any) => {
@@ -106,6 +107,20 @@ export default function OrdersSection(props: Props) {
       const { error } = await (supabase as any).rpc("confirm_pix_proof", { p_order_id: order.id });
       if (error) throw error;
       toast.success("Pagamento confirmado! Pedido em preparo.");
+      invalidateOrders();
+    } catch (e: any) {
+      toast.error(e?.message || "Erro ao confirmar");
+    } finally {
+      setPixBusyId(null);
+    }
+  };
+
+  const confirmPixExternal = async (order: any) => {
+    setPixBusyId(order.id);
+    try {
+      const { error } = await (supabase as any).rpc("confirm_pix_external", { p_order_id: order.id });
+      if (error) throw error;
+      toast.success("Pagamento confirmado (WhatsApp)! Pedido em preparo.");
       invalidateOrders();
     } catch (e: any) {
       toast.error(e?.message || "Erro ao confirmar");
