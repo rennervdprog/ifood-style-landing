@@ -29,11 +29,11 @@ const steps = [
 ];
 
 const features = [
-  { icon: Smartphone, title: "Cardápio digital", desc: "Link próprio da loja, abre sem instalar nada." },
+  { icon: Smartphone, title: "Cardápio digital", desc: "Cardápio digital com link próprio da sua loja — cliente abre no navegador, sem instalar app." },
   { icon: CreditCard, title: "PIX automático", desc: "Cliente paga, dinheiro cai na hora." },
   { icon: Truck, title: "Motoboy integrado", desc: "Mapa em tempo real e código de confirmação." },
   { icon: BarChart3, title: "Relatório do dia", desc: "Vendas, lucro e mais pedidos numa tela." },
-  { icon: Store, title: "PDV de balcão (opcional)", desc: "Módulo à parte por R$ 49/mês. Caixa, troco e fechamento do dia." },
+  { icon: Store, title: "PDV para loja física", desc: "Frente de caixa completa: vendas, troco, sangria e fechamento do dia. Contrate à parte ou use o plano Somente PDV." },
 ];
 
 const segments = [
@@ -42,7 +42,7 @@ const segments = [
   { emoji: "🍰", title: "Docerias", desc: "Cliente agenda dia e hora sozinho." },
   { emoji: "🍺", title: "Bares", desc: "Delivery e balcão no mesmo sistema." },
   { emoji: "🍔", title: "Lanches", desc: "Combos e adicionais com 1 toque." },
-  { emoji: "💈", title: "Serviços", desc: "Vitrine + caixa, sem precisar de entrega." },
+  { emoji: "💈", title: "Lojas físicas", desc: "Barbearia, pet shop, loja de roupa — use só o PDV, sem vitrine online." },
 ];
 
 const plans = [
@@ -99,6 +99,25 @@ const plans = [
   },
 ];
 
+// Plano Somente PDV (loja física sem delivery)
+plans.push({
+  id: "pdv_only",
+  name: "Somente PDV",
+  tagline: "Só o caixa, sem delivery",
+  price: "69",
+  commission: "Sem",
+  icon: CreditCard,
+  highlight: false,
+  badge: "Balcão" as string | undefined,
+  features: [
+    "PDV completo (vendas, sangria, fechamento)",
+    "Cadastro de produtos ilimitado",
+    "Relatórios do caixa",
+    "WhatsApp integrado (grátis)",
+    "Sem vitrine pública, sem delivery",
+  ],
+});
+
 const testimonials = [
   { name: "Carlos M.", store: "Pizzaria do Carlinho", quote: "Em 2 semanas dobrei os pedidos. O PIX cair na hora mudou minha vida." },
   { name: "Juliana R.", store: "Doceria Júlia", quote: "Saí do WhatsApp e parei de perder pedido. Agora vendo até dormindo." },
@@ -125,6 +144,14 @@ const faqs = [
   {
     q: "Tenho só loja física, sem delivery. Dá pra usar só o PDV?",
     a: "Dá sim. Existe o plano Somente PDV por R$ 69/mês: você usa o caixa completo (vendas, sangria, fechamento do dia) sem vitrine pública, sem cardápio online e sem comissão por pedido. Depois, se quiser abrir delivery, migra pra Comissão/Essencial/Autonomia num clique.",
+  },
+  {
+    q: "O ItaSuper é uma alternativa ao iFood?",
+    a: "Sim. Você tem seu próprio cardápio digital, recebe pedidos direto no seu link, o PIX cai na sua conta na hora e a comissão é bem menor (0% no plano Essencial, contra ~27% das grandes plataformas). Você fica dono do cliente.",
+  },
+  {
+    q: "Serve para pizzaria com meio-a-meio e bordas?",
+    a: "Sim. O cardápio suporta sabor meio-a-meio, escolha de borda recheada, adicionais por sabor e observações do cliente sem erro. Ideal para pizzaria delivery.",
   },
 ];
 
@@ -195,7 +222,7 @@ const Navbar = ({ onNavigate, isLoggedIn }: { onNavigate: (p: string) => void; i
     <nav className={`sticky top-0 z-50 backdrop-blur-xl transition-all duration-300 ${scrolled ? "bg-background/90 border-b border-border shadow-sm" : "bg-background/60 border-b border-transparent"}`}>
       <div className="max-w-6xl mx-auto flex items-center justify-between px-4 md:px-6 h-14 md:h-16">
         <button onClick={() => scrollTo("#hero")} aria-label="Início" className="shrink-0">
-          <img src="/itasuper-logo-horizontal.webp" alt="ItaSuper" width={170} height={40} className="h-7 md:h-9 w-auto object-contain" decoding="async" {...({ fetchpriority: "high" } as any)} />
+          <img src="/itasuper-logo-horizontal.webp" alt="ItaSuper — sistema de delivery e PDV" width={170} height={40} className="h-7 md:h-9 w-auto object-contain" decoding="async" {...({ fetchpriority: "high" } as any)} />
         </button>
         <div className="hidden md:flex items-center gap-7">
           {links.map((l) => (
@@ -284,20 +311,20 @@ const StoreDirectory = () => {
     window.open("https://wa.me/5522992796291?text=Olá! Tenho interesse em cadastrar minha loja na plataforma.", "_blank");
 
   useEffect(() => {
-    document.title = "ItaSuper — Cardápio digital, delivery e PDV para sua loja";
+    document.title = "Sistema de Delivery e PDV para Restaurantes e Lojas | ItaSuper";
     const setMeta = (name: string, content: string, attr: "name" | "property" = "name") => {
       let el = document.head.querySelector<HTMLMetaElement>(`meta[${attr}="${name}"]`);
       if (!el) { el = document.createElement("meta"); el.setAttribute(attr, name); document.head.appendChild(el); }
       el.setAttribute("content", content);
     };
-    const desc = "Cardápio digital, PIX automático e motoboy num app só. PDV de balcão como módulo opcional. Sem comissão por pedido. Crie sua loja grátis em 10 minutos.";
+    const desc = "Sistema completo de delivery com cardápio digital, PIX automático, motoboy integrado e PDV para loja física. Sem comissão no plano fixo. Grátis para começar.";
     setMeta("description", desc);
-    setMeta("og:title", "ItaSuper — Delivery profissional em 10 minutos", "property");
+    setMeta("og:title", "ItaSuper — Delivery e PDV num app só", "property");
     setMeta("og:description", desc, "property");
-    setMeta("og:url", "https://itasuper.com.br/", "property");
+    setMeta("og:url", "https://itasuper.lovable.app/", "property");
     let canonical = document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]');
     if (!canonical) { canonical = document.createElement("link"); canonical.rel = "canonical"; document.head.appendChild(canonical); }
-    canonical.href = "https://itasuper.com.br/";
+    canonical.href = "https://itasuper.lovable.app/";
 
     // FAQPage JSON-LD
     const SCRIPT_ID = "faq-jsonld-storedirectory";
@@ -316,6 +343,48 @@ const StoreDirectory = () => {
         name: f.q,
         acceptedAnswer: { "@type": "Answer", text: f.a },
       })),
+    });
+
+    // SoftwareApplication JSON-LD
+    const APP_ID = "app-jsonld-storedirectory";
+    let a = document.getElementById(APP_ID) as HTMLScriptElement | null;
+    if (!a) {
+      a = document.createElement("script");
+      a.type = "application/ld+json";
+      a.id = APP_ID;
+      document.head.appendChild(a);
+    }
+    a.textContent = JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      name: "ItaSuper",
+      applicationCategory: "BusinessApplication",
+      operatingSystem: "Web, Android",
+      description: desc,
+      url: "https://itasuper.lovable.app/",
+      offers: [
+        { "@type": "Offer", name: "Comissão", price: "0", priceCurrency: "BRL" },
+        { "@type": "Offer", name: "Essencial", price: "90", priceCurrency: "BRL" },
+        { "@type": "Offer", name: "Autonomia", price: "229.90", priceCurrency: "BRL" },
+        { "@type": "Offer", name: "Somente PDV", price: "69", priceCurrency: "BRL" },
+      ],
+    });
+
+    // Organization JSON-LD
+    const ORG_ID = "org-jsonld-storedirectory";
+    let o = document.getElementById(ORG_ID) as HTMLScriptElement | null;
+    if (!o) {
+      o = document.createElement("script");
+      o.type = "application/ld+json";
+      o.id = ORG_ID;
+      document.head.appendChild(o);
+    }
+    o.textContent = JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      name: "ItaSuper",
+      url: "https://itasuper.lovable.app/",
+      logo: "https://itasuper.lovable.app/itasuper-logo-horizontal.webp",
     });
   }, []);
 
@@ -396,12 +465,12 @@ const StoreDirectory = () => {
           </div>
 
           <h1 className="mx-auto max-w-3xl text-5xl md:text-7xl font-black tracking-tight text-foreground leading-[0.95] mb-6">
-            Cardápio digital, PIX e motoboy<br />
-            <span className="text-primary">em 10 minutos.</span>
+            Sistema de delivery e PDV<br />
+            <span className="text-primary">pronto em 10 minutos.</span>
           </h1>
 
           <p className="mx-auto max-w-xl text-lg md:text-xl text-muted-foreground leading-relaxed mb-10">
-            Cardápio, PIX e motoboy num app só — com PDV de balcão opcional. Sem mensalidade pra começar.
+            Cardápio digital, PIX automático, motoboy integrado e frente de caixa (PDV) num app só. Sem mensalidade pra começar.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
@@ -445,7 +514,7 @@ const StoreDirectory = () => {
           <div className="max-w-2xl mb-14">
             <p className="text-xs font-black uppercase tracking-[0.2em] text-primary mb-3">A diferença</p>
             <h2 className="text-4xl md:text-5xl font-black tracking-tight text-foreground leading-tight">
-              O fim da bagunça <br /> do delivery no WhatsApp.
+              Chega de anotar pedido no papel <br /> e conferir PIX no banco.
             </h2>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -465,7 +534,7 @@ const StoreDirectory = () => {
           <div className="text-center max-w-xl mx-auto mb-16">
             <p className="text-xs font-black uppercase tracking-[0.2em] text-primary mb-3">Como funciona</p>
             <h2 className="text-4xl md:text-5xl font-black tracking-tight text-foreground">
-              Do cadastro ao primeiro pedido <br /> em menos de 10 minutos.
+              Como montar seu delivery <br /> em 10 minutos.
             </h2>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -487,7 +556,7 @@ const StoreDirectory = () => {
           <div className="max-w-2xl mb-14">
             <p className="text-xs font-black uppercase tracking-[0.2em] text-primary mb-3">Recursos</p>
             <h2 className="text-4xl md:text-5xl font-black tracking-tight text-foreground leading-tight">
-              Tudo que seu delivery <br /> precisa, num app só.
+              Tudo que restaurante, mercado <br /> e loja física precisam.
             </h2>
           </div>
           <div className="grid grid-cols-6 gap-4 auto-rows-[180px]">
@@ -521,7 +590,7 @@ const StoreDirectory = () => {
         <div className="mx-auto max-w-6xl">
           <div className="text-center max-w-xl mx-auto mb-12">
             <p className="text-xs font-black uppercase tracking-[0.2em] text-primary mb-3">Para o seu negócio</p>
-            <h2 className="text-4xl md:text-5xl font-black tracking-tight text-foreground">Feito sob medida.</h2>
+            <h2 className="text-4xl md:text-5xl font-black tracking-tight text-foreground">Feito para pizzarias, mercados, docerias, bares e lojas físicas.</h2>
           </div>
           <div className="flex flex-wrap justify-center gap-2 mb-10">
             {segments.map((s, i) => (
@@ -550,7 +619,7 @@ const StoreDirectory = () => {
           <div>
             <p className="text-xs font-black uppercase tracking-[0.2em] text-primary mb-3">Logística integrada</p>
             <h2 className="text-4xl md:text-5xl font-black tracking-tight leading-tight mb-6">
-              Motoboy com mapa <br /> e código de confirmação.
+              Motoboy integrado com mapa <br /> e código de entrega.
             </h2>
             <p className="text-background/70 text-lg leading-relaxed mb-8">
               Da cozinha à porta do cliente, tudo conectado em tempo real. Sem ligação, sem erro de endereço.
@@ -611,7 +680,7 @@ const StoreDirectory = () => {
         <div className="mx-auto max-w-6xl">
           <div className="text-center max-w-xl mx-auto mb-14">
             <p className="text-xs font-black uppercase tracking-[0.2em] text-primary mb-3">Planos</p>
-            <h2 className="text-4xl md:text-5xl font-black tracking-tight text-foreground">Preço justo. Cancele quando quiser.</h2>
+            <h2 className="text-4xl md:text-5xl font-black tracking-tight text-foreground">Planos de delivery e PDV — cancele quando quiser.</h2>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5">
             {plans.map((p) => (
@@ -659,6 +728,9 @@ const StoreDirectory = () => {
           </div>
           <p className="mt-8 text-center text-xs text-muted-foreground max-w-2xl mx-auto leading-relaxed">
             💡 Nos planos <strong className="text-foreground">Comissão e Essencial</strong> a plataforma soma R$2,00 à sua taxa de entrega (o cliente paga, não sai do seu caixa). Apenas no <strong className="text-foreground">Autonomia</strong> esse acréscimo é zero — o cliente paga exatamente a taxa que você define.
+          </p>
+          <p className="mt-3 text-center text-xs text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+            🏪 Já tem clientela na loja física? O plano <strong className="text-foreground">Somente PDV</strong> é a frente de caixa pura — se quiser abrir delivery depois, migra num clique.
           </p>
         </div>
       </section>
@@ -743,7 +815,7 @@ const StoreDirectory = () => {
         <div className="mx-auto max-w-6xl">
           <div className="text-center max-w-xl mx-auto mb-14">
             <p className="text-xs font-black uppercase tracking-[0.2em] text-primary mb-3">Quem usa, recomenda</p>
-            <h2 className="text-4xl md:text-5xl font-black tracking-tight text-foreground">Lojistas reais.</h2>
+            <h2 className="text-4xl md:text-5xl font-black tracking-tight text-foreground">O que os lojistas dizem sobre o ItaSuper.</h2>
           </div>
           <div className="grid md:grid-cols-3 gap-5">
             {testimonials.map((t) => (
@@ -774,7 +846,7 @@ const StoreDirectory = () => {
         <div className="mx-auto max-w-3xl">
           <div className="text-center mb-12">
             <p className="text-xs font-black uppercase tracking-[0.2em] text-primary mb-3">Dúvidas</p>
-            <h2 className="text-4xl md:text-5xl font-black tracking-tight text-foreground">Perguntas frequentes.</h2>
+            <h2 className="text-4xl md:text-5xl font-black tracking-tight text-foreground">Perguntas frequentes sobre o sistema.</h2>
           </div>
           <div className="space-y-3">
             {faqs.map((f, i) => (
@@ -801,7 +873,7 @@ const StoreDirectory = () => {
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,hsl(var(--primary)/0.15),transparent_70%)] pointer-events-none" />
           <div className="relative flex flex-col items-center">
             <h2 className="text-3xl sm:text-4xl md:text-6xl font-black tracking-tight leading-[1.1] mb-4 text-balance max-w-3xl mx-auto">
-              Comece a vender hoje.
+              Cadastre sua loja e comece a vender hoje.
             </h2>
             <p className="text-background/70 text-base md:text-lg max-w-xl mx-auto mb-10 text-balance">
               Crie sua loja grátis em 10 minutos. Sem cartão, sem fidelidade.
