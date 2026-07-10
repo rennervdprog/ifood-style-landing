@@ -5,6 +5,16 @@ import type { OrderStatus, OrderTabKey } from "../types";
 import { formatBRL } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface Props {
   store: any;
@@ -76,6 +86,7 @@ export default function OrdersSection(props: Props) {
   );
   const [pixBusyId, setPixBusyId] = useState<string | null>(null);
   const [proofUrls, setProofUrls] = useState<Record<string, string>>({});
+  const [pixConfirmOrder, setPixConfirmOrder] = useState<any | null>(null);
 
   const openProof = async (order: any) => {
     if (!order?.pix_proof_url) return;
@@ -198,13 +209,13 @@ export default function OrdersSection(props: Props) {
                 )}
                 {proofSent && (
                   <>
-                    <button
-                      onClick={() => confirmPix(o)}
-                      disabled={pixBusyId === o.id}
-                      className="text-[11px] font-black px-2.5 py-1.5 rounded-lg bg-emerald-600 text-white disabled:opacity-50"
-                    >
-                      {pixBusyId === o.id ? "..." : "Confirmar"}
-                    </button>
+                     <button
+                       onClick={() => setPixConfirmOrder(o)}
+                       disabled={pixBusyId === o.id}
+                       className="text-[11px] font-black px-2.5 py-1.5 rounded-lg bg-emerald-600 text-white disabled:opacity-50"
+                     >
+                       {pixBusyId === o.id ? "..." : "Confirmar"}
+                     </button>
                     <button
                       onClick={() => refusePix(o)}
                       disabled={pixBusyId === o.id}
