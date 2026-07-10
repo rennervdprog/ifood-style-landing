@@ -403,7 +403,7 @@ const AdminDashboard = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orders")
-        .select("id, status, total_price, subtotal, delivery_fee, payment_method, created_at, confirmed_at, client_id, store_id, driver_id, delivery_pin, address_details, neighborhood, needs_change, change_for, scheduled_for, order_source, commission_rate, order_items(id, quantity, unit_price, observations, addons, products(name))")
+        .select("id, status, total_price, subtotal, delivery_fee, payment_method, created_at, confirmed_at, client_id, store_id, driver_id, delivery_pin, address_details, neighborhood, needs_change, change_for, scheduled_for, order_source, commission_rate, pix_proof_url, pix_proof_uploaded_at, pix_expires_at, order_items(id, quantity, unit_price, observations, addons, products(name))")
         .eq("store_id", store!.id)
         .neq("status", "aguardando_pagamento" as any)
         .neq("status", "cancelado" as any)
