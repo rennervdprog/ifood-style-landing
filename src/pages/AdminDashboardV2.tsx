@@ -39,7 +39,7 @@ import { openWhatsApp, formatWhatsAppNumber } from "@/lib/whatsapp";
 import WhatsAppButton from "@/components/WhatsAppButton";
 const MenuBuilder = lazy(() => import("@/components/MenuBuilder"));
 const SupportTicketModal = lazy(() => import("@/components/SupportTicketModal"));
-import { notifyOrderStatusChange, buildWhatsAppMessage } from "@/lib/orderNotifications";
+import { notifyOrderStatusChange, buildWhatsAppMessage, buildRichItemsBlock, buildEtaWindow } from "@/lib/orderNotifications";
 import { getStoreOpenStatus } from "@/lib/storeStatus";
 // Tabs carregadas sob demanda — só baixa o JS quando o lojista abrir a aba
 const TutoriaisTab = lazy(() => import("./admin/tabs/TutoriaisTab"));
@@ -876,6 +876,70 @@ const AdminDashboard = () => {
     return () => { if (loopIntervalRef.current) { clearInterval(loopIntervalRef.current); loopIntervalRef.current = null; } };
   }, [orders, soundEnabled, soundMuted, playAlert]);
 
+  // ── AUTO-PRINT HELPER ──
+  // Único ponto de impressão automática para pedidos de delivery.
+  // Respeita toggle rápido (localStorage.autoPrint) e settings.auto_print_delivery.
+  // Dedupe via sessionStorage["printed-order:{id}"].
+  const autoPrintDeliveryOrder = useCallback(async (orderId: string, source?: string | null) => {
+    if (!orderId) return;
+    if (source === "pdv") {
+      console.info("[auto-print] pulado: motivo=pdv", orderId);
+      return;
+    }
+    const stored = localStorage.getItem("autoPrint");
+    const autoPrintNow = stored === null ? true : stored === "true";
+    if (!autoPrintNow) {
+      console.info("[auto-print] pulado: motivo=toggle-off", orderId);
+      return;
+    }
+    const storeAutoDelivery = (store?.settings as any)?.auto_print_delivery !== false;
+    if (!storeAutoDelivery) {
+      console.info("[auto-print] pulado: motivo=settings-off", orderId);
+      return;
+    }
+    const dedupeKey = `printed-order:${orderId}`;
+    if (sessionStorage.getItem(dedupeKey)) {
+      console.info("[auto-print] pulado: motivo=dedupe", orderId);
+      return;
+    }
+    sessionStorage.setItem(dedupeKey, "1");
+    try {
+      const { data: full } = await supabase
+        .from("orders")
+        .select("*, order_items(*, products(name))")
+        .eq("id", orderId)
+        .maybeSingle();
+      if (!full) return;
+      if ((full as any).order_source === "pdv") return;
+      const copies = (store?.settings as any)?.print_copies === 1 ? 1 : 2;
+      const paperWidth = (store?.settings as any)?.print_paper_width === 58 ? 58 : 80;
+      let name = getClientName((full as any).client_id);
+      let phone = getClientWhatsApp((full as any).client_id);
+      if (!name || name === "Cliente" || !phone) {
+        try {
+          const { data } = await supabase.rpc("get_delivery_contacts", { _order_ids: [orderId] });
+          const row = (data || []).find((r: any) => r.user_id === (full as any).client_id) || (data || [])[0];
+          if (row) {
+            if (row.full_name) name = row.full_name;
+            if (!phone) phone = row.whatsapp_number || row.phone || "";
+          }
+        } catch (e) { console.warn("[auto-print] contact fetch failed", e); }
+      }
+      console.info("[auto-print] imprimindo", orderId);
+      printThermalReceipt(full as any, store?.name || "Loja", name || "Cliente", phone, { copies, paperWidth });
+    } catch (e) {
+      console.warn("[auto-print] falhou", e);
+      // Libera dedupe pra tentar de novo numa próxima trigger.
+      sessionStorage.removeItem(dedupeKey);
+    }
+  }, [store?.settings, store?.name, getClientName, getClientWhatsApp]);
+
+  // Expõe globalmente para chamadas fora da árvore React (ex: OrdersSection).
+  useEffect(() => {
+    (window as any).__autoPrintDeliveryOrder = autoPrintDeliveryOrder;
+    return () => { try { delete (window as any).__autoPrintDeliveryOrder; } catch {} };
+  }, [autoPrintDeliveryOrder]);
+
   // ── REALTIME ORDERS ──
   useEffect(() => {
     if (!store) return;
@@ -919,44 +983,10 @@ const AdminDashboard = () => {
           playAlert();
           notifyNewOrder();
           toast.info("🔔 Novo pedido!", { duration: 8000 });
-          // Impressão automática do cupom para pedidos de delivery.
-          // Respeita: (1) toggle rápido da sidebar (autoPrint) e
-          //          (2) preferência da loja (settings.auto_print_delivery).
-          // Ignora pedidos do PDV (têm impressão própria no fechamento).
+          // Aguarda 1.2s para dar tempo do refresh trazer order_items no banco.
+          const orderId = (payload.new as any).id as string;
           const src = (payload.new as any).order_source;
-          const storeAutoDelivery = (store?.settings as any)?.auto_print_delivery !== false;
-          // Lê autoPrint direto do localStorage — evita stale closure na subscription.
-          const stored = localStorage.getItem("autoPrint");
-          const autoPrintNow = stored === null ? true : stored === "true";
-          if (autoPrintNow && storeAutoDelivery && src !== "pdv") {
-            const orderId = (payload.new as any).id as string;
-            const dedupeKey = `printed-order:${orderId}`;
-            if (!sessionStorage.getItem(dedupeKey)) {
-              sessionStorage.setItem(dedupeKey, "1");
-              // Aguarda o refresh trazer order_items e depois imprime.
-              setTimeout(async () => {
-                try {
-                  const { data: full } = await supabase
-                    .from("orders")
-                    .select("*, order_items(*, products(name))")
-                    .eq("id", orderId)
-                    .maybeSingle();
-                  if (!full) return;
-                  const copies = (store?.settings as any)?.print_copies === 1 ? 1 : 2;
-                  const paperWidth = (store?.settings as any)?.print_paper_width === 58 ? 58 : 80;
-                  printThermalReceipt(
-                    full as any,
-                    store?.name || "Loja",
-                    getClientName(full.client_id),
-                    getClientWhatsApp(full.client_id),
-                    { copies, paperWidth },
-                  );
-                } catch (e) {
-                  console.warn("[auto-print] falhou", e);
-                }
-              }, 1200);
-            }
-          }
+          setTimeout(() => { autoPrintDeliveryOrder(orderId, src); }, 1200);
         }
         if (payload.eventType === "UPDATE" && (payload.new as any).status === "pendente" && previous?.status === "aguardando_pagamento") {
           try {
@@ -967,6 +997,10 @@ const AdminDashboard = () => {
           } catch {}
           toast.success("💰 PIX confirmado!", { duration: 8000 });
           notifyNewOrder();
+          // Pix (gateway ou direto) recém-confirmado — imprime também.
+          const orderId = (payload.new as any).id as string;
+          const src = (payload.new as any).order_source;
+          setTimeout(() => { autoPrintDeliveryOrder(orderId, src); }, 500);
         }
         if (payload.eventType === "UPDATE" && (payload.new as any).status === "finalizado") {
           toast.success("✅ Pedido finalizado!", { duration: 5000 });
@@ -977,10 +1011,27 @@ const AdminDashboard = () => {
       setIsOnline(connected);
       if (connected) {
         refreshDashboardOrders().catch(console.error);
+        // Varredura: imprime pendentes das últimas 2h que ainda não foram
+        // impressos nesta sessão (cobre painel aberto depois do pedido chegar
+        // ou reconexão de rede).
+        (async () => {
+          try {
+            const cutoff = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
+            const { data } = await supabase
+              .from("orders")
+              .select("id, order_source, status, created_at")
+              .eq("store_id", store.id)
+              .eq("status", "pendente")
+              .gte("created_at", cutoff);
+            (data || []).forEach((o: any) => {
+              if (o.order_source !== "pdv") autoPrintDeliveryOrder(o.id, o.order_source);
+            });
+          } catch (e) { console.warn("[auto-print] sweep falhou", e); }
+        })();
       }
     });
     return () => { cleanupChannel(channel); };
-  }, [store, queryClient, playAlert, refreshDashboardOrders]);
+  }, [store, queryClient, playAlert, refreshDashboardOrders, autoPrintDeliveryOrder]);
 
   // ── ACTIONS ──
   const handlePrint = useCallback((order: any) => {
@@ -1153,8 +1204,12 @@ const AdminDashboard = () => {
       if (order) {
         const clientPhone = getClientWhatsApp(order.client_id);
         const clientName = getClientName(order.client_id);
-        const items = order.order_items?.map((i: any) => `${i.quantity}x ${getOrderItemDisplayName(i)}`).join("\n") || "";
+        const items = buildRichItemsBlock(order.order_items || []);
         const storeSettings = (store?.settings || {}) as Record<string, any>;
+        const deliveryFee = Number(order.delivery_fee || 0);
+        const deliveryType: "delivery" | "retirada" = deliveryFee > 0 || order.address_details ? "delivery" : "retirada";
+        const etaText = deliveryType === "delivery" ? buildEtaWindow() : "";
+        const paymentLabel = paymentLabels?.[order.payment_method] || String(order.payment_method || "").toUpperCase();
         // Fire-and-forget — never await notification dispatch
         try {
           notifyOrderStatusChange(newStatus, {
@@ -1169,6 +1224,11 @@ const AdminDashboard = () => {
             items,
             deliveryPin: order.delivery_pin,
             paymentMethod: order.payment_method,
+            paymentLabel,
+            deliveryFee,
+            deliveryType,
+            etaText,
+            neighborhood: order.neighborhood,
           }, {
             evolutionEnabled: evolutionConnected,
             zapiEnabled: !!storeSettings.zapi_enabled,
