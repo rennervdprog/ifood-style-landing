@@ -166,6 +166,62 @@ export default function OrdersSection(props: Props) {
 
   return (
 <>
+  {/* 🚨 Prioridade: Pix Direto aguardando confirmação */}
+  {pixPending.length > 0 && (
+    <div className="px-4 pt-3">
+      <div className="rounded-2xl border-2 border-primary/40 bg-primary/5 p-3 space-y-2">
+        <div className="flex items-center gap-2">
+          <QrCode className="h-4 w-4 text-primary" />
+          <p className="text-xs font-black text-primary uppercase tracking-wide">Pix Direto — aguardando você</p>
+          <span className="ml-auto text-[10px] font-bold bg-primary text-primary-foreground px-2 py-0.5 rounded-full">{pixPending.length}</span>
+        </div>
+        <div className="space-y-2">
+          {pixPending.map((o: any) => {
+            const proofSent = o.status === "comprovante_enviado";
+            return (
+              <div key={o.id} className="rounded-xl bg-card border border-border p-2.5 flex items-center gap-2">
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-bold text-foreground truncate">
+                    #{String(o.id).slice(0, 6)} · {formatBRL(Number(o.total_price || 0))}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground truncate">
+                    {proofSent ? "Comprovante enviado — revise e confirme" : "Aguardando cliente enviar comprovante"}
+                  </p>
+                </div>
+                {proofSent && o.pix_proof_url && (
+                  <button
+                    onClick={() => openProof(o)}
+                    className="text-[11px] font-bold px-2 py-1.5 rounded-lg bg-muted text-foreground"
+                  >
+                    Ver
+                  </button>
+                )}
+                {proofSent && (
+                  <>
+                    <button
+                      onClick={() => confirmPix(o)}
+                      disabled={pixBusyId === o.id}
+                      className="text-[11px] font-black px-2.5 py-1.5 rounded-lg bg-emerald-600 text-white disabled:opacity-50"
+                    >
+                      {pixBusyId === o.id ? "..." : "Confirmar"}
+                    </button>
+                    <button
+                      onClick={() => refusePix(o)}
+                      disabled={pixBusyId === o.id}
+                      className="text-[11px] font-bold px-2 py-1.5 rounded-lg bg-destructive text-destructive-foreground disabled:opacity-50"
+                    >
+                      Recusar
+                    </button>
+                  </>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  )}
+
   {/* Quick summary counters */}
   {orderCounters.total > 0 && (
       <div className="px-4 pt-3 pb-1">
