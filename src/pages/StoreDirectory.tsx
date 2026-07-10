@@ -42,7 +42,7 @@ const segments = [
   { emoji: "🍰", title: "Docerias", desc: "Cliente agenda dia e hora sozinho." },
   { emoji: "🍺", title: "Bares", desc: "Delivery e balcão no mesmo sistema." },
   { emoji: "🍔", title: "Lanches", desc: "Combos e adicionais com 1 toque." },
-  { emoji: "💈", title: "Serviços", desc: "Vitrine + caixa, sem precisar de entrega." },
+  { emoji: "💈", title: "Lojas físicas", desc: "Barbearia, pet shop, loja de roupa — use só o PDV, sem vitrine online." },
 ];
 
 const plans = [
