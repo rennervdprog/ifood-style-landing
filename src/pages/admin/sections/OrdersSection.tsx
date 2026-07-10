@@ -1,8 +1,10 @@
 import { useMemo, useState } from "react";
-import { Search, XCircle, Truck, Loader2, Clock, ChefHat, Package, CheckCircle2, Bell, Calendar, Store as StoreIcon } from "lucide-react";
+import { Search, XCircle, Truck, Loader2, Clock, ChefHat, Package, CheckCircle2, Bell, Calendar, Store as StoreIcon, QrCode } from "lucide-react";
 import { AdminOrderCard } from "../components/AdminOrderCard";
 import type { OrderStatus, OrderTabKey } from "../types";
 import { formatBRL } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface Props {
   store: any;
@@ -66,6 +68,55 @@ export default function OrdersSection(props: Props) {
   // Filtros locais: período + origem (Delivery / PDV / Manual)
   const [period, setPeriod] = useState<"today" | "yesterday" | "7d" | "all">("today");
   const [sourceFilter, setSourceFilter] = useState<"all" | "delivery" | "pdv" | "manual">("all");
+
+  // Pedidos aguardando confirmação Pix Direto (comprovante enviado)
+  const pixPending = useMemo(
+    () => (orders || []).filter((o: any) => o.status === "comprovante_enviado" || o.status === "aguardando_comprovante"),
+    [orders]
+  );
+  const [pixBusyId, setPixBusyId] = useState<string | null>(null);
+  const [proofUrls, setProofUrls] = useState<Record<string, string>>({});
+
+  const openProof = async (order: any) => {
+    if (!order?.pix_proof_url) return;
+    if (proofUrls[order.id]) { window.open(proofUrls[order.id], "_blank"); return; }
+    const { data, error } = await supabase.storage
+      .from("pix-proofs")
+      .createSignedUrl(order.pix_proof_url, 60 * 10);
+    if (error || !data?.signedUrl) { toast.error("Não foi possível abrir o comprovante"); return; }
+    setProofUrls((p) => ({ ...p, [order.id]: data.signedUrl }));
+    window.open(data.signedUrl, "_blank");
+  };
+
+  const confirmPix = async (order: any) => {
+    setPixBusyId(order.id);
+    try {
+      const { error } = await (supabase as any).rpc("confirm_pix_proof", { p_order_id: order.id });
+      if (error) throw error;
+      toast.success("Pagamento confirmado! Pedido em preparo.");
+      invalidateOrders();
+    } catch (e: any) {
+      toast.error(e?.message || "Erro ao confirmar");
+    } finally {
+      setPixBusyId(null);
+    }
+  };
+
+  const refusePix = async (order: any) => {
+    const reason = prompt("Motivo da recusa (será visível ao cliente):");
+    if (!reason || !reason.trim()) return;
+    setPixBusyId(order.id);
+    try {
+      const { error } = await (supabase as any).rpc("refuse_pix_proof", { p_order_id: order.id, p_reason: reason.trim() });
+      if (error) throw error;
+      toast.success("Comprovante recusado.");
+      invalidateOrders();
+    } catch (e: any) {
+      toast.error(e?.message || "Erro ao recusar");
+    } finally {
+      setPixBusyId(null);
+    }
+  };
 
   const periodRange = useMemo(() => {
     const now = new Date();
