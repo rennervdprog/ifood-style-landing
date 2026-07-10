@@ -39,7 +39,7 @@ import { openWhatsApp, formatWhatsAppNumber } from "@/lib/whatsapp";
 import WhatsAppButton from "@/components/WhatsAppButton";
 const MenuBuilder = lazy(() => import("@/components/MenuBuilder"));
 const SupportTicketModal = lazy(() => import("@/components/SupportTicketModal"));
-import { notifyOrderStatusChange, buildWhatsAppMessage } from "@/lib/orderNotifications";
+import { notifyOrderStatusChange, buildWhatsAppMessage, buildRichItemsBlock, buildEtaWindow } from "@/lib/orderNotifications";
 import { getStoreOpenStatus } from "@/lib/storeStatus";
 // Tabs carregadas sob demanda — só baixa o JS quando o lojista abrir a aba
 const TutoriaisTab = lazy(() => import("./admin/tabs/TutoriaisTab"));
@@ -1204,8 +1204,12 @@ const AdminDashboard = () => {
       if (order) {
         const clientPhone = getClientWhatsApp(order.client_id);
         const clientName = getClientName(order.client_id);
-        const items = order.order_items?.map((i: any) => `${i.quantity}x ${getOrderItemDisplayName(i)}`).join("\n") || "";
+        const items = buildRichItemsBlock(order.order_items || []);
         const storeSettings = (store?.settings || {}) as Record<string, any>;
+        const deliveryFee = Number(order.delivery_fee || 0);
+        const deliveryType: "delivery" | "retirada" = deliveryFee > 0 || order.address_details ? "delivery" : "retirada";
+        const etaText = deliveryType === "delivery" ? buildEtaWindow() : "";
+        const paymentLabel = paymentLabels?.[order.payment_method] || String(order.payment_method || "").toUpperCase();
         // Fire-and-forget — never await notification dispatch
         try {
           notifyOrderStatusChange(newStatus, {
@@ -1220,6 +1224,11 @@ const AdminDashboard = () => {
             items,
             deliveryPin: order.delivery_pin,
             paymentMethod: order.payment_method,
+            paymentLabel,
+            deliveryFee,
+            deliveryType,
+            etaText,
+            neighborhood: order.neighborhood,
           }, {
             evolutionEnabled: evolutionConnected,
             zapiEnabled: !!storeSettings.zapi_enabled,
