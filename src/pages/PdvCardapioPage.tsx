@@ -12,15 +12,32 @@ const PdvCardapioPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  const { data: store, isLoading } = useQuery({
+  const { data: store, isFetched } = useQuery({
     queryKey: ["pdv-cardapio-store", user?.id],
     enabled: !!user?.id,
     queryFn: async () => {
+      // Admin pode ter selecionado uma loja no PDV — respeitar essa escolha
+      try {
+        const adminStoreId = localStorage.getItem("pdv_admin_selected_store");
+        if (adminStoreId) {
+          const { data } = await supabase
+            .from("stores").select("id, name, category")
+            .eq("id", adminStoreId).maybeSingle();
+          if (data) return data;
+        }
+      } catch {}
+      // Cache do PDV (mesma loja que o caixa está usando)
+      try {
+        const raw = localStorage.getItem("pdv_store_v1");
+        if (raw) {
+          const cached = JSON.parse(raw);
+          if (cached?.id) return cached;
+        }
+      } catch {}
       const { data } = await supabase
         .from("stores")
         .select("id, name, category")
         .eq("owner_id", user!.id)
-        .eq("status", "ativo")
         .maybeSingle();
       return data;
     },
@@ -30,10 +47,26 @@ const PdvCardapioPage = () => {
     if (!user) navigate("/", { replace: true });
   }, [user, navigate]);
 
-  if (isLoading || !store) {
+  if (!isFetched) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-6 w-6 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!store) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-3 px-6 text-center">
+        <p className="text-sm text-muted-foreground max-w-xs">
+          Nenhuma loja encontrada para o seu usuário. Abra o PDV primeiro para selecionar uma loja.
+        </p>
+        <button
+          onClick={() => navigate("/admin/pdv")}
+          className="bg-primary text-primary-foreground font-bold px-5 py-2.5 rounded-xl text-sm"
+        >
+          Ir para o PDV
+        </button>
       </div>
     );
   }
