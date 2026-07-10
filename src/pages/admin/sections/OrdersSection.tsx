@@ -283,6 +283,30 @@ export default function OrdersSection(props: Props) {
     </AlertDialogContent>
   </AlertDialog>
 
+  <AlertDialog open={!!pixWhatsAppOrder} onOpenChange={(v) => !v && setPixWhatsAppOrder(null)}>
+    <AlertDialogContent className="rounded-2xl">
+      <AlertDialogHeader>
+        <AlertDialogTitle>Confirmar recebimento via WhatsApp?</AlertDialogTitle>
+        <AlertDialogDescription>
+          Use esta opção apenas se o cliente enviou o comprovante <strong>pelo WhatsApp</strong> (fora do app) e você já confirmou <strong>{pixWhatsAppOrder ? formatBRL(Number(pixWhatsAppOrder.total_price || 0)) : ""}</strong> na sua conta. O pedido vai direto para preparo.
+        </AlertDialogDescription>
+      </AlertDialogHeader>
+      <AlertDialogFooter>
+        <AlertDialogCancel className="rounded-xl">Cancelar</AlertDialogCancel>
+        <AlertDialogAction
+          className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white"
+          onClick={async () => {
+            const o = pixWhatsAppOrder;
+            setPixWhatsAppOrder(null);
+            if (o) await confirmPixExternal(o);
+          }}
+        >
+          Sim, recebi pelo WhatsApp
+        </AlertDialogAction>
+      </AlertDialogFooter>
+    </AlertDialogContent>
+  </AlertDialog>
+
   {/* 🚨 Prioridade: Pix Direto aguardando confirmação */}
   {pixPending.length > 0 && (
     <div className="px-4 pt-3">
@@ -296,8 +320,8 @@ export default function OrdersSection(props: Props) {
           {pixPending.map((o: any) => {
             const proofSent = o.status === "comprovante_enviado";
             return (
-              <div key={o.id} className="rounded-xl bg-card border border-border p-2.5 flex items-center gap-2">
-                <div className="flex-1 min-w-0">
+              <div key={o.id} className="rounded-xl bg-card border border-border p-2.5 flex flex-wrap items-center gap-2">
+                <div className="flex-1 min-w-0 basis-full sm:basis-auto">
                   <p className="text-xs font-bold text-foreground truncate">
                     #{String(o.id).slice(0, 6)} · {formatBRL(Number(o.total_price || 0))}
                   </p>
@@ -331,6 +355,15 @@ export default function OrdersSection(props: Props) {
                     </button>
                   </>
                 )}
+                <button
+                  onClick={() => setPixWhatsAppOrder(o)}
+                  disabled={pixBusyId === o.id}
+                  className="inline-flex items-center gap-1 text-[11px] font-black px-2.5 py-1.5 rounded-lg bg-green-600 hover:bg-green-700 text-white disabled:opacity-50"
+                  title="Cliente enviou comprovante pelo WhatsApp"
+                >
+                  <MessageCircle className="h-3 w-3" />
+                  Recebi no WhatsApp
+                </button>
               </div>
             );
           })}
