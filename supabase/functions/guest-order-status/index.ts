@@ -33,7 +33,7 @@ Deno.serve(async (req) => {
     );
 
     const { data: order } = await sb.from("orders")
-      .select("id, client_id, status, total_price, subtotal, delivery_fee, payment_method, address_details, neighborhood, created_at, store_id, is_guest, delivery_pin")
+      .select("id, client_id, status, total_price, subtotal, delivery_fee, payment_method, address_details, neighborhood, created_at, store_id, is_guest, delivery_pin, pix_expires_at, pix_proof_url, pix_refused_reason, pix_proof_uploaded_at")
       .eq("id", orderId).maybeSingle();
     if (!order || !(order as any).is_guest) return json({ error: "not_found" }, 404);
 
@@ -49,7 +49,7 @@ Deno.serve(async (req) => {
 
     const [{ data: store }, { data: items }] = await Promise.all([
       sb.from("stores")
-        .select("name, slug, whatsapp_number").eq("id", (order as any).store_id).maybeSingle(),
+        .select("name, slug, whatsapp_number, pix_direto_enabled, pix_direto_key, pix_direto_key_type, pix_direto_beneficiary, pix_direto_instructions").eq("id", (order as any).store_id).maybeSingle(),
       sb.from("order_items")
         .select("quantity, unit_price, products(name)").eq("order_id", orderId),
     ]);
