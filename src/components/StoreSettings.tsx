@@ -399,6 +399,12 @@ type PizzaPriceMode = "maior" | "media" | "soma";
       address_city: addressCity.trim() || "Itatinga",
       address_state: addressState.trim() || "SP",
       address_cep: addressCep.replace(/\D/g, "") || null,
+      // Pix Direto (chave manual do lojista)
+      pix_direto_enabled: pixDiretoEnabled && !!pixDiretoKey.trim(),
+      pix_direto_key: pixDiretoKey.trim() || null,
+      pix_direto_key_type: pixDiretoKey.trim() ? pixDiretoKeyType : null,
+      pix_direto_beneficiary: pixDiretoBeneficiary.trim() || null,
+      pix_direto_instructions: pixDiretoInstructions.trim() || null,
     };
 
     console.log("[DEBUG] Salvando configurações da loja:", { storeId, updateData });
