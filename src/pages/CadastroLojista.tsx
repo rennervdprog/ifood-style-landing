@@ -657,20 +657,24 @@ const CadastroLojista = () => {
                             ))}
                           </ul>
 
-                          <p className="text-[11px] text-muted-foreground leading-relaxed">
-                            💡 O <strong>PDV de balcão</strong> é um módulo à parte (R$ 49/mês), independente do plano. Você pode ativar/cancelar quando quiser em "Meu Plano".
-                          </p>
+                          {id !== "pdv_only" && (
+                            <p className="text-[11px] text-muted-foreground leading-relaxed">
+                              💡 O <strong>PDV de balcão</strong> é um módulo à parte (R$ 49/mês), independente do plano. Você pode ativar/cancelar quando quiser em "Meu Plano".
+                            </p>
+                          )}
 
                           <PlanFeeBreakdown planId={id} orderValue={50} viaPix={true} />
 
-                          <div className="flex items-start gap-1.5 text-[11px] text-muted-foreground leading-relaxed">
-                            <span>
-                              {id === "autonomy"
-                                ? <>✨ Sem os R$2 da plataforma: você define a taxa de entrega e fica com 100%.</>
-                                : <>Entrega: cliente paga sua taxa + R$2 da plataforma. Nada sai do seu caixa.</>}
-                            </span>
-                            <WhyThisCharge title="Taxa de entrega">{DELIVERY_FEE_NOTE}</WhyThisCharge>
-                          </div>
+                          {id !== "pdv_only" && (
+                            <div className="flex items-start gap-1.5 text-[11px] text-muted-foreground leading-relaxed">
+                              <span>
+                                {id === "autonomy"
+                                  ? <>✨ Sem os R$2 da plataforma: você define a taxa de entrega e fica com 100%.</>
+                                  : <>Entrega: cliente paga sua taxa + R$2 da plataforma. Nada sai do seu caixa.</>}
+                              </span>
+                              <WhyThisCharge title="Taxa de entrega">{DELIVERY_FEE_NOTE}</WhyThisCharge>
+                            </div>
+                          )}
 
                           {p.pixFee > 0 && (
                             <div className="flex items-start gap-1.5 text-[11px] text-muted-foreground leading-relaxed">
