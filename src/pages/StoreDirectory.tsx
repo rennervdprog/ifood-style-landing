@@ -29,11 +29,11 @@ const steps = [
 ];
 
 const features = [
-  { icon: Smartphone, title: "Cardápio digital", desc: "Link próprio da loja, abre sem instalar nada." },
+  { icon: Smartphone, title: "Cardápio digital", desc: "Cardápio digital com link próprio da sua loja — cliente abre no navegador, sem instalar app." },
   { icon: CreditCard, title: "PIX automático", desc: "Cliente paga, dinheiro cai na hora." },
   { icon: Truck, title: "Motoboy integrado", desc: "Mapa em tempo real e código de confirmação." },
   { icon: BarChart3, title: "Relatório do dia", desc: "Vendas, lucro e mais pedidos numa tela." },
-  { icon: Store, title: "PDV de balcão (opcional)", desc: "Módulo à parte por R$ 49/mês. Caixa, troco e fechamento do dia." },
+  { icon: Store, title: "PDV para loja física", desc: "Frente de caixa completa: vendas, troco, sangria e fechamento do dia. Contrate à parte ou use o plano Somente PDV." },
 ];
 
 const segments = [
