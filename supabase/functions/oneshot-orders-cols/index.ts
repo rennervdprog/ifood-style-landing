@@ -10,6 +10,7 @@ async function q(sql: string) {
 }
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: cors });
-  const cols = await q(`SELECT column_name FROM information_schema.columns WHERE table_schema='public' AND table_name='orders';
-  return new Response(JSON.stringify(cols, null, 2), { headers: { ...cors, "Content-Type": "application/json" } });
+  const cols = await q(`SELECT column_name, data_type FROM information_schema.columns WHERE table_schema='public' AND table_name='orders' ORDER BY ordinal_position;`);
+  const sample = await q(`SELECT id, client_id, is_guest, delivery_address, payment_method, status FROM public.orders ORDER BY created_at DESC LIMIT 3;`);
+  return new Response(JSON.stringify({ cols, sample }, null, 2), { headers: { ...cors, "Content-Type": "application/json" } });
 });
