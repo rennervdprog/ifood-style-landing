@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Search, XCircle, Truck, Loader2, Clock, ChefHat, Package, CheckCircle2, Bell, Calendar, Store as StoreIcon, QrCode } from "lucide-react";
+import { Search, XCircle, Truck, Loader2, Clock, ChefHat, Package, CheckCircle2, Bell, Calendar, Store as StoreIcon, QrCode, MessageCircle } from "lucide-react";
 import { AdminOrderCard } from "../components/AdminOrderCard";
 import type { OrderStatus, OrderTabKey } from "../types";
 import { formatBRL } from "@/lib/utils";
@@ -87,6 +87,7 @@ export default function OrdersSection(props: Props) {
   const [pixBusyId, setPixBusyId] = useState<string | null>(null);
   const [proofUrls, setProofUrls] = useState<Record<string, string>>({});
   const [pixConfirmOrder, setPixConfirmOrder] = useState<any | null>(null);
+  const [pixWhatsAppOrder, setPixWhatsAppOrder] = useState<any | null>(null);
   const [pixProofPreview, setPixProofPreview] = useState<{ url: string; order: any } | null>(null);
 
   const openProof = async (order: any) => {
@@ -106,6 +107,20 @@ export default function OrdersSection(props: Props) {
       const { error } = await (supabase as any).rpc("confirm_pix_proof", { p_order_id: order.id });
       if (error) throw error;
       toast.success("Pagamento confirmado! Pedido em preparo.");
+      invalidateOrders();
+    } catch (e: any) {
+      toast.error(e?.message || "Erro ao confirmar");
+    } finally {
+      setPixBusyId(null);
+    }
+  };
+
+  const confirmPixExternal = async (order: any) => {
+    setPixBusyId(order.id);
+    try {
+      const { error } = await (supabase as any).rpc("confirm_pix_external", { p_order_id: order.id });
+      if (error) throw error;
+      toast.success("Pagamento confirmado (WhatsApp)! Pedido em preparo.");
       invalidateOrders();
     } catch (e: any) {
       toast.error(e?.message || "Erro ao confirmar");
@@ -268,6 +283,30 @@ export default function OrdersSection(props: Props) {
     </AlertDialogContent>
   </AlertDialog>
 
+  <AlertDialog open={!!pixWhatsAppOrder} onOpenChange={(v) => !v && setPixWhatsAppOrder(null)}>
+    <AlertDialogContent className="rounded-2xl">
+      <AlertDialogHeader>
+        <AlertDialogTitle>Confirmar recebimento via WhatsApp?</AlertDialogTitle>
+        <AlertDialogDescription>
+          Use esta opção apenas se o cliente enviou o comprovante <strong>pelo WhatsApp</strong> (fora do app) e você já confirmou <strong>{pixWhatsAppOrder ? formatBRL(Number(pixWhatsAppOrder.total_price || 0)) : ""}</strong> na sua conta. O pedido vai direto para preparo.
+        </AlertDialogDescription>
+      </AlertDialogHeader>
+      <AlertDialogFooter>
+        <AlertDialogCancel className="rounded-xl">Cancelar</AlertDialogCancel>
+        <AlertDialogAction
+          className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white"
+          onClick={async () => {
+            const o = pixWhatsAppOrder;
+            setPixWhatsAppOrder(null);
+            if (o) await confirmPixExternal(o);
+          }}
+        >
+          Sim, recebi pelo WhatsApp
+        </AlertDialogAction>
+      </AlertDialogFooter>
+    </AlertDialogContent>
+  </AlertDialog>
+
   {/* 🚨 Prioridade: Pix Direto aguardando confirmação */}
   {pixPending.length > 0 && (
     <div className="px-4 pt-3">
@@ -281,8 +320,8 @@ export default function OrdersSection(props: Props) {
           {pixPending.map((o: any) => {
             const proofSent = o.status === "comprovante_enviado";
             return (
-              <div key={o.id} className="rounded-xl bg-card border border-border p-2.5 flex items-center gap-2">
-                <div className="flex-1 min-w-0">
+              <div key={o.id} className="rounded-xl bg-card border border-border p-2.5 flex flex-wrap items-center gap-2">
+                <div className="flex-1 min-w-0 basis-full sm:basis-auto">
                   <p className="text-xs font-bold text-foreground truncate">
                     #{String(o.id).slice(0, 6)} · {formatBRL(Number(o.total_price || 0))}
                   </p>
@@ -316,6 +355,15 @@ export default function OrdersSection(props: Props) {
                     </button>
                   </>
                 )}
+                <button
+                  onClick={() => setPixWhatsAppOrder(o)}
+                  disabled={pixBusyId === o.id}
+                  className="inline-flex items-center gap-1 text-[11px] font-black px-2.5 py-1.5 rounded-lg bg-green-600 hover:bg-green-700 text-white disabled:opacity-50"
+                  title="Cliente enviou comprovante pelo WhatsApp"
+                >
+                  <MessageCircle className="h-3 w-3" />
+                  Recebi no WhatsApp
+                </button>
               </div>
             );
           })}
