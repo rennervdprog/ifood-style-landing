@@ -1,4 +1,4 @@
-import { ArrowLeft, Monitor, Keyboard, ArrowUpCircle, ArrowDownCircle, Lock, Loader2, User, Wifi, WifiOff, RefreshCw, Menu, LogOut, CreditCard, LifeBuoy, UserCircle } from "lucide-react";
+import { ArrowLeft, Monitor, Keyboard, ArrowUpCircle, ArrowDownCircle, Lock, Loader2, User, Wifi, WifiOff, RefreshCw, Menu, LogOut, CreditCard, LifeBuoy, UserCircle, BookOpen } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { formatBRL } from "@/lib/utils";
@@ -62,6 +62,9 @@ export const PdvTopbar = ({
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => navigate("/perfil")}>
               <UserCircle className="h-4 w-4 mr-2" /> Perfil
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate("/admin/cardapio")}>
+              <BookOpen className="h-4 w-4 mr-2" /> Cardápio
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => navigate("/perfil?tab=plano")}>
               <CreditCard className="h-4 w-4 mr-2" /> Meu Plano
