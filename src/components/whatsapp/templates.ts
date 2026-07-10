@@ -29,14 +29,14 @@ export const DEFAULT_TEMPLATES: Record<TemplateKey, TemplateInfo> = {
     shortDesc: "Pedido finalizado, aguardando motoboy",
     emoji: "📦",
     template:
-      "📦 Olá {clientName}! Seu pedido da *{storeName}* está *PRONTO*! 🎉\n\nO motoboy logo irá sair para entrega. 🛵\n\n🔑 *CÓDIGO DE ENTREGA: {pin}*\nInforme ao motoboy somente na entrega.",
+      "📦 Olá {clientName}! Seu pedido da *{storeName}* está *PRONTO*! 🎉\n\nO motoboy logo irá sair para entrega. 🛵\n\n🔑 *CÓDIGO DE ENTREGA: {pin}*\nGuarde este código! Informe ao motoboy *somente* quando ele chegar com seu pedido.\n\n⚠️ Não compartilhe antes da entrega.",
   },
   saiu_entrega: {
     label: "Saiu para entrega",
     shortDesc: "Motoboy a caminho do cliente",
     emoji: "🛵",
     template:
-      "🛵 *{storeName}* informa: Seu pedido #{orderId} saiu para entrega! 🚀\nEndereço: {address}\n\n🔑 *PIN: {pin}*",
+      "🛵 *{storeName}* informa: Seu pedido #{orderId} saiu para entrega! 🚀\nEndereço: {address}\n\n🔑 *PIN de Segurança: {pin}*",
   },
   entregue: {
     label: "Entregue",
