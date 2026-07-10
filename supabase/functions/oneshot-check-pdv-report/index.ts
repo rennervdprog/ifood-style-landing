@@ -10,11 +10,11 @@ async function q(sql: string) {
 }
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: cors });
+  const uid = 'a5248d00-2cbe-432a-8bb0-d6f60e734e7b';
   const out: Record<string, unknown> = {};
-  out.recent_sessions = await q(`SELECT id, store_id, status, opened_at, closed_at FROM public.pdv_sessions ORDER BY opened_at DESC LIMIT 10;`);
-  out.recent_movements = await q(`SELECT id, session_id, store_id, type, amount, payment_method, created_at FROM public.pdv_movements ORDER BY created_at DESC LIMIT 15;`);
-  out.recent_pdv_orders = await q(`SELECT id, store_id, pdv_session_id, order_source, status, total_price, created_at FROM public.orders WHERE order_source='pdv' ORDER BY created_at DESC LIMIT 15;`);
-  out.rls_pdv_movements = await q(`SELECT polname, polcmd, pg_get_expr(polqual, polrelid) AS using_expr FROM pg_policy WHERE polrelid='public.pdv_movements'::regclass;`);
-  out.grants_pdv_movements = await q(`SELECT grantee, privilege_type FROM information_schema.role_table_grants WHERE table_name='pdv_movements';`);
+  out.user_stores = await q(`SELECT id, name, owner_id, plan_type FROM public.stores WHERE owner_id='${uid}';`);
+  out.user_roles = await q(`SELECT * FROM public.user_roles WHERE user_id='${uid}';`);
+  out.store_802 = await q(`SELECT id, name, owner_id, plan_type FROM public.stores WHERE id='802ce29a-3f2a-4bc8-8146-78028b31477b';`);
+  out.session_c2 = await q(`SELECT * FROM public.pdv_sessions WHERE id='c2dd878b-c9ac-4194-94ea-8b036b813ad8';`);
   return new Response(JSON.stringify(out, null, 2), { headers: { ...cors, "Content-Type": "application/json" } });
 });
