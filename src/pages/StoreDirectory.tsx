@@ -145,6 +145,14 @@ const faqs = [
     q: "Tenho só loja física, sem delivery. Dá pra usar só o PDV?",
     a: "Dá sim. Existe o plano Somente PDV por R$ 69/mês: você usa o caixa completo (vendas, sangria, fechamento do dia) sem vitrine pública, sem cardápio online e sem comissão por pedido. Depois, se quiser abrir delivery, migra pra Comissão/Essencial/Autonomia num clique.",
   },
+  {
+    q: "O ItaSuper é uma alternativa ao iFood?",
+    a: "Sim. Você tem seu próprio cardápio digital, recebe pedidos direto no seu link, o PIX cai na sua conta na hora e a comissão é bem menor (0% no plano Essencial, contra ~27% das grandes plataformas). Você fica dono do cliente.",
+  },
+  {
+    q: "Serve para pizzaria com meio-a-meio e bordas?",
+    a: "Sim. O cardápio suporta sabor meio-a-meio, escolha de borda recheada, adicionais por sabor e observações do cliente sem erro. Ideal para pizzaria delivery.",
+  },
 ];
 
 /* ───────────────────────── HELPERS ───────────────────────── */
