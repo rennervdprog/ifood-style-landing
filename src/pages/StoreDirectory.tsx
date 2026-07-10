@@ -311,20 +311,20 @@ const StoreDirectory = () => {
     window.open("https://wa.me/5522992796291?text=Olá! Tenho interesse em cadastrar minha loja na plataforma.", "_blank");
 
   useEffect(() => {
-    document.title = "ItaSuper — Cardápio digital, delivery e PDV para sua loja";
+    document.title = "Sistema de Delivery e PDV para Restaurantes e Lojas | ItaSuper";
     const setMeta = (name: string, content: string, attr: "name" | "property" = "name") => {
       let el = document.head.querySelector<HTMLMetaElement>(`meta[${attr}="${name}"]`);
       if (!el) { el = document.createElement("meta"); el.setAttribute(attr, name); document.head.appendChild(el); }
       el.setAttribute("content", content);
     };
-    const desc = "Cardápio digital, PIX automático e motoboy num app só. PDV de balcão como módulo opcional. Sem comissão por pedido. Crie sua loja grátis em 10 minutos.";
+    const desc = "Sistema completo de delivery com cardápio digital, PIX automático, motoboy integrado e PDV para loja física. Sem comissão no plano fixo. Grátis para começar.";
     setMeta("description", desc);
-    setMeta("og:title", "ItaSuper — Delivery profissional em 10 minutos", "property");
+    setMeta("og:title", "ItaSuper — Delivery e PDV num app só", "property");
     setMeta("og:description", desc, "property");
-    setMeta("og:url", "https://itasuper.com.br/", "property");
+    setMeta("og:url", "https://itasuper.lovable.app/", "property");
     let canonical = document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]');
     if (!canonical) { canonical = document.createElement("link"); canonical.rel = "canonical"; document.head.appendChild(canonical); }
-    canonical.href = "https://itasuper.com.br/";
+    canonical.href = "https://itasuper.lovable.app/";
 
     // FAQPage JSON-LD
     const SCRIPT_ID = "faq-jsonld-storedirectory";
@@ -343,6 +343,48 @@ const StoreDirectory = () => {
         name: f.q,
         acceptedAnswer: { "@type": "Answer", text: f.a },
       })),
+    });
+
+    // SoftwareApplication JSON-LD
+    const APP_ID = "app-jsonld-storedirectory";
+    let a = document.getElementById(APP_ID) as HTMLScriptElement | null;
+    if (!a) {
+      a = document.createElement("script");
+      a.type = "application/ld+json";
+      a.id = APP_ID;
+      document.head.appendChild(a);
+    }
+    a.textContent = JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      name: "ItaSuper",
+      applicationCategory: "BusinessApplication",
+      operatingSystem: "Web, Android",
+      description: desc,
+      url: "https://itasuper.lovable.app/",
+      offers: [
+        { "@type": "Offer", name: "Comissão", price: "0", priceCurrency: "BRL" },
+        { "@type": "Offer", name: "Essencial", price: "90", priceCurrency: "BRL" },
+        { "@type": "Offer", name: "Autonomia", price: "229.90", priceCurrency: "BRL" },
+        { "@type": "Offer", name: "Somente PDV", price: "69", priceCurrency: "BRL" },
+      ],
+    });
+
+    // Organization JSON-LD
+    const ORG_ID = "org-jsonld-storedirectory";
+    let o = document.getElementById(ORG_ID) as HTMLScriptElement | null;
+    if (!o) {
+      o = document.createElement("script");
+      o.type = "application/ld+json";
+      o.id = ORG_ID;
+      document.head.appendChild(o);
+    }
+    o.textContent = JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      name: "ItaSuper",
+      url: "https://itasuper.lovable.app/",
+      logo: "https://itasuper.lovable.app/itasuper-logo-horizontal.webp",
     });
   }, []);
 
