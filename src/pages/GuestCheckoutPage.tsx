@@ -276,7 +276,8 @@ const GuestCheckoutPage = () => {
         confetti({ particleCount: 120, spread: 80, origin: { y: 0.7 } });
       }).catch(() => {});
       toast.success("Pedido enviado!");
-      navigate(`/p/${res.order_id}?t=${res.phone_last4}`, {
+      const suffix = res.pix_direto ? "&pix=1" : "";
+      navigate(`/p/${res.order_id}?t=${res.phone_last4}${suffix}`, {
         replace: true,
         state: { delivery_pin: res.delivery_pin || null },
       });
