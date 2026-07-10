@@ -204,6 +204,12 @@ Deno.test({ name: "5. cliente faz pedido na unidade", ...opts }, async () => {
   clientUserId = userId;
   CREATED_USER_IDS.push(userId);
 
+  // regra nova: cliente precisa ter PIN de entrega definido antes do pedido
+  await admin!
+    .from("profiles")
+    .update({ delivery_pin: "1234" } as any)
+    .eq("user_id", clientUserId);
+
   // insere pedido via service role (RLS permite, mas service ignora)
   const { data: order, error: oErr } = await admin!
     .from("orders")
