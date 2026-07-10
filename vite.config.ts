@@ -169,7 +169,7 @@ export default defineConfig(({ mode }) => ({
           "**/motion-*.js",
         ],
         // Não pré-cacheia arquivos > 500KB — vão via cache runtime/network
-        maximumFileSizeToCacheInBytes: 500_000,
+        maximumFileSizeToCacheInBytes: 3_000_000,
         navigateFallback: "/index.html",
         navigateFallbackDenylist: [
           /^\/~oauth/,
