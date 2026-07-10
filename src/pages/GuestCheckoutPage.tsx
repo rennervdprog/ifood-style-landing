@@ -288,6 +288,10 @@ const GuestCheckoutPage = () => {
   if (!storeId || !items.length) return null;
 
   const guestEnabled = (store as any)?.guest_checkout_enabled === true;
+  const pixDiretoAvailable = !!(store as any)?.pix_direto_enabled && !!((store as any)?.pix_direto_key || "").trim();
+  const payMethods = pixDiretoAvailable
+    ? [...BASE_PAY_METHODS, { id: "pix_direto", label: "Pix Direto (chave do lojista)", icon: QrCode }]
+    : BASE_PAY_METHODS;
 
   const contactOk = phone.replace(/\D/g, "").length >= 10 && name.trim().length >= 2;
   const addressOk = isPickup || (!!street.trim() && !!number.trim() && !!neighborhood.trim());
@@ -474,7 +478,7 @@ const GuestCheckoutPage = () => {
             {payment && <CheckCircle2 className="h-4 w-4 text-primary" />}
           </div>
           <div className="p-4 space-y-2">
-          {PAY_METHODS.map((m) => {
+          {payMethods.map((m) => {
             const Icon = m.icon;
             const active = payment === m.id;
             return (
