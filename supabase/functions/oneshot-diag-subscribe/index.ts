@@ -8,13 +8,22 @@ async function q(sql: string) {
   });
   return JSON.parse(await r.text());
 }
+async function fetchLogs(fn: string) {
+  const ref = Deno.env.get("EXTERNAL_SUPABASE_PROJECT_REF")!;
+  const token = Deno.env.get("EXTERNAL_SUPABASE_ACCESS_TOKEN")!;
+  const sql = `select id, timestamp, event_message from function_edge_logs cross join unnest(metadata) as m cross join unnest(m.request) as req where req.path like '%${fn}%' order by timestamp desc limit 20`;
+  const url = `https://api.supabase.com/v1/projects/${ref}/analytics/endpoints/logs.all?sql=${encodeURIComponent(sql)}`;
+  const r = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+  return { status: r.status, body: await r.text() };
+}
 Deno.serve(async () => {
-  const store = 'b97f3a1a-d558-41e5-b8a2-ebd65b5381b4';
   const out: Record<string, unknown> = {};
-  out.store = await q(`select id,name,owner_id from public.stores where id='${store}';`);
-  out.plan = await q(`select id,plan_type,monthly_fee,trial_ends_at,last_billed_at,is_active from public.store_plans where store_id='${store}';`);
-  out.pending_tx = await q(`select id,reference_code,status,amount,pix_copy_paste is not null as has_pix,created_at from public.financial_transactions where store_id='${store}' and status='pending' order by created_at desc limit 10;`);
-  out.rpc = await q(`select proname, pronargs from pg_proc where proname='generate_financial_reference';`);
-  out.profile = await q(`select p.user_id, p.full_name, p.email, p.document from public.profiles p join public.stores s on s.owner_id=p.user_id where s.id='${store}';`);
+  out.asaas_key_present = !!Deno.env.get("ASAAS_API_KEY");
+  // Query recent function invocations for subscribe-plan-payment
+  const ref = Deno.env.get("EXTERNAL_SUPABASE_PROJECT_REF")!;
+  const token = Deno.env.get("EXTERNAL_SUPABASE_ACCESS_TOKEN")!;
+  const sql = `select id, timestamp, event_message, metadata from function_edge_logs f cross join unnest(metadata) m where (m.function_id like '%subscribe-plan-payment%' or event_message ilike '%subscribe-plan-payment%' or event_message ilike '%Asaas%') order by timestamp desc limit 30`;
+  const r = await fetch(`https://api.supabase.com/v1/projects/${ref}/analytics/endpoints/logs.all?sql=${encodeURIComponent(sql)}`, { headers: { Authorization: `Bearer ${token}` } });
+  out.logs = { status: r.status, body: (await r.text()).slice(0, 8000) };
   return new Response(JSON.stringify(out, null, 2), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
 });
