@@ -19,21 +19,22 @@ const KEY =
 const sb = createClient(URL, KEY, { auth: { persistSession: false } });
 
 async function getFixture() {
-  const { data: stores } = await sb
-    .from("stores")
-    .select("id, owner_id")
-    .limit(1);
-  const storeId = stores?.[0]?.id;
-  const ownerId = (stores?.[0] as any)?.owner_id;
-  if (!storeId) throw new Error("No store to test against");
-  if (!ownerId) throw new Error("Store has no owner_id");
-  const { data: products } = await sb
+  // Escolhe uma loja que tenha pelo menos 1 produto (fixture estável).
+  const { data: prod } = await sb
     .from("products")
-    .select("id")
+    .select("id, store_id, stores!inner(owner_id)")
+    .limit(1)
+    .single();
+  const productId = (prod as any)?.id;
+  const storeId = (prod as any)?.store_id;
+  const ownerId = (prod as any)?.stores?.owner_id;
+  if (!storeId || !productId || !ownerId) throw new Error("No store with product/owner");
+  // fecha sessão aberta remanescente
+  await sb
+    .from("pdv_sessions")
+    .update({ status: "closed", closed_at: new Date().toISOString() } as any)
     .eq("store_id", storeId)
-    .limit(1);
-  const productId = products?.[0]?.id;
-  if (!productId) throw new Error("No product for store");
+    .eq("status", "open");
   const { data: session, error: se } = await sb
     .from("pdv_sessions")
     .insert({
