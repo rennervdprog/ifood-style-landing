@@ -36,6 +36,13 @@ async function openSession() {
     ownerId = (s as any)?.owner_id;
     if (!ownerId) throw new Error("store owner_id não encontrado");
   }
+  // fecha qualquer sessão aberta remanescente para respeitar
+  // o unique constraint pdv_sessions_one_open_per_store
+  await sb!
+    .from("pdv_sessions")
+    .update({ status: "closed", closed_at: new Date().toISOString() } as any)
+    .eq("store_id", STORE_ID)
+    .eq("status", "open");
   const { data, error } = await sb!
     .from("pdv_sessions")
     .insert({ store_id: STORE_ID, opening_amount: 0, status: "open", opened_by: ownerId } as any)
