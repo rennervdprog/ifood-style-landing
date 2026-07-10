@@ -9,6 +9,7 @@ import WhatsAppButton from "@/components/WhatsAppButton";
 import PlatformFeeExplainerCard from "@/components/PlatformFeeExplainerCard";
 import { GlanceCard } from "../components/GlanceCard";
 import DriverDeliveriesCard from "../components/DriverDeliveriesCard";
+import { CalendarClock } from "lucide-react";
 
 
 interface Props {
@@ -154,6 +155,67 @@ export default function DashboardOverviewSection(props: Props) {
       <ChevronRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
     </button>
   )}
+
+  {/* ── Trial em andamento: progresso dos dias restantes ── */}
+  {storePlan.isInTrial && storePlan.trialEndsAt && (() => {
+    const daysLeft = Math.max(0, storePlan.trialDaysLeft);
+    const started = storePlan.startedAt ? new Date(storePlan.startedAt).getTime() : null;
+    const endsAt = new Date(storePlan.trialEndsAt).getTime();
+    const totalDays = started
+      ? Math.max(1, Math.ceil((endsAt - started) / 86400000))
+      : Math.max(daysLeft, 7);
+    const daysUsed = Math.max(0, totalDays - daysLeft);
+    const pct = Math.min(100, Math.round((daysUsed / totalDays) * 100));
+    const urgent = daysLeft <= 3;
+    const endsLabel = new Date(storePlan.trialEndsAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "long" });
+    const fee = Number(storePlan.monthlyFee || 0);
+    return (
+      <button
+        onClick={() => setDashboardTab("plan")}
+        className={`w-full text-left rounded-2xl p-4 border-2 active:scale-[0.99] transition-transform ${
+          urgent
+            ? "bg-destructive/5 border-destructive/30"
+            : "bg-primary/5 border-primary/30"
+        }`}
+      >
+        <div className="flex items-center gap-3 mb-3">
+          <div className={`w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 ${
+            urgent ? "bg-destructive/15 text-destructive" : "bg-primary/15 text-primary"
+          }`}>
+            <CalendarClock className="h-5 w-5" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h3 className={`text-sm font-black ${urgent ? "text-destructive" : "text-foreground"}`}>
+              {daysLeft === 0
+                ? "Seu período de teste termina hoje"
+                : `Período de teste — restam ${daysLeft} dia${daysLeft > 1 ? "s" : ""}`}
+            </h3>
+            <p className="text-[11px] text-muted-foreground mt-0.5">
+              Termina em <span className="font-semibold text-foreground">{endsLabel}</span>
+              {fee > 0 && (
+                <> — cobrança automática de <span className="font-semibold text-foreground">{formatBRL(fee)}</span> ao final</>
+              )}
+            </p>
+          </div>
+          <ChevronRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+        </div>
+        <div className="w-full h-2 rounded-full bg-muted overflow-hidden">
+          <div
+            className={`h-full transition-all ${urgent ? "bg-destructive" : "bg-primary"}`}
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+        <div className="flex items-center justify-between mt-1.5">
+          <span className="text-[10px] text-muted-foreground font-semibold">
+            {daysUsed} de {totalDays} dias usados
+          </span>
+          <span className={`text-[10px] font-bold ${urgent ? "text-destructive" : "text-primary"}`}>
+            {urgent ? "Ative seu plano para não interromper" : "Ver detalhes do plano"}
+          </span>
+        </div>
+      </button>
+    );
+  })()}
 
   {/* Explicação permanente da taxa R$ X/entrega — visível para todos os planos */}
   {storePlan.platformDeliverySplit > 0 && (
