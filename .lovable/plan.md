@@ -1,65 +1,68 @@
+# Plano: PDV-only = literalmente só PDV
+
 ## Objetivo
-Quando a loja for **PDV Standalone** (`plan_type = 'pdv_only'`), o painel do lojista precisa parecer um sistema de PDV — sem termos de "delivery", "entrega", "pedidos online", "motoboy", "vitrine", "cliente do app" espalhados pela UI — e o layout deve priorizar o Caixa/PDV como tela principal.
+Quando `plan_type = 'pdv_only'`, o painel do lojista **não é mais um painel** — é o próprio PDV em tela cheia. Zero abas, zero menus, zero configurações de delivery, zero cardápio "de vitrine", zero relatórios de pedidos, zero motoboys, zero repasse, zero avisos de app.
 
-## Escopo (apenas frontend)
+A loja também **não existe** para o resto do sistema (marketplace, busca, deep links, super admin de pedidos).
 
-### 1. Landing do painel = Caixa/PDV
-- Em `AdminDashboardV2.tsx`, quando `isPdvOnly`:
-  - `defaultTab` = `cash_register` (hoje cai em `dashboard`/`orders`).
-  - Grupo inicial do bottom nav = **Pedidos → PDV/Caixa**.
-  - Esconder o card "Pedidos do dia / Delivery" da `DashboardOverviewSection` e trocar por card "Vendas do caixa hoje" (só leitura de `pdv_sales`).
+## Escopo — Frontend
 
-### 2. Textos e rótulos condicionais
-Substituir strings quando `isPdvOnly === true`:
-| Onde | Texto atual (delivery) | Texto PDV |
-|---|---|---|
-| AppHeader / título painel | "Painel do Lojista" | "Painel PDV" |
-| Aba "Pedidos" | "Pedidos" | "Vendas" |
-| GlanceCard "Pedidos hoje" | idem | "Vendas hoje" |
-| SettingsTab seção entrega | ocultar bloco inteiro | — |
-| SubscriptionTab / PlanFeeBreakdown | "R$ X por pedido entregue" | "Mensalidade PDV R$ 69, sem taxa por venda" |
-| RepasseSection | ocultar (já feito via `hideOnPdvOnly`) | — |
-| AvisosSection | filtrar avisos com `category='delivery'` | — |
-| Onboarding tips / tutoriais | esconder cards de "Configurar entrega/raio/motoboy" | mostrar só trilha PDV |
+### 1. Roteamento (`App.tsx` + `AdminDashboardV2.tsx`)
+- Se a loja logada é `pdv_only`, `/admin` faz `Navigate → /pdv` (sem passar pelo dashboard).
+- `/admin/*` inteiro fica bloqueado — redireciona pra `/pdv`.
+- Remover qualquer redirect residual pra `dashboard`, `orders`, `menu`, etc.
 
-### 3. Sub-tabs a esconder (revisar `constants.ts`)
-Já marcadas com `hideOnPdvOnly`: `orders`, `refunds`, `promotions`, `clients`, `loyalty`, `coupons`, `hours`, `drivers`, `repasse`, `reports`. Confirmar e adicionar as faltantes:
-- `avisos` → manter, mas filtrar conteúdo.
-- Grupo **Clientes** inteiro: se todas as sub-tabs sumirem, esconder o grupo no bottom nav e no sheet "Mais".
-- Grupo **Operação** idem (fica vazio sem `hours`/`drivers`).
+### 2. `PdvPage.tsx` vira o app inteiro do lojista PDV
+- Header próprio (logo + nome da loja + menu simples).
+- Menu do header (dropdown/sheet) só com:
+  - **Meu Plano** (mostra "PDV Standalone R$69/mês" + botão cancelar/trocar plano)
+  - **Perfil / Sair**
+  - **Suporte (WhatsApp)**
+- Sem link pra: pedidos, cardápio delivery, motoboys, cupons, promoções, relatórios de app, avisos, tutoriais delivery, repasse, saldo Asaas.
 
-### 4. Configurações (`SettingsTab`)
-Ocultar blocos quando `isPdvOnly`:
-- Raio de entrega, taxa de entrega, tempo de preparo delivery.
-- Integrações WhatsApp de pedido online → manter só "notificações internas".
-- Aceitar pedidos online / pausar loja no app → esconder (loja nem aparece no marketplace).
-- Manter: dados fiscais, impressora, gaveta, atalhos PDV, usuários operadores.
+### 3. Cardápio dentro do PDV
+- Não existe mais aba "Cardápio" separada com switches de delivery.
+- Produtos vivem só no PDV: criar/editar/excluir direto no `PdvCatalogSection` (já tem UI de produto peso; expandir pra produto normal também).
+- Remover, pra loja PDV-only, os campos: "disponível no delivery", "foto para vitrine", "descrição pública", "categoria da vitrine", "tempo de preparo delivery".
 
-### 5. Cardápio (`MenuTab` / `MenuBuilder`)
-- Esconder switches "Disponível no delivery", "Foto obrigatória para app", "Descrição p/ vitrine".
-- Rótulo do preço: "Preço no PDV" em vez de "Preço no cardápio".
-- Esconder aba **Promoções** (já hideOnPdvOnly) e badge "Aparece no app".
+### 4. Client-side (site público)
+- `StoreDirectory`, `CityStoresPage`, `ClientHome`, busca, categorias: **filtrar `plan_type != 'pdv_only'`** em todas as queries (mesmo se `is_visible=false` já esconde, garantir por segurança).
+- Página pública `/loja/:slug` de PDV-only → 404 (já existe, confirmar).
+- `PartnerClientView`: se o lojista logado é dono de loja PDV-only, esconder totalmente o "modo cliente" (ele não vende no app). Home dele = botão único "Abrir PDV".
 
-### 6. Meu Plano (`SubscriptionTab` + `StoreAddonsPanel`)
-- Mostrar plano como "PDV Standalone — R$ 69/mês".
-- Esconder linhas "Taxa por pedido entregue", "Repasse semanal", "Split Asaas por venda online".
-- StoreAddonsPanel: manter PDV (marcado como incluso no plano, sem botão ativar/cancelar).
+### 5. Super Admin
+- Aba "Pedidos" / "Repasses" / "Saques do lojista" / "Cupons" / "Promoções": filtrar lojas `pdv_only` fora das listas (não faz sentido).
+- Aba "Lojas" (lista geral): manter, mas com badge "PDV" e sem colunas de comissão/repasse pra essas.
+- VIP config: pra loja PDV-only, esconder toggles de "isentar comissão", "isentar taxa entrega", "auto-repasse" (não se aplicam). Deixar só "PIN autofill" e "Isentar mensalidade PDV".
 
-### 7. Header/menu do cliente
-- `PartnerClientView`: se o `profile.role === 'lojista'` e a loja dele é `pdv_only`, esconder o próprio link "Voltar como cliente" e não sugerir /admin com ícone "Delivery". Trocar ícone/label para "Painel PDV".
+### 6. Notificações / background
+- Não registrar FCM/OneSignal de "novo pedido delivery" pra loja PDV-only.
+- Não abrir socket de `orders` realtime pra essas lojas.
+- Não rodar `orderNotifications`, `arrivalGeofence`, `driverBackgroundFetch` no boot dessas contas.
 
-## Implementação técnica
-- Criar util `isPdvOnlyStore(plan)` em `src/lib/plansInfo.ts` (já existe algo similar; consolidar).
-- Propagar `isPdvOnly` via `AdminContext` para não recomputar em cada tab.
-- Cada tab lê `useAdminContext().isPdvOnly` e faz early-return / conditional render.
-- Zero mudança em backend, migrations ou lógica de billing.
+### 7. Textos residuais
+Varredura final removendo qualquer string "delivery/entrega/motoboy/pedido online/vitrine" da UI que sobrar pra PDV-only.
+
+## Escopo — Backend (Supabase externo, via oneshot)
+
+1. **RLS**: policies de `orders`, `order_items`, `driver_earnings`, `store_driver_earnings`, `refund_requests`, `coupons`, `promo_campaigns`, `loyalty_points` — adicionar cláusula `AND stores.plan_type <> 'pdv_only'` onde acessam via store_id (defensivo; UI já não chama, mas fecha a porta).
+2. **Trigger** em `stores`: ao mudar `plan_type` pra `pdv_only`, setar `is_visible=false` automaticamente e cancelar entregas em aberto.
+3. **`monthly-billing`**: pra loja `pdv_only`, cobrar só a mensalidade do plano (R$69) e **não** cobrar add-on PDV separado (já embutido). Confirmar que já está assim; corrigir se não.
+4. **Cron / edge functions**: `orders-timeout-check`, `auto-refund`, `driver-arrival-check`, `weekly-payout` — early-return quando `plan_type='pdv_only'`.
 
 ## Fora de escopo
-- Não mexer em edge functions, RLS, cobrança.
-- Não remover código de delivery — apenas ocultar por flag (loja pode migrar de plano depois).
-- Não redesenhar componentes; só condicionar textos/blocos.
+- Não redesenhar o PDV em si (layout do caixa fica igual).
+- Não mexer em cobrança do Asaas além do filtro acima.
+- Não migrar lojas existentes automaticamente — só afeta lojas novas ou que trocarem pra `pdv_only`.
 
 ## Entregáveis
-1. Patch em ~10 arquivos de UI (`AdminDashboardV2`, `AdminContext`, `constants.ts`, `SettingsTab`, `MenuTab`/`MenuBuilder`, `SubscriptionTab`, `PlanFeeBreakdown`, `DashboardOverviewSection`, `GlanceCard`, `PartnerClientView`).
-2. Bump de versão (patch) conforme regra do projeto.
-3. Teste manual: abrir loja PDV → painel abre no Caixa, sem qualquer menção a entrega/motoboy/vitrine.
+1. ~8 arquivos frontend editados + 2–3 componentes novos (header do PDV, menu de perfil PDV, tela "Meu Plano" enxuta).
+2. 1 oneshot edge function aplicando as policies e o trigger no Supabase externo.
+3. Ajustes em 4 edge functions de cron pra early-return.
+4. Bump de versão (patch) + nota ao usuário.
+
+## Teste manual
+- Criar loja fake PDV-only no super admin → login → cai direto no PDV, sem qualquer aba/menu de delivery, sem badge de pedidos, sem repasse.
+- Buscar essa loja no marketplace → não aparece.
+- Abrir `/loja/slug-dela` → 404.
+- Super admin: aba Pedidos não lista essa loja; aba Lojas mostra com badge PDV.
