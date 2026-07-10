@@ -729,6 +729,9 @@ const StoreDirectory = () => {
           <p className="mt-8 text-center text-xs text-muted-foreground max-w-2xl mx-auto leading-relaxed">
             💡 Nos planos <strong className="text-foreground">Comissão e Essencial</strong> a plataforma soma R$2,00 à sua taxa de entrega (o cliente paga, não sai do seu caixa). Apenas no <strong className="text-foreground">Autonomia</strong> esse acréscimo é zero — o cliente paga exatamente a taxa que você define.
           </p>
+          <p className="mt-3 text-center text-xs text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+            🏪 Já tem clientela na loja física? O plano <strong className="text-foreground">Somente PDV</strong> é a frente de caixa pura — se quiser abrir delivery depois, migra num clique.
+          </p>
         </div>
       </section>
 
