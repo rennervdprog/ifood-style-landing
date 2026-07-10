@@ -41,6 +41,7 @@ const StorePage = lazy(() => import("./pages/StorePage"));
 const CartPage = lazy(() => import("./pages/CartPage"));
 const CheckoutPage = lazy(() => import("./pages/CheckoutPage"));
 const GuestCheckoutPage = lazy(() => import("./pages/GuestCheckoutPage"));
+const PixDiretoPaymentPage = lazy(() => import("./pages/PixDiretoPaymentPage"));
 const PublicOrderTracking = lazy(() => import("./pages/PublicOrderTracking"));
 const PedidosPage = lazy(() => import("./pages/PedidosPage"));
 const PerfilPage = lazy(() => import("./pages/PerfilPage"));
@@ -377,6 +378,7 @@ const App = () => {
                 <Route path="/carrinho" element={<CartPage />} />
                 <Route path="/checkout" element={<CheckoutPage />} />
                 <Route path="/checkout-rapido" element={<GuestCheckoutPage />} />
+                <Route path="/pix-direto/:orderId" element={<PixDiretoPaymentPage />} />
                 <Route path="/p/:orderId" element={<PublicOrderTracking />} />
                 <Route path="/pedidos" element={<PedidosPage />} />
                 <Route path="/perfil" element={<PerfilPage />} />
