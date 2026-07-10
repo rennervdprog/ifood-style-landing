@@ -13,7 +13,7 @@ Deno.serve(async (req) => {
   const out: Record<string, unknown> = {};
   out.store = await q(`SELECT id,name,plan_type,legacy_pdv FROM public.stores WHERE name ILIKE '%cantinho%silv%' OR name ILIKE '%silvia%';`);
   out.orders_today = await q(`
-    SELECT o.id, o.status, o.origin, o.created_at, o.total_price, o.assigned_driver_id, o.driver_id, o.payment_method
+    SELECT o.id, o.status, o.created_at, o.total_price, o.assigned_driver_id, o.driver_id, o.payment_method
     FROM public.orders o
     JOIN public.stores s ON s.id=o.store_id
     WHERE (s.name ILIKE '%cantinho%silv%' OR s.name ILIKE '%silvia%')
@@ -21,14 +21,14 @@ Deno.serve(async (req) => {
     ORDER BY o.created_at DESC;
   `);
   out.driver_earnings_today = await q(`
-    SELECT de.*, o.origin FROM public.driver_earnings de
+    SELECT de.* FROM public.driver_earnings de
     JOIN public.orders o ON o.id=de.order_id
     JOIN public.stores s ON s.id=o.store_id
     WHERE (s.name ILIKE '%cantinho%silv%' OR s.name ILIKE '%silvia%')
       AND de.created_at >= (now() AT TIME ZONE 'America/Sao_Paulo')::date;
   `);
   out.store_driver_earnings_today = await q(`
-    SELECT sde.*, o.origin FROM public.store_driver_earnings sde
+    SELECT sde.* FROM public.store_driver_earnings sde
     JOIN public.orders o ON o.id=sde.order_id
     JOIN public.stores s ON s.id=o.store_id
     WHERE (s.name ILIKE '%cantinho%silv%' OR s.name ILIKE '%silvia%')
