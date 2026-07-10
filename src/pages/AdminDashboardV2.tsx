@@ -986,8 +986,27 @@ const AdminDashboard = () => {
   const handlePrint = useCallback((order: any) => {
     const copies = (store?.settings as any)?.print_copies === 1 ? 1 : 2;
     const paperWidth = (store?.settings as any)?.print_paper_width === 58 ? 58 : 80;
-    printThermalReceipt(order, store?.name || "Loja", getClientName(order.client_id), getClientWhatsApp(order.client_id), { copies, paperWidth });
+    doPrintOrder(order, copies, paperWidth);
   }, [store?.name, store?.settings, getClientName, getClientWhatsApp]);
+
+  // Print resiliente: se o cache de clientProfiles ainda não carregou
+  // (nome fica "Cliente" e telefone vazio), busca on-demand direto na RPC
+  // antes de enviar pra impressora.
+  const doPrintOrder = useCallback(async (order: any, copies: number, paperWidth: number) => {
+    let name = getClientName(order.client_id);
+    let phone = getClientWhatsApp(order.client_id);
+    if (!name || name === "Cliente" || !phone) {
+      try {
+        const { data } = await supabase.rpc("get_delivery_contacts", { _order_ids: [order.id] });
+        const row = (data || []).find((r: any) => r.user_id === order.client_id) || (data || [])[0];
+        if (row) {
+          if (row.full_name) name = row.full_name;
+          if (!phone) phone = row.whatsapp_number || row.phone || "";
+        }
+      } catch (e) { console.warn("print contact fetch failed", e); }
+    }
+    printThermalReceipt(order, store?.name || "Loja", name || "Cliente", phone, { copies, paperWidth });
+  }, [store?.name, getClientName, getClientWhatsApp]);
 
   /**
    * Mensagem de ACEITE do pedido — sem PIN.
@@ -1064,11 +1083,11 @@ const AdminDashboard = () => {
     try {
       const copies = (store?.settings as any)?.print_copies === 1 ? 1 : 2;
       const paperWidth = (store?.settings as any)?.print_paper_width === 58 ? 58 : 80;
-      printThermalReceipt(order, store?.name || "Loja", getClientName(order.client_id), getClientWhatsApp(order.client_id), { copies, paperWidth });
+      doPrintOrder(order, copies, paperWidth);
     } catch (e) {
       console.warn("print error", e);
     }
-  }, [store?.name, store?.settings, getClientName, getClientWhatsApp]);
+  }, [store?.name, store?.settings, doPrintOrder]);
 
   const toggleAutoPrint = () => {
     const next = !autoPrint;
