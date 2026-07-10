@@ -992,7 +992,7 @@ const AdminDashboard = () => {
   // Print resiliente: se o cache de clientProfiles ainda não carregou
   // (nome fica "Cliente" e telefone vazio), busca on-demand direto na RPC
   // antes de enviar pra impressora.
-  const doPrintOrder = useCallback(async (order: any, copies: number, paperWidth: number) => {
+  const doPrintOrder = useCallback(async (order: any, copies: 1 | 2, paperWidth: 58 | 80) => {
     let name = getClientName(order.client_id);
     let phone = getClientWhatsApp(order.client_id);
     if (!name || name === "Cliente" || !phone) {
