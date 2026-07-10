@@ -1478,6 +1478,13 @@ const AdminDashboard = () => {
   const allowFullReports = storePlan.allowFullReports;
   const isPdvOnly = storePlan.planType === "pdv_only";
 
+  // PDV-only: painel do lojista NÃO existe. Manda direto pro caixa/PDV.
+  useEffect(() => {
+    if (!storePlan.isLoading && isPdvOnly) {
+      navigate("/pdv", { replace: true });
+    }
+  }, [isPdvOnly, storePlan.isLoading, navigate]);
+
   // Grupos visíveis (com pelo menos 1 sub-tab disponível)
   const visibleGroups: DashboardGroup[] = useMemo(
     () => {
