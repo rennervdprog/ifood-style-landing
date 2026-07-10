@@ -264,9 +264,14 @@ export const notifyOrderStatusChange = (
     console.log("[notifyOrderStatusChange] → enviando WhatsApp via Evolution");
     // tenta usar template customizado do lojista; se não houver, usa o padrão
     (async () => {
-      const customTpl = params.storeId
-        ? await fetchCustomTemplate(params.storeId, newStatus)
-        : null;
+      // Para "preparando" (pedido aceito) forçamos o novo formato rico,
+      // ignorando templates antigos salvos pelo lojista — evita precisar
+      // atualizar manualmente os templates customizados.
+      const customTpl = newStatus === "preparando"
+        ? null
+        : params.storeId
+          ? await fetchCustomTemplate(params.storeId, newStatus)
+          : null;
       const msg = customTpl ? applyTemplate(customTpl, params) : config.whatsApp(params);
       sendEvolutionMessage(params.storeId, params.clientPhone, msg);
     })();
