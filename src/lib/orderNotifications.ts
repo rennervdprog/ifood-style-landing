@@ -23,7 +23,62 @@ interface OrderNotifyParams {
   addressDetails?: string;
   items?: string;
   paymentMethod?: string;
+  paymentLabel?: string;
+  deliveryFee?: number;
+  deliveryType?: "delivery" | "retirada";
+  etaText?: string;
+  neighborhood?: string;
+  orderNumber?: string | number;
 }
+
+/**
+ * Formata a lista de itens do pedido em bloco estilo "Anota AI":
+ *   ➡ ```1x Produto```
+ *         _Grupo_
+ *             ```1x Adicional```
+ *   _Obs: texto do cliente_
+ */
+export const buildRichItemsBlock = (orderItems: any[] = []): string => {
+  if (!Array.isArray(orderItems) || orderItems.length === 0) return "";
+  const lines: string[] = [];
+  for (const item of orderItems) {
+    const qty = Number(item.quantity || 1);
+    const name = item.products?.name || item.name || "Item";
+    lines.push(`➡ \`\`\`${qty}x ${name}\`\`\``);
+
+    let addons: any = item.addons;
+    if (typeof addons === "string") { try { addons = JSON.parse(addons); } catch { addons = []; } }
+    if (Array.isArray(addons) && addons.length > 0) {
+      // agrupa por groupName preservando ordem
+      const groups = new Map<string, any[]>();
+      for (const a of addons) {
+        const g = (a?.groupName as string) || "Adicional";
+        if (!groups.has(g)) groups.set(g, []);
+        groups.get(g)!.push(a);
+      }
+      for (const [group, arr] of groups) {
+        lines.push(`      _${group}_`);
+        for (const a of arr) {
+          const aqty = Number(a.quantity || 1);
+          const aname = String(a.name || "").trim();
+          if (aname) lines.push(`          \`\`\`${aqty}x ${aname}\`\`\``);
+        }
+      }
+    }
+    if (item.observations && String(item.observations).trim()) {
+      lines.push(`      _Obs: ${String(item.observations).trim()}_`);
+    }
+  }
+  return lines.join("\n");
+};
+
+/** Janela estimada de entrega (30–45 min a partir de agora, formato HH:MM). */
+export const buildEtaWindow = (fromDate: Date = new Date(), minMin = 30, maxMin = 45): string => {
+  const fmt = (d: Date) => d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  const a = new Date(fromDate.getTime() + minMin * 60000);
+  const b = new Date(fromDate.getTime() + maxMin * 60000);
+  return `entre ${fmt(a)} e ${fmt(b)}`;
+};
 
 const STATUS_MESSAGES: Record<string, {
   pushTitle: string;
@@ -33,12 +88,32 @@ const STATUS_MESSAGES: Record<string, {
   preparando: {
     pushTitle: "👨‍🍳 Pedido aceito!",
     pushBody: (p) => `Seu pedido #${p.orderId.slice(0, 8).toUpperCase()} no ${p.storeName} está sendo preparado!`,
-    whatsApp: (p) =>
-      `✅ *${p.storeName}* informa: Seu pedido foi aceito! 🍔\n\n` +
-      `${p.items ? p.items + "\n\n" : ""}` +
-      `💰 Total: ${formatBRL(p.totalPrice)}\n` +
-      `Pedido: #${p.orderId.slice(0, 8).toUpperCase()}` +
-      `${p.deliveryPin ? `\n🔑 *PIN de Segurança: ${p.deliveryPin}*` : ""}`,
+    whatsApp: (p) => {
+      const num = p.orderNumber ? String(p.orderNumber) : p.orderId.slice(0, 8).toUpperCase();
+      const isDelivery = (p.deliveryType ?? (Number(p.deliveryFee || 0) > 0 ? "delivery" : "retirada")) === "delivery";
+      const feeTxt = isDelivery && Number(p.deliveryFee || 0) > 0
+        ? ` (taxa de: *${formatBRL(Number(p.deliveryFee))}*)`
+        : "";
+      const enderecoLinha = isDelivery
+        ? `🏠 ${[p.addressDetails, p.neighborhood].filter(Boolean).join(", ")}`
+        : `🏃 Retirada no balcão`;
+      const eta = p.etaText || (isDelivery ? buildEtaWindow() : "");
+      const etaLinha = isDelivery && eta ? `\n(Previsão de Entrega: ${eta})` : "";
+      const pinLinha = p.deliveryPin ? `\n\n🔑 *PIN de Segurança: ${p.deliveryPin}*` : "";
+      const pagamento = p.paymentLabel || (p.paymentMethod ? p.paymentMethod.toUpperCase() : "");
+      return (
+        `${p.clientName || "Cliente"}, o pedido Nº *${num}* está em produção.\n\n` +
+        `Pedido *nº ${num}*\n\n` +
+        `*Itens:*\n${p.items || ""}\n\n` +
+        (pagamento ? `📱 *${pagamento}*\n\n` : "") +
+        (isDelivery
+          ? `🛵 *Delivery*${feeTxt}\n${enderecoLinha}${etaLinha}\n\n`
+          : `${enderecoLinha}\n\n`) +
+        `Total: *${formatBRL(p.totalPrice)}*\n\n` +
+        `Obrigado pela preferência, se precisar de algo é só chamar! 😉` +
+        pinLinha
+      );
+    },
   },
    pronto_para_entrega: {
      pushTitle: "📦 Pedido pronto!",
@@ -102,11 +177,16 @@ const applyTemplate = (tpl: string, p: OrderNotifyParams): string => {
   return tpl
     .replace(/\{storeName\}/g, p.storeName || "")
     .replace(/\{clientName\}/g, p.clientName || "")
-    .replace(/\{orderId\}/g, p.orderId.slice(0, 8).toUpperCase())
+    .replace(/\{orderId\}/g, p.orderNumber ? String(p.orderNumber) : p.orderId.slice(0, 8).toUpperCase())
     .replace(/\{total\}/g, formatBRL(p.totalPrice))
     .replace(/\{pin\}/g, p.deliveryPin || "")
     .replace(/\{address\}/g, p.addressDetails || "")
-    .replace(/\{items\}/g, p.items || "");
+    .replace(/\{items\}/g, p.items || "")
+    .replace(/\{payment\}/g, p.paymentLabel || (p.paymentMethod || "").toUpperCase())
+    .replace(/\{deliveryFee\}/g, p.deliveryFee ? formatBRL(Number(p.deliveryFee)) : "")
+    .replace(/\{deliveryType\}/g, (p.deliveryType ?? (Number(p.deliveryFee || 0) > 0 ? "Delivery" : "Retirada")))
+    .replace(/\{eta\}/g, p.etaText || "")
+    .replace(/\{neighborhood\}/g, p.neighborhood || "");
 };
 
 /**
