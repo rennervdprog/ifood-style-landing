@@ -34,6 +34,14 @@ Deno.serve(async () => {
   out.rpc_sig = await q(`select proname, pg_get_function_identity_arguments(oid) as args from pg_proc where proname='generate_financial_reference';`);
   // Try to actually generate a reference
   out.rpc_test = await q(`select public.generate_financial_reference('ASSIN') as v;`);
+  out.tx_kind_enum = await q(`select unnest(enum_range(NULL::text)) as v where false; select column_name, data_type, udt_name from information_schema.columns where table_schema='public' and table_name='financial_transactions' and column_name in ('transaction_kind','status','provider');`);
+  out.tx_triggers = await q(`select tgname, pg_get_triggerdef(oid) from pg_trigger where tgrelid='public.financial_transactions'::regclass and not tgisinternal;`);
+  out.tx_kind_values = await q(`select distinct transaction_kind from public.financial_transactions limit 30;`);
+  // Try inserting exactly like the function does
+  const tryInsert = `insert into public.financial_transactions (store_id, transaction_kind, amount, reference_code, status, provider, mercado_pago_payment_id, pix_qr_code, pix_qr_code_base64, pix_copy_paste, metadata) values ('b97f3a1a-d558-41e5-b8a2-ebd65b5381b4','commission_charge',90,'#ASSIN-DIAGTEST','pending','asaas','pay_test','x','x','x','{"type":"plan_subscription"}'::jsonb) returning id;`;
+  out.tx_insert = await q(tryInsert);
+  // cleanup
+  await q(`delete from public.financial_transactions where reference_code='#ASSIN-DIAGTEST';`);
   // Test Asaas from here
   if (key) {
     const base = key.startsWith("$aact_prod_") ? "https://api.asaas.com/v3" : "https://sandbox.asaas.com/api/v3";
