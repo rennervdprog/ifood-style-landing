@@ -1,7 +1,12 @@
-import { ArrowLeft, Monitor, Keyboard, ArrowUpCircle, ArrowDownCircle, Lock, Loader2, User, Wifi, WifiOff, RefreshCw } from "lucide-react";
+import { ArrowLeft, Monitor, Keyboard, ArrowUpCircle, ArrowDownCircle, Lock, Loader2, User, Wifi, WifiOff, RefreshCw, Menu, LogOut, CreditCard, LifeBuoy, UserCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { formatBRL } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  DropdownMenu, DropdownMenuTrigger, DropdownMenuContent,
+  DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 
 interface Props {
   storeName?: string;
@@ -18,12 +23,14 @@ interface Props {
   outboxCount?: number;
   outboxFlushing?: boolean;
   onSyncOutbox?: () => void;
+  /** Quando true, esconde o "voltar ao painel" e mostra menu enxuto (Perfil/Plano/Sair). */
+  isPdvOnly?: boolean;
 }
 
 export const PdvTopbar = ({
   storeName, operatorName, turnoVendasCount, turnoVendido, ticketMedio,
   loading, onShowShortcuts, onSuprimento, onSangria, onFechar,
-  outboxCount = 0, outboxFlushing = false, onSyncOutbox,
+  outboxCount = 0, outboxFlushing = false, onSyncOutbox, isPdvOnly = false,
 }: Props) => {
   const navigate = useNavigate();
   const initial = (operatorName || "").trim().charAt(0).toUpperCase() || "?";
@@ -43,9 +50,41 @@ export const PdvTopbar = ({
   }, []);
   return (
     <header className="h-12 border-b border-border bg-card flex items-center px-3 gap-2 shrink-0">
-      <button onClick={() => navigate("/admin")} className="p-1.5 rounded-lg hover:bg-muted transition-colors">
-        <ArrowLeft className="h-4 w-4" />
-      </button>
+      {isPdvOnly ? (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="p-1.5 rounded-lg hover:bg-muted transition-colors" title="Menu">
+              <Menu className="h-4 w-4" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-56">
+            <DropdownMenuLabel>{storeName || "Menu"}</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => navigate("/perfil")}>
+              <UserCircle className="h-4 w-4 mr-2" /> Perfil
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate("/perfil?tab=plano")}>
+              <CreditCard className="h-4 w-4 mr-2" /> Meu Plano
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => window.open("https://wa.me/5511999999999", "_blank")}
+            >
+              <LifeBuoy className="h-4 w-4 mr-2" /> Suporte
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              className="text-red-600 focus:text-red-600"
+              onClick={async () => { await supabase.auth.signOut(); navigate("/", { replace: true }); }}
+            >
+              <LogOut className="h-4 w-4 mr-2" /> Sair
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ) : (
+        <button onClick={() => navigate("/admin")} className="p-1.5 rounded-lg hover:bg-muted transition-colors">
+          <ArrowLeft className="h-4 w-4" />
+        </button>
+      )}
       <div className="w-px h-5 bg-border" />
       <Monitor className="h-4 w-4 text-primary shrink-0" />
       <div className="flex-1 min-w-0">
