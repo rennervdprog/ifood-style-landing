@@ -195,6 +195,13 @@ type PizzaPriceMode = "maior" | "media" | "soma";
   const [acceptCard,       setAcceptCard]       = useState<boolean>(storeSettings?.accept_card        !== false);
   const [acceptCash,       setAcceptCash]       = useState<boolean>(storeSettings?.accept_cash        !== false);
 
+  // Pix Direto (chave PIX do lojista, comprovante manual). Campos top-level em `stores`.
+  const [pixDiretoEnabled, setPixDiretoEnabled] = useState<boolean>(false);
+  const [pixDiretoKey, setPixDiretoKey] = useState<string>("");
+  const [pixDiretoKeyType, setPixDiretoKeyType] = useState<string>("cpf");
+  const [pixDiretoBeneficiary, setPixDiretoBeneficiary] = useState<string>("");
+  const [pixDiretoInstructions, setPixDiretoInstructions] = useState<string>("");
+
   // Quantas vias o cupom térmico imprime (1 = só cliente / 2 = cozinha + cliente)
   const [printCopies, setPrintCopies] = useState<1 | 2>(
     storeSettings?.print_copies === 1 ? 1 : 2
@@ -233,7 +240,7 @@ type PizzaPriceMode = "maior" | "media" | "soma";
     if (!storeId) return;
     (supabase as any)
       .from("stores")
-      .select("free_delivery_threshold, platform_fee_split")
+      .select("free_delivery_threshold, platform_fee_split, pix_direto_enabled, pix_direto_key, pix_direto_key_type, pix_direto_beneficiary, pix_direto_instructions")
       .eq("id", storeId)
       .maybeSingle()
       .then(({ data }: any) => {
@@ -246,6 +253,11 @@ type PizzaPriceMode = "maior" | "media" | "soma";
         if (s === "cliente" || s === "meio_a_meio" || s === "lojista") {
           setPlatformFeeSplit(s);
         }
+        setPixDiretoEnabled(!!data?.pix_direto_enabled);
+        if (data?.pix_direto_key) setPixDiretoKey(String(data.pix_direto_key));
+        if (data?.pix_direto_key_type) setPixDiretoKeyType(String(data.pix_direto_key_type));
+        if (data?.pix_direto_beneficiary) setPixDiretoBeneficiary(String(data.pix_direto_beneficiary));
+        if (data?.pix_direto_instructions) setPixDiretoInstructions(String(data.pix_direto_instructions));
       });
   }, [storeId]);
 
