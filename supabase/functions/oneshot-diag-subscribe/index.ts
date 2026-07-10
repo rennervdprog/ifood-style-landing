@@ -42,6 +42,27 @@ Deno.serve(async () => {
   out.tx_insert = await q(tryInsert);
   // cleanup
   await q(`delete from public.financial_transactions where reference_code='#ASSIN-DIAGTEST';`);
+
+  // Also test if we have the EXTERNAL service key set here on Lovable Cloud
+  const extUrl = Deno.env.get("EXTERNAL_SUPABASE_URL");
+  const extSvc = Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY");
+  out.env = { extUrl, extSvc_present: !!extSvc };
+  if (extUrl && extSvc) {
+    // Try insert via PostgREST as service key
+    const r = await fetch(`${extUrl}/rest/v1/financial_transactions`, {
+      method: "POST",
+      headers: { apikey: extSvc, Authorization: `Bearer ${extSvc}`, "Content-Type": "application/json", Prefer: "return=representation" },
+      body: JSON.stringify({
+        store_id: 'b97f3a1a-d558-41e5-b8a2-ebd65b5381b4',
+        transaction_kind: 'commission_charge',
+        amount: 90, reference_code: '#ASSIN-PGRSTEST', status: 'pending', provider: 'asaas',
+        mercado_pago_payment_id: 'x', pix_qr_code: 'x', pix_qr_code_base64: 'x', pix_copy_paste: 'x',
+        metadata: { type: 'plan_subscription' },
+      }),
+    });
+    out.pgrst_insert = { status: r.status, body: (await r.text()).slice(0, 800) };
+    await q(`delete from public.financial_transactions where reference_code='#ASSIN-PGRSTEST';`);
+  }
   // Test Asaas from here
   if (key) {
     const base = key.startsWith("$aact_prod_") ? "https://api.asaas.com/v3" : "https://sandbox.asaas.com/api/v3";
