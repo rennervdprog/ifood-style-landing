@@ -41,6 +41,7 @@ const StorePage = lazy(() => import("./pages/StorePage"));
 const CartPage = lazy(() => import("./pages/CartPage"));
 const CheckoutPage = lazy(() => import("./pages/CheckoutPage"));
 const GuestCheckoutPage = lazy(() => import("./pages/GuestCheckoutPage"));
+const PixDiretoPaymentPage = lazy(() => import("./pages/PixDiretoPaymentPage"));
 const PublicOrderTracking = lazy(() => import("./pages/PublicOrderTracking"));
 const PedidosPage = lazy(() => import("./pages/PedidosPage"));
 const PerfilPage = lazy(() => import("./pages/PerfilPage"));
