@@ -22,7 +22,7 @@ export const DEFAULT_TEMPLATES: Record<TemplateKey, TemplateInfo> = {
     shortDesc: "Disparada quando o lojista aceita o pedido",
     emoji: "✅",
     template:
-      "✅ *{storeName}* informa: Seu pedido foi aceito! 🍔\n\n{items}\n\n💰 Total: {total}\nPedido: #{orderId}\n🔑 *PIN de Segurança: {pin}*",
+      "{clientName}, o pedido Nº *{orderId}* está em produção.\n\nPedido *nº {orderId}*\n\n*Itens:*\n{items}\n\n📱 *{payment}*\n\n🛵 *{deliveryType}* (taxa de: *{deliveryFee}*)\n🏠 {address}, {neighborhood}\n(Previsão de Entrega: {eta})\n\nTotal: *{total}*\n\nObrigado pela preferência, se precisar de algo é só chamar! 😉\n\n🔑 *PIN de Segurança: {pin}*",
   },
   pronto_para_entrega: {
     label: "Pronto para entrega",
@@ -62,16 +62,27 @@ export const TEMPLATE_VARIABLES: { key: string; desc: string }[] = [
   { key: "{pin}", desc: "PIN de entrega" },
   { key: "{address}", desc: "Endereço de entrega" },
   { key: "{items}", desc: "Lista de itens" },
+  { key: "{payment}", desc: "Forma de pagamento (PIX, Cartão, Dinheiro)" },
+  { key: "{deliveryType}", desc: "Delivery ou Retirada" },
+  { key: "{deliveryFee}", desc: "Taxa de entrega" },
+  { key: "{neighborhood}", desc: "Bairro" },
+  { key: "{eta}", desc: "Previsão de entrega (janela HH:MM)" },
 ];
 
 export const SAMPLE_DATA: Record<string, string> = {
   storeName: "Cantinho da Silvia",
   clientName: "Ana",
-  orderId: "235894",
+  orderId: "2475",
   total: "R$ 45,90",
   pin: "0605",
-  address: "Rua das Flores, 123 — Centro",
-  items: "• 1x Pastel de Carne\n• 1x Caldo de Cana 500ml",
+  address: "Prefeito Benedito Antunes de Toledo, Nº 801 - Casa",
+  neighborhood: "Vila União, Itatinga",
+  items:
+    "➡ ```1x Suco de Laranja Natural 300ml```\n➡ ```1x O Favorito```\n➡ ```1x Trufas Gourmet Sabores Especiais```\n      _Selecione_\n          ```1x Trufa de Nutella com Ninho e Mor```",
+  payment: "PIX",
+  deliveryType: "Delivery",
+  deliveryFee: "R$ 4,00",
+  eta: "entre 18:40 e 18:55",
 };
 
 export const fillTemplate = (tpl: string, data: Record<string, string> = SAMPLE_DATA) =>
