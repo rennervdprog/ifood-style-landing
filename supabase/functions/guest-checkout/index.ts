@@ -61,12 +61,20 @@ Deno.serve(async (req) => {
 
     // Store + guest lookup em paralelo (independentes).
     const [storeRes, existingRes] = await Promise.all([
-      sb.from("stores").select("id, guest_checkout_enabled, address_city, slug").eq("id", p.store_id).maybeSingle(),
+      sb.from("stores").select("id, guest_checkout_enabled, address_city, slug, pix_direto_enabled, pix_direto_key").eq("id", p.store_id).maybeSingle(),
       sb.from("guest_customers").select("user_id").eq("phone", phone).maybeSingle(),
     ]);
     const store = storeRes.data;
     const existing = existingRes.data;
     if (!store || !(store as any).guest_checkout_enabled) return json({ error: "guest_not_enabled" }, 403);
+
+    // Se o método for pix_direto, valida que a loja tem chave configurada
+    const isPixDireto = p.payment_method === "pix_direto";
+    if (isPixDireto) {
+      if (!(store as any).pix_direto_enabled || !((store as any).pix_direto_key || "").trim()) {
+        return json({ error: "pix_direto_not_available" }, 400);
+      }
+    }
 
     // 1) Reutilizar ou criar auth.user sintético
     let userId: string | null = null;
@@ -123,7 +131,7 @@ Deno.serve(async (req) => {
       address_details: addressString,
       needs_change: !!p.needs_change,
       change_for: p.change_for || 0,
-      status: "pendente",
+      status: isPixDireto ? "aguardando_comprovante" : "pendente",
       scheduled_for: p.scheduled_for || null,
       is_guest: true,
       delivery_pin: deliveryPin,
@@ -206,7 +214,7 @@ Deno.serve(async (req) => {
     })();
     try { (globalThis as any).EdgeRuntime?.waitUntil?.(bgTask); } catch { /* fire-and-forget fallback */ }
 
-    return json({ ok: true, order_id: order.id, phone_last4: phone.slice(-4), delivery_pin: deliveryPin });
+    return json({ ok: true, order_id: order.id, phone_last4: phone.slice(-4), delivery_pin: deliveryPin, pix_direto: isPixDireto });
   } catch (e) {
     console.error("[guest-checkout] unhandled:", e);
     return json({ error: "internal_error" }, 500);

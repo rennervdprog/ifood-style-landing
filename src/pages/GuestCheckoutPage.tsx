@@ -12,7 +12,7 @@ import { maskWhatsApp } from "@/lib/whatsapp";
 import { formatBRL, addMoney } from "@/lib/utils";
 import { calculateStoreOwnDeliveryFee, calculateDeliveryFee, DEFAULT_DELIVERY_FEE_CONFIG, type DeliveryFeeConfig } from "@/lib/deliveryFee";
 
-const PAY_METHODS = [
+const BASE_PAY_METHODS = [
   { id: "pix_machine", label: "PIX na maquininha", icon: QrCode },
   { id: "cartao",      label: "Cartão na entrega", icon: CreditCard },
   { id: "dinheiro",    label: "Dinheiro",           icon: Banknote },
@@ -52,7 +52,7 @@ const GuestCheckoutPage = () => {
     queryFn: async () => {
       const { data } = await supabase
         .from("stores")
-        .select("id, name, address_city, minimum_order_value, own_delivery_fee, delivery_mode, delivery_fee_type, delivery_base_km, delivery_fee_base, delivery_fee_per_km, address_cep, latitude, longitude, free_delivery_threshold, guest_checkout_enabled")
+        .select("id, name, address_city, minimum_order_value, own_delivery_fee, delivery_mode, delivery_fee_type, delivery_base_km, delivery_fee_base, delivery_fee_per_km, address_cep, latitude, longitude, free_delivery_threshold, guest_checkout_enabled, pix_direto_enabled, pix_direto_key")
         .eq("id", storeId!).maybeSingle();
       return (data as any) || null;
     },
@@ -276,7 +276,8 @@ const GuestCheckoutPage = () => {
         confetti({ particleCount: 120, spread: 80, origin: { y: 0.7 } });
       }).catch(() => {});
       toast.success("Pedido enviado!");
-      navigate(`/p/${res.order_id}?t=${res.phone_last4}`, {
+      const suffix = res.pix_direto ? "&pix=1" : "";
+      navigate(`/p/${res.order_id}?t=${res.phone_last4}${suffix}`, {
         replace: true,
         state: { delivery_pin: res.delivery_pin || null },
       });
@@ -288,6 +289,10 @@ const GuestCheckoutPage = () => {
   if (!storeId || !items.length) return null;
 
   const guestEnabled = (store as any)?.guest_checkout_enabled === true;
+  const pixDiretoAvailable = !!(store as any)?.pix_direto_enabled && !!((store as any)?.pix_direto_key || "").trim();
+  const payMethods = pixDiretoAvailable
+    ? [...BASE_PAY_METHODS, { id: "pix_direto", label: "Pix Direto (chave do lojista)", icon: QrCode }]
+    : BASE_PAY_METHODS;
 
   const contactOk = phone.replace(/\D/g, "").length >= 10 && name.trim().length >= 2;
   const addressOk = isPickup || (!!street.trim() && !!number.trim() && !!neighborhood.trim());
@@ -474,7 +479,7 @@ const GuestCheckoutPage = () => {
             {payment && <CheckCircle2 className="h-4 w-4 text-primary" />}
           </div>
           <div className="p-4 space-y-2">
-          {PAY_METHODS.map((m) => {
+          {payMethods.map((m) => {
             const Icon = m.icon;
             const active = payment === m.id;
             return (
