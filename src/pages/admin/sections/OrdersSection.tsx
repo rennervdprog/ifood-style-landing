@@ -87,16 +87,17 @@ export default function OrdersSection(props: Props) {
   const [pixBusyId, setPixBusyId] = useState<string | null>(null);
   const [proofUrls, setProofUrls] = useState<Record<string, string>>({});
   const [pixConfirmOrder, setPixConfirmOrder] = useState<any | null>(null);
+  const [pixProofPreview, setPixProofPreview] = useState<{ url: string; order: any } | null>(null);
 
   const openProof = async (order: any) => {
     if (!order?.pix_proof_url) return;
-    if (proofUrls[order.id]) { window.open(proofUrls[order.id], "_blank"); return; }
+    if (proofUrls[order.id]) { setPixProofPreview({ url: proofUrls[order.id], order }); return; }
     const { data, error } = await supabase.storage
       .from("pix-proofs")
       .createSignedUrl(order.pix_proof_url, 60 * 10);
     if (error || !data?.signedUrl) { toast.error("Não foi possível abrir o comprovante"); return; }
     setProofUrls((p) => ({ ...p, [order.id]: data.signedUrl }));
-    window.open(data.signedUrl, "_blank");
+    setPixProofPreview({ url: data.signedUrl, order });
   };
 
   const confirmPix = async (order: any) => {
