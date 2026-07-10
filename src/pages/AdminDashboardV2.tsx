@@ -1481,7 +1481,7 @@ const AdminDashboard = () => {
   // PDV-only: painel do lojista NÃO existe. Manda direto pro caixa/PDV.
   useEffect(() => {
     if (!storePlan.isLoading && isPdvOnly) {
-      navigate("/pdv", { replace: true });
+      navigate("/admin/pdv", { replace: true });
     }
   }, [isPdvOnly, storePlan.isLoading, navigate]);
 
