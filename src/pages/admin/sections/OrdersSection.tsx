@@ -108,6 +108,7 @@ export default function OrdersSection(props: Props) {
       if (error) throw error;
       toast.success("Pagamento confirmado! Pedido em preparo.");
       invalidateOrders();
+      try { (window as any).__autoPrintDeliveryOrder?.(order.id, order.order_source); } catch {}
     } catch (e: any) {
       toast.error(e?.message || "Erro ao confirmar");
     } finally {
@@ -122,6 +123,7 @@ export default function OrdersSection(props: Props) {
       if (error) throw error;
       toast.success("Pagamento confirmado (WhatsApp)! Pedido em preparo.");
       invalidateOrders();
+      try { (window as any).__autoPrintDeliveryOrder?.(order.id, order.order_source); } catch {}
     } catch (e: any) {
       toast.error(e?.message || "Erro ao confirmar");
     } finally {
