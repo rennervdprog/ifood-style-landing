@@ -11,8 +11,6 @@ async function q(sql: string) {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: cors });
   const out: any = {};
-  out.col_privs_anon = await q(`SELECT column_name, privilege_type FROM information_schema.column_privileges WHERE table_schema='public' AND table_name='stores' AND grantee='anon' AND column_name LIKE 'pix_direto%';`);
-  out.col_privs_auth = await q(`SELECT column_name, privilege_type FROM information_schema.column_privileges WHERE table_schema='public' AND table_name='stores' AND grantee='authenticated' AND column_name LIKE 'pix_direto%';`);
-  out.table_privs = await q(`SELECT grantee, privilege_type FROM information_schema.table_privileges WHERE table_schema='public' AND table_name='stores';`);
+  out.def = await q(`SELECT pg_get_viewdef('public.stores_public'::regclass, true) AS def;`);
   return new Response(JSON.stringify(out, null, 2), { headers: { ...cors, "Content-Type": "application/json" } });
 });
