@@ -177,6 +177,30 @@ export default function OrdersSection(props: Props) {
 
   return (
 <>
+  <AlertDialog open={!!pixConfirmOrder} onOpenChange={(v) => !v && setPixConfirmOrder(null)}>
+    <AlertDialogContent className="rounded-2xl">
+      <AlertDialogHeader>
+        <AlertDialogTitle>Confirmar recebimento do Pix?</AlertDialogTitle>
+        <AlertDialogDescription>
+          Confirme apenas se o valor de <strong>{pixConfirmOrder ? formatBRL(Number(pixConfirmOrder.total_price || 0)) : ""}</strong> já caiu na sua conta. Essa ação libera o pedido para preparo e não pode ser desfeita.
+        </AlertDialogDescription>
+      </AlertDialogHeader>
+      <AlertDialogFooter>
+        <AlertDialogCancel className="rounded-xl">Cancelar</AlertDialogCancel>
+        <AlertDialogAction
+          className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white"
+          onClick={async () => {
+            const o = pixConfirmOrder;
+            setPixConfirmOrder(null);
+            if (o) await confirmPix(o);
+          }}
+        >
+          Sim, recebi
+        </AlertDialogAction>
+      </AlertDialogFooter>
+    </AlertDialogContent>
+  </AlertDialog>
+
   {/* 🚨 Prioridade: Pix Direto aguardando confirmação */}
   {pixPending.length > 0 && (
     <div className="px-4 pt-3">
