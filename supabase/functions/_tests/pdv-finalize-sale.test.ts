@@ -26,13 +26,19 @@ const STORE_ID = "b97f3a1a-d558-41e5-b8a2-ebd65b5381b4";
 const PRODUCT_ID = "4c5edf70-4381-41d2-97e2-5d0c54938796"; // Batata Frita
 
 let sessionId = "";
+let ownerId = "";
 const createdOrders: string[] = [];
 const createdUuids: string[] = [];
 
 async function openSession() {
+  if (!ownerId) {
+    const { data: s } = await sb!.from("stores").select("owner_id").eq("id", STORE_ID).single();
+    ownerId = (s as any)?.owner_id;
+    if (!ownerId) throw new Error("store owner_id não encontrado");
+  }
   const { data, error } = await sb!
     .from("pdv_sessions")
-    .insert({ store_id: STORE_ID, opening_amount: 0, status: "open" })
+    .insert({ store_id: STORE_ID, opening_amount: 0, status: "open", opened_by: ownerId } as any)
     .select("id")
     .single();
   if (error) throw error;
