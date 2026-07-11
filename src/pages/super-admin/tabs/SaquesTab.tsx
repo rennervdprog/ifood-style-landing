@@ -91,11 +91,11 @@ const SaquesTab = ({
             </div>
             <div>
               <p className="text-sm font-bold text-foreground">{driverName}</p>
-              <p className="text-xs text-muted-foreground font-bold">
+              <p className="text-xs text-muted-foreground font-bold tabular-nums">
                 {req.transaction_code && <span className="text-primary mr-1">{req.transaction_code}</span>}
                 {formatBRL(Number(req.amount))}
               </p>
-              <p className="text-[10px] text-muted-foreground">
+              <p className="text-[10px] text-muted-foreground tabular-nums">
                 {new Date(req.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
               </p>
             </div>
@@ -118,7 +118,7 @@ const SaquesTab = ({
         )}
         <div className="bg-muted rounded-xl p-3 space-y-1 mb-3">
           <p className="text-xs text-muted-foreground">Entregador: <span className="text-foreground font-medium">{driverName}</span></p>
-          <p className="text-xs text-muted-foreground">Valor: <span className="text-foreground font-bold">{formatBRL(Number(req.amount))}</span></p>
+          <p className="text-xs text-muted-foreground">Valor: <span className="text-foreground font-bold tabular-nums">{formatBRL(Number(req.amount))}</span></p>
           <p className="text-xs text-muted-foreground">PIX: <span className="text-foreground font-medium">{req.pix_key}</span></p>
           <p className="text-xs text-muted-foreground">Tipo: <span className="text-foreground font-medium">{req.pix_type?.toUpperCase()}</span></p>
           {req.processed_at && (
