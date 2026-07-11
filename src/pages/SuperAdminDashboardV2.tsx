@@ -704,7 +704,7 @@ const TAB_SUBTITLE: Record<string, (ctx: {
   if (!user || !isAdmin) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center text-center px-6">
-        <AlertTriangle className="h-16 w-16 text-yellow-500 mb-4" />
+        <AlertTriangle className="h-16 w-16 text-amber-500 dark:text-amber-400 mb-4" />
         <h1 className="text-xl font-bold text-foreground mb-2">Acesso Negado</h1>
         <p className="text-sm text-muted-foreground mb-6">Apenas o administrador pode acessar este painel.</p>
         <button onClick={() => navigate("/")} className="bg-primary text-primary-foreground font-bold px-6 py-3 rounded-xl">
@@ -848,7 +848,7 @@ const TAB_SUBTITLE: Record<string, (ctx: {
           <div className="bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/15 rounded-2xl p-4 space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-bold uppercase tracking-widest text-primary/70">Resumo {filterLabels[dateFilter]}</span>
-              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -862,7 +862,7 @@ const TAB_SUBTITLE: Record<string, (ctx: {
             </div>
             <div className="pt-2 border-t border-primary/10 flex items-center justify-between">
               <div className="flex items-center gap-1.5">
-                <TrendingUp className="h-3.5 w-3.5 text-green-500" />
+                <TrendingUp className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
                 <span className="text-[10px] text-muted-foreground">Vendas</span>
               </div>
               <span className="text-sm font-black text-foreground tabular-nums">{formatBRL(metrics.totalSales)}</span>
@@ -914,7 +914,7 @@ const TAB_SUBTITLE: Record<string, (ctx: {
                           </span>
                         )}
                         {item.key === "dashboard" && complianceAlerts && complianceAlerts.length > 0 && delayedOrders.length === 0 && (
-                          <span className="text-amber-500 text-sm leading-none">⚠</span>
+                          <span className="text-amber-600 dark:text-amber-400 text-sm leading-none">⚠</span>
                         )}
                       </button>
                     );
@@ -1291,7 +1291,7 @@ const TAB_SUBTITLE: Record<string, (ctx: {
                        <p className="text-xs font-bold text-foreground">Evolução — Delivery vs PDV</p>
                        <div className="text-[10px] text-muted-foreground flex gap-3">
                          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-primary inline-block"/>Delivery</span>
-                         <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-500 inline-block"/>PDV</span>
+                         <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-sky-500 inline-block"/>PDV</span>
                        </div>
                      </div>
                       <div className="h-44">
@@ -1301,7 +1301,7 @@ const TAB_SUBTITLE: Record<string, (ctx: {
                       </div>
                      <div className="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-border/30 text-center">
                        <div><p className="text-[10px] text-muted-foreground">Delivery</p><p className="text-sm font-black text-primary">{formatBRL(adminChartData.totalDelivery)}</p></div>
-                       <div className="border-x border-border/30"><p className="text-[10px] text-muted-foreground">PDV</p><p className="text-sm font-black text-blue-500">{formatBRL(adminChartData.totalPdv)}</p></div>
+                       <div className="border-x border-border/30"><p className="text-[10px] text-muted-foreground">PDV</p><p className="text-sm font-black text-sky-600 dark:text-sky-400 tabular-nums">{formatBRL(adminChartData.totalPdv)}</p></div>
                        <div><p className="text-[10px] text-muted-foreground">Ticket Médio</p><p className="text-sm font-black text-foreground">{formatBRL(adminChartData.ticketMedio)}</p></div>
                      </div>
                    </div>
