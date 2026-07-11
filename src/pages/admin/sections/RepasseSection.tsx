@@ -1,4 +1,4 @@
-import { Banknote, CheckCircle2, Crown } from "lucide-react";
+import { Banknote, CheckCircle2, Crown, CalendarClock } from "lucide-react";
 import CommissionAlert from "@/components/CommissionAlert";
 import PlatformSplitAlert from "@/components/PlatformSplitAlert";
 import RepassePendingCharges from "@/components/RepassePendingCharges";
@@ -37,6 +37,25 @@ export default function RepasseSection({ store, storePlan, setDashboardTab, pend
           ? `Comissão ${storePlan.commissionRate}%`
           : "Sem comissão");
 
+  // Previsão do próximo repasse semanal (toda segunda-feira)
+  const nextMonday = (() => {
+    const d = new Date();
+    const day = d.getDay(); // 0=Dom .. 6=Sab
+    const diff = day === 1 ? 7 : (8 - day) % 7 || 7;
+    d.setDate(d.getDate() + diff);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  })();
+  const daysUntil = Math.max(
+    0,
+    Math.ceil((nextMonday.getTime() - Date.now()) / 86400000),
+  );
+  const nextMondayLabel = nextMonday.toLocaleDateString("pt-BR", {
+    weekday: "long",
+    day: "2-digit",
+    month: "long",
+  });
+
   return (
     <div className="p-4 lg:p-6 max-w-6xl mx-auto space-y-4">
       <div className="flex items-center gap-3 mb-1">
@@ -66,6 +85,36 @@ export default function RepasseSection({ store, storePlan, setDashboardTab, pend
         <span className="text-xs text-foreground">{deliveryTxt}</span>
         <span className="text-muted-foreground text-xs">·</span>
         <span className="text-xs text-foreground">{pixTxt}</span>
+      </div>
+
+      {/* Previsão do próximo repasse */}
+      <div className="rounded-xl border border-blue-500/20 bg-gradient-to-br from-blue-500/5 to-transparent p-4">
+        <div className="flex items-start gap-3">
+          <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center shrink-0">
+            <CalendarClock className="h-5 w-5 text-blue-500" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
+              Próximo repasse previsto
+            </p>
+            <p className="text-sm font-bold text-foreground capitalize truncate">
+              {nextMondayLabel}
+            </p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {daysUntil === 0
+                ? "Hoje é dia de repasse"
+                : `Em ${daysUntil} dia${daysUntil > 1 ? "s" : ""} · Repasses são processados toda segunda-feira`}
+            </p>
+          </div>
+          <div className="text-right shrink-0">
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+              Acumulado
+            </p>
+            <p className={`text-base font-black ${pendingTotal > 0 ? "text-blue-600 dark:text-blue-400" : "text-muted-foreground"}`}>
+              {formatBRL(pendingTotal || 0)}
+            </p>
+          </div>
+        </div>
       </div>
 
       {pendingTotal <= 0 && !showCommission && !showSplit && (
