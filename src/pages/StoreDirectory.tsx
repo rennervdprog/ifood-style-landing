@@ -118,16 +118,16 @@ const faqs = [
     a: "É o quanto a plataforma cobra por pedido pra manter o motoboy integrado, o rastreamento e o suporte. Nos planos Comissão e Essencial ela aparece pro cliente como acréscimo em cima da sua taxa de entrega. No plano Autonomia esse acréscimo é zero — o cliente paga exatamente a taxa que você define.",
   },
   {
-    q: "Quando vale a pena o plano Autonomia (R$229,90)?",
-    a: 'Se você sente que os R$2 extras estão afastando cliente, ou se prefere mostrar um preço de entrega "redondo" sem acréscimo, o Autonomia compensa a partir de ~115 pedidos/mês (R$2 × 115 = R$230). Tem 7 dias grátis pra testar.',
+    q: "Quando vale a pena o plano Autonomia (R$329,90)?",
+    a: 'Se você sente que os R$2 extras estão afastando cliente, ou se prefere mostrar um preço de entrega "redondo" sem acréscimo, o Autonomia compensa a partir de ~165 pedidos/mês (R$2 × 165 = R$330). Tem 7 dias grátis pra testar.',
   },
   {
     q: "O PDV está incluso em algum plano?",
-    a: "Não. O PDV é um módulo opcional, contratado à parte por R$ 49/mês, e funciona com qualquer plano (Comissão, Essencial ou Autonomia). Lojas antigas que já usavam o PDV mantêm a regra anterior de R$ 1 por venda presencial.",
+    a: "Não. O PDV é um módulo opcional, contratado à parte por R$ 49/mês, e funciona com qualquer plano (Essencial ou Autonomia). Lojas antigas que já usavam o PDV mantêm a regra anterior de R$ 1 por venda presencial.",
   },
   {
     q: "Tenho só loja física, sem delivery. Dá pra usar só o PDV?",
-    a: "Dá sim. Existe o plano Somente PDV por R$ 69/mês: você usa o caixa completo (vendas, sangria, fechamento do dia) sem vitrine pública, sem cardápio online e sem comissão por pedido. Depois, se quiser abrir delivery, migra pra Comissão/Essencial/Autonomia num clique.",
+    a: "Dá sim. Existe o plano Somente PDV por R$ 69/mês: você usa o caixa completo (vendas, sangria, fechamento do dia) sem vitrine pública, sem cardápio online e sem comissão por pedido. Depois, se quiser abrir delivery, migra pra Essencial ou Autonomia num clique.",
   },
   {
     q: "O ItaSuper é uma alternativa ao iFood?",
@@ -347,9 +347,8 @@ const StoreDirectory = () => {
       description: desc,
       url: "https://itasuper.com.br/",
       offers: [
-        { "@type": "Offer", name: "Comissão", price: "0", priceCurrency: "BRL" },
-        { "@type": "Offer", name: "Essencial", price: "90", priceCurrency: "BRL" },
-        { "@type": "Offer", name: "Autonomia", price: "229.90", priceCurrency: "BRL" },
+        { "@type": "Offer", name: "Essencial", price: "0", priceCurrency: "BRL" },
+        { "@type": "Offer", name: "Autonomia", price: "329.90", priceCurrency: "BRL" },
         { "@type": "Offer", name: "Somente PDV", price: "69", priceCurrency: "BRL" },
       ],
     });
@@ -737,7 +736,7 @@ const StoreDirectory = () => {
           <div className="grid md:grid-cols-2 gap-4 md:gap-5 max-w-3xl mx-auto">
             {/* Planos normais */}
             <div className="rounded-2xl border border-border bg-card p-6">
-              <p className="text-[10px] font-black uppercase tracking-wider text-muted-foreground mb-4">Comissão · Essencial</p>
+              <p className="text-[10px] font-black uppercase tracking-wider text-muted-foreground mb-4">Plano Essencial</p>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Sua taxa de entrega</span>
