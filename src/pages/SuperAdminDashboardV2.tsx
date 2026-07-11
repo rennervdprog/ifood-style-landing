@@ -1002,7 +1002,7 @@ const TAB_SUBTITLE: Record<string, (ctx: {
                 className="relative p-2 rounded-xl bg-destructive/10 hover:bg-destructive/20 transition-colors lg:hidden"
               >
                 <Bell className="h-4 w-4 text-destructive" />
-                <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[8px] font-black w-4 h-4 flex items-center justify-center rounded-full animate-pulse">
+                <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[8px] font-black w-4 h-4 flex items-center justify-center rounded-full tabular-nums">
                   {pendingWithdrawals.length}
                 </span>
               </button>
@@ -1014,7 +1014,7 @@ const TAB_SUBTITLE: Record<string, (ctx: {
                 aria-label="Cadastros pendentes"
               >
                 <Shield className="h-4 w-4 text-amber-600" />
-                <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[8px] font-black w-4 h-4 flex items-center justify-center rounded-full animate-pulse">
+                <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[8px] font-black w-4 h-4 flex items-center justify-center rounded-full tabular-nums">
                   {pendingApprovalsCount}
                 </span>
               </button>
