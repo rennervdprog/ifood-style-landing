@@ -51,7 +51,7 @@ const SyncExternalTab = () => {
             {testing ? "Testando..." : "Teste de Conexão"}
           </button>
           {testResult && (
-            <div className={`p-3 rounded-xl text-sm font-medium ${testResult.success ? "bg-green-500/10 text-green-500" : "bg-destructive/10 text-destructive"}`}>
+            <div className={`p-3 rounded-xl text-sm font-medium ${testResult.success ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-destructive/10 text-destructive"}`}>
               {testResult.success ? "✅" : "❌"} {testResult.message}
             </div>
           )}
@@ -67,7 +67,7 @@ const SyncExternalTab = () => {
               {Object.entries(syncResult).map(([table, info]) => (
                 <div key={table} className="flex justify-between">
                   <span className="font-medium text-foreground">{table}</span>
-                  <span className={info.error ? "text-destructive" : "text-green-500"}>
+                  <span className={info.error ? "text-destructive" : "text-emerald-600 dark:text-emerald-400"}>
                     {info.error ? `❌ ${info.error}` : `✅ ${info.count} registros`}
                   </span>
                 </div>

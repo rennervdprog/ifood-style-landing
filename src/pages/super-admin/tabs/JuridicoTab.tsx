@@ -255,7 +255,7 @@ const JuridicoTab = () => {
                       <p className="text-xs text-muted-foreground">{p.email} • {p.document || "Sem doc"} • {roleLabels[p.role] || p.role}</p>
                     </div>
                     <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                      p.is_approved ? "bg-emerald-500/10 text-emerald-600" : "bg-amber-500/10 text-amber-600"
+                      p.is_approved ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-amber-500/10 text-amber-600 dark:text-amber-400"
                     }`}>
                       {p.is_approved ? "Aprovado" : "Pendente"}
                     </span>
@@ -415,14 +415,14 @@ const JuridicoTab = () => {
                     {userOrders.map((o: any) => (
                       <div key={o.id} className="px-4 py-3 flex items-center justify-between text-xs">
                         <div>
-                          <p className="font-bold text-foreground">{formatBRL(Number(o.total_price))}</p>
-                          <p className="text-muted-foreground">{new Date(o.created_at).toLocaleString("pt-BR")} • {o.neighborhood}</p>
+                          <p className="font-bold text-foreground tabular-nums">{formatBRL(Number(o.total_price))}</p>
+                          <p className="text-muted-foreground tabular-nums">{new Date(o.created_at).toLocaleString("pt-BR")} • {o.neighborhood}</p>
                         </div>
                         <div className="text-right">
                           <span className={`font-bold px-2 py-0.5 rounded-full ${
-                            o.status === "finalizado" || o.status === "entregue" ? "bg-emerald-500/10 text-emerald-600" :
+                            o.status === "finalizado" || o.status === "entregue" ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" :
                             o.status === "cancelado" ? "bg-destructive/10 text-destructive" :
-                            "bg-amber-500/10 text-amber-600"
+                            "bg-amber-500/10 text-amber-600 dark:text-amber-400"
                           }`}>
                             {statusLabels[o.status] || o.status}
                           </span>
