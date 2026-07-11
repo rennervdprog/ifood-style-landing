@@ -7,8 +7,8 @@ android {
         applicationId "app.lovable.e8d28aded6334d74be2161c8dbe24765"
         minSdkVersion 26
         targetSdkVersion rootProject.ext.targetSdkVersion
- versionCode 903
- versionName "1.13.44"
+        versionCode 904
+        versionName "1.13.45"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
