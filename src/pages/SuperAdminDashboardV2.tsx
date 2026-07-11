@@ -1248,10 +1248,17 @@ const TAB_SUBTITLE: Record<string, (ctx: {
              )}
              {activeTab === "dashboard" && (
                <div className="space-y-4">
-                 <div className="flex gap-2 mb-4">
+                 <div className="inline-flex items-center gap-1 p-1 bg-muted rounded-xl mb-4">
                    {(["today", "yesterday", "week"] as DateFilter[]).map(f => (
-                     <button key={f} onClick={() => setDateFilter(f)}
-                       className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors ${dateFilter === f ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground"}`}>
+                     <button
+                       key={f}
+                       onClick={() => setDateFilter(f)}
+                       className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                         dateFilter === f
+                           ? "bg-background text-foreground shadow-sm"
+                           : "text-muted-foreground hover:text-foreground"
+                       }`}
+                     >
                        {filterLabels[f]}
                      </button>
                    ))}
