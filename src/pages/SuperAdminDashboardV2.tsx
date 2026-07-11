@@ -689,7 +689,7 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
 
   // Bottom nav tabs (mobile)
   const bottomTabs: { key: AdminTab; label: string; icon: React.ElementType }[] = [
-    { key: "dashboard", label: "Início", icon: LayoutDashboard },
+    { key: "dashboard", label: "Visão Geral", icon: LayoutDashboard },
     { key: "financeiro", label: "Financeiro", icon: DollarSign },
     { key: "saques", label: "Saques", icon: Wallet },
     { key: "stores", label: "Lojas", icon: Store },
