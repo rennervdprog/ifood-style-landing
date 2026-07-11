@@ -18,7 +18,7 @@ Deno.serve(async (req) => {
     WHERE (s.name ILIKE '%cantinho%silv%' OR s.name ILIKE '%silvia%')
       AND o.created_at >= ((now() AT TIME ZONE 'America/Sao_Paulo')::date - interval '1 day')
       AND o.created_at < (now() AT TIME ZONE 'America/Sao_Paulo')::date
-      AND o.status IN ('saiu_entrega','saiu_para_entrega','out_for_delivery')
+      AND o.status = 'saiu_entrega'
     ORDER BY o.created_at DESC;
   `);
   out.driver_earnings_today = await q(`
