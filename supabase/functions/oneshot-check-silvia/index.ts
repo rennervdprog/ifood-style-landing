@@ -11,7 +11,8 @@ async function q(sql: string) {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: cors });
   const out: Record<string, unknown> = {};
-  out.store = await q(`SELECT id,name,plan_type,legacy_pdv FROM public.stores WHERE name ILIKE '%cantinho%silv%' OR name ILIKE '%silvia%';`);
+  out.store = await q(`SELECT id,name,plan_type,legacy_pdv,driver_pin_autofill,address_city FROM public.stores WHERE name ILIKE '%cantinho%silv%' OR name ILIKE '%silvia%';`);
+  out.itatinga_stores = await q(`SELECT id,name,driver_pin_autofill FROM public.stores WHERE address_city ILIKE '%itatinga%' ORDER BY name;`);
   out.orders_yday = await q(`
     SELECT o.* FROM public.orders o
     JOIN public.stores s ON s.id=o.store_id
