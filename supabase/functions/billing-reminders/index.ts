@@ -44,7 +44,7 @@ Deno.serve(async (req) => {
 
   const { data: pending, error } = await sb
     .from("financial_transactions")
-    .select("id, store_id, amount, reference_code, due_date, status, stores!inner(id, name, owner_id)")
+    .select("id, store_id, amount, reference_code, created_at, status, stores!inner(id, name, owner_id)")
     .eq("status", "pending")
     .or("reference_code.like.#MENS-%,reference_code.like.#ASSIN-%");
   if (error) return json({ error: error.message }, 500);
@@ -69,8 +69,10 @@ Deno.serve(async (req) => {
     const store: any = (tx as any).stores;
     const owner: any = profilesById[store?.owner_id];
     const phone: string = String(owner?.whatsapp || "").replace(/\D/g, "");
-    if (!phone || !tx.due_date) { skipped.push({ id: tx.id, reason: "no_phone_or_due" }); continue; }
-    const diff = daysDiff(tx.due_date);
+    if (!phone || !tx.created_at) { skipped.push({ id: tx.id, reason: "no_phone_or_created" }); continue; }
+    // Vencimento = created_at + 3 dias (regra do auto-deactivate)
+    const due = new Date(new Date(tx.created_at).getTime() + 3 * 86400000);
+    const diff = daysDiff(due.toISOString());
     const kind = kindByDiff(diff);
     if (!kind) { skipped.push({ id: tx.id, diff, reason: "no_reminder_today" }); continue; }
     const message = templates[kind]({
