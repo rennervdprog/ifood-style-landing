@@ -13,7 +13,7 @@ Deno.serve(async (req) => {
   const out: Record<string, unknown> = {};
   out.store = await q(`SELECT id,name,plan_type,legacy_pdv FROM public.stores WHERE name ILIKE '%cantinho%silv%' OR name ILIKE '%silvia%';`);
   out.orders_yday = await q(`
-    SELECT o.id, o.status, o.created_at, o.updated_at, o.total_price, o.assigned_driver_id, o.driver_id, o.payment_method, o.delivery_type
+    SELECT o.id, o.status, o.created_at, o.total_price, o.assigned_driver_id, o.driver_id, o.payment_method, o.delivery_type, o.accepted_at, o.ready_at, o.dispatched_at, o.delivered_at
     FROM public.orders o
     JOIN public.stores s ON s.id=o.store_id
     WHERE (s.name ILIKE '%cantinho%silv%' OR s.name ILIKE '%silvia%')
