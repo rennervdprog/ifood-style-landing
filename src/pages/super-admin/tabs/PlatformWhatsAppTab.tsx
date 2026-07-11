@@ -30,7 +30,8 @@ export default function PlatformWhatsAppTab() {
 
   const formatBrPhone = (raw: string) => {
     let d = raw.replace(/\D/g, "").slice(0, 13);
-    if (d.length && !d.startsWith("55")) d = "55" + d.slice(0, 11);
+    if (!d) return "";
+    if (!d.startsWith("55")) d = "55" + d.slice(0, 11);
     const cc = d.slice(0, 2);
     const ddd = d.slice(2, 4);
     const rest = d.slice(4);
