@@ -15,7 +15,7 @@ Deno.serve(async (req) => {
   const scopeEnd = `(now() AT TIME ZONE 'America/Sao_Paulo')::date`;
   out.orders_yday_all = await q(`
     SELECT o.id, o.order_number, o.status, o.total_price, o.commission_rate, o.delivery_fee,
-           o.delivery_confirmed_by_client, o.collection_validated, o.created_at, o.updated_at
+           o.delivery_confirmed_by_client, o.collection_validated, o.created_at
     FROM public.orders o JOIN public.stores s ON s.id=o.store_id
     WHERE (s.name ILIKE '%cantinho%silv%' OR s.name ILIKE '%silvia%')
       AND o.created_at >= ${scope} AND o.created_at < ${scopeEnd}
@@ -32,7 +32,7 @@ Deno.serve(async (req) => {
   out.finalize_stuck = await q(`
     UPDATE public.orders o
     SET status='concluido', delivery_confirmed_by_client=true, collection_validated=true,
-        completed_at=COALESCE(o.completed_at, now()), updated_at=now()
+        updated_at=now()
     FROM public.stores s
     WHERE o.store_id=s.id
       AND (s.name ILIKE '%cantinho%silv%' OR s.name ILIKE '%silvia%')
