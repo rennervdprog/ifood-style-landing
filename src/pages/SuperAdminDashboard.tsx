@@ -902,6 +902,7 @@ const SuperAdminDashboard = () => {
             {activeTab === "test_finance" && <TestStoreFinancePanel />}
             {activeTab === "links" && <AppLinksManager />}
             {activeTab === "broadcast" && <AdminBroadcastPush />}
+            {activeTab === "whatsapp_plataforma" && <PlatformWhatsAppTab />}
             {activeTab === "logs" && (
               <div className="space-y-4">
                 <div className="bg-card rounded-xl border border-border overflow-hidden">
