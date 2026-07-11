@@ -13,7 +13,7 @@ import { toast } from "sonner";
 type ReceivableKind = "mensalidade" | "comissao" | "entrega_fee" | "pdv_fee";
 
 const KIND_META: Record<ReceivableKind, { label: string; icon: typeof Crown; color: string }> = {
-  mensalidade: { label: "Mensalidade", icon: Crown, color: "text-blue-500" },
+  mensalidade: { label: "Mensalidade", icon: Crown, color: "text-primary" },
   comissao: { label: "Comissão", icon: Percent, color: "text-primary" },
   entrega_fee: { label: "R$2/entrega", color: "text-amber-500", icon: Truck },
   pdv_fee: { label: "PDV (R$1)", color: "text-emerald-500", icon: ShoppingCart },
@@ -165,7 +165,7 @@ const AReceberTab = () => {
           </div>
           <p className="text-3xl font-black text-primary tabular-nums">{brl(totals.total)}</p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-4 text-xs">
-            <Breakdown icon={Crown} label="Mensalidades" value={totals.mensalidade} color="text-blue-500" />
+            <Breakdown icon={Crown} label="Mensalidades" value={totals.mensalidade} color="text-primary" />
             <Breakdown icon={Truck} label="R$2/entrega" value={totals.entrega_fee} color="text-amber-500" />
             <Breakdown icon={Percent} label="Comissão" value={totals.comissao} color="text-primary" />
             <Breakdown icon={ShoppingCart} label="PDV" value={totals.pdv_fee} color="text-emerald-500" />
