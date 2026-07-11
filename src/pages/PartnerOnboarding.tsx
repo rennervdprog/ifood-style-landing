@@ -217,7 +217,7 @@ const PartnerOnboarding = () => {
         const { error } = await supabase.rpc("register_as_lojista", {
           _full_name: fullName.trim(), _document: document.trim(), _store_name: storeName.trim(),
           _store_category: storeCategory, _avatar_url: avatarUrl, _whatsapp: formattedWhatsapp,
-          _selected_plan: selectedPlan || "commission_only",
+          _selected_plan: selectedPlan || "fixed",
         } as any);
         if (error) throw error;
         toast.success("Cadastro realizado com sucesso! Bem-vindo ao ItaSuper. 🎉");
