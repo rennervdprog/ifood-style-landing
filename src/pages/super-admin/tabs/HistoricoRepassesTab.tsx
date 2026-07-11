@@ -9,7 +9,7 @@ import { Download, CheckCircle2, Crown, Truck, Percent, ShoppingCart } from "luc
 import { brl, exportCSV } from "@/components/finance/financeExport";
 
 const KIND_LABEL: Record<string, { label: string; icon: typeof Crown; color: string }> = {
-  mensalidade: { label: "Mensalidade", icon: Crown, color: "text-blue-500" },
+  mensalidade: { label: "Mensalidade", icon: Crown, color: "text-primary" },
   comissao: { label: "Comissão", icon: Percent, color: "text-primary" },
   entrega_fee: { label: "R$2/entrega", icon: Truck, color: "text-amber-500" },
   pdv_fee: { label: "PDV", icon: ShoppingCart, color: "text-emerald-500" },
