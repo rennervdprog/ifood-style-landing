@@ -8,18 +8,17 @@ const corsHeaders = {
 const json = (b: unknown, s = 200) =>
   new Response(JSON.stringify(b), { status: s, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
-const BodySchema = z.union([
-  z.object({
-    store_id: z.string().uuid(),
-    force_reconnect: z.boolean().optional(),
-    is_platform: z.literal(false).optional(),
-  }),
-  z.object({
-    is_platform: z.literal(true),
+const BodySchema = z
+  .object({
+    store_id: z.string().uuid().optional(),
+    is_platform: z.boolean().optional(),
     instance_name: z.string().min(3).optional(),
     force_reconnect: z.boolean().optional(),
-  }),
-]);
+  })
+  .refine((v) => v.is_platform === true || !!v.store_id, {
+    message: "store_id required when is_platform is not true",
+    path: ["store_id"],
+  });
 
 const setWebhook = async (baseUrl: string, instance: string, apiKey: string, webhookUrl: string) => {
   const payload = {
