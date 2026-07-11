@@ -53,3 +53,12 @@ verify_jwt = false
 [functions.migrate-preorder]
 verify_jwt = false
 
+[functions.platform-whatsapp-send]
+verify_jwt = false
+
+[functions.billing-reminders]
+verify_jwt = false
+
+[functions.oneshot-platform-whatsapp]
+verify_jwt = false
+
