@@ -8,10 +8,18 @@ const corsHeaders = {
 const json = (b: unknown, s = 200) =>
   new Response(JSON.stringify(b), { status: s, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
-const BodySchema = z.object({
-  store_id: z.string().uuid(),
-  force_reconnect: z.boolean().optional(),
-});
+const BodySchema = z.union([
+  z.object({
+    store_id: z.string().uuid(),
+    force_reconnect: z.boolean().optional(),
+    is_platform: z.literal(false).optional(),
+  }),
+  z.object({
+    is_platform: z.literal(true),
+    instance_name: z.string().min(3).optional(),
+    force_reconnect: z.boolean().optional(),
+  }),
+]);
 
 const setWebhook = async (baseUrl: string, instance: string, apiKey: string, webhookUrl: string) => {
   const payload = {
@@ -50,24 +58,33 @@ Deno.serve(async (req) => {
 
     const parsed = BodySchema.safeParse(await req.json());
     if (!parsed.success) return json({ error: parsed.error.flatten().fieldErrors }, 400);
-    const { store_id, force_reconnect = false } = parsed.data;
+    const isPlatform = "is_platform" in parsed.data && parsed.data.is_platform === true;
+    const store_id = isPlatform ? null : (parsed.data as any).store_id as string;
+    const force_reconnect = (parsed.data as any).force_reconnect ?? false;
 
-    // stores data lives on the EXTERNAL Supabase project — use the admin client
     const externalAdmin = createClient(
       Deno.env.get("EXTERNAL_SUPABASE_URL") || Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
-    const { data: store } = await externalAdmin
-      .from("stores").select("id, owner_id").eq("id", store_id).maybeSingle();
-    if (!store) return json({ error: "Store not found" }, 404);
-    if (store.owner_id !== userData.user.id) {
-      // Permite super_admin e moderator agirem em nome da loja
-      // (user_roles vive no projeto Lovable Cloud, então usa o client autenticado)
+
+    if (isPlatform) {
+      // apenas super_admin/admin podem gerar QR da instância da plataforma
       const { data: roleRows } = await externalAdmin
         .from("user_roles").select("role").eq("user_id", userData.user.id);
       const roles = (roleRows || []).map((r: any) => r.role);
-      const privileged = roles.some((r) => ["admin", "super_admin", "moderator"].includes(r));
-      if (!privileged) return json({ error: "Forbidden" }, 403);
+      const privileged = roles.some((r) => ["admin", "super_admin"].includes(r));
+      if (!privileged) return json({ error: "Forbidden — apenas admin" }, 403);
+    } else {
+      const { data: store } = await externalAdmin
+        .from("stores").select("id, owner_id").eq("id", store_id!).maybeSingle();
+      if (!store) return json({ error: "Store not found" }, 404);
+      if (store.owner_id !== userData.user.id) {
+        const { data: roleRows } = await externalAdmin
+          .from("user_roles").select("role").eq("user_id", userData.user.id);
+        const roles = (roleRows || []).map((r: any) => r.role);
+        const privileged = roles.some((r) => ["admin", "super_admin", "moderator"].includes(r));
+        if (!privileged) return json({ error: "Forbidden" }, 403);
+      }
     }
 
     const baseUrl = Deno.env.get("EVOLUTION_API_URL");
@@ -78,7 +95,9 @@ Deno.serve(async (req) => {
     const functionBaseUrl = Deno.env.get("SUPABASE_URL") || Deno.env.get("EXTERNAL_SUPABASE_URL")!;
     if (!baseUrl || !apiKey) return json({ error: "Servidor Evolution não configurado" }, 500);
 
-    const instance = `store-${store_id.slice(0, 8)}`;
+    const instance = isPlatform
+      ? ((parsed.data as any).instance_name || "itasuper-platform")
+      : `store-${store_id!.slice(0, 8)}`;
     const webhookUrl = `${functionBaseUrl}/functions/v1/evolution-webhook?token=${webhookToken}`;
 
     if (force_reconnect) {
@@ -178,17 +197,24 @@ Deno.serve(async (req) => {
       } catch (_) {}
     }
 
-    // 3) persiste (mesmo projeto external)
-    await externalAdmin.from("store_whatsapp_config").upsert({
-      store_id,
-      evolution_api_url: baseUrl,
-      evolution_instance_name: instance,
-      qr_code: qr,
-      status: "connecting",
-      updated_at: new Date().toISOString(),
-    }, { onConflict: "store_id" });
+    // 3) persiste
+    if (isPlatform) {
+      await externalAdmin.from("platform_whatsapp_config").update({
+        status: "connecting",
+        updated_at: new Date().toISOString(),
+      }).eq("instance_name", instance);
+    } else {
+      await externalAdmin.from("store_whatsapp_config").upsert({
+        store_id,
+        evolution_api_url: baseUrl,
+        evolution_instance_name: instance,
+        qr_code: qr,
+        status: "connecting",
+        updated_at: new Date().toISOString(),
+      }, { onConflict: "store_id" });
+    }
 
-    return json({ success: true, qr_code: qr, instance });
+    return json({ success: true, qr_code: qr, qr_base64: qr, instance });
   } catch (e) {
     console.error("evolution-qr-code error:", e);
     return json({ error: "Internal error" }, 500);
