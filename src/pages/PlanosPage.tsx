@@ -576,7 +576,7 @@ const faqs = [
             Sem risco. Sem surpresas.
           </h2>
           <p className="text-muted-foreground max-w-lg mx-auto leading-relaxed">
-            Comece pelo plano Comissão (grátis) e migre quando quiser. 
+            Comece pelo plano Essencial (grátis pra começar) e migre quando quiser.
             Sem fidelidade, sem multa, sem pegadinha. Cancele a qualquer momento.
           </p>
         </div>
