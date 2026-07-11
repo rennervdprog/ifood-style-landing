@@ -651,7 +651,7 @@ const TAB_SUBTITLE: Record<string, (ctx: {
   const generateReport = () => {
     const dateLabel = dateFilter === "today" ? "Hoje" : dateFilter === "yesterday" ? "Ontem" : "Últimos 7 dias";
     let report = `📊 *Relatório ${dateLabel} - ItaSuper*\n\n`;
-    report += `💰 Vendas: ${formatBRL(metrics.totalSales)}\n`;
+    report += `💰 Faturamento: ${formatBRL(metrics.totalSales)}\n`;
     report += `📦 Pedidos: ${metrics.totalOrders}\n`;
     report += `🏷️ Comissão Plataforma: ${formatBRL(metrics.commission)}\n\n`;
     report += `🏪 *Por Loja:*\n`;
@@ -1128,8 +1128,8 @@ const TAB_SUBTITLE: Record<string, (ctx: {
                     </h3>
                   </div>
                   <div className="overflow-x-auto">
-                    <table className="w-full text-left text-sm">
-                      <thead className="bg-muted/50 text-muted-foreground uppercase text-[10px] font-bold">
+                    <table className="w-full text-left text-sm tabular-nums">
+                      <thead className="sticky top-0 z-10 bg-muted/70 backdrop-blur text-muted-foreground uppercase text-[10px] font-bold tracking-wider">
                         <tr>
                           <th className="px-4 py-3">Data</th>
                           <th className="px-4 py-3">Admin</th>
@@ -1139,11 +1139,18 @@ const TAB_SUBTITLE: Record<string, (ctx: {
                       </thead>
                       <tbody className="divide-y divide-border">
                         {logsLoading ? (
-                          <tr><td colSpan={4} className="px-4 py-8 text-center"><Loader2 className="h-5 w-5 animate-spin mx-auto text-muted-foreground" /></td></tr>
-                        ) : adminLogs?.map((log) => (
-                          <tr key={log.id} className="hover:bg-muted/30 transition-colors">
+                          Array.from({ length: 6 }).map((_, i) => (
+                            <tr key={`sk-${i}`} className={i % 2 ? "bg-muted/20" : ""}>
+                              <td className="px-4 py-3"><div className="h-3 w-32 rounded bg-muted animate-pulse" /></td>
+                              <td className="px-4 py-3"><div className="h-3 w-24 rounded bg-muted animate-pulse" /></td>
+                              <td className="px-4 py-3"><div className="h-3 w-16 rounded bg-muted animate-pulse" /></td>
+                              <td className="px-4 py-3"><div className="h-3 w-28 rounded bg-muted animate-pulse" /></td>
+                            </tr>
+                          ))
+                        ) : adminLogs?.map((log, i) => (
+                          <tr key={log.id} className={`hover:bg-muted/40 transition-colors ${i % 2 ? "bg-muted/20" : ""}`}>
                             <td className="px-4 py-3 whitespace-nowrap text-muted-foreground">
-                              {new Date(log.created_at).toLocaleString('pt-BR')}
+                              {new Date(log.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }).replace(',', ' ·')}
                             </td>
                             <td className="px-4 py-3 font-medium">
                               {log.profiles?.full_name || "Admin"}
@@ -1156,13 +1163,21 @@ const TAB_SUBTITLE: Record<string, (ctx: {
                             <td className="px-4 py-3">
                               <div className="flex flex-col">
                                 <span className="text-xs font-bold capitalize">{log.target_type}</span>
-                                <span className="text-[10px] text-muted-foreground font-mono">{log.target_id?.substring(0, 8)}...</span>
+                                <span className="text-[10px] text-muted-foreground font-mono">{log.target_id?.substring(0, 8)}…</span>
                               </div>
                             </td>
                           </tr>
                         ))}
                         {!logsLoading && (!adminLogs || adminLogs.length === 0) && (
-                          <tr><td colSpan={4} className="px-4 py-8 text-center text-muted-foreground">Nenhum log encontrado.</td></tr>
+                          <tr>
+                            <td colSpan={4} className="px-4 py-12">
+                              <div className="flex flex-col items-center justify-center text-center gap-2 text-muted-foreground">
+                                <FileText className="h-8 w-8 opacity-40" />
+                                <p className="text-sm font-bold text-foreground">Nenhum log ainda</p>
+                                <p className="text-xs">Ações administrativas aparecerão aqui.</p>
+                              </div>
+                            </td>
+                          </tr>
                         )}
                       </tbody>
                     </table>
