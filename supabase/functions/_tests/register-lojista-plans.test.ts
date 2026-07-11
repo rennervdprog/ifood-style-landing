@@ -4,9 +4,9 @@
  * Valida, para CADA plano oferecido no cadastro, que o store_plans
  * criado bate com a especificação de negócio:
  *
- *   commission_only : 0/mês | 6% comissão | PIX R$1,99 | +R$2 entrega | PDV 2%
- *   fixed (Essencial): R$180/mês | 0% | PIX R$1,99 | +R$2 entrega | PDV R$1 fixo
- *   autonomy         : R$229,90 | 0% | PIX R$1,99 | SEM +R$2 entrega  | PDV R$1 fixo
+ *   commission_only : LEGADO (mantido só pra lojas atuais)
+ *   fixed (Essencial): R$0/mês (grátis) → R$180/mês após R$5k GMV | 0% | PIX R$1,99 | +R$2 entrega | PDV R$1 fixo
+ *   autonomy         : R$329,90 | 0% | PIX R$1,99 | SEM +R$2 entrega  | PDV R$1 fixo
  *
  * Roda contra o Supabase EXTERNO. Requer:
  *   EXTERNAL_SUPABASE_URL, EXTERNAL_SUPABASE_SERVICE_KEY, EXTERNAL_SUPABASE_ANON_KEY
@@ -48,7 +48,7 @@ const SPECS: PlanSpec[] = [
   {
     selected: "fixed",
     planType: "fixed",
-    monthlyFee: 90, // inicial R$90 (upgrade para R$180 depois via revenue_threshold)
+    monthlyFee: 0, // grátis na entrada; sobe pra R$180 após R$5k GMV via check-essencial-upgrade
     commissionRate: 0,
     pixOperationalFee: 1.99,
     platformDeliveryExtra: 2,
@@ -58,7 +58,7 @@ const SPECS: PlanSpec[] = [
   {
     selected: "autonomy",
     planType: "autonomy",
-    monthlyFee: 229.9,
+    monthlyFee: 329.9,
     commissionRate: 0,
     pixOperationalFee: 1.99,
     platformDeliveryExtra: 0,
