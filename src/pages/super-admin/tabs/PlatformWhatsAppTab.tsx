@@ -24,6 +24,9 @@ export default function PlatformWhatsAppTab() {
   const [testPhone, setTestPhone] = useState("");
   const [qrData, setQrData] = useState<string | null>(null);
   const [qrLoading, setQrLoading] = useState(false);
+  const [pairingCode, setPairingCode] = useState<string | null>(null);
+  const [pairingPhone, setPairingPhone] = useState("");
+  const [pairingLoading, setPairingLoading] = useState(false);
   const [supportNumber, setSupportNumber] = useState("");
 
   const { data: cfg } = useQuery({
@@ -73,7 +76,7 @@ export default function PlatformWhatsAppTab() {
   });
 
   const fetchQr = async () => {
-    setQrLoading(true); setQrData(null);
+    setQrLoading(true); setQrData(null); setPairingCode(null);
     try {
       const { data, error } = await supabase.functions.invoke("evolution-qr-code", {
         body: { instance_name: cfg?.instance_name || "itasuper-platform", is_platform: true },
@@ -83,6 +86,23 @@ export default function PlatformWhatsAppTab() {
     } catch (e: any) {
       toast({ title: "Erro QR", description: e.message, variant: "destructive" });
     } finally { setQrLoading(false); }
+  };
+
+  const fetchPairing = async () => {
+    const phone = pairingPhone.replace(/\D/g, "");
+    if (phone.length < 10) return toast({ title: "Número inválido", description: "Formato: 5522999999999", variant: "destructive" });
+    setPairingLoading(true); setPairingCode(null); setQrData(null);
+    try {
+      const { data, error } = await supabase.functions.invoke("evolution-qr-code", {
+        body: { instance_name: cfg?.instance_name || "itasuper-platform", is_platform: true, pairing_number: phone, force_reconnect: true },
+      });
+      if (error) throw error;
+      const code = (data as any)?.pairing_code as string | null;
+      if (!code) throw new Error("Evolution não retornou pairing code");
+      setPairingCode(code);
+    } catch (e: any) {
+      toast({ title: "Erro", description: e.message, variant: "destructive" });
+    } finally { setPairingLoading(false); }
   };
 
   const sendTest = async () => {
@@ -135,6 +155,30 @@ export default function PlatformWhatsAppTab() {
         {qrData && (
           <div className="p-3 bg-white rounded-lg flex justify-center">
             <img src={qrData.startsWith("data:") ? qrData : `data:image/png;base64,${qrData}`} alt="QR" className="max-w-[280px]" />
+          </div>
+        )}
+      </div>
+
+      <div className="rounded-xl border bg-card p-4 space-y-3">
+        <div>
+          <div className="font-bold">Conectar por número (código de 8 dígitos)</div>
+          <div className="text-xs text-muted-foreground">
+            No WhatsApp do celular: Aparelhos conectados → Conectar aparelho → <b>Conectar com número de telefone</b>. Digite o código gerado abaixo.
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <Input value={pairingPhone} onChange={(e) => setPairingPhone(e.target.value)} placeholder="5522999999999" />
+          <Button onClick={fetchPairing} disabled={pairingLoading}>
+            {pairingLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Gerar código"}
+          </Button>
+        </div>
+        {pairingCode && (
+          <div className="p-4 bg-green-50 dark:bg-green-950/30 rounded-lg text-center">
+            <div className="text-xs text-muted-foreground mb-1">Digite este código no WhatsApp:</div>
+            <div className="text-3xl font-black font-mono tracking-widest text-green-700 dark:text-green-400">
+              {pairingCode.length === 8 ? `${pairingCode.slice(0, 4)}-${pairingCode.slice(4)}` : pairingCode}
+            </div>
+            <div className="text-[10px] text-muted-foreground mt-2">Válido por ~60s. Se expirar, gere outro.</div>
           </div>
         )}
       </div>
