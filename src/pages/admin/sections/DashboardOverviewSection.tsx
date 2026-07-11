@@ -7,6 +7,7 @@ import { CreditCard, AlertTriangle, ChevronRight, Clock, Bike, Monitor, Shopping
 import { formatBRL } from "@/lib/utils";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import PlatformFeeExplainerCard from "@/components/PlatformFeeExplainerCard";
+import EssencialProgressCard from "@/components/EssencialProgressCard";
 import { GlanceCard } from "../components/GlanceCard";
 import DriverDeliveriesCard from "../components/DriverDeliveriesCard";
 import { CalendarClock } from "lucide-react";
@@ -221,6 +222,9 @@ export default function DashboardOverviewSection(props: Props) {
   {storePlan.platformDeliverySplit > 0 && (
     <PlatformFeeExplainerCard storeId={store.id} splitPerOrder={storePlan.platformDeliverySplit} />
   )}
+
+  {/* Progresso Essencial R$0 → R$180 quando bater R$ 5.000/60d */}
+  <EssencialProgressCard store={store} storePlan={storePlan} />
 
   {/* ── Banner PDV ── */}
   {storePlan.pdvEnabled !== false && (

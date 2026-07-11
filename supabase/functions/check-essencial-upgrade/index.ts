@@ -43,7 +43,7 @@ Deno.serve(async (req) => {
     // Essencial grátis (fixed, monthly_fee=0, ativo)
     const { data: plans, error: pErr } = await sb
       .from("store_plans")
-      .select("id, store_id, monthly_fee, plan_type, is_active, stores!inner(name, status)")
+      .select("id, store_id, monthly_fee, plan_type, is_active, essencial_upgrade_scheduled_at, stores!inner(name, status, owner_id, profiles!stores_owner_id_fkey(whatsapp))")
       .eq("plan_type", "fixed")
       .eq("is_active", true)
       .eq("monthly_fee", 0);
@@ -53,9 +53,21 @@ Deno.serve(async (req) => {
     const upgraded: any[] = [];
     const skipped: any[] = [];
 
+    const GRACE_DAYS = 7;
+    const FUNCTIONS_BASE = `${EXTERNAL_URL}/functions/v1`;
+    const notify = async (phone: string | undefined, msg: string, kind: string, store_id: string) => {
+      if (!phone) return;
+      await fetch(`${FUNCTIONS_BASE}/platform-whatsapp-send`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${EXTERNAL_KEY}` },
+        body: JSON.stringify({ phone, message: msg, kind, store_id }),
+      }).catch(() => {});
+    };
+
     for (const p of plans || []) {
       const store = (p as any).stores;
       if (!store || store.status !== "ativo") continue;
+      const ownerPhone: string | undefined = store?.profiles?.whatsapp;
 
       const { data: orders, error: oErr } = await sb
         .from("orders")
@@ -70,19 +82,42 @@ Deno.serve(async (req) => {
       const gmv = (orders || []).reduce((s: number, o: any) => s + Number(o.total_price || 0), 0);
 
       if (gmv >= THRESHOLD_BRL) {
-        const { error: uErr } = await sb
-          .from("store_plans")
-          .update({ monthly_fee: UPGRADE_FEE, updated_at: new Date().toISOString() })
-          .eq("id", p.id);
-        if (uErr) {
-          skipped.push({ store: store.name, gmv, error: uErr.message });
+        const nowMs = Date.now();
+        const scheduled = (p as any).essencial_upgrade_scheduled_at
+          ? new Date((p as any).essencial_upgrade_scheduled_at).getTime()
+          : null;
+
+        if (!scheduled) {
+          // 1ª vez que bateu R$5k: agenda upgrade daqui a GRACE_DAYS
+          const scheduleAt = new Date(nowMs + GRACE_DAYS * 86400_000);
+          await sb.from("store_plans")
+            .update({ essencial_upgrade_scheduled_at: scheduleAt.toISOString(), updated_at: new Date().toISOString() })
+            .eq("id", p.id);
+          const label = scheduleAt.toLocaleDateString("pt-BR");
+          await notify(ownerPhone,
+            `🎉 Parabéns, ${store.name}!\n\nSua loja passou de R$ 5.000 em vendas nos últimos ${WINDOW_DAYS} dias. A partir de *${label}* sua mensalidade ItaSuper será de R$ ${UPGRADE_FEE},00/mês (plano Essencial pago).\n\nVocê tem 7 dias para se preparar. Nenhuma cobrança será feita antes disso.`,
+            "essencial_upgrade_scheduled", p.store_id);
+          skipped.push({ store: store.name, gmv, scheduled_for: scheduleAt.toISOString() });
+        } else if (nowMs >= scheduled) {
+          // Grace period vencido → aplica upgrade
+          const { error: uErr } = await sb
+            .from("store_plans")
+            .update({ monthly_fee: UPGRADE_FEE, updated_at: new Date().toISOString() })
+            .eq("id", p.id);
+          if (uErr) {
+            skipped.push({ store: store.name, gmv, error: uErr.message });
+          } else {
+            upgraded.push({ store: store.name, gmv, new_fee: UPGRADE_FEE });
+            await sb.from("admin_logs").insert({
+              action: "essencial_auto_upgrade",
+              metadata: { store_id: p.store_id, gmv, window_days: WINDOW_DAYS, new_fee: UPGRADE_FEE },
+            }).then(() => {}, () => {});
+            await notify(ownerPhone,
+              `📢 ${store.name}, o período de preparação terminou e sua mensalidade ItaSuper foi atualizada para *R$ ${UPGRADE_FEE},00/mês*.\n\nA próxima cobrança PIX será gerada em breve. Obrigado por crescer com a gente!`,
+              "essencial_upgrade_applied", p.store_id);
+          }
         } else {
-          upgraded.push({ store: store.name, gmv, new_fee: UPGRADE_FEE });
-          // Log de auditoria (best-effort)
-          await sb.from("admin_logs").insert({
-            action: "essencial_auto_upgrade",
-            metadata: { store_id: p.store_id, gmv, window_days: WINDOW_DAYS, new_fee: UPGRADE_FEE },
-          }).then(() => {}, () => {});
+          skipped.push({ store: store.name, gmv, scheduled_for: new Date(scheduled).toISOString(), reason: "in_grace_period" });
         }
       } else {
         skipped.push({ store: store.name, gmv, reason: "below_threshold" });

@@ -30,6 +30,9 @@ Deno.serve(async (req) => {
         if exists (select 1 from cron.job where jobname = 'evolution-keepalive-3min') then
           perform cron.unschedule('evolution-keepalive-3min');
         end if;
+        if exists (select 1 from cron.job where jobname = 'billing-reminders-daily') then
+          perform cron.unschedule('billing-reminders-daily');
+        end if;
       end $$;
 
       select cron.schedule(
@@ -94,6 +97,23 @@ Deno.serve(async (req) => {
           );
         $cron$
       );
+
+      -- Lembretes de mensalidade (D-3, D-1, D+1, D+3) — 11:00 UTC (08:00 BRT).
+      select cron.schedule(
+        'billing-reminders-daily',
+        '0 11 * * *',
+        $cron$
+          select net.http_post(
+            url := '${base}/functions/v1/billing-reminders',
+            headers := jsonb_build_object(
+              'Content-Type','application/json',
+              'apikey','${anonKey}',
+              'Authorization','Bearer ${cronSecret}'
+            ),
+            body := '{}'::jsonb
+          );
+        $cron$
+      );
     `
 
     const r = await fetch(`https://api.supabase.com/v1/projects/${ref}/database/query`, {
@@ -116,7 +136,7 @@ Deno.serve(async (req) => {
       method: 'POST',
       headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        query: `select jobname, schedule from cron.job where jobname in ('weekly-platform-report','auto-withdraw-asaas-daily','auto-charge-physical-fees-monday','evolution-keepalive-3min') order by jobname;`,
+        query: `select jobname, schedule from cron.job where jobname in ('weekly-platform-report','auto-withdraw-asaas-daily','auto-charge-physical-fees-monday','evolution-keepalive-3min','billing-reminders-daily') order by jobname;`,
       }),
     })
     const jobs = await verify.json()
