@@ -161,13 +161,23 @@ export default function PlatformWhatsAppTab() {
           </div>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <Button onClick={fetchQr} disabled={qrLoading} variant="outline" size="sm">
             {qrLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <QrCode className="h-4 w-4" />}
             Gerar QR Code
           </Button>
-          <Button onClick={() => qc.invalidateQueries({ queryKey: ["platform-wa-cfg"] })} variant="ghost" size="sm">
-            <RefreshCw className="h-4 w-4" /> Atualizar status
+          <Button
+            onClick={async () => {
+              const { data, error } = await supabase.functions.invoke("platform-whatsapp-sync-status", { body: {} });
+              if (error) return toast({ title: "Erro", description: error.message, variant: "destructive" });
+              if ((data as any)?.error) return toast({ title: "Erro", description: (data as any).error, variant: "destructive" });
+              toast({ title: "Status sincronizado", description: (data as any)?.status });
+              qc.invalidateQueries({ queryKey: ["platform-wa-cfg"] });
+            }}
+            variant="ghost"
+            size="sm"
+          >
+            <RefreshCw className="h-4 w-4" /> Sincronizar status
           </Button>
         </div>
 
