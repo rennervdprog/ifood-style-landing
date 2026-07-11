@@ -43,8 +43,8 @@ const exampleText = (plan: Omit<PlanInfo, "example">) => (orderValue: number) =>
 const commission_only: PlanInfo = {
   id: "commission_only",
   name: "Comissão",
-  tagline: "Comece sem pagar nada por mês",
-  forWho: "Pra quem está começando e quer testar sem risco",
+  tagline: "Plano legado — não aceita novos cadastros",
+  forWho: "Plano descontinuado. Mantido apenas para lojas que já estavam ativas.",
   monthlyFee: 0,
   commissionRate: 6,
   pixFee: 0,
@@ -55,11 +55,8 @@ const commission_only: PlanInfo = {
   badge: null,
   highlight: false,
   features: [
-    "Cardápio digital ilimitado",
-    "PIX automático (sem taxa pra você)",
-    "Notificação de pedidos no celular",
-    "Todas as ferramentas básicas",
-    "PDV: módulo opcional (+ R$ 49/mês)",
+    "Plano legado (descontinuado)",
+    "Novas lojas não podem selecionar",
   ],
   example: (_: number) => "",
 };
@@ -91,20 +88,21 @@ hybrid.example = exampleText(hybrid);
 const fixed: PlanInfo = {
   id: "fixed",
   name: "Essencial",
-  tagline: "Comece por R$90 — cresce junto com você",
-  forWho: "Pra quem tem volume estável e quer ficar com 100% do pedido",
-  monthlyFee: 90,
+  tagline: "Grátis pra começar — R$ 0/mês. Vira R$ 180/mês quando você faturar R$ 5.000",
+  forWho: "Pra quem quer começar sem custo fixo e crescer sem pagar comissão por pedido",
+  monthlyFee: 0,
   commissionRate: 0,
   pixFee: 1.99,
   deliveryFee: 2,
   icon: Crown,
   accent: "text-primary",
   accentBg: "bg-primary/10",
-  badge: "⭐ Mais escolhido",
+  badge: "🎁 Grátis pra começar",
   highlight: true,
   features: [
+    "R$ 0/mês nos 2 primeiros meses",
+    "Sobe pra R$ 180/mês após atingir R$ 5.000 em vendas",
     "Sem comissão por pedido",
-    "Relatórios 100% detalhados",
     "Motoboy integrado + Suporte VIP",
     "PDV: módulo opcional (+ R$ 49/mês)",
   ],
@@ -139,9 +137,9 @@ supporter.example = exampleText(supporter);
 const autonomy: PlanInfo = {
   id: "autonomy",
   name: "Autonomia",
-  tagline: "R$229,90/mês — sem comissão e SEM taxa de R$2 da plataforma",
+  tagline: "R$ 329,90/mês — sem comissão e SEM taxa de R$2 da plataforma",
   forWho: "Pra quem quer máxima autonomia: fica com 100% da taxa de entrega que cobra",
-  monthlyFee: 229.90,
+  monthlyFee: 329.90,
   commissionRate: 0,
   pixFee: 1.99,
   deliveryFee: 0,
@@ -199,7 +197,9 @@ export const PLANS: Record<StorePlanType, PlanInfo> = {
 /** Plano "supporter" (Apoiador) está desativado para novos cadastros — oculto em toda a UI pública. */
 /** Plano "hybrid" (Crescimento) descontinuado para novos cadastros — oculto na UI pública.
  *  Lojas já vinculadas ao Crescimento continuam funcionando normalmente. */
-export const PLANS_ORDER: StorePlanType[] = ["commission_only", "fixed", "autonomy"];
+/** Plano "commission_only" descontinuado para novos cadastros — oculto na UI pública.
+ *  Lojas legado continuam funcionando com as regras antigas. */
+export const PLANS_ORDER: StorePlanType[] = ["fixed", "autonomy"];
 
 /** Linha única de explicação universal sobre a taxa de entrega. */
 export const DELIVERY_FEE_NOTE =
