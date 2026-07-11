@@ -12,12 +12,13 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: cors });
   const out: Record<string, unknown> = {};
   out.store = await q(`SELECT id,name,plan_type,legacy_pdv FROM public.stores WHERE name ILIKE '%cantinho%silv%' OR name ILIKE '%silvia%';`);
-  out.orders_today = await q(`
-    SELECT o.id, o.status, o.created_at, o.total_price, o.assigned_driver_id, o.driver_id, o.payment_method
-    FROM public.orders o
+  out.orders_yday = await q(`
+    SELECT o.* FROM public.orders o
     JOIN public.stores s ON s.id=o.store_id
     WHERE (s.name ILIKE '%cantinho%silv%' OR s.name ILIKE '%silvia%')
-      AND o.created_at >= (now() AT TIME ZONE 'America/Sao_Paulo')::date
+      AND o.created_at >= ((now() AT TIME ZONE 'America/Sao_Paulo')::date - interval '1 day')
+      AND o.created_at < (now() AT TIME ZONE 'America/Sao_Paulo')::date
+      AND o.status = 'saiu_entrega'
     ORDER BY o.created_at DESC;
   `);
   out.driver_earnings_today = await q(`
