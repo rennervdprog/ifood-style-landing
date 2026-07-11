@@ -148,6 +148,35 @@ Deno.serve(async (req) => {
       .eq("evolution_instance_name", instance)
       .maybeSingle();
     if (!cfg) {
+      // Instância da plataforma (ItaSuper) — sincroniza status em platform_whatsapp_config.
+      if (/connection/i.test(event)) {
+        const state: string = data?.state || data?.status || "";
+        const statusReason: number = Number(data?.statusReason || data?.reason || 0);
+        const phone: string | undefined = data?.wuid?.split("@")?.[0] || data?.number || data?.owner;
+        const { data: pcfg } = await admin
+          .from("platform_whatsapp_config")
+          .select("id, status")
+          .eq("instance_name", instance)
+          .maybeSingle();
+        if (pcfg) {
+          let newStatus: string | null = null;
+          if (state === "open" || state === "connected") newStatus = "connected";
+          else if ((state === "close" || state === "disconnected") && statusReason === 401) newStatus = "disconnected";
+          else if (pcfg.status !== "connected") newStatus = "connecting";
+          if (newStatus) {
+            const patch: any = {
+              status: newStatus,
+              phone_number: phone ?? undefined,
+              updated_at: new Date().toISOString(),
+            };
+            if (newStatus === "connected" && pcfg.status !== "connected") {
+              patch.connected_at = new Date().toISOString();
+            }
+            await admin.from("platform_whatsapp_config").update(patch).eq("id", pcfg.id);
+          }
+          return json({ ok: true, platform: true });
+        }
+      }
       console.warn("[evolution-webhook] instance without config", { instance, event });
       return json({ ok: true });
     }
