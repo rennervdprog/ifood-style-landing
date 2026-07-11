@@ -31,6 +31,13 @@ export const initSentry = () => {
       /Failed to (update|register) a ServiceWorker/i,
       /ServiceWorker script.*failed to fetch/i,
       /The script has an unsupported MIME type/i,
+      // Supabase Navigator Locks: quando 2 abas/refresh concorrentes
+      // pegam o mesmo lock, um deles é "roubado". Sessão não quebra.
+      /Lock ".*" was released because another request stole it/i,
+      // Fetch abortado (visibilitychange, unmount, timeout controller)
+      /Fetch is aborted/i,
+      /The user aborted a request/i,
+      /AbortError/i,
     ],
   } as const;
 
