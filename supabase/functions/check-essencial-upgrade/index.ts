@@ -59,7 +59,7 @@ Deno.serve(async (req) => {
 
       const { data: orders, error: oErr } = await sb
         .from("orders")
-        .select("total")
+        .select("total_price")
         .eq("store_id", p.store_id)
         .eq("status", "delivered")
         .gte("created_at", since);
@@ -67,7 +67,7 @@ Deno.serve(async (req) => {
         skipped.push({ store: store.name, error: oErr.message });
         continue;
       }
-      const gmv = (orders || []).reduce((s: number, o: any) => s + Number(o.total || 0), 0);
+      const gmv = (orders || []).reduce((s: number, o: any) => s + Number(o.total_price || 0), 0);
 
       if (gmv >= THRESHOLD_BRL) {
         const { error: uErr } = await sb
