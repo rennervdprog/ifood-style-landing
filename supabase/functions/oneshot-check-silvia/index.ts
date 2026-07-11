@@ -31,8 +31,8 @@ Deno.serve(async (req) => {
   `);
   out.finalize_stuck = await q(`
     UPDATE public.orders o
-    SET status='concluido', delivery_confirmed_by_client=true, collection_validated=true,
-        updated_at=now()
+    SET status='finalizado', delivery_confirmed_by_client=true, collection_validated=true
+        
     FROM public.stores s
     WHERE o.store_id=s.id
       AND (s.name ILIKE '%cantinho%silv%' OR s.name ILIKE '%silvia%')
