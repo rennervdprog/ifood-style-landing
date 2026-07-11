@@ -1105,6 +1105,7 @@ const TAB_SUBTITLE: Record<string, (ctx: {
             {activeTab === "links" && <AppLinksManager />}
             {activeTab === "broadcast" && <AdminBroadcastPush />}
             {activeTab === "coach" && <SalesCoachPanel />}
+            {activeTab === "whatsapp_plataforma" && <Suspense fallback={<TabFallback />}><PlatformWhatsAppTab /></Suspense>}
             {activeTab === "auditoria" && (
               <div className="space-y-4">
                 <SubTabsBar
