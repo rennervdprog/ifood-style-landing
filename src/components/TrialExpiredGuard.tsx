@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { AlertTriangle, Clock, Copy, CheckCircle2, Loader2, CreditCard, Sparkles } from "lucide-react";
+import { AlertTriangle, Clock, Copy, CheckCircle2, Loader2, CreditCard, Sparkles, MessageCircle, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import type { StorePlanFeatures } from "@/hooks/useStorePlan";
@@ -17,6 +17,9 @@ interface TrialExpiredGuardProps {
 export default function TrialExpiredGuard({ storePlan, storeId, children }: TrialExpiredGuardProps) {
   const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
+  // 🔓 Escape hatch: se o lojista já está pagando (ou está no plano R$0),
+  // permite fechar o guard e ver o app mesmo com alguma cobrança residual.
+  const [dismissed, setDismissed] = useState(false);
   const [pixData, setPixData] = useState<{
     qr_code: string | null;
     qr_code_base64: string | null;
@@ -25,6 +28,20 @@ export default function TrialExpiredGuard({ storePlan, storeId, children }: Tria
   } | null>(null);
   const [copied, setCopied] = useState(false);
   const [polling, setPolling] = useState(false);
+
+  // Número/link de suporte da plataforma (fallback via admin_settings.support_whatsapp)
+  const { data: supportCfg } = useQuery({
+    queryKey: ["support-whatsapp-cfg"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("admin_settings")
+        .select("value")
+        .eq("key", "support_whatsapp")
+        .maybeSingle();
+      return (data?.value as { number?: string; link?: string } | null) || null;
+    },
+    staleTime: 60_000,
+  });
 
   // Check for pending subscription/monthly payment
   const { data: pendingPayment } = useQuery({
@@ -107,7 +124,9 @@ export default function TrialExpiredGuard({ storePlan, storeId, children }: Tria
     }
   }, [hasUnpaidBill, pendingPayment, pixData]);
 
-  if (!shouldBlock) {
+  // 🔓 Bypass total quando a mensalidade é R$0 (Essencial gratuito).
+  // Sem isso, cobranças órfãs de planos antigos travariam o lojista.
+  if (storePlan.monthlyFee === 0 || !shouldBlock || dismissed) {
     return <>{children}</>;
   }
 
@@ -149,6 +168,14 @@ export default function TrialExpiredGuard({ storePlan, storeId, children }: Tria
 
   const planLabel = storePlan.planType === "fixed" ? "Essencial" : "Crescimento";
   const isRecurring = (hasUnpaidBill || isOverdue) && !isTrialExpired;
+
+  const supportLink =
+    supportCfg?.link ||
+    (supportCfg?.number
+      ? `https://wa.me/${String(supportCfg.number).replace(/\D/g, "")}?text=${encodeURIComponent(
+          "Olá! Preciso de ajuda com minha mensalidade ItaSuper."
+        )}`
+      : null);
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -276,6 +303,28 @@ export default function TrialExpiredGuard({ storePlan, storeId, children }: Tria
               Enquanto o pagamento não for confirmado, o acesso ao painel ficará limitado.
               Seus dados e pedidos estão seguros.
             </p>
+          </div>
+
+          {/* Escape hatch: suporte + histórico */}
+          <div className="flex flex-col gap-2 pt-1">
+            {supportLink && (
+              <a
+                href={supportLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-2 text-sm font-semibold text-emerald-600 hover:text-emerald-700 py-2 rounded-xl border border-emerald-500/30 hover:bg-emerald-500/5 transition"
+              >
+                <MessageCircle className="h-4 w-4" />
+                Falar com o suporte ItaSuper
+              </a>
+            )}
+            <button
+              onClick={() => setDismissed(true)}
+              className="inline-flex items-center justify-center gap-2 text-xs text-muted-foreground hover:text-foreground py-1.5"
+            >
+              <FileText className="h-3.5 w-3.5" />
+              Ver histórico de cobranças no painel
+            </button>
           </div>
         </CardContent>
       </Card>
