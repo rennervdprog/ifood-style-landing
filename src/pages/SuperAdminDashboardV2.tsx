@@ -132,6 +132,36 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
   { key: "juridico", label: "Jurídico", icon: Scale, group: "Sistema" },
 ];
 
+// Subtítulo padronizado por aba — evita if/else espalhado no header.
+const TAB_SUBTITLE: Record<string, (ctx: {
+  totalOrders: number;
+  pendingWithdrawals: number;
+  pendingApprovals: number;
+  storesCount: number;
+}) => string> = {
+  dashboard: (c) => `${c.totalOrders} pedidos no período`,
+  financeiro: () => "Gestão financeira e repasses",
+  saques: (c) => `${c.pendingWithdrawals} solicitação${c.pendingWithdrawals === 1 ? "" : "ões"} pendente${c.pendingWithdrawals === 1 ? "" : "s"}`,
+  entrega: () => "Configurações de taxa de entrega",
+  approvals: (c) => `${c.pendingApprovals} cadastro${c.pendingApprovals === 1 ? "" : "s"} pendente${c.pendingApprovals === 1 ? "" : "s"}`,
+  stores: (c) => `${c.storesCount} lojas cadastradas`,
+  cidades: () => "Lojas por cidade",
+  pagamentos: () => "Histórico de pagamentos por loja",
+  coupons: () => "Gerenciar cupons de desconto",
+  juridico: () => "Consulta jurídica e dados arquivados",
+  moderadores: () => "Moderadores e sistema de afiliados",
+  socios: () => "Divisão de lucros entre sócios",
+  sync: () => "Sincronização com banco externo",
+  test_finance: () => "Lojas de teste — finanças fictícias isoladas",
+  links: () => "Gerenciar botões da página pública /links",
+  broadcast: () => "Enviar push notifications em massa",
+  coach: () => "Assistente de IA para captar e fechar lojistas",
+  planos: () => "Gerenciar planos e assinaturas das lojas",
+  "app-page": () => "Página pública do app e links",
+  suporte: () => "Painel de suporte ao lojista",
+  auditoria: () => "Auditoria, logs e debug",
+};
+
  import { FinanceTab as FinanceTabFull, MetricCard } from "./SuperAdminDashboard";
 
  const SuperAdminDashboardV2 = () => {
