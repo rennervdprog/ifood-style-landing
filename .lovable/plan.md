@@ -1,109 +1,111 @@
-## Objetivo
+# Plano UI/UX — Super Admin (sem alterar lógica)
 
-Atualizar textos da `src/pages/StoreDirectory.tsx` com SEO puro (foco em intenção de busca real de lojistas) e adicionar o **4º card de plano "Somente PDV (R$ 69/mês)"**, alinhado a `plansInfo.ts` (`pdv_only`) e ao restante do sistema.
+Objetivo: transformar o painel num produto profissional, com hierarquia clara, agrupamento consistente e navegação previsível. Zero alteração em queries, RPCs, cálculos ou regras de negócio — só layout, agrupamento, tipografia, espaçamento e microcopy.
 
-Escopo: **somente frontend** desta página. Nada de lógica de billing/backend.
+## Diagnóstico atual
+Hoje existem **17 abas** soltas em 4 grupos inconsistentes (`Principal`, `Configurações`, `Gerenciamento`, `Sistema`). Itens de mesma natureza estão espalhados:
+- Financeiro, Pagamentos, Saques, Sócios, Finanças Teste → todos são dinheiro, mas moram em grupos diferentes.
+- Entrega (config) fica sozinho em "Configurações".
+- Sync, Logs, Broadcast, /links → tudo em "Sistema" mas cada um faz coisa muito diferente.
+No mobile a barra inferior tem "Início / … / Mais", e o "Mais" repete quase tudo.
 
----
+## Nova arquitetura de navegação (5 grupos, 17 abas mantidas)
 
-## 1. Card "Somente PDV" no bloco de Planos
+```text
+📊 Visão Geral
+  └─ Dashboard
 
-Adicionar como 4º card do array `plans`:
+💰 Financeiro
+  ├─ Financeiro (fechamento)
+  ├─ Pagamentos (split)
+  ├─ Saques
+  ├─ Sócios
+  └─ Finanças Teste
 
-- id: `pdv_only`
-- name: `Somente PDV`
-- tagline: `Só o caixa, sem delivery`
-- price: `69`
-- commission: `Sem comissão`
-- icon: `CreditCard`
-- badge: `Balcão`
-- features:
-  - PDV completo (vendas, sangria, fechamento)
-  - Cadastro de produtos ilimitado
-  - Relatórios do caixa
-  - WhatsApp integrado (grátis)
-  - Sem vitrine pública, sem delivery
+🏪 Operação
+  ├─ Lojas
+  ├─ Planos
+  ├─ Cidades
+  ├─ Cupons
+  └─ Entrega (taxas)
 
-Ajustes de grid: mudar `lg:grid-cols-4` já existe → 4 cards cabem naturalmente. Manter Essencial como `highlight`.
+👥 Pessoas
+  ├─ Aprovações   (badge nº pendentes — hoje é toast solto)
+  ├─ Moderadores
+  └─ Jurídico
 
-Adicionar 1 linha de nota abaixo dos planos:
-> "Já tem clientela na loja física? O plano **Somente PDV** é a frente de caixa pura — se quiser abrir delivery depois, migra num clique."
+⚙️ Sistema
+  ├─ Notificações (push)
+  ├─ Página /links
+  ├─ Sincronizar
+  └─ Logs
+```
+Renomeações leves para clareza: `Dashboard` → `Visão Geral`, `Broadcast` → `Notificações`, `test_finance` → `Finanças Teste`, `sync` → `Sincronizar`.
 
----
+## Boas práticas aplicadas
 
-## 2. SEO puro — textos reescritos com foco em busca real
+**1. Sidebar (desktop)**
+- Grupos com título em `text-xs uppercase tracking-wider text-muted-foreground` e divisor sutil.
+- Item ativo com barra lateral de 3px na cor primária + fundo `bg-primary/10` (hoje já existe, padronizar).
+- Badges numéricos alinhados à direita (Aprovações, Saques pendentes) usando `<Badge variant="secondary">` — dados já existem (`pendingApprovalsCount`, `pendingWithdrawals.length`).
+- Ícones 16px, label 14px, altura de linha 40px — bater com padrão shadcn.
+- Colapsável para ícone-only (usar `Sidebar collapsible="icon"` do shadcn).
 
-Alvo de intenção (queries reais que lojistas digitam no Google):
-`sistema para delivery`, `cardápio digital grátis`, `PDV para restaurante`, `sistema de PDV barato`, `alternativa iFood`, `PDV com controle de caixa`, `sistema para pizzaria delivery`, `PDV para loja física`.
+**2. Bottom nav (mobile)**
+- Manter 4 fixos + "Mais": `Visão Geral`, `Financeiro`, `Operação`, `Pessoas`, `Mais`.
+- O sheet "Mais" abre agrupado pelos mesmos 5 grupos (hoje é lista corrida).
+- Badges de pendência aparecem também no bottom nav.
 
-### 2.1. `<title>` e `<meta description>` (dentro do `useEffect`)
+**3. Header de cada aba**
+- Padrão fixo: `Título grande + subtítulo cinza + ações à direita`.
+- Substituir o if/else de 20 linhas de subtítulo por um mapa `TAB_META = { key: { title, subtitle, actions } }` renderizado num único componente `<PageHeader />` — mesmo comportamento, código mais limpo visualmente (isso é refactor de apresentação, sem alterar lógica).
+- Filtro de data (Hoje/Ontem/7 dias) vira `SegmentedControl` no header, não botões soltos.
 
-- **title**: `Sistema de Delivery e PDV para Restaurantes e Lojas | ItaSuper`
-- **description**: `Sistema completo de delivery com cardápio digital, PIX automático, motoboy integrado e PDV para loja física. Sem comissão no plano fixo. Grátis para começar.`
-- **og:title**: `ItaSuper — Delivery e PDV num app só`
-- **og:description**: mesma da description
+**4. Cards de métrica (Visão Geral)**
+- Grid responsivo `2 cols mobile → 4 cols desktop`, altura uniforme.
+- Hierarquia: label 12px caps, valor 28px bold, sublabel 11px muted.
+- Card com "alert" (atrasos) muda apenas o ícone e a borda esquerda vermelha, sem trocar o fundo inteiro (menos ruído).
+- Mini-sparkline opcional só se houver dados prontos; caso contrário, remover a promessa visual.
 
-### 2.1.1. Corrigir canonical/og:url
+**5. Toasts e alertas persistentes**
+- Faixa amarela "X saques pendentes" e "X aprovações pendentes" viram **um único banner** no topo com chips clicáveis, não dois blocos empilhados.
+- Toast de novo cadastro mantém, mas com ação "Ver" já padronizada.
 
-Trocar `https://itasuper.com.br/` por `https://itasuper.lovable.app/` (domínio real hoje).
+**6. Tabelas (Financeiro, Pagamentos, Saques, Lojas)**
+- Cabeçalho sticky, zebra sutil (`bg-muted/30` nas linhas ímpares), padding vertical 12px.
+- Colunas numéricas alinhadas à direita, monetárias com fonte tabular (`font-variant-numeric: tabular-nums`).
+- Estado vazio ilustrado (ícone grande cinza + frase + CTA) em vez de "Nenhum registro".
+- Loading = skeleton rows, não spinner central.
 
-### 2.2. H1 (hero)
+**7. Formulários (Entrega, Planos, Saques limites)**
+- Agrupar em `<Card>` com `CardHeader` descritivo.
+- Labels acima dos inputs, help text abaixo em muted.
+- Botão primário sempre à direita, secundário à esquerda; ambos com largura mínima 120px.
 
-De: *"Cardápio digital, PIX e motoboy em 10 minutos."*
-Para: **"Sistema de delivery e PDV para sua loja — pronto em 10 minutos."**
+**8. Cores e tipografia**
+- Só tokens semânticos (`--primary`, `--muted-foreground`, `--destructive`, `--success`). Auditar e remover `text-white`, `bg-red-500` etc. que ainda existam nos painéis admin.
+- Escala tipográfica: 12 / 14 / 16 / 20 / 28 / 36. Nada fora disso.
+- Espaçamento em múltiplos de 4px (Tailwind default) — remover paddings customizados tipo `p-[13px]`.
 
-Subtítulo:
-`Cardápio digital, PIX automático, motoboy integrado e frente de caixa (PDV) num app só. Sem mensalidade pra começar.`
+**9. Densidade e responsividade**
+- Modo compacto opcional no desktop (linhas 32px) via toggle no header do usuário — só CSS.
+- Breakpoint `md` corrige tabelas que hoje quebram no tablet (scroll horizontal com sombra de borda).
 
-### 2.3. H2s com palavras-chave
+**10. Microcopy**
+- Padronizar: "Vendas" vs "Faturamento" vs "Volume" → escolher **Faturamento** em todo o painel.
+- "Comissão" sempre com % ao lado do valor.
+- Datas sempre em `dd/MM · HH:mm` (America/Sao_Paulo), sem misturar ISO.
 
-| Seção | Novo H2 |
-| --- | --- |
-| Dor → Solução | Chega de anotar pedido no papel e conferir PIX no banco |
-| Como funciona | Como montar seu delivery em 10 minutos |
-| Features (bento) | Tudo que restaurante, mercado e loja precisam |
-| Segmentos | Feito para pizzarias, mercados, docerias, bares e lojas físicas |
-| Motoboy | Motoboy integrado com mapa e código de entrega |
-| Planos | Planos de delivery e PDV — cancele quando quiser |
-| Autonomia | Plano sem a taxa de R$2 da plataforma na entrega |
-| Depoimentos | O que os lojistas dizem sobre o ItaSuper |
-| FAQ | Perguntas frequentes sobre o sistema |
-| Final CTA | Cadastre sua loja e comece a vender hoje |
+## Escopo do que NÃO muda
+- Nenhuma query, RPC, edge function, tabela, cálculo, permissão ou fluxo de negócio.
+- Nenhum dado novo é buscado; só reaproveitamos o que já vem.
+- Rotas, chaves de aba e URLs permanecem idênticas.
 
-### 2.4. Ajustes de copy com keywords (sem enfeitar demais)
+## Entrega sugerida em 3 PRs visuais
+1. **Navegação:** novo `sidebarItems` (regrupado + renomeado), bottom nav e sheet "Mais" agrupado, badges de pendência.
+2. **Header + banner unificado + cards de métrica** padronizados.
+3. **Tabelas, formulários, tipografia/tokens e microcopy** varridos em todas as abas.
 
-- **Feature "PDV de balcão"** → renomear para **"PDV para loja física"**, desc: `Frente de caixa completa: vendas, troco, sangria e fechamento do dia. Contrate à parte ou use o plano Somente PDV.`
-- **Feature "Cardápio digital"** desc: `Cardápio digital com link próprio da sua loja — cliente abre no navegador, sem instalar app.`
-- **Segmento "Serviços"** → **"Lojas físicas"**, desc: `Barbearia, pet shop, loja de roupa — use só o PDV, sem vitrine online.`
+Cada PR é independente e reversível. Nada quebra funcionalidade porque nenhuma lógica é tocada.
 
-### 2.5. Novas FAQs (SEO long-tail)
-
-Adicionar 2 perguntas ao array `faqs`:
-
-- *"O ItaSuper é uma alternativa ao iFood?"* — Sim. Você tem seu próprio cardápio digital, recebe pedidos direto no seu link, PIX cai na sua conta na hora e a comissão é bem menor (0% no plano Essencial, contra ~27% das grandes plataformas).
-- *"Serve para pizzaria com meio-a-meio e bordas?"* — Sim. O cardápio suporta sabor meio-a-meio, escolha de borda, adicionais e observações do cliente sem erro.
-
-### 2.6. JSON-LD adicional
-
-Além do `FAQPage` já existente, injetar no mesmo `useEffect`:
-
-- **SoftwareApplication** (com `name`, `applicationCategory: "BusinessApplication"`, `operatingSystem: "Web, Android"`, `offers` listando os 4 planos com preço).
-- **Organization** (name, url, logo `/itasuper-logo-horizontal.webp`, `sameAs` — vazio se não houver).
-
-### 2.7. Alt/aria
-
-Confirmar `alt="ItaSuper — sistema de delivery e PDV"` no logo do navbar (não só "ItaSuper").
-
----
-
-## 3. Fora de escopo
-
-- Nada de mexer em `plansInfo.ts`, billing, backend, rotas.
-- Sem novas imagens.
-- Sem mudança visual estrutural — só cópia + 1 card novo.
-
----
-
-## 4. Versão
-
-Após aplicar: bump patch → `v1.13.24 (build 883)` em `src/lib/appVersion.ts`, `src/pages/PerfilPage.tsx` e `android/app/build.gradle` (versionName + versionCode +1).
+Quer que eu comece pelo PR 1 (navegação) ou prefere ver mocks antes?
