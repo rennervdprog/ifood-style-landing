@@ -1025,6 +1025,32 @@ const TAB_SUBTITLE: Record<string, (ctx: {
         {/* Content area */}
         <div className="flex-1 overflow-y-auto">
           <div className="p-4 lg:p-6 max-w-6xl mx-auto">
+            {/* Banner unificado de pendências */}
+            {(pendingWithdrawals.length > 0 || pendingApprovalsCount > 0) &&
+              activeTab !== "approvals" && activeTab !== "saques" && activeTab !== "financeiro" && (
+                <div className="mb-4 rounded-2xl border border-amber-200 dark:border-amber-900/50 bg-amber-50 dark:bg-amber-950/30 px-4 py-3 flex flex-wrap items-center gap-2">
+                  <Bell className="h-4 w-4 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+                  <span className="text-xs font-bold text-amber-900 dark:text-amber-200 mr-1">Pendências:</span>
+                  {pendingApprovalsCount > 0 && (
+                    <button
+                      onClick={() => handleTabChange("approvals")}
+                      className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/25 transition-colors inline-flex items-center gap-1.5"
+                    >
+                      <Shield className="h-3 w-3" />
+                      {pendingApprovalsCount} cadastro{pendingApprovalsCount === 1 ? "" : "s"}
+                    </button>
+                  )}
+                  {pendingWithdrawals.length > 0 && (
+                    <button
+                      onClick={() => handleTabChange("financeiro")}
+                      className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-destructive/15 text-destructive hover:bg-destructive/25 transition-colors inline-flex items-center gap-1.5"
+                    >
+                      <Wallet className="h-3 w-3" />
+                      {pendingWithdrawals.length} saque{pendingWithdrawals.length === 1 ? "" : "s"}
+                    </button>
+                  )}
+                </div>
+              )}
             {activeTab === "approvals" && <AdminApprovals />}
             {activeTab === "entrega" && <DeliveryFeeConfigPanel />}
             {activeTab === "sync" && <Suspense fallback={<TabFallback />}><SyncExternalTab /></Suspense>}
