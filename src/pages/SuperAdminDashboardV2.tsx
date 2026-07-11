@@ -60,6 +60,7 @@ const AuditoriaTab = lazy(() => import("./super-admin/tabs/AuditoriaTab"));
 const AReceberTab = lazy(() => import("./super-admin/tabs/AReceberTab"));
 const HistoricoRepassesTab = lazy(() => import("./super-admin/tabs/HistoricoRepassesTab"));
 const DebugLojaTab = lazy(() => import("./super-admin/tabs/DebugLojaTab"));
+const PlatformWhatsAppTab = lazy(() => import("./super-admin/tabs/PlatformWhatsAppTab"));
 // Painéis financeiros profissionais (Fase 1)
 const FluxoCaixaPanel = lazy(() => import("@/components/finance/FluxoCaixaPanel"));
 const ConciliacaoAsaasPanel = lazy(() => import("@/components/finance/ConciliacaoAsaasPanel"));
@@ -109,7 +110,7 @@ const SubTabsBar = ({
 );
 
 type DateFilter = "today" | "yesterday" | "week";
-type AdminTab = "dashboard" | "approvals" | "stores" | "financeiro" | "pagamentos" | "saques" | "sync" | "coupons" | "entrega" | "cidades" | "juridico" | "planos" | "moderadores" | "socios" | "suporte" | "app-page" | "test_finance" | "links" | "broadcast" | "logs" | "coach" | "auditoria";
+type AdminTab = "dashboard" | "approvals" | "stores" | "financeiro" | "pagamentos" | "saques" | "sync" | "coupons" | "entrega" | "cidades" | "juridico" | "planos" | "moderadores" | "socios" | "suporte" | "app-page" | "test_finance" | "links" | "broadcast" | "logs" | "coach" | "auditoria" | "whatsapp_plataforma";
 
 const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; group: string }[] = [
   // Início
@@ -129,6 +130,7 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
   // Sistema (Logs virou sub-aba de "Auditoria")
   { key: "sync", label: "Sincronizar", icon: RefreshCw, group: "Sistema" },
   { key: "auditoria", label: "Auditoria", icon: ShieldCheck, group: "Sistema" },
+  { key: "whatsapp_plataforma", label: "WhatsApp Plataforma", icon: MessageCircle, group: "Sistema" },
   { key: "juridico", label: "Jurídico", icon: Scale, group: "Sistema" },
 ];
 
@@ -160,6 +162,7 @@ const TAB_SUBTITLE: Record<string, (ctx: {
   "app-page": () => "Página pública do app e links",
   suporte: () => "Painel de suporte ao lojista",
   auditoria: () => "Auditoria, logs e debug",
+  whatsapp_plataforma: () => "WhatsApp oficial da plataforma (avisos automáticos)",
 };
 
  import { FinanceTab as FinanceTabFull, MetricCard } from "./SuperAdminDashboard";
@@ -1102,6 +1105,7 @@ const TAB_SUBTITLE: Record<string, (ctx: {
             {activeTab === "links" && <AppLinksManager />}
             {activeTab === "broadcast" && <AdminBroadcastPush />}
             {activeTab === "coach" && <SalesCoachPanel />}
+            {activeTab === "whatsapp_plataforma" && <Suspense fallback={<TabFallback />}><PlatformWhatsAppTab /></Suspense>}
             {activeTab === "auditoria" && (
               <div className="space-y-4">
                 <SubTabsBar
