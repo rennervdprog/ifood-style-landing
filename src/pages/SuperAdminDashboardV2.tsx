@@ -113,7 +113,7 @@ type AdminTab = "dashboard" | "approvals" | "stores" | "financeiro" | "pagamento
 
 const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; group: string }[] = [
   // Início
-  { key: "dashboard", label: "Dashboard", icon: LayoutDashboard, group: "Início" },
+  { key: "dashboard", label: "Visão Geral", icon: LayoutDashboard, group: "Início" },
   // Operação (Cidades + Entrega agora vivem dentro de "Lojas")
   { key: "stores", label: "Lojas", icon: Store, group: "Operação" },
   { key: "coupons", label: "Cupons", icon: Ticket, group: "Operação" },
