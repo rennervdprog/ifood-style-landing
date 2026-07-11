@@ -822,11 +822,11 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <p className="text-xl font-black text-foreground leading-none">{metrics.activeOrders}</p>
+                <p className="text-xl font-black text-foreground leading-none tabular-nums">{metrics.activeOrders}</p>
                 <p className="text-[10px] text-muted-foreground mt-0.5">Pedidos ativos</p>
               </div>
               <div>
-                <p className="text-xl font-black text-foreground leading-none">{metrics.totalOrders}</p>
+                <p className="text-xl font-black text-foreground leading-none tabular-nums">{metrics.totalOrders}</p>
                 <p className="text-[10px] text-muted-foreground mt-0.5">Total pedidos</p>
               </div>
             </div>
@@ -835,7 +835,7 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
                 <TrendingUp className="h-3.5 w-3.5 text-green-500" />
                 <span className="text-[10px] text-muted-foreground">Vendas</span>
               </div>
-              <span className="text-sm font-black text-foreground">{formatBRL(metrics.totalSales)}</span>
+              <span className="text-sm font-black text-foreground tabular-nums">{formatBRL(metrics.totalSales)}</span>
             </div>
           </div>
         </div>
@@ -903,14 +903,14 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
                 <Store className="h-3.5 w-3.5 text-primary" />
               </div>
               <span className="text-xs text-muted-foreground flex-1">Lojas</span>
-              <span className="text-xs font-black text-foreground bg-accent px-2 py-0.5 rounded-md">{stores?.length || 0}</span>
+              <span className="text-xs font-black text-foreground bg-accent px-2 py-0.5 rounded-md tabular-nums">{stores?.length || 0}</span>
             </div>
             <div className="flex items-center gap-2.5">
               <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
                 <Bike className="h-3.5 w-3.5 text-primary" />
               </div>
               <span className="text-xs text-muted-foreground flex-1">Entregadores</span>
-              <span className="text-xs font-black text-foreground bg-accent px-2 py-0.5 rounded-md">{drivers?.length || 0}</span>
+              <span className="text-xs font-black text-foreground bg-accent px-2 py-0.5 rounded-md tabular-nums">{drivers?.length || 0}</span>
             </div>
           </div>
           <button
