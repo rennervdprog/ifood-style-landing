@@ -61,7 +61,7 @@ Deno.serve(async (req) => {
         .from("orders")
         .select("total_price")
         .eq("store_id", p.store_id)
-        .eq("status", "delivered")
+        .in("status", ["entregue", "finalizado"])
         .gte("created_at", since);
       if (oErr) {
         skipped.push({ store: store.name, error: oErr.message });
