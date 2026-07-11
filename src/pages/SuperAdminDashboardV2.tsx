@@ -113,7 +113,7 @@ type AdminTab = "dashboard" | "approvals" | "stores" | "financeiro" | "pagamento
 
 const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; group: string }[] = [
   // Início
-  { key: "dashboard", label: "Dashboard", icon: LayoutDashboard, group: "Início" },
+  { key: "dashboard", label: "Visão Geral", icon: LayoutDashboard, group: "Início" },
   // Operação (Cidades + Entrega agora vivem dentro de "Lojas")
   { key: "stores", label: "Lojas", icon: Store, group: "Operação" },
   { key: "coupons", label: "Cupons", icon: Ticket, group: "Operação" },
@@ -689,7 +689,7 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
 
   // Bottom nav tabs (mobile)
   const bottomTabs: { key: AdminTab; label: string; icon: React.ElementType }[] = [
-    { key: "dashboard", label: "Início", icon: LayoutDashboard },
+    { key: "dashboard", label: "Visão Geral", icon: LayoutDashboard },
     { key: "financeiro", label: "Financeiro", icon: DollarSign },
     { key: "saques", label: "Saques", icon: Wallet },
     { key: "stores", label: "Lojas", icon: Store },
@@ -822,11 +822,11 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <p className="text-xl font-black text-foreground leading-none">{metrics.activeOrders}</p>
+                <p className="text-xl font-black text-foreground leading-none tabular-nums">{metrics.activeOrders}</p>
                 <p className="text-[10px] text-muted-foreground mt-0.5">Pedidos ativos</p>
               </div>
               <div>
-                <p className="text-xl font-black text-foreground leading-none">{metrics.totalOrders}</p>
+                <p className="text-xl font-black text-foreground leading-none tabular-nums">{metrics.totalOrders}</p>
                 <p className="text-[10px] text-muted-foreground mt-0.5">Total pedidos</p>
               </div>
             </div>
@@ -835,19 +835,19 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
                 <TrendingUp className="h-3.5 w-3.5 text-green-500" />
                 <span className="text-[10px] text-muted-foreground">Vendas</span>
               </div>
-              <span className="text-sm font-black text-foreground">{formatBRL(metrics.totalSales)}</span>
+              <span className="text-sm font-black text-foreground tabular-nums">{formatBRL(metrics.totalSales)}</span>
             </div>
           </div>
         </div>
 
         {/* Navigation */}
         <nav className="flex-1 px-3 py-2 overflow-y-auto scrollbar-thin">
-          {["Início", "Operação", "Financeiro", "Pessoas", "Marketing", "Sistema"].map(group => {
+          {["Início", "Operação", "Financeiro", "Pessoas", "Marketing", "Sistema"].map((group, groupIdx) => {
             const items = sidebarItems.filter(i => i.group === group);
             if (items.length === 0) return null;
             return (
-              <div key={group} className="mb-4">
-                <p className="text-[10px] font-extrabold text-muted-foreground/60 uppercase tracking-[0.15em] px-3 mb-1.5">{group}</p>
+              <div key={group} className={`mb-3 pb-2 ${groupIdx > 0 ? "pt-3 border-t border-border/40" : ""}`}>
+                <p className="text-[10px] font-extrabold text-muted-foreground/70 uppercase tracking-[0.15em] px-3 mb-1.5">{group}</p>
                 <div className="space-y-0.5">
                   {items.map(item => {
                     const isActive = activeTab === item.key;
@@ -856,37 +856,35 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
                       <button
                         key={item.key}
                         onClick={() => handleTabChange(item.key)}
-                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-semibold transition-all duration-200 ${
+                        className={`relative w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-semibold transition-all duration-150 ${
                           isActive
-                            ? "bg-primary text-primary-foreground shadow-md shadow-primary/20"
-                            : "text-muted-foreground hover:bg-accent/80 hover:text-foreground"
+                            ? "bg-primary/10 text-primary before:content-[''] before:absolute before:left-0 before:top-1.5 before:bottom-1.5 before:w-1 before:rounded-full before:bg-primary"
+                            : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"
                         }`}
                       >
                         <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors ${
-                          isActive ? "bg-primary-foreground/15" : "bg-muted/50"
+                          isActive ? "bg-primary/15 text-primary" : "bg-muted/40 text-muted-foreground"
                         }`}>
                           <Icon className="h-4 w-4" />
                         </div>
                         <span className="flex-1 text-left">{item.label}</span>
                         {item.key === "saques" && pendingWithdrawals.length > 0 && (
-                          <span className="bg-destructive text-destructive-foreground text-[10px] font-black min-w-[20px] h-5 flex items-center justify-center px-1.5 rounded-full animate-pulse">
+                          <span className="tabular-nums bg-destructive text-destructive-foreground text-[10px] font-black min-w-[20px] h-5 flex items-center justify-center px-1.5 rounded-full">
                             {pendingWithdrawals.length}
                           </span>
                         )}
                         {item.key === "approvals" && pendingApprovalsCount > 0 && (
-                          <span className="bg-destructive text-destructive-foreground text-[10px] font-black min-w-[20px] h-5 flex items-center justify-center px-1.5 rounded-full animate-pulse">
+                          <span className="tabular-nums bg-destructive text-destructive-foreground text-[10px] font-black min-w-[20px] h-5 flex items-center justify-center px-1.5 rounded-full">
                             {pendingApprovalsCount}
                           </span>
                         )}
                         {item.key === "dashboard" && delayedOrders.length > 0 && (
-                          <span className="bg-destructive text-destructive-foreground text-[10px] font-black min-w-[20px] h-5 flex items-center justify-center px-1.5 rounded-full">
+                          <span className="tabular-nums bg-destructive text-destructive-foreground text-[10px] font-black min-w-[20px] h-5 flex items-center justify-center px-1.5 rounded-full">
                             {delayedOrders.length}
                           </span>
                         )}
                         {item.key === "dashboard" && complianceAlerts && complianceAlerts.length > 0 && delayedOrders.length === 0 && (
-                          <span className="bg-amber-500 text-white text-[10px] font-black w-5 h-5 flex items-center justify-center rounded-full animate-pulse">
-                            ⚠
-                          </span>
+                          <span className="text-amber-500 text-sm leading-none">⚠</span>
                         )}
                       </button>
                     );
@@ -905,14 +903,14 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
                 <Store className="h-3.5 w-3.5 text-primary" />
               </div>
               <span className="text-xs text-muted-foreground flex-1">Lojas</span>
-              <span className="text-xs font-black text-foreground bg-accent px-2 py-0.5 rounded-md">{stores?.length || 0}</span>
+              <span className="text-xs font-black text-foreground bg-accent px-2 py-0.5 rounded-md tabular-nums">{stores?.length || 0}</span>
             </div>
             <div className="flex items-center gap-2.5">
               <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
                 <Bike className="h-3.5 w-3.5 text-primary" />
               </div>
               <span className="text-xs text-muted-foreground flex-1">Entregadores</span>
-              <span className="text-xs font-black text-foreground bg-accent px-2 py-0.5 rounded-md">{drivers?.length || 0}</span>
+              <span className="text-xs font-black text-foreground bg-accent px-2 py-0.5 rounded-md tabular-nums">{drivers?.length || 0}</span>
             </div>
           </div>
           <button
