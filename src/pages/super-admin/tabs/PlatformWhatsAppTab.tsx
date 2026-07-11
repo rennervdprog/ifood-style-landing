@@ -29,14 +29,15 @@ export default function PlatformWhatsAppTab() {
   const [pairingLoading, setPairingLoading] = useState(false);
 
   const formatBrPhone = (raw: string) => {
-    let d = raw.replace(/\D/g, "").slice(0, 13);
-    if (!d) return "";
-    if (!d.startsWith("55")) d = "55" + d.slice(0, 11);
-    const cc = d.slice(0, 2);
-    const ddd = d.slice(2, 4);
-    const rest = d.slice(4);
-    let out = "";
-    if (cc) out = `+${cc}`;
+    const digits = raw.replace(/\D/g, "").slice(0, 13);
+    if (!digits || digits === "55") return "";
+
+    const localDigits = (digits.startsWith("55") ? digits.slice(2) : digits).slice(0, 11);
+    if (!localDigits) return "";
+
+    const ddd = localDigits.slice(0, 2);
+    const rest = localDigits.slice(2);
+    let out = "+55";
     if (ddd) out += ` (${ddd}`;
     if (ddd.length === 2) out += ")";
     if (rest) {
