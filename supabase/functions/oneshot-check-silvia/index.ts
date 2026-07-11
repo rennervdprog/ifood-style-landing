@@ -14,7 +14,7 @@ Deno.serve(async (req) => {
   const scope = `((now() AT TIME ZONE 'America/Sao_Paulo')::date - interval '1 day')`;
   const scopeEnd = `(now() AT TIME ZONE 'America/Sao_Paulo')::date`;
   out.orders_yday_all = await q(`
-    SELECT o.id, o.order_number, o.status, o.total, o.commission_amount, o.delivery_fee,
+    SELECT o.id, o.order_number, o.status, o.total_amount, o.commission_amount, o.delivery_fee,
            o.delivery_confirmed_by_client, o.collection_validated, o.created_at, o.updated_at
     FROM public.orders o JOIN public.stores s ON s.id=o.store_id
     WHERE (s.name ILIKE '%cantinho%silv%' OR s.name ILIKE '%silvia%')
@@ -22,7 +22,7 @@ Deno.serve(async (req) => {
     ORDER BY o.created_at;
   `);
   out.plan = await q(`
-    SELECT sp.store_id, sp.plan_type, sp.is_active, sp.commission_pct, sp.monthly_fee,
+    SELECT sp.store_id, sp.plan_type, sp.is_active, sp.commission_rate, sp.monthly_fee,
            sp.pdv_commission_pending, sb.repasse_pendente, sb.comissao_pendente
     FROM public.store_plans sp
     LEFT JOIN public.store_balances sb ON sb.store_id=sp.store_id
@@ -38,10 +38,10 @@ Deno.serve(async (req) => {
       AND (s.name ILIKE '%cantinho%silv%' OR s.name ILIKE '%silvia%')
       AND o.created_at >= ${scope} AND o.created_at < ${scopeEnd}
       AND o.status='saiu_entrega'
-    RETURNING o.id, o.order_number, o.total, o.commission_amount;
+    RETURNING o.id, o.order_number, o.total_amount, o.commission_amount;
   `);
   out.after_orders = await q(`
-    SELECT o.id, o.order_number, o.status, o.total, o.commission_amount
+    SELECT o.id, o.order_number, o.status, o.total_amount, o.commission_amount
     FROM public.orders o JOIN public.stores s ON s.id=o.store_id
     WHERE (s.name ILIKE '%cantinho%silv%' OR s.name ILIKE '%silvia%')
       AND o.created_at >= ${scope} AND o.created_at < ${scopeEnd}
