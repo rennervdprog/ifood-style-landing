@@ -14,6 +14,7 @@ const BodySchema = z
     is_platform: z.boolean().optional(),
     instance_name: z.string().min(3).optional(),
     force_reconnect: z.boolean().optional(),
+    pairing_number: z.string().min(10).max(20).optional(),
   })
   .refine((v) => v.is_platform === true || !!v.store_id, {
     message: "store_id required when is_platform is not true",
@@ -60,6 +61,8 @@ Deno.serve(async (req) => {
     const isPlatform = "is_platform" in parsed.data && parsed.data.is_platform === true;
     const store_id = isPlatform ? null : (parsed.data as any).store_id as string;
     const force_reconnect = (parsed.data as any).force_reconnect ?? false;
+    const pairingNumberRaw = (parsed.data as any).pairing_number as string | undefined;
+    const pairingNumber = pairingNumberRaw ? pairingNumberRaw.replace(/\D/g, "") : null;
 
     const externalAdmin = createClient(
       Deno.env.get("EXTERNAL_SUPABASE_URL") || Deno.env.get("SUPABASE_URL")!,
@@ -147,13 +150,17 @@ Deno.serve(async (req) => {
     // 2) conecta e pega QR — com retry automático via logout se falhar
     const root = baseUrl.replace(/\/$/, "");
     const doConnect = async () => {
-      const r = await fetch(`${root}/instance/connect/${instance}`, { headers: { apikey: apiKey } });
+      const url = pairingNumber
+        ? `${root}/instance/connect/${instance}?number=${pairingNumber}`
+        : `${root}/instance/connect/${instance}`;
+      const r = await fetch(url, { headers: { apikey: apiKey } });
       const data = await r.json().catch(() => ({}));
       return { r, data };
     };
     let { r, data } = await doConnect();
-    let qrPeek: string | null = (data?.base64 || data?.qrcode?.base64 || data?.code || data?.qrcode?.code) ?? null;
-    if (!r.ok || !qrPeek) {
+    let peek: string | null =
+      (data?.pairingCode || data?.base64 || data?.qrcode?.base64 || data?.code || data?.qrcode?.code) ?? null;
+    if (!r.ok || !peek) {
       // instância provavelmente presa em "connecting" antigo — força logout + delete e recria
       await fetch(`${root}/instance/logout/${instance}`, { method: "DELETE", headers: { apikey: apiKey } }).catch(() => {});
       await fetch(`${root}/instance/delete/${instance}`, { method: "DELETE", headers: { apikey: apiKey } }).catch(() => {});
@@ -175,6 +182,22 @@ Deno.serve(async (req) => {
       ({ r, data } = await doConnect());
     }
     if (!r.ok) return json({ error: "Falha ao gerar QR", details: data }, 502);
+
+    // Pairing code path — retorna código de 8 chars, não QR
+    const pairingCode: string | null = data?.pairingCode || null;
+    if (pairingNumber && pairingCode) {
+      if (isPlatform) {
+        await externalAdmin.from("platform_whatsapp_config").update({
+          status: "connecting", updated_at: new Date().toISOString(),
+        }).eq("instance_name", instance);
+      } else {
+        await externalAdmin.from("store_whatsapp_config").upsert({
+          store_id, evolution_api_url: baseUrl, evolution_instance_name: instance,
+          status: "connecting", updated_at: new Date().toISOString(),
+        }, { onConflict: "store_id" });
+      }
+      return json({ success: true, pairing_code: pairingCode, instance });
+    }
 
     // IMPORTANT: only use the base64 IMAGE; `code` is the raw QR text (not an image)
     // and rendering it as <img src="data:image/png;base64,<code>"> produces an invalid
