@@ -13,8 +13,7 @@ Deno.serve(async (req) => {
   const out: Record<string, unknown> = {};
   out.store = await q(`SELECT id,name,plan_type,legacy_pdv FROM public.stores WHERE name ILIKE '%cantinho%silv%' OR name ILIKE '%silvia%';`);
   out.orders_yday = await q(`
-    SELECT column_name FROM information_schema.columns WHERE table_schema='public' AND table_name='orders' ORDER BY ordinal_position
-    FROM public.orders o
+    SELECT o.* FROM public.orders o
     JOIN public.stores s ON s.id=o.store_id
     WHERE (s.name ILIKE '%cantinho%silv%' OR s.name ILIKE '%silvia%')
       AND o.created_at >= ((now() AT TIME ZONE 'America/Sao_Paulo')::date - interval '1 day')
