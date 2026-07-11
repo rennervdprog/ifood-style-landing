@@ -21,7 +21,7 @@ interface DebugLog {
 }
 
 const DirectionIcon = ({ d }: { d: DebugLog["direction"] }) => {
-  if (d === "request") return <ArrowRight className="h-3.5 w-3.5 text-blue-500" />;
+  if (d === "request") return <ArrowRight className="h-3.5 w-3.5 text-primary" />;
   if (d === "response") return <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />;
   return <XCircle className="h-3.5 w-3.5 text-destructive" />;
 };
