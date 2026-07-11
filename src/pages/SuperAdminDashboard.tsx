@@ -2362,14 +2362,24 @@ export const FinanceTab = ({
 export const MetricCard = ({ icon: Icon, label, value, sublabel, sublabel2, highlight, alert }: {
   icon: React.ElementType; label: string; value: string; sublabel: string; sublabel2?: string; highlight?: boolean; alert?: boolean;
 }) => (
-  <div className={`bg-card rounded-2xl p-4 border ${alert ? "border-destructive/50" : "border-border"}`}>
-    <div className="flex items-center gap-2 mb-2">
+  <div
+    className={`relative bg-card rounded-2xl p-4 border border-border flex flex-col gap-2 min-h-[112px] transition-colors ${
+      alert ? "border-l-4 border-l-destructive" : ""
+    } ${highlight ? "ring-1 ring-primary/20" : ""}`}
+  >
+    <div className="flex items-center gap-2">
       <Icon className={`h-4 w-4 ${highlight ? "text-primary" : alert ? "text-destructive" : "text-muted-foreground"}`} />
-      <span className="text-xs text-muted-foreground">{label}</span>
+      <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">{label}</span>
     </div>
-    <p className={`text-xl font-black ${highlight ? "text-primary" : alert ? "text-destructive" : "text-foreground"}`}>{value}</p>
-    <p className="text-xs text-muted-foreground">{sublabel}</p>
-    {sublabel2 && <p className="text-[10px] text-muted-foreground/70 mt-0.5">{sublabel2}</p>}
+    <p
+      className={`text-[26px] leading-none font-black tabular-nums ${
+        highlight ? "text-primary" : alert ? "text-destructive" : "text-foreground"
+      }`}
+    >
+      {value}
+    </p>
+    <p className="text-[11px] text-muted-foreground tabular-nums truncate">{sublabel}</p>
+    {sublabel2 && <p className="text-[10px] text-muted-foreground/70 tabular-nums truncate">{sublabel2}</p>}
   </div>
 );
 

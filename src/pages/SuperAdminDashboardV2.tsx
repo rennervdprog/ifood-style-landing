@@ -132,6 +132,36 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
   { key: "juridico", label: "Jurídico", icon: Scale, group: "Sistema" },
 ];
 
+// Subtítulo padronizado por aba — evita if/else espalhado no header.
+const TAB_SUBTITLE: Record<string, (ctx: {
+  totalOrders: number;
+  pendingWithdrawals: number;
+  pendingApprovals: number;
+  storesCount: number;
+}) => string> = {
+  dashboard: (c) => `${c.totalOrders} pedidos no período`,
+  financeiro: () => "Gestão financeira e repasses",
+  saques: (c) => `${c.pendingWithdrawals} solicitação${c.pendingWithdrawals === 1 ? "" : "ões"} pendente${c.pendingWithdrawals === 1 ? "" : "s"}`,
+  entrega: () => "Configurações de taxa de entrega",
+  approvals: (c) => `${c.pendingApprovals} cadastro${c.pendingApprovals === 1 ? "" : "s"} pendente${c.pendingApprovals === 1 ? "" : "s"}`,
+  stores: (c) => `${c.storesCount} lojas cadastradas`,
+  cidades: () => "Lojas por cidade",
+  pagamentos: () => "Histórico de pagamentos por loja",
+  coupons: () => "Gerenciar cupons de desconto",
+  juridico: () => "Consulta jurídica e dados arquivados",
+  moderadores: () => "Moderadores e sistema de afiliados",
+  socios: () => "Divisão de lucros entre sócios",
+  sync: () => "Sincronização com banco externo",
+  test_finance: () => "Lojas de teste — finanças fictícias isoladas",
+  links: () => "Gerenciar botões da página pública /links",
+  broadcast: () => "Enviar push notifications em massa",
+  coach: () => "Assistente de IA para captar e fechar lojistas",
+  planos: () => "Gerenciar planos e assinaturas das lojas",
+  "app-page": () => "Página pública do app e links",
+  suporte: () => "Painel de suporte ao lojista",
+  auditoria: () => "Auditoria, logs e debug",
+};
+
  import { FinanceTab as FinanceTabFull, MetricCard } from "./SuperAdminDashboard";
 
  const SuperAdminDashboardV2 = () => {
@@ -947,24 +977,12 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
             <div className="hidden lg:block">
               <h2 className="font-bold text-foreground text-lg">{currentTab?.label || "Dashboard"}</h2>
               <p className="text-xs text-muted-foreground">
-                {activeTab === "dashboard" && `${metrics.totalOrders} pedidos no período`}
-                {activeTab === "financeiro" && "Gestão financeira e repasses"}
-                {activeTab === "saques" && `${pendingWithdrawals.length} solicitações pendentes`}
-                {activeTab === "entrega" && "Configurações de taxa de entrega"}
-                {activeTab === "approvals" && `${pendingApprovalsCount} cadastro${pendingApprovalsCount === 1 ? "" : "s"} pendente${pendingApprovalsCount === 1 ? "" : "s"}`}
-                {activeTab === "stores" && `${stores?.length || 0} lojas cadastradas`}
-                {activeTab === "cidades" && "Lojas por cidade"}
-                {activeTab === "pagamentos" && "Histórico de pagamentos por loja"}
-                {activeTab === "coupons" && "Gerenciar cupons de desconto"}
-                {activeTab === "juridico" && "Consulta jurídica e dados arquivados"}
-                {activeTab === "moderadores" && "Moderadores e sistema de afiliados"}
-                {activeTab === "socios" && "Divisão de lucros entre sócios"}
-                {activeTab === "sync" && "Sincronização com banco externo"}
-                {activeTab === "test_finance" && "Lojas de teste — finanças fictícias isoladas"}
-                {activeTab === "links" && "Gerenciar botões da página pública /links"}
-                {activeTab === "broadcast" && "Enviar push notifications em massa"}
-                {activeTab === "coach" && "Assistente de IA para captar e fechar lojistas"}
-                {activeTab === "planos" && "Gerenciar planos e assinaturas das lojas"}
+                {TAB_SUBTITLE[activeTab]?.({
+                  totalOrders: metrics.totalOrders,
+                  pendingWithdrawals: pendingWithdrawals.length,
+                  pendingApprovals: pendingApprovalsCount,
+                  storesCount: stores?.length || 0,
+                }) || " "}
               </p>
             </div>
           </div>
@@ -984,7 +1002,7 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
                 className="relative p-2 rounded-xl bg-destructive/10 hover:bg-destructive/20 transition-colors lg:hidden"
               >
                 <Bell className="h-4 w-4 text-destructive" />
-                <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[8px] font-black w-4 h-4 flex items-center justify-center rounded-full animate-pulse">
+                <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[8px] font-black w-4 h-4 flex items-center justify-center rounded-full tabular-nums">
                   {pendingWithdrawals.length}
                 </span>
               </button>
@@ -996,7 +1014,7 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
                 aria-label="Cadastros pendentes"
               >
                 <Shield className="h-4 w-4 text-amber-600" />
-                <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[8px] font-black w-4 h-4 flex items-center justify-center rounded-full animate-pulse">
+                <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[8px] font-black w-4 h-4 flex items-center justify-center rounded-full tabular-nums">
                   {pendingApprovalsCount}
                 </span>
               </button>
@@ -1007,6 +1025,32 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
         {/* Content area */}
         <div className="flex-1 overflow-y-auto">
           <div className="p-4 lg:p-6 max-w-6xl mx-auto">
+            {/* Banner unificado de pendências */}
+            {(pendingWithdrawals.length > 0 || pendingApprovalsCount > 0) &&
+              activeTab !== "approvals" && activeTab !== "saques" && activeTab !== "financeiro" && (
+                <div className="mb-4 rounded-2xl border border-amber-200 dark:border-amber-900/50 bg-amber-50 dark:bg-amber-950/30 px-4 py-3 flex flex-wrap items-center gap-2">
+                  <Bell className="h-4 w-4 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+                  <span className="text-xs font-bold text-amber-900 dark:text-amber-200 mr-1">Pendências:</span>
+                  {pendingApprovalsCount > 0 && (
+                    <button
+                      onClick={() => handleTabChange("approvals")}
+                      className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/25 transition-colors inline-flex items-center gap-1.5"
+                    >
+                      <Shield className="h-3 w-3" />
+                      {pendingApprovalsCount} cadastro{pendingApprovalsCount === 1 ? "" : "s"}
+                    </button>
+                  )}
+                  {pendingWithdrawals.length > 0 && (
+                    <button
+                      onClick={() => handleTabChange("financeiro")}
+                      className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-destructive/15 text-destructive hover:bg-destructive/25 transition-colors inline-flex items-center gap-1.5"
+                    >
+                      <Wallet className="h-3 w-3" />
+                      {pendingWithdrawals.length} saque{pendingWithdrawals.length === 1 ? "" : "s"}
+                    </button>
+                  )}
+                </div>
+              )}
             {activeTab === "approvals" && <AdminApprovals />}
             {activeTab === "entrega" && <DeliveryFeeConfigPanel />}
             {activeTab === "sync" && <Suspense fallback={<TabFallback />}><SyncExternalTab /></Suspense>}
@@ -1204,10 +1248,17 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
              )}
              {activeTab === "dashboard" && (
                <div className="space-y-4">
-                 <div className="flex gap-2 mb-4">
+                 <div className="inline-flex items-center gap-1 p-1 bg-muted rounded-xl mb-4">
                    {(["today", "yesterday", "week"] as DateFilter[]).map(f => (
-                     <button key={f} onClick={() => setDateFilter(f)}
-                       className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors ${dateFilter === f ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground"}`}>
+                     <button
+                       key={f}
+                       onClick={() => setDateFilter(f)}
+                       className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                         dateFilter === f
+                           ? "bg-background text-foreground shadow-sm"
+                           : "text-muted-foreground hover:text-foreground"
+                       }`}
+                     >
                        {filterLabels[f]}
                      </button>
                    ))}
