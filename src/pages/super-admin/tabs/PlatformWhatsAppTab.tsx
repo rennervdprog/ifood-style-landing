@@ -27,6 +27,23 @@ export default function PlatformWhatsAppTab() {
   const [pairingCode, setPairingCode] = useState<string | null>(null);
   const [pairingPhone, setPairingPhone] = useState("");
   const [pairingLoading, setPairingLoading] = useState(false);
+
+  const formatBrPhone = (raw: string) => {
+    let d = raw.replace(/\D/g, "").slice(0, 13);
+    if (d.length && !d.startsWith("55")) d = "55" + d.slice(0, 11);
+    const cc = d.slice(0, 2);
+    const ddd = d.slice(2, 4);
+    const rest = d.slice(4);
+    let out = "";
+    if (cc) out = `+${cc}`;
+    if (ddd) out += ` (${ddd}`;
+    if (ddd.length === 2) out += ")";
+    if (rest) {
+      if (rest.length <= 5) out += ` ${rest}`;
+      else out += ` ${rest.slice(0, rest.length - 4)}-${rest.slice(-4)}`;
+    }
+    return out;
+  };
   const [supportNumber, setSupportNumber] = useState("");
 
   const { data: cfg } = useQuery({
@@ -167,7 +184,13 @@ export default function PlatformWhatsAppTab() {
           </div>
         </div>
         <div className="flex gap-2">
-          <Input value={pairingPhone} onChange={(e) => setPairingPhone(e.target.value)} placeholder="5522999999999" />
+          <Input
+            value={pairingPhone}
+            onChange={(e) => setPairingPhone(formatBrPhone(e.target.value))}
+            placeholder="+55 (22) 99999-9999"
+            inputMode="tel"
+            maxLength={20}
+          />
           <Button onClick={fetchPairing} disabled={pairingLoading}>
             {pairingLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Gerar código"}
           </Button>
