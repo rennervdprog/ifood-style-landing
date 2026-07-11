@@ -977,24 +977,12 @@ const TAB_SUBTITLE: Record<string, (ctx: {
             <div className="hidden lg:block">
               <h2 className="font-bold text-foreground text-lg">{currentTab?.label || "Dashboard"}</h2>
               <p className="text-xs text-muted-foreground">
-                {activeTab === "dashboard" && `${metrics.totalOrders} pedidos no período`}
-                {activeTab === "financeiro" && "Gestão financeira e repasses"}
-                {activeTab === "saques" && `${pendingWithdrawals.length} solicitações pendentes`}
-                {activeTab === "entrega" && "Configurações de taxa de entrega"}
-                {activeTab === "approvals" && `${pendingApprovalsCount} cadastro${pendingApprovalsCount === 1 ? "" : "s"} pendente${pendingApprovalsCount === 1 ? "" : "s"}`}
-                {activeTab === "stores" && `${stores?.length || 0} lojas cadastradas`}
-                {activeTab === "cidades" && "Lojas por cidade"}
-                {activeTab === "pagamentos" && "Histórico de pagamentos por loja"}
-                {activeTab === "coupons" && "Gerenciar cupons de desconto"}
-                {activeTab === "juridico" && "Consulta jurídica e dados arquivados"}
-                {activeTab === "moderadores" && "Moderadores e sistema de afiliados"}
-                {activeTab === "socios" && "Divisão de lucros entre sócios"}
-                {activeTab === "sync" && "Sincronização com banco externo"}
-                {activeTab === "test_finance" && "Lojas de teste — finanças fictícias isoladas"}
-                {activeTab === "links" && "Gerenciar botões da página pública /links"}
-                {activeTab === "broadcast" && "Enviar push notifications em massa"}
-                {activeTab === "coach" && "Assistente de IA para captar e fechar lojistas"}
-                {activeTab === "planos" && "Gerenciar planos e assinaturas das lojas"}
+                {TAB_SUBTITLE[activeTab]?.({
+                  totalOrders: metrics.totalOrders,
+                  pendingWithdrawals: pendingWithdrawals.length,
+                  pendingApprovals: pendingApprovalsCount,
+                  storesCount: stores?.length || 0,
+                }) || " "}
               </p>
             </div>
           </div>
