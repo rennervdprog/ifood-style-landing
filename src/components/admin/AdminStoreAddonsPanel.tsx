@@ -24,17 +24,6 @@ export function AdminStoreAddonsPanel({ storeId }: { storeId: string }) {
       };
     },
   });
-  const _placeholder = ([] as any);
-  void _placeholder;
-  const _keep = (async () => {
-    const [catRes, subRes, storeRes] = await Promise.all([
-      Promise.resolve({ data: null }),
-      Promise.resolve({ data: null }),
-      Promise.resolve({ data: null }),
-      ]);
-    return { catRes, subRes, storeRes };
-  });
-  void _keep;
   const isLegacyPdv = !!data?.legacy;
 
   const [enabled, setEnabled] = useState(false);
@@ -104,6 +93,12 @@ export function AdminStoreAddonsPanel({ storeId }: { storeId: string }) {
         </div>
         {data?.sub?.cancels_at && (
           <p className="text-[10px] text-amber-500">Agendado p/ cancelar em {new Date(data.sub.cancels_at).toLocaleDateString("pt-BR")}</p>
+        )}
+        {data?.sub?.enabled && !data?.sub?.first_charge_done && effectivePrice > 0 && (
+          <p className="text-[10px] text-sky-500">1ª cobrança será proporcional aos dias restantes do mês.</p>
+        )}
+        {(data?.creditCents ?? 0) > 0 && (
+          <p className="text-[10px] text-emerald-500">Crédito acumulado: <b>R$ {(data!.creditCents / 100).toFixed(2)}</b> (será abatido na próxima fatura)</p>
         )}
         <p className="text-[10px] text-muted-foreground">
           Efetivo: <b>R$ {effectivePrice.toFixed(2)}/mês</b> {effectivePrice === 0 && enabled && "(VIP grátis)"}
