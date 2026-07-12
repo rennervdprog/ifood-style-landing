@@ -159,7 +159,7 @@ export function useStorePlan(storeId: string | undefined | null): StorePlanFeatu
         if (tpl) template = { monthly_fee: Number(tpl.monthly_fee), commission_rate: Number(tpl.commission_rate) };
       }
       return {
-        plan: planResult.data,
+        plan: planResult.data as any,
         city: (storeResult.data as any)?.address_city || "itatinga",
         deliveryMode: (storeResult.data as any)?.delivery_mode || "platform",
         platformFeeSplit: ((storeResult.data as any)?.platform_fee_split || "cliente") as "cliente" | "meio_a_meio" | "lojista",
