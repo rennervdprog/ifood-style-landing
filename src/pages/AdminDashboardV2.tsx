@@ -1022,27 +1022,46 @@ const AdminDashboard = () => {
       setIsOnline(connected);
       if (connected) {
         refreshDashboardOrders().catch(console.error);
-        // Varredura: imprime pendentes das últimas 2h que ainda não foram
-        // impressos nesta sessão (cobre painel aberto depois do pedido chegar
-        // ou reconexão de rede).
-        (async () => {
-          try {
-            const cutoff = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
-            const { data } = await supabase
-              .from("orders")
-              .select("id, order_source, status, created_at")
-              .eq("store_id", store.id)
-              .eq("status", "pendente")
-              .gte("created_at", cutoff);
-            (data || []).forEach((o: any) => {
-              if (o.order_source !== "pdv") autoPrintDeliveryOrder(o.id, o.order_source);
-            });
-          } catch (e) { console.warn("[auto-print] sweep falhou", e); }
-        })();
+        runAutoPrintSweep();
       }
     });
     return () => { cleanupChannel(channel); };
   }, [store, queryClient, playAlert, refreshDashboardOrders, autoPrintDeliveryOrder]);
+
+  // Varredura: busca pendentes das últimas 6h SEM printed_at e imprime.
+  // Server-side dedupe via printed_at garante que roda em vários dispositivos
+  // sem imprimir duplicado.
+  const runAutoPrintSweep = useCallback(async () => {
+    if (!store?.id) return;
+    try {
+      const cutoff = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
+      const { data } = await supabase
+        .from("orders")
+        .select("id, order_source, status, created_at, printed_at" as any)
+        .eq("store_id", store.id)
+        .eq("status", "pendente")
+        .is("printed_at" as any, null)
+        .gte("created_at", cutoff);
+      (data || []).forEach((o: any) => {
+        if (o.order_source !== "pdv") autoPrintDeliveryOrder(o.id, o.order_source);
+      });
+    } catch (e) { console.warn("[auto-print] sweep falhou", e); }
+  }, [store?.id, autoPrintDeliveryOrder]);
+
+  // Gatilhos redundantes: polling a cada 30s + quando a aba volta ao foco.
+  // Cobre casos onde Realtime falhou (aba em background, rede instável).
+  useEffect(() => {
+    if (!store?.id) return;
+    const interval = setInterval(() => { runAutoPrintSweep(); }, 30_000);
+    const onVisible = () => { if (!document.hidden) runAutoPrintSweep(); };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onVisible);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", onVisible);
+    };
+  }, [store?.id, runAutoPrintSweep]);
 
   // ── ACTIONS ──
   const handlePrint = useCallback((order: any) => {
