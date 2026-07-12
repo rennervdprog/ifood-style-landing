@@ -855,7 +855,7 @@ function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride
           {/* Seção 2b: Operacional — Auto-PIN por loja */}
           <div>
             <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2">🔐 Operacional</p>
-            <div className="bg-muted/20 rounded-xl p-3">
+            <div className="bg-muted/20 rounded-xl p-3 space-y-3">
               <label className="flex items-center justify-between cursor-pointer gap-3">
                 <div className="min-w-0">
                   <p className="text-xs font-bold text-foreground">Auto-preencher PIN de entrega</p>
@@ -869,6 +869,24 @@ function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride
                   <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${pinAutofill ? "left-5" : "left-0.5"}`} />
                 </button>
               </label>
+              {displayPlan === "fixed" && (
+                <label className="flex items-center justify-between cursor-pointer gap-3 pt-3 border-t border-border/40">
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                      <Crown className="h-3 w-3 text-amber-500" />
+                      Essencial vitalício R$ 0
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">Bloqueia o upgrade automático para R$ 180 ao atingir R$ 5.000 em vendas. Nenhuma cobrança será gerada.</p>
+                  </div>
+                  <button
+                    onClick={toggleLifetimeFree}
+                    disabled={lifetimeSaving}
+                    className={`relative w-10 h-5 rounded-full transition-colors shrink-0 ${lifetimeFree ? "bg-amber-500" : "bg-muted-foreground/30"} ${lifetimeSaving ? "opacity-50" : ""}`}
+                  >
+                    <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${lifetimeFree ? "left-5" : "left-0.5"}`} />
+                  </button>
+                </label>
+              )}
             </div>
           </div>
 
