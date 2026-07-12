@@ -15,6 +15,45 @@ Deno.serve(async (req) => {
   const instance = "itasuper-platform";
   const url = new URL(req.url);
   const testPhone = url.searchParams.get("send");
+  if (url.searchParams.get("create") === "1") {
+    const webhookToken = Deno.env.get("EVOLUTION_WEBHOOK_TOKEN") || "";
+    const functionBaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const webhookUrl = `${functionBaseUrl}/functions/v1/evolution-webhook?token=${webhookToken}`;
+    const createR = await fetch(`${baseUrl}/instance/create`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", apikey: apiKey },
+      body: JSON.stringify({
+        instanceName: instance,
+        qrcode: true,
+        integration: "WHATSAPP-BAILEYS",
+        webhookUrl,
+        webhookByEvents: false,
+        webhookBase64: false,
+        webhookEvents: ["CONNECTION_UPDATE", "MESSAGES_UPSERT"],
+        rejectCall: true,
+        msgCall: "Olá! No momento não consigo atender chamadas. Por favor envie uma mensagem 😊",
+        groupsIgnore: true,
+        alwaysOnline: false,
+        readMessages: false,
+        readStatus: false,
+        syncFullHistory: false,
+      }),
+    });
+    const createJson = await createR.json().catch(() => ({}));
+    const stateR = await fetch(`${baseUrl}/instance/connectionState/${instance}`, { headers: { apikey: apiKey } });
+    const stateJson = await stateR.json().catch(() => ({}));
+    const qr = createJson?.base64 || createJson?.qrcode?.base64 || createJson?.code || createJson?.qrcode?.code;
+    return new Response(JSON.stringify({
+      create_status: createR.status,
+      create_ok: createR.ok,
+      created_instance: createJson?.instance?.instanceName || createJson?.instanceName || instance,
+      has_qr_or_code: !!qr,
+      create_keys: Object.keys(createJson || {}),
+      state_status: stateR.status,
+      state: stateJson?.instance?.state || stateJson?.state || null,
+      state_body: stateJson,
+    }, null, 2), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+  }
   if (testPhone) {
     const number = "55" + testPhone.replace(/\D/g, "");
     const sendR = await fetch(`${baseUrl}/message/sendText/${instance}`, {

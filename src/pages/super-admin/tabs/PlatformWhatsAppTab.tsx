@@ -50,6 +50,20 @@ export default function PlatformWhatsAppTab() {
   };
   const [supportNumber, setSupportNumber] = useState("");
 
+  const getFunctionErrorMessage = async (error: any) => {
+    const fallback = error?.message || "Falha na função";
+    const context = error?.context;
+    if (!context || typeof context.text !== "function") return fallback;
+    const text = await context.text().catch(() => "");
+    if (!text) return fallback;
+    try {
+      const parsed = JSON.parse(text);
+      return parsed?.error || parsed?.message || text.slice(0, 180);
+    } catch {
+      return text.slice(0, 180);
+    }
+  };
+
   const { data: cfg } = useQuery({
     queryKey: ["platform-wa-cfg"],
     queryFn: async () => {
@@ -102,8 +116,11 @@ export default function PlatformWhatsAppTab() {
       const { data, error } = await supabase.functions.invoke("evolution-qr-code", {
         body: { instance_name: cfg?.instance_name || "itasuper-platform", is_platform: true },
       });
-      if (error) throw error;
-      setQrData((data as any)?.qr_base64 || (data as any)?.base64 || null);
+      if (error) throw new Error(await getFunctionErrorMessage(error));
+      const qr = (data as any)?.qr_base64 || (data as any)?.qr_code || (data as any)?.base64 || null;
+      if (!qr) throw new Error((data as any)?.error || "Evolution não retornou QR Code");
+      setQrData(qr);
+      toast({ title: "QR Code gerado" });
     } catch (e: any) {
       toast({ title: "Erro QR", description: e.message, variant: "destructive" });
     } finally { setQrLoading(false); }
@@ -117,10 +134,11 @@ export default function PlatformWhatsAppTab() {
       const { data, error } = await supabase.functions.invoke("evolution-qr-code", {
         body: { instance_name: cfg?.instance_name || "itasuper-platform", is_platform: true, pairing_number: phone, force_reconnect: true },
       });
-      if (error) throw error;
+      if (error) throw new Error(await getFunctionErrorMessage(error));
       const code = (data as any)?.pairing_code as string | null;
       if (!code) throw new Error("Evolution não retornou pairing code");
       setPairingCode(code);
+      toast({ title: "Código gerado" });
     } catch (e: any) {
       toast({ title: "Erro", description: e.message, variant: "destructive" });
     } finally { setPairingLoading(false); }

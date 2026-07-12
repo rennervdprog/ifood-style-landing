@@ -21,23 +21,73 @@ const BodySchema = z
     path: ["store_id"],
   });
 
+const parseJson = async (response: Response) => {
+  const text = await response.text().catch(() => "");
+  if (!text) return {};
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { raw: text.slice(0, 1_000) };
+  }
+};
+
+const evolutionFetch = (url: string, init: RequestInit = {}) =>
+  fetch(url, { ...init, signal: AbortSignal.timeout(20_000) });
+
+const getQrPayload = (data: any): string | null =>
+  data?.base64 || data?.qrcode?.base64 || data?.qrcode?.base64Image || null;
+
+const getRawQrCode = (data: any): string | null =>
+  data?.code || data?.qrcode?.code || null;
+
+const getPairingCode = (data: any): string | null => {
+  const code = data?.pairingCode || data?.pairing_code || data?.pairing?.code || data?.code;
+  if (typeof code !== "string") return null;
+  const trimmed = code.trim();
+  return trimmed.length > 0 && trimmed.length <= 20 ? trimmed : null;
+};
+
 const setWebhook = async (baseUrl: string, instance: string, apiKey: string, webhookUrl: string) => {
   const payload = {
-    webhook: {
-      enabled: true,
-      url: webhookUrl,
-      webhook_by_events: false,
-      webhook_base64: false,
-      events: ["CONNECTION_UPDATE", "MESSAGES_UPSERT"],
-    },
+    enabled: true,
+    url: webhookUrl,
+    webhook_by_events: false,
+    webhook_base64: false,
+    events: ["CONNECTION_UPDATE", "MESSAGES_UPSERT"],
   };
-  const r = await fetch(`${baseUrl.replace(/\/$/, "")}/webhook/set/${instance}`, {
+  const r = await evolutionFetch(`${baseUrl.replace(/\/$/, "")}/webhook/set/${instance}`, {
     method: "POST",
     headers: { "Content-Type": "application/json", apikey: apiKey },
     body: JSON.stringify(payload),
   });
-  const data = await r.json().catch(() => ({}));
+  const data = await parseJson(r);
   if (!r.ok) console.error("[evolution-qr-code] webhook set failed", { instance, status: r.status, data });
+  return { ok: r.ok, status: r.status, data };
+};
+
+const createInstance = async (root: string, instance: string, apiKey: string, webhookUrl: string, withQr: boolean) => {
+  const payload = {
+    instanceName: instance,
+    qrcode: withQr,
+    integration: "WHATSAPP-BAILEYS",
+    webhookUrl,
+    webhookByEvents: false,
+    webhookBase64: false,
+    webhookEvents: ["CONNECTION_UPDATE", "MESSAGES_UPSERT"],
+    rejectCall: true,
+    msgCall: "Olá! No momento não consigo atender chamadas. Por favor envie uma mensagem 😊",
+    groupsIgnore: true,
+    alwaysOnline: false,
+    readMessages: false,
+    readStatus: false,
+    syncFullHistory: false,
+  };
+  const r = await evolutionFetch(`${root}/instance/create`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", apikey: apiKey },
+    body: JSON.stringify(payload),
+  });
+  const data = await parseJson(r);
   return { ok: r.ok, status: r.status, data };
 };
 
@@ -102,38 +152,38 @@ Deno.serve(async (req) => {
       : `store-${store_id!.slice(0, 8)}`;
     const webhookUrl = `${functionBaseUrl}/functions/v1/evolution-webhook?token=${webhookToken}`;
 
+    const root = baseUrl.replace(/\/$/, "");
+
     if (force_reconnect) {
-      await fetch(`${baseUrl.replace(/\/$/, "")}/instance/logout/${instance}`, {
+      await evolutionFetch(`${root}/instance/logout/${instance}`, {
         method: "DELETE",
         headers: { apikey: apiKey },
       }).catch(() => undefined);
       await new Promise((resolve) => setTimeout(resolve, 1200));
     }
 
-    // 1) cria instância (ignora erro se já existir)
-    await fetch(`${baseUrl.replace(/\/$/, "")}/instance/create`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", apikey: apiKey },
-      body: JSON.stringify({
-        instanceName: instance,
-        qrcode: true,
-        integration: "WHATSAPP-BAILEYS",
-        webhook: {
-          enabled: true,
-          url: webhookUrl,
-          webhook_by_events: false,
-          webhook_base64: false,
-          events: ["CONNECTION_UPDATE", "MESSAGES_UPSERT"],
-        },
-      }),
-    }).catch(() => {});
+    // 1) cria instância usando o contrato atual da Evolution v2.3.x.
+    // Se ela já existir, seguimos para conectar; se não existir e a criação falhar,
+    // retornamos o erro real em vez de deixar a UI presa em loading.
+    let createResult = await createInstance(root, instance, apiKey, webhookUrl, !pairingNumber);
+    const createAlreadyExists =
+      !createResult.ok && /exist|already|duplicate|já existe/i.test(JSON.stringify(createResult.data));
+    if (!createResult.ok && !createAlreadyExists) {
+      const stateCheck = await evolutionFetch(`${root}/instance/connectionState/${instance}`, { headers: { apikey: apiKey } })
+        .then(async (r) => ({ ok: r.ok, status: r.status, data: await parseJson(r) }))
+        .catch((e) => ({ ok: false, status: 0, data: { error: String(e) } }));
+      if (!stateCheck.ok || stateCheck.status === 404) {
+        console.error("[evolution-qr-code] instance create failed", { instance, status: createResult.status, data: createResult.data });
+        return json({ error: "Falha ao criar instância Evolution", status: createResult.status, details: createResult.data }, 502);
+      }
+    }
 
     // 1.0) regrava explicitamente o webhook; em instâncias já existentes,
     // o /instance/create não atualiza o webhook e as mensagens não chegam.
     await setWebhook(baseUrl, instance, apiKey, webhookUrl);
 
     // 1.1) aplica settings anti-ban recomendados (best-effort)
-    await fetch(`${baseUrl.replace(/\/$/, "")}/settings/set/${instance}`, {
+    await evolutionFetch(`${root}/settings/set/${instance}`, {
       method: "POST",
       headers: { "Content-Type": "application/json", apikey: apiKey },
       body: JSON.stringify({
@@ -148,43 +198,39 @@ Deno.serve(async (req) => {
     }).catch(() => {});
 
     // 2) conecta e pega QR — com retry automático via logout se falhar
-    const root = baseUrl.replace(/\/$/, "");
     const doConnect = async () => {
       const url = pairingNumber
         ? `${root}/instance/connect/${instance}?number=${pairingNumber}`
         : `${root}/instance/connect/${instance}`;
-      const r = await fetch(url, { headers: { apikey: apiKey } });
-      const data = await r.json().catch(() => ({}));
+      const r = await evolutionFetch(url, { headers: { apikey: apiKey } });
+      const data = await parseJson(r);
       return { r, data };
     };
-    let { r, data } = await doConnect();
+    let data = createResult.ok && !pairingNumber && (getQrPayload(createResult.data) || getRawQrCode(createResult.data))
+      ? createResult.data
+      : null;
+    let r: Response | null = data ? null : null;
+    if (!data) ({ r, data } = await doConnect());
     let peek: string | null =
-      (data?.pairingCode || data?.base64 || data?.qrcode?.base64 || data?.code || data?.qrcode?.code) ?? null;
-    if (!r.ok || !peek) {
+      (getPairingCode(data) || getQrPayload(data) || getRawQrCode(data)) ?? null;
+    if ((!r || !r.ok || !peek) && !(createResult.ok && peek)) {
       // instância provavelmente presa em "connecting" antigo — força logout + delete e recria
-      await fetch(`${root}/instance/logout/${instance}`, { method: "DELETE", headers: { apikey: apiKey } }).catch(() => {});
-      await fetch(`${root}/instance/delete/${instance}`, { method: "DELETE", headers: { apikey: apiKey } }).catch(() => {});
+      await evolutionFetch(`${root}/instance/logout/${instance}`, { method: "DELETE", headers: { apikey: apiKey } }).catch(() => {});
+      await evolutionFetch(`${root}/instance/delete/${instance}`, { method: "DELETE", headers: { apikey: apiKey } }).catch(() => {});
       await new Promise((res) => setTimeout(res, 1500));
-      await fetch(`${root}/instance/create`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", apikey: apiKey },
-        body: JSON.stringify({
-          instanceName: instance,
-          qrcode: true,
-          integration: "WHATSAPP-BAILEYS",
-          webhook: {
-            enabled: true, url: webhookUrl, webhook_by_events: false, webhook_base64: false,
-            events: ["CONNECTION_UPDATE", "MESSAGES_UPSERT"],
-          },
-        }),
-      }).catch(() => {});
+      createResult = await createInstance(root, instance, apiKey, webhookUrl, !pairingNumber);
+      if (!createResult.ok) {
+        console.error("[evolution-qr-code] recreate failed", { instance, status: createResult.status, data: createResult.data });
+        return json({ error: "Falha ao recriar instância Evolution", status: createResult.status, details: createResult.data }, 502);
+      }
       await setWebhook(baseUrl, instance, apiKey, webhookUrl);
-      ({ r, data } = await doConnect());
+      data = !pairingNumber && (getQrPayload(createResult.data) || getRawQrCode(createResult.data)) ? createResult.data : null;
+      if (!data) ({ r, data } = await doConnect());
     }
-    if (!r.ok) return json({ error: "Falha ao gerar QR", details: data }, 502);
+    if (r && !r.ok) return json({ error: "Falha ao gerar QR", status: r.status, details: data }, 502);
 
     // Pairing code path — retorna código de 8 chars, não QR
-    const pairingCode: string | null = data?.pairingCode || null;
+    const pairingCode: string | null = getPairingCode(data);
     if (pairingNumber && pairingCode) {
       if (isPlatform) {
         await externalAdmin.from("platform_whatsapp_config").update({
@@ -202,8 +248,8 @@ Deno.serve(async (req) => {
     // IMPORTANT: only use the base64 IMAGE; `code` is the raw QR text (not an image)
     // and rendering it as <img src="data:image/png;base64,<code>"> produces an invalid
     // QR that WhatsApp reads but fails to pair.
-    let qr: string | null = data?.base64 || data?.qrcode?.base64 || null;
-    const rawCode: string | null = data?.code || data?.qrcode?.code || null;
+    let qr: string | null = getQrPayload(data);
+    const rawCode: string | null = getRawQrCode(data);
     if (!qr && rawCode) {
       // Render the raw QR text into a PNG via an external QR service as fallback
       try {
@@ -217,6 +263,10 @@ Deno.serve(async (req) => {
           qr = `data:image/png;base64,${btoa(bin)}`;
         }
       } catch (_) {}
+    }
+    if (!qr) {
+      console.error("[evolution-qr-code] no qr returned", { instance, keys: Object.keys(data || {}) });
+      return json({ error: "Evolution não retornou QR Code", details: { keys: Object.keys(data || {}) } }, 502);
     }
 
     // 3) persiste
