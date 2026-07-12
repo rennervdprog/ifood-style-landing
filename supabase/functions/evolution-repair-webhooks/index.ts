@@ -13,13 +13,11 @@ const json = (b: unknown, s = 200) =>
 
 const setWebhook = async (baseUrl: string, instance: string, apiKey: string, webhookUrl: string) => {
   const payload = {
-    webhook: {
-      enabled: true,
-      url: webhookUrl,
-      webhook_by_events: false,
-      webhook_base64: false,
-      events: ["CONNECTION_UPDATE", "MESSAGES_UPSERT"],
-    },
+    enabled: true,
+    url: webhookUrl,
+    webhook_by_events: false,
+    webhook_base64: false,
+    events: ["CONNECTION_UPDATE", "MESSAGES_UPSERT"],
   };
   const r = await fetch(`${baseUrl.replace(/\/$/, "")}/webhook/set/${instance}`, {
     method: "POST",
@@ -88,6 +86,6 @@ Deno.serve(async (req) => {
     return json({ success: true, webhook: "configured", count: results.length, results });
   } catch (e) {
     console.error("evolution-repair-webhooks error:", e);
-    return json({ error: "Internal error" }, 500);
+    return json({ error: "Internal error", message: e.message, stack: e.stack }, 500);
   }
 });

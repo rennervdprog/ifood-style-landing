@@ -107,7 +107,7 @@ Deno.serve(async (req) => {
     const { data: userData } = await supabase.auth.getUser();
     if (!userData?.user) return json({ error: "Unauthorized" }, 401);
 
-    const parsed = BodySchema.safeParse(await req.json());
+    const body = await req.json().catch(() => ({})); const parsed = BodySchema.safeParse(body);
     if (!parsed.success) return json({ error: parsed.error.flatten().fieldErrors }, 400);
     const isPlatform = "is_platform" in parsed.data && parsed.data.is_platform === true;
     const store_id = isPlatform ? null : (parsed.data as any).store_id as string;
@@ -201,7 +201,7 @@ Deno.serve(async (req) => {
     // 2) conecta e pega QR — com retry automático via logout se falhar
     const doConnect = async () => {
       const url = pairingNumber
-        ? `${root}/instance/connect/${instance}?number=${pairingNumber}`
+        ? `${root}/instance/connect/pairingCode/${instance}?number=${pairingNumber}`
         : `${root}/instance/connect/${instance}`;
       const r = await evolutionFetch(url, { headers: { apikey: apiKey } });
       const data = await parseJson(r);
@@ -282,6 +282,6 @@ Deno.serve(async (req) => {
     return json({ success: true, qr_code: qr, qr_base64: qr, raw_qr_code: rawCode, instance });
   } catch (e) {
     console.error("evolution-qr-code error:", e);
-    return json({ error: "Internal error" }, 500);
+    return json({ error: "Internal error", message: e.message, stack: e.stack }, 500);
   }
 });

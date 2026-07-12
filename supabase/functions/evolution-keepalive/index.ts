@@ -70,6 +70,6 @@ Deno.serve(async (req) => {
     return json({ success: true, count: results.length, results });
   } catch (e) {
     console.error("evolution-keepalive error:", e);
-    return json({ error: "Internal error" }, 500);
+    return json({ error: "Internal error", message: e.message, stack: e.stack }, 500);
   }
 });
