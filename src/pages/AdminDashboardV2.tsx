@@ -231,11 +231,11 @@ const AdminDashboard = () => {
     initialTabParam || "dashboard",
   );
   const [isPendingTab, startTabTransition] = useTransition();
-  const [autoPrint, setAutoPrint] = useState(() => {
-    const stored = localStorage.getItem("autoPrint");
-    // Default ON: only false if the user explicitly disabled it
-    return stored === null ? true : stored === "true";
-  });
+  // Fonte única da verdade: store.settings.auto_print_delivery (do banco).
+  // O sino do topo lê/escreve direto desse setting — não há mais override local
+  // por navegador, que era o principal motivo do lojista achar que estava
+  // "ligado" quando na verdade estava desligado neste dispositivo.
+  const [autoPrintSaving, setAutoPrintSaving] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(false);
   
   const [soundMuted, setSoundMuted] = useState(false);
