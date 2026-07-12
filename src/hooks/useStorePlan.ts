@@ -256,6 +256,7 @@ export function useStorePlan(storeId: string | undefined | null): StorePlanFeatu
     defaultMonthlyFee: _tplFee != null ? Number(_tplFee) : _actualFee,
     defaultCommissionRate: _tplRate != null ? Number(_tplRate) : _actualRate,
     isVip: _isVip,
+    isEssencialLifetimeFree: !!(data?.plan as any)?.essencial_lifetime_free,
     vipDiffs: {
       fee: _vipFee,
       commission: _vipCommission,
