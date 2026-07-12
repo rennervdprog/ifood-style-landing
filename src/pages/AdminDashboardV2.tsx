@@ -909,7 +909,7 @@ const AdminDashboard = () => {
       // imprime). Se a UPDATE não afetar linha, outro dispositivo já pegou.
       const { data: claim } = await supabase
         .from("orders")
-        .update({ printed_at: new Date().toISOString() })
+        .update({ printed_at: new Date().toISOString() } as any)
         .eq("id", orderId)
         .is("printed_at", null)
         .select("id")
@@ -938,7 +938,7 @@ const AdminDashboard = () => {
       } catch (e) {
         // Falhou depois do claim — libera o pedido pra outra tentativa/dispositivo.
         console.warn("[auto-print] print falhou, revertendo claim", e);
-        await supabase.from("orders").update({ printed_at: null }).eq("id", orderId);
+        await supabase.from("orders").update({ printed_at: null } as any).eq("id", orderId);
       }
     } catch (e) {
       console.warn("[auto-print] falhou", e);
