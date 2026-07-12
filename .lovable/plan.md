@@ -1,59 +1,80 @@
-# Correção: Realtime WhatsApp + número correto conectado
+# Impressão automática confiável (delivery)
 
-## Problemas confirmados
+## Problema
+Mesmo com "Impressão automática" ligada nas configurações, o lojista precisa clicar manualmente em "Imprimir" na aba Pedidos. Hoje a impressão depende de **3 chaves ao mesmo tempo** e de vários gatilhos frágeis — qualquer falha silenciosa faz o pedido não sair.
 
-1. **Realtime não replica na tela**
-   - As tabelas `store_whatsapp_config` e `platform_whatsapp_config` provavelmente **não estão na publicação `supabase_realtime`** e/ou não têm `REPLICA IDENTITY FULL`.
-   - Sem isso, `postgres_changes` (que `WhatsAppSetup.tsx` já assina) nunca dispara — a UI só atualiza no polling de 3s ou ao reabrir a aba.
-   - Sintoma: aparece "Conectado" só depois de mexer na tela / recarregar.
+Causas prováveis (levantadas no código atual `AdminDashboardV2.tsx` + `thermalPrint.ts`):
 
-2. **Número errado no card "Conectado"**
-   - O webhook (`evolution-webhook`) grava `phone_number = data.wuid || data.number || data.owner`.
-   - No fluxo de **pairing code** o Evolution devolve o número **digitado**, não o real que pareou. E em `connection.update` o `wuid` chega vazio ou desatualizado quando trocamos de chip.
-   - `store-whatsapp-sync-status` já busca o `ownerJid` real via `/instance/fetchInstances` — mas isso só roda quando o usuário abre a aba. O webhook (que dispara em tempo real) não faz esse fetch.
+1. **Toggle local `localStorage.autoPrint`** convive com o setting do banco. Se o lojista já clicou uma vez no sino do topo, ele vira `false` naquele navegador e sobrepõe a configuração — parece "ligado" nas Configurações mas está desligado no dispositivo.
+2. **Dedupe em `sessionStorage`** por aba: se o navegador bloqueou o pop-up ou fechou a janela antes de imprimir, a chave já foi gravada e o pedido nunca mais tenta.
+3. **Pop-up blocker do Chrome/Edge**: `printThermalReceipt` abre `window.open` fora de gesto do usuário → maioria dos navegadores bloqueia silenciosamente. Não há feedback nenhum.
+4. **Realtime pode não disparar** (canal caído, aba em background com throttling), e o "sweep" só roda quando o painel abre/reconecta — pedidos que entram com a aba em segundo plano só imprimem quando a aba volta ao foco.
+5. **PIX confirmado (`aguardando_pagamento → pendente`)**: se o webhook chega antes do INSERT ser processado no cliente, a lógica de UPDATE não acha o pedido em cache e ignora.
+6. **Sem observabilidade pro lojista** — os `console.info("[auto-print]…")` só aparecem no DevTools; ele não tem como saber por que não imprimiu.
 
-## Correções
+## Objetivo
+Impressão sair **sozinha em 100% dos pedidos de delivery** enquanto o painel estiver aberto, com diagnóstico visível quando não sair.
 
-### 1. Habilitar Realtime nas tabelas de config (migration)
+## Escopo (6 correções)
 
-```sql
-ALTER TABLE public.store_whatsapp_config REPLICA IDENTITY FULL;
-ALTER TABLE public.platform_whatsapp_config REPLICA IDENTITY FULL;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.store_whatsapp_config;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.platform_whatsapp_config;
-```
-(idempotente — checa antes se já existe)
+### 1. Unificar a fonte da verdade
+- Remover o override oculto do `localStorage.autoPrint`. O sino do topo passa a **espelhar e alterar** `store.settings.auto_print_delivery` no banco (com optimistic update).
+- Uma única regra: `settings.auto_print_delivery !== false` → imprime.
+- Migrar valores locais existentes (uma leitura na inicialização; se `false`, propõe manter desligado nas configurações e mostra aviso).
 
-### 2. Webhook busca o número real via fetchInstances
+### 2. Dedupe persistente e recuperável
+- Trocar `sessionStorage["printed-order:{id}"]` por coluna `orders.printed_at timestamptz` (server-side) + fallback em `localStorage` (não sessionStorage).
+- Só marca `printed_at` **depois** que `printThermalReceipt` confirmar que a janela abriu (ver #3).
+- Sweep passa a buscar `printed_at IS NULL AND status='pendente' AND created_at > now() - interval '6h'` (era 2h e dependia de flag local).
 
-Em `supabase/functions/evolution-webhook/index.ts`, quando `state === 'open'`:
-- Chamar `${EVOLUTION_API_URL}/instance/fetchInstances?instanceName=<inst>` com `apikey`.
-- Extrair `ownerJid` (fallbacks: `instance.owner`, `owner`) e usar como `phone_number` — não confiar em `data.wuid`.
-- Se o número diferir do salvo (`phoneChanged`) → resetar `connected_at = now()` e limpar `qr_code`.
-- Aplicar a mesma lógica no bloco de `platform_whatsapp_config` (linhas 152-179).
+### 3. Detectar bloqueio de pop-up
+- `printThermalReceipt` já usa `window.open`; capturar o retorno: se `null`, **não** marcar como impresso, mostrar toast persistente "Pop-up bloqueado — clique para imprimir #1234" com botão que reabre no gesto do usuário.
+- Enfileirar pedidos bloqueados num badge visível no header ("3 pedidos aguardando impressão"). Clique único imprime todos em sequência.
+- Instruir uma vez (primeira execução) a liberar pop-ups do domínio via banner no painel.
 
-### 3. Front — cobrir gap de rede/aba oculta
+### 4. Gatilhos redundantes
+Além do Realtime INSERT/UPDATE atuais:
+- **Polling leve** a cada 20s buscando `printed_at IS NULL AND status='pendente'` das últimas 6h (custa 1 select indexado).
+- **Refetch on focus** já existe no react-query — hook explícito para rodar o sweep sempre que a aba volta a ficar visível (`visibilitychange`).
+- **Wake lock** opcional (`navigator.wakeLock`) para manter a aba viva quando o lojista deixa o painel aberto no tablet da cozinha.
 
-Em `src/components/WhatsAppSetup.tsx`:
-- Ao voltar a aba (`visibilitychange = 'visible'`) → chamar `store-whatsapp-sync-status` + `loadConfig`.
-- Ao reconectar o socket do realtime (`SUBSCRIBED` após `CHANNEL_ERROR`) → forçar `loadConfig` uma vez para pegar o que foi perdido offline.
+### 5. Robustez do fluxo PIX → pendente
+- No handler de UPDATE, se o pedido não estiver em cache, buscar direto do banco antes de decidir imprimir (evita o "pulou porque não achei").
+- Garantir que `aguardando_pagamento → pendente` **sempre** cai no mesmo caminho de INSERT (função única `enqueueAutoPrint(orderId)`).
 
-Mesmo tratamento em `PlatformWhatsAppTab.tsx` (super admin) usando `platform-whatsapp-sync-status`.
+### 6. Observabilidade pro lojista
+- Nova aba "Diagnóstico de impressão" dentro de Configurações → Impressão:
+  - Últimos 20 pedidos com status: `impresso`, `bloqueado (popup)`, `desligado`, `erro`.
+  - Botão "Testar impressão agora" que gera um cupom fake.
+  - Indicador ao vivo do canal Realtime (verde/vermelho) e do último polling.
+- Logs `[auto-print]` continuam no console, mas agora com `printed_at` no banco dá pra auditar remotamente.
 
-### 4. UI já pronta
-
-`WhatsAppStatusCard` e `WhatsAppConnection` já mostram `phone_number` e `connected_at` do `config` — assim que o realtime disparar com dados corretos, a tela atualiza sozinha. Nada a mexer em UI.
+## Fora de escopo
+- PDV (usa outro fluxo).
+- Impressão via bridge nativa (USB/Bluetooth direto) — continua sendo `window.open` do navegador.
+- App mobile / notificação push para impressão.
 
 ## Detalhes técnicos
 
-- **Migration** roda via `supabase--migration` (aprovação do usuário).
-- **Edge function** re-deploy: `evolution-webhook`.
-- Fetch dentro do webhook tem timeout de 4s (`AbortController`) para não segurar resposta do Evolution.
-- Bump de versão para `1.14.14` (build 949) em `src/lib/appVersion.ts` + `android/app/build.gradle`.
-- Log breve `[evolution-webhook] ownerJid resolved` para auditoria futura.
+**Migração backend:**
+```sql
+ALTER TABLE public.orders ADD COLUMN printed_at timestamptz;
+CREATE INDEX orders_pending_unprinted_idx
+  ON public.orders (store_id, created_at DESC)
+  WHERE printed_at IS NULL AND status = 'pendente';
+```
+Policy: `UPDATE printed_at` liberado para dono da loja (já coberto pela policy geral de `orders`).
 
-## Como validar
+**Arquivos afetados:**
+- `src/pages/AdminDashboardV2.tsx` — remover override local, unificar `enqueueAutoPrint`, adicionar fila de bloqueados, polling, visibilitychange, wake lock.
+- `src/lib/thermalPrint.ts` — retornar `boolean` (janela abriu?) em vez de `void`.
+- `src/pages/admin/tabs/SettingsTab.tsx` (aba Impressão) — nova seção Diagnóstico + botão de teste.
+- `src/components/admin/PrintQueueBadge.tsx` (novo) — badge no header.
+- `supabase/migrations/*_orders_printed_at.sql` (nova).
 
-1. Desconectar o WhatsApp no celular → card muda para "Desconectado" em < 2s sem recarregar.
-2. Reconectar com **outro** número via pairing code → aparece o número **real** que pareou (não o digitado) e "há 0m".
-3. `admin_logs` recebe eventos `connection_update_ownerjid` com o JID resolvido.
+**Rollout:**
+1. Migração + coluna (sem quebrar nada, default null).
+2. Deploy do front com fonte única de verdade + fila de bloqueados.
+3. Monitorar por 48h via nova aba de diagnóstico; ajustar intervalo do polling se necessário.
+
+Versão prevista após aplicar: **v1.14.18 (build 953)**.
