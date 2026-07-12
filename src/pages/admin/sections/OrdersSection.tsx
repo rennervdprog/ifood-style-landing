@@ -1,20 +1,15 @@
 import { useMemo, useState } from "react";
-import { Search, XCircle, Truck, Loader2, Clock, ChefHat, Package, CheckCircle2, Bell, Calendar, Store as StoreIcon, QrCode, MessageCircle } from "lucide-react";
+import { Bell } from "lucide-react";
 import { AdminOrderCard } from "../components/AdminOrderCard";
-import type { OrderStatus, OrderTabKey } from "../types";
-import { formatBRL } from "@/lib/utils";
+import type { OrderTabKey } from "../types";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import OrdersToolbar, { type PeriodKey, type SourceKey } from "../components/orders/OrdersToolbar";
+import OrdersStatusPills from "../components/orders/OrdersStatusPills";
+import PixDirectAlert from "../components/orders/PixDirectAlert";
+import BatchDispatchBar from "../components/orders/BatchDispatchBar";
+import OrdersEmptyState from "../components/orders/OrdersEmptyState";
+import OrderCardSkeleton from "../components/orders/OrderCardSkeleton";
 
 interface Props {
   store: any;
