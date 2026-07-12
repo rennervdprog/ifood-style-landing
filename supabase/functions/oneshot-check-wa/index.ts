@@ -10,6 +10,6 @@ async function q(sql: string) {
 }
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
-  const cfg = await q(`SELECT instance_name, status, phone_number, connected_at, last_status_check, updated_at FROM public.platform_whatsapp_config;`);
+  const cfg = await q(`SELECT * FROM public.platform_whatsapp_config;`);
   return new Response(JSON.stringify({ cfg }, null, 2), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
 });
