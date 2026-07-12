@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { FunctionsHttpError } from "@supabase/supabase-js";
 import { toast } from "sonner";
-import { Loader2, RefreshCw, Info, ChevronDown, ChevronUp, Shield } from "lucide-react";
+import { Loader2, RefreshCw, Info, ChevronDown, ChevronUp, Shield, Smartphone, QrCode, Copy, Check } from "lucide-react";
 import WhatsAppStatusCard from "./WhatsAppStatusCard";
 
 interface Props {
@@ -44,6 +44,13 @@ export default function WhatsAppConnection({ storeId, storeName, expectedPhone, 
   const [qrLoading, setQrLoading] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
   const [countdown, setCountdown] = useState(60);
+  const [mode, setMode] = useState<"qr" | "pairing">("qr");
+  const [pairingPhone, setPairingPhone] = useState<string>(() => onlyDigits(expectedPhone) || "");
+  const [pairingLoading, setPairingLoading] = useState(false);
+  const [pairingCode, setPairingCode] = useState<string | null>(null);
+  const [pairingExpiresAt, setPairingExpiresAt] = useState<number | null>(null);
+  const [pairingLeft, setPairingLeft] = useState(60);
+  const [copied, setCopied] = useState(false);
   const pollRef = useRef<number | null>(null);
   const countdownRef = useRef<number | null>(null);
 
@@ -67,6 +74,8 @@ export default function WhatsAppConnection({ storeId, storeName, expectedPhone, 
         // Só recarregamos o config local; falha aqui NÃO deve virar erro pro usuário.
         try { await reload(); } catch (e) { console.warn("[evolution-qr-code] reload falhou", e); }
         setCountdown(60);
+        setPairingCode(null);
+        setPairingExpiresAt(null);
         toast.success("QR Code gerado! Escaneie com seu WhatsApp.");
       } else {
         toast.error("Servidor não retornou QR Code. Tente novamente.");
@@ -86,6 +95,54 @@ export default function WhatsAppConnection({ storeId, storeName, expectedPhone, 
     }
     setQrLoading(false);
   };
+
+  const getPairingCode = async () => {
+    const phone = pairingPhone.replace(/\D/g, "");
+    if (phone.length < 10) {
+      toast.error("Número inválido. Formato: 5522999999999 (com DDI + DDD)");
+      return;
+    }
+    setPairingLoading(true);
+    setPairingCode(null);
+    setCopied(false);
+    try {
+      const { data, error } = await supabase.functions.invoke("evolution-qr-code", {
+        body: { store_id: storeId, pairing_number: phone, force_reconnect: true },
+      });
+      if (error) throw error;
+      const code = (data as any)?.pairing_code;
+      if (!code) throw new Error("Servidor não retornou código");
+      setPairingCode(code);
+      setPairingExpiresAt(Date.now() + 60_000);
+      setPairingLeft(60);
+      try { await reload(); } catch {}
+      toast.success("Código gerado! Digite no WhatsApp em até 60s.");
+    } catch (err: any) {
+      let detail = "";
+      try {
+        if (err instanceof FunctionsHttpError) {
+          const body = await err.context.json().catch(() => null);
+          detail = body?.error ? (typeof body.error === "string" ? body.error : JSON.stringify(body.error)) : "";
+        }
+      } catch {}
+      toast.error(detail || err?.message || "Erro ao gerar código");
+    } finally {
+      setPairingLoading(false);
+    }
+  };
+
+  // Countdown do código de pareamento
+  useEffect(() => {
+    if (!pairingExpiresAt) return;
+    const t = window.setInterval(() => {
+      const left = Math.max(0, Math.ceil((pairingExpiresAt - Date.now()) / 1000));
+      setPairingLeft(left);
+      if (left <= 0) window.clearInterval(t);
+    }, 500);
+    return () => window.clearInterval(t);
+  }, [pairingExpiresAt]);
+
+  const pairingExpired = pairingExpiresAt !== null && pairingLeft <= 0;
 
   // Polling automático a cada 3s enquanto está em "connecting"
   useEffect(() => {
@@ -139,6 +196,84 @@ export default function WhatsAppConnection({ storeId, storeName, expectedPhone, 
         onPrimaryAction={() => getQrCode(status !== "disconnected")}
         primaryLoading={qrLoading}
       />
+
+      {/* Seletor de método: QR Code x Código por número */}
+      {status !== "connected" && (
+        <div className="rounded-2xl border border-border p-3 space-y-3">
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              onClick={() => setMode("qr")}
+              className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-colors ${
+                mode === "qr" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/70"
+              }`}
+            >
+              <QrCode className="h-3.5 w-3.5" /> QR Code
+            </button>
+            <button
+              onClick={() => setMode("pairing")}
+              className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-colors ${
+                mode === "pairing" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/70"
+              }`}
+            >
+              <Smartphone className="h-3.5 w-3.5" /> Código por número
+            </button>
+          </div>
+
+          {mode === "pairing" && (
+            <div className="space-y-2.5">
+              <div>
+                <label className="text-[11px] font-bold text-muted-foreground">Número do WhatsApp (com DDI e DDD)</label>
+                <input
+                  type="tel"
+                  inputMode="numeric"
+                  value={pairingPhone}
+                  onChange={(e) => setPairingPhone(e.target.value)}
+                  placeholder="5522999999999"
+                  className="mt-1 w-full px-3 py-2 rounded-xl border border-border bg-background text-sm"
+                />
+                <p className="text-[10px] text-muted-foreground mt-1">Só dígitos. Ex.: Brasil = 55 + DDD + número.</p>
+              </div>
+              <button
+                onClick={getPairingCode}
+                disabled={pairingLoading}
+                className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-bold disabled:opacity-50"
+              >
+                {pairingLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Smartphone className="h-4 w-4" />}
+                {pairingCode ? "Gerar novo código" : "Gerar código"}
+              </button>
+
+              {pairingCode && (
+                <div className={`rounded-xl border p-3 space-y-2.5 ${pairingExpired ? "border-destructive/40 bg-destructive/5" : "border-emerald-500/30 bg-emerald-500/5"}`}>
+                  <div className="flex items-center justify-between">
+                    <p className="text-[11px] font-bold text-foreground">Seu código</p>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${pairingExpired ? "bg-destructive text-destructive-foreground" : "bg-emerald-500/20 text-emerald-700 dark:text-emerald-300"}`}>
+                      {pairingExpired ? "expirado" : `${pairingLeft}s`}
+                    </span>
+                  </div>
+                  <div className="flex justify-center gap-1.5">
+                    {pairingCode.split("").map((ch, i) => (
+                      <div key={i} className="w-8 h-10 flex items-center justify-center rounded-lg bg-background border border-border font-mono text-lg font-bold text-foreground">
+                        {ch}
+                      </div>
+                    ))}
+                  </div>
+                  <button
+                    onClick={() => { navigator.clipboard.writeText(pairingCode); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
+                    className="w-full flex items-center justify-center gap-1.5 text-xs font-bold text-primary hover:underline"
+                  >
+                    {copied ? <><Check className="h-3.5 w-3.5" /> Copiado</> : <><Copy className="h-3.5 w-3.5" /> Copiar código</>}
+                  </button>
+                  <div className="text-[11px] text-muted-foreground space-y-1 pt-1 border-t border-border">
+                    <p><strong className="text-foreground">1.</strong> WhatsApp → 3 pontinhos → <strong>Dispositivos conectados</strong></p>
+                    <p><strong className="text-foreground">2.</strong> Toque em <strong>Conectar um dispositivo</strong></p>
+                    <p><strong className="text-foreground">3.</strong> Toque em <strong>Conectar com número</strong> e digite o código acima</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Saúde do chip — só faz sentido quando está conectado */}
       {status === "connected" && config?.connected_at && (() => {
