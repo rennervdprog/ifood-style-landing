@@ -1,5 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2.49.4";
 import { z } from "npm:zod@3.23.8";
+import QRCode from "npm:qrcode@1.5.4";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -245,24 +246,16 @@ Deno.serve(async (req) => {
       return json({ success: true, pairing_code: pairingCode, instance });
     }
 
-    // IMPORTANT: only use the base64 IMAGE; `code` is the raw QR text (not an image)
-    // and rendering it as <img src="data:image/png;base64,<code>"> produces an invalid
-    // QR that WhatsApp reads but fails to pair.
+    // IMPORTANT: only render an actual image. Evolution may return `code` as raw QR text;
+    // convert it locally instead of depending on an external QR service.
     let qr: string | null = getQrPayload(data);
     const rawCode: string | null = getRawQrCode(data);
     if (!qr && rawCode) {
-      // Render the raw QR text into a PNG via an external QR service as fallback
       try {
-        const qrRes = await fetch(
-          `https://api.qrserver.com/v1/create-qr-code/?size=512x512&data=${encodeURIComponent(rawCode)}`,
-        );
-        if (qrRes.ok) {
-          const buf = new Uint8Array(await qrRes.arrayBuffer());
-          let bin = "";
-          for (let i = 0; i < buf.length; i++) bin += String.fromCharCode(buf[i]);
-          qr = `data:image/png;base64,${btoa(bin)}`;
-        }
-      } catch (_) {}
+        qr = await QRCode.toDataURL(rawCode, { width: 512, margin: 2, errorCorrectionLevel: "M" });
+      } catch (e) {
+        console.error("[evolution-qr-code] local qr render failed", { instance, error: String(e) });
+      }
     }
     if (!qr) {
       console.error("[evolution-qr-code] no qr returned", { instance, keys: Object.keys(data || {}) });
@@ -286,7 +279,7 @@ Deno.serve(async (req) => {
       }, { onConflict: "store_id" });
     }
 
-    return json({ success: true, qr_code: qr, qr_base64: qr, instance });
+    return json({ success: true, qr_code: qr, qr_base64: qr, raw_qr_code: rawCode, instance });
   } catch (e) {
     console.error("evolution-qr-code error:", e);
     return json({ error: "Internal error" }, 500);
