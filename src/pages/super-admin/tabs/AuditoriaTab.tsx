@@ -1,15 +1,34 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, ShieldCheck, Webhook, Activity, RefreshCw } from "lucide-react";
+import { Loader2, ShieldCheck, Webhook, Activity, RefreshCw, ScrollText, CheckCircle2, AlertTriangle, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
-type View = "audit" | "webhooks";
+type View = "audit" | "webhooks" | "compliance";
+
+type ComplianceCheck = { id: string; clause: string; title: string; status: "pass" | "warn" | "fail"; detail: string };
 
 export default function AuditoriaTab() {
   const [view, setView] = useState<View>("audit");
   const [reconciling, setReconciling] = useState(false);
+  const [compliance, setCompliance] = useState<{ summary: any; checks: ComplianceCheck[]; checked_at: string } | null>(null);
+  const [complianceLoading, setComplianceLoading] = useState(false);
+
+  const runCompliance = async () => {
+    setComplianceLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("terms-compliance-check");
+      if (error) throw error;
+      setCompliance(data as any);
+      const s = (data as any).summary;
+      toast.success(`Auditoria concluída: ${s.pass} ok · ${s.warn} avisos · ${s.fail} falhas`);
+    } catch (e: any) {
+      toast.error(e?.message || "Falha ao rodar auditoria de compliance.");
+    } finally {
+      setComplianceLoading(false);
+    }
+  };
 
   const { data: audit, isLoading: auditLoading, refetch: refetchAudit } = useQuery({
     queryKey: ["financial-audit-log"],
@@ -71,15 +90,31 @@ export default function AuditoriaTab() {
           >
             <Webhook className="h-4 w-4 mr-1" /> Webhooks Asaas
           </Button>
+          <Button
+            size="sm"
+            variant={view === "compliance" ? "default" : "outline"}
+            onClick={() => setView("compliance")}
+          >
+            <ScrollText className="h-4 w-4 mr-1" /> Compliance Termos
+          </Button>
         </div>
         <div className="flex gap-2">
-          <Button size="sm" variant="outline" onClick={() => view === "audit" ? refetchAudit() : refetchWh()}>
-            <RefreshCw className="h-4 w-4" />
-          </Button>
-          <Button size="sm" onClick={runReconcile} disabled={reconciling}>
-            {reconciling ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Activity className="h-4 w-4 mr-1" />}
-            Reconciliar agora
-          </Button>
+          {view === "compliance" ? (
+            <Button size="sm" onClick={runCompliance} disabled={complianceLoading}>
+              {complianceLoading ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <ScrollText className="h-4 w-4 mr-1" />}
+              Rodar auditoria
+            </Button>
+          ) : (
+            <>
+              <Button size="sm" variant="outline" onClick={() => view === "audit" ? refetchAudit() : refetchWh()}>
+                <RefreshCw className="h-4 w-4" />
+              </Button>
+              <Button size="sm" onClick={runReconcile} disabled={reconciling}>
+                {reconciling ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Activity className="h-4 w-4 mr-1" />}
+                Reconciliar agora
+              </Button>
+            </>
+          )}
         </div>
       </div>
 
