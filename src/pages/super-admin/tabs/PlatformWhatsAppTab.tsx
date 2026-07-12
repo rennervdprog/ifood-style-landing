@@ -64,6 +64,18 @@ export default function PlatformWhatsAppTab() {
     }
   };
 
+  const invokeWithAuth = async <T = any,>(name: string, body: Record<string, unknown>) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token;
+    if (!token) {
+      throw new Error("Sessão expirada. Saia e entre novamente no Super Admin.");
+    }
+    return supabase.functions.invoke<T>(name, {
+      body,
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  };
+
   const { data: cfg } = useQuery({
     queryKey: ["platform-wa-cfg"],
     queryFn: async () => {
@@ -113,8 +125,8 @@ export default function PlatformWhatsAppTab() {
   const fetchQr = async () => {
     setQrLoading(true); setQrData(null); setPairingCode(null);
     try {
-      const { data, error } = await supabase.functions.invoke("evolution-qr-code", {
-        body: { instance_name: cfg?.instance_name || "itasuper-platform", is_platform: true },
+      const { data, error } = await invokeWithAuth("evolution-qr-code", {
+        instance_name: cfg?.instance_name || "itasuper-platform", is_platform: true,
       });
       if (error) throw new Error(await getFunctionErrorMessage(error));
       const qr = (data as any)?.qr_base64 || (data as any)?.qr_code || (data as any)?.base64 || null;
@@ -131,8 +143,8 @@ export default function PlatformWhatsAppTab() {
     if (phone.length < 10) return toast({ title: "Número inválido", description: "Formato: 5522999999999", variant: "destructive" });
     setPairingLoading(true); setPairingCode(null); setQrData(null);
     try {
-      const { data, error } = await supabase.functions.invoke("evolution-qr-code", {
-        body: { instance_name: cfg?.instance_name || "itasuper-platform", is_platform: true, pairing_number: phone, force_reconnect: true },
+      const { data, error } = await invokeWithAuth("evolution-qr-code", {
+        instance_name: cfg?.instance_name || "itasuper-platform", is_platform: true, pairing_number: phone, force_reconnect: true,
       });
       if (error) throw new Error(await getFunctionErrorMessage(error));
       const code = (data as any)?.pairing_code as string | null;
@@ -147,8 +159,8 @@ export default function PlatformWhatsAppTab() {
   const sendTest = async () => {
     const phone = testPhone.replace(/\D/g, "");
     if (phone.length < 10) return toast({ title: "Número inválido", variant: "destructive" });
-    const { data, error } = await supabase.functions.invoke("platform-whatsapp-send", {
-      body: { phone, message: `Teste ItaSuper — ${new Date().toLocaleString("pt-BR")}`, kind: "test", force: true },
+    const { data, error } = await invokeWithAuth("platform-whatsapp-send", {
+      phone, message: `Teste ItaSuper — ${new Date().toLocaleString("pt-BR")}`, kind: "test", force: true,
     });
     if (error) return toast({ title: "Erro", description: error.message, variant: "destructive" });
     if ((data as any)?.error) return toast({ title: "Falhou", description: (data as any).error, variant: "destructive" });
@@ -200,7 +212,7 @@ export default function PlatformWhatsAppTab() {
           </Button>
           <Button
             onClick={async () => {
-              const { data, error } = await supabase.functions.invoke("platform-whatsapp-sync-status", { body: {} });
+              const { data, error } = await invokeWithAuth("platform-whatsapp-sync-status", {});
               if (error) return toast({ title: "Erro", description: error.message, variant: "destructive" });
               if ((data as any)?.error) return toast({ title: "Erro", description: (data as any).error, variant: "destructive" });
               toast({ title: "Status sincronizado", description: (data as any)?.status });
