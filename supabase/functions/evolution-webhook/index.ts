@@ -81,8 +81,8 @@ const normalize = (text: string) =>
 const isOptOut = (text: string) =>
   /(^|\s)(parar|stop|cancelar|sair|remover|nao receber)(\s|$|!|\.|,)/i.test(normalize(text));
 
-// P2 — "placa de entre aqui": bot fala 1x por número / 24h e some.
-const SILENCE_AFTER_LINK_MS = 24 * 60 * 60_000; // 24h
+// P2 — "placa de entre aqui": bot fala 1x por número / 16h e some.
+const SILENCE_AFTER_LINK_MS = 16 * 60 * 60_000; // 16h
 // P2 — pula 1º contato: só responde se cliente mandar ≥2 msgs em 10min
 // (filtra desengano/erro de digitação sem gastar envio).
 const FIRST_CONTACT_WINDOW_MS = 10 * 60_000;
