@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "@/hooks/use-toast";
-import { MessageCircle, RefreshCw, QrCode, Send, Loader2, History, Settings, Link as LinkIcon, Copy, Check, Smartphone } from "lucide-react";
+import { MessageCircle, RefreshCw, QrCode, Send, Loader2, History, Settings, Link as LinkIcon, Copy, Check, Smartphone, CheckCircle2, Phone, Power } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import PlatformWhatsAppHistory from "./PlatformWhatsAppHistory";
 import PasskeyWarning from "@/components/whatsapp/PasskeyWarning";
@@ -222,6 +222,96 @@ export default function PlatformWhatsAppTab() {
 
         <TabsContent value="conexao" className="space-y-4 mt-4">
 
+      {cfg?.status === "connected" ? (
+        <>
+          <div className="rounded-2xl border-2 border-green-500/30 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/20 p-5 space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-green-500 flex items-center justify-center shadow-lg shadow-green-500/30 shrink-0">
+                <CheckCircle2 className="h-6 w-6 text-white" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-base font-black text-green-800 dark:text-green-300">WhatsApp conectado</div>
+                <div className="text-xs text-green-700/80 dark:text-green-400/80">Pronto para enviar avisos aos lojistas</div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <div className="rounded-xl bg-white/70 dark:bg-background/40 p-3">
+                <div className="text-[10px] uppercase tracking-wide text-muted-foreground font-bold">Número</div>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <Phone className="h-3.5 w-3.5 text-green-600" />
+                  <div className="text-sm font-bold truncate">
+                    {cfg?.phone_number ? formatBrPhone(cfg.phone_number) || cfg.phone_number : "—"}
+                  </div>
+                </div>
+              </div>
+              <div className="rounded-xl bg-white/70 dark:bg-background/40 p-3">
+                <div className="text-[10px] uppercase tracking-wide text-muted-foreground font-bold">Instância</div>
+                <div className="text-sm font-mono font-bold mt-0.5 truncate">{cfg?.instance_name || "itasuper-platform"}</div>
+              </div>
+            </div>
+
+            {cfg?.connected_at && (
+              <div className="text-[11px] text-muted-foreground text-center">
+                Conectado em {new Date(cfg.connected_at).toLocaleString("pt-BR")}
+              </div>
+            )}
+
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1"
+                onClick={async () => {
+                  const { data, error } = await invokeWithAuth("platform-whatsapp-sync-status", {});
+                  if (error) return toast({ title: "Erro", description: error.message, variant: "destructive" });
+                  toast({ title: "Status sincronizado", description: (data as any)?.status });
+                  qc.invalidateQueries({ queryKey: ["platform-wa-cfg"] });
+                }}
+              >
+                <RefreshCw className="h-4 w-4 mr-1" /> Sincronizar
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1 text-destructive hover:text-destructive"
+                onClick={async () => {
+                  if (!confirm("Desconectar o WhatsApp da plataforma? Você precisará parear novamente.")) return;
+                  try {
+                    const { error } = await invokeWithAuth("evolution-qr-code", {
+                      instance_name: cfg?.instance_name || "itasuper-platform",
+                      is_platform: true,
+                      action: "logout",
+                    });
+                    if (error) throw new Error(await getFunctionErrorMessage(error));
+                    toast({ title: "Desconectado" });
+                    qc.invalidateQueries({ queryKey: ["platform-wa-cfg"] });
+                  } catch (e: any) {
+                    toast({ title: "Erro", description: e.message, variant: "destructive" });
+                  }
+                }}
+              >
+                <Power className="h-4 w-4 mr-1" /> Desconectar
+              </Button>
+            </div>
+          </div>
+
+          <div className="rounded-xl border bg-card p-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <Send className="h-4 w-4 text-green-600" />
+              <Label className="text-sm font-bold">Enviar mensagem de teste</Label>
+            </div>
+            <p className="text-xs text-muted-foreground">Envie uma mensagem para confirmar que tudo está funcionando.</p>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Input value={testPhone} onChange={(e) => setTestPhone(e.target.value)} placeholder="5522999999999" inputMode="tel" className="flex-1" />
+              <Button onClick={sendTest} className="bg-green-600 hover:bg-green-700 text-white">
+                <Send className="h-4 w-4 mr-1" /> Enviar teste
+              </Button>
+            </div>
+          </div>
+        </>
+      ) : (
+        <>
       <div className="rounded-xl border bg-card p-4 space-y-3">
         <div className="flex items-center justify-between">
           <div>
@@ -261,9 +351,7 @@ export default function PlatformWhatsAppTab() {
         )}
       </div>
 
-      {cfg?.status !== "connected" && (
-        <PasskeyWarning highlight={failCount >= 2} />
-      )}
+      <PasskeyWarning highlight={failCount >= 2} />
 
       <div className="rounded-xl border bg-card p-4 space-y-3">
         <div className="flex items-center gap-2">
@@ -357,7 +445,8 @@ export default function PlatformWhatsAppTab() {
           </Button>
         </div>
       </div>
-
+        </>
+      )}
         </TabsContent>
 
         <TabsContent value="historico" className="mt-4">
