@@ -9,6 +9,35 @@ const json = (b: unknown, s = 200) =>
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+// Busca o ownerJid real da instância no Evolution (fonte de verdade).
+// Usado no CONNECTION_UPDATE quando state='open' — data.wuid/number vem
+// do que o usuário digitou no pairing, não do chip que realmente pareou.
+async function resolveOwnerJid(instance: string): Promise<string | null> {
+  const baseUrl = Deno.env.get("EVOLUTION_API_URL");
+  const apiKey = Deno.env.get("EVOLUTION_GLOBAL_API_KEY");
+  if (!baseUrl || !apiKey) return null;
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 4000);
+  try {
+    const r = await fetch(
+      `${baseUrl.replace(/\/$/, "")}/instance/fetchInstances?instanceName=${encodeURIComponent(instance)}`,
+      { headers: { apikey: apiKey }, signal: ctrl.signal },
+    );
+    const arr: any = await r.json().catch(() => []);
+    const inst = Array.isArray(arr) ? arr[0] : arr;
+    const owner = inst?.ownerJid || inst?.instance?.owner || inst?.owner || inst?.instance?.ownerJid;
+    if (typeof owner === "string" && owner.includes("@")) {
+      const num = owner.split("@")[0].replace(/\D/g, "");
+      return num || null;
+    }
+  } catch (e) {
+    console.warn("[evolution-webhook] resolveOwnerJid failed", instance, (e as any)?.message);
+  } finally {
+    clearTimeout(timer);
+  }
+  return null;
+}
+
 const isRecentIncomingMessage = (data: any) => {
   const rawTimestamp = data?.messageTimestamp || data?.timestamp || data?.date_time;
   if (!rawTimestamp) return true;
