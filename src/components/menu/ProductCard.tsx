@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { compressImage } from "@/lib/compressImage";
 import {
-  Trash2, Edit2, Package, PackageX, Pause, Play, ArrowRightLeft, Link2, X, Upload, Loader2, MoreVertical, ChevronDown,
+  Trash2, Edit2, Package, PackageX, Pause, Play, ArrowRightLeft, Link2, X, Upload, Loader2, MoreVertical, ChevronDown, Link as LinkIcon, Copy,
 } from "lucide-react";
 import CategoryProductFields from "@/components/CategoryProductFields";
 import {
@@ -128,12 +128,15 @@ interface ProductFormInlineProps {
   onCancel: () => void;
   storeCategory?: string;
   storeId?: string;
+  onChange?: (data: ProductFormData) => void;
 }
 
-export const ProductFormInline = ({ initial, onSave, onCancel, storeCategory, storeId }: ProductFormInlineProps) => {
+export const ProductFormInline = ({ initial, onSave, onCancel, storeCategory, storeId, onChange }: ProductFormInlineProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [form, setForm] = useState<ProductFormData>(initial || EMPTY_FORM);
+
+  useEffect(() => { onChange?.(form); }, [form, onChange]);
   
   // Estado local para o display do preço para evitar saltos e fechamento do teclado
   const [priceDisplay, setPriceDisplay] = useState(
