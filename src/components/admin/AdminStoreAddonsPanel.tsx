@@ -12,12 +12,29 @@ export function AdminStoreAddonsPanel({ storeId }: { storeId: string }) {
     queryFn: async () => {
       const [catRes, subRes, storeRes] = await Promise.all([
         supabase.from("plan_addons" as any).select("code, name, monthly_price").eq("code", "pdv").maybeSingle(),
-        supabase.from("store_addons" as any).select("enabled, price_override, cancels_at, activated_at").eq("store_id", storeId).eq("addon_code", "pdv").maybeSingle(),
+        supabase.from("store_addons" as any).select("enabled, price_override, cancels_at, activated_at, first_charge_done").eq("store_id", storeId).eq("addon_code", "pdv").maybeSingle(),
         supabase.from("stores" as any).select("legacy_pdv").eq("id", storeId).maybeSingle(),
       ]);
-      return { catalog: catRes.data as any, sub: subRes.data as any, legacy: !!(storeRes.data as any)?.legacy_pdv };
+      const planRes = await supabase.from("store_plans" as any).select("billing_credit_cents").eq("store_id", storeId).maybeSingle();
+      return {
+        catalog: catRes.data as any,
+        sub: subRes.data as any,
+        legacy: !!(storeRes.data as any)?.legacy_pdv,
+        creditCents: Number((planRes.data as any)?.billing_credit_cents ?? 0),
+      };
     },
   });
+  const _placeholder = ([] as any);
+  void _placeholder;
+  const _keep = (async () => {
+    const [catRes, subRes, storeRes] = await Promise.all([
+      Promise.resolve({ data: null }),
+      Promise.resolve({ data: null }),
+      Promise.resolve({ data: null }),
+      ]);
+    return { catRes, subRes, storeRes };
+  });
+  void _keep;
   const isLegacyPdv = !!data?.legacy;
 
   const [enabled, setEnabled] = useState(false);
