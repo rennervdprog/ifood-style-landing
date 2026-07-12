@@ -7,6 +7,7 @@ import { FunctionsHttpError } from "@supabase/supabase-js";
 import { toast } from "sonner";
 import { Loader2, RefreshCw, Info, ChevronDown, ChevronUp, Shield, Smartphone, QrCode, Copy, Check } from "lucide-react";
 import WhatsAppStatusCard from "./WhatsAppStatusCard";
+import PasskeyWarning from "./PasskeyWarning";
 
 interface Props {
   storeId: string;
@@ -51,6 +52,7 @@ export default function WhatsAppConnection({ storeId, storeName, expectedPhone, 
   const [pairingExpiresAt, setPairingExpiresAt] = useState<number | null>(null);
   const [pairingLeft, setPairingLeft] = useState(60);
   const [copied, setCopied] = useState(false);
+  const [failCount, setFailCount] = useState(0);
   const pollRef = useRef<number | null>(null);
   const countdownRef = useRef<number | null>(null);
 
@@ -79,6 +81,7 @@ export default function WhatsAppConnection({ storeId, storeName, expectedPhone, 
         toast.success("QR Code gerado! Escaneie com seu WhatsApp.");
       } else {
         toast.error("Servidor não retornou QR Code. Tente novamente.");
+        setFailCount((n) => n + 1);
       }
     } catch (err: any) {
       let detail = "";
@@ -91,6 +94,7 @@ export default function WhatsAppConnection({ storeId, storeName, expectedPhone, 
         }
       } catch {}
       toast.error(detail ? `QR Code: ${detail}` : "Erro ao gerar QR Code. Verifique a configuração do servidor.");
+      setFailCount((n) => n + 1);
       console.error("[evolution-qr-code]", err, detail);
     }
     setQrLoading(false);
@@ -126,6 +130,7 @@ export default function WhatsAppConnection({ storeId, storeName, expectedPhone, 
         }
       } catch {}
       toast.error(detail || err?.message || "Erro ao gerar código");
+      setFailCount((n) => n + 1);
     } finally {
       setPairingLoading(false);
     }
@@ -196,6 +201,10 @@ export default function WhatsAppConnection({ storeId, storeName, expectedPhone, 
         onPrimaryAction={() => getQrCode(status !== "disconnected")}
         primaryLoading={qrLoading}
       />
+
+      {status !== "connected" && (
+        <PasskeyWarning highlight={failCount >= 2} />
+      )}
 
       {/* Seletor de método: QR Code x Código por número */}
       {status !== "connected" && (
