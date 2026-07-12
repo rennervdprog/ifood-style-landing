@@ -84,6 +84,7 @@ Deno.serve(async (req) => {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${EXT_KEY}` },
       body: JSON.stringify({ phone, message, kind: `billing_${kind}`, store_id: tx.store_id }),
+
     });
     const data = await r.json().catch(() => ({}));
     if (r.ok) sent.push({ id: tx.id, store: store?.name, kind, ...data });
