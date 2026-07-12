@@ -64,6 +64,6 @@ Deno.serve(async (req) => {
     return json({ success: true, state, status: newStatus, phone });
   } catch (e) {
     console.error("platform-whatsapp-sync-status error:", e);
-    return json({ error: "Internal error" }, 500);
+    return json({ error: "Internal error", message: e.message, stack: e.stack }, 500);
   }
 });
