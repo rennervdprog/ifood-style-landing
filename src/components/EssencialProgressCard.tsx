@@ -1,7 +1,10 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { formatBRL } from "@/lib/utils";
-import { TrendingUp, PartyPopper } from "lucide-react";
+import { TrendingUp, PartyPopper, Check, X, ShieldCheck } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import { useState } from "react";
 
 const THRESHOLD = 5000;
 const WINDOW_DAYS = 60;
@@ -13,6 +16,8 @@ interface Props {
 }
 
 export default function EssencialProgressCard({ store, storePlan }: Props) {
+  const qc = useQueryClient();
+  const [saving, setSaving] = useState(false);
   // Só para Essencial grátis (fixed + fee=0)
   const eligible =
     storePlan?.planType === "fixed" &&
@@ -34,11 +39,15 @@ export default function EssencialProgressCard({ store, storePlan }: Props) {
       const gmv = (orders || []).reduce((s, o: any) => s + Number(o.total_price || 0), 0);
       const { data: plan } = await supabase
         .from("store_plans")
-        .select("essencial_upgrade_scheduled_at")
+        .select("essencial_upgrade_scheduled_at, essencial_upgrade_response")
         .eq("store_id", store.id)
         .eq("is_active", true)
         .maybeSingle();
-      return { gmv, scheduledAt: (plan as any)?.essencial_upgrade_scheduled_at as string | null };
+      return {
+        gmv,
+        scheduledAt: (plan as any)?.essencial_upgrade_scheduled_at as string | null,
+        response: (plan as any)?.essencial_upgrade_response as string | null,
+      };
     },
     enabled: eligible && !!store?.id,
     staleTime: 60_000,
@@ -50,18 +59,58 @@ export default function EssencialProgressCard({ store, storePlan }: Props) {
   const remaining = Math.max(0, THRESHOLD - data.gmv);
   const scheduled = data.scheduledAt ? new Date(data.scheduledAt) : null;
 
-  if (scheduled && scheduled.getTime() > Date.now()) {
-    const label = scheduled.toLocaleDateString("pt-BR", { day: "2-digit", month: "long" });
+  async function respond(response: "accepted" | "refused") {
+    setSaving(true);
+    const { data: res, error } = await supabase.rpc("respond_essencial_upgrade" as any, { _response: response });
+    setSaving(false);
+    if (error || (res as any)?.error) {
+      toast.error("Não foi possível registrar sua resposta.");
+      return;
+    }
+    toast.success(response === "accepted" ? "Upgrade aceito. Obrigado!" : "Upgrade recusado. Nenhuma cobrança será feita.");
+    qc.invalidateQueries({ queryKey: ["essencial-progress", store?.id] });
+  }
+
+  if (data.response === "refused") {
     return (
-      <div className="rounded-2xl border border-amber-500/40 bg-gradient-to-br from-amber-500/10 to-orange-500/5 p-4 space-y-2">
+      <div className="rounded-2xl border border-border/60 bg-card p-4 space-y-2">
         <div className="flex items-center gap-2">
-          <PartyPopper className="h-5 w-5 text-amber-600" />
-          <div className="font-black text-foreground">Parabéns! Você bateu R$ 5.000</div>
+          <ShieldCheck className="h-5 w-5 text-emerald-600" />
+          <div className="font-black text-foreground">Upgrade recusado</div>
         </div>
         <p className="text-sm text-muted-foreground">
-          A partir de <b className="text-foreground">{label}</b> sua mensalidade ItaSuper será de{" "}
-          <b className="text-foreground">{formatBRL(UPGRADE_FEE)}/mês</b>. Você tem 7 dias para se preparar — nenhuma cobrança será feita antes disso.
+          Você optou por não migrar para o plano Essencial pago. Nenhuma cobrança de mensalidade será gerada.
         </p>
+      </div>
+    );
+  }
+
+  if (scheduled) {
+    const label = scheduled.toLocaleDateString("pt-BR", { day: "2-digit", month: "long" });
+    const accepted = data.response === "accepted";
+    return (
+      <div className="rounded-2xl border border-amber-500/40 bg-gradient-to-br from-amber-500/10 to-orange-500/5 p-4 space-y-3">
+        <div className="flex items-center gap-2">
+          <PartyPopper className="h-5 w-5 text-amber-600" />
+          <div className="font-black text-foreground">Upgrade Essencial disponível</div>
+        </div>
+        <p className="text-sm text-muted-foreground">
+          Você bateu R$ 5.000 em vendas nos últimos {WINDOW_DAYS} dias. Conforme os Termos de Uso, o plano Essencial pago (<b className="text-foreground">{formatBRL(UPGRADE_FEE)}/mês</b>) pode ser ativado a partir de <b className="text-foreground">{label}</b> — mas <b className="text-foreground">apenas com o seu consentimento expresso</b>.
+        </p>
+        {accepted ? (
+          <div className="text-xs font-semibold text-emerald-700 flex items-center gap-1">
+            <Check className="h-4 w-4" /> Upgrade aceito. Cobrança será gerada em {label}.
+          </div>
+        ) : (
+          <div className="flex gap-2 pt-1">
+            <Button size="sm" disabled={saving} onClick={() => respond("accepted")} className="flex-1 gap-1">
+              <Check className="h-4 w-4" /> Aceitar upgrade
+            </Button>
+            <Button size="sm" variant="outline" disabled={saving} onClick={() => respond("refused")} className="flex-1 gap-1">
+              <X className="h-4 w-4" /> Recusar
+            </Button>
+          </div>
+        )}
       </div>
     );
   }
@@ -81,7 +130,7 @@ export default function EssencialProgressCard({ store, storePlan }: Props) {
       </div>
       <p className="text-xs text-muted-foreground">
         {remaining > 0 ? (
-          <>Faltam <b className="text-foreground">{formatBRL(remaining)}</b> para sua mensalidade virar <b className="text-foreground">{formatBRL(UPGRADE_FEE)}/mês</b> (com 7 dias de aviso antes).</>
+          <>Faltam <b className="text-foreground">{formatBRL(remaining)}</b> para o plano Essencial pago (<b className="text-foreground">{formatBRL(UPGRADE_FEE)}/mês</b>) ficar disponível — com 30 dias de aviso e consentimento expresso antes de qualquer cobrança.</>
         ) : (
           <>Você atingiu R$ 5.000 — em breve o upgrade será agendado.</>
         )}

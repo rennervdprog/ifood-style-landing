@@ -10,16 +10,25 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    // 🔁 EXTERNAL DB: ItaSuper mantém perfis/pedidos no Supabase EXTERNO
+    // (qkjhguziuchqsbxzruea). Exclusão de conta deve rodar contra o externo
+    // para cumprir LGPD Art. 18 (direito de eliminação).
+    const supabaseUrl = Deno.env.get("EXTERNAL_SUPABASE_URL") || Deno.env.get("SUPABASE_URL")!;
+    const serviceKey = Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY")
+      || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY")
+      || Deno.env.get("SERVICE_ROLE_KEY")
+      || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const anonKey = Deno.env.get("EXTERNAL_SUPABASE_ANON_KEY")
+      || Deno.env.get("SUPABASE_ANON_KEY")
+      || serviceKey;
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) throw new Error("Não autorizado");
 
-    // Verify user
-    const userClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
-      global: { headers: { Authorization: authHeader } },
-    });
-    const { data: { user }, error: authError } = await userClient.auth.getUser();
+    // Verifica o token contra o mesmo projeto externo. getUser(token) valida
+    // a assinatura JWT independente da chave usada no client.
+    const userClient = createClient(supabaseUrl, anonKey);
+    const token = authHeader.replace(/^Bearer\s+/i, "");
+    const { data: { user }, error: authError } = await userClient.auth.getUser(token);
     if (authError || !user) throw new Error("Não autorizado");
 
     const ReasonSchema = z.object({

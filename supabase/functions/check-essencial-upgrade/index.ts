@@ -53,7 +53,7 @@ Deno.serve(async (req) => {
     const upgraded: any[] = [];
     const skipped: any[] = [];
 
-    const GRACE_DAYS = 7;
+    const GRACE_DAYS = 30;
     const FUNCTIONS_BASE = `${EXTERNAL_URL}/functions/v1`;
     const notify = async (phone: string | undefined, msg: string, kind: string, store_id: string) => {
       if (!phone) return;
@@ -64,7 +64,16 @@ Deno.serve(async (req) => {
       }).catch(() => {});
     };
 
+    const planSel = await sb
+      .from("store_plans")
+      .select("id, essencial_upgrade_response, essencial_upgrade_response_at, essencial_upgrade_notified_at")
+      .in("id", (plans || []).map((x: any) => x.id));
+    const extra: Record<string, any> = {};
+    for (const r of (planSel.data || [])) extra[(r as any).id] = r;
+
     for (const p of plans || []) {
+      const ex = extra[(p as any).id] || {};
+      const response = ex.essencial_upgrade_response as string | null;
       const store = (p as any).stores;
       if (!store || store.status !== "ativo") continue;
       // VIP vitalício: nunca subir mensalidade nem agendar upgrade.
@@ -101,18 +110,23 @@ Deno.serve(async (req) => {
           ? new Date((p as any).essencial_upgrade_scheduled_at).getTime()
           : null;
 
+        if (response === "refused") {
+          skipped.push({ store: store.name, gmv, reason: "user_refused_upgrade" });
+          continue;
+        }
+
         if (!scheduled) {
           // 1ª vez que bateu R$5k: agenda upgrade daqui a GRACE_DAYS
           const scheduleAt = new Date(nowMs + GRACE_DAYS * 86400_000);
           await sb.from("store_plans")
-            .update({ essencial_upgrade_scheduled_at: scheduleAt.toISOString(), updated_at: new Date().toISOString() })
+            .update({ essencial_upgrade_scheduled_at: scheduleAt.toISOString(), essencial_upgrade_notified_at: new Date().toISOString(), updated_at: new Date().toISOString() })
             .eq("id", p.id);
           const label = scheduleAt.toLocaleDateString("pt-BR");
           await notify(ownerPhone,
-            `🎉 Parabéns, ${store.name}!\n\nSua loja passou de R$ 5.000 em vendas nos últimos ${WINDOW_DAYS} dias. A partir de *${label}* sua mensalidade ItaSuper será de R$ ${UPGRADE_FEE},00/mês (plano Essencial pago).\n\nVocê tem 7 dias para se preparar. Nenhuma cobrança será feita antes disso.`,
+            `🎉 Parabéns, ${store.name}!\n\nSua loja passou de R$ 5.000 em vendas nos últimos ${WINDOW_DAYS} dias. Conforme os Termos de Uso, o upgrade para o plano Essencial pago (R$ ${UPGRADE_FEE},00/mês) está agendado para *${label}* (30 dias de aviso prévio).\n\nAcesse o painel para *Aceitar* ou *Recusar* o upgrade. Nenhuma cobrança será feita sem o seu consentimento expresso.`,
             "essencial_upgrade_scheduled", p.store_id);
           skipped.push({ store: store.name, gmv, scheduled_for: scheduleAt.toISOString() });
-        } else if (nowMs >= scheduled) {
+        } else if (nowMs >= scheduled && response === "accepted") {
           // Grace period vencido → aplica upgrade
           const { error: uErr } = await sb
             .from("store_plans")
@@ -130,6 +144,9 @@ Deno.serve(async (req) => {
               `📢 ${store.name}, o período de preparação terminou e sua mensalidade ItaSuper foi atualizada para *R$ ${UPGRADE_FEE},00/mês*.\n\nA próxima cobrança PIX será gerada em breve. Obrigado por crescer com a gente!`,
               "essencial_upgrade_applied", p.store_id);
           }
+        } else if (nowMs >= scheduled) {
+          // Prazo venceu mas sem consentimento expresso → NÃO aplica; mantém pendente.
+          skipped.push({ store: store.name, gmv, reason: "awaiting_user_consent" });
         } else {
           skipped.push({ store: store.name, gmv, scheduled_for: new Date(scheduled).toISOString(), reason: "in_grace_period" });
         }
