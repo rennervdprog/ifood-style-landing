@@ -1,15 +1,20 @@
-import { useState, useRef, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import DailyMenuManager from "@/components/DailyMenuManager";
 import MenuImportCSV from "@/components/MenuImportCSV";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import {
-  Plus, Trash2, Edit2, ChevronDown, ChevronUp, GripVertical,
-  Package, PackageX, Save, X, Loader2, ArrowUp, ArrowDown, Search, Pause, Play, ArrowRightLeft, Layers, CheckSquare, Square,
-} from "lucide-react";
-import { ProductCard, ProductFormInline, ProductFormData } from "@/components/menu/ProductCard";
+import { Plus, Loader2, Package, Sparkles } from "lucide-react";
+import { ProductCard, ProductFormData } from "@/components/menu/ProductCard";
 import { ConfirmDialog } from "@/components/menu/ConfirmDialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Skeleton } from "@/components/ui/skeleton";
+import { SectionNav, SectionScope } from "@/components/menu/SectionNav";
+import { MenuToolbar, ProductFilter } from "@/components/menu/MenuToolbar";
+import { ProductSheet } from "@/components/menu/ProductSheet";
+import { SectionManageSheet } from "@/components/menu/SectionManageSheet";
+import { BulkActionBar } from "@/components/menu/BulkActionBar";
+import { SortableProductGrid } from "@/components/menu/SortableProductGrid";
 
 interface MenuBuilderProps {
   storeId: string;
@@ -24,46 +29,34 @@ type ConfirmState = {
   onConfirm: () => void;
 } | null;
 
-const PRODUCT_FIELDS = "id, store_id, section_id, name, price, description, image_url, is_available, metadata, sold_by_weight, price_per_kg, weight_unit, created_at";
+const PRODUCT_FIELDS =
+  "id, store_id, section_id, name, price, description, image_url, is_available, metadata, sold_by_weight, price_per_kg, weight_unit, sort_order, created_at";
 
 const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
   const queryClient = useQueryClient();
 
-  // ----- UI state -----
-  const [editingSection, setEditingSection] = useState<string | null>(null);
-  const [newSectionName, setNewSectionName] = useState("");
-  const [showAddSection, setShowAddSection] = useState(false);
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
-  const [showProductForm, setShowProductForm] = useState<string | null>(null);
-  const quickAddRef = useRef<HTMLDivElement>(null);
-
-  const handleOpenQuickAdd = () => {
-    setShowProductForm("__none__");
-    // Scroll para o formulário após render
-    setTimeout(() => {
-      quickAddRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-    }, 50);
-  };
-  const [editingProduct, setEditingProduct] = useState<string | null>(null);
-  const [editInitialForm, setEditInitialForm] = useState<ProductFormData | undefined>(undefined);
-  const [showAddonFormFor, setShowAddonFormFor] = useState<string | null>(null);
-  const [addonGroupForm, setAddonGroupForm] = useState({ name: "", min_select: "0", max_select: "1" });
-  const [addonItemForm, setAddonItemForm] = useState({ name: "", price: "0" });
-  const [showAddonItemForm, setShowAddonItemForm] = useState<string | null>(null);
-  const [showLinkAddonFor, setShowLinkAddonFor] = useState<string | null>(null);
-  const [draggedSectionId, setDraggedSectionId] = useState<string | null>(null);
-  const [dragOverSectionId, setDragOverSectionId] = useState<string | null>(null);
-  const [movingProductId, setMovingProductId] = useState<string | null>(null);
-  const [showSectionAddonLink, setShowSectionAddonLink] = useState<string | null>(null);
-  const [linkingSectionAddon, setLinkingSectionAddon] = useState(false);
+  // ---------- UI state ----------
+  const [activeSection, setActiveSection] = useState<SectionScope>("all");
   const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState<ProductFilter>("all");
+  const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkBusy, setBulkBusy] = useState(false);
-  const [confirmState, setConfirmState] = useState<ConfirmState>(null);
-  const [moveBulkOpen, setMoveBulkOpen] = useState(false);
 
-  // ----- Queries -----
-  const { data: sections } = useQuery({
+  const [productSheet, setProductSheet] = useState<
+    | { mode: "create"; sectionId: string | null }
+    | { mode: "edit"; id: string; initial: ProductFormData; sectionName: string | null }
+    | null
+  >(null);
+
+  const [sectionSheetOpen, setSectionSheetOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
+  const [dailyMenuOpen, setDailyMenuOpen] = useState(false);
+  const [moveBulkOpen, setMoveBulkOpen] = useState(false);
+  const [confirmState, setConfirmState] = useState<ConfirmState>(null);
+
+  // ---------- Queries ----------
+  const { data: sections, isLoading: loadingSections } = useQuery({
     queryKey: ["menu-sections", storeId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -72,28 +65,36 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
         .eq("store_id", storeId)
         .order("sort_order");
       if (error) throw error;
-      return data;
+      return data || [];
     },
   });
 
-  const { data: products } = useQuery({
+  const { data: products, isLoading: loadingProducts } = useQuery({
     queryKey: ["store-products", storeId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("products")
         .select(PRODUCT_FIELDS)
         .eq("store_id", storeId)
+        .order("sort_order", { ascending: true, nullsFirst: false })
         .order("name");
       if (error) throw error;
-      // Produtos exclusivos do PDV (vendidos por peso, criados pela tela do PDV)
-      // não devem aparecer no cardápio do lojista.
       return (data || []).filter(
         (p: any) =>
-          !(p?.metadata?.pdv_only) &&
+          !p?.metadata?.pdv_only &&
           !p?.sold_by_weight &&
-          !(p?.metadata?.sold_by_weight) &&
-          !(p?.metadata?.hidden)
+          !p?.metadata?.sold_by_weight &&
+          !p?.metadata?.hidden
       );
+    },
+  });
+
+  // Slug da loja — pra copiar link público do produto
+  const { data: storeSlug } = useQuery({
+    queryKey: ["store-slug", storeId],
+    queryFn: async () => {
+      const { data } = await supabase.from("stores").select("slug").eq("id", storeId).maybeSingle();
+      return (data as any)?.slug || null;
     },
   });
 
@@ -108,7 +109,7 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
         .in("product_id", productIds)
         .order("sort_order");
       if (error) throw error;
-      return data;
+      return data || [];
     },
     enabled: productIds.length > 0,
   });
@@ -140,7 +141,7 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
     enabled: productIds.length > 0,
   });
 
-  // ----- Memoized derivations -----
+  // ---------- Derivations ----------
   const productsBySection = useMemo(() => {
     const map = new Map<string | null, any[]>();
     (products || []).forEach((p: any) => {
@@ -150,6 +151,12 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
     });
     return map;
   }, [products]);
+
+  const productCounts = useMemo(() => {
+    const map = new Map<string | null, number>();
+    productsBySection.forEach((list, key) => map.set(key, list.length));
+    return map;
+  }, [productsBySection]);
 
   const addonGroupsByProduct = useMemo(() => {
     const map = new Map<string, any[]>();
@@ -171,110 +178,163 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
 
   const storeAddonGroupsList = (storeAddonGroups as any[]) || [];
 
-  const filteredProducts = useMemo(() => {
-    if (!search.trim()) return null;
-    const q = search.toLowerCase().trim();
-    return (products || []).filter((p: any) =>
-      p.name?.toLowerCase().includes(q) ||
-      p.description?.toLowerCase().includes(q)
-    );
-  }, [products, search]);
+  const unsectionedProducts = productsBySection.get(null) || [];
 
-  // ----- Granular invalidation helpers -----
-  const invalidateProducts = () => queryClient.invalidateQueries({ queryKey: ["store-products", storeId] });
-  const invalidateSections = () => queryClient.invalidateQueries({ queryKey: ["menu-sections", storeId] });
+  const totalProducts = products?.length || 0;
+  const activeCount = useMemo(
+    () => (products || []).filter((p: any) => p.is_available).length,
+    [products]
+  );
+  const pausedCount = totalProducts - activeCount;
+  const outOfStockCount = useMemo(
+    () => (products || []).filter((p: any) => p.is_available && p.metadata?.out_of_stock).length,
+    [products]
+  );
+  const noImageCount = useMemo(
+    () => (products || []).filter((p: any) => !p.image_url).length,
+    [products]
+  );
+
+  const filterCounts = useMemo(
+    () => ({
+      all: totalProducts,
+      active: activeCount,
+      paused: pausedCount,
+      out_of_stock: outOfStockCount,
+      no_image: noImageCount,
+    }),
+    [totalProducts, activeCount, pausedCount, outOfStockCount, noImageCount]
+  );
+
+  const visibleProducts = useMemo(() => {
+    let list: any[] = [];
+    if (activeSection === "all") list = products || [];
+    else if (activeSection === "none") list = unsectionedProducts;
+    else list = productsBySection.get(activeSection) || [];
+
+    // Filter
+    if (filter === "active") list = list.filter((p: any) => p.is_available);
+    else if (filter === "paused") list = list.filter((p: any) => !p.is_available);
+    else if (filter === "out_of_stock") list = list.filter((p: any) => !!p.metadata?.out_of_stock);
+    else if (filter === "no_image") list = list.filter((p: any) => !p.image_url);
+
+    // Search
+    if (search.trim()) {
+      const q = search.toLowerCase().trim();
+      list = list.filter(
+        (p: any) =>
+          p.name?.toLowerCase().includes(q) || p.description?.toLowerCase().includes(q)
+      );
+    }
+    return list;
+  }, [activeSection, products, unsectionedProducts, productsBySection, filter, search]);
+
+  // ---------- Invalidation helpers ----------
+  const invalidateProducts = () =>
+    queryClient.invalidateQueries({ queryKey: ["store-products", storeId] });
+  const invalidateSections = () =>
+    queryClient.invalidateQueries({ queryKey: ["menu-sections", storeId] });
   const invalidateAddons = () => {
     queryClient.invalidateQueries({ queryKey: ["addon-groups", storeId] });
     queryClient.invalidateQueries({ queryKey: ["store-addon-groups", storeId] });
   };
-  const invalidateLinks = () => queryClient.invalidateQueries({ queryKey: ["product-addon-links", storeId] });
+  const invalidateLinks = () =>
+    queryClient.invalidateQueries({ queryKey: ["product-addon-links", storeId] });
 
-  // ----- Section CRUD -----
-  const addSection = async () => {
-    if (!newSectionName.trim()) return;
+  // ---------- Section CRUD ----------
+  const createSection = async (name: string) => {
     const { error } = await supabase.from("menu_sections").insert({
       store_id: storeId,
-      name: newSectionName.trim(),
+      name,
       sort_order: (sections?.length || 0) + 1,
     } as any);
-    if (error) { toast.error("Erro ao criar seção"); return; }
-    toast.success("Seção criada!");
-    setNewSectionName("");
-    setShowAddSection(false);
-    invalidateSections();
-  };
-
-  const updateSection = async (id: string, name: string) => {
-    if (!name.trim()) { setEditingSection(null); return; }
-    const { error } = await supabase.from("menu_sections").update({ name: name.trim() } as any).eq("id", id);
-    if (error) { toast.error("Erro ao atualizar seção"); return; }
-    toast.success("Seção atualizada!");
-    setEditingSection(null);
-    invalidateSections();
-  };
-
-  const deleteSection = async (id: string) => {
-    const sectionProducts = productsBySection.get(id) || [];
-    if (sectionProducts.length > 0) {
-      await supabase.from("products").update({ section_id: null } as any).in("id", sectionProducts.map((p: any) => p.id));
+    if (error) {
+      toast.error("Erro ao criar seção");
+      return;
     }
-    const { error } = await supabase.from("menu_sections").delete().eq("id", id);
-    if (error) { toast.error("Erro ao excluir seção"); return; }
-    toast.success("Seção excluída! Produtos movidos para 'Sem Seção'.");
+    toast.success("Seção criada!");
     invalidateSections();
-    invalidateProducts();
   };
 
-  // ----- Section addon linking helpers -----
-  const getLinkedGroupIds = useCallback((productId: string) => linksByProduct.get(productId) || [], [linksByProduct]);
+  const renameSection = async (id: string, name: string) => {
+    if (!name.trim()) return;
+    const { error } = await supabase
+      .from("menu_sections")
+      .update({ name: name.trim() } as any)
+      .eq("id", id);
+    if (error) {
+      toast.error("Erro ao renomear");
+      return;
+    }
+    toast.success("Seção atualizada!");
+    invalidateSections();
+  };
 
-  const getSectionLinkedGroupIds = useCallback((sectionId: string) => {
-    const sectionProducts = productsBySection.get(sectionId) || [];
-    if (sectionProducts.length === 0) return [];
-    const allGroupIds = storeAddonGroupsList.map((g) => g.id);
-    return allGroupIds.filter((gId) =>
-      sectionProducts.every((p: any) => getLinkedGroupIds(p.id).includes(gId))
+  const moveSection = async (sectionId: string, delta: -1 | 1) => {
+    if (!sections) return;
+    const items = [...sections];
+    const fromIdx = items.findIndex((s: any) => s.id === sectionId);
+    const toIdx = fromIdx + delta;
+    if (fromIdx === -1 || toIdx < 0 || toIdx >= items.length) return;
+    const [moved] = items.splice(fromIdx, 1);
+    items.splice(toIdx, 0, moved);
+    queryClient.setQueryData(
+      ["menu-sections", storeId],
+      items.map((s: any, i: number) => ({ ...s, sort_order: i }))
     );
-  }, [productsBySection, storeAddonGroupsList, getLinkedGroupIds]);
-
-  const linkGroupToSection = async (sectionId: string, addonGroupId: string) => {
-    setLinkingSectionAddon(true);
-    try {
-      const sectionProducts = productsBySection.get(sectionId) || [];
-      const inserts = sectionProducts
-        .filter((p: any) => !getLinkedGroupIds(p.id).includes(addonGroupId))
-        .map((p: any) => ({ product_id: p.id, addon_group_id: addonGroupId }));
-      if (inserts.length === 0) { toast.info("Grupo já vinculado a todos"); return; }
-      const { error } = await supabase.from("product_addon_groups").insert(inserts as any);
-      if (error) { toast.error("Erro ao vincular grupo à seção"); return; }
-      toast.success(`Grupo vinculado a ${inserts.length} produto${inserts.length > 1 ? "s" : ""}!`);
-      invalidateLinks();
-    } finally { setLinkingSectionAddon(false); }
+    const results = await Promise.all(
+      items.map((s: any, i: number) =>
+        supabase.from("menu_sections").update({ sort_order: i } as any).eq("id", s.id)
+      )
+    );
+    if (results.some((r) => r.error)) {
+      toast.error("Erro ao reordenar");
+      invalidateSections();
+    }
   };
 
-  const unlinkGroupFromSection = async (sectionId: string, addonGroupId: string) => {
-    setLinkingSectionAddon(true);
-    try {
-      const sectionProducts = productsBySection.get(sectionId) || [];
-      const productIdsToUnlink = sectionProducts
-        .filter((p: any) => getLinkedGroupIds(p.id).includes(addonGroupId))
-        .map((p: any) => p.id);
-      if (productIdsToUnlink.length === 0) return;
-      const { error } = await supabase.from("product_addon_groups")
-        .delete()
-        .eq("addon_group_id", addonGroupId)
-        .in("product_id", productIdsToUnlink);
-      if (error) { toast.error("Erro ao desvincular"); return; }
-      toast.success(`Grupo desvinculado de ${productIdsToUnlink.length} produto${productIdsToUnlink.length > 1 ? "s" : ""}!`);
-      invalidateLinks();
-    } finally { setLinkingSectionAddon(false); }
+  const deleteSectionConfirm = (id: string, name: string, count: number) => {
+    setConfirmState({
+      title: `Excluir seção "${name}"?`,
+      description:
+        count > 0
+          ? `Os ${count} produto${count === 1 ? "" : "s"} desta seção ${count === 1 ? "será movido" : "serão movidos"} para "Sem seção".`
+          : "Esta seção está vazia.",
+      destructive: true,
+      confirmText: "Excluir seção",
+      onConfirm: async () => {
+        const list = productsBySection.get(id) || [];
+        if (list.length > 0) {
+          await supabase
+            .from("products")
+            .update({ section_id: null } as any)
+            .in("id", list.map((p: any) => p.id));
+        }
+        const { error } = await supabase.from("menu_sections").delete().eq("id", id);
+        if (error) {
+          toast.error("Erro ao excluir seção");
+          return;
+        }
+        toast.success("Seção excluída!");
+        setConfirmState(null);
+        if (activeSection === id) setActiveSection("all");
+        invalidateSections();
+        invalidateProducts();
+      },
+    });
   };
 
-  // ----- Product CRUD -----
+  // ---------- Product CRUD ----------
   const addProduct = async (sectionId: string | null, formData: ProductFormData) => {
     const finalPrice = parseFloat(formData.price) || 0;
-    if (!formData.name.trim()) { toast.error("Preencha o nome do produto"); return; }
-    if (!formData.price || finalPrice <= 0) { toast.error("Preencha o preço do produto"); return; }
+    if (!formData.name.trim()) {
+      toast.error("Preencha o nome do produto");
+      return;
+    }
+    if (!formData.price || finalPrice <= 0) {
+      toast.error("Preencha o preço do produto");
+      return;
+    }
     const soldByWeight = !!formData.metadata?.sold_by_weight;
     const pricePerKg = Number(formData.metadata?.price_per_kg ?? 0) || null;
     if (soldByWeight && (!pricePerKg || pricePerKg <= 0)) {
@@ -285,17 +345,20 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
       store_id: storeId,
       section_id: sectionId,
       name: formData.name.trim(),
-      price: soldByWeight ? (pricePerKg || finalPrice) : finalPrice,
+      price: soldByWeight ? pricePerKg || finalPrice : finalPrice,
       description: formData.description.trim() || null,
       image_url: formData.image_url.trim() || null,
       metadata: formData.metadata || {},
       sold_by_weight: soldByWeight,
       price_per_kg: soldByWeight ? pricePerKg : null,
-      weight_unit: soldByWeight ? "kg" : "kg",
+      weight_unit: "kg",
     } as any);
-    if (error) { toast.error("Erro ao adicionar produto"); return; }
+    if (error) {
+      toast.error("Erro ao adicionar produto");
+      return;
+    }
     toast.success("Produto adicionado!");
-    setShowProductForm(null);
+    setProductSheet(null);
     invalidateProducts();
   };
 
@@ -307,25 +370,33 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
       toast.error("Defina o preço por kg para vender por peso");
       return;
     }
-    const { error } = await supabase.from("products").update({
-      name: formData.name.trim(),
-      price: soldByWeight ? (pricePerKg || finalPrice) : finalPrice,
-      description: formData.description.trim() || null,
-      image_url: formData.image_url.trim() || null,
-      metadata: formData.metadata || {},
-      sold_by_weight: soldByWeight,
-      price_per_kg: soldByWeight ? pricePerKg : null,
-    } as any).eq("id", id);
-    if (error) { toast.error("Erro ao atualizar"); return; }
+    const { error } = await supabase
+      .from("products")
+      .update({
+        name: formData.name.trim(),
+        price: soldByWeight ? pricePerKg || finalPrice : finalPrice,
+        description: formData.description.trim() || null,
+        image_url: formData.image_url.trim() || null,
+        metadata: formData.metadata || {},
+        sold_by_weight: soldByWeight,
+        price_per_kg: soldByWeight ? pricePerKg : null,
+      } as any)
+      .eq("id", id);
+    if (error) {
+      toast.error("Erro ao atualizar");
+      return;
+    }
     toast.success("Produto atualizado!");
-    setEditingProduct(null);
-    setEditInitialForm(undefined);
+    setProductSheet(null);
     invalidateProducts();
   };
 
   const toggleProductAvailable = async (id: string, available: boolean) => {
     const { error } = await supabase.from("products").update({ is_available: !available }).eq("id", id);
-    if (error) { toast.error("Erro"); return; }
+    if (error) {
+      toast.error("Erro");
+      return;
+    }
     toast.success(available ? "Item pausado" : "Item reativado!");
     invalidateProducts();
   };
@@ -334,12 +405,14 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
     const isOOS = !!currentMeta?.out_of_stock;
     const newMeta = { ...(currentMeta || {}), out_of_stock: !isOOS };
     const { error } = await supabase.from("products").update({ metadata: newMeta } as any).eq("id", id);
-    if (error) { toast.error("Erro"); return; }
+    if (error) {
+      toast.error("Erro");
+      return;
+    }
     toast.success(isOOS ? "Produto disponível novamente!" : "Produto marcado como esgotado");
     invalidateProducts();
   };
 
-  // Fase 3: duplicar produto (cria cópia na mesma seção com sufixo " (cópia)")
   const duplicateProduct = async (product: any) => {
     const { error } = await supabase.from("products").insert({
       store_id: storeId,
@@ -349,10 +422,13 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
       description: product.description ?? null,
       image_url: product.image_url ?? null,
       metadata: (product as any).metadata ?? {},
-      is_available: false, // sai pausado para o lojista revisar antes de publicar
+      is_available: false,
     } as any);
-    if (error) { toast.error("Erro ao duplicar produto"); return; }
-    toast.success("Produto duplicado (pausado para você revisar)");
+    if (error) {
+      toast.error("Erro ao duplicar produto");
+      return;
+    }
+    toast.success("Produto duplicado (pausado para revisar)");
     invalidateProducts();
   };
 
@@ -365,8 +441,6 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
       onConfirm: async () => {
         const { error } = await supabase.from("products").delete().eq("id", id);
         if (error) {
-          // FK: produto já foi usado em pedidos históricos e não pode ser removido.
-          // Fazemos "arquivamento" (soft-delete): some do cardápio e do gerenciador.
           const isFk =
             (error as any)?.code === "23503" ||
             /foreign key|violates/i.test(error.message || "");
@@ -377,8 +451,11 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
               .from("products")
               .update({ is_available: false, metadata: newMeta } as any)
               .eq("id", id);
-            if (updErr) { toast.error(updErr.message || "Erro ao arquivar"); return; }
-            toast.success("Produto arquivado (tinha pedidos antigos e não pôde ser excluído)");
+            if (updErr) {
+              toast.error(updErr.message || "Erro ao arquivar");
+              return;
+            }
+            toast.success("Produto arquivado (tinha pedidos antigos)");
             setConfirmState(null);
             invalidateProducts();
             return;
@@ -394,29 +471,59 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
   };
 
   const moveProduct = async (productId: string, targetSectionId: string | null) => {
-    const { error } = await supabase.from("products").update({ section_id: targetSectionId } as any).eq("id", productId);
-    if (error) { toast.error("Erro ao mover produto"); return; }
+    const { error } = await supabase
+      .from("products")
+      .update({ section_id: targetSectionId } as any)
+      .eq("id", productId);
+    if (error) {
+      toast.error("Erro ao mover produto");
+      return;
+    }
     toast.success("Produto movido!");
-    setMovingProductId(null);
     invalidateProducts();
   };
 
-  // ----- Addon CRUD (per-product) -----
+  // ---------- Addon CRUD (per-product) — mantido igual ----------
   const linkAddonGroup = async (productId: string, addonGroupId: string) => {
-    const { error } = await supabase.from("product_addon_groups").insert({ product_id: productId, addon_group_id: addonGroupId } as any);
+    const { error } = await supabase
+      .from("product_addon_groups")
+      .insert({ product_id: productId, addon_group_id: addonGroupId } as any);
     if (error) {
-      if (error.code === "23505") { toast.info("Grupo já vinculado"); return; }
-      toast.error("Erro ao vincular grupo"); return;
+      if (error.code === "23505") {
+        toast.info("Grupo já vinculado");
+        return;
+      }
+      toast.error("Erro ao vincular grupo");
+      return;
     }
     toast.success("Grupo vinculado!");
     invalidateLinks();
   };
   const unlinkAddonGroup = async (productId: string, addonGroupId: string) => {
-    const { error } = await supabase.from("product_addon_groups").delete().eq("product_id", productId).eq("addon_group_id", addonGroupId);
-    if (error) { toast.error("Erro ao desvincular"); return; }
+    const { error } = await supabase
+      .from("product_addon_groups")
+      .delete()
+      .eq("product_id", productId)
+      .eq("addon_group_id", addonGroupId);
+    if (error) {
+      toast.error("Erro ao desvincular");
+      return;
+    }
     toast.success("Grupo desvinculado!");
     invalidateLinks();
   };
+
+  const [addonGroupForm, setAddonGroupForm] = useState({
+    name: "",
+    min_select: "0",
+    max_select: "1",
+  });
+  const [addonItemForm, setAddonItemForm] = useState({ name: "", price: "0" });
+  const [showAddonFormFor, setShowAddonFormFor] = useState<string | null>(null);
+  const [showAddonItemForm, setShowAddonItemForm] = useState<string | null>(null);
+  const [showLinkAddonFor, setShowLinkAddonFor] = useState<string | null>(null);
+  const [movingProductId, setMovingProductId] = useState<string | null>(null);
+
   const addAddonGroup = async (productId: string) => {
     if (!addonGroupForm.name.trim()) return;
     const { error } = await supabase.from("addon_groups").insert({
@@ -425,7 +532,10 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
       min_select: parseInt(addonGroupForm.min_select),
       max_select: parseInt(addonGroupForm.max_select),
     } as any);
-    if (error) { toast.error("Erro ao criar grupo"); return; }
+    if (error) {
+      toast.error("Erro ao criar grupo");
+      return;
+    }
     toast.success("Grupo criado!");
     setAddonGroupForm({ name: "", min_select: "0", max_select: "1" });
     setShowAddonFormFor(null);
@@ -433,7 +543,10 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
   };
   const deleteAddonGroup = async (id: string) => {
     const { error } = await supabase.from("addon_groups").delete().eq("id", id);
-    if (error) { toast.error("Erro"); return; }
+    if (error) {
+      toast.error("Erro");
+      return;
+    }
     toast.success("Grupo excluído!");
     invalidateAddons();
   };
@@ -444,7 +557,10 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
       name: addonItemForm.name.trim(),
       price: parseFloat(addonItemForm.price) || 0,
     } as any);
-    if (error) { toast.error("Erro"); return; }
+    if (error) {
+      toast.error("Erro");
+      return;
+    }
     toast.success("Adicional criado!");
     setAddonItemForm({ name: "", price: "0" });
     setShowAddonItemForm(null);
@@ -452,61 +568,27 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
   };
   const deleteAddonItem = async (id: string) => {
     const { error } = await supabase.from("addon_items").delete().eq("id", id);
-    if (error) { toast.error("Erro"); return; }
+    if (error) {
+      toast.error("Erro");
+      return;
+    }
     toast.success("Adicional excluído!");
     invalidateAddons();
   };
 
-  // ----- Reorder -----
-  const handleSectionDrop = async (targetId: string) => {
-    if (!draggedSectionId || draggedSectionId === targetId || !sections) return;
-    const items = [...sections];
-    const fromIdx = items.findIndex((s: any) => s.id === draggedSectionId);
-    const toIdx = items.findIndex((s: any) => s.id === targetId);
-    if (fromIdx === -1 || toIdx === -1) return;
-    const [moved] = items.splice(fromIdx, 1);
-    items.splice(toIdx, 0, moved);
-    queryClient.setQueryData(["menu-sections", storeId], items.map((s: any, i: number) => ({ ...s, sort_order: i })));
-    setDraggedSectionId(null);
-    setDragOverSectionId(null);
-    await Promise.all(items.map((s: any, i: number) =>
-      supabase.from("menu_sections").update({ sort_order: i } as any).eq("id", s.id)
-    ));
-  };
-
-  const moveSectionBy = async (sectionId: string, delta: -1 | 1) => {
-    if (!sections) return;
-    const items = [...sections];
-    const fromIdx = items.findIndex((s: any) => s.id === sectionId);
-    const toIdx = fromIdx + delta;
-    if (fromIdx === -1 || toIdx < 0 || toIdx >= items.length) return;
-    const [moved] = items.splice(fromIdx, 1);
-    items.splice(toIdx, 0, moved);
-    queryClient.setQueryData(["menu-sections", storeId], items.map((s: any, i: number) => ({ ...s, sort_order: i })));
-    const results = await Promise.all(items.map((s: any, i: number) =>
-      supabase.from("menu_sections").update({ sort_order: i } as any).eq("id", s.id)
-    ));
-    if (results.some(r => r.error)) { toast.error("Erro ao reordenar"); invalidateSections(); }
-  };
-
-  // ----- Bulk actions -----
+  // ---------- Selection & bulk ----------
   const toggleSelect = useCallback((id: string) => {
     setSelectedIds((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
       return next;
     });
   }, []);
 
-  const clearSelection = () => setSelectedIds(new Set());
-
-  const selectAllInSection = (sectionId: string | null) => {
-    const list = productsBySection.get(sectionId) || [];
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      list.forEach((p: any) => next.add(p.id));
-      return next;
-    });
+  const clearSelection = () => {
+    setSelectedIds(new Set());
+    setSelectionMode(false);
   };
 
   const bulkAvailable = async (available: boolean) => {
@@ -515,7 +597,10 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
     const ids = Array.from(selectedIds);
     const { error } = await supabase.from("products").update({ is_available: available }).in("id", ids);
     setBulkBusy(false);
-    if (error) { toast.error("Erro"); return; }
+    if (error) {
+      toast.error("Erro");
+      return;
+    }
     toast.success(`${ids.length} ${available ? "reativado" : "pausado"}${ids.length > 1 ? "s" : ""}!`);
     clearSelection();
     invalidateProducts();
@@ -525,16 +610,21 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
     if (selectedIds.size === 0) return;
     setBulkBusy(true);
     const ids = Array.from(selectedIds);
-    // metadata é jsonb — precisa preservar campos atuais por produto
     const targets = (products || []).filter((p: any) => ids.includes(p.id));
-    const results = await Promise.all(targets.map((p: any) =>
-      supabase.from("products").update({
-        metadata: { ...((p.metadata as any) || {}), out_of_stock: value },
-      } as any).eq("id", p.id)
-    ));
+    const results = await Promise.all(
+      targets.map((p: any) =>
+        supabase
+          .from("products")
+          .update({ metadata: { ...((p.metadata as any) || {}), out_of_stock: value } } as any)
+          .eq("id", p.id)
+      )
+    );
     setBulkBusy(false);
-    if (results.some(r => r.error)) { toast.error("Erro em alguns itens"); }
-    else toast.success(`${ids.length} ${value ? "marcado" : "desmarcado"}${ids.length > 1 ? "s" : ""} como esgotado!`);
+    if (results.some((r) => r.error)) toast.error("Erro em alguns itens");
+    else
+      toast.success(
+        `${ids.length} ${value ? "marcado" : "desmarcado"}${ids.length > 1 ? "s" : ""} como esgotado!`
+      );
     clearSelection();
     invalidateProducts();
   };
@@ -553,7 +643,10 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
         const { error } = await supabase.from("products").delete().in("id", ids);
         setBulkBusy(false);
         setConfirmState(null);
-        if (error) { toast.error("Erro"); return; }
+        if (error) {
+          toast.error("Erro");
+          return;
+        }
         toast.success(`${ids.length} produto${ids.length > 1 ? "s" : ""} excluído${ids.length > 1 ? "s" : ""}!`);
         clearSelection();
         invalidateProducts();
@@ -565,48 +658,181 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
     if (selectedIds.size === 0) return;
     setBulkBusy(true);
     const ids = Array.from(selectedIds);
-    const { error } = await supabase.from("products").update({ section_id: sectionId } as any).in("id", ids);
+    const { error } = await supabase
+      .from("products")
+      .update({ section_id: sectionId } as any)
+      .in("id", ids);
     setBulkBusy(false);
     setMoveBulkOpen(false);
-    if (error) { toast.error("Erro ao mover"); return; }
+    if (error) {
+      toast.error("Erro ao mover");
+      return;
+    }
     toast.success(`${ids.length} produto${ids.length > 1 ? "s" : ""} movido${ids.length > 1 ? "s" : ""}!`);
     clearSelection();
     invalidateProducts();
   };
 
-  // ----- Section toggle helpers -----
-  const isSectionExpanded = (id: string) => expandedSections.has(id);
-  const toggleSection = (id: string) => setExpandedSections((prev) => {
-    const next = new Set(prev);
-    if (next.has(id)) next.delete(id); else next.add(id);
-    return next;
-  });
-  const expandAll = () => setExpandedSections(new Set((sections || []).map((s: any) => s.id)));
-  const collapseAll = () => setExpandedSections(new Set());
+  const bulkDuplicate = async () => {
+    if (selectedIds.size === 0) return;
+    setBulkBusy(true);
+    const ids = Array.from(selectedIds);
+    const targets = (products || []).filter((p: any) => ids.includes(p.id));
+    const rows = targets.map((p: any) => ({
+      store_id: storeId,
+      section_id: p.section_id ?? null,
+      name: `${p.name} (cópia)`,
+      price: Number(p.price) || 0,
+      description: p.description ?? null,
+      image_url: p.image_url ?? null,
+      metadata: p.metadata ?? {},
+      is_available: false,
+    }));
+    const { error } = await supabase.from("products").insert(rows as any);
+    setBulkBusy(false);
+    if (error) {
+      toast.error("Erro ao duplicar");
+      return;
+    }
+    toast.success(`${rows.length} produto${rows.length > 1 ? "s duplicados" : " duplicado"} (pausado)`);
+    clearSelection();
+    invalidateProducts();
+  };
 
-  // ----- Stats -----
-  const totalProducts = products?.length || 0;
-  const activeCount = useMemo(() => (products || []).filter((p: any) => p.is_available).length, [products]);
-  const pausedCount = totalProducts - activeCount;
-  const outOfStockCount = useMemo(
-    () => (products || []).filter((p: any) => p.is_available && p.metadata?.out_of_stock).length,
-    [products]
+  // ---------- Copiar link público ----------
+  const copyProductLink = async (product: any) => {
+    const slug = storeSlug || storeId;
+    const base = typeof window !== "undefined" ? window.location.origin : "https://itasuper.com.br";
+    const url = `${base}/${slug}?p=${product.id}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success("Link copiado!");
+    } catch {
+      toast.error("Não foi possível copiar");
+    }
+  };
+
+  // ---------- Reorder (drag & drop) ----------
+  const reorderProducts = async (orderedIds: string[]) => {
+    // Optimistic: reordena localmente já
+    const previous = queryClient.getQueryData<any[]>(["store-products", storeId]);
+    if (previous) {
+      const byId = new Map(previous.map((p: any) => [p.id, p]));
+      const reordered = orderedIds.map((id, i) => ({ ...byId.get(id), sort_order: i }));
+      // Mantém itens fora da lista visível
+      const kept = previous.filter((p: any) => !orderedIds.includes(p.id));
+      queryClient.setQueryData(["store-products", storeId], [...reordered, ...kept]);
+    }
+    const results = await Promise.all(
+      orderedIds.map((id, i) =>
+        supabase.from("products").update({ sort_order: i } as any).eq("id", id)
+      )
+    );
+    if (results.some((r) => r.error)) {
+      toast.error("Erro ao reordenar");
+      invalidateProducts();
+    }
+  };
+
+  // ---------- Atalhos de teclado (desktop) ----------
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      const inField =
+        !!t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || (t as any).isContentEditable);
+      if (e.key === "Escape") {
+        if (productSheet) setProductSheet(null);
+        else if (sectionSheetOpen) setSectionSheetOpen(false);
+        else if (importOpen) setImportOpen(false);
+        else if (dailyMenuOpen) setDailyMenuOpen(false);
+        else if (moveBulkOpen) setMoveBulkOpen(false);
+        else if (selectedIds.size > 0) clearSelection();
+        return;
+      }
+      if (inField) return;
+      if (e.key === "/") {
+        const input = document.querySelector<HTMLInputElement>('input[placeholder="Buscar produto..."]');
+        if (input) { e.preventDefault(); input.focus(); }
+      } else if (e.key.toLowerCase() === "n") {
+        e.preventDefault();
+        openCreate();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [productSheet, sectionSheetOpen, importOpen, dailyMenuOpen, moveBulkOpen, selectedIds, activeSection]);
+
+  // ---------- Section nav items ----------
+  const sectionNavItems = useMemo(
+    () =>
+      (sections || []).map((s: any) => ({
+        id: s.id as string,
+        name: s.name,
+        count: productCounts.get(s.id) || 0,
+      })),
+    [sections, productCounts]
   );
 
-  const unsectionedProducts = productsBySection.get(null) || [];
+  const activeSectionName =
+    activeSection === "all"
+      ? "Todos os produtos"
+      : activeSection === "none"
+        ? "Sem seção"
+        : (sections || []).find((s: any) => s.id === activeSection)?.name || "";
 
-  // ----- Render helpers -----
+  // ---------- Handlers helpers ----------
+  const openCreate = () => {
+    const sectionId =
+      activeSection === "all" || activeSection === "none" ? null : (activeSection as string);
+    setProductSheet({ mode: "create", sectionId });
+  };
+
+  const openEdit = (product: any) => {
+    const sectionName =
+      product.section_id ? (sections || []).find((s: any) => s.id === product.section_id)?.name || null : null;
+    setProductSheet({
+      mode: "edit",
+      id: product.id,
+      sectionName,
+      initial: {
+        name: product.name,
+        price: Number(product.price).toFixed(2),
+        description: product.description || "",
+        image_url: product.image_url || "",
+        metadata: {
+          ...((product as any).metadata || {}),
+          ...((product as any).sold_by_weight
+            ? {
+                sold_by_weight: true,
+                price_per_kg: Number(
+                  (product as any).price_per_kg ?? (product as any).metadata?.price_per_kg ?? 0
+                ),
+                weight_unit: (product as any).weight_unit || "kg",
+              }
+            : {}),
+        },
+      },
+    });
+  };
+
   const renderProductCard = (product: any) => (
     <ProductCard
       key={product.id}
       product={product}
       sections={sections || []}
       addonGroups={addonGroupsByProduct.get(product.id) || []}
-      linkedGroups={(linksByProduct.get(product.id) || []).map((gid) => storeAddonGroupsList.find((g) => g.id === gid)).filter(Boolean) as any[]}
+      linkedGroups={
+        (linksByProduct.get(product.id) || [])
+          .map((gid) => storeAddonGroupsList.find((g) => g.id === gid))
+          .filter(Boolean) as any[]
+      }
       storeAddonGroups={storeAddonGroupsList}
       linkedGroupIds={linksByProduct.get(product.id) || []}
       selected={selectedIds.has(product.id)}
-      onToggleSelect={() => toggleSelect(product.id)}
+      onToggleSelect={() => {
+        if (!selectionMode) setSelectionMode(true);
+        toggleSelect(product.id);
+      }}
       onLinkGroup={(gId) => linkAddonGroup(product.id, gId)}
       onUnlinkGroup={(gId) => unlinkAddonGroup(product.id, gId)}
       showLinkAddon={showLinkAddonFor === product.id}
@@ -615,30 +841,11 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
       onToggleOutOfStock={() => toggleProductOutOfStock(product.id, (product as any).metadata)}
       onDelete={() => deleteProductConfirm(product.id, product.name)}
       onDuplicate={() => duplicateProduct(product)}
-      onEdit={() => {
-        setEditingProduct(product.id);
-        setEditInitialForm({
-          name: product.name,
-          price: Number(product.price).toFixed(2),
-          description: product.description || "",
-          image_url: product.image_url || "",
-          metadata: {
-            ...((product as any).metadata || {}),
-            // Prioriza colunas dedicadas se existirem (PDV por peso).
-            ...((product as any).sold_by_weight
-              ? {
-                  sold_by_weight: true,
-                  price_per_kg: Number((product as any).price_per_kg ?? (product as any).metadata?.price_per_kg ?? 0),
-                  weight_unit: (product as any).weight_unit || "kg",
-                }
-              : {}),
-          },
-        });
-      }}
-      isEditing={editingProduct === product.id}
-      initialEditForm={editingProduct === product.id ? editInitialForm : undefined}
-      onSaveEdit={(data) => updateProduct(product.id, data)}
-      onCancelEdit={() => { setEditingProduct(null); setEditInitialForm(undefined); }}
+      onCopyLink={() => copyProductLink(product)}
+      onEdit={() => openEdit(product)}
+      isEditing={false}
+      onSaveEdit={() => {}}
+      onCancelEdit={() => {}}
       showAddonForm={showAddonFormFor === product.id}
       setShowAddonForm={(v) => setShowAddonFormFor(v ? product.id : null)}
       addonGroupForm={addonGroupForm}
@@ -656,429 +863,248 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
       isMoving={movingProductId === product.id}
       onStartMove={() => setMovingProductId(movingProductId === product.id ? null : product.id)}
       onCancelMove={() => setMovingProductId(null)}
-      onMoveProduct={moveProduct}
+      onMoveProduct={(pid, sid) => {
+        moveProduct(pid, sid);
+        setMovingProductId(null);
+      }}
     />
   );
 
-  return (
-    <div className="space-y-4 max-w-5xl mx-auto w-full">
-      {storeCategory !== "adegas" && (
-        <DailyMenuManager storeId={storeId} products={products || []} onUpdate={invalidateProducts} />
-      )}
+  // ---------- Loading state ----------
+  if (loadingSections || (loadingProducts && !products)) {
+    return (
+      <div className="max-w-6xl mx-auto w-full space-y-3">
+        <Skeleton className="h-10 w-full rounded-xl" />
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+          {[...Array(6)].map((_, i) => (
+            <Skeleton key={i} className="h-24 rounded-xl" />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
-      {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-2">
+  // ---------- Empty state (no sections + no products) ----------
+  const showFullEmpty = totalProducts === 0 && (sections?.length || 0) === 0;
+
+  return (
+    <div className="max-w-6xl mx-auto w-full">
+      {/* Header + stats */}
+      <div className="flex items-end justify-between flex-wrap gap-2 mb-3 px-1">
         <div>
-          <h2 className="text-lg font-bold text-foreground">Cardápio</h2>
-          <p className="text-xs text-muted-foreground">
+          <h2 className="text-xl font-bold text-foreground">Cardápio</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">
             <span className="text-primary font-bold">{activeCount} ativos</span>
-            {pausedCount > 0 && <span className="text-muted-foreground"> · {pausedCount} pausados</span>}
-            {outOfStockCount > 0 && <span className="text-destructive"> · {outOfStockCount} esgotado{outOfStockCount > 1 ? "s" : ""}</span>}
-            {" · "}{sections?.length || 0} {(sections?.length || 0) === 1 ? "seção" : "seções"}
+            {pausedCount > 0 && <span> · {pausedCount} pausados</span>}
+            {outOfStockCount > 0 && (
+              <span className="text-destructive"> · {outOfStockCount} esgotado{outOfStockCount > 1 ? "s" : ""}</span>
+            )}
+            {" · "}
+            {sections?.length || 0} {(sections?.length || 0) === 1 ? "seção" : "seções"}
           </p>
         </div>
-        <div className="flex flex-col gap-2 items-end">
-          {/* Linha 1 — ações secundárias */}
-          <div className="flex gap-2">
+      </div>
+
+      {showFullEmpty ? (
+        <EmptyState
+          onCreateSection={() => setSectionSheetOpen(true)}
+          onOpenImport={() => setImportOpen(true)}
+        />
+      ) : (
+        <div className="flex flex-col lg:flex-row gap-4">
+          {/* Section nav */}
+          <SectionNav
+            items={sectionNavItems}
+            activeId={activeSection}
+            onSelect={setActiveSection}
+            onManage={() => setSectionSheetOpen(true)}
+            onNewSection={() => setSectionSheetOpen(true)}
+            totalProducts={totalProducts}
+            unsectionedCount={unsectionedProducts.length}
+          />
+
+          {/* Main column */}
+          <div className="flex-1 min-w-0 space-y-3">
+            <MenuToolbar
+              search={search}
+              onSearchChange={setSearch}
+              filter={filter}
+              onFilterChange={setFilter}
+              filterCounts={filterCounts}
+              selectionMode={selectionMode}
+              onToggleSelectionMode={() => {
+                if (selectionMode) clearSelection();
+                else setSelectionMode(true);
+              }}
+              onNewProduct={openCreate}
+              onOpenImport={() => setImportOpen(true)}
+              onOpenDailyMenu={() => setDailyMenuOpen(true)}
+              onOpenSectionManage={() => setSectionSheetOpen(true)}
+              disableDailyMenu={storeCategory === "adegas"}
+            />
+
+            {/* Section header */}
+            <div className="flex items-center justify-between px-1">
+              <div className="min-w-0">
+                <h3 className="text-sm font-bold text-foreground truncate">
+                  {activeSectionName}
+                </h3>
+                <p className="text-[11px] text-muted-foreground">
+                  {visibleProducts.length} produto{visibleProducts.length === 1 ? "" : "s"}
+                  {search && ` para "${search}"`}
+                </p>
+              </div>
+            </div>
+
+            {/* Grid de produtos */}
+            {visibleProducts.length === 0 ? (
+              <EmptySectionState
+                hasSearch={!!search}
+                onCreate={openCreate}
+                filter={filter}
+                onResetFilter={() => setFilter("all")}
+              />
+            ) : (
+              <SortableProductGrid
+                items={visibleProducts}
+                enabled={
+                  !selectionMode &&
+                  !search &&
+                  filter === "all" &&
+                  activeSection !== "all"
+                }
+                onReorder={reorderProducts}
+                renderItem={(p) => renderProductCard(p)}
+              />
+            )}
+
+            {/* Bulk action bar */}
+            {selectedIds.size > 0 && (
+              <BulkActionBar
+                count={selectedIds.size}
+                busy={bulkBusy}
+                onPause={() => bulkAvailable(false)}
+                onResume={() => bulkAvailable(true)}
+                onOutOfStock={() => bulkOutOfStock(true)}
+                onRestock={() => bulkOutOfStock(false)}
+                onMove={() => setMoveBulkOpen(true)}
+                onDuplicate={bulkDuplicate}
+                onDelete={bulkDeleteConfirm}
+                onClear={clearSelection}
+              />
+            )}
+
+            {/* Bulk move picker */}
+            {moveBulkOpen && (
+              <div className="bg-card border border-border rounded-xl p-3 space-y-2">
+                <p className="text-xs font-bold text-foreground">
+                  Mover {selectedIds.size} produto{selectedIds.size > 1 ? "s" : ""} para:
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  <button
+                    onClick={() => bulkMoveTo(null)}
+                    className="text-xs bg-muted text-muted-foreground px-3 py-1.5 rounded-lg hover:bg-muted/80"
+                  >
+                    Sem seção
+                  </button>
+                  {(sections || []).map((s: any) => (
+                    <button
+                      key={s.id}
+                      onClick={() => bulkMoveTo(s.id)}
+                      className="text-xs bg-primary/10 text-primary px-3 py-1.5 rounded-lg hover:bg-primary/20 font-medium"
+                    >
+                      {s.name}
+                    </button>
+                  ))}
+                </div>
+                <button
+                  onClick={() => setMoveBulkOpen(false)}
+                  className="text-xs text-muted-foreground hover:text-foreground"
+                >
+                  Cancelar
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Mobile FAB */}
+      {!showFullEmpty && productSheet === null && selectedIds.size === 0 && (
+        <button
+          onClick={openCreate}
+          className="lg:hidden fixed bottom-20 right-4 z-30 bg-primary text-primary-foreground rounded-full shadow-lg hover:bg-primary/90 transition-all active:scale-95 flex items-center gap-2 px-5 py-3 font-bold text-sm"
+          aria-label="Novo produto"
+        >
+          <Plus className="h-5 w-5" /> Novo
+        </button>
+      )}
+
+      {/* Product sheet */}
+      {productSheet && (
+        <ProductSheet
+          open={true}
+          onOpenChange={(v) => !v && setProductSheet(null)}
+          mode={productSheet.mode}
+          initial={productSheet.mode === "edit" ? productSheet.initial : undefined}
+          sectionName={
+            productSheet.mode === "create"
+              ? productSheet.sectionId
+                ? (sections || []).find((s: any) => s.id === productSheet.sectionId)?.name || null
+                : null
+              : productSheet.sectionName
+          }
+          onSave={(data) =>
+            productSheet.mode === "create"
+              ? addProduct(productSheet.sectionId, data)
+              : updateProduct(productSheet.id, data)
+          }
+          storeCategory={storeCategory}
+          storeId={storeId}
+        />
+      )}
+
+      {/* Section manage sheet */}
+      <SectionManageSheet
+        open={sectionSheetOpen}
+        onOpenChange={setSectionSheetOpen}
+        sections={sections || []}
+        productCounts={productCounts}
+        onCreate={createSection}
+        onRename={renameSection}
+        onMove={moveSection}
+        onDelete={deleteSectionConfirm}
+      />
+
+      {/* Import CSV sheet */}
+      <Sheet open={importOpen} onOpenChange={setImportOpen}>
+        <SheetContent side="right" className="w-full sm:max-w-lg overflow-y-auto p-0">
+          <SheetHeader className="sticky top-0 z-10 bg-background border-b border-border px-5 py-4">
+            <SheetTitle className="text-base">Importar cardápio</SheetTitle>
+          </SheetHeader>
+          <div className="p-5">
             <MenuImportCSV storeId={storeId} />
           </div>
-          {/* Linha 2 — ações primárias */}
-          <div className="flex gap-2">
-            <button
-              onClick={handleOpenQuickAdd}
-              className="flex items-center gap-1.5 bg-muted border border-border text-foreground px-3 py-2 rounded-xl text-sm font-bold hover:bg-muted/80 transition-colors"
-            >
-              <Plus className="h-4 w-4" /> Criar Produto
-            </button>
-            <button
-              onClick={() => setShowAddSection(true)}
-              className="flex items-center gap-1.5 bg-primary text-primary-foreground px-3 py-2 rounded-xl text-sm font-bold shadow-sm hover:bg-primary/90 transition-colors"
-            >
-              <Plus className="h-4 w-4" /> Nova Seção
-            </button>
-          </div>
-        </div>
-      </div>
+        </SheetContent>
+      </Sheet>
 
-      {/* Search + expand controls */}
-      {totalProducts > 0 && (
-        <div className="flex items-center gap-2">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Buscar produto..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full bg-card pl-9 pr-9 py-2 rounded-xl text-sm border border-border focus:border-primary focus:outline-none"
-            />
-            {search && (
-              <button onClick={() => setSearch("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1">
-                <X className="h-3.5 w-3.5" />
-              </button>
-            )}
-          </div>
-          {!search && (sections?.length || 0) > 0 && (
-            <button
-              onClick={expandedSections.size === (sections?.length || 0) ? collapseAll : expandAll}
-              className="text-xs text-primary font-bold px-3 py-2 rounded-xl bg-primary/10 hover:bg-primary/20 transition-colors flex-shrink-0"
-            >
-              {expandedSections.size === (sections?.length || 0) ? "Recolher" : "Expandir"}
-            </button>
-          )}
-        </div>
-      )}
-
-      {/* Bulk action bar */}
-      {selectedIds.size > 0 && (
-        <div className="sticky top-2 z-20 bg-primary text-primary-foreground rounded-2xl p-3 shadow-lg flex items-center justify-between gap-2 flex-wrap">
-          <div className="flex items-center gap-2">
-            <CheckSquare className="h-4 w-4" />
-            <span className="text-sm font-bold">{selectedIds.size} selecionado{selectedIds.size > 1 ? "s" : ""}</span>
-          </div>
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <button disabled={bulkBusy} onClick={() => bulkAvailable(false)} className="bg-primary-foreground/15 hover:bg-primary-foreground/25 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 disabled:opacity-50">
-              <Pause className="h-3.5 w-3.5" /> Pausar
-            </button>
-            <button disabled={bulkBusy} onClick={() => bulkAvailable(true)} className="bg-primary-foreground/15 hover:bg-primary-foreground/25 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 disabled:opacity-50">
-              <Play className="h-3.5 w-3.5" /> Reativar
-            </button>
-            <button disabled={bulkBusy} onClick={() => bulkOutOfStock(true)} className="bg-destructive/80 hover:bg-destructive px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 disabled:opacity-50">
-              <PackageX className="h-3.5 w-3.5" /> Esgotar
-            </button>
-            <button disabled={bulkBusy} onClick={() => bulkOutOfStock(false)} className="bg-primary-foreground/15 hover:bg-primary-foreground/25 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 disabled:opacity-50">
-              <Package className="h-3.5 w-3.5" /> Repor
-            </button>
-            <button disabled={bulkBusy} onClick={() => setMoveBulkOpen(true)} className="bg-primary-foreground/15 hover:bg-primary-foreground/25 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 disabled:opacity-50">
-              <ArrowRightLeft className="h-3.5 w-3.5" /> Mover
-            </button>
-            <button disabled={bulkBusy} onClick={bulkDeleteConfirm} className="bg-destructive hover:bg-destructive/90 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 disabled:opacity-50">
-              <Trash2 className="h-3.5 w-3.5" /> Excluir
-            </button>
-            <button onClick={clearSelection} className="text-xs underline opacity-80">Limpar</button>
-            {bulkBusy && <Loader2 className="h-4 w-4 animate-spin" />}
-          </div>
-        </div>
-      )}
-
-      {/* Bulk move picker */}
-      {moveBulkOpen && (
-        <div className="bg-card border border-border rounded-xl p-3 space-y-2">
-          <p className="text-xs font-bold text-foreground">Mover {selectedIds.size} produto{selectedIds.size > 1 ? "s" : ""} para:</p>
-          <div className="flex flex-wrap gap-1.5">
-            <button onClick={() => bulkMoveTo(null)} className="text-xs bg-muted text-muted-foreground px-3 py-1.5 rounded-lg hover:bg-muted/80">Sem Seção</button>
-            {(sections || []).map((s: any) => (
-              <button key={s.id} onClick={() => bulkMoveTo(s.id)} className="text-xs bg-primary/10 text-primary px-3 py-1.5 rounded-lg hover:bg-primary/20 font-medium">{s.name}</button>
-            ))}
-          </div>
-          <button onClick={() => setMoveBulkOpen(false)} className="text-xs text-muted-foreground hover:text-foreground">Cancelar</button>
-        </div>
-      )}
-
-      {/* Search results view */}
-      {filteredProducts !== null && (
-        <div className="bg-card rounded-2xl p-4 space-y-2 border border-border">
-          <p className="text-xs text-muted-foreground">{filteredProducts.length} resultado{filteredProducts.length === 1 ? "" : "s"} para "<strong>{search}</strong>"</p>
-          {filteredProducts.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-6">Nenhum produto encontrado</p>
-          ) : (
-            filteredProducts.map((p: any) => renderProductCard(p))
-          )}
-        </div>
-      )}
-
-      {/* Tip */}
-      {filteredProducts === null && (!sections || sections.length === 0) && (
-        <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
-          <div className="text-center">
-            <div className="text-4xl mb-2">🍽️</div>
-            <h3 className="text-base font-bold text-foreground">Vamos montar seu cardápio</h3>
-            <p className="text-xs text-muted-foreground mt-1">Siga os 3 passos abaixo — leva menos de 2 minutos</p>
-          </div>
-          <div className="space-y-2.5">
-            <div className="flex items-start gap-3 p-3 bg-muted/40 rounded-xl">
-              <span className="flex-shrink-0 w-7 h-7 rounded-full bg-primary text-primary-foreground text-xs font-black flex items-center justify-center">1</span>
-              <div className="flex-1">
-                <p className="text-sm font-bold text-foreground">Crie uma categoria</p>
-                <p className="text-[11px] text-muted-foreground">Ex: Hambúrgueres, Bebidas, Combos</p>
-              </div>
-              <button onClick={() => setShowAddSection(true)} className="text-xs bg-primary text-primary-foreground px-3 py-1.5 rounded-lg font-bold flex-shrink-0">Criar</button>
+      {/* Daily menu sheet */}
+      {storeCategory !== "adegas" && (
+        <Sheet open={dailyMenuOpen} onOpenChange={setDailyMenuOpen}>
+          <SheetContent side="right" className="w-full sm:max-w-lg overflow-y-auto p-0">
+            <SheetHeader className="sticky top-0 z-10 bg-background border-b border-border px-5 py-4">
+              <SheetTitle className="text-base">Cardápio do dia</SheetTitle>
+            </SheetHeader>
+            <div className="p-5">
+              <DailyMenuManager
+                storeId={storeId}
+                products={products || []}
+                onUpdate={invalidateProducts}
+              />
             </div>
-            <div className="flex items-start gap-3 p-3 bg-muted/20 rounded-xl opacity-70">
-              <span className="flex-shrink-0 w-7 h-7 rounded-full bg-muted text-muted-foreground text-xs font-black flex items-center justify-center">2</span>
-              <div className="flex-1">
-                <p className="text-sm font-bold text-foreground">Adicione produtos</p>
-                <p className="text-[11px] text-muted-foreground">Nome, preço, foto e descrição</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3 p-3 bg-muted/20 rounded-xl opacity-70">
-              <span className="flex-shrink-0 w-7 h-7 rounded-full bg-muted text-muted-foreground text-xs font-black flex items-center justify-center">3</span>
-              <div className="flex-1">
-                <p className="text-sm font-bold text-foreground">Adicionais (opcional)</p>
-                <p className="text-[11px] text-muted-foreground">Ex: molhos, tamanhos, bordas</p>
-              </div>
-            </div>
-          </div>
-        </div>
+          </SheetContent>
+        </Sheet>
       )}
-
-      {/* Add Section Form */}
-      {showAddSection && (
-        <div className="bg-card rounded-xl p-3 flex gap-2 shadow-sm border border-border">
-          <input
-            type="text"
-            placeholder="Nome da seção (ex: Hambúrgueres, Bebidas...)"
-            value={newSectionName}
-            onChange={(e) => setNewSectionName(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && addSection()}
-            className="flex-1 bg-secondary text-foreground px-3 py-2 rounded-lg text-sm border border-border focus:border-primary focus:outline-none"
-            autoFocus
-          />
-          <button onClick={addSection} className="bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-bold">
-            <Save className="h-4 w-4" />
-          </button>
-          <button onClick={() => { setShowAddSection(false); setNewSectionName(""); }} className="text-muted-foreground px-2">
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-      )}
-
-      {/* Sections (escondido durante busca) */}
-      {filteredProducts === null && sections?.map((section: any) => {
-        const sectionProducts = productsBySection.get(section.id) || [];
-        const expanded = isSectionExpanded(section.id);
-        const sectionLinkedIds = getSectionLinkedGroupIds(section.id);
-        const allSelected = sectionProducts.length > 0 && sectionProducts.every((p: any) => selectedIds.has(p.id));
-        return (
-          <div
-            key={section.id}
-            className={`bg-card rounded-2xl overflow-hidden shadow-sm border border-border transition-all ${
-              dragOverSectionId === section.id ? "ring-2 ring-primary scale-[1.01]" : ""
-            } ${draggedSectionId === section.id ? "opacity-50" : ""}`}
-            draggable
-            onDragStart={(e) => { setDraggedSectionId(section.id); e.dataTransfer.effectAllowed = "move"; }}
-            onDragOver={(e) => { e.preventDefault(); setDragOverSectionId(section.id); }}
-            onDragLeave={() => setDragOverSectionId(null)}
-            onDrop={(e) => { e.preventDefault(); handleSectionDrop(section.id); }}
-            onDragEnd={() => { setDraggedSectionId(null); setDragOverSectionId(null); }}
-          >
-            {/* Section Header */}
-            <div
-              className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/30 transition-colors"
-              onClick={() => toggleSection(section.id)}
-            >
-              <div className="flex items-center gap-3 min-w-0 flex-1">
-                <GripVertical className="h-4 w-4 text-muted-foreground/50 cursor-grab active:cursor-grabbing hidden sm:block flex-shrink-0" />
-                {editingSection === section.id ? (
-                  <input
-                    type="text"
-                    defaultValue={section.name}
-                    onBlur={(e) => updateSection(section.id, e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && updateSection(section.id, (e.target as HTMLInputElement).value)}
-                    className="bg-secondary text-foreground px-3 py-1.5 rounded-lg text-sm border border-primary focus:outline-none font-bold"
-                    autoFocus
-                    onClick={(e) => e.stopPropagation()}
-                  />
-                ) : (
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className="font-bold text-foreground truncate">{section.name}</span>
-                    <span className="bg-muted text-muted-foreground text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0">
-                      {sectionProducts.length}
-                    </span>
-                  </div>
-                )}
-              </div>
-              <div className="flex items-center gap-1 flex-shrink-0">
-                <button onClick={(e) => { e.stopPropagation(); moveSectionBy(section.id, -1); }} disabled={sections?.[0]?.id === section.id}
-                  className="text-muted-foreground hover:text-foreground p-1.5 rounded-lg hover:bg-muted transition-colors disabled:opacity-30 disabled:hover:bg-transparent" title="Mover para cima">
-                  <ArrowUp className="h-3.5 w-3.5" />
-                </button>
-                <button onClick={(e) => { e.stopPropagation(); moveSectionBy(section.id, 1); }} disabled={sections?.[sections.length - 1]?.id === section.id}
-                  className="text-muted-foreground hover:text-foreground p-1.5 rounded-lg hover:bg-muted transition-colors disabled:opacity-30 disabled:hover:bg-transparent" title="Mover para baixo">
-                  <ArrowDown className="h-3.5 w-3.5" />
-                </button>
-                <button onClick={(e) => { e.stopPropagation(); setEditingSection(section.id); }}
-                  className="text-muted-foreground hover:text-foreground p-1.5 rounded-lg hover:bg-muted transition-colors" title="Renomear">
-                  <Edit2 className="h-3.5 w-3.5" />
-                </button>
-                <button onClick={(e) => {
-                  e.stopPropagation();
-                  setConfirmState({
-                    title: `Excluir seção "${section.name}"?`,
-                    description: `Os ${sectionProducts.length} produto${sectionProducts.length === 1 ? "" : "s"} desta seção ${sectionProducts.length === 1 ? "será movido" : "serão movidos"} para "Sem Seção".`,
-                    destructive: true,
-                    confirmText: "Excluir seção",
-                    onConfirm: async () => { await deleteSection(section.id); setConfirmState(null); },
-                  });
-                }} className="text-muted-foreground hover:text-destructive p-1.5 rounded-lg hover:bg-destructive/10 transition-colors" title="Excluir seção">
-                  <Trash2 className="h-3.5 w-3.5" />
-                </button>
-                {expanded ? <ChevronUp className="h-4 w-4 text-muted-foreground ml-1" /> : <ChevronDown className="h-4 w-4 text-muted-foreground ml-1" />}
-              </div>
-            </div>
-
-            {/* Section Products */}
-            {expanded && (
-              <div className="px-4 pb-4 space-y-2">
-                {/* Bulk select row */}
-                {sectionProducts.length > 0 && (
-                  <button
-                    onClick={() => allSelected ? setSelectedIds((prev) => { const next = new Set(prev); sectionProducts.forEach((p: any) => next.delete(p.id)); return next; }) : selectAllInSection(section.id)}
-                    className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground px-2 py-1"
-                  >
-                    {allSelected ? <CheckSquare className="h-3.5 w-3.5 text-primary" /> : <Square className="h-3.5 w-3.5" />}
-                    {allSelected ? "Desmarcar todos" : "Selecionar todos"}
-                  </button>
-                )}
-
-                {/* Beverage section toggle */}
-                <div className="flex items-center justify-between bg-muted/50 border border-border rounded-xl p-3">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm">🥤</span>
-                    <span className="text-xs font-bold text-foreground/70">Seção de bebidas</span>
-                    <span className="text-[10px] text-muted-foreground hidden sm:inline">(marca todos como bebida)</span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={async (e) => {
-                      e.stopPropagation();
-                      const allBeverage = sectionProducts.length > 0 && sectionProducts.every((p: any) => p.metadata?.is_beverage);
-                      const newValue = !allBeverage;
-                      await Promise.all(sectionProducts.map((p: any) =>
-                        supabase.from("products").update({ metadata: { ...(p.metadata || {}), is_beverage: newValue } } as any).eq("id", p.id)
-                      ));
-                      toast.success(newValue ? "Todos marcados como bebida!" : "Bebida removido dos itens!");
-                      invalidateProducts();
-                    }}
-                    className={`w-10 h-5 rounded-full transition-colors relative ${
-                      sectionProducts.length > 0 && sectionProducts.every((p: any) => p.metadata?.is_beverage) ? "bg-primary" : "bg-muted-foreground/30"
-                    }`}
-                  >
-                    <div className={`w-4 h-4 bg-white rounded-full absolute top-0.5 transition-transform ${
-                      sectionProducts.length > 0 && sectionProducts.every((p: any) => p.metadata?.is_beverage) ? "translate-x-5" : "translate-x-0.5"
-                    }`} />
-                  </button>
-                </div>
-
-                {/* Section addon group linking */}
-                <div className="flex items-center justify-between bg-primary/5 border border-primary/20 rounded-xl p-3">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <Layers className="h-4 w-4 text-primary flex-shrink-0" />
-                    <span className="text-xs font-bold text-primary">Adicionais da seção</span>
-                    <span className="text-[10px] text-muted-foreground hidden sm:inline">(aplica em todos)</span>
-                  </div>
-                  <button type="button" onClick={(e) => { e.stopPropagation(); setShowSectionAddonLink(showSectionAddonLink === section.id ? null : section.id); }}
-                    className="text-primary text-xs font-bold px-3 py-1 rounded-lg bg-primary/10 hover:bg-primary/20 transition-colors flex-shrink-0">
-                    {showSectionAddonLink === section.id ? "Fechar" : "Gerenciar"}
-                  </button>
-                </div>
-
-                {showSectionAddonLink === section.id && storeAddonGroupsList.length > 0 && (
-                  <div className="bg-muted/30 border border-border rounded-xl p-3 space-y-2">
-                    <p className="text-[11px] text-muted-foreground">
-                      Vincular/desvincular grupos para <strong>todos os {sectionProducts.length} produtos</strong>:
-                    </p>
-                    {sectionProducts.length === 0 ? (
-                      <p className="text-xs text-muted-foreground text-center py-2">Adicione produtos à seção primeiro</p>
-                    ) : (
-                      <div className="space-y-1.5">
-                        {storeAddonGroupsList.map((group: any) => {
-                          const isLinkedToAll = sectionLinkedIds.includes(group.id);
-                          const linkedCount = sectionProducts.filter((p: any) => getLinkedGroupIds(p.id).includes(group.id)).length;
-                          const isPartial = linkedCount > 0 && linkedCount < sectionProducts.length;
-                          return (
-                            <button key={group.id} disabled={linkingSectionAddon}
-                              onClick={() => isLinkedToAll ? unlinkGroupFromSection(section.id, group.id) : linkGroupToSection(section.id, group.id)}
-                              className={`w-full flex items-center justify-between py-2.5 px-3 rounded-xl border-2 transition-all text-left ${
-                                isLinkedToAll ? "bg-primary/10 border-primary" : isPartial ? "bg-accent/10 border-accent/50" : "bg-muted/50 border-transparent hover:border-primary/30"
-                              }`}>
-                              <div>
-                                <span className="text-sm font-bold text-foreground">{group.name}</span>
-                                <span className="text-[10px] text-muted-foreground ml-2">
-                                  {(group.addon_items as any[])?.length || 0} itens • {group.min_select > 0 ? "Obrigatório" : "Opcional"}
-                                </span>
-                                {isPartial && <span className="text-[10px] text-accent ml-2 font-bold">({linkedCount}/{sectionProducts.length})</span>}
-                              </div>
-                              <div className={`w-10 h-5 rounded-full transition-colors relative flex-shrink-0 ${isLinkedToAll ? "bg-primary" : isPartial ? "bg-accent" : "bg-muted-foreground/30"}`}>
-                                <div className={`w-4 h-4 bg-white rounded-full absolute top-0.5 transition-transform shadow ${isLinkedToAll ? "translate-x-5" : isPartial ? "translate-x-2.5" : "translate-x-0.5"}`} />
-                              </div>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {showSectionAddonLink === section.id && storeAddonGroupsList.length === 0 && (
-                  <div className="bg-muted/30 border border-border rounded-xl p-3 text-center">
-                    <p className="text-xs text-muted-foreground">Nenhum grupo de adicionais criado.</p>
-                    <p className="text-[11px] text-muted-foreground mt-1">Crie grupos na aba "Adicionais" primeiro.</p>
-                  </div>
-                )}
-
-                {sectionProducts.length === 0 && (
-                  <p className="text-xs text-muted-foreground text-center py-4">Nenhum produto nesta seção</p>
-                )}
-                {sectionProducts.map((p: any) => renderProductCard(p))}
-
-                {showProductForm === section.id ? (
-                  <ProductFormInline
-                    onSave={(formData) => addProduct(section.id, formData)}
-                    onCancel={() => setShowProductForm(null)}
-                    storeCategory={storeCategory}
-                    storeId={storeId}
-                  />
-                ) : (
-                  <button
-                    onClick={() => setShowProductForm(section.id)}
-                    className="w-full flex items-center justify-center gap-2 py-3 border-2 border-dashed border-primary/30 rounded-xl text-primary hover:bg-primary/5 transition-colors text-sm font-medium"
-                  >
-                    <Plus className="h-4 w-4" /> Adicionar Produto
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
-        );
-      })}
-
-      {/* Unsectioned Products */}
-      {filteredProducts === null && unsectionedProducts.length > 0 && (
-        <div className="bg-card rounded-2xl p-4 space-y-2 border border-dashed border-border">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <Package className="h-4 w-4 text-muted-foreground" />
-              <h3 className="text-sm font-bold text-muted-foreground">Sem Seção</h3>
-              <span className="bg-muted text-muted-foreground text-xs px-2 py-0.5 rounded-full">{unsectionedProducts.length}</span>
-            </div>
-            {sections && sections.length > 0 && (
-              <p className="text-xs text-muted-foreground hidden sm:block">Use ↔ para mover para uma seção</p>
-            )}
-          </div>
-          {unsectionedProducts.map((p: any) => renderProductCard(p))}
-        </div>
-      )}
-
-      {/* Quick add product — formulário avulso, sempre visível quando ativo */}
-      <div ref={quickAddRef}>
-        {showProductForm === "__none__" && (
-          <ProductFormInline
-            onSave={(formData) => addProduct(null, formData)}
-            onCancel={() => setShowProductForm(null)}
-            storeCategory={storeCategory}
-            storeId={storeId}
-          />
-        )}
-        {filteredProducts === null && showProductForm !== "__none__" && (
-          <button
-            onClick={handleOpenQuickAdd}
-            className="w-full flex items-center justify-center gap-2 py-3 bg-muted/50 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors text-sm font-medium"
-          >
-            <Plus className="h-4 w-4" /> Produto Rápido (sem seção)
-          </button>
-        )}
-      </div>
 
       {/* Confirm dialog */}
       {confirmState && (
@@ -1092,19 +1118,82 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
           onConfirm={confirmState.onConfirm}
         />
       )}
-
-      {/* FAB — botão flutuante para adicionar produto rapidamente */}
-      {totalProducts > 0 && showProductForm === null && editingProduct === null && (
-        <button
-          onClick={handleOpenQuickAdd}
-          className="fixed bottom-20 right-4 z-30 bg-primary text-primary-foreground rounded-full shadow-lg hover:bg-primary/90 transition-all active:scale-95 flex items-center gap-2 px-5 py-3 font-bold text-sm"
-          title="Novo produto"
-        >
-          <Plus className="h-5 w-5" /> Novo Produto
-        </button>
-      )}
     </div>
   );
 };
+
+// ---------- Empty states ----------
+const EmptyState = ({
+  onCreateSection,
+  onOpenImport,
+}: {
+  onCreateSection: () => void;
+  onOpenImport: () => void;
+}) => (
+  <div className="bg-card border border-border rounded-2xl p-8 text-center max-w-lg mx-auto">
+    <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-primary/10 flex items-center justify-center">
+      <Sparkles className="h-6 w-6 text-primary" />
+    </div>
+    <h3 className="text-lg font-bold text-foreground">Vamos montar seu cardápio</h3>
+    <p className="text-sm text-muted-foreground mt-1">
+      Comece criando uma seção (ex: Hambúrgueres) ou importe seu cardápio de um CSV em poucos segundos.
+    </p>
+    <div className="flex flex-col sm:flex-row gap-2 justify-center mt-5">
+      <button
+        onClick={onCreateSection}
+        className="bg-primary text-primary-foreground px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-primary/90 transition-colors"
+      >
+        Criar primeira seção
+      </button>
+      <button
+        onClick={onOpenImport}
+        className="bg-card border border-border text-foreground px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-muted transition-colors"
+      >
+        Importar CSV
+      </button>
+    </div>
+  </div>
+);
+
+const EmptySectionState = ({
+  hasSearch,
+  onCreate,
+  filter,
+  onResetFilter,
+}: {
+  hasSearch: boolean;
+  onCreate: () => void;
+  filter: ProductFilter;
+  onResetFilter: () => void;
+}) => (
+  <div className="bg-card border border-dashed border-border rounded-2xl p-8 text-center">
+    <div className="w-12 h-12 mx-auto mb-3 rounded-2xl bg-muted flex items-center justify-center">
+      <Package className="h-5 w-5 text-muted-foreground" />
+    </div>
+    {hasSearch ? (
+      <p className="text-sm text-muted-foreground">Nenhum produto encontrado para a busca.</p>
+    ) : filter !== "all" ? (
+      <>
+        <p className="text-sm text-muted-foreground">Nenhum produto com este filtro.</p>
+        <button
+          onClick={onResetFilter}
+          className="mt-3 text-xs text-primary font-bold underline"
+        >
+          Limpar filtro
+        </button>
+      </>
+    ) : (
+      <>
+        <p className="text-sm text-muted-foreground">Nenhum produto nesta seção ainda.</p>
+        <button
+          onClick={onCreate}
+          className="mt-3 inline-flex items-center gap-1.5 bg-primary text-primary-foreground px-4 py-2 rounded-xl text-sm font-bold hover:bg-primary/90 transition-colors"
+        >
+          <Plus className="h-4 w-4" /> Adicionar primeiro produto
+        </button>
+      </>
+    )}
+  </div>
+);
 
 export default MenuBuilder;
