@@ -13,6 +13,18 @@ Deno.serve(async (req) => {
   const baseUrl = Deno.env.get("EVOLUTION_API_URL")!.replace(/\/$/, "");
   const apiKey = Deno.env.get("EVOLUTION_GLOBAL_API_KEY")!;
   const instance = "itasuper-platform";
+  const url = new URL(req.url);
+  const testPhone = url.searchParams.get("send");
+  if (testPhone) {
+    const number = "55" + testPhone.replace(/\D/g, "");
+    const sendR = await fetch(`${baseUrl}/message/sendText/${instance}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", apikey: apiKey },
+      body: JSON.stringify({ number, text: "🚀 Teste do WhatsApp da plataforma ItaSuper — se você recebeu, está tudo funcionando!" }),
+    });
+    const sendJson = await sendR.json().catch(() => ({}));
+    return new Response(JSON.stringify({ status: sendR.status, sendJson }, null, 2), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+  }
   const r = await fetch(`${baseUrl}/instance/connectionState/${instance}`, { headers: { apikey: apiKey } });
   const evo = await r.json().catch(() => ({}));
   const state: string = evo?.instance?.state || evo?.state || "";
