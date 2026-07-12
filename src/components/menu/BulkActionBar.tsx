@@ -1,4 +1,4 @@
-import { Pause, Play, PackageX, Package, ArrowRightLeft, Trash2, Loader2, X } from "lucide-react";
+import { Pause, Play, PackageX, Package, ArrowRightLeft, Trash2, Loader2, X, Copy } from "lucide-react";
 
 interface BulkActionBarProps {
   count: number;
@@ -8,6 +8,7 @@ interface BulkActionBarProps {
   onOutOfStock: () => void;
   onRestock: () => void;
   onMove: () => void;
+  onDuplicate: () => void;
   onDelete: () => void;
   onClear: () => void;
 }
@@ -23,6 +24,7 @@ export const BulkActionBar = ({
   onOutOfStock,
   onRestock,
   onMove,
+  onDuplicate,
   onDelete,
   onClear,
 }: BulkActionBarProps) => {
@@ -40,6 +42,7 @@ export const BulkActionBar = ({
         <BulkBtn onClick={onOutOfStock} icon={<PackageX className="h-3.5 w-3.5" />} label="Esgotar" disabled={busy} destructive />
         <BulkBtn onClick={onRestock} icon={<Package className="h-3.5 w-3.5" />} label="Repor" disabled={busy} />
         <BulkBtn onClick={onMove} icon={<ArrowRightLeft className="h-3.5 w-3.5" />} label="Mover" disabled={busy} />
+        <BulkBtn onClick={onDuplicate} icon={<Copy className="h-3.5 w-3.5" />} label="Duplicar" disabled={busy} />
         <BulkBtn onClick={onDelete} icon={<Trash2 className="h-3.5 w-3.5" />} label="Excluir" disabled={busy} destructive />
         <button
           onClick={onClear}
