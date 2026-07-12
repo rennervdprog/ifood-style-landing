@@ -152,7 +152,7 @@ export default function PlatformWhatsAppTab() {
   const fetchPairing = async () => {
     const phone = pairingPhone.replace(/\D/g, "");
     if (phone.length < 10) return toast({ title: "Número inválido", description: "Formato: 5522999999999", variant: "destructive" });
-    setPairingLoading(true); setPairingCode(null); setQrData(null);
+    setPairingLoading(true); setPairingCode(null); setQrData(null); setPairingExpiresAt(null); setCopied(false);
     try {
       const { data, error } = await invokeWithAuth("evolution-qr-code", {
         instance_name: cfg?.instance_name || "itasuper-platform", is_platform: true, pairing_number: phone, force_reconnect: true,
@@ -161,6 +161,7 @@ export default function PlatformWhatsAppTab() {
       const code = (data as any)?.pairing_code as string | null;
       if (!code) throw new Error("Evolution não retornou pairing code");
       setPairingCode(code);
+      setPairingExpiresAt(Date.now() + 60_000);
       toast({ title: "Código gerado" });
     } catch (e: any) {
       toast({ title: "Erro", description: e.message, variant: "destructive" });
