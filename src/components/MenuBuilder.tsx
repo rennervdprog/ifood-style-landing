@@ -4,7 +4,7 @@ import MenuImportCSV from "@/components/MenuImportCSV";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Plus, Loader2, Package, Sparkles } from "lucide-react";
+import { Plus, Loader2, Package, Sparkles, ArrowLeft } from "lucide-react";
 import { ProductCard, ProductFormData } from "@/components/menu/ProductCard";
 import { ConfirmDialog } from "@/components/menu/ConfirmDialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetClose } from "@/components/ui/sheet";
