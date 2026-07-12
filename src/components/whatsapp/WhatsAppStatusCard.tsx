@@ -15,24 +15,46 @@ interface Props {
   primaryLoading?: boolean;
 }
 
-const maskPhone = (phone?: string) => {
+// Formata número BR completo, sem máscara: +55 (14) 99999-4997
+const formatPhone = (phone?: string) => {
   if (!phone) return "";
-  const digits = phone.replace(/\D/g, "");
-  if (digits.length < 6) return `+${digits}`;
-  const last4 = digits.slice(-4);
-  const masked = "*".repeat(Math.max(0, digits.length - 6));
-  return `+${digits.slice(0, 2)} ${digits.slice(2, 4)} ${masked}-${last4}`;
+  const d = phone.replace(/\D/g, "");
+  if (!d) return "";
+  // Assume DDI 55 quando cabe
+  const hasDDI = d.length >= 12 && d.startsWith("55");
+  const rest = hasDDI ? d.slice(2) : d;
+  const ddi = hasDDI ? "+55 " : d.length > 11 ? `+${d.slice(0, d.length - 11)} ` : "";
+  if (rest.length === 11) return `${ddi}(${rest.slice(0, 2)}) ${rest.slice(2, 7)}-${rest.slice(7)}`;
+  if (rest.length === 10) return `${ddi}(${rest.slice(0, 2)}) ${rest.slice(2, 6)}-${rest.slice(6)}`;
+  return `+${d}`;
 };
 
 const sinceLabel = (iso?: string | null) => {
   if (!iso) return null;
   const ms = Date.now() - new Date(iso).getTime();
-  const days = Math.floor(ms / 86400000);
-  if (days >= 1) return `há ${days} dia${days > 1 ? "s" : ""}`;
-  const hours = Math.floor(ms / 3600000);
-  if (hours >= 1) return `há ${hours}h`;
-  const min = Math.max(1, Math.floor(ms / 60000));
-  return `há ${min}min`;
+  if (ms < 60_000) return "agora mesmo";
+  const min = Math.floor(ms / 60_000);
+  if (min < 60) return `há ${min}min`;
+  const hours = Math.floor(ms / 3_600_000);
+  const remMin = Math.floor((ms % 3_600_000) / 60_000);
+  if (hours < 24) return remMin ? `há ${hours}h ${remMin}min` : `há ${hours}h`;
+  const days = Math.floor(ms / 86_400_000);
+  const remH = Math.floor((ms % 86_400_000) / 3_600_000);
+  return remH ? `há ${days}d ${remH}h` : `há ${days} dia${days > 1 ? "s" : ""}`;
+};
+
+const absoluteWhen = (iso?: string | null) => {
+  if (!iso) return "";
+  try {
+    return new Date(iso).toLocaleString("pt-BR", {
+      day: "2-digit",
+      month: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return "";
+  }
 };
 
 export default function WhatsAppStatusCard({
@@ -87,12 +109,14 @@ export default function WhatsAppStatusCard({
             </span>
           </div>
           <p className="text-sm font-bold text-foreground truncate mt-0.5">{storeName}</p>
-          <p className="text-xs text-muted-foreground truncate">
-            {isConnected && connectedPhone ? maskPhone(connectedPhone) : "Nenhum número conectado"}
-            {isConnected && connectedAt && (
-              <span className="ml-1.5 text-[10px] opacity-70">· conectado {sinceLabel(connectedAt)}</span>
-            )}
+          <p className="text-xs text-foreground/90 truncate font-medium">
+            {isConnected && connectedPhone ? formatPhone(connectedPhone) : "Nenhum número conectado"}
           </p>
+          {isConnected && connectedAt && (
+            <p className="text-[10px] text-muted-foreground mt-0.5">
+              Conectado {sinceLabel(connectedAt)} · desde {absoluteWhen(connectedAt)}
+            </p>
+          )}
         </div>
       </div>
 
@@ -100,7 +124,7 @@ export default function WhatsAppStatusCard({
         <div className="mt-3 flex items-start gap-2 rounded-lg bg-destructive/10 border border-destructive/30 px-3 py-2">
           <AlertTriangle className="h-3.5 w-3.5 text-destructive shrink-0 mt-0.5" />
           <p className="text-[11px] text-destructive leading-snug">
-            Número conectado ({maskPhone(connectedPhone)}) é diferente do cadastrado na loja ({maskPhone(expectedPhone)}). Reconecte com o número correto.
+            Número conectado ({formatPhone(connectedPhone)}) é diferente do cadastrado na loja ({formatPhone(expectedPhone)}). Reconecte com o número correto.
           </p>
         </div>
       )}
