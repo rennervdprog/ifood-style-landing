@@ -108,6 +108,19 @@ export default function PlatformWhatsAppTab() {
     if (supportCfg?.number != null) setSupportNumber(supportCfg.number);
   }, [supportCfg?.number]);
 
+  // Auto-sync real status from Evolution on mount (evita status "connecting" travado)
+  useEffect(() => {
+    (async () => {
+      try {
+        await invokeWithAuth("platform-whatsapp-sync-status", {});
+        qc.invalidateQueries({ queryKey: ["platform-wa-cfg"] });
+      } catch {
+        /* silencioso */
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const saveCfg = useMutation({
     mutationFn: async (patch: Partial<Cfg>) => {
       const { error } = await supabase
