@@ -298,13 +298,13 @@ Deno.serve(async (req) => {
           .limit(1).maybeSingle();
         if (blocked) return json({ ok: true, skipped: "blacklisted" });
 
-        // P2 — silêncio 24h: se já mandamos saudação nas últimas 24h, some.
-        //  Bot é placa de "entre aqui" — não é atendente.
+        // P2 — silêncio 24h: se já mandamos (ou estamos mandando) saudação
+        // nas últimas 24h, some. INCLUI greet_pending para bloquear rajada
+        // de mensagens que chegam em segundos (bug: 2 respostas seguidas).
         const silenceSince = new Date(Date.now() - SILENCE_AFTER_LINK_MS).toISOString();
         const { data: recentGreet } = await admin
           .from("whatsapp_send_log")
           .select("id").eq("store_id", cfg.store_id).eq("phone", number).eq("kind", "auto_reply")
-          .neq("message_hash", "greet_pending")
           .gte("sent_at", silenceSince).limit(1).maybeSingle();
         if (recentGreet) return json({ ok: true, skipped: "silence_24h" });
 
@@ -418,11 +418,16 @@ Deno.serve(async (req) => {
 
         // Pré-registra IMEDIATAMENTE (greet_pending) para bloquear rajada
         // via unique index (store_id, phone, kind, sent_bucket_min) da Fase 1.
+        // Se o insert falhar (conflito unique), outra invocação já está enviando
+        // — ABORTA para não gerar 2 respostas.
         const { error: pendingLogError } = await admin.from("whatsapp_send_log").insert({
           store_id: cfg.store_id, phone: number, message_hash: "greet_pending",
           kind: "auto_reply", sent_at: new Date().toISOString(),
         });
-        if (pendingLogError) console.warn("[evolution-webhook] pending log skipped", pendingLogError.message);
+        if (pendingLogError) {
+          console.warn("[evolution-webhook] pending log conflict — skipping duplicate send", pendingLogError.message);
+          return json({ ok: true, skipped: "concurrent_send_in_progress" });
+        }
 
         // Um envio só, com pequeno delay humano (2-4s).
         await sleep(2_000 + Math.floor(Math.random() * 2_000));
