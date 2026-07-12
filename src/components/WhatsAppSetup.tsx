@@ -70,6 +70,12 @@ export default function WhatsAppSetup({ storeId, storeSlug, storeName, expectedP
 
   // Realtime — reflete conexão/desconexão em tempo real
   useEffect(() => {
+    const doSync = async () => {
+      try {
+        await supabase.functions.invoke("store-whatsapp-sync-status", { body: { store_id: storeId } });
+      } catch { /* ignore */ }
+      await loadConfig();
+    };
     const channel = supabase
       .channel(`store-wa-cfg-${storeId}`)
       .on(
@@ -77,8 +83,19 @@ export default function WhatsAppSetup({ storeId, storeSlug, storeName, expectedP
         { event: "*", schema: "public", table: "store_whatsapp_config", filter: `store_id=eq.${storeId}` },
         () => { loadConfig(); },
       )
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
+      .subscribe((status) => {
+        // Ao (re)conectar o socket, força um refresh para pegar mudanças perdidas offline.
+        if (status === "SUBSCRIBED") loadConfig();
+      });
+    // Ao voltar pra aba, ressincroniza com Evolution + reload.
+    const onVisible = () => {
+      if (document.visibilityState === "visible") doSync();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      supabase.removeChannel(channel);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
   }, [storeId, loadConfig]);
 
   const saveConfig = async () => {
