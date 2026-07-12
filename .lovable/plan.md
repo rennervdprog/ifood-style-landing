@@ -1,76 +1,47 @@
-# Plano — WhatsApp Plataforma 100% Profissional
+## Plano para Evolution voltar a funcionar
 
-Objetivo: transformar a aba **WhatsApp Plataforma** (Super Admin) num painel real de operação, com histórico de envios (mensalidades, repasses, avisos), métricas e controles funcionando de verdade — não só um botão de conectar.
+### Objetivo
+Restaurar a conexão do WhatsApp Plataforma pelos dois caminhos:
+- QR Code
+- Código por número de telefone
 
-## 1. Reorganização visual da aba (UI)
+### Diagnóstico atual
+- A API Evolution nova está respondendo e a chave autentica.
+- O erro atual vem da função `evolution-qr-code`, que está caindo em erro interno genérico antes de devolver uma mensagem útil.
+- Há risco de instância antiga/stale no banco versus instância real inexistente no servidor novo.
+- O fluxo precisa tratar Evolution v2.3.7 de forma mais direta, sem depender de estado antigo.
 
-Layout em 4 sub-abas dentro de "WhatsApp Plataforma":
+### Correção proposta
+1. **Reescrever o fluxo da função de conexão**
+   - Validar usuário/admin.
+   - Ler a configuração atual.
+   - Checar se a instância existe na Evolution.
+   - Se não existir, criar a instância com payload compatível com Evolution v2.3.7.
+   - Reaplicar webhook e settings.
+   - Só depois chamar conexão por QR ou por número.
 
-```text
-[ Conexão ] [ Histórico ] [ Templates ] [ Configurações ]
-```
+2. **Separar QR Code de código por número**
+   - QR: usar `/instance/connect/{instance}` e aceitar `base64`, `qrcode.base64`, `qrcode.code` ou `code`.
+   - Número: usar `/instance/connect/{instance}?number=55...` e aceitar `pairingCode`, `pairing_code`, `qrcode.pairingCode` ou `code` quando for realmente código curto.
 
-- **Conexão**: card grande com status (conectado/desconectado), número, última atividade, botões QR / Conectar por número / Sincronizar / Desconectar. Já existe — só reorganizar num card único.
-- **Histórico**: nova aba — tabela de todos os envios (ver seção 2).
-- **Templates**: editor dos textos usados nos disparos automáticos (mensalidade, repasse, boas-vindas, atraso).
-- **Configurações**: número de suporte, avisos ativos, limites diários, janela de envio (horário comercial), coffee break.
+3. **Parar o 500 genérico**
+   - Toda falha da Evolution vai retornar erro claro para a tela: status, etapa e mensagem resumida.
+   - Exemplo: “falha ao criar instância”, “falha ao conectar”, “Evolution não retornou QR”.
 
-## 2. Histórico de envios (o pedido central)
+4. **Reset seguro da instância da plataforma**
+   - Se a instância `itasuper-platform` estiver quebrada/stale, apagar no servidor novo quando existir.
+   - Recriar limpa.
+   - Atualizar o banco para `connecting` apenas quando QR/código for gerado de verdade.
 
-Fonte: tabela `platform_whatsapp_send_log` que já existe no Supabase externo.
+5. **Fechar brecha de diagnóstico**
+   - Remover ou proteger função pública de diagnóstico que expõe dados operacionais do WhatsApp.
 
-Adicionar na UI:
-- Tabela paginada com filtros: **categoria** (mensalidade / repasse / boas-vindas / atraso / manual), **status** (enviado / falhou / bloqueado por limite), **loja**, **período**.
-- Colunas: data/hora, loja, telefone (mascarado), categoria, preview da mensagem, status, botão "reenviar".
-- Cards de métrica no topo: enviados hoje / semana / mês, taxa de sucesso, próximo horário liberado (respeitando anti-ban).
-- Exportar CSV.
+6. **Testes finais**
+   - Testar QR Code.
+   - Testar código por número.
+   - Parear o WhatsApp ItaSuper.
+   - Sincronizar status até `connected`.
+   - Enviar mensagem teste para `14991624997`.
 
-Ajustes no backend:
-- Garantir que `billing-reminders`, `subscribe-plan-payment` (cobrança gerada), `repasse-*` e qualquer envio manual gravem sempre em `platform_whatsapp_send_log` com `category` preenchido.
-- RPC `list_platform_wa_log(filters, page)` com paginação server-side.
-
-## 3. Disparos automáticos ligados de verdade
-
-- **Mensalidade gerada** → template "Nova cobrança R$ X — vence em DD/MM, link: …".
-- **Mensalidade vencendo (D-2, D0, D+1, D+3, D+7)** → já existe cron `billing-reminders`; revisar textos e cadência, e forçar log.
-- **Repasse liberado** (semanal) → template "Seu repasse de R$ X foi transferido para sua conta Asaas".
-- **Repasse pendente** (sexta) → aviso do valor previsto.
-- **Essencial atingiu 80% dos R$ 5k** → aviso preventivo de upgrade.
-- **WhatsApp da loja desconectou** → aviso ao lojista pelo WhatsApp da plataforma.
-
-Cada evento vira uma função pequena que chama `platform-whatsapp-send` com `category` e `template_key`.
-
-## 4. Templates editáveis
-
-Nova tabela `platform_whatsapp_templates(key, title, body, variables[], active)` no Supabase externo. Editor simples na aba Templates com preview e placeholders (`{{loja}}`, `{{valor}}`, `{{vencimento}}`, `{{link}}`).
-`platform-whatsapp-send` passa a resolver template pelo `key` em vez de string hardcoded.
-
-## 5. Envio manual / broadcast controlado
-
-- Campo "enviar para uma loja" (busca por nome) com preview do template.
-- Broadcast segmentado: "todas as lojas do plano Essencial", "todas com mensalidade em atraso", etc. — sempre respeitando os limites anti-ban (log-normal delay + limite diário) já implementados em `platform-whatsapp-send`.
-
-## 6. Saúde e anti-ban visíveis
-
-Card "Saúde do chip" com: idade do chip, mensagens hoje / limite, próximo horário permitido, últimos erros da Evolution. Botão "pausar disparos 1h / 24h" (flag em `platform_whatsapp_config`).
-
-## 7. Entregáveis técnicos (resumo)
-
-- Frontend: refatorar `PlatformWhatsAppTab.tsx` em 4 sub-abas + novos componentes `WhatsAppHistoryTable`, `WhatsAppTemplatesEditor`, `WhatsAppHealthCard`, `WhatsAppManualSend`.
-- Backend externo:
-  - Tabela `platform_whatsapp_templates` + seed dos templates atuais.
-  - RPC `list_platform_wa_log` e `wa_stats_summary`.
-  - Ajustar `platform-whatsapp-send` para ler template por `key` e sempre gravar `category`.
-  - Garantir logs em todos os call sites (billing, repasse, alerts).
-- Cron novo: `repasse-reminders` (sexta) se ainda não existir.
-
-## 8. Ordem de execução sugerida
-
-1. Sub-abas + card de conexão reorganizado (baixo risco).
-2. Tabela `platform_whatsapp_templates` + editor + refactor do `send` para usar templates.
-3. RPC de histórico + aba Histórico com filtros e métricas.
-4. Envio manual + broadcast segmentado.
-5. Card de saúde do chip + pausar disparos.
-6. Novos eventos automáticos (repasse liberado, essencial 80%, wa da loja caiu).
-
-Cada etapa incrementa versão e é testável isoladamente.
+### Resultado esperado
+A aba WhatsApp Plataforma deixa de travar em loading/500 e passa a mostrar erro útil ou QR/código válido, permitindo reconectar o ItaSuper no servidor novo.
