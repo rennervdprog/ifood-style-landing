@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "@/hooks/use-toast";
-import { MessageCircle, RefreshCw, QrCode, Send, Loader2, History, Settings, Link as LinkIcon } from "lucide-react";
+import { MessageCircle, RefreshCw, QrCode, Send, Loader2, History, Settings, Link as LinkIcon, Copy, Check, Smartphone } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import PlatformWhatsAppHistory from "./PlatformWhatsAppHistory";
 
@@ -29,6 +29,17 @@ export default function PlatformWhatsAppTab() {
   const [pairingCode, setPairingCode] = useState<string | null>(null);
   const [pairingPhone, setPairingPhone] = useState("");
   const [pairingLoading, setPairingLoading] = useState(false);
+  const [pairingExpiresAt, setPairingExpiresAt] = useState<number | null>(null);
+  const [secondsLeft, setSecondsLeft] = useState(0);
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    if (!pairingExpiresAt) return;
+    const tick = () => setSecondsLeft(Math.max(0, Math.ceil((pairingExpiresAt - Date.now()) / 1000)));
+    tick();
+    const id = setInterval(tick, 500);
+    return () => clearInterval(id);
+  }, [pairingExpiresAt]);
 
   const formatBrPhone = (raw: string) => {
     const digits = raw.replace(/\D/g, "").slice(0, 13);
@@ -141,7 +152,7 @@ export default function PlatformWhatsAppTab() {
   const fetchPairing = async () => {
     const phone = pairingPhone.replace(/\D/g, "");
     if (phone.length < 10) return toast({ title: "Número inválido", description: "Formato: 5522999999999", variant: "destructive" });
-    setPairingLoading(true); setPairingCode(null); setQrData(null);
+    setPairingLoading(true); setPairingCode(null); setQrData(null); setPairingExpiresAt(null); setCopied(false);
     try {
       const { data, error } = await invokeWithAuth("evolution-qr-code", {
         instance_name: cfg?.instance_name || "itasuper-platform", is_platform: true, pairing_number: phone, force_reconnect: true,
@@ -150,6 +161,7 @@ export default function PlatformWhatsAppTab() {
       const code = (data as any)?.pairing_code as string | null;
       if (!code) throw new Error("Evolution não retornou pairing code");
       setPairingCode(code);
+      setPairingExpiresAt(Date.now() + 60_000);
       toast({ title: "Código gerado" });
     } catch (e: any) {
       toast({ title: "Erro", description: e.message, variant: "destructive" });
@@ -233,33 +245,86 @@ export default function PlatformWhatsAppTab() {
       </div>
 
       <div className="rounded-xl border bg-card p-4 space-y-3">
-        <div>
-          <div className="font-bold">Conectar por número (código de 8 dígitos)</div>
-          <div className="text-xs text-muted-foreground">
-            No WhatsApp do celular: Aparelhos conectados → Conectar aparelho → <b>Conectar com número de telefone</b>. Digite o código gerado abaixo.
-          </div>
+        <div className="flex items-center gap-2">
+          <Smartphone className="h-4 w-4 text-green-600" />
+          <div className="font-bold">Conectar por número de telefone</div>
         </div>
-        <div className="flex gap-2">
+
+        <ol className="space-y-1.5 text-xs text-muted-foreground list-decimal list-inside">
+          <li>Digite o número do WhatsApp abaixo e toque em <b>Gerar código</b>.</li>
+          <li>No celular, abra <b>WhatsApp → Aparelhos conectados → Conectar aparelho</b>.</li>
+          <li>Toque em <b>Conectar com número de telefone</b> e digite o código gerado.</li>
+        </ol>
+
+        <div className="flex flex-col sm:flex-row gap-2">
           <Input
             value={pairingPhone}
             onChange={(e) => setPairingPhone(formatBrPhone(e.target.value))}
             placeholder="+55 (22) 99999-9999"
             inputMode="tel"
             maxLength={20}
+            className="flex-1"
           />
-          <Button onClick={fetchPairing} disabled={pairingLoading}>
-            {pairingLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Gerar código"}
+          <Button onClick={fetchPairing} disabled={pairingLoading} className="bg-green-600 hover:bg-green-700 text-white">
+            {pairingLoading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Smartphone className="h-4 w-4 mr-1" />}
+            Gerar código
           </Button>
         </div>
-        {pairingCode && (
-          <div className="p-4 bg-green-50 dark:bg-green-950/30 rounded-lg text-center">
-            <div className="text-xs text-muted-foreground mb-1">Digite este código no WhatsApp:</div>
-            <div className="text-3xl font-black font-mono tracking-widest text-green-700 dark:text-green-400">
-              {pairingCode.length === 8 ? `${pairingCode.slice(0, 4)}-${pairingCode.slice(4)}` : pairingCode}
+
+        {pairingCode && (() => {
+          const clean = pairingCode.replace(/[^A-Z0-9]/gi, "").toUpperCase();
+          const g1 = clean.slice(0, 4).split("");
+          const g2 = clean.slice(4, 8).split("");
+          const expired = secondsLeft <= 0;
+          return (
+            <div className={`p-4 rounded-xl border-2 border-dashed space-y-3 ${expired ? "bg-muted border-muted-foreground/30" : "bg-green-50 dark:bg-green-950/30 border-green-500/40"}`}>
+              <div className="flex items-center justify-between gap-2">
+                <div className="text-xs font-bold text-muted-foreground uppercase tracking-wide">
+                  Digite este código no WhatsApp
+                </div>
+                <div className={`text-xs font-bold px-2 py-0.5 rounded-full ${expired ? "bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-400" : "bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-400"}`}>
+                  {expired ? "Expirado" : `${secondsLeft}s`}
+                </div>
+              </div>
+
+              <div className="flex items-center justify-center gap-1 sm:gap-2 flex-wrap">
+                {g1.map((c, i) => (
+                  <div key={`a${i}`} className={`w-9 h-12 sm:w-11 sm:h-14 rounded-lg flex items-center justify-center text-2xl sm:text-3xl font-black font-mono ${expired ? "bg-background text-muted-foreground" : "bg-white dark:bg-background text-green-700 dark:text-green-400 shadow-sm"}`}>{c}</div>
+                ))}
+                <div className="text-2xl font-black text-muted-foreground px-1">–</div>
+                {g2.map((c, i) => (
+                  <div key={`b${i}`} className={`w-9 h-12 sm:w-11 sm:h-14 rounded-lg flex items-center justify-center text-2xl sm:text-3xl font-black font-mono ${expired ? "bg-background text-muted-foreground" : "bg-white dark:bg-background text-green-700 dark:text-green-400 shadow-sm"}`}>{c}</div>
+                ))}
+              </div>
+
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => {
+                    navigator.clipboard.writeText(clean).then(() => {
+                      setCopied(true);
+                      setTimeout(() => setCopied(false), 2000);
+                    });
+                  }}
+                  disabled={expired}
+                >
+                  {copied ? <><Check className="h-4 w-4 mr-1" />Copiado</> : <><Copy className="h-4 w-4 mr-1" />Copiar código</>}
+                </Button>
+                {expired && (
+                  <Button size="sm" className="flex-1" onClick={fetchPairing} disabled={pairingLoading}>
+                    <RefreshCw className="h-4 w-4 mr-1" /> Gerar novo
+                  </Button>
+                )}
+              </div>
+
+              <div className="text-[11px] text-center text-muted-foreground">
+                {expired ? "O código expirou. Gere um novo e digite rapidamente." : "Digite no WhatsApp antes de expirar."}
+              </div>
             </div>
-            <div className="text-[10px] text-muted-foreground mt-2">Válido por ~60s. Se expirar, gere outro.</div>
-          </div>
-        )}
+          );
+        })()}
       </div>
 
       <div className="rounded-xl border bg-card p-4 space-y-3">
