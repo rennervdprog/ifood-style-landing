@@ -62,3 +62,9 @@ verify_jwt = false
 [functions.oneshot-platform-whatsapp]
 verify_jwt = false
 
+[functions.oneshot-balance-shadow]
+verify_jwt = false
+
+[functions.check-balance-restrictions]
+verify_jwt = false
+
