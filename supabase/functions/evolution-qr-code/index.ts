@@ -150,15 +150,18 @@ Deno.serve(async (req) => {
 
   try {
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader?.startsWith("Bearer ")) return json({ error: "Unauthorized" }, 401);
+    if (!authHeader?.startsWith("Bearer ")) return json({ error: "Unauthorized", reason: "missing_bearer" }, 401);
+    const jwt = authHeader.replace(/^Bearer\s+/i, "");
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_ANON_KEY")!,
-      { global: { headers: { Authorization: authHeader } } },
     );
-    const { data: userData } = await supabase.auth.getUser();
-    if (!userData?.user) return json({ error: "Unauthorized" }, 401);
+    const { data: userData, error: userErr } = await supabase.auth.getUser(jwt);
+    if (!userData?.user) {
+      console.error("[evolution-qr-code] auth failed", { err: userErr?.message });
+      return json({ error: "Unauthorized", reason: userErr?.message || "no_user" }, 401);
+    }
 
     const body = await req.json().catch(() => ({}));
     const parsed = BodySchema.safeParse(body);
