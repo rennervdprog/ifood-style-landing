@@ -60,9 +60,17 @@ async function refundAsaasPayment(paymentId: string, apiKey: string) {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
-    const url = Deno.env.get("SUPABASE_URL")!;
-    const anon = Deno.env.get("SUPABASE_ANON_KEY")!;
-    const svc = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    // 🔁 EXTERNAL DB: pedidos/lojas ficam no Supabase EXTERNO. Cancelamento
+    // + reembolso precisam operar contra o mesmo projeto para respeitar a
+    // política de cancelamento contratual (cláusula 10).
+    const url = Deno.env.get("EXTERNAL_SUPABASE_URL") || Deno.env.get("SUPABASE_URL")!;
+    const svc = Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY")
+      || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY")
+      || Deno.env.get("SERVICE_ROLE_KEY")
+      || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const anon = Deno.env.get("EXTERNAL_SUPABASE_ANON_KEY")
+      || Deno.env.get("SUPABASE_ANON_KEY")
+      || svc;
 
     const authHeader = req.headers.get("Authorization") || "";
     if (!authHeader.toLowerCase().startsWith("bearer ")) {
