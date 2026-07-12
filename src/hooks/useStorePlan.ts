@@ -61,6 +61,8 @@ export interface StorePlanFeatures {
   defaultCommissionRate: number;
   /** True quando a loja tem qualquer override (VIP / condição personalizada) */
   isVip: boolean;
+  /** VIP vitalício no Essencial R$0 — nunca sofre upgrade automático */
+  isEssencialLifetimeFree: boolean;
   /** Detalhes dos overrides ativos */
   vipDiffs: {
     fee: boolean;
