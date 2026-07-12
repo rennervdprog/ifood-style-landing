@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "@/hooks/use-toast";
-import { MessageCircle, RefreshCw, QrCode, Send, Loader2, History, Settings, Link as LinkIcon } from "lucide-react";
+import { MessageCircle, RefreshCw, QrCode, Send, Loader2, History, Settings, Link as LinkIcon, Copy, Check, Smartphone } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import PlatformWhatsAppHistory from "./PlatformWhatsAppHistory";
 
@@ -29,6 +29,17 @@ export default function PlatformWhatsAppTab() {
   const [pairingCode, setPairingCode] = useState<string | null>(null);
   const [pairingPhone, setPairingPhone] = useState("");
   const [pairingLoading, setPairingLoading] = useState(false);
+  const [pairingExpiresAt, setPairingExpiresAt] = useState<number | null>(null);
+  const [secondsLeft, setSecondsLeft] = useState(0);
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    if (!pairingExpiresAt) return;
+    const tick = () => setSecondsLeft(Math.max(0, Math.ceil((pairingExpiresAt - Date.now()) / 1000)));
+    tick();
+    const id = setInterval(tick, 500);
+    return () => clearInterval(id);
+  }, [pairingExpiresAt]);
 
   const formatBrPhone = (raw: string) => {
     const digits = raw.replace(/\D/g, "").slice(0, 13);
