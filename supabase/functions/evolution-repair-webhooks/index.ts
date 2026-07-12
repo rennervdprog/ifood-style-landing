@@ -12,12 +12,15 @@ const json = (b: unknown, s = 200) =>
   });
 
 const setWebhook = async (baseUrl: string, instance: string, apiKey: string, webhookUrl: string) => {
+  // Evolution v2.3.x exige o envelope { webhook: { ... } }
   const payload = {
-    enabled: true,
-    url: webhookUrl,
-    webhook_by_events: false,
-    webhook_base64: false,
-    events: ["CONNECTION_UPDATE", "MESSAGES_UPSERT"],
+    webhook: {
+      enabled: true,
+      url: webhookUrl,
+      byEvents: false,
+      base64: false,
+      events: ["CONNECTION_UPDATE", "MESSAGES_UPSERT"],
+    },
   };
   const r = await fetch(`${baseUrl.replace(/\/$/, "")}/webhook/set/${instance}`, {
     method: "POST",
