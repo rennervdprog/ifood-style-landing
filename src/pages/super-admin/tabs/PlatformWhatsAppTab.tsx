@@ -9,6 +9,7 @@ import { toast } from "@/hooks/use-toast";
 import { MessageCircle, RefreshCw, QrCode, Send, Loader2, History, Settings, Link as LinkIcon, Copy, Check, Smartphone } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import PlatformWhatsAppHistory from "./PlatformWhatsAppHistory";
+import PasskeyWarning from "@/components/whatsapp/PasskeyWarning";
 
 type Cfg = {
   id?: string;
@@ -32,6 +33,7 @@ export default function PlatformWhatsAppTab() {
   const [pairingExpiresAt, setPairingExpiresAt] = useState<number | null>(null);
   const [secondsLeft, setSecondsLeft] = useState(0);
   const [copied, setCopied] = useState(false);
+  const [failCount, setFailCount] = useState(0);
 
   useEffect(() => {
     if (!pairingExpiresAt) return;
@@ -159,6 +161,7 @@ export default function PlatformWhatsAppTab() {
       toast({ title: "QR Code gerado" });
     } catch (e: any) {
       toast({ title: "Erro QR", description: e.message, variant: "destructive" });
+      setFailCount((n) => n + 1);
     } finally { setQrLoading(false); }
   };
 
@@ -178,6 +181,7 @@ export default function PlatformWhatsAppTab() {
       toast({ title: "Código gerado" });
     } catch (e: any) {
       toast({ title: "Erro", description: e.message, variant: "destructive" });
+      setFailCount((n) => n + 1);
     } finally { setPairingLoading(false); }
   };
 
@@ -256,6 +260,10 @@ export default function PlatformWhatsAppTab() {
           </div>
         )}
       </div>
+
+      {cfg?.status !== "connected" && (
+        <PasskeyWarning highlight={failCount >= 2} />
+      )}
 
       <div className="rounded-xl border bg-card p-4 space-y-3">
         <div className="flex items-center gap-2">
