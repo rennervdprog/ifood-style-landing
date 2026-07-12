@@ -123,6 +123,19 @@ export default function PlatformWhatsAppTab() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Realtime — reflete conexão/desconexão instantaneamente
+  useEffect(() => {
+    const channel = supabase
+      .channel("platform-wa-cfg-rt")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "platform_whatsapp_config" },
+        () => qc.invalidateQueries({ queryKey: ["platform-wa-cfg"] }),
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [qc]);
+
   const saveCfg = useMutation({
     mutationFn: async (patch: Partial<Cfg>) => {
       const { error } = await supabase
