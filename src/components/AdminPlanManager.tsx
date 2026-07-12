@@ -562,6 +562,7 @@ export default function AdminPlanManager() {
                       currentPixOverride={(plan as any).pix_operational_fee_override}
                       currentDeliveryOverride={(plan as any).platform_delivery_split_override}
                       currentPdvFixedFee={(plan as any).pdv_fixed_fee_per_sale}
+                      currentLifetimeFree={!!(plan as any).essencial_lifetime_free}
                       displayPlan={currentDisplay ?? (plan.plan_type as PlanType)}
                       planDefault={planDefaults[currentDisplay ?? (plan.plan_type as PlanType)]}
                       onSave={() => {
@@ -633,13 +634,14 @@ export default function AdminPlanManager() {
   );
 }
 
-function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride, currentDeliveryOverride, currentPdvFixedFee, displayPlan, planDefault, onSave }: {
+function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride, currentDeliveryOverride, currentPdvFixedFee, currentLifetimeFree, displayPlan, planDefault, onSave }: {
   storeId: string;
   currentFee: number;
   currentRate: number;
   currentPixOverride: number | null | undefined;
   currentDeliveryOverride: number | null | undefined;
   currentPdvFixedFee: number | null | undefined;
+  currentLifetimeFree?: boolean;
   displayPlan: DisplayPlan;
   planDefault: { monthly_fee: number; commission_rate: number };
   onSave: () => void;
@@ -659,7 +661,30 @@ function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride
   const [rate, setRate] = useState(currentRate);
   const [pdvFixedFee, setPdvFixedFee] = useState(currentPdvFixedFee ?? 0);
   const [pdvCommRate, setPdvCommRate] = useState(0);
+  const [lifetimeFree, setLifetimeFree] = useState(!!currentLifetimeFree);
+  const [lifetimeSaving, setLifetimeSaving] = useState(false);
   const [pixOverrideEnabled, setPixOverrideEnabled] = useState(currentPixOverride != null);
+  const toggleLifetimeFree = async () => {
+    setLifetimeSaving(true);
+    try {
+      const target = !lifetimeFree;
+      const { error } = await supabase
+        .from("store_plans" as any)
+        .update({
+          essencial_lifetime_free: target,
+          ...(target ? { essencial_upgrade_scheduled_at: null } : {}),
+        } as any)
+        .eq("store_id", storeId)
+        .eq("is_active", true);
+      if (error) throw error;
+      setLifetimeFree(target);
+      toast.success(target ? "Essencial vitalício ativado — nunca sofrerá upgrade automático." : "Vitalício removido.");
+      onSave();
+    } catch (e: any) {
+      toast.error(e?.message || "Erro ao alterar vitalício.");
+    } finally { setLifetimeSaving(false); }
+  };
+
   const [pixOverride, setPixOverride] = useState(currentPixOverride ?? 1.99);
   const [deliveryOverrideEnabled, setDeliveryOverrideEnabled] = useState(currentDeliveryOverride != null);
   const [deliveryOverride, setDeliveryOverride] = useState(currentDeliveryOverride ?? 2.00);
@@ -830,7 +855,7 @@ function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride
           {/* Seção 2b: Operacional — Auto-PIN por loja */}
           <div>
             <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2">🔐 Operacional</p>
-            <div className="bg-muted/20 rounded-xl p-3">
+            <div className="bg-muted/20 rounded-xl p-3 space-y-3">
               <label className="flex items-center justify-between cursor-pointer gap-3">
                 <div className="min-w-0">
                   <p className="text-xs font-bold text-foreground">Auto-preencher PIN de entrega</p>
@@ -844,6 +869,24 @@ function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride
                   <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${pinAutofill ? "left-5" : "left-0.5"}`} />
                 </button>
               </label>
+              {displayPlan === "fixed" && (
+                <label className="flex items-center justify-between cursor-pointer gap-3 pt-3 border-t border-border/40">
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                      <Crown className="h-3 w-3 text-amber-500" />
+                      Essencial vitalício R$ 0
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">Bloqueia o upgrade automático para R$ 180 ao atingir R$ 5.000 em vendas. Nenhuma cobrança será gerada.</p>
+                  </div>
+                  <button
+                    onClick={toggleLifetimeFree}
+                    disabled={lifetimeSaving}
+                    className={`relative w-10 h-5 rounded-full transition-colors shrink-0 ${lifetimeFree ? "bg-amber-500" : "bg-muted-foreground/30"} ${lifetimeSaving ? "opacity-50" : ""}`}
+                  >
+                    <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${lifetimeFree ? "left-5" : "left-0.5"}`} />
+                  </button>
+                </label>
+              )}
             </div>
           </div>
 

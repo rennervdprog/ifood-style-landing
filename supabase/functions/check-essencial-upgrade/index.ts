@@ -43,7 +43,7 @@ Deno.serve(async (req) => {
     // Essencial grátis (fixed, monthly_fee=0, ativo)
     const { data: plans, error: pErr } = await sb
       .from("store_plans")
-      .select("id, store_id, monthly_fee, plan_type, is_active, essencial_upgrade_scheduled_at, stores!inner(name, status, owner_id, profiles!stores_owner_id_fkey(whatsapp))")
+      .select("id, store_id, monthly_fee, plan_type, is_active, essencial_upgrade_scheduled_at, essencial_lifetime_free, pix_operational_fee_override, platform_delivery_split_override, commission_rate, stores!inner(name, status, owner_id, profiles!stores_owner_id_fkey(whatsapp))")
       .eq("plan_type", "fixed")
       .eq("is_active", true)
       .eq("monthly_fee", 0);
@@ -67,6 +67,20 @@ Deno.serve(async (req) => {
     for (const p of plans || []) {
       const store = (p as any).stores;
       if (!store || store.status !== "ativo") continue;
+      // VIP vitalício: nunca subir mensalidade nem agendar upgrade.
+      if ((p as any).essencial_lifetime_free === true) {
+        skipped.push({ store: store.name, reason: "lifetime_free_vip" });
+        continue;
+      }
+      // Qualquer override VIP (PIX, entrega, comissão custom) também isenta do upgrade automático.
+      if (
+        (p as any).pix_operational_fee_override != null ||
+        (p as any).platform_delivery_split_override != null ||
+        Number((p as any).commission_rate || 0) !== 0
+      ) {
+        skipped.push({ store: store.name, reason: "vip_override" });
+        continue;
+      }
       const ownerPhone: string | undefined = store?.profiles?.whatsapp;
 
       const { data: orders, error: oErr } = await sb

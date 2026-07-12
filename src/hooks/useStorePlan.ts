@@ -61,6 +61,8 @@ export interface StorePlanFeatures {
   defaultCommissionRate: number;
   /** True quando a loja tem qualquer override (VIP / condição personalizada) */
   isVip: boolean;
+  /** VIP vitalício no Essencial R$0 — nunca sofre upgrade automático */
+  isEssencialLifetimeFree: boolean;
   /** Detalhes dos overrides ativos */
   vipDiffs: {
     fee: boolean;
@@ -128,8 +130,8 @@ export function useStorePlan(storeId: string | undefined | null): StorePlanFeatu
     queryFn: async () => {
       const [planResult, storeResult, configResult] = await Promise.all([
         supabase
-          .from("store_plans")
-          .select("plan_type, monthly_fee, commission_rate, trial_ends_at, next_billing_date, last_billed_at, started_at, pix_operational_fee_override, platform_delivery_split_override, pdv_enabled, pdv_commission_rate")
+          .from("store_plans" as any)
+          .select("plan_type, monthly_fee, commission_rate, trial_ends_at, next_billing_date, last_billed_at, started_at, pix_operational_fee_override, platform_delivery_split_override, pdv_enabled, pdv_commission_rate, essencial_lifetime_free")
           .eq("store_id", storeId!)
           .eq("is_active", true)
           .maybeSingle(),
@@ -159,7 +161,7 @@ export function useStorePlan(storeId: string | undefined | null): StorePlanFeatu
         if (tpl) template = { monthly_fee: Number(tpl.monthly_fee), commission_rate: Number(tpl.commission_rate) };
       }
       return {
-        plan: planResult.data,
+        plan: planResult.data as any,
         city: (storeResult.data as any)?.address_city || "itatinga",
         deliveryMode: (storeResult.data as any)?.delivery_mode || "platform",
         platformFeeSplit: ((storeResult.data as any)?.platform_fee_split || "cliente") as "cliente" | "meio_a_meio" | "lojista",
@@ -254,6 +256,7 @@ export function useStorePlan(storeId: string | undefined | null): StorePlanFeatu
     defaultMonthlyFee: _tplFee != null ? Number(_tplFee) : _actualFee,
     defaultCommissionRate: _tplRate != null ? Number(_tplRate) : _actualRate,
     isVip: _isVip,
+    isEssencialLifetimeFree: !!(data?.plan as any)?.essencial_lifetime_free,
     vipDiffs: {
       fee: _vipFee,
       commission: _vipCommission,
