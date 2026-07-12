@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import DailyMenuManager from "@/components/DailyMenuManager";
 import MenuImportCSV from "@/components/MenuImportCSV";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -14,6 +14,7 @@ import { MenuToolbar, ProductFilter } from "@/components/menu/MenuToolbar";
 import { ProductSheet } from "@/components/menu/ProductSheet";
 import { SectionManageSheet } from "@/components/menu/SectionManageSheet";
 import { BulkActionBar } from "@/components/menu/BulkActionBar";
+import { SortableProductGrid } from "@/components/menu/SortableProductGrid";
 
 interface MenuBuilderProps {
   storeId: string;
@@ -29,7 +30,7 @@ type ConfirmState = {
 } | null;
 
 const PRODUCT_FIELDS =
-  "id, store_id, section_id, name, price, description, image_url, is_available, metadata, sold_by_weight, price_per_kg, weight_unit, created_at";
+  "id, store_id, section_id, name, price, description, image_url, is_available, metadata, sold_by_weight, price_per_kg, weight_unit, sort_order, created_at";
 
 const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
   const queryClient = useQueryClient();
@@ -75,6 +76,7 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
         .from("products")
         .select(PRODUCT_FIELDS)
         .eq("store_id", storeId)
+        .order("sort_order", { ascending: true, nullsFirst: false })
         .order("name");
       if (error) throw error;
       return (data || []).filter(
@@ -84,6 +86,15 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
           !p?.metadata?.sold_by_weight &&
           !p?.metadata?.hidden
       );
+    },
+  });
+
+  // Slug da loja — pra copiar link público do produto
+  const { data: storeSlug } = useQuery({
+    queryKey: ["store-slug", storeId],
+    queryFn: async () => {
+      const { data } = await supabase.from("stores").select("slug").eq("id", storeId).maybeSingle();
+      return (data as any)?.slug || null;
     },
   });
 
@@ -178,6 +189,21 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
   const outOfStockCount = useMemo(
     () => (products || []).filter((p: any) => p.is_available && p.metadata?.out_of_stock).length,
     [products]
+  );
+  const noImageCount = useMemo(
+    () => (products || []).filter((p: any) => !p.image_url).length,
+    [products]
+  );
+
+  const filterCounts = useMemo(
+    () => ({
+      all: totalProducts,
+      active: activeCount,
+      paused: pausedCount,
+      out_of_stock: outOfStockCount,
+      no_image: noImageCount,
+    }),
+    [totalProducts, activeCount, pausedCount, outOfStockCount, noImageCount]
   );
 
   const visibleProducts = useMemo(() => {
@@ -647,6 +673,95 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
     invalidateProducts();
   };
 
+  const bulkDuplicate = async () => {
+    if (selectedIds.size === 0) return;
+    setBulkBusy(true);
+    const ids = Array.from(selectedIds);
+    const targets = (products || []).filter((p: any) => ids.includes(p.id));
+    const rows = targets.map((p: any) => ({
+      store_id: storeId,
+      section_id: p.section_id ?? null,
+      name: `${p.name} (cópia)`,
+      price: Number(p.price) || 0,
+      description: p.description ?? null,
+      image_url: p.image_url ?? null,
+      metadata: p.metadata ?? {},
+      is_available: false,
+    }));
+    const { error } = await supabase.from("products").insert(rows as any);
+    setBulkBusy(false);
+    if (error) {
+      toast.error("Erro ao duplicar");
+      return;
+    }
+    toast.success(`${rows.length} produto${rows.length > 1 ? "s duplicados" : " duplicado"} (pausado)`);
+    clearSelection();
+    invalidateProducts();
+  };
+
+  // ---------- Copiar link público ----------
+  const copyProductLink = async (product: any) => {
+    const slug = storeSlug || storeId;
+    const base = typeof window !== "undefined" ? window.location.origin : "https://itasuper.com.br";
+    const url = `${base}/${slug}?p=${product.id}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success("Link copiado!");
+    } catch {
+      toast.error("Não foi possível copiar");
+    }
+  };
+
+  // ---------- Reorder (drag & drop) ----------
+  const reorderProducts = async (orderedIds: string[]) => {
+    // Optimistic: reordena localmente já
+    const previous = queryClient.getQueryData<any[]>(["store-products", storeId]);
+    if (previous) {
+      const byId = new Map(previous.map((p: any) => [p.id, p]));
+      const reordered = orderedIds.map((id, i) => ({ ...byId.get(id), sort_order: i }));
+      // Mantém itens fora da lista visível
+      const kept = previous.filter((p: any) => !orderedIds.includes(p.id));
+      queryClient.setQueryData(["store-products", storeId], [...reordered, ...kept]);
+    }
+    const results = await Promise.all(
+      orderedIds.map((id, i) =>
+        supabase.from("products").update({ sort_order: i } as any).eq("id", id)
+      )
+    );
+    if (results.some((r) => r.error)) {
+      toast.error("Erro ao reordenar");
+      invalidateProducts();
+    }
+  };
+
+  // ---------- Atalhos de teclado (desktop) ----------
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      const inField =
+        !!t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || (t as any).isContentEditable);
+      if (e.key === "Escape") {
+        if (productSheet) setProductSheet(null);
+        else if (sectionSheetOpen) setSectionSheetOpen(false);
+        else if (importOpen) setImportOpen(false);
+        else if (dailyMenuOpen) setDailyMenuOpen(false);
+        else if (moveBulkOpen) setMoveBulkOpen(false);
+        else if (selectedIds.size > 0) clearSelection();
+        return;
+      }
+      if (inField) return;
+      if (e.key === "/") {
+        const input = document.querySelector<HTMLInputElement>('input[placeholder="Buscar produto..."]');
+        if (input) { e.preventDefault(); input.focus(); }
+      } else if (e.key.toLowerCase() === "n") {
+        e.preventDefault();
+        openCreate();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [productSheet, sectionSheetOpen, importOpen, dailyMenuOpen, moveBulkOpen, selectedIds, activeSection]);
+
   // ---------- Section nav items ----------
   const sectionNavItems = useMemo(
     () =>
@@ -726,6 +841,7 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
       onToggleOutOfStock={() => toggleProductOutOfStock(product.id, (product as any).metadata)}
       onDelete={() => deleteProductConfirm(product.id, product.name)}
       onDuplicate={() => duplicateProduct(product)}
+      onCopyLink={() => copyProductLink(product)}
       onEdit={() => openEdit(product)}
       isEditing={false}
       onSaveEdit={() => {}}
