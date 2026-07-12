@@ -9,6 +9,7 @@ async function extSQL(query: string) {
   });
   return { status: r.status, body: await r.json().catch(() => null) };
 }
+
 async function evo(path: string) {
   const base = (Deno.env.get("EVOLUTION_API_URL") || "").replace(/\/$/, "");
   const key = Deno.env.get("EVOLUTION_GLOBAL_API_KEY") || "";
@@ -19,52 +20,59 @@ async function evo(path: string) {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: cors });
   const out: any = {};
+
   out.env = {
     EXTERNAL_SUPABASE_URL: !!Deno.env.get("EXTERNAL_SUPABASE_URL"),
     EXTERNAL_SUPABASE_SERVICE_KEY: !!Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY"),
-    EXTERNAL_SUPABASE_ACCESS_TOKEN: !!Deno.env.get("EXTERNAL_SUPABASE_ACCESS_TOKEN"),
     EXTERNAL_SUPABASE_PROJECT_REF: Deno.env.get("EXTERNAL_SUPABASE_PROJECT_REF") || null,
     EVOLUTION_API_URL: Deno.env.get("EVOLUTION_API_URL") || null,
     EVOLUTION_GLOBAL_API_KEY: !!Deno.env.get("EVOLUTION_GLOBAL_API_KEY"),
     EVOLUTION_WEBHOOK_TOKEN: !!Deno.env.get("EVOLUTION_WEBHOOK_TOKEN"),
     SUPABASE_URL: Deno.env.get("SUPABASE_URL") || null,
   };
+
+  // Configs no banco EXTERNO
   out.store_configs = await extSQL(`
-    SELECT store_id, evolution_instance_name, status, phone_number,
-           to_char(connected_at, 'YYYY-MM-DD HH24:MI:SS') AS connected_at,
-           auto_reply_enabled,
-           to_char(updated_at, 'YYYY-MM-DD HH24:MI:SS') AS updated_at
+    SELECT store_id, evolution_instance_name, status, phone_number, connected_at, auto_reply_enabled, updated_at
     FROM public.store_whatsapp_config ORDER BY updated_at DESC;
   `);
   out.platform_configs = await extSQL(`
-    SELECT id, instance_name, status, phone_number,
-           to_char(connected_at, 'YYYY-MM-DD HH24:MI:SS') AS connected_at,
-           to_char(updated_at, 'YYYY-MM-DD HH24:MI:SS') AS updated_at
+    SELECT id, instance_name, status, phone_number, connected_at, updated_at
     FROM public.platform_whatsapp_config ORDER BY updated_at DESC;
   `);
+
+  // Índices anti-rajada
   out.indexes = await extSQL(`
-    SELECT indexname FROM pg_indexes WHERE schemaname='public' AND tablename='whatsapp_send_log' ORDER BY 1;
+    SELECT indexname FROM pg_indexes
+    WHERE schemaname='public' AND tablename='whatsapp_send_log'
+    ORDER BY indexname;
   `);
-  out.dedupe_col = await extSQL(`
-    SELECT column_name FROM information_schema.columns
+  out.dedupe_column = await extSQL(`
+    SELECT column_name, generation_expression FROM information_schema.columns
     WHERE table_schema='public' AND table_name='whatsapp_send_log' AND column_name='sent_bucket_min';
   `);
+
+  // Últimos envios (para ver duplicações)
   out.recent_sends = await extSQL(`
-    SELECT store_id, phone, kind, message_hash,
-           to_char(sent_at, 'YYYY-MM-DD HH24:MI:SS') AS sent_at
+    SELECT store_id, phone, kind, message_hash, sent_at
     FROM public.whatsapp_send_log
-    WHERE sent_at > now() - interval '4 hours'
-    ORDER BY sent_at DESC LIMIT 60;
+    WHERE sent_at > now() - interval '2 hours'
+    ORDER BY sent_at DESC LIMIT 40;
   `);
+
+  // Evolution: lista instâncias e webhook de cada uma relevante
   const inst = await evo(`/instance/fetchInstances`);
-  out.instances = Array.isArray(inst.body) ? inst.body.map((i: any) => ({
+  out.instances = (inst.body || []).map((i: any) => ({
     name: i?.name || i?.instance?.instanceName,
     state: i?.connectionStatus || i?.instance?.state,
     ownerJid: i?.ownerJid || i?.instance?.owner,
-  })) : inst;
+    integration: i?.integration || i?.instance?.integration,
+  }));
+
   for (const name of ["store-b97f3a1a", "itasuper-platform"]) {
     out[`webhook_${name}`] = await evo(`/webhook/find/${name}`);
     out[`state_${name}`] = await evo(`/instance/connectionState/${name}`);
   }
+
   return new Response(JSON.stringify(out, null, 2), { headers: { ...cors, "Content-Type": "application/json" } });
 });
