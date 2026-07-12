@@ -6,7 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "@/hooks/use-toast";
-import { MessageCircle, RefreshCw, QrCode, Send, Loader2 } from "lucide-react";
+import { MessageCircle, RefreshCw, QrCode, Send, Loader2, History, Settings, Link as LinkIcon } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import PlatformWhatsAppHistory from "./PlatformWhatsAppHistory";
 
 type Cfg = {
   id?: string;
@@ -138,7 +140,7 @@ export default function PlatformWhatsAppTab() {
   const statusColor = cfg?.status === "connected" ? "text-green-600" : "text-amber-600";
 
   return (
-    <div className="p-4 lg:p-6 max-w-4xl mx-auto space-y-4">
+    <div className="p-4 lg:p-6 max-w-5xl mx-auto space-y-4">
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-2xl bg-green-500/10 flex items-center justify-center">
           <MessageCircle className="h-5 w-5 text-green-600" />
@@ -147,7 +149,19 @@ export default function PlatformWhatsAppTab() {
           <h2 className="text-lg font-black">WhatsApp da Plataforma</h2>
           <p className="text-xs text-muted-foreground">Instância dedicada para avisar lojistas em nome da ItaSuper</p>
         </div>
+        <div className="ml-auto flex items-center gap-2">
+          <span className={`text-xs font-bold ${statusColor}`}>● {cfg?.status || "?"}</span>
+        </div>
       </div>
+
+      <Tabs defaultValue="conexao" className="w-full">
+        <TabsList className="grid grid-cols-3 w-full">
+          <TabsTrigger value="conexao"><LinkIcon className="h-3.5 w-3.5 mr-1" />Conexão</TabsTrigger>
+          <TabsTrigger value="historico"><History className="h-3.5 w-3.5 mr-1" />Histórico</TabsTrigger>
+          <TabsTrigger value="config"><Settings className="h-3.5 w-3.5 mr-1" />Config.</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="conexao" className="space-y-4 mt-4">
 
       <div className="rounded-xl border bg-card p-4 space-y-3">
         <div className="flex items-center justify-between">
@@ -219,6 +233,24 @@ export default function PlatformWhatsAppTab() {
       </div>
 
       <div className="rounded-xl border bg-card p-4 space-y-3">
+        <Label className="text-sm font-bold">Testar envio</Label>
+        <div className="flex gap-2">
+          <Input value={testPhone} onChange={(e) => setTestPhone(e.target.value)} placeholder="5522..." />
+          <Button onClick={sendTest} disabled={cfg?.status !== "connected"}>
+            <Send className="h-4 w-4 mr-1" /> Enviar
+          </Button>
+        </div>
+      </div>
+
+        </TabsContent>
+
+        <TabsContent value="historico" className="mt-4">
+          <PlatformWhatsAppHistory />
+        </TabsContent>
+
+        <TabsContent value="config" className="space-y-4 mt-4">
+
+      <div className="rounded-xl border bg-card p-4 space-y-3">
         <div className="flex items-center justify-between">
           <div>
             <div className="font-bold">Avisos automáticos</div>
@@ -240,15 +272,8 @@ export default function PlatformWhatsAppTab() {
         </div>
       </div>
 
-      <div className="rounded-xl border bg-card p-4 space-y-3">
-        <Label className="text-sm font-bold">Testar envio</Label>
-        <div className="flex gap-2">
-          <Input value={testPhone} onChange={(e) => setTestPhone(e.target.value)} placeholder="5522..." />
-          <Button onClick={sendTest} disabled={cfg?.status !== "connected"}>
-            <Send className="h-4 w-4 mr-1" /> Enviar teste
-          </Button>
-        </div>
-      </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
