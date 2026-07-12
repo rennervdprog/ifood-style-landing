@@ -66,6 +66,19 @@ Deno.serve(async (req) => {
     const message: string = String(body?.message || "");
     const kind: string = String(body?.kind || "generic");
     const force: boolean = body?.force === true;
+    const category: string = String(
+      body?.category ||
+        (kind.startsWith("billing_") ? "mensalidade"
+        : kind.startsWith("repasse_") || kind === "weekly_payout" ? "repasse"
+        : kind.startsWith("essencial_") ? "essencial"
+        : kind === "welcome" ? "boas-vindas"
+        : kind === "test" ? "teste"
+        : kind === "manual" ? "manual"
+        : "outros"),
+    );
+    const store_id: string | null = body?.store_id || null;
+    const store_name: string | null = body?.store_name || null;
+    const preview: string = String(message).slice(0, 200);
     if (!phoneRaw || !message) return json({ error: "phone e message obrigatórios" }, 400);
 
     const admin = createClient(EXT_URL, EXT_KEY);
@@ -172,7 +185,8 @@ Deno.serve(async (req) => {
         if (r.ok) break;
         if (r.status >= 400 && r.status < 500) {
           await admin.from("platform_whatsapp_send_log").insert({
-            phone: number, kind, message_hash: msgHash, status: "error",
+            phone: number, kind, category, store_id, store_name, preview,
+            message_hash: msgHash, status: "error",
             error: JSON.stringify(data).slice(0, 500),
           }).then(() => {}, () => {});
           return json({ error: "Falha Evolution", details: data }, 502);
@@ -186,7 +200,8 @@ Deno.serve(async (req) => {
     }
     if (!r || !r.ok) {
       await admin.from("platform_whatsapp_send_log").insert({
-        phone: number, kind, message_hash: msgHash, status: "error",
+        phone: number, kind, category, store_id, store_name, preview,
+        message_hash: msgHash, status: "error",
         error: String(lastErr || data).slice(0, 500),
       }).then(() => {}, () => {});
       return json({ error: "Falha Evolution", details: data || String(lastErr) }, 502);
@@ -194,7 +209,8 @@ Deno.serve(async (req) => {
 
     // Registra envio (upsert por bucket para cortar corrida)
     await admin.from("platform_whatsapp_send_log").upsert(
-      { phone: number, kind, message_hash: msgHash, status: "sent", sent_at: nowIso },
+      { phone: number, kind, category, store_id, store_name, preview,
+        message_hash: msgHash, status: "sent", sent_at: nowIso },
       { onConflict: "phone,kind,sent_bucket_min", ignoreDuplicates: kind !== "auto_reply" } as any,
     );
 

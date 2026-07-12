@@ -83,7 +83,13 @@ Deno.serve(async (req) => {
     const r = await fetch(`${FUNCTIONS_BASE}/platform-whatsapp-send`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${EXT_KEY}` },
-      body: JSON.stringify({ phone, message, kind: `billing_${kind}`, store_id: tx.store_id }),
+      body: JSON.stringify({
+        phone, message,
+        kind: `billing_${kind}`,
+        category: "mensalidade",
+        store_id: tx.store_id,
+        store_name: store?.name,
+      }),
     });
     const data = await r.json().catch(() => ({}));
     if (r.ok) sent.push({ id: tx.id, store: store?.name, kind, ...data });
