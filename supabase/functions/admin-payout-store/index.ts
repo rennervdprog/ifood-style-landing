@@ -164,6 +164,29 @@ Deno.serve(async (req) => {
       admin_user_id: userData.user.id,
     });
 
+    // Notifica lojista via WhatsApp da plataforma (best-effort, não bloqueia)
+    try {
+      const { data: ownerRow } = await serviceClient
+        .from("stores").select("owner_id").eq("id", store_id).single();
+      if (ownerRow?.owner_id) {
+        const { data: prof } = await serviceClient
+          .from("profiles").select("whatsapp, full_name").eq("id", ownerRow.owner_id).maybeSingle();
+        const phone = String(prof?.whatsapp || "").replace(/\D/g, "");
+        if (phone) {
+          const first = String(prof?.full_name || "").split(" ")[0] || "Olá";
+          const msg = `💸 *Repasse enviado — ItaSuper*\n\nOlá ${first}! Acabamos de enviar seu repasse:\n\n• Loja: *${store.name}*\n• Valor: *R$ ${amount.toFixed(2).replace(".", ",")}*\n• Chave PIX: ${pix_type.toUpperCase()} ${maskedPix}\n• Ref: ${referenceCode}\n\nO valor cai na sua conta em minutos. Qualquer dúvida, fale com o suporte. 💚`;
+          await fetch(`${EXTERNAL_URL}/functions/v1/platform-whatsapp-send`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${EXTERNAL_SERVICE_KEY}` },
+            body: JSON.stringify({
+              phone, message: msg, kind: "repasse_sent",
+              category: "repasse", store_id, store_name: store.name,
+            }),
+          }).catch(() => undefined);
+        }
+      }
+    } catch (e) { console.error("[admin-payout-store] wa notify failed", e); }
+
     // Débito atômico via RPC com FOR UPDATE — valida saldo suficiente e
     // evita race-condition com auto-payout-cron (double payout).
     const { error: debitErr } = await serviceClient.rpc("debit_store_repasse", {
