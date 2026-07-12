@@ -886,23 +886,11 @@ const AdminDashboard = () => {
       console.info("[auto-print] pulado: motivo=pdv", orderId);
       return;
     }
-    const stored = localStorage.getItem("autoPrint");
-    const autoPrintNow = stored === null ? true : stored === "true";
-    if (!autoPrintNow) {
-      console.info("[auto-print] pulado: motivo=toggle-off", orderId);
-      return;
-    }
     const storeAutoDelivery = (store?.settings as any)?.auto_print_delivery !== false;
     if (!storeAutoDelivery) {
       console.info("[auto-print] pulado: motivo=settings-off", orderId);
       return;
     }
-    const dedupeKey = `printed-order:${orderId}`;
-    if (sessionStorage.getItem(dedupeKey)) {
-      console.info("[auto-print] pulado: motivo=dedupe", orderId);
-      return;
-    }
-    sessionStorage.setItem(dedupeKey, "1");
     try {
       const { data: full } = await supabase
         .from("orders")
@@ -911,6 +899,25 @@ const AdminDashboard = () => {
         .maybeSingle();
       if (!full) return;
       if ((full as any).order_source === "pdv") return;
+      // Dedupe server-side: se já tem printed_at, não imprime de novo em nenhum
+      // dispositivo/aba (antes era só sessionStorage por aba).
+      if ((full as any).printed_at) {
+        console.info("[auto-print] pulado: motivo=already-printed", orderId);
+        return;
+      }
+      // Marca ANTES de imprimir de forma atômica (só quem "ganhar" a corrida
+      // imprime). Se a UPDATE não afetar linha, outro dispositivo já pegou.
+      const { data: claim } = await supabase
+        .from("orders")
+        .update({ printed_at: new Date().toISOString() })
+        .eq("id", orderId)
+        .is("printed_at", null)
+        .select("id")
+        .maybeSingle();
+      if (!claim) {
+        console.info("[auto-print] pulado: motivo=claim-lost", orderId);
+        return;
+      }
       const copies = (store?.settings as any)?.print_copies === 1 ? 1 : 2;
       const paperWidth = (store?.settings as any)?.print_paper_width === 58 ? 58 : 80;
       let name = getClientName((full as any).client_id);
@@ -926,11 +933,15 @@ const AdminDashboard = () => {
         } catch (e) { console.warn("[auto-print] contact fetch failed", e); }
       }
       console.info("[auto-print] imprimindo", orderId);
-      printThermalReceipt(full as any, store?.name || "Loja", name || "Cliente", phone, { copies, paperWidth });
+      try {
+        printThermalReceipt(full as any, store?.name || "Loja", name || "Cliente", phone, { copies, paperWidth });
+      } catch (e) {
+        // Falhou depois do claim — libera o pedido pra outra tentativa/dispositivo.
+        console.warn("[auto-print] print falhou, revertendo claim", e);
+        await supabase.from("orders").update({ printed_at: null }).eq("id", orderId);
+      }
     } catch (e) {
       console.warn("[auto-print] falhou", e);
-      // Libera dedupe pra tentar de novo numa próxima trigger.
-      sessionStorage.removeItem(dedupeKey);
     }
   }, [store?.settings, store?.name, getClientName, getClientWhatsApp]);
 
@@ -1140,11 +1151,30 @@ const AdminDashboard = () => {
     }
   }, [store?.name, store?.settings, doPrintOrder]);
 
-  const toggleAutoPrint = () => {
+  // Deriva do banco (fonte única). Default ON.
+  const autoPrint = (store?.settings as any)?.auto_print_delivery !== false;
+
+  const toggleAutoPrint = async () => {
+    if (!store?.id || autoPrintSaving) return;
     const next = !autoPrint;
-    setAutoPrint(next);
-    localStorage.setItem("autoPrint", String(next));
-    toast.success(next ? "Impressão automática ativada" : "Impressão automática desativada");
+    setAutoPrintSaving(true);
+    // Optimistic update no cache do react-query.
+    queryClient.setQueryData(["my-store", user?.id, activeSimulateStoreId], (old: any) => {
+      if (!old) return old;
+      return { ...old, settings: { ...(old.settings || {}), auto_print_delivery: next } };
+    });
+    const merged = { ...((store.settings as any) || {}), auto_print_delivery: next };
+    const { error } = await supabase.from("stores").update({ settings: merged }).eq("id", store.id);
+    setAutoPrintSaving(false);
+    if (error) {
+      // Reverte cache.
+      queryClient.invalidateQueries({ queryKey: ["my-store", user?.id, activeSimulateStoreId] });
+      toast.error("Não foi possível salvar. Tente novamente.");
+      return;
+    }
+    // Limpa flag local antiga pra não confundir dispositivos que ainda tenham o override.
+    try { localStorage.removeItem("autoPrint"); } catch {}
+    toast.success(next ? "Impressão automática ativada em todos dispositivos" : "Impressão automática desativada");
   };
 
   const updateOrderStatus = async (orderId: string, newStatus: OrderStatus) => {
