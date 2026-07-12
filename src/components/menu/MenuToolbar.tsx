@@ -17,6 +17,7 @@ interface MenuToolbarProps {
   onSearchChange: (v: string) => void;
   filter: ProductFilter;
   onFilterChange: (f: ProductFilter) => void;
+  filterCounts?: Partial<Record<ProductFilter, number>>;
   selectionMode: boolean;
   onToggleSelectionMode: () => void;
   onNewProduct: () => void;
@@ -39,6 +40,7 @@ export const MenuToolbar = ({
   onSearchChange,
   filter,
   onFilterChange,
+  filterCounts,
   selectionMode,
   onToggleSelectionMode,
   onNewProduct,
@@ -96,7 +98,12 @@ export const MenuToolbar = ({
                 checked={filter === f}
                 onCheckedChange={() => onFilterChange(f)}
               >
-                {FILTER_LABELS[f]}
+                <span className="flex-1">{FILTER_LABELS[f]}</span>
+                {filterCounts?.[f] !== undefined && (
+                  <span className="ml-2 text-[10px] font-bold text-muted-foreground tabular-nums">
+                    {filterCounts[f]}
+                  </span>
+                )}
               </DropdownMenuCheckboxItem>
             ))}
           </DropdownMenuContent>
