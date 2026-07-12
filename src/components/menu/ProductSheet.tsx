@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { Package } from "lucide-react";
+import { Package, ArrowLeft } from "lucide-react";
 import { formatBRL } from "@/lib/utils";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetClose } from "@/components/ui/sheet";
 import { ProductFormInline, ProductFormData } from "@/components/menu/ProductCard";
 
 interface ProductSheetProps {
@@ -39,15 +39,21 @@ export const ProductSheet = ({
         side="right"
         className="w-full sm:max-w-lg overflow-y-auto p-0"
       >
-        <SheetHeader className="sticky top-0 z-10 bg-background border-b border-border px-5 py-4">
-          <SheetTitle className="text-base">
-            {mode === "create" ? "Novo produto" : "Editar produto"}
-          </SheetTitle>
-          {sectionName !== undefined && (
-            <SheetDescription className="text-xs">
-              {sectionName ? <>Seção: <span className="font-semibold text-foreground">{sectionName}</span></> : "Sem seção"}
-            </SheetDescription>
-          )}
+        <SheetHeader className="sticky top-0 z-20 bg-background border-b border-border px-3 py-3 flex-row items-center gap-2 space-y-0">
+          <SheetClose className="flex items-center gap-1.5 px-2.5 py-2 rounded-lg hover:bg-muted text-sm font-semibold text-foreground focus:outline-none focus:ring-2 focus:ring-ring">
+            <ArrowLeft className="h-4 w-4" />
+            Voltar
+          </SheetClose>
+          <div className="min-w-0 flex-1">
+            <SheetTitle className="text-base leading-tight truncate">
+              {mode === "create" ? "Novo produto" : "Editar produto"}
+            </SheetTitle>
+            {sectionName !== undefined && (
+              <SheetDescription className="text-xs truncate">
+                {sectionName ? <>Seção: <span className="font-semibold text-foreground">{sectionName}</span></> : "Sem seção"}
+              </SheetDescription>
+            )}
+          </div>
         </SheetHeader>
         {/* Live preview — como aparece pro cliente */}
         <div className="px-5 pt-4">

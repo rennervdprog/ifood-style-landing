@@ -1,91 +1,93 @@
-# Plano — Reestruturação da aba Cardápio
 
-Hoje o `MenuBuilder` (1.110 linhas) concentra tudo em uma única tela: seções, produtos, adicionais, importação, cardápio do dia, busca, seleção em massa, drag-and-drop e formulários inline. O resultado é pesado no mobile, com muitos botões soltos, formulários que empurram a página e ações escondidas. O plano abaixo profissionaliza a experiência sem mudar regras de negócio nem estrutura de dados.
+# Reestruturação UI/UX — Aba Pedidos (Lojista)
 
-## 1. Nova arquitetura visual
+Sem mudar lógica de negócio, RPCs, queries, fluxos de status, impressão, WhatsApp, Pix Direto ou batch dispatch. Apenas reorganizar hierarquia visual, densidade, componentização e responsividade em `src/pages/admin/sections/OrdersSection.tsx` e `src/pages/admin/components/AdminOrderCard.tsx`.
 
-Layout em 3 zonas fixas (responsivo):
+## Problemas atuais
+
+- Arquivo único de 662 linhas com muitos blocos empilhados: banner Pix + 4 contadores + tabs de status + busca + filtros período/origem + resumo + barra batch + cards. Muita informação competindo pela atenção.
+- Contadores (4 botões) duplicam funcionalmente as tabs de status logo abaixo.
+- Filtros de período/origem ficam abaixo da busca e do sticky, então "somem" no scroll.
+- Resumo do período (faturamento) fica visualmente igual aos filtros — pouca hierarquia.
+- Card do pedido (`AdminOrderCard`, 621 linhas) tem alta densidade sem agrupamento claro entre: cabeçalho, cliente, itens, ações.
+- No mobile o layout empilha bem, mas há muito padding vertical e header sticky ocupa espaço demais.
+- No desktop usa grid 2 colunas, mas toolbar/filtros continuam full-width mobile-first, deixando o topo "vazio".
+
+## Nova estrutura visual
 
 ```text
-Desktop (>=1024px)                    Mobile (<1024px)
-┌───────────┬──────────────────────┐  ┌──────────────────────┐
-│ Sidebar   │ Toolbar sticky       │  │ Toolbar sticky       │
-│ Seções    ├──────────────────────┤  ├──────────────────────┤
-│ (lista    │ Grid de produtos     │  │ Chips de seções      │
-│  vertical │ da seção ativa       │  │ (scroll horizontal)  │
-│  + drag)  │                      │  ├──────────────────────┤
-│           │                      │  │ Lista de produtos    │
-└───────────┴──────────────────────┘  └──────────────────────┘
-                                       + FAB "Novo produto"
+┌─────────────────────────────────────────────────────────┐
+│ Header sticky compacto                                  │
+│  Faturamento hoje · R$ 1.240   [Hoje▾] [Todas▾] [🔍]   │
+├─────────────────────────────────────────────────────────┤
+│ Pills de status (scroll horizontal, badges com contagem)│
+│  ● Novos 3   Preparo 2   Prontos 1   Entrega   Concl.  │
+├─────────────────────────────────────────────────────────┤
+│ [Alerta Pix Direto] (só quando existir)                 │
+│ [Barra batch dispatch] (só quando aplicável)            │
+├─────────────────────────────────────────────────────────┤
+│ Lista de cards (1 col mobile · 2 col desktop · 3 col xl)│
+└─────────────────────────────────────────────────────────┘
 ```
 
-- **Sidebar de seções (desktop)**: lista vertical com contagem de itens, indicador de pausada, drag para reordenar, botão "+ Nova seção" no rodapé.
-- **Chips de seções (mobile)**: barra horizontal com scroll, badge de quantidade, seção ativa destacada. Botão "gerenciar seções" abre bottom sheet com reordenar/renomear/pausar/excluir.
-- **Toolbar sticky**: busca global, filtros (Disponíveis / Pausados / Sem imagem / Sem adicional), botão modo seleção, menu "Mais" (importar CSV, cardápio do dia, adicionais da loja).
-- **Área principal**: grid responsivo (1 col mobile, 2 col tablet, 3 col desktop) de `ProductCard` compactos.
+## Mudanças (apenas apresentação)
 
-## 2. Card de produto redesenhado
+### 1. Header unificado (substitui contadores + filtros + resumo soltos)
+- Um único bloco sticky com: resumo curto do período (faturamento + nº pedidos), seletor de período (Hoje/Ontem/7d/Tudo) como dropdown compacto, seletor de origem (Todas/Delivery/PDV/Manual) como dropdown, e ícone de busca que expande input inline.
+- Remove os 4 "contadores grandes" — a informação passa para os badges das próprias pills de status (já existem).
 
-Card único e legível, substituindo o layout atual empilhado:
+### 2. Pills de status refinadas
+- Mantém a lógica atual (`orderTabs`, `activeTab`, `setActiveTab`).
+- Visual: pill ativa com preenchimento sólido; pills com contagem > 0 destacadas; pill "Novos" com dot pulsante quando `pendente > 0`.
+- Sticky logo abaixo do header, alinhadas ao container.
 
-- Miniatura 72x72 à esquerda (placeholder elegante quando sem imagem).
-- Nome + preço em destaque, descrição truncada em 2 linhas.
-- Linha de metadados: nº de adicionais vinculados, status (Ativo/Pausado), aviso "sem imagem".
-- Ações principais visíveis: Editar, Pausar/Ativar. Ações secundárias (Duplicar, Mover, Excluir, Adicionais) em menu `...`.
-- Checkbox aparece apenas no modo seleção.
-- Estado vazio ilustrado por seção com CTA "Adicionar primeiro item".
+### 3. Alerta Pix Direto
+- Mantém toda a lógica (`confirmPix`, `refusePix`, `confirmPixExternal`, `openProof`).
+- Vira um card único colapsável quando > 2 itens, com badge de contagem. Botões `Ver`, `Confirmar`, `Recusar`, `Recebi no WhatsApp` reorganizados em linha única no desktop e wrap no mobile (já é, mas melhora spacing/hierarquia).
 
-## 3. Formulários em Sheet/Drawer
+### 4. Card do pedido (`AdminOrderCard`)
+Sem mudar props nem handlers. Reagrupamento visual interno em 4 seções:
+1. **Cabeçalho** — nº pedido, hora, status pill, valor total (destaque), origem (Delivery/PDV/Manual como chip pequeno).
+2. **Cliente & entrega** — nome + WhatsApp + endereço colapsável (mantém `toggleAddress`).
+3. **Itens** — lista compacta com destaques de adicionais obrigatórios (mantém `highlights`).
+4. **Ações** — ação principal em destaque (accept/ready/dispatch), ações secundárias (imprimir, WhatsApp, cancelar) em barra alinhada. No mobile as ações secundárias viram ícones; no desktop, ícone + texto.
 
-Hoje os formulários renderizam inline e empurram o conteúdo. Passar para:
+### 5. Empty states
+- Mantém texto atual, mas cria componente `OrdersEmptyState` reutilizável e reduz padding vertical (`py-24` → `py-14`) para não empurrar demais o layout.
 
-- **Desktop**: `Sheet` lateral direito (480px) para criar/editar produto e para gerenciar adicionais.
-- **Mobile**: `Drawer` bottom sheet full-height com header sticky (Cancelar / Salvar) e teclado-safe.
-- Campos agrupados em blocos: Básico, Imagem, Preço, Adicionais vinculados, Avançado (peso, metadata).
-- Salvar mostra feedback inline no botão + toast curto.
+### 6. Skeleton
+- Extrair para `OrderCardSkeleton` e usar grid igual ao dos cards reais para evitar "salto" quando carrega.
 
-## 4. Gestão de adicionais mais clara
+### 7. Floating badge "N novos"
+- Mantém a lógica; muda posição para respeitar `env(safe-area-inset-bottom)` + altura do bottom nav (mesmo pattern do `BulkActionBar` corrigido recentemente) para não sobrepor navegação.
 
-- Cada produto mostra um resumo dos grupos vinculados (nome + min/max + nº de itens).
-- Botão "Gerenciar adicionais" abre Sheet dedicado com abas: **Deste produto** / **Da loja** (reutilizáveis).
-- Vincular/desvincular por toggle em vez de modais aninhados.
-- Item de adicional com edição inline enxuta (nome + preço) e drag para reordenar.
+### 8. Responsividade
+- Mobile: 1 coluna, header e pills sticky, ações compactadas.
+- Tablet (md): 2 colunas, header em linha única.
+- Desktop (xl): 3 colunas de cards, filtros e busca lado a lado no header.
 
-## 5. Ações em massa aprimoradas
+## Componentização (só extração, sem mudança de lógica)
 
-- Barra inferior fixa aparece quando há itens selecionados ("3 itens selecionados").
-- Ações: Pausar, Ativar, Mover para seção, Excluir, Duplicar.
-- Botão "Selecionar todos da seção" no header da seção.
-- Confirmações usam o `ConfirmDialog` existente, sempre com contagem.
+Novos arquivos em `src/pages/admin/components/orders/`:
+- `OrdersHeader.tsx` — resumo + filtros período/origem + busca.
+- `OrdersStatusPills.tsx` — pills de status com badges.
+- `PixDirectAlert.tsx` — bloco Pix Direto (recebe handlers via props).
+- `BatchDispatchBar.tsx` — barra de agrupamento de entregas.
+- `OrdersEmptyState.tsx` — estado vazio por tab.
+- `OrderCardSkeleton.tsx` — placeholder de carregamento.
 
-## 6. Estados, feedback e microdetalhes
+`OrdersSection.tsx` passa a ser um orquestrador enxuto (~200 linhas) que só monta esses blocos e passa props — nenhuma query, RPC, filtro de negócio ou cálculo muda.
 
-- Skeletons enquanto carrega (sidebar + grid).
-- Empty state global ("Comece pelo primeiro item do cardápio") com 2 CTAs: Criar seção / Importar CSV.
-- Badges de status padronizadas usando tokens semânticos (`bg-muted`, `text-destructive`, etc.) — sem cores hardcoded.
-- Tooltips nos ícones do desktop; labels sempre visíveis no mobile.
-- Animações discretas (fade/slide) na abertura de Sheets e reorder.
+`AdminOrderCard.tsx` é refatorado internamente em subcomponentes locais (`CardHeader`, `CustomerBlock`, `ItemsBlock`, `ActionsBar`) mantendo a mesma assinatura de props.
 
-## 7. Sub-recursos reorganizados
+## Fora do escopo
 
-Movidos para dentro do menu "Mais" da toolbar, deixando a tela principal focada em produtos:
+- Nada de mudar RPCs, queries React Query, ordenação, cálculo de contadores, fluxos de status, impressão térmica, integração WhatsApp/Evolution, permissões ou dados exibidos.
+- Nada de tocar em `AdminDashboardV2.tsx` além, se necessário, dos imports.
+- Sem novas dependências.
 
-- **Importar CSV** → abre Sheet com o `MenuImportCSV` já existente.
-- **Cardápio do Dia** → abre Sheet com o `DailyMenuManager` existente.
-- **Adicionais da loja** → nova visão consolidada listando grupos reutilizáveis.
+## Versão
 
-## Detalhes técnicos
+Ao aplicar, subir para v1.14.4 (build 939) em `PerfilPage.tsx` e `android/app/build.gradle`.
 
-- Quebrar `MenuBuilder.tsx` em: `MenuBuilder.tsx` (orquestrador), `menu/SectionSidebar.tsx`, `menu/SectionChips.tsx`, `menu/MenuToolbar.tsx`, `menu/ProductGrid.tsx`, `menu/ProductSheet.tsx`, `menu/AddonsSheet.tsx`, `menu/BulkActionBar.tsx`.
-- Reaproveitar 100% das queries/mutations atuais (React Query keys preservadas) — sem mudança de schema.
-- Usar shadcn `Sheet`, `Drawer`, `Command` (busca), `DropdownMenu`, `Tabs`, `Badge`, `Skeleton`.
-- Tokens semânticos apenas (nada de `text-white`/`bg-black` cru).
-- Responsividade via `lg:` breakpoints; testar em 384px (viewport atual) e 1440px.
-- Manter drag-and-drop nativo já implementado, encapsulado no novo `SectionSidebar`.
-- Incrementar versão em `src/pages/PerfilPage.tsx` e `android/app/build.gradle` (versionName + versionCode) ao final.
-
-## Fora de escopo
-
-- Regras de negócio, cálculo de preços, schema do banco.
-- PDV, cardápio público do cliente, painel do super admin.
-- Novos campos de produto ou novos tipos de adicionais.
+Confirma que sigo com essa reestruturação?

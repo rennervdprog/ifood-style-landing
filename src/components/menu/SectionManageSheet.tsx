@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
-import { ArrowUp, ArrowDown, Edit2, Trash2, Save, X, Plus } from "lucide-react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetClose } from "@/components/ui/sheet";
+import { ArrowUp, ArrowDown, Edit2, Trash2, Save, X, Plus, ArrowLeft } from "lucide-react";
 
 interface Section {
   id: string;
@@ -52,11 +52,17 @@ export const SectionManageSheet = ({
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto p-0">
-        <SheetHeader className="sticky top-0 z-10 bg-background border-b border-border px-5 py-4">
-          <SheetTitle className="text-base">Gerenciar seções</SheetTitle>
-          <SheetDescription className="text-xs">
-            Reordene, renomeie ou exclua as seções do cardápio.
-          </SheetDescription>
+        <SheetHeader className="sticky top-0 z-20 bg-background border-b border-border px-3 py-3 flex-row items-center gap-2 space-y-0">
+          <SheetClose className="flex items-center gap-1.5 px-2.5 py-2 rounded-lg hover:bg-muted text-sm font-semibold text-foreground focus:outline-none focus:ring-2 focus:ring-ring">
+            <ArrowLeft className="h-4 w-4" />
+            Voltar
+          </SheetClose>
+          <div className="min-w-0 flex-1">
+            <SheetTitle className="text-base leading-tight truncate">Gerenciar seções</SheetTitle>
+            <SheetDescription className="text-xs truncate">
+              Reordene, renomeie ou exclua.
+            </SheetDescription>
+          </div>
         </SheetHeader>
         <div className="p-5 space-y-4">
           <div className="flex gap-2">

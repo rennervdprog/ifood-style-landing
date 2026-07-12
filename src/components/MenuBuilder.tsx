@@ -4,10 +4,10 @@ import MenuImportCSV from "@/components/MenuImportCSV";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Plus, Loader2, Package, Sparkles } from "lucide-react";
+import { Plus, Loader2, Package, Sparkles, ArrowLeft } from "lucide-react";
 import { ProductCard, ProductFormData } from "@/components/menu/ProductCard";
 import { ConfirmDialog } from "@/components/menu/ConfirmDialog";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetClose } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SectionNav, SectionScope } from "@/components/menu/SectionNav";
 import { MenuToolbar, ProductFilter } from "@/components/menu/MenuToolbar";
@@ -1079,8 +1079,12 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
       {/* Import CSV sheet */}
       <Sheet open={importOpen} onOpenChange={setImportOpen}>
         <SheetContent side="right" className="w-full sm:max-w-lg overflow-y-auto p-0">
-          <SheetHeader className="sticky top-0 z-10 bg-background border-b border-border px-5 py-4">
-            <SheetTitle className="text-base">Importar cardápio</SheetTitle>
+          <SheetHeader className="sticky top-0 z-20 bg-background border-b border-border px-3 py-3 flex-row items-center gap-2 space-y-0">
+            <SheetClose className="flex items-center gap-1.5 px-2.5 py-2 rounded-lg hover:bg-muted text-sm font-semibold text-foreground focus:outline-none focus:ring-2 focus:ring-ring">
+              <ArrowLeft className="h-4 w-4" />
+              Voltar
+            </SheetClose>
+            <SheetTitle className="text-base leading-tight truncate flex-1">Importar cardápio</SheetTitle>
           </SheetHeader>
           <div className="p-5">
             <MenuImportCSV storeId={storeId} />
@@ -1092,8 +1096,12 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
       {storeCategory !== "adegas" && (
         <Sheet open={dailyMenuOpen} onOpenChange={setDailyMenuOpen}>
           <SheetContent side="right" className="w-full sm:max-w-lg overflow-y-auto p-0">
-            <SheetHeader className="sticky top-0 z-10 bg-background border-b border-border px-5 py-4">
-              <SheetTitle className="text-base">Cardápio do dia</SheetTitle>
+            <SheetHeader className="sticky top-0 z-20 bg-background border-b border-border px-3 py-3 flex-row items-center gap-2 space-y-0">
+              <SheetClose className="flex items-center gap-1.5 px-2.5 py-2 rounded-lg hover:bg-muted text-sm font-semibold text-foreground focus:outline-none focus:ring-2 focus:ring-ring">
+                <ArrowLeft className="h-4 w-4" />
+                Voltar
+              </SheetClose>
+              <SheetTitle className="text-base leading-tight truncate flex-1">Cardápio do dia</SheetTitle>
             </SheetHeader>
             <div className="p-5">
               <DailyMenuManager
