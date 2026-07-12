@@ -1813,8 +1813,9 @@ const AdminDashboard = () => {
                 {soundMuted ? <VolumeX className="h-4 w-4 mx-auto" /> : <Volume2 className="h-4 w-4 mx-auto" />}
               </button>
             )}
-            <button onClick={toggleAutoPrint}
-              className={`p-2 rounded-xl border border-border ${autoPrint ? "text-primary bg-primary/5" : "text-muted-foreground"}`}>
+            <button onClick={toggleAutoPrint} disabled={autoPrintSaving}
+              title={autoPrint ? "Impressão automática ligada (clique para desligar)" : "Impressão automática desligada"}
+              className={`p-2 rounded-xl border border-border transition-opacity ${autoPrintSaving ? "opacity-50" : ""} ${autoPrint ? "text-primary bg-primary/5" : "text-muted-foreground"}`}>
               <Printer className="h-4 w-4 mx-auto" />
             </button>
             <div className="col-span-2 space-y-1">
