@@ -178,7 +178,6 @@ const pdv_only: PlanInfo = {
     "PDV completo (vendas, sangria, fechamento)",
     "Cadastro de produtos ilimitado",
     "Relatórios financeiros do caixa",
-    "WhatsApp integrado (grátis)",
     "Sem vitrine pública, sem delivery",
   ],
   example: (_: number) => "Sem pedidos online — você usa só o caixa presencial.",
