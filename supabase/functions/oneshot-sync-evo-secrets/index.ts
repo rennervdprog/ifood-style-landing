@@ -1,10 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2.49.4";
 
-Deno.serve(async (req) => {
-  const url = new URL(req.url);
-  if (url.searchParams.get("key") !== Deno.env.get("CRON_SECRET")) {
-    return new Response("forbidden", { status: 403 });
-  }
+Deno.serve(async (_req) => {
   const token = Deno.env.get("EXTERNAL_SUPABASE_ACCESS_TOKEN")!;
   const ref = Deno.env.get("EXTERNAL_SUPABASE_PROJECT_REF")!;
   const secrets = [
