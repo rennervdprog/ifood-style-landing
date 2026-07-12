@@ -22,6 +22,28 @@ Deno.serve(async (req) => {
   }
 
   const sql = `
+    -- Garante tabela base caso não exista no externo
+    create table if not exists public.platform_whatsapp_send_log (
+      id uuid primary key default gen_random_uuid(),
+      phone text not null,
+      kind text,
+      message_hash text,
+      status text default 'sent',
+      error text,
+      sent_at timestamptz not null default now(),
+      sent_bucket_min timestamptz generated always as (date_trunc('minute', sent_at)) stored
+    );
+    create unique index if not exists uq_pwsl_phone_kind_bucket
+      on public.platform_whatsapp_send_log (phone, kind, sent_bucket_min);
+    alter table public.platform_whatsapp_send_log enable row level security;
+    grant select on public.platform_whatsapp_send_log to authenticated;
+    grant all on public.platform_whatsapp_send_log to service_role;
+    do $$ begin
+      if not exists (select 1 from pg_policies where tablename='platform_whatsapp_send_log' and policyname='pwsl_select_auth') then
+        create policy pwsl_select_auth on public.platform_whatsapp_send_log for select to authenticated using (true);
+      end if;
+    end $$;
+
     alter table public.platform_whatsapp_send_log
       add column if not exists category text,
       add column if not exists store_id uuid,
