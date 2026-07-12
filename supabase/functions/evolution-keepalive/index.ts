@@ -55,13 +55,36 @@ Deno.serve(async (req) => {
         }
 
         const newStatus = isOpen ? "connected" : (state === "connecting" ? "connecting" : "disconnected");
-        if (newStatus !== (cfg as any).status) {
-          await admin
-            .from("store_whatsapp_config")
-            .update({ status: newStatus, updated_at: new Date().toISOString() })
-            .eq("store_id", (cfg as any).store_id);
+        // Quando aberto, também confere o ownerJid real — se o chip trocou
+        // (ou o webhook não disparou), corrige phone_number e connected_at.
+        let realPhone: string | undefined;
+        if (isOpen) {
+          try {
+            const fr = await fetch(`${root}/instance/fetchInstances?instanceName=${inst}`, { headers: { apikey: apiKey } });
+            const arr: any = await fr.json().catch(() => []);
+            const info = Array.isArray(arr) ? arr[0] : arr;
+            const owner = info?.ownerJid || info?.owner;
+            if (typeof owner === "string") realPhone = owner.split("@")[0].replace(/\D/g, "");
+          } catch { /* ignore */ }
         }
-        results.push({ store_id: (cfg as any).store_id, state, action: isOpen ? "noop" : "reconnect" });
+        const { data: cur } = await admin
+          .from("store_whatsapp_config")
+          .select("phone_number, status, connected_at")
+          .eq("store_id", (cfg as any).store_id)
+          .maybeSingle();
+        const norm = (v?: string | null) => String(v || "").replace(/\D/g, "");
+        const phoneChanged = !!realPhone && norm(realPhone) !== norm(cur?.phone_number);
+        const patch: any = {};
+        if (newStatus !== (cfg as any).status) patch.status = newStatus;
+        if (realPhone && phoneChanged) patch.phone_number = realPhone;
+        if (isOpen && (cur?.status !== "connected" || phoneChanged || !cur?.connected_at)) {
+          patch.connected_at = new Date().toISOString();
+        }
+        if (Object.keys(patch).length > 0) {
+          patch.updated_at = new Date().toISOString();
+          await admin.from("store_whatsapp_config").update(patch).eq("store_id", (cfg as any).store_id);
+        }
+        results.push({ store_id: (cfg as any).store_id, state, action: isOpen ? "noop" : "reconnect", phoneChanged });
       } catch (e) {
         results.push({ store_id: (cfg as any).store_id, error: String(e) });
       }
