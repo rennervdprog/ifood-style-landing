@@ -125,6 +125,10 @@ export default function PlatformWhatsAppTab() {
 
   // Realtime — reflete conexão/desconexão instantaneamente
   useEffect(() => {
+    const forceSync = async () => {
+      try { await invokeWithAuth("platform-whatsapp-sync-status", {}); } catch { /* ignore */ }
+      qc.invalidateQueries({ queryKey: ["platform-wa-cfg"] });
+    };
     const channel = supabase
       .channel("platform-wa-cfg-rt")
       .on(
@@ -132,8 +136,17 @@ export default function PlatformWhatsAppTab() {
         { event: "*", schema: "public", table: "platform_whatsapp_config" },
         () => qc.invalidateQueries({ queryKey: ["platform-wa-cfg"] }),
       )
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
+      .subscribe((status) => {
+        if (status === "SUBSCRIBED") qc.invalidateQueries({ queryKey: ["platform-wa-cfg"] });
+      });
+    const onVisible = () => {
+      if (document.visibilityState === "visible") forceSync();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      supabase.removeChannel(channel);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
   }, [qc]);
 
   const saveCfg = useMutation({

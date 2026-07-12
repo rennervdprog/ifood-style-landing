@@ -9,6 +9,35 @@ const json = (b: unknown, s = 200) =>
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+// Busca o ownerJid real da instância no Evolution (fonte de verdade).
+// Usado no CONNECTION_UPDATE quando state='open' — data.wuid/number vem
+// do que o usuário digitou no pairing, não do chip que realmente pareou.
+async function resolveOwnerJid(instance: string): Promise<string | null> {
+  const baseUrl = Deno.env.get("EVOLUTION_API_URL");
+  const apiKey = Deno.env.get("EVOLUTION_GLOBAL_API_KEY");
+  if (!baseUrl || !apiKey) return null;
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 4000);
+  try {
+    const r = await fetch(
+      `${baseUrl.replace(/\/$/, "")}/instance/fetchInstances?instanceName=${encodeURIComponent(instance)}`,
+      { headers: { apikey: apiKey }, signal: ctrl.signal },
+    );
+    const arr: any = await r.json().catch(() => []);
+    const inst = Array.isArray(arr) ? arr[0] : arr;
+    const owner = inst?.ownerJid || inst?.instance?.owner || inst?.owner || inst?.instance?.ownerJid;
+    if (typeof owner === "string" && owner.includes("@")) {
+      const num = owner.split("@")[0].replace(/\D/g, "");
+      return num || null;
+    }
+  } catch (e) {
+    console.warn("[evolution-webhook] resolveOwnerJid failed", instance, (e as any)?.message);
+  } finally {
+    clearTimeout(timer);
+  }
+  return null;
+}
+
 const isRecentIncomingMessage = (data: any) => {
   const rawTimestamp = data?.messageTimestamp || data?.timestamp || data?.date_time;
   if (!rawTimestamp) return true;
@@ -152,10 +181,10 @@ Deno.serve(async (req) => {
       if (/connection/i.test(event)) {
         const state: string = data?.state || data?.status || "";
         const statusReason: number = Number(data?.statusReason || data?.reason || 0);
-        const phone: string | undefined = data?.wuid?.split("@")?.[0] || data?.number || data?.owner;
+        let phone: string | undefined = data?.wuid?.split("@")?.[0] || data?.number || data?.owner;
         const { data: pcfg } = await admin
           .from("platform_whatsapp_config")
-          .select("id, status")
+          .select("id, status, phone_number")
           .eq("instance_name", instance)
           .maybeSingle();
         if (pcfg) {
@@ -163,16 +192,27 @@ Deno.serve(async (req) => {
           if (state === "open" || state === "connected") newStatus = "connected";
           else if ((state === "close" || state === "disconnected") && statusReason === 401) newStatus = "disconnected";
           else if (pcfg.status !== "connected") newStatus = "connecting";
+          if (newStatus === "connected") {
+            const real = await resolveOwnerJid(instance);
+            if (real) phone = real;
+          }
           if (newStatus) {
+            const norm = (v?: string | null) => String(v || "").replace(/\D/g, "");
+            const phoneChanged = !!phone && norm(phone) !== norm(pcfg.phone_number);
             const patch: any = {
               status: newStatus,
               phone_number: phone ?? undefined,
               updated_at: new Date().toISOString(),
             };
-            if (newStatus === "connected" && pcfg.status !== "connected") {
+            if (newStatus === "connected" && (pcfg.status !== "connected" || phoneChanged)) {
               patch.connected_at = new Date().toISOString();
             }
+            if (newStatus === "disconnected") {
+              patch.phone_number = null;
+              patch.connected_at = null;
+            }
             await admin.from("platform_whatsapp_config").update(patch).eq("id", pcfg.id);
+            console.log("[evolution-webhook] platform connection", { instance, newStatus, phone, phoneChanged });
           }
           return json({ ok: true, platform: true });
         }
@@ -185,7 +225,7 @@ Deno.serve(async (req) => {
     if (/connection/i.test(event)) {
       const state: string = data?.state || data?.status || "";
       const statusReason: number = Number(data?.statusReason || data?.reason || 0);
-      const phone: string | undefined = data?.wuid?.split("@")?.[0] || data?.number || data?.owner;
+      let phone: string | undefined = data?.wuid?.split("@")?.[0] || data?.number || data?.owner;
       // Evolution/Baileys emits transient "close"/"connecting" events even
       // right after a successful pairing (socket reconnect). Only flip the
       // status to "disconnected" when the device was actually logged out
@@ -194,17 +234,33 @@ Deno.serve(async (req) => {
       if (state === "open" || state === "connected") newStatus = "connected";
       else if ((state === "close" || state === "disconnected") && statusReason === 401) newStatus = "disconnected";
       else if (cfg.status !== "connected") newStatus = "connecting";
+      if (newStatus === "connected") {
+        const real = await resolveOwnerJid(instance);
+        if (real) phone = real;
+      }
       if (newStatus) {
+        const { data: cur } = await admin
+          .from("store_whatsapp_config")
+          .select("phone_number, status")
+          .eq("store_id", cfg.store_id)
+          .maybeSingle();
+        const norm = (v?: string | null) => String(v || "").replace(/\D/g, "");
+        const phoneChanged = !!phone && norm(phone) !== norm(cur?.phone_number);
         const patch: any = {
           status: newStatus,
           phone_number: phone ?? undefined,
           qr_code: newStatus === "connected" ? null : undefined,
           updated_at: new Date().toISOString(),
         };
-        if (newStatus === "connected" && cfg.status !== "connected") {
+        if (newStatus === "connected" && (cfg.status !== "connected" || phoneChanged)) {
           patch.connected_at = new Date().toISOString();
         }
+        if (newStatus === "disconnected") {
+          patch.phone_number = null;
+          patch.connected_at = null;
+        }
         await admin.from("store_whatsapp_config").update(patch).eq("store_id", cfg.store_id);
+        console.log("[evolution-webhook] store connection", { instance, newStatus, phone, phoneChanged });
       }
     }
 
