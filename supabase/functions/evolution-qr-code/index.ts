@@ -65,6 +65,24 @@ const getBearerToken = (req: Request): string | null => {
   return token;
 };
 
+const authenticateUser = async (jwt: string) => {
+  const supabase = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_ANON_KEY")!,
+    { global: { headers: { Authorization: `Bearer ${jwt}` } } },
+  );
+
+  const { data: claimsData, error: claimsErr } = await supabase.auth.getClaims(jwt);
+  if (claimsData?.claims?.sub) {
+    return { user: { id: String(claimsData.claims.sub), email: claimsData.claims.email as string | undefined }, error: null };
+  }
+
+  const { data: userData, error: userErr } = await supabase.auth.getUser(jwt);
+  if (userData?.user) return { user: userData.user, error: null };
+
+  return { user: null, error: claimsErr?.message || userErr?.message || "no_user" };
+};
+
 const instanceExists = async (root: string, instance: string, apiKey: string) => {
   const r = await evolutionFetch(`${root}/instance/connectionState/${instance}`, { headers: { apikey: apiKey } });
   const data = await parseJson(r);
@@ -162,14 +180,10 @@ Deno.serve(async (req) => {
       return json({ error: "Unauthorized", reason: "Auth session missing!" }, 401);
     }
 
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_ANON_KEY")!,
-    );
-    const { data: userData, error: userErr } = await supabase.auth.getUser(jwt);
-    if (!userData?.user) {
-      console.error("[evolution-qr-code] auth failed", { err: userErr?.message });
-      return json({ error: "Unauthorized", reason: userErr?.message || "no_user" }, 401);
+    const auth = await authenticateUser(jwt);
+    if (!auth.user) {
+      console.error("[evolution-qr-code] auth failed", { err: auth.error });
+      return json({ error: "Unauthorized", reason: auth.error }, 401);
     }
 
     const body = await req.json().catch(() => ({}));
@@ -189,7 +203,7 @@ Deno.serve(async (req) => {
     if (isPlatform) {
       // apenas super_admin/admin podem gerar QR da instância da plataforma
       const { data: roleRows } = await externalAdmin
-        .from("user_roles").select("role").eq("user_id", userData.user.id);
+        .from("user_roles").select("role").eq("user_id", auth.user.id);
       const roles = (roleRows || []).map((r: any) => r.role);
       const privileged = roles.some((r) => ["admin", "super_admin"].includes(r));
       if (!privileged) return json({ error: "Forbidden — apenas admin" }, 403);
@@ -197,9 +211,9 @@ Deno.serve(async (req) => {
       const { data: store } = await externalAdmin
         .from("stores").select("id, owner_id").eq("id", store_id!).maybeSingle();
       if (!store) return json({ error: "Store not found" }, 404);
-      if (store.owner_id !== userData.user.id) {
+      if (store.owner_id !== auth.user.id) {
         const { data: roleRows } = await externalAdmin
-          .from("user_roles").select("role").eq("user_id", userData.user.id);
+          .from("user_roles").select("role").eq("user_id", auth.user.id);
         const roles = (roleRows || []).map((r: any) => r.role);
         const privileged = roles.some((r) => ["admin", "super_admin", "moderator"].includes(r));
         if (!privileged) return json({ error: "Forbidden" }, 403);
