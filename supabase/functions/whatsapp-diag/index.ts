@@ -1,4 +1,4 @@
-// Diagnóstico completo do WhatsApp de uma loja. Sem auth (só devolve info operacional).
+// Diagnóstico completo do WhatsApp de uma loja. Requer usuário admin/super_admin.
 import { createClient } from "npm:@supabase/supabase-js@2.49.4";
 
 const cors = {
@@ -10,6 +10,17 @@ const json = (b: unknown, s = 200) =>
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader?.startsWith("Bearer ")) return json({ error: "Unauthorized" }, 401);
+
+  const sb = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_ANON_KEY")!,
+    { global: { headers: { Authorization: authHeader } } },
+  );
+  const { data: userData } = await sb.auth.getUser();
+  if (!userData?.user) return json({ error: "Unauthorized" }, 401);
+
   const url = new URL(req.url);
   const storeId = url.searchParams.get("store_id") || "b97f3a1a-d558-41e5-b8a2-ebd65b5381b4";
 
@@ -24,10 +35,15 @@ Deno.serve(async (req) => {
   const extKey = Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   out.external_configured = !!(extUrl && extKey);
 
+  if (!extUrl || !extKey) return json({ error: "Backend externo não configurado" }, 500);
+  const ext = createClient(extUrl, extKey);
+  const { data: roleRows } = await ext.from("user_roles").select("role").eq("user_id", userData.user.id);
+  const roles = (roleRows || []).map((r: any) => r.role);
+  if (!roles.some((r) => ["admin", "super_admin"].includes(r))) return json({ error: "Forbidden" }, 403);
+
   // 1) Config no external
   if (extUrl && extKey) {
     try {
-      const ext = createClient(extUrl, extKey);
       const { data: store } = await ext.from("stores").select("id, name, slug, owner_id, status, is_open, force_closed").eq("id", storeId).maybeSingle();
       out.store = store;
       const { data: cfg } = await ext.from("store_whatsapp_config").select("*").eq("store_id", storeId).maybeSingle();

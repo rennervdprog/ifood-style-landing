@@ -44,16 +44,16 @@ const CidadesTab = ({ stores }: { stores: any[] | undefined }) => {
                     </div>
                     <div className="text-left">
                       <p className="font-bold text-foreground">{c.displayName}</p>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-muted-foreground tabular-nums">
                         {c.stores.length} loja{c.stores.length !== 1 ? "s" : ""} • {activeStores} ativa{activeStores !== 1 ? "s" : ""}
                       </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
                     {isPlatform ? (
-                      <span className="text-xs bg-emerald-500/10 text-emerald-600 px-2 py-1 rounded-full font-bold">✅ Plataforma</span>
+                      <span className="text-xs bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-1 rounded-full font-bold">Plataforma</span>
                     ) : (
-                      <span className="text-xs bg-amber-500/10 text-amber-600 px-2 py-1 rounded-full font-bold">📱 Cardápio Digital</span>
+                      <span className="text-xs bg-amber-500/10 text-amber-600 dark:text-amber-400 px-2 py-1 rounded-full font-bold">Cardápio Digital</span>
                     )}
                     {isExpanded ? <X className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
                   </div>
@@ -68,9 +68,9 @@ const CidadesTab = ({ stores }: { stores: any[] | undefined }) => {
                         </div>
                         <div className="flex items-center gap-2">
                           <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${
-                            store.status === "ativo" ? "bg-emerald-500/10 text-emerald-600" :
-                            store.status === "analise" ? "bg-amber-500/10 text-amber-600" :
-                            "bg-red-500/10 text-red-600"
+                            store.status === "ativo" ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" :
+                            store.status === "analise" ? "bg-amber-500/10 text-amber-600 dark:text-amber-400" :
+                            "bg-destructive/10 text-destructive"
                           }`}>
                             {store.status === "ativo" ? "Ativa" : store.status === "analise" ? "Em Análise" : "Bloqueada"}
                           </span>

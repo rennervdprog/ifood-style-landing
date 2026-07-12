@@ -14,6 +14,7 @@ import FixedPlanBillingHistory from "@/components/FixedPlanBillingHistory";
 import TestStoreFinancePanel from "@/components/TestStoreFinancePanel";
 import AppLinksManager from "@/components/AppLinksManager";
 import AdminBroadcastPush from "@/components/AdminBroadcastPush";
+import PlatformWhatsAppTab from "@/pages/super-admin/tabs/PlatformWhatsAppTab";
 import PageViewsCard from "@/components/PageViewsCard";
 import { AdminSubaccountsTab } from "@/components/AdminSubaccountsTab";
 import { planLabel as planNameLabel } from "@/lib/plansInfo";
@@ -24,7 +25,7 @@ import { toast } from "sonner";
 import {
   ArrowLeft, DollarSign, ShoppingBag, TrendingUp, Clock,
   Store, Copy, AlertTriangle, Users, Bike, Wallet, CheckCircle2, Banknote, XCircle, Bell, Trash2, QrCode, Loader2, ArrowUpRight, ArrowDownRight, Settings,
-   LayoutDashboard, Shield, Ticket, RefreshCw, Truck, Menu, X, MapPin, Eye, Scale, Search, FileText, Mail, Phone, User, Download, Calendar, CreditCard, Receipt, ChevronDown, ChevronUp, Percent, Crown, Handshake, FlaskConical, Link as LinkIcon, Megaphone, Monitor
+    LayoutDashboard, Shield, Ticket, RefreshCw, Truck, Menu, X, MapPin, Eye, Scale, Search, FileText, Mail, Phone, User, Download, Calendar, CreditCard, Receipt, ChevronDown, ChevronUp, Percent, Crown, Handshake, FlaskConical, Link as LinkIcon, Megaphone, Monitor, MessageCircle
 } from "lucide-react";
  import { Switch } from "@/components/ui/switch";
  import { Badge } from "@/components/ui/badge";
@@ -39,7 +40,7 @@ import {
  import { statusColors as globalStatusColors } from "@/lib/orderStatus";
 
 type DateFilter = "today" | "yesterday" | "week";
- type AdminTab = "dashboard" | "approvals" | "stores" | "financeiro" | "pagamentos" | "saques" | "sync" | "coupons" | "entrega" | "cidades" | "juridico" | "planos" | "moderadores" | "socios" | "test_finance" | "links" | "broadcast" | "logs";
+type AdminTab = "dashboard" | "approvals" | "stores" | "financeiro" | "pagamentos" | "saques" | "sync" | "coupons" | "entrega" | "cidades" | "juridico" | "planos" | "moderadores" | "socios" | "test_finance" | "links" | "broadcast" | "logs" | "whatsapp_plataforma";
 
 const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; group: string }[] = [
   { key: "dashboard", label: "Dashboard", icon: LayoutDashboard, group: "Principal" },
@@ -57,6 +58,7 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
   { key: "test_finance", label: "Finanças Teste", icon: FlaskConical, group: "Sistema" },
   { key: "links", label: "Página /links", icon: LinkIcon, group: "Sistema" },
   { key: "broadcast", label: "Notificações", icon: Megaphone, group: "Sistema" },
+  { key: "whatsapp_plataforma", label: "WhatsApp Plataforma", icon: MessageCircle, group: "Sistema" },
   { key: "sync", label: "Sincronizar", icon: RefreshCw, group: "Sistema" },
   { key: "logs", label: "Logs", icon: FileText, group: "Sistema" },
 ];
@@ -900,6 +902,7 @@ const SuperAdminDashboard = () => {
             {activeTab === "test_finance" && <TestStoreFinancePanel />}
             {activeTab === "links" && <AppLinksManager />}
             {activeTab === "broadcast" && <AdminBroadcastPush />}
+            {activeTab === "whatsapp_plataforma" && <PlatformWhatsAppTab />}
             {activeTab === "logs" && (
               <div className="space-y-4">
                 <div className="bg-card rounded-xl border border-border overflow-hidden">
@@ -2362,14 +2365,24 @@ export const FinanceTab = ({
 export const MetricCard = ({ icon: Icon, label, value, sublabel, sublabel2, highlight, alert }: {
   icon: React.ElementType; label: string; value: string; sublabel: string; sublabel2?: string; highlight?: boolean; alert?: boolean;
 }) => (
-  <div className={`bg-card rounded-2xl p-4 border ${alert ? "border-destructive/50" : "border-border"}`}>
-    <div className="flex items-center gap-2 mb-2">
+  <div
+    className={`relative bg-card rounded-2xl p-4 border border-border flex flex-col gap-2 min-h-[112px] transition-colors ${
+      alert ? "border-l-4 border-l-destructive" : ""
+    } ${highlight ? "ring-1 ring-primary/20" : ""}`}
+  >
+    <div className="flex items-center gap-2">
       <Icon className={`h-4 w-4 ${highlight ? "text-primary" : alert ? "text-destructive" : "text-muted-foreground"}`} />
-      <span className="text-xs text-muted-foreground">{label}</span>
+      <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">{label}</span>
     </div>
-    <p className={`text-xl font-black ${highlight ? "text-primary" : alert ? "text-destructive" : "text-foreground"}`}>{value}</p>
-    <p className="text-xs text-muted-foreground">{sublabel}</p>
-    {sublabel2 && <p className="text-[10px] text-muted-foreground/70 mt-0.5">{sublabel2}</p>}
+    <p
+      className={`text-[26px] leading-none font-black tabular-nums ${
+        highlight ? "text-primary" : alert ? "text-destructive" : "text-foreground"
+      }`}
+    >
+      {value}
+    </p>
+    <p className="text-[11px] text-muted-foreground tabular-nums truncate">{sublabel}</p>
+    {sublabel2 && <p className="text-[10px] text-muted-foreground/70 tabular-nums truncate">{sublabel2}</p>}
   </div>
 );
 

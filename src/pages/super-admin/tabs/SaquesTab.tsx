@@ -86,22 +86,22 @@ const SaquesTab = ({
       <div key={req.id} className={`bg-card rounded-2xl p-4 border ${isPending ? "border-amber-500/30" : "border-border"}`}>
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${isPending ? "bg-amber-500/20" : isPaid ? "bg-green-500/20" : "bg-destructive/20"}`}>
-              <DollarSign className={`h-4 w-4 ${isPending ? "text-amber-500" : isPaid ? "text-green-500" : "text-destructive"}`} />
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${isPending ? "bg-amber-500/20" : isPaid ? "bg-emerald-500/20" : "bg-destructive/20"}`}>
+              <DollarSign className={`h-4 w-4 ${isPending ? "text-amber-600 dark:text-amber-400" : isPaid ? "text-emerald-600 dark:text-emerald-400" : "text-destructive"}`} />
             </div>
             <div>
               <p className="text-sm font-bold text-foreground">{driverName}</p>
-              <p className="text-xs text-muted-foreground font-bold">
+              <p className="text-xs text-muted-foreground font-bold tabular-nums">
                 {req.transaction_code && <span className="text-primary mr-1">{req.transaction_code}</span>}
                 {formatBRL(Number(req.amount))}
               </p>
-              <p className="text-[10px] text-muted-foreground">
+              <p className="text-[10px] text-muted-foreground tabular-nums">
                 {new Date(req.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <span className={`text-xs font-bold px-2 py-1 rounded-lg ${isPending ? "bg-amber-500/20 text-amber-500" : isPaid ? "bg-green-500/20 text-green-500" : "bg-destructive/20 text-destructive"}`}>
+            <span className={`text-xs font-bold px-2 py-1 rounded-lg ${isPending ? "bg-amber-500/20 text-amber-700 dark:text-amber-300" : isPaid ? "bg-emerald-500/20 text-emerald-700 dark:text-emerald-300" : "bg-destructive/20 text-destructive"}`}>
               {isPending ? "Pendente" : isPaid ? "✅ Pago" : "Cancelado"}
             </span>
             <button onClick={() => handleDelete(req)}
@@ -118,7 +118,7 @@ const SaquesTab = ({
         )}
         <div className="bg-muted rounded-xl p-3 space-y-1 mb-3">
           <p className="text-xs text-muted-foreground">Entregador: <span className="text-foreground font-medium">{driverName}</span></p>
-          <p className="text-xs text-muted-foreground">Valor: <span className="text-foreground font-bold">{formatBRL(Number(req.amount))}</span></p>
+          <p className="text-xs text-muted-foreground">Valor: <span className="text-foreground font-bold tabular-nums">{formatBRL(Number(req.amount))}</span></p>
           <p className="text-xs text-muted-foreground">PIX: <span className="text-foreground font-medium">{req.pix_key}</span></p>
           <p className="text-xs text-muted-foreground">Tipo: <span className="text-foreground font-medium">{req.pix_type?.toUpperCase()}</span></p>
           {req.processed_at && (
@@ -139,7 +139,7 @@ const SaquesTab = ({
             <button onClick={() => handleConfirmPayment(req, driverName)}
               disabled={processingId === req.id}
               className={`w-full flex items-center justify-center gap-2 font-bold py-3 rounded-xl text-sm active:scale-95 transition-transform disabled:opacity-60 ${
-                confirmingId === req.id ? "bg-amber-500 hover:bg-amber-600 text-white" : "bg-green-500 hover:bg-green-600 text-white"
+                confirmingId === req.id ? "bg-amber-500 hover:bg-amber-600 text-white" : "bg-emerald-600 hover:bg-emerald-700 text-white"
               }`}>
               <CheckCircle2 className="h-4 w-4" />
               {processingId === req.id ? "Processando..." : confirmingId === req.id ? "Tocar novamente para confirmar" : "Confirmar Pagamento"}

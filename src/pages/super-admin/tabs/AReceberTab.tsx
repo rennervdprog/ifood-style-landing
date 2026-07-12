@@ -13,7 +13,7 @@ import { toast } from "sonner";
 type ReceivableKind = "mensalidade" | "comissao" | "entrega_fee" | "pdv_fee";
 
 const KIND_META: Record<ReceivableKind, { label: string; icon: typeof Crown; color: string }> = {
-  mensalidade: { label: "Mensalidade", icon: Crown, color: "text-blue-500" },
+  mensalidade: { label: "Mensalidade", icon: Crown, color: "text-primary" },
   comissao: { label: "Comissão", icon: Percent, color: "text-primary" },
   entrega_fee: { label: "R$2/entrega", color: "text-amber-500", icon: Truck },
   pdv_fee: { label: "PDV (R$1)", color: "text-emerald-500", icon: ShoppingCart },
@@ -163,9 +163,9 @@ const AReceberTab = () => {
           <div className="flex items-center gap-2 text-muted-foreground text-xs mb-1">
             <Wallet className="w-4 h-4" /> Total a receber das lojas
           </div>
-          <p className="text-3xl font-black text-primary">{brl(totals.total)}</p>
+          <p className="text-3xl font-black text-primary tabular-nums">{brl(totals.total)}</p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-4 text-xs">
-            <Breakdown icon={Crown} label="Mensalidades" value={totals.mensalidade} color="text-blue-500" />
+            <Breakdown icon={Crown} label="Mensalidades" value={totals.mensalidade} color="text-primary" />
             <Breakdown icon={Truck} label="R$2/entrega" value={totals.entrega_fee} color="text-amber-500" />
             <Breakdown icon={Percent} label="Comissão" value={totals.comissao} color="text-primary" />
             <Breakdown icon={ShoppingCart} label="PDV" value={totals.pdv_fee} color="text-emerald-500" />
@@ -195,7 +195,7 @@ const AReceberTab = () => {
                       </Badge>
                     )}
                   </div>
-                  <span className="text-lg font-black text-foreground">{brl(r.total)}</span>
+                  <span className="text-lg font-black text-foreground tabular-nums">{brl(r.total)}</span>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -211,7 +211,7 @@ const AReceberTab = () => {
                           <Icon className={`w-4 h-4 ${meta.color}`} />
                           <div className="min-w-0">
                             <p className="text-[11px] text-muted-foreground leading-tight">{meta.label}</p>
-                            <p className="text-sm font-bold leading-tight">{brl(v)}</p>
+                            <p className="text-sm font-bold leading-tight tabular-nums">{brl(v)}</p>
                           </div>
                         </div>
                         <Button
@@ -258,7 +258,7 @@ function Breakdown({
       <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
         <Icon className={`w-3 h-3 ${color}`} /> {label}
       </div>
-      <p className={`text-sm font-bold ${color}`}>{brl(value)}</p>
+      <p className={`text-sm font-bold tabular-nums ${color}`}>{brl(value)}</p>
     </div>
   );
 }

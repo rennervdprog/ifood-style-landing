@@ -74,7 +74,7 @@ interface Props {
 
 /** Opções de plano para troca — vem direto de plansInfo (fonte única). */
 const planOptions: { type: StorePlanType; label: string; fee: number; rate: number; tagline: string; bullets: string[] }[] = (
-  ["fixed", "hybrid", "commission_only"] as StorePlanType[]
+  ["fixed", "autonomy"] as StorePlanType[]
 ).map((id) => {
   const p = PLANS[id];
   return {

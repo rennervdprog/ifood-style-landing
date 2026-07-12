@@ -60,6 +60,7 @@ const AuditoriaTab = lazy(() => import("./super-admin/tabs/AuditoriaTab"));
 const AReceberTab = lazy(() => import("./super-admin/tabs/AReceberTab"));
 const HistoricoRepassesTab = lazy(() => import("./super-admin/tabs/HistoricoRepassesTab"));
 const DebugLojaTab = lazy(() => import("./super-admin/tabs/DebugLojaTab"));
+const PlatformWhatsAppTab = lazy(() => import("./super-admin/tabs/PlatformWhatsAppTab"));
 // Painéis financeiros profissionais (Fase 1)
 const FluxoCaixaPanel = lazy(() => import("@/components/finance/FluxoCaixaPanel"));
 const ConciliacaoAsaasPanel = lazy(() => import("@/components/finance/ConciliacaoAsaasPanel"));
@@ -109,11 +110,11 @@ const SubTabsBar = ({
 );
 
 type DateFilter = "today" | "yesterday" | "week";
-type AdminTab = "dashboard" | "approvals" | "stores" | "financeiro" | "pagamentos" | "saques" | "sync" | "coupons" | "entrega" | "cidades" | "juridico" | "planos" | "moderadores" | "socios" | "suporte" | "app-page" | "test_finance" | "links" | "broadcast" | "logs" | "coach" | "auditoria";
+type AdminTab = "dashboard" | "approvals" | "stores" | "financeiro" | "pagamentos" | "saques" | "sync" | "coupons" | "entrega" | "cidades" | "juridico" | "planos" | "moderadores" | "socios" | "suporte" | "app-page" | "test_finance" | "links" | "broadcast" | "logs" | "coach" | "auditoria" | "whatsapp_plataforma";
 
 const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; group: string }[] = [
   // Início
-  { key: "dashboard", label: "Dashboard", icon: LayoutDashboard, group: "Início" },
+  { key: "dashboard", label: "Visão Geral", icon: LayoutDashboard, group: "Início" },
   // Operação (Cidades + Entrega agora vivem dentro de "Lojas")
   { key: "stores", label: "Lojas", icon: Store, group: "Operação" },
   { key: "coupons", label: "Cupons", icon: Ticket, group: "Operação" },
@@ -129,8 +130,40 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
   // Sistema (Logs virou sub-aba de "Auditoria")
   { key: "sync", label: "Sincronizar", icon: RefreshCw, group: "Sistema" },
   { key: "auditoria", label: "Auditoria", icon: ShieldCheck, group: "Sistema" },
+  { key: "whatsapp_plataforma", label: "WhatsApp Plataforma", icon: MessageCircle, group: "Sistema" },
   { key: "juridico", label: "Jurídico", icon: Scale, group: "Sistema" },
 ];
+
+// Subtítulo padronizado por aba — evita if/else espalhado no header.
+const TAB_SUBTITLE: Record<string, (ctx: {
+  totalOrders: number;
+  pendingWithdrawals: number;
+  pendingApprovals: number;
+  storesCount: number;
+}) => string> = {
+  dashboard: (c) => `${c.totalOrders} pedidos no período`,
+  financeiro: () => "Gestão financeira e repasses",
+  saques: (c) => `${c.pendingWithdrawals} solicitação${c.pendingWithdrawals === 1 ? "" : "ões"} pendente${c.pendingWithdrawals === 1 ? "" : "s"}`,
+  entrega: () => "Configurações de taxa de entrega",
+  approvals: (c) => `${c.pendingApprovals} cadastro${c.pendingApprovals === 1 ? "" : "s"} pendente${c.pendingApprovals === 1 ? "" : "s"}`,
+  stores: (c) => `${c.storesCount} lojas cadastradas`,
+  cidades: () => "Lojas por cidade",
+  pagamentos: () => "Histórico de pagamentos por loja",
+  coupons: () => "Gerenciar cupons de desconto",
+  juridico: () => "Consulta jurídica e dados arquivados",
+  moderadores: () => "Moderadores e sistema de afiliados",
+  socios: () => "Divisão de lucros entre sócios",
+  sync: () => "Sincronização com banco externo",
+  test_finance: () => "Lojas de teste — finanças fictícias isoladas",
+  links: () => "Gerenciar botões da página pública /links",
+  broadcast: () => "Enviar push notifications em massa",
+  coach: () => "Assistente de IA para captar e fechar lojistas",
+  planos: () => "Gerenciar planos e assinaturas das lojas",
+  "app-page": () => "Página pública do app e links",
+  suporte: () => "Painel de suporte ao lojista",
+  auditoria: () => "Auditoria, logs e debug",
+  whatsapp_plataforma: () => "WhatsApp oficial da plataforma (avisos automáticos)",
+};
 
  import { FinanceTab as FinanceTabFull, MetricCard } from "./SuperAdminDashboard";
 
@@ -621,7 +654,7 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
   const generateReport = () => {
     const dateLabel = dateFilter === "today" ? "Hoje" : dateFilter === "yesterday" ? "Ontem" : "Últimos 7 dias";
     let report = `📊 *Relatório ${dateLabel} - ItaSuper*\n\n`;
-    report += `💰 Vendas: ${formatBRL(metrics.totalSales)}\n`;
+    report += `💰 Faturamento: ${formatBRL(metrics.totalSales)}\n`;
     report += `📦 Pedidos: ${metrics.totalOrders}\n`;
     report += `🏷️ Comissão Plataforma: ${formatBRL(metrics.commission)}\n\n`;
     report += `🏪 *Por Loja:*\n`;
@@ -674,7 +707,7 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
   if (!user || !isAdmin) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center text-center px-6">
-        <AlertTriangle className="h-16 w-16 text-yellow-500 mb-4" />
+        <AlertTriangle className="h-16 w-16 text-amber-500 dark:text-amber-400 mb-4" />
         <h1 className="text-xl font-bold text-foreground mb-2">Acesso Negado</h1>
         <p className="text-sm text-muted-foreground mb-6">Apenas o administrador pode acessar este painel.</p>
         <button onClick={() => navigate("/")} className="bg-primary text-primary-foreground font-bold px-6 py-3 rounded-xl">
@@ -689,7 +722,7 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
 
   // Bottom nav tabs (mobile)
   const bottomTabs: { key: AdminTab; label: string; icon: React.ElementType }[] = [
-    { key: "dashboard", label: "Início", icon: LayoutDashboard },
+    { key: "dashboard", label: "Visão Geral", icon: LayoutDashboard },
     { key: "financeiro", label: "Financeiro", icon: DollarSign },
     { key: "saques", label: "Saques", icon: Wallet },
     { key: "stores", label: "Lojas", icon: Store },
@@ -818,36 +851,36 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
           <div className="bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/15 rounded-2xl p-4 space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-bold uppercase tracking-widest text-primary/70">Resumo {filterLabels[dateFilter]}</span>
-              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <p className="text-xl font-black text-foreground leading-none">{metrics.activeOrders}</p>
+                <p className="text-xl font-black text-foreground leading-none tabular-nums">{metrics.activeOrders}</p>
                 <p className="text-[10px] text-muted-foreground mt-0.5">Pedidos ativos</p>
               </div>
               <div>
-                <p className="text-xl font-black text-foreground leading-none">{metrics.totalOrders}</p>
+                <p className="text-xl font-black text-foreground leading-none tabular-nums">{metrics.totalOrders}</p>
                 <p className="text-[10px] text-muted-foreground mt-0.5">Total pedidos</p>
               </div>
             </div>
             <div className="pt-2 border-t border-primary/10 flex items-center justify-between">
               <div className="flex items-center gap-1.5">
-                <TrendingUp className="h-3.5 w-3.5 text-green-500" />
+                <TrendingUp className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
                 <span className="text-[10px] text-muted-foreground">Vendas</span>
               </div>
-              <span className="text-sm font-black text-foreground">{formatBRL(metrics.totalSales)}</span>
+              <span className="text-sm font-black text-foreground tabular-nums">{formatBRL(metrics.totalSales)}</span>
             </div>
           </div>
         </div>
 
         {/* Navigation */}
         <nav className="flex-1 px-3 py-2 overflow-y-auto scrollbar-thin">
-          {["Início", "Operação", "Financeiro", "Pessoas", "Marketing", "Sistema"].map(group => {
+          {["Início", "Operação", "Financeiro", "Pessoas", "Marketing", "Sistema"].map((group, groupIdx) => {
             const items = sidebarItems.filter(i => i.group === group);
             if (items.length === 0) return null;
             return (
-              <div key={group} className="mb-4">
-                <p className="text-[10px] font-extrabold text-muted-foreground/60 uppercase tracking-[0.15em] px-3 mb-1.5">{group}</p>
+              <div key={group} className={`mb-3 pb-2 ${groupIdx > 0 ? "pt-3 border-t border-border/40" : ""}`}>
+                <p className="text-[10px] font-extrabold text-muted-foreground/70 uppercase tracking-[0.15em] px-3 mb-1.5">{group}</p>
                 <div className="space-y-0.5">
                   {items.map(item => {
                     const isActive = activeTab === item.key;
@@ -856,37 +889,35 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
                       <button
                         key={item.key}
                         onClick={() => handleTabChange(item.key)}
-                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-semibold transition-all duration-200 ${
+                        className={`relative w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-semibold transition-all duration-150 ${
                           isActive
-                            ? "bg-primary text-primary-foreground shadow-md shadow-primary/20"
-                            : "text-muted-foreground hover:bg-accent/80 hover:text-foreground"
+                            ? "bg-primary/10 text-primary before:content-[''] before:absolute before:left-0 before:top-1.5 before:bottom-1.5 before:w-1 before:rounded-full before:bg-primary"
+                            : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"
                         }`}
                       >
                         <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors ${
-                          isActive ? "bg-primary-foreground/15" : "bg-muted/50"
+                          isActive ? "bg-primary/15 text-primary" : "bg-muted/40 text-muted-foreground"
                         }`}>
                           <Icon className="h-4 w-4" />
                         </div>
                         <span className="flex-1 text-left">{item.label}</span>
                         {item.key === "saques" && pendingWithdrawals.length > 0 && (
-                          <span className="bg-destructive text-destructive-foreground text-[10px] font-black min-w-[20px] h-5 flex items-center justify-center px-1.5 rounded-full animate-pulse">
+                          <span className="tabular-nums bg-destructive text-destructive-foreground text-[10px] font-black min-w-[20px] h-5 flex items-center justify-center px-1.5 rounded-full">
                             {pendingWithdrawals.length}
                           </span>
                         )}
                         {item.key === "approvals" && pendingApprovalsCount > 0 && (
-                          <span className="bg-destructive text-destructive-foreground text-[10px] font-black min-w-[20px] h-5 flex items-center justify-center px-1.5 rounded-full animate-pulse">
+                          <span className="tabular-nums bg-destructive text-destructive-foreground text-[10px] font-black min-w-[20px] h-5 flex items-center justify-center px-1.5 rounded-full">
                             {pendingApprovalsCount}
                           </span>
                         )}
                         {item.key === "dashboard" && delayedOrders.length > 0 && (
-                          <span className="bg-destructive text-destructive-foreground text-[10px] font-black min-w-[20px] h-5 flex items-center justify-center px-1.5 rounded-full">
+                          <span className="tabular-nums bg-destructive text-destructive-foreground text-[10px] font-black min-w-[20px] h-5 flex items-center justify-center px-1.5 rounded-full">
                             {delayedOrders.length}
                           </span>
                         )}
                         {item.key === "dashboard" && complianceAlerts && complianceAlerts.length > 0 && delayedOrders.length === 0 && (
-                          <span className="bg-amber-500 text-white text-[10px] font-black w-5 h-5 flex items-center justify-center rounded-full animate-pulse">
-                            ⚠
-                          </span>
+                          <span className="text-amber-600 dark:text-amber-400 text-sm leading-none">⚠</span>
                         )}
                       </button>
                     );
@@ -905,14 +936,14 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
                 <Store className="h-3.5 w-3.5 text-primary" />
               </div>
               <span className="text-xs text-muted-foreground flex-1">Lojas</span>
-              <span className="text-xs font-black text-foreground bg-accent px-2 py-0.5 rounded-md">{stores?.length || 0}</span>
+              <span className="text-xs font-black text-foreground bg-accent px-2 py-0.5 rounded-md tabular-nums">{stores?.length || 0}</span>
             </div>
             <div className="flex items-center gap-2.5">
               <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
                 <Bike className="h-3.5 w-3.5 text-primary" />
               </div>
               <span className="text-xs text-muted-foreground flex-1">Entregadores</span>
-              <span className="text-xs font-black text-foreground bg-accent px-2 py-0.5 rounded-md">{drivers?.length || 0}</span>
+              <span className="text-xs font-black text-foreground bg-accent px-2 py-0.5 rounded-md tabular-nums">{drivers?.length || 0}</span>
             </div>
           </div>
           <button
@@ -949,24 +980,12 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
             <div className="hidden lg:block">
               <h2 className="font-bold text-foreground text-lg">{currentTab?.label || "Dashboard"}</h2>
               <p className="text-xs text-muted-foreground">
-                {activeTab === "dashboard" && `${metrics.totalOrders} pedidos no período`}
-                {activeTab === "financeiro" && "Gestão financeira e repasses"}
-                {activeTab === "saques" && `${pendingWithdrawals.length} solicitações pendentes`}
-                {activeTab === "entrega" && "Configurações de taxa de entrega"}
-                {activeTab === "approvals" && `${pendingApprovalsCount} cadastro${pendingApprovalsCount === 1 ? "" : "s"} pendente${pendingApprovalsCount === 1 ? "" : "s"}`}
-                {activeTab === "stores" && `${stores?.length || 0} lojas cadastradas`}
-                {activeTab === "cidades" && "Lojas por cidade"}
-                {activeTab === "pagamentos" && "Histórico de pagamentos por loja"}
-                {activeTab === "coupons" && "Gerenciar cupons de desconto"}
-                {activeTab === "juridico" && "Consulta jurídica e dados arquivados"}
-                {activeTab === "moderadores" && "Moderadores e sistema de afiliados"}
-                {activeTab === "socios" && "Divisão de lucros entre sócios"}
-                {activeTab === "sync" && "Sincronização com banco externo"}
-                {activeTab === "test_finance" && "Lojas de teste — finanças fictícias isoladas"}
-                {activeTab === "links" && "Gerenciar botões da página pública /links"}
-                {activeTab === "broadcast" && "Enviar push notifications em massa"}
-                {activeTab === "coach" && "Assistente de IA para captar e fechar lojistas"}
-                {activeTab === "planos" && "Gerenciar planos e assinaturas das lojas"}
+                {TAB_SUBTITLE[activeTab]?.({
+                  totalOrders: metrics.totalOrders,
+                  pendingWithdrawals: pendingWithdrawals.length,
+                  pendingApprovals: pendingApprovalsCount,
+                  storesCount: stores?.length || 0,
+                }) || " "}
               </p>
             </div>
           </div>
@@ -986,7 +1005,7 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
                 className="relative p-2 rounded-xl bg-destructive/10 hover:bg-destructive/20 transition-colors lg:hidden"
               >
                 <Bell className="h-4 w-4 text-destructive" />
-                <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[8px] font-black w-4 h-4 flex items-center justify-center rounded-full animate-pulse">
+                <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[8px] font-black w-4 h-4 flex items-center justify-center rounded-full tabular-nums">
                   {pendingWithdrawals.length}
                 </span>
               </button>
@@ -998,7 +1017,7 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
                 aria-label="Cadastros pendentes"
               >
                 <Shield className="h-4 w-4 text-amber-600" />
-                <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[8px] font-black w-4 h-4 flex items-center justify-center rounded-full animate-pulse">
+                <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[8px] font-black w-4 h-4 flex items-center justify-center rounded-full tabular-nums">
                   {pendingApprovalsCount}
                 </span>
               </button>
@@ -1009,6 +1028,32 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
         {/* Content area */}
         <div className="flex-1 overflow-y-auto">
           <div className="p-4 lg:p-6 max-w-6xl mx-auto">
+            {/* Banner unificado de pendências */}
+            {(pendingWithdrawals.length > 0 || pendingApprovalsCount > 0) &&
+              activeTab !== "approvals" && activeTab !== "saques" && activeTab !== "financeiro" && (
+                <div className="mb-4 rounded-2xl border border-amber-200 dark:border-amber-900/50 bg-amber-50 dark:bg-amber-950/30 px-4 py-3 flex flex-wrap items-center gap-2">
+                  <Bell className="h-4 w-4 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+                  <span className="text-xs font-bold text-amber-900 dark:text-amber-200 mr-1">Pendências:</span>
+                  {pendingApprovalsCount > 0 && (
+                    <button
+                      onClick={() => handleTabChange("approvals")}
+                      className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/25 transition-colors inline-flex items-center gap-1.5"
+                    >
+                      <Shield className="h-3 w-3" />
+                      {pendingApprovalsCount} cadastro{pendingApprovalsCount === 1 ? "" : "s"}
+                    </button>
+                  )}
+                  {pendingWithdrawals.length > 0 && (
+                    <button
+                      onClick={() => handleTabChange("financeiro")}
+                      className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-destructive/15 text-destructive hover:bg-destructive/25 transition-colors inline-flex items-center gap-1.5"
+                    >
+                      <Wallet className="h-3 w-3" />
+                      {pendingWithdrawals.length} saque{pendingWithdrawals.length === 1 ? "" : "s"}
+                    </button>
+                  )}
+                </div>
+              )}
             {activeTab === "approvals" && <AdminApprovals />}
             {activeTab === "entrega" && <DeliveryFeeConfigPanel />}
             {activeTab === "sync" && <Suspense fallback={<TabFallback />}><SyncExternalTab /></Suspense>}
@@ -1060,6 +1105,7 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
             {activeTab === "links" && <AppLinksManager />}
             {activeTab === "broadcast" && <AdminBroadcastPush />}
             {activeTab === "coach" && <SalesCoachPanel />}
+            {activeTab === "whatsapp_plataforma" && <Suspense fallback={<TabFallback />}><PlatformWhatsAppTab /></Suspense>}
             {activeTab === "auditoria" && (
               <div className="space-y-4">
                 <SubTabsBar
@@ -1086,8 +1132,8 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
                     </h3>
                   </div>
                   <div className="overflow-x-auto">
-                    <table className="w-full text-left text-sm">
-                      <thead className="bg-muted/50 text-muted-foreground uppercase text-[10px] font-bold">
+                    <table className="w-full text-left text-sm tabular-nums">
+                      <thead className="sticky top-0 z-10 bg-muted/70 backdrop-blur text-muted-foreground uppercase text-[10px] font-bold tracking-wider">
                         <tr>
                           <th className="px-4 py-3">Data</th>
                           <th className="px-4 py-3">Admin</th>
@@ -1097,11 +1143,18 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
                       </thead>
                       <tbody className="divide-y divide-border">
                         {logsLoading ? (
-                          <tr><td colSpan={4} className="px-4 py-8 text-center"><Loader2 className="h-5 w-5 animate-spin mx-auto text-muted-foreground" /></td></tr>
-                        ) : adminLogs?.map((log) => (
-                          <tr key={log.id} className="hover:bg-muted/30 transition-colors">
+                          Array.from({ length: 6 }).map((_, i) => (
+                            <tr key={`sk-${i}`} className={i % 2 ? "bg-muted/20" : ""}>
+                              <td className="px-4 py-3"><div className="h-3 w-32 rounded bg-muted animate-pulse" /></td>
+                              <td className="px-4 py-3"><div className="h-3 w-24 rounded bg-muted animate-pulse" /></td>
+                              <td className="px-4 py-3"><div className="h-3 w-16 rounded bg-muted animate-pulse" /></td>
+                              <td className="px-4 py-3"><div className="h-3 w-28 rounded bg-muted animate-pulse" /></td>
+                            </tr>
+                          ))
+                        ) : adminLogs?.map((log, i) => (
+                          <tr key={log.id} className={`hover:bg-muted/40 transition-colors ${i % 2 ? "bg-muted/20" : ""}`}>
                             <td className="px-4 py-3 whitespace-nowrap text-muted-foreground">
-                              {new Date(log.created_at).toLocaleString('pt-BR')}
+                              {new Date(log.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }).replace(',', ' ·')}
                             </td>
                             <td className="px-4 py-3 font-medium">
                               {log.profiles?.full_name || "Admin"}
@@ -1114,13 +1167,21 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
                             <td className="px-4 py-3">
                               <div className="flex flex-col">
                                 <span className="text-xs font-bold capitalize">{log.target_type}</span>
-                                <span className="text-[10px] text-muted-foreground font-mono">{log.target_id?.substring(0, 8)}...</span>
+                                <span className="text-[10px] text-muted-foreground font-mono">{log.target_id?.substring(0, 8)}…</span>
                               </div>
                             </td>
                           </tr>
                         ))}
                         {!logsLoading && (!adminLogs || adminLogs.length === 0) && (
-                          <tr><td colSpan={4} className="px-4 py-8 text-center text-muted-foreground">Nenhum log encontrado.</td></tr>
+                          <tr>
+                            <td colSpan={4} className="px-4 py-12">
+                              <div className="flex flex-col items-center justify-center text-center gap-2 text-muted-foreground">
+                                <FileText className="h-8 w-8 opacity-40" />
+                                <p className="text-sm font-bold text-foreground">Nenhum log ainda</p>
+                                <p className="text-xs">Ações administrativas aparecerão aqui.</p>
+                              </div>
+                            </td>
+                          </tr>
                         )}
                       </tbody>
                     </table>
@@ -1206,10 +1267,17 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
              )}
              {activeTab === "dashboard" && (
                <div className="space-y-4">
-                 <div className="flex gap-2 mb-4">
+                 <div className="inline-flex items-center gap-1 p-1 bg-muted rounded-xl mb-4">
                    {(["today", "yesterday", "week"] as DateFilter[]).map(f => (
-                     <button key={f} onClick={() => setDateFilter(f)}
-                       className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors ${dateFilter === f ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground"}`}>
+                     <button
+                       key={f}
+                       onClick={() => setDateFilter(f)}
+                       className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                         dateFilter === f
+                           ? "bg-background text-foreground shadow-sm"
+                           : "text-muted-foreground hover:text-foreground"
+                       }`}
+                     >
                        {filterLabels[f]}
                      </button>
                    ))}
@@ -1227,7 +1295,7 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
                        <p className="text-xs font-bold text-foreground">Evolução — Delivery vs PDV</p>
                        <div className="text-[10px] text-muted-foreground flex gap-3">
                          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-primary inline-block"/>Delivery</span>
-                         <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-500 inline-block"/>PDV</span>
+                         <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-sky-500 inline-block"/>PDV</span>
                        </div>
                      </div>
                       <div className="h-44">
@@ -1237,7 +1305,7 @@ const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; gro
                       </div>
                      <div className="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-border/30 text-center">
                        <div><p className="text-[10px] text-muted-foreground">Delivery</p><p className="text-sm font-black text-primary">{formatBRL(adminChartData.totalDelivery)}</p></div>
-                       <div className="border-x border-border/30"><p className="text-[10px] text-muted-foreground">PDV</p><p className="text-sm font-black text-blue-500">{formatBRL(adminChartData.totalPdv)}</p></div>
+                       <div className="border-x border-border/30"><p className="text-[10px] text-muted-foreground">PDV</p><p className="text-sm font-black text-sky-600 dark:text-sky-400 tabular-nums">{formatBRL(adminChartData.totalPdv)}</p></div>
                        <div><p className="text-[10px] text-muted-foreground">Ticket Médio</p><p className="text-sm font-black text-foreground">{formatBRL(adminChartData.ticketMedio)}</p></div>
                      </div>
                    </div>

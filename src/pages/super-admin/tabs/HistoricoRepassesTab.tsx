@@ -9,7 +9,7 @@ import { Download, CheckCircle2, Crown, Truck, Percent, ShoppingCart } from "luc
 import { brl, exportCSV } from "@/components/finance/financeExport";
 
 const KIND_LABEL: Record<string, { label: string; icon: typeof Crown; color: string }> = {
-  mensalidade: { label: "Mensalidade", icon: Crown, color: "text-blue-500" },
+  mensalidade: { label: "Mensalidade", icon: Crown, color: "text-primary" },
   comissao: { label: "Comissão", icon: Percent, color: "text-primary" },
   entrega_fee: { label: "R$2/entrega", icon: Truck, color: "text-amber-500" },
   pdv_fee: { label: "PDV", icon: ShoppingCart, color: "text-emerald-500" },
@@ -55,8 +55,8 @@ const HistoricoRepassesTab = () => {
       <Card className="border-emerald-500/40 bg-emerald-500/5">
         <CardContent className="p-5">
           <p className="text-xs text-muted-foreground mb-1">Total recebido no período</p>
-          <p className="text-3xl font-black text-emerald-600 dark:text-emerald-400">{brl(total)}</p>
-          <p className="text-[11px] text-muted-foreground mt-1">{filtered.length} registro(s)</p>
+          <p className="text-3xl font-black text-emerald-600 dark:text-emerald-400 tabular-nums">{brl(total)}</p>
+          <p className="text-[11px] text-muted-foreground mt-1 tabular-nums">{filtered.length} registro(s)</p>
         </CardContent>
       </Card>
 
@@ -133,7 +133,7 @@ const HistoricoRepassesTab = () => {
                       {r.notes ? ` · ${r.notes}` : ""}
                     </p>
                   </div>
-                  <span className="text-sm font-black text-emerald-600 dark:text-emerald-400">
+                  <span className="text-sm font-black text-emerald-600 dark:text-emerald-400 tabular-nums">
                     {brl(Number(r.amount))}
                   </span>
                 </CardContent>

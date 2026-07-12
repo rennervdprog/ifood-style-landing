@@ -224,7 +224,7 @@ Deno.serve(async (req) => {
 
         const { data: ownerProfile } = await supabase
           .from("profiles")
-          .select("full_name, pix_key, pix_type")
+          .select("full_name, pix_key, pix_type, whatsapp")
           .eq("user_id", store.owner_id)
           .single();
 
@@ -268,6 +268,25 @@ Deno.serve(async (req) => {
             payout_type: "auto_asaas",
             notes: `Transfer ID: ${transfer.data.transfer_id}`,
           });
+
+          // Notifica lojista via WhatsApp plataforma (best-effort)
+          try {
+            const phone = String(ownerProfile?.whatsapp || "").replace(/\D/g, "");
+            if (phone) {
+              const first = String(ownerProfile?.full_name || "").split(" ")[0] || "Olá";
+              const pixKind = String(ownerProfile.pix_type || "cpf").toUpperCase();
+              const masked = ownerProfile.pix_key ? `${String(ownerProfile.pix_key).slice(0,3)}***${String(ownerProfile.pix_key).slice(-2)}` : "";
+              const msg = `💸 *Repasse semanal enviado — ItaSuper*\n\nOlá ${first}! Seu repasse desta semana foi enviado:\n\n• Loja: *${store.name}*\n• Valor: *R$ ${amount.toFixed(2).replace(".", ",")}*\n• PIX: ${pixKind} ${masked}\n\nCai na sua conta em minutos. 💚`;
+              await fetch(`${supabaseUrl}/functions/v1/platform-whatsapp-send`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json", Authorization: `Bearer ${serviceKey}` },
+                body: JSON.stringify({
+                  phone, message: msg, kind: "repasse_weekly",
+                  category: "repasse", store_id: sb.store_id, store_name: store.name,
+                }),
+              }).catch(() => undefined);
+            }
+          } catch (e) { console.error("[auto-payout-cron] wa notify failed", e); }
 
           results.push({ type: "store", id: sb.store_id, name: store.name, status: "paid", amount });
         } else {

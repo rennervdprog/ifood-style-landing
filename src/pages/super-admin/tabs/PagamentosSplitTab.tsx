@@ -173,21 +173,21 @@ const PagamentosSplitTab = ({ stores }: { stores: any[] }) => {
             <CreditCard className="h-4 w-4 text-primary" />
             <span className="text-xs text-muted-foreground">Transações</span>
           </div>
-          <p className="text-lg font-black text-foreground">{transactions?.length || 0}</p>
+          <p className="text-lg font-black text-foreground tabular-nums">{transactions?.length || 0}</p>
         </div>
         <div className="bg-card rounded-2xl p-4 border border-border">
           <div className="flex items-center gap-2 mb-1">
             <Store className="h-4 w-4 text-primary" />
             <span className="text-xs text-muted-foreground">Lojas</span>
           </div>
-          <p className="text-lg font-black text-foreground">{storeGroups.length}</p>
+          <p className="text-lg font-black text-foreground tabular-nums">{storeGroups.length}</p>
         </div>
         <div className="bg-card rounded-2xl p-4 border border-border col-span-2 lg:col-span-1">
           <div className="flex items-center gap-2 mb-1">
             <CheckCircle2 className="h-4 w-4 text-emerald-500" />
             <span className="text-xs text-muted-foreground">Total Pago</span>
           </div>
-          <p className="text-lg font-black text-emerald-500">
+          <p className="text-lg font-black text-emerald-500 tabular-nums">
             {formatBRL(storeGroups.reduce((acc, g) => acc + g.totalPaid, 0))}
           </p>
         </div>
@@ -224,10 +224,10 @@ const PagamentosSplitTab = ({ stores }: { stores: any[] }) => {
                   <div className="flex items-center gap-3">
                     <div className="text-right">
                       {group.totalPaid > 0 && (
-                        <p className="text-sm font-bold text-emerald-500">{formatBRL(group.totalPaid)}</p>
+                        <p className="text-sm font-bold text-emerald-500 tabular-nums">{formatBRL(group.totalPaid)}</p>
                       )}
                       {group.totalPending > 0 && (
-                        <p className="text-xs text-amber-500 font-bold">{formatBRL(group.totalPending)} pend.</p>
+                        <p className="text-xs text-amber-500 font-bold tabular-nums">{formatBRL(group.totalPending)} pend.</p>
                       )}
                     </div>
                     {isExpanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
@@ -248,7 +248,7 @@ const PagamentosSplitTab = ({ stores }: { stores: any[] }) => {
                               {kindLabels[record.transaction_kind] || record.transaction_kind}
                             </span>
                           </div>
-                          <span className="text-sm font-black text-foreground">{formatBRL(Number(record.amount))}</span>
+                          <span className="text-sm font-black text-foreground tabular-nums">{formatBRL(Number(record.amount))}</span>
                         </div>
 
                         <div className="grid grid-cols-2 gap-2 text-xs">
@@ -258,7 +258,7 @@ const PagamentosSplitTab = ({ stores }: { stores: any[] }) => {
                           </div>
                           <div className="bg-muted/50 rounded-lg p-2">
                             <p className="text-muted-foreground">Data</p>
-                            <p className="font-bold text-foreground">
+                            <p className="font-bold text-foreground tabular-nums">
                               {new Date(record.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit" })}
                             </p>
                           </div>

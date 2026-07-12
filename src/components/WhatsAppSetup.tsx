@@ -57,6 +57,15 @@ export default function WhatsAppSetup({ storeId, storeSlug, storeName, expectedP
   useEffect(() => {
     setLoading(true);
     loadConfig().finally(() => setLoading(false));
+    // Auto-sincroniza status real com Evolution ao abrir a aba
+    (async () => {
+      try {
+        await supabase.functions.invoke("store-whatsapp-sync-status", { body: { store_id: storeId } });
+        await loadConfig();
+      } catch (e) {
+        console.warn("[WhatsAppSetup] sync-status falhou", e);
+      }
+    })();
   }, [loadConfig]);
 
   const saveConfig = async () => {

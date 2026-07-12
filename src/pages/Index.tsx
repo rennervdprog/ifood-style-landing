@@ -115,9 +115,9 @@ const painPoints = [
  ];
 
 const plans = [
-  { name: "Comissão", price: "R$0", sub: "/mês", desc: "6% por pedido", icon: Rocket, tags: ["Sem mensalidade", "Todas as ferramentas"], subtitle: "Todas as ferramentas incluídas. Taxa PIX R$ 1,99 (lojista) + entrega R$ 2.", popular: false },
-  { name: "Crescimento", price: "R$100", sub: "/mês", desc: "2,5% por pedido", icon: TrendingUp, tags: ["Comissão reduzida", "Todas as ferramentas"], subtitle: "Mesmas ferramentas, taxa PIX R$ 1,99 (lojista) + entrega R$ 2.", popular: true },
-  { name: "Essencial", price: "R$90*", sub: "/mês", desc: "0% comissão", icon: Crown, tags: ["Zero comissão", "Lucro máximo"], subtitle: "Fique com 100% do pedido. Taxa PIX R$ 1,99 (lojista) + entrega R$ 2.", popular: false },
+  { name: "Essencial", price: "R$0", sub: "/mês", desc: "0% comissão", icon: Crown, tags: ["Grátis pra começar", "Sobe pra R$180 quando faturar R$5.000"], subtitle: "Comece sem pagar mensalidade. Taxa PIX R$ 1,99 + entrega R$ 2.", popular: true },
+  { name: "Autonomia", price: "R$329,90", sub: "/mês", desc: "0% comissão + sem taxa R$2", icon: Crown, tags: ["Sem taxa de R$2 da plataforma", "100% da sua taxa de entrega"], subtitle: "Cliente paga exatamente a taxa que você define. 7 dias grátis.", popular: false },
+  { name: "Somente PDV", price: "R$69", sub: "/mês", desc: "Só o caixa presencial", icon: CreditCard, tags: ["Sem delivery", "Sem vitrine pública"], subtitle: "Pra loja física que não quer delivery. Só o PDV completo.", popular: false },
 ];
 
 const testimonials = [
@@ -130,7 +130,7 @@ const faqs = [
   { q: "Preciso baixar algum aplicativo?", a: "Não! Você gerencia tudo pelo navegador do celular ou computador. Seus clientes também pedem direto pelo link, sem instalar nada." },
   { q: "Como funciona o PIX automático?", a: "Quando o cliente escolhe PIX, geramos um QR Code automaticamente. Assim que ele paga, a confirmação é instantânea — sem precisar conferir extrato." },
   { q: "Posso trocar de plano depois?", a: "Sim! Você pode migrar entre planos a qualquer momento. Basta solicitar pelo painel da loja e o admin aprova a troca." },
-  { q: "O plano Essencial cobra alguma comissão?", a: "Não! Zero comissão. Você fica com 100% do pedido. Há apenas uma taxa PIX fixa de R$ 1,99 por transação e R$ 2,00 por entrega via plataforma." },
+  { q: "O plano Essencial cobra alguma comissão?", a: "Não! Zero comissão. Começa em R$ 0/mês e sobe pra R$ 180/mês quando sua loja atingir R$ 5.000 em vendas. Há apenas uma taxa PIX fixa de R$ 1,99 por transação e R$ 2,00 por entrega via plataforma." },
   { q: "Como recebo os pedidos?", a: "Você recebe notificação sonora e push no celular em tempo real. O painel mostra todos os pedidos organizados para você gerenciar." },
 ];
 

@@ -126,6 +126,18 @@ Deno.serve(async (req) => {
       const t = await r.text();
       let d: unknown = t;
       try { d = JSON.parse(t); } catch {}
+      // Se a função ainda não existe, cria via POST /functions
+      if (r.status === 404) {
+        const r2 = await fetch(`https://api.supabase.com/v1/projects/${REF}/functions`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${PAT}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ slug, name: slug, verify_jwt: verifyJwt, body: code }),
+        });
+        const t2 = await r2.text();
+        let d2: unknown = t2;
+        try { d2 = JSON.parse(t2); } catch {}
+        return json({ status: r2.status, ok: r2.ok, data: d2, created: true });
+      }
       return json({ status: r.status, ok: r.ok, data: d });
     }
 

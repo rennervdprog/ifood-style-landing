@@ -278,6 +278,6 @@ Deno.serve(async (req) => {
     return json({ success: true, data });
   } catch (e) {
     console.error("evolution-send-message error:", e);
-    return json({ error: "Internal error" }, 500);
+    return json({ error: "Internal error", message: e.message, stack: e.stack }, 500);
   }
 });

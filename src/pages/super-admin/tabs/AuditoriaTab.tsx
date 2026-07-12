@@ -84,20 +84,24 @@ export default function AuditoriaTab() {
       </div>
 
       {view === "audit" && (
-        <div className="rounded-xl border bg-card">
+        <div className="rounded-xl border bg-card overflow-hidden">
           {auditLoading ? (
-            <div className="p-8 flex justify-center"><Loader2 className="h-5 w-5 animate-spin" /></div>
+            <div className="p-8 flex justify-center"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
           ) : !audit || audit.length === 0 ? (
-            <p className="p-6 text-sm text-muted-foreground">Nenhum evento registrado ainda.</p>
+            <div className="p-10 flex flex-col items-center gap-2 text-muted-foreground">
+              <ShieldCheck className="h-8 w-8 opacity-40" />
+              <p className="text-sm font-bold text-foreground">Nenhum evento registrado</p>
+              <p className="text-xs">Eventos financeiros aparecerão aqui em tempo real.</p>
+            </div>
           ) : (
-            <div className="divide-y">
-              {audit.map((a: any) => (
-                <div key={a.id} className="p-3 text-xs flex flex-wrap gap-2 items-center">
-                  <span className="font-mono text-muted-foreground">{new Date(a.created_at).toLocaleString("pt-BR")}</span>
-                  <span className="px-2 py-0.5 rounded bg-primary/10 text-primary font-semibold">{a.action}</span>
+            <div className="divide-y divide-border tabular-nums">
+              {audit.map((a: any, i: number) => (
+                <div key={a.id} className={`p-3 text-xs flex flex-wrap gap-2 items-center ${i % 2 ? "bg-muted/20" : ""}`}>
+                  <span className="font-mono text-muted-foreground">{new Date(a.created_at).toLocaleString("pt-BR", { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }).replace(',', ' ·')}</span>
+                  <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary font-bold uppercase text-[10px] tracking-wider">{a.action}</span>
                   <span className="text-muted-foreground">{a.entity_type}</span>
                   <span className="font-mono truncate max-w-[200px]">{a.entity_id}</span>
-                  {a.amount && <span className="font-semibold">R$ {Number(a.amount).toFixed(2)}</span>}
+                  {a.amount && <span className="font-bold">R$ {Number(a.amount).toFixed(2)}</span>}
                   <span className="text-muted-foreground ml-auto">{a.actor_type}</span>
                 </div>
               ))}
@@ -107,17 +111,21 @@ export default function AuditoriaTab() {
       )}
 
       {view === "webhooks" && (
-        <div className="rounded-xl border bg-card">
+        <div className="rounded-xl border bg-card overflow-hidden">
           {whLoading ? (
-            <div className="p-8 flex justify-center"><Loader2 className="h-5 w-5 animate-spin" /></div>
+            <div className="p-8 flex justify-center"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
           ) : !webhooks || webhooks.length === 0 ? (
-            <p className="p-6 text-sm text-muted-foreground">Nenhum webhook registrado.</p>
+            <div className="p-10 flex flex-col items-center gap-2 text-muted-foreground">
+              <Webhook className="h-8 w-8 opacity-40" />
+              <p className="text-sm font-bold text-foreground">Nenhum webhook recebido</p>
+              <p className="text-xs">Webhooks do Asaas aparecerão aqui.</p>
+            </div>
           ) : (
-            <div className="divide-y">
-              {webhooks.map((w: any) => (
-                <div key={w.id} className="p-3 text-xs flex flex-wrap gap-2 items-center">
-                  <span className="font-mono text-muted-foreground">{new Date(w.processed_at).toLocaleString("pt-BR")}</span>
-                  <span className="px-2 py-0.5 rounded bg-blue-500/10 text-blue-700 font-semibold">{w.event_type}</span>
+            <div className="divide-y divide-border tabular-nums">
+              {webhooks.map((w: any, i: number) => (
+                <div key={w.id} className={`p-3 text-xs flex flex-wrap gap-2 items-center ${i % 2 ? "bg-muted/20" : ""}`}>
+                  <span className="font-mono text-muted-foreground">{new Date(w.processed_at).toLocaleString("pt-BR", { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }).replace(',', ' ·')}</span>
+                  <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary font-bold uppercase text-[10px] tracking-wider">{w.event_type}</span>
                   <span className="font-mono truncate max-w-[180px]">{w.payment_id || "—"}</span>
                   <span className="text-muted-foreground ml-auto">{w.status}</span>
                 </div>
