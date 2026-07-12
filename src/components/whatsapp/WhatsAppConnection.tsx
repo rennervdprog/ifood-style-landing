@@ -314,7 +314,7 @@ export default function WhatsAppConnection({ storeId, storeName, expectedPhone, 
       })()}
 
       {/* QR Code visível durante "connecting" */}
-      {status === "connecting" && config?.qr_code && (
+      {status === "connecting" && config?.qr_code && mode === "qr" && (
         <div className="flex flex-col items-center gap-2 p-4 bg-white rounded-2xl border border-border">
           <p className="text-xs font-bold text-foreground">Escaneie com seu WhatsApp</p>
           <div className="relative">
