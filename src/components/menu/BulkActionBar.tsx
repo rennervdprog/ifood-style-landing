@@ -29,7 +29,10 @@ export const BulkActionBar = ({
   onClear,
 }: BulkActionBarProps) => {
   return (
-    <div className="fixed bottom-4 left-4 right-4 lg:sticky lg:top-4 lg:left-auto lg:right-auto z-30 bg-primary text-primary-foreground rounded-2xl p-3 shadow-xl border border-primary/40 flex items-center justify-between gap-2 flex-wrap animate-in slide-in-from-bottom-4 lg:slide-in-from-top-4">
+    <div
+      className="fixed left-4 right-4 lg:sticky lg:top-4 lg:left-auto lg:right-auto lg:bottom-auto z-30 bg-primary text-primary-foreground rounded-2xl p-3 shadow-xl border border-primary/40 flex items-center justify-between gap-2 flex-wrap animate-in slide-in-from-bottom-4 lg:slide-in-from-top-4"
+      style={{ bottom: "calc(env(safe-area-inset-bottom) + 5rem)" }}
+    >
       <div className="flex items-center gap-2">
         <span className="text-sm font-bold">
           {count} selecionado{count > 1 ? "s" : ""}
