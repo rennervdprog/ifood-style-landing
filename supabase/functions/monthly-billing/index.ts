@@ -195,7 +195,7 @@ Deno.serve(async (req) => {
     );
     const { data: allStoreAddons } = await supabase
       .from("store_addons")
-      .select("store_id, addon_code, enabled, price_override, cancels_at");
+      .select("store_id, addon_code, enabled, price_override, cancels_at, first_charge_done, activated_at");
     const addonsByStore = new Map<string, any[]>();
     (allStoreAddons || []).forEach((sa: any) => {
       if (!sa.enabled) return;
@@ -204,6 +204,14 @@ Deno.serve(async (req) => {
       arr.push(sa);
       addonsByStore.set(sa.store_id, arr);
     });
+
+    // Helper de proração: valor proporcional aos dias restantes do mês civil (inclui hoje).
+    const prorate = (priceReais: number, ref: Date) => {
+      const y = ref.getFullYear(), m = ref.getMonth();
+      const daysInMonth = new Date(y, m + 1, 0).getDate();
+      const remaining = Math.max(1, daysInMonth - ref.getDate() + 1);
+      return Math.round(priceReais * (remaining / daysInMonth) * 100) / 100;
+    };
 
     for (const plan of duePlans) {
       const store = (plan as any).stores;
@@ -267,16 +275,41 @@ Deno.serve(async (req) => {
         const storeAddons = addonsByStore.get(store.id) || [];
         let addonsTotal = 0;
         const addonLines: string[] = [];
+        const addonsBilledFirst: string[] = []; // rastreia quais serão marcados como cobrados
         for (const sa of storeAddons) {
           const cat = addonPriceByCode.get(sa.addon_code);
           if (!cat) continue;
           const price = sa.price_override !== null && sa.price_override !== undefined
             ? Number(sa.price_override) : cat.price;
           if (price <= 0) continue; // VIP grátis
-          addonsTotal += price;
-          addonLines.push(`${cat.name} R$${price.toFixed(2)}`);
+          if (!sa.first_charge_done) {
+            const prorated = prorate(price, now);
+            addonsTotal += prorated;
+            addonLines.push(`${cat.name} R$${prorated.toFixed(2)} (proporcional)`);
+            addonsBilledFirst.push(sa.addon_code);
+          } else {
+            addonsTotal += price;
+            addonLines.push(`${cat.name} R$${price.toFixed(2)}`);
+          }
         }
-        const totalAmount = Number(plan.monthly_fee) + pdvPending + addonsTotal;
+
+        // Proração da mensalidade do próprio plano pdv_only na 1ª cobrança.
+        let planMonthly = Number(plan.monthly_fee);
+        let pdvOnlyFirst = false;
+        if (plan.plan_type === "pdv_only" && !(plan as any).pdv_only_first_charge_done && planMonthly > 0) {
+          planMonthly = prorate(planMonthly, now);
+          pdvOnlyFirst = true;
+        }
+        let totalAmount = planMonthly + pdvPending + addonsTotal;
+
+        // Aplica crédito acumulado (cancelamentos anteriores), com piso em 0.
+        const creditCents = Number((plan as any).billing_credit_cents || 0);
+        let creditApplied = 0;
+        if (creditCents > 0 && totalAmount > 0) {
+          const creditReais = creditCents / 100;
+          creditApplied = Math.min(creditReais, totalAmount);
+          totalAmount = Math.max(0, Math.round((totalAmount - creditApplied) * 100) / 100);
+        }
 
         // Detect VIP: any store_plans value diverges from plan_templates default
         const tpl = templateByType.get(plan.plan_type);
@@ -289,7 +322,41 @@ Deno.serve(async (req) => {
         );
         const vipTag = isVip ? " (condição VIP)" : "";
         const addonsDesc = addonLines.length ? ` + ${addonLines.join(" + ")}` : "";
-        const description = `${planLabel}${vipTag}${pdvLine}${addonsDesc} - ${store.name} - ${referenceCode}`;
+        const proratedTag = pdvOnlyFirst ? " (proporcional 1º mês)" : "";
+        const creditTag = creditApplied > 0 ? ` (- crédito R$${creditApplied.toFixed(2)})` : "";
+        const description = `${planLabel}${vipTag}${proratedTag}${pdvLine}${addonsDesc}${creditTag} - ${store.name} - ${referenceCode}`;
+
+        // Se totalAmount == 0 (crédito zerou tudo), pula cobrança Asaas mas registra e consome crédito.
+        if (totalAmount <= 0) {
+          await supabase.from("financial_transactions").insert({
+            store_id: store.id,
+            transaction_kind: "commission_charge",
+            reference_code: referenceCode,
+            amount: 0,
+            status: "paid",
+            provider: "credit",
+            metadata: {
+              plan_type: plan.plan_type,
+              plan_label: planLabel,
+              store_name: store.name,
+              billing_period: now.toISOString(),
+              credit_applied: creditApplied,
+              addons_billed_first: addonsBilledFirst,
+              note: "Cobrança zerada por crédito acumulado.",
+            },
+          });
+          const remainingCents = Math.max(0, creditCents - Math.round(creditApplied * 100));
+          const patch: Record<string, unknown> = { billing_credit_cents: remainingCents };
+          if (pdvOnlyFirst) patch.pdv_only_first_charge_done = true;
+          await supabase.from("store_plans").update(patch).eq("id", plan.id);
+          if (addonsBilledFirst.length) {
+            await supabase.from("store_addons").update({ first_charge_done: true })
+              .eq("store_id", store.id).in("addon_code", addonsBilledFirst);
+          }
+          billed++;
+          results.push({ store: store.name, reference: referenceCode, status: "credit_covered" });
+          continue;
+        }
 
         // Resolve Asaas customer for this store
         let customerId: string | null = store.asaas_account_id || null;
@@ -416,6 +483,9 @@ Deno.serve(async (req) => {
             store_name: store.name,
             billing_period: now.toISOString(),
             pdv_pending_billed: pdvPending, // webhook usa para zerar APÓS pagamento
+            credit_applied: creditApplied,
+            addons_billed_first: addonsBilledFirst,
+            pdv_only_first_charge: pdvOnlyFirst,
           },
         });
 
@@ -423,6 +493,23 @@ Deno.serve(async (req) => {
         // o valor seria perdido. Zeramento é feito pelo asaas-webhook ao confirmar
         // o pagamento (via RPC decrement_pdv_commission_pending), subtraindo apenas
         // o valor faturado e preservando comissão acumulada no período de espera.
+
+        // Marca first_charge_done já na emissão do PIX (proteção anti-duplo-proração).
+        // Se o lojista não pagar, cobrança segue como "pending" e a próxima tentativa
+        // usará valor cheio — comportamento aceitável e conservador para a plataforma.
+        if (addonsBilledFirst.length) {
+          await supabase.from("store_addons").update({ first_charge_done: true })
+            .eq("store_id", store.id).in("addon_code", addonsBilledFirst);
+        }
+        const planPatch: Record<string, unknown> = {};
+        if (pdvOnlyFirst) planPatch.pdv_only_first_charge_done = true;
+        if (creditApplied > 0) {
+          const remainingCents = Math.max(0, creditCents - Math.round(creditApplied * 100));
+          planPatch.billing_credit_cents = remainingCents;
+        }
+        if (Object.keys(planPatch).length) {
+          await supabase.from("store_plans").update(planPatch).eq("id", plan.id);
+        }
 
         billed++;
         results.push({ store: store.name, reference: referenceCode, status: "billed" });

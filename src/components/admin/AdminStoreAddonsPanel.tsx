@@ -12,10 +12,16 @@ export function AdminStoreAddonsPanel({ storeId }: { storeId: string }) {
     queryFn: async () => {
       const [catRes, subRes, storeRes] = await Promise.all([
         supabase.from("plan_addons" as any).select("code, name, monthly_price").eq("code", "pdv").maybeSingle(),
-        supabase.from("store_addons" as any).select("enabled, price_override, cancels_at, activated_at").eq("store_id", storeId).eq("addon_code", "pdv").maybeSingle(),
+        supabase.from("store_addons" as any).select("enabled, price_override, cancels_at, activated_at, first_charge_done").eq("store_id", storeId).eq("addon_code", "pdv").maybeSingle(),
         supabase.from("stores" as any).select("legacy_pdv").eq("id", storeId).maybeSingle(),
       ]);
-      return { catalog: catRes.data as any, sub: subRes.data as any, legacy: !!(storeRes.data as any)?.legacy_pdv };
+      const planRes = await supabase.from("store_plans" as any).select("billing_credit_cents").eq("store_id", storeId).maybeSingle();
+      return {
+        catalog: catRes.data as any,
+        sub: subRes.data as any,
+        legacy: !!(storeRes.data as any)?.legacy_pdv,
+        creditCents: Number((planRes.data as any)?.billing_credit_cents ?? 0),
+      };
     },
   });
   const isLegacyPdv = !!data?.legacy;
@@ -87,6 +93,12 @@ export function AdminStoreAddonsPanel({ storeId }: { storeId: string }) {
         </div>
         {data?.sub?.cancels_at && (
           <p className="text-[10px] text-amber-500">Agendado p/ cancelar em {new Date(data.sub.cancels_at).toLocaleDateString("pt-BR")}</p>
+        )}
+        {data?.sub?.enabled && !data?.sub?.first_charge_done && effectivePrice > 0 && (
+          <p className="text-[10px] text-sky-500">1ª cobrança será proporcional aos dias restantes do mês.</p>
+        )}
+        {(data?.creditCents ?? 0) > 0 && (
+          <p className="text-[10px] text-emerald-500">Crédito acumulado: <b>R$ {(data!.creditCents / 100).toFixed(2)}</b> (será abatido na próxima fatura)</p>
         )}
         <p className="text-[10px] text-muted-foreground">
           Efetivo: <b>R$ {effectivePrice.toFixed(2)}/mês</b> {effectivePrice === 0 && enabled && "(VIP grátis)"}

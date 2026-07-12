@@ -1,93 +1,60 @@
+# Proração + Crédito de Cancelamento
 
-# Reestruturação UI/UX — Aba Pedidos (Lojista)
+Objetivo: alinhar a cobrança ao que o Termo de Uso promete (proporcional na ativação e crédito no cancelamento), sem alterar o fluxo mensal atual de lojas que não têm add-on / não cancelaram nada.
 
-Sem mudar lógica de negócio, RPCs, queries, fluxos de status, impressão, WhatsApp, Pix Direto ou batch dispatch. Apenas reorganizar hierarquia visual, densidade, componentização e responsividade em `src/pages/admin/sections/OrdersSection.tsx` e `src/pages/admin/components/AdminOrderCard.tsx`.
+## Escopo
+- Add-ons pagos (`store_addons`, hoje: PDV R$ 49/mês).
+- Plano `pdv_only` (R$ 69/mês).
+- **Não** mexe em: planos com delivery (fixed/hybrid/commission/supporter), comissão PDV pendente, webhook Asaas, cron atual, split, repasses.
 
-## Problemas atuais
+## Regras de negócio
+1. **Proração na 1ª fatura após ativação**
+   - Base: `preço_mensal × (dias_restantes_no_mês_civil / dias_do_mês)`.
+   - Aplica só à **primeira** fatura após `activated_at`. Depois volta ao valor cheio.
+   - VIP grátis (override 0) continua não cobrando.
 
-- Arquivo único de 662 linhas com muitos blocos empilhados: banner Pix + 4 contadores + tabs de status + busca + filtros período/origem + resumo + barra batch + cards. Muita informação competindo pela atenção.
-- Contadores (4 botões) duplicam funcionalmente as tabs de status logo abaixo.
-- Filtros de período/origem ficam abaixo da busca e do sticky, então "somem" no scroll.
-- Resumo do período (faturamento) fica visualmente igual aos filtros — pouca hierarquia.
-- Card do pedido (`AdminOrderCard`, 621 linhas) tem alta densidade sem agrupamento claro entre: cabeçalho, cliente, itens, ações.
-- No mobile o layout empilha bem, mas há muito padding vertical e header sticky ocupa espaço demais.
-- No desktop usa grid 2 colunas, mas toolbar/filtros continuam full-width mobile-first, deixando o topo "vazio".
+2. **Crédito no cancelamento**
+   - Quando lojista/admin cancela no meio de um ciclo já pago:
+     `crédito = preço_pago × (dias_não_usados / dias_do_ciclo)`.
+   - Crédito é acumulado em `store_plans.billing_credit_cents` (novo).
+   - Na próxima fatura, `monthly-billing` subtrai o crédito do `totalAmount` (piso em 0) e zera o campo.
+   - Se `totalAmount` ficar 0 após crédito, nenhuma cobrança Asaas é gerada (fatura pulada) e o crédito residual permanece.
 
-## Nova estrutura visual
+## Mudanças técnicas
 
-```text
-┌─────────────────────────────────────────────────────────┐
-│ Header sticky compacto                                  │
-│  Faturamento hoje · R$ 1.240   [Hoje▾] [Todas▾] [🔍]   │
-├─────────────────────────────────────────────────────────┤
-│ Pills de status (scroll horizontal, badges com contagem)│
-│  ● Novos 3   Preparo 2   Prontos 1   Entrega   Concl.  │
-├─────────────────────────────────────────────────────────┤
-│ [Alerta Pix Direto] (só quando existir)                 │
-│ [Barra batch dispatch] (só quando aplicável)            │
-├─────────────────────────────────────────────────────────┤
-│ Lista de cards (1 col mobile · 2 col desktop · 3 col xl)│
-└─────────────────────────────────────────────────────────┘
-```
+### Banco (migração aditiva no Supabase externo, via oneshot)
+- `store_addons`: já tem `activated_at`. Adicionar `first_charge_done boolean default false`.
+- `store_plans`:
+  - `billing_credit_cents integer default 0 not null`
+  - `pdv_only_activated_at timestamptz` (proração do plano `pdv_only`)
+  - `pdv_only_first_charge_done boolean default false`
 
-## Mudanças (apenas apresentação)
+### `supabase/functions/manage-store-addon/index.ts`
+- Ao ativar: setar `activated_at = now()`, `first_charge_done = false`.
+- Ao cancelar imediato (não `cancels_at` futuro) dentro do ciclo pago: calcular crédito e somar em `store_plans.billing_credit_cents`.
+- Ao reativar após cancelamento: nova `activated_at`, nova proração.
 
-### 1. Header unificado (substitui contadores + filtros + resumo soltos)
-- Um único bloco sticky com: resumo curto do período (faturamento + nº pedidos), seletor de período (Hoje/Ontem/7d/Tudo) como dropdown compacto, seletor de origem (Todas/Delivery/PDV/Manual) como dropdown, e ícone de busca que expande input inline.
-- Remove os 4 "contadores grandes" — a informação passa para os badges das próprias pills de status (já existem).
+### `supabase/functions/monthly-billing/index.ts`
+- Para cada add-on ativo:
+  - Se `!first_charge_done`: usar valor prorrateado; marcar `first_charge_done = true` após criar a cobrança Asaas com sucesso.
+  - Senão: valor cheio (comportamento atual).
+- Mesmo tratamento para plano `pdv_only` via `pdv_only_activated_at` / `pdv_only_first_charge_done`.
+- Antes de chamar Asaas: `totalAmount = max(0, totalAmount - billing_credit_cents/100)`.
+  - Se `> 0`: gera cobrança e zera `billing_credit_cents`.
+  - Se `== 0`: registra `financial_transactions` como `paid`/`credit_applied` (R$ 0), zera crédito consumido, não cria cobrança Asaas.
+- Descrição da fatura ganha linha `(proporcional X dias)` e `(- crédito R$ Y,YY)` quando aplicável.
 
-### 2. Pills de status refinadas
-- Mantém a lógica atual (`orderTabs`, `activeTab`, `setActiveTab`).
-- Visual: pill ativa com preenchimento sólido; pills com contagem > 0 destacadas; pill "Novos" com dot pulsante quando `pendente > 0`.
-- Sticky logo abaixo do header, alinhadas ao container.
+### UI
+- `AdminStoreAddonsPanel.tsx` (super admin): mostrar `activated_at`, próxima cobrança prevista (cheia ou proporcional) e crédito acumulado da loja.
+- `SubscriptionTab.tsx` (lojista): pequena nota "Primeira cobrança proporcional aos dias restantes do mês" quando `!first_charge_done`; mostrar crédito disponível se `> 0`.
 
-### 3. Alerta Pix Direto
-- Mantém toda a lógica (`confirmPix`, `refusePix`, `confirmPixExternal`, `openProof`).
-- Vira um card único colapsável quando > 2 itens, com badge de contagem. Botões `Ver`, `Confirmar`, `Recusar`, `Recebi no WhatsApp` reorganizados em linha única no desktop e wrap no mobile (já é, mas melhora spacing/hierarquia).
+## Segurança
+- Coluna `billing_credit_cents` só é escrita por edge functions com service role (nunca pelo cliente).
+- Cancelamento por lojista continua passando por `manage-store-addon` (já valida ownership).
+- Sem SQL dinâmico; tudo parametrizado.
 
-### 4. Card do pedido (`AdminOrderCard`)
-Sem mudar props nem handlers. Reagrupamento visual interno em 4 seções:
-1. **Cabeçalho** — nº pedido, hora, status pill, valor total (destaque), origem (Delivery/PDV/Manual como chip pequeno).
-2. **Cliente & entrega** — nome + WhatsApp + endereço colapsável (mantém `toggleAddress`).
-3. **Itens** — lista compacta com destaques de adicionais obrigatórios (mantém `highlights`).
-4. **Ações** — ação principal em destaque (accept/ready/dispatch), ações secundárias (imprimir, WhatsApp, cancelar) em barra alinhada. No mobile as ações secundárias viram ícones; no desktop, ícone + texto.
-
-### 5. Empty states
-- Mantém texto atual, mas cria componente `OrdersEmptyState` reutilizável e reduz padding vertical (`py-24` → `py-14`) para não empurrar demais o layout.
-
-### 6. Skeleton
-- Extrair para `OrderCardSkeleton` e usar grid igual ao dos cards reais para evitar "salto" quando carrega.
-
-### 7. Floating badge "N novos"
-- Mantém a lógica; muda posição para respeitar `env(safe-area-inset-bottom)` + altura do bottom nav (mesmo pattern do `BulkActionBar` corrigido recentemente) para não sobrepor navegação.
-
-### 8. Responsividade
-- Mobile: 1 coluna, header e pills sticky, ações compactadas.
-- Tablet (md): 2 colunas, header em linha única.
-- Desktop (xl): 3 colunas de cards, filtros e busca lado a lado no header.
-
-## Componentização (só extração, sem mudança de lógica)
-
-Novos arquivos em `src/pages/admin/components/orders/`:
-- `OrdersHeader.tsx` — resumo + filtros período/origem + busca.
-- `OrdersStatusPills.tsx` — pills de status com badges.
-- `PixDirectAlert.tsx` — bloco Pix Direto (recebe handlers via props).
-- `BatchDispatchBar.tsx` — barra de agrupamento de entregas.
-- `OrdersEmptyState.tsx` — estado vazio por tab.
-- `OrderCardSkeleton.tsx` — placeholder de carregamento.
-
-`OrdersSection.tsx` passa a ser um orquestrador enxuto (~200 linhas) que só monta esses blocos e passa props — nenhuma query, RPC, filtro de negócio ou cálculo muda.
-
-`AdminOrderCard.tsx` é refatorado internamente em subcomponentes locais (`CardHeader`, `CustomerBlock`, `ItemsBlock`, `ActionsBar`) mantendo a mesma assinatura de props.
-
-## Fora do escopo
-
-- Nada de mudar RPCs, queries React Query, ordenação, cálculo de contadores, fluxos de status, impressão térmica, integração WhatsApp/Evolution, permissões ou dados exibidos.
-- Nada de tocar em `AdminDashboardV2.tsx` além, se necessário, dos imports.
-- Sem novas dependências.
+## Rollback
+- Reverter é seguro: colunas novas são opcionais com default. Se `monthly-billing` voltar à versão anterior, ignora as colunas e cobra valor cheio como hoje.
 
 ## Versão
-
-Ao aplicar, subir para v1.14.4 (build 939) em `PerfilPage.tsx` e `android/app/build.gradle`.
-
-Confirma que sigo com essa reestruturação?
+Bump para v1.14.7 (build 942) ao final.

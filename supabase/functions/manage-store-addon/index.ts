@@ -61,15 +61,37 @@ Deno.serve(async (req) => {
       const priceOverride = body?.price_override === null || body?.price_override === undefined
         ? null
         : Number(body.price_override);
+      // Detecta cancelamento imediato dentro de ciclo já pago para gerar crédito proporcional.
+      const { data: prevAddon } = await admin.from("store_addons")
+        .select("enabled, price_override, first_charge_done, activated_at")
+        .eq("store_id", store_id).eq("addon_code", addon_code).maybeSingle();
+      const wasEnabled = !!prevAddon?.enabled;
+      const keepActivatedAt = wasEnabled && enabled ? prevAddon?.activated_at : new Date().toISOString();
+      const keepFirstCharge = wasEnabled && enabled ? !!prevAddon?.first_charge_done : false;
       const { error } = await admin.from("store_addons").upsert({
         store_id, addon_code,
         enabled,
         price_override: priceOverride,
-        activated_at: new Date().toISOString(),
+        activated_at: keepActivatedAt,
+        first_charge_done: keepFirstCharge,
         cancels_at: null,
         created_by: user.id,
       }, { onConflict: "store_id,addon_code" });
       if (error) throw error;
+      // Se admin desativou imediatamente e ciclo já estava pago, credita dias não usados.
+      if (wasEnabled && !enabled && prevAddon?.first_charge_done) {
+        const price = Number(prevAddon?.price_override ?? 0) || 49; // fallback PDV
+        const credit = computeUnusedCredit(price, new Date());
+        if (credit > 0) {
+          await admin.rpc("increment_billing_credit_cents", {
+            _store_id: store_id, _delta: credit,
+          }).catch(async () => {
+            const { data: sp } = await admin.from("store_plans").select("billing_credit_cents").eq("store_id", store_id).maybeSingle();
+            const cur = Number((sp as any)?.billing_credit_cents ?? 0);
+            await admin.from("store_plans").update({ billing_credit_cents: cur + credit }).eq("store_id", store_id);
+          });
+        }
+      }
       return json({ ok: true, action, enabled, price_override: priceOverride });
     }
 
@@ -78,6 +100,7 @@ Deno.serve(async (req) => {
         store_id, addon_code,
         enabled: true,
         activated_at: new Date().toISOString(),
+        first_charge_done: false,
         cancels_at: null,
         created_by: user.id,
       }, { onConflict: "store_id,addon_code" });
@@ -104,4 +127,14 @@ function json(payload: unknown, status = 200) {
   return new Response(JSON.stringify(payload), {
     status, headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
+}
+
+// Retorna crédito em centavos correspondente aos dias restantes do mês civil.
+function computeUnusedCredit(priceReais: number, now: Date): number {
+  const y = now.getFullYear(), m = now.getMonth();
+  const daysInMonth = new Date(y, m + 1, 0).getDate();
+  const day = now.getDate();
+  const unused = Math.max(0, daysInMonth - day); // dias que restariam a partir de amanhã
+  if (unused <= 0) return 0;
+  return Math.floor(priceReais * 100 * (unused / daysInMonth));
 }
