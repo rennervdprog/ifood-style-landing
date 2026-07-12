@@ -181,10 +181,10 @@ Deno.serve(async (req) => {
       if (/connection/i.test(event)) {
         const state: string = data?.state || data?.status || "";
         const statusReason: number = Number(data?.statusReason || data?.reason || 0);
-        const phone: string | undefined = data?.wuid?.split("@")?.[0] || data?.number || data?.owner;
+        let phone: string | undefined = data?.wuid?.split("@")?.[0] || data?.number || data?.owner;
         const { data: pcfg } = await admin
           .from("platform_whatsapp_config")
-          .select("id, status")
+          .select("id, status, phone_number")
           .eq("instance_name", instance)
           .maybeSingle();
         if (pcfg) {
@@ -192,16 +192,27 @@ Deno.serve(async (req) => {
           if (state === "open" || state === "connected") newStatus = "connected";
           else if ((state === "close" || state === "disconnected") && statusReason === 401) newStatus = "disconnected";
           else if (pcfg.status !== "connected") newStatus = "connecting";
+          if (newStatus === "connected") {
+            const real = await resolveOwnerJid(instance);
+            if (real) phone = real;
+          }
           if (newStatus) {
+            const norm = (v?: string | null) => String(v || "").replace(/\D/g, "");
+            const phoneChanged = !!phone && norm(phone) !== norm(pcfg.phone_number);
             const patch: any = {
               status: newStatus,
               phone_number: phone ?? undefined,
               updated_at: new Date().toISOString(),
             };
-            if (newStatus === "connected" && pcfg.status !== "connected") {
+            if (newStatus === "connected" && (pcfg.status !== "connected" || phoneChanged)) {
               patch.connected_at = new Date().toISOString();
             }
+            if (newStatus === "disconnected") {
+              patch.phone_number = null;
+              patch.connected_at = null;
+            }
             await admin.from("platform_whatsapp_config").update(patch).eq("id", pcfg.id);
+            console.log("[evolution-webhook] platform connection", { instance, newStatus, phone, phoneChanged });
           }
           return json({ ok: true, platform: true });
         }
@@ -214,7 +225,7 @@ Deno.serve(async (req) => {
     if (/connection/i.test(event)) {
       const state: string = data?.state || data?.status || "";
       const statusReason: number = Number(data?.statusReason || data?.reason || 0);
-      const phone: string | undefined = data?.wuid?.split("@")?.[0] || data?.number || data?.owner;
+      let phone: string | undefined = data?.wuid?.split("@")?.[0] || data?.number || data?.owner;
       // Evolution/Baileys emits transient "close"/"connecting" events even
       // right after a successful pairing (socket reconnect). Only flip the
       // status to "disconnected" when the device was actually logged out
@@ -223,17 +234,33 @@ Deno.serve(async (req) => {
       if (state === "open" || state === "connected") newStatus = "connected";
       else if ((state === "close" || state === "disconnected") && statusReason === 401) newStatus = "disconnected";
       else if (cfg.status !== "connected") newStatus = "connecting";
+      if (newStatus === "connected") {
+        const real = await resolveOwnerJid(instance);
+        if (real) phone = real;
+      }
       if (newStatus) {
+        const { data: cur } = await admin
+          .from("store_whatsapp_config")
+          .select("phone_number, status")
+          .eq("store_id", cfg.store_id)
+          .maybeSingle();
+        const norm = (v?: string | null) => String(v || "").replace(/\D/g, "");
+        const phoneChanged = !!phone && norm(phone) !== norm(cur?.phone_number);
         const patch: any = {
           status: newStatus,
           phone_number: phone ?? undefined,
           qr_code: newStatus === "connected" ? null : undefined,
           updated_at: new Date().toISOString(),
         };
-        if (newStatus === "connected" && cfg.status !== "connected") {
+        if (newStatus === "connected" && (cfg.status !== "connected" || phoneChanged)) {
           patch.connected_at = new Date().toISOString();
         }
+        if (newStatus === "disconnected") {
+          patch.phone_number = null;
+          patch.connected_at = null;
+        }
         await admin.from("store_whatsapp_config").update(patch).eq("store_id", cfg.store_id);
+        console.log("[evolution-webhook] store connection", { instance, newStatus, phone, phoneChanged });
       }
     }
 
