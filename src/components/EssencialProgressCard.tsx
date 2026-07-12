@@ -17,6 +17,7 @@ export default function EssencialProgressCard({ store, storePlan }: Props) {
   const eligible =
     storePlan?.planType === "fixed" &&
     Number(storePlan?.monthlyFee || 0) === 0 &&
+    !storePlan?.isVip &&
     !storePlan?.isInTrial;
 
   const { data } = useQuery({
