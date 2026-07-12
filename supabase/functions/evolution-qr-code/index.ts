@@ -35,17 +35,33 @@ const parseJson = async (response: Response) => {
 const evolutionFetch = (url: string, init: RequestInit = {}) =>
   fetch(url, { ...init, signal: AbortSignal.timeout(20_000) });
 
+const compact = (value: unknown) => JSON.stringify(value).slice(0, 1_500);
+
+const fail = (step: string, status: number, details?: unknown) => {
+  console.error(`[evolution-qr-code] ${step}`, { status, details });
+  return json({ error: step, status, details }, status >= 400 && status < 600 ? status : 502);
+};
+
 const getQrPayload = (data: any): string | null =>
-  data?.base64 || data?.qrcode?.base64 || data?.qrcode?.base64Image || null;
+  data?.base64 || data?.qrCode || data?.qr_code || data?.qrcode?.base64 || data?.qrcode?.base64Image || null;
 
 const getRawQrCode = (data: any): string | null =>
-  data?.code || data?.qrcode?.code || null;
+  data?.qrcode?.code || (typeof data?.code === "string" && data.code.length > 20 ? data.code : null) || null;
 
 const getPairingCode = (data: any): string | null => {
-  const code = data?.pairingCode || data?.pairing_code || data?.pairing?.code || data?.code;
+  const code = data?.pairingCode || data?.pairing_code || data?.pairing?.code || data?.qrcode?.pairingCode || data?.qrcode?.pairing_code || data?.code;
   if (typeof code !== "string") return null;
-  const trimmed = code.trim();
-  return trimmed.length > 0 && trimmed.length <= 20 ? trimmed : null;
+  const trimmed = code.replace(/[^A-Za-z0-9]/g, "").trim();
+  return trimmed.length >= 4 && trimmed.length <= 12 ? trimmed : null;
+};
+
+const responseFromFetch = async (r: Response) => ({ ok: r.ok, status: r.status, data: await parseJson(r) });
+
+const instanceExists = async (root: string, instance: string, apiKey: string) => {
+  const r = await evolutionFetch(`${root}/instance/connectionState/${instance}`, { headers: { apikey: apiKey } });
+  const data = await parseJson(r);
+  if (r.status === 404) return { exists: false, status: r.status, data };
+  return { exists: r.ok, status: r.status, data };
 };
 
 const setWebhook = async (baseUrl: string, instance: string, apiKey: string, webhookUrl: string) => {
@@ -69,6 +85,7 @@ const setWebhook = async (baseUrl: string, instance: string, apiKey: string, web
 const createInstance = async (root: string, instance: string, apiKey: string, webhookUrl: string, withQr: boolean) => {
   const payload = {
     instanceName: instance,
+    token: apiKey,
     qrcode: withQr,
     integration: "WHATSAPP-BAILEYS",
     webhookUrl,
@@ -92,6 +109,42 @@ const createInstance = async (root: string, instance: string, apiKey: string, we
   return { ok: r.ok, status: r.status, data };
 };
 
+const applySettings = async (root: string, instance: string, apiKey: string) =>
+  evolutionFetch(`${root}/settings/set/${instance}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", apikey: apiKey },
+    body: JSON.stringify({
+      rejectCall: true,
+      msgCall: "Olá! No momento não consigo atender chamadas. Por favor envie uma mensagem 😊",
+      groupsIgnore: true,
+      alwaysOnline: false,
+      readMessages: false,
+      readStatus: false,
+      syncFullHistory: false,
+    }),
+  }).catch((e) => console.warn("[evolution-qr-code] settings ignored", String(e)));
+
+const connectInstance = async (root: string, instance: string, apiKey: string, pairingNumber: string | null) => {
+  const headers = { apikey: apiKey };
+  const primary = pairingNumber
+    ? `${root}/instance/connect/${instance}?number=${pairingNumber}`
+    : `${root}/instance/connect/${instance}`;
+  const first = await evolutionFetch(primary, { headers }).then(responseFromFetch);
+  if (!pairingNumber || (first.ok && getPairingCode(first.data))) return first;
+
+  // Algumas builds/forks da Evolution v2 expõem uma rota dedicada para pairing code.
+  const fallback = await evolutionFetch(`${root}/instance/connect/pairingCode/${instance}?number=${pairingNumber}`, { headers })
+    .then(responseFromFetch)
+    .catch(() => first);
+  return fallback.ok || getPairingCode(fallback.data) ? fallback : first;
+};
+
+const deleteInstance = async (root: string, instance: string, apiKey: string) => {
+  const headers = { apikey: apiKey };
+  await evolutionFetch(`${root}/instance/logout/${instance}`, { method: "DELETE", headers }).catch(() => undefined);
+  await evolutionFetch(`${root}/instance/delete/${instance}`, { method: "DELETE", headers }).catch(() => undefined);
+};
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
@@ -107,7 +160,8 @@ Deno.serve(async (req) => {
     const { data: userData } = await supabase.auth.getUser();
     if (!userData?.user) return json({ error: "Unauthorized" }, 401);
 
-    const body = await req.json().catch(() => ({})); const parsed = BodySchema.safeParse(body);
+    const body = await req.json().catch(() => ({}));
+    const parsed = BodySchema.safeParse(body);
     if (!parsed.success) return json({ error: parsed.error.flatten().fieldErrors }, 400);
     const isPlatform = "is_platform" in parsed.data && parsed.data.is_platform === true;
     const store_id = isPlatform ? null : (parsed.data as any).store_id as string;
@@ -156,79 +210,55 @@ Deno.serve(async (req) => {
     const root = baseUrl.replace(/\/$/, "");
 
     if (force_reconnect) {
-      await evolutionFetch(`${root}/instance/logout/${instance}`, {
-        method: "DELETE",
-        headers: { apikey: apiKey },
-      }).catch(() => undefined);
-      await new Promise((resolve) => setTimeout(resolve, 1200));
+      await deleteInstance(root, instance, apiKey);
+      await new Promise((resolve) => setTimeout(resolve, 1_200));
     }
 
-    // 1) cria instância usando o contrato atual da Evolution v2.3.x.
-    // Se ela já existir, seguimos para conectar; se não existir e a criação falhar,
-    // retornamos o erro real em vez de deixar a UI presa em loading.
-    let createResult = await createInstance(root, instance, apiKey, webhookUrl, !pairingNumber);
-    const createAlreadyExists =
-      !createResult.ok && /exist|already|duplicate|já existe/i.test(JSON.stringify(createResult.data));
-    if (!createResult.ok && !createAlreadyExists) {
-      const stateCheck = await evolutionFetch(`${root}/instance/connectionState/${instance}`, { headers: { apikey: apiKey } })
-        .then(async (r) => ({ ok: r.ok, status: r.status, data: await parseJson(r) }))
-        .catch((e) => ({ ok: false, status: 0, data: { error: String(e) } }));
-      if (!stateCheck.ok || stateCheck.status === 404) {
-        console.error("[evolution-qr-code] instance create failed", { instance, status: createResult.status, data: createResult.data });
-        return json({ error: "Falha ao criar instância Evolution", status: createResult.status, details: createResult.data }, 502);
+    const exists = force_reconnect ? { exists: false } : await instanceExists(root, instance, apiKey).catch((e) => ({ exists: false, data: { error: String(e) } }));
+    let createResult: { ok: boolean; status: number; data: any } | null = null;
+    if (!exists.exists) {
+      createResult = await createInstance(root, instance, apiKey, webhookUrl, !pairingNumber);
+      const alreadyExists = !createResult.ok && /exist|already|duplicate|já existe/i.test(compact(createResult.data));
+      if (!createResult.ok && !alreadyExists) {
+        return fail("Falha ao criar instância Evolution", 502, { evolution_status: createResult.status, response: createResult.data });
       }
     }
 
-    // 1.0) regrava explicitamente o webhook; em instâncias já existentes,
-    // o /instance/create não atualiza o webhook e as mensagens não chegam.
     await setWebhook(baseUrl, instance, apiKey, webhookUrl);
+    await applySettings(root, instance, apiKey);
 
-    // 1.1) aplica settings anti-ban recomendados (best-effort)
-    await evolutionFetch(`${root}/settings/set/${instance}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", apikey: apiKey },
-      body: JSON.stringify({
-        rejectCall: true,
-        msgCall: "Olá! No momento não consigo atender chamadas. Por favor envie uma mensagem 😊",
-        groupsIgnore: true,
-        alwaysOnline: false,
-        readMessages: false,
-        readStatus: false,
-        syncFullHistory: false,
-      }),
-    }).catch(() => {});
-
-    // 2) conecta e pega QR — com retry automático via logout se falhar
-    const doConnect = async () => {
-      const url = pairingNumber
-        ? `${root}/instance/connect/pairingCode/${instance}?number=${pairingNumber}`
-        : `${root}/instance/connect/${instance}`;
-      const r = await evolutionFetch(url, { headers: { apikey: apiKey } });
-      const data = await parseJson(r);
-      return { r, data };
-    };
-    let data = createResult.ok && !pairingNumber && (getQrPayload(createResult.data) || getRawQrCode(createResult.data))
+    let data: any = createResult?.ok && !pairingNumber && (getQrPayload(createResult.data) || getRawQrCode(createResult.data))
       ? createResult.data
       : null;
-    let r: Response | null = data ? null : null;
-    if (!data) ({ r, data } = await doConnect());
-    let peek: string | null =
-      (getPairingCode(data) || getQrPayload(data) || getRawQrCode(data)) ?? null;
-    if ((!r || !r.ok || !peek) && !(createResult.ok && peek)) {
-      // instância provavelmente presa em "connecting" antigo — força logout + delete e recria
-      await evolutionFetch(`${root}/instance/logout/${instance}`, { method: "DELETE", headers: { apikey: apiKey } }).catch(() => {});
-      await evolutionFetch(`${root}/instance/delete/${instance}`, { method: "DELETE", headers: { apikey: apiKey } }).catch(() => {});
-      await new Promise((res) => setTimeout(res, 1500));
+    let connectResult: { ok: boolean; status: number; data: any } | null = null;
+    if (!data) {
+      connectResult = await connectInstance(root, instance, apiKey, pairingNumber);
+      data = connectResult.data;
+    }
+
+    const hasUsefulPayload = pairingNumber ? !!getPairingCode(data) : !!(getQrPayload(data) || getRawQrCode(data));
+    if ((!connectResult?.ok && connectResult) || !hasUsefulPayload) {
+      await deleteInstance(root, instance, apiKey);
+      await new Promise((resolve) => setTimeout(resolve, 1_200));
       createResult = await createInstance(root, instance, apiKey, webhookUrl, !pairingNumber);
       if (!createResult.ok) {
-        console.error("[evolution-qr-code] recreate failed", { instance, status: createResult.status, data: createResult.data });
-        return json({ error: "Falha ao recriar instância Evolution", status: createResult.status, details: createResult.data }, 502);
+        return fail("Falha ao recriar instância Evolution", 502, { evolution_status: createResult.status, response: createResult.data });
       }
       await setWebhook(baseUrl, instance, apiKey, webhookUrl);
+      await applySettings(root, instance, apiKey);
       data = !pairingNumber && (getQrPayload(createResult.data) || getRawQrCode(createResult.data)) ? createResult.data : null;
-      if (!data) ({ r, data } = await doConnect());
+      if (!data) {
+        connectResult = await connectInstance(root, instance, apiKey, pairingNumber);
+        data = connectResult.data;
+      }
     }
-    if (r && !r.ok) return json({ error: "Falha ao gerar QR", status: r.status, details: data }, 502);
+
+    if (connectResult && !connectResult.ok) {
+      return fail(pairingNumber ? "Falha ao gerar código por número" : "Falha ao gerar QR", 502, {
+        evolution_status: connectResult.status,
+        response: connectResult.data,
+      });
+    }
 
     // Pairing code path — retorna código de 8 chars, não QR
     const pairingCode: string | null = getPairingCode(data);
@@ -259,7 +289,7 @@ Deno.serve(async (req) => {
     }
     if (!qr) {
       console.error("[evolution-qr-code] no qr returned", { instance, keys: Object.keys(data || {}) });
-      return json({ error: "Evolution não retornou QR Code", details: { keys: Object.keys(data || {}) } }, 502);
+      return json({ error: "Evolution não retornou QR Code", details: { keys: Object.keys(data || {}), response: data } }, 502);
     }
 
     // 3) persiste
@@ -282,6 +312,6 @@ Deno.serve(async (req) => {
     return json({ success: true, qr_code: qr, qr_base64: qr, raw_qr_code: rawCode, instance });
   } catch (e) {
     console.error("evolution-qr-code error:", e);
-    return json({ error: "Internal error", message: e.message, stack: e.stack }, 500);
+    return json({ error: "Falha interna ao conectar Evolution", message: e instanceof Error ? e.message : String(e) }, 500);
   }
 });
