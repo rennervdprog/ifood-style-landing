@@ -128,7 +128,7 @@ export function useStorePlan(storeId: string | undefined | null): StorePlanFeatu
     queryFn: async () => {
       const [planResult, storeResult, configResult] = await Promise.all([
         supabase
-          .from("store_plans")
+          .from("store_plans" as any)
           .select("plan_type, monthly_fee, commission_rate, trial_ends_at, next_billing_date, last_billed_at, started_at, pix_operational_fee_override, platform_delivery_split_override, pdv_enabled, pdv_commission_rate, essencial_lifetime_free")
           .eq("store_id", storeId!)
           .eq("is_active", true)
