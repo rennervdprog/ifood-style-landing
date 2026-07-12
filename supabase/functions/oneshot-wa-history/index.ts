@@ -31,8 +31,18 @@ Deno.serve(async (req) => {
       status text default 'sent',
       error text,
       sent_at timestamptz not null default now(),
-      sent_bucket_min timestamptz generated always as (date_trunc('minute', sent_at)) stored
+      sent_bucket_min timestamptz
     );
+    -- Preenche bucket via trigger para permitir índice único usado no upsert
+    create or replace function public.pwsl_set_bucket() returns trigger language plpgsql as $$
+    begin
+      new.sent_bucket_min := date_trunc('minute', coalesce(new.sent_at, now()));
+      return new;
+    end $$;
+    drop trigger if exists trg_pwsl_bucket on public.platform_whatsapp_send_log;
+    create trigger trg_pwsl_bucket before insert or update on public.platform_whatsapp_send_log
+      for each row execute function public.pwsl_set_bucket();
+    update public.platform_whatsapp_send_log set sent_bucket_min = date_trunc('minute', sent_at) where sent_bucket_min is null;
     create unique index if not exists uq_pwsl_phone_kind_bucket
       on public.platform_whatsapp_send_log (phone, kind, sent_bucket_min);
     alter table public.platform_whatsapp_send_log enable row level security;
