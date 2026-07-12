@@ -1,6 +1,7 @@
 // Oneshot: cria schema para WhatsApp da plataforma + grace period Essencial.
 // - platform_whatsapp_config (config única)
 // - platform_whatsapp_log (dedupe de envios)
+// - platform_whatsapp_send_log (log estilo whatsapp_send_log, para anti-ban)
 // - store_plans.essencial_upgrade_scheduled_at
 // - admin_settings.support_whatsapp (row default se não existir)
 const cors = {
@@ -89,6 +90,34 @@ Deno.serve(async (req) => {
     insert into public.admin_settings (key, value)
     select 'support_whatsapp', '{"number":"","link":""}'::jsonb
     where not exists (select 1 from public.admin_settings where key='support_whatsapp');
+
+    -- platform_whatsapp_send_log: espelha whatsapp_send_log (sem store_id).
+    -- Usado pela função platform-whatsapp-send para dedupe/throttle/limite diário.
+    create table if not exists public.platform_whatsapp_send_log (
+      id uuid primary key default gen_random_uuid(),
+      phone text not null,
+      kind text not null default 'generic',
+      message_hash text,
+      status text default 'sent',
+      error text,
+      sent_at timestamptz not null default now(),
+      sent_bucket_min bigint generated always as ((extract(epoch from sent_at)/60)::bigint) stored
+    );
+    create unique index if not exists pwsl_dedupe_bucket_idx
+      on public.platform_whatsapp_send_log (phone, kind, sent_bucket_min);
+    create index if not exists pwsl_sent_at_idx
+      on public.platform_whatsapp_send_log (sent_at desc);
+    create index if not exists pwsl_phone_sent_idx
+      on public.platform_whatsapp_send_log (phone, sent_at desc);
+    grant select on public.platform_whatsapp_send_log to authenticated;
+    grant all on public.platform_whatsapp_send_log to service_role;
+    alter table public.platform_whatsapp_send_log enable row level security;
+    do $$ begin
+      if not exists (select 1 from pg_policies where tablename='platform_whatsapp_send_log' and policyname='pwsl_admin_read') then
+        create policy pwsl_admin_read on public.platform_whatsapp_send_log for select to authenticated
+          using (public.has_role(auth.uid(),'admin'));
+      end if;
+    end $$;
   `;
   try {
     return json(await runSql(sql));
