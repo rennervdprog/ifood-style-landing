@@ -169,6 +169,72 @@ export default function AuditoriaTab() {
           )}
         </div>
       )}
+
+      {view === "compliance" && (
+        <div className="space-y-3">
+          {compliance && (
+            <div className="grid grid-cols-4 gap-2 text-xs">
+              <div className="rounded-lg border bg-card p-3">
+                <div className="text-muted-foreground">Total</div>
+                <div className="text-lg font-bold">{compliance.summary.total}</div>
+              </div>
+              <div className="rounded-lg border bg-emerald-500/10 p-3">
+                <div className="text-emerald-600 dark:text-emerald-400">OK</div>
+                <div className="text-lg font-bold text-emerald-600 dark:text-emerald-400">{compliance.summary.pass}</div>
+              </div>
+              <div className="rounded-lg border bg-amber-500/10 p-3">
+                <div className="text-amber-600 dark:text-amber-400">Avisos</div>
+                <div className="text-lg font-bold text-amber-600 dark:text-amber-400">{compliance.summary.warn}</div>
+              </div>
+              <div className="rounded-lg border bg-red-500/10 p-3">
+                <div className="text-red-600 dark:text-red-400">Falhas</div>
+                <div className="text-lg font-bold text-red-600 dark:text-red-400">{compliance.summary.fail}</div>
+              </div>
+            </div>
+          )}
+
+          <div className="rounded-xl border bg-card overflow-hidden">
+            {!compliance ? (
+              <div className="p-10 flex flex-col items-center gap-2 text-muted-foreground">
+                <ScrollText className="h-8 w-8 opacity-40" />
+                <p className="text-sm font-bold text-foreground">Auditoria Termos × Código</p>
+                <p className="text-xs text-center max-w-md">
+                  Valida se o backend implementa fielmente as cláusulas dos Termos de Uso
+                  (VIP vitalícia, grace period, restrição parcial, add-ons, saques, estornos, etc.).
+                </p>
+                <Button size="sm" className="mt-2" onClick={runCompliance} disabled={complianceLoading}>
+                  {complianceLoading ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <ScrollText className="h-4 w-4 mr-1" />}
+                  Rodar agora
+                </Button>
+              </div>
+            ) : (
+              <div className="divide-y divide-border">
+                {compliance.checks.map((c) => {
+                  const Icon = c.status === "pass" ? CheckCircle2 : c.status === "warn" ? AlertTriangle : XCircle;
+                  const color = c.status === "pass" ? "text-emerald-600 dark:text-emerald-400" : c.status === "warn" ? "text-amber-600 dark:text-amber-400" : "text-red-600 dark:text-red-400";
+                  return (
+                    <div key={c.id} className="p-3 flex gap-3 items-start">
+                      <Icon className={`h-4 w-4 mt-0.5 flex-shrink-0 ${color}`} />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-muted text-muted-foreground">Cl. {c.clause}</span>
+                          <span className="text-sm font-bold">{c.title}</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-0.5">{c.detail}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+          {compliance && (
+            <p className="text-[11px] text-muted-foreground text-center">
+              Última verificação: {new Date(compliance.checked_at).toLocaleString("pt-BR")}
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 }
