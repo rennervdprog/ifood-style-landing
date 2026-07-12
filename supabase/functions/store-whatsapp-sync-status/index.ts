@@ -47,7 +47,7 @@ Deno.serve(async (req) => {
 
     const { data: cfg } = await admin
       .from("store_whatsapp_config")
-      .select("id, evolution_instance_name, status, phone_number")
+      .select("id, evolution_instance_name, status, phone_number, connected_at")
       .eq("store_id", store_id)
       .maybeSingle();
     if (!cfg) return json({ error: "Config não encontrada" }, 404);
@@ -72,14 +72,22 @@ Deno.serve(async (req) => {
     if (state === "open" || state === "connected") newStatus = "connected";
     else if (state === "connecting") newStatus = "connecting";
 
+    const norm = (v?: string | null) => String(v || "").replace(/\D/g, "");
+    const phoneChanged = !!phone && norm(phone) !== norm(cfg.phone_number);
     const patch: any = { status: newStatus, updated_at: new Date().toISOString() };
     if (phone) patch.phone_number = phone;
-    if (newStatus === "connected" && cfg.status !== "connected") {
+    // Reseta connected_at quando conectou agora OU quando o número mudou (reconexão com outro chip)
+    if (newStatus === "connected" && (cfg.status !== "connected" || phoneChanged)) {
       patch.connected_at = new Date().toISOString();
+    }
+    // Se desconectou, limpa o número para não mostrar dado obsoleto
+    if (newStatus === "disconnected") {
+      patch.phone_number = null;
+      patch.connected_at = null;
     }
     await admin.from("store_whatsapp_config").update(patch).eq("id", cfg.id);
 
-    return json({ success: true, state, status: newStatus, phone });
+    return json({ success: true, state, status: newStatus, phone, phoneChanged });
   } catch (e: any) {
     console.error("store-whatsapp-sync-status error:", e);
     return json({ error: "Internal error", message: e?.message }, 500);

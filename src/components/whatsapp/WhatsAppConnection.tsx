@@ -7,6 +7,7 @@ import { FunctionsHttpError } from "@supabase/supabase-js";
 import { toast } from "sonner";
 import { Loader2, RefreshCw, Info, ChevronDown, ChevronUp, Shield, Smartphone, QrCode, Copy, Check } from "lucide-react";
 import WhatsAppStatusCard from "./WhatsAppStatusCard";
+import PasskeyWarning from "./PasskeyWarning";
 
 interface Props {
   storeId: string;
@@ -17,6 +18,21 @@ interface Props {
 }
 
 const onlyDigits = (v?: string | null) => String(v || "").replace(/\D/g, "");
+// Formata enquanto digita: +55 (14) 99999-4997
+const formatPhoneInput = (v: string) => {
+  const d = onlyDigits(v).slice(0, 13);
+  if (!d) return "";
+  const hasDDI = d.length > 11 || d.startsWith("55");
+  const ddi = hasDDI ? d.slice(0, 2) : "";
+  const rest = hasDDI ? d.slice(2) : d;
+  let out = hasDDI ? `+${ddi}` : "";
+  if (rest.length === 0) return out;
+  out += hasDDI ? " " : "";
+  if (rest.length <= 2) return `${out}(${rest}`;
+  out += `(${rest.slice(0, 2)}) `;
+  if (rest.length <= 7) return `${out}${rest.slice(2)}`;
+  return `${out}${rest.slice(2, 7)}-${rest.slice(7, 11)}`;
+};
 const samePhone = (a?: string | null, b?: string | null) => {
   const left = onlyDigits(a).replace(/^55/, "");
   const right = onlyDigits(b).replace(/^55/, "");
@@ -51,6 +67,7 @@ export default function WhatsAppConnection({ storeId, storeName, expectedPhone, 
   const [pairingExpiresAt, setPairingExpiresAt] = useState<number | null>(null);
   const [pairingLeft, setPairingLeft] = useState(60);
   const [copied, setCopied] = useState(false);
+  const [failCount, setFailCount] = useState(0);
   const pollRef = useRef<number | null>(null);
   const countdownRef = useRef<number | null>(null);
 
@@ -79,6 +96,7 @@ export default function WhatsAppConnection({ storeId, storeName, expectedPhone, 
         toast.success("QR Code gerado! Escaneie com seu WhatsApp.");
       } else {
         toast.error("Servidor não retornou QR Code. Tente novamente.");
+        setFailCount((n) => n + 1);
       }
     } catch (err: any) {
       let detail = "";
@@ -91,6 +109,7 @@ export default function WhatsAppConnection({ storeId, storeName, expectedPhone, 
         }
       } catch {}
       toast.error(detail ? `QR Code: ${detail}` : "Erro ao gerar QR Code. Verifique a configuração do servidor.");
+      setFailCount((n) => n + 1);
       console.error("[evolution-qr-code]", err, detail);
     }
     setQrLoading(false);
@@ -126,6 +145,7 @@ export default function WhatsAppConnection({ storeId, storeName, expectedPhone, 
         }
       } catch {}
       toast.error(detail || err?.message || "Erro ao gerar código");
+      setFailCount((n) => n + 1);
     } finally {
       setPairingLoading(false);
     }
@@ -197,6 +217,10 @@ export default function WhatsAppConnection({ storeId, storeName, expectedPhone, 
         primaryLoading={qrLoading}
       />
 
+      {status !== "connected" && (
+        <PasskeyWarning highlight={failCount >= 2} />
+      )}
+
       {/* Seletor de método: QR Code x Código por número */}
       {status !== "connected" && (
         <div className="rounded-2xl border border-border p-3 space-y-3">
@@ -226,12 +250,12 @@ export default function WhatsAppConnection({ storeId, storeName, expectedPhone, 
                 <input
                   type="tel"
                   inputMode="numeric"
-                  value={pairingPhone}
-                  onChange={(e) => setPairingPhone(e.target.value)}
-                  placeholder="5522999999999"
+                  value={formatPhoneInput(pairingPhone)}
+                  onChange={(e) => setPairingPhone(onlyDigits(e.target.value))}
+                  placeholder="+55 (22) 99999-9999"
                   className="mt-1 w-full px-3 py-2 rounded-xl border border-border bg-background text-sm"
                 />
-                <p className="text-[10px] text-muted-foreground mt-1">Só dígitos. Ex.: Brasil = 55 + DDD + número.</p>
+                <p className="text-[10px] text-muted-foreground mt-1">Ex.: Brasil = 55 + DDD + número.</p>
               </div>
               <button
                 onClick={getPairingCode}

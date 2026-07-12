@@ -35,33 +35,44 @@ Deno.serve(async (req) => {
     if (!baseUrl || !apiKey) return json({ error: "Evolution não configurado" }, 500);
 
     const { data: cfg } = await admin
-      .from("platform_whatsapp_config").select("id, instance_name, status").limit(1).maybeSingle();
+      .from("platform_whatsapp_config").select("id, instance_name, status, phone_number").limit(1).maybeSingle();
     if (!cfg) return json({ error: "Config não encontrada" }, 404);
 
     const root = baseUrl.replace(/\/$/, "");
     const r = await fetch(`${root}/instance/connectionState/${cfg.instance_name}`, { headers: { apikey: apiKey } });
     const data = await r.json().catch(() => ({} as any));
     const state: string = data?.instance?.state || data?.state || "";
-    const phone: string | undefined =
+    let phone: string | undefined =
       data?.instance?.wuid?.split?.("@")?.[0] ||
       data?.instance?.owner ||
       data?.wuid?.split?.("@")?.[0];
+    // fetchInstances é mais confiável para pegar o ownerJid real
+    try {
+      const listR = await fetch(`${root}/instance/fetchInstances?instanceName=${cfg.instance_name}`, { headers: { apikey: apiKey } });
+      const arr: any = await listR.json().catch(() => []);
+      const inst = Array.isArray(arr) ? arr[0] : arr;
+      const owner = inst?.ownerJid || inst?.instance?.owner || inst?.owner;
+      if (typeof owner === "string") phone = owner.split("@")[0];
+    } catch { /* ignore */ }
 
     let newStatus = "disconnected";
     if (state === "open" || state === "connected") newStatus = "connected";
     else if (state === "connecting") newStatus = "connecting";
 
-    const patch: any = {
-      status: newStatus,
-      phone_number: phone ?? undefined,
-      updated_at: new Date().toISOString(),
-    };
-    if (newStatus === "connected" && cfg.status !== "connected") {
+    const norm = (v?: string | null) => String(v || "").replace(/\D/g, "");
+    const phoneChanged = !!phone && norm(phone) !== norm(cfg.phone_number);
+    const patch: any = { status: newStatus, updated_at: new Date().toISOString() };
+    if (phone) patch.phone_number = phone;
+    if (newStatus === "connected" && (cfg.status !== "connected" || phoneChanged)) {
       patch.connected_at = new Date().toISOString();
+    }
+    if (newStatus === "disconnected") {
+      patch.phone_number = null;
+      patch.connected_at = null;
     }
     await admin.from("platform_whatsapp_config").update(patch).eq("id", cfg.id);
 
-    return json({ success: true, state, status: newStatus, phone });
+    return json({ success: true, state, status: newStatus, phone, phoneChanged });
   } catch (e) {
     console.error("platform-whatsapp-sync-status error:", e);
     return json({ error: "Internal error", message: e.message, stack: e.stack }, 500);
