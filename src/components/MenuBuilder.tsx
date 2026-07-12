@@ -930,6 +930,7 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
               onSearchChange={setSearch}
               filter={filter}
               onFilterChange={setFilter}
+              filterCounts={filterCounts}
               selectionMode={selectionMode}
               onToggleSelectionMode={() => {
                 if (selectionMode) clearSelection();
@@ -964,9 +965,17 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
                 onResetFilter={() => setFilter("all")}
               />
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-                {visibleProducts.map((p: any) => renderProductCard(p))}
-              </div>
+              <SortableProductGrid
+                items={visibleProducts}
+                enabled={
+                  !selectionMode &&
+                  !search &&
+                  filter === "all" &&
+                  activeSection !== "all"
+                }
+                onReorder={reorderProducts}
+                renderItem={(p) => renderProductCard(p)}
+              />
             )}
 
             {/* Bulk action bar */}
@@ -979,6 +988,7 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
                 onOutOfStock={() => bulkOutOfStock(true)}
                 onRestock={() => bulkOutOfStock(false)}
                 onMove={() => setMoveBulkOpen(true)}
+                onDuplicate={bulkDuplicate}
                 onDelete={bulkDeleteConfirm}
                 onClear={clearSelection}
               />
