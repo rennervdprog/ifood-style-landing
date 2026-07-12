@@ -224,7 +224,7 @@ Deno.serve(async (req) => {
 
         const { data: ownerProfile } = await supabase
           .from("profiles")
-          .select("full_name, pix_key, pix_type")
+          .select("full_name, pix_key, pix_type, whatsapp")
           .eq("user_id", store.owner_id)
           .single();
 
