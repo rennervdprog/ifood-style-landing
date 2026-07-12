@@ -126,14 +126,17 @@ const applySettings = async (root: string, instance: string, apiKey: string) =>
 
 const connectInstance = async (root: string, instance: string, apiKey: string, pairingNumber: string | null) => {
   const headers = { apikey: apiKey };
-  const path = pairingNumber
-    ? `${root}/instance/connect/pairingCode/${instance}?number=${pairingNumber}`
+  const primary = pairingNumber
+    ? `${root}/instance/connect/${instance}?number=${pairingNumber}`
     : `${root}/instance/connect/${instance}`;
-  const first = await evolutionFetch(path, { headers }).then(responseFromFetch);
-  if (!pairingNumber || first.ok || first.status !== 404) return first;
+  const first = await evolutionFetch(primary, { headers }).then(responseFromFetch);
+  if (!pairingNumber || (first.ok && getPairingCode(first.data))) return first;
 
-  // Algumas builds da Evolution v2.3.x usam o endpoint de QR com ?number.
-  return evolutionFetch(`${root}/instance/connect/${instance}?number=${pairingNumber}`, { headers }).then(responseFromFetch);
+  // Algumas builds/forks da Evolution v2 expõem uma rota dedicada para pairing code.
+  const fallback = await evolutionFetch(`${root}/instance/connect/pairingCode/${instance}?number=${pairingNumber}`, { headers })
+    .then(responseFromFetch)
+    .catch(() => first);
+  return fallback.ok || getPairingCode(fallback.data) ? fallback : first;
 };
 
 const deleteInstance = async (root: string, instance: string, apiKey: string) => {
