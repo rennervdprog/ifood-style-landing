@@ -68,6 +68,19 @@ export default function WhatsAppSetup({ storeId, storeSlug, storeName, expectedP
     })();
   }, [loadConfig]);
 
+  // Realtime — reflete conexão/desconexão em tempo real
+  useEffect(() => {
+    const channel = supabase
+      .channel(`store-wa-cfg-${storeId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "store_whatsapp_config", filter: `store_id=eq.${storeId}` },
+        () => { loadConfig(); },
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [storeId, loadConfig]);
+
   const saveConfig = async () => {
     setSaving(true);
     const payload = {
