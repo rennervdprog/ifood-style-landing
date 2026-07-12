@@ -1,139 +1,59 @@
+# Correção: Realtime WhatsApp + número correto conectado
 
-# Plano de Correção: Termos de Uso × Aplicação
+## Problemas confirmados
 
-Objetivo: eliminar os 5 riscos jurídicos apontados pela auditoria sem quebrar cobrança/planos atuais. Fases ordenadas por severidade — cada fase é independente e pode ser aprovada isoladamente.
+1. **Realtime não replica na tela**
+   - As tabelas `store_whatsapp_config` e `platform_whatsapp_config` provavelmente **não estão na publicação `supabase_realtime`** e/ou não têm `REPLICA IDENTITY FULL`.
+   - Sem isso, `postgres_changes` (que `WhatsAppSetup.tsx` já assina) nunca dispara — a UI só atualiza no polling de 3s ou ao reabrir a aba.
+   - Sintoma: aparece "Conectado" só depois de mexer na tela / recarregar.
 
----
+2. **Número errado no card "Conectado"**
+   - O webhook (`evolution-webhook`) grava `phone_number = data.wuid || data.number || data.owner`.
+   - No fluxo de **pairing code** o Evolution devolve o número **digitado**, não o real que pareou. E em `connection.update` o `wuid` chega vazio ou desatualizado quando trocamos de chip.
+   - `store-whatsapp-sync-status` já busca o `ownerJid` real via `/instance/fetchInstances` — mas isso só roda quando o usuário abre a aba. O webhook (que dispara em tempo real) não faz esse fetch.
 
-## Fase 1 — CRÍTICO: Garantir que exclusão de conta e reembolso rodam no banco externo
+## Correções
 
-**Problema:** `delete-account` e `cancel-order-refund` usam só `SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY`, sem fallback `EXTERNAL_SUPABASE_URL`. Se os secrets não coincidirem exatamente com o projeto externo, LGPD Art. 18 (direito de eliminação) e CDC (reembolso) falham silenciosamente.
+### 1. Habilitar Realtime nas tabelas de config (migration)
 
-**Ação:**
-- Padronizar as duas functions com o mesmo padrão de `asaas-webhook` / `confirm-order-payment`:
-  ```
-  const EXTERNAL_URL = Deno.env.get("EXTERNAL_SUPABASE_URL") || Deno.env.get("SUPABASE_URL")!;
-  const EXTERNAL_KEY = Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-  ```
-- Rodar `oneshot-verify-external-target` (nova) que compara `EXTERNAL_URL` × host real onde as tabelas `profiles`/`orders` existem, e loga em `admin_logs`.
-- Adicionar teste manual: chamar `delete-account` numa conta de teste do externo e verificar que `profiles` sumiu lá.
+```sql
+ALTER TABLE public.store_whatsapp_config REPLICA IDENTITY FULL;
+ALTER TABLE public.platform_whatsapp_config REPLICA IDENTITY FULL;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.store_whatsapp_config;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.platform_whatsapp_config;
+```
+(idempotente — checa antes se já existe)
 
-**Risco de quebra:** baixo. É aditivo (fallback), não muda comportamento se secrets já estão corretos.
+### 2. Webhook busca o número real via fetchInstances
 
----
+Em `supabase/functions/evolution-webhook/index.ts`, quando `state === 'open'`:
+- Chamar `${EVOLUTION_API_URL}/instance/fetchInstances?instanceName=<inst>` com `apikey`.
+- Extrair `ownerJid` (fallbacks: `instance.owner`, `owner`) e usar como `phone_number` — não confiar em `data.wuid`.
+- Se o número diferir do salvo (`phoneChanged`) → resetar `connected_at = now()` e limpar `qr_code`.
+- Aplicar a mesma lógica no bloco de `platform_whatsapp_config` (linhas 152-179).
 
-## Fase 2 — CRÍTICO: Upgrade Essencial R$0→R$180 com aceite expresso e 30 dias
+### 3. Front — cobrir gap de rede/aba oculta
 
-**Problema:** `check-essencial-upgrade` força `UPDATE monthly_fee=180` após 7 dias, sem aceite. Termo promete aceite + 30 dias.
+Em `src/components/WhatsAppSetup.tsx`:
+- Ao voltar a aba (`visibilitychange = 'visible'`) → chamar `store-whatsapp-sync-status` + `loadConfig`.
+- Ao reconectar o socket do realtime (`SUBSCRIBED` após `CHANNEL_ERROR`) → forçar `loadConfig` uma vez para pegar o que foi perdido offline.
 
-**Ação (2 sub-fases):**
+Mesmo tratamento em `PlatformWhatsAppTab.tsx` (super admin) usando `platform-whatsapp-sync-status`.
 
-**2a. Migração DB** (`oneshot-essencial-upgrade-consent`):
-- Adiciona em `store_plans`:
-  - `essencial_upgrade_notified_at timestamptz`
-  - `essencial_upgrade_scheduled_for timestamptz`
-  - `essencial_upgrade_accepted_at timestamptz`
-  - `essencial_upgrade_declined_at timestamptz`
+### 4. UI já pronta
 
-**2b. Reescrever `check-essencial-upgrade`:**
-- Muda `GRACE_DAYS` de 7 → **30**.
-- Ao detectar loja elegível: só grava `essencial_upgrade_notified_at = now()` + `essencial_upgrade_scheduled_for = now()+30d` e dispara notificação (WhatsApp + push + banner in-app).
-- **Nunca** faz `UPDATE monthly_fee` sem `essencial_upgrade_accepted_at IS NOT NULL`.
-- Nova edge function `essencial-upgrade-response` com actions `accept`, `decline`, `migrate_plan` (para pular pra Autonomia/Crescimento).
-- Se `declined_at` setado → downgrade automático para plano gratuito compatível (Apoiadores) ou desativação com aviso.
+`WhatsAppStatusCard` e `WhatsAppConnection` já mostram `phone_number` e `connected_at` do `config` — assim que o realtime disparar com dados corretos, a tela atualiza sozinha. Nada a mexer em UI.
 
-**2c. UI (`EssencialProgressCard.tsx`, novo `EssencialUpgradeBanner.tsx`):**
-- Mostra countdown dos 30 dias com 3 botões: **Aceitar reajuste**, **Migrar para outro plano**, **Recusar**.
-- Bloqueia o auto-upgrade até resposta.
+## Detalhes técnicos
 
-**Risco de quebra:** médio — muda fluxo de billing. Mitigação: lojas atualmente marcadas como vitalícias (`essencial_lifetime_free`) continuam intocadas.
+- **Migration** roda via `supabase--migration` (aprovação do usuário).
+- **Edge function** re-deploy: `evolution-webhook`.
+- Fetch dentro do webhook tem timeout de 4s (`AbortController`) para não segurar resposta do Evolution.
+- Bump de versão para `1.14.14` (build 949) em `src/lib/appVersion.ts` + `android/app/build.gradle`.
+- Log breve `[evolution-webhook] ownerJid resolved` para auditoria futura.
 
----
+## Como validar
 
-## Fase 3 — ALTO: Alinhar planos `hybrid`/`commission_only` com Termos
-
-**Problema:** Código cobra 2,5%+ desses planos mas Termos só descrevem planos 0% comissão.
-
-**Ação — decisão do usuário necessária, mas o plano oferece dois caminhos:**
-
-**Opção A (recomendada) — Aditar os Termos:**
-- Adicionar seção 5.7 aos Termos descrevendo os planos `hybrid` (X% comissão + R$Y fixo) e `commission_only` (X% comissão pura), com valores exatos lidos de `plan_templates`.
-- Publicar como nova versão em `legal_documents` (kind='terms', version_num+1) e disparar modal de re-aceite (`legal_document_changes` já existe).
-
-**Opção B — Retirar do código:**
-- Marcar `hybrid` e `commission_only` como `deprecated=true` em `plan_templates`.
-- Migrar lojas existentes desses planos para `fixed` (Essencial) mantendo condições atuais como VIP.
-
-Padrão: **Opção A**, pois há lojas ativas.
-
----
-
-## Fase 4 — MÉDIO-ALTO: Implementar bloqueio parcial por saldo > R$500
-
-**Problema:** Cláusula 8.2 detalha valor (R$500), prazo (5 dias úteis) e efeito (restrição parcial) — nenhum implementado. Só existe desativação total após 30d.
-
-**Ação:**
-- Migração: adicionar `stores.partial_lock_status text` (null | `warning` | `restricted`), `stores.partial_lock_notified_at`, `stores.partial_lock_deadline`.
-- Estender `is_store_blocked_by_balance` (já existe) para retornar 3 estados: `ok` / `warning_soon` / `restricted`.
-- Nova edge function `check-balance-restrictions` (cron diário) que:
-  1. Detecta saldo pendente > R$500 → grava `partial_lock_status='warning'` + `deadline = now() + 5 business days` + notifica.
-  2. Ao vencer deadline sem quitação → `partial_lock_status='restricted'`.
-- Frontend: bloquear novas ações no `AdminDashboardV2` quando `restricted` (mas manter aba "Financeiro" e pedidos em andamento acessíveis).
-- Trigger `enforce_store_balance_lock` atual (que joga exception em R$500 duro) precisa ser suavizado para respeitar os 5 dias úteis.
-
-**Risco de quebra:** médio — envolve trigger que hoje bloqueia inserção. Mitigação: fase de sombra (loga sem bloquear) por 7 dias antes de ativar.
-
----
-
-## Fase 5 — MÉDIO: Divulgar regras de saque do motoboy nos Termos
-
-**Problema:** Mín R$5, 1x/semana existem em código+`admin_settings`, não nos Termos.
-
-**Ação:**
-- Adicionar seção 7.5 aos Termos: "Saques do Entregador" com mín, periodicidade, prazo D+1 útil, e "quaisquer alterações serão comunicadas com 30 dias de antecedência".
-- Nova coluna `admin_settings.value->>'notified_at'` para trilha de auditoria.
-- Publicar nova versão em `legal_documents` (junto com Fase 3 se aprovada).
-- Criar edge function `notify-withdrawal-rule-change` disparada por trigger em `admin_settings` quando `key='withdrawal_limits'` muda — envia push + email pra todos os motoboys ativos com 30d de antecedência.
-
----
-
-## Fase 6 — HIGIENE: Auditoria contínua
-
-**Ação:**
-- Criar `docs/terms-vs-code-audit.md` com tabela viva Cláusula → Implementação → Arquivo:linha.
-- CI check: script `scripts/audit-terms-implementation.mjs` que roda em PR verificando que preços em `plansInfo.ts` batem com o texto renderizado em `TermosDeUso.tsx`.
-- Criar edge function `oneshot-diff-legal-documents` que compara `TermosDeUso.tsx` estático × versão vigente em `legal_documents` e alerta se divergirem.
-
----
-
-## Ordem de execução sugerida (por versão)
-
-| Versão | Fase | Impacto usuário |
-|---|---|---|
-| v1.14.8 | Fase 1 (fallback external) | Zero (só backend) |
-| v1.14.9 | Fase 6 (audit doc + CI) | Zero |
-| v1.15.0 | Fase 2 (upgrade consent) | Alto — nova UI + fluxo |
-| v1.15.1 | Fase 4 sombra (log-only) | Zero |
-| v1.15.2 | Fase 5 (regras saque) | Baixo — texto + modal aceite |
-| v1.15.3 | Fase 3 (aditar planos) | Baixo — modal re-aceite |
-| v1.15.4 | Fase 4 ativa (restrição) | Médio — lojas em débito |
-
----
-
-## Detalhes técnicos (para revisão do desenvolvedor)
-
-- Todas as migrações via edge function `oneshot-*` usando `EXTERNAL_SUPABASE_SERVICE_KEY` (nunca migration tool do Lovable Cloud, pois DB é externo).
-- Toda mudança em `legal_documents` precisa entrada em `legal_document_changes` para o modal `get_pending_legal_changes` funcionar.
-- Cada fase incrementa versão em `src/lib/appVersion.ts` + `android/app/build.gradle` (versionName + versionCode).
-- Fase 2 e 4 exigem cron pausado antes do deploy (`cron.unschedule('check-essencial-upgrade')`) para evitar race.
-
----
-
-## O que **não** está neste plano
-
-- Reescrever o texto dos Termos por completo (só aditamentos pontuais nas Fases 3 e 5).
-- Auditoria de LGPD além do direito de eliminação (Fase 1 cobre o mínimo).
-- Retenção/expurgo automático de `archived_accounts` — merece plano próprio.
-- `reviewCount` fixo no schema.org (nota lateral do auditor, não é cláusula).
-
-**Pergunta antes de começar:** aprovar tudo em ordem, ou quer priorizar só Fases 1+2 (as CRÍTICAS) por enquanto?
+1. Desconectar o WhatsApp no celular → card muda para "Desconectado" em < 2s sem recarregar.
+2. Reconectar com **outro** número via pairing code → aparece o número **real** que pareou (não o digitado) e "há 0m".
+3. `admin_logs` recebe eventos `connection_update_ownerjid` com o JID resolvido.
