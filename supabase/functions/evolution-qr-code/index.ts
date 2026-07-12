@@ -57,6 +57,14 @@ const getPairingCode = (data: any): string | null => {
 
 const responseFromFetch = async (r: Response) => ({ ok: r.ok, status: r.status, data: await parseJson(r) });
 
+const getBearerToken = (req: Request): string | null => {
+  const authHeader = req.headers.get("Authorization") || "";
+  const match = authHeader.match(/^Bearer\s+(.+)$/i);
+  const token = match?.[1]?.trim() || "";
+  if (!token || token === "undefined" || token === "null") return null;
+  return token;
+};
+
 const instanceExists = async (root: string, instance: string, apiKey: string) => {
   const r = await evolutionFetch(`${root}/instance/connectionState/${instance}`, { headers: { apikey: apiKey } });
   const data = await parseJson(r);
@@ -149,9 +157,10 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader?.startsWith("Bearer ")) return json({ error: "Unauthorized", reason: "missing_bearer" }, 401);
-    const jwt = authHeader.replace(/^Bearer\s+/i, "");
+    const jwt = getBearerToken(req);
+    if (!jwt || jwt === Deno.env.get("SUPABASE_ANON_KEY")) {
+      return json({ error: "Unauthorized", reason: "Auth session missing!" }, 401);
+    }
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
