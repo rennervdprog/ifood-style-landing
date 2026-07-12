@@ -16,6 +16,7 @@ const BodySchema = z
     instance_name: z.string().min(3).optional(),
     force_reconnect: z.boolean().optional(),
     pairing_number: z.string().min(10).max(20).optional(),
+    action: z.enum(["logout"]).optional(),
   })
   .refine((v) => v.is_platform === true || !!v.store_id, {
     message: "store_id required when is_platform is not true",
@@ -234,6 +235,22 @@ Deno.serve(async (req) => {
     const webhookUrl = `${functionBaseUrl}/functions/v1/evolution-webhook?token=${webhookToken}`;
 
     const root = baseUrl.replace(/\/$/, "");
+
+    const action = (parsed.data as any).action as string | undefined;
+    if (action === "logout") {
+      await evolutionFetch(`${root}/instance/logout/${instance}`, {
+        method: "DELETE",
+        headers: { apikey: apiKey },
+      }).catch(() => undefined);
+      const table = isPlatform ? "platform_whatsapp_config" : "store_whatsapp_config";
+      const patch: any = { status: "disconnected", updated_at: new Date().toISOString() };
+      if (isPlatform) {
+        await externalAdmin.from(table).update(patch).eq("instance_name", instance);
+      } else {
+        await externalAdmin.from(table).update(patch).eq("store_id", store_id!);
+      }
+      return json({ success: true, status: "disconnected", instance });
+    }
 
     if (force_reconnect) {
       await deleteInstance(root, instance, apiKey);
