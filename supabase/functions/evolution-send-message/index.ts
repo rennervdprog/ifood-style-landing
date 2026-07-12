@@ -70,7 +70,7 @@ const isAuthorizedForStore = async (admin: any, req: Request, storeId: string) =
 
 // Anti-spam params
 const DEDUPE_WINDOW_SEC = 3600;        // mesma msg p/ mesmo número
-const AUTO_REPLY_DEDUPE_WINDOW_SEC = 86400; // P0: saudação 1x por número / 24h
+const AUTO_REPLY_DEDUPE_WINDOW_SEC = 57600; // P0: saudação 1x por número / 16h
 const PER_STORE_MIN_GAP_MS = 12_000;   // gap mínimo entre envios da loja
 const PER_PHONE_MIN_GAP_MS = 3_000;    // gap mínimo entre envios p/ mesmo número (anti-burst de status)
 const EVOLUTION_MAX_RETRIES = 2;        // tentativas extras em falha transitória
@@ -147,7 +147,7 @@ Deno.serve(async (req) => {
     const msgHash = await hashMsg(message);
     const nowIso = new Date().toISOString();
 
-    // 1) Dedupe: P0 — saudação vira 1x por número / 24h (bot fala pouco, chip dura muito).
+    // 1) Dedupe: P0 — saudação vira 1x por número / 16h (bot fala pouco, chip dura muito).
     const dedupeWindowSec = kind === "auto_reply" ? AUTO_REPLY_DEDUPE_WINDOW_SEC : DEDUPE_WINDOW_SEC;
     const dedupeSince = new Date(Date.now() - dedupeWindowSec * 1000).toISOString();
     const { data: dup } = await admin
@@ -157,7 +157,7 @@ Deno.serve(async (req) => {
       .gte("sent_at", dedupeSince).limit(1).maybeSingle();
     if (dup) return json({ success: true, skipped: "duplicate" });
     // P0 — dedupe adicional por KIND para auto_reply: mesmo que o texto varie
-    // (bom dia / boa tarde / fora do horário), só 1 saudação por número / 24h.
+    // (bom dia / boa tarde / fora do horário), só 1 saudação por número / 16h.
     if (kind === "auto_reply") {
       const { data: dupKind } = await admin
         .from("whatsapp_send_log")
@@ -165,7 +165,7 @@ Deno.serve(async (req) => {
         .eq("store_id", store_id).eq("phone", number).eq("kind", "auto_reply")
         .neq("message_hash", "greet_pending")
         .gte("sent_at", dedupeSince).limit(1).maybeSingle();
-      if (dupKind) return json({ success: true, skipped: "auto_reply_dedupe_24h" });
+      if (dupKind) return json({ success: true, skipped: "auto_reply_dedupe_16h" });
     }
 
     // 2) Limite diário por fase do chip (P1.3)
