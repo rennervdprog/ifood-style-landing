@@ -8,9 +8,9 @@ async function q(sql:string){
 Deno.serve(async(req)=>{
   if(req.method==="OPTIONS")return new Response(null,{headers:cors});
   const out:any={};
-  out.plan_cols=await q(`select column_name from information_schema.columns where table_schema='public' and table_name='store_plans'`);
-  out.plan=await q(`select * from store_plans where store_id='e14a110c-f0a1-4b25-8a71-554a9705fefa'`);
-  out.gmv=await q(`select coalesce(sum(total_price),0) as gmv, count(*) as n from orders where store_id='e14a110c-f0a1-4b25-8a71-554a9705fefa' and status in ('finalizado','entregue','concluido') and created_at > now() - interval '60 days'`);
-  out.admin=await q(`select * from admin_settings where key ilike '%silvia%' or key ilike '%essencial%' or key ilike '%lifetime%'`);
+  out.owner_stores=await q(`select id,name,plan_type from stores where owner_id='91031f23-bde5-4632-8ac4-b7604941a431'`);
+  out.owner_plans=await q(`select sp.store_id, s.name, sp.plan_type, sp.monthly_fee, sp.is_active, sp.essencial_lifetime_free, sp.essencial_upgrade_scheduled_at, sp.essencial_upgrade_notified_at from store_plans sp join stores s on s.id=sp.store_id where s.owner_id='91031f23-bde5-4632-8ac4-b7604941a431'`);
+  out.wa_history=await q(`select created_at, kind, phone, store_id, substring(message,1,120) as msg from platform_whatsapp_history where phone in (select whatsapp_number from profiles where user_id='91031f23-bde5-4632-8ac4-b7604941a431') order by created_at desc limit 10`);
+  out.logs=await q(`select created_at, action, metadata from admin_logs where action ilike '%upgrade%' and metadata::text ilike '%silvia%' order by created_at desc limit 10`);
   return new Response(JSON.stringify(out,null,2),{headers:{...cors,"Content-Type":"application/json"}});
 });
