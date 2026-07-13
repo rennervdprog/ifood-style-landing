@@ -147,7 +147,7 @@ Deno.serve(async (req) => {
             .eq("id", p.id);
           const label = scheduleAt.toLocaleDateString("pt-BR");
           await notify(ownerPhone,
-            `🎉 Parabéns, ${store.name}!\n\nSua loja passou de R$ ${THRESHOLD_BRL.toLocaleString("pt-BR")} em vendas nos últimos ${WINDOW_DAYS} dias. Conforme os Termos de Uso, o upgrade para o plano ${PLAN_LABEL} pago (R$ ${UPGRADE_FEE.toFixed(2).replace(".", ",")}/mês) está agendado para *${label}* (30 dias de aviso prévio).\n\nAcesse o painel para *Aceitar* ou *Recusar* o upgrade. Nenhuma cobrança será feita sem o seu consentimento expresso.`,
+            `🎉 Parabéns, ${store.name}!\n\nSua loja passou de R$ ${THRESHOLD_BRL.toLocaleString("pt-BR")} em vendas nos últimos ${WINDOW_DAYS} dias no plano *${PLAN_LABEL}*. Conforme os Termos de Uso, a mensalidade do seu plano ${PLAN_LABEL} (hoje gratuita) passará a *R$ ${UPGRADE_FEE.toFixed(2).replace(".", ",")}/mês* a partir de *${label}* (30 dias de aviso prévio). Você continua no mesmo plano — apenas a mensalidade será ativada.\n\nAcesse o painel para *Aceitar* ou *Recusar*. Nenhuma cobrança será feita sem o seu consentimento expresso.`,
             "plan_upgrade_scheduled", p.store_id);
           skipped.push({ store: store.name, gmv, scheduled_for: scheduleAt.toISOString() });
         } else if (nowMs >= scheduled && response === "accepted") {
@@ -165,7 +165,7 @@ Deno.serve(async (req) => {
               metadata: { store_id: p.store_id, plan_type: (p as any).plan_type, gmv, window_days: WINDOW_DAYS, new_fee: UPGRADE_FEE },
             }).then(() => {}, () => {});
             await notify(ownerPhone,
-              `📢 ${store.name}, o período de preparação terminou e sua mensalidade ItaSuper (${PLAN_LABEL}) foi atualizada para *R$ ${UPGRADE_FEE.toFixed(2).replace(".", ",")}/mês*.\n\nA próxima cobrança PIX será gerada em breve. Obrigado por crescer com a gente!`,
+              `📢 ${store.name}, o período de preparação terminou e a mensalidade do seu plano *${PLAN_LABEL}* foi ativada em *R$ ${UPGRADE_FEE.toFixed(2).replace(".", ",")}/mês*. Você segue no mesmo plano ${PLAN_LABEL}, apenas com a mensalidade agora vigente.\n\nA próxima cobrança PIX será gerada em breve. Obrigado por crescer com a gente!`,
               "plan_upgrade_applied", p.store_id);
           }
         } else if (nowMs >= scheduled) {
