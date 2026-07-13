@@ -31,8 +31,8 @@ ALTER TABLE public.whatsapp_bot_config ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS wbc_owner_all ON public.whatsapp_bot_config;
 CREATE POLICY wbc_owner_all ON public.whatsapp_bot_config
   FOR ALL TO authenticated
-  USING (EXISTS (SELECT 1 FROM public.stores s WHERE s.id = whatsapp_bot_config.store_id AND s.user_id = auth.uid()))
-  WITH CHECK (EXISTS (SELECT 1 FROM public.stores s WHERE s.id = whatsapp_bot_config.store_id AND s.user_id = auth.uid()));
+  USING (EXISTS (SELECT 1 FROM public.stores s WHERE s.id = whatsapp_bot_config.store_id AND s.owner_id = auth.uid()))
+  WITH CHECK (EXISTS (SELECT 1 FROM public.stores s WHERE s.id = whatsapp_bot_config.store_id AND s.owner_id = auth.uid()));
 
 -- Sessões ativas do bot (uma por telefone/loja)
 CREATE TABLE IF NOT EXISTS public.whatsapp_bot_sessions (
@@ -58,7 +58,7 @@ ALTER TABLE public.whatsapp_bot_sessions ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS wbs_owner_read ON public.whatsapp_bot_sessions;
 CREATE POLICY wbs_owner_read ON public.whatsapp_bot_sessions
   FOR SELECT TO authenticated
-  USING (EXISTS (SELECT 1 FROM public.stores s WHERE s.id = whatsapp_bot_sessions.store_id AND s.user_id = auth.uid()));
+  USING (EXISTS (SELECT 1 FROM public.stores s WHERE s.id = whatsapp_bot_sessions.store_id AND s.owner_id = auth.uid()));
 `;
 
 Deno.serve(async (req) => {
