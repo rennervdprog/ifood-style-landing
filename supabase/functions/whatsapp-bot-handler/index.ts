@@ -401,9 +401,9 @@ Deno.serve(async (req) => {
         } else if (num === 2) {
           session.context.delivery_type = "retirada";
           const methods = (cfg.accepted_payment_methods || ["pix", "cash", "card"]).filter((m: string) => {
-            if (m === "pix") return store?.accepts_pix !== false;
-            if (m === "cash") return store?.accepts_cash !== false;
-            if (m === "card") return store?.accepts_card !== false;
+            if (m === "pix") return accepts.pix;
+            if (m === "cash") return accepts.cash;
+            if (m === "card") return accepts.card;
             return true;
           });
           await askPayment(admin, store_id, phone, session, methods);
@@ -449,9 +449,9 @@ Deno.serve(async (req) => {
           Number(store?.delivery_fee_base || 0);
         session.context.delivery_fee = Math.round((flat + PLATFORM_FEE) * 100) / 100;
         const methods = (cfg.accepted_payment_methods || ["pix", "cash", "card"]).filter((m: string) => {
-          if (m === "pix") return store?.accepts_pix !== false;
-          if (m === "cash") return store?.accepts_cash !== false;
-          if (m === "card") return store?.accepts_card !== false;
+          if (m === "pix") return accepts.pix;
+          if (m === "cash") return accepts.cash;
+          if (m === "card") return accepts.card;
           return true;
         });
         await askPayment(admin, store_id, phone, session, methods);
