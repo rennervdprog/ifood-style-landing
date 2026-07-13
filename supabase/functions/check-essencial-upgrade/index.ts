@@ -14,9 +14,13 @@ const json = (b: unknown, s = 200) =>
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 
-const THRESHOLD_BRL = 5000;
 const WINDOW_DAYS = 60;
-const UPGRADE_FEE = 180;
+
+// Config dinâmica por plano: {threshold GMV 60d → fee-alvo}
+const PLAN_CONFIG: Record<string, { threshold: number; upgradeFee: number; planLabel: string }> = {
+  fixed:    { threshold: 5000, upgradeFee: 180,    planLabel: "Essencial" },
+  autonomy: { threshold: 2500, upgradeFee: 329.90, planLabel: "Autonomia" },
+};
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -40,11 +44,11 @@ Deno.serve(async (req) => {
   try {
     const sb = createClient(EXTERNAL_URL, EXTERNAL_KEY);
 
-    // Essencial grátis (fixed, monthly_fee=0, ativo)
+    // Planos dinâmicos grátis (fixed + autonomy, monthly_fee=0, ativos)
     const { data: plans, error: pErr } = await sb
       .from("store_plans")
       .select("id, store_id, monthly_fee, plan_type, is_active, essencial_upgrade_scheduled_at, essencial_lifetime_free, pix_operational_fee_override, platform_delivery_split_override, commission_rate, stores!inner(name, status, owner_id, profiles!stores_owner_id_fkey(whatsapp))")
-      .eq("plan_type", "fixed")
+      .in("plan_type", Object.keys(PLAN_CONFIG))
       .eq("is_active", true)
       .eq("monthly_fee", 0);
     if (pErr) return json({ error: pErr.message }, 500);
@@ -76,15 +80,23 @@ Deno.serve(async (req) => {
       const response = ex.essencial_upgrade_response as string | null;
       const store = (p as any).stores;
       if (!store || store.status !== "ativo") continue;
+      const cfg = PLAN_CONFIG[(p as any).plan_type] || PLAN_CONFIG.fixed;
+      const THRESHOLD_BRL = cfg.threshold;
+      const UPGRADE_FEE = cfg.upgradeFee;
+      const PLAN_LABEL = cfg.planLabel;
       // VIP vitalício: nunca subir mensalidade nem agendar upgrade.
       if ((p as any).essencial_lifetime_free === true) {
         skipped.push({ store: store.name, reason: "lifetime_free_vip" });
         continue;
       }
-      // Qualquer override VIP (PIX, entrega, comissão custom) também isenta do upgrade automático.
+      // Overrides VIP (PIX custom, comissão custom) isentam do upgrade automático.
+      // Autonomia legitimamente tem platform_delivery_split_override=0 — não conta como VIP.
+      const _deliveryOv = (p as any).platform_delivery_split_override;
+      const _autonomyExpectedZero = (p as any).plan_type === "autonomy" && Number(_deliveryOv) === 0;
+      const hasDeliveryOverride = _deliveryOv != null && !_autonomyExpectedZero;
       if (
         (p as any).pix_operational_fee_override != null ||
-        (p as any).platform_delivery_split_override != null ||
+        hasDeliveryOverride ||
         Number((p as any).commission_rate || 0) !== 0
       ) {
         skipped.push({ store: store.name, reason: "vip_override" });
@@ -123,8 +135,8 @@ Deno.serve(async (req) => {
             .eq("id", p.id);
           const label = scheduleAt.toLocaleDateString("pt-BR");
           await notify(ownerPhone,
-            `🎉 Parabéns, ${store.name}!\n\nSua loja passou de R$ 5.000 em vendas nos últimos ${WINDOW_DAYS} dias. Conforme os Termos de Uso, o upgrade para o plano Essencial pago (R$ ${UPGRADE_FEE},00/mês) está agendado para *${label}* (30 dias de aviso prévio).\n\nAcesse o painel para *Aceitar* ou *Recusar* o upgrade. Nenhuma cobrança será feita sem o seu consentimento expresso.`,
-            "essencial_upgrade_scheduled", p.store_id);
+            `🎉 Parabéns, ${store.name}!\n\nSua loja passou de R$ ${THRESHOLD_BRL.toLocaleString("pt-BR")} em vendas nos últimos ${WINDOW_DAYS} dias. Conforme os Termos de Uso, o upgrade para o plano ${PLAN_LABEL} pago (R$ ${UPGRADE_FEE.toFixed(2).replace(".", ",")}/mês) está agendado para *${label}* (30 dias de aviso prévio).\n\nAcesse o painel para *Aceitar* ou *Recusar* o upgrade. Nenhuma cobrança será feita sem o seu consentimento expresso.`,
+            "plan_upgrade_scheduled", p.store_id);
           skipped.push({ store: store.name, gmv, scheduled_for: scheduleAt.toISOString() });
         } else if (nowMs >= scheduled && response === "accepted") {
           // Grace period vencido → aplica upgrade
@@ -137,12 +149,12 @@ Deno.serve(async (req) => {
           } else {
             upgraded.push({ store: store.name, gmv, new_fee: UPGRADE_FEE });
             await sb.from("admin_logs").insert({
-              action: "essencial_auto_upgrade",
-              metadata: { store_id: p.store_id, gmv, window_days: WINDOW_DAYS, new_fee: UPGRADE_FEE },
+              action: "plan_auto_upgrade",
+              metadata: { store_id: p.store_id, plan_type: (p as any).plan_type, gmv, window_days: WINDOW_DAYS, new_fee: UPGRADE_FEE },
             }).then(() => {}, () => {});
             await notify(ownerPhone,
-              `📢 ${store.name}, o período de preparação terminou e sua mensalidade ItaSuper foi atualizada para *R$ ${UPGRADE_FEE},00/mês*.\n\nA próxima cobrança PIX será gerada em breve. Obrigado por crescer com a gente!`,
-              "essencial_upgrade_applied", p.store_id);
+              `📢 ${store.name}, o período de preparação terminou e sua mensalidade ItaSuper (${PLAN_LABEL}) foi atualizada para *R$ ${UPGRADE_FEE.toFixed(2).replace(".", ",")}/mês*.\n\nA próxima cobrança PIX será gerada em breve. Obrigado por crescer com a gente!`,
+              "plan_upgrade_applied", p.store_id);
           }
         } else if (nowMs >= scheduled) {
           // Prazo venceu mas sem consentimento expresso → NÃO aplica; mantém pendente.
@@ -160,8 +172,8 @@ Deno.serve(async (req) => {
       upgraded_count: upgraded.length,
       upgraded,
       skipped,
-      threshold: THRESHOLD_BRL,
       window_days: WINDOW_DAYS,
+      plans_covered: Object.keys(PLAN_CONFIG),
     });
   } catch (e: any) {
     console.error("[check-essencial-upgrade]", e);
