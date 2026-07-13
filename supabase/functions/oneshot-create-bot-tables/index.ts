@@ -63,6 +63,16 @@ CREATE POLICY wbs_owner_read ON public.whatsapp_bot_sessions
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: cors });
+  const url = new URL(req.url);
+  if (url.searchParams.get("inspect") === "1") {
+    const q = `
+      SELECT column_name, data_type, is_nullable, column_default
+      FROM information_schema.columns
+      WHERE table_schema='public' AND table_name IN ('orders','order_items','stores','profiles','menu_sections','products')
+      ORDER BY table_name, ordinal_position;`;
+    const out = await run(q);
+    return new Response(out.body, { headers: { ...cors, "Content-Type": "application/json" } });
+  }
   const out = await run(SQL);
   return new Response(JSON.stringify(out, null, 2), { headers: { ...cors, "Content-Type": "application/json" } });
 });
