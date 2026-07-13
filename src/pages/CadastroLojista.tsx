@@ -323,7 +323,7 @@ const CadastroLojista = () => {
               _plan_type: selectedPlan,
               _monthly_fee: selectedPlan === "hybrid" ? 50 : selectedPlan === "supporter" ? 75 : 0,
               _revenue_threshold: selectedPlan === "fixed" ? 5000 : selectedPlan === "autonomy" ? 2500 : selectedPlan === "hybrid" ? 5000 : null,
-              _upgrade_monthly_fee: selectedPlan === "fixed" ? 180 : selectedPlan === "autonomy" ? 329.90 : selectedPlan === "hybrid" ? 100 : null,
+              _upgrade_monthly_fee: selectedPlan === "fixed" ? 180 : selectedPlan === "autonomy" ? 239.90 : selectedPlan === "hybrid" ? 100 : null,
               _upgrade_trigger_months: (selectedPlan === "fixed" || selectedPlan === "hybrid" || selectedPlan === "autonomy") ? 2 : null,
             });
             if (matrizErr) {
@@ -608,7 +608,7 @@ const CadastroLojista = () => {
                             PIX {p.pixFee === 0 ? "grátis" : `R$${p.pixFee.toFixed(2).replace(".", ",")}`}
                           </span>
                           <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted text-foreground/80">
-                            {id === "pdv_only" ? "Sem delivery" : `Entrega ${id === "autonomy" ? "sem taxa" : "+R$2"}`}
+                            {id === "pdv_only" ? "Sem delivery" : `Entrega ${id === "autonomy" ? "sem taxa" : "+R$ 0,99"}`}
                           </span>
                           {p.monthlyFee > 0 && (
                             <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-400">
@@ -669,8 +669,8 @@ const CadastroLojista = () => {
                             <div className="flex items-start gap-1.5 text-[11px] text-muted-foreground leading-relaxed">
                               <span>
                                 {id === "autonomy"
-                                  ? <>✨ Sem os R$2 da plataforma: você define a taxa de entrega e fica com 100%.</>
-                                  : <>Entrega: cliente paga sua taxa + R$2 da plataforma. Nada sai do seu caixa.</>}
+                                  ? <>✨ Sem os R$ 0,99 da plataforma: você define a taxa de entrega e fica com 100%.</>
+                                  : <>Entrega: cliente paga sua taxa + R$ 0,99 da plataforma. Nada sai do seu caixa.</>}
                               </span>
                               <WhyThisCharge title="Taxa de entrega">{DELIVERY_FEE_NOTE}</WhyThisCharge>
                             </div>
@@ -686,7 +686,7 @@ const CadastroLojista = () => {
                           {isDynamic && (
                             <div className="rounded-lg border border-amber-500/40 bg-amber-500/5 px-3 py-2">
                               <p className="text-[11px] text-foreground leading-relaxed">
-                                <strong>📈 Plano dinâmico:</strong> começa em R$ 0/mês. Quando sua loja faturar <strong>R$ {id === "autonomy" ? "2.500" : "5.000"}</strong> (60 dias), a mensalidade passa a <strong>R$ {id === "autonomy" ? "329,90" : "180"}/mês</strong> — com 30 dias de aviso e seu aceite expresso.
+                                <strong>📈 Plano dinâmico:</strong> começa em R$ 0/mês. Quando sua loja faturar <strong>R$ {id === "autonomy" ? "2.500" : "5.000"}</strong> (60 dias), a mensalidade passa a <strong>R$ {id === "autonomy" ? "239,90" : "180"}/mês</strong> — com 30 dias de aviso e seu aceite expresso.
                               </p>
                             </div>
                           )}

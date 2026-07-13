@@ -15,7 +15,7 @@ type ReceivableKind = "mensalidade" | "comissao" | "entrega_fee" | "pdv_fee";
 const KIND_META: Record<ReceivableKind, { label: string; icon: typeof Crown; color: string }> = {
   mensalidade: { label: "Mensalidade", icon: Crown, color: "text-primary" },
   comissao: { label: "Comissão", icon: Percent, color: "text-primary" },
-  entrega_fee: { label: "R$2/entrega", color: "text-amber-500", icon: Truck },
+  entrega_fee: { label: "Taxa/entrega", color: "text-amber-500", icon: Truck },
   pdv_fee: { label: "PDV (R$1)", color: "text-emerald-500", icon: ShoppingCart },
 };
 

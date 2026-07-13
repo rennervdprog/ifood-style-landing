@@ -48,7 +48,7 @@ const commission_only: PlanInfo = {
   monthlyFee: 0,
   commissionRate: 6,
   pixFee: 0,
-  deliveryFee: 2,
+  deliveryFee: 0.99,
   icon: Rocket,
   accent: "text-emerald-600 dark:text-emerald-400",
   accentBg: "bg-emerald-500/10",
@@ -70,7 +70,7 @@ const hybrid: PlanInfo = {
   monthlyFee: 50,
   commissionRate: 2.5,
   pixFee: 0,
-  deliveryFee: 2,
+  deliveryFee: 0.99,
   icon: TrendingUp,
   accent: "text-blue-600 dark:text-blue-400",
   accentBg: "bg-blue-500/10",
@@ -93,7 +93,7 @@ const fixed: PlanInfo = {
   monthlyFee: 0,
   commissionRate: 0,
   pixFee: 1.99,
-  deliveryFee: 2,
+  deliveryFee: 0.99,
   icon: Crown,
   accent: "text-primary",
   accentBg: "bg-primary/10",
@@ -118,7 +118,7 @@ const supporter: PlanInfo = {
   monthlyFee: 75,
   commissionRate: 0,
   pixFee: 1.99,
-  deliveryFee: 2,
+  deliveryFee: 0.99,
   icon: Sparkles,
   accent: "text-amber-600 dark:text-amber-400",
   accentBg: "bg-amber-500/10",
@@ -137,7 +137,7 @@ supporter.example = exampleText(supporter);
 const autonomy: PlanInfo = {
   id: "autonomy",
   name: "Autonomia",
-  tagline: "Grátis pra começar — R$ 0/mês. Vira R$ 329,90/mês quando faturar R$ 2.500",
+  tagline: "Grátis pra começar — R$ 0/mês. Vira R$ 239,90/mês quando faturar R$ 2.500",
   forWho: "Pra quem quer máxima autonomia: fica com 100% da taxa de entrega que cobra",
   monthlyFee: 0,
   commissionRate: 0,
@@ -150,9 +150,9 @@ const autonomy: PlanInfo = {
   highlight: false,
   features: [
     "R$ 0/mês até atingir R$ 2.500 em vendas",
-    "Sobe pra R$ 329,90/mês após o gatilho (com 30 dias de aviso)",
+    "Sobe pra R$ 239,90/mês após o gatilho (com 30 dias de aviso)",
     "Sem comissão por pedido",
-    "Sem taxa de R$2 da plataforma na entrega",
+    "Sem taxa de R$ 0,99 da plataforma na entrega",
     "Você fica com 100% da taxa que cobra",
     "PIX online: R$1,99 por pedido (só se usar)",
     "PDV: módulo opcional (+ R$ 49/mês)",
@@ -203,7 +203,7 @@ export const PLANS_ORDER: StorePlanType[] = ["fixed", "autonomy"];
 
 /** Linha única de explicação universal sobre a taxa de entrega. */
 export const DELIVERY_FEE_NOTE =
-  "Taxa de entrega: nos planos Comissão e Essencial a plataforma adiciona R$ 2,00 EM CIMA da taxa que você (lojista) cobra. Ex.: você cobra R$ 5 → cliente paga R$ 7. Os R$ 2 ficam com a plataforma, os R$ 5 são seus. Nada sai do seu caixa. No plano Autonomia esse acréscimo é zero — o cliente paga exatamente a taxa que você define.";
+  "Taxa de entrega: nos planos Comissão e Essencial a plataforma adiciona R$ 0,99 EM CIMA da taxa que você (lojista) cobra. Ex.: você cobra R$ 5 → cliente paga R$ 5,99. Os R$ 0,99 ficam com a plataforma, os R$ 5 são seus. Nada sai do seu caixa. No plano Autonomia esse acréscimo é zero — o cliente paga exatamente a taxa que você define.";
 
 /** Linha única para a taxa PIX (apenas Essencial/Apoiador). */
 export const PIX_FEE_NOTE =

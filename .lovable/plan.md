@@ -1,66 +1,154 @@
+## Objetivo
 
-# Autonomia Dinâmica — grátis até R$2.500 GMV
+Adicionar um **bot de menu guiado** (sem IA) na Evolution API, mantendo tudo que já existe hoje (envio de notificações de pedido, respostas automáticas). Lojista escolhe no painel se quer ligar/desligar o bot e configura mensagens/gatilhos.
 
-Reaproveitar a máquina do Essencial (agendamento + aviso prévio + aceite/recusa + VIP) e generalizar para o Autonomia. Caminho **rápido e seguro**: mesmas colunas `essencial_upgrade_*` já existentes, cron único cobre os dois planos, threshold e fee-alvo por plano.
+---
 
-## Regras de negócio
+## O que muda para o cliente final
 
-- **Autonomia entra grátis:** `monthly_fee = 0` no cadastro.
-- **Gatilho:** GMV (pedidos `entregue`/`finalizado`) ≥ **R$ 2.500** em 60 dias.
-- **Aviso prévio:** 30 dias, exatamente como o Essencial.
-- **Aceite/Recusa** pelo lojista no painel (mesmo componente).
-- **Após aceite + prazo:** `monthly_fee` sobe para **R$ 329,90**.
-- **VIP `essencial_lifetime_free`** continua bloqueando upgrade (renomear label na UI para "Vitalício grátis").
-- **Overrides VIP** (PIX/entrega/comissão custom) também isentam — regra já existe, só estender pra autonomy.
+Cliente manda "oi", "cardápio", "pedido" (ou qualquer palavra-chave configurada) no WhatsApp da loja → bot responde com menu interativo → cliente navega por listas/botões nativos do WhatsApp → bot monta pedido → cria no sistema igual a um pedido feito pelo app.
 
-## Mudanças
+Se cliente digitar qualquer coisa fora do fluxo (ex: "quero falar com atendente"), o bot para e o lojista assume manualmente.
 
-### 1. Cron `check-essencial-upgrade` → cobrir autonomy
-- Query passa a filtrar `plan_type IN ('fixed','autonomy')` + `monthly_fee = 0` + `is_active`.
-- Tabela de config por plano dentro do código:
-  ```
-  fixed    → threshold 5000, target_fee 180
-  autonomy → threshold 2500, target_fee 329.90
-  ```
-- Mensagens WhatsApp já parametrizadas por `store.name` e `UPGRADE_FEE` — só passar dinâmico.
-- Sem mudança de schema.
+---
 
-### 2. `register_as_lojista` (RPC no Supabase externo)
-- No branch `autonomy`, criar `store_plans` com `monthly_fee = 0` (hoje cria com 329,90).
-- Manter demais campos (commission 0, pix_operational_fee 1,99, platform_delivery_split_override 0, pdv fixo R$1).
+## Fluxo do bot (máquina de estados, zero IA)
 
-### 3. `src/lib/plansInfo.ts` — Autonomia
-- `tagline`: "Grátis pra começar — R$ 0/mês. Vira R$ 329,90/mês quando faturar R$ 2.500"
-- `monthlyFee: 0`
-- `badge`: "🎁 Grátis pra começar"
-- `features`: adicionar "R$ 0/mês até atingir R$ 2.500 em vendas" e "Sobe pra R$ 329,90/mês após o gatilho"
+```text
+[gatilho: cliente manda mensagem]
+      ↓
+"Olá! Bem-vindo à {loja}. O que deseja?"
+[Botões: Ver cardápio | Falar com atendente]
+      ↓ Ver cardápio
+[Lista: categorias do cardápio]
+      ↓ escolhe categoria
+[Lista: produtos da categoria com preço]
+      ↓ escolhe produto
+   (se tiver adicionais obrigatórios → Lista de adicionais)
+      ↓
+[Botões: Adicionar mais itens | Finalizar pedido]
+      ↓ Finalizar
+[Botões: Delivery | Retirada]
+      ↓ Delivery → pede endereço em texto (CEP ou "rua, número, bairro")
+      ↓ Retirada → pula endereço
+[Botões: Pix | Dinheiro | Cartão na entrega]
+      ↓ Pix → gera Pix Direto (usa fluxo já existente)
+      ↓
+[Resumo do pedido + total]
+[Botões: Confirmar | Cancelar]
+      ↓ Confirmar → cria pedido no sistema → aparece no painel do lojista
+```
 
-### 4. UI do progresso (lojista)
-- Renomear `EssencialProgressCard` → `PlanUpgradeProgressCard` genérico recebendo `{ threshold, targetFee, planName }`.
-- Detectar plano ativo e escolher threshold automaticamente.
-- Reaproveita 100% do fluxo Aceitar/Recusar já existente.
+Timeout de sessão: **15 minutos sem resposta** → sessão zera, próxima mensagem começa do início.
 
-### 5. Textos legais (`TermosDeUso.tsx`)
-- Adicionar cláusula do gatilho R$ 2.500 pro Autonomia (espelho da cláusula do Essencial R$ 5.000), incluindo 30 dias de aviso prévio e direito de recusa.
+---
 
-### 6. Test store creator (Super Admin)
-- Nada a fazer — já cria Autonomia; só refletirá o novo `monthly_fee = 0` inicial.
+## Painel do lojista — nova aba "Bot WhatsApp"
 
-### 7. Testes Deno (`register-lojista-plans.test.ts`)
-- Ajustar `SPECS.autonomy.monthlyFee` para `0`.
+Dentro de **Admin → Configurações → WhatsApp** (onde já tem Evolution), adicionar seção "Bot de Menu Guiado":
 
-## Fora de escopo (não mexer)
+- **Toggle:** Ativar bot automático (on/off)
+- **Palavras-gatilho:** campo de tags — padrão: `oi, olá, cardápio, menu, pedido, quero pedir`
+- **Mensagem de boas-vindas:** texto customizável com `{loja}` e `{cliente}` como variáveis
+- **Horário de funcionamento do bot:** usa `opening_hours` já existente OU horário próprio
+- **Fora do horário:** mensagem customizável ("Estamos fechados, abrimos às 18h")
+- **Palavra de escape:** cliente digita "atendente" / "humano" → bot para e notifica lojista
+- **Método de pagamento aceito no bot:** checkboxes (Pix, Dinheiro, Cartão) — apenas os que a loja aceita
+- **Preview:** botão "Testar bot" que simula fluxo no próprio painel
 
-- Colunas novas no banco (usa as existentes).
-- Fluxo do PDV-only.
-- Comissão / PIX / split — permanecem iguais.
-- Lojas Autonomia **já ativas com R$ 329,90** — não rebaixar automaticamente. Se quiser oferecer retroativo, faço em migração manual separada só nas que você indicar.
+---
 
-## Riscos
+## Backend
 
-- Lojas Autonomia existentes continuam pagando R$ 329,90 (correto — não é rebaixamento automático). Confirmar se você quer alguma exceção manual.
-- Cron único aumenta escopo do log — nada crítico, só mais entradas em `admin_logs`.
+### Nova tabela `whatsapp_bot_config` (por loja)
 
-## Entrega
+```sql
+CREATE TABLE public.whatsapp_bot_config (
+  store_id uuid PRIMARY KEY,
+  enabled boolean DEFAULT false,
+  trigger_keywords text[] DEFAULT ARRAY['oi','olá','cardápio','menu','pedido'],
+  welcome_message text,
+  offline_message text,
+  escape_keywords text[] DEFAULT ARRAY['atendente','humano','pessoa'],
+  accepted_payment_methods text[] DEFAULT ARRAY['pix','cash','card'],
+  use_store_hours boolean DEFAULT true,
+  custom_hours jsonb,
+  updated_at timestamptz DEFAULT now()
+);
+```
 
-Uma versão só (patch), com bump automático de versão e revisão de segurança no fim.
+### Nova tabela `whatsapp_bot_sessions` (estado por cliente/telefone)
+
+```sql
+CREATE TABLE public.whatsapp_bot_sessions (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  store_id uuid NOT NULL,
+  phone text NOT NULL,
+  current_step text NOT NULL, -- 'welcome' | 'category' | 'product' | 'addon' | 'address' | 'payment' | 'confirm'
+  cart jsonb DEFAULT '[]'::jsonb,
+  context jsonb DEFAULT '{}'::jsonb, -- endereço parcial, categoria escolhida, etc.
+  last_message_at timestamptz DEFAULT now(),
+  expires_at timestamptz DEFAULT now() + interval '15 minutes',
+  UNIQUE(store_id, phone)
+);
+```
+
+### Nova edge function `evolution-webhook-inbound`
+
+- Recebe webhook `MESSAGES_UPSERT` da Evolution
+- Ignora mensagens do próprio bot (`fromMe: true`)
+- Carrega `whatsapp_bot_config` da loja pelo `instance_name`
+- Se bot desligado ou fora de horário → não faz nada (lojista responde manual)
+- Se palavra-escape detectada → deleta sessão + envia "Um atendente já vai te responder"
+- Carrega/cria sessão em `whatsapp_bot_sessions`
+- Baseado em `current_step`, chama Evolution `/message/sendList` ou `/message/sendButtons` com próxima pergunta
+- No passo `confirm`, cria pedido em `orders` + `order_items` (mesmo formato do checkout web) e limpa sessão
+
+### Cron `whatsapp-bot-cleanup` (a cada 5 min)
+
+Deleta sessões expiradas (`expires_at < now()`).
+
+---
+
+## O que NÃO muda (mantido igual)
+
+- `evolution-send-message` (notificações de pedido) — continua igual
+- `platform-whatsapp-send` (mensagens da plataforma) — continua igual
+- Fluxo de auto-reply existente — continua, mas se bot estiver ligado, ele tem prioridade
+- Todo anti-ban, throttling, dedupe já implementados — o bot novo usa a mesma função `evolution-send-message` para enviar, então herda toda proteção
+
+---
+
+## Detalhes técnicos
+
+**Limites da Evolution / WhatsApp:**
+- List Messages: até 10 itens por seção → se categoria tiver mais de 10 produtos, paginar ("Ver mais")
+- Button Messages: máx 3 botões — usado só em confirmações binárias/ternárias
+- Só funciona dentro da janela de 24h após cliente enviar mensagem (não é problema, bot só responde a mensagens recebidas)
+
+**Endereço:** parseamento simples por regex (procura número + palavra "rua/av") — se não bater, pede em partes: "Qual seu CEP?" → "Número?" → "Complemento?" (usa `saved_addresses` se cliente já tem cadastro)
+
+**Cliente sem cadastro:** cria perfil guest usando telefone como identificador (mesmo padrão de `GuestCheckoutPage`)
+
+**Pix Direto no bot:** reusa `pix-direto-create` já existente, envia QR Code como imagem + copia-e-cola
+
+**Arquivos novos:**
+- `supabase/functions/evolution-webhook-inbound/index.ts`
+- `supabase/functions/whatsapp-bot-cleanup/index.ts`
+- `src/pages/admin/tabs/WhatsAppBotConfig.tsx` (nova sub-aba dentro de SettingsTab)
+- Migration com as 2 tabelas
+
+**Arquivos alterados:**
+- `src/pages/admin/tabs/SettingsTab.tsx` — adicionar seção "Bot Menu Guiado"
+- `supabase/config.toml` — registrar cron do cleanup
+- `src/lib/appVersion.ts` + `android/app/build.gradle` — bump versão
+
+---
+
+## Fases de entrega
+
+1. **Fase 1 (MVP):** Tabelas + edge function do webhook + fluxo até "Confirmar pedido" só com Pix + painel básico (liga/desliga + palavras-gatilho)
+2. **Fase 2:** Adicionais/opcionais de produto, Dinheiro/Cartão, horário customizado
+3. **Fase 3:** Templates de mensagem customizáveis, analytics (quantos pedidos vieram do bot), integração com cupons
+
+Confirma esse escopo? Prefere que eu já implemente a Fase 1 completa ou quebra em pedaços menores?

@@ -104,7 +104,7 @@ async function confirmAndSplit(supabase: any, orderId: string, paymentId: string
       const isOwnDelivery = store.delivery_mode === "own";
 
       let pixOpFee = 1.99;
-      let platformSplit = 2;
+      let platformSplit = 0.99;
       try {
         const { data: feeConfigRow } = await supabase
           .from("admin_settings")
@@ -115,7 +115,7 @@ async function confirmAndSplit(supabase: any, orderId: string, paymentId: string
           const fc = feeConfigRow.value as any;
           // Chave correta no banco é "pix_fee" dentro do JSON delivery_fee_config
           pixOpFee = fc.pix_fee ?? fc.pix_operational_fee ?? 1.99;
-          platformSplit = fc.platform_split ?? 2;
+          platformSplit = fc.platform_split ?? 0.99;
         }
       } catch (_) {}
 
@@ -137,7 +137,7 @@ async function confirmAndSplit(supabase: any, orderId: string, paymentId: string
           storeShare = Math.round((subtotal - pixOpFee) * 100) / 100;
         }
       } else if (isHybridPlan) {
-        // Hybrid: cobra comissão % sobre subtotal + R$2 de entrega
+        // Hybrid: cobra comissão % sobre subtotal + R$ 0,99 de entrega
         const rate = (storePlan?.commission_rate ?? store.commission_rate ?? 2.5) / 100;
         commissionAmount = Math.round(subtotal * rate * 100) / 100;
         if (isOwnDelivery) {

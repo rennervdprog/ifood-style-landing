@@ -6,7 +6,7 @@
  *
  *   commission_only : LEGADO (mantido só pra lojas atuais)
  *   fixed (Essencial): R$0/mês (grátis) → R$180/mês após R$5k GMV | 0% | PIX R$1,99 | +R$2 entrega | PDV R$1 fixo
- *   autonomy         : R$329,90 | 0% | PIX R$1,99 | SEM +R$2 entrega  | PDV R$1 fixo
+ *   autonomy         : R$239,90 | 0% | PIX R$1,99 | SEM +R$2 entrega  | PDV R$1 fixo
  *
  * Roda contra o Supabase EXTERNO. Requer:
  *   EXTERNAL_SUPABASE_URL, EXTERNAL_SUPABASE_SERVICE_KEY, EXTERNAL_SUPABASE_ANON_KEY
@@ -58,7 +58,7 @@ const SPECS: PlanSpec[] = [
   {
     selected: "autonomy",
     planType: "autonomy",
-    monthlyFee: 0, // grátis na entrada; sobe pra R$329,90 após R$2,5k GMV via check-essencial-upgrade
+    monthlyFee: 0, // grátis na entrada; sobe pra R$239,90 após R$2,5k GMV via check-essencial-upgrade
     commissionRate: 0,
     pixOperationalFee: 1.99,
     platformDeliveryExtra: 0,

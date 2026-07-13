@@ -74,8 +74,8 @@ const plans = [
     badge: "🎁 Grátis pra começar" as string | undefined,
     features: [
       "R$ 0/mês pra começar",
-      "Sobe pra R$ 329,90/mês após atingir R$ 2.500 em vendas",
-      "SEM taxa de R$2 da plataforma na entrega",
+      "Sobe pra R$ 239,90/mês após atingir R$ 2.500 em vendas",
+      "SEM taxa de R$ 0,99 da plataforma na entrega",
       "Cliente paga exatamente a taxa que você define",
       "PIX online: R$1,99/pedido (só se usar)",
       "PDV: módulo opcional (+ R$ 49/mês)",
@@ -114,12 +114,12 @@ const faqs = [
   { q: "Posso cancelar quando quiser?", a: "Sim. Sem multa, sem fidelidade, sem pegadinha." },
   { q: "E se eu tiver dificuldade?", a: "Nossa equipe responde no WhatsApp em minutos." },
   {
-    q: 'O que é essa "taxa de R$2 da plataforma" na entrega?',
-    a: "É o quanto a plataforma cobra por pedido pra manter o motoboy integrado, o rastreamento e o suporte. No plano Essencial ela aparece pro cliente como acréscimo em cima da sua taxa de entrega. No plano Autonomia esse acréscimo é zero — o cliente paga exatamente a taxa que você define.",
+    q: 'O que é essa "taxa de R$ 0,99 da plataforma" na entrega?',
+    a: "É o quanto a plataforma cobra por pedido pra manter o motoboy integrado, o rastreamento e o suporte. No plano Essencial ela aparece pro cliente como acréscimo de R$ 0,99 em cima da sua taxa de entrega. No plano Autonomia esse acréscimo é zero — o cliente paga exatamente a taxa que você define.",
   },
   {
     q: "Quando vale a pena o plano Autonomia?",
-    a: 'Se você sente que os R$2 extras estão afastando cliente, ou se prefere mostrar um preço de entrega "redondo" sem acréscimo, o Autonomia é ideal. Começa grátis (R$ 0/mês) e só sobe pra R$ 329,90/mês depois que sua loja faturar R$ 2.500 — com 30 dias de aviso e aceite expresso seu.',
+    a: 'Se você prefere mostrar um preço de entrega "redondo" sem qualquer acréscimo da plataforma, o Autonomia é ideal. Começa grátis (R$ 0/mês) e só sobe pra R$ 239,90/mês depois que sua loja faturar R$ 2.500 — com 30 dias de aviso e aceite expresso seu.',
   },
   {
     q: "O PDV está incluso em algum plano?",
@@ -710,7 +710,7 @@ const StoreDirectory = () => {
             ))}
           </div>
           <p className="mt-8 text-center text-xs text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            💡 No plano <strong className="text-foreground">Essencial</strong> a plataforma soma R$2,00 à sua taxa de entrega (o cliente paga, não sai do seu caixa). Apenas no <strong className="text-foreground">Autonomia</strong> esse acréscimo é zero — o cliente paga exatamente a taxa que você define.
+            💡 No plano <strong className="text-foreground">Essencial</strong> a plataforma soma R$ 0,99 à sua taxa de entrega (o cliente paga, não sai do seu caixa). Apenas no <strong className="text-foreground">Autonomia</strong> esse acréscimo é zero — o cliente paga exatamente a taxa que você define.
           </p>
           <p className="mt-3 text-center text-xs text-muted-foreground max-w-2xl mx-auto leading-relaxed">
             🏪 Já tem clientela na loja física? O plano <strong className="text-foreground">Somente PDV</strong> é a frente de caixa pura — se quiser abrir delivery depois, migra num clique.
@@ -726,10 +726,10 @@ const StoreDirectory = () => {
               Novidade • Plano Autonomia
             </p>
             <h2 className="text-3xl md:text-5xl font-black tracking-tight text-foreground text-balance">
-              Seus clientes reclamavam dos <span className="text-emerald-600 dark:text-emerald-400">R$2 a mais</span>? Agora você escolhe.
+              Quer entrega com preço <span className="text-emerald-600 dark:text-emerald-400">100% seu</span>? Agora você escolhe.
             </h2>
             <p className="mt-4 text-sm md:text-base text-muted-foreground">
-              Vários lojistas pediram: "queria que o cliente pagasse exatamente a taxa que eu cobro, sem acréscimo da plataforma". Ouvimos. Nasceu o <strong className="text-foreground">Autonomia</strong> — o único plano sem a taxa de R$2,00 da plataforma na entrega.
+              Vários lojistas pediram: "queria que o cliente pagasse exatamente a taxa que eu cobro, sem acréscimo da plataforma". Ouvimos. Nasceu o <strong className="text-foreground">Autonomia</strong> — o único plano sem a taxa de R$ 0,99 da plataforma na entrega.
             </p>
           </div>
 
@@ -744,11 +744,11 @@ const StoreDirectory = () => {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">+ Taxa plataforma</span>
-                  <span className="font-bold text-foreground">R$ 2,00</span>
+                  <span className="font-bold text-foreground">R$ 0,99</span>
                 </div>
                 <div className="border-t border-border pt-2 flex justify-between">
                   <span className="font-bold text-foreground">Cliente paga</span>
-                  <span className="font-black text-foreground text-lg">R$ 7,00</span>
+                  <span className="font-black text-foreground text-lg">R$ 5,99</span>
                 </div>
               </div>
             </div>
