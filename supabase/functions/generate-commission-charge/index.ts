@@ -162,6 +162,7 @@ Deno.serve(async (req) => {
       const customerBody: Record<string, unknown> = {
         name: ownerProfile?.full_name || "Lojista",
         email: customerEmail,
+        notificationDisabled: true,
       };
       if (cleanCpf.length >= 11) customerBody.cpfCnpj = cleanCpf;
 
