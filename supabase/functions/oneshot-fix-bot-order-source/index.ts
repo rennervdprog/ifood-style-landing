@@ -11,9 +11,11 @@ async function q(sql: string) {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   const out: any = {};
-  out.current = await q(`SELECT conname, pg_get_constraintdef(oid) AS def FROM pg_constraint WHERE conrelid='public.orders'::regclass AND conname='orders_order_source_check';`);
+  // Fix any rogue rows first
+  out.fix_rows = await q(`UPDATE public.orders SET order_source = 'delivery' WHERE order_source IS NOT NULL AND order_source NOT IN ('delivery','pdv','manual','whatsapp_bot');`);
+  // Recreate constraint allowing whatsapp_bot
   out.drop = await q(`ALTER TABLE public.orders DROP CONSTRAINT IF EXISTS orders_order_source_check;`);
-  out.recreate = await q(`ALTER TABLE public.orders ADD CONSTRAINT orders_order_source_check CHECK (order_source IS NULL OR order_source IN ('app','web','pdv','whatsapp_bot','manual'));`);
+  out.recreate = await q(`ALTER TABLE public.orders ADD CONSTRAINT orders_order_source_check CHECK (order_source IS NULL OR order_source IN ('delivery','pdv','manual','whatsapp_bot'));`);
   out.verify = await q(`SELECT conname, pg_get_constraintdef(oid) AS def FROM pg_constraint WHERE conrelid='public.orders'::regclass AND conname='orders_order_source_check';`);
   return new Response(JSON.stringify(out, null, 2), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
 });
