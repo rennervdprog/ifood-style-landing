@@ -3,6 +3,8 @@ import CommissionAlert from "@/components/CommissionAlert";
 import PlatformSplitAlert from "@/components/PlatformSplitAlert";
 import RepassePendingCharges from "@/components/RepassePendingCharges";
 import { formatBRL } from "@/lib/utils";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Props {
   store: any;
@@ -12,11 +14,31 @@ interface Props {
 }
 
 export default function RepasseSection({ store, storePlan, setDashboardTab, pendingTotal }: Props) {
-  const showCommission = !!storePlan?.hasCommission;
+  // Se já existe cobrança PIX pendente, não mostra os cards de alerta duplicados —
+  // o RepassePendingCharges já exibe QR/valor/copiar em destaque.
+  const { data: hasPendingCharge } = useQuery({
+    queryKey: ["repasse-has-pending-charge", store?.id],
+    queryFn: async () => {
+      const { data } = await (supabase as any)
+        .from("financial_transactions")
+        .select("id")
+        .eq("store_id", store.id)
+        .eq("transaction_kind", "commission_charge")
+        .eq("status", "pending")
+        .limit(1)
+        .maybeSingle();
+      return !!data;
+    },
+    enabled: !!store?.id,
+    refetchInterval: 30000,
+  });
+
+  const showCommission = !!storePlan?.hasCommission && !hasPendingCharge;
   const showSplit =
     !storePlan?.hasCommission &&
     !!storePlan?.isItatingaFixed &&
-    (storePlan?.platformDeliverySplit || 0) > 0;
+    (storePlan?.platformDeliverySplit || 0) > 0 &&
+    !hasPendingCharge;
 
   const planLabel =
     storePlan?.planType === "fixed" ? "Essencial" :
