@@ -178,7 +178,7 @@ export default function DashboardOverviewSection(props: Props) {
 
   {pendingCharge && (
     <button
-      onClick={() => setDashboardTab("plan")}
+      onClick={() => setDashboardTab("repasse")}
       className="w-full text-left bg-primary/5 border-2 border-primary/40 rounded-2xl p-3.5 flex items-center gap-3 active:scale-[0.99] transition-transform"
     >
       <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground flex-shrink-0">
