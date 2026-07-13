@@ -44,14 +44,22 @@ const isAuthorizedForStore = async (admin: any, req: Request, storeId: string) =
   if (internalToken && req.headers.get("x-internal-token") === internalToken) return true;
   if (!authHeader.startsWith("Bearer ")) return false;
 
-  const authClient = createClient(
-    Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_ANON_KEY")!,
-    { global: { headers: { Authorization: authHeader } } },
-  );
-  const { data: userData, error } = await authClient.auth.getUser(authHeader.replace("Bearer ", ""));
-  const userId = userData?.user?.id;
-  if (error || !userId) return false;
+  // Tenta primeiro contra o Supabase EXTERNO (onde os lojistas fazem login),
+  // com fallback para o Lovable Cloud. Sem isso, os tokens externos falhavam
+  // silenciosamente e o disparo de order_status era rejeitado com 403.
+  const tryGetUser = async (url?: string, anon?: string) => {
+    if (!url || !anon) return null;
+    try {
+      const client = createClient(url, anon, { global: { headers: { Authorization: authHeader } } });
+      const { data, error: err } = await client.auth.getUser(authHeader.replace("Bearer ", ""));
+      if (err) return null;
+      return data?.user?.id || null;
+    } catch { return null; }
+  };
+  let userId =
+    (await tryGetUser(Deno.env.get("EXTERNAL_SUPABASE_URL"), Deno.env.get("EXTERNAL_SUPABASE_ANON_KEY"))) ||
+    (await tryGetUser(Deno.env.get("SUPABASE_URL"), Deno.env.get("SUPABASE_ANON_KEY")));
+  if (!userId) return false;
 
   const { data: store } = await admin.from("stores").select("owner_id").eq("id", storeId).maybeSingle();
   if (store?.owner_id === userId) return true;
