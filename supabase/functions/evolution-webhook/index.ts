@@ -276,6 +276,37 @@ Deno.serve(async (req) => {
 
         const text = incomingText(data);
 
+        // ── Bot de menu guiado (Fase 1) ────────────────────────────────
+        // Se a loja tem bot ativo, delega TUDO pro handler do bot.
+        // Bot ignora dedupe/silêncio, pois é conversa em sessão.
+        try {
+          const { data: botCfg } = await admin
+            .from("whatsapp_bot_config")
+            .select("enabled").eq("store_id", cfg.store_id).maybeSingle();
+          if (botCfg?.enabled) {
+            const botBase = Deno.env.get("SUPABASE_URL") || Deno.env.get("EXTERNAL_SUPABASE_URL")!;
+            const botKey = Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+            const botRes = await fetch(`${botBase}/functions/v1/whatsapp-bot-handler`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                apikey: botKey,
+                Authorization: `Bearer ${botKey}`,
+                "x-internal-token": Deno.env.get("EVOLUTION_WEBHOOK_TOKEN") || "",
+              },
+              body: JSON.stringify({ store_id: cfg.store_id, phone: number, text }),
+            });
+            const botOut = await botRes.json().catch(() => ({} as any));
+            if (botOut?.handled) {
+              console.log("[evolution-webhook] bot handled", { store: cfg.store_id, phone: number, action: botOut.action });
+              return json({ ok: true, bot: botOut.action || "handled" });
+            }
+            // handled=false → cai pra fluxo auto-reply normal (ex.: mensagem sem gatilho)
+          }
+        } catch (e) {
+          console.error("[evolution-webhook] bot dispatch failed", (e as any)?.message);
+        }
+
         // Log inbound SEMPRE (antes de qualquer skip) — usado para first-contact.
         const { error: inboundLogError } = await admin.from("whatsapp_inbound_log").insert({
           store_id: cfg.store_id, phone: number,
