@@ -47,11 +47,23 @@ Deno.serve(async (req) => {
     // Planos dinâmicos grátis (fixed + autonomy, monthly_fee=0, ativos)
     const { data: plans, error: pErr } = await sb
       .from("store_plans")
-      .select("id, store_id, monthly_fee, plan_type, is_active, essencial_upgrade_scheduled_at, essencial_lifetime_free, pix_operational_fee_override, platform_delivery_split_override, commission_rate, stores!inner(name, status, owner_id, profiles!stores_owner_id_fkey(whatsapp))")
+      .select("id, store_id, monthly_fee, plan_type, is_active, essencial_upgrade_scheduled_at, essencial_lifetime_free, pix_operational_fee_override, platform_delivery_split_override, commission_rate, stores!inner(name, status, owner_id)")
       .in("plan_type", Object.keys(PLAN_CONFIG))
       .eq("is_active", true)
       .eq("monthly_fee", 0);
     if (pErr) return json({ error: pErr.message }, 500);
+
+    // Buscar whatsapp dos owners em batch (evita FK explícita entre stores↔profiles)
+    const ownerIds = Array.from(new Set((plans || [])
+      .map((p: any) => p?.stores?.owner_id).filter(Boolean)));
+    const phoneMap: Record<string, string | undefined> = {};
+    if (ownerIds.length) {
+      const { data: profs } = await sb
+        .from("profiles")
+        .select("user_id, whatsapp_number")
+        .in("user_id", ownerIds);
+      for (const p of profs || []) phoneMap[(p as any).user_id] = (p as any).whatsapp_number;
+    }
 
     const since = new Date(Date.now() - WINDOW_DAYS * 24 * 60 * 60 * 1000).toISOString();
     const upgraded: any[] = [];
@@ -102,7 +114,7 @@ Deno.serve(async (req) => {
         skipped.push({ store: store.name, reason: "vip_override" });
         continue;
       }
-      const ownerPhone: string | undefined = store?.profiles?.whatsapp;
+      const ownerPhone: string | undefined = phoneMap[store?.owner_id];
 
       const { data: orders, error: oErr } = await sb
         .from("orders")
