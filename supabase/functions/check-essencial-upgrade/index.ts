@@ -19,7 +19,7 @@ const WINDOW_DAYS = 60;
 // Config dinâmica por plano: {threshold GMV 60d → fee-alvo}
 const PLAN_CONFIG: Record<string, { threshold: number; upgradeFee: number; planLabel: string }> = {
   fixed:    { threshold: 5000, upgradeFee: 180,    planLabel: "Essencial" },
-  autonomy: { threshold: 2500, upgradeFee: 329.90, planLabel: "Autonomia" },
+  autonomy: { threshold: 2500, upgradeFee: 239.90, planLabel: "Autonomia" },
 };
 
 Deno.serve(async (req) => {

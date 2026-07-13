@@ -116,7 +116,7 @@ const painPoints = [
 
 const plans = [
   { name: "Essencial", price: "R$0", sub: "/mês", desc: "0% comissão", icon: Crown, tags: ["Grátis pra começar", "Sobe pra R$180 quando faturar R$5.000"], subtitle: "Comece sem pagar mensalidade. Taxa PIX R$ 1,99 + entrega R$ 2.", popular: true },
-  { name: "Autonomia", price: "R$329,90", sub: "/mês", desc: "0% comissão + sem taxa R$2", icon: Crown, tags: ["Sem taxa de R$2 da plataforma", "100% da sua taxa de entrega"], subtitle: "Cliente paga exatamente a taxa que você define. 7 dias grátis.", popular: false },
+  { name: "Autonomia", price: "R$239,90", sub: "/mês", desc: "0% comissão + sem taxa R$2", icon: Crown, tags: ["Sem taxa de R$2 da plataforma", "100% da sua taxa de entrega"], subtitle: "Cliente paga exatamente a taxa que você define. 7 dias grátis.", popular: false },
   { name: "Somente PDV", price: "R$69", sub: "/mês", desc: "Só o caixa presencial", icon: CreditCard, tags: ["Sem delivery", "Sem vitrine pública"], subtitle: "Pra loja física que não quer delivery. Só o PDV completo.", popular: false },
 ];
 

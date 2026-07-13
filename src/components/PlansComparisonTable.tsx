@@ -14,7 +14,7 @@ const ROWS: Row[] = [
       commission_only: "R$ 0",
       fixed: "R$ 90*",
       supporter: "R$ 75",
-      autonomy: "R$ 329,90",
+      autonomy: "R$ 239,90",
     } as Record<StorePlanType, string>,
   },
   {

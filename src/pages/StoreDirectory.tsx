@@ -74,7 +74,7 @@ const plans = [
     badge: "🎁 Grátis pra começar" as string | undefined,
     features: [
       "R$ 0/mês pra começar",
-      "Sobe pra R$ 329,90/mês após atingir R$ 2.500 em vendas",
+      "Sobe pra R$ 239,90/mês após atingir R$ 2.500 em vendas",
       "SEM taxa de R$2 da plataforma na entrega",
       "Cliente paga exatamente a taxa que você define",
       "PIX online: R$1,99/pedido (só se usar)",
@@ -119,7 +119,7 @@ const faqs = [
   },
   {
     q: "Quando vale a pena o plano Autonomia?",
-    a: 'Se você sente que os R$2 extras estão afastando cliente, ou se prefere mostrar um preço de entrega "redondo" sem acréscimo, o Autonomia é ideal. Começa grátis (R$ 0/mês) e só sobe pra R$ 329,90/mês depois que sua loja faturar R$ 2.500 — com 30 dias de aviso e aceite expresso seu.',
+    a: 'Se você sente que os R$2 extras estão afastando cliente, ou se prefere mostrar um preço de entrega "redondo" sem acréscimo, o Autonomia é ideal. Começa grátis (R$ 0/mês) e só sobe pra R$ 239,90/mês depois que sua loja faturar R$ 2.500 — com 30 dias de aviso e aceite expresso seu.',
   },
   {
     q: "O PDV está incluso em algum plano?",
