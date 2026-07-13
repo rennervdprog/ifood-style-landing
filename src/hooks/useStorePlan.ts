@@ -212,7 +212,11 @@ export function useStorePlan(storeId: string | undefined | null): StorePlanFeatu
   const _actualRate = Number(data?.plan?.commission_rate ?? 0);
   const _pixOverride = (data?.plan as any)?.pix_operational_fee_override;
   const _deliveryOverride = (data?.plan as any)?.platform_delivery_split_override;
-  const _vipFee = _tplFee != null && Number(_tplFee) !== _actualFee;
+  // Entrada dinâmica grátis (Essencial e Autonomia): fee=0 na entrada NÃO é VIP,
+  // é o preço inicial oficial. O cron `check-essencial-upgrade` sobe depois.
+  const _isDynamicFreeEntry =
+    (planType === "fixed" || planType === "autonomy") && _actualFee === 0;
+  const _vipFee = !_isDynamicFreeEntry && _tplFee != null && Number(_tplFee) !== _actualFee;
   const _vipCommission = _tplRate != null && Number(_tplRate) !== _actualRate;
   const _vipPix = _pixOverride != null;
   const _vipDelivery = _deliveryOverride != null;

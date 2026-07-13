@@ -58,7 +58,7 @@ const SPECS: PlanSpec[] = [
   {
     selected: "autonomy",
     planType: "autonomy",
-    monthlyFee: 329.9,
+    monthlyFee: 0, // grátis na entrada; sobe pra R$329,90 após R$2,5k GMV via check-essencial-upgrade
     commissionRate: 0,
     pixOperationalFee: 1.99,
     platformDeliveryExtra: 0,
