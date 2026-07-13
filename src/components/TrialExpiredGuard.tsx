@@ -244,7 +244,7 @@ export default function TrialExpiredGuard({ storePlan, storeId, children }: Tria
               </Button>
               <p className="text-xs text-center text-muted-foreground">
                 Após o pagamento, o acesso é liberado automaticamente.
-                Próxima cobrança em 30 dias.
+                Cobrança mensal recorrente (a cada 30 dias).
               </p>
             </div>
           ) : (

@@ -1,59 +1,66 @@
-# Correção: Realtime WhatsApp + número correto conectado
 
-## Problemas confirmados
+# Autonomia Dinâmica — grátis até R$2.500 GMV
 
-1. **Realtime não replica na tela**
-   - As tabelas `store_whatsapp_config` e `platform_whatsapp_config` provavelmente **não estão na publicação `supabase_realtime`** e/ou não têm `REPLICA IDENTITY FULL`.
-   - Sem isso, `postgres_changes` (que `WhatsAppSetup.tsx` já assina) nunca dispara — a UI só atualiza no polling de 3s ou ao reabrir a aba.
-   - Sintoma: aparece "Conectado" só depois de mexer na tela / recarregar.
+Reaproveitar a máquina do Essencial (agendamento + aviso prévio + aceite/recusa + VIP) e generalizar para o Autonomia. Caminho **rápido e seguro**: mesmas colunas `essencial_upgrade_*` já existentes, cron único cobre os dois planos, threshold e fee-alvo por plano.
 
-2. **Número errado no card "Conectado"**
-   - O webhook (`evolution-webhook`) grava `phone_number = data.wuid || data.number || data.owner`.
-   - No fluxo de **pairing code** o Evolution devolve o número **digitado**, não o real que pareou. E em `connection.update` o `wuid` chega vazio ou desatualizado quando trocamos de chip.
-   - `store-whatsapp-sync-status` já busca o `ownerJid` real via `/instance/fetchInstances` — mas isso só roda quando o usuário abre a aba. O webhook (que dispara em tempo real) não faz esse fetch.
+## Regras de negócio
 
-## Correções
+- **Autonomia entra grátis:** `monthly_fee = 0` no cadastro.
+- **Gatilho:** GMV (pedidos `entregue`/`finalizado`) ≥ **R$ 2.500** em 60 dias.
+- **Aviso prévio:** 30 dias, exatamente como o Essencial.
+- **Aceite/Recusa** pelo lojista no painel (mesmo componente).
+- **Após aceite + prazo:** `monthly_fee` sobe para **R$ 329,90**.
+- **VIP `essencial_lifetime_free`** continua bloqueando upgrade (renomear label na UI para "Vitalício grátis").
+- **Overrides VIP** (PIX/entrega/comissão custom) também isentam — regra já existe, só estender pra autonomy.
 
-### 1. Habilitar Realtime nas tabelas de config (migration)
+## Mudanças
 
-```sql
-ALTER TABLE public.store_whatsapp_config REPLICA IDENTITY FULL;
-ALTER TABLE public.platform_whatsapp_config REPLICA IDENTITY FULL;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.store_whatsapp_config;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.platform_whatsapp_config;
-```
-(idempotente — checa antes se já existe)
+### 1. Cron `check-essencial-upgrade` → cobrir autonomy
+- Query passa a filtrar `plan_type IN ('fixed','autonomy')` + `monthly_fee = 0` + `is_active`.
+- Tabela de config por plano dentro do código:
+  ```
+  fixed    → threshold 5000, target_fee 180
+  autonomy → threshold 2500, target_fee 329.90
+  ```
+- Mensagens WhatsApp já parametrizadas por `store.name` e `UPGRADE_FEE` — só passar dinâmico.
+- Sem mudança de schema.
 
-### 2. Webhook busca o número real via fetchInstances
+### 2. `register_as_lojista` (RPC no Supabase externo)
+- No branch `autonomy`, criar `store_plans` com `monthly_fee = 0` (hoje cria com 329,90).
+- Manter demais campos (commission 0, pix_operational_fee 1,99, platform_delivery_split_override 0, pdv fixo R$1).
 
-Em `supabase/functions/evolution-webhook/index.ts`, quando `state === 'open'`:
-- Chamar `${EVOLUTION_API_URL}/instance/fetchInstances?instanceName=<inst>` com `apikey`.
-- Extrair `ownerJid` (fallbacks: `instance.owner`, `owner`) e usar como `phone_number` — não confiar em `data.wuid`.
-- Se o número diferir do salvo (`phoneChanged`) → resetar `connected_at = now()` e limpar `qr_code`.
-- Aplicar a mesma lógica no bloco de `platform_whatsapp_config` (linhas 152-179).
+### 3. `src/lib/plansInfo.ts` — Autonomia
+- `tagline`: "Grátis pra começar — R$ 0/mês. Vira R$ 329,90/mês quando faturar R$ 2.500"
+- `monthlyFee: 0`
+- `badge`: "🎁 Grátis pra começar"
+- `features`: adicionar "R$ 0/mês até atingir R$ 2.500 em vendas" e "Sobe pra R$ 329,90/mês após o gatilho"
 
-### 3. Front — cobrir gap de rede/aba oculta
+### 4. UI do progresso (lojista)
+- Renomear `EssencialProgressCard` → `PlanUpgradeProgressCard` genérico recebendo `{ threshold, targetFee, planName }`.
+- Detectar plano ativo e escolher threshold automaticamente.
+- Reaproveita 100% do fluxo Aceitar/Recusar já existente.
 
-Em `src/components/WhatsAppSetup.tsx`:
-- Ao voltar a aba (`visibilitychange = 'visible'`) → chamar `store-whatsapp-sync-status` + `loadConfig`.
-- Ao reconectar o socket do realtime (`SUBSCRIBED` após `CHANNEL_ERROR`) → forçar `loadConfig` uma vez para pegar o que foi perdido offline.
+### 5. Textos legais (`TermosDeUso.tsx`)
+- Adicionar cláusula do gatilho R$ 2.500 pro Autonomia (espelho da cláusula do Essencial R$ 5.000), incluindo 30 dias de aviso prévio e direito de recusa.
 
-Mesmo tratamento em `PlatformWhatsAppTab.tsx` (super admin) usando `platform-whatsapp-sync-status`.
+### 6. Test store creator (Super Admin)
+- Nada a fazer — já cria Autonomia; só refletirá o novo `monthly_fee = 0` inicial.
 
-### 4. UI já pronta
+### 7. Testes Deno (`register-lojista-plans.test.ts`)
+- Ajustar `SPECS.autonomy.monthlyFee` para `0`.
 
-`WhatsAppStatusCard` e `WhatsAppConnection` já mostram `phone_number` e `connected_at` do `config` — assim que o realtime disparar com dados corretos, a tela atualiza sozinha. Nada a mexer em UI.
+## Fora de escopo (não mexer)
 
-## Detalhes técnicos
+- Colunas novas no banco (usa as existentes).
+- Fluxo do PDV-only.
+- Comissão / PIX / split — permanecem iguais.
+- Lojas Autonomia **já ativas com R$ 329,90** — não rebaixar automaticamente. Se quiser oferecer retroativo, faço em migração manual separada só nas que você indicar.
 
-- **Migration** roda via `supabase--migration` (aprovação do usuário).
-- **Edge function** re-deploy: `evolution-webhook`.
-- Fetch dentro do webhook tem timeout de 4s (`AbortController`) para não segurar resposta do Evolution.
-- Bump de versão para `1.14.14` (build 949) em `src/lib/appVersion.ts` + `android/app/build.gradle`.
-- Log breve `[evolution-webhook] ownerJid resolved` para auditoria futura.
+## Riscos
 
-## Como validar
+- Lojas Autonomia existentes continuam pagando R$ 329,90 (correto — não é rebaixamento automático). Confirmar se você quer alguma exceção manual.
+- Cron único aumenta escopo do log — nada crítico, só mais entradas em `admin_logs`.
 
-1. Desconectar o WhatsApp no celular → card muda para "Desconectado" em < 2s sem recarregar.
-2. Reconectar com **outro** número via pairing code → aparece o número **real** que pareou (não o digitado) e "há 0m".
-3. `admin_logs` recebe eventos `connection_update_ownerjid` com o JID resolvido.
+## Entrega
+
+Uma versão só (patch), com bump automático de versão e revisão de segurança no fim.

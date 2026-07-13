@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { QrCode, Copy, Clock, CheckCircle2, XCircle } from "lucide-react";
+import { QrCode, Copy, Clock, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { formatBRL } from "@/lib/utils";
@@ -48,32 +48,89 @@ export default function RepassePendingCharges({ storeId }: Props) {
   return (
     <div className="space-y-4">
       {pending && (
-        <div className="rounded-2xl border-2 border-blue-500/30 p-5 bg-blue-500/5 space-y-3">
-          <div className="flex items-center gap-2">
-            <QrCode className="h-5 w-5 text-blue-600" />
-            <h3 className="font-black text-foreground">Cobrança PIX gerada</h3>
+        <div className="rounded-3xl border-2 border-primary/40 bg-card shadow-xl shadow-primary/10 overflow-hidden">
+          {/* Status header */}
+          <div className="px-5 pt-5 pb-0">
+            <div className="flex justify-between items-center mb-4">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                <span className="text-[11px] font-bold text-primary uppercase tracking-widest">
+                  Aguardando Pagamento
+                </span>
+              </div>
+              {pending.reference_code && (
+                <div className="px-2 py-1 rounded bg-muted text-muted-foreground text-[10px] font-bold uppercase">
+                  {pending.reference_code}
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2">
+                <QrCode className="h-5 w-5 text-primary" />
+                <h3 className="text-xl font-extrabold text-foreground tracking-tight">
+                  Cobrança PIX gerada
+                </h3>
+              </div>
+              <p className="text-sm text-muted-foreground leading-tight pl-7">
+                {(pending.metadata as any)?.description || "Repasse da plataforma"}
+              </p>
+            </div>
+
+            <div className="mt-5 mb-6">
+              <p className="text-[10px] font-bold text-primary/60 uppercase tracking-wider mb-1">
+                Valor total a pagar
+              </p>
+              <div className="text-4xl font-black text-primary tracking-tight">
+                {formatBRL(Number(pending.amount))}
+              </div>
+            </div>
           </div>
-          <p className="text-sm text-muted-foreground">
-            {(pending.metadata as any)?.description || "Repasse da plataforma"}
-          </p>
-          <div className="text-2xl font-black text-blue-600">{formatBRL(Number(pending.amount))}</div>
+
+          {/* QR focal area */}
           {pending.pix_qr_code_base64 && (
-            <img
-              src={`data:image/png;base64,${pending.pix_qr_code_base64}`}
-              alt="QR Code PIX"
-              className="w-48 h-48 mx-auto rounded-lg border bg-white"
-            />
+            <div className="px-5">
+              <div className="relative bg-muted/40 border border-border rounded-2xl p-6 flex flex-col items-center justify-center">
+                <div className="bg-white p-3 rounded-xl shadow-sm">
+                  <img
+                    src={`data:image/png;base64,${pending.pix_qr_code_base64}`}
+                    alt="QR Code PIX"
+                    className="w-40 h-40 rounded-sm"
+                  />
+                </div>
+                <div className="mt-3 flex items-center gap-2 text-primary">
+                  <QrCode className="h-4 w-4" />
+                  <span className="text-[11px] font-bold uppercase tracking-wider">
+                    Escaneie o código acima
+                  </span>
+                </div>
+              </div>
+            </div>
           )}
-          {pending.pix_copy_paste && (
-            <Button variant="outline" className="w-full" onClick={() => copy(pending.pix_copy_paste)}>
-              <Copy className="h-4 w-4 mr-2" /> Copiar PIX copia-e-cola
-            </Button>
-          )}
-          {(pending.metadata as any)?.due_date && (
-            <p className="text-xs text-muted-foreground text-center">
-              Vence em {new Date((pending.metadata as any).due_date).toLocaleDateString("pt-BR")}
-            </p>
-          )}
+
+          {/* Actions & deadline */}
+          <div className="p-5 space-y-3">
+            {pending.pix_copy_paste && (
+              <Button
+                className="w-full h-14 rounded-xl text-base font-bold shadow-lg shadow-primary/20 active:scale-[0.98] transition-all"
+                onClick={() => copy(pending.pix_copy_paste)}
+              >
+                <Copy className="h-5 w-5 mr-2" /> Copiar código PIX
+              </Button>
+            )}
+
+            {(pending.metadata as any)?.due_date && (
+              <div className="flex items-center justify-center gap-2 py-2 px-4 rounded-full bg-amber-500/10 border border-amber-500/20">
+                <AlertCircle className="h-3.5 w-3.5 text-amber-700 dark:text-amber-500" />
+                <p className="text-[11px] font-bold text-amber-800 dark:text-amber-400">
+                  Vencimento:{" "}
+                  <span className="underline decoration-amber-400">
+                    {new Date((pending.metadata as any).due_date).toLocaleDateString("pt-BR")}
+                  </span>
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       )}
 

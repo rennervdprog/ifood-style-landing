@@ -27,7 +27,7 @@ const sendPresence = async (baseUrl: string, instance: string, apiKey: string, n
 
 // Anti-spam (mesmos parâmetros de evolution-send-message)
 const DEDUPE_WINDOW_SEC = 3600;
-const AUTO_REPLY_DEDUPE_WINDOW_SEC = 86400;
+const AUTO_REPLY_DEDUPE_WINDOW_SEC = 57600; // 16h
 const PER_INSTANCE_MIN_GAP_MS = 12_000;
 const PER_PHONE_MIN_GAP_MS = 3_000;
 const EVOLUTION_MAX_RETRIES = 2;
@@ -98,7 +98,7 @@ Deno.serve(async (req) => {
     const msgHash = await hashMsg(message);
     const nowIso = new Date().toISOString();
 
-    // 1) Dedupe por hash (1h / 24h auto_reply)
+    // 1) Dedupe por hash (1h / 16h auto_reply)
     const dedupeWindowSec = kind === "auto_reply" ? AUTO_REPLY_DEDUPE_WINDOW_SEC : DEDUPE_WINDOW_SEC;
     const dedupeSince = new Date(Date.now() - dedupeWindowSec * 1000).toISOString();
     const { data: dup } = await admin
@@ -115,7 +115,7 @@ Deno.serve(async (req) => {
         .select("id")
         .eq("phone", number).eq("kind", "auto_reply")
         .gte("sent_at", dedupeSince).limit(1).maybeSingle();
-      if (dupKind) return json({ success: true, skipped: "auto_reply_dedupe_24h" });
+      if (dupKind) return json({ success: true, skipped: "auto_reply_dedupe_16h" });
     }
 
     // 2) Limite diário por fase do chip

@@ -19,7 +19,7 @@ interface PlatformSplitAlertProps {
 const PlatformSplitAlert = ({ storeId, storeName, splitPerOrder, onGoToFinance }: PlatformSplitAlertProps) => {
   const [generating, setGenerating] = useState(false);
   const [dismissed, setDismissed] = useState(false);
-  const [pixData, setPixData] = useState<{ qr_code: string; qr_code_base64: string; amount: number; reference_code?: string } | null>(null);
+  const [pixData, setPixData] = useState<{ qr_code: string | null; qr_code_base64: string | null; amount: number; reference_code?: string } | null>(null);
   const queryClient = useQueryClient();
 
   const { data: storeBalance } = useQuery({
@@ -110,12 +110,22 @@ const PlatformSplitAlert = ({ storeId, storeName, splitPerOrder, onGoToFinance }
         return;
       }
 
-      const { data, error } = await supabase.functions.invoke("store-platform-fee-pix", {
-        body: { store_id: storeId, amount: pendingFee },
+      const { data, error } = await supabase.functions.invoke("payment-router", {
+        body: {
+          action: "commission_charge",
+          store_id: storeId,
+          amount: pendingFee,
+          description: `Repasse ItaSuper - ${storeName}`,
+        },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
-      setPixData({ qr_code: data.qr_code, qr_code_base64: data.qr_code_base64, amount: data.amount, reference_code: data.reference_code });
+      setPixData({
+        qr_code: data.pix_code ?? data.qr_code ?? null,
+        qr_code_base64: data.qr_code_url ?? data.qr_code_base64 ?? null,
+        amount: Number(data.amount || pendingFee),
+        reference_code: data.reference_code,
+      });
       toast.success("PIX gerado! Escaneie o QR Code para pagar.");
       queryClient.invalidateQueries({ queryKey: ["store-balance-split", storeId] });
       queryClient.invalidateQueries({ queryKey: ["repasse-pending-charge", storeId] });

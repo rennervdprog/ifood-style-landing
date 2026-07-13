@@ -6,9 +6,14 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useState } from "react";
 
-const THRESHOLD = 5000;
 const WINDOW_DAYS = 60;
-const UPGRADE_FEE = 180;
+
+// Config por plano: threshold de GMV (60 dias) → fee de upgrade.
+// Reaproveita as mesmas colunas `essencial_upgrade_*` e o mesmo cron.
+const PLAN_CONFIG: Record<string, { threshold: number; upgradeFee: number; planName: string }> = {
+  fixed:    { threshold: 5000, upgradeFee: 180,    planName: "Essencial" },
+  autonomy: { threshold: 2500, upgradeFee: 329.90, planName: "Autonomia" },
+};
 
 interface Props {
   store: any;
@@ -18,13 +23,18 @@ interface Props {
 export default function EssencialProgressCard({ store, storePlan }: Props) {
   const qc = useQueryClient();
   const [saving, setSaving] = useState(false);
-  // Só para Essencial grátis (fixed + fee=0)
+  const cfg = PLAN_CONFIG[storePlan?.planType as string];
+  // Elegível para o card dinâmico: planos Essencial/Autonomia na entrada grátis.
   const eligible =
-    storePlan?.planType === "fixed" &&
+    !!cfg &&
     Number(storePlan?.monthlyFee || 0) === 0 &&
     !storePlan?.isVip &&
     !storePlan?.isEssencialLifetimeFree &&
     !storePlan?.isInTrial;
+
+  const THRESHOLD = cfg?.threshold ?? 5000;
+  const UPGRADE_FEE = cfg?.upgradeFee ?? 180;
+  const PLAN_NAME = cfg?.planName ?? "Essencial";
 
   const { data } = useQuery({
     queryKey: ["essencial-progress", store?.id],
@@ -79,7 +89,7 @@ export default function EssencialProgressCard({ store, storePlan }: Props) {
           <div className="font-black text-foreground">Upgrade recusado</div>
         </div>
         <p className="text-sm text-muted-foreground">
-          Você optou por não migrar para o plano Essencial pago. Nenhuma cobrança de mensalidade será gerada.
+          Você optou por não migrar para o plano {PLAN_NAME} pago. Nenhuma cobrança de mensalidade será gerada.
         </p>
       </div>
     );
@@ -92,10 +102,10 @@ export default function EssencialProgressCard({ store, storePlan }: Props) {
       <div className="rounded-2xl border border-amber-500/40 bg-gradient-to-br from-amber-500/10 to-orange-500/5 p-4 space-y-3">
         <div className="flex items-center gap-2">
           <PartyPopper className="h-5 w-5 text-amber-600" />
-          <div className="font-black text-foreground">Upgrade Essencial disponível</div>
+          <div className="font-black text-foreground">Upgrade {PLAN_NAME} disponível</div>
         </div>
         <p className="text-sm text-muted-foreground">
-          Você bateu R$ 5.000 em vendas nos últimos {WINDOW_DAYS} dias. Conforme os Termos de Uso, o plano Essencial pago (<b className="text-foreground">{formatBRL(UPGRADE_FEE)}/mês</b>) pode ser ativado a partir de <b className="text-foreground">{label}</b> — mas <b className="text-foreground">apenas com o seu consentimento expresso</b>.
+          Você bateu {formatBRL(THRESHOLD)} em vendas nos últimos {WINDOW_DAYS} dias. Conforme os Termos de Uso, o plano {PLAN_NAME} pago (<b className="text-foreground">{formatBRL(UPGRADE_FEE)}/mês</b>) pode ser ativado a partir de <b className="text-foreground">{label}</b> — mas <b className="text-foreground">apenas com o seu consentimento expresso</b>.
         </p>
         {accepted ? (
           <div className="text-xs font-semibold text-emerald-700 flex items-center gap-1">
@@ -119,7 +129,7 @@ export default function EssencialProgressCard({ store, storePlan }: Props) {
     <div className="rounded-2xl border border-border/60 bg-card p-4 space-y-3">
       <div className="flex items-center gap-2">
         <TrendingUp className="h-4 w-4 text-primary" />
-        <div className="font-bold text-foreground text-sm">Progresso Essencial (últimos {WINDOW_DAYS} dias)</div>
+        <div className="font-bold text-foreground text-sm">Progresso {PLAN_NAME} (últimos {WINDOW_DAYS} dias)</div>
       </div>
       <div className="flex items-baseline justify-between">
         <div className="text-2xl font-black tabular-nums">{formatBRL(data.gmv)}</div>
@@ -130,9 +140,9 @@ export default function EssencialProgressCard({ store, storePlan }: Props) {
       </div>
       <p className="text-xs text-muted-foreground">
         {remaining > 0 ? (
-          <>Faltam <b className="text-foreground">{formatBRL(remaining)}</b> para o plano Essencial pago (<b className="text-foreground">{formatBRL(UPGRADE_FEE)}/mês</b>) ficar disponível — com 30 dias de aviso e consentimento expresso antes de qualquer cobrança.</>
+          <>Faltam <b className="text-foreground">{formatBRL(remaining)}</b> para o plano {PLAN_NAME} pago (<b className="text-foreground">{formatBRL(UPGRADE_FEE)}/mês</b>) ficar disponível — com 30 dias de aviso e consentimento expresso antes de qualquer cobrança.</>
         ) : (
-          <>Você atingiu R$ 5.000 — em breve o upgrade será agendado.</>
+          <>Você atingiu {formatBRL(THRESHOLD)} — em breve o upgrade será agendado.</>
         )}
       </p>
     </div>

@@ -4,7 +4,7 @@ import { z } from "https://esm.sh/zod@3.25.76";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+    "authorization, x-client-info, apikey, content-type, x-supabase-api-version, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version, baggage, sentry-trace",
 };
 
 const json = (body: unknown, status = 200) =>
@@ -162,6 +162,7 @@ Deno.serve(async (req) => {
       const customerBody: Record<string, unknown> = {
         name: ownerProfile?.full_name || "Lojista",
         email: customerEmail,
+        notificationDisabled: true,
       };
       if (cleanCpf.length >= 11) customerBody.cpfCnpj = cleanCpf;
 

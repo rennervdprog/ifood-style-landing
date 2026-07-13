@@ -224,9 +224,9 @@ Deno.serve(async (req) => {
     const baseUrl = Deno.env.get("EVOLUTION_API_URL");
     const apiKey = Deno.env.get("EVOLUTION_GLOBAL_API_KEY");
     const webhookToken = Deno.env.get("EVOLUTION_WEBHOOK_TOKEN") || "";
-    // Webhook must point to the current Cloud functions host; EXTERNAL_SUPABASE_URL
+    // Webhook aponta para o Supabase EXTERNO (produção). Nunca para Lovable Cloud.
     // is used only for the production data backend.
-    const functionBaseUrl = Deno.env.get("SUPABASE_URL") || Deno.env.get("EXTERNAL_SUPABASE_URL")!;
+    const functionBaseUrl = Deno.env.get("EXTERNAL_SUPABASE_URL") || Deno.env.get("SUPABASE_URL")!;
     if (!baseUrl || !apiKey) return json({ error: "Servidor Evolution não configurado" }, 500);
 
     const instance = isPlatform

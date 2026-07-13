@@ -68,3 +68,6 @@ verify_jwt = false
 [functions.check-balance-restrictions]
 verify_jwt = false
 
+[functions.oneshot-verify-external-target]
+verify_jwt = false
+

@@ -410,15 +410,20 @@ const PIE_COLORS = [COLORS.green, COLORS.blue, COLORS.amber];
         });
         toast.success(`Cobrança ${simResult.reference_code} gerada!`);
       } else {
-        const { data, error } = await supabase.functions.invoke("store-platform-fee-pix", {
-          body: { store_id: storeId, amount: pendingFee },
+        const { data, error } = await supabase.functions.invoke("payment-router", {
+          body: {
+            action: "commission_charge",
+            store_id: storeId,
+            amount: pendingFee,
+            description: `Repasse ItaSuper - ${storeName}`,
+          },
         });
         if (error) throw error;
         if (data?.error) throw new Error(data.error);
         setNowMs(Date.now());
         setChargeResult({
-          qr_code: data.qr_code,
-          qr_code_base64: data.qr_code_base64,
+          qr_code: data.pix_code ?? data.qr_code ?? null,
+          qr_code_base64: data.qr_code_url ?? data.qr_code_base64 ?? null,
           reference_code: data.reference_code || "PIX",
           amount: data.amount || pendingFee,
           created_at: new Date().toISOString(),
