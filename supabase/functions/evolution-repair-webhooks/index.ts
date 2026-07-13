@@ -55,11 +55,9 @@ Deno.serve(async (req) => {
     const baseUrl = Deno.env.get("EVOLUTION_API_URL");
     const apiKey = Deno.env.get("EVOLUTION_GLOBAL_API_KEY");
     const webhookToken = Deno.env.get("EVOLUTION_WEBHOOK_TOKEN") || "";
-    // Repair should target the current Cloud functions host. The external backend
-    // stores production data, but should not be used as the webhook function host.
-    // Tudo roda no Supabase EXTERNO. O webhook deve chamar o projeto externo,
-    // NUNCA o Lovable Cloud (SUPABASE_URL).
-    const functionBaseUrl = Deno.env.get("EXTERNAL_SUPABASE_URL") || Deno.env.get("SUPABASE_URL");
+    // Repair deve apontar para o host atual das funções; o backend externo é
+    // usado apenas como banco de dados de produção.
+    const functionBaseUrl = Deno.env.get("SUPABASE_URL") || Deno.env.get("EXTERNAL_SUPABASE_URL");
     if (!baseUrl || !apiKey || !functionBaseUrl) return json({ error: "Evolution/backend não configurado" }, 500);
 
     const body = await req.json().catch(() => ({} as any));
