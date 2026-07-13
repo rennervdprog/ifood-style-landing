@@ -1,5 +1,6 @@
 import StoreSettings from "@/components/StoreSettings";
 import WhatsAppSetup from "@/components/WhatsAppSetup";
+import WhatsAppBotConfig from "@/components/WhatsAppBotConfig";
 import { MessageCircle, Monitor, Copy, Loader2, RefreshCw, Ban, Store as StoreIcon } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -85,6 +86,7 @@ const SettingsTab = ({ store }: Props) => {
         storeName={store.name}
         expectedPhone={store.whatsapp_number || store.whatsapp || store.phone || null}
       />
+      <WhatsAppBotConfig storeId={store.id} storeName={store.name} />
     </section>
     )}
 
