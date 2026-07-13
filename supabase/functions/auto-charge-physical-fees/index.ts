@@ -4,8 +4,8 @@
  * Roda por cron (ex: diariamente às 10h) ou chamada manual pelo admin.
  *
  * Para cada loja com saldo pendente de pagamentos físicos (dinheiro/cartão):
- *  - Planos fixo/apoiador: cobrar repasse_pendente (R$2 por entrega)
- *  - Plano hybrid: cobrar repasse_pendente (R$2/entrega) + comissao_pendente (2,5% físico)
+ *  - Planos fixo/apoiador: cobrar repasse_pendente (R$ 0,99 por entrega)
+ *  - Plano hybrid: cobrar repasse_pendente (R$ 0,99/entrega) + comissao_pendente (2,5% físico)
  *  - Planos commission_only: cobrar comissao_pendente (% sobre vendas)
  *
  * Fluxo:
@@ -213,7 +213,7 @@ Deno.serve(async (req) => {
     const now = new Date();
 
     // ── 1. Buscar lojas com saldo pendente de pagamentos físicos ──
-    // store_balances.repasse_pendente = R$2/entrega (planos fixed/supporter)
+    // store_balances.repasse_pendente = R$ 0,99/entrega (planos fixed/supporter)
     // store_balances.comissao_pendente = % sobre vendas físicas (commission_only)
     let balanceQuery = supabase
       .from("store_balances")
@@ -255,11 +255,11 @@ Deno.serve(async (req) => {
       let baseAmount = 0;
 
       if (planType === "fixed" || planType === "supporter") {
-        // Cobrar repasse_pendente (R$2 por entrega)
+        // Cobrar repasse_pendente (taxa por entrega física acumulada)
         baseAmount = repasse;
-        chargeDescription = `Taxa de entrega ItaSuper — ${store.name} (${repasse.toFixed(0)} entregas × R$2,00)`;
+        chargeDescription = `Taxa de entrega ItaSuper — ${store.name} (R$ ${repasse.toFixed(2).replace(".", ",")} acumulados)`;
       } else if (planType === "hybrid") {
-        // Hybrid: cobrar repasse_pendente (R$2/entrega) + comissao_pendente (2,5% físico)
+        // Hybrid: cobrar repasse_pendente + comissao_pendente (2,5% físico)
         baseAmount = repasse + comissao;
         const parts = [];
         if (repasse > 0) parts.push(`R$${repasse.toFixed(2)} taxa entrega`);
