@@ -339,15 +339,27 @@ Deno.serve(async (req) => {
         ? String(cfg.welcome_message).replace(/\{loja\}/g, storeName)
         : `Olá! 👋 Aqui é o atendimento automático da *${storeName}*.\n\nPosso te ajudar a fazer seu pedido pelo WhatsApp mesmo. Vamos lá?`;
       await sendText(store_id, phone, welcome);
-      // Cria sessão vazia e mostra categorias
-      session = { store_id, phone, current_step: "welcome", cart: [], context: {} };
-      await showCategories(admin, store_id, phone, session);
+      // Antes de mostrar o cardápio, pede o nome do cliente
+      session = { store_id, phone, current_step: "awaiting_name", cart: [], context: {} };
+      await setSession(admin, session);
+      await sendText(store_id, phone, "*👤 Qual é o seu *nome*?*");
       return json({ handled: true, action: "welcome" });
     }
 
     // Roteia por estado
     const num = parseInt(text.trim(), 10);
     switch (session.current_step) {
+      case "awaiting_name": {
+        const name = text.trim().slice(0, 80);
+        if (name.length < 2) {
+          await sendText(store_id, phone, "Nome muito curto. Envie seu nome completo (mínimo 2 letras).");
+          return json({ handled: true, action: "invalid_name" });
+        }
+        session.context.customer_name = name;
+        await sendText(store_id, phone, `Prazer, *${name}*! 👋`);
+        await showCategories(admin, store_id, phone, session);
+        return json({ handled: true, action: "name_saved" });
+      }
       case "awaiting_category": {
         const cats: string[] = session.context.categories || [];
         if (!Number.isFinite(num) || num < 1 || num > cats.length) {
@@ -378,7 +390,7 @@ Deno.serve(async (req) => {
       case "awaiting_delivery_type": {
         if (num === 1) {
           session.context.delivery_type = "delivery";
-          await askAddress(admin, store_id, phone, session);
+          await askStreet(admin, store_id, phone, session);
         } else if (num === 2) {
           session.context.delivery_type = "retirada";
           const methods = (cfg.accepted_payment_methods || ["pix", "cash", "card"]).filter((m: string) => {
@@ -393,12 +405,34 @@ Deno.serve(async (req) => {
         }
         return json({ handled: true });
       }
-      case "awaiting_address": {
-        if (text.trim().length < 8) {
-          await sendText(store_id, phone, "Endereço muito curto. Envie rua, número e bairro.");
-          return json({ handled: true, action: "invalid_address" });
+      case "awaiting_street": {
+        const street = text.trim();
+        if (street.length < 3) {
+          await sendText(store_id, phone, "Nome de rua muito curto. Envie o nome completo.");
+          return json({ handled: true, action: "invalid_street" });
         }
-        session.context.address = text.trim();
+        session.context.street = street;
+        await askNumber(admin, store_id, phone, session);
+        return json({ handled: true });
+      }
+      case "awaiting_number": {
+        session.context.number = text.trim().slice(0, 20) || "SN";
+        await askNeighborhood(admin, store_id, phone, session);
+        return json({ handled: true });
+      }
+      case "awaiting_neighborhood": {
+        const nb = text.trim();
+        if (nb.length < 2) {
+          await sendText(store_id, phone, "Bairro inválido. Envie o nome do bairro.");
+          return json({ handled: true });
+        }
+        session.context.neighborhood = nb;
+        await askReference(admin, store_id, phone, session);
+        return json({ handled: true });
+      }
+      case "awaiting_reference": {
+        const ref = text.trim();
+        session.context.reference = (ref === "-" || ref === "") ? "" : ref.slice(0, 120);
         // Cálculo simples da taxa: usa a taxa fixa da loja (own_delivery_fee) + taxa da plataforma (R$ 0,99).
         // Não usamos cálculo por km porque o bot não tem GPS/CEP validado.
         const PLATFORM_FEE = 0.99;
@@ -423,6 +457,38 @@ Deno.serve(async (req) => {
           return json({ handled: true, action: "invalid_payment" });
         }
         session.context.payment_method = opts[num - 1];
+        // Se dinheiro → pergunta troco antes de confirmar
+        if (session.context.payment_method === "cash") {
+          const subtotal = session.cart.reduce((s, i) => s + i.unit_price * i.quantity, 0);
+          const total = subtotal + Number(session.context.delivery_fee || 0);
+          await askChange(admin, store_id, phone, session, total);
+          return json({ handled: true, action: "ask_change" });
+        }
+        session.context.needs_change = false;
+        session.context.change_for = 0;
+        await showConfirmation(admin, store_id, phone, session, storeName);
+        return json({ handled: true, action: "show_confirm" });
+      }
+      case "awaiting_change": {
+        const raw = normalize(text);
+        const subtotal = session.cart.reduce((s, i) => s + i.unit_price * i.quantity, 0);
+        const total = subtotal + Number(session.context.delivery_fee || 0);
+        if (/^(nao|não|n|0)$/i.test(raw)) {
+          session.context.needs_change = false;
+          session.context.change_for = 0;
+        } else {
+          const value = parseFloat(raw.replace(",", ".").replace(/[^0-9.]/g, ""));
+          if (!Number.isFinite(value) || value <= 0) {
+            await sendText(store_id, phone, "Não entendi. Envie o *valor em dinheiro* (ex: 50) ou *NAO*.");
+            return json({ handled: true, action: "invalid_change" });
+          }
+          if (value < total) {
+            await sendText(store_id, phone, `O valor precisa ser maior ou igual ao total (${BRL(total)}). Tente de novo ou envie *NAO*.`);
+            return json({ handled: true, action: "change_below_total" });
+          }
+          session.context.needs_change = true;
+          session.context.change_for = Math.round(value * 100) / 100;
+        }
         await showConfirmation(admin, store_id, phone, session, storeName);
         return json({ handled: true, action: "show_confirm" });
       }
