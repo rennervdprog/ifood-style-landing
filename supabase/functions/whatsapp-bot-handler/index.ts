@@ -288,7 +288,7 @@ const createOrder = async (admin: any, storeId: string, phone: string, session: 
     quantity: i.quantity, unit_price: i.unit_price, addons: [],
   }));
   await admin.from("order_items").insert(items);
-  const num = order.order_number ? `#${order.order_number}` : `#${order.id.slice(0, 8).toUpperCase()}`;
+  const num = `#${order.id.slice(0, 8).toUpperCase()}`;
   await sendText(storeId, phone,
     `🎉 *Pedido ${num} confirmado!*\n\nA *${storeName}* recebeu seu pedido e vai começar a preparar em instantes.\n\nVocê será avisado quando o pedido for aceito. ✨`);
   await clearSession(admin, storeId, phone);
