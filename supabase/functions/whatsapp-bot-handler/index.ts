@@ -309,10 +309,17 @@ Deno.serve(async (req) => {
       .select("*").eq("store_id", store_id).maybeSingle();
     if (!cfg || !cfg.enabled) return json({ handled: false, reason: "bot_disabled" });
 
-    const { data: store } = await admin.from("stores")
-      .select("name, accepts_pix, accepts_cash, accepts_card, delivery_mode, delivery_fee_type, own_delivery_fee, delivery_fee, delivery_fee_base")
+    const { data: store, error: storeErr } = await admin.from("stores")
+      .select("name, settings, delivery_mode, delivery_fee_type, own_delivery_fee, delivery_fee, delivery_fee_base, minimum_order_value")
       .eq("id", store_id).maybeSingle();
+    if (storeErr) console.error("[bot] store select error", storeErr);
     const storeName = store?.name || "loja";
+    const settings = (store?.settings || {}) as Record<string, any>;
+    const accepts = {
+      pix: settings.accept_pix_online !== false || settings.accept_pix_machine === true,
+      cash: settings.accept_cash !== false,
+      card: settings.accept_card !== false,
+    };
 
     // Palavra de escape → encerra bot silenciosamente
     const norm = normalize(text);
@@ -394,9 +401,9 @@ Deno.serve(async (req) => {
         } else if (num === 2) {
           session.context.delivery_type = "retirada";
           const methods = (cfg.accepted_payment_methods || ["pix", "cash", "card"]).filter((m: string) => {
-            if (m === "pix") return store?.accepts_pix !== false;
-            if (m === "cash") return store?.accepts_cash !== false;
-            if (m === "card") return store?.accepts_card !== false;
+            if (m === "pix") return accepts.pix;
+            if (m === "cash") return accepts.cash;
+            if (m === "card") return accepts.card;
             return true;
           });
           await askPayment(admin, store_id, phone, session, methods);
@@ -442,9 +449,9 @@ Deno.serve(async (req) => {
           Number(store?.delivery_fee_base || 0);
         session.context.delivery_fee = Math.round((flat + PLATFORM_FEE) * 100) / 100;
         const methods = (cfg.accepted_payment_methods || ["pix", "cash", "card"]).filter((m: string) => {
-          if (m === "pix") return store?.accepts_pix !== false;
-          if (m === "cash") return store?.accepts_cash !== false;
-          if (m === "card") return store?.accepts_card !== false;
+          if (m === "pix") return accepts.pix;
+          if (m === "cash") return accepts.cash;
+          if (m === "card") return accepts.card;
           return true;
         });
         await askPayment(admin, store_id, phone, session, methods);
