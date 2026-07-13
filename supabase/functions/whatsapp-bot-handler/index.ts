@@ -309,10 +309,17 @@ Deno.serve(async (req) => {
       .select("*").eq("store_id", store_id).maybeSingle();
     if (!cfg || !cfg.enabled) return json({ handled: false, reason: "bot_disabled" });
 
-    const { data: store } = await admin.from("stores")
-      .select("name, accepts_pix, accepts_cash, accepts_card, delivery_mode, delivery_fee_type, own_delivery_fee, delivery_fee, delivery_fee_base")
+    const { data: store, error: storeErr } = await admin.from("stores")
+      .select("name, settings, delivery_mode, delivery_fee_type, own_delivery_fee, delivery_fee, delivery_fee_base, minimum_order_value")
       .eq("id", store_id).maybeSingle();
+    if (storeErr) console.error("[bot] store select error", storeErr);
     const storeName = store?.name || "loja";
+    const settings = (store?.settings || {}) as Record<string, any>;
+    const accepts = {
+      pix: settings.accept_pix_online !== false || settings.accept_pix_machine === true,
+      cash: settings.accept_cash !== false,
+      card: settings.accept_card !== false,
+    };
 
     // Palavra de escape → encerra bot silenciosamente
     const norm = normalize(text);
