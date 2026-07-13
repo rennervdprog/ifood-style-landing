@@ -16,7 +16,8 @@ const BodySchema = z.object({
   store_id: z.string().uuid(),
   phone: z.string().min(10).max(20),
   message: z.string().min(1).max(4000),
-  kind: z.enum(["manual", "auto_reply", "order_status"]).optional(),
+  kind: z.enum(["manual", "auto_reply", "order_status", "bot"]).optional(),
+  force: z.boolean().optional(),
 });
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -107,6 +108,9 @@ Deno.serve(async (req) => {
       return json({ error: parsed.error.flatten().fieldErrors }, 400);
     }
     const { store_id, phone, message, kind = "manual" } = parsed.data;
+    const internalToken = Deno.env.get("EVOLUTION_WEBHOOK_TOKEN") || "";
+    const requestedForce = parsed.data.force === true;
+    const force = requestedForce && !!internalToken && req.headers.get("x-internal-token") === internalToken;
     const maskedPhone = phone ? `${phone.slice(0,4)}****${phone.slice(-2)}` : "";
     console.log("[evolution-send-message] ▶ store_id=", store_id, "phone=", maskedPhone, "kind=", kind, "msgLen=", message.length);
 
@@ -155,10 +159,10 @@ Deno.serve(async (req) => {
       .select("id")
       .eq("store_id", store_id).eq("phone", number).eq("message_hash", msgHash)
       .gte("sent_at", dedupeSince).limit(1).maybeSingle();
-    if (dup) return json({ success: true, skipped: "duplicate" });
+    if (dup && !force) return json({ success: true, skipped: "duplicate" });
     // P0 — dedupe adicional por KIND para auto_reply: mesmo que o texto varie
     // (bom dia / boa tarde / fora do horário), só 1 saudação por número / 16h.
-    if (kind === "auto_reply") {
+    if (kind === "auto_reply" && !force) {
       const { data: dupKind } = await admin
         .from("whatsapp_send_log")
         .select("id")
@@ -182,11 +186,11 @@ Deno.serve(async (req) => {
       .eq("store_id", store_id)
       .neq("message_hash", "greet_pending")
       .gte("sent_at", dayStart.toISOString());
-    if ((sentToday ?? 0) >= dailyLimit) {
+    if (!force && (sentToday ?? 0) >= dailyLimit) {
       return json({ error: `Limite diário de envios atingido (${dailyLimit}). Aguarde amanhã.` }, 429);
     }
     // P0 — coffee break também para auto_reply: a cada 10 msgs no dia, pausa 5-15min.
-    if ((sentToday ?? 0) > 0 && (sentToday ?? 0) % 10 === 0) {
+    if (!force && (sentToday ?? 0) > 0 && (sentToday ?? 0) % 10 === 0) {
       await sleep(300_000 + Math.floor(Math.random() * 600_000));
     }
 
