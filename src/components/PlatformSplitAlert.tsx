@@ -19,7 +19,7 @@ interface PlatformSplitAlertProps {
 const PlatformSplitAlert = ({ storeId, storeName, splitPerOrder, onGoToFinance }: PlatformSplitAlertProps) => {
   const [generating, setGenerating] = useState(false);
   const [dismissed, setDismissed] = useState(false);
-  const [pixData, setPixData] = useState<{ qr_code: string; qr_code_base64: string; amount: number; reference_code?: string } | null>(null);
+  const [pixData, setPixData] = useState<{ qr_code: string | null; qr_code_base64: string | null; amount: number; reference_code?: string } | null>(null);
   const queryClient = useQueryClient();
 
   const { data: storeBalance } = useQuery({
