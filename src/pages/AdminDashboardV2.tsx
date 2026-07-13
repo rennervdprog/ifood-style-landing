@@ -1160,6 +1160,12 @@ const AdminDashboard = () => {
    * O WhatsApp é aberto via link <a> no JSX (não via window.open).
    */
   const handleAcceptOrder = useCallback((order: any) => {
+    // Se a notinha já foi disparada automaticamente (auto-print), não imprime
+    // de novo aqui pra evitar duplicidade.
+    if ((order as any)?.printed_at) {
+      console.info("[accept] print pulado: já impresso automaticamente", order?.id);
+      return;
+    }
     // Print da notinha
     try {
       const copies = (store?.settings as any)?.print_copies === 1 ? 1 : 2;
