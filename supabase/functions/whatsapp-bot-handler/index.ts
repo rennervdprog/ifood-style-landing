@@ -234,10 +234,15 @@ const createOrder = async (admin: any, storeId: string, phone: string, session: 
       }
     }
     if (clientId) {
+      // Garante delivery_pin no profile (trigger de orders exige)
+      const { data: prof } = await admin.from("profiles")
+        .select("delivery_pin").eq("user_id", clientId).maybeSingle();
+      const pin = (prof as any)?.delivery_pin || String(Math.floor(1000 + Math.random() * 9000));
       await admin.from("profiles").upsert(
-        { user_id: clientId, full_name: customerName || null, phone } as any,
+        { user_id: clientId, full_name: customerName || null, phone, delivery_pin: pin } as any,
         { onConflict: "user_id" },
       );
+      (session.context as any)._delivery_pin = pin;
       await admin.from("guest_customers").upsert(
         { phone, user_id: clientId, name: customerName || null, last_store_id: storeId, consent_at: new Date().toISOString() } as any,
         { onConflict: "phone" },
@@ -261,6 +266,7 @@ const createOrder = async (admin: any, storeId: string, phone: string, session: 
     change_for: Number(session.context.change_for || 0),
     is_guest: true,
     order_source: "whatsapp_bot",
+    delivery_pin: (session.context as any)._delivery_pin || String(Math.floor(1000 + Math.random() * 9000)),
     metadata: {
       source: "whatsapp_bot",
       customer_phone: phone,
