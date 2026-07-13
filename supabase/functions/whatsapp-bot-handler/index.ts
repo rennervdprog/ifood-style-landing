@@ -229,7 +229,8 @@ Deno.serve(async (req) => {
     if (!cfg || !cfg.enabled) return json({ handled: false, reason: "bot_disabled" });
 
     const { data: store } = await admin.from("stores")
-      .select("name, accepts_pix, accepts_cash, accepts_card").eq("id", store_id).maybeSingle();
+      .select("name, accepts_pix, accepts_cash, accepts_card, delivery_mode, delivery_fee_type, own_delivery_fee, delivery_fee, delivery_fee_base")
+      .eq("id", store_id).maybeSingle();
     const storeName = store?.name || "loja";
 
     // Palavra de escape → encerra bot silenciosamente
@@ -317,7 +318,14 @@ Deno.serve(async (req) => {
           return json({ handled: true, action: "invalid_address" });
         }
         session.context.address = text.trim();
-        session.context.delivery_fee = 0; // Fase 1: cliente combina na entrega
+        // Cálculo simples da taxa: usa a taxa fixa da loja (own_delivery_fee) + taxa da plataforma (R$ 0,99).
+        // Não usamos cálculo por km porque o bot não tem GPS/CEP validado.
+        const PLATFORM_FEE = 0.99;
+        const flat =
+          Number(store?.own_delivery_fee || 0) ||
+          Number(store?.delivery_fee || 0) ||
+          Number(store?.delivery_fee_base || 0);
+        session.context.delivery_fee = Math.round((flat + PLATFORM_FEE) * 100) / 100;
         const methods = (cfg.accepted_payment_methods || ["pix", "cash", "card"]).filter((m: string) => {
           if (m === "pix") return store?.accepts_pix !== false;
           if (m === "cash") return store?.accepts_cash !== false;
