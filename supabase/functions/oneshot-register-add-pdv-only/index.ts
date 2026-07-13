@@ -44,7 +44,7 @@ BEGIN
   IF _selected_plan='fixed' THEN
     _plan_type:='fixed'::store_plan_type; _monthly_fee:=0.00; _commission_rate:=0.00;
   ELSIF _selected_plan='autonomy' THEN
-    _plan_type:='autonomy'::store_plan_type; _monthly_fee:=329.90; _commission_rate:=0.00; _split_override:=0.00;
+    _plan_type:='autonomy'::store_plan_type; _monthly_fee:=239.90; _commission_rate:=0.00; _split_override:=0.00;
   ELSIF _selected_plan IN ('supporter','apoiador') THEN
     _plan_type:='supporter'::store_plan_type; _monthly_fee:=75.00; _commission_rate:=0.00;
   ELSIF _selected_plan='hybrid' THEN

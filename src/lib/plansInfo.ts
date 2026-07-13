@@ -137,7 +137,7 @@ supporter.example = exampleText(supporter);
 const autonomy: PlanInfo = {
   id: "autonomy",
   name: "Autonomia",
-  tagline: "Grátis pra começar — R$ 0/mês. Vira R$ 329,90/mês quando faturar R$ 2.500",
+  tagline: "Grátis pra começar — R$ 0/mês. Vira R$ 239,90/mês quando faturar R$ 2.500",
   forWho: "Pra quem quer máxima autonomia: fica com 100% da taxa de entrega que cobra",
   monthlyFee: 0,
   commissionRate: 0,
@@ -150,7 +150,7 @@ const autonomy: PlanInfo = {
   highlight: false,
   features: [
     "R$ 0/mês até atingir R$ 2.500 em vendas",
-    "Sobe pra R$ 329,90/mês após o gatilho (com 30 dias de aviso)",
+    "Sobe pra R$ 239,90/mês após o gatilho (com 30 dias de aviso)",
     "Sem comissão por pedido",
     "Sem taxa de R$2 da plataforma na entrega",
     "Você fica com 100% da taxa que cobra",

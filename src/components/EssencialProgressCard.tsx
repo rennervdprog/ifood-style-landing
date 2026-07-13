@@ -12,7 +12,7 @@ const WINDOW_DAYS = 60;
 // Reaproveita as mesmas colunas `essencial_upgrade_*` e o mesmo cron.
 const PLAN_CONFIG: Record<string, { threshold: number; upgradeFee: number; planName: string }> = {
   fixed:    { threshold: 5000, upgradeFee: 180,    planName: "Essencial" },
-  autonomy: { threshold: 2500, upgradeFee: 329.90, planName: "Autonomia" },
+  autonomy: { threshold: 2500, upgradeFee: 239.90, planName: "Autonomia" },
 };
 
 interface Props {
