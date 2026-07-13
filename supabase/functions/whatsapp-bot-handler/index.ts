@@ -14,9 +14,10 @@ const BRL = (n: number) => `R$ ${n.toFixed(2).replace(".", ",")}`;
 const normalize = (t: string) => t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 
 type Step =
-  | "welcome" | "awaiting_category" | "awaiting_product"
+  | "welcome" | "awaiting_name" | "awaiting_category" | "awaiting_product"
   | "awaiting_more" | "awaiting_delivery_type"
-  | "awaiting_address" | "awaiting_payment" | "awaiting_confirm";
+  | "awaiting_street" | "awaiting_number" | "awaiting_neighborhood" | "awaiting_reference"
+  | "awaiting_payment" | "awaiting_change" | "awaiting_confirm";
 
 type CartItem = { product_id: string; name: string; unit_price: number; quantity: number };
 
@@ -128,11 +129,31 @@ const askDeliveryType = async (admin: any, storeId: string, phone: string, sessi
     "*🛵 Como deseja receber?*\n\n*1* — Entrega (delivery)\n*2* — Retirada no balcão");
 };
 
-const askAddress = async (admin: any, storeId: string, phone: string, session: Session) => {
-  session.current_step = "awaiting_address";
+const askStreet = async (admin: any, storeId: string, phone: string, session: Session) => {
+  session.current_step = "awaiting_street";
+  await setSession(admin, session);
+  await sendText(storeId, phone, "*📍 Qual o nome da *rua*?*\n\n_Exemplo: Rua das Flores_");
+};
+const askNumber = async (admin: any, storeId: string, phone: string, session: Session) => {
+  session.current_step = "awaiting_number";
+  await setSession(admin, session);
+  await sendText(storeId, phone, "*🔢 Qual o *número*?*\n\n_Se não tiver, responda *SN*._");
+};
+const askNeighborhood = async (admin: any, storeId: string, phone: string, session: Session) => {
+  session.current_step = "awaiting_neighborhood";
+  await setSession(admin, session);
+  await sendText(storeId, phone, "*🏘️ Qual o *bairro*?*");
+};
+const askReference = async (admin: any, storeId: string, phone: string, session: Session) => {
+  session.current_step = "awaiting_reference";
+  await setSession(admin, session);
+  await sendText(storeId, phone, "*📌 Complemento / ponto de referência?*\n\n_Ex: apto 12, ao lado da praça._\n_Se não tiver, responda *-*._");
+};
+const askChange = async (admin: any, storeId: string, phone: string, session: Session, total: number) => {
+  session.current_step = "awaiting_change";
   await setSession(admin, session);
   await sendText(storeId, phone,
-    "*📍 Envie seu endereço completo:*\n\n_Exemplo: Rua das Flores, 123, Centro — apto 4 (referência: perto da praça)_");
+    `*💵 Precisa de troco?*\n\nSeu total é ${BRL(total)}.\n\nResponda com o *valor em dinheiro* que vai entregar (ex: *50*), ou *NAO* se não precisar de troco.`);
 };
 
 const askPayment = async (admin: any, storeId: string, phone: string, session: Session, methods: string[]) => {
@@ -153,11 +174,20 @@ const showConfirmation = async (admin: any, storeId: string, phone: string, sess
   const cartText = session.cart.map(i => `• ${i.quantity}x ${i.name} — ${BRL(i.unit_price * i.quantity)}`).join("\n");
   const isDelivery = session.context.delivery_type === "delivery";
   const paymentLabel = ({ pix: "Pix", cash: "Dinheiro", card: "Cartão na entrega" } as any)[session.context.payment_method] || session.context.payment_method;
+  const addr = session.context;
+  const fullAddress = isDelivery
+    ? [addr.street, addr.number, addr.neighborhood ? `— ${addr.neighborhood}` : "", addr.reference ? `(${addr.reference})` : ""]
+        .filter(Boolean).join(" ")
+    : "Retirada no balcão";
+  const changeLine = session.context.payment_method === "cash" && session.context.needs_change
+    ? `Troco para: ${BRL(Number(session.context.change_for || 0))}` : "";
   const msg = [
     `*📝 Confirme seu pedido — ${storeName}*`, "",
+    `*Cliente:* ${session.context.customer_name || "—"}`,
     "*Itens:*", cartText, "",
-    `*Entrega:* ${isDelivery ? `Delivery — ${session.context.address}` : "Retirada no balcão"}`,
+    `*Entrega:* ${isDelivery ? `Delivery — ${fullAddress}` : "Retirada no balcão"}`,
     `*Pagamento:* ${paymentLabel}`,
+    changeLine,
     "",
     `Subtotal: ${BRL(subtotal)}`,
     isDelivery && deliveryFee > 0 ? `Taxa de entrega: ${BRL(deliveryFee)}` : "",
@@ -176,19 +206,70 @@ const createOrder = async (admin: any, storeId: string, phone: string, session: 
   const deliveryFee = Number(session.context.delivery_fee || 0);
   const total = subtotal + deliveryFee;
   const isDelivery = session.context.delivery_type === "delivery";
+  const customerName = String(session.context.customer_name || "").trim();
+  const addr = session.context;
+  const addressString = isDelivery
+    ? [addr.street, addr.number, addr.reference ? `Ref: ${addr.reference}` : ""].filter(Boolean).join(", ")
+    : "Retirada no balcão";
+
+  // 1) Cria/reaproveita guest user para vincular client_id (assim o painel mostra nome e telefone).
+  let clientId: string | null = null;
+  try {
+    const { data: existing } = await admin.from("guest_customers")
+      .select("user_id").eq("phone", phone).maybeSingle();
+    if (existing?.user_id) {
+      clientId = existing.user_id;
+    } else {
+      const email = `guest+${phone}@guest.itasuper.app`;
+      const password = crypto.randomUUID() + crypto.randomUUID();
+      const { data: created } = await admin.auth.admin.createUser({
+        email, password, email_confirm: true,
+        user_metadata: { guest: true, phone, name: customerName, source: "whatsapp_bot" },
+      });
+      if (created?.user?.id) {
+        clientId = created.user.id;
+      } else {
+        const { data: prof } = await admin.from("profiles").select("user_id").eq("phone", phone).maybeSingle();
+        clientId = (prof as any)?.user_id || null;
+      }
+    }
+    if (clientId) {
+      await admin.from("profiles").upsert(
+        { user_id: clientId, full_name: customerName || null, phone } as any,
+        { onConflict: "user_id" },
+      );
+      await admin.from("guest_customers").upsert(
+        { phone, user_id: clientId, name: customerName || null, last_store_id: storeId, consent_at: new Date().toISOString() } as any,
+        { onConflict: "phone" },
+      );
+    }
+  } catch (e) {
+    console.warn("[bot] guest link failed, seguindo sem client_id", e);
+  }
+
   const { data: order, error } = await admin.from("orders").insert({
     store_id: storeId,
-    client_id: null,
+    client_id: clientId,
     status: "pendente",
     subtotal,
     delivery_fee: deliveryFee,
     total_price: total,
     payment_method: session.context.payment_method,
-    neighborhood: session.context.neighborhood || "não informado",
-    address_details: isDelivery ? session.context.address : "Retirada no balcão",
+    neighborhood: isDelivery ? (session.context.neighborhood || "não informado") : "RETIRADA",
+    address_details: addressString,
+    needs_change: !!session.context.needs_change,
+    change_for: Number(session.context.change_for || 0),
     is_guest: true,
     order_source: "whatsapp_bot",
-    metadata: { source: "whatsapp_bot", customer_phone: phone },
+    metadata: {
+      source: "whatsapp_bot",
+      customer_phone: phone,
+      customer_name: customerName,
+      address_street: addr.street || null,
+      address_number: addr.number || null,
+      address_neighborhood: addr.neighborhood || null,
+      address_reference: addr.reference || null,
+    },
   }).select("id, order_number").single();
   if (error || !order) {
     console.error("[bot] order insert failed", error);
@@ -258,15 +339,27 @@ Deno.serve(async (req) => {
         ? String(cfg.welcome_message).replace(/\{loja\}/g, storeName)
         : `Olá! 👋 Aqui é o atendimento automático da *${storeName}*.\n\nPosso te ajudar a fazer seu pedido pelo WhatsApp mesmo. Vamos lá?`;
       await sendText(store_id, phone, welcome);
-      // Cria sessão vazia e mostra categorias
-      session = { store_id, phone, current_step: "welcome", cart: [], context: {} };
-      await showCategories(admin, store_id, phone, session);
+      // Antes de mostrar o cardápio, pede o nome do cliente
+      session = { store_id, phone, current_step: "awaiting_name", cart: [], context: {} };
+      await setSession(admin, session);
+      await sendText(store_id, phone, "*👤 Qual é o seu *nome*?*");
       return json({ handled: true, action: "welcome" });
     }
 
     // Roteia por estado
     const num = parseInt(text.trim(), 10);
     switch (session.current_step) {
+      case "awaiting_name": {
+        const name = text.trim().slice(0, 80);
+        if (name.length < 2) {
+          await sendText(store_id, phone, "Nome muito curto. Envie seu nome completo (mínimo 2 letras).");
+          return json({ handled: true, action: "invalid_name" });
+        }
+        session.context.customer_name = name;
+        await sendText(store_id, phone, `Prazer, *${name}*! 👋`);
+        await showCategories(admin, store_id, phone, session);
+        return json({ handled: true, action: "name_saved" });
+      }
       case "awaiting_category": {
         const cats: string[] = session.context.categories || [];
         if (!Number.isFinite(num) || num < 1 || num > cats.length) {
@@ -297,7 +390,7 @@ Deno.serve(async (req) => {
       case "awaiting_delivery_type": {
         if (num === 1) {
           session.context.delivery_type = "delivery";
-          await askAddress(admin, store_id, phone, session);
+          await askStreet(admin, store_id, phone, session);
         } else if (num === 2) {
           session.context.delivery_type = "retirada";
           const methods = (cfg.accepted_payment_methods || ["pix", "cash", "card"]).filter((m: string) => {
@@ -312,12 +405,34 @@ Deno.serve(async (req) => {
         }
         return json({ handled: true });
       }
-      case "awaiting_address": {
-        if (text.trim().length < 8) {
-          await sendText(store_id, phone, "Endereço muito curto. Envie rua, número e bairro.");
-          return json({ handled: true, action: "invalid_address" });
+      case "awaiting_street": {
+        const street = text.trim();
+        if (street.length < 3) {
+          await sendText(store_id, phone, "Nome de rua muito curto. Envie o nome completo.");
+          return json({ handled: true, action: "invalid_street" });
         }
-        session.context.address = text.trim();
+        session.context.street = street;
+        await askNumber(admin, store_id, phone, session);
+        return json({ handled: true });
+      }
+      case "awaiting_number": {
+        session.context.number = text.trim().slice(0, 20) || "SN";
+        await askNeighborhood(admin, store_id, phone, session);
+        return json({ handled: true });
+      }
+      case "awaiting_neighborhood": {
+        const nb = text.trim();
+        if (nb.length < 2) {
+          await sendText(store_id, phone, "Bairro inválido. Envie o nome do bairro.");
+          return json({ handled: true });
+        }
+        session.context.neighborhood = nb;
+        await askReference(admin, store_id, phone, session);
+        return json({ handled: true });
+      }
+      case "awaiting_reference": {
+        const ref = text.trim();
+        session.context.reference = (ref === "-" || ref === "") ? "" : ref.slice(0, 120);
         // Cálculo simples da taxa: usa a taxa fixa da loja (own_delivery_fee) + taxa da plataforma (R$ 0,99).
         // Não usamos cálculo por km porque o bot não tem GPS/CEP validado.
         const PLATFORM_FEE = 0.99;
@@ -342,6 +457,38 @@ Deno.serve(async (req) => {
           return json({ handled: true, action: "invalid_payment" });
         }
         session.context.payment_method = opts[num - 1];
+        // Se dinheiro → pergunta troco antes de confirmar
+        if (session.context.payment_method === "cash") {
+          const subtotal = session.cart.reduce((s, i) => s + i.unit_price * i.quantity, 0);
+          const total = subtotal + Number(session.context.delivery_fee || 0);
+          await askChange(admin, store_id, phone, session, total);
+          return json({ handled: true, action: "ask_change" });
+        }
+        session.context.needs_change = false;
+        session.context.change_for = 0;
+        await showConfirmation(admin, store_id, phone, session, storeName);
+        return json({ handled: true, action: "show_confirm" });
+      }
+      case "awaiting_change": {
+        const raw = normalize(text);
+        const subtotal = session.cart.reduce((s, i) => s + i.unit_price * i.quantity, 0);
+        const total = subtotal + Number(session.context.delivery_fee || 0);
+        if (/^(nao|não|n|0)$/i.test(raw)) {
+          session.context.needs_change = false;
+          session.context.change_for = 0;
+        } else {
+          const value = parseFloat(raw.replace(",", ".").replace(/[^0-9.]/g, ""));
+          if (!Number.isFinite(value) || value <= 0) {
+            await sendText(store_id, phone, "Não entendi. Envie o *valor em dinheiro* (ex: 50) ou *NAO*.");
+            return json({ handled: true, action: "invalid_change" });
+          }
+          if (value < total) {
+            await sendText(store_id, phone, `O valor precisa ser maior ou igual ao total (${BRL(total)}). Tente de novo ou envie *NAO*.`);
+            return json({ handled: true, action: "change_below_total" });
+          }
+          session.context.needs_change = true;
+          session.context.change_for = Math.round(value * 100) / 100;
+        }
         await showConfirmation(admin, store_id, phone, session, storeName);
         return json({ handled: true, action: "show_confirm" });
       }
