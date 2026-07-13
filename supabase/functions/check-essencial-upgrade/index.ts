@@ -1,6 +1,6 @@
 // Cron diário: promove Essencial R$0 → R$180/mês quando GMV últimos 60 dias >= R$5.000.
 // Roda contra Supabase EXTERNO (mesmo padrão de monthly-billing).
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "npm:@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
