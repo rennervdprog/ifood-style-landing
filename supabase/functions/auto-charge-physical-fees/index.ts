@@ -76,7 +76,16 @@ async function createAsaasCharge(params: {
       await fetch(`${baseUrl}/customers/${customerId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "access_token": apiKey },
-        body: JSON.stringify({ cpfCnpj: cpf }),
+        body: JSON.stringify({ cpfCnpj: cpf, notificationDisabled: true }),
+      });
+    }
+
+    // Garante que notificações estão desativadas (evita taxa de mensageria R$ 0,99)
+    if (customerId && existing?.notificationDisabled === false) {
+      await fetch(`${baseUrl}/customers/${customerId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "access_token": apiKey },
+        body: JSON.stringify({ notificationDisabled: true }),
       });
     }
 
@@ -92,6 +101,7 @@ async function createAsaasCharge(params: {
           email: params.customerEmail || `loja-${params.storeAccountId.substring(0, 8)}@itasuper.com`,
           cpfCnpj: cpf,
           externalReference: `store_${params.storeAccountId}`,
+          notificationDisabled: true,
         }),
       });
       const created = await createRes.json();
