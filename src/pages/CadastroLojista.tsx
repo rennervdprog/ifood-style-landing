@@ -555,7 +555,7 @@ const CadastroLojista = () => {
                   const Icon = p.icon;
                   const selected = selectedPlan === id;
                   const isExpanded = expandedPlan === id || selected;
-                  const isDynamic = id === "fixed";
+                  const isDynamic = id === "fixed" || id === "autonomy";
                   return (
                     <div
                       key={id}
@@ -686,7 +686,7 @@ const CadastroLojista = () => {
                           {isDynamic && (
                             <div className="rounded-lg border border-amber-500/40 bg-amber-500/5 px-3 py-2">
                               <p className="text-[11px] text-foreground leading-relaxed">
-                                <strong>📈 Plano dinâmico:</strong> se faturar mais de R$5.000/mês por 2 meses seguidos, a mensalidade sobe para <strong>R${id === "fixed" ? "180" : "100"}/mês</strong>. Você é avisado antes.
+                                <strong>📈 Plano dinâmico:</strong> começa em R$ 0/mês. Quando sua loja faturar <strong>R$ {id === "autonomy" ? "2.500" : "5.000"}</strong> (60 dias), a mensalidade passa a <strong>R$ {id === "autonomy" ? "329,90" : "180"}/mês</strong> — com 30 dias de aviso e seu aceite expresso.
                               </p>
                             </div>
                           )}
