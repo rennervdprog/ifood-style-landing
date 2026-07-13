@@ -95,7 +95,7 @@ const CadastroLojista = () => {
   const [expandedPlan, setExpandedPlan] = useState<"supporter" | "fixed" | "hybrid" | "commission_only" | "autonomy" | "pdv_only" | "">("");
   const isPdvOnly = selectedPlan === "pdv_only";
 
-  const isDynamicPlan = selectedPlan === "fixed" || selectedPlan === "hybrid";
+  const isDynamicPlan = selectedPlan === "fixed" || selectedPlan === "hybrid" || selectedPlan === "autonomy";
   useEffect(() => {
     setAcceptedDynamic(false);
   }, [selectedPlan]);
@@ -321,10 +321,10 @@ const CadastroLojista = () => {
               _network_name: networkName.trim(),
               _user_id: signUpData.user.id, // passar explícito — auth.uid() pode ser null neste momento
               _plan_type: selectedPlan,
-              _monthly_fee: selectedPlan === "fixed" ? 0 : selectedPlan === "hybrid" ? 50 : selectedPlan === "supporter" ? 75 : selectedPlan === "autonomy" ? 329.90 : 0,
-              _revenue_threshold: (selectedPlan === "fixed" || selectedPlan === "hybrid") ? 5000 : null,
-              _upgrade_monthly_fee: selectedPlan === "fixed" ? 180 : selectedPlan === "hybrid" ? 100 : null,
-              _upgrade_trigger_months: (selectedPlan === "fixed" || selectedPlan === "hybrid") ? 2 : null,
+              _monthly_fee: selectedPlan === "hybrid" ? 50 : selectedPlan === "supporter" ? 75 : 0,
+              _revenue_threshold: selectedPlan === "fixed" ? 5000 : selectedPlan === "autonomy" ? 2500 : selectedPlan === "hybrid" ? 5000 : null,
+              _upgrade_monthly_fee: selectedPlan === "fixed" ? 180 : selectedPlan === "autonomy" ? 329.90 : selectedPlan === "hybrid" ? 100 : null,
+              _upgrade_trigger_months: (selectedPlan === "fixed" || selectedPlan === "hybrid" || selectedPlan === "autonomy") ? 2 : null,
             });
             if (matrizErr) {
               console.warn("register_as_matriz aviso:", matrizErr.message);
@@ -555,7 +555,7 @@ const CadastroLojista = () => {
                   const Icon = p.icon;
                   const selected = selectedPlan === id;
                   const isExpanded = expandedPlan === id || selected;
-                  const isDynamic = id === "fixed";
+                  const isDynamic = id === "fixed" || id === "autonomy";
                   return (
                     <div
                       key={id}
@@ -686,7 +686,7 @@ const CadastroLojista = () => {
                           {isDynamic && (
                             <div className="rounded-lg border border-amber-500/40 bg-amber-500/5 px-3 py-2">
                               <p className="text-[11px] text-foreground leading-relaxed">
-                                <strong>📈 Plano dinâmico:</strong> se faturar mais de R$5.000/mês por 2 meses seguidos, a mensalidade sobe para <strong>R${id === "fixed" ? "180" : "100"}/mês</strong>. Você é avisado antes.
+                                <strong>📈 Plano dinâmico:</strong> começa em R$ 0/mês. Quando sua loja faturar <strong>R$ {id === "autonomy" ? "2.500" : "5.000"}</strong> (60 dias), a mensalidade passa a <strong>R$ {id === "autonomy" ? "329,90" : "180"}/mês</strong> — com 30 dias de aviso e seu aceite expresso.
                               </p>
                             </div>
                           )}

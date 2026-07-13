@@ -66,19 +66,19 @@ const plans = [
   {
     id: "autonomy",
     name: "Autonomia",
-    tagline: "Você cobra, o cliente paga. Sem acréscimo da plataforma.",
-    price: "329,90",
+    tagline: "Grátis pra começar. Sem acréscimo da plataforma na entrega.",
+    price: "0",
     commission: "0%",
     icon: Crown,
     highlight: false,
-    badge: "Sem taxa de R$2" as string | undefined,
+    badge: "🎁 Grátis pra começar" as string | undefined,
     features: [
-      "Tudo do plano Essencial",
+      "R$ 0/mês pra começar",
+      "Sobe pra R$ 329,90/mês após atingir R$ 2.500 em vendas",
       "SEM taxa de R$2 da plataforma na entrega",
       "Cliente paga exatamente a taxa que você define",
       "PIX online: R$1,99/pedido (só se usar)",
       "PDV: módulo opcional (+ R$ 49/mês)",
-      "7 dias grátis para testar",
     ],
   },
 ];
@@ -118,8 +118,8 @@ const faqs = [
     a: "É o quanto a plataforma cobra por pedido pra manter o motoboy integrado, o rastreamento e o suporte. No plano Essencial ela aparece pro cliente como acréscimo em cima da sua taxa de entrega. No plano Autonomia esse acréscimo é zero — o cliente paga exatamente a taxa que você define.",
   },
   {
-    q: "Quando vale a pena o plano Autonomia (R$329,90)?",
-    a: 'Se você sente que os R$2 extras estão afastando cliente, ou se prefere mostrar um preço de entrega "redondo" sem acréscimo, o Autonomia compensa a partir de ~165 pedidos/mês (R$2 × 165 = R$330). Tem 7 dias grátis pra testar.',
+    q: "Quando vale a pena o plano Autonomia?",
+    a: 'Se você sente que os R$2 extras estão afastando cliente, ou se prefere mostrar um preço de entrega "redondo" sem acréscimo, o Autonomia é ideal. Começa grátis (R$ 0/mês) e só sobe pra R$ 329,90/mês depois que sua loja faturar R$ 2.500 — com 30 dias de aviso e aceite expresso seu.',
   },
   {
     q: "O PDV está incluso em algum plano?",
@@ -348,7 +348,7 @@ const StoreDirectory = () => {
       url: "https://itasuper.com.br/",
       offers: [
         { "@type": "Offer", name: "Essencial", price: "0", priceCurrency: "BRL" },
-        { "@type": "Offer", name: "Autonomia", price: "329.90", priceCurrency: "BRL" },
+        { "@type": "Offer", name: "Autonomia", price: "0.00", priceCurrency: "BRL" },
         { "@type": "Offer", name: "Somente PDV", price: "69", priceCurrency: "BRL" },
       ],
     });
