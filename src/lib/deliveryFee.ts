@@ -23,7 +23,7 @@
     config: StoreDeliveryConfig
   ): Promise<DeliveryFeeResult> {
     // Get platform split from admin config if available, fallback to 2.0
-    const PLATFORM_FEE = config.platform_split ?? 2.0; 
+    const PLATFORM_FEE = config.platform_split ?? 0.99; 
     
     if (config.delivery_fee_type === 'fixed') {
       const totalFee = Number(config.own_delivery_fee || 0) + PLATFORM_FEE;

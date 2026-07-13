@@ -11,7 +11,7 @@ import { brl, exportCSV } from "@/components/finance/financeExport";
 const KIND_LABEL: Record<string, { label: string; icon: typeof Crown; color: string }> = {
   mensalidade: { label: "Mensalidade", icon: Crown, color: "text-primary" },
   comissao: { label: "Comissão", icon: Percent, color: "text-primary" },
-  entrega_fee: { label: "R$2/entrega", icon: Truck, color: "text-amber-500" },
+  entrega_fee: { label: "Taxa/entrega", icon: Truck, color: "text-amber-500" },
   pdv_fee: { label: "PDV", icon: ShoppingCart, color: "text-emerald-500" },
   repasse: { label: "Repasse", icon: CheckCircle2, color: "text-emerald-500" },
 };
@@ -79,7 +79,7 @@ const HistoricoRepassesTab = () => {
           <option value="all">Todos os tipos</option>
           <option value="mensalidade">Mensalidade</option>
           <option value="comissao">Comissão</option>
-          <option value="entrega_fee">R$2/entrega</option>
+          <option value="entrega_fee">Taxa/entrega</option>
           <option value="pdv_fee">PDV</option>
           <option value="repasse">Repasse genérico</option>
         </select>

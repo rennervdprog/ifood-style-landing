@@ -608,7 +608,7 @@ const CadastroLojista = () => {
                             PIX {p.pixFee === 0 ? "grátis" : `R$${p.pixFee.toFixed(2).replace(".", ",")}`}
                           </span>
                           <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted text-foreground/80">
-                            {id === "pdv_only" ? "Sem delivery" : `Entrega ${id === "autonomy" ? "sem taxa" : "+R$2"}`}
+                            {id === "pdv_only" ? "Sem delivery" : `Entrega ${id === "autonomy" ? "sem taxa" : "+R$ 0,99"}`}
                           </span>
                           {p.monthlyFee > 0 && (
                             <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-400">
@@ -669,8 +669,8 @@ const CadastroLojista = () => {
                             <div className="flex items-start gap-1.5 text-[11px] text-muted-foreground leading-relaxed">
                               <span>
                                 {id === "autonomy"
-                                  ? <>✨ Sem os R$2 da plataforma: você define a taxa de entrega e fica com 100%.</>
-                                  : <>Entrega: cliente paga sua taxa + R$2 da plataforma. Nada sai do seu caixa.</>}
+                                  ? <>✨ Sem os R$ 0,99 da plataforma: você define a taxa de entrega e fica com 100%.</>
+                                  : <>Entrega: cliente paga sua taxa + R$ 0,99 da plataforma. Nada sai do seu caixa.</>}
                               </span>
                               <WhyThisCharge title="Taxa de entrega">{DELIVERY_FEE_NOTE}</WhyThisCharge>
                             </div>

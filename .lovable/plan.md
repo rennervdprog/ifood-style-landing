@@ -1,66 +1,46 @@
+# Plano: Taxa da plataforma R$ 2,00 → R$ 0,99
 
-# Autonomia Dinâmica — grátis até R$2.500 GMV
+Reduzir a taxa fixa que a plataforma soma na entrega dos planos **Essencial**, **Apoiador** e **Comissão** de R$ 2,00 para **R$ 0,99**. Autonomia continua sem acréscimo (zero). Aplicável a **pedidos novos**; lojas com saldo pendente acumulado a R$ 2,00 mantêm o valor histórico até quitação.
 
-Reaproveitar a máquina do Essencial (agendamento + aviso prévio + aceite/recusa + VIP) e generalizar para o Autonomia. Caminho **rápido e seguro**: mesmas colunas `essencial_upgrade_*` já existentes, cron único cobre os dois planos, threshold e fee-alvo por plano.
+## Escopo da mudança
 
-## Regras de negócio
+### 1. Fonte de verdade (banco)
+- `admin_settings.delivery_fee_config.platform_split`: `2` → `0.99`
 
-- **Autonomia entra grátis:** `monthly_fee = 0` no cadastro.
-- **Gatilho:** GMV (pedidos `entregue`/`finalizado`) ≥ **R$ 2.500** em 60 dias.
-- **Aviso prévio:** 30 dias, exatamente como o Essencial.
-- **Aceite/Recusa** pelo lojista no painel (mesmo componente).
-- **Após aceite + prazo:** `monthly_fee` sobe para **R$ 329,90**.
-- **VIP `essencial_lifetime_free`** continua bloqueando upgrade (renomear label na UI para "Vitalício grátis").
-- **Overrides VIP** (PIX/entrega/comissão custom) também isentam — regra já existe, só estender pra autonomy.
+### 2. Código (fallbacks e defaults)
+- `src/lib/deliveryFee.ts` — fallback `?? 2.0` → `?? 0.99`
+- `src/lib/plansInfo.ts` — 4 ocorrências `deliveryFee: 2` → `0.99` (fixed, apoiador, comissão, hybrid)
+- `supabase/functions/confirm-order-payment/index.ts` — `let platformSplit = 2` → `0.99`
 
-## Mudanças
+### 3. Textos de UI
+- `src/pages/Index.tsx` — 3 menções (card Essencial, card Autonomia, FAQ)
+- `src/pages/StoreDirectory.tsx` — 6 menções (comparativo, FAQ, seção "R$2 a mais", card de preço R$ 2,00)
+- `src/pages/CadastroLojista.tsx` — 2 menções (`+R$2`, texto explicativo)
+- `src/lib/plansInfo.ts` — string `"Sem taxa de R$2 da plataforma"` + descrição longa
 
-### 1. Cron `check-essencial-upgrade` → cobrir autonomy
-- Query passa a filtrar `plan_type IN ('fixed','autonomy')` + `monthly_fee = 0` + `is_active`.
-- Tabela de config por plano dentro do código:
-  ```
-  fixed    → threshold 5000, target_fee 180
-  autonomy → threshold 2500, target_fee 329.90
-  ```
-- Mensagens WhatsApp já parametrizadas por `store.name` e `UPGRADE_FEE` — só passar dinâmico.
-- Sem mudança de schema.
+### 4. Termos de Uso (`src/pages/TermosDeUso.tsx`)
+- Cláusula planos Essencial, Autonomia, Apoiador, Comissão (4 linhas)
+- Cláusula 8.2 (métodos físicos, gatilho de R$ 30 continua igual)
+- Cláusula 9.4 (taxa de entrega)
+- Adicionar nota de versão: "Vigência a partir de {data}. Pedidos e saldos anteriores permanecem em R$ 2,00 até quitação."
 
-### 2. `register_as_lojista` (RPC no Supabase externo)
-- No branch `autonomy`, criar `store_plans` com `monthly_fee = 0` (hoje cria com 329,90).
-- Manter demais campos (commission 0, pix_operational_fee 1,99, platform_delivery_split_override 0, pdv fixo R$1).
+### 5. Edge functions e admin
+- `supabase/functions/auto-charge-physical-fees/index.ts` — descrição da cobrança e comentários
+- `src/pages/super-admin/tabs/HistoricoRepassesTab.tsx` — label `R$2/entrega` → `R$0,99/entrega`
+- `src/pages/super-admin/tabs/AReceberTab.tsx` — mesma label
 
-### 3. `src/lib/plansInfo.ts` — Autonomia
-- `tagline`: "Grátis pra começar — R$ 0/mês. Vira R$ 329,90/mês quando faturar R$ 2.500"
-- `monthlyFee: 0`
-- `badge`: "🎁 Grátis pra começar"
-- `features`: adicionar "R$ 0/mês até atingir R$ 2.500 em vendas" e "Sobe pra R$ 329,90/mês após o gatilho"
+### 6. Versão e comunicação
+- Bump `PerfilPage.tsx` + `android/app/build.gradle` (versionName + versionCode)
+- Nota curta no changelog do super-admin (opcional)
 
-### 4. UI do progresso (lojista)
-- Renomear `EssencialProgressCard` → `PlanUpgradeProgressCard` genérico recebendo `{ threshold, targetFee, planName }`.
-- Detectar plano ativo e escolher threshold automaticamente.
-- Reaproveita 100% do fluxo Aceitar/Recusar já existente.
+## Fora de escopo
+- Não alterar `store_balances.repasse_pendente` já acumulado (respeita valor histórico do pedido)
+- Não alterar taxa PIX Online (R$ 1,99) nem taxa PDV (R$ 1,00)
+- Não alterar Autonomia (continua zero)
+- Não alterar gatilhos de upgrade (R$ 5.000 Essencial / R$ 2.500 Autonomia) nem mensalidades
 
-### 5. Textos legais (`TermosDeUso.tsx`)
-- Adicionar cláusula do gatilho R$ 2.500 pro Autonomia (espelho da cláusula do Essencial R$ 5.000), incluindo 30 dias de aviso prévio e direito de recusa.
-
-### 6. Test store creator (Super Admin)
-- Nada a fazer — já cria Autonomia; só refletirá o novo `monthly_fee = 0` inicial.
-
-### 7. Testes Deno (`register-lojista-plans.test.ts`)
-- Ajustar `SPECS.autonomy.monthlyFee` para `0`.
-
-## Fora de escopo (não mexer)
-
-- Colunas novas no banco (usa as existentes).
-- Fluxo do PDV-only.
-- Comissão / PIX / split — permanecem iguais.
-- Lojas Autonomia **já ativas com R$ 329,90** — não rebaixar automaticamente. Se quiser oferecer retroativo, faço em migração manual separada só nas que você indicar.
-
-## Riscos
-
-- Lojas Autonomia existentes continuam pagando R$ 329,90 (correto — não é rebaixamento automático). Confirmar se você quer alguma exceção manual.
-- Cron único aumenta escopo do log — nada crítico, só mais entradas em `admin_logs`.
-
-## Entrega
-
-Uma versão só (patch), com bump automático de versão e revisão de segurança no fim.
+## Ordem de execução
+1. Migração `admin_settings` (update do JSON)
+2. Batch de edições de código + textos (parallel)
+3. Bump de versão
+4. Verificação: build + preview do landing e termos
