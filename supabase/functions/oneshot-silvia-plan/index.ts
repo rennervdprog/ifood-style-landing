@@ -8,7 +8,8 @@ async function q(sql:string){
 Deno.serve(async(req)=>{
   if(req.method==="OPTIONS")return new Response(null,{headers:cors});
   const out:any={};
-  out.store=await q(`select id,name,plan_type,essencial_lifetime_free,essencial_trigger_reached_at,essencial_paid_starts_at,essencial_upgrade_consent,created_at from stores where name ilike '%cantinho%silvia%'`);
-  out.gmv60=await q(`select coalesce(sum(total),0) as gmv, count(*) as n from orders where store_id='e14a110c-f0a1-4b25-8a71-554a9705fefa' and status in ('finalizado','entregue','concluido') and created_at > now() - interval '60 days'`);
+  out.cols=await q(`select column_name from information_schema.columns where table_schema='public' and table_name='stores' and (column_name ilike '%essencial%' or column_name ilike '%upgrade%' or column_name ilike '%lifetime%' or column_name ilike '%autonomia%')`);
+  out.store=await q(`select * from stores where name ilike '%cantinho%silvia%'`);
+  out.ordercols=await q(`select column_name from information_schema.columns where table_schema='public' and table_name='orders' and (column_name ilike '%total%' or column_name ilike '%valor%' or column_name ilike '%amount%')`);
   return new Response(JSON.stringify(out,null,2),{headers:{...cors,"Content-Type":"application/json"}});
 });
