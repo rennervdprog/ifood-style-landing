@@ -95,7 +95,7 @@ const CadastroLojista = () => {
   const [expandedPlan, setExpandedPlan] = useState<"supporter" | "fixed" | "hybrid" | "commission_only" | "autonomy" | "pdv_only" | "">("");
   const isPdvOnly = selectedPlan === "pdv_only";
 
-  const isDynamicPlan = selectedPlan === "fixed" || selectedPlan === "hybrid";
+  const isDynamicPlan = selectedPlan === "fixed" || selectedPlan === "hybrid" || selectedPlan === "autonomy";
   useEffect(() => {
     setAcceptedDynamic(false);
   }, [selectedPlan]);
@@ -321,10 +321,10 @@ const CadastroLojista = () => {
               _network_name: networkName.trim(),
               _user_id: signUpData.user.id, // passar explícito — auth.uid() pode ser null neste momento
               _plan_type: selectedPlan,
-              _monthly_fee: selectedPlan === "fixed" ? 0 : selectedPlan === "hybrid" ? 50 : selectedPlan === "supporter" ? 75 : selectedPlan === "autonomy" ? 329.90 : 0,
-              _revenue_threshold: (selectedPlan === "fixed" || selectedPlan === "hybrid") ? 5000 : null,
-              _upgrade_monthly_fee: selectedPlan === "fixed" ? 180 : selectedPlan === "hybrid" ? 100 : null,
-              _upgrade_trigger_months: (selectedPlan === "fixed" || selectedPlan === "hybrid") ? 2 : null,
+              _monthly_fee: selectedPlan === "hybrid" ? 50 : selectedPlan === "supporter" ? 75 : 0,
+              _revenue_threshold: selectedPlan === "fixed" ? 5000 : selectedPlan === "autonomy" ? 2500 : selectedPlan === "hybrid" ? 5000 : null,
+              _upgrade_monthly_fee: selectedPlan === "fixed" ? 180 : selectedPlan === "autonomy" ? 329.90 : selectedPlan === "hybrid" ? 100 : null,
+              _upgrade_trigger_months: (selectedPlan === "fixed" || selectedPlan === "hybrid" || selectedPlan === "autonomy") ? 2 : null,
             });
             if (matrizErr) {
               console.warn("register_as_matriz aviso:", matrizErr.message);
