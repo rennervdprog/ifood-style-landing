@@ -264,8 +264,8 @@ Deno.serve(async (req) => {
       }
     }
 
-    // MESSAGES_UPSERT (auto-reply)
-    if (/messages.?upsert/i.test(event) && cfg.auto_reply_enabled) {
+    // MESSAGES_UPSERT
+    if (/messages.?upsert/i.test(event)) {
       const key = data?.key || data?.messages?.[0]?.key || {};
       const fromMe = key?.fromMe;
       const remoteJid: string = key?.remoteJid || "";
@@ -277,8 +277,7 @@ Deno.serve(async (req) => {
         const text = incomingText(data);
 
         // ── Bot de menu guiado (Fase 1) ────────────────────────────────
-        // Se a loja tem bot ativo, delega TUDO pro handler do bot.
-        // Bot ignora dedupe/silêncio, pois é conversa em sessão.
+        // Roda ANTES do auto-reply e independe de auto_reply_enabled.
         try {
           const { data: botCfg } = await admin
             .from("whatsapp_bot_config")
@@ -297,8 +296,8 @@ Deno.serve(async (req) => {
               body: JSON.stringify({ store_id: cfg.store_id, phone: number, text }),
             });
             const botOut = await botRes.json().catch(() => ({} as any));
+            console.log("[evolution-webhook] bot dispatch", { store: cfg.store_id, phone: number, status: botRes.status, out: botOut });
             if (botOut?.handled) {
-              console.log("[evolution-webhook] bot handled", { store: cfg.store_id, phone: number, action: botOut.action });
               return json({ ok: true, bot: botOut.action || "handled" });
             }
             // handled=false → cai pra fluxo auto-reply normal (ex.: mensagem sem gatilho)
@@ -306,6 +305,9 @@ Deno.serve(async (req) => {
         } catch (e) {
           console.error("[evolution-webhook] bot dispatch failed", (e as any)?.message);
         }
+
+        // Se auto-reply está desligado, para aqui (bot já teve a chance).
+        if (!cfg.auto_reply_enabled) return json({ ok: true, skipped: "auto_reply_off" });
 
         // Log inbound SEMPRE (antes de qualquer skip) — usado para first-contact.
         const { error: inboundLogError } = await admin.from("whatsapp_inbound_log").insert({
