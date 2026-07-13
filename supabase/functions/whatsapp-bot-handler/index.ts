@@ -14,9 +14,10 @@ const BRL = (n: number) => `R$ ${n.toFixed(2).replace(".", ",")}`;
 const normalize = (t: string) => t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 
 type Step =
-  | "welcome" | "awaiting_category" | "awaiting_product"
+  | "welcome" | "awaiting_name" | "awaiting_category" | "awaiting_product"
   | "awaiting_more" | "awaiting_delivery_type"
-  | "awaiting_address" | "awaiting_payment" | "awaiting_confirm";
+  | "awaiting_street" | "awaiting_number" | "awaiting_neighborhood" | "awaiting_reference"
+  | "awaiting_payment" | "awaiting_change" | "awaiting_confirm";
 
 type CartItem = { product_id: string; name: string; unit_price: number; quantity: number };
 
@@ -128,11 +129,31 @@ const askDeliveryType = async (admin: any, storeId: string, phone: string, sessi
     "*🛵 Como deseja receber?*\n\n*1* — Entrega (delivery)\n*2* — Retirada no balcão");
 };
 
-const askAddress = async (admin: any, storeId: string, phone: string, session: Session) => {
-  session.current_step = "awaiting_address";
+const askStreet = async (admin: any, storeId: string, phone: string, session: Session) => {
+  session.current_step = "awaiting_street";
+  await setSession(admin, session);
+  await sendText(storeId, phone, "*📍 Qual o nome da *rua*?*\n\n_Exemplo: Rua das Flores_");
+};
+const askNumber = async (admin: any, storeId: string, phone: string, session: Session) => {
+  session.current_step = "awaiting_number";
+  await setSession(admin, session);
+  await sendText(storeId, phone, "*🔢 Qual o *número*?*\n\n_Se não tiver, responda *SN*._");
+};
+const askNeighborhood = async (admin: any, storeId: string, phone: string, session: Session) => {
+  session.current_step = "awaiting_neighborhood";
+  await setSession(admin, session);
+  await sendText(storeId, phone, "*🏘️ Qual o *bairro*?*");
+};
+const askReference = async (admin: any, storeId: string, phone: string, session: Session) => {
+  session.current_step = "awaiting_reference";
+  await setSession(admin, session);
+  await sendText(storeId, phone, "*📌 Complemento / ponto de referência?*\n\n_Ex: apto 12, ao lado da praça._\n_Se não tiver, responda *-*._");
+};
+const askChange = async (admin: any, storeId: string, phone: string, session: Session, total: number) => {
+  session.current_step = "awaiting_change";
   await setSession(admin, session);
   await sendText(storeId, phone,
-    "*📍 Envie seu endereço completo:*\n\n_Exemplo: Rua das Flores, 123, Centro — apto 4 (referência: perto da praça)_");
+    `*💵 Precisa de troco?*\n\nSeu total é ${BRL(total)}.\n\nResponda com o *valor em dinheiro* que vai entregar (ex: *50*), ou *NAO* se não precisar de troco.`);
 };
 
 const askPayment = async (admin: any, storeId: string, phone: string, session: Session, methods: string[]) => {
@@ -153,11 +174,20 @@ const showConfirmation = async (admin: any, storeId: string, phone: string, sess
   const cartText = session.cart.map(i => `• ${i.quantity}x ${i.name} — ${BRL(i.unit_price * i.quantity)}`).join("\n");
   const isDelivery = session.context.delivery_type === "delivery";
   const paymentLabel = ({ pix: "Pix", cash: "Dinheiro", card: "Cartão na entrega" } as any)[session.context.payment_method] || session.context.payment_method;
+  const addr = session.context;
+  const fullAddress = isDelivery
+    ? [addr.street, addr.number, addr.neighborhood ? `— ${addr.neighborhood}` : "", addr.reference ? `(${addr.reference})` : ""]
+        .filter(Boolean).join(" ")
+    : "Retirada no balcão";
+  const changeLine = session.context.payment_method === "cash" && session.context.needs_change
+    ? `Troco para: ${BRL(Number(session.context.change_for || 0))}` : "";
   const msg = [
     `*📝 Confirme seu pedido — ${storeName}*`, "",
+    `*Cliente:* ${session.context.customer_name || "—"}`,
     "*Itens:*", cartText, "",
-    `*Entrega:* ${isDelivery ? `Delivery — ${session.context.address}` : "Retirada no balcão"}`,
+    `*Entrega:* ${isDelivery ? `Delivery — ${fullAddress}` : "Retirada no balcão"}`,
     `*Pagamento:* ${paymentLabel}`,
+    changeLine,
     "",
     `Subtotal: ${BRL(subtotal)}`,
     isDelivery && deliveryFee > 0 ? `Taxa de entrega: ${BRL(deliveryFee)}` : "",
@@ -176,19 +206,70 @@ const createOrder = async (admin: any, storeId: string, phone: string, session: 
   const deliveryFee = Number(session.context.delivery_fee || 0);
   const total = subtotal + deliveryFee;
   const isDelivery = session.context.delivery_type === "delivery";
+  const customerName = String(session.context.customer_name || "").trim();
+  const addr = session.context;
+  const addressString = isDelivery
+    ? [addr.street, addr.number, addr.reference ? `Ref: ${addr.reference}` : ""].filter(Boolean).join(", ")
+    : "Retirada no balcão";
+
+  // 1) Cria/reaproveita guest user para vincular client_id (assim o painel mostra nome e telefone).
+  let clientId: string | null = null;
+  try {
+    const { data: existing } = await admin.from("guest_customers")
+      .select("user_id").eq("phone", phone).maybeSingle();
+    if (existing?.user_id) {
+      clientId = existing.user_id;
+    } else {
+      const email = `guest+${phone}@guest.itasuper.app`;
+      const password = crypto.randomUUID() + crypto.randomUUID();
+      const { data: created } = await admin.auth.admin.createUser({
+        email, password, email_confirm: true,
+        user_metadata: { guest: true, phone, name: customerName, source: "whatsapp_bot" },
+      });
+      if (created?.user?.id) {
+        clientId = created.user.id;
+      } else {
+        const { data: prof } = await admin.from("profiles").select("user_id").eq("phone", phone).maybeSingle();
+        clientId = (prof as any)?.user_id || null;
+      }
+    }
+    if (clientId) {
+      await admin.from("profiles").upsert(
+        { user_id: clientId, full_name: customerName || null, phone } as any,
+        { onConflict: "user_id" },
+      );
+      await admin.from("guest_customers").upsert(
+        { phone, user_id: clientId, name: customerName || null, last_store_id: storeId, consent_at: new Date().toISOString() } as any,
+        { onConflict: "phone" },
+      );
+    }
+  } catch (e) {
+    console.warn("[bot] guest link failed, seguindo sem client_id", e);
+  }
+
   const { data: order, error } = await admin.from("orders").insert({
     store_id: storeId,
-    client_id: null,
+    client_id: clientId,
     status: "pendente",
     subtotal,
     delivery_fee: deliveryFee,
     total_price: total,
     payment_method: session.context.payment_method,
-    neighborhood: session.context.neighborhood || "não informado",
-    address_details: isDelivery ? session.context.address : "Retirada no balcão",
+    neighborhood: isDelivery ? (session.context.neighborhood || "não informado") : "RETIRADA",
+    address_details: addressString,
+    needs_change: !!session.context.needs_change,
+    change_for: Number(session.context.change_for || 0),
     is_guest: true,
     order_source: "whatsapp_bot",
-    metadata: { source: "whatsapp_bot", customer_phone: phone },
+    metadata: {
+      source: "whatsapp_bot",
+      customer_phone: phone,
+      customer_name: customerName,
+      address_street: addr.street || null,
+      address_number: addr.number || null,
+      address_neighborhood: addr.neighborhood || null,
+      address_reference: addr.reference || null,
+    },
   }).select("id, order_number").single();
   if (error || !order) {
     console.error("[bot] order insert failed", error);
