@@ -88,6 +88,25 @@ export default function DashboardOverviewSection(props: Props) {
   });
   const isPdvOpen = !!pdvSession?.id;
 
+  // Cobrança PIX pendente (leva para aba Repasse)
+  const { data: pendingCharge } = useQuery({
+    queryKey: ["dashboard-pending-charge", store?.id],
+    queryFn: async () => {
+      const { data } = await (supabase as any)
+        .from("financial_transactions")
+        .select("id, amount, created_at")
+        .eq("store_id", store.id)
+        .eq("transaction_kind", "commission_charge")
+        .eq("status", "pending")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      return data as any;
+    },
+    enabled: !!store?.id,
+    refetchInterval: 30_000,
+  });
+
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite";
   const greetingEmoji = hour < 12 ? "☀️" : hour < 18 ? "🌤️" : "🌙";
@@ -154,6 +173,25 @@ export default function DashboardOverviewSection(props: Props) {
         <p className="text-xs text-muted-foreground mt-0.5">Toque para ver e resolver</p>
       </div>
       <ChevronRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+    </button>
+  )}
+
+  {pendingCharge && (
+    <button
+      onClick={() => setDashboardTab("plan")}
+      className="w-full text-left bg-primary/5 border-2 border-primary/40 rounded-2xl p-3.5 flex items-center gap-3 active:scale-[0.99] transition-transform"
+    >
+      <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground flex-shrink-0">
+        <CreditCard className="h-5 w-5" />
+        <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-destructive border-2 border-background animate-pulse" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <h3 className="text-sm font-black text-foreground">
+          Cobrança gerada — {formatBRL(Number(pendingCharge.amount || 0))}
+        </h3>
+        <p className="text-xs text-muted-foreground mt-0.5">Toque para pagar via PIX</p>
+      </div>
+      <ChevronRight className="h-5 w-5 text-primary flex-shrink-0" />
     </button>
   )}
 
