@@ -18,7 +18,7 @@ type Step =
   | "welcome" | "awaiting_main_menu"
   | "awaiting_existing_order_choice"
   | "awaiting_name" | "awaiting_category" | "awaiting_product"
-  | "awaiting_addon" | "awaiting_more" | "awaiting_delivery_type"
+  | "awaiting_addon" | "awaiting_observation" | "awaiting_more" | "awaiting_delivery_type"
   | "awaiting_address_choice"
   | "awaiting_street" | "awaiting_number" | "awaiting_neighborhood" | "awaiting_reference"
   | "awaiting_payment" | "awaiting_change" | "awaiting_confirm"
@@ -73,7 +73,7 @@ function getStoreOpenStatus(
 }
 
 type AddonSel = { group_id: string; group_name: string; name: string; price: number };
-type CartItem = { product_id: string; name: string; unit_price: number; quantity: number; addons?: AddonSel[] };
+type CartItem = { product_id: string; name: string; unit_price: number; quantity: number; addons?: AddonSel[]; observations?: string };
 
 interface Session {
   id?: string;
