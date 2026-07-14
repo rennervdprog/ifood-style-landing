@@ -17,7 +17,7 @@ type Step =
   | "welcome" | "awaiting_main_menu"
   | "awaiting_existing_order_choice"
   | "awaiting_name" | "awaiting_category" | "awaiting_product"
-  | "awaiting_more" | "awaiting_delivery_type"
+  | "awaiting_addon" | "awaiting_more" | "awaiting_delivery_type"
   | "awaiting_address_choice"
   | "awaiting_street" | "awaiting_number" | "awaiting_neighborhood" | "awaiting_reference"
   | "awaiting_payment" | "awaiting_change" | "awaiting_confirm"
@@ -70,7 +70,8 @@ function getStoreOpenStatus(
   return { isOpen: false, reason: "Fechado" };
 }
 
-type CartItem = { product_id: string; name: string; unit_price: number; quantity: number };
+type AddonSel = { group_id: string; group_name: string; name: string; price: number };
+type CartItem = { product_id: string; name: string; unit_price: number; quantity: number; addons?: AddonSel[] };
 
 interface Session {
   id?: string;
@@ -166,11 +167,96 @@ const showProducts = async (admin: any, storeId: string, phone: string, session:
 
 const askMore = async (admin: any, storeId: string, phone: string, session: Session) => {
   const total = session.cart.reduce((s, i) => s + i.unit_price * i.quantity, 0);
-  const cartText = session.cart.map(i => `• ${i.quantity}x ${i.name} — ${BRL(i.unit_price * i.quantity)}`).join("\n");
+  const cartText = session.cart.map(i => {
+    const ad = (i.addons || []).map(a => `   ↳ ${a.name}`).join("\n");
+    return `• ${i.quantity}x ${i.name} — ${BRL(i.unit_price * i.quantity)}${ad ? "\n" + ad : ""}`;
+  }).join("\n");
   const msg = `✅ *Item adicionado!*\n\n*Seu carrinho:*\n${cartText}\n\n*Subtotal:* ${BRL(total)}\n\n*1* — Adicionar mais itens\n*2* — Finalizar pedido\n\n_Digite *CANCELAR* para desistir._`;
   session.current_step = "awaiting_more";
   await setSession(admin, session);
   await sendText(storeId, phone, msg);
+};
+
+// Busca grupos de adicionais (diretos e vinculados via product_addon_groups) + itens.
+const fetchAddonGroupsFor = async (admin: any, storeId: string, productId: string) => {
+  const sel = "id,name,min_select,max_select,sort_order,price_replaces_base,addon_items(id,name,price,sort_order)";
+  const [directRes, linkedRes] = await Promise.all([
+    admin.from("addon_groups").select(sel).eq("product_id", productId).order("sort_order"),
+    admin.from("product_addon_groups")
+      .select(`addon_group_id,addon_groups(${sel})`)
+      .eq("product_id", productId),
+  ]);
+  const direct = (directRes.data || []) as any[];
+  const linked = ((linkedRes.data || []) as any[])
+    .map((r) => r.addon_groups)
+    .filter(Boolean)
+    .filter((g: any) => !direct.find((d) => d.id === g.id));
+  const groups = [...direct, ...linked]
+    .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
+    .map((g: any) => ({
+      id: g.id,
+      name: g.name,
+      min: Number(g.min_select || 0),
+      max: Number(g.max_select || 1),
+      price_replaces_base: !!g.price_replaces_base,
+      items: ((g.addon_items || []) as any[])
+        .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
+        .map((it: any) => ({ id: it.id, name: it.name, price: Number(it.price || 0) })),
+    }))
+    .filter((g) => g.items.length > 0);
+  return groups;
+};
+
+const askAddonGroup = async (admin: any, storeId: string, phone: string, session: Session) => {
+  const pp = session.context.pending_product;
+  const g = pp.groups[pp.group_idx];
+  const rule =
+    g.min === 0 && g.max === 1 ? "opcional, escolha 1"
+    : g.min === 1 && g.max === 1 ? "obrigatório, escolha 1"
+    : g.min === 0 ? `opcional, até ${g.max}`
+    : g.min === g.max ? `obrigatório, escolha ${g.min}`
+    : `escolha de ${g.min} a ${g.max}`;
+  const lines = [`*${g.name}* (${rule})`, ""];
+  g.items.forEach((it: any, i: number) => {
+    const priceStr = it.price > 0 ? ` (+${BRL(it.price)})` : "";
+    lines.push(`*${i + 1}* — ${it.name}${priceStr}`);
+  });
+  if (g.max > 1) lines.push("", "_Envie os números separados por vírgula (ex: 1,3)._");
+  else lines.push("", "_Responda com o *número* da opção._");
+  if (g.min === 0) lines.push("_Ou envie *0* para pular._");
+  session.current_step = "awaiting_addon";
+  await setSession(admin, session);
+  await sendText(storeId, phone, lines.join("\n"));
+};
+
+const finalizeProductWithAddons = async (admin: any, storeId: string, phone: string, session: Session) => {
+  const pp = session.context.pending_product;
+  const addons: AddonSel[] = pp.addons || [];
+  // preço: se algum grupo com price_replaces_base tem seleção, o base vira o maior preço desse grupo;
+  // demais adicionais somam normalmente.
+  let base = Number(pp.base_price || 0);
+  let extras = 0;
+  const replacedGroups = new Set<string>();
+  for (const g of pp.groups) {
+    const picks = addons.filter(a => a.group_id === g.id);
+    if (g.price_replaces_base && picks.length > 0) {
+      base = Math.max(...picks.map(a => a.price));
+      replacedGroups.add(g.id);
+    }
+  }
+  for (const a of addons) {
+    if (!replacedGroups.has(a.group_id)) extras += a.price;
+  }
+  const unit_price = Math.round((base + extras) * 100) / 100;
+  session.cart.push({
+    product_id: pp.product_id,
+    name: pp.name,
+    unit_price,
+    quantity: 1,
+    addons: addons.map(a => ({ group_id: a.group_id, group_name: a.group_name, name: a.name, price: a.price })),
+  });
+  session.context.pending_product = null;
+  await askMore(admin, storeId, phone, session);
 };
 
 const askDeliveryType = async (admin: any, storeId: string, phone: string, session: Session) => {
@@ -256,7 +342,10 @@ const showConfirmation = async (admin: any, storeId: string, phone: string, sess
   const subtotal = session.cart.reduce((s, i) => s + i.unit_price * i.quantity, 0);
   const deliveryFee = Number(session.context.delivery_fee || 0);
   const total = subtotal + deliveryFee;
-  const cartText = session.cart.map(i => `• ${i.quantity}x ${i.name} — ${BRL(i.unit_price * i.quantity)}`).join("\n");
+  const cartText = session.cart.map(i => {
+    const ad = (i.addons || []).map(a => `   ↳ ${a.name}`).join("\n");
+    return `• ${i.quantity}x ${i.name} — ${BRL(i.unit_price * i.quantity)}${ad ? "\n" + ad : ""}`;
+  }).join("\n");
   const isDelivery = session.context.delivery_type === "delivery";
   const paymentLabel = ({ pix: "Pix", cash: "Dinheiro", card: "Cartão na entrega" } as any)[session.context.payment_method] || session.context.payment_method;
   const addr = session.context;
@@ -338,7 +427,8 @@ const startPixDireto = async (admin: any, storeId: string, phone: string, sessio
   }
   const items = session.cart.map(i => ({
     order_id: order.id, product_id: i.product_id,
-    quantity: i.quantity, unit_price: i.unit_price, addons: [],
+    quantity: i.quantity, unit_price: i.unit_price,
+    addons: (i.addons || []).map(a => ({ name: a.name, price: a.price, group_name: a.group_name })),
   }));
   await admin.from("order_items").insert(items);
 
@@ -488,7 +578,8 @@ const createOrder = async (admin: any, storeId: string, phone: string, session: 
   }
   const items = session.cart.map(i => ({
     order_id: order.id, product_id: i.product_id,
-    quantity: i.quantity, unit_price: i.unit_price, addons: [],
+    quantity: i.quantity, unit_price: i.unit_price,
+    addons: (i.addons || []).map(a => ({ name: a.name, price: a.price, group_name: a.group_name })),
   }));
   await admin.from("order_items").insert(items);
   const num = `#${order.id.slice(0, 8).toUpperCase()}`;
@@ -733,9 +824,51 @@ Deno.serve(async (req) => {
           return json({ handled: true, action: "invalid_product" });
         }
         const p = prods[num - 1];
-        session.cart.push({ product_id: p.id, name: p.name, unit_price: p.price, quantity: 1 });
-        await askMore(admin, store_id, phone, session);
-        return json({ handled: true, action: "added_item" });
+        const groups = await fetchAddonGroupsFor(admin, store_id, p.id);
+        if (groups.length === 0) {
+          session.cart.push({ product_id: p.id, name: p.name, unit_price: p.price, quantity: 1, addons: [] });
+          await askMore(admin, store_id, phone, session);
+          return json({ handled: true, action: "added_item" });
+        }
+        session.context.pending_product = {
+          product_id: p.id, name: p.name, base_price: p.price, quantity: 1,
+          groups, group_idx: 0, addons: [],
+        };
+        await askAddonGroup(admin, store_id, phone, session);
+        return json({ handled: true, action: "ask_addon" });
+      }
+      case "awaiting_addon": {
+        const pp = session.context.pending_product;
+        if (!pp) { await showCategories(admin, store_id, phone, session); return json({ handled: true }); }
+        const g = pp.groups[pp.group_idx];
+        const raw = text.trim();
+        const skipped = raw === "0" && g.min === 0;
+        let picks: number[] = [];
+        if (!skipped) {
+          picks = raw.split(/[,\s;]+/).map((s) => parseInt(s, 10)).filter((n) => Number.isFinite(n) && n >= 1 && n <= g.items.length);
+          picks = Array.from(new Set(picks));
+          if (g.max === 1 && picks.length > 1) picks = [picks[0]];
+          if (picks.length < g.min) {
+            await sendText(store_id, phone, `Escolha pelo menos *${g.min}* opção(ões) de *${g.name}*.`);
+            return json({ handled: true, action: "addon_below_min" });
+          }
+          if (picks.length > g.max) {
+            await sendText(store_id, phone, `Escolha no máximo *${g.max}* opção(ões) de *${g.name}*.`);
+            return json({ handled: true, action: "addon_above_max" });
+          }
+        }
+        for (const i of picks) {
+          const it = g.items[i - 1];
+          pp.addons.push({ group_id: g.id, group_name: g.name, name: it.name, price: it.price });
+        }
+        pp.group_idx += 1;
+        session.context.pending_product = pp;
+        if (pp.group_idx < pp.groups.length) {
+          await askAddonGroup(admin, store_id, phone, session);
+          return json({ handled: true, action: "next_addon" });
+        }
+        await finalizeProductWithAddons(admin, store_id, phone, session);
+        return json({ handled: true, action: "product_finalized" });
       }
       case "awaiting_more": {
         if (num === 1) { await showCategories(admin, store_id, phone, session); return json({ handled: true }); }
