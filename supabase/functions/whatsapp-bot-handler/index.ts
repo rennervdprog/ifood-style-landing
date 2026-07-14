@@ -1105,6 +1105,26 @@ Deno.serve(async (req) => {
         await setPostOrderCooldown(admin, store_id, phone, `#${String(orderId).slice(0,8).toUpperCase()}`);
         return json({ handled: true, action: "pix_proof_saved" });
       }
+      case "post_order_cooldown": {
+        // Silêncio pós-pedido: só avisa 1 vez, depois fica mudo até expirar.
+        // Escape/cancelar já são tratados antes de chegar aqui.
+        if (!session.context?.notified) {
+          session.context = { ...(session.context || {}), notified: true };
+          await setSession(admin, {
+            ...session,
+            current_step: "post_order_cooldown",
+          });
+          // Reafirma expires_at longo (setSession usa 15min por padrão).
+          await admin.from("whatsapp_bot_sessions")
+            .update({ expires_at: new Date(Date.now() + POST_ORDER_COOLDOWN_MS).toISOString() })
+            .eq("store_id", store_id).eq("phone", phone);
+          const code = session.context?.order_code || "seu pedido";
+          await sendText(store_id, phone,
+            `✅ Recebi! Seu pedido *${code}* já está com a loja.\n\nPra evitar bloqueio do WhatsApp, vou ficar em silêncio por aqui. Quando quiser *falar com atendente*, é só escrever *atendente*. Pra fazer *outro pedido*, mande *MENU* mais tarde. 💚`);
+          return json({ handled: true, action: "post_order_ack" });
+        }
+        return json({ handled: true, action: "post_order_silent" });
+      }
       default:
         await clearSession(admin, store_id, phone);
         return json({ handled: false, reason: "unknown_step" });
