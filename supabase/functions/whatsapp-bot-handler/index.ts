@@ -553,6 +553,26 @@ Deno.serve(async (req) => {
 
     let session = await loadSession(admin, store_id, phone);
 
+    // Verifica horário de funcionamento (só bloqueia se não há pedido em andamento).
+    if (!session) {
+      const { data: hoursRows } = await admin
+        .from("opening_hours")
+        .select("day_of_week, open_time, close_time, is_closed_all_day")
+        .eq("store_id", store_id);
+      const status = getStoreOpenStatus(
+        (hoursRows || []) as any,
+        Boolean(store?.force_closed),
+        store?.is_open !== false,
+      );
+      if (!status.isOpen) {
+        const triggeredClosed = (cfg.trigger_keywords || []).some((k: string) => norm.includes(normalize(k)));
+        if (!triggeredClosed) return json({ handled: false, reason: "closed_no_trigger" });
+        await sendText(store_id, phone,
+          `🌙 *${storeName}* está fechada no momento.\n\n${status.reason}.\n\nQuando abrirmos, é só mandar *MENU* que te atendo. 💚`);
+        return json({ handled: true, action: "store_closed", reason: status.reason });
+      }
+    }
+
     // Sem sessão: verifica gatilho
     if (!session) {
       const triggered = (cfg.trigger_keywords || []).some((k: string) => norm.includes(normalize(k)));
