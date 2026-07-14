@@ -107,10 +107,6 @@ const sendText = async (storeId: string, phone: string, message: string) => {
   return true;
 };
 
-const setSession = async (admin: any, s: Session) => {
-  return _setSession(admin, s);
-};
-
 async function sendDeliveryFeeInfo(storeId: string, phone: string, storeFee: number, platformFee: number) {
   const total = Math.round((storeFee + platformFee) * 100) / 100;
   const lines = [
@@ -126,7 +122,7 @@ async function sendDeliveryFeeInfo(storeId: string, phone: string, storeFee: num
   try { await sendText(storeId, phone, lines.join("\n")); } catch (e) { console.error("[bot] sendDeliveryFeeInfo", e); }
 }
 
-const _setSession = async (admin: any, s: Session) => {
+const setSession = async (admin: any, s: Session) => {
   const expires = new Date(Date.now() + 15 * 60_000).toISOString();
   await admin.from("whatsapp_bot_sessions").upsert(
     {
