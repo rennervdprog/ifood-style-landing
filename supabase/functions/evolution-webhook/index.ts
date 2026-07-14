@@ -75,6 +75,43 @@ const incomingPhone = (data: any) => {
   return best.split("@")[0].replace(/\D/g, "");
 };
 
+const hasImageMessage = (data: any) => {
+  const msg = data?.message || data?.messages?.[0]?.message || {};
+  return Boolean(msg.imageMessage);
+};
+
+// Baixa imagem via Evolution API (base64) — usado para comprovantes Pix Direto do bot.
+const fetchImageBase64 = async (instance: string, data: any): Promise<{ base64: string; mime: string } | null> => {
+  const baseUrl = Deno.env.get("EVOLUTION_API_URL");
+  const apiKey = Deno.env.get("EVOLUTION_GLOBAL_API_KEY");
+  if (!baseUrl || !apiKey) return null;
+  const key = data?.key || data?.messages?.[0]?.key;
+  const msg = data?.message || data?.messages?.[0]?.message;
+  if (!key || !msg) return null;
+  const mime = String(msg?.imageMessage?.mimetype || "image/jpeg");
+  try {
+    const r = await fetch(
+      `${baseUrl.replace(/\/$/, "")}/chat/getBase64FromMediaMessage/${encodeURIComponent(instance)}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json", apikey: apiKey },
+        body: JSON.stringify({ message: { key, message: msg }, convertToMp4: false }),
+      },
+    );
+    if (!r.ok) {
+      console.warn("[evolution-webhook] getBase64 failed", r.status);
+      return null;
+    }
+    const out: any = await r.json().catch(() => null);
+    const base64 = out?.base64 || out?.data || out?.body || null;
+    if (typeof base64 !== "string" || base64.length < 32) return null;
+    return { base64, mime };
+  } catch (e) {
+    console.warn("[evolution-webhook] getBase64 error", (e as any)?.message);
+    return null;
+  }
+};
+
 const normalize = (text: string) =>
   text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 
@@ -283,6 +320,18 @@ Deno.serve(async (req) => {
             .from("whatsapp_bot_config")
             .select("enabled").eq("store_id", cfg.store_id).maybeSingle();
           if (botCfg?.enabled) {
+            // Se a sessão do bot está aguardando comprovante e chegou imagem,
+            // baixamos base64 e passamos junto pro handler processar.
+            let image_base64: string | undefined;
+            let image_mime: string | undefined;
+            if (hasImageMessage(data)) {
+              const { data: sess } = await admin.from("whatsapp_bot_sessions")
+                .select("current_step").eq("store_id", cfg.store_id).eq("phone", number).maybeSingle();
+              if ((sess as any)?.current_step === "awaiting_pix_proof") {
+                const img = await fetchImageBase64(instance, data);
+                if (img) { image_base64 = img.base64; image_mime = img.mime; }
+              }
+            }
             const botBase = Deno.env.get("SUPABASE_URL") || Deno.env.get("EXTERNAL_SUPABASE_URL")!;
             const botKey = Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
             const botRes = await fetch(`${botBase}/functions/v1/whatsapp-bot-handler`, {
@@ -293,7 +342,7 @@ Deno.serve(async (req) => {
                 Authorization: `Bearer ${botKey}`,
                 "x-internal-token": Deno.env.get("EVOLUTION_WEBHOOK_TOKEN") || "",
               },
-              body: JSON.stringify({ store_id: cfg.store_id, phone: number, text }),
+              body: JSON.stringify({ store_id: cfg.store_id, phone: number, text, image_base64, image_mime }),
             });
             const botOut = await botRes.json().catch(() => ({} as any));
             console.log("[evolution-webhook] bot dispatch", { store: cfg.store_id, phone: number, status: botRes.status, out: botOut });
