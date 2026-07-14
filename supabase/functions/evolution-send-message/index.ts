@@ -116,8 +116,8 @@ Deno.serve(async (req) => {
     console.log("[evolution-send-message] ▶ store_id=", store_id, "phone=", maskedPhone, "kind=", kind, "msgLen=", message.length);
 
     const admin = createClient(
-      Deno.env.get("EXTERNAL_SUPABASE_URL")!,
-      (Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY"))!,
+      (Deno.env.get("EXTERNAL_SUPABASE_URL") || Deno.env.get("SUPABASE_URL"))!,
+      (Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"))!,
     );
 
     if (!(await isAuthorizedForStore(admin, req, store_id))) {
