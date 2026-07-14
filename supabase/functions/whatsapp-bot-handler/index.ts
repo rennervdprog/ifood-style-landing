@@ -167,7 +167,10 @@ const showProducts = async (admin: any, storeId: string, phone: string, session:
 
 const askMore = async (admin: any, storeId: string, phone: string, session: Session) => {
   const total = session.cart.reduce((s, i) => s + i.unit_price * i.quantity, 0);
-  const cartText = session.cart.map(i => `• ${i.quantity}x ${i.name} — ${BRL(i.unit_price * i.quantity)}`).join("\n");
+  const cartText = session.cart.map(i => {
+    const ad = (i.addons || []).map(a => `   ↳ ${a.name}`).join("\n");
+    return `• ${i.quantity}x ${i.name} — ${BRL(i.unit_price * i.quantity)}${ad ? "\n" + ad : ""}`;
+  }).join("\n");
   const msg = `✅ *Item adicionado!*\n\n*Seu carrinho:*\n${cartText}\n\n*Subtotal:* ${BRL(total)}\n\n*1* — Adicionar mais itens\n*2* — Finalizar pedido\n\n_Digite *CANCELAR* para desistir._`;
   session.current_step = "awaiting_more";
   await setSession(admin, session);
@@ -339,7 +342,10 @@ const showConfirmation = async (admin: any, storeId: string, phone: string, sess
   const subtotal = session.cart.reduce((s, i) => s + i.unit_price * i.quantity, 0);
   const deliveryFee = Number(session.context.delivery_fee || 0);
   const total = subtotal + deliveryFee;
-  const cartText = session.cart.map(i => `• ${i.quantity}x ${i.name} — ${BRL(i.unit_price * i.quantity)}`).join("\n");
+  const cartText = session.cart.map(i => {
+    const ad = (i.addons || []).map(a => `   ↳ ${a.name}`).join("\n");
+    return `• ${i.quantity}x ${i.name} — ${BRL(i.unit_price * i.quantity)}${ad ? "\n" + ad : ""}`;
+  }).join("\n");
   const isDelivery = session.context.delivery_type === "delivery";
   const paymentLabel = ({ pix: "Pix", cash: "Dinheiro", card: "Cartão na entrega" } as any)[session.context.payment_method] || session.context.payment_method;
   const addr = session.context;
