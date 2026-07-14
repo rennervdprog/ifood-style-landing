@@ -1,3 +1,4 @@
+import { createClient } from "npm:@supabase/supabase-js@2.49.4";
 const cors = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "*" };
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: cors });
@@ -10,7 +11,6 @@ Deno.serve(async (req) => {
   const target = `${ext}/functions/v1/evolution-webhook?token=${token}`;
 
   if (mode === "diag") {
-    const { createClient } = await import("npm:@supabase/supabase-js@2.49.4");
     const admin = createClient(Deno.env.get("EXTERNAL_SUPABASE_URL")!, (Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY"))!);
     const storeId = "e14a110c-f0a1-4b25-8a71-554a9705fefa";
     const out: any = {};
