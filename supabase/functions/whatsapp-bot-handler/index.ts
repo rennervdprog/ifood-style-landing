@@ -22,7 +22,8 @@ type Step =
   | "awaiting_address_choice"
   | "awaiting_street" | "awaiting_number" | "awaiting_neighborhood" | "awaiting_reference"
   | "awaiting_payment" | "awaiting_change" | "awaiting_confirm"
-  | "awaiting_pix_proof";
+  | "awaiting_pix_proof"
+  | "post_order_cooldown";
 
 const CANONICAL_HOST = "https://itasuper.com.br";
 const onlyDigits = (p: string) => String(p || "").replace(/\D/g, "");
@@ -113,6 +114,26 @@ const setSession = async (admin: any, s: Session) => {
       store_id: s.store_id, phone: s.phone,
       current_step: s.current_step, cart: s.cart, context: s.context,
       last_message_at: new Date().toISOString(), expires_at: expires,
+    },
+    { onConflict: "store_id,phone" },
+  );
+};
+
+// Cooldown pós-pedido: 2h de silêncio (só 1 aviso na 1ª mensagem).
+// Evita rajada de respostas que aumenta risco de ban do chip.
+const POST_ORDER_COOLDOWN_MS = 2 * 60 * 60_000;
+const setPostOrderCooldown = async (
+  admin: any, storeId: string, phone: string, orderCode: string,
+) => {
+  const expires = new Date(Date.now() + POST_ORDER_COOLDOWN_MS).toISOString();
+  await admin.from("whatsapp_bot_sessions").upsert(
+    {
+      store_id: storeId, phone,
+      current_step: "post_order_cooldown",
+      cart: [],
+      context: { order_code: orderCode, notified: false },
+      last_message_at: new Date().toISOString(),
+      expires_at: expires,
     },
     { onConflict: "store_id,phone" },
   );
