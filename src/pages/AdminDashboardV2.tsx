@@ -41,6 +41,7 @@ const MenuBuilder = lazy(() => import("@/components/MenuBuilder"));
 const SupportTicketModal = lazy(() => import("@/components/SupportTicketModal"));
 import { notifyOrderStatusChange, buildWhatsAppMessage, buildRichItemsBlock, buildEtaWindow } from "@/lib/orderNotifications";
 import { getStoreOpenStatus } from "@/lib/storeStatus";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 // Tabs carregadas sob demanda — só baixa o JS quando o lojista abrir a aba
 const TutoriaisTab = lazy(() => import("./admin/tabs/TutoriaisTab"));
 const SubscriptionTab = lazy(() => import("./admin/tabs/SubscriptionTab"));
