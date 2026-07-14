@@ -461,7 +461,10 @@ Deno.serve(async (req) => {
     const token = req.headers.get("x-internal-token") || "";
     if (token !== Deno.env.get("EVOLUTION_WEBHOOK_TOKEN")) return json({ error: "forbidden" }, 403);
 
-    const { store_id, phone, text } = await req.json();
+    const body = await req.json();
+    const { store_id, phone, text } = body as { store_id: string; phone: string; text: string };
+    const image_base64: string | undefined = body?.image_base64;
+    const image_mime: string | undefined = body?.image_mime;
     if (!store_id || !phone || typeof text !== "string") return json({ error: "invalid payload" }, 400);
 
     const admin = createClient(
@@ -474,7 +477,7 @@ Deno.serve(async (req) => {
     if (!cfg || !cfg.enabled) return json({ handled: false, reason: "bot_disabled" });
 
     const { data: store, error: storeErr } = await admin.from("stores")
-      .select("name, settings, delivery_mode, delivery_fee_type, own_delivery_fee, delivery_fee, delivery_fee_base, minimum_order_value")
+      .select("name, slug, settings, delivery_mode, delivery_fee_type, own_delivery_fee, delivery_fee, delivery_fee_base, minimum_order_value, pix_direto_enabled, pix_direto_key, pix_direto_key_type, pix_direto_beneficiary, pix_direto_instructions")
       .eq("id", store_id).maybeSingle();
     if (storeErr) console.error("[bot] store select error", storeErr);
     const storeName = store?.name || "loja";
@@ -484,6 +487,9 @@ Deno.serve(async (req) => {
       cash: settings.accept_cash !== false,
       card: settings.accept_card !== false,
     };
+    const pixDiretoOn = Boolean(store?.pix_direto_enabled && store?.pix_direto_key);
+    const storeSlug = store?.slug || "";
+    const storeUrl = storeSlug ? `${CANONICAL_HOST}/${storeSlug}` : CANONICAL_HOST;
 
     // Palavra de escape → encerra bot silenciosamente
     const norm = normalize(text);
@@ -506,20 +512,70 @@ Deno.serve(async (req) => {
     if (!session) {
       const triggered = (cfg.trigger_keywords || []).some((k: string) => norm.includes(normalize(k)));
       if (!triggered) return json({ handled: false, reason: "no_trigger" });
-      const welcome = cfg.welcome_message
-        ? String(cfg.welcome_message).replace(/\{loja\}/g, storeName)
-        : `Olá! 👋 Aqui é o atendimento automático da *${storeName}*.\n\nPosso te ajudar a fazer seu pedido pelo WhatsApp mesmo. Vamos lá?`;
-      await sendText(store_id, phone, welcome);
-      // Antes de mostrar o cardápio, pede o nome do cliente
-      session = { store_id, phone, current_step: "awaiting_name", cart: [], context: {} };
+      // Reconhece cliente pelo telefone
+      const digits = onlyDigits(phone);
+      const { data: known } = await admin.from("profiles")
+        .select("user_id, full_name")
+        .eq("phone", digits)
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      const knownName = (known as any)?.full_name || null;
+      const clientId = (known as any)?.user_id || null;
+      const greeting = knownName
+        ? `Olá, *${String(knownName).split(" ")[0]}*! 👋 Que bom te ver de novo na *${storeName}*.`
+        : `Olá! 👋 Bem-vindo à *${storeName}*.`;
+      const menu = [
+        greeting, "",
+        "Como posso te ajudar hoje?", "",
+        "*1* — 🛒 Fazer pedido aqui pelo WhatsApp",
+        "*2* — 📱 Ver cardápio completo no site",
+        "*3* — 💬 Falar com um atendente",
+      ].join("\n");
+      session = {
+        store_id, phone,
+        current_step: "awaiting_main_menu",
+        cart: [],
+        context: {
+          client_id: clientId,
+          customer_name: knownName || undefined,
+          store_url: storeUrl,
+        },
+      };
       await setSession(admin, session);
-      await sendText(store_id, phone, "*👤 Qual é o seu *nome*?*");
+      await sendText(store_id, phone, menu);
       return json({ handled: true, action: "welcome" });
     }
 
     // Roteia por estado
     const num = parseInt(text.trim(), 10);
     switch (session.current_step) {
+      case "awaiting_main_menu": {
+        if (num === 2) {
+          await sendText(store_id, phone,
+            `📱 Aqui está nosso cardápio completo:\n\n${storeUrl}\n\nQualquer dúvida é só chamar! ✨`);
+          await clearSession(admin, store_id, phone);
+          return json({ handled: true, action: "menu_link_sent" });
+        }
+        if (num === 3) {
+          await clearSession(admin, store_id, phone);
+          await sendText(store_id, phone, "👋 Um atendente humano vai te responder em instantes. Aguarde só um momento.");
+          return json({ handled: true, action: "escape_menu" });
+        }
+        if (num === 1) {
+          if (session.context.customer_name) {
+            await sendText(store_id, phone, `Perfeito, *${String(session.context.customer_name).split(" ")[0]}*! Bora escolher. 🛒`);
+            await showCategories(admin, store_id, phone, session);
+          } else {
+            session.current_step = "awaiting_name";
+            await setSession(admin, session);
+            await sendText(store_id, phone, "*👤 Qual é o seu nome?*");
+          }
+          return json({ handled: true, action: "chose_order" });
+        }
+        await sendText(store_id, phone, "Responda *1*, *2* ou *3* pra escolher.");
+        return json({ handled: true, action: "invalid_menu" });
+      }
       case "awaiting_name": {
         const name = text.trim().slice(0, 80);
         if (name.length < 2) {
@@ -561,7 +617,7 @@ Deno.serve(async (req) => {
       case "awaiting_delivery_type": {
         if (num === 1) {
           session.context.delivery_type = "delivery";
-          await askStreet(admin, store_id, phone, session);
+          await maybeOfferSavedAddress(admin, store_id, phone, session);
         } else if (num === 2) {
           session.context.delivery_type = "retirada";
           const methods = (cfg.accepted_payment_methods || ["pix", "cash", "card"]).filter((m: string) => {
@@ -570,11 +626,40 @@ Deno.serve(async (req) => {
             if (m === "card") return accepts.card;
             return true;
           });
-          await askPayment(admin, store_id, phone, session, methods);
+          await askPayment(admin, store_id, phone, session, methods, pixDiretoOn);
         } else {
           await sendText(store_id, phone, "Responda *1* para Delivery ou *2* para Retirada.");
         }
         return json({ handled: true });
+      }
+      case "awaiting_address_choice": {
+        const saved = session.context.saved_address;
+        if (num === 1 && saved) {
+          session.context.street = saved.street;
+          session.context.number = saved.number;
+          session.context.neighborhood = saved.neighborhood;
+          session.context.reference = saved.reference_point || saved.complement || "";
+          const PLATFORM_FEE = 0.99;
+          const flat =
+            Number(store?.own_delivery_fee || 0) ||
+            Number(store?.delivery_fee || 0) ||
+            Number(store?.delivery_fee_base || 0);
+          session.context.delivery_fee = Math.round((flat + PLATFORM_FEE) * 100) / 100;
+          const methods = (cfg.accepted_payment_methods || ["pix", "cash", "card"]).filter((m: string) => {
+            if (m === "pix") return accepts.pix;
+            if (m === "cash") return accepts.cash;
+            if (m === "card") return accepts.card;
+            return true;
+          });
+          await askPayment(admin, store_id, phone, session, methods, pixDiretoOn);
+          return json({ handled: true, action: "used_saved_address" });
+        }
+        if (num === 2) {
+          await askStreet(admin, store_id, phone, session);
+          return json({ handled: true, action: "new_address" });
+        }
+        await sendText(store_id, phone, "Responda *1* para usar o endereço salvo ou *2* para informar outro.");
+        return json({ handled: true, action: "invalid_address_choice" });
       }
       case "awaiting_street": {
         const street = text.trim();
@@ -618,7 +703,7 @@ Deno.serve(async (req) => {
           if (m === "card") return accepts.card;
           return true;
         });
-        await askPayment(admin, store_id, phone, session, methods);
+        await askPayment(admin, store_id, phone, session, methods, pixDiretoOn);
         return json({ handled: true, action: "address_saved" });
       }
       case "awaiting_payment": {
@@ -628,6 +713,11 @@ Deno.serve(async (req) => {
           return json({ handled: true, action: "invalid_payment" });
         }
         session.context.payment_method = opts[num - 1];
+        // Pix + Pix Direto habilitado → fluxo com comprovante
+        if (session.context.payment_method === "pix" && session.context.pix_direto_on && pixDiretoOn) {
+          await startPixDireto(admin, store_id, phone, session, store, storeName);
+          return json({ handled: true, action: "pix_direto_started" });
+        }
         // Se dinheiro → pergunta troco antes de confirmar
         if (session.context.payment_method === "cash") {
           const subtotal = session.cart.reduce((s, i) => s + i.unit_price * i.quantity, 0);
@@ -675,6 +765,39 @@ Deno.serve(async (req) => {
         }
         await sendText(store_id, phone, "Responda *1* para CONFIRMAR ou *2* para CANCELAR.");
         return json({ handled: true, action: "invalid_confirm" });
+      }
+      case "awaiting_pix_proof": {
+        const orderId = session.context.pix_order_id;
+        if (!orderId) {
+          await clearSession(admin, store_id, phone);
+          return json({ handled: true, action: "pix_proof_no_order" });
+        }
+        if (!image_base64) {
+          await sendText(store_id, phone,
+            "📸 Envie a *foto do comprovante* do Pix aqui pelo WhatsApp para eu registrar seu pedido.\n\nSe já pagou, faça um print e envie como imagem.");
+          return json({ handled: true, action: "pix_proof_awaiting_image" });
+        }
+        const path = await uploadPixProofFromBase64(store_id, orderId, image_base64, image_mime || "image/jpeg");
+        if (!path) {
+          await sendText(store_id, phone, "⚠️ Não consegui salvar o comprovante. Pode tentar enviar de novo?");
+          return json({ handled: true, action: "pix_proof_upload_failed" });
+        }
+        // Marca no pedido (bypass RPC pois roda como service role)
+        const { error: upErr } = await admin.from("orders").update({
+          pix_proof_url: path,
+          pix_proof_uploaded_at: new Date().toISOString(),
+          status: "comprovante_enviado",
+        }).eq("id", orderId).eq("status", "aguardando_comprovante");
+        if (upErr) {
+          console.error("[bot] pix proof update failed", upErr);
+          await sendText(store_id, phone, "⚠️ Ocorreu um erro ao registrar seu comprovante. Um atendente vai te ajudar.");
+          await clearSession(admin, store_id, phone);
+          return json({ handled: true, action: "pix_proof_update_failed" });
+        }
+        await sendText(store_id, phone,
+          `✅ *Comprovante recebido!*\n\nO lojista vai validar e confirmar seu pedido em instantes. Você recebe uma mensagem assim que for aceito. ✨`);
+        await clearSession(admin, store_id, phone);
+        return json({ handled: true, action: "pix_proof_saved" });
       }
       default:
         await clearSession(admin, store_id, phone);
