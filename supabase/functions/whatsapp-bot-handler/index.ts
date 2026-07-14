@@ -974,12 +974,15 @@ Deno.serve(async (req) => {
           session.context.number = saved.number;
           session.context.neighborhood = saved.neighborhood;
           session.context.reference = saved.reference_point || saved.complement || "";
-          const PLATFORM_FEE = 0.99;
+          const PLATFORM_FEE = store?.platform_delivery_split_override != null
+            ? Number(store.platform_delivery_split_override)
+            : 0.99;
           const flat =
             Number(store?.own_delivery_fee || 0) ||
             Number(store?.delivery_fee || 0) ||
             Number(store?.delivery_fee_base || 0);
           session.context.delivery_fee = Math.round((flat + PLATFORM_FEE) * 100) / 100;
+          await sendDeliveryFeeInfo(store_id, phone, flat, PLATFORM_FEE);
           const baseMethods = cfg.accepted_payment_methods || ["pix", "cash", "card"];
           const withPix = pixDiretoOn && !baseMethods.includes("pix") ? ["pix", ...baseMethods] : baseMethods;
           const methods = withPix.filter((m: string) => {
@@ -1026,14 +1029,16 @@ Deno.serve(async (req) => {
       case "awaiting_reference": {
         const ref = text.trim();
         session.context.reference = (ref === "-" || ref === "") ? "" : ref.slice(0, 120);
-        // Cálculo simples da taxa: usa a taxa fixa da loja (own_delivery_fee) + taxa da plataforma (R$ 0,99).
-        // Não usamos cálculo por km porque o bot não tem GPS/CEP validado.
-        const PLATFORM_FEE = 0.99;
+        // Cálculo simples: taxa fixa da loja + taxa da plataforma (override por loja VIP se houver).
+        const PLATFORM_FEE = store?.platform_delivery_split_override != null
+          ? Number(store.platform_delivery_split_override)
+          : 0.99;
         const flat =
           Number(store?.own_delivery_fee || 0) ||
           Number(store?.delivery_fee || 0) ||
           Number(store?.delivery_fee_base || 0);
         session.context.delivery_fee = Math.round((flat + PLATFORM_FEE) * 100) / 100;
+        await sendDeliveryFeeInfo(store_id, phone, flat, PLATFORM_FEE);
         const baseMethods = cfg.accepted_payment_methods || ["pix", "cash", "card"];
         const withPix = pixDiretoOn && !baseMethods.includes("pix") ? ["pix", ...baseMethods] : baseMethods;
         const methods = withPix.filter((m: string) => {
