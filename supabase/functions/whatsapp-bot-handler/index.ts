@@ -477,7 +477,7 @@ Deno.serve(async (req) => {
     if (!cfg || !cfg.enabled) return json({ handled: false, reason: "bot_disabled" });
 
     const { data: store, error: storeErr } = await admin.from("stores")
-      .select("name, slug, settings, delivery_mode, delivery_fee_type, own_delivery_fee, delivery_fee, delivery_fee_base, minimum_order_value, pix_direto_enabled, pix_direto_key, pix_direto_key_type, pix_direto_beneficiary, pix_direto_instructions")
+      .select("name, slug, settings, delivery_mode, delivery_fee_type, own_delivery_fee, delivery_fee, delivery_fee_base, minimum_order_value, pix_direto_enabled, pix_direto_key, pix_direto_key_type, pix_direto_beneficiary, pix_direto_instructions, is_open, force_closed, preorder_enabled, preorder_minutes_before")
       .eq("id", store_id).maybeSingle();
     if (storeErr) console.error("[bot] store select error", storeErr);
     const storeName = store?.name || "loja";
