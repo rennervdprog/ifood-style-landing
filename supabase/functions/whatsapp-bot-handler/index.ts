@@ -474,8 +474,13 @@ const ensureClient = async (admin: any, storeId: string, phone: string, session:
   if (session.context.client_id) return session.context.client_id;
   const customerName = String(session.context.customer_name || "").trim();
   try {
+    const digits = onlyDigits(phone);
     const { data: prof } = await admin.from("profiles")
-      .select("user_id, delivery_pin").eq("phone", phone).order("updated_at", { ascending: false }).limit(1).maybeSingle();
+      .select("user_id, delivery_pin")
+      .eq("phone", digits)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
     let clientId: string | null = (prof as any)?.user_id || null;
     let pin = (prof as any)?.delivery_pin || String(Math.floor(1000 + Math.random() * 9000));
     if (!clientId) {
@@ -674,24 +679,28 @@ Deno.serve(async (req) => {
       const { data: known } = await admin.from("profiles")
         .select("user_id, full_name")
         .eq("phone", digits)
-        .order("updated_at", { ascending: false })
+        .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
       const knownName = (known as any)?.full_name || null;
       const clientId = (known as any)?.user_id || null;
       // Verifica se este telefone tem pedido em aberto (não finalizado)
       const digitsPhone = digits;
-      const { data: openOrders } = await admin
+      // orders não tem coluna customer_phone; usa client_id (quando conhecido) ou anon_session_id (=phone)
+      let openOrdersQuery = admin
         .from("orders")
-        .select("id, display_code, status, created_at")
+        .select("id, order_number, status, created_at")
         .eq("store_id", store_id)
-        .eq("customer_phone", digitsPhone)
         .not("status", "in", "(entregue,cancelado,recusado,finalizado)")
         .order("created_at", { ascending: false })
         .limit(1);
+      openOrdersQuery = clientId
+        ? openOrdersQuery.or(`client_id.eq.${clientId},anon_session_id.eq.${digitsPhone}`)
+        : openOrdersQuery.eq("anon_session_id", digitsPhone);
+      const { data: openOrders } = await openOrdersQuery;
       const openOrder = (openOrders || [])[0] as any;
       if (openOrder) {
-        const code = openOrder.display_code ? `#${openOrder.display_code}` : `#${String(openOrder.id).slice(0, 8)}`;
+        const code = openOrder.order_number ? `#${openOrder.order_number}` : `#${String(openOrder.id).slice(0, 8).toUpperCase()}`;
         const firstName = knownName ? String(knownName).split(" ")[0] : null;
         const hi = firstName ? `Olá, *${firstName}*! 👋` : "Olá! 👋";
         session = {
