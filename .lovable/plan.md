@@ -1,154 +1,119 @@
 ## Objetivo
 
-Adicionar um **bot de menu guiado** (sem IA) na Evolution API, mantendo tudo que já existe hoje (envio de notificações de pedido, respostas automáticas). Lojista escolhe no painel se quer ligar/desligar o bot e configura mensagens/gatilhos.
+Deixar o bot do WhatsApp 100% funcional no Supabase **externo**, sem quebrar o resto. Todas as informações abaixo foram conferidas no código real.
 
 ---
 
-## O que muda para o cliente final
+## Fatos verificados
 
-Cliente manda "oi", "cardápio", "pedido" (ou qualquer palavra-chave configurada) no WhatsApp da loja → bot responde com menu interativo → cliente navega por listas/botões nativos do WhatsApp → bot monta pedido → cria no sistema igual a um pedido feito pelo app.
-
-Se cliente digitar qualquer coisa fora do fluxo (ex: "quero falar com atendente"), o bot para e o lojista assume manualmente.
+- **Rota da loja**: `src/App.tsx` tem `Route path="/:slug"` (linha 439) → `itasuper.com.br/pastelao-carioca` funciona. Link canônico do bot = `https://itasuper.com.br/{stores.slug}` (sem `/loja/`).
+- **Handler atual** (`supabase/functions/whatsapp-bot-handler/index.ts`, 528 linhas) já roda 100% no externo (usa `EXTERNAL_SUPABASE_URL` + `EXTERNAL_SUPABASE_SERVICE_KEY`, sem fallback).
+- Fluxo atual: `welcome → awaiting_name → categoria → produto → mais? → tipo entrega → rua → número → bairro → referência → pagamento → confirma`. Já grava `address_street/number/neighborhood/reference` + `address_details` na `orders`. Já faz upsert em `profiles(phone, full_name, delivery_pin)`.
+- **Bugs reais**:
+  1. Sempre pergunta o nome (não olha `profiles.phone` antes).
+  2. Não oferece endereço anterior (não lê `saved_addresses`, não grava lá).
+  3. Welcome é só texto — sem escolha "Pedir aqui" x "Cardápio online".
+  4. Pix escolhido no bot vira `payment_method: "pix"` em pedido comum — **não** usa `create_pix_direto_order` mesmo com `stores.pix_direto_enabled=true`.
+- Anti-ban: `evolution-send-message` já tem presença "digitando", delay log-normal, gap por telefone, jitter em retry e pausa longa em rate-limit — o bot herda tudo porque manda por lá.
 
 ---
 
-## Fluxo do bot (máquina de estados, zero IA)
+## Fluxo novo
 
 ```text
-[gatilho: cliente manda mensagem]
-      ↓
-"Olá! Bem-vindo à {loja}. O que deseja?"
-[Botões: Ver cardápio | Falar com atendente]
-      ↓ Ver cardápio
-[Lista: categorias do cardápio]
-      ↓ escolhe categoria
-[Lista: produtos da categoria com preço]
-      ↓ escolhe produto
-   (se tiver adicionais obrigatórios → Lista de adicionais)
-      ↓
-[Botões: Adicionar mais itens | Finalizar pedido]
-      ↓ Finalizar
-[Botões: Delivery | Retirada]
-      ↓ Delivery → pede endereço em texto (CEP ou "rua, número, bairro")
-      ↓ Retirada → pula endereço
-[Botões: Pix | Dinheiro | Cartão na entrega]
-      ↓ Pix → gera Pix Direto (usa fluxo já existente)
-      ↓
-[Resumo do pedido + total]
-[Botões: Confirmar | Cancelar]
-      ↓ Confirmar → cria pedido no sistema → aparece no painel do lojista
+[cliente manda qualquer coisa]
+   ↓
+Normaliza telefone (só dígitos) e busca profiles.phone
+   ├── achou → context.client_id + context.client_name; saudação "Olá, {Nome}!"
+   └── novo  → saudação "Olá! 👋 Bem-vindo à {loja}."
+   ↓
+Envia menu com 3 opções (texto numerado, compatível com Evolution):
+   1️⃣ Pedir pelo WhatsApp
+   2️⃣ Ver cardápio online
+   3️⃣ Falar com atendente
+   ↓
+   ├── 2 → envia "https://itasuper.com.br/{slug}" + encerra sessão
+   ├── 3 → escape (limpa sessão, "atendente vai responder")
+   └── 1 → se já tem nome pula awaiting_name; senão pergunta
+             ↓ fluxo atual (categoria → produto → carrinho)
+   ↓
+[Delivery]
+   ├── busca saved_addresses do client_id (mais recente)
+   │     → "Entregar em: {resumo}? 1) Sim  2) Outro endereço"
+   ├── Sim  → reusa (grava em context.address)
+   └── Outro/sem → rua → número → bairro → referência → grava em saved_addresses (upsert)
+   ↓
+[Pagamento] (accepted_payment_methods do bot ∩ métodos da loja)
+   ├── Pix + stores.pix_direto_enabled → fluxo Pix Direto (abaixo)
+   ├── Pix sem pix_direto → cria pedido normal payment_method=pix
+   ├── Dinheiro → pergunta troco
+   └── Cartão → cartão na entrega
+   ↓
+Cria pedido → UPSERT profiles(phone, full_name) → limpa sessão
 ```
 
-Timeout de sessão: **15 minutos sem resposta** → sessão zera, próxima mensagem começa do início.
+### Sub-fluxo Pix Direto no bot
+
+1. Chama RPC `create_pix_direto_order` (já existe no externo — em `scripts/pix-direto-external.sql`) passando items, endereço, subtotal, delivery_fee, total.
+2. Envia mensagem formatada com `stores.pix_direto_key` + `pix_direto_key_type` + `pix_direto_beneficiary` + valor + `pix_direto_instructions`.
+3. Novo passo `awaiting_pix_proof`: quando cliente manda imagem, o webhook baixa via Evolution (`/message/downloadMedia`), sobe no bucket `pix-proofs` como `{store_id}/{order_id}.jpg` e chama `attach_pix_proof(order_id, path, anon_session)`.
+4. Responde: "✅ Comprovante recebido! O lojista vai confirmar em instantes."
+5. Se cliente mandar texto em vez de imagem: reforça "Envie a foto do comprovante".
+6. Timeout já garantido pelo `pix_expires_at` (20min) + RPC `expire_pending_pix_orders`.
 
 ---
 
-## Painel do lojista — nova aba "Bot WhatsApp"
+## Mudanças arquivo por arquivo
 
-Dentro de **Admin → Configurações → WhatsApp** (onde já tem Evolution), adicionar seção "Bot de Menu Guiado":
+### `supabase/functions/whatsapp-bot-handler/index.ts`  (único arquivo alterado)
 
-- **Toggle:** Ativar bot automático (on/off)
-- **Palavras-gatilho:** campo de tags — padrão: `oi, olá, cardápio, menu, pedido, quero pedir`
-- **Mensagem de boas-vindas:** texto customizável com `{loja}` e `{cliente}` como variáveis
-- **Horário de funcionamento do bot:** usa `opening_hours` já existente OU horário próprio
-- **Fora do horário:** mensagem customizável ("Estamos fechados, abrimos às 18h")
-- **Palavra de escape:** cliente digita "atendente" / "humano" → bot para e notifica lojista
-- **Método de pagamento aceito no bot:** checkboxes (Pix, Dinheiro, Cartão) — apenas os que a loja aceita
-- **Preview:** botão "Testar bot" que simula fluxo no próprio painel
+Adições:
 
----
+- `normalizePhone(p)` = só dígitos, sem `+`.
+- No welcome:
+  - `SELECT user_id, full_name FROM profiles WHERE phone = <normalized> LIMIT 1`.
+  - Envia saudação personalizada + menu 3 opções.
+  - Novo step `awaiting_main_menu`.
+- Case `awaiting_main_menu`: `"2"` → link cardápio + `clearSession`; `"3"` → escape; `"1"` → pula direto pra `awaiting_category` se já tem nome, senão `awaiting_name`.
+- Antes de `askStreet`: se `client_id`, busca `saved_addresses WHERE user_id=... ORDER BY created_at DESC LIMIT 1`; se achou, novo step `awaiting_address_choice` com resumo + [Sim/Outro].
+- Depois de coletar endereço completo (após `awaiting_reference`): `upsert saved_addresses` com onConflict lógico (user_id + street + number + neighborhood).
+- No `askPayment`: se `payment_method === "pix"` **e** `store.pix_direto_enabled` **e** `store.pix_direto_key` → rota Pix Direto (RPC + mensagem + `awaiting_pix_proof`).
+- Novo step `awaiting_pix_proof`: no webhook, quando `messageType === "imageMessage"`, baixar via Evolution, upload no bucket `pix-proofs`, chamar `attach_pix_proof`.
+- Cap anti-ban interno: `min gap 1200ms` entre mensagens pro mesmo telefone dentro do handler (além do que evolution-send-message já faz).
 
-## Backend
+### `supabase/functions/evolution-webhook/index.ts`
 
-### Nova tabela `whatsapp_bot_config` (por loja)
+- Ao receber `MESSAGES_UPSERT`, se a sessão do telefone estiver em `awaiting_pix_proof` **e** a msg for imagem, passar `mediaUrl` + `mimeType` pro bot-handler no lugar de `text`.
 
-```sql
-CREATE TABLE public.whatsapp_bot_config (
-  store_id uuid PRIMARY KEY,
-  enabled boolean DEFAULT false,
-  trigger_keywords text[] DEFAULT ARRAY['oi','olá','cardápio','menu','pedido'],
-  welcome_message text,
-  offline_message text,
-  escape_keywords text[] DEFAULT ARRAY['atendente','humano','pessoa'],
-  accepted_payment_methods text[] DEFAULT ARRAY['pix','cash','card'],
-  use_store_hours boolean DEFAULT true,
-  custom_hours jsonb,
-  updated_at timestamptz DEFAULT now()
-);
-```
+### Sem migrations
 
-### Nova tabela `whatsapp_bot_sessions` (estado por cliente/telefone)
+Colunas já existem: `profiles.phone/full_name/delivery_pin`, `saved_addresses.user_id/street/number/neighborhood/reference`, `stores.pix_direto_*`, `orders.address_*`. Bucket `pix-proofs` e RPCs `create_pix_direto_order` / `attach_pix_proof` já existem (script `scripts/pix-direto-external.sql`).
 
-```sql
-CREATE TABLE public.whatsapp_bot_sessions (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  store_id uuid NOT NULL,
-  phone text NOT NULL,
-  current_step text NOT NULL, -- 'welcome' | 'category' | 'product' | 'addon' | 'address' | 'payment' | 'confirm'
-  cart jsonb DEFAULT '[]'::jsonb,
-  context jsonb DEFAULT '{}'::jsonb, -- endereço parcial, categoria escolhida, etc.
-  last_message_at timestamptz DEFAULT now(),
-  expires_at timestamptz DEFAULT now() + interval '15 minutes',
-  UNIQUE(store_id, phone)
-);
-```
+### Versão
 
-### Nova edge function `evolution-webhook-inbound`
-
-- Recebe webhook `MESSAGES_UPSERT` da Evolution
-- Ignora mensagens do próprio bot (`fromMe: true`)
-- Carrega `whatsapp_bot_config` da loja pelo `instance_name`
-- Se bot desligado ou fora de horário → não faz nada (lojista responde manual)
-- Se palavra-escape detectada → deleta sessão + envia "Um atendente já vai te responder"
-- Carrega/cria sessão em `whatsapp_bot_sessions`
-- Baseado em `current_step`, chama Evolution `/message/sendList` ou `/message/sendButtons` com próxima pergunta
-- No passo `confirm`, cria pedido em `orders` + `order_items` (mesmo formato do checkout web) e limpa sessão
-
-### Cron `whatsapp-bot-cleanup` (a cada 5 min)
-
-Deleta sessões expiradas (`expires_at < now()`).
+- `src/pages/PerfilPage.tsx`: bump patch (v1.15.23).
+- `android/app/build.gradle`: `versionName "1.15.23"` + `versionCode` +1 (983).
 
 ---
 
-## O que NÃO muda (mantido igual)
+## Segurança
 
-- `evolution-send-message` (notificações de pedido) — continua igual
-- `platform-whatsapp-send` (mensagens da plataforma) — continua igual
-- Fluxo de auto-reply existente — continua, mas se bot estiver ligado, ele tem prioridade
-- Todo anti-ban, throttling, dedupe já implementados — o bot novo usa a mesma função `evolution-send-message` para enviar, então herda toda proteção
-
----
-
-## Detalhes técnicos
-
-**Limites da Evolution / WhatsApp:**
-- List Messages: até 10 itens por seção → se categoria tiver mais de 10 produtos, paginar ("Ver mais")
-- Button Messages: máx 3 botões — usado só em confirmações binárias/ternárias
-- Só funciona dentro da janela de 24h após cliente enviar mensagem (não é problema, bot só responde a mensagens recebidas)
-
-**Endereço:** parseamento simples por regex (procura número + palavra "rua/av") — se não bater, pede em partes: "Qual seu CEP?" → "Número?" → "Complemento?" (usa `saved_addresses` se cliente já tem cadastro)
-
-**Cliente sem cadastro:** cria perfil guest usando telefone como identificador (mesmo padrão de `GuestCheckoutPage`)
-
-**Pix Direto no bot:** reusa `pix-direto-create` já existente, envia QR Code como imagem + copia-e-cola
-
-**Arquivos novos:**
-- `supabase/functions/evolution-webhook-inbound/index.ts`
-- `supabase/functions/whatsapp-bot-cleanup/index.ts`
-- `src/pages/admin/tabs/WhatsAppBotConfig.tsx` (nova sub-aba dentro de SettingsTab)
-- Migration com as 2 tabelas
-
-**Arquivos alterados:**
-- `src/pages/admin/tabs/SettingsTab.tsx` — adicionar seção "Bot Menu Guiado"
-- `supabase/config.toml` — registrar cron do cleanup
-- `src/lib/appVersion.ts` + `android/app/build.gradle` — bump versão
+- `phone` sempre normalizado antes de query (`replace(/\D/g,"")`).
+- Colisão de número entre 2 clientes: se `profiles` retornar mais de 1, usar o mais recente e não expor nome antigo (comparar `updated_at`).
+- RPCs mantêm `SECURITY DEFINER` já auditadas; nenhuma nova exposição.
+- Upload no bucket `pix-proofs` só via service key dentro da edge function (bucket segue privado; políticas storage inalteradas).
 
 ---
 
-## Fases de entrega
+## Checklist manual
 
-1. **Fase 1 (MVP):** Tabelas + edge function do webhook + fluxo até "Confirmar pedido" só com Pix + painel básico (liga/desliga + palavras-gatilho)
-2. **Fase 2:** Adicionais/opcionais de produto, Dinheiro/Cartão, horário customizado
-3. **Fase 3:** Templates de mensagem customizáveis, analytics (quantos pedidos vieram do bot), integração com cupons
+1. Cliente novo → "oi" → menu 3 opções.
+2. Opção 2 → recebe `itasuper.com.br/pastelao-carioca` e sessão zera.
+3. Opção 1 (cliente novo) → pede nome → fluxo até pedido criado com endereço no card do lojista.
+4. Mesmo número volta e manda "oi" → "Olá, {Nome}!" + menu, sem pedir nome de novo.
+5. Segundo pedido → oferece endereço anterior; aceitar reusa; recusar pede novo e salva.
+6. Loja com Pix Direto → mensagem com chave/beneficiário; cliente manda foto; pedido aparece como `comprovante_enviado` no painel.
+7. Loja sem Pix Direto → opção Pix cai no fluxo antigo (pedido normal).
+8. Palavra "atendente" em qualquer step → escape.
 
-Confirma esse escopo? Prefere que eu já implemente a Fase 1 completa ou quebra em pedaços menores?
+Confirma pra eu implementar?

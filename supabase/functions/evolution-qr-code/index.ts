@@ -68,8 +68,8 @@ const getBearerToken = (req: Request): string | null => {
 
 const authenticateUser = async (jwt: string) => {
   const supabase = createClient(
-    Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_ANON_KEY")!,
+    Deno.env.get("EXTERNAL_SUPABASE_URL")!,
+    Deno.env.get("EXTERNAL_SUPABASE_ANON_KEY")!,
     { global: { headers: { Authorization: `Bearer ${jwt}` } } },
   );
 
@@ -92,21 +92,41 @@ const instanceExists = async (root: string, instance: string, apiKey: string) =>
 };
 
 const setWebhook = async (baseUrl: string, instance: string, apiKey: string, webhookUrl: string) => {
+  const root = baseUrl.replace(/\/$/, "");
+  // Evolution v2.3.x espera o envelope `webhook`. O formato flat é mantido
+  // apenas como fallback para forks antigos.
   const payload = {
+    webhook: {
+      enabled: true,
+      url: webhookUrl,
+      byEvents: false,
+      base64: false,
+      events: ["CONNECTION_UPDATE", "MESSAGES_UPSERT"],
+    },
+  };
+  const r = await evolutionFetch(`${root}/webhook/set/${instance}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", apikey: apiKey },
+    body: JSON.stringify(payload),
+  });
+  const data = await parseJson(r);
+  if (r.ok) return { ok: true, status: r.status, data };
+
+  const legacyPayload = {
     enabled: true,
     url: webhookUrl,
     webhook_by_events: false,
     webhook_base64: false,
     events: ["CONNECTION_UPDATE", "MESSAGES_UPSERT"],
   };
-  const r = await evolutionFetch(`${baseUrl.replace(/\/$/, "")}/webhook/set/${instance}`, {
+  const fallback = await evolutionFetch(`${root}/webhook/set/${instance}`, {
     method: "POST",
     headers: { "Content-Type": "application/json", apikey: apiKey },
-    body: JSON.stringify(payload),
+    body: JSON.stringify(legacyPayload),
   });
-  const data = await parseJson(r);
-  if (!r.ok) console.error("[evolution-qr-code] webhook set failed", { instance, status: r.status, data });
-  return { ok: r.ok, status: r.status, data };
+  const fallbackData = await parseJson(fallback);
+  if (!fallback.ok) console.error("[evolution-qr-code] webhook set failed", { instance, status: fallback.status, data: fallbackData });
+  return { ok: fallback.ok, status: fallback.status, data: fallbackData };
 };
 
 const createInstance = async (root: string, instance: string, apiKey: string, webhookUrl: string, withQr: boolean) => {
@@ -197,8 +217,8 @@ Deno.serve(async (req) => {
     const pairingNumber = pairingNumberRaw ? pairingNumberRaw.replace(/\D/g, "") : null;
 
     const externalAdmin = createClient(
-      Deno.env.get("EXTERNAL_SUPABASE_URL") || Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+      Deno.env.get("EXTERNAL_SUPABASE_URL")!,
+      (Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY"))!,
     );
 
     if (isPlatform) {
@@ -224,9 +244,9 @@ Deno.serve(async (req) => {
     const baseUrl = Deno.env.get("EVOLUTION_API_URL");
     const apiKey = Deno.env.get("EVOLUTION_GLOBAL_API_KEY");
     const webhookToken = Deno.env.get("EVOLUTION_WEBHOOK_TOKEN") || "";
-    // Webhook aponta para o Supabase EXTERNO (produção). Nunca para Lovable Cloud.
-    // is used only for the production data backend.
-    const functionBaseUrl = Deno.env.get("EXTERNAL_SUPABASE_URL") || Deno.env.get("SUPABASE_URL")!;
+    // Webhook deve chamar o host atual das funções; o backend externo é usado
+    // apenas como banco de dados de produção.
+    const functionBaseUrl = Deno.env.get("SUPABASE_URL") || Deno.env.get("EXTERNAL_SUPABASE_URL")!;
     if (!baseUrl || !apiKey) return json({ error: "Servidor Evolution não configurado" }, 500);
 
     const instance = isPlatform

@@ -41,6 +41,7 @@ const MenuBuilder = lazy(() => import("@/components/MenuBuilder"));
 const SupportTicketModal = lazy(() => import("@/components/SupportTicketModal"));
 import { notifyOrderStatusChange, buildWhatsAppMessage, buildRichItemsBlock, buildEtaWindow } from "@/lib/orderNotifications";
 import { getStoreOpenStatus } from "@/lib/storeStatus";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 // Tabs carregadas sob demanda — só baixa o JS quando o lojista abrir a aba
 const TutoriaisTab = lazy(() => import("./admin/tabs/TutoriaisTab"));
 const SubscriptionTab = lazy(() => import("./admin/tabs/SubscriptionTab"));
@@ -212,6 +213,7 @@ const AdminDashboard = () => {
   const simulateStoreId = searchParams.get("storeId");
   const initialTabParam = searchParams.get("tab") as DashboardTab | null;
   const queryClient = useQueryClient();
+  const { confirm: confirmReprint, ConfirmDialog: ReprintConfirmDialog } = useConfirmDialog();
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const loopIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const cashSoundRef = useRef<HTMLAudioElement | null>(null);
@@ -1159,7 +1161,18 @@ const AdminDashboard = () => {
    * Responsabilidade: disparar o print e atualizar o status.
    * O WhatsApp é aberto via link <a> no JSX (não via window.open).
    */
-  const handleAcceptOrder = useCallback((order: any) => {
+  const handleAcceptOrder = useCallback(async (order: any) => {
+    // Se a notinha já foi disparada automaticamente (auto-print), pergunta
+    // ao lojista se quer reimprimir em vez de imprimir silenciosamente.
+    if ((order as any)?.printed_at) {
+      const ok = await confirmReprint({
+        title: "Notinha já foi impressa",
+        description: "Deseja imprimir novamente?",
+        confirmText: "Imprimir de novo",
+        cancelText: "Não imprimir",
+      });
+      if (!ok) return;
+    }
     // Print da notinha
     try {
       const copies = (store?.settings as any)?.print_copies === 1 ? 1 : 2;
@@ -1168,7 +1181,7 @@ const AdminDashboard = () => {
     } catch (e) {
       console.warn("print error", e);
     }
-  }, [store?.name, store?.settings, doPrintOrder]);
+  }, [store?.name, store?.settings, doPrintOrder, confirmReprint]);
 
   // Deriva do banco (fonte única). Default ON.
   const autoPrint = (store?.settings as any)?.auto_print_delivery !== false;
@@ -2240,6 +2253,7 @@ const AdminDashboard = () => {
       </main>
       <ProductTour steps={lojistaTourSteps} tourKey="lojista" />
     </div>
+    <ReprintConfirmDialog />
     </TrialExpiredGuard>
   );
 };

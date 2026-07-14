@@ -18,8 +18,8 @@ Deno.serve(async (req) => {
     if (!store_id) return json({ error: "store_id required" }, 400);
 
     const anon = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_ANON_KEY")!,
+      Deno.env.get("EXTERNAL_SUPABASE_URL")!,
+      Deno.env.get("EXTERNAL_SUPABASE_ANON_KEY")!,
       { global: { headers: { Authorization: `Bearer ${jwt}` } } },
     );
     const { data: claims } = await anon.auth.getClaims(jwt);
@@ -27,8 +27,8 @@ Deno.serve(async (req) => {
     if (!userId) return json({ error: "Unauthorized" }, 401);
 
     const admin = createClient(
-      Deno.env.get("EXTERNAL_SUPABASE_URL") || Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+      Deno.env.get("EXTERNAL_SUPABASE_URL")!,
+      (Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY"))!,
     );
 
     // Autorização: dono da loja OU admin/super_admin

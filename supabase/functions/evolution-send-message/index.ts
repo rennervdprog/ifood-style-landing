@@ -16,7 +16,8 @@ const BodySchema = z.object({
   store_id: z.string().uuid(),
   phone: z.string().min(10).max(20),
   message: z.string().min(1).max(4000),
-  kind: z.enum(["manual", "auto_reply", "order_status"]).optional(),
+  kind: z.enum(["manual", "auto_reply", "order_status", "bot"]).optional(),
+  force: z.boolean().optional(),
 });
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -35,22 +36,23 @@ const sendPresence = async (baseUrl: string, instance: string, apiKey: string, n
 
 const isAuthorizedForStore = async (admin: any, req: Request, storeId: string) => {
   const authHeader = req.headers.get("Authorization") || "";
-  const serviceRole = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
-  if (serviceRole && authHeader === `Bearer ${serviceRole}`) return true;
   const externalServiceRole = Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY") || "";
   if (externalServiceRole && authHeader === `Bearer ${externalServiceRole}`) return true;
   const internalToken = Deno.env.get("EVOLUTION_WEBHOOK_TOKEN") || "";
   if (internalToken && req.headers.get("x-internal-token") === internalToken) return true;
   if (!authHeader.startsWith("Bearer ")) return false;
 
-  const authClient = createClient(
-    Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_ANON_KEY")!,
-    { global: { headers: { Authorization: authHeader } } },
-  );
-  const { data: userData, error } = await authClient.auth.getUser(authHeader.replace("Bearer ", ""));
-  const userId = userData?.user?.id;
-  if (error || !userId) return false;
+  // Autenticação SEMPRE contra o Supabase EXTERNO (onde os lojistas fazem login).
+  const extUrl = Deno.env.get("EXTERNAL_SUPABASE_URL");
+  const extAnon = Deno.env.get("EXTERNAL_SUPABASE_ANON_KEY");
+  if (!extUrl || !extAnon) return false;
+  let userId: string | null = null;
+  try {
+    const client = createClient(extUrl, extAnon, { global: { headers: { Authorization: authHeader } } });
+    const { data, error: err } = await client.auth.getUser(authHeader.replace("Bearer ", ""));
+    if (err || !data?.user?.id) return false;
+    userId = data.user.id;
+  } catch { return false; }
 
   const { data: store } = await admin.from("stores").select("owner_id").eq("id", storeId).maybeSingle();
   if (store?.owner_id === userId) return true;
@@ -107,12 +109,15 @@ Deno.serve(async (req) => {
       return json({ error: parsed.error.flatten().fieldErrors }, 400);
     }
     const { store_id, phone, message, kind = "manual" } = parsed.data;
+    const internalToken = Deno.env.get("EVOLUTION_WEBHOOK_TOKEN") || "";
+    const requestedForce = parsed.data.force === true;
+    const force = requestedForce && !!internalToken && req.headers.get("x-internal-token") === internalToken;
     const maskedPhone = phone ? `${phone.slice(0,4)}****${phone.slice(-2)}` : "";
     console.log("[evolution-send-message] ▶ store_id=", store_id, "phone=", maskedPhone, "kind=", kind, "msgLen=", message.length);
 
     const admin = createClient(
-      Deno.env.get("EXTERNAL_SUPABASE_URL") || Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+      Deno.env.get("EXTERNAL_SUPABASE_URL")!,
+      (Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY"))!,
     );
 
     if (!(await isAuthorizedForStore(admin, req, store_id))) {
@@ -155,10 +160,10 @@ Deno.serve(async (req) => {
       .select("id")
       .eq("store_id", store_id).eq("phone", number).eq("message_hash", msgHash)
       .gte("sent_at", dedupeSince).limit(1).maybeSingle();
-    if (dup) return json({ success: true, skipped: "duplicate" });
+    if (dup && !force) return json({ success: true, skipped: "duplicate" });
     // P0 — dedupe adicional por KIND para auto_reply: mesmo que o texto varie
     // (bom dia / boa tarde / fora do horário), só 1 saudação por número / 16h.
-    if (kind === "auto_reply") {
+    if (kind === "auto_reply" && !force) {
       const { data: dupKind } = await admin
         .from("whatsapp_send_log")
         .select("id")
@@ -182,11 +187,11 @@ Deno.serve(async (req) => {
       .eq("store_id", store_id)
       .neq("message_hash", "greet_pending")
       .gte("sent_at", dayStart.toISOString());
-    if ((sentToday ?? 0) >= dailyLimit) {
+    if (!force && (sentToday ?? 0) >= dailyLimit) {
       return json({ error: `Limite diário de envios atingido (${dailyLimit}). Aguarde amanhã.` }, 429);
     }
     // P0 — coffee break também para auto_reply: a cada 10 msgs no dia, pausa 5-15min.
-    if ((sentToday ?? 0) > 0 && (sentToday ?? 0) % 10 === 0) {
+    if (!force && (sentToday ?? 0) > 0 && (sentToday ?? 0) % 10 === 0) {
       await sleep(300_000 + Math.floor(Math.random() * 600_000));
     }
 
