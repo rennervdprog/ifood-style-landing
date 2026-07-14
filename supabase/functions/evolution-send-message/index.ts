@@ -36,15 +36,15 @@ const sendPresence = async (baseUrl: string, instance: string, apiKey: string, n
 
 const isAuthorizedForStore = async (admin: any, req: Request, storeId: string) => {
   const authHeader = req.headers.get("Authorization") || "";
-  const externalServiceRole = Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY") || "";
+  const externalServiceRole = Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
   if (externalServiceRole && authHeader === `Bearer ${externalServiceRole}`) return true;
   const internalToken = Deno.env.get("EVOLUTION_WEBHOOK_TOKEN") || "";
   if (internalToken && req.headers.get("x-internal-token") === internalToken) return true;
   if (!authHeader.startsWith("Bearer ")) return false;
 
   // Autenticação SEMPRE contra o Supabase EXTERNO (onde os lojistas fazem login).
-  const extUrl = Deno.env.get("EXTERNAL_SUPABASE_URL");
-  const extAnon = Deno.env.get("EXTERNAL_SUPABASE_ANON_KEY");
+  const extUrl = Deno.env.get("EXTERNAL_SUPABASE_URL") || Deno.env.get("SUPABASE_URL");
+  const extAnon = Deno.env.get("EXTERNAL_SUPABASE_ANON_KEY") || Deno.env.get("SUPABASE_ANON_KEY");
   if (!extUrl || !extAnon) return false;
   let userId: string | null = null;
   try {
@@ -116,8 +116,8 @@ Deno.serve(async (req) => {
     console.log("[evolution-send-message] ▶ store_id=", store_id, "phone=", maskedPhone, "kind=", kind, "msgLen=", message.length);
 
     const admin = createClient(
-      Deno.env.get("EXTERNAL_SUPABASE_URL")!,
-      (Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY"))!,
+      (Deno.env.get("EXTERNAL_SUPABASE_URL") || Deno.env.get("SUPABASE_URL"))!,
+      (Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"))!,
     );
 
     if (!(await isAuthorizedForStore(admin, req, store_id))) {
