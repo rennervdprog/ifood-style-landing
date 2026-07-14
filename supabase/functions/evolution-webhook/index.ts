@@ -168,8 +168,8 @@ Deno.serve(async (req) => {
     if (!instance) return json({ ok: true });
 
     const admin = createClient(
-      Deno.env.get("EXTERNAL_SUPABASE_URL") || Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+      Deno.env.get("EXTERNAL_SUPABASE_URL")!,
+      (Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY"))!,
     );
     const { data: cfg } = await admin
       .from("store_whatsapp_config")
