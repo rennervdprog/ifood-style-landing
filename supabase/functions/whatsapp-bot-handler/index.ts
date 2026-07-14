@@ -1102,7 +1102,7 @@ Deno.serve(async (req) => {
         }
         await sendText(store_id, phone,
           `✅ *Comprovante recebido!*\n\nO lojista vai validar e confirmar seu pedido em instantes. Você recebe uma mensagem assim que for aceito. ✨`);
-        await clearSession(admin, store_id, phone);
+        await setPostOrderCooldown(admin, store_id, phone, `#${String(orderId).slice(0,8).toUpperCase()}`);
         return json({ handled: true, action: "pix_proof_saved" });
       }
       default:
