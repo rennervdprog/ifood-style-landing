@@ -12,6 +12,7 @@ const json = (b: unknown, s = 200) =>
 
 const BRL = (n: number) => `R$ ${n.toFixed(2).replace(".", ",")}`;
 const normalize = (t: string) => t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+const DEFAULT_TRIGGER_KEYWORDS = ["menu", "cardapio", "cardápio", "pedido", "pedir", "comprar", "oi", "ola", "olá", "bom dia", "boa tarde", "boa noite"];
 
 type Step =
   | "welcome" | "awaiting_main_menu"
@@ -662,7 +663,8 @@ Deno.serve(async (req) => {
         store?.is_open !== false,
       );
       if (!status.isOpen) {
-        const triggeredClosed = (cfg.trigger_keywords || []).some((k: string) => norm.includes(normalize(k)));
+        const triggerKeywords = Array.from(new Set([...(cfg.trigger_keywords || []), ...DEFAULT_TRIGGER_KEYWORDS]));
+        const triggeredClosed = triggerKeywords.some((k: string) => norm.includes(normalize(k)));
         if (!triggeredClosed) return json({ handled: false, reason: "closed_no_trigger" });
         await sendText(store_id, phone,
           `🌙 *${storeName}* está fechada no momento.\n\n${status.reason}.\n\nQuando abrirmos, é só mandar *MENU* que te atendo. 💚`);
@@ -672,7 +674,8 @@ Deno.serve(async (req) => {
 
     // Sem sessão: verifica gatilho
     if (!session) {
-      const triggered = (cfg.trigger_keywords || []).some((k: string) => norm.includes(normalize(k)));
+      const triggerKeywords = Array.from(new Set([...(cfg.trigger_keywords || []), ...DEFAULT_TRIGGER_KEYWORDS]));
+      const triggered = triggerKeywords.some((k: string) => norm.includes(normalize(k)));
       if (!triggered) return json({ handled: false, reason: "no_trigger" });
       // Reconhece cliente pelo telefone
       const digits = onlyDigits(phone);
