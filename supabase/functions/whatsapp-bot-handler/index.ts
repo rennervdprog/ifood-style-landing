@@ -652,6 +652,33 @@ Deno.serve(async (req) => {
     // Roteia por estado
     const num = parseInt(text.trim(), 10);
     switch (session.current_step) {
+      case "awaiting_existing_order_choice": {
+        if (num === 1) {
+          if (session.context.customer_name) {
+            session.current_step = "awaiting_main_menu";
+            await setSession(admin, session);
+            await sendText(store_id, phone, `Perfeito, *${String(session.context.customer_name).split(" ")[0]}*! Bora escolher. 🛒`);
+            await showCategories(admin, store_id, phone, session);
+          } else {
+            session.current_step = "awaiting_name";
+            await setSession(admin, session);
+            await sendText(store_id, phone, "*👤 Qual é o seu nome?*");
+          }
+          return json({ handled: true, action: "new_order_from_existing" });
+        }
+        if (num === 2) {
+          await clearSession(admin, store_id, phone);
+          await sendText(store_id, phone, "👋 Um atendente humano vai te responder em instantes sobre seu pedido. Aguarde só um momento.");
+          return json({ handled: true, action: "escape_existing_order" });
+        }
+        if (num === 3) {
+          await clearSession(admin, store_id, phone);
+          await sendText(store_id, phone, "❌ Ok, encerrado. Quando quiser, é só mandar *MENU*.");
+          return json({ handled: true, action: "cancel_existing_order" });
+        }
+        await sendText(store_id, phone, "Responda com *1*, *2* ou *3*.");
+        return json({ handled: true, action: "invalid_existing_order_choice" });
+      }
       case "awaiting_main_menu": {
         if (num === 2) {
           await sendText(store_id, phone,
