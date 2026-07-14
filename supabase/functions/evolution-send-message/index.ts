@@ -36,30 +36,23 @@ const sendPresence = async (baseUrl: string, instance: string, apiKey: string, n
 
 const isAuthorizedForStore = async (admin: any, req: Request, storeId: string) => {
   const authHeader = req.headers.get("Authorization") || "";
-  const serviceRole = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
-  if (serviceRole && authHeader === `Bearer ${serviceRole}`) return true;
   const externalServiceRole = Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY") || "";
   if (externalServiceRole && authHeader === `Bearer ${externalServiceRole}`) return true;
   const internalToken = Deno.env.get("EVOLUTION_WEBHOOK_TOKEN") || "";
   if (internalToken && req.headers.get("x-internal-token") === internalToken) return true;
   if (!authHeader.startsWith("Bearer ")) return false;
 
-  // Tenta primeiro contra o Supabase EXTERNO (onde os lojistas fazem login),
-  // com fallback para o Lovable Cloud. Sem isso, os tokens externos falhavam
-  // silenciosamente e o disparo de order_status era rejeitado com 403.
-  const tryGetUser = async (url?: string, anon?: string) => {
-    if (!url || !anon) return null;
-    try {
-      const client = createClient(url, anon, { global: { headers: { Authorization: authHeader } } });
-      const { data, error: err } = await client.auth.getUser(authHeader.replace("Bearer ", ""));
-      if (err) return null;
-      return data?.user?.id || null;
-    } catch { return null; }
-  };
-  let userId =
-    (await tryGetUser(Deno.env.get("EXTERNAL_SUPABASE_URL"), Deno.env.get("EXTERNAL_SUPABASE_ANON_KEY"))) ||
-    (await tryGetUser(Deno.env.get("SUPABASE_URL"), Deno.env.get("SUPABASE_ANON_KEY")));
-  if (!userId) return false;
+  // Autenticação SEMPRE contra o Supabase EXTERNO (onde os lojistas fazem login).
+  const extUrl = Deno.env.get("EXTERNAL_SUPABASE_URL");
+  const extAnon = Deno.env.get("EXTERNAL_SUPABASE_ANON_KEY");
+  if (!extUrl || !extAnon) return false;
+  let userId: string | null = null;
+  try {
+    const client = createClient(extUrl, extAnon, { global: { headers: { Authorization: authHeader } } });
+    const { data, error: err } = await client.auth.getUser(authHeader.replace("Bearer ", ""));
+    if (err || !data?.user?.id) return false;
+    userId = data.user.id;
+  } catch { return false; }
 
   const { data: store } = await admin.from("stores").select("owner_id").eq("id", storeId).maybeSingle();
   if (store?.owner_id === userId) return true;
@@ -123,8 +116,8 @@ Deno.serve(async (req) => {
     console.log("[evolution-send-message] ▶ store_id=", store_id, "phone=", maskedPhone, "kind=", kind, "msgLen=", message.length);
 
     const admin = createClient(
-      Deno.env.get("EXTERNAL_SUPABASE_URL") || Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+      Deno.env.get("EXTERNAL_SUPABASE_URL")!,
+      (Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY"))!,
     );
 
     if (!(await isAuthorizedForStore(admin, req, store_id))) {
