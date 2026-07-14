@@ -92,21 +92,41 @@ const instanceExists = async (root: string, instance: string, apiKey: string) =>
 };
 
 const setWebhook = async (baseUrl: string, instance: string, apiKey: string, webhookUrl: string) => {
+  const root = baseUrl.replace(/\/$/, "");
+  // Evolution v2.3.x espera o envelope `webhook`. O formato flat é mantido
+  // apenas como fallback para forks antigos.
   const payload = {
+    webhook: {
+      enabled: true,
+      url: webhookUrl,
+      byEvents: false,
+      base64: false,
+      events: ["CONNECTION_UPDATE", "MESSAGES_UPSERT"],
+    },
+  };
+  const r = await evolutionFetch(`${root}/webhook/set/${instance}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", apikey: apiKey },
+    body: JSON.stringify(payload),
+  });
+  const data = await parseJson(r);
+  if (r.ok) return { ok: true, status: r.status, data };
+
+  const legacyPayload = {
     enabled: true,
     url: webhookUrl,
     webhook_by_events: false,
     webhook_base64: false,
     events: ["CONNECTION_UPDATE", "MESSAGES_UPSERT"],
   };
-  const r = await evolutionFetch(`${baseUrl.replace(/\/$/, "")}/webhook/set/${instance}`, {
+  const fallback = await evolutionFetch(`${root}/webhook/set/${instance}`, {
     method: "POST",
     headers: { "Content-Type": "application/json", apikey: apiKey },
-    body: JSON.stringify(payload),
+    body: JSON.stringify(legacyPayload),
   });
-  const data = await parseJson(r);
-  if (!r.ok) console.error("[evolution-qr-code] webhook set failed", { instance, status: r.status, data });
-  return { ok: r.ok, status: r.status, data };
+  const fallbackData = await parseJson(fallback);
+  if (!fallback.ok) console.error("[evolution-qr-code] webhook set failed", { instance, status: fallback.status, data: fallbackData });
+  return { ok: fallback.ok, status: fallback.status, data: fallbackData };
 };
 
 const createInstance = async (root: string, instance: string, apiKey: string, webhookUrl: string, withQr: boolean) => {
