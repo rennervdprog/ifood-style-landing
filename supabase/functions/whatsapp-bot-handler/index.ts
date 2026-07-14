@@ -22,7 +22,8 @@ type Step =
   | "awaiting_address_choice"
   | "awaiting_street" | "awaiting_number" | "awaiting_neighborhood" | "awaiting_reference"
   | "awaiting_payment" | "awaiting_change" | "awaiting_confirm"
-  | "awaiting_pix_proof";
+  | "awaiting_pix_proof"
+  | "post_order_cooldown";
 
 const CANONICAL_HOST = "https://itasuper.com.br";
 const onlyDigits = (p: string) => String(p || "").replace(/\D/g, "");
@@ -113,6 +114,26 @@ const setSession = async (admin: any, s: Session) => {
       store_id: s.store_id, phone: s.phone,
       current_step: s.current_step, cart: s.cart, context: s.context,
       last_message_at: new Date().toISOString(), expires_at: expires,
+    },
+    { onConflict: "store_id,phone" },
+  );
+};
+
+// Cooldown pós-pedido: 2h de silêncio (só 1 aviso na 1ª mensagem).
+// Evita rajada de respostas que aumenta risco de ban do chip.
+const POST_ORDER_COOLDOWN_MS = 2 * 60 * 60_000;
+const setPostOrderCooldown = async (
+  admin: any, storeId: string, phone: string, orderCode: string,
+) => {
+  const expires = new Date(Date.now() + POST_ORDER_COOLDOWN_MS).toISOString();
+  await admin.from("whatsapp_bot_sessions").upsert(
+    {
+      store_id: storeId, phone,
+      current_step: "post_order_cooldown",
+      cart: [],
+      context: { order_code: orderCode, notified: false },
+      last_message_at: new Date().toISOString(),
+      expires_at: expires,
     },
     { onConflict: "store_id,phone" },
   );
@@ -596,7 +617,7 @@ const createOrder = async (admin: any, storeId: string, phone: string, session: 
   const num = `#${order.id.slice(0, 8).toUpperCase()}`;
   await sendText(storeId, phone,
     `🎉 *Pedido ${num} confirmado!*\n\nA *${storeName}* recebeu seu pedido e vai começar a preparar em instantes.\n\nVocê será avisado quando o pedido for aceito. ✨`);
-  await clearSession(admin, storeId, phone);
+  await setPostOrderCooldown(admin, storeId, phone, num);
 };
 
 const isCancel = (t: string) => /^(cancelar|sair|parar)$/i.test(normalize(t));
@@ -1081,8 +1102,28 @@ Deno.serve(async (req) => {
         }
         await sendText(store_id, phone,
           `✅ *Comprovante recebido!*\n\nO lojista vai validar e confirmar seu pedido em instantes. Você recebe uma mensagem assim que for aceito. ✨`);
-        await clearSession(admin, store_id, phone);
+        await setPostOrderCooldown(admin, store_id, phone, `#${String(orderId).slice(0,8).toUpperCase()}`);
         return json({ handled: true, action: "pix_proof_saved" });
+      }
+      case "post_order_cooldown": {
+        // Silêncio pós-pedido: só avisa 1 vez, depois fica mudo até expirar.
+        // Escape/cancelar já são tratados antes de chegar aqui.
+        if (!session.context?.notified) {
+          session.context = { ...(session.context || {}), notified: true };
+          await setSession(admin, {
+            ...session,
+            current_step: "post_order_cooldown",
+          });
+          // Reafirma expires_at longo (setSession usa 15min por padrão).
+          await admin.from("whatsapp_bot_sessions")
+            .update({ expires_at: new Date(Date.now() + POST_ORDER_COOLDOWN_MS).toISOString() })
+            .eq("store_id", store_id).eq("phone", phone);
+          const code = session.context?.order_code || "seu pedido";
+          await sendText(store_id, phone,
+            `✅ Recebi! Seu pedido *${code}* já está com a loja.\n\nPra evitar bloqueio do WhatsApp, vou ficar em silêncio por aqui. Quando quiser *falar com atendente*, é só escrever *atendente*. Pra fazer *outro pedido*, mande *MENU* mais tarde. 💚`);
+          return json({ handled: true, action: "post_order_ack" });
+        }
+        return json({ handled: true, action: "post_order_silent" });
       }
       default:
         await clearSession(admin, store_id, phone);
