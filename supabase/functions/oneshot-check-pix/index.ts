@@ -28,5 +28,6 @@ GRANT SELECT ON public.stores_public TO anon, authenticated;
 `;
   const out = await q(sql);
   const check = await q(`SELECT column_name FROM information_schema.columns WHERE table_schema='public' AND table_name='stores_public' AND column_name LIKE 'pix%';`);
-  return new Response(JSON.stringify({ out, check }, null, 2), { headers: { ...cors, "Content-Type": "application/json" } });
+  const pastelao = await q(`SELECT name, slug, pix_direto_enabled, pix_direto_key, pix_direto_key_type, pix_direto_beneficiary, settings->'accepted_payment_methods' as apm, settings->'accept_pix_online' as apo, settings->'accept_pix_machine' as apm2 FROM stores WHERE slug ILIKE '%pastelao%';`);
+  return new Response(JSON.stringify({ out, check, pastelao }, null, 2), { headers: { ...cors, "Content-Type": "application/json" } });
 });

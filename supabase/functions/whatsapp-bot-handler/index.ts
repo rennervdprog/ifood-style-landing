@@ -482,12 +482,13 @@ Deno.serve(async (req) => {
     if (storeErr) console.error("[bot] store select error", storeErr);
     const storeName = store?.name || "loja";
     const settings = (store?.settings || {}) as Record<string, any>;
+    const pixDiretoOn = Boolean(store?.pix_direto_enabled && store?.pix_direto_key);
     const accepts = {
-      pix: settings.accept_pix_online !== false || settings.accept_pix_machine === true,
+      // Pix direto habilitado sempre permite oferecer "pix" no bot, mesmo se o pix online/máquina estiver off.
+      pix: pixDiretoOn || settings.accept_pix_online !== false || settings.accept_pix_machine === true,
       cash: settings.accept_cash !== false,
       card: settings.accept_card !== false,
     };
-    const pixDiretoOn = Boolean(store?.pix_direto_enabled && store?.pix_direto_key);
     const storeSlug = store?.slug || "";
     const storeUrl = storeSlug ? `${CANONICAL_HOST}/${storeSlug}` : CANONICAL_HOST;
 
@@ -620,7 +621,9 @@ Deno.serve(async (req) => {
           await maybeOfferSavedAddress(admin, store_id, phone, session);
         } else if (num === 2) {
           session.context.delivery_type = "retirada";
-          const methods = (cfg.accepted_payment_methods || ["pix", "cash", "card"]).filter((m: string) => {
+          const baseMethods = cfg.accepted_payment_methods || ["pix", "cash", "card"];
+          const withPix = pixDiretoOn && !baseMethods.includes("pix") ? ["pix", ...baseMethods] : baseMethods;
+          const methods = withPix.filter((m: string) => {
             if (m === "pix") return accepts.pix;
             if (m === "cash") return accepts.cash;
             if (m === "card") return accepts.card;
@@ -645,7 +648,9 @@ Deno.serve(async (req) => {
             Number(store?.delivery_fee || 0) ||
             Number(store?.delivery_fee_base || 0);
           session.context.delivery_fee = Math.round((flat + PLATFORM_FEE) * 100) / 100;
-          const methods = (cfg.accepted_payment_methods || ["pix", "cash", "card"]).filter((m: string) => {
+          const baseMethods = cfg.accepted_payment_methods || ["pix", "cash", "card"];
+          const withPix = pixDiretoOn && !baseMethods.includes("pix") ? ["pix", ...baseMethods] : baseMethods;
+          const methods = withPix.filter((m: string) => {
             if (m === "pix") return accepts.pix;
             if (m === "cash") return accepts.cash;
             if (m === "card") return accepts.card;
@@ -697,7 +702,9 @@ Deno.serve(async (req) => {
           Number(store?.delivery_fee || 0) ||
           Number(store?.delivery_fee_base || 0);
         session.context.delivery_fee = Math.round((flat + PLATFORM_FEE) * 100) / 100;
-        const methods = (cfg.accepted_payment_methods || ["pix", "cash", "card"]).filter((m: string) => {
+        const baseMethods = cfg.accepted_payment_methods || ["pix", "cash", "card"];
+        const withPix = pixDiretoOn && !baseMethods.includes("pix") ? ["pix", ...baseMethods] : baseMethods;
+        const methods = withPix.filter((m: string) => {
           if (m === "pix") return accepts.pix;
           if (m === "cash") return accepts.cash;
           if (m === "card") return accepts.card;
