@@ -107,6 +107,21 @@ const sendText = async (storeId: string, phone: string, message: string) => {
   return true;
 };
 
+async function sendDeliveryFeeInfo(storeId: string, phone: string, storeFee: number, platformFee: number) {
+  const total = Math.round((storeFee + platformFee) * 100) / 100;
+  const lines = [
+    `🛵 *Taxa de entrega: ${BRL(total)}*`,
+    ``,
+    `• Loja: ${BRL(storeFee)}`,
+  ];
+  if (platformFee > 0) {
+    lines.push(`• Plataforma: ${BRL(platformFee)} (mantém o app no ar)`);
+  } else {
+    lines.push(`• Plataforma: grátis 🎉`);
+  }
+  try { await sendText(storeId, phone, lines.join("\n")); } catch (e) { console.error("[bot] sendDeliveryFeeInfo", e); }
+}
+
 const setSession = async (admin: any, s: Session) => {
   const expires = new Date(Date.now() + 15 * 60_000).toISOString();
   await admin.from("whatsapp_bot_sessions").upsert(
@@ -664,7 +679,7 @@ Deno.serve(async (req) => {
     if (!cfg || !cfg.enabled) return json({ handled: false, reason: "bot_disabled" });
 
     const { data: store, error: storeErr } = await admin.from("stores")
-      .select("name, slug, settings, delivery_mode, delivery_fee_type, own_delivery_fee, delivery_fee, delivery_fee_base, minimum_order_value, pix_direto_enabled, pix_direto_key, pix_direto_key_type, pix_direto_beneficiary, pix_direto_instructions, is_open, force_closed, preorder_enabled, preorder_minutes_before")
+      .select("name, slug, settings, delivery_mode, delivery_fee_type, own_delivery_fee, delivery_fee, delivery_fee_base, minimum_order_value, pix_direto_enabled, pix_direto_key, pix_direto_key_type, pix_direto_beneficiary, pix_direto_instructions, is_open, force_closed, preorder_enabled, preorder_minutes_before, platform_delivery_split_override")
       .eq("id", store_id).maybeSingle();
     if (storeErr) console.error("[bot] store select error", storeErr);
     const storeName = store?.name || "loja";
@@ -974,12 +989,15 @@ Deno.serve(async (req) => {
           session.context.number = saved.number;
           session.context.neighborhood = saved.neighborhood;
           session.context.reference = saved.reference_point || saved.complement || "";
-          const PLATFORM_FEE = 0.99;
+          const PLATFORM_FEE = store?.platform_delivery_split_override != null
+            ? Number(store.platform_delivery_split_override)
+            : 0.99;
           const flat =
             Number(store?.own_delivery_fee || 0) ||
             Number(store?.delivery_fee || 0) ||
             Number(store?.delivery_fee_base || 0);
           session.context.delivery_fee = Math.round((flat + PLATFORM_FEE) * 100) / 100;
+          await sendDeliveryFeeInfo(store_id, phone, flat, PLATFORM_FEE);
           const baseMethods = cfg.accepted_payment_methods || ["pix", "cash", "card"];
           const withPix = pixDiretoOn && !baseMethods.includes("pix") ? ["pix", ...baseMethods] : baseMethods;
           const methods = withPix.filter((m: string) => {
@@ -1026,14 +1044,16 @@ Deno.serve(async (req) => {
       case "awaiting_reference": {
         const ref = text.trim();
         session.context.reference = (ref === "-" || ref === "") ? "" : ref.slice(0, 120);
-        // Cálculo simples da taxa: usa a taxa fixa da loja (own_delivery_fee) + taxa da plataforma (R$ 0,99).
-        // Não usamos cálculo por km porque o bot não tem GPS/CEP validado.
-        const PLATFORM_FEE = 0.99;
+        // Cálculo simples: taxa fixa da loja + taxa da plataforma (override por loja VIP se houver).
+        const PLATFORM_FEE = store?.platform_delivery_split_override != null
+          ? Number(store.platform_delivery_split_override)
+          : 0.99;
         const flat =
           Number(store?.own_delivery_fee || 0) ||
           Number(store?.delivery_fee || 0) ||
           Number(store?.delivery_fee_base || 0);
         session.context.delivery_fee = Math.round((flat + PLATFORM_FEE) * 100) / 100;
+        await sendDeliveryFeeInfo(store_id, phone, flat, PLATFORM_FEE);
         const baseMethods = cfg.accepted_payment_methods || ["pix", "cash", "card"];
         const withPix = pixDiretoOn && !baseMethods.includes("pix") ? ["pix", ...baseMethods] : baseMethods;
         const methods = withPix.filter((m: string) => {
