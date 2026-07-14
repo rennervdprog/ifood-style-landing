@@ -18,8 +18,9 @@ Deno.serve(async (req) => {
     const storeId = "e14a110c-f0a1-4b25-8a71-554a9705fefa";
     const out: any = {};
     try { const r = await admin.from("store_whatsapp_config").select("*").eq("store_id", storeId).maybeSingle(); out.cfg = r.data; out.cfgErr = r.error?.message; } catch(e){ out.cfgErr = String(e); }
-    try { const r = await admin.from("whatsapp_bot_sessions").select("*").eq("store_id", storeId).order("created_at", { ascending: false }).limit(5); out.sessions = r.data; out.sessErr = r.error?.message; } catch(e){ out.sessErr = String(e); }
-    try { const r = await admin.from("whatsapp_inbound_log").select("*").eq("store_id", storeId).order("created_at", { ascending: false }).limit(10); out.log = r.data; out.logErr = r.error?.message; } catch(e){ out.logErr = String(e); }
+    try { const r = await admin.from("whatsapp_bot_sessions").select("*").eq("store_id", storeId).limit(20); out.sessions = r.data; out.sessErr = r.error?.message; } catch(e){ out.sessErr = String(e); }
+    try { const r = await admin.from("whatsapp_inbound_log").select("*").eq("store_id", storeId).limit(30); out.log = r.data; out.logErr = r.error?.message; } catch(e){ out.logErr = String(e); }
+    try { const r = await admin.from("whatsapp_inbound_log").select("*").ilike("phone", "%991624997%").limit(30); out.logByPhone = r.data; out.logByPhoneErr = r.error?.message; } catch(e){ out.logByPhoneErr = String(e); }
     try { out.instance = await fetch(`${base}/instance/fetchInstances?instanceName=store-e14a110c`, { headers: { apikey: key }}).then(r=>r.json()); } catch(e){ out.instanceErr = String(e); }
     try { out.webhook = await fetch(`${base}/webhook/find/store-e14a110c`, { headers: { apikey: key }}).then(r=>r.json()); } catch(e){ out.webhookErr = String(e); }
     return new Response(JSON.stringify(out, null, 2), { headers: { ...cors, "Content-Type": "application/json" }});
