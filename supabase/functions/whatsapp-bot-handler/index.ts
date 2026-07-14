@@ -588,6 +588,42 @@ Deno.serve(async (req) => {
         .maybeSingle();
       const knownName = (known as any)?.full_name || null;
       const clientId = (known as any)?.user_id || null;
+      // Verifica se este telefone tem pedido em aberto (não finalizado)
+      const digitsPhone = digits;
+      const { data: openOrders } = await admin
+        .from("orders")
+        .select("id, display_code, status, created_at")
+        .eq("store_id", store_id)
+        .eq("customer_phone", digitsPhone)
+        .not("status", "in", "(entregue,cancelado,recusado,finalizado)")
+        .order("created_at", { ascending: false })
+        .limit(1);
+      const openOrder = (openOrders || [])[0] as any;
+      if (openOrder) {
+        const code = openOrder.display_code ? `#${openOrder.display_code}` : `#${String(openOrder.id).slice(0, 8)}`;
+        const firstName = knownName ? String(knownName).split(" ")[0] : null;
+        const hi = firstName ? `Olá, *${firstName}*! 👋` : "Olá! 👋";
+        session = {
+          store_id, phone,
+          current_step: "awaiting_existing_order_choice",
+          cart: [],
+          context: {
+            client_id: clientId,
+            customer_name: knownName || undefined,
+            store_url: storeUrl,
+          },
+        };
+        await setSession(admin, session);
+        await sendText(store_id, phone, [
+          hi, "",
+          `Você já tem um pedido em aberto na *${storeName}*: *${code}* (status: _${openOrder.status}_).`, "",
+          "Deseja fazer *outro pedido*?", "",
+          "*1* — 🛒 Sim, fazer novo pedido",
+          "*2* — 💬 Falar com atendente sobre o pedido atual",
+          "*3* — ❌ Cancelar / sair",
+        ].join("\n"));
+        return json({ handled: true, action: "existing_order_prompt" });
+      }
       const greeting = knownName
         ? `Olá, *${String(knownName).split(" ")[0]}*! 👋 Que bom te ver de novo na *${storeName}*.`
         : `Olá! 👋 Bem-vindo à *${storeName}*.`;
