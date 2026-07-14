@@ -52,11 +52,9 @@ const logNormalDelay = () => {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: cors });
   try {
-    const EXT_URL = Deno.env.get("EXTERNAL_SUPABASE_URL") || Deno.env.get("SUPABASE_URL")!;
-    const EXT_KEY =
-      Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") ||
-      Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY") ||
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const EXT_URL = Deno.env.get("EXTERNAL_SUPABASE_URL")!;
+    const EXT_KEY = (Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") ||
+      Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY"))!;
     const baseUrl = Deno.env.get("EVOLUTION_API_URL");
     const apiKey = Deno.env.get("EVOLUTION_GLOBAL_API_KEY");
     if (!baseUrl || !apiKey) return json({ error: "Evolution não configurado" }, 500);
