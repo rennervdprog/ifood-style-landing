@@ -174,6 +174,88 @@ const askMore = async (admin: any, storeId: string, phone: string, session: Sess
   await sendText(storeId, phone, msg);
 };
 
+// Busca grupos de adicionais (diretos e vinculados via product_addon_groups) + itens.
+const fetchAddonGroupsFor = async (admin: any, storeId: string, productId: string) => {
+  const sel = "id,name,min_select,max_select,sort_order,price_replaces_base,addon_items(id,name,price,sort_order)";
+  const [directRes, linkedRes] = await Promise.all([
+    admin.from("addon_groups").select(sel).eq("product_id", productId).order("sort_order"),
+    admin.from("product_addon_groups")
+      .select(`addon_group_id,addon_groups(${sel})`)
+      .eq("product_id", productId),
+  ]);
+  const direct = (directRes.data || []) as any[];
+  const linked = ((linkedRes.data || []) as any[])
+    .map((r) => r.addon_groups)
+    .filter(Boolean)
+    .filter((g: any) => !direct.find((d) => d.id === g.id));
+  const groups = [...direct, ...linked]
+    .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
+    .map((g: any) => ({
+      id: g.id,
+      name: g.name,
+      min: Number(g.min_select || 0),
+      max: Number(g.max_select || 1),
+      price_replaces_base: !!g.price_replaces_base,
+      items: ((g.addon_items || []) as any[])
+        .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
+        .map((it: any) => ({ id: it.id, name: it.name, price: Number(it.price || 0) })),
+    }))
+    .filter((g) => g.items.length > 0);
+  return groups;
+};
+
+const askAddonGroup = async (admin: any, storeId: string, phone: string, session: Session) => {
+  const pp = session.context.pending_product;
+  const g = pp.groups[pp.group_idx];
+  const rule =
+    g.min === 0 && g.max === 1 ? "opcional, escolha 1"
+    : g.min === 1 && g.max === 1 ? "obrigatório, escolha 1"
+    : g.min === 0 ? `opcional, até ${g.max}`
+    : g.min === g.max ? `obrigatório, escolha ${g.min}`
+    : `escolha de ${g.min} a ${g.max}`;
+  const lines = [`*${g.name}* (${rule})`, ""];
+  g.items.forEach((it: any, i: number) => {
+    const priceStr = it.price > 0 ? ` (+${BRL(it.price)})` : "";
+    lines.push(`*${i + 1}* — ${it.name}${priceStr}`);
+  });
+  if (g.max > 1) lines.push("", "_Envie os números separados por vírgula (ex: 1,3)._");
+  else lines.push("", "_Responda com o *número* da opção._");
+  if (g.min === 0) lines.push("_Ou envie *0* para pular._");
+  session.current_step = "awaiting_addon";
+  await setSession(admin, session);
+  await sendText(storeId, phone, lines.join("\n"));
+};
+
+const finalizeProductWithAddons = async (admin: any, storeId: string, phone: string, session: Session) => {
+  const pp = session.context.pending_product;
+  const addons: AddonSel[] = pp.addons || [];
+  // preço: se algum grupo com price_replaces_base tem seleção, o base vira o maior preço desse grupo;
+  // demais adicionais somam normalmente.
+  let base = Number(pp.base_price || 0);
+  let extras = 0;
+  const replacedGroups = new Set<string>();
+  for (const g of pp.groups) {
+    const picks = addons.filter(a => a.group_id === g.id);
+    if (g.price_replaces_base && picks.length > 0) {
+      base = Math.max(...picks.map(a => a.price));
+      replacedGroups.add(g.id);
+    }
+  }
+  for (const a of addons) {
+    if (!replacedGroups.has(a.group_id)) extras += a.price;
+  }
+  const unit_price = Math.round((base + extras) * 100) / 100;
+  session.cart.push({
+    product_id: pp.product_id,
+    name: pp.name,
+    unit_price,
+    quantity: 1,
+    addons: addons.map(a => ({ group_id: a.group_id, group_name: a.group_name, name: a.name, price: a.price })),
+  });
+  session.context.pending_product = null;
+  await askMore(admin, storeId, phone, session);
+};
+
 const askDeliveryType = async (admin: any, storeId: string, phone: string, session: Session) => {
   session.current_step = "awaiting_delivery_type";
   await setSession(admin, session);
