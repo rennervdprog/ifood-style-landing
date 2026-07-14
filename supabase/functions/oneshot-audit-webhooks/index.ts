@@ -24,6 +24,18 @@ Deno.serve(async (req) => {
     try { const r = await admin.from("whatsapp_bot_config").select("*").eq("store_id", storeId).maybeSingle(); out.botCfg = r.data; out.botCfgErr = r.error?.message; } catch(e){ out.botCfgErr = String(e); }
     try { const r = await admin.from("stores").select("id,name,plan,status,is_test").eq("id", storeId).maybeSingle(); out.store = r.data; } catch(e){ out.storeErr = String(e); }
     try { const r = await admin.from("store_plans").select("*").eq("store_id", storeId).maybeSingle(); out.storePlan = r.data; } catch(e){ out.storePlanErr = String(e); }
+    try { const r = await admin.from("stores").select("id,name,slug,is_open,force_closed").eq("id", storeId).maybeSingle(); out.storeMin = r.data; out.storeMinErr = r.error?.message; } catch(e){ out.storeMinErr = String(e); }
+    try { const r = await admin.from("opening_hours").select("*").eq("store_id", storeId); out.hours = r.data; out.hoursErr = r.error?.message; } catch(e){ out.hoursErr = String(e); }
+    // Test bot handler directly
+    try {
+      const botBase = Deno.env.get("SUPABASE_URL")!;
+      const r = await fetch(`${botBase}/functions/v1/whatsapp-bot-handler`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-internal-token": token, apikey: Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!}` },
+        body: JSON.stringify({ store_id: storeId, phone: "5514991624997", text: "menu" }),
+      });
+      out.botTest = { status: r.status, body: await r.json().catch(()=>({})) };
+    } catch(e) { out.botTestErr = String(e); }
     try { out.instance = await fetch(`${base}/instance/fetchInstances?instanceName=store-e14a110c`, { headers: { apikey: key }}).then(r=>r.json()); } catch(e){ out.instanceErr = String(e); }
     try { out.webhook = await fetch(`${base}/webhook/find/store-e14a110c`, { headers: { apikey: key }}).then(r=>r.json()); } catch(e){ out.webhookErr = String(e); }
     return new Response(JSON.stringify(out, null, 2), { headers: { ...cors, "Content-Type": "application/json" }});
