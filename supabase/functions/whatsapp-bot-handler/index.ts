@@ -621,7 +621,9 @@ Deno.serve(async (req) => {
           await maybeOfferSavedAddress(admin, store_id, phone, session);
         } else if (num === 2) {
           session.context.delivery_type = "retirada";
-          const methods = (cfg.accepted_payment_methods || ["pix", "cash", "card"]).filter((m: string) => {
+          const baseMethods = cfg.accepted_payment_methods || ["pix", "cash", "card"];
+          const withPix = pixDiretoOn && !baseMethods.includes("pix") ? ["pix", ...baseMethods] : baseMethods;
+          const methods = withPix.filter((m: string) => {
             if (m === "pix") return accepts.pix;
             if (m === "cash") return accepts.cash;
             if (m === "card") return accepts.card;
@@ -646,7 +648,9 @@ Deno.serve(async (req) => {
             Number(store?.delivery_fee || 0) ||
             Number(store?.delivery_fee_base || 0);
           session.context.delivery_fee = Math.round((flat + PLATFORM_FEE) * 100) / 100;
-          const methods = (cfg.accepted_payment_methods || ["pix", "cash", "card"]).filter((m: string) => {
+          const baseMethods = cfg.accepted_payment_methods || ["pix", "cash", "card"];
+          const withPix = pixDiretoOn && !baseMethods.includes("pix") ? ["pix", ...baseMethods] : baseMethods;
+          const methods = withPix.filter((m: string) => {
             if (m === "pix") return accepts.pix;
             if (m === "cash") return accepts.cash;
             if (m === "card") return accepts.card;
@@ -698,7 +702,9 @@ Deno.serve(async (req) => {
           Number(store?.delivery_fee || 0) ||
           Number(store?.delivery_fee_base || 0);
         session.context.delivery_fee = Math.round((flat + PLATFORM_FEE) * 100) / 100;
-        const methods = (cfg.accepted_payment_methods || ["pix", "cash", "card"]).filter((m: string) => {
+        const baseMethods = cfg.accepted_payment_methods || ["pix", "cash", "card"];
+        const withPix = pixDiretoOn && !baseMethods.includes("pix") ? ["pix", ...baseMethods] : baseMethods;
+        const methods = withPix.filter((m: string) => {
           if (m === "pix") return accepts.pix;
           if (m === "cash") return accepts.cash;
           if (m === "card") return accepts.card;
