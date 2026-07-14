@@ -18,7 +18,7 @@ type Step =
   | "welcome" | "awaiting_main_menu"
   | "awaiting_existing_order_choice"
   | "awaiting_name" | "awaiting_category" | "awaiting_product"
-  | "awaiting_addon" | "awaiting_more" | "awaiting_delivery_type"
+  | "awaiting_addon" | "awaiting_observation" | "awaiting_more" | "awaiting_delivery_type"
   | "awaiting_address_choice"
   | "awaiting_street" | "awaiting_number" | "awaiting_neighborhood" | "awaiting_reference"
   | "awaiting_payment" | "awaiting_change" | "awaiting_confirm"
@@ -73,7 +73,7 @@ function getStoreOpenStatus(
 }
 
 type AddonSel = { group_id: string; group_name: string; name: string; price: number };
-type CartItem = { product_id: string; name: string; unit_price: number; quantity: number; addons?: AddonSel[] };
+type CartItem = { product_id: string; name: string; unit_price: number; quantity: number; addons?: AddonSel[]; observations?: string };
 
 interface Session {
   id?: string;
@@ -202,12 +202,23 @@ const askMore = async (admin: any, storeId: string, phone: string, session: Sess
   const total = session.cart.reduce((s, i) => s + i.unit_price * i.quantity, 0);
   const cartText = session.cart.map(i => {
     const ad = (i.addons || []).map(a => `   ↳ ${a.name}`).join("\n");
-    return `• ${i.quantity}x ${i.name} — ${BRL(i.unit_price * i.quantity)}${ad ? "\n" + ad : ""}`;
+    const obs = i.observations ? `\n   📝 _${i.observations}_` : "";
+    return `• ${i.quantity}x ${i.name} — ${BRL(i.unit_price * i.quantity)}${ad ? "\n" + ad : ""}${obs}`;
   }).join("\n");
   const msg = `✅ *Item adicionado!*\n\n*Seu carrinho:*\n${cartText}\n\n*Subtotal:* ${BRL(total)}\n\n*1* — Adicionar mais itens\n*2* — Finalizar pedido\n\n_Digite *CANCELAR* para desistir._`;
   session.current_step = "awaiting_more";
   await setSession(admin, session);
   await sendText(storeId, phone, msg);
+};
+
+const askObservation = async (admin: any, storeId: string, phone: string, session: Session) => {
+  session.current_step = "awaiting_observation";
+  await setSession(admin, session);
+  await sendText(
+    storeId,
+    phone,
+    "📝 *Alguma observação para este item?*\n\n_Ex.: sem cebola, ponto da carne, tirar o queijo..._\n\nDigite sua observação ou envie *0* para pular.",
+  );
 };
 
 // Busca grupos de adicionais (diretos e vinculados via product_addon_groups) + itens.
@@ -289,7 +300,7 @@ const finalizeProductWithAddons = async (admin: any, storeId: string, phone: str
     addons: addons.map(a => ({ group_id: a.group_id, group_name: a.group_name, name: a.name, price: a.price })),
   });
   session.context.pending_product = null;
-  await askMore(admin, storeId, phone, session);
+  await askObservation(admin, storeId, phone, session);
 };
 
 const askDeliveryType = async (admin: any, storeId: string, phone: string, session: Session) => {
@@ -461,6 +472,7 @@ const startPixDireto = async (admin: any, storeId: string, phone: string, sessio
   const items = session.cart.map(i => ({
     order_id: order.id, product_id: i.product_id,
     quantity: i.quantity, unit_price: i.unit_price,
+    observations: i.observations || null,
     addons: (i.addons || []).map(a => ({ name: a.name, price: a.price, group_name: a.group_name })),
   }));
   await admin.from("order_items").insert(items);
@@ -617,6 +629,7 @@ const createOrder = async (admin: any, storeId: string, phone: string, session: 
   const items = session.cart.map(i => ({
     order_id: order.id, product_id: i.product_id,
     quantity: i.quantity, unit_price: i.unit_price,
+    observations: i.observations || null,
     addons: (i.addons || []).map(a => ({ name: a.name, price: a.price, group_name: a.group_name })),
   }));
   await admin.from("order_items").insert(items);
@@ -876,7 +889,7 @@ Deno.serve(async (req) => {
         const groups = await fetchAddonGroupsFor(admin, store_id, p.id);
         if (groups.length === 0) {
           session.cart.push({ product_id: p.id, name: p.name, unit_price: p.price, quantity: 1, addons: [] });
-          await askMore(admin, store_id, phone, session);
+          await askObservation(admin, store_id, phone, session);
           return json({ handled: true, action: "added_item" });
         }
         session.context.pending_product = {
@@ -918,6 +931,15 @@ Deno.serve(async (req) => {
         }
         await finalizeProductWithAddons(admin, store_id, phone, session);
         return json({ handled: true, action: "product_finalized" });
+      }
+      case "awaiting_observation": {
+        const raw = (text || "").trim();
+        if (raw && raw !== "0") {
+          const last = session.cart[session.cart.length - 1];
+          if (last) last.observations = raw.slice(0, 240);
+        }
+        await askMore(admin, store_id, phone, session);
+        return json({ handled: true, action: "observation_saved" });
       }
       case "awaiting_more": {
         if (num === 1) { await showCategories(admin, store_id, phone, session); return json({ handled: true }); }
