@@ -108,6 +108,25 @@ const sendText = async (storeId: string, phone: string, message: string) => {
 };
 
 const setSession = async (admin: any, s: Session) => {
+  return _setSession(admin, s);
+};
+
+async function sendDeliveryFeeInfo(storeId: string, phone: string, storeFee: number, platformFee: number) {
+  const total = Math.round((storeFee + platformFee) * 100) / 100;
+  const lines = [
+    `🛵 *Taxa de entrega: ${BRL(total)}*`,
+    ``,
+    `• Loja: ${BRL(storeFee)}`,
+  ];
+  if (platformFee > 0) {
+    lines.push(`• Plataforma: ${BRL(platformFee)} (mantém o app no ar)`);
+  } else {
+    lines.push(`• Plataforma: grátis 🎉`);
+  }
+  try { await sendText(storeId, phone, lines.join("\n")); } catch (e) { console.error("[bot] sendDeliveryFeeInfo", e); }
+}
+
+const _setSession = async (admin: any, s: Session) => {
   const expires = new Date(Date.now() + 15 * 60_000).toISOString();
   await admin.from("whatsapp_bot_sessions").upsert(
     {
