@@ -474,8 +474,13 @@ const ensureClient = async (admin: any, storeId: string, phone: string, session:
   if (session.context.client_id) return session.context.client_id;
   const customerName = String(session.context.customer_name || "").trim();
   try {
+    const digits = onlyDigits(phone);
     const { data: prof } = await admin.from("profiles")
-      .select("user_id, delivery_pin").eq("phone", phone).order("updated_at", { ascending: false }).limit(1).maybeSingle();
+      .select("user_id, delivery_pin")
+      .eq("phone", digits)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
     let clientId: string | null = (prof as any)?.user_id || null;
     let pin = (prof as any)?.delivery_pin || String(Math.floor(1000 + Math.random() * 9000));
     if (!clientId) {
