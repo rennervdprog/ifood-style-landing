@@ -25,6 +25,50 @@ type Step =
 const CANONICAL_HOST = "https://itasuper.com.br";
 const onlyDigits = (p: string) => String(p || "").replace(/\D/g, "");
 
+// Verifica se a loja está aberta agora (horário Brasília) com base em opening_hours + force_closed + is_open.
+const dayNamesBR = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
+function getStoreOpenStatus(
+  hours: Array<{ day_of_week: number; open_time: string; close_time: string; is_closed_all_day: boolean }>,
+  forceClosed: boolean,
+  isOpenManual: boolean,
+): { isOpen: boolean; reason: string } {
+  if (forceClosed) return { isOpen: false, reason: "Fechado temporariamente" };
+  if (!hours || hours.length === 0) {
+    return isOpenManual ? { isOpen: true, reason: "Aberto" } : { isOpen: false, reason: "Fechado" };
+  }
+  const now = new Date();
+  const parts = new Intl.DateTimeFormat("pt-BR", {
+    timeZone: "America/Sao_Paulo", weekday: "short", hour: "2-digit", minute: "2-digit", hour12: false,
+  }).formatToParts(now);
+  const brHour = Number(parts.find(p => p.type === "hour")?.value ?? 0);
+  const brMinute = Number(parts.find(p => p.type === "minute")?.value ?? 0);
+  const brDate = new Date(now.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
+  const currentDay = brDate.getDay();
+  const currentMinutes = brHour * 60 + brMinute;
+  const today = hours.find(h => h.day_of_week === currentDay);
+  if (today && !today.is_closed_all_day) {
+    const [oH, oM] = today.open_time.split(":").map(Number);
+    const [cH, cM] = today.close_time.split(":").map(Number);
+    const openMin = oH * 60 + oM;
+    let closeMin = cH * 60 + cM;
+    if (closeMin <= openMin) {
+      if (currentMinutes >= openMin || currentMinutes < closeMin) return { isOpen: true, reason: `Aberto até ${today.close_time.slice(0,5)}` };
+    } else {
+      if (currentMinutes >= openMin && currentMinutes < closeMin) return { isOpen: true, reason: `Aberto até ${today.close_time.slice(0,5)}` };
+    }
+    if (currentMinutes < openMin) return { isOpen: false, reason: `Abre hoje às ${today.open_time.slice(0,5)}` };
+  }
+  for (let off = 1; off <= 7; off++) {
+    const nd = (currentDay + off) % 7;
+    const nh = hours.find(h => h.day_of_week === nd);
+    if (nh && !nh.is_closed_all_day) {
+      const label = off === 1 ? "Amanhã" : dayNamesBR[nd];
+      return { isOpen: false, reason: `Abre ${label} às ${nh.open_time.slice(0,5)}` };
+    }
+  }
+  return { isOpen: false, reason: "Fechado" };
+}
+
 type CartItem = { product_id: string; name: string; unit_price: number; quantity: number };
 
 interface Session {
