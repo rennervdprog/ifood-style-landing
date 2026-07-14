@@ -14,8 +14,8 @@ Deno.serve(async (req) => {
   if (!authHeader?.startsWith("Bearer ")) return json({ error: "Unauthorized" }, 401);
 
   const sb = createClient(
-    Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_ANON_KEY")!,
+    Deno.env.get("EXTERNAL_SUPABASE_URL")!,
+    Deno.env.get("EXTERNAL_SUPABASE_ANON_KEY")!,
     { global: { headers: { Authorization: authHeader } } },
   );
   const { data: userData } = await sb.auth.getUser();
@@ -31,8 +31,8 @@ Deno.serve(async (req) => {
   out.evolution_configured = !!(baseUrl && apiKey);
   out.evolution_url = baseUrl || null;
 
-  const extUrl = Deno.env.get("EXTERNAL_SUPABASE_URL") || Deno.env.get("SUPABASE_URL");
-  const extKey = Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  const extUrl = Deno.env.get("EXTERNAL_SUPABASE_URL");
+  const extKey = Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY");
   out.external_configured = !!(extUrl && extKey);
 
   if (!extUrl || !extKey) return json({ error: "Backend externo não configurado" }, 500);
