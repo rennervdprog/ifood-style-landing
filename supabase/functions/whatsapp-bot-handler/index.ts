@@ -98,7 +98,12 @@ const sendText = async (storeId: string, phone: string, message: string) => {
     },
     body: JSON.stringify({ store_id: storeId, phone, message, kind: "bot", force: true }),
   });
-  return r.ok;
+  const out = await r.json().catch(() => ({}));
+  if (!r.ok || (out as any)?.error) {
+    console.error("[bot] sendText failed", { status: r.status, out });
+    throw new Error(`send_text_failed_${r.status}`);
+  }
+  return true;
 };
 
 const setSession = async (admin: any, s: Session) => {
