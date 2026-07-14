@@ -187,7 +187,13 @@ const showProducts = async (admin: any, storeId: string, phone: string, session:
   );
   lines.push("", "_Responda com o *número* do item._", "_Digite *0* para voltar às categorias._");
   session.current_step = "awaiting_product";
-  session.context = { ...session.context, products: products.map((p: any) => ({ id: p.id, name: p.name, price: Number(p.price) })) };
+  session.context = {
+    ...session.context,
+    products: products.map((p: any) => ({
+      id: p.id, name: p.name, price: Number(p.price),
+      description: (p.description || "").toString().trim() || null,
+    })),
+  };
   await setSession(admin, session);
   await sendText(storeId, phone, lines.join("\n"));
 };
@@ -862,6 +868,11 @@ Deno.serve(async (req) => {
           return json({ handled: true, action: "invalid_product" });
         }
         const p = prods[num - 1];
+        // Se o produto tem descrição (ex.: "cardápio do dia" — arroz, feijão, mistura...),
+        // mostra ao cliente antes de pedir os adicionais obrigatórios.
+        if (p.description) {
+          await sendText(store_id, phone, `🍱 *${p.name}*\n${p.description}`);
+        }
         const groups = await fetchAddonGroupsFor(admin, store_id, p.id);
         if (groups.length === 0) {
           session.cart.push({ product_id: p.id, name: p.name, unit_price: p.price, quantity: 1, addons: [] });
