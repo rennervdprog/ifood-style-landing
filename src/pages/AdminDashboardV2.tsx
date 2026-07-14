@@ -213,6 +213,7 @@ const AdminDashboard = () => {
   const simulateStoreId = searchParams.get("storeId");
   const initialTabParam = searchParams.get("tab") as DashboardTab | null;
   const queryClient = useQueryClient();
+  const { confirm: confirmReprint, ConfirmDialog: ReprintConfirmDialog } = useConfirmDialog();
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const loopIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const cashSoundRef = useRef<HTMLAudioElement | null>(null);
@@ -1160,12 +1161,17 @@ const AdminDashboard = () => {
    * Responsabilidade: disparar o print e atualizar o status.
    * O WhatsApp é aberto via link <a> no JSX (não via window.open).
    */
-  const handleAcceptOrder = useCallback((order: any) => {
-    // Se a notinha já foi disparada automaticamente (auto-print), não imprime
-    // de novo aqui pra evitar duplicidade.
+  const handleAcceptOrder = useCallback(async (order: any) => {
+    // Se a notinha já foi disparada automaticamente (auto-print), pergunta
+    // ao lojista se quer reimprimir em vez de imprimir silenciosamente.
     if ((order as any)?.printed_at) {
-      console.info("[accept] print pulado: já impresso automaticamente", order?.id);
-      return;
+      const ok = await confirmReprint({
+        title: "Notinha já foi impressa",
+        description: "Deseja imprimir novamente?",
+        confirmText: "Imprimir de novo",
+        cancelText: "Não imprimir",
+      });
+      if (!ok) return;
     }
     // Print da notinha
     try {
@@ -1175,7 +1181,7 @@ const AdminDashboard = () => {
     } catch (e) {
       console.warn("print error", e);
     }
-  }, [store?.name, store?.settings, doPrintOrder]);
+  }, [store?.name, store?.settings, doPrintOrder, confirmReprint]);
 
   // Deriva do banco (fonte única). Default ON.
   const autoPrint = (store?.settings as any)?.auto_print_delivery !== false;
