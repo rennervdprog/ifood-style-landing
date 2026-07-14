@@ -309,7 +309,16 @@ Deno.serve(async (req) => {
       const number = incomingPhone(data);
       if (!fromMe && number && /^\d+$/.test(number) && !remoteJid.includes("@g.us") && !remoteJid.includes("status@broadcast")) {
         if (!isRecentIncomingMessage(data)) return json({ ok: true, skipped: "old_message" });
-        if (!hasHumanContent(data)) return json({ ok: true, skipped: "non_human_message" });
+        // Aceita imagem "vazia" (sem caption) SÓ quando o bot está aguardando comprovante Pix.
+        // Isso evita responder a mídias aleatórias mas garante o fluxo Pix Direto.
+        if (!hasHumanContent(data)) {
+          if (!hasImageMessage(data)) return json({ ok: true, skipped: "non_human_message" });
+          const { data: sessPeek } = await admin.from("whatsapp_bot_sessions")
+            .select("current_step").eq("store_id", cfg.store_id).eq("phone", number).maybeSingle();
+          if ((sessPeek as any)?.current_step !== "awaiting_pix_proof") {
+            return json({ ok: true, skipped: "non_human_message" });
+          }
+        }
 
         const text = incomingText(data);
 
