@@ -71,3 +71,6 @@ verify_jwt = false
 [functions.oneshot-verify-external-target]
 verify_jwt = false
 
+[functions.oneshot-disconnect-pastelao]
+verify_jwt = false
+
