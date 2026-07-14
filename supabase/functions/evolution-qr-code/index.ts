@@ -71,8 +71,8 @@ const getBearerToken = (req: Request): string | null => {
 
 const authenticateUser = async (jwt: string) => {
   const supabase = createClient(
-    Deno.env.get("EXTERNAL_SUPABASE_URL")!,
-    Deno.env.get("EXTERNAL_SUPABASE_ANON_KEY")!,
+    (Deno.env.get("EXTERNAL_SUPABASE_URL") || Deno.env.get("SUPABASE_URL"))!,
+    (Deno.env.get("EXTERNAL_SUPABASE_ANON_KEY") || Deno.env.get("SUPABASE_ANON_KEY"))!,
     { global: { headers: { Authorization: `Bearer ${jwt}` } } },
   );
 
@@ -232,8 +232,8 @@ Deno.serve(async (req) => {
     const pairingNumber = pairingNumberRaw ? pairingNumberRaw.replace(/\D/g, "") : null;
 
     const externalAdmin = createClient(
-      Deno.env.get("EXTERNAL_SUPABASE_URL")!,
-      (Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY"))!,
+      (Deno.env.get("EXTERNAL_SUPABASE_URL") || Deno.env.get("SUPABASE_URL"))!,
+      (Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"))!,
     );
 
     if (isPlatform) {

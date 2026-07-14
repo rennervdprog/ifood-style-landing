@@ -84,15 +84,19 @@ Deno.serve(async (req) => {
         $cron$
       );
 
-      -- Mantém sessões Evolution/WhatsApp vivas: a cada 3 min chama evolution-keepalive
-      -- na Lovable Cloud (que lê configs do banco externo e reconecta se caiu).
+      -- Mantém sessões Evolution/WhatsApp vivas no backend externo: a cada 3 min
+      -- valida conexão e repara webhook vazio/desconfigurado de qualquer instância.
       select cron.schedule(
         'evolution-keepalive-3min',
         '*/3 * * * *',
         $cron$
           select net.http_post(
-            url := 'https://lktzrqjvqoojlrhqnxuz.supabase.co/functions/v1/evolution-keepalive',
-            headers := jsonb_build_object('Content-Type','application/json'),
+            url := '${base}/functions/v1/evolution-keepalive',
+            headers := jsonb_build_object(
+              'Content-Type','application/json',
+              'apikey','${anonKey}',
+              'Authorization','Bearer ${anonKey}'
+            ),
             body := '{}'::jsonb
           );
         $cron$
