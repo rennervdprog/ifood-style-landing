@@ -454,8 +454,8 @@ const startPixDireto = async (admin: any, storeId: string, phone: string, sessio
 const uploadPixProofFromBase64 = async (
   storeId: string, orderId: string, base64: string, mime: string
 ): Promise<string | null> => {
-  const base = Deno.env.get("EXTERNAL_SUPABASE_URL")!;
-  const key = Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY")!;
+  const base = Deno.env.get("SUPABASE_URL") || Deno.env.get("EXTERNAL_SUPABASE_URL")!;
+  const key = Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const ext = mime.includes("png") ? "png" : mime.includes("pdf") ? "pdf" : "jpg";
   const path = `${storeId}/${orderId}.${ext}`;
   const bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
@@ -610,8 +610,8 @@ Deno.serve(async (req) => {
     if (!store_id || !phone || typeof text !== "string") return json({ error: "invalid payload" }, 400);
 
     const admin = createClient(
-      Deno.env.get("EXTERNAL_SUPABASE_URL")!,
-      (Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY"))!,
+      (Deno.env.get("SUPABASE_URL") || Deno.env.get("EXTERNAL_SUPABASE_URL"))!,
+      (Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"))!,
     );
 
     const { data: cfg } = await admin.from("whatsapp_bot_config")
