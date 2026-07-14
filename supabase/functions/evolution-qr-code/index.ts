@@ -58,6 +58,9 @@ const getPairingCode = (data: any): string | null => {
 
 const responseFromFetch = async (r: Response) => ({ ok: r.ok, status: r.status, data: await parseJson(r) });
 
+const webhookUrlOf = (body: any): string => String(body?.url || body?.webhook?.url || "");
+const webhookEnabledOf = (body: any): boolean => Boolean(body?.enabled ?? body?.webhook?.enabled);
+
 const getBearerToken = (req: Request): string | null => {
   const authHeader = req.headers.get("Authorization") || "";
   const match = authHeader.match(/^Bearer\s+(.+)$/i);
@@ -68,8 +71,8 @@ const getBearerToken = (req: Request): string | null => {
 
 const authenticateUser = async (jwt: string) => {
   const supabase = createClient(
-    Deno.env.get("EXTERNAL_SUPABASE_URL")!,
-    Deno.env.get("EXTERNAL_SUPABASE_ANON_KEY")!,
+    (Deno.env.get("EXTERNAL_SUPABASE_URL") || Deno.env.get("SUPABASE_URL"))!,
+    (Deno.env.get("EXTERNAL_SUPABASE_ANON_KEY") || Deno.env.get("SUPABASE_ANON_KEY"))!,
     { global: { headers: { Authorization: `Bearer ${jwt}` } } },
   );
 
@@ -110,7 +113,14 @@ const setWebhook = async (baseUrl: string, instance: string, apiKey: string, web
     body: JSON.stringify(payload),
   });
   const data = await parseJson(r);
-  if (r.ok) return { ok: true, status: r.status, data };
+  if (r.ok) {
+    const verified = await evolutionFetch(`${root}/webhook/find/${instance}`, { headers: { apikey: apiKey } })
+      .then(responseFromFetch)
+      .catch(() => null);
+    if (verified?.ok && webhookEnabledOf(verified.data) && webhookUrlOf(verified.data) === webhookUrl) {
+      return { ok: true, status: r.status, data: verified.data, verified: true };
+    }
+  }
 
   const legacyPayload = {
     enabled: true,
@@ -126,7 +136,12 @@ const setWebhook = async (baseUrl: string, instance: string, apiKey: string, web
   });
   const fallbackData = await parseJson(fallback);
   if (!fallback.ok) console.error("[evolution-qr-code] webhook set failed", { instance, status: fallback.status, data: fallbackData });
-  return { ok: fallback.ok, status: fallback.status, data: fallbackData };
+  const verified = await evolutionFetch(`${root}/webhook/find/${instance}`, { headers: { apikey: apiKey } })
+    .then(responseFromFetch)
+    .catch(() => null);
+  const ok = fallback.ok && verified?.ok && webhookEnabledOf(verified.data) && webhookUrlOf(verified.data) === webhookUrl;
+  if (!ok) console.error("[evolution-qr-code] webhook verify failed", { instance, expected: webhookUrl, current: webhookUrlOf(verified?.data), status: verified?.status });
+  return { ok, status: fallback.status, data: verified?.data || fallbackData, verified: ok };
 };
 
 const createInstance = async (root: string, instance: string, apiKey: string, webhookUrl: string, withQr: boolean) => {
@@ -217,8 +232,8 @@ Deno.serve(async (req) => {
     const pairingNumber = pairingNumberRaw ? pairingNumberRaw.replace(/\D/g, "") : null;
 
     const externalAdmin = createClient(
-      Deno.env.get("EXTERNAL_SUPABASE_URL")!,
-      (Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY"))!,
+      (Deno.env.get("EXTERNAL_SUPABASE_URL") || Deno.env.get("SUPABASE_URL"))!,
+      (Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"))!,
     );
 
     if (isPlatform) {
@@ -244,15 +259,13 @@ Deno.serve(async (req) => {
     const baseUrl = Deno.env.get("EVOLUTION_API_URL");
     const apiKey = Deno.env.get("EVOLUTION_GLOBAL_API_KEY");
     const webhookToken = Deno.env.get("EVOLUTION_WEBHOOK_TOKEN") || "";
-    // Webhook deve chamar o host atual das funções; o backend externo é usado
-    // apenas como banco de dados de produção.
-    const functionBaseUrl = Deno.env.get("SUPABASE_URL") || Deno.env.get("EXTERNAL_SUPABASE_URL")!;
-    if (!baseUrl || !apiKey) return json({ error: "Servidor Evolution não configurado" }, 500);
+    const functionBaseUrl = Deno.env.get("EXTERNAL_SUPABASE_URL") || Deno.env.get("SUPABASE_URL") || "";
+    if (!baseUrl || !apiKey || !webhookToken || !functionBaseUrl) return json({ error: "Servidor Evolution/backend não configurado" }, 500);
 
     const instance = isPlatform
       ? ((parsed.data as any).instance_name || "itasuper-platform")
       : `store-${store_id!.slice(0, 8)}`;
-    const webhookUrl = `${functionBaseUrl}/functions/v1/evolution-webhook?token=${webhookToken}`;
+    const webhookUrl = `${functionBaseUrl.replace(/\/$/, "")}/functions/v1/evolution-webhook?token=${webhookToken}`;
 
     const root = baseUrl.replace(/\/$/, "");
 
@@ -287,7 +300,8 @@ Deno.serve(async (req) => {
       }
     }
 
-    await setWebhook(baseUrl, instance, apiKey, webhookUrl);
+    const webhookResult = await setWebhook(baseUrl, instance, apiKey, webhookUrl);
+    if (!webhookResult.ok) return fail("Falha ao configurar webhook Evolution", 502, webhookResult);
     await applySettings(root, instance, apiKey);
 
     let data: any = createResult?.ok && !pairingNumber && (getQrPayload(createResult.data) || getRawQrCode(createResult.data))
@@ -307,7 +321,8 @@ Deno.serve(async (req) => {
       if (!createResult.ok) {
         return fail("Falha ao recriar instância Evolution", 502, { evolution_status: createResult.status, response: createResult.data });
       }
-      await setWebhook(baseUrl, instance, apiKey, webhookUrl);
+      const recreatedWebhook = await setWebhook(baseUrl, instance, apiKey, webhookUrl);
+      if (!recreatedWebhook.ok) return fail("Falha ao configurar webhook Evolution", 502, recreatedWebhook);
       await applySettings(root, instance, apiKey);
       data = !pairingNumber && (getQrPayload(createResult.data) || getRawQrCode(createResult.data)) ? createResult.data : null;
       if (!data) {
