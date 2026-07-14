@@ -14,10 +14,16 @@ const BRL = (n: number) => `R$ ${n.toFixed(2).replace(".", ",")}`;
 const normalize = (t: string) => t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 
 type Step =
-  | "welcome" | "awaiting_name" | "awaiting_category" | "awaiting_product"
+  | "welcome" | "awaiting_main_menu"
+  | "awaiting_name" | "awaiting_category" | "awaiting_product"
   | "awaiting_more" | "awaiting_delivery_type"
+  | "awaiting_address_choice"
   | "awaiting_street" | "awaiting_number" | "awaiting_neighborhood" | "awaiting_reference"
-  | "awaiting_payment" | "awaiting_change" | "awaiting_confirm";
+  | "awaiting_payment" | "awaiting_change" | "awaiting_confirm"
+  | "awaiting_pix_proof";
+
+const CANONICAL_HOST = "https://itasuper.com.br";
+const onlyDigits = (p: string) => String(p || "").replace(/\D/g, "");
 
 type CartItem = { product_id: string; name: string; unit_price: number; quantity: number };
 
@@ -129,6 +135,36 @@ const askDeliveryType = async (admin: any, storeId: string, phone: string, sessi
     "*🛵 Como deseja receber?*\n\n*1* — Entrega (delivery)\n*2* — Retirada no balcão");
 };
 
+const addressSummary = (a: any) => {
+  const parts = [a.street, a.number, a.neighborhood ? `— ${a.neighborhood}` : ""].filter(Boolean);
+  const s = parts.join(" ").trim();
+  return a.reference || a.reference_point ? `${s} (${a.reference || a.reference_point})` : s;
+};
+
+const maybeOfferSavedAddress = async (admin: any, storeId: string, phone: string, session: Session) => {
+  const clientId = session.context.client_id;
+  if (clientId) {
+    const { data: addrs } = await admin
+      .from("saved_addresses")
+      .select("id, street, number, neighborhood, reference_point, complement")
+      .eq("user_id", clientId)
+      .order("is_default", { ascending: false })
+      .order("created_at", { ascending: false })
+      .limit(1);
+    const last = addrs?.[0];
+    if (last) {
+      session.context.saved_address = last;
+      session.current_step = "awaiting_address_choice";
+      await setSession(admin, session);
+      await sendText(storeId, phone,
+        `*📍 Entregar no endereço de sempre?*\n\n${addressSummary(last)}\n\n*1* — Sim, entregar aí\n*2* — Usar outro endereço`);
+      return true;
+    }
+  }
+  await askStreet(admin, storeId, phone, session);
+  return false;
+};
+
 const askStreet = async (admin: any, storeId: string, phone: string, session: Session) => {
   session.current_step = "awaiting_street";
   await setSession(admin, session);
@@ -156,13 +192,17 @@ const askChange = async (admin: any, storeId: string, phone: string, session: Se
     `*💵 Precisa de troco?*\n\nSeu total é ${BRL(total)}.\n\nResponda com o *valor em dinheiro* que vai entregar (ex: *50*), ou *NAO* se não precisar de troco.`);
 };
 
-const askPayment = async (admin: any, storeId: string, phone: string, session: Session, methods: string[]) => {
+const askPayment = async (admin: any, storeId: string, phone: string, session: Session, methods: string[], pixDiretoOn = false) => {
   const opts: string[] = [];
-  const map: Record<string, string> = { pix: "Pix (na entrega/retirada)", cash: "Dinheiro", card: "Cartão na entrega" };
+  const map: Record<string, string> = {
+    pix: pixDiretoOn ? "Pix direto (chave do lojista)" : "Pix (na entrega/retirada)",
+    cash: "Dinheiro",
+    card: "Cartão na entrega",
+  };
   const available = methods.filter(m => map[m]);
   available.forEach((m, i) => opts.push(`*${i + 1}* — ${map[m]}`));
   session.current_step = "awaiting_payment";
-  session.context = { ...session.context, payment_options: available };
+  session.context = { ...session.context, payment_options: available, pix_direto_on: pixDiretoOn };
   await setSession(admin, session);
   await sendText(storeId, phone, `*💰 Forma de pagamento:*\n\n${opts.join("\n")}`);
 };
@@ -201,6 +241,161 @@ const showConfirmation = async (admin: any, storeId: string, phone: string, sess
   await sendText(storeId, phone, msg);
 };
 
+const pixKeyLabel = (t?: string | null) =>
+  ({ cpf: "CPF", cnpj: "CNPJ", email: "E-mail", phone: "Telefone", random: "Chave aleatória" } as any)[t || ""] || "Chave";
+
+const startPixDireto = async (admin: any, storeId: string, phone: string, session: Session, store: any, storeName: string) => {
+  const subtotal = session.cart.reduce((s, i) => s + i.unit_price * i.quantity, 0);
+  const deliveryFee = Number(session.context.delivery_fee || 0);
+  const total = subtotal + deliveryFee;
+  const isDelivery = session.context.delivery_type === "delivery";
+  const addr = session.context;
+  const addressString = isDelivery
+    ? [addr.street, addr.number, addr.reference ? `Ref: ${addr.reference}` : ""].filter(Boolean).join(", ")
+    : "Retirada no balcão";
+
+  // Garante client vinculado + delivery_pin
+  const clientId = await ensureClient(admin, storeId, phone, session);
+  const pin = (session.context as any)._delivery_pin || String(Math.floor(1000 + Math.random() * 9000));
+
+  const { data: order, error } = await admin.from("orders").insert({
+    store_id: storeId,
+    client_id: clientId,
+    status: "aguardando_comprovante",
+    subtotal,
+    delivery_fee: deliveryFee,
+    total_price: total,
+    payment_method: "pix_direto",
+    neighborhood: isDelivery ? (addr.neighborhood || "não informado") : "RETIRADA",
+    address_details: addressString,
+    needs_change: false,
+    change_for: 0,
+    is_guest: true,
+    order_source: "whatsapp_bot",
+    delivery_pin: pin,
+    pix_expires_at: new Date(Date.now() + 20 * 60_000).toISOString(),
+    anon_session_id: phone,
+    metadata: {
+      source: "whatsapp_bot",
+      customer_phone: phone,
+      customer_name: session.context.customer_name,
+      address_street: addr.street || null,
+      address_number: addr.number || null,
+      address_neighborhood: addr.neighborhood || null,
+      address_reference: addr.reference || null,
+    },
+  }).select("id").single();
+  if (error || !order) {
+    console.error("[bot] pix_direto order insert failed", error);
+    await sendText(storeId, phone, "❌ Erro ao gerar Pix direto. Um atendente já vai te chamar.");
+    await clearSession(admin, storeId, phone);
+    return;
+  }
+  const items = session.cart.map(i => ({
+    order_id: order.id, product_id: i.product_id,
+    quantity: i.quantity, unit_price: i.unit_price, addons: [],
+  }));
+  await admin.from("order_items").insert(items);
+
+  const label = pixKeyLabel(store.pix_direto_key_type);
+  const benef = store.pix_direto_beneficiary ? `\n*Favorecido:* ${store.pix_direto_beneficiary}` : "";
+  const extra = store.pix_direto_instructions ? `\n\n${store.pix_direto_instructions}` : "";
+  const msg = [
+    `*💠 Pix direto — ${storeName}*`, "",
+    `*Valor:* ${BRL(total)}`,
+    `*${label}:* ${store.pix_direto_key}${benef}`,
+    "",
+    `⚠️ O pedido é confirmado *só depois* que o lojista validar o comprovante.`,
+    `Você tem *20 minutos* para pagar e enviar o comprovante *aqui mesmo* (foto).${extra}`,
+  ].join("\n");
+
+  session.context.pix_order_id = order.id;
+  session.current_step = "awaiting_pix_proof";
+  await setSession(admin, session);
+  await sendText(storeId, phone, msg);
+};
+
+const uploadPixProofFromBase64 = async (
+  storeId: string, orderId: string, base64: string, mime: string
+): Promise<string | null> => {
+  const base = Deno.env.get("EXTERNAL_SUPABASE_URL")!;
+  const key = Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY")!;
+  const ext = mime.includes("png") ? "png" : mime.includes("pdf") ? "pdf" : "jpg";
+  const path = `${storeId}/${orderId}.${ext}`;
+  const bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+  const r = await fetch(`${base}/storage/v1/object/pix-proofs/${path}?upsert=true`, {
+    method: "POST",
+    headers: { apikey: key, Authorization: `Bearer ${key}`, "Content-Type": mime, "x-upsert": "true" },
+    body: bytes,
+  });
+  if (!r.ok) {
+    console.error("[bot] pix proof upload failed", r.status, await r.text().catch(() => ""));
+    return null;
+  }
+  return path;
+};
+
+const ensureClient = async (admin: any, storeId: string, phone: string, session: Session): Promise<string | null> => {
+  if (session.context.client_id) return session.context.client_id;
+  const customerName = String(session.context.customer_name || "").trim();
+  try {
+    const { data: prof } = await admin.from("profiles")
+      .select("user_id, delivery_pin").eq("phone", phone).order("updated_at", { ascending: false }).limit(1).maybeSingle();
+    let clientId: string | null = (prof as any)?.user_id || null;
+    let pin = (prof as any)?.delivery_pin || String(Math.floor(1000 + Math.random() * 9000));
+    if (!clientId) {
+      const { data: existing } = await admin.from("guest_customers")
+        .select("user_id").eq("phone", phone).maybeSingle();
+      if (existing?.user_id) clientId = existing.user_id;
+      if (!clientId) {
+        const email = `guest+${phone}@guest.itasuper.app`;
+        const password = crypto.randomUUID() + crypto.randomUUID();
+        const { data: created } = await admin.auth.admin.createUser({
+          email, password, email_confirm: true,
+          user_metadata: { guest: true, phone, name: customerName, source: "whatsapp_bot" },
+        });
+        clientId = created?.user?.id || null;
+      }
+    }
+    if (clientId) {
+      await admin.from("profiles").upsert(
+        { user_id: clientId, full_name: customerName || null, phone, delivery_pin: pin } as any,
+        { onConflict: "user_id" },
+      );
+      await admin.from("guest_customers").upsert(
+        { phone, user_id: clientId, name: customerName || null, last_store_id: storeId, consent_at: new Date().toISOString() } as any,
+        { onConflict: "phone" },
+      );
+      session.context.client_id = clientId;
+      (session.context as any)._delivery_pin = pin;
+    }
+    return clientId;
+  } catch (e) {
+    console.warn("[bot] ensureClient failed", e);
+    return null;
+  }
+};
+
+const saveAddressIfNew = async (admin: any, session: Session) => {
+  const clientId = session.context.client_id;
+  if (!clientId) return;
+  const a = session.context;
+  if (!a.street || !a.number || !a.neighborhood) return;
+  try {
+    const { data: existing } = await admin.from("saved_addresses")
+      .select("id").eq("user_id", clientId)
+      .eq("street", a.street).eq("number", a.number).eq("neighborhood", a.neighborhood)
+      .maybeSingle();
+    if (existing) return;
+    await admin.from("saved_addresses").insert({
+      user_id: clientId, street: a.street, number: a.number, neighborhood: a.neighborhood,
+      reference_point: a.reference || null, label: "WhatsApp", is_default: false,
+    });
+  } catch (e) {
+    console.warn("[bot] saveAddress failed", e);
+  }
+};
+
 const createOrder = async (admin: any, storeId: string, phone: string, session: Session, storeName: string) => {
   const subtotal = session.cart.reduce((s, i) => s + i.unit_price * i.quantity, 0);
   const deliveryFee = Number(session.context.delivery_fee || 0);
@@ -212,45 +407,8 @@ const createOrder = async (admin: any, storeId: string, phone: string, session: 
     ? [addr.street, addr.number, addr.reference ? `Ref: ${addr.reference}` : ""].filter(Boolean).join(", ")
     : "Retirada no balcão";
 
-  // 1) Cria/reaproveita guest user para vincular client_id (assim o painel mostra nome e telefone).
-  let clientId: string | null = null;
-  try {
-    const { data: existing } = await admin.from("guest_customers")
-      .select("user_id").eq("phone", phone).maybeSingle();
-    if (existing?.user_id) {
-      clientId = existing.user_id;
-    } else {
-      const email = `guest+${phone}@guest.itasuper.app`;
-      const password = crypto.randomUUID() + crypto.randomUUID();
-      const { data: created } = await admin.auth.admin.createUser({
-        email, password, email_confirm: true,
-        user_metadata: { guest: true, phone, name: customerName, source: "whatsapp_bot" },
-      });
-      if (created?.user?.id) {
-        clientId = created.user.id;
-      } else {
-        const { data: prof } = await admin.from("profiles").select("user_id").eq("phone", phone).maybeSingle();
-        clientId = (prof as any)?.user_id || null;
-      }
-    }
-    if (clientId) {
-      // Garante delivery_pin no profile (trigger de orders exige)
-      const { data: prof } = await admin.from("profiles")
-        .select("delivery_pin").eq("user_id", clientId).maybeSingle();
-      const pin = (prof as any)?.delivery_pin || String(Math.floor(1000 + Math.random() * 9000));
-      await admin.from("profiles").upsert(
-        { user_id: clientId, full_name: customerName || null, phone, delivery_pin: pin } as any,
-        { onConflict: "user_id" },
-      );
-      (session.context as any)._delivery_pin = pin;
-      await admin.from("guest_customers").upsert(
-        { phone, user_id: clientId, name: customerName || null, last_store_id: storeId, consent_at: new Date().toISOString() } as any,
-        { onConflict: "phone" },
-      );
-    }
-  } catch (e) {
-    console.warn("[bot] guest link failed, seguindo sem client_id", e);
-  }
+  const clientId = await ensureClient(admin, storeId, phone, session);
+  if (isDelivery) await saveAddressIfNew(admin, session);
 
   const { data: order, error } = await admin.from("orders").insert({
     store_id: storeId,
