@@ -299,7 +299,7 @@ const finalizeProductWithAddons = async (admin: any, storeId: string, phone: str
     addons: addons.map(a => ({ group_id: a.group_id, group_name: a.group_name, name: a.name, price: a.price })),
   });
   session.context.pending_product = null;
-  await askMore(admin, storeId, phone, session);
+  await askObservation(admin, storeId, phone, session);
 };
 
 const askDeliveryType = async (admin: any, storeId: string, phone: string, session: Session) => {
@@ -886,7 +886,7 @@ Deno.serve(async (req) => {
         const groups = await fetchAddonGroupsFor(admin, store_id, p.id);
         if (groups.length === 0) {
           session.cart.push({ product_id: p.id, name: p.name, unit_price: p.price, quantity: 1, addons: [] });
-          await askMore(admin, store_id, phone, session);
+          await askObservation(admin, store_id, phone, session);
           return json({ handled: true, action: "added_item" });
         }
         session.context.pending_product = {
@@ -928,6 +928,15 @@ Deno.serve(async (req) => {
         }
         await finalizeProductWithAddons(admin, store_id, phone, session);
         return json({ handled: true, action: "product_finalized" });
+      }
+      case "awaiting_observation": {
+        const raw = (text || "").trim();
+        if (raw && raw !== "0") {
+          const last = session.cart[session.cart.length - 1];
+          if (last) last.observations = raw.slice(0, 240);
+        }
+        await askMore(admin, store_id, phone, session);
+        return json({ handled: true, action: "observation_saved" });
       }
       case "awaiting_more": {
         if (num === 1) { await showCategories(admin, store_id, phone, session); return json({ handled: true }); }
