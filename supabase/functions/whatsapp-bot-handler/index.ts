@@ -816,9 +816,51 @@ Deno.serve(async (req) => {
           return json({ handled: true, action: "invalid_product" });
         }
         const p = prods[num - 1];
-        session.cart.push({ product_id: p.id, name: p.name, unit_price: p.price, quantity: 1 });
-        await askMore(admin, store_id, phone, session);
-        return json({ handled: true, action: "added_item" });
+        const groups = await fetchAddonGroupsFor(admin, store_id, p.id);
+        if (groups.length === 0) {
+          session.cart.push({ product_id: p.id, name: p.name, unit_price: p.price, quantity: 1, addons: [] });
+          await askMore(admin, store_id, phone, session);
+          return json({ handled: true, action: "added_item" });
+        }
+        session.context.pending_product = {
+          product_id: p.id, name: p.name, base_price: p.price, quantity: 1,
+          groups, group_idx: 0, addons: [],
+        };
+        await askAddonGroup(admin, store_id, phone, session);
+        return json({ handled: true, action: "ask_addon" });
+      }
+      case "awaiting_addon": {
+        const pp = session.context.pending_product;
+        if (!pp) { await showCategories(admin, store_id, phone, session); return json({ handled: true }); }
+        const g = pp.groups[pp.group_idx];
+        const raw = text.trim();
+        const skipped = raw === "0" && g.min === 0;
+        let picks: number[] = [];
+        if (!skipped) {
+          picks = raw.split(/[,\s;]+/).map((s) => parseInt(s, 10)).filter((n) => Number.isFinite(n) && n >= 1 && n <= g.items.length);
+          picks = Array.from(new Set(picks));
+          if (g.max === 1 && picks.length > 1) picks = [picks[0]];
+          if (picks.length < g.min) {
+            await sendText(store_id, phone, `Escolha pelo menos *${g.min}* opção(ões) de *${g.name}*.`);
+            return json({ handled: true, action: "addon_below_min" });
+          }
+          if (picks.length > g.max) {
+            await sendText(store_id, phone, `Escolha no máximo *${g.max}* opção(ões) de *${g.name}*.`);
+            return json({ handled: true, action: "addon_above_max" });
+          }
+        }
+        for (const i of picks) {
+          const it = g.items[i - 1];
+          pp.addons.push({ group_id: g.id, group_name: g.name, name: it.name, price: it.price });
+        }
+        pp.group_idx += 1;
+        session.context.pending_product = pp;
+        if (pp.group_idx < pp.groups.length) {
+          await askAddonGroup(admin, store_id, phone, session);
+          return json({ handled: true, action: "next_addon" });
+        }
+        await finalizeProductWithAddons(admin, store_id, phone, session);
+        return json({ handled: true, action: "product_finalized" });
       }
       case "awaiting_more": {
         if (num === 1) { await showCategories(admin, store_id, phone, session); return json({ handled: true }); }
