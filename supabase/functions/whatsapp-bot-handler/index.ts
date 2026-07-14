@@ -482,12 +482,13 @@ Deno.serve(async (req) => {
     if (storeErr) console.error("[bot] store select error", storeErr);
     const storeName = store?.name || "loja";
     const settings = (store?.settings || {}) as Record<string, any>;
+    const pixDiretoOn = Boolean(store?.pix_direto_enabled && store?.pix_direto_key);
     const accepts = {
-      pix: settings.accept_pix_online !== false || settings.accept_pix_machine === true,
+      // Pix direto habilitado sempre permite oferecer "pix" no bot, mesmo se o pix online/máquina estiver off.
+      pix: pixDiretoOn || settings.accept_pix_online !== false || settings.accept_pix_machine === true,
       cash: settings.accept_cash !== false,
       card: settings.accept_card !== false,
     };
-    const pixDiretoOn = Boolean(store?.pix_direto_enabled && store?.pix_direto_key);
     const storeSlug = store?.slug || "";
     const storeUrl = storeSlug ? `${CANONICAL_HOST}/${storeSlug}` : CANONICAL_HOST;
 
