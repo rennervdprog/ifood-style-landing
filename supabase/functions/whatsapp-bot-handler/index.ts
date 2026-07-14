@@ -471,6 +471,7 @@ const startPixDireto = async (admin: any, storeId: string, phone: string, sessio
   const items = session.cart.map(i => ({
     order_id: order.id, product_id: i.product_id,
     quantity: i.quantity, unit_price: i.unit_price,
+    observations: i.observations || null,
     addons: (i.addons || []).map(a => ({ name: a.name, price: a.price, group_name: a.group_name })),
   }));
   await admin.from("order_items").insert(items);
@@ -627,6 +628,7 @@ const createOrder = async (admin: any, storeId: string, phone: string, session: 
   const items = session.cart.map(i => ({
     order_id: order.id, product_id: i.product_id,
     quantity: i.quantity, unit_price: i.unit_price,
+    observations: i.observations || null,
     addons: (i.addons || []).map(a => ({ name: a.name, price: a.price, group_name: a.group_name })),
   }));
   await admin.from("order_items").insert(items);
