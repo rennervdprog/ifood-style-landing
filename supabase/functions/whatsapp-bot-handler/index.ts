@@ -617,7 +617,7 @@ const createOrder = async (admin: any, storeId: string, phone: string, session: 
   const num = `#${order.id.slice(0, 8).toUpperCase()}`;
   await sendText(storeId, phone,
     `🎉 *Pedido ${num} confirmado!*\n\nA *${storeName}* recebeu seu pedido e vai começar a preparar em instantes.\n\nVocê será avisado quando o pedido for aceito. ✨`);
-  await clearSession(admin, storeId, phone);
+  await setPostOrderCooldown(admin, storeId, phone, num);
 };
 
 const isCancel = (t: string) => /^(cancelar|sair|parar)$/i.test(normalize(t));
