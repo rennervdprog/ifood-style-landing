@@ -202,7 +202,8 @@ const askMore = async (admin: any, storeId: string, phone: string, session: Sess
   const total = session.cart.reduce((s, i) => s + i.unit_price * i.quantity, 0);
   const cartText = session.cart.map(i => {
     const ad = (i.addons || []).map(a => `   ↳ ${a.name}`).join("\n");
-    return `• ${i.quantity}x ${i.name} — ${BRL(i.unit_price * i.quantity)}${ad ? "\n" + ad : ""}`;
+    const obs = i.observations ? `\n   📝 _${i.observations}_` : "";
+    return `• ${i.quantity}x ${i.name} — ${BRL(i.unit_price * i.quantity)}${ad ? "\n" + ad : ""}${obs}`;
   }).join("\n");
   const msg = `✅ *Item adicionado!*\n\n*Seu carrinho:*\n${cartText}\n\n*Subtotal:* ${BRL(total)}\n\n*1* — Adicionar mais itens\n*2* — Finalizar pedido\n\n_Digite *CANCELAR* para desistir._`;
   session.current_step = "awaiting_more";
