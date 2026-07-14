@@ -11,7 +11,10 @@ Deno.serve(async (req) => {
   const target = `${ext}/functions/v1/evolution-webhook?token=${token}`;
 
   if (mode === "diag") {
-    const admin = createClient(Deno.env.get("EXTERNAL_SUPABASE_URL")!, (Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY"))!);
+    const sbUrl = Deno.env.get("SUPABASE_URL") || Deno.env.get("EXTERNAL_SUPABASE_URL") || "";
+    const sbKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY") || "";
+    if (!sbUrl || !sbKey) return new Response(JSON.stringify({ error: "no sb creds", hasUrl: !!sbUrl, hasKey: !!sbKey }), { headers: { ...cors, "Content-Type": "application/json" }});
+    const admin = createClient(sbUrl, sbKey);
     const storeId = "e14a110c-f0a1-4b25-8a71-554a9705fefa";
     const out: any = {};
     try { const r = await admin.from("store_whatsapp_config").select("*").eq("store_id", storeId).maybeSingle(); out.cfg = r.data; out.cfgErr = r.error?.message; } catch(e){ out.cfgErr = String(e); }
