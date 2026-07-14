@@ -13,14 +13,13 @@ Deno.serve(async (req) => {
     const { createClient } = await import("npm:@supabase/supabase-js@2.49.4");
     const admin = createClient(Deno.env.get("EXTERNAL_SUPABASE_URL")!, (Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY"))!);
     const storeId = "e14a110c-f0a1-4b25-8a71-554a9705fefa";
-    const [cfgRes, sessRes, logRes, instRes] = await Promise.all([
-      admin.from("store_whatsapp_config").select("*").eq("store_id", storeId).maybeSingle(),
-      admin.from("whatsapp_bot_sessions").select("*").eq("store_id", storeId).order("created_at", { ascending: false }).limit(5),
-      admin.from("whatsapp_inbound_log").select("*").eq("store_id", storeId).order("created_at", { ascending: false }).limit(10),
-      fetch(`${base}/instance/fetchInstances?instanceName=store-e14a110c`, { headers: { apikey: key }}).then(r=>r.json()).catch(e=>({error:String(e)})),
-    ]);
-    const wh = await fetch(`${base}/webhook/find/store-e14a110c`, { headers: { apikey: key }}).then(r=>r.json()).catch(e=>({error:String(e)}));
-    return new Response(JSON.stringify({ cfg: cfgRes.data, cfgErr: cfgRes.error, sessions: sessRes.data, log: logRes.data, instances: instRes, webhook: wh }, null, 2), { headers: { ...cors, "Content-Type": "application/json" }});
+    const out: any = {};
+    try { const r = await admin.from("store_whatsapp_config").select("*").eq("store_id", storeId).maybeSingle(); out.cfg = r.data; out.cfgErr = r.error?.message; } catch(e){ out.cfgErr = String(e); }
+    try { const r = await admin.from("whatsapp_bot_sessions").select("*").eq("store_id", storeId).order("created_at", { ascending: false }).limit(5); out.sessions = r.data; out.sessErr = r.error?.message; } catch(e){ out.sessErr = String(e); }
+    try { const r = await admin.from("whatsapp_inbound_log").select("*").eq("store_id", storeId).order("created_at", { ascending: false }).limit(10); out.log = r.data; out.logErr = r.error?.message; } catch(e){ out.logErr = String(e); }
+    try { out.instance = await fetch(`${base}/instance/fetchInstances?instanceName=store-e14a110c`, { headers: { apikey: key }}).then(r=>r.json()); } catch(e){ out.instanceErr = String(e); }
+    try { out.webhook = await fetch(`${base}/webhook/find/store-e14a110c`, { headers: { apikey: key }}).then(r=>r.json()); } catch(e){ out.webhookErr = String(e); }
+    return new Response(JSON.stringify(out, null, 2), { headers: { ...cors, "Content-Type": "application/json" }});
   }
 
   const list = await fetch(`${base}/instance/fetchInstances`, { headers: { apikey: key } }).then(r => r.json());
