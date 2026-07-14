@@ -15,6 +15,7 @@ const normalize = (t: string) => t.normalize("NFD").replace(/[\u0300-\u036f]/g, 
 
 type Step =
   | "welcome" | "awaiting_main_menu"
+  | "awaiting_existing_order_choice"
   | "awaiting_name" | "awaiting_category" | "awaiting_product"
   | "awaiting_more" | "awaiting_delivery_type"
   | "awaiting_address_choice"
