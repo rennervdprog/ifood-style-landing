@@ -210,6 +210,16 @@ const askMore = async (admin: any, storeId: string, phone: string, session: Sess
   await sendText(storeId, phone, msg);
 };
 
+const askObservation = async (admin: any, storeId: string, phone: string, session: Session) => {
+  session.current_step = "awaiting_observation";
+  await setSession(admin, session);
+  await sendText(
+    storeId,
+    phone,
+    "📝 *Alguma observação para este item?*\n\n_Ex.: sem cebola, ponto da carne, tirar o queijo..._\n\nDigite sua observação ou envie *0* para pular.",
+  );
+};
+
 // Busca grupos de adicionais (diretos e vinculados via product_addon_groups) + itens.
 const fetchAddonGroupsFor = async (admin: any, storeId: string, productId: string) => {
   const sel = "id,name,min_select,max_select,sort_order,price_replaces_base,addon_items(id,name,price,sort_order)";
