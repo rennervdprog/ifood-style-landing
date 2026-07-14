@@ -12,6 +12,15 @@ const json = (b: unknown, s = 200) =>
   });
 
 const setWebhook = async (baseUrl: string, instance: string, apiKey: string, webhookUrl: string) => {
+  const root = baseUrl.replace(/\/$/, "");
+  const readBody = async (r: Response) => r.json().catch(() => ({}));
+  const findWebhook = async () => {
+    const r = await fetch(`${root}/webhook/find/${instance}`, { headers: { apikey: apiKey }, signal: AbortSignal.timeout(20_000) });
+    return { ok: r.ok, status: r.status, data: await readBody(r) };
+  };
+  const getUrl = (body: any) => String(body?.url || body?.webhook?.url || "");
+  const isEnabled = (body: any) => Boolean(body?.enabled ?? body?.webhook?.enabled);
+
   // Evolution v2.3.x exige o envelope { webhook: { ... } }
   const payload = {
     webhook: {
@@ -22,20 +31,41 @@ const setWebhook = async (baseUrl: string, instance: string, apiKey: string, web
       events: ["CONNECTION_UPDATE", "MESSAGES_UPSERT"],
     },
   };
-  const r = await fetch(`${baseUrl.replace(/\/$/, "")}/webhook/set/${instance}`, {
+  const r = await fetch(`${root}/webhook/set/${instance}`, {
     method: "POST",
     headers: { "Content-Type": "application/json", apikey: apiKey },
     body: JSON.stringify(payload),
+    signal: AbortSignal.timeout(20_000),
   });
-  const data = await r.json().catch(() => ({}));
+  const data = await readBody(r);
+  let verified = await findWebhook().catch(() => null);
+  if (!(r.ok && verified?.ok && isEnabled(verified.data) && getUrl(verified.data) === webhookUrl)) {
+    const legacyPayload = {
+      enabled: true,
+      url: webhookUrl,
+      webhook_by_events: false,
+      webhook_base64: false,
+      events: ["CONNECTION_UPDATE", "MESSAGES_UPSERT"],
+    };
+    await fetch(`${root}/webhook/set/${instance}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", apikey: apiKey },
+      body: JSON.stringify(legacyPayload),
+      signal: AbortSignal.timeout(20_000),
+    }).catch(() => null);
+    verified = await findWebhook().catch(() => null);
+  }
+  const currentUrl = getUrl(verified?.data);
+  const ok = Boolean(verified?.ok && isEnabled(verified?.data) && currentUrl === webhookUrl);
   return {
-    ok: r.ok,
-    status: r.status,
+    ok,
+    status: verified?.status || r.status,
     data: {
-      enabled: Boolean(data?.enabled),
-      events: Array.isArray(data?.events) ? data.events : [],
-      webhookByEvents: Boolean(data?.webhookByEvents),
-      urlConfigured: Boolean(data?.url),
+      enabled: isEnabled(verified?.data),
+      events: Array.isArray(verified?.data?.events) ? verified.data.events : (Array.isArray(data?.events) ? data.events : []),
+      urlConfigured: Boolean(currentUrl),
+      verified: ok,
+      previousResponse: data,
     },
   };
 };
@@ -55,9 +85,7 @@ Deno.serve(async (req) => {
     const baseUrl = Deno.env.get("EVOLUTION_API_URL");
     const apiKey = Deno.env.get("EVOLUTION_GLOBAL_API_KEY");
     const webhookToken = Deno.env.get("EVOLUTION_WEBHOOK_TOKEN") || "";
-    // Repair deve apontar para o host atual das funções; o backend externo é
-    // usado apenas como banco de dados de produção.
-    const functionBaseUrl = Deno.env.get("SUPABASE_URL") || Deno.env.get("EXTERNAL_SUPABASE_URL");
+    const functionBaseUrl = Deno.env.get("EXTERNAL_SUPABASE_URL") || Deno.env.get("SUPABASE_URL");
     if (!baseUrl || !apiKey || !functionBaseUrl) return json({ error: "Evolution/backend não configurado" }, 500);
 
     const body = await req.json().catch(() => ({} as any));
@@ -77,7 +105,7 @@ Deno.serve(async (req) => {
     const { data: configs, error } = await query;
     if (error) return json({ error: error.message }, 500);
 
-    const webhookUrl = `${functionBaseUrl}/functions/v1/evolution-webhook?token=${webhookToken}`;
+    const webhookUrl = `${functionBaseUrl.replace(/\/$/, "")}/functions/v1/evolution-webhook?token=${webhookToken}`;
     const results = [];
     for (const cfg of configs ?? []) {
       const instance = String((cfg as any).evolution_instance_name || "");
