@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { formatBRL } from "@/lib/utils";
-import { TrendingUp, PartyPopper, Check, X, ShieldCheck } from "lucide-react";
+import { TrendingUp, PartyPopper, Check, X, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useState } from "react";
@@ -83,14 +83,20 @@ export default function EssencialProgressCard({ store, storePlan }: Props) {
 
   if (data.response === "refused") {
     return (
-      <div className="rounded-2xl border border-border/60 bg-card p-4 space-y-2">
+      <div className="rounded-2xl border-2 border-destructive/60 bg-gradient-to-br from-destructive/15 to-destructive/5 p-4 space-y-3">
         <div className="flex items-center gap-2">
-          <ShieldCheck className="h-5 w-5 text-emerald-600" />
-          <div className="font-black text-foreground">Upgrade recusado</div>
+          <AlertTriangle className="h-5 w-5 text-destructive animate-pulse" />
+          <div className="font-black text-destructive">Loja suspensa</div>
         </div>
-        <p className="text-sm text-muted-foreground">
-          Você optou por não migrar para o plano {PLAN_NAME} pago. Nenhuma cobrança de mensalidade será gerada.
+        <p className="text-sm text-foreground">
+          Sua loja ultrapassou {formatBRL(THRESHOLD)} em vendas e a mensalidade do plano {PLAN_NAME} (<b>{formatBRL(UPGRADE_FEE)}/mês</b>) passou a ser devida. Como o upgrade foi recusado, a loja está <b>inativa</b> — vitrine, cardápio e novos pedidos estão bloqueados.
         </p>
+        <p className="text-xs text-muted-foreground">
+          Conforme os Termos de Uso (5.2), não há retorno ao plano gratuito. Para reativar, aceite a mensalidade abaixo.
+        </p>
+        <Button size="sm" disabled={saving} onClick={() => respond("accepted")} className="w-full gap-1">
+          <Check className="h-4 w-4" /> Aceitar mensalidade e reativar loja
+        </Button>
       </div>
     );
   }
@@ -106,6 +112,9 @@ export default function EssencialProgressCard({ store, storePlan }: Props) {
         </div>
         <p className="text-sm text-muted-foreground">
           Você bateu {formatBRL(THRESHOLD)} em vendas nos últimos {WINDOW_DAYS} dias. Conforme os Termos de Uso, o plano {PLAN_NAME} pago (<b className="text-foreground">{formatBRL(UPGRADE_FEE)}/mês</b>) pode ser ativado a partir de <b className="text-foreground">{label}</b> — mas <b className="text-foreground">apenas com o seu consentimento expresso</b>.
+        </p>
+        <p className="text-xs text-destructive font-semibold">
+          ⚠️ Se você recusar (ou não responder até {label}), a loja será <b>suspensa</b> até aceitar. Não há retorno ao plano gratuito.
         </p>
         {accepted ? (
           <div className="text-xs font-semibold text-emerald-700 flex items-center gap-1">
