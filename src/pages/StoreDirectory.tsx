@@ -317,8 +317,8 @@ const StoreDirectory = () => {
           <div className="absolute inset-0 [background-image:linear-gradient(hsl(var(--foreground)/0.04)_1px,transparent_1px),linear-gradient(90deg,hsl(var(--foreground)/0.04)_1px,transparent_1px)] [background-size:32px_32px] [mask-image:radial-gradient(ellipse_at_center,black_40%,transparent_75%)]" />
         </div>
 
-        <div className="mx-auto max-w-6xl grid md:grid-cols-[1.15fr,0.85fr] gap-10 md:gap-14 items-center">
-          <div className="text-center md:text-left">
+        <div className="mx-auto max-w-3xl text-center">
+          <div>
             <div className="inline-flex items-center gap-2 rounded-full border border-border bg-card/60 backdrop-blur px-3 py-1.5 text-[11px] font-bold text-muted-foreground mb-6">
               <span className="relative flex h-2 w-2">
                 <span className="absolute inline-flex h-full w-full rounded-full bg-primary opacity-75 animate-ping" />
@@ -337,11 +337,11 @@ const StoreDirectory = () => {
               Sem comissão. Sem app pro cliente.
             </h1>
 
-            <p className="max-w-xl mx-auto md:mx-0 text-base md:text-lg text-muted-foreground leading-relaxed mb-8">
+            <p className="max-w-xl mx-auto text-base md:text-lg text-muted-foreground leading-relaxed mb-8">
               Cardápio digital próprio, <b className="text-foreground">PIX cai na hora</b>, WhatsApp bot que anota o pedido sozinho e motoboy com rastreio. <b className="text-foreground">Grátis até R$ 5.000</b> em vendas.
             </p>
 
-            <div className="flex flex-col sm:flex-row items-center md:items-start justify-center md:justify-start gap-3">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
               <Button size="lg" onClick={handleCTA} className="min-h-[54px] px-7 rounded-2xl text-base font-black shadow-[0_20px_50px_-20px_hsl(var(--primary)/0.7)] hover:-translate-y-0.5 transition-all w-full sm:w-auto">
                 Criar minha loja grátis <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
@@ -350,7 +350,7 @@ const StoreDirectory = () => {
               </Button>
             </div>
 
-            <div className="mt-6 flex flex-wrap items-center justify-center md:justify-start gap-x-5 gap-y-2 text-[11px] text-muted-foreground">
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[11px] text-muted-foreground">
               {[
                 { icon: CheckCircle2, t: "Sem cartão pra começar" },
                 { icon: Clock, t: "Pronto em 10 min" },
@@ -360,23 +360,6 @@ const StoreDirectory = () => {
                   <x.icon className="h-3.5 w-3.5 text-primary" /> {x.t}
                 </span>
               ))}
-            </div>
-          </div>
-
-          <div className="relative order-first md:order-last">
-            <HeroMock />
-            <div className="hidden md:block absolute -left-6 top-10 rounded-2xl border border-border bg-card/95 backdrop-blur px-3 py-2 shadow-[0_20px_40px_-20px_hsl(var(--foreground)/0.25)]">
-              <div className="flex items-center gap-2">
-                <div className="h-8 w-8 rounded-xl bg-emerald-500/15 grid place-items-center"><Zap className="h-4 w-4 text-emerald-600" /></div>
-                <div>
-                  <p className="text-[10px] font-black uppercase text-muted-foreground">PIX confirmado</p>
-                  <p className="text-xs font-black text-foreground">+ R$ 69,00</p>
-                </div>
-              </div>
-            </div>
-            <div className="hidden md:block absolute -right-4 bottom-16 rounded-2xl border border-border bg-card/95 backdrop-blur px-3 py-2 shadow-[0_20px_40px_-20px_hsl(var(--foreground)/0.25)]">
-              <p className="text-[10px] font-black uppercase text-muted-foreground">Hoje</p>
-              <p className="text-sm font-black text-foreground">37 pedidos · R$ 2.184</p>
             </div>
           </div>
         </div>
@@ -471,19 +454,38 @@ const StoreDirectory = () => {
 
       {/* ═════════════════ COMO FUNCIONA ═════════════════ */}
       <section id="como-funciona" className="py-20 md:py-24 px-6 bg-muted/20 border-y border-border">
-        <div className="mx-auto max-w-6xl">
-          <div className="max-w-2xl mb-10 md:mb-14">
-            <p className="text-[11px] font-black uppercase tracking-[0.2em] text-primary mb-3">Como funciona</p>
-            <h2 className="text-3xl md:text-5xl font-black tracking-tight leading-[1.05]">Do zero ao primeiro pedido em <span className="text-primary">10 minutos.</span></h2>
+        <div className="mx-auto max-w-6xl grid lg:grid-cols-[1fr,auto] gap-12 lg:gap-16 items-center">
+          <div>
+            <div className="max-w-2xl mb-10 md:mb-12 text-center lg:text-left">
+              <p className="text-[11px] font-black uppercase tracking-[0.2em] text-primary mb-3">Como funciona</p>
+              <h2 className="text-3xl md:text-5xl font-black tracking-tight leading-[1.05]">Do zero ao primeiro pedido em <span className="text-primary">10 minutos.</span></h2>
+              <p className="mt-4 text-base text-muted-foreground max-w-lg mx-auto lg:mx-0">Cada pedido chega assim na sua tela — pago, com endereço e pronto pra despachar.</p>
+            </div>
+            <div className="grid sm:grid-cols-2 gap-3 md:gap-4">
+              {STEPS.map((s) => (
+                <div key={s.n} className="rounded-2xl border border-border bg-card p-5">
+                  <p className="text-3xl font-black text-primary/70 tabular-nums">{s.n}</p>
+                  <p className="mt-3 font-black text-base">{s.title}</p>
+                  <p className="mt-1 text-sm text-muted-foreground leading-snug">{s.desc}</p>
+                </div>
+              ))}
+            </div>
           </div>
-          <div className="grid md:grid-cols-4 gap-3 md:gap-4">
-            {STEPS.map((s) => (
-              <div key={s.n} className="rounded-2xl border border-border bg-card p-5">
-                <p className="text-3xl font-black text-primary/70 tabular-nums">{s.n}</p>
-                <p className="mt-3 font-black text-base">{s.title}</p>
-                <p className="mt-1 text-sm text-muted-foreground leading-snug">{s.desc}</p>
+          <div className="relative mx-auto">
+            <HeroMock />
+            <div className="hidden lg:block absolute -left-8 top-12 rounded-2xl border border-border bg-card/95 backdrop-blur px-3 py-2 shadow-[0_20px_40px_-20px_hsl(var(--foreground)/0.25)]">
+              <div className="flex items-center gap-2">
+                <div className="h-8 w-8 rounded-xl bg-emerald-500/15 grid place-items-center"><Zap className="h-4 w-4 text-emerald-600" /></div>
+                <div>
+                  <p className="text-[10px] font-black uppercase text-muted-foreground">PIX confirmado</p>
+                  <p className="text-xs font-black text-foreground">+ R$ 69,00</p>
+                </div>
               </div>
-            ))}
+            </div>
+            <div className="hidden lg:block absolute -right-6 bottom-20 rounded-2xl border border-border bg-card/95 backdrop-blur px-3 py-2 shadow-[0_20px_40px_-20px_hsl(var(--foreground)/0.25)]">
+              <p className="text-[10px] font-black uppercase text-muted-foreground">Hoje</p>
+              <p className="text-sm font-black text-foreground">37 pedidos · R$ 2.184</p>
+            </div>
           </div>
         </div>
       </section>
