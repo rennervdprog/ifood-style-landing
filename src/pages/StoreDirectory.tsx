@@ -759,4 +759,13 @@ function PlansSection({
   );
 }
 
+function FeeNote({ title, body }: { title: string; body: string }) {
+  return (
+    <div className="rounded-xl bg-background/60 border border-border/60 p-4">
+      <p className="text-[11px] font-black uppercase tracking-wider text-primary mb-1.5">{title}</p>
+      <p className="text-[12px] leading-relaxed text-muted-foreground">{body}</p>
+    </div>
+  );
+}
+
 export default StoreDirectory;
