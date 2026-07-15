@@ -36,9 +36,9 @@ Deno.serve(async (req) => {
     `);
     out.inject_orders = await run(`
       WITH s AS (SELECT id FROM public.stores WHERE slug ILIKE '${slug}%' LIMIT 1)
-      INSERT INTO public.orders (store_id, user_id, status, total_price, subtotal, delivery_fee, payment_method, created_at, updated_at)
-      SELECT s.id, NULL, 'entregue', 550, 500, 50, 'dinheiro',
-             now() - (gs || ' days')::interval, now() - (gs || ' days')::interval
+      INSERT INTO public.orders (store_id, status, total_price, subtotal, delivery_fee, payment_method, neighborhood, address_details, created_at)
+      SELECT s.id, 'entregue', 550, 500, 50, 'dinheiro', 'SIMULACAO', 'SIMULACAO',
+             now() - (gs || ' days')::interval
       FROM s, generate_series(1, 10) gs;
     `);
     out.gmv_check = await run(`
@@ -67,7 +67,7 @@ Deno.serve(async (req) => {
     out.del_orders = await run(`
       DELETE FROM public.orders
       WHERE store_id IN (SELECT id FROM public.stores WHERE slug ILIKE '${slug}%')
-        AND user_id IS NULL AND payment_method = 'dinheiro' AND total_price = 550;
+        AND neighborhood = 'SIMULACAO' AND total_price = 550;
     `);
     out.reset = await run(`
       UPDATE public.store_plans sp
