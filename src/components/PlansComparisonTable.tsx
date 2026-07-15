@@ -12,9 +12,9 @@ const ROWS: Row[] = [
     label: "Mensalidade",
     values: {
       commission_only: "R$ 0",
-      fixed: "R$ 90*",
+      fixed: "R$ 0 → R$ 180*",
       supporter: "R$ 75",
-      autonomy: "R$ 239,90",
+      autonomy: "R$ 0 → R$ 239,90*",
     } as Record<StorePlanType, string>,
   },
   {
@@ -38,9 +38,9 @@ const ROWS: Row[] = [
   {
     label: "Taxa da plataforma na entrega (somada à sua taxa, paga pelo cliente)",
     values: {
-      commission_only: "+ R$ 2,00",
-      fixed: "+ R$ 2,00",
-      supporter: "+ R$ 2,00",
+      commission_only: "+ R$ 0,99",
+      fixed: "+ R$ 0,99",
+      supporter: "+ R$ 0,99",
       autonomy: "Não cobra",
     } as Record<StorePlanType, string>,
   },
@@ -82,7 +82,7 @@ interface Props {
 }
 
 export default function PlansComparisonTable({
-  plans = ["commission_only", "fixed", "autonomy"],
+  plans = ["fixed", "autonomy"],
   className = "",
 }: Props) {
   const cols = plans.map((id) => PLANS[id]);
@@ -142,6 +142,7 @@ export default function PlansComparisonTable({
         </table>
       </div>
       <div className="space-y-1 text-[11px] text-muted-foreground px-1">
+        <p>💡 * Mensalidade grátis até atingir o gatilho de GMV (R$ 5.000 no Essencial, R$ 2.500 no Autonomia em 60 dias). Após isso, mensalidade é ativada com 30 dias de aviso.</p>
         <p>💡 {DELIVERY_FEE_NOTE}</p>
         <p>💡 {PIX_FEE_NOTE}</p>
         <p>💡 PDV é um módulo opcional: novas lojas contratam por R$ 49/mês. Lojas antigas mantêm a regra atual de R$ 1 por venda.</p>
