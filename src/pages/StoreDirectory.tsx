@@ -668,7 +668,7 @@ function PlansSection({
 
                 <div className="flex items-center gap-2 mb-1">
                   <span className={`h-9 w-9 rounded-xl grid place-items-center ${p.accentBg} ${p.accent}`}>
-                    <p.icon className="h-4.5 w-4.5" />
+                    <p.icon className="h-5 w-5" />
                   </span>
                   <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">{p.name}</p>
                 </div>
