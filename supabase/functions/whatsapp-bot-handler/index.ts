@@ -12,20 +12,68 @@ const json = (b: unknown, s = 200) =>
 
 const BRL = (n: number) => `R$ ${n.toFixed(2).replace(".", ",")}`;
 const normalize = (t: string) => t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+const DEFAULT_TRIGGER_KEYWORDS = ["menu", "cardapio", "cardápio", "pedido", "pedir", "comprar", "oi", "ola", "olá", "bom dia", "boa tarde", "boa noite"];
 
 type Step =
   | "welcome" | "awaiting_main_menu"
+  | "awaiting_existing_order_choice"
   | "awaiting_name" | "awaiting_category" | "awaiting_product"
-  | "awaiting_more" | "awaiting_delivery_type"
+  | "awaiting_addon" | "awaiting_observation" | "awaiting_more" | "awaiting_delivery_type"
   | "awaiting_address_choice"
   | "awaiting_street" | "awaiting_number" | "awaiting_neighborhood" | "awaiting_reference"
   | "awaiting_payment" | "awaiting_change" | "awaiting_confirm"
-  | "awaiting_pix_proof";
+  | "awaiting_pix_proof"
+  | "post_order_cooldown";
 
 const CANONICAL_HOST = "https://itasuper.com.br";
 const onlyDigits = (p: string) => String(p || "").replace(/\D/g, "");
 
-type CartItem = { product_id: string; name: string; unit_price: number; quantity: number };
+// Verifica se a loja está aberta agora (horário Brasília) com base em opening_hours + force_closed + is_open.
+const dayNamesBR = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
+function getStoreOpenStatus(
+  hours: Array<{ day_of_week: number; open_time: string; close_time: string; is_closed_all_day: boolean }>,
+  forceClosed: boolean,
+  isOpenManual: boolean,
+): { isOpen: boolean; reason: string } {
+  if (forceClosed) return { isOpen: false, reason: "Fechado temporariamente" };
+  if (!hours || hours.length === 0) {
+    return isOpenManual ? { isOpen: true, reason: "Aberto" } : { isOpen: false, reason: "Fechado" };
+  }
+  const now = new Date();
+  const parts = new Intl.DateTimeFormat("pt-BR", {
+    timeZone: "America/Sao_Paulo", weekday: "short", hour: "2-digit", minute: "2-digit", hour12: false,
+  }).formatToParts(now);
+  const brHour = Number(parts.find(p => p.type === "hour")?.value ?? 0);
+  const brMinute = Number(parts.find(p => p.type === "minute")?.value ?? 0);
+  const brDate = new Date(now.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
+  const currentDay = brDate.getDay();
+  const currentMinutes = brHour * 60 + brMinute;
+  const today = hours.find(h => h.day_of_week === currentDay);
+  if (today && !today.is_closed_all_day) {
+    const [oH, oM] = today.open_time.split(":").map(Number);
+    const [cH, cM] = today.close_time.split(":").map(Number);
+    const openMin = oH * 60 + oM;
+    let closeMin = cH * 60 + cM;
+    if (closeMin <= openMin) {
+      if (currentMinutes >= openMin || currentMinutes < closeMin) return { isOpen: true, reason: `Aberto até ${today.close_time.slice(0,5)}` };
+    } else {
+      if (currentMinutes >= openMin && currentMinutes < closeMin) return { isOpen: true, reason: `Aberto até ${today.close_time.slice(0,5)}` };
+    }
+    if (currentMinutes < openMin) return { isOpen: false, reason: `Abre hoje às ${today.open_time.slice(0,5)}` };
+  }
+  for (let off = 1; off <= 7; off++) {
+    const nd = (currentDay + off) % 7;
+    const nh = hours.find(h => h.day_of_week === nd);
+    if (nh && !nh.is_closed_all_day) {
+      const label = off === 1 ? "Amanhã" : dayNamesBR[nd];
+      return { isOpen: false, reason: `Abre ${label} às ${nh.open_time.slice(0,5)}` };
+    }
+  }
+  return { isOpen: false, reason: "Fechado" };
+}
+
+type AddonSel = { group_id: string; group_name: string; name: string; price: number };
+type CartItem = { product_id: string; name: string; unit_price: number; quantity: number; addons?: AddonSel[]; observations?: string };
 
 interface Session {
   id?: string;
@@ -51,8 +99,28 @@ const sendText = async (storeId: string, phone: string, message: string) => {
     },
     body: JSON.stringify({ store_id: storeId, phone, message, kind: "bot", force: true }),
   });
-  return r.ok;
+  const out = await r.json().catch(() => ({}));
+  if (!r.ok || (out as any)?.error) {
+    console.error("[bot] sendText failed", { status: r.status, out });
+    throw new Error(`send_text_failed_${r.status}`);
+  }
+  return true;
 };
+
+async function sendDeliveryFeeInfo(storeId: string, phone: string, storeFee: number, platformFee: number) {
+  const total = Math.round((storeFee + platformFee) * 100) / 100;
+  const lines = [
+    `🛵 *Taxa de entrega: ${BRL(total)}*`,
+    ``,
+    `• Loja: ${BRL(storeFee)}`,
+  ];
+  if (platformFee > 0) {
+    lines.push(`• Plataforma: ${BRL(platformFee)} (mantém o app no ar)`);
+  } else {
+    lines.push(`• Plataforma: grátis 🎉`);
+  }
+  try { await sendText(storeId, phone, lines.join("\n")); } catch (e) { console.error("[bot] sendDeliveryFeeInfo", e); }
+}
 
 const setSession = async (admin: any, s: Session) => {
   const expires = new Date(Date.now() + 15 * 60_000).toISOString();
@@ -61,6 +129,26 @@ const setSession = async (admin: any, s: Session) => {
       store_id: s.store_id, phone: s.phone,
       current_step: s.current_step, cart: s.cart, context: s.context,
       last_message_at: new Date().toISOString(), expires_at: expires,
+    },
+    { onConflict: "store_id,phone" },
+  );
+};
+
+// Cooldown pós-pedido: 2h de silêncio (só 1 aviso na 1ª mensagem).
+// Evita rajada de respostas que aumenta risco de ban do chip.
+const POST_ORDER_COOLDOWN_MS = 2 * 60 * 60_000;
+const setPostOrderCooldown = async (
+  admin: any, storeId: string, phone: string, orderCode: string,
+) => {
+  const expires = new Date(Date.now() + POST_ORDER_COOLDOWN_MS).toISOString();
+  await admin.from("whatsapp_bot_sessions").upsert(
+    {
+      store_id: storeId, phone,
+      current_step: "post_order_cooldown",
+      cart: [],
+      context: { order_code: orderCode, notified: false },
+      last_message_at: new Date().toISOString(),
+      expires_at: expires,
     },
     { onConflict: "store_id,phone" },
   );
@@ -114,18 +202,120 @@ const showProducts = async (admin: any, storeId: string, phone: string, session:
   );
   lines.push("", "_Responda com o *número* do item._", "_Digite *0* para voltar às categorias._");
   session.current_step = "awaiting_product";
-  session.context = { ...session.context, products: products.map((p: any) => ({ id: p.id, name: p.name, price: Number(p.price) })) };
+  session.context = {
+    ...session.context,
+    products: products.map((p: any) => ({
+      id: p.id, name: p.name, price: Number(p.price),
+      description: (p.description || "").toString().trim() || null,
+    })),
+  };
   await setSession(admin, session);
   await sendText(storeId, phone, lines.join("\n"));
 };
 
 const askMore = async (admin: any, storeId: string, phone: string, session: Session) => {
   const total = session.cart.reduce((s, i) => s + i.unit_price * i.quantity, 0);
-  const cartText = session.cart.map(i => `• ${i.quantity}x ${i.name} — ${BRL(i.unit_price * i.quantity)}`).join("\n");
+  const cartText = session.cart.map(i => {
+    const ad = (i.addons || []).map(a => `   ↳ ${a.name}`).join("\n");
+    const obs = i.observations ? `\n   📝 _${i.observations}_` : "";
+    return `• ${i.quantity}x ${i.name} — ${BRL(i.unit_price * i.quantity)}${ad ? "\n" + ad : ""}${obs}`;
+  }).join("\n");
   const msg = `✅ *Item adicionado!*\n\n*Seu carrinho:*\n${cartText}\n\n*Subtotal:* ${BRL(total)}\n\n*1* — Adicionar mais itens\n*2* — Finalizar pedido\n\n_Digite *CANCELAR* para desistir._`;
   session.current_step = "awaiting_more";
   await setSession(admin, session);
   await sendText(storeId, phone, msg);
+};
+
+const askObservation = async (admin: any, storeId: string, phone: string, session: Session) => {
+  session.current_step = "awaiting_observation";
+  await setSession(admin, session);
+  await sendText(
+    storeId,
+    phone,
+    "📝 *Alguma observação para este item?*\n\n_Ex.: sem cebola, ponto da carne, tirar o queijo..._\n\nDigite sua observação ou envie *0* para pular.",
+  );
+};
+
+// Busca grupos de adicionais (diretos e vinculados via product_addon_groups) + itens.
+const fetchAddonGroupsFor = async (admin: any, storeId: string, productId: string) => {
+  const sel = "id,name,min_select,max_select,sort_order,price_replaces_base,addon_items(id,name,price,sort_order)";
+  const [directRes, linkedRes] = await Promise.all([
+    admin.from("addon_groups").select(sel).eq("product_id", productId).order("sort_order"),
+    admin.from("product_addon_groups")
+      .select(`addon_group_id,addon_groups(${sel})`)
+      .eq("product_id", productId),
+  ]);
+  const direct = (directRes.data || []) as any[];
+  const linked = ((linkedRes.data || []) as any[])
+    .map((r) => r.addon_groups)
+    .filter(Boolean)
+    .filter((g: any) => !direct.find((d) => d.id === g.id));
+  const groups = [...direct, ...linked]
+    .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
+    .map((g: any) => ({
+      id: g.id,
+      name: g.name,
+      min: Number(g.min_select || 0),
+      max: Number(g.max_select || 1),
+      price_replaces_base: !!g.price_replaces_base,
+      items: ((g.addon_items || []) as any[])
+        .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
+        .map((it: any) => ({ id: it.id, name: it.name, price: Number(it.price || 0) })),
+    }))
+    .filter((g) => g.items.length > 0);
+  return groups;
+};
+
+const askAddonGroup = async (admin: any, storeId: string, phone: string, session: Session) => {
+  const pp = session.context.pending_product;
+  const g = pp.groups[pp.group_idx];
+  const rule =
+    g.min === 0 && g.max === 1 ? "opcional, escolha 1"
+    : g.min === 1 && g.max === 1 ? "obrigatório, escolha 1"
+    : g.min === 0 ? `opcional, até ${g.max}`
+    : g.min === g.max ? `obrigatório, escolha ${g.min}`
+    : `escolha de ${g.min} a ${g.max}`;
+  const lines = [`*${g.name}* (${rule})`, ""];
+  g.items.forEach((it: any, i: number) => {
+    const priceStr = it.price > 0 ? ` (+${BRL(it.price)})` : "";
+    lines.push(`*${i + 1}* — ${it.name}${priceStr}`);
+  });
+  if (g.max > 1) lines.push("", "_Envie os números separados por vírgula (ex: 1,3)._");
+  else lines.push("", "_Responda com o *número* da opção._");
+  if (g.min === 0) lines.push("_Ou envie *0* para pular._");
+  session.current_step = "awaiting_addon";
+  await setSession(admin, session);
+  await sendText(storeId, phone, lines.join("\n"));
+};
+
+const finalizeProductWithAddons = async (admin: any, storeId: string, phone: string, session: Session) => {
+  const pp = session.context.pending_product;
+  const addons: AddonSel[] = pp.addons || [];
+  // preço: se algum grupo com price_replaces_base tem seleção, o base vira o maior preço desse grupo;
+  // demais adicionais somam normalmente.
+  let base = Number(pp.base_price || 0);
+  let extras = 0;
+  const replacedGroups = new Set<string>();
+  for (const g of pp.groups) {
+    const picks = addons.filter(a => a.group_id === g.id);
+    if (g.price_replaces_base && picks.length > 0) {
+      base = Math.max(...picks.map(a => a.price));
+      replacedGroups.add(g.id);
+    }
+  }
+  for (const a of addons) {
+    if (!replacedGroups.has(a.group_id)) extras += a.price;
+  }
+  const unit_price = Math.round((base + extras) * 100) / 100;
+  session.cart.push({
+    product_id: pp.product_id,
+    name: pp.name,
+    unit_price,
+    quantity: 1,
+    addons: addons.map(a => ({ group_id: a.group_id, group_name: a.group_name, name: a.name, price: a.price })),
+  });
+  session.context.pending_product = null;
+  await askObservation(admin, storeId, phone, session);
 };
 
 const askDeliveryType = async (admin: any, storeId: string, phone: string, session: Session) => {
@@ -211,7 +401,10 @@ const showConfirmation = async (admin: any, storeId: string, phone: string, sess
   const subtotal = session.cart.reduce((s, i) => s + i.unit_price * i.quantity, 0);
   const deliveryFee = Number(session.context.delivery_fee || 0);
   const total = subtotal + deliveryFee;
-  const cartText = session.cart.map(i => `• ${i.quantity}x ${i.name} — ${BRL(i.unit_price * i.quantity)}`).join("\n");
+  const cartText = session.cart.map(i => {
+    const ad = (i.addons || []).map(a => `   ↳ ${a.name}`).join("\n");
+    return `• ${i.quantity}x ${i.name} — ${BRL(i.unit_price * i.quantity)}${ad ? "\n" + ad : ""}`;
+  }).join("\n");
   const isDelivery = session.context.delivery_type === "delivery";
   const paymentLabel = ({ pix: "Pix", cash: "Dinheiro", card: "Cartão na entrega" } as any)[session.context.payment_method] || session.context.payment_method;
   const addr = session.context;
@@ -293,7 +486,9 @@ const startPixDireto = async (admin: any, storeId: string, phone: string, sessio
   }
   const items = session.cart.map(i => ({
     order_id: order.id, product_id: i.product_id,
-    quantity: i.quantity, unit_price: i.unit_price, addons: [],
+    quantity: i.quantity, unit_price: i.unit_price,
+    observations: i.observations || null,
+    addons: (i.addons || []).map(a => ({ name: a.name, price: a.price, group_name: a.group_name })),
   }));
   await admin.from("order_items").insert(items);
 
@@ -318,8 +513,8 @@ const startPixDireto = async (admin: any, storeId: string, phone: string, sessio
 const uploadPixProofFromBase64 = async (
   storeId: string, orderId: string, base64: string, mime: string
 ): Promise<string | null> => {
-  const base = Deno.env.get("EXTERNAL_SUPABASE_URL")!;
-  const key = Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY")!;
+  const base = Deno.env.get("SUPABASE_URL") || Deno.env.get("EXTERNAL_SUPABASE_URL")!;
+  const key = Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const ext = mime.includes("png") ? "png" : mime.includes("pdf") ? "pdf" : "jpg";
   const path = `${storeId}/${orderId}.${ext}`;
   const bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
@@ -339,8 +534,13 @@ const ensureClient = async (admin: any, storeId: string, phone: string, session:
   if (session.context.client_id) return session.context.client_id;
   const customerName = String(session.context.customer_name || "").trim();
   try {
+    const digits = onlyDigits(phone);
     const { data: prof } = await admin.from("profiles")
-      .select("user_id, delivery_pin").eq("phone", phone).order("updated_at", { ascending: false }).limit(1).maybeSingle();
+      .select("user_id, delivery_pin")
+      .eq("phone", digits)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
     let clientId: string | null = (prof as any)?.user_id || null;
     let pin = (prof as any)?.delivery_pin || String(Math.floor(1000 + Math.random() * 9000));
     if (!clientId) {
@@ -443,13 +643,15 @@ const createOrder = async (admin: any, storeId: string, phone: string, session: 
   }
   const items = session.cart.map(i => ({
     order_id: order.id, product_id: i.product_id,
-    quantity: i.quantity, unit_price: i.unit_price, addons: [],
+    quantity: i.quantity, unit_price: i.unit_price,
+    observations: i.observations || null,
+    addons: (i.addons || []).map(a => ({ name: a.name, price: a.price, group_name: a.group_name })),
   }));
   await admin.from("order_items").insert(items);
   const num = `#${order.id.slice(0, 8).toUpperCase()}`;
   await sendText(storeId, phone,
     `🎉 *Pedido ${num} confirmado!*\n\nA *${storeName}* recebeu seu pedido e vai começar a preparar em instantes.\n\nVocê será avisado quando o pedido for aceito. ✨`);
-  await clearSession(admin, storeId, phone);
+  await setPostOrderCooldown(admin, storeId, phone, num);
 };
 
 const isCancel = (t: string) => /^(cancelar|sair|parar)$/i.test(normalize(t));
@@ -468,8 +670,8 @@ Deno.serve(async (req) => {
     if (!store_id || !phone || typeof text !== "string") return json({ error: "invalid payload" }, 400);
 
     const admin = createClient(
-      Deno.env.get("EXTERNAL_SUPABASE_URL")!,
-      (Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY"))!,
+      (Deno.env.get("SUPABASE_URL") || Deno.env.get("EXTERNAL_SUPABASE_URL"))!,
+      (Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"))!,
     );
 
     const { data: cfg } = await admin.from("whatsapp_bot_config")
@@ -477,17 +679,18 @@ Deno.serve(async (req) => {
     if (!cfg || !cfg.enabled) return json({ handled: false, reason: "bot_disabled" });
 
     const { data: store, error: storeErr } = await admin.from("stores")
-      .select("name, slug, settings, delivery_mode, delivery_fee_type, own_delivery_fee, delivery_fee, delivery_fee_base, minimum_order_value, pix_direto_enabled, pix_direto_key, pix_direto_key_type, pix_direto_beneficiary, pix_direto_instructions")
+      .select("name, slug, settings, delivery_mode, delivery_fee_type, own_delivery_fee, delivery_fee, delivery_fee_base, minimum_order_value, pix_direto_enabled, pix_direto_key, pix_direto_key_type, pix_direto_beneficiary, pix_direto_instructions, is_open, force_closed, preorder_enabled, preorder_minutes_before, platform_delivery_split_override")
       .eq("id", store_id).maybeSingle();
     if (storeErr) console.error("[bot] store select error", storeErr);
     const storeName = store?.name || "loja";
     const settings = (store?.settings || {}) as Record<string, any>;
+    const pixDiretoOn = Boolean(store?.pix_direto_enabled && store?.pix_direto_key);
     const accepts = {
-      pix: settings.accept_pix_online !== false || settings.accept_pix_machine === true,
+      // Pix direto habilitado sempre permite oferecer "pix" no bot, mesmo se o pix online/máquina estiver off.
+      pix: pixDiretoOn || settings.accept_pix_online !== false || settings.accept_pix_machine === true,
       cash: settings.accept_cash !== false,
       card: settings.accept_card !== false,
     };
-    const pixDiretoOn = Boolean(store?.pix_direto_enabled && store?.pix_direto_key);
     const storeSlug = store?.slug || "";
     const storeUrl = storeSlug ? `${CANONICAL_HOST}/${storeSlug}` : CANONICAL_HOST;
 
@@ -508,20 +711,82 @@ Deno.serve(async (req) => {
 
     let session = await loadSession(admin, store_id, phone);
 
+    // Verifica horário de funcionamento (só bloqueia se não há pedido em andamento).
+    if (!session) {
+      const { data: hoursRows } = await admin
+        .from("opening_hours")
+        .select("day_of_week, open_time, close_time, is_closed_all_day")
+        .eq("store_id", store_id);
+      const status = getStoreOpenStatus(
+        (hoursRows || []) as any,
+        Boolean(store?.force_closed),
+        store?.is_open !== false,
+      );
+      if (!status.isOpen) {
+        const triggerKeywords = Array.from(new Set([...(cfg.trigger_keywords || []), ...DEFAULT_TRIGGER_KEYWORDS]));
+        const triggeredClosed = triggerKeywords.some((k: string) => norm.includes(normalize(k)));
+        if (!triggeredClosed) return json({ handled: false, reason: "closed_no_trigger" });
+        await sendText(store_id, phone,
+          `🌙 *${storeName}* está fechada no momento.\n\n${status.reason}.\n\nQuando abrirmos, é só mandar *MENU* que te atendo. 💚`);
+        return json({ handled: true, action: "store_closed", reason: status.reason });
+      }
+    }
+
     // Sem sessão: verifica gatilho
     if (!session) {
-      const triggered = (cfg.trigger_keywords || []).some((k: string) => norm.includes(normalize(k)));
+      const triggerKeywords = Array.from(new Set([...(cfg.trigger_keywords || []), ...DEFAULT_TRIGGER_KEYWORDS]));
+      const triggered = triggerKeywords.some((k: string) => norm.includes(normalize(k)));
       if (!triggered) return json({ handled: false, reason: "no_trigger" });
       // Reconhece cliente pelo telefone
       const digits = onlyDigits(phone);
       const { data: known } = await admin.from("profiles")
         .select("user_id, full_name")
         .eq("phone", digits)
-        .order("updated_at", { ascending: false })
+        .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
       const knownName = (known as any)?.full_name || null;
       const clientId = (known as any)?.user_id || null;
+      // Verifica se este telefone tem pedido em aberto (não finalizado)
+      const digitsPhone = digits;
+      // orders não tem coluna customer_phone; usa client_id (quando conhecido) ou anon_session_id (=phone)
+      let openOrdersQuery = admin
+        .from("orders")
+        .select("id, order_number, status, created_at")
+        .eq("store_id", store_id)
+        .not("status", "in", "(entregue,cancelado,recusado,finalizado)")
+        .order("created_at", { ascending: false })
+        .limit(1);
+      openOrdersQuery = clientId
+        ? openOrdersQuery.or(`client_id.eq.${clientId},anon_session_id.eq.${digitsPhone}`)
+        : openOrdersQuery.eq("anon_session_id", digitsPhone);
+      const { data: openOrders } = await openOrdersQuery;
+      const openOrder = (openOrders || [])[0] as any;
+      if (openOrder) {
+        const code = openOrder.order_number ? `#${openOrder.order_number}` : `#${String(openOrder.id).slice(0, 8).toUpperCase()}`;
+        const firstName = knownName ? String(knownName).split(" ")[0] : null;
+        const hi = firstName ? `Olá, *${firstName}*! 👋` : "Olá! 👋";
+        session = {
+          store_id, phone,
+          current_step: "awaiting_existing_order_choice",
+          cart: [],
+          context: {
+            client_id: clientId,
+            customer_name: knownName || undefined,
+            store_url: storeUrl,
+          },
+        };
+        await setSession(admin, session);
+        await sendText(store_id, phone, [
+          hi, "",
+          `Você já tem um pedido em aberto na *${storeName}*: *${code}* (status: _${openOrder.status}_).`, "",
+          "Deseja fazer *outro pedido*?", "",
+          "*1* — 🛒 Sim, fazer novo pedido",
+          "*2* — 💬 Falar com atendente sobre o pedido atual",
+          "*3* — ❌ Cancelar / sair",
+        ].join("\n"));
+        return json({ handled: true, action: "existing_order_prompt" });
+      }
       const greeting = knownName
         ? `Olá, *${String(knownName).split(" ")[0]}*! 👋 Que bom te ver de novo na *${storeName}*.`
         : `Olá! 👋 Bem-vindo à *${storeName}*.`;
@@ -550,6 +815,33 @@ Deno.serve(async (req) => {
     // Roteia por estado
     const num = parseInt(text.trim(), 10);
     switch (session.current_step) {
+      case "awaiting_existing_order_choice": {
+        if (num === 1) {
+          if (session.context.customer_name) {
+            session.current_step = "awaiting_main_menu";
+            await setSession(admin, session);
+            await sendText(store_id, phone, `Perfeito, *${String(session.context.customer_name).split(" ")[0]}*! Bora escolher. 🛒`);
+            await showCategories(admin, store_id, phone, session);
+          } else {
+            session.current_step = "awaiting_name";
+            await setSession(admin, session);
+            await sendText(store_id, phone, "*👤 Qual é o seu nome?*");
+          }
+          return json({ handled: true, action: "new_order_from_existing" });
+        }
+        if (num === 2) {
+          await clearSession(admin, store_id, phone);
+          await sendText(store_id, phone, "👋 Um atendente humano vai te responder em instantes sobre seu pedido. Aguarde só um momento.");
+          return json({ handled: true, action: "escape_existing_order" });
+        }
+        if (num === 3) {
+          await clearSession(admin, store_id, phone);
+          await sendText(store_id, phone, "❌ Ok, encerrado. Quando quiser, é só mandar *MENU*.");
+          return json({ handled: true, action: "cancel_existing_order" });
+        }
+        await sendText(store_id, phone, "Responda com *1*, *2* ou *3*.");
+        return json({ handled: true, action: "invalid_existing_order_choice" });
+      }
       case "awaiting_main_menu": {
         if (num === 2) {
           await sendText(store_id, phone,
@@ -604,9 +896,65 @@ Deno.serve(async (req) => {
           return json({ handled: true, action: "invalid_product" });
         }
         const p = prods[num - 1];
-        session.cart.push({ product_id: p.id, name: p.name, unit_price: p.price, quantity: 1 });
+        // Se o produto tem descrição (ex.: "cardápio do dia" — arroz, feijão, mistura...),
+        // mostra ao cliente antes de pedir os adicionais obrigatórios.
+        if (p.description) {
+          await sendText(store_id, phone, `🍱 *${p.name}*\n${p.description}`);
+        }
+        const groups = await fetchAddonGroupsFor(admin, store_id, p.id);
+        if (groups.length === 0) {
+          session.cart.push({ product_id: p.id, name: p.name, unit_price: p.price, quantity: 1, addons: [] });
+          await askObservation(admin, store_id, phone, session);
+          return json({ handled: true, action: "added_item" });
+        }
+        session.context.pending_product = {
+          product_id: p.id, name: p.name, base_price: p.price, quantity: 1,
+          groups, group_idx: 0, addons: [],
+        };
+        await askAddonGroup(admin, store_id, phone, session);
+        return json({ handled: true, action: "ask_addon" });
+      }
+      case "awaiting_addon": {
+        const pp = session.context.pending_product;
+        if (!pp) { await showCategories(admin, store_id, phone, session); return json({ handled: true }); }
+        const g = pp.groups[pp.group_idx];
+        const raw = text.trim();
+        const skipped = raw === "0" && g.min === 0;
+        let picks: number[] = [];
+        if (!skipped) {
+          picks = raw.split(/[,\s;]+/).map((s) => parseInt(s, 10)).filter((n) => Number.isFinite(n) && n >= 1 && n <= g.items.length);
+          picks = Array.from(new Set(picks));
+          if (g.max === 1 && picks.length > 1) picks = [picks[0]];
+          if (picks.length < g.min) {
+            await sendText(store_id, phone, `Escolha pelo menos *${g.min}* opção(ões) de *${g.name}*.`);
+            return json({ handled: true, action: "addon_below_min" });
+          }
+          if (picks.length > g.max) {
+            await sendText(store_id, phone, `Escolha no máximo *${g.max}* opção(ões) de *${g.name}*.`);
+            return json({ handled: true, action: "addon_above_max" });
+          }
+        }
+        for (const i of picks) {
+          const it = g.items[i - 1];
+          pp.addons.push({ group_id: g.id, group_name: g.name, name: it.name, price: it.price });
+        }
+        pp.group_idx += 1;
+        session.context.pending_product = pp;
+        if (pp.group_idx < pp.groups.length) {
+          await askAddonGroup(admin, store_id, phone, session);
+          return json({ handled: true, action: "next_addon" });
+        }
+        await finalizeProductWithAddons(admin, store_id, phone, session);
+        return json({ handled: true, action: "product_finalized" });
+      }
+      case "awaiting_observation": {
+        const raw = (text || "").trim();
+        if (raw && raw !== "0") {
+          const last = session.cart[session.cart.length - 1];
+          if (last) last.observations = raw.slice(0, 240);
+        }
         await askMore(admin, store_id, phone, session);
-        return json({ handled: true, action: "added_item" });
+        return json({ handled: true, action: "observation_saved" });
       }
       case "awaiting_more": {
         if (num === 1) { await showCategories(admin, store_id, phone, session); return json({ handled: true }); }
@@ -620,7 +968,9 @@ Deno.serve(async (req) => {
           await maybeOfferSavedAddress(admin, store_id, phone, session);
         } else if (num === 2) {
           session.context.delivery_type = "retirada";
-          const methods = (cfg.accepted_payment_methods || ["pix", "cash", "card"]).filter((m: string) => {
+          const baseMethods = cfg.accepted_payment_methods || ["pix", "cash", "card"];
+          const withPix = pixDiretoOn && !baseMethods.includes("pix") ? ["pix", ...baseMethods] : baseMethods;
+          const methods = withPix.filter((m: string) => {
             if (m === "pix") return accepts.pix;
             if (m === "cash") return accepts.cash;
             if (m === "card") return accepts.card;
@@ -639,13 +989,18 @@ Deno.serve(async (req) => {
           session.context.number = saved.number;
           session.context.neighborhood = saved.neighborhood;
           session.context.reference = saved.reference_point || saved.complement || "";
-          const PLATFORM_FEE = 0.99;
+          const PLATFORM_FEE = store?.platform_delivery_split_override != null
+            ? Number(store.platform_delivery_split_override)
+            : 0.99;
           const flat =
             Number(store?.own_delivery_fee || 0) ||
             Number(store?.delivery_fee || 0) ||
             Number(store?.delivery_fee_base || 0);
           session.context.delivery_fee = Math.round((flat + PLATFORM_FEE) * 100) / 100;
-          const methods = (cfg.accepted_payment_methods || ["pix", "cash", "card"]).filter((m: string) => {
+          await sendDeliveryFeeInfo(store_id, phone, flat, PLATFORM_FEE);
+          const baseMethods = cfg.accepted_payment_methods || ["pix", "cash", "card"];
+          const withPix = pixDiretoOn && !baseMethods.includes("pix") ? ["pix", ...baseMethods] : baseMethods;
+          const methods = withPix.filter((m: string) => {
             if (m === "pix") return accepts.pix;
             if (m === "cash") return accepts.cash;
             if (m === "card") return accepts.card;
@@ -689,15 +1044,19 @@ Deno.serve(async (req) => {
       case "awaiting_reference": {
         const ref = text.trim();
         session.context.reference = (ref === "-" || ref === "") ? "" : ref.slice(0, 120);
-        // Cálculo simples da taxa: usa a taxa fixa da loja (own_delivery_fee) + taxa da plataforma (R$ 0,99).
-        // Não usamos cálculo por km porque o bot não tem GPS/CEP validado.
-        const PLATFORM_FEE = 0.99;
+        // Cálculo simples: taxa fixa da loja + taxa da plataforma (override por loja VIP se houver).
+        const PLATFORM_FEE = store?.platform_delivery_split_override != null
+          ? Number(store.platform_delivery_split_override)
+          : 0.99;
         const flat =
           Number(store?.own_delivery_fee || 0) ||
           Number(store?.delivery_fee || 0) ||
           Number(store?.delivery_fee_base || 0);
         session.context.delivery_fee = Math.round((flat + PLATFORM_FEE) * 100) / 100;
-        const methods = (cfg.accepted_payment_methods || ["pix", "cash", "card"]).filter((m: string) => {
+        await sendDeliveryFeeInfo(store_id, phone, flat, PLATFORM_FEE);
+        const baseMethods = cfg.accepted_payment_methods || ["pix", "cash", "card"];
+        const withPix = pixDiretoOn && !baseMethods.includes("pix") ? ["pix", ...baseMethods] : baseMethods;
+        const methods = withPix.filter((m: string) => {
           if (m === "pix") return accepts.pix;
           if (m === "cash") return accepts.cash;
           if (m === "card") return accepts.card;
@@ -796,8 +1155,28 @@ Deno.serve(async (req) => {
         }
         await sendText(store_id, phone,
           `✅ *Comprovante recebido!*\n\nO lojista vai validar e confirmar seu pedido em instantes. Você recebe uma mensagem assim que for aceito. ✨`);
-        await clearSession(admin, store_id, phone);
+        await setPostOrderCooldown(admin, store_id, phone, `#${String(orderId).slice(0,8).toUpperCase()}`);
         return json({ handled: true, action: "pix_proof_saved" });
+      }
+      case "post_order_cooldown": {
+        // Silêncio pós-pedido: só avisa 1 vez, depois fica mudo até expirar.
+        // Escape/cancelar já são tratados antes de chegar aqui.
+        if (!session.context?.notified) {
+          session.context = { ...(session.context || {}), notified: true };
+          await setSession(admin, {
+            ...session,
+            current_step: "post_order_cooldown",
+          });
+          // Reafirma expires_at longo (setSession usa 15min por padrão).
+          await admin.from("whatsapp_bot_sessions")
+            .update({ expires_at: new Date(Date.now() + POST_ORDER_COOLDOWN_MS).toISOString() })
+            .eq("store_id", store_id).eq("phone", phone);
+          const code = session.context?.order_code || "seu pedido";
+          await sendText(store_id, phone,
+            `✅ Recebi! Seu pedido *${code}* já está com a loja.\n\nPra evitar bloqueio do WhatsApp, vou ficar em silêncio por aqui. Quando quiser *falar com atendente*, é só escrever *atendente*. Pra fazer *outro pedido*, mande *MENU* mais tarde. 💚`);
+          return json({ handled: true, action: "post_order_ack" });
+        }
+        return json({ handled: true, action: "post_order_silent" });
       }
       default:
         await clearSession(admin, store_id, phone);
