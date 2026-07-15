@@ -20,8 +20,10 @@ Deno.serve(async (req) => {
     out.plan_cols = await run(`SELECT column_name FROM information_schema.columns WHERE table_schema='public' AND table_name='store_plans' ORDER BY ordinal_position;`);
     out.clear_vip = await run(`
       UPDATE public.store_plans sp
-      SET is_vip = false,
-          essencial_lifetime_free = false,
+      SET essencial_lifetime_free = false,
+          pix_operational_fee_override = NULL,
+          platform_delivery_split_override = NULL,
+          commission_rate = 0,
           trial_ends_at = NULL
       FROM public.stores s
       WHERE sp.store_id = s.id AND s.slug ILIKE '${slug}%';
