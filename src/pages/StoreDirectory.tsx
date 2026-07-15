@@ -1,185 +1,94 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { AsaasBadgeBar } from "@/components/AsaasBadge";
 import PartnerClientView from "@/components/PartnerClientView";
+import PlansComparisonTable from "@/components/PlansComparisonTable";
+import { PLANS, PLANS_ORDER, DELIVERY_FEE_NOTE, PIX_FEE_NOTE } from "@/lib/plansInfo";
 import {
-  Store, ShieldCheck, Smartphone,
-  ArrowRight, CheckCircle2, MapPin, Clock, CreditCard,
-  BarChart3, Menu, X, Rocket, Sparkles, ChevronDown,
-  ShoppingBag, Truck, Crown, Bell, MessageCircle, Check,
+  ArrowRight, Check, CheckCircle2, ChevronDown, Clock, CreditCard,
+  Menu, MessageCircle, ShieldCheck, ShoppingBag, Sparkles,
+  Store, Truck, X, Zap, Smartphone, BarChart3, Printer, Gift, MapPin,
+  AlertTriangle, PhoneCall, FileText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-/* ───────────────────────── DATA ───────────────────────── */
+/* ─────────────────────────── CONTENT ─────────────────────────── */
 
-const painSolutions = [
-  { pain: "Pedido no papel, endereço errado", solution: "Pedido completo na tela, com mapa." },
-  { pain: "Conferir PIX no extrato", solution: "PIX cai na hora, já confirmado." },
-  { pain: "Cliente liga: 'já saiu?'", solution: "WhatsApp avisa cada etapa sozinho." },
-  { pain: "Não sabe o lucro do dia", solution: "Relatório do dia em 1 tela." },
+const PAINS = [
+  { pain: "Pedido no papel, endereço errado, entrega perdida.",     solution: "Pedido completo na tela, com mapa e código de confirmação." },
+  { pain: "Conferir PIX no extrato pedido por pedido.",               solution: "PIX cai confirmado — o pedido libera sozinho." },
+  { pain: "Cliente ligando \"já saiu meu pedido?\" toda hora.",      solution: "WhatsApp avisa cada etapa automaticamente." },
+  { pain: "Fim do dia sem saber quanto sobrou de verdade.",           solution: "Relatório do dia numa tela — vendas, taxas e líquido." },
 ];
 
-const steps = [
-  { n: "1", title: "Crie sua conta", desc: "Nome da loja e telefone. Pronto." },
-  { n: "2", title: "Monte o cardápio", desc: "Produtos com foto e preço." },
-  { n: "3", title: "Compartilhe o link", desc: "Envie no WhatsApp e redes." },
-  { n: "4", title: "Receba pedidos", desc: "Cada pedido pago, no celular." },
+const FEATURES = [
+  { icon: Smartphone, title: "Cardápio digital próprio",  desc: "Link exclusivo da sua loja. Cliente abre no navegador, sem baixar app." },
+  { icon: CreditCard, title: "PIX automático + Pix Direto", desc: "Asaas confirma na hora, ou receba direto na sua chave e confirme com 1 toque." },
+  { icon: MessageCircle, title: "WhatsApp Bot guiado",     desc: "Cliente faz o pedido conversando no seu WhatsApp — bot valida endereço, horário e taxa." },
+  { icon: Truck, title: "Motoboy integrado",               desc: "Mapa em tempo real, cálculo de taxa por distância e código de entrega." },
+  { icon: BarChart3, title: "Relatórios que fecham a conta", desc: "Vendas, comissão, PIX, mensalidade — tudo já descontado no líquido." },
+  { icon: Store, title: "PDV pro balcão",                  desc: "Sessão, sangria, fechamento do dia e impressão térmica. Grátis pra loja física." },
+  { icon: Gift, title: "Cupons, fidelidade e banners",     desc: "Suas próprias promoções sem depender de marketplace." },
+  { icon: Printer, title: "Impressão térmica",             desc: "Roda em qualquer impressora Bluetooth / USB de cozinha." },
 ];
 
-const features = [
-  { icon: Smartphone, title: "Cardápio digital", desc: "Cardápio digital com link próprio da sua loja — cliente abre no navegador, sem instalar app." },
-  { icon: CreditCard, title: "PIX automático", desc: "Cliente paga, dinheiro cai na hora." },
-  { icon: Truck, title: "Motoboy integrado", desc: "Mapa em tempo real e código de confirmação." },
-  { icon: BarChart3, title: "Relatório do dia", desc: "Vendas, lucro e mais pedidos numa tela." },
-  { icon: Store, title: "PDV para loja física", desc: "Frente de caixa completa: vendas, troco, sangria e fechamento do dia. Contrate à parte ou use o plano Somente PDV." },
+const STEPS = [
+  { n: "01", title: "Cria a conta",       desc: "Nome da loja, telefone e endereço. 2 minutos." },
+  { n: "02", title: "Monta o cardápio",   desc: "Produtos com foto, preço e adicionais." },
+  { n: "03", title: "Compartilha o link", desc: "Cola no WhatsApp, Instagram, bio do TikTok." },
+  { n: "04", title: "Recebe pedidos",     desc: "Cada pedido pago, no seu celular, com o PIX na conta." },
 ];
 
-const segments = [
-  { emoji: "🍕", title: "Pizzarias", desc: "Meio-a-meio, bordas e adicionais sem erro." },
-  { emoji: "🛒", title: "Mercados", desc: "Catálogo grande organizado por categoria." },
-  { emoji: "🍰", title: "Docerias", desc: "Cliente agenda dia e hora sozinho." },
-  { emoji: "🍺", title: "Bares", desc: "Delivery e balcão no mesmo sistema." },
-  { emoji: "🍔", title: "Lanches", desc: "Combos e adicionais com 1 toque." },
-  { emoji: "💈", title: "Lojas físicas", desc: "Barbearia, pet shop, loja de roupa — use só o PDV, sem vitrine online." },
+const SEGMENTS = [
+  { emoji: "🍕", title: "Pizzarias",   desc: "Meio-a-meio, bordas recheadas, adicionais por sabor." },
+  { emoji: "🍔", title: "Lanches",     desc: "Combos, adicionais e observações do cliente sem erro." },
+  { emoji: "🛒", title: "Mercados",    desc: "Catálogo grande organizado por categoria." },
+  { emoji: "🍰", title: "Docerias",    desc: "Cliente agenda dia e hora sozinho pela vitrine." },
+  { emoji: "🍺", title: "Bares",       desc: "Delivery + balcão no mesmo sistema." },
+  { emoji: "💈", title: "Loja física", desc: "Barbearia, pet, roupa — só o PDV, sem vitrine online." },
 ];
 
-const plans = [
-  {
-    id: "fixed",
-    name: "Essencial",
-    tagline: "Grátis pra começar — vira R$180 quando faturar R$5.000",
-    price: "0",
-    commission: "0%",
-    icon: Crown,
-    highlight: true,
-    badge: "🎁 Grátis pra começar" as string | undefined,
-    features: [
-      "R$ 0/mês pra começar",
-      "Sobe pra R$ 180/mês após atingir R$ 5.000 em vendas",
-      "Zero comissão por pedido",
-      "Cardápio digital ilimitado + Motoboy integrado",
-      "PDV: módulo opcional (+ R$ 49/mês)",
-    ],
-  },
-  {
-    id: "autonomy",
-    name: "Autonomia",
-    tagline: "Grátis pra começar. Sem acréscimo da plataforma na entrega.",
-    price: "0",
-    commission: "0%",
-    icon: Crown,
-    highlight: false,
-    badge: "🎁 Grátis pra começar" as string | undefined,
-    features: [
-      "R$ 0/mês pra começar",
-      "Sobe pra R$ 239,90/mês após atingir R$ 2.500 em vendas",
-      "SEM taxa de R$ 0,99 da plataforma na entrega",
-      "Cliente paga exatamente a taxa que você define",
-      "PIX online: R$1,99/pedido (só se usar)",
-      "PDV: módulo opcional (+ R$ 49/mês)",
-    ],
-  },
+const TESTIMONIALS = [
+  { name: "Carlos M.",  store: "Pizzaria do Carlinho",   quote: "Em 2 semanas dobrei os pedidos. O PIX cair na hora mudou minha vida." },
+  { name: "Juliana R.", store: "Doceria Júlia",          quote: "Saí do WhatsApp na mão e parei de perder pedido. Vendo até dormindo." },
+  { name: "Renato S.",  store: "Mercadinho Bom Preço",   quote: "O cliente faz tudo sozinho. Eu só separo e entrego." },
 ];
 
-// Plano Somente PDV (loja física sem delivery)
-plans.push({
-  id: "pdv_only",
-  name: "Somente PDV",
-  tagline: "Só o caixa, sem delivery",
-  price: "69",
-  commission: "Sem",
-  icon: CreditCard,
-  highlight: false,
-  badge: "Balcão" as string | undefined,
-  features: [
-    "PDV completo (vendas, sangria, fechamento)",
-    "Cadastro de produtos ilimitado",
-    "Relatórios do caixa",
-    "WhatsApp integrado (grátis)",
-    "Sem vitrine pública, sem delivery",
-  ],
-});
-
-const testimonials = [
-  { name: "Carlos M.", store: "Pizzaria do Carlinho", quote: "Em 2 semanas dobrei os pedidos. O PIX cair na hora mudou minha vida." },
-  { name: "Juliana R.", store: "Doceria Júlia", quote: "Saí do WhatsApp e parei de perder pedido. Agora vendo até dormindo." },
-  { name: "Renato S.", store: "Mercadinho Bom Preço", quote: "O cliente faz tudo sozinho. Eu só separo e entrego." },
+const FAQS = [
+  { q: "Grátis mesmo? Onde está a pegadinha?",
+    a: "Sem pegadinha. Você começa com R$ 0/mês. Ao faturar R$ 5.000 no Essencial (ou R$ 2.500 no Autonomia) em 60 dias, a mensalidade passa a valer, com 30 dias de aviso e aceite expresso. Se você não aceitar, a loja fica suspensa até aceitar — está explícito na cláusula 5.2 dos Termos." },
+  { q: "E as taxas que aparecem: R$ 0,99 e R$ 1,99?",
+    a: "R$ 0,99 é o acréscimo da plataforma somado à sua taxa de entrega, pago pelo cliente (não sai do seu caixa). Só existe no plano Essencial — no Autonomia é zero. R$ 1,99 é a taxa de PIX online por pedido pago no PIX; pedidos em dinheiro ou cartão não pagam." },
+  { q: "O PDV está incluso?",
+    a: "No plano Essencial e Autonomia o PDV é um módulo opcional (R$ 49/mês). Se você só quer o caixa presencial, tem o plano Somente PDV por R$ 69/mês, sem delivery." },
+  { q: "Preciso instalar algo?",
+    a: "Não. Roda no celular ou computador pelo navegador. Tem app Android opcional pra receber notificação de pedido. Cliente não instala nada." },
+  { q: "Posso cancelar quando quiser?",
+    a: "Sim, sem multa e sem fidelidade. Você desativa a loja no painel e pronto." },
+  { q: "É alternativa ao iFood?",
+    a: "Sim. Cardápio próprio, PIX direto na sua conta, comissão 0% no Essencial e Autonomia (contra ~27% dos grandes marketplaces). Você fica dono do cliente." },
 ];
 
-const faqs = [
-  { q: "Preciso instalar algum programa?", a: "Não. Você usa no celular ou computador. O cliente também não instala nada." },
-  { q: "Como o cliente paga?", a: "PIX direto no celular. O dinheiro cai na sua conta na hora." },
-  { q: "Posso cancelar quando quiser?", a: "Sim. Sem multa, sem fidelidade, sem pegadinha." },
-  { q: "E se eu tiver dificuldade?", a: "Nossa equipe responde no WhatsApp em minutos." },
-  {
-    q: 'O que é essa "taxa de R$ 0,99 da plataforma" na entrega?',
-    a: "É o quanto a plataforma cobra por pedido pra manter o motoboy integrado, o rastreamento e o suporte. No plano Essencial ela aparece pro cliente como acréscimo de R$ 0,99 em cima da sua taxa de entrega. No plano Autonomia esse acréscimo é zero — o cliente paga exatamente a taxa que você define.",
-  },
-  {
-    q: "Quando vale a pena o plano Autonomia?",
-    a: 'Se você prefere mostrar um preço de entrega "redondo" sem qualquer acréscimo da plataforma, o Autonomia é ideal. Começa grátis (R$ 0/mês) e só sobe pra R$ 239,90/mês depois que sua loja faturar R$ 2.500 — com 30 dias de aviso e aceite expresso seu.',
-  },
-  {
-    q: "O PDV está incluso em algum plano?",
-    a: "Não. O PDV é um módulo opcional, contratado à parte por R$ 49/mês, e funciona com qualquer plano (Essencial ou Autonomia). Lojas antigas que já usavam o PDV mantêm a regra anterior de R$ 1 por venda presencial.",
-  },
-  {
-    q: "Tenho só loja física, sem delivery. Dá pra usar só o PDV?",
-    a: "Dá sim. Existe o plano Somente PDV por R$ 69/mês: você usa o caixa completo (vendas, sangria, fechamento do dia) sem vitrine pública, sem cardápio online e sem comissão por pedido. Depois, se quiser abrir delivery, migra pra Essencial ou Autonomia num clique.",
-  },
-  {
-    q: "O ItaSuper é uma alternativa ao iFood?",
-    a: "Sim. Você tem seu próprio cardápio digital, recebe pedidos direto no seu link, o PIX cai na sua conta na hora e a comissão é bem menor (0% no plano Essencial, contra ~27% das grandes plataformas). Você fica dono do cliente.",
-  },
-  {
-    q: "Serve para pizzaria com meio-a-meio e bordas?",
-    a: "Sim. O cardápio suporta sabor meio-a-meio, escolha de borda recheada, adicionais por sabor e observações do cliente sem erro. Ideal para pizzaria delivery.",
-  },
-];
+/* ─────────────────────────── HELPERS ─────────────────────────── */
 
-/* ───────────────────────── HELPERS ───────────────────────── */
+const brl = (n: number) => `R$ ${n.toFixed(2).replace(".", ",").replace(/,00$/, "")}`;
 
 const ScrollProgress = () => {
-  const [progress, setProgress] = useState(0);
+  const [p, setP] = useState(0);
   useEffect(() => {
-    const onScroll = () => {
+    const on = () => {
       const h = document.documentElement;
-      setProgress(Math.min(100, (h.scrollTop / Math.max(1, h.scrollHeight - h.clientHeight)) * 100));
+      setP(Math.min(100, (h.scrollTop / Math.max(1, h.scrollHeight - h.clientHeight)) * 100));
     };
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    on();
+    window.addEventListener("scroll", on, { passive: true });
+    return () => window.removeEventListener("scroll", on);
   }, []);
   return (
-    <div className="fixed top-0 left-0 right-0 h-[3px] z-[60] pointer-events-none">
-      <div className="h-full bg-primary transition-[width] duration-150" style={{ width: `${progress}%` }} />
-    </div>
-  );
-};
-
-const StickyMobileCTA = ({ onClick }: { onClick: () => void }) => {
-  const [show, setShow] = useState(false);
-  useEffect(() => {
-    const onScroll = () => {
-      const s = window.scrollY;
-      const nearBottom = window.innerHeight + s >= document.documentElement.scrollHeight - 320;
-      setShow(s > 600 && !nearBottom);
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    onScroll();
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-  return (
-    <div
-      className={`md:hidden fixed bottom-0 left-0 right-0 z-40 px-4 pb-[max(env(safe-area-inset-bottom),12px)] pt-3 bg-gradient-to-t from-background via-background/95 to-background/0 transition-all duration-300 ${
-        show ? "translate-y-0 opacity-100" : "translate-y-full opacity-0 pointer-events-none"
-      }`}
-    >
-      <Button onClick={onClick} className="w-full min-h-[52px] rounded-2xl text-base font-black shadow-2xl shadow-primary/30">
-        <Store className="mr-2 h-5 w-5" /> Criar minha loja grátis <ArrowRight className="ml-2 h-5 w-5" />
-      </Button>
+    <div className="fixed top-0 inset-x-0 h-[2px] z-[70] pointer-events-none">
+      <div className="h-full bg-primary transition-[width] duration-150" style={{ width: `${p}%` }} />
     </div>
   );
 };
@@ -188,98 +97,115 @@ const Navbar = ({ onNavigate, isLoggedIn }: { onNavigate: (p: string) => void; i
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   useEffect(() => {
-    const h = () => setScrolled(window.scrollY > 20);
-    window.addEventListener("scroll", h);
+    const h = () => setScrolled(window.scrollY > 12);
+    window.addEventListener("scroll", h, { passive: true });
     return () => window.removeEventListener("scroll", h);
   }, []);
   const links = [
-    { label: "Como funciona", href: "#como-funciona", icon: Rocket },
-    { label: "Recursos", href: "#recursos", icon: Sparkles },
-    { label: "Planos", href: "#planos", icon: Crown },
-    { label: "Dúvidas", href: "#faq", icon: MessageCircle },
+    { label: "Recursos", href: "#recursos" },
+    { label: "Planos", href: "#planos" },
+    { label: "Como funciona", href: "#como-funciona" },
+    { label: "Dúvidas", href: "#faq" },
   ];
-  const scrollTo = (id: string) => {
-    setOpen(false);
-    document.querySelector(id)?.scrollIntoView({ behavior: "smooth" });
-  };
+  const scrollTo = (id: string) => { setOpen(false); document.querySelector(id)?.scrollIntoView({ behavior: "smooth" }); };
   return (
-    <nav className={`sticky top-0 z-50 backdrop-blur-xl transition-all duration-300 ${scrolled ? "bg-background/90 border-b border-border shadow-sm" : "bg-background/60 border-b border-transparent"}`}>
+    <nav className={`sticky top-0 z-[60] transition-all duration-300 ${scrolled ? "bg-background/85 backdrop-blur-xl border-b border-border shadow-[0_2px_20px_-8px_hsl(var(--foreground)/0.15)]" : "bg-transparent"}`}>
       <div className="max-w-6xl mx-auto flex items-center justify-between px-4 md:px-6 h-14 md:h-16">
         <button onClick={() => scrollTo("#hero")} aria-label="Início" className="shrink-0">
-          <img src="/itasuper-logo-horizontal.webp" alt="ItaSuper — sistema de delivery e PDV" width={170} height={40} className="h-7 md:h-9 w-auto object-contain" decoding="async" {...({ fetchpriority: "high" } as any)} />
+          <img src="/itasuper-logo-horizontal.webp" alt="ItaSuper" width={170} height={40} className="h-7 md:h-9 w-auto object-contain" decoding="async" {...({ fetchpriority: "high" } as any)} />
         </button>
-        <div className="hidden md:flex items-center gap-7">
+        <div className="hidden md:flex items-center gap-1">
           {links.map((l) => (
-            <button key={l.href} onClick={() => scrollTo(l.href)} className="text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors">
+            <button key={l.href} onClick={() => scrollTo(l.href)} className="text-sm font-semibold text-muted-foreground hover:text-foreground px-3 py-2 rounded-full hover:bg-muted/60 transition">
               {l.label}
             </button>
           ))}
+        </div>
+        <div className="hidden md:flex items-center gap-2">
           {isLoggedIn ? (
             <Button className="rounded-full font-bold text-sm px-6" onClick={() => onNavigate("/pedidos")}>
-              <ShoppingBag className="h-4 w-4 mr-2" /> Meus Pedidos
+              <ShoppingBag className="h-4 w-4 mr-2" /> Meus pedidos
             </Button>
           ) : (
             <>
-              <button onClick={() => onNavigate("/portal-parceiro")} className="text-sm font-semibold text-muted-foreground hover:text-foreground">
-                Já sou parceiro
-              </button>
-              <Button variant="outline" className="rounded-full font-bold text-sm px-5" onClick={() => onNavigate("/auth")}>Entrar</Button>
-              <Button className="rounded-full font-bold text-sm px-5" onClick={() => onNavigate("/cadastro-lojista")}>Começar grátis</Button>
+              <Button variant="ghost" className="rounded-full font-semibold text-sm" onClick={() => onNavigate("/auth")}>Entrar</Button>
+              <Button className="rounded-full font-bold text-sm px-5 shadow-[0_8px_24px_-8px_hsl(var(--primary)/0.5)]" onClick={() => onNavigate("/cadastro-lojista")}>
+                Criar loja grátis
+              </Button>
             </>
           )}
         </div>
         <div className="md:hidden flex items-center gap-2">
           {!isLoggedIn ? (
-            <Button size="sm" className="rounded-full font-bold text-xs px-4 h-9 shadow-md shadow-primary/20" onClick={() => onNavigate("/cadastro-lojista")}>
-              Começar
-            </Button>
+            <Button size="sm" className="rounded-full font-bold text-xs px-4 h-9" onClick={() => onNavigate("/cadastro-lojista")}>Começar</Button>
           ) : (
             <Button size="sm" variant="outline" className="rounded-full font-bold text-xs px-3 h-9" onClick={() => onNavigate("/pedidos")}>
               <ShoppingBag className="h-3.5 w-3.5 mr-1.5" /> Pedidos
             </Button>
           )}
-          <button
-            onClick={() => setOpen(!open)}
-            aria-label={open ? "Fechar" : "Menu"}
-            className="h-9 w-9 inline-flex items-center justify-center rounded-full border border-border bg-card/60 active:scale-95 transition-transform"
-          >
+          <button onClick={() => setOpen(!open)} aria-label={open ? "Fechar" : "Menu"} className="h-9 w-9 inline-flex items-center justify-center rounded-full border border-border bg-card/70 active:scale-95 transition">
             {open ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
           </button>
         </div>
       </div>
       {open && (
-        <div className="md:hidden border-t border-border bg-background/95 backdrop-blur-xl px-3 py-3 animate-in slide-in-from-top-2 duration-200">
+        <div className="md:hidden border-t border-border bg-background/95 backdrop-blur-xl px-3 py-3">
           <div className="grid grid-cols-2 gap-2">
             {links.map((l) => (
-              <button
-                key={l.href}
-                onClick={() => scrollTo(l.href)}
-                className="flex items-center gap-2 rounded-xl border border-border bg-card/60 px-3 py-2.5 text-left text-sm font-semibold text-foreground hover:border-primary/40 active:scale-[0.98] transition"
-              >
-                <l.icon className="h-4 w-4 text-primary shrink-0" />
-                <span className="truncate">{l.label}</span>
+              <button key={l.href} onClick={() => scrollTo(l.href)} className="rounded-xl border border-border bg-card/60 px-3 py-2.5 text-left text-sm font-semibold hover:border-primary/40 active:scale-[0.98] transition">
+                {l.label}
               </button>
             ))}
           </div>
-          <div className="mt-3 flex flex-col gap-2">
-            {!isLoggedIn && (
-              <Button variant="outline" className="w-full h-11 rounded-xl font-bold" onClick={() => { setOpen(false); onNavigate("/auth"); }}>
-                Entrar
-              </Button>
-            )}
-            {!isLoggedIn && (
-              <button onClick={() => { setOpen(false); onNavigate("/portal-parceiro"); }} className="text-center text-xs font-semibold text-muted-foreground py-1">
-                Já sou parceiro
-              </button>
-            )}
-          </div>
+          {!isLoggedIn && (
+            <Button variant="outline" className="w-full mt-3 h-11 rounded-xl font-bold" onClick={() => { setOpen(false); onNavigate("/auth"); }}>Entrar</Button>
+          )}
         </div>
       )}
     </nav>
   );
 };
 
-/* ───────────────────────── PAGE ───────────────────────── */
+/* Fake mock phone com pedido — dá cara Figma ao hero */
+const HeroMock = () => (
+  <div className="relative mx-auto w-[280px] md:w-[320px] aspect-[9/19] rounded-[2.6rem] border-[10px] border-foreground/90 bg-background shadow-[0_40px_80px_-30px_hsl(var(--primary)/0.35),0_20px_40px_-15px_hsl(var(--foreground)/0.25)] overflow-hidden">
+    <div className="absolute top-0 inset-x-0 h-6 bg-foreground/90 flex justify-center items-end">
+      <div className="h-3.5 w-24 bg-background rounded-b-2xl" />
+    </div>
+    <div className="pt-8 px-3 pb-3 h-full flex flex-col gap-2 bg-gradient-to-b from-background to-muted/40">
+      <div className="flex items-center gap-2">
+        <div className="h-8 w-8 rounded-xl bg-primary/15 grid place-items-center text-primary text-sm">🍕</div>
+        <div className="flex-1">
+          <p className="text-[10px] font-black text-foreground leading-none">Pizzaria do Carlinho</p>
+          <p className="text-[8px] text-muted-foreground mt-0.5">Pedido #1247 · há 2 min</p>
+        </div>
+        <span className="text-[8px] font-black bg-emerald-500/15 text-emerald-600 px-1.5 py-0.5 rounded-full">PAGO PIX</span>
+      </div>
+      <div className="rounded-xl border border-border bg-card/70 p-2 space-y-1">
+        <div className="flex justify-between text-[9px] font-semibold"><span>1× Pizza Calabresa G</span><span>R$ 52,00</span></div>
+        <div className="flex justify-between text-[9px] font-semibold"><span>1× Coca-Cola 2L</span><span>R$ 12,00</span></div>
+        <div className="flex justify-between text-[9px] font-semibold text-muted-foreground"><span>Taxa entrega</span><span>R$ 5,00</span></div>
+        <div className="h-px bg-border my-1" />
+        <div className="flex justify-between text-[10px] font-black text-primary"><span>Total</span><span>R$ 69,00</span></div>
+      </div>
+      <div className="rounded-xl border border-border bg-card/70 p-2">
+        <p className="text-[8px] font-black uppercase tracking-wider text-muted-foreground mb-1">Entrega</p>
+        <p className="text-[9px] font-semibold leading-tight">R. das Flores, 234 — Centro</p>
+        <div className="mt-1.5 flex items-center gap-1 text-[8px] font-bold text-primary">
+          <MapPin className="h-2.5 w-2.5" /> 2,4 km · ~18 min
+        </div>
+      </div>
+      <div className="mt-auto flex gap-1.5">
+        <button className="flex-1 h-8 rounded-lg bg-primary text-[9px] font-black text-primary-foreground shadow-[0_4px_12px_-2px_hsl(var(--primary)/0.5)]">Aceitar pedido</button>
+        <button className="h-8 w-8 rounded-lg border border-border bg-card grid place-items-center">
+          <Printer className="h-3.5 w-3.5" />
+        </button>
+      </div>
+    </div>
+  </div>
+);
+
+/* ─────────────────────────── PAGE ─────────────────────────── */
 
 const StoreDirectory = () => {
   const navigate = useNavigate();
@@ -287,103 +213,56 @@ const StoreDirectory = () => {
   const [partnerRole, setPartnerRole] = useState<string | null>(null);
   const [roleChecked, setRoleChecked] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
-  const [activeSegment, setActiveSegment] = useState(0);
+  const [showCompare, setShowCompare] = useState(false);
   const [liveStats, setLiveStats] = useState<{ stores: number; cities: number } | null>(null);
 
   const handleCTA = useCallback(() => navigate("/cadastro-lojista"), [navigate]);
   const handleWhatsApp = () =>
-    window.open("https://wa.me/5522992796291?text=Olá! Tenho interesse em cadastrar minha loja na plataforma.", "_blank");
+    window.open("https://wa.me/5522992796291?text=Olá! Tenho interesse em cadastrar minha loja no ItaSuper.", "_blank");
 
+  /* SEO */
   useEffect(() => {
-    document.title = "Sistema de Delivery e PDV para Restaurantes e Lojas | ItaSuper";
+    document.title = "ItaSuper — Cardápio digital, PIX na hora e PDV, grátis pra começar";
     const setMeta = (name: string, content: string, attr: "name" | "property" = "name") => {
       let el = document.head.querySelector<HTMLMetaElement>(`meta[${attr}="${name}"]`);
       if (!el) { el = document.createElement("meta"); el.setAttribute(attr, name); document.head.appendChild(el); }
       el.setAttribute("content", content);
     };
-    const desc = "Sistema completo de delivery com cardápio digital, PIX automático, motoboy integrado e PDV para loja física. Sem comissão no plano fixo. Grátis para começar.";
+    const desc = "Sistema de delivery e PDV com cardápio digital próprio, PIX automático, WhatsApp bot e motoboy integrado. Grátis até R$ 5.000 em vendas. Sem comissão por pedido.";
     setMeta("description", desc);
-    setMeta("og:title", "ItaSuper — Delivery e PDV num app só", "property");
+    setMeta("og:title", "ItaSuper — Delivery, PIX e PDV num app só", "property");
     setMeta("og:description", desc, "property");
-    setMeta("og:url", "https://itasuper.com.br/", "property");
+    setMeta("og:type", "website", "property");
+    setMeta("twitter:card", "summary_large_image");
     let canonical = document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]');
     if (!canonical) { canonical = document.createElement("link"); canonical.rel = "canonical"; document.head.appendChild(canonical); }
     canonical.href = "https://itasuper.com.br/";
-
-    // FAQPage JSON-LD
-    const SCRIPT_ID = "faq-jsonld-storedirectory";
-    let s = document.getElementById(SCRIPT_ID) as HTMLScriptElement | null;
-    if (!s) {
-      s = document.createElement("script");
-      s.type = "application/ld+json";
-      s.id = SCRIPT_ID;
-      document.head.appendChild(s);
-    }
-    s.textContent = JSON.stringify({
-      "@context": "https://schema.org",
-      "@type": "FAQPage",
-      mainEntity: faqs.map((f) => ({
-        "@type": "Question",
-        name: f.q,
-        acceptedAnswer: { "@type": "Answer", text: f.a },
+    const setLd = (id: string, obj: unknown) => {
+      let s = document.getElementById(id) as HTMLScriptElement | null;
+      if (!s) { s = document.createElement("script"); s.type = "application/ld+json"; s.id = id; document.head.appendChild(s); }
+      s.textContent = JSON.stringify(obj);
+    };
+    setLd("faq-jsonld-storedirectory", {
+      "@context": "https://schema.org", "@type": "FAQPage",
+      mainEntity: FAQS.map((f) => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })),
+    });
+    setLd("app-jsonld-storedirectory", {
+      "@context": "https://schema.org", "@type": "SoftwareApplication",
+      name: "ItaSuper", applicationCategory: "BusinessApplication", operatingSystem: "Web, Android",
+      description: desc, url: "https://itasuper.com.br/",
+      offers: PLANS_ORDER.concat(["pdv_only"] as any).map((id) => ({
+        "@type": "Offer", name: PLANS[id].name, price: String(PLANS[id].monthlyFee), priceCurrency: "BRL",
       })),
     });
-
-    // SoftwareApplication JSON-LD
-    const APP_ID = "app-jsonld-storedirectory";
-    let a = document.getElementById(APP_ID) as HTMLScriptElement | null;
-    if (!a) {
-      a = document.createElement("script");
-      a.type = "application/ld+json";
-      a.id = APP_ID;
-      document.head.appendChild(a);
-    }
-    a.textContent = JSON.stringify({
-      "@context": "https://schema.org",
-      "@type": "SoftwareApplication",
-      name: "ItaSuper",
-      applicationCategory: "BusinessApplication",
-      operatingSystem: "Web, Android",
-      description: desc,
-      url: "https://itasuper.com.br/",
-      offers: [
-        { "@type": "Offer", name: "Essencial", price: "0", priceCurrency: "BRL" },
-        { "@type": "Offer", name: "Autonomia", price: "0.00", priceCurrency: "BRL" },
-        { "@type": "Offer", name: "Somente PDV", price: "69", priceCurrency: "BRL" },
-      ],
-    });
-
-    // Organization JSON-LD
-    const ORG_ID = "org-jsonld-storedirectory";
-    let o = document.getElementById(ORG_ID) as HTMLScriptElement | null;
-    if (!o) {
-      o = document.createElement("script");
-      o.type = "application/ld+json";
-      o.id = ORG_ID;
-      document.head.appendChild(o);
-    }
-    o.textContent = JSON.stringify({
-      "@context": "https://schema.org",
-      "@type": "Organization",
-      name: "ItaSuper",
-      url: "https://itasuper.com.br/",
-      logo: "https://itasuper.com.br/itasuper-logo-horizontal.webp",
-    });
   }, []);
 
-  useEffect(() => {
-    import("@/lib/pageView").then((m) => m.trackPageView("store_directory"));
-  }, []);
+  useEffect(() => { import("@/lib/pageView").then((m) => m.trackPageView("store_directory")); }, []);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const { data } = await supabase
-          .from("stores")
-          .select("address_city")
-          .eq("status", "ativo")
-          .eq("is_test", false);
+        const { data } = await supabase.from("stores").select("address_city").eq("status", "ativo").eq("is_test", false);
         if (cancelled || !data) return;
         const cities = new Set(data.map((s: any) => (s.address_city || "").trim().toLowerCase()).filter(Boolean));
         setLiveStats({ stores: data.length, cities: cities.size });
@@ -396,7 +275,7 @@ const StoreDirectory = () => {
     if (authLoading) return;
     if (!user) { setPartnerRole(null); setRoleChecked(true); return; }
     let cancelled = false;
-    const check = async () => {
+    (async () => {
       try {
         const { data: adminRole } = await supabase.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin").maybeSingle();
         if (cancelled) return;
@@ -413,15 +292,10 @@ const StoreDirectory = () => {
           if (!cancelled) setRoleChecked(true);
           return;
         }
-        if (!profile?.role || profile.role === "cliente") {
-          navigate("/cliente", { replace: true });
-          return;
-        }
+        if (!profile?.role || profile.role === "cliente") { navigate("/cliente", { replace: true }); return; }
       } catch (e) { console.error("StoreDirectory role check error:", e); }
       if (!cancelled) setRoleChecked(true);
-    };
-    setRoleChecked(false);
-    check();
+    })();
     return () => { cancelled = true; };
   }, [user?.id, authLoading]);
 
@@ -431,136 +305,257 @@ const StoreDirectory = () => {
   const citiesCount = liveStats?.cities ?? 6;
 
   return (
-    <div className="min-h-screen bg-background overflow-x-hidden">
+    <div className="min-h-screen bg-background overflow-x-hidden antialiased">
       <ScrollProgress />
       <Navbar onNavigate={navigate} isLoggedIn={!!user} />
 
-      {/* ════ HERO ════ */}
-      <section id="hero" className="relative px-6 pt-10 pb-20 md:pt-24 md:pb-32">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,hsl(var(--primary)/0.08),transparent_55%)] pointer-events-none" />
-        <div className="relative mx-auto max-w-6xl text-center">
-          <div className="inline-flex items-center gap-2 rounded-full border border-border bg-card/60 px-4 py-1.5 text-xs font-semibold text-muted-foreground mb-8">
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full rounded-full bg-primary opacity-75 animate-ping" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
-            </span>
-            {storesCount}+ lojas ativas em {citiesCount} cidades
-          </div>
+      {/* ═════════════════ HERO ═════════════════ */}
+      <section id="hero" className="relative px-5 md:px-6 pt-6 md:pt-16 pb-16 md:pb-24">
+        <div aria-hidden className="absolute inset-0 -z-10 overflow-hidden">
+          <div className="absolute -top-24 -right-24 h-[520px] w-[520px] rounded-full bg-primary/15 blur-3xl" />
+          <div className="absolute top-40 -left-32 h-[420px] w-[420px] rounded-full bg-primary/10 blur-3xl" />
+          <div className="absolute inset-0 [background-image:linear-gradient(hsl(var(--foreground)/0.04)_1px,transparent_1px),linear-gradient(90deg,hsl(var(--foreground)/0.04)_1px,transparent_1px)] [background-size:32px_32px] [mask-image:radial-gradient(ellipse_at_center,black_40%,transparent_75%)]" />
+        </div>
 
-          <h1 className="mx-auto max-w-3xl text-5xl md:text-7xl font-black tracking-tight text-foreground leading-[0.95] mb-6">
-            Sistema de delivery e PDV<br />
-            <span className="text-primary">pronto em 10 minutos.</span>
-          </h1>
-
-          <p className="mx-auto max-w-xl text-lg md:text-xl text-muted-foreground leading-relaxed mb-10">
-            Cardápio digital, PIX automático, motoboy integrado e frente de caixa (PDV) num app só. Sem mensalidade pra começar.
-          </p>
-
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <Button size="lg" onClick={handleCTA} className="min-h-[56px] px-8 rounded-2xl text-base font-black shadow-xl shadow-primary/20 hover:-translate-y-0.5 transition-all w-full sm:w-auto">
-              Criar minha loja grátis <ArrowRight className="ml-2 h-5 w-5" />
-            </Button>
-            <Button size="lg" variant="outline" onClick={handleWhatsApp} className="min-h-[56px] px-8 rounded-2xl text-base font-bold w-full sm:w-auto">
-              <MessageCircle className="mr-2 h-5 w-5" /> Falar no WhatsApp
-            </Button>
-          </div>
-
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-muted-foreground">
-            {[{ icon: CheckCircle2, t: "Sem cartão" }, { icon: Clock, t: "Pronto em 10 min" }, { icon: ShieldCheck, t: "Cancele quando quiser" }].map((x) => (
-              <span key={x.t} className="inline-flex items-center gap-1.5 font-semibold">
-                <x.icon className="h-3.5 w-3.5 text-primary" /> {x.t}
+        <div className="mx-auto max-w-6xl grid md:grid-cols-[1.15fr,0.85fr] gap-10 md:gap-14 items-center">
+          <div className="text-center md:text-left">
+            <div className="inline-flex items-center gap-2 rounded-full border border-border bg-card/60 backdrop-blur px-3 py-1.5 text-[11px] font-bold text-muted-foreground mb-6">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full rounded-full bg-primary opacity-75 animate-ping" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
               </span>
-            ))}
+              {storesCount}+ lojas ativas em {citiesCount} cidades
+            </div>
+
+            <h1 className="text-[2.6rem] leading-[0.95] md:text-6xl lg:text-7xl font-black tracking-tight text-foreground mb-5">
+              Seu delivery{" "}
+              <span className="relative inline-block">
+                <span className="relative z-10 text-primary">no seu link.</span>
+                <span aria-hidden className="absolute inset-x-0 bottom-1 h-3 md:h-4 bg-primary/20 -skew-x-6 -z-0" />
+              </span>
+              <br className="hidden md:block" />
+              Sem comissão. Sem app pro cliente.
+            </h1>
+
+            <p className="max-w-xl mx-auto md:mx-0 text-base md:text-lg text-muted-foreground leading-relaxed mb-8">
+              Cardápio digital próprio, <b className="text-foreground">PIX cai na hora</b>, WhatsApp bot que anota o pedido sozinho e motoboy com rastreio. <b className="text-foreground">Grátis até R$ 5.000</b> em vendas.
+            </p>
+
+            <div className="flex flex-col sm:flex-row items-center md:items-start justify-center md:justify-start gap-3">
+              <Button size="lg" onClick={handleCTA} className="min-h-[54px] px-7 rounded-2xl text-base font-black shadow-[0_20px_50px_-20px_hsl(var(--primary)/0.7)] hover:-translate-y-0.5 transition-all w-full sm:w-auto">
+                Criar minha loja grátis <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+              <Button size="lg" variant="outline" onClick={handleWhatsApp} className="min-h-[54px] px-6 rounded-2xl text-base font-bold w-full sm:w-auto border-2">
+                <MessageCircle className="mr-2 h-5 w-5" /> Falar no WhatsApp
+              </Button>
+            </div>
+
+            <div className="mt-6 flex flex-wrap items-center justify-center md:justify-start gap-x-5 gap-y-2 text-[11px] text-muted-foreground">
+              {[
+                { icon: CheckCircle2, t: "Sem cartão pra começar" },
+                { icon: Clock, t: "Pronto em 10 min" },
+                { icon: ShieldCheck, t: "Sem multa, cancele quando quiser" },
+              ].map((x) => (
+                <span key={x.t} className="inline-flex items-center gap-1.5 font-bold">
+                  <x.icon className="h-3.5 w-3.5 text-primary" /> {x.t}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div className="relative order-first md:order-last">
+            <HeroMock />
+            <div className="hidden md:block absolute -left-6 top-10 rounded-2xl border border-border bg-card/95 backdrop-blur px-3 py-2 shadow-[0_20px_40px_-20px_hsl(var(--foreground)/0.25)]">
+              <div className="flex items-center gap-2">
+                <div className="h-8 w-8 rounded-xl bg-emerald-500/15 grid place-items-center"><Zap className="h-4 w-4 text-emerald-600" /></div>
+                <div>
+                  <p className="text-[10px] font-black uppercase text-muted-foreground">PIX confirmado</p>
+                  <p className="text-xs font-black text-foreground">+ R$ 69,00</p>
+                </div>
+              </div>
+            </div>
+            <div className="hidden md:block absolute -right-4 bottom-16 rounded-2xl border border-border bg-card/95 backdrop-blur px-3 py-2 shadow-[0_20px_40px_-20px_hsl(var(--foreground)/0.25)]">
+              <p className="text-[10px] font-black uppercase text-muted-foreground">Hoje</p>
+              <p className="text-sm font-black text-foreground">37 pedidos · R$ 2.184</p>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* ════ STATS BAR ════ */}
-      <section className="border-y border-border bg-muted/30 py-10 px-6">
+      {/* ═════════════════ STATS ═════════════════ */}
+      <section className="border-y border-border bg-muted/30 py-8 md:py-10 px-6">
         <div className="mx-auto max-w-6xl grid grid-cols-3 gap-6 text-center">
           {[
             { v: `${storesCount}+`, l: "Lojas ativas" },
-            { v: `${citiesCount}`, l: "Cidades atendidas" },
-            { v: "0%", l: "Comissão no plano fixo" },
+            { v: `${citiesCount}`, l: "Cidades" },
+            { v: "0%", l: "Comissão por pedido" },
           ].map((s) => (
             <div key={s.l}>
               <p className="text-3xl md:text-5xl font-black tracking-tight text-foreground">{s.v}</p>
-              <p className="mt-1 text-[11px] md:text-xs font-bold uppercase tracking-wider text-muted-foreground">{s.l}</p>
+              <p className="mt-1 text-[10px] md:text-xs font-bold uppercase tracking-wider text-muted-foreground">{s.l}</p>
             </div>
           ))}
         </div>
       </section>
 
-      {/* ════ DOR → SOLUÇÃO ════ */}
-      <section className="py-24 md:py-28 px-6">
+      {/* ═════════════════ SEGMENTOS ═════════════════ */}
+      <section className="py-20 md:py-24 px-6">
         <div className="mx-auto max-w-6xl">
-          <div className="max-w-2xl mb-14">
-            <p className="text-xs font-black uppercase tracking-[0.2em] text-primary mb-3">A diferença</p>
-            <h2 className="text-4xl md:text-5xl font-black tracking-tight text-foreground leading-tight">
-              Chega de anotar pedido no papel <br /> e conferir PIX no banco.
+          <div className="max-w-2xl mb-10 md:mb-14">
+            <p className="text-[11px] font-black uppercase tracking-[0.2em] text-primary mb-3">Pra quem é</p>
+            <h2 className="text-3xl md:text-5xl font-black tracking-tight leading-[1.05]">
+              Feito pra quem vende <span className="text-primary">todo dia</span>.
             </h2>
           </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {painSolutions.map((p) => (
-              <div key={p.pain} className="rounded-2xl border border-border bg-card p-6 hover:border-primary/30 hover:-translate-y-1 transition-all">
-                <p className="text-sm text-muted-foreground line-through mb-3">{p.pain}</p>
-                <p className="text-base font-bold text-foreground leading-snug">{p.solution}</p>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+            {SEGMENTS.map((s) => (
+              <div key={s.title} className="group rounded-2xl border border-border bg-card p-4 md:p-5 hover:border-primary/40 hover:-translate-y-0.5 transition-all">
+                <div className="text-3xl md:text-4xl mb-2">{s.emoji}</div>
+                <p className="font-black text-sm md:text-base">{s.title}</p>
+                <p className="text-xs md:text-sm text-muted-foreground mt-1 leading-snug">{s.desc}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ════ COMO FUNCIONA ════ */}
-      <section id="como-funciona" className="py-24 md:py-28 px-6 bg-muted/30 border-y border-border">
+      {/* ═════════════════ DOR → SOLUÇÃO ═════════════════ */}
+      <section className="py-20 md:py-24 px-6 bg-muted/20 border-y border-border">
         <div className="mx-auto max-w-6xl">
-          <div className="text-center max-w-xl mx-auto mb-16">
-            <p className="text-xs font-black uppercase tracking-[0.2em] text-primary mb-3">Como funciona</p>
-            <h2 className="text-4xl md:text-5xl font-black tracking-tight text-foreground">
-              Como montar seu delivery <br /> em 10 minutos.
+          <div className="max-w-2xl mb-10 md:mb-14">
+            <p className="text-[11px] font-black uppercase tracking-[0.2em] text-primary mb-3">A diferença</p>
+            <h2 className="text-3xl md:text-5xl font-black tracking-tight leading-[1.05]">
+              Chega de anotar pedido no papel<br />e conferir PIX no banco.
             </h2>
           </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            {steps.map((s, i) => (
-              <div key={s.n} className="relative">
-                {i < 3 && <div className="hidden lg:block absolute top-7 left-[55%] w-full h-px bg-border" />}
-                <div className="relative w-14 h-14 rounded-2xl bg-primary text-primary-foreground flex items-center justify-center text-xl font-black mb-5 shadow-lg shadow-primary/20">{s.n}</div>
-                <h3 className="text-lg font-black text-foreground mb-2">{s.title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{s.desc}</p>
+          <div className="grid md:grid-cols-2 gap-3 md:gap-4">
+            {PAINS.map((p) => (
+              <div key={p.pain} className="rounded-2xl border border-border bg-card p-5 md:p-6 grid grid-cols-[auto,1fr] gap-3 md:gap-4">
+                <div className="flex flex-col gap-2 pt-1">
+                  <span className="h-7 w-7 rounded-full bg-destructive/10 text-destructive grid place-items-center"><X className="h-4 w-4" /></span>
+                  <span className="h-7 w-7 rounded-full bg-primary/15 text-primary grid place-items-center"><Check className="h-4 w-4" /></span>
+                </div>
+                <div className="flex flex-col gap-3">
+                  <p className="text-sm md:text-base text-muted-foreground line-through">{p.pain}</p>
+                  <p className="text-sm md:text-base font-bold text-foreground">{p.solution}</p>
+                </div>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ════ FEATURES (bento) ════ */}
-      <section id="recursos" className="py-24 md:py-28 px-6">
+      {/* ═════════════════ RECURSOS (BENTO) ═════════════════ */}
+      <section id="recursos" className="py-20 md:py-28 px-6">
         <div className="mx-auto max-w-6xl">
-          <div className="max-w-2xl mb-14">
-            <p className="text-xs font-black uppercase tracking-[0.2em] text-primary mb-3">Recursos</p>
-            <h2 className="text-4xl md:text-5xl font-black tracking-tight text-foreground leading-tight">
-              Tudo que restaurante, mercado <br /> e loja física precisam.
+          <div className="max-w-2xl mb-10 md:mb-14">
+            <p className="text-[11px] font-black uppercase tracking-[0.2em] text-primary mb-3">Recursos</p>
+            <h2 className="text-3xl md:text-5xl font-black tracking-tight leading-[1.05]">
+              Tudo pra rodar. <span className="text-primary">Nada de firula.</span>
             </h2>
+            <p className="mt-4 text-muted-foreground md:text-lg">Só o que você usa de verdade no dia a dia — sem prometer o que a gente não entrega.</p>
           </div>
-          <div className="grid grid-cols-6 gap-4 auto-rows-[180px]">
-            {features.map((f, i) => {
-              const spans = [
-                "col-span-6 md:col-span-4 md:row-span-2 bg-gradient-to-br from-primary/[0.08] to-card",
-                "col-span-6 md:col-span-2",
-                "col-span-6 md:col-span-2",
-                "col-span-3 md:col-span-3",
-                "col-span-3 md:col-span-3",
-              ];
-              const isHero = i === 0;
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
+            {FEATURES.map((f, i) => (
+              <div key={f.title} className={`group rounded-3xl border border-border bg-card p-5 md:p-6 hover:border-primary/40 transition-all ${i === 0 ? "md:col-span-2 md:row-span-1 bg-gradient-to-br from-primary/10 via-card to-card" : ""}`}>
+                <div className={`h-11 w-11 rounded-2xl grid place-items-center mb-4 ${i === 0 ? "bg-primary text-primary-foreground" : "bg-primary/10 text-primary"}`}>
+                  <f.icon className="h-5 w-5" />
+                </div>
+                <p className="text-base md:text-lg font-black">{f.title}</p>
+                <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed">{f.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ═════════════════ COMO FUNCIONA ═════════════════ */}
+      <section id="como-funciona" className="py-20 md:py-24 px-6 bg-muted/20 border-y border-border">
+        <div className="mx-auto max-w-6xl">
+          <div className="max-w-2xl mb-10 md:mb-14">
+            <p className="text-[11px] font-black uppercase tracking-[0.2em] text-primary mb-3">Como funciona</p>
+            <h2 className="text-3xl md:text-5xl font-black tracking-tight leading-[1.05]">Do zero ao primeiro pedido em <span className="text-primary">10 minutos.</span></h2>
+          </div>
+          <div className="grid md:grid-cols-4 gap-3 md:gap-4">
+            {STEPS.map((s) => (
+              <div key={s.n} className="rounded-2xl border border-border bg-card p-5">
+                <p className="text-3xl font-black text-primary/70 tabular-nums">{s.n}</p>
+                <p className="mt-3 font-black text-base">{s.title}</p>
+                <p className="mt-1 text-sm text-muted-foreground leading-snug">{s.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ═════════════════ PLANOS ═════════════════ */}
+      <PlansSection onCTA={handleCTA} onCompare={() => setShowCompare((v) => !v)} showCompare={showCompare} />
+
+      {/* ═════════════════ TRANSPARÊNCIA UPGRADE ═════════════════ */}
+      <section className="px-6 py-16 md:py-20">
+        <div className="mx-auto max-w-4xl rounded-3xl border-2 border-primary/25 bg-gradient-to-br from-primary/[0.06] via-card to-card p-6 md:p-10 shadow-[0_20px_60px_-20px_hsl(var(--primary)/0.25)]">
+          <div className="flex items-start gap-3 md:gap-4">
+            <div className="h-10 w-10 md:h-12 md:w-12 rounded-2xl bg-primary/15 text-primary grid place-items-center shrink-0">
+              <AlertTriangle className="h-5 w-5 md:h-6 md:w-6" />
+            </div>
+            <div>
+              <p className="text-[11px] font-black uppercase tracking-[0.2em] text-primary mb-2">Transparência total</p>
+              <h3 className="text-xl md:text-2xl font-black leading-tight mb-3">E quando eu passar dos R$ 5.000?</h3>
+              <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
+                Quando sua loja atingir o gatilho de vendas (R$ 5.000 no Essencial ou R$ 2.500 no Autonomia em 60 dias), a mensalidade passa a valer com <b className="text-foreground">30 dias de aviso</b> e aceite expresso seu. Se você preferir não continuar, a loja fica <b className="text-foreground">suspensa até você aceitar</b> — não voltamos ao grátis pra sempre. Está escrito na cláusula 5.2 dos Termos, sem letra miúda.
+              </p>
+              <button onClick={() => navigate("/termos-de-uso")} className="mt-4 inline-flex items-center gap-1.5 text-sm font-black text-primary hover:underline">
+                <FileText className="h-4 w-4" /> Ler a cláusula
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═════════════════ DEPOIMENTOS ═════════════════ */}
+      <section className="px-6 py-20 md:py-24 bg-muted/20 border-y border-border">
+        <div className="mx-auto max-w-6xl">
+          <div className="max-w-2xl mb-10">
+            <p className="text-[11px] font-black uppercase tracking-[0.2em] text-primary mb-3">Quem já usa</p>
+            <h2 className="text-3xl md:text-5xl font-black tracking-tight leading-[1.05]">Lojistas que <span className="text-primary">saíram do WhatsApp na mão.</span></h2>
+          </div>
+          <div className="grid md:grid-cols-3 gap-3 md:gap-4">
+            {TESTIMONIALS.map((t) => (
+              <figure key={t.name} className="rounded-2xl border border-border bg-card p-5 md:p-6">
+                <blockquote className="text-base md:text-lg font-semibold leading-snug text-foreground">"{t.quote}"</blockquote>
+                <figcaption className="mt-4 text-sm">
+                  <span className="font-black">{t.name}</span>
+                  <span className="text-muted-foreground"> · {t.store}</span>
+                </figcaption>
+              </figure>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ═════════════════ FAQ ═════════════════ */}
+      <section id="faq" className="px-6 py-20 md:py-24">
+        <div className="mx-auto max-w-3xl">
+          <div className="mb-10 text-center">
+            <p className="text-[11px] font-black uppercase tracking-[0.2em] text-primary mb-3">Dúvidas</p>
+            <h2 className="text-3xl md:text-5xl font-black tracking-tight leading-[1.05]">Perguntas frequentes</h2>
+          </div>
+          <div className="rounded-3xl border border-border bg-card divide-y divide-border overflow-hidden">
+            {FAQS.map((f, i) => {
+              const open = openFaq === i;
               return (
-                <div key={f.title} className={`group rounded-3xl border border-border bg-card p-7 flex flex-col justify-between hover:border-primary/30 hover:-translate-y-1 transition-all ${spans[i]}`}>
-                  <div className={`rounded-2xl bg-primary/10 flex items-center justify-center ${isHero ? "w-14 h-14" : "w-11 h-11"}`}>
-                    <f.icon className={`text-primary ${isHero ? "h-7 w-7" : "h-5 w-5"}`} />
-                  </div>
-                  <div>
-                    <h3 className={`font-black text-foreground tracking-tight mb-2 ${isHero ? "text-2xl md:text-3xl" : "text-lg"}`}>{f.title}</h3>
-                    <p className={`text-muted-foreground leading-relaxed ${isHero ? "text-base" : "text-sm"}`}>{f.desc}</p>
-                  </div>
+                <div key={f.q}>
+                  <button
+                    onClick={() => setOpenFaq(open ? null : i)}
+                    className="w-full flex items-center justify-between gap-4 text-left px-5 md:px-6 py-4 md:py-5 hover:bg-muted/40 transition"
+                    aria-expanded={open}
+                  >
+                    <span className="font-black text-sm md:text-base leading-snug">{f.q}</span>
+                    <ChevronDown className={`h-5 w-5 shrink-0 text-muted-foreground transition-transform ${open ? "rotate-180 text-primary" : ""}`} />
+                  </button>
+                  {open && (
+                    <div className="px-5 md:px-6 pb-5 md:pb-6 text-sm md:text-base text-muted-foreground leading-relaxed">{f.a}</div>
+                  )}
                 </div>
               );
             })}
@@ -568,314 +563,32 @@ const StoreDirectory = () => {
         </div>
       </section>
 
-      {/* ════ SEGMENTOS (tabs) ════ */}
-      <section className="py-24 md:py-28 px-6 bg-muted/30 border-y border-border">
-        <div className="mx-auto max-w-6xl">
-          <div className="text-center max-w-xl mx-auto mb-12">
-            <p className="text-xs font-black uppercase tracking-[0.2em] text-primary mb-3">Para o seu negócio</p>
-            <h2 className="text-4xl md:text-5xl font-black tracking-tight text-foreground">Feito para pizzarias, mercados, docerias, bares e lojas físicas.</h2>
-          </div>
-          <div className="flex flex-wrap justify-center gap-2 mb-10">
-            {segments.map((s, i) => (
-              <button
-                key={s.title}
-                onClick={() => setActiveSegment(i)}
-                className={`px-5 py-2.5 rounded-full text-sm font-bold transition-all ${
-                  i === activeSegment ? "bg-foreground text-background" : "bg-card border border-border text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <span className="mr-1.5">{s.emoji}</span>{s.title}
-              </button>
-            ))}
-          </div>
-          <div className="max-w-2xl mx-auto rounded-3xl border border-border bg-card p-10 text-center">
-            <div className="text-6xl mb-4">{segments[activeSegment].emoji}</div>
-            <h3 className="text-2xl font-black text-foreground mb-2">{segments[activeSegment].title}</h3>
-            <p className="text-muted-foreground text-lg">{segments[activeSegment].desc}</p>
-          </div>
-        </div>
-      </section>
-
-      {/* ════ MOTOBOY (dark contrast) ════ */}
-      <section className="py-24 md:py-28 px-6 bg-foreground text-background">
-        <div className="mx-auto max-w-6xl grid lg:grid-cols-2 gap-12 items-center">
-          <div>
-            <p className="text-xs font-black uppercase tracking-[0.2em] text-primary mb-3">Logística integrada</p>
-            <h2 className="text-4xl md:text-5xl font-black tracking-tight leading-tight mb-6">
-              Motoboy integrado com mapa <br /> e código de entrega.
+      {/* ═════════════════ CTA FINAL ═════════════════ */}
+      <section className="px-6 py-20 md:py-28">
+        <div className="mx-auto max-w-5xl relative overflow-hidden rounded-[2rem] md:rounded-[2.5rem] border border-primary/20 bg-gradient-to-br from-primary via-primary to-primary/80 p-8 md:p-16 text-primary-foreground shadow-[0_40px_80px_-30px_hsl(var(--primary)/0.6)]">
+          <div aria-hidden className="absolute inset-0 [background-image:linear-gradient(hsl(0_0%_100%/0.08)_1px,transparent_1px),linear-gradient(90deg,hsl(0_0%_100%/0.08)_1px,transparent_1px)] [background-size:28px_28px] [mask-image:radial-gradient(ellipse_at_center,black_30%,transparent_75%)]" />
+          <div className="relative text-center">
+            <p className="text-[11px] font-black uppercase tracking-[0.2em] opacity-90 mb-3">Bora vender mais</p>
+            <h2 className="text-3xl md:text-6xl font-black tracking-tight leading-[1.05] mb-4">
+              Crie sua loja grátis<br />e receba pedido ainda hoje.
             </h2>
-            <p className="text-background/70 text-lg leading-relaxed mb-8">
-              Da cozinha à porta do cliente, tudo conectado em tempo real. Sem ligação, sem erro de endereço.
+            <p className="opacity-90 text-base md:text-lg max-w-xl mx-auto mb-8">
+              Sem cartão. Sem mensalidade até R$ 5.000 em vendas. Cancelamento a qualquer momento.
             </p>
-            <ul className="space-y-4">
-              {[
-                "Celular do motoboy apita quando o pedido sai",
-                "Cliente acompanha o motoboy no mapa",
-                "Código de confirmação na entrega",
-                "Acerto financeiro automático no fim do dia",
-              ].map((t) => (
-                <li key={t} className="flex items-start gap-3">
-                  <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center shrink-0 mt-0.5">
-                    <Check className="h-3 w-3 text-primary-foreground" />
-                  </div>
-                  <span className="text-base font-medium text-background/90">{t}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div className="relative mx-auto w-full max-w-sm">
-            <div className="aspect-[4/5] rounded-[2.5rem] border border-background/10 bg-background/5 backdrop-blur p-5">
-              <div className="w-full h-full bg-background text-foreground rounded-[2rem] overflow-hidden flex flex-col">
-                <div className="p-4 border-b border-border flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center">
-                    <Truck className="h-4 w-4 text-primary" />
-                  </div>
-                  <div>
-                    <p className="font-black text-sm">App do Motoboy</p>
-                    <p className="text-[10px] font-bold text-emerald-600 flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> ONLINE
-                    </p>
-                  </div>
-                </div>
-                <div className="flex-1 p-5 space-y-4">
-                  <div className="rounded-2xl bg-primary/10 border border-primary/20 p-4">
-                    <p className="text-[10px] font-black uppercase tracking-wider text-primary mb-1">Novo Pedido</p>
-                    <p className="text-xl font-black mb-1">#1024 · R$ 45,90</p>
-                    <p className="text-xs text-muted-foreground">R. das Flores, 123 · 1,2km</p>
-                  </div>
-                  <div className="h-32 rounded-2xl bg-muted relative overflow-hidden">
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-primary rounded-full ring-4 ring-primary/20" />
-                  </div>
-                </div>
-                <div className="p-4">
-                  <div className="w-full py-3 bg-primary text-primary-foreground rounded-xl text-center font-black text-sm">
-                    ACEITAR ENTREGA
-                  </div>
-                </div>
-              </div>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+              <Button size="lg" variant="secondary" onClick={handleCTA} className="min-h-[56px] px-8 rounded-2xl text-base font-black bg-background text-foreground hover:bg-background/90 w-full sm:w-auto">
+                Criar minha loja grátis <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+              <Button size="lg" variant="outline" onClick={handleWhatsApp} className="min-h-[56px] px-6 rounded-2xl text-base font-bold border-2 border-primary-foreground/40 bg-transparent text-primary-foreground hover:bg-primary-foreground/10 w-full sm:w-auto">
+                <PhoneCall className="mr-2 h-5 w-5" /> Falar com humano
+              </Button>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ════ PLANOS ════ */}
-      <section id="planos" className="py-24 md:py-28 px-6">
-        <div className="mx-auto max-w-6xl">
-          <div className="text-center max-w-xl mx-auto mb-14">
-            <p className="text-xs font-black uppercase tracking-[0.2em] text-primary mb-3">Planos</p>
-            <h2 className="text-4xl md:text-5xl font-black tracking-tight text-foreground">Planos de delivery e PDV — cancele quando quiser.</h2>
-          </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5">
-            {plans.map((p) => (
-              <div
-                key={p.id}
-                className={`relative rounded-3xl border p-7 flex flex-col ${
-                  p.highlight ? "border-primary bg-card shadow-2xl shadow-primary/10 md:scale-105" : "border-border bg-card"
-                }`}
-              >
-                {p.highlight && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-primary text-primary-foreground text-[10px] font-black uppercase tracking-wider">
-                    Mais escolhido
-                  </div>
-                )}
-                {p.badge && (
-                  <div className="absolute -top-3 right-4 px-2.5 py-1 rounded-full bg-emerald-500 text-white text-[10px] font-black uppercase tracking-wider">
-                    {p.badge}
-                  </div>
-                )}
-                <div className="flex items-center gap-3 mb-1">
-                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                    <p.icon className="h-5 w-5 text-primary" />
-                  </div>
-                  <h3 className="text-xl font-black text-foreground">{p.name}</h3>
-                </div>
-                <p className="text-sm text-muted-foreground mb-6">{p.tagline}</p>
-                <div className="flex items-baseline gap-1 mb-1">
-                  <span className="text-sm font-bold text-muted-foreground">R$</span>
-                  <span className={`${p.price.length > 2 ? "text-4xl" : "text-5xl"} font-black tracking-tight text-foreground`}>{p.price}</span>
-                  <span className="text-sm font-semibold text-muted-foreground">/mês</span>
-                </div>
-                <p className="text-sm font-bold text-primary mb-6">{p.commission} comissão por pedido</p>
-                <ul className="space-y-3 mb-8 flex-1">
-                  {p.features.map((f) => (
-                    <li key={f} className="flex items-start gap-2.5 text-sm text-foreground/80">
-                      <Check className="h-4 w-4 text-primary shrink-0 mt-0.5" /> <span>{f}</span>
-                    </li>
-                  ))}
-                </ul>
-                <Button onClick={handleCTA} variant={p.highlight ? "default" : "outline"} className="w-full min-h-[48px] rounded-xl font-black">
-                  Começar agora
-                </Button>
-              </div>
-            ))}
-          </div>
-          <p className="mt-8 text-center text-xs text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            💡 No plano <strong className="text-foreground">Essencial</strong> a plataforma soma R$ 0,99 à sua taxa de entrega (o cliente paga, não sai do seu caixa). Apenas no <strong className="text-foreground">Autonomia</strong> esse acréscimo é zero — o cliente paga exatamente a taxa que você define.
-          </p>
-          <p className="mt-3 text-center text-xs text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            🏪 Já tem clientela na loja física? O plano <strong className="text-foreground">Somente PDV</strong> é a frente de caixa pura — se quiser abrir delivery depois, migra num clique.
-          </p>
-        </div>
-      </section>
-
-      {/* ════ POR QUE AUTONOMIA (comparação) ════ */}
-      <section className="py-20 md:py-24 px-6 bg-muted/30 border-y border-border">
-        <div className="mx-auto max-w-5xl">
-          <div className="text-center max-w-2xl mx-auto mb-10">
-            <p className="inline-block text-[10px] font-black uppercase tracking-[0.2em] text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full mb-4">
-              Novidade • Plano Autonomia
-            </p>
-            <h2 className="text-3xl md:text-5xl font-black tracking-tight text-foreground text-balance">
-              Quer entrega com preço <span className="text-emerald-600 dark:text-emerald-400">100% seu</span>? Agora você escolhe.
-            </h2>
-            <p className="mt-4 text-sm md:text-base text-muted-foreground">
-              Vários lojistas pediram: "queria que o cliente pagasse exatamente a taxa que eu cobro, sem acréscimo da plataforma". Ouvimos. Nasceu o <strong className="text-foreground">Autonomia</strong> — o único plano sem a taxa de R$ 0,99 da plataforma na entrega.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-4 md:gap-5 max-w-3xl mx-auto">
-            {/* Planos normais */}
-            <div className="rounded-2xl border border-border bg-card p-6">
-              <p className="text-[10px] font-black uppercase tracking-wider text-muted-foreground mb-4">Plano Essencial</p>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Sua taxa de entrega</span>
-                  <span className="font-bold text-foreground">R$ 5,00</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">+ Taxa plataforma</span>
-                  <span className="font-bold text-foreground">R$ 0,99</span>
-                </div>
-                <div className="border-t border-border pt-2 flex justify-between">
-                  <span className="font-bold text-foreground">Cliente paga</span>
-                  <span className="font-black text-foreground text-lg">R$ 5,99</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Autonomia */}
-            <div className="rounded-2xl border-2 border-emerald-500 bg-card p-6 relative">
-              <div className="absolute -top-3 left-6 px-2.5 py-1 rounded-full bg-emerald-500 text-white text-[10px] font-black uppercase tracking-wider">
-                Plano Autonomia
-              </div>
-              <p className="text-[10px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400 mb-4">Sem acréscimo da plataforma</p>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Sua taxa de entrega</span>
-                  <span className="font-bold text-foreground">R$ 5,00</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">+ Taxa plataforma</span>
-                  <span className="font-bold text-emerald-600 dark:text-emerald-400">R$ 0,00 ✓</span>
-                </div>
-                <div className="border-t border-emerald-500/30 pt-2 flex justify-between">
-                  <span className="font-bold text-foreground">Cliente paga</span>
-                  <span className="font-black text-emerald-600 dark:text-emerald-400 text-lg">R$ 5,00</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <ul className="mt-10 grid sm:grid-cols-3 gap-3 max-w-3xl mx-auto text-sm">
-            <li className="flex items-start gap-2 text-foreground/80">
-              <Check className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
-              <span>Você define a taxa, o cliente vê exatamente isso</span>
-            </li>
-            <li className="flex items-start gap-2 text-foreground/80">
-              <Check className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
-              <span>Zero comissão por pedido</span>
-            </li>
-            <li className="flex items-start gap-2 text-foreground/80">
-              <Check className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
-              <span>PIX online: R$1,99 só quando o cliente paga via PIX</span>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      {/* ════ DEPOIMENTOS ════ */}
-      <section className="py-24 md:py-28 px-6 bg-muted/30 border-y border-border">
-        <div className="mx-auto max-w-6xl">
-          <div className="text-center max-w-xl mx-auto mb-14">
-            <p className="text-xs font-black uppercase tracking-[0.2em] text-primary mb-3">Quem usa, recomenda</p>
-            <h2 className="text-4xl md:text-5xl font-black tracking-tight text-foreground">O que os lojistas dizem sobre o ItaSuper.</h2>
-          </div>
-          <div className="grid md:grid-cols-3 gap-5">
-            {testimonials.map((t) => (
-              <div key={t.name} className="rounded-3xl border border-border bg-card p-7">
-                <div className="flex gap-1 mb-4 text-primary">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <span key={i}>★</span>
-                  ))}
-                </div>
-                <p className="text-foreground text-base leading-relaxed mb-6">"{t.quote}"</p>
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center font-black text-primary">
-                    {t.name[0]}
-                  </div>
-                  <div>
-                    <p className="text-sm font-black text-foreground">{t.name}</p>
-                    <p className="text-xs text-muted-foreground">{t.store}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ════ FAQ ════ */}
-      <section id="faq" className="py-24 md:py-28 px-6">
-        <div className="mx-auto max-w-3xl">
-          <div className="text-center mb-12">
-            <p className="text-xs font-black uppercase tracking-[0.2em] text-primary mb-3">Dúvidas</p>
-            <h2 className="text-4xl md:text-5xl font-black tracking-tight text-foreground">Perguntas frequentes sobre o sistema.</h2>
-          </div>
-          <div className="space-y-3">
-            {faqs.map((f, i) => (
-              <div key={f.q} className="rounded-2xl border border-border bg-card overflow-hidden">
-                <button
-                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                  className="w-full flex items-center justify-between gap-4 p-5 text-left"
-                >
-                  <span className="text-base font-bold text-foreground">{f.q}</span>
-                  <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform shrink-0 ${openFaq === i ? "rotate-180" : ""}`} />
-                </button>
-                {openFaq === i && (
-                  <div className="px-5 pb-5 text-muted-foreground leading-relaxed">{f.a}</div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ════ FINAL CTA ════ */}
-      <section className="px-6 pb-24">
-        <div className="mx-auto max-w-6xl rounded-[2rem] bg-foreground text-background px-6 py-14 md:p-20 text-center relative overflow-hidden">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,hsl(var(--primary)/0.15),transparent_70%)] pointer-events-none" />
-          <div className="relative flex flex-col items-center">
-            <h2 className="text-3xl sm:text-4xl md:text-6xl font-black tracking-tight leading-[1.1] mb-4 text-balance max-w-3xl mx-auto">
-              Cadastre sua loja e comece a vender hoje.
-            </h2>
-            <p className="text-background/70 text-base md:text-lg max-w-xl mx-auto mb-10 text-balance">
-              Crie sua loja grátis em 10 minutos. Sem cartão, sem fidelidade.
-            </p>
-            <Button size="lg" onClick={handleCTA} className="w-full sm:w-auto min-h-[56px] px-10 rounded-2xl text-base font-black shadow-2xl shadow-primary/30">
-              Criar minha loja grátis <ArrowRight className="ml-2 h-5 w-5" />
-            </Button>
-            <p className="mt-4 text-xs text-background/50 font-semibold">
-              Já tem conta?{" "}
-              <button onClick={() => navigate("/auth")} className="underline hover:text-background">
-                Entrar
-              </button>
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* ════ FOOTER ════ */}
-      <footer className="border-t border-border bg-muted/30 px-6 py-12">
+      {/* ═════════════════ FOOTER ═════════════════ */}
+      <footer className="border-t border-border bg-muted/30 px-6 py-10 md:py-12">
         <div className="mx-auto max-w-6xl flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-3">
             <img src="/itasuper-logo-horizontal.webp" alt="ItaSuper" width={140} height={32} className="h-8 w-auto" decoding="async" />
@@ -891,9 +604,140 @@ const StoreDirectory = () => {
         </div>
       </footer>
 
-      <StickyMobileCTA onClick={handleCTA} />
+      {/* Sticky mobile CTA */}
+      <div className="md:hidden fixed bottom-0 inset-x-0 z-40 px-4 pb-[max(env(safe-area-inset-bottom),12px)] pt-3 bg-gradient-to-t from-background via-background/95 to-background/0">
+        <Button onClick={handleCTA} className="w-full min-h-[52px] rounded-2xl text-base font-black shadow-[0_16px_40px_-12px_hsl(var(--primary)/0.6)]">
+          <Store className="mr-2 h-5 w-5" /> Criar minha loja grátis <ArrowRight className="ml-2 h-5 w-5" />
+        </Button>
+      </div>
     </div>
   );
 };
+
+/* ─────────────────── PLANS SECTION ─────────────────── */
+
+function PlansSection({
+  onCTA, onCompare, showCompare,
+}: {
+  onCTA: () => void; onCompare: () => void; showCompare: boolean;
+}) {
+  // Ordem visual: Autonomia, Essencial (destaque no meio), Somente PDV
+  const order = useMemo(() => ["autonomy", "fixed", "pdv_only"] as const, []);
+
+  return (
+    <section id="planos" className="px-6 py-20 md:py-28">
+      <div className="mx-auto max-w-6xl">
+        <div className="text-center max-w-2xl mx-auto mb-10 md:mb-14">
+          <p className="text-[11px] font-black uppercase tracking-[0.2em] text-primary mb-3">Planos</p>
+          <h2 className="text-3xl md:text-5xl font-black tracking-tight leading-[1.05]">
+            Comece grátis. <span className="text-primary">Pague quando faturar.</span>
+          </h2>
+          <p className="mt-4 text-muted-foreground md:text-lg">
+            Só 3 planos. Escolhe o seu, começa hoje e migra a qualquer hora.
+          </p>
+        </div>
+
+        <div className="grid md:grid-cols-3 gap-4 md:gap-5 items-stretch">
+          {order.map((id) => {
+            const p = PLANS[id];
+            const highlight = id === "fixed";
+            const isPdv = id === "pdv_only";
+            const gmvTrigger =
+              id === "fixed"    ? "R$ 5.000 em vendas" :
+              id === "autonomy" ? "R$ 2.500 em vendas" : null;
+            const paidPrice =
+              id === "fixed"    ? "R$ 180/mês"    :
+              id === "autonomy" ? "R$ 239,90/mês" : null;
+
+            return (
+              <div
+                key={id}
+                className={`relative rounded-3xl border p-6 md:p-7 flex flex-col ${
+                  highlight
+                    ? "border-primary bg-gradient-to-b from-primary/[0.08] via-card to-card shadow-[0_30px_60px_-25px_hsl(var(--primary)/0.5)] md:-my-4 md:py-11"
+                    : "border-border bg-card"
+                }`}
+              >
+                {highlight && (
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-primary text-primary-foreground text-[10px] font-black uppercase tracking-widest px-3 py-1 shadow-md">
+                      <Sparkles className="h-3 w-3" /> Mais escolhido
+                    </span>
+                  </div>
+                )}
+
+                <div className="flex items-center gap-2 mb-1">
+                  <span className={`h-9 w-9 rounded-xl grid place-items-center ${p.accentBg} ${p.accent}`}>
+                    <p.icon className="h-5 w-5" />
+                  </span>
+                  <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">{p.name}</p>
+                </div>
+
+                <p className="text-sm text-muted-foreground leading-snug min-h-[2.5rem]">{p.forWho}</p>
+
+                <div className="mt-5 flex items-baseline gap-2">
+                  <span className="text-5xl md:text-6xl font-black tracking-tight">
+                    {p.monthlyFee === 0 ? "R$ 0" : brl(p.monthlyFee)}
+                  </span>
+                  <span className="text-sm text-muted-foreground font-semibold">/mês</span>
+                </div>
+
+                {gmvTrigger ? (
+                  <p className="mt-2 text-xs font-bold text-primary">
+                    Vira {paidPrice} depois de {gmvTrigger}
+                  </p>
+                ) : (
+                  <p className="mt-2 text-xs font-bold text-muted-foreground">Preço fixo · sem gatilho de upgrade</p>
+                )}
+
+                <ul className="mt-6 space-y-2.5 flex-1">
+                  {p.features.map((f) => (
+                    <li key={f} className="flex items-start gap-2 text-sm">
+                      <Check className="h-4 w-4 mt-0.5 shrink-0 text-primary" />
+                      <span className="leading-snug text-foreground">{f}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                <Button
+                  onClick={onCTA}
+                  className={`mt-7 min-h-[48px] rounded-xl font-black ${
+                    highlight ? "shadow-[0_16px_40px_-12px_hsl(var(--primary)/0.6)]" : ""
+                  }`}
+                  variant={highlight ? "default" : "outline"}
+                >
+                  {isPdv ? "Contratar PDV" : "Começar grátis"} <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+                {highlight && (
+                  <p className="mt-3 text-[11px] text-muted-foreground text-center font-semibold">
+                    Sem cartão · cancele quando quiser
+                  </p>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="mt-8 space-y-1.5 text-[12px] text-muted-foreground max-w-4xl mx-auto">
+          <p>💡 {DELIVERY_FEE_NOTE}</p>
+          <p>💡 {PIX_FEE_NOTE}</p>
+          <p>💡 PDV nos planos Essencial e Autonomia é opcional (+ R$ 49/mês). Plano Somente PDV não inclui delivery nem vitrine pública.</p>
+        </div>
+
+        <div className="mt-8 text-center">
+          <button onClick={onCompare} className="inline-flex items-center gap-1.5 text-sm font-black text-primary hover:underline">
+            {showCompare ? "Ocultar" : "Ver"} comparação completa de recursos
+            <ChevronDown className={`h-4 w-4 transition-transform ${showCompare ? "rotate-180" : ""}`} />
+          </button>
+          {showCompare && (
+            <div className="mt-6 text-left">
+              <PlansComparisonTable />
+            </div>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
 
 export default StoreDirectory;
