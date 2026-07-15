@@ -17,6 +17,15 @@ Deno.serve(async (req) => {
 
   if (action === "inject") {
     out.cols = await run(`SELECT column_name, data_type, is_nullable, column_default FROM information_schema.columns WHERE table_schema='public' AND table_name='orders' ORDER BY ordinal_position;`);
+    out.plan_cols = await run(`SELECT column_name FROM information_schema.columns WHERE table_schema='public' AND table_name='store_plans' ORDER BY ordinal_position;`);
+    out.clear_vip = await run(`
+      UPDATE public.store_plans sp
+      SET is_vip = false,
+          essencial_lifetime_free = false,
+          trial_ends_at = NULL
+      FROM public.stores s
+      WHERE sp.store_id = s.id AND s.slug ILIKE '${slug}%';
+    `);
     out.reset_plan = await run(`
       UPDATE public.store_plans sp
       SET essencial_upgrade_scheduled_at = NULL,
