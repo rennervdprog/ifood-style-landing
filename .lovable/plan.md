@@ -1,55 +1,95 @@
-# Regra nova: upgrade obrigatório após atingir o limite
+# Refatoração da Landing (StoreDirectory)
 
-Hoje: se o lojista recusa o upgrade, a loja continua grátis pra sempre.
-Nova regra (Essencial e Autonomia): ao bater o GMV do plano (R$ 5.000 / R$ 2.500 em 60 dias), a mensalidade passa a ser devida. Recusar o upgrade **inativa a loja** até o lojista aceitar. Não existe mais "voltar ao grátis" depois de cruzar o limite.
+Objetivo: reconstruir a landing do lojista com visual moderno estilo Figma, copy de alta conversão e — o mais importante — **zero informação falsa**. Todos os números, taxas e recursos vêm da fonte única `src/lib/plansInfo.ts` e do que o app realmente entrega hoje.
 
-## 1. Termos de Uso (`src/pages/TermosDeUso.tsx`)
+## 1. Auditoria do que o sistema REALMENTE oferece (base da copy)
 
-Reescrever a cláusula 6.2 (upgrade dinâmico) deixando explícito:
-- Grátis apenas até R$ 5.000 (Essencial) / R$ 2.500 (Autonomia) em 60 dias.
-- Ao atingir, mensalidade fica devida com 30 dias de aviso prévio.
-- Aceitar → cobrança gerada no vencimento.
-- Recusar → **loja é suspensa (inativada) até o aceite**. Não existe reversão ao plano gratuito.
-- O status "gratuito" é uma janela inicial de adesão, não um plano permanente.
+Confirmado no código:
 
-Bump de versão do documento + registro em `legal_document_changes`.
+**Planos ativos (novos cadastros)** — só 3, exatamente como `PLANS_ORDER`:
+- **Essencial** — R$ 0/mês grátis até GMV de R$ 5.000 em 60 dias → depois R$ 180/mês. 0% comissão. PIX R$ 1,99/pedido. Plataforma soma +R$ 0,99 na taxa de entrega (cliente paga).
+- **Autonomia** — R$ 0/mês grátis até GMV de R$ 2.500 em 60 dias → depois R$ 239,90/mês. 0% comissão. PIX R$ 1,99/pedido. **Sem** acréscimo de R$ 0,99 na entrega (você fica com 100% da taxa).
+- **Somente PDV** — R$ 69/mês. Só frente de caixa presencial. Sem vitrine, sem delivery.
 
-## 2. Lógica no backend externo
+**Nova regra crítica (implementada essa semana):** ao atingir o GMV, aceitar o upgrade é obrigatório. Recusar **suspende a loja** até aceitar. Isso precisa aparecer com honestidade na landing (não esconder para forçar conversão).
 
-### 2a. RPC `respond_essencial_upgrade` (função existente)
-Quando `_response = 'refused'`:
-- Gravar `essencial_upgrade_response = 'refused'` + `essencial_upgrade_response_at = now()` (mantém).
-- **Novo:** `UPDATE public.stores SET status = 'inativo' WHERE id = _store_id`.
-- Logar `action = 'store_suspended_upgrade_refused'` em `admin_logs`.
+**Módulos opcionais reais:** PDV add-on R$ 49/mês (para Essencial/Autonomia); WhatsApp bot é grátis.
 
-### 2b. RPC `respond_essencial_upgrade` — caminho `accepted`
-- Ativar a mensalidade imediatamente: `monthly_fee = 180` (fixed) ou `239.90` (autonomy).
-- Se a loja estava inativada por recusa anterior, reativar: `stores.status = 'ativo'`.
-- Limpar `essencial_upgrade_response` pra permitir o fluxo normal de cobrança.
+**Recursos reais entregues:** cardápio digital com link próprio, pedido com mapa, PIX automático (Asaas) + Pix Direto (chave do lojista com confirmação manual), motoboy integrado com rastreio e código de confirmação, WhatsApp bot guiado (Evolution API) com fluxo de pedido, relatórios do dia, PDV completo (sessão, sangria, fechamento, relatórios), impressão térmica, cupons, fidelidade, promoções, banners.
 
-### 2c. Cron `check-essencial-upgrade`
-- Remover o `skipped: user_refused_upgrade` que hoje ignora a loja pra sempre.
-- Se `response = 'refused'` e `stores.status = 'ativo'` (ex.: admin reativou manualmente), reaplicar suspensão.
-- Se `response = null` e prazo (`essencial_upgrade_scheduled_at`) vencido sem resposta: tratar como recusa implícita → suspender.
+**O que NÃO temos e não pode aparecer:** app nativo obrigatório pro cliente, integração iFood/Rappi, garantia de faturamento, "sem taxas" absoluto (PIX tem R$ 1,99), plano Apoiador/Crescimento/Comissão para novos (são legado).
 
-### 2d. Enforcement no front do lojista
-- Guard já existente de `stores.status !== 'ativo'` cobre bloqueio do admin/cardápio; garantir que a tela mostre um card claro:
-  > "Sua loja está suspensa. Você ultrapassou R$ 5.000 em vendas e precisa aceitar o plano Essencial (R$ 180/mês) para reativar."
-- Botão "Aceitar e reativar" chamando a mesma RPC com `accepted`.
+## 2. Nova estrutura da página
 
-## 3. Componente `EssencialProgressCard.tsx`
-- Reescrever o estado "refused": em vez de "Nenhuma cobrança será feita", mostrar aviso vermelho "Loja suspensa — aceite para reativar" + botão "Aceitar upgrade".
-- Estado "scheduled" ganha texto: "Ao recusar, a loja será suspensa até você aceitar."
+Ordem pensada pra funil de conversão (dor → prova → solução → preço → objeção → CTA):
 
-## 4. Migração de dados existentes
-- Nenhuma loja hoje está com `response = 'refused'` de verdade (só o teste do Duda lanches). Não precisa migração destrutiva.
-- Reset do teste do Duda incluído na oneshot de cleanup.
+1. **Nav flutuante** — logo, âncoras (Recursos, Planos, FAQ), CTA "Criar loja grátis".
+2. **Hero** — headline curta de alto impacto + subhead com prova ("grátis até R$ 5.000 em vendas"), 2 CTAs (Criar loja grátis / Ver planos), mock de celular à direita com print real do admin.
+3. **Faixa de prova social** — logos/nomes de lojas ativas + números reais (nº de lojas, cidades) puxados via count no Supabase (ou fixos honestos).
+4. **Bloco "Pra quem é"** — grid de segmentos (pizzaria, mercado, doceria, bar, lanche, loja física com PDV).
+5. **Dor → Solução** — 4 pares em cards espelhados (papel × tela, ligações × WhatsApp automático, PIX no extrato × PIX na hora, sem controle × relatório do dia).
+6. **Recursos reais** — bento grid estilo Figma com 6-8 cards: Cardápio digital, PIX automático + Pix Direto, WhatsApp bot guiado, Motoboy integrado, Relatórios, PDV, Cupons/Fidelidade, Impressão térmica.
+7. **Como funciona** — 4 passos (criar conta → montar cardápio → compartilhar link → receber pedido).
+8. **Planos** — 3 cards (Essencial destacado no meio, Autonomia à direita, Somente PDV à esquerda). Cada card com preço grande, gatilho de upgrade explícito, lista de features vinda de `PLANS[id].features`, badge, CTA. Rodapé do bloco com as duas notas oficiais: `DELIVERY_FEE_NOTE` e `PIX_FEE_NOTE`.
+9. **Comparador** — reaproveita `PlansComparisonTable` colapsável ("Ver comparação completa").
+10. **Simulador rápido** — reaproveita `PlanFeeBreakdown` com slider de valor do pedido, mostrando líquido nos 2 planos lado a lado (prova numérica honesta).
+11. **Transparência sobre o upgrade obrigatório** — bloco discreto mas visível: "E depois dos R$ 5.000? Você aceita a mensalidade e continua, ou a loja fica suspensa até aceitar. Sem pegadinha — está nos Termos, cláusula 5.2." Link para Termos.
+12. **Depoimentos** — 3 cards.
+13. **FAQ** — accordion, incluindo perguntas sobre a taxa de R$ 0,99, o gatilho dos R$ 5.000, cancelamento, o que acontece se recusar upgrade.
+14. **CTA final** — faixa full-width com headline forte e botão único.
+15. **Footer** — links legais, badges Asaas, versão.
+
+## 3. Design "estilo Figma"
+
+Sistema visual coeso, sem cara de template genérico:
+
+- **Tokens novos em `index.css`**: gradient hero (`--gradient-hero`), gradient de card destaque, sombras suaves (`--shadow-card`, `--shadow-elevated`), radius maior (`--radius: 1.25rem`).
+- **Tipografia**: manter fonte atual do projeto; hierarquia forte (display 48-64px no hero mobile-first, 96px desktop; H2 32-40px; body 16-18px).
+- **Layout**: max-width 1200px, seções com respiração generosa (py-24 desktop, py-16 mobile), grid de 12 colunas onde faz sentido.
+- **Componentes-chave**: cards com border 1px + sombra sutil + hover lift; badge pill no card destacado; ícones em círculo com fundo `bg-primary/10`; separadores usando gradiente sutil, não linha dura.
+- **Motion**: fade-up em scroll (IntersectionObserver leve, sem lib nova), hover scale nos cards, pulse no CTA principal. Nada de parallax pesado.
+- **Mobile-first real** — todos os grids colapsam limpo, hero com mock abaixo do texto, planos em carrossel horizontal com snap.
+- **Cores**: primary do projeto + neutrals; usar apenas tokens semânticos (nada de `text-white`/`bg-black` hardcoded).
+
+## 4. Cards de plano — a parte mais sensível
+
+Fonte de verdade: `src/lib/plansInfo.ts`. A landing consome direto de `PLANS` e `PLANS_ORDER`, sem duplicar textos. Isso garante que quando o preço mudar em um lugar, muda em todos.
+
+Cada card mostra:
+- Nome + tagline oficial.
+- Preço grande: "R$ 0" com sublinha "hoje" e chip "→ R$ 180/mês após R$ 5.000 em vendas" para deixar claro.
+- Lista de features **exata** de `PLANS[id].features`.
+- Selo de plano em destaque só no Essencial (é o mais popular).
+- CTA "Começar grátis" (Essencial/Autonomia) ou "Contratar PDV" (Somente PDV).
+- Micro-nota abaixo do card destacado: "Sem cartão de crédito. Cancelamento a qualquer momento."
+
+Nada de features inventadas ("suporte 24h", "app nativo", "integração iFood") — só o que tem em `PLANS[id].features`.
+
+## 5. Arquivos afetados
+
+- `src/pages/StoreDirectory.tsx` — reescrita completa (arquivo grande hoje, vai encolher usando componentes).
+- `src/pages/landing/` (novo diretório) — quebrar em componentes: `HeroSection.tsx`, `SegmentsSection.tsx`, `PainSolutionSection.tsx`, `FeaturesBento.tsx`, `HowItWorksSection.tsx`, `PlansSection.tsx`, `SimulatorSection.tsx`, `UpgradeTransparency.tsx`, `TestimonialsSection.tsx`, `FaqSection.tsx`, `FinalCta.tsx`, `LandingNav.tsx`, `LandingFooter.tsx`.
+- `src/index.css` — 3-4 tokens novos (gradients, sombras).
+- Sem tocar em `plansInfo.ts` (já é a fonte da verdade).
+- Sem mudança no backend, sem migration.
+
+## 6. SEO
+
+- `<title>`: "ItaSuper — Cardápio digital, PIX na hora e motoboy integrado, grátis pra começar" (< 60).
+- `<meta description>`: focar em grátis até R$ 5.000, PIX automático, cardápio próprio (< 160).
+- H1 único no hero.
+- Alt real em todas as imagens.
+- JSON-LD `SoftwareApplication` com preço grátis inicial e ratings só se forem reais.
+
+## 7. Bump de versão
+
+Ao final: v1.15.46, build 1006, atualizado em `PerfilPage.tsx` e `android/app/build.gradle` (versionCode 1006).
 
 ## Detalhes técnicos
 
-Uma migration única no externo (via `oneshot-*` como já fazemos) contendo:
-1. `CREATE OR REPLACE FUNCTION respond_essencial_upgrade` com a nova lógica (suspende / reativa / ativa mensalidade).
-2. Ajuste no `check-essencial-upgrade` (edge function) removendo o short-circuit de `refused`.
-3. Frontend: `EssencialProgressCard.tsx` + copy nos Termos.
-
-Depois: bump de versão (patch), redeploy das functions afetadas.
+- Reaproveitar `PlansComparisonTable`, `PlanFeeBreakdown`, `DeliveryFeeExplainer` já existentes — não duplicar lógica de preço.
+- IntersectionObserver custom hook (`useInView`) em vez de framer-motion pra não pesar bundle.
+- Lazy-load das seções abaixo da dobra via `React.lazy` + `Suspense` (as sections pesadas: Simulator, Testimonials, FAQ) — já entra na regra de otimização do projeto.
+- Imagens do mock: reutilizar screenshots já existentes em `src/assets/` se houver; caso contrário, gerar 1-2 imagens novas otimizadas em .webp.
+- Manter `PartnerClientView` e `AsaasBadgeBar` (já usados).
+- Testes: sem novo teste unitário (é página de conteúdo); smoke via preview.
