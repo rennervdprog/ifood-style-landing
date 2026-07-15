@@ -71,7 +71,10 @@ export default function EssencialProgressCard({ store, storePlan }: Props) {
 
   async function respond(response: "accepted" | "refused") {
     setSaving(true);
-    const { data: res, error } = await supabase.rpc("respond_essencial_upgrade" as any, { _response: response });
+    const { data: res, error } = await supabase.rpc("respond_essencial_upgrade" as any, {
+      _response: response,
+      _store_id: store?.id ?? null,
+    });
     setSaving(false);
     if (error || (res as any)?.error) {
       const msg = error?.message || (res as any)?.error || "erro desconhecido";
