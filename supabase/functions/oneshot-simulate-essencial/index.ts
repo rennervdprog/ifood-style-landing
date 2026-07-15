@@ -16,6 +16,7 @@ Deno.serve(async (req) => {
   const out: Record<string, unknown> = { action, slug };
 
   if (action === "inject") {
+    out.cols = await run(`SELECT column_name, data_type, is_nullable, column_default FROM information_schema.columns WHERE table_schema='public' AND table_name='orders' ORDER BY ordinal_position;`);
     out.reset_plan = await run(`
       UPDATE public.store_plans sp
       SET essencial_upgrade_scheduled_at = NULL,
