@@ -337,11 +337,11 @@ const StoreDirectory = () => {
               Sem comissão. Sem app pro cliente.
             </h1>
 
-            <p className="max-w-xl mx-auto md:mx-0 text-base md:text-lg text-muted-foreground leading-relaxed mb-8">
+            <p className="max-w-xl mx-auto text-base md:text-lg text-muted-foreground leading-relaxed mb-8">
               Cardápio digital próprio, <b className="text-foreground">PIX cai na hora</b>, WhatsApp bot que anota o pedido sozinho e motoboy com rastreio. <b className="text-foreground">Grátis até R$ 5.000</b> em vendas.
             </p>
 
-            <div className="flex flex-col sm:flex-row items-center md:items-start justify-center md:justify-start gap-3">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
               <Button size="lg" onClick={handleCTA} className="min-h-[54px] px-7 rounded-2xl text-base font-black shadow-[0_20px_50px_-20px_hsl(var(--primary)/0.7)] hover:-translate-y-0.5 transition-all w-full sm:w-auto">
                 Criar minha loja grátis <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
@@ -350,7 +350,7 @@ const StoreDirectory = () => {
               </Button>
             </div>
 
-            <div className="mt-6 flex flex-wrap items-center justify-center md:justify-start gap-x-5 gap-y-2 text-[11px] text-muted-foreground">
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[11px] text-muted-foreground">
               {[
                 { icon: CheckCircle2, t: "Sem cartão pra começar" },
                 { icon: Clock, t: "Pronto em 10 min" },
