@@ -91,11 +91,22 @@ Deno.serve(async (req) => {
       const ex = extra[(p as any).id] || {};
       const response = ex.essencial_upgrade_response as string | null;
       const store = (p as any).stores;
-      if (!store || store.status !== "ativo") continue;
+      if (!store) continue;
       const cfg = PLAN_CONFIG[(p as any).plan_type] || PLAN_CONFIG.fixed;
       const THRESHOLD_BRL = cfg.threshold;
       const UPGRADE_FEE = cfg.upgradeFee;
       const PLAN_LABEL = cfg.planLabel;
+      // Se já respondeu 'refused', reaplica suspensão (caso admin tenha reativado por engano)
+      if (response === "refused" && store.status === "ativo") {
+        await sb.from("stores").update({ status: "inativo", updated_at: new Date().toISOString() }).eq("id", p.store_id);
+        await sb.from("admin_logs").insert({
+          action: "store_suspended_upgrade_refused_reapply",
+          metadata: { store_id: p.store_id, plan_type: (p as any).plan_type },
+        }).then(() => {}, () => {});
+        skipped.push({ store: store.name, reason: "resuspended_after_refusal" });
+        continue;
+      }
+      if (store.status !== "ativo") { skipped.push({ store: store.name, reason: "store_inactive" }); continue; }
       // VIP vitalício: nunca subir mensalidade nem agendar upgrade.
       if ((p as any).essencial_lifetime_free === true) {
         skipped.push({ store: store.name, reason: "lifetime_free_vip" });
@@ -134,11 +145,6 @@ Deno.serve(async (req) => {
           ? new Date((p as any).essencial_upgrade_scheduled_at).getTime()
           : null;
 
-        if (response === "refused") {
-          skipped.push({ store: store.name, gmv, reason: "user_refused_upgrade" });
-          continue;
-        }
-
         if (!scheduled) {
           // 1ª vez que bateu R$5k: agenda upgrade daqui a GRACE_DAYS
           const scheduleAt = new Date(nowMs + GRACE_DAYS * 86400_000);
@@ -147,7 +153,7 @@ Deno.serve(async (req) => {
             .eq("id", p.id);
           const label = scheduleAt.toLocaleDateString("pt-BR");
           await notify(ownerPhone,
-            `🎉 Parabéns, ${store.name}!\n\nSua loja passou de R$ ${THRESHOLD_BRL.toLocaleString("pt-BR")} em vendas nos últimos ${WINDOW_DAYS} dias no plano *${PLAN_LABEL}*. Conforme os Termos de Uso, a mensalidade do seu plano ${PLAN_LABEL} (hoje gratuita) passará a *R$ ${UPGRADE_FEE.toFixed(2).replace(".", ",")}/mês* a partir de *${label}* (30 dias de aviso prévio). Você continua no mesmo plano — apenas a mensalidade será ativada.\n\nAcesse o painel para *Aceitar* ou *Recusar*. Nenhuma cobrança será feita sem o seu consentimento expresso.`,
+            `🎉 Parabéns, ${store.name}!\n\nSua loja passou de R$ ${THRESHOLD_BRL.toLocaleString("pt-BR")} em vendas nos últimos ${WINDOW_DAYS} dias no plano *${PLAN_LABEL}*. Conforme os Termos de Uso, a mensalidade do seu plano ${PLAN_LABEL} (hoje gratuita) passará a *R$ ${UPGRADE_FEE.toFixed(2).replace(".", ",")}/mês* a partir de *${label}* (30 dias de aviso prévio).\n\n⚠️ *Importante:* a gratuidade era uma janela inicial. Ao final do prazo, você deve *Aceitar* a mensalidade no painel. Caso *recuse* (ou não responda até ${label}), sua loja será *suspensa* até o aceite — não há retorno ao plano gratuito.`,
             "plan_upgrade_scheduled", p.store_id);
           skipped.push({ store: store.name, gmv, scheduled_for: scheduleAt.toISOString() });
         } else if (nowMs >= scheduled && response === "accepted") {
@@ -169,8 +175,21 @@ Deno.serve(async (req) => {
               "plan_upgrade_applied", p.store_id);
           }
         } else if (nowMs >= scheduled) {
-          // Prazo venceu mas sem consentimento expresso → NÃO aplica; mantém pendente.
-          skipped.push({ store: store.name, gmv, reason: "awaiting_user_consent" });
+          // Prazo venceu sem aceite expresso → recusa implícita: suspende loja.
+          await sb.from("stores")
+            .update({ status: "inativo", updated_at: new Date().toISOString() })
+            .eq("id", p.store_id);
+          await sb.from("store_plans")
+            .update({ essencial_upgrade_response: "refused", essencial_upgrade_response_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+            .eq("id", p.id);
+          await sb.from("admin_logs").insert({
+            action: "store_suspended_upgrade_deadline_expired",
+            metadata: { store_id: p.store_id, plan_type: (p as any).plan_type, gmv, scheduled_for: new Date(scheduled).toISOString() },
+          }).then(() => {}, () => {});
+          await notify(ownerPhone,
+            `⚠️ ${store.name}: o prazo de aceite da mensalidade do plano *${PLAN_LABEL}* (R$ ${UPGRADE_FEE.toFixed(2).replace(".", ",")}/mês) venceu sem resposta.\n\nSua loja foi *suspensa* conforme os Termos de Uso (cláusula 5.2). Para reativar, acesse o painel e clique em *Aceitar mensalidade e reativar loja*.`,
+            "plan_upgrade_auto_suspended", p.store_id);
+          skipped.push({ store: store.name, gmv, reason: "auto_suspended_deadline_expired" });
         } else {
           skipped.push({ store: store.name, gmv, scheduled_for: new Date(scheduled).toISOString(), reason: "in_grace_period" });
         }
