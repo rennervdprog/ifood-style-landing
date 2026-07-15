@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { AsaasBadgeBar } from "@/components/AsaasBadge";
 import PartnerClientView from "@/components/PartnerClientView";
 import PlansComparisonTable from "@/components/PlansComparisonTable";
-import { PLANS, PLANS_ORDER, DELIVERY_FEE_NOTE, PIX_FEE_NOTE } from "@/lib/plansInfo";
+import { PLANS, PLANS_ORDER } from "@/lib/plansInfo";
 import {
   ArrowRight, Check, CheckCircle2, ChevronDown, Clock, CreditCard,
   Menu, MessageCircle, ShieldCheck, ShoppingBag, Sparkles,
@@ -718,10 +718,29 @@ function PlansSection({
           })}
         </div>
 
-        <div className="mt-8 space-y-1.5 text-[12px] text-muted-foreground max-w-4xl mx-auto">
-          <p>💡 {DELIVERY_FEE_NOTE}</p>
-          <p>💡 {PIX_FEE_NOTE}</p>
-          <p>💡 PDV nos planos Essencial e Autonomia é opcional (+ R$ 49/mês). Plano Somente PDV não inclui delivery nem vitrine pública.</p>
+        <div className="mt-10 max-w-4xl mx-auto">
+          <div className="rounded-2xl border border-border/60 bg-gradient-to-br from-muted/40 to-background p-5 sm:p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="h-8 w-8 rounded-xl bg-primary/10 grid place-items-center">
+                <FileText className="h-4 w-4 text-primary" />
+              </div>
+              <h4 className="text-sm font-black tracking-tight">Regras claras, sem letra miúda</h4>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-3">
+              <FeeNote
+                title="Taxa de entrega"
+                body="Você define quanto cobrar. Nos planos Comissão e Essencial, a plataforma soma R$ 0,99 em cima — o cliente paga, você recebe sua parte inteira. No Autonomia esse acréscimo é zero."
+              />
+              <FeeNote
+                title="PIX online"
+                body="R$ 1,99 por pedido pago via PIX (descontado no repasse). Dinheiro e cartão não têm taxa."
+              />
+              <FeeNote
+                title="Módulo PDV"
+                body="Opcional no Essencial e Autonomia por + R$ 49/mês. O plano Somente PDV é focado só no caixa, sem delivery nem vitrine pública."
+              />
+            </div>
+          </div>
         </div>
 
         <div className="mt-8 text-center">
@@ -737,6 +756,15 @@ function PlansSection({
         </div>
       </div>
     </section>
+  );
+}
+
+function FeeNote({ title, body }: { title: string; body: string }) {
+  return (
+    <div className="rounded-xl bg-background/60 border border-border/60 p-4">
+      <p className="text-[11px] font-black uppercase tracking-wider text-primary mb-1.5">{title}</p>
+      <p className="text-[12px] leading-relaxed text-muted-foreground">{body}</p>
+    </div>
   );
 }
 
