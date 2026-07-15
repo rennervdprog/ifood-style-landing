@@ -71,10 +71,17 @@ export default function EssencialProgressCard({ store, storePlan }: Props) {
 
   async function respond(response: "accepted" | "refused") {
     setSaving(true);
-    const { data: res, error } = await supabase.rpc("respond_essencial_upgrade" as any, { _response: response });
+    const { data: res, error } = await supabase.functions.invoke("respond-essencial-upgrade", {
+      body: {
+        response,
+        store_id: store?.id,
+      },
+    });
     setSaving(false);
     if (error || (res as any)?.error) {
-      toast.error("Não foi possível registrar sua resposta.");
+      const msg = error?.message || (res as any)?.error || "erro desconhecido";
+      console.error("[respond_essencial_upgrade]", { error, res });
+      toast.error(`Não foi possível registrar: ${msg}`);
       return;
     }
     toast.success(response === "accepted" ? "Upgrade aceito. Obrigado!" : "Upgrade recusado. Nenhuma cobrança será feita.");
