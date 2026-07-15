@@ -8,9 +8,9 @@ import PlansComparisonTable from "@/components/PlansComparisonTable";
 import { PLANS, PLANS_ORDER, DELIVERY_FEE_NOTE, PIX_FEE_NOTE } from "@/lib/plansInfo";
 import {
   ArrowRight, Check, CheckCircle2, ChevronDown, Clock, CreditCard,
-  Menu, MessageCircle, Rocket, ShieldCheck, ShoppingBag, Sparkles,
+  Menu, MessageCircle, ShieldCheck, ShoppingBag, Sparkles,
   Store, Truck, X, Zap, Smartphone, BarChart3, Printer, Gift, MapPin,
-  Crown, AlertTriangle, PhoneCall, FileText,
+  AlertTriangle, PhoneCall, FileText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
