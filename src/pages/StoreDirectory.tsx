@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { AsaasBadgeBar } from "@/components/AsaasBadge";
 import PartnerClientView from "@/components/PartnerClientView";
 import PlansComparisonTable from "@/components/PlansComparisonTable";
-import { PLANS, PLANS_ORDER, DELIVERY_FEE_NOTE, PIX_FEE_NOTE } from "@/lib/plansInfo";
+import { PLANS, PLANS_ORDER } from "@/lib/plansInfo";
 import {
   ArrowRight, Check, CheckCircle2, ChevronDown, Clock, CreditCard,
   Menu, MessageCircle, ShieldCheck, ShoppingBag, Sparkles,
