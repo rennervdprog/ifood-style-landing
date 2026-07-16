@@ -51,7 +51,11 @@ export const PdvAberturaScreen = ({ storeName, storeId, openingAmount, setOpenin
           </div>
 
           {storeId && (
-            <div className="bg-card rounded-2xl border border-border p-3 flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => operator ? setOperator(null) : setPinOpen(true)}
+              className="w-full text-left bg-card rounded-2xl border border-border p-3 flex items-center gap-3 hover:bg-muted/40 transition-colors"
+            >
               <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
                 <User className="h-4 w-4 text-primary" />
               </div>
@@ -59,11 +63,10 @@ export const PdvAberturaScreen = ({ storeName, storeId, openingAmount, setOpenin
                 <p className="text-[10px] font-bold uppercase text-muted-foreground">Operador</p>
                 <p className="text-sm font-black truncate">{operator?.name || "Nenhum selecionado"}</p>
               </div>
-              <button type="button" onClick={() => operator ? setOperator(null) : setPinOpen(true)}
-                className="p-2 rounded-lg hover:bg-muted text-muted-foreground">
+              <span className="p-2 rounded-lg text-muted-foreground">
                 {operator ? <LogOut className="h-4 w-4" /> : <KeyRound className="h-4 w-4" />}
-              </button>
-            </div>
+              </span>
+            </button>
           )}
 
           <div className="bg-card rounded-2xl border border-border p-5 space-y-5">
@@ -89,7 +92,9 @@ export const PdvAberturaScreen = ({ storeName, storeId, openingAmount, setOpenin
             </div>
 
             <button
-              type="submit" disabled={loading || !operator}
+              type={operator ? "submit" : "button"}
+              disabled={loading}
+              onClick={operator ? undefined : (e) => { e.preventDefault(); setPinOpen(true); }}
               className="w-full h-14 bg-primary text-primary-foreground font-black text-base rounded-2xl flex items-center justify-center gap-2.5 active:scale-[0.98] transition-all shadow-lg shadow-primary/30 disabled:opacity-60"
             >
               {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Unlock className="h-5 w-5" />}
