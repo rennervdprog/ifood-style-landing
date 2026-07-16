@@ -10,7 +10,6 @@ import { toast } from "sonner";
 import { formatBRL, addMoney, sumMoney, subtractMoney } from "@/lib/utils";
 import { parseBRL } from "@/hooks/useBRLInput";
 import { printPdvReceipt, printMovementReceipt, printZReport } from "@/lib/thermalPrint";
-import { PDV_METHODS as _PDV_METHODS_FOR_LABELS } from "@/pages/pdv/constants";
 import {
   ArrowLeft, Search, Plus, Minus, Trash2,
   Banknote, CreditCard, Smartphone, Monitor,
@@ -457,7 +456,7 @@ const PdvPage = () => {
       try {
         const settingsObj = (store as any)?.settings || {};
         const paymentLabels = Object.fromEntries(
-          _PDV_METHODS_FOR_LABELS.map((m: any) => [m.id, m.label]),
+          PDV_METHODS.map((m: any) => [m.id, m.label]),
         );
         const ticketMedio = snapshot.totalOrders > 0
           ? snapshot.totalSales / snapshot.totalOrders
