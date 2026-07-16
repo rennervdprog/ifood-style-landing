@@ -53,6 +53,7 @@ import { usePdvCheckout } from "@/pages/pdv/state/usePdvCheckout";
 import { usePdvOutbox } from "@/pages/pdv/state/usePdvOutbox";
 import { PdvCatalogSection } from "@/pages/pdv/components/PdvCatalogSection";
 import { PdvCartSection } from "@/pages/pdv/components/PdvCartSection";
+import { PdvNowCard } from "@/pages/pdv/components/PdvNowCard";
 import { PdvAberturaScreen } from "@/pages/pdv/components/PdvAberturaScreen";
 import { PdvFechamentoScreen } from "@/pages/pdv/components/PdvFechamentoScreen";
 import { PdvMovementDialog } from "@/pages/pdv/components/PdvMovementDialog";
@@ -366,6 +367,8 @@ const PdvPage = () => {
       tableId,
       pdvCommissionRate: storePlan.pdvCommissionRate ?? 0,
       onSuccess: () => setOrderDone(true),
+    // Refresca o dashboard "Agora" após cada venda concluída.
+    // (o onSuccess original mantém o comportamento de estado local)
       onClearScheduled: clearSale,
       onEmptiesFlowStart: ({ orderId, items }) =>
         setEmptiesFlow({ step: "lookup", orderId, items }),
