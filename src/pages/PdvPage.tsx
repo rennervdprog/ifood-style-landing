@@ -831,6 +831,12 @@ const PdvPage = () => {
             <div className="flex flex-1 overflow-hidden">
               {/* Catálogo */}
               <div className="flex flex-col flex-1 min-w-0 overflow-hidden border-r border-border">
+                <PdvNowCard
+                  sessionId={currentSession?.id}
+                  vendasTotal={turnoVendido}
+                  vendasCount={turnoVendasCount}
+                  ticketMedio={ticketMedio}
+                />
                 <PdvCatalogSection
                   search={search} setSearch={setSearch}
                   sections={sections} activeSection={activeSection} setActiveSection={setActiveSection}
@@ -876,6 +882,12 @@ const PdvPage = () => {
               {/* Etapa: catálogo */}
               {mobileStep === "catalog" && (
                 <>
+                  <PdvNowCard
+                    sessionId={currentSession?.id}
+                    vendasTotal={turnoVendido}
+                    vendasCount={turnoVendasCount}
+                    ticketMedio={ticketMedio}
+                  />
                   <div className="flex-1 overflow-hidden flex flex-col">
                     <PdvCatalogSection
                       search={search} setSearch={setSearch}
