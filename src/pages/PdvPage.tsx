@@ -633,6 +633,7 @@ const PdvPage = () => {
   if (screen === "abertura") return (
     <PdvAberturaScreen
       storeName={store?.name}
+      storeId={store?.id}
       openingAmount={openingAmount}
       setOpeningAmount={setOpeningAmount}
       onOpen={handleAbrirCaixa}

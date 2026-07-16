@@ -1,12 +1,14 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { formatBRL } from "@/lib/utils";
 import {
   Receipt, Banknote, CreditCard, Smartphone, Loader2,
   Clock, ArrowDownCircle, ArrowUpCircle, ChevronRight,
   ChevronDown, Package, Lock, Unlock, BarChart3,
+  Ban, XCircle,
 } from "lucide-react";
+import { PdvCancelSaleDialog } from "./PdvCancelSaleDialog";
 
 const PAYMENT_LABELS: Record<string, { label: string; icon: any; color: string }> = {
   dinheiro:           { label: "Dinheiro",       icon: Banknote,   color: "text-emerald-500" },
@@ -112,6 +114,8 @@ export const PdvHistorico = ({ storeId, sessionId, limit = 50 }: HistoricoProps)
 const PdvSessionDetail = ({ session, storeId }: { session: any; storeId: string }) => {
   const opening = Number(session.opening_amount || 0);
   const closing = Number(session.closing_amount || 0);
+  const queryClient = useQueryClient();
+  const [cancelTarget, setCancelTarget] = useState<{ id: string; total: number } | null>(null);
 
   const { data: movements = [], isLoading: movL } = useQuery({
     queryKey: ["pdv-session-mov", session.id],
@@ -125,8 +129,8 @@ const PdvSessionDetail = ({ session, storeId }: { session: any; storeId: string 
     queryKey: ["pdv-session-orders", session.id],
     queryFn: async () => {
        const { data } = await (supabase as any).from("orders")
-        .select("id, total_price, subtotal, pdv_discount, payment_method, created_at, order_items(quantity, unit_price, products(name))")
-        .eq("pdv_session_id" as any, session.id).eq("status", "finalizado")
+        .select("id, total_price, subtotal, pdv_discount, payment_method, created_at, status, metadata, order_items(quantity, unit_price, products(name))")
+        .eq("pdv_session_id" as any, session.id).in("status", ["finalizado", "cancelado"])
         .order("created_at", { ascending: false });
       return (data || []) as any[];
     },
@@ -248,22 +252,49 @@ const PdvSessionDetail = ({ session, storeId }: { session: any; storeId: string 
             const pm = PAYMENT_LABELS[o.payment_method] || { label: o.payment_method || "—", icon: Receipt, color: "text-muted-foreground" };
             const Icon = pm.icon;
             const itemNames = (o.order_items || []).map((it: any) => `${it.quantity}x ${it.products?.name || "—"}`).join(", ");
+            const canceled = o.status === "cancelado";
             return (
-              <div key={o.id} className="bg-card border border-border/50 rounded-xl px-3 py-2.5">
+              <div key={o.id} className={`bg-card border rounded-xl px-3 py-2.5 ${canceled ? "border-red-500/30 opacity-70" : "border-border/50"}`}>
                 <div className="flex items-center gap-2">
                   <Icon className={`h-3.5 w-3.5 ${pm.color} shrink-0`} />
-                  <p className="flex-1 text-[11px] text-muted-foreground truncate">{itemNames || "Sem itens"}</p>
+                  <p className={`flex-1 text-[11px] truncate ${canceled ? "line-through text-muted-foreground" : "text-muted-foreground"}`}>{itemNames || "Sem itens"}</p>
                   <span className="text-[10px] text-muted-foreground">{formatTime(o.created_at)}</span>
-                  <p className="text-xs font-black text-foreground shrink-0">{formatBRL(Number(o.total_price))}</p>
+                  <p className={`text-xs font-black shrink-0 ${canceled ? "text-muted-foreground line-through" : "text-foreground"}`}>{formatBRL(Number(o.total_price))}</p>
+                  {canceled ? (
+                    <span className="inline-flex items-center gap-1 text-[9px] font-black text-red-500 bg-red-500/10 px-1.5 py-0.5 rounded"><Ban className="h-2.5 w-2.5" />CANCELADA</span>
+                  ) : (
+                    <button onClick={() => setCancelTarget({ id: o.id, total: Number(o.total_price) })}
+                      className="p-1 rounded hover:bg-red-500/10 text-red-500" title="Cancelar venda">
+                      <XCircle className="h-3.5 w-3.5" />
+                    </button>
+                  )}
                 </div>
                 {Number(o.pdv_discount) > 0 && (
                   <p className="text-[10px] text-emerald-600 mt-0.5 ml-5">Desconto: −{formatBRL(Number(o.pdv_discount))}</p>
+                )}
+                {canceled && o.metadata?.canceled_reason && (
+                  <p className="text-[10px] text-red-500 mt-1 ml-5">
+                    Motivo: {o.metadata.canceled_reason}{o.metadata.canceled_by_operator ? ` · ${o.metadata.canceled_by_operator}` : ""}
+                  </p>
                 )}
               </div>
             );
           })}
         </div>
       )}
+
+      <PdvCancelSaleDialog
+        open={!!cancelTarget}
+        orderId={cancelTarget?.id ?? null}
+        orderTotal={cancelTarget?.total ?? 0}
+        onClose={() => setCancelTarget(null)}
+        onDone={() => {
+          queryClient.invalidateQueries({ queryKey: ["pdv-session-orders", session.id] });
+          queryClient.invalidateQueries({ queryKey: ["pdv-session-mov", session.id] });
+          queryClient.invalidateQueries({ queryKey: ["pdv-historico"] });
+          queryClient.invalidateQueries({ queryKey: ["pdv-movements"] });
+        }}
+      />
     </div>
   );
 };
