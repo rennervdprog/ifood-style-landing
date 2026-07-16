@@ -54,6 +54,7 @@ import { usePdvOutbox } from "@/pages/pdv/state/usePdvOutbox";
 import { PdvCatalogSection } from "@/pages/pdv/components/PdvCatalogSection";
 import { PdvCartSection } from "@/pages/pdv/components/PdvCartSection";
 import { PdvNowCard } from "@/pages/pdv/components/PdvNowCard";
+import { PdvFavoritesBar } from "@/pages/pdv/components/PdvFavoritesBar";
 import { PdvAberturaScreen } from "@/pages/pdv/components/PdvAberturaScreen";
 import { PdvFechamentoScreen } from "@/pages/pdv/components/PdvFechamentoScreen";
 import { PdvMovementDialog } from "@/pages/pdv/components/PdvMovementDialog";
