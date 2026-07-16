@@ -9,7 +9,7 @@ import PdvUpsellScreen from "@/components/pdv/PdvUpsellScreen";
 import { toast } from "sonner";
 import { formatBRL, addMoney, sumMoney, subtractMoney } from "@/lib/utils";
 import { parseBRL } from "@/hooks/useBRLInput";
-import { printPdvReceipt } from "@/lib/thermalPrint";
+import { printPdvReceipt, printMovementReceipt, printZReport } from "@/lib/thermalPrint";
 import {
   ArrowLeft, Search, Plus, Minus, Trash2,
   Banknote, CreditCard, Smartphone, Monitor,
@@ -377,8 +377,8 @@ const PdvPage = () => {
     if (!currentSession || !store?.id) return;
     const amount = parseBRL(movValue);
     if (amount <= 0) { toast.error("Valor inválido."); return; }
-    if (type === "sangria" && !movReason) {
-      toast.error("Selecione o motivo da sangria."); return;
+    if (!movReason) {
+      toast.error(`Selecione o motivo do ${type === "sangria" ? "sangria" : "suprimento"}.`); return;
     }
     setLoading(true);
     try {
@@ -390,6 +390,26 @@ const PdvPage = () => {
       });
       queryClient.invalidateQueries({ queryKey: ["pdv-movements", currentSession.id] });
       toast.success(type === "sangria" ? `Sangria de ${formatBRL(amount)}` : `Suprimento de ${formatBRL(amount)}`);
+      // Comprovante impresso — auditoria física ao lado do caixa.
+      try {
+        const settingsObj = (store as any)?.settings || {};
+        printMovementReceipt(
+          {
+            type,
+            amount,
+            reason: movReason,
+            description: movDesc,
+            operator: user?.email || null,
+            sessionOpenedAt: currentSession.opened_at,
+          },
+          store?.name || "Loja",
+          {
+            paperWidth: settingsObj.print_paper_width === 58 ? 58 : 80,
+            storePhone: (store as any)?.phone || null,
+            storeCnpj: (store as any)?.cnpj || null,
+          },
+        );
+      } catch (e) { console.warn("print movement receipt", e); }
       setMovModal(null); setMovValue(""); setMovDesc(""); setMovReason("");
     } catch (e: any) { toast.error(e.message); }
     finally { setLoading(false); }
@@ -411,6 +431,20 @@ const PdvPage = () => {
   // ── Fechar caixa (delegado a usePdvSession) ──
   const handleFecharCaixa = async () => {
     if (!currentSession) return;
+    // Snapshot dos dados ANTES de fechar (a sessão some do estado após ok).
+    const snapshot = {
+      sessionId: currentSession.id,
+      openedAt: currentSession.opened_at,
+      openingAmount: Number(currentSession.opening_amount) || 0,
+      totalSales: Number(sessionSummary?.total_sales ?? turnoVendido) || 0,
+      totalOrders: Number(sessionSummary?.total_orders ?? turnoVendasCount) || 0,
+      byPayment: (sessionSummary?.by_payment as Record<string, number>) || {},
+      sangrias: turnoSangrias,
+      suprimentos: turnoSuprimentos,
+      expectedCash: saldoEsperado,
+      countedCash: parseBRL(closingAmount),
+      blindClose,
+    };
     const ok = await closeSession({
       countedAmount: parseBRL(closingAmount),
       expectedAmount: saldoEsperado,
@@ -418,6 +452,42 @@ const PdvPage = () => {
       denominationCounts,
     });
     if (ok) {
+      // Relatório Z — cupom padrão do mercado. Best-effort (não bloqueia).
+      try {
+        const settingsObj = (store as any)?.settings || {};
+        const paymentLabels = Object.fromEntries(
+          PDV_METHODS.map((m: any) => [m.id, m.label]),
+        );
+        const ticketMedio = snapshot.totalOrders > 0
+          ? snapshot.totalSales / snapshot.totalOrders
+          : 0;
+        printZReport(
+          {
+            sessionId: snapshot.sessionId,
+            openedAt: snapshot.openedAt,
+            closedAt: new Date().toISOString(),
+            operator: user?.email || null,
+            openingAmount: snapshot.openingAmount,
+            totalSales: snapshot.totalSales,
+            totalOrders: snapshot.totalOrders,
+            ticketMedio,
+            byPayment: snapshot.byPayment,
+            paymentLabels,
+            sangrias: snapshot.sangrias,
+            suprimentos: snapshot.suprimentos,
+            expectedCash: snapshot.expectedCash,
+            countedCash: snapshot.countedCash,
+            difference: snapshot.countedCash - snapshot.expectedCash,
+            blindClose: snapshot.blindClose,
+          },
+          store?.name || "Loja",
+          {
+            paperWidth: settingsObj.print_paper_width === 58 ? 58 : 80,
+            storePhone: (store as any)?.phone || null,
+            storeCnpj: (store as any)?.cnpj || null,
+          },
+        );
+      } catch (e) { console.warn("print Z report", e); }
       setSessionSummary(null);
       clearSale();
       setBlindClose(false);

@@ -476,6 +476,132 @@ ${renderFooter()}
   safePrint();
 }
 
+// ─── PDV: recibos operacionais (movimentação e Z) ─────────────────────────
+
+interface PrintMovementInput {
+  type: "sangria" | "suprimento";
+  amount: number;
+  reason?: string | null;
+  description?: string | null;
+  operator?: string | null;
+  sessionOpenedAt?: string | null;
+}
+
+/** Comprovante de sangria ou suprimento — 1 via (para o gerente/cofre). */
+export function printMovementReceipt(
+  mv: PrintMovementInput,
+  storeName: string,
+  options: PrintOptions = {},
+) {
+  const paperWidth = options.paperWidth ?? 80;
+  applyPaperWidth(paperWidth);
+
+  const now = fmtDate(new Date().toISOString());
+  const isSangria = mv.type === "sangria";
+  const label = isSangria ? "SANGRIA (SAÍDA)" : "SUPRIMENTO (ENTRADA)";
+  const signed = `${isSangria ? "-" : "+"} ${formatBRL(Math.abs(Number(mv.amount) || 0))}`;
+
+  const body = `
+${storeHeader(storeName, options)}
+<div class="tp-info" style="text-align:center">${now}</div>
+${originBanner(label)}
+<div class="tp-divider"></div>
+<div class="tp-total-big" style="display:flex;justify-content:space-between;font-weight:bold;font-size:22px"><span>VALOR</span><span>${esc(signed)}</span></div>
+<div class="tp-divider"></div>
+${mv.reason ? `<div class="tp-info"><b>Motivo:</b> ${esc(mv.reason)}</div>` : ""}
+${mv.description ? `<div class="tp-info"><b>Obs.:</b> ${esc(mv.description)}</div>` : ""}
+${mv.operator ? `<div class="tp-info"><b>Operador:</b> ${esc(mv.operator)}</div>` : ""}
+${mv.sessionOpenedAt ? `<div class="tp-info"><b>Turno aberto:</b> ${esc(fmtDate(mv.sessionOpenedAt))}</div>` : ""}
+<div class="tp-divider"></div>
+<div style="font-size:11px;margin-top:8px">Assinatura do responsável:</div>
+<div style="border-bottom:1px solid #000;height:36px;margin:6px 20px 8px"></div>
+${renderFooter()}
+`;
+
+  const container = getOrCreatePrintContainer();
+  container.innerHTML = wrapCopies(body, 1);
+  safePrint();
+}
+
+interface PrintZReportInput {
+  sessionId: string;
+  openedAt: string;
+  closedAt?: string;
+  operator?: string | null;
+  openingAmount: number;
+  totalSales: number;
+  totalOrders: number;
+  ticketMedio: number;
+  byPayment: Record<string, number>;
+  paymentLabels?: Record<string, string>;
+  sangrias: number;
+  suprimentos: number;
+  expectedCash: number;
+  countedCash: number;
+  difference: number;
+  blindClose: boolean;
+}
+
+/** Relatório Z (cupom de fechamento) — 2 vias (operador + gerência). */
+export function printZReport(
+  z: PrintZReportInput,
+  storeName: string,
+  options: PrintOptions = {},
+) {
+  const paperWidth = options.paperWidth ?? 80;
+  applyPaperWidth(paperWidth);
+
+  const labels = z.paymentLabels || {};
+  const paymentRows = Object.entries(z.byPayment)
+    .map(
+      ([m, v]) =>
+        `<div style="display:flex;justify-content:space-between;font-size:13px"><span>${esc(labels[m] || m)}</span><span>${formatBRL(Number(v) || 0)}</span></div>`,
+    )
+    .join("");
+
+  const diff = Number(z.difference) || 0;
+  const diffLabel = Math.abs(diff) < 0.05 ? "Conferido" : diff > 0 ? "Sobra" : "Falta";
+  const diffValue = Math.abs(diff) < 0.05 ? "—" : formatBRL(Math.abs(diff));
+
+  const cashBlock = z.blindClose
+    ? `<div style="font-size:12px;text-align:center;margin:6px 0">** Fechamento CEGO — esperado oculto para o operador **</div>`
+    : `<div style="display:flex;justify-content:space-between;font-size:13px"><span>Dinheiro esperado:</span><span>${formatBRL(z.expectedCash)}</span></div>`;
+
+  const body = `
+${storeHeader(storeName, options)}
+<div class="tp-info" style="text-align:center">${fmtDate(z.closedAt || new Date().toISOString())}</div>
+${originBanner("RELATÓRIO Z — FECHAMENTO DE CAIXA")}
+<div class="tp-info"><b>Turno:</b> ${z.sessionId.slice(0, 8)}</div>
+<div class="tp-info"><b>Aberto:</b> ${esc(fmtDate(z.openedAt))}</div>
+${z.operator ? `<div class="tp-info"><b>Operador:</b> ${esc(z.operator)}</div>` : ""}
+<div class="tp-divider"></div>
+<div style="font-weight:bold;font-size:13px;margin:4px 0">MOVIMENTAÇÃO</div>
+<div style="display:flex;justify-content:space-between;font-size:13px"><span>Abertura (troco):</span><span>${formatBRL(z.openingAmount)}</span></div>
+<div style="display:flex;justify-content:space-between;font-size:13px"><span>Vendas (${z.totalOrders}):</span><span>${formatBRL(z.totalSales)}</span></div>
+<div style="display:flex;justify-content:space-between;font-size:13px"><span>Ticket médio:</span><span>${formatBRL(z.ticketMedio)}</span></div>
+<div style="display:flex;justify-content:space-between;font-size:13px"><span>Suprimentos:</span><span>+ ${formatBRL(z.suprimentos)}</span></div>
+<div style="display:flex;justify-content:space-between;font-size:13px"><span>Sangrias:</span><span>- ${formatBRL(z.sangrias)}</span></div>
+<div class="tp-divider"></div>
+<div style="font-weight:bold;font-size:13px;margin:4px 0">POR FORMA DE PAGAMENTO</div>
+${paymentRows || `<div style="font-size:12px;color:#666">Sem vendas no turno.</div>`}
+<div class="tp-divider"></div>
+<div style="font-weight:bold;font-size:13px;margin:4px 0">CONFERÊNCIA DE CAIXA</div>
+${cashBlock}
+<div style="display:flex;justify-content:space-between;font-size:13px"><span>Dinheiro contado:</span><span>${formatBRL(z.countedCash)}</span></div>
+<div class="tp-total-big" style="display:flex;justify-content:space-between;font-weight:bold;font-size:18px;margin-top:4px"><span>${diffLabel.toUpperCase()}:</span><span>${diffValue}</span></div>
+<div class="tp-divider"></div>
+<div style="font-size:11px;margin-top:8px">Assinatura do operador:</div>
+<div style="border-bottom:1px solid #000;height:36px;margin:6px 20px 12px"></div>
+<div style="font-size:11px">Assinatura do gerente:</div>
+<div style="border-bottom:1px solid #000;height:36px;margin:6px 20px 8px"></div>
+${renderFooter()}
+`;
+
+  const container = getOrCreatePrintContainer();
+  container.innerHTML = wrapCopies(body, 2, ["VIA OPERADOR", "VIA GERÊNCIA"]);
+  safePrint();
+}
+
 /** Recibo do PDV (balcão / mesa). */
 export function printPdvReceipt(order: PrintPdvOrder, storeName: string, options: PrintOptions = {}) {
   const paperWidth = options.paperWidth ?? 80;

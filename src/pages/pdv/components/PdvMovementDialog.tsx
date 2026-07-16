@@ -46,31 +46,34 @@ export const PdvMovementDialog = ({
           </div>
         </div>
 
-        {type === "sangria" && (
-          <div>
-            <label className="text-xs font-bold text-muted-foreground">Motivo *</label>
-            <div className="grid grid-cols-2 gap-1.5 mt-1.5">
-              {["Cofre", "Despesa", "Pagto fornecedor", "Outro"].map((r) => (
-                <button
-                  key={r}
-                  type="button"
-                  onClick={() => setMovReason(r)}
-                  className={`px-2 py-1.5 rounded-lg text-[11px] font-bold transition-colors border ${
-                    movReason === r
+        <div>
+          <label className="text-xs font-bold text-muted-foreground">Motivo *</label>
+          <div className="grid grid-cols-2 gap-1.5 mt-1.5">
+            {(type === "sangria"
+              ? ["Cofre", "Despesa", "Pagto fornecedor", "Retirada dono", "Outro"]
+              : ["Troco inicial", "Reforço de troco", "Depósito", "Outro"]
+            ).map((r) => (
+              <button
+                key={r}
+                type="button"
+                onClick={() => setMovReason(r)}
+                className={`px-2 py-1.5 rounded-lg text-[11px] font-bold transition-colors border ${
+                  movReason === r
+                    ? type === "sangria"
                       ? "bg-red-500 text-white border-red-500"
-                      : "bg-muted/50 text-muted-foreground border-border hover:bg-muted"
-                  }`}
-                >
-                  {r}
-                </button>
-              ))}
-            </div>
+                      : "bg-blue-500 text-white border-blue-500"
+                    : "bg-muted/50 text-muted-foreground border-border hover:bg-muted"
+                }`}
+              >
+                {r}
+              </button>
+            ))}
           </div>
-        )}
+        </div>
 
         <div>
           <label className="text-xs font-bold text-muted-foreground">
-            Observação {type === "sangria" ? "(opcional)" : ""}
+            Observação (opcional)
           </label>
           <input
             type="text"
