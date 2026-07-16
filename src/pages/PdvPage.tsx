@@ -53,6 +53,7 @@ import { usePdvCheckout } from "@/pages/pdv/state/usePdvCheckout";
 import { usePdvOutbox } from "@/pages/pdv/state/usePdvOutbox";
 import { PdvCatalogSection } from "@/pages/pdv/components/PdvCatalogSection";
 import { PdvCartSection } from "@/pages/pdv/components/PdvCartSection";
+import { PdvNowCard } from "@/pages/pdv/components/PdvNowCard";
 import { PdvAberturaScreen } from "@/pages/pdv/components/PdvAberturaScreen";
 import { PdvFechamentoScreen } from "@/pages/pdv/components/PdvFechamentoScreen";
 import { PdvMovementDialog } from "@/pages/pdv/components/PdvMovementDialog";
@@ -365,7 +366,11 @@ const PdvPage = () => {
       troco,
       tableId,
       pdvCommissionRate: storePlan.pdvCommissionRate ?? 0,
-      onSuccess: () => setOrderDone(true),
+    onSuccess: () => {
+      setOrderDone(true);
+      // Refresca o dashboard "Agora" após cada venda concluída.
+      queryClient.invalidateQueries({ queryKey: ["pdv-now", currentSession?.id] });
+    },
       onClearScheduled: clearSale,
       onEmptiesFlowStart: ({ orderId, items }) =>
         setEmptiesFlow({ step: "lookup", orderId, items }),
@@ -826,6 +831,12 @@ const PdvPage = () => {
             <div className="flex flex-1 overflow-hidden">
               {/* Catálogo */}
               <div className="flex flex-col flex-1 min-w-0 overflow-hidden border-r border-border">
+                <PdvNowCard
+                  sessionId={currentSession?.id}
+                  vendasTotal={turnoVendido}
+                  vendasCount={turnoVendasCount}
+                  ticketMedio={ticketMedio}
+                />
                 <PdvCatalogSection
                   search={search} setSearch={setSearch}
                   sections={sections} activeSection={activeSection} setActiveSection={setActiveSection}
@@ -871,6 +882,12 @@ const PdvPage = () => {
               {/* Etapa: catálogo */}
               {mobileStep === "catalog" && (
                 <>
+                  <PdvNowCard
+                    sessionId={currentSession?.id}
+                    vendasTotal={turnoVendido}
+                    vendasCount={turnoVendasCount}
+                    ticketMedio={ticketMedio}
+                  />
                   <div className="flex-1 overflow-hidden flex flex-col">
                     <PdvCatalogSection
                       search={search} setSearch={setSearch}
