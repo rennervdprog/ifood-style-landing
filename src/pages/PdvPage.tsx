@@ -278,10 +278,10 @@ const PdvPage = () => {
   const storePlan = useStorePlan(store?.id);
   const pdvAccess = useStorePdvAccess(store?.id);
   const addonsFlag = useAddonsFlag();
-  // Bloqueia PDV quando: flag ativa + loja NÃO tem acesso (não-legacy, sem add-on).
-  // Enquanto flag estiver desligada, tudo segue como hoje.
+  // Bloqueia PDV sempre que a loja NÃO tem acesso (não-legacy, sem add-on, não pdv_only).
+  // Sem gate real, qualquer loja abria o caixa mesmo sem contratar.
   const showPdvUpsell =
-    addonsFlag && !!store?.id && !pdvAccess.isLoading && !pdvAccess.enabled;
+    !!store?.id && !pdvAccess.isLoading && !pdvAccess.enabled;
 
   // ── Sessão (extraída na Fase 1 da refatoração) ──
   const {
