@@ -366,9 +366,11 @@ const PdvPage = () => {
       troco,
       tableId,
       pdvCommissionRate: storePlan.pdvCommissionRate ?? 0,
-      onSuccess: () => setOrderDone(true),
-    // Refresca o dashboard "Agora" após cada venda concluída.
-    // (o onSuccess original mantém o comportamento de estado local)
+    onSuccess: () => {
+      setOrderDone(true);
+      // Refresca o dashboard "Agora" após cada venda concluída.
+      queryClient.invalidateQueries({ queryKey: ["pdv-now", currentSession?.id] });
+    },
       onClearScheduled: clearSale,
       onEmptiesFlowStart: ({ orderId, items }) =>
         setEmptiesFlow({ step: "lookup", orderId, items }),
