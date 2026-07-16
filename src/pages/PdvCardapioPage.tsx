@@ -4,6 +4,8 @@ import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useStorePdvAccess } from "@/hooks/useStorePdvAccess";
+import { toast } from "sonner";
 import MenuBuilder from "@/components/MenuBuilder";
 
 /** Cardápio standalone acessível a partir do PDV (principalmente pra lojas pdv_only,
@@ -43,9 +45,20 @@ const PdvCardapioPage = () => {
     },
   });
 
+  const pdvAccess = useStorePdvAccess(store?.id);
+
   useEffect(() => {
     if (!user) navigate("/", { replace: true });
   }, [user, navigate]);
+
+  // Gate: sem acesso ao módulo PDV → volta pra aba de plano com aviso.
+  useEffect(() => {
+    if (!store?.id || pdvAccess.isLoading) return;
+    if (!pdvAccess.enabled) {
+      toast.error("Ative o módulo PDV pra usar o caixa e o cardápio.");
+      navigate("/admin?tab=plano", { replace: true });
+    }
+  }, [store?.id, pdvAccess.enabled, pdvAccess.isLoading, navigate]);
 
   if (!isFetched) {
     return (

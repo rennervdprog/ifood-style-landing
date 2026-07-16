@@ -199,7 +199,7 @@ export const PLANS: Record<StorePlanType, PlanInfo> = {
  *  Lojas já vinculadas ao Crescimento continuam funcionando normalmente. */
 /** Plano "commission_only" descontinuado para novos cadastros — oculto na UI pública.
  *  Lojas legado continuam funcionando com as regras antigas. */
-export const PLANS_ORDER: StorePlanType[] = ["fixed", "autonomy"];
+export const PLANS_ORDER: StorePlanType[] = ["fixed", "autonomy", "pdv_only"];
 
 /** Linha única de explicação universal sobre a taxa de entrega. */
 export const DELIVERY_FEE_NOTE =
