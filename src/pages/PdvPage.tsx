@@ -287,6 +287,19 @@ const PdvPage = () => {
   const storePlan = useStorePlan(store?.id);
   const pdvAccess = useStorePdvAccess(store?.id);
   const addonsFlag = useAddonsFlag();
+  // Operador logado por PIN (Fase 1) — usado como operator_id nas movimentações.
+  const { operator: pdvOperator } = usePdvOperator(store?.id);
+  // Limite de sangria sem alçada de gerente (Fase 2 item 8). Default R$ 200.
+  const { data: sangriaLimit } = useQuery({
+    queryKey: ["pdv-sangria-manager-limit"],
+    staleTime: 5 * 60_000,
+    queryFn: async () => {
+      const { data } = await supabase.from("admin_settings")
+        .select("value").eq("key", "pdv_sangria_manager_limit").maybeSingle();
+      const v = Number((data?.value as any) ?? 200);
+      return Number.isFinite(v) && v >= 0 ? v : 200;
+    },
+  });
   // Bloqueia PDV sempre que a loja NÃO tem acesso (não-legacy, sem add-on, não pdv_only).
   // Sem gate real, qualquer loja abria o caixa mesmo sem contratar.
   const showPdvUpsell =
