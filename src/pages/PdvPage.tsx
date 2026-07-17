@@ -720,6 +720,12 @@ const PdvPage = () => {
 
   // ── Builders Pizza/Pastel: detecta categoria + settings da loja ──
   const storeSettings = ((store as any)?.settings || {}) as Record<string, any>;
+  // Fase 3 — flags de hardware (opt-in por loja).
+  const drawerEnabled = storeSettings.pdv_drawer_enabled === true;
+  useEffect(() => {
+    (window as any).__pdvScaleEnabled = storeSettings.pdv_scale_enabled === true;
+    return () => { try { delete (window as any).__pdvScaleEnabled; } catch {} };
+  }, [storeSettings.pdv_scale_enabled]);
   const storeCats: string[] = [
     (store as any)?.category,
     ...(((store as any)?.categories || []) as string[]),
@@ -927,6 +933,7 @@ const PdvPage = () => {
                   sangrias={turnoSangrias}
                   suprimentos={turnoSuprimentos}
                   saldoEsperado={saldoEsperado}
+                  drawerEnabled={drawerEnabled}
                 />
                 <PdvCartSection
                   cart={cart} tableId={tableId} setTableId={setTableId}
