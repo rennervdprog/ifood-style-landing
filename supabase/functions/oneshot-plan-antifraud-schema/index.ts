@@ -43,7 +43,7 @@ ALTER TABLE public.stores
   ADD COLUMN IF NOT EXISTS cnpj_cpf TEXT;
 CREATE UNIQUE INDEX IF NOT EXISTS stores_cnpj_cpf_unique_idx
   ON public.stores (cnpj_cpf)
-  WHERE cnpj_cpf IS NOT NULL AND (archived_at IS NULL);
+  WHERE cnpj_cpf IS NOT NULL;
 
 NOTIFY pgrst, 'reload schema';
 `;
