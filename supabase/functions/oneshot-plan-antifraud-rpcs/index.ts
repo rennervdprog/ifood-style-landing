@@ -126,7 +126,7 @@ CREATE OR REPLACE FUNCTION public.register_as_lojista(
   _selected_plan text DEFAULT NULL,
   _ip text DEFAULT NULL,
   _device_id text DEFAULT NULL,
-  _skip_otp_check boolean DEFAULT false
+  _skip_otp_check boolean DEFAULT true
 ) RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 DECLARE
   _user_id uuid := auth.uid();
