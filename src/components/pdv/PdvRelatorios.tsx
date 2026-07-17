@@ -489,7 +489,7 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
             </div>
           )}
 
-          {/* ── Dias da semana ── */}
+          {/* ── Produtividade por operador ── */}
           {operatorStats.length > 0 && (
             <div className="bg-card border border-border rounded-2xl p-4">
               <div className="flex items-center gap-2 mb-3">
@@ -524,6 +524,7 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
             </div>
           )}
 
+          {/* ── Dias da semana ── */}
           {Object.keys(stats.byDay).length > 1 && (
             <div className="bg-card border border-border rounded-2xl p-4">
               <div className="flex items-center gap-2 mb-3">
