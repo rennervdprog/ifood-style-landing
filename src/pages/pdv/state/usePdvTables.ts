@@ -107,7 +107,8 @@ export function usePdvTabItems(tabId: string | null | undefined) {
   const q = useQuery({
     queryKey: ["pdv-tab-items", tabId],
     enabled: !!tabId,
-    staleTime: 3_000,
+    staleTime: 0,
+    refetchInterval: 4_000,
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("pdv_tab_items")
@@ -130,7 +131,11 @@ export function usePdvTabItems(tabId: string | null | undefined) {
     return () => { (supabase as any).removeChannel(ch); };
   }, [tabId, qc]);
 
-  return { items: q.data ?? [], loading: q.isLoading };
+  const refetch = useCallback(() => {
+    qc.invalidateQueries({ queryKey: ["pdv-tab-items", tabId] });
+  }, [qc, tabId]);
+
+  return { items: q.data ?? [], loading: q.isLoading, refetch };
 }
 
 // ── RPC wrappers ────────────────────────────────────────────────────────────

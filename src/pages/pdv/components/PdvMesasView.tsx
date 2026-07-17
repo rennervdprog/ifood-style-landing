@@ -301,7 +301,7 @@ function TabDrawer({
   onAfterAction: () => void;
 }) {
   const tab = allTabs.find((t) => t.id === tabId);
-  const { items } = usePdvTabItems(tabId);
+  const { items, refetch: refetchItems } = usePdvTabItems(tabId);
   const [query, setQuery] = useState("");
   const [showClose, setShowClose] = useState(false);
   const [showTransfer, setShowTransfer] = useState(false);
@@ -320,13 +320,21 @@ function TabDrawer({
       await rpcAddTabItem({
         tabId, productId: p.id, name: p.name, quantity: 1, unitPrice: Number(p.price ?? 0),
       });
+      refetchItems();
     } catch (e: any) {
       toast.error(e?.message ?? "Falha ao adicionar");
     }
   };
 
   const removeItem = async (id: string) => {
-    try { await rpcRemoveTabItem(id); } catch (e: any) { toast.error(e?.message ?? "erro"); }
+    try {
+      await rpcRemoveTabItem(id);
+      refetchItems();
+    } catch (e: any) {
+      const msg = e?.message === "item_not_found" ? "Item já removido" : (e?.message ?? "erro");
+      toast.error(msg);
+      refetchItems();
+    }
   };
 
   return (
