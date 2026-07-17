@@ -49,7 +49,7 @@ export function usePdvCatalog(params: {
     queryFn: async () => {
       const { data } = await supabase
         .from("menu_sections")
-        .select("id, name, sort_order")
+        .select("id, name, sort_order, pdv_color")
         .eq("store_id", storeId!)
         .order("sort_order");
       const list = (data || []) as MenuSection[];
@@ -66,9 +66,10 @@ export function usePdvCatalog(params: {
     queryFn: async () => {
       const { data } = await supabase
         .from("products")
-        .select("id, name, price, image_url, section_id, is_available, store_id, description, metadata, sold_by_weight, price_per_kg, weight_unit")
+        .select("id, name, price, image_url, section_id, is_available, store_id, description, metadata, sold_by_weight, price_per_kg, weight_unit, pdv_short_code, pdv_sort_order")
         .eq("store_id", storeId!)
         .eq("is_available", true)
+        .order("pdv_sort_order", { ascending: true, nullsFirst: false })
         .order("name");
       // Backwards-compat: alguns produtos só têm sold_by_weight/price_per_kg
       // armazenados em metadata. Normalizamos para os campos top-level.
