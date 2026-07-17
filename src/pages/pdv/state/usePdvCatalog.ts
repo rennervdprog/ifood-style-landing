@@ -49,10 +49,10 @@ export function usePdvCatalog(params: {
     queryFn: async () => {
       const { data } = await supabase
         .from("menu_sections")
-        .select("id, name, sort_order, pdv_color")
+        .select("id, name, sort_order, pdv_color" as any)
         .eq("store_id", storeId!)
         .order("sort_order");
-      const list = (data || []) as MenuSection[];
+      const list = ((data as any) || []) as MenuSection[];
       if (storeId) writeCache("sections", storeId, list);
       return list;
     },
@@ -66,7 +66,7 @@ export function usePdvCatalog(params: {
     queryFn: async () => {
       const { data } = await supabase
         .from("products")
-        .select("id, name, price, image_url, section_id, is_available, store_id, description, metadata, sold_by_weight, price_per_kg, weight_unit, pdv_short_code, pdv_sort_order")
+        .select("id, name, price, image_url, section_id, is_available, store_id, description, metadata, sold_by_weight, price_per_kg, weight_unit, pdv_short_code, pdv_sort_order" as any)
         .eq("store_id", storeId!)
         .eq("is_available", true)
         .order("pdv_sort_order", { ascending: true, nullsFirst: false })
