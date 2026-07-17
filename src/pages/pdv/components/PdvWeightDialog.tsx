@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Scale, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { formatBRL } from "@/lib/utils";
 import type { Product } from "@/pages/pdv/types";
 
@@ -23,10 +24,39 @@ interface Props {
  */
 export const PdvWeightDialog = ({ product, open, onClose, onAdd }: Props) => {
   const [grams, setGrams] = useState("");
+  const [reading, setReading] = useState(false);
+  const [scaleSupported, setScaleSupported] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    // Feature-flag lida do settings da loja injetado em window (opt-in).
+    // Se o navegador não suportar Web Serial, esconde o botão de leitura.
+    let cancelled = false;
+    (async () => {
+      try {
+        const flag = (window as any).__pdvScaleEnabled === true;
+        if (!flag) return;
+        const { isScaleSupported } = await import("@/lib/toledoScale");
+        if (!cancelled) setScaleSupported(isScaleSupported());
+      } catch {}
+    })();
+    return () => { cancelled = true; };
+  }, [open]);
 
   useEffect(() => {
     if (open) setGrams("");
   }, [open, product?.id]);
+
+  const handleReadScale = async () => {
+    setReading(true);
+    try {
+      const { readScaleGrams } = await import("@/lib/toledoScale");
+      const g = await readScaleGrams();
+      if (g == null) { toast.error("Balança não respondeu. Verifique a conexão."); return; }
+      setGrams(String(g));
+      toast.success(`Peso lido: ${g} g`);
+    } finally { setReading(false); }
+  };
 
   const pricePerKg = useMemo(
     () => Number(product?.price_per_kg ?? product?.price ?? 0) || 0,
@@ -102,6 +132,17 @@ export const PdvWeightDialog = ({ product, open, onClose, onAdd }: Props) => {
               </button>
             ))}
           </div>
+          {scaleSupported && (
+            <button
+              type="button"
+              onClick={handleReadScale}
+              disabled={reading}
+              className="w-full mt-2 h-10 rounded-xl bg-primary/10 text-primary border border-primary/30 text-xs font-black flex items-center justify-center gap-2 disabled:opacity-60"
+            >
+              {reading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Scale className="h-3.5 w-3.5" />}
+              Ler balança
+            </button>
+          )}
         </div>
 
         <div className="rounded-xl bg-primary/8 border border-primary/20 p-3 flex items-center justify-between">

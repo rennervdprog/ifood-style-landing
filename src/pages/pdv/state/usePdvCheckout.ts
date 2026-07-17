@@ -383,6 +383,19 @@ export function usePdvCheckout() {
         }
 
         // 6) Limpar venda após pequeno delay (deixa toast visível)
+        // Fase 3 item 10 — abre gaveta ESC/POS quando venda em dinheiro (opt-in).
+        try {
+          const settingsObj = (store?.settings as any) || {};
+          const drawerEnabled = settingsObj.pdv_drawer_enabled === true;
+          const hasCash =
+            primaryMethod === "dinheiro" ||
+            paymentsPayload.some((p: any) => p?.method === "dinheiro");
+          if (drawerEnabled && hasCash && !offlineQueued) {
+            const { openCashDrawer } = await import("@/lib/cashDrawer");
+            void openCashDrawer();
+          }
+        } catch (e) { console.warn("[PDV] cash drawer skipped:", e); }
+
         setTimeout(onClearScheduled, 2000);
       } catch (e: any) {
         toast.error(e.message || "Erro ao finalizar.");
