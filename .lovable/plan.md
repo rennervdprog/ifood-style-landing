@@ -1,125 +1,73 @@
-# PDV — Plano para fechar os gaps auditados
+# Como o add-on PDV reflete hoje + o que falta para cancelamento
 
-Ordenado por **impacto no lojista × esforço**. Cada fase sobe versão (core rule) e vira testável isoladamente. Nada de escopo novo além do que a auditoria listou.
+## 1. O que já existe (auditado no código)
 
----
+### Backend (Supabase externo)
+- **`plan_addons`** — catálogo global. Hoje só tem `pdv` a R$ 49,00/mês.
+- **`store_addons`** — contratação por loja (`enabled`, `price_override`, `activated_at`, `cancels_at`, `first_charge_done`).
+- **`stores.legacy_pdv`** — todas as lojas criadas antes da mudança receberam `true` (mantêm PDV incluso pela regra antiga R$ 1/venda).
+- **`admin_settings.addons_module_enabled`** — feature flag global. Foi inserida com valor `false`, então **a UI de add-on está escondida do lojista até hoje**.
 
-## Fase 1 — Consertar o que está parcial (2-3 dias, baixo risco)
+### Edge functions
+- `manage-store-addon` — ações `activate`, `cancel`, `admin_set` (super admin). Valida dono da loja ou admin.
+- `monthly-billing` — já lê `store_addons`, calcula proporcional na 1ª cobrança, soma ao boleto/PIX mensal, marca `first_charge_done`.
 
-Foco: fechar buracos silenciosos sem features novas.
+### Frontend
+- `useStorePdvAccess` decide a origem do acesso: `legacy | addon | vip | pdv_only | none`.
+- `useAddonsFlag` esconde tudo se `addons_module_enabled=false`.
+- `StoreAddonsPanel` (aba Meu Plano) — mostra o cartão PDV, botão **Ativar** e botão **Cancelar** (só aparece se `source==="addon"` e sem `cancels_at`).
+- `AdminStoreAddonsPanel` (super admin) — permite forçar `enabled` e `price_override` (VIP grátis = 0).
+- `PdvPage` bloqueia entrada no PDV quando `!pdvAccess.enabled` (mostra upsell).
 
-1. **Migração versionada da Fase B**
-   - Criar `supabase/migrations/*_pdv_tables_tabs.sql` espelhando o que o `oneshot-pdv-fase-b-tables` já criou no banco (tabelas + 6 RPCs + GRANTs + RLS + realtime + REPLICA IDENTITY).
-   - Idempotente (`IF NOT EXISTS`) para não quebrar produção.
-2. **Cupom de cancelamento**
-   - `PdvCancelSaleDialog.tsx` chama `printCancelReceipt()` novo em `thermalPrint.ts` (motivo, operador, valor, id da venda) após `pdv_cancel_sale` OK.
-3. **Trilha por operador PIN**
-   - `usePdvSession.ts` e `usePdvCheckout.ts` passam `operator_id` (do login por PIN) para `pdv_sessions.opened_by_operator_id` e `pdv_movements.operator_id`. Migração adiciona as duas colunas nullable.
-4. **Renomear rota do cardápio PDV**
-   - Adicionar rota-alias `/admin/pdv/cardapio` → mesma tela, sem quebrar `/admin/cardapio`.
-5. **Sangria com categoria enum**
-   - Trocar texto livre por `Select` fixo: `troco | deposito | retirada_dono | despesa | outro`. Coluna `pdv_movements.reason_category`.
-6. **Favoritos: label correto**
-   - Renomear "Favoritos do turno" → "Mais vendidos (30d)". Sem mudar a query.
-7. **Testes**
-   - Adicionar Playwright E2E cobrindo: PIN login → abrir caixa → venda → sangria → cancelamento → Z-report → fechar caixa.
-   - Vitest para `printCancelReceipt`.
+### Como reflete no app HOJE (resumo honesto)
+| Situação da loja | O que ela vê | O que é cobrado |
+|---|---|---|
+| Legacy (todas antigas) | PDV liberado, sem cartão de add-on | R$ 1/venda no PDV, sem mensalidade extra |
+| Nova loja delivery (pós-migração) | Se flag global = false: **NADA** (upsell nem aparece). Se true: cartão "Ativar PDV R$ 49" | Nada, até ativar |
+| Add-on ativo | Badge "Ativo" + botão Cancelar | R$ 49/mês somado ao boleto do plano (proporcional na 1ª) |
+| VIP (override 0) | Badge "VIP grátis" | R$ 0 |
+| `pdv_only` | PDV liberado, sem cartão de add-on | R$ 69/mês do plano |
 
-Versão: **v1.16.2**.
+**Conclusão:** o encanamento está pronto, mas como `addons_module_enabled=false` e toda loja atual é `legacy_pdv=true`, na prática **nenhum lojista real está pagando add-on nem enxergando o cartão hoje**.
 
----
+## 2. Cancelamento self-service — o que já existe e o que falta
 
-## Fase 2 — Alçada de gerente + divisão por pessoa (3-4 dias)
+### Já funciona
+- Botão **Cancelar** no `StoreAddonsPanel` chama `manage-store-addon` com `action=cancel`.
+- Backend agenda `cancels_at = 1º dia do mês seguinte` (mantém acesso até o fim do ciclo pago).
+- `useStorePdvAccess` já expõe `cancelsAt` e o badge "Cancela em dd/mm/aaaa" aparece.
+- `monthly-billing` não cobra ciclo seguinte porque a próxima execução vê `cancels_at` no passado (precisa confirmar — ver item de correção abaixo).
 
-Features mais pedidas por bar/restaurante.
+### O que falta / risco encontrado
+1. **`monthly-billing` não filtra `cancels_at`** ao somar add-ons — se a data já passou, ainda pode cobrar. Precisa adicionar `if (sa.cancels_at && new Date(sa.cancels_at) <= now) continue;` e desativar (`enabled=false`) na virada do mês.
+2. **Não há "reativar antes do fim do ciclo"** — se o lojista cancelou por engano, hoje só um admin desfaz. Adicionar botão **Reativar** quando `enabled=true && cancels_at!=null`, limpando `cancels_at`.
+3. **Confirmação de cancelamento** — hoje é 1 clique. Adicionar `AlertDialog` explicando "acesso vai até dd/mm, sem cobrança no próximo ciclo".
+4. **Feature flag ainda false** — nenhum lojista vê nada. Decidir se liga globalmente ou só pra lojas não-legacy.
+5. **Histórico** — não há log de quem ativou/cancelou. Aproveitar `admin_logs` para registrar as ações.
 
-8. **Alçada de gerente**
-   - `admin_settings.pdv_sangria_manager_limit` (default R$ 200).
-   - Se sangria > limite → dialog exige PIN de um `pdv_operator` com `role='gerente'` (nova coluna `pdv_operators.role`).
-   - Log em `pdv_movements.authorized_by_operator_id`.
-9. **Divisão de conta por pessoa**
-   - Ampliar `PdvSplitPayment.tsx`: modo "por pessoa" divide total em N partes iguais ou custom, cada pessoa escolhe forma.
-   - Impressão de comprovante por pessoa (Nº 1/4, 2/4…).
-   - Aproveita `pdv_close_tab(_payments jsonb)` — só a UI muda; RPC já aceita array.
+## 3. Plano de execução proposto
 
-Versão: **v1.17.0**.
+**Fase 1 — Correções críticas (backend)**
+- Ajustar `monthly-billing`: pular add-ons com `cancels_at <= now` e marcar `enabled=false` + `cancels_at=null` na virada.
+- Registrar `admin_logs` em cada `activate`/`cancel`/`admin_set`.
 
----
+**Fase 2 — UX de cancelamento**
+- `AlertDialog` de confirmação no `StoreAddonsPanel` antes de cancelar.
+- Botão **Reativar** quando há `cancels_at` agendado (nova action `reactivate` na edge function, apenas limpa `cancels_at`).
+- Texto mais claro: "Você mantém acesso até dd/mm. Nenhuma cobrança será feita no próximo ciclo."
 
-## Fase 3 — Hardware balcão (2 dias)
+**Fase 3 — Rollout controlado**
+- Ligar `addons_module_enabled=true` apenas para lojas `legacy_pdv=false` (via check adicional no hook `useAddonsFlag`, recebendo `storeId`).
+- Manter legacy invisível — elas continuam na regra R$ 1/venda até decidirem migrar.
 
-10. **Comando ESC/POS gaveta**
-    - Adicionar `openCashDrawer()` em `thermalPrint.ts` enviando `ESC p 0 25 250` na mesma conexão da impressora.
-    - Disparar automaticamente ao finalizar venda em dinheiro; botão manual em Turno.
-    - Feature-flag `store.settings.pdv_drawer_enabled`.
+**Fase 4 — Bump de versão + smoke E2E**
+- Playwright: login lojista não-legacy → ativa PDV → cancela → confirma badge → reativa → confirma remoção do badge.
+- Bump `appVersion.ts` + `build.gradle` conforme regra de memória.
 
-11. **Balança Toledo Prix** *(atrás de feature-flag, só se lojista pedir)*
-    - `src/lib/toledoScale.ts` via Web Serial API (protocolo Prix 3/4).
-    - `PdvWeightDialog.tsx` ganha botão "Ler balança".
-    - Não bloqueia — é opcional, some se navegador não suporta.
+## Detalhes técnicos
+- `manage-store-addon`: adicionar branch `action === "reactivate"` que valida `owner_id`/admin e faz `update store_addons set cancels_at=null where store_id=? and addon_code=? and enabled=true`.
+- `monthly-billing` (linhas ~275-295): dentro do loop de `storeAddons`, se `sa.cancels_at && new Date(sa.cancels_at) <= referenceDate`, dar `continue` e enfileirar `update store_addons set enabled=false, cancels_at=null`.
+- `useStorePdvAccess`: expor também `canReactivate = enabled && !!cancelsAt`.
+- Não mexer em `client.ts`, `types.ts`, `.env` (regras do projeto).
 
-Versão: **v1.17.5**.
-
----
-
-## Fase 4 — Multi-terminal + KDS do PDV (4-5 dias)
-
-12. **Múltiplos terminais na mesma loja**
-    - Migração: `pdv_terminals(id, store_id, label, last_seen_at)` + `pdv_sessions.terminal_id`.
-    - Login PDV escolhe/cria terminal (localStorage guarda `terminal_id`).
-    - Relatório Z filtra por terminal; dashboard "Agora" mostra por terminal.
-
-13. **KDS do PDV com bump**
-    - Nova rota autenticada `/admin/pdv/kds` (não a `/kds/:token` pública).
-    - Lê `pdv_tab_items` em preparo agrupados por mesa/comanda.
-    - Estados: `pendente → preparando → pronto → entregue`, com botão "bump" único por item.
-    - Coluna `pdv_tab_items.kds_status` + `bumped_at` + `bumped_by`.
-    - Realtime já ativo nas tabelas (Fase B).
-
-Versão: **v1.18.0**.
-
----
-
-## Fase 5 — Fiscal NFC-e (2 semanas, depende de credencial)
-
-14. **Emissão NFC-e via Focus NFe**
-    - Migração: `fiscal_documents(id, store_id, order_id, chave, xml, pdf_url, status, error)`.
-    - Edge function `pdv-nfce-issue` (assinada JWT, POST Focus NFe).
-    - Secret `FOCUS_NFE_TOKEN` (add_secret quando lojista pedir).
-    - Botão "Emitir NFC-e" em `PdvCheckoutDialog` após venda finalizada; campo CPF/CNPJ opcional.
-    - Contingência: se Focus falhar, marca `status='contingencia'` e cron `nfce-retry` reenvia a cada 5 min.
-    - Cupom impresso ganha QR Code + chave.
-
-Versão: **v1.19.0**.
-
----
-
-## Fase 6 — Fidelidade no PDV (2 dias)
-
-15. **Resgate de pontos no checkout**
-    - `PdvCheckoutDialog` mostra saldo do cliente (busca por CPF/telefone em `loyalty_points`).
-    - Botão "Usar X pontos = R$ Y" aplica desconto e grava `loyalty_points.redemption`.
-    - Acúmulo automático pós-venda (já existe lógica no delivery — reaproveitar `applyLoyaltyEarn`).
-
-Versão: **v1.19.5**.
-
----
-
-## Fora deste plano (explícito)
-
-- Estoque perpétuo, compras/fornecedores, ficha técnica com baixa automática
-- TEF/Pinpad (custo alto, só sob demanda)
-- SAT (só SP, NFC-e cobre 96% dos casos)
-- Combos por horário, busca fonética, segunda tela do cliente, modo escuro específico do balcão, meta por operador, SPED — foram sugestões minhas na resposta anterior, mas não estavam no seu plano original. Se quiser algum, entra em fase própria.
-
----
-
-## Prioridade sugerida
-
-**Fase 1 imediato** (fecha risco silencioso, custo baixo).
-**Fase 2 e 3** juntas (semana seguinte) — dão a percepção "PDV pro" completo.
-**Fase 4** quando aparecer o primeiro lojista com 2+ caixas.
-**Fase 5** quando o primeiro lojista pedir nota (é o que trava adoção séria).
-**Fase 6** quando marketing pedir engajamento.
-
-Confirma que fecho neste escopo (com essa ordem) para eu começar pela Fase 1?
+Quer que eu execute todas as 4 fases de uma vez ou prefere aprovar fase por fase?
