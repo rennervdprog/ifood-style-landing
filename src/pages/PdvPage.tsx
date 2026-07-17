@@ -788,6 +788,15 @@ const PdvPage = () => {
         </div>
       )}
 
+      {/* ── MESAS / COMANDAS (Fase B) ── */}
+      {tab === "mesas" && store?.id && (
+        <PdvMesasView
+          storeId={store.id}
+          session={currentSession ?? null}
+          products={products as any}
+        />
+      )}
+
       {/* ── TURNOS ANTERIORES ── */}
       {tab === "turnos" && (
         <div className="flex-1 overflow-y-auto p-3">
