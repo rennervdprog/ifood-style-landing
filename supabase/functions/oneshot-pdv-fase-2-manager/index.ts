@@ -36,6 +36,7 @@ INSERT INTO public.admin_settings (key, value)
   ON CONFLICT (key) DO NOTHING;
 
 -- 4) pdv_list_operators devolve role também
+DROP FUNCTION IF EXISTS public.pdv_list_operators(uuid);
 CREATE OR REPLACE FUNCTION public.pdv_list_operators(_store_id uuid)
 RETURNS TABLE(id uuid, name text, active boolean, role text)
 LANGUAGE sql SECURITY DEFINER SET search_path = public AS $$
