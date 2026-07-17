@@ -58,6 +58,8 @@ import { PdvNowCard } from "@/pages/pdv/components/PdvNowCard";
 import { PdvFavoritesBar } from "@/pages/pdv/components/PdvFavoritesBar";
 import { PdvAberturaScreen } from "@/pages/pdv/components/PdvAberturaScreen";
 import { PdvFechamentoScreen } from "@/pages/pdv/components/PdvFechamentoScreen";
+import { usePdvOperator } from "@/hooks/usePdvOperator";
+import { PdvOperatorLoginDialog } from "@/components/pdv/PdvOperatorLoginDialog";
 import { PdvMovementDialog } from "@/pages/pdv/components/PdvMovementDialog";
 import { PdvWeightDialog } from "@/pages/pdv/components/PdvWeightDialog";
 import { PdvCreateWeightProductDialog } from "@/pages/pdv/components/PdvCreateWeightProductDialog";
