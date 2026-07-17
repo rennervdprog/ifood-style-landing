@@ -12,6 +12,8 @@ export interface PdvAccess {
   monthlyPrice: number;
   /** Se o cancelamento foi solicitado, quando termina o acesso */
   cancelsAt: string | null;
+  /** true quando há cancelamento agendado que pode ser desfeito */
+  canReactivate: boolean;
   isLoading: boolean;
 }
 
@@ -68,6 +70,7 @@ export function useStorePdvAccess(storeId: string | undefined | null): PdvAccess
       pricePerOrder: 0,
       monthlyPrice: 0, // já cobrado como plano, não como add-on
       cancelsAt: null,
+      canReactivate: false,
       isLoading,
     };
   }
@@ -79,6 +82,7 @@ export function useStorePdvAccess(storeId: string | undefined | null): PdvAccess
       pricePerOrder: 1,
       monthlyPrice: 0,
       cancelsAt: null,
+      canReactivate: false,
       isLoading,
     };
   }
@@ -93,6 +97,7 @@ export function useStorePdvAccess(storeId: string | undefined | null): PdvAccess
       pricePerOrder: 0,
       monthlyPrice: monthly,
       cancelsAt: addon.cancels_at ?? null,
+      canReactivate: !!addon.cancels_at,
       isLoading,
     };
   }
@@ -103,6 +108,7 @@ export function useStorePdvAccess(storeId: string | undefined | null): PdvAccess
     pricePerOrder: 0,
     monthlyPrice: catalogPrice,
     cancelsAt: null,
+    canReactivate: false,
     isLoading,
   };
 }
