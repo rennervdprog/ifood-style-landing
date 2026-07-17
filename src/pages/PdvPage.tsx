@@ -58,6 +58,8 @@ import { PdvNowCard } from "@/pages/pdv/components/PdvNowCard";
 import { PdvFavoritesBar } from "@/pages/pdv/components/PdvFavoritesBar";
 import { PdvAberturaScreen } from "@/pages/pdv/components/PdvAberturaScreen";
 import { PdvFechamentoScreen } from "@/pages/pdv/components/PdvFechamentoScreen";
+import { usePdvOperator } from "@/hooks/usePdvOperator";
+import { PdvOperatorLoginDialog } from "@/components/pdv/PdvOperatorLoginDialog";
 import { PdvMovementDialog } from "@/pages/pdv/components/PdvMovementDialog";
 import { PdvWeightDialog } from "@/pages/pdv/components/PdvWeightDialog";
 import { PdvCreateWeightProductDialog } from "@/pages/pdv/components/PdvCreateWeightProductDialog";
@@ -188,6 +190,9 @@ const PdvPage = () => {
   const [movValue, setMovValue] = useState("");
   const [movDesc, setMovDesc] = useState("");
   const [movReason, setMovReason] = useState("");
+  // Fase 2 item 8 — alçada de gerente para sangria acima do limite.
+  const [managerGateOpen, setManagerGateOpen] = useState(false);
+  const pendingSangria = useRef<null | ((mgrId: string) => void)>(null);
 
   // Fechamento
   const [closingAmount, setClosingAmount] = useState("");
@@ -282,6 +287,19 @@ const PdvPage = () => {
   const storePlan = useStorePlan(store?.id);
   const pdvAccess = useStorePdvAccess(store?.id);
   const addonsFlag = useAddonsFlag();
+  // Operador logado por PIN (Fase 1) — usado como operator_id nas movimentações.
+  const { operator: pdvOperator } = usePdvOperator(store?.id);
+  // Limite de sangria sem alçada de gerente (Fase 2 item 8). Default R$ 200.
+  const { data: sangriaLimit } = useQuery({
+    queryKey: ["pdv-sangria-manager-limit"],
+    staleTime: 5 * 60_000,
+    queryFn: async () => {
+      const { data } = await supabase.from("admin_settings")
+        .select("value").eq("key", "pdv_sangria_manager_limit").maybeSingle();
+      const v = Number((data?.value as any) ?? 200);
+      return Number.isFinite(v) && v >= 0 ? v : 200;
+    },
+  });
   // Bloqueia PDV sempre que a loja NÃO tem acesso (não-legacy, sem add-on, não pdv_only).
   // Sem gate real, qualquer loja abria o caixa mesmo sem contratar.
   const showPdvUpsell =
@@ -388,6 +406,26 @@ const PdvPage = () => {
     if (!movReason) {
       toast.error(`Selecione o motivo do ${type === "sangria" ? "sangria" : "suprimento"}.`); return;
     }
+
+    // Fase 2 item 8 — sangria acima do limite exige PIN de um gerente.
+    const limit = Number(sangriaLimit ?? 200);
+    if (type === "sangria" && limit > 0 && amount > limit) {
+      pendingSangria.current = (managerId: string) => {
+        void doInsertMovement(type, amount, managerId);
+      };
+      setManagerGateOpen(true);
+      return;
+    }
+
+    await doInsertMovement(type, amount, null);
+  };
+
+  const doInsertMovement = async (
+    type: "sangria" | "suprimento",
+    amount: number,
+    authorizedByManagerId: string | null,
+  ) => {
+    if (!currentSession || !store?.id) return;
     setLoading(true);
     try {
       const fullDesc = [movReason, movDesc].filter(Boolean).join(" — ") ||
@@ -395,6 +433,9 @@ const PdvPage = () => {
       await supabase.from("pdv_movements" as any).insert({
         session_id: currentSession.id, store_id: store.id,
         type, amount, description: fullDesc,
+        reason_category: movReason || null,
+        operator_id: pdvOperator?.id ?? null,
+        authorized_by_operator_id: authorizedByManagerId,
       });
       queryClient.invalidateQueries({ queryKey: ["pdv-movements", currentSession.id] });
       toast.success(type === "sangria" ? `Sangria de ${formatBRL(amount)}` : `Suprimento de ${formatBRL(amount)}`);
@@ -407,7 +448,7 @@ const PdvPage = () => {
             amount,
             reason: movReason,
             description: movDesc,
-            operator: user?.email || null,
+            operator: pdvOperator?.name || user?.email || null,
             sessionOpenedAt: currentSession.opened_at,
           },
           store?.name || "Loja",
@@ -1093,6 +1134,23 @@ const PdvPage = () => {
           loading={loading}
           onCancel={() => { setMovModal(null); setMovValue(""); setMovDesc(""); setMovReason(""); }}
           onConfirm={() => handleMoviment(movModal)}
+        />
+      )}
+
+      {/* Fase 2 item 8 — autorização de gerente para sangria acima do limite. */}
+      {managerGateOpen && store?.id && (
+        <PdvOperatorLoginDialog
+          open
+          storeId={store.id}
+          requiredRole="gerente"
+          title="Autorização de gerente"
+          onClose={() => { setManagerGateOpen(false); pendingSangria.current = null; }}
+          onLogin={(mgr) => {
+            setManagerGateOpen(false);
+            const fn = pendingSangria.current;
+            pendingSangria.current = null;
+            if (fn) fn(mgr.id);
+          }}
         />
       )}
 

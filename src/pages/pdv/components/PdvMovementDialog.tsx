@@ -1,5 +1,22 @@
 import { ArrowDownCircle, ArrowUpCircle, Loader2 } from "lucide-react";
 
+// Slugs mapeados 1:1 ao enum pdv_movements.reason_category (Fase 1 item 5).
+const REASONS: Record<"sangria" | "suprimento", { slug: string; label: string }[]> = {
+  sangria: [
+    { slug: "cofre", label: "Cofre" },
+    { slug: "despesa", label: "Despesa" },
+    { slug: "fornecedor", label: "Pagto fornecedor" },
+    { slug: "retirada_dono", label: "Retirada dono" },
+    { slug: "outro", label: "Outro" },
+  ],
+  suprimento: [
+    { slug: "troco_inicial", label: "Troco inicial" },
+    { slug: "reforco_troco", label: "Reforço de troco" },
+    { slug: "deposito", label: "Depósito" },
+    { slug: "outro", label: "Outro" },
+  ],
+};
+
 interface Props {
   type: "sangria" | "suprimento";
   movValue: string;
@@ -49,23 +66,20 @@ export const PdvMovementDialog = ({
         <div>
           <label className="text-xs font-bold text-muted-foreground">Motivo *</label>
           <div className="grid grid-cols-2 gap-1.5 mt-1.5">
-            {(type === "sangria"
-              ? ["Cofre", "Despesa", "Pagto fornecedor", "Retirada dono", "Outro"]
-              : ["Troco inicial", "Reforço de troco", "Depósito", "Outro"]
-            ).map((r) => (
+            {REASONS[type].map((r) => (
               <button
-                key={r}
+                key={r.slug}
                 type="button"
-                onClick={() => setMovReason(r)}
+                onClick={() => setMovReason(r.slug)}
                 className={`px-2 py-1.5 rounded-lg text-[11px] font-bold transition-colors border ${
-                  movReason === r
+                  movReason === r.slug
                     ? type === "sangria"
                       ? "bg-red-500 text-white border-red-500"
                       : "bg-blue-500 text-white border-blue-500"
                     : "bg-muted/50 text-muted-foreground border-border hover:bg-muted"
                 }`}
               >
-                {r}
+                {r.label}
               </button>
             ))}
           </div>
