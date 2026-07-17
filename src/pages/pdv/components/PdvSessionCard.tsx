@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { ChevronDown, ChevronUp, Wallet } from "lucide-react";
+import { ChevronDown, ChevronUp, Wallet, Archive } from "lucide-react";
+import { toast } from "sonner";
 import { formatBRL } from "@/lib/utils";
 
 interface Props {
@@ -10,6 +11,8 @@ interface Props {
   sangrias: number;
   suprimentos: number;
   saldoEsperado: number;
+  /** Fase 3 — mostra botão "Abrir gaveta" quando o lojista tem gaveta ESC/POS. */
+  drawerEnabled?: boolean;
 }
 
 /**
@@ -19,9 +22,18 @@ interface Props {
  */
 export const PdvSessionCard = ({
   openingAmount, vendasTotal, vendasCount, dinheiro,
-  sangrias, suprimentos, saldoEsperado,
+  sangrias, suprimentos, saldoEsperado, drawerEnabled,
 }: Props) => {
   const [open, setOpen] = useState(false);
+  const [drawerBusy, setDrawerBusy] = useState(false);
+  const handleOpenDrawer = async () => {
+    setDrawerBusy(true);
+    try {
+      const { openCashDrawer } = await import("@/lib/cashDrawer");
+      const ok = await openCashDrawer();
+      if (!ok) toast.error("Gaveta não respondeu. Verifique a conexão da impressora.");
+    } finally { setDrawerBusy(false); }
+  };
   return (
     <div className="border-b border-border bg-muted/30 shrink-0">
       <button
@@ -44,6 +56,16 @@ export const PdvSessionCard = ({
             <span className="font-bold text-foreground">Saldo esperado</span>
             <span className="font-black pdv-mono text-foreground">{formatBRL(saldoEsperado)}</span>
           </div>
+          {drawerEnabled && (
+            <button
+              type="button"
+              onClick={handleOpenDrawer}
+              disabled={drawerBusy}
+              className="w-full mt-2 h-8 rounded-lg bg-primary/10 text-primary text-[11px] font-black flex items-center justify-center gap-1.5 border border-primary/30 disabled:opacity-60"
+            >
+              <Archive className="h-3 w-3" /> {drawerBusy ? "Abrindo…" : "Abrir gaveta"}
+            </button>
+          )}
         </div>
       )}
     </div>
