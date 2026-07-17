@@ -50,6 +50,7 @@ const PartnerLogin = lazy(() => import("./pages/PartnerLogin"));
 const AdminDashboardV2 = lazy(() => import("./pages/AdminDashboardV2"));
 const MatrizDashboard = lazy(() => import("./pages/MatrizDashboard"));
 const PdvPage = lazy(() => import("./pages/PdvPage"));
+const PdvKdsPage = lazy(() => import("./pages/PdvKdsPage"));
 const PdvCardapioPage = lazy(() => import("./pages/PdvCardapioPage"));
 const DriverDashboardV2 = lazy(() => import("./pages/DriverDashboardV2"));
 const SuperAdminDashboardV2 = lazy(() => import("./pages/SuperAdminDashboardV2").catch(() => {
@@ -388,6 +389,7 @@ const App = () => {
                 <Route path="/matriz" element={<RoleGuard allowedRoles={["lojista_matriz", "admin"]} redirectTo="/"><MatrizDashboard /></RoleGuard>} />
                 <Route path="/admin2" element={<Navigate to="/admin" replace />} />
                 <Route path="/admin/pdv" element={<RoleGuard allowedRoles={["lojista", "admin"]} redirectTo="/" requireApproval><PdvPage /></RoleGuard>} />
+                <Route path="/admin/pdv/kds" element={<RoleGuard allowedRoles={["lojista", "admin"]} redirectTo="/" requireApproval><PdvKdsPage /></RoleGuard>} />
                 <Route path="/admin/cardapio" element={<RoleGuard allowedRoles={["lojista", "admin"]} redirectTo="/" requireApproval><PdvCardapioPage /></RoleGuard>} />
                 <Route path="/admin/pdv/cardapio" element={<Navigate to="/admin/cardapio" replace />} />
                 <Route
