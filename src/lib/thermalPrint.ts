@@ -602,6 +602,44 @@ ${renderFooter()}
   safePrint();
 }
 
+interface PrintCancelInput {
+  orderNumber?: string | number | null;
+  amount: number;
+  reason: string;
+  operator?: string | null;
+  canceledAt?: string | null;
+}
+
+/** Comprovante de cancelamento — 2 vias (operador + gerência) para auditoria. */
+export function printCancelReceipt(
+  input: PrintCancelInput,
+  storeName: string,
+  options: PrintOptions = {},
+) {
+  const paperWidth = options.paperWidth ?? 80;
+  applyPaperWidth(paperWidth);
+  const when = fmtDate(input.canceledAt || new Date().toISOString());
+  const num = input.orderNumber ? `#${String(input.orderNumber)}` : "";
+  const body = `
+${storeHeader(storeName, options)}
+<div class="tp-info" style="text-align:center">${when}</div>
+${originBanner("VENDA CANCELADA")}
+<div class="tp-divider"></div>
+${num ? `<div class="tp-info"><b>Pedido:</b> ${esc(num)}</div>` : ""}
+<div class="tp-total-big" style="display:flex;justify-content:space-between;font-weight:bold;font-size:22px"><span>ESTORNO</span><span>- ${formatBRL(Math.abs(Number(input.amount) || 0))}</span></div>
+<div class="tp-divider"></div>
+<div class="tp-info"><b>Motivo:</b> ${esc(input.reason || "-")}</div>
+${input.operator ? `<div class="tp-info"><b>Operador:</b> ${esc(input.operator)}</div>` : ""}
+<div class="tp-divider"></div>
+<div style="font-size:11px;margin-top:8px">Assinatura do responsável:</div>
+<div style="border-bottom:1px solid #000;height:36px;margin:6px 20px 8px"></div>
+${renderFooter()}
+`;
+  const container = getOrCreatePrintContainer();
+  container.innerHTML = wrapCopies(body, 2, ["VIA OPERADOR", "VIA GERÊNCIA"]);
+  safePrint();
+}
+
 /** Recibo do PDV (balcão / mesa). */
 export function printPdvReceipt(order: PrintPdvOrder, storeName: string, options: PrintOptions = {}) {
   const paperWidth = options.paperWidth ?? 80;
