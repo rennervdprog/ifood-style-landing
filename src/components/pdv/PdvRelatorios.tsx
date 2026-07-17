@@ -490,6 +490,40 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
           )}
 
           {/* ── Dias da semana ── */}
+          {operatorStats.length > 0 && (
+            <div className="bg-card border border-border rounded-2xl p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Users className="h-4 w-4 text-primary" />
+                <h3 className="text-sm font-black">Produtividade por Operador</h3>
+              </div>
+              <div className="space-y-2">
+                {operatorStats.map((o, i) => {
+                  const max = operatorStats[0]?.total || 1;
+                  const pct = (o.total / max) * 100;
+                  const share = stats.totalSales > 0 ? (o.total / stats.totalSales) * 100 : 0;
+                  return (
+                    <div key={o.user_id} className="flex items-center gap-2">
+                      <span className="text-[10px] font-black text-muted-foreground w-4">{i + 1}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5 mb-0.5">
+                          <p className="text-xs font-semibold text-foreground truncate">{o.name}</p>
+                          <span className="text-[9px] font-bold text-muted-foreground">{o.count} vendas</span>
+                        </div>
+                        <div className="h-1.5 bg-muted/40 rounded-full overflow-hidden">
+                          <div className="h-full bg-primary/70 rounded-full" style={{ width: `${pct}%` }} />
+                        </div>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <p className="text-xs font-black text-foreground">{formatBRL(o.total)}</p>
+                        <p className="text-[10px] text-muted-foreground">{share.toFixed(0)}%</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {Object.keys(stats.byDay).length > 1 && (
             <div className="bg-card border border-border rounded-2xl p-4">
               <div className="flex items-center gap-2 mb-3">
