@@ -73,7 +73,10 @@ interface Props {
  };
 
 /** Opções de plano para troca — fonte única em plansInfo, filtrando destinos válidos. */
-const ALL_SWITCHABLE: StorePlanType[] = ["fixed", "autonomy", "hybrid", "commission_only", "supporter"];
+// Apenas planos ATIVOS podem ser escolhidos como destino de troca.
+// hybrid / commission_only / supporter são legados — lojas neles continuam funcionando,
+// mas ninguém pode migrar PRA eles.
+const ALL_SWITCHABLE: StorePlanType[] = ["fixed", "autonomy", "pdv_only"];
 const planOptions: { type: StorePlanType; label: string; fee: number; rate: number; tagline: string; bullets: string[] }[] =
   ALL_SWITCHABLE.filter((id) => !!PLANS[id]).map((id) => {
     const p = PLANS[id];
