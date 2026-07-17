@@ -34,8 +34,14 @@ export const PdvMovementDialog = ({
   type, movValue, setMovValue, movDesc, setMovDesc,
   movReason, setMovReason, loading, onCancel, onConfirm,
 }: Props) => (
-  <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-    <div className="bg-card rounded-2xl border border-border w-full max-w-xs p-5 space-y-4 shadow-2xl">
+  <div
+    className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+    onClick={() => { if (!loading) onCancel(); }}
+  >
+    <div
+      className="bg-card rounded-2xl border border-border w-full max-w-xs p-5 space-y-4 shadow-2xl"
+      onClick={(e) => e.stopPropagation()}
+    >
       <div className="flex items-center gap-3">
         {type === "sangria"
           ? <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center"><ArrowDownCircle className="h-5 w-5 text-red-500" /></div>

@@ -3,7 +3,7 @@
  *
  * Tela fullscreen para cozinha: lista pedidos em preparo em cards grandes,
  * com tempo desde recebimento e um clique para avançar status:
- *   pendente/confirmado → preparando → pronto_para_entrega/finalizado
+ *   pendente → preparando → pronto_para_entrega/finalizado
  *
  * Atualiza via Realtime + polling backup de 10s (à prova de falha de socket).
  * Multi-terminal: qualquer PDV/tablet aberto na mesma URL vê o mesmo estado.
@@ -31,14 +31,14 @@ type KdsOrder = {
   }>;
 };
 
-const ACTIVE_STATUSES = ["pendente", "confirmado", "preparando", "pronto_para_entrega"];
+const ACTIVE_STATUSES = ["pendente", "preparando", "pronto_para_entrega"];
 
 function minutesSince(iso: string): number {
   return Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 60000));
 }
 
 function nextStatus(current: string): string | null {
-  if (current === "pendente" || current === "confirmado") return "preparando";
+  if (current === "pendente") return "preparando";
   if (current === "preparando") return "pronto_para_entrega";
   return null; // pronto → sai da tela; balcão finaliza pelo PDV
 }
@@ -46,7 +46,6 @@ function nextStatus(current: string): string | null {
 function statusLabel(s: string): string {
   return ({
     pendente: "Novo",
-    confirmado: "Novo",
     preparando: "Em preparo",
     pronto_para_entrega: "Pronto",
   } as Record<string, string>)[s] || s;
