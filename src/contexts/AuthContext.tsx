@@ -50,20 +50,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const deviceCheckFailCountRef = useRef(0);
   const shouldTrackDeviceRef = useRef(false);
 
-  // Device tracking (kick de outra sessão) só faz sentido para admin/lojista/super_admin.
-  // Cliente e entregador podem usar múltiplos dispositivos livremente (padrão Anota.ai).
-  const evaluateDeviceTracking = async (userId: string): Promise<boolean> => {
-    try {
-      const { data } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", userId);
-      const roles = (data || []).map((r: any) => r.role);
-      return roles.some((r: string) => r === "admin" || r === "admin_loja" || r === "super_admin");
-    } catch {
-      return false;
-    }
-  };
+  // Multi-device liberado para TODOS os perfis (inclusive admin/lojista/super_admin).
+  // Nenhum dispositivo é desconectado ao logar em outro.
+  const evaluateDeviceTracking = async (_userId: string): Promise<boolean> => false;
 
   // Register this device as the active one for the user
   const registerDevice = async () => {
