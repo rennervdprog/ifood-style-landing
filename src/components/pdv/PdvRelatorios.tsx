@@ -6,7 +6,7 @@ import {
   TrendingUp, ShoppingBag, BarChart3, Clock,
   Banknote, CreditCard, Smartphone, Loader2,
   Trophy, ChevronDown, ChevronUp, Calendar,
-  ArrowUpRight, Percent, Receipt,
+  ArrowUpRight, Percent, Receipt, Download, Users,
 } from "lucide-react";
 
 // ─── tipos ────────────────────────────────────────────────────────────────────
@@ -71,6 +71,40 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
     getDateRange(period, period === "custom" ? { start: customStart, end: customEnd } : undefined),
     [period, customStart, customEnd]
   );
+
+  // ── Produtividade por operador ──
+  const { data: operatorStats = [] } = useQuery({
+    queryKey: ["pdv-relatorio-operators", storeId, sessionId, dateRange.start, dateRange.end],
+    queryFn: async () => {
+      let q = (supabase.from("pdv_movements" as any) as any)
+        .select("amount, created_by")
+        .eq("store_id", storeId)
+        .eq("type", "sale")
+        .gte("created_at", dateRange.start)
+        .lte("created_at", dateRange.end);
+      if (sessionId) q = q.eq("session_id", sessionId);
+      const { data } = await q;
+      const rows = (data || []) as any[];
+      const map: Record<string, { user_id: string; total: number; count: number }> = {};
+      rows.forEach((m) => {
+        const uid = m.created_by || "sem-operador";
+        if (!map[uid]) map[uid] = { user_id: uid, total: 0, count: 0 };
+        map[uid].total += Number(m.amount || 0);
+        map[uid].count += 1;
+      });
+      const ids = Object.keys(map).filter((id) => id !== "sem-operador");
+      let names: Record<string, string> = {};
+      if (ids.length) {
+        const { data: profs } = await (supabase as any)
+          .from("profiles").select("id, name, email").in("id", ids);
+        (profs || []).forEach((p: any) => { names[p.id] = p.name || p.email || "Operador"; });
+      }
+      return Object.values(map)
+        .map((o) => ({ ...o, name: names[o.user_id] || "Sem operador" }))
+        .sort((a, b) => b.total - a.total);
+    },
+    enabled: !!storeId,
+  });
 
   // ── Pedidos PDV do período ──
   const { data: orders = [], isLoading } = useQuery({
@@ -202,6 +236,48 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
     custom: "Personalizado",
   };
 
+  const exportCsv = () => {
+    if (!stats) return;
+    const lines: string[] = [];
+    lines.push(`Relatório PDV;${periodLabels[period]}`);
+    lines.push(`Período;${new Date(dateRange.start).toLocaleString("pt-BR")};${new Date(dateRange.end).toLocaleString("pt-BR")}`);
+    lines.push("");
+    lines.push("RESUMO");
+    lines.push(`Faturamento;${stats.totalSales.toFixed(2)}`);
+    lines.push(`Vendas;${stats.count}`);
+    lines.push(`Ticket médio;${stats.avgTicket.toFixed(2)}`);
+    lines.push(`Descontos;${stats.totalDiscount.toFixed(2)}`);
+    lines.push(`Comissão plataforma;${stats.totalCommission.toFixed(2)}`);
+    lines.push("");
+    lines.push("PAGAMENTOS");
+    lines.push("Método;Valor");
+    Object.entries(stats.byPayment).forEach(([k, v]) => {
+      lines.push(`${(PAYMENT_LABELS[k]?.label || k)};${v.toFixed(2)}`);
+    });
+    lines.push("");
+    lines.push("PRODUTOS (Curva ABC)");
+    lines.push("Ranking;Produto;Qtd;Receita;Classe");
+    stats.topProducts.forEach((p, i) => {
+      lines.push(`${i + 1};${p.name.replace(/;/g, ",")};${p.qty};${p.revenue.toFixed(2)};${p.abc}`);
+    });
+    if (operatorStats.length) {
+      lines.push("");
+      lines.push("OPERADORES");
+      lines.push("Ranking;Operador;Vendas;Faturamento");
+      operatorStats.forEach((o, i) => {
+        lines.push(`${i + 1};${o.name.replace(/;/g, ",")};${o.count};${o.total.toFixed(2)}`);
+      });
+    }
+    const csv = "\uFEFF" + lines.join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `pdv-relatorio-${period}-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -221,6 +297,15 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
               {periodLabels[p]}
             </button>
           ))}
+          {stats && (
+            <button
+              onClick={exportCsv}
+              className="ml-auto px-3 py-1.5 rounded-full text-[11px] font-bold border border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 transition-colors flex items-center gap-1"
+              title="Exportar CSV"
+            >
+              <Download className="h-3 w-3" /> CSV
+            </button>
+          )}
         </div>
         {period === "custom" && (
           <div className="flex gap-2">
@@ -401,6 +486,41 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
                   {expandProducts ? <><ChevronUp className="h-3 w-3" /> Mostrar menos</> : <><ChevronDown className="h-3 w-3" /> Ver todos ({stats.topProducts.length})</>}
                 </button>
               )}
+            </div>
+          )}
+
+          {/* ── Produtividade por operador ── */}
+          {operatorStats.length > 0 && (
+            <div className="bg-card border border-border rounded-2xl p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Users className="h-4 w-4 text-primary" />
+                <h3 className="text-sm font-black">Produtividade por Operador</h3>
+              </div>
+              <div className="space-y-2">
+                {operatorStats.map((o, i) => {
+                  const max = operatorStats[0]?.total || 1;
+                  const pct = (o.total / max) * 100;
+                  const share = stats.totalSales > 0 ? (o.total / stats.totalSales) * 100 : 0;
+                  return (
+                    <div key={o.user_id} className="flex items-center gap-2">
+                      <span className="text-[10px] font-black text-muted-foreground w-4">{i + 1}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5 mb-0.5">
+                          <p className="text-xs font-semibold text-foreground truncate">{o.name}</p>
+                          <span className="text-[9px] font-bold text-muted-foreground">{o.count} vendas</span>
+                        </div>
+                        <div className="h-1.5 bg-muted/40 rounded-full overflow-hidden">
+                          <div className="h-full bg-primary/70 rounded-full" style={{ width: `${pct}%` }} />
+                        </div>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <p className="text-xs font-black text-foreground">{formatBRL(o.total)}</p>
+                        <p className="text-[10px] text-muted-foreground">{share.toFixed(0)}%</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
 
