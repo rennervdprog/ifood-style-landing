@@ -2,18 +2,27 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { X, Loader2, AlertTriangle } from "lucide-react";
+import { printCancelReceipt } from "@/lib/thermalPrint";
 
 interface Props {
   open: boolean;
   orderId: string | null;
   orderTotal: number;
+  orderNumber?: string | number | null;
+  storeName?: string | null;
+  paperWidth?: 58 | 80;
+  storePhone?: string | null;
+  storeCnpj?: string | null;
   onClose: () => void;
   onDone: () => void;
 }
 
 const REASONS = ["Erro do operador", "Cliente desistiu", "Produto em falta", "Pagamento recusado", "Outro"];
 
-export function PdvCancelSaleDialog({ open, orderId, orderTotal, onClose, onDone }: Props) {
+export function PdvCancelSaleDialog({
+  open, orderId, orderTotal, orderNumber, storeName,
+  paperWidth = 80, storePhone, storeCnpj, onClose, onDone,
+}: Props) {
   const [reason, setReason] = useState(REASONS[0]);
   const [custom, setCustom] = useState("");
   const [pin, setPin] = useState("");
@@ -44,6 +53,20 @@ export function PdvCancelSaleDialog({ open, orderId, orderTotal, onClose, onDone
         return;
       }
       toast.success(`Cancelada por ${r.operator_name}`);
+      // Comprovante físico (auditoria) — 2 vias.
+      try {
+        printCancelReceipt(
+          {
+            orderNumber: orderNumber ?? null,
+            amount: orderTotal,
+            reason: finalReason,
+            operator: r.operator_name ?? null,
+            canceledAt: new Date().toISOString(),
+          },
+          storeName || "Loja",
+          { paperWidth, storePhone: storePhone ?? null, storeCnpj: storeCnpj ?? null },
+        );
+      } catch (e) { console.warn("print cancel receipt", e); }
       onDone();
       onClose();
     } catch (e: any) {

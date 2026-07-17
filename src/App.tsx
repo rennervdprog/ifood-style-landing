@@ -389,6 +389,7 @@ const App = () => {
                 <Route path="/admin2" element={<Navigate to="/admin" replace />} />
                 <Route path="/admin/pdv" element={<RoleGuard allowedRoles={["lojista", "admin"]} redirectTo="/" requireApproval><PdvPage /></RoleGuard>} />
                 <Route path="/admin/cardapio" element={<RoleGuard allowedRoles={["lojista", "admin"]} redirectTo="/" requireApproval><PdvCardapioPage /></RoleGuard>} />
+                <Route path="/admin/pdv/cardapio" element={<Navigate to="/admin/cardapio" replace />} />
                 <Route
                   path="/entregador"
                   element={
