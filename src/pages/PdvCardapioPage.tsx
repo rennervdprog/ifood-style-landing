@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useStorePdvAccess } from "@/hooks/useStorePdvAccess";
 import { toast } from "sonner";
 import MenuBuilder from "@/components/MenuBuilder";
+import { PdvQuickGridEditor } from "@/pages/pdv/components/PdvQuickGridEditor";
 
 /** Cardápio standalone acessível a partir do PDV (principalmente pra lojas pdv_only,
  *  que não têm painel do lojista). Renderiza o mesmo MenuBuilder do painel. */
@@ -98,6 +99,7 @@ const PdvCardapioPage = () => {
         <span className="text-sm font-bold">Cardápio · {store.name}</span>
       </header>
       <div className="p-3">
+        <PdvQuickGridEditor storeId={store.id} />
         <MenuBuilder storeId={store.id} storeCategory={store.category} />
       </div>
     </div>
