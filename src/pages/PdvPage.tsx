@@ -406,6 +406,26 @@ const PdvPage = () => {
     if (!movReason) {
       toast.error(`Selecione o motivo do ${type === "sangria" ? "sangria" : "suprimento"}.`); return;
     }
+
+    // Fase 2 item 8 — sangria acima do limite exige PIN de um gerente.
+    const limit = Number(sangriaLimit ?? 200);
+    if (type === "sangria" && limit > 0 && amount > limit) {
+      pendingSangria.current = (managerId: string) => {
+        void doInsertMovement(type, amount, managerId);
+      };
+      setManagerGateOpen(true);
+      return;
+    }
+
+    await doInsertMovement(type, amount, null);
+  };
+
+  const doInsertMovement = async (
+    type: "sangria" | "suprimento",
+    amount: number,
+    authorizedByManagerId: string | null,
+  ) => {
+    if (!currentSession || !store?.id) return;
     setLoading(true);
     try {
       const fullDesc = [movReason, movDesc].filter(Boolean).join(" — ") ||
@@ -413,6 +433,9 @@ const PdvPage = () => {
       await supabase.from("pdv_movements" as any).insert({
         session_id: currentSession.id, store_id: store.id,
         type, amount, description: fullDesc,
+        reason_category: movReason || null,
+        operator_id: pdvOperator?.id ?? null,
+        authorized_by_operator_id: authorizedByManagerId,
       });
       queryClient.invalidateQueries({ queryKey: ["pdv-movements", currentSession.id] });
       toast.success(type === "sangria" ? `Sangria de ${formatBRL(amount)}` : `Suprimento de ${formatBRL(amount)}`);
@@ -425,7 +448,7 @@ const PdvPage = () => {
             amount,
             reason: movReason,
             description: movDesc,
-            operator: user?.email || null,
+            operator: pdvOperator?.name || user?.email || null,
             sessionOpenedAt: currentSession.opened_at,
           },
           store?.name || "Loja",
