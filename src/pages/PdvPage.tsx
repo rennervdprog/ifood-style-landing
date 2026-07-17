@@ -1137,6 +1137,23 @@ const PdvPage = () => {
         />
       )}
 
+      {/* Fase 2 item 8 — autorização de gerente para sangria acima do limite. */}
+      {managerGateOpen && store?.id && (
+        <PdvOperatorLoginDialog
+          open
+          storeId={store.id}
+          requiredRole="gerente"
+          title="Autorização de gerente"
+          onClose={() => { setManagerGateOpen(false); pendingSangria.current = null; }}
+          onLogin={(mgr) => {
+            setManagerGateOpen(false);
+            const fn = pendingSangria.current;
+            pendingSangria.current = null;
+            if (fn) fn(mgr.id);
+          }}
+        />
+      )}
+
       {/* ── MODAL ATALHOS DE TECLADO ── */}
       {showShortcuts && <PdvShortcutsDialog onClose={() => setShowShortcuts(false)} />}
 
