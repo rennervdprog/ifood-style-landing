@@ -63,7 +63,7 @@ export const PdvFavoritesBar = ({ storeId, products, addItem, getQty }: Props) =
       <div className="flex items-center gap-1.5 mb-1.5">
         <Star className="h-3 w-3 text-amber-500 fill-amber-500" />
         <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">
-          Favoritos do turno
+          Mais vendidos (30d)
         </span>
         <span className="text-[9px] text-muted-foreground/70">
           · toque para adicionar
