@@ -915,6 +915,7 @@ const PdvPage = () => {
                       grouped={grouped} prodLoading={prodLoading}
                       getQty={getQty} addItem={addItem} decItem={decItem}
                       searchInputRef={searchInputRef}
+                      allProducts={products}
                       topSlot={
                         <>
                           <PdvFavoritesBar
