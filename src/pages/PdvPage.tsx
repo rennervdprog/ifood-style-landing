@@ -190,6 +190,9 @@ const PdvPage = () => {
   const [movValue, setMovValue] = useState("");
   const [movDesc, setMovDesc] = useState("");
   const [movReason, setMovReason] = useState("");
+  // Fase 2 item 8 — alçada de gerente para sangria acima do limite.
+  const [managerGateOpen, setManagerGateOpen] = useState(false);
+  const pendingSangria = useRef<null | ((mgrId: string) => void)>(null);
 
   // Fechamento
   const [closingAmount, setClosingAmount] = useState("");
