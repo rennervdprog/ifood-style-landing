@@ -722,10 +722,10 @@ const PdvPage = () => {
   const storeSettings = ((store as any)?.settings || {}) as Record<string, any>;
   // Fase 3 — flags de hardware (opt-in por loja).
   const drawerEnabled = storeSettings.pdv_drawer_enabled === true;
-  useEffect(() => {
+  // Set inline (não pode ser useEffect aqui pois este ponto fica após early-returns).
+  if (typeof window !== "undefined") {
     (window as any).__pdvScaleEnabled = storeSettings.pdv_scale_enabled === true;
-    return () => { try { delete (window as any).__pdvScaleEnabled; } catch {} };
-  }, [storeSettings.pdv_scale_enabled]);
+  }
   const storeCats: string[] = [
     (store as any)?.category,
     ...(((store as any)?.categories || []) as string[]),
