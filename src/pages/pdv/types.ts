@@ -16,6 +16,10 @@ export interface Product {
   sold_by_weight?: boolean | null;
   price_per_kg?: number | null;
   weight_unit?: string | null;
+  /** Código curto pra digitar+Enter no PDV (ex.: "01"). */
+  pdv_short_code?: string | null;
+  /** Ordem custom da grade rápida do PDV. */
+  pdv_sort_order?: number | null;
 }
 
 /** Seção/categoria do cardápio. */
@@ -23,6 +27,8 @@ export interface MenuSection {
   id: string;
   name: string;
   sort_order: number;
+  /** Cor da categoria na sidebar do PDV (hex ou nome de token). */
+  pdv_color?: string | null;
 }
 
 /** Item dentro do carrinho do PDV. */
