@@ -276,9 +276,15 @@ Deno.serve(async (req) => {
         let addonsTotal = 0;
         const addonLines: string[] = [];
         const addonsBilledFirst: string[] = []; // rastreia quais serão marcados como cobrados
+        const addonsToDisable: string[] = []; // cancelamentos que já venceram
         for (const sa of storeAddons) {
           const cat = addonPriceByCode.get(sa.addon_code);
           if (!cat) continue;
+          // Cancelamento agendado já venceu → não cobra e desativa no fim do loop.
+          if (sa.cancels_at && new Date(sa.cancels_at) <= now) {
+            addonsToDisable.push(sa.addon_code);
+            continue;
+          }
           const price = sa.price_override !== null && sa.price_override !== undefined
             ? Number(sa.price_override) : cat.price;
           if (price <= 0) continue; // VIP grátis
@@ -291,6 +297,11 @@ Deno.serve(async (req) => {
             addonsTotal += price;
             addonLines.push(`${cat.name} R$${price.toFixed(2)}`);
           }
+        }
+        if (addonsToDisable.length) {
+          await supabase.from("store_addons")
+            .update({ enabled: false, cancels_at: null, first_charge_done: false })
+            .eq("store_id", store.id).in("addon_code", addonsToDisable);
         }
 
         // Proração da mensalidade do próprio plano pdv_only na 1ª cobrança.
