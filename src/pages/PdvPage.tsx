@@ -67,6 +67,7 @@ import { PdvTopbar } from "@/pages/pdv/components/PdvTopbar";
 import { PdvTabs } from "@/pages/pdv/components/PdvTabs";
 import { PdvStatusBar } from "@/pages/pdv/components/PdvStatusBar";
 import { PdvSessionCard } from "@/pages/pdv/components/PdvSessionCard";
+import { PdvMesasView } from "@/pages/pdv/components/PdvMesasView";
 
 // Detecta se está em tela mobile (< 768px)
 const useIsMobile = () => {
@@ -785,6 +786,15 @@ const PdvPage = () => {
           <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Movimentações do turno atual</p>
           <PdvHistorico sessionId={currentSession?.id} />
         </div>
+      )}
+
+      {/* ── MESAS / COMANDAS (Fase B) ── */}
+      {tab === "mesas" && store?.id && (
+        <PdvMesasView
+          storeId={store.id}
+          session={currentSession ?? null}
+          products={products as any}
+        />
       )}
 
       {/* ── TURNOS ANTERIORES ── */}
