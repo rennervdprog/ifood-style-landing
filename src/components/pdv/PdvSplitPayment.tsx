@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Banknote, CreditCard, Smartphone, X, Plus, Wallet } from "lucide-react";
+import { Banknote, CreditCard, Smartphone, X, Plus, Wallet, Users } from "lucide-react";
 import { formatBRL, addMoney, subtractMoney } from "@/lib/utils";
 import { parseBRL } from "@/hooks/useBRLInput";
 
@@ -36,6 +36,8 @@ const COLORS: Record<string, string> = {
 export const PdvSplitPayment = ({ total, payments, onChange }: Props) => {
   const [pickerMethod, setPickerMethod] = useState<string>("dinheiro");
   const [pickerAmount, setPickerAmount] = useState("");
+  // Fase 2 item 9 — dividir por pessoa: gera N pagamentos iguais.
+  const [peopleCount, setPeopleCount] = useState<number>(2);
 
   const paid = useMemo(() => addMoney(0, ...payments.map((p) => p.amount)), [payments]);
   const remaining = subtractMoney(total, paid);
@@ -52,6 +54,25 @@ export const PdvSplitPayment = ({ total, payments, onChange }: Props) => {
   const removePayment = (idx: number) =>
     onChange(payments.filter((_, i) => i !== idx));
 
+  /**
+   * Divide o total em N partes iguais. A última parte absorve o resto de centavos
+   * (ex.: R$ 10 / 3 = 3,33 + 3,33 + 3,34) para não deixar diferença.
+   */
+  const splitPerPerson = (n: number) => {
+    if (n < 2 || total <= 0) return;
+    const cents = Math.round(total * 100);
+    const base = Math.floor(cents / n);
+    const rest = cents - base * n;
+    const list: SplitPayment[] = Array.from({ length: n }).map((_, i) => ({
+      method: "dinheiro",
+      amount: (i === n - 1 ? base + rest : base) / 100,
+    }));
+    onChange(list);
+  };
+
+  const changeMethodAt = (idx: number, method: string) =>
+    onChange(payments.map((p, i) => (i === idx ? { ...p, method } : p)));
+
   return (
     <div className="space-y-2.5">
       {/* Pagamentos já feitos */}
@@ -66,7 +87,17 @@ export const PdvSplitPayment = ({ total, payments, onChange }: Props) => {
                 className={`flex items-center gap-2 px-3 py-2 rounded-xl border ${COLORS[m?.color || "emerald"]}`}
               >
                 <Icon className="h-3.5 w-3.5 shrink-0" />
-                <span className="text-xs font-bold flex-1">{m?.label || p.method}</span>
+                <span className="text-[10px] font-black shrink-0 opacity-70">#{idx + 1}</span>
+                <select
+                  value={p.method}
+                  onChange={(e) => changeMethodAt(idx, e.target.value)}
+                  className="text-xs font-bold flex-1 bg-transparent focus:outline-none cursor-pointer"
+                  aria-label="Alterar forma de pagamento"
+                >
+                  {METHODS.map((mm) => (
+                    <option key={mm.id} value={mm.id}>{mm.label}</option>
+                  ))}
+                </select>
                 <span className="text-sm font-black">{formatBRL(p.amount)}</span>
                 <button
                   onClick={() => removePayment(idx)}
@@ -100,6 +131,48 @@ export const PdvSplitPayment = ({ total, payments, onChange }: Props) => {
           {isComplete ? formatBRL(total) : formatBRL(remaining)}
         </span>
       </div>
+
+      {/* Fase 2 item 9 — dividir por pessoa */}
+      {payments.length === 0 && total > 0 && (
+        <div className="bg-muted/20 rounded-xl p-2.5 space-y-2 border border-dashed border-border/60">
+          <div className="flex items-center gap-2">
+            <Users className="h-3.5 w-3.5 text-primary" />
+            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider flex-1">
+              Dividir por pessoa
+            </p>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => setPeopleCount((n) => Math.max(2, n - 1))}
+              className="h-9 w-9 rounded-lg bg-card border border-border/60 font-black text-sm"
+              aria-label="Menos pessoas"
+            >−</button>
+            <div className="flex-1 text-center">
+              <p className="text-lg font-black leading-none">{peopleCount}</p>
+              <p className="text-[9px] text-muted-foreground uppercase">
+                {formatBRL(total / peopleCount)} cada
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setPeopleCount((n) => Math.min(12, n + 1))}
+              className="h-9 w-9 rounded-lg bg-card border border-border/60 font-black text-sm"
+              aria-label="Mais pessoas"
+            >+</button>
+            <button
+              type="button"
+              onClick={() => splitPerPerson(peopleCount)}
+              className="h-9 px-3 rounded-lg bg-primary text-primary-foreground text-[11px] font-black active:scale-95 transition-transform"
+            >
+              Dividir
+            </button>
+          </div>
+          <p className="text-[10px] text-muted-foreground text-center">
+            Cada pessoa pode trocar sua forma de pagamento depois.
+          </p>
+        </div>
+      )}
 
       {/* Adicionar pagamento */}
       {!isComplete && (
