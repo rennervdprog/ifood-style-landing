@@ -52,6 +52,7 @@ import { usePdvCart } from "@/pages/pdv/state/usePdvCart";
 import { usePdvCheckout } from "@/pages/pdv/state/usePdvCheckout";
 import { usePdvOutbox } from "@/pages/pdv/state/usePdvOutbox";
 import { PdvCatalogSection } from "@/pages/pdv/components/PdvCatalogSection";
+import { PdvCategoriesRail } from "@/pages/pdv/components/PdvCategoriesRail";
 import { PdvCartSection } from "@/pages/pdv/components/PdvCartSection";
 import { PdvNowCard } from "@/pages/pdv/components/PdvNowCard";
 import { PdvFavoritesBar } from "@/pages/pdv/components/PdvFavoritesBar";
@@ -830,6 +831,12 @@ const PdvPage = () => {
           {/* DESKTOP — 2 colunas lado a lado */}
           {!isMobile && (
             <div className="flex flex-1 overflow-hidden">
+              {/* Sidebar de categorias (3ª coluna à esquerda) */}
+              <PdvCategoriesRail
+                sections={sections}
+                activeSection={activeSection}
+                setActiveSection={setActiveSection}
+              />
               {/* Catálogo */}
               <div className="flex flex-col flex-1 min-w-0 overflow-hidden border-r border-border">
                 <PdvNowCard
@@ -844,6 +851,8 @@ const PdvPage = () => {
                   grouped={grouped} prodLoading={prodLoading}
                   getQty={getQty} addItem={addItem} decItem={decItem}
                   searchInputRef={searchInputRef}
+                  hideSectionTabs
+                  allProducts={products}
                   topSlot={
                     <>
                       <PdvFavoritesBar
@@ -906,6 +915,7 @@ const PdvPage = () => {
                       grouped={grouped} prodLoading={prodLoading}
                       getQty={getQty} addItem={addItem} decItem={decItem}
                       searchInputRef={searchInputRef}
+                      allProducts={products}
                       topSlot={
                         <>
                           <PdvFavoritesBar
