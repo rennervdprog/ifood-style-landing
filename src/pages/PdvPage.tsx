@@ -427,6 +427,43 @@ const PdvPage = () => {
     }
   };
 
+  // ── Cobrar e fechar comanda selecionada ──
+  const handleCloseTab = async () => {
+    if (!selectedTabId || !currentSession?.id) return;
+    // Se ainda há itens no carrinho, envia-os primeiro para a comanda.
+    if (cart.length > 0) {
+      await handleSendToTab();
+    }
+    const payments = splitMode && splitPayments.length > 0
+      ? splitPayments.map((p) => ({ method: p.method, amount: Number(p.amount) }))
+      : (paymentMethod ? [{ method: paymentMethod, amount: finalTotal }] : []);
+    if (payments.length === 0) {
+      toast.error("Escolha o método de pagamento para fechar a comanda.");
+      return;
+    }
+    setLoading(true);
+    try {
+      const { rpcCloseTab } = await import("@/pages/pdv/state/usePdvTables");
+      await rpcCloseTab({
+        tabId: selectedTabId,
+        sessionId: currentSession.id,
+        payments,
+        pdvDiscount: discountAmount,
+        commissionRate: storePlan.pdvCommissionRate ?? 0,
+      });
+      queryClient.invalidateQueries({ queryKey: ["pdv-tabs-open", store?.id] });
+      queryClient.invalidateQueries({ queryKey: ["pdv-tables", store?.id] });
+      queryClient.invalidateQueries({ queryKey: ["pdv-now", currentSession?.id] });
+      toast.success("Comanda fechada!");
+      setOrderDone(true);
+      clearSale();
+    } catch (e: any) {
+      toast.error(`Falha ao fechar comanda: ${e?.message ?? "erro"}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // ── Abrir caixa (delegado a usePdvSession) ──
   const handleAbrirCaixa = async () => {
     await openSession(parseBRL(openingAmount));
