@@ -950,6 +950,7 @@ const PdvPage = () => {
           if (t === "relatorios") setSelectedSessionId(null);
           setTab(t);
         }}
+        showMeuPlano={pdvAccess.source === "pdv_only"}
       />
 
       {/* ── HISTÓRICO ── */}
