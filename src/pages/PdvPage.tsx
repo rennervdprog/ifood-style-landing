@@ -148,6 +148,8 @@ const PdvPage = () => {
     cart, setCart,
     paymentMethod, setPaymentMethod,
     tableId, setTableId,
+    selectedTable, setSelectedTable,
+    selectedTabId, setSelectedTabId,
     discountType, setDiscountType,
     discountInput, setDiscountInput,
     showDiscount, setShowDiscount,
