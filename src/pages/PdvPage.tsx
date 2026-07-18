@@ -787,7 +787,23 @@ const PdvPage = () => {
   // ─────────────────────────────────────────────────────────────────────────
 
   if (screen === "abertura") return (
-    reportsNoSession && store?.id ? (
+    planNoSession && store?.id ? (
+      <div className="pdv-shell min-h-screen bg-background flex flex-col">
+        <header className="h-14 border-b border-border flex items-center px-4 gap-3 bg-card shrink-0">
+          <button onClick={() => setPlanNoSession(false)} className="p-1.5 rounded-xl hover:bg-muted transition-colors">
+            <ArrowLeft className="h-5 w-5" />
+          </button>
+          <BarChart3 className="h-5 w-5 text-primary" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold truncate">{store?.name}</p>
+            <p className="text-[10px] text-muted-foreground">Meu Plano · Caixa fechado</p>
+          </div>
+        </header>
+        <div className="flex-1 overflow-y-auto">
+          <StoreSubscription storeId={store.id} storeName={store.name || ""} />
+        </div>
+      </div>
+    ) : reportsNoSession && store?.id ? (
       <div className="pdv-shell min-h-screen bg-background flex flex-col">
         <header className="h-14 border-b border-border flex items-center px-4 gap-3 bg-card shrink-0">
           <button onClick={() => setReportsNoSession(false)} className="p-1.5 rounded-xl hover:bg-muted transition-colors">
@@ -812,6 +828,7 @@ const PdvPage = () => {
         onOpen={handleAbrirCaixa}
         loading={sessionLoading || loading}
         onViewReports={() => setReportsNoSession(true)}
+        onViewPlan={pdvAccess.source === "pdv_only" ? () => setPlanNoSession(true) : undefined}
       />
     )
   );
