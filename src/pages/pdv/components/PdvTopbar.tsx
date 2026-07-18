@@ -25,12 +25,16 @@ interface Props {
   onSyncOutbox?: () => void;
   /** Quando true, esconde o "voltar ao painel" e mostra menu enxuto (Perfil/Plano/Sair). */
   isPdvOnly?: boolean;
+  /** Quando fornecido (PDV Only), o item "Meu Plano" do menu troca para a aba interna
+   *  em vez de navegar para /perfil?tab=plano. */
+  onOpenMeuPlano?: () => void;
 }
 
 export const PdvTopbar = ({
   storeName, operatorName, turnoVendasCount, turnoVendido, ticketMedio,
   loading, onShowShortcuts, onSuprimento, onSangria, onFechar,
   outboxCount = 0, outboxFlushing = false, onSyncOutbox, isPdvOnly = false,
+  onOpenMeuPlano,
 }: Props) => {
   const navigate = useNavigate();
   const initial = (operatorName || "").trim().charAt(0).toUpperCase() || "?";
@@ -66,7 +70,12 @@ export const PdvTopbar = ({
             <DropdownMenuItem onClick={() => navigate("/admin/cardapio")}>
               <BookOpen className="h-4 w-4 mr-2" /> Cardápio
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => navigate("/perfil?tab=plano")}>
+            <DropdownMenuItem
+              onClick={() => {
+                if (onOpenMeuPlano) onOpenMeuPlano();
+                else navigate("/perfil?tab=plano");
+              }}
+            >
               <CreditCard className="h-4 w-4 mr-2" /> Meu Plano
             </DropdownMenuItem>
             <DropdownMenuItem
