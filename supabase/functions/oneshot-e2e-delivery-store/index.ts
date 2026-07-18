@@ -37,9 +37,11 @@ Deno.serve(async (req) => {
   const owned = await sql(`SELECT id, name, slug, plan_type FROM public.stores WHERE owner_id='${userId}';`);
   steps.push({ step: "owned_stores", ...owned });
 
+  const enums = await sql(`SELECT unnest(enum_range(NULL::store_status))::text AS v;`);
+  steps.push({ step: "status_enum", ...enums });
   const activate = await sql(`
     UPDATE public.stores
-       SET is_visible = true, status = 'active', is_open = true, force_closed = false
+       SET is_visible = true, is_open = true, force_closed = false
      WHERE owner_id = '${userId}'
      RETURNING id, name, slug, plan_type, is_visible, status, is_open;
   `);
