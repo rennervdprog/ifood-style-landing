@@ -18,7 +18,7 @@ export const PdvTabs = ({ tab, onChange }: Props) => (
   <div
     role="tablist"
     aria-label="Seções do PDV"
-    className="flex border-b border-border bg-card shrink-0"
+    className="flex border-b border-border bg-card shrink-0 overflow-x-auto no-scrollbar"
   >
     {TABS.map(({ id, label, icon: Icon }) => (
       <button
@@ -27,13 +27,13 @@ export const PdvTabs = ({ tab, onChange }: Props) => (
         aria-selected={tab === id}
         aria-label={label}
         onClick={() => onChange(id)}
-        className={`flex-1 sm:flex-initial px-4 py-2 text-xs font-bold flex items-center justify-center gap-1.5 border-b-2 transition-colors ${
+        className={`flex-1 sm:flex-initial min-w-0 px-2 sm:px-4 py-2 text-[11px] sm:text-xs font-bold flex items-center justify-center gap-1 sm:gap-1.5 border-b-2 transition-colors whitespace-nowrap ${
           tab === id
             ? "border-primary text-primary"
             : "border-transparent text-muted-foreground hover:text-foreground"
         }`}
       >
-        <Icon className="h-3.5 w-3.5" /> {label}
+        <Icon className="h-3.5 w-3.5 shrink-0" /> <span className="truncate">{label}</span>
       </button>
     ))}
   </div>
