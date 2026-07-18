@@ -491,6 +491,7 @@ const PdvPage = () => {
       troco,
       tableId,
       pdvCommissionRate: storePlan.pdvCommissionRate ?? 0,
+      operatorId: pdvOperator?.id ?? null,
     onSuccess: () => {
       setOrderDone(true);
       // Refresca o dashboard "Agora" após cada venda concluída.
