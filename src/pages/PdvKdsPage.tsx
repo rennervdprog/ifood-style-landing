@@ -153,7 +153,22 @@ export default function PdvKdsPage() {
     return g;
   }, [orders]);
 
-  if (!storeId || loading) {
+  if (!storeId) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-3 text-muted-foreground p-6 text-center">
+        <ChefHat className="h-8 w-8 text-primary" />
+        <p className="text-sm font-bold">Nenhuma loja ativa selecionada.</p>
+        <p className="text-xs">Abra o PDV primeiro e escolha uma loja para carregar o KDS.</p>
+        <button
+          onClick={() => navigate("/admin/pdv")}
+          className="mt-2 h-10 px-4 rounded-lg bg-primary text-primary-foreground text-xs font-black uppercase"
+        >
+          Ir para o PDV
+        </button>
+      </div>
+    );
+  }
+  if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center text-muted-foreground">
         <Loader2 className="h-6 w-6 animate-spin mr-2" /> Carregando KDS…
