@@ -434,6 +434,11 @@ const PdvPage = () => {
 
   // ── Finalizar venda (delegado a usePdvCheckout) ──
   const handleVenda = async () => {
+    // Se há comanda ativa: fecha a comanda em vez de criar venda avulsa.
+    if (selectedTabId) {
+      await handleCloseTab();
+      return;
+    }
     await runCheckout({
       store: store ?? null,
       session: currentSession,
