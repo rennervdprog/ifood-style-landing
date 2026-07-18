@@ -30,10 +30,24 @@ async def shot(page, name):
     except Exception: pass
 
 async def click_tab(page, pattern):
-    t = page.get_by_role("tab", name=re.compile(pattern, re.I))
-    if await t.count() == 0: return False
-    await t.first.click(); await asyncio.sleep(2)
-    return True
+    rx = re.compile(pattern, re.I)
+    for role in ("tab", "link", "button"):
+        t = page.get_by_role(role, name=rx)
+        if await t.count() > 0:
+            try:
+                await t.first.click(); await asyncio.sleep(2); return True
+            except Exception: pass
+    return False
+
+async def dismiss_tutorial(page):
+    # tutorial overlay: "Pular Tutorial" or close X
+    for pat in (r"Pular Tutorial", r"Pular"):
+        try:
+            b = page.get_by_role("button", name=re.compile(pat, re.I))
+            if await b.count() > 0:
+                await b.first.click(); await asyncio.sleep(1); return True
+        except Exception: pass
+    return False
 
 async def main():
     if not SESSION_PATH.exists():
@@ -57,6 +71,8 @@ async def main():
         # 1) Admin dashboard
         await page.goto(f"{BASE}/admin", wait_until="networkidle")
         await asyncio.sleep(3)
+        await dismiss_tutorial(page)
+        await asyncio.sleep(1)
         await shot(page, "01_admin")
         body = await page.locator("body").inner_text()
         rec("Admin loads", "PASS" if ("Pedidos" in body or "Dashboard" in body) else "FAIL")
