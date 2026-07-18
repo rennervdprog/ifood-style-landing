@@ -41,13 +41,20 @@ Deno.serve(async (req) => {
   steps.push({ step: "create_user", status: cr.status, id: cd?.id, msg: cd?.msg || cd?.error_description });
   if (cd?.id) userId = cd.id;
   else {
-    const lu = await fetch(`${URL_}/auth/v1/admin/users?filter=email.eq.${encodeURIComponent(EMAIL)}`, {
-      headers: { apikey: SVC, Authorization: `Bearer ${SVC}` },
-    });
-    const ld = await lu.json().catch(() => ({}));
-    const found = ld?.users?.find?.((u: any) => u.email === EMAIL);
-    if (!found?.id) return json({ error: "no user", steps }, 500);
-    userId = found.id;
+    // paginate through admin users to find by email
+    let page = 1;
+    while (page < 20 && !userId) {
+      const lu = await fetch(`${URL_}/auth/v1/admin/users?page=${page}&per_page=200`, {
+        headers: { apikey: SVC, Authorization: `Bearer ${SVC}` },
+      });
+      const ld = await lu.json().catch(() => ({}));
+      const arr = ld?.users || [];
+      const found = arr.find?.((u: any) => u.email === EMAIL);
+      if (found?.id) { userId = found.id; break; }
+      if (arr.length < 200) break;
+      page++;
+    }
+    if (!userId) return json({ error: "no user", steps }, 500);
     const upd = await fetch(`${URL_}/auth/v1/admin/users/${userId}`, {
       method: "PUT", headers: { apikey: SVC, Authorization: `Bearer ${SVC}`, "Content-Type": "application/json" },
       body: JSON.stringify({ password, email_confirm: true }),
