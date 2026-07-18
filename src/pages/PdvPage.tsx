@@ -138,6 +138,7 @@ const PdvPage = () => {
   const [openingAmount, setOpeningAmount] = useState("");
   // Ver relatórios sem abrir o caixa (a partir da tela de abertura)
   const [reportsNoSession, setReportsNoSession] = useState(false);
+  const [planNoSession, setPlanNoSession] = useState(false);
 
   // Venda — estado de carrinho/pagamento agora vive em usePdvCart.
   const [search, setSearch] = useState("");
