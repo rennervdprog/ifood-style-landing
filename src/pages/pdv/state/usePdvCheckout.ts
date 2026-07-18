@@ -62,6 +62,8 @@ export interface CheckoutContext {
   tableId: string;
   /** Comissão da loja (0–100) — geralmente vem de useStorePlan. */
   pdvCommissionRate: number;
+  /** Operador PIN logado (Fase 2) — grava em pdv_movements.operator_id. */
+  operatorId?: string | null;
   /** Callbacks de UI após sucesso. */
   onSuccess: () => void;
   onClearScheduled: () => void;
@@ -92,6 +94,7 @@ export function usePdvCheckout() {
         troco,
         tableId,
         pdvCommissionRate,
+        operatorId,
         onSuccess,
         onClearScheduled,
         onEmptiesFlowStart,
@@ -172,6 +175,7 @@ export function usePdvCheckout() {
           payment_method: primaryMethod,
           payments: paymentsPayload,
           created_by: createdBy,
+          operator_id: operatorId ?? null,
           items: cart.map((item) => ({
             product_id: item.id,
             quantity: item.quantity,
@@ -291,6 +295,7 @@ export function usePdvCheckout() {
             description: tableId || "Venda balcão",
             order_id: orderId!,
             created_by: createdBy,
+            operator_id: operatorId ?? null,
           })),
         );
         }
