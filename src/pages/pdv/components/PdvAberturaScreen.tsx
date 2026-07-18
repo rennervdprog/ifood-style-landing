@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowLeft, Loader2, Monitor, Unlock, User, KeyRound, LogOut } from "lucide-react";
+import { ArrowLeft, Loader2, Monitor, Unlock, User, KeyRound, LogOut, BarChart3 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { formatBRLDisplay, parseBRLCentsInput } from "@/hooks/useBRLInput";
 import { usePdvOperator } from "@/hooks/usePdvOperator";
@@ -12,9 +12,11 @@ interface Props {
   setOpeningAmount: (v: string) => void;
   onOpen: () => void;
   loading: boolean;
+  /** Se fornecido, exibe botão secundário "Ver relatórios" abaixo do card. */
+  onViewReports?: () => void;
 }
 
-export const PdvAberturaScreen = ({ storeName, storeId, openingAmount, setOpeningAmount, onOpen, loading }: Props) => {
+export const PdvAberturaScreen = ({ storeName, storeId, openingAmount, setOpeningAmount, onOpen, loading, onViewReports }: Props) => {
   const navigate = useNavigate();
   const { operator, setOperator } = usePdvOperator(storeId);
   const [pinOpen, setPinOpen] = useState(false);
@@ -101,6 +103,27 @@ export const PdvAberturaScreen = ({ storeName, storeId, openingAmount, setOpenin
               {operator ? "Abrir Caixa" : "Selecione o operador"}
             </button>
           </div>
+
+          {onViewReports && (
+            <>
+              <div className="flex items-center gap-3">
+                <div className="flex-1 h-px bg-border" />
+                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">ou</span>
+                <div className="flex-1 h-px bg-border" />
+              </div>
+              <button
+                type="button"
+                onClick={onViewReports}
+                className="w-full h-14 bg-card border border-border hover:border-primary/40 hover:bg-muted/40 text-foreground font-black text-sm rounded-2xl flex items-center justify-center gap-2.5 active:scale-[0.98] transition-all"
+              >
+                <BarChart3 className="h-5 w-5 text-primary" />
+                Ver relatórios
+              </button>
+              <p className="text-[11px] text-center text-muted-foreground -mt-2">
+                Consultar vendas anteriores sem abrir o caixa
+              </p>
+            </>
+          )}
         </form>
       </div>
 
