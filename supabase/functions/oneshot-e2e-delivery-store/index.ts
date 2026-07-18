@@ -37,15 +37,13 @@ Deno.serve(async (req) => {
   const owned = await sql(`SELECT id, name, slug, plan_type FROM public.stores WHERE owner_id='${userId}';`);
   steps.push({ step: "owned_stores", ...owned });
 
-  const up = await sql(`
-    INSERT INTO public.stores (name, slug, owner_id, plan_type, is_open, city, state)
-    VALUES ('E2E Delivery Teste', '${SLUG}', '${userId}', 'fixed', true, 'Itaquaquecetuba', 'SP')
-    ON CONFLICT (slug) DO UPDATE
-      SET owner_id = EXCLUDED.owner_id,
-          plan_type = 'fixed'
-    RETURNING id, name, slug, plan_type;
+  const activate = await sql(`
+    UPDATE public.stores
+       SET is_visible = true, status = 'active', is_open = true, force_closed = false
+     WHERE owner_id = '${userId}'
+     RETURNING id, name, slug, plan_type, is_visible, status, is_open;
   `);
-  steps.push({ step: "upsert_store", ...up });
+  steps.push({ step: "activate_owned_stores", ...activate });
 
   return json({ ok: true, user_id: userId, store: up.data?.[0], steps });
 });
