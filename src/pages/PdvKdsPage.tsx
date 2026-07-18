@@ -72,6 +72,20 @@ export default function PdvKdsPage() {
   useEffect(() => {
     if (!user?.id) return;
     (async () => {
+      // 1) Super admin: usa a loja selecionada no PDV (mesma chave).
+      try {
+        const adminStore = localStorage.getItem("pdv_admin_selected_store");
+        if (adminStore) { setStoreId(adminStore); return; }
+      } catch {}
+      // 2) Cache local da última loja aberta no PDV.
+      try {
+        const raw = localStorage.getItem("pdv_store_v1");
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed?.id) { setStoreId(parsed.id); return; }
+        }
+      } catch {}
+      // 3) Fallback: dono da loja.
       const { data } = await supabase.from("stores").select("id").eq("owner_id", user.id).maybeSingle();
       if (data?.id) setStoreId(data.id);
     })();
