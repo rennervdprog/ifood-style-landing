@@ -12,9 +12,6 @@ const SLUG = "e2e-delivery-teste";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: cors });
-  const ADMIN = Deno.env.get("EXTERNAL_CRON_SECRET") || "";
-  if (!ADMIN || req.headers.get("x-admin-secret") !== ADMIN) return json({ error: "unauthorized" }, 401);
-
   const REF = Deno.env.get("EXTERNAL_SUPABASE_PROJECT_REF")!;
   const PAT = Deno.env.get("EXTERNAL_SUPABASE_ACCESS_TOKEN")!;
 
