@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowLeft, Loader2, Monitor, Unlock, User, KeyRound, LogOut, BarChart3 } from "lucide-react";
+import { ArrowLeft, Loader2, Monitor, Unlock, User, KeyRound, LogOut, BarChart3, CreditCard } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { formatBRLDisplay, parseBRLCentsInput } from "@/hooks/useBRLInput";
 import { usePdvOperator } from "@/hooks/usePdvOperator";
@@ -14,9 +14,11 @@ interface Props {
   loading: boolean;
   /** Se fornecido, exibe botão secundário "Ver relatórios" abaixo do card. */
   onViewReports?: () => void;
+  /** Se fornecido, exibe botão "Meu Plano" (usado por lojas PDV Only). */
+  onViewPlan?: () => void;
 }
 
-export const PdvAberturaScreen = ({ storeName, storeId, openingAmount, setOpeningAmount, onOpen, loading, onViewReports }: Props) => {
+export const PdvAberturaScreen = ({ storeName, storeId, openingAmount, setOpeningAmount, onOpen, loading, onViewReports, onViewPlan }: Props) => {
   const navigate = useNavigate();
   const { operator, setOperator } = usePdvOperator(storeId);
   const [pinOpen, setPinOpen] = useState(false);
@@ -123,6 +125,17 @@ export const PdvAberturaScreen = ({ storeName, storeId, openingAmount, setOpenin
                 Consultar vendas anteriores sem abrir o caixa
               </p>
             </>
+          )}
+
+          {onViewPlan && (
+            <button
+              type="button"
+              onClick={onViewPlan}
+              className="w-full h-14 bg-card border border-border hover:border-primary/40 hover:bg-muted/40 text-foreground font-black text-sm rounded-2xl flex items-center justify-center gap-2.5 active:scale-[0.98] transition-all"
+            >
+              <CreditCard className="h-5 w-5 text-primary" />
+              Meu Plano & Mensalidades
+            </button>
           )}
         </form>
       </div>
