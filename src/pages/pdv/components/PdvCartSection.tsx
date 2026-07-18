@@ -283,6 +283,32 @@ export const PdvCartSection = ({
           const canFinalize =
             !loading && !orderDone && cart.length > 0 &&
             (splitMode ? splitComplete : (!!paymentMethod && !trocoNegativo));
+          const inTabMode = !!selectedTabId;
+          if (inTabMode) {
+            const canSend = !loading && !orderDone && cart.length > 0;
+            return (
+              <div className="space-y-1.5">
+                <button
+                  onClick={onSendToTab}
+                  disabled={!canSend}
+                  className="w-full h-12 bg-amber-500 hover:bg-amber-600 text-white font-black text-sm rounded-2xl flex items-center justify-center gap-2 active:scale-[0.98] transition-all shadow-lg shadow-amber-500/25 disabled:opacity-50"
+                >
+                  {loading ? <><Loader2 className="h-4 w-4 animate-spin" /> Enviando...</>
+                    : <><Send className="h-4 w-4" /> Enviar {totalItems} {totalItems === 1 ? "item" : "itens"} à comanda</>}
+                </button>
+                <button
+                  onClick={onFinalize}
+                  disabled={!canFinalize}
+                  className="w-full h-10 bg-primary/10 text-primary border border-primary/30 font-bold text-xs rounded-xl flex items-center justify-center gap-2 active:scale-[0.98] transition-all disabled:opacity-40"
+                >
+                  Cobrar e fechar comanda ({formatBRL(finalTotal)})
+                </button>
+                <p className="text-[10px] text-muted-foreground text-center pt-0.5">
+                  Para cobrar, escolha o método de pagamento acima.
+                </p>
+              </div>
+            );
+          }
           return (
             <button onClick={onFinalize}
               disabled={!canFinalize}
