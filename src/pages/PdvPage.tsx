@@ -392,6 +392,41 @@ const PdvPage = () => {
     if (isMobile) setMobileStep("catalog");
   };
 
+  // ── Enviar itens do carrinho para a comanda selecionada (Mesa/Comanda) ──
+  const handleSendToTab = async () => {
+    if (!selectedTabId || cart.length === 0) return;
+    setLoading(true);
+    try {
+      const { rpcAddTabItem } = await import("@/pages/pdv/state/usePdvTables");
+      for (const item of cart) {
+        await rpcAddTabItem({
+          tabId: selectedTabId,
+          productId: item.id,
+          name: item.name,
+          quantity: item.quantity,
+          unitPrice: item.price,
+          addons: item.addons ?? null,
+          observations: item.observations ?? null,
+          metadata: item.metadata ?? null,
+        });
+      }
+      queryClient.invalidateQueries({ queryKey: ["pdv-tabs-open", store?.id] });
+      queryClient.invalidateQueries({ queryKey: ["pdv-tab-items", selectedTabId] });
+      toast.success(`${cart.length} ${cart.length === 1 ? "item enviado" : "itens enviados"} à comanda`);
+      // Mantém a comanda selecionada para próximos envios; limpa só os itens.
+      setCart([]);
+      setPaymentMethod("");
+      setCashReceived("");
+      setSplitMode(false);
+      setSplitPayments([]);
+      if (isMobile) setMobileStep("catalog");
+    } catch (e: any) {
+      toast.error(`Falha ao enviar: ${e?.message ?? "erro"}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // ── Abrir caixa (delegado a usePdvSession) ──
   const handleAbrirCaixa = async () => {
     await openSession(parseBRL(openingAmount));
