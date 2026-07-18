@@ -135,6 +135,8 @@ const PdvPage = () => {
 
   // Abertura
   const [openingAmount, setOpeningAmount] = useState("");
+  // Ver relatórios sem abrir o caixa (a partir da tela de abertura)
+  const [reportsNoSession, setReportsNoSession] = useState(false);
 
   // Venda — estado de carrinho/pagamento agora vive em usePdvCart.
   const [search, setSearch] = useState("");
@@ -703,14 +705,33 @@ const PdvPage = () => {
   // ─────────────────────────────────────────────────────────────────────────
 
   if (screen === "abertura") return (
-    <PdvAberturaScreen
-      storeName={store?.name}
-      storeId={store?.id}
-      openingAmount={openingAmount}
-      setOpeningAmount={setOpeningAmount}
-      onOpen={handleAbrirCaixa}
-      loading={sessionLoading || loading}
-    />
+    reportsNoSession && store?.id ? (
+      <div className="pdv-shell min-h-screen bg-background flex flex-col">
+        <header className="h-14 border-b border-border flex items-center px-4 gap-3 bg-card shrink-0">
+          <button onClick={() => setReportsNoSession(false)} className="p-1.5 rounded-xl hover:bg-muted transition-colors">
+            <ArrowLeft className="h-5 w-5" />
+          </button>
+          <BarChart3 className="h-5 w-5 text-primary" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold truncate">{store?.name}</p>
+            <p className="text-[10px] text-muted-foreground">Relatórios · Caixa fechado</p>
+          </div>
+        </header>
+        <div className="flex-1 overflow-y-auto">
+          <PdvRelatorios storeId={store.id} />
+        </div>
+      </div>
+    ) : (
+      <PdvAberturaScreen
+        storeName={store?.name}
+        storeId={store?.id}
+        openingAmount={openingAmount}
+        setOpeningAmount={setOpeningAmount}
+        onOpen={handleAbrirCaixa}
+        loading={sessionLoading || loading}
+        onViewReports={() => setReportsNoSession(true)}
+      />
+    )
   );
 
   // ─────────────────────────────────────────────────────────────────────────
