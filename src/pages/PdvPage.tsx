@@ -22,6 +22,8 @@ import {
 import { PdvHistorico, PdvSessionsList } from "@/components/pdv/PdvHistorico";
 import ProductDetailModal from "@/components/ProductDetailModal";
 import type { CartAddon } from "@/contexts/CartContext";
+import { fetchProductAddons } from "@/lib/productAddons";
+import { hasPizzaCatalog } from "@/types/pizza";
 
 // Builders compartilhados com o app cliente — lazy para não pesar no PDV.
 const PizzaHalfHalfModal = lazy(() => import("@/components/PizzaHalfHalfModal"));
@@ -353,12 +355,33 @@ const PdvPage = () => {
 
   // Cart, derivados e ações foram extraídos para `usePdvCart`.
   // Mantemos só o wrapper `clearSale` para que ele também resete o passo mobile.
-  const addItem = (p: Product) => {
+  // No PDV, produtos simples (sem addons/tamanhos/pizza) devem ir direto ao
+  // carrinho — o modal só aparece quando há real necessidade de customização.
+  // Isso mantém o fluxo rápido de balcão (1 clique = 1 item).
+  const addItem = async (p: Product) => {
     if (p.sold_by_weight) {
       setWeightProduct(p);
       return;
     }
-    openProduct(p);
+    const meta: any = (p as any).metadata || {};
+    const hasSizes = Array.isArray(meta.sizes) && meta.sizes.length > 0;
+    const hasPizza = hasPizzaCatalog(meta);
+    const hasPastel = !!meta.pastel_builder || meta.builder_type === "pastel";
+    if (hasSizes || hasPizza || hasPastel) {
+      openProduct(p);
+      return;
+    }
+    try {
+      const { groups } = await fetchProductAddons(p.id);
+      if (groups && groups.length > 0) {
+        openProduct(p);
+      } else {
+        addScannedProduct(p);
+      }
+    } catch {
+      // Em caso de falha ao checar addons, abre o modal (comportamento antigo, seguro).
+      openProduct(p);
+    }
   };
   const clearSale = () => {
     clearSaleCart();
