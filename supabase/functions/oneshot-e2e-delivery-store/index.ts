@@ -45,5 +45,5 @@ Deno.serve(async (req) => {
   `);
   steps.push({ step: "activate_owned_stores", ...activate });
 
-  return json({ ok: true, user_id: userId, store: up.data?.[0], steps });
+  return json({ ok: true, user_id: userId, stores: activate.data, steps });
 });
