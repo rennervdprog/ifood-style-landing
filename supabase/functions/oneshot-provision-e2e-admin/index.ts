@@ -87,8 +87,8 @@ Deno.serve(async (req) => {
   // 2) Make user owner of the test store + ensure profile
   steps.push({ step: "upsert_profile", ...await runSql(`
     INSERT INTO public.profiles (user_id, email, full_name, role)
-    VALUES ('${userId}', '${EMAIL}', 'E2E Admin', 'admin')
-    ON CONFLICT (user_id) DO UPDATE SET email = EXCLUDED.email, role = 'admin';
+    VALUES ('${userId}', '${EMAIL}', 'E2E Admin', 'lojista')
+    ON CONFLICT (user_id) DO UPDATE SET email = EXCLUDED.email, role = 'lojista';
   `) });
   steps.push({ step: "set_owner", ...await runSql(`
     UPDATE public.stores SET owner_id = '${userId}' WHERE id = '${STORE_ID}';
