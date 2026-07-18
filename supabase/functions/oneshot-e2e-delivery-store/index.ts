@@ -31,19 +31,19 @@ Deno.serve(async (req) => {
   const userId = u.data?.[0]?.user_id;
   if (!userId) return json({ error: "e2e user not provisioned", steps }, 400);
 
-  // list stores this user owns
-  const owned = await sql(`SELECT id, name, slug, plan_type, is_active FROM public.stores WHERE owner_id='${userId}';`);
+  const cols = await sql(`SELECT column_name FROM information_schema.columns WHERE table_schema='public' AND table_name='stores' ORDER BY column_name;`);
+  steps.push({ step: "cols", ...cols });
+
+  const owned = await sql(`SELECT id, name, slug, plan_type FROM public.stores WHERE owner_id='${userId}';`);
   steps.push({ step: "owned_stores", ...owned });
 
-  // Upsert delivery store
   const up = await sql(`
-    INSERT INTO public.stores (name, slug, owner_id, plan_type, is_active, is_open, city, state)
-    VALUES ('E2E Delivery Teste', '${SLUG}', '${userId}', 'fixed', true, true, 'Itaquaquecetuba', 'SP')
+    INSERT INTO public.stores (name, slug, owner_id, plan_type, is_open, city, state)
+    VALUES ('E2E Delivery Teste', '${SLUG}', '${userId}', 'fixed', true, 'Itaquaquecetuba', 'SP')
     ON CONFLICT (slug) DO UPDATE
       SET owner_id = EXCLUDED.owner_id,
-          plan_type = 'fixed',
-          is_active = true
-    RETURNING id, name, slug, plan_type, is_active;
+          plan_type = 'fixed'
+    RETURNING id, name, slug, plan_type;
   `);
   steps.push({ step: "upsert_store", ...up });
 
