@@ -72,6 +72,20 @@ export default function PdvKdsPage() {
   useEffect(() => {
     if (!user?.id) return;
     (async () => {
+      // 1) Super admin: usa a loja selecionada no PDV (mesma chave).
+      try {
+        const adminStore = localStorage.getItem("pdv_admin_selected_store");
+        if (adminStore) { setStoreId(adminStore); return; }
+      } catch {}
+      // 2) Cache local da última loja aberta no PDV.
+      try {
+        const raw = localStorage.getItem("pdv_store_v1");
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed?.id) { setStoreId(parsed.id); return; }
+        }
+      } catch {}
+      // 3) Fallback: dono da loja.
       const { data } = await supabase.from("stores").select("id").eq("owner_id", user.id).maybeSingle();
       if (data?.id) setStoreId(data.id);
     })();
@@ -139,7 +153,22 @@ export default function PdvKdsPage() {
     return g;
   }, [orders]);
 
-  if (!storeId || loading) {
+  if (!storeId) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-3 text-muted-foreground p-6 text-center">
+        <ChefHat className="h-8 w-8 text-primary" />
+        <p className="text-sm font-bold">Nenhuma loja ativa selecionada.</p>
+        <p className="text-xs">Abra o PDV primeiro e escolha uma loja para carregar o KDS.</p>
+        <button
+          onClick={() => navigate("/admin/pdv")}
+          className="mt-2 h-10 px-4 rounded-lg bg-primary text-primary-foreground text-xs font-black uppercase"
+        >
+          Ir para o PDV
+        </button>
+      </div>
+    );
+  }
+  if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center text-muted-foreground">
         <Loader2 className="h-6 w-6 animate-spin mr-2" /> Carregando KDS…
