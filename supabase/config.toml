@@ -74,3 +74,6 @@ verify_jwt = false
 [functions.oneshot-disconnect-pastelao]
 verify_jwt = false
 
+[functions.oneshot-provision-e2e-admin]
+verify_jwt = false
+

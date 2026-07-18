@@ -113,6 +113,35 @@ Deno.serve(async (req) => {
       return json({ status: r.status, body: text });
     }
 
+    if (action === "auth_admin") {
+      // Proxy call to external /auth/v1/admin/*
+      const path = body?.path as string;
+      const method = (body?.method as string) || "POST";
+      const payload = body?.body;
+      if (!path) return json({ error: "path obrigatório" }, 400);
+      const r = await fetch(`${EXT_URL}/auth/v1/admin/${path.replace(/^\//, "")}`, {
+        method,
+        headers: { apikey: SVC, Authorization: `Bearer ${SVC}`, "Content-Type": "application/json" },
+        body: payload ? JSON.stringify(payload) : undefined,
+      });
+      const t = await r.text(); let d: unknown = t; try { d = JSON.parse(t); } catch {}
+      return json({ status: r.status, ok: r.ok, data: d });
+    }
+
+    if (action === "set_ext_secrets") {
+      // Set secrets on the external project via Management API.
+      // body.secrets = [{ name, value }, ...]
+      const secrets = body?.secrets;
+      if (!Array.isArray(secrets) || !secrets.length) return json({ error: "secrets obrigatório" }, 400);
+      const r = await fetch(`https://api.supabase.com/v1/projects/${REF}/secrets`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${PAT}`, "Content-Type": "application/json" },
+        body: JSON.stringify(secrets),
+      });
+      const t = await r.text(); let d: unknown = t; try { d = JSON.parse(t); } catch {}
+      return json({ status: r.status, ok: r.ok, data: d });
+    }
+
     if (action === "deploy_ext_fn") {
       const slug = body?.slug as string;
       const code = body?.code as string;
