@@ -30,13 +30,15 @@ interface Props {
 export function PdvOperatorLoginDialog({ open, storeId, onClose, onLogin, requiredRole, title }: Props) {
   const [ops, setOps] = useState<Op[]>([]);
   const [loading, setLoading] = useState(false);
-  const [step, setStep] = useState<"pick" | "pin" | "create">("pick");
+  const [step, setStep] = useState<"pick" | "pin" | "create" | "manager_gate">("pick");
   const [selected, setSelected] = useState<Op | null>(null);
   const [pin, setPin] = useState("");
   const [busy, setBusy] = useState(false);
   const [newName, setNewName] = useState("");
   const [newPin, setNewPin] = useState("");
   const [newRole, setNewRole] = useState<"operador" | "gerente">("operador");
+  const [managerPin, setManagerPin] = useState("");
+  const hasManager = ops.some((o) => o.role === "gerente");
 
   const load = async () => {
     setLoading(true);
@@ -54,10 +56,35 @@ export function PdvOperatorLoginDialog({ open, storeId, onClose, onLogin, requir
   };
 
   useEffect(() => {
-    if (open) { setPin(""); setSelected(null); setNewName(""); setNewPin(""); setNewRole("operador"); load(); }
+    if (open) { setPin(""); setSelected(null); setNewName(""); setNewPin(""); setNewRole("operador"); setManagerPin(""); load(); }
   }, [open, storeId]);
 
   if (!open) return null;
+
+  const requestCreate = () => {
+    // Se já existe pelo menos um gerente, exigir PIN de gerente para autorizar
+    // o cadastro de novos operadores. Se não há gerente ainda (bootstrap),
+    // permite criar o primeiro livremente.
+    if (hasManager) { setManagerPin(""); setStep("manager_gate"); }
+    else { setStep("create"); }
+  };
+
+  const verifyManagerAndOpenCreate = async () => {
+    if (managerPin.length < 4) { toast.error("PIN de 4 a 8 dígitos"); return; }
+    setBusy(true);
+    try {
+      const { data, error } = await supabase.rpc("pdv_verify_manager_pin" as any, { _store_id: storeId, _pin: managerPin } as any);
+      if (error) throw error;
+      const r = data as any;
+      if (!r?.ok) {
+        toast.error(r?.error === "not_manager" ? "PIN não pertence a um gerente" : "PIN incorreto");
+        setManagerPin(""); return;
+      }
+      setManagerPin(""); setStep("create");
+    } catch (e: any) {
+      toast.error(e.message || "Erro ao validar PIN");
+    } finally { setBusy(false); }
+  };
 
   const tryLogin = async () => {
     if (!selected) return;
@@ -188,11 +215,34 @@ export function PdvOperatorLoginDialog({ open, storeId, onClose, onLogin, requir
               </button>
             ))}
             {!requiredRole && (
-              <button onClick={() => setStep("create")}
+              <button onClick={requestCreate}
                 className="w-full flex items-center justify-center gap-2 p-3 rounded-xl border border-dashed border-border/60 text-xs font-bold text-muted-foreground hover:text-foreground hover:border-primary/40">
                 <Plus className="h-3.5 w-3.5" /> Adicionar operador
+                {hasManager && <Shield className="h-3 w-3 ml-1 opacity-60" />}
               </button>
             )}
+          </div>
+        ) : step === "manager_gate" ? (
+          <div className="p-5 space-y-4">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Shield className="h-4 w-4 text-primary" />
+              Autorização de gerente para cadastrar novo operador.
+            </div>
+            <input
+              autoFocus
+              value={managerPin}
+              onChange={(e) => setManagerPin(e.target.value.replace(/\D/g, "").slice(0, 8))}
+              onKeyDown={(e) => { if (e.key === "Enter") verifyManagerAndOpenCreate(); }}
+              inputMode="numeric" placeholder="PIN do gerente"
+              className="w-full px-3 py-3 bg-muted/40 rounded-xl text-center tracking-[0.5em] text-lg font-black focus:outline-none focus:ring-2 focus:ring-primary/40"
+            />
+            <button onClick={verifyManagerAndOpenCreate} disabled={busy || managerPin.length < 4}
+              className="w-full h-12 bg-primary text-primary-foreground rounded-xl font-black flex items-center justify-center gap-2 disabled:opacity-60">
+              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />} Autorizar
+            </button>
+            <button onClick={() => setStep("pick")} className="w-full text-xs text-muted-foreground hover:text-foreground">
+              ← Cancelar
+            </button>
           </div>
         ) : (
           <div className="p-5 space-y-4">
