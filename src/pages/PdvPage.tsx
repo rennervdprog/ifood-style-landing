@@ -1017,7 +1017,11 @@ const PdvPage = () => {
                   drawerEnabled={drawerEnabled}
                 />
                 <PdvCartSection
-                  cart={cart} tableId={tableId} setTableId={setTableId}
+                  cart={cart} storeId={store?.id}
+                  tableId={tableId} setTableId={setTableId}
+                  selectedTable={selectedTable} setSelectedTable={setSelectedTable}
+                  selectedTabId={selectedTabId} setSelectedTabId={setSelectedTabId}
+                  onSendToTab={handleSendToTab}
                   totalItems={totalItems} clearSale={clearSale}
                   subtotal={subtotal} discountAmount={discountAmount} finalTotal={finalTotal}
                   showDiscount={showDiscount} setShowDiscount={setShowDiscount}
@@ -1098,7 +1102,11 @@ const PdvPage = () => {
                   </div>
                   <div className="flex-1 overflow-hidden flex flex-col">
                     <PdvCartSection
-                      cart={cart} tableId={tableId} setTableId={setTableId}
+                      cart={cart} storeId={store?.id}
+                      tableId={tableId} setTableId={setTableId}
+                      selectedTable={selectedTable} setSelectedTable={setSelectedTable}
+                      selectedTabId={selectedTabId} setSelectedTabId={setSelectedTabId}
+                      onSendToTab={handleSendToTab}
                       totalItems={totalItems} clearSale={clearSale}
                       subtotal={subtotal} discountAmount={discountAmount} finalTotal={finalTotal}
                       showDiscount={showDiscount} setShowDiscount={setShowDiscount}
