@@ -1,12 +1,14 @@
-import { ShoppingCart, History, Receipt, BarChart3, LayoutGrid } from "lucide-react";
+import { ShoppingCart, History, Receipt, BarChart3, LayoutGrid, CreditCard } from "lucide-react";
 import type { PdvTab } from "@/pages/pdv/types";
 
 interface Props {
   tab: PdvTab;
   onChange: (t: PdvTab) => void;
+  /** Mostra a aba "Meu Plano" (apenas lojas PDV Only). */
+  showMeuPlano?: boolean;
 }
 
-const TABS: { id: PdvTab; label: string; icon: any }[] = [
+const BASE_TABS: { id: PdvTab; label: string; icon: any }[] = [
   { id: "venda", label: "Vender", icon: ShoppingCart },
   { id: "mesas", label: "Mesas", icon: LayoutGrid },
   { id: "historico", label: "Histórico", icon: History },
@@ -14,13 +16,17 @@ const TABS: { id: PdvTab; label: string; icon: any }[] = [
   { id: "relatorios", label: "Relatórios", icon: BarChart3 },
 ];
 
-export const PdvTabs = ({ tab, onChange }: Props) => (
+export const PdvTabs = ({ tab, onChange, showMeuPlano }: Props) => {
+  const tabs = showMeuPlano
+    ? [...BASE_TABS, { id: "meu_plano" as PdvTab, label: "Meu Plano", icon: CreditCard }]
+    : BASE_TABS;
+  return (
   <div
     role="tablist"
     aria-label="Seções do PDV"
     className="flex border-b border-border bg-card shrink-0 overflow-x-auto no-scrollbar"
   >
-    {TABS.map(({ id, label, icon: Icon }) => (
+    {tabs.map(({ id, label, icon: Icon }) => (
       <button
         key={id}
         role="tab"
@@ -37,4 +43,5 @@ export const PdvTabs = ({ tab, onChange }: Props) => (
       </button>
     ))}
   </div>
-);
+  );
+};
