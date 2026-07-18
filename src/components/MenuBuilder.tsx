@@ -354,7 +354,8 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
       weight_unit: "kg",
     } as any);
     if (error) {
-      toast.error("Erro ao adicionar produto");
+      console.error("[MenuBuilder] insert products failed:", error);
+      toast.error(`Erro ao adicionar produto: ${error.message || error.code || "desconhecido"}`);
       return;
     }
     toast.success("Produto adicionado!");
