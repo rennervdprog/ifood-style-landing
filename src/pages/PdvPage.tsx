@@ -148,6 +148,8 @@ const PdvPage = () => {
     cart, setCart,
     paymentMethod, setPaymentMethod,
     tableId, setTableId,
+    selectedTable, setSelectedTable,
+    selectedTabId, setSelectedTabId,
     discountType, setDiscountType,
     discountInput, setDiscountInput,
     showDiscount, setShowDiscount,
@@ -390,6 +392,78 @@ const PdvPage = () => {
     if (isMobile) setMobileStep("catalog");
   };
 
+  // ── Enviar itens do carrinho para a comanda selecionada (Mesa/Comanda) ──
+  const handleSendToTab = async () => {
+    if (!selectedTabId || cart.length === 0) return;
+    setLoading(true);
+    try {
+      const { rpcAddTabItem } = await import("@/pages/pdv/state/usePdvTables");
+      for (const item of cart) {
+        await rpcAddTabItem({
+          tabId: selectedTabId,
+          productId: item.id,
+          name: item.name,
+          quantity: item.quantity,
+          unitPrice: item.price,
+          addons: item.addons ?? null,
+          observations: item.observations ?? null,
+          metadata: item.metadata ?? null,
+        });
+      }
+      queryClient.invalidateQueries({ queryKey: ["pdv-tabs-open", store?.id] });
+      queryClient.invalidateQueries({ queryKey: ["pdv-tab-items", selectedTabId] });
+      toast.success(`${cart.length} ${cart.length === 1 ? "item enviado" : "itens enviados"} à comanda`);
+      // Mantém a comanda selecionada para próximos envios; limpa só os itens.
+      setCart([]);
+      setPaymentMethod("");
+      setCashReceived("");
+      setSplitMode(false);
+      setSplitPayments([]);
+      if (isMobile) setMobileStep("catalog");
+    } catch (e: any) {
+      toast.error(`Falha ao enviar: ${e?.message ?? "erro"}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ── Cobrar e fechar comanda selecionada ──
+  const handleCloseTab = async () => {
+    if (!selectedTabId || !currentSession?.id) return;
+    // Se ainda há itens no carrinho, envia-os primeiro para a comanda.
+    if (cart.length > 0) {
+      await handleSendToTab();
+    }
+    const payments = splitMode && splitPayments.length > 0
+      ? splitPayments.map((p) => ({ method: p.method, amount: Number(p.amount) }))
+      : (paymentMethod ? [{ method: paymentMethod, amount: finalTotal }] : []);
+    if (payments.length === 0) {
+      toast.error("Escolha o método de pagamento para fechar a comanda.");
+      return;
+    }
+    setLoading(true);
+    try {
+      const { rpcCloseTab } = await import("@/pages/pdv/state/usePdvTables");
+      await rpcCloseTab({
+        tabId: selectedTabId,
+        sessionId: currentSession.id,
+        payments,
+        pdvDiscount: discountAmount,
+        commissionRate: storePlan.pdvCommissionRate ?? 0,
+      });
+      queryClient.invalidateQueries({ queryKey: ["pdv-tabs-open", store?.id] });
+      queryClient.invalidateQueries({ queryKey: ["pdv-tables", store?.id] });
+      queryClient.invalidateQueries({ queryKey: ["pdv-now", currentSession?.id] });
+      toast.success("Comanda fechada!");
+      setOrderDone(true);
+      clearSale();
+    } catch (e: any) {
+      toast.error(`Falha ao fechar comanda: ${e?.message ?? "erro"}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // ── Abrir caixa (delegado a usePdvSession) ──
   const handleAbrirCaixa = async () => {
     await openSession(parseBRL(openingAmount));
@@ -397,6 +471,11 @@ const PdvPage = () => {
 
   // ── Finalizar venda (delegado a usePdvCheckout) ──
   const handleVenda = async () => {
+    // Se há comanda ativa: fecha a comanda em vez de criar venda avulsa.
+    if (selectedTabId) {
+      await handleCloseTab();
+      return;
+    }
     await runCheckout({
       store: store ?? null,
       session: currentSession,
@@ -980,7 +1059,11 @@ const PdvPage = () => {
                   drawerEnabled={drawerEnabled}
                 />
                 <PdvCartSection
-                  cart={cart} tableId={tableId} setTableId={setTableId}
+                  cart={cart} storeId={store?.id}
+                  tableId={tableId} setTableId={setTableId}
+                  selectedTable={selectedTable} setSelectedTable={setSelectedTable}
+                  selectedTabId={selectedTabId} setSelectedTabId={setSelectedTabId}
+                  onSendToTab={handleSendToTab}
                   totalItems={totalItems} clearSale={clearSale}
                   subtotal={subtotal} discountAmount={discountAmount} finalTotal={finalTotal}
                   showDiscount={showDiscount} setShowDiscount={setShowDiscount}
@@ -1061,7 +1144,11 @@ const PdvPage = () => {
                   </div>
                   <div className="flex-1 overflow-hidden flex flex-col">
                     <PdvCartSection
-                      cart={cart} tableId={tableId} setTableId={setTableId}
+                      cart={cart} storeId={store?.id}
+                      tableId={tableId} setTableId={setTableId}
+                      selectedTable={selectedTable} setSelectedTable={setSelectedTable}
+                      selectedTabId={selectedTabId} setSelectedTabId={setSelectedTabId}
+                      onSendToTab={handleSendToTab}
                       totalItems={totalItems} clearSale={clearSale}
                       subtotal={subtotal} discountAmount={discountAmount} finalTotal={finalTotal}
                       showDiscount={showDiscount} setShowDiscount={setShowDiscount}

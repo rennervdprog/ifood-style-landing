@@ -23,6 +23,9 @@ export function usePdvCart() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [paymentMethod, setPaymentMethod] = useState("");
   const [tableId, setTableId] = useState("");
+  // Seleção real de mesa/comanda (v1.20.12 — integração com pdv_tables/pdv_tabs)
+  const [selectedTable, setSelectedTable] = useState<{ id: string; label: string } | null>(null);
+  const [selectedTabId, setSelectedTabId] = useState<string | null>(null);
   const [discountType, setDiscountType] = useState<"R$" | "%">("R$");
   const [discountInput, setDiscountInput] = useState("");
   const [showDiscount, setShowDiscount] = useState(false);
@@ -186,6 +189,8 @@ export function usePdvCart() {
     setCart([]);
     setPaymentMethod("");
     setTableId("");
+    setSelectedTable(null);
+    setSelectedTabId(null);
     setDiscountType("R$");
     setDiscountInput("");
     setShowDiscount(false);
@@ -203,6 +208,10 @@ export function usePdvCart() {
     setPaymentMethod,
     tableId,
     setTableId,
+    selectedTable,
+    setSelectedTable,
+    selectedTabId,
+    setSelectedTabId,
     discountType,
     setDiscountType,
     discountInput,
