@@ -77,7 +77,7 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
     queryKey: ["pdv-relatorio-operators", storeId, sessionId, dateRange.start, dateRange.end],
     queryFn: async () => {
       let q = (supabase.from("pdv_movements" as any) as any)
-        .select("amount, created_by")
+        .select("amount, created_by, operator_id")
         .eq("store_id", storeId)
         .eq("type", "sale")
         .gte("created_at", dateRange.start)
@@ -85,22 +85,38 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
       if (sessionId) q = q.eq("session_id", sessionId);
       const { data } = await q;
       const rows = (data || []) as any[];
-      const map: Record<string, { user_id: string; total: number; count: number }> = {};
+      const map: Record<string, { key: string; operator_id: string | null; user_id: string | null; total: number; count: number }> = {};
       rows.forEach((m) => {
-        const uid = m.created_by || "sem-operador";
-        if (!map[uid]) map[uid] = { user_id: uid, total: 0, count: 0 };
-        map[uid].total += Number(m.amount || 0);
-        map[uid].count += 1;
+        const key = m.operator_id || m.created_by || "sem-operador";
+        if (!map[key]) map[key] = {
+          key,
+          operator_id: m.operator_id || null,
+          user_id: m.operator_id ? null : (m.created_by || null),
+          total: 0, count: 0,
+        };
+        map[key].total += Number(m.amount || 0);
+        map[key].count += 1;
       });
-      const ids = Object.keys(map).filter((id) => id !== "sem-operador");
-      let names: Record<string, string> = {};
-      if (ids.length) {
+      const opIds = Object.values(map).map((o) => o.operator_id).filter(Boolean) as string[];
+      const userIds = Object.values(map).map((o) => o.user_id).filter(Boolean) as string[];
+      const names: Record<string, string> = {};
+      if (opIds.length) {
+        const { data: ops } = await (supabase as any)
+          .from("pdv_operators").select("id, name").in("id", opIds);
+        (ops || []).forEach((p: any) => { names[p.id] = p.name || "Operador"; });
+      }
+      if (userIds.length) {
         const { data: profs } = await (supabase as any)
-          .from("profiles").select("id, name, email").in("id", ids);
+          .from("profiles").select("id, name, email").in("id", userIds);
         (profs || []).forEach((p: any) => { names[p.id] = p.name || p.email || "Operador"; });
       }
       return Object.values(map)
-        .map((o) => ({ ...o, name: names[o.user_id] || "Sem operador" }))
+        .map((o) => ({
+          user_id: o.key,
+          total: o.total,
+          count: o.count,
+          name: names[o.operator_id || o.user_id || ""] || "Sem operador",
+        }))
         .sort((a, b) => b.total - a.total);
     },
     enabled: !!storeId,
