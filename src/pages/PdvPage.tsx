@@ -1008,6 +1008,13 @@ const PdvPage = () => {
         </div>
       )}
 
+      {/* ── MEU PLANO (PDV Only) ── */}
+      {tab === "meu_plano" && store?.id && (
+        <div className="flex-1 overflow-y-auto">
+          <StoreSubscription storeId={store.id} storeName={store.name || ""} />
+        </div>
+      )}
+
       {/* ── VENDA ── */}
       {tab === "venda" && (
         <>
