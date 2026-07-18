@@ -73,7 +73,7 @@ Deno.serve(async (req) => {
   // 2) create store (fresh, owned by new user)
   steps.push({ step: "create_store", ...await sql(`
     INSERT INTO public.stores (owner_id, name, slug, category, plan_type, is_visible, status, is_open, force_closed, delivery_enabled, is_test)
-    VALUES ('${userId}', '${STORE_NAME}', '${STORE_SLUG}', 'Lanches', 'essencial', true, 'ativo', true, false, true, true)
+    VALUES ('${userId}', '${STORE_NAME}', '${STORE_SLUG}', 'lanches', 'essencial', true, 'ativo', true, false, true, true)
     ON CONFLICT (slug) DO UPDATE SET owner_id=EXCLUDED.owner_id, is_visible=true, status='ativo', is_open=true, force_closed=false
     RETURNING id, slug, name, plan_type, status;
   `) });
