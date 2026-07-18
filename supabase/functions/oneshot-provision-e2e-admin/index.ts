@@ -44,7 +44,7 @@ Deno.serve(async (req) => {
     const r = await fetch(`${URL_}/auth/v1/admin/users`, {
       method: "POST",
       headers: { apikey: SVC, Authorization: `Bearer ${SVC}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ email: EMAIL, password, email_confirm: true, user_metadata: { role: "e2e" } }),
+      body: JSON.stringify({ email: EMAIL, password, email_confirm: true, user_metadata: { full_name: "E2E Admin" } }),
     });
     const t = await r.text();
     let d: any; try { d = JSON.parse(t); } catch { d = t; }
@@ -86,9 +86,9 @@ Deno.serve(async (req) => {
 
   // 2) Make user owner of the test store + ensure profile
   steps.push({ step: "upsert_profile", ...await runSql(`
-    INSERT INTO public.profiles (id, email, full_name)
-    VALUES ('${userId}', '${EMAIL}', 'E2E Admin')
-    ON CONFLICT (id) DO UPDATE SET email = EXCLUDED.email;
+    INSERT INTO public.profiles (user_id, email, full_name, role)
+    VALUES ('${userId}', '${EMAIL}', 'E2E Admin', 'lojista')
+    ON CONFLICT (user_id) DO UPDATE SET email = EXCLUDED.email, role = 'lojista';
   `) });
   steps.push({ step: "set_owner", ...await runSql(`
     UPDATE public.stores SET owner_id = '${userId}' WHERE id = '${STORE_ID}';
