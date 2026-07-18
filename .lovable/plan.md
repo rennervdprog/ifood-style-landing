@@ -1,76 +1,70 @@
+# Mesa/Comanda funcional no carrinho da aba Vender
 
-# Plano — Troca de Plano correta + Antifraude reforçado
+## Problema atual
+O input "Mesa / Comanda" no topo do carrinho (`PdvCartSection.tsx`) é apenas texto livre. Ele é salvo em `orders.table_identifier` mas **não conversa** com o módulo real de Mesas & Comandas (Fase B: `pdv_tables` / `pdv_tabs`). Ou seja:
 
-Objetivo: fechar todos os gaps reais listados na auditoria, sem inventar features novas.
+- Não ocupa a mesa (continua "Livre" na aba Mesas).
+- Não adiciona os itens numa comanda aberta — cria uma venda direta separada.
+- Digitar o mesmo número várias vezes gera vendas independentes em vez de acumular na mesma comanda.
+- Não valida se a mesa existe.
 
----
+## Objetivo
+Transformar o campo em um seletor real que:
+1. Lista mesas cadastradas + comandas abertas.
+2. Permite "Enviar para comanda" (acumula na mesa/comanda) OU "Venda avulsa" (comportamento atual).
+3. Cria/reutiliza automaticamente a `pdv_tab` da mesa selecionada.
 
-## Parte 1 — Troca de Plano (fica funcional de verdade)
+## Escopo
 
-### 1.1 Aplicar prorata de fato
-- Adicionar coluna `billing_credit_cents INT NOT NULL DEFAULT 0` em `store_plans` (se não existir).
-- Alterar RPC `approve_plan_change`:
-  - Ler `prorata_credit` da solicitação.
-  - Somar em `store_plans.billing_credit_cents`.
-  - `monthly-billing` já deve descontar esse crédito antes de gerar a cobrança (ajustar edge function pra ler/zerar o crédito ao usar).
+### 1. Substituir input por seletor (`PdvTableSelector`)
+Novo componente no lugar do `<input>` da linha 58:
+- Botão compacto que abre popover.
+- Popover mostra:
+  - **Mesas livres** (chips clicáveis).
+  - **Comandas abertas** (mesa + total atual + tempo aberta).
+  - Opção "Balcão / Avulsa" (limpa seleção).
+  - Opção "Comanda avulsa (sem mesa)" com campo nome/código.
+- Badge de estado: `Balcão` | `Mesa 5` | `Mesa 5 · Comanda #ab12` | `Comanda: João`.
 
-### 1.2 Recalcular ciclo de cobrança na troca
-- Em `approve_plan_change`: setar `last_billed_at = now()` e `next_billing_date = now() + interval '30 days'` quando o plano muda de tipo/fee, evitando cobrança em data velha.
+### 2. Novo modo do carrinho
+State `saleMode: "direct" | "tab"` em `usePdvCart`:
+- `direct` (padrão): fluxo atual — botão "Finalizar" cobra e fecha venda.
+- `tab`: quando uma mesa/comanda é selecionada, o botão principal vira **"Enviar para comanda"** (não cobra, só acumula itens via RPC existente `pdv_tab_add_item`). Botão secundário **"Cobrar e fechar"** faz checkout + fecha comanda.
 
-### 1.3 Destinos de troca consistentes
-- Em `StoreSubscription.tsx`: substituir lista hardcoded (`fixed`, `autonomy`) por consulta a `plan_templates` (mesma fonte do admin), filtrando o plano atual e `pdv_only`.
-- Manter labels/preços vindos do template pra não divergir do painel admin.
+### 3. RPCs / integração
+Reaproveitar o que já existe (Fase B):
+- `pdv_open_tab(store_id, table_id, code, customer_name)` → cria/retorna `tab_id`.
+- `pdv_tab_add_item(tab_id, product_id, qty, unit_price, addons, notes)` → grava item.
+- `pdv_tab_close(tab_id, payment_method, ...)` → fecha e gera `order`.
 
-### 1.4 Histórico auditável
-- Em `approve_plan_change` e `reject_plan_change`: inserir linha em `admin_logs` (`action='plan_change_approved'|'rejected'`, `target_store_id`, payload com from/to/fee/prorata).
+Se algum item do carrinho for adicionado no modo `tab`, ao clicar "Enviar":
+- Abre/reutiliza tab da mesa selecionada.
+- Faz loop enviando cada item.
+- Limpa carrinho e mostra toast "3 itens enviados para Mesa 5".
 
-### 1.5 Unificar caminho do auto-upgrade Autonomia Dinâmica
-- `respond_essencial_upgrade` passa a criar uma linha em `plan_change_requests` com `status='approved'` e chama a mesma lógica interna de `approve_plan_change` (via função auxiliar `_apply_plan_change(store_id, new_plan, ...)`), pra ter histórico e prorata iguais.
+### 4. Ajustes em `usePdvCheckout`
+- Se `saleMode === "tab"` e usuário clicar "Cobrar e fechar": chamar `pdv_tab_close` em vez do fluxo de venda direta.
+- Preservar `table_identifier` no order (compat).
 
----
+### 5. Realtime / UX
+- Seletor assina `pdv_tabs` para refletir comandas abertas em tempo real (já tem hook `usePdvTables`).
+- Ao enviar itens, invalidar query de mesas para atualizar totais.
+- Feedback visual claro: cor do header do carrinho muda quando em modo comanda (borda âmbar).
 
-## Parte 2 — Antifraude (fechar os buracos)
+## Fora de escopo
+- Mudar a aba Mesas (continua como está).
+- Divisão de conta por pessoa dentro da comanda.
+- Impressão automática de comanda de cozinha (já existe via KDS).
 
-### 2.1 Rate-limit por IP + device no cadastro
-- `register_as_lojista` passa a receber `p_ip TEXT, p_device_id TEXT` e gravar em `signup_attempts`.
-- Regras adicionais: máx **5 tentativas / 24 h por IP** e **3 / 24 h por device_id**.
-- Frontend do cadastro coleta `device_id` (fingerprint leve: `crypto.randomUUID()` persistido em `localStorage` + `navigator.userAgent` hash) e IP vem via header no edge function que chama o RPC.
+## Arquivos afetados
+- `src/pages/pdv/components/PdvCartSection.tsx` — substitui input, adiciona botão duplo.
+- `src/pages/pdv/components/PdvTableSelector.tsx` — **novo**.
+- `src/pages/pdv/state/usePdvCart.ts` — adiciona `saleMode`, `selectedTable`, `selectedTabId`.
+- `src/pages/pdv/state/usePdvCheckout.ts` — branch para fechar comanda.
+- `src/pages/PdvPage.tsx` — propaga novos props.
 
-### 2.2 Lista de e-mails descartáveis expandida
-- Substituir lista inline por pacote `disposable-email-domains` (JSON estático ~3.500 domínios) carregado no edge function `register-lojista-guarded` (novo wrapper) que valida e chama o RPC.
+## Versão
+Bump para **v1.20.12 / build 1040** ao final.
 
-### 2.3 Verificação de WhatsApp por OTP
-- Novo edge function `send-whatsapp-otp` (usa Evolution API já configurada) + `verify-whatsapp-otp`.
-- Código de 6 dígitos, TTL 10 min, tabela `whatsapp_otp` (hash do código, expires_at, attempts).
-- `register_as_lojista` exige `whatsapp_verified_at` no perfil antes de criar a loja.
-
-### 2.4 Fraude do cliente: fail-closed razoável
-- `fraudCheck.ts`:
-  - `MAX_DISTANCE_KM` passa a ser lido de `stores.max_delivery_km` (default 15 km).
-  - Quando GPS negado E `deliveryCity` ausente → **bloqueia** (fail-closed) em vez de deixar passar.
-  - Após **3 tentativas bloqueadas em 1 h** do mesmo `user_id` ou device → bloquear novos pedidos por 24 h (checar contagem em `fraud_attempts`).
-
-### 2.5 Garantir unicidade CPF/CNPJ
-- Migração idempotente: se `stores.cnpj_cpf` não existir, criar coluna + índice único parcial. Backfill a partir de `profiles.document` quando possível.
-
-### 2.6 CAPTCHA no cadastro
-- Adicionar hCaptcha (grátis) no formulário de cadastro de lojista; token validado no edge function wrapper antes de chamar o RPC.
-
----
-
-## Ordem de execução (5 entregas)
-
-1. **DB migration**: `billing_credit_cents`, `stores.cnpj_cpf` (se faltar), tabela `whatsapp_otp`, colunas IP/device já usadas em `signup_attempts`.
-2. **RPCs**: `approve_plan_change` v2, `_apply_plan_change`, `register_as_lojista` v2 (IP/device/otp).
-3. **Edge functions**: `register-lojista-guarded` (hCaptcha + disposable list + IP), `send-whatsapp-otp`, `verify-whatsapp-otp`, ajuste `monthly-billing` (consumir crédito).
-4. **Frontend**: `StoreSubscription.tsx` dinâmico, cadastro com hCaptcha + OTP WhatsApp + device_id, `fraudCheck.ts` fail-closed + limite por loja.
-5. **Bump versão** + smoke test Playwright (pedir troca de plano → admin aprova → conferir crédito aplicado na próxima fatura simulada; tentar cadastro com e-mail descartável / sem OTP → bloqueado).
-
----
-
-## Fora de escopo (confirmar se quer incluir)
-- SMS OTP (custo por mensagem — WhatsApp OTP já cobre o caso).
-- Serviço pago tipo Kickbox pra e-mail (lista estática já reduz 95%).
-- Score de risco por machine learning.
-
-Aprova esse plano ou quer ajustar prioridades / remover alguma parte?
+## Verificação
+- E2E: adicionar 2 itens → selecionar Mesa 3 → "Enviar" → aba Mesas mostra Mesa 3 ocupada com 2 itens → adicionar mais 1 → total acumula → "Cobrar e fechar" → venda registrada e mesa volta a livre.
