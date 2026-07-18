@@ -72,6 +72,7 @@ import { PdvTabs } from "@/pages/pdv/components/PdvTabs";
 import { PdvStatusBar } from "@/pages/pdv/components/PdvStatusBar";
 import { PdvSessionCard } from "@/pages/pdv/components/PdvSessionCard";
 import { PdvMesasView } from "@/pages/pdv/components/PdvMesasView";
+import StoreSubscription from "@/components/StoreSubscription";
 
 // Detecta se está em tela mobile (< 768px)
 const useIsMobile = () => {
