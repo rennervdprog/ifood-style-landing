@@ -37,8 +37,6 @@ export function usePdvShortcuts({
   enabled = true,
 }: ShortcutHandlers) {
   useEffect(() => {
-    if (!enabled) return;
-
     const isTyping = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement | null;
       if (!t) return false;
@@ -70,14 +68,20 @@ export function usePdvShortcuts({
         return;
       }
 
+      // F1 (ajuda) sempre funciona — atalho global
+      if (e.key === "F1") {
+        e.preventDefault();
+        onHelp?.();
+        return;
+      }
+
+      // Demais atalhos exigem contexto de venda ativo
+      if (!enabled) return;
+
       // Demais atalhos não funcionam enquanto está digitando
       if (isTyping(e) && e.key !== "Escape") return;
 
       switch (e.key) {
-        case "F1":
-          e.preventDefault();
-          onHelp?.();
-          break;
         case "F2":
           e.preventDefault();
           onSearchFocus?.();
