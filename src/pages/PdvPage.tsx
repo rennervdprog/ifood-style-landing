@@ -960,6 +960,9 @@ const PdvPage = () => {
         outboxFlushing={outboxFlushing}
         onSyncOutbox={() => flushOutbox(false)}
         isPdvOnly={pdvAccess.source === "pdv_only"}
+        onOpenMeuPlano={
+          pdvAccess.source === "pdv_only" ? () => setTab("meu_plano") : undefined
+        }
       />
 
       <PdvTabs
