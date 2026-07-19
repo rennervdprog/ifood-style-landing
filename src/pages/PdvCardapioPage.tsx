@@ -1,13 +1,19 @@
-import { useEffect } from "react";
+import { useEffect, useMemo, useState, lazy, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2, BookOpen, Layers, Pizza } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStorePdvAccess } from "@/hooks/useStorePdvAccess";
 import { toast } from "sonner";
 import MenuBuilder from "@/components/MenuBuilder";
 import { PdvQuickGridEditor } from "@/pages/pdv/components/PdvQuickGridEditor";
+
+// Sub-tabs pesadas — lazy para não pesar no primeiro paint do PDV.
+const AddonManager = lazy(() => import("@/components/AddonManager"));
+const BordasTab = lazy(() => import("@/pages/admin/tabs/BordasTab"));
+
+type SubTab = "cardapio" | "adicionais" | "pizza_pastel";
 
 /** Cardápio standalone acessível a partir do PDV (principalmente pra lojas pdv_only,
  *  que não têm painel do lojista). Renderiza o mesmo MenuBuilder do painel. */
@@ -24,7 +30,7 @@ const PdvCardapioPage = () => {
         const adminStoreId = localStorage.getItem("pdv_admin_selected_store");
         if (adminStoreId) {
           const { data } = await supabase
-            .from("stores").select("id, name, category")
+            .from("stores").select("id, name, category, categories")
             .eq("id", adminStoreId).maybeSingle();
           if (data) return data;
         }
@@ -39,7 +45,7 @@ const PdvCardapioPage = () => {
       } catch {}
       const { data } = await supabase
         .from("stores")
-        .select("id, name, category")
+        .select("id, name, category, categories")
         .eq("owner_id", user!.id)
         .maybeSingle();
       return data;
@@ -47,6 +53,14 @@ const PdvCardapioPage = () => {
   });
 
   const pdvAccess = useStorePdvAccess(store?.id);
+
+  const cats = useMemo(() => {
+    if (!store) return [] as string[];
+    return [store.category, ...(((store as any).categories || []) as string[])].filter(Boolean);
+  }, [store]);
+  const showPizzaPastel = cats.includes("pizzas") || cats.includes("pasteis");
+
+  const [sub, setSub] = useState<SubTab>("cardapio");
 
   useEffect(() => {
     if (!user) navigate("/", { replace: true });
@@ -98,9 +112,50 @@ const PdvCardapioPage = () => {
         <div className="w-px h-5 bg-border" />
         <span className="text-sm font-bold">Cardápio · {store.name}</span>
       </header>
+
+      {/* Sub-abas: Cardápio / Adicionais / Pizza-Pastel */}
+      <div className="sticky top-12 z-10 bg-card border-b border-border">
+        <div className="flex gap-1 overflow-x-auto px-2">
+          {([
+            { key: "cardapio", label: "Cardápio", icon: BookOpen },
+            { key: "adicionais", label: "Adicionais", icon: Layers },
+            ...(showPizzaPastel
+              ? [{ key: "pizza_pastel" as SubTab, label: cats.includes("pizzas") ? "Pizza / Pastel" : "Pastel", icon: Pizza }]
+              : []),
+          ] as { key: SubTab; label: string; icon: typeof BookOpen }[]).map(({ key, label, icon: Icon }) => (
+            <button
+              key={key}
+              onClick={() => setSub(key)}
+              className={`flex items-center gap-1.5 px-3 py-2.5 text-xs font-bold whitespace-nowrap border-b-2 transition-colors ${
+                sub === key
+                  ? "border-primary text-primary"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Icon className="h-3.5 w-3.5" />
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div className="p-3">
-        <PdvQuickGridEditor storeId={store.id} />
-        <MenuBuilder storeId={store.id} storeCategory={store.category} />
+        {sub === "cardapio" && (
+          <>
+            <PdvQuickGridEditor storeId={store.id} />
+            <MenuBuilder storeId={store.id} storeCategory={store.category} />
+          </>
+        )}
+        {sub === "adicionais" && (
+          <Suspense fallback={<Loader2 className="h-5 w-5 animate-spin text-primary mx-auto mt-6" />}>
+            <AddonManager storeId={store.id} />
+          </Suspense>
+        )}
+        {sub === "pizza_pastel" && showPizzaPastel && (
+          <Suspense fallback={<Loader2 className="h-5 w-5 animate-spin text-primary mx-auto mt-6" />}>
+            <BordasTab storeId={store.id} category={store.category} categories={(store as any).categories} />
+          </Suspense>
+        )}
       </div>
     </div>
   );
