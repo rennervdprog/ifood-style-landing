@@ -56,7 +56,7 @@ export function PdvOperatorLoginDialog({ open, storeId, onClose, onLogin, requir
   };
 
   useEffect(() => {
-    if (open) { setPin(""); setSelected(null); setNewName(""); setNewPin(""); setNewRole("operador"); setManagerPin(""); load(); }
+    if (open) { setPin(""); setSelected(null); setNewName(""); setNewPin(""); setNewRole("gerente"); setManagerPin(""); load(); }
   }, [open, storeId]);
 
   if (!open) return null;
@@ -110,6 +110,14 @@ export function PdvOperatorLoginDialog({ open, storeId, onClose, onLogin, requir
   const createOp = async () => {
     if (newName.trim().length < 2) { toast.error("Nome muito curto"); return; }
     if (!/^[0-9]{4,8}$/.test(newPin)) { toast.error("PIN deve ter 4 a 8 dígitos"); return; }
+    // Regra: se ainda não existe nenhum gerente, o primeiro operador cadastrado
+    // OBRIGATORIAMENTE precisa ser gerente. Isso garante que sempre haja alguém
+    // com alçada para autorizar sangrias e cadastrar novos operadores.
+    if (!hasManager && newRole !== "gerente") {
+      toast.error("Cadastre primeiro um gerente antes de criar operadores.");
+      setNewRole("gerente");
+      return;
+    }
     setBusy(true);
     try {
       const { error } = await supabase.rpc("pdv_upsert_operator" as any, {
