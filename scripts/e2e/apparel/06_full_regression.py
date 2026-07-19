@@ -2,7 +2,7 @@
 Fluxo: abre PDV, valida grade visual de variantes, faz venda com decremento
 de estoque, aplica vale-crédito de cliente e imprime etiqueta.
 Requer storage_state autenticado com dono da loja apparel."""
-import asyncio, os
+import asyncio, os, re
 from pathlib import Path
 from playwright.async_api import async_playwright, expect
 
@@ -41,7 +41,7 @@ async def main():
                 await page.wait_for_timeout(300)
                 await shot(page, "03_add_variant")
                 # Botão Etiquetas
-                labels_btn = page.get_by_role("button", name=/Etiquetas/i)
+                labels_btn = page.get_by_role("button", name=re.compile(r"Etiquetas", re.I))
                 if await labels_btn.count():
                     await labels_btn.first.click()
                     await page.wait_for_timeout(500)
@@ -54,7 +54,7 @@ async def main():
         if await phone.count():
             await phone.first.fill("11999990001")
             await shot(page, "05_customer")
-            buscar = page.get_by_role("button", name=/Buscar/i)
+            buscar = page.get_by_role("button", name=re.compile(r"Buscar", re.I))
             if await buscar.count():
                 await buscar.first.click()
                 await page.wait_for_timeout(700)
@@ -64,7 +64,7 @@ async def main():
         await page.goto(f"{BASE}/admin/pdv?tab=historico", wait_until="domcontentloaded")
         await page.wait_for_load_state("networkidle")
         await shot(page, "07_historico")
-        dev_btn = page.get_by_role("button", name=/Devolver/i)
+        dev_btn = page.get_by_role("button", name=re.compile(r"Devolver", re.I))
         if await dev_btn.count():
             await dev_btn.first.click()
             await page.wait_for_timeout(500)
