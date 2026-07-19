@@ -26,6 +26,11 @@ async def main():
         # 1) Vender — matriz visual
         await page.goto(f"{BASE}/admin/pdv", wait_until="domcontentloaded")
         await page.wait_for_load_state("networkidle")
+        # Super admin store picker — choose apparel store if visible
+        picker = page.get_by_text("E2E Boutique", exact=False)
+        if await picker.count():
+            await picker.first.click()
+            await page.wait_for_load_state("networkidle")
         await shot(page, "01_vender")
 
         # Abre matriz da primeira peça
