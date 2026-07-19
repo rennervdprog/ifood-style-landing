@@ -17,6 +17,8 @@ interface Props {
   searchInputRef: RefObject<HTMLInputElement | null>;
   /** Slot opcional renderizado acima da busca (ex.: Monte sua Pizza/Pastel). */
   topSlot?: ReactNode;
+  /** Slot renderizado DENTRO da área rolável, antes dos produtos (scrolla junto). */
+  scrollTopSlot?: ReactNode;
   /** Esconde as pills de categoria (quando já há sidebar externa). */
   hideSectionTabs?: boolean;
   /** Lista bruta de produtos, pra lookup por pdv_short_code. */
@@ -26,7 +28,7 @@ interface Props {
 export const PdvCatalogSection = ({
   search, setSearch, sections, activeSection, setActiveSection,
   grouped, prodLoading, getQty, addItem, decItem, searchInputRef, topSlot,
-  hideSectionTabs, allProducts,
+  scrollTopSlot, hideSectionTabs, allProducts,
 }: Props) => {
   const [code, setCode] = useState("");
   const submitCode = () => {
@@ -92,6 +94,7 @@ export const PdvCatalogSection = ({
 
     {/* Produtos */}
     <div className="flex-1 overflow-y-auto px-2 pb-3 space-y-3">
+      {scrollTopSlot}
       {prodLoading ? (
         <div className="flex items-center justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
       ) : Object.keys(grouped).length === 0 ? (
