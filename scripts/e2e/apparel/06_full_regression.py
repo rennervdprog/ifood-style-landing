@@ -31,6 +31,7 @@ async def main():
         if await picker.count():
             await picker.first.click()
             await page.wait_for_load_state("networkidle")
+            await page.wait_for_timeout(1500)
         await shot(page, "01_vender")
 
         # Abre matriz da primeira peça
