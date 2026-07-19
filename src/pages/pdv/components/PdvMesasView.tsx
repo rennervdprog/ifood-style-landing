@@ -489,8 +489,10 @@ function TabDrawer({
   const [showClose, setShowClose] = useState(false);
   const [showTransfer, setShowTransfer] = useState(false);
   const [showCancel, setShowCancel] = useState(false);
+  const [mobileView, setMobileView] = useState<"itens" | "add">("itens");
 
   const total = items.reduce((s, it) => s + Number(it.quantity) * Number(it.unit_price), 0);
+  const itemCount = items.reduce((s, it) => s + Number(it.quantity), 0);
 
   const filteredProducts = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -498,11 +500,21 @@ function TabDrawer({
     return products.filter((p) => p.name.toLowerCase().includes(q)).slice(0, 30);
   }, [products, query]);
 
+  const qtyByProduct = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const it of items) {
+      if (!it.product_id) continue;
+      m.set(it.product_id, (m.get(it.product_id) ?? 0) + Number(it.quantity));
+    }
+    return m;
+  }, [items]);
+
   const addProduct = async (p: Product) => {
     try {
       await rpcAddTabItem({
         tabId, productId: p.id, name: p.name, quantity: 1, unitPrice: Number(p.price ?? 0),
       });
+      haptic.light();
       refetchItems();
     } catch (e: any) {
       toast.error(e?.message ?? "Falha ao adicionar");
@@ -520,111 +532,176 @@ function TabDrawer({
     }
   };
 
+  const tableLabel = tab?.table_id
+    ? tables.find((t) => t.id === tab.table_id)?.label
+    : tab?.code ? `Comanda #${tab.code}` : "Comanda";
+
+  const ProductsList = (
+    <div className="flex flex-col overflow-hidden h-full">
+      <div className="p-2 border-b border-border">
+        <div className="relative">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+          <input
+            autoFocus
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Buscar produto..."
+            className="w-full border border-input rounded-md pl-8 pr-3 py-2.5 text-sm bg-background"
+          />
+        </div>
+      </div>
+      <div className="flex-1 overflow-y-auto p-2 space-y-1">
+        {filteredProducts.map((p) => {
+          const q = qtyByProduct.get(p.id) ?? 0;
+          return (
+            <button
+              key={p.id}
+              onClick={() => addProduct(p)}
+              className="w-full text-left px-3 py-2.5 rounded-md hover:bg-accent active:bg-accent border border-transparent hover:border-border flex items-center gap-2"
+            >
+              {q > 0 && (
+                <span className="shrink-0 h-6 min-w-6 px-1.5 rounded-full bg-primary text-primary-foreground text-[11px] font-black flex items-center justify-center tabular-nums">
+                  {q}
+                </span>
+              )}
+              <span className="flex-1 text-sm font-semibold truncate">{p.name}</span>
+              <span className="text-sm font-bold tabular-nums shrink-0">
+                {formatBRL(Number(p.price ?? 0))}
+              </span>
+              <Plus className="h-4 w-4 text-primary shrink-0" />
+            </button>
+          );
+        })}
+        {filteredProducts.length === 0 && (
+          <p className="text-xs text-muted-foreground text-center py-6">Nenhum produto</p>
+        )}
+      </div>
+    </div>
+  );
+
+  const ItemsList = (
+    <div className="flex flex-col overflow-hidden h-full">
+      <div className="flex-1 overflow-y-auto p-2 space-y-1.5">
+        {items.length === 0 && (
+          <div className="text-center py-10 px-4">
+            <Receipt className="h-8 w-8 text-muted-foreground/40 mx-auto mb-2" />
+            <p className="text-xs text-muted-foreground">
+              Nenhum item ainda. Toque em <b>“Adicionar”</b> para começar.
+            </p>
+          </div>
+        )}
+        {items.map((it) => (
+          <div key={it.id} className="flex items-center justify-between gap-2 p-2.5 rounded-md bg-card border border-border">
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <span className="shrink-0 h-7 min-w-7 px-1.5 rounded-md bg-primary/10 text-primary text-xs font-black flex items-center justify-center tabular-nums">
+                {it.quantity}×
+              </span>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold truncate">{it.name}</p>
+                <p className="text-[10px] text-muted-foreground tabular-nums">
+                  {formatBRL(Number(it.unit_price))} · {formatBRL(Number(it.quantity) * Number(it.unit_price))}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => removeItem(it.id)}
+              className="h-9 w-9 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 flex items-center justify-center shrink-0"
+              aria-label="Remover"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 flex items-end sm:items-center sm:justify-center" onClick={onClose}>
+    <div className="fixed inset-0 z-50 bg-black/60 flex items-end sm:items-center sm:justify-center" onClick={onClose}>
       <div
-        className="bg-background w-full sm:max-w-3xl sm:rounded-lg max-h-[92vh] flex flex-col"
+        className="bg-background w-full h-[96vh] sm:h-auto sm:max-w-3xl sm:max-h-[92vh] sm:rounded-xl rounded-t-2xl flex flex-col overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between p-3 border-b border-border">
-          <div>
-            <h3 className="font-bold text-sm">
-              {tab?.table_id
-                ? tables.find((t) => t.id === tab.table_id)?.label
-                : tab?.code ? `Comanda #${tab.code}` : "Comanda"}
-            </h3>
-            {tab?.customer_name && (
-              <p className="text-[10px] text-muted-foreground">{tab.customer_name}</p>
-            )}
+        {/* Header */}
+        <div className="flex items-center justify-between p-3 border-b border-border shrink-0">
+          <div className="mx-auto sm:hidden absolute top-1.5 left-1/2 -translate-x-1/2 h-1 w-10 rounded-full bg-muted" />
+          <div className="min-w-0">
+            <h3 className="font-black text-base truncate">{tableLabel}</h3>
+            <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+              {tab && <span>Aberta há {timeAgo(tab.opened_at)}</span>}
+              {tab?.customer_name && <span>· {tab.customer_name}</span>}
+            </div>
           </div>
-          <button onClick={onClose} className="p-1"><X className="h-4 w-4" /></button>
+          <button onClick={onClose} className="h-9 w-9 rounded-md hover:bg-accent flex items-center justify-center shrink-0">
+            <X className="h-4 w-4" />
+          </button>
         </div>
 
-        <div className="grid sm:grid-cols-2 flex-1 overflow-hidden">
-          {/* Produtos */}
-          <div className="border-r border-border flex flex-col overflow-hidden">
-            <div className="p-2 border-b border-border">
-              <input
-                autoFocus
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Buscar produto..."
-                className="w-full border border-input rounded-md px-3 py-2 text-sm bg-background"
-              />
-            </div>
-            <div className="flex-1 overflow-y-auto p-2 space-y-1">
-              {filteredProducts.map((p) => (
-                <button
-                  key={p.id}
-                  onClick={() => addProduct(p)}
-                  className="w-full text-left p-2 rounded-md hover:bg-accent flex items-center justify-between"
-                >
-                  <span className="text-xs font-semibold truncate">{p.name}</span>
-                  <span className="text-xs font-bold tabular-nums shrink-0 ml-2">
-                    {formatBRL(Number(p.price ?? 0))}
-                  </span>
-                </button>
-              ))}
-              {filteredProducts.length === 0 && (
-                <p className="text-xs text-muted-foreground text-center py-4">Nenhum produto</p>
-              )}
-            </div>
-          </div>
+        {/* Mobile tabs */}
+        <div className="sm:hidden flex border-b border-border shrink-0">
+          <button
+            onClick={() => setMobileView("itens")}
+            className={`flex-1 text-xs font-bold py-2.5 border-b-2 ${
+              mobileView === "itens" ? "border-primary text-primary" : "border-transparent text-muted-foreground"
+            }`}
+          >
+            Itens ({itemCount})
+          </button>
+          <button
+            onClick={() => setMobileView("add")}
+            className={`flex-1 text-xs font-bold py-2.5 border-b-2 flex items-center justify-center gap-1 ${
+              mobileView === "add" ? "border-primary text-primary" : "border-transparent text-muted-foreground"
+            }`}
+          >
+            <Plus className="h-3.5 w-3.5" /> Adicionar
+          </button>
+        </div>
 
-          {/* Itens da comanda */}
-          <div className="flex flex-col overflow-hidden">
-            <div className="flex-1 overflow-y-auto p-2 space-y-1">
-              {items.length === 0 && (
-                <p className="text-xs text-muted-foreground text-center py-6">
-                  Nenhum item na comanda ainda
-                </p>
-              )}
-              {items.map((it) => (
-                <div key={it.id} className="flex items-center justify-between p-2 rounded-md bg-card border border-border">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold truncate">
-                      {it.quantity}× {it.name}
-                    </p>
-                    <p className="text-[10px] text-muted-foreground tabular-nums">
-                      {formatBRL(Number(it.unit_price))} · Subtotal {formatBRL(Number(it.quantity) * Number(it.unit_price))}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => removeItem(it.id)}
-                    className="p-1 text-muted-foreground hover:text-destructive"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              ))}
-            </div>
+        {/* Body */}
+        <div className="flex-1 overflow-hidden">
+          {/* Desktop: split */}
+          <div className="hidden sm:grid grid-cols-2 h-full">
+            <div className="border-r border-border">{ProductsList}</div>
+            {ItemsList}
+          </div>
+          {/* Mobile: single view */}
+          <div className="sm:hidden h-full">
+            {mobileView === "itens" ? ItemsList : ProductsList}
           </div>
         </div>
 
-        <div className="border-t border-border p-3 space-y-2">
+        {/* Footer */}
+        <div className="border-t border-border p-3 space-y-2 shrink-0 bg-background">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-muted-foreground">Total</span>
-            <span className="text-lg font-black tabular-nums">{formatBRL(total)}</span>
+            <div>
+              <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Total</div>
+              <div className="text-2xl font-black tabular-nums leading-none">{formatBRL(total)}</div>
+            </div>
+            <div className="text-right text-[10px] text-muted-foreground">
+              {itemCount} {itemCount === 1 ? "item" : "itens"}
+            </div>
           </div>
-          <div className="grid grid-cols-3 gap-1.5">
+          <div className="grid grid-cols-5 gap-1.5">
             <button
               onClick={() => setShowTransfer(true)}
-              className="text-[11px] font-bold px-2 py-2 rounded-md border border-border hover:bg-accent flex items-center justify-center gap-1"
+              className="col-span-1 h-11 rounded-md border border-border hover:bg-accent flex items-center justify-center"
+              aria-label="Transferir"
             >
-              <ArrowRightLeft className="h-3 w-3" /> Transferir
+              <ArrowRightLeft className="h-4 w-4" />
             </button>
             <button
               onClick={() => setShowCancel(true)}
-              className="text-[11px] font-bold px-2 py-2 rounded-md border border-destructive/40 text-destructive hover:bg-destructive/10 flex items-center justify-center gap-1"
+              className="col-span-1 h-11 rounded-md border border-destructive/40 text-destructive hover:bg-destructive/10 flex items-center justify-center"
+              aria-label="Cancelar comanda"
             >
-              <XCircle className="h-3 w-3" /> Cancelar
+              <XCircle className="h-4 w-4" />
             </button>
             <button
               onClick={() => setShowClose(true)}
               disabled={items.length === 0 || !session}
-              className="text-[11px] font-bold px-2 py-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 flex items-center justify-center gap-1"
+              className="col-span-3 h-11 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 flex items-center justify-center gap-1.5 font-bold text-sm"
             >
-              <Receipt className="h-3 w-3" /> Fechar
+              <Receipt className="h-4 w-4" /> Fechar {formatBRL(total)}
             </button>
           </div>
           {!session && (
