@@ -527,7 +527,7 @@ const PdvPage = () => {
       tableId,
       pdvCommissionRate: storePlan.pdvCommissionRate ?? 0,
       operatorId: pdvOperator?.id ?? null,
-    onSuccess: () => {
+    onSuccess: ({ orderId }) => {
       setOrderDone(true);
       // Refresca o dashboard "Agora" após cada venda concluída.
       queryClient.invalidateQueries({ queryKey: ["pdv-now", currentSession?.id] });
@@ -545,6 +545,40 @@ const PdvPage = () => {
             } catch {}
           }
           queryClient.invalidateQueries({ queryKey: ["apparel-variants", store?.id] });
+        })();
+      }
+      // Fase 4.2 Boutique — CRM + vale-crédito
+      if (isApparel && store?.id && orderId) {
+        (async () => {
+          try {
+            const phone = apparelCustomer.phone.trim();
+            if (phone) {
+              // Anexa telefone/nome ao pedido criado (usado depois pela devolução)
+              try {
+                await supabase.from("orders").update({
+                  customer_phone: phone,
+                  customer_name: apparelCustomer.name || null,
+                } as any).eq("id", orderId);
+              } catch {}
+              await (supabase as any).rpc("apparel_touch_customer", {
+                _store_id: store.id,
+                _phone: phone,
+                _name: apparelCustomer.name || null,
+                _preferred_size: null,
+                _amount: Math.max(0, finalTotal),
+              });
+            }
+            if (apparelCredit) {
+              await (supabase as any).rpc("apparel_apply_credit", {
+                _credit_id: apparelCredit.id,
+                _order_id: orderId,
+                _amount: apparelCredit.amount,
+              });
+            }
+          } catch (e) { console.warn("[Boutique] CRM/credit post-sale skipped:", e); }
+          // Limpa cliente/vale para próxima venda
+          setApparelCustomer({ phone: "", name: "" });
+          setApparelCredit(null);
         })();
       }
     },
