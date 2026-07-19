@@ -278,6 +278,8 @@ const PdvPage = () => {
     initialDataUpdatedAt: 0,
   });
 
+  const isApparel = (store as any)?.store_type === "apparel";
+
   // Lista de lojas para o seletor (apenas admin, apenas quando sem loja ativa)
   const { data: adminStores } = useQuery({
     queryKey: ["pdv-admin-stores"],
