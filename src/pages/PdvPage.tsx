@@ -1297,6 +1297,16 @@ const PdvPage = () => {
                     <span className="text-xl font-black text-primary pdv-mono">{formatBRL(finalTotal)}</span>
                   </div>
                   <div className="flex-1 overflow-hidden flex flex-col">
+                    {isApparel && !selectedTabId && (
+                      <ApparelCustomerPanel
+                        storeId={store?.id}
+                        customer={apparelCustomer}
+                        onCustomerChange={setApparelCustomer}
+                        credit={apparelCredit}
+                        onCreditChange={setApparelCredit}
+                        finalTotal={finalTotal}
+                      />
+                    )}
                     <PdvCartSection
                       cart={cart} storeId={store?.id}
                       tableId={tableId} setTableId={setTableId}
