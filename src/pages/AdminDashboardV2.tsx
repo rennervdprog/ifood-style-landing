@@ -1694,6 +1694,19 @@ const AdminDashboard = () => {
     : false;
 
   // ── RENDER ──
+  // PDV-only: enquanto o plano carrega OU quando é pdv_only, não renderizar
+  // o dashboard de delivery — evita flash da UI errada antes do redirect.
+  if (storePlan.isLoading || isPdvOnly) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3 text-muted-foreground">
+          <div className="h-8 w-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+          <span className="text-sm">Carregando…</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <TrialExpiredGuard storePlan={storePlan} storeId={store?.id || ""}>
     <div className="min-h-screen bg-background flex native-app">
