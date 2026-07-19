@@ -168,7 +168,7 @@ type PizzaPriceMode = "maior" | "media" | "soma";
     queryFn: async () => {
       const { data: storeData } = await supabase
         .from("stores")
-        .select("asaas_wallet_id, asaas_activation_status")
+        .select("asaas_wallet_id")
         .eq("id", storeId)
         .maybeSingle();
       if (!storeData?.asaas_wallet_id) return null;
