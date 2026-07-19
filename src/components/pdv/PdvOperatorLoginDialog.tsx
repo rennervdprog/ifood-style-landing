@@ -56,7 +56,7 @@ export function PdvOperatorLoginDialog({ open, storeId, onClose, onLogin, requir
   };
 
   useEffect(() => {
-    if (open) { setPin(""); setSelected(null); setNewName(""); setNewPin(""); setNewRole("operador"); setManagerPin(""); load(); }
+    if (open) { setPin(""); setSelected(null); setNewName(""); setNewPin(""); setNewRole("gerente"); setManagerPin(""); load(); }
   }, [open, storeId]);
 
   if (!open) return null;
@@ -110,6 +110,14 @@ export function PdvOperatorLoginDialog({ open, storeId, onClose, onLogin, requir
   const createOp = async () => {
     if (newName.trim().length < 2) { toast.error("Nome muito curto"); return; }
     if (!/^[0-9]{4,8}$/.test(newPin)) { toast.error("PIN deve ter 4 a 8 dígitos"); return; }
+    // Regra: se ainda não existe nenhum gerente, o primeiro operador cadastrado
+    // OBRIGATORIAMENTE precisa ser gerente. Isso garante que sempre haja alguém
+    // com alçada para autorizar sangrias e cadastrar novos operadores.
+    if (!hasManager && newRole !== "gerente") {
+      toast.error("Cadastre primeiro um gerente antes de criar operadores.");
+      setNewRole("gerente");
+      return;
+    }
     setBusy(true);
     try {
       const { error } = await supabase.rpc("pdv_upsert_operator" as any, {
@@ -150,8 +158,18 @@ export function PdvOperatorLoginDialog({ open, storeId, onClose, onLogin, requir
           <div className="p-10 flex justify-center"><Loader2 className="h-5 w-5 animate-spin text-primary" /></div>
         ) : step === "create" ? (
           <div className="p-5 space-y-4">
-            {ops.length === 0 && (
-              <p className="text-xs text-muted-foreground">Nenhum operador cadastrado. Crie o primeiro para começar.</p>
+            {!hasManager && (
+              <div className="rounded-2xl border border-primary/30 bg-primary/5 p-4 space-y-2">
+                <div className="flex items-center gap-2">
+                  <Shield className="h-4 w-4 text-primary" />
+                  <p className="text-xs font-black uppercase text-primary">Passo 1 · Cadastre o gerente</p>
+                </div>
+                <p className="text-[11px] leading-relaxed text-muted-foreground">
+                  Antes de qualquer operador, é preciso ter <b>ao menos um gerente</b>.
+                  O gerente autoriza sangrias acima do limite e libera o cadastro de novos operadores.
+                  Depois de criado, você poderá adicionar operadores comuns normalmente.
+                </p>
+              </div>
             )}
             <div className="space-y-2">
               <label className="text-[11px] font-bold uppercase text-muted-foreground">Nome</label>
@@ -168,8 +186,10 @@ export function PdvOperatorLoginDialog({ open, storeId, onClose, onLogin, requir
               <label className="text-[11px] font-bold uppercase text-muted-foreground">Perfil</label>
               <div className="grid grid-cols-2 gap-2">
                 {(["operador","gerente"] as const).map((r) => (
-                  <button key={r} type="button" onClick={() => setNewRole(r)}
-                    className={`h-11 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 border transition-colors ${
+                  <button key={r} type="button"
+                    onClick={() => { if (!hasManager && r === "operador") return; setNewRole(r); }}
+                    disabled={!hasManager && r === "operador"}
+                    className={`h-11 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
                       newRole === r ? "bg-primary text-primary-foreground border-primary"
                                     : "bg-muted/40 text-muted-foreground border-border hover:bg-muted"
                     }`}>
@@ -179,7 +199,9 @@ export function PdvOperatorLoginDialog({ open, storeId, onClose, onLogin, requir
                 ))}
               </div>
               <p className="text-[10px] text-muted-foreground">
-                Gerente pode autorizar sangrias acima do limite configurado.
+                {hasManager
+                  ? "Gerente pode autorizar sangrias acima do limite configurado."
+                  : "O primeiro cadastro precisa ser um gerente. Você poderá criar operadores em seguida."}
               </p>
             </div>
             <button onClick={createOp} disabled={busy}
