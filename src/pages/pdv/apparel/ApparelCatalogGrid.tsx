@@ -45,7 +45,7 @@ export default function ApparelCatalogGrid({ storeId, products, addItem, getQty 
         .select("id, product_id, size, color, stock_qty, price_override, sku, barcode, active")
         .in("product_id", ids)
         .eq("active", true);
-      return (data || []) as Variant[];
+      return ((data || []) as unknown) as Variant[];
     },
   });
 
