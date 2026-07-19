@@ -21,9 +21,12 @@ type SubTab = "cardapio" | "adicionais" | "pizza_pastel" | "boutique";
 const PdvCardapioPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const selectedAdminStoreId = useMemo(() => {
+    try { return localStorage.getItem("pdv_admin_selected_store"); } catch { return null; }
+  }, []);
 
   const { data: store, isFetched } = useQuery({
-    queryKey: ["pdv-cardapio-store", user?.id],
+    queryKey: ["pdv-cardapio-store", user?.id, selectedAdminStoreId],
     enabled: !!user?.id,
     queryFn: async () => {
       const { data: adminRole } = await supabase
@@ -36,7 +39,7 @@ const PdvCardapioPage = () => {
       // 1) Super-admin operando loja fake/sandbox: respeitar seleção do PDV.
       if (adminRole) {
         try {
-          const adminStoreId = localStorage.getItem("pdv_admin_selected_store");
+          const adminStoreId = selectedAdminStoreId;
           if (adminStoreId) {
             const { data } = await supabase
               .from("stores").select("id, name, category, categories, store_type")
