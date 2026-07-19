@@ -1380,7 +1380,7 @@ const PdvPage = () => {
         onClick={() => navigate("/admin/cardapio")}
         title="Gerenciar cardápio"
         aria-label="Gerenciar cardápio"
-        className="fixed bottom-4 right-4 z-40 h-12 w-12 rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center justify-center border-2 border-background"
+        className="fixed bottom-20 md:bottom-4 right-4 z-40 h-12 w-12 rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center justify-center border-2 border-background"
       >
         <Plus className="h-6 w-6" />
       </button>
