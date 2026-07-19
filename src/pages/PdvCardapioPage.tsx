@@ -67,6 +67,10 @@ const PdvCardapioPage = () => {
   const [sub, setSub] = useState<SubTab>("cardapio");
 
   useEffect(() => {
+    if (isApparel && sub === "cardapio") setSub("boutique");
+  }, [isApparel]); // eslint-disable-line
+
+  useEffect(() => {
     if (!user) navigate("/", { replace: true });
   }, [user, navigate]);
 
