@@ -106,6 +106,10 @@ async def main():
         # 5) Health
         rec("Console errors", "PASS" if not console_errs else "FAIL", f"{len(console_errs)}")
         rec("Supabase 4xx/5xx", "PASS" if not net_errs else "FAIL", f"{len(net_errs)}")
+        print("\n--- console errors ---")
+        for e in console_errs[:10]: print(e[:300])
+        print("\n--- net errors ---")
+        for e in net_errs[:10]: print(e[:300])
 
         await b.close()
 

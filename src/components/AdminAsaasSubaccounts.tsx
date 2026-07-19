@@ -23,13 +23,13 @@ const AdminAsaasSubaccounts = () => {
       // Lojas que possuem subconta configurada
       const { data, error } = await supabase
         .from("stores")
-        .select("id, name, asaas_account_id, asaas_activation_status, asaas_documents_sent, status")
+        .select("id, name, asaas_account_id, asaas_documents_sent, status")
         .not("asaas_account_id", "is", null);
       
       if (error) throw error;
 
       // Para cada loja, vamos buscar o status de ativação (se disponível no banco)
-      return data || [];
+      return (data || []).map((s: any) => ({ ...s, asaas_activation_status: null }));
     },
   });
 
