@@ -1170,6 +1170,14 @@ const PdvPage = () => {
               {mobileStep === "catalog" && (
                 <>
                   <div className="flex-1 overflow-hidden flex flex-col">
+                    {isApparel ? (
+                      <ApparelCatalogGrid
+                        storeId={store!.id}
+                        products={products}
+                        addItem={addItem}
+                        getQty={getQty}
+                      />
+                    ) : (
                     <PdvCatalogSection
                       search={search} setSearch={setSearch}
                       sections={sections} activeSection={activeSection} setActiveSection={setActiveSection}
@@ -1195,6 +1203,7 @@ const PdvPage = () => {
                         </>
                       }
                     />
+                    )}
                   </div>
                   {/* Bottom bar — ir ao carrinho */}
                   {cart.length > 0 && (
