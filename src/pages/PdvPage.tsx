@@ -1137,12 +1137,6 @@ const PdvPage = () => {
               {/* Etapa: catálogo */}
               {mobileStep === "catalog" && (
                 <>
-                  <PdvNowCard
-                    sessionId={currentSession?.id}
-                    vendasTotal={turnoVendido}
-                    vendasCount={turnoVendasCount}
-                    ticketMedio={ticketMedio}
-                  />
                   <div className="flex-1 overflow-hidden flex flex-col">
                     <PdvCatalogSection
                       search={search} setSearch={setSearch}
@@ -1151,8 +1145,14 @@ const PdvPage = () => {
                       getQty={getQty} addItem={addItem} decItem={decItem}
                       searchInputRef={searchInputRef}
                       allProducts={products}
-                      topSlot={
+                      scrollTopSlot={
                         <>
+                          <PdvNowCard
+                            sessionId={currentSession?.id}
+                            vendasTotal={turnoVendido}
+                            vendasCount={turnoVendasCount}
+                            ticketMedio={ticketMedio}
+                          />
                           <PdvFavoritesBar
                             storeId={store?.id}
                             products={products}
