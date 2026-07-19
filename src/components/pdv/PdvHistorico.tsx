@@ -9,6 +9,7 @@ import {
   Ban, XCircle, Search,
 } from "lucide-react";
 import { PdvCancelSaleDialog } from "./PdvCancelSaleDialog";
+import { ApparelReturnDialog } from "@/pages/pdv/apparel/ApparelReturnDialog";
 
 const PAYMENT_LABELS: Record<string, { label: string; icon: any; color: string }> = {
   dinheiro:           { label: "Dinheiro",       icon: Banknote,   color: "text-emerald-500" },
@@ -34,10 +35,12 @@ interface HistoricoProps {
   operatorName?: string | null;
   limit?: number;
   onViewTurnos?: () => void;
+  /** Quando true, exibe botão de troca/devolução do PDV Boutique. */
+  isApparel?: boolean;
 }
 
 export const PdvHistorico = ({
-  storeId, sessionId, session, operatorName, limit = 100, onViewTurnos,
+  storeId, sessionId, session, operatorName, limit = 100, onViewTurnos, isApparel = false,
 }: HistoricoProps) => {
   const queryClient = useQueryClient();
   const [filter, setFilter] = useState<FilterType>("all");
@@ -45,6 +48,7 @@ export const PdvHistorico = ({
   const [search, setSearch] = useState("");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [cancelTarget, setCancelTarget] = useState<{ id: string; total: number } | null>(null);
+  const [returnOrderId, setReturnOrderId] = useState<string | null>(null);
 
   const { data: movements = [], isLoading } = useQuery({
     queryKey: ["pdv-historico", storeId, sessionId, limit],
@@ -244,6 +248,7 @@ export const PdvHistorico = ({
                     expanded={expandedId === m.id}
                     onToggle={() => setExpandedId(expandedId === m.id ? null : m.id)}
                     onCancel={(id: string, total: number) => setCancelTarget({ id, total })}
+                    onReturn={isApparel ? (id: string) => setReturnOrderId(id) : undefined}
                   />
                 ))}
               </div>
@@ -261,6 +266,16 @@ export const PdvHistorico = ({
           queryClient.invalidateQueries({ queryKey: ["pdv-historico"] });
           queryClient.invalidateQueries({ queryKey: ["pdv-historico-orders"] });
           queryClient.invalidateQueries({ queryKey: ["pdv-movements"] });
+        }}
+      />
+      <ApparelReturnDialog
+        open={!!returnOrderId}
+        orderId={returnOrderId}
+        onClose={() => setReturnOrderId(null)}
+        onDone={() => {
+          queryClient.invalidateQueries({ queryKey: ["pdv-historico"] });
+          queryClient.invalidateQueries({ queryKey: ["pdv-historico-orders"] });
+          queryClient.invalidateQueries({ queryKey: ["apparel-variants", storeId] });
         }}
       />
     </div>
@@ -290,10 +305,11 @@ const Kpi = ({
 // ─── Linha de movimentação ──────────────────────────────────────────────────
 
 const MovementRow = ({
-  m, order, expanded, onToggle, onCancel,
+  m, order, expanded, onToggle, onCancel, onReturn,
 }: {
   m: any; order: any; expanded: boolean; onToggle: () => void;
   onCancel: (id: string, total: number) => void;
+  onReturn?: (id: string) => void;
 }) => {
   const isSale = m.type === "sale";
   const isSangria = m.type === "sangria";
@@ -396,7 +412,15 @@ const MovementRow = ({
             </p>
           )}
           {!canceled && m.order_id && (
-            <div className="flex justify-end">
+            <div className="flex justify-end gap-2">
+              {onReturn && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); onReturn(m.order_id); }}
+                  className="inline-flex items-center gap-1 text-[10px] font-bold text-primary bg-primary/10 hover:bg-primary/15 px-2 py-1 rounded-lg"
+                >
+                  <Undo2 className="h-3 w-3" /> Trocar/Devolver
+                </button>
+              )}
               <button
                 onClick={(e) => { e.stopPropagation(); onCancel(m.order_id, Number(m.amount)); }}
                 className="inline-flex items-center gap-1 text-[10px] font-bold text-red-500 bg-red-500/10 hover:bg-red-500/15 px-2 py-1 rounded-lg"
