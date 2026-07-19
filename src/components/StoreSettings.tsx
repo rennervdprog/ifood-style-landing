@@ -58,6 +58,8 @@ type PizzaPriceMode = "maior" | "media" | "soma";
   storeMinimumOrderValue?: number | null;
   storeEstimatedDeliveryTime?: string | null;
    storeSettings?: Record<string, any> | null;
+  /** Quando true, oculta seções específicas de delivery (slug, WhatsApp, taxa de entrega, frete grátis, tempo estimado, auto-print delivery). */
+  pdvOnly?: boolean;
  }
  
  const StoreSettings = ({
@@ -68,6 +70,7 @@ type PizzaPriceMode = "maior" | "media" | "soma";
    storeDeliveryFeePerKm, storeSettings
   , storeMinimumOrderValue
   , storeEstimatedDeliveryTime
+  , pdvOnly = false
  }: StoreSettingsProps) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -679,6 +682,7 @@ const NotificationSection = () => {
       </div>
 
       {/* WhatsApp */}
+      {!pdvOnly && (
       <div className="space-y-2">
         <label className="text-sm font-bold text-foreground/80 flex items-center gap-2">
           <Phone className="h-4 w-4 text-primary" />
@@ -694,8 +698,10 @@ const NotificationSection = () => {
         />
         <p className="text-[10px] text-muted-foreground/70">Será exibido para clientes e entregadores.</p>
       </div>
+      )}
 
       {/* Store Link (Slug) */}
+      {!pdvOnly && (
       <div className="space-y-2">
         <label className="text-sm font-bold text-foreground/80 flex items-center gap-2">
           <Link className="h-4 w-4 text-primary" />
@@ -752,8 +758,10 @@ const NotificationSection = () => {
         )}
         <p className="text-[10px] text-muted-foreground/70">Compartilhe esse link para clientes acessarem direto seu cardápio.</p>
       </div>
+      )}
 
       {/* Slugs alias — anti-spam WhatsApp */}
+      {!pdvOnly && (
       <div className="space-y-2">
         <label className="text-sm font-bold text-muted-foreground flex items-center gap-2">
           <MessageSquare className="h-4 w-4 text-primary" />
@@ -793,6 +801,7 @@ const NotificationSection = () => {
           Regenerar aliases
         </button>
       </div>
+      )}
 
       {/* Store Address */}
       <div className="space-y-3">
@@ -917,6 +926,7 @@ const NotificationSection = () => {
 
 
       {/* Delivery Mode — motoboy da plataforma oculto, forçar "own" */}
+      {!pdvOnly && (<>
       <div className="bg-muted/50 border border-border rounded-2xl p-4 space-y-3">
         <label className="text-sm font-bold text-foreground/80 flex items-center gap-2">
           <Truck className="h-4 w-4 text-primary" />
@@ -1192,6 +1202,7 @@ const NotificationSection = () => {
            </div>
          )}
        </div>
+       </>)}
 
       {/* Pizza Half-and-Half Settings */}
       {category === "pizzas" && (
@@ -1505,6 +1516,7 @@ const NotificationSection = () => {
             </div>
           </label>
 
+          {!pdvOnly && (
           <label className="flex items-start gap-3 rounded-xl border border-border bg-muted/20 p-3 cursor-pointer">
             <input
               type="checkbox"
@@ -1519,6 +1531,7 @@ const NotificationSection = () => {
               </p>
             </div>
           </label>
+          )}
         </div>
       </div>
 
