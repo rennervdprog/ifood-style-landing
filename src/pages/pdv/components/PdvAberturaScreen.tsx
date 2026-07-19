@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowLeft, Loader2, Monitor, Unlock, User, KeyRound, LogOut, BarChart3, CreditCard } from "lucide-react";
+import { ArrowLeft, Loader2, Monitor, Unlock, User, KeyRound, LogOut, BarChart3, CreditCard, Shield } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { formatBRLDisplay, parseBRLCentsInput } from "@/hooks/useBRLInput";
 import { usePdvOperator } from "@/hooks/usePdvOperator";
@@ -70,6 +70,24 @@ export const PdvAberturaScreen = ({ storeName, storeId, openingAmount, setOpenin
               <span className="p-2 rounded-lg text-muted-foreground">
                 {operator ? <LogOut className="h-4 w-4" /> : <KeyRound className="h-4 w-4" />}
               </span>
+            </button>
+          )}
+
+          {storeId && !operator && (
+            <button
+              type="button"
+              onClick={() => setPinOpen(true)}
+              className="w-full text-left rounded-2xl border border-primary/30 bg-primary/5 p-4 flex items-start gap-3 hover:bg-primary/10 transition-colors"
+            >
+              <div className="w-9 h-9 rounded-xl bg-primary/15 flex items-center justify-center shrink-0">
+                <Shield className="h-4 w-4 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0 space-y-1">
+                <p className="text-[11px] font-black uppercase tracking-wider text-primary">Primeiro acesso? Comece aqui</p>
+                <p className="text-[11px] leading-relaxed text-muted-foreground">
+                  Cadastre um <b>gerente</b> antes de tudo. Ele autoriza sangrias e libera o cadastro dos operadores do caixa.
+                </p>
+              </div>
             </button>
           )}
 
