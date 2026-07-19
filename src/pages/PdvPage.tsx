@@ -988,12 +988,14 @@ const PdvPage = () => {
 
       {/* ── HISTÓRICO ── */}
       {tab === "historico" && (
-        <PdvHistorico
-          sessionId={currentSession?.id}
-          session={currentSession as any}
-          operatorName={pdvOperator?.name || operatorName}
-          onViewTurnos={() => setTab("turnos")}
-        />
+        <div className="flex-1 min-h-0 overflow-hidden">
+          <PdvHistorico
+            sessionId={currentSession?.id}
+            session={currentSession as any}
+            operatorName={pdvOperator?.name || operatorName}
+            onViewTurnos={() => setTab("turnos")}
+          />
+        </div>
       )}
 
       {/* ── MESAS / COMANDAS (Fase B) ── */}
