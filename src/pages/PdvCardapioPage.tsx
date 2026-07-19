@@ -25,7 +25,15 @@ const PdvCardapioPage = () => {
     queryKey: ["pdv-cardapio-store", user?.id],
     enabled: !!user?.id,
     queryFn: async () => {
-      // Admin pode ter selecionado uma loja no PDV — respeitar essa escolha
+      // 1) Loja do próprio usuário logado — fonte da verdade pra lojistas
+      const { data: owned } = await supabase
+        .from("stores")
+        .select("id, name, category, categories")
+        .eq("owner_id", user!.id)
+        .maybeSingle();
+      if (owned) return owned;
+
+      // 2) Sem loja própria (super-admin operando outra loja): respeitar seleção do PDV
       try {
         const adminStoreId = localStorage.getItem("pdv_admin_selected_store");
         if (adminStoreId) {
@@ -35,7 +43,6 @@ const PdvCardapioPage = () => {
           if (data) return data;
         }
       } catch {}
-      // Cache do PDV (mesma loja que o caixa está usando)
       try {
         const raw = localStorage.getItem("pdv_store_v1");
         if (raw) {
@@ -43,12 +50,7 @@ const PdvCardapioPage = () => {
           if (cached?.id) return cached;
         }
       } catch {}
-      const { data } = await supabase
-        .from("stores")
-        .select("id, name, category, categories")
-        .eq("owner_id", user!.id)
-        .maybeSingle();
-      return data;
+      return null;
     },
   });
 
