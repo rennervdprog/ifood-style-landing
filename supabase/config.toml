@@ -30,6 +30,9 @@ verify_jwt = false
 [functions.oneshot-fix-e2e-boutique]
 verify_jwt = false
 
+[functions.oneshot-diag-e2e-boutique]
+verify_jwt = false
+
 [functions.auto-withdraw-subaccounts]
 verify_jwt = false
 
