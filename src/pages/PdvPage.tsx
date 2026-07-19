@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useCallback, useRef, lazy, Suspense } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -110,8 +110,10 @@ const useIsMobile = () => {
 const PdvPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const isMobile = useIsMobile();
+  const urlStoreId = searchParams.get("storeId");
 
   // Quando entra em mobile, voltar sempre para o catálogo
   useEffect(() => {
@@ -248,8 +250,19 @@ const PdvPage = () => {
 
   const ADMIN_STORE_KEY = "pdv_admin_selected_store";
   const [adminStoreId, setAdminStoreId] = useState<string | null>(() => {
-    try { return localStorage.getItem(ADMIN_STORE_KEY); } catch { return null; }
+    try { return urlStoreId || localStorage.getItem(ADMIN_STORE_KEY); } catch { return urlStoreId || null; }
   });
+
+  // Super admin vindo de /admin?storeId=...: a loja clicada deve vencer qualquer
+  // cache anterior do PDV, senão abre a última loja operada.
+  useEffect(() => {
+    if (!urlStoreId) return;
+    try {
+      localStorage.setItem(ADMIN_STORE_KEY, urlStoreId);
+      localStorage.removeItem("pdv_store_v1");
+    } catch {}
+    setAdminStoreId((prev) => (prev === urlStoreId ? prev : urlStoreId));
+  }, [urlStoreId]);
 
   // ── Loja ──
   const { data: store, isFetched: storeFetched } = useQuery({
@@ -273,7 +286,10 @@ const PdvPage = () => {
     initialData: () => {
       try {
         const raw = localStorage.getItem("pdv_store_v1");
-        return raw ? JSON.parse(raw) : undefined;
+        if (!raw) return undefined;
+        const cached = JSON.parse(raw);
+        if (adminStoreId && cached?.id !== adminStoreId) return undefined;
+        return cached;
       } catch { return undefined; }
     },
     initialDataUpdatedAt: 0,
@@ -816,9 +832,12 @@ const PdvPage = () => {
                 <button
                   key={s.id}
                   onClick={() => {
-                    try { localStorage.setItem(ADMIN_STORE_KEY, s.id); } catch {}
+                    try {
+                      localStorage.setItem(ADMIN_STORE_KEY, s.id);
+                      localStorage.removeItem("pdv_store_v1");
+                    } catch {}
                     setAdminStoreId(s.id);
-                    queryClient.invalidateQueries({ queryKey: ["pdv-store"] });
+                    queryClient.removeQueries({ queryKey: ["pdv-store"] });
                   }}
                   className="w-full text-left bg-card border border-border rounded-xl px-4 py-3 hover:border-primary transition-colors"
                 >

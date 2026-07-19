@@ -340,7 +340,7 @@ const AdminDashboard = () => {
       }
       return rows?.[0] ?? null;
     },
-    enabled: !!user,
+    enabled: !!user && (!simulateStoreId || !adminRoleLoading),
     staleTime: 1000 * 60 * 5, // 5min — catálogo muda raramente
   });
 
@@ -1625,9 +1625,24 @@ const AdminDashboard = () => {
   // PDV-only: painel do lojista NÃO existe. Manda direto pro caixa/PDV.
   useEffect(() => {
     if (!storePlan.isLoading && isPdvOnly) {
+      if (isPlatformAdmin && store?.id) {
+        try {
+          localStorage.setItem("pdv_admin_selected_store", store.id);
+          localStorage.setItem("pdv_store_v1", JSON.stringify({
+            id: store.id,
+            name: store.name,
+            category: store.category,
+            categories: (store as any).categories,
+            settings: (store as any).settings,
+            store_type: (store as any).store_type,
+          }));
+        } catch {}
+        navigate(`/admin/pdv?storeId=${store.id}`, { replace: true });
+        return;
+      }
       navigate("/admin/pdv", { replace: true });
     }
-  }, [isPdvOnly, storePlan.isLoading, navigate]);
+  }, [isPdvOnly, isPlatformAdmin, store?.id, storePlan.isLoading, navigate]);
 
   // Cacheia role + plan_type do usuário para que reloads futuros pulem
   // qualquer flash (landing → painel delivery) e vão direto pra tela certa.
