@@ -1507,13 +1507,15 @@ const PdvPage = () => {
         />
       )}
 
-      {/* FAB — gerenciar cardápio (principalmente pra lojas pdv_only, que não têm painel) */}
+      {/* FAB — gerenciar cardápio. No mobile já existe atalho no menu (☰) do topbar
+          e no bottom-nav, então mostramos só em telas ≥ md pra evitar sobreposição
+          com FABs específicos (ex.: "criar mesa" na aba Mesas). */}
       <button
         type="button"
         onClick={() => navigate("/admin/cardapio")}
         title="Gerenciar cardápio"
         aria-label="Gerenciar cardápio"
-        className="fixed bottom-20 md:bottom-4 right-4 z-40 h-12 w-12 rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center justify-center border-2 border-background"
+        className="hidden md:flex fixed bottom-4 right-4 z-40 h-12 w-12 rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all items-center justify-center border-2 border-background"
       >
         <Plus className="h-6 w-6" />
       </button>
