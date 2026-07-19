@@ -1053,7 +1053,7 @@ const PerfilPage = () => {
         </div>
 
         <div className="flex flex-col items-center gap-1 pb-4">
-          <p className="text-center text-[10px] text-muted-foreground/50">ItaSuper v{appVersion}</p>
+          <p className="text-center text-[10px] text-muted-foreground/50">{`ItaSuper v${appVersion}`}</p>
           <button
             onClick={handleSentryTest}
             className="text-[10px] text-muted-foreground/40 underline"
