@@ -54,6 +54,7 @@ import { usePdvCart } from "@/pages/pdv/state/usePdvCart";
 import { usePdvCheckout } from "@/pages/pdv/state/usePdvCheckout";
 import { usePdvOutbox } from "@/pages/pdv/state/usePdvOutbox";
 import { PdvCatalogSection } from "@/pages/pdv/components/PdvCatalogSection";
+import ApparelCatalogGrid from "@/pages/pdv/apparel/ApparelCatalogGrid";
 import { PdvCategoriesRail } from "@/pages/pdv/components/PdvCategoriesRail";
 import { PdvCartSection } from "@/pages/pdv/components/PdvCartSection";
 import { PdvNowCard } from "@/pages/pdv/components/PdvNowCard";
