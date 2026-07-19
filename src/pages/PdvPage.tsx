@@ -1098,26 +1098,35 @@ const PdvPage = () => {
                   vendasCount={turnoVendasCount}
                   ticketMedio={ticketMedio}
                 />
-                <PdvCatalogSection
-                  search={search} setSearch={setSearch}
-                  sections={sections} activeSection={activeSection} setActiveSection={setActiveSection}
-                  grouped={grouped} prodLoading={prodLoading}
-                  getQty={getQty} addItem={addItem} decItem={decItem}
-                  searchInputRef={searchInputRef}
-                  hideSectionTabs
-                  allProducts={products}
-                  topSlot={
-                    <>
-                      <PdvFavoritesBar
-                        storeId={store?.id}
-                        products={products}
-                        addItem={addItem}
-                        getQty={getQty}
-                      />
-                      {builderActions}
-                    </>
-                  }
-                />
+                {isApparel ? (
+                  <ApparelCatalogGrid
+                    storeId={store!.id}
+                    products={products}
+                    addItem={addItem}
+                    getQty={getQty}
+                  />
+                ) : (
+                  <PdvCatalogSection
+                    search={search} setSearch={setSearch}
+                    sections={sections} activeSection={activeSection} setActiveSection={setActiveSection}
+                    grouped={grouped} prodLoading={prodLoading}
+                    getQty={getQty} addItem={addItem} decItem={decItem}
+                    searchInputRef={searchInputRef}
+                    hideSectionTabs
+                    allProducts={products}
+                    topSlot={
+                      <>
+                        <PdvFavoritesBar
+                          storeId={store?.id}
+                          products={products}
+                          addItem={addItem}
+                          getQty={getQty}
+                        />
+                        {builderActions}
+                      </>
+                    }
+                  />
+                )}
               </div>
               {/* Caixa */}
               <aside className="w-72 lg:w-80 xl:w-96 flex flex-col bg-card shrink-0 overflow-hidden">
