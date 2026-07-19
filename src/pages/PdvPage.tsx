@@ -288,7 +288,7 @@ const PdvPage = () => {
         const raw = localStorage.getItem("pdv_store_v1");
         if (!raw) return undefined;
         const cached = JSON.parse(raw);
-        if (isAdmin && adminStoreId && cached?.id !== adminStoreId) return undefined;
+        if (adminStoreId && cached?.id !== adminStoreId) return undefined;
         return cached;
       } catch { return undefined; }
     },
