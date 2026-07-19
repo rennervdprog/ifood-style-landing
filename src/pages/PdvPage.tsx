@@ -69,6 +69,7 @@ import PdvDeliveryManualDialog from "@/components/pdv/PdvDeliveryManualDialog";
 import { PdvShortcutsDialog } from "@/pages/pdv/components/PdvShortcutsDialog";
 import { PdvTopbar } from "@/pages/pdv/components/PdvTopbar";
 import { PdvTabs } from "@/pages/pdv/components/PdvTabs";
+import { PdvMobileBottomNav } from "@/pages/pdv/components/PdvMobileBottomNav";
 import { PdvStatusBar } from "@/pages/pdv/components/PdvStatusBar";
 import { PdvSessionCard } from "@/pages/pdv/components/PdvSessionCard";
 import { PdvMesasView } from "@/pages/pdv/components/PdvMesasView";
