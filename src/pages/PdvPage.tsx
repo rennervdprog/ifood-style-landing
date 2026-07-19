@@ -54,6 +54,7 @@ import { usePdvCart } from "@/pages/pdv/state/usePdvCart";
 import { usePdvCheckout } from "@/pages/pdv/state/usePdvCheckout";
 import { usePdvOutbox } from "@/pages/pdv/state/usePdvOutbox";
 import { PdvCatalogSection } from "@/pages/pdv/components/PdvCatalogSection";
+import ApparelCatalogGrid from "@/pages/pdv/apparel/ApparelCatalogGrid";
 import { PdvCategoriesRail } from "@/pages/pdv/components/PdvCategoriesRail";
 import { PdvCartSection } from "@/pages/pdv/components/PdvCartSection";
 import { PdvNowCard } from "@/pages/pdv/components/PdvNowCard";
@@ -256,13 +257,13 @@ const PdvPage = () => {
       // Super admin com loja escolhida → busca direto por id (qualquer status)
       if (isAdmin && adminStoreId) {
         const { data } = await supabase
-          .from("stores").select("id, name, category, categories, settings")
+          .from("stores").select("id, name, category, categories, settings, store_type")
           .eq("id", adminStoreId).maybeSingle();
         try { if (data) localStorage.setItem("pdv_store_v1", JSON.stringify(data)); } catch {}
         return data;
       }
       const { data } = await supabase
-        .from("stores").select("id, name, category, categories, settings")
+        .from("stores").select("id, name, category, categories, settings, store_type")
         .eq("owner_id", user!.id).eq("status", "ativo").maybeSingle();
       try { if (data) localStorage.setItem("pdv_store_v1", JSON.stringify(data)); } catch {}
       return data;
@@ -276,6 +277,8 @@ const PdvPage = () => {
     },
     initialDataUpdatedAt: 0,
   });
+
+  const isApparel = (store as any)?.store_type === "apparel";
 
   // Lista de lojas para o seletor (apenas admin, apenas quando sem loja ativa)
   const { data: adminStores } = useQuery({
@@ -510,6 +513,22 @@ const PdvPage = () => {
       setOrderDone(true);
       // Refresca o dashboard "Agora" após cada venda concluída.
       queryClient.invalidateQueries({ queryKey: ["pdv-now", currentSession?.id] });
+      // Boutique: decrementa estoque de cada variante vendida
+      const apparelItems = cart.filter((i) => (i.metadata as any)?.apparel_variant_id);
+      if (apparelItems.length) {
+        (async () => {
+          for (const it of apparelItems) {
+            try {
+              await supabase.rpc("apparel_adjust_stock" as any, {
+                _variant_id: (it.metadata as any).apparel_variant_id,
+                _delta: -Math.abs(it.quantity),
+                _reason: "sale",
+              });
+            } catch {}
+          }
+          queryClient.invalidateQueries({ queryKey: ["apparel-variants", store?.id] });
+        })();
+      }
     },
       onClearScheduled: clearSale,
       onEmptiesFlowStart: ({ orderId, items }) =>
@@ -1079,26 +1098,35 @@ const PdvPage = () => {
                   vendasCount={turnoVendasCount}
                   ticketMedio={ticketMedio}
                 />
-                <PdvCatalogSection
-                  search={search} setSearch={setSearch}
-                  sections={sections} activeSection={activeSection} setActiveSection={setActiveSection}
-                  grouped={grouped} prodLoading={prodLoading}
-                  getQty={getQty} addItem={addItem} decItem={decItem}
-                  searchInputRef={searchInputRef}
-                  hideSectionTabs
-                  allProducts={products}
-                  topSlot={
-                    <>
-                      <PdvFavoritesBar
-                        storeId={store?.id}
-                        products={products}
-                        addItem={addItem}
-                        getQty={getQty}
-                      />
-                      {builderActions}
-                    </>
-                  }
-                />
+                {isApparel ? (
+                  <ApparelCatalogGrid
+                    storeId={store!.id}
+                    products={products}
+                    addItem={addItem}
+                    getQty={getQty}
+                  />
+                ) : (
+                  <PdvCatalogSection
+                    search={search} setSearch={setSearch}
+                    sections={sections} activeSection={activeSection} setActiveSection={setActiveSection}
+                    grouped={grouped} prodLoading={prodLoading}
+                    getQty={getQty} addItem={addItem} decItem={decItem}
+                    searchInputRef={searchInputRef}
+                    hideSectionTabs
+                    allProducts={products}
+                    topSlot={
+                      <>
+                        <PdvFavoritesBar
+                          storeId={store?.id}
+                          products={products}
+                          addItem={addItem}
+                          getQty={getQty}
+                        />
+                        {builderActions}
+                      </>
+                    }
+                  />
+                )}
               </div>
               {/* Caixa */}
               <aside className="w-72 lg:w-80 xl:w-96 flex flex-col bg-card shrink-0 overflow-hidden">
@@ -1142,6 +1170,14 @@ const PdvPage = () => {
               {mobileStep === "catalog" && (
                 <>
                   <div className="flex-1 overflow-hidden flex flex-col">
+                    {isApparel ? (
+                      <ApparelCatalogGrid
+                        storeId={store!.id}
+                        products={products}
+                        addItem={addItem}
+                        getQty={getQty}
+                      />
+                    ) : (
                     <PdvCatalogSection
                       search={search} setSearch={setSearch}
                       sections={sections} activeSection={activeSection} setActiveSection={setActiveSection}
@@ -1167,6 +1203,7 @@ const PdvPage = () => {
                         </>
                       }
                     />
+                    )}
                   </div>
                   {/* Bottom bar — ir ao carrinho */}
                   {cart.length > 0 && (
