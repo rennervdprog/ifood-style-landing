@@ -926,6 +926,7 @@ const NotificationSection = () => {
 
 
       {/* Delivery Mode — motoboy da plataforma oculto, forçar "own" */}
+      {!pdvOnly && (<>
       <div className="bg-muted/50 border border-border rounded-2xl p-4 space-y-3">
         <label className="text-sm font-bold text-foreground/80 flex items-center gap-2">
           <Truck className="h-4 w-4 text-primary" />
