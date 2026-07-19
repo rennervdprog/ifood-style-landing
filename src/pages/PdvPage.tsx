@@ -55,6 +55,7 @@ import { usePdvCheckout } from "@/pages/pdv/state/usePdvCheckout";
 import { usePdvOutbox } from "@/pages/pdv/state/usePdvOutbox";
 import { PdvCatalogSection } from "@/pages/pdv/components/PdvCatalogSection";
 import ApparelCatalogGrid from "@/pages/pdv/apparel/ApparelCatalogGrid";
+import ApparelCustomerPanel, { type ApparelCustomer, type ApparelCredit } from "@/pages/pdv/apparel/ApparelCustomerPanel";
 import { PdvCategoriesRail } from "@/pages/pdv/components/PdvCategoriesRail";
 import { PdvCartSection } from "@/pages/pdv/components/PdvCartSection";
 import { PdvNowCard } from "@/pages/pdv/components/PdvNowCard";
@@ -279,6 +280,23 @@ const PdvPage = () => {
   });
 
   const isApparel = (store as any)?.store_type === "apparel";
+
+  // Fase 4.2 Boutique — cliente + vale-crédito da venda atual
+  const [apparelCustomer, setApparelCustomer] = useState<ApparelCustomer>({ phone: "", name: "" });
+  const [apparelCredit, setApparelCredit] = useState<ApparelCredit | null>(null);
+  // Sincroniza vale-crédito com o desconto do carrinho (usa engine de preço já existente)
+  useEffect(() => {
+    if (!isApparel) return;
+    if (apparelCredit) {
+      setDiscountType("R$");
+      setDiscountInput(apparelCredit.amount.toFixed(2).replace(".", ","));
+      setShowDiscount(true);
+    } else {
+      // Se o desconto vigente veio do vale, limpa
+      setDiscountInput((prev) => prev);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [apparelCredit, isApparel]);
 
   // Lista de lojas para o seletor (apenas admin, apenas quando sem loja ativa)
   const { data: adminStores } = useQuery({
@@ -509,7 +527,7 @@ const PdvPage = () => {
       tableId,
       pdvCommissionRate: storePlan.pdvCommissionRate ?? 0,
       operatorId: pdvOperator?.id ?? null,
-    onSuccess: () => {
+    onSuccess: ({ orderId }) => {
       setOrderDone(true);
       // Refresca o dashboard "Agora" após cada venda concluída.
       queryClient.invalidateQueries({ queryKey: ["pdv-now", currentSession?.id] });
@@ -527,6 +545,40 @@ const PdvPage = () => {
             } catch {}
           }
           queryClient.invalidateQueries({ queryKey: ["apparel-variants", store?.id] });
+        })();
+      }
+      // Fase 4.2 Boutique — CRM + vale-crédito
+      if (isApparel && store?.id && orderId) {
+        (async () => {
+          try {
+            const phone = apparelCustomer.phone.trim();
+            if (phone) {
+              // Anexa telefone/nome ao pedido criado (usado depois pela devolução)
+              try {
+                await supabase.from("orders").update({
+                  customer_phone: phone,
+                  customer_name: apparelCustomer.name || null,
+                } as any).eq("id", orderId);
+              } catch {}
+              await (supabase as any).rpc("apparel_touch_customer", {
+                _store_id: store.id,
+                _phone: phone,
+                _name: apparelCustomer.name || null,
+                _preferred_size: null,
+                _amount: Math.max(0, finalTotal),
+              });
+            }
+            if (apparelCredit) {
+              await (supabase as any).rpc("apparel_apply_credit", {
+                _credit_id: apparelCredit.id,
+                _order_id: orderId,
+                _amount: apparelCredit.amount,
+              });
+            }
+          } catch (e) { console.warn("[Boutique] CRM/credit post-sale skipped:", e); }
+          // Limpa cliente/vale para próxima venda
+          setApparelCustomer({ phone: "", name: "" });
+          setApparelCredit(null);
         })();
       }
     },
@@ -1141,6 +1193,16 @@ const PdvPage = () => {
                   saldoEsperado={saldoEsperado}
                   drawerEnabled={drawerEnabled}
                 />
+                {isApparel && !selectedTabId && (
+                  <ApparelCustomerPanel
+                    storeId={store?.id}
+                    customer={apparelCustomer}
+                    onCustomerChange={setApparelCustomer}
+                    credit={apparelCredit}
+                    onCreditChange={setApparelCredit}
+                    finalTotal={finalTotal}
+                  />
+                )}
                 <PdvCartSection
                   cart={cart} storeId={store?.id}
                   tableId={tableId} setTableId={setTableId}
@@ -1235,6 +1297,16 @@ const PdvPage = () => {
                     <span className="text-xl font-black text-primary pdv-mono">{formatBRL(finalTotal)}</span>
                   </div>
                   <div className="flex-1 overflow-hidden flex flex-col">
+                    {isApparel && !selectedTabId && (
+                      <ApparelCustomerPanel
+                        storeId={store?.id}
+                        customer={apparelCustomer}
+                        onCustomerChange={setApparelCustomer}
+                        credit={apparelCredit}
+                        onCreditChange={setApparelCredit}
+                        finalTotal={finalTotal}
+                      />
+                    )}
                     <PdvCartSection
                       cart={cart} storeId={store?.id}
                       tableId={tableId} setTableId={setTableId}

@@ -64,8 +64,8 @@ export interface CheckoutContext {
   pdvCommissionRate: number;
   /** Operador PIN logado (Fase 2) — grava em pdv_movements.operator_id. */
   operatorId?: string | null;
-  /** Callbacks de UI após sucesso. */
-  onSuccess: () => void;
+  /** Callbacks de UI após sucesso. Recebe o `orderId` gerado (ou placeholder offline). */
+  onSuccess: (info: { orderId: string | null }) => void;
   onClearScheduled: () => void;
   onEmptiesFlowStart: (args: {
     orderId: string;
@@ -303,7 +303,7 @@ export function usePdvCheckout() {
         queryClient.invalidateQueries({
           queryKey: ["pdv-movements", session.id],
         });
-        onSuccess();
+        onSuccess({ orderId });
         if (!offlineQueued) toast.success("✅ Venda finalizada!");
 
         // 4) Empties (garrafas retornáveis) — best-effort
