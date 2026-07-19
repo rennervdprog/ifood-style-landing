@@ -1202,6 +1202,7 @@ const NotificationSection = () => {
            </div>
          )}
        </div>
+       </>)}
 
       {/* Pizza Half-and-Half Settings */}
       {category === "pizzas" && (
