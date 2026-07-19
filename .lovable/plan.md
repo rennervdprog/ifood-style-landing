@@ -1,41 +1,68 @@
-# Correção: PDV Only sem acesso a "Meu Plano" / Mensalidades
+# Plano — Refatoração mobile das abas do PDV
 
-## Diagnóstico
-- `AdminDashboardV2.tsx` (linha 1622-1627): quando `plan_type = pdv_only`, o lojista é **redirecionado à força** para `/admin/pdv`, perdendo qualquer acesso às abas `subscription`, `finance` e `repasse`.
-- `PdvPage` (`PdvTabs.tsx`) só tem 5 abas operacionais: Vender, Mesas, Histórico, Turnos, Relatórios. Não há entrada para "Meu Plano" nem para "Mensalidades".
-- Resultado: lojista PDV Only nunca vê seu plano, valor, próximo vencimento, cobranças em aberto/pagas, nem consegue trocar de plano ou baixar histórico.
+## Problema atual
+No mobile as abas de topo (`PdvTabs`) ficam com labels truncados ("V...", "M...", "H...", "T...", "R...", "M...", "C..."), sem ícones legíveis, sem indicação clara do que é cada aba, e o scroll horizontal é desconfortável. Visualmente poluído e amador.
 
 ## Objetivo
-Dar ao PDV Only acesso completo a **Meu Plano** (StoreSubscription) e **Relatório de Mensalidades**, sem devolvê-lo ao dashboard de delivery.
+UI mobile-first, dedografiada (touch friendly), com hierarquia clara, sem truncar texto, e coerente com o resto do app (laranja/branco, tokens semânticos).
 
-## Escopo da mudança
+## Mudanças
 
-### 1. Novo tipo de aba no PDV
-- `src/pages/pdv/types.ts`: adicionar `"meu_plano"` ao `PdvTab`.
-- `src/pages/pdv/components/PdvTabs.tsx`: adicionar aba "Meu Plano" (ícone `CreditCard`), visível apenas quando `isPdvOnly` (prop nova). Para não-PDV a barra continua igual.
+### 1. Bottom Tab Bar no mobile (padrão nativo)
+- No mobile (`<md`): mover as abas do topo para uma **barra fixa inferior** com 5 itens principais + botão "Mais" para abas secundárias.
+- No desktop/tablet: manter o layout de abas horizontal atual (já funciona bem).
+- Componente novo: `PdvMobileBottomNav.tsx`, controlado pelo mesmo estado de `activeTab` do `PdvPage`.
 
-### 2. Renderização do conteúdo
-- `src/pages/PdvPage.tsx`:
-  - Passar `isPdvOnly` para `<PdvTabs>` (via `useStorePlan`).
-  - Ao renderizar `tab === "meu_plano"`, montar uma tela com duas sub-seções (Tabs shadcn):
-    - **Plano** → reaproveita `<StoreSubscription store={store} />`.
-    - **Mensalidades** → nova sub-view listando cobranças de `financial_transactions` da loja (mesma query já usada em `RepasseSection`, filtrando `type in ('monthly_fee','plan_addon','pdv_addon')`), com colunas: competência, descrição, valor, status, data de pagamento, link do boleto/pix quando existir. Reaproveitar componente/hook do repasse quando possível para não duplicar.
-  - Fora do PDV Only, essa aba não aparece.
+### 2. Agrupamento das abas
+Principais (bottom bar, sempre visíveis):
+- Vender (ícone carrinho)
+- Mesas (ícone grid)
+- Histórico (ícone relógio)
+- Relatórios (ícone gráfico)
+- Mais (abre bottom-sheet)
 
-### 3. Ajuste da tela pré-caixa
-- `PdvAberturaScreen.tsx` (quando não há caixa aberto e a loja é PDV Only): adicionar terceiro botão "Meu Plano" ao lado de "Abrir caixa" / "Ver relatórios", chamando `setTab("meu_plano")`. Assim funciona mesmo sem sessão de PDV.
+Secundárias (dentro do "Mais", bottom-sheet):
+- Cardápio
+- Meu Plano
+- Configurações
+- Turno / Fechar caixa
 
-### 4. Menu do super-admin / navegação
-- Nenhuma mudança em `AdminDashboardV2` — o redirect continua (o painel de delivery não faz sentido pra PDV Only). Toda a experiência de plano/mensalidade passa a viver **dentro** do `/admin/pdv`.
+### 3. Header mobile enxuto
+- `PdvTopbar` no mobile: só logo + nome da loja + status caixa + avatar operador. Remover ações duplicadas que já estão no bottom nav.
+- Badge de conexão (wifi) menor, sem texto.
 
-### 5. Segurança
-- Reuso de `StoreSubscription` (já protegida por `useStorePlan` + policies de `store_plans`) e queries já existentes em `financial_transactions` (RLS por `store_id = auth store`). Nenhuma nova policy/GRANT necessário.
-- Confirmar que a query de mensalidades roda pelo Data API com o `store_id` do lojista logado (sem service role).
+### 4. Estados visuais
+- Aba ativa: fundo laranja suave (`bg-primary/10`), ícone e label em `text-primary`, barra superior de 2px.
+- Inativa: `text-muted-foreground`, ícone outline.
+- Toque com `active:scale-95` e haptic feedback (via `navigator.vibrate(10)`).
+- Safe-area inset bottom para iPhone/Android com barra de gestos: `pb-[env(safe-area-inset-bottom)]`.
 
-## Fora de escopo
-- Redesign da tela de Meu Plano.
-- Novos meios de pagamento / cobrança.
-- Mudanças em RLS ou edge functions.
+### 5. Bottom sheet "Mais"
+- Usa `Sheet` do shadcn com `side="bottom"`, cantos arredondados no topo, grid 2 colunas de cards grandes (ícone + label), fechamento por swipe.
 
-## Versão
-- Bump: `v1.20.14` (build 1042) após implementar.
+### 6. Aba "Vender" no mobile
+- Sticky search bar no topo do conteúdo (não do header) para busca de produto.
+- Botão flutuante do carrinho (FAB) com badge de quantidade e total — abre a etapa "cart" atual.
+
+### 7. Tokens e acessibilidade
+- Nada de cor hardcoded — usar `--primary`, `--muted`, `--border`, `--background`.
+- Alvos de toque ≥ 44px.
+- `aria-label` em cada item, `aria-current="page"` na aba ativa.
+
+## Arquivos a criar/alterar
+- **Novo:** `src/pages/pdv/components/PdvMobileBottomNav.tsx`
+- **Novo:** `src/pages/pdv/components/PdvMoreSheet.tsx`
+- **Alterar:** `src/pages/pdv/components/PdvTabs.tsx` — esconder no mobile (`hidden md:flex`)
+- **Alterar:** `src/pages/PdvPage.tsx` — montar bottom nav + sheet, adicionar `pb-20 md:pb-0` no container
+- **Alterar:** `src/pages/pdv/components/PdvTopbar.tsx` — versão compacta mobile
+- **Alterar:** `src/pages/PdvPage.tsx` (aba Vender) — FAB do carrinho no mobile
+- **Alterar:** `src/lib/appVersion.ts` + `android/app/build.gradle` — bump patch
+
+## Fora do escopo
+- Sem mudanças em lógica de negócio, RPCs, ou dados.
+- Sem mexer no layout desktop além de esconder o bottom nav.
+- Sem alterar KDS (já é tela dedicada).
+
+## Validação
+- Playwright mobile viewport (384×653) navegando por todas as abas via bottom nav + sheet "Mais".
+- Screenshots antes/depois de cada aba.

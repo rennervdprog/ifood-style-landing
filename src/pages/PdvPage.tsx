@@ -69,6 +69,7 @@ import PdvDeliveryManualDialog from "@/components/pdv/PdvDeliveryManualDialog";
 import { PdvShortcutsDialog } from "@/pages/pdv/components/PdvShortcutsDialog";
 import { PdvTopbar } from "@/pages/pdv/components/PdvTopbar";
 import { PdvTabs } from "@/pages/pdv/components/PdvTabs";
+import { PdvMobileBottomNav } from "@/pages/pdv/components/PdvMobileBottomNav";
 import { PdvStatusBar } from "@/pages/pdv/components/PdvStatusBar";
 import { PdvSessionCard } from "@/pages/pdv/components/PdvSessionCard";
 import { PdvMesasView } from "@/pages/pdv/components/PdvMesasView";
@@ -1229,6 +1230,16 @@ const PdvPage = () => {
         </>
       )}
 
+      {/* ── NAV INFERIOR (mobile) ── */}
+      <PdvMobileBottomNav
+        tab={tab}
+        onChange={(t) => {
+          if (t === "relatorios") setSelectedSessionId(null);
+          setTab(t);
+        }}
+        showMeuPlano={pdvAccess.source === "pdv_only"}
+      />
+
       {/* ── MODAL DE PRODUTO (adicionais, bordas, observações) ── */}
       <ProductDetailModal
         product={productModal}
@@ -1369,7 +1380,7 @@ const PdvPage = () => {
         onClick={() => navigate("/admin/cardapio")}
         title="Gerenciar cardápio"
         aria-label="Gerenciar cardápio"
-        className="fixed bottom-4 right-4 z-40 h-12 w-12 rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center justify-center border-2 border-background"
+        className="fixed bottom-20 md:bottom-4 right-4 z-40 h-12 w-12 rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center justify-center border-2 border-background"
       >
         <Plus className="h-6 w-6" />
       </button>
