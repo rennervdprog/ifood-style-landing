@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowLeft, Loader2, Monitor, Unlock, User, KeyRound, LogOut, BarChart3, CreditCard, Shield } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { formatBRLDisplay, parseBRLCentsInput } from "@/hooks/useBRLInput";
 import { usePdvOperator } from "@/hooks/usePdvOperator";
 import { PdvOperatorLoginDialog } from "@/components/pdv/PdvOperatorLoginDialog";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Props {
   storeName?: string;
@@ -22,6 +23,20 @@ export const PdvAberturaScreen = ({ storeName, storeId, openingAmount, setOpenin
   const navigate = useNavigate();
   const { operator, setOperator } = usePdvOperator(storeId);
   const [pinOpen, setPinOpen] = useState(false);
+  // Tutorial de primeiro acesso só aparece enquanto não existir gerente cadastrado.
+  const [hasManager, setHasManager] = useState<boolean | null>(null);
+  useEffect(() => {
+    if (!storeId) return;
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase.rpc("pdv_list_operators" as any, { _store_id: storeId } as any);
+      if (cancelled) return;
+      if (error) { setHasManager(true); return; } // fail-closed: não mostra tutorial em caso de erro
+      const list = (data as any[]) || [];
+      setHasManager(list.some((o) => o.active && o.role === "gerente"));
+    })();
+    return () => { cancelled = true; };
+  }, [storeId, pinOpen]);
   return (
     <div className="pdv-shell min-h-screen bg-background flex flex-col">
       <header className="h-14 border-b border-border flex items-center px-4 gap-3 bg-card">
@@ -73,7 +88,7 @@ export const PdvAberturaScreen = ({ storeName, storeId, openingAmount, setOpenin
             </button>
           )}
 
-          {storeId && !operator && (
+          {storeId && !operator && hasManager === false && (
             <button
               type="button"
               onClick={() => setPinOpen(true)}
