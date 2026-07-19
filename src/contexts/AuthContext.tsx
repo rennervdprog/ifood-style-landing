@@ -203,6 +203,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         stopDeviceCheck();
         stopProactiveRefresh();
         shouldTrackDeviceRef.current = false;
+        try {
+          localStorage.removeItem(`itasuper:userRole:${previousUserId}`);
+          localStorage.removeItem(`itasuper:userPlan:${previousUserId}`);
+        } catch {}
         if (!isCapacitorNative()) {
           clearStoredPushState();
         }
