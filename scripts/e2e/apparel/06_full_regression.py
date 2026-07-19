@@ -50,7 +50,7 @@ async def main():
             await page.keyboard.press("Escape")
 
         # 2) Painel cliente / vale-crédito
-        phone = page.get_by_placeholder(/Telefone/i)
+        phone = page.get_by_placeholder(re.compile(r"Telefone", re.I))
         if await phone.count():
             await phone.first.fill("11999990001")
             await shot(page, "05_customer")
