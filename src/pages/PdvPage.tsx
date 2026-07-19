@@ -1230,6 +1230,16 @@ const PdvPage = () => {
         </>
       )}
 
+      {/* ── NAV INFERIOR (mobile) ── */}
+      <PdvMobileBottomNav
+        tab={tab}
+        onChange={(t) => {
+          if (t === "relatorios") setSelectedSessionId(null);
+          setTab(t);
+        }}
+        showMeuPlano={pdvAccess.source === "pdv_only"}
+      />
+
       {/* ── MODAL DE PRODUTO (adicionais, bordas, observações) ── */}
       <ProductDetailModal
         product={productModal}
