@@ -1,11 +1,16 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Loader2, Plus, X, Trash2, ArrowRightLeft, XCircle, Receipt, CheckCircle2 } from "lucide-react";
+import {
+  Loader2, Plus, X, Trash2, ArrowRightLeft, XCircle, Receipt, CheckCircle2,
+  Utensils, CreditCard, CircleDot, Clock, Users, Search, ChevronRight,
+} from "lucide-react";
 import { formatBRL } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
+import { haptic } from "@/lib/haptics";
 import {
   usePdvTables,
   usePdvTabItems,
+  usePdvTabsTotals,
   rpcOpenTab,
   rpcAddTabItem,
   rpcRemoveTabItem,
@@ -23,23 +28,68 @@ interface Props {
   products: Product[];
 }
 
-const STATUS_COLORS: Record<string, string> = {
-  free: "bg-emerald-500/15 border-emerald-500/40 text-emerald-700 dark:text-emerald-300",
-  occupied: "bg-amber-500/15 border-amber-500/40 text-amber-700 dark:text-amber-300",
-  billing: "bg-rose-500/15 border-rose-500/40 text-rose-700 dark:text-rose-300",
+type StatusKey = "free" | "occupied" | "billing";
+
+const STATUS_META: Record<StatusKey, {
+  label: string;
+  icon: typeof CircleDot;
+  border: string;
+  bg: string;
+  chip: string;
+  dot: string;
+}> = {
+  free: {
+    label: "Livre",
+    icon: CircleDot,
+    border: "border-l-emerald-500",
+    bg: "bg-emerald-500/5 hover:bg-emerald-500/10 border-emerald-500/30",
+    chip: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
+    dot: "bg-emerald-500",
+  },
+  occupied: {
+    label: "Ocupada",
+    icon: Utensils,
+    border: "border-l-amber-500",
+    bg: "bg-amber-500/5 hover:bg-amber-500/10 border-amber-500/30",
+    chip: "bg-amber-500/15 text-amber-700 dark:text-amber-300",
+    dot: "bg-amber-500",
+  },
+  billing: {
+    label: "Fechando",
+    icon: CreditCard,
+    border: "border-l-rose-500",
+    bg: "bg-rose-500/5 hover:bg-rose-500/10 border-rose-500/30",
+    chip: "bg-rose-500/15 text-rose-700 dark:text-rose-300",
+    dot: "bg-rose-500",
+  },
 };
 
-const STATUS_LABEL: Record<string, string> = {
-  free: "Livre",
-  occupied: "Ocupada",
-  billing: "Fechando",
-};
+function timeAgo(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return "agora";
+  if (m < 60) return `${m} min`;
+  const h = Math.floor(m / 60);
+  const rm = m % 60;
+  return rm ? `${h}h${rm}m` : `${h}h`;
+}
 
 export const PdvMesasView = ({ storeId, session, products }: Props) => {
   const { tables, tabs, loading, refresh } = usePdvTables(storeId);
   const [selectedTabId, setSelectedTabId] = useState<string | null>(null);
   const [showNewTable, setShowNewTable] = useState(false);
   const [showQuickTab, setShowQuickTab] = useState(false);
+  const [showAddSheet, setShowAddSheet] = useState(false);
+  const [confirmOpenTable, setConfirmOpenTable] = useState<PdvTableRow | null>(null);
+  // tick a cada 60s pra atualizar "tempo aberta"
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const i = setInterval(() => setTick((n) => n + 1), 60_000);
+    return () => clearInterval(i);
+  }, []);
+
+  const tabIds = useMemo(() => tabs.map((t) => t.id), [tabs]);
+  const totals = usePdvTabsTotals(tabIds);
 
   const tabByTable = useMemo(() => {
     const m = new Map<string, PdvTabRow>();
@@ -49,18 +99,15 @@ export const PdvMesasView = ({ storeId, session, products }: Props) => {
 
   const looseTabs = tabs.filter((t) => !t.table_id);
 
-  const openTable = async (t: PdvTableRow) => {
+  const openTableNow = async (t: PdvTableRow) => {
     const existing = tabByTable.get(t.id);
     if (existing) {
       setSelectedTabId(existing.id);
       return;
     }
-    if (t.status !== "free") {
-      toast.error("Mesa não está livre");
-      return;
-    }
     try {
       const tabId = await rpcOpenTab({ storeId, tableId: t.id });
+      haptic.success();
       refresh();
       setSelectedTabId(tabId);
     } catch (e: any) {
@@ -68,96 +115,199 @@ export const PdvMesasView = ({ storeId, session, products }: Props) => {
     }
   };
 
+  const onTableClick = (t: PdvTableRow) => {
+    const existing = tabByTable.get(t.id);
+    if (existing) {
+      haptic.light();
+      setSelectedTabId(existing.id);
+      return;
+    }
+    setConfirmOpenTable(t);
+  };
+
+  const occupiedCount = tables.filter((t) => tabByTable.has(t.id)).length;
+  const freeCount = tables.length - occupiedCount;
+  const totalOpenValue = Array.from(totals.values()).reduce((s, v) => s + v.total, 0);
+
   return (
-    <div className="flex-1 overflow-y-auto p-3">
-      <div className="flex items-center justify-between mb-3">
-        <div>
-          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-            Mesas e comandas
-          </p>
-          <p className="text-[10px] text-muted-foreground">
-            {tables.length} mesas · {tabs.length} comandas abertas
-          </p>
-        </div>
-        <div className="flex gap-1.5">
-          <button
-            onClick={() => setShowQuickTab(true)}
-            className="text-xs font-bold px-3 py-1.5 rounded-md border border-primary text-primary hover:bg-primary/10 flex items-center gap-1"
-          >
-            <Plus className="h-3.5 w-3.5" /> Comanda avulsa
-          </button>
-          <button
-            onClick={() => setShowNewTable(true)}
-            className="text-xs font-bold px-3 py-1.5 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 flex items-center gap-1"
-          >
-            <Plus className="h-3.5 w-3.5" /> Nova mesa
-          </button>
+    <div className="flex-1 overflow-y-auto pb-24 relative">
+      {/* KPI strip */}
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border">
+        <div className="grid grid-cols-3 gap-2 p-3">
+          <KpiChip label="Livres" value={String(freeCount)} tone="emerald" />
+          <KpiChip label="Ocupadas" value={String(occupiedCount)} tone="amber" />
+          <KpiChip label="Aberto" value={formatBRL(totalOpenValue)} tone="primary" />
         </div>
       </div>
 
-      {loading && (
-        <div className="flex items-center justify-center py-8">
-          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-        </div>
-      )}
-
-      {!loading && tables.length === 0 && looseTabs.length === 0 && (
-        <div className="text-center py-8 text-muted-foreground text-sm">
-          Nenhuma mesa cadastrada. Clique em "Nova mesa" para começar.
-        </div>
-      )}
-
-      {tables.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 mb-4">
-          {tables.map((t) => {
-            const tab = tabByTable.get(t.id);
-            const status = tab ? "occupied" : t.status;
-            return (
-              <button
-                key={t.id}
-                onClick={() => openTable(t)}
-                className={`p-3 rounded-lg border-2 text-left transition-colors ${STATUS_COLORS[status]}`}
-              >
-                <div className="flex items-start justify-between">
-                  <span className="font-bold text-sm">{t.label}</span>
-                  <span className="text-[10px] font-semibold uppercase">{STATUS_LABEL[status]}</span>
-                </div>
-                <div className="text-[10px] mt-1 opacity-80">{t.seats} lugares</div>
-                {tab && (
-                  <div className="text-[10px] mt-1 font-semibold">
-                    {tab.customer_name ?? "Comanda aberta"}
-                  </div>
-                )}
-              </button>
-            );
-          })}
-        </div>
-      )}
-
-      {looseTabs.length > 0 && (
-        <div>
-          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">
-            Comandas avulsas
-          </p>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-            {looseTabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setSelectedTabId(tab.id)}
-                className="p-3 rounded-lg border-2 border-primary/40 bg-primary/10 text-left"
-              >
-                <div className="flex items-start justify-between">
-                  <span className="font-bold text-sm">
-                    {tab.code ? `#${tab.code}` : "Comanda"}
-                  </span>
-                </div>
-                <div className="text-[10px] mt-1">
-                  {tab.customer_name ?? "Sem nome"}
-                </div>
-              </button>
+      <div className="p-3 space-y-4">
+        {loading && (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="h-[110px] rounded-xl bg-muted/40 animate-pulse" />
             ))}
           </div>
-        </div>
+        )}
+
+        {!loading && tables.length === 0 && looseTabs.length === 0 && (
+          <div className="text-center py-12 px-4">
+            <div className="mx-auto w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mb-3">
+              <Utensils className="h-6 w-6 text-primary" />
+            </div>
+            <p className="font-bold text-sm mb-1">Nenhuma mesa cadastrada</p>
+            <p className="text-xs text-muted-foreground mb-4">
+              Crie mesas ou abra uma comanda avulsa pelo botão “+”.
+            </p>
+            <button
+              onClick={() => setShowNewTable(true)}
+              className="text-xs font-bold px-4 py-2 rounded-md bg-primary text-primary-foreground"
+            >
+              Criar primeira mesa
+            </button>
+          </div>
+        )}
+
+        {tables.length > 0 && (
+          <section>
+            <SectionHeader title="Mesas" count={tables.length} />
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+              {tables.map((t) => {
+                const tab = tabByTable.get(t.id);
+                const status: StatusKey = tab ? "occupied" : (t.status as StatusKey);
+                const meta = STATUS_META[status];
+                const tot = tab ? totals.get(tab.id) : undefined;
+                return (
+                  <button
+                    key={t.id}
+                    onClick={() => onTableClick(t)}
+                    className={`relative text-left rounded-xl border-2 border-l-[6px] transition-all active:scale-[0.98] ${meta.border} ${meta.bg} p-3 min-h-[110px] flex flex-col justify-between`}
+                  >
+                    <div className="flex items-start justify-between gap-1">
+                      <span className="font-black text-lg leading-none truncate">{t.label}</span>
+                      <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase ${meta.chip}`}>
+                        <meta.icon className="h-2.5 w-2.5" /> {meta.label}
+                      </span>
+                    </div>
+
+                    {tab ? (
+                      <div className="space-y-0.5">
+                        <div className="text-[15px] font-black tabular-nums leading-tight">
+                          {formatBRL(tot?.total ?? 0)}
+                        </div>
+                        <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                          <span className="inline-flex items-center gap-0.5">
+                            <Clock className="h-2.5 w-2.5" /> {timeAgo(tab.opened_at)}
+                          </span>
+                          <span>·</span>
+                          <span>{tot?.count ?? 0} itens</span>
+                        </div>
+                        {tab.customer_name && (
+                          <div className="text-[10px] font-semibold truncate">{tab.customer_name}</div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                        <Users className="h-3 w-3" /> {t.seats} lugares
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
+        {looseTabs.length > 0 && (
+          <section>
+            <SectionHeader title="Comandas avulsas" count={looseTabs.length} />
+            <div className="flex gap-2 overflow-x-auto pb-1 -mx-3 px-3 snap-x">
+              {looseTabs.map((tab) => {
+                const tot = totals.get(tab.id);
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => { haptic.light(); setSelectedTabId(tab.id); }}
+                    className="snap-start shrink-0 w-[160px] text-left rounded-xl border-2 border-l-[6px] border-primary/40 border-l-primary bg-primary/5 p-3"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-black text-sm">{tab.code ? `#${tab.code}` : "Comanda"}</span>
+                      <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+                    </div>
+                    <div className="text-[15px] font-black tabular-nums mt-1">
+                      {formatBRL(tot?.total ?? 0)}
+                    </div>
+                    <div className="text-[10px] text-muted-foreground mt-0.5">
+                      {timeAgo(tab.opened_at)} · {tot?.count ?? 0} itens
+                    </div>
+                    {tab.customer_name && (
+                      <div className="text-[10px] font-semibold truncate mt-0.5">{tab.customer_name}</div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        )}
+      </div>
+
+      {/* FAB */}
+      <button
+        onClick={() => setShowAddSheet(true)}
+        className="fixed bottom-24 right-4 z-20 h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center active:scale-95 transition"
+        aria-label="Adicionar"
+      >
+        <Plus className="h-6 w-6" />
+      </button>
+
+      {showAddSheet && (
+        <ActionSheet onClose={() => setShowAddSheet(false)}>
+          <button
+            onClick={() => { setShowAddSheet(false); setShowNewTable(true); }}
+            className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-accent text-left"
+          >
+            <div className="h-10 w-10 rounded-full bg-emerald-500/15 flex items-center justify-center">
+              <Utensils className="h-5 w-5 text-emerald-600" />
+            </div>
+            <div>
+              <div className="font-bold text-sm">Nova mesa</div>
+              <div className="text-[11px] text-muted-foreground">Cadastrar mesa fixa</div>
+            </div>
+          </button>
+          <button
+            onClick={() => { setShowAddSheet(false); setShowQuickTab(true); }}
+            className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-accent text-left"
+          >
+            <div className="h-10 w-10 rounded-full bg-primary/15 flex items-center justify-center">
+              <Receipt className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <div className="font-bold text-sm">Comanda avulsa</div>
+              <div className="text-[11px] text-muted-foreground">Sem mesa vinculada</div>
+            </div>
+          </button>
+        </ActionSheet>
+      )}
+
+      {confirmOpenTable && (
+        <ModalShell title={`Abrir ${confirmOpenTable.label}?`} onClose={() => setConfirmOpenTable(null)}>
+          <p className="text-xs text-muted-foreground mb-4">
+            {confirmOpenTable.seats} lugares · A mesa será marcada como ocupada.
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              onClick={() => setConfirmOpenTable(null)}
+              className="text-sm font-bold py-2.5 rounded-md border border-border"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={() => { const t = confirmOpenTable; setConfirmOpenTable(null); openTableNow(t); }}
+              className="text-sm font-bold py-2.5 rounded-md bg-primary text-primary-foreground"
+            >
+              Abrir mesa
+            </button>
+          </div>
+        </ModalShell>
       )}
 
       {showNewTable && (
@@ -190,6 +340,39 @@ export const PdvMesasView = ({ storeId, session, products }: Props) => {
     </div>
   );
 };
+
+function KpiChip({ label, value, tone }: { label: string; value: string; tone: "emerald" | "amber" | "primary" }) {
+  const toneClass =
+    tone === "emerald" ? "text-emerald-600 dark:text-emerald-400"
+    : tone === "amber" ? "text-amber-600 dark:text-amber-400"
+    : "text-primary";
+  return (
+    <div className="rounded-lg bg-card border border-border px-2 py-1.5">
+      <div className="text-[9px] font-bold uppercase text-muted-foreground tracking-wider">{label}</div>
+      <div className={`text-sm font-black tabular-nums truncate ${toneClass}`}>{value}</div>
+    </div>
+  );
+}
+
+function SectionHeader({ title, count }: { title: string; count: number }) {
+  return (
+    <div className="flex items-center justify-between mb-2 px-0.5">
+      <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">{title}</p>
+      <span className="text-[10px] font-bold text-muted-foreground tabular-nums">{count}</span>
+    </div>
+  );
+}
+
+function ActionSheet({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
+  return (
+    <div className="fixed inset-0 z-[70] bg-black/50 flex items-end sm:items-center sm:justify-center" onClick={onClose}>
+      <div className="bg-background w-full sm:max-w-sm rounded-t-2xl sm:rounded-2xl p-3 pb-6 sm:pb-3" onClick={(e) => e.stopPropagation()}>
+        <div className="mx-auto h-1 w-10 rounded-full bg-muted mb-3 sm:hidden" />
+        <div className="space-y-1">{children}</div>
+      </div>
+    </div>
+  );
+}
 
 // ────────────────────────────────────────────────────────────────────────────
 
