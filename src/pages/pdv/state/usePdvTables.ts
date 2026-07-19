@@ -200,3 +200,30 @@ export async function rpcCloseTab(args: {
   if (error) throw error;
   return data as string; // order_id
 }
+
+/** Agrega totais/qtd de itens por tab_id para uma lista de tabs abertas. */
+export function usePdvTabsTotals(tabIds: string[]) {
+  const key = tabIds.slice().sort().join(",");
+  const q = useQuery({
+    queryKey: ["pdv-tabs-totals", key],
+    enabled: tabIds.length > 0,
+    staleTime: 4_000,
+    refetchInterval: 8_000,
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("pdv_tab_items")
+        .select("tab_id,quantity,unit_price")
+        .in("tab_id", tabIds);
+      if (error) throw error;
+      const totals = new Map<string, { total: number; count: number }>();
+      for (const r of (data ?? []) as { tab_id: string; quantity: number; unit_price: number }[]) {
+        const cur = totals.get(r.tab_id) ?? { total: 0, count: 0 };
+        cur.total += Number(r.quantity) * Number(r.unit_price);
+        cur.count += Number(r.quantity);
+        totals.set(r.tab_id, cur);
+      }
+      return totals;
+    },
+  });
+  return q.data ?? new Map<string, { total: number; count: number }>();
+}

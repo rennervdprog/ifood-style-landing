@@ -1,68 +1,55 @@
-# Plano — Refatoração mobile das abas do PDV
+# Plano — Refatoração UI/UX da aba Mesas (PDV)
 
-## Problema atual
-No mobile as abas de topo (`PdvTabs`) ficam com labels truncados ("V...", "M...", "H...", "T...", "R...", "M...", "C..."), sem ícones legíveis, sem indicação clara do que é cada aba, e o scroll horizontal é desconfortável. Visualmente poluído e amador.
+## Problemas atuais
+- Grid 2 col no mobile com cards pequenos, texto minúsculo (10px), sem hierarquia visual clara.
+- Status codificado só por cor (livre/ocupada/fechando) — difícil distinguir de relance.
+- Comandas avulsas empurradas para baixo, sem contexto de tempo/valor.
+- Header com dois botões concorrentes (Nova mesa / Comanda avulsa) ocupando muito espaço.
+- Drawer da comanda tem grid 2 colunas (produtos + itens) que no mobile fica apertado — precisa ser passos separados.
+- Sem indicador de tempo aberta, valor acumulado ou nº de itens direto no card da mesa.
+- Ações (Transferir / Cancelar / Fechar) em botões pequenos de 11px, difíceis de tocar.
 
-## Objetivo
-UI mobile-first, dedografiada (touch friendly), com hierarquia clara, sem truncar texto, e coerente com o resto do app (laranja/branco, tokens semânticos).
+## Nova estrutura (mobile-first)
 
-## Mudanças
+### 1. Topo compacto
+- KPI strip horizontal: `Livres X` · `Ocupadas Y` · `Total aberto R$ Z` (chips).
+- FAB `+` no canto inferior direito com sheet (Nova mesa / Comanda avulsa) — libera header.
 
-### 1. Bottom Tab Bar no mobile (padrão nativo)
-- No mobile (`<md`): mover as abas do topo para uma **barra fixa inferior** com 5 itens principais + botão "Mais" para abas secundárias.
-- No desktop/tablet: manter o layout de abas horizontal atual (já funciona bem).
-- Componente novo: `PdvMobileBottomNav.tsx`, controlado pelo mesmo estado de `activeTab` do `PdvPage`.
+### 2. Cards de mesa redesenhados
+- Grid 2 col mobile, mas cards maiores (altura ~110px) com:
+  - Número/label grande (font-black, 20px).
+  - Badge de status colorido com ícone (● livre, 🍽 ocupada, 💳 fechando).
+  - Se ocupada: valor acumulado em destaque + tempo aberta ("32 min") + nº de itens.
+  - Nome do cliente em linha secundária.
+- Borda esquerda colorida grossa (4px) reforçando status (redundância cor+forma).
+- Toque em mesa livre → sheet de confirmação "Abrir mesa X" (evita abrir sem querer).
 
-### 2. Agrupamento das abas
-Principais (bottom bar, sempre visíveis):
-- Vender (ícone carrinho)
-- Mesas (ícone grid)
-- Histórico (ícone relógio)
-- Relatórios (ícone gráfico)
-- Mais (abre bottom-sheet)
+### 3. Seção "Comandas avulsas" como carrossel horizontal
+- Scroll-x com cards médios mostrando código, cliente, valor, tempo.
+- Reduz altura vertical e diferencia visualmente das mesas.
 
-Secundárias (dentro do "Mais", bottom-sheet):
-- Cardápio
-- Meu Plano
-- Configurações
-- Turno / Fechar caixa
+### 4. Drawer da comanda — fluxo em passos (mobile)
+- Full-screen sheet com 2 abas topo: `Itens (n)` · `Adicionar produto`.
+- Aba Itens: lista grande, swipe-left ou botão remover 40x40.
+- Aba Adicionar: busca fixa + lista de produtos com toque grande, contador visual de qtd por produto.
+- Rodapé fixo sempre visível: `Total R$ X` + botão principal grande `Fechar` (verde), botões secundários `Transferir` e `Cancelar` menores acima em row.
+- Desktop mantém split 2 colunas (comportamento atual).
 
-### 3. Header mobile enxuto
-- `PdvTopbar` no mobile: só logo + nome da loja + status caixa + avatar operador. Remover ações duplicadas que já estão no bottom nav.
-- Badge de conexão (wifi) menor, sem texto.
+### 5. Micro-interações
+- Toast + haptic ao adicionar item.
+- Skeleton loading no lugar do spinner central.
+- Empty state com ilustração/ícone grande + CTA claro.
 
-### 4. Estados visuais
-- Aba ativa: fundo laranja suave (`bg-primary/10`), ícone e label em `text-primary`, barra superior de 2px.
-- Inativa: `text-muted-foreground`, ícone outline.
-- Toque com `active:scale-95` e haptic feedback (via `navigator.vibrate(10)`).
-- Safe-area inset bottom para iPhone/Android com barra de gestos: `pb-[env(safe-area-inset-bottom)]`.
+## Escopo técnico
+Arquivos afetados:
+- `src/pages/pdv/components/PdvMesasView.tsx` — refatoração principal.
+- Novo: `src/pages/pdv/components/PdvMesaCard.tsx` — card isolado com props (status, valor, tempo, itens).
+- Novo: `src/pages/pdv/components/PdvTabDrawer.tsx` — extrair drawer para arquivo próprio com layout mobile/desktop.
+- `usePdvTables` — adicionar cálculo agregado (total, itens, opened_at) por tab; ou calcular no componente via `usePdvTabItems` batch.
 
-### 5. Bottom sheet "Mais"
-- Usa `Sheet` do shadcn com `side="bottom"`, cantos arredondados no topo, grid 2 colunas de cards grandes (ícone + label), fechamento por swipe.
+Sem mudanças de backend/schema. Só apresentação.
 
-### 6. Aba "Vender" no mobile
-- Sticky search bar no topo do conteúdo (não do header) para busca de produto.
-- Botão flutuante do carrinho (FAB) com badge de quantidade e total — abre a etapa "cart" atual.
+## Versão
+Bump para v1.20.26 (build 1054) após implementação.
 
-### 7. Tokens e acessibilidade
-- Nada de cor hardcoded — usar `--primary`, `--muted`, `--border`, `--background`.
-- Alvos de toque ≥ 44px.
-- `aria-label` em cada item, `aria-current="page"` na aba ativa.
-
-## Arquivos a criar/alterar
-- **Novo:** `src/pages/pdv/components/PdvMobileBottomNav.tsx`
-- **Novo:** `src/pages/pdv/components/PdvMoreSheet.tsx`
-- **Alterar:** `src/pages/pdv/components/PdvTabs.tsx` — esconder no mobile (`hidden md:flex`)
-- **Alterar:** `src/pages/PdvPage.tsx` — montar bottom nav + sheet, adicionar `pb-20 md:pb-0` no container
-- **Alterar:** `src/pages/pdv/components/PdvTopbar.tsx` — versão compacta mobile
-- **Alterar:** `src/pages/PdvPage.tsx` (aba Vender) — FAB do carrinho no mobile
-- **Alterar:** `src/lib/appVersion.ts` + `android/app/build.gradle` — bump patch
-
-## Fora do escopo
-- Sem mudanças em lógica de negócio, RPCs, ou dados.
-- Sem mexer no layout desktop além de esconder o bottom nav.
-- Sem alterar KDS (já é tela dedicada).
-
-## Validação
-- Playwright mobile viewport (384×653) navegando por todas as abas via bottom nav + sheet "Mais".
-- Screenshots antes/depois de cada aba.
+Confirma que sigo com a implementação?
