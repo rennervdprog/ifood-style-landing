@@ -274,6 +274,14 @@ const StoreDirectory = () => {
   useEffect(() => {
     if (authLoading) return;
     if (!user) { setPartnerRole(null); setRoleChecked(true); return; }
+    // Fast-path: se já sabemos que este usuário é lojista/motoboy, navega
+    // imediatamente sem renderizar a landing (evita flash de 1-2s).
+    try {
+      const cached = localStorage.getItem(`itasuper:userRole:${user.id}`);
+      if (cached === "lojista") { navigate("/admin", { replace: true }); return; }
+      if (cached === "motoboy") { navigate("/entregador", { replace: true }); return; }
+      if (cached === "cliente") { navigate("/cliente", { replace: true }); return; }
+    } catch {}
     let cancelled = false;
     (async () => {
       try {
@@ -282,8 +290,12 @@ const StoreDirectory = () => {
         if (adminRole) { setPartnerRole(null); setRoleChecked(true); return; }
         const { data: profile } = await supabase.from("profiles").select("role, is_approved").eq("user_id", user.id).maybeSingle();
         if (cancelled) return;
-        if (profile?.role === "lojista") { navigate("/admin", { replace: true }); return; }
+        if (profile?.role === "lojista") {
+          try { localStorage.setItem(`itasuper:userRole:${user.id}`, "lojista"); } catch {}
+          navigate("/admin", { replace: true }); return;
+        }
         if (profile?.role === "motoboy") {
+          try { localStorage.setItem(`itasuper:userRole:${user.id}`, "motoboy"); } catch {}
           if (!profile?.is_approved) {
             const { data: sd } = await supabase.from("store_drivers").select("id").eq("driver_user_id", user.id).limit(1).maybeSingle();
             if (!sd) { navigate("/entregador", { replace: true }); return; }
@@ -292,7 +304,10 @@ const StoreDirectory = () => {
           if (!cancelled) setRoleChecked(true);
           return;
         }
-        if (!profile?.role || profile.role === "cliente") { navigate("/cliente", { replace: true }); return; }
+        if (!profile?.role || profile.role === "cliente") {
+          try { localStorage.setItem(`itasuper:userRole:${user.id}`, "cliente"); } catch {}
+          navigate("/cliente", { replace: true }); return;
+        }
       } catch (e) { console.error("StoreDirectory role check error:", e); }
       if (!cancelled) setRoleChecked(true);
     })();
@@ -300,6 +315,17 @@ const StoreDirectory = () => {
   }, [user?.id, authLoading]);
 
   if (roleChecked && partnerRole) return <PartnerClientView />;
+
+  // Enquanto valida sessão/role de um usuário logado, não mostra a landing
+  // pública — evita flash de marketing antes de redirecionar pra /admin,
+  // /cliente ou /entregador.
+  if (authLoading || (user && !roleChecked)) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
 
   const storesCount = liveStats?.stores ?? 35;
   const citiesCount = liveStats?.cities ?? 6;
