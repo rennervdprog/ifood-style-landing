@@ -758,8 +758,10 @@ const NotificationSection = () => {
         )}
         <p className="text-[10px] text-muted-foreground/70">Compartilhe esse link para clientes acessarem direto seu cardápio.</p>
       </div>
+      )}
 
       {/* Slugs alias — anti-spam WhatsApp */}
+      {!pdvOnly && (
       <div className="space-y-2">
         <label className="text-sm font-bold text-muted-foreground flex items-center gap-2">
           <MessageSquare className="h-4 w-4 text-primary" />
@@ -799,6 +801,7 @@ const NotificationSection = () => {
           Regenerar aliases
         </button>
       </div>
+      )}
 
       {/* Store Address */}
       <div className="space-y-3">
