@@ -58,6 +58,8 @@ type PizzaPriceMode = "maior" | "media" | "soma";
   storeMinimumOrderValue?: number | null;
   storeEstimatedDeliveryTime?: string | null;
    storeSettings?: Record<string, any> | null;
+  /** Quando true, oculta seções específicas de delivery (slug, WhatsApp, taxa de entrega, frete grátis, tempo estimado, auto-print delivery). */
+  pdvOnly?: boolean;
  }
  
  const StoreSettings = ({
@@ -68,6 +70,7 @@ type PizzaPriceMode = "maior" | "media" | "soma";
    storeDeliveryFeePerKm, storeSettings
   , storeMinimumOrderValue
   , storeEstimatedDeliveryTime
+  , pdvOnly = false
  }: StoreSettingsProps) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
