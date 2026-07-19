@@ -42,16 +42,21 @@ const TestStoreCreator = () => {
     enabled: !!user,
   });
 
-  const handleCreate = async (cat: typeof CATEGORIES[0], planType?: string) => {
+  const handleCreate = async (
+    cat: typeof CATEGORIES[0],
+    planType?: string,
+    storeType?: "food" | "apparel",
+  ) => {
     setCreating(true);
     try {
       const { error } = await supabase.rpc("admin_create_test_store", {
-        _name: `Teste ${planType === "pdv_only" ? "PDV " : ""}${cat.label.replace(/[^\w\s]/g, "").trim()}`,
+        _name: `Teste ${storeType === "apparel" ? "Boutique " : planType === "pdv_only" ? "PDV " : ""}${cat.label.replace(/[^\w\s]/g, "").trim()}`,
         _category: cat.value as any,
         ...(planType ? { _plan_type: planType } : {}),
+        ...(storeType ? { _store_type: storeType } : {}),
       } as any);
       if (error) throw error;
-      toast.success(`Loja teste ${planType === "pdv_only" ? "(Somente PDV) " : ""}"${cat.label}" criada!`);
+      toast.success(`Loja teste ${storeType === "apparel" ? "(Boutique) " : planType === "pdv_only" ? "(Somente PDV) " : ""}"${cat.label}" criada!`);
       refetch();
       queryClient.invalidateQueries({ queryKey: ["admin-stores-list"] });
       queryClient.invalidateQueries({ queryKey: ["admin-all-stores"] });
@@ -126,6 +131,22 @@ const TestStoreCreator = () => {
             </button>
           ))}
         </div>
+      </div>
+
+      <div className="pt-3 border-t border-border space-y-2">
+        <p className="text-xs font-bold text-foreground/70">👕 PDV Boutique (roupas — grade tamanho/cor)</p>
+        <button
+          onClick={() => handleCreate(
+            { value: "restaurante" as any, label: "👕 Boutique", emoji: "👕" },
+            "pdv_only",
+            "apparel",
+          )}
+          disabled={creating}
+          className="w-full flex items-center justify-center gap-2 p-3 rounded-xl border-2 border-fuchsia-500/40 bg-fuchsia-500/5 text-fuchsia-700 dark:text-fuchsia-400 text-xs font-bold transition-all active:scale-95 hover:border-fuchsia-500/70"
+        >
+          <span className="text-lg">👕</span>
+          <span>Criar loja teste — PDV Boutique (roupas)</span>
+        </button>
       </div>
 
       {testStores && testStores.length > 0 && (

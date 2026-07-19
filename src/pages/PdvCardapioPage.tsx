@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, lazy, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Loader2, BookOpen, Layers, Pizza } from "lucide-react";
+import { ArrowLeft, Loader2, BookOpen, Layers, Pizza, Shirt } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStorePdvAccess } from "@/hooks/useStorePdvAccess";
@@ -12,8 +12,9 @@ import { PdvQuickGridEditor } from "@/pages/pdv/components/PdvQuickGridEditor";
 // Sub-tabs pesadas — lazy para não pesar no primeiro paint do PDV.
 const AddonManager = lazy(() => import("@/components/AddonManager"));
 const BordasTab = lazy(() => import("@/pages/admin/tabs/BordasTab"));
+const ApparelProductForm = lazy(() => import("@/pages/pdv/apparel/ApparelProductForm"));
 
-type SubTab = "cardapio" | "adicionais" | "pizza_pastel";
+type SubTab = "cardapio" | "adicionais" | "pizza_pastel" | "boutique";
 
 /** Cardápio standalone acessível a partir do PDV (principalmente pra lojas pdv_only,
  *  que não têm painel do lojista). Renderiza o mesmo MenuBuilder do painel. */
@@ -28,7 +29,7 @@ const PdvCardapioPage = () => {
       // 1) Loja do próprio usuário logado — fonte da verdade pra lojistas
       const { data: owned } = await supabase
         .from("stores")
-        .select("id, name, category, categories")
+        .select("id, name, category, categories, store_type")
         .eq("owner_id", user!.id)
         .maybeSingle();
       if (owned) return owned;
@@ -38,7 +39,7 @@ const PdvCardapioPage = () => {
         const adminStoreId = localStorage.getItem("pdv_admin_selected_store");
         if (adminStoreId) {
           const { data } = await supabase
-            .from("stores").select("id, name, category, categories")
+            .from("stores").select("id, name, category, categories, store_type")
             .eq("id", adminStoreId).maybeSingle();
           if (data) return data;
         }
@@ -61,8 +62,13 @@ const PdvCardapioPage = () => {
     return [store.category, ...(((store as any).categories || []) as string[])].filter(Boolean);
   }, [store]);
   const showPizzaPastel = cats.includes("pizzas") || cats.includes("pasteis");
+  const isApparel = (store as any)?.store_type === "apparel";
 
   const [sub, setSub] = useState<SubTab>("cardapio");
+
+  useEffect(() => {
+    if (isApparel && sub === "cardapio") setSub("boutique");
+  }, [isApparel]); // eslint-disable-line
 
   useEffect(() => {
     if (!user) navigate("/", { replace: true });
@@ -118,13 +124,19 @@ const PdvCardapioPage = () => {
       {/* Sub-abas: Cardápio / Adicionais / Pizza-Pastel */}
       <div className="sticky top-12 z-10 bg-card border-b border-border">
         <div className="flex gap-1 overflow-x-auto px-2">
-          {([
-            { key: "cardapio", label: "Cardápio", icon: BookOpen },
-            { key: "adicionais", label: "Adicionais", icon: Layers },
-            ...(showPizzaPastel
-              ? [{ key: "pizza_pastel" as SubTab, label: cats.includes("pizzas") ? "Pizza / Pastel" : "Pastel", icon: Pizza }]
-              : []),
-          ] as { key: SubTab; label: string; icon: typeof BookOpen }[]).map(({ key, label, icon: Icon }) => (
+          {(isApparel
+            ? [
+                { key: "boutique" as SubTab, label: "Modelos & Grade", icon: Shirt },
+                { key: "cardapio" as SubTab, label: "Cardápio simples", icon: BookOpen },
+              ]
+            : ([
+                { key: "cardapio", label: "Cardápio", icon: BookOpen },
+                { key: "adicionais", label: "Adicionais", icon: Layers },
+                ...(showPizzaPastel
+                  ? [{ key: "pizza_pastel" as SubTab, label: cats.includes("pizzas") ? "Pizza / Pastel" : "Pastel", icon: Pizza }]
+                  : []),
+              ] as { key: SubTab; label: string; icon: typeof BookOpen }[])
+          ).map(({ key, label, icon: Icon }) => (
             <button
               key={key}
               onClick={() => setSub(key)}
@@ -142,6 +154,11 @@ const PdvCardapioPage = () => {
       </div>
 
       <div className="p-3">
+        {sub === "boutique" && isApparel && (
+          <Suspense fallback={<Loader2 className="h-5 w-5 animate-spin text-primary mx-auto mt-6" />}>
+            <ApparelProductForm storeId={store.id} />
+          </Suspense>
+        )}
         {sub === "cardapio" && (
           <>
             <PdvQuickGridEditor storeId={store.id} />
