@@ -6,7 +6,7 @@ import {
   Receipt, Banknote, CreditCard, Smartphone, Loader2,
   Clock, ArrowDownCircle, ArrowUpCircle, ChevronRight,
   ChevronDown, Package, Lock, Unlock, BarChart3,
-  Ban, XCircle, Search,
+  Ban, XCircle, Search, Undo2,
 } from "lucide-react";
 import { PdvCancelSaleDialog } from "./PdvCancelSaleDialog";
 import { ApparelReturnDialog } from "@/pages/pdv/apparel/ApparelReturnDialog";
