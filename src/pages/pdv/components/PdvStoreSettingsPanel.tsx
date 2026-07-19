@@ -39,6 +39,7 @@ export function PdvStoreSettingsPanel({ storeId }: { storeId: string }) {
       </div>
       <StoreSettings
         storeId={store.id}
+        pdvOnly
         storeName={store.name}
         storeCategory={store.category}
         storeCategories={store.categories || null}
