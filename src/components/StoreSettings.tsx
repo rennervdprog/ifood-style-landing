@@ -1516,6 +1516,7 @@ const NotificationSection = () => {
             </div>
           </label>
 
+          {!pdvOnly && (
           <label className="flex items-start gap-3 rounded-xl border border-border bg-muted/20 p-3 cursor-pointer">
             <input
               type="checkbox"
@@ -1530,6 +1531,7 @@ const NotificationSection = () => {
               </p>
             </div>
           </label>
+          )}
         </div>
       </div>
 
