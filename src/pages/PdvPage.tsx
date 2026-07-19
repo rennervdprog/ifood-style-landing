@@ -256,13 +256,13 @@ const PdvPage = () => {
       // Super admin com loja escolhida → busca direto por id (qualquer status)
       if (isAdmin && adminStoreId) {
         const { data } = await supabase
-          .from("stores").select("id, name, category, categories, settings")
+          .from("stores").select("id, name, category, categories, settings, store_type")
           .eq("id", adminStoreId).maybeSingle();
         try { if (data) localStorage.setItem("pdv_store_v1", JSON.stringify(data)); } catch {}
         return data;
       }
       const { data } = await supabase
-        .from("stores").select("id, name, category, categories, settings")
+        .from("stores").select("id, name, category, categories, settings, store_type")
         .eq("owner_id", user!.id).eq("status", "ativo").maybeSingle();
       try { if (data) localStorage.setItem("pdv_store_v1", JSON.stringify(data)); } catch {}
       return data;
