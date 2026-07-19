@@ -278,7 +278,11 @@ const StoreDirectory = () => {
     // imediatamente sem renderizar a landing (evita flash de 1-2s).
     try {
       const cached = localStorage.getItem(`itasuper:userRole:${user.id}`);
-      if (cached === "lojista") { navigate("/admin", { replace: true }); return; }
+      const cachedPlan = localStorage.getItem(`itasuper:userPlan:${user.id}`);
+      if (cached === "lojista") {
+        navigate(cachedPlan === "pdv_only" ? "/admin/pdv" : "/admin", { replace: true });
+        return;
+      }
       if (cached === "motoboy") { navigate("/entregador", { replace: true }); return; }
       if (cached === "cliente") { navigate("/cliente", { replace: true }); return; }
     } catch {}
