@@ -166,6 +166,16 @@ const PdvPage = () => {
     clearSale: clearSaleCart,
   } = usePdvCart();
 
+  // Fix v1.20.20 — em mobile, ao remover o último item do carrinho (em modo
+  // comanda ou balcão), voltar automaticamente para o catálogo. Sem isso o
+  // usuário ficava travado na tela do carrinho com botões desabilitados e
+  // sem conseguir selecionar novos itens.
+  useEffect(() => {
+    if (isMobile && mobileStep === "cart" && cart.length === 0) {
+      setMobileStep("catalog");
+    }
+  }, [isMobile, mobileStep, cart.length]);
+
   // Fluxo de troca de casquinhas no PDV
   const [emptiesFlow, setEmptiesFlow] = useState<{
     step: "lookup" | "return" | null;
