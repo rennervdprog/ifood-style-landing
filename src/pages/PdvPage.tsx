@@ -511,6 +511,22 @@ const PdvPage = () => {
       setOrderDone(true);
       // Refresca o dashboard "Agora" após cada venda concluída.
       queryClient.invalidateQueries({ queryKey: ["pdv-now", currentSession?.id] });
+      // Boutique: decrementa estoque de cada variante vendida
+      const apparelItems = cart.filter((i) => (i.metadata as any)?.apparel_variant_id);
+      if (apparelItems.length) {
+        (async () => {
+          for (const it of apparelItems) {
+            try {
+              await supabase.rpc("apparel_adjust_stock" as any, {
+                _variant_id: (it.metadata as any).apparel_variant_id,
+                _delta: -Math.abs(it.quantity),
+                _reason: "sale",
+              });
+            } catch {}
+          }
+          queryClient.invalidateQueries({ queryKey: ["apparel-variants", store?.id] });
+        })();
+      }
     },
       onClearScheduled: clearSale,
       onEmptiesFlowStart: ({ orderId, items }) =>
