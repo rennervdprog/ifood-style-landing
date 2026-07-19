@@ -294,7 +294,7 @@ const AdminDashboard = () => {
 
       return data;
     },
-    enabled: !!user && (!simulateStoreId || !adminRoleLoading),
+    enabled: !!user,
     staleTime: 1000 * 60 * 10,
   });
 
@@ -340,7 +340,7 @@ const AdminDashboard = () => {
       }
       return rows?.[0] ?? null;
     },
-    enabled: !!user,
+    enabled: !!user && (!simulateStoreId || !adminRoleLoading),
     staleTime: 1000 * 60 * 5, // 5min — catálogo muda raramente
   });
 
