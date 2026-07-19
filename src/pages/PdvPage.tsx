@@ -988,10 +988,12 @@ const PdvPage = () => {
 
       {/* ── HISTÓRICO ── */}
       {tab === "historico" && (
-        <div className="flex-1 overflow-y-auto p-3">
-          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Movimentações do turno atual</p>
-          <PdvHistorico sessionId={currentSession?.id} />
-        </div>
+        <PdvHistorico
+          sessionId={currentSession?.id}
+          session={currentSession as any}
+          operatorName={pdvOperator?.name || operatorName}
+          onViewTurnos={() => setTab("turnos")}
+        />
       )}
 
       {/* ── MESAS / COMANDAS (Fase B) ── */}
