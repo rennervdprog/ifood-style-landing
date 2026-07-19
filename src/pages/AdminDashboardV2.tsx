@@ -329,13 +329,16 @@ const AdminDashboard = () => {
       } else {
         query = query.eq("owner_id", user!.id);
       }
-      const { data, error } = await query.maybeSingle();
+      // Defensivo: se um mesmo owner tiver >1 loja (raro, ex. dados legados),
+      // pega a mais recente em vez de estourar PGRST116 e sumir a loja.
+      const { data: rows, error } = await query
+        .order("created_at", { ascending: false })
+        .limit(1);
       if (error) {
         console.error("[AdminDashboard] store query error:", error);
         throw error;
       }
-      
-      return data;
+      return rows?.[0] ?? null;
     },
     enabled: !!user,
     staleTime: 1000 * 60 * 5, // 5min — catálogo muda raramente
