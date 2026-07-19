@@ -1,59 +1,86 @@
-# Plano — UI/UX profissional da aba Histórico (PDV)
+# PDV Boutique — Modo Roupa
 
-## Problemas atuais
-- Header minúsculo ("Movimentações do turno atual") sem contexto do turno (abertura, tempo, totais).
-- Lista plana e cronológica de vendas/sangria/suprimento — sem agrupar por hora, sem filtros, sem busca.
-- Cards de venda mostram só valor + método; não dá pra ver itens, cliente, cancelar sem abrir Turnos.
-- Não há KPIs de topo (nº vendas, ticket médio, dinheiro em caixa, sangrias).
-- Sem distinção visual entre vendas normais x canceladas x estornos.
-- Sem paginação/scroll infinito — `limit=50` fixo, silencioso.
-- Aba "Turnos" (histórico antigo) vive separada — usuário precisa saber que existem duas abas.
+Objetivo: habilitar um "modo boutique" no PDV existente sem quebrar o food/varejo atual. Ativado por loja via `store_type = 'apparel'`. Todo o backend fica no Supabase externo.
 
-## Nova estrutura (mobile-first)
+## Escopo (o que entra agora)
 
-### 1. Header contextual do turno atual (sticky)
-- Card compacto no topo com: operador · hora abertura · tempo aberto (`3h 12min`) · badge "● Aberto".
-- Linha de KPIs em chips horizontais scrolláveis:
-  `Vendas 12` · `Total R$ 480` · `Ticket R$ 40` · `Dinheiro R$ 210` · `Sangrias −R$ 50`.
-- Botão discreto "Ver turnos anteriores" → abre bottom-sheet com `PdvSessionsList` (elimina a aba Turnos duplicada, ou mantém como atalho).
+1. Modelo de dados de variantes (grade tamanho × cor)
+2. Estoque por SKU em tempo real (com movimentações)
+3. Layout de venda adaptado — matriz visual P/M/G × cores
+4. Cadastro de produto "roupa" (SKU-pai + variantes geradas)
+5. Troca e devolução com vale-crédito do cliente
+6. CRM básico do cliente (histórico, tamanho preferido, telefone)
+7. Impressão de etiqueta com código de barras (EAN/Code128)
+8. Ajustes de UI/UX (cards do catálogo, cores de categoria, histórico)
+9. Testes E2E cobrindo cada fluxo novo
 
-### 2. Barra de filtros + busca (sticky abaixo do header)
-- Input de busca (código do pedido, nome do item, valor).
-- Chips de filtro rápido: `Tudo` · `Vendas` · `Sangrias` · `Suprimentos` · `Canceladas`.
-- Chip de método: `Dinheiro` · `PIX` · `Crédito` · `Débito` (multi-select).
+Fora do escopo desta fase: NFC-e / integração fiscal (esforço grande, exige certificado A1 do lojista — fica para fase 2).
 
-### 3. Timeline agrupada por hora
-- Separadores tipo "14:00 — 15:00 · 6 vendas · R$ 240" (colapsáveis).
-- Cada item de venda expansível (tap → expande inline):
-  - Fechado: método + itens resumidos ("2x X-Burguer, 1x Coca") + valor.
-  - Aberto: lista completa de itens com qty × preço, desconto, mesa/comanda, cliente, hora, botão "Cancelar venda" e "Reimprimir".
-- Sangria/suprimento: linha mais fina, ícone lateral, motivo em itálico.
+## Estrutura técnica (para dev)
 
-### 4. Rodapé de estado
-- Skeleton loading (3 cards fantasmas) em vez de spinner central.
-- Empty state com ícone + CTA "Registrar primeira venda" (leva pra aba Vender).
-- Paginação: botão "Carregar mais 50" no fim, ou infinite scroll com IntersectionObserver.
+### Backend (Supabase externo)
+Uma única migration aplicada via edge function `oneshot` com `EXTERNAL_SUPABASE_SERVICE_KEY`:
 
-### 5. Micro-detalhes visuais
-- Borda-esquerda 3px colorida por tipo (verde=venda, vermelho=sangria, azul=suprimento, cinza=cancelada).
-- Valor sempre alinhado à direita, tabular-nums, font-black.
-- Badge de método com ícone (já existe) mas maior e com bg tintado.
-- Haptic leve ao expandir card.
+- `stores.store_type` enum: `food | apparel` (default `food`)
+- `product_variants`: `id, product_id, size, color, sku, barcode, price_override, stock_qty, active, created_at, updated_at` + GRANT + RLS + trigger updated_at
+- `stock_movements`: `id, store_id, variant_id, delta, reason (sale|return|adjust|entry), operator_id, ref_order_id, created_at` + GRANT + RLS
+- `customer_credits` (vale-troca): `id, store_id, customer_id, amount, source_order_id, used_at, expires_at, created_at` + GRANT + RLS
+- `customers_crm` (extensão do cliente por loja): `id, store_id, customer_id, preferred_size, notes, total_spent, last_purchase_at`
+- `order_items.variant_id` (nullable, FK)
 
-## Escopo técnico
-Arquivos afetados:
-- `src/components/pdv/PdvHistorico.tsx` — refatoração principal:
-  - Extrair `PdvHistoricoHeader` (KPIs + contexto do turno).
-  - Extrair `PdvHistoricoFilters` (busca + chips).
-  - Extrair `PdvHistoricoItem` (card expansível com detalhes/cancelar/reimprimir).
-  - Adicionar agrupamento por hora via `useMemo`.
-  - Adicionar paginação (queryKey com `page` ou `useInfiniteQuery`).
-- `src/pages/PdvPage.tsx` — passar mais props (session, operator) ao Histórico; opcionalmente esconder a aba "Turnos" separada e usar o botão dentro do Histórico.
-- Reaproveitar `PdvCancelSaleDialog` já existente para cancelamento inline.
+RPCs `SECURITY DEFINER` (padrão do projeto):
+- `apparel_create_product_with_variants(product, variants[])`
+- `apparel_adjust_stock(variant_id, delta, reason)`
+- `apparel_return_item(order_item_id, qty, mode: 'credit'|'refund')` → gera `customer_credits` ou reembolso
+- `apparel_apply_credit(customer_id, amount, order_id)`
+- `apparel_stock_report(store_id, filters)`
 
-Sem mudanças de backend/schema. Só UI + query enrichment (join com order_items pra mostrar itens resumidos direto no card).
+### Frontend
+- `src/pages/pdv/apparel/` isolado, carregado condicionalmente quando `store_type='apparel'`
+- `ApparelCatalogGrid.tsx` — card do modelo com foto grande + chip de cores + "abrir grade"
+- `ApparelVariantMatrix.tsx` — matriz tamanho × cor, célula mostra estoque, clique adiciona ao carrinho
+- `ApparelProductForm.tsx` — cadastro do modelo com gerador automático de variantes
+- `ApparelStockPage.tsx` — listagem, filtro por baixo estoque, ajuste rápido
+- `ApparelReturnDialog.tsx` — troca/devolução a partir do histórico
+- `CustomerCrmDrawer.tsx` — ficha do cliente no checkout
+- `LabelPrintDialog.tsx` — geração de etiqueta (Code128 via JsBarcode) para impressora térmica
 
-## Versão
-Bump para v1.20.27 (build 1055) após implementação.
+Roteamento: `PdvTabs` detecta `store_type` e troca o componente da aba Vender e Cardápio; demais abas (Mesas, Histórico, Relatórios, Caixa) permanecem.
 
-Confirma que sigo com a implementação?
+### Super Admin
+- Toggle `store_type` na tela de edição da loja
+- `TestStoreCreator` ganha opção "PDV Boutique (roupas)"
+
+## E2E (Playwright)
+Nova suíte `/tmp/browser/pdv_apparel/`:
+1. `01_setup.py` — cria loja sandbox `e2e-boutique@itasuper.test` via `e2e-mint-session`, seta `store_type='apparel'`
+2. `02_cadastro_variantes.py` — cria modelo "Camiseta Básica" com grade P/M/G × 3 cores, valida 9 SKUs e estoque inicial
+3. `03_venda_matriz.py` — abre caixa, adiciona 2 variantes pela matriz, finaliza pagamento, valida decremento de estoque
+4. `04_troca_credito.py` — devolve 1 item do pedido, valida geração de `customer_credits` e reentrada no estoque
+5. `05_aplicar_credito.py` — nova venda usando vale-crédito, valida `used_at`
+6. `06_baixo_estoque.py` — força estoque = 0 em variante e valida bloqueio + alerta
+7. `07_crm.py` — valida histórico e tamanho preferido do cliente
+8. `08_etiqueta.py` — abre diálogo de etiqueta, valida SVG do código de barras
+9. `09_mobile.py` — repete 03 e 04 em viewport mobile
+10. `10_isolamento.py` — loja food não vê UI apparel; loja apparel não vê aba delivery
+
+Cada script tira screenshot em cada passo e valida via `expect`. Roda em série; falha aborta a suíte.
+
+## Entregas por fase
+
+Fase 1 — Base (dia 1-2): migration + RPCs + toggle super admin
+Fase 2 — Cadastro (dia 3): `ApparelProductForm` + gerador de variantes + E2E 01-02
+Fase 3 — Venda (dia 4-5): matriz + estoque em tempo real + E2E 03, 06, 09
+Fase 4 — Troca/CRM (dia 6-7): devolução, vale-crédito, ficha do cliente + E2E 04-05, 07
+Fase 5 — Etiqueta + polish (dia 8): impressão + isolamento + E2E 08, 10
+Fase 6 — Regressão: rodar suíte E2E antiga do PDV food para garantir zero quebra
+
+## Riscos e mitigações
+- **Quebrar PDV food**: todo código novo atrás de `if (store_type==='apparel')`; nenhuma tabela existente ganha coluna obrigatória
+- **Estoque race condition**: `apparel_adjust_stock` usa `UPDATE ... WHERE stock_qty >= delta` com retorno; falha vira toast
+- **Migração de loja existente food→apparel**: bloqueada por enquanto (só cria já como apparel)
+
+## Versionamento
+Ao final: bump para v1.21.0 (build 1063+), sincronizado em `appVersion.ts` e `build.gradle`.
+
+Aprovando este plano, começo pela Fase 1 (migration + toggle) e sigo em sequência, rodando o E2E de cada fase antes de avançar.
