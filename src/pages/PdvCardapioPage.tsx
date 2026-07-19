@@ -26,7 +26,27 @@ const PdvCardapioPage = () => {
     queryKey: ["pdv-cardapio-store", user?.id],
     enabled: !!user?.id,
     queryFn: async () => {
-      // 1) Loja do próprio usuário logado — fonte da verdade pra lojistas
+      const { data: adminRole } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user!.id)
+        .eq("role", "admin")
+        .maybeSingle();
+
+      // 1) Super-admin operando loja fake/sandbox: respeitar seleção do PDV.
+      if (adminRole) {
+        try {
+          const adminStoreId = localStorage.getItem("pdv_admin_selected_store");
+          if (adminStoreId) {
+            const { data } = await supabase
+              .from("stores").select("id, name, category, categories, store_type")
+              .eq("id", adminStoreId).maybeSingle();
+            if (data) return data;
+          }
+        } catch {}
+      }
+
+      // 2) Loja do próprio usuário logado — fonte da verdade pra lojistas
       const { data: owned } = await supabase
         .from("stores")
         .select("id, name, category, categories, store_type")
@@ -34,16 +54,6 @@ const PdvCardapioPage = () => {
         .maybeSingle();
       if (owned) return owned;
 
-      // 2) Sem loja própria (super-admin operando outra loja): respeitar seleção do PDV
-      try {
-        const adminStoreId = localStorage.getItem("pdv_admin_selected_store");
-        if (adminStoreId) {
-          const { data } = await supabase
-            .from("stores").select("id, name, category, categories, store_type")
-            .eq("id", adminStoreId).maybeSingle();
-          if (data) return data;
-        }
-      } catch {}
       try {
         const raw = localStorage.getItem("pdv_store_v1");
         if (raw) {
