@@ -682,6 +682,7 @@ const NotificationSection = () => {
       </div>
 
       {/* WhatsApp */}
+      {!pdvOnly && (
       <div className="space-y-2">
         <label className="text-sm font-bold text-foreground/80 flex items-center gap-2">
           <Phone className="h-4 w-4 text-primary" />
@@ -697,8 +698,10 @@ const NotificationSection = () => {
         />
         <p className="text-[10px] text-muted-foreground/70">Será exibido para clientes e entregadores.</p>
       </div>
+      )}
 
       {/* Store Link (Slug) */}
+      {!pdvOnly && (
       <div className="space-y-2">
         <label className="text-sm font-bold text-foreground/80 flex items-center gap-2">
           <Link className="h-4 w-4 text-primary" />
