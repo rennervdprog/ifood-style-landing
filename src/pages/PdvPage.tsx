@@ -1013,6 +1013,7 @@ const PdvPage = () => {
             session={currentSession as any}
             operatorName={pdvOperator?.name || operatorName}
             onViewTurnos={() => setTab("turnos")}
+            isApparel={isApparel}
           />
         </div>
       )}
