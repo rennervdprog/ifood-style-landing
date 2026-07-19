@@ -2,8 +2,9 @@ import { useMemo, useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { formatBRL } from "@/lib/utils";
-import { Loader2, Search, Shirt, X, ArrowLeft } from "lucide-react";
+import { Loader2, Search, Shirt, X, ArrowLeft, Tag } from "lucide-react";
 import type { Product } from "@/pages/pdv/types";
+import LabelPrintDialog, { type LabelData } from "./LabelPrintDialog";
 
 interface Variant {
   id: string;
@@ -190,6 +191,7 @@ function VariantMatrixSheet({
   addItem: (p: Product) => void;
   getQty: (id: string) => number;
 }) {
+  const [labels, setLabels] = useState<LabelData[] | null>(null);
   const { sizes, colors, matrix } = useMemo(() => {
     const sSet = new Set<string>();
     const cSet = new Set<string>();
@@ -238,6 +240,26 @@ function VariantMatrixSheet({
             <p className="text-sm font-bold truncate">{product.name}</p>
             <p className="text-xs text-muted-foreground pdv-mono">{formatBRL(Number(product.price))}</p>
           </div>
+          <button
+            onClick={() =>
+              setLabels(
+                variants
+                  .filter((v) => v.stock_qty > 0 || v.barcode || v.sku)
+                  .map((v) => ({
+                    productName: product.name,
+                    size: v.size,
+                    color: v.color,
+                    price: v.price_override != null ? Number(v.price_override) : Number(product.price),
+                    sku: v.sku,
+                    barcode: v.barcode || v.sku,
+                  })),
+              )
+            }
+            className="flex items-center gap-1 text-[11px] font-bold bg-muted/60 hover:bg-muted rounded-lg px-2 py-1.5"
+            title="Imprimir etiquetas"
+          >
+            <Tag className="h-3.5 w-3.5" /> Etiquetas
+          </button>
           <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-muted">
             <X className="h-4 w-4" />
           </button>
@@ -300,6 +322,7 @@ function VariantMatrixSheet({
           </p>
         </div>
       </div>
+      {labels && <LabelPrintDialog items={labels} onClose={() => setLabels(null)} />}
     </div>
   );
 }
