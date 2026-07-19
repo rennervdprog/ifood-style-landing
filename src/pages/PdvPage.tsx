@@ -55,6 +55,7 @@ import { usePdvCheckout } from "@/pages/pdv/state/usePdvCheckout";
 import { usePdvOutbox } from "@/pages/pdv/state/usePdvOutbox";
 import { PdvCatalogSection } from "@/pages/pdv/components/PdvCatalogSection";
 import ApparelCatalogGrid from "@/pages/pdv/apparel/ApparelCatalogGrid";
+import ApparelCustomerPanel, { type ApparelCustomer, type ApparelCredit } from "@/pages/pdv/apparel/ApparelCustomerPanel";
 import { PdvCategoriesRail } from "@/pages/pdv/components/PdvCategoriesRail";
 import { PdvCartSection } from "@/pages/pdv/components/PdvCartSection";
 import { PdvNowCard } from "@/pages/pdv/components/PdvNowCard";
@@ -279,6 +280,23 @@ const PdvPage = () => {
   });
 
   const isApparel = (store as any)?.store_type === "apparel";
+
+  // Fase 4.2 Boutique — cliente + vale-crédito da venda atual
+  const [apparelCustomer, setApparelCustomer] = useState<ApparelCustomer>({ phone: "", name: "" });
+  const [apparelCredit, setApparelCredit] = useState<ApparelCredit | null>(null);
+  // Sincroniza vale-crédito com o desconto do carrinho (usa engine de preço já existente)
+  useEffect(() => {
+    if (!isApparel) return;
+    if (apparelCredit) {
+      setDiscountType("R$");
+      setDiscountInput(apparelCredit.amount.toFixed(2).replace(".", ","));
+      setShowDiscount(true);
+    } else {
+      // Se o desconto vigente veio do vale, limpa
+      setDiscountInput((prev) => prev);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [apparelCredit, isApparel]);
 
   // Lista de lojas para o seletor (apenas admin, apenas quando sem loja ativa)
   const { data: adminStores } = useQuery({
