@@ -1193,6 +1193,16 @@ const PdvPage = () => {
                   saldoEsperado={saldoEsperado}
                   drawerEnabled={drawerEnabled}
                 />
+                {isApparel && !selectedTabId && (
+                  <ApparelCustomerPanel
+                    storeId={store?.id}
+                    customer={apparelCustomer}
+                    onCustomerChange={setApparelCustomer}
+                    credit={apparelCredit}
+                    onCreditChange={setApparelCredit}
+                    finalTotal={finalTotal}
+                  />
+                )}
                 <PdvCartSection
                   cart={cart} storeId={store?.id}
                   tableId={tableId} setTableId={setTableId}
