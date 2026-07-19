@@ -1629,6 +1629,16 @@ const AdminDashboard = () => {
     }
   }, [isPdvOnly, storePlan.isLoading, navigate]);
 
+  // Cacheia role + plan_type do usuário para que reloads futuros pulem
+  // qualquer flash (landing → painel delivery) e vão direto pra tela certa.
+  useEffect(() => {
+    if (!user?.id || storePlan.isLoading) return;
+    try {
+      localStorage.setItem(`itasuper:userRole:${user.id}`, "lojista");
+      localStorage.setItem(`itasuper:userPlan:${user.id}`, storePlan.planType);
+    } catch {}
+  }, [user?.id, storePlan.isLoading, storePlan.planType]);
+
   // Grupos visíveis (com pelo menos 1 sub-tab disponível)
   const visibleGroups: DashboardGroup[] = useMemo(
     () => {
