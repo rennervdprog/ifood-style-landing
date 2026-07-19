@@ -1,10 +1,11 @@
-import { ShoppingCart, History, Receipt, BarChart3, LayoutGrid, CreditCard } from "lucide-react";
+import { ShoppingCart, History, Receipt, BarChart3, LayoutGrid, CreditCard, Settings } from "lucide-react";
 import type { PdvTab } from "@/pages/pdv/types";
 
 interface Props {
   tab: PdvTab;
   onChange: (t: PdvTab) => void;
-  /** Mostra a aba "Meu Plano" (apenas lojas PDV Only). */
+  /** Mostra as abas "Meu Plano" e "Configurações" (apenas lojas PDV Only,
+   *  que não têm acesso ao painel `/admin` completo). */
   showMeuPlano?: boolean;
 }
 
@@ -18,7 +19,11 @@ const BASE_TABS: { id: PdvTab; label: string; icon: any }[] = [
 
 export const PdvTabs = ({ tab, onChange, showMeuPlano }: Props) => {
   const tabs = showMeuPlano
-    ? [...BASE_TABS, { id: "meu_plano" as PdvTab, label: "Meu Plano", icon: CreditCard }]
+    ? [
+        ...BASE_TABS,
+        { id: "meu_plano" as PdvTab, label: "Meu Plano", icon: CreditCard },
+        { id: "configuracoes" as PdvTab, label: "Configurações", icon: Settings },
+      ]
     : BASE_TABS;
   return (
   <div

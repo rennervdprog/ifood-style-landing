@@ -73,6 +73,7 @@ import { PdvStatusBar } from "@/pages/pdv/components/PdvStatusBar";
 import { PdvSessionCard } from "@/pages/pdv/components/PdvSessionCard";
 import { PdvMesasView } from "@/pages/pdv/components/PdvMesasView";
 import StoreSubscription from "@/components/StoreSubscription";
+import { PdvStoreSettingsPanel } from "@/pages/pdv/components/PdvStoreSettingsPanel";
 
 // Detecta se está em tela mobile (< 768px)
 const useIsMobile = () => {
@@ -1043,6 +1044,13 @@ const PdvPage = () => {
       {tab === "meu_plano" && store?.id && (
         <div className="flex-1 overflow-y-auto">
           <StoreSubscription storeId={store.id} storeName={store.name || ""} />
+        </div>
+      )}
+
+      {/* ── CONFIGURAÇÕES DA LOJA (PDV Only) ── */}
+      {tab === "configuracoes" && store?.id && (
+        <div className="flex-1 overflow-y-auto">
+          <PdvStoreSettingsPanel storeId={store.id} />
         </div>
       )}
 
