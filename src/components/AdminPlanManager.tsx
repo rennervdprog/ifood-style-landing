@@ -229,7 +229,7 @@ export default function AdminPlanManager() {
             started_at: new Date().toISOString(),
             next_billing_date: nextBilling,
             pdv_enabled: false,
-            pdv_commission_rate: planType === "fixed" || planType === "pdv_only" ? 0 : planType === "hybrid" ? 1.0 : 2.0,
+            pdv_commission_rate: planType === "fixed" ? 0 : planType === "hybrid" ? 1.0 : 2.0,
             pdv_commission_pending: 0,
             pdv_fixed_fee_per_sale: planType === "fixed" ? 1.0 : 0,
           });
