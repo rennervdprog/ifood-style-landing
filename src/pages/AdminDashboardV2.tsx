@@ -277,7 +277,7 @@ const AdminDashboard = () => {
       const { data } = await supabase.from("profiles").select("is_approved, role").eq("user_id", user!.id).maybeSingle();
       return data;
     },
-    enabled: !!user && (!simulateStoreId || !adminRoleLoading),
+    enabled: !!user,
     staleTime: 1000 * 60 * 5,
   });
 
@@ -294,7 +294,7 @@ const AdminDashboard = () => {
 
       return data;
     },
-    enabled: !!user,
+    enabled: !!user && (!simulateStoreId || !adminRoleLoading),
     staleTime: 1000 * 60 * 10,
   });
 
