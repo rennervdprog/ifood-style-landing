@@ -29,7 +29,7 @@ export const PdvTabs = ({ tab, onChange, showMeuPlano }: Props) => {
   <div
     role="tablist"
     aria-label="Seções do PDV"
-    className="flex border-b border-border bg-card shrink-0 overflow-x-auto no-scrollbar"
+    className="hidden md:flex border-b border-border bg-card shrink-0 overflow-x-auto no-scrollbar"
   >
     {tabs.map(({ id, label, icon: Icon }) => (
       <button
