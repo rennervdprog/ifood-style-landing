@@ -19,31 +19,14 @@ const SERVICE_ONLY = [
   "get_backend_url()",
 ];
 
-// Funções que precisam de sessão logada (revogar só de anon)
-const AUTH_ONLY = [
-  "_apply_plan_change(uuid, store_plan_type, numeric, numeric, boolean, numeric, boolean, boolean, boolean)",
-  "accrue_moderator_plan_fee(uuid, numeric)",
-  "apparel_apply_credit(uuid, uuid, numeric)",
-  "apparel_return_item(uuid, numeric, text)",
-  "apparel_set_store_type(uuid, text)",
-  "apply_wallet_discount(uuid, uuid, numeric)",
-  "calculate_prorata_credit(uuid)",
-  "check_plan_upgrade(uuid)",
-  "clear_physical_payment_balance(uuid, text, numeric, numeric)",
-  "driver_finish_delivery_offline(uuid, text, timestamp with time zone, text)",
-  "get_pdv_session_summary(uuid)",
-  "get_pdv_stats(uuid, integer)",
-  "get_store_report(uuid, date, date)",
-  "get_store_financial_summary(uuid)",
-  "list_platform_wa_log(text, text, uuid, timestamp with time zone, timestamp with time zone, integer, integer)",
-  "pdv_cancel_tab(uuid, text)",
-  "pdv_finalize_sale(jsonb)",
-  "pdv_remove_tab_item(uuid)",
-  "platform_wa_stats()",
-  "process_whatsapp_message(uuid, text, text)",
-  "request_withdrawal_atomic(uuid, numeric, text, text)",
-  "update_store_monthly_revenue(uuid, text)",
-  "use_coupon(uuid, uuid, uuid)",
+// Nomes de funções cuja EXECUTE deve ser revogada de anon (todas as overloads)
+const AUTH_ONLY_NAMES = [
+  "_apply_plan_change","accrue_moderator_plan_fee","apparel_apply_credit","apparel_return_item",
+  "apparel_set_store_type","apply_wallet_discount","calculate_prorata_credit","check_plan_upgrade",
+  "clear_physical_payment_balance","driver_finish_delivery_offline","get_pdv_session_summary",
+  "get_pdv_stats","get_store_report","get_store_financial_summary","list_platform_wa_log",
+  "pdv_cancel_tab","pdv_finalize_sale","pdv_remove_tab_item","platform_wa_stats",
+  "process_whatsapp_message","request_withdrawal_atomic","update_store_monthly_revenue","use_coupon",
 ];
 
 Deno.serve(async (req) => {
@@ -58,12 +41,19 @@ Deno.serve(async (req) => {
   }
   results.service_only = await sql(svc.join("\n"));
 
-  // 2) REVOGA anon de funções que exigem sessão
-  const ao: string[] = [];
-  for (const f of AUTH_ONLY) {
-    ao.push(`REVOKE EXECUTE ON FUNCTION public.${f} FROM anon;`);
-  }
-  results.auth_only = await sql(ao.join("\n"));
+  // 2) REVOGA anon de todas as overloads dessas funções
+  const list = AUTH_ONLY_NAMES.map(n => `'${n}'`).join(',');
+  results.auth_only = await sql(`
+    DO $$
+    DECLARE r record;
+    BEGIN
+      FOR r IN SELECT p.oid, p.proname, pg_get_function_identity_arguments(p.oid) as args
+               FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+               WHERE n.nspname='public' AND p.proname IN (${list})
+      LOOP
+        EXECUTE format('REVOKE EXECUTE ON FUNCTION public.%I(%s) FROM anon', r.proname, r.args);
+      END LOOP;
+    END $$;`);
 
   // 3) Confirma novos privilégios
   results.verify = await sql(`
