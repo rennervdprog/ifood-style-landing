@@ -980,7 +980,9 @@ const PdvPage = () => {
     (store as any)?.category,
     ...(((store as any)?.categories || []) as string[]),
   ].filter(Boolean);
-  const isPizzaria = (store as any)?.category === "pizzas";
+  const isPizzaria =
+    (store as any)?.category === "pizzas" ||
+    (store as any)?.store_type === "pizzeria";
   const isPastelaria = storeCats.includes("pasteis");
   const pizzaHalfEnabled = isPizzaria && !!storeSettings.pizza_half_enabled && products.length >= 2;
   const pastelHalfEnabled =
