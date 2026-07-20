@@ -416,17 +416,20 @@ const StoreDirectory = () => {
             </div>
 
             <h1 className="text-[2.6rem] leading-[0.95] md:text-6xl lg:text-7xl font-black tracking-tight text-foreground mb-5">
-              Seu delivery{" "}
+              O delivery da sua loja,{" "}
               <span className="relative inline-block">
-                <span className="relative z-10 text-primary">no seu link.</span>
+                <span className="relative z-10 text-primary">no seu link</span>
                 <span aria-hidden className="absolute inset-x-0 bottom-1 h-3 md:h-4 bg-primary/20 -skew-x-6 -z-0" />
               </span>
               <br className="hidden md:block" />
-              Sem comissão. Sem app pro cliente.
+              — sem entregar 27% pra ninguém.
             </h1>
 
-            <p className="max-w-xl mx-auto text-base md:text-lg text-muted-foreground leading-relaxed mb-8">
-              Cardápio digital próprio, <b className="text-foreground">PIX cai na hora</b>, WhatsApp bot que anota o pedido sozinho e motoboy com rastreio. <b className="text-foreground">Grátis até R$ 5.000</b> em vendas.
+            <p className="max-w-xl mx-auto text-base md:text-lg text-muted-foreground leading-relaxed mb-4">
+              Cardápio próprio, <b className="text-foreground">PIX confirmado na hora</b>, atendente de IA no WhatsApp que tira o pedido sozinho 24h e motoboy com rastreio em tempo real. O cliente pede pelo navegador — sem baixar app, sem cadastro chato.
+            </p>
+            <p className="max-w-xl mx-auto text-base md:text-lg font-bold text-foreground leading-relaxed mb-8">
+              Grátis até R$ 5.000 em vendas. Depois, mensalidade fixa. Você fica com o cliente, com a marca e com o dinheiro.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
