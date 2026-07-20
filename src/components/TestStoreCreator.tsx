@@ -45,18 +45,27 @@ const TestStoreCreator = () => {
   const handleCreate = async (
     cat: typeof CATEGORIES[0],
     planType?: string,
-    storeType?: "food" | "apparel",
+    storeType?: "food" | "apparel" | "snack_bar" | "pizzeria" | "restaurant",
   ) => {
     setCreating(true);
     try {
+      const typeLabel: Record<string, string> = {
+        apparel: "Boutique ",
+        snack_bar: "Lanches ",
+        pizzeria: "Pizzaria ",
+        restaurant: "Restaurante ",
+      };
+      const prefix = storeType && typeLabel[storeType]
+        ? typeLabel[storeType]
+        : planType === "pdv_only" ? "PDV " : "";
       const { error } = await supabase.rpc("admin_create_test_store", {
-        _name: `Teste ${storeType === "apparel" ? "Boutique " : planType === "pdv_only" ? "PDV " : ""}${cat.label.replace(/[^\w\s]/g, "").trim()}`,
+        _name: `Teste ${prefix}${cat.label.replace(/[^\w\s]/g, "").trim()}`,
         _category: cat.value as any,
         ...(planType ? { _plan_type: planType } : {}),
         ...(storeType ? { _store_type: storeType } : {}),
       } as any);
       if (error) throw error;
-      toast.success(`Loja teste ${storeType === "apparel" ? "(Boutique) " : planType === "pdv_only" ? "(Somente PDV) " : ""}"${cat.label}" criada!`);
+      toast.success(`Loja teste ${prefix ? `(${prefix.trim()}) ` : ""}"${cat.label}" criada!`);
       refetch();
       queryClient.invalidateQueries({ queryKey: ["admin-stores-list"] });
       queryClient.invalidateQueries({ queryKey: ["admin-all-stores"] });
