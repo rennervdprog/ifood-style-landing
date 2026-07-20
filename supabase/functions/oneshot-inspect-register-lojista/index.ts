@@ -45,5 +45,6 @@ Deno.serve(async (req) => {
       AND p.proname NOT LIKE 'tg_%'
       AND p.proname NOT IN ('set_order_number','update_store_rating','notify_record_sync','notify_order_sync','handle_new_user','handle_order_cash_transaction','handle_repasse_expiry','insert_order_status_chat_message','touch_ticket_on_message','award_loyalty_points','accrue_fixed_plan_split','accrue_moderator_earnings','accrue_pdv_fixed_fee','accumulate_pdv_commission','alert_negative_store_balance','apply_order_empties_debit','auto_finalize_stale_orders','create_store_driver_earning','enforce_free_delivery_threshold','enforce_store_balance_lock','ensure_lojista_has_store','expire_pending_pix_orders','force_auto_approve','force_store_auto_approve','generate_delivery_pin','guard_matriz_flag','legal_documents_enforce_single_current','notify_admins_new_approval','notify_order_status_zapi','prevent_driver_protected_fields_update','prevent_role_self_change','prevent_writes_on_matriz','release_scheduled_orders','sync_repasse_paid','cleanup_old_page_views','cleanup_refused_pix_proofs')
     ORDER BY p.proname;`);
+  out.secret_fns = await run(`SELECT proname, pg_get_functiondef(oid) FROM pg_proc WHERE proname IN ('get_service_role_key','get_supabase_url','get_backend_url');`);
   return new Response(JSON.stringify(out, null, 2), { headers: { ...cors, "Content-Type": "application/json" } });
 });
