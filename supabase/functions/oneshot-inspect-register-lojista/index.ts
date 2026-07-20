@@ -25,5 +25,7 @@ Deno.serve(async (req) => {
   out.plan_change_reqs = await run(`SELECT * FROM plan_change_requests WHERE store_id='363c52e2-6477-4aae-89df-6ad8224e5c71' ORDER BY created_at DESC;`);
   out.audit_store = await run(`SELECT column_name, column_default FROM information_schema.columns WHERE table_schema='public' AND table_name='stores' AND column_name IN ('plan_type','is_visible','delivery_mode');`);
   out.addons = await run(`SELECT * FROM store_addons WHERE store_id='363c52e2-6477-4aae-89df-6ad8224e5c71';`);
+  out.plan_row = await run(`SELECT sp.*, s.created_at as store_ts FROM store_plans sp JOIN stores s ON s.id=sp.store_id WHERE sp.store_id='363c52e2-6477-4aae-89df-6ad8224e5c71';`);
+  out.all_lojista_rpcs = await run(`SELECT proname FROM pg_proc WHERE prosrc ILIKE '%register_as_lojista%' OR prosrc ILIKE '%INSERT INTO % store_plans%';`);
   return new Response(JSON.stringify(out, null, 2), { headers: { ...cors, "Content-Type": "application/json" } });
 });
