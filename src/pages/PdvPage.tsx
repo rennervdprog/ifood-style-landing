@@ -57,6 +57,7 @@ import { PdvCatalogSection } from "@/pages/pdv/components/PdvCatalogSection";
 import ApparelCatalogGrid from "@/pages/pdv/apparel/ApparelCatalogGrid";
 import ApparelCustomerPanel, { type ApparelCustomer, type ApparelCredit } from "@/pages/pdv/apparel/ApparelCustomerPanel";
 import SnackBarCombosBar from "@/pages/pdv/snackbar/SnackBarCombosBar";
+import RestaurantDailyMenuBar from "@/pages/pdv/restaurant/RestaurantDailyMenuBar";
 import { PdvCategoriesRail } from "@/pages/pdv/components/PdvCategoriesRail";
 import { PdvCartSection } from "@/pages/pdv/components/PdvCartSection";
 import { PdvNowCard } from "@/pages/pdv/components/PdvNowCard";
@@ -298,6 +299,8 @@ const PdvPage = () => {
 
   const isApparel = (store as any)?.store_type === "apparel";
   const isSnackBar = (store as any)?.store_type === "snack_bar";
+  const isPizzeria = (store as any)?.store_type === "pizzeria";
+  const isRestaurant = (store as any)?.store_type === "restaurant";
 
   // Fase 4.2 Boutique — cliente + vale-crédito da venda atual
   const [apparelCustomer, setApparelCustomer] = useState<ApparelCustomer>({ phone: "", name: "" });
@@ -1193,6 +1196,9 @@ const PdvPage = () => {
                         {isSnackBar && (
                           <SnackBarCombosBar storeId={store?.id} addItem={addItem} />
                         )}
+                        {isRestaurant && (
+                          <RestaurantDailyMenuBar storeId={store?.id} addItem={addItem} />
+                        )}
                         <PdvFavoritesBar
                           storeId={store?.id}
                           products={products}
@@ -1282,6 +1288,9 @@ const PdvPage = () => {
                           />
                           {isSnackBar && (
                             <SnackBarCombosBar storeId={store?.id} addItem={addItem} />
+                          )}
+                          {isRestaurant && (
+                            <RestaurantDailyMenuBar storeId={store?.id} addItem={addItem} />
                           )}
                           <PdvFavoritesBar
                             storeId={store?.id}

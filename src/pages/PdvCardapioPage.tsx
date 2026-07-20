@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, lazy, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Loader2, BookOpen, Layers, Pizza, Shirt, Package2 } from "lucide-react";
+import { ArrowLeft, Loader2, BookOpen, Layers, Pizza, Shirt, Package2, UtensilsCrossed } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStorePdvAccess } from "@/hooks/useStorePdvAccess";
@@ -14,8 +14,9 @@ const AddonManager = lazy(() => import("@/components/AddonManager"));
 const BordasTab = lazy(() => import("@/pages/admin/tabs/BordasTab"));
 const ApparelProductForm = lazy(() => import("@/pages/pdv/apparel/ApparelProductForm"));
 const SnackBarCombosManager = lazy(() => import("@/pages/pdv/snackbar/SnackBarCombosManager"));
+const RestaurantDailyMenuManager = lazy(() => import("@/pages/pdv/restaurant/RestaurantDailyMenuManager"));
 
-type SubTab = "cardapio" | "adicionais" | "pizza_pastel" | "boutique" | "combos";
+type SubTab = "cardapio" | "adicionais" | "pizza_pastel" | "boutique" | "combos" | "daily_menu";
 
 /** Cardápio standalone acessível a partir do PDV (principalmente pra lojas pdv_only,
  *  que não têm painel do lojista). Renderiza o mesmo MenuBuilder do painel. */
@@ -78,6 +79,7 @@ const PdvCardapioPage = () => {
   const showPizzaPastel = cats.includes("pizzas") || cats.includes("pasteis");
   const isApparel = (store as any)?.store_type === "apparel";
   const isSnackBar = (store as any)?.store_type === "snack_bar" || cats.includes("lanches");
+  const isRestaurant = (store as any)?.store_type === "restaurant";
 
   const [sub, setSub] = useState<SubTab>("cardapio");
 
@@ -150,6 +152,9 @@ const PdvCardapioPage = () => {
                 ...(isSnackBar
                   ? [{ key: "combos" as SubTab, label: "Combos", icon: Package2 }]
                   : []),
+                ...(isRestaurant
+                  ? [{ key: "daily_menu" as SubTab, label: "Prato do Dia", icon: UtensilsCrossed }]
+                  : []),
                 ...(showPizzaPastel
                   ? [{ key: "pizza_pastel" as SubTab, label: cats.includes("pizzas") ? "Pizza / Pastel" : "Pastel", icon: Pizza }]
                   : []),
@@ -191,6 +196,11 @@ const PdvCardapioPage = () => {
         {sub === "combos" && isSnackBar && (
           <Suspense fallback={<Loader2 className="h-5 w-5 animate-spin text-primary mx-auto mt-6" />}>
             <SnackBarCombosManager storeId={store.id} />
+          </Suspense>
+        )}
+        {sub === "daily_menu" && isRestaurant && (
+          <Suspense fallback={<Loader2 className="h-5 w-5 animate-spin text-primary mx-auto mt-6" />}>
+            <RestaurantDailyMenuManager storeId={store.id} />
           </Suspense>
         )}
         {sub === "pizza_pastel" && showPizzaPastel && (
