@@ -981,7 +981,7 @@ const PdvPage = () => {
     ...(((store as any)?.categories || []) as string[]),
   ].filter(Boolean);
   const isPizzaria =
-    (store as any)?.category === "pizzas" ||
+    storeCats.includes("pizzas") ||
     (store as any)?.store_type === "pizzeria";
   const isPastelaria = storeCats.includes("pasteis");
   // Filtra os produtos elegíveis para cada builder — em lojas multi-categoria,
@@ -1003,7 +1003,10 @@ const PdvPage = () => {
   };
   const pizzaProducts = isPizzaria ? productsByCategory("pizza") : [];
   const pastelProducts = isPastelaria ? productsByCategory("pastel") : [];
-  const pizzaHalfEnabled = isPizzaria && !!storeSettings.pizza_half_enabled && pizzaProducts.length >= 2;
+  // Meia-a-meia: habilitado por padrão em lojas com categoria pizza (a menos
+  // que a loja tenha desligado explicitamente em settings.pizza_half_enabled=false).
+  const pizzaHalfEnabled =
+    isPizzaria && storeSettings.pizza_half_enabled !== false && pizzaProducts.length >= 2;
   const pastelHalfEnabled =
     isPastelaria && storeSettings.pastel_half_enabled !== false && pastelProducts.length >= 2;
 
