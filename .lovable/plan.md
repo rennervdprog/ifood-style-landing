@@ -1,77 +1,77 @@
-# Plano — Landing StoreDirectory v2 (dados reais + copy persuasivo)
+# PDV especializado — Lanches, Pizzaria e Restaurante/Marmitaria
 
-## Objetivo
-A landing atual está bonita, mas genérica em cima de "grátis". Vamos plugar **informações reais do sistema** que ninguém sabe que existem (ex.: quem paga a taxa da plataforma — cliente, meio-a-meio ou lojista), aprofundar prova social/rapport e reforçar autoridade — sem quebrar o que já funciona.
+Três modos focados em food service, seguindo o mesmo padrão da Boutique (`store_type` + telas próprias, reaproveitando caixa/KDS/mesas/histórico/PIN).
 
-## Princípios de copy (persuasão + rapport)
-- **Cialdini**: reciprocidade (grátis até R$5k), prova social (X lojas ativas), autoridade (Asaas, LGPD, contrato), escassez (10 vagas Apoiador), compromisso ("sem multa, cancela a qualquer momento"), afinidade ("feito em Itatinga, pra loja de bairro").
-- **Rapport**: linguagem do lojista ("cai no seu PIX", "sem depender de marketplace"), quebra de objeção antes da pergunta.
-- **Hierarquia**: 1 promessa por seção, 1 CTA por dobra, benefício antes de feature.
+Muita coisa já existe solta no sistema (modo pizza, adicionais, KDS, mesas). O trabalho aqui é **empacotar por categoria** com layout e fluxo dedicados, ao invés de deixar tudo genérico.
 
-## Novas seções (a inserir na StoreDirectory)
+## Fase 1 — Lanches (Hamburgueria / Lanchonete)
 
-### 1. Bloco "Você escolhe quem paga a taxa de entrega" *(NOVO — diferencial exclusivo)*
-Hoje o sistema já tem `stores.platform_fee_split` com 3 modos, mas **ninguém comunica isso**. Isso é ouro competitivo.
+Foco: rapidez no balcão, montagem de lanche com adicionais.
 
-3 cards lado a lado, cada um com ícone + título + micro-copy + exemplo numérico:
-- **Cliente paga** (padrão): "R$ 0,99 somado à taxa. Zero do seu caixa."
-- **Meio a meio**: "Você absorve R$ 0,49 e passa R$ 0,50 pro cliente. Mostra cuidado sem doer."
-- **Lojista paga**: "Taxa some pro cliente. Converte mais em ticket alto."
-Encerra com selo: "Muda quando quiser, sem sair do painel."
+Escopo:
+- `store_type='snack_bar'`.
+- Catálogo em **grid grande com foto** agrupado por categoria (Lanches, Bebidas, Porções, Sobremesas).
+- Modal de montagem: adicionais obrigatórios (ponto da carne, molhos) + opcionais (bacon, cheddar extra) reusando `addon_groups` / `addon_items`.
+- Combo builder: "Lanche + Batata + Refri" com preço fechado.
+- Observação por item ("sem cebola", "bem passado") direto no card do carrinho.
+- Impressão dividida: cozinha (só itens quentes) + balcão (frios/bebidas) via `thermalPrint.ts`.
+- Chamador de senha simples (número na tela KDS).
 
-### 2. Bloco "O que o iFood não te dá" *(comparativo direto)*
-Tabela 3 colunas: **ItaSuper × Marketplace × WhatsApp na mão**. Linhas com dados reais:
-- Comissão (0% Essencial × ~27% × 0%)
-- PIX na sua conta (Sim × Não × Manual)
-- Dono da base de clientes (Você × Eles × Você)
-- Bot de WhatsApp guiado, PDV, Motoboy próprio, Cupom/Fidelidade próprios.
+E2E: montar 2 combos + 1 lanche com adicional + observação, fechar, conferir impressão dividida e KDS.
 
-### 3. Bloco "Modos de recebimento reais" *(reforça confiança)*
-Cards horizontais mostrando o que já existe:
-- **PIX Automático (Asaas)** — cai confirmado, libera pedido sozinho.
-- **Pix Direto** — cai na sua chave, você confirma com 1 toque (novo, do lojista que pediu).
-- **Dinheiro / Cartão na entrega / PIX Maquininha** — plataforma acumula só o R$ 0,99, cobra por PIX quando passar de R$ 30.
-Cada card com o texto real dos Termos, resumido.
+## Fase 2 — Pizzaria
 
-### 4. Bloco "Módulos que você liga quando precisar" *(add-ons reais)*
-Grid dos add-ons que já cobramos separado:
-- **PDV Balcão** — R$ 49/mês (só Essencial/Autonomia; grátis se for plano PDV Only).
-- **WhatsApp Bot Guiado** — cliente pede sem sair da conversa.
-- **Motoboy próprio** — cadastra seus entregadores, comissão configurável.
-- **Cardápio Boutique (roupas)** — grade P/M/G, estoque por variação, etiqueta com código de barras.
-Copy: "Paga só o que usar. Cancela o add-on em 2 cliques na aba Meu Plano."
+Foco: pizza meio-a-meio, bordas, tamanhos, entrega.
 
-### 5. Bloco "Regras do jogo, sem letra miúda" *(quebra de objeção)*
-3 quadros honestos:
-- **Quando a mensalidade começa**: "Essencial: após R$ 5.000 em 60 dias → R$ 180/mês. Autonomia: após R$ 2.500 → R$ 239,90/mês. Com 30 dias de aviso e aceite expresso (cláusula 5.2)."
-- **Cobrança PIX pendente**: "Saldo passa de R$ 30 → gera PIX pra segunda-feira. Passa de R$ 500 → painel limita até quitar."
-- **Cancelamento**: "Sem multa, sem fidelidade. Desativa a loja no painel."
+Escopo:
+- `store_type='pizzeria'`.
+- Já existe `pizzaPricing.ts` + `pizza_borders` + tipos em `types/pizza.ts` — encapsular num fluxo próprio.
+- Builder visual: escolhe tamanho → 1/2 ou 2/2 sabores → borda → adicionais.
+- Regra de preço: **maior sabor** (padrão) ou média — configurável por loja.
+- Cardápio do dia / promo por dia da semana (Terça 2x1) reusando `promo_campaigns`.
+- Impressão da comanda com os sabores lado-a-lado ("1/2 Calabresa | 1/2 Portuguesa").
+- Ficha técnica opcional (ingredientes na cozinha).
+- Integração com **mesas** e **delivery** — pizzaria costuma ter os dois.
 
-### 6. Bloco "Feito por quem entende de loja de bairro" *(rapport local)*
-Micro-manifesto curto + logo Asaas + selo LGPD + link Termos/Privacidade. Frase-âncora: "Não somos um marketplace. Somos o seu sistema — a marca é sua, o cliente é seu, o PIX é seu."
+E2E: montar pizza meio-a-meio com borda + refri, salvar em mesa, fechar, conferir impressão com sabores separados.
 
-### 7. Ajustes nas seções existentes
-- **Hero**: trocar sub-título por promessa mensurável: "Comece grátis. Você só paga mensalidade depois de faturar R$ 5.000."
-- **Planos**: puxar valores direto de `src/lib/plansInfo.ts` (fonte única) e mostrar o **exemplo prático** (`plan.example(50)`) que já existe no código e não está sendo usado.
-- **FAQ**: adicionar 3 perguntas novas — "Posso passar a taxa pro cliente?", "E se eu quiser só o PDV?", "O bot do WhatsApp responde sozinho?".
-- **Depoimentos**: marcar como "depoimentos ilustrativos" até termos reais (evita risco jurídico) OU trocar por métricas neutras ("X pedidos processados", "Y cidades atendidas") puxadas do banco.
+## Fase 3 — Restaurante / Marmitaria
 
-## UI/UX
-- Manter o design system atual (tokens semânticos, sem cor hardcoded).
-- Cada bloco novo com: eyebrow pequeno + H2 forte + 1 linha de suporte + conteúdo + micro-CTA.
-- Micro-animações discretas (fade-up no scroll) — nada de parallax pesado.
-- Mobile-first: cards viram carrossel horizontal com snap onde couber (bloco 1, 3 e 4).
-- Ícones do lucide já usados; nada novo pesado.
-- Contraste WCAG AA verificado em light/dark.
+Foco: prato feito, self-service por peso, marmita montada.
+
+Escopo:
+- `store_type='restaurant'`.
+- Três sub-modos escolhidos nas configs da loja:
+  1. **À la carte** (prato pronto do cardápio) → usa fluxo padrão.
+  2. **Por quilo** — leitura da balança Toledo (`toledoScale.ts` já existe) → preço × peso, ticket fica aberto até pesar.
+  3. **Marmita montada** — cliente escolhe base (arroz/feijão) + 1 proteína + N acompanhamentos, com regras de tamanho (P/M/G) e preço fechado.
+- Card **"Cardápio do dia"** em destaque no topo (o que tem hoje) — já temos infra de disponibilidade diária em `products.is_available`, só faltará um toggle rápido por dia.
+- Modo **marmita para entrega**: fluxo enxuto sem mesa, direto pra sacola + endereço.
+- Comanda de mesa com divisão de conta ("dividir por 4").
+- Fechamento por mesa mostrando taxa de serviço (10%) opcional.
+
+E2E: vender 1 prato à la carte + 1 marmita M montada + 1 por peso, dividir conta em mesa por 3, fechar.
+
+## Padrão comum (reaproveitado das fases anteriores)
+
+- Cadastro (`CadastroLojista.tsx`) mapeia categoria → `store_type`.
+- Switch em `PdvPage.tsx` / `PdvCardapioPage.tsx`.
+- Componentes em `src/pages/pdv/{snack,pizza,restaurant}/`.
+- Caixa, KDS, mesas, PIN gerente, outbox offline, relatórios: reaproveitados sem duplicar.
+- Bump de versão (`appVersion.ts` + `build.gradle` patch + versionCode) a cada fase.
+- E2E em `scripts/e2e/{snack,pizza,restaurant}/` no padrão do apparel.
+- Landing (`StoreDirectory.tsx`) ganha os 3 modos na seção de módulos ao final.
 
 ## Detalhes técnicos
-- Arquivo único: `src/pages/StoreDirectory.tsx` (mantém estrutura, adiciona 6 seções entre "Recursos" e "Planos" e ajusta hero/FAQ).
-- Constantes novas (`FEE_SPLIT_MODES`, `PAYMENT_MODES`, `ADDONS`, `RULES`) no topo do arquivo, seguindo o padrão de `PAINS`/`FEATURES`.
-- Planos: importar `PLANS` de `@/lib/plansInfo.ts` (já importado) e usar `plan.example(50)` no card.
-- Sem chamadas novas de backend — só conteúdo estático que reflete regras reais.
-- Incrementar versão em `PerfilPage.tsx` e `android/app/build.gradle` (patch + versionCode).
 
-## Fora de escopo
-- Não mexer em rotas, auth, cadastro, ou lógica de cobrança.
-- Não gerar imagens novas (usar ícones existentes).
-- Não alterar `plansInfo.ts` (só consumir).
+- Enum `store_type` recebe `snack_bar`, `pizzeria`, `restaurant` via migration no externo (oneshot edge function com `EXTERNAL_SUPABASE_SERVICE_KEY`, padrão do projeto).
+- Nova tabela `restaurant_meal_kits` (id, store_id, name, size, base_price, allowed_categories jsonb) só na Fase 3 — com GRANT + RLS por `store_id` via `has_role`.
+- Nova tabela `combo_definitions` (Fase 1) — id, store_id, name, items jsonb, price. GRANT + RLS idem.
+- Split de impressão: extensão em `thermalPrint.ts` aceitando `printerTarget: 'kitchen' | 'counter'` no item.
+- Regra de preço da pizza (maior vs média): já suportada em `pizzaPricing.ts`, só expor toggle em Settings.
+- Divisão de conta: cálculo puro no client (`splitBill(total, n)`).
+- Performance: lazy-load dos 3 painéis novos, memoização dos builders (montagem re-renderiza muito).
+
+## Entrega
+
+Sequencial, uma fase por resposta, com E2E verde antes de avançar. Começo pela **Fase 1 — Lanches** se você aprovar.
