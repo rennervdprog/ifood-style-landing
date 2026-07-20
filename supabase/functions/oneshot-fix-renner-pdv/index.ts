@@ -1,25 +1,20 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
 const cors = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, apikey, content-type",
 };
 
+async function sql(query: string) {
+  const ref = Deno.env.get("EXTERNAL_SUPABASE_PROJECT_REF")!;
+  const t = Deno.env.get("EXTERNAL_SUPABASE_ACCESS_TOKEN")!;
+  const r = await fetch(`https://api.supabase.com/v1/projects/${ref}/database/query`, {
+    method: "POST", headers: { Authorization: `Bearer ${t}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ query }),
+  });
+  return { status: r.status, body: await r.text() };
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: cors });
-  const URL_ = Deno.env.get("EXTERNAL_SUPABASE_URL")!;
-  const SVC = Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY")!;
-  const sb = createClient(URL_, SVC);
-
-  async function sql(q: string) {
-    const r = await fetch(`${URL_}/rest/v1/rpc/exec_sql`, {
-      method: "POST",
-      headers: { apikey: SVC, Authorization: `Bearer ${SVC}`, "Content-Type": "application/json", Prefer: "return=representation" },
-      body: JSON.stringify({ query: q }),
-    });
-    return { status: r.status, body: await r.text() };
-  }
-
   const results: any = {};
 
   // 1) Backfill: fix RennerPdv store_plans row
