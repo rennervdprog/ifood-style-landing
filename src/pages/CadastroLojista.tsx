@@ -407,6 +407,15 @@ const CadastroLojista = () => {
                 is_open: false,
                 plan_type: "pdv_only",
               } as any).eq("id", storeRow.id);
+              // Garante que store_plans reflita pdv_only (fallback caso a RPC tenha caído no ELSE)
+              await (supabase as any).from("store_plans").update({
+                plan_type: "pdv_only",
+                monthly_fee: 69.00,
+                commission_rate: 0,
+                pdv_enabled: true,
+                pdv_commission_rate: 0,
+                pdv_fixed_fee_per_sale: 0,
+              }).eq("store_id", storeRow.id);
               await (supabase as any).from("store_addons").upsert({
                 store_id: storeRow.id,
                 addon_key: "pdv",
