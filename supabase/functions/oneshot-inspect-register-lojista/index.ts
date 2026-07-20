@@ -20,5 +20,10 @@ Deno.serve(async (req) => {
   out.triggers = await run(`SELECT tgname, pg_get_triggerdef(oid) FROM pg_trigger WHERE tgrelid='public.stores'::regclass AND NOT tgisinternal;`);
   out.trg_fns = await run(`SELECT proname, pg_get_functiondef(oid) FROM pg_proc WHERE proname IN ('create_default_store_plan','ensure_store_plan','stores_default_plan','set_default_store_plan');`);
   out.force_auto = await run(`SELECT pg_get_functiondef(oid) FROM pg_proc WHERE proname='force_store_auto_approve';`);
+  out.auth_trg = await run(`SELECT tgname, pg_get_triggerdef(oid) FROM pg_trigger WHERE tgrelid='auth.users'::regclass AND NOT tgisinternal;`);
+  out.all_new_lojista = await run(`SELECT proname, pg_get_functiondef(oid) FROM pg_proc WHERE prosrc ILIKE '%selected_plan%' AND proname LIKE 'handle%';`);
+  out.plan_change_reqs = await run(`SELECT * FROM plan_change_requests WHERE store_id='363c52e2-6477-4aae-89df-6ad8224e5c71' ORDER BY created_at DESC;`);
+  out.audit_store = await run(`SELECT column_name, column_default FROM information_schema.columns WHERE table_schema='public' AND table_name='stores' AND column_name IN ('plan_type','is_visible','delivery_mode');`);
+  out.addons = await run(`SELECT * FROM store_addons WHERE store_id='363c52e2-6477-4aae-89df-6ad8224e5c71';`);
   return new Response(JSON.stringify(out, null, 2), { headers: { ...cors, "Content-Type": "application/json" } });
 });
