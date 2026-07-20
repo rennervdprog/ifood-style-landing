@@ -1082,6 +1082,84 @@ function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride
             </button>
           </div>
           <AdminStoreAddonsPanel storeId={storeId} />
+          <VipHistoryPanel storeId={storeId} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function VipHistoryPanel({ storeId }: { storeId: string }) {
+  const [open, setOpen] = useState(false);
+  const { data: logs, isLoading, refetch } = useQuery({
+    queryKey: ["vip-history", storeId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("admin_logs" as any)
+        .select("id, action, details, created_at, admin_user_id")
+        .eq("target_id", storeId)
+        .in("action", [
+          "vip_settings_saved",
+          "vip_settings_reset",
+          "vip_essencial_lifetime_toggled",
+          "vip_autonomy_lifetime_toggled",
+        ])
+        .order("created_at", { ascending: false })
+        .limit(30);
+      if (error) throw error;
+      return (data || []) as any[];
+    },
+    enabled: open,
+  });
+  const fmt = (v: any) =>
+    v === null || v === undefined ? "—" : typeof v === "number" ? v.toString() : String(v);
+  return (
+    <div className="rounded-2xl border border-border overflow-hidden mt-3">
+      <button
+        onClick={() => { setOpen(o => !o); if (!open) refetch(); }}
+        className="w-full flex items-center justify-between px-4 py-3 bg-muted/30 hover:bg-muted/50 transition-colors"
+      >
+        <div className="flex items-center gap-2">
+          <History className="h-4 w-4 text-muted-foreground" />
+          <span className="text-xs font-black text-foreground">Histórico VIP</span>
+        </div>
+        <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+      {open && (
+        <div className="p-3 space-y-2 max-h-72 overflow-y-auto">
+          {isLoading && <p className="text-[11px] text-muted-foreground">Carregando…</p>}
+          {!isLoading && (logs || []).length === 0 && (
+            <p className="text-[11px] text-muted-foreground">Nenhuma alteração VIP registrada.</p>
+          )}
+          {(logs || []).map((l: any) => (
+            <div key={l.id} className="rounded-xl border border-border/50 p-2.5 bg-card/50">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[11px] font-bold text-foreground">
+                  {l.action === "vip_settings_saved" && "Configuração VIP salva"}
+                  {l.action === "vip_settings_reset" && "Resetado ao padrão"}
+                  {l.action === "vip_essencial_lifetime_toggled" && `Essencial vitalício ${l.details?.enabled ? "ativado" : "removido"}`}
+                  {l.action === "vip_autonomy_lifetime_toggled" && `Autonomia vitalícia ${l.details?.enabled ? "ativada" : "removida"}`}
+                </span>
+                <span className="text-[10px] text-muted-foreground shrink-0">
+                  {new Date(l.created_at).toLocaleString("pt-BR")}
+                </span>
+              </div>
+              {l.details?.before && l.details?.after && (
+                <div className="mt-1.5 text-[10px] text-muted-foreground space-y-0.5">
+                  {Object.keys(l.details.after).map((k) => {
+                    const b = l.details.before?.[k];
+                    const a = l.details.after?.[k];
+                    if (fmt(b) === fmt(a)) return null;
+                    return (
+                      <div key={k}>
+                        <span className="font-semibold">{k}:</span> {fmt(b)} → <span className="text-foreground font-bold">{fmt(a)}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       )}
     </div>
