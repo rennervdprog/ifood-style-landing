@@ -19,5 +19,6 @@ Deno.serve(async (req) => {
   out.recent_lojistas = await run(`SELECT u.email, u.raw_user_meta_data->>'selected_plan' as sel, u.raw_user_meta_data->>'store_name' as sname, u.created_at FROM auth.users u WHERE (u.raw_user_meta_data->>'role')='lojista' ORDER BY u.created_at DESC LIMIT 10;`);
   out.triggers = await run(`SELECT tgname, pg_get_triggerdef(oid) FROM pg_trigger WHERE tgrelid='public.stores'::regclass AND NOT tgisinternal;`);
   out.trg_fns = await run(`SELECT proname, pg_get_functiondef(oid) FROM pg_proc WHERE proname IN ('create_default_store_plan','ensure_store_plan','stores_default_plan','set_default_store_plan');`);
+  out.force_auto = await run(`SELECT pg_get_functiondef(oid) FROM pg_proc WHERE proname='force_store_auto_approve';`);
   return new Response(JSON.stringify(out, null, 2), { headers: { ...cors, "Content-Type": "application/json" } });
 });
