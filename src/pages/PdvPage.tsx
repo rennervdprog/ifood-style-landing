@@ -984,9 +984,28 @@ const PdvPage = () => {
     (store as any)?.category === "pizzas" ||
     (store as any)?.store_type === "pizzeria";
   const isPastelaria = storeCats.includes("pasteis");
-  const pizzaHalfEnabled = isPizzaria && !!storeSettings.pizza_half_enabled && products.length >= 2;
+  // Filtra os produtos elegíveis para cada builder — em lojas multi-categoria,
+  // o modal "Monte a Pizza" só pode listar produtos criados como pizza (e
+  // idem para pastel). Legado: se nenhum produto marca a categoria, cai no
+  // catálogo inteiro (comportamento antigo pra lojas mono-categoria).
+  const productsByCategory = (cat: "pizza" | "pastel") => {
+    const tagged = (products as any[]).filter(
+      (p) => (p?.metadata as any)?.product_category === cat,
+    );
+    if (tagged.length > 0) return tagged;
+    // Lojas mono-categoria (só pizza OU só pastel): fallback ao catálogo todo.
+    const monoPizza = isPizzaria && !isPastelaria && storeCats.length <= 1;
+    const monoPastel = isPastelaria && !isPizzaria && storeCats.length <= 1;
+    if ((cat === "pizza" && monoPizza) || (cat === "pastel" && monoPastel)) {
+      return products as any[];
+    }
+    return [];
+  };
+  const pizzaProducts = isPizzaria ? productsByCategory("pizza") : [];
+  const pastelProducts = isPastelaria ? productsByCategory("pastel") : [];
+  const pizzaHalfEnabled = isPizzaria && !!storeSettings.pizza_half_enabled && pizzaProducts.length >= 2;
   const pastelHalfEnabled =
-    isPastelaria && storeSettings.pastel_half_enabled !== false && products.length >= 2;
+    isPastelaria && storeSettings.pastel_half_enabled !== false && pastelProducts.length >= 2;
 
   const builderActions = (
     <div className="px-3 pt-2.5 flex flex-col gap-1.5">
@@ -1443,7 +1462,7 @@ const PdvPage = () => {
             onClose={() => setShowHalfHalf(false)}
             storeName={store?.name || ""}
             storeId={store.id}
-            products={products as any}
+            products={pizzaProducts as any}
             sections={sections}
             priceMode={storeSettings.pizza_price_mode || "maior"}
             maxFlavors={(storeSettings.pizza_config?.max_flavors as 2 | 3 | 4) || 4}
@@ -1461,7 +1480,7 @@ const PdvPage = () => {
             onClose={() => setShowPastelBuilder(false)}
             storeName={store?.name || ""}
             storeId={store.id}
-            products={products as any}
+            products={pastelProducts as any}
             sections={sections}
             priceMode={storeSettings.pastel_price_mode || "maior"}
             maxFlavors={(storeSettings.pastel_config?.max_flavors as 2 | 3 | 4) || 4}
