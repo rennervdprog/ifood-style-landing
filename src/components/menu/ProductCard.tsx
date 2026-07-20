@@ -345,6 +345,7 @@ interface ProductCardProps {
   onDeleteAddonItem?: (id: string) => void;
   storeCategory?: string;
   storeId?: string;
+  storeCategories?: string[];
   isMoving: boolean;
   onStartMove: () => void;
   onCancelMove: () => void;
@@ -360,7 +361,7 @@ const ProductCardImpl = (props: ProductCardProps) => {
     showAddonForm, setShowAddonForm, addonGroupForm, setAddonGroupForm,
     onAddAddonGroup, onDeleteAddonGroup, showAddonItemForm, setShowAddonItemForm,
     addonItemForm, setAddonItemForm, onAddAddonItem, onDeleteAddonItem,
-    storeCategory, storeId, isMoving, onStartMove, onCancelMove, onMoveProduct,
+    storeCategory, storeId, storeCategories, isMoving, onStartMove, onCancelMove, onMoveProduct,
   } = props;
 
   const isOOS = !!product?.metadata?.out_of_stock;
@@ -375,6 +376,7 @@ const ProductCardImpl = (props: ProductCardProps) => {
         onCancel={onCancelEdit}
         storeCategory={storeCategory}
         storeId={storeId}
+        storeCategories={storeCategories}
       />
     );
   }
