@@ -799,6 +799,20 @@ function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride
         .eq("is_active", true);
       if (error) throw error;
       await supabase.from("stores").update({ commission_rate: rate } as any).eq("id", storeId);
+      await logVip("vip_settings_saved", {
+        before: {
+          monthly_fee: currentFee, commission_rate: currentRate,
+          pdv_fixed_fee_per_sale: currentPdvFixedFee,
+          pix_operational_fee_override: currentPixOverride,
+          platform_delivery_split_override: currentDeliveryOverride,
+        },
+        after: {
+          monthly_fee: fee, commission_rate: rate,
+          pdv_fixed_fee_per_sale: pdvFixedFee,
+          pix_operational_fee_override: finalPix,
+          platform_delivery_split_override: finalDelivery,
+        },
+      });
       toast.success("Configuração VIP salva!");
       onSave();
     } catch {
@@ -820,6 +834,7 @@ function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride
       setFee(d.fee); setRate(d.rate);
       setPdvFixedFee(defaultPdvFixed);
       setPixOverrideEnabled(false); setDeliveryOverrideEnabled(false);
+      await logVip("vip_settings_reset", { defaults: d });
       toast.success("Valores resetados para o padrão do plano.");
       onSave();
     } catch { toast.error("Erro ao resetar."); }
