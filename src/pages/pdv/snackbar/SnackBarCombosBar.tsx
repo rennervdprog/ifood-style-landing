@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { formatBRL } from "@/lib/utils";
 import { Layers } from "lucide-react";
 import type { Product } from "@/pages/pdv/types";
+import SnackBarComboBuilderDialog from "./SnackBarComboBuilderDialog";
 
 interface Combo {
   id: string;
@@ -26,6 +28,7 @@ interface Props {
  * (MVP: sem builder de slots — próxima iteração abre modal de escolha.)
  */
 export default function SnackBarCombosBar({ storeId, addItem }: Props) {
+  const [active, setActive] = useState<Combo | null>(null);
   const { data: combos } = useQuery({
     queryKey: ["snackbar-combos", storeId],
     enabled: !!storeId,
@@ -43,6 +46,23 @@ export default function SnackBarCombosBar({ storeId, addItem }: Props) {
 
   if (!combos || combos.length === 0) return null;
 
+  const handleClick = (c: Combo) => {
+    const slots = Array.isArray(c.slots) ? c.slots : [];
+    if (slots.length === 0) {
+      addItem({
+        id: `combo:${c.id}:${Date.now()}`,
+        name: c.name,
+        price: Number(c.price),
+        image_url: c.image_url ?? undefined,
+        is_available: true,
+        section_id: null,
+        metadata: { combo_id: c.id },
+      } as any);
+      return;
+    }
+    setActive(c);
+  };
+
   return (
     <div className="border-b border-border bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 px-3 py-2">
       <div className="flex items-center gap-1.5 mb-2">
@@ -55,17 +75,7 @@ export default function SnackBarCombosBar({ storeId, addItem }: Props) {
         {combos.map((c) => (
           <button
             key={c.id}
-            onClick={() =>
-              addItem({
-                id: `combo:${c.id}`,
-                name: c.name,
-                price: Number(c.price),
-                image_url: c.image_url ?? undefined,
-                is_available: true,
-                section_id: null,
-                metadata: { combo_id: c.id },
-              } as any)
-            }
+            onClick={() => handleClick(c)}
             className="snap-start shrink-0 w-40 rounded-xl border border-primary/30 bg-card p-2 text-left hover:border-primary hover:shadow-md transition-all"
           >
             {c.image_url ? (
@@ -90,6 +100,14 @@ export default function SnackBarCombosBar({ storeId, addItem }: Props) {
           </button>
         ))}
       </div>
+      {active && storeId && (
+        <SnackBarComboBuilderDialog
+          combo={active as any}
+          storeId={storeId}
+          onClose={() => setActive(null)}
+          onConfirm={(item) => { addItem(item); setActive(null); }}
+        />
+      )}
     </div>
   );
 }
