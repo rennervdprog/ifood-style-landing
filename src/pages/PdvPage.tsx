@@ -1315,7 +1315,7 @@ const PdvPage = () => {
                     </span>
                     <span className="text-xl font-black text-primary pdv-mono">{formatBRL(finalTotal)}</span>
                   </div>
-                  <div className="flex-1 overflow-hidden flex flex-col">
+                  <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain pb-3">
                     {isApparel && !selectedTabId && (
                       <ApparelCustomerPanel
                         storeId={store?.id}
@@ -1344,6 +1344,7 @@ const PdvPage = () => {
                       loading={loading || checkoutLoading} orderDone={orderDone}
                       splitMode={splitMode} setSplitMode={setSplitMode}
                       splitPayments={splitPayments} setSplitPayments={setSplitPayments}
+                      mobileScroll
                     />
                   </div>
                   {/* Barra de voltar ao catálogo */}

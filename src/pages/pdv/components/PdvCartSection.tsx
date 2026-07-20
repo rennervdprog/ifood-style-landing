@@ -46,6 +46,7 @@ interface Props {
   setSplitMode: (v: boolean) => void;
   splitPayments: SplitPayment[];
   setSplitPayments: (v: SplitPayment[]) => void;
+  mobileScroll?: boolean;
 }
 
 export const PdvCartSection = ({
@@ -59,8 +60,9 @@ export const PdvCartSection = ({
   troco, trocoNegativo, finalTotal_,
   removeItem, onFinalize, loading, orderDone,
   splitMode, setSplitMode, splitPayments, setSplitPayments,
+  mobileScroll = false,
 }: Props) => (
-  <div className="flex flex-col h-full min-h-0 overflow-hidden">
+  <div className={mobileScroll ? "flex flex-col min-h-0 overflow-visible" : "flex flex-col h-full min-h-0 overflow-hidden"}>
     {/* Cabeçalho */}
     <div className={`px-3 pt-2.5 pb-2 border-b shrink-0 transition-colors ${selectedTabId ? "border-amber-500/40 bg-amber-500/5" : "border-border"}`}>
       <div className="flex items-center justify-between">
@@ -90,7 +92,7 @@ export const PdvCartSection = ({
     </div>
 
     {/* Itens */}
-    <div className="flex-1 overflow-y-auto p-2 space-y-1 min-h-0">
+    <div className={mobileScroll ? "p-2 space-y-1" : "flex-1 overflow-y-auto p-2 space-y-1 min-h-0"}>
       {cart.length === 0 ? (
         <div className="flex flex-col items-center justify-center h-full gap-2 py-8">
           <div className="w-14 h-14 rounded-2xl bg-muted/40 flex items-center justify-center">
