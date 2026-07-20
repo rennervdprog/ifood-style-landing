@@ -11,6 +11,7 @@ import {
   Menu, MessageCircle, ShieldCheck, ShoppingBag, Sparkles,
   Store, Truck, X, Zap, Smartphone, BarChart3, Printer, Gift, MapPin,
   AlertTriangle, PhoneCall, FileText,
+  Users, Split, HandCoins, Wallet, Shirt, Ban,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -69,6 +70,63 @@ const FAQS = [
     a: "Sim, sem multa e sem fidelidade. Você desativa a loja no painel e pronto." },
   { q: "É alternativa ao iFood?",
     a: "Sim. Cardápio próprio, PIX direto na sua conta, comissão 0% no Essencial e Autonomia (contra ~27% dos grandes marketplaces). Você fica dono do cliente." },
+  { q: "Posso escolher quem paga a taxa da plataforma?",
+    a: "Sim. Em Configurações da loja você define entre 3 modos: Cliente paga (padrão, R$ 0,99 somados à taxa de entrega), Meio a meio (você absorve R$ 0,49 e passa R$ 0,50 pro cliente) ou Lojista paga (some do cliente e sai do repasse). Muda quando quiser." },
+  { q: "O bot do WhatsApp responde sozinho?",
+    a: "Sim. Ele guia o cliente pelo cardápio, valida endereço, calcula taxa por distância, aceita o pagamento e joga o pedido direto no seu painel. Você continua podendo assumir a conversa a qualquer momento." },
+  { q: "Também serve pra loja de roupas / boutique?",
+    a: "Sim. Existe o modo Boutique com grade P/M/G, estoque por variação (tamanho e cor), etiqueta de código de barras e devolução com crédito na conta do cliente." },
+];
+
+const FEE_SPLIT_MODES = [
+  { icon: Users, title: "Cliente paga", tag: "Padrão",
+    desc: "R$ 0,99 somam à sua taxa de entrega. Zero sai do seu caixa.",
+    example: "Você cobra R$ 5,00 → cliente vê R$ 5,99." },
+  { icon: Split, title: "Meio a meio", tag: "Equilibrado",
+    desc: "Você absorve R$ 0,49 no repasse. O cliente paga R$ 0,50 a mais.",
+    example: "Cobra R$ 5,00 → cliente vê R$ 5,50 · repasse −R$ 0,49." },
+  { icon: HandCoins, title: "Lojista paga", tag: "Converte mais",
+    desc: "A taxa da plataforma some pro cliente. Sai R$ 0,99 do seu repasse.",
+    example: "Cobra R$ 5,00 → cliente vê R$ 5,00 · repasse −R$ 0,99." },
+];
+
+const PAYMENT_MODES = [
+  { icon: Zap, title: "PIX Automático (Asaas)",
+    desc: "Cliente paga pelo checkout, Asaas confirma na hora e o pedido cai pronto pra despachar." },
+  { icon: Wallet, title: "PIX Direto",
+    desc: "Cai direto na sua chave PIX. Cliente anexa comprovante e você confirma com 1 toque." },
+  { icon: CreditCard, title: "Dinheiro · Cartão · Maquininha",
+    desc: "Cobrado só o R$ 0,99 da plataforma. Acumula um saldo e vira PIX de segunda quando passar de R$ 30." },
+];
+
+const ADDONS = [
+  { icon: Store, title: "PDV Balcão", price: "+ R$ 49/mês",
+    desc: "Frente de caixa completa: sessão, sangria, fechamento e impressão térmica. Grátis se seu plano for Somente PDV." },
+  { icon: MessageCircle, title: "WhatsApp Bot Guiado", price: "Incluso",
+    desc: "Cliente pede sem sair da conversa. Bot valida endereço, horário e taxa e cria o pedido no painel." },
+  { icon: Truck, title: "Motoboy próprio", price: "Incluso",
+    desc: "Cadastre seus entregadores, defina comissão e acompanhe a rota em tempo real." },
+  { icon: Shirt, title: "Cardápio Boutique (roupas)", price: "Incluso",
+    desc: "Grade P/M/G, estoque por variação, etiqueta com código de barras e devolução com crédito." },
+];
+
+const RULES = [
+  { icon: AlertTriangle, title: "Quando a mensalidade começa",
+    desc: "Essencial: após R$ 5.000 em 60 dias vira R$ 180/mês. Autonomia: após R$ 2.500 vira R$ 239,90/mês. Sempre com 30 dias de aviso e aceite expresso (cláusula 5.2)." },
+  { icon: Wallet, title: "Cobrança do PIX pendente",
+    desc: "Saldo passa de R$ 30 → gera PIX pra segunda-feira. Passa de R$ 500 → o painel limita novos pedidos até quitar. Sem surpresa." },
+  { icon: Ban, title: "Cancelamento",
+    desc: "Sem multa, sem fidelidade, sem letra miúda. Desativa a loja no painel e acabou." },
+];
+
+const COMPARISON = [
+  { row: "Comissão por pedido",  us: "0%",           market: "~27%",      wpp: "0%" },
+  { row: "PIX direto na sua conta", us: "Sim",       market: "Não",       wpp: "Manual" },
+  { row: "Dono da base de clientes", us: "Você",     market: "Eles",      wpp: "Você" },
+  { row: "Bot de WhatsApp guiado", us: "Incluso",    market: "Não",       wpp: "Não" },
+  { row: "PDV de balcão",         us: "R$ 49/mês",   market: "Não",       wpp: "Não" },
+  { row: "Motoboy próprio",       us: "Incluso",     market: "Terceiros", wpp: "Não" },
+  { row: "Cupom e fidelidade seus", us: "Sim",       market: "Deles",     wpp: "Não" },
 ];
 
 /* ─────────────────────────── HELPERS ─────────────────────────── */
@@ -516,6 +574,149 @@ const StoreDirectory = () => {
               <p className="text-[10px] font-black uppercase text-muted-foreground">Hoje</p>
               <p className="text-sm font-black text-foreground">37 pedidos · R$ 2.184</p>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═════════════════ QUEM PAGA A TAXA ═════════════════ */}
+      <section className="py-20 md:py-24 px-6">
+        <div className="mx-auto max-w-6xl">
+          <div className="max-w-2xl mb-10 md:mb-14">
+            <p className="text-[11px] font-black uppercase tracking-[0.2em] text-primary mb-3">Diferencial exclusivo</p>
+            <h2 className="text-3xl md:text-5xl font-black tracking-tight leading-[1.05]">
+              Você escolhe <span className="text-primary">quem paga a taxa</span> da plataforma.
+            </h2>
+            <p className="mt-4 text-muted-foreground md:text-lg">
+              Nenhum marketplace deixa. Aqui você decide se o cliente paga, se divide meio a meio, ou se você absorve pra ganhar conversão. Muda quando quiser, direto no painel.
+            </p>
+          </div>
+          <div className="grid md:grid-cols-3 gap-3 md:gap-4">
+            {FEE_SPLIT_MODES.map((m) => (
+              <div key={m.title} className="rounded-3xl border border-border bg-card p-5 md:p-6 hover:border-primary/40 transition-all">
+                <div className="flex items-center justify-between mb-4">
+                  <span className="h-11 w-11 rounded-2xl bg-primary/10 text-primary grid place-items-center">
+                    <m.icon className="h-5 w-5" />
+                  </span>
+                  <span className="text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full bg-muted text-muted-foreground">{m.tag}</span>
+                </div>
+                <p className="text-lg font-black">{m.title}</p>
+                <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed">{m.desc}</p>
+                <div className="mt-4 rounded-xl border border-dashed border-border bg-muted/40 px-3 py-2 text-xs font-semibold text-foreground/80">
+                  {m.example}
+                </div>
+              </div>
+            ))}
+          </div>
+          <p className="mt-6 text-center text-xs font-bold text-muted-foreground">
+            <ShieldCheck className="inline h-3.5 w-3.5 mr-1 text-primary" /> Muda quando quiser · sem falar com suporte
+          </p>
+        </div>
+      </section>
+
+      {/* ═════════════════ MODOS DE RECEBIMENTO ═════════════════ */}
+      <section className="py-20 md:py-24 px-6 bg-muted/20 border-y border-border">
+        <div className="mx-auto max-w-6xl">
+          <div className="max-w-2xl mb-10 md:mb-14">
+            <p className="text-[11px] font-black uppercase tracking-[0.2em] text-primary mb-3">Recebimento</p>
+            <h2 className="text-3xl md:text-5xl font-black tracking-tight leading-[1.05]">
+              3 formas de <span className="text-primary">receber</span> — todas caem no seu bolso.
+            </h2>
+          </div>
+          <div className="grid md:grid-cols-3 gap-3 md:gap-4">
+            {PAYMENT_MODES.map((p) => (
+              <div key={p.title} className="rounded-3xl border border-border bg-card p-5 md:p-6">
+                <div className="h-11 w-11 rounded-2xl bg-primary/10 text-primary grid place-items-center mb-4">
+                  <p.icon className="h-5 w-5" />
+                </div>
+                <p className="text-lg font-black">{p.title}</p>
+                <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed">{p.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ═════════════════ COMPARATIVO ═════════════════ */}
+      <section className="py-20 md:py-24 px-6">
+        <div className="mx-auto max-w-5xl">
+          <div className="max-w-2xl mb-10">
+            <p className="text-[11px] font-black uppercase tracking-[0.2em] text-primary mb-3">Comparativo honesto</p>
+            <h2 className="text-3xl md:text-5xl font-black tracking-tight leading-[1.05]">
+              O que o iFood <span className="text-primary">não te dá.</span>
+            </h2>
+          </div>
+          <div className="rounded-3xl border border-border bg-card overflow-hidden">
+            <div className="grid grid-cols-[1.4fr,1fr,1fr,1fr] text-[11px] md:text-xs font-black uppercase tracking-wider bg-muted/60 border-b border-border">
+              <div className="px-3 md:px-5 py-3 text-muted-foreground">Recurso</div>
+              <div className="px-2 md:px-5 py-3 text-primary">ItaSuper</div>
+              <div className="px-2 md:px-5 py-3 text-muted-foreground">Marketplace</div>
+              <div className="px-2 md:px-5 py-3 text-muted-foreground">WhatsApp na mão</div>
+            </div>
+            {COMPARISON.map((r, i) => (
+              <div key={r.row} className={`grid grid-cols-[1.4fr,1fr,1fr,1fr] text-xs md:text-sm ${i % 2 ? "bg-muted/20" : ""} border-b border-border last:border-0`}>
+                <div className="px-3 md:px-5 py-3 md:py-4 font-bold text-foreground leading-snug">{r.row}</div>
+                <div className="px-2 md:px-5 py-3 md:py-4 font-black text-primary">{r.us}</div>
+                <div className="px-2 md:px-5 py-3 md:py-4 text-muted-foreground">{r.market}</div>
+                <div className="px-2 md:px-5 py-3 md:py-4 text-muted-foreground">{r.wpp}</div>
+              </div>
+            ))}
+          </div>
+          <p className="mt-4 text-[11px] text-muted-foreground text-center">
+            Comissão de marketplace baseada em taxas públicas divulgadas por lojistas parceiros (2024–2025).
+          </p>
+        </div>
+      </section>
+
+      {/* ═════════════════ ADD-ONS / MÓDULOS ═════════════════ */}
+      <section className="py-20 md:py-24 px-6 bg-muted/20 border-y border-border">
+        <div className="mx-auto max-w-6xl">
+          <div className="max-w-2xl mb-10 md:mb-14">
+            <p className="text-[11px] font-black uppercase tracking-[0.2em] text-primary mb-3">Módulos</p>
+            <h2 className="text-3xl md:text-5xl font-black tracking-tight leading-[1.05]">
+              Liga só o que você <span className="text-primary">usa de verdade.</span>
+            </h2>
+            <p className="mt-4 text-muted-foreground md:text-lg">
+              Sem pacote inchado. Cancela o módulo em 2 cliques na aba <b className="text-foreground">Meu Plano</b>.
+            </p>
+          </div>
+          <div className="grid md:grid-cols-2 gap-3 md:gap-4">
+            {ADDONS.map((a) => (
+              <div key={a.title} className="rounded-3xl border border-border bg-card p-5 md:p-6 flex items-start gap-4">
+                <div className="h-12 w-12 rounded-2xl bg-primary/10 text-primary grid place-items-center shrink-0">
+                  <a.icon className="h-5 w-5" />
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="text-base md:text-lg font-black">{a.title}</p>
+                    <span className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-primary/10 text-primary">{a.price}</span>
+                  </div>
+                  <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed">{a.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ═════════════════ REGRAS DO JOGO ═════════════════ */}
+      <section className="py-20 md:py-24 px-6">
+        <div className="mx-auto max-w-6xl">
+          <div className="max-w-2xl mb-10 md:mb-14">
+            <p className="text-[11px] font-black uppercase tracking-[0.2em] text-primary mb-3">Sem letra miúda</p>
+            <h2 className="text-3xl md:text-5xl font-black tracking-tight leading-[1.05]">
+              As regras do jogo, <span className="text-primary">na cara.</span>
+            </h2>
+          </div>
+          <div className="grid md:grid-cols-3 gap-3 md:gap-4">
+            {RULES.map((r) => (
+              <div key={r.title} className="rounded-3xl border border-border bg-card p-5 md:p-6">
+                <div className="h-11 w-11 rounded-2xl bg-primary/10 text-primary grid place-items-center mb-4">
+                  <r.icon className="h-5 w-5" />
+                </div>
+                <p className="text-lg font-black">{r.title}</p>
+                <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed">{r.desc}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
