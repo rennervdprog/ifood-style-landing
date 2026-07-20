@@ -20,6 +20,8 @@ export interface Product {
   pdv_short_code?: string | null;
   /** Ordem custom da grade rápida do PDV. */
   pdv_sort_order?: number | null;
+  /** Destino de impressão: 'kitchen' | 'counter' | 'both' (Fase 1 Lanches). */
+  printer_target?: "kitchen" | "counter" | "both" | null;
 }
 
 /** Seção/categoria do cardápio. */
@@ -45,6 +47,8 @@ export interface CartItem {
   image_url?: string | null;
   /** Metadados livres do item (ex.: { weight_grams, price_per_kg }). */
   metadata?: Record<string, any>;
+  /** Copiado do produto — usado para split cozinha/balcão na impressão. */
+  printer_target?: "kitchen" | "counter" | "both" | null;
 }
 
 /** Sessão de caixa aberta. */
