@@ -68,8 +68,8 @@ const FAQS = [
     a: "Não. Roda no celular ou computador pelo navegador. Tem app Android opcional pra receber notificação de pedido. Cliente não instala nada." },
   { q: "Posso cancelar quando quiser?",
     a: "Sim, sem multa e sem fidelidade. Você desativa a loja no painel e pronto." },
-  { q: "É alternativa ao iFood?",
-    a: "Sim. Cardápio próprio, PIX direto na sua conta, comissão 0% no Essencial e Autonomia (contra ~27% dos grandes marketplaces). Você fica dono do cliente." },
+  { q: "É alternativa aos grandes marketplaces de delivery?",
+    a: "Sim. Cardápio próprio, PIX direto na sua conta, comissão 0% no Essencial e Autonomia (contra ~27% praticados por grandes marketplaces). Você fica dono do cliente." },
   { q: "Posso escolher quem paga a taxa da plataforma?",
     a: "Sim. Em Configurações da loja você define entre 3 modos: Cliente paga (padrão, R$ 0,99 somados à taxa de entrega), Meio a meio (você absorve R$ 0,49 e passa R$ 0,50 pro cliente) ou Lojista paga (some do cliente e sai do repasse). Muda quando quiser." },
   { q: "O bot do WhatsApp responde sozinho?",
@@ -642,7 +642,7 @@ const StoreDirectory = () => {
           <div className="max-w-2xl mb-10">
             <p className="text-[11px] font-black uppercase tracking-[0.2em] text-primary mb-3">Comparativo honesto</p>
             <h2 className="text-3xl md:text-5xl font-black tracking-tight leading-[1.05]">
-              O que o iFood <span className="text-primary">não te dá.</span>
+              O que a concorrência <span className="text-primary">não te dá.</span>
             </h2>
           </div>
           <div className="rounded-3xl border border-border bg-card overflow-hidden">
