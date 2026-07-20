@@ -1196,6 +1196,9 @@ const PdvPage = () => {
                         {isSnackBar && (
                           <SnackBarCombosBar storeId={store?.id} addItem={addItem} />
                         )}
+                        {isRestaurant && (
+                          <RestaurantDailyMenuBar storeId={store?.id} addItem={addItem} />
+                        )}
                         <PdvFavoritesBar
                           storeId={store?.id}
                           products={products}
@@ -1285,6 +1288,9 @@ const PdvPage = () => {
                           />
                           {isSnackBar && (
                             <SnackBarCombosBar storeId={store?.id} addItem={addItem} />
+                          )}
+                          {isRestaurant && (
+                            <RestaurantDailyMenuBar storeId={store?.id} addItem={addItem} />
                           )}
                           <PdvFavoritesBar
                             storeId={store?.id}
