@@ -11,6 +11,7 @@ import {
   Menu, MessageCircle, ShieldCheck, ShoppingBag, Sparkles,
   Store, Truck, X, Zap, Smartphone, BarChart3, Printer, Gift, MapPin,
   AlertTriangle, PhoneCall, FileText,
+  Users, Split, HandCoins, Wallet, Package, Shirt, Ban, Percent,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -69,6 +70,63 @@ const FAQS = [
     a: "Sim, sem multa e sem fidelidade. Você desativa a loja no painel e pronto." },
   { q: "É alternativa ao iFood?",
     a: "Sim. Cardápio próprio, PIX direto na sua conta, comissão 0% no Essencial e Autonomia (contra ~27% dos grandes marketplaces). Você fica dono do cliente." },
+  { q: "Posso escolher quem paga a taxa da plataforma?",
+    a: "Sim. Em Configurações da loja você define entre 3 modos: Cliente paga (padrão, R$ 0,99 somados à taxa de entrega), Meio a meio (você absorve R$ 0,49 e passa R$ 0,50 pro cliente) ou Lojista paga (some do cliente e sai do repasse). Muda quando quiser." },
+  { q: "O bot do WhatsApp responde sozinho?",
+    a: "Sim. Ele guia o cliente pelo cardápio, valida endereço, calcula taxa por distância, aceita o pagamento e joga o pedido direto no seu painel. Você continua podendo assumir a conversa a qualquer momento." },
+  { q: "Também serve pra loja de roupas / boutique?",
+    a: "Sim. Existe o modo Boutique com grade P/M/G, estoque por variação (tamanho e cor), etiqueta de código de barras e devolução com crédito na conta do cliente." },
+];
+
+const FEE_SPLIT_MODES = [
+  { icon: Users, title: "Cliente paga", tag: "Padrão",
+    desc: "R$ 0,99 somam à sua taxa de entrega. Zero sai do seu caixa.",
+    example: "Você cobra R$ 5,00 → cliente vê R$ 5,99." },
+  { icon: Split, title: "Meio a meio", tag: "Equilibrado",
+    desc: "Você absorve R$ 0,49 no repasse. O cliente paga R$ 0,50 a mais.",
+    example: "Cobra R$ 5,00 → cliente vê R$ 5,50 · repasse −R$ 0,49." },
+  { icon: HandCoins, title: "Lojista paga", tag: "Converte mais",
+    desc: "A taxa da plataforma some pro cliente. Sai R$ 0,99 do seu repasse.",
+    example: "Cobra R$ 5,00 → cliente vê R$ 5,00 · repasse −R$ 0,99." },
+];
+
+const PAYMENT_MODES = [
+  { icon: Zap, title: "PIX Automático (Asaas)",
+    desc: "Cliente paga pelo checkout, Asaas confirma na hora e o pedido cai pronto pra despachar." },
+  { icon: Wallet, title: "PIX Direto",
+    desc: "Cai direto na sua chave PIX. Cliente anexa comprovante e você confirma com 1 toque." },
+  { icon: CreditCard, title: "Dinheiro · Cartão · Maquininha",
+    desc: "Cobrado só o R$ 0,99 da plataforma. Acumula um saldo e vira PIX de segunda quando passar de R$ 30." },
+];
+
+const ADDONS = [
+  { icon: Store, title: "PDV Balcão", price: "+ R$ 49/mês",
+    desc: "Frente de caixa completa: sessão, sangria, fechamento e impressão térmica. Grátis se seu plano for Somente PDV." },
+  { icon: MessageCircle, title: "WhatsApp Bot Guiado", price: "Incluso",
+    desc: "Cliente pede sem sair da conversa. Bot valida endereço, horário e taxa e cria o pedido no painel." },
+  { icon: Truck, title: "Motoboy próprio", price: "Incluso",
+    desc: "Cadastre seus entregadores, defina comissão e acompanhe a rota em tempo real." },
+  { icon: Shirt, title: "Cardápio Boutique (roupas)", price: "Incluso",
+    desc: "Grade P/M/G, estoque por variação, etiqueta com código de barras e devolução com crédito." },
+];
+
+const RULES = [
+  { icon: AlertTriangle, title: "Quando a mensalidade começa",
+    desc: "Essencial: após R$ 5.000 em 60 dias vira R$ 180/mês. Autonomia: após R$ 2.500 vira R$ 239,90/mês. Sempre com 30 dias de aviso e aceite expresso (cláusula 5.2)." },
+  { icon: Wallet, title: "Cobrança do PIX pendente",
+    desc: "Saldo passa de R$ 30 → gera PIX pra segunda-feira. Passa de R$ 500 → o painel limita novos pedidos até quitar. Sem surpresa." },
+  { icon: Ban, title: "Cancelamento",
+    desc: "Sem multa, sem fidelidade, sem letra miúda. Desativa a loja no painel e acabou." },
+];
+
+const COMPARISON = [
+  { row: "Comissão por pedido",  us: "0%",           market: "~27%",      wpp: "0%" },
+  { row: "PIX direto na sua conta", us: "Sim",       market: "Não",       wpp: "Manual" },
+  { row: "Dono da base de clientes", us: "Você",     market: "Eles",      wpp: "Você" },
+  { row: "Bot de WhatsApp guiado", us: "Incluso",    market: "Não",       wpp: "Não" },
+  { row: "PDV de balcão",         us: "R$ 49/mês",   market: "Não",       wpp: "Não" },
+  { row: "Motoboy próprio",       us: "Incluso",     market: "Terceiros", wpp: "Não" },
+  { row: "Cupom e fidelidade seus", us: "Sim",       market: "Deles",     wpp: "Não" },
 ];
 
 /* ─────────────────────────── HELPERS ─────────────────────────── */
