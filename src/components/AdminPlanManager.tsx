@@ -926,6 +926,24 @@ function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride
                   </button>
                 </label>
               )}
+              {displayPlan === "autonomy" && (
+                <label className="flex items-center justify-between cursor-pointer gap-3 pt-3 border-t border-border/40">
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                      <Crown className="h-3 w-3 text-purple-500" />
+                      Autonomia vitalícia R$ 0
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">Bloqueia o upgrade automático para R$ 239,90 ao atingir R$ 2.500 em vendas. Nenhuma cobrança será gerada.</p>
+                  </div>
+                  <button
+                    onClick={toggleAutonomyLifetime}
+                    disabled={lifetimeSaving}
+                    className={`relative w-10 h-5 rounded-full transition-colors shrink-0 ${autonomyLifetime ? "bg-purple-500" : "bg-muted-foreground/30"} ${lifetimeSaving ? "opacity-50" : ""}`}
+                  >
+                    <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${autonomyLifetime ? "left-5" : "left-0.5"}`} />
+                  </button>
+                </label>
+              )}
             </div>
           </div>
 
