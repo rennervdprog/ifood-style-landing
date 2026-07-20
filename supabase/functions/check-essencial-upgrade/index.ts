@@ -47,7 +47,7 @@ Deno.serve(async (req) => {
     // Planos dinâmicos grátis (fixed + autonomy, monthly_fee=0, ativos)
     const { data: plans, error: pErr } = await sb
       .from("store_plans")
-      .select("id, store_id, monthly_fee, plan_type, is_active, essencial_upgrade_scheduled_at, essencial_lifetime_free, pix_operational_fee_override, platform_delivery_split_override, commission_rate, stores!inner(name, status, owner_id)")
+      .select("id, store_id, monthly_fee, plan_type, is_active, essencial_upgrade_scheduled_at, essencial_lifetime_free, autonomy_lifetime_free, pix_operational_fee_override, platform_delivery_split_override, commission_rate, stores!inner(name, status, owner_id)")
       .in("plan_type", Object.keys(PLAN_CONFIG))
       .eq("is_active", true)
       .eq("monthly_fee", 0);
@@ -108,7 +108,11 @@ Deno.serve(async (req) => {
       }
       if (store.status !== "ativo") { skipped.push({ store: store.name, reason: "store_inactive" }); continue; }
       // VIP vitalício: nunca subir mensalidade nem agendar upgrade.
-      if ((p as any).essencial_lifetime_free === true) {
+      const _planType = (p as any).plan_type;
+      const _lifetime =
+        (_planType === "fixed" && (p as any).essencial_lifetime_free === true) ||
+        (_planType === "autonomy" && (p as any).autonomy_lifetime_free === true);
+      if (_lifetime) {
         skipped.push({ store: store.name, reason: "lifetime_free_vip" });
         continue;
       }
