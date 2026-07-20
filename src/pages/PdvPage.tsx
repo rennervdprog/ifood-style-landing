@@ -1190,6 +1190,9 @@ const PdvPage = () => {
                     allProducts={products}
                     topSlot={
                       <>
+                        {isSnackBar && (
+                          <SnackBarCombosBar storeId={store?.id} addItem={addItem} />
+                        )}
                         <PdvFavoritesBar
                           storeId={store?.id}
                           products={products}
