@@ -1280,6 +1280,9 @@ const PdvPage = () => {
                             vendasCount={turnoVendasCount}
                             ticketMedio={ticketMedio}
                           />
+                          {isSnackBar && (
+                            <SnackBarCombosBar storeId={store?.id} addItem={addItem} />
+                          )}
                           <PdvFavoritesBar
                             storeId={store?.id}
                             products={products}
