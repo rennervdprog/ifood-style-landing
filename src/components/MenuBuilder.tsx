@@ -19,6 +19,7 @@ import { SortableProductGrid } from "@/components/menu/SortableProductGrid";
 interface MenuBuilderProps {
   storeId: string;
   storeCategory?: string;
+  storeCategories?: string[];
 }
 
 type ConfirmState = {
@@ -32,7 +33,7 @@ type ConfirmState = {
 const PRODUCT_FIELDS =
   "id, store_id, section_id, name, price, description, image_url, is_available, metadata, sold_by_weight, price_per_kg, weight_unit, sort_order, created_at";
 
-const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
+const MenuBuilder = ({ storeId, storeCategory, storeCategories }: MenuBuilderProps) => {
   const queryClient = useQueryClient();
 
   // ---------- UI state ----------
@@ -862,6 +863,7 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
       storeCategory={storeCategory}
       storeId={storeId}
       isMoving={movingProductId === product.id}
+      storeCategories={storeCategories}
       onStartMove={() => setMovingProductId(movingProductId === product.id ? null : product.id)}
       onCancelMove={() => setMovingProductId(null)}
       onMoveProduct={(pid, sid) => {
@@ -1062,6 +1064,7 @@ const MenuBuilder = ({ storeId, storeCategory }: MenuBuilderProps) => {
           }
           storeCategory={storeCategory}
           storeId={storeId}
+          storeCategories={storeCategories}
         />
       )}
 

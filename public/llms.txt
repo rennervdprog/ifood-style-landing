@@ -18,6 +18,16 @@ ItaSuper oferece: cardápio digital próprio (link da loja), app cliente Android
 - [Baixar app Android](/download): APK oficial do ItaSuper.
 - [Links rápidos](/links): Atalhos públicos do projeto.
 
+## Produtos e categorias de PDV
+
+- **PDV Only** (standalone, R$ 69/mês): Frente de caixa para lojas físicas sem delivery. Inclui operadores com PIN, gerente, sangria/suprimento, Z-Report, comandas/mesas e histórico.
+- **PDV Add-on** (R$ 49/mês, sobre plano de delivery): Mesmo PDV completo, integrado ao painel do delivery.
+- **PDV Boutique** (roupas): Grade de tamanho × cor, controle de SKU, devoluções/vale-crédito e impressão de etiquetas.
+- **PDV Pizzaria**: Montador de pizza meio-a-meio com bordas e sabores integrados ao cardápio.
+- **PDV Restaurante/Marmitaria**: Cardápio do dia (executivo) com atalho na tela de venda.
+- **PDV Lanches**: Combos configuráveis (lanche + bebida + acompanhamento) com preço promocional.
+- **KDS de cozinha**: Tela de pedidos em andamento com split cliente/cozinha na impressão térmica.
+
 ## Blog (SEO + conteúdo de apoio)
 
 - [Índice do blog](/blog): Artigos sobre delivery, gestão, marketing e operação de restaurantes.

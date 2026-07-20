@@ -79,7 +79,7 @@ const PdvCardapioPage = () => {
   const showPizzaPastel = cats.includes("pizzas") || cats.includes("pasteis");
   const isApparel = (store as any)?.store_type === "apparel";
   const isSnackBar = (store as any)?.store_type === "snack_bar" || cats.includes("lanches");
-  const isRestaurant = (store as any)?.store_type === "restaurant";
+  const isRestaurant = (store as any)?.store_type === "restaurant" || cats.includes("restaurante");
 
   const [sub, setSub] = useState<SubTab>("cardapio");
 
@@ -185,7 +185,7 @@ const PdvCardapioPage = () => {
         {sub === "cardapio" && (
           <>
             <PdvQuickGridEditor storeId={store.id} />
-            <MenuBuilder storeId={store.id} storeCategory={store.category} />
+            <MenuBuilder storeId={store.id} storeCategory={store.category} storeCategories={cats} />
           </>
         )}
         {sub === "adicionais" && (

@@ -13,6 +13,7 @@ interface ProductSheetProps {
   onSave: (data: ProductFormData) => void;
   storeCategory?: string;
   storeId?: string;
+  storeCategories?: string[];
 }
 
 /**
@@ -28,6 +29,7 @@ export const ProductSheet = ({
   onSave,
   storeCategory,
   storeId,
+  storeCategories,
 }: ProductSheetProps) => {
   const [live, setLive] = useState<ProductFormData | undefined>(initial);
   const preview = live || initial;
@@ -88,6 +90,7 @@ export const ProductSheet = ({
             onCancel={() => onOpenChange(false)}
             storeCategory={storeCategory}
             storeId={storeId}
+            storeCategories={storeCategories}
             onChange={setLive}
           />
         </div>

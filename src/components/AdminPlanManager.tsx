@@ -563,6 +563,7 @@ export default function AdminPlanManager() {
                       currentDeliveryOverride={(plan as any).platform_delivery_split_override}
                       currentPdvFixedFee={(plan as any).pdv_fixed_fee_per_sale}
                       currentLifetimeFree={!!(plan as any).essencial_lifetime_free}
+                      currentAutonomyLifetime={!!(plan as any).autonomy_lifetime_free}
                       displayPlan={currentDisplay ?? (plan.plan_type as PlanType)}
                       planDefault={planDefaults[currentDisplay ?? (plan.plan_type as PlanType)]}
                       onSave={() => {
@@ -634,7 +635,7 @@ export default function AdminPlanManager() {
   );
 }
 
-function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride, currentDeliveryOverride, currentPdvFixedFee, currentLifetimeFree, displayPlan, planDefault, onSave }: {
+function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride, currentDeliveryOverride, currentPdvFixedFee, currentLifetimeFree, currentAutonomyLifetime, displayPlan, planDefault, onSave }: {
   storeId: string;
   currentFee: number;
   currentRate: number;
@@ -642,6 +643,7 @@ function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride
   currentDeliveryOverride: number | null | undefined;
   currentPdvFixedFee: number | null | undefined;
   currentLifetimeFree?: boolean;
+  currentAutonomyLifetime?: boolean;
   displayPlan: DisplayPlan;
   planDefault: { monthly_fee: number; commission_rate: number };
   onSave: () => void;
@@ -662,8 +664,22 @@ function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride
   const [pdvFixedFee, setPdvFixedFee] = useState(currentPdvFixedFee ?? 0);
   const [pdvCommRate, setPdvCommRate] = useState(0);
   const [lifetimeFree, setLifetimeFree] = useState(!!currentLifetimeFree);
+  const [autonomyLifetime, setAutonomyLifetime] = useState(!!currentAutonomyLifetime);
   const [lifetimeSaving, setLifetimeSaving] = useState(false);
   const [pixOverrideEnabled, setPixOverrideEnabled] = useState(currentPixOverride != null);
+  const logVip = async (action: string, details: any) => {
+    try {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) return;
+      await supabase.from("admin_logs" as any).insert({
+        admin_user_id: u.user.id,
+        action,
+        target_type: "store_plan_vip",
+        target_id: storeId,
+        details,
+      } as any);
+    } catch (err) { console.warn("admin_logs insert failed:", err); }
+  };
   const toggleLifetimeFree = async () => {
     setLifetimeSaving(true);
     try {
@@ -678,10 +694,33 @@ function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride
         .eq("is_active", true);
       if (error) throw error;
       setLifetimeFree(target);
+      await logVip("vip_essencial_lifetime_toggled", { enabled: target });
       toast.success(target ? "Essencial vitalício ativado — nunca sofrerá upgrade automático." : "Vitalício removido.");
       onSave();
     } catch (e: any) {
       toast.error(e?.message || "Erro ao alterar vitalício.");
+    } finally { setLifetimeSaving(false); }
+  };
+
+  const toggleAutonomyLifetime = async () => {
+    setLifetimeSaving(true);
+    try {
+      const target = !autonomyLifetime;
+      const { error } = await supabase
+        .from("store_plans" as any)
+        .update({
+          autonomy_lifetime_free: target,
+          ...(target ? { essencial_upgrade_scheduled_at: null } : {}),
+        } as any)
+        .eq("store_id", storeId)
+        .eq("is_active", true);
+      if (error) throw error;
+      setAutonomyLifetime(target);
+      await logVip("vip_autonomy_lifetime_toggled", { enabled: target });
+      toast.success(target ? "Autonomia vitalícia ativada — não será forçada a upgrade ao passar de R$ 2.500." : "Vitalício de Autonomia removido.");
+      onSave();
+    } catch (e: any) {
+      toast.error(e?.message || "Erro ao alterar vitalício de Autonomia.");
     } finally { setLifetimeSaving(false); }
   };
 
@@ -760,6 +799,20 @@ function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride
         .eq("is_active", true);
       if (error) throw error;
       await supabase.from("stores").update({ commission_rate: rate } as any).eq("id", storeId);
+      await logVip("vip_settings_saved", {
+        before: {
+          monthly_fee: currentFee, commission_rate: currentRate,
+          pdv_fixed_fee_per_sale: currentPdvFixedFee,
+          pix_operational_fee_override: currentPixOverride,
+          platform_delivery_split_override: currentDeliveryOverride,
+        },
+        after: {
+          monthly_fee: fee, commission_rate: rate,
+          pdv_fixed_fee_per_sale: pdvFixedFee,
+          pix_operational_fee_override: finalPix,
+          platform_delivery_split_override: finalDelivery,
+        },
+      });
       toast.success("Configuração VIP salva!");
       onSave();
     } catch {
@@ -781,6 +834,7 @@ function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride
       setFee(d.fee); setRate(d.rate);
       setPdvFixedFee(defaultPdvFixed);
       setPixOverrideEnabled(false); setDeliveryOverrideEnabled(false);
+      await logVip("vip_settings_reset", { defaults: d });
       toast.success("Valores resetados para o padrão do plano.");
       onSave();
     } catch { toast.error("Erro ao resetar."); }
@@ -884,6 +938,24 @@ function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride
                     className={`relative w-10 h-5 rounded-full transition-colors shrink-0 ${lifetimeFree ? "bg-amber-500" : "bg-muted-foreground/30"} ${lifetimeSaving ? "opacity-50" : ""}`}
                   >
                     <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${lifetimeFree ? "left-5" : "left-0.5"}`} />
+                  </button>
+                </label>
+              )}
+              {displayPlan === "autonomy" && (
+                <label className="flex items-center justify-between cursor-pointer gap-3 pt-3 border-t border-border/40">
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                      <Crown className="h-3 w-3 text-purple-500" />
+                      Autonomia vitalícia R$ 0
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">Bloqueia o upgrade automático para R$ 239,90 ao atingir R$ 2.500 em vendas. Nenhuma cobrança será gerada.</p>
+                  </div>
+                  <button
+                    onClick={toggleAutonomyLifetime}
+                    disabled={lifetimeSaving}
+                    className={`relative w-10 h-5 rounded-full transition-colors shrink-0 ${autonomyLifetime ? "bg-purple-500" : "bg-muted-foreground/30"} ${lifetimeSaving ? "opacity-50" : ""}`}
+                  >
+                    <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${autonomyLifetime ? "left-5" : "left-0.5"}`} />
                   </button>
                 </label>
               )}
@@ -1010,6 +1082,84 @@ function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride
             </button>
           </div>
           <AdminStoreAddonsPanel storeId={storeId} />
+          <VipHistoryPanel storeId={storeId} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function VipHistoryPanel({ storeId }: { storeId: string }) {
+  const [open, setOpen] = useState(false);
+  const { data: logs, isLoading, refetch } = useQuery({
+    queryKey: ["vip-history", storeId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("admin_logs" as any)
+        .select("id, action, details, created_at, admin_user_id")
+        .eq("target_id", storeId)
+        .in("action", [
+          "vip_settings_saved",
+          "vip_settings_reset",
+          "vip_essencial_lifetime_toggled",
+          "vip_autonomy_lifetime_toggled",
+        ])
+        .order("created_at", { ascending: false })
+        .limit(30);
+      if (error) throw error;
+      return (data || []) as any[];
+    },
+    enabled: open,
+  });
+  const fmt = (v: any) =>
+    v === null || v === undefined ? "—" : typeof v === "number" ? v.toString() : String(v);
+  return (
+    <div className="rounded-2xl border border-border overflow-hidden mt-3">
+      <button
+        onClick={() => { setOpen(o => !o); if (!open) refetch(); }}
+        className="w-full flex items-center justify-between px-4 py-3 bg-muted/30 hover:bg-muted/50 transition-colors"
+      >
+        <div className="flex items-center gap-2">
+          <History className="h-4 w-4 text-muted-foreground" />
+          <span className="text-xs font-black text-foreground">Histórico VIP</span>
+        </div>
+        <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+      {open && (
+        <div className="p-3 space-y-2 max-h-72 overflow-y-auto">
+          {isLoading && <p className="text-[11px] text-muted-foreground">Carregando…</p>}
+          {!isLoading && (logs || []).length === 0 && (
+            <p className="text-[11px] text-muted-foreground">Nenhuma alteração VIP registrada.</p>
+          )}
+          {(logs || []).map((l: any) => (
+            <div key={l.id} className="rounded-xl border border-border/50 p-2.5 bg-card/50">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[11px] font-bold text-foreground">
+                  {l.action === "vip_settings_saved" && "Configuração VIP salva"}
+                  {l.action === "vip_settings_reset" && "Resetado ao padrão"}
+                  {l.action === "vip_essencial_lifetime_toggled" && `Essencial vitalício ${l.details?.enabled ? "ativado" : "removido"}`}
+                  {l.action === "vip_autonomy_lifetime_toggled" && `Autonomia vitalícia ${l.details?.enabled ? "ativada" : "removida"}`}
+                </span>
+                <span className="text-[10px] text-muted-foreground shrink-0">
+                  {new Date(l.created_at).toLocaleString("pt-BR")}
+                </span>
+              </div>
+              {l.details?.before && l.details?.after && (
+                <div className="mt-1.5 text-[10px] text-muted-foreground space-y-0.5">
+                  {Object.keys(l.details.after).map((k) => {
+                    const b = l.details.before?.[k];
+                    const a = l.details.after?.[k];
+                    if (fmt(b) === fmt(a)) return null;
+                    return (
+                      <div key={k}>
+                        <span className="font-semibold">{k}:</span> {fmt(b)} → <span className="text-foreground font-bold">{fmt(a)}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       )}
     </div>
