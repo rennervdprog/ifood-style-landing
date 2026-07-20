@@ -128,13 +128,40 @@ interface ProductFormInlineProps {
   onCancel: () => void;
   storeCategory?: string;
   storeId?: string;
+  storeCategories?: string[];
   onChange?: (data: ProductFormData) => void;
 }
 
-export const ProductFormInline = ({ initial, onSave, onCancel, storeCategory, storeId, onChange }: ProductFormInlineProps) => {
+const CATEGORY_LABELS: Record<string, string> = {
+  lanches: "🍔 Lanches",
+  pizzas: "🍕 Pizzas",
+  pasteis: "🥟 Pastéis",
+  restaurante: "🍽️ Restaurante",
+  bebidas: "🥤 Bebidas",
+  doces: "🍰 Doces",
+  mercado: "🛒 Mercado",
+  farmacia: "💊 Farmácia",
+  petshop: "🐾 Petshop",
+  adegas: "🍷 Adegas",
+  padaria: "🥖 Padaria",
+  acai: "🍨 Açaí",
+  sorvetes: "🍦 Sorvetes",
+  hortifruti: "🥬 Hortifruti",
+  salao: "💇 Salão",
+  roupas: "👗 Roupas",
+};
+
+export const ProductFormInline = ({ initial, onSave, onCancel, storeCategory, storeId, storeCategories, onChange }: ProductFormInlineProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [form, setForm] = useState<ProductFormData>(initial || EMPTY_FORM);
+
+  const availableCategories = (storeCategories && storeCategories.length > 0)
+    ? Array.from(new Set(storeCategories.filter(Boolean)))
+    : (storeCategory ? [storeCategory] : []);
+  const effectiveCategory: string | undefined =
+    (form.metadata as any)?.product_category
+    || (availableCategories.length > 0 ? availableCategories[0] : storeCategory);
 
   useEffect(() => { onChange?.(form); }, [form, onChange]);
   
@@ -236,9 +263,25 @@ export const ProductFormInline = ({ initial, onSave, onCancel, storeCategory, st
         className="w-full bg-background text-foreground px-3 py-2.5 rounded-lg text-sm border border-border focus:border-primary focus:outline-none"
       />
 
-      {storeCategory && (
+      {availableCategories.length > 1 && (
+        <div className="space-y-1">
+          <label className="text-xs font-bold text-foreground/70">Categoria do produto</label>
+          <select
+            value={effectiveCategory || ""}
+            onChange={(e) => setForm((p) => ({ ...p, metadata: { ...(p.metadata || {}), product_category: e.target.value } }))}
+            className="w-full bg-background text-foreground px-3 py-2.5 rounded-lg text-sm border border-border focus:border-primary focus:outline-none"
+          >
+            {availableCategories.map((c) => (
+              <option key={c} value={c}>{CATEGORY_LABELS[c] || c}</option>
+            ))}
+          </select>
+          <p className="text-[10px] text-muted-foreground">Escolha a qual categoria da loja este produto pertence.</p>
+        </div>
+      )}
+
+      {effectiveCategory && (
         <CategoryProductFields
-          category={storeCategory}
+          category={effectiveCategory}
           metadata={form.metadata || {}}
           onChange={(metadata: Record<string, any>) => setForm((p) => ({ ...p, metadata }))}
           onNameChange={(name: string) => {
