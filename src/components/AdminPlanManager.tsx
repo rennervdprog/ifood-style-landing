@@ -635,7 +635,7 @@ export default function AdminPlanManager() {
   );
 }
 
-function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride, currentDeliveryOverride, currentPdvFixedFee, currentLifetimeFree, displayPlan, planDefault, onSave }: {
+function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride, currentDeliveryOverride, currentPdvFixedFee, currentLifetimeFree, currentAutonomyLifetime, displayPlan, planDefault, onSave }: {
   storeId: string;
   currentFee: number;
   currentRate: number;
@@ -643,6 +643,7 @@ function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride
   currentDeliveryOverride: number | null | undefined;
   currentPdvFixedFee: number | null | undefined;
   currentLifetimeFree?: boolean;
+  currentAutonomyLifetime?: boolean;
   displayPlan: DisplayPlan;
   planDefault: { monthly_fee: number; commission_rate: number };
   onSave: () => void;
@@ -663,8 +664,22 @@ function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride
   const [pdvFixedFee, setPdvFixedFee] = useState(currentPdvFixedFee ?? 0);
   const [pdvCommRate, setPdvCommRate] = useState(0);
   const [lifetimeFree, setLifetimeFree] = useState(!!currentLifetimeFree);
+  const [autonomyLifetime, setAutonomyLifetime] = useState(!!currentAutonomyLifetime);
   const [lifetimeSaving, setLifetimeSaving] = useState(false);
   const [pixOverrideEnabled, setPixOverrideEnabled] = useState(currentPixOverride != null);
+  const logVip = async (action: string, details: any) => {
+    try {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) return;
+      await supabase.from("admin_logs" as any).insert({
+        admin_user_id: u.user.id,
+        action,
+        target_type: "store_plan_vip",
+        target_id: storeId,
+        details,
+      } as any);
+    } catch (err) { console.warn("admin_logs insert failed:", err); }
+  };
   const toggleLifetimeFree = async () => {
     setLifetimeSaving(true);
     try {
@@ -679,10 +694,33 @@ function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride
         .eq("is_active", true);
       if (error) throw error;
       setLifetimeFree(target);
+      await logVip("vip_essencial_lifetime_toggled", { enabled: target });
       toast.success(target ? "Essencial vitalício ativado — nunca sofrerá upgrade automático." : "Vitalício removido.");
       onSave();
     } catch (e: any) {
       toast.error(e?.message || "Erro ao alterar vitalício.");
+    } finally { setLifetimeSaving(false); }
+  };
+
+  const toggleAutonomyLifetime = async () => {
+    setLifetimeSaving(true);
+    try {
+      const target = !autonomyLifetime;
+      const { error } = await supabase
+        .from("store_plans" as any)
+        .update({
+          autonomy_lifetime_free: target,
+          ...(target ? { essencial_upgrade_scheduled_at: null } : {}),
+        } as any)
+        .eq("store_id", storeId)
+        .eq("is_active", true);
+      if (error) throw error;
+      setAutonomyLifetime(target);
+      await logVip("vip_autonomy_lifetime_toggled", { enabled: target });
+      toast.success(target ? "Autonomia vitalícia ativada — não será forçada a upgrade ao passar de R$ 2.500." : "Vitalício de Autonomia removido.");
+      onSave();
+    } catch (e: any) {
+      toast.error(e?.message || "Erro ao alterar vitalício de Autonomia.");
     } finally { setLifetimeSaving(false); }
   };
 
