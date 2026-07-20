@@ -11,7 +11,7 @@ import {
   Menu, MessageCircle, ShieldCheck, ShoppingBag, Sparkles,
   Store, Truck, X, Zap, Smartphone, BarChart3, Printer, Gift, MapPin,
   AlertTriangle, PhoneCall, FileText,
-  Users, Split, HandCoins, Wallet, Package, Shirt, Ban, Percent,
+  Users, Split, HandCoins, Wallet, Shirt, Ban,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
