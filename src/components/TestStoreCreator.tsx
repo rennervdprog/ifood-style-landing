@@ -158,6 +158,33 @@ const TestStoreCreator = () => {
         </button>
       </div>
 
+      <div className="pt-3 border-t border-border space-y-2">
+        <p className="text-xs font-bold text-foreground/70">🍔🍕🍽️ PDV Food Service (tipos especializados)</p>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <button
+            onClick={() => handleCreate({ value: "restaurante" as any, label: "🍔 Lanches", emoji: "🍔" }, "pdv_only", "snack_bar")}
+            disabled={creating}
+            className="flex items-center justify-center gap-2 p-3 rounded-xl border-2 border-orange-500/40 bg-orange-500/5 text-orange-700 dark:text-orange-400 text-xs font-bold transition-all active:scale-95 hover:border-orange-500/70"
+          >
+            🍔 Lanches (combos)
+          </button>
+          <button
+            onClick={() => handleCreate({ value: "pizzaria" as any, label: "🍕 Pizzaria", emoji: "🍕" }, "pdv_only", "pizzeria")}
+            disabled={creating}
+            className="flex items-center justify-center gap-2 p-3 rounded-xl border-2 border-red-500/40 bg-red-500/5 text-red-700 dark:text-red-400 text-xs font-bold transition-all active:scale-95 hover:border-red-500/70"
+          >
+            🍕 Pizzaria (meio a meio)
+          </button>
+          <button
+            onClick={() => handleCreate({ value: "restaurante" as any, label: "🍽️ Restaurante", emoji: "🍽️" }, "pdv_only", "restaurant")}
+            disabled={creating}
+            className="flex items-center justify-center gap-2 p-3 rounded-xl border-2 border-emerald-500/40 bg-emerald-500/5 text-emerald-700 dark:text-emerald-400 text-xs font-bold transition-all active:scale-95 hover:border-emerald-500/70"
+          >
+            🍽️ Restaurante (kg + marmitex)
+          </button>
+        </div>
+      </div>
+
       {testStores && testStores.length > 0 && (
         <div className="space-y-2">
           <p className="text-xs font-bold text-foreground/70">Suas lojas de teste:</p>
