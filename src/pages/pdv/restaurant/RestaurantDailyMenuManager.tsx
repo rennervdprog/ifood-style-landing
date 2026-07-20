@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { formatBRL, parseCurrencyToNumber } from "@/lib/utils";
+import { formatBRL } from "@/lib/utils";
+import { parseBRL } from "@/hooks/useBRLInput";
 import { toast } from "sonner";
 import { Plus, Trash2, Save, UtensilsCrossed } from "lucide-react";
 
@@ -42,7 +43,7 @@ export default function RestaurantDailyMenuManager({ storeId }: { storeId: strin
   const refresh = () => qc.invalidateQueries({ queryKey: ["daily-menus-admin", storeId, date] });
 
   const create = async () => {
-    const price = parseCurrencyToNumber(draft.price);
+    const price = parseBRL(draft.price);
     if (!draft.name || !price) return toast.error("Informe nome e preço.");
     const { error } = await (supabase as any).from("daily_menus").insert({
       store_id: storeId, menu_date: date,
