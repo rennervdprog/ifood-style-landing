@@ -312,6 +312,14 @@ const StoreDirectory = () => {
         "@type": "Offer", name: PLANS[id].name, price: String(PLANS[id].monthlyFee), priceCurrency: "BRL",
       })),
     });
+    setLd("breadcrumb-jsonld-storedirectory", {
+      "@context": "https://schema.org", "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Início", item: "https://itasuper.com.br/" },
+        { "@type": "ListItem", position: 2, name: "Planos", item: "https://itasuper.com.br/planos" },
+        { "@type": "ListItem", position: 3, name: "Lojas", item: "https://itasuper.com.br/cliente" },
+      ],
+    });
   }, []);
 
   useEffect(() => { import("@/lib/pageView").then((m) => m.trackPageView("store_directory")); }, []);
