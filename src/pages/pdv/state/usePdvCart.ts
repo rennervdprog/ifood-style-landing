@@ -98,6 +98,7 @@ export function usePdvCart() {
               observations: observations || undefined,
               image_url: product.image_url,
               metadata,
+              printer_target: (product as any)?.printer_target ?? null,
             },
           ];
         }
@@ -131,6 +132,7 @@ export function usePdvCart() {
             observations: observations || undefined,
             image_url: product.image_url,
             metadata,
+            printer_target: (product as any)?.printer_target ?? null,
           },
         ];
       });
@@ -161,6 +163,7 @@ export function usePdvCart() {
           price: Number(product.price),
           quantity: 1,
           image_url: product.image_url,
+          printer_target: (product as any)?.printer_target ?? null,
         },
       ];
     });

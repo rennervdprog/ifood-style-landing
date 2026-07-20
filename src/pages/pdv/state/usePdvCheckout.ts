@@ -361,11 +361,15 @@ export function usePdvCheckout() {
               unit_price: item.price,
               products: { name: item.name },
               metadata: item.metadata || null,
+              printer_target: (item as any).printer_target ?? null,
             })),
           });
           const printOpts = {
             copies: settingsObj.print_copies === 1 ? 1 : 2,
             paperWidth: settingsObj.print_paper_width === 58 ? 58 : 80,
+            splitByPrinter:
+              settingsObj.print_split_kitchen !== false &&
+              cart.some((it) => (it as any).printer_target === "kitchen"),
           } as const;
           if (!autoPrint) {
             // Lojista optou por imprimir manualmente — deixamos o CTA no toast.

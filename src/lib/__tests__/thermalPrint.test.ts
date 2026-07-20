@@ -208,6 +208,29 @@ describe("printPdvReceipt — fase 3", () => {
     expect(html).toContain("(11) 99999-9999");
     expect(html).toContain("12.345.678/0001-00");
   });
+
+  it("splitByPrinter imprime via COZINHA quando há item printer_target=kitchen", () => {
+    printPdvReceipt(
+      {
+        id: "kitc0000",
+        created_at: "2026-06-28T15:00:00Z",
+        subtotal: 20, total_price: 20, payment_method: "dinheiro",
+        order_items: [
+          { quantity: 1, unit_price: 15, products: { name: "X-Burger" }, printer_target: "kitchen" },
+          { quantity: 1, unit_price: 5,  products: { name: "Coca 350ml" }, printer_target: "counter" },
+        ],
+      },
+      "Loja",
+      { splitByPrinter: true },
+    );
+    const html = getContainerHtml();
+    expect(html).toContain("VIA COZINHA");
+    expect(html).toContain("COZINHA — PREPARAR");
+    expect(html).toContain("X-Burger");
+    expect(html).toContain("VIA CLIENTE");
+    // preços só na via cliente
+    expect(html).toContain("20,00");
+  });
 });
 
 describe("printThermalReceipt — delivery", () => {
