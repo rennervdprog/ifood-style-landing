@@ -578,6 +578,149 @@ const StoreDirectory = () => {
         </div>
       </section>
 
+      {/* ═════════════════ QUEM PAGA A TAXA ═════════════════ */}
+      <section className="py-20 md:py-24 px-6">
+        <div className="mx-auto max-w-6xl">
+          <div className="max-w-2xl mb-10 md:mb-14">
+            <p className="text-[11px] font-black uppercase tracking-[0.2em] text-primary mb-3">Diferencial exclusivo</p>
+            <h2 className="text-3xl md:text-5xl font-black tracking-tight leading-[1.05]">
+              Você escolhe <span className="text-primary">quem paga a taxa</span> da plataforma.
+            </h2>
+            <p className="mt-4 text-muted-foreground md:text-lg">
+              Nenhum marketplace deixa. Aqui você decide se o cliente paga, se divide meio a meio, ou se você absorve pra ganhar conversão. Muda quando quiser, direto no painel.
+            </p>
+          </div>
+          <div className="grid md:grid-cols-3 gap-3 md:gap-4">
+            {FEE_SPLIT_MODES.map((m) => (
+              <div key={m.title} className="rounded-3xl border border-border bg-card p-5 md:p-6 hover:border-primary/40 transition-all">
+                <div className="flex items-center justify-between mb-4">
+                  <span className="h-11 w-11 rounded-2xl bg-primary/10 text-primary grid place-items-center">
+                    <m.icon className="h-5 w-5" />
+                  </span>
+                  <span className="text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full bg-muted text-muted-foreground">{m.tag}</span>
+                </div>
+                <p className="text-lg font-black">{m.title}</p>
+                <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed">{m.desc}</p>
+                <div className="mt-4 rounded-xl border border-dashed border-border bg-muted/40 px-3 py-2 text-xs font-semibold text-foreground/80">
+                  {m.example}
+                </div>
+              </div>
+            ))}
+          </div>
+          <p className="mt-6 text-center text-xs font-bold text-muted-foreground">
+            <ShieldCheck className="inline h-3.5 w-3.5 mr-1 text-primary" /> Muda quando quiser · sem falar com suporte
+          </p>
+        </div>
+      </section>
+
+      {/* ═════════════════ MODOS DE RECEBIMENTO ═════════════════ */}
+      <section className="py-20 md:py-24 px-6 bg-muted/20 border-y border-border">
+        <div className="mx-auto max-w-6xl">
+          <div className="max-w-2xl mb-10 md:mb-14">
+            <p className="text-[11px] font-black uppercase tracking-[0.2em] text-primary mb-3">Recebimento</p>
+            <h2 className="text-3xl md:text-5xl font-black tracking-tight leading-[1.05]">
+              3 formas de <span className="text-primary">receber</span> — todas caem no seu bolso.
+            </h2>
+          </div>
+          <div className="grid md:grid-cols-3 gap-3 md:gap-4">
+            {PAYMENT_MODES.map((p) => (
+              <div key={p.title} className="rounded-3xl border border-border bg-card p-5 md:p-6">
+                <div className="h-11 w-11 rounded-2xl bg-primary/10 text-primary grid place-items-center mb-4">
+                  <p.icon className="h-5 w-5" />
+                </div>
+                <p className="text-lg font-black">{p.title}</p>
+                <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed">{p.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ═════════════════ COMPARATIVO ═════════════════ */}
+      <section className="py-20 md:py-24 px-6">
+        <div className="mx-auto max-w-5xl">
+          <div className="max-w-2xl mb-10">
+            <p className="text-[11px] font-black uppercase tracking-[0.2em] text-primary mb-3">Comparativo honesto</p>
+            <h2 className="text-3xl md:text-5xl font-black tracking-tight leading-[1.05]">
+              O que o iFood <span className="text-primary">não te dá.</span>
+            </h2>
+          </div>
+          <div className="rounded-3xl border border-border bg-card overflow-hidden">
+            <div className="grid grid-cols-[1.4fr,1fr,1fr,1fr] text-[11px] md:text-xs font-black uppercase tracking-wider bg-muted/60 border-b border-border">
+              <div className="px-3 md:px-5 py-3 text-muted-foreground">Recurso</div>
+              <div className="px-2 md:px-5 py-3 text-primary">ItaSuper</div>
+              <div className="px-2 md:px-5 py-3 text-muted-foreground">Marketplace</div>
+              <div className="px-2 md:px-5 py-3 text-muted-foreground">WhatsApp na mão</div>
+            </div>
+            {COMPARISON.map((r, i) => (
+              <div key={r.row} className={`grid grid-cols-[1.4fr,1fr,1fr,1fr] text-xs md:text-sm ${i % 2 ? "bg-muted/20" : ""} border-b border-border last:border-0`}>
+                <div className="px-3 md:px-5 py-3 md:py-4 font-bold text-foreground leading-snug">{r.row}</div>
+                <div className="px-2 md:px-5 py-3 md:py-4 font-black text-primary">{r.us}</div>
+                <div className="px-2 md:px-5 py-3 md:py-4 text-muted-foreground">{r.market}</div>
+                <div className="px-2 md:px-5 py-3 md:py-4 text-muted-foreground">{r.wpp}</div>
+              </div>
+            ))}
+          </div>
+          <p className="mt-4 text-[11px] text-muted-foreground text-center">
+            Comissão de marketplace baseada em taxas públicas divulgadas por lojistas parceiros (2024–2025).
+          </p>
+        </div>
+      </section>
+
+      {/* ═════════════════ ADD-ONS / MÓDULOS ═════════════════ */}
+      <section className="py-20 md:py-24 px-6 bg-muted/20 border-y border-border">
+        <div className="mx-auto max-w-6xl">
+          <div className="max-w-2xl mb-10 md:mb-14">
+            <p className="text-[11px] font-black uppercase tracking-[0.2em] text-primary mb-3">Módulos</p>
+            <h2 className="text-3xl md:text-5xl font-black tracking-tight leading-[1.05]">
+              Liga só o que você <span className="text-primary">usa de verdade.</span>
+            </h2>
+            <p className="mt-4 text-muted-foreground md:text-lg">
+              Sem pacote inchado. Cancela o módulo em 2 cliques na aba <b className="text-foreground">Meu Plano</b>.
+            </p>
+          </div>
+          <div className="grid md:grid-cols-2 gap-3 md:gap-4">
+            {ADDONS.map((a) => (
+              <div key={a.title} className="rounded-3xl border border-border bg-card p-5 md:p-6 flex items-start gap-4">
+                <div className="h-12 w-12 rounded-2xl bg-primary/10 text-primary grid place-items-center shrink-0">
+                  <a.icon className="h-5 w-5" />
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="text-base md:text-lg font-black">{a.title}</p>
+                    <span className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-primary/10 text-primary">{a.price}</span>
+                  </div>
+                  <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed">{a.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ═════════════════ REGRAS DO JOGO ═════════════════ */}
+      <section className="py-20 md:py-24 px-6">
+        <div className="mx-auto max-w-6xl">
+          <div className="max-w-2xl mb-10 md:mb-14">
+            <p className="text-[11px] font-black uppercase tracking-[0.2em] text-primary mb-3">Sem letra miúda</p>
+            <h2 className="text-3xl md:text-5xl font-black tracking-tight leading-[1.05]">
+              As regras do jogo, <span className="text-primary">na cara.</span>
+            </h2>
+          </div>
+          <div className="grid md:grid-cols-3 gap-3 md:gap-4">
+            {RULES.map((r) => (
+              <div key={r.title} className="rounded-3xl border border-border bg-card p-5 md:p-6">
+                <div className="h-11 w-11 rounded-2xl bg-primary/10 text-primary grid place-items-center mb-4">
+                  <r.icon className="h-5 w-5" />
+                </div>
+                <p className="text-lg font-black">{r.title}</p>
+                <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed">{r.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ═════════════════ PLANOS ═════════════════ */}
       <PlansSection onCTA={handleCTA} onCompare={() => setShowCompare((v) => !v)} showCompare={showCompare} />
 
