@@ -563,6 +563,7 @@ export default function AdminPlanManager() {
                       currentDeliveryOverride={(plan as any).platform_delivery_split_override}
                       currentPdvFixedFee={(plan as any).pdv_fixed_fee_per_sale}
                       currentLifetimeFree={!!(plan as any).essencial_lifetime_free}
+                      currentAutonomyLifetime={!!(plan as any).autonomy_lifetime_free}
                       displayPlan={currentDisplay ?? (plan.plan_type as PlanType)}
                       planDefault={planDefaults[currentDisplay ?? (plan.plan_type as PlanType)]}
                       onSave={() => {
