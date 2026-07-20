@@ -87,10 +87,13 @@ export default function LandingPage() {
       {/* Hero */}
       <section className="px-4 py-14 sm:py-20 max-w-6xl mx-auto text-center">
         <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight leading-tight">
-          Atendente de IA no WhatsApp + cardápio digital para o seu delivery
+          O delivery da sua loja, no seu link — sem entregar 27% pra ninguém.
         </h1>
         <p className="mt-5 text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto">
-          A IA atende seu cliente no WhatsApp, manda o cardápio e fecha o pedido sozinha. Você recebe tudo organizado no painel, com PDV, KDS e motoboy próprio integrados — sem comissão por pedido.
+          Cardápio próprio, PIX confirmado na hora, atendente de IA no WhatsApp que tira o pedido sozinho 24h e motoboy com rastreio em tempo real. O cliente pede pelo navegador — sem baixar app, sem cadastro chato.
+        </p>
+        <p className="mt-3 text-base sm:text-lg font-semibold max-w-2xl mx-auto">
+          Grátis até R$ 5.000 em vendas. Depois, mensalidade fixa. Você fica com o cliente, com a marca e com o dinheiro.
         </p>
         <div className="mt-8 flex flex-wrap gap-3 justify-center">
           <Link to="/cadastro-lojista" className="bg-primary text-primary-foreground font-bold px-6 py-3 rounded-xl">
