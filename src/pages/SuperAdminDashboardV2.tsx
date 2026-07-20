@@ -26,7 +26,7 @@ import {
   ArrowLeft, DollarSign, ShoppingBag, TrendingUp, Clock,
   Store, Copy, AlertTriangle, Users, Bike, Wallet, CheckCircle2, Banknote, XCircle, Bell, Trash2, QrCode, Loader2, ArrowUpRight, ArrowDownRight, Settings,
   LayoutDashboard, Shield, Ticket, RefreshCw, Truck, Menu, X, MapPin, Eye, Scale, Search, FileText, Mail, Phone, User, Download, Calendar, CreditCard, Receipt, ChevronDown, ChevronUp, Percent, Crown, Handshake, FlaskConical, Link as LinkIcon, Megaphone, Monitor, Sparkles,
-  MessageCircle, Smartphone, ShieldCheck,
+  MessageCircle, Smartphone, ShieldCheck, Puzzle,
 } from "lucide-react";
  import { Switch } from "@/components/ui/switch";
  import { Badge } from "@/components/ui/badge";
@@ -61,6 +61,7 @@ const AReceberTab = lazy(() => import("./super-admin/tabs/AReceberTab"));
 const HistoricoRepassesTab = lazy(() => import("./super-admin/tabs/HistoricoRepassesTab"));
 const DebugLojaTab = lazy(() => import("./super-admin/tabs/DebugLojaTab"));
 const PlatformWhatsAppTab = lazy(() => import("./super-admin/tabs/PlatformWhatsAppTab"));
+const AddonsMrrTab = lazy(() => import("./super-admin/tabs/AddonsMrrTab"));
 // Painéis financeiros profissionais (Fase 1)
 const FluxoCaixaPanel = lazy(() => import("@/components/finance/FluxoCaixaPanel"));
 const ConciliacaoAsaasPanel = lazy(() => import("@/components/finance/ConciliacaoAsaasPanel"));
@@ -191,6 +192,7 @@ const TAB_SUBTITLE: Record<string, (ctx: {
     | "mensalidades"
     | "planos-lojas"
     | "planos-templates"
+    | "addons"
     | "auditoria";
   const [financeSection, setFinanceSection] = useState<FinanceSection>("overview");
   type StoresSection = "lojas" | "cidades" | "entrega";
@@ -1202,6 +1204,7 @@ const TAB_SUBTITLE: Record<string, (ctx: {
                       { key: "mensalidades", label: "Mensalidades", icon: Crown },
                      { key: "planos-lojas", label: "Planos (Lojas)", icon: Store },
                      { key: "planos-templates", label: "Planos (Templates)", icon: FileText },
+                      { key: "addons", label: "Add-ons / MRR", icon: Puzzle },
                      { key: "historico", label: "Histórico Pago", icon: CheckCircle2 },
                      { key: "fluxo", label: "Fluxo de Caixa", icon: TrendingUp },
                      { key: "saques", label: "Saques", icon: Wallet, badge: pendingWithdrawals.length },
@@ -1263,6 +1266,9 @@ const TAB_SUBTITLE: Record<string, (ctx: {
                   )}
                   {financeSection === "planos-lojas" && <AdminPlanManager />}
                   {financeSection === "planos-templates" && <AdminPlanTemplatesEditor />}
+                   {financeSection === "addons" && (
+                     <Suspense fallback={<TabFallback />}><AddonsMrrTab /></Suspense>
+                   )}
                </div>
              )}
              {activeTab === "dashboard" && (

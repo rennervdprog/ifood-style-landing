@@ -24,6 +24,15 @@ verify_jwt = false
 [functions.oneshot-setup-pdv-only]
 verify_jwt = false
 
+[functions.oneshot-reset-e2e-password]
+verify_jwt = false
+
+[functions.oneshot-fix-e2e-boutique]
+verify_jwt = false
+
+[functions.oneshot-diag-e2e-boutique]
+verify_jwt = false
+
 [functions.auto-withdraw-subaccounts]
 verify_jwt = false
 
@@ -72,5 +81,8 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.oneshot-disconnect-pastelao]
+verify_jwt = false
+
+[functions.oneshot-provision-e2e-admin]
 verify_jwt = false
 

@@ -16,6 +16,12 @@ export interface Product {
   sold_by_weight?: boolean | null;
   price_per_kg?: number | null;
   weight_unit?: string | null;
+  /** Código curto pra digitar+Enter no PDV (ex.: "01"). */
+  pdv_short_code?: string | null;
+  /** Ordem custom da grade rápida do PDV. */
+  pdv_sort_order?: number | null;
+  /** Destino de impressão: 'kitchen' | 'counter' | 'both' (Fase 1 Lanches). */
+  printer_target?: "kitchen" | "counter" | "both" | null;
 }
 
 /** Seção/categoria do cardápio. */
@@ -23,6 +29,8 @@ export interface MenuSection {
   id: string;
   name: string;
   sort_order: number;
+  /** Cor da categoria na sidebar do PDV (hex ou nome de token). */
+  pdv_color?: string | null;
 }
 
 /** Item dentro do carrinho do PDV. */
@@ -39,6 +47,8 @@ export interface CartItem {
   image_url?: string | null;
   /** Metadados livres do item (ex.: { weight_grams, price_per_kg }). */
   metadata?: Record<string, any>;
+  /** Copiado do produto — usado para split cozinha/balcão na impressão. */
+  printer_target?: "kitchen" | "counter" | "both" | null;
 }
 
 /** Sessão de caixa aberta. */
@@ -57,4 +67,4 @@ export type PdvScreen = "loading" | "abertura" | "venda" | "fechamento";
 export type PdvMobileStep = "catalog" | "cart";
 
 /** Abas dentro da tela de venda. */
-export type PdvTab = "venda" | "historico" | "turnos" | "relatorios";
+export type PdvTab = "venda" | "mesas" | "historico" | "turnos" | "relatorios" | "meu_plano" | "configuracoes";

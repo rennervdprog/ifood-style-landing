@@ -5,7 +5,9 @@
 import { supabase } from "@/integrations/supabase/client";
 import { readGps, haversineMeters, type Coordinates } from "@/lib/location";
 
-export const MAX_DISTANCE_KM = 50;
+export const DEFAULT_MAX_DISTANCE_KM = 15;
+/** @deprecated use store.max_delivery_km ou DEFAULT_MAX_DISTANCE_KM */
+export const MAX_DISTANCE_KM = DEFAULT_MAX_DISTANCE_KM;
 
 export interface FraudCheckParams {
   storeId: string;
@@ -15,6 +17,7 @@ export interface FraudCheckParams {
   storeLng?: number | null;
   deliveryCity?: string | null;
   deliveryCoords?: Coordinates | null;
+  maxDeliveryKm?: number | null;
 }
 
 export interface FraudCheckResult {
@@ -56,10 +59,34 @@ async function logAttempt(params: FraudCheckParams, result: FraudCheckResult) {
  * Retorna allowed=true quando não há dados suficientes (fail-open).
  */
 export async function checkStoreAccess(params: FraudCheckParams): Promise<FraudCheckResult> {
-  const { storeLat, storeLng, storeCity, deliveryCity, deliveryCoords } = params;
+  const { storeLat, storeLng, storeCity, deliveryCity, deliveryCoords, maxDeliveryKm } = params;
+  const maxKm = Number(maxDeliveryKm ?? DEFAULT_MAX_DISTANCE_KM) || DEFAULT_MAX_DISTANCE_KM;
+
+  // Bloqueio por abuso: >3 tentativas bloqueadas em 1h para este usuário
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user?.id) {
+      const since = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+      const { count } = await supabase
+        .from("fraud_attempts")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", user.id).eq("blocked", true).gte("created_at", since);
+      if ((count ?? 0) >= 3) {
+        const result: FraudCheckResult = { allowed: false, distanceKm: null, reason: "rate_limited:too_many_blocked_attempts", clientCoords: null };
+        await logAttempt(params, result);
+        return result;
+      }
+    }
+  } catch {}
 
   if (typeof storeLat !== "number" || typeof storeLng !== "number") {
-    const result: FraudCheckResult = { allowed: true, distanceKm: null, reason: "fail_open:store_coords_missing", clientCoords: null };
+    // fail-open só quando cidade bate; se sem cidade também, bloquear
+    if (!deliveryCity || !storeCity || normCity(deliveryCity) === normCity(storeCity)) {
+      const result: FraudCheckResult = { allowed: true, distanceKm: null, reason: "fail_open:store_coords_missing", clientCoords: null };
+      await logAttempt(params, result);
+      return result;
+    }
+    const result: FraudCheckResult = { allowed: false, distanceKm: null, reason: "fail_closed:no_store_coords_and_city_mismatch", clientCoords: null };
     await logAttempt(params, result);
     return result;
   }
@@ -82,7 +109,13 @@ export async function checkStoreAccess(params: FraudCheckParams): Promise<FraudC
 
   // 3. Sem coordenadas e cidade OK → permitir (não há dados suficientes para bloquear)
   if (!clientCoords) {
-    const result: FraudCheckResult = { allowed: true, distanceKm: null, reason: "fail_open:no_client_coords", clientCoords: null };
+    // fail-closed: sem GPS E sem deliveryCity → bloquear
+    if (!deliveryCity) {
+      const result: FraudCheckResult = { allowed: false, distanceKm: null, reason: "fail_closed:no_gps_and_no_city", clientCoords: null };
+      await logAttempt(params, result);
+      return result;
+    }
+    const result: FraudCheckResult = { allowed: true, distanceKm: null, reason: "fail_open:city_ok_no_coords", clientCoords: null };
     await logAttempt(params, result);
     return result;
   }
@@ -92,10 +125,10 @@ export async function checkStoreAccess(params: FraudCheckParams): Promise<FraudC
   let reason: string | null = null;
   let allowed = true;
 
-  // 4. Validação por distância GPS
-  if (distanceKm > MAX_DISTANCE_KM) {
+  // 4. Validação por distância GPS (limite por loja)
+  if (distanceKm > maxKm) {
     allowed = false;
-    reason = `distance_exceeded:${distanceKm.toFixed(1)}km`;
+    reason = `distance_exceeded:${distanceKm.toFixed(1)}km>max${maxKm}km`;
   }
 
   const result: FraudCheckResult = { allowed, distanceKm, reason, clientCoords };

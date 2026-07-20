@@ -61,7 +61,8 @@ Deno.serve(async (req) => {
     // other devices so notifications only go to the latest active device.
 
     if (fcm_token) {
-      // 1. Remove this exact token from ANY other user (device changed hands)
+      // Multi-device: apenas garante que este token pertence a este usuário
+      // (se o aparelho trocou de mãos), mas NÃO remove outros tokens do mesmo user.
       const { data: stolenRows } = await supabaseAdmin
         .from("fcm_tokens")
         .delete()
@@ -73,20 +74,7 @@ Deno.serve(async (req) => {
         console.log(`[register-push-device] 🔄 Reclaimed FCM token from ${stolenRows.length} other user(s)`);
       }
 
-      // 2. Remove ALL other FCM tokens for THIS user (other devices)
-      //    This ensures notifications only go to the current device.
-      const { data: oldDeviceRows } = await supabaseAdmin
-        .from("fcm_tokens")
-        .delete()
-        .eq("user_id", user.id)
-        .neq("token", fcm_token)
-        .select("device_info");
-
-      if (oldDeviceRows?.length) {
-        console.log(`[register-push-device] 🧹 Removed ${oldDeviceRows.length} old FCM token(s) for user ${user.id.slice(0,8)}`);
-      }
-
-      // 3. Upsert the current token
+      // Upsert do token atual — múltiplos dispositivos por usuário permitidos
       const { error } = await supabaseAdmin
         .from("fcm_tokens")
         .upsert(
@@ -108,26 +96,13 @@ Deno.serve(async (req) => {
     }
 
     if (player_id) {
-      // 1. Remove this player_id from any other user
+      // Multi-device: apenas reivindica o player_id se pertencia a outro user.
       await supabaseAdmin
         .from("onesignal_players")
         .delete()
         .eq("player_id", player_id)
         .neq("user_id", user.id);
 
-      // 2. Remove ALL other OneSignal players for THIS user (other devices)
-      const { data: oldPlayerRows } = await supabaseAdmin
-        .from("onesignal_players")
-        .delete()
-        .eq("user_id", user.id)
-        .neq("player_id", player_id)
-        .select("device_info");
-
-      if (oldPlayerRows?.length) {
-        console.log(`[register-push-device] 🧹 Removed ${oldPlayerRows.length} old OneSignal player(s) for user ${user.id.slice(0,8)}`);
-      }
-
-      // 3. Upsert the current player
       const { error } = await supabaseAdmin
         .from("onesignal_players")
         .upsert(

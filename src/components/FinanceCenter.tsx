@@ -46,7 +46,7 @@ export default function FinanceCenter({ storeId, storeName, hasCommission, isPla
     queryFn: async () => {
       const { data, error } = await supabase
         .from("stores")
-        .select("id, asaas_wallet_id, asaas_activation_status")
+        .select("id, asaas_wallet_id")
         .eq("id", storeId)
         .single();
       if (error) throw error;

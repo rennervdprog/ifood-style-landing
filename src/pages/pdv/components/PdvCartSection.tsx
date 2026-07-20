@@ -1,17 +1,24 @@
 import {
   X, RotateCcw, ShoppingCart, Tag, ChevronDown, ChevronRight,
-  Split, Calculator, Wallet, Loader2, CheckCircle2,
+  Split, Calculator, Wallet, Loader2, CheckCircle2, Send,
 } from "lucide-react";
 import { formatBRL } from "@/lib/utils";
 import { parseBRL } from "@/hooks/useBRLInput";
 import { PdvSplitPayment, type SplitPayment } from "@/components/pdv/PdvSplitPayment";
 import { PDV_METHODS, COLOR_MAP } from "@/pages/pdv/constants";
 import type { CartItem } from "@/pages/pdv/types";
+import { PdvTableSelector } from "./PdvTableSelector";
 
 interface Props {
   cart: CartItem[];
+  storeId?: string | null;
   tableId: string;
   setTableId: (v: string) => void;
+  selectedTable: { id: string; label: string } | null;
+  setSelectedTable: (v: { id: string; label: string } | null) => void;
+  selectedTabId: string | null;
+  setSelectedTabId: (v: string | null) => void;
+  onSendToTab?: () => void;
   totalItems: number;
   clearSale: () => void;
   subtotal: number;
@@ -39,10 +46,13 @@ interface Props {
   setSplitMode: (v: boolean) => void;
   splitPayments: SplitPayment[];
   setSplitPayments: (v: SplitPayment[]) => void;
+  mobileScroll?: boolean;
 }
 
 export const PdvCartSection = ({
-  cart, tableId, setTableId, totalItems, clearSale,
+  cart, storeId, tableId, setTableId,
+  selectedTable, setSelectedTable, selectedTabId, setSelectedTabId, onSendToTab,
+  totalItems, clearSale,
   subtotal, discountAmount, finalTotal,
   showDiscount, setShowDiscount, discountType, setDiscountType,
   discountInput, setDiscountInput,
@@ -50,14 +60,21 @@ export const PdvCartSection = ({
   troco, trocoNegativo, finalTotal_,
   removeItem, onFinalize, loading, orderDone,
   splitMode, setSplitMode, splitPayments, setSplitPayments,
+  mobileScroll = false,
 }: Props) => (
-  <div className="flex flex-col h-full min-h-0 overflow-hidden">
+  <div className={mobileScroll ? "flex flex-col min-h-0 overflow-visible" : "flex flex-col h-full min-h-0 overflow-hidden"}>
     {/* Cabeçalho */}
-    <div className="px-3 pt-2.5 pb-2 border-b border-border shrink-0">
+    <div className={`px-3 pt-2.5 pb-2 border-b shrink-0 transition-colors ${selectedTabId ? "border-amber-500/40 bg-amber-500/5" : "border-border"}`}>
       <div className="flex items-center justify-between">
-        <input type="text" placeholder="Mesa / Comanda"
-          value={tableId} onChange={(e) => setTableId(e.target.value)}
-          className="text-xs bg-muted/40 rounded-lg px-2.5 py-1.5 placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/30 border border-border/50 w-32" />
+        <PdvTableSelector
+          storeId={storeId}
+          tableId={tableId}
+          setTableId={setTableId}
+          selectedTable={selectedTable}
+          setSelectedTable={setSelectedTable}
+          selectedTabId={selectedTabId}
+          setSelectedTabId={setSelectedTabId}
+        />
         <div className="flex items-center gap-1.5">
           <span className="text-[10px] text-muted-foreground">{totalItems} itens</span>
           {cart.length > 0 && (
@@ -67,10 +84,15 @@ export const PdvCartSection = ({
           )}
         </div>
       </div>
+      {selectedTabId && (
+        <p className="text-[10px] text-amber-700 dark:text-amber-300 mt-1.5 font-semibold">
+          Modo comanda — itens serão acumulados sem cobrar.
+        </p>
+      )}
     </div>
 
     {/* Itens */}
-    <div className="flex-1 overflow-y-auto p-2 space-y-1 min-h-0">
+    <div className={mobileScroll ? "p-2 space-y-1" : "flex-1 overflow-y-auto p-2 space-y-1 min-h-0"}>
       {cart.length === 0 ? (
         <div className="flex flex-col items-center justify-center h-full gap-2 py-8">
           <div className="w-14 h-14 rounded-2xl bg-muted/40 flex items-center justify-center">
@@ -263,6 +285,32 @@ export const PdvCartSection = ({
           const canFinalize =
             !loading && !orderDone && cart.length > 0 &&
             (splitMode ? splitComplete : (!!paymentMethod && !trocoNegativo));
+          const inTabMode = !!selectedTabId;
+          if (inTabMode) {
+            const canSend = !loading && !orderDone && cart.length > 0;
+            return (
+              <div className="space-y-1.5">
+                <button
+                  onClick={onSendToTab}
+                  disabled={!canSend}
+                  className="w-full h-12 bg-amber-500 hover:bg-amber-600 text-white font-black text-sm rounded-2xl flex items-center justify-center gap-2 active:scale-[0.98] transition-all shadow-lg shadow-amber-500/25 disabled:opacity-50"
+                >
+                  {loading ? <><Loader2 className="h-4 w-4 animate-spin" /> Enviando...</>
+                    : <><Send className="h-4 w-4" /> Enviar {totalItems} {totalItems === 1 ? "item" : "itens"} à comanda</>}
+                </button>
+                <button
+                  onClick={onFinalize}
+                  disabled={!canFinalize}
+                  className="w-full h-10 bg-primary/10 text-primary border border-primary/30 font-bold text-xs rounded-xl flex items-center justify-center gap-2 active:scale-[0.98] transition-all disabled:opacity-40"
+                >
+                  Cobrar e fechar comanda ({formatBRL(finalTotal)})
+                </button>
+                <p className="text-[10px] text-muted-foreground text-center pt-0.5">
+                  Para cobrar, escolha o método de pagamento acima.
+                </p>
+              </div>
+            );
+          }
           return (
             <button onClick={onFinalize}
               disabled={!canFinalize}

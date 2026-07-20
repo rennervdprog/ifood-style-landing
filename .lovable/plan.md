@@ -1,55 +1,77 @@
-# Regra nova: upgrade obrigatório após atingir o limite
+# PDV especializado — Lanches, Pizzaria e Restaurante/Marmitaria
 
-Hoje: se o lojista recusa o upgrade, a loja continua grátis pra sempre.
-Nova regra (Essencial e Autonomia): ao bater o GMV do plano (R$ 5.000 / R$ 2.500 em 60 dias), a mensalidade passa a ser devida. Recusar o upgrade **inativa a loja** até o lojista aceitar. Não existe mais "voltar ao grátis" depois de cruzar o limite.
+Três modos focados em food service, seguindo o mesmo padrão da Boutique (`store_type` + telas próprias, reaproveitando caixa/KDS/mesas/histórico/PIN).
 
-## 1. Termos de Uso (`src/pages/TermosDeUso.tsx`)
+Muita coisa já existe solta no sistema (modo pizza, adicionais, KDS, mesas). O trabalho aqui é **empacotar por categoria** com layout e fluxo dedicados, ao invés de deixar tudo genérico.
 
-Reescrever a cláusula 6.2 (upgrade dinâmico) deixando explícito:
-- Grátis apenas até R$ 5.000 (Essencial) / R$ 2.500 (Autonomia) em 60 dias.
-- Ao atingir, mensalidade fica devida com 30 dias de aviso prévio.
-- Aceitar → cobrança gerada no vencimento.
-- Recusar → **loja é suspensa (inativada) até o aceite**. Não existe reversão ao plano gratuito.
-- O status "gratuito" é uma janela inicial de adesão, não um plano permanente.
+## Fase 1 — Lanches (Hamburgueria / Lanchonete)
 
-Bump de versão do documento + registro em `legal_document_changes`.
+Foco: rapidez no balcão, montagem de lanche com adicionais.
 
-## 2. Lógica no backend externo
+Escopo:
+- `store_type='snack_bar'`.
+- Catálogo em **grid grande com foto** agrupado por categoria (Lanches, Bebidas, Porções, Sobremesas).
+- Modal de montagem: adicionais obrigatórios (ponto da carne, molhos) + opcionais (bacon, cheddar extra) reusando `addon_groups` / `addon_items`.
+- Combo builder: "Lanche + Batata + Refri" com preço fechado.
+- Observação por item ("sem cebola", "bem passado") direto no card do carrinho.
+- Impressão dividida: cozinha (só itens quentes) + balcão (frios/bebidas) via `thermalPrint.ts`.
+- Chamador de senha simples (número na tela KDS).
 
-### 2a. RPC `respond_essencial_upgrade` (função existente)
-Quando `_response = 'refused'`:
-- Gravar `essencial_upgrade_response = 'refused'` + `essencial_upgrade_response_at = now()` (mantém).
-- **Novo:** `UPDATE public.stores SET status = 'inativo' WHERE id = _store_id`.
-- Logar `action = 'store_suspended_upgrade_refused'` em `admin_logs`.
+E2E: montar 2 combos + 1 lanche com adicional + observação, fechar, conferir impressão dividida e KDS.
 
-### 2b. RPC `respond_essencial_upgrade` — caminho `accepted`
-- Ativar a mensalidade imediatamente: `monthly_fee = 180` (fixed) ou `239.90` (autonomy).
-- Se a loja estava inativada por recusa anterior, reativar: `stores.status = 'ativo'`.
-- Limpar `essencial_upgrade_response` pra permitir o fluxo normal de cobrança.
+## Fase 2 — Pizzaria
 
-### 2c. Cron `check-essencial-upgrade`
-- Remover o `skipped: user_refused_upgrade` que hoje ignora a loja pra sempre.
-- Se `response = 'refused'` e `stores.status = 'ativo'` (ex.: admin reativou manualmente), reaplicar suspensão.
-- Se `response = null` e prazo (`essencial_upgrade_scheduled_at`) vencido sem resposta: tratar como recusa implícita → suspender.
+Foco: pizza meio-a-meio, bordas, tamanhos, entrega.
 
-### 2d. Enforcement no front do lojista
-- Guard já existente de `stores.status !== 'ativo'` cobre bloqueio do admin/cardápio; garantir que a tela mostre um card claro:
-  > "Sua loja está suspensa. Você ultrapassou R$ 5.000 em vendas e precisa aceitar o plano Essencial (R$ 180/mês) para reativar."
-- Botão "Aceitar e reativar" chamando a mesma RPC com `accepted`.
+Escopo:
+- `store_type='pizzeria'`.
+- Já existe `pizzaPricing.ts` + `pizza_borders` + tipos em `types/pizza.ts` — encapsular num fluxo próprio.
+- Builder visual: escolhe tamanho → 1/2 ou 2/2 sabores → borda → adicionais.
+- Regra de preço: **maior sabor** (padrão) ou média — configurável por loja.
+- Cardápio do dia / promo por dia da semana (Terça 2x1) reusando `promo_campaigns`.
+- Impressão da comanda com os sabores lado-a-lado ("1/2 Calabresa | 1/2 Portuguesa").
+- Ficha técnica opcional (ingredientes na cozinha).
+- Integração com **mesas** e **delivery** — pizzaria costuma ter os dois.
 
-## 3. Componente `EssencialProgressCard.tsx`
-- Reescrever o estado "refused": em vez de "Nenhuma cobrança será feita", mostrar aviso vermelho "Loja suspensa — aceite para reativar" + botão "Aceitar upgrade".
-- Estado "scheduled" ganha texto: "Ao recusar, a loja será suspensa até você aceitar."
+E2E: montar pizza meio-a-meio com borda + refri, salvar em mesa, fechar, conferir impressão com sabores separados.
 
-## 4. Migração de dados existentes
-- Nenhuma loja hoje está com `response = 'refused'` de verdade (só o teste do Duda lanches). Não precisa migração destrutiva.
-- Reset do teste do Duda incluído na oneshot de cleanup.
+## Fase 3 — Restaurante / Marmitaria
+
+Foco: prato feito, self-service por peso, marmita montada.
+
+Escopo:
+- `store_type='restaurant'`.
+- Três sub-modos escolhidos nas configs da loja:
+  1. **À la carte** (prato pronto do cardápio) → usa fluxo padrão.
+  2. **Por quilo** — leitura da balança Toledo (`toledoScale.ts` já existe) → preço × peso, ticket fica aberto até pesar.
+  3. **Marmita montada** — cliente escolhe base (arroz/feijão) + 1 proteína + N acompanhamentos, com regras de tamanho (P/M/G) e preço fechado.
+- Card **"Cardápio do dia"** em destaque no topo (o que tem hoje) — já temos infra de disponibilidade diária em `products.is_available`, só faltará um toggle rápido por dia.
+- Modo **marmita para entrega**: fluxo enxuto sem mesa, direto pra sacola + endereço.
+- Comanda de mesa com divisão de conta ("dividir por 4").
+- Fechamento por mesa mostrando taxa de serviço (10%) opcional.
+
+E2E: vender 1 prato à la carte + 1 marmita M montada + 1 por peso, dividir conta em mesa por 3, fechar.
+
+## Padrão comum (reaproveitado das fases anteriores)
+
+- Cadastro (`CadastroLojista.tsx`) mapeia categoria → `store_type`.
+- Switch em `PdvPage.tsx` / `PdvCardapioPage.tsx`.
+- Componentes em `src/pages/pdv/{snack,pizza,restaurant}/`.
+- Caixa, KDS, mesas, PIN gerente, outbox offline, relatórios: reaproveitados sem duplicar.
+- Bump de versão (`appVersion.ts` + `build.gradle` patch + versionCode) a cada fase.
+- E2E em `scripts/e2e/{snack,pizza,restaurant}/` no padrão do apparel.
+- Landing (`StoreDirectory.tsx`) ganha os 3 modos na seção de módulos ao final.
 
 ## Detalhes técnicos
 
-Uma migration única no externo (via `oneshot-*` como já fazemos) contendo:
-1. `CREATE OR REPLACE FUNCTION respond_essencial_upgrade` com a nova lógica (suspende / reativa / ativa mensalidade).
-2. Ajuste no `check-essencial-upgrade` (edge function) removendo o short-circuit de `refused`.
-3. Frontend: `EssencialProgressCard.tsx` + copy nos Termos.
+- Enum `store_type` recebe `snack_bar`, `pizzeria`, `restaurant` via migration no externo (oneshot edge function com `EXTERNAL_SUPABASE_SERVICE_KEY`, padrão do projeto).
+- Nova tabela `restaurant_meal_kits` (id, store_id, name, size, base_price, allowed_categories jsonb) só na Fase 3 — com GRANT + RLS por `store_id` via `has_role`.
+- Nova tabela `combo_definitions` (Fase 1) — id, store_id, name, items jsonb, price. GRANT + RLS idem.
+- Split de impressão: extensão em `thermalPrint.ts` aceitando `printerTarget: 'kitchen' | 'counter'` no item.
+- Regra de preço da pizza (maior vs média): já suportada em `pizzaPricing.ts`, só expor toggle em Settings.
+- Divisão de conta: cálculo puro no client (`splitBill(total, n)`).
+- Performance: lazy-load dos 3 painéis novos, memoização dos builders (montagem re-renderiza muito).
 
-Depois: bump de versão (patch), redeploy das functions afetadas.
+## Entrega
+
+Sequencial, uma fase por resposta, com E2E verde antes de avançar. Começo pela **Fase 1 — Lanches** se você aprovar.

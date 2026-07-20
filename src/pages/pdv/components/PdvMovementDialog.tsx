@@ -1,5 +1,22 @@
 import { ArrowDownCircle, ArrowUpCircle, Loader2 } from "lucide-react";
 
+// Slugs mapeados 1:1 ao enum pdv_movements.reason_category (Fase 1 item 5).
+const REASONS: Record<"sangria" | "suprimento", { slug: string; label: string }[]> = {
+  sangria: [
+    { slug: "cofre", label: "Cofre" },
+    { slug: "despesa", label: "Despesa" },
+    { slug: "fornecedor", label: "Pagto fornecedor" },
+    { slug: "retirada_dono", label: "Retirada dono" },
+    { slug: "outro", label: "Outro" },
+  ],
+  suprimento: [
+    { slug: "troco_inicial", label: "Troco inicial" },
+    { slug: "reforco_troco", label: "Reforço de troco" },
+    { slug: "deposito", label: "Depósito" },
+    { slug: "outro", label: "Outro" },
+  ],
+};
+
 interface Props {
   type: "sangria" | "suprimento";
   movValue: string;
@@ -17,8 +34,14 @@ export const PdvMovementDialog = ({
   type, movValue, setMovValue, movDesc, setMovDesc,
   movReason, setMovReason, loading, onCancel, onConfirm,
 }: Props) => (
-  <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-    <div className="bg-card rounded-2xl border border-border w-full max-w-xs p-5 space-y-4 shadow-2xl">
+  <div
+    className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+    onClick={() => { if (!loading) onCancel(); }}
+  >
+    <div
+      className="bg-card rounded-2xl border border-border w-full max-w-xs p-5 space-y-4 shadow-2xl"
+      onClick={(e) => e.stopPropagation()}
+    >
       <div className="flex items-center gap-3">
         {type === "sangria"
           ? <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center"><ArrowDownCircle className="h-5 w-5 text-red-500" /></div>
@@ -46,31 +69,31 @@ export const PdvMovementDialog = ({
           </div>
         </div>
 
-        {type === "sangria" && (
-          <div>
-            <label className="text-xs font-bold text-muted-foreground">Motivo *</label>
-            <div className="grid grid-cols-2 gap-1.5 mt-1.5">
-              {["Cofre", "Despesa", "Pagto fornecedor", "Outro"].map((r) => (
-                <button
-                  key={r}
-                  type="button"
-                  onClick={() => setMovReason(r)}
-                  className={`px-2 py-1.5 rounded-lg text-[11px] font-bold transition-colors border ${
-                    movReason === r
+        <div>
+          <label className="text-xs font-bold text-muted-foreground">Motivo *</label>
+          <div className="grid grid-cols-2 gap-1.5 mt-1.5">
+            {REASONS[type].map((r) => (
+              <button
+                key={r.slug}
+                type="button"
+                onClick={() => setMovReason(r.slug)}
+                className={`px-2 py-1.5 rounded-lg text-[11px] font-bold transition-colors border ${
+                  movReason === r.slug
+                    ? type === "sangria"
                       ? "bg-red-500 text-white border-red-500"
-                      : "bg-muted/50 text-muted-foreground border-border hover:bg-muted"
-                  }`}
-                >
-                  {r}
-                </button>
-              ))}
-            </div>
+                      : "bg-blue-500 text-white border-blue-500"
+                    : "bg-muted/50 text-muted-foreground border-border hover:bg-muted"
+                }`}
+              >
+                {r.label}
+              </button>
+            ))}
           </div>
-        )}
+        </div>
 
         <div>
           <label className="text-xs font-bold text-muted-foreground">
-            Observação {type === "sangria" ? "(opcional)" : ""}
+            Observação (opcional)
           </label>
           <input
             type="text"

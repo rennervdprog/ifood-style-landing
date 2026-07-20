@@ -35,7 +35,7 @@ Deno.serve(async (req) => {
     const store_id = String(body?.store_id || "");
     const addon_code = String(body?.addon_code || "");
     const action = String(body?.action || "");
-    if (!store_id || !addon_code || !["activate", "cancel", "admin_set"].includes(action)) {
+    if (!store_id || !addon_code || !["activate", "cancel", "reactivate", "admin_set"].includes(action)) {
       return json({ error: "Parâmetros inválidos." }, 400);
     }
     if (addon_code !== "pdv") return json({ error: "Add-on não suportado." }, 400);
@@ -53,6 +53,20 @@ Deno.serve(async (req) => {
     if (store.legacy_pdv && !isAdmin && action !== "admin_set") {
       return json({ error: "Loja legada — PDV já está incluso." }, 400);
     }
+
+    const logAction = async (payload: Record<string, unknown>) => {
+      try {
+        await admin.from("admin_logs").insert({
+          actor_id: user.id,
+          action: `store_addon.${action}`,
+          target_type: "store_addon",
+          target_id: store_id,
+          payload: { addon_code, ...payload },
+        });
+      } catch (e) {
+        console.warn("admin_logs insert failed:", (e as Error).message);
+      }
+    };
 
     // Super Admin: força estado/override de preço (VIP: 0 = grátis).
     if (action === "admin_set") {
@@ -92,6 +106,7 @@ Deno.serve(async (req) => {
           });
         }
       }
+      await logAction({ enabled, price_override: priceOverride });
       return json({ ok: true, action, enabled, price_override: priceOverride });
     }
 
@@ -105,6 +120,21 @@ Deno.serve(async (req) => {
         created_by: user.id,
       }, { onConflict: "store_id,addon_code" });
       if (error) throw error;
+      await logAction({});
+      return json({ ok: true, action });
+    }
+
+    if (action === "reactivate") {
+      // Remove cancelamento agendado — mantém enabled=true e ciclo atual.
+      const { data: cur } = await admin.from("store_addons")
+        .select("enabled, cancels_at").eq("store_id", store_id).eq("addon_code", addon_code).maybeSingle();
+      if (!cur?.enabled) return json({ error: "Add-on não está ativo." }, 400);
+      if (!cur?.cancels_at) return json({ ok: true, action, note: "sem cancelamento pendente" });
+      const { error } = await admin.from("store_addons")
+        .update({ cancels_at: null })
+        .eq("store_id", store_id).eq("addon_code", addon_code);
+      if (error) throw error;
+      await logAction({});
       return json({ ok: true, action });
     }
 
@@ -116,6 +146,7 @@ Deno.serve(async (req) => {
       .update({ cancels_at: endOfMonth.toISOString() })
       .eq("store_id", store_id).eq("addon_code", addon_code);
     if (error) throw error;
+    await logAction({ cancels_at: endOfMonth.toISOString() });
     return json({ ok: true, action, cancels_at: endOfMonth.toISOString() });
   } catch (e) {
     console.error("manage-store-addon error:", e);

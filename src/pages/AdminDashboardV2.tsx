@@ -329,15 +329,18 @@ const AdminDashboard = () => {
       } else {
         query = query.eq("owner_id", user!.id);
       }
-      const { data, error } = await query.maybeSingle();
+      // Defensivo: se um mesmo owner tiver >1 loja (raro, ex. dados legados),
+      // pega a mais recente em vez de estourar PGRST116 e sumir a loja.
+      const { data: rows, error } = await query
+        .order("created_at", { ascending: false })
+        .limit(1);
       if (error) {
         console.error("[AdminDashboard] store query error:", error);
         throw error;
       }
-      
-      return data;
+      return rows?.[0] ?? null;
     },
-    enabled: !!user,
+    enabled: !!user && (!simulateStoreId || !adminRoleLoading),
     staleTime: 1000 * 60 * 5, // 5min — catálogo muda raramente
   });
 
@@ -1622,9 +1625,34 @@ const AdminDashboard = () => {
   // PDV-only: painel do lojista NÃO existe. Manda direto pro caixa/PDV.
   useEffect(() => {
     if (!storePlan.isLoading && isPdvOnly) {
+      if (isPlatformAdmin && store?.id) {
+        try {
+          localStorage.setItem("pdv_admin_selected_store", store.id);
+          localStorage.setItem("pdv_store_v1", JSON.stringify({
+            id: store.id,
+            name: store.name,
+            category: store.category,
+            categories: (store as any).categories,
+            settings: (store as any).settings,
+            store_type: (store as any).store_type,
+          }));
+        } catch {}
+        navigate(`/admin/pdv?storeId=${store.id}`, { replace: true });
+        return;
+      }
       navigate("/admin/pdv", { replace: true });
     }
-  }, [isPdvOnly, storePlan.isLoading, navigate]);
+  }, [isPdvOnly, isPlatformAdmin, store?.id, storePlan.isLoading, navigate]);
+
+  // Cacheia role + plan_type do usuário para que reloads futuros pulem
+  // qualquer flash (landing → painel delivery) e vão direto pra tela certa.
+  useEffect(() => {
+    if (!user?.id || storePlan.isLoading) return;
+    try {
+      localStorage.setItem(`itasuper:userRole:${user.id}`, "lojista");
+      localStorage.setItem(`itasuper:userPlan:${user.id}`, storePlan.planType);
+    } catch {}
+  }, [user?.id, storePlan.isLoading, storePlan.planType]);
 
   // Grupos visíveis (com pelo menos 1 sub-tab disponível)
   const visibleGroups: DashboardGroup[] = useMemo(
@@ -1691,6 +1719,19 @@ const AdminDashboard = () => {
     : false;
 
   // ── RENDER ──
+  // PDV-only: enquanto o plano carrega OU quando é pdv_only, não renderizar
+  // o dashboard de delivery — evita flash da UI errada antes do redirect.
+  if (storePlan.isLoading || isPdvOnly) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3 text-muted-foreground">
+          <div className="h-8 w-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+          <span className="text-sm">Carregando…</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <TrialExpiredGuard storePlan={storePlan} storeId={store?.id || ""}>
     <div className="min-h-screen bg-background flex native-app">

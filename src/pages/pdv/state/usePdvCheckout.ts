@@ -62,8 +62,10 @@ export interface CheckoutContext {
   tableId: string;
   /** Comissão da loja (0–100) — geralmente vem de useStorePlan. */
   pdvCommissionRate: number;
-  /** Callbacks de UI após sucesso. */
-  onSuccess: () => void;
+  /** Operador PIN logado (Fase 2) — grava em pdv_movements.operator_id. */
+  operatorId?: string | null;
+  /** Callbacks de UI após sucesso. Recebe o `orderId` gerado (ou placeholder offline). */
+  onSuccess: (info: { orderId: string | null }) => void;
   onClearScheduled: () => void;
   onEmptiesFlowStart: (args: {
     orderId: string;
@@ -92,6 +94,7 @@ export function usePdvCheckout() {
         troco,
         tableId,
         pdvCommissionRate,
+        operatorId,
         onSuccess,
         onClearScheduled,
         onEmptiesFlowStart,
@@ -172,6 +175,7 @@ export function usePdvCheckout() {
           payment_method: primaryMethod,
           payments: paymentsPayload,
           created_by: createdBy,
+          operator_id: operatorId ?? null,
           items: cart.map((item) => ({
             product_id: item.id,
             quantity: item.quantity,
@@ -291,6 +295,7 @@ export function usePdvCheckout() {
             description: tableId || "Venda balcão",
             order_id: orderId!,
             created_by: createdBy,
+            operator_id: operatorId ?? null,
           })),
         );
         }
@@ -298,7 +303,7 @@ export function usePdvCheckout() {
         queryClient.invalidateQueries({
           queryKey: ["pdv-movements", session.id],
         });
-        onSuccess();
+        onSuccess({ orderId });
         if (!offlineQueued) toast.success("✅ Venda finalizada!");
 
         // 4) Empties (garrafas retornáveis) — best-effort
@@ -356,11 +361,15 @@ export function usePdvCheckout() {
               unit_price: item.price,
               products: { name: item.name },
               metadata: item.metadata || null,
+              printer_target: (item as any).printer_target ?? null,
             })),
           });
           const printOpts = {
             copies: settingsObj.print_copies === 1 ? 1 : 2,
             paperWidth: settingsObj.print_paper_width === 58 ? 58 : 80,
+            splitByPrinter:
+              settingsObj.print_split_kitchen !== false &&
+              cart.some((it) => (it as any).printer_target === "kitchen"),
           } as const;
           if (!autoPrint) {
             // Lojista optou por imprimir manualmente — deixamos o CTA no toast.
@@ -383,6 +392,19 @@ export function usePdvCheckout() {
         }
 
         // 6) Limpar venda após pequeno delay (deixa toast visível)
+        // Fase 3 item 10 — abre gaveta ESC/POS quando venda em dinheiro (opt-in).
+        try {
+          const settingsObj = (store?.settings as any) || {};
+          const drawerEnabled = settingsObj.pdv_drawer_enabled === true;
+          const hasCash =
+            primaryMethod === "dinheiro" ||
+            paymentsPayload.some((p: any) => p?.method === "dinheiro");
+          if (drawerEnabled && hasCash && !offlineQueued) {
+            const { openCashDrawer } = await import("@/lib/cashDrawer");
+            void openCashDrawer();
+          }
+        } catch (e) { console.warn("[PDV] cash drawer skipped:", e); }
+
         setTimeout(onClearScheduled, 2000);
       } catch (e: any) {
         toast.error(e.message || "Erro ao finalizar.");

@@ -72,6 +72,9 @@ export function readPizzaCatalogConfig(settings: Record<string, any> | null | un
 }
 
 /** Indica se a loja já adotou o catálogo profissional. */
-export function hasPizzaCatalog(cfg: PizzaCatalogConfig): boolean {
-  return cfg.sizes.length > 0 && cfg.categories.length > 0;
+export function hasPizzaCatalog(cfg: PizzaCatalogConfig | Record<string, any> | null | undefined): boolean {
+  if (!cfg) return false;
+  const sizes = Array.isArray((cfg as any).sizes) ? (cfg as any).sizes : [];
+  const categories = Array.isArray((cfg as any).categories) ? (cfg as any).categories : [];
+  return sizes.length > 0 && categories.length > 0;
 }

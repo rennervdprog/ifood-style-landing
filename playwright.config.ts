@@ -1,10 +1,11 @@
 import { createLovableConfig } from "lovable-agent-playwright-config/config";
+import path from "node:path";
+import fs from "node:fs";
+
+const AUTH_FILE = path.resolve(".auth/pdv-user.json");
+const hasAuth = fs.existsSync(AUTH_FILE);
 
 export default createLovableConfig({
-  // Add your custom playwright configuration overrides here
-  // Example:
-  // timeout: 60000,
-  // use: {
-  //   baseURL: 'http://localhost:3000',
-  // },
+  globalSetup: require.resolve("./e2e/global-setup.ts"),
+  use: hasAuth ? { storageState: AUTH_FILE } : undefined,
 });

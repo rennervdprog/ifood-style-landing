@@ -21,7 +21,7 @@ const ConciliacaoAsaasPanel = () => {
       const [storesRes, balancesRes] = await Promise.all([
         supabase
           .from("stores")
-          .select("id, name, asaas_wallet_id, asaas_activation_status, is_test")
+          .select("id, name, asaas_wallet_id, is_test")
           .not("asaas_wallet_id", "is", null),
         supabase.from("store_balances").select("store_id, comissao_pendente, repasse_pendente"),
       ]);

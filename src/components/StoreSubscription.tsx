@@ -72,20 +72,23 @@ interface Props {
    pdv_only: "bg-primary/10",
  };
 
-/** Opções de plano para troca — vem direto de plansInfo (fonte única). */
-const planOptions: { type: StorePlanType; label: string; fee: number; rate: number; tagline: string; bullets: string[] }[] = (
-  ["fixed", "autonomy"] as StorePlanType[]
-).map((id) => {
-  const p = PLANS[id];
-  return {
-    type: id,
-    label: p.name,
-    fee: p.monthlyFee,
-    rate: p.commissionRate,
-    tagline: p.tagline,
-    bullets: p.features,
-  };
-});
+/** Opções de plano para troca — fonte única em plansInfo, filtrando destinos válidos. */
+// Apenas planos ATIVOS podem ser escolhidos como destino de troca.
+// hybrid / commission_only / supporter são legados — lojas neles continuam funcionando,
+// mas ninguém pode migrar PRA eles.
+const ALL_SWITCHABLE: StorePlanType[] = ["fixed", "autonomy", "pdv_only"];
+const planOptions: { type: StorePlanType; label: string; fee: number; rate: number; tagline: string; bullets: string[] }[] =
+  ALL_SWITCHABLE.filter((id) => !!PLANS[id]).map((id) => {
+    const p = PLANS[id];
+    return {
+      type: id,
+      label: p.name,
+      fee: p.monthlyFee,
+      rate: p.commissionRate,
+      tagline: p.tagline,
+      bullets: p.features,
+    };
+  });
 
 const features = [
   { key: "allowPix", label: "Pagamento PIX online", icon: CreditCard },
