@@ -23,6 +23,7 @@ const categoryLabels: Record<string, string> = {
   adegas: "🍷 Adegas", japonesa: "🍣 Japonesa", saudavel: "🥗 Saudável",
   sobremesas: "🍰 Sobremesas", cafeteria: "☕ Cafeteria", churrasco: "🥩 Churrasco",
   farmacias: "💊 Farmácia", docerias: "🍰 Doceria",
+  roupas: "👗 Roupas",
 };
 
 const PLATFORM_CITIES = ["itatinga"];
