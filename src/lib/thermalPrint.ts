@@ -57,6 +57,8 @@ interface PrintOrderItem {
   products?: { name: string } | null;
   /** Metadados livres (ex.: { weight_grams, price_per_kg }) usados na venda por peso. */
   metadata?: Record<string, any> | null;
+  /** Destino de impressão: 'kitchen' | 'counter' | 'both'. */
+  printer_target?: "kitchen" | "counter" | "both" | null;
 }
 
 interface PrintOrder {
@@ -120,6 +122,12 @@ export interface PrintOptions {
   paperWidth?: 58 | 80;
   /** Quantidade de vias (1 = só cliente; 2 = cozinha + cliente). Padrão 2. */
   copies?: 1 | 2;
+  /**
+   * Quando true e houver ao menos um item com `printer_target='kitchen'`,
+   * imprime primeiro um cupom da COZINHA (só itens de cozinha, sem preços)
+   * e depois o cupom completo do CLIENTE. Ignora `copies`.
+   */
+  splitByPrinter?: boolean;
 }
 
 // ─── Labels ───────────────────────────────────────────────────────────────
@@ -695,7 +703,41 @@ ${renderFooter()}
 `;
 
   const container = getOrCreatePrintContainer();
-  container.innerHTML = wrapCopies(body, copies, ["VIA INTERNA", "VIA CLIENTE"]);
+  const items = order.order_items || [];
+  const kitchenItems = items.filter(
+    (it) => it.printer_target === "kitchen" || it.printer_target === "both",
+  );
+  if (options.splitByPrinter && kitchenItems.length > 0) {
+    // Ticket da cozinha (sem preços, letra grande, só o essencial)
+    const kitchenBody = `
+${originBanner("COZINHA — PREPARAR")}
+<div class="tp-order-id" style="text-align:center;font-size:26px;font-weight:bold">${origin === "BALCÃO" ? "VENDA" : origin} ${num.big}</div>
+<div class="tp-info" style="text-align:center">${date}</div>
+<div class="tp-divider"></div>
+${kitchenItems
+  .map(
+    (it) => `
+<div style="font-size:16px;font-weight:bold;margin:4px 0"><b>${it.quantity}x</b> ${esc(it.products?.name || "")}</div>
+${
+  it.observations
+    ? `<div style="font-size:13px;font-weight:bold;border:1px dashed #000;padding:3px 5px;margin:2px 0 6px">⚠ OBS: ${esc(it.observations)}</div>`
+    : ""
+}
+`,
+  )
+  .join("")}
+${generalObsHtml}
+<div class="tp-divider"></div>
+`;
+    container.innerHTML =
+      `<div style="text-align:center;font-size:10px;font-weight:bold;letter-spacing:2px;padding:2px 0;border-top:1px dashed #000;border-bottom:1px dashed #000;margin-bottom:4px">VIA COZINHA</div>` +
+      kitchenBody +
+      `<div style="page-break-after:always"></div>` +
+      `<div style="text-align:center;font-size:10px;font-weight:bold;letter-spacing:2px;padding:2px 0;border-top:1px dashed #000;border-bottom:1px dashed #000;margin-bottom:4px">VIA CLIENTE</div>` +
+      body;
+  } else {
+    container.innerHTML = wrapCopies(body, copies, ["VIA INTERNA", "VIA CLIENTE"]);
+  }
 
   safePrint();
 }
