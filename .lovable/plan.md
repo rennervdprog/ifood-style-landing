@@ -1,86 +1,77 @@
-# PDV Boutique — Modo Roupa
+# Plano — Landing StoreDirectory v2 (dados reais + copy persuasivo)
 
-Objetivo: habilitar um "modo boutique" no PDV existente sem quebrar o food/varejo atual. Ativado por loja via `store_type = 'apparel'`. Todo o backend fica no Supabase externo.
+## Objetivo
+A landing atual está bonita, mas genérica em cima de "grátis". Vamos plugar **informações reais do sistema** que ninguém sabe que existem (ex.: quem paga a taxa da plataforma — cliente, meio-a-meio ou lojista), aprofundar prova social/rapport e reforçar autoridade — sem quebrar o que já funciona.
 
-## Escopo (o que entra agora)
+## Princípios de copy (persuasão + rapport)
+- **Cialdini**: reciprocidade (grátis até R$5k), prova social (X lojas ativas), autoridade (Asaas, LGPD, contrato), escassez (10 vagas Apoiador), compromisso ("sem multa, cancela a qualquer momento"), afinidade ("feito em Itatinga, pra loja de bairro").
+- **Rapport**: linguagem do lojista ("cai no seu PIX", "sem depender de marketplace"), quebra de objeção antes da pergunta.
+- **Hierarquia**: 1 promessa por seção, 1 CTA por dobra, benefício antes de feature.
 
-1. Modelo de dados de variantes (grade tamanho × cor)
-2. Estoque por SKU em tempo real (com movimentações)
-3. Layout de venda adaptado — matriz visual P/M/G × cores
-4. Cadastro de produto "roupa" (SKU-pai + variantes geradas)
-5. Troca e devolução com vale-crédito do cliente
-6. CRM básico do cliente (histórico, tamanho preferido, telefone)
-7. Impressão de etiqueta com código de barras (EAN/Code128)
-8. Ajustes de UI/UX (cards do catálogo, cores de categoria, histórico)
-9. Testes E2E cobrindo cada fluxo novo
+## Novas seções (a inserir na StoreDirectory)
 
-Fora do escopo desta fase: NFC-e / integração fiscal (esforço grande, exige certificado A1 do lojista — fica para fase 2).
+### 1. Bloco "Você escolhe quem paga a taxa de entrega" *(NOVO — diferencial exclusivo)*
+Hoje o sistema já tem `stores.platform_fee_split` com 3 modos, mas **ninguém comunica isso**. Isso é ouro competitivo.
 
-## Estrutura técnica (para dev)
+3 cards lado a lado, cada um com ícone + título + micro-copy + exemplo numérico:
+- **Cliente paga** (padrão): "R$ 0,99 somado à taxa. Zero do seu caixa."
+- **Meio a meio**: "Você absorve R$ 0,49 e passa R$ 0,50 pro cliente. Mostra cuidado sem doer."
+- **Lojista paga**: "Taxa some pro cliente. Converte mais em ticket alto."
+Encerra com selo: "Muda quando quiser, sem sair do painel."
 
-### Backend (Supabase externo)
-Uma única migration aplicada via edge function `oneshot` com `EXTERNAL_SUPABASE_SERVICE_KEY`:
+### 2. Bloco "O que o iFood não te dá" *(comparativo direto)*
+Tabela 3 colunas: **ItaSuper × Marketplace × WhatsApp na mão**. Linhas com dados reais:
+- Comissão (0% Essencial × ~27% × 0%)
+- PIX na sua conta (Sim × Não × Manual)
+- Dono da base de clientes (Você × Eles × Você)
+- Bot de WhatsApp guiado, PDV, Motoboy próprio, Cupom/Fidelidade próprios.
 
-- `stores.store_type` enum: `food | apparel` (default `food`)
-- `product_variants`: `id, product_id, size, color, sku, barcode, price_override, stock_qty, active, created_at, updated_at` + GRANT + RLS + trigger updated_at
-- `stock_movements`: `id, store_id, variant_id, delta, reason (sale|return|adjust|entry), operator_id, ref_order_id, created_at` + GRANT + RLS
-- `customer_credits` (vale-troca): `id, store_id, customer_id, amount, source_order_id, used_at, expires_at, created_at` + GRANT + RLS
-- `customers_crm` (extensão do cliente por loja): `id, store_id, customer_id, preferred_size, notes, total_spent, last_purchase_at`
-- `order_items.variant_id` (nullable, FK)
+### 3. Bloco "Modos de recebimento reais" *(reforça confiança)*
+Cards horizontais mostrando o que já existe:
+- **PIX Automático (Asaas)** — cai confirmado, libera pedido sozinho.
+- **Pix Direto** — cai na sua chave, você confirma com 1 toque (novo, do lojista que pediu).
+- **Dinheiro / Cartão na entrega / PIX Maquininha** — plataforma acumula só o R$ 0,99, cobra por PIX quando passar de R$ 30.
+Cada card com o texto real dos Termos, resumido.
 
-RPCs `SECURITY DEFINER` (padrão do projeto):
-- `apparel_create_product_with_variants(product, variants[])`
-- `apparel_adjust_stock(variant_id, delta, reason)`
-- `apparel_return_item(order_item_id, qty, mode: 'credit'|'refund')` → gera `customer_credits` ou reembolso
-- `apparel_apply_credit(customer_id, amount, order_id)`
-- `apparel_stock_report(store_id, filters)`
+### 4. Bloco "Módulos que você liga quando precisar" *(add-ons reais)*
+Grid dos add-ons que já cobramos separado:
+- **PDV Balcão** — R$ 49/mês (só Essencial/Autonomia; grátis se for plano PDV Only).
+- **WhatsApp Bot Guiado** — cliente pede sem sair da conversa.
+- **Motoboy próprio** — cadastra seus entregadores, comissão configurável.
+- **Cardápio Boutique (roupas)** — grade P/M/G, estoque por variação, etiqueta com código de barras.
+Copy: "Paga só o que usar. Cancela o add-on em 2 cliques na aba Meu Plano."
 
-### Frontend
-- `src/pages/pdv/apparel/` isolado, carregado condicionalmente quando `store_type='apparel'`
-- `ApparelCatalogGrid.tsx` — card do modelo com foto grande + chip de cores + "abrir grade"
-- `ApparelVariantMatrix.tsx` — matriz tamanho × cor, célula mostra estoque, clique adiciona ao carrinho
-- `ApparelProductForm.tsx` — cadastro do modelo com gerador automático de variantes
-- `ApparelStockPage.tsx` — listagem, filtro por baixo estoque, ajuste rápido
-- `ApparelReturnDialog.tsx` — troca/devolução a partir do histórico
-- `CustomerCrmDrawer.tsx` — ficha do cliente no checkout
-- `LabelPrintDialog.tsx` — geração de etiqueta (Code128 via JsBarcode) para impressora térmica
+### 5. Bloco "Regras do jogo, sem letra miúda" *(quebra de objeção)*
+3 quadros honestos:
+- **Quando a mensalidade começa**: "Essencial: após R$ 5.000 em 60 dias → R$ 180/mês. Autonomia: após R$ 2.500 → R$ 239,90/mês. Com 30 dias de aviso e aceite expresso (cláusula 5.2)."
+- **Cobrança PIX pendente**: "Saldo passa de R$ 30 → gera PIX pra segunda-feira. Passa de R$ 500 → painel limita até quitar."
+- **Cancelamento**: "Sem multa, sem fidelidade. Desativa a loja no painel."
 
-Roteamento: `PdvTabs` detecta `store_type` e troca o componente da aba Vender e Cardápio; demais abas (Mesas, Histórico, Relatórios, Caixa) permanecem.
+### 6. Bloco "Feito por quem entende de loja de bairro" *(rapport local)*
+Micro-manifesto curto + logo Asaas + selo LGPD + link Termos/Privacidade. Frase-âncora: "Não somos um marketplace. Somos o seu sistema — a marca é sua, o cliente é seu, o PIX é seu."
 
-### Super Admin
-- Toggle `store_type` na tela de edição da loja
-- `TestStoreCreator` ganha opção "PDV Boutique (roupas)"
+### 7. Ajustes nas seções existentes
+- **Hero**: trocar sub-título por promessa mensurável: "Comece grátis. Você só paga mensalidade depois de faturar R$ 5.000."
+- **Planos**: puxar valores direto de `src/lib/plansInfo.ts` (fonte única) e mostrar o **exemplo prático** (`plan.example(50)`) que já existe no código e não está sendo usado.
+- **FAQ**: adicionar 3 perguntas novas — "Posso passar a taxa pro cliente?", "E se eu quiser só o PDV?", "O bot do WhatsApp responde sozinho?".
+- **Depoimentos**: marcar como "depoimentos ilustrativos" até termos reais (evita risco jurídico) OU trocar por métricas neutras ("X pedidos processados", "Y cidades atendidas") puxadas do banco.
 
-## E2E (Playwright)
-Nova suíte `/tmp/browser/pdv_apparel/`:
-1. `01_setup.py` — cria loja sandbox `e2e-boutique@itasuper.test` via `e2e-mint-session`, seta `store_type='apparel'`
-2. `02_cadastro_variantes.py` — cria modelo "Camiseta Básica" com grade P/M/G × 3 cores, valida 9 SKUs e estoque inicial
-3. `03_venda_matriz.py` — abre caixa, adiciona 2 variantes pela matriz, finaliza pagamento, valida decremento de estoque
-4. `04_troca_credito.py` — devolve 1 item do pedido, valida geração de `customer_credits` e reentrada no estoque
-5. `05_aplicar_credito.py` — nova venda usando vale-crédito, valida `used_at`
-6. `06_baixo_estoque.py` — força estoque = 0 em variante e valida bloqueio + alerta
-7. `07_crm.py` — valida histórico e tamanho preferido do cliente
-8. `08_etiqueta.py` — abre diálogo de etiqueta, valida SVG do código de barras
-9. `09_mobile.py` — repete 03 e 04 em viewport mobile
-10. `10_isolamento.py` — loja food não vê UI apparel; loja apparel não vê aba delivery
+## UI/UX
+- Manter o design system atual (tokens semânticos, sem cor hardcoded).
+- Cada bloco novo com: eyebrow pequeno + H2 forte + 1 linha de suporte + conteúdo + micro-CTA.
+- Micro-animações discretas (fade-up no scroll) — nada de parallax pesado.
+- Mobile-first: cards viram carrossel horizontal com snap onde couber (bloco 1, 3 e 4).
+- Ícones do lucide já usados; nada novo pesado.
+- Contraste WCAG AA verificado em light/dark.
 
-Cada script tira screenshot em cada passo e valida via `expect`. Roda em série; falha aborta a suíte.
+## Detalhes técnicos
+- Arquivo único: `src/pages/StoreDirectory.tsx` (mantém estrutura, adiciona 6 seções entre "Recursos" e "Planos" e ajusta hero/FAQ).
+- Constantes novas (`FEE_SPLIT_MODES`, `PAYMENT_MODES`, `ADDONS`, `RULES`) no topo do arquivo, seguindo o padrão de `PAINS`/`FEATURES`.
+- Planos: importar `PLANS` de `@/lib/plansInfo.ts` (já importado) e usar `plan.example(50)` no card.
+- Sem chamadas novas de backend — só conteúdo estático que reflete regras reais.
+- Incrementar versão em `PerfilPage.tsx` e `android/app/build.gradle` (patch + versionCode).
 
-## Entregas por fase
-
-Fase 1 — Base (dia 1-2): migration + RPCs + toggle super admin
-Fase 2 — Cadastro (dia 3): `ApparelProductForm` + gerador de variantes + E2E 01-02
-Fase 3 — Venda (dia 4-5): matriz + estoque em tempo real + E2E 03, 06, 09
-Fase 4 — Troca/CRM (dia 6-7): devolução, vale-crédito, ficha do cliente + E2E 04-05, 07
-Fase 5 — Etiqueta + polish (dia 8): impressão + isolamento + E2E 08, 10
-Fase 6 — Regressão: rodar suíte E2E antiga do PDV food para garantir zero quebra
-
-## Riscos e mitigações
-- **Quebrar PDV food**: todo código novo atrás de `if (store_type==='apparel')`; nenhuma tabela existente ganha coluna obrigatória
-- **Estoque race condition**: `apparel_adjust_stock` usa `UPDATE ... WHERE stock_qty >= delta` com retorno; falha vira toast
-- **Migração de loja existente food→apparel**: bloqueada por enquanto (só cria já como apparel)
-
-## Versionamento
-Ao final: bump para v1.21.0 (build 1063+), sincronizado em `appVersion.ts` e `build.gradle`.
-
-Aprovando este plano, começo pela Fase 1 (migration + toggle) e sigo em sequência, rodando o E2E de cada fase antes de avançar.
+## Fora de escopo
+- Não mexer em rotas, auth, cadastro, ou lógica de cobrança.
+- Não gerar imagens novas (usar ícones existentes).
+- Não alterar `plansInfo.ts` (só consumir).
