@@ -45,18 +45,27 @@ const TestStoreCreator = () => {
   const handleCreate = async (
     cat: typeof CATEGORIES[0],
     planType?: string,
-    storeType?: "food" | "apparel",
+    storeType?: "food" | "apparel" | "snack_bar" | "pizzeria" | "restaurant",
   ) => {
     setCreating(true);
     try {
+      const typeLabel: Record<string, string> = {
+        apparel: "Boutique ",
+        snack_bar: "Lanches ",
+        pizzeria: "Pizzaria ",
+        restaurant: "Restaurante ",
+      };
+      const prefix = storeType && typeLabel[storeType]
+        ? typeLabel[storeType]
+        : planType === "pdv_only" ? "PDV " : "";
       const { error } = await supabase.rpc("admin_create_test_store", {
-        _name: `Teste ${storeType === "apparel" ? "Boutique " : planType === "pdv_only" ? "PDV " : ""}${cat.label.replace(/[^\w\s]/g, "").trim()}`,
+        _name: `Teste ${prefix}${cat.label.replace(/[^\w\s]/g, "").trim()}`,
         _category: cat.value as any,
         ...(planType ? { _plan_type: planType } : {}),
         ...(storeType ? { _store_type: storeType } : {}),
       } as any);
       if (error) throw error;
-      toast.success(`Loja teste ${storeType === "apparel" ? "(Boutique) " : planType === "pdv_only" ? "(Somente PDV) " : ""}"${cat.label}" criada!`);
+      toast.success(`Loja teste ${prefix ? `(${prefix.trim()}) ` : ""}"${cat.label}" criada!`);
       refetch();
       queryClient.invalidateQueries({ queryKey: ["admin-stores-list"] });
       queryClient.invalidateQueries({ queryKey: ["admin-all-stores"] });
@@ -147,6 +156,33 @@ const TestStoreCreator = () => {
           <span className="text-lg">👕</span>
           <span>Criar loja teste — PDV Boutique (roupas)</span>
         </button>
+      </div>
+
+      <div className="pt-3 border-t border-border space-y-2">
+        <p className="text-xs font-bold text-foreground/70">🍔🍕🍽️ PDV Food Service (tipos especializados)</p>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <button
+            onClick={() => handleCreate({ value: "restaurante" as any, label: "🍔 Lanches", emoji: "🍔" }, "pdv_only", "snack_bar")}
+            disabled={creating}
+            className="flex items-center justify-center gap-2 p-3 rounded-xl border-2 border-orange-500/40 bg-orange-500/5 text-orange-700 dark:text-orange-400 text-xs font-bold transition-all active:scale-95 hover:border-orange-500/70"
+          >
+            🍔 Lanches (combos)
+          </button>
+          <button
+            onClick={() => handleCreate({ value: "pizzaria" as any, label: "🍕 Pizzaria", emoji: "🍕" }, "pdv_only", "pizzeria")}
+            disabled={creating}
+            className="flex items-center justify-center gap-2 p-3 rounded-xl border-2 border-red-500/40 bg-red-500/5 text-red-700 dark:text-red-400 text-xs font-bold transition-all active:scale-95 hover:border-red-500/70"
+          >
+            🍕 Pizzaria (meio a meio)
+          </button>
+          <button
+            onClick={() => handleCreate({ value: "restaurante" as any, label: "🍽️ Restaurante", emoji: "🍽️" }, "pdv_only", "restaurant")}
+            disabled={creating}
+            className="flex items-center justify-center gap-2 p-3 rounded-xl border-2 border-emerald-500/40 bg-emerald-500/5 text-emerald-700 dark:text-emerald-400 text-xs font-bold transition-all active:scale-95 hover:border-emerald-500/70"
+          >
+            🍽️ Restaurante (kg + marmitex)
+          </button>
+        </div>
       </div>
 
       {testStores && testStores.length > 0 && (
