@@ -999,7 +999,13 @@ const PdvPage = () => {
     if ((cat === "pizza" && monoPizza) || (cat === "pastel" && monoPastel)) {
       return products as any[];
     }
-    return [];
+    // Fallback multi-categoria: heurística pelo nome/descrição enquanto os
+    // produtos legados não têm `metadata.product_category` gravado.
+    const kw = cat === "pizza" ? "pizza" : "pastel";
+    return (products as any[]).filter((p) => {
+      const s = `${p?.name || ""} ${p?.description || ""}`.toLowerCase();
+      return s.includes(kw);
+    });
   };
   const pizzaProducts = isPizzaria ? productsByCategory("pizza") : [];
   const pastelProducts = isPastelaria ? productsByCategory("pastel") : [];
