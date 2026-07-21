@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Banknote, CreditCard, Smartphone, X, Plus, Wallet, Users } from "lucide-react";
 import { formatBRL, addMoney, subtractMoney } from "@/lib/utils";
-import { parseBRL } from "@/hooks/useBRLInput";
+import { parseBRL, formatBRLDisplay, parseBRLCentsInput } from "@/hooks/useBRLInput";
 
 export interface SplitPayment {
   method: string;
@@ -208,7 +208,15 @@ export const PdvSplitPayment = ({ total, payments, onChange }: Props) => {
                 inputMode="decimal"
                 placeholder={remaining.toFixed(2).replace(".", ",")}
                 value={pickerAmount}
-                onChange={(e) => setPickerAmount(e.target.value.replace(/[^0-9.,]/g, ""))}
+                onChange={(e) => {
+                  const raw = e.target.value;
+                  if (!raw.replace(/\D/g, "")) {
+                    setPickerAmount("");
+                    return;
+                  }
+                  const n = parseBRLCentsInput(raw);
+                  setPickerAmount(formatBRLDisplay(n));
+                }}
                 onKeyDown={(e) => e.key === "Enter" && addPayment()}
                 className="w-full pl-9 pr-3 py-2.5 bg-background rounded-lg text-sm font-bold focus:outline-none focus:ring-2 focus:ring-primary/30 border border-border/60"
               />
