@@ -1,77 +1,69 @@
-# PDV especializado — Lanches, Pizzaria e Restaurante/Marmitaria
+# Ebook ItaSuper para Lojistas — Plano de Geração de PDF
 
-Três modos focados em food service, seguindo o mesmo padrão da Boutique (`store_type` + telas próprias, reaproveitando caixa/KDS/mesas/histórico/PIN).
+## Recomendação de formato
 
-Muita coisa já existe solta no sistema (modo pizza, adicionais, KDS, mesas). O trabalho aqui é **empacotar por categoria** com layout e fluxo dedicados, ao invés de deixar tudo genérico.
+- **Papel:** A4 (210×297mm) — padrão brasileiro, imprime bem e abre em qualquer WhatsApp/celular. US Letter só se o público fosse EUA.
+- **Orientação:** retrato, margens 18mm.
+- **Tipografia:** Inter/DejaVu Sans (suporta acentos PT-BR nativamente no ReportLab).
+- **Paleta:** cores da marca ItaSuper já usadas no app (primary do `index.css`) + preto/cinza + destaques amarelo/verde para CTAs.
+- **Extensão alvo:** 14–18 páginas (leitura de 8–10 min, ideal pra WhatsApp).
+- **Peso alvo:** < 3 MB (compressão de imagens em 150 dpi).
+- **Entrega:** `/mnt/documents/ItaSuper-Ebook-Lojistas-v1.pdf` + versão landscape opcional pra apresentação em tela.
 
-## Fase 1 — Lanches (Hamburgueria / Lanchonete)
+## Estrutura (só dados REAIS que já existem no sistema)
 
-Foco: rapidez no balcão, montagem de lanche com adicionais.
+Todo conteúdo abaixo sai de arquivos já auditados no repo — nada inventado.
 
-Escopo:
-- `store_type='snack_bar'`.
-- Catálogo em **grid grande com foto** agrupado por categoria (Lanches, Bebidas, Porções, Sobremesas).
-- Modal de montagem: adicionais obrigatórios (ponto da carne, molhos) + opcionais (bacon, cheddar extra) reusando `addon_groups` / `addon_items`.
-- Combo builder: "Lanche + Batata + Refri" com preço fechado.
-- Observação por item ("sem cebola", "bem passado") direto no card do carrinho.
-- Impressão dividida: cozinha (só itens quentes) + balcão (frios/bebidas) via `thermalPrint.ts`.
-- Chamador de senha simples (número na tela KDS).
+```text
+Capa                       — Logo + "Pare de pagar comissão. Comece a lucrar."
+Sumário
+1. O problema do marketplace  (docs/anuncio-andromeda-lojistas.md, LandingPage.tsx)
+2. O que é o ItaSuper          (public/llms-full.txt — descrição oficial)
+3. Como funciona em 4 passos   (fluxo cliente do llms-full.txt)
+4. Planos e preços REAIS       (src/lib/plansInfo.ts — Essencial, Autonomia, PDV)
+   • Essencial: R$ 0 → R$ 180 após R$ 5.000 GMV, 0% comissão
+   • Autonomia: R$ 0 → R$ 239,90 após R$ 2.500 GMV, 0% taxa plataforma
+   • PDV Only: R$ 69/mês
+   • Add-on PDV: R$ 49/mês
+5. Comparativo vs iFood/Rappi   (números reais do plansInfo.ts + FAQ do llms-full)
+6. Taxa de entrega explicada    (DELIVERY_FEE_NOTE — os R$0,99 em cima, meio-a-meio, lojista)
+7. Ferramentas incluídas        (llms-full: PDV, KDS, Motoboy, Multi-loja, PIX, IA WhatsApp)
+8. Segurança e LGPD             (PoliticaPrivacidade.tsx, TermosDeUso.tsx)
+9. Prova social / cases         (deixar placeholder — só se você tiver depoimento real)
+10. FAQ                         (llms-full.txt já tem 9 perguntas)
+11. Como cadastrar em 3 min     (link https://itasuper.com.br/cadastro-lojista + QR code)
+Contracapa                     — CTA + WhatsApp + QR
+```
 
-E2E: montar 2 combos + 1 lanche com adicional + observação, fechar, conferir impressão dividida e KDS.
+## Copy persuasivo (princípios aplicados)
 
-## Fase 2 — Pizzaria
+- **Contraste de preço concreto:** "R$ 0 até faturar R$ 5.000" vs "27% do iFood".
+- **Reciprocidade:** 2 meses grátis + tutorial.
+- **Escassez real:** 10 vagas Apoiador (dado real de `plansInfo.ts`) — só se ainda estiver aberto.
+- **Autoridade:** número de lojas ativas, cidades atendidas (buscar do banco antes de gerar).
+- **Prova numérica:** exemplo "Pedido de R$ 50 → você fica com R$ 48,01" (função `netPerOrder`).
+- **CTA único e claro:** QR code pro cadastro em toda página par.
 
-Foco: pizza meio-a-meio, bordas, tamanhos, entrega.
+## Implementação técnica
 
-Escopo:
-- `store_type='pizzeria'`.
-- Já existe `pizzaPricing.ts` + `pizza_borders` + tipos em `types/pizza.ts` — encapsular num fluxo próprio.
-- Builder visual: escolhe tamanho → 1/2 ou 2/2 sabores → borda → adicionais.
-- Regra de preço: **maior sabor** (padrão) ou média — configurável por loja.
-- Cardápio do dia / promo por dia da semana (Terça 2x1) reusando `promo_campaigns`.
-- Impressão da comanda com os sabores lado-a-lado ("1/2 Calabresa | 1/2 Portuguesa").
-- Ficha técnica opcional (ingredientes na cozinha).
-- Integração com **mesas** e **delivery** — pizzaria costuma ter os dois.
+1. Script Python `/tmp/gen_ebook.py` usando **ReportLab Platypus** (skill/pdf já carregada).
+2. Registrar **DejaVu Sans** via `fc-match` (skill exige — senão acento vira caixinha).
+3. Ler `src/lib/plansInfo.ts` e `public/llms-full.txt` do próprio repo pra não divergir dos preços atuais.
+4. Gerar QR codes com `qrcode[pil]` apontando pra `itasuper.com.br/cadastro-lojista` e WhatsApp.
+5. Usar cores hex do `src/index.css` (primary/foreground).
+6. **QA obrigatório:** rodar `pdftoppm -jpeg -r 150` e revisar cada página com `code--view` — checar acentos, quebras, overflow, contraste. Corrigir e re-gerar até passar.
+7. Salvar em `/mnt/documents/ItaSuper-Ebook-Lojistas-v1.pdf` e emitir `<presentation-artifact>`.
 
-E2E: montar pizza meio-a-meio com borda + refri, salvar em mesa, fechar, conferir impressão com sabores separados.
+## O que NÃO vou incluir (pra não inventar)
 
-## Fase 3 — Restaurante / Marmitaria
+- Depoimentos de lojistas (não temos no repo — vou deixar página em branco marcada "inserir 2 depoimentos aqui").
+- Número de lojas/pedidos totais (só incluo se você autorizar consulta ao banco real agora).
+- Datas de fundação, prêmios, mídia.
 
-Foco: prato feito, self-service por peso, marmita montada.
+## Próximos passos
 
-Escopo:
-- `store_type='restaurant'`.
-- Três sub-modos escolhidos nas configs da loja:
-  1. **À la carte** (prato pronto do cardápio) → usa fluxo padrão.
-  2. **Por quilo** — leitura da balança Toledo (`toledoScale.ts` já existe) → preço × peso, ticket fica aberto até pesar.
-  3. **Marmita montada** — cliente escolhe base (arroz/feijão) + 1 proteína + N acompanhamentos, com regras de tamanho (P/M/G) e preço fechado.
-- Card **"Cardápio do dia"** em destaque no topo (o que tem hoje) — já temos infra de disponibilidade diária em `products.is_available`, só faltará um toggle rápido por dia.
-- Modo **marmita para entrega**: fluxo enxuto sem mesa, direto pra sacola + endereço.
-- Comanda de mesa com divisão de conta ("dividir por 4").
-- Fechamento por mesa mostrando taxa de serviço (10%) opcional.
-
-E2E: vender 1 prato à la carte + 1 marmita M montada + 1 por peso, dividir conta em mesa por 3, fechar.
-
-## Padrão comum (reaproveitado das fases anteriores)
-
-- Cadastro (`CadastroLojista.tsx`) mapeia categoria → `store_type`.
-- Switch em `PdvPage.tsx` / `PdvCardapioPage.tsx`.
-- Componentes em `src/pages/pdv/{snack,pizza,restaurant}/`.
-- Caixa, KDS, mesas, PIN gerente, outbox offline, relatórios: reaproveitados sem duplicar.
-- Bump de versão (`appVersion.ts` + `build.gradle` patch + versionCode) a cada fase.
-- E2E em `scripts/e2e/{snack,pizza,restaurant}/` no padrão do apparel.
-- Landing (`StoreDirectory.tsx`) ganha os 3 modos na seção de módulos ao final.
-
-## Detalhes técnicos
-
-- Enum `store_type` recebe `snack_bar`, `pizzeria`, `restaurant` via migration no externo (oneshot edge function com `EXTERNAL_SUPABASE_SERVICE_KEY`, padrão do projeto).
-- Nova tabela `restaurant_meal_kits` (id, store_id, name, size, base_price, allowed_categories jsonb) só na Fase 3 — com GRANT + RLS por `store_id` via `has_role`.
-- Nova tabela `combo_definitions` (Fase 1) — id, store_id, name, items jsonb, price. GRANT + RLS idem.
-- Split de impressão: extensão em `thermalPrint.ts` aceitando `printerTarget: 'kitchen' | 'counter'` no item.
-- Regra de preço da pizza (maior vs média): já suportada em `pizzaPricing.ts`, só expor toggle em Settings.
-- Divisão de conta: cálculo puro no client (`splitBill(total, n)`).
-- Performance: lazy-load dos 3 painéis novos, memoização dos builders (montagem re-renderiza muito).
-
-## Entrega
-
-Sequencial, uma fase por resposta, com E2E verde antes de avançar. Começo pela **Fase 1 — Lanches** se você aprovar.
+Se aprovar, eu:
+1. Gero o PDF v1 completo com os dados do repo.
+2. Faço QA visual página por página.
+3. Entrego pra download.
+Se quiser, também consulto o banco pra puxar nº real de lojas ativas e cidades atendidas antes de gerar — só confirmar.

@@ -178,6 +178,16 @@ export const PdvTopbar = ({
           {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Lock className="h-3.5 w-3.5" />}
           <span className="hidden sm:block">Fechar</span>
         </button>
+        {isPdvOnly && (
+          <button
+            onClick={async () => { await supabase.auth.signOut(); navigate("/", { replace: true }); }}
+            title="Sair da conta"
+            className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-bold text-red-600 bg-red-500/8 hover:bg-red-500/15 transition-colors border border-red-500/20"
+          >
+            <LogOut className="h-3.5 w-3.5" />
+            <span className="hidden sm:block">Sair</span>
+          </button>
+        )}
       </div>
     </header>
   );
