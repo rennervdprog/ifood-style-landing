@@ -164,6 +164,18 @@ export const ProductFormInline = ({ initial, onSave, onCancel, storeCategory, st
     || (availableCategories.length > 0 ? availableCategories[0] : storeCategory);
 
   useEffect(() => { onChange?.(form); }, [form, onChange]);
+
+  // Em lojas multi-categoria, garante que `metadata.product_category` seja
+  // gravado no produto mesmo que o usuário NÃO abra o seletor — sem isso,
+  // "Monte a Pizza" no PDV nunca acha produtos (o filtro exige a tag).
+  useEffect(() => {
+    if (availableCategories.length <= 1) return;
+    const current = (form.metadata as any)?.product_category;
+    if (current) return;
+    const initialCat = availableCategories[0];
+    if (!initialCat) return;
+    setForm((p) => ({ ...p, metadata: { ...(p.metadata || {}), product_category: initialCat } }));
+  }, [availableCategories, form.metadata]);
   
   // Estado local para o display do preço para evitar saltos e fechamento do teclado
   const [priceDisplay, setPriceDisplay] = useState(

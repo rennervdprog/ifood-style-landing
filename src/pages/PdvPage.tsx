@@ -988,9 +988,17 @@ const PdvPage = () => {
   // o modal "Monte a Pizza" só pode listar produtos criados como pizza (e
   // idem para pastel). Legado: se nenhum produto marca a categoria, cai no
   // catálogo inteiro (comportamento antigo pra lojas mono-categoria).
+  const normalizeBuilderCategory = (value: unknown) => {
+    const v = String(value || "").toLowerCase().trim();
+    if (["pizza", "pizzas", "pizzaria", "pizzeria"].includes(v)) return "pizza";
+    if (["pastel", "pasteis", "pastéis", "pastelaria"].includes(v)) return "pastel";
+    return v;
+  };
+  const productBuilderCategory = (p: any) =>
+    normalizeBuilderCategory((p?.metadata as any)?.product_category);
   const productsByCategory = (cat: "pizza" | "pastel") => {
     const tagged = (products as any[]).filter(
-      (p) => (p?.metadata as any)?.product_category === cat,
+      (p) => productBuilderCategory(p) === cat,
     );
     if (tagged.length > 0) return tagged;
     // Lojas mono-categoria (só pizza OU só pastel): fallback ao catálogo todo.
@@ -999,7 +1007,13 @@ const PdvPage = () => {
     if ((cat === "pizza" && monoPizza) || (cat === "pastel" && monoPastel)) {
       return products as any[];
     }
-    return [];
+    // Fallback multi-categoria: heurística pelo nome/descrição enquanto os
+    // produtos legados não têm `metadata.product_category` gravado.
+    const kw = cat === "pizza" ? "pizza" : "pastel";
+    return (products as any[]).filter((p) => {
+      const s = `${p?.name || ""} ${p?.description || ""}`.toLowerCase();
+      return s.includes(kw);
+    });
   };
   const pizzaProducts = isPizzaria ? productsByCategory("pizza") : [];
   const pastelProducts = isPastelaria ? productsByCategory("pastel") : [];
