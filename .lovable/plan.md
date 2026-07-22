@@ -1,127 +1,111 @@
-# E2E Sistema de Revenda — Cobertura Total
+# Sistema de Revenda — o que ainda falta
 
-Objetivo: exercitar **cada RPC + cada tela + cada regra de negócio** do sistema de revenda, do zero até o saque pago, com asserts no banco externo.
+Status atual (v1.23.3): Fases 1–4 no ar + suíte E2E de RPCs verde (35/35). Faltam as automações que fazem o dinheiro andar sozinho, a captação pública e refinos de analytics/regra.
 
-## Contas de teste (provisionar via oneshot no externo)
+---
 
-- `e2e-reseller-1@itasuper.test` — revendedor "feliz" (aprovado)
-- `e2e-reseller-2@itasuper.test` — revendedor pending (nunca aprovado)
-- `e2e-reseller-3@itasuper.test` — revendedor blocked (para testar bloqueio)
-- `e2e-lojista-ref-1@itasuper.test` … `-4` — lojas indicadas
-- `e2e-admin@itasuper.test` — já existe, usa role admin
-- Loja `e2e-self-ref` — tentativa de auto-indicação (mesmo CPF do reseller-1)
+## Fase 5 — Automação (o coração comercial, nada disso existe hoje)
 
-Script `scripts/e2e/reseller/00_seed.py` cria/reseta tudo via edge function `oneshot-e2e-reseller-seed` (idempotente, apaga runs anteriores por prefixo de email).
+### 5.1 `reseller-check-activations` (cron diário, 03:00)
+- Varre `reseller_referrals` com `status='pending'`.
+- Marca `active` + grava `activated_at` quando a loja bater **20 pedidos entregues nos últimos 30 dias** E `stores.whatsapp_verified_at IS NOT NULL`.
+- Cria bounty (`type='bounty'`, `amount_cents = resellers.bounty_amount * 100`) em `reseller_commissions` com `status='pending'`.
+- Idempotente: só cria bounty se ainda não existe para o par `(reseller_id, store_id, type='bounty')`.
 
-## Suites (ordem de execução)
+### 5.2 `reseller-monthly-recurring` (cron mensal, dia 5 às 04:00)
+- Para cada `store_plans` com pagamento confirmado no mês anterior (`asaas_payment_status='RECEIVED'`), credita `commission_rate * mensalidade` em `reseller_commissions` (`type='recurring'`, `reference_month='YYYY-MM'`).
+- Cobre Essencial (R$ 180), Autonomia (R$ 239,90), PDV addon (R$ 49), PDV Only (R$ 69), Apoiador (R$ 75).
+- Respeita `commission_rate` individual do revendedor (VIP 30%).
+- Skip se loja está `suspensa` ou `cancelada` no fim do mês de referência.
 
-### Suite 1 — Cadastro do revendedor (`01_register.py`)
-- `reseller_register("RENAN2026")` → status pending, retorna row.
-- Chamar de novo com mesmo code → erro `code_taken`.
-- Chamar sem estar logado → erro auth.
-- Reseller-2 tenta `reseller_get_dashboard()` estando pending → deve retornar payload vazio, sem 500.
-- Admin lista via `admin_reseller_list()` e vê os 3 revendedores.
+### 5.3 `reseller-gmv-bonus` (cron mensal, opcional — decisão pendente)
+- Só liga se `gmv_bonus_rate > 0` no revendedor.
+- Credita 0,3% do GMV entregue no mês para lojas ainda no período grátis.
 
-### Suite 2 — Aprovação / bloqueio / config (`02_admin_flow.py`)
-- Admin roda `admin_reseller_set_status(reseller-1, 'approved')` → cria role `revendedor` em `user_roles`, `approved_at` preenchido.
-- `admin_reseller_update_config(reseller-1, commission_rate=0.30, bounty_amount_cents=20000)` → confere update.
-- `admin_reseller_set_status(reseller-3, 'blocked', notes='fraude')`.
-- Reseller não-admin tenta chamar RPC admin → erro `unauthorized`.
+### 5.4 `reseller-fraud-check` (cron semanal, domingo)
+- Calcula ratio de lojas fantasma (0 pedidos em 90d) por revendedor.
+- Se >30% E total de indicações ≥ 5 → `status='blocked'`, grava motivo em `notes`.
+- Checa auto-indicação: CPF/CNPJ/user_id/device_id do dono da loja indicada contra o próprio revendedor via `signup_attempts` — se bater, bloqueia o referral e cria alerta.
 
-### Suite 3 — Vínculo `?ref=` no cadastro lojista (`03_referral_link.py`)
-- Abrir Playwright em `/cadastro?ref=RENAN2026` como `e2e-lojista-ref-1`, completar signup.
-- Assert `stores.referred_by_reseller_id = reseller-1.id` e `reseller_locked_at` setado.
-- Assert row em `reseller_referrals` (status `pending`, source `link`).
-- Repetir cadastro com `?ref=CODIGOINVALIDO` → loja criada sem vínculo, sem erro.
-- Reseller-1 tenta cadastrar loja com próprio CPF → assert **bloqueio anti-auto-indicação** (após Fase 5).
+### 5.5 `reseller-payout-processor` (chamada manual pelo admin ou cron 06:00)
+- Hoje "marcar como pago" só muda status no banco. Falta **transferir de fato** via PIX Asaas (reaproveitar `create_pix_transfer` dos motoboys).
+- Fluxo: `pending → processing → paid` com `asaas_transfer_id` real, retry em falha, notificação ao revendedor.
 
-### Suite 4 — Trigger de bounty (`04_bounty.py`)
-- Injetar 19 pedidos entregues para lojista-ref-1 → rodar `reseller-check-activations` → assert **nenhum** bounty.
-- Injetar 20º pedido + `whatsapp_verified_at` → rodar cron → assert:
-  - `reseller_referrals.status = 'active'`, `activated_at` setado.
-  - `reseller_commissions` com `type='bounty'`, `amount_cents=20000` (rate VIP), `status='pending'`.
-- Rodar cron 2ª vez → idempotente, não duplica.
+### 5.6 Trigger `reseller_locked_at`
+- Trigger em `reseller_referrals` que grava `stores.reseller_locked_at = now()` quando `activated_at IS NOT NULL` → impede reatribuir revendedor depois de ativado.
 
-### Suite 5 — Recorrente mensal (`05_recurring.py`)
-- Simular pagamento de plano Essencial (R$ 180) via insert em `store_plans` + `financial_transactions` no mês anterior.
-- Rodar `reseller-monthly-recurring` → assert commission `type='recurring'`, `amount_cents = 180 * rate`, `reference_month` correto.
-- Rodar de novo → idempotente (unique em `reseller_id + store_id + reference_month + type`).
-- Loja suspensa no mês → **não** credita.
-- Testar todos os planos: Essencial, Autonomia, PDV addon, PDV Only, Apoiador.
+---
 
-### Suite 6 — GMV bonus opcional (`06_gmv_bonus.py`)
-- Ligar `gmv_bonus_rate=0.003` no reseller-1.
-- Injetar GMV R$ 3.000 no período grátis → assert commission `type='gmv_bonus'`, valor R$ 9,00.
-- Reseller-2 (rate 0) → nenhum bonus.
+## Fase 6 — Captação, materiais e E2E completo
 
-### Suite 7 — Dashboard revendedor (`07_dashboard.py`)
-- Login como reseller-1, `GET /revendedor`.
-- Assert cards: saldo pendente, saldo pago, nº lojas ativas, comissão do mês.
-- Assert lista de lojas com GMV 60d, plano, status, "quanto falta pro trigger".
-- Extrato filtra por período e por tipo (bounty/recurring/gmv_bonus).
-- Copiar link → checa clipboard contém `/cadastro?ref=RENAN2026`.
+### 6.1 Landing pública `/seja-revendedor`
+- Copy persuasiva focada em "grátis-até-faturar" (diferencial vs Saipos/Ifood).
+- Calculadora interativa: slider "quantas lojas vou indicar" → mostra MRR vitalício estimado.
+- FAQ (bounty, saque, período grátis, anti-fraude).
+- Formulário integrado a `reseller_register` com aprovação manual.
+- SEO + JSON-LD + `robots.txt`/`llms.txt` como fizemos na StoreDirectory.
 
-### Suite 8 — Saque (`08_withdrawal.py`)
-- Reseller-1 com saldo < R$ 100 → `reseller_request_withdrawal` erro `min_amount`.
-- Ajustar mínimo pra R$ 100 (config atual está R$ 50 — plano manda 100).
-- Saldo suficiente → cria withdrawal `pending`.
-- Segunda tentativa com pending aberto → erro `already_pending`.
-- Admin `admin_reseller_withdrawal_process(id, 'reject', 'dados PIX errados')` → status rejected, comissões continuam pending.
-- Novo saque → admin `'approve'` → status approved.
-- Admin `'paid'` com `_asaas_transfer_id` → assert:
-  - Withdrawal `status='paid'`, `processed_at` setado.
-  - Comissões correspondentes viraram `paid` com `paid_batch_id`.
-  - Saldo pendente do dashboard zerou.
+### 6.2 Aba "Materiais" no `/revendedor`
+- Download do ebook PDF (o que geramos v2).
+- Scripts prontos de WhatsApp (abordagem fria, follow-up, objeção "vou pensar").
+- Imagens Andrômeda para stories/feed.
+- Vídeo tutorial de 3 min "como fechar sua primeira loja".
 
-### Suite 9 — Anti-fraude (`09_fraud.py`, depende Fase 5)
-- Criar reseller-4 com 10 lojas indicadas, 4 delas 0 pedidos em 90d.
-- Rodar `reseller-fraud-check` → assert `status='blocked'`, notes com motivo.
-- Reseller bloqueado tenta abrir dashboard → 403 amigável.
+### 6.3 Aba "Perfil" no `/revendedor`
+- Edição de dados PIX (já existe via `reseller_update_pix`, falta UI dedicada).
+- Aceite do contrato de revendedor (`resellers.contract_accepted_at`).
+- Trocar código de indicação (com cooldown de 90 dias, opcional).
 
-### Suite 10 — Super Admin analytics (`10_admin_analytics.py`)
-- Abrir aba **Financeiro → Revendedores** via Playwright.
-- Assert KPIs de `admin_reseller_summary()` batem com queries diretas no banco.
-- Aprovar/bloquear pela UI (não só RPC) e conferir toast + refresh.
-- Processar saque pela UI (approve → paid).
+### 6.4 E2E completo com Playwright (bloco 2 de testes)
+Hoje temos só E2E de RPCs. Falta o fluxo UI ponta-a-ponta:
+- Revendedor se cadastra em `/seja-revendedor` → admin aprova no Super Admin.
+- Lojista abre `/cadastro?ref=CODIGO` → cria loja → 20 pedidos fake → bounty aparece.
+- Revendedor vê no dashboard, solicita saque → admin paga → comissões viram `paid`.
 
-### Suite 11 — Landing pública (`11_landing.py`, depende Fase 6)
-- `GET /seja-revendedor` sem auth → 200, título correto, calculadora funciona (10 lojas Essencial = R$ 360/mês).
-- Submit do form → cria `resellers` pending + envia notificação admin.
+---
 
-### Suite 12 — RLS / segurança (`12_rls.py`)
-- Como reseller-1 anon-key JWT: tenta `SELECT * FROM resellers WHERE id != own` → 0 rows.
-- Tenta `SELECT` em `reseller_commissions` de outro reseller → 0 rows.
-- Tenta UPDATE direto em `resellers.commission_rate` → negado.
-- Tenta chamar `admin_reseller_*` → `unauthorized`.
-- Service_role bypassa (usado pelas edge functions cron).
+## Refinos do Super Admin (RevendedoresTab hoje é básica)
 
-## Infra dos testes
+- **Ranking por MRR trazido** (não só nº de lojas), com sparkline dos últimos 6 meses.
+- **Cohort 3/6/12 meses**: quantas lojas indicadas ainda ativas após N meses.
+- **CAC efetivo**: comissão paga total ÷ MRR gerado; alerta se CAC > 6× LTV mensal.
+- **Alertas de fraude** por revendedor (badge vermelho, motivo, ação rápida).
+- **Log de auditoria** de cada comissão creditada/paga com origem visível.
 
-- `scripts/e2e/reseller/` — todas as suites em Python + Playwright (mesmo padrão de `apparel/` e `snackbar/`).
-- `scripts/e2e/reseller/README.md` — como rodar local + CI.
-- Edge functions helper:
-  - `oneshot-e2e-reseller-seed` — cria contas, dá role, reseta estado.
-  - `oneshot-e2e-reseller-inject-orders` — injeta N pedidos entregues numa loja (bypass Asaas).
-  - `oneshot-e2e-reseller-tick-cron` — dispara os 4 crons on-demand para o teste não esperar horário.
-- Workflow `.github/workflows/reseller-e2e.yml` roda suites 1–8 e 12 em cada PR (as que dependem de Fase 5/6 rodam quando essas fases entrarem).
-- Cada suite escreve JSON em `/tmp/e2e/reseller/<suite>.json` + screenshots.
+---
 
-## Cobertura final (RPC checklist)
+## Regra comercial ainda divergente do plano
 
-Publicas do revendedor:
-- `reseller_register`, `reseller_lookup_code`, `reseller_get_dashboard`, `reseller_attach_signup`, `reseller_request_withdrawal` → suites 1,3,7,8.
+- **Saque mínimo:** hoje `reseller_request_withdrawal` valida R$ 50 hardcoded. Plano pede **R$ 100 semanal**. Mudar constante + adicionar cooldown de 7 dias entre saques do mesmo revendedor.
+- **Frequência:** hoje é sob demanda; plano prevê "semanal PIX". Manter sob demanda mas com o cooldown já cobre.
 
-Admin:
-- `admin_reseller_list`, `admin_reseller_set_status`, `admin_reseller_update_config`, `admin_reseller_referrals`, `admin_reseller_commissions`, `admin_reseller_withdrawals`, `admin_reseller_withdrawal_process`, `admin_reseller_summary` → suites 2,8,10,12.
+---
 
-Crons (Fase 5):
-- `reseller-check-activations`, `reseller-monthly-recurring`, `reseller-gmv-bonus`, `reseller-fraud-check`, `reseller-payout-processor` → suites 4,5,6,8,9.
+## Ordem sugerida de entrega (patch por patch, sempre bumpando versão)
 
-## Ordem de entrega
+1. **v1.23.4 — Fase 5.6 + regra saque** (trigger de lock + R$ 100 + cooldown). Rápido, sem risco.
+2. **v1.24.0 — Fase 5.1 (bounty cron)**. Já libera dinheiro real quando lojas ativarem.
+3. **v1.24.1 — Fase 5.2 (recorrente mensal)**. Consolida receita vitalícia.
+4. **v1.24.2 — Fase 5.4 (anti-fraude)** antes de escalar aquisição.
+5. **v1.24.3 — Fase 5.5 (payout PIX real)** para fechar o ciclo financeiro.
+6. **v1.25.0 — Fase 6.1 (landing pública)**. Só liga captação depois do motor rodando.
+7. **v1.25.1 — Fase 6.2 + 6.3 (materiais + perfil)**.
+8. **v1.25.2 — Refinos Super Admin** (cohort/CAC/alertas).
+9. **v1.25.3 — E2E Playwright completo (bloco 2)** validando ponta-a-ponta.
+10. **v1.26.0 — Fase 5.3 (GMV bonus)** apenas se decidirem ligar.
 
-1. Seed + suites 1,2,3,7,8,10,12 (já dá pra rodar hoje, cobre tudo que existe).
-2. Suites 4,5,6,9 (após Fase 5 estar deployada).
-3. Suite 11 (após Fase 6).
-4. Ligar workflow no CI.
+---
 
-Cada bloco entregue = versão patch (`PerfilPage.tsx` + `build.gradle`) com report ao usuário.
+## Decisões que preciso de você antes de começar
+
+1. **Ligo o 0,3% GMV bonus** (5.3) ou deixamos desligado por padrão?
+2. **Payout PIX real** (5.5): usar mesma subconta Asaas dos motoboys ou subconta separada só de revendedores (melhor pra conciliação)?
+3. **Ordem confirmada?** Começo pela **v1.23.4 (regra de saque + trigger de lock)** já na próxima mensagem, ou você prefere pular direto pra bounty cron (v1.24.0)?
+
+## Detalhes técnicos (referência)
+
+- Todos os crons via `pg_cron` + `net.http_post` chamando edge functions com service-role interno (nunca expor anon).
+- Edge functions novas: `reseller-check-activations`, `reseller-monthly-recurring`, `reseller-gmv-bonus`, `reseller-fraud-check`, `reseller-payout-processor`.
+- Cada cron loga em nova tabela `reseller_cron_runs (id, function, run_at, processed, credited_cents, errors_json)` pra debug e auditoria.
+- Todas as novas RPCs seguem o padrão já estabelecido: `SECURITY DEFINER`, `search_path=public`, `REVOKE ALL FROM PUBLIC, anon`, `GRANT EXECUTE TO authenticated` (ou só `service_role` para as internas de cron).
+- E2E de cada cron: hook `_dry_run=true` para simular sem creditar de fato — usado pela suíte `oneshot-e2e-reseller` já existente.
