@@ -52,7 +52,7 @@ BEGIN
     JOIN public.store_plans sp ON sp.store_id = rr.store_id
     WHERE rr.status = 'active'
       AND sp.is_active = true
-      AND s.status NOT IN ('cancelada','suspensa','arquivada')
+      AND s.status::text NOT IN ('cancelled','suspended','archived','cancelada','suspensa','arquivada','inactive','inativa')
       AND sp.last_billed_at >= v_start
       AND sp.last_billed_at <  v_end
       AND COALESCE(sp.monthly_fee,0) > 0
