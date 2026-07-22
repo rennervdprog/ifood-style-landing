@@ -62,6 +62,7 @@ const HistoricoRepassesTab = lazy(() => import("./super-admin/tabs/HistoricoRepa
 const DebugLojaTab = lazy(() => import("./super-admin/tabs/DebugLojaTab"));
 const PlatformWhatsAppTab = lazy(() => import("./super-admin/tabs/PlatformWhatsAppTab"));
 const AddonsMrrTab = lazy(() => import("./super-admin/tabs/AddonsMrrTab"));
+const RevendedoresTab = lazy(() => import("./super-admin/tabs/RevendedoresTab"));
 // Painéis financeiros profissionais (Fase 1)
 const FluxoCaixaPanel = lazy(() => import("@/components/finance/FluxoCaixaPanel"));
 const ConciliacaoAsaasPanel = lazy(() => import("@/components/finance/ConciliacaoAsaasPanel"));
@@ -193,6 +194,7 @@ const TAB_SUBTITLE: Record<string, (ctx: {
     | "planos-lojas"
     | "planos-templates"
     | "addons"
+    | "revendedores"
     | "auditoria";
   const [financeSection, setFinanceSection] = useState<FinanceSection>("overview");
   type StoresSection = "lojas" | "cidades" | "entrega";
