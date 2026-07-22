@@ -143,6 +143,20 @@ export default function ResellerDashboard() {
     navigate("/");
   };
 
+  const savePix = async () => {
+    if (!pPix.trim()) return toast.error("Informe a chave PIX");
+    setPLoading(true);
+    const { error } = await (supabase as any).rpc("reseller_update_pix", {
+      _pix_key: pPix.trim(),
+      _pix_key_type: pType,
+    });
+    setPLoading(false);
+    if (error) return toast.error(error.message || "Erro ao salvar");
+    toast.success("Chave PIX atualizada");
+    setPOpen(false);
+    load();
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
