@@ -2,11 +2,12 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Copy, LogOut, TrendingUp, Users, Wallet, Loader2 } from "lucide-react";
+import { Copy, LogOut, TrendingUp, Users, Wallet, Loader2, Download, MessageCircle, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger,
 } from "@/components/ui/dialog";
@@ -60,6 +61,12 @@ export default function ResellerDashboard() {
   const [rPix, setRPix] = useState("");
   const [rType, setRType] = useState<"cpf" | "cnpj" | "email" | "telefone" | "aleatoria">("cpf");
   const [rLoading, setRLoading] = useState(false);
+
+  // Edição de PIX (aba Perfil)
+  const [pOpen, setPOpen] = useState(false);
+  const [pPix, setPPix] = useState("");
+  const [pType, setPType] = useState<"cpf" | "cnpj" | "email" | "telefone" | "aleatoria">("cpf");
+  const [pLoading, setPLoading] = useState(false);
 
   const load = async () => {
     setLoading(true);
