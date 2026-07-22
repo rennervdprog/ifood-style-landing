@@ -1207,6 +1207,7 @@ const TAB_SUBTITLE: Record<string, (ctx: {
                      { key: "planos-lojas", label: "Planos (Lojas)", icon: Store },
                      { key: "planos-templates", label: "Planos (Templates)", icon: FileText },
                       { key: "addons", label: "Add-ons / MRR", icon: Puzzle },
+                      { key: "revendedores", label: "Revendedores", icon: Handshake },
                      { key: "historico", label: "Histórico Pago", icon: CheckCircle2 },
                      { key: "fluxo", label: "Fluxo de Caixa", icon: TrendingUp },
                      { key: "saques", label: "Saques", icon: Wallet, badge: pendingWithdrawals.length },
@@ -1270,6 +1271,9 @@ const TAB_SUBTITLE: Record<string, (ctx: {
                   {financeSection === "planos-templates" && <AdminPlanTemplatesEditor />}
                    {financeSection === "addons" && (
                      <Suspense fallback={<TabFallback />}><AddonsMrrTab /></Suspense>
+                   )}
+                   {financeSection === "revendedores" && (
+                     <Suspense fallback={<TabFallback />}><RevendedoresTab /></Suspense>
                    )}
                </div>
              )}
