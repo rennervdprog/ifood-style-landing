@@ -287,7 +287,7 @@ BEGIN
         'status', s.status,
         'referral_status', rr.status,
         'activated_at', rr.activated_at,
-        'gmv_60d_cents', COALESCE((SELECT sum(o.total_cents) FROM public.orders o WHERE o.store_id = s.id AND o.status='entregue' AND o.created_at >= now() - interval '60 days'),0),
+        'gmv_60d_cents', COALESCE((SELECT (sum(o.total_price)*100)::int FROM public.orders o WHERE o.store_id = s.id AND o.status='entregue' AND o.created_at >= now() - interval '60 days'),0),
         'commissions_total_cents', COALESCE((SELECT sum(amount_cents) FROM public.reseller_commissions WHERE reseller_id = v_reseller.id AND store_id = s.id),0)
       ) ORDER BY rr.created_at DESC)
       FROM public.reseller_referrals rr
