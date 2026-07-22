@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import {
-  Loader2, Search, Users, Handshake, Wallet, CheckCircle2, XCircle, Ban, Store, DollarSign, Percent, Copy, Zap, ShieldAlert,
+  Loader2, Search, Users, Handshake, Wallet, CheckCircle2, XCircle, Ban, Store, DollarSign, Percent, Copy, Zap, ShieldAlert, FileDown,
 } from "lucide-react";
 import { formatBRL } from "@/lib/utils";
 
@@ -158,6 +158,63 @@ export default function RevendedoresTab() {
   const s = summaryQ.data ?? {};
   const pendingWithdrawalsCount = (withdrawalsQ.data ?? []).filter(w => w.status === "pending").length;
 
+  const exportPendingCSV = async () => {
+    try {
+      const [{ data: comms, error: cErr }, { data: resList, error: rErr }] = await Promise.all([
+        supabase.rpc("admin_reseller_commissions" as any, { _reseller_id: null, _status: "pending" }),
+        supabase.rpc("admin_reseller_list" as any),
+      ]);
+      if (cErr) throw cErr;
+      if (rErr) throw rErr;
+      const resMap = new Map<string, Reseller>();
+      for (const r of ((resList as Reseller[]) ?? [])) resMap.set(r.code, r);
+      type Agg = { code: string; email: string; pix_type: string; pix: string; bounty: number; recurring: number; other: number; count: number; total: number };
+      const agg = new Map<string, Agg>();
+      for (const c of ((comms as any[]) ?? [])) {
+        const code = c.reseller_code ?? "?";
+        const r = resMap.get(code);
+        const cur: Agg = agg.get(code) ?? {
+          code, email: r?.email ?? "", pix_type: r?.pix_key_type ?? "", pix: r?.pix_key ?? "",
+          bounty: 0, recurring: 0, other: 0, count: 0, total: 0,
+        };
+        const amt = Number(c.amount_cents) || 0;
+        if (c.type === "bounty") cur.bounty += amt;
+        else if (c.type === "recurring") cur.recurring += amt;
+        else cur.other += amt;
+        cur.total += amt;
+        cur.count += 1;
+        agg.set(code, cur);
+      }
+      if (agg.size === 0) {
+        toast.info("Nenhuma comissão pendente para exportar.");
+        return;
+      }
+      const esc = (v: unknown) => {
+        const str = v == null ? "" : String(v);
+        return /[",;\n\r]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
+      };
+      const header = ["codigo","email","pix_tipo","pix_chave","qtd_comissoes","bounty_brl","recorrente_brl","outros_brl","total_brl"];
+      const lines = [header.join(";")];
+      let totalBrl = 0;
+      for (const v of agg.values()) {
+        totalBrl += v.total;
+        lines.push([v.code, v.email, v.pix_type, v.pix, v.count, (v.bounty/100).toFixed(2), (v.recurring/100).toFixed(2), (v.other/100).toFixed(2), (v.total/100).toFixed(2)].map(esc).join(";"));
+      }
+      const csv = "\uFEFF" + lines.join("\n");
+      const today = new Date().toISOString().slice(0, 10);
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `revendedores_pendentes_${today}.csv`;
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+      toast.success(`CSV gerado: ${agg.size} revendedores · ${cents(totalBrl)} a pagar`);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Falha ao gerar CSV");
+    }
+  };
+
   return (
     <div className="space-y-4">
       {/* KPIs */}
@@ -195,6 +252,21 @@ export default function RevendedoresTab() {
           }}><ShieldAlert className="h-3 w-3 mr-1" /> Rodar Anti-fraude</Button>
           <p className="text-xs text-muted-foreground w-full pt-1">
             Crons agendados: bounty 03:00 UTC diário · recorrente dia 5 04:00 UTC · anti-fraude domingo 05:00 UTC
+          </p>
+        </CardContent>
+      </Card>
+
+      {/* Relatório mensal */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm">Relatório de pagamentos</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-wrap items-center gap-2">
+          <Button size="sm" variant="outline" onClick={exportPendingCSV}>
+            <FileDown className="h-3 w-3 mr-1" /> Exportar CSV pendentes
+          </Button>
+          <p className="text-xs text-muted-foreground">
+            Agrupa todas as comissões pendentes por revendedor com chave PIX. Use para pagar em lote e depois marque cada saque como pago.
           </p>
         </CardContent>
       </Card>
