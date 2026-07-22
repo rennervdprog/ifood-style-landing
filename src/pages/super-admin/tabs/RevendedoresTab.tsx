@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import {
-  Loader2, Search, Users, Handshake, Wallet, CheckCircle2, XCircle, Ban, Store, DollarSign, Percent,
+  Loader2, Search, Users, Handshake, Wallet, CheckCircle2, XCircle, Ban, Store, DollarSign, Percent, Copy,
 } from "lucide-react";
 import { formatBRL } from "@/lib/utils";
 
@@ -45,6 +45,15 @@ const statusBadge = (s: string) => {
   };
   const m = map[s] ?? { label: s, cls: "bg-muted text-foreground" };
   return <Badge variant="outline" className={m.cls}>{m.label}</Badge>;
+};
+
+const copyToClipboard = async (text: string, label: string) => {
+  try {
+    await navigator.clipboard.writeText(text);
+    toast.success(`${label} copiado`);
+  } catch {
+    toast.error("Falha ao copiar");
+  }
 };
 
 export default function RevendedoresTab() {
