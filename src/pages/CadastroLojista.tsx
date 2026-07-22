@@ -468,6 +468,18 @@ const CadastroLojista = () => {
               // Non-critical: don't block signup
             }
           }
+
+          // Vincular loja a revendedor via ?ref=CODE (idempotente na RPC)
+          if (referralCode && storeRow.id) {
+            try {
+              await (supabase as any).rpc("reseller_attach_signup", {
+                _store_id: storeRow.id,
+                _code: referralCode,
+              });
+            } catch {
+              // Não bloqueia o cadastro
+            }
+          }
         }
       }
 
