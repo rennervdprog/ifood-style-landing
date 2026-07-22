@@ -1,69 +1,68 @@
-# Ebook ItaSuper para Lojistas — Plano de Geração de PDF
+# Sistema de Revenda — Fechamento final (v1.25.4 → v1.26.0)
 
-## Recomendação de formato
+Status: v1.25.3 no ar. Fases 1–5 completas + Fase 6 parcial (landing, ebook, scripts, botões manuais de cron).
 
-- **Papel:** A4 (210×297mm) — padrão brasileiro, imprime bem e abre em qualquer WhatsApp/celular. US Letter só se o público fosse EUA.
-- **Orientação:** retrato, margens 18mm.
-- **Tipografia:** Inter/DejaVu Sans (suporta acentos PT-BR nativamente no ReportLab).
-- **Paleta:** cores da marca ItaSuper já usadas no app (primary do `index.css`) + preto/cinza + destaques amarelo/verde para CTAs.
-- **Extensão alvo:** 14–18 páginas (leitura de 8–10 min, ideal pra WhatsApp).
-- **Peso alvo:** < 3 MB (compressão de imagens em 150 dpi).
-- **Entrega:** `/mnt/documents/ItaSuper-Ebook-Lojistas-v1.pdf` + versão landscape opcional pra apresentação em tela.
+---
 
-## Estrutura (só dados REAIS que já existem no sistema)
+## O que falta (agrupado por patch)
 
-Todo conteúdo abaixo sai de arquivos já auditados no repo — nada inventado.
+### v1.25.4 — Refinos Super Admin + Anti-fraude avançado
+- **Cohort 3/6/12 meses** por revendedor (quantas lojas indicadas seguem ativas).
+- **CAC efetivo**: `SUM(commissions.paid) / SUM(MRR gerado)` com alerta se CAC > 6× LTV.
+- **Ranking por MRR trazido** (não só nº de lojas) com sparkline 6 meses.
+- **Anti-fraude v2**: cruzar `stores.owner` CPF/CNPJ/user_id/device_id contra o próprio `resellers.user_id` via `signup_attempts`. Bloqueia referral + alerta.
+- Nova RPC `admin_reseller_stats_v2()` (SECURITY DEFINER, admin-only) devolvendo cohort, CAC, ranking.
 
-```text
-Capa                       — Logo + "Pare de pagar comissão. Comece a lucrar."
-Sumário
-1. O problema do marketplace  (docs/anuncio-andromeda-lojistas.md, LandingPage.tsx)
-2. O que é o ItaSuper          (public/llms-full.txt — descrição oficial)
-3. Como funciona em 4 passos   (fluxo cliente do llms-full.txt)
-4. Planos e preços REAIS       (src/lib/plansInfo.ts — Essencial, Autonomia, PDV)
-   • Essencial: R$ 0 → R$ 180 após R$ 5.000 GMV, 0% comissão
-   • Autonomia: R$ 0 → R$ 239,90 após R$ 2.500 GMV, 0% taxa plataforma
-   • PDV Only: R$ 69/mês
-   • Add-on PDV: R$ 49/mês
-5. Comparativo vs iFood/Rappi   (números reais do plansInfo.ts + FAQ do llms-full)
-6. Taxa de entrega explicada    (DELIVERY_FEE_NOTE — os R$0,99 em cima, meio-a-meio, lojista)
-7. Ferramentas incluídas        (llms-full: PDV, KDS, Motoboy, Multi-loja, PIX, IA WhatsApp)
-8. Segurança e LGPD             (PoliticaPrivacidade.tsx, TermosDeUso.tsx)
-9. Prova social / cases         (deixar placeholder — só se você tiver depoimento real)
-10. FAQ                         (llms-full.txt já tem 9 perguntas)
-11. Como cadastrar em 3 min     (link https://itasuper.com.br/cadastro-lojista + QR code)
-Contracapa                     — CTA + WhatsApp + QR
-```
+### v1.25.5 — Relatório mensal exportável
+- Botão "Exportar CSV do mês" na `RevendedoresTab` do Super Admin.
+- CSV: revendedor, PIX, valor total pendente, quebra bounty/recorrente, período.
+- Marca tudo como `processing` ao exportar; botão "confirmar pagamento em lote" vira `paid`.
 
-## Copy persuasivo (princípios aplicados)
+### v1.25.6 — Materiais visuais no dashboard
+- Aba **Materiais** em `/revendedor`: 3 artes Andrômeda (stories/feed 1080×1920 e 1080×1080) via `imagegen--generate_image`.
+- Placeholder de vídeo-tutorial (embed YouTube quando gravado).
 
-- **Contraste de preço concreto:** "R$ 0 até faturar R$ 5.000" vs "27% do iFood".
-- **Reciprocidade:** 2 meses grátis + tutorial.
-- **Escassez real:** 10 vagas Apoiador (dado real de `plansInfo.ts`) — só se ainda estiver aberto.
-- **Autoridade:** número de lojas ativas, cidades atendidas (buscar do banco antes de gerar).
-- **Prova numérica:** exemplo "Pedido de R$ 50 → você fica com R$ 48,01" (função `netPerOrder`).
-- **CTA único e claro:** QR code pro cadastro em toda página par.
+### v1.26.0 — E2E Playwright ponta-a-ponta (bloco 2)
+Novo script `scripts/e2e/reseller/full_ui_flow.py`:
+1. Revendedor se cadastra em `/seja-revendedor` (form).
+2. Admin aprova no Super Admin → aba Revendedores.
+3. Lojista abre `/cadastro?ref=CODIGO` → cria loja `pdv_only` fake.
+4. Injeta 20 pedidos entregues via `oneshot-e2e-reseller` (modo `seed_orders`).
+5. Dispara `admin_reseller_run_bounty_cron(false)` → valida bounty criado.
+6. Revendedor abre `/revendedor` → vê saldo → solicita saque R$ 150.
+7. Admin marca como pago → comissões viram `paid`.
+8. Assert visual em cada etapa (screenshots em `/tmp/browser/reseller/`).
 
-## Implementação técnica
+Além disso, rodar novamente os E2E existentes que ainda não passaram no bloco 2:
+- `scripts/e2e/reseller/` — suíte completa de RPCs (35/35 verde já).
+- Playwright do fluxo público `/seja-revendedor` (SEO + formulário + JSON-LD).
+- Playwright do landing `/cadastro?ref=` gravando `sessionStorage` corretamente.
 
-1. Script Python `/tmp/gen_ebook.py` usando **ReportLab Platypus** (skill/pdf já carregada).
-2. Registrar **DejaVu Sans** via `fc-match` (skill exige — senão acento vira caixinha).
-3. Ler `src/lib/plansInfo.ts` e `public/llms-full.txt` do próprio repo pra não divergir dos preços atuais.
-4. Gerar QR codes com `qrcode[pil]` apontando pra `itasuper.com.br/cadastro-lojista` e WhatsApp.
-5. Usar cores hex do `src/index.css` (primary/foreground).
-6. **QA obrigatório:** rodar `pdftoppm -jpeg -r 150` e revisar cada página com `code--view` — checar acentos, quebras, overflow, contraste. Corrigir e re-gerar até passar.
-7. Salvar em `/mnt/documents/ItaSuper-Ebook-Lojistas-v1.pdf` e emitir `<presentation-artifact>`.
+---
 
-## O que NÃO vou incluir (pra não inventar)
+## Ordem de execução
 
-- Depoimentos de lojistas (não temos no repo — vou deixar página em branco marcada "inserir 2 depoimentos aqui").
-- Número de lojas/pedidos totais (só incluo se você autorizar consulta ao banco real agora).
-- Datas de fundação, prêmios, mídia.
+1. v1.25.4 (patch de código + migration para `admin_reseller_stats_v2` e anti-fraude v2).
+2. v1.25.5 (patch UI + edge function `oneshot-reseller-csv-export`).
+3. v1.25.6 (patch UI + gerar 3 artes).
+4. v1.26.0 (script Playwright + rodar todos e reportar).
 
-## Próximos passos
+Cada patch bumpa `src/lib/appVersion.ts` + `android/app/build.gradle` (versionName + versionCode +1).
 
-Se aprovar, eu:
-1. Gero o PDF v1 completo com os dados do repo.
-2. Faço QA visual página por página.
-3. Entrego pra download.
-Se quiser, também consulto o banco pra puxar nº real de lojas ativas e cidades atendidas antes de gerar — só confirmar.
+---
+
+## Detalhes técnicos
+
+- Todas as novas RPCs: `SECURITY DEFINER`, `search_path=public`, `REVOKE ALL FROM PUBLIC, anon`, `GRANT EXECUTE TO authenticated` (checa `has_role(auth.uid(),'admin')`).
+- Cron de anti-fraude v2: estende `reseller_process_fraud_checks` existente com JOIN em `signup_attempts` por `cpf_cnpj_hash`, `device_id`, `user_id`.
+- Export CSV: edge function que roda com service-role, aceita `?month=YYYY-MM`, devolve `text/csv`.
+- Playwright: viewport 1280×1800, sessão Supabase injetada via `LOVABLE_BROWSER_SUPABASE_*`, screenshots por etapa.
+- Registro dos runs em `reseller_cron_runs` (já existe) para auditoria.
+
+---
+
+## Aprovações que preciso
+
+1. Confirmo **desligado** o GMV bonus 0,3% (5.3) — só implemento se pedir depois.
+2. Export CSV em vez de PIX Asaas automático — ok? (você já disse que prefere manual).
+3. Sigo do v1.25.4 até v1.26.0 sem parar entre patches, reportando no final?
