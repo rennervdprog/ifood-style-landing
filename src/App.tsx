@@ -64,6 +64,7 @@ const TermosDeUso = lazy(() => import("./pages/TermosDeUso"));
 const PoliticaPrivacidade = lazy(() => import("./pages/PoliticaPrivacidade"));
 const PlanosPage = lazy(() => import("./pages/PlanosPage"));
 const ModeradorDashboard = lazy(() => import("./pages/ModeradorDashboard"));
+const ResellerDashboard = lazy(() => import("./pages/ResellerDashboard"));
 const SupportAgentDashboard = lazy(() => import("./pages/SupportAgentDashboard"));
 const LinksPage = lazy(() => import("./pages/LinksPage"));
  const DownloadApp = lazy(() => import("./pages/DownloadApp"));
@@ -414,6 +415,7 @@ const App = () => {
                 <Route path="/super-admin2" element={<Navigate to="/super-admin" replace />} />
                 <Route path="/super-admin/sandbox-tests" element={<RoleGuard allowedRoles={["admin"]} redirectTo="/"><SandboxTestsPage /></RoleGuard>} />
                 <Route path="/parceiro" element={<PartnerOnboarding />} />
+                <Route path="/revendedor" element={<ResellerDashboard />} />
                 {/* Cadastro de motoboy de plataforma descontinuado — redireciona para motoboy de loja */}
                 <Route path="/cadastro-entregador" element={<Navigate to="/cadastro-motoboy-loja" replace />} />
                 <Route path="/cadastro-lojista" element={<CadastroLojista />} />
