@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import {
-  Loader2, Search, Users, Handshake, Wallet, CheckCircle2, XCircle, Ban, Store, DollarSign, Percent, Copy,
+  Loader2, Search, Users, Handshake, Wallet, CheckCircle2, XCircle, Ban, Store, DollarSign, Percent, Copy, Zap, ShieldAlert,
 } from "lucide-react";
 import { formatBRL } from "@/lib/utils";
 
@@ -167,6 +167,37 @@ export default function RevendedoresTab() {
         <KpiCard icon={Wallet}   label="A pagar"         value={cents(s.pending_commissions_cents ?? 0)} sub={`${s.pending_withdrawals ?? 0} saques pendentes`} highlight={pendingWithdrawalsCount > 0} />
         <KpiCard icon={DollarSign} label="Total pago"    value={cents(s.paid_commissions_cents ?? 0)} sub="Vitalício" />
       </div>
+
+      {/* Automação */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm">Automação (crons)</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-wrap gap-2">
+          <Button size="sm" variant="outline" onClick={async () => {
+            const { data, error } = await supabase.rpc("admin_reseller_run_bounty_cron" as any, { _dry_run: false });
+            if (error) return toast.error(error.message);
+            toast.success(`Bounty: ${(data as any)?.processed ?? 0} processados`);
+            qc.invalidateQueries();
+          }}><Zap className="h-3 w-3 mr-1" /> Rodar Bounty</Button>
+          <Button size="sm" variant="outline" onClick={async () => {
+            const { data, error } = await supabase.rpc("admin_reseller_run_recurring_cron" as any, { _ref_month: null, _dry_run: false });
+            if (error) return toast.error(error.message);
+            toast.success(`Recorrente ${(data as any)?.ref_month}: ${(data as any)?.processed ?? 0} processados`);
+            qc.invalidateQueries();
+          }}><Wallet className="h-3 w-3 mr-1" /> Rodar Recorrente (mês anterior)</Button>
+          <Button size="sm" variant="outline" onClick={async () => {
+            const { data, error } = await supabase.rpc("admin_reseller_run_fraud_cron" as any, { _dry_run: false });
+            if (error) return toast.error(error.message);
+            const alerts = (data as any)?.alerts?.length ?? 0;
+            toast.success(`Anti-fraude: ${alerts} alertas · ${(data as any)?.blocked_resellers ?? 0} bloqueados`);
+            qc.invalidateQueries();
+          }}><ShieldAlert className="h-3 w-3 mr-1" /> Rodar Anti-fraude</Button>
+          <p className="text-xs text-muted-foreground w-full pt-1">
+            Crons agendados: bounty 03:00 UTC diário · recorrente dia 5 04:00 UTC · anti-fraude domingo 05:00 UTC
+          </p>
+        </CardContent>
+      </Card>
 
       {/* Sub-tabs */}
       <div className="inline-flex gap-1 p-1 bg-muted rounded-xl">
