@@ -12,7 +12,7 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: cors });
   const out: Record<string, unknown> = {};
   out.before = await q(`SELECT id, name, status FROM public.stores WHERE name ILIKE '%cantinho%silv%' OR name ILIKE '%silvia%';`);
-  out.update = await q(`UPDATE public.stores SET status='inativo' WHERE name ILIKE '%cantinho%silv%' OR name ILIKE '%silvia%' RETURNING id, name, status;`);
+  out.update = await q(`UPDATE public.stores SET status='bloqueado', is_open=false WHERE name ILIKE '%cantinho%silv%' OR name ILIKE '%silvia%' RETURNING id, name, status, is_open;`);
   out.after = await q(`SELECT id, name, status FROM public.stores WHERE name ILIKE '%cantinho%silv%' OR name ILIKE '%silvia%';`);
   return new Response(JSON.stringify(out, null, 2), { headers: { ...cors, "Content-Type": "application/json" } });
 });
