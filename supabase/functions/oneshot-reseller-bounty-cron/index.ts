@@ -7,7 +7,7 @@
 // Regras:
 //   - Referral status='pending' vira 'active' quando:
 //       a) store possui >= 20 pedidos com status='entregue' nos últimos 30 dias
-//       b) stores.whatsapp_verified_at IS NOT NULL
+//       b) profiles.whatsapp_verified_at IS NOT NULL do dono da loja (stores.owner_id)
 //   - Ao ativar, cria commission type='bounty' com valor = resellers.bounty_amount_cents
 //     (default 15000 = R$ 150). Unique index já impede duplicata.
 //   - _dry_run=true retorna candidatos sem alterar dados.
@@ -67,7 +67,7 @@ BEGIN
       rr.store_id,
       r.bounty_amount_cents,
       s.name          AS store_name,
-      s.whatsapp_verified_at,
+      p.whatsapp_verified_at,
       (SELECT count(*) FROM public.orders o
          WHERE o.store_id = rr.store_id
            AND o.status = 'entregue'
@@ -75,6 +75,7 @@ BEGIN
     FROM public.reseller_referrals rr
     JOIN public.resellers r ON r.id = rr.reseller_id AND r.status = 'approved'
     JOIN public.stores s    ON s.id = rr.store_id
+    LEFT JOIN public.profiles p ON p.user_id = s.owner_id
     WHERE rr.status = 'pending'
   LOOP
     IF v_row.delivered_30d < 20 OR v_row.whatsapp_verified_at IS NULL THEN
