@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import {
-  Loader2, Search, Users, Handshake, Wallet, CheckCircle2, XCircle, Ban, Store, DollarSign, Percent,
+  Loader2, Search, Users, Handshake, Wallet, CheckCircle2, XCircle, Ban, Store, DollarSign, Percent, Copy,
 } from "lucide-react";
 import { formatBRL } from "@/lib/utils";
 
@@ -45,6 +45,15 @@ const statusBadge = (s: string) => {
   };
   const m = map[s] ?? { label: s, cls: "bg-muted text-foreground" };
   return <Badge variant="outline" className={m.cls}>{m.label}</Badge>;
+};
+
+const copyToClipboard = async (text: string, label: string) => {
+  try {
+    await navigator.clipboard.writeText(text);
+    toast.success(`${label} copiado`);
+  } catch {
+    toast.error("Falha ao copiar");
+  }
 };
 
 export default function RevendedoresTab() {
@@ -288,6 +297,12 @@ export default function RevendedoresTab() {
                         <td className="pr-3">
                           {w.status === "pending" && (
                             <div className="flex gap-1 flex-wrap">
+                              <Button size="sm" variant="outline" className="h-7 px-2" onClick={() => copyToClipboard(w.pix_key, "Chave PIX")}>
+                                <Copy className="h-3 w-3 mr-1" /> PIX
+                              </Button>
+                              <Button size="sm" variant="outline" className="h-7 px-2" onClick={() => copyToClipboard((w.amount_cents / 100).toFixed(2), "Valor")}>
+                                <Copy className="h-3 w-3 mr-1" /> Valor
+                              </Button>
                               <Button size="sm" className="h-7 px-2 bg-emerald-600 hover:bg-emerald-700" onClick={() => { setPayDialog(w); setAsaasId(""); }}>
                                 <CheckCircle2 className="h-3 w-3 mr-1" /> Marcar pago
                               </Button>
