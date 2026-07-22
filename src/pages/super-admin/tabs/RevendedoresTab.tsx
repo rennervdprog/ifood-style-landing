@@ -297,6 +297,12 @@ export default function RevendedoresTab() {
                         <td className="pr-3">
                           {w.status === "pending" && (
                             <div className="flex gap-1 flex-wrap">
+                              <Button size="sm" variant="outline" className="h-7 px-2" onClick={() => copyToClipboard(w.pix_key, "Chave PIX")}>
+                                <Copy className="h-3 w-3 mr-1" /> PIX
+                              </Button>
+                              <Button size="sm" variant="outline" className="h-7 px-2" onClick={() => copyToClipboard((w.amount_cents / 100).toFixed(2), "Valor")}>
+                                <Copy className="h-3 w-3 mr-1" /> Valor
+                              </Button>
                               <Button size="sm" className="h-7 px-2 bg-emerald-600 hover:bg-emerald-700" onClick={() => { setPayDialog(w); setAsaasId(""); }}>
                                 <CheckCircle2 className="h-3 w-3 mr-1" /> Marcar pago
                               </Button>
