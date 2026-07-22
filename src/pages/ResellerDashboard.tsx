@@ -2,11 +2,12 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Copy, LogOut, TrendingUp, Users, Wallet, Loader2 } from "lucide-react";
+import { Copy, LogOut, TrendingUp, Users, Wallet, Loader2, Download, MessageCircle, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger,
 } from "@/components/ui/dialog";
@@ -60,6 +61,12 @@ export default function ResellerDashboard() {
   const [rPix, setRPix] = useState("");
   const [rType, setRType] = useState<"cpf" | "cnpj" | "email" | "telefone" | "aleatoria">("cpf");
   const [rLoading, setRLoading] = useState(false);
+
+  // Edição de PIX (aba Perfil)
+  const [pOpen, setPOpen] = useState(false);
+  const [pPix, setPPix] = useState("");
+  const [pType, setPType] = useState<"cpf" | "cnpj" | "email" | "telefone" | "aleatoria">("cpf");
+  const [pLoading, setPLoading] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -134,6 +141,20 @@ export default function ResellerDashboard() {
   const signOut = async () => {
     await supabase.auth.signOut();
     navigate("/");
+  };
+
+  const savePix = async () => {
+    if (!pPix.trim()) return toast.error("Informe a chave PIX");
+    setPLoading(true);
+    const { error } = await (supabase as any).rpc("reseller_update_pix", {
+      _pix_key: pPix.trim(),
+      _pix_key_type: pType,
+    });
+    setPLoading(false);
+    if (error) return toast.error(error.message || "Erro ao salvar");
+    toast.success("Chave PIX atualizada");
+    setPOpen(false);
+    load();
   };
 
   if (loading) {
@@ -428,6 +449,117 @@ export default function ResellerDashboard() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Materiais */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <Download className="h-4 w-4" /> Materiais de venda
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <a
+              href="/materiais/ItaSuper-Ebook-Lojistas-v2.pdf"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 p-3 rounded border hover:bg-accent transition"
+            >
+              <Download className="h-4 w-4 text-primary" />
+              <div className="flex-1">
+                <div className="text-sm font-medium">Ebook do Lojista (PDF)</div>
+                <div className="text-xs text-muted-foreground">16 páginas — envie no WhatsApp antes de fechar</div>
+              </div>
+            </a>
+
+            <Accordion type="single" collapsible className="w-full">
+              <AccordionItem value="script-frio">
+                <AccordionTrigger className="text-sm">
+                  <MessageCircle className="h-4 w-4 mr-2 inline" /> Script de abordagem fria
+                </AccordionTrigger>
+                <AccordionContent className="text-sm space-y-2">
+                  <p>Oi [Nome], tudo bem? Vi que você tem [nome da loja] aqui em [cidade].</p>
+                  <p>Trabalho com o ItaSuper — um sistema de delivery próprio (site + app) que só cobra taxa quando a loja fatura acima de R$ 2.500/mês. Abaixo disso é 100% gratuito.</p>
+                  <p>Faz sentido eu te mandar um resumo de 2 min pra ver se encaixa no seu momento?</p>
+                  <Button size="sm" variant="outline" onClick={() => { navigator.clipboard.writeText("Oi [Nome], tudo bem? Vi que você tem [nome da loja] aqui em [cidade]. Trabalho com o ItaSuper — um sistema de delivery próprio (site + app) que só cobra taxa quando a loja fatura acima de R$ 2.500/mês. Abaixo disso é 100% gratuito. Faz sentido eu te mandar um resumo de 2 min pra ver se encaixa no seu momento?"); toast.success("Copiado"); }}>
+                    <Copy className="h-3 w-3 mr-1" /> Copiar
+                  </Button>
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="script-followup">
+                <AccordionTrigger className="text-sm">
+                  <MessageCircle className="h-4 w-4 mr-2 inline" /> Follow-up (D+2)
+                </AccordionTrigger>
+                <AccordionContent className="text-sm space-y-2">
+                  <p>Oi [Nome], só relembrando o material do ItaSuper. Consegui ver o ebook?</p>
+                  <p>Se preferir, marco 10 min por vídeo pra te mostrar o painel funcionando com uma loja real.</p>
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="objecao">
+                <AccordionTrigger className="text-sm">
+                  <MessageCircle className="h-4 w-4 mr-2 inline" /> Objeção "vou pensar"
+                </AccordionTrigger>
+                <AccordionContent className="text-sm space-y-2">
+                  <p>Entendo — a maior objeção que a gente ouve é "e se não vender?". Por isso o plano é grátis até faturar R$ 2.500/mês. Você só paga se já estiver ganhando com ele.</p>
+                  <p>Posso te deixar cadastrado hoje e você ativa quando quiser?</p>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+
+            <p className="text-xs text-muted-foreground">
+              Precisa de artes ou vídeos? Fale com o suporte — enviamos pack pronto pra stories/feed.
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Perfil */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <User className="h-4 w-4" /> Perfil
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm">
+            <div>
+              <div className="text-xs text-muted-foreground">Chave PIX atual</div>
+              <div className="font-mono">{r.pix_key || "—"} {r.pix_key_type && <span className="text-xs text-muted-foreground">({r.pix_key_type})</span>}</div>
+            </div>
+            <Dialog open={pOpen} onOpenChange={(o) => { setPOpen(o); if (o) { setPPix(r.pix_key || ""); setPType((r.pix_key_type as any) || "cpf"); } }}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm">Alterar chave PIX</Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader><DialogTitle>Alterar chave PIX</DialogTitle></DialogHeader>
+                <div className="space-y-3">
+                  <div>
+                    <Label>Tipo</Label>
+                    <select value={pType} onChange={e => setPType(e.target.value as any)}
+                      className="w-full h-10 rounded-md border border-input bg-background px-3">
+                      <option value="cpf">CPF</option>
+                      <option value="cnpj">CNPJ</option>
+                      <option value="email">E-mail</option>
+                      <option value="telefone">Telefone</option>
+                      <option value="aleatoria">Aleatória</option>
+                    </select>
+                  </div>
+                  <div>
+                    <Label>Chave</Label>
+                    <Input value={pPix} onChange={e => setPPix(e.target.value)} />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setPOpen(false)}>Cancelar</Button>
+                  <Button onClick={savePix} disabled={pLoading}>
+                    {pLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Salvar
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+            <p className="text-xs text-muted-foreground">
+              Pagamentos são feitos manualmente pelo time ItaSuper via PIX na chave cadastrada.
+            </p>
+          </CardContent>
+        </Card>
       </main>
     </div>
   );
