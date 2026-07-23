@@ -85,7 +85,7 @@ async function run() {
   `);
   const store = await sql(`
     INSERT INTO public.stores (name, category, slug, owner_id, plan_type, status, is_visible)
-    VALUES ('E2E RFF Store','lanche','${slug}','${ownerId}','pdv_only','ativo', false)
+    VALUES ('E2E RFF Store','lanches','${slug}','${ownerId}','pdv_only','ativo', false)
     RETURNING id;
   `);
   const storeId = store[0].id;
