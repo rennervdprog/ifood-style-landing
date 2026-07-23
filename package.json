@@ -12,6 +12,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:pdv": "vitest run src/pages/pdv",
+    "test:e2e": "playwright test",
+    "test:e2e:report": "playwright show-report",
     "deploy:external": "node scripts/deploy-external.mjs"
   },
   "dependencies": {
