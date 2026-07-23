@@ -13,7 +13,7 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 2 : undefined,
   reporter: process.env.CI ? [["list"], ["html", { open: "never" }], ["github"]] : "list",
-  globalSetup: require.resolve("./e2e/global-setup.ts"),
+  globalSetup: "./e2e/global-setup.ts",
   use: {
     baseURL,
     trace: "retain-on-failure",
