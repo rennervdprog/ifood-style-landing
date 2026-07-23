@@ -66,7 +66,7 @@ Deno.serve(async (req) => {
 
     const now = new Date().toISOString();
     if (response === "accepted") {
-      const monthlyFee = plan.plan_type === "autonomy" ? 239.9 : 180;
+      const monthlyFee = plan.plan_type === "autonomy" ? 199.90 : 89.90;
       const { error: updatePlanError } = await admin
         .from("store_plans")
         .update({

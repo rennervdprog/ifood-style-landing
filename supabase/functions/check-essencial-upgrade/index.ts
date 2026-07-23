@@ -1,4 +1,4 @@
-// Cron diário: promove Essencial R$0 → R$180/mês quando GMV últimos 60 dias >= R$5.000.
+// Cron diário: promove Essencial R$0 → R$89,90/mês quando GMV últimos 60 dias >= R$5.000.
 // Roda contra Supabase EXTERNO (mesmo padrão de monthly-billing).
 import { createClient } from "npm:@supabase/supabase-js@2";
 
@@ -18,8 +18,8 @@ const WINDOW_DAYS = 60;
 
 // Config dinâmica por plano: {threshold GMV 60d → fee-alvo}
 const PLAN_CONFIG: Record<string, { threshold: number; upgradeFee: number; planLabel: string }> = {
-  fixed:    { threshold: 5000, upgradeFee: 180,    planLabel: "Essencial" },
-  autonomy: { threshold: 2500, upgradeFee: 239.90, planLabel: "Autonomia" },
+  fixed:    { threshold: 5000, upgradeFee: 89.90,  planLabel: "Essencial" },
+  autonomy: { threshold: 2500, upgradeFee: 199.90, planLabel: "Autonomia" },
 };
 
 Deno.serve(async (req) => {
