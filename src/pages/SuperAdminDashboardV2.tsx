@@ -326,11 +326,23 @@ const TAB_SUBTITLE: Record<string, (ctx: {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("admin_logs")
-        .select("*, profiles:admin_user_id(full_name)")
+        .select("*")
         .order("created_at", { ascending: false })
         .limit(100);
       if (error) throw error;
-      return data as any[];
+      const logs = (data as any[]) || [];
+      // Fetch admin names separately — admin_logs.admin_user_id FK aponta pra
+      // auth.users, então PostgREST não consegue embutir profiles.full_name.
+      const ids = Array.from(new Set(logs.map((l) => l.admin_user_id).filter(Boolean)));
+      if (ids.length) {
+        const { data: profs } = await supabase
+          .from("profiles")
+          .select("user_id, full_name")
+          .in("user_id", ids);
+        const map = new Map((profs || []).map((p: any) => [p.user_id, p.full_name]));
+        for (const l of logs) l.profiles = { full_name: map.get(l.admin_user_id) || null };
+      }
+      return logs;
     },
     enabled: isAdmin && activeTab === "logs",
   });
