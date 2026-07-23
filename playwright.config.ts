@@ -1,9 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 import path from "node:path";
-import fs from "node:fs";
 
 const AUTH_FILE = path.resolve(".auth/pdv-user.json");
-const hasAuth = fs.existsSync(AUTH_FILE);
 const baseURL = process.env.E2E_BASE_URL || "http://localhost:8080";
 
 export default defineConfig({
@@ -19,7 +17,7 @@ export default defineConfig({
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
     video: "retain-on-failure",
-    ...(hasAuth ? { storageState: AUTH_FILE } : {}),
+    storageState: AUTH_FILE,
   },
   projects: [
     { name: "chromium", use: { ...devices["Desktop Chrome"] } },
