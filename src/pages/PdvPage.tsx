@@ -1229,7 +1229,7 @@ const PdvPage = () => {
                     searchInputRef={searchInputRef}
                     hideSectionTabs
                     allProducts={products}
-                    topSlot={
+                    scrollTopSlot={
                       <>
                         {isSnackBar && (
                           <SnackBarCombosBar storeId={store?.id} addItem={addItem} />

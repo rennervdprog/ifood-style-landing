@@ -112,7 +112,7 @@ export const PdvCatalogSection = ({
                 <div className="flex-1 h-px bg-border/50" />
               </div>
             )}
-            <div className="grid grid-cols-1 gap-1">
+            <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-1.5">
               {items.map((product) => {
                 const qty = getQty(product.id);
                 return (
