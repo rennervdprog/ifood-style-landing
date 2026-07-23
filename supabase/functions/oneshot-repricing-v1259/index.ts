@@ -14,47 +14,9 @@ Deno.serve(async (req) => {
   const KEY = Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY")!;
   const sb = createClient(URL, KEY);
 
-  const results: any = {};
-
-  // Descobre nome do param do exec_sql (pode ser sql, query, _sql, _query)
-  async function execSql(sql: string) {
-    for (const key of ["sql", "query", "_sql", "_query", "p_sql"]) {
-      const { data, error } = await sb.rpc("exec_sql", { [key]: sql });
-      if (!error) return { data, error: null, key };
-      if (!/Could not find the function/i.test(error.message)) return { data: null, error, key };
-    }
-    return { data: null, error: { message: "exec_sql RPC signature not found" }, key: null };
-  }
-
-  // 1) Pega source atual das duas RPCs
-  const { data: procs, error: pErr } = await execSql(
-    `select json_agg(json_build_object('proname', proname, 'def', pg_get_functiondef(oid))) as r from pg_proc where proname in ('register_as_lojista','handle_new_user')`
-  );
-  if (pErr) return new Response(JSON.stringify({ step: "read_procs", error: (pErr as any).message }), { status: 500, headers: { ...cors, "Content-Type": "application/json" } });
-
-  // exec_sql pode retornar o resultado bruto ou envelopado. Tenta desembrulhar.
-  let rows: any[] = [];
-  const raw: any = procs;
-  if (Array.isArray(raw) && raw[0]?.r) rows = raw[0].r;
-  else if (raw?.r) rows = raw.r;
-  else if (Array.isArray(raw)) rows = raw;
-  else if (typeof raw === "string") { try { rows = JSON.parse(raw); } catch {} }
-
-  const patched: any[] = [];
-  for (const p of rows) {
-    let def: string = p.def;
-    const before = def;
-    def = def
-      .replace(/\b180(\.0+)?\b(?=[^0-9])/g, "89.90")
-      .replace(/\b239\.9(0)?\b/g, "199.90");
-    if (def !== before) {
-      const { error: eErr } = await execSql(def);
-      patched.push({ proname: p.proname, applied: !eErr, error: (eErr as any)?.message });
-    } else {
-      patched.push({ proname: p.proname, applied: false, reason: "no_literal_found" });
-    }
-  }
-  results.rpcs = patched;
+  const results: any = {
+    note: "RPCs internas (register_as_lojista, handle_new_user) mantêm defaults antigos como fallback — a frontend agora passa _upgrade_monthly_fee explícito com 89.90/199.90.",
+  };
 
   // 3) Baixa mensalidade das lojas Essencial legado que ainda pagam R$180
   const { data: legacy, error: lErr } = await sb
