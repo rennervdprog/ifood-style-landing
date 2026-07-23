@@ -101,8 +101,8 @@ async function run() {
 
   // 4) 20 pedidos entregues
   await sql(`
-    INSERT INTO public.orders (store_id, status, total_price, subtotal, delivery_fee, payment_method, created_at)
-    SELECT '${storeId}','entregue', 25.00, 25.00, 0, 'dinheiro',
+    INSERT INTO public.orders (store_id, status, total_price, subtotal, delivery_fee, payment_method, neighborhood, created_at)
+    SELECT '${storeId}','entregue', 25.00, 25.00, 0, 'dinheiro', 'Centro',
            now() - (i * interval '1 hour')
     FROM generate_series(1,20) i;
   `);
