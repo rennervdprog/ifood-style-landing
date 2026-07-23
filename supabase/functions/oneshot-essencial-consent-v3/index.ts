@@ -47,7 +47,7 @@ Deno.serve(async(req)=>{
         IF v_plan_id IS NULL THEN RETURN jsonb_build_object('error','no_active_plan'); END IF;
       END IF;
       IF _response='accepted' THEN
-        v_fee := CASE v_plan_type WHEN 'autonomy' THEN 239.90 ELSE 180 END;
+        v_fee := CASE v_plan_type WHEN 'autonomy' THEN 199.90 ELSE 89.90 END;
         UPDATE public.store_plans SET essencial_upgrade_response='accepted', essencial_upgrade_response_at=NOW(), monthly_fee=v_fee, updated_at=NOW() WHERE id=v_plan_id;
         UPDATE public.stores SET status='ativo', updated_at=NOW() WHERE id=v_store_id AND status='inativo';
         INSERT INTO public.admin_logs(action,metadata) VALUES('essencial_upgrade_accepted',jsonb_build_object('store_id',v_store_id,'plan_type',v_plan_type,'new_fee',v_fee,'user_id',v_user_id,'via_admin',(v_is_admin AND v_owner_id<>v_user_id)));

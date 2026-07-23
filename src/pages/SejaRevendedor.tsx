@@ -8,8 +8,8 @@ import { CheckCircle2, TrendingUp, Wallet, Shield, Users, Rocket } from "lucide-
 
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
-// Premissas conservadoras: 60% Essencial R$180, 40% Autonomia R$239,90.
-const AVG_MRR_PER_STORE = 180 * 0.6 + 239.9 * 0.4; // ≈ 203,96
+// Premissas conservadoras: 60% Essencial R$89,90, 40% Autonomia R$199,90.
+const AVG_MRR_PER_STORE = 89.90 * 0.6 + 199.90 * 0.4; // ≈ 133,90
 const COMMISSION = 0.20; // 20% vitalício
 const BOUNTY = 150;
 

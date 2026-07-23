@@ -324,7 +324,7 @@ const CadastroLojista = () => {
               _plan_type: selectedPlan,
               _monthly_fee: selectedPlan === "hybrid" ? 50 : selectedPlan === "supporter" ? 75 : 0,
               _revenue_threshold: selectedPlan === "fixed" ? 5000 : selectedPlan === "autonomy" ? 2500 : selectedPlan === "hybrid" ? 5000 : null,
-              _upgrade_monthly_fee: selectedPlan === "fixed" ? 180 : selectedPlan === "autonomy" ? 239.90 : selectedPlan === "hybrid" ? 100 : null,
+              _upgrade_monthly_fee: selectedPlan === "fixed" ? 89.90 : selectedPlan === "autonomy" ? 199.90 : selectedPlan === "hybrid" ? 100 : null,
               _upgrade_trigger_months: (selectedPlan === "fixed" || selectedPlan === "hybrid" || selectedPlan === "autonomy") ? 2 : null,
             });
             if (matrizErr) {
@@ -708,7 +708,7 @@ const CadastroLojista = () => {
                           {isDynamic && (
                             <div className="rounded-lg border border-amber-500/40 bg-amber-500/5 px-3 py-2">
                               <p className="text-[11px] text-foreground leading-relaxed">
-                                <strong>📈 Plano dinâmico:</strong> começa em R$ 0/mês. Quando sua loja faturar <strong>R$ {id === "autonomy" ? "2.500" : "5.000"}</strong> (60 dias), a mensalidade passa a <strong>R$ {id === "autonomy" ? "239,90" : "180"}/mês</strong> — com 30 dias de aviso e seu aceite expresso.
+                                <strong>📈 Plano dinâmico:</strong> começa em R$ 0/mês. Quando sua loja faturar <strong>R$ {id === "autonomy" ? "2.500" : "5.000"}</strong> (60 dias), a mensalidade passa a <strong>R$ {id === "autonomy" ? "199,90" : "89,90"}/mês</strong> — com 30 dias de aviso e seu aceite expresso.
                               </p>
                             </div>
                           )}
