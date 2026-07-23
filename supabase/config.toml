@@ -86,3 +86,6 @@ verify_jwt = false
 [functions.oneshot-provision-e2e-admin]
 verify_jwt = false
 
+[functions.oneshot-reseller-full-flow]
+verify_jwt = false
+
