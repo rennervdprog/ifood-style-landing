@@ -84,7 +84,7 @@ async function run() {
     ON CONFLICT (user_id) DO UPDATE SET whatsapp_verified_at = now();
   `);
   const store = await sql(`
-    INSERT INTO public.stores (name, slug, owner_id, plan, is_active, city)
+    INSERT INTO public.stores (name, slug, owner_id, plan_type, is_active, city)
     VALUES ('E2E RFF Store','${slug}','${ownerId}','pdv_only', true, 'Itatinga')
     RETURNING id;
   `);
