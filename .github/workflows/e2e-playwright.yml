@@ -1,0 +1,95 @@
+name: E2E Playwright (authenticated)
+
+# Runs the full authenticated Playwright suite (lojista + admin flows) on every
+# PR and push to main. Publishes the HTML report and failure traces as
+# artifacts so failures can be inspected without re-running locally.
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  playwright:
+    name: Playwright — lojista + admin
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      E2E_SETUP_TOKEN: ${{ secrets.E2E_SETUP_TOKEN }}
+      E2E_BASE_URL: http://localhost:8080
+      CI: "true"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install deps
+        run: bun install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: bunx playwright install --with-deps chromium
+
+      - name: Build app
+        run: bun run build:dev
+
+      - name: Start preview server
+        run: |
+          bunx vite preview --port 8080 --host 127.0.0.1 > /tmp/preview.log 2>&1 &
+          echo $! > /tmp/preview.pid
+          for i in $(seq 1 40); do
+            if curl -sSf http://localhost:8080 > /dev/null; then
+              echo "preview up"; exit 0
+            fi
+            sleep 1
+          done
+          echo "preview failed to start"; cat /tmp/preview.log; exit 1
+
+      - name: Guard — require E2E_SETUP_TOKEN
+        run: |
+          if [ -z "${E2E_SETUP_TOKEN}" ]; then
+            echo "::error::E2E_SETUP_TOKEN secret is not set — authenticated suite cannot run."
+            echo "Add it in GitHub → Settings → Secrets and variables → Actions."
+            exit 1
+          fi
+
+      - name: Run Playwright (authenticated suite)
+        run: bunx playwright test --reporter=list,html,github
+
+      - name: Stop preview server
+        if: always()
+        run: |
+          if [ -f /tmp/preview.pid ]; then kill "$(cat /tmp/preview.pid)" || true; fi
+
+      - name: Upload HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ github.run_id }}
+          path: playwright-report/
+          retention-days: 14
+
+      - name: Upload traces & screenshots
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces-${{ github.run_id }}
+          path: |
+            test-results/
+            /tmp/preview.log
+          retention-days: 14
+
+      - name: Failure summary
+        if: failure()
+        run: |
+          echo "### ❌ Playwright falhou" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- Baixe o artifact **playwright-report-${{ github.run_id }}** e abra \`index.html\`." >> $GITHUB_STEP_SUMMARY
+          echo "- Traces e screenshots em **playwright-traces-${{ github.run_id }}**." >> $GITHUB_STEP_SUMMARY
