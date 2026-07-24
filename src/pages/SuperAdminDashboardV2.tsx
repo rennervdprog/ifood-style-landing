@@ -181,6 +181,23 @@ const TAB_SUBTITLE: Record<string, (ctx: {
   const [selectedStore, setSelectedStore] = useState<string>("all");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showMoreSheet, setShowMoreSheet] = useState(false);
+  const [desktopCollapsed, setDesktopCollapsed] = useState<boolean>(() => {
+    try { return localStorage.getItem("adminSidebarCollapsed") === "1"; } catch { return false; }
+  });
+  const [cmdOpen, setCmdOpen] = useState(false);
+  useEffect(() => {
+    try { localStorage.setItem("adminSidebarCollapsed", desktopCollapsed ? "1" : "0"); } catch {}
+  }, [desktopCollapsed]);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setCmdOpen(v => !v);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
   // Sub-seções dos grupos unificados
   type FinanceSection =
     | "overview"
