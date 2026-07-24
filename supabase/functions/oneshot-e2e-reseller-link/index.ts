@@ -61,15 +61,21 @@ Deno.serve(async (req) => {
 
     // Criar/garantir store_plans com plano pago vigente neste mês
     const now = new Date().toISOString();
-    const { error: eSP } = await db.from("store_plans").upsert({
+    const spPayload = {
       store_id: storeId,
       plan_type: "essencial",
       monthly_fee: 89.90,
+      commission_rate: 0.10,
       is_active: true,
       last_billed_at: now,
-      next_billing_at: new Date(Date.now() + 30*86400000).toISOString(),
-    }, { onConflict: "store_id" });
-    if (eSP) log("store_plans_upsert_error", eSP.message);
+    };
+    const { error: eIns } = await db.from("store_plans").insert(spPayload);
+    if (eIns) {
+      const { error: eUpd } = await db.from("store_plans").update({
+        plan_type: "essencial", monthly_fee: 89.90, is_active: true, last_billed_at: now,
+      }).eq("store_id", storeId);
+      if (eUpd) log("store_plans_error", { insert: eIns.message, update: eUpd.message });
+    }
 
     // ---------- 4) RECORRENTE — loja ativa deve gerar comissão mensal ----------
     const { data: dryRec } = await db.rpc("reseller_process_recurring", { _ref_month: refMonth, _dry_run: true });
