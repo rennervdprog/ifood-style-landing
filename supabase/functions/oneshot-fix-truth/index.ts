@@ -12,12 +12,6 @@ async function q(sql: string) {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   const sql = `
-    -- 0) Inspect columns first
-    SELECT column_name FROM information_schema.columns WHERE table_schema='public' AND table_name='plan_templates' ORDER BY ordinal_position;
-  `;
-  const r0 = await q(sql);
-  return new Response(JSON.stringify(r0, null, 2), { headers: { ...cors, "Content-Type": "application/json" } });
-  const _sql_orig = `
     -- 1) Essencial (fixed) → R$ 89,90 e descrição atualizada
     UPDATE public.plan_templates
       SET monthly_fee = 89.90,
@@ -33,19 +27,11 @@ Deno.serve(async (req) => {
     -- 3) Desativar planos legados que não são mais oferecidos
     UPDATE public.plan_templates SET is_active = false WHERE plan_type IN ('hybrid','commission_only');
 
-    -- 4) Add-on PDV R$ 49 — criar template se não existir
-    INSERT INTO public.plan_templates (name, plan_type, monthly_fee, description, is_active, is_addon)
-    SELECT 'PDV Add-on', 'pdv_addon', 49.00,
-           'Módulo PDV adicionado a um plano existente (Essencial ou Autonomia).', true, true
-    WHERE NOT EXISTS (SELECT 1 FROM public.plan_templates WHERE plan_type = 'pdv_addon')
-      AND EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='plan_templates' AND column_name='is_addon');
-
-    -- 4b) Fallback caso a coluna is_addon não exista: cria só com os campos padrão
-    INSERT INTO public.plan_templates (name, plan_type, monthly_fee, description, is_active)
-    SELECT 'PDV Add-on', 'pdv_addon', 49.00,
-           'Módulo PDV adicionado a um plano existente (Essencial ou Autonomia).', true
-    WHERE NOT EXISTS (SELECT 1 FROM public.plan_templates WHERE plan_type = 'pdv_addon')
-      AND NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='plan_templates' AND column_name='is_addon');
+    -- 4) Add-on PDV R$ 49 — criar template se não existir (usa colunas reais: plan_key, label)
+    INSERT INTO public.plan_templates (plan_key, plan_type, label, monthly_fee, description, is_active, sort_order)
+    SELECT 'pdv_addon', 'pdv_addon', 'PDV Add-on', 49.00,
+           'Módulo PDV adicionado a um plano existente (Essencial ou Autonomia).', true, 50
+    WHERE NOT EXISTS (SELECT 1 FROM public.plan_templates WHERE plan_key = 'pdv_addon' OR plan_type = 'pdv_addon');
 
     -- 5) admin_settings.plan_prices — sincronizar com os novos valores
     UPDATE public.admin_settings
@@ -63,8 +49,13 @@ Deno.serve(async (req) => {
     ALTER TABLE public.resellers ALTER COLUMN commission_rate SET DEFAULT 0.20;
 
     -- Snapshot final
-    SELECT 'plan_templates' AS src, name, plan_type, monthly_fee, is_active FROM public.plan_templates ORDER BY monthly_fee;
+    SELECT plan_key, plan_type, label, monthly_fee, is_active FROM public.plan_templates ORDER BY sort_order NULLS LAST, monthly_fee;
   `;
+  const r = await q(sql);
+  return new Response(JSON.stringify(r, null, 2), { headers: { ...cors, "Content-Type": "application/json" } });
+});
+
+const _dead = `
   const r = await q(sql);
   return new Response(JSON.stringify(r, null, 2), { headers: { ...cors, "Content-Type": "application/json" } });
 });
