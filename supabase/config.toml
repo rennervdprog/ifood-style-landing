@@ -89,3 +89,6 @@ verify_jwt = false
 [functions.oneshot-reseller-full-flow]
 verify_jwt = false
 
+[functions.oneshot-user-routing-rpc]
+verify_jwt = false
+
