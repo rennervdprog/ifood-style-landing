@@ -1,63 +1,49 @@
-# Plano: Experiência dedicada do Revendedor
-
-Hoje, quando um usuário revendedor abre `/cliente`, `/pedidos` ou `/perfil`, ele vê a mesma UI de um cliente comum (comprar em lojas, pedidos de comida, perfil de consumidor). Isso não reflete a conta dele.
-
 ## Objetivo
-Se o usuário logado é revendedor (linha em `resellers` com `user_id = auth.uid()`), essas 3 abas devem mostrar conteúdo do universo dele — não do universo cliente.
+Transformar o painel do revendedor (`/revendedor`, `/cliente`, `/pedidos`, `/perfil` quando logado como revendedor) em uma experiência premium — nível SaaS moderno, não "sistema antigo".
 
-## Detecção do papel
-- Criar hook `useIsReseller()` que consulta `resellers` por `user_id`, com cache via React Query (`staleTime` 5 min).
-- Reaproveitar em `ClientHome`, `PedidosPage` e `PerfilPage` sem quebrar clientes normais.
+## Diagnóstico do que está simples hoje
+- Cards genéricos shadcn sem hierarquia visual (tudo com o mesmo peso).
+- Sem "hero" de ganhos — número principal se perde no meio de KPIs iguais.
+- Link de indicação escondido em um card comum, sem destaque de CTA.
+- Lista de indicações plana, sem status visual forte nem progresso do bônus (X/20 pedidos).
+- Sem gráfico de evolução mensal / MRR acumulado.
+- Sem ilustração/identidade — parece dashboard interno, não produto.
+- Tipografia uniforme, sem contrastes fortes de tamanho/peso.
 
-## O que cada aba passa a mostrar
+## Escopo da refatoração
+1. **Hero "Ganhos" (topo)** — número gigante do disponível, delta do mês, botão "Sacar" destacado, mini-sparkline dos últimos 6 meses.
+2. **Card do Link de Indicação premium** — bloco com gradiente sutil, QR-code ao lado, botões copiar/WhatsApp/Instagram, badge do código.
+3. **KPI row redesenhada** — 4 métricas com ícones coloridos, deltas vs mês anterior, micro-animação ao carregar.
+4. **Funil de indicações visual** — Cadastradas → Ativas → Gerando MRR, em formato de barra segmentada.
+5. **Lista de lojas indicadas com progresso do bônus** — barra "12/20 pedidos p/ desbloquear R$ 150", status colorido, cidade + plano, mini-avatar.
+6. **Gráfico MRR mensal** (Recharts) — linha/área dos últimos 6 meses.
+7. **Timeline de últimas comissões** — feed vertical com ícones (bônus vs MRR).
+8. **Estado vazio ilustrado** — quando 0 indicações, ilustração + CTA claro.
+9. **Header fixo com identidade** — avatar, código do revendedor, status como pill colorida, ThemeToggle.
+10. **Mobile-first refinado** — bottom-sheet para saque/PIX, cards com scroll horizontal onde couber.
 
-### 1. `/cliente` (Home)
-Em vez de listagem de lojas/carrinho, renderiza um **ResellerHome** enxuto:
-- Saldo a receber / próximo pagamento
-- Lojas ativas indicadas (contagem + últimas 3)
-- Link de indicação com botão "Copiar" e "Compartilhar WhatsApp"
-- CTA grande "Abrir painel do revendedor" → `/revendedor`
-- Bloco "Como funciona sua comissão" resumido
-
-### 2. `/pedidos`
-Vira **"Minhas indicações / conversões"**:
-- Lista das lojas cadastradas via link do revendedor
-- Status: Pendente bounty · Bounty pago · Recorrente ativa · Cancelada
-- Data de cadastro, plano atual da loja, MRR gerado
-- Filtro por status + busca por nome da loja
-
-### 3. `/perfil`
-Vira **Perfil de Revendedor**:
-- Dados da conta (nome, email, telefone)
-- Chave PIX para recebimento (editável)
-- Histórico de repasses (últimos 6 meses) com status
-- Link de indicação + QR code
-- Sair da conta
-- Remover blocos irrelevantes do cliente (endereços salvos, cupons de compra, fidelidade)
-
-## BottomNav
-`BottomNav` passa a exibir, para revendedor:
-- Home (ResellerHome)
-- Indicações (ex-Pedidos)
-- Perfil
-Ícones/labels ajustados (`Users`, `LinkIcon`, `User`).
+## Design tokens
+- Definir tokens semânticos novos em `index.css`: `--reseller-gradient`, `--reseller-surface`, `--reseller-glow`, `--success-soft`, `--warning-soft`.
+- Paleta, tipografia e densidade serão escolhidas na próxima etapa (3 perguntas visuais).
 
 ## Arquivos afetados
-- **Novo** `src/hooks/useIsReseller.ts`
-- **Novo** `src/pages/revendedor/ResellerHome.tsx`
-- **Novo** `src/pages/revendedor/ResellerIndicacoes.tsx`
-- **Novo** `src/pages/revendedor/ResellerPerfil.tsx`
-- `src/pages/ClientHome.tsx` — se revendedor, renderiza ResellerHome
-- `src/pages/PedidosPage.tsx` — se revendedor, renderiza ResellerIndicacoes
-- `src/pages/PerfilPage.tsx` — se revendedor, renderiza ResellerPerfil
-- `src/components/BottomNav.tsx` — labels/rotas quando `isReseller`
-- `src/components/AppHeader.tsx` — esconder "Entregar em" para revendedor
+- `src/pages/ResellerDashboard.tsx` — reescrita completa.
+- `src/pages/revendedor/ResellerHome.tsx` — nova UI premium (visão mobile do `/cliente`).
+- `src/pages/revendedor/ResellerIndicacoes.tsx` — nova UI da lista com progresso.
+- `src/pages/revendedor/ResellerPerfil.tsx` — refino visual + bottom-sheet PIX.
+- `src/index.css` — novos tokens.
+- Novo componente: `src/pages/revendedor/components/` (HeroBalance, ReferralLinkCard, KPICard, FunnelBar, MrrChart, CommissionTimeline, StoreProgressRow, EmptyState).
+- `src/lib/appVersion.ts` + `android/app/build.gradle` → **v1.25.15**.
 
-## Regras
-- Admins e lojistas seguem inalterados (guards atuais têm prioridade).
-- Se usuário for revendedor **e** cliente ao mesmo tempo, priorizar visão de revendedor nessas 3 rotas (ele já tem `/lojas` público para comprar).
-- Sem migração de schema — só leitura de `resellers`, `reseller_referrals`, `reseller_commissions`, `reseller_payouts` (tabelas já existentes).
-- Incrementar versão para **v1.25.14** ao implementar.
+## Fluxo
+```text
+1. Você escolhe paleta + tipografia + layout (3 perguntas visuais)
+2. Eu gero 3 direções renderizadas do painel
+3. Você escolhe uma
+4. Eu implemento fiel ao protótipo escolhido
+```
 
-## Segurança
-Revalidar que policies de `resellers` / `reseller_*` permitem apenas `SELECT` pelo próprio `user_id`. Nenhuma nova rota pública.
+## Fora do escopo
+- Regras de negócio (comissão, saque, bônus) — permanecem intactas.
+- RPCs e schema do Supabase — não mudam.
+- Fluxo de autenticação do revendedor.
