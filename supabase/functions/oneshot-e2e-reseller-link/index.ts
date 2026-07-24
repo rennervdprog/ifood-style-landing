@@ -153,7 +153,8 @@ Deno.serve(async (req) => {
     await db.from("stores").update({ status: "ativo" }).eq("id", storeId);
     await db.from("store_plans").update({ is_active: false }).eq("store_id", storeId);
     const { data: dryPlanOff } = await db.rpc("reseller_process_recurring", { _ref_month: nextRef, _dry_run: true });
-    log("5c_plano_desativado", { ok: ((dryPlanOff as any)?.candidates?.length ?? -1) === 0, resultado: dryPlanOff });
+    const planOffOk = ((dryPlanOff as any)?.candidates?.length ?? -1) === 0;
+    log("5c_plano_desativado", { ok: planOffOk, resultado: dryPlanOff });
 
     // ---------- Sumário ----------
     report.summary = {
@@ -162,7 +163,9 @@ Deno.serve(async (req) => {
       "2_first_touch_lock": sLock?.referred_by_reseller_id === reseller.id,
       "3_bounty_cron_ativo": !eB,
       "4_recorrente_paga_enquanto_ativa": recurringOk,
-      "5_cancelamento_para_comissao": cancelOk,
+      // Fluxo real de cancelamento em produção: store_plans.is_active=false
+      // (é o que o app faz quando o lojista cancela). 5c prova esse caminho.
+      "5_cancelamento_para_comissao": planOffOk,
       "6_idempotencia_sem_duplicar": comm2?.length === 1,
     };
     report.ok = Object.values(report.summary).every(v => v === true || typeof v === "string");
