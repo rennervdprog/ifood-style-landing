@@ -1438,6 +1438,35 @@ const TAB_SUBTITLE: Record<string, (ctx: {
           </div>
         </div>
       </main>
+
+      {/* ⌘K Command Palette */}
+      <CommandDialog open={cmdOpen} onOpenChange={setCmdOpen}>
+        <CommandInput placeholder="Buscar abas do painel…" />
+        <CommandList>
+          <CommandEmpty>Nenhuma aba encontrada.</CommandEmpty>
+          {["Início", "Lojas", "Financeiro", "Crescimento", "Sistema"].map(group => {
+            const items = sidebarItems.filter(i => i.group === group);
+            if (items.length === 0) return null;
+            return (
+              <CommandGroup key={group} heading={group}>
+                {items.map(item => {
+                  const Icon = item.icon;
+                  return (
+                    <CommandItem
+                      key={item.key}
+                      value={`${item.label} ${group}`}
+                      onSelect={() => { handleTabChange(item.key); setCmdOpen(false); }}
+                    >
+                      <Icon className="h-4 w-4 mr-2 text-muted-foreground" />
+                      <span>{item.label}</span>
+                    </CommandItem>
+                  );
+                })}
+              </CommandGroup>
+            );
+          })}
+        </CommandList>
+      </CommandDialog>
     </div>
   );
 };
