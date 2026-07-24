@@ -168,7 +168,7 @@ export default function ResellerHome() {
           </CardHeader>
           <CardContent className="text-xs text-muted-foreground space-y-1.5">
             <p>• Toda loja cadastrada pelo seu link fica <strong>vinculada permanentemente</strong> à sua conta.</p>
-            <p>• Bônus de <strong>R$ 150</strong> por loja que ativa e completa 20 pedidos.</p>
+            <p>• Bônus de <strong>R$ 50</strong> por loja que ativa e completa 20 pedidos.</p>
             <p>• <strong>{(r.commission_rate * 100).toFixed(0)}%</strong> recorrente sobre o MRR enquanto a loja estiver ativa.</p>
             <p>• Se a loja cancelar, a comissão daquele mês encerra automaticamente.</p>
           </CardContent>

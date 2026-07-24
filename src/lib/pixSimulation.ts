@@ -2,11 +2,10 @@
  * PIX Simulation Mode
  * 
  * When SIMULATION_MODE is true, all PIX payment flows bypass the real
- * Mercado Pago API and use a local simulation with fake QR codes and
- * a 3-second delay before marking as paid.
- * 
- * TODO: Reativar integração real após liberação do Mercado Pago.
- * Set SIMULATION_MODE = false to restore real payments.
+ * Asaas API and use a local simulation com QR codes falsos e
+ * um delay de 3 segundos antes de marcar como pago.
+ *
+ * Set SIMULATION_MODE = false para restaurar cobranças reais via Asaas.
  */
 
 export const SIMULATION_MODE = false;

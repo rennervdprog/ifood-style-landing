@@ -168,7 +168,7 @@ const TAB_SUBTITLE: Record<string, (ctx: {
   whatsapp_plataforma: () => "WhatsApp oficial da plataforma (avisos automáticos)",
 };
 
- import { FinanceTab as FinanceTabFull, MetricCard } from "./SuperAdminDashboard";
+ import { FinanceTab as FinanceTabFull, MetricCard } from "./admin/components/FinanceTab";
 
  const SuperAdminDashboardV2 = () => {
   const { user, loading: authLoading } = useAuth();
