@@ -826,7 +826,11 @@ const StoreDirectory = () => {
           <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
             <button onClick={() => navigate("/termos-de-uso")} className="hover:text-foreground font-semibold">Termos</button>
             <button onClick={() => navigate("/politica-de-privacidade")} className="hover:text-foreground font-semibold">Privacidade</button>
-            <button onClick={() => navigate("/portal-parceiro")} className="hover:text-foreground font-semibold">Já sou parceiro</button>
+            <button
+              onClick={() => navigate("/portal-parceiro")}
+              {...prefetchHandlers("/portal-parceiro")}
+              className="hover:text-foreground font-semibold"
+            >Já sou parceiro</button>
             <button onClick={handleWhatsApp} className="hover:text-foreground font-semibold">Contato</button>
           </div>
           <AsaasBadgeBar />
@@ -835,7 +839,7 @@ const StoreDirectory = () => {
 
       {/* Sticky mobile CTA */}
       <div className="md:hidden fixed bottom-0 inset-x-0 z-40 px-4 pb-[max(env(safe-area-inset-bottom),12px)] pt-3 bg-gradient-to-t from-background via-background/95 to-background/0">
-        <Button onClick={handleCTA} className="w-full min-h-[52px] rounded-2xl text-base font-black shadow-[0_16px_40px_-12px_hsl(var(--primary)/0.6)]">
+        <Button onClick={handleCTA} {...prefetchHandlers("/cadastro-lojista")} className="w-full min-h-[52px] rounded-2xl text-base font-black shadow-[0_16px_40px_-12px_hsl(var(--primary)/0.6)]">
           <Store className="mr-2 h-5 w-5" /> Criar minha loja grátis <ArrowRight className="ml-2 h-5 w-5" />
         </Button>
       </div>
