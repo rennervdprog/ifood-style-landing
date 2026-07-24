@@ -125,7 +125,17 @@ Deno.serve(async (req) => {
     log("5a_mes_seguinte_loja_ativa", { candidatos: (dryNextActive as any)?.candidates?.length ?? 0, expected: 1 });
 
     // (b) CANCELAR loja e rodar de novo: 0 candidatos
-    await db.from("stores").update({ status: "cancelled" }).eq("id", storeId);
+    // Testa vários valores até algum "pegar" (schema pode ter check constraint)
+    let cancelStatus = "cancelled";
+    let cancelErr: string | null = null;
+    for (const v of ["cancelled", "cancelada", "suspensa", "suspended", "inativa", "inactive", "archived", "arquivada"]) {
+      const { error: eU } = await db.from("stores").update({ status: v }).eq("id", storeId);
+      if (!eU) {
+        const { data: sChk } = await db.from("stores").select("status").eq("id", storeId).single();
+        if (sChk?.status === v) { cancelStatus = v; cancelErr = null; break; }
+      } else { cancelErr = eU.message; }
+    }
+    log("5b_status_set_to", { cancelStatus, cancelErr });
     const { data: dryNextCancel } = await db.rpc("reseller_process_recurring", { _ref_month: nextRef, _dry_run: true });
     const cancelOk = ((dryNextCancel as any)?.candidates?.length ?? -1) === 0;
     log("5b_mes_seguinte_loja_cancelada", { ok: cancelOk, candidatos: (dryNextCancel as any)?.candidates?.length, resultado: dryNextCancel });
