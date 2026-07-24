@@ -11,7 +11,7 @@ const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", curren
 // Premissas conservadoras: 60% Essencial R$89,90, 40% Autonomia R$199,90.
 const AVG_MRR_PER_STORE = 89.90 * 0.6 + 199.90 * 0.4; // ≈ 133,90
 const COMMISSION = 0.20; // 20% vitalício
-const BOUNTY = 150;
+const BOUNTY = 50;
 
 export default function SejaRevendedor() {
   const [stores, setStores] = useState<number[]>([10]);
@@ -21,8 +21,8 @@ export default function SejaRevendedor() {
   const bounty = useMemo(() => n * BOUNTY, [n]);
   const year1 = useMemo(() => monthly * 12 + bounty, [monthly, bounty]);
 
-  const title = "Seja Revendedor ItaSuper — 20% vitalício + R$ 150 por loja";
-  const description = "Ganhe 20% de comissão vitalícia sobre cada loja indicada + R$ 150 de bônus por ativação. Grátis para começar.";
+  const title = "Seja Revendedor ItaSuper — 20% vitalício + R$ 50 por loja";
+  const description = "Ganhe 20% de comissão vitalícia sobre cada loja indicada + R$ 50 de bônus por ativação. Grátis para começar.";
 
   return (
     <>
@@ -41,7 +41,7 @@ export default function SejaRevendedor() {
             "@type": "FAQPage",
             mainEntity: [
               { "@type": "Question", name: "Preciso pagar pra ser revendedor?", acceptedAnswer: { "@type": "Answer", text: "Não. O cadastro é gratuito e a aprovação sai em até 48h úteis." } },
-              { "@type": "Question", name: "Quando recebo o bônus de R$ 150?", acceptedAnswer: { "@type": "Answer", text: "Quando a loja indicada atinge 20 pedidos entregues em até 30 dias e valida o WhatsApp." } },
+              { "@type": "Question", name: "Quando recebo o bônus de R$ 50?", acceptedAnswer: { "@type": "Answer", text: "Quando a loja indicada atinge 20 pedidos entregues em até 30 dias e valida o WhatsApp." } },
               { "@type": "Question", name: "Qual o valor mínimo do saque?", acceptedAnswer: { "@type": "Answer", text: "R$ 100 via PIX, com cooldown de 7 dias entre solicitações." } },
               { "@type": "Question", name: "A comissão de 20% é para sempre?", acceptedAnswer: { "@type": "Answer", text: "Sim — enquanto a loja continuar ativa e pagando o plano, você recebe mensalmente." } },
             ],
@@ -58,7 +58,7 @@ export default function SejaRevendedor() {
             </div>
             <h1 className="text-3xl md:text-5xl font-bold leading-tight">
               Ganhe <span className="text-primary">20% vitalício</span> +<br className="hidden md:block" />
-              R$ 150 por loja ativada
+              R$ 50 por loja ativada
             </h1>
             <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto">
               Indique restaurantes, hamburguerias, pizzarias e boutiques pra usar o ItaSuper.
@@ -80,7 +80,7 @@ export default function SejaRevendedor() {
         <section className="max-w-5xl mx-auto px-4 py-12 grid md:grid-cols-3 gap-4">
           {[
             { icon: <Wallet className="h-5 w-5 text-primary" />, title: "Comissão vitalícia", desc: "20% do MRR da loja indicada, todo mês, enquanto ela pagar o plano." },
-            { icon: <TrendingUp className="h-5 w-5 text-primary" />, title: "Bônus de ativação", desc: "R$ 150 quando a loja atingir 20 pedidos entregues em 30 dias." },
+            { icon: <TrendingUp className="h-5 w-5 text-primary" />, title: "Bônus de ativação", desc: "R$ 50 quando a loja atingir 20 pedidos entregues em 30 dias." },
             { icon: <Shield className="h-5 w-5 text-primary" />, title: "Grátis até faturar", desc: "Loja só paga acima de R$ 2.500/mês — fácil de vender, difícil de recusar." },
             { icon: <Users className="h-5 w-5 text-primary" />, title: "Link exclusivo", desc: "Toda loja cadastrada no seu link fica vinculada permanentemente." },
             { icon: <CheckCircle2 className="h-5 w-5 text-primary" />, title: "Pagamento em PIX", desc: "Saque a partir de R$ 100. Pagamento manual em até 3 dias úteis." },
@@ -120,7 +120,7 @@ export default function SejaRevendedor() {
                   <div className="p-3 rounded bg-background">
                     <div className="text-xs text-muted-foreground">Bônus 1º ano</div>
                     <div className="text-xl font-bold">{brl(bounty)}</div>
-                    <div className="text-[10px] text-muted-foreground">R$ 150 × ativações</div>
+                    <div className="text-[10px] text-muted-foreground">R$ 50 × ativações</div>
                   </div>
                   <div className="p-3 rounded bg-background">
                     <div className="text-xs text-muted-foreground">Total 1º ano</div>
@@ -147,7 +147,7 @@ export default function SejaRevendedor() {
               <AccordionContent>Não. Cadastro gratuito, aprovação em até 48h úteis.</AccordionContent>
             </AccordionItem>
             <AccordionItem value="q2">
-              <AccordionTrigger>Quando recebo o bônus de R$ 150?</AccordionTrigger>
+              <AccordionTrigger>Quando recebo o bônus de R$ 50?</AccordionTrigger>
               <AccordionContent>Quando a loja indicada atinge 20 pedidos entregues em 30 dias e valida o WhatsApp.</AccordionContent>
             </AccordionItem>
             <AccordionItem value="q3">
