@@ -52,8 +52,9 @@ Deno.serve(async (req) => {
             '{pdv_addon,monthly_fee}', '49.00'::jsonb, true)
       WHERE key = 'plan_prices';
 
-    -- 6) Padronizar comissão do revendedor em 20% (mantém overrides > 0.2 intactos? não — força padrão)
-    UPDATE public.resellers SET commission_rate = 0.20 WHERE commission_rate IS DISTINCT FROM 0.20;
+    -- 6) NÃO mexer em resellers.commission_rate — overrides (ex: RENAN2026 30%) podem ser intencionais.
+    --    Apenas garantir default da coluna em 0.20 para novos cadastros.
+    ALTER TABLE public.resellers ALTER COLUMN commission_rate SET DEFAULT 0.20;
 
     -- Snapshot final
     SELECT 'plan_templates' AS src, name, plan_type, monthly_fee, is_active FROM public.plan_templates ORDER BY monthly_fee;
