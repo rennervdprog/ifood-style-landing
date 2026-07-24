@@ -185,6 +185,7 @@ const TAB_SUBTITLE: Record<string, (ctx: {
     try { return localStorage.getItem("adminSidebarCollapsed") === "1"; } catch { return false; }
   });
   const [cmdOpen, setCmdOpen] = useState(false);
+  const [moreQuery, setMoreQuery] = useState("");
   useEffect(() => {
     try { localStorage.setItem("adminSidebarCollapsed", desktopCollapsed ? "1" : "0"); } catch {}
   }, [desktopCollapsed]);
@@ -763,7 +764,6 @@ const TAB_SUBTITLE: Record<string, (ctx: {
   ];
 
   const moreTabs = sidebarItems.filter(i => !bottomTabs.some(b => b.key === i.key));
-  const [moreQuery, setMoreQuery] = useState("");
   const normalizedMoreQuery = moreQuery.trim().toLowerCase();
   const filteredMoreTabs = normalizedMoreQuery
     ? moreTabs.filter((i) =>
