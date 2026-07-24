@@ -185,6 +185,7 @@ const TAB_SUBTITLE: Record<string, (ctx: {
     try { return localStorage.getItem("adminSidebarCollapsed") === "1"; } catch { return false; }
   });
   const [cmdOpen, setCmdOpen] = useState(false);
+  const [moreQuery, setMoreQuery] = useState("");
   useEffect(() => {
     try { localStorage.setItem("adminSidebarCollapsed", desktopCollapsed ? "1" : "0"); } catch {}
   }, [desktopCollapsed]);
