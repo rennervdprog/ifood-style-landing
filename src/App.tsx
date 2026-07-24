@@ -66,6 +66,7 @@ const PlanosPage = lazy(() => import("./pages/PlanosPage"));
 const ModeradorDashboard = lazy(() => import("./pages/ModeradorDashboard"));
 const ResellerDashboard = lazy(() => import("./pages/ResellerDashboard"));
 const SejaRevendedor = lazy(() => import("./pages/SejaRevendedor"));
+const ResellerAuth = lazy(() => import("./pages/ResellerAuth"));
 const SupportAgentDashboard = lazy(() => import("./pages/SupportAgentDashboard"));
 const LinksPage = lazy(() => import("./pages/LinksPage"));
  const DownloadApp = lazy(() => import("./pages/DownloadApp"));
