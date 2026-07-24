@@ -91,6 +91,8 @@ const PageLoader = () => (
 // on every app resume — which triggers refetchOnWindowFocus internally.
 // queryClient extraído para `src/lib/queryClient.ts` para que módulos não-React
 // (route resolvers) possam ler o mesmo cache sem duplicar queries.
+const isNativeApp = typeof window !== "undefined" &&
+  (window as any).Capacitor?.isNativePlatform?.() === true;
 
 /** Listens for push notification taps and navigates via React Router */
 const PushNavigator = () => {
