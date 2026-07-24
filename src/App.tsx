@@ -419,6 +419,8 @@ const App = () => {
                 <Route path="/parceiro" element={<PartnerOnboarding />} />
                 <Route path="/revendedor" element={<ResellerDashboard />} />
                 <Route path="/seja-revendedor" element={<SejaRevendedor />} />
+                <Route path="/revendedor/entrar" element={<ResellerAuth />} />
+                <Route path="/revendedor/cadastro" element={<ResellerAuth />} />
                 {/* Cadastro de motoboy de plataforma descontinuado — redireciona para motoboy de loja */}
                 <Route path="/cadastro-entregador" element={<Navigate to="/cadastro-motoboy-loja" replace />} />
                 <Route path="/cadastro-lojista" element={<CadastroLojista />} />
