@@ -94,6 +94,7 @@ registerRoutePrefetch("/revendedor/auth", () => import("./pages/ResellerAuth"));
 registerRoutePrefetch("/portal-parceiro", () => import("./pages/PartnerLogin"));
 registerRoutePrefetch("/planos", () => import("./pages/PlanosPage"));
 registerRoutePrefetch("/cliente", () => import("./pages/ClientHome"));
+registerRoutePrefetch("/cadastro-lojista", () => import("./pages/CadastroLojista"));
 
 const PageLoader = () => (
   <div className="min-h-screen bg-background flex items-center justify-center">
