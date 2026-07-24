@@ -1622,37 +1622,26 @@ const AdminDashboard = () => {
   const allowFullReports = storePlan.allowFullReports;
   const isPdvOnly = storePlan.planType === "pdv_only";
 
-  // PDV-only: painel do lojista NÃO existe. Manda direto pro caixa/PDV.
+  // pdv_only agora é decidido no roteamento (LojistaHomeRedirect) — este
+  // dashboard nunca monta para lojistas pdv_only. Mantemos apenas o
+  // pré-seed do store selecionado quando um admin da plataforma navega
+  // manualmente para um caixa pdv_only.
   useEffect(() => {
-    if (!storePlan.isLoading && isPdvOnly) {
-      if (isPlatformAdmin && store?.id) {
-        try {
-          localStorage.setItem("pdv_admin_selected_store", store.id);
-          localStorage.setItem("pdv_store_v1", JSON.stringify({
-            id: store.id,
-            name: store.name,
-            category: store.category,
-            categories: (store as any).categories,
-            settings: (store as any).settings,
-            store_type: (store as any).store_type,
-          }));
-        } catch {}
-        navigate(`/admin/pdv?storeId=${store.id}`, { replace: true });
-        return;
-      }
-      navigate("/admin/pdv", { replace: true });
+    if (!storePlan.isLoading && isPdvOnly && isPlatformAdmin && store?.id) {
+      try {
+        localStorage.setItem("pdv_admin_selected_store", store.id);
+        localStorage.setItem("pdv_store_v1", JSON.stringify({
+          id: store.id,
+          name: store.name,
+          category: store.category,
+          categories: (store as any).categories,
+          settings: (store as any).settings,
+          store_type: (store as any).store_type,
+        }));
+      } catch {}
+      navigate(`/admin/pdv?storeId=${store.id}`, { replace: true });
     }
   }, [isPdvOnly, isPlatformAdmin, store?.id, storePlan.isLoading, navigate]);
-
-  // Cacheia role + plan_type do usuário para que reloads futuros pulem
-  // qualquer flash (landing → painel delivery) e vão direto pra tela certa.
-  useEffect(() => {
-    if (!user?.id || storePlan.isLoading) return;
-    try {
-      localStorage.setItem(`itasuper:userRole:${user.id}`, "lojista");
-      localStorage.setItem(`itasuper:userPlan:${user.id}`, storePlan.planType);
-    } catch {}
-  }, [user?.id, storePlan.isLoading, storePlan.planType]);
 
   // Grupos visíveis (com pelo menos 1 sub-tab disponível)
   const visibleGroups: DashboardGroup[] = useMemo(

@@ -1,7 +1,7 @@
 import { useState, lazy, Suspense } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import ClientHomeContent from "./cliente/home/ClientHomeContent";
-import { useIsReseller } from "@/hooks/useIsReseller";
+import { useUserRouting } from "@/hooks/useUserRouting";
 import ResellerHome from "./revendedor/ResellerHome";
 
 const ClientAuthScreen = lazy(() => import("./cliente/auth/ClientAuthScreen"));
@@ -34,7 +34,7 @@ const ClientHome = () => {
 };
 
 const ClientHomeSwitch = () => {
-  const { isReseller, loading } = useIsReseller();
+  const { isReseller, loading } = useUserRouting();
   if (loading) {
     return (
       <div className="min-h-dvh bg-background flex items-center justify-center">

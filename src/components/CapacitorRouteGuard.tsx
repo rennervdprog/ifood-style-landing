@@ -4,6 +4,15 @@ import { isCapacitorNative } from "@/lib/capacitorNative";
 import { detectAndPersistNativeAppMode, getCapacitorAppMode, persistCapacitorAppMode, type CapacitorAppMode } from "@/lib/capacitorAppMode";
 import { useAuth } from "@/contexts/AuthContext";
 import { resolvePartnerDashboard } from "@/lib/partnerDashboard";
+import { queryClient } from "@/lib/queryClient";
+import { USER_ROUTING_QUERY_KEY, type UserRoutingSnapshot } from "@/hooks/useUserRouting";
+
+// Tenta ler o destino direto do cache do useUserRouting; se estiver quente,
+// evita um round-trip completo e o spinner de "blocking".
+function readCachedHome(userId: string): string | null {
+  const snap = queryClient.getQueryData<UserRoutingSnapshot>([USER_ROUTING_QUERY_KEY, userId]);
+  return snap?.homeRoute ?? null;
+}
 
 /**
  * On Capacitor Android PARCEIRO app, restrict navigation to partner-only routes.
@@ -118,25 +127,36 @@ const CapacitorRouteGuard = () => {
        );
  
        if (!isAllowed) {
-         setBlocking(true);
-         if (!authLoading && user) {
-           (async () => {
-             const dest = await resolvePartnerDashboard(user.id);
-             navigate(dest, { replace: true });
-             setBlocking(false);
-           })();
-         } else if (!authLoading) {
+          if (!authLoading && user) {
+            const cachedDest = readCachedHome(user.id);
+            if (cachedDest) {
+              navigate(cachedDest, { replace: true });
+              setBlocking(false);
+              return;
+            }
+            setBlocking(true);
+            (async () => {
+              const dest = await resolvePartnerDashboard(user.id);
+              navigate(dest, { replace: true });
+              setBlocking(false);
+            })();
+          } else if (!authLoading) {
            navigate("/portal-parceiro", { replace: true });
            setBlocking(false);
          }
        } else if (path === "/portal-parceiro" && user && !authLoading) {
          setBlocking(false);
-         (async () => {
-           const dest = await resolvePartnerDashboard(user.id);
-           if (dest !== "/portal-parceiro") {
-             navigate(dest, { replace: true });
-           }
-         })();
+          const cachedDest = readCachedHome(user.id);
+          if (cachedDest && cachedDest !== "/portal-parceiro") {
+            navigate(cachedDest, { replace: true });
+          } else {
+            (async () => {
+              const dest = await resolvePartnerDashboard(user.id);
+              if (dest !== "/portal-parceiro") {
+                navigate(dest, { replace: true });
+              }
+            })();
+          }
        } else {
          setBlocking(false);
        }
