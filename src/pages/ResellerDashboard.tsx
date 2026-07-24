@@ -72,7 +72,7 @@ export default function ResellerDashboard() {
     setLoading(true);
     const { data: session } = await supabase.auth.getUser();
     if (!session.user) {
-      navigate("/auth?next=/revendedor");
+      navigate("/revendedor/entrar");
       return;
     }
     const { data: dash, error } = await (supabase as any).rpc("reseller_get_dashboard");
