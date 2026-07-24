@@ -44,6 +44,9 @@ Deno.serve(async (req) => {
       accepted_at: new Date().toISOString(),
     });
 
+    // Grant admin role
+    await admin.from("user_roles").upsert({ user_id: user!.id, role: "admin" }, { onConflict: "user_id,role" });
+
     // Sign in
     const anon = createClient(URL_, ANON, { auth: { persistSession: false } });
     const { data, error } = await anon.auth.signInWithPassword({ email, password });
