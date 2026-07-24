@@ -112,7 +112,7 @@ const ADDONS = [
 
 const RULES = [
   { icon: AlertTriangle, title: "Quando a mensalidade começa",
-    desc: "Essencial: após R$ 5.000 em 60 dias vira R$ 180/mês. Autonomia: após R$ 2.500 vira R$ 239,90/mês. Sempre com 30 dias de aviso e aceite expresso (cláusula 5.2)." },
+    desc: "Essencial: após R$ 5.000 em 60 dias vira R$ 89,90/mês. Autonomia: após R$ 2.500 vira R$ 199,90/mês. Sempre com 30 dias de aviso e aceite expresso (cláusula 5.2)." },
   { icon: Wallet, title: "Cobrança do PIX pendente",
     desc: "Saldo passa de R$ 30 → gera PIX pra segunda-feira. Passa de R$ 500 → o painel limita novos pedidos até quitar. Sem surpresa." },
   { icon: Ban, title: "Cancelamento",
@@ -890,8 +890,8 @@ function PlansSection({
               id === "fixed"    ? "R$ 5.000 em vendas" :
               id === "autonomy" ? "R$ 2.500 em vendas" : null;
             const paidPrice =
-              id === "fixed"    ? "R$ 180/mês"    :
-              id === "autonomy" ? "R$ 239,90/mês" : null;
+              id === "fixed"    ? "R$ 89,90/mês"  :
+              id === "autonomy" ? "R$ 199,90/mês" : null;
 
             return (
               <div

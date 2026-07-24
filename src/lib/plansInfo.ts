@@ -88,7 +88,7 @@ hybrid.example = exampleText(hybrid);
 const fixed: PlanInfo = {
   id: "fixed",
   name: "Essencial",
-  tagline: "Grátis pra começar — R$ 0/mês. Vira R$ 180/mês quando você faturar R$ 5.000",
+  tagline: "Grátis pra começar — R$ 0/mês. Vira R$ 89,90/mês quando você faturar R$ 5.000",
   forWho: "Pra quem quer começar sem custo fixo e crescer sem pagar comissão por pedido",
   monthlyFee: 0,
   commissionRate: 0,
@@ -101,7 +101,7 @@ const fixed: PlanInfo = {
   highlight: true,
   features: [
     "R$ 0/mês nos 2 primeiros meses",
-    "Sobe pra R$ 180/mês após atingir R$ 5.000 em vendas",
+    "Sobe pra R$ 89,90/mês após atingir R$ 5.000 em vendas",
     "Sem comissão por pedido",
     "Motoboy integrado + Suporte VIP",
     "PDV: módulo opcional (+ R$ 49/mês)",
@@ -137,7 +137,7 @@ supporter.example = exampleText(supporter);
 const autonomy: PlanInfo = {
   id: "autonomy",
   name: "Autonomia",
-  tagline: "Grátis pra começar — R$ 0/mês. Vira R$ 239,90/mês quando faturar R$ 2.500",
+  tagline: "Grátis pra começar — R$ 0/mês. Vira R$ 199,90/mês quando faturar R$ 2.500",
   forWho: "Pra quem quer máxima autonomia: fica com 100% da taxa de entrega que cobra",
   monthlyFee: 0,
   commissionRate: 0,
@@ -150,7 +150,7 @@ const autonomy: PlanInfo = {
   highlight: false,
   features: [
     "R$ 0/mês até atingir R$ 2.500 em vendas",
-    "Sobe pra R$ 239,90/mês após o gatilho (com 30 dias de aviso)",
+    "Sobe pra R$ 199,90/mês após o gatilho (com 30 dias de aviso)",
     "Sem comissão por pedido",
     "Sem taxa de R$ 0,99 da plataforma na entrega",
     "Você fica com 100% da taxa que cobra",

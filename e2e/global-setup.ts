@@ -18,14 +18,28 @@ const SUPABASE_URL = "https://qkjhguziuchqsbxzruea.supabase.co";
 const STORAGE_KEY = "sb-qkjhguziuchqsbxzruea-auth-token";
 const AUTH_FILE = path.resolve(".auth/pdv-user.json");
 
+async function writeStorageState(baseURL: string, session?: unknown) {
+  const origin = new URL(baseURL).origin;
+  const localStorage = session
+    ? [{ name: STORAGE_KEY, value: JSON.stringify(session) }]
+    : [];
+
+  await fs.mkdir(path.dirname(AUTH_FILE), { recursive: true });
+  await fs.writeFile(
+    AUTH_FILE,
+    JSON.stringify({ cookies: [], origins: [{ origin, localStorage }] }, null, 2)
+  );
+}
+
 export default async function globalSetup() {
+  const baseURL = process.env.E2E_BASE_URL || "http://localhost:8080";
   const token = process.env.E2E_SETUP_TOKEN;
   if (!token) {
     console.warn("[e2e] E2E_SETUP_TOKEN not set — skipping session mint (tests requiring auth will land on /auth).");
+    await writeStorageState(baseURL);
     return;
   }
 
-  const baseURL = process.env.E2E_BASE_URL || "http://localhost:8080";
   const res = await fetch(`${SUPABASE_URL}/functions/v1/e2e-mint-session`, {
     method: "POST",
     headers: { "x-e2e-token": token, "content-type": "application/json" },
@@ -36,18 +50,6 @@ export default async function globalSetup() {
   }
   const session = await res.json();
 
-  const origin = new URL(baseURL).origin;
-  const storageState = {
-    cookies: [],
-    origins: [
-      {
-        origin,
-        localStorage: [{ name: STORAGE_KEY, value: JSON.stringify(session) }],
-      },
-    ],
-  };
-
-  await fs.mkdir(path.dirname(AUTH_FILE), { recursive: true });
-  await fs.writeFile(AUTH_FILE, JSON.stringify(storageState, null, 2));
+  await writeStorageState(baseURL, session);
   console.log(`[e2e] session written to ${AUTH_FILE} (user=${session?.user?.email ?? "?"})`);
 }
