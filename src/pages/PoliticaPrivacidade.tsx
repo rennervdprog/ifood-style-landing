@@ -92,7 +92,6 @@ const PoliticaPrivacidade = () => {
           <p>Os dados são compartilhados apenas quando necessário:</p>
           <ul className="list-disc pl-4 space-y-2">
             <li><strong className="text-foreground">Asaas Gestão Financeira Instituição de Pagamentos S.A. (CNPJ 19.540.550/0001-21):</strong> Instituição de pagamento autorizada pelo Banco Central do Brasil. Recebe os dados financeiros necessários para criação e operação da subconta de pagamento do lojista (nome, CPF/CNPJ, endereço, documentos).</li>
-            <li><strong className="text-foreground">Mercado Pago (Mercado Pago.com Representações Ltda.):</strong> Operador de pagamento utilizado de forma residual em fluxos legados de checkout. Recebe dados mínimos da transação (valor, identificador do pedido, e-mail do cliente quando aplicável).</li>
             <li><strong className="text-foreground">Firebase (Google):</strong> Token de dispositivo para envio de notificações push (sem dados pessoais identificáveis).</li>
             <li><strong className="text-foreground">Supabase:</strong> Infraestrutura de banco de dados e autenticação — dados armazenados com criptografia.</li>
             <li><strong className="text-foreground">Vercel:</strong> Infraestrutura de hospedagem da aplicação.</li>
