@@ -47,7 +47,7 @@ Deno.serve(async (req) => {
     log("1_atribuicao_link", { ok: attachOk, store: sAfter, referral: refRow });
 
     // ---------- 2) First-touch lock (tenta reatribuir com código fake) ----------
-    await db.rpc("reseller_attach_signup", { _store_id: storeId, _code: "FAKE_INEXISTENTE" }).catch(()=>{});
+    try { await db.rpc("reseller_attach_signup", { _store_id: storeId, _code: "FAKE_INEXISTENTE" }); } catch {}
     const { data: sLock } = await db.from("stores").select("referred_by_reseller_id").eq("id", storeId).single();
     log("2_first_touch_lock", { ok: sLock?.referred_by_reseller_id === reseller.id });
 
