@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState } from "react";
+import { lazy, memo, Suspense, useEffect, useState } from "react";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { supabase } from "@/integrations/supabase/client";
@@ -86,6 +86,97 @@ const PageLoader = () => (
     <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
   </div>
 );
+
+/**
+ * Árvore de rotas isolada e memoizada. Como não recebe props, o React nunca
+ * a re-renderiza depois do primeiro mount — mudanças de estado no <App/>
+ * (ex.: showAncillary flip, TermsChecker) deixam de invalidar todo o
+ * `<Routes>` e cada página só re-renderiza quando o próprio path muda.
+ */
+const AppRoutes = memo(function AppRoutes() {
+  return (
+    <Routes>
+      {/* Public landing / Client home */}
+      <Route path="/" element={<StoreDirectory />} />
+      <Route path="/lojas" element={<Navigate to="/" replace />} />
+      <Route path="/lojas/:cidade" element={<CityStoresPage />} />
+      <Route path="/cliente" element={<ClientHome />} />
+      <Route
+        path="/painel"
+        element={
+          <RoleGuard allowedRoles={["admin"]} redirectTo="/">
+            <Index />
+          </RoleGuard>
+        }
+      />
+      <Route path="/loja/:id" element={<StorePage />} />
+      <Route path="/carrinho" element={<CartPage />} />
+      <Route path="/checkout" element={<CheckoutPage />} />
+      <Route path="/checkout-rapido" element={<GuestCheckoutPage />} />
+      <Route path="/pix-direto/:orderId" element={<PixDiretoPaymentPage />} />
+      <Route path="/p/:orderId" element={<PublicOrderTracking />} />
+      <Route path="/pedidos" element={<PedidosPage />} />
+      <Route path="/perfil" element={<PerfilPage />} />
+      <Route path="/auth" element={<AuthPage />} />
+      <Route path="/portal-parceiro" element={<PartnerLogin />} />
+      <Route path="/admin" element={<RoleGuard allowedRoles={["lojista", "lojista_matriz", "lojista_unidade", "admin"]} redirectTo="/" requireApproval><LojistaHomeRedirect><AdminDashboardV2 /></LojistaHomeRedirect></RoleGuard>} />
+      <Route path="/matriz" element={<RoleGuard allowedRoles={["lojista_matriz", "admin"]} redirectTo="/"><MatrizDashboard /></RoleGuard>} />
+      <Route path="/admin2" element={<Navigate to="/admin" replace />} />
+      <Route path="/admin/pdv" element={<RoleGuard allowedRoles={["lojista", "admin"]} redirectTo="/" requireApproval><PdvPage /></RoleGuard>} />
+      <Route path="/admin/pdv/kds" element={<RoleGuard allowedRoles={["lojista", "admin"]} redirectTo="/" requireApproval><PdvKdsPage /></RoleGuard>} />
+      <Route path="/admin/cardapio" element={<RoleGuard allowedRoles={["lojista", "admin"]} redirectTo="/" requireApproval><PdvCardapioPage /></RoleGuard>} />
+      <Route path="/admin/pdv/cardapio" element={<Navigate to="/admin/cardapio" replace />} />
+      <Route
+        path="/entregador"
+        element={
+          <RoleGuard allowedRoles={["motoboy", "admin"]} redirectTo="/" requireApproval>
+            <DriverDashboardV2 />
+          </RoleGuard>
+        }
+      />
+      <Route path="/entregador1" element={<Navigate to="/entregador" replace />} />
+      <Route path="/entregador2" element={<Navigate to="/entregador" replace />} />
+      <Route
+        path="/super-admin"
+        element={
+          <RoleGuard allowedRoles={["admin"]} redirectTo="/">
+            <SuperAdminDashboardV2 />
+          </RoleGuard>
+        }
+      />
+      <Route path="/super-admin1" element={<Navigate to="/super-admin" replace />} />
+      <Route path="/super-admin2" element={<Navigate to="/super-admin" replace />} />
+      <Route path="/super-admin/sandbox-tests" element={<RoleGuard allowedRoles={["admin"]} redirectTo="/"><SandboxTestsPage /></RoleGuard>} />
+      <Route path="/parceiro" element={<PartnerOnboarding />} />
+      <Route path="/revendedor" element={<ResellerDashboard />} />
+      <Route path="/seja-revendedor" element={<SejaRevendedor />} />
+      <Route path="/revendedor/entrar" element={<ResellerAuth />} />
+      <Route path="/revendedor/cadastro" element={<ResellerAuth />} />
+      <Route path="/cadastro-entregador" element={<Navigate to="/cadastro-motoboy-loja" replace />} />
+      <Route path="/cadastro-lojista" element={<CadastroLojista />} />
+      <Route path="/cadastro-motoboy-loja" element={<CadastroMotoboyLoja />} />
+      <Route path="/termos-de-uso" element={<TermosDeUso />} />
+      <Route path="/politica-de-privacidade" element={<PoliticaPrivacidade />} />
+      <Route path="/termos" element={<Navigate to="/termos-de-uso" replace />} />
+      <Route path="/privacidade" element={<Navigate to="/politica-de-privacidade" replace />} />
+      <Route path="/parceiro/login" element={<Navigate to="/portal-parceiro" replace />} />
+      <Route path="/planos" element={<PlanosPage />} />
+      <Route path="/moderador" element={<ModeradorDashboard />} />
+      <Route path="/suporte" element={<RoleGuard allowedRoles={["suporte","admin"]} redirectTo="/auth"><SupportAgentDashboard /></RoleGuard>} />
+      <Route path="/links" element={<LinksPage />} />
+      <Route path="/download" element={<DownloadApp />} />
+      <Route path="/kds/:token" element={<KdsPage />} />
+      <Route path="/blog" element={<BlogIndex />} />
+      <Route path="/blog/:slug" element={<BlogPost />} />
+      <Route path="/admin/blog" element={<RoleGuard allowedRoles={["admin"]} redirectTo="/"><BlogAdmin /></RoleGuard>} />
+      <Route path="/admin/blog/novo" element={<RoleGuard allowedRoles={["admin"]} redirectTo="/"><BlogAdminEditor /></RoleGuard>} />
+      <Route path="/admin/blog/:id" element={<RoleGuard allowedRoles={["admin"]} redirectTo="/"><BlogAdminEditor /></RoleGuard>} />
+      <Route path="/vaga/:cidade" element={<VagaPromoPage />} />
+      <Route path="/:slug" element={<StorePage />} />
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  );
+});
 
 // On Capacitor, capacitorLifecycle.ts already calls focusManager.setFocused(true)
 // on every app resume — which triggers refetchOnWindowFocus internally.
