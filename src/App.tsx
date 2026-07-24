@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect, useState } from "react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { queryClient } from "@/lib/queryClient";
 import { supabase } from "@/integrations/supabase/client";
 import { BrowserRouter, Route, Routes, useNavigate, useLocation, Navigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
@@ -9,6 +10,7 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { StoreProvider } from "@/contexts/StoreContext";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import RoleGuard from "@/components/RoleGuard";
+import LojistaHomeRedirect from "@/components/LojistaHomeRedirect";
 import InstallPrompt from "@/components/InstallPrompt";
 import NotificationPrompt from "@/components/NotificationPrompt";
 import DownloadAppPrompt from "@/components/DownloadAppPrompt";
@@ -87,24 +89,10 @@ const PageLoader = () => (
 
 // On Capacitor, capacitorLifecycle.ts already calls focusManager.setFocused(true)
 // on every app resume — which triggers refetchOnWindowFocus internally.
-// Keeping refetchOnWindowFocus:true causes a double-refetch on every resume.
-// Disable it here and rely solely on explicit invalidations + focusManager.
+// queryClient extraído para `src/lib/queryClient.ts` para que módulos não-React
+// (route resolvers) possam ler o mesmo cache sem duplicar queries.
 const isNativeApp = typeof window !== "undefined" &&
   (window as any).Capacitor?.isNativePlatform?.() === true;
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 1000 * 60,           // 60s global — dados considerados frescos por 1min
-      gcTime: 1000 * 60 * 15,         // 15min cache — reduz cold re-fetches
-      refetchOnWindowFocus: !isNativeApp, // Capacitor lifecycle handles this
-      refetchOnReconnect: true,
-      refetchOnMount: true,
-      retry: 1,
-      // Queries de dados em tempo real (pedidos) sobrescrevem com staleTime menor
-    },
-  },
-});
 
 /** Listens for push notification taps and navigates via React Router */
 const PushNavigator = () => {
@@ -388,7 +376,7 @@ const App = () => {
                 <Route path="/perfil" element={<PerfilPage />} />
                 <Route path="/auth" element={<AuthPage />} />
                 <Route path="/portal-parceiro" element={<PartnerLogin />} />
-                <Route path="/admin" element={<RoleGuard allowedRoles={["lojista", "lojista_matriz", "lojista_unidade", "admin"]} redirectTo="/" requireApproval><AdminDashboardV2 /></RoleGuard>} />
+                <Route path="/admin" element={<RoleGuard allowedRoles={["lojista", "lojista_matriz", "lojista_unidade", "admin"]} redirectTo="/" requireApproval><LojistaHomeRedirect><AdminDashboardV2 /></LojistaHomeRedirect></RoleGuard>} />
                 <Route path="/matriz" element={<RoleGuard allowedRoles={["lojista_matriz", "admin"]} redirectTo="/"><MatrizDashboard /></RoleGuard>} />
                 <Route path="/admin2" element={<Navigate to="/admin" replace />} />
                 <Route path="/admin/pdv" element={<RoleGuard allowedRoles={["lojista", "admin"]} redirectTo="/" requireApproval><PdvPage /></RoleGuard>} />

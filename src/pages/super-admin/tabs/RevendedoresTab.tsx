@@ -14,6 +14,7 @@ import {
   Loader2, Search, Users, Handshake, Wallet, CheckCircle2, XCircle, Ban, Store, DollarSign, Percent, Copy, Zap, ShieldAlert, FileDown,
 } from "lucide-react";
 import { formatBRL } from "@/lib/utils";
+import { KpiCard } from "@/components/ui/kpi-card";
 
 type Reseller = {
   id: string; user_id: string; email: string | null; code: string;
@@ -536,19 +537,6 @@ export default function RevendedoresTab() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
-  );
-}
-
-function KpiCard({ icon: Icon, label, value, sub, highlight }: { icon: any; label: string; value: string; sub?: string; highlight?: boolean }) {
-  return (
-    <div className={`rounded-2xl border p-3 ${highlight ? "border-amber-400 bg-amber-50/40" : "border-border bg-card"}`}>
-      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-        <Icon className="h-3.5 w-3.5" />
-        <span className="font-bold uppercase tracking-wide">{label}</span>
-      </div>
-      <div className="mt-1 text-xl font-black">{value}</div>
-      {sub && <div className="text-[11px] text-muted-foreground">{sub}</div>}
     </div>
   );
 }

@@ -8,6 +8,8 @@ import { registerCapacitorPush, isCapacitorNative, reclaimStoredToken, resetPush
 import { clearStoredPushState } from "@/lib/pushSession";
 import { getDeviceId } from "@/lib/deviceSession";
 import { setUser as setSentryUser } from "@/lib/sentry";
+import { queryClient } from "@/lib/queryClient";
+import { USER_ROUTING_QUERY_KEY } from "@/hooks/useUserRouting";
 import { toast } from "sonner";
 
 interface AuthContextType {
@@ -207,6 +209,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           localStorage.removeItem(`itasuper:userRole:${previousUserId}`);
           localStorage.removeItem(`itasuper:userPlan:${previousUserId}`);
         } catch {}
+        try { queryClient.removeQueries({ queryKey: [USER_ROUTING_QUERY_KEY] }); } catch {}
         if (!isCapacitorNative()) {
           clearStoredPushState();
         }
@@ -217,6 +220,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       // Register device on explicit sign in (not token refresh)
       if (event === "SIGNED_IN" && nextUserId) {
+        try { queryClient.invalidateQueries({ queryKey: [USER_ROUTING_QUERY_KEY, nextUserId] }); } catch {}
         evaluateDeviceTracking(nextUserId).then((track) => {
           shouldTrackDeviceRef.current = track;
           registerDevice().then(() => startDeviceCheck());

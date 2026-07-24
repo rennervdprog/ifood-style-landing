@@ -1,68 +1,118 @@
-# Sistema de Revenda — Fechamento final (v1.25.4 → v1.26.0)
+# Plano — Fonte da Verdade das Rotas (v2, com E2E)
 
-Status: v1.25.3 no ar. Fases 1–5 completas + Fase 6 parcial (landing, ebook, scripts, botões manuais de cron).
+## Objetivo
 
----
-
-## O que falta (agrupado por patch)
-
-### v1.25.4 — Refinos Super Admin + Anti-fraude avançado
-- **Cohort 3/6/12 meses** por revendedor (quantas lojas indicadas seguem ativas).
-- **CAC efetivo**: `SUM(commissions.paid) / SUM(MRR gerado)` com alerta se CAC > 6× LTV.
-- **Ranking por MRR trazido** (não só nº de lojas) com sparkline 6 meses.
-- **Anti-fraude v2**: cruzar `stores.owner` CPF/CNPJ/user_id/device_id contra o próprio `resellers.user_id` via `signup_attempts`. Bloqueia referral + alerta.
-- Nova RPC `admin_reseller_stats_v2()` (SECURITY DEFINER, admin-only) devolvendo cohort, CAC, ranking.
-
-### v1.25.5 — Relatório mensal exportável
-- Botão "Exportar CSV do mês" na `RevendedoresTab` do Super Admin.
-- CSV: revendedor, PIX, valor total pendente, quebra bounty/recorrente, período.
-- Marca tudo como `processing` ao exportar; botão "confirmar pagamento em lote" vira `paid`.
-
-### v1.25.6 — Materiais visuais no dashboard
-- Aba **Materiais** em `/revendedor`: 3 artes Andrômeda (stories/feed 1080×1920 e 1080×1080) via `imagegen--generate_image`.
-- Placeholder de vídeo-tutorial (embed YouTube quando gravado).
-
-### v1.26.0 — E2E Playwright ponta-a-ponta (bloco 2)
-Novo script `scripts/e2e/reseller/full_ui_flow.py`:
-1. Revendedor se cadastra em `/seja-revendedor` (form).
-2. Admin aprova no Super Admin → aba Revendedores.
-3. Lojista abre `/cadastro?ref=CODIGO` → cria loja `pdv_only` fake.
-4. Injeta 20 pedidos entregues via `oneshot-e2e-reseller` (modo `seed_orders`).
-5. Dispara `admin_reseller_run_bounty_cron(false)` → valida bounty criado.
-6. Revendedor abre `/revendedor` → vê saldo → solicita saque R$ 150.
-7. Admin marca como pago → comissões viram `paid`.
-8. Assert visual em cada etapa (screenshots em `/tmp/browser/reseller/`).
-
-Além disso, rodar novamente os E2E existentes que ainda não passaram no bloco 2:
-- `scripts/e2e/reseller/` — suíte completa de RPCs (35/35 verde já).
-- Playwright do fluxo público `/seja-revendedor` (SEO + formulário + JSON-LD).
-- Playwright do landing `/cadastro?ref=` gravando `sessionStorage` corretamente.
+Centralizar toda decisão de "para onde mandar o usuário" em **um único hook** (`useUserRouting`), eliminando as 5 cópias divergentes, os spinners em cascata e os double-redirects. **Sem quebrar nada**: guards continuam existindo (segurança em profundidade), só passam a ler do mesmo cache.
 
 ---
 
-## Ordem de execução
+## Fase 0 — Rede de segurança (E2E ANTES de mexer)
 
-1. v1.25.4 (patch de código + migration para `admin_reseller_stats_v2` e anti-fraude v2).
-2. v1.25.5 (patch UI + edge function `oneshot-reseller-csv-export`).
-3. v1.25.6 (patch UI + gerar 3 artes).
-4. v1.26.0 (script Playwright + rodar todos e reportar).
+Antes de tocar em qualquer arquivo de rota/guard, criar a suíte que valida o comportamento **atual** e servirá como baseline. Se a refatoração quebrar algo, o teste acusa.
 
-Cada patch bumpa `src/lib/appVersion.ts` + `android/app/build.gradle` (versionName + versionCode +1).
+Criar `e2e/routing-source-of-truth.spec.ts` com cenários:
+
+1. **Admin** loga em `/portal-parceiro` → destino final `/super-admin`.
+2. **Lojista delivery** loga em `/portal-parceiro` → destino final `/admin`.
+3. **Lojista pdv_only** loga em `/portal-parceiro` → destino final `/admin/pdv` (hoje passa por `/admin` primeiro — teste vai registrar isso e depois validar que **não passa mais**).
+4. **Motoboy** loga → `/entregador`.
+5. **Cliente** loga em `/cliente` → permanece em `/cliente`.
+6. **Revendedor** loga em `/cliente` → destino `/revendedor` (ou home do revendedor).
+7. **Já logado** entra em `/portal-parceiro` → é levado direto ao seu painel sem mostrar tela de login.
+8. **Lojista tentando `/super-admin`** → bloqueado pelo `RoleGuard`, redirecionado.
+
+Cada teste usa `page.on('framenavigated')` para contar navegações intermediárias e `page.on('response')` (ou marca visual) para contar spinners. Baseline atual será gravada como número máximo aceitável; após refatoração, apertamos os limites (1 navegação, 1 spinner).
+
+Usar o mesmo padrão de mint de sessão dos E2Es existentes (`e2e-mint-session` + `E2E_SETUP_TOKEN`), reaproveitando usuários seed já criados nos workflows atuais. Adicionar um seed de usuário **pdv_only** se ainda não existir.
+
+Rodar localmente (`bunx playwright test e2e/routing-source-of-truth.spec.ts`) e no workflow `.github/workflows/e2e-playwright.yml`.
+
+Também adicionar teste unitário Vitest em `src/hooks/__tests__/useUserRouting.test.ts` cobrindo cada branch de resolução de `homeRoute` (admin, lojista, lojista pdv_only, matriz, motoboy, reseller, cliente, fallback).
+
+---
+
+## Fase 1 — Hook `useUserRouting` (fonte da verdade)
+
+`src/hooks/useUserRouting.ts`:
+
+- react-query `queryKey: ["user-routing", userId]`, `staleTime: 5min`, `gcTime: 30min`.
+- Uma única `queryFn` que dispara em **paralelo** (`Promise.all`):
+  - `user_roles` (admin?)
+  - `profiles` (role, is_approved, network_id, unit_store_id)
+  - `stores` (owner_id → id, slug) — fallback lojista
+  - `store_networks` (owner_id) — fallback matriz
+  - `drivers` + `store_drivers` — fallback motoboy
+  - `store_plans.plan_type` do store resolvido — para `isPdvOnly`
+  - `resellers` — para `isReseller`
+- Retorna:
+  ```ts
+  { role, isAdmin, isLojista, isMatriz, isMotoboy, isReseller,
+    isPdvOnly, isApproved, storeId, storeSlug, homeRoute, loading }
+  ```
+- `homeRoute`: `/super-admin` | `/admin/pdv` | `/admin` | `/entregador` | `/revendedor` | `/cliente` | `/portal-parceiro`.
+- Invalidação: `AuthContext` chama `queryClient.removeQueries(["user-routing"])` no `SIGNED_OUT` e `invalidateQueries` no `SIGNED_IN`.
+
+**Nada é refatorado ainda** — o hook é apenas criado e testado com o Vitest da Fase 0.
+
+---
+
+## Fase 2 — Migrar consumidores (um por vez, com verde no E2E)
+
+Ordem incremental para minimizar risco. Após cada item: rodar `e2e/routing-source-of-truth.spec.ts` — precisa estar verde antes do próximo.
+
+1. **`ClientAuthScreen.redirectByRole`** → substituir por `invalidate + navigate(homeRoute, {replace:true})`. Fim do `window.location.replace`.
+2. **`PartnerLogin`** → mesma coisa; remove chamadas soltas a `resolvePartnerDashboard`.
+3. **`CapacitorRouteGuard`** → lê `homeRoute` do hook em vez de chamar `resolvePartnerDashboard`. Mantém a lógica de `appMode` (partner vs cliente APK) intacta.
+4. **`RoleGuard`** → mantém API pública (`allowedRoles`, `requireApproval`) e comportamento; internamente troca as 5 queries próprias por `useUserRouting()`. Regressão coberta pelo teste 8.
+5. **`resolvePartnerDashboard`** → vira thin wrapper que lê `queryClient.getQueryData(["user-routing", userId])`; se não houver cache, faz fallback à lógica antiga (não quebra callers ainda não migrados).
+6. **`ClientHomeSwitch`** → usa `isReseller` do hook; `useIsReseller` deprecado (mas mantido enquanto houver outros callers).
+
+---
+
+## Fase 3 — `pdv_only` decidido no roteamento (elimina double-redirect)
+
+- Criar `<LojistaHomeRedirect />`: se `isPdvOnly` → `<Navigate to="/admin/pdv" replace />`, senão renderiza `AdminDashboardV2`.
+- Trocar `App.tsx` `/admin` para envolver com esse wrapper (dentro do `RoleGuard` existente).
+- **Remover** de `AdminDashboardV2` o redirect tardio para `/admin/pdv` e a escrita de `itasuper:userPlan`/`itasuper:userRole` no localStorage.
+- Teste 3 do E2E passa a exigir `framenavigated === 1` (sem passar por `/admin` no meio).
+
+---
+
+## Fase 4 — Limpeza
+
+- `rg "ClientGuard"` — se só houver o próprio arquivo e o `App.tsx` sem uso ativo, **deletar** `src/components/ClientGuard.tsx`.
+- Remover queries duplicadas de `stores.owner_id` em `StoreDirectory.tsx` — usar hook.
+- Remover leituras de `itasuper:userPlan:*` / `itasuper:userRole:*` em toda a base.
+- Regra do projeto: navegação interna **sempre** via `navigate(..., {replace:true})`, nunca `window.location.replace`.
+
+---
+
+## Fase 5 — Validação final
+
+- Rodar suíte completa Playwright do projeto (`bunx playwright test`) — todos os specs existentes precisam continuar verdes.
+- Rodar `e2e/routing-source-of-truth.spec.ts` com asserts apertados (1 navegação, 1 spinner).
+- Rodar Vitest (`useUserRouting.test.ts` + testes existentes).
+- Testar manualmente no preview: login como admin, lojista delivery, lojista pdv_only, motoboy, cliente, revendedor.
+- Bump de versão em `src/lib/appVersion.ts`, `src/pages/PerfilPage.tsx`, `android/app/build.gradle` (`versionName` + `versionCode+1`).
 
 ---
 
 ## Detalhes técnicos
 
-- Todas as novas RPCs: `SECURITY DEFINER`, `search_path=public`, `REVOKE ALL FROM PUBLIC, anon`, `GRANT EXECUTE TO authenticated` (checa `has_role(auth.uid(),'admin')`).
-- Cron de anti-fraude v2: estende `reseller_process_fraud_checks` existente com JOIN em `signup_attempts` por `cpf_cnpj_hash`, `device_id`, `user_id`.
-- Export CSV: edge function que roda com service-role, aceita `?month=YYYY-MM`, devolve `text/csv`.
-- Playwright: viewport 1280×1800, sessão Supabase injetada via `LOVABLE_BROWSER_SUPABASE_*`, screenshots por etapa.
-- Registro dos runs em `reseller_cron_runs` (já existe) para auditoria.
+- Hook em `src/hooks/useUserRouting.ts`; consumido pelo `QueryClient` global já existente.
+- Cache invalidado em `SIGNED_OUT`/`SIGNED_IN` no `AuthContext` (única alteração no context).
+- `CapacitorRouteGuard` continua responsável por lógica de APK (partner vs cliente) — apenas a fonte do `homeRoute` muda.
+- `resolvePartnerDashboard` mantido temporariamente como shim para compatibilidade; remover só quando 0 callers ativos.
 
----
+## Riscos & mitigação
 
-## Aprovações que preciso
+- **RoleGuard usado em muitas rotas**: manter API pública idêntica; E2E cobre cada allowedRoles.
+- **Cache stale após mudança de role no Super Admin**: invalidar `["user-routing", targetUserId]` nas ações que mudam role.
+- **Capacitor partner APK**: `homeRoute` respeita `appMode` — partner nunca resolve para `/cliente`. Teste específico no Playwright emulando `capApp=partner`.
+- **Loja pdv_only sem `store_plans.plan_type` populado**: hook trata `null` como `commission_only` (mesmo default de hoje).
 
-1. Confirmo **desligado** o GMV bonus 0,3% (5.3) — só implemento se pedir depois.
-2. Export CSV em vez de PIX Asaas automático — ok? (você já disse que prefere manual).
-3. Sigo do v1.25.4 até v1.26.0 sem parar entre patches, reportando no final?
+## Fora de escopo
+
+- Redesign visual.
+- Mudar regras de plano/`pdv_only`.
+- Mudar `AuthContext` além da invalidação de cache.

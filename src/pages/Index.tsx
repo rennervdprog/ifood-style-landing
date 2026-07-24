@@ -713,10 +713,10 @@ const Index = () => {
                © {new Date().getFullYear()} ItaSuper - Todos os direitos reservados.
              </p>
              <div className="flex items-center gap-6">
-               <div className="flex flex-col items-end">
-                 <span className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Desenvolvido por</span>
-                 <span className="font-black text-primary">Lovable AI</span>
-               </div>
+             <div className="flex flex-col items-end">
+               <span className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Plataforma</span>
+               <span className="font-black text-primary">ItaSuper</span>
+             </div>
              </div>
            </div>
          </div>

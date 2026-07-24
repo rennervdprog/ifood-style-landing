@@ -1087,4 +1087,20 @@ const PerfilPage = () => {
   );
 };
 
-export default PerfilPage;
+import { useIsReseller as _useIsReseller } from "@/hooks/useIsReseller";
+import ResellerPerfil from "./revendedor/ResellerPerfil";
+
+const PerfilPageSwitch = () => {
+  const { isReseller, loading } = _useIsReseller();
+  if (loading) {
+    return (
+      <div className="min-h-dvh bg-background flex items-center justify-center">
+        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+  if (isReseller) return <ResellerPerfil />;
+  return <PerfilPage />;
+};
+
+export default PerfilPageSwitch;
