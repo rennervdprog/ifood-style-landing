@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, MessageCircle, TrendingUp, DollarSign, Truck, Store as StoreIcon, LucideIcon } from "lucide-react";
-import { formatBRL } from "@/lib/money";
+import { formatBRL } from "@/lib/utils";
 
 /* ─────────────────────────────────────────────────────────────
  * MetricCard — KPI card reutilizado no header do dashboard.
