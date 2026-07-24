@@ -565,7 +565,10 @@ export default function AdminPlanManager() {
                       currentLifetimeFree={!!(plan as any).essencial_lifetime_free}
                       currentAutonomyLifetime={!!(plan as any).autonomy_lifetime_free}
                       displayPlan={currentDisplay ?? (plan.plan_type as PlanType)}
-                      planDefault={planDefaults[currentDisplay ?? (plan.plan_type as PlanType)]}
+                      planDefault={
+                        planDefaults[currentDisplay ?? (plan.plan_type as DisplayPlan)] ??
+                        { monthly_fee: Number(plan.monthly_fee ?? 0), commission_rate: Number(plan.commission_rate ?? 0) }
+                      }
                       onSave={() => {
                         queryClient.invalidateQueries({ queryKey: ["admin-store-plans"] });
                         queryClient.invalidateQueries({ queryKey: ["admin-all-stores"] });
