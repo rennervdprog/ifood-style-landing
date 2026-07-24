@@ -1,8 +1,30 @@
 import { supabase } from "@/integrations/supabase/client";
+import { queryClient } from "@/lib/queryClient";
+import { USER_ROUTING_QUERY_KEY, type UserRoutingSnapshot } from "@/hooks/useUserRouting";
 
-export type PartnerDashboardPath = "/super-admin" | "/admin" | "/entregador" | "/portal-parceiro";
+export type PartnerDashboardPath =
+  | "/super-admin"
+  | "/admin"
+  | "/admin/pdv"
+  | "/matriz"
+  | "/entregador"
+  | "/revendedor"
+  | "/portal-parceiro";
 
+/**
+ * Fonte da verdade: se o hook `useUserRouting` já resolveu, reaproveita o
+ * cache do react-query (0 round-trips). Caso contrário, cai no fallback
+ * legado — mesma lógica de sempre, mantida para retrocompatibilidade.
+ */
 export async function resolvePartnerDashboard(userId: string): Promise<PartnerDashboardPath> {
+  const cached = queryClient.getQueryData<UserRoutingSnapshot>([USER_ROUTING_QUERY_KEY, userId]);
+  if (cached) {
+    return cached.homeRoute as PartnerDashboardPath;
+  }
+  return legacyResolve(userId);
+}
+
+async function legacyResolve(userId: string): Promise<PartnerDashboardPath> {
   const { data: adminRole } = await supabase
     .from("user_roles")
     .select("role")
