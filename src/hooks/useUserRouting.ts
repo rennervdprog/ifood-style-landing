@@ -156,6 +156,26 @@ const EMPTY: UserRoutingSnapshot = {
 };
 
 async function fetchUserRouting(userId: string): Promise<UserRoutingSnapshot> {
+  // Fast path: single RPC that aggregates the 7+ queries we used to fire in parallel.
+  // Falls back to the legacy multi-query path if the RPC isn't available yet.
+  try {
+    const { data, error } = await (supabase as any).rpc("get_user_routing_context", { _user_id: userId });
+    if (!error && data && typeof data === "object") {
+      return resolveUserRouting({
+        adminRow: data.adminRow ?? null,
+        profile: data.profile ?? null,
+        ownedStore: data.ownedStore ?? null,
+        matrizNetwork: data.matrizNetwork ?? null,
+        driver: data.driver ?? null,
+        storeDriver: data.storeDriver ?? null,
+        storePlanType: data.storePlanType ?? null,
+        reseller: data.reseller ?? null,
+      });
+    }
+  } catch {
+    // fall through to legacy path
+  }
+
   const [
     adminRes,
     profileRes,
@@ -174,7 +194,6 @@ async function fetchUserRouting(userId: string): Promise<UserRoutingSnapshot> {
     (supabase as any).from("resellers").select("id").eq("user_id", userId).maybeSingle(),
   ]);
 
-  // Only fetch plan_type when we actually resolved a store — saves a round-trip.
   let storePlanType: string | null = null;
   const ownedStore = (ownedStoreRes as any).data as { id: string; slug: string | null } | null;
   if (ownedStore?.id) {
