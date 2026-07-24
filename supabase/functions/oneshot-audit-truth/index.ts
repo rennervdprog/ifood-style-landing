@@ -1,13 +1,9 @@
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 const cors = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "*" };
+const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 async function q(sql: string) {
-  const ref = Deno.env.get("EXTERNAL_SUPABASE_PROJECT_REF")!;
-  const t = Deno.env.get("EXTERNAL_SUPABASE_ACCESS_TOKEN")!;
-  const r = await fetch(`https://api.supabase.com/v1/projects/${ref}/database/query`, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${t}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ query: sql }),
-  });
-  return JSON.parse(await r.text());
+  const { data, error } = await sb.rpc("exec_sql" as any, { sql });
+  return error ? { error: error.message } : data;
 }
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: cors });
