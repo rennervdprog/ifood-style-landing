@@ -117,18 +117,17 @@ type AdminTab = "dashboard" | "approvals" | "stores" | "financeiro" | "pagamento
 const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; group: string }[] = [
   // Início
   { key: "dashboard", label: "Visão Geral", icon: LayoutDashboard, group: "Início" },
-  // Operação (Cidades + Entrega agora vivem dentro de "Lojas")
-  { key: "stores", label: "Lojas", icon: Store, group: "Operação" },
-  { key: "coupons", label: "Cupons", icon: Ticket, group: "Operação" },
+  // Lojas (Cidades + Entrega vivem como sub-abas dentro de "Lojas")
+  { key: "stores", label: "Lojas", icon: Store, group: "Lojas" },
+  { key: "coupons", label: "Cupons", icon: Ticket, group: "Lojas" },
   // Financeiro unificado (Pagamentos / Saques / Planos / Sócios / Teste viraram sub-abas)
   { key: "financeiro", label: "Financeiro", icon: DollarSign, group: "Financeiro" },
-  // Pessoas
-  { key: "moderadores", label: "Moderadores", icon: Users, group: "Pessoas" },
-  { key: "suporte", label: "Suporte", icon: MessageCircle, group: "Pessoas" },
-  // Marketing (Links virou sub-aba de "Página do App")
-  { key: "app-page", label: "Página do App", icon: Smartphone, group: "Marketing" },
-  { key: "broadcast", label: "Notificações", icon: Megaphone, group: "Marketing" },
-  { key: "coach", label: "Coach Vendas IA", icon: Sparkles, group: "Marketing" },
+  // Crescimento (Pessoas + Marketing fundidos — mesma intenção: atrair, engajar e apoiar lojistas)
+  { key: "app-page", label: "Página do App", icon: Smartphone, group: "Crescimento" },
+  { key: "broadcast", label: "Notificações", icon: Megaphone, group: "Crescimento" },
+  { key: "coach", label: "Coach Vendas IA", icon: Sparkles, group: "Crescimento" },
+  { key: "moderadores", label: "Moderadores", icon: Users, group: "Crescimento" },
+  { key: "suporte", label: "Suporte", icon: MessageCircle, group: "Crescimento" },
   // Sistema (Logs virou sub-aba de "Auditoria")
   { key: "sync", label: "Sincronizar", icon: RefreshCw, group: "Sistema" },
   { key: "auditoria", label: "Auditoria", icon: ShieldCheck, group: "Sistema" },
@@ -795,7 +794,7 @@ const TAB_SUBTITLE: Record<string, (ctx: {
           <div className="fixed bottom-16 left-0 right-0 z-[70] bg-card border-t border-border rounded-t-3xl shadow-2xl lg:hidden animate-in slide-in-from-bottom-4 max-h-[60vh] overflow-y-auto" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
             <div className="w-12 h-1 bg-muted-foreground/20 rounded-full mx-auto mt-3 mb-2" />
             <div className="px-4 pb-4 space-y-3">
-              {["Início", "Operação", "Financeiro", "Pessoas", "Marketing", "Sistema"].map((group) => {
+              {["Início", "Lojas", "Financeiro", "Crescimento", "Sistema"].map((group) => {
                 const groupItems = moreTabs.filter((i) => i.group === group);
                 if (groupItems.length === 0) return null;
                 return (
@@ -891,7 +890,7 @@ const TAB_SUBTITLE: Record<string, (ctx: {
 
         {/* Navigation */}
         <nav className="flex-1 px-3 py-2 overflow-y-auto scrollbar-thin">
-          {["Início", "Operação", "Financeiro", "Pessoas", "Marketing", "Sistema"].map((group, groupIdx) => {
+          {["Início", "Lojas", "Financeiro", "Crescimento", "Sistema"].map((group, groupIdx) => {
             const items = sidebarItems.filter(i => i.group === group);
             if (items.length === 0) return null;
             return (
