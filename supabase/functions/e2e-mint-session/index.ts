@@ -1,12 +1,13 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+const e2eCorsHeaders = {
+  ...corsHeaders,
   "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-e2e-token",
 };
 
 const json = (b: unknown, s = 200) =>
-  new Response(JSON.stringify(b), { status: s, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+  new Response(JSON.stringify(b), { status: s, headers: { ...e2eCorsHeaders, "Content-Type": "application/json" } });
 
 async function findUserByEmail(url: string, serviceKey: string, email: string) {
   const direct = await fetch(`${url}/auth/v1/admin/users?filter=email.eq.${encodeURIComponent(email)}`, {
@@ -66,7 +67,7 @@ async function ensureE2eUser(url: string, serviceKey: string, email: string, pas
  *   - E2E_TEST_EMAIL, E2E_TEST_PASSWORD
  */
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  if (req.method === "OPTIONS") return new Response("ok", { headers: e2eCorsHeaders });
   try {
     const provided = req.headers.get("x-e2e-token") ?? "";
     const expected = Deno.env.get("E2E_SETUP_TOKEN") ?? "";
