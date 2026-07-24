@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Card } from "@/components/ui/card";
 import { Wallet, Store, Clock, FileText } from "lucide-react";
 import { formatBRL } from "@/lib/utils";
+import { KpiCard } from "@/components/ui/kpi-card";
 import AdminFixedPlanReceivables from "@/components/AdminFixedPlanReceivables";
 import AdminPlanTemplatesEditor from "@/components/AdminPlanTemplatesEditor";
 import AdminPlanManager from "@/components/AdminPlanManager";
@@ -12,35 +12,6 @@ interface Kpis {
   receber: number;
   lojas: number;
   pendentes: number;
-}
-
-function KpiCard({
-  icon: Icon,
-  label,
-  value,
-  tone,
-}: {
-  icon: typeof Wallet;
-  label: string;
-  value: string;
-  tone: "emerald" | "blue" | "amber";
-}) {
-  const tones = {
-    emerald: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
-    blue: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
-    amber: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
-  } as const;
-  return (
-    <Card className="p-3 flex items-center gap-3 rounded-2xl">
-      <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${tones[tone]}`}>
-        <Icon className="h-5 w-5" />
-      </div>
-      <div className="min-w-0">
-        <p className="text-[11px] uppercase tracking-wide text-muted-foreground truncate">{label}</p>
-        <p className="text-lg font-bold leading-tight truncate">{value}</p>
-      </div>
-    </Card>
-  );
 }
 
 export default function PlanosTab() {
