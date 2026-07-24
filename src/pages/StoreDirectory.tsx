@@ -340,18 +340,6 @@ const StoreDirectory = () => {
   useEffect(() => {
     if (authLoading) return;
     if (!user) { setPartnerRole(null); setRoleChecked(true); return; }
-    // Fast-path: se já sabemos que este usuário é lojista/motoboy, navega
-    // imediatamente sem renderizar a landing (evita flash de 1-2s).
-    try {
-      const cached = localStorage.getItem(`itasuper:userRole:${user.id}`);
-      const cachedPlan = localStorage.getItem(`itasuper:userPlan:${user.id}`);
-      if (cached === "lojista") {
-        navigate(cachedPlan === "pdv_only" ? "/admin/pdv" : "/admin", { replace: true });
-        return;
-      }
-      if (cached === "motoboy") { navigate("/entregador", { replace: true }); return; }
-      if (cached === "cliente") { navigate("/cliente", { replace: true }); return; }
-    } catch {}
     let cancelled = false;
     (async () => {
       try {
@@ -361,11 +349,9 @@ const StoreDirectory = () => {
         const { data: profile } = await supabase.from("profiles").select("role, is_approved").eq("user_id", user.id).maybeSingle();
         if (cancelled) return;
         if (profile?.role === "lojista") {
-          try { localStorage.setItem(`itasuper:userRole:${user.id}`, "lojista"); } catch {}
           navigate("/admin", { replace: true }); return;
         }
         if (profile?.role === "motoboy") {
-          try { localStorage.setItem(`itasuper:userRole:${user.id}`, "motoboy"); } catch {}
           if (!profile?.is_approved) {
             const { data: sd } = await supabase.from("store_drivers").select("id").eq("driver_user_id", user.id).limit(1).maybeSingle();
             if (!sd) { navigate("/entregador", { replace: true }); return; }
@@ -375,7 +361,6 @@ const StoreDirectory = () => {
           return;
         }
         if (!profile?.role || profile.role === "cliente") {
-          try { localStorage.setItem(`itasuper:userRole:${user.id}`, "cliente"); } catch {}
           navigate("/cliente", { replace: true }); return;
         }
       } catch (e) { console.error("StoreDirectory role check error:", e); }

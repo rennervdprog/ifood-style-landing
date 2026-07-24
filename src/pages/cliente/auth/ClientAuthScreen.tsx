@@ -1,6 +1,8 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { queryClient } from "@/lib/queryClient";
+import { USER_ROUTING_QUERY_KEY, type UserRoutingSnapshot } from "@/hooks/useUserRouting";
 import {
   Mail, Lock, Eye, EyeOff, KeyRound, FileText, Phone, User, ShoppingBag, Zap, ShieldCheck,
 } from "lucide-react";
@@ -13,36 +15,23 @@ type AuthMode = "login" | "signup" | "forgot" | "reset";
 const REMEMBER_KEY = "itasuper_remember_until";
 const TWO_MONTHS_MS = 60 * 24 * 60 * 60 * 1000;
 
-async function redirectByRole(fallback: () => void) {
+async function redirectByRole(navigate: (to: string, opts?: { replace?: boolean }) => void, fallback: () => void) {
   try {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { fallback(); return; }
-    const { data: adminRole } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", user.id)
-      .eq("role", "admin")
-      .maybeSingle();
-    if (adminRole) { window.location.replace("/super-admin"); return; }
-    const { data: prof } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("user_id", user.id)
-      .maybeSingle();
-    const role = (prof as any)?.role;
-    if (role === "lojista" || role === "lojista_matriz" || role === "lojista_unidade") {
-      const plan = localStorage.getItem(`itasuper:userPlan:${user.id}`);
-      window.location.replace(plan === "pdv_only" ? "/admin/pdv" : "/admin");
-      return;
-    }
-    if (role === "motoboy") { window.location.replace("/entregador"); return; }
-    fallback();
+    // Invalida cache e refaz uma única leitura via fonte da verdade.
+    await queryClient.invalidateQueries({ queryKey: [USER_ROUTING_QUERY_KEY, user.id] });
+    const snap = await queryClient.fetchQuery<UserRoutingSnapshot>({ queryKey: [USER_ROUTING_QUERY_KEY, user.id] });
+    const target = snap?.homeRoute;
+    if (!target || target === "/cliente") { fallback(); return; }
+    navigate(target, { replace: true });
   } catch {
     fallback();
   }
 }
 
 const ClientAuthScreen = ({ onSuccess }: { onSuccess: () => void }) => {
+  const navigate = useNavigate();
   const [mode, setMode] = useState<AuthMode>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -105,7 +94,7 @@ const ClientAuthScreen = ({ onSuccess }: { onSuccess: () => void }) => {
         if (rememberMe) localStorage.setItem(REMEMBER_KEY, String(Date.now() + TWO_MONTHS_MS));
         else localStorage.removeItem(REMEMBER_KEY);
         toast.success("Login realizado!");
-        await redirectByRole(onSuccess);
+        await redirectByRole(navigate, onSuccess);
       } else if (mode === "signup") {
         const { data: signUpData, error } = await supabase.auth.signUp({
           email: email.trim(),

@@ -8,6 +8,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { Mail, Lock, Eye, EyeOff, Store, Shield, Bike } from "lucide-react";
 import { resolvePartnerDashboard } from "@/lib/partnerDashboard";
+import { queryClient } from "@/lib/queryClient";
+import { USER_ROUTING_QUERY_KEY } from "@/hooks/useUserRouting";
 import BiometricLoginButton from "@/components/BiometricLoginButton";
 import {
   isBiometricAvailable,
@@ -46,6 +48,8 @@ const PartnerLogin = () => {
     }
     setChecking(true);
     try {
+      // Garante que o cache do useUserRouting está fresco antes de resolver.
+      await queryClient.invalidateQueries({ queryKey: [USER_ROUTING_QUERY_KEY, userId] });
       const dashboardPath = await resolvePartnerDashboard(userId);
       if (dashboardPath === "/portal-parceiro") {
         // On Capacitor, show choose mode instead of navigating to onboarding landing

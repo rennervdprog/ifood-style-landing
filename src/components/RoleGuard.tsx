@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Shield } from "lucide-react";
 import { isPartnerCapacitorApp } from "@/lib/capacitorAppMode";
+import { useUserRouting } from "@/hooks/useUserRouting";
 
 interface RoleGuardProps {
   allowedRoles: string[];
@@ -16,12 +16,10 @@ interface RoleGuardProps {
 const RoleGuard = ({ allowedRoles, redirectTo, children, requireApproval = false }: RoleGuardProps) => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const [checking, setChecking] = useState(true);
-  const [authorized, setAuthorized] = useState(false);
+  const routing = useUserRouting();
   const [slow, setSlow] = useState(false);
-
-  // Estabiliza allowedRoles (array literal em JSX recria a referência a cada render)
   const allowedRolesKey = allowedRoles.join(",");
+  const checking = routing.loading;
 
   useEffect(() => {
     if (!authLoading && !checking) {
@@ -34,138 +32,38 @@ const RoleGuard = ({ allowedRoles, redirectTo, children, requireApproval = false
 
   useEffect(() => {
     if (authLoading) return;
-
     if (!user) {
       navigate(isPartnerCapacitorApp() ? "/portal-parceiro" : "/auth", { replace: true });
       return;
     }
+    if (routing.loading) return;
 
-    const checkRole = async () => {
-      // Admin can access ANY screen
-      const { data: adminRole } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", user.id)
-        .eq("role", "admin")
-        .maybeSingle();
+    // Admin bypass — pode acessar qualquer rota protegida.
+    if (routing.isAdmin) return;
 
-      if (adminRole) {
-        setAuthorized(true);
-        setChecking(false);
-        return;
-      }
+    const role = routing.role;
+    if (!role) {
+      if (allowedRoles.includes("cliente")) return; // fallback cliente permitido
+      toast.error("Acesso negado. Redirecionando...");
+      navigate(routing.homeRoute || redirectTo, { replace: true });
+      return;
+    }
 
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("role, is_approved")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      let resolvedRole = (profile as any)?.role as string | undefined;
-      let resolvedApproved = Boolean((profile as any)?.is_approved);
-
-      if (!resolvedRole && allowedRoles.includes("lojista")) {
-        const { data: ownedStore } = await supabase
-          .from("stores")
-          .select("id")
-          .eq("owner_id", user.id)
-          .maybeSingle();
-
-        if (ownedStore) {
-          resolvedRole = "lojista";
-        }
-      }
-
-      // Fallback: detectar matriz pela rede
-      if (!resolvedRole && allowedRoles.includes("lojista_matriz")) {
-        const { data: network } = await (supabase as any)
-          .from("store_networks" as any)
-          .select("id, is_approved")
-          .eq("owner_id", user.id)
-          .maybeSingle();
-        if (network) {
-          resolvedRole = "lojista_matriz";
-          resolvedApproved = Boolean((network as any).is_approved);
-        }
-      }
-
-      // Fallback: detectar unidade pela vinculação
-      if (!resolvedRole && allowedRoles.includes("lojista_unidade")) {
-        const { data: prof } = await supabase
-          .from("profiles")
-          .select("unit_store_id")
-          .eq("user_id", user.id)
-          .maybeSingle();
-        if ((prof as any)?.unit_store_id) {
-          resolvedRole = "lojista_unidade";
-          resolvedApproved = true; // unidades já vêm aprovadas
-        }
-      }
-
-      if (!resolvedRole && allowedRoles.includes("motoboy")) {
-        const { data: driver } = await supabase
-          .from("drivers")
-          .select("user_id, is_active")
-          .eq("user_id", user.id)
-          .maybeSingle();
-
-        if (driver) {
-          resolvedRole = "motoboy";
-          resolvedApproved = Boolean((driver as any).is_active);
-        } else {
-          // Check if user is a store-linked driver
-          const { data: storeDriver } = await supabase
-            .from("store_drivers")
-            .select("id")
-            .eq("driver_user_id", user.id)
-            .limit(1)
-            .maybeSingle();
-
-          if (storeDriver) {
-            resolvedRole = "motoboy";
-            resolvedApproved = true; // Store drivers are approved by the store owner
-          }
-        }
-      }
-
-      if (!resolvedRole) {
-        if (allowedRoles.includes("cliente")) {
-          setAuthorized(true);
-        } else {
-          toast.error("Acesso negado. Redirecionando...");
-          navigate(redirectTo, { replace: true });
-        }
-        setChecking(false);
-        return;
-      }
-
-      const role = resolvedRole;
-      
-      if (!allowedRoles.includes(role)) {
-        toast.error("Acesso negado. Redirecionando...");
-        if (role === "lojista") {
-          navigate("/admin", { replace: true });
-        } else if (role === "motoboy") {
-          navigate("/entregador", { replace: true });
-        } else {
-          navigate(redirectTo, { replace: true });
-        }
-        setChecking(false);
-        return;
-      }
-
-      // Auto-aprovação ativa: lojistas/motoboys têm acesso imediato após cadastro.
-      // (mantemos o parâmetro requireApproval na API para compat, mas não bloqueia mais)
-      void resolvedApproved;
-      void requireApproval;
-
-      setAuthorized(true);
-      setChecking(false);
-    };
-
-    checkRole();
+    if (!allowedRoles.includes(role)) {
+      toast.error("Acesso negado. Redirecionando...");
+      navigate(routing.homeRoute || redirectTo, { replace: true });
+    }
+    // requireApproval mantido na API por compat — auto-aprovação ativa.
+    void requireApproval;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id, authLoading, allowedRolesKey, redirectTo, requireApproval]);
+  }, [user?.id, authLoading, allowedRolesKey, redirectTo, requireApproval, routing.loading, routing.role, routing.isAdmin, routing.homeRoute]);
+
+  const authorized = (() => {
+    if (!user || routing.loading) return false;
+    if (routing.isAdmin) return true;
+    if (!routing.role) return allowedRoles.includes("cliente");
+    return allowedRoles.includes(routing.role);
+  })();
 
   if (authLoading || checking) {
     return (
