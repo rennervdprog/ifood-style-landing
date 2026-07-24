@@ -54,8 +54,3 @@ Deno.serve(async (req) => {
   const r = await q(sql);
   return new Response(JSON.stringify(r, null, 2), { headers: { ...cors, "Content-Type": "application/json" } });
 });
-
-const _dead = `
-  const r = await q(sql);
-  return new Response(JSON.stringify(r, null, 2), { headers: { ...cors, "Content-Type": "application/json" } });
-});
