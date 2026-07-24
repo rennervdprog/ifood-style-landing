@@ -15,6 +15,9 @@
     <!-- Preload main entry to shorten critical chain -->
     <link rel="modulepreload" href="/src/main.tsx" />
 
+    <!-- Preload LCP: logo horizontal aparece no header da landing (StoreDirectory) -->
+    <link rel="preload" as="image" href="/itasuper-logo-horizontal.webp" type="image/webp" fetchpriority="high" />
+
     <!-- Google Fonts — loaded after page load to not block FCP -->
     <script>
       window.addEventListener('load', function() {
