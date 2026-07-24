@@ -1,68 +1,63 @@
-# Sistema de Revenda — Fechamento final (v1.25.4 → v1.26.0)
+# Plano: Experiência dedicada do Revendedor
 
-Status: v1.25.3 no ar. Fases 1–5 completas + Fase 6 parcial (landing, ebook, scripts, botões manuais de cron).
+Hoje, quando um usuário revendedor abre `/cliente`, `/pedidos` ou `/perfil`, ele vê a mesma UI de um cliente comum (comprar em lojas, pedidos de comida, perfil de consumidor). Isso não reflete a conta dele.
 
----
+## Objetivo
+Se o usuário logado é revendedor (linha em `resellers` com `user_id = auth.uid()`), essas 3 abas devem mostrar conteúdo do universo dele — não do universo cliente.
 
-## O que falta (agrupado por patch)
+## Detecção do papel
+- Criar hook `useIsReseller()` que consulta `resellers` por `user_id`, com cache via React Query (`staleTime` 5 min).
+- Reaproveitar em `ClientHome`, `PedidosPage` e `PerfilPage` sem quebrar clientes normais.
 
-### v1.25.4 — Refinos Super Admin + Anti-fraude avançado
-- **Cohort 3/6/12 meses** por revendedor (quantas lojas indicadas seguem ativas).
-- **CAC efetivo**: `SUM(commissions.paid) / SUM(MRR gerado)` com alerta se CAC > 6× LTV.
-- **Ranking por MRR trazido** (não só nº de lojas) com sparkline 6 meses.
-- **Anti-fraude v2**: cruzar `stores.owner` CPF/CNPJ/user_id/device_id contra o próprio `resellers.user_id` via `signup_attempts`. Bloqueia referral + alerta.
-- Nova RPC `admin_reseller_stats_v2()` (SECURITY DEFINER, admin-only) devolvendo cohort, CAC, ranking.
+## O que cada aba passa a mostrar
 
-### v1.25.5 — Relatório mensal exportável
-- Botão "Exportar CSV do mês" na `RevendedoresTab` do Super Admin.
-- CSV: revendedor, PIX, valor total pendente, quebra bounty/recorrente, período.
-- Marca tudo como `processing` ao exportar; botão "confirmar pagamento em lote" vira `paid`.
+### 1. `/cliente` (Home)
+Em vez de listagem de lojas/carrinho, renderiza um **ResellerHome** enxuto:
+- Saldo a receber / próximo pagamento
+- Lojas ativas indicadas (contagem + últimas 3)
+- Link de indicação com botão "Copiar" e "Compartilhar WhatsApp"
+- CTA grande "Abrir painel do revendedor" → `/revendedor`
+- Bloco "Como funciona sua comissão" resumido
 
-### v1.25.6 — Materiais visuais no dashboard
-- Aba **Materiais** em `/revendedor`: 3 artes Andrômeda (stories/feed 1080×1920 e 1080×1080) via `imagegen--generate_image`.
-- Placeholder de vídeo-tutorial (embed YouTube quando gravado).
+### 2. `/pedidos`
+Vira **"Minhas indicações / conversões"**:
+- Lista das lojas cadastradas via link do revendedor
+- Status: Pendente bounty · Bounty pago · Recorrente ativa · Cancelada
+- Data de cadastro, plano atual da loja, MRR gerado
+- Filtro por status + busca por nome da loja
 
-### v1.26.0 — E2E Playwright ponta-a-ponta (bloco 2)
-Novo script `scripts/e2e/reseller/full_ui_flow.py`:
-1. Revendedor se cadastra em `/seja-revendedor` (form).
-2. Admin aprova no Super Admin → aba Revendedores.
-3. Lojista abre `/cadastro?ref=CODIGO` → cria loja `pdv_only` fake.
-4. Injeta 20 pedidos entregues via `oneshot-e2e-reseller` (modo `seed_orders`).
-5. Dispara `admin_reseller_run_bounty_cron(false)` → valida bounty criado.
-6. Revendedor abre `/revendedor` → vê saldo → solicita saque R$ 150.
-7. Admin marca como pago → comissões viram `paid`.
-8. Assert visual em cada etapa (screenshots em `/tmp/browser/reseller/`).
+### 3. `/perfil`
+Vira **Perfil de Revendedor**:
+- Dados da conta (nome, email, telefone)
+- Chave PIX para recebimento (editável)
+- Histórico de repasses (últimos 6 meses) com status
+- Link de indicação + QR code
+- Sair da conta
+- Remover blocos irrelevantes do cliente (endereços salvos, cupons de compra, fidelidade)
 
-Além disso, rodar novamente os E2E existentes que ainda não passaram no bloco 2:
-- `scripts/e2e/reseller/` — suíte completa de RPCs (35/35 verde já).
-- Playwright do fluxo público `/seja-revendedor` (SEO + formulário + JSON-LD).
-- Playwright do landing `/cadastro?ref=` gravando `sessionStorage` corretamente.
+## BottomNav
+`BottomNav` passa a exibir, para revendedor:
+- Home (ResellerHome)
+- Indicações (ex-Pedidos)
+- Perfil
+Ícones/labels ajustados (`Users`, `LinkIcon`, `User`).
 
----
+## Arquivos afetados
+- **Novo** `src/hooks/useIsReseller.ts`
+- **Novo** `src/pages/revendedor/ResellerHome.tsx`
+- **Novo** `src/pages/revendedor/ResellerIndicacoes.tsx`
+- **Novo** `src/pages/revendedor/ResellerPerfil.tsx`
+- `src/pages/ClientHome.tsx` — se revendedor, renderiza ResellerHome
+- `src/pages/PedidosPage.tsx` — se revendedor, renderiza ResellerIndicacoes
+- `src/pages/PerfilPage.tsx` — se revendedor, renderiza ResellerPerfil
+- `src/components/BottomNav.tsx` — labels/rotas quando `isReseller`
+- `src/components/AppHeader.tsx` — esconder "Entregar em" para revendedor
 
-## Ordem de execução
+## Regras
+- Admins e lojistas seguem inalterados (guards atuais têm prioridade).
+- Se usuário for revendedor **e** cliente ao mesmo tempo, priorizar visão de revendedor nessas 3 rotas (ele já tem `/lojas` público para comprar).
+- Sem migração de schema — só leitura de `resellers`, `reseller_referrals`, `reseller_commissions`, `reseller_payouts` (tabelas já existentes).
+- Incrementar versão para **v1.25.14** ao implementar.
 
-1. v1.25.4 (patch de código + migration para `admin_reseller_stats_v2` e anti-fraude v2).
-2. v1.25.5 (patch UI + edge function `oneshot-reseller-csv-export`).
-3. v1.25.6 (patch UI + gerar 3 artes).
-4. v1.26.0 (script Playwright + rodar todos e reportar).
-
-Cada patch bumpa `src/lib/appVersion.ts` + `android/app/build.gradle` (versionName + versionCode +1).
-
----
-
-## Detalhes técnicos
-
-- Todas as novas RPCs: `SECURITY DEFINER`, `search_path=public`, `REVOKE ALL FROM PUBLIC, anon`, `GRANT EXECUTE TO authenticated` (checa `has_role(auth.uid(),'admin')`).
-- Cron de anti-fraude v2: estende `reseller_process_fraud_checks` existente com JOIN em `signup_attempts` por `cpf_cnpj_hash`, `device_id`, `user_id`.
-- Export CSV: edge function que roda com service-role, aceita `?month=YYYY-MM`, devolve `text/csv`.
-- Playwright: viewport 1280×1800, sessão Supabase injetada via `LOVABLE_BROWSER_SUPABASE_*`, screenshots por etapa.
-- Registro dos runs em `reseller_cron_runs` (já existe) para auditoria.
-
----
-
-## Aprovações que preciso
-
-1. Confirmo **desligado** o GMV bonus 0,3% (5.3) — só implemento se pedir depois.
-2. Export CSV em vez de PIX Asaas automático — ok? (você já disse que prefere manual).
-3. Sigo do v1.25.4 até v1.26.0 sem parar entre patches, reportando no final?
+## Segurança
+Revalidar que policies de `resellers` / `reseller_*` permitem apenas `SELECT` pelo próprio `user_id`. Nenhuma nova rota pública.
