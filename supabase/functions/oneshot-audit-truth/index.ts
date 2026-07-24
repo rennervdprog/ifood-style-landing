@@ -13,28 +13,9 @@ Deno.serve(async (req) => {
   if (resellers.error) out["resellers"] = resellers.error.message;
   else {
     const rows = resellers.data || [];
-    const bounties: Record<string, number> = {};
-    const rates: Record<string, number> = {};
-    const statuses: Record<string, number> = {};
-    let minB = Infinity, maxB = -Infinity;
-    for (const r of rows) {
-      const b = Number(r.bounty_amount_cents || 0);
-      bounties[b] = (bounties[b] || 0) + 1;
-      rates[Number(r.commission_rate_bps || 0)] = (rates[Number(r.commission_rate_bps || 0)] || 0) + 1;
-      statuses[String(r.status)] = (statuses[String(r.status)] || 0) + 1;
-      if (b < minB) minB = b;
-      if (b > maxB) maxB = b;
-    }
-    out["resellers_summary"] = {
-      total: rows.length,
-      bounty_min_cents: rows.length ? minB : null,
-      bounty_max_cents: rows.length ? maxB : null,
-      bounty_distribution: bounties,
-      commission_rate_bps_distribution: rates,
-      status_distribution: statuses,
-      sample_min_withdraw_cents: rows[0]?.min_withdraw_cents ?? null,
-      sample_min_delivered_orders: rows[0]?.min_delivered_orders_for_bounty ?? null,
-    };
+    out["resellers_columns"] = rows[0] ? Object.keys(rows[0]) : [];
+    out["resellers_sample"] = rows.slice(0, 3);
+    out["resellers_count"] = rows.length;
   }
 
   const sp = await sb.from("store_plans").select("plan_type,monthly_fee,is_active").eq("is_active", true);
