@@ -1079,6 +1079,16 @@ const TAB_SUBTITLE: Record<string, (ctx: {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {/* ⌘K global search — desktop */}
+            <button
+              onClick={() => setCmdOpen(true)}
+              className="hidden lg:inline-flex items-center gap-2 h-9 px-3 rounded-xl border border-border/60 bg-muted/30 hover:bg-muted/60 text-xs text-muted-foreground transition-colors"
+              aria-label="Buscar (Ctrl+K)"
+            >
+              <Search className="h-3.5 w-3.5" />
+              <span>Buscar…</span>
+              <kbd className="ml-2 px-1.5 py-0.5 rounded bg-background border border-border/60 text-[10px] font-mono tabular-nums">⌘K</kbd>
+            </button>
             {activeTab === "dashboard" && (
               <button
                 onClick={generateReport}
