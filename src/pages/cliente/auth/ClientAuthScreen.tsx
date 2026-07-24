@@ -13,6 +13,35 @@ type AuthMode = "login" | "signup" | "forgot" | "reset";
 const REMEMBER_KEY = "itasuper_remember_until";
 const TWO_MONTHS_MS = 60 * 24 * 60 * 60 * 1000;
 
+async function redirectByRole(fallback: () => void) {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { fallback(); return; }
+    const { data: adminRole } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id)
+      .eq("role", "admin")
+      .maybeSingle();
+    if (adminRole) { window.location.replace("/super-admin"); return; }
+    const { data: prof } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    const role = (prof as any)?.role;
+    if (role === "lojista" || role === "lojista_matriz" || role === "lojista_unidade") {
+      const plan = localStorage.getItem(`itasuper:userPlan:${user.id}`);
+      window.location.replace(plan === "pdv_only" ? "/admin/pdv" : "/admin");
+      return;
+    }
+    if (role === "motoboy") { window.location.replace("/entregador"); return; }
+    fallback();
+  } catch {
+    fallback();
+  }
+}
+
 const ClientAuthScreen = ({ onSuccess }: { onSuccess: () => void }) => {
   const [mode, setMode] = useState<AuthMode>("login");
   const [email, setEmail] = useState("");
