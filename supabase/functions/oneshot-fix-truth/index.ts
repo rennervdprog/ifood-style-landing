@@ -12,6 +12,12 @@ async function q(sql: string) {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   const sql = `
+    -- 0) Inspect columns first
+    SELECT column_name FROM information_schema.columns WHERE table_schema='public' AND table_name='plan_templates' ORDER BY ordinal_position;
+  `;
+  const r0 = await q(sql);
+  return new Response(JSON.stringify(r0, null, 2), { headers: { ...cors, "Content-Type": "application/json" } });
+  const _sql_orig = `
     -- 1) Essencial (fixed) → R$ 89,90 e descrição atualizada
     UPDATE public.plan_templates
       SET monthly_fee = 89.90,
