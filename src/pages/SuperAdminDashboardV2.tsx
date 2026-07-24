@@ -764,7 +764,6 @@ const TAB_SUBTITLE: Record<string, (ctx: {
   ];
 
   const moreTabs = sidebarItems.filter(i => !bottomTabs.some(b => b.key === i.key));
-  const [moreQuery, setMoreQuery] = useState("");
   const normalizedMoreQuery = moreQuery.trim().toLowerCase();
   const filteredMoreTabs = normalizedMoreQuery
     ? moreTabs.filter((i) =>
