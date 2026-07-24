@@ -137,10 +137,14 @@ Deno.serve(async (req) => {
     }
     log("5b_status_set_to", { cancelStatus, cancelErr });
     // Debug: verificar status real e enum values
-    const { data: rawStatus } = await db.rpc("exec_sql", { sql: `SELECT id::text, status::text AS status_text, pg_typeof(status)::text AS status_type FROM public.stores WHERE id='${storeId}'::uuid` });
-    log("5b_raw_status", rawStatus);
-    const { data: enumVals } = await db.rpc("exec_sql", { sql: `SELECT string_agg(enumlabel, ',') AS labels FROM pg_enum WHERE enumtypid = 'public.store_status'::regtype` });
-    log("5b_enum_values", enumVals);
+    const { data: sRow } = await db.from("stores").select("id,status,is_active").eq("id", storeId).single();
+    log("5b_store_row_after_cancel", sRow);
+    // Também tenta desativar via is_active (talvez seja a coluna real usada)
+    const { error: eDeact } = await db.from("stores").update({ is_active: false }).eq("id", storeId);
+    log("5b_is_active_false", { error: eDeact?.message ?? null });
+    const { data: dryAfterDeact } = await db.rpc("reseller_process_recurring", { _ref_month: nextRef, _dry_run: true });
+    const rDeact: any = dryAfterDeact;
+    log("5b_dry_after_is_active_false", { candidatos: (rDeact?.candidates?.length ?? 0), ok: (rDeact?.candidates?.length ?? 0) === 0, resultado: rDeact });
     const { data: dryNextCancel } = await db.rpc("reseller_process_recurring", { _ref_month: nextRef, _dry_run: true });
     const cancelOk = ((dryNextCancel as any)?.candidates?.length ?? -1) === 0;
     log("5b_mes_seguinte_loja_cancelada", { ok: cancelOk, candidatos: (dryNextCancel as any)?.candidates?.length, resultado: dryNextCancel });
