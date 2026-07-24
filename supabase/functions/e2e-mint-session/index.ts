@@ -27,13 +27,29 @@ Deno.serve(async (req) => {
 
     const URL_ = Deno.env.get("EXTERNAL_SUPABASE_URL") ?? Deno.env.get("SUPABASE_URL")!;
     const ANON = Deno.env.get("EXTERNAL_SUPABASE_ANON_KEY") ?? Deno.env.get("SUPABASE_ANON_KEY")!;
+    const SERVICE = Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") ?? Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
     const email = Deno.env.get("E2E_TEST_EMAIL") ?? "";
     const password = Deno.env.get("E2E_TEST_PASSWORD") ?? "";
     if (!URL_ || !ANON || !email || !password) return json({ error: "backend not configured" }, 500);
 
     const client = createClient(URL_, ANON, { auth: { persistSession: false } });
-    const { data, error } = await client.auth.signInWithPassword({ email, password });
-    if (error || !data.session) return json({ error: error?.message ?? "sign-in failed" }, 400);
+    let { data, error } = await client.auth.signInWithPassword({ email, password });
+
+    // Self-heal: se as credenciais são inválidas e temos service key,
+    // cria/atualiza o usuário e tenta novamente.
+    if ((error || !data?.session) && SERVICE) {
+      const admin = createClient(URL_, SERVICE, { auth: { persistSession: false } });
+      const { data: list } = await admin.auth.admin.listUsers();
+      const existing = list?.users?.find((u: any) => u.email?.toLowerCase() === email.toLowerCase());
+      if (existing) {
+        await admin.auth.admin.updateUserById(existing.id, { password, email_confirm: true });
+      } else {
+        await admin.auth.admin.createUser({ email, password, email_confirm: true });
+      }
+      ({ data, error } = await client.auth.signInWithPassword({ email, password }));
+    }
+
+    if (error || !data?.session) return json({ error: error?.message ?? "sign-in failed" }, 400);
 
     return json({
       access_token: data.session.access_token,
