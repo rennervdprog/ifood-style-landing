@@ -25,11 +25,13 @@ import { planLabel } from "@/lib/plansInfo";
 import {
   ArrowLeft, DollarSign, ShoppingBag, TrendingUp, Clock,
   Store, Copy, AlertTriangle, Users, Bike, Wallet, CheckCircle2, Banknote, XCircle, Bell, Trash2, QrCode, Loader2, ArrowUpRight, ArrowDownRight, Settings,
-  LayoutDashboard, Shield, Ticket, RefreshCw, Truck, Menu, X, MapPin, Eye, Scale, Search, FileText, Mail, Phone, User, Download, Calendar, CreditCard, Receipt, ChevronDown, ChevronUp, Percent, Crown, Handshake, FlaskConical, Link as LinkIcon, Megaphone, Monitor, Sparkles,
+  LayoutDashboard, Shield, Ticket, RefreshCw, Truck, Menu, X, MapPin, Eye, Scale, Search, FileText, Mail, Phone, User, Download, Calendar, CreditCard, Receipt, ChevronDown, ChevronUp, Percent, Crown, Handshake, FlaskConical, Link as LinkIcon, Megaphone, Monitor, Sparkles, PanelLeftClose, PanelLeftOpen,
   MessageCircle, Smartphone, ShieldCheck, Puzzle,
 } from "lucide-react";
  import { Switch } from "@/components/ui/switch";
  import { Badge } from "@/components/ui/badge";
+import { CommandDialog, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem } from "@/components/ui/command";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 // Hook + KPI/cores leves (sem recharts) — eager
 import {
   KpiCard, useFinanceChartData, CHART_COLORS,
@@ -179,6 +181,23 @@ const TAB_SUBTITLE: Record<string, (ctx: {
   const [selectedStore, setSelectedStore] = useState<string>("all");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showMoreSheet, setShowMoreSheet] = useState(false);
+  const [desktopCollapsed, setDesktopCollapsed] = useState<boolean>(() => {
+    try { return localStorage.getItem("adminSidebarCollapsed") === "1"; } catch { return false; }
+  });
+  const [cmdOpen, setCmdOpen] = useState(false);
+  useEffect(() => {
+    try { localStorage.setItem("adminSidebarCollapsed", desktopCollapsed ? "1" : "0"); } catch {}
+  }, [desktopCollapsed]);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setCmdOpen(v => !v);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
   // Sub-seções dos grupos unificados
   type FinanceSection =
     | "overview"
@@ -866,21 +885,24 @@ const TAB_SUBTITLE: Record<string, (ctx: {
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
-      <aside className={`fixed lg:sticky top-0 left-0 z-50 h-screen w-[80vw] max-w-[320px] lg:w-[280px] bg-card/95 backdrop-blur-xl border-r border-border/50 flex-col transition-all duration-300 ease-out shadow-2xl lg:shadow-none hidden lg:flex`}>
+      <aside className={`fixed lg:sticky top-0 left-0 z-50 h-screen bg-card/95 backdrop-blur-xl border-r border-border/50 flex-col transition-[width] duration-300 ease-out shadow-2xl lg:shadow-none hidden lg:flex ${desktopCollapsed ? "lg:w-[76px]" : "lg:w-[280px]"}`}>
         {/* Brand Header */}
-        <div className="p-5 border-b border-border/50">
-          <div className="flex items-center gap-3 min-w-0">
+        <div className={`border-b border-border/50 ${desktopCollapsed ? "p-3 flex justify-center" : "p-5"}`}>
+          <div className={`flex items-center gap-3 min-w-0 ${desktopCollapsed ? "justify-center" : ""}`}>
             <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center flex-shrink-0 shadow-lg shadow-primary/20">
               <LayoutDashboard className="h-5 w-5 text-primary-foreground" />
             </div>
-            <div className="min-w-0">
-              <h1 className="font-black text-sm text-foreground tracking-tight">ItaSuper</h1>
-              <p className="text-[10px] text-muted-foreground font-medium">Painel Admin</p>
-            </div>
+            {!desktopCollapsed && (
+              <div className="min-w-0">
+                <h1 className="font-black text-sm text-foreground tracking-tight">ItaSuper</h1>
+                <p className="text-[10px] text-muted-foreground font-medium">Painel Admin</p>
+              </div>
+            )}
           </div>
         </div>
 
         {/* Live Stats Banner */}
+        {!desktopCollapsed && (
         <div className="mx-4 mt-4 mb-2">
           <div className="bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/15 rounded-2xl p-4 space-y-3">
             <div className="flex items-center justify-between">
@@ -906,64 +928,88 @@ const TAB_SUBTITLE: Record<string, (ctx: {
             </div>
           </div>
         </div>
+        )}
 
         {/* Navigation */}
-        <nav className="flex-1 px-3 py-2 overflow-y-auto scrollbar-thin">
+        <TooltipProvider delayDuration={100}>
+        <nav className={`flex-1 py-2 overflow-y-auto scrollbar-thin ${desktopCollapsed ? "px-2" : "px-3"}`}>
           {["Início", "Lojas", "Financeiro", "Crescimento", "Sistema"].map((group, groupIdx) => {
             const items = sidebarItems.filter(i => i.group === group);
             if (items.length === 0) return null;
             return (
               <div key={group} className={`mb-3 pb-2 ${groupIdx > 0 ? "pt-3 border-t border-border/40" : ""}`}>
-                <p className="text-[10px] font-extrabold text-muted-foreground/70 uppercase tracking-[0.15em] px-3 mb-1.5">{group}</p>
+                {!desktopCollapsed && (
+                  <p className="text-[10px] font-extrabold text-muted-foreground/70 uppercase tracking-[0.15em] px-3 mb-1.5">{group}</p>
+                )}
                 <div className="space-y-0.5">
                   {items.map(item => {
                     const isActive = activeTab === item.key;
                     const Icon = item.icon;
-                    return (
+                    const badgeCount =
+                      item.key === "saques" ? pendingWithdrawals.length :
+                      item.key === "approvals" ? pendingApprovalsCount :
+                      item.key === "dashboard" ? delayedOrders.length : 0;
+                    const btn = (
                       <button
                         key={item.key}
                         onClick={() => handleTabChange(item.key)}
-                        className={`relative w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-semibold transition-all duration-150 ${
+                        className={`relative w-full flex items-center rounded-lg text-[13px] font-semibold transition-all duration-150 ${desktopCollapsed ? "justify-center px-0 py-2" : "gap-3 px-3 py-2.5"} ${
                           isActive
                             ? "bg-primary/10 text-primary before:content-[''] before:absolute before:left-0 before:top-1.5 before:bottom-1.5 before:w-1 before:rounded-full before:bg-primary"
                             : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"
                         }`}
                       >
-                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors ${
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors relative ${
                           isActive ? "bg-primary/15 text-primary" : "bg-muted/40 text-muted-foreground"
                         }`}>
                           <Icon className="h-4 w-4" />
+                          {desktopCollapsed && badgeCount > 0 && (
+                            <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[9px] font-black min-w-[16px] h-4 flex items-center justify-center px-1 rounded-full tabular-nums">
+                              {badgeCount}
+                            </span>
+                          )}
                         </div>
-                        <span className="flex-1 text-left">{item.label}</span>
-                        {item.key === "saques" && pendingWithdrawals.length > 0 && (
+                        {!desktopCollapsed && <span className="flex-1 text-left">{item.label}</span>}
+                        {!desktopCollapsed && item.key === "saques" && pendingWithdrawals.length > 0 && (
                           <span className="tabular-nums bg-destructive text-destructive-foreground text-[10px] font-black min-w-[20px] h-5 flex items-center justify-center px-1.5 rounded-full">
                             {pendingWithdrawals.length}
                           </span>
                         )}
-                        {item.key === "approvals" && pendingApprovalsCount > 0 && (
+                        {!desktopCollapsed && item.key === "approvals" && pendingApprovalsCount > 0 && (
                           <span className="tabular-nums bg-destructive text-destructive-foreground text-[10px] font-black min-w-[20px] h-5 flex items-center justify-center px-1.5 rounded-full">
                             {pendingApprovalsCount}
                           </span>
                         )}
-                        {item.key === "dashboard" && delayedOrders.length > 0 && (
+                        {!desktopCollapsed && item.key === "dashboard" && delayedOrders.length > 0 && (
                           <span className="tabular-nums bg-destructive text-destructive-foreground text-[10px] font-black min-w-[20px] h-5 flex items-center justify-center px-1.5 rounded-full">
                             {delayedOrders.length}
                           </span>
                         )}
-                        {item.key === "dashboard" && complianceAlerts && complianceAlerts.length > 0 && delayedOrders.length === 0 && (
+                        {!desktopCollapsed && item.key === "dashboard" && complianceAlerts && complianceAlerts.length > 0 && delayedOrders.length === 0 && (
                           <span className="text-amber-600 dark:text-amber-400 text-sm leading-none">⚠</span>
                         )}
                       </button>
                     );
+                    if (desktopCollapsed) {
+                      return (
+                        <Tooltip key={item.key}>
+                          <TooltipTrigger asChild>{btn}</TooltipTrigger>
+                          <TooltipContent side="right">{item.label}</TooltipContent>
+                        </Tooltip>
+                      );
+                    }
+                    return btn;
                   })}
                 </div>
               </div>
             );
           })}
         </nav>
+        </TooltipProvider>
 
         {/* Bottom Stats & Actions */}
-        <div className="p-4 border-t border-border/50 space-y-3">
+        <div className={`border-t border-border/50 space-y-3 ${desktopCollapsed ? "p-2" : "p-4"}`}>
+          {!desktopCollapsed && (
           <div className="bg-muted/30 rounded-xl p-3 space-y-2">
             <div className="flex items-center gap-2.5">
               <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -980,12 +1026,21 @@ const TAB_SUBTITLE: Record<string, (ctx: {
               <span className="text-xs font-black text-foreground bg-accent px-2 py-0.5 rounded-md tabular-nums">{drivers?.length || 0}</span>
             </div>
           </div>
+          )}
+          <button
+            onClick={() => setDesktopCollapsed(v => !v)}
+            className="w-full py-2 rounded-xl text-xs font-bold border border-border/60 text-muted-foreground hover:text-foreground hover:bg-accent/60 transition-all flex items-center justify-center gap-2"
+            aria-label={desktopCollapsed ? "Expandir menu" : "Recolher menu"}
+          >
+            {desktopCollapsed ? <PanelLeftOpen className="h-3.5 w-3.5" /> : <><PanelLeftClose className="h-3.5 w-3.5" /> Recolher</>}
+          </button>
           <button
             onClick={() => navigate("/")}
-            className="w-full py-2.5 rounded-xl text-xs font-bold border border-border/60 text-muted-foreground hover:text-foreground hover:bg-accent/60 transition-all flex items-center justify-center gap-2"
+            className={`w-full py-2.5 rounded-xl text-xs font-bold border border-border/60 text-muted-foreground hover:text-foreground hover:bg-accent/60 transition-all flex items-center justify-center gap-2 ${desktopCollapsed ? "px-0" : ""}`}
+            aria-label="Voltar à Home"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
-            Voltar à Home
+            {!desktopCollapsed && "Voltar à Home"}
           </button>
         </div>
       </aside>
@@ -1024,6 +1079,16 @@ const TAB_SUBTITLE: Record<string, (ctx: {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {/* ⌘K global search — desktop */}
+            <button
+              onClick={() => setCmdOpen(true)}
+              className="hidden lg:inline-flex items-center gap-2 h-9 px-3 rounded-xl border border-border/60 bg-muted/30 hover:bg-muted/60 text-xs text-muted-foreground transition-colors"
+              aria-label="Buscar (Ctrl+K)"
+            >
+              <Search className="h-3.5 w-3.5" />
+              <span>Buscar…</span>
+              <kbd className="ml-2 px-1.5 py-0.5 rounded bg-background border border-border/60 text-[10px] font-mono tabular-nums">⌘K</kbd>
+            </button>
             {activeTab === "dashboard" && (
               <button
                 onClick={generateReport}
@@ -1373,6 +1438,35 @@ const TAB_SUBTITLE: Record<string, (ctx: {
           </div>
         </div>
       </main>
+
+      {/* ⌘K Command Palette */}
+      <CommandDialog open={cmdOpen} onOpenChange={setCmdOpen}>
+        <CommandInput placeholder="Buscar abas do painel…" />
+        <CommandList>
+          <CommandEmpty>Nenhuma aba encontrada.</CommandEmpty>
+          {["Início", "Lojas", "Financeiro", "Crescimento", "Sistema"].map(group => {
+            const items = sidebarItems.filter(i => i.group === group);
+            if (items.length === 0) return null;
+            return (
+              <CommandGroup key={group} heading={group}>
+                {items.map(item => {
+                  const Icon = item.icon;
+                  return (
+                    <CommandItem
+                      key={item.key}
+                      value={`${item.label} ${group}`}
+                      onSelect={() => { handleTabChange(item.key); setCmdOpen(false); }}
+                    >
+                      <Icon className="h-4 w-4 mr-2 text-muted-foreground" />
+                      <span>{item.label}</span>
+                    </CommandItem>
+                  );
+                })}
+              </CommandGroup>
+            );
+          })}
+        </CommandList>
+      </CommandDialog>
     </div>
   );
 };
