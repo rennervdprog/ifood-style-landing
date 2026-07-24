@@ -206,7 +206,7 @@ export default function ResellerDashboard() {
             <div className="space-y-4">
               <p className="text-sm text-muted-foreground">
                 Ganhe <strong>20% de comissão vitalícia</strong> sobre o MRR de cada loja indicada,
-                mais <strong>R$ 150 de bônus</strong> por loja ativada.
+                mais <strong>R$ 50 de bônus</strong> por loja ativada.
               </p>
               <div>
                 <Label>Seu código de indicação (4 a 20 caracteres, sem espaços)</Label>

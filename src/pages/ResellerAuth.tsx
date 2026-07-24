@@ -91,7 +91,7 @@ export default function ResellerAuth() {
   };
 
   const pageTitle = `${title} — ItaSuper Revendedores`;
-  const pageDesc = "Área exclusiva para revendedores ItaSuper. 20% vitalício + R$ 150 por loja ativada.";
+  const pageDesc = "Área exclusiva para revendedores ItaSuper. 20% vitalício + R$ 50 por loja ativada.";
 
   return (
     <>
@@ -127,7 +127,7 @@ export default function ResellerAuth() {
                 <span><strong>20% vitalício</strong> sobre o MRR de cada loja indicada</span>
               </li>
               <li className="flex gap-3"><Wallet className="h-5 w-5 text-primary shrink-0" />
-                <span><strong>R$ 150 de bônus</strong> por loja ativada (20 pedidos/30d)</span>
+                <span><strong>R$ 50 de bônus</strong> por loja ativada (20 pedidos/30d)</span>
               </li>
               <li className="flex gap-3"><Shield className="h-5 w-5 text-primary shrink-0" />
                 <span>Sem meta, sem mensalidade — saque via PIX a partir de R$ 100</span>
