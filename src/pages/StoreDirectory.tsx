@@ -14,6 +14,7 @@ import {
   Users, Split, HandCoins, Wallet, Shirt, Ban,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { prefetchHandlers } from "@/lib/prefetchRoute";
 
 /* ─────────────────────────── CONTENT ─────────────────────────── */
 
