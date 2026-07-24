@@ -76,7 +76,7 @@ const ClientAuthScreen = ({ onSuccess }: { onSuccess: () => void }) => {
         if (rememberMe) localStorage.setItem(REMEMBER_KEY, String(Date.now() + TWO_MONTHS_MS));
         else localStorage.removeItem(REMEMBER_KEY);
         toast.success("Login realizado!");
-        onSuccess();
+        await redirectByRole(onSuccess);
       } else if (mode === "signup") {
         const { data: signUpData, error } = await supabase.auth.signUp({
           email: email.trim(),
