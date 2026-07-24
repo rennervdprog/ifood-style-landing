@@ -744,6 +744,14 @@ const TAB_SUBTITLE: Record<string, (ctx: {
   ];
 
   const moreTabs = sidebarItems.filter(i => !bottomTabs.some(b => b.key === i.key));
+  const [moreQuery, setMoreQuery] = useState("");
+  const normalizedMoreQuery = moreQuery.trim().toLowerCase();
+  const filteredMoreTabs = normalizedMoreQuery
+    ? moreTabs.filter((i) =>
+        i.label.toLowerCase().includes(normalizedMoreQuery) ||
+        i.group.toLowerCase().includes(normalizedMoreQuery),
+      )
+    : moreTabs;
 
   return (
     <div className="min-h-screen bg-background flex">
@@ -793,9 +801,20 @@ const TAB_SUBTITLE: Record<string, (ctx: {
           <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[60] lg:hidden" onClick={() => setShowMoreSheet(false)} />
           <div className="fixed bottom-16 left-0 right-0 z-[70] bg-card border-t border-border rounded-t-3xl shadow-2xl lg:hidden animate-in slide-in-from-bottom-4 max-h-[60vh] overflow-y-auto" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
             <div className="w-12 h-1 bg-muted-foreground/20 rounded-full mx-auto mt-3 mb-2" />
+            <div className="px-4 pt-1 pb-2 sticky top-0 bg-card/95 backdrop-blur-xl z-10">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <input
+                  value={moreQuery}
+                  onChange={(e) => setMoreQuery(e.target.value)}
+                  placeholder="Buscar aba..."
+                  className="w-full h-10 pl-9 pr-3 rounded-xl bg-muted/50 border border-border/50 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                />
+              </div>
+            </div>
             <div className="px-4 pb-4 space-y-3">
               {["Início", "Lojas", "Financeiro", "Crescimento", "Sistema"].map((group) => {
-                const groupItems = moreTabs.filter((i) => i.group === group);
+                const groupItems = filteredMoreTabs.filter((i) => i.group === group);
                 if (groupItems.length === 0) return null;
                 return (
                   <div key={group}>
