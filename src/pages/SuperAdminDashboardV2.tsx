@@ -25,11 +25,13 @@ import { planLabel } from "@/lib/plansInfo";
 import {
   ArrowLeft, DollarSign, ShoppingBag, TrendingUp, Clock,
   Store, Copy, AlertTriangle, Users, Bike, Wallet, CheckCircle2, Banknote, XCircle, Bell, Trash2, QrCode, Loader2, ArrowUpRight, ArrowDownRight, Settings,
-  LayoutDashboard, Shield, Ticket, RefreshCw, Truck, Menu, X, MapPin, Eye, Scale, Search, FileText, Mail, Phone, User, Download, Calendar, CreditCard, Receipt, ChevronDown, ChevronUp, Percent, Crown, Handshake, FlaskConical, Link as LinkIcon, Megaphone, Monitor, Sparkles,
+  LayoutDashboard, Shield, Ticket, RefreshCw, Truck, Menu, X, MapPin, Eye, Scale, Search, FileText, Mail, Phone, User, Download, Calendar, CreditCard, Receipt, ChevronDown, ChevronUp, Percent, Crown, Handshake, FlaskConical, Link as LinkIcon, Megaphone, Monitor, Sparkles, PanelLeftClose, PanelLeftOpen,
   MessageCircle, Smartphone, ShieldCheck, Puzzle,
 } from "lucide-react";
  import { Switch } from "@/components/ui/switch";
  import { Badge } from "@/components/ui/badge";
+import { CommandDialog, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem } from "@/components/ui/command";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 // Hook + KPI/cores leves (sem recharts) — eager
 import {
   KpiCard, useFinanceChartData, CHART_COLORS,
