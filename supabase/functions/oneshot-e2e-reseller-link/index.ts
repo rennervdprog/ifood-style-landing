@@ -66,7 +66,7 @@ Deno.serve(async (req) => {
     const now = new Date().toISOString();
     const spPayload = {
       store_id: storeId,
-      plan_type: "essencial",
+      plan_type: "fixed",
       monthly_fee: 89.90,
       commission_rate: 0.10,
       is_active: true,
@@ -76,7 +76,7 @@ Deno.serve(async (req) => {
     log("_sp_insert", { error: eIns?.message ?? null });
     if (eIns) {
       const { data: upSp, error: eUpd } = await db.from("store_plans").update({
-        plan_type: "essencial", monthly_fee: 89.90, is_active: true, last_billed_at: now,
+        plan_type: "fixed", monthly_fee: 89.90, is_active: true, last_billed_at: now,
       }).eq("store_id", storeId).select();
       log("_sp_update_fallback", { rows: upSp?.length, error: eUpd?.message });
     }
