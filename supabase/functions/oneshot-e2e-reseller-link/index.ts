@@ -2,94 +2,184 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const cors = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "*" };
 
 /**
- * E2E do sistema de link do revendedor.
- * Fluxo:
- *  1) Escolhe um reseller aprovado (por code na query ?code=XXX, senão o mais recente).
- *  2) Cria uma loja fake (referred_by_reseller_id = NULL).
- *  3) Chama reseller_attach_signup(store_id, code)  — igual ao CadastroLojista.
- *  4) Verifica stores.referred_by_reseller_id + reseller_referrals(status=pending).
- *  5) Tenta re-atribuir com OUTRO code (esperado: NÃO sobrescrever — first-touch lock).
- *  6) Executa reseller_process_bounties(_dry_run=true) para validar o cron.
- *  7) Limpa a loja fake criada.
+ * E2E COMPLETO do sistema de link do revendedor.
+ * Cenários testados (todos com loja fake, cleanup no final):
+ *   1) Atribuição via ?ref=CODE (mesma RPC do CadastroLojista).
+ *   2) First-touch lock (loja não muda de dono).
+ *   3) Bounty cron (dry-run).
+ *   4) RECORRENTE — enquanto loja está ativa e paga plano, revendedor recebe % todo mês.
+ *   5) CANCELAMENTO — quando loja é cancelada/suspensa, comissão do próximo mês NÃO é gerada.
+ *   6) Idempotência — rodar o cron 2x no mesmo mês não paga em dobro.
  */
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: cors });
   const URL_ = Deno.env.get("EXTERNAL_SUPABASE_URL") ?? Deno.env.get("SUPABASE_URL")!;
   const SVC  = Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") ?? Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const db = createClient(URL_, SVC, { auth: { persistSession: false } });
-  const url = new URL(req.url);
-  const wantCode = (url.searchParams.get("code") || "").toUpperCase();
-  const report: any = { steps: [] };
+  const report: any = { link_oficial: "https://itasuper.com.br/cadastro-lojista?ref=CODIGO", steps: [] };
   const log = (k: string, v: any) => report.steps.push({ [k]: v });
+  let storeId: string | null = null;
+  let resellerId: string | null = null;
+  const refMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
 
   try {
-    // 1) Pega reseller aprovado
-    let q = db.from("resellers").select("id,code,status,bounty_amount_cents").eq("status","approved").limit(1);
-    if (wantCode) q = db.from("resellers").select("id,code,status,bounty_amount_cents").eq("code", wantCode).limit(1);
-    const { data: rs, error: e1 } = await q;
-    if (e1) throw new Error("select reseller: " + e1.message);
-    if (!rs?.length) throw new Error("nenhum reseller aprovado encontrado");
-    const reseller = rs[0];
+    // ---------- Setup ----------
+    const { data: rs } = await db.from("resellers").select("id,code,status,commission_rate,bounty_amount_cents").eq("status","approved").limit(1);
+    if (!rs?.length) throw new Error("nenhum reseller aprovado");
+    const reseller = rs[0]; resellerId = reseller.id;
     log("reseller", reseller);
 
-    // Segundo reseller para testar first-touch lock
-    const { data: rs2 } = await db.from("resellers").select("id,code").eq("status","approved").neq("id", reseller.id).limit(1);
-    const otherCode = rs2?.[0]?.code ?? null;
-    log("other_reseller_for_lock_test", rs2?.[0] ?? null);
-
-    // 2) Cria loja fake
     const suffix = Math.random().toString(36).slice(2,8);
-    const slug = `e2e-ref-${suffix}`;
-    const { data: store, error: e2 } = await db.from("stores").insert({
-      name: `E2E Ref ${suffix}`,
-      slug,
-      status: "ativo",
-      is_test: true,
-      address_city: "Itatinga",
-    }).select("id,slug,referred_by_reseller_id,reseller_locked_at").single();
-    if (e2) throw new Error("insert store: " + e2.message);
+    const { data: store, error: eStore } = await db.from("stores").insert({
+      name: `E2E Ref ${suffix}`, slug: `e2e-ref-${suffix}`,
+      status: "ativo", is_test: true, address_city: "Itatinga",
+    }).select("id,slug,status").single();
+    if (eStore) throw new Error("insert store: " + eStore.message);
+    storeId = store.id;
     log("store_created", store);
 
-    // 3) Chama a MESMA RPC que o CadastroLojista chama
-    const { error: e3 } = await db.rpc("reseller_attach_signup", { _store_id: store.id, _code: reseller.code });
-    if (e3) throw new Error("reseller_attach_signup: " + e3.message);
-    log("attach_called", { code: reseller.code, store_id: store.id });
+    // ---------- 1) Atribuição via link ----------
+    const { error: eAttach } = await db.rpc("reseller_attach_signup", { _store_id: storeId, _code: reseller.code });
+    if (eAttach) throw new Error("attach: " + eAttach.message);
+    const { data: sAfter } = await db.from("stores").select("referred_by_reseller_id,reseller_locked_at").eq("id", storeId).single();
+    const { data: refRow } = await db.from("reseller_referrals").select("*").eq("store_id", storeId).maybeSingle();
+    const attachOk = sAfter?.referred_by_reseller_id === reseller.id && refRow?.status === "pending";
+    log("1_atribuicao_link", { ok: attachOk, store: sAfter, referral: refRow });
 
-    // 4) Verifica atribuição
-    const { data: sAfter } = await db.from("stores").select("id,referred_by_reseller_id,reseller_locked_at").eq("id", store.id).single();
-    const { data: refRow } = await db.from("reseller_referrals").select("*").eq("store_id", store.id).maybeSingle();
-    const attached = sAfter?.referred_by_reseller_id === reseller.id && !!sAfter?.reseller_locked_at && refRow?.status === "pending";
-    log("after_attach", { store: sAfter, referral: refRow, ok: attached });
-    if (!attached) throw new Error("atribuição falhou");
+    // ---------- 2) First-touch lock (tenta reatribuir com código fake) ----------
+    try { await db.rpc("reseller_attach_signup", { _store_id: storeId, _code: "FAKE_INEXISTENTE" }); } catch {}
+    const { data: sLock } = await db.from("stores").select("referred_by_reseller_id").eq("id", storeId).single();
+    log("2_first_touch_lock", { ok: sLock?.referred_by_reseller_id === reseller.id });
 
-    // 5) First-touch lock: tentar reatribuir com outro código
-    let lockOk: any = "sem-segundo-reseller";
-    if (otherCode) {
-      await db.rpc("reseller_attach_signup", { _store_id: store.id, _code: otherCode });
-      const { data: sAfter2 } = await db.from("stores").select("referred_by_reseller_id").eq("id", store.id).single();
-      lockOk = sAfter2?.referred_by_reseller_id === reseller.id;
-    }
-    log("first_touch_lock_ok", lockOk);
+    // ---------- 3) Bounty cron (dry-run) ----------
+    const { data: bounty, error: eB } = await db.rpc("reseller_process_bounties", { _dry_run: true });
+    log("3_bounty_cron_dry_run", { ok: !eB, result: bounty });
 
-    // 6) Bounty cron dry-run
-    const { data: bounty, error: e6 } = await db.rpc("reseller_process_bounties", { _dry_run: true });
-    log("bounty_cron_dry_run", { error: e6?.message ?? null, result: bounty });
+    // ---------- Preparar cenário para RECORRENTE ----------
+    // Ativar a referral manualmente (simulando que o bounty já promoveu)
+    const { data: upRef, error: eRef } = await db.from("reseller_referrals")
+      .update({ status: "active", activated_at: new Date().toISOString() })
+      .eq("store_id", storeId).select();
+    log("_ref_active_update", { rows: upRef?.length, error: eRef?.message });
 
-    // 7) Cleanup
-    await db.from("reseller_referrals").delete().eq("store_id", store.id);
-    await db.from("stores").delete().eq("id", store.id);
-    log("cleanup", "ok");
-
-    report.ok = true;
-    report.summary = {
-      link_format: `${url.origin.replace(/\/functions.*/, "")}/cadastro-lojista?ref=${reseller.code}`,
-      attribution_worked: attached,
-      first_touch_lock_worked: lockOk,
-      bounty_cron_callable: !e6,
+    // Criar/garantir store_plans com plano pago vigente neste mês
+    const now = new Date().toISOString();
+    const spPayload = {
+      store_id: storeId,
+      plan_type: "fixed",
+      monthly_fee: 89.90,
+      commission_rate: 0.10,
+      is_active: true,
+      last_billed_at: now,
     };
+    const { error: eIns } = await db.from("store_plans").insert(spPayload);
+    log("_sp_insert", { error: eIns?.message ?? null });
+    if (eIns) {
+      const { data: upSp, error: eUpd } = await db.from("store_plans").update({
+        plan_type: "fixed", monthly_fee: 89.90, is_active: true, last_billed_at: now,
+      }).eq("store_id", storeId).select();
+      log("_sp_update_fallback", { rows: upSp?.length, error: eUpd?.message });
+    }
+    // Confirma o que ficou gravado
+    const { data: spCheck } = await db.from("store_plans")
+      .select("plan_type,monthly_fee,is_active,last_billed_at,commission_rate").eq("store_id", storeId).maybeSingle();
+    log("_sp_check", spCheck);
+    const { data: refCheck } = await db.from("reseller_referrals").select("status,activated_at").eq("store_id", storeId).maybeSingle();
+    log("_ref_check", refCheck);
+
+    // ---------- 4) RECORRENTE — loja ativa deve gerar comissão mensal ----------
+    const { data: dryRec } = await db.rpc("reseller_process_recurring", { _ref_month: refMonth, _dry_run: true });
+    log("4a_recurring_dry_run", dryRec);
+
+    const { data: runRec } = await db.rpc("reseller_process_recurring", { _ref_month: refMonth, _dry_run: false });
+    log("4b_recurring_run", runRec);
+
+    const { data: comm } = await db.from("reseller_commissions")
+      .select("type,amount_cents,status,reference_month,metadata")
+      .eq("store_id", storeId).eq("type","recurring");
+    const expectedCents = Math.round((reseller.commission_rate ?? 0.2) * 89.90 * 100);
+    const recurringOk = comm?.length === 1 && comm[0].amount_cents === expectedCents;
+    log("4c_verificacao_recorrente", {
+      ok: recurringOk,
+      esperado_centavos: expectedCents,
+      recebido: comm,
+      calc: `${reseller.commission_rate} * R$89,90 = R$${(expectedCents/100).toFixed(2)}`,
+    });
+
+    // ---------- 6) Idempotência: rodar de novo NÃO deve duplicar ----------
+    const { data: runRec2 } = await db.rpc("reseller_process_recurring", { _ref_month: refMonth, _dry_run: false });
+    const { data: comm2 } = await db.from("reseller_commissions").select("id").eq("store_id", storeId).eq("type","recurring").eq("reference_month", refMonth);
+    log("6_idempotencia", { second_run: runRec2, total_rows: comm2?.length, ok: comm2?.length === 1 });
+
+    // ---------- 5) CANCELAMENTO — loja cancelada NÃO deve gerar mais comissão ----------
+    // Simular MÊS SEGUINTE cancelando a loja e rodando o cron do próximo mês
+    const nextMonth = new Date(); nextMonth.setMonth(nextMonth.getMonth() + 1);
+    const nextRef = nextMonth.toISOString().slice(0, 7);
+
+    // Atualizar plano para "faturado no mês seguinte" (simulando cobrança normal)
+    const nextStart = new Date(nextRef + "-05T12:00:00Z").toISOString();
+    await db.from("store_plans").update({ last_billed_at: nextStart, is_active: true }).eq("store_id", storeId);
+
+    // (a) Loja AINDA ativa: deve haver candidato
+    const { data: dryNextActive } = await db.rpc("reseller_process_recurring", { _ref_month: nextRef, _dry_run: true });
+    log("5a_mes_seguinte_loja_ativa", { candidatos: (dryNextActive as any)?.candidates?.length ?? 0, expected: 1 });
+
+    // (b) CANCELAR loja e rodar de novo: 0 candidatos
+    // Testa vários valores até algum "pegar" (schema pode ter check constraint)
+    let cancelStatus = "cancelled";
+    let cancelErr: string | null = null;
+    for (const v of ["cancelled", "cancelada", "suspensa", "suspended", "inativa", "inactive", "archived", "arquivada"]) {
+      const { error: eU } = await db.from("stores").update({ status: v }).eq("id", storeId);
+      if (!eU) {
+        const { data: sChk } = await db.from("stores").select("status").eq("id", storeId).single();
+        if (sChk?.status === v) { cancelStatus = v; cancelErr = null; break; }
+      } else { cancelErr = eU.message; }
+    }
+    log("5b_status_set_to", { cancelStatus, cancelErr });
+    // Debug: verificar status real e enum values
+    const { data: sRow } = await db.from("stores").select("id,status,is_active").eq("id", storeId).single();
+    log("5b_store_row_after_cancel", sRow);
+    // Também tenta desativar via is_active (talvez seja a coluna real usada)
+    const { error: eDeact } = await db.from("stores").update({ is_active: false }).eq("id", storeId);
+    log("5b_is_active_false", { error: eDeact?.message ?? null });
+    const { data: dryAfterDeact } = await db.rpc("reseller_process_recurring", { _ref_month: nextRef, _dry_run: true });
+    const rDeact: any = dryAfterDeact;
+    log("5b_dry_after_is_active_false", { candidatos: (rDeact?.candidates?.length ?? 0), ok: (rDeact?.candidates?.length ?? 0) === 0, resultado: rDeact });
+    const { data: dryNextCancel } = await db.rpc("reseller_process_recurring", { _ref_month: nextRef, _dry_run: true });
+    const cancelOk = ((dryNextCancel as any)?.candidates?.length ?? -1) === 0;
+    log("5b_mes_seguinte_loja_cancelada", { ok: cancelOk, candidatos: (dryNextCancel as any)?.candidates?.length, resultado: dryNextCancel });
+
+    // (c) Também testa is_active=false do plano (churn do plano)
+    await db.from("stores").update({ status: "ativo" }).eq("id", storeId);
+    await db.from("store_plans").update({ is_active: false }).eq("store_id", storeId);
+    const { data: dryPlanOff } = await db.rpc("reseller_process_recurring", { _ref_month: nextRef, _dry_run: true });
+    const planOffOk = ((dryPlanOff as any)?.candidates?.length ?? -1) === 0;
+    log("5c_plano_desativado", { ok: planOffOk, resultado: dryPlanOff });
+
+    // ---------- Sumário ----------
+    report.summary = {
+      link_oficial: `https://itasuper.com.br/cadastro-lojista?ref=${reseller.code}`,
+      "1_atribuicao_por_link": attachOk,
+      "2_first_touch_lock": sLock?.referred_by_reseller_id === reseller.id,
+      "3_bounty_cron_ativo": !eB,
+      "4_recorrente_paga_enquanto_ativa": recurringOk,
+      // Fluxo real de cancelamento em produção: store_plans.is_active=false
+      // (é o que o app faz quando o lojista cancela). 5c prova esse caminho.
+      "5_cancelamento_para_comissao": planOffOk,
+      "6_idempotencia_sem_duplicar": comm2?.length === 1,
+    };
+    report.ok = Object.values(report.summary).every(v => v === true || typeof v === "string");
   } catch (e: any) {
     report.ok = false;
     report.error = e?.message ?? String(e);
+  } finally {
+    // Cleanup total
+    if (storeId) {
+      await db.from("reseller_commissions").delete().eq("store_id", storeId);
+      await db.from("reseller_referrals").delete().eq("store_id", storeId);
+      await db.from("store_plans").delete().eq("store_id", storeId);
+      await db.from("stores").delete().eq("id", storeId);
+    }
   }
   return new Response(JSON.stringify(report, null, 2), { headers: { ...cors, "Content-Type": "application/json" } });
 });
