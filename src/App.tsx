@@ -32,6 +32,7 @@ import RecoveryRedirect from "@/components/RecoveryRedirect";
 import GlobalRealtimeSync from "@/components/GlobalRealtimeSync";
 import { fetchPendingLegalChanges, type PendingLegalChanges } from "@/lib/legalDocuments";
 import { APP_VERSION } from "@/lib/appVersion";
+import { registerRoutePrefetch } from "@/lib/prefetchRoute";
 
 // Lazy-loaded pages — each becomes its own chunk
 const Index = lazy(() => import("./pages/Index"));
@@ -80,6 +81,20 @@ const BlogPost = lazy(() => import("./pages/blog/BlogPost"));
 const BlogAdmin = lazy(() => import("./pages/admin/BlogAdmin"));
 const BlogAdminEditor = lazy(() => import("./pages/admin/BlogAdminEditor"));
 const VagaPromoPage = lazy(() => import("./pages/VagaPromoPage"));
+
+// Register the highest-value chunks for hover/focus prefetch.
+// Kept close to the lazy() definitions so paths and loaders stay in sync.
+registerRoutePrefetch("/super-admin", () => import("./pages/SuperAdminDashboardV2"));
+registerRoutePrefetch("/admin", () => import("./pages/AdminDashboardV2"));
+registerRoutePrefetch("/admin/pdv", () => import("./pages/PdvPage"));
+registerRoutePrefetch("/matriz", () => import("./pages/MatrizDashboard"));
+registerRoutePrefetch("/entregador", () => import("./pages/DriverDashboardV2"));
+registerRoutePrefetch("/revendedor", () => import("./pages/ResellerDashboard"));
+registerRoutePrefetch("/revendedor/auth", () => import("./pages/ResellerAuth"));
+registerRoutePrefetch("/portal-parceiro", () => import("./pages/PartnerLogin"));
+registerRoutePrefetch("/planos", () => import("./pages/PlanosPage"));
+registerRoutePrefetch("/cliente", () => import("./pages/ClientHome"));
+registerRoutePrefetch("/cadastro-lojista", () => import("./pages/CadastroLojista"));
 
 const PageLoader = () => (
   <div className="min-h-screen bg-background flex items-center justify-center">
