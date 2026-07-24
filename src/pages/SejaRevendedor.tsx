@@ -65,7 +65,7 @@ export default function SejaRevendedor() {
               Nós cobramos só quando a loja fatura. Você recebe todo mês, pra sempre.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Link to="/revendedor">
+              <Link to="/revendedor/cadastro">
                 <Button size="lg" className="w-full sm:w-auto">Quero me cadastrar</Button>
               </Link>
               <a href="#calculadora">
@@ -129,7 +129,7 @@ export default function SejaRevendedor() {
                   </div>
                 </div>
                 <div className="text-center">
-                  <Link to="/revendedor">
+                  <Link to="/revendedor/cadastro">
                     <Button size="lg">Começar agora</Button>
                   </Link>
                 </div>
@@ -174,7 +174,7 @@ export default function SejaRevendedor() {
           <div className="max-w-3xl mx-auto px-4 py-12 text-center space-y-4">
             <h2 className="text-2xl md:text-3xl font-bold">Pronto pra começar?</h2>
             <p className="text-muted-foreground">Cadastro em 2 minutos. Aprovação em até 48h úteis.</p>
-            <Link to="/revendedor">
+            <Link to="/revendedor/cadastro">
               <Button size="lg">Quero meu link de indicação</Button>
             </Link>
           </div>
