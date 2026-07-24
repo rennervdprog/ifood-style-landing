@@ -6,10 +6,10 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: cors });
   const out: Record<string, unknown> = {};
 
-  const plans = await sb.from("plan_templates").select("name,plan_type,monthly_fee,is_active").order("monthly_fee");
+  const plans = await sb.from("plan_templates").select("*").order("monthly_fee");
   out["plan_templates"] = plans.error ? plans.error.message : plans.data;
 
-  const resellers = await sb.from("resellers").select("bounty_amount_cents,commission_rate_bps,min_withdraw_cents,min_delivered_orders_for_bounty,status");
+  const resellers = await sb.from("resellers").select("*");
   if (resellers.error) out["resellers"] = resellers.error.message;
   else {
     const rows = resellers.data || [];
