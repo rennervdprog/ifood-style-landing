@@ -57,7 +57,10 @@ Deno.serve(async (req) => {
 
     // ---------- Preparar cenário para RECORRENTE ----------
     // Ativar a referral manualmente (simulando que o bounty já promoveu)
-    await db.from("reseller_referrals").update({ status: "active", activated_at: new Date().toISOString() }).eq("store_id", storeId);
+    const { data: upRef, error: eRef } = await db.from("reseller_referrals")
+      .update({ status: "active", activated_at: new Date().toISOString() })
+      .eq("store_id", storeId).select();
+    log("_ref_active_update", { rows: upRef?.length, error: eRef?.message });
 
     // Criar/garantir store_plans com plano pago vigente neste mês
     const now = new Date().toISOString();
@@ -70,12 +73,19 @@ Deno.serve(async (req) => {
       last_billed_at: now,
     };
     const { error: eIns } = await db.from("store_plans").insert(spPayload);
+    log("_sp_insert", { error: eIns?.message ?? null });
     if (eIns) {
-      const { error: eUpd } = await db.from("store_plans").update({
+      const { data: upSp, error: eUpd } = await db.from("store_plans").update({
         plan_type: "essencial", monthly_fee: 89.90, is_active: true, last_billed_at: now,
-      }).eq("store_id", storeId);
-      if (eUpd) log("store_plans_error", { insert: eIns.message, update: eUpd.message });
+      }).eq("store_id", storeId).select();
+      log("_sp_update_fallback", { rows: upSp?.length, error: eUpd?.message });
     }
+    // Confirma o que ficou gravado
+    const { data: spCheck } = await db.from("store_plans")
+      .select("plan_type,monthly_fee,is_active,last_billed_at,commission_rate").eq("store_id", storeId).maybeSingle();
+    log("_sp_check", spCheck);
+    const { data: refCheck } = await db.from("reseller_referrals").select("status,activated_at").eq("store_id", storeId).maybeSingle();
+    log("_ref_check", refCheck);
 
     // ---------- 4) RECORRENTE — loja ativa deve gerar comissão mensal ----------
     const { data: dryRec } = await db.rpc("reseller_process_recurring", { _ref_month: refMonth, _dry_run: true });
