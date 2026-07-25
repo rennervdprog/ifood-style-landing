@@ -246,15 +246,16 @@ html {
   overscroll-behavior: none;
   background: hsl(var(--background));
   min-height: 100vh;
+  --native-keyboard-height: 0px;
 }
 
 /* Safe-area aplicada APENAS no body para evitar empilhamento de padding
    quando elementos internos também recebem a classe .native-app. */
 body.native-app {
-  padding-top: env(safe-area-inset-top);
-  padding-bottom: env(safe-area-inset-bottom);
-  padding-left: env(safe-area-inset-left);
-  padding-right: env(safe-area-inset-right);
+  padding-top: var(--safe-area-inset-top, env(safe-area-inset-top));
+  padding-bottom: var(--safe-area-inset-bottom, env(safe-area-inset-bottom));
+  padding-left: var(--safe-area-inset-left, env(safe-area-inset-left));
+  padding-right: var(--safe-area-inset-right, env(safe-area-inset-right));
 }
 
 /* Elimina delay de 300ms em TODOS os botões e links no app nativo */
@@ -266,20 +267,37 @@ body.native-app {
   cursor: pointer;
 }
 
-/* Bloqueia pull-to-refresh do Chrome no Android */
-.native-app html,
-.native-app body {
+/* Bloqueia pull-to-refresh sem travar o resize/scroll quando o teclado abre */
+html.native-app,
+body.native-app {
   overscroll-behavior-y: contain;
-  position: fixed;
   width: 100%;
-  height: 100%;
+  min-height: 100%;
   overflow: hidden;
+  background: hsl(var(--background));
+}
+
+body.native-app {
+  position: relative;
+  min-height: 100dvh;
 }
 
 .native-app #root {
-  height: 100%;
+  height: 100dvh;
+  min-height: 100dvh;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  scroll-padding-bottom: calc(var(--native-keyboard-height, 0px) + 5rem);
+}
+
+.native-app.keyboard-open #root {
+  padding-bottom: calc(var(--native-keyboard-height, 0px) + var(--safe-area-inset-bottom, env(safe-area-inset-bottom)) + 1rem);
+}
+
+.native-app.keyboard-open input,
+.native-app.keyboard-open textarea,
+.native-app.keyboard-open [contenteditable="true"] {
+  scroll-margin-bottom: calc(var(--native-keyboard-height, 0px) + 5rem);
 }
 
 .native-app * {

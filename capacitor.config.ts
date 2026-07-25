@@ -9,11 +9,11 @@ const config: CapacitorConfig = {
     allowMixedContent: false,
     webContentsDebuggingEnabled: false,
     captureInput: true,
-    backgroundColor: '#0B0F14',
+    backgroundColor: '#FFFFFF',
     // Bridge nova (MessageChannel) — mais rápida que a legada.
     useLegacyBridge: false,
     // CDN identifica o app e serve Cache-Control agressivo.
-    appendUserAgent: 'ItaSuperApp/1.25.64',
+    appendUserAgent: 'ItaSuperApp/1.25.68',
     // Não focar automaticamente inputs — evita reflow no boot.
     initialFocus: false,
   },

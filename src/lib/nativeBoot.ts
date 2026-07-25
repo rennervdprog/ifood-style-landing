@@ -9,6 +9,43 @@ import { getCapacitorAppMode } from "@/lib/capacitorAppMode";
 let booted = false;
 let otaReadyCalled = false;
 
+function setNativeKeyboardHeight(height: number) {
+  const keyboardHeight = Math.max(0, Math.round(height || 0));
+  const root = document.documentElement;
+  const body = document.body;
+
+  if (keyboardHeight > 0) {
+    root.classList.add("keyboard-open");
+    body.classList.add("keyboard-open");
+    root.style.setProperty("--native-keyboard-height", `${keyboardHeight}px`);
+    body.style.setProperty("--native-keyboard-height", `${keyboardHeight}px`);
+    return;
+  }
+
+  root.classList.remove("keyboard-open");
+  body.classList.remove("keyboard-open");
+  root.style.removeProperty("--native-keyboard-height");
+  body.style.removeProperty("--native-keyboard-height");
+}
+
+function scrollFocusedFieldIntoView(delay = 80) {
+  window.setTimeout(() => {
+    const active = document.activeElement;
+    if (!(active instanceof HTMLElement)) return;
+
+    const tagName = active.tagName.toLowerCase();
+    const isEditable =
+      tagName === "input" ||
+      tagName === "textarea" ||
+      active.isContentEditable ||
+      active.getAttribute("role") === "textbox";
+
+    if (!isEditable) return;
+
+    active.scrollIntoView({ block: "center", inline: "nearest", behavior: "smooth" });
+  }, delay);
+}
+
 /**
  * Deve ser chamado o MAIS CEDO possível no cold start (antes de qualquer
  * requestIdleCallback). `notifyAppReady` é uma chamada barata (<5ms) que
@@ -87,15 +124,29 @@ export async function nativeBoot() {
     });
   } catch {}
 
-  // 4) Keyboard — modo Body redimensiona o <body> junto com o teclado,
-  //    evitando a faixa preta atrás do webview (Native deixava o fundo
-  //    da Activity aparecer quando o teclado abria em telas com campo
-  //    no topo, ex.: CEP no modal de endereço). Body mantém o conteúdo
-  //    "colado" acima do teclado sem gap.
+  // 4) Keyboard — NÃO redimensionar WebView/body. O resize nativo/Body cria
+  //    uma área fantasma entre o conteúdo e o teclado em alguns Androids.
+  //    Mantemos o WebView estável e adicionamos padding/scroll via CSS var.
   try {
     const { Keyboard, KeyboardResize } = await import("@capacitor/keyboard");
-    await Keyboard.setResizeMode({ mode: KeyboardResize.Body });
+    await Keyboard.setResizeMode({ mode: KeyboardResize.None });
     await Keyboard.setAccessoryBarVisible({ isVisible: false }).catch(() => {});
+
+    Keyboard.addListener("keyboardWillShow", (info) => {
+      setNativeKeyboardHeight(info.keyboardHeight);
+      scrollFocusedFieldIntoView(120);
+    });
+    Keyboard.addListener("keyboardDidShow", (info) => {
+      setNativeKeyboardHeight(info.keyboardHeight);
+      scrollFocusedFieldIntoView(40);
+    });
+    Keyboard.addListener("keyboardWillHide", () => setNativeKeyboardHeight(0));
+    Keyboard.addListener("keyboardDidHide", () => setNativeKeyboardHeight(0));
+    window.addEventListener("focusin", () => {
+      if (document.documentElement.classList.contains("keyboard-open")) {
+        scrollFocusedFieldIntoView(60);
+      }
+    });
   } catch {}
 
   // 5) Safe-area nativo — o plugin @capacitor-community/safe-area já publica
