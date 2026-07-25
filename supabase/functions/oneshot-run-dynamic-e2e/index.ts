@@ -19,9 +19,17 @@ Deno.serve(async (_req) => {
   const { data: sample } = await admin.from("orders").select("*").limit(1);
 
   const results: any[] = [];
-  const target = stores?.find((s: any) => /dudalanchesteste/i.test(s.name))
-    || stores?.find((s: any) => /dudalanchesfake/i.test(s.name))
-    || stores?.[0];
+  // Prefer "Duda lanches Teste"; ensure it has an active store_plan
+  const candidates = (stores || []).sort((a: any, b: any) => {
+    const score = (s: any) => /duda.*teste/i.test(s.name) ? 0 : /duda/i.test(s.name) ? 1 : 2;
+    return score(a) - score(b);
+  });
+  let target: any = null;
+  for (const s of candidates) {
+    const { data: plan } = await admin.from("store_plans")
+      .select("id").eq("store_id", s.id).eq("is_active", true).maybeSingle();
+    if (plan) { target = s; break; }
+  }
 
   for (const plan_type of ["fixed", "autonomy"] as const) {
     const r = await fetch(`${url}/functions/v1/e2e-dynamic-upgrade-flow`, {
