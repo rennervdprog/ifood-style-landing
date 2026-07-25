@@ -4,6 +4,7 @@
  */
 import { useEffect, useState } from "react";
 import { readGps, readGpsFromGesture, reverseGeocode } from "@/lib/location";
+import { checkLocationPermission } from "@/lib/location/permissions";
 import type { Coordinates } from "@/lib/location";
 
 export interface UserLocation {
@@ -45,7 +46,17 @@ export function useUserLocation(): UserLocation & { refresh: () => void } {
 
   useEffect(() => {
     let alive = true;
-    detect().then((r) => alive && setState(r));
+    // Nunca disparar prompt de permissão sem gesto do usuário.
+    // Só faz detecção automática se a permissão JÁ está concedida.
+    (async () => {
+      const perm = await checkLocationPermission();
+      if (perm.state !== "granted") {
+        if (alive) setState({ coords: null, city: null, state: null, ready: true });
+        return;
+      }
+      const r = await detect();
+      if (alive) setState(r);
+    })();
     return () => {
       alive = false;
     };

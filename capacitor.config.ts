@@ -27,18 +27,15 @@ const config: CapacitorConfig = {
   },
   plugins: {
     SplashScreen: {
-      // Fallback máximo — main.tsx chama hideSplash() logo após o primeiro
-      // render (RAF x2), tipicamente 400-900ms. 2000ms é só cinto de segurança
-      // caso o JS crashe antes de chamar hideSplash.
       launchShowDuration: 2000,
       launchAutoHide: false,
       launchFadeOutDuration: 200,
-      backgroundColor: '#FF6B00',
+      backgroundColor: '#FFFFFF',
       androidSplashResourceName: 'splash',
-      androidScaleType: 'CENTER_CROP',
+      androidScaleType: 'CENTER',
       showSpinner: false,
-      splashFullScreen: true,
-      splashImmersive: true,
+      splashFullScreen: false,
+      splashImmersive: false,
     },
     LocalNotifications: {
       smallIcon: 'ic_stat_icon_config_sample',
