@@ -95,4 +95,19 @@ export async function nativeBoot() {
     await Keyboard.setResizeMode({ mode: KeyboardResize.Native });
     await Keyboard.setAccessoryBarVisible({ isVisible: false }).catch(() => {});
   } catch {}
+
+  // 5) Safe-area nativo — publica --safe-area-inset-* como CSS vars
+  //    logo no primeiro paint, evitando o "pulo" do notch.
+  try {
+    const { SafeArea } = await import("@capacitor-community/safe-area");
+    await SafeArea.enable({
+      config: {
+        customColorsForSystemBars: false,
+        statusBarColor: "#00000000",
+        statusBarContent: "light",
+        navigationBarColor: "#00000000",
+        navigationBarContent: "light",
+      },
+    });
+  } catch {}
 }
