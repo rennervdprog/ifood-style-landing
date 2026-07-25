@@ -87,12 +87,14 @@ export async function nativeBoot() {
     });
   } catch {}
 
-  // 4) Keyboard — modo Native evita o webview recalcular 100vh a cada
-  //    abertura do teclado (checkout/busca). Esconde a barra de acessórios
-  //    do iOS que ninguém usa e ainda ocupa 44px.
+  // 4) Keyboard — modo Body redimensiona o <body> junto com o teclado,
+  //    evitando a faixa preta atrás do webview (Native deixava o fundo
+  //    da Activity aparecer quando o teclado abria em telas com campo
+  //    no topo, ex.: CEP no modal de endereço). Body mantém o conteúdo
+  //    "colado" acima do teclado sem gap.
   try {
     const { Keyboard, KeyboardResize } = await import("@capacitor/keyboard");
-    await Keyboard.setResizeMode({ mode: KeyboardResize.Native });
+    await Keyboard.setResizeMode({ mode: KeyboardResize.Body });
     await Keyboard.setAccessoryBarVisible({ isVisible: false }).catch(() => {});
   } catch {}
 
