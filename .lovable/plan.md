@@ -1,94 +1,65 @@
-# Plano de UI/UX — /perfil
+# Plano: "Comissão só após GMV" explícito em toda a jornada do revendedor
 
-## Problemas atuais
-- Header laranja ocupa muito espaço e o avatar do "Chat" flutuante sobrepõe o título "MEUS DADOS".
-- Lista longa e monótona: "Acesso Rápido", "Meus Dados", "Ações" empilhadas sem prioridade visual.
-- Status (OK / Pendente / Obrigatório) misturados sem agrupamento — cliente PDV vê seções irrelevantes (Endereço, PIX cliente).
-- Sem indicador de progresso do cadastro / próximos passos.
-- Versão e botão "Sair" perdidos no fim, sem destaque.
-- Tokens semânticos ok, mas hierarquia tipográfica fraca (tudo `text-sm font-semibold`).
+## Objetivo
+Nenhum revendedor deve descobrir depois que a mensalidade só cai quando a loja passa do GMV gratuito. Essa regra tem que aparecer em toda tela onde ele vê ganhos, indicações ou material de divulgação.
 
-## Nova estrutura
+## Fonte da verdade (única)
+Criar `src/lib/resellerEarnings.ts` exportando:
+- `FREE_GMV = { essencial: 5000, autonomia: 2500 }` (R$)
+- `BOUNTY_CENTS = 5000` (R$ 50 após 20 pedidos)
+- `RECURRING_RATE = 0.20`
+- Helpers: `formatFreeGmvLine()`, `getReferralEarningStage(store)` → `"pre_bounty" | "bounty_paid_free_tier" | "earning_recurring"`
 
-```text
-┌───────────────────────────────────────┐
-│  Header compacto (h-32, gradient)     │
-│  ← Avatar 64  Nome     [badge role]   │
-│               email · telefone        │
-├───────────────────────────────────────┤
-│  Card "Complete seu cadastro"         │
-│  ▓▓▓▓▓░░░ 3 de 5 · Continuar →        │  (só aparece se progresso < 100%)
-├───────────────────────────────────────┤
-│  Atalhos (grid 2x2, cards com ícone) │
-│  [Pedidos] [Painel Loja]              │
-│  [Endereço][Suporte]                  │
-├───────────────────────────────────────┤
-│  Seção "Conta"   (agrupada)           │
-│   • Dados pessoais       ✓            │
-│   • Endereço             ! Pendente   │
-│   • Dados PIX            ! Obrigatório│
-├───────────────────────────────────────┤
-│  Seção "Preferências"                 │
-│   • Tema (toggle inline)              │
-│   • Notificações                      │
-│   • Verificar atualização             │
-├───────────────────────────────────────┤
-│  Seção "Ajuda & Legal"                │
-│   • Central de ajuda                  │
-│   • Termos · Privacidade              │
-├───────────────────────────────────────┤
-│  Sair da conta  (btn ghost destaque)  │
-│  ItaSuper v1.25.46                    │
-└───────────────────────────────────────┘
-```
+Todos os textos e badges consomem daqui — zero string solta.
 
-## Mudanças por elemento
+## Telas a atualizar
 
-### 1. Header
-- Reduzir altura (h-48 → h-32), remover blobs decorativos pesados.
-- Gradient sutil `from-primary to-primary/80`, texto branco.
-- Avatar 64px com iniciais + borda branca; nome em `text-lg font-black`, email em `text-xs opacity-80`.
-- Badge do papel (Lojista / Cliente / Entregador / Revendedor) como pill translúcida.
-- `ThemeToggle` movido para dentro da seção Preferências (não flutua no header).
+**1. Landing `/seja-revendedor`**
+Card "Como você ganha" ganha 3 passos numerados explícitos:
+1. Bounty de R$ 50 após as 20 primeiras vendas da loja
+2. **Loja em fase gratuita → R$ 0 de recorrente** (Essencial até R$ 5k GMV / Autonomia até R$ 2,5k)
+3. Loja passou do GMV → 20% da mensalidade, todo mês
 
-### 2. Card de progresso de cadastro (novo)
-- Só renderiza quando faltam itens obrigatórios.
-- Barra de progresso + CTA "Continuar cadastro" que rola até primeiro pendente.
-- Usa cor primária para reforçar ação.
+Adicionar FAQ: "Quando começo a receber a mensalidade?"
 
-### 3. Atalhos (grid, não lista)
-- Grid `grid-cols-2 gap-3` de cards altos 96px com ícone grande + label.
-- Cards contextuais por papel:
-  - Cliente: Pedidos, Endereço, Favoritos, Suporte.
-  - Lojista: Pedidos, Painel Loja, Financeiro, Suporte.
-  - Entregador: Corridas, Ganhos, Documentos, Suporte.
-  - Revendedor: Indicações, Saques, Materiais, Suporte.
+**2. Cadastro `/reseller-auth`**
+Checkbox de termos com linha explícita:
+> "Entendi que a comissão recorrente de 20% só é paga a partir do mês em que a loja indicada passa do GMV gratuito e começa a pagar mensalidade."
 
-### 4. Seções agrupadas
-- Cada seção com título `text-[11px] uppercase tracking-wider text-muted-foreground` fora do card.
-- `MenuRow` mantém, mas:
-  - Adiciona divisórias sutis (`divide-y divide-border/50`) dentro do card.
-  - Status vira `StatusBadge` alinhado à direita antes do chevron.
-- Ocultar seções irrelevantes por papel (ex: PDV-only não mostra "Endereço de Entrega" nem "Dados PIX cliente").
+**3. Dashboard do revendedor (`ResellerHome` / bento)**
+- Card "Saldo pendente" com tooltip (ícone info): "Só entra saldo quando a loja indicada passa do GMV gratuito."
+- Novo mini-card "Aguardando ativação": conta lojas com `referral_status='active'` mas ainda em fase gratuita.
 
-### 5. Preferências
-- Tema com toggle inline (Sol/Lua) na própria row, sem navegar.
-- "Verificar atualização" com estado (última verificação, versão).
+**4. Lista de indicações (`ResellerIndicacoes`)**
+Cada card de loja mostra badge de estágio (do `getReferralEarningStage`):
+- 🟡 "Pré-bounty — X/20 pedidos"
+- 🔵 "Bounty pago · fase gratuita (faltam R$ Y de GMV)"
+- 🟢 "Gerando recorrente · R$ Z/mês"
 
-### 6. Sair e versão
-- Botão `Sair da conta` em ghost com ícone, largura total, cor destructive.
-- Versão em `text-[10px] text-muted-foreground/60 text-center` logo abaixo.
+Barra de progresso do GMV até o teto gratuito quando estágio = fase gratuita.
+
+**5. Tela de link/QR de divulgação**
+Abaixo do link, linha fixa em cinza:
+> "Você recebe 20% da mensalidade a partir do mês em que a loja passar de R$ 5.000 (Essencial) ou R$ 2.500 (Autonomia) em vendas."
+
+**6. Perfil do revendedor (`ResellerPerfil`)**
+Seção "Como funciona meu ganho" com os 3 estágios + link pros termos.
+
+**7. Materiais/copy prontos pra compartilhar**
+Se houver aba de "Materiais", incluir versão curta pronta pra WhatsApp já com a regra dentro do texto (não em asterisco).
+
+## Backend (dashboard RPC)
+`reseller_get_dashboard` já retorna `gmv_60d_cents` e `plan_type` por loja — adicionar no retorno:
+- `free_gmv_cents` (do template do plano)
+- `earning_stage` calculado no SQL
+Assim o front não recalcula regra de negócio.
+
+## Fora de escopo
+- Mudar valores/regra de comissão
+- Redesign visual completo (só adicionar os elementos explicativos nos layouts existentes)
 
 ## Detalhes técnicos
-- Arquivo: `src/pages/PerfilPage.tsx` (refator visual, sem alterar RPCs/queries).
-- Extrair sub-componentes: `ProfileHeader`, `CompletionCard`, `QuickActionsGrid`, `SectionGroup`.
-- Tokens: usar `hsl(var(--primary))` para gradient; `--muted`, `--border`, `--destructive` já definidos.
-- Responsivo: max-w-md centralizado; grid 2x2 vira 4x1 em ≥sm.
-- Reaproveitar `SignOutConfirm`, `ThemeToggle`, `MenuRow`, `StatusBadge`.
-- Nenhuma mudança de lógica de negócio, apenas apresentação.
-- Bump de versão + versionCode ao final.
-
-## Fora do escopo
-- Novas telas ou fluxos (edição de dados continua nos modais atuais).
-- Alterações no BottomNav.
-- Mudanças no back-end / RPCs.
+- Arquivo novo: `src/lib/resellerEarnings.ts`
+- Editar: `SejaRevendedor.tsx`, `ResellerAuth.tsx`, `revendedor/ResellerHome.tsx`, `revendedor/ResellerIndicacoes.tsx`, `revendedor/ResellerPerfil.tsx`, `useResellerDashboard.ts`
+- Edge function oneshot para atualizar `reseller_get_dashboard` retornando `earning_stage` + `free_gmv_cents`
+- Bump v1.25.48 + versionCode 10011
