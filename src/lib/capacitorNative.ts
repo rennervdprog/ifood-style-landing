@@ -355,16 +355,23 @@ export async function setupAppListeners() {
 
     App.addListener("backButton", ({ canGoBack }) => {
       const path = window.location.pathname;
+      const search = window.location.search;
       const HOME = "/cliente";
 
       // Se já está na home do cliente, minimiza o app
-      if (path === HOME || path === HOME + "/") {
+      if ((path === HOME || path === HOME + "/") && !search) {
         App.minimizeApp();
         return;
       }
 
-      // Qualquer outra rota (loja, carrinho, checkout, pedidos, perfil, auth…)
-      // volta direto pra home do cliente, sem depender do history stack
+      // Se tem histórico dentro do app, volta uma etapa (fecha modal de produto
+      // via query param, volta da loja pro /cliente, etc.)
+      if (canGoBack && window.history.length > 1) {
+        window.history.back();
+        return;
+      }
+
+      // Sem histórico → cai na home do cliente
       setPendingPushNavigation(HOME);
       window.dispatchEvent(
         new CustomEvent("capacitor-push-navigate", { detail: { path: HOME } })
