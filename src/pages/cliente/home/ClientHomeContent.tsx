@@ -18,6 +18,15 @@ import { mapStoresWithHours } from "../utils/mapStores";
 import CategoryChips, { normalizeCategory } from "./CategoryChips";
 import PromoBanners from "@/components/PromoBanners";
 
+const shuffle = <T,>(arr: T[]): T[] => {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+};
+
 const ROTATING_PLACEHOLDERS = [
   "Buscar pizza...",
   "Buscar mercado...",
@@ -221,6 +230,36 @@ const ClientHomeContent = () => {
       .filter((s: any) => !!s.image_url && s.realIsOpen)
       .slice(0, 8);
   }, [visibleStores]);
+
+  const openStoreIds = useMemo(
+    () => (suggestedStores || []).filter((s: any) => s.realIsOpen).map((s: any) => s.id),
+    [suggestedStores]
+  );
+  const openStoresMap = useMemo(() => {
+    const map = new Map<string, any>();
+    (suggestedStores || []).forEach((s: any) => map.set(s.id, s));
+    return map;
+  }, [suggestedStores]);
+
+  const { data: discoverProducts } = useQuery({
+    queryKey: ["discover-products", openStoreIds.slice(0, 30).join(",")],
+    queryFn: async () => {
+      if (openStoreIds.length === 0) return [];
+      const ids = shuffle(openStoreIds).slice(0, 30);
+      const { data, error } = await supabase
+        .from("products")
+        .select("id, name, price, image_url, store_id, is_available")
+        .in("store_id", ids)
+        .eq("is_available", true)
+        .not("image_url", "is", null)
+        .limit(80);
+      if (error) throw error;
+      return shuffle(data || []).slice(0, 12);
+    },
+    enabled: openStoreIds.length > 0 && !searchQuery && !activeCategory,
+    staleTime: 1000 * 60 * 3,
+  });
+
   const sponsoredIds = useMemo(() => new Set(sponsoredStores.map((s: any) => s.id)), [sponsoredStores]);
   const listStores = useMemo(
     () => (visibleStores || []).filter((s: any) => !sponsoredIds.has(s.id)),
@@ -443,6 +482,46 @@ const ClientHomeContent = () => {
         )}
 
         {/* Restaurantes perto de você — rich vertical list */}
+        {!searchQuery && !activeCategory && discoverProducts && discoverProducts.length > 0 && (
+          <section aria-labelledby="descubra-h">
+            <div className="flex justify-between items-center mb-3">
+              <h2 id="descubra-h" className="text-base font-bold text-foreground flex items-center gap-1.5">
+                <Sparkles className="h-4 w-4 text-primary" /> Descubra
+              </h2>
+              <span className="text-[11px] font-bold text-muted-foreground">Aleatório</span>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {discoverProducts.map((p: any) => {
+                const store = openStoresMap.get(p.store_id);
+                return (
+                  <button
+                    key={p.id}
+                    onClick={() => store && goToStore(store)}
+                    className="bg-card border border-border rounded-2xl overflow-hidden text-left active:scale-[0.98] transition-transform"
+                  >
+                    <div className="aspect-square bg-muted relative">
+                      <img
+                        loading="lazy"
+                        decoding="async"
+                        src={p.image_url}
+                        alt={p.name}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="p-2.5">
+                      <p className="text-xs font-bold text-foreground truncate">{p.name}</p>
+                      {store && (
+                        <p className="text-[10px] text-muted-foreground truncate">{store.name}</p>
+                      )}
+                      <p className="text-sm font-extrabold text-primary mt-1">{formatBRL(Number(p.price))}</p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
         <section aria-labelledby="stores-h">
           <div className="flex items-end justify-between mb-3 gap-2">
             <h2 id="stores-h" className="text-base font-bold text-foreground min-w-0 truncate">
