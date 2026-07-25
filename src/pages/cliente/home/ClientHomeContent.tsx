@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
   Search, Clock, Repeat, ShoppingBag, Store as StoreIcon, MapPin, Bell, MessageCircle,
-  ChevronDown, ChevronRight, SlidersHorizontal, Star, Heart, Sparkles,
+  ChevronDown, ChevronRight, SlidersHorizontal, Sparkles,
 } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 import ProductTour, { clienteTourSteps } from "@/components/ProductTour";
@@ -16,7 +16,9 @@ import { useUserLocation } from "@/hooks/useUserLocation";
 import { formatBRL } from "@/lib/utils";
 import { mapStoresWithHours } from "../utils/mapStores";
 import CategoryChips, { normalizeCategory } from "./CategoryChips";
-import PromoBanners from "@/components/PromoBanners";
+import BentoHero from "./BentoHero";
+import HighlightsBento from "./HighlightsBento";
+import DiscoverGrid from "./DiscoverGrid";
 
 const shuffle = <T,>(arr: T[]): T[] => {
   const a = arr.slice();
@@ -228,7 +230,7 @@ const ClientHomeContent = () => {
   const sponsoredStores = useMemo(() => {
     return (visibleStores || [])
       .filter((s: any) => !!s.image_url && s.realIsOpen)
-      .slice(0, 8);
+      .slice(0, 3);
   }, [visibleStores]);
 
   const openStoreIds = useMemo(
@@ -248,13 +250,14 @@ const ClientHomeContent = () => {
       const ids = shuffle(openStoreIds).slice(0, 30);
       const { data, error } = await supabase
         .from("products")
-        .select("id, name, price, image_url, store_id, is_available")
+        .select("id, name, price, image_url, store_id, is_available, created_at")
         .in("store_id", ids)
         .eq("is_available", true)
         .not("image_url", "is", null)
-        .limit(80);
+        .order("created_at", { ascending: false })
+        .limit(60);
       if (error) throw error;
-      return shuffle(data || []).slice(0, 12);
+      return shuffle(data || []).slice(0, 8);
     },
     enabled: openStoreIds.length > 0 && !searchQuery && !activeCategory,
     staleTime: 1000 * 60 * 3,
@@ -275,7 +278,7 @@ const ClientHomeContent = () => {
 
       {/* Sticky header — marketplace style */}
       <header className="sticky top-0 z-30 bg-background/95 backdrop-blur border-b border-border">
-        <div className="px-4 pt-4 pb-2 flex items-center justify-between gap-3">
+        <div className="px-4 pt-3 pb-2 flex items-center justify-between gap-3">
           <button
             onClick={userLocation.refresh}
             className="flex flex-col text-left min-w-0 active:opacity-70"
@@ -286,7 +289,7 @@ const ClientHomeContent = () => {
             </span>
             <span className="flex items-center gap-1 min-w-0">
               <MapPin className="w-4 h-4 text-primary shrink-0" />
-              <span className="text-sm font-bold text-foreground truncate max-w-[220px]">
+              <span className="font-display text-sm font-bold text-foreground truncate max-w-[220px]">
                 {locationLabel}
               </span>
               <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />
@@ -334,11 +337,9 @@ const ClientHomeContent = () => {
       </header>
 
       <main className="px-4 pt-3 space-y-6">
-        {/* Promo banners */}
+        {/* Bento hero */}
         {!searchQuery && (
-          <div className="-mx-4">
-            <PromoBanners />
-          </div>
+          <BentoHero />
         )}
 
         {/* Category chips */}
@@ -353,28 +354,28 @@ const ClientHomeContent = () => {
         {/* Last order highlight */}
         {!searchQuery && lastOrder && (
           <section aria-labelledby="last-order-h">
-            <h2 id="last-order-h" className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
+            <h2 id="last-order-h" className="font-display text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
               <Clock className="h-3.5 w-3.5" /> Último pedido
             </h2>
-            <div className="bg-gradient-to-br from-primary/5 to-primary/10 border border-primary/20 rounded-2xl p-4">
+            <div className="bg-gradient-to-br from-primary/5 to-transparent border border-primary/20 rounded-3xl p-4">
               <div className="flex items-center gap-3 mb-3">
                 {lastOrder.stores?.image_url ? (
                   <img loading="lazy" decoding="async" src={lastOrder.stores.image_url}
-                    className="w-11 h-11 rounded-xl object-cover" alt="" />
+                    className="w-12 h-12 rounded-2xl object-cover" alt="" />
                 ) : (
-                  <div className="w-11 h-11 rounded-xl bg-primary/15 flex items-center justify-center">
+                  <div className="w-12 h-12 rounded-2xl bg-primary/15 flex items-center justify-center">
                     <ShoppingBag className="h-5 w-5 text-primary" />
                   </div>
                 )}
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-bold text-foreground truncate">{lastOrder.stores?.name}</p>
+                  <p className="font-display text-sm font-bold text-foreground truncate">{lastOrder.stores?.name}</p>
                   <p className="text-[11px] text-muted-foreground">
                     {new Date(lastOrder.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "long" })}
                     {" · "}
                     {lastOrder.order_items?.length || 0} itens
                   </p>
                 </div>
-                <span className="text-sm font-extrabold text-primary">{formatBRL(Number(lastOrder.total_price))}</span>
+                <span className="font-display text-sm font-extrabold text-primary">{formatBRL(Number(lastOrder.total_price))}</span>
               </div>
               <div className="flex gap-2">
                 <button
@@ -397,7 +398,7 @@ const ClientHomeContent = () => {
         {/* Suas lojas (atalho rápido) */}
         {!searchQuery && lastStores.length > 0 && (
           <section aria-labelledby="suas-lojas-h">
-            <h2 id="suas-lojas-h" className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
+            <h2 id="suas-lojas-h" className="font-display text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
               <StoreIcon className="h-3.5 w-3.5" /> Suas lojas
             </h2>
             <div className="flex overflow-x-auto gap-3 no-scrollbar -mx-1 px-1 pb-1">
@@ -409,13 +410,13 @@ const ClientHomeContent = () => {
                 >
                   {store.image_url ? (
                     <img loading="lazy" decoding="async" src={store.image_url}
-                      className="w-16 h-16 rounded-2xl object-cover border-2 border-border" alt={store.name} />
+                      className="w-16 h-16 rounded-full object-cover ring-2 ring-primary/20 ring-offset-2 ring-offset-background" alt={store.name} />
                   ) : (
-                    <div className="w-16 h-16 rounded-2xl bg-primary/10 border-2 border-border flex items-center justify-center">
+                    <div className="w-16 h-16 rounded-full bg-primary/10 ring-2 ring-primary/20 ring-offset-2 ring-offset-background flex items-center justify-center">
                       <StoreIcon className="h-6 w-6 text-primary" />
                     </div>
                   )}
-                  <p className="text-[10px] font-semibold text-foreground text-center truncate w-full leading-tight">
+                  <p className="font-display text-[10px] font-semibold text-foreground text-center truncate w-full leading-tight">
                     {store.name}
                   </p>
                 </button>
@@ -424,60 +425,15 @@ const ClientHomeContent = () => {
           </section>
         )}
 
-        {/* Patrocinados — horizontal cards */}
+        {/* Destaques — bento 2x2 */}
         {!searchQuery && !activeCategory && sponsoredStores.length > 0 && (
           <section aria-labelledby="patrocinados-h">
             <div className="flex justify-between items-center mb-3">
-              <span
-                id="patrocinados-h"
-                className="bg-primary text-primary-foreground text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1 uppercase tracking-wide"
-              >
-                <Sparkles className="w-3 h-3" /> Destaques
-              </span>
+              <h2 id="patrocinados-h" className="font-display text-base font-bold text-foreground flex items-center gap-1.5">
+                <Sparkles className="w-4 h-4 text-primary" /> Destaques da região
+              </h2>
             </div>
-
-            <div className="flex gap-3 overflow-x-auto no-scrollbar pb-1 -mx-1 px-1">
-              {sponsoredStores.map((store: any) => (
-                <button
-                  key={store.id}
-                  onClick={() => goToStore(store)}
-                  className="min-w-[150px] max-w-[150px] bg-card rounded-2xl overflow-hidden border border-border shadow-sm text-left active:scale-[0.98] transition-transform"
-                >
-                  <div className="h-24 bg-muted relative">
-                    {store.image_url ? (
-                      <img
-                        loading="lazy"
-                        decoding="async"
-                        src={store.image_url}
-                        alt={store.name}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <StoreIcon className="w-8 h-8 text-primary/60" />
-                      </div>
-                    )}
-                    <div className="absolute top-2 right-2 bg-background/80 p-1.5 rounded-full backdrop-blur-sm">
-                      <Heart className="w-3.5 h-3.5 text-muted-foreground" />
-                    </div>
-                  </div>
-                  <div className="p-3">
-                    <h4 className="text-xs font-bold text-foreground truncate">{store.name}</h4>
-                    <div className="flex items-center gap-1 mt-1">
-                      <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
-                      <span className="text-[10px] font-bold text-muted-foreground">
-                        {store.rating ? Number(store.rating).toFixed(1) : "Novo"}
-                      </span>
-                      {formatDistance(store.distanceKm) && (
-                        <span className="text-[10px] text-muted-foreground ml-auto">
-                          {formatDistance(store.distanceKm)}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </button>
-              ))}
-            </div>
+            <HighlightsBento stores={sponsoredStores} onSelect={goToStore} />
           </section>
         )}
 
@@ -485,53 +441,25 @@ const ClientHomeContent = () => {
         {!searchQuery && !activeCategory && discoverProducts && discoverProducts.length > 0 && (
           <section aria-labelledby="descubra-h">
             <div className="flex justify-between items-center mb-3">
-              <h2 id="descubra-h" className="text-base font-bold text-foreground flex items-center gap-1.5">
+              <h2 id="descubra-h" className="font-display text-base font-bold text-foreground flex items-center gap-1.5">
                 <Sparkles className="h-4 w-4 text-primary" /> Descubra
               </h2>
-              <span className="text-[11px] font-bold text-muted-foreground">Aleatório</span>
+              <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wide">Selecionado pra você</span>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              {discoverProducts.map((p: any) => {
-                const store = openStoresMap.get(p.store_id);
-                return (
-                  <button
-                    key={p.id}
-                    onClick={() => store && goToStore(store)}
-                    className="bg-card border border-border rounded-2xl overflow-hidden text-left active:scale-[0.98] transition-transform"
-                  >
-                    <div className="aspect-square bg-muted relative">
-                      <img
-                        loading="lazy"
-                        decoding="async"
-                        src={p.image_url}
-                        alt={p.name}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <div className="p-2.5">
-                      <p className="text-xs font-bold text-foreground truncate">{p.name}</p>
-                      {store && (
-                        <p className="text-[10px] text-muted-foreground truncate">{store.name}</p>
-                      )}
-                      <p className="text-sm font-extrabold text-primary mt-1">{formatBRL(Number(p.price))}</p>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
+            <DiscoverGrid products={discoverProducts} storesMap={openStoresMap} onSelect={goToStore} />
           </section>
         )}
 
         <section aria-labelledby="stores-h">
           <div className="flex items-end justify-between mb-3 gap-2">
-            <h2 id="stores-h" className="text-base font-bold text-foreground min-w-0 truncate">
+            <h2 id="stores-h" className="font-display text-base font-bold text-foreground min-w-0 truncate">
               {searchQuery.length >= 2
                 ? `Resultados para "${searchQuery}"`
                 : activeCategory
                 ? "Filtrado"
                 : effectiveCity
-                ? `Restaurantes em ${effectiveCity}`
-                : "Restaurantes perto de você"}
+                ? `Todas as lojas em ${effectiveCity}`
+                : "Todas as lojas"}
             </h2>
             <span className="text-[11px] font-bold text-muted-foreground shrink-0">
               {visibleStores.length} {visibleStores.length === 1 ? "loja" : "lojas"}
