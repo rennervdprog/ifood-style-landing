@@ -1,104 +1,104 @@
-# Plano — Fluidez extra no APK Cliente
+## Objetivo
+Corrigir o bug do teclado no app cliente onde, ao focar qualquer input, aparece um grande espaço branco/cinza entre o conteúdo e o teclado, deixando a tela difícil ou impossível de usar.
 
-Objetivo: reduzir jank de scroll, tempo de primeira pintura entre rotas e latência da bridge JS↔nativo. Tudo OTA-compatível exceto os itens marcados **[APK novo]**.
+## Diagnóstico provável
+O problema não é mais a cor preta/cinza: agora o WebView está branco, mas o bug real continua porque o app está adicionando `padding-bottom` global no `#root` com a altura inteira do teclado.
 
-## 1. WebView tuning nativo [APK novo]
+Na prática, quando o teclado abre:
 
-`android/app/src/main/AndroidManifest.xml` — adicionar no `<application>`:
-- `android:hardwareAccelerated="true"`
-- `android:largeHeap="true"` (WebView de catálogo com muitas imagens)
-
-`MainActivity.java` — no `onCreate` após `super.onCreate`:
-```java
-WebView wv = (WebView) bridge.getWebView();
-WebSettings s = wv.getSettings();
-s.setRenderPriority(WebSettings.RenderPriority.HIGH);
-s.setCacheMode(WebSettings.LOAD_DEFAULT);
-s.setOffscreenPreRaster(true);   // pré-rasteriza fora da tela → scroll liso
-wv.setLayerType(View.LAYER_TYPE_HARDWARE, null);
+```text
+Tela normal
++ conteúdo
++ padding gigante = altura do teclado
++ teclado Android
 ```
 
-Ganho: scroll de listas longas (StorePage cardápio) e transições sem "stutter" em Androids médios.
+Esse padding vira a “mancha enorme” visível na tela, especialmente em checkout, login e modais.
 
-## 2. Bridge mais rápida [APK novo]
+## Plano de correção
 
-`capacitor.config.ts` → `android`:
-- `useLegacyBridge: false` (default no CAP 8, mas explicitar)
-- `initialFocus: false` (evita foco automático que dispara reflow)
-- `mixedContentMode: "compatibility"` só onde precisar
+### 1. Remover o padding global gigante do app
+Alterar `src/index.css` para parar de aplicar isso globalmente:
 
-## 3. Safe-area nativo (evita layout thrash do CSS `env()`)
-
-Instalar `@capacitor-community/safe-area`:
-- Emite valores via CSS vars `--safe-area-inset-*` **antes** do primeiro paint (hoje o `env()` só resolve depois que o WebView calcula o notch → causa flash).
-- Substituir uso de `env(safe-area-inset-*)` por `var(--safe-area-inset-*, env(safe-area-inset-*))` no `src/index.css`.
-- Elimina o "pulo" do header/BottomNav ao abrir app.
-
-## 4. Preload de rotas críticas (OTA)
-
-`index.html`:
-```html
-<link rel="modulepreload" href="/assets/StorePage-*.js" />
-<link rel="modulepreload" href="/assets/ClientHomeContent-*.js" />
-<link rel="preload" as="image" href="/logo-itasuper-128.webp" fetchpriority="high" />
+```css
+.native-app.keyboard-open #root {
+  padding-bottom: altura-do-teclado;
+}
 ```
-- Vite gera hash → usar `vite-plugin-preload` para injetar automaticamente os chunks das rotas `/cliente` e `/loja/:slug`.
-- Prefetch on-hover dos cards de loja já existe (`prefetchRoute.ts`); estender pra prefetch **on-visible** com `IntersectionObserver` no `StoreCard`.
 
-## 5. Cache agressivo de imagens (OTA + config)
+Manter apenas `scroll-padding-bottom`, que ajuda o campo focado a não ficar escondido, mas sem criar um bloco branco visível.
 
-- `capacitor.config.ts` → `android.appendUserAgent: "ItaSuperApp/1.25.63"` pra CDN identificar e servir com `Cache-Control` maior.
-- Todas `<img>` de loja/produto: `loading="lazy" decoding="async" fetchpriority="low"` — exceto a 1ª visível.
-- Componente `<StoreImage>` único que aplica `srcset` webp/avif via `?w=` no Supabase Storage transform.
+### 2. Trocar a estratégia: teclado sobreposto + scroll controlado
+Manter no Android:
 
-## 6. Keyboard + resize (OTA + plugin já instalado)
+```xml
+android:windowSoftInputMode="adjustNothing"
+```
 
-`@capacitor/keyboard` (já temos) — no boot:
+e no Capacitor:
+
 ```ts
-Keyboard.setResizeMode({ mode: KeyboardResize.Native });
-Keyboard.setAccessoryBarVisible({ isVisible: false });
+KeyboardResize.None
 ```
-Evita reflow do `100vh` toda vez que teclado abre no checkout/busca.
 
-## 7. StatusBar overlay [APK novo]
+Mas o JavaScript não deve “empurrar” a página inteira; ele deve apenas rolar o input ativo para uma posição útil.
 
-`StatusBar.setOverlaysWebView({ overlay: true })` no boot nativo — combinado com safe-area do item 3 dá header edge-to-edge sem gap branco no topo.
+### 3. Melhorar o `scrollFocusedFieldIntoView`
+Atualizar `src/lib/nativeBoot.ts` para:
 
-## 8. Sentry perf sampling
+- usar `requestAnimationFrame` + delay curto após o teclado abrir;
+- calcular se o input está atrás do teclado;
+- rolar somente o necessário;
+- não centralizar agressivamente campos que já estão visíveis;
+- evitar scroll quando o input está no topo e já pode ser usado.
 
-Reduzir `tracesSampleRate` no APK pra `0.05` (hoje deve estar mais alto). Sentry no mobile custa FPS em telas pesadas.
+### 4. Corrigir telas com rodapé fixo durante teclado
+Auditar e ajustar telas críticas com input:
 
-## 9. Lazy de libs pesadas (OTA)
+- login/cadastro;
+- checkout `/checkout` e guest checkout;
+- modais de endereço/observação;
+- perfil/endereço;
+- busca.
 
-Auditar e mover pra `React.lazy`:
-- `recharts` (só usado em dashboards)
-- `html2canvas`/`jspdf` (só no ebook/comprovante)
-- `qrcode.react` (só em Pix)
-- `mapbox-gl` / leaflet se existir
+Quando o teclado estiver aberto no app nativo, rodapés fixos como resumo do pedido devem não criar espaço extra nem disputar com o teclado.
 
-## 10. React Query — `structuralSharing` + `notifyOnChangeProps`
+### 5. Adicionar classe utilitária segura
+Criar uma regra CSS tipo:
 
-Global default no `queryClient.ts`:
-```ts
-defaultOptions: { queries: { notifyOnChangeProps: 'tracked', structuralSharing: true } }
+```css
+.native-app.keyboard-open .native-hide-while-keyboard {
+  display: none;
+}
 ```
-Reduz re-renders em ~40% em listas grandes (cardápio).
 
----
+Usar apenas em barras fixas que atrapalham inputs, como CTA/resumo fixo no checkout, se necessário.
 
-## Ordem de execução
+### 6. Validação real
+Como esse bug depende do teclado nativo Android, o teste final precisa ser no APK, mas antes vou validar no código:
 
-1. **OTA-only primeiro** (itens 4, 5, 6, 8, 9, 10) → sai na v1.25.64, testa no APK atual.
-2. **APK novo** (itens 1, 2, 3, 7) → sai em v1.26.0 (versionCode 10027).
+- sem `padding-bottom` global com altura do teclado;
+- sem `KeyboardResize.Body` ou `Native`;
+- sem `reload`/layout shift relacionado a OTA;
+- campos ainda recebem scroll automático.
 
-## Validação
+Depois de gerar APK, testar no celular:
 
-- Chrome DevTools remoto (`chrome://inspect`) medindo FPS de scroll na StorePage antes/depois.
-- Lighthouse mobile: LCP alvo <1.8s, TBT <150ms.
-- Sentry Performance: transactions de rota `<300ms`.
+1. login com senha;
+2. checkout/finalizar pedido;
+3. campo telefone/número;
+4. modal com input;
+5. fechar teclado e abrir de novo.
 
-## Riscos
+## Arquivos que serão alterados
 
-- `setOffscreenPreRaster(true)` aumenta RAM; ok no `largeHeap`.
-- `overlaysWebView` exige revisar TODOS os headers pra não sumir atrás do status bar — safe-area do item 3 cobre isso.
-- Plugin `safe-area` precisa `npx cap sync` — mesmo passo do OTA cliente atual.
+- `src/index.css`
+- `src/lib/nativeBoot.ts`
+- possivelmente `src/pages/CheckoutPage.tsx` e `src/pages/GuestCheckoutPage.tsx` se o rodapé fixo estiver interferindo
+- versão sincronizada em:
+  - `src/lib/appVersion.ts`
+  - `android/app/build.gradle`
+  - `android/app/src/main/java/.../MainActivity.java`
+
+## Resultado esperado
+Ao abrir o teclado, a tela não deve criar uma faixa branca gigante; o teclado deve sobrepor a parte inferior e o app deve apenas rolar o campo ativo para ficar usável.
