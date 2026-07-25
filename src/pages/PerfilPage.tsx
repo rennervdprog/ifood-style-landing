@@ -534,7 +534,7 @@ const PerfilPage = () => {
     if (target) {
       setActiveSection(target);
       setTimeout(() => {
-        const el = document.getElementById(`section-${target}`);
+        const el = window.document.getElementById(`section-${target}`);
         el?.scrollIntoView({ behavior: "smooth", block: "start" });
       }, 60);
     } else if (firstPending.key === "pin") {
