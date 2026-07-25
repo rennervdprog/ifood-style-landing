@@ -406,10 +406,42 @@ export async function requestLocationPermission(): Promise<boolean> {
 
   try {
     const { Geolocation } = await import("@capacitor/geolocation");
-    const perm = await Geolocation.requestPermissions();
-    const granted = perm.location === "granted" || perm.coarseLocation === "granted";
-    console.log(`[Location] Permission: ${granted ? "granted" : perm.location}`);
-    return granted;
+    const isGranted = (perm: { location?: string; coarseLocation?: string } | null | undefined) =>
+      perm?.location === "granted" || perm?.coarseLocation === "granted";
+
+    try {
+      // No Android, getCurrentPosition dispara o prompt nativo no fluxo correto
+      // e só depois tenta ler o GPS; requestPermissions pode falhar antes do
+      // prompt quando o serviço de localização do aparelho está desligado.
+      await Geolocation.getCurrentPosition({
+        enableHighAccuracy: true,
+        timeout: 10_000,
+        maximumAge: 60_000,
+      });
+      console.log("[Location] Permission: granted");
+      return true;
+    } catch (positionError) {
+      try {
+        const checked = await Geolocation.checkPermissions();
+        if (isGranted(checked)) {
+          console.log("[Location] Permission: granted (position unavailable)");
+          return true;
+        }
+      } catch {
+        // Se o GPS do aparelho estiver desligado, checkPermissions pode lançar
+        // erro mesmo após o prompt de permissão ter sido exibido.
+      }
+
+      try {
+        const requested = await Geolocation.requestPermissions({ permissions: ["location"] });
+        const granted = isGranted(requested);
+        console.log(`[Location] Permission: ${granted ? "granted" : requested.location}`);
+        return granted;
+      } catch (requestError) {
+        console.warn("[Location] Permission request failed:", requestError || positionError);
+        return false;
+      }
+    }
   } catch (e) {
     console.warn("[Location] Permission request failed:", e);
     return false;
