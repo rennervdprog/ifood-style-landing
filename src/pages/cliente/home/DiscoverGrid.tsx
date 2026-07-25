@@ -1,4 +1,5 @@
 import { memo } from "react";
+import { useNavigate } from "react-router-dom";
 import { formatBRL } from "@/lib/utils";
 
 interface Props {
@@ -12,7 +13,14 @@ interface Props {
  * Card com imagem no topo e nome/loja/preço no rodapé — sem overlaps no mobile.
  */
 const DiscoverGrid = memo(({ products, storesMap, onSelect }: Props) => {
+  const navigate = useNavigate();
   if (!products?.length) return null;
+
+  const openProduct = (p: any, store: any) => {
+    if (!store) return;
+    const base = store.slug ? `/${store.slug}` : `/loja/${store.id}`;
+    navigate(`${base}?product=${p.id}`);
+  };
 
   return (
     <div className="grid grid-cols-2 gap-3">
@@ -21,7 +29,7 @@ const DiscoverGrid = memo(({ products, storesMap, onSelect }: Props) => {
         return (
           <button
             key={p.id}
-            onClick={() => store && onSelect(store)}
+            onClick={() => openProduct(p, store)}
             onPointerEnter={() => {
               if (store?.slug) {
                 const link = document.createElement("link");

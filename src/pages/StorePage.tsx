@@ -796,6 +796,19 @@ const StorePage = () => {
     setSelectedProduct(product);
   }, [queryClient]);
 
+  // Auto-abrir produto via ?product=<id> (ex.: vindo do /cliente "Descubra")
+  const autoOpenedRef = useRef(false);
+  useEffect(() => {
+    if (autoOpenedRef.current) return;
+    const pid = new URLSearchParams(location.search).get("product");
+    if (!pid || !displayProducts?.length) return;
+    const p = displayProducts.find((x) => x.id === pid);
+    if (p) {
+      autoOpenedRef.current = true;
+      openProduct(p);
+    }
+  }, [location.search, displayProducts, openProduct]);
+
   const prefetchProduct = useCallback((product: Product) => {
     void loadProductDetailModal();
     void queryClient.prefetchQuery({
