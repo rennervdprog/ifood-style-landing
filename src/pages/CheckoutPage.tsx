@@ -471,11 +471,7 @@ const CheckoutPage = () => {
   }, [authLoading, user, items.length, navigate]);
 
   if (authLoading || !user || items.length === 0) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-      </div>
-    );
+    return <div className="min-h-screen bg-background" />;
   }
 
    useEffect(() => {
