@@ -987,9 +987,12 @@ const StorePage = () => {
 
          {/* Sticky Header Top Bar */}
          {!showHalfHalf && !showPastelBuilder && (
-           <div className={`fixed top-0 left-0 right-0 flex items-center justify-between p-4 z-[70] transition-all duration-300 h-[64px] ${
-            scrolled ? "bg-background border-b border-border shadow-sm py-2" : "bg-transparent"
-           }`}>
+           <div
+             style={{ paddingTop: "calc(env(safe-area-inset-top) + 0.75rem)" }}
+             className={`fixed top-0 left-0 right-0 flex items-center justify-between px-4 pb-3 z-[70] transition-all duration-300 ${
+               scrolled ? "bg-background border-b border-border shadow-sm" : "bg-transparent"
+             }`}
+           >
           <div className="flex items-center gap-3 min-w-0">
             {!getStoreAppSlug() && hasInternalHistory && (
               <button
