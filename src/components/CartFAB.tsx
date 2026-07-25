@@ -13,7 +13,8 @@ const CartFAB = memo(() => {
   return (
     <button
       onClick={() => navigate("/carrinho")}
-      className="fixed bottom-20 left-4 right-4 z-40 bg-primary text-primary-foreground rounded-2xl py-3.5 px-5 flex items-center justify-between shadow-lg active:scale-[0.98] transition-transform"
+      style={{ bottom: "calc(env(safe-area-inset-bottom) + 5rem)" }}
+      className="fixed left-4 right-4 z-40 bg-primary text-primary-foreground rounded-2xl py-3.5 px-5 flex items-center justify-between shadow-lg active:scale-[0.98] transition-transform"
     >
       <div className="flex items-center gap-3">
         <div className="relative">
