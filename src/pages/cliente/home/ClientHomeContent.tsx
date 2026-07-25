@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
@@ -38,6 +38,8 @@ const ROTATING_PLACEHOLDERS = [
 ];
 
 const PUBLIC_STORE_SELECT = "id, name, image_url, slug, category, categories, is_open, force_closed, rating, status, delivery_mode, own_delivery_fee, address_cep, address_city, address_complement, address_neighborhood, address_number, address_reference, address_state, address_street, latitude, longitude, settings";
+
+type HeroFilter = "no_fee" | "direct_delivery" | null;
 
 const normalizeCity = (value?: string | null) =>
   (value || "")
@@ -106,6 +108,7 @@ const ClientHomeContent = () => {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [heroFilter, setHeroFilter] = useState<HeroFilter>(null);
   const [placeholderIdx, setPlaceholderIdx] = useState(0);
   const [showSupport, setShowSupport] = useState(false);
 
@@ -190,9 +193,16 @@ const ClientHomeContent = () => {
 
   const visibleStores = useMemo(() => {
     const base = searchQuery.length >= 2 ? searchResults || [] : suggestedStores || [];
-    if (!activeCategory) return base;
-    return base.filter((s: any) => normalizeCategory(s.category) === activeCategory);
-  }, [searchQuery, searchResults, suggestedStores, activeCategory]);
+    const categoryFiltered = activeCategory
+      ? base.filter((s: any) => normalizeCategory(s.category) === activeCategory)
+      : base;
+
+    if (heroFilter === "direct_delivery") {
+      return categoryFiltered.filter((s: any) => s.delivery_mode === "own");
+    }
+
+    return categoryFiltered;
+  }, [searchQuery, searchResults, suggestedStores, activeCategory, heroFilter]);
 
   const lastStores = useMemo(() => {
     if (!recentOrders) return [];
@@ -207,6 +217,43 @@ const ClientHomeContent = () => {
     if (store?.slug) navigate(`/${store.slug}`);
     else if (store?.id) navigate(`/loja/${store.id}`);
   };
+
+  const scrollToStores = useCallback(() => {
+    window.requestAnimationFrame(() => {
+      document.getElementById("stores-h")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }, []);
+
+  const handleSearchChange = useCallback((value: string) => {
+    setSearchQuery(value);
+    if (value.trim()) setHeroFilter(null);
+  }, []);
+
+  const handleCategoryChange = useCallback((category: string | null) => {
+    setActiveCategory(category);
+    setHeroFilter(null);
+  }, []);
+
+  const handleExploreStores = useCallback(() => {
+    setSearchQuery("");
+    setActiveCategory(null);
+    setHeroFilter(null);
+    scrollToStores();
+  }, [scrollToStores]);
+
+  const handleSelectNoFee = useCallback(() => {
+    setSearchQuery("");
+    setActiveCategory(null);
+    setHeroFilter("no_fee");
+    scrollToStores();
+  }, [scrollToStores]);
+
+  const handleSelectDirectDelivery = useCallback(() => {
+    setSearchQuery("");
+    setActiveCategory(null);
+    setHeroFilter("direct_delivery");
+    scrollToStores();
+  }, [scrollToStores]);
 
   const handleReorder = (order: any) => {
     const availableItems = order.order_items?.filter((i: any) => i.products?.is_available) || [];
@@ -320,7 +367,7 @@ const ClientHomeContent = () => {
             <input
               type="text"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => handleSearchChange(e.target.value)}
               placeholder={ROTATING_PLACEHOLDERS[placeholderIdx]}
               aria-label="Pesquisar lojas"
               className="bg-transparent w-full py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
@@ -339,7 +386,12 @@ const ClientHomeContent = () => {
       <main className="px-4 pt-3 space-y-6">
         {/* Bento hero */}
         {!searchQuery && (
-          <BentoHero />
+          <BentoHero
+            activeAction={heroFilter}
+            onExploreStores={handleExploreStores}
+            onSelectNoFee={handleSelectNoFee}
+            onSelectDirectDelivery={handleSelectDirectDelivery}
+          />
         )}
 
         {/* Category chips */}
@@ -347,7 +399,7 @@ const ClientHomeContent = () => {
           <CategoryChips
             stores={suggestedStores}
             active={activeCategory}
-            onChange={setActiveCategory}
+            onChange={handleCategoryChange}
           />
         )}
 
@@ -455,15 +507,30 @@ const ClientHomeContent = () => {
             <h2 id="stores-h" className="font-display text-base font-bold text-foreground min-w-0 truncate">
               {searchQuery.length >= 2
                 ? `Resultados para "${searchQuery}"`
+                : heroFilter === "direct_delivery"
+                ? "Lojas com entrega direta"
+                : heroFilter === "no_fee"
+                ? "Lojas sem taxa de serviço"
                 : activeCategory
                 ? "Filtrado"
                 : effectiveCity
                 ? `Todas as lojas em ${effectiveCity}`
                 : "Todas as lojas"}
             </h2>
-            <span className="text-[11px] font-bold text-muted-foreground shrink-0">
-              {visibleStores.length} {visibleStores.length === 1 ? "loja" : "lojas"}
-            </span>
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="text-[11px] font-bold text-muted-foreground">
+                {visibleStores.length} {visibleStores.length === 1 ? "loja" : "lojas"}
+              </span>
+              {heroFilter && (
+                <button
+                  type="button"
+                  onClick={() => setHeroFilter(null)}
+                  className="text-[11px] font-bold text-primary"
+                >
+                  Limpar
+                </button>
+              )}
+            </div>
           </div>
 
           {loadingStores ? (
@@ -488,6 +555,8 @@ const ClientHomeContent = () => {
                   ? `Nenhuma loja encontrada para "${searchQuery}"`
                   : activeCategory
                   ? "Nenhuma loja nesta categoria"
+                  : heroFilter === "direct_delivery"
+                  ? "Nenhuma loja com entrega direta no momento."
                   : effectiveCity
                   ? `Nenhuma loja disponível em ${effectiveCity}`
                   : "Nenhuma loja disponível no momento."}
