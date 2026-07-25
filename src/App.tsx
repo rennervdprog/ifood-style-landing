@@ -34,6 +34,7 @@ import { fetchPendingLegalChanges, type PendingLegalChanges } from "@/lib/legalD
 import { APP_VERSION } from "@/lib/appVersion";
 import { registerRoutePrefetch } from "@/lib/prefetchRoute";
 import { useDelayedFallback } from "@/lib/useDelayedFallback";
+import { useNativeNavStackTracker } from "@/lib/nativeNavStack";
 
 // Lazy-loaded pages — each becomes its own chunk
 const Index = lazy(() => import("./pages/Index"));
@@ -213,6 +214,9 @@ const isNativeApp = typeof window !== "undefined" &&
 const PushNavigator = () => {
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Mirror router transitions into our app-owned nav stack (Android back).
+  useNativeNavStackTracker();
 
   // On mount: check if there's a pending push navigation from cold start
   // Try multiple times because Capacitor's push event may fire after mount
