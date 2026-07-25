@@ -291,23 +291,31 @@ const ClientHomeContent = () => {
   }, [suggestedStores]);
 
   const { data: discoverProducts } = useQuery({
-    queryKey: ["discover-products", openStoreIds.slice(0, 30).join(",")],
+    queryKey: ["discover-products", openStoreIds.length],
     queryFn: async () => {
       if (openStoreIds.length === 0) return [];
-      const ids = shuffle(openStoreIds).slice(0, 30);
+      const ids = shuffle(openStoreIds).slice(0, 60);
       const { data, error } = await supabase
         .from("products")
         .select("id, name, price, image_url, store_id, is_available, created_at")
         .in("store_id", ids)
         .eq("is_available", true)
         .not("image_url", "is", null)
-        .order("created_at", { ascending: false })
-        .limit(60);
+        .limit(200);
       if (error) throw error;
-      return shuffle(data || []).slice(0, 8);
+      // Diversify: no more than 2 items per loja, then embaralha de novo
+      const perStore = new Map<string, number>();
+      const diversified = shuffle(data || []).filter((p: any) => {
+        const n = perStore.get(p.store_id) || 0;
+        if (n >= 2) return false;
+        perStore.set(p.store_id, n + 1);
+        return true;
+      });
+      return shuffle(diversified).slice(0, 10);
     },
     enabled: openStoreIds.length > 0 && !searchQuery && !activeCategory,
-    staleTime: 1000 * 60 * 3,
+    staleTime: 0,
+    gcTime: 1000 * 30,
   });
 
   const sponsoredIds = useMemo(() => new Set(sponsoredStores.map((s: any) => s.id)), [sponsoredStores]);
