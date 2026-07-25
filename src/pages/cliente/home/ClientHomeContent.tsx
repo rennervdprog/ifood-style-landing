@@ -18,6 +18,15 @@ import { mapStoresWithHours } from "../utils/mapStores";
 import CategoryChips, { normalizeCategory } from "./CategoryChips";
 import PromoBanners from "@/components/PromoBanners";
 
+const shuffle = <T,>(arr: T[]): T[] => {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+};
+
 const ROTATING_PLACEHOLDERS = [
   "Buscar pizza...",
   "Buscar mercado...",
@@ -221,6 +230,36 @@ const ClientHomeContent = () => {
       .filter((s: any) => !!s.image_url && s.realIsOpen)
       .slice(0, 8);
   }, [visibleStores]);
+
+  const openStoreIds = useMemo(
+    () => (suggestedStores || []).filter((s: any) => s.realIsOpen).map((s: any) => s.id),
+    [suggestedStores]
+  );
+  const openStoresMap = useMemo(() => {
+    const map = new Map<string, any>();
+    (suggestedStores || []).forEach((s: any) => map.set(s.id, s));
+    return map;
+  }, [suggestedStores]);
+
+  const { data: discoverProducts } = useQuery({
+    queryKey: ["discover-products", openStoreIds.slice(0, 30).join(",")],
+    queryFn: async () => {
+      if (openStoreIds.length === 0) return [];
+      const ids = shuffle(openStoreIds).slice(0, 30);
+      const { data, error } = await supabase
+        .from("products")
+        .select("id, name, price, image_url, store_id, is_available")
+        .in("store_id", ids)
+        .eq("is_available", true)
+        .not("image_url", "is", null)
+        .limit(80);
+      if (error) throw error;
+      return shuffle(data || []).slice(0, 12);
+    },
+    enabled: openStoreIds.length > 0 && !searchQuery && !activeCategory,
+    staleTime: 1000 * 60 * 3,
+  });
+
   const sponsoredIds = useMemo(() => new Set(sponsoredStores.map((s: any) => s.id)), [sponsoredStores]);
   const listStores = useMemo(
     () => (visibleStores || []).filter((s: any) => !sponsoredIds.has(s.id)),
