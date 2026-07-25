@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
   Search, Clock, Repeat, ShoppingBag, Store as StoreIcon, MapPin, Bell, MessageCircle,
-  ChevronDown, ChevronRight, SlidersHorizontal, Star, Heart, Sparkles,
+  ChevronDown, ChevronRight, SlidersHorizontal, Sparkles,
 } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 import ProductTour, { clienteTourSteps } from "@/components/ProductTour";
