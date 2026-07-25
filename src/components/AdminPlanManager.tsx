@@ -933,7 +933,7 @@ function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride
                       <Crown className="h-3 w-3 text-amber-500" />
                       Essencial vitalício R$ 0
                     </p>
-                    <p className="text-[10px] text-muted-foreground">Bloqueia o upgrade automático para R$ 180 ao atingir R$ 5.000 em vendas. Nenhuma cobrança será gerada.</p>
+                    <p className="text-[10px] text-muted-foreground">Bloqueia o upgrade automático para R$ 89,90 ao atingir R$ 5.000 em vendas. Nenhuma cobrança será gerada.</p>
                   </div>
                   <button
                     onClick={toggleLifetimeFree}
