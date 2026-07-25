@@ -284,9 +284,17 @@ export async function configureStatusBar() {
 
   try {
     const { StatusBar, Style } = await import("@capacitor/status-bar");
-    // Style.Light = ícones brancos (combina com fundo laranja da marca)
-    await StatusBar.setStyle({ style: Style.Light });
-    await StatusBar.setBackgroundColor({ color: "#FF6B00" });
+    // Cliente = header branco → ícones escuros; Parceiro = laranja → ícones brancos.
+    const { getCapacitorAppMode } = await import("@/lib/capacitorAppMode");
+    const mode = getCapacitorAppMode();
+    if (mode === "client") {
+      await StatusBar.setStyle({ style: Style.Dark }); // Dark = ícones escuros
+      await StatusBar.setBackgroundColor({ color: "#FFFFFF" });
+    } else {
+      await StatusBar.setStyle({ style: Style.Light });
+      await StatusBar.setBackgroundColor({ color: "#FF6B00" });
+    }
+    // overlay:false → WebView não desenha atrás da status bar (respeita notch).
     await StatusBar.setOverlaysWebView({ overlay: false });
   } catch (e) {
     console.warn("[StatusBar] Error:", e);
