@@ -57,6 +57,11 @@ const DiscoverGrid = memo(({ products, storesMap, onSelect }: Props) => {
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                 Aberta
               </span>
+              {store?.category && (
+                <span className="absolute top-2 right-2 bg-foreground/85 text-background text-[9px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full backdrop-blur max-w-[70%] truncate">
+                  {String(store.category).replace(/_/g, " ")}
+                </span>
+              )}
             </div>
 
             <div className="p-2.5 flex flex-col gap-1.5">
