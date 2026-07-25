@@ -18,9 +18,8 @@ export const queryClient = new QueryClient({
       refetchOnReconnect: true,
       refetchOnMount: true,
       retry: 1,
-      // Reduz re-renders em listas grandes (cardápio, catálogo) — só
-      // notifica componentes cujos campos realmente mudaram.
-      notifyOnChangeProps: "all",
+      // Reduz re-renders replicando referência quando os dados são iguais
+      // — mantém memoizações downstream funcionando em listas grandes.
       structuralSharing: true,
     },
   },
