@@ -346,11 +346,21 @@ export async function setupAppListeners() {
     const { App } = await import("@capacitor/app");
 
     App.addListener("backButton", ({ canGoBack }) => {
-      if (canGoBack) {
-        window.history.back();
-      } else {
+      const path = window.location.pathname;
+      const HOME = "/cliente";
+
+      // Se já está na home do cliente, minimiza o app
+      if (path === HOME || path === HOME + "/") {
         App.minimizeApp();
+        return;
       }
+
+      // Qualquer outra rota (loja, carrinho, checkout, pedidos, perfil, auth…)
+      // volta direto pra home do cliente, sem depender do history stack
+      setPendingPushNavigation(HOME);
+      window.dispatchEvent(
+        new CustomEvent("capacitor-push-navigate", { detail: { path: HOME } })
+      );
     });
 
     App.addListener("appUrlOpen", (event) => {
