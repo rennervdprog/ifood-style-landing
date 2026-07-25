@@ -50,7 +50,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const baseUrl = Deno.env.get("EXTERNAL_SUPABASE_URL");
+    const baseUrl = Deno.env.get("EXTERNAL_SUPABASE_URL") || "https://qkjhguziuchqsbxzruea.supabase.co";
     if (!baseUrl) {
       return new Response(JSON.stringify({ error: "missing_storage_base", message: "OTA storage não configurado" }), {
         status: 500,

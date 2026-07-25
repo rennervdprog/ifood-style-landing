@@ -10,8 +10,9 @@
  */
 import { isCapacitorNative } from "@/lib/capacitorNative";
 import { APP_VERSION } from "@/lib/appVersion";
-import { supabase } from "@/integrations/supabase/client";
 import { getCapacitorAppMode } from "@/lib/capacitorAppMode";
+
+const OTA_UPDATE_URL = "https://lktzrqjvqoojlrhqnxuz.supabase.co/functions/v1/ota-update";
 
 export type OtaCheckResult =
   | { status: "not-native" }
@@ -37,15 +38,18 @@ export async function forceCheckForOtaUpdate(): Promise<OtaCheckResult> {
     // 2) Consulta o endpoint OTA público. Não usamos getLatest() aqui porque
     // APKs antigos apontavam direto para um arquivo estático, mas o plugin faz
     // POST no updateUrl; este caminho manual sempre fala com a edge function.
-    const { data: latest, error } = await supabase.functions.invoke("ota-update", {
-      body: {
+    const latestResponse = await fetch(OTA_UPDATE_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
         app_id: appInfo?.id,
         version_name: currentBundleVersion,
         defaultChannel: mode,
-      },
+      }),
     });
-    if (error) {
-      return { status: "error", message: error.message || "Falha ao consultar OTA" };
+    const latest = await latestResponse.json().catch(() => null);
+    if (!latestResponse.ok) {
+      return { status: "error", message: latest?.message || "Falha ao consultar OTA" };
     }
     const remoteVersion: string | undefined = latest?.version;
     const remoteUrl: string | undefined = latest?.url;
