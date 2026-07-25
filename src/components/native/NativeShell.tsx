@@ -27,7 +27,7 @@ export default function NativeShell({ children, withBottomTabs, className }: Pro
     <div
       className={cn(
         "min-h-screen bg-background text-foreground",
-        withBottomTabs && "pb-[5.25rem]",
+        withBottomTabs && "pb-[calc(env(safe-area-inset-bottom)+5.25rem)]",
         className,
       )}
     >
