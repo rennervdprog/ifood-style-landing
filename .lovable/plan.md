@@ -1,37 +1,77 @@
-# Plano — App Cliente (Capacitor) v1.25.52
+# Plano — APK Cliente: navegação Android + safe-areas
 
-## Problemas observados
-1. **Topo colado no notch / bottom colado nos gestos** — `NativeShell` só é usado em algumas telas; `/cliente` e `/loja/:slug` renderizam fora dele, então `env(safe-area-inset-*)` não é aplicado.
-2. **Splash com fundo laranja + texto** — hoje a splash usa `@drawable/splash` (imagem cheia). Precisa virar fundo branco + ícone centralizado.
-3. **Permissão de localização dispara ANTES da tela explicativa** — no boot do app, algum efeito chama `readGps()` / `requestLocationPermission()` automaticamente, então o prompt nativo aparece sem contexto.
+## 1. Botão Voltar do Android (fim dos bugs de "volta pra algo antigo")
 
-## O que vou mudar
+Problema hoje: `capacitorNative.ts` chama `window.history.back()` cego. Isso pula pra qualquer entrada antiga do history (busca antiga, modal, deep-link OTA, etc.).
 
-### 1. Safe-area global no APK Cliente
-- Envelopar `<Outlet />` do layout cliente com um wrapper que aplica `padding-top: env(safe-area-inset-top)` e `padding-bottom: env(safe-area-inset-bottom) + altura-bottom-tabs` **em todas as rotas do cliente** (não só nas que usam `NativeShell`).
-- Ajustar header branco do `/cliente` e header da `StorePage` para respeitar o inset do topo (background estende até o topo, conteúdo desce).
-- Configurar `StatusBar.setOverlaysWebView({ overlay: false })` + `setBackgroundColor("#FFFFFF")` + `setStyle(Style.Dark)` no boot do APK Cliente (já parcialmente feito, revisar).
-- Configurar `NavigationBar` (plugin `@capacitor-community/navigation-bar`) para cor branca e ícones escuros no Android, evitando barra preta cortando conteúdo.
+Solução — **stack de navegação controlado pelo app**, não pelo history do browser:
 
-### 2. Splash screen só com ícone
-- Substituir `android/app/src/main/res/drawable/splash.xml` por um `<layer-list>` com fundo branco (`#FFFFFF`) e o ícone `@mipmap/ic_launcher` centralizado (tamanho fixo ~200dp).
-- Ajustar `capacitor.config.ts` → `SplashScreen`: `backgroundColor: "#FFFFFF"`, `androidScaleType: "CENTER"`, `showSpinner: false`, `splashFullScreen: false`, `splashImmersive: false`.
-- Remover qualquer texto/logo composto da splash antiga.
+- Criar `src/lib/nativeNavStack.ts` — mantém uma pilha própria (`["/cliente", "/pizzaria-lagoinha", "/pizzaria-lagoinha?product=xyz"]`) baseada em `useLocation()`.
+- Hook `useNativeNavStack()` no `App.tsx` que faz `push` em navegação nova e `pop` em back.
+- Regras do back button (`capacitorNative.ts`):
+  1. Se houver **modal/sheet/drawer aberto** (produto, carrinho, filtros) → fecha ele (dispara evento `native-back` que os modais escutam).
+  2. Senão, se a stack tem >1 item → `pop` e `navigate(stack.top, { replace: true })`.
+  3. Senão, se estiver em `/cliente` → `App.exitApp()` (minimiza).
+  4. Senão → `navigate("/cliente")`.
+- Modais (ProductModal, CartDrawer, SearchSheet) registram-se num `BackHandlerContext` com prioridade LIFO — o topo consome o back primeiro.
+- Nunca mais usar `history.back()` cru.
 
-### 3. Prompt de localização controlado
-- Auditar `nativeBoot.ts`, `ClientHomeContent.tsx`, `useUserLocation.ts` e `location/resolve.ts` para achar quem chama `requestLocationPermission` / `readGps` no mount.
-- Regra nova no APK Cliente: **nunca** chamar `requestLocationPermission()` automaticamente. Só disparar via gesto do usuário (clique em "Usar minha localização" ou no seletor "ENTREGAR EM").
-- Boot do cliente usa apenas cache (`cacheGet`) — se não houver, exibe estado "Selecione sua cidade" sem prompt.
-- Criar tela/bottom-sheet explicativa `LocationPermissionSheet` que abre ao clicar no seletor: mostra por que precisamos, e só então chama `requestLocationPermission()`.
+## 2. Safe-areas — auditoria global
 
-### 4. Versão
-- Bump `src/lib/appVersion.ts` → `1.25.52`.
-- Bump `android/app/build.gradle` → `versionName "1.25.52"`, `versionCode 10015`.
+Criar utilitários únicos e aplicar em todas as telas fixas/sticky:
 
-## Detalhes técnicos
-- Layout wrapper: novo `ClientNativeLayout` com `className="min-h-dvh pt-[env(safe-area-inset-top)] pb-[calc(env(safe-area-inset-bottom)+4.5rem)]"` aplicado no `Route` do `/cliente/*`, `/loja/*`, `/carrinho`, `/checkout`, `/pedidos`, `/perfil` quando `isClientNative`.
-- Splash: manter `splashResourceName: "splash"` mas o drawable vira layer-list branco + ícone.
-- Guard de permissão: `LOCATION_AUTO_REQUEST` flag = `false` em APK Cliente; hooks respeitam a flag.
+- `src/index.css`: classes `.safe-top`, `.safe-bottom`, `.safe-x` usando `env(safe-area-inset-*)` com fallback `0px`.
+- Meta viewport: garantir `viewport-fit=cover` no `index.html`.
+- `NativeShell.tsx`: aplicar `.safe-top` no wrapper raiz apenas quando não houver header fixo próprio da rota.
 
-## Pós-deploy
-Usuário faz `git pull` → roda workflow **Build Android APKs → cliente** → instala v1.25.52.
+Componentes a auditar e corrigir:
+- `BottomNav.tsx` — padding-bottom com safe-bottom (já feito, revalidar altura).
+- `StorePage.tsx` header fixo — `.safe-top` (já feito).
+- **Botão "Ver carrinho" flutuante** (`CartFloatingButton` / equivalente na StorePage) → `bottom: calc(env(safe-area-inset-bottom) + 88px)` para ficar acima do BottomNav.
+- ProductModal, CartDrawer, CheckoutPage, AddressSheet, SearchSheet — top e bottom.
+- OnboardingPermissions, Splash overlay, Toaster (`sonner` offset).
+- ClientHome header (endereço) — safe-top.
+
+## 3. Header sticky com transição on-scroll (igual web)
+
+Problema: no APK o header da loja fica sempre branco. Na web, ele começa transparente sobre a capa e vira branco ao rolar, mantendo voltar/lupa/WhatsApp e a barra de categorias grudada.
+
+Plano em `StorePage.tsx`:
+- Extrair `StoreHeader.tsx` com estado `scrolled` via `useScrollY()` (throttle rAF).
+- Estados:
+  - `scrolled=false`: fundo transparente, ícones com bolha branca translúcida (como já é na web).
+  - `scrolled=true`: fundo branco sólido, sombra sutil, mostra nome da loja + status "ABERTO".
+- Abaixo do header, **CategoryTabs sticky** (`position: sticky; top: calc(env(safe-area-inset-top) + 56px)`) — mesma barra "Tradicional/Especial/Premium/Doces" da 2ª/3ª screenshot, mas grudando ao rolar.
+- Garantir que ao rolar até uma seção, a tab correspondente ativa (IntersectionObserver por categoria).
+
+## 4. Detalhes técnicos
+
+- `nativeNavStack`: usar `useLocation().key` para deduplicar; ignorar navegações `replace`.
+- `BackHandlerContext`: API `useBackHandler(fn, enabled)` — cada modal registra e desregistra no mount/unmount.
+- Categoria sticky: usar `scroll-margin-top` nas seções pra o scroll-into-view não ficar atrás do header+tabs.
+- Sem regressão web: tudo dentro de `if (isNativePlatform())` onde faz sentido; safe-areas usam `env()` que é 0 no browser.
+
+## 5. Entregáveis / arquivos
+
+Criar:
+- `src/lib/nativeNavStack.ts`
+- `src/lib/backHandler.tsx` (Context + hook)
+- `src/components/store/StoreHeader.tsx`
+- `src/components/store/CategoryTabsSticky.tsx`
+
+Editar:
+- `src/lib/capacitorNative.ts` (backButton reescrito)
+- `src/App.tsx` (providers + tracker)
+- `src/pages/StorePage.tsx` (usar StoreHeader + tabs sticky + safe-areas no botão carrinho)
+- `src/components/ProductModal.tsx`, `CartDrawer.tsx`, `SearchSheet.tsx` (registrar back handler + safe-top)
+- `src/components/BottomNav.tsx` (revalidar safe-bottom)
+- `src/pages/CheckoutPage.tsx`, `AddressSheet` (safe-areas)
+- `index.html` (`viewport-fit=cover`)
+- `src/index.css` (classes safe-*)
+- `src/lib/appVersion.ts` + `android/app/build.gradle` → v1.25.57 / versionCode 10020
+
+## 6. Validação
+- Playwright mobile viewport pra sticky header e botão carrinho.
+- Checklist manual APK: voltar dentro de modal → fecha; voltar em loja → volta pra /cliente; voltar em /cliente → minimiza; header transita ao rolar; carrinho não encosta no BottomNav; nada atrás do notch.
+
+Entrega tudo OTA (só JS/CSS) — não precisa novo APK.
