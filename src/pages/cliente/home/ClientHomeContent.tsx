@@ -6,7 +6,8 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
-  Search, Clock, Repeat, ShoppingBag, Store as StoreIcon, MapPin, RefreshCw, Bell, MessageCircle,
+  Search, Clock, Repeat, ShoppingBag, Store as StoreIcon, MapPin, Bell, MessageCircle,
+  ChevronDown, ChevronRight, SlidersHorizontal, Star, Heart, Sparkles,
 } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 import ProductTour, { clienteTourSteps } from "@/components/ProductTour";
@@ -15,7 +16,7 @@ import { useUserLocation } from "@/hooks/useUserLocation";
 import { formatBRL } from "@/lib/utils";
 import { mapStoresWithHours } from "../utils/mapStores";
 import CategoryChips, { normalizeCategory } from "./CategoryChips";
-import StoreCard from "./StoreCard";
+import PromoBanners from "@/components/PromoBanners";
 
 const ROTATING_PLACEHOLDERS = [
   "Buscar pizza...",
