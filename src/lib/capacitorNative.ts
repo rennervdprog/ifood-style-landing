@@ -5,6 +5,8 @@
 import { Capacitor } from "@capacitor/core";
 import { claimFcmPushToken } from "@/lib/pushRegistration";
 import { rememberPushIdentifier, getStoredPushState, getCurrentPushDeviceInfo } from "@/lib/pushSession";
+import { runTopBackHandler } from "@/lib/backHandler";
+import { popNavStack, stackSize } from "@/lib/nativeNavStack";
 
 let listenersReady = false;
 let registrationPromise: Promise<string | null> | null = null;
@@ -353,28 +355,35 @@ export async function setupAppListeners() {
   try {
     const { App } = await import("@capacitor/app");
 
-    App.addListener("backButton", ({ canGoBack }) => {
-      const path = window.location.pathname;
-      const search = window.location.search;
+    App.addListener("backButton", () => {
       const HOME = "/cliente";
 
-      // Se já está na home do cliente, minimiza o app
+      // 1) Modal/sheet/drawer aberto consome o back primeiro (LIFO).
+      if (runTopBackHandler()) return;
+
+      const path = window.location.pathname;
+      const search = window.location.search;
+
+      // 2) Já está na home do cliente sem query → minimiza o app.
       if ((path === HOME || path === HOME + "/") && !search) {
         App.minimizeApp();
         return;
       }
 
-      // Se tem histórico dentro do app, volta uma etapa (fecha modal de produto
-      // via query param, volta da loja pro /cliente, etc.)
-      if (canGoBack && window.history.length > 1) {
-        window.history.back();
-        return;
+      // 3) Tem histórico próprio → pop e navega para a entrada anterior.
+      if (stackSize() > 1) {
+        const prev = popNavStack();
+        if (prev) {
+          window.dispatchEvent(
+            new CustomEvent("capacitor-push-navigate", { detail: { path: prev, replace: true } })
+          );
+          return;
+        }
       }
 
-      // Sem histórico → cai na home do cliente
-      setPendingPushNavigation(HOME);
+      // 4) Fallback: cai na home do cliente.
       window.dispatchEvent(
-        new CustomEvent("capacitor-push-navigate", { detail: { path: HOME } })
+        new CustomEvent("capacitor-push-navigate", { detail: { path: HOME, replace: true } })
       );
     });
 
