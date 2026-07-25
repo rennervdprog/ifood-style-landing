@@ -93,9 +93,11 @@ export async function forceCheckForOtaUpdate(): Promise<OtaCheckResult> {
       return { status: "error", message: "Download retornou bundle vazio" };
     }
 
-    // 4) Aplica agora — reinicia o webview no novo bundle.
+    // 4) Aplica agora. `set()` já reinicia o webview no novo bundle —
+    // chamar `reload()` em seguida causava race/tela branca porque o
+    // webview era recarregado duas vezes antes do bundle terminar de
+    // ser extraído. Deixamos só o set().
     await CapacitorUpdater.set({ id: bundle.id });
-    await CapacitorUpdater.reload();
     return { status: "applied", version: remoteVersion };
   } catch (e: any) {
     const message = e?.message || String(e) || "Erro desconhecido";
