@@ -8,29 +8,22 @@ import { getCapacitorAppMode } from "@/lib/capacitorAppMode";
 
 let booted = false;
 let otaReadyCalled = false;
-let currentKeyboardHeight = 0;
 
-function setNativeKeyboardHeight(height: number) {
-  const keyboardHeight = Math.max(0, Math.round(height || 0));
-  currentKeyboardHeight = keyboardHeight;
+function setNativeKeyboardOpen(open: boolean) {
   const root = document.documentElement;
   const body = document.body;
 
-  if (keyboardHeight > 0) {
+  if (open) {
     root.classList.add("keyboard-open");
     body.classList.add("keyboard-open");
-    root.style.setProperty("--native-keyboard-height", `${keyboardHeight}px`);
-    body.style.setProperty("--native-keyboard-height", `${keyboardHeight}px`);
     return;
   }
 
   root.classList.remove("keyboard-open");
   body.classList.remove("keyboard-open");
-  root.style.removeProperty("--native-keyboard-height");
-  body.style.removeProperty("--native-keyboard-height");
 }
 
-function scrollFocusedFieldIntoView(delay = 80) {
+function keepFocusedFieldVisible(delay = 120) {
   window.setTimeout(() => {
     window.requestAnimationFrame(() => {
       const active = document.activeElement;
@@ -45,31 +38,13 @@ function scrollFocusedFieldIntoView(delay = 80) {
 
       if (!isEditable) return;
 
-      const rootScroller = document.getElementById("root");
-      const scroller = rootScroller || document.scrollingElement;
-      const keyboardTop = window.innerHeight - currentKeyboardHeight;
-      const safeBottom = Math.max(96, Math.min(window.innerHeight - 96, keyboardTop));
-      const safeTop = 72;
       const rect = active.getBoundingClientRect();
+      const safeTop = 72;
+      const safeBottom = window.innerHeight - 24;
 
-      if (rect.bottom <= safeBottom - 16 && rect.top >= safeTop) return;
+      if (rect.top >= safeTop && rect.bottom <= safeBottom) return;
 
-      const desiredBottom = safeBottom - 24;
-      const desiredTop = safeTop + 16;
-      const delta = rect.bottom > desiredBottom
-        ? rect.bottom - desiredBottom
-        : rect.top < desiredTop
-          ? rect.top - desiredTop
-          : 0;
-
-      if (Math.abs(delta) < 4) return;
-
-      if (scroller instanceof HTMLElement) {
-        scroller.scrollBy({ top: delta, left: 0, behavior: "smooth" });
-        return;
-      }
-
-      window.scrollBy({ top: delta, left: 0, behavior: "smooth" });
+      active.scrollIntoView({ block: "center", inline: "nearest", behavior: "smooth" });
     });
   }, delay);
 }
@@ -152,27 +127,26 @@ export async function nativeBoot() {
     });
   } catch {}
 
-  // 4) Keyboard — NÃO redimensionar WebView/body. O resize nativo/Body cria
-  //    uma área fantasma entre o conteúdo e o teclado em alguns Androids.
-  //    Mantemos o WebView estável e adicionamos padding/scroll via CSS var.
+  // 4) Keyboard — no Android usamos o resize NATIVO do sistema
+  //    (AndroidManifest adjustResize). Não forçamos altura/padding manual:
+  //    esse hack criava a "faixa" branca/cinza entre input e teclado.
   try {
-    const { Keyboard, KeyboardResize } = await import("@capacitor/keyboard");
-    await Keyboard.setResizeMode({ mode: KeyboardResize.None });
+    const { Keyboard } = await import("@capacitor/keyboard");
     await Keyboard.setAccessoryBarVisible({ isVisible: false }).catch(() => {});
 
-    Keyboard.addListener("keyboardWillShow", (info) => {
-      setNativeKeyboardHeight(info.keyboardHeight);
-      scrollFocusedFieldIntoView(120);
+    Keyboard.addListener("keyboardWillShow", () => {
+      setNativeKeyboardOpen(true);
+      keepFocusedFieldVisible(160);
     });
-    Keyboard.addListener("keyboardDidShow", (info) => {
-      setNativeKeyboardHeight(info.keyboardHeight);
-      scrollFocusedFieldIntoView(40);
+    Keyboard.addListener("keyboardDidShow", () => {
+      setNativeKeyboardOpen(true);
+      keepFocusedFieldVisible(40);
     });
-    Keyboard.addListener("keyboardWillHide", () => setNativeKeyboardHeight(0));
-    Keyboard.addListener("keyboardDidHide", () => setNativeKeyboardHeight(0));
+    Keyboard.addListener("keyboardWillHide", () => setNativeKeyboardOpen(false));
+    Keyboard.addListener("keyboardDidHide", () => setNativeKeyboardOpen(false));
     window.addEventListener("focusin", () => {
       if (document.documentElement.classList.contains("keyboard-open")) {
-        scrollFocusedFieldIntoView(60);
+        keepFocusedFieldVisible(80);
       }
     });
   } catch {}
