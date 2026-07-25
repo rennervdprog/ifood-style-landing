@@ -361,6 +361,26 @@ export async function setupAppListeners() {
       // 1) Modal/sheet/drawer aberto consome o back primeiro (LIFO).
       if (runTopBackHandler()) return;
 
+      // 1b) Fallback genérico: se há qualquer overlay Radix aberto
+      // (Dialog/Sheet/Drawer/Popover), fecha via Escape em vez de navegar.
+      try {
+        const openOverlay = document.querySelector(
+          '[data-state="open"][role="dialog"], [data-state="open"][role="alertdialog"], [data-radix-popper-content-wrapper] [data-state="open"]'
+        );
+        if (openOverlay) {
+          const ev = new KeyboardEvent("keydown", {
+            key: "Escape",
+            code: "Escape",
+            keyCode: 27,
+            which: 27,
+            bubbles: true,
+            cancelable: true,
+          });
+          document.dispatchEvent(ev);
+          return;
+        }
+      } catch {}
+
       const path = window.location.pathname;
       const search = window.location.search;
 
