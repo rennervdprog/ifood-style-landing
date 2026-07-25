@@ -8,7 +8,16 @@ import { ChevronRight, Wallet, Truck } from "lucide-react";
  * Bento hero — 1 banner grande + 2 mini-cards fixos (cashback / frete grátis).
  * Substitui o carrossel de `PromoBanners` na home /cliente.
  */
-const BentoHero = memo(() => {
+type HeroAction = "no_fee" | "direct_delivery" | null;
+
+interface BentoHeroProps {
+  activeAction?: HeroAction;
+  onExploreStores: () => void;
+  onSelectNoFee: () => void;
+  onSelectDirectDelivery: () => void;
+}
+
+const BentoHero = memo(({ activeAction, onExploreStores, onSelectNoFee, onSelectDirectDelivery }: BentoHeroProps) => {
   const navigate = useNavigate();
 
   const { data: banners } = useQuery({
@@ -28,11 +37,15 @@ const BentoHero = memo(() => {
 
   const handleBanner = useCallback(
     (banner: any) => {
-      if (!banner) return;
+      if (!banner) {
+        onExploreStores();
+        return;
+      }
       if (banner.link_type === "store" && banner.link_value) navigate(`/${banner.link_value}`);
       else if (banner.link_type === "url" && banner.link_value) window.open(banner.link_value, "_blank");
+      else onExploreStores();
     },
-    [navigate]
+    [navigate, onExploreStores]
   );
 
   const main = banners?.[0];
@@ -68,22 +81,40 @@ const BentoHero = memo(() => {
       </button>
 
       {/* Mini card 1 — cashback */}
-      <div className="rounded-2xl bg-primary/10 border border-primary/20 p-3 flex flex-col justify-between">
+      <button
+        type="button"
+        onClick={onSelectNoFee}
+        aria-pressed={activeAction === "no_fee"}
+        className={`rounded-2xl border p-3 flex flex-col justify-between text-left active:scale-[0.98] transition-all ${
+          activeAction === "no_fee"
+            ? "bg-primary text-primary-foreground border-primary shadow-sm shadow-primary/25"
+            : "bg-primary/10 border-primary/20"
+        }`}
+      >
         <Wallet className="h-4 w-4 text-primary" />
         <div>
-          <p className="font-display font-bold text-xs text-foreground leading-tight">Sem taxa</p>
-          <p className="text-[10px] text-muted-foreground leading-tight">de serviço</p>
+          <p className={`font-display font-bold text-xs leading-tight ${activeAction === "no_fee" ? "text-primary-foreground" : "text-foreground"}`}>Sem taxa</p>
+          <p className={`text-[10px] leading-tight ${activeAction === "no_fee" ? "text-primary-foreground/80" : "text-muted-foreground"}`}>de serviço</p>
         </div>
-      </div>
+      </button>
 
       {/* Mini card 2 — frete grátis */}
-      <div className="rounded-2xl bg-card border border-border p-3 flex flex-col justify-between">
-        <Truck className="h-4 w-4 text-primary" />
+      <button
+        type="button"
+        onClick={onSelectDirectDelivery}
+        aria-pressed={activeAction === "direct_delivery"}
+        className={`rounded-2xl border p-3 flex flex-col justify-between text-left active:scale-[0.98] transition-all ${
+          activeAction === "direct_delivery"
+            ? "bg-primary text-primary-foreground border-primary shadow-sm shadow-primary/25"
+            : "bg-card border-border"
+        }`}
+      >
+        <Truck className={`h-4 w-4 ${activeAction === "direct_delivery" ? "text-primary-foreground" : "text-primary"}`} />
         <div>
-          <p className="font-display font-bold text-xs text-foreground leading-tight">Entrega</p>
-          <p className="text-[10px] text-muted-foreground leading-tight">direta da loja</p>
+          <p className={`font-display font-bold text-xs leading-tight ${activeAction === "direct_delivery" ? "text-primary-foreground" : "text-foreground"}`}>Entrega</p>
+          <p className={`text-[10px] leading-tight ${activeAction === "direct_delivery" ? "text-primary-foreground/80" : "text-muted-foreground"}`}>direta da loja</p>
         </div>
-      </div>
+      </button>
     </div>
   );
 });
