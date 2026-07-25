@@ -55,7 +55,10 @@ export async function nativeBoot() {
 
     // Adiar checagem de OTA pra depois do primeiro paint — não competir
     // com o render inicial nem com a hidratação de dados.
-    const scheduleLatest = () => CapacitorUpdater.getLatest().catch(() => {});
+    // O endpoint ota-update separa cliente/parceiro pelo app_id nativo.
+    const scheduleLatest = () => CapacitorUpdater.getLatest().catch((e: unknown) => {
+      console.warn("[OTA] getLatest falhou:", e);
+    });
     const w = window as any;
     if (typeof w.requestIdleCallback === "function") {
       w.requestIdleCallback(scheduleLatest, { timeout: 5000 });

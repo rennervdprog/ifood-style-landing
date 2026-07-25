@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'app.lovable.e8d28aded6334d74be2161c8dbe24765',
+  appId: 'app.itasuper.cliente',
   appName: 'ItaSuper',
   webDir: 'dist',
   android: {
@@ -67,8 +67,9 @@ const config: CapacitorConfig = {
       directUpdate: false,
       resetWhenUpdate: true,
       keepUrlPathAfterReload: true,
+      defaultChannel: 'cliente',
       updateUrl:
-        'https://qkjhguziuchqsbxzruea.supabase.co/storage/v1/object/public/app-releases/manifest.json',
+        'https://lktzrqjvqoojlrhqnxuz.supabase.co/functions/v1/ota-update',
       // Estatísticas/canais do serviço pago desligados.
       statsUrl: '',
       channelUrl: '',

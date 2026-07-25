@@ -37,11 +37,26 @@ jobs:
       - name: Install deps
         run: npm ci --no-audit --no-fund
 
-      - name: Build
+      - name: Build Cliente OTA
         run: npm run build
-
-      - name: Publish OTA bundle
         env:
+          VITE_CAPACITOR_APP_MODE: cliente
+
+      - name: Publish Cliente OTA bundle
+        env:
+          OTA_APP_MODE: cliente
+          EXTERNAL_SUPABASE_URL: ${{ secrets.EXTERNAL_SUPABASE_URL }}
+          EXTERNAL_SUPABASE_SERVICE_KEY: ${{ secrets.EXTERNAL_SUPABASE_SERVICE_KEY }}
+        run: node scripts/publish-ota.mjs
+
+      - name: Build Parceiro OTA
+        run: npm run build
+        env:
+          VITE_CAPACITOR_APP_MODE: parceiro
+
+      - name: Publish Parceiro OTA bundle
+        env:
+          OTA_APP_MODE: parceiro
           EXTERNAL_SUPABASE_URL: ${{ secrets.EXTERNAL_SUPABASE_URL }}
           EXTERNAL_SUPABASE_SERVICE_KEY: ${{ secrets.EXTERNAL_SUPABASE_SERVICE_KEY }}
         run: node scripts/publish-ota.mjs
