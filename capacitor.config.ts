@@ -10,6 +10,12 @@ const config: CapacitorConfig = {
     webContentsDebuggingEnabled: false,
     captureInput: true,
     backgroundColor: '#0B0F14',
+    // Bridge nova (MessageChannel) — mais rápida que a legada.
+    useLegacyBridge: false,
+    // CDN identifica o app e serve Cache-Control agressivo.
+    appendUserAgent: 'ItaSuperApp/1.25.64',
+    // Não focar automaticamente inputs — evita reflow no boot.
+    initialFocus: false,
   },
   server: {
     // 🚀 Bundle local servido pelo Capacitor (sem hot-reload remoto).
@@ -75,6 +81,12 @@ const config: CapacitorConfig = {
       channelUrl: '',
       // Sem assinatura RSA — validação por SHA-256 no manifest.
       publicKey: '',
+    },
+    // Emite CSS vars --safe-area-inset-* ANTES do primeiro paint,
+    // evitando o "pulo" do header/BottomNav ao abrir o app.
+    SafeArea: {
+      detectViewportFitCoverChanges: true,
+      initialViewportFitCover: true,
     },
   },
 };

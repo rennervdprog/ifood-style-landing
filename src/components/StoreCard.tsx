@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, useEffect, useRef } from "react";
 import { Star, Clock, MapPin } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
@@ -45,6 +45,7 @@ const CATEGORY_GRADIENTS: Record<string, string> = {
 const StoreCard = memo(({ id, name, category, image_url, is_open, rating, statusReason, slug, distanceKm }: StoreCardProps) => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const ref = useRef<HTMLButtonElement>(null);
   const icon = CATEGORY_ICONS[category] || "🍽️";
   const gradient = CATEGORY_GRADIENTS[category] || "from-primary/20 via-primary/10 to-primary/5";
   const distanceLabel =
@@ -68,8 +69,30 @@ const StoreCard = memo(({ id, name, category, image_url, is_open, rating, status
     });
   };
 
+  // Prefetch on-visible (mobile não tem hover). Dispara 1x quando o card
+  // entra no viewport — mantém navegação instantânea ao tocar.
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    let fired = false;
+    const io = new IntersectionObserver((entries) => {
+      for (const e of entries) {
+        if (e.isIntersecting && !fired) {
+          fired = true;
+          prefetchBootstrap();
+          io.disconnect();
+          break;
+        }
+      }
+    }, { rootMargin: "200px" });
+    io.observe(el);
+    return () => io.disconnect();
+     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, slug]);
+
   return (
     <button
+      ref={ref}
       onClick={() => navigate(slug ? `/${slug}` : `/loja/${id}`)}
       onMouseEnter={prefetchBootstrap}
       onTouchStart={prefetchBootstrap}

@@ -4,8 +4,10 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.view.View;
 import android.webkit.CookieManager;
 import android.webkit.WebView;
+import android.webkit.WebSettings;
 
 import com.getcapacitor.BridgeActivity;
 
@@ -16,7 +18,25 @@ public class MainActivity extends BridgeActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        tuneWebViewForSmoothness();
         clearWebViewCacheAfterNativeUpdate();
+    }
+
+    /**
+     * Fluidez: prioridade alta de render, pré-raster fora do viewport
+     * (scroll longo de cardápio fica sem "stutter") e layer hardware.
+     * Roda 1x logo após o Bridge inicializar o WebView.
+     */
+    private void tuneWebViewForSmoothness() {
+        try {
+            if (bridge == null || bridge.getWebView() == null) return;
+            WebView wv = bridge.getWebView();
+            WebSettings s = wv.getSettings();
+            s.setRenderPriority(WebSettings.RenderPriority.HIGH);
+            s.setCacheMode(WebSettings.LOAD_DEFAULT);
+            s.setOffscreenPreRaster(true);
+            wv.setLayerType(View.LAYER_TYPE_HARDWARE, null);
+        } catch (Exception ignored) {}
     }
 
     private void clearWebViewCacheAfterNativeUpdate() {

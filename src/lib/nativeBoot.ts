@@ -86,4 +86,20 @@ export async function nativeBoot() {
       );
     });
   } catch {}
+
+  // 4) Keyboard — modo Native evita o webview recalcular 100vh a cada
+  //    abertura do teclado (checkout/busca). Esconde a barra de acessórios
+  //    do iOS que ninguém usa e ainda ocupa 44px.
+  try {
+    const { Keyboard, KeyboardResize } = await import("@capacitor/keyboard");
+    await Keyboard.setResizeMode({ mode: KeyboardResize.Native });
+    await Keyboard.setAccessoryBarVisible({ isVisible: false }).catch(() => {});
+  } catch {}
+
+  // 5) Safe-area nativo — o plugin @capacitor-community/safe-area já publica
+  //    as CSS vars --safe-area-inset-* automaticamente no boot nativo
+  //    (config em capacitor.config.ts). Aqui só logamos que carregou.
+  try {
+    await import("@capacitor-community/safe-area");
+  } catch {}
 }
