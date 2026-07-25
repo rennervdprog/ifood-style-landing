@@ -246,7 +246,6 @@ html {
   overscroll-behavior: none;
   background: hsl(var(--background));
   min-height: 100vh;
-  --native-keyboard-height: 0px;
 }
 
 /* Safe-area aplicada APENAS no body para evitar empilhamento de padding
@@ -267,33 +266,34 @@ body.native-app {
   cursor: pointer;
 }
 
-/* Bloqueia pull-to-refresh sem travar o resize/scroll quando o teclado abre */
+/* App nativo: deixe o Android redimensionar o WebView com o teclado.
+   Não fixe #root em 100dvh nem esconda overflow-y; isso cria a faixa branca/cinza
+   entre input e teclado em alguns aparelhos. */
 html.native-app,
 body.native-app {
   overscroll-behavior-y: contain;
   width: 100%;
-  min-height: 100%;
-  overflow: hidden;
+  min-height: 100vh;
+  overflow-x: hidden;
   background: hsl(var(--background));
 }
 
 body.native-app {
   position: relative;
-  min-height: 100dvh;
 }
 
 .native-app #root {
-  height: 100dvh;
-  min-height: 100dvh;
-  overflow-y: auto;
+  min-height: 100vh;
+  overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
-  scroll-padding-bottom: calc(var(--native-keyboard-height, 0px) + 5rem);
 }
 
-.native-app.keyboard-open input,
-.native-app.keyboard-open textarea,
-.native-app.keyboard-open [contenteditable="true"] {
-  scroll-margin-bottom: calc(var(--native-keyboard-height, 0px) + 5rem);
+@supports (height: 100svh) {
+  html.native-app,
+  body.native-app,
+  .native-app #root {
+    min-height: 100svh;
+  }
 }
 
 .native-app.keyboard-open .native-hide-while-keyboard {

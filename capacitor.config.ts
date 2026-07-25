@@ -13,7 +13,7 @@ const config: CapacitorConfig = {
     // Bridge nova (MessageChannel) — mais rápida que a legada.
     useLegacyBridge: false,
     // CDN identifica o app e serve Cache-Control agressivo.
-    appendUserAgent: 'ItaSuperApp/1.25.69',
+    appendUserAgent: 'ItaSuperApp/1.25.70',
     // Não focar automaticamente inputs — evita reflow no boot.
     initialFocus: false,
   },
@@ -87,6 +87,10 @@ const config: CapacitorConfig = {
     SafeArea: {
       detectViewportFitCoverChanges: true,
       initialViewportFitCover: true,
+    },
+    Keyboard: {
+      // Android deve usar apenas adjustResize do Manifest; sem workaround extra.
+      resizeOnFullScreen: false,
     },
   },
 };

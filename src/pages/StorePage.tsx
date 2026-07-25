@@ -63,10 +63,6 @@ interface PromoCollection {
 }
 
 const getPageScrollElement = (): HTMLElement => {
-  const root = document.getElementById("root");
-  if (root && (document.body.classList.contains("native-app") || document.documentElement.classList.contains("native-app"))) {
-    return root;
-  }
   return (document.scrollingElement as HTMLElement) || document.documentElement;
 };
 
