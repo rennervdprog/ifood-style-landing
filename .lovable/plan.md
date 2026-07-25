@@ -1,77 +1,104 @@
-# Plano — APK Cliente: navegação Android + safe-areas
+# Plano — Fluidez extra no APK Cliente
 
-## 1. Botão Voltar do Android (fim dos bugs de "volta pra algo antigo")
+Objetivo: reduzir jank de scroll, tempo de primeira pintura entre rotas e latência da bridge JS↔nativo. Tudo OTA-compatível exceto os itens marcados **[APK novo]**.
 
-Problema hoje: `capacitorNative.ts` chama `window.history.back()` cego. Isso pula pra qualquer entrada antiga do history (busca antiga, modal, deep-link OTA, etc.).
+## 1. WebView tuning nativo [APK novo]
 
-Solução — **stack de navegação controlado pelo app**, não pelo history do browser:
+`android/app/src/main/AndroidManifest.xml` — adicionar no `<application>`:
+- `android:hardwareAccelerated="true"`
+- `android:largeHeap="true"` (WebView de catálogo com muitas imagens)
 
-- Criar `src/lib/nativeNavStack.ts` — mantém uma pilha própria (`["/cliente", "/pizzaria-lagoinha", "/pizzaria-lagoinha?product=xyz"]`) baseada em `useLocation()`.
-- Hook `useNativeNavStack()` no `App.tsx` que faz `push` em navegação nova e `pop` em back.
-- Regras do back button (`capacitorNative.ts`):
-  1. Se houver **modal/sheet/drawer aberto** (produto, carrinho, filtros) → fecha ele (dispara evento `native-back` que os modais escutam).
-  2. Senão, se a stack tem >1 item → `pop` e `navigate(stack.top, { replace: true })`.
-  3. Senão, se estiver em `/cliente` → `App.exitApp()` (minimiza).
-  4. Senão → `navigate("/cliente")`.
-- Modais (ProductModal, CartDrawer, SearchSheet) registram-se num `BackHandlerContext` com prioridade LIFO — o topo consome o back primeiro.
-- Nunca mais usar `history.back()` cru.
+`MainActivity.java` — no `onCreate` após `super.onCreate`:
+```java
+WebView wv = (WebView) bridge.getWebView();
+WebSettings s = wv.getSettings();
+s.setRenderPriority(WebSettings.RenderPriority.HIGH);
+s.setCacheMode(WebSettings.LOAD_DEFAULT);
+s.setOffscreenPreRaster(true);   // pré-rasteriza fora da tela → scroll liso
+wv.setLayerType(View.LAYER_TYPE_HARDWARE, null);
+```
 
-## 2. Safe-areas — auditoria global
+Ganho: scroll de listas longas (StorePage cardápio) e transições sem "stutter" em Androids médios.
 
-Criar utilitários únicos e aplicar em todas as telas fixas/sticky:
+## 2. Bridge mais rápida [APK novo]
 
-- `src/index.css`: classes `.safe-top`, `.safe-bottom`, `.safe-x` usando `env(safe-area-inset-*)` com fallback `0px`.
-- Meta viewport: garantir `viewport-fit=cover` no `index.html`.
-- `NativeShell.tsx`: aplicar `.safe-top` no wrapper raiz apenas quando não houver header fixo próprio da rota.
+`capacitor.config.ts` → `android`:
+- `useLegacyBridge: false` (default no CAP 8, mas explicitar)
+- `initialFocus: false` (evita foco automático que dispara reflow)
+- `mixedContentMode: "compatibility"` só onde precisar
 
-Componentes a auditar e corrigir:
-- `BottomNav.tsx` — padding-bottom com safe-bottom (já feito, revalidar altura).
-- `StorePage.tsx` header fixo — `.safe-top` (já feito).
-- **Botão "Ver carrinho" flutuante** (`CartFloatingButton` / equivalente na StorePage) → `bottom: calc(env(safe-area-inset-bottom) + 88px)` para ficar acima do BottomNav.
-- ProductModal, CartDrawer, CheckoutPage, AddressSheet, SearchSheet — top e bottom.
-- OnboardingPermissions, Splash overlay, Toaster (`sonner` offset).
-- ClientHome header (endereço) — safe-top.
+## 3. Safe-area nativo (evita layout thrash do CSS `env()`)
 
-## 3. Header sticky com transição on-scroll (igual web)
+Instalar `@capacitor-community/safe-area`:
+- Emite valores via CSS vars `--safe-area-inset-*` **antes** do primeiro paint (hoje o `env()` só resolve depois que o WebView calcula o notch → causa flash).
+- Substituir uso de `env(safe-area-inset-*)` por `var(--safe-area-inset-*, env(safe-area-inset-*))` no `src/index.css`.
+- Elimina o "pulo" do header/BottomNav ao abrir app.
 
-Problema: no APK o header da loja fica sempre branco. Na web, ele começa transparente sobre a capa e vira branco ao rolar, mantendo voltar/lupa/WhatsApp e a barra de categorias grudada.
+## 4. Preload de rotas críticas (OTA)
 
-Plano em `StorePage.tsx`:
-- Extrair `StoreHeader.tsx` com estado `scrolled` via `useScrollY()` (throttle rAF).
-- Estados:
-  - `scrolled=false`: fundo transparente, ícones com bolha branca translúcida (como já é na web).
-  - `scrolled=true`: fundo branco sólido, sombra sutil, mostra nome da loja + status "ABERTO".
-- Abaixo do header, **CategoryTabs sticky** (`position: sticky; top: calc(env(safe-area-inset-top) + 56px)`) — mesma barra "Tradicional/Especial/Premium/Doces" da 2ª/3ª screenshot, mas grudando ao rolar.
-- Garantir que ao rolar até uma seção, a tab correspondente ativa (IntersectionObserver por categoria).
+`index.html`:
+```html
+<link rel="modulepreload" href="/assets/StorePage-*.js" />
+<link rel="modulepreload" href="/assets/ClientHomeContent-*.js" />
+<link rel="preload" as="image" href="/logo-itasuper-128.webp" fetchpriority="high" />
+```
+- Vite gera hash → usar `vite-plugin-preload` para injetar automaticamente os chunks das rotas `/cliente` e `/loja/:slug`.
+- Prefetch on-hover dos cards de loja já existe (`prefetchRoute.ts`); estender pra prefetch **on-visible** com `IntersectionObserver` no `StoreCard`.
 
-## 4. Detalhes técnicos
+## 5. Cache agressivo de imagens (OTA + config)
 
-- `nativeNavStack`: usar `useLocation().key` para deduplicar; ignorar navegações `replace`.
-- `BackHandlerContext`: API `useBackHandler(fn, enabled)` — cada modal registra e desregistra no mount/unmount.
-- Categoria sticky: usar `scroll-margin-top` nas seções pra o scroll-into-view não ficar atrás do header+tabs.
-- Sem regressão web: tudo dentro de `if (isNativePlatform())` onde faz sentido; safe-areas usam `env()` que é 0 no browser.
+- `capacitor.config.ts` → `android.appendUserAgent: "ItaSuperApp/1.25.63"` pra CDN identificar e servir com `Cache-Control` maior.
+- Todas `<img>` de loja/produto: `loading="lazy" decoding="async" fetchpriority="low"` — exceto a 1ª visível.
+- Componente `<StoreImage>` único que aplica `srcset` webp/avif via `?w=` no Supabase Storage transform.
 
-## 5. Entregáveis / arquivos
+## 6. Keyboard + resize (OTA + plugin já instalado)
 
-Criar:
-- `src/lib/nativeNavStack.ts`
-- `src/lib/backHandler.tsx` (Context + hook)
-- `src/components/store/StoreHeader.tsx`
-- `src/components/store/CategoryTabsSticky.tsx`
+`@capacitor/keyboard` (já temos) — no boot:
+```ts
+Keyboard.setResizeMode({ mode: KeyboardResize.Native });
+Keyboard.setAccessoryBarVisible({ isVisible: false });
+```
+Evita reflow do `100vh` toda vez que teclado abre no checkout/busca.
 
-Editar:
-- `src/lib/capacitorNative.ts` (backButton reescrito)
-- `src/App.tsx` (providers + tracker)
-- `src/pages/StorePage.tsx` (usar StoreHeader + tabs sticky + safe-areas no botão carrinho)
-- `src/components/ProductModal.tsx`, `CartDrawer.tsx`, `SearchSheet.tsx` (registrar back handler + safe-top)
-- `src/components/BottomNav.tsx` (revalidar safe-bottom)
-- `src/pages/CheckoutPage.tsx`, `AddressSheet` (safe-areas)
-- `index.html` (`viewport-fit=cover`)
-- `src/index.css` (classes safe-*)
-- `src/lib/appVersion.ts` + `android/app/build.gradle` → v1.25.57 / versionCode 10020
+## 7. StatusBar overlay [APK novo]
 
-## 6. Validação
-- Playwright mobile viewport pra sticky header e botão carrinho.
-- Checklist manual APK: voltar dentro de modal → fecha; voltar em loja → volta pra /cliente; voltar em /cliente → minimiza; header transita ao rolar; carrinho não encosta no BottomNav; nada atrás do notch.
+`StatusBar.setOverlaysWebView({ overlay: true })` no boot nativo — combinado com safe-area do item 3 dá header edge-to-edge sem gap branco no topo.
 
-Entrega tudo OTA (só JS/CSS) — não precisa novo APK.
+## 8. Sentry perf sampling
+
+Reduzir `tracesSampleRate` no APK pra `0.05` (hoje deve estar mais alto). Sentry no mobile custa FPS em telas pesadas.
+
+## 9. Lazy de libs pesadas (OTA)
+
+Auditar e mover pra `React.lazy`:
+- `recharts` (só usado em dashboards)
+- `html2canvas`/`jspdf` (só no ebook/comprovante)
+- `qrcode.react` (só em Pix)
+- `mapbox-gl` / leaflet se existir
+
+## 10. React Query — `structuralSharing` + `notifyOnChangeProps`
+
+Global default no `queryClient.ts`:
+```ts
+defaultOptions: { queries: { notifyOnChangeProps: 'tracked', structuralSharing: true } }
+```
+Reduz re-renders em ~40% em listas grandes (cardápio).
+
+---
+
+## Ordem de execução
+
+1. **OTA-only primeiro** (itens 4, 5, 6, 8, 9, 10) → sai na v1.25.64, testa no APK atual.
+2. **APK novo** (itens 1, 2, 3, 7) → sai em v1.26.0 (versionCode 10027).
+
+## Validação
+
+- Chrome DevTools remoto (`chrome://inspect`) medindo FPS de scroll na StorePage antes/depois.
+- Lighthouse mobile: LCP alvo <1.8s, TBT <150ms.
+- Sentry Performance: transactions de rota `<300ms`.
+
+## Riscos
+
+- `setOffscreenPreRaster(true)` aumenta RAM; ok no `largeHeap`.
+- `overlaysWebView` exige revisar TODOS os headers pra não sumir atrás do status bar — safe-area do item 3 cobre isso.
+- Plugin `safe-area` precisa `npx cap sync` — mesmo passo do OTA cliente atual.
