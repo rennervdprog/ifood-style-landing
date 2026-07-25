@@ -33,6 +33,7 @@ import GlobalRealtimeSync from "@/components/GlobalRealtimeSync";
 import { fetchPendingLegalChanges, type PendingLegalChanges } from "@/lib/legalDocuments";
 import { APP_VERSION } from "@/lib/appVersion";
 import { registerRoutePrefetch } from "@/lib/prefetchRoute";
+import { useDelayedFallback } from "@/lib/useDelayedFallback";
 
 // Lazy-loaded pages — each becomes its own chunk
 const Index = lazy(() => import("./pages/Index"));
@@ -96,11 +97,19 @@ registerRoutePrefetch("/planos", () => import("./pages/PlanosPage"));
 registerRoutePrefetch("/cliente", () => import("./pages/ClientHome"));
 registerRoutePrefetch("/cadastro-lojista", () => import("./pages/CadastroLojista"));
 
-const PageLoader = () => (
-  <div className="min-h-screen bg-background flex items-center justify-center">
-    <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
-  </div>
-);
+/**
+ * Fallback do Suspense de rotas. Só aparece se o chunk demorar mais que 180ms
+ * — chunks já em cache trocam de rota sem piscar spinner.
+ */
+const PageLoader = () => {
+  const show = useDelayedFallback(180);
+  if (!show) return null;
+  return (
+    <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
+    </div>
+  );
+};
 
 /**
  * Árvore de rotas isolada e memoizada. Como não recebe props, o React nunca
