@@ -9,7 +9,7 @@ interface Props {
 
 /**
  * Grid editorial de produtos aleatórios de lojas abertas.
- * Cards com imagem cheia, overlay editorial e pill de preço.
+ * Card com imagem no topo e nome/loja/preço no rodapé — sem overlaps no mobile.
  */
 const DiscoverGrid = memo(({ products, storesMap, onSelect }: Props) => {
   if (!products?.length) return null;
@@ -31,42 +31,39 @@ const DiscoverGrid = memo(({ products, storesMap, onSelect }: Props) => {
                 setTimeout(() => link.remove(), 4000);
               }
             }}
-            className="relative rounded-3xl overflow-hidden bg-card border border-border aspect-square text-left active:scale-[0.98] transition-transform group"
+            className="relative rounded-3xl overflow-hidden bg-card border border-border text-left active:scale-[0.98] transition-transform group flex flex-col"
           >
-            {p.image_url ? (
-              <img
-                src={p.image_url}
-                alt={p.name}
-                loading="lazy"
-                decoding="async"
-                className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-              />
-            ) : (
-              <div className="absolute inset-0 bg-primary/10" />
-            )}
-
-            {/* preço pill topo-direita */}
-            <span className="absolute top-2 right-2 bg-primary text-primary-foreground font-display font-bold text-[11px] px-2 py-1 rounded-full shadow-md">
-              {formatBRL(Number(p.price))}
-            </span>
-
-            {/* loja pill topo-esquerda */}
-            {store && (
-              <span className="absolute top-2 left-2 bg-background/90 backdrop-blur text-foreground font-semibold text-[10px] px-2 py-1 rounded-full max-w-[70%] truncate">
-                {store.name}
+            <div className="relative w-full aspect-square overflow-hidden">
+              {p.image_url ? (
+                <img
+                  src={p.image_url}
+                  alt={p.name}
+                  loading="lazy"
+                  decoding="async"
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                />
+              ) : (
+                <div className="absolute inset-0 bg-primary/10" />
+              )}
+              <span className="absolute top-2 left-2 inline-flex items-center gap-1 bg-background/90 backdrop-blur text-foreground text-[10px] font-semibold px-2 py-0.5 rounded-full">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                Aberta
               </span>
-            )}
+            </div>
 
-            {/* overlay inferior */}
-            <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-foreground/85 via-foreground/40 to-transparent" />
-
-            <div className="absolute bottom-0 left-0 right-0 p-3 text-background">
-              <p className="font-display font-bold text-sm leading-tight line-clamp-2 drop-shadow">
+            <div className="p-2.5 flex flex-col gap-1.5">
+              <p className="font-display font-bold text-[13px] leading-tight text-foreground line-clamp-2 min-h-[2.2em]">
                 {p.name}
               </p>
-              <div className="flex items-center gap-1 mt-1 text-[10px] opacity-95">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                Aberta agora
+              <div className="flex items-center justify-between gap-1.5">
+                {store && (
+                  <span className="text-[10px] text-muted-foreground truncate flex-1 min-w-0">
+                    {store.name}
+                  </span>
+                )}
+                <span className="bg-primary text-primary-foreground font-display font-bold text-[11px] px-2 py-0.5 rounded-full shrink-0">
+                  {formatBRL(Number(p.price))}
+                </span>
               </div>
             </div>
           </button>
