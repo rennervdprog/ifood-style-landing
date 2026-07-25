@@ -1,68 +1,59 @@
-# Plano de Performance — Alto ROI
+# Plano — Matar spinners desnecessários
 
-Foco: reduzir tempo de login, navegação e boot em Android mid-tier. Sem mudanças de lógica de negócio.
+Objetivo: nenhum spinner de tela cheia quando já temos cache, dados públicos ou pode-se mostrar skeleton. UX deve parecer instantânea.
 
-## Fase 1 — Enxugar `useUserRouting` (maior ganho no login)
+## Diagnóstico (achados reais)
 
-Hoje o hook dispara ~7 queries Supabase em paralelo assim que a sessão existe, mesmo quando só precisamos saber o papel do usuário para redirecionar.
+**Spinners de tela cheia que aparecem toda navegação (piores):**
+1. `PageLoader` global do `<Suspense>` em `App.tsx` — dispara mesmo em rotas já carregadas no cache do browser porque o chunk lazy re-avalia. Aparece por 30–80ms em cada troca de rota rápida.
+2. `PerfilPage`, `PedidosPage`, `CheckoutPage`, `PdvCardapioPage` (6 spinners cada) — cada seção tem `if (loading) return <Spinner/>` bloqueando render inteiro em vez de skeleton parcial.
+3. `AdminDashboardV2` / `SuperAdminDashboardV2` / `MatrizDashboard` — tela branca+spinner enquanto `useUserRouting` valida, mesmo com sessão em cache.
+4. `PartnerLogin` / `PartnerOnboarding` — spinner full-screen enquanto decide redirect (deveria redirecionar direto sem render).
+5. `PdvKdsPage`, `PdvPage` — spinner a cada refetch de pedidos por causa de `refetchOnWindowFocus` sem `keepPreviousData`/`placeholderData`.
+6. `StorePage`, `PublicOrderTracking`, `BlogPost` — spinner full-screen em dados 100% públicos que dá pra SSG/pré-cachear ou mostrar skeleton com shape real.
+7. `AdminPlanManager` (8 spinners), `AsaasFinancialPanel`, `AsaasSubaccountSetup` — cada botão/aba com spinner separado; muitos ficam em loop porque a query invalida a si mesma.
+8. `ResellerDashboard` — spinner enquanto `MrrAreaChart` lazy carrega (já lazy, mas fallback é spinner grande em vez de mini-shape do gráfico).
+9. `CapacitorRouteGuard` e `StoreAppGuard` — flicker de spinner no boot antes de decidir rota.
 
-**Ações:**
-1. Dividir em 2 estágios:
-   - **Estágio A (crítico)**: 1 única RPC `get_user_routing_context(user_id)` retornando `{ role, plan_type, store_id, is_reseller, needs_onboarding }` em uma chamada.
-   - **Estágio B (background)**: dados secundários (settings, flags VIP, contadores) carregam via `queueMicrotask` depois do redirect.
-2. Criar RPC `public.get_user_routing_context` SECURITY DEFINER agregando as consultas atuais.
-3. Cachear resultado em `sessionStorage` por 60s (chave = user id) — evita refetch em navegações rápidas.
-4. Ganho esperado: ~400–900 ms a menos entre "login OK" e "painel visível".
+**Causas raízes comuns:**
+- Uso de `if (isLoading) return <Spinner/>` em vez de `placeholderData: keepPreviousData` do React Query.
+- Falta de `initialData` vindo do cache em queries que já rodaram no `useUserRouting`.
+- Suspense fallback global sempre é spinner grande — deveria ser transparente para rotas <200ms.
+- Guards que renderizam spinner enquanto poderiam apenas retornar `null` (não flickam) ou `<Navigate/>` direto.
 
-## Fase 2 — Prefetch de chunks por hover/foco
+## Fases
 
-Chunks pesados (`SuperAdminDashboardV2`, `AdminDashboardV2`, `PdvPage`, `recharts`) só baixam no clique.
+### Fase 1 — Suspense inteligente (maior ROI)
+- Trocar `PageLoader` global por fallback com delay de 150ms (`useDelayedFallback`) — se o chunk carrega antes, nenhum spinner aparece.
+- Manter shell (header/nav) fora do Suspense de rota para não piscar.
 
-**Ações:**
-1. Criar util `prefetchRoute(path)` que chama o mesmo `import()` do `lazy()` da rota.
-2. Wrapper `<PrefetchLink>` em cima de `<Link>` disparando prefetch em `onMouseEnter` / `onFocus` / `onTouchStart` (com `requestIdleCallback` fallback).
-3. Aplicar nos pontos de entrada:
-   - Sidebar do Super Admin
-   - Menu do lojista (`AdminDashboardV2` → PDV, Financeiro, Cardápio)
-   - Bottom nav mobile do PDV
-   - Landing `StoreDirectory` → `/portal-parceiro`, `/revendedor/auth`
-4. Ganho: primeira navegação após login vira instantânea (chunk já em cache).
+### Fase 2 — React Query stale-while-revalidate
+- Adicionar `placeholderData: keepPreviousData` nas queries dos dashboards que refazem fetch no focus: `PdvPage`, `PdvKdsPage`, `AdminDashboardV2`, `DriverDashboardV2`, `PedidosPage`.
+- Definir `staleTime` alto (30–60s) em `useUserRouting`, `useStorePlan`, `useUserRole` — hoje tudo é 0 e refaz a cada mount.
 
-## Fase 3 — Recharts sob demanda
+### Fase 3 — Guards sem flicker
+- `RoleGuard`, `CapacitorRouteGuard`, `StoreAppGuard`, `LojistaHomeRedirect`, `PartnerLogin` redirect: quando `loading`, retornar `null` (não `<Spinner/>`) — o Suspense já cobre e evita duplo-spinner.
+- Persistir última rota conhecida por role em `localStorage` para redirect síncrono no boot (elimina spinner de "decidindo pra onde ir").
 
-`recharts` pesa ~90 KB gzip e hoje entra no bundle de várias telas admin.
+### Fase 4 — Skeletons no lugar de spinners de página
+- Substituir spinner full-screen por skeleton com shape real em: `PerfilPage`, `PedidosPage`, `CheckoutPage`, `StorePage`, `BlogPost`, `PublicOrderTracking`, `ResellerDashboard`, `PdvCardapioPage`.
+- Reutilizar `Skeleton` do shadcn já disponível.
 
-**Ações:**
-1. Isolar cada gráfico em componente próprio com `React.lazy`.
-2. Renderizar via `<Suspense fallback={<ChartSkeleton/>}>` só quando visível (IntersectionObserver).
-3. Verificar se `MRRChart`, `FinanceTab` e `PdvRelatorios` compartilham o mesmo chunk (config manual em `vite.config.ts` → `manualChunks: { recharts: ['recharts'] }`).
+### Fase 5 — Componentes internos
+- `AdminPlanManager`, `AsaasFinancialPanel`, `AsaasSubaccountSetup`, `WhatsAppSetup`: trocar spinner de aba inteira por spinner inline no botão de ação. Nunca esconder conteúdo já carregado.
+- `MrrAreaChart` Suspense fallback vira `<Skeleton className="h-64"/>`.
 
-## Fase 4 — Imagens
-
-**Ações:**
-1. Adicionar `vite-imagetools`; converter hero da `StoreDirectory` e logo horizontal para `.webp` + `.avif`.
-2. `<picture>` com `<source type="image/avif">` + fallback.
-3. `loading="lazy"` + `decoding="async"` em toda imagem below-the-fold.
-4. Manter apenas o preload do logo LCP (já feito em v1.25.26).
-
-## Fase 5 — Validação
-
-1. Rodar Playwright `routing-source-of-truth.spec.ts` + suite reseller (6/6).
-2. Medir com `performance.mark` no `ClientAuthScreen` → primeiro paint do painel (log em dev).
-3. Lighthouse mobile na `StoreDirectory` antes/depois (meta: LCP < 2.5s, TBT < 200 ms).
-4. Bump para **v1.25.29** (versionCode 1128) ao final.
+### Fase 6 — Validação
+- Playwright: medir tempo até "conteúdo visível" em `/admin`, `/super-admin`, `/entregador`, `/cliente`, `/pedidos`, `/perfil` — target: nenhum spinner full-screen visível se rota trocar em <200ms.
+- Regressão: rodar `routing-source-of-truth.spec.ts` e suíte E2E.
+- Bump versão + versionCode.
 
 ## Detalhes técnicos
 
-- RPC nova precisa de `GRANT EXECUTE ... TO authenticated`.
-- Cache de sessão invalidado em `signOut` e ao trocar de plano/role.
-- Prefetch respeita `navigator.connection.saveData` (não prefetch em 2G/save-data).
-- Chunk split de recharts precisa checar se `PdvBoutique` também usa, para não duplicar.
+- Novo util `src/lib/useDelayedFallback.ts` — hook que retorna `true` só depois de N ms montado; usado no fallback do Suspense.
+- Novo util `src/lib/lastRouteByRole.ts` — grava/lê último path por role para redirect síncrono no boot.
+- React Query defaults centralizados em `src/lib/queryClient.ts`: `staleTime: 30_000`, `refetchOnWindowFocus: 'always'` mas com `placeholderData: keepPreviousData` opt-in por query.
+- Regra: qualquer `if (loading) return <Spinner .../>` em componente de página → refatorar para skeleton OU `null` se for guard.
 
-## Ordem sugerida de execução
-
-1. Fase 1 (maior ROI, ~1h)
-2. Fase 2 (rápido, ~40min)
-3. Fase 3 (moderado, ~1h)
-4. Fase 4 (opcional, depende de assets)
-5. Fase 5 validação
+## Estimativa
+Fase 1: 20min · Fase 2: 40min · Fase 3: 30min · Fase 4: 1h · Fase 5: 40min · Fase 6: 30min.

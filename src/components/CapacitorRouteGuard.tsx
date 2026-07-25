@@ -182,11 +182,8 @@ const CapacitorRouteGuard = () => {
   }, [location.pathname, navigate, user?.id, authLoading, appMode]);
 
   if (blocking) {
-    return (
-      <div className="fixed inset-0 z-[9999] bg-background flex items-center justify-center">
-        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
-      </div>
-    );
+    // Sem spinner — o Suspense global já cobre com delay se necessário.
+    return <div className="fixed inset-0 z-[9999] bg-background" />;
   }
   return null;
 };

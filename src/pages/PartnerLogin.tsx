@@ -127,12 +127,8 @@ const PartnerLogin = () => {
   };
 
   if (authLoading || checking) {
-    return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-3">
-        <div className="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
-        <p className="text-sm text-muted-foreground">Verificando acesso...</p>
-      </div>
-    );
+    // Sem spinner — geralmente resolve em <100ms. Suspense global cobre demoras reais.
+    return null;
   }
 
   if (user) return null;
