@@ -116,11 +116,10 @@ Deno.serve(async (req) => {
       subtotal: perOrder,
       delivery_fee: 0,
       payment_method: "pix",
-      customer_name: `E2E ${MARKER}`,
-      customer_phone: "0000000000",
-      delivery_address: `E2E-INJECT ${MARKER}`,
+      metadata: { e2e_marker: MARKER },
+      neighborhood: "E2E",
+      address_details: "E2E",
       created_at: new Date(now.getTime() - (i + 1) * 24 * 3600_000).toISOString(),
-      updated_at: new Date().toISOString(),
     }));
     const { error: insErr, data: inserted } = await admin.from("orders").insert(rows as any).select("id");
     if (insErr) throw new Error(`insert orders: ${insErr.message}`);
@@ -194,7 +193,7 @@ Deno.serve(async (req) => {
         .from("orders")
         .delete()
         .eq("store_id", storeId)
-        .eq("delivery_address", `E2E-INJECT ${MARKER}`);
+        .contains("metadata", { e2e_marker: MARKER });
     } catch (_) { /* noop */ }
     try {
       const b = backup.plan as any;
