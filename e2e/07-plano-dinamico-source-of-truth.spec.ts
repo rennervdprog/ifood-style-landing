@@ -5,8 +5,11 @@ import { test, expect } from "@playwright/test";
  * Garante que plan_templates no banco reflete os valores acordados.
  */
 
-const SUPABASE_URL = process.env.VITE_SUPABASE_URL || "https://lktzrqjvqoojlrhqnxuz.supabase.co";
-const SUPABASE_ANON = process.env.VITE_SUPABASE_PUBLISHABLE_KEY || "";
+// Backend externo (mesmo que src/integrations/supabase/client.ts). Hardcoded para
+// não depender de VITE_* no ambiente de CI, que apontaria para o projeto errado.
+const SUPABASE_URL = "https://qkjhguziuchqsbxzruea.supabase.co";
+const SUPABASE_ANON =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFramhndXppdWNocXNieHpydWVhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNDg4NTUsImV4cCI6MjA5MDYyNDg1NX0.2sTeKchqAEN2gCqnH1_Zn9cJmUSmZgryt05A66tgm2Y";
 
 test.describe("Planos — fonte da verdade única", () => {
   test("plan_templates no banco bate com os valores acordados", async ({ request }) => {
@@ -34,8 +37,9 @@ test.describe("Planos — fonte da verdade única", () => {
     expect(Number(byKey.pdv_only?.monthly_fee)).toBe(69);
     expect(byKey.pdv_only?.is_active).toBe(true);
 
-    // Planos legados desativados.
-    expect(byKey.hybrid?.is_active).toBe(false);
-    expect(byKey.supporter?.is_active).toBe(false);
+    // Planos legados desativados: a RLS pública filtra por is_active=true,
+    // então nem devem aparecer no resultado do anon.
+    expect(byKey.hybrid).toBeUndefined();
+    expect(byKey.supporter).toBeUndefined();
   });
 });
