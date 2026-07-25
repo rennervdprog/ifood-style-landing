@@ -42,10 +42,10 @@ const FALLBACK_DESCRIPTIONS: Record<DisplayPlan, string> = {
 
 const FALLBACK_DEFAULTS: Record<DisplayPlan, { monthly_fee: number; commission_rate: number }> = {
   supporter: { monthly_fee: SUPPORTER_FEE, commission_rate: 0 },
-  fixed: { monthly_fee: 90, commission_rate: 0 },
+  fixed: { monthly_fee: 89.90, commission_rate: 0 },
   hybrid: { monthly_fee: 50, commission_rate: 2.5 },
   commission_only: { monthly_fee: 0, commission_rate: 6 },
-  autonomy: { monthly_fee: 229.9, commission_rate: 0 },
+  autonomy: { monthly_fee: 199.90, commission_rate: 0 },
 };
 
 const FALLBACK_FEATURES: Record<DisplayPlan, string[]> = {
