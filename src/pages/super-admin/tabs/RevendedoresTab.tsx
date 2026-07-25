@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { formatBRL } from "@/lib/utils";
 import { KpiCard } from "@/components/ui/kpi-card";
+import AntiFraudPanel from "./reseller/AntiFraudPanel";
 
 type Reseller = {
   id: string; user_id: string; email: string | null; code: string;
@@ -59,7 +60,7 @@ const copyToClipboard = async (text: string, label: string) => {
 
 export default function RevendedoresTab() {
   const qc = useQueryClient();
-  const [tab, setTab] = useState<"resellers" | "withdrawals" | "commissions">("resellers");
+  const [tab, setTab] = useState<"resellers" | "withdrawals" | "commissions" | "fraud">("resellers");
   const [search, setSearch] = useState("");
   const [editReseller, setEditReseller] = useState<Reseller | null>(null);
   const [payDialog, setPayDialog] = useState<Withdrawal | null>(null);
@@ -278,6 +279,7 @@ export default function RevendedoresTab() {
           { k: "resellers",   label: "Revendedores" },
           { k: "withdrawals", label: `Saques${pendingWithdrawalsCount ? ` (${pendingWithdrawalsCount})` : ""}` },
           { k: "commissions", label: "Comissões" },
+          { k: "fraud",       label: "Anti-fraude" },
         ] as const).map(t => (
           <button
             key={t.k}
