@@ -951,7 +951,7 @@ function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride
                       <Crown className="h-3 w-3 text-purple-500" />
                       Autonomia vitalícia R$ 0
                     </p>
-                    <p className="text-[10px] text-muted-foreground">Bloqueia o upgrade automático para R$ 239,90 ao atingir R$ 2.500 em vendas. Nenhuma cobrança será gerada.</p>
+                    <p className="text-[10px] text-muted-foreground">Bloqueia o upgrade automático para R$ 199,90 ao atingir R$ 2.500 em vendas. Nenhuma cobrança será gerada.</p>
                   </div>
                   <button
                     onClick={toggleAutonomyLifetime}
