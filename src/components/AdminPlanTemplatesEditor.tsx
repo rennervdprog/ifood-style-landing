@@ -23,6 +23,8 @@ interface PlanTemplate {
   max_slots: number | null;
   sort_order: number;
   is_active: boolean;
+  revenue_threshold?: number | null;
+  platform_fee_included?: boolean | null;
 }
 
 type DraftMap = Record<string, Partial<PlanTemplate> & { featuresText?: string }>;
@@ -60,6 +62,8 @@ export default function AdminPlanTemplatesEditor() {
             commission_rate: Number(t.commission_rate),
             featuresText: Array.isArray(t.features) ? t.features.join("\n") : "",
             is_active: t.is_active,
+            revenue_threshold: Number(t.revenue_threshold ?? 0),
+            platform_fee_included: t.platform_fee_included ?? true,
           };
         }
       });
@@ -82,6 +86,8 @@ export default function AdminPlanTemplatesEditor() {
         commission_rate: Number(t.commission_rate),
         featuresText: Array.isArray(t.features) ? t.features.join("\n") : "",
         is_active: t.is_active,
+        revenue_threshold: Number(t.revenue_threshold ?? 0),
+        platform_fee_included: t.platform_fee_included ?? true,
       },
     }));
   };
@@ -122,6 +128,8 @@ export default function AdminPlanTemplatesEditor() {
           commission_rate: commissionRate,
           features,
           is_active: !!draft.is_active,
+          revenue_threshold: Number(draft.revenue_threshold ?? 0),
+          platform_fee_included: !!draft.platform_fee_included,
           updated_at: new Date().toISOString(),
         } as any)
         .eq("id", t.id);
@@ -149,7 +157,9 @@ export default function AdminPlanTemplatesEditor() {
       Number(d.monthly_fee) !== Number(t.monthly_fee) ||
       Number(d.commission_rate) !== Number(t.commission_rate) ||
       (d.featuresText ?? "") !== originalFeatures ||
-      d.is_active !== t.is_active
+      d.is_active !== t.is_active ||
+      Number(d.revenue_threshold ?? 0) !== Number(t.revenue_threshold ?? 0) ||
+      Boolean(d.platform_fee_included) !== Boolean(t.platform_fee_included ?? true)
     );
   };
 
@@ -228,6 +238,34 @@ export default function AdminPlanTemplatesEditor() {
                     />
                     <p className="text-[10px] text-muted-foreground mt-1">Atual: {Number(t.commission_rate)}%</p>
                   </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-xs">Gatilho GMV / mês (R$)</Label>
+                  <Input
+                    type="number"
+                    step="1"
+                    min="0"
+                    value={d.revenue_threshold ?? 0}
+                    onChange={(e) => updateDraft(t.id, { revenue_threshold: Number(e.target.value) })}
+                  />
+                  <p className="text-[10px] text-muted-foreground mt-1">
+                    Plano fica grátis até este valor. 0 = sem período grátis.
+                  </p>
+                </div>
+                <div className="flex items-center justify-between border border-border rounded-md px-3 py-2">
+                  <div>
+                    <Label className="text-xs">Cobra taxa da plataforma?</Label>
+                    <p className="text-[10px] text-muted-foreground">
+                      Se ativo, cada entrega paga R$ 0,99 da plataforma.
+                    </p>
+                  </div>
+                  <Switch
+                    checked={!!d.platform_fee_included}
+                    onCheckedChange={(v) => updateDraft(t.id, { platform_fee_included: v })}
+                  />
                 </div>
               </div>
 
