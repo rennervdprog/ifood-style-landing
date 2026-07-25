@@ -937,7 +937,8 @@ const StorePage = () => {
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
           <button
             onClick={() => navigate("/lojas")}
-            className="absolute top-4 left-4 h-10 w-10 rounded-full bg-background/90 backdrop-blur flex items-center justify-center shadow-md"
+            style={{ top: "calc(env(safe-area-inset-top) + 1rem)" }}
+            className="absolute left-4 h-10 w-10 rounded-full bg-background/90 backdrop-blur flex items-center justify-center shadow-md"
             aria-label="Voltar"
           >
             <ArrowLeft className="h-5 w-5 text-foreground" />
