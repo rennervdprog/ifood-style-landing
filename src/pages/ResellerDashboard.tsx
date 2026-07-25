@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, lazy, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import SignOutConfirm from "@/components/SignOutConfirm";
 import { toast } from "sonner";
 import {
   Copy, LogOut, TrendingUp, Users, Wallet, Loader2, Download, MessageCircle,
@@ -169,10 +170,7 @@ export default function ResellerDashboard() {
     toast.success("Link copiado!");
   };
 
-  const signOut = async () => {
-    await supabase.auth.signOut();
-    navigate("/");
-  };
+  // Sair — usa <SignOutConfirm> abaixo (dialog + overlay "Até logo").
 
   const savePix = async () => {
     if (!pPix.trim()) return toast.error("Informe a chave PIX");
@@ -345,14 +343,15 @@ export default function ResellerDashboard() {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
-            <button
-              onClick={signOut}
-              className="p-3 rounded-2xl hover:bg-neutral-100 text-neutral-500"
-              aria-label="Sair"
-              title="Sair"
-            >
-              <LogOut className="h-4 w-4" />
-            </button>
+            <SignOutConfirm redirectTo="/revendedor/auth">
+              <button
+                className="p-3 rounded-2xl hover:bg-neutral-100 text-neutral-500"
+                aria-label="Sair"
+                title="Sair"
+              >
+                <LogOut className="h-4 w-4" />
+              </button>
+            </SignOutConfirm>
           </div>
         </header>
 
