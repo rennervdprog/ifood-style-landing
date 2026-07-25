@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { formatBRL } from "@/lib/utils";
+import SignOutConfirm from "@/components/SignOutConfirm";
 import {
   Store, Plus, LogOut, Building2, TrendingUp, DollarSign,
   ShoppingBag, MapPin, ChevronRight, Loader2, Users, X,
@@ -176,9 +177,11 @@ const MatrizDashboard = () => {
               <p className="text-[11px] text-muted-foreground">Painel Matriz · {units.length} unidade(s)</p>
             </div>
           </div>
-          <button onClick={() => signOut()} className="p-2 text-muted-foreground hover:text-foreground">
-            <LogOut className="h-4 w-4" />
-          </button>
+          <SignOutConfirm redirectTo="/portal-parceiro">
+            <button className="p-2 text-muted-foreground hover:text-foreground">
+              <LogOut className="h-4 w-4" />
+            </button>
+          </SignOutConfirm>
         </div>
 
         {!network.is_approved && (
