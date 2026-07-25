@@ -507,28 +507,62 @@ const PerfilPage = () => {
   const hasPin = !!currentPin && /^\d{4}$/.test(currentPin);
   const isClient = !profileRole || profileRole === "cliente";
 
+  /* ── Completion progress (only for clients) ── */
+  const completionItems = isClient
+    ? [
+        { key: "personal", label: "Dados pessoais", done: !!fullName && !!document },
+        { key: "address", label: "Endereço", done: hasAddress },
+        { key: "whatsapp", label: "WhatsApp", done: !!whatsappNumber.replace(/\D/g, "") },
+        { key: "pin", label: "PIN de entrega", done: hasPin },
+      ]
+    : [
+        { key: "personal", label: "Dados pessoais", done: !!fullName && !!document },
+        { key: "pix", label: "Chave PIX", done: hasPix },
+      ];
+  const completedCount = completionItems.filter((i) => i.done).length;
+  const completionPct = Math.round((completedCount / completionItems.length) * 100);
+  const firstPending = completionItems.find((i) => !i.done);
+  const scrollToPending = () => {
+    if (!firstPending) return;
+    const map: Record<string, "personal" | "address" | "pix"> = {
+      personal: "personal",
+      address: "address",
+      whatsapp: "address",
+      pix: "pix",
+    };
+    const target = map[firstPending.key];
+    if (target) {
+      setActiveSection(target);
+      setTimeout(() => {
+        const el = window.document.getElementById(`section-${target}`);
+        el?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 60);
+    } else if (firstPending.key === "pin") {
+      setShowPinEdit(true);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background pb-32 overflow-y-auto">
       {/* ── Hero Header ── */}
-      <div className="relative bg-gradient-to-br from-primary via-primary to-primary/80 pt-10 pb-14 px-5 overflow-hidden">
-        <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full" />
-        <div className="absolute -bottom-6 -left-6 w-28 h-28 bg-white/5 rounded-full" />
-        <div className="relative z-10 flex items-center gap-4">
-          <Avatar className="h-18 w-18 border-3 border-white/30 shadow-lg">
-            <AvatarFallback className="bg-white/20 text-white font-bold text-xl backdrop-blur-sm h-[72px] w-[72px]">
+      <div className="relative bg-gradient-to-br from-primary to-primary/85 pt-8 pb-10 px-5 overflow-hidden">
+        <div className="absolute -top-16 -right-10 w-48 h-48 bg-white/[0.06] rounded-full blur-2xl" />
+        <div className="relative z-10 flex items-center gap-3.5">
+          <Avatar className="h-14 w-14 ring-2 ring-white/40 shadow-md">
+            <AvatarFallback className="bg-white/15 text-white font-black text-base backdrop-blur-sm h-14 w-14">
               {userInitials}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
-            <h1 className="text-lg font-bold text-white truncate">{userName}</h1>
-            <p className="text-xs text-white/70 truncate">{user.email}</p>
-            <div className="mt-2 flex flex-wrap items-center gap-2">
-              <span className="text-[10px] font-bold uppercase tracking-wider bg-white/20 text-white px-2.5 py-1 rounded-full backdrop-blur-sm">
+            <h1 className="text-base font-black text-white truncate leading-tight">{userName}</h1>
+            <p className="text-[11px] text-white/75 truncate mt-0.5">{user.email}</p>
+            <div className="mt-1.5 flex flex-wrap items-center gap-2">
+              <span className="text-[9px] font-bold uppercase tracking-wider bg-white/20 text-white px-2 py-0.5 rounded-full backdrop-blur-sm">
                 {roleLabel}
               </span>
               {orderCount !== undefined && orderCount > 0 && (
-                <span className="text-[10px] font-medium text-white/80 flex items-center gap-1">
-                  <Package className="h-3 w-3" /> {orderCount} pedido{orderCount !== 1 ? "s" : ""}
+                <span className="text-[10px] font-medium text-white/85 flex items-center gap-1">
+                  <Package className="h-2.5 w-2.5" /> {orderCount} pedido{orderCount !== 1 ? "s" : ""}
                 </span>
               )}
             </div>
@@ -538,6 +572,32 @@ const PerfilPage = () => {
 
       {/* ── Content ── */}
       <div className="px-4 -mt-6 space-y-3 relative z-10">
+
+        {/* Progresso de cadastro */}
+        {firstPending && (
+          <button
+            onClick={scrollToPending}
+            className="w-full bg-card rounded-2xl border border-primary/30 shadow-sm p-4 text-left active:scale-[0.99] transition-transform"
+          >
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-primary" />
+                <p className="text-sm font-black text-foreground">Complete seu cadastro</p>
+              </div>
+              <span className="text-[11px] font-bold text-primary">{completedCount}/{completionItems.length}</span>
+            </div>
+            <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-primary to-primary/70 transition-all"
+                style={{ width: `${completionPct}%` }}
+              />
+            </div>
+            <p className="text-[11px] text-muted-foreground mt-2 flex items-center gap-1">
+              Próximo: <span className="font-semibold text-foreground">{firstPending.label}</span>
+              <ChevronRight className="h-3 w-3" />
+            </p>
+          </button>
+        )}
 
         {/* PWA Install */}
         {showInstallButton && !isInstalled && (
@@ -590,26 +650,42 @@ const PerfilPage = () => {
         )}
 
         {/* ── Quick Actions ── */}
-        <Card>
-          <div className="px-4 pt-3.5 pb-2">
-            <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Acesso Rápido</p>
+        <div>
+          <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground px-1 mb-2">Acesso Rápido</p>
+          <div className="grid grid-cols-2 gap-2.5">
+            {[
+              { icon: Package, label: "Meus Pedidos", sub: orderCount ? `${orderCount} pedido${orderCount !== 1 ? "s" : ""}` : "Acompanhe", onClick: () => navigate("/pedidos"), color: "text-primary", bg: "bg-primary/10" },
+              myStore && { icon: Store, label: "Painel da Loja", sub: myStore.name, onClick: () => navigate("/admin"), color: "text-primary", bg: "bg-primary/10" },
+              myDriver && { icon: Bike, label: "Entregador", sub: "Corridas", onClick: () => navigate("/entregador"), color: "text-primary", bg: "bg-primary/10" },
+              isModerator && { icon: Users, label: "Moderador", sub: "Indicações", onClick: () => navigate("/moderador"), color: "text-purple-600", bg: "bg-purple-500/10" },
+              isAdminUser && { icon: Shield, label: "Admin", sub: "Plataforma", onClick: () => navigate("/super-admin"), color: "text-amber-600", bg: "bg-amber-500/10" },
+              { icon: MessageCircle, label: "Suporte", sub: "WhatsApp", onClick: () => window.open(`https://wa.me/5522992796291?text=${encodeURIComponent(`Olá! Sou ${userName} (${user.email}) e preciso de ajuda no ItaSuper.`)}`, "_blank"), color: "text-green-600", bg: "bg-green-500/10" },
+            ].filter(Boolean).slice(0, 6).map((it: any, idx) => (
+              <button
+                key={idx}
+                onClick={it.onClick}
+                className="bg-card rounded-2xl border border-border p-3 flex flex-col items-start gap-2 shadow-sm active:scale-[0.97] transition-transform min-h-[92px] hover:border-primary/30"
+              >
+                <div className={`w-10 h-10 rounded-xl ${it.bg} flex items-center justify-center`}>
+                  <it.icon className={`h-[18px] w-[18px] ${it.color}`} />
+                </div>
+                <div className="min-w-0 w-full">
+                  <p className="text-[13px] font-bold text-foreground leading-tight truncate">{it.label}</p>
+                  <p className="text-[10px] text-muted-foreground truncate mt-0.5">{it.sub}</p>
+                </div>
+              </button>
+            ))}
           </div>
-          <div className="divide-y divide-border/50">
-            <MenuRow icon={Package} title="Meus Pedidos" subtitle="Acompanhe seus pedidos" onClick={() => navigate("/pedidos")} />
-            {myStore && <MenuRow icon={Store} title="Painel da Loja" subtitle={myStore.name} onClick={() => navigate("/admin")} />}
-            {myDriver && <MenuRow icon={Bike} title="Painel do Entregador" subtitle="Gerenciar entregas" onClick={() => navigate("/entregador")} />}
-            {isModerator && <MenuRow icon={Users} iconBg="bg-purple-500/10" iconColor="text-purple-600" title="Painel do Moderador" subtitle="Indicações e ganhos" onClick={() => navigate("/moderador")} />}
-            {isAdminUser && <MenuRow icon={Shield} iconBg="bg-amber-500/10" iconColor="text-amber-600" title="Painel Administrativo" subtitle="Gerenciar plataforma" onClick={() => navigate("/super-admin")} />}
-          </div>
-        </Card>
+        </div>
 
         {/* ── Meus Dados (collapsible sections) ── */}
         <div className="pt-1">
-          <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground px-1 mb-2">Meus Dados</p>
+          <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground px-1 mb-2">Conta</p>
         </div>
 
         {/* Personal Data */}
         <Card>
+          <div id="section-personal" />
           <button onClick={() => setActiveSection(activeSection === "personal" ? null : "personal")}
             className="w-full flex items-center gap-3.5 px-4 py-3.5 transition-colors hover:bg-muted/50">
             <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
@@ -654,7 +730,9 @@ const PerfilPage = () => {
         </Card>
 
         {/* Address */}
+        {isClient && (
         <Card>
+          <div id="section-address" />
           <button onClick={() => setActiveSection(activeSection === "address" ? null : "address")}
             className="w-full flex items-center gap-3.5 px-4 py-3.5 transition-colors hover:bg-muted/50">
             <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
@@ -731,10 +809,12 @@ const PerfilPage = () => {
             </div>
           )}
         </Card>
+        )}
 
         {/* PIX Section */}
         {(profileRole === "lojista" || profileRole === "motoboy") && (
           <Card>
+            <div id="section-pix" />
             <button onClick={() => setActiveSection(activeSection === "pix" ? null : "pix")}
               className="w-full flex items-center gap-3.5 px-4 py-3.5 transition-colors hover:bg-muted/50">
               <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
