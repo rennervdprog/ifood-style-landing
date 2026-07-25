@@ -36,6 +36,9 @@ public class MainActivity extends BridgeActivity {
             s.setCacheMode(WebSettings.LOAD_DEFAULT);
             s.setOffscreenPreRaster(true);
             wv.setLayerType(View.LAYER_TYPE_HARDWARE, null);
+            // Fundo do WebView casando com o app (evita faixa preta atrás
+            // do webview quando o teclado abre e o body encolhe).
+            wv.setBackgroundColor(0xFFFFFFFF);
         } catch (Exception ignored) {}
     }
 
