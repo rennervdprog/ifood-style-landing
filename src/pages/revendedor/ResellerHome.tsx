@@ -1,10 +1,16 @@
 import { useNavigate } from "react-router-dom";
-import { Copy, Share2, Users, Wallet, TrendingUp, ArrowRight, Loader2 } from "lucide-react";
+import { Copy, Share2, Users, Wallet, TrendingUp, ArrowRight, Loader2, Info, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import BottomNav from "@/components/BottomNav";
 import { useResellerDashboard, brl } from "./useResellerDashboard";
+import {
+  getReferralEarningStage,
+  RECURRING_STARTS_TOOLTIP,
+  FREE_GMV_EXPLAINER,
+} from "@/lib/resellerEarnings";
 
 export default function ResellerHome() {
   const navigate = useNavigate();
@@ -31,12 +37,16 @@ export default function ResellerHome() {
   const available =
     s.balance_pending_cents + s.balance_paid_cents - s.withdrawn_cents - s.pending_withdrawal_cents;
 
+  const awaitingActivation = stores.filter(
+    (st) => getReferralEarningStage(st) === "bounty_paid_free_tier"
+  ).length;
+
   const copy = () => {
     navigator.clipboard.writeText(link);
     toast.success("Link copiado!");
   };
   const share = () => {
-    const msg = `Conheça o ItaSuper — plataforma de delivery próprio pra sua loja. Cadastre-se pelo meu link: ${link}`;
+    const msg = `Conheça o ItaSuper — plataforma de delivery próprio pra sua loja. Grátis até R$ 5.000/mês de vendas. Cadastre-se pelo meu link: ${link}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank");
   };
 
@@ -87,6 +97,9 @@ export default function ResellerHome() {
                 <Share2 className="h-3 w-3 mr-1" /> WhatsApp
               </Button>
             </div>
+            <p className="text-[10px] text-muted-foreground leading-snug pt-1">
+              {FREE_GMV_EXPLAINER}
+            </p>
           </CardContent>
         </Card>
 
@@ -102,9 +115,19 @@ export default function ResellerHome() {
           </Card>
           <Card>
             <CardContent className="pt-4">
-              <div className="text-[10px] text-muted-foreground flex items-center gap-1">
-                <Wallet className="h-3 w-3" /> Disponível
-              </div>
+              <TooltipProvider delayDuration={100}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="text-[10px] text-muted-foreground flex items-center gap-1 cursor-help">
+                      <Wallet className="h-3 w-3" /> Disponível
+                      <Info className="h-2.5 w-2.5 opacity-60" />
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="max-w-[220px] text-[11px]">
+                    {RECURRING_STARTS_TOOLTIP}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
               <div className="text-xl font-black text-amber-600">{brl(Math.max(0, available))}</div>
               <div className="text-[9px] text-muted-foreground">Mês: {brl(s.earnings_this_month_cents)}</div>
             </CardContent>
@@ -115,15 +138,16 @@ export default function ResellerHome() {
                 <TrendingUp className="h-3 w-3" /> Comissão MRR
               </div>
               <div className="text-xl font-black">{(r.commission_rate * 100).toFixed(0)}%</div>
-              <div className="text-[9px] text-muted-foreground">vitalícia</div>
+              <div className="text-[9px] text-muted-foreground">após loja pagar plano</div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-4">
               <div className="text-[10px] text-muted-foreground flex items-center gap-1">
-                <Wallet className="h-3 w-3" /> Total recebido
+                <Clock className="h-3 w-3" /> Aguardando ativação
               </div>
-              <div className="text-xl font-black text-green-600">{brl(s.withdrawn_cents)}</div>
+              <div className="text-xl font-black text-blue-600">{awaitingActivation}</div>
+              <div className="text-[9px] text-muted-foreground">lojas em fase gratuita</div>
             </CardContent>
           </Card>
         </div>
@@ -169,7 +193,8 @@ export default function ResellerHome() {
           <CardContent className="text-xs text-muted-foreground space-y-1.5">
             <p>• Toda loja cadastrada pelo seu link fica <strong>vinculada permanentemente</strong> à sua conta.</p>
             <p>• Bônus de <strong>R$ 50</strong> por loja que ativa e completa 20 pedidos.</p>
-            <p>• <strong>{(r.commission_rate * 100).toFixed(0)}%</strong> recorrente sobre o MRR enquanto a loja estiver ativa.</p>
+            <p>• <strong>{(r.commission_rate * 100).toFixed(0)}% da mensalidade</strong> a partir do mês em que a loja passa do GMV gratuito (R$ 5.000 no Essencial · R$ 2.500 na Autonomia).</p>
+            <p>• Enquanto a loja estiver em fase gratuita, a mensalidade é R$ 0 — a comissão recorrente também.</p>
             <p>• Se a loja cancelar, a comissão daquele mês encerra automaticamente.</p>
           </CardContent>
         </Card>
