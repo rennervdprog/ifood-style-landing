@@ -287,9 +287,9 @@ jobs:
       - name: Verify and rename APK (Cliente)
         id: apk
         run: |
-          APK_PATH="android/app/build/outputs/apk/release/app-release-unsigned.apk"
+          APK_PATH="android/app/build/outputs/apk/release/app-release.apk"
           if [ ! -f "$APK_PATH" ]; then
-             APK_PATH="android/app/build/outputs/apk/release/app-release.apk"
+             APK_PATH="android/app/build/outputs/apk/release/app-release-unsigned.apk"
           fi
           AAPT=$(ls "$ANDROID_HOME"/build-tools/*/aapt | sort -V | tail -1)
           BADGING=$($AAPT dump badging "$APK_PATH" | head -1)
