@@ -6,7 +6,8 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
-  Search, Clock, Repeat, ShoppingBag, Store as StoreIcon, MapPin, RefreshCw, Bell, MessageCircle,
+  Search, Clock, Repeat, ShoppingBag, Store as StoreIcon, MapPin, Bell, MessageCircle,
+  ChevronDown, ChevronRight, SlidersHorizontal, Star, Heart, Sparkles,
 } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 import ProductTour, { clienteTourSteps } from "@/components/ProductTour";
@@ -15,7 +16,7 @@ import { useUserLocation } from "@/hooks/useUserLocation";
 import { formatBRL } from "@/lib/utils";
 import { mapStoresWithHours } from "../utils/mapStores";
 import CategoryChips, { normalizeCategory } from "./CategoryChips";
-import StoreCard from "./StoreCard";
+import PromoBanners from "@/components/PromoBanners";
 
 const ROTATING_PLACEHOLDERS = [
   "Buscar pizza...",
@@ -215,70 +216,92 @@ const ClientHomeContent = () => {
   const firstName = profile?.full_name?.split(" ")[0] || "Cliente";
   const locationLabel = userLocation.city || effectiveCity || (userLocation.ready ? "Sem localização" : "Detectando...");
 
+  const sponsoredStores = useMemo(() => {
+    return (visibleStores || [])
+      .filter((s: any) => !!s.image_url && s.realIsOpen)
+      .slice(0, 8);
+  }, [visibleStores]);
+  const sponsoredIds = useMemo(() => new Set(sponsoredStores.map((s: any) => s.id)), [sponsoredStores]);
+  const listStores = useMemo(
+    () => (visibleStores || []).filter((s: any) => !sponsoredIds.has(s.id)),
+    [visibleStores, sponsoredIds]
+  );
+
+  const formatDistance = (km?: number | null) =>
+    typeof km === "number" ? (km < 1 ? `${Math.round(km * 1000)} m` : `${km.toFixed(1)} km`) : null;
+
   return (
     <div className="min-h-dvh bg-background pb-24">
       <SupportTicketModal open={showSupport} onClose={() => setShowSupport(false)} userRole="cliente" />
 
-      {/* Sticky header */}
-      <header className="sticky top-0 z-30 bg-primary text-primary-foreground rounded-b-3xl shadow-sm">
-        <div className="px-4 pt-9 pb-4">
-          <div className="flex items-center justify-between mb-3">
+      {/* Sticky header — marketplace style */}
+      <header className="sticky top-0 z-30 bg-background/95 backdrop-blur border-b border-border">
+        <div className="px-4 pt-4 pb-2 flex items-center justify-between gap-3">
+          <button
+            onClick={userLocation.refresh}
+            className="flex flex-col text-left min-w-0 active:opacity-70"
+            aria-label="Atualizar localização"
+          >
+            <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">
+              Entregar em
+            </span>
+            <span className="flex items-center gap-1 min-w-0">
+              <MapPin className="w-4 h-4 text-primary shrink-0" />
+              <span className="text-sm font-bold text-foreground truncate max-w-[220px]">
+                {locationLabel}
+              </span>
+              <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />
+            </span>
+          </button>
+          <div className="flex items-center gap-1.5 shrink-0">
             <button
-              onClick={userLocation.refresh}
-              className="flex items-center gap-1.5 text-left min-w-0 active:opacity-80"
-              aria-label="Atualizar localização"
+              onClick={() => navigate("/pedidos")}
+              className="relative p-2 bg-muted rounded-xl hover:bg-muted/70 transition-colors"
+              aria-label="Meus pedidos"
             >
-              <MapPin className="h-4 w-4 shrink-0" />
-              <div className="min-w-0">
-                <p className="text-[10px] uppercase font-bold opacity-70 tracking-wider leading-none">
-                  Entregar em
-                </p>
-                <p className="text-sm font-bold truncate flex items-center gap-1">
-                  {locationLabel}
-                  <RefreshCw className="h-3 w-3 opacity-60" />
-                </p>
-              </div>
+              <Bell className="w-5 h-5 text-foreground" />
+              <span className="absolute top-1.5 right-2 w-2 h-2 bg-primary rounded-full border-2 border-background" />
             </button>
-            <div className="flex items-center gap-1.5 shrink-0">
-              <button
-                onClick={() => navigate("/pedidos")}
-                className="w-9 h-9 rounded-xl bg-primary-foreground/15 hover:bg-primary-foreground/25 flex items-center justify-center transition-colors"
-                aria-label="Meus pedidos"
-                title="Meus pedidos"
-              >
-                <Bell className="h-4 w-4" />
-              </button>
-              <button
-                onClick={() => setShowSupport(true)}
-                className="w-9 h-9 rounded-xl bg-primary-foreground/15 hover:bg-primary-foreground/25 flex items-center justify-center transition-colors"
-                aria-label="Suporte"
-                title="Suporte"
-              >
-                <MessageCircle className="h-4 w-4" />
-              </button>
-            </div>
+            <button
+              onClick={() => setShowSupport(true)}
+              className="p-2 bg-muted rounded-xl hover:bg-muted/70 transition-colors"
+              aria-label="Suporte"
+            >
+              <MessageCircle className="w-5 h-5 text-foreground" />
+            </button>
           </div>
+        </div>
 
-          <h1 className="text-lg font-bold leading-tight">
-            <span className="opacity-80 font-medium">{greeting()},</span> {firstName} 👋
-          </h1>
-          <p className="text-xs opacity-75 mt-0.5">O que você quer pedir hoje?</p>
-
-          <div className="mt-3 relative" data-tour="search">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <div className="px-4 pb-3 pt-1 flex gap-2" data-tour="search">
+          <div className="flex-1 bg-muted rounded-xl flex items-center px-3 gap-2 border border-transparent focus-within:border-primary transition-colors">
+            <Search className="w-5 h-5 text-muted-foreground shrink-0" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={ROTATING_PLACEHOLDERS[placeholderIdx]}
               aria-label="Pesquisar lojas"
-              className="w-full h-12 pl-10 pr-4 rounded-2xl bg-background text-foreground placeholder:text-muted-foreground text-sm font-medium shadow-md focus:outline-none focus:ring-2 focus:ring-primary-foreground/40"
+              className="bg-transparent w-full py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
             />
           </div>
+          <button
+            className="bg-primary p-3 rounded-xl text-primary-foreground shadow-md shadow-primary/20 active:scale-95 transition-transform"
+            aria-label="Filtros"
+            onClick={() => toast("Filtros em breve.")}
+          >
+            <SlidersHorizontal className="w-5 h-5" />
+          </button>
         </div>
       </header>
 
-      <main className="px-4 mt-4 space-y-6">
+      <main className="px-4 pt-3 space-y-6">
+        {/* Promo banners */}
+        {!searchQuery && (
+          <div className="-mx-4">
+            <PromoBanners />
+          </div>
+        )}
+
         {/* Category chips */}
         {!searchQuery && suggestedStores && suggestedStores.length > 0 && (
           <CategoryChips
@@ -362,80 +385,93 @@ const ClientHomeContent = () => {
           </section>
         )}
 
-        {/* Reorder carousel */}
-        {!searchQuery && recentOrders && recentOrders.length > 1 && (
-          <section aria-labelledby="reorder-h">
-            <h2 id="reorder-h" className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
-              <Repeat className="h-3.5 w-3.5" /> Pedir de novo
-            </h2>
-            <div className="flex overflow-x-auto gap-3 no-scrollbar -mx-1 px-1 pb-1">
-              {recentOrders.slice(1, 8).map((order: any) => (
-                <div key={order.id} className="shrink-0 w-52 bg-card border border-border rounded-2xl p-3 space-y-2">
-                  <div className="flex items-center gap-2">
-                    {order.stores?.image_url ? (
-                      <img loading="lazy" decoding="async" src={order.stores.image_url}
-                        className="w-9 h-9 rounded-lg object-cover" alt="" />
+        {/* Patrocinados — horizontal cards */}
+        {!searchQuery && !activeCategory && sponsoredStores.length > 0 && (
+          <section aria-labelledby="patrocinados-h">
+            <div className="flex justify-between items-center mb-3">
+              <span
+                id="patrocinados-h"
+                className="bg-primary text-primary-foreground text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1 uppercase tracking-wide"
+              >
+                <Sparkles className="w-3 h-3" /> Destaques
+              </span>
+            </div>
+
+            <div className="flex gap-3 overflow-x-auto no-scrollbar pb-1 -mx-1 px-1">
+              {sponsoredStores.map((store: any) => (
+                <button
+                  key={store.id}
+                  onClick={() => goToStore(store)}
+                  className="min-w-[150px] max-w-[150px] bg-card rounded-2xl overflow-hidden border border-border shadow-sm text-left active:scale-[0.98] transition-transform"
+                >
+                  <div className="h-24 bg-muted relative">
+                    {store.image_url ? (
+                      <img
+                        loading="lazy"
+                        decoding="async"
+                        src={store.image_url}
+                        alt={store.name}
+                        className="w-full h-full object-cover"
+                      />
                     ) : (
-                      <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
-                        <ShoppingBag className="h-4 w-4 text-primary" />
+                      <div className="w-full h-full flex items-center justify-center">
+                        <StoreIcon className="w-8 h-8 text-primary/60" />
                       </div>
                     )}
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs font-bold text-foreground truncate">{order.stores?.name}</p>
-                      <p className="text-[10px] text-muted-foreground">
-                        {new Date(order.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}
-                      </p>
+                    <div className="absolute top-2 right-2 bg-background/80 p-1.5 rounded-full backdrop-blur-sm">
+                      <Heart className="w-3.5 h-3.5 text-muted-foreground" />
                     </div>
                   </div>
-                  <div className="space-y-0.5 min-h-[28px]">
-                    {order.order_items?.slice(0, 2).map((item: any) => (
-                      <p key={item.id} className="text-[10px] text-muted-foreground truncate">
-                        {item.quantity}x {item.products?.name || "Item"}
-                      </p>
-                    ))}
+                  <div className="p-3">
+                    <h4 className="text-xs font-bold text-foreground truncate">{store.name}</h4>
+                    <div className="flex items-center gap-1 mt-1">
+                      <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
+                      <span className="text-[10px] font-bold text-muted-foreground">
+                        {store.rating ? Number(store.rating).toFixed(1) : "Novo"}
+                      </span>
+                      {formatDistance(store.distanceKm) && (
+                        <span className="text-[10px] text-muted-foreground ml-auto">
+                          {formatDistance(store.distanceKm)}
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex items-center justify-between pt-1 border-t border-border/60">
-                    <span className="text-xs font-extrabold text-foreground">{formatBRL(Number(order.total_price))}</span>
-                    <button
-                      onClick={() => handleReorder(order)}
-                      className="bg-primary text-primary-foreground text-[10px] font-bold px-2.5 py-1 rounded-lg flex items-center gap-1 hover:brightness-105"
-                    >
-                      <Repeat className="h-3 w-3" /> Pedir
-                    </button>
-                  </div>
-                </div>
+                </button>
               ))}
             </div>
           </section>
         )}
 
-        {/* Main store list */}
+        {/* Restaurantes perto de você — rich vertical list */}
         <section aria-labelledby="stores-h">
-          <div className="flex items-end justify-between mb-2 gap-2">
-            <h2 id="stores-h" className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5 min-w-0">
-              <StoreIcon className="h-3.5 w-3.5 shrink-0" />
-              <span className="truncate">
-                {searchQuery.length >= 2
-                  ? `Resultados para "${searchQuery}"`
-                  : activeCategory
-                  ? "Filtrado"
-                  : effectiveCity
-                  ? `Lojas em ${effectiveCity}`
-                  : "Lojas disponíveis"}
-              </span>
+          <div className="flex items-end justify-between mb-3 gap-2">
+            <h2 id="stores-h" className="text-base font-bold text-foreground min-w-0 truncate">
+              {searchQuery.length >= 2
+                ? `Resultados para "${searchQuery}"`
+                : activeCategory
+                ? "Filtrado"
+                : effectiveCity
+                ? `Restaurantes em ${effectiveCity}`
+                : "Restaurantes perto de você"}
             </h2>
-            <span className="text-[10px] font-bold text-muted-foreground shrink-0">
+            <span className="text-[11px] font-bold text-muted-foreground shrink-0">
               {visibleStores.length} {visibleStores.length === 1 ? "loja" : "lojas"}
             </span>
           </div>
 
           {loadingStores ? (
-            <div className="grid grid-cols-2 gap-3">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="h-48 rounded-2xl bg-muted animate-pulse" />
+            <div className="space-y-4">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-3">
+                  <div className="w-16 h-16 rounded-full bg-muted animate-pulse" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-3 w-2/3 bg-muted rounded animate-pulse" />
+                    <div className="h-2.5 w-1/2 bg-muted rounded animate-pulse" />
+                  </div>
+                </div>
               ))}
             </div>
-          ) : visibleStores.length === 0 ? (
+          ) : listStores.length === 0 && sponsoredStores.length === 0 ? (
             <div className="text-center py-10">
               <div className="w-14 h-14 bg-muted rounded-2xl flex items-center justify-center mx-auto mb-3">
                 <StoreIcon className="h-6 w-6 text-muted-foreground" />
@@ -456,11 +492,71 @@ const ClientHomeContent = () => {
               )}
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-3">
-              {visibleStores.map((store: any) => (
-                <StoreCard key={store.id} store={store} onClick={() => goToStore(store)} />
-              ))}
-            </div>
+            <ul className="space-y-5">
+              {listStores.map((store: any) => {
+                const isOpen = !!store.realIsOpen;
+                const dist = formatDistance(store.distanceKm);
+                return (
+                  <li key={store.id}>
+                    <button
+                      onClick={() => goToStore(store)}
+                      className="group w-full flex items-start gap-3 text-left active:opacity-80"
+                    >
+                      <div
+                        className={`w-16 h-16 rounded-full overflow-hidden shrink-0 shadow-sm border-2 ${
+                          isOpen ? "border-primary/20" : "border-border"
+                        }`}
+                      >
+                        {store.image_url ? (
+                          <img
+                            loading="lazy"
+                            decoding="async"
+                            src={store.image_url}
+                            alt={store.name}
+                            className={`w-full h-full object-cover ${isOpen ? "" : "grayscale"}`}
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-primary/10">
+                            <StoreIcon className="w-6 h-6 text-primary" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex justify-between items-start gap-2">
+                          <h3 className="font-bold text-foreground truncate">{store.name}</h3>
+                          <ChevronRight
+                            className={`w-5 h-5 shrink-0 mt-0.5 transition-colors ${
+                              isOpen ? "text-muted-foreground group-hover:text-primary" : "text-muted-foreground/40"
+                            }`}
+                          />
+                        </div>
+                        <p className="text-xs text-muted-foreground truncate capitalize">
+                          {(store.category || "Loja").replace(/_/g, " ")}
+                          {dist ? ` • ${dist}` : ""}
+                          {store.rating ? ` • ★ ${Number(store.rating).toFixed(1)}` : ""}
+                        </p>
+                        <div className="mt-1.5 flex items-center gap-2">
+                          <span
+                            className={`px-2 py-0.5 text-[10px] font-bold rounded uppercase ${
+                              isOpen
+                                ? "bg-emerald-100 text-emerald-700"
+                                : "bg-muted text-muted-foreground"
+                            }`}
+                          >
+                            {isOpen ? "Aberto" : "Fechado"}
+                          </span>
+                          {!isOpen && store.statusReason && (
+                            <span className="text-[10px] text-muted-foreground truncate">
+                              {store.statusReason}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
           )}
         </section>
       </main>
