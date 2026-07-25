@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { subscribeWithRejoin, cleanupChannel } from "@/lib/realtimeChannel";
 import { toast } from "sonner";
+import SignOutConfirm from "@/components/SignOutConfirm";
 import {
   MessageCircle, Send, Loader2, LogOut, ChevronRight,
   User, Store, Bike, Search, StickyNote, ArrowLeft,
@@ -236,10 +237,11 @@ const SupportAgentDashboard = () => {
         {counts.aguardando > 0 && (
           <span className="text-[10px] font-black bg-purple-500 text-white px-2 py-0.5 rounded-full">{counts.aguardando}</span>
         )}
-        <button onClick={() => signOut()}
-          className="w-9 h-9 rounded-2xl bg-muted/60 flex items-center justify-center active:scale-90 transition-transform">
-          <LogOut className="h-3.5 w-3.5 text-muted-foreground" />
-        </button>
+        <SignOutConfirm redirectTo="/portal-parceiro">
+          <button className="w-9 h-9 rounded-2xl bg-muted/60 flex items-center justify-center active:scale-90 transition-transform">
+            <LogOut className="h-3.5 w-3.5 text-muted-foreground" />
+          </button>
+        </SignOutConfirm>
       </div>
     </div>
   );

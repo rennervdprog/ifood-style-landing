@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState } from "react";
+import { lazy, memo, Suspense, useEffect, useState } from "react";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { supabase } from "@/integrations/supabase/client";
@@ -32,6 +32,8 @@ import RecoveryRedirect from "@/components/RecoveryRedirect";
 import GlobalRealtimeSync from "@/components/GlobalRealtimeSync";
 import { fetchPendingLegalChanges, type PendingLegalChanges } from "@/lib/legalDocuments";
 import { APP_VERSION } from "@/lib/appVersion";
+import { registerRoutePrefetch } from "@/lib/prefetchRoute";
+import { useDelayedFallback } from "@/lib/useDelayedFallback";
 
 // Lazy-loaded pages — each becomes its own chunk
 const Index = lazy(() => import("./pages/Index"));
@@ -81,11 +83,124 @@ const BlogAdmin = lazy(() => import("./pages/admin/BlogAdmin"));
 const BlogAdminEditor = lazy(() => import("./pages/admin/BlogAdminEditor"));
 const VagaPromoPage = lazy(() => import("./pages/VagaPromoPage"));
 
-const PageLoader = () => (
-  <div className="min-h-screen bg-background flex items-center justify-center">
-    <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
-  </div>
-);
+// Register the highest-value chunks for hover/focus prefetch.
+// Kept close to the lazy() definitions so paths and loaders stay in sync.
+registerRoutePrefetch("/super-admin", () => import("./pages/SuperAdminDashboardV2"));
+registerRoutePrefetch("/admin", () => import("./pages/AdminDashboardV2"));
+registerRoutePrefetch("/admin/pdv", () => import("./pages/PdvPage"));
+registerRoutePrefetch("/matriz", () => import("./pages/MatrizDashboard"));
+registerRoutePrefetch("/entregador", () => import("./pages/DriverDashboardV2"));
+registerRoutePrefetch("/revendedor", () => import("./pages/ResellerDashboard"));
+registerRoutePrefetch("/revendedor/auth", () => import("./pages/ResellerAuth"));
+registerRoutePrefetch("/portal-parceiro", () => import("./pages/PartnerLogin"));
+registerRoutePrefetch("/planos", () => import("./pages/PlanosPage"));
+registerRoutePrefetch("/cliente", () => import("./pages/ClientHome"));
+registerRoutePrefetch("/cadastro-lojista", () => import("./pages/CadastroLojista"));
+
+/**
+ * Fallback do Suspense de rotas. Só aparece se o chunk demorar mais que 180ms
+ * — chunks já em cache trocam de rota sem piscar spinner.
+ */
+const PageLoader = () => {
+  const show = useDelayedFallback(180);
+  if (!show) return null;
+  return (
+    <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
+    </div>
+  );
+};
+
+/**
+ * Árvore de rotas isolada e memoizada. Como não recebe props, o React nunca
+ * a re-renderiza depois do primeiro mount — mudanças de estado no <App/>
+ * (ex.: showAncillary flip, TermsChecker) deixam de invalidar todo o
+ * `<Routes>` e cada página só re-renderiza quando o próprio path muda.
+ */
+const AppRoutes = memo(function AppRoutes() {
+  return (
+    <Routes>
+      {/* Public landing / Client home */}
+      <Route path="/" element={<StoreDirectory />} />
+      <Route path="/lojas" element={<Navigate to="/" replace />} />
+      <Route path="/lojas/:cidade" element={<CityStoresPage />} />
+      <Route path="/cliente" element={<ClientHome />} />
+      <Route
+        path="/painel"
+        element={
+          <RoleGuard allowedRoles={["admin"]} redirectTo="/">
+            <Index />
+          </RoleGuard>
+        }
+      />
+      <Route path="/loja/:id" element={<StorePage />} />
+      <Route path="/carrinho" element={<CartPage />} />
+      <Route path="/checkout" element={<CheckoutPage />} />
+      <Route path="/checkout-rapido" element={<GuestCheckoutPage />} />
+      <Route path="/pix-direto/:orderId" element={<PixDiretoPaymentPage />} />
+      <Route path="/p/:orderId" element={<PublicOrderTracking />} />
+      <Route path="/pedidos" element={<PedidosPage />} />
+      <Route path="/perfil" element={<PerfilPage />} />
+      <Route path="/auth" element={<AuthPage />} />
+      <Route path="/portal-parceiro" element={<PartnerLogin />} />
+      <Route path="/admin" element={<RoleGuard allowedRoles={["lojista", "lojista_matriz", "lojista_unidade", "admin"]} redirectTo="/" requireApproval><LojistaHomeRedirect><AdminDashboardV2 /></LojistaHomeRedirect></RoleGuard>} />
+      <Route path="/matriz" element={<RoleGuard allowedRoles={["lojista_matriz", "admin"]} redirectTo="/"><MatrizDashboard /></RoleGuard>} />
+      <Route path="/admin2" element={<Navigate to="/admin" replace />} />
+      <Route path="/admin/pdv" element={<RoleGuard allowedRoles={["lojista", "admin"]} redirectTo="/" requireApproval><PdvPage /></RoleGuard>} />
+      <Route path="/admin/pdv/kds" element={<RoleGuard allowedRoles={["lojista", "admin"]} redirectTo="/" requireApproval><PdvKdsPage /></RoleGuard>} />
+      <Route path="/admin/cardapio" element={<RoleGuard allowedRoles={["lojista", "admin"]} redirectTo="/" requireApproval><PdvCardapioPage /></RoleGuard>} />
+      <Route path="/admin/pdv/cardapio" element={<Navigate to="/admin/cardapio" replace />} />
+      <Route
+        path="/entregador"
+        element={
+          <RoleGuard allowedRoles={["motoboy", "admin"]} redirectTo="/" requireApproval>
+            <DriverDashboardV2 />
+          </RoleGuard>
+        }
+      />
+      <Route path="/entregador1" element={<Navigate to="/entregador" replace />} />
+      <Route path="/entregador2" element={<Navigate to="/entregador" replace />} />
+      <Route
+        path="/super-admin"
+        element={
+          <RoleGuard allowedRoles={["admin"]} redirectTo="/">
+            <SuperAdminDashboardV2 />
+          </RoleGuard>
+        }
+      />
+      <Route path="/super-admin1" element={<Navigate to="/super-admin" replace />} />
+      <Route path="/super-admin2" element={<Navigate to="/super-admin" replace />} />
+      <Route path="/super-admin/sandbox-tests" element={<RoleGuard allowedRoles={["admin"]} redirectTo="/"><SandboxTestsPage /></RoleGuard>} />
+      <Route path="/parceiro" element={<PartnerOnboarding />} />
+      <Route path="/revendedor" element={<ResellerDashboard />} />
+      <Route path="/seja-revendedor" element={<SejaRevendedor />} />
+      <Route path="/revendedor/entrar" element={<ResellerAuth />} />
+      <Route path="/revendedor/cadastro" element={<ResellerAuth />} />
+      <Route path="/cadastro-entregador" element={<Navigate to="/cadastro-motoboy-loja" replace />} />
+      <Route path="/cadastro-lojista" element={<CadastroLojista />} />
+      <Route path="/cadastro-motoboy-loja" element={<CadastroMotoboyLoja />} />
+      <Route path="/termos-de-uso" element={<TermosDeUso />} />
+      <Route path="/politica-de-privacidade" element={<PoliticaPrivacidade />} />
+      <Route path="/termos" element={<Navigate to="/termos-de-uso" replace />} />
+      <Route path="/privacidade" element={<Navigate to="/politica-de-privacidade" replace />} />
+      <Route path="/parceiro/login" element={<Navigate to="/portal-parceiro" replace />} />
+      <Route path="/planos" element={<PlanosPage />} />
+      <Route path="/moderador" element={<ModeradorDashboard />} />
+      <Route path="/suporte" element={<RoleGuard allowedRoles={["suporte","admin"]} redirectTo="/auth"><SupportAgentDashboard /></RoleGuard>} />
+      <Route path="/links" element={<LinksPage />} />
+      <Route path="/download" element={<DownloadApp />} />
+      <Route path="/kds/:token" element={<KdsPage />} />
+      <Route path="/blog" element={<BlogIndex />} />
+      <Route path="/blog/:slug" element={<BlogPost />} />
+      <Route path="/admin/blog" element={<RoleGuard allowedRoles={["admin"]} redirectTo="/"><BlogAdmin /></RoleGuard>} />
+      <Route path="/admin/blog/novo" element={<RoleGuard allowedRoles={["admin"]} redirectTo="/"><BlogAdminEditor /></RoleGuard>} />
+      <Route path="/admin/blog/:id" element={<RoleGuard allowedRoles={["admin"]} redirectTo="/"><BlogAdminEditor /></RoleGuard>} />
+      <Route path="/vaga/:cidade" element={<VagaPromoPage />} />
+      <Route path="/:slug" element={<StorePage />} />
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  );
+});
 
 // On Capacitor, capacitorLifecycle.ts already calls focusManager.setFocused(true)
 // on every app resume — which triggers refetchOnWindowFocus internally.
@@ -351,92 +466,7 @@ const App = () => {
             {showAncillary && !partnerNative && <DownloadAppPrompt />}
             <ErrorBoundary>
             <Suspense fallback={<PageLoader />}>
-              <Routes>
-                {/* Public landing / Client home */}
-                <Route path="/" element={<StoreDirectory />} />
-                <Route path="/lojas" element={<Navigate to="/" replace />} />
-                <Route path="/lojas/:cidade" element={<CityStoresPage />} />
-                <Route path="/cliente" element={<ClientHome />} />
-                {/* Admin dashboard at /index */}
-                <Route
-                  path="/painel"
-                  element={
-                    <RoleGuard allowedRoles={["admin"]} redirectTo="/">
-                      <Index />
-                    </RoleGuard>
-                  }
-                />
-                <Route path="/loja/:id" element={<StorePage />} />
-                <Route path="/carrinho" element={<CartPage />} />
-                <Route path="/checkout" element={<CheckoutPage />} />
-                <Route path="/checkout-rapido" element={<GuestCheckoutPage />} />
-                <Route path="/pix-direto/:orderId" element={<PixDiretoPaymentPage />} />
-                <Route path="/p/:orderId" element={<PublicOrderTracking />} />
-                <Route path="/pedidos" element={<PedidosPage />} />
-                <Route path="/perfil" element={<PerfilPage />} />
-                <Route path="/auth" element={<AuthPage />} />
-                <Route path="/portal-parceiro" element={<PartnerLogin />} />
-                <Route path="/admin" element={<RoleGuard allowedRoles={["lojista", "lojista_matriz", "lojista_unidade", "admin"]} redirectTo="/" requireApproval><LojistaHomeRedirect><AdminDashboardV2 /></LojistaHomeRedirect></RoleGuard>} />
-                <Route path="/matriz" element={<RoleGuard allowedRoles={["lojista_matriz", "admin"]} redirectTo="/"><MatrizDashboard /></RoleGuard>} />
-                <Route path="/admin2" element={<Navigate to="/admin" replace />} />
-                <Route path="/admin/pdv" element={<RoleGuard allowedRoles={["lojista", "admin"]} redirectTo="/" requireApproval><PdvPage /></RoleGuard>} />
-                <Route path="/admin/pdv/kds" element={<RoleGuard allowedRoles={["lojista", "admin"]} redirectTo="/" requireApproval><PdvKdsPage /></RoleGuard>} />
-                <Route path="/admin/cardapio" element={<RoleGuard allowedRoles={["lojista", "admin"]} redirectTo="/" requireApproval><PdvCardapioPage /></RoleGuard>} />
-                <Route path="/admin/pdv/cardapio" element={<Navigate to="/admin/cardapio" replace />} />
-                <Route
-                  path="/entregador"
-                  element={
-                    <RoleGuard allowedRoles={["motoboy", "admin"]} redirectTo="/" requireApproval>
-                      <DriverDashboardV2 />
-                    </RoleGuard>
-                  }
-                />
-                <Route path="/entregador1" element={<Navigate to="/entregador" replace />} />
-                <Route path="/entregador2" element={<Navigate to="/entregador" replace />} />
-                <Route
-                  path="/super-admin"
-                  element={
-                    <RoleGuard allowedRoles={["admin"]} redirectTo="/">
-                      <SuperAdminDashboardV2 />
-                    </RoleGuard>
-                  }
-                />
-                <Route path="/super-admin1" element={<Navigate to="/super-admin" replace />} />
-                <Route path="/super-admin2" element={<Navigate to="/super-admin" replace />} />
-                <Route path="/super-admin/sandbox-tests" element={<RoleGuard allowedRoles={["admin"]} redirectTo="/"><SandboxTestsPage /></RoleGuard>} />
-                <Route path="/parceiro" element={<PartnerOnboarding />} />
-                <Route path="/revendedor" element={<ResellerDashboard />} />
-                <Route path="/seja-revendedor" element={<SejaRevendedor />} />
-                <Route path="/revendedor/entrar" element={<ResellerAuth />} />
-                <Route path="/revendedor/cadastro" element={<ResellerAuth />} />
-                {/* Cadastro de motoboy de plataforma descontinuado — redireciona para motoboy de loja */}
-                <Route path="/cadastro-entregador" element={<Navigate to="/cadastro-motoboy-loja" replace />} />
-                <Route path="/cadastro-lojista" element={<CadastroLojista />} />
-                <Route path="/cadastro-motoboy-loja" element={<CadastroMotoboyLoja />} />
-                <Route path="/termos-de-uso" element={<TermosDeUso />} />
-                <Route path="/politica-de-privacidade" element={<PoliticaPrivacidade />} />
-                <Route path="/termos" element={<Navigate to="/termos-de-uso" replace />} />
-                <Route path="/privacidade" element={<Navigate to="/politica-de-privacidade" replace />} />
-                <Route path="/parceiro/login" element={<Navigate to="/portal-parceiro" replace />} />
-                <Route path="/planos" element={<PlanosPage />} />
-                <Route path="/moderador" element={<ModeradorDashboard />} />
-                <Route path="/suporte" element={<RoleGuard allowedRoles={["suporte","admin"]} redirectTo="/auth"><SupportAgentDashboard /></RoleGuard>} />
-                <Route path="/links" element={<LinksPage />} />
-                 <Route path="/download" element={<DownloadApp />} />
-                <Route path="/kds/:token" element={<KdsPage />} />
-                {/* Blog público — DEVE vir antes de /:slug */}
-                <Route path="/blog" element={<BlogIndex />} />
-                <Route path="/blog/:slug" element={<BlogPost />} />
-                {/* Admin do blog (super admin) */}
-                <Route path="/admin/blog" element={<RoleGuard allowedRoles={["admin"]} redirectTo="/"><BlogAdmin /></RoleGuard>} />
-                <Route path="/admin/blog/novo" element={<RoleGuard allowedRoles={["admin"]} redirectTo="/"><BlogAdminEditor /></RoleGuard>} />
-                <Route path="/admin/blog/:id" element={<RoleGuard allowedRoles={["admin"]} redirectTo="/"><BlogAdminEditor /></RoleGuard>} />
-                {/* Campanha promocional de captação de lojistas por cidade */}
-                <Route path="/vaga/:cidade" element={<VagaPromoPage />} />
-                {/* Client store access via slug - must be last */}
-                <Route path="/:slug" element={<StorePage />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
+              <AppRoutes />
             </Suspense>
             </ErrorBoundary>
           </BrowserRouter>

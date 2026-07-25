@@ -16,8 +16,9 @@ const json = (b: unknown, s = 200) =>
 
 const WINDOW_DAYS = 60;
 
-// Config dinâmica por plano: {threshold GMV 60d → fee-alvo}
-const PLAN_CONFIG: Record<string, { threshold: number; upgradeFee: number; planLabel: string }> = {
+// Config dinâmica por plano é carregada de plan_templates (fonte única da verdade).
+// Fallback só existe se o banco estiver offline.
+const PLAN_FALLBACK: Record<string, { threshold: number; upgradeFee: number; planLabel: string }> = {
   fixed:    { threshold: 5000, upgradeFee: 89.90,  planLabel: "Essencial" },
   autonomy: { threshold: 2500, upgradeFee: 199.90, planLabel: "Autonomia" },
 };
@@ -43,6 +44,21 @@ Deno.serve(async (req) => {
 
   try {
     const sb = createClient(EXTERNAL_URL, EXTERNAL_KEY);
+
+    // Carrega fonte da verdade dos planos dinâmicos.
+    const { data: tpls } = await sb
+      .from("plan_templates")
+      .select("plan_key, label, monthly_fee, revenue_threshold")
+      .in("plan_key", ["fixed", "autonomy"]);
+    const PLAN_CONFIG: Record<string, { threshold: number; upgradeFee: number; planLabel: string }> = { ...PLAN_FALLBACK };
+    for (const t of tpls || []) {
+      const key = (t as any).plan_key === "fixed" ? "fixed" : "autonomy";
+      PLAN_CONFIG[key] = {
+        threshold: Number((t as any).revenue_threshold) || PLAN_FALLBACK[key].threshold,
+        upgradeFee: Number((t as any).monthly_fee) || PLAN_FALLBACK[key].upgradeFee,
+        planLabel: (t as any).label || PLAN_FALLBACK[key].planLabel,
+      };
+    }
 
     // Planos dinâmicos grátis (fixed + autonomy, monthly_fee=0, ativos)
     const { data: plans, error: pErr } = await sb

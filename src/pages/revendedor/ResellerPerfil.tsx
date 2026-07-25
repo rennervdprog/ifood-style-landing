@@ -12,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import ThemeToggle from "@/components/ThemeToggle";
 import BottomNav from "@/components/BottomNav";
+import SignOutConfirm from "@/components/SignOutConfirm";
 import { useResellerDashboard, brl } from "./useResellerDashboard";
 import { APP_VERSION } from "@/lib/appVersion";
 
@@ -211,13 +212,11 @@ export default function ResellerPerfil() {
           Abrir painel completo
         </Button>
 
-        <Button
-          variant="ghost"
-          className="w-full text-destructive"
-          onClick={async () => { await signOut(); navigate("/"); }}
-        >
-          <LogOut className="h-4 w-4 mr-2" /> Sair da conta
-        </Button>
+        <SignOutConfirm redirectTo="/revendedor/auth">
+          <Button variant="ghost" className="w-full text-destructive">
+            <LogOut className="h-4 w-4 mr-2" /> Sair da conta
+          </Button>
+        </SignOutConfirm>
 
         <p className="text-center text-[10px] text-muted-foreground/50 pt-2">ItaSuper v{APP_VERSION}</p>
       </main>

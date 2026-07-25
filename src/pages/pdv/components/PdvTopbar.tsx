@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { formatBRL } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
+import SignOutConfirm from "@/components/SignOutConfirm";
 import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent,
   DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator,
@@ -38,6 +39,7 @@ export const PdvTopbar = ({
 }: Props) => {
   const navigate = useNavigate();
   const initial = (operatorName || "").trim().charAt(0).toUpperCase() || "?";
+  const [signOutOpen, setSignOutOpen] = useState(false);
   // Indicador de sincronização — Fase 7
   const [online, setOnline] = useState<boolean>(
     typeof navigator !== "undefined" ? navigator.onLine : true,
@@ -86,7 +88,7 @@ export const PdvTopbar = ({
             <DropdownMenuSeparator />
             <DropdownMenuItem
               className="text-red-600 focus:text-red-600"
-              onClick={async () => { await supabase.auth.signOut(); navigate("/", { replace: true }); }}
+              onSelect={(e) => { e.preventDefault(); setSignOutOpen(true); }}
             >
               <LogOut className="h-4 w-4 mr-2" /> Sair
             </DropdownMenuItem>
@@ -179,16 +181,23 @@ export const PdvTopbar = ({
           <span className="hidden sm:block">Fechar</span>
         </button>
         {isPdvOnly && (
-          <button
-            onClick={async () => { await supabase.auth.signOut(); navigate("/", { replace: true }); }}
-            title="Sair da conta"
-            className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-bold text-red-600 bg-red-500/8 hover:bg-red-500/15 transition-colors border border-red-500/20"
-          >
-            <LogOut className="h-3.5 w-3.5" />
-            <span className="hidden sm:block">Sair</span>
-          </button>
+          <SignOutConfirm redirectTo="/portal-parceiro">
+            <button
+              title="Sair da conta"
+              className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-bold text-red-600 bg-red-500/8 hover:bg-red-500/15 transition-colors border border-red-500/20"
+            >
+              <LogOut className="h-3.5 w-3.5" />
+              <span className="hidden sm:block">Sair</span>
+            </button>
+          </SignOutConfirm>
         )}
       </div>
+      <SignOutConfirm
+        open={signOutOpen}
+        onOpenChange={setSignOutOpen}
+        hideTrigger
+        redirectTo="/portal-parceiro"
+      />
     </header>
   );
 };

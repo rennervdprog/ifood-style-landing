@@ -261,7 +261,7 @@ export default function DashboardOverviewSection(props: Props) {
     <PlatformFeeExplainerCard storeId={store.id} splitPerOrder={storePlan.platformDeliverySplit} />
   )}
 
-  {/* Progresso Essencial R$0 → R$180 quando bater R$ 5.000/60d */}
+  {/* Progresso Essencial R$0 → R$89,90 quando bater R$ 5.000/60d */}
   <EssencialProgressCard store={store} storePlan={storePlan} />
 
   {/* ── Banner PDV ── */}

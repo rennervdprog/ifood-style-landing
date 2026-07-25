@@ -66,7 +66,15 @@ Deno.serve(async (req) => {
 
     const now = new Date().toISOString();
     if (response === "accepted") {
-      const monthlyFee = plan.plan_type === "autonomy" ? 199.90 : 89.90;
+      // Fonte da verdade: plan_templates. Fallback só se banco offline.
+      const planKey = plan.plan_type === "autonomy" ? "autonomy" : "fixed";
+      const { data: tpl } = await admin
+        .from("plan_templates")
+        .select("monthly_fee")
+        .eq("plan_key", planKey)
+        .maybeSingle();
+      const fallbackFee = planKey === "autonomy" ? 199.90 : 89.90;
+      const monthlyFee = Number((tpl as any)?.monthly_fee) || fallbackFee;
       const { error: updatePlanError } = await admin
         .from("store_plans")
         .update({
