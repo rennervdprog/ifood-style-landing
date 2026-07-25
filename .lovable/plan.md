@@ -1,65 +1,54 @@
-# Plano: "Comissão só após GMV" explícito em toda a jornada do revendedor
+# Plano: Correção do APK Cliente (navegação travada + safe-areas Android)
 
-## Objetivo
-Nenhum revendedor deve descobrir depois que a mensalidade só cai quando a loja passa do GMV gratuito. Essa regra tem que aparecer em toda tela onde ele vê ganhos, indicações ou material de divulgação.
+## Problemas identificados
 
-## Fonte da verdade (única)
-Criar `src/lib/resellerEarnings.ts` exportando:
-- `FREE_GMV = { essencial: 5000, autonomia: 2500 }` (R$)
-- `BOUNTY_CENTS = 5000` (R$ 50 após 20 pedidos)
-- `RECURRING_RATE = 0.20`
-- Helpers: `formatFreeGmvLine()`, `getReferralEarningStage(store)` → `"pre_bounty" | "bounty_paid_free_tier" | "earning_recurring"`
+### 1. Navegação presa em `/cliente`
+No `CapacitorRouteGuard.tsx`, o whitelist do modo **client** (`CLIENT_ALLOWED_PREFIXES`) **não inclui**:
+- `/` (raiz — o `<Link to="/loja/:id">` do `StoreCard` passa por aqui em alguns fluxos)
+- rotas dinâmicas de loja por **slug** (ex.: `/dudalanches`) — o catch-all `/:slug` que renderiza `StorePage` cai fora da whitelist e é redirecionado de volta para `/cliente`
+- `/lojas`, `/cidade/*`, `/busca`
 
-Todos os textos e badges consomem daqui — zero string solta.
+Resultado: qualquer clique em card de loja/produto que resolva para slug (não `/loja/:id`) é interceptado e devolvido para `/cliente` → **efeito "preso na home"**.
 
-## Telas a atualizar
+### 2. Safe-areas Android (notch + gesture bar)
+- `capacitor.config.ts` não declara `overrideUserInterfaceStyle` nem plugin `StatusBar`/`EdgeToEdge`.
+- `AndroidManifest` / `styles.xml` provavelmente sem `windowLayoutInDisplayCutoutMode=shortEdges` e sem `enableEdgeToEdge`.
+- O CSS usa `pb-[5.25rem]` fixo em `NativeShell`, sem `env(safe-area-inset-bottom)`, então a bottom-tab cobre a barra de gestos e o conteúdo entra embaixo do notch.
 
-**1. Landing `/seja-revendedor`**
-Card "Como você ganha" ganha 3 passos numerados explícitos:
-1. Bounty de R$ 50 após as 20 primeiras vendas da loja
-2. **Loja em fase gratuita → R$ 0 de recorrente** (Essencial até R$ 5k GMV / Autonomia até R$ 2,5k)
-3. Loja passou do GMV → 20% da mensalidade, todo mês
+---
 
-Adicionar FAQ: "Quando começo a receber a mensalidade?"
+## Passos
 
-**2. Cadastro `/reseller-auth`**
-Checkbox de termos com linha explícita:
-> "Entendi que a comissão recorrente de 20% só é paga a partir do mês em que a loja indicada passa do GMV gratuito e começa a pagar mensalidade."
+### A. Liberar navegação no APK Cliente
+1. Em `CapacitorRouteGuard.tsx`:
+   - Trocar a lógica do modo `client`: em vez de whitelist restritiva, usar **blacklist** = apenas `PARTNER_ROUTES` são bloqueadas. Todo o resto (incluindo `/:slug`, `/loja/:id`, `/`, `/cidade/*`) é liberado.
+   - Manter o redirect `/` → `/cliente` só quando o usuário está logado como cliente puro (não quebra navegação profunda).
+2. Garantir que links do `StoreCard`, `DiscoverGrid` e `HighlightsBento` usem rotas absolutas conhecidas (`/loja/:id` ou `/:slug`) — já usam, só destravar o guard resolve.
 
-**3. Dashboard do revendedor (`ResellerHome` / bento)**
-- Card "Saldo pendente" com tooltip (ícone info): "Só entra saldo quando a loja indicada passa do GMV gratuito."
-- Novo mini-card "Aguardando ativação": conta lojas com `referral_status='active'` mas ainda em fase gratuita.
+### B. Safe-areas / Edge-to-edge Android
+1. `capacitor.config.ts`: adicionar plugin `StatusBar` com `overlaysWebView: false`, `style: 'DARK'`, `backgroundColor: '#FFFFFF'` (header branco do /cliente).
+2. Instalar `@capacitor/status-bar` (já pode estar) e aplicar no `nativeBoot.ts`:
+   - `StatusBar.setOverlaysWebView({ overlay: false })`
+   - `StatusBar.setBackgroundColor({ color: '#FFFFFF' })`
+3. `android/app/src/main/res/values/styles.xml`: adicionar `<item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>` e `<item name="android:fitsSystemWindows">true</item>` no `AppTheme.NoActionBarLaunch`.
+4. CSS global (`index.css`): adicionar utilitário `.safe-top { padding-top: env(safe-area-inset-top); }` e `.safe-bottom { padding-bottom: calc(env(safe-area-inset-bottom) + 5.25rem); }`.
+5. `NativeShell.tsx`: trocar `pb-[5.25rem]` por `safe-bottom`; header do `/cliente` ganha `safe-top`.
+6. `NativeBottomTabs`: adicionar `padding-bottom: env(safe-area-inset-bottom)` no container.
 
-**4. Lista de indicações (`ResellerIndicacoes`)**
-Cada card de loja mostra badge de estágio (do `getReferralEarningStage`):
-- 🟡 "Pré-bounty — X/20 pedidos"
-- 🔵 "Bounty pago · fase gratuita (faltam R$ Y de GMV)"
-- 🟢 "Gerando recorrente · R$ Z/mês"
+### C. Bump de versão + rebuild
+- `appVersion.ts` → v1.25.51
+- `build.gradle` → versionName "1.25.51", versionCode 10014
+- Rodar workflow **Build Android APKs → cliente** e reinstalar.
 
-Barra de progresso do GMV até o teto gratuito quando estágio = fase gratuita.
-
-**5. Tela de link/QR de divulgação**
-Abaixo do link, linha fixa em cinza:
-> "Você recebe 20% da mensalidade a partir do mês em que a loja passar de R$ 5.000 (Essencial) ou R$ 2.500 (Autonomia) em vendas."
-
-**6. Perfil do revendedor (`ResellerPerfil`)**
-Seção "Como funciona meu ganho" com os 3 estágios + link pros termos.
-
-**7. Materiais/copy prontos pra compartilhar**
-Se houver aba de "Materiais", incluir versão curta pronta pra WhatsApp já com a regra dentro do texto (não em asterisco).
-
-## Backend (dashboard RPC)
-`reseller_get_dashboard` já retorna `gmv_60d_cents` e `plan_type` por loja — adicionar no retorno:
-- `free_gmv_cents` (do template do plano)
-- `earning_stage` calculado no SQL
-Assim o front não recalcula regra de negócio.
-
-## Fora de escopo
-- Mudar valores/regra de comissão
-- Redesign visual completo (só adicionar os elementos explicativos nos layouts existentes)
+---
 
 ## Detalhes técnicos
-- Arquivo novo: `src/lib/resellerEarnings.ts`
-- Editar: `SejaRevendedor.tsx`, `ResellerAuth.tsx`, `revendedor/ResellerHome.tsx`, `revendedor/ResellerIndicacoes.tsx`, `revendedor/ResellerPerfil.tsx`, `useResellerDashboard.ts`
-- Edge function oneshot para atualizar `reseller_get_dashboard` retornando `earning_stage` + `free_gmv_cents`
-- Bump v1.25.48 + versionCode 10011
+
+- Blacklist em vez de whitelist reduz risco de regressão futura ao adicionar rotas cliente.
+- `overlaysWebView: false` é o modo mais seguro (não precisa refatorar todos os headers para respeitar `safe-area-inset-top`); se quiser visual "cheio até o topo" depois, invertemos.
+- `shortEdges` no cutout mode faz o app usar a área do notch em landscape sem esconder conteúdo.
+- Nenhum impacto no APK Parceiro — mudanças no guard são dentro do branch `currentMode === "client"`; StatusBar/styles são compartilhados mas neutros no parceiro (fundo escuro já combina).
+
+## Fora do escopo
+- Refatorar visual dos headers para "immersive full bleed" (deixamos para depois se quiser).
+- iOS (não gera APK, mas as mudanças de CSS/plugin já ficam prontas para quando for buildar).
