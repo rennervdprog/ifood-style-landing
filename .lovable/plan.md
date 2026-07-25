@@ -1,94 +1,94 @@
-# Redesign /cliente — Marketplace Profissional
+# Plano de UI/UX — /perfil
 
-Sai o feed genérico de blocos empilhados. Entra um **bento grid editorial** com hierarquia real, densidade calibrada e tipografia Sora/Manrope. Paleta ItaSuper mantida (amarelo `#FACC15` sobre fundo claro, acentos `hsl(var(--primary))`).
+## Problemas atuais
+- Header laranja ocupa muito espaço e o avatar do "Chat" flutuante sobrepõe o título "MEUS DADOS".
+- Lista longa e monótona: "Acesso Rápido", "Meus Dados", "Ações" empilhadas sem prioridade visual.
+- Status (OK / Pendente / Obrigatório) misturados sem agrupamento — cliente PDV vê seções irrelevantes (Endereço, PIX cliente).
+- Sem indicador de progresso do cadastro / próximos passos.
+- Versão e botão "Sair" perdidos no fim, sem destaque.
+- Tokens semânticos ok, mas hierarquia tipográfica fraca (tudo `text-sm font-semibold`).
 
-## Princípios visuais
-
-- **Sora** nos títulos (bold, tracking justo) — Manrope no corpo. Aplicados via `tailwind.config.ts` como `font-display` / `font-sans`.
-- Cantos `rounded-3xl` nos cards grandes, `rounded-2xl` nos médios, `rounded-xl` nos pills.
-- Sombra sutil `shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_24px_-12px_rgba(0,0,0,0.08)]` só nos cards de destaque.
-- Zero cores hardcoded — tudo via tokens `--background`, `--primary`, `--card`, `--muted`.
-- Skeleton nas 3 seções principais (não spinner).
-
-## Estrutura da nova home
+## Nova estrutura
 
 ```text
-┌──────────────────────────────────────────┐
-│ HEADER STICKY (endereço + sino + chat)   │
-│ Search pill + botão filtros              │
-├──────────────────────────────────────────┤
-│ BENTO HERO (2 colunas mobile)            │
-│ ┌────────────┬──────────────┐            │
-│ │            │  Cashback    │            │
-│ │  Banner    ├──────────────┤            │
-│ │  principal │  Frete grátis│            │
-│ └────────────┴──────────────┘            │
-├──────────────────────────────────────────┤
-│ Chips categorias (scroll horizontal)     │
-├──────────────────────────────────────────┤
-│ SUAS LOJAS (avatars circulares)          │
-├──────────────────────────────────────────┤
-│ ÚLTIMO PEDIDO (card premium refinado)    │
-├──────────────────────────────────────────┤
-│ DESTAQUES DA REGIÃO (bento 2x2)          │
-│ ┌──────────┬─────┐                       │
-│ │  Loja    │Loja │                       │
-│ │  grande  ├─────┤                       │
-│ │          │Loja │                       │
-│ └──────────┴─────┘                       │
-├──────────────────────────────────────────┤
-│ DESCUBRA (produtos, grid editorial 2 col)│
-│ Cards com preço grande, loja em pill,    │
-│ tag "aberta agora", rating inline        │
-├──────────────────────────────────────────┤
-│ TODAS AS LOJAS (lista rica)              │
-└──────────────────────────────────────────┘
+┌───────────────────────────────────────┐
+│  Header compacto (h-32, gradient)     │
+│  ← Avatar 64  Nome     [badge role]   │
+│               email · telefone        │
+├───────────────────────────────────────┤
+│  Card "Complete seu cadastro"         │
+│  ▓▓▓▓▓░░░ 3 de 5 · Continuar →        │  (só aparece se progresso < 100%)
+├───────────────────────────────────────┤
+│  Atalhos (grid 2x2, cards com ícone) │
+│  [Pedidos] [Painel Loja]              │
+│  [Endereço][Suporte]                  │
+├───────────────────────────────────────┤
+│  Seção "Conta"   (agrupada)           │
+│   • Dados pessoais       ✓            │
+│   • Endereço             ! Pendente   │
+│   • Dados PIX            ! Obrigatório│
+├───────────────────────────────────────┤
+│  Seção "Preferências"                 │
+│   • Tema (toggle inline)              │
+│   • Notificações                      │
+│   • Verificar atualização             │
+├───────────────────────────────────────┤
+│  Seção "Ajuda & Legal"                │
+│   • Central de ajuda                  │
+│   • Termos · Privacidade              │
+├───────────────────────────────────────┤
+│  Sair da conta  (btn ghost destaque)  │
+│  ItaSuper v1.25.46                    │
+└───────────────────────────────────────┘
 ```
 
-## Seções detalhadas
+## Mudanças por elemento
 
-**1. Header** — mantém, só ajusta tipografia para Sora e reduz padding vertical.
+### 1. Header
+- Reduzir altura (h-48 → h-32), remover blobs decorativos pesados.
+- Gradient sutil `from-primary to-primary/80`, texto branco.
+- Avatar 64px com iniciais + borda branca; nome em `text-lg font-black`, email em `text-xs opacity-80`.
+- Badge do papel (Lojista / Cliente / Entregador / Revendedor) como pill translúcida.
+- `ThemeToggle` movido para dentro da seção Preferências (não flutua no header).
 
-**2. Bento Hero (novo)** — substitui o `PromoBanners` atual. Grid `grid-cols-3 grid-rows-2`: banner principal ocupa `col-span-2 row-span-2`; 2 mini-cards laterais (cashback, frete grátis) fixos com ícone + micro-copy. Dados vêm de `banners` (já existe).
+### 2. Card de progresso de cadastro (novo)
+- Só renderiza quando faltam itens obrigatórios.
+- Barra de progresso + CTA "Continuar cadastro" que rola até primeiro pendente.
+- Usa cor primária para reforçar ação.
 
-**3. Categoria chips** — mantém `CategoryChips` mas com pills `bg-muted` + estado ativo `bg-primary text-primary-foreground`, altura 40px, sem borda.
+### 3. Atalhos (grid, não lista)
+- Grid `grid-cols-2 gap-3` de cards altos 96px com ícone grande + label.
+- Cards contextuais por papel:
+  - Cliente: Pedidos, Endereço, Favoritos, Suporte.
+  - Lojista: Pedidos, Painel Loja, Financeiro, Suporte.
+  - Entregador: Corridas, Ganhos, Documentos, Suporte.
+  - Revendedor: Indicações, Saques, Materiais, Suporte.
 
-**4. Suas lojas** — mantém, refina para avatars 56px com anel `ring-2 ring-primary/20` quando aberta.
+### 4. Seções agrupadas
+- Cada seção com título `text-[11px] uppercase tracking-wider text-muted-foreground` fora do card.
+- `MenuRow` mantém, mas:
+  - Adiciona divisórias sutis (`divide-y divide-border/50`) dentro do card.
+  - Status vira `StatusBadge` alinhado à direita antes do chevron.
+- Ocultar seções irrelevantes por papel (ex: PDV-only não mostra "Endereço de Entrega" nem "Dados PIX cliente").
 
-**5. Último pedido** — card premium com gradient sutil `from-primary/5 to-transparent`, botão "Pedir de novo" em destaque.
+### 5. Preferências
+- Tema com toggle inline (Sol/Lua) na própria row, sem navegar.
+- "Verificar atualização" com estado (última verificação, versão).
 
-**6. Destaques da região (redesenhado)** — substitui a rolagem horizontal "Destaques" por um **bento 2x2**: 1 loja grande (imagem 16:10 + overlay com nome, rating, tempo) + 2 lojas pequenas empilhadas à direita (avatar + nome + distância). Muito mais denso e visual que o carrossel atual.
-
-**7. Descubra (refinado, o que ficou genérico)** — grid 2 colunas com cards editoriais:
-   - Imagem aspect-square, corner-radius `rounded-3xl` só no topo
-   - Overlay inferior com gradient preto→transparente
-   - Nome do produto em Sora bold branco sobre a imagem
-   - Preço em pill amarelo flutuante no canto superior direito
-   - Nome da loja em pill `bg-background/90 backdrop-blur` sobre a imagem
-   - Micro-tag "aberta" com ponto verde pulsante
-   - Ordena por: aberta primeiro, com imagem, aleatório dentro disso
-
-**8. Todas as lojas** — lista vertical mantida, refinada com Sora e espaçamento `space-y-4`.
-
-## Arquivos
-
-- `src/pages/cliente/home/ClientHomeContent.tsx` — refatorar seções
-- `src/pages/cliente/home/BentoHero.tsx` — novo
-- `src/pages/cliente/home/HighlightsBento.tsx` — novo (destaques 2x2)
-- `src/pages/cliente/home/DiscoverGrid.tsx` — extrair produtos e reestilizar
-- `tailwind.config.ts` — adicionar `fontFamily: { display: ["Sora", ...], sans: ["Manrope", ...] }`
-- `index.html` — preload Google Fonts Sora + Manrope
-- `src/index.css` — utilitário `.font-display` (fallback) e classe `.card-elevated`
+### 6. Sair e versão
+- Botão `Sair da conta` em ghost com ícone, largura total, cor destructive.
+- Versão em `text-[10px] text-muted-foreground/60 text-center` logo abaixo.
 
 ## Detalhes técnicos
+- Arquivo: `src/pages/PerfilPage.tsx` (refator visual, sem alterar RPCs/queries).
+- Extrair sub-componentes: `ProfileHeader`, `CompletionCard`, `QuickActionsGrid`, `SectionGroup`.
+- Tokens: usar `hsl(var(--primary))` para gradient; `--muted`, `--border`, `--destructive` já definidos.
+- Responsivo: max-w-md centralizado; grid 2x2 vira 4x1 em ≥sm.
+- Reaproveitar `SignOutConfirm`, `ThemeToggle`, `MenuRow`, `StatusBadge`.
+- Nenhuma mudança de lógica de negócio, apenas apresentação.
+- Bump de versão + versionCode ao final.
 
-- Query `discover-products` ganha filtro `.order("created_at", { ascending: false })` + shuffle client-side dos 40 mais recentes → 12 finais. Mantém aleatoriedade sem parecer bagunçado.
-- Prefetch da loja no `onPointerEnter` dos cards de Descubra (padrão que já usamos em `StoreCard`).
-- Todos os cards com `loading="lazy"` e `decoding="async"` (mantém).
-- Suspense boundary por seção com `useDelayedFallback(180)`.
-
-## Versão
-
-Bump para **v1.25.41** em `src/lib/appVersion.ts` e `android/app/build.gradle` (versionCode 10004).
-
-Aprova pra eu implementar?
+## Fora do escopo
+- Novas telas ou fluxos (edição de dados continua nos modais atuais).
+- Alterações no BottomNav.
+- Mudanças no back-end / RPCs.
