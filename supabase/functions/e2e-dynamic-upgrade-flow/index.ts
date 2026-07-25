@@ -117,6 +117,8 @@ Deno.serve(async (req) => {
       delivery_fee: 0,
       payment_method: "pix",
       metadata: { e2e_marker: MARKER },
+      neighborhood: "E2E",
+      address_details: "E2E",
       created_at: new Date(now.getTime() - (i + 1) * 24 * 3600_000).toISOString(),
     }));
     const { error: insErr, data: inserted } = await admin.from("orders").insert(rows as any).select("id");
