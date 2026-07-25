@@ -85,8 +85,8 @@ const config: CapacitorConfig = {
     // Emite CSS vars --safe-area-inset-* ANTES do primeiro paint,
     // evitando o "pulo" do header/BottomNav ao abrir o app.
     SafeArea: {
-      enabled: true,
-      customColorsForSystemBars: false,
+      detectViewportFitCoverChanges: true,
+      initialViewportFitCover: true,
     },
   },
 };
