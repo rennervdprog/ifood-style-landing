@@ -98,7 +98,10 @@ const BottomNav = memo(() => {
    if (tabs.length === 0) return null;
  
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-lg border-t border-border/40 safe-area-bottom shadow-[0_-8px_30px_rgb(0,0,0,0.04)]">
+    <nav
+      className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-lg border-t border-border/40 shadow-[0_-8px_30px_rgb(0,0,0,0.04)]"
+      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+    >
       <div className="mx-auto max-w-md h-16 flex items-stretch justify-around px-2">
         {tabs.map((tab) => {
           const active = isActive(tab.path);
