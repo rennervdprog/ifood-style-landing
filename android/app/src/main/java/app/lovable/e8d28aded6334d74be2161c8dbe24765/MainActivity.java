@@ -73,6 +73,6 @@ public class MainActivity extends BridgeActivity {
             if (packageInfo.versionName != null) return packageInfo.versionName;
         } catch (PackageManager.NameNotFoundException ignored) {}
 
-        return "1.25.68";
+        return "1.25.69";
     }
 }

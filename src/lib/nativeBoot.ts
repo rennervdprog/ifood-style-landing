@@ -8,9 +8,11 @@ import { getCapacitorAppMode } from "@/lib/capacitorAppMode";
 
 let booted = false;
 let otaReadyCalled = false;
+let currentKeyboardHeight = 0;
 
 function setNativeKeyboardHeight(height: number) {
   const keyboardHeight = Math.max(0, Math.round(height || 0));
+  currentKeyboardHeight = keyboardHeight;
   const root = document.documentElement;
   const body = document.body;
 
@@ -30,19 +32,45 @@ function setNativeKeyboardHeight(height: number) {
 
 function scrollFocusedFieldIntoView(delay = 80) {
   window.setTimeout(() => {
-    const active = document.activeElement;
-    if (!(active instanceof HTMLElement)) return;
+    window.requestAnimationFrame(() => {
+      const active = document.activeElement;
+      if (!(active instanceof HTMLElement)) return;
 
-    const tagName = active.tagName.toLowerCase();
-    const isEditable =
-      tagName === "input" ||
-      tagName === "textarea" ||
-      active.isContentEditable ||
-      active.getAttribute("role") === "textbox";
+      const tagName = active.tagName.toLowerCase();
+      const isEditable =
+        tagName === "input" ||
+        tagName === "textarea" ||
+        active.isContentEditable ||
+        active.getAttribute("role") === "textbox";
 
-    if (!isEditable) return;
+      if (!isEditable) return;
 
-    active.scrollIntoView({ block: "center", inline: "nearest", behavior: "smooth" });
+      const rootScroller = document.getElementById("root");
+      const scroller = rootScroller || document.scrollingElement;
+      const keyboardTop = window.innerHeight - currentKeyboardHeight;
+      const safeBottom = Math.max(96, Math.min(window.innerHeight - 96, keyboardTop));
+      const safeTop = 72;
+      const rect = active.getBoundingClientRect();
+
+      if (rect.bottom <= safeBottom - 16 && rect.top >= safeTop) return;
+
+      const desiredBottom = safeBottom - 24;
+      const desiredTop = safeTop + 16;
+      const delta = rect.bottom > desiredBottom
+        ? rect.bottom - desiredBottom
+        : rect.top < desiredTop
+          ? rect.top - desiredTop
+          : 0;
+
+      if (Math.abs(delta) < 4) return;
+
+      if (scroller instanceof HTMLElement) {
+        scroller.scrollBy({ top: delta, left: 0, behavior: "smooth" });
+        return;
+      }
+
+      window.scrollBy({ top: delta, left: 0, behavior: "smooth" });
+    });
   }, delay);
 }
 

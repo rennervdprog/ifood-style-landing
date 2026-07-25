@@ -290,14 +290,14 @@ body.native-app {
   scroll-padding-bottom: calc(var(--native-keyboard-height, 0px) + 5rem);
 }
 
-.native-app.keyboard-open #root {
-  padding-bottom: calc(var(--native-keyboard-height, 0px) + var(--safe-area-inset-bottom, env(safe-area-inset-bottom)) + 1rem);
-}
-
 .native-app.keyboard-open input,
 .native-app.keyboard-open textarea,
 .native-app.keyboard-open [contenteditable="true"] {
   scroll-margin-bottom: calc(var(--native-keyboard-height, 0px) + 5rem);
+}
+
+.native-app.keyboard-open .native-hide-while-keyboard {
+  display: none !important;
 }
 
 .native-app * {
