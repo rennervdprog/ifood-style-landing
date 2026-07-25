@@ -25,6 +25,18 @@ function currentVersion(payload: Record<string, unknown>): string {
   );
 }
 
+function compareVersions(a: string, b: string): number {
+  const parse = (value: string) => value.split(/[.-]/).map((part) => Number.parseInt(part, 10) || 0);
+  const left = parse(a);
+  const right = parse(b);
+  const len = Math.max(left.length, right.length);
+  for (let i = 0; i < len; i += 1) {
+    const diff = (left[i] || 0) - (right[i] || 0);
+    if (diff !== 0) return diff > 0 ? 1 : -1;
+  }
+  return 0;
+}
+
 async function readManifest(baseUrl: string, mode: AppMode) {
   const manifestPath = `manifest-${mode}.json`;
   const url = `${baseUrl}/storage/v1/object/public/app-releases/${manifestPath}`;
@@ -74,7 +86,7 @@ Deno.serve(async (req) => {
     const manifest = await readManifest(baseUrl, mode);
     const installed = currentVersion(payload);
 
-    if (installed && installed === manifest.version) {
+    if (installed && compareVersions(installed, manifest.version) >= 0) {
       return new Response(
         JSON.stringify({
           kind: "up_to_date",
