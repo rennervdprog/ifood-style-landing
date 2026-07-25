@@ -82,6 +82,12 @@ const config: CapacitorConfig = {
       // Sem assinatura RSA — validação por SHA-256 no manifest.
       publicKey: '',
     },
+    // Emite CSS vars --safe-area-inset-* ANTES do primeiro paint,
+    // evitando o "pulo" do header/BottomNav ao abrir o app.
+    SafeArea: {
+      enabled: true,
+      customColorsForSystemBars: false,
+    },
   },
 };
 
