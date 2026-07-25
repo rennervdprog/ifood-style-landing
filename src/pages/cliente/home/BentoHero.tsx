@@ -91,7 +91,7 @@ const BentoHero = memo(({ activeAction, onExploreStores, onSelectNoFee, onSelect
             : "bg-primary/10 border-primary/20"
         }`}
       >
-        <Wallet className="h-4 w-4 text-primary" />
+        <Wallet className={`h-4 w-4 ${activeAction === "no_fee" ? "text-primary-foreground" : "text-primary"}`} />
         <div>
           <p className={`font-display font-bold text-xs leading-tight ${activeAction === "no_fee" ? "text-primary-foreground" : "text-foreground"}`}>Sem taxa</p>
           <p className={`text-[10px] leading-tight ${activeAction === "no_fee" ? "text-primary-foreground/80" : "text-muted-foreground"}`}>de serviço</p>
