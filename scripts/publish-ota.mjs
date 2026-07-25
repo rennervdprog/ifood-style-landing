@@ -1,16 +1,16 @@
 #!/usr/bin/env node
 /**
- * Publica um bundle OTA para o app Capacitor.
+ * Publica um bundle OTA para os apps Capacitor (cliente/parceiro).
  *
  * Fluxo:
- *   1. Zipa `dist/` → `.ota/<versão>.zip`
+ *   1. Zipa `dist/` → `.ota/<app>-<versão>.zip`
  *   2. Calcula SHA-256
  *   3. Faz upload do ZIP para o bucket `app-releases` do Supabase externo
- *   4. Reescreve `manifest.json` no bucket com {version, url, checksum}
+ *   4. Reescreve `manifest-cliente.json` ou `manifest-parceiro.json`
+ *      no bucket com {version, url, checksum}
  *
- * O plugin `@capgo/capacitor-updater` lê esse manifest via `updateUrl`
- * (capacitor.config.ts), baixa o bundle em background e aplica no próximo
- * cold start — sem precisar de novo APK na Play Store.
+ * O plugin `@capgo/capacitor-updater` consulta a edge function `ota-update`,
+ * que escolhe o manifest correto pelo app_id nativo do APK.
  *
  * Variáveis de ambiente necessárias:
  *   EXTERNAL_SUPABASE_URL
@@ -45,12 +45,15 @@ if (!versionMatch) {
   process.exit(1);
 }
 const version = versionMatch[1];
+const rawAppMode = (process.env.OTA_APP_MODE || process.env.VITE_CAPACITOR_APP_MODE || "cliente").toLowerCase();
+const appMode = rawAppMode === "parceiro" || rawAppMode === "partner" ? "parceiro" : "cliente";
+const appId = appMode === "parceiro" ? "app.itasuper.parceiro" : "app.itasuper.cliente";
 
 const outDir = resolve(".ota");
 if (!existsSync(outDir)) mkdirSync(outDir, { recursive: true });
-const zipPath = resolve(outDir, `${version}.zip`);
+const zipPath = resolve(outDir, `${appMode}-${version}.zip`);
 
-console.log(`📦 Zipando dist/ → ${zipPath}`);
+console.log(`📦 Zipando dist/ (${appMode}) → ${zipPath}`);
 // -r recursivo, -q silencioso, -X sem metadata extra, cwd dentro de dist/
 execSync(`cd dist && zip -rqX9 "${zipPath}" .`, { stdio: "inherit" });
 
@@ -60,7 +63,7 @@ const sizeKB = (buf.length / 1024).toFixed(1);
 console.log(`🔐 SHA-256: ${checksum}`);
 console.log(`📏 Tamanho: ${sizeKB} KB`);
 
-const bucketPath = `bundles/${version}.zip`;
+const bucketPath = `bundles/${appMode}/${version}.zip`;
 const uploadUrl = `${SUPABASE_URL}/storage/v1/object/app-releases/${bucketPath}`;
 
 console.log(`☁️  Upload → ${bucketPath}`);
@@ -85,12 +88,15 @@ const manifest = {
   url: publicUrl,
   checksum,
   size: buf.length,
+  appMode,
+  appId,
   publishedAt: new Date().toISOString(),
 };
 
-console.log(`📝 Atualizando manifest.json`);
+const manifestPath = `manifest-${appMode}.json`;
+console.log(`📝 Atualizando ${manifestPath}`);
 const mfRes = await fetch(
-  `${SUPABASE_URL}/storage/v1/object/app-releases/manifest.json`,
+  `${SUPABASE_URL}/storage/v1/object/app-releases/${manifestPath}`,
   {
     method: "POST",
     headers: {
@@ -103,10 +109,31 @@ const mfRes = await fetch(
   },
 );
 if (!mfRes.ok) {
-  console.error(`❌ Manifest falhou (${mfRes.status}):`, await mfRes.text());
+  console.error(`❌ ${manifestPath} falhou (${mfRes.status}):`, await mfRes.text());
   process.exit(1);
 }
 
-console.log(`✅ OTA v${version} publicada`);
-console.log(`   Manifest: ${SUPABASE_URL}/storage/v1/object/public/app-releases/manifest.json`);
+// Compatibilidade com APKs/diagnósticos antigos que ainda leem manifest.json.
+// Mantemos o cliente como fallback público, mas o fluxo correto usa ota-update.
+if (appMode === "cliente") {
+  const legacyMfRes = await fetch(
+    `${SUPABASE_URL}/storage/v1/object/app-releases/manifest.json`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${SERVICE_KEY}`,
+        "Content-Type": "application/json",
+        "x-upsert": "true",
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+      },
+      body: JSON.stringify(manifest, null, 2),
+    },
+  );
+  if (!legacyMfRes.ok) {
+    console.warn(`⚠️ manifest.json legado falhou (${legacyMfRes.status}):`, await legacyMfRes.text());
+  }
+}
+
+console.log(`✅ OTA ${appMode} v${version} publicada`);
+console.log(`   Manifest: ${SUPABASE_URL}/storage/v1/object/public/app-releases/${manifestPath}`);
 console.log(`   Bundle:   ${publicUrl}`);

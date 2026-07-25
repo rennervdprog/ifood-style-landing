@@ -95,3 +95,6 @@ verify_jwt = false
 [functions.oneshot-user-routing-rpc]
 verify_jwt = false
 
+[functions.ota-update]
+verify_jwt = false
+

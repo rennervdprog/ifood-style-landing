@@ -216,6 +216,14 @@ const PerfilPage = () => {
     let cancelled = false;
     const refreshVersion = async () => {
       try {
+        const { CapacitorUpdater } = await import("@capgo/capacitor-updater");
+        const current = await CapacitorUpdater.current().catch(() => null as any);
+        const bundleVersion = current?.bundle?.version;
+        if (!cancelled && bundleVersion && bundleVersion !== "builtin") {
+          setAppVersion(bundleVersion);
+          return;
+        }
+
         const { App } = await import("@capacitor/app");
         const info = await App.getInfo();
         if (!cancelled && info.version) setAppVersion(info.version);

@@ -68,7 +68,7 @@ const config: CapacitorConfig = {
       resetWhenUpdate: true,
       keepUrlPathAfterReload: true,
       updateUrl:
-        'https://qkjhguziuchqsbxzruea.supabase.co/storage/v1/object/public/app-releases/manifest.json',
+        'https://lktzrqjvqoojlrhqnxuz.supabase.co/functions/v1/ota-update',
       // Estatísticas/canais do serviço pago desligados.
       statsUrl: '',
       channelUrl: '',
