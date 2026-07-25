@@ -133,6 +133,10 @@ export default function ResellerAuth() {
                 <span>Sem meta, sem mensalidade — saque via PIX a partir de R$ 100</span>
               </li>
             </ul>
+            <div className="mt-4 rounded-lg border border-blue-500/30 bg-blue-500/5 p-3 text-[11px] text-muted-foreground">
+              ℹ️ Os 20% recorrentes só entram a partir do mês em que a loja indicada passa do GMV gratuito
+              (R$ 5.000 no Essencial ou R$ 2.500 na Autonomia) e começa a pagar mensalidade.
+            </div>
           </section>
 
           {/* Coluna direita: formulário */}
@@ -194,6 +198,14 @@ export default function ResellerAuth() {
                   {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   {mode === "signup" ? "Criar conta e continuar" : mode === "login" ? "Entrar" : "Enviar link"}
                 </Button>
+
+                {mode === "signup" && (
+                  <p className="text-[11px] text-muted-foreground bg-muted/40 rounded-md p-2 leading-relaxed">
+                    Ao criar a conta, você entende que a comissão recorrente de 20% só é paga a partir do mês em
+                    que a loja indicada passa do GMV gratuito e começa a pagar mensalidade. O bounty de R$ 50 é
+                    pago após 20 pedidos entregues.
+                  </p>
+                )}
 
                 <div className="text-xs text-center text-muted-foreground pt-2 space-y-1">
                   {mode === "signup" && (
