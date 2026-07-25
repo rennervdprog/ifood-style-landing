@@ -12,6 +12,9 @@
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
         <item name="android:background">@null</item>
+        <!-- Fundo branco da Activity — evita faixa preta atrás do WebView
+             quando o teclado abre e o body encolhe (Keyboard resize=Body). -->
+        <item name="android:windowBackground">@android:color/white</item>
         <!-- 🔒 Edge-to-edge: permite que o app desenhe atrás das barras do sistema -->
         <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
     </style>
