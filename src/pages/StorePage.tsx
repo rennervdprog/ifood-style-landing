@@ -225,18 +225,22 @@ const StorePage = () => {
    // Track scroll to show name in header
    useEffect(() => {
      let ticking = false;
+    const scrollElement = getPageScrollElement();
+    const isWindow = isDocumentScrollElement(scrollElement);
      const handleScroll = () => {
        if (ticking) return;
        ticking = true;
        window.requestAnimationFrame(() => {
-         const isScrolled = window.scrollY > 150;
+        const y = isWindow ? window.scrollY : scrollElement.scrollTop;
+        const isScrolled = y > 150;
          setScrolled((prev) => (prev !== isScrolled ? isScrolled : prev));
          ticking = false;
        });
      };
 
-     window.addEventListener("scroll", handleScroll, { passive: true });
-     return () => window.removeEventListener("scroll", handleScroll);
+    const target: EventTarget = isWindow ? window : scrollElement;
+    target.addEventListener("scroll", handleScroll, { passive: true } as any);
+    return () => target.removeEventListener("scroll", handleScroll as any);
    }, []);
 
   const { data: storeHours } = useQuery({
