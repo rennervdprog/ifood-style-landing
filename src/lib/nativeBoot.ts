@@ -96,18 +96,10 @@ export async function nativeBoot() {
     await Keyboard.setAccessoryBarVisible({ isVisible: false }).catch(() => {});
   } catch {}
 
-  // 5) Safe-area nativo — publica --safe-area-inset-* como CSS vars
-  //    logo no primeiro paint, evitando o "pulo" do notch.
+  // 5) Safe-area nativo — o plugin @capacitor-community/safe-area já publica
+  //    as CSS vars --safe-area-inset-* automaticamente no boot nativo
+  //    (config em capacitor.config.ts). Aqui só logamos que carregou.
   try {
-    const { SafeArea } = await import("@capacitor-community/safe-area");
-    await SafeArea.enable({
-      config: {
-        customColorsForSystemBars: false,
-        statusBarColor: "#00000000",
-        statusBarContent: "light",
-        navigationBarColor: "#00000000",
-        navigationBarContent: "light",
-      },
-    });
+    await import("@capacitor-community/safe-area");
   } catch {}
 }
