@@ -1,59 +1,103 @@
-# Plano — Matar spinners desnecessários
 
-Objetivo: nenhum spinner de tela cheia quando já temos cache, dados públicos ou pode-se mostrar skeleton. UX deve parecer instantânea.
+# Plano — Fonte da verdade única dos planos dinâmicos
 
-## Diagnóstico (achados reais)
+Objetivo: fazer o Super Admin ser o **único lugar** que decide preço, threshold e taxa da plataforma. Hoje esses valores estão hardcoded em 3 pontos do código, o que causou toda a divergência que auditamos.
 
-**Spinners de tela cheia que aparecem toda navegação (piores):**
-1. `PageLoader` global do `<Suspense>` em `App.tsx` — dispara mesmo em rotas já carregadas no cache do browser porque o chunk lazy re-avalia. Aparece por 30–80ms em cada troca de rota rápida.
-2. `PerfilPage`, `PedidosPage`, `CheckoutPage`, `PdvCardapioPage` (6 spinners cada) — cada seção tem `if (loading) return <Spinner/>` bloqueando render inteiro em vez de skeleton parcial.
-3. `AdminDashboardV2` / `SuperAdminDashboardV2` / `MatrizDashboard` — tela branca+spinner enquanto `useUserRouting` valida, mesmo com sessão em cache.
-4. `PartnerLogin` / `PartnerOnboarding` — spinner full-screen enquanto decide redirect (deveria redirecionar direto sem render).
-5. `PdvKdsPage`, `PdvPage` — spinner a cada refetch de pedidos por causa de `refetchOnWindowFocus` sem `keepPreviousData`/`placeholderData`.
-6. `StorePage`, `PublicOrderTracking`, `BlogPost` — spinner full-screen em dados 100% públicos que dá pra SSG/pré-cachear ou mostrar skeleton com shape real.
-7. `AdminPlanManager` (8 spinners), `AsaasFinancialPanel`, `AsaasSubaccountSetup` — cada botão/aba com spinner separado; muitos ficam em loop porque a query invalida a si mesma.
-8. `ResellerDashboard` — spinner enquanto `MrrAreaChart` lazy carrega (já lazy, mas fallback é spinner grande em vez de mini-shape do gráfico).
-9. `CapacitorRouteGuard` e `StoreAppGuard` — flicker de spinner no boot antes de decidir rota.
+## Fonte da verdade acordada
 
-**Causas raízes comuns:**
-- Uso de `if (isLoading) return <Spinner/>` em vez de `placeholderData: keepPreviousData` do React Query.
-- Falta de `initialData` vindo do cache em queries que já rodaram no `useUserRouting`.
-- Suspense fallback global sempre é spinner grande — deveria ser transparente para rotas <200ms.
-- Guards que renderizam spinner enquanto poderiam apenas retornar `null` (não flickam) ou `<Navigate/>` direto.
+| Item | Valor | Onde vive hoje |
+|---|---|---|
+| Taxa plataforma | R$ 0,99 | ✅ `admin_settings.delivery_fee_config.platform_split` |
+| Essencial | Grátis até R$ 5.000 → R$ 89,90 + taxa | ❌ `plan_templates` diz R$ 180; cron hardcoded |
+| Autonomia | Grátis até R$ 2.500 → R$ 199,90 sem taxa | ❌ `plan_templates` diz R$ 229,90; cron hardcoded |
+| PDV Only | R$ 69,00 | ❌ template não existe |
+| VIP | `essencial_lifetime_free` / `autonomy_lifetime_free` | ✅ funciona |
 
-## Fases
+## Fase 1 — Banco (oneshot no Supabase externo)
 
-### Fase 1 — Suspense inteligente (maior ROI)
-- Trocar `PageLoader` global por fallback com delay de 150ms (`useDelayedFallback`) — se o chunk carrega antes, nenhum spinner aparece.
-- Manter shell (header/nav) fora do Suspense de rota para não piscar.
+Uma edge function `oneshot-plans-source-of-truth`:
 
-### Fase 2 — React Query stale-while-revalidate
-- Adicionar `placeholderData: keepPreviousData` nas queries dos dashboards que refazem fetch no focus: `PdvPage`, `PdvKdsPage`, `AdminDashboardV2`, `DriverDashboardV2`, `PedidosPage`.
-- Definir `staleTime` alto (30–60s) em `useUserRouting`, `useStorePlan`, `useUserRole` — hoje tudo é 0 e refaz a cada mount.
+1. `ALTER TABLE plan_templates ADD COLUMN IF NOT EXISTS revenue_threshold NUMERIC DEFAULT 0`
+2. `ALTER TABLE plan_templates ADD COLUMN IF NOT EXISTS platform_fee_included BOOLEAN DEFAULT true`
+3. UPDATE Essencial → `monthly_fee=89.90, revenue_threshold=5000, platform_fee_included=true, description='Grátis até R$ 5.000/mês em vendas. Após, R$ 89,90/mês + R$ 0,99 por entrega.'`
+4. UPDATE Autonomia → `monthly_fee=199.90, revenue_threshold=2500, platform_fee_included=false, description='Grátis até R$ 2.500/mês em vendas. Após, R$ 199,90/mês sem taxa da plataforma. Apenas PIX online: R$ 1,99/pedido.'`
+5. INSERT `pdv_only` → R$ 69,00, threshold 0, sem taxa.
+6. `UPDATE plan_templates SET is_active=false WHERE plan_key IN ('hybrid','supporter')` (legados, sem novos cadastros).
+7. Adicionar RPC `admin_update_plan_template(p_id uuid, p_monthly_fee numeric, p_revenue_threshold numeric, p_commission_rate numeric, p_description text)` — SECURITY DEFINER + `has_role(auth.uid(),'admin')`.
 
-### Fase 3 — Guards sem flicker
-- `RoleGuard`, `CapacitorRouteGuard`, `StoreAppGuard`, `LojistaHomeRedirect`, `PartnerLogin` redirect: quando `loading`, retornar `null` (não `<Spinner/>`) — o Suspense já cobre e evita duplo-spinner.
-- Persistir última rota conhecida por role em `localStorage` para redirect síncrono no boot (elimina spinner de "decidindo pra onde ir").
+## Fase 2 — Refatorar código para ler do banco
 
-### Fase 4 — Skeletons no lugar de spinners de página
-- Substituir spinner full-screen por skeleton com shape real em: `PerfilPage`, `PedidosPage`, `CheckoutPage`, `StorePage`, `BlogPost`, `PublicOrderTracking`, `ResellerDashboard`, `PdvCardapioPage`.
-- Reutilizar `Skeleton` do shadcn já disponível.
+**`check-essencial-upgrade/index.ts`** (L21-22):
+Remover objeto hardcoded. No início da função, carregar de `plan_templates`:
+```ts
+const { data: tpls } = await sb.from("plan_templates")
+  .select("plan_key, monthly_fee, revenue_threshold")
+  .in("plan_key", ["fixed","autonomy"]);
+const PLAN_CONFIG = {
+  fixed:    { threshold: tpls.find(t=>t.plan_key==="fixed").revenue_threshold,    upgradeFee: tpls.find(t=>t.plan_key==="fixed").monthly_fee },
+  autonomy: { threshold: tpls.find(t=>t.plan_key==="autonomy").revenue_threshold, upgradeFee: tpls.find(t=>t.plan_key==="autonomy").monthly_fee },
+};
+```
 
-### Fase 5 — Componentes internos
-- `AdminPlanManager`, `AsaasFinancialPanel`, `AsaasSubaccountSetup`, `WhatsAppSetup`: trocar spinner de aba inteira por spinner inline no botão de ação. Nunca esconder conteúdo já carregado.
-- `MrrAreaChart` Suspense fallback vira `<Skeleton className="h-64"/>`.
+**`respond-essencial-upgrade/index.ts`** (L69):
+```ts
+const { data: tpl } = await sb.from("plan_templates")
+  .select("monthly_fee")
+  .eq("plan_key", plan.plan_type === "autonomy" ? "autonomy" : "fixed").single();
+const monthlyFee = Number(tpl.monthly_fee);
+```
 
-### Fase 6 — Validação
-- Playwright: medir tempo até "conteúdo visível" em `/admin`, `/super-admin`, `/entregador`, `/cliente`, `/pedidos`, `/perfil` — target: nenhum spinner full-screen visível se rota trocar em <200ms.
-- Regressão: rodar `routing-source-of-truth.spec.ts` e suíte E2E.
-- Bump versão + versionCode.
+**`AdminPlanManager.tsx`**: remover `FALLBACK_DEFAULTS`, usar novo hook `usePlanTemplates()` (React Query, staleTime 5min, lê `plan_templates` via anon client). Formulário chama `admin_update_plan_template`.
+
+**`plansInfo.ts`**: adicionar `getPlanConfig(planKey)` que consulta cache do hook e cai em fallback estático quando offline.
+
+## Fase 3 — UI consome fonte única
+
+Substituir constantes hardcoded em:
+- `StoreDirectory.tsx` (L63/L116/L735 — regra do gatilho dinâmico)
+- `EssencialProgressCard.tsx` (L15 R$ 239,90)
+- `PlansComparisonTable.tsx` (L15 R$ 180 e L17 R$ 239,90)
+- `PlanSummaryCard.tsx` / `RepasseSection.tsx` (labels)
+
+Todos passam a chamar `usePlanTemplates()`. Adicionar coluna PDV Only na `PlansComparisonTable`.
+
+## Fase 4 — E2E real do ciclo dinâmico
+
+Novo `e2e/07-plano-dinamico-upgrade.spec.ts` cobrindo Essencial **e** Autonomia:
+
+```text
+Para cada plano (fixed=5000, autonomy=2500):
+  1. Reset store de teste (essencial_upgrade_scheduled_at=null, revenue=0)
+  2. oneshot-simulate-essencial injeta GMV > threshold
+  3. Chama check-essencial-upgrade
+  4. Assert: essencial_upgrade_scheduled_at != null no banco
+  5. Login lojista → assert banner "atingiu o limite" visível
+  6. Clica "Aceitar cobrança"
+  7. Assert: monthly_fee = valor do template (não valor hardcoded)
+  8. Assert: essencial_upgrade_response = 'accepted'
+Cenário VIP: mesma loja com lifetime_free=true, atinge threshold, cron NÃO agenda upgrade.
+```
+
+Também um teste unitário Vitest garantindo que se `plan_templates.monthly_fee` for editado para R$ 99,90, `respond-essencial-upgrade` grava 99,90 (não 89,90).
+
+## Fase 5 — Validação e release
+
+- `tsgo` typecheck.
+- Rodar spec novo + `routing-source-of-truth.spec.ts`.
+- Auditar via `oneshot-audit-plans-external` que `plan_templates` bate com fonte da verdade.
+- Bump para **v1.25.32** (`appVersion.ts`, `build.gradle` versionName + versionCode).
 
 ## Detalhes técnicos
 
-- Novo util `src/lib/useDelayedFallback.ts` — hook que retorna `true` só depois de N ms montado; usado no fallback do Suspense.
-- Novo util `src/lib/lastRouteByRole.ts` — grava/lê último path por role para redirect síncrono no boot.
-- React Query defaults centralizados em `src/lib/queryClient.ts`: `staleTime: 30_000`, `refetchOnWindowFocus: 'always'` mas com `placeholderData: keepPreviousData` opt-in por query.
-- Regra: qualquer `if (loading) return <Spinner .../>` em componente de página → refatorar para skeleton OU `null` se for guard.
+- Nenhuma alteração no fluxo do `monthly-billing` (já lê template corretamente).
+- `admin_settings.delivery_fee_config.platform_split` já vale 0.99 — não mexer.
+- Legados `hybrid`/`supporter` ficam `is_active=false` mas não são deletados (histórico de `store_plans` referencia).
+- Aceite expresso continua funcionando como está — só ganha a leitura dinâmica do preço.
+- VIP (`*_lifetime_free`) já tem prioridade no cron, não precisa mudar.
 
-## Estimativa
-Fase 1: 20min · Fase 2: 40min · Fase 3: 30min · Fase 4: 1h · Fase 5: 40min · Fase 6: 30min.
+## O que este plano NÃO faz
+
+- Não muda a UX do banner de aceite (mantém texto e botões atuais).
+- Não mexe em cobrança de PIX operacional (R$ 1,99) nem em Asaas.
+- Não altera o cron `monthly-plan-upgrade-check` (só o `check-essencial-upgrade-daily`).
+- Não migra lojas legadas para os novos planos automaticamente.

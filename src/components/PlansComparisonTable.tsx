@@ -12,9 +12,9 @@ const ROWS: Row[] = [
     label: "Mensalidade",
     values: {
       commission_only: "R$ 0",
-      fixed: "R$ 0 → R$ 180*",
+      fixed: "R$ 0 → R$ 89,90*",
       supporter: "R$ 75",
-      autonomy: "R$ 0 → R$ 239,90*",
+      autonomy: "R$ 0 → R$ 199,90*",
     } as Record<StorePlanType, string>,
   },
   {

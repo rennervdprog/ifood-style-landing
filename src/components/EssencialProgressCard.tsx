@@ -8,11 +8,10 @@ import { useState } from "react";
 
 const WINDOW_DAYS = 60;
 
-// Config por plano: threshold de GMV (60 dias) → fee de upgrade.
-// Reaproveita as mesmas colunas `essencial_upgrade_*` e o mesmo cron.
-const PLAN_CONFIG: Record<string, { threshold: number; upgradeFee: number; planName: string }> = {
-  fixed:    { threshold: 5000, upgradeFee: 180,    planName: "Essencial" },
-  autonomy: { threshold: 2500, upgradeFee: 239.90, planName: "Autonomia" },
+// Fallback só se plan_templates estiver offline. Valores reais vêm do banco.
+const PLAN_FALLBACK: Record<string, { threshold: number; upgradeFee: number; planName: string }> = {
+  fixed:    { threshold: 5000, upgradeFee: 89.90,  planName: "Essencial" },
+  autonomy: { threshold: 2500, upgradeFee: 199.90, planName: "Autonomia" },
 };
 
 interface Props {
@@ -23,7 +22,30 @@ interface Props {
 export default function EssencialProgressCard({ store, storePlan }: Props) {
   const qc = useQueryClient();
   const [saving, setSaving] = useState(false);
-  const cfg = PLAN_CONFIG[storePlan?.planType as string];
+  const planKey = (storePlan?.planType as string) || "fixed";
+
+  // Fonte da verdade: plan_templates (cacheado 5min).
+  const { data: tpl } = useQuery({
+    queryKey: ["plan-template", planKey],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("plan_templates" as any)
+        .select("monthly_fee, revenue_threshold, label")
+        .eq("plan_key", planKey)
+        .maybeSingle();
+      return data as any;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const fb = PLAN_FALLBACK[planKey];
+  const cfg = fb
+    ? {
+        threshold: Number(tpl?.revenue_threshold) || fb.threshold,
+        upgradeFee: Number(tpl?.monthly_fee) || fb.upgradeFee,
+        planName: tpl?.label || fb.planName,
+      }
+    : undefined;
   // Elegível para o card dinâmico: planos Essencial/Autonomia na entrada grátis.
   const eligible =
     !!cfg &&
@@ -33,7 +55,7 @@ export default function EssencialProgressCard({ store, storePlan }: Props) {
     !storePlan?.isInTrial;
 
   const THRESHOLD = cfg?.threshold ?? 5000;
-  const UPGRADE_FEE = cfg?.upgradeFee ?? 180;
+  const UPGRADE_FEE = cfg?.upgradeFee ?? 89.90;
   const PLAN_NAME = cfg?.planName ?? "Essencial";
 
   const { data } = useQuery({

@@ -42,10 +42,10 @@ const FALLBACK_DESCRIPTIONS: Record<DisplayPlan, string> = {
 
 const FALLBACK_DEFAULTS: Record<DisplayPlan, { monthly_fee: number; commission_rate: number }> = {
   supporter: { monthly_fee: SUPPORTER_FEE, commission_rate: 0 },
-  fixed: { monthly_fee: 90, commission_rate: 0 },
+  fixed: { monthly_fee: 89.90, commission_rate: 0 },
   hybrid: { monthly_fee: 50, commission_rate: 2.5 },
   commission_only: { monthly_fee: 0, commission_rate: 6 },
-  autonomy: { monthly_fee: 229.9, commission_rate: 0 },
+  autonomy: { monthly_fee: 199.90, commission_rate: 0 },
 };
 
 const FALLBACK_FEATURES: Record<DisplayPlan, string[]> = {
@@ -933,7 +933,7 @@ function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride
                       <Crown className="h-3 w-3 text-amber-500" />
                       Essencial vitalício R$ 0
                     </p>
-                    <p className="text-[10px] text-muted-foreground">Bloqueia o upgrade automático para R$ 180 ao atingir R$ 5.000 em vendas. Nenhuma cobrança será gerada.</p>
+                    <p className="text-[10px] text-muted-foreground">Bloqueia o upgrade automático para R$ 89,90 ao atingir R$ 5.000 em vendas. Nenhuma cobrança será gerada.</p>
                   </div>
                   <button
                     onClick={toggleLifetimeFree}
@@ -951,7 +951,7 @@ function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride
                       <Crown className="h-3 w-3 text-purple-500" />
                       Autonomia vitalícia R$ 0
                     </p>
-                    <p className="text-[10px] text-muted-foreground">Bloqueia o upgrade automático para R$ 239,90 ao atingir R$ 2.500 em vendas. Nenhuma cobrança será gerada.</p>
+                    <p className="text-[10px] text-muted-foreground">Bloqueia o upgrade automático para R$ 199,90 ao atingir R$ 2.500 em vendas. Nenhuma cobrança será gerada.</p>
                   </div>
                   <button
                     onClick={toggleAutonomyLifetime}
