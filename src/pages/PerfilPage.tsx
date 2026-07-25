@@ -1141,19 +1141,32 @@ const PerfilPage = () => {
             Testar Sentry
           </button>
           {isCapacitorNative() && (
-            <button 
+            <button
               onClick={async () => {
-                toast.promise(
-                  Promise.all([
-                    forceCheckForOtaUpdate(),
-                    checkAppVersion((import.meta.env.VITE_CAPACITOR_APP_MODE || "cliente") as "cliente" | "parceiro")
-                  ]),
-                  {
-                    loading: 'Verificando atualizações...',
-                    success: 'Verificação concluída — reabra o app se houver atualização',
-                    error: 'Erro ao verificar atualizações'
+                const tId = toast.loading("Verificando atualizações...");
+                try {
+                  const result = await forceCheckForOtaUpdate();
+                  checkAppVersion(
+                    (import.meta.env.VITE_CAPACITOR_APP_MODE || "cliente") as "cliente" | "parceiro"
+                  ).catch(() => {});
+                  if (result.status === "applied") {
+                    toast.success(`Atualizado para v${result.version}`, {
+                      id: tId,
+                      description: "Reabrindo o app...",
+                    });
+                  } else if (result.status === "up-to-date") {
+                    toast.success(`Já está na última versão (v${result.current})`, { id: tId });
+                  } else if (result.status === "error") {
+                    toast.error("Erro ao atualizar", { id: tId, description: result.message });
+                  } else {
+                    toast.dismiss(tId);
                   }
-                );
+                } catch (e: any) {
+                  toast.error("Erro ao verificar atualizações", {
+                    id: tId,
+                    description: e?.message || String(e),
+                  });
+                }
               }}
               className="text-[10px] font-bold text-primary hover:underline"
             >
