@@ -473,6 +473,8 @@ export default function RevendedoresTab() {
         </Card>
       )}
 
+      {tab === "fraud" && <AntiFraudPanel />}
+
       {/* Config dialog */}
       <Dialog open={!!editReseller} onOpenChange={(o) => !o && setEditReseller(null)}>
         <DialogContent>
