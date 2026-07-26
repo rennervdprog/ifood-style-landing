@@ -4,8 +4,10 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.view.View;
 import android.webkit.CookieManager;
 import android.webkit.WebView;
+import android.webkit.WebSettings;
 
 import com.getcapacitor.BridgeActivity;
 
@@ -16,7 +18,41 @@ public class MainActivity extends BridgeActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        enableWebViewDebuggingIfDebugBuild();
+        tuneWebViewForSmoothness();
         clearWebViewCacheAfterNativeUpdate();
+    }
+
+    /**
+     * Habilita inspeção via chrome://inspect e conexão do Playwright (CDP)
+     * ao WebView do app. Só ativa em builds debug — nunca em produção.
+     */
+    private void enableWebViewDebuggingIfDebugBuild() {
+        try {
+            if ((getApplicationInfo().flags & android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0) {
+                WebView.setWebContentsDebuggingEnabled(true);
+            }
+        } catch (Exception ignored) {}
+    }
+
+    /**
+     * Fluidez: prioridade alta de render, pré-raster fora do viewport
+     * (scroll longo de cardápio fica sem "stutter") e layer hardware.
+     * Roda 1x logo após o Bridge inicializar o WebView.
+     */
+    private void tuneWebViewForSmoothness() {
+        try {
+            if (bridge == null || bridge.getWebView() == null) return;
+            WebView wv = bridge.getWebView();
+            WebSettings s = wv.getSettings();
+            s.setRenderPriority(WebSettings.RenderPriority.HIGH);
+            s.setCacheMode(WebSettings.LOAD_DEFAULT);
+            s.setOffscreenPreRaster(true);
+            wv.setLayerType(View.LAYER_TYPE_HARDWARE, null);
+            // Fundo do WebView casando com o app (evita faixa preta atrás
+            // do webview quando o teclado abre e o body encolhe).
+            wv.setBackgroundColor(0xFFFFFFFF);
+        } catch (Exception ignored) {}
     }
 
     private void clearWebViewCacheAfterNativeUpdate() {
@@ -50,6 +86,6 @@ public class MainActivity extends BridgeActivity {
             if (packageInfo.versionName != null) return packageInfo.versionName;
         } catch (PackageManager.NameNotFoundException ignored) {}
 
-        return "1.9.32";
+        return "1.25.70";
     }
 }

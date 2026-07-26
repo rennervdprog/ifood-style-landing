@@ -5,6 +5,8 @@
 import { Capacitor } from "@capacitor/core";
 import { claimFcmPushToken } from "@/lib/pushRegistration";
 import { rememberPushIdentifier, getStoredPushState, getCurrentPushDeviceInfo } from "@/lib/pushSession";
+import { runTopBackHandler } from "@/lib/backHandler";
+import { popNavStack, stackSize } from "@/lib/nativeNavStack";
 
 let listenersReady = false;
 let registrationPromise: Promise<string | null> | null = null;
@@ -284,9 +286,17 @@ export async function configureStatusBar() {
 
   try {
     const { StatusBar, Style } = await import("@capacitor/status-bar");
-    // Style.Light = ícones brancos (combina com fundo laranja da marca)
-    await StatusBar.setStyle({ style: Style.Light });
-    await StatusBar.setBackgroundColor({ color: "#FF6B00" });
+    // Cliente = header branco → ícones escuros; Parceiro = laranja → ícones brancos.
+    const { getCapacitorAppMode } = await import("@/lib/capacitorAppMode");
+    const mode = getCapacitorAppMode();
+    if (mode === "client") {
+      await StatusBar.setStyle({ style: Style.Dark }); // Dark = ícones escuros
+      await StatusBar.setBackgroundColor({ color: "#FFFFFF" });
+    } else {
+      await StatusBar.setStyle({ style: Style.Light });
+      await StatusBar.setBackgroundColor({ color: "#FF6B00" });
+    }
+    // overlay:false → WebView não desenha atrás da status bar (respeita notch).
     await StatusBar.setOverlaysWebView({ overlay: false });
   } catch (e) {
     console.warn("[StatusBar] Error:", e);
@@ -345,21 +355,55 @@ export async function setupAppListeners() {
   try {
     const { App } = await import("@capacitor/app");
 
-    App.addListener("backButton", ({ canGoBack }) => {
-      const path = window.location.pathname;
+    App.addListener("backButton", () => {
       const HOME = "/cliente";
 
-      // Se já está na home do cliente, minimiza o app
-      if (path === HOME || path === HOME + "/") {
+      // 1) Modal/sheet/drawer aberto consome o back primeiro (LIFO).
+      if (runTopBackHandler()) return;
+
+      // 1b) Fallback genérico: se há qualquer overlay Radix aberto
+      // (Dialog/Sheet/Drawer/Popover), fecha via Escape em vez de navegar.
+      try {
+        const openOverlay = document.querySelector(
+          '[data-state="open"][role="dialog"], [data-state="open"][role="alertdialog"], [data-radix-popper-content-wrapper] [data-state="open"]'
+        );
+        if (openOverlay) {
+          const ev = new KeyboardEvent("keydown", {
+            key: "Escape",
+            code: "Escape",
+            keyCode: 27,
+            which: 27,
+            bubbles: true,
+            cancelable: true,
+          });
+          document.dispatchEvent(ev);
+          return;
+        }
+      } catch {}
+
+      const path = window.location.pathname;
+      const search = window.location.search;
+
+      // 2) Já está na home do cliente sem query → minimiza o app.
+      if ((path === HOME || path === HOME + "/") && !search) {
         App.minimizeApp();
         return;
       }
 
-      // Qualquer outra rota (loja, carrinho, checkout, pedidos, perfil, auth…)
-      // volta direto pra home do cliente, sem depender do history stack
-      setPendingPushNavigation(HOME);
+      // 3) Tem histórico próprio → pop e navega para a entrada anterior.
+      if (stackSize() > 1) {
+        const prev = popNavStack();
+        if (prev) {
+          window.dispatchEvent(
+            new CustomEvent("capacitor-push-navigate", { detail: { path: prev, replace: true } })
+          );
+          return;
+        }
+      }
+
+      // 4) Fallback: cai na home do cliente.
       window.dispatchEvent(
-        new CustomEvent("capacitor-push-navigate", { detail: { path: HOME } })
+        new CustomEvent("capacitor-push-navigate", { detail: { path: HOME, replace: true } })
       );
     });
 
@@ -391,10 +435,42 @@ export async function requestLocationPermission(): Promise<boolean> {
 
   try {
     const { Geolocation } = await import("@capacitor/geolocation");
-    const perm = await Geolocation.requestPermissions();
-    const granted = perm.location === "granted" || perm.coarseLocation === "granted";
-    console.log(`[Location] Permission: ${granted ? "granted" : perm.location}`);
-    return granted;
+    const isGranted = (perm: { location?: string; coarseLocation?: string } | null | undefined) =>
+      perm?.location === "granted" || perm?.coarseLocation === "granted";
+
+    try {
+      // No Android, getCurrentPosition dispara o prompt nativo no fluxo correto
+      // e só depois tenta ler o GPS; requestPermissions pode falhar antes do
+      // prompt quando o serviço de localização do aparelho está desligado.
+      await Geolocation.getCurrentPosition({
+        enableHighAccuracy: true,
+        timeout: 10_000,
+        maximumAge: 60_000,
+      });
+      console.log("[Location] Permission: granted");
+      return true;
+    } catch (positionError) {
+      try {
+        const checked = await Geolocation.checkPermissions();
+        if (isGranted(checked)) {
+          console.log("[Location] Permission: granted (position unavailable)");
+          return true;
+        }
+      } catch {
+        // Se o GPS do aparelho estiver desligado, checkPermissions pode lançar
+        // erro mesmo após o prompt de permissão ter sido exibido.
+      }
+
+      try {
+        const requested = await Geolocation.requestPermissions({ permissions: ["location"] });
+        const granted = isGranted(requested);
+        console.log(`[Location] Permission: ${granted ? "granted" : requested.location}`);
+        return granted;
+      } catch (requestError) {
+        console.warn("[Location] Permission request failed:", requestError || positionError);
+        return false;
+      }
+    }
   } catch (e) {
     console.warn("[Location] Permission request failed:", e);
     return false;

@@ -30,6 +30,9 @@ verify_jwt = false
 [functions.oneshot-fix-e2e-boutique]
 verify_jwt = false
 
+[functions.oneshot-reseller-fraud-report]
+verify_jwt = false
+
 [functions.oneshot-diag-e2e-boutique]
 verify_jwt = false
 
@@ -90,5 +93,8 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.oneshot-user-routing-rpc]
+verify_jwt = false
+
+[functions.ota-update]
 verify_jwt = false
 

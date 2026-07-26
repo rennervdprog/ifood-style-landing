@@ -546,7 +546,7 @@ const GuestCheckoutPage = () => {
         </label>
       </div>
 
-      <div className="fixed bottom-0 inset-x-0 bg-card border-t border-border p-4">
+      <div className="native-hide-while-keyboard fixed bottom-0 inset-x-0 bg-card border-t border-border p-4">
         <button onClick={handleConfirm} disabled={submitting}
           className="w-full h-12 bg-primary text-primary-foreground font-bold rounded-xl active:scale-[0.98] disabled:opacity-50">
           {submitting ? "Enviando..." : `Confirmar pedido — ${formatBRL(total)}`}

@@ -18,6 +18,9 @@ export const queryClient = new QueryClient({
       refetchOnReconnect: true,
       refetchOnMount: true,
       retry: 1,
+      // Reduz re-renders replicando referência quando os dados são iguais
+      // — mantém memoizações downstream funcionando em listas grandes.
+      structuralSharing: true,
     },
   },
 });

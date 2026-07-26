@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { CheckCircle2, TrendingUp, Wallet, Shield, Users, Rocket } from "lucide-react";
+import { CheckCircle2, TrendingUp, Wallet, Shield, Users, Rocket, Info } from "lucide-react";
 
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
@@ -73,6 +73,42 @@ export default function SejaRevendedor() {
               </a>
             </div>
             <p className="text-xs text-muted-foreground">Sem mensalidade. Sem meta. Sem letras miúdas.</p>
+          </div>
+        </section>
+
+        {/* Como você ganha — 3 estágios explícitos */}
+        <section className="max-w-3xl mx-auto px-4 pt-10">
+          <div className="rounded-2xl border bg-card p-5 md:p-6">
+            <div className="flex items-start gap-2 mb-4">
+              <Info className="h-4 w-4 text-primary mt-0.5" />
+              <div>
+                <h2 className="text-lg font-bold">Como você ganha (passo a passo)</h2>
+                <p className="text-xs text-muted-foreground">Sem letras miúdas — os 3 estágios do seu ganho por loja indicada.</p>
+              </div>
+            </div>
+            <ol className="space-y-3 text-sm">
+              <li className="flex gap-3">
+                <span className="w-6 h-6 rounded-full bg-amber-500/15 text-amber-600 text-xs font-bold flex items-center justify-center shrink-0">1</span>
+                <div>
+                  <strong>Bounty de R$ 50</strong> — pago após a loja indicada completar 20 pedidos entregues.
+                </div>
+              </li>
+              <li className="flex gap-3">
+                <span className="w-6 h-6 rounded-full bg-blue-500/15 text-blue-600 text-xs font-bold flex items-center justify-center shrink-0">2</span>
+                <div>
+                  <strong>Loja em fase gratuita → R$ 0 de recorrente.</strong> Enquanto a loja ficar abaixo do GMV gratuito
+                  (Essencial até R$ 5.000/mês · Autonomia até R$ 2.500/mês) a mensalidade é zero — logo, sua comissão
+                  recorrente também.
+                </div>
+              </li>
+              <li className="flex gap-3">
+                <span className="w-6 h-6 rounded-full bg-green-500/15 text-green-600 text-xs font-bold flex items-center justify-center shrink-0">3</span>
+                <div>
+                  <strong>Loja passou do GMV → 20% da mensalidade, todo mês.</strong> A partir do mês em que a loja começa
+                  a pagar o plano, você recebe 20% do valor cobrado enquanto ela continuar ativa.
+                </div>
+              </li>
+            </ol>
           </div>
         </section>
 
@@ -149,6 +185,14 @@ export default function SejaRevendedor() {
             <AccordionItem value="q2">
               <AccordionTrigger>Quando recebo o bônus de R$ 50?</AccordionTrigger>
               <AccordionContent>Quando a loja indicada atinge 20 pedidos entregues em 30 dias e valida o WhatsApp.</AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="q2b">
+              <AccordionTrigger>Quando começo a receber a mensalidade (20%)?</AccordionTrigger>
+              <AccordionContent>
+                A partir do primeiro mês em que a loja indicada ultrapassa o GMV gratuito (R$ 5.000 no Essencial ou
+                R$ 2.500 na Autonomia) e passa a pagar a mensalidade. Enquanto a loja estiver na faixa gratuita, a
+                mensalidade é R$ 0 — e por isso a comissão recorrente também é R$ 0.
+              </AccordionContent>
             </AccordionItem>
             <AccordionItem value="q3">
               <AccordionTrigger>E se a loja não vender?</AccordionTrigger>

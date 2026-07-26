@@ -1,4 +1,5 @@
-import { memo } from "react";
+import { memo, type KeyboardEvent } from "react";
+import { useNavigate } from "react-router-dom";
 import { formatBRL } from "@/lib/utils";
 
 interface Props {
@@ -12,16 +13,33 @@ interface Props {
  * Card com imagem no topo e nome/loja/preço no rodapé — sem overlaps no mobile.
  */
 const DiscoverGrid = memo(({ products, storesMap, onSelect }: Props) => {
+  const navigate = useNavigate();
   if (!products?.length) return null;
+
+  const openProduct = (p: any, store: any) => {
+    if (!store) return;
+    const base = store.slug ? `/${store.slug}` : `/loja/${store.id}`;
+    navigate(`${base}?product=${p.id}`);
+  };
+
+  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>, product: any, store: any) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    openProduct(product, store);
+  };
 
   return (
     <div className="grid grid-cols-2 gap-3">
       {products.map((p) => {
         const store = storesMap.get(p.store_id);
         return (
-          <button
+          <div
             key={p.id}
-            onClick={() => store && onSelect(store)}
+            role="button"
+            tabIndex={0}
+            onClick={() => openProduct(p, store)}
+            onKeyDown={(event) => handleKeyDown(event, p, store)}
+            data-native-scroll-pan
             onPointerEnter={() => {
               if (store?.slug) {
                 const link = document.createElement("link");
@@ -31,7 +49,7 @@ const DiscoverGrid = memo(({ products, storesMap, onSelect }: Props) => {
                 setTimeout(() => link.remove(), 4000);
               }
             }}
-            className="relative rounded-3xl overflow-hidden bg-card border border-border text-left active:scale-[0.98] transition-transform group flex flex-col"
+            className="relative rounded-3xl overflow-hidden bg-card border border-border text-left active:scale-[0.98] transition-transform group flex flex-col cursor-pointer"
           >
             <div className="relative w-full aspect-square overflow-hidden">
               {p.image_url ? (
@@ -49,6 +67,11 @@ const DiscoverGrid = memo(({ products, storesMap, onSelect }: Props) => {
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                 Aberta
               </span>
+              {store?.category && (
+                <span className="absolute top-2 right-2 bg-foreground/85 text-background text-[9px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full backdrop-blur max-w-[70%] truncate">
+                  {String(store.category).replace(/_/g, " ")}
+                </span>
+              )}
             </div>
 
             <div className="p-2.5 flex flex-col gap-1.5">
@@ -66,7 +89,7 @@ const DiscoverGrid = memo(({ products, storesMap, onSelect }: Props) => {
                 </span>
               </div>
             </div>
-          </button>
+          </div>
         );
       })}
     </div>

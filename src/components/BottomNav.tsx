@@ -1,11 +1,11 @@
 import { memo, useMemo } from "react";
- import { Home, ClipboardList, User, Store, LayoutDashboard } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useStoreContext } from "@/contexts/StoreContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
  import { supabase } from "@/integrations/supabase/client";
  import { isPartnerCapacitorApp } from "@/lib/capacitorAppMode";
+import { Bike, ClipboardList, Home, LayoutDashboard, Search, Store, User } from "lucide-react";
 
 const BottomNav = memo(() => {
   const location = useLocation();
@@ -44,7 +44,18 @@ const BottomNav = memo(() => {
 
    const isLojista = (profile as any)?.role === "lojista";
    const isMotoboy = (profile as any)?.role === "motoboy" || (profile as any)?.role === "entregador";
-  const isStoreContext = !!currentStoreSlug;
+  // Only show store-scoped tabs when actually browsing the store (or its cart/checkout),
+  // never on /cliente, /cliente/busca, /pedidos, /perfil, etc. Isso evita que o bottom bar
+  // "grude" na loja depois que o cliente volta pra Home.
+  const path = location.pathname;
+  const onStoreRoute =
+    !!currentStoreSlug &&
+    (path === `/${currentStoreSlug}` ||
+      path.startsWith(`/${currentStoreSlug}/`) ||
+      path.startsWith("/loja/") ||
+      path === "/carrinho" ||
+      path.startsWith("/checkout"));
+  const isStoreContext = onStoreRoute;
 
   const tabs = useMemo(() => {
     if (isStoreContext) {
@@ -65,18 +76,19 @@ const BottomNav = memo(() => {
        if (!user) return [];
        const baseTabs = [];
        if (isLojista) {
-         baseTabs.push({ icon: LayoutDashboard, label: "Painel", path: "/admin" });
+          baseTabs.push({ icon: LayoutDashboard, label: "Painel", path: "/admin" });
        } else if (isMotoboy) {
-         baseTabs.push({ icon: LayoutDashboard, label: "Entregas", path: "/entregador" });
+          baseTabs.push({ icon: Bike, label: "Entregas", path: "/entregador" });
        }
-       baseTabs.push({ icon: ClipboardList, label: "Pedidos", path: "/pedidos" });
-       baseTabs.push({ icon: User, label: "Perfil", path: "/perfil" });
+        baseTabs.push({ icon: ClipboardList, label: "Pedidos", path: "/pedidos" });
+        baseTabs.push({ icon: User, label: "Perfil", path: "/perfil" });
        return baseTabs;
      }
      return [
-       { icon: Home, label: "Home", path: "/cliente" },
-       { icon: ClipboardList, label: "Pedidos", path: "/pedidos" },
-       { icon: User, label: "Perfil", path: "/perfil" },
+        { icon: Home, label: "Home", path: "/cliente" },
+        { icon: Search, label: "Busca", path: "/cliente/busca" },
+        { icon: ClipboardList, label: "Pedidos", path: "/pedidos" },
+        { icon: User, label: "Perfil", path: "/perfil" },
      ];
    }, [isStoreContext, currentStoreSlug, currentStoreId, isLojista, ownStore, isPartnerApp, user, isMotoboy]);
 
@@ -84,6 +96,7 @@ const BottomNav = memo(() => {
     const [path] = tabPath.split("?");
     if (path === "/" && location.pathname === "/") return true;
     if (path === "/cliente" && location.pathname === "/cliente") return true;
+    if (path === "/cliente/busca" && location.pathname.startsWith("/cliente/busca")) return true;
     if (path === "/pedidos" && location.pathname === "/pedidos") return true;
      if (path === "/perfil" && location.pathname === "/perfil") return true;
      if (path === "/admin" && location.pathname === "/admin") return true;
@@ -98,10 +111,14 @@ const BottomNav = memo(() => {
    if (tabs.length === 0) return null;
  
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-lg border-t border-border/40 safe-area-bottom shadow-[0_-8px_30px_rgb(0,0,0,0.04)]">
+    <nav
+      className="native-hide-while-keyboard fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-lg border-t border-border/40 shadow-[0_-8px_30px_rgb(0,0,0,0.04)]"
+      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+    >
       <div className="mx-auto max-w-md h-16 flex items-stretch justify-around px-2">
         {tabs.map((tab) => {
           const active = isActive(tab.path);
+          const Icon = tab.icon;
           return (
             <button
               key={tab.path}
@@ -116,10 +133,7 @@ const BottomNav = memo(() => {
               <div className={`p-1.5 rounded-xl transition-all duration-300 ${
                 active ? "bg-primary/10" : "group-hover:bg-accent/50"
               }`}>
-                <tab.icon 
-                  className={`h-5 w-5 transition-transform duration-300 ${active ? "scale-110" : "group-hover:scale-105"}`} 
-                  strokeWidth={active ? 2.5 : 2} 
-                />
+                <Icon className={`h-5 w-5 transition-transform duration-300 pointer-events-none ${active ? "scale-110" : "group-hover:scale-105"}`} />
               </div>
               <span className={`text-[11px] font-medium mt-1 transition-all duration-200 ${
                 active ? "opacity-100 font-bold tracking-tight" : "opacity-70"

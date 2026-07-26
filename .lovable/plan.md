@@ -1,94 +1,69 @@
-# Redesign /cliente — Marketplace Profissional
+# Plano: Headers persistentes no app cliente (Capacitor)
 
-Sai o feed genérico de blocos empilhados. Entra um **bento grid editorial** com hierarquia real, densidade calibrada e tipografia Sora/Manrope. Paleta ItaSuper mantida (amarelo `#FACC15` sobre fundo claro, acentos `hsl(var(--primary))`).
+Objetivo: em **todas** as telas do fluxo `/cliente/**` e loja pública, o header (barra superior) fica **fixo no topo**, **respeita o notch/status bar do Android** (hora, bateria) e o conteúdo rola **por baixo** dele — igual ao iFood.
 
-## Princípios visuais
+## 1. Criar primitivo único `AppHeader`
 
-- **Sora** nos títulos (bold, tracking justo) — Manrope no corpo. Aplicados via `tailwind.config.ts` como `font-display` / `font-sans`.
-- Cantos `rounded-3xl` nos cards grandes, `rounded-2xl` nos médios, `rounded-xl` nos pills.
-- Sombra sutil `shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_24px_-12px_rgba(0,0,0,0.08)]` só nos cards de destaque.
-- Zero cores hardcoded — tudo via tokens `--background`, `--primary`, `--card`, `--muted`.
-- Skeleton nas 3 seções principais (não spinner).
+Arquivo: `src/components/cliente/AppHeader.tsx`
 
-## Estrutura da nova home
+Responsabilidades:
+- `position: sticky; top: 0; z-index: 40`
+- `padding-top: env(safe-area-inset-top)` (notch) + fundo sólido opaco (não translúcido) para nunca "vazar" atrás da status bar
+- Variantes: `solid` (padrão branco) / `transparent-to-solid` (StorePage — vira sólido no scroll) / `brand` (gradiente laranja da home)
+- Slots: `left` (voltar/menu), `center` (título/busca), `right` (ações — sino, favorito)
+- Prop `elevated` (sombra sutil ao rolar)
 
-```text
-┌──────────────────────────────────────────┐
-│ HEADER STICKY (endereço + sino + chat)   │
-│ Search pill + botão filtros              │
-├──────────────────────────────────────────┤
-│ BENTO HERO (2 colunas mobile)            │
-│ ┌────────────┬──────────────┐            │
-│ │            │  Cashback    │            │
-│ │  Banner    ├──────────────┤            │
-│ │  principal │  Frete grátis│            │
-│ └────────────┴──────────────┘            │
-├──────────────────────────────────────────┤
-│ Chips categorias (scroll horizontal)     │
-├──────────────────────────────────────────┤
-│ SUAS LOJAS (avatars circulares)          │
-├──────────────────────────────────────────┤
-│ ÚLTIMO PEDIDO (card premium refinado)    │
-├──────────────────────────────────────────┤
-│ DESTAQUES DA REGIÃO (bento 2x2)          │
-│ ┌──────────┬─────┐                       │
-│ │  Loja    │Loja │                       │
-│ │  grande  ├─────┤                       │
-│ │          │Loja │                       │
-│ └──────────┴─────┘                       │
-├──────────────────────────────────────────┤
-│ DESCUBRA (produtos, grid editorial 2 col)│
-│ Cards com preço grande, loja em pill,    │
-│ tag "aberta agora", rating inline        │
-├──────────────────────────────────────────┤
-│ TODAS AS LOJAS (lista rica)              │
-└──────────────────────────────────────────┘
-```
+## 2. Configurar StatusBar nativa uma vez
 
-## Seções detalhadas
+`src/lib/capacitorNative.ts`:
+- `StatusBar.setOverlaysWebView({ overlay: true })` (já usamos parcial)
+- `StatusBar.setStyle({ style: Style.Dark })` para ícones escuros sobre header branco; alternar para `Light` em telas com header brand (laranja)
+- Hook `useStatusBarStyle(variant)` chamado por cada `AppHeader`
 
-**1. Header** — mantém, só ajusta tipografia para Sora e reduz padding vertical.
+## 3. Telas a migrar para `AppHeader`
 
-**2. Bento Hero (novo)** — substitui o `PromoBanners` atual. Grid `grid-cols-3 grid-rows-2`: banner principal ocupa `col-span-2 row-span-2`; 2 mini-cards laterais (cashback, frete grátis) fixos com ícone + micro-copy. Dados vêm de `banners` (já existe).
+Todas usam padrão sticky + safe-area:
 
-**3. Categoria chips** — mantém `CategoryChips` mas com pills `bg-muted` + estado ativo `bg-primary text-primary-foreground`, altura 40px, sem borda.
+| Tela | Arquivo | Variante |
+|---|---|---|
+| Home cliente | `ClientHomeContent.tsx` | `brand` (endereço + sino) |
+| Busca | `busca/ClientBuscaPage.tsx` | `solid` (já sticky — trocar wrapper) |
+| Categoria/resultados | mesma acima | `solid` |
+| Loja pública | `StorePage.tsx` | `transparent-to-solid` |
+| Cardápio item | `ProductPage.tsx` | `solid` |
+| Carrinho | `CartPage.tsx` | `solid` |
+| Checkout | `CheckoutPage.tsx` | `solid` |
+| Pedidos | `cliente/PedidosPage.tsx` | `solid` |
+| Detalhe pedido | `PedidoDetalhePage.tsx` | `solid` |
+| Perfil | `PerfilPage.tsx` | `solid` |
+| Endereços | `EnderecosPage.tsx` | `solid` |
+| Favoritos | `FavoritosPage.tsx` | `solid` |
+| Ajuda / Termos | `AjudaPage.tsx` etc. | `solid` |
 
-**4. Suas lojas** — mantém, refina para avatars 56px com anel `ring-2 ring-primary/20` quando aberta.
+## 4. Ajustes globais
 
-**5. Último pedido** — card premium com gradient sutil `from-primary/5 to-transparent`, botão "Pedir de novo" em destaque.
+- Remover `paddingTop: env(safe-area-inset-top)` **do body/App** para as rotas `/cliente/**` (o header agora cuida disso). Rotas sem header próprio mantêm um `SafeAreaTop` filler.
+- `src/index.css`: garantir `html, body { background: white }` para o gap do notch nunca aparecer preto ao rolar bounce (iOS-like overscroll no Android também).
+- Bottom nav: já respeita `safe-area-inset-bottom`; sem mudanças.
 
-**6. Destaques da região (redesenhado)** — substitui a rolagem horizontal "Destaques" por um **bento 2x2**: 1 loja grande (imagem 16:10 + overlay com nome, rating, tempo) + 2 lojas pequenas empilhadas à direita (avatar + nome + distância). Muito mais denso e visual que o carrossel atual.
+## 5. Comportamento no scroll (iFood-like)
 
-**7. Descubra (refinado, o que ficou genérico)** — grid 2 colunas com cards editoriais:
-   - Imagem aspect-square, corner-radius `rounded-3xl` só no topo
-   - Overlay inferior com gradient preto→transparente
-   - Nome do produto em Sora bold branco sobre a imagem
-   - Preço em pill amarelo flutuante no canto superior direito
-   - Nome da loja em pill `bg-background/90 backdrop-blur` sobre a imagem
-   - Micro-tag "aberta" com ponto verde pulsante
-   - Ordena por: aberta primeiro, com imagem, aleatório dentro disso
+- Sticky puro (não `fixed`) → conteúdo empurra normalmente, header acompanha o topo do viewport.
+- Sombra aparece após 8px de scroll via `IntersectionObserver` de um sentinel invisível — sem listener de `scroll` pesado.
+- StorePage: opacidade do fundo do header interpolada 0→1 nos primeiros 120px (já existe, será portado para `AppHeader`).
 
-**8. Todas as lojas** — lista vertical mantida, refinada com Sora e espaçamento `space-y-4`.
+## 6. Versionamento
 
-## Arquivos
-
-- `src/pages/cliente/home/ClientHomeContent.tsx` — refatorar seções
-- `src/pages/cliente/home/BentoHero.tsx` — novo
-- `src/pages/cliente/home/HighlightsBento.tsx` — novo (destaques 2x2)
-- `src/pages/cliente/home/DiscoverGrid.tsx` — extrair produtos e reestilizar
-- `tailwind.config.ts` — adicionar `fontFamily: { display: ["Sora", ...], sans: ["Manrope", ...] }`
-- `index.html` — preload Google Fonts Sora + Manrope
-- `src/index.css` — utilitário `.font-display` (fallback) e classe `.card-elevated`
+Bump para **v1.26.0** (mudança visual global). Atualiza `src/lib/appVersion.ts` + `android/app/build.gradle` (`versionName` + `versionCode +1`).
 
 ## Detalhes técnicos
 
-- Query `discover-products` ganha filtro `.order("created_at", { ascending: false })` + shuffle client-side dos 40 mais recentes → 12 finais. Mantém aleatoriedade sem parecer bagunçado.
-- Prefetch da loja no `onPointerEnter` dos cards de Descubra (padrão que já usamos em `StoreCard`).
-- Todos os cards com `loading="lazy"` e `decoding="async"` (mantém).
-- Suspense boundary por seção com `useDelayedFallback(180)`.
+- `sticky` funciona dentro do WebView do Capacitor sem precisar de `-webkit-` extra.
+- `env(safe-area-inset-top)` só devolve valor > 0 quando o `AndroidManifest` tem `windowLayoutInDisplayCutoutMode="shortEdges"` e `StatusBar.setOverlaysWebView(true)` — ambos já configurados.
+- Web (não-Capacitor) recebe `env()` = 0 → header cola no topo do navegador, sem regressão.
+- Evita `position: fixed` para não brigar com o teclado (bug do gap branco já resolvido).
 
-## Versão
+## Fora de escopo
 
-Bump para **v1.25.41** em `src/lib/appVersion.ts` e `android/app/build.gradle` (versionCode 10004).
-
-Aprova pra eu implementar?
+- Redesign visual dos headers (só estrutura + sticky). Refinos de UI ficam para plano separado.
+- Rotas de super-admin / lojista / PDV.

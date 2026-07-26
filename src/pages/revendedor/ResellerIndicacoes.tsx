@@ -6,13 +6,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import BottomNav from "@/components/BottomNav";
 import { useResellerDashboard, brl } from "./useResellerDashboard";
-
-const STATUS_LABELS: Record<string, { label: string; cls: string }> = {
-  pending: { label: "Pendente", cls: "bg-muted text-muted-foreground" },
-  active: { label: "Ativa", cls: "bg-green-500/10 text-green-600" },
-  churned: { label: "Cancelada", cls: "bg-red-500/10 text-red-600" },
-  blocked: { label: "Bloqueada", cls: "bg-red-500/10 text-red-600" },
-};
+import {
+  getReferralEarningStage,
+  stageBadge,
+  remainingToPaidCents,
+  freeGmvCentsFor,
+  FREE_GMV_EXPLAINER,
+} from "@/lib/resellerEarnings";
 
 export default function ResellerIndicacoes() {
   const navigate = useNavigate();
@@ -52,6 +52,10 @@ export default function ResellerIndicacoes() {
       </header>
 
       <main className="px-4 py-3 space-y-3 max-w-md mx-auto">
+        <div className="rounded-lg border border-blue-500/30 bg-blue-500/5 px-3 py-2 text-[11px] text-muted-foreground leading-snug">
+          ℹ️ {FREE_GMV_EXPLAINER}
+        </div>
+
         <div className="relative">
           <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -90,7 +94,11 @@ export default function ResellerIndicacoes() {
         ) : (
           <div className="space-y-2">
             {filtered.map((s) => {
-              const st = STATUS_LABELS[s.referral_status] || STATUS_LABELS.pending;
+              const stage = getReferralEarningStage(s);
+              const badge = stageBadge(stage);
+              const free = freeGmvCentsFor(s.plan_type);
+              const remaining = remainingToPaidCents(s);
+              const progress = free > 0 ? Math.min(100, Math.round(((s.gmv_60d_cents || 0) / free) * 100)) : 0;
               return (
                 <Card key={s.store_id}>
                   <CardContent className="pt-4 pb-3">
@@ -106,10 +114,24 @@ export default function ResellerIndicacoes() {
                           </div>
                         )}
                       </div>
-                      <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold ${st.cls}`}>
-                        {st.label}
+                      <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold whitespace-nowrap ${badge.cls}`}>
+                        {badge.label}
                       </span>
                     </div>
+                    {stage === "bounty_paid_free_tier" && free > 0 && (
+                      <div className="mt-3">
+                        <div className="flex justify-between text-[10px] text-muted-foreground mb-1">
+                          <span>Progresso até começar a pagar mensalidade</span>
+                          <span>{progress}%</span>
+                        </div>
+                        <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                          <div className="h-full bg-blue-500 transition-all" style={{ width: `${progress}%` }} />
+                        </div>
+                        <div className="text-[10px] text-muted-foreground mt-1">
+                          Faltam <strong>{brl(remaining)}</strong> em vendas pra loja começar a pagar o plano — e você começar a receber os 20% recorrentes.
+                        </div>
+                      </div>
+                    )}
                     <div className="grid grid-cols-2 gap-2 mt-3 pt-3 border-t">
                       <div>
                         <div className="text-[9px] text-muted-foreground uppercase">GMV 60d</div>

@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'app.lovable.e8d28aded6334d74be2161c8dbe24765',
+  appId: 'app.itasuper.cliente',
   appName: 'ItaSuper',
   webDir: 'dist',
   android: {
@@ -9,7 +9,13 @@ const config: CapacitorConfig = {
     allowMixedContent: false,
     webContentsDebuggingEnabled: false,
     captureInput: true,
-    backgroundColor: '#0B0F14',
+    backgroundColor: '#FFFFFF',
+    // Bridge nova (MessageChannel) — mais rápida que a legada.
+    useLegacyBridge: false,
+    // CDN identifica o app e serve Cache-Control agressivo.
+    appendUserAgent: 'ItaSuperApp/1.25.82',
+    // Não focar automaticamente inputs — evita reflow no boot.
+    initialFocus: false,
   },
   server: {
     // 🚀 Bundle local servido pelo Capacitor (sem hot-reload remoto).
@@ -27,18 +33,15 @@ const config: CapacitorConfig = {
   },
   plugins: {
     SplashScreen: {
-      // Fallback máximo — main.tsx chama hideSplash() logo após o primeiro
-      // render (RAF x2), tipicamente 400-900ms. 2000ms é só cinto de segurança
-      // caso o JS crashe antes de chamar hideSplash.
       launchShowDuration: 2000,
       launchAutoHide: false,
       launchFadeOutDuration: 200,
       backgroundColor: '#FF6B00',
       androidSplashResourceName: 'splash',
-      androidScaleType: 'CENTER_CROP',
+      androidScaleType: 'CENTER',
       showSpinner: false,
-      splashFullScreen: true,
-      splashImmersive: true,
+      splashFullScreen: false,
+      splashImmersive: false,
     },
     LocalNotifications: {
       smallIcon: 'ic_stat_icon_config_sample',
@@ -70,13 +73,24 @@ const config: CapacitorConfig = {
       directUpdate: false,
       resetWhenUpdate: true,
       keepUrlPathAfterReload: true,
+      defaultChannel: 'cliente',
       updateUrl:
-        'https://qkjhguziuchqsbxzruea.supabase.co/storage/v1/object/public/app-releases/manifest.json',
+        'https://lktzrqjvqoojlrhqnxuz.supabase.co/functions/v1/ota-update',
       // Estatísticas/canais do serviço pago desligados.
       statsUrl: '',
       channelUrl: '',
       // Sem assinatura RSA — validação por SHA-256 no manifest.
       publicKey: '',
+    },
+    // Emite CSS vars --safe-area-inset-* ANTES do primeiro paint,
+    // evitando o "pulo" do header/BottomNav ao abrir o app.
+    SafeArea: {
+      detectViewportFitCoverChanges: true,
+      initialViewportFitCover: true,
+    },
+    Keyboard: {
+      // Android deve usar apenas adjustResize do Manifest; sem workaround extra.
+      resizeOnFullScreen: false,
     },
   },
 };

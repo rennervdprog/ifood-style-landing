@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, type KeyboardEvent } from "react";
 import { Star, Clock, MapPin } from "lucide-react";
 
 interface Props {
@@ -18,11 +18,21 @@ const HighlightsBento = memo(({ stores, onSelect }: Props) => {
   const sides = rest.slice(0, 2);
   if (!featured) return null;
 
+  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>, store: any) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    onSelect(store);
+  };
+
   return (
     <div className="grid grid-cols-3 grid-rows-2 gap-2 h-56">
-      <button
+      <div
+        role="button"
+        tabIndex={0}
         onClick={() => onSelect(featured)}
-        className="col-span-2 row-span-2 relative rounded-3xl overflow-hidden bg-card border border-border text-left active:scale-[0.99] transition-transform group"
+        onKeyDown={(event) => handleKeyDown(event, featured)}
+        data-native-scroll-pan
+        className="col-span-2 row-span-2 relative rounded-3xl overflow-hidden bg-card border border-border text-left active:scale-[0.99] transition-transform group cursor-pointer"
       >
         {featured.image_url ? (
           <img
@@ -60,13 +70,17 @@ const HighlightsBento = memo(({ stores, onSelect }: Props) => {
             )}
           </div>
         </div>
-      </button>
+      </div>
 
       {sides.map((store) => (
-        <button
+        <div
           key={store.id}
+          role="button"
+          tabIndex={0}
           onClick={() => onSelect(store)}
-          className="relative rounded-2xl overflow-hidden bg-card border border-border text-left active:scale-[0.99] transition-transform group"
+          onKeyDown={(event) => handleKeyDown(event, store)}
+          data-native-scroll-pan
+          className="relative rounded-2xl overflow-hidden bg-card border border-border text-left active:scale-[0.99] transition-transform group cursor-pointer"
         >
           {store.image_url ? (
             <img
@@ -86,7 +100,7 @@ const HighlightsBento = memo(({ stores, onSelect }: Props) => {
               {distanceLabel(store.distanceKm) || (store.category || "").replace(/_/g, " ")}
             </p>
           </div>
-        </button>
+        </div>
       ))}
     </div>
   );

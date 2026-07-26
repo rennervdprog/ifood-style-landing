@@ -165,16 +165,16 @@ const CapacitorRouteGuard = () => {
          (route) => path === route || path.startsWith(route + "/")
        );
  
-       const isWhitelistedClientRoute = CLIENT_ALLOWED_PREFIXES.some(
-         (route) => path === route || path.startsWith(route + "/")
-       );
- 
-       if (isPartnerRoute || !isWhitelistedClientRoute) {
-         if (path !== "/cliente" && path !== "/") {
-           navigate("/cliente", { replace: true });
-         }
+       // BLACKLIST: no APK Cliente só bloqueamos rotas de parceiro/admin.
+       // Tudo mais (incluindo `/:slug` de loja, `/loja/:id`, `/cidade/*`,
+       // `/busca`, `/pesquisa`, etc.) é liberado — evita ficar preso em /cliente
+       // ao clicar em cards de loja/produto que resolvem para slug dinâmico.
+       if (isPartnerRoute) {
+         navigate("/cliente", { replace: true });
+         return;
        }
- 
+
+       // `/` → `/cliente` (home padrão do APK Cliente).
        if (path === "/") {
          navigate("/cliente", { replace: true });
        }

@@ -63,10 +63,6 @@ interface PromoCollection {
 }
 
 const getPageScrollElement = (): HTMLElement => {
-  const root = document.getElementById("root");
-  if (root && (document.body.classList.contains("native-app") || document.documentElement.classList.contains("native-app"))) {
-    return root;
-  }
   return (document.scrollingElement as HTMLElement) || document.documentElement;
 };
 
@@ -225,18 +221,22 @@ const StorePage = () => {
    // Track scroll to show name in header
    useEffect(() => {
      let ticking = false;
+    const scrollElement = getPageScrollElement();
+    const isWindow = isDocumentScrollElement(scrollElement);
      const handleScroll = () => {
        if (ticking) return;
        ticking = true;
        window.requestAnimationFrame(() => {
-         const isScrolled = window.scrollY > 150;
+        const y = isWindow ? window.scrollY : scrollElement.scrollTop;
+        const isScrolled = y > 150;
          setScrolled((prev) => (prev !== isScrolled ? isScrolled : prev));
          ticking = false;
        });
      };
 
-     window.addEventListener("scroll", handleScroll, { passive: true });
-     return () => window.removeEventListener("scroll", handleScroll);
+    const target: EventTarget = isWindow ? window : scrollElement;
+    target.addEventListener("scroll", handleScroll, { passive: true } as any);
+    return () => target.removeEventListener("scroll", handleScroll as any);
    }, []);
 
   const { data: storeHours } = useQuery({
@@ -796,6 +796,19 @@ const StorePage = () => {
     setSelectedProduct(product);
   }, [queryClient]);
 
+  // Auto-abrir produto via ?product=<id> (ex.: vindo do /cliente "Descubra")
+  const autoOpenedRef = useRef(false);
+  useEffect(() => {
+    if (autoOpenedRef.current) return;
+    const pid = new URLSearchParams(location.search).get("product");
+    if (!pid || !displayProducts?.length) return;
+    const p = displayProducts.find((x) => x.id === pid);
+    if (p) {
+      autoOpenedRef.current = true;
+      openProduct(p);
+    }
+  }, [location.search, displayProducts, openProduct]);
+
   const prefetchProduct = useCallback((product: Product) => {
     void loadProductDetailModal();
     void queryClient.prefetchQuery({
@@ -924,7 +937,8 @@ const StorePage = () => {
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
           <button
             onClick={() => navigate("/lojas")}
-            className="absolute top-4 left-4 h-10 w-10 rounded-full bg-background/90 backdrop-blur flex items-center justify-center shadow-md"
+            style={{ top: "calc(env(safe-area-inset-top) + 1rem)" }}
+            className="absolute left-4 h-10 w-10 rounded-full bg-background/90 backdrop-blur flex items-center justify-center shadow-md"
             aria-label="Voltar"
           >
             <ArrowLeft className="h-5 w-5 text-foreground" />
@@ -974,9 +988,12 @@ const StorePage = () => {
 
          {/* Sticky Header Top Bar */}
          {!showHalfHalf && !showPastelBuilder && (
-           <div className={`fixed top-0 left-0 right-0 flex items-center justify-between p-4 z-[70] transition-all duration-300 h-[64px] ${
-            scrolled ? "bg-background border-b border-border shadow-sm py-2" : "bg-transparent"
-           }`}>
+           <div
+             style={{ paddingTop: "calc(env(safe-area-inset-top) + 0.75rem)" }}
+             className={`fixed top-0 left-0 right-0 flex items-center justify-between px-4 pb-3 z-[70] transition-all duration-300 ${
+               scrolled ? "bg-background border-b border-border shadow-sm" : "bg-transparent"
+             }`}
+           >
           <div className="flex items-center gap-3 min-w-0">
             {!getStoreAppSlug() && hasInternalHistory && (
               <button
@@ -1125,7 +1142,7 @@ const StorePage = () => {
                         const isAutonomy = platformInfo?.plan_type === "autonomy";
                         const baseSplit = isAutonomy
                           ? 0
-                          : Number(platformInfo?.platform_delivery_split_override ?? storePlan.platformDeliverySplit ?? 2);
+                          : Number(platformInfo?.platform_delivery_split_override ?? storePlan.platformDeliverySplit ?? 0.99);
                         const splitMode = (platformInfo?.platform_fee_split || storePlan.platformFeeSplit || "cliente") as "cliente" | "meio_a_meio" | "lojista";
                         platformAdd = splitMode === "lojista"
                           ? 0

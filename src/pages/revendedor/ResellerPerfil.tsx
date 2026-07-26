@@ -15,6 +15,7 @@ import BottomNav from "@/components/BottomNav";
 import SignOutConfirm from "@/components/SignOutConfirm";
 import { useResellerDashboard, brl } from "./useResellerDashboard";
 import { APP_VERSION } from "@/lib/appVersion";
+import { FREE_GMV_EXPLAINER } from "@/lib/resellerEarnings";
 
 export default function ResellerPerfil() {
   const navigate = useNavigate();
@@ -176,6 +177,29 @@ export default function ResellerPerfil() {
             <Button size="sm" variant="outline" className="w-full" onClick={copyLink}>
               <Copy className="h-3 w-3 mr-1" /> Copiar link
             </Button>
+            <p className="text-[10px] text-muted-foreground leading-snug pt-1">
+              {FREE_GMV_EXPLAINER}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">Como funciona meu ganho</CardTitle>
+          </CardHeader>
+          <CardContent className="text-xs space-y-2">
+            <div className="flex gap-2">
+              <span className="w-5 h-5 rounded-full bg-amber-500/15 text-amber-600 text-[10px] font-bold flex items-center justify-center shrink-0">1</span>
+              <p><strong>Bounty R$ 50</strong> — após 20 pedidos entregues da loja indicada.</p>
+            </div>
+            <div className="flex gap-2">
+              <span className="w-5 h-5 rounded-full bg-blue-500/15 text-blue-600 text-[10px] font-bold flex items-center justify-center shrink-0">2</span>
+              <p><strong>Fase gratuita → R$ 0 recorrente.</strong> Enquanto a loja ficar abaixo do GMV gratuito (R$ 5.000 Essencial / R$ 2.500 Autonomia).</p>
+            </div>
+            <div className="flex gap-2">
+              <span className="w-5 h-5 rounded-full bg-green-500/15 text-green-600 text-[10px] font-bold flex items-center justify-center shrink-0">3</span>
+              <p><strong>20% da mensalidade, todo mês</strong> — a partir do mês em que a loja passa do GMV e começa a pagar o plano.</p>
+            </div>
           </CardContent>
         </Card>
 

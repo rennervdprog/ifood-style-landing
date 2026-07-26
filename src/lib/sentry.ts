@@ -17,7 +17,12 @@ export const initSentry = () => {
     dsn: SENTRY_DSN,
     release: `itasuper@${APP_VERSION}`,
     environment: import.meta.env.MODE,
-    tracesSampleRate: import.meta.env.MODE === "production" ? 0.2 : 1.0,
+    // Sample rate menor no APK nativo — profiling do Sentry custa FPS em
+    // listas pesadas (cardápio). Web continua em 0.2, dev em 1.0.
+    tracesSampleRate:
+      import.meta.env.MODE === "production"
+        ? (typeof window !== "undefined" && (window as any).Capacitor?.isNativePlatform?.() ? 0.05 : 0.2)
+        : 1.0,
     // Integrações web-only (browserTracing/replay não fazem sentido no webview nativo)
     integrations: isNative
       ? []

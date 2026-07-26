@@ -434,7 +434,7 @@ const CheckoutPage = () => {
       const deliveryConfigWithPlatform: any = {
         ...config,
         // Ensure we use the latest platform split from the store plan or admin settings
-        platform_split: storePlan.platformDeliverySplit ?? config.platform_split ?? 2.0
+        platform_split: storePlan.platformDeliverySplit ?? config.platform_split ?? 0.99
       };
 
       calculateDeliveryFee(customerCep, storeCep, deliveryConfigWithPlatform, clientCoords).then((result) => {
@@ -1413,7 +1413,7 @@ const CheckoutPage = () => {
       </div>
 
       {/* CTA — barra fixa no rodapé, estilo app profissional */}
-      <div role="region" aria-label="Resumo e finalização do pedido" className="fixed bottom-0 left-0 right-0 z-40 bg-card/95 backdrop-blur-md border-t border-border shadow-[0_-4px_20px_-8px_rgba(0,0,0,0.15)] px-4 pt-3 pb-[max(env(safe-area-inset-bottom),12px)] space-y-2.5">
+      <div role="region" aria-label="Resumo e finalização do pedido" className="native-hide-while-keyboard fixed bottom-0 left-0 right-0 z-40 bg-card/95 backdrop-blur-md border-t border-border shadow-[0_-4px_20px_-8px_rgba(0,0,0,0.15)] px-4 pt-3 pb-[max(env(safe-area-inset-bottom),12px)] space-y-2.5">
         {/* Total */}
         <div className="flex items-center justify-between py-1" aria-live="polite" aria-atomic="true">
           <span className="text-base font-bold text-foreground">Total</span>

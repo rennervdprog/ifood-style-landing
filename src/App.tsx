@@ -34,6 +34,7 @@ import { fetchPendingLegalChanges, type PendingLegalChanges } from "@/lib/legalD
 import { APP_VERSION } from "@/lib/appVersion";
 import { registerRoutePrefetch } from "@/lib/prefetchRoute";
 import { useDelayedFallback } from "@/lib/useDelayedFallback";
+import { useNativeNavStackTracker } from "@/lib/nativeNavStack";
 
 // Lazy-loaded pages — each becomes its own chunk
 const Index = lazy(() => import("./pages/Index"));
@@ -41,6 +42,7 @@ const StoreDirectory = lazy(() => import("./pages/StoreDirectory"));
 const CityStoresPage = lazy(() => import("./pages/CityStoresPage"));
 const LandingPage = lazy(() => import("./pages/LandingPage"));
 const ClientHome = lazy(() => import("./pages/ClientHome"));
+const ClientBuscaPage = lazy(() => import("./pages/cliente/busca/ClientBuscaPage"));
 const StorePage = lazy(() => import("./pages/StorePage"));
 const CartPage = lazy(() => import("./pages/CartPage"));
 const CheckoutPage = lazy(() => import("./pages/CheckoutPage"));
@@ -95,6 +97,7 @@ registerRoutePrefetch("/revendedor/auth", () => import("./pages/ResellerAuth"));
 registerRoutePrefetch("/portal-parceiro", () => import("./pages/PartnerLogin"));
 registerRoutePrefetch("/planos", () => import("./pages/PlanosPage"));
 registerRoutePrefetch("/cliente", () => import("./pages/ClientHome"));
+registerRoutePrefetch("/cliente/busca", () => import("./pages/cliente/busca/ClientBuscaPage"));
 registerRoutePrefetch("/cadastro-lojista", () => import("./pages/CadastroLojista"));
 
 /**
@@ -125,6 +128,7 @@ const AppRoutes = memo(function AppRoutes() {
       <Route path="/lojas" element={<Navigate to="/" replace />} />
       <Route path="/lojas/:cidade" element={<CityStoresPage />} />
       <Route path="/cliente" element={<ClientHome />} />
+      <Route path="/cliente/busca" element={<ClientBuscaPage />} />
       <Route
         path="/painel"
         element={
@@ -213,6 +217,9 @@ const isNativeApp = typeof window !== "undefined" &&
 const PushNavigator = () => {
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Mirror router transitions into our app-owned nav stack (Android back).
+  useNativeNavStackTracker();
 
   // On mount: check if there's a pending push navigation from cold start
   // Try multiple times because Capacitor's push event may fire after mount

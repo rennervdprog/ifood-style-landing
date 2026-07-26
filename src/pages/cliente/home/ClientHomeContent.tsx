@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type KeyboardEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
   Search, Clock, Repeat, ShoppingBag, Store as StoreIcon, MapPin, Bell, MessageCircle,
-  ChevronDown, ChevronRight, SlidersHorizontal, Sparkles,
+  ChevronDown, ChevronRight, SlidersHorizontal, Sparkles, Star,
 } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 import ProductTour, { clienteTourSteps } from "@/components/ProductTour";
@@ -37,7 +37,39 @@ const ROTATING_PLACEHOLDERS = [
   "Buscar açaí...",
 ];
 
-const PUBLIC_STORE_SELECT = "id, name, image_url, slug, category, categories, is_open, force_closed, rating, status, delivery_mode, own_delivery_fee, address_cep, address_city, address_complement, address_neighborhood, address_number, address_reference, address_state, address_street, latitude, longitude, settings";
+// Full select (para tabela `stores` — inclui colunas que só existem na tabela base).
+const FULL_STORE_SELECT = "id, name, image_url, slug, category, categories, is_open, force_closed, rating, status, delivery_mode, own_delivery_fee, delivery_fee, delivery_fee_type, delivery_fee_base, delivery_fee_per_km, estimated_delivery_time, minimum_order_value, free_delivery_threshold, address_cep, address_city, address_complement, address_neighborhood, address_number, address_reference, address_state, address_street, latitude, longitude, settings";
+// Select compatível com a view `stores_public` (não expõe delivery_fee/estimated_delivery_time/etc).
+const PUBLIC_VIEW_SELECT = "id, name, image_url, slug, category, categories, is_open, force_closed, rating, status, delivery_mode, own_delivery_fee, address_cep, address_city, address_complement, address_neighborhood, address_number, address_reference, address_state, address_street, latitude, longitude, settings";
+
+// Split base cobrado pela plataforma quando a loja usa entrega própria.
+// Fonte da verdade: admin_settings.delivery_fee_config.platform_split (default R$ 0,99).
+const PLATFORM_OWN_SPLIT = 0.99;
+
+const formatFeeLabel = (store: any): { label: string; free: boolean; prefix?: string } => {
+  if (store.delivery_mode === "pickup") return { label: "Retirada", free: false };
+  const mode = store.delivery_mode;
+  const baseFee = mode === "own" ? store.own_delivery_fee : store.delivery_fee;
+  if (baseFee == null) return { label: "—", free: false };
+  const platformAdd = mode === "own" ? PLATFORM_OWN_SPLIT : 0;
+  const total = Number(baseFee || 0) + platformAdd;
+  if (total <= 0) return { label: "Grátis", free: true };
+  return { label: formatBRL(total), free: false, prefix: "A partir de" };
+};
+
+const formatDeliveryTime = (store: any): string => {
+  const raw = (store?.estimated_delivery_time || "").toString().trim();
+  if (raw) return raw.includes("min") ? raw : `${raw} min`;
+  const min = Number(store?.settings?.delivery_time_min);
+  const max = Number(store?.settings?.delivery_time_max);
+  if (Number.isFinite(min) && Number.isFinite(max) && min > 0 && max > 0) {
+    return `${min}-${max} min`;
+  }
+  const km = typeof store.distanceKm === "number" ? store.distanceKm : null;
+  if (km === null) return "30-45 min";
+  const base = 20 + Math.round(km * 4);
+  return `${base}-${base + 15} min`;
+};
 
 type HeroFilter = "no_fee" | "direct_delivery" | null;
 
@@ -63,7 +95,7 @@ const loadPublicStores = async ({
   const table = includeTest ? "stores" : "stores_public";
   let dbQuery = (supabase as any)
     .from(table)
-    .select(PUBLIC_STORE_SELECT)
+    .select(includeTest ? FULL_STORE_SELECT : PUBLIC_VIEW_SELECT)
     .eq("status", "ativo")
     .limit(50);
 
@@ -216,6 +248,12 @@ const ClientHomeContent = () => {
   const goToStore = (store: any) => {
     if (store?.slug) navigate(`/${store.slug}`);
     else if (store?.id) navigate(`/loja/${store.id}`);
+  };
+
+  const handleStoreKeyDown = (event: KeyboardEvent<HTMLDivElement>, store: any) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    goToStore(store);
   };
 
   const scrollToStores = useCallback(() => {
@@ -463,10 +501,14 @@ const ClientHomeContent = () => {
             </h2>
             <div className="flex overflow-x-auto gap-3 no-scrollbar -mx-1 px-1 pb-1">
               {lastStores.map((store: any) => (
-                <button
+                <div
                   key={store.id}
+                  role="button"
+                  tabIndex={0}
                   onClick={() => goToStore(store)}
-                  className="shrink-0 w-20 flex flex-col items-center gap-1.5"
+                  onKeyDown={(event) => handleStoreKeyDown(event, store)}
+                  data-native-scroll-pan
+                  className="shrink-0 w-20 flex flex-col items-center gap-1.5 cursor-pointer"
                 >
                   {store.image_url ? (
                     <img loading="lazy" decoding="async" src={store.image_url}
@@ -479,7 +521,7 @@ const ClientHomeContent = () => {
                   <p className="font-display text-[10px] font-semibold text-foreground text-center truncate w-full leading-tight">
                     {store.name}
                   </p>
-                </button>
+                </div>
               ))}
             </div>
           </section>
@@ -576,67 +618,98 @@ const ClientHomeContent = () => {
               )}
             </div>
           ) : (
-            <ul className="space-y-5">
+            <ul className="divide-y divide-border/50" data-native-scroll-pan>
               {listStores.map((store: any) => {
                 const isOpen = !!store.realIsOpen;
                 const dist = formatDistance(store.distanceKm);
+                const rating =
+                  typeof store.rating === "number" && store.rating > 0
+                    ? Number(store.rating)
+                    : null;
+                const fee = formatFeeLabel(store);
+                const timeLabel = formatDeliveryTime(store);
+                const categoryLabel = (store.category || "Loja").replace(/_/g, " ");
                 return (
                   <li key={store.id}>
-                    <button
+                    <div
+                      role="button"
+                      tabIndex={0}
                       onClick={() => goToStore(store)}
-                      className="group w-full flex items-start gap-3 text-left active:opacity-80"
+                      onKeyDown={(event) => handleStoreKeyDown(event, store)}
+                      data-native-scroll-pan
+                      className="w-full flex items-center gap-3 py-3.5 text-left active:opacity-70 transition-opacity cursor-pointer"
                     >
-                      <div
-                        className={`w-16 h-16 rounded-full overflow-hidden shrink-0 shadow-sm border-2 ${
-                          isOpen ? "border-primary/20" : "border-border"
-                        }`}
-                      >
-                        {store.image_url ? (
-                          <img
-                            loading="lazy"
-                            decoding="async"
-                            src={store.image_url}
-                            alt={store.name}
-                            className={`w-full h-full object-cover ${isOpen ? "" : "grayscale"}`}
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center bg-primary/10">
-                            <StoreIcon className="w-6 h-6 text-primary" />
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex justify-between items-start gap-2">
-                          <h3 className="font-bold text-foreground truncate">{store.name}</h3>
-                          <ChevronRight
-                            className={`w-5 h-5 shrink-0 mt-0.5 transition-colors ${
-                              isOpen ? "text-muted-foreground group-hover:text-primary" : "text-muted-foreground/40"
-                            }`}
-                          />
+                      {store.image_url ? (
+                        <img
+                          loading="lazy"
+                          decoding="async"
+                          src={store.image_url}
+                          alt={store.name}
+                          className={`w-[68px] h-[68px] rounded-2xl object-cover border border-border/50 shrink-0 ${
+                            isOpen ? "" : "grayscale opacity-60"
+                          }`}
+                        />
+                      ) : (
+                        <div
+                          className={`w-[68px] h-[68px] rounded-2xl bg-muted flex items-center justify-center shrink-0 ${
+                            isOpen ? "" : "opacity-60"
+                          }`}
+                        >
+                          <StoreIcon className="h-7 w-7 text-muted-foreground" />
                         </div>
-                        <p className="text-xs text-muted-foreground truncate capitalize">
-                          {(store.category || "Loja").replace(/_/g, " ")}
-                          {dist ? ` • ${dist}` : ""}
-                          {store.rating ? ` • ★ ${Number(store.rating).toFixed(1)}` : ""}
-                        </p>
-                        <div className="mt-1.5 flex items-center gap-2">
-                          <span
-                            className={`px-2 py-0.5 text-[10px] font-bold rounded uppercase ${
-                              isOpen
-                                ? "bg-emerald-100 text-emerald-700"
-                                : "bg-muted text-muted-foreground"
-                            }`}
-                          >
-                            {isOpen ? "Aberto" : "Fechado"}
-                          </span>
-                          {!isOpen && store.statusReason && (
-                            <span className="text-[10px] text-muted-foreground truncate">
-                              {store.statusReason}
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="text-[15px] font-bold text-foreground truncate leading-tight">
+                            {store.name}
+                          </p>
+                          {rating !== null && (
+                            <span className="flex items-center gap-0.5 text-[12px] font-bold text-amber-600 shrink-0 mt-0.5">
+                              <Star className="h-3 w-3 fill-amber-500 text-amber-500" />
+                              {rating.toFixed(1)}
                             </span>
                           )}
                         </div>
+                        <p className="text-[12px] text-muted-foreground truncate capitalize mt-0.5">
+                          {categoryLabel}
+                          {dist ? ` • ${dist}` : ""}
+                          {rating === null ? " • Novo" : ""}
+                        </p>
+                        <div className="flex items-center gap-1.5 mt-1 text-[12px]">
+                          <span className="text-muted-foreground">{timeLabel}</span>
+                          <span className="text-muted-foreground/50">•</span>
+                          {fee.prefix && (
+                            <span className="text-muted-foreground">{fee.prefix}</span>
+                          )}
+                          <span
+                            className={
+                              fee.free
+                                ? "font-bold text-emerald-600"
+                                : "font-semibold text-foreground"
+                            }
+                          >
+                            {fee.label}
+                          </span>
+                        </div>
+                        {!isOpen && (
+                          <div className="flex items-center gap-1.5 mt-1">
+                            <span className="px-1.5 py-0.5 text-[9px] font-black tracking-wider rounded bg-rose-100 text-rose-700">
+                              FECHADA
+                            </span>
+                            {store.statusReason && (
+                              <span className="text-[10px] text-muted-foreground truncate">
+                                {store.statusReason}
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </div>
-                    </button>
+                      <ChevronRight
+                        className={`w-4 h-4 shrink-0 ${
+                          isOpen ? "text-muted-foreground" : "text-muted-foreground/40"
+                        }`}
+                      />
+                    </div>
                   </li>
                 );
               })}

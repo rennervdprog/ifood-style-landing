@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "@capacitor-community/background-geolocation": "^1.2.26",
+    "@capacitor-community/safe-area": "^8.0.1",
     "@capacitor-firebase/analytics": "^8.3.0",
     "@capacitor/android": "^8.3.0",
     "@capacitor/app": "^8.1.0",
@@ -45,6 +46,8 @@
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "@hookform/resolvers": "^3.10.0",
+    "@iconify-json/solar": "^1.2.5",
+    "@iconify/react": "^6.0.2",
     "@radix-ui/react-accordion": "^1.2.11",
     "@radix-ui/react-alert-dialog": "^1.1.14",
     "@radix-ui/react-aspect-ratio": "^1.1.7",

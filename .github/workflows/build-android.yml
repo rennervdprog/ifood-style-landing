@@ -124,7 +124,8 @@ jobs:
                 directUpdate: false,
                 resetWhenUpdate: true,
                 keepUrlPathAfterReload: true,
-                updateUrl: 'https://qkjhguziuchqsbxzruea.supabase.co/storage/v1/object/public/app-releases/manifest.json',
+                defaultChannel: 'cliente',
+                updateUrl: 'https://lktzrqjvqoojlrhqnxuz.supabase.co/functions/v1/ota-update',
                 statsUrl: '',
                 channelUrl: '',
                 publicKey: '',
@@ -261,12 +262,35 @@ jobs:
       - name: Build Release APK (unsigned)
         run: cd android && ./gradlew --version && ./gradlew assembleRelease
 
+      - name: Sign APK with debug keystore (sideload-friendly)
+        run: |
+          APK_UNSIGNED="android/app/build/outputs/apk/release/app-release-unsigned.apk"
+          APK_SIGNED="android/app/build/outputs/apk/release/app-release.apk"
+          if [ ! -f "$APK_UNSIGNED" ] && [ -f "$APK_SIGNED" ]; then
+            echo "✅ APK já assinado pelo Gradle"
+            exit 0
+          fi
+          KEYSTORE="$HOME/.android/debug.keystore"
+          if [ ! -f "$KEYSTORE" ]; then
+            mkdir -p "$HOME/.android"
+            keytool -genkeypair -v -keystore "$KEYSTORE" -storepass android \
+              -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 \
+              -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+          fi
+          APKSIGNER=$(ls "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -1)
+          ZIPALIGN=$(ls "$ANDROID_HOME"/build-tools/*/zipalign | sort -V | tail -1)
+          "$ZIPALIGN" -f -p 4 "$APK_UNSIGNED" "$APK_SIGNED"
+          "$APKSIGNER" sign --ks "$KEYSTORE" --ks-pass pass:android \
+            --key-pass pass:android --ks-key-alias androiddebugkey "$APK_SIGNED"
+          "$APKSIGNER" verify --print-certs "$APK_SIGNED"
+          echo "✅ APK Cliente assinado com debug keystore"
+
       - name: Verify and rename APK (Cliente)
         id: apk
         run: |
-          APK_PATH="android/app/build/outputs/apk/release/app-release-unsigned.apk"
+          APK_PATH="android/app/build/outputs/apk/release/app-release.apk"
           if [ ! -f "$APK_PATH" ]; then
-             APK_PATH="android/app/build/outputs/apk/release/app-release.apk"
+             APK_PATH="android/app/build/outputs/apk/release/app-release-unsigned.apk"
           fi
           AAPT=$(ls "$ANDROID_HOME"/build-tools/*/aapt | sort -V | tail -1)
           BADGING=$($AAPT dump badging "$APK_PATH" | head -1)
@@ -408,7 +432,8 @@ jobs:
                 directUpdate: false,
                 resetWhenUpdate: true,
                 keepUrlPathAfterReload: true,
-                updateUrl: 'https://qkjhguziuchqsbxzruea.supabase.co/storage/v1/object/public/app-releases/manifest.json',
+                defaultChannel: 'parceiro',
+                updateUrl: 'https://lktzrqjvqoojlrhqnxuz.supabase.co/functions/v1/ota-update',
                 statsUrl: '',
                 channelUrl: '',
                 publicKey: '',

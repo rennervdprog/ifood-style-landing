@@ -230,9 +230,9 @@ div[style*="Edit with Lovable"],
 }
 
 /* ─── Native App Feel (GoNative / Capacitor) ─── */
-/* Bloqueia zoom (pinch e double-tap) em todas as telas */
+/* Base nativa: não force touch-action global; alguns Android WebViews
+   perdem o pan vertical quando o gesto começa em elementos clicáveis. */
 html {
-  touch-action: pan-x pan-y;
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
 }
@@ -242,44 +242,93 @@ html {
   user-select: none;
   -webkit-touch-callout: none;
   -webkit-tap-highlight-color: transparent;
-  touch-action: manipulation;
-  overscroll-behavior: none;
   background: hsl(var(--background));
   min-height: 100vh;
 }
 
-/* Safe-area aplicada APENAS no body para evitar empilhamento de padding
-   quando elementos internos também recebem a classe .native-app. */
+/* Safe-area no body.
+   - Fallback: se a página NÃO tem header sticky, aplicamos padding-top para
+     não deixar conteúdo sob a status bar do Android/iOS.
+   - Quando existe header sticky (padrão iFood), o próprio header cobre o notch
+     — regra mais abaixo — e evitamos empilhar padding.
+   `:has()` é suportado no WebView Chromium moderno usado pelo Capacitor. */
 body.native-app {
-  padding-top: env(safe-area-inset-top);
-  padding-bottom: env(safe-area-inset-bottom);
-  padding-left: env(safe-area-inset-left);
-  padding-right: env(safe-area-inset-right);
+  padding-bottom: var(--safe-area-inset-bottom, env(safe-area-inset-bottom));
+  padding-left: var(--safe-area-inset-left, env(safe-area-inset-left));
+  padding-right: var(--safe-area-inset-right, env(safe-area-inset-right));
+}
+body.native-app:not(:has(header.sticky.top-0)) {
+  padding-top: var(--safe-area-inset-top, env(safe-area-inset-top));
 }
 
-/* Elimina delay de 300ms em TODOS os botões e links no app nativo */
+/* Padrão iFood: todo header sticky no app nativo estende-se sob a status bar,
+   fica opaco (nunca translúcido) e ganha padding-top do notch. Assim, ao rolar
+   a página, o header permanece visível e cobre a área da bateria/hora. */
+body.native-app header.sticky.top-0 {
+  padding-top: env(safe-area-inset-top);
+  background-color: hsl(var(--card)) !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+/* Remove o realce cinza de tap no app nativo.
+   IMPORTANTE: não setar `touch-action: manipulation` aqui — isso bloqueia
+   o gesto de rolagem quando o dedo começa em cima de um <button> (ex.:
+   cards de loja no /cliente são <button>). Navegadores modernos já não
+   têm o delay de 300ms desde que a meta viewport esteja correta. */
 .native-app button,
 .native-app a,
 .native-app [role="button"] {
-  touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
   cursor: pointer;
 }
 
-/* Bloqueia pull-to-refresh do Chrome no Android */
-.native-app html,
-.native-app body {
-  overscroll-behavior-y: contain;
-  position: fixed;
+/* Android WebView: não declare `touch-action` no app nativo. Em alguns
+   aparelhos o gesto vertical fica preso quando começa em cards/botões. */
+
+/* App nativo: deixe o Android redimensionar o WebView com o teclado.
+   Não fixe #root em 100dvh nem esconda overflow-y; isso cria a faixa branca/cinza
+   entre input e teclado em alguns aparelhos. */
+html.native-app,
+body.native-app {
   width: 100%;
+  min-height: 100%;
+  background: hsl(var(--background));
+}
+
+/* IMPORTANTE: apenas UM scroll container no app nativo.
+   Se html E body têm overflow-y:auto, o Android WebView aninha dois
+   containers de rolagem e `position: sticky` deixa de grudar (o header
+   rola junto porque o body inteiro se move dentro do html). Aqui deixamos
+   só o html rolar; body flui livre. Assim `header.sticky.top-0` gruda
+   corretamente no topo da viewport do WebView. */
+html.native-app {
+  overflow-x: hidden;
+  overflow-y: auto;
   height: 100%;
-  overflow: hidden;
+}
+body.native-app {
+  position: static;
+  overflow-x: hidden;
+  overflow-y: visible;
 }
 
 .native-app #root {
-  height: 100%;
-  overflow-y: auto;
+  min-height: 100%;
+  overflow: visible;
   -webkit-overflow-scrolling: touch;
+}
+
+@supports (height: 100svh) {
+  html.native-app,
+  body.native-app,
+  .native-app #root {
+    min-height: 100svh;
+  }
+}
+
+.native-app.keyboard-open .native-hide-while-keyboard {
+  display: none !important;
 }
 
 .native-app * {

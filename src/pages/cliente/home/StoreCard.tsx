@@ -1,4 +1,6 @@
+import type { KeyboardEvent } from "react";
 import { MapPin, Store as StoreIcon, Star } from "lucide-react";
+import { formatBRL } from "@/lib/utils";
 
 interface Props {
   store: any;
@@ -8,6 +10,11 @@ interface Props {
 
 const StoreCard = ({ store, onClick, variant = "grid" }: Props) => {
   const isOpen = !!store.realIsOpen;
+  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    onClick();
+  };
   const distance =
     typeof store.distanceKm === "number"
       ? store.distanceKm < 1
@@ -15,10 +22,29 @@ const StoreCard = ({ store, onClick, variant = "grid" }: Props) => {
         : `${store.distanceKm.toFixed(1)} km`
       : null;
 
+  const rating =
+    typeof store.rating === "number" && store.rating > 0 ? Number(store.rating) : null;
+  const deliveryTime = (() => {
+    if (typeof store.distanceKm !== "number") return "30-45 min";
+    const base = 20 + Math.round(store.distanceKm * 4);
+    return `${base}-${base + 15} min`;
+  })();
+  const feeLabel = (() => {
+    if (store.delivery_mode === "pickup") return "Retirada";
+    const fee = Number(store.own_delivery_fee || 0);
+    if (!fee) return "Grátis";
+    return formatBRL(fee);
+  })();
+  const isFreeFee = feeLabel === "Grátis";
+
   if (variant === "row") {
     return (
-      <button
+      <div
+        role="button"
+        tabIndex={0}
         onClick={onClick}
+        onKeyDown={handleKeyDown}
+        data-native-scroll-pan
         onPointerEnter={() => {
           if (store.slug) {
             const link = document.createElement("link");
@@ -28,44 +54,74 @@ const StoreCard = ({ store, onClick, variant = "grid" }: Props) => {
             setTimeout(() => link.remove(), 4000);
           }
         }}
-        className="w-full flex items-center gap-3 p-3 bg-card border border-border rounded-2xl hover:bg-muted/40 active:scale-[0.99] transition-all text-left"
+        className="w-full flex items-center gap-3 py-3 active:opacity-70 transition-opacity text-left cursor-pointer"
       >
         {store.image_url ? (
-          <img loading="lazy" decoding="async" src={store.image_url} alt={store.name}
-            className="w-14 h-14 rounded-xl object-cover" />
+          <img
+            loading="lazy"
+            decoding="async"
+            src={store.image_url}
+            alt={store.name}
+            className={`w-16 h-16 rounded-2xl object-cover border border-border/50 shrink-0 ${
+              isOpen ? "" : "grayscale opacity-60"
+            }`}
+          />
         ) : (
-          <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center">
-            <StoreIcon className="h-5 w-5 text-primary" />
+          <div className={`w-16 h-16 rounded-2xl bg-muted flex items-center justify-center shrink-0 ${
+            isOpen ? "" : "opacity-60"
+          }`}>
+            <StoreIcon className="h-6 w-6 text-muted-foreground" />
           </div>
         )}
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1.5">
-            <p className="text-sm font-bold text-foreground truncate">{store.name}</p>
-            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full shrink-0 ${
-              isOpen ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-600"
-            }`}>
-              {isOpen ? "Aberta" : "Fechada"}
+          {!isOpen && (
+            <span className="inline-block text-[9px] font-black tracking-wider text-rose-600 mb-0.5">
+              FECHADA
             </span>
-          </div>
-          <p className="text-[11px] text-muted-foreground capitalize truncate">
-            {(store.category || "").replace(/_/g, " ")}
+          )}
+          <p className="text-[15px] font-bold text-foreground truncate leading-tight">
+            {store.name}
           </p>
-          <div className="flex items-center gap-2 mt-0.5 text-[10px] text-muted-foreground">
-            {distance && (
-              <span className="flex items-center gap-0.5">
-                <MapPin className="h-2.5 w-2.5" /> {distance}
+          <div className="flex items-center gap-1.5 mt-1 text-[12px] text-muted-foreground">
+            {rating ? (
+              <span className="flex items-center gap-0.5 font-semibold text-amber-600">
+                <Star className="h-3 w-3 fill-amber-500 text-amber-500" />
+                {rating.toFixed(1)}
               </span>
+            ) : (
+              <span className="text-[11px] font-semibold text-muted-foreground/70">Novo</span>
             )}
-            {!isOpen && store.statusReason && <span className="truncate">{store.statusReason}</span>}
+            <span className="text-muted-foreground/50">•</span>
+            <span className="truncate capitalize">{(store.category || "").replace(/_/g, " ")}</span>
+          </div>
+          <div className="flex items-center gap-1.5 mt-0.5 text-[12px] text-muted-foreground">
+            <span>{deliveryTime}</span>
+            <span className="text-muted-foreground/50">•</span>
+            <span className={isFreeFee ? "font-bold text-emerald-600" : "font-semibold text-foreground"}>
+              {feeLabel}
+            </span>
+            {distance && (
+              <>
+                <span className="text-muted-foreground/50">•</span>
+                <span className="flex items-center gap-0.5">
+                  <MapPin className="h-2.5 w-2.5" />
+                  {distance}
+                </span>
+              </>
+            )}
           </div>
         </div>
-      </button>
+      </div>
     );
   }
 
   return (
-    <button
+    <div
+      role="button"
+      tabIndex={0}
       onClick={onClick}
+      onKeyDown={handleKeyDown}
+      data-native-scroll-pan
       onPointerEnter={() => {
         if (store.slug) {
           const link = document.createElement("link");
@@ -75,7 +131,7 @@ const StoreCard = ({ store, onClick, variant = "grid" }: Props) => {
           setTimeout(() => link.remove(), 4000);
         }
       }}
-      className={`group relative bg-card border border-border rounded-2xl overflow-hidden text-left transition-all hover:shadow-md hover:-translate-y-0.5 active:scale-[0.99] ${
+      className={`group relative bg-card border border-border rounded-2xl overflow-hidden text-left transition-all hover:shadow-md hover:-translate-y-0.5 active:scale-[0.99] cursor-pointer ${
         isOpen ? "" : "opacity-80"
       }`}
     >
@@ -115,7 +171,7 @@ const StoreCard = ({ store, onClick, variant = "grid" }: Props) => {
           <p className="text-[10px] text-muted-foreground mt-1 truncate">{store.statusReason}</p>
         )}
       </div>
-    </button>
+    </div>
   );
 };
 

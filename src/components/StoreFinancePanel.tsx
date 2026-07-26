@@ -285,7 +285,7 @@ const DONUT_COLORS = [NEON_COLORS.pink, NEON_COLORS.blue, NEON_COLORS.amber];
         ...storeResult.data,
         plan_commission_rate: planResult.data?.commission_rate,
         plan_type: planResult.data?.plan_type,
-        platform_delivery_split: planResult.data?.platform_delivery_split_override ?? 2.00,
+        platform_delivery_split: planResult.data?.platform_delivery_split_override ?? 0.99,
       };
     },
     enabled: !!storeId,
@@ -297,7 +297,7 @@ const DONUT_COLORS = [NEON_COLORS.pink, NEON_COLORS.blue, NEON_COLORS.amber];
   const commissionRate = ((storeData as any)?.plan_commission_rate ?? (storeData as any)?.commission_rate ?? 5) / 100;
   const commissionPct = Math.round(commissionRate * 100);
   // R$2/entrega cobrado em TODOS os planos (incluindo comissão)
-  const platformDeliverySplit: number = (storeData as any)?.platform_delivery_split ?? 2.00;
+  const platformDeliverySplit: number = (storeData as any)?.platform_delivery_split ?? 0.99;
 
   /**
    * 🔒 Helper: retorna a taxa de comissão correta para cada pedido individual.
