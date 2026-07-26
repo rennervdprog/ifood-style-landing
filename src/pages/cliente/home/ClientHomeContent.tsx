@@ -37,7 +37,10 @@ const ROTATING_PLACEHOLDERS = [
   "Buscar açaí...",
 ];
 
-const PUBLIC_STORE_SELECT = "id, name, image_url, slug, category, categories, is_open, force_closed, rating, status, delivery_mode, own_delivery_fee, delivery_fee, delivery_fee_type, delivery_fee_base, delivery_fee_per_km, estimated_delivery_time, minimum_order_value, free_delivery_threshold, address_cep, address_city, address_complement, address_neighborhood, address_number, address_reference, address_state, address_street, latitude, longitude, settings";
+// Full select (para tabela `stores` — inclui colunas que só existem na tabela base).
+const FULL_STORE_SELECT = "id, name, image_url, slug, category, categories, is_open, force_closed, rating, status, delivery_mode, own_delivery_fee, delivery_fee, delivery_fee_type, delivery_fee_base, delivery_fee_per_km, estimated_delivery_time, minimum_order_value, free_delivery_threshold, address_cep, address_city, address_complement, address_neighborhood, address_number, address_reference, address_state, address_street, latitude, longitude, settings";
+// Select compatível com a view `stores_public` (não expõe delivery_fee/estimated_delivery_time/etc).
+const PUBLIC_VIEW_SELECT = "id, name, image_url, slug, category, categories, is_open, force_closed, rating, status, delivery_mode, own_delivery_fee, address_cep, address_city, address_complement, address_neighborhood, address_number, address_reference, address_state, address_street, latitude, longitude, settings";
 
 // Split base cobrado pela plataforma quando a loja usa entrega própria.
 // Fonte da verdade: admin_settings.delivery_fee_config.platform_split (default R$ 0,99).
@@ -92,7 +95,7 @@ const loadPublicStores = async ({
   const table = includeTest ? "stores" : "stores_public";
   let dbQuery = (supabase as any)
     .from(table)
-    .select(PUBLIC_STORE_SELECT)
+    .select(includeTest ? FULL_STORE_SELECT : PUBLIC_VIEW_SELECT)
     .eq("status", "ativo")
     .limit(50);
 
