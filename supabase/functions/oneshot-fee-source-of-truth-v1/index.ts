@@ -32,7 +32,7 @@ GRANT EXECUTE ON FUNCTION public.get_store_platform_split(uuid) TO anon, authent
   out.drop_view = await run(`DROP VIEW IF EXISTS public.stores_public CASCADE;`);
   out.view = await run(`
 CREATE VIEW public.stores_public
-WITH (security_invoker = on) AS
+WITH (security_invoker = off) AS
 SELECT
   s.id, s.name, s.slug, s.slug_aliases, s.image_url, s.category, s.categories,
   s.rating, s.is_open, s.force_closed, s.status,
