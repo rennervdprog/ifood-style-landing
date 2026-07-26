@@ -140,8 +140,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     supabase.auth.getSession().then(async ({ data: { session: restoredSession }, error }) => {
       // Se o token salvo estiver corrompido (bad_jwt de projeto antigo), limpa e segue.
       if (error) {
-        console.warn("[Auth] getSession error, clearing local session:", error.message);
-        try { await supabase.auth.signOut({ scope: "local" as any }); } catch {}
+        const msg = (error.message || "").toLowerCase();
+        const isFatal =
+          msg.includes("bad_jwt") ||
+          msg.includes("invalid_grant") ||
+          msg.includes("refresh_token_not_found") ||
+          msg.includes("invalid refresh token");
+        if (isFatal) {
+          console.warn("[Auth] getSession fatal error, clearing local session:", error.message);
+          try { await supabase.auth.signOut({ scope: "local" as any }); } catch {}
+        } else {
+          // Erro transitório (rede, timeout, 5xx) — NÃO desloga.
+          console.warn("[Auth] getSession transient error, keeping session:", error.message);
+        }
       }
       console.log("[Auth] 🔄 Session restored from storage:", restoredSession?.user?.email ?? "none");
       try {
@@ -240,6 +251,58 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       subscription.unsubscribe();
       stopDeviceCheck();
       stopProactiveRefresh();
+    };
+  }, []);
+
+  // 📱 Capacitor App resume: `visibilitychange` não dispara de forma
+  // confiável no Android nativo. Escutar `App.resume` garante refresh do JWT
+  // quando o usuário volta ao app depois de horas/dias em background.
+  // Se o refresh falhar por rede, NÃO desloga — reagenda retry (5s, 15s, 45s).
+  useEffect(() => {
+    if (!isCapacitorNative()) return;
+    let cancelled = false;
+    let retryTimer: ReturnType<typeof setTimeout> | null = null;
+    let sub: { remove: () => void } | null = null;
+
+    const tryRefresh = async (attempt = 0) => {
+      if (cancelled) return;
+      try {
+        const { error } = await supabase.auth.refreshSession();
+        if (error) throw error;
+      } catch (e: any) {
+        const msg = (e?.message || "").toLowerCase();
+        const isFatal =
+          msg.includes("bad_jwt") ||
+          msg.includes("invalid_grant") ||
+          msg.includes("refresh_token_not_found") ||
+          msg.includes("invalid refresh token");
+        if (isFatal) {
+          console.warn("[Auth] resume refresh fatal:", e?.message);
+          return; // Supabase JS já vai emitir SIGNED_OUT
+        }
+        // Transiente — retry backoff 5s, 15s, 45s
+        const delays = [5_000, 15_000, 45_000];
+        if (attempt < delays.length) {
+          retryTimer = setTimeout(() => tryRefresh(attempt + 1), delays[attempt]);
+        }
+      }
+    };
+
+    (async () => {
+      try {
+        const { App } = await import("@capacitor/app");
+        const handle = await App.addListener("resume", () => tryRefresh(0));
+        if (cancelled) { handle.remove(); return; }
+        sub = handle;
+      } catch (e) {
+        console.warn("[Auth] failed to attach App.resume listener:", e);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      if (retryTimer) clearTimeout(retryTimer);
+      if (sub) { try { sub.remove(); } catch {} }
     };
   }, []);
 

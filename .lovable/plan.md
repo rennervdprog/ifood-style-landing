@@ -1,47 +1,65 @@
-# Plano — Cobrança PIX de repasse (piso R$ 150 + cobranças separadas)
 
-## O que muda
+# Manter conta logada no app cliente (Capacitor)
 
-### 1. Piso mínimo para gerar PIX: R$ 30 → **R$ 150**
-Hoje o cron semanal gera uma cobrança PIX sempre que o saldo pendente atinge R$ 30. Vai passar a só gerar quando o saldo do ciclo for **≥ R$ 150**. Abaixo disso, acumula para a próxima segunda.
+## Diagnóstico
 
-### 2. Cobrança por **ciclo**, não por saldo total
-Cada rodada semanal gera **uma cobrança PIX independente** com o valor acumulado **naquele ciclo** — não soma com cobranças anteriores em aberto.
+A infra já está quase toda certa:
 
-Exemplo do usuário:
-- Segunda A: saldo pendente do ciclo = **R$ 237** → gera PIX #1 de R$ 237.
-- Lojista não paga.
-- Segunda B: novo saldo acumulado no ciclo = **R$ 120** → gera PIX #2 **separado** de R$ 120 (não vira R$ 357).
-- Painel do lojista mostra as duas cobranças lado a lado, com data de vencimento própria.
+- `authStorage` usa `@capacitor/preferences` (sobrevive a limpeza de cache, update de APK).
+- `persistSession: true` e `autoRefreshToken: true` no client Supabase.
+- Refresh proativo a cada intervalo enquanto o app está visível.
+- Refresh no `visibilitychange` quando volta do background.
 
-Isso evita a confusão de "por que a cobrança mudou de valor?" e mantém rastreabilidade (uma cobrança = um ciclo).
+Então por que o usuário está sendo deslogado?
 
-### 3. Regra de bloqueio continua igual
-- Total pendente **≥ R$ 500** → loja bloqueada (independentemente de quantas cobranças em aberto).
-- Prazo de 30 dias sem quitar → suspensão.
+**3 causas prováveis, em ordem de probabilidade:**
 
-## Alterações técnicas
+1. **`getSession()` erro transitório → `signOut({scope:"local"})`** (AuthContext.tsx:142-145).
+   Se o boot acontece sem rede (celular abriu o app no metrô/avião), `getSession` pode retornar erro genérico → o código faz signOut local e apaga o token válido. Não deveria: `bad_jwt` sim, network error não.
 
-**Backend (Supabase externo)**
-- Edge function do cron semanal (`weekly-repasse-charge` / equivalente): trocar constante `MIN_CHARGE_BRL` de 30 → **150**.
-- Ajustar lógica de agregação: passar a somar apenas o delta acumulado **desde a última cobrança emitida** (usar `platform_fee_accruals.charged_at IS NULL` ou coluna equivalente para marcar o que já entrou em cobrança).
-- Ao gerar PIX, marcar os accruals daquele lote com o `charge_id` retornado, para o próximo ciclo não pegá-los de novo.
+2. **JWT expira no background e o refresh token expira antes do próximo `resume`.**
+   Padrão Supabase: access token 1h, refresh token 30 dias com **rotação obrigatória**. Se o usuário fica >30 dias sem abrir, ou se o refresh falha (rede) e a próxima chamada tenta usar o token rotacionado errado, sessão morre.
+   No Capacitor Android o `visibilitychange` **não dispara de forma confiável** quando o app vem do background — só `App.addListener('resume')` do plugin nativo.
 
-**Frontend (`RepassePendingCharges.tsx` + `RepasseSection.tsx`)**
-- Listar **todas** as cobranças em aberto (não só a mais recente), ordenadas por data.
-- Total pendente = soma de todas as cobranças abertas + saldo em acúmulo ainda não cobrado.
-- Texto informativo: "cobranças abaixo de R$ 150 são acumuladas para a próxima segunda-feira".
+3. **`Preferences.get` retorna null silenciosamente em cold-start no Android** enquanto o Supabase client já leu (race). Mitigar com pré-hidratação antes de `createClient` ler.
 
-**Regras (`src/lib/repasseRules.ts`)**
-- Adicionar `MIN_CHARGE_BRL: 150`.
-- Ajustar copy do `RepasseAlert` e `PlatformFeeExplainerCard`.
+## Mudanças
 
-## Fora do escopo
-- Não muda regra de comissão do Essencial (mensalidade continua como está).
-- Não muda taxa de 0,99 por pedido nem split de entrega.
-- Não altera lógica de VIP / lifetime free.
+### 1. `src/contexts/AuthContext.tsx`
+- Remover o `signOut({scope:"local"})` no erro genérico do `getSession`. Só limpar se `error.message` contiver `bad_jwt` / `invalid_grant` / `refresh_token_not_found`. Erro de rede mantém a sessão como está.
+- Adicionar listener `App.addListener('resume', ...)` do `@capacitor/app` chamando `refreshSession()` (o `visibilitychange` sozinho não cobre Android nativo).
+- No `resume`, se `refreshSession` falhar com erro de rede, **não** deslogar — só logar warning e reagendar retry curto (5s, 15s, 45s).
 
-## Versão
-Bump para `1.26.14` (`src/lib/appVersion.ts` + `android/app/build.gradle`).
+### 2. `src/integrations/supabase/authStorage.ts`
+- Pré-hidratar a chave `sb-<ref>-auth-token` do `Preferences` para `localStorage` **antes** do `createClient` rodar (executar em `main.tsx` antes do import do client), garantindo que a leitura síncrona inicial já veja o token no native.
 
-Confirma que posso implementar?
+### 3. Refresh token de longa duração
+- Configurar no Supabase auth: `refresh_token_rotation_enabled=true` (já é default) mas subir `jwt_expiry` para 3600 (1h, já default) e garantir que `refresh_token_reuse_interval=10s` (evita corrida de refresh no boot do app quando várias queries disparam ao mesmo tempo).
+
+### 4. `main.tsx`
+- Boot: chamar `await hydrateAuthStorage()` antes de renderizar o `<App />`. Curto (~50ms no native), evita render com sessão "vazia".
+
+## Detalhes técnicos
+
+```text
+Boot atual (bug):                Boot novo:
+─────────────────                ──────────
+createClient (lê storage sync)   hydrateAuthStorage() ─► copia Preferences→localStorage
+  └─ localStorage vazio          createClient (lê localStorage já hidratado)
+getSession() ─► erro rede        getSession() ─► sessão viva
+  └─ signOut local ❌            App.on('resume') ─► refreshSession com retry
+                                   └─ falha rede: mantém sessão, tenta de novo
+```
+
+Regras de "quando deslogar de verdade":
+- `bad_jwt` / `invalid_grant` / `refresh_token_not_found` → sim, signOut local.
+- Qualquer outro erro (network, timeout, 5xx) → **manter sessão**, tentar depois.
+
+## Fora de escopo
+
+- Biometria/PIN local (pode ser fase 2 se quiser reforço extra).
+- Sign in with Apple / OAuth Google no nativo (fluxo separado, não afeta persistência).
+
+## Resultado esperado
+
+Usuário loga uma vez → app cliente mantém a conta por semanas/meses, mesmo com updates de APK, sem rede no boot, e com o app fechado por muitos dias (até o refresh token real expirar após inatividade prolongada).
