@@ -7,32 +7,24 @@ import { supabase } from "@/integrations/supabase/client";
  *    cuja conta em `drivers` esteja com `is_online = true`.
  *
  * Recebe qualquer lista de lojas (precisa ter `id`; usa `plan_type` se existir).
+ * Usa a RPC `stores_with_online_drivers` (SECURITY DEFINER) para funcionar
+ * também para visitantes anônimos — as tabelas `drivers`/`store_drivers` bloqueiam
+ * `SELECT` para o role `anon`, o que antes escondia 100% das lojas em `/cliente`
+ * quando o usuário não estava logado.
  */
 export async function filterStoresWithOnlineDrivers<T extends { id: string; plan_type?: string | null }>(
   stores: T[] | null | undefined,
 ): Promise<T[]> {
   const list = (stores || []).filter((s) => (s as any).plan_type !== "pdv_only");
   if (list.length === 0) return [];
-  const ids = list.map((s) => s.id);
 
-  const { data: links } = await supabase
-    .from("store_drivers")
-    .select("store_id, driver_user_id")
-    .in("store_id", ids);
-  const linkRows = (links || []) as { store_id: string; driver_user_id: string }[];
-  if (linkRows.length === 0) return [];
-
-  const driverIds = Array.from(new Set(linkRows.map((l) => l.driver_user_id)));
-  const { data: drivers } = await supabase
-    .from("drivers")
-    .select("user_id, is_online")
-    .in("user_id", driverIds)
-    .eq("is_online", true);
-  const onlineDrivers = new Set(((drivers || []) as { user_id: string }[]).map((d) => d.user_id));
-  if (onlineDrivers.size === 0) return [];
-
-  const storesWithOnline = new Set(
-    linkRows.filter((l) => onlineDrivers.has(l.driver_user_id)).map((l) => l.store_id),
-  );
-  return list.filter((s) => storesWithOnline.has(s.id));
+  const { data, error } = await supabase.rpc("stores_with_online_drivers" as any);
+  if (error || !Array.isArray(data)) {
+    // Fail-open: se a RPC falhar (rede/rollout), preserva o comportamento
+    // anterior à filtragem em vez de deixar a vitrine vazia.
+    return list;
+  }
+  const allowed = new Set<string>((data as string[]).filter(Boolean));
+  if (allowed.size === 0) return [];
+  return list.filter((s) => allowed.has(s.id));
 }
