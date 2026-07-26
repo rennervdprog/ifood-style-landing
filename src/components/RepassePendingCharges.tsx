@@ -37,8 +37,8 @@ export default function RepassePendingCharges({ storeId }: Props) {
 
   if (isLoading || charges.length === 0) return null;
 
-  const pending = charges.find((c: any) => c.status === "pending");
-  const history = charges.filter((c: any) => c.id !== pending?.id);
+  const pendingList = charges.filter((c: any) => c.status === "pending");
+  const history = charges.filter((c: any) => c.status !== "pending");
 
   const copy = (t: string) => {
     navigator.clipboard.writeText(t);
@@ -47,15 +47,21 @@ export default function RepassePendingCharges({ storeId }: Props) {
 
   return (
     <div className="space-y-4">
-      {pending && (
-        <div className="rounded-3xl border-2 border-primary/40 bg-card shadow-xl shadow-primary/10 overflow-hidden">
+      {pendingList.length > 1 && (
+        <div className="rounded-2xl border border-amber-500/40 bg-amber-500/5 px-4 py-3 text-sm text-amber-800 dark:text-amber-300">
+          Você tem <strong>{pendingList.length} cobranças</strong> em aberto de ciclos diferentes.
+          Cada uma corresponde a uma segunda-feira e é paga separadamente.
+        </div>
+      )}
+      {pendingList.map((pending: any, idx: number) => (
+        <div key={pending.id} className="rounded-3xl border-2 border-primary/40 bg-card shadow-xl shadow-primary/10 overflow-hidden">
           {/* Status header */}
           <div className="px-5 pt-5 pb-0">
             <div className="flex justify-between items-center mb-4">
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
                 <span className="text-[11px] font-bold text-primary uppercase tracking-widest">
-                  Aguardando Pagamento
+                  Cobrança {pendingList.length > 1 ? `${idx + 1}/${pendingList.length} · ` : ""}aguardando pagamento
                 </span>
               </div>
               {pending.reference_code && (
@@ -79,7 +85,7 @@ export default function RepassePendingCharges({ storeId }: Props) {
 
             <div className="mt-5 mb-6">
               <p className="text-[10px] font-bold text-primary/60 uppercase tracking-wider mb-1">
-                Valor total a pagar
+                Valor desta cobrança
               </p>
               <div className="text-4xl font-black text-primary tracking-tight">
                 {formatBRL(Number(pending.amount))}
@@ -132,7 +138,7 @@ export default function RepassePendingCharges({ storeId }: Props) {
             )}
           </div>
         </div>
-      )}
+      ))}
 
       {history.length > 0 && (
         <div className="rounded-2xl border p-5 space-y-3">
