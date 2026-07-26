@@ -96,9 +96,9 @@ import {
   formatDateKeyPtBR,
   getPeriodDateKeys,
 } from "./admin/helpers";
-import type {
 import { AppIcon } from "@/components/ui/app-icon";
 import { Clock, Printer, Bike, Volume2, VolumeX, Bell, Store, Loader2, Menu, X, TrendingUp, ArrowUpRight, ArrowDownRight, Filter, Shield, Navigation, ChevronRight } from "lucide-react";
+import type {
   OrderStatus,
   OrderTabKey,
   DashboardTab,
