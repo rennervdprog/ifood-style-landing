@@ -14,6 +14,7 @@ import ProductTour, { clienteTourSteps } from "@/components/ProductTour";
 import SupportTicketModal from "@/components/SupportTicketModal";
 import { useUserLocation } from "@/hooks/useUserLocation";
 import { formatBRL } from "@/lib/utils";
+import { describeStoreFee } from "@/lib/deliveryFeeDisplay";
 import { mapStoresWithHours } from "../utils/mapStores";
 import CategoryChips, { normalizeCategory } from "./CategoryChips";
 import BentoHero from "./BentoHero";
@@ -42,11 +43,7 @@ const FULL_STORE_SELECT = "id, name, image_url, slug, category, categories, is_o
 // Select compatível com a view `stores_public` (agora expõe plan_type/override/autonomy_lifetime_free/delivery_fee/estimated_delivery_time).
 const PUBLIC_VIEW_SELECT = "id, name, image_url, slug, category, categories, is_open, force_closed, rating, status, delivery_mode, own_delivery_fee, delivery_fee, estimated_delivery_time, address_cep, address_city, address_complement, address_neighborhood, address_number, address_reference, address_state, address_street, latitude, longitude, settings, platform_fee_split, plan_type, platform_delivery_split_override, autonomy_lifetime_free";
 
-// Fonte única de verdade — usa a helper compartilhada, que espelha a RPC
-// `compute_store_delivery_fee`. A view `stores_public` já traz plan_type,
-// platform_delivery_split_override e autonomy_lifetime_free, então o cálculo
-// aqui é idêntico ao da StorePage e do Checkout.
-import { describeStoreFee } from "@/lib/deliveryFeeDisplay";
+// Fonte única de verdade — helper espelha RPC compute_store_delivery_fee.
 const formatFeeLabel = (store: any): { label: string; free: boolean; prefix?: string } => {
   const d = describeStoreFee(store);
   return { label: d.label, free: d.free, prefix: d.prefix };
