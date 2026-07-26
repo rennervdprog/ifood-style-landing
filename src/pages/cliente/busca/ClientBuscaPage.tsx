@@ -9,7 +9,8 @@ import { mapStoresWithHours } from "../utils/mapStores";
 import { formatBRL } from "@/lib/utils";
 import BottomNav from "@/components/BottomNav";
 
-const PUBLIC_STORE_SELECT = "id, name, image_url, slug, category, categories, is_open, force_closed, rating, status, delivery_mode, own_delivery_fee, delivery_fee, delivery_fee_type, delivery_fee_base, delivery_fee_per_km, estimated_delivery_time, minimum_order_value, free_delivery_threshold, address_cep, address_city, address_complement, address_neighborhood, address_number, address_reference, address_state, address_street, latitude, longitude, settings, created_at";
+const PUBLIC_STORE_SELECT_FULL = "id, name, image_url, slug, category, categories, is_open, force_closed, rating, status, delivery_mode, own_delivery_fee, delivery_fee, delivery_fee_type, delivery_fee_base, delivery_fee_per_km, estimated_delivery_time, minimum_order_value, free_delivery_threshold, address_cep, address_city, address_complement, address_neighborhood, address_number, address_reference, address_state, address_street, latitude, longitude, settings, created_at";
+const PUBLIC_STORE_SELECT_VIEW = "id, name, image_url, slug, category, categories, is_open, force_closed, rating, status, delivery_mode, own_delivery_fee, address_cep, address_city, address_complement, address_neighborhood, address_number, address_reference, address_state, address_street, latitude, longitude, settings, created_at";
 
 const PLATFORM_OWN_SPLIT = 0.99;
 
@@ -167,9 +168,10 @@ const ClientBuscaPage = () => {
     queryFn: async () => {
       const includeTest = !!user?.email?.endsWith("@itasuper.test");
       const table = includeTest ? "stores" : "stores_public";
+      const select = includeTest ? PUBLIC_STORE_SELECT_FULL : PUBLIC_STORE_SELECT_VIEW;
       const { data, error } = await (supabase as any)
         .from(table)
-        .select(PUBLIC_STORE_SELECT)
+        .select(select)
         .eq("status", "ativo")
         .limit(100);
       if (error) throw error;
