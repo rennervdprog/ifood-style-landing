@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, type KeyboardEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { formatBRL } from "@/lib/utils";
 
@@ -22,14 +22,23 @@ const DiscoverGrid = memo(({ products, storesMap, onSelect }: Props) => {
     navigate(`${base}?product=${p.id}`);
   };
 
+  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>, product: any, store: any) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    openProduct(product, store);
+  };
+
   return (
     <div className="grid grid-cols-2 gap-3">
       {products.map((p) => {
         const store = storesMap.get(p.store_id);
         return (
-          <button
+          <div
             key={p.id}
+            role="button"
+            tabIndex={0}
             onClick={() => openProduct(p, store)}
+            onKeyDown={(event) => handleKeyDown(event, p, store)}
             data-native-scroll-pan
             onPointerEnter={() => {
               if (store?.slug) {
@@ -40,7 +49,7 @@ const DiscoverGrid = memo(({ products, storesMap, onSelect }: Props) => {
                 setTimeout(() => link.remove(), 4000);
               }
             }}
-            className="relative rounded-3xl overflow-hidden bg-card border border-border text-left active:scale-[0.98] transition-transform group flex flex-col"
+            className="relative rounded-3xl overflow-hidden bg-card border border-border text-left active:scale-[0.98] transition-transform group flex flex-col cursor-pointer"
           >
             <div className="relative w-full aspect-square overflow-hidden">
               {p.image_url ? (
@@ -80,7 +89,7 @@ const DiscoverGrid = memo(({ products, storesMap, onSelect }: Props) => {
                 </span>
               </div>
             </div>
-          </button>
+          </div>
         );
       })}
     </div>

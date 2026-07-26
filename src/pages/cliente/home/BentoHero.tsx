@@ -1,4 +1,4 @@
-import { memo, useCallback } from "react";
+import { memo, useCallback, type KeyboardEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,6 +19,12 @@ interface BentoHeroProps {
 
 const BentoHero = memo(({ activeAction, onExploreStores, onSelectNoFee, onSelectDirectDelivery }: BentoHeroProps) => {
   const navigate = useNavigate();
+
+  const runOnKeyboard = useCallback((event: KeyboardEvent<HTMLDivElement>, action: () => void) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    action();
+  }, []);
 
   const { data: banners } = useQuery({
     queryKey: ["active-banners-hero"],
@@ -53,10 +59,13 @@ const BentoHero = memo(({ activeAction, onExploreStores, onSelectNoFee, onSelect
   return (
     <div className="grid grid-cols-3 grid-rows-2 gap-2 h-40">
       {/* Banner principal */}
-      <button
+      <div
+        role="button"
+        tabIndex={0}
         onClick={() => handleBanner(main)}
+        onKeyDown={(event) => runOnKeyboard(event, () => handleBanner(main))}
         data-native-scroll-pan
-        className="col-span-2 row-span-2 relative rounded-3xl overflow-hidden bg-gradient-to-br from-primary/25 via-primary/10 to-primary/5 border border-primary/20 text-left active:scale-[0.99] transition-transform"
+        className="col-span-2 row-span-2 relative rounded-3xl overflow-hidden bg-gradient-to-br from-primary/25 via-primary/10 to-primary/5 border border-primary/20 text-left active:scale-[0.99] transition-transform cursor-pointer"
       >
         {main?.image_url && (
           <img
@@ -79,15 +88,17 @@ const BentoHero = memo(({ activeAction, onExploreStores, onSelectNoFee, onSelect
             Ver mais <ChevronRight className="h-3 w-3" />
           </div>
         </div>
-      </button>
+      </div>
 
       {/* Mini card 1 — cashback */}
-      <button
-        type="button"
+      <div
+        role="button"
+        tabIndex={0}
         onClick={onSelectNoFee}
+        onKeyDown={(event) => runOnKeyboard(event, onSelectNoFee)}
         data-native-scroll-pan
         aria-pressed={activeAction === "no_fee"}
-        className={`rounded-2xl border p-3 flex flex-col justify-between text-left active:scale-[0.98] transition-all ${
+        className={`rounded-2xl border p-3 flex flex-col justify-between text-left active:scale-[0.98] transition-all cursor-pointer ${
           activeAction === "no_fee"
             ? "bg-primary text-primary-foreground border-primary shadow-sm shadow-primary/25"
             : "bg-primary/10 border-primary/20"
@@ -98,15 +109,17 @@ const BentoHero = memo(({ activeAction, onExploreStores, onSelectNoFee, onSelect
           <p className={`font-display font-bold text-xs leading-tight ${activeAction === "no_fee" ? "text-primary-foreground" : "text-foreground"}`}>Sem taxa</p>
           <p className={`text-[10px] leading-tight ${activeAction === "no_fee" ? "text-primary-foreground/80" : "text-muted-foreground"}`}>de serviço</p>
         </div>
-      </button>
+      </div>
 
       {/* Mini card 2 — frete grátis */}
-      <button
-        type="button"
+      <div
+        role="button"
+        tabIndex={0}
         onClick={onSelectDirectDelivery}
+        onKeyDown={(event) => runOnKeyboard(event, onSelectDirectDelivery)}
         data-native-scroll-pan
         aria-pressed={activeAction === "direct_delivery"}
-        className={`rounded-2xl border p-3 flex flex-col justify-between text-left active:scale-[0.98] transition-all ${
+        className={`rounded-2xl border p-3 flex flex-col justify-between text-left active:scale-[0.98] transition-all cursor-pointer ${
           activeAction === "direct_delivery"
             ? "bg-primary text-primary-foreground border-primary shadow-sm shadow-primary/25"
             : "bg-card border-border"
@@ -117,7 +130,7 @@ const BentoHero = memo(({ activeAction, onExploreStores, onSelectNoFee, onSelect
           <p className={`font-display font-bold text-xs leading-tight ${activeAction === "direct_delivery" ? "text-primary-foreground" : "text-foreground"}`}>Entrega</p>
           <p className={`text-[10px] leading-tight ${activeAction === "direct_delivery" ? "text-primary-foreground/80" : "text-muted-foreground"}`}>direta da loja</p>
         </div>
-      </button>
+      </div>
     </div>
   );
 });

@@ -1,4 +1,5 @@
-import { MapPin, Store as StoreIcon, Star } from "lucide-react";
+import type { KeyboardEvent } from "react";
+import { MapPin, Store as StoreIcon } from "lucide-react";
 
 interface Props {
   store: any;
@@ -8,6 +9,11 @@ interface Props {
 
 const StoreCard = ({ store, onClick, variant = "grid" }: Props) => {
   const isOpen = !!store.realIsOpen;
+  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    onClick();
+  };
   const distance =
     typeof store.distanceKm === "number"
       ? store.distanceKm < 1
@@ -17,8 +23,11 @@ const StoreCard = ({ store, onClick, variant = "grid" }: Props) => {
 
   if (variant === "row") {
     return (
-      <button
+      <div
+        role="button"
+        tabIndex={0}
         onClick={onClick}
+        onKeyDown={handleKeyDown}
         data-native-scroll-pan
         onPointerEnter={() => {
           if (store.slug) {
@@ -29,7 +38,7 @@ const StoreCard = ({ store, onClick, variant = "grid" }: Props) => {
             setTimeout(() => link.remove(), 4000);
           }
         }}
-        className="w-full flex items-center gap-3 p-3 bg-card border border-border rounded-2xl hover:bg-muted/40 active:scale-[0.99] transition-all text-left"
+        className="w-full flex items-center gap-3 p-3 bg-card border border-border rounded-2xl hover:bg-muted/40 active:scale-[0.99] transition-all text-left cursor-pointer"
       >
         {store.image_url ? (
           <img loading="lazy" decoding="async" src={store.image_url} alt={store.name}
@@ -60,13 +69,16 @@ const StoreCard = ({ store, onClick, variant = "grid" }: Props) => {
             {!isOpen && store.statusReason && <span className="truncate">{store.statusReason}</span>}
           </div>
         </div>
-      </button>
+      </div>
     );
   }
 
   return (
-    <button
+    <div
+      role="button"
+      tabIndex={0}
       onClick={onClick}
+      onKeyDown={handleKeyDown}
       data-native-scroll-pan
       onPointerEnter={() => {
         if (store.slug) {
@@ -77,7 +89,7 @@ const StoreCard = ({ store, onClick, variant = "grid" }: Props) => {
           setTimeout(() => link.remove(), 4000);
         }
       }}
-      className={`group relative bg-card border border-border rounded-2xl overflow-hidden text-left transition-all hover:shadow-md hover:-translate-y-0.5 active:scale-[0.99] ${
+      className={`group relative bg-card border border-border rounded-2xl overflow-hidden text-left transition-all hover:shadow-md hover:-translate-y-0.5 active:scale-[0.99] cursor-pointer ${
         isOpen ? "" : "opacity-80"
       }`}
     >
@@ -117,7 +129,7 @@ const StoreCard = ({ store, onClick, variant = "grid" }: Props) => {
           <p className="text-[10px] text-muted-foreground mt-1 truncate">{store.statusReason}</p>
         )}
       </div>
-    </button>
+    </div>
   );
 };
 
