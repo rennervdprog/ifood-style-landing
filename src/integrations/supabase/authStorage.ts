@@ -23,6 +23,27 @@ const isNative = () => {
 
 const CURRENT_PROJECT_REF = "qkjhguziuchqsbxzruea";
 
+/** Chave que o Supabase JS usa para persistir a sessão. */
+const AUTH_TOKEN_KEY = `sb-${CURRENT_PROJECT_REF}-auth-token`;
+
+/**
+ * Pré-hidrata a sessão do Capacitor Preferences para o localStorage ANTES
+ * do `createClient` fazer sua leitura inicial. Sem isso, no cold-start do
+ * APK Android o `getSession()` pode enxergar `null` e deslogar o usuário
+ * silenciosamente. Chamar em `main.tsx` antes de renderizar o App.
+ */
+export const hydrateAuthStorage = async (): Promise<void> => {
+  if (!isNative()) return;
+  try {
+    const { value } = await Preferences.get({ key: AUTH_TOKEN_KEY });
+    if (value) {
+      try { localStorage.setItem(AUTH_TOKEN_KEY, value); } catch {}
+    }
+  } catch (e) {
+    console.warn("[AuthStorage] hydrateAuthStorage failed:", e);
+  }
+};
+
 /** Remove chaves `sb-<ref>-auth-token` de projetos Supabase antigos. */
 export const purgeOrphanSupabaseTokens = () => {
   try {
