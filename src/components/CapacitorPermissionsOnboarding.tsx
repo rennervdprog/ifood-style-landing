@@ -3,7 +3,7 @@ import { Bell, Star, Store, Check } from "lucide-react";
 import { isCapacitorNative, registerCapacitorPush, requestLocationPermission } from "@/lib/capacitorNative";
 import { isPartnerCapacitorApp } from "@/lib/capacitorAppMode";
 
-const STORAGE_KEY = "cap-permissions-onboarding-v4";
+const STORAGE_KEY = "cap-permissions-onboarding-v5";
 
 type Step = "notifications" | "location" | "done";
 
