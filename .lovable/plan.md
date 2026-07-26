@@ -1,104 +1,51 @@
-## Objetivo
-Corrigir o bug do teclado no app cliente onde, ao focar qualquer input, aparece um grande espaço branco/cinza entre o conteúdo e o teclado, deixando a tela difícil ou impossível de usar.
+## Diagnóstico
 
-## Diagnóstico provável
-O problema não é mais a cor preta/cinza: agora o WebView está branco, mas o bug real continua porque o app está adicionando `padding-bottom` global no `#root` com a altura inteira do teclado.
+- **Web ok, Partner APK ok, Cliente APK travado.** Como partner e cliente compartilham a mesma base, mas usam **canais OTA separados** (feito na v1.25.62), o partner ainda não recebeu as últimas mudanças — logo o problema está numa alteração recente aplicada só ao cliente.
+- **Sintoma:** scroll vertical só funciona quando o dedo começa sobre a `BottomNav`. Em qualquer área de conteúdo o gesto é engolido.
+- **Suspeitos recentes (v1.25.72 → 1.25.78):**
+  1. Troca de ícones Lucide → **Iconify** (`AppIcon` com SVG renderizado async).
+  2. Refactor de `<button>` para `<div role="button">` nos cards.
+  3. Regras globais de `touch-action` em `src/index.css` (última patch minha).
+  4. `captureInput: true` + `useLegacyBridge: false` no `capacitor.config.ts`.
 
-Na prática, quando o teclado abre:
+## Plano de correção (em ordem, cada passo publicado via OTA para o cliente)
+
+### Passo 1 — Isolar a causa raiz (sem chutar)
+- Adicionar log temporário no `main.tsx` do cliente: registrar `touchstart`/`touchmove` no `document` com `{passive:true}` logando `event.target.tagName`, `event.defaultPrevented` e `getComputedStyle(target).touchAction`.
+- Publicar OTA; próximo turn os logs do console do WebView aparecem automaticamente no meu contexto.
+
+### Passo 2 — Reverter o global de `touch-action` que introduzi
+- No `src/index.css`, remover o bloco `.native-app, .native-app button, .native-app a, [role="button"] { touch-action: pan-y }`. Definir `touch-action` no root altera comportamento do WebView de forma imprevisível; voltar para o `data-native-scroll-pan` cirúrgico + `touch-action: auto` no `#root`.
+
+### Passo 3 — Neutralizar Iconify como suspeito
+- Envolver `<Icon>` do Iconify com `<span style="pointer-events:none; touch-action:pan-y">`. SVGs do Iconify chegam com `<svg>` que em alguns WebViews Android capturam o `touchstart` até serem "hidratados", bloqueando o scroll no primeiro gesto.
+
+### Passo 4 — Reverter os `<div role="button">` para `<button>` novamente
+- A conversão pra `div` não resolveu (a origem era outra) e adiciona custo de acessibilidade. Voltar para `<button type="button">` com `touch-action: manipulation` apenas no botão, sem herdar para filhos.
+
+### Passo 5 — Ajustes no `capacitor.config.ts` (requer novo APK, opcional)
+- `captureInput: false` (deixa a View nativa não interceptar toques).
+- `useLegacyBridge: true` temporariamente para comparar; a bridge nova tem tickets abertos de touch-lag em Android 12/13.
+- Isso NÃO vai por OTA — só entra se os passos 1–4 não resolverem.
+
+### Passo 6 — Validação
+- Rodar Playwright headless em `localhost:8080` com viewport mobile e `hasTouch:true` para confirmar que a mudança não regride a web.
+- Bumpar versão a cada iteração (`1.25.79`, `.80`…) e sincronizar `PerfilPage` + `build.gradle`.
+- Pedir ao usuário para atualizar o app cliente e testar o scroll na home e em pelo menos uma tela extra.
+
+## Detalhes técnicos
+
+- Bibliotecas envolvidas: `@iconify/react`, `@capacitor/core`, `@capgo/capacitor-updater`.
+- Arquivos que devem mudar nesta rodada: `src/index.css`, `src/components/ui/app-icon.tsx`, `src/pages/cliente/home/StoreCard.tsx`, `BentoHero.tsx`, `HighlightsBento.tsx`, `DiscoverGrid.tsx`, `ClientHomeContent.tsx`, `src/main.tsx` (log temporário), `src/lib/appVersion.ts`, `android/app/build.gradle`, `src/pages/PerfilPage.tsx`.
+- Sem alteração de banco, edge functions ou lógica de negócio.
+
+## Ordem de execução proposta
 
 ```text
-Tela normal
-+ conteúdo
-+ padding gigante = altura do teclado
-+ teclado Android
+1. Instrumentar logs   → OTA v1.25.79
+2. Ler console na próxima mensagem do usuário
+3. Aplicar fixes 2+3+4 juntos → OTA v1.25.80
+4. Se persistir → mudar capacitor.config.ts + novo APK
 ```
 
-Esse padding vira a “mancha enorme” visível na tela, especialmente em checkout, login e modais.
-
-## Plano de correção
-
-### 1. Remover o padding global gigante do app
-Alterar `src/index.css` para parar de aplicar isso globalmente:
-
-```css
-.native-app.keyboard-open #root {
-  padding-bottom: altura-do-teclado;
-}
-```
-
-Manter apenas `scroll-padding-bottom`, que ajuda o campo focado a não ficar escondido, mas sem criar um bloco branco visível.
-
-### 2. Trocar a estratégia: teclado sobreposto + scroll controlado
-Manter no Android:
-
-```xml
-android:windowSoftInputMode="adjustNothing"
-```
-
-e no Capacitor:
-
-```ts
-KeyboardResize.None
-```
-
-Mas o JavaScript não deve “empurrar” a página inteira; ele deve apenas rolar o input ativo para uma posição útil.
-
-### 3. Melhorar o `scrollFocusedFieldIntoView`
-Atualizar `src/lib/nativeBoot.ts` para:
-
-- usar `requestAnimationFrame` + delay curto após o teclado abrir;
-- calcular se o input está atrás do teclado;
-- rolar somente o necessário;
-- não centralizar agressivamente campos que já estão visíveis;
-- evitar scroll quando o input está no topo e já pode ser usado.
-
-### 4. Corrigir telas com rodapé fixo durante teclado
-Auditar e ajustar telas críticas com input:
-
-- login/cadastro;
-- checkout `/checkout` e guest checkout;
-- modais de endereço/observação;
-- perfil/endereço;
-- busca.
-
-Quando o teclado estiver aberto no app nativo, rodapés fixos como resumo do pedido devem não criar espaço extra nem disputar com o teclado.
-
-### 5. Adicionar classe utilitária segura
-Criar uma regra CSS tipo:
-
-```css
-.native-app.keyboard-open .native-hide-while-keyboard {
-  display: none;
-}
-```
-
-Usar apenas em barras fixas que atrapalham inputs, como CTA/resumo fixo no checkout, se necessário.
-
-### 6. Validação real
-Como esse bug depende do teclado nativo Android, o teste final precisa ser no APK, mas antes vou validar no código:
-
-- sem `padding-bottom` global com altura do teclado;
-- sem `KeyboardResize.Body` ou `Native`;
-- sem `reload`/layout shift relacionado a OTA;
-- campos ainda recebem scroll automático.
-
-Depois de gerar APK, testar no celular:
-
-1. login com senha;
-2. checkout/finalizar pedido;
-3. campo telefone/número;
-4. modal com input;
-5. fechar teclado e abrir de novo.
-
-## Arquivos que serão alterados
-
-- `src/index.css`
-- `src/lib/nativeBoot.ts`
-- possivelmente `src/pages/CheckoutPage.tsx` e `src/pages/GuestCheckoutPage.tsx` se o rodapé fixo estiver interferindo
-- versão sincronizada em:
-  - `src/lib/appVersion.ts`
-  - `android/app/build.gradle`
-  - `android/app/src/main/java/.../MainActivity.java`
-
-## Resultado esperado
-Ao abrir o teclado, a tela não deve criar uma faixa branca gigante; o teclado deve sobrepor a parte inferior e o app deve apenas rolar o campo ativo para ficar usável.
+Confirma que posso executar os passos 1 e 2 (instrumentação + reversões CSS/JSX) já nesta rodada?
