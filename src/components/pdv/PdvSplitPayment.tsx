@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
-import { Banknote, CreditCard, Smartphone, X, Plus, Wallet, Users } from "lucide-react";
 import { formatBRL, addMoney, subtractMoney } from "@/lib/utils";
 import { parseBRL, formatBRLDisplay, parseBRLCentsInput } from "@/hooks/useBRLInput";
+import { AppIcon } from "@/components/ui/app-icon";
+import { Banknote, CreditCard, Smartphone, X, Plus, Wallet, Users } from "lucide-react";
 
 export interface SplitPayment {
   method: string;
@@ -104,7 +105,7 @@ export const PdvSplitPayment = ({ total, payments, onChange }: Props) => {
                   className="text-muted-foreground hover:text-destructive transition-colors"
                   aria-label="Remover pagamento"
                 >
-                  <X className="h-3.5 w-3.5" />
+                  <AppIcon name="X" className="h-3.5 w-3.5" />
                 </button>
               </div>
             );
@@ -136,7 +137,7 @@ export const PdvSplitPayment = ({ total, payments, onChange }: Props) => {
       {payments.length === 0 && total > 0 && (
         <div className="bg-muted/20 rounded-xl p-2.5 space-y-2 border border-dashed border-border/60">
           <div className="flex items-center gap-2">
-            <Users className="h-3.5 w-3.5 text-primary" />
+            <AppIcon name="Users" className="h-3.5 w-3.5 text-primary" />
             <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider flex-1">
               Dividir por pessoa
             </p>
@@ -225,7 +226,7 @@ export const PdvSplitPayment = ({ total, payments, onChange }: Props) => {
               onClick={addPayment}
               className="px-3 h-10 rounded-lg bg-primary text-primary-foreground font-bold text-xs flex items-center gap-1 active:scale-95 transition-transform"
             >
-              <Plus className="h-3.5 w-3.5" /> Add
+              <AppIcon name="Plus" className="h-3.5 w-3.5" /> Add
             </button>
           </div>
           <p className="text-[10px] text-muted-foreground text-center">

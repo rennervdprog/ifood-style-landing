@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Fingerprint } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
@@ -9,6 +8,8 @@ import {
   disableBiometricLogin,
 } from "@/lib/biometricAuth";
 import { isCapacitorNative } from "@/lib/capacitorNative";
+import { AppIcon } from "@/components/ui/app-icon";
+import { Fingerprint } from "lucide-react";
 
 interface Props {
   onSuccess?: () => void;
@@ -71,7 +72,7 @@ const BiometricLoginButton = ({ onSuccess }: Props) => {
       disabled={busy}
       className="w-full h-11 flex items-center justify-center gap-2 rounded-xl border-2 border-primary/30 bg-primary/5 text-primary font-semibold active:scale-[0.98] transition-all disabled:opacity-60"
     >
-      <Fingerprint className="h-5 w-5" />
+      <AppIcon name="Fingerprint" className="h-5 w-5" />
       {busy ? "Verificando..." : "Entrar com biometria"}
     </button>
   );

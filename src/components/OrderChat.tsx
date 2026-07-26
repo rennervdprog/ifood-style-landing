@@ -2,9 +2,10 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { subscribeWithRejoin, cleanupChannel } from "@/lib/realtimeChannel";
 import { useAuth } from "@/contexts/AuthContext";
-import { MessageCircle, Send, X, ChefHat, Package, Truck, CheckCircle2, XCircle, Bell, CheckCheck } from "lucide-react";
 import { toast } from "sonner";
 import { sendPushNotification } from "@/lib/firebase";
+import { AppIcon } from "@/components/ui/app-icon";
+import { MessageCircle, Send, X, ChefHat, Package, Truck, CheckCircle2, XCircle, Bell, CheckCheck } from "lucide-react";
 
 interface OrderChatProps {
   orderId: string;
@@ -205,7 +206,7 @@ const OrderChat = ({ orderId, storeName, storeOwnerId, clientId, driverId, defau
         onClick={() => setOpen(true)}
         className="relative flex items-center gap-1.5 text-xs font-bold text-primary bg-primary/10 px-3 py-1.5 rounded-lg hover:bg-primary/20 transition-colors"
       >
-        <MessageCircle className="h-3.5 w-3.5" />
+        <AppIcon name="MessageCircle" className="h-3.5 w-3.5" />
         Chat
         {unreadCount > 0 && (
           <span className="absolute -top-1.5 -right-1.5 bg-destructive text-destructive-foreground text-[10px] font-bold min-w-[18px] h-[18px] flex items-center justify-center rounded-full px-1 animate-pulse">
@@ -223,7 +224,7 @@ const OrderChat = ({ orderId, storeName, storeOwnerId, clientId, driverId, defau
         {/* ── Header ── */}
         <div className="flex items-center gap-3 px-4 py-3" style={{ background: "#075E54" }}>
           <div className="w-10 h-10 rounded-full bg-white/15 flex items-center justify-center flex-shrink-0">
-            <MessageCircle className="h-5 w-5 text-white" />
+            <AppIcon name="MessageCircle" className="h-5 w-5 text-white" />
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="font-bold text-sm text-white truncate">{storeName}</h3>
@@ -233,7 +234,7 @@ const OrderChat = ({ orderId, storeName, storeOwnerId, clientId, driverId, defau
             onClick={() => setOpen(false)}
             className="p-2 rounded-full hover:bg-white/10 transition-colors"
           >
-            <X className="h-5 w-5 text-white" />
+            <AppIcon name="X" className="h-5 w-5 text-white" />
           </button>
         </div>
 
@@ -245,7 +246,7 @@ const OrderChat = ({ orderId, storeName, storeOwnerId, clientId, driverId, defau
           {messages.length === 0 && (
             <div className="text-center py-16">
               <div className="w-16 h-16 rounded-full bg-[#075E54]/10 flex items-center justify-center mx-auto mb-4">
-                <MessageCircle className="h-8 w-8 text-[#075E54]/40" />
+                <AppIcon name="MessageCircle" className="h-8 w-8 text-[#075E54]/40" />
               </div>
               <p className="text-sm font-semibold text-[#303030]">
                 Acompanhe seu pedido aqui
@@ -321,7 +322,7 @@ const OrderChat = ({ orderId, storeName, storeOwnerId, clientId, driverId, defau
                           {formatTime(msg.created_at)}
                         </span>
                         {right && (
-                          <CheckCheck className="h-3.5 w-3.5" style={{ color: "#53BDEB" }} />
+                          <AppIcon name="CheckCheck" className="h-3.5 w-3.5" style={{ color: "#53BDEB" }} />
                         )}
                       </div>
                     </div>
@@ -352,7 +353,7 @@ const OrderChat = ({ orderId, storeName, storeOwnerId, clientId, driverId, defau
             className="p-2.5 rounded-full disabled:opacity-40 active:scale-95 transition-all flex-shrink-0"
             style={{ backgroundColor: "#075E54", color: "#FFFFFF" }}
           >
-            <Send className="h-4.5 w-4.5" />
+            <AppIcon name="Send" className="h-4.5 w-4.5" />
           </button>
         </div>
       </div>

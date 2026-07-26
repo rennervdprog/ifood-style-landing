@@ -1,8 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { formatBRL } from "@/lib/utils";
-import { UtensilsCrossed } from "lucide-react";
 import type { Product } from "@/pages/pdv/types";
+import { AppIcon } from "@/components/ui/app-icon";
+import { UtensilsCrossed } from "lucide-react";
 
 interface DailyMenu {
   id: string;
@@ -45,7 +46,7 @@ export default function RestaurantDailyMenuBar({ storeId, addItem }: Props) {
   return (
     <div className="border-b border-border bg-gradient-to-r from-emerald-500/5 via-emerald-500/10 to-emerald-500/5 px-3 py-2">
       <div className="flex items-center gap-1.5 mb-2">
-        <UtensilsCrossed className="h-3.5 w-3.5 text-emerald-600" />
+        <AppIcon name="UtensilsCrossed" className="h-3.5 w-3.5 text-emerald-600" />
         <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
           Prato do Dia
         </span>
@@ -71,7 +72,7 @@ export default function RestaurantDailyMenuBar({ storeId, addItem }: Props) {
               <img src={m.image_url} alt={m.name} loading="lazy" className="w-full h-20 rounded-lg object-cover mb-1.5" />
             ) : (
               <div className="w-full h-20 rounded-lg bg-emerald-500/10 flex items-center justify-center mb-1.5">
-                <UtensilsCrossed className="h-6 w-6 text-emerald-500/40" />
+                <AppIcon name="UtensilsCrossed" className="h-6 w-6 text-emerald-500/40" />
               </div>
             )}
             <p className="text-xs font-bold text-foreground line-clamp-1">{m.name}</p>

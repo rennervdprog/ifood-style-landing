@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { X, ChevronRight, ChevronLeft, SkipForward } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
+import { AppIcon } from "@/components/ui/app-icon";
+import { X, ChevronRight, ChevronLeft, SkipForward } from "lucide-react";
 
 export interface TourStep {
   target: string; // CSS selector
@@ -248,7 +249,7 @@ const ProductTour = ({ steps, tourKey, onComplete }: ProductTourProps) => {
               onClick={completeTour}
               className="p-1 rounded-lg hover:bg-muted transition-colors"
             >
-              <X className="h-4 w-4 text-muted-foreground" />
+              <AppIcon name="X" className="h-4 w-4 text-muted-foreground" />
             </button>
           </div>
 
@@ -272,7 +273,7 @@ const ProductTour = ({ steps, tourKey, onComplete }: ProductTourProps) => {
               onClick={completeTour}
               className="text-xs text-muted-foreground hover:text-foreground font-medium flex items-center gap-1 transition-colors"
             >
-              <SkipForward className="h-3 w-3" />
+              <AppIcon name="SkipForward" className="h-3 w-3" />
               Pular Tutorial
             </button>
             <div className="flex items-center gap-2">
@@ -281,7 +282,7 @@ const ProductTour = ({ steps, tourKey, onComplete }: ProductTourProps) => {
                   onClick={prev}
                   className="px-3 py-2 rounded-xl border border-border text-sm font-semibold text-foreground hover:bg-muted transition-colors flex items-center gap-1"
                 >
-                  <ChevronLeft className="h-3.5 w-3.5" />
+                  <AppIcon name="ChevronLeft" className="h-3.5 w-3.5" />
                   Anterior
                 </button>
               )}
@@ -290,7 +291,7 @@ const ProductTour = ({ steps, tourKey, onComplete }: ProductTourProps) => {
                 className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-bold hover:bg-primary/90 transition-colors flex items-center gap-1"
               >
                 {currentStep === steps.length - 1 ? "Concluir" : "Próximo"}
-                {currentStep < steps.length - 1 && <ChevronRight className="h-3.5 w-3.5" />}
+                {currentStep < steps.length - 1 && <AppIcon name="ChevronRight" className="h-3.5 w-3.5" />}
               </button>
             </div>
           </div>

@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatBRL } from "@/lib/utils";
 import { toast } from "sonner";
+import { AppIcon } from "@/components/ui/app-icon";
 import { Wallet, Clock, CheckCircle2, TrendingUp, Loader2, BadgeCheck } from "lucide-react";
 
 interface Props {
@@ -50,7 +51,7 @@ const StoreDriverEarnings = ({ storeIds }: Props) => {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        <AppIcon name="Loader2" className="h-5 w-5 animate-spin text-muted-foreground" />
       </div>
     );
   }
@@ -69,17 +70,17 @@ const StoreDriverEarnings = ({ storeIds }: Props) => {
       {/* Summary cards */}
       <div className="grid grid-cols-3 gap-2">
         <div className="bg-warning/5 border border-warning/25 rounded-2xl p-3">
-          <Clock className="h-4 w-4 text-warning mb-1" />
+          <AppIcon name="Clock" className="h-4 w-4 text-warning mb-1" />
           <p className="text-[10px] font-bold text-muted-foreground uppercase">A Receber</p>
           <p className="text-base font-black text-foreground mt-0.5">{formatBRL(pendingTotal)}</p>
         </div>
         <div className="bg-success/5 border border-success/25 rounded-2xl p-3">
-          <CheckCircle2 className="h-4 w-4 text-success mb-1" />
+          <AppIcon name="CheckCircle2" className="h-4 w-4 text-success mb-1" />
           <p className="text-[10px] font-bold text-muted-foreground uppercase">Recebido</p>
           <p className="text-base font-black text-foreground mt-0.5">{formatBRL(paidTotal)}</p>
         </div>
         <div className="bg-primary/5 border border-primary/20 rounded-2xl p-3">
-          <TrendingUp className="h-4 w-4 text-primary mb-1" />
+          <AppIcon name="TrendingUp" className="h-4 w-4 text-primary mb-1" />
           <p className="text-[10px] font-bold text-muted-foreground uppercase">Total</p>
           <p className="text-base font-black text-foreground mt-0.5">{formatBRL(totalEarned)}</p>
         </div>
@@ -88,7 +89,7 @@ const StoreDriverEarnings = ({ storeIds }: Props) => {
       {pending.length > 0 && (
         <div className="bg-warning/5 border border-warning/25 rounded-2xl p-4">
           <div className="flex items-center gap-2 mb-1">
-            <Wallet className="h-4 w-4 text-warning" />
+            <AppIcon name="Wallet" className="h-4 w-4 text-warning" />
             <p className="text-sm font-bold text-foreground">Acerto pendente com a loja</p>
           </div>
           <p className="text-xs text-muted-foreground">
@@ -102,7 +103,7 @@ const StoreDriverEarnings = ({ storeIds }: Props) => {
       {awaiting.length > 0 && (
         <div className="bg-primary/10 border-2 border-primary/30 rounded-2xl p-4 space-y-3">
           <div className="flex items-center gap-2">
-            <BadgeCheck className="h-5 w-5 text-primary" />
+            <AppIcon name="BadgeCheck" className="h-5 w-5 text-primary" />
             <p className="text-sm font-bold text-foreground">A loja marcou como pago — confirme!</p>
           </div>
           <p className="text-xs text-muted-foreground">
@@ -129,9 +130,9 @@ const StoreDriverEarnings = ({ storeIds }: Props) => {
                   className="bg-success text-success-foreground px-3 py-1.5 rounded-lg text-[11px] font-bold disabled:opacity-50 flex items-center gap-1 active:scale-95"
                 >
                   {confirmingId === e.id ? (
-                    <Loader2 className="h-3 w-3 animate-spin" />
+                    <AppIcon name="Loader2" className="h-3 w-3 animate-spin" />
                   ) : (
-                    <CheckCircle2 className="h-3 w-3" />
+                    <AppIcon name="CheckCircle2" className="h-3 w-3" />
                   )}
                   Recebi
                 </button>

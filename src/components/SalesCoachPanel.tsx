@@ -1,13 +1,10 @@
 import { useState, useRef, useEffect } from "react";
-import {
-  Sparkles, Send, Loader2, Trash2, Copy, Check,
-  Bot, ChevronDown, ChevronUp, Store, RefreshCw,
-  Utensils, ShoppingBag, Pizza, Coffee, Pill, Bike,
-} from "lucide-react";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
 import { supabase } from "@/integrations/supabase/client";
 import { EXTERNAL_BACKEND_ANON_KEY, externalFunctionUrl } from "@/lib/externalBackend";
+import { AppIcon } from "@/components/ui/app-icon";
+import { Sparkles, Send, Loader2, Trash2, Copy, Check, Bot, ChevronDown, ChevronUp, Store, RefreshCw, Utensils, ShoppingBag, Pizza, Coffee, Pill } from "lucide-react";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
@@ -61,7 +58,7 @@ function CopyBtn({ text }: { text: string }) {
       }}
       className="flex items-center gap-1 text-[11px] font-bold text-muted-foreground opacity-70 hover:opacity-100 transition-opacity"
     >
-      {copied ? <Check className="h-3 w-3 text-green-500" /> : <Copy className="h-3 w-3" />}
+      {copied ? <AppIcon name="Check" className="h-3 w-3 text-green-500" /> : <AppIcon name="Copy" className="h-3 w-3" />}
       {copied ? "Copiado" : "Copiar resposta"}
     </button>
   );
@@ -225,7 +222,7 @@ const SalesCoachPanel = () => {
         >
           <div className="flex items-center gap-2.5">
             <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${leadSaved ? "bg-primary/10" : "bg-amber-500/10"}`}>
-              {leadSaved ? <CatIcon className="h-4 w-4 text-primary" /> : <Store className="h-4 w-4 text-amber-500" />}
+              {leadSaved ? <CatIcon className="h-4 w-4 text-primary" /> : <AppIcon name="Store" className="h-4 w-4 text-amber-500" />}
             </div>
             <div className="text-left">
               {leadSaved ? (
@@ -249,10 +246,10 @@ const SalesCoachPanel = () => {
                 onClick={e => { e.stopPropagation(); resetLead(); }}
                 className="text-[11px] text-muted-foreground hover:text-destructive font-bold flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-destructive/10 transition-colors"
               >
-                <RefreshCw className="h-3 w-3" /> Novo lead
+                <AppIcon name="RefreshCw" className="h-3 w-3" /> Novo lead
               </button>
             )}
-            {showLeadForm ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+            {showLeadForm ? <AppIcon name="ChevronUp" className="h-4 w-4 text-muted-foreground" /> : <AppIcon name="ChevronDown" className="h-4 w-4 text-muted-foreground" />}
           </div>
         </button>
 
@@ -323,7 +320,7 @@ const SalesCoachPanel = () => {
 
             <button onClick={saveLead}
               className="w-full h-11 bg-primary text-primary-foreground font-black rounded-xl text-sm active:scale-[0.98] transition-transform flex items-center justify-center gap-2">
-              <Sparkles className="h-4 w-4" />
+              <AppIcon name="Sparkles" className="h-4 w-4" />
               {messages.length === 0 ? "Gerar script de abertura" : "Salvar e continuar conversa"}
             </button>
           </div>
@@ -335,13 +332,13 @@ const SalesCoachPanel = () => {
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/20 shrink-0">
           <div className="flex items-center gap-2">
-            <Bot className="h-4 w-4 text-primary" />
+            <AppIcon name="Bot" className="h-4 w-4 text-primary" />
             <p className="text-sm font-black text-foreground">Coach de Vendas ItaSuper</p>
           </div>
           {messages.length > 0 && (
             <button onClick={clear}
               className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground hover:text-destructive transition-colors">
-              <Trash2 className="h-3.5 w-3.5" /> Limpar
+              <AppIcon name="Trash2" className="h-3.5 w-3.5" /> Limpar
             </button>
           )}
         </div>
@@ -351,7 +348,7 @@ const SalesCoachPanel = () => {
           {messages.length === 0 && !loading && (
             <div className="h-full flex flex-col items-center justify-center text-center gap-4 py-8">
               <div className="w-16 h-16 rounded-3xl bg-primary/10 flex items-center justify-center">
-                <Sparkles className="h-8 w-8 text-primary" />
+                <AppIcon name="Sparkles" className="h-8 w-8 text-primary" />
               </div>
               <div className="max-w-sm space-y-2">
                 <p className="font-black text-foreground text-base">
@@ -386,7 +383,7 @@ const SalesCoachPanel = () => {
               <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-black ${
                 m.role === "user" ? "bg-primary text-primary-foreground" : "bg-primary/10 text-primary"
               }`}>
-                {m.role === "user" ? "EU" : <Bot className="h-4 w-4" />}
+                {m.role === "user" ? "EU" : <AppIcon name="Bot" className="h-4 w-4" />}
               </div>
               <div className={`flex-1 min-w-0 max-w-[88%] flex flex-col gap-1 ${m.role === "user" ? "items-end" : "items-start"}`}>
                 <div className={`rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
@@ -410,10 +407,10 @@ const SalesCoachPanel = () => {
           {loading && (
             <div className="flex gap-2.5">
               <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                <Bot className="h-4 w-4 text-primary" />
+                <AppIcon name="Bot" className="h-4 w-4 text-primary" />
               </div>
               <div className="bg-muted/60 rounded-2xl rounded-tl-sm px-4 py-3 flex items-center gap-2">
-                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                <AppIcon name="Loader2" className="h-4 w-4 animate-spin text-muted-foreground" />
                 <span className="text-xs text-muted-foreground">Analisando...</span>
               </div>
             </div>
@@ -432,7 +429,7 @@ const SalesCoachPanel = () => {
             />
             <button type="submit" disabled={loading || !input.trim() || !leadSaved}
               className="bg-primary text-primary-foreground rounded-xl p-3 disabled:opacity-40 active:scale-95 transition-transform shrink-0">
-              {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
+              {loading ? <AppIcon name="Loader2" className="h-5 w-5 animate-spin" /> : <AppIcon name="Send" className="h-5 w-5" />}
             </button>
           </form>
           <p className="text-[10px] text-muted-foreground/60 mt-1 px-1">

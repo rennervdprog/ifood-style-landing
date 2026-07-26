@@ -2,6 +2,7 @@ import { memo, useRef, useState, useEffect, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
+import { AppIcon } from "@/components/ui/app-icon";
 import { ChevronRight, Megaphone } from "lucide-react";
 
 const PromoBanners = memo(() => {
@@ -53,7 +54,7 @@ const PromoBanners = memo(() => {
   return (
     <div className="px-4 pt-3">
       <div className="flex items-center gap-1.5 mb-2">
-        <Megaphone className="h-4 w-4 text-primary" />
+        <AppIcon name="Megaphone" className="h-4 w-4 text-primary" />
         <h2 className="text-sm font-bold text-foreground">Promoções</h2>
       </div>
       <div ref={scrollRef} className="flex overflow-x-auto snap-x snap-mandatory no-scrollbar gap-3 -mx-1 px-1">
@@ -81,7 +82,7 @@ const PromoBanners = memo(() => {
                 )}
                 {banner.link_type !== "none" && (
                   <div className="flex items-center gap-0.5 mt-2 text-white/90 text-[10px] font-bold">
-                    Ver mais <ChevronRight className="h-3 w-3" />
+                    Ver mais <AppIcon name="ChevronRight" className="h-3 w-3" />
                   </div>
                 )}
               </div>

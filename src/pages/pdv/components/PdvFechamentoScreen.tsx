@@ -1,4 +1,3 @@
-import { ArrowLeft, Lock, Loader2, Receipt, EyeOff, Eye, Scale } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { formatBRL } from "@/lib/utils";
@@ -8,6 +7,8 @@ import { PDV_METHODS } from "@/pages/pdv/constants";
 import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { toast } from "sonner";
 import type { PdvSession } from "@/pages/pdv/types";
+import { AppIcon } from "@/components/ui/app-icon";
+import { ArrowLeft, Lock, Loader2, Receipt, EyeOff, Eye, Scale } from "lucide-react";
 
 interface Props {
   currentSession: PdvSession | null;
@@ -80,9 +81,9 @@ export const PdvFechamentoScreen = ({
     <div className="pdv-shell min-h-screen bg-background flex flex-col">
       <header className="h-14 border-b border-border flex items-center px-4 gap-3 bg-card">
         <button onClick={onBack} className="p-1.5 rounded-xl hover:bg-muted">
-          <ArrowLeft className="h-5 w-5" />
+          <AppIcon name="ArrowLeft" className="h-5 w-5" />
         </button>
-        <Lock className="h-5 w-5 text-destructive" />
+        <AppIcon name="Lock" className="h-5 w-5 text-destructive" />
         <div className="flex-1">
           <p className="text-sm font-bold">Fechamento de Caixa</p>
           <p className="text-[10px] text-muted-foreground">
@@ -94,7 +95,7 @@ export const PdvFechamentoScreen = ({
       <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-28">
         <div className="bg-card rounded-2xl border border-border p-4 space-y-4">
           <h3 className="text-sm font-black flex items-center gap-2">
-            <Receipt className="h-4 w-4 text-primary" /> Resumo do Turno
+            <AppIcon name="Receipt" className="h-4 w-4 text-primary" /> Resumo do Turno
           </h3>
 
           <div className="grid grid-cols-2 gap-3">
@@ -147,7 +148,7 @@ export const PdvFechamentoScreen = ({
             </div>
           ) : (
             <div className="bg-purple-500/8 border border-purple-500/30 rounded-xl p-3.5 flex items-center gap-3">
-              <EyeOff className="h-5 w-5 text-purple-500 shrink-0" />
+              <AppIcon name="EyeOff" className="h-5 w-5 text-purple-500 shrink-0" />
               <div className="flex-1">
                 <p className="text-xs font-bold text-purple-700 dark:text-purple-300">Fechamento cego ativo</p>
                 <p className="text-[11px] text-muted-foreground mt-0.5">
@@ -162,7 +163,7 @@ export const PdvFechamentoScreen = ({
             onClick={() => setBlindClose(v => !v)}
             className="w-full text-[11px] font-bold text-muted-foreground hover:text-foreground transition-colors flex items-center justify-center gap-1.5"
           >
-            {blindClose ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
+            {blindClose ? <AppIcon name="Eye" className="h-3 w-3" /> : <AppIcon name="EyeOff" className="h-3 w-3" />}
             {blindClose ? "Mostrar valor esperado" : "Ativar fechamento cego (anti-fraude)"}
           </button>
         </div>
@@ -170,7 +171,7 @@ export const PdvFechamentoScreen = ({
         {weightSummary && weightSummary.totalGrams > 0 && (
           <div className="bg-card rounded-2xl border border-border p-4 space-y-3">
             <h3 className="text-sm font-black flex items-center gap-2">
-              <Scale className="h-4 w-4 text-primary" /> Vendas por peso
+              <AppIcon name="Scale" className="h-4 w-4 text-primary" /> Vendas por peso
             </h3>
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-primary/8 border border-primary/15 rounded-xl p-3">
@@ -242,7 +243,7 @@ export const PdvFechamentoScreen = ({
           {closingAmount && blindClose && (
             <div className="rounded-xl p-3 bg-purple-500/8 border border-purple-500/20">
               <p className="text-xs text-purple-600 dark:text-purple-400 font-bold flex items-center gap-1.5">
-                <EyeOff className="h-3.5 w-3.5" /> A diferença será calculada após confirmar
+                <AppIcon name="EyeOff" className="h-3.5 w-3.5" /> A diferença será calculada após confirmar
               </p>
             </div>
           )}
@@ -271,7 +272,7 @@ export const PdvFechamentoScreen = ({
           disabled={loading || !closingAmount}
           className="w-full h-14 bg-destructive text-destructive-foreground font-black text-base rounded-2xl flex items-center justify-center gap-2 active:scale-[0.98] transition-all disabled:opacity-60"
         >
-          {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Lock className="h-5 w-5" />}
+          {loading ? <AppIcon name="Loader2" className="h-5 w-5 animate-spin" /> : <AppIcon name="Lock" className="h-5 w-5" />}
           Confirmar Fechamento
         </button>
       </div>

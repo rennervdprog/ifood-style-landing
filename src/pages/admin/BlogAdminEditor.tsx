@@ -5,7 +5,8 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ArrowLeft, Save, Eye, ExternalLink, Loader2, Upload } from "lucide-react";
+import { AppIcon } from "@/components/ui/app-icon";
+import { ArrowLeft, Save, ExternalLink, Loader2, Upload } from "lucide-react";
 
 interface FormState {
   title: string;
@@ -167,7 +168,7 @@ export default function BlogAdminEditor() {
   };
 
   if (loading) {
-    return <div className="min-h-screen grid place-items-center"><Loader2 className="h-6 w-6 animate-spin" /></div>;
+    return <div className="min-h-screen grid place-items-center"><AppIcon name="Loader2" className="h-6 w-6 animate-spin" /></div>;
   }
 
   return (
@@ -177,7 +178,7 @@ export default function BlogAdminEditor() {
         <header className="border-b border-border bg-background sticky top-0 z-10">
           <div className="container mx-auto max-w-6xl px-4 py-3 flex items-center gap-3">
             <Link to="/admin/blog" className="text-muted-foreground hover:text-foreground">
-              <ArrowLeft className="h-5 w-5" />
+              <AppIcon name="ArrowLeft" className="h-5 w-5" />
             </Link>
             <div className="flex-1 min-w-0">
               <h1 className="text-sm font-semibold truncate">{isNew ? "Novo post" : form.title || "Sem título"}</h1>
@@ -189,7 +190,7 @@ export default function BlogAdminEditor() {
             </div>
             {!isNew && form.published && (
               <Link to={`/blog/${form.slug}`} target="_blank" className="hidden sm:inline-flex items-center gap-1 rounded-full border border-border px-3 py-1.5 text-xs font-semibold hover:bg-muted">
-                <ExternalLink className="h-3 w-3" /> Ver
+                <AppIcon name="ExternalLink" className="h-3 w-3" /> Ver
               </Link>
             )}
             <button
@@ -197,7 +198,7 @@ export default function BlogAdminEditor() {
               disabled={saving}
               className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
             >
-              {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+              {saving ? <AppIcon name="Loader2" className="h-3.5 w-3.5 animate-spin" /> : <AppIcon name="Save" className="h-3.5 w-3.5" />}
               Salvar
             </button>
           </div>
@@ -272,7 +273,7 @@ export default function BlogAdminEditor() {
                 <img src={form.cover_url} alt="" className="w-full aspect-video object-cover rounded-lg border border-border" />
               )}
               <label className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-semibold hover:bg-muted cursor-pointer">
-                {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
+                {uploading ? <AppIcon name="Loader2" className="h-3.5 w-3.5 animate-spin" /> : <AppIcon name="Upload" className="h-3.5 w-3.5" />}
                 {uploading ? "Enviando…" : "Enviar imagem"}
                 <input
                   type="file"

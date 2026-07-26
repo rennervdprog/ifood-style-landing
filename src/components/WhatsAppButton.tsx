@@ -1,5 +1,6 @@
-import { MessageCircle } from "lucide-react";
 import { openWhatsApp } from "@/lib/whatsapp";
+import { AppIcon } from "@/components/ui/app-icon";
+import { MessageCircle } from "lucide-react";
 
 interface WhatsAppButtonProps {
   number: string;
@@ -23,7 +24,7 @@ const WhatsAppButton = ({ number, message, label, size = "sm", className = "" }:
       } ${className}`}
       title={label || "WhatsApp"}
     >
-      <MessageCircle className={size === "sm" ? "h-3.5 w-3.5" : "h-4 w-4"} />
+      <AppIcon name="MessageCircle" className={size === "sm" ? "h-3.5 w-3.5" : "h-4 w-4"} />
       {label && <span>{label}</span>}
     </button>
   );

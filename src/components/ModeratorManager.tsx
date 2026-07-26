@@ -2,11 +2,9 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import {
-  Users, Plus, Copy, CheckCircle2, DollarSign, Store, Loader2,
-  Eye, EyeOff, Search, X, UserCheck, Percent, Truck, CreditCard
-} from "lucide-react";
 import { formatBRL } from "@/lib/utils";
+import { AppIcon } from "@/components/ui/app-icon";
+import { Users, Plus, Copy, CheckCircle2, DollarSign, Store, Loader2, Eye, EyeOff, Search, X, UserCheck } from "lucide-react";
 
 /* ── Tiny UI atoms ── */
 const Input = ({ label, hint, ...props }: { label: string; hint?: string } & React.InputHTMLAttributes<HTMLInputElement>) => (
@@ -246,20 +244,20 @@ const ModeratorManager = () => {
     toast.success("Relatório copiado!");
   };
 
-  if (isLoading) return <div className="flex items-center justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
+  if (isLoading) return <div className="flex items-center justify-center py-12"><AppIcon name="Loader2" className="h-6 w-6 animate-spin text-primary" /></div>;
 
   return (
     <div className="space-y-6">
       {/* ── Header ── */}
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
-          <Users className="h-5 w-5 text-primary" /> Moderadores
+          <AppIcon name="Users" className="h-5 w-5 text-primary" /> Moderadores
         </h2>
         <button
           onClick={() => { showAdd ? resetForm() : setShowAdd(true); }}
           className={`px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-1.5 transition ${showAdd ? "bg-muted text-muted-foreground" : "bg-primary text-primary-foreground"}`}
         >
-          {showAdd ? <><X className="h-4 w-4" /> Cancelar</> : <><Plus className="h-4 w-4" /> Novo Moderador</>}
+          {showAdd ? <><AppIcon name="X" className="h-4 w-4" /> Cancelar</> : <><AppIcon name="Plus" className="h-4 w-4" /> Novo Moderador</>}
         </button>
       </div>
 
@@ -295,7 +293,7 @@ const ModeratorManager = () => {
                       disabled={searching || !searchTerm.trim()}
                       className="bg-primary text-primary-foreground px-4 py-2.5 rounded-xl font-bold text-sm flex items-center gap-1.5 disabled:opacity-50"
                     >
-                      {searching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                      {searching ? <AppIcon name="Loader2" className="h-4 w-4 animate-spin" /> : <AppIcon name="Search" className="h-4 w-4" />}
                       Buscar
                     </button>
                   </div>
@@ -312,13 +310,13 @@ const ModeratorManager = () => {
                         className="w-full bg-background border border-border rounded-xl p-3 flex items-center gap-3 hover:border-primary/50 hover:bg-primary/5 transition text-left"
                       >
                         <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                          <UserCheck className="h-5 w-5 text-primary" />
+                          <AppIcon name="UserCheck" className="h-5 w-5 text-primary" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-bold text-foreground truncate">{u.full_name || "Sem nome"}</p>
                           <p className="text-xs text-muted-foreground truncate">{u.email} {u.phone && `· ${u.phone}`}</p>
                         </div>
-                        <Plus className="h-5 w-5 text-primary shrink-0" />
+                        <AppIcon name="Plus" className="h-5 w-5 text-primary shrink-0" />
                       </button>
                     ))}
                   </div>
@@ -331,14 +329,14 @@ const ModeratorManager = () => {
                 {/* Selected user badge */}
                 <div className="flex items-center gap-3 bg-accent/10 border border-accent/30 rounded-xl p-3">
                   <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center">
-                    <UserCheck className="h-5 w-5 text-accent" />
+                    <AppIcon name="UserCheck" className="h-5 w-5 text-accent" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-bold text-foreground truncate">{selectedUser.full_name || "Sem nome"}</p>
                     <p className="text-xs text-muted-foreground truncate">{selectedUser.email}</p>
                   </div>
                   <button onClick={() => { setStep("search"); setSelectedUser(null); }} className="text-muted-foreground hover:text-foreground p-1">
-                    <X className="h-4 w-4" />
+                    <AppIcon name="X" className="h-4 w-4" />
                   </button>
                 </div>
 
@@ -374,7 +372,7 @@ const ModeratorManager = () => {
                   disabled={saving}
                   className="w-full bg-primary text-primary-foreground py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-2 disabled:opacity-50 active:scale-[0.98] transition"
                 >
-                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <><UserCheck className="h-4 w-4" /> Criar Moderador</>}
+                  {saving ? <AppIcon name="Loader2" className="h-4 w-4 animate-spin" /> : <><AppIcon name="UserCheck" className="h-4 w-4" /> Criar Moderador</>}
                 </button>
               </>
             )}
@@ -385,17 +383,17 @@ const ModeratorManager = () => {
       {/* ── Summary Cards ── */}
       <div className="grid grid-cols-3 gap-3">
         <div className="bg-card border border-border rounded-2xl p-3 text-center">
-          <Users className="h-4 w-4 text-primary mx-auto mb-1" />
+          <AppIcon name="Users" className="h-4 w-4 text-primary mx-auto mb-1" />
           <p className="text-xl font-black text-foreground">{moderators?.length || 0}</p>
           <p className="text-[10px] text-muted-foreground">Moderadores</p>
         </div>
         <div className="bg-card border border-border rounded-2xl p-3 text-center">
-          <Store className="h-4 w-4 text-primary mx-auto mb-1" />
+          <AppIcon name="Store" className="h-4 w-4 text-primary mx-auto mb-1" />
           <p className="text-xl font-black text-foreground">{referrals?.length || 0}</p>
           <p className="text-[10px] text-muted-foreground">Lojas Indicadas</p>
         </div>
         <div className="bg-card border border-border rounded-2xl p-3 text-center">
-          <DollarSign className="h-4 w-4 text-destructive mx-auto mb-1" />
+          <AppIcon name="DollarSign" className="h-4 w-4 text-destructive mx-auto mb-1" />
           <p className="text-xl font-black text-destructive">
             {formatBRL(earnings?.filter((e: any) => !e.is_paid).reduce((s: number, e: any) => s + Number(e.amount), 0) || 0)}
           </p>
@@ -429,9 +427,9 @@ const ModeratorManager = () => {
               </div>
               <div className="flex items-center gap-1.5 shrink-0">
                 <button onClick={e => { e.stopPropagation(); copyLink(mod.referral_code); }} className="bg-muted text-muted-foreground p-2 rounded-xl">
-                  {copiedCode === mod.referral_code ? <CheckCircle2 className="h-4 w-4 text-accent" /> : <Copy className="h-4 w-4" />}
+                  {copiedCode === mod.referral_code ? <AppIcon name="CheckCircle2" className="h-4 w-4 text-accent" /> : <AppIcon name="Copy" className="h-4 w-4" />}
                 </button>
-                {isExpanded ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
+                {isExpanded ? <AppIcon name="EyeOff" className="h-4 w-4 text-muted-foreground" /> : <AppIcon name="Eye" className="h-4 w-4 text-muted-foreground" />}
               </div>
             </div>
 
@@ -447,11 +445,11 @@ const ModeratorManager = () => {
                 {/* Referred Stores */}
                 {modRefs.length > 0 && (
                   <div>
-                    <h4 className="text-xs font-bold text-muted-foreground mb-1.5 flex items-center gap-1"><Store className="h-3.5 w-3.5" /> Lojas Indicadas</h4>
+                    <h4 className="text-xs font-bold text-muted-foreground mb-1.5 flex items-center gap-1"><AppIcon name="Store" className="h-3.5 w-3.5" /> Lojas Indicadas</h4>
                     <div className="space-y-1">
                       {modRefs.map((ref: any) => (
                         <div key={ref.id} className="bg-muted rounded-xl px-3 py-1.5 text-sm text-foreground flex items-center gap-2">
-                          <Store className="h-3.5 w-3.5 text-primary" />
+                          <AppIcon name="Store" className="h-3.5 w-3.5 text-primary" />
                           {ref.stores?.name || "Loja removida"}
                         </div>
                       ))}
@@ -462,7 +460,7 @@ const ModeratorManager = () => {
                 {/* Unpaid */}
                 {unpaid.length > 0 && (
                   <div>
-                    <h4 className="text-xs font-bold text-muted-foreground mb-1.5 flex items-center gap-1"><DollarSign className="h-3.5 w-3.5" /> Pendentes ({unpaid.length})</h4>
+                    <h4 className="text-xs font-bold text-muted-foreground mb-1.5 flex items-center gap-1"><AppIcon name="DollarSign" className="h-3.5 w-3.5" /> Pendentes ({unpaid.length})</h4>
                     <div className="max-h-40 overflow-y-auto space-y-1">
                       {unpaid.slice(0, 20).map((e: any) => (
                         <div key={e.id} className="bg-muted rounded-xl px-3 py-1.5 text-xs text-foreground flex justify-between">
@@ -479,11 +477,11 @@ const ModeratorManager = () => {
                   {totalUnpaid > 0 && (
                     <button onClick={() => handleMarkPaid(mod.id)} disabled={markingPaid === mod.id}
                       className="flex-1 bg-accent text-accent-foreground py-2 rounded-xl text-sm font-bold flex items-center justify-center gap-1.5">
-                      {markingPaid === mod.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <><CheckCircle2 className="h-4 w-4" /> Pagar ({formatBRL(totalUnpaid)})</>}
+                      {markingPaid === mod.id ? <AppIcon name="Loader2" className="h-4 w-4 animate-spin" /> : <><AppIcon name="CheckCircle2" className="h-4 w-4" /> Pagar ({formatBRL(totalUnpaid)})</>}
                     </button>
                   )}
                   <button onClick={() => generateWhatsAppReport(mod)} className="bg-muted text-muted-foreground py-2 px-4 rounded-xl text-sm font-bold flex items-center gap-1.5">
-                    <Copy className="h-4 w-4" /> Relatório
+                    <AppIcon name="Copy" className="h-4 w-4" /> Relatório
                   </button>
                   <button onClick={() => handleToggleActive(mod)} className="bg-muted text-muted-foreground py-2 px-4 rounded-xl text-sm font-bold">
                     {mod.is_active ? "Desativar" : "Ativar"}
@@ -497,7 +495,7 @@ const ModeratorManager = () => {
 
       {(!moderators || moderators.length === 0) && (
         <div className="text-center py-12 text-muted-foreground">
-          <Users className="h-12 w-12 mx-auto mb-3 opacity-30" />
+          <AppIcon name="Users" className="h-12 w-12 mx-auto mb-3 opacity-30" />
           <p className="font-bold">Nenhum moderador cadastrado</p>
           <p className="text-sm">Clique em "Novo Moderador" para começar.</p>
         </div>

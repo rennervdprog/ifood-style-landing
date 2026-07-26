@@ -1,8 +1,9 @@
 import { useMemo, useState } from "react";
-import { ChevronDown, Users, Receipt, Store, Plus, Check } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { usePdvTables, rpcOpenTab } from "@/pages/pdv/state/usePdvTables";
 import { toast } from "sonner";
+import { AppIcon } from "@/components/ui/app-icon";
+import { ChevronDown, Users, Receipt, Store, Plus, Check } from "lucide-react";
 
 interface Props {
   storeId: string | undefined | null;
@@ -103,9 +104,9 @@ export const PdvTableSelector = ({
               : "bg-muted/40 text-muted-foreground border-border/50 hover:bg-muted"
           }`}
         >
-          {active ? <Receipt className="h-3 w-3" /> : <Store className="h-3 w-3" />}
+          {active ? <AppIcon name="Receipt" className="h-3 w-3" /> : <AppIcon name="Store" className="h-3 w-3" />}
           <span className="truncate max-w-[110px]">{badgeLabel}</span>
-          <ChevronDown className="h-3 w-3 opacity-60" />
+          <AppIcon name="ChevronDown" className="h-3 w-3 opacity-60" />
         </button>
       </PopoverTrigger>
       <PopoverContent align="start" className="w-72 p-0 max-h-[70vh] overflow-y-auto">
@@ -113,8 +114,8 @@ export const PdvTableSelector = ({
           onClick={clear}
           className="w-full flex items-center gap-2 px-3 py-2 text-xs font-bold hover:bg-muted transition-colors border-b"
         >
-          <Store className="h-3.5 w-3.5" /> Balcão / Venda avulsa
-          {!active && <Check className="h-3.5 w-3.5 ml-auto text-primary" />}
+          <AppIcon name="Store" className="h-3.5 w-3.5" /> Balcão / Venda avulsa
+          {!active && <AppIcon name="Check" className="h-3.5 w-3.5 ml-auto text-primary" />}
         </button>
 
         {tables.length > 0 && (
@@ -141,7 +142,7 @@ export const PdvTableSelector = ({
                   >
                     <div>{t.label}</div>
                     <div className="text-[9px] font-normal opacity-70 flex items-center justify-center gap-0.5">
-                      <Users className="h-2.5 w-2.5" />{t.seats}
+                      <AppIcon name="Users" className="h-2.5 w-2.5" />{t.seats}
                     </div>
                   </button>
                 );
@@ -166,9 +167,9 @@ export const PdvTableSelector = ({
                       sel ? "bg-amber-500/20" : "hover:bg-muted"
                     }`}
                   >
-                    <Receipt className="h-3 w-3 opacity-70" />
+                    <AppIcon name="Receipt" className="h-3 w-3 opacity-70" />
                     <span className="font-semibold truncate">{t.code || t.customer_name || "Sem nome"}</span>
-                    {sel && <Check className="h-3 w-3 ml-auto text-primary" />}
+                    {sel && <AppIcon name="Check" className="h-3 w-3 ml-auto text-primary" />}
                   </button>
                 );
               })}
@@ -192,7 +193,7 @@ export const PdvTableSelector = ({
               onClick={createLooseTab}
               className="text-xs font-bold px-2.5 py-1.5 bg-primary text-primary-foreground rounded-md flex items-center gap-1"
             >
-              <Plus className="h-3 w-3" /> Abrir
+              <AppIcon name="Plus" className="h-3 w-3" /> Abrir
             </button>
           </div>
         </div>

@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { AppIcon } from "@/components/ui/app-icon";
 import { Send, Megaphone, Info } from "lucide-react";
 
 type Audience = "clients" | "partners" | "all";
@@ -71,7 +72,7 @@ const AdminBroadcastPush = () => {
       <Card className="p-5 space-y-4">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center">
-            <Megaphone className="h-5 w-5 text-primary" />
+            <AppIcon name="Megaphone" className="h-5 w-5 text-primary" />
           </div>
           <div>
             <h3 className="font-bold text-foreground">Enviar notificação em massa</h3>
@@ -127,7 +128,7 @@ const AdminBroadcastPush = () => {
         </div>
 
         <Button onClick={send} disabled={sending || !title.trim()} className="w-full" size="lg">
-          <Send className="h-4 w-4 mr-2" />
+          <AppIcon name="Send" className="h-4 w-4 mr-2" />
           {sending ? "Enviando..." : "Enviar agora"}
         </Button>
 
@@ -140,7 +141,7 @@ const AdminBroadcastPush = () => {
 
       <Card className="p-4 bg-muted/30">
         <div className="flex gap-3">
-          <Info className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+          <AppIcon name="Info" className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
           <div className="text-xs text-muted-foreground space-y-1">
             <p><strong>Dicas:</strong></p>
             <ul className="list-disc pl-4 space-y-0.5">

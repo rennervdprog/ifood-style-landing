@@ -3,8 +3,9 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Recycle, Minus, Plus } from "lucide-react";
 import { toast } from "sonner";
+import { AppIcon } from "@/components/ui/app-icon";
+import { Recycle, Minus, Plus } from "lucide-react";
 
 interface OrderItemLite { product_id: string; quantity: number; }
 
@@ -118,7 +119,7 @@ const EmptiesReturnDialog = ({ open, orderId, storeId, items, onClose, onDone }:
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Recycle className="h-5 w-5 text-emerald-600" />
+            <AppIcon name="Recycle" className="h-5 w-5 text-emerald-600" />
             Cliente devolveu casquinhas?
           </DialogTitle>
         </DialogHeader>
@@ -136,11 +137,11 @@ const EmptiesReturnDialog = ({ open, orderId, storeId, items, onClose, onDone }:
                 </div>
                 <div className="flex items-center gap-2">
                   <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => setReturns(p => ({ ...p, [r.product_id]: Math.max(0, cur - 1) }))}>
-                    <Minus className="h-3.5 w-3.5" />
+                    <AppIcon name="Minus" className="h-3.5 w-3.5" />
                   </Button>
                   <span className="w-6 text-center text-sm font-bold">{cur}</span>
                   <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => setReturns(p => ({ ...p, [r.product_id]: Math.min(r.qty_ordered, cur + 1) }))}>
-                    <Plus className="h-3.5 w-3.5" />
+                    <AppIcon name="Plus" className="h-3.5 w-3.5" />
                   </Button>
                 </div>
               </div>

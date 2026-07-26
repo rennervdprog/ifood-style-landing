@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { ChevronDown, ChevronUp, Wallet, Archive } from "lucide-react";
 import { toast } from "sonner";
 import { formatBRL } from "@/lib/utils";
+import { AppIcon } from "@/components/ui/app-icon";
+import { ChevronDown, ChevronUp, Wallet, Archive } from "lucide-react";
 
 interface Props {
   openingAmount: number;
@@ -40,10 +41,10 @@ export const PdvSessionCard = ({
         onClick={() => setOpen(v => !v)}
         className="w-full flex items-center gap-2 px-3 py-2 hover:bg-muted/50 transition-colors"
       >
-        <Wallet className="h-3.5 w-3.5 text-primary shrink-0" />
+        <AppIcon name="Wallet" className="h-3.5 w-3.5 text-primary shrink-0" />
         <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Caixa</span>
         <span className="ml-auto text-[11px] font-bold text-foreground pdv-mono">{formatBRL(saldoEsperado)}</span>
-        {open ? <ChevronUp className="h-3.5 w-3.5 text-muted-foreground" /> : <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />}
+        {open ? <AppIcon name="ChevronUp" className="h-3.5 w-3.5 text-muted-foreground" /> : <AppIcon name="ChevronDown" className="h-3.5 w-3.5 text-muted-foreground" />}
       </button>
       {open && (
         <div className="px-3 pb-2 space-y-1 text-[11px]">
@@ -63,7 +64,7 @@ export const PdvSessionCard = ({
               disabled={drawerBusy}
               className="w-full mt-2 h-8 rounded-lg bg-primary/10 text-primary text-[11px] font-black flex items-center justify-center gap-1.5 border border-primary/30 disabled:opacity-60"
             >
-              <Archive className="h-3 w-3" /> {drawerBusy ? "Abrindo…" : "Abrir gaveta"}
+              <AppIcon name="Archive" className="h-3 w-3" /> {drawerBusy ? "Abrindo…" : "Abrir gaveta"}
             </button>
           )}
         </div>

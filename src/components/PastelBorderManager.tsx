@@ -3,9 +3,10 @@ import { formatBRL } from "@/lib/utils";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Plus, Trash2, Edit2, Save, Circle } from "lucide-react";
 import { formatBRLDisplay, parseBRLCentsInput } from "@/hooks/useBRLInput";
 import { useConfirmDialog } from "@/hooks/useConfirmDialog";
+import { AppIcon } from "@/components/ui/app-icon";
+import { Plus, Trash2, Edit2, Save, Circle } from "lucide-react";
 
 interface PastelBorderManagerProps {
   storeId: string;
@@ -128,14 +129,14 @@ const PastelBorderManager = ({ storeId }: PastelBorderManagerProps) => {
       <ConfirmDialog />
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Circle className="h-5 w-5 text-primary" />
+          <AppIcon name="Circle" className="h-5 w-5 text-primary" />
           <h2 className="text-sm font-bold text-foreground/80 uppercase tracking-wider">Complementos de Pastel</h2>
         </div>
         <button
           onClick={() => setShowAdd(true)}
           className="flex items-center gap-1.5 bg-primary/20 text-primary px-3 py-2 rounded-xl text-xs font-bold"
         >
-          <Plus className="h-3.5 w-3.5" /> Novo Complemento
+          <AppIcon name="Plus" className="h-3.5 w-3.5" /> Novo Complemento
         </button>
       </div>
 
@@ -193,7 +194,7 @@ const PastelBorderManager = ({ storeId }: PastelBorderManagerProps) => {
           </div>
           <div className="flex gap-2">
             <button onClick={addBorder} className="flex-1 bg-primary text-primary-foreground py-2 rounded-lg text-sm font-bold">
-              <Save className="h-4 w-4 inline mr-1" /> Salvar
+              <AppIcon name="Save" className="h-4 w-4 inline mr-1" /> Salvar
             </button>
             <button onClick={() => { setShowAdd(false); setNewName(""); setNewPrice(""); }} className="px-4 py-2 text-muted-foreground text-sm">
               Cancelar
@@ -210,7 +211,7 @@ const PastelBorderManager = ({ storeId }: PastelBorderManagerProps) => {
         </div>
       ) : borders.length === 0 ? (
         <div className="bg-card border border-dashed border-border rounded-2xl p-8 text-center space-y-2">
-          <Circle className="h-8 w-8 text-muted-foreground mx-auto" />
+          <AppIcon name="Circle" className="h-8 w-8 text-muted-foreground mx-auto" />
           <p className="text-sm text-muted-foreground font-medium">Nenhum complemento cadastrado</p>
           <p className="text-xs text-muted-foreground">Adicione complementos para seus clientes escolherem</p>
         </div>
@@ -246,7 +247,7 @@ const PastelBorderManager = ({ storeId }: PastelBorderManagerProps) => {
                     />
                   </div>
                   <button onClick={() => saveEdit(border.id)} className="text-primary">
-                    <Save className="h-4 w-4" />
+                    <AppIcon name="Save" className="h-4 w-4" />
                   </button>
                 </div>
               ) : (
@@ -275,7 +276,7 @@ const PastelBorderManager = ({ storeId }: PastelBorderManagerProps) => {
                     }}
                     className="text-muted-foreground hover:text-foreground"
                   >
-                    <Edit2 className="h-3.5 w-3.5" />
+                    <AppIcon name="Edit2" className="h-3.5 w-3.5" />
                   </button>
                   <button
                     onClick={async () => {
@@ -289,7 +290,7 @@ const PastelBorderManager = ({ storeId }: PastelBorderManagerProps) => {
                     }}
                     className="text-muted-foreground hover:text-destructive"
                   >
-                    <Trash2 className="h-3.5 w-3.5" />
+                    <AppIcon name="Trash2" className="h-3.5 w-3.5" />
                   </button>
                 </>
               )}

@@ -1,7 +1,8 @@
-import { Search, Plus, Minus, Layers, Loader2, X, Hash } from "lucide-react";
 import { formatBRL } from "@/lib/utils";
 import { useState, type RefObject, type ReactNode } from "react";
 import type { Product, MenuSection } from "@/pages/pdv/types";
+import { AppIcon } from "@/components/ui/app-icon";
+import { Search, Plus, Minus, Layers, Loader2, X, Hash } from "lucide-react";
 
 interface Props {
   search: string;
@@ -48,7 +49,7 @@ export const PdvCatalogSection = ({
     {/* Busca + código curto */}
     <div className="px-3 pt-2.5 pb-2 shrink-0 flex gap-2">
       <div className="relative">
-        <Hash className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+        <AppIcon name="Hash" className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
         <input
           type="text" inputMode="numeric" placeholder="Cód"
           value={code}
@@ -59,7 +60,7 @@ export const PdvCatalogSection = ({
         />
       </div>
       <div className="relative flex-1">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+        <AppIcon name="Search" className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
         <input
           ref={searchInputRef}
           type="text" placeholder="Buscar produto..."
@@ -68,7 +69,7 @@ export const PdvCatalogSection = ({
         />
         {search && (
           <button onClick={() => setSearch("")} className="absolute right-2.5 top-1/2 -translate-y-1/2">
-            <X className="h-3.5 w-3.5 text-muted-foreground" />
+            <AppIcon name="X" className="h-3.5 w-3.5 text-muted-foreground" />
           </button>
         )}
       </div>
@@ -96,10 +97,10 @@ export const PdvCatalogSection = ({
     <div className="flex-1 overflow-y-auto px-2 pb-3 space-y-3">
       {scrollTopSlot}
       {prodLoading ? (
-        <div className="flex items-center justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
+        <div className="flex items-center justify-center py-12"><AppIcon name="Loader2" className="h-6 w-6 animate-spin text-primary" /></div>
       ) : Object.keys(grouped).length === 0 ? (
         <div className="text-center py-12 text-muted-foreground">
-          <Search className="h-8 w-8 mx-auto mb-2 opacity-20" />
+          <AppIcon name="Search" className="h-8 w-8 mx-auto mb-2 opacity-20" />
           <p className="text-sm">Nenhum produto encontrado</p>
         </div>
       ) : (
@@ -107,7 +108,7 @@ export const PdvCatalogSection = ({
           <div key={section}>
             {Object.keys(grouped).length > 1 && (
               <div className="flex items-center gap-2 px-1 mb-1.5 mt-2">
-                <Layers className="h-3 w-3 text-muted-foreground" />
+                <AppIcon name="Layers" className="h-3 w-3 text-muted-foreground" />
                 <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">{section}</p>
                 <div className="flex-1 h-px bg-border/50" />
               </div>
@@ -141,13 +142,13 @@ export const PdvCatalogSection = ({
                       {qty > 0 && (
                         <>
                           <button onClick={() => decItem(product.id)} className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center active:scale-90">
-                            <Minus className="h-4 w-4" />
+                            <AppIcon name="Minus" className="h-4 w-4" />
                           </button>
                           <span className="w-6 text-center text-sm font-black">{qty}</span>
                         </>
                       )}
                       <button onClick={() => addItem(product)} className={`w-8 h-8 rounded-lg flex items-center justify-center active:scale-90 shadow-sm ${qty > 0 ? "bg-primary shadow-primary/30" : "bg-primary/80 hover:bg-primary shadow-primary/20"}`}>
-                        <Plus className="h-4 w-4 text-primary-foreground" />
+                        <AppIcon name="Plus" className="h-4 w-4 text-primary-foreground" />
                       </button>
                     </div>
                   </div>

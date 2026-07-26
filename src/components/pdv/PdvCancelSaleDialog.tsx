@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { X, Loader2, AlertTriangle } from "lucide-react";
 import { printCancelReceipt } from "@/lib/thermalPrint";
+import { AppIcon } from "@/components/ui/app-icon";
+import { X, Loader2, AlertTriangle } from "lucide-react";
 
 interface Props {
   open: boolean;
@@ -79,10 +80,10 @@ export function PdvCancelSaleDialog({
       <div className="w-full max-w-sm bg-card rounded-3xl border border-border shadow-2xl overflow-hidden">
         <div className="h-12 border-b border-border flex items-center justify-between px-4">
           <div className="flex items-center gap-2">
-            <AlertTriangle className="h-4 w-4 text-red-500" />
+            <AppIcon name="AlertTriangle" className="h-4 w-4 text-red-500" />
             <p className="text-sm font-black">Cancelar venda</p>
           </div>
-          <button onClick={onClose} className="p-1 rounded hover:bg-muted"><X className="h-4 w-4" /></button>
+          <button onClick={onClose} className="p-1 rounded hover:bg-muted"><AppIcon name="X" className="h-4 w-4" /></button>
         </div>
         <div className="p-5 space-y-4">
           <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 text-xs">
@@ -112,7 +113,7 @@ export function PdvCancelSaleDialog({
           </div>
           <button onClick={submit} disabled={busy}
             className="w-full h-12 bg-red-500 text-white rounded-xl font-black flex items-center justify-center gap-2 disabled:opacity-60">
-            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <AlertTriangle className="h-4 w-4" />} Confirmar cancelamento
+            {busy ? <AppIcon name="Loader2" className="h-4 w-4 animate-spin" /> : <AppIcon name="AlertTriangle" className="h-4 w-4" />} Confirmar cancelamento
           </button>
         </div>
       </div>

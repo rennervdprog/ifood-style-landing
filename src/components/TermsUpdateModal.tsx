@@ -7,10 +7,8 @@ import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import {
-  FileText, Shield, CheckCircle2, ChevronDown, ChevronUp,
-  Loader2, AlertTriangle,
-} from "lucide-react";
-import {
+import { AppIcon } from "@/components/ui/app-icon";
+import { FileText, Shield, CheckCircle2, ChevronDown, ChevronUp, Loader2, AlertTriangle } from "lucide-react";
   LegalChange,
   PendingLegalChanges,
   recordLegalAcceptance,
@@ -113,7 +111,7 @@ export const TermsUpdateModal = ({ pending, onAccepted }: Props) => {
         <div className="px-4 pt-2 pb-3 sm:pt-4 sm:pb-4 border-b border-border shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-              <FileText className="h-4.5 w-4.5 text-primary" />
+              <AppIcon name="FileText" className="h-4.5 w-4.5 text-primary" />
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-black text-foreground leading-tight">Termos atualizados</p>
@@ -135,7 +133,7 @@ export const TermsUpdateModal = ({ pending, onAccepted }: Props) => {
 
           {/* Aviso LGPD */}
           <div className="flex items-start gap-2 bg-amber-500/8 border border-amber-500/20 rounded-xl px-3 py-2.5">
-            <AlertTriangle className="h-3.5 w-3.5 text-amber-500 shrink-0 mt-0.5" />
+            <AppIcon name="AlertTriangle" className="h-3.5 w-3.5 text-amber-500 shrink-0 mt-0.5" />
             <p className="text-[11px] text-amber-700 dark:text-amber-400 leading-relaxed">
               Conforme a LGPD (Art. 8º), é necessário consentir com as novas versões antes de continuar.
             </p>
@@ -158,8 +156,8 @@ export const TermsUpdateModal = ({ pending, onAccepted }: Props) => {
                     {section.changes.length} mudança{section.changes.length !== 1 ? "s" : ""}
                   </span>
                   {isOpen
-                    ? <ChevronUp className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                    : <ChevronDown className="h-3.5 w-3.5 text-muted-foreground shrink-0" />}
+                    ? <AppIcon name="ChevronUp" className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                    : <AppIcon name="ChevronDown" className="h-3.5 w-3.5 text-muted-foreground shrink-0" />}
                 </button>
                 {isOpen && (
                   <div className="px-3.5 py-3 space-y-3 bg-card/50">
@@ -195,11 +193,11 @@ export const TermsUpdateModal = ({ pending, onAccepted }: Props) => {
           <div className="flex gap-2">
             <a href="/termos" target="_blank" rel="noopener noreferrer"
               className="flex-1 flex items-center justify-center gap-1.5 bg-muted/40 border border-border rounded-xl py-2.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors">
-              <FileText className="h-3.5 w-3.5" /> Ler Termos
+              <AppIcon name="FileText" className="h-3.5 w-3.5" /> Ler Termos
             </a>
             <a href="/privacidade" target="_blank" rel="noopener noreferrer"
               className="flex-1 flex items-center justify-center gap-1.5 bg-muted/40 border border-border rounded-xl py-2.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors">
-              <Shield className="h-3.5 w-3.5" /> Ler Política
+              <AppIcon name="Shield" className="h-3.5 w-3.5" /> Ler Política
             </a>
           </div>
         </div>
@@ -213,7 +211,7 @@ export const TermsUpdateModal = ({ pending, onAccepted }: Props) => {
               <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 mt-0.5 transition-colors ${
                 checkedTerms ? "bg-primary border-primary" : "bg-background border-border"
               }`}>
-                {checkedTerms && <CheckCircle2 className="h-3.5 w-3.5 text-primary-foreground" />}
+                {checkedTerms && <AppIcon name="CheckCircle2" className="h-3.5 w-3.5 text-primary-foreground" />}
               </div>
               <p className="text-xs text-muted-foreground leading-relaxed">
                 Li e aceito os{" "}
@@ -230,7 +228,7 @@ export const TermsUpdateModal = ({ pending, onAccepted }: Props) => {
               <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 mt-0.5 transition-colors ${
                 checkedPrivacy ? "bg-emerald-500 border-emerald-500" : "bg-background border-border"
               }`}>
-                {checkedPrivacy && <CheckCircle2 className="h-3.5 w-3.5 text-white" />}
+                {checkedPrivacy && <AppIcon name="CheckCircle2" className="h-3.5 w-3.5 text-white" />}
               </div>
               <p className="text-xs text-muted-foreground leading-relaxed">
                 Li e aceito a{" "}
@@ -248,8 +246,8 @@ export const TermsUpdateModal = ({ pending, onAccepted }: Props) => {
             disabled={!canAccept || accepting}
             className="w-full bg-primary text-primary-foreground font-black py-3.5 rounded-2xl text-sm disabled:opacity-40 active:scale-[0.98] transition-all flex items-center justify-center gap-2 mt-1">
             {accepting
-              ? <><Loader2 className="h-4 w-4 animate-spin" /> Registrando...</>
-              : <><CheckCircle2 className="h-4 w-4" /> Aceitar e continuar</>}
+              ? <><AppIcon name="Loader2" className="h-4 w-4 animate-spin" /> Registrando...</>
+              : <><AppIcon name="CheckCircle2" className="h-4 w-4" /> Aceitar e continuar</>}
           </button>
 
           <p className="text-[10px] text-muted-foreground text-center leading-relaxed">

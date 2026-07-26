@@ -1,8 +1,9 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
-import { Loader2, Crown, Package } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { AppIcon } from "@/components/ui/app-icon";
+import { Loader2, Crown, Package } from "lucide-react";
 
 export function AdminStoreAddonsPanel({ storeId }: { storeId: string }) {
   const qc = useQueryClient();
@@ -63,7 +64,7 @@ export function AdminStoreAddonsPanel({ storeId }: { storeId: string }) {
   return (
     <div className="mt-4 rounded-2xl border border-border bg-card/40 p-4 space-y-3">
       <div className="flex items-center gap-2">
-        <Package className="h-4 w-4 text-primary" />
+        <AppIcon name="Package" className="h-4 w-4 text-primary" />
         <span className="text-xs font-black">Add-ons pagos</span>
         {isLegacyPdv && (
           <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-500 font-bold">Legacy (PDV incluso)</span>
@@ -105,7 +106,7 @@ export function AdminStoreAddonsPanel({ storeId }: { storeId: string }) {
         </p>
         <button onClick={save} disabled={saving}
           className="w-full py-2 rounded-xl bg-primary text-primary-foreground text-xs font-black disabled:opacity-40 flex items-center justify-center gap-1.5">
-          {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Crown className="h-3.5 w-3.5" />}
+          {saving ? <AppIcon name="Loader2" className="h-3.5 w-3.5 animate-spin" /> : <AppIcon name="Crown" className="h-3.5 w-3.5" />}
           Salvar add-on
         </button>
       </div>

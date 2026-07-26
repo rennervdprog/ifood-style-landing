@@ -4,10 +4,11 @@ import { Helmet } from "react-helmet-async";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeSlug from "rehype-slug";
-import { Clock, Share2, Link as LinkIcon, ArrowRight, ListOrdered } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import NewsletterSignup from "@/components/blog/NewsletterSignup";
+import { AppIcon } from "@/components/ui/app-icon";
+import { Clock, Share2, ArrowRight, ListOrdered } from "lucide-react";
 
 const BlogComments = lazy(() => import("@/components/blog/BlogComments"));
 
@@ -288,7 +289,7 @@ export default function BlogPostPage() {
               </span>
               <span>·</span>
               <span className="inline-flex items-center gap-1">
-                <Clock className="h-3 w-3" /> {minutes} min de leitura
+                <AppIcon name="Clock" className="h-3 w-3" /> {minutes} min de leitura
               </span>
             </div>
           </div>
@@ -327,7 +328,7 @@ export default function BlogPostPage() {
                 to="/cadastro-lojista"
                 className="mt-5 inline-flex items-center gap-1.5 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
               >
-                Cadastrar minha loja <ArrowRight className="h-4 w-4" />
+                Cadastrar minha loja <AppIcon name="ArrowRight" className="h-4 w-4" />
               </Link>
             </div>
 
@@ -342,7 +343,7 @@ export default function BlogPostPage() {
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3.5 py-1.5 text-xs font-medium hover:bg-accent transition-colors"
               >
-                <Share2 className="h-3.5 w-3.5" /> WhatsApp
+                <AppIcon name="Share2" className="h-3.5 w-3.5" /> WhatsApp
               </a>
               <a
                 href={shareTwitter}
@@ -350,13 +351,13 @@ export default function BlogPostPage() {
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3.5 py-1.5 text-xs font-medium hover:bg-accent transition-colors"
               >
-                <Share2 className="h-3.5 w-3.5" /> X / Twitter
+                <AppIcon name="Share2" className="h-3.5 w-3.5" /> X / Twitter
               </a>
               <button
                 onClick={copyLink}
                 className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3.5 py-1.5 text-xs font-medium hover:bg-accent transition-colors"
               >
-                <LinkIcon className="h-3.5 w-3.5" /> Copiar link
+                <AppIcon name="Link" className="h-3.5 w-3.5" /> Copiar link
               </button>
             </div>
           </article>
@@ -366,7 +367,7 @@ export default function BlogPostPage() {
             <aside className="hidden lg:block">
               <div className="sticky top-20">
                 <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  <ListOrdered className="h-3.5 w-3.5" /> Neste artigo
+                  <AppIcon name="ListOrdered" className="h-3.5 w-3.5" /> Neste artigo
                 </p>
                 <ul className="mt-3 space-y-2 text-sm">
                   {headings.map((h) => (
@@ -424,7 +425,7 @@ export default function BlogPostPage() {
                       </h3>
                       {r.reading_minutes && (
                         <p className="mt-2 text-xs text-muted-foreground inline-flex items-center gap-1">
-                          <Clock className="h-3 w-3" /> {r.reading_minutes} min
+                          <AppIcon name="Clock" className="h-3 w-3" /> {r.reading_minutes} min
                         </p>
                       )}
                     </div>

@@ -2,8 +2,9 @@ import { formatBRL } from "@/lib/utils";
 import { useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Upload, Download, FileSpreadsheet, Loader2, X, AlertTriangle, FileText, Sparkles, ClipboardPaste, FileDown, Edit2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { AppIcon } from "@/components/ui/app-icon";
+import { Upload, Download, FileSpreadsheet, Loader2, X, AlertTriangle, FileText, Sparkles, FileDown, Edit2 } from "lucide-react";
 
 interface MenuImportCSVProps {
   storeId: string;
@@ -335,13 +336,13 @@ export default function MenuImportCSV({ storeId }: MenuImportCSVProps) {
           onClick={() => setOpen(true)}
           className="flex items-center gap-1.5 bg-accent/50 text-accent-foreground px-3 py-2 rounded-xl text-xs font-bold hover:bg-accent/70 transition-colors"
         >
-          <FileSpreadsheet className="h-3.5 w-3.5" /> Importar
+          <AppIcon name="FileSpreadsheet" className="h-3.5 w-3.5" /> Importar
         </button>
         <button
           onClick={() => exportStoreMenu(storeId)}
           className="flex items-center gap-1.5 bg-accent/50 text-accent-foreground px-3 py-2 rounded-xl text-xs font-bold hover:bg-accent/70 transition-colors"
         >
-          <FileDown className="h-3.5 w-3.5" /> Exportar
+          <AppIcon name="FileDown" className="h-3.5 w-3.5" /> Exportar
         </button>
       </div>
     );
@@ -351,11 +352,11 @@ export default function MenuImportCSV({ storeId }: MenuImportCSVProps) {
     <div className="bg-card border border-border rounded-2xl p-4 space-y-3">
       <div className="flex items-center justify-between">
         <h3 className="font-bold text-sm flex items-center gap-2">
-          <FileSpreadsheet className="h-4 w-4 text-primary" />
+          <AppIcon name="FileSpreadsheet" className="h-4 w-4 text-primary" />
           Importar Cardápio
         </h3>
         <button onClick={() => { setOpen(false); setParsed(null); setMode(null); setPasteText(""); setItasuperSource(null); }} className="text-muted-foreground hover:text-foreground">
-          <X className="h-4 w-4" />
+          <AppIcon name="X" className="h-4 w-4" />
         </button>
       </div>
 
@@ -366,7 +367,7 @@ export default function MenuImportCSV({ storeId }: MenuImportCSVProps) {
             onClick={() => setMode("csv")}
             className="flex flex-col items-center gap-2 p-4 rounded-xl border border-border hover:border-primary hover:bg-primary/5 transition-all"
           >
-            <FileSpreadsheet className="h-6 w-6 text-primary" />
+            <AppIcon name="FileSpreadsheet" className="h-6 w-6 text-primary" />
             <span className="text-xs font-bold">Planilha CSV</span>
             <span className="text-[10px] text-muted-foreground text-center">Arquivo CSV padronizado</span>
           </button>
@@ -374,7 +375,7 @@ export default function MenuImportCSV({ storeId }: MenuImportCSVProps) {
             onClick={() => setMode("ai")}
             className="flex flex-col items-center gap-2 p-4 rounded-xl border border-border hover:border-primary hover:bg-primary/5 transition-all"
           >
-            <Sparkles className="h-6 w-6 text-primary" />
+            <AppIcon name="Sparkles" className="h-6 w-6 text-primary" />
             <span className="text-xs font-bold">IA (Texto/PDF)</span>
             <span className="text-[10px] text-muted-foreground text-center">Cole texto ou envie arquivo</span>
           </button>
@@ -383,7 +384,7 @@ export default function MenuImportCSV({ storeId }: MenuImportCSVProps) {
             className="flex flex-col items-center gap-2 p-4 rounded-xl border border-primary/50 bg-primary/5 hover:border-primary hover:bg-primary/10 transition-all relative"
           >
             <div className="absolute -top-1.5 -right-1.5 bg-primary text-primary-foreground text-[8px] px-1.5 py-0.5 rounded-full font-bold">REDE</div>
-            <FileDown className="h-6 w-6 text-primary" />
+            <AppIcon name="FileDown" className="h-6 w-6 text-primary" />
             <span className="text-xs font-bold">ItaSuper</span>
             <span className="text-[10px] text-muted-foreground text-center">De outra loja da rede</span>
           </button>
@@ -399,10 +400,10 @@ export default function MenuImportCSV({ storeId }: MenuImportCSVProps) {
           </p>
           <div className="flex gap-2">
             <button onClick={downloadTemplate} className="flex items-center gap-1.5 bg-muted text-muted-foreground px-3 py-2 rounded-lg text-xs hover:bg-muted/80">
-              <Download className="h-3.5 w-3.5" /> Baixar Modelo
+              <AppIcon name="Download" className="h-3.5 w-3.5" /> Baixar Modelo
             </button>
             <button onClick={() => fileRef.current?.click()} className="flex items-center gap-1.5 bg-primary text-primary-foreground px-4 py-2 rounded-lg text-xs font-bold">
-              <Upload className="h-3.5 w-3.5" /> Enviar CSV
+              <AppIcon name="Upload" className="h-3.5 w-3.5" /> Enviar CSV
             </button>
             <input ref={fileRef} type="file" accept=".csv,.txt,.json,text/csv,text/plain,application/json,application/vnd.ms-excel" onChange={handleCSVFile} className="hidden" />
           </div>
@@ -435,10 +436,10 @@ export default function MenuImportCSV({ storeId }: MenuImportCSVProps) {
               disabled={pasteText.trim().length < 10}
               className="flex items-center gap-1.5 bg-primary text-primary-foreground px-4 py-2 rounded-lg text-xs font-bold disabled:opacity-50"
             >
-              <Sparkles className="h-3.5 w-3.5" /> Processar com IA
+              <AppIcon name="Sparkles" className="h-3.5 w-3.5" /> Processar com IA
             </button>
             <button onClick={() => pdfRef.current?.click()} className="flex items-center gap-1.5 bg-muted text-muted-foreground px-3 py-2 rounded-lg text-xs hover:bg-muted/80">
-              <FileText className="h-3.5 w-3.5" /> Enviar Arquivo
+              <AppIcon name="FileText" className="h-3.5 w-3.5" /> Enviar Arquivo
             </button>
             <input ref={pdfRef} type="file" accept=".pdf,.txt,.csv,application/pdf,text/csv,text/plain,application/vnd.ms-excel" onChange={handlePDFFile} className="hidden" />
           </div>
@@ -449,7 +450,7 @@ export default function MenuImportCSV({ storeId }: MenuImportCSVProps) {
       {/* AI Loading */}
       {aiLoading && (
         <div className="flex flex-col items-center gap-3 py-6">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <AppIcon name="Loader2" className="h-8 w-8 animate-spin text-primary" />
           <p className="text-xs text-muted-foreground">Analisando cardápio com IA...</p>
           <p className="text-[10px] text-muted-foreground/60">Isso pode levar alguns segundos</p>
         </div>
@@ -458,7 +459,7 @@ export default function MenuImportCSV({ storeId }: MenuImportCSVProps) {
       {/* ItaSuper Source Banner */}
       {parsed && mode === "itasuper" && itasuperSource && (
         <div className="bg-primary/10 border border-primary/30 rounded-lg p-3 flex items-center gap-2">
-          <FileDown className="h-4 w-4 text-primary flex-shrink-0" />
+          <AppIcon name="FileDown" className="h-4 w-4 text-primary flex-shrink-0" />
           <div>
             <p className="text-xs font-bold text-foreground">Cardápio importado de: {itasuperSource}</p>
             <p className="text-[10px] text-muted-foreground">Clique no preço de qualquer produto para ajustar antes de importar</p>
@@ -473,7 +474,7 @@ export default function MenuImportCSV({ storeId }: MenuImportCSVProps) {
             <span className="text-green-600 dark:text-green-400 font-bold">✓ {validCount} válidos</span>
             {invalidCount > 0 && (
               <span className="text-destructive font-bold flex items-center gap-1">
-                <AlertTriangle className="h-3 w-3" /> {invalidCount} com erro
+                <AppIcon name="AlertTriangle" className="h-3 w-3" /> {invalidCount} com erro
               </span>
             )}
           </div>
@@ -515,7 +516,7 @@ export default function MenuImportCSV({ storeId }: MenuImportCSVProps) {
                           title="Clique para editar preço"
                         >
                           {formatBRL(p.price)}
-                          <Edit2 className="h-2.5 w-2.5 text-muted-foreground opacity-0 group-hover:opacity-100" />
+                          <AppIcon name="Edit2" className="h-2.5 w-2.5 text-muted-foreground opacity-0 group-hover:opacity-100" />
                         </button>
                       )}
                     </td>
@@ -538,7 +539,7 @@ export default function MenuImportCSV({ storeId }: MenuImportCSVProps) {
               disabled={importing || validCount === 0}
               className="flex items-center gap-1.5 bg-primary text-primary-foreground px-4 py-2 rounded-lg text-xs font-bold disabled:opacity-50"
             >
-              {importing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
+              {importing ? <AppIcon name="Loader2" className="h-3.5 w-3.5 animate-spin" /> : <AppIcon name="Upload" className="h-3.5 w-3.5" />}
               Importar {validCount} Produtos
             </button>
             <button onClick={() => { setParsed(null); setMode(null); setPasteText(""); setItasuperSource(null); }} className="text-muted-foreground text-xs px-3 py-2">

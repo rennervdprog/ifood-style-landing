@@ -3,7 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { LayoutDashboard, Truck, ChevronRight, ShoppingCart } from "lucide-react";
 import AppHeader from "@/components/AppHeader";
 import BottomNav from "@/components/BottomNav";
 import CategoryScroll from "@/components/CategoryScroll";
@@ -15,6 +14,8 @@ import PopularProducts from "@/components/PopularProducts";
 import PromoBanners from "@/components/PromoBanners";
 import FirstOrderBanner from "@/components/FirstOrderBanner";
 import { getStoreOpenStatus, type OpeningHour } from "@/lib/storeStatus";
+import { AppIcon } from "@/components/ui/app-icon";
+import { LayoutDashboard, Truck, ChevronRight, ShoppingCart } from "lucide-react";
 
 const PartnerClientView = memo(() => {
   const { user } = useAuth();
@@ -108,7 +109,7 @@ const PartnerClientView = memo(() => {
           className="mx-4 mt-3 flex items-center gap-3 rounded-xl bg-primary/10 border border-primary/20 p-3 transition-colors active:bg-primary/20"
         >
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            {isPdvOnly ? <ShoppingCart className="h-5 w-5" /> : <LayoutDashboard className="h-5 w-5" />}
+            {isPdvOnly ? <AppIcon name="ShoppingCart" className="h-5 w-5" /> : <AppIcon name="LayoutDashboard" className="h-5 w-5" />}
           </div>
           <div className="flex-1 text-left">
             <p className="text-sm font-bold text-foreground">
@@ -118,7 +119,7 @@ const PartnerClientView = memo(() => {
               {isPdvOnly ? "Frente de caixa da sua loja" : "Gerencie sua loja e pedidos"}
             </p>
           </div>
-          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+          <AppIcon name="ChevronRight" className="h-4 w-4 text-muted-foreground" />
         </button>
       )}
       {profile?.role === "motoboy" && (
@@ -127,13 +128,13 @@ const PartnerClientView = memo(() => {
           className="mx-4 mt-3 flex items-center gap-3 rounded-xl bg-primary/10 border border-primary/20 p-3 transition-colors active:bg-primary/20"
         >
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <Truck className="h-5 w-5" />
+            <AppIcon name="Truck" className="h-5 w-5" />
           </div>
           <div className="flex-1 text-left">
             <p className="text-sm font-bold text-foreground">Acessar Painel de Entregas</p>
             <p className="text-xs text-muted-foreground">Veja entregas disponíveis</p>
           </div>
-          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+          <AppIcon name="ChevronRight" className="h-4 w-4 text-muted-foreground" />
         </button>
       )}
 

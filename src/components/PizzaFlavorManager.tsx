@@ -1,8 +1,9 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Pizza } from "lucide-react";
 import PizzaSizesCatalogManager from "@/components/pizza/PizzaSizesCatalogManager";
+import { AppIcon } from "@/components/ui/app-icon";
+import { Pizza } from "lucide-react";
 
 interface PizzaFlavorManagerProps {
   storeId: string;
@@ -91,7 +92,7 @@ const PizzaFlavorManager = ({ storeId }: PizzaFlavorManagerProps) => {
 
       {/* Header */}
       <div className="flex items-center gap-2">
-        <Pizza className="h-5 w-5 text-primary" />
+        <AppIcon name="Pizza" className="h-5 w-5 text-primary" />
         <h2 className="text-sm font-bold text-foreground/80 uppercase tracking-wider">Regras de Combinação</h2>
       </div>
 

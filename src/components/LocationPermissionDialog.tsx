@@ -25,12 +25,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { MapPin, Settings2, RefreshCw } from "lucide-react";
 import {
   checkLocationPermission,
   readGpsFromGesture,
 } from "@/lib/location";
 import type { Coordinates, PermissionResult } from "@/lib/location";
+import { AppIcon } from "@/components/ui/app-icon";
+import { MapPin, Settings2, RefreshCw } from "lucide-react";
 
 interface Props {
   open: boolean;
@@ -97,7 +98,7 @@ export function LocationPermissionDialog({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <div className="mx-auto mb-2 grid h-12 w-12 place-items-center rounded-full bg-primary/10 text-primary">
-            <MapPin className="h-6 w-6" />
+            <AppIcon name="MapPin" className="h-6 w-6" />
           </div>
           <DialogTitle className="text-center">{title}</DialogTitle>
           <DialogDescription className="text-center">{description}</DialogDescription>
@@ -126,7 +127,7 @@ export function LocationPermissionDialog({
         <DialogFooter className="flex-col gap-2 sm:flex-col">
           {(state === "prompt" || state === "denied") && (
             <Button onClick={handleAllow} disabled={busy} className="w-full">
-              <RefreshCw className={`mr-2 h-4 w-4 ${busy ? "animate-spin" : ""}`} />
+              <AppIcon name="RefreshCw" className={`mr-2 h-4 w-4 ${busy ? "animate-spin" : ""}`} />
               {state === "denied" ? "Tentar novamente" : "Permitir localização"}
             </Button>
           )}
@@ -142,7 +143,7 @@ export function LocationPermissionDialog({
                 }
               }}
             >
-              <Settings2 className="mr-2 h-4 w-4" /> Abrir configurações
+              <AppIcon name="Settings2" className="mr-2 h-4 w-4" /> Abrir configurações
             </Button>
           )}
           <Button variant="ghost" className="w-full" onClick={() => onOpenChange(false)}>

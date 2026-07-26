@@ -10,17 +10,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { Capacitor } from "@capacitor/core";
-import {
-  Wifi, WifiOff, Clock, ChefHat, Truck, CheckCircle2, Pizza,
-  MapPin, Package, Settings, Banknote, CreditCard,
-  UtensilsCrossed, ListOrdered, Plus, Printer, Bike,
-  Volume2, VolumeX, Bell, Store, MessageCircle, Copy, Coins,
-  ChevronDown, ChevronUp, DollarSign, XCircle, Loader2, Search,
-  Menu, X, LayoutDashboard, CircleDot, TrendingUp, BarChart3,
-  Users, Timer, Star, ShoppingBag, ArrowUpRight, ArrowDownRight,
-   Filter, UserCheck, UserX, MapPinned, Repeat, Heart, AlertTriangle, LogOut, User, Shield, Navigation,
-  Calendar, Download, GraduationCap, ChevronRight, Monitor
-} from "lucide-react";
 // recharts agora vive em chunk separado (@/components/admin/AdminCharts) —
 // removido do bundle inicial do AdminDashboard (~150KB gzipped).
 const DailyRevenueChart = lazy(() =>
@@ -67,7 +56,7 @@ const StoreReportsPanel = lazy(() => import("@/components/store/StoreReportsPane
 
 const TabFallback = () => (
   <div className="flex items-center justify-center py-12">
-    <Loader2 className="h-6 w-6 animate-spin text-primary" />
+    <AppIcon name="Loader2" className="h-6 w-6 animate-spin text-primary" />
   </div>
 );
 
@@ -108,6 +97,8 @@ import {
   getPeriodDateKeys,
 } from "./admin/helpers";
 import type {
+import { AppIcon } from "@/components/ui/app-icon";
+import { Clock, Printer, Bike, Volume2, VolumeX, Bell, Store, Loader2, Menu, X, TrendingUp, ArrowUpRight, ArrowDownRight, Filter, Shield, Navigation, ChevronRight } from "lucide-react";
   OrderStatus,
   OrderTabKey,
   DashboardTab,
@@ -157,7 +148,7 @@ const GlanceCard = ({ icon: Icon, label, value, subValue, color = "text-primary"
         </div>
         {trend && (
           <div className={`flex items-center gap-1 text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full ${trend === "up" ? "text-emerald-500 bg-emerald-500/15" : "text-red-500 bg-red-500/15"}`}>
-            {trend === "up" ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
+            {trend === "up" ? <AppIcon name="ArrowUpRight" className="h-3 w-3" /> : <AppIcon name="ArrowDownRight" className="h-3 w-3" />}
             {trend === "up" ? "Cresceu" : "Caiu"}
           </div>
         )}
@@ -1773,7 +1764,7 @@ const AdminDashboard = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3 min-w-0">
               <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                <Store className="h-5 w-5 text-primary" />
+                <AppIcon name="Store" className="h-5 w-5 text-primary" />
               </div>
               <div className="min-w-0">
                 <h1 className="font-bold text-sm text-foreground truncate">{store?.name || "Painel"}</h1>
@@ -1784,7 +1775,7 @@ const AdminDashboard = () => {
               </div>
             </div>
             <button onClick={() => setSidebarOpen(false)} className="lg:hidden p-1 text-muted-foreground hover:text-foreground">
-              <X className="h-5 w-5" />
+              <AppIcon name="X" className="h-5 w-5" />
             </button>
           </div>
         </div>
@@ -1803,7 +1794,7 @@ const AdminDashboard = () => {
           </div>
           <div className="bg-muted/50 border border-border rounded-xl p-2 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-emerald-500" />
+              <AppIcon name="TrendingUp" className="h-4 w-4 text-emerald-500" />
               <span className="text-xs text-muted-foreground">Hoje</span>
             </div>
             <div className="text-right">
@@ -1842,7 +1833,7 @@ const AdminDashboard = () => {
         {/* Bottom controls */}
         <div className="p-2 border-t border-border space-y-1.5">
           <div className="flex items-center gap-2 px-1">
-            <Bike className="h-4 w-4 text-muted-foreground" />
+            <AppIcon name="Bike" className="h-4 w-4 text-muted-foreground" />
             <span className="text-xs text-muted-foreground flex-1">Entregadores</span>
             <span className={`flex items-center gap-1 text-xs font-bold ${(onlineDrivers?.length || 0) > 0 ? "text-emerald-500" : "text-muted-foreground"}`}>
               <span className={`w-2 h-2 rounded-full ${(onlineDrivers?.length || 0) > 0 ? "bg-emerald-500 animate-pulse" : "bg-muted"}`} />
@@ -1853,13 +1844,13 @@ const AdminDashboard = () => {
             {soundEnabled && (
               <button onClick={() => setSoundMuted(prev => { if (!prev) toast("🔇 Silenciado"); else toast.success("🔊 Ativo!"); return !prev; })}
                 className={`p-2 rounded-xl border border-border ${soundMuted ? "text-destructive" : "text-emerald-500"}`}>
-                {soundMuted ? <VolumeX className="h-4 w-4 mx-auto" /> : <Volume2 className="h-4 w-4 mx-auto" />}
+                {soundMuted ? <AppIcon name="VolumeX" className="h-4 w-4 mx-auto" /> : <AppIcon name="Volume2" className="h-4 w-4 mx-auto" />}
               </button>
             )}
             <button onClick={toggleAutoPrint} disabled={autoPrintSaving}
               title={autoPrint ? "Impressão automática ligada (clique para desligar)" : "Impressão automática desligada"}
               className={`p-2 rounded-xl border border-border transition-opacity ${autoPrintSaving ? "opacity-50" : ""} ${autoPrint ? "text-primary bg-primary/5" : "text-muted-foreground"}`}>
-              <Printer className="h-4 w-4 mx-auto" />
+              <AppIcon name="Printer" className="h-4 w-4 mx-auto" />
             </button>
             <div className="col-span-2 space-y-1">
               <button onClick={toggleStoreOpen}
@@ -1882,7 +1873,7 @@ const AdminDashboard = () => {
           <div className="flex items-center gap-3 min-w-0">
             {/* Desktop: hamburger for sidebar */}
             <button onClick={() => setSidebarOpen(true)} className="hidden lg:hidden p-2 -ml-2 rounded-xl hover:bg-accent">
-              <Menu className="h-5 w-5 text-foreground" />
+              <AppIcon name="Menu" className="h-5 w-5 text-foreground" />
             </button>
             <div className="min-w-0">
               <h2 className="font-bold text-foreground text-base truncate">{store?.name || "Painel"}</h2>
@@ -1926,19 +1917,19 @@ const AdminDashboard = () => {
             {showSoundPrompt && !soundEnabled && !Capacitor.isNativePlatform() && (
               <button onClick={activateSound}
                 className="flex items-center gap-1 bg-amber-400/10 border border-amber-400/30 text-amber-500 px-2.5 py-1.5 rounded-xl text-[11px] font-bold animate-pulse">
-                <Bell className="h-3.5 w-3.5" /> Alertas
+                <AppIcon name="Bell" className="h-3.5 w-3.5" /> Alertas
               </button>
             )}
             {pendingCount > 0 && dashboardTab !== "orders" && !isPdvOnly && (
               <button onClick={() => { setDashboardTab("orders"); setActiveTab("pendente"); }}
                 className="flex items-center gap-1 bg-amber-400 text-amber-900 px-2.5 py-1.5 rounded-xl text-[11px] font-bold animate-bounce">
-                <Clock className="h-3.5 w-3.5" /> {pendingCount}
+                <AppIcon name="Clock" className="h-3.5 w-3.5" /> {pendingCount}
               </button>
             )}
             {soundEnabled && (
               <button onClick={() => setSoundMuted(prev => { if (!prev) toast("🔇 Silenciado"); else toast.success("🔊 Ativo!"); return !prev; })}
                 className={`p-2 rounded-xl lg:hidden ${soundMuted ? "text-destructive" : "text-emerald-500"}`}>
-                {soundMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+                {soundMuted ? <AppIcon name="VolumeX" className="h-4 w-4" /> : <AppIcon name="Volume2" className="h-4 w-4" />}
               </button>
             )}
             <SignOutConfirm redirectTo="/portal-parceiro" />
@@ -1962,7 +1953,7 @@ const AdminDashboard = () => {
           {!storeLoading && isApproved && !store && (
             <div className="p-4 lg:p-6 max-w-lg mx-auto flex flex-col items-center justify-center text-center min-h-[60vh]">
               <div className="w-20 h-20 bg-amber-500/10 rounded-3xl flex items-center justify-center mb-5">
-                <Store className="h-10 w-10 text-amber-500" />
+                <AppIcon name="Store" className="h-10 w-10 text-amber-500" />
               </div>
               <h2 className="text-xl font-black text-foreground mb-2">
                 {activeSimulateStoreId ? "Loja de simulação não encontrada" : "Nenhuma loja vinculada a esta conta"}
@@ -1993,7 +1984,7 @@ const AdminDashboard = () => {
           {dashboardTab === "dashboard" && !isApproved && !profileLoading && (
             <div className="p-4 lg:p-6 max-w-lg mx-auto flex flex-col items-center justify-center text-center min-h-[60vh]">
               <div className="w-20 h-20 bg-amber-500/10 rounded-3xl flex items-center justify-center mb-5">
-                <Shield className="h-10 w-10 text-amber-500" />
+                <AppIcon name="Shield" className="h-10 w-10 text-amber-500" />
               </div>
               <h2 className="text-xl font-black text-foreground mb-2">Cadastro em Análise 🔍</h2>
               <p className="text-sm text-muted-foreground max-w-xs mb-3">
@@ -2052,7 +2043,7 @@ const AdminDashboard = () => {
                               <p className={`text-xs font-bold ${item.urgente ? "text-amber-800 dark:text-amber-300" : "text-blue-800 dark:text-blue-300"}`}>{item.label}</p>
                               <p className="text-[10px] text-muted-foreground truncate">{item.desc}</p>
                             </div>
-                            <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                            <AppIcon name="ChevronRight" className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                           </button>
                         ))}
                       </div>
@@ -2273,7 +2264,7 @@ const AdminDashboard = () => {
               {(isBottomNavMore || showMoreSheet) && <div className="absolute top-0 w-8 h-1 bg-primary rounded-full animate-in fade-in zoom-in duration-300" />}
               <div className="relative mt-1">
                 <div className={`transition-all duration-300 ${showMoreSheet ? "rotate-90 scale-110" : ""}`}>
-                  {showMoreSheet ? <X className="h-6 w-6" strokeWidth={2.5} /> : <Menu className="h-6 w-6" strokeWidth={2} />}
+                  {showMoreSheet ? <AppIcon name="X" className="h-6 w-6" /> : <AppIcon name="Menu" className="h-6 w-6" />}
                 </div>
               </div>
               <span className={`text-[11px] mt-1 transition-all duration-300 ${(isBottomNavMore || showMoreSheet) ? "font-black tracking-tight" : "font-bold"}`}>Mais</span>

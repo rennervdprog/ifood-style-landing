@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { Plus, X } from "lucide-react";
 import { useBRLInput, formatBRLDisplay, parseBRLCentsInput } from "@/hooks/useBRLInput";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { readPizzaCatalogConfig, hasPizzaCatalog } from "@/types/pizza";
+import { AppIcon } from "@/components/ui/app-icon";
+import { Plus, X } from "lucide-react";
 
 interface CategoryProductFieldsProps {
   category: string;
@@ -148,7 +149,7 @@ const PizzaSizesField = ({
                 className="flex h-8 w-8 sm:h-9 sm:w-9 flex-shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
                 aria-label="Remover tamanho"
               >
-                <X className="h-4 w-4" />
+                <AppIcon name="X" className="h-4 w-4" />
               </button>
             </div>
           ))}
@@ -196,7 +197,7 @@ const PizzaSizesField = ({
           onClick={add}
           className="bg-primary/20 text-primary px-2.5 py-1.5 rounded-lg text-xs font-bold flex-shrink-0"
         >
-          <Plus className="h-3.5 w-3.5" />
+          <AppIcon name="Plus" className="h-3.5 w-3.5" />
         </button>
       </div>
       <p className="text-[10px] text-muted-foreground">
@@ -348,7 +349,7 @@ const CategoryProductFields = ({ category, metadata, onChange, onNameChange, sto
         {(metadata[fieldKey] || []).map((item: string, i: number) => (
           <span key={i} className="bg-primary/15 text-primary text-xs px-2.5 py-1 rounded-full flex items-center gap-1 font-medium">
             {item}
-            <button onClick={() => removeFromList(fieldKey, i)} className="hover:text-destructive"><X className="h-3 w-3" /></button>
+            <button onClick={() => removeFromList(fieldKey, i)} className="hover:text-destructive"><AppIcon name="X" className="h-3 w-3" /></button>
           </span>
         ))}
       </div>
@@ -372,7 +373,7 @@ const CategoryProductFields = ({ category, metadata, onChange, onNameChange, sto
           onClick={() => { addToList(fieldKey, tempInputs[fieldKey] || ""); setTempInputs({ ...tempInputs, [fieldKey]: "" }); }}
           className="bg-primary/20 text-primary px-2.5 py-1.5 rounded-lg text-xs font-bold"
         >
-          <Plus className="h-3.5 w-3.5" />
+          <AppIcon name="Plus" className="h-3.5 w-3.5" />
         </button>
       </div>
     </div>

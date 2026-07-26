@@ -6,11 +6,8 @@ import { useNavigate } from "react-router-dom";
 import { subscribeWithRejoin, cleanupChannel } from "@/lib/realtimeChannel";
 import { toast } from "sonner";
 import SignOutConfirm from "@/components/SignOutConfirm";
-import {
-  MessageCircle, Send, Loader2, LogOut, ChevronRight,
-  User, Store, Bike, Search, StickyNote, ArrowLeft,
-  Circle, CheckCircle2, Clock, AlertCircle,
-} from "lucide-react";
+import { AppIcon } from "@/components/ui/app-icon";
+import { MessageCircle, Send, Loader2, LogOut, ChevronRight, User, Store, Bike, Search, StickyNote, ArrowLeft, CheckCircle2 } from "lucide-react";
 
 const STATUSES = [
   { value: "aberto",             label: "Aberto",          color: "text-blue-600",        dot: "bg-blue-500",    badge: "bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-400" },
@@ -193,7 +190,7 @@ const SupportAgentDashboard = () => {
 
   if (agentLoading) return (
     <div className="min-h-screen bg-background flex items-center justify-center">
-      <Loader2 className="h-5 w-5 animate-spin text-primary" />
+      <AppIcon name="Loader2" className="h-5 w-5 animate-spin text-primary" />
     </div>
   );
 
@@ -205,11 +202,11 @@ const SupportAgentDashboard = () => {
       {view === "chat" ? (
         <button onClick={goBack}
           className="w-9 h-9 rounded-2xl bg-muted/60 flex items-center justify-center lg:hidden active:scale-90 transition-transform">
-          <ArrowLeft className="h-4 w-4" />
+          <AppIcon name="ArrowLeft" className="h-4 w-4" />
         </button>
       ) : (
         <div className="w-9 h-9 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0">
-          <MessageCircle className="h-4 w-4 text-primary" />
+          <AppIcon name="MessageCircle" className="h-4 w-4 text-primary" />
         </div>
       )}
       <div className="flex-1 min-w-0">
@@ -239,7 +236,7 @@ const SupportAgentDashboard = () => {
         )}
         <SignOutConfirm redirectTo="/portal-parceiro">
           <button className="w-9 h-9 rounded-2xl bg-muted/60 flex items-center justify-center active:scale-90 transition-transform">
-            <LogOut className="h-3.5 w-3.5 text-muted-foreground" />
+            <AppIcon name="LogOut" className="h-3.5 w-3.5 text-muted-foreground" />
           </button>
         </SignOutConfirm>
       </div>
@@ -254,7 +251,7 @@ const SupportAgentDashboard = () => {
       {/* Filtros */}
       <div className="px-4 pt-3 pb-3 space-y-3 border-b border-border/60 shrink-0">
         <div className="relative">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+          <AppIcon name="Search" className="absolute left-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
           <input value={search} onChange={e => setSearch(e.target.value)}
             placeholder="Buscar por assunto ou cliente..."
             className="w-full bg-muted/40 pl-9 pr-4 py-2.5 text-sm rounded-2xl border border-border/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/30 transition-all" />
@@ -288,12 +285,12 @@ const SupportAgentDashboard = () => {
       <div className="flex-1 overflow-y-auto">
         {ticketsLoading && (
           <div className="flex items-center justify-center py-16">
-            <Loader2 className="h-5 w-5 animate-spin text-primary" />
+            <AppIcon name="Loader2" className="h-5 w-5 animate-spin text-primary" />
           </div>
         )}
         {!ticketsLoading && filtered.length === 0 && (
           <div className="flex flex-col items-center justify-center py-16 gap-3 text-muted-foreground">
-            <CheckCircle2 className="h-10 w-10 opacity-20" />
+            <AppIcon name="CheckCircle2" className="h-10 w-10 opacity-20" />
             <p className="text-sm font-medium">Nenhum ticket aqui</p>
           </div>
         )}
@@ -339,7 +336,7 @@ const SupportAgentDashboard = () => {
                     )}
                   </div>
                 </div>
-                <ChevronRight className="h-4 w-4 text-muted-foreground/40 shrink-0 mt-2" />
+                <AppIcon name="ChevronRight" className="h-4 w-4 text-muted-foreground/40 shrink-0 mt-2" />
               </div>
             </button>
           );
@@ -355,7 +352,7 @@ const SupportAgentDashboard = () => {
     if (!selected) return (
       <div className="flex-1 flex flex-col items-center justify-center gap-4 text-muted-foreground">
         <div className="w-16 h-16 rounded-3xl bg-muted/40 flex items-center justify-center">
-          <MessageCircle className="h-7 w-7 opacity-30" strokeWidth={1.5} />
+          <AppIcon name="MessageCircle" className="h-7 w-7 opacity-30" />
         </div>
         <p className="text-sm font-medium">Selecione um ticket para atender</p>
       </div>
@@ -414,13 +411,13 @@ const SupportAgentDashboard = () => {
               <div key={m.id} className={`flex ${isAgent ? "justify-end" : "justify-start"}`}>
                 {!isAgent && (
                   <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mr-2 mt-auto mb-0.5">
-                    <User className="h-3.5 w-3.5 text-primary" />
+                    <AppIcon name="User" className="h-3.5 w-3.5 text-primary" />
                   </div>
                 )}
                 <div className={`max-w-[75%] flex flex-col gap-1 ${isAgent ? "items-end" : "items-start"}`}>
                   {isNote && (
                     <div className="flex items-center gap-1 px-1">
-                      <StickyNote className="h-3 w-3 text-amber-500" />
+                      <AppIcon name="StickyNote" className="h-3 w-3 text-amber-500" />
                       <span className="text-[10px] font-bold text-amber-600">Nota interna</span>
                     </div>
                   )}
@@ -460,7 +457,7 @@ const SupportAgentDashboard = () => {
                   ? "bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/30"
                   : "bg-muted/40 text-muted-foreground border-border/60"
               }`}>
-              <StickyNote className="h-3.5 w-3.5" />
+              <AppIcon name="StickyNote" className="h-3.5 w-3.5" />
               {isInternal ? "Nota interna — só agentes veem" : "Resposta ao cliente"}
             </button>
 
@@ -474,7 +471,7 @@ const SupportAgentDashboard = () => {
                 className="flex-1 bg-transparent text-sm resize-none focus:outline-none placeholder:text-muted-foreground/50" />
               <button onClick={sendMsg} disabled={!msg.trim() || sending}
                 className="w-9 h-9 bg-primary rounded-xl flex items-center justify-center shrink-0 disabled:opacity-30 active:scale-90 transition-transform mb-0.5">
-                {sending ? <Loader2 className="h-3.5 w-3.5 text-white animate-spin" /> : <Send className="h-3.5 w-3.5 text-white" />}
+                {sending ? <AppIcon name="Loader2" className="h-3.5 w-3.5 text-white animate-spin" /> : <AppIcon name="Send" className="h-3.5 w-3.5 text-white" />}
               </button>
             </div>
           </div>

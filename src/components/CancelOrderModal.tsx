@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { formatBRL } from "@/lib/utils";
+import { AppIcon } from "@/components/ui/app-icon";
 import { X, AlertTriangle, Loader2, Wallet, Clock, CheckCircle2, Banknote } from "lucide-react";
 
 const FEE_TABLE: Record<string, { percent: number; label: string }> = {
@@ -94,14 +95,14 @@ const CancelOrderModal = ({ order, onClose, onCancelled }: Props) => {
         {/* Header */}
         <div className="px-4 py-4 flex items-center gap-3 border-b border-border">
           <div className="w-10 h-10 rounded-full bg-destructive/10 flex items-center justify-center">
-            <AlertTriangle className="h-5 w-5 text-destructive" />
+            <AppIcon name="AlertTriangle" className="h-5 w-5 text-destructive" />
           </div>
           <div className="flex-1">
             <h2 className="font-bold text-foreground">Cancelar Pedido</h2>
             <p className="text-xs text-muted-foreground">#{order.id.slice(0, 8).toUpperCase()} · {order.stores?.name}</p>
           </div>
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
-            <X className="h-5 w-5" />
+            <AppIcon name="X" className="h-5 w-5" />
           </button>
         </div>
 
@@ -109,7 +110,7 @@ const CancelOrderModal = ({ order, onClose, onCancelled }: Props) => {
           {/* Sem reembolso: dinheiro/cartão na entrega OU PIX ainda não pago */}
           {!hasRefund && (
             <div className="bg-primary/10 border border-primary/30 rounded-xl p-3 flex items-start gap-2">
-              <Banknote className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+              <AppIcon name="Banknote" className="h-5 w-5 text-primary mt-0.5 shrink-0" />
               <div>
                 <p className="text-sm font-semibold text-foreground">
                   {isPrepaid ? "PIX ainda não pago" : "Pagamento na entrega"}
@@ -129,7 +130,7 @@ const CancelOrderModal = ({ order, onClose, onCancelled }: Props) => {
               {/* Time override banner */}
               {isTimeOverride && (
                 <div className="bg-primary/10 border border-primary/30 rounded-xl p-3 flex items-start gap-2">
-                  <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+                  <AppIcon name="CheckCircle2" className="h-5 w-5 text-primary mt-0.5 shrink-0" />
                   <div>
                     <p className="text-sm font-semibold text-foreground">
                       Reembolso total garantido!
@@ -159,7 +160,7 @@ const CancelOrderModal = ({ order, onClose, onCancelled }: Props) => {
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground line-through">{feeInfo.label}</span>
                     <span className="text-primary font-semibold flex items-center gap-1">
-                      <Clock className="h-3.5 w-3.5" />
+                      <AppIcon name="Clock" className="h-3.5 w-3.5" />
                       Isento (tempo excedido)
                     </span>
                   </div>
@@ -167,7 +168,7 @@ const CancelOrderModal = ({ order, onClose, onCancelled }: Props) => {
 
                 <div className="border-t border-border pt-3 flex justify-between">
                   <span className="text-sm font-bold text-foreground flex items-center gap-1.5">
-                    <Wallet className="h-4 w-4 text-primary" />
+                    <AppIcon name="Wallet" className="h-4 w-4 text-primary" />
                     Crédito na carteira
                   </span>
                   <span className="text-lg font-black text-primary">{formatBRL(refundAmount)}</span>
@@ -207,7 +208,7 @@ const CancelOrderModal = ({ order, onClose, onCancelled }: Props) => {
             >
               {loading ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <AppIcon name="Loader2" className="h-4 w-4 animate-spin" />
                   Cancelando...
                 </>
               ) : (

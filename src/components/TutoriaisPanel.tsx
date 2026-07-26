@@ -1,14 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
-import {
-  GraduationCap, ChevronDown, ChevronUp, Search, X,
-  LayoutDashboard, ListOrdered, UtensilsCrossed, Plus, CircleDot,
-  Clock, Coins, BarChart3, CreditCard, Star, Bike, AlertTriangle, Settings,
-  CheckCircle2, Rocket, HelpCircle, MessageCircle, Sparkles, BookOpen,
-  PlayCircle, ArrowRight, Zap, Trophy, ShoppingCart, Tag, Users, Bell,
-  Wallet, MapPin,
-} from "lucide-react";
 import { openWhatsApp } from "@/lib/whatsapp";
 import { useAuth } from "@/contexts/AuthContext";
+import { AppIcon } from "@/components/ui/app-icon";
+import { GraduationCap, ChevronDown, ChevronUp, Search, X, LayoutDashboard, ListOrdered, UtensilsCrossed, Plus, CircleDot, Clock, Coins, BarChart3, CreditCard, Star, Bike, AlertTriangle, Settings, CheckCircle2, Rocket, HelpCircle, MessageCircle, Sparkles, BookOpen, PlayCircle, ArrowRight, Zap, Trophy, ShoppingCart, Tag, Users, Bell, Wallet, MapPin } from "lucide-react";
 
 const SUPPORT_WHATSAPP = "22992796291";
 const SUPPORT_MESSAGE = "Olá! Preciso de ajuda com o painel do lojista do ItaSuper.";
@@ -725,7 +719,7 @@ const TutoriaisPanel = () => {
       <div className="bg-gradient-to-br from-primary/15 via-primary/5 to-background border border-primary/20 rounded-2xl p-5 space-y-3">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 bg-primary/20 rounded-2xl flex items-center justify-center">
-            <GraduationCap className="h-6 w-6 text-primary" />
+            <AppIcon name="GraduationCap" className="h-6 w-6 text-primary" />
           </div>
           <div className="flex-1 min-w-0">
             <h2 className="text-xl font-black text-foreground tracking-tight">Escola de Parceiros</h2>
@@ -749,7 +743,7 @@ const TutoriaisPanel = () => {
           </div>
           {progressPercent === 100 && (
             <p className="text-xs text-primary font-bold flex items-center gap-1 pt-1">
-              <Trophy className="h-3.5 w-3.5" /> Parabéns! Você completou todos os tutoriais!
+              <AppIcon name="Trophy" className="h-3.5 w-3.5" /> Parabéns! Você completou todos os tutoriais!
             </p>
           )}
         </div>
@@ -759,7 +753,7 @@ const TutoriaisPanel = () => {
       <div className="bg-card border border-border rounded-2xl p-4 space-y-3">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 bg-primary/15 rounded-xl flex items-center justify-center">
-            <Rocket className="h-4 w-4 text-primary" />
+            <AppIcon name="Rocket" className="h-4 w-4 text-primary" />
           </div>
           <div>
             <h3 className="text-base font-black text-foreground">Trilha do Sucesso</h3>
@@ -779,13 +773,13 @@ const TutoriaisPanel = () => {
                 <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-black flex-shrink-0 ${
                   isDone ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
                 }`}>
-                  {isDone ? <CheckCircle2 className="h-4 w-4" /> : idx + 1}
+                  {isDone ? <AppIcon name="CheckCircle2" className="h-4 w-4" /> : idx + 1}
                 </div>
                 <Icon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                 <span className={`flex-1 text-sm font-bold ${isDone ? "text-muted-foreground/60 line-through" : "text-foreground"}`}>
                   {q.label}
                 </span>
-                <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all flex-shrink-0" />
+                <AppIcon name="ArrowRight" className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all flex-shrink-0" />
               </button>
             );
           })}
@@ -795,7 +789,7 @@ const TutoriaisPanel = () => {
       {/* Search and Filters container */}
       <div className="bg-card border border-border rounded-2xl p-4 space-y-4">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+          <AppIcon name="Search" className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
           <input
             type="text"
             value={search}
@@ -808,7 +802,7 @@ const TutoriaisPanel = () => {
               onClick={() => setSearch("")}
               className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-muted"
             >
-              <X className="h-3.5 w-3.5 text-muted-foreground" />
+              <AppIcon name="X" className="h-3.5 w-3.5 text-muted-foreground" />
             </button>
           )}
         </div>
@@ -840,7 +834,7 @@ const TutoriaisPanel = () => {
       <div className="space-y-3">
         {filteredTutoriais.length === 0 && (
           <div className="text-center py-12 text-muted-foreground text-sm bg-card border border-border rounded-2xl">
-            <Search className="h-8 w-8 mx-auto mb-2 opacity-40" />
+            <AppIcon name="Search" className="h-8 w-8 mx-auto mb-2 opacity-40" />
             Nenhum tutorial encontrado{search && ` para "${search}"`}
           </div>
         )}
@@ -867,7 +861,7 @@ const TutoriaisPanel = () => {
                   <Icon className={`h-5 w-5 ${section.color}`} />
                   {isDone && (
                     <div className="absolute -top-1 -right-1 w-5 h-5 bg-primary rounded-full flex items-center justify-center border-2 border-card">
-                      <CheckCircle2 className="h-3 w-3 text-white" />
+                      <AppIcon name="CheckCircle2" className="h-3 w-3 text-white" />
                     </div>
                   )}
                 </div>
@@ -878,19 +872,19 @@ const TutoriaisPanel = () => {
                   <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">{section.shortDesc}</p>
                   <div className="flex items-center gap-3 mt-1.5">
                     <span className="text-[10px] font-bold text-muted-foreground flex items-center gap-1 bg-muted/50 px-1.5 py-0.5 rounded-md">
-                      <PlayCircle className="h-3 w-3 text-primary" />
+                      <AppIcon name="PlayCircle" className="h-3 w-3 text-primary" />
                       {section.steps.length} etapas
                     </span>
                     <span className="text-[10px] font-bold text-muted-foreground flex items-center gap-1 bg-muted/50 px-1.5 py-0.5 rounded-md">
-                      <Clock className="h-3 w-3 text-primary" />
+                      <AppIcon name="Clock" className="h-3 w-3 text-primary" />
                       {section.estimatedMinutes} min
                     </span>
                   </div>
                 </div>
                 {isOpen ? (
-                  <ChevronUp className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                  <AppIcon name="ChevronUp" className="h-5 w-5 text-muted-foreground flex-shrink-0" />
                 ) : (
-                  <ChevronDown className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                  <AppIcon name="ChevronDown" className="h-5 w-5 text-muted-foreground flex-shrink-0" />
                 )}
               </button>
 
@@ -914,9 +908,9 @@ const TutoriaisPanel = () => {
                             {step.title}
                           </span>
                           {stepOpen ? (
-                            <ChevronUp className="h-4 w-4 text-primary flex-shrink-0" />
+                            <AppIcon name="ChevronUp" className="h-4 w-4 text-primary flex-shrink-0" />
                           ) : (
-                            <ChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                            <AppIcon name="ChevronDown" className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                           )}
                         </button>
                         {stepOpen && (
@@ -949,11 +943,11 @@ const TutoriaisPanel = () => {
                   >
                     {isDone ? (
                       <>
-                        <CheckCircle2 className="h-4 w-4" /> Tutorial concluído
+                        <AppIcon name="CheckCircle2" className="h-4 w-4" /> Tutorial concluído
                       </>
                     ) : (
                       <>
-                        <Zap className="h-4 w-4" /> Marcar como concluído
+                        <AppIcon name="Zap" className="h-4 w-4" /> Marcar como concluído
                       </>
                     )}
                   </button>
@@ -968,7 +962,7 @@ const TutoriaisPanel = () => {
       <div className="bg-card border border-border rounded-2xl overflow-hidden">
         <div className="p-4 border-b border-border bg-muted/20 flex items-center gap-2">
           <div className="w-8 h-8 bg-primary/15 rounded-xl flex items-center justify-center">
-            <HelpCircle className="h-4 w-4 text-primary" />
+            <AppIcon name="HelpCircle" className="h-4 w-4 text-primary" />
           </div>
           <div>
             <h3 className="text-sm font-black text-foreground">Perguntas Frequentes</h3>
@@ -989,9 +983,9 @@ const TutoriaisPanel = () => {
                   </span>
                   <span className="flex-1 text-sm font-bold text-foreground">{item.q}</span>
                   {isOpen ? (
-                    <ChevronUp className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                    <AppIcon name="ChevronUp" className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                   ) : (
-                    <ChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                    <AppIcon name="ChevronDown" className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                   )}
                 </button>
                 {isOpen && (
@@ -1008,7 +1002,7 @@ const TutoriaisPanel = () => {
       {/* Footer help / contato suporte */}
       <div className="bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 rounded-2xl p-5 text-center space-y-3">
         <div className="w-12 h-12 bg-primary/15 rounded-2xl flex items-center justify-center mx-auto">
-          <MessageCircle className="h-6 w-6 text-primary" />
+          <AppIcon name="MessageCircle" className="h-6 w-6 text-primary" />
         </div>
         <div>
           <p className="text-sm font-black text-foreground">Ainda com dúvida?</p>
@@ -1020,7 +1014,7 @@ const TutoriaisPanel = () => {
           onClick={() => openWhatsApp(SUPPORT_WHATSAPP, SUPPORT_MESSAGE)}
           className="inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 rounded-xl text-sm font-black hover:bg-primary/90 active:scale-95 transition-all w-full"
         >
-          <MessageCircle className="h-4 w-4" />
+          <AppIcon name="MessageCircle" className="h-4 w-4" />
           Falar com Suporte
         </button>
       </div>

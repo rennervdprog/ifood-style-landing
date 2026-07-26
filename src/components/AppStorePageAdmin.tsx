@@ -7,11 +7,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { APP_VERSION } from "@/lib/appVersion";
 import { toast } from "sonner";
-import {
-  Smartphone, Save, Loader2, Plus, Trash2, Eye,
-  ExternalLink, Upload, Bell, Wifi, MapPin, Camera,
-  Mic, Image, GripVertical, Check,
-} from "lucide-react";
+import { AppIcon } from "@/components/ui/app-icon";
+import { Smartphone, Save, Loader2, Plus, Trash2, Eye } from "lucide-react";
 
 const PERM_ICON_OPTIONS = [
   { value: "bell",    label: "Notificações" },
@@ -154,7 +151,7 @@ const AppStorePageAdmin = () => {
 
   if (isLoading) return (
     <div className="flex items-center justify-center py-16">
-      <Loader2 className="h-5 w-5 animate-spin text-primary" />
+      <AppIcon name="Loader2" className="h-5 w-5 animate-spin text-primary" />
     </div>
   );
 
@@ -164,7 +161,7 @@ const AppStorePageAdmin = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Smartphone className="h-5 w-5 text-primary" />
+          <AppIcon name="Smartphone" className="h-5 w-5 text-primary" />
           <div>
             <h2 className="text-sm font-black text-foreground">Página de Download</h2>
             <p className="text-xs text-muted-foreground">Gerencie o conteúdo da página /download</p>
@@ -173,11 +170,11 @@ const AppStorePageAdmin = () => {
         <div className="flex items-center gap-2">
           <a href="/download" target="_blank"
             className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground bg-muted/40 border border-border px-3 py-2 rounded-xl hover:text-foreground transition-colors">
-            <Eye className="h-3.5 w-3.5" /> Ver página
+            <AppIcon name="Eye" className="h-3.5 w-3.5" /> Ver página
           </a>
           <button onClick={save} disabled={saving}
             className="flex items-center gap-1.5 bg-primary text-primary-foreground text-xs font-bold px-4 py-2 rounded-xl active:scale-95 transition-transform disabled:opacity-50">
-            {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+            {saving ? <AppIcon name="Loader2" className="h-3.5 w-3.5 animate-spin" /> : <AppIcon name="Save" className="h-3.5 w-3.5" />}
             {saving ? "Salvando..." : "Salvar"}
           </button>
         </div>
@@ -309,7 +306,7 @@ const AppStorePageAdmin = () => {
                   className="w-20 h-36 object-cover rounded-xl border border-border/60" />
                 <button onClick={() => removeScreenshot(i)}
                   className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
-                  <Trash2 className="h-2.5 w-2.5 text-white" />
+                  <AppIcon name="Trash2" className="h-2.5 w-2.5 text-white" />
                 </button>
                 {s.caption && <p className="text-[9px] text-muted-foreground mt-1 text-center truncate w-20">{s.caption}</p>}
               </div>
@@ -327,7 +324,7 @@ const AppStorePageAdmin = () => {
               className="flex-1 bg-muted/40 border border-border/60 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
             <button onClick={addScreenshot} disabled={!newScreenUrl.trim()}
               className="bg-primary text-primary-foreground px-4 py-2 rounded-xl text-xs font-bold active:scale-95 transition-transform disabled:opacity-40 flex items-center gap-1.5">
-              <Plus className="h-3.5 w-3.5" /> Adicionar
+              <AppIcon name="Plus" className="h-3.5 w-3.5" /> Adicionar
             </button>
           </div>
           <p className="text-[10px] text-muted-foreground">Use URLs do Supabase Storage ou qualquer imagem pública. Tamanho ideal: 360×640px.</p>
@@ -340,7 +337,7 @@ const AppStorePageAdmin = () => {
           <p className="text-xs font-black text-muted-foreground uppercase tracking-widest">Permissões</p>
           <button onClick={addPerm}
             className="flex items-center gap-1 text-xs font-bold text-primary bg-primary/10 px-2.5 py-1.5 rounded-lg active:scale-95 transition-transform">
-            <Plus className="h-3 w-3" /> Adicionar
+            <AppIcon name="Plus" className="h-3 w-3" /> Adicionar
           </button>
         </div>
 
@@ -362,7 +359,7 @@ const AppStorePageAdmin = () => {
             </div>
             <button onClick={() => removePerm(i)}
               className="w-7 h-7 rounded-lg hover:bg-red-50 dark:hover:bg-red-500/10 flex items-center justify-center mt-0.5 shrink-0">
-              <Trash2 className="h-3.5 w-3.5 text-muted-foreground hover:text-red-500" />
+              <AppIcon name="Trash2" className="h-3.5 w-3.5 text-muted-foreground hover:text-red-500" />
             </button>
           </div>
         ))}
@@ -371,7 +368,7 @@ const AppStorePageAdmin = () => {
       {/* Salvar (duplicado no rodapé) */}
       <button onClick={save} disabled={saving}
         className="w-full bg-primary text-primary-foreground font-black py-3.5 rounded-2xl text-sm active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-2">
-        {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+        {saving ? <AppIcon name="Loader2" className="h-4 w-4 animate-spin" /> : <AppIcon name="Save" className="h-4 w-4" />}
         {saving ? "Salvando..." : "Salvar todas as alterações"}
       </button>
     </div>

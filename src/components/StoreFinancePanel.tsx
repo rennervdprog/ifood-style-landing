@@ -1,11 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  Copy, Download, ArrowUpRight, ArrowDownRight, Smartphone, Banknote,
-  QrCode, Loader2, X, CheckCircle2, RotateCcw, AlertCircle, TimerReset,
-  ShieldAlert, TrendingUp, TrendingDown, Receipt, Calendar, Monitor,
-} from "lucide-react";
 import { toast } from "sonner";
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subWeeks, startOfDay, endOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -27,6 +22,8 @@ import {
   KpiCard, CommissionSummary, useFinanceChartData, CHART_COLORS,
 } from "@/components/FinanceCharts";
 import PaymentStatement from "@/components/PaymentStatement";
+import { AppIcon } from "@/components/ui/app-icon";
+import { Copy, Download, ArrowUpRight, ArrowDownRight, Smartphone, Banknote, QrCode, Loader2, X, CheckCircle2, RotateCcw, AlertCircle, TimerReset, ShieldAlert, TrendingUp, TrendingDown, Receipt, Calendar, Monitor } from "lucide-react";
 
  interface StoreFinancePanelProps {
    storeId: string;
@@ -649,7 +646,7 @@ const DONUT_COLORS = [NEON_COLORS.pink, NEON_COLORS.blue, NEON_COLORS.amber];
 
       {/* Date filter bar */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1">
-        <Calendar className="h-4 w-4 text-muted-foreground shrink-0" />
+        <AppIcon name="Calendar" className="h-4 w-4 text-muted-foreground shrink-0" />
         {(["today", "week", "month"] as DateFilter[]).map((f) => (
           <button
             key={f}
@@ -713,9 +710,9 @@ const DONUT_COLORS = [NEON_COLORS.pink, NEON_COLORS.blue, NEON_COLORS.amber];
             <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Crescimento</p>
             <div className="flex items-center gap-1.5 mt-1">
               {growthPercent >= 0 ? (
-                <TrendingUp className="h-5 w-5 text-emerald-400" />
+                <AppIcon name="TrendingUp" className="h-5 w-5 text-emerald-400" />
               ) : (
-                <TrendingDown className="h-5 w-5 text-red-400" />
+                <AppIcon name="TrendingDown" className="h-5 w-5 text-red-400" />
               )}
               <p className={`text-2xl font-black tracking-tight ${growthPercent >= 0 ? "text-emerald-400" : "text-red-400"}`}>
                 {growthPercent >= 0 ? "+" : ""}{growthPercent.toFixed(1)}%
@@ -897,7 +894,7 @@ const DONUT_COLORS = [NEON_COLORS.pink, NEON_COLORS.blue, NEON_COLORS.amber];
         <div className="relative">
           <div className="flex items-center gap-2 mb-2">
             <div className="w-8 h-8 rounded-xl bg-emerald-500/10 flex items-center justify-center">
-              <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+              <AppIcon name="CheckCircle2" className="h-4 w-4 text-emerald-400" />
             </div>
            <p className="text-sm font-bold text-foreground">Vendas via App (PIX)</p>
             <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30 text-[10px]">Automático</Badge>
@@ -919,7 +916,7 @@ const DONUT_COLORS = [NEON_COLORS.pink, NEON_COLORS.blue, NEON_COLORS.amber];
           <div className="relative">
             <div className="flex items-center gap-2 mb-2">
               <div className="w-8 h-8 rounded-xl bg-blue-500/10 flex items-center justify-center">
-                <Monitor className="h-4 w-4 text-blue-400" />
+                <AppIcon name="Monitor" className="h-4 w-4 text-blue-400" />
               </div>
               <p className="text-sm font-bold text-foreground">PDV — Caixa Presencial</p>
               {pdvOrders.length > 0 && (
@@ -982,7 +979,7 @@ const DONUT_COLORS = [NEON_COLORS.pink, NEON_COLORS.blue, NEON_COLORS.amber];
         <div className="relative">
           <div className="flex items-center gap-2 mb-2">
             <div className="w-8 h-8 rounded-xl bg-red-500/10 flex items-center justify-center">
-              <ArrowDownRight className="h-4 w-4 text-red-400" />
+              <AppIcon name="ArrowDownRight" className="h-4 w-4 text-red-400" />
             </div>
             <p className="text-sm font-bold text-foreground">Taxa Pendente — Vendas Físicas</p>
           </div>
@@ -1018,7 +1015,7 @@ const DONUT_COLORS = [NEON_COLORS.pink, NEON_COLORS.blue, NEON_COLORS.amber];
 
           {safetyModeMs > 0 && (
             <div className="mt-3 rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 flex items-start gap-2">
-              <ShieldAlert className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />
+              <AppIcon name="ShieldAlert" className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />
               <div>
                 <p className="text-xs font-bold text-amber-400">Manutenção temporária</p>
                 <p className="text-[10px] text-muted-foreground mt-1">Volta em {formatCooldownTime(safetyModeMs)}</p>
@@ -1027,7 +1024,7 @@ const DONUT_COLORS = [NEON_COLORS.pink, NEON_COLORS.blue, NEON_COLORS.amber];
           )}
           {!safetyModeMs && pixCooldownMs > 0 && (
             <div className="mt-3 rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 flex items-start gap-2">
-              <AlertCircle className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />
+              <AppIcon name="AlertCircle" className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />
               <div>
                 <p className="text-xs font-bold text-amber-400">Muitas tentativas</p>
                 <p className="text-[10px] text-muted-foreground mt-1">Aguarde {formatCooldownTime(pixCooldownMs)}</p>
@@ -1037,7 +1034,7 @@ const DONUT_COLORS = [NEON_COLORS.pink, NEON_COLORS.blue, NEON_COLORS.amber];
 
           {!hasDocument && (
             <div className="mt-3 rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 flex items-start gap-2">
-              <AlertCircle className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />
+              <AppIcon name="AlertCircle" className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />
               <div>
                 <p className="text-xs font-bold text-amber-400">CPF/CNPJ não cadastrado</p>
                 <p className="text-[10px] text-muted-foreground mt-1">
@@ -1058,13 +1055,13 @@ const DONUT_COLORS = [NEON_COLORS.pink, NEON_COLORS.blue, NEON_COLORS.amber];
                 size="lg"
               >
                 {generatingCharge ? (
-                  <><Loader2 className="h-4 w-4 animate-spin" /> Gerando PIX...</>
+                  <><AppIcon name="Loader2" className="h-4 w-4 animate-spin" /> Gerando PIX...</>
                 ) : isPixBlocked ? (
-                  <><ShieldAlert className="h-4 w-4" /> Aguarde...</>
+                  <><AppIcon name="ShieldAlert" className="h-4 w-4" /> Aguarde...</>
                 ) : !hasDocument ? (
-                  <><AlertCircle className="h-4 w-4" /> CPF/CNPJ pendente</>
+                  <><AppIcon name="AlertCircle" className="h-4 w-4" /> CPF/CNPJ pendente</>
                 ) : (
-                  <><QrCode className="h-4 w-4" /> Pagar Pendência via PIX</>
+                  <><AppIcon name="QrCode" className="h-4 w-4" /> Pagar Pendência via PIX</>
                 )}
               </Button>
             ) : (
@@ -1089,14 +1086,14 @@ const DONUT_COLORS = [NEON_COLORS.pink, NEON_COLORS.blue, NEON_COLORS.amber];
       {chargeError && !chargeResult && (
         <div className="bg-card/60 rounded-2xl p-5 border border-red-500/20 space-y-3">
           <div className="flex items-start gap-3">
-            <AlertCircle className="h-5 w-5 text-red-400 shrink-0" />
+            <AppIcon name="AlertCircle" className="h-5 w-5 text-red-400 shrink-0" />
             <div>
               <p className="text-sm font-bold text-foreground">Erro ao gerar PIX</p>
               <p className="text-xs text-muted-foreground">{chargeError}</p>
             </div>
           </div>
           <Button onClick={handleGenerateCommissionCharge} disabled={generatingCharge} className="w-full" variant="outline">
-            <RotateCcw className="h-4 w-4" /> Tentar Novamente
+            <AppIcon name="RotateCcw" className="h-4 w-4" /> Tentar Novamente
           </Button>
         </div>
       )}
@@ -1107,7 +1104,7 @@ const DONUT_COLORS = [NEON_COLORS.pink, NEON_COLORS.blue, NEON_COLORS.amber];
           <div className="flex items-center justify-between">
             <p className="text-sm font-bold text-pink-400">Pague via PIX</p>
             <button onClick={handleDismissChargeCard} className="text-muted-foreground hover:text-foreground">
-              <X className="h-4 w-4" />
+              <AppIcon name="X" className="h-4 w-4" />
             </button>
           </div>
           <p className="text-xs text-muted-foreground">
@@ -1118,7 +1115,7 @@ const DONUT_COLORS = [NEON_COLORS.pink, NEON_COLORS.blue, NEON_COLORS.amber];
           {!isChargeExpired && !isChargeSettled && (
             <div className="rounded-xl border border-border/50 bg-card/40 p-3 text-center space-y-2">
               <div className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-bold ${isChargeUrgent ? "bg-red-500/20 text-red-400 animate-pulse" : "bg-pink-500/20 text-pink-400"}`}>
-                <TimerReset className="h-4 w-4" />
+                <AppIcon name="TimerReset" className="h-4 w-4" />
                 {formatCountdown(currentChargeRemainingMs)}
               </div>
               <p className="text-[10px] text-muted-foreground">QR Code válido por 5 minutos.</p>
@@ -1127,15 +1124,15 @@ const DONUT_COLORS = [NEON_COLORS.pink, NEON_COLORS.blue, NEON_COLORS.amber];
 
           {isChargeSettled ? (
             <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4 text-center space-y-2">
-              <CheckCircle2 className="h-8 w-8 text-emerald-400 mx-auto" />
+              <AppIcon name="CheckCircle2" className="h-8 w-8 text-emerald-400 mx-auto" />
               <p className="text-sm font-bold text-foreground">Pagamento confirmado</p>
             </div>
           ) : isChargeExpired ? (
             <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-4 text-center space-y-3">
-              <AlertCircle className="h-8 w-8 text-red-400 mx-auto" />
+              <AppIcon name="AlertCircle" className="h-8 w-8 text-red-400 mx-auto" />
               <p className="text-sm font-bold text-foreground">QR Code expirou</p>
               <Button onClick={handleGenerateCommissionCharge} disabled={generatingCharge} className="w-full">
-                {generatingCharge ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}
+                {generatingCharge ? <AppIcon name="Loader2" className="h-4 w-4 animate-spin" /> : <AppIcon name="RotateCcw" className="h-4 w-4" />}
                 Gerar Nova Cobrança
               </Button>
             </div>
@@ -1152,7 +1149,7 @@ const DONUT_COLORS = [NEON_COLORS.pink, NEON_COLORS.blue, NEON_COLORS.amber];
               )}
               {chargeResult.qr_code && (
                 <Button onClick={() => copyPixCode(chargeResult.qr_code!)} variant="outline" className="w-full">
-                  <Copy className="h-4 w-4" /> Copiar Código Pix
+                  <AppIcon name="Copy" className="h-4 w-4" /> Copiar Código Pix
                 </Button>
               )}
               {SIMULATION_MODE && (
@@ -1161,7 +1158,7 @@ const DONUT_COLORS = [NEON_COLORS.pink, NEON_COLORS.blue, NEON_COLORS.amber];
                   disabled={simulatingPayment}
                   className="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold"
                 >
-                  {simulatingPayment ? <><Loader2 className="h-4 w-4 animate-spin" /> Processando...</> : "🧪 Simular Pagamento"}
+                  {simulatingPayment ? <><AppIcon name="Loader2" className="h-4 w-4 animate-spin" /> Processando...</> : "🧪 Simular Pagamento"}
                 </Button>
               )}
             </>
@@ -1194,7 +1191,7 @@ const DONUT_COLORS = [NEON_COLORS.pink, NEON_COLORS.blue, NEON_COLORS.amber];
         <div className="p-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-xl bg-amber-500/10 flex items-center justify-center">
-              <Banknote className="h-4 w-4 text-amber-400" />
+              <AppIcon name="Banknote" className="h-4 w-4 text-amber-400" />
             </div>
             <div>
               <p className="text-sm font-medium text-foreground">Vendas Presenciais</p>
@@ -1209,7 +1206,7 @@ const DONUT_COLORS = [NEON_COLORS.pink, NEON_COLORS.blue, NEON_COLORS.amber];
         <div className="p-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-xl bg-emerald-500/10 flex items-center justify-center">
-              <Smartphone className="h-4 w-4 text-emerald-400" />
+              <AppIcon name="Smartphone" className="h-4 w-4 text-emerald-400" />
             </div>
             <div>
               <p className="text-sm font-medium text-foreground">Vendas PIX App</p>
@@ -1226,10 +1223,10 @@ const DONUT_COLORS = [NEON_COLORS.pink, NEON_COLORS.blue, NEON_COLORS.amber];
       {/* Export buttons */}
       <div className="flex gap-2">
         <button onClick={copyToClipboard} className="flex-1 flex items-center justify-center gap-2 bg-card/60 hover:bg-card/80 text-foreground rounded-xl py-3 text-sm font-medium transition-colors border border-border/30">
-          <Copy className="h-4 w-4" /> Copiar
+          <AppIcon name="Copy" className="h-4 w-4" /> Copiar
         </button>
         <button onClick={downloadTxt} className="flex-1 flex items-center justify-center gap-2 bg-card/60 hover:bg-card/80 text-foreground rounded-xl py-3 text-sm font-medium transition-colors border border-border/30">
-          <Download className="h-4 w-4" /> Baixar Extrato
+          <AppIcon name="Download" className="h-4 w-4" /> Baixar Extrato
         </button>
       </div>
 
@@ -1238,7 +1235,7 @@ const DONUT_COLORS = [NEON_COLORS.pink, NEON_COLORS.blue, NEON_COLORS.amber];
         <div className="bg-card/60 backdrop-blur-sm rounded-2xl border border-border/30 overflow-hidden">
           <div className="p-4 border-b border-border/30">
             <p className="text-xs font-bold text-foreground flex items-center gap-2">
-              <Receipt className="h-4 w-4 text-pink-400" />
+              <AppIcon name="Receipt" className="h-4 w-4 text-pink-400" />
               Transações Recentes
             </p>
           </div>
@@ -1252,8 +1249,8 @@ const DONUT_COLORS = [NEON_COLORS.pink, NEON_COLORS.blue, NEON_COLORS.amber];
                     tx.transaction_kind === "commission_charge" ? "bg-red-500/10" : "bg-emerald-500/10"
                   }`}>
                     {tx.transaction_kind === "commission_charge"
-                      ? <ArrowDownRight className="h-4 w-4 text-red-400" />
-                      : <ArrowUpRight className="h-4 w-4 text-emerald-400" />
+                      ? <AppIcon name="ArrowDownRight" className="h-4 w-4 text-red-400" />
+                      : <AppIcon name="ArrowUpRight" className="h-4 w-4 text-emerald-400" />
                     }
                   </div>
                   <div className="flex-1 min-w-0">
@@ -1275,7 +1272,7 @@ const DONUT_COLORS = [NEON_COLORS.pink, NEON_COLORS.blue, NEON_COLORS.amber];
                       </p>
                       {canRetryExpiredCharge && (
                         <Button onClick={handleGenerateCommissionCharge} size="sm" variant="outline" className="h-6 px-2 text-[10px]">
-                          <RotateCcw className="h-3 w-3" /> Nova cobrança
+                          <AppIcon name="RotateCcw" className="h-3 w-3" /> Nova cobrança
                         </Button>
                       )}
                     </div>
@@ -1309,7 +1306,7 @@ const DONUT_COLORS = [NEON_COLORS.pink, NEON_COLORS.blue, NEON_COLORS.amber];
       {/* Order list */}
       {isLoading ? (
         <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-6 w-6 animate-spin text-pink-400" />
+          <AppIcon name="Loader2" className="h-6 w-6 animate-spin text-pink-400" />
         </div>
       ) : completedOrders.length > 0 ? (
         <div className="bg-card/60 backdrop-blur-sm rounded-2xl border border-border/30 overflow-hidden">
@@ -1326,7 +1323,7 @@ const DONUT_COLORS = [NEON_COLORS.pink, NEON_COLORS.blue, NEON_COLORS.amber];
               return (
                 <div key={order.id} className="p-3 flex items-center gap-3 hover:bg-card/40 transition-colors">
                   <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 ${isPix ? "bg-emerald-500/10" : "bg-amber-500/10"}`}>
-                    {isPix ? <Smartphone className="h-4 w-4 text-emerald-400" /> : <Banknote className="h-4 w-4 text-amber-400" />}
+                    {isPix ? <AppIcon name="Smartphone" className="h-4 w-4 text-emerald-400" /> : <AppIcon name="Banknote" className="h-4 w-4 text-amber-400" />}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
@@ -1351,7 +1348,7 @@ const DONUT_COLORS = [NEON_COLORS.pink, NEON_COLORS.blue, NEON_COLORS.amber];
         </div>
       ) : (
         <div className="text-center py-12">
-          <Receipt className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
+          <AppIcon name="Receipt" className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
           <p className="text-muted-foreground text-sm">Nenhum pedido finalizado neste período.</p>
         </div>
       )}

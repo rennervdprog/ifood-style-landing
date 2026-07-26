@@ -1,12 +1,13 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Loader2, Search, ArrowLeft } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import BottomNav from "@/components/BottomNav";
 import { useResellerDashboard, brl } from "./useResellerDashboard";
 import {
+import { AppIcon } from "@/components/ui/app-icon";
+import { Loader2, Search, ArrowLeft } from "lucide-react";
   getReferralEarningStage,
   stageBadge,
   remainingToPaidCents,
@@ -30,7 +31,7 @@ export default function ResellerIndicacoes() {
   if (isLoading) {
     return (
       <div className="min-h-dvh flex items-center justify-center bg-background">
-        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+        <AppIcon name="Loader2" className="h-6 w-6 animate-spin text-primary" />
       </div>
     );
   }
@@ -40,7 +41,7 @@ export default function ResellerIndicacoes() {
       <header className="sticky top-0 z-30 bg-card/80 backdrop-blur-xl border-b border-border/50">
         <div className="px-4 h-14 flex items-center gap-2">
           <Button size="icon" variant="ghost" onClick={() => navigate("/cliente")}>
-            <ArrowLeft className="h-4 w-4" />
+            <AppIcon name="ArrowLeft" className="h-4 w-4" />
           </Button>
           <div>
             <h1 className="text-base font-black tracking-tight">Minhas Indicações</h1>
@@ -57,7 +58,7 @@ export default function ResellerIndicacoes() {
         </div>
 
         <div className="relative">
-          <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <AppIcon name="Search" className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={q}
             onChange={(e) => setQ(e.target.value)}

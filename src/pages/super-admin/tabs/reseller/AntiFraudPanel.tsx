@@ -4,8 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { KpiCard } from "@/components/ui/kpi-card";
-import { ShieldAlert, ShieldCheck, AlertTriangle, Ban, Loader2, RefreshCw, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
+import { AppIcon } from "@/components/ui/app-icon";
+import { ShieldAlert, ShieldCheck, AlertTriangle, Ban, Loader2, RefreshCw, RotateCcw } from "lucide-react";
 
 type Report = {
   summary: { blocked_resellers_count: number; blocked_referrals_count: number; last_run_alerts: number };
@@ -55,7 +56,7 @@ export default function AntiFraudPanel() {
   };
 
   if (q.isLoading) {
-    return <div className="flex items-center gap-2 text-sm text-muted-foreground p-6"><Loader2 className="h-4 w-4 animate-spin" /> Carregando painel anti-fraude…</div>;
+    return <div className="flex items-center gap-2 text-sm text-muted-foreground p-6"><AppIcon name="Loader2" className="h-4 w-4 animate-spin" /> Carregando painel anti-fraude…</div>;
   }
   if (q.error) {
     return (
@@ -86,13 +87,13 @@ export default function AntiFraudPanel() {
         <CardHeader className="pb-2"><CardTitle className="text-sm">Ações</CardTitle></CardHeader>
         <CardContent className="flex flex-wrap gap-2">
           <Button size="sm" variant="outline" onClick={() => runNow(true)}>
-            <ShieldCheck className="h-3 w-3 mr-1" /> Simular (dry-run)
+            <AppIcon name="ShieldCheck" className="h-3 w-3 mr-1" /> Simular (dry-run)
           </Button>
           <Button size="sm" onClick={() => runNow(false)}>
-            <ShieldAlert className="h-3 w-3 mr-1" /> Rodar agora
+            <AppIcon name="ShieldAlert" className="h-3 w-3 mr-1" /> Rodar agora
           </Button>
           <Button size="sm" variant="ghost" onClick={refresh}>
-            <RefreshCw className="h-3 w-3 mr-1" /> Atualizar
+            <AppIcon name="RefreshCw" className="h-3 w-3 mr-1" /> Atualizar
           </Button>
           <p className="text-xs text-muted-foreground w-full pt-1">
             Regras: bloqueia revendedor com &gt; 30% de lojas sem pedidos em 90 dias (mín. 5 indicações) e bloqueia indicações onde o dono da loja é o próprio revendedor.
@@ -167,7 +168,7 @@ export default function AntiFraudPanel() {
                       <td className="pr-3 text-xs text-muted-foreground max-w-md whitespace-pre-wrap">{(b.notes ?? "—").split("\n").slice(-3).join("\n")}</td>
                       <td className="pr-3">
                         <Button size="sm" variant="outline" onClick={() => unblock(b.id, b.code)}>
-                          <RotateCcw className="h-3 w-3 mr-1" /> Desbloquear
+                          <AppIcon name="RotateCcw" className="h-3 w-3 mr-1" /> Desbloquear
                         </Button>
                       </td>
                     </tr>

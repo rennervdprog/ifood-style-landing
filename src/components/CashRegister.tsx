@@ -6,11 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Plus, Minus, History, Lock, Unlock, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { formatBRL } from "@/lib/utils";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { AppIcon } from "@/components/ui/app-icon";
+import { Loader2, Plus, Minus, History, Lock } from "lucide-react";
 
 interface CashRegisterProps {
   storeId: string;
@@ -119,7 +120,7 @@ export const CashRegister = ({ storeId }: CashRegisterProps) => {
   if (isLoadingRegister) {
     return (
       <div className="flex items-center justify-center p-8">
-        <Loader2 className="animate-spin" />
+        <AppIcon name="Loader2" className="animate-spin" />
       </div>
     );
   }
@@ -128,7 +129,7 @@ export const CashRegister = ({ storeId }: CashRegisterProps) => {
     return (
       <div className="p-6 border rounded-xl bg-card text-card-foreground shadow-sm">
         <div className="flex flex-col items-center gap-4 py-8">
-          <Lock className="w-12 h-12 text-muted-foreground" />
+          <AppIcon name="Lock" className="w-12 h-12 text-muted-foreground" />
           <h3 className="text-xl font-bold">O caixa está fechado</h3>
           <p className="text-muted-foreground text-center max-w-xs">
             Para começar a registrar vendas e movimentações, você precisa abrir o caixa.
@@ -176,7 +177,7 @@ export const CashRegister = ({ storeId }: CashRegisterProps) => {
           onClick={() => closeMutation.mutate()}
           disabled={closeMutation.isPending}
         >
-          <Lock className="w-4 h-4 mr-2" />
+          <AppIcon name="Lock" className="w-4 h-4 mr-2" />
           Fechar Caixa
         </Button>
       </div>
@@ -184,7 +185,7 @@ export const CashRegister = ({ storeId }: CashRegisterProps) => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="p-6 border rounded-xl bg-card shadow-sm space-y-4">
           <h4 className="font-bold flex items-center gap-2">
-            <History className="w-4 h-4" />
+            <AppIcon name="History" className="w-4 h-4" />
             Nova Movimentação
           </h4>
           <div className="space-y-3">
@@ -206,7 +207,7 @@ export const CashRegister = ({ storeId }: CashRegisterProps) => {
                 onClick={() => transactionMutation.mutate({ amount: Number(transactionAmount), type: 'in', category: 'cash_in' })}
                 disabled={transactionMutation.isPending || !transactionAmount}
               >
-                <Plus className="w-4 h-4 mr-2" />
+                <AppIcon name="Plus" className="w-4 h-4 mr-2" />
                 Entrada
               </Button>
               <Button 
@@ -215,7 +216,7 @@ export const CashRegister = ({ storeId }: CashRegisterProps) => {
                 onClick={() => transactionMutation.mutate({ amount: Number(transactionAmount), type: 'out', category: 'cash_out' })}
                 disabled={transactionMutation.isPending || !transactionAmount}
               >
-                <Minus className="w-4 h-4 mr-2" />
+                <AppIcon name="Minus" className="w-4 h-4 mr-2" />
                 Saída
               </Button>
             </div>

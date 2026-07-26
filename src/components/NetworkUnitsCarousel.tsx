@@ -1,8 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Store as StoreIcon, Clock } from "lucide-react";
 import { getStoreOpenStatus, type OpeningHour } from "@/lib/storeStatus";
+import { AppIcon } from "@/components/ui/app-icon";
+import { Clock } from "lucide-react";
 
 interface Unit {
   id: string;
@@ -89,7 +90,7 @@ export default function NetworkUnitsCarousel({
                 {u.image_url ? (
                   <img loading="lazy" src={u.image_url} alt={u.name} className="w-full h-full object-cover" />
                 ) : (
-                  <StoreIcon className="h-6 w-6 text-muted-foreground" />
+                  <AppIcon name="Store" className="h-6 w-6 text-muted-foreground" />
                 )}
               </div>
               <div className="min-w-0 flex-1">
@@ -107,7 +108,7 @@ export default function NetworkUnitsCarousel({
                     status.isOpen ? "text-emerald-500" : "text-primary"
                   }`}
                 >
-                  <Clock className="h-3 w-3" />
+                  <AppIcon name="Clock" className="h-3 w-3" />
                   {status.reason}
                 </p>
               </div>

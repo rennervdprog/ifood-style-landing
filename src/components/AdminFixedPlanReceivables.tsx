@@ -3,8 +3,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Crown, Truck, Wallet, AlertCircle, Calendar } from "lucide-react";
 import { formatBRL } from "@/lib/utils";
+import { AppIcon } from "@/components/ui/app-icon";
+import { Crown, Truck, Wallet, AlertCircle, Calendar } from "lucide-react";
 
 /**
  * Painel exclusivo do admin: mostra quanto a plataforma tem a receber
@@ -85,7 +86,7 @@ const AdminFixedPlanReceivables = () => {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2 text-muted-foreground text-xs mb-1">
-              <Crown className="w-4 h-4" /> Mensalidades
+              <AppIcon name="Crown" className="w-4 h-4" /> Mensalidades
             </div>
             <p className="text-2xl font-bold">{formatBRL(totalMonthly)}</p>
           </CardContent>
@@ -93,7 +94,7 @@ const AdminFixedPlanReceivables = () => {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2 text-muted-foreground text-xs mb-1">
-              <Truck className="w-4 h-4" /> Taxas Entrega
+              <AppIcon name="Truck" className="w-4 h-4" /> Taxas Entrega
             </div>
             <p className="text-2xl font-bold">{formatBRL(totalRepasse)}</p>
           </CardContent>
@@ -101,7 +102,7 @@ const AdminFixedPlanReceivables = () => {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2 text-muted-foreground text-xs mb-1">
-              <Wallet className="w-4 h-4" /> Comissões
+              <AppIcon name="Wallet" className="w-4 h-4" /> Comissões
             </div>
             <p className="text-2xl font-bold">{formatBRL(totalComissao)}</p>
           </CardContent>
@@ -109,7 +110,7 @@ const AdminFixedPlanReceivables = () => {
         <Card className="border-primary bg-primary/5">
           <CardContent className="p-4">
             <div className="flex items-center gap-2 text-muted-foreground text-xs mb-1">
-              <AlertCircle className="w-4 h-4" /> TOTAL A RECEBER
+              <AppIcon name="AlertCircle" className="w-4 h-4" /> TOTAL A RECEBER
             </div>
             <p className="text-2xl font-bold text-primary">{formatBRL(grandTotal)}</p>
           </CardContent>
@@ -120,7 +121,7 @@ const AdminFixedPlanReceivables = () => {
       <Card>
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
-            <Crown className="w-5 h-5 text-amber-500" />
+            <AppIcon name="Crown" className="w-5 h-5 text-amber-500" />
             A Receber por Loja — Plano Fixo
           </CardTitle>
         </CardHeader>
@@ -150,26 +151,26 @@ const AdminFixedPlanReceivables = () => {
               <div className="grid grid-cols-3 gap-2 text-xs">
                 <div className="bg-background rounded px-2 py-1.5">
                   <div className="text-muted-foreground flex items-center gap-1">
-                    <Crown className="w-3 h-3" /> Mensalidade
+                    <AppIcon name="Crown" className="w-3 h-3" /> Mensalidade
                   </div>
                   <div className="font-semibold">{formatBRL(row.monthly)}</div>
                 </div>
                 <div className="bg-background rounded px-2 py-1.5">
                   <div className="text-muted-foreground flex items-center gap-1">
-                    <Truck className="w-3 h-3" /> A Repassar (R$2)
+                    <AppIcon name="Truck" className="w-3 h-3" /> A Repassar (R$2)
                   </div>
                   <div className="font-semibold text-amber-500">-{formatBRL(row.repasse)}</div>
                 </div>
                 <div className="bg-background rounded px-2 py-1.5">
                   <div className="text-muted-foreground flex items-center gap-1">
-                    <Wallet className="w-3 h-3" /> Comissão
+                    <AppIcon name="Wallet" className="w-3 h-3" /> Comissão
                   </div>
                   <div className="font-semibold">{formatBRL(row.comissao)}</div>
                 </div>
               </div>
               <div className="flex items-center gap-3 text-xs text-muted-foreground mt-2">
                 <span className="flex items-center gap-1">
-                  <Calendar className="w-3 h-3" /> Próx. cobrança: <strong>{formatDate(row.next_billing_date)}</strong>
+                  <AppIcon name="Calendar" className="w-3 h-3" /> Próx. cobrança: <strong>{formatDate(row.next_billing_date)}</strong>
                 </span>
                 {row.last_billed_at && (
                   <span>Última: {formatDate(row.last_billed_at)}</span>

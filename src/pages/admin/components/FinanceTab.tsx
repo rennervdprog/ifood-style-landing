@@ -1,8 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, MessageCircle, TrendingUp, DollarSign, Truck, Store as StoreIcon, LucideIcon } from "lucide-react";
 import { formatBRL } from "@/lib/utils";
+import { AppIcon } from "@/components/ui/app-icon";
+import { Loader2, MessageCircle, TrendingUp, DollarSign, Truck, LucideIcon } from "lucide-react";
 
 /* ─────────────────────────────────────────────────────────────
  * MetricCard — KPI card reutilizado no header do dashboard.
@@ -142,14 +143,14 @@ export const FinanceTab = ({
 
       {loading && (
         <div className="flex items-center justify-center py-10 text-muted-foreground">
-          <Loader2 className="h-5 w-5 animate-spin mr-2" /> Carregando...
+          <AppIcon name="Loader2" className="h-5 w-5 animate-spin mr-2" /> Carregando...
         </div>
       )}
 
       {!loading && financeSubTab === "stores" && (
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-2"><StoreIcon className="h-4 w-4" /> Fechamento por Loja</CardTitle>
+            <CardTitle className="text-sm flex items-center gap-2"><AppIcon name="Store" className="h-4 w-4" /> Fechamento por Loja</CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             {storeSettlement.length === 0 ? (
@@ -181,7 +182,7 @@ export const FinanceTab = ({
                         </td>
                         <td className="px-3 py-2 text-right">
                           <Button size="sm" variant="ghost" onClick={() => generateStoreWhatsApp(e)}>
-                            <MessageCircle className="h-3.5 w-3.5" />
+                            <AppIcon name="MessageCircle" className="h-3.5 w-3.5" />
                           </Button>
                         </td>
                       </tr>
@@ -197,7 +198,7 @@ export const FinanceTab = ({
       {!loading && financeSubTab === "drivers" && (
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-2"><Truck className="h-4 w-4" /> Fechamento por Entregador</CardTitle>
+            <CardTitle className="text-sm flex items-center gap-2"><AppIcon name="Truck" className="h-4 w-4" /> Fechamento por Entregador</CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             {driverSettlement.length === 0 ? (

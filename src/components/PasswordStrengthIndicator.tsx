@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { AppIcon } from "@/components/ui/app-icon";
 import { Check, X } from "lucide-react";
 
 interface PasswordRule {
@@ -40,9 +41,9 @@ export const PasswordStrengthIndicator = ({ password }: { password: string }) =>
         {PASSWORD_RULES.map((rule, i) => (
           <div key={i} className="flex items-center gap-1.5">
             {ruleResults[i] ? (
-              <Check className="h-3 w-3 text-green-500 flex-shrink-0" />
+              <AppIcon name="Check" className="h-3 w-3 text-green-500 flex-shrink-0" />
             ) : (
-              <X className="h-3 w-3 text-muted-foreground/50 flex-shrink-0" />
+              <AppIcon name="X" className="h-3 w-3 text-muted-foreground/50 flex-shrink-0" />
             )}
             <span className={`text-[10px] ${ruleResults[i] ? "text-green-600 font-medium" : "text-muted-foreground"}`}>
               {rule.label}

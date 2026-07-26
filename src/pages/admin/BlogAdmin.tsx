@@ -2,8 +2,9 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Pencil, Eye, EyeOff, MessageSquare, Loader2, ArrowLeft, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { AppIcon } from "@/components/ui/app-icon";
+import { Plus, Pencil, Eye, EyeOff, MessageSquare, Loader2, ArrowLeft, Trash2 } from "lucide-react";
 
 interface PostRow {
   id: string;
@@ -90,7 +91,7 @@ export default function BlogAdmin() {
           <div className="container mx-auto max-w-6xl px-4 py-4 flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <Link to="/super-admin" className="text-muted-foreground hover:text-foreground">
-                <ArrowLeft className="h-5 w-5" />
+                <AppIcon name="ArrowLeft" className="h-5 w-5" />
               </Link>
               <h1 className="text-lg md:text-xl font-bold">Blog</h1>
             </div>
@@ -98,7 +99,7 @@ export default function BlogAdmin() {
               to="/admin/blog/novo"
               className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
             >
-              <Plus className="h-4 w-4" /> Novo post
+              <AppIcon name="Plus" className="h-4 w-4" /> Novo post
             </Link>
           </div>
           <div className="container mx-auto max-w-6xl px-4 flex gap-1">
@@ -124,7 +125,7 @@ export default function BlogAdmin() {
 
         <div className="container mx-auto max-w-6xl px-4 py-6">
           {loading ? (
-            <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
+            <div className="flex justify-center py-12"><AppIcon name="Loader2" className="h-6 w-6 animate-spin text-muted-foreground" /></div>
           ) : tab === "posts" ? (
             <div className="rounded-2xl border border-border bg-card overflow-hidden">
               <table className="w-full text-sm">
@@ -154,17 +155,17 @@ export default function BlogAdmin() {
                           className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${p.published ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400" : "bg-muted text-muted-foreground"}`}
                           title={p.published ? "Despublicar" : "Publicar"}
                         >
-                          {p.published ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
+                          {p.published ? <AppIcon name="Eye" className="h-3 w-3" /> : <AppIcon name="EyeOff" className="h-3 w-3" />}
                           {p.published ? "Publicado" : "Rascunho"}
                         </button>
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1 justify-end">
                           <Link to={`/admin/blog/${p.id}`} className="rounded-md p-1.5 hover:bg-muted" title="Editar">
-                            <Pencil className="h-4 w-4" />
+                            <AppIcon name="Pencil" className="h-4 w-4" />
                           </Link>
                           <button onClick={() => deletePost(p)} className="rounded-md p-1.5 hover:bg-destructive/10 text-destructive" title="Excluir">
-                            <Trash2 className="h-4 w-4" />
+                            <AppIcon name="Trash2" className="h-4 w-4" />
                           </button>
                         </div>
                       </td>
@@ -180,7 +181,7 @@ export default function BlogAdmin() {
             <div className="space-y-3">
               {pending.length === 0 && (
                 <div className="rounded-2xl border border-border bg-card p-10 text-center text-sm text-muted-foreground">
-                  <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <AppIcon name="MessageSquare" className="h-8 w-8 mx-auto mb-2 opacity-50" />
                   Nenhum comentário pendente.
                 </div>
               )}

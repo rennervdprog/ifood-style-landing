@@ -2,12 +2,6 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AsaasBadgeFooter } from "@/components/AsaasBadge";
-import {
-  PackageOpen, ArrowRight, Smartphone, QrCode, Clock, Zap, Star,
-  ShoppingBag, CreditCard, Bell, Utensils, Truck, Gift, ChevronDown,
-  Search, Shield, MessageCircle, BarChart3, TrendingUp, Crown, Rocket,
-   CheckCircle2, X, Check, MapPin, Navigation, UserCheck, SmartphoneNfc,
- } from "lucide-react";
  
  /* ─── Motoboy Data ─── */
  const motoboyWorkflow = [
@@ -57,6 +51,8 @@ import ProductTour, { clienteTourSteps } from "@/components/ProductTour";
 import { useNavigate } from "react-router-dom";
 import { useUserLocation } from "@/hooks/useUserLocation";
 import { haversineMeters } from "@/lib/location";
+import { AppIcon } from "@/components/ui/app-icon";
+import { PackageOpen, ArrowRight, Smartphone, QrCode, Clock, Star, CreditCard, Bell, Utensils, Truck, Gift, ChevronDown, Shield, BarChart3, Crown, CheckCircle2, Check, MapPin, Navigation, UserCheck, SmartphoneNfc } from "lucide-react";
 
 /* ─── hooks ─── */
 function useCountUp(end: number, duration = 2000, start = false) {
@@ -249,7 +245,7 @@ const Index = () => {
  
            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10">
              <Button size="lg" onClick={handleCTA} className="text-base font-bold px-10 py-7 rounded-full shadow-2xl shadow-primary/30 w-full sm:w-auto transition-all hover:scale-105">
-               Criar Loja Grátis <ArrowRight className="ml-2 h-5 w-5" />
+               Criar Loja Grátis <AppIcon name="ArrowRight" className="ml-2 h-5 w-5" />
              </Button>
              <Button size="lg" variant="outline" onClick={handleWhatsApp} className="text-base font-bold px-10 py-7 rounded-full w-full sm:w-auto border-2">
                Falar com Consultor
@@ -259,13 +255,13 @@ const Index = () => {
           {/* Trust badges */}
           <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
             <span className="flex items-center gap-1.5">
-              <CheckCircle2 className="h-4 w-4 text-primary" /> Sem cartão de crédito
+              <AppIcon name="CheckCircle2" className="h-4 w-4 text-primary" /> Sem cartão de crédito
             </span>
             <span className="flex items-center gap-1.5">
-              <Clock className="h-4 w-4 text-primary" /> Aprovação em 24h
+              <AppIcon name="Clock" className="h-4 w-4 text-primary" /> Aprovação em 24h
             </span>
             <span className="flex items-center gap-1.5">
-              <CheckCircle2 className="h-4 w-4 text-primary" /> Cancele quando quiser
+              <AppIcon name="CheckCircle2" className="h-4 w-4 text-primary" /> Cancele quando quiser
             </span>
           </div>
         </div>
@@ -333,7 +329,7 @@ const Index = () => {
                    <div className="p-4 border-b border-white/10 bg-slate-900 flex items-center justify-between">
                      <div className="flex items-center gap-2">
                        <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
-                         <Truck className="h-4 w-4 text-primary" />
+                         <AppIcon name="Truck" className="h-4 w-4 text-primary" />
                        </div>
                        <span className="font-bold text-xs">App do Motoboy</span>
                      </div>
@@ -343,7 +339,7 @@ const Index = () => {
                      <div className="p-4 rounded-xl bg-primary/10 border border-primary/20 animate-bounce-slow">
                        <div className="flex items-center justify-between mb-2">
                          <span className="text-[10px] uppercase font-bold text-primary">Novo Pedido Disponível!</span>
-                         <Bell className="h-3 w-3 text-primary" />
+                         <AppIcon name="Bell" className="h-3 w-3 text-primary" />
                        </div>
                        <p className="font-bold text-sm">#1024 - R$ 45,90</p>
                        <p className="text-[10px] text-slate-400">Rua das Flores, 123 • 1.2km</p>
@@ -351,7 +347,7 @@ const Index = () => {
                      <div className="h-32 w-full bg-slate-800 rounded-xl relative overflow-hidden">
                        {/* Mini Map representation */}
                        <div className="absolute inset-0 flex items-center justify-center opacity-30">
-                         <Navigation className="h-10 w-10 text-primary rotate-45" />
+                         <AppIcon name="Navigation" className="h-10 w-10 text-primary rotate-45" />
                        </div>
                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-primary rounded-full shadow-[0_0_15px_rgba(255,107,0,0.5)] border-2 border-white" />
                      </div>
@@ -370,7 +366,7 @@ const Index = () => {
                  {/* Floating badge */}
                  <div className="absolute -bottom-6 -right-6 bg-white text-slate-950 p-4 rounded-2xl shadow-xl flex items-center gap-3 animate-float max-w-[200px]">
                    <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center shrink-0">
-                     <UserCheck className="h-5 w-5 text-green-600" />
+                     <AppIcon name="UserCheck" className="h-5 w-5 text-green-600" />
                    </div>
                    <p className="text-[10px] font-bold leading-tight">Motoboy acaba de aceitar o pedido!</p>
                  </div>
@@ -464,7 +460,7 @@ const Index = () => {
                    <div className="flex flex-col gap-3">
                      {plan.tags.map(tag => (
                        <div key={tag} className="flex items-center justify-center gap-2 text-sm font-semibold text-foreground bg-muted/50 py-2 rounded-2xl">
-                         <Check className="h-4 w-4 text-primary" /> {tag}
+                         <AppIcon name="Check" className="h-4 w-4 text-primary" /> {tag}
                        </div>
                      ))}
                    </div>
@@ -512,7 +508,7 @@ const Index = () => {
                  <CardContent className="pt-8 px-6 pb-8">
                    <div className="flex gap-1 mb-6">
                      {Array.from({ length: t.rating }).map((_, i) => (
-                       <Star key={i} className="h-5 w-5 fill-primary text-primary" />
+                       <AppIcon name="Star" key={i} className="h-5 w-5 fill-primary text-primary" />
                      ))}
                    </div>
                    <p className="text-lg text-foreground font-medium leading-relaxed mb-8 italic">"{t.text}"</p>
@@ -548,7 +544,7 @@ const Index = () => {
                <div key={i} className="rounded-3xl border border-border bg-card overflow-hidden transition-all hover:border-primary/30">
                  <button onClick={() => setOpenFaq(openFaq === i ? null : i)} className="w-full flex items-center justify-between p-8 text-left group">
                    <span className="text-lg font-bold text-foreground pr-8 group-hover:text-primary transition-colors">{faq.q}</span>
-                   <ChevronDown className={`h-6 w-6 text-muted-foreground shrink-0 transition-transform duration-300 ${openFaq === i ? "rotate-180 text-primary" : ""}`} />
+                   <AppIcon name="ChevronDown" className={`h-6 w-6 text-muted-foreground shrink-0 transition-transform duration-300 ${openFaq === i ? "rotate-180 text-primary" : ""}`} />
                  </button>
                  {openFaq === i && (
                    <div className="px-8 pb-8 text-lg text-muted-foreground leading-relaxed animate-in fade-in slide-in-from-top-2 duration-300">
@@ -644,7 +640,7 @@ const Index = () => {
            ) : (
              <div className="flex flex-col items-center justify-center py-24 text-center bg-card rounded-[3rem] border border-dashed border-border">
                <div className="w-24 h-24 bg-muted rounded-full flex items-center justify-center mb-6">
-                 <PackageOpen className="h-12 w-12 text-muted-foreground" />
+                 <AppIcon name="PackageOpen" className="h-12 w-12 text-muted-foreground" />
                </div>
                <h2 className="text-2xl font-black text-foreground mb-2">
                  {search.length >= 2 ? "Nenhum resultado encontrado" : stores && stores.length === 0 ? "Estamos chegando!" : "Nenhum estabelecimento encontrado"}
@@ -661,7 +657,7 @@ const Index = () => {
       <section className="py-10 px-4 bg-muted/30 border-y border-border mt-8">
         <div className="mx-auto max-w-3xl text-center">
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-primary/10 mb-3">
-            <Shield className="h-7 w-7 text-primary" />
+            <AppIcon name="Shield" className="h-7 w-7 text-primary" />
           </div>
           <h2 className="text-xl font-bold text-foreground mb-2">Seguro e confiável</h2>
           <p className="text-sm text-muted-foreground max-w-lg mx-auto leading-relaxed">

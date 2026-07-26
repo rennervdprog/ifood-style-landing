@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { AppIcon } from "@/components/ui/app-icon";
 import { CheckCircle2, TrendingUp, Wallet, Shield, Users, Rocket, Info } from "lucide-react";
 
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -54,7 +55,7 @@ export default function SejaRevendedor() {
         <section className="relative overflow-hidden border-b">
           <div className="max-w-5xl mx-auto px-4 py-16 md:py-24 text-center space-y-6">
             <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-3 py-1 rounded-full text-xs font-medium">
-              <Rocket className="h-3 w-3" /> Programa de revenda ItaSuper
+              <AppIcon name="Rocket" className="h-3 w-3" /> Programa de revenda ItaSuper
             </div>
             <h1 className="text-3xl md:text-5xl font-bold leading-tight">
               Ganhe <span className="text-primary">20% vitalício</span> +<br className="hidden md:block" />
@@ -80,7 +81,7 @@ export default function SejaRevendedor() {
         <section className="max-w-3xl mx-auto px-4 pt-10">
           <div className="rounded-2xl border bg-card p-5 md:p-6">
             <div className="flex items-start gap-2 mb-4">
-              <Info className="h-4 w-4 text-primary mt-0.5" />
+              <AppIcon name="Info" className="h-4 w-4 text-primary mt-0.5" />
               <div>
                 <h2 className="text-lg font-bold">Como você ganha (passo a passo)</h2>
                 <p className="text-xs text-muted-foreground">Sem letras miúdas — os 3 estágios do seu ganho por loja indicada.</p>
@@ -115,12 +116,12 @@ export default function SejaRevendedor() {
         {/* Diferenciais */}
         <section className="max-w-5xl mx-auto px-4 py-12 grid md:grid-cols-3 gap-4">
           {[
-            { icon: <Wallet className="h-5 w-5 text-primary" />, title: "Comissão vitalícia", desc: "20% do MRR da loja indicada, todo mês, enquanto ela pagar o plano." },
-            { icon: <TrendingUp className="h-5 w-5 text-primary" />, title: "Bônus de ativação", desc: "R$ 50 quando a loja atingir 20 pedidos entregues em 30 dias." },
-            { icon: <Shield className="h-5 w-5 text-primary" />, title: "Grátis até faturar", desc: "Loja só paga acima de R$ 2.500/mês — fácil de vender, difícil de recusar." },
-            { icon: <Users className="h-5 w-5 text-primary" />, title: "Link exclusivo", desc: "Toda loja cadastrada no seu link fica vinculada permanentemente." },
-            { icon: <CheckCircle2 className="h-5 w-5 text-primary" />, title: "Pagamento em PIX", desc: "Saque a partir de R$ 100. Pagamento manual em até 3 dias úteis." },
-            { icon: <Rocket className="h-5 w-5 text-primary" />, title: "Materiais prontos", desc: "Ebook, scripts de WhatsApp e artes — tudo dentro do painel." },
+            { icon: <AppIcon name="Wallet" className="h-5 w-5 text-primary" />, title: "Comissão vitalícia", desc: "20% do MRR da loja indicada, todo mês, enquanto ela pagar o plano." },
+            { icon: <AppIcon name="TrendingUp" className="h-5 w-5 text-primary" />, title: "Bônus de ativação", desc: "R$ 50 quando a loja atingir 20 pedidos entregues em 30 dias." },
+            { icon: <AppIcon name="Shield" className="h-5 w-5 text-primary" />, title: "Grátis até faturar", desc: "Loja só paga acima de R$ 2.500/mês — fácil de vender, difícil de recusar." },
+            { icon: <AppIcon name="Users" className="h-5 w-5 text-primary" />, title: "Link exclusivo", desc: "Toda loja cadastrada no seu link fica vinculada permanentemente." },
+            { icon: <AppIcon name="CheckCircle2" className="h-5 w-5 text-primary" />, title: "Pagamento em PIX", desc: "Saque a partir de R$ 100. Pagamento manual em até 3 dias úteis." },
+            { icon: <AppIcon name="Rocket" className="h-5 w-5 text-primary" />, title: "Materiais prontos", desc: "Ebook, scripts de WhatsApp e artes — tudo dentro do painel." },
           ].map((f, i) => (
             <Card key={i}>
               <CardHeader className="pb-2">

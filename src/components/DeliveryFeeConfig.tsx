@@ -3,9 +3,10 @@ import { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Truck, Save, MapPin, DollarSign, Users, Crown } from "lucide-react";
 import { DEFAULT_DELIVERY_FEE_CONFIG, type DeliveryFeeConfig as FeeConfig } from "@/lib/deliveryFee";
 import { formatBRLDisplay, parseBRLCentsInput } from "@/hooks/useBRLInput";
+import { AppIcon } from "@/components/ui/app-icon";
+import { Truck, Save, MapPin, DollarSign, Users, Crown } from "lucide-react";
 
 const BRLInput = ({ value, onChange, placeholder }: { value: string, onChange: (v: string) => void, placeholder?: string }) => {
   const [display, setDisplay] = useState(value && parseFloat(value) > 0 ? formatBRLDisplay(parseFloat(value)) : "");
@@ -143,12 +144,12 @@ const DeliveryFeeConfigPanel = () => {
   return (
     <div className="space-y-4">
       <h2 className="text-sm font-bold text-foreground uppercase tracking-wider flex items-center gap-2">
-        <Truck className="h-4 w-4" /> Configuração de Taxa de Entrega
+        <AppIcon name="Truck" className="h-4 w-4" /> Configuração de Taxa de Entrega
       </h2>
 
       {vipOverrideCount > 0 && (
         <div className="flex items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[11px] text-amber-700 dark:text-amber-300">
-          <Crown className="h-3.5 w-3.5" />
+          <AppIcon name="Crown" className="h-3.5 w-3.5" />
           <span>
             <b>{vipOverrideCount}</b> loja(s) com <b>override VIP</b> na taxa da plataforma — a config global abaixo NÃO se aplica a elas.
           </span>
@@ -159,7 +160,7 @@ const DeliveryFeeConfigPanel = () => {
         {/* City Name */}
         <div className="space-y-1">
           <label className="text-xs font-bold text-muted-foreground flex items-center gap-1.5">
-            <MapPin className="h-3.5 w-3.5" /> Cidade Base
+            <AppIcon name="MapPin" className="h-3.5 w-3.5" /> Cidade Base
           </label>
           <input
             type="text"
@@ -174,7 +175,7 @@ const DeliveryFeeConfigPanel = () => {
         {/* City Fee */}
         <div className="space-y-1">
           <label className="text-xs font-bold text-muted-foreground flex items-center gap-1.5">
-            <DollarSign className="h-3.5 w-3.5" /> Taxa Fixa (dentro da cidade)
+            <AppIcon name="DollarSign" className="h-3.5 w-3.5" /> Taxa Fixa (dentro da cidade)
           </label>
           <BRLInput value={cityFee} onChange={setCityFee} placeholder="5,00" />
         </div>
@@ -201,7 +202,7 @@ const DeliveryFeeConfigPanel = () => {
         {/* Split Config */}
         <div className="border-t border-border pt-4">
           <p className="text-xs font-bold text-muted-foreground mb-1 flex items-center gap-1.5">
-            <Users className="h-3.5 w-3.5" /> 🏍️ Split de Entrega (Plano Fixo)
+            <AppIcon name="Users" className="h-3.5 w-3.5" /> 🏍️ Split de Entrega (Plano Fixo)
           </p>
           <p className="text-[10px] text-muted-foreground mb-3">Esses valores só se aplicam a lojas no <strong>Plano Fixo</strong>. Lojas com comissão usam a % do plano.</p>
 
@@ -245,7 +246,7 @@ const DeliveryFeeConfigPanel = () => {
           disabled={saving}
           className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground font-bold py-3 rounded-xl text-sm disabled:opacity-50"
         >
-          <Save className="h-4 w-4" />
+          <AppIcon name="Save" className="h-4 w-4" />
           {saving ? "Salvando..." : "Salvar Configuração"}
         </button>
       </div>

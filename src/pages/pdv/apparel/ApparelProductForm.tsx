@@ -1,9 +1,10 @@
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2, Plus, Shirt, Trash2 } from "lucide-react";
 import { formatBRL } from "@/lib/utils";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { AppIcon } from "@/components/ui/app-icon";
+import { Loader2, Plus, Shirt, Trash2 } from "lucide-react";
 
 interface Props {
   storeId: string;
@@ -127,7 +128,7 @@ export default function ApparelProductForm({ storeId }: Props) {
     <div className="space-y-6">
       <div className="bg-card border border-border rounded-2xl p-4 space-y-4">
         <div className="flex items-center gap-2">
-          <Shirt className="h-5 w-5 text-fuchsia-500" />
+          <AppIcon name="Shirt" className="h-5 w-5 text-fuchsia-500" />
           <h3 className="text-sm font-bold">Novo modelo</h3>
         </div>
         <div className="grid grid-cols-2 gap-3">
@@ -216,7 +217,7 @@ export default function ApparelProductForm({ storeId }: Props) {
                           className="text-red-500 p-1"
                           title="Remover variante"
                         >
-                          <Trash2 className="h-3.5 w-3.5" />
+                          <AppIcon name="Trash2" className="h-3.5 w-3.5" />
                         </button>
                       </td>
                     </tr>
@@ -236,7 +237,7 @@ export default function ApparelProductForm({ storeId }: Props) {
             disabled={saving || !name || !price || !grid.length}
             className="flex items-center gap-2 bg-primary text-primary-foreground font-bold px-4 py-2 rounded-xl text-sm active:scale-95 disabled:opacity-40"
           >
-            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+            {saving ? <AppIcon name="Loader2" className="h-4 w-4 animate-spin" /> : <AppIcon name="Plus" className="h-4 w-4" />}
             Salvar modelo
           </button>
         </div>

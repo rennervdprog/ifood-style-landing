@@ -1,4 +1,3 @@
-import { Search, X, MoreHorizontal, Plus, CheckSquare, Filter } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -9,6 +8,8 @@ import {
   DropdownMenuCheckboxItem,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
+import { AppIcon } from "@/components/ui/app-icon";
+import { Search, X, MoreHorizontal, Plus, CheckSquare, Filter } from "lucide-react";
 
 export type ProductFilter = "all" | "active" | "paused" | "out_of_stock" | "no_image";
 
@@ -54,7 +55,7 @@ export const MenuToolbar = ({
       <div className="flex items-center gap-2">
         {/* Busca */}
         <div className="relative flex-1 min-w-0">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+          <AppIcon name="Search" className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
           <input
             type="text"
             placeholder="Buscar produto..."
@@ -68,7 +69,7 @@ export const MenuToolbar = ({
               className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1"
               aria-label="Limpar busca"
             >
-              <X className="h-3.5 w-3.5" />
+              <AppIcon name="X" className="h-3.5 w-3.5" />
             </button>
           )}
         </div>
@@ -85,7 +86,7 @@ export const MenuToolbar = ({
               )}
               aria-label="Filtrar"
             >
-              <Filter className="h-3.5 w-3.5" />
+              <AppIcon name="Filter" className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">{FILTER_LABELS[filter]}</span>
             </button>
           </DropdownMenuTrigger>
@@ -120,7 +121,7 @@ export const MenuToolbar = ({
           )}
           aria-label="Modo seleção"
         >
-          <CheckSquare className="h-3.5 w-3.5" />
+          <AppIcon name="CheckSquare" className="h-3.5 w-3.5" />
           <span>Selecionar</span>
         </button>
 
@@ -131,12 +132,12 @@ export const MenuToolbar = ({
               className="p-2 rounded-xl border border-border bg-card hover:bg-muted transition-colors flex-shrink-0"
               aria-label="Mais opções"
             >
-              <MoreHorizontal className="h-4 w-4" />
+              <AppIcon name="MoreHorizontal" className="h-4 w-4" />
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuItem onClick={onToggleSelectionMode} className="sm:hidden">
-              <CheckSquare className="h-4 w-4 mr-2" /> Modo seleção
+              <AppIcon name="CheckSquare" className="h-4 w-4 mr-2" /> Modo seleção
             </DropdownMenuItem>
             <DropdownMenuItem onClick={onOpenSectionManage}>
               Gerenciar seções
@@ -157,7 +158,7 @@ export const MenuToolbar = ({
           onClick={onNewProduct}
           className="hidden sm:flex items-center gap-1.5 bg-primary text-primary-foreground px-3 py-2 rounded-xl text-sm font-bold shadow-sm hover:bg-primary/90 transition-colors flex-shrink-0"
         >
-          <Plus className="h-4 w-4" /> Novo
+          <AppIcon name="Plus" className="h-4 w-4" /> Novo
         </button>
       </div>
     </div>

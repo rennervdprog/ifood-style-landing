@@ -1,3 +1,4 @@
+import { AppIcon } from "@/components/ui/app-icon";
 import { Clock } from "lucide-react";
 
 interface DeliveryTimeEstimateProps {
@@ -59,7 +60,7 @@ const DeliveryTimeEstimate = ({
 
   return (
     <div className="flex items-center gap-1.5 bg-primary/5 border border-primary/20 rounded-lg px-2.5 py-1.5">
-      <Clock className="h-3.5 w-3.5 text-primary" />
+      <AppIcon name="Clock" className="h-3.5 w-3.5 text-primary" />
       <span className="text-[10px] font-bold text-primary">
         {remaining > 0
           ? `≈ ${Math.max(estimate.min - elapsed, 5)}–${remaining} min`

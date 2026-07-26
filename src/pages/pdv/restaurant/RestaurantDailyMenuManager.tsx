@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { formatBRL } from "@/lib/utils";
 import { parseBRL } from "@/hooks/useBRLInput";
 import { toast } from "sonner";
+import { AppIcon } from "@/components/ui/app-icon";
 import { Plus, Trash2, Save, UtensilsCrossed } from "lucide-react";
 
 interface DailyMenu {
@@ -74,7 +75,7 @@ export default function RestaurantDailyMenuManager({ storeId }: { storeId: strin
   return (
     <div className="p-4 space-y-4">
       <div className="flex items-center gap-2">
-        <UtensilsCrossed className="h-5 w-5 text-emerald-600" />
+        <AppIcon name="UtensilsCrossed" className="h-5 w-5 text-emerald-600" />
         <h3 className="text-base font-bold">Prato do Dia</h3>
         <input
           type="date" value={date} onChange={(e) => setDate(e.target.value)}
@@ -84,7 +85,7 @@ export default function RestaurantDailyMenuManager({ storeId }: { storeId: strin
 
       <div className="rounded-xl border border-dashed border-emerald-500/40 bg-emerald-500/5 p-3 space-y-2">
         <p className="text-xs font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-1">
-          <Plus className="h-3.5 w-3.5" /> Novo prato
+          <AppIcon name="Plus" className="h-3.5 w-3.5" /> Novo prato
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           <input placeholder="Nome (ex.: Feijoada)" value={draft.name}
@@ -99,7 +100,7 @@ export default function RestaurantDailyMenuManager({ storeId }: { storeId: strin
               className="h-10 flex-1 rounded-lg border border-border bg-background px-3 text-sm" />
             <button onClick={create}
               className="h-10 px-4 rounded-lg bg-emerald-600 text-white font-bold text-sm flex items-center gap-1">
-              <Save className="h-4 w-4" /> Salvar
+              <AppIcon name="Save" className="h-4 w-4" /> Salvar
             </button>
           </div>
         </div>
@@ -125,7 +126,7 @@ export default function RestaurantDailyMenuManager({ storeId }: { storeId: strin
             </button>
             <button onClick={() => remove(m.id)}
               className="p-2 rounded-lg text-destructive hover:bg-destructive/10">
-              <Trash2 className="h-4 w-4" />
+              <AppIcon name="Trash2" className="h-4 w-4" />
             </button>
           </div>
         ))}

@@ -1,3 +1,4 @@
+import { AppIcon } from "@/components/ui/app-icon";
 import { Keyboard } from "lucide-react";
 
 export const PdvShortcutsDialog = ({ onClose }: { onClose: () => void }) => (
@@ -11,7 +12,7 @@ export const PdvShortcutsDialog = ({ onClose }: { onClose: () => void }) => (
     >
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-          <Keyboard className="h-5 w-5 text-primary" />
+          <AppIcon name="Keyboard" className="h-5 w-5 text-primary" />
         </div>
         <div>
           <h3 className="font-black text-base">Atalhos de teclado</h3>

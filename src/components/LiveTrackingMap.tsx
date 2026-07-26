@@ -1,10 +1,11 @@
 import { useEffect, useState, useRef, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Bike, Navigation } from "lucide-react";
 import { geocodeAddress, haversineMeters, isValidCoordinate } from "@/lib/location";
 import { fetchOsrmRoute } from "@/lib/osrmRouting";
 import { toast } from "sonner";
+import { AppIcon } from "@/components/ui/app-icon";
+import { Bike, Navigation } from "lucide-react";
 
 let leafletCSSLoaded = false;
 function ensureLeafletCSS() {
@@ -422,7 +423,7 @@ const LiveTrackingMap = ({ orderId, driverId, storeId, clientAddress, clientLat,
     return (
       <div className="bg-primary/10 border border-primary/20 rounded-xl p-3">
         <div className="flex items-center gap-2">
-          <Navigation className="h-4 w-4 text-primary animate-pulse" />
+          <AppIcon name="Navigation" className="h-4 w-4 text-primary animate-pulse" />
           <span className="text-xs font-bold text-primary">
             Aguardando motoboy aceitar o pedido...
           </span>
@@ -436,7 +437,7 @@ const LiveTrackingMap = ({ orderId, driverId, storeId, clientAddress, clientLat,
       {/* Header */}
       <div className="bg-gradient-to-r from-primary to-primary/70 px-3 py-2 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Bike className="h-4 w-4 text-primary-foreground" />
+          <AppIcon name="Bike" className="h-4 w-4 text-primary-foreground" />
           <span className="text-xs font-bold text-primary-foreground">Rastreamento ao vivo</span>
         </div>
         <div className="flex items-center gap-2">

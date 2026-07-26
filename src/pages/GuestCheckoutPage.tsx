@@ -6,11 +6,12 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCart } from "@/contexts/CartContext";
 import { toast } from "sonner";
-import { ArrowLeft, MapPin, CreditCard, Banknote, QrCode, Search, Loader2, ShoppingBag, MessageCircle, Truck, Store, CheckCircle2, User } from "lucide-react";
 import { formatCep, fetchCep } from "@/lib/location";
 import { maskWhatsApp } from "@/lib/whatsapp";
 import { formatBRL, addMoney } from "@/lib/utils";
 import { calculateStoreOwnDeliveryFee, calculateDeliveryFee, DEFAULT_DELIVERY_FEE_CONFIG, type DeliveryFeeConfig } from "@/lib/deliveryFee";
+import { AppIcon } from "@/components/ui/app-icon";
+import { ArrowLeft, MapPin, CreditCard, Banknote, QrCode, Search, Loader2, ShoppingBag, MessageCircle, Truck, Store, CheckCircle2 } from "lucide-react";
 
 const BASE_PAY_METHODS = [
   { id: "pix_machine", label: "PIX na maquininha", icon: QrCode },
@@ -302,7 +303,7 @@ const GuestCheckoutPage = () => {
   return (
     <div className="min-h-screen bg-background pb-32">
       <header className="sticky top-0 z-40 bg-card border-b border-border h-14 flex items-center px-4 gap-3">
-        <button onClick={() => navigate(-1)} className="p-1 -ml-1"><ArrowLeft className="h-5 w-5" /></button>
+        <button onClick={() => navigate(-1)} className="p-1 -ml-1"><AppIcon name="ArrowLeft" className="h-5 w-5" /></button>
         <h1 className="text-base font-bold">Finalizar pedido</h1>
       </header>
 
@@ -324,7 +325,7 @@ const GuestCheckoutPage = () => {
                           : "bg-muted text-muted-foreground"
                     }`}
                   >
-                    {done ? <CheckCircle2 className="h-3.5 w-3.5" /> : i + 1}
+                    {done ? <AppIcon name="CheckCircle2" className="h-3.5 w-3.5" /> : i + 1}
                   </div>
                   {i < stepLabels.length - 1 && (
                     <div className={`flex-1 h-0.5 rounded-full transition-all ${done ? "bg-primary" : "bg-muted"}`} />
@@ -342,7 +343,7 @@ const GuestCheckoutPage = () => {
         <section className="bg-card rounded-2xl border border-border overflow-hidden">
           <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border/50">
             <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center">
-              <Truck className="h-4 w-4 text-primary" />
+              <AppIcon name="Truck" className="h-4 w-4 text-primary" />
             </div>
             <h2 className="text-sm font-bold text-foreground">Tipo de pedido</h2>
           </div>
@@ -354,7 +355,7 @@ const GuestCheckoutPage = () => {
                   !isPickup ? "border-primary bg-primary/5" : "border-transparent bg-muted/50"
                 }`}
               >
-                <Truck className={`h-6 w-6 ${!isPickup ? "text-primary" : "text-muted-foreground"}`} />
+                <AppIcon name="Truck" className={`h-6 w-6 ${!isPickup ? "text-primary" : "text-muted-foreground"}`} />
                 <div className="text-center">
                   <span className={`text-sm font-bold block ${!isPickup ? "text-primary" : "text-foreground"}`}>Entrega</span>
                   <span className="text-[10px] text-muted-foreground">Receba em casa</span>
@@ -366,7 +367,7 @@ const GuestCheckoutPage = () => {
                   isPickup ? "border-primary bg-primary/5" : "border-transparent bg-muted/50"
                 }`}
               >
-                <Store className={`h-6 w-6 ${isPickup ? "text-primary" : "text-muted-foreground"}`} />
+                <AppIcon name="Store" className={`h-6 w-6 ${isPickup ? "text-primary" : "text-muted-foreground"}`} />
                 <div className="text-center">
                   <span className={`text-sm font-bold block ${isPickup ? "text-primary" : "text-foreground"}`}>Retirada</span>
                   <span className="text-[10px] text-muted-foreground">Retire na loja</span>
@@ -375,7 +376,7 @@ const GuestCheckoutPage = () => {
             </div>
             {isPickup && (
               <div className="mt-3 bg-primary/5 border border-primary/10 rounded-xl p-3 flex items-start gap-2">
-                <Store className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                <AppIcon name="Store" className="h-4 w-4 text-primary mt-0.5 shrink-0" />
                 <div>
                   <p className="text-xs font-bold text-foreground">Retirada na loja</p>
                   <p className="text-[11px] text-muted-foreground mt-0.5">Seu pedido ficará pronto para retirada. Sem taxa de entrega! 🎉</p>
@@ -389,12 +390,12 @@ const GuestCheckoutPage = () => {
         <section className="bg-card rounded-2xl border border-border overflow-hidden">
           <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border/50">
             <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${contactOk ? "bg-primary/10" : "bg-muted"}`}>
-              <MessageCircle className={`h-4 w-4 ${contactOk ? "text-primary" : "text-muted-foreground"}`} />
+              <AppIcon name="MessageCircle" className={`h-4 w-4 ${contactOk ? "text-primary" : "text-muted-foreground"}`} />
             </div>
             <div className="flex-1">
               <h2 className="text-sm font-bold text-foreground">Seus dados</h2>
             </div>
-            {contactOk && <CheckCircle2 className="h-4 w-4 text-primary" />}
+            {contactOk && <AppIcon name="CheckCircle2" className="h-4 w-4 text-primary" />}
           </div>
           <div className="p-4 space-y-3">
           <div className="relative">
@@ -408,12 +409,12 @@ const GuestCheckoutPage = () => {
             />
             {loadingLookup && (
               <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs text-primary font-medium">
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <AppIcon name="Loader2" className="h-4 w-4 animate-spin" />
                 <span>Buscando…</span>
               </div>
             )}
             {!loadingLookup && lookedUp && (
-              <CheckCircle2 className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-primary" />
+              <AppIcon name="CheckCircle2" className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-primary" />
             )}
           </div>
           <input
@@ -432,12 +433,12 @@ const GuestCheckoutPage = () => {
         <section className="bg-card rounded-2xl border border-border overflow-hidden">
           <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border/50">
             <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${addressOk ? "bg-primary/10" : "bg-muted"}`}>
-              <MapPin className={`h-4 w-4 ${addressOk ? "text-primary" : "text-muted-foreground"}`} />
+              <AppIcon name="MapPin" className={`h-4 w-4 ${addressOk ? "text-primary" : "text-muted-foreground"}`} />
             </div>
             <div className="flex-1">
               <h2 className="text-sm font-bold text-foreground">Endereço de entrega</h2>
             </div>
-            {addressOk && <CheckCircle2 className="h-4 w-4 text-primary" />}
+            {addressOk && <AppIcon name="CheckCircle2" className="h-4 w-4 text-primary" />}
           </div>
           <div className="p-4 space-y-3">
           <div className="flex gap-2">
@@ -447,7 +448,7 @@ const GuestCheckoutPage = () => {
               className="flex-1 h-11 px-3 rounded-xl border border-border bg-background text-sm" />
             <button onClick={() => handleCepLookup()} disabled={loadingCep}
               className="px-3 rounded-xl bg-primary text-primary-foreground text-sm font-bold disabled:opacity-50">
-              {loadingCep ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+              {loadingCep ? <AppIcon name="Loader2" className="h-4 w-4 animate-spin" /> : <AppIcon name="Search" className="h-4 w-4" />}
             </button>
           </div>
           <p className="text-[11px] text-muted-foreground -mt-1">Não sabe o CEP? Pode deixar em branco.</p>
@@ -471,12 +472,12 @@ const GuestCheckoutPage = () => {
         <section className="bg-card rounded-2xl border border-border overflow-hidden">
           <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border/50">
             <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${payment ? "bg-primary/10" : "bg-muted"}`}>
-              <CreditCard className={`h-4 w-4 ${payment ? "text-primary" : "text-muted-foreground"}`} />
+              <AppIcon name="CreditCard" className={`h-4 w-4 ${payment ? "text-primary" : "text-muted-foreground"}`} />
             </div>
             <div className="flex-1">
               <h2 className="text-sm font-bold text-foreground">Pagamento</h2>
             </div>
-            {payment && <CheckCircle2 className="h-4 w-4 text-primary" />}
+            {payment && <AppIcon name="CheckCircle2" className="h-4 w-4 text-primary" />}
           </div>
           <div className="p-4 space-y-2">
           {payMethods.map((m) => {
@@ -487,7 +488,7 @@ const GuestCheckoutPage = () => {
                 className={`w-full flex items-center gap-3 p-3 rounded-xl border-2 transition-all ${active ? "border-primary bg-primary/5" : "border-transparent bg-muted/50"}`}>
                 <Icon className={`h-5 w-5 ${active ? "text-primary" : "text-muted-foreground"}`} />
                 <span className={`text-sm font-medium ${active ? "text-primary" : "text-foreground"}`}>{m.label}</span>
-                {active && <CheckCircle2 className="h-4 w-4 text-primary ml-auto" />}
+                {active && <AppIcon name="CheckCircle2" className="h-4 w-4 text-primary ml-auto" />}
               </button>
             );
           })}
@@ -524,7 +525,7 @@ const GuestCheckoutPage = () => {
         <section className="bg-card rounded-2xl border border-border overflow-hidden">
           <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border/50">
             <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center">
-              <ShoppingBag className="h-4 w-4 text-primary" />
+              <AppIcon name="ShoppingBag" className="h-4 w-4 text-primary" />
             </div>
             <h2 className="text-sm font-bold text-foreground">Resumo</h2>
           </div>
@@ -532,7 +533,7 @@ const GuestCheckoutPage = () => {
             <div className="flex justify-between text-sm"><span className="text-muted-foreground">Subtotal</span><span className="font-medium">{formatBRL(subtotal)}</span></div>
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground flex items-center gap-1.5">
-                {isPickup ? <><Store className="h-3 w-3" /> Retirada</> : <>Entrega</>}
+                {isPickup ? <><AppIcon name="Store" className="h-3 w-3" /> Retirada</> : <>Entrega</>}
               </span>
               <span className="font-medium">{isPickup ? "Grátis" : (matchedFee > 0 ? formatBRL(matchedFee) : (calculatingFee ? "..." : "—"))}</span>
             </div>

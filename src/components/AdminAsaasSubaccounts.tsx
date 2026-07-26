@@ -3,18 +3,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { 
-  AlertCircle, 
-  Clock, 
-  Wallet, 
-  FileText, 
-  CheckCircle2, 
-  XCircle,
-  Loader2,
-  ExternalLink
-} from "lucide-react";
 import { formatBRL } from "@/lib/utils";
 import { toast } from "sonner";
+import { AppIcon } from "@/components/ui/app-icon";
+import { AlertCircle, Clock, Wallet, FileText, CheckCircle2, XCircle, Loader2, ExternalLink } from "lucide-react";
 
 const AdminAsaasSubaccounts = () => {
   const { data: stores, isLoading, refetch } = useQuery({
@@ -50,7 +42,7 @@ const AdminAsaasSubaccounts = () => {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <AppIcon name="Loader2" className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -58,7 +50,7 @@ const AdminAsaasSubaccounts = () => {
   return (
     <div className="space-y-4">
       <div className="bg-blue-50 border border-blue-200 p-4 rounded-xl flex gap-3">
-        <AlertCircle className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
+        <AppIcon name="AlertCircle" className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
         <div className="text-sm text-blue-800">
           <p className="font-bold mb-1">Sobre o saldo retido em subcontas:</p>
           <p>
@@ -84,20 +76,20 @@ const AdminAsaasSubaccounts = () => {
               <div className="flex flex-col gap-2">
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-muted-foreground flex items-center gap-1.5">
-                    <FileText className="h-3 w-3" /> Documentos enviados:
+                    <AppIcon name="FileText" className="h-3 w-3" /> Documentos enviados:
                   </span>
                   <span className="font-bold">
                     {store.asaas_documents_sent ? (
-                      <span className="text-green-600 flex items-center gap-1">Sim <CheckCircle2 className="h-3 w-3" /></span>
+                      <span className="text-green-600 flex items-center gap-1">Sim <AppIcon name="CheckCircle2" className="h-3 w-3" /></span>
                     ) : (
-                      <span className="text-red-600 flex items-center gap-1">Não <XCircle className="h-3 w-3" /></span>
+                      <span className="text-red-600 flex items-center gap-1">Não <AppIcon name="XCircle" className="h-3 w-3" /></span>
                     )}
                   </span>
                 </div>
                 
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-muted-foreground flex items-center gap-1.5">
-                    <Clock className="h-3 w-3" /> Info. Comercial:
+                    <AppIcon name="Clock" className="h-3 w-3" /> Info. Comercial:
                   </span>
                   <Badge variant="outline" className="h-5 px-1.5 text-[10px] border-none bg-muted">
                     {(store.asaas_activation_status as any)?.commercialInfo || "PENDENTE"}
@@ -106,7 +98,7 @@ const AdminAsaasSubaccounts = () => {
 
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-muted-foreground flex items-center gap-1.5">
-                    <Wallet className="h-3 w-3" /> Conta Bancária:
+                    <AppIcon name="Wallet" className="h-3 w-3" /> Conta Bancária:
                   </span>
                   <Badge variant="outline" className="h-5 px-1.5 text-[10px] border-none bg-muted">
                     {(store.asaas_activation_status as any)?.bankAccount || "PENDENTE"}
@@ -122,7 +114,7 @@ const AdminAsaasSubaccounts = () => {
                   window.open(`https://www.asaas.com/customer/show/${store.asaas_account_id}`, '_blank');
                 }}
               >
-                <ExternalLink className="h-3 w-3 mr-1.5" /> Ver no Asaas
+                <AppIcon name="ExternalLink" className="h-3 w-3 mr-1.5" /> Ver no Asaas
               </Button>
             </CardContent>
           </Card>

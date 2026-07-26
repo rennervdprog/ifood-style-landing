@@ -1,9 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { QrCode, Copy, Clock, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { formatBRL } from "@/lib/utils";
+import { AppIcon } from "@/components/ui/app-icon";
+import { QrCode, Copy, Clock, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
 
 interface Props {
   storeId: string;
@@ -67,7 +68,7 @@ export default function RepassePendingCharges({ storeId }: Props) {
 
             <div className="space-y-1.5">
               <div className="flex items-center gap-2">
-                <QrCode className="h-5 w-5 text-primary" />
+                <AppIcon name="QrCode" className="h-5 w-5 text-primary" />
                 <h3 className="text-xl font-extrabold text-foreground tracking-tight">
                   Cobrança PIX gerada
                 </h3>
@@ -99,7 +100,7 @@ export default function RepassePendingCharges({ storeId }: Props) {
                   />
                 </div>
                 <div className="mt-3 flex items-center gap-2 text-primary">
-                  <QrCode className="h-4 w-4" />
+                  <AppIcon name="QrCode" className="h-4 w-4" />
                   <span className="text-[11px] font-bold uppercase tracking-wider">
                     Escaneie o código acima
                   </span>
@@ -115,13 +116,13 @@ export default function RepassePendingCharges({ storeId }: Props) {
                 className="w-full h-14 rounded-xl text-base font-bold shadow-lg shadow-primary/20 active:scale-[0.98] transition-all"
                 onClick={() => copy(pending.pix_copy_paste)}
               >
-                <Copy className="h-5 w-5 mr-2" /> Copiar código PIX
+                <AppIcon name="Copy" className="h-5 w-5 mr-2" /> Copiar código PIX
               </Button>
             )}
 
             {(pending.metadata as any)?.due_date && (
               <div className="flex items-center justify-center gap-2 py-2 px-4 rounded-full bg-amber-500/10 border border-amber-500/20">
-                <AlertCircle className="h-3.5 w-3.5 text-amber-700 dark:text-amber-500" />
+                <AppIcon name="AlertCircle" className="h-3.5 w-3.5 text-amber-700 dark:text-amber-500" />
                 <p className="text-[11px] font-bold text-amber-800 dark:text-amber-400">
                   Vencimento:{" "}
                   <span className="underline decoration-amber-400">

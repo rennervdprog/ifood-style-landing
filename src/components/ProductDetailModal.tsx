@@ -4,12 +4,13 @@ import { useQuery } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
-import { Minus, Plus, ShoppingCart, Pizza, AlertTriangle, X, ArrowLeft } from "lucide-react";
 import type { CartAddon } from "@/contexts/CartContext";
 import { getEffectivePrice, isPromoActive, getPromoDiscountPct } from "@/lib/promoPrice";
 import { readPizzaCatalogConfig, hasPizzaCatalog } from "@/types/pizza";
 import { priceForFlavorInSize, isFlavorAvailableInSize } from "@/lib/pizzaPricing";
 import { fetchProductAddons, type ProductAddonGroup, type ProductAddonItem } from "@/lib/productAddons";
+import { AppIcon } from "@/components/ui/app-icon";
+import { Minus, Plus, ShoppingCart, Pizza, AlertTriangle, X, ArrowLeft } from "lucide-react";
 
 interface Product {
   id: string;
@@ -445,7 +446,7 @@ const ProductDetailModal = ({ product, storeName, storeCategory, singleSize = fa
                         qty > 0 ? "border-primary bg-primary text-white" : "border-muted-foreground/20 text-muted-foreground/30"
                       )}
                     >
-                      <Minus className="h-3.5 w-3.5" />
+                      <AppIcon name="Minus" className="h-3.5 w-3.5" />
                     </button>
                     <span className={cn("w-5 text-center text-sm font-black", qty > 0 ? "text-primary" : "text-muted-foreground/40")}>
                       {qty}
@@ -459,7 +460,7 @@ const ProductDetailModal = ({ product, storeName, storeCategory, singleSize = fa
                         !atCap ? "border-primary bg-primary text-white" : "border-muted-foreground/20 text-muted-foreground/30"
                       )}
                     >
-                      <Plus className="h-3.5 w-3.5" />
+                      <AppIcon name="Plus" className="h-3.5 w-3.5" />
                     </button>
                   </div>
                 )}
@@ -496,7 +497,7 @@ const ProductDetailModal = ({ product, storeName, storeCategory, singleSize = fa
                       className="flex h-7 w-7 items-center justify-center rounded-lg border-2 border-primary bg-primary text-white transition active:scale-90"
                       aria-label="Diminuir quantidade"
                     >
-                      <Minus className="h-3.5 w-3.5" />
+                      <AppIcon name="Minus" className="h-3.5 w-3.5" />
                     </button>
                     <span className="w-5 text-center text-sm font-black text-primary">{qty}</span>
                     <button
@@ -505,7 +506,7 @@ const ProductDetailModal = ({ product, storeName, storeCategory, singleSize = fa
                       className="flex h-7 w-7 items-center justify-center rounded-lg border-2 border-primary bg-primary text-white transition active:scale-90"
                       aria-label="Aumentar quantidade"
                     >
-                      <Plus className="h-3.5 w-3.5" />
+                      <AppIcon name="Plus" className="h-3.5 w-3.5" />
                     </button>
                   </div>
                 )}
@@ -554,7 +555,7 @@ const ProductDetailModal = ({ product, storeName, storeCategory, singleSize = fa
         <section className="space-y-2">
           {meta.requires_prescription && (
             <div className="flex items-center gap-2 rounded-2xl border border-destructive/20 bg-destructive/10 p-3">
-              <AlertTriangle className="h-4 w-4 shrink-0 text-destructive" />
+              <AppIcon name="AlertTriangle" className="h-4 w-4 shrink-0 text-destructive" />
               <span className="text-xs font-bold text-destructive">Este produto exige receita médica</span>
             </div>
           )}
@@ -791,7 +792,7 @@ const ProductDetailModal = ({ product, storeName, storeCategory, singleSize = fa
       {hasSizes && (
         <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
           <div className="mb-3 flex items-center gap-2">
-            <Pizza className="h-4 w-4 shrink-0 text-primary" />
+            <AppIcon name="Pizza" className="h-4 w-4 shrink-0 text-primary" />
             <h4 className="text-sm font-bold text-foreground">Escolha o tamanho</h4>
             <span className={cn("ml-auto shrink-0 rounded-full px-2 py-1 text-[11px] font-bold", selectedSize ? "bg-primary/10 text-primary" : "bg-destructive/10 text-destructive")}>
               {selectedSize ? "Selecionado" : "Obrigatório"}
@@ -832,7 +833,7 @@ const ProductDetailModal = ({ product, storeName, storeCategory, singleSize = fa
 
       {showRequiredWarning && !allRequiredMet && (
         <div className="flex items-center gap-2 rounded-2xl border border-destructive/30 bg-destructive/10 p-3 animate-in fade-in slide-in-from-bottom-2">
-          <AlertTriangle className="h-4 w-4 shrink-0 text-destructive" />
+          <AppIcon name="AlertTriangle" className="h-4 w-4 shrink-0 text-destructive" />
           <span className="text-xs font-bold text-destructive">Selecione todos os obrigatórios para continuar</span>
         </div>
       )}
@@ -902,7 +903,7 @@ const ProductDetailModal = ({ product, storeName, storeCategory, singleSize = fa
               className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-muted text-foreground transition active:scale-95"
               aria-label={step === 2 ? "Voltar" : "Fechar"}
             >
-              {step === 2 ? <ArrowLeft className="h-5 w-5" /> : <X className="h-5 w-5" />}
+              {step === 2 ? <AppIcon name="ArrowLeft" className="h-5 w-5" /> : <AppIcon name="X" className="h-5 w-5" />}
             </button>
             <div className="min-w-0 flex-1">
               {totalSteps > 1 && <p className="mb-0.5 text-[11px] font-bold uppercase text-muted-foreground">Etapa {step} de {totalSteps}</p>}
@@ -929,7 +930,7 @@ const ProductDetailModal = ({ product, storeName, storeCategory, singleSize = fa
                 primaryEnabled ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground",
               )}
             >
-              {!(totalSteps === 2 && step === 1) && <ShoppingCart className="h-5 w-5 shrink-0" />}
+              {!(totalSteps === 2 && step === 1) && <AppIcon name="ShoppingCart" className="h-5 w-5 shrink-0" />}
               <span className="truncate">{primaryLabel}</span>
             </button>
           </div>

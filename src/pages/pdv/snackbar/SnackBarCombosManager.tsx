@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { formatBRL } from "@/lib/utils";
+import { AppIcon } from "@/components/ui/app-icon";
 import { Loader2, Plus, Pencil, Trash2, Layers, X, GripVertical } from "lucide-react";
 
 interface Slot { name: string; product_ids: string[] }
@@ -72,14 +73,14 @@ export default function SnackBarCombosManager({ storeId }: { storeId: string }) 
     invalidate();
   };
 
-  if (isLoading) return <Loader2 className="h-5 w-5 animate-spin text-primary mx-auto mt-6" />;
+  if (isLoading) return <AppIcon name="Loader2" className="h-5 w-5 animate-spin text-primary mx-auto mt-6" />;
 
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-sm font-black flex items-center gap-1.5">
-            <Layers className="h-4 w-4 text-primary" /> Combos
+            <AppIcon name="Layers" className="h-4 w-4 text-primary" /> Combos
           </h2>
           <p className="text-[11px] text-muted-foreground">Combos aparecem no topo do catálogo do PDV.</p>
         </div>
@@ -87,7 +88,7 @@ export default function SnackBarCombosManager({ storeId }: { storeId: string }) 
           onClick={() => setCreating(true)}
           className="flex items-center gap-1 bg-primary text-primary-foreground font-bold px-3 py-2 rounded-lg text-xs"
         >
-          <Plus className="h-3.5 w-3.5" /> Novo
+          <AppIcon name="Plus" className="h-3.5 w-3.5" /> Novo
         </button>
       </div>
 
@@ -102,7 +103,7 @@ export default function SnackBarCombosManager({ storeId }: { storeId: string }) 
           <div key={c.id} className={`flex items-center gap-3 rounded-xl border p-2.5 ${c.active ? "border-primary/40 bg-card" : "border-border bg-muted/30 opacity-70"}`}>
             {c.image_url
               ? <img src={c.image_url} alt={c.name} className="w-14 h-14 rounded-lg object-cover" />
-              : <div className="w-14 h-14 rounded-lg bg-primary/10 flex items-center justify-center"><Layers className="h-5 w-5 text-primary/40" /></div>}
+              : <div className="w-14 h-14 rounded-lg bg-primary/10 flex items-center justify-center"><AppIcon name="Layers" className="h-5 w-5 text-primary/40" /></div>}
             <div className="flex-1 min-w-0">
               <p className="text-sm font-bold truncate">{c.name}</p>
               <p className="text-[11px] text-muted-foreground truncate">
@@ -112,8 +113,8 @@ export default function SnackBarCombosManager({ storeId }: { storeId: string }) 
             <button onClick={() => toggleActive(c)} className={`text-[10px] font-bold px-2 py-1 rounded ${c.active ? "bg-emerald-500/15 text-emerald-600" : "bg-muted text-muted-foreground"}`}>
               {c.active ? "ATIVO" : "OFF"}
             </button>
-            <button onClick={() => setEditing(c)} className="p-1.5 rounded hover:bg-muted"><Pencil className="h-3.5 w-3.5" /></button>
-            <button onClick={() => remove(c)} className="p-1.5 rounded hover:bg-destructive/10 text-destructive"><Trash2 className="h-3.5 w-3.5" /></button>
+            <button onClick={() => setEditing(c)} className="p-1.5 rounded hover:bg-muted"><AppIcon name="Pencil" className="h-3.5 w-3.5" /></button>
+            <button onClick={() => remove(c)} className="p-1.5 rounded hover:bg-destructive/10 text-destructive"><AppIcon name="Trash2" className="h-3.5 w-3.5" /></button>
           </div>
         ))}
       </div>
@@ -191,7 +192,7 @@ function ComboForm({ storeId, combo, products, onClose, onSaved }: {
       <div className="bg-background w-full sm:max-w-lg sm:rounded-2xl max-h-[92vh] overflow-y-auto">
         <div className="sticky top-0 bg-background border-b border-border px-4 py-3 flex items-center justify-between">
           <h3 className="text-sm font-black">{combo ? "Editar combo" : "Novo combo"}</h3>
-          <button onClick={onClose} className="p-1.5 rounded hover:bg-muted"><X className="h-4 w-4" /></button>
+          <button onClick={onClose} className="p-1.5 rounded hover:bg-muted"><AppIcon name="X" className="h-4 w-4" /></button>
         </div>
         <div className="p-4 space-y-3">
           <Field label="Nome"><input value={name} onChange={(e) => setName(e.target.value)} className="w-full h-10 px-3 rounded-lg border border-border bg-card text-sm" placeholder="Combo Big Burguer" /></Field>
@@ -211,16 +212,16 @@ function ComboForm({ storeId, combo, products, onClose, onSaved }: {
           <div className="pt-2 border-t border-border">
             <div className="flex items-center justify-between mb-2">
               <p className="text-xs font-bold">Etapas do combo</p>
-              <button onClick={addSlot} className="text-[10px] font-bold text-primary flex items-center gap-1"><Plus className="h-3 w-3" />Etapa</button>
+              <button onClick={addSlot} className="text-[10px] font-bold text-primary flex items-center gap-1"><AppIcon name="Plus" className="h-3 w-3" />Etapa</button>
             </div>
             <p className="text-[10px] text-muted-foreground mb-2">O operador escolhe UM item por etapa ao vender.</p>
             <div className="space-y-3">
               {slots.map((sl, i) => (
                 <div key={i} className="rounded-lg border border-border p-2 bg-card">
                   <div className="flex items-center gap-2 mb-2">
-                    <GripVertical className="h-3.5 w-3.5 text-muted-foreground" />
+                    <AppIcon name="GripVertical" className="h-3.5 w-3.5 text-muted-foreground" />
                     <input value={sl.name} onChange={(e) => updateSlot(i, { name: e.target.value })} className="flex-1 h-8 px-2 rounded border border-border bg-background text-xs font-bold" placeholder="Ex.: Lanche, Bebida" />
-                    <button onClick={() => rmSlot(i)} className="p-1 rounded hover:bg-destructive/10 text-destructive"><Trash2 className="h-3 w-3" /></button>
+                    <button onClick={() => rmSlot(i)} className="p-1 rounded hover:bg-destructive/10 text-destructive"><AppIcon name="Trash2" className="h-3 w-3" /></button>
                   </div>
                   <div className="max-h-40 overflow-y-auto grid grid-cols-1 gap-1 pr-1">
                     {products.map((p) => {
@@ -243,7 +244,7 @@ function ComboForm({ storeId, combo, products, onClose, onSaved }: {
         <div className="sticky bottom-0 bg-background border-t border-border px-4 py-3 flex gap-2">
           <button onClick={onClose} className="flex-1 h-10 rounded-lg border border-border font-bold text-sm">Cancelar</button>
           <button onClick={save} disabled={saving} className="flex-1 h-10 rounded-lg bg-primary text-primary-foreground font-bold text-sm disabled:opacity-50">
-            {saving ? <Loader2 className="h-4 w-4 animate-spin mx-auto" /> : "Salvar"}
+            {saving ? <AppIcon name="Loader2" className="h-4 w-4 animate-spin mx-auto" /> : "Salvar"}
           </button>
         </div>
       </div>

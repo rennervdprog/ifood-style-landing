@@ -1,8 +1,9 @@
 import { memo } from "react";
 import { formatBRL } from "@/lib/utils";
-import { ShoppingBag } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { useNavigate } from "react-router-dom";
+import { AppIcon } from "@/components/ui/app-icon";
+import { ShoppingBag } from "lucide-react";
 
 const CartFAB = memo(() => {
   const { totalItems, total } = useCart();
@@ -18,7 +19,7 @@ const CartFAB = memo(() => {
     >
       <div className="flex items-center gap-3">
         <div className="relative">
-          <ShoppingBag className="h-5 w-5" />
+          <AppIcon name="ShoppingBag" className="h-5 w-5" />
           <span className="absolute -top-2 -right-2 bg-secondary text-secondary-foreground text-[10px] font-black w-4 h-4 rounded-full flex items-center justify-center">
             {totalItems}
           </span>
