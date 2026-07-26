@@ -254,6 +254,58 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
+  // 📱 Capacitor App resume: `visibilitychange` não dispara de forma
+  // confiável no Android nativo. Escutar `App.resume` garante refresh do JWT
+  // quando o usuário volta ao app depois de horas/dias em background.
+  // Se o refresh falhar por rede, NÃO desloga — reagenda retry (5s, 15s, 45s).
+  useEffect(() => {
+    if (!isCapacitorNative()) return;
+    let cancelled = false;
+    let retryTimer: ReturnType<typeof setTimeout> | null = null;
+    let sub: { remove: () => void } | null = null;
+
+    const tryRefresh = async (attempt = 0) => {
+      if (cancelled) return;
+      try {
+        const { error } = await supabase.auth.refreshSession();
+        if (error) throw error;
+      } catch (e: any) {
+        const msg = (e?.message || "").toLowerCase();
+        const isFatal =
+          msg.includes("bad_jwt") ||
+          msg.includes("invalid_grant") ||
+          msg.includes("refresh_token_not_found") ||
+          msg.includes("invalid refresh token");
+        if (isFatal) {
+          console.warn("[Auth] resume refresh fatal:", e?.message);
+          return; // Supabase JS já vai emitir SIGNED_OUT
+        }
+        // Transiente — retry backoff 5s, 15s, 45s
+        const delays = [5_000, 15_000, 45_000];
+        if (attempt < delays.length) {
+          retryTimer = setTimeout(() => tryRefresh(attempt + 1), delays[attempt]);
+        }
+      }
+    };
+
+    (async () => {
+      try {
+        const { App } = await import("@capacitor/app");
+        const handle = await App.addListener("resume", () => tryRefresh(0));
+        if (cancelled) { handle.remove(); return; }
+        sub = handle;
+      } catch (e) {
+        console.warn("[Auth] failed to attach App.resume listener:", e);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      if (retryTimer) clearTimeout(retryTimer);
+      if (sub) { try { sub.remove(); } catch {} }
+    };
+  }, []);
+
   // Also check on visibility change (tab focus) — but with debounce
   useEffect(() => {
     if (!session?.user) return;
