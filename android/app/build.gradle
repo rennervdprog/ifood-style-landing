@@ -7,7 +7,7 @@ android {
         applicationId "app.lovable.e8d28aded6334d74be2161c8dbe24765"
         minSdkVersion 26
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 10068
+        versionCode 10069
         versionName "1.26.16"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
