@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type KeyboardEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
@@ -216,6 +216,12 @@ const ClientHomeContent = () => {
   const goToStore = (store: any) => {
     if (store?.slug) navigate(`/${store.slug}`);
     else if (store?.id) navigate(`/loja/${store.id}`);
+  };
+
+  const handleStoreKeyDown = (event: KeyboardEvent<HTMLDivElement>, store: any) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    goToStore(store);
   };
 
   const scrollToStores = useCallback(() => {
@@ -463,10 +469,14 @@ const ClientHomeContent = () => {
             </h2>
             <div className="flex overflow-x-auto gap-3 no-scrollbar -mx-1 px-1 pb-1">
               {lastStores.map((store: any) => (
-                <button
+                <div
                   key={store.id}
+                  role="button"
+                  tabIndex={0}
                   onClick={() => goToStore(store)}
-                  className="shrink-0 w-20 flex flex-col items-center gap-1.5"
+                  onKeyDown={(event) => handleStoreKeyDown(event, store)}
+                  data-native-scroll-pan
+                  className="shrink-0 w-20 flex flex-col items-center gap-1.5 cursor-pointer"
                 >
                   {store.image_url ? (
                     <img loading="lazy" decoding="async" src={store.image_url}
@@ -479,7 +489,7 @@ const ClientHomeContent = () => {
                   <p className="font-display text-[10px] font-semibold text-foreground text-center truncate w-full leading-tight">
                     {store.name}
                   </p>
-                </button>
+                </div>
               ))}
             </div>
           </section>
@@ -582,10 +592,13 @@ const ClientHomeContent = () => {
                 const dist = formatDistance(store.distanceKm);
                 return (
                   <li key={store.id}>
-                    <button
+                    <div
+                      role="button"
+                      tabIndex={0}
                       onClick={() => goToStore(store)}
+                      onKeyDown={(event) => handleStoreKeyDown(event, store)}
                       data-native-scroll-pan
-                      className="group w-full flex items-start gap-3 text-left active:opacity-80"
+                      className="group w-full flex items-start gap-3 text-left active:opacity-80 cursor-pointer"
                     >
                       <div
                         className={`w-16 h-16 rounded-full overflow-hidden shrink-0 shadow-sm border-2 ${
@@ -637,7 +650,7 @@ const ClientHomeContent = () => {
                           )}
                         </div>
                       </div>
-                    </button>
+                    </div>
                   </li>
                 );
               })}
