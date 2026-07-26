@@ -1136,28 +1136,14 @@ const StorePage = () => {
                   <span className="text-[11px] font-semibold text-muted-foreground uppercase">Taxa</span>
                   <span className="text-[11px] font-black text-foreground mt-0.5">
                     {(() => {
-                      const mode = (store as any)?.delivery_mode;
-                      // Para entrega própria: taxa do lojista + R$2 da plataforma
-                      // Para entrega da plataforma: delivery_fee já é o total (inclui splits)
-                      const baseFee = mode === "own"
-                        ? (store as any)?.own_delivery_fee
-                        : (store as any)?.delivery_fee;
-                      if (baseFee == null) return "—";
-                      let platformAdd = 0;
-                      if (mode === "own") {
-                        const isAutonomy = platformInfo?.plan_type === "autonomy";
-                        const baseSplit = isAutonomy
-                          ? 0
-                          : Number(platformInfo?.platform_delivery_split_override ?? storePlan.platformDeliverySplit ?? 0.99);
-                        const splitMode = (platformInfo?.platform_fee_split || storePlan.platformFeeSplit || "cliente") as "cliente" | "meio_a_meio" | "lojista";
-                        platformAdd = splitMode === "lojista"
-                          ? 0
-                          : splitMode === "meio_a_meio"
-                            ? Math.round((baseSplit / 2) * 100) / 100
-                            : baseSplit;
+                      // Prefere RPC (fonte de verdade), com fallback ao helper caso ainda não carregou.
+                      if (platformInfo && typeof platformInfo.customer_total === "number") {
+                        return platformInfo.customer_total === 0
+                          ? "Grátis"
+                          : `A partir de ${formatBRL(platformInfo.customer_total)}`;
                       }
-                      const total = Number(baseFee) + platformAdd;
-                      return total === 0 ? "Grátis" : `A partir de ${formatBRL(total)}`;
+                      const d = describeStoreFee(store as any);
+                      return d.free ? "Grátis" : `${d.prefix ?? ""} ${d.label}`.trim();
                     })()}
                   </span>
                 </div>
