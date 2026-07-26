@@ -1,54 +1,47 @@
-# Plano — Unificar UX de Repasses do lojista
+# Plano — Cobrança PIX de repasse (piso R$ 150 + cobranças separadas)
 
-Objetivo: eliminar divergências textuais, visuais e de cálculo na seção de Repasses do painel do lojista, com base na auditoria Playwright + leitura dos componentes.
+## O que muda
 
-## 1. Nomenclatura única
-- Termo padrão de topo: **"Repasse"** (o que o lojista deve à plataforma).
-- Sub-rótulos permitidos apenas em detalhamento: "Comissão do plano", "Taxa operacional (R$ 0,99)", "PDV", "Split de entrega".
-- Renomear títulos em `CommissionAlert`, `PlatformSplitAlert`, `RepassePendingCharges`, `ValorAPagarCard` para seguir o padrão.
-- Renomear label do card "Cobrança PIX gerada" → "Repasse — pagamento via PIX".
+### 1. Piso mínimo para gerar PIX: R$ 30 → **R$ 150**
+Hoje o cron semanal gera uma cobrança PIX sempre que o saldo pendente atinge R$ 30. Vai passar a só gerar quando o saldo do ciclo for **≥ R$ 150**. Abaixo disso, acumula para a próxima segunda.
 
-## 2. Fonte única de valor pendente
-- Criar hook `usePendingRepasse(storeId)` retornando `{ total, breakdown: { comissao, taxaOperacional, pdv, splitEntrega }, hasPendingCharge }`.
-- Consumido por: `RepasseSection`, `CommissionAlert`, `PlatformSplitAlert`, `ValorAPagarCard`, badge da sub-aba (`useRepassePending`).
-- Refetch alinhado (30s em todos) para evitar valores divergentes na mesma tela.
+### 2. Cobrança por **ciclo**, não por saldo total
+Cada rodada semanal gera **uma cobrança PIX independente** com o valor acumulado **naquele ciclo** — não soma com cobranças anteriores em aberto.
 
-## 3. Consolidar alerts duplicados
-- Fundir `CommissionAlert` + `PlatformSplitAlert` em um único `<RepasseAlert variant="commission|split|fee" />`.
-- Mesma estrutura: título, breakdown, prazo, botão "Gerar PIX", QR quando existir.
+Exemplo do usuário:
+- Segunda A: saldo pendente do ciclo = **R$ 237** → gera PIX #1 de R$ 237.
+- Lojista não paga.
+- Segunda B: novo saldo acumulado no ciclo = **R$ 120** → gera PIX #2 **separado** de R$ 120 (não vira R$ 357).
+- Painel do lojista mostra as duas cobranças lado a lado, com data de vencimento própria.
 
-## 4. Sistema de cores semântico
-- Âmbar (`amber-500/10`): pendência aberta.
-- Vermelho (`red-500/10`): bloqueio iminente/ativo (≥ R$ 500 ou após prazo).
-- Verde: quitado / sem pendência.
-- Azul apenas para informativos neutros ("Próximo repasse previsto").
-- Aplicar em todos os cards da seção.
+Isso evita a confusão de "por que a cobrança mudou de valor?" e mantém rastreabilidade (uma cobrança = um ciclo).
 
-## 5. Regras de prazo em fonte única
-- Criar `src/lib/repasseRules.ts` exportando `{ SUSPENSION_DAYS, BLOCK_THRESHOLD_BRL, ... }`.
-- Corrigir divergência atual: **3 dias** (CommissionAlert) vs **30 dias** (PlatformFeeExplainerCard). Definir com o usuário qual é a regra real (sugestão: 7 dias) e usar em todos os textos + tooltip único "Como funcionam as cobranças".
+### 3. Regra de bloqueio continua igual
+- Total pendente **≥ R$ 500** → loja bloqueada (independentemente de quantas cobranças em aberto).
+- Prazo de 30 dias sem quitar → suspensão.
 
-## 6. Hierarquia visual da RepasseSection
-Nova ordem (mais urgente → informativo):
-1. `RepassePendingCharges` (se houver cobrança PIX ativa) — topo, destaque máximo.
-2. `RepasseAlert` (se houver saldo acumulado sem cobrança emitida).
-3. Card "Próximo repasse previsto" (informativo).
-4. Card "Plano ativo" (contexto).
-5. Histórico de cobranças.
+## Alterações técnicas
 
-## 7. Modal do PlatformSplitAlert
-- Remover modal bloqueante quando já existe alerta inline na mesma tela.
-- Manter modal só quando o lojista tenta usar função crítica com repasse ≥ threshold.
+**Backend (Supabase externo)**
+- Edge function do cron semanal (`weekly-repasse-charge` / equivalente): trocar constante `MIN_CHARGE_BRL` de 30 → **150**.
+- Ajustar lógica de agregação: passar a somar apenas o delta acumulado **desde a última cobrança emitida** (usar `platform_fee_accruals.charged_at IS NULL` ou coluna equivalente para marcar o que já entrou em cobrança).
+- Ao gerar PIX, marcar os accruals daquele lote com o `charge_id` retornado, para o próximo ciclo não pegá-los de novo.
 
-## 8. Detalhes técnicos
-- Arquivos a criar: `src/hooks/usePendingRepasse.ts`, `src/lib/repasseRules.ts`, `src/components/repasse/RepasseAlert.tsx`.
-- Arquivos a editar: `RepasseSection.tsx`, `RepassePendingCharges.tsx`, `CommissionAlert.tsx` (remover), `PlatformSplitAlert.tsx` (remover), `PlatformFeeExplainerCard.tsx`, `ValorAPagarCard.tsx`, `useRepassePending.ts`.
-- Sem mudança de schema no banco.
-- Bump de versão ao final (patch).
+**Frontend (`RepassePendingCharges.tsx` + `RepasseSection.tsx`)**
+- Listar **todas** as cobranças em aberto (não só a mais recente), ordenadas por data.
+- Total pendente = soma de todas as cobranças abertas + saldo em acúmulo ainda não cobrado.
+- Texto informativo: "cobranças abaixo de R$ 150 são acumuladas para a próxima segunda-feira".
 
-## Fora de escopo
-- Mudanças no fluxo de cobrança/geração de PIX (Asaas).
-- Regras de acúmulo no backend (já auditadas em v1.26.9).
+**Regras (`src/lib/repasseRules.ts`)**
+- Adicionar `MIN_CHARGE_BRL: 150`.
+- Ajustar copy do `RepasseAlert` e `PlatformFeeExplainerCard`.
 
-## Decisão pendente
-Qual prazo real de suspensão usar: **3, 7 ou 30 dias**?
+## Fora do escopo
+- Não muda regra de comissão do Essencial (mensalidade continua como está).
+- Não muda taxa de 0,99 por pedido nem split de entrega.
+- Não altera lógica de VIP / lifetime free.
+
+## Versão
+Bump para `1.26.14` (`src/lib/appVersion.ts` + `android/app/build.gradle`).
+
+Confirma que posso implementar?
