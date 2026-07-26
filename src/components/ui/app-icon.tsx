@@ -33,9 +33,11 @@ export const AppIcon = ({
   className,
   "aria-hidden": ariaHidden = true,
 }: AppIconProps) => {
+  // Suporte a nomes completos "prefix:icon" (ex: "mdi:pizza") — pula o pack Solar.
+  const icon = name.includes(":") ? name : `solar:${name}-${variant}`;
   return (
     <Icon
-      icon={`solar:${name}-${variant}`}
+      icon={icon}
       className={cn("shrink-0", className)}
       aria-hidden={ariaHidden}
     />
