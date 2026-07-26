@@ -1,10 +1,9 @@
 import { Banknote, CheckCircle2, Crown, CalendarClock } from "lucide-react";
-import CommissionAlert from "@/components/CommissionAlert";
-import PlatformSplitAlert from "@/components/PlatformSplitAlert";
+import RepasseAlert from "@/components/repasse/RepasseAlert";
 import RepassePendingCharges from "@/components/RepassePendingCharges";
 import { formatBRL } from "@/lib/utils";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { usePendingRepasse } from "@/hooks/usePendingRepasse";
+import { REPASSE_RULES } from "@/lib/repasseRules";
 
 interface Props {
   store: any;
@@ -14,31 +13,10 @@ interface Props {
 }
 
 export default function RepasseSection({ store, storePlan, setDashboardTab, pendingTotal }: Props) {
-  // Se já existe cobrança PIX pendente, não mostra os cards de alerta duplicados —
-  // o RepassePendingCharges já exibe QR/valor/copiar em destaque.
-  const { data: hasPendingCharge } = useQuery({
-    queryKey: ["repasse-has-pending-charge", store?.id],
-    queryFn: async () => {
-      const { data } = await (supabase as any)
-        .from("financial_transactions")
-        .select("id")
-        .eq("store_id", store.id)
-        .eq("transaction_kind", "commission_charge")
-        .eq("status", "pending")
-        .limit(1)
-        .maybeSingle();
-      return !!data;
-    },
-    enabled: !!store?.id,
-    refetchInterval: 30000,
-  });
-
-  const showCommission = !!storePlan?.hasCommission && !hasPendingCharge;
-  const showSplit =
-    !storePlan?.hasCommission &&
-    !!storePlan?.isItatingaFixed &&
-    (storePlan?.platformDeliverySplit || 0) > 0 &&
-    !hasPendingCharge;
+  // Fonte única do valor pendente e do estado de cobrança PIX ativa.
+  const { total: hookTotal, hasPendingCharge } = usePendingRepasse(store?.id);
+  const displayTotal = hookTotal || pendingTotal || 0;
+  const showAlert = displayTotal > 0 && !hasPendingCharge;
 
   const planLabel =
     storePlan?.planType === "fixed" ? "Essencial" :
@@ -85,16 +63,28 @@ export default function RepasseSection({ store, storePlan, setDashboardTab, pend
           <Banknote className="h-5 w-5 text-blue-500" />
         </div>
         <div>
-          <h2 className="text-lg font-black text-foreground tracking-tight">Repasse da Plataforma</h2>
+          <h2 className="text-lg font-black text-foreground tracking-tight">Repasse</h2>
           <p className="text-xs text-muted-foreground">
-            {pendingTotal > 0
-              ? "Você tem valor acumulado a repassar"
+            {displayTotal > 0
+              ? "Você tem valor acumulado a repassar à plataforma"
               : "Nenhum repasse pendente no momento"}
           </p>
         </div>
       </div>
 
-      {/* Contexto do plano ativo — reflete VIP */}
+      {/* 1. Cobrança PIX ativa — sempre no topo, ação mais urgente */}
+      <RepassePendingCharges storeId={store.id} />
+
+      {/* 2. Alerta unificado quando há saldo sem cobrança emitida */}
+      {showAlert && (
+        <RepasseAlert
+          storeId={store.id}
+          storeName={store.name}
+          onGoToFinance={() => setDashboardTab("finance")}
+        />
+      )}
+
+      {/* 3. Contexto do plano ativo — reflete VIP */}
       <div className="rounded-xl border border-border/60 bg-muted/30 p-3 flex items-center gap-2 flex-wrap">
         <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Plano</span>
         <span className="text-sm font-bold text-foreground">{planLabel}</span>
@@ -109,7 +99,7 @@ export default function RepasseSection({ store, storePlan, setDashboardTab, pend
         <span className="text-xs text-foreground">{pixTxt}</span>
       </div>
 
-      {/* Previsão do próximo repasse */}
+      {/* 4. Informativo — próximo repasse previsto (neutro, azul) */}
       <div className="rounded-xl border border-blue-500/20 bg-gradient-to-br from-blue-500/5 to-transparent p-4">
         <div className="flex items-start gap-3">
           <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center shrink-0">
@@ -132,43 +122,25 @@ export default function RepasseSection({ store, storePlan, setDashboardTab, pend
             <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
               Acumulado
             </p>
-            <p className={`text-base font-black ${pendingTotal > 0 ? "text-blue-600 dark:text-blue-400" : "text-muted-foreground"}`}>
-              {formatBRL(pendingTotal || 0)}
+            <p className={`text-base font-black ${displayTotal > 0 ? "text-amber-600 dark:text-amber-400" : "text-muted-foreground"}`}>
+              {formatBRL(displayTotal)}
             </p>
           </div>
         </div>
       </div>
 
-      {pendingTotal <= 0 && !showCommission && !showSplit && (
+      {displayTotal <= 0 && !hasPendingCharge && (
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <div className="w-20 h-20 rounded-3xl bg-emerald-500/10 flex items-center justify-center mb-4">
             <CheckCircle2 className="h-10 w-10 text-emerald-500" />
           </div>
           <h3 className="font-black text-foreground mb-1">Sem pendências de repasse</h3>
           <p className="text-sm text-muted-foreground max-w-xs">
-            Quando houver saldo acumulado com a plataforma (delivery, comissão ou PDV), ele aparecerá aqui.
+            Quando houver saldo acumulado (delivery, comissão do plano ou PDV), ele aparecerá aqui.
+            Cobrança automática toda segunda a partir de {formatBRL(REPASSE_RULES.MIN_AUTO_CHARGE_BRL)}.
           </p>
         </div>
       )}
-
-      {showCommission && (
-        <CommissionAlert
-          storeId={store.id}
-          storeName={store.name}
-          onGoToFinance={() => setDashboardTab("finance")}
-        />
-      )}
-
-      {showSplit && (
-        <PlatformSplitAlert
-          storeId={store.id}
-          storeName={store.name}
-          splitPerOrder={storePlan.platformDeliverySplit}
-          onGoToFinance={() => setDashboardTab("finance")}
-        />
-      )}
-
-      <RepassePendingCharges storeId={store.id} />
     </div>
   );
 }
