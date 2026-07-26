@@ -1,57 +1,89 @@
+# Plano: Nova aba "Busca" (estilo iFood)
 
-## Contexto
+Inspirada no iFood, mas com identidade ItaSuper — não é cópia. Vira a segunda aba do BottomNav do `/cliente`.
 
-A listagem "Todas as lojas em itatinga" (screenshot) é renderizada **inline** em `src/pages/cliente/home/ClientHomeContent.tsx` (linhas 588–657) — não usa o `StoreCard.tsx` que refiz antes. Por isso a alteração anterior não apareceu. Cards atuais têm ícone circular laranja genérico e info pobre (só categoria + Aberto).
+## 1. Estrutura / navegação
 
-## Objetivo
+- Nova rota: `/cliente/busca`
+- Adicionar item no `BottomNav.tsx`: Início · **Busca** · Pedidos · Perfil
+- Ícone: `solar:magnifer-bold-duotone` (Iconify, já instalado)
+- Lazy-load da página
 
-Trocar por linhas estilo iFood com **dados reais** do lojista: thumbnail quadrado da loja, avaliação, tempo de entrega estimado, taxa de entrega real (loja + plataforma) e distância. Zero mock.
+## 2. Layout da tela `/cliente/busca` (estado inicial)
 
-## Fontes de verdade (dados reais)
+Ordem vertical:
 
-- **Thumbnail:** `store.image_url` (quadrado 64px arredondado, fallback ícone loja).
-- **Rating:** `store.rating` (só mostra se > 0; senão "Novo").
-- **Distância:** `store.distanceKm` (já calculado em `mapStoresWithHours`).
-- **Tempo de entrega:** ler `store.settings.delivery_time_min` / `delivery_time_max` se o lojista configurou; caso contrário estimar `20 + round(distanceKm * 4)` até `+15min` (mesma fórmula do `StoreCard` row).
-- **Taxa de entrega:**
-  - `delivery_mode === "pickup"` → "Retirada".
-  - `delivery_fee_type === "km"` → "A partir de R$ X" usando `delivery_fee_base`.
-  - Fixa → `own_delivery_fee`.
-  - Somar `platform_split` (taxa operacional, hoje R$ 0,99 default em `deliveryFee.ts`) para exibir o valor **final** que o cliente pagará — fonte única de verdade.
-  - Se total = 0 → "Grátis" em verde.
-- **Status fechado:** mantém `statusReason` embaixo (ex.: "Abre às 18:00").
+1. **Search bar sticky no topo**
+   - Placeholder rotativo: "Pizza em 30 minutos", "Hambúrguer artesanal", "Marmita fitness"…
+   - Ao focar → abre modo "resultados" (ver seção 4)
 
-## Ajustes de query
+2. **Seção "Categorias"** (grid 2 colunas, cards coloridos com imagem à direita)
+   Categorias reais da base (`stores.category` / tags):
+   - Lanches (laranja)
+   - Pizzaria (vermelho)
+   - Marmita / Restaurante (âmbar)
+   - Açaí / Sobremesa (roxo)
+   - Bebidas (coral)
+   - Mercado (verde)
+   - Farmácia (azul)
+   - Promoções (magenta — filtro `has_active_coupon`)
+   
+   Cada card = filtro que abre lista de lojas daquela categoria.
 
-Incluir no `PUBLIC_STORE_SELECT` os campos que faltam: `delivery_fee_type, delivery_fee_base, delivery_fee_per_km, platform_split, settings` (settings já vem). Nada de N+1.
+3. **Seção "Em alta em Itatinga"** — carrossel horizontal de lojas mais pedidas (rating desc, pedidos últimos 7d)
 
-## UI (apenas frontend)
+4. **Seção "Novidades"** — lojas criadas nos últimos 30 dias
 
-Substituir o bloco `<ul>` da seção "Todas as lojas" em `ClientHomeContent.tsx` por:
+## 3. Tela de categoria `/cliente/busca/:categoria`
 
-```
-[img 64x64 rounded-xl]  Nome da loja                    ⭐ 4.8
-                        Categoria • 1,2 km
-                        25–40 min • Grátis / R$ 6,99
-                        [FECHADA — Abre 18:00]  (só se fechada)
-```
+Header simples "LANCHES" + botão voltar + share.
 
-- Divisor sutil `border-b border-border/40` entre linhas (padrão iFood).
-- Loja fechada: `grayscale opacity-60` na imagem + badge "Fechada" vermelha discreta.
-- Taxa grátis: texto verde-esmeralda em bold; taxa paga: preto seminegrito.
-- Distância com pino pequeno; separadores `•` entre metadados.
-- Sem card com sombra — visual limpo de lista.
+Filtros chip horizontais (scroll):
+- Ordenar (relevância / avaliação / tempo / taxa)
+- Entrega grátis (own_delivery_fee = 0)
+- Turbo (estimated_delivery_time ≤ 30 min)
+- Aberto agora
 
-## Arquivos afetados
+Lista vertical de lojas com o **mesmo card** já usado em `ClientHomeContent.tsx` (logo redondo, nome, rating real, tempo, taxa calculada com split R$ 0,99). Reutilizar componente — sem duplicar código.
 
-- `src/pages/cliente/home/ClientHomeContent.tsx` — trocar o bloco `<ul>` (linhas ~588–657) e ampliar `PUBLIC_STORE_SELECT`.
-- `src/pages/cliente/utils/mapStores.ts` — passar `platform_split` default se ausente e calcular `totalDeliveryFee` já no map (evita cálculo no render).
-- Bump versão para v1.25.85 em `src/lib/appVersion.ts`, `src/pages/PerfilPage.tsx` e `android/app/build.gradle` (+ `versionCode`).
+Badge "Mais Pedido" nas top 3 da categoria.
 
-## Fora de escopo
+## 4. Modo busca ativa
 
-- Não mexer em backend, RPC `store_bootstrap` (campos já retornados via `select *`).
-- Não alterar `StoreCard.tsx` do marketplace, nem outras telas.
-- Sem novas dependências.
+Ao digitar no input:
+- Debounce 250ms
+- Busca em `stores.name`, `products.name`, `stores.category`
+- Duas seções nos resultados: **Lojas** e **Pratos** (com preço + loja de origem)
+- Histórico de buscas recentes em localStorage (últimas 5)
+- Sugestões populares quando vazio
 
-Confirma que sigo com a implementação?
+## 5. Design / tokens
+
+- **Não copiar cores do iFood** (nada de vermelho #EA1D2C)
+- Usar paleta atual ItaSuper: `--primary` + accents já definidos
+- Cards de categoria com gradientes vindos de `--gradient-*` do design system
+- Tipografia atual, sem fontes novas
+- Safe-area top/bottom respeitada (Capacitor)
+
+## 6. Detalhes técnicos
+
+- Página: `src/pages/ClientBuscaPage.tsx` (lazy)
+- Componentes novos: `SearchCategoryCard`, `SearchChipFilters`, `SearchResults`
+- Reuso: `StoreListCard` extraído de `ClientHomeContent.tsx` para arquivo próprio
+- Query: uma única RPC `search_stores_and_products(term, category, filters)` no Supabase externo pra evitar 2-3 roundtrips
+- Cache: React Query com `staleTime: 60s` nas categorias/em-alta
+- Realtime: OFF (já removido do plano de IO)
+
+## 7. Fora do escopo
+
+- Filtro por Vale-refeição (não temos integração)
+- "Super Restaurantes" / assinatura de frete grátis
+- Mapa de lojas próximas (fica pra fase 2)
+
+## 8. Versionamento
+
+Bump patch (`PerfilPage.tsx` + `android/app/build.gradle` versionName + versionCode+1) ao final da implementação.
+
+---
+
+Se aprovar, implemento tudo em uma leva e te aviso a nova versão.

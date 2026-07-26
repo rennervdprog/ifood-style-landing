@@ -5,7 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
  import { supabase } from "@/integrations/supabase/client";
  import { isPartnerCapacitorApp } from "@/lib/capacitorAppMode";
-import { Bike, ClipboardList, Home, LayoutDashboard, Store, User } from "lucide-react";
+import { Bike, ClipboardList, Home, LayoutDashboard, Search, Store, User } from "lucide-react";
 
 const BottomNav = memo(() => {
   const location = useLocation();
@@ -75,6 +75,7 @@ const BottomNav = memo(() => {
      }
      return [
         { icon: Home, label: "Home", path: "/cliente" },
+        { icon: Search, label: "Busca", path: "/cliente/busca" },
         { icon: ClipboardList, label: "Pedidos", path: "/pedidos" },
         { icon: User, label: "Perfil", path: "/perfil" },
      ];
@@ -84,6 +85,7 @@ const BottomNav = memo(() => {
     const [path] = tabPath.split("?");
     if (path === "/" && location.pathname === "/") return true;
     if (path === "/cliente" && location.pathname === "/cliente") return true;
+    if (path === "/cliente/busca" && location.pathname.startsWith("/cliente/busca")) return true;
     if (path === "/pedidos" && location.pathname === "/pedidos") return true;
      if (path === "/perfil" && location.pathname === "/perfil") return true;
      if (path === "/admin" && location.pathname === "/admin") return true;
