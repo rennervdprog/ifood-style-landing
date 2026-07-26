@@ -6,7 +6,6 @@ assertExternalBackend();
 // ANTES de qualquer código importar o client. Sem isso, no cold-start do APK
 // o `getSession()` pode ler `null` e derrubar a sessão silenciosamente.
 import { hydrateAuthStorage } from "./integrations/supabase/authStorage";
-await hydrateAuthStorage();
 
 // Declarar extensões do Window para gonative/median (apps nativos WebView)
 declare global {
@@ -131,9 +130,13 @@ if ("serviceWorker" in navigator && !isPreviewHost && !isInIframe && !isCapacito
   });
 }
 
-createRoot(document.getElementById("root")!).render(
-  <HelmetProvider><App /></HelmetProvider>
-);
+async function bootstrap() {
+  await hydrateAuthStorage();
+  createRoot(document.getElementById("root")!).render(
+    <HelmetProvider><App /></HelmetProvider>
+  );
+}
+bootstrap();
 
 // 🚀 Splash: esconde IMEDIATAMENTE após o primeiro paint do React —
 // não espera useEffect dos Providers (que só disparam depois do mount de
