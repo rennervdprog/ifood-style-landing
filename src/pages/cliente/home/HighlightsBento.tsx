@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { Star, Clock, MapPin } from "lucide-react";
+import { AppIcon } from "@/components/ui/app-icon";
 
 interface Props {
   stores: any[];
@@ -46,16 +46,16 @@ const HighlightsBento = memo(({ stores, onSelect }: Props) => {
           <div className="flex items-center gap-2 mt-1 text-[11px] opacity-95">
             {featured.rating && (
               <span className="inline-flex items-center gap-0.5">
-                <Star className="h-3 w-3 fill-current" />
+                <AppIcon name="star" variant="bold" className="h-3 w-3" />
                 {Number(featured.rating).toFixed(1)}
               </span>
             )}
             <span className="inline-flex items-center gap-0.5">
-              <Clock className="h-3 w-3" /> 30-45 min
+              <AppIcon name="clock-circle" variant="bold-duotone" className="h-3 w-3" /> 30-45 min
             </span>
             {distanceLabel(featured.distanceKm) && (
               <span className="inline-flex items-center gap-0.5">
-                <MapPin className="h-3 w-3" /> {distanceLabel(featured.distanceKm)}
+                <AppIcon name="map-point" variant="bold-duotone" className="h-3 w-3" /> {distanceLabel(featured.distanceKm)}
               </span>
             )}
           </div>
