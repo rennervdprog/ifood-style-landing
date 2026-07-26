@@ -1,51 +1,57 @@
-## Diagnóstico
 
-- **Web ok, Partner APK ok, Cliente APK travado.** Como partner e cliente compartilham a mesma base, mas usam **canais OTA separados** (feito na v1.25.62), o partner ainda não recebeu as últimas mudanças — logo o problema está numa alteração recente aplicada só ao cliente.
-- **Sintoma:** scroll vertical só funciona quando o dedo começa sobre a `BottomNav`. Em qualquer área de conteúdo o gesto é engolido.
-- **Suspeitos recentes (v1.25.72 → 1.25.78):**
-  1. Troca de ícones Lucide → **Iconify** (`AppIcon` com SVG renderizado async).
-  2. Refactor de `<button>` para `<div role="button">` nos cards.
-  3. Regras globais de `touch-action` em `src/index.css` (última patch minha).
-  4. `captureInput: true` + `useLegacyBridge: false` no `capacitor.config.ts`.
+## Contexto
 
-## Plano de correção (em ordem, cada passo publicado via OTA para o cliente)
+A listagem "Todas as lojas em itatinga" (screenshot) é renderizada **inline** em `src/pages/cliente/home/ClientHomeContent.tsx` (linhas 588–657) — não usa o `StoreCard.tsx` que refiz antes. Por isso a alteração anterior não apareceu. Cards atuais têm ícone circular laranja genérico e info pobre (só categoria + Aberto).
 
-### Passo 1 — Isolar a causa raiz (sem chutar)
-- Adicionar log temporário no `main.tsx` do cliente: registrar `touchstart`/`touchmove` no `document` com `{passive:true}` logando `event.target.tagName`, `event.defaultPrevented` e `getComputedStyle(target).touchAction`.
-- Publicar OTA; próximo turn os logs do console do WebView aparecem automaticamente no meu contexto.
+## Objetivo
 
-### Passo 2 — Reverter o global de `touch-action` que introduzi
-- No `src/index.css`, remover o bloco `.native-app, .native-app button, .native-app a, [role="button"] { touch-action: pan-y }`. Definir `touch-action` no root altera comportamento do WebView de forma imprevisível; voltar para o `data-native-scroll-pan` cirúrgico + `touch-action: auto` no `#root`.
+Trocar por linhas estilo iFood com **dados reais** do lojista: thumbnail quadrado da loja, avaliação, tempo de entrega estimado, taxa de entrega real (loja + plataforma) e distância. Zero mock.
 
-### Passo 3 — Neutralizar Iconify como suspeito
-- Envolver `<Icon>` do Iconify com `<span style="pointer-events:none; touch-action:pan-y">`. SVGs do Iconify chegam com `<svg>` que em alguns WebViews Android capturam o `touchstart` até serem "hidratados", bloqueando o scroll no primeiro gesto.
+## Fontes de verdade (dados reais)
 
-### Passo 4 — Reverter os `<div role="button">` para `<button>` novamente
-- A conversão pra `div` não resolveu (a origem era outra) e adiciona custo de acessibilidade. Voltar para `<button type="button">` com `touch-action: manipulation` apenas no botão, sem herdar para filhos.
+- **Thumbnail:** `store.image_url` (quadrado 64px arredondado, fallback ícone loja).
+- **Rating:** `store.rating` (só mostra se > 0; senão "Novo").
+- **Distância:** `store.distanceKm` (já calculado em `mapStoresWithHours`).
+- **Tempo de entrega:** ler `store.settings.delivery_time_min` / `delivery_time_max` se o lojista configurou; caso contrário estimar `20 + round(distanceKm * 4)` até `+15min` (mesma fórmula do `StoreCard` row).
+- **Taxa de entrega:**
+  - `delivery_mode === "pickup"` → "Retirada".
+  - `delivery_fee_type === "km"` → "A partir de R$ X" usando `delivery_fee_base`.
+  - Fixa → `own_delivery_fee`.
+  - Somar `platform_split` (taxa operacional, hoje R$ 0,99 default em `deliveryFee.ts`) para exibir o valor **final** que o cliente pagará — fonte única de verdade.
+  - Se total = 0 → "Grátis" em verde.
+- **Status fechado:** mantém `statusReason` embaixo (ex.: "Abre às 18:00").
 
-### Passo 5 — Ajustes no `capacitor.config.ts` (requer novo APK, opcional)
-- `captureInput: false` (deixa a View nativa não interceptar toques).
-- `useLegacyBridge: true` temporariamente para comparar; a bridge nova tem tickets abertos de touch-lag em Android 12/13.
-- Isso NÃO vai por OTA — só entra se os passos 1–4 não resolverem.
+## Ajustes de query
 
-### Passo 6 — Validação
-- Rodar Playwright headless em `localhost:8080` com viewport mobile e `hasTouch:true` para confirmar que a mudança não regride a web.
-- Bumpar versão a cada iteração (`1.25.79`, `.80`…) e sincronizar `PerfilPage` + `build.gradle`.
-- Pedir ao usuário para atualizar o app cliente e testar o scroll na home e em pelo menos uma tela extra.
+Incluir no `PUBLIC_STORE_SELECT` os campos que faltam: `delivery_fee_type, delivery_fee_base, delivery_fee_per_km, platform_split, settings` (settings já vem). Nada de N+1.
 
-## Detalhes técnicos
+## UI (apenas frontend)
 
-- Bibliotecas envolvidas: `@iconify/react`, `@capacitor/core`, `@capgo/capacitor-updater`.
-- Arquivos que devem mudar nesta rodada: `src/index.css`, `src/components/ui/app-icon.tsx`, `src/pages/cliente/home/StoreCard.tsx`, `BentoHero.tsx`, `HighlightsBento.tsx`, `DiscoverGrid.tsx`, `ClientHomeContent.tsx`, `src/main.tsx` (log temporário), `src/lib/appVersion.ts`, `android/app/build.gradle`, `src/pages/PerfilPage.tsx`.
-- Sem alteração de banco, edge functions ou lógica de negócio.
+Substituir o bloco `<ul>` da seção "Todas as lojas" em `ClientHomeContent.tsx` por:
 
-## Ordem de execução proposta
-
-```text
-1. Instrumentar logs   → OTA v1.25.79
-2. Ler console na próxima mensagem do usuário
-3. Aplicar fixes 2+3+4 juntos → OTA v1.25.80
-4. Se persistir → mudar capacitor.config.ts + novo APK
+```
+[img 64x64 rounded-xl]  Nome da loja                    ⭐ 4.8
+                        Categoria • 1,2 km
+                        25–40 min • Grátis / R$ 6,99
+                        [FECHADA — Abre 18:00]  (só se fechada)
 ```
 
-Confirma que posso executar os passos 1 e 2 (instrumentação + reversões CSS/JSX) já nesta rodada?
+- Divisor sutil `border-b border-border/40` entre linhas (padrão iFood).
+- Loja fechada: `grayscale opacity-60` na imagem + badge "Fechada" vermelha discreta.
+- Taxa grátis: texto verde-esmeralda em bold; taxa paga: preto seminegrito.
+- Distância com pino pequeno; separadores `•` entre metadados.
+- Sem card com sombra — visual limpo de lista.
+
+## Arquivos afetados
+
+- `src/pages/cliente/home/ClientHomeContent.tsx` — trocar o bloco `<ul>` (linhas ~588–657) e ampliar `PUBLIC_STORE_SELECT`.
+- `src/pages/cliente/utils/mapStores.ts` — passar `platform_split` default se ausente e calcular `totalDeliveryFee` já no map (evita cálculo no render).
+- Bump versão para v1.25.85 em `src/lib/appVersion.ts`, `src/pages/PerfilPage.tsx` e `android/app/build.gradle` (+ `versionCode`).
+
+## Fora de escopo
+
+- Não mexer em backend, RPC `store_bootstrap` (campos já retornados via `select *`).
+- Não alterar `StoreCard.tsx` do marketplace, nem outras telas.
+- Sem novas dependências.
+
+Confirma que sigo com a implementação?
