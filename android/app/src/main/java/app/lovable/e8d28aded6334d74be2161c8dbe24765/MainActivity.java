@@ -18,8 +18,21 @@ public class MainActivity extends BridgeActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        enableWebViewDebuggingIfDebugBuild();
         tuneWebViewForSmoothness();
         clearWebViewCacheAfterNativeUpdate();
+    }
+
+    /**
+     * Habilita inspeção via chrome://inspect e conexão do Playwright (CDP)
+     * ao WebView do app. Só ativa em builds debug — nunca em produção.
+     */
+    private void enableWebViewDebuggingIfDebugBuild() {
+        try {
+            if ((getApplicationInfo().flags & android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0) {
+                WebView.setWebContentsDebuggingEnabled(true);
+            }
+        } catch (Exception ignored) {}
     }
 
     /**
