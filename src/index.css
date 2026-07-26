@@ -255,11 +255,14 @@ body.native-app {
   padding-right: var(--safe-area-inset-right, env(safe-area-inset-right));
 }
 
-/* Elimina delay de 300ms em TODOS os botões e links no app nativo */
+/* Remove o realce cinza de tap no app nativo.
+   IMPORTANTE: não setar `touch-action: manipulation` aqui — isso bloqueia
+   o gesto de rolagem quando o dedo começa em cima de um <button> (ex.:
+   cards de loja no /cliente são <button>). Navegadores modernos já não
+   têm o delay de 300ms desde que a meta viewport esteja correta. */
 .native-app button,
 .native-app a,
 .native-app [role="button"] {
-  touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
   cursor: pointer;
 }
