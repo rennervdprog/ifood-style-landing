@@ -42,17 +42,16 @@ const FULL_STORE_SELECT = "id, name, image_url, slug, category, categories, is_o
 // Select compatível com a view `stores_public` (não expõe delivery_fee/estimated_delivery_time/etc).
 const PUBLIC_VIEW_SELECT = "id, name, image_url, slug, category, categories, is_open, force_closed, rating, status, delivery_mode, own_delivery_fee, address_cep, address_city, address_complement, address_neighborhood, address_number, address_reference, address_state, address_street, latitude, longitude, settings";
 
-// Split base cobrado pela plataforma quando a loja usa entrega própria.
-// Fonte da verdade: admin_settings.delivery_fee_config.platform_split (default R$ 0,99).
-const PLATFORM_OWN_SPLIT = 0.99;
-
+// A lista não conhece platform_fee_split/plano por loja (info exigiria RPC por item).
+// Para evitar divergência com a StorePage, exibimos apenas a taxa base do lojista
+// com prefixo "A partir de" — o total final (com split da plataforma) é calculado
+// na página da loja e no checkout, que são as fontes de verdade.
 const formatFeeLabel = (store: any): { label: string; free: boolean; prefix?: string } => {
   if (store.delivery_mode === "pickup") return { label: "Retirada", free: false };
   const mode = store.delivery_mode;
   const baseFee = mode === "own" ? store.own_delivery_fee : store.delivery_fee;
   if (baseFee == null) return { label: "—", free: false };
-  const platformAdd = mode === "own" ? PLATFORM_OWN_SPLIT : 0;
-  const total = Number(baseFee || 0) + platformAdd;
+  const total = Number(baseFee || 0);
   if (total <= 0) return { label: "Grátis", free: true };
   return { label: formatBRL(total), free: false, prefix: "A partir de" };
 };
