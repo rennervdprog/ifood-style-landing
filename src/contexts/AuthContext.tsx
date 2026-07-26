@@ -140,8 +140,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     supabase.auth.getSession().then(async ({ data: { session: restoredSession }, error }) => {
       // Se o token salvo estiver corrompido (bad_jwt de projeto antigo), limpa e segue.
       if (error) {
-        console.warn("[Auth] getSession error, clearing local session:", error.message);
-        try { await supabase.auth.signOut({ scope: "local" as any }); } catch {}
+        const msg = (error.message || "").toLowerCase();
+        const isFatal =
+          msg.includes("bad_jwt") ||
+          msg.includes("invalid_grant") ||
+          msg.includes("refresh_token_not_found") ||
+          msg.includes("invalid refresh token");
+        if (isFatal) {
+          console.warn("[Auth] getSession fatal error, clearing local session:", error.message);
+          try { await supabase.auth.signOut({ scope: "local" as any }); } catch {}
+        } else {
+          // Erro transitório (rede, timeout, 5xx) — NÃO desloga.
+          console.warn("[Auth] getSession transient error, keeping session:", error.message);
+        }
       }
       console.log("[Auth] 🔄 Session restored from storage:", restoredSession?.user?.email ?? "none");
       try {
