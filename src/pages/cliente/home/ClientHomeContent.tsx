@@ -328,7 +328,7 @@ const ClientHomeContent = () => {
     typeof km === "number" ? (km < 1 ? `${Math.round(km * 1000)} m` : `${km.toFixed(1)} km`) : null;
 
   return (
-    <div className="min-h-dvh bg-background pb-24" data-native-scroll-pan>
+    <div className="min-h-dvh bg-background pb-24">
       <SupportTicketModal open={showSupport} onClose={() => setShowSupport(false)} userRole="cliente" />
 
       {/* Sticky header — marketplace style */}
@@ -391,7 +391,7 @@ const ClientHomeContent = () => {
         </div>
       </header>
 
-      <main className="px-4 pt-3 space-y-6" data-native-scroll-pan>
+      <main className="px-4 pt-3 space-y-6">
         {/* Bento hero */}
         {!searchQuery && (
           <BentoHero
