@@ -206,12 +206,18 @@ const StorePage = () => {
      queryKey: ["store-platform-split", storeId],
      queryFn: async () => {
        const { data } = await (supabase as any).rpc("get_store_platform_split", { _store_id: storeId });
-       const row = Array.isArray(data) ? data[0] : data;
-       return row as {
-         plan_type: string | null;
-         platform_delivery_split_override: number | null;
-         platform_fee_split: "cliente" | "meio_a_meio" | "lojista" | null;
-         delivery_mode: string | null;
+       // RPC agora retorna JSONB { base_fee, customer_total, platform_add_customer,
+       // platform_add_payout_deduction, split_mode, plan_type, is_autonomy, ... }
+       return (data ?? null) as {
+         base_fee: number;
+         customer_total: number;
+         platform_add_customer: number;
+         platform_add_payout_deduction: number;
+         platform_split_full: number;
+         split_mode: "cliente" | "meio_a_meio" | "lojista";
+         plan_type: string;
+         delivery_mode: string;
+         is_autonomy: boolean;
        } | null;
      },
      enabled: !!storeId,
