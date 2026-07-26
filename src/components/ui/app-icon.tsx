@@ -36,7 +36,7 @@ export const AppIcon = ({
   return (
     <Icon
       icon={`solar:${name}-${variant}`}
-      className={cn("shrink-0", className)}
+      className={cn("shrink-0 pointer-events-none", className)}
       aria-hidden={ariaHidden}
     />
   );

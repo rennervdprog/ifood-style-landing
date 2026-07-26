@@ -13,7 +13,7 @@ const config: CapacitorConfig = {
     // Bridge nova (MessageChannel) — mais rápida que a legada.
     useLegacyBridge: false,
     // CDN identifica o app e serve Cache-Control agressivo.
-    appendUserAgent: 'ItaSuperApp/1.25.70',
+    appendUserAgent: 'ItaSuperApp/1.25.80',
     // Não focar automaticamente inputs — evita reflow no boot.
     initialFocus: false,
   },

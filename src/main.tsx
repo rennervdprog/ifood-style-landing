@@ -96,29 +96,6 @@ if (window.gonative || window.median || isCapacitor) {
   document.body.classList.add("native-app");
 }
 
-// 🔍 v1.25.79 — Instrumentação temporária para diagnosticar scroll travado
-// no APK cliente Android. Loga o 1º touchstart/touchmove por sessão
-// mostrando target, touch-action computado e se algum handler chamou
-// preventDefault. Remover após identificar a causa raiz.
-if (isCapacitor) {
-  let logged = 0;
-  const logTouch = (evt: TouchEvent) => {
-    if (logged >= 6) return;
-    logged++;
-    const t = evt.target as Element | null;
-    const tag = t?.tagName ?? "?";
-    const cls = (t as HTMLElement)?.className?.toString?.().slice(0, 80) ?? "";
-    const ta = t ? getComputedStyle(t as Element).touchAction : "?";
-    const po = t ? getComputedStyle(t as Element).pointerEvents : "?";
-    // eslint-disable-next-line no-console
-    console.log(
-      `[touch-debug ${evt.type}] tag=${tag} touchAction=${ta} pointerEvents=${po} defaultPrevented=${evt.defaultPrevented} class="${cls}"`
-    );
-  };
-  document.addEventListener("touchstart", logTouch, { passive: true, capture: true });
-  document.addEventListener("touchmove", logTouch, { passive: true, capture: true });
-}
-
 // Listener de atualização do Service Worker
 // Quando um novo SW toma controle, limpar caches e recarregar
 if ("serviceWorker" in navigator && !isPreviewHost && !isInIframe && !isCapacitor) {

@@ -1,11 +1,11 @@
 import { memo, useMemo } from "react";
- import { AppIcon } from "@/components/ui/app-icon";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useStoreContext } from "@/contexts/StoreContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
  import { supabase } from "@/integrations/supabase/client";
  import { isPartnerCapacitorApp } from "@/lib/capacitorAppMode";
+import { Bike, ClipboardList, Home, LayoutDashboard, Store, User } from "lucide-react";
 
 const BottomNav = memo(() => {
   const location = useLocation();
@@ -49,34 +49,34 @@ const BottomNav = memo(() => {
   const tabs = useMemo(() => {
     if (isStoreContext) {
       return [
-        { icon: "shop", label: "Loja", path: `/${currentStoreSlug}` },
-        { icon: "clipboard-list", label: "Pedidos", path: `/pedidos?store=${currentStoreId}` },
-        { icon: "user", label: "Perfil", path: "/perfil" },
+        { icon: Store, label: "Loja", path: `/${currentStoreSlug}` },
+        { icon: ClipboardList, label: "Pedidos", path: `/pedidos?store=${currentStoreId}` },
+        { icon: User, label: "Perfil", path: "/perfil" },
       ];
     }
     if (isLojista && ownStore) {
       return [
-        { icon: "shop", label: "Minha Loja", path: ownStore.slug ? `/${ownStore.slug}` : `/loja/${ownStore.id}` },
-        { icon: "clipboard-list", label: "Pedidos", path: "/pedidos" },
-        { icon: "user", label: "Perfil", path: "/perfil" },
+        { icon: Store, label: "Minha Loja", path: ownStore.slug ? `/${ownStore.slug}` : `/loja/${ownStore.id}` },
+        { icon: ClipboardList, label: "Pedidos", path: "/pedidos" },
+        { icon: User, label: "Perfil", path: "/perfil" },
       ];
     }
      if (isPartnerApp) {
        if (!user) return [];
        const baseTabs = [];
        if (isLojista) {
-         baseTabs.push({ icon: "widget-2", label: "Painel", path: "/admin" });
+          baseTabs.push({ icon: LayoutDashboard, label: "Painel", path: "/admin" });
        } else if (isMotoboy) {
-         baseTabs.push({ icon: "scooter", label: "Entregas", path: "/entregador" });
+          baseTabs.push({ icon: Bike, label: "Entregas", path: "/entregador" });
        }
-       baseTabs.push({ icon: "clipboard-list", label: "Pedidos", path: "/pedidos" });
-       baseTabs.push({ icon: "user", label: "Perfil", path: "/perfil" });
+        baseTabs.push({ icon: ClipboardList, label: "Pedidos", path: "/pedidos" });
+        baseTabs.push({ icon: User, label: "Perfil", path: "/perfil" });
        return baseTabs;
      }
      return [
-       { icon: "home-smile", label: "Home", path: "/cliente" },
-       { icon: "clipboard-list", label: "Pedidos", path: "/pedidos" },
-       { icon: "user", label: "Perfil", path: "/perfil" },
+        { icon: Home, label: "Home", path: "/cliente" },
+        { icon: ClipboardList, label: "Pedidos", path: "/pedidos" },
+        { icon: User, label: "Perfil", path: "/perfil" },
      ];
    }, [isStoreContext, currentStoreSlug, currentStoreId, isLojista, ownStore, isPartnerApp, user, isMotoboy]);
 
@@ -105,6 +105,7 @@ const BottomNav = memo(() => {
       <div className="mx-auto max-w-md h-16 flex items-stretch justify-around px-2">
         {tabs.map((tab) => {
           const active = isActive(tab.path);
+          const Icon = tab.icon;
           return (
             <button
               key={tab.path}
@@ -119,11 +120,7 @@ const BottomNav = memo(() => {
               <div className={`p-1.5 rounded-xl transition-all duration-300 ${
                 active ? "bg-primary/10" : "group-hover:bg-accent/50"
               }`}>
-                <AppIcon
-                  name={tab.icon}
-                  variant={active ? "bold-duotone" : "linear"}
-                  className={`h-5 w-5 transition-transform duration-300 ${active ? "scale-110" : "group-hover:scale-105"}`}
-                />
+                <Icon className={`h-5 w-5 transition-transform duration-300 pointer-events-none ${active ? "scale-110" : "group-hover:scale-105"}`} />
               </div>
               <span className={`text-[11px] font-medium mt-1 transition-all duration-200 ${
                 active ? "opacity-100 font-bold tracking-tight" : "opacity-70"
