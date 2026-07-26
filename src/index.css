@@ -271,6 +271,26 @@ body.native-app header.sticky.top-0 {
   backdrop-filter: none !important;
 }
 
+/* Android WebView: `position: sticky` no <header> falha em várias telas
+   (rola junto com o conteúdo). A StorePage funciona porque usa `fixed`.
+   Aqui replicamos o mesmo truque para todo `header.sticky.top-0` no app
+   nativo: promove a `fixed` e reserva espaço via `--native-header-h`
+   (medido dinamicamente por nativeBoot). */
+.native-app header.sticky.top-0 {
+  position: fixed !important;
+  top: 0;
+  left: 0;
+  right: 0;
+}
+.native-app body,
+body.native-app {
+  /* Empurra o conteúdo pra baixo do header fixo. Fallback = 56px + notch
+     enquanto o JS não mediu. Páginas sem header sticky zeram a var. */
+}
+body.native-app:has(header.sticky.top-0) > #root {
+  padding-top: var(--native-header-h, calc(3.5rem + env(safe-area-inset-top)));
+}
+
 /* No Android WebView, um <header sticky> filho de wrappers com
    `min-h-dvh` (100dvh) pode "descolar" ao rolar porque o wrapper
    compete com o <html> pelo papel de scroller. Neutralize `min-h-dvh`
