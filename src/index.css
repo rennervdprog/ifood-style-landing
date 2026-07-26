@@ -276,7 +276,7 @@ body.native-app header.sticky.top-0 {
    Aqui replicamos o mesmo truque para todo `header.sticky.top-0` no app
    nativo: promove a `fixed` e reserva espaço via `--native-header-h`
    (medido dinamicamente por nativeBoot). */
-.native-app header.sticky.top-0 {
+body.native-app header.sticky.top-0 {
   position: fixed !important;
   top: 0;
   left: 0;
