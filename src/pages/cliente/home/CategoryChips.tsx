@@ -1,25 +1,28 @@
 import { useMemo } from "react";
-import { AppIcon } from "@/components/ui/app-icon";
+import {
+  Pizza, ShoppingBasket, Utensils, Cake, Beer, IceCream, Coffee, Sandwich,
+  Drumstick, Fish, Cookie, Store as StoreIcon,
+} from "lucide-react";
 
-const CATEGORY_META: Record<string, { label: string; icon: string }> = {
-  pizzaria:     { label: "Pizzaria",    icon: "mdi:pizza" },
-  pizza:        { label: "Pizza",       icon: "mdi:pizza" },
-  mercado:      { label: "Mercado",     icon: "cart-large-minimalistic" },
-  supermercado: { label: "Mercado",     icon: "cart-large-minimalistic" },
-  marmitaria:   { label: "Marmita",     icon: "fork" },
-  restaurante:  { label: "Restaurante", icon: "chef-hat" },
-  hamburgueria: { label: "Burger",      icon: "mdi:hamburger" },
-  lanchonete:   { label: "Lanches",     icon: "mdi:hamburger" },
-  doceria:      { label: "Doces",       icon: "cake" },
-  confeitaria:  { label: "Doces",       icon: "cake" },
-  sorveteria:   { label: "Sorvete",     icon: "cup-hot" },
-  cafeteria:    { label: "Café",        icon: "cup-hot" },
-  acai:         { label: "Açaí",        icon: "cup-hot" },
-  adega:        { label: "Bebidas",     icon: "bottle" },
-  pasteis:      { label: "Pastel",      icon: "donut" },
-  pastel:       { label: "Pastel",      icon: "donut" },
-  churrascaria: { label: "Churrasco",   icon: "fire" },
-  peixaria:     { label: "Peixaria",    icon: "shop" },
+const CATEGORY_META: Record<string, { label: string; Icon: any }> = {
+  pizzaria: { label: "Pizzaria", Icon: Pizza },
+  pizza: { label: "Pizza", Icon: Pizza },
+  mercado: { label: "Mercado", Icon: ShoppingBasket },
+  supermercado: { label: "Mercado", Icon: ShoppingBasket },
+  marmitaria: { label: "Marmita", Icon: Utensils },
+  restaurante: { label: "Restaurante", Icon: Utensils },
+  hamburgueria: { label: "Burger", Icon: Sandwich },
+  lanchonete: { label: "Lanches", Icon: Sandwich },
+  doceria: { label: "Doces", Icon: Cake },
+  confeitaria: { label: "Doces", Icon: Cake },
+  sorveteria: { label: "Sorvete", Icon: IceCream },
+  cafeteria: { label: "Café", Icon: Coffee },
+  acai: { label: "Açaí", Icon: IceCream },
+  adega: { label: "Bebidas", Icon: Beer },
+  pasteis: { label: "Pastel", Icon: Cookie },
+  pastel: { label: "Pastel", Icon: Cookie },
+  churrascaria: { label: "Churrasco", Icon: Drumstick },
+  peixaria: { label: "Peixaria", Icon: Fish },
 };
 
 const norm = (c?: string | null) =>
@@ -30,7 +33,7 @@ const metaFor = (cat?: string | null) => {
   return (
     CATEGORY_META[k] ||
     CATEGORY_META[k.replace(/s$/, "")] ||
-    { label: (cat || "Outras").replace(/_/g, " "), icon: "shop" }
+    { label: (cat || "Outras").replace(/_/g, " "), Icon: StoreIcon }
   );
 };
 
@@ -42,14 +45,14 @@ interface Props {
 
 const CategoryChips = ({ stores, active, onChange }: Props) => {
   const categories = useMemo(() => {
-    const map = new Map<string, { key: string; label: string; icon: string; count: number }>();
+    const map = new Map<string, { key: string; label: string; Icon: any; count: number }>();
     for (const s of stores) {
       const k = norm(s.category);
       if (!k) continue;
       const meta = metaFor(s.category);
       const cur = map.get(k);
       if (cur) cur.count += 1;
-      else map.set(k, { key: k, label: meta.label, icon: meta.icon, count: 1 });
+      else map.set(k, { key: k, label: meta.label, Icon: meta.Icon, count: 1 });
     }
     return Array.from(map.values()).sort((a, b) => b.count - a.count);
   }, [stores]);
@@ -69,7 +72,7 @@ const CategoryChips = ({ stores, active, onChange }: Props) => {
         >
           Todas
         </button>
-        {categories.map(({ key, label, icon }) => {
+        {categories.map(({ key, label, Icon }) => {
           const isActive = active === key;
           return (
             <button
@@ -81,7 +84,7 @@ const CategoryChips = ({ stores, active, onChange }: Props) => {
                   : "bg-card text-foreground border-border hover:bg-muted/50"
               }`}
             >
-              <AppIcon name={icon} variant={isActive ? "bold-duotone" : "linear"} className="h-3.5 w-3.5" />
+              <Icon className="h-3.5 w-3.5" />
               {label}
             </button>
           );

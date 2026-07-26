@@ -11,10 +11,11 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import {
+  Users, Percent, PiggyBank, DollarSign, Send, Plus, Trash2, Edit2, Check, X, Wallet, TrendingUp, Shield, Calendar, ArrowRight, CreditCard, BarChart3, Building2
+} from "lucide-react";
 import { formatBRL } from "@/lib/utils";
 import { planLabel } from "@/lib/plansInfo";
-import { AppIcon } from "@/components/ui/app-icon";
-import { Users, PiggyBank, Plus, Trash2, Edit2, Check, X, Wallet, TrendingUp, Shield, CreditCard, BarChart3, Building2 } from "lucide-react";
 
 interface Partner {
   id: string;
@@ -85,10 +86,10 @@ const PartnerForm = ({ form, setForm, onSave, onCancel, isPending, isNew, partne
       </div>
       <div className="flex gap-2">
         <Button onClick={() => onSave(isNew ? form : { ...form, id: partnerId })} disabled={isPending || !form.name || form.profit_percent <= 0}>
-          <AppIcon name="Check" className="w-4 h-4 mr-1" /> Salvar
+          <Check className="w-4 h-4 mr-1" /> Salvar
         </Button>
         <Button variant="ghost" onClick={onCancel}>
-          <AppIcon name="X" className="w-4 h-4 mr-1" /> Cancelar
+          <X className="w-4 h-4 mr-1" /> Cancelar
         </Button>
       </div>
     </CardContent>
@@ -112,14 +113,14 @@ const RevenueBreakdownCard = ({ planBreakdown, pendingCommission, pendingRepasse
     <Card className="border-primary/20">
       <CardHeader className="pb-2">
         <CardTitle className="text-base flex items-center gap-2">
-          <AppIcon name="BarChart3" className="w-5 h-5 text-primary" /> Receita Detalhada da Plataforma
+          <BarChart3 className="w-5 h-5 text-primary" /> Receita Detalhada da Plataforma
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Assinaturas */}
         <div>
           <h4 className="text-sm font-semibold flex items-center gap-2 mb-2">
-            <AppIcon name="CreditCard" className="w-4 h-4 text-blue-500" /> Assinaturas Ativas
+            <CreditCard className="w-4 h-4 text-blue-500" /> Assinaturas Ativas
           </h4>
           <div className="space-y-1">
             {planBreakdown.map(p => (
@@ -146,7 +147,7 @@ const RevenueBreakdownCard = ({ planBreakdown, pendingCommission, pendingRepasse
         {/* Comissões a Receber */}
         <div>
           <h4 className="text-sm font-semibold flex items-center gap-2 mb-2">
-            <AppIcon name="TrendingUp" className="w-4 h-4 text-green-500" /> Comissões & Repasses Pendentes
+            <TrendingUp className="w-4 h-4 text-green-500" /> Comissões & Repasses Pendentes
           </h4>
           <div className="space-y-1">
             <div className="flex justify-between text-sm bg-muted/50 rounded px-3 py-2">
@@ -169,7 +170,7 @@ const RevenueBreakdownCard = ({ planBreakdown, pendingCommission, pendingRepasse
         {/* Divisão por Sócio */}
         <div>
           <h4 className="text-sm font-semibold flex items-center gap-2 mb-2">
-            <AppIcon name="Users" className="w-4 h-4 text-purple-500" /> Divisão por Sócio (Receita Mensal Estimada)
+            <Users className="w-4 h-4 text-purple-500" /> Divisão por Sócio (Receita Mensal Estimada)
           </h4>
           <div className="space-y-2">
             {partners.filter(p => p.is_active).map(p => {
@@ -349,7 +350,7 @@ const PartnerSplitPanel = () => {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="pt-4 text-center">
-            <AppIcon name="Building2" className="w-6 h-6 mx-auto text-blue-500 mb-1" />
+            <Building2 className="w-6 h-6 mx-auto text-blue-500 mb-1" />
             <p className="text-xs text-muted-foreground">Lojas Ativas</p>
             <p className="text-lg font-bold">{totalPlans}</p>
             <p className="text-xs text-muted-foreground">{formatBRL(totalMonthly)}/mês</p>
@@ -357,21 +358,21 @@ const PartnerSplitPanel = () => {
         </Card>
         <Card>
           <CardContent className="pt-4 text-center">
-            <AppIcon name="TrendingUp" className="w-6 h-6 mx-auto text-green-500 mb-1" />
+            <TrendingUp className="w-6 h-6 mx-auto text-green-500 mb-1" />
             <p className="text-xs text-muted-foreground">A Receber</p>
             <p className="text-lg font-bold">{formatBRL(pendingBalances.commission + pendingBalances.repasse)}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4 text-center">
-            <AppIcon name="PiggyBank" className="w-6 h-6 mx-auto text-amber-500 mb-1" />
+            <PiggyBank className="w-6 h-6 mx-auto text-amber-500 mb-1" />
             <p className="text-xs text-muted-foreground">Fundo Emergência</p>
             <p className="text-lg font-bold">{formatBRL(fundBalance)}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4 text-center">
-            <AppIcon name="Users" className="w-6 h-6 mx-auto text-purple-500 mb-1" />
+            <Users className="w-6 h-6 mx-auto text-purple-500 mb-1" />
             <p className="text-xs text-muted-foreground">Sócios Ativos</p>
             <p className="text-lg font-bold">{partners.filter(p => p.is_active).length}</p>
             <p className="text-xs text-muted-foreground">Repasses dias 5 e 20</p>
@@ -394,18 +395,18 @@ const PartnerSplitPanel = () => {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-base flex items-center gap-2">
-            <AppIcon name="Users" className="w-5 h-5" /> Sócios da Plataforma
+            <Users className="w-5 h-5" /> Sócios da Plataforma
           </CardTitle>
           {!adding && (
             <Button size="sm" onClick={() => { setAdding(true); resetForm(); }}>
-              <AppIcon name="Plus" className="w-4 h-4 mr-1" /> Adicionar Sócio
+              <Plus className="w-4 h-4 mr-1" /> Adicionar Sócio
             </Button>
           )}
         </CardHeader>
         <CardContent className="space-y-4">
           {totalPercent !== 100 && partners.length > 0 && (
             <div className="bg-destructive/10 text-destructive text-sm p-3 rounded-lg flex items-center gap-2">
-              <AppIcon name="Shield" className="w-4 h-4" />
+              <Shield className="w-4 h-4" />
               A soma das porcentagens é {totalPercent}%. Deve ser 100%.
             </div>
           )}
@@ -436,7 +437,7 @@ const PartnerSplitPanel = () => {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <div className={`w-10 h-10 rounded-full flex items-center justify-center ${p.is_owner ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'}`}>
-                          {p.is_owner ? <AppIcon name="Shield" className="w-5 h-5" /> : <AppIcon name="Users" className="w-5 h-5" />}
+                          {p.is_owner ? <Shield className="w-5 h-5" /> : <Users className="w-5 h-5" />}
                         </div>
                         <div>
                           <div className="flex items-center gap-2">
@@ -453,13 +454,13 @@ const PartnerSplitPanel = () => {
                       </div>
                       <div className="flex gap-2">
                         <Button variant="ghost" size="icon" onClick={() => startEdit(p)}>
-                          <AppIcon name="Edit2" className="w-4 h-4" />
+                          <Edit2 className="w-4 h-4" />
                         </Button>
                         {!p.is_owner && (
                           <Button variant="ghost" size="icon" className="text-destructive" onClick={() => {
                             if (confirm("Remover este sócio?")) deleteMutation.mutate(p.id);
                           }}>
-                            <AppIcon name="Trash2" className="w-4 h-4" />
+                            <Trash2 className="w-4 h-4" />
                           </Button>
                         )}
                       </div>
@@ -482,7 +483,7 @@ const PartnerSplitPanel = () => {
       <Card>
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
-            <AppIcon name="Wallet" className="w-5 h-5" /> Histórico de Repasses
+            <Wallet className="w-5 h-5" /> Histórico de Repasses
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -516,7 +517,7 @@ const PartnerSplitPanel = () => {
       <Card>
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
-            <AppIcon name="PiggyBank" className="w-5 h-5" /> Fundo de Emergência
+            <PiggyBank className="w-5 h-5" /> Fundo de Emergência
           </CardTitle>
         </CardHeader>
         <CardContent>

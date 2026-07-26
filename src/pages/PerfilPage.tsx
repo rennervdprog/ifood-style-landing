@@ -7,6 +7,12 @@ import { supabase, SUPABASE_URL } from "@/integrations/supabase/client";
 import { isCapacitorNative } from "@/lib/capacitorNative";
 import BottomNav from "@/components/BottomNav";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import {
+  User, LogOut, Store, Shield, UserPlus, MapPin, Save, Bike, Wallet, Copy,
+  AlertTriangle, MessageCircle, Truck, Download, Smartphone, X, Share2,
+  Search, Loader2, ChevronRight, Phone, Mail, CreditCard, Package, Settings, HelpCircle, Trash2, CheckCircle2, Users,
+  KeyRound, Bell, Moon, Sun, Newspaper, Sparkles, Send, FileText, ExternalLink
+} from "lucide-react";
 import { toast } from "sonner";
 import ThemeToggle from "@/components/ThemeToggle";
 import { maskWhatsApp, formatWhatsAppNumber, isValidWhatsApp } from "@/lib/whatsapp";
@@ -37,7 +43,7 @@ const MenuRow = ({ icon: Icon, iconBg = "bg-primary/10", iconColor = "text-prima
       <p className={`text-sm font-semibold leading-tight ${danger ? "text-destructive" : "text-foreground"}`}>{title}</p>
       {subtitle && <p className="text-xs text-muted-foreground mt-0.5 truncate">{subtitle}</p>}
     </div>
-    {trailing || <AppIcon name="ChevronRight" className={`h-4 w-4 shrink-0 ${danger ? "text-destructive/50" : "text-muted-foreground/40"}`} />}
+    {trailing || <ChevronRight className={`h-4 w-4 shrink-0 ${danger ? "text-destructive/50" : "text-muted-foreground/40"}`} />}
   </button>
 );
 
@@ -53,7 +59,7 @@ const InputField = ({ label, ...props }: { label?: string } & React.InputHTMLAtt
 
 const StatusBadge = ({ done, label }: { done: boolean; label: string }) => (
   <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full ${done ? "bg-green-500/10 text-green-600" : "bg-amber-500/10 text-amber-600"}`}>
-    {done ? <AppIcon name="CheckCircle2" className="h-2.5 w-2.5" /> : <AppIcon name="AlertTriangle" className="h-2.5 w-2.5" />}
+    {done ? <CheckCircle2 className="h-2.5 w-2.5" /> : <AlertTriangle className="h-2.5 w-2.5" />}
     {label}
   </span>
 );
@@ -484,7 +490,7 @@ const PerfilPage = () => {
       <div className="min-h-screen bg-background pb-32 overflow-y-auto">
         <div className="flex flex-col items-center justify-center py-24 text-center px-6">
           <div className="w-20 h-20 rounded-3xl bg-primary/10 flex items-center justify-center mb-6">
-            <AppIcon name="User" className="h-10 w-10 text-primary" />
+            <User className="h-10 w-10 text-primary" />
           </div>
           <h2 className="text-xl font-bold text-foreground mb-2">Entre na sua conta</h2>
           <p className="text-sm text-muted-foreground max-w-[260px]">Faça login para acompanhar seus pedidos e gerenciar seu perfil.</p>
@@ -564,7 +570,7 @@ const PerfilPage = () => {
               </span>
               {orderCount !== undefined && orderCount > 0 && (
                 <span className="text-[10px] font-medium text-white/85 flex items-center gap-1">
-                  <AppIcon name="Package" className="h-2.5 w-2.5" /> {orderCount} pedido{orderCount !== 1 ? "s" : ""}
+                  <Package className="h-2.5 w-2.5" /> {orderCount} pedido{orderCount !== 1 ? "s" : ""}
                 </span>
               )}
             </div>
@@ -583,7 +589,7 @@ const PerfilPage = () => {
           >
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
-                <AppIcon name="Sparkles" className="h-4 w-4 text-primary" />
+                <Sparkles className="h-4 w-4 text-primary" />
                 <p className="text-sm font-black text-foreground">Complete seu cadastro</p>
               </div>
               <span className="text-[11px] font-bold text-primary">{completedCount}/{completionItems.length}</span>
@@ -596,7 +602,7 @@ const PerfilPage = () => {
             </div>
             <p className="text-[11px] text-muted-foreground mt-2 flex items-center gap-1">
               Próximo: <span className="font-semibold text-foreground">{firstPending.label}</span>
-              <AppIcon name="ChevronRight" className="h-3 w-3" />
+              <ChevronRight className="h-3 w-3" />
             </p>
           </button>
         )}
@@ -605,7 +611,7 @@ const PerfilPage = () => {
         {showInstallButton && !isInstalled && (
           <button onClick={handleInstallClick}
             className="w-full bg-card text-foreground font-bold py-3.5 rounded-2xl flex items-center justify-center gap-3 text-sm active:scale-[0.98] transition-transform shadow-md border border-border">
-            <AppIcon name="Download" className="h-5 w-5 text-primary" />
+            <Download className="h-5 w-5 text-primary" />
             📲 Instalar Aplicativo
           </button>
         )}
@@ -616,11 +622,11 @@ const PerfilPage = () => {
             <div className="bg-card w-full max-w-md rounded-t-3xl p-6 space-y-4 animate-in slide-in-from-bottom-4" onClick={(e) => e.stopPropagation()}>
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-black text-foreground">Instalar no iPhone</h3>
-                <button onClick={() => setShowIOSModal(false)} className="text-muted-foreground"><AppIcon name="X" className="h-5 w-5" /></button>
+                <button onClick={() => setShowIOSModal(false)} className="text-muted-foreground"><X className="h-5 w-5" /></button>
               </div>
               <div className="space-y-3">
                 {[
-                  { step: "1", title: "Toque no botão Compartilhar", desc: <span className="flex items-center gap-1">Ícone <AppIcon name="Share2" className="h-3.5 w-3.5 inline" /> na barra do Safari</span> },
+                  { step: "1", title: "Toque no botão Compartilhar", desc: <span className="flex items-center gap-1">Ícone <Share2 className="h-3.5 w-3.5 inline" /> na barra do Safari</span> },
                   { step: "2", title: 'Role e toque em:', desc: <>"<strong>Adicionar à Tela de Início</strong>"</> },
                   { step: "3", title: 'Toque em "Adicionar"', desc: "Pronto! O app aparecerá na sua tela inicial" },
                 ].map((item) => (
@@ -642,7 +648,7 @@ const PerfilPage = () => {
         {(profileRole === "lojista" || profileRole === "motoboy") && !isApproved && (
           <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-4 flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center shrink-0">
-              <AppIcon name="AlertTriangle" className="h-5 w-5 text-amber-600" />
+              <AlertTriangle className="h-5 w-5 text-amber-600" />
             </div>
             <div>
               <p className="text-sm font-bold text-amber-700 dark:text-amber-400">Cadastro em Análise</p>
@@ -691,7 +697,7 @@ const PerfilPage = () => {
           <button onClick={() => setActiveSection(activeSection === "personal" ? null : "personal")}
             className="w-full flex items-center gap-3.5 px-4 py-3.5 transition-colors hover:bg-muted/50">
             <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-              <AppIcon name="User" className="h-[18px] w-[18px] text-primary" />
+              <User className="h-[18px] w-[18px] text-primary" />
             </div>
             <div className="flex-1 text-left min-w-0">
               <div className="flex items-center gap-2">
@@ -702,7 +708,7 @@ const PerfilPage = () => {
                 {fullName || "Toque para cadastrar seu nome"}
               </p>
             </div>
-            <AppIcon name="ChevronRight" className={`h-4 w-4 text-muted-foreground/40 transition-transform duration-200 ${activeSection === "personal" ? "rotate-90" : ""}`} />
+            <ChevronRight className={`h-4 w-4 text-muted-foreground/40 transition-transform duration-200 ${activeSection === "personal" ? "rotate-90" : ""}`} />
           </button>
 
           {activeSection === "personal" && (
@@ -724,7 +730,7 @@ const PerfilPage = () => {
               </div>
               <button onClick={handleSavePersonal} disabled={savingPersonal}
                 className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-primary text-primary-foreground font-bold text-sm disabled:opacity-50 transition-all active:scale-[0.98] shadow-sm">
-                {savingPersonal ? <AppIcon name="Loader2" className="h-4 w-4 animate-spin" /> : <AppIcon name="Save" className="h-4 w-4" />}
+                {savingPersonal ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                 {savingPersonal ? "Salvando..." : "Salvar Dados Pessoais"}
               </button>
             </div>
@@ -738,7 +744,7 @@ const PerfilPage = () => {
           <button onClick={() => setActiveSection(activeSection === "address" ? null : "address")}
             className="w-full flex items-center gap-3.5 px-4 py-3.5 transition-colors hover:bg-muted/50">
             <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-              <AppIcon name="MapPin" className="h-[18px] w-[18px] text-primary" />
+              <MapPin className="h-[18px] w-[18px] text-primary" />
             </div>
             <div className="flex-1 text-left min-w-0">
               <div className="flex items-center gap-2">
@@ -749,7 +755,7 @@ const PerfilPage = () => {
                 {hasAddress ? `${street}, ${number} – ${neighborhood}` : "Toque para cadastrar seu endereço"}
               </p>
             </div>
-            <AppIcon name="ChevronRight" className={`h-4 w-4 text-muted-foreground/40 transition-transform duration-200 ${activeSection === "address" ? "rotate-90" : ""}`} />
+            <ChevronRight className={`h-4 w-4 text-muted-foreground/40 transition-transform duration-200 ${activeSection === "address" ? "rotate-90" : ""}`} />
           </button>
 
           {activeSection === "address" && (
@@ -761,7 +767,7 @@ const PerfilPage = () => {
                 <div className="pt-[22px]">
                   <button onClick={() => handleCepLookup()} disabled={loadingCep}
                     className="h-[46px] px-4 rounded-xl bg-primary text-primary-foreground text-sm font-bold disabled:opacity-50 flex items-center gap-1.5 shrink-0">
-                    {loadingCep ? <AppIcon name="Loader2" className="h-4 w-4 animate-spin" /> : <AppIcon name="Search" className="h-4 w-4" />}
+                    {loadingCep ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
                     Buscar
                   </button>
                 </div>
@@ -775,7 +781,7 @@ const PerfilPage = () => {
 
               {calculatedFee !== null && (
                 <div className="flex items-center gap-2.5 bg-primary/5 border border-primary/20 rounded-xl px-4 py-3">
-                  <AppIcon name="Truck" className="h-4 w-4 text-primary shrink-0" />
+                  <Truck className="h-4 w-4 text-primary shrink-0" />
                   <div>
                     <span className="text-sm font-bold text-primary">Taxa estimada: R$ {calculatedFee.toFixed(2)}</span>
                     {feeBreakdown && <p className="text-[10px] text-muted-foreground">{feeBreakdown}</p>}
@@ -796,7 +802,7 @@ const PerfilPage = () => {
 
               <div>
                 <label className="text-xs font-semibold text-muted-foreground mb-1.5 flex items-center gap-1.5">
-                  <AppIcon name="MessageCircle" className="h-3.5 w-3.5 text-green-500" /> WhatsApp (com DDD)
+                  <MessageCircle className="h-3.5 w-3.5 text-green-500" /> WhatsApp (com DDD)
                 </label>
                 <input type="tel" placeholder="(14) 99999-9999" value={whatsappNumber}
                   onChange={(e) => setWhatsappNumber(maskWhatsApp(e.target.value))} inputMode="tel"
@@ -805,7 +811,7 @@ const PerfilPage = () => {
 
               <button onClick={handleSaveAddress} disabled={savingAddress}
                 className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-primary text-primary-foreground font-bold text-sm disabled:opacity-50 transition-all active:scale-[0.98] shadow-sm">
-                {savingAddress ? <AppIcon name="Loader2" className="h-4 w-4 animate-spin" /> : <AppIcon name="Save" className="h-4 w-4" />}
+                {savingAddress ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                 {savingAddress ? "Salvando..." : "Salvar Endereço"}
               </button>
             </div>
@@ -820,7 +826,7 @@ const PerfilPage = () => {
             <button onClick={() => setActiveSection(activeSection === "pix" ? null : "pix")}
               className="w-full flex items-center gap-3.5 px-4 py-3.5 transition-colors hover:bg-muted/50">
               <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                <AppIcon name="Wallet" className="h-[18px] w-[18px] text-primary" />
+                <Wallet className="h-[18px] w-[18px] text-primary" />
               </div>
               <div className="flex-1 text-left min-w-0">
                 <div className="flex items-center gap-2">
@@ -831,14 +837,14 @@ const PerfilPage = () => {
                   {hasPix ? `${pixType.toUpperCase()} • ${pixKey.slice(0, 16)}...` : "Cadastre para receber pagamentos"}
                 </p>
               </div>
-              <AppIcon name="ChevronRight" className={`h-4 w-4 text-muted-foreground/40 transition-transform duration-200 ${activeSection === "pix" ? "rotate-90" : ""}`} />
+              <ChevronRight className={`h-4 w-4 text-muted-foreground/40 transition-transform duration-200 ${activeSection === "pix" ? "rotate-90" : ""}`} />
             </button>
 
             {activeSection === "pix" && (
               <div className="px-4 pb-5 space-y-3 border-t border-border/50 pt-4 animate-in slide-in-from-top-2 duration-200">
                 {!hasPix && (
                   <div className="bg-destructive/5 border border-destructive/20 rounded-xl p-3.5 flex items-center gap-3">
-                    <AppIcon name="AlertTriangle" className="h-5 w-5 text-destructive shrink-0" />
+                    <AlertTriangle className="h-5 w-5 text-destructive shrink-0" />
                     <p className="text-xs text-destructive font-bold">Cadastre sua chave PIX para receber pagamentos!</p>
                   </div>
                 )}
@@ -866,14 +872,14 @@ const PerfilPage = () => {
                   {pixKey && (
                     <div className="pt-[22px]">
                       <button onClick={copyPixKey} className="h-[46px] px-3.5 rounded-xl border border-border bg-background text-muted-foreground hover:text-foreground shrink-0 flex items-center">
-                        <AppIcon name="Copy" className="h-4 w-4" />
+                        <Copy className="h-4 w-4" />
                       </button>
                     </div>
                   )}
                 </div>
                 <button onClick={handleSavePix} disabled={savingPix}
                   className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-primary text-primary-foreground font-bold text-sm disabled:opacity-50 transition-all active:scale-[0.98] shadow-sm">
-                  {savingPix ? <AppIcon name="Loader2" className="h-4 w-4 animate-spin" /> : <AppIcon name="Save" className="h-4 w-4" />}
+                  {savingPix ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                   {savingPix ? "Salvando..." : "Salvar Chave PIX"}
                 </button>
               </div>
@@ -886,7 +892,7 @@ const PerfilPage = () => {
           <Card>
             <div className="w-full flex items-center gap-3.5 px-4 py-3.5">
               <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                <AppIcon name="KeyRound" className="h-[18px] w-[18px] text-primary" />
+                <KeyRound className="h-[18px] w-[18px] text-primary" />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
@@ -912,7 +918,7 @@ const PerfilPage = () => {
           <div className="divide-y divide-border/50">
             <div className="flex items-center gap-3.5 px-4 py-3.5">
               <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                <AppIcon name="Moon" className="h-[18px] w-[18px] text-primary" />
+                <Moon className="h-[18px] w-[18px] text-primary" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-foreground">Tema</p>
@@ -1027,7 +1033,7 @@ const PerfilPage = () => {
             <div className="bg-card w-full max-w-sm rounded-2xl p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
-                  <AppIcon name="KeyRound" className="h-6 w-6 text-primary" />
+                  <KeyRound className="h-6 w-6 text-primary" />
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-foreground">{hasPin ? "Alterar PIN" : "Definir PIN"}</h3>
@@ -1068,7 +1074,7 @@ const PerfilPage = () => {
                 <>
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center">
-                      <AppIcon name="AlertTriangle" className="h-6 w-6 text-destructive" />
+                      <AlertTriangle className="h-6 w-6 text-destructive" />
                     </div>
                     <div>
                       <h3 className="text-lg font-bold text-foreground">Excluir Conta</h3>
@@ -1113,7 +1119,7 @@ const PerfilPage = () => {
                     disabled={deletingAccount} />
                   {deletingAccount && (
                     <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                      <AppIcon name="Loader2" className="h-4 w-4 animate-spin" /> Excluindo conta...
+                      <Loader2 className="h-4 w-4 animate-spin" /> Excluindo conta...
                     </div>
                   )}
                   <button onClick={() => { setDeleteStep(0); setShowDeleteConfirm(false); }}
@@ -1184,8 +1190,6 @@ const PerfilPage = () => {
 
 import { useIsReseller as _useIsReseller } from "@/hooks/useIsReseller";
 import ResellerPerfil from "./revendedor/ResellerPerfil";
-import { AppIcon } from "@/components/ui/app-icon";
-import { User, LogOut, Store, Shield, UserPlus, MapPin, Save, Bike, Wallet, Copy, AlertTriangle, MessageCircle, Truck, Download, Smartphone, X, Share2, Search, Loader2, ChevronRight, Package, HelpCircle, Trash2, CheckCircle2, Users, KeyRound, Bell, Moon, Newspaper, Sparkles } from "lucide-react";
 
 const PerfilPageSwitch = () => {
   const { isReseller, loading } = _useIsReseller();

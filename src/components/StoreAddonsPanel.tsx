@@ -1,3 +1,4 @@
+import { Monitor, Check, Loader2, Sparkles, RotateCcw } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,8 +11,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { AppIcon } from "@/components/ui/app-icon";
-import { Monitor, Check, Loader2, Sparkles, RotateCcw } from "lucide-react";
 
 interface Props { storeId: string; }
 
@@ -58,13 +57,13 @@ export default function StoreAddonsPanel({ storeId }: Props) {
     <Card>
       <CardContent className="p-4 space-y-3">
         <div className="flex items-center gap-2">
-          <AppIcon name="Sparkles" className="h-4 w-4 text-primary" />
+          <Sparkles className="h-4 w-4 text-primary" />
           <h3 className="font-bold text-sm">Módulos adicionais</h3>
         </div>
 
         <div className="rounded-xl border border-border p-4 flex flex-col sm:flex-row sm:items-center gap-3">
           <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-            <AppIcon name="Monitor" className="h-5 w-5 text-primary" />
+            <Monitor className="h-5 w-5 text-primary" />
           </div>
 
           <div className="flex-1 min-w-0">
@@ -89,20 +88,20 @@ export default function StoreAddonsPanel({ storeId }: Props) {
           <div className="shrink-0 flex gap-2">
             {isNone && (
               <Button size="sm" onClick={() => call("activate")} disabled={loading}>
-                {loading ? <AppIcon name="Loader2" className="h-4 w-4 animate-spin" /> : "Ativar"}
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Ativar"}
               </Button>
             )}
             {isPaid && !access.canReactivate && (
               <Button size="sm" variant="outline" onClick={() => setConfirmCancel(true)} disabled={loading}>
-                {loading ? <AppIcon name="Loader2" className="h-4 w-4 animate-spin" /> : "Cancelar"}
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Cancelar"}
               </Button>
             )}
             {access.canReactivate && (
               <Button size="sm" onClick={() => call("reactivate")} disabled={loading}>
-                {loading ? <AppIcon name="Loader2" className="h-4 w-4 animate-spin" /> : <><AppIcon name="RotateCcw" className="h-4 w-4 mr-1" />Reativar</>}
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <><RotateCcw className="h-4 w-4 mr-1" />Reativar</>}
               </Button>
             )}
-            {isVip && <AppIcon name="Check" className="h-5 w-5 text-primary" />}
+            {isVip && <Check className="h-5 w-5 text-primary" />}
           </div>
         </div>
 

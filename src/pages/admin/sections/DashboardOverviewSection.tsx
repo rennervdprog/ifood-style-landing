@@ -3,14 +3,14 @@ import { supabase } from "@/integrations/supabase/client";
 
 type OrderStatus = any;
 type DashboardTab = any;
+import { CreditCard, AlertTriangle, ChevronRight, Clock, Bike, Monitor, ShoppingBag, DollarSign, Timer, Users, GraduationCap, ChevronUp, ChevronDown, User, MapPin, CheckCircle2, ArrowUpRight, UtensilsCrossed, Coins, Settings, Store, XCircle, Download, TrendingUp, Bell } from "lucide-react";
 import { formatBRL } from "@/lib/utils";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import PlatformFeeExplainerCard from "@/components/PlatformFeeExplainerCard";
 import EssencialProgressCard from "@/components/EssencialProgressCard";
 import { GlanceCard } from "../components/GlanceCard";
 import DriverDeliveriesCard from "../components/DriverDeliveriesCard";
-import { AppIcon } from "@/components/ui/app-icon";
-import { CreditCard, AlertTriangle, ChevronRight, Clock, Monitor, ShoppingBag, DollarSign, Timer, Users, GraduationCap, ChevronUp, ChevronDown, User, MapPin, CheckCircle2, ArrowUpRight, UtensilsCrossed, Coins, Settings, Store, XCircle, Download, TrendingUp, Bell, CalendarClock } from "lucide-react";
+import { CalendarClock } from "lucide-react";
 
 
 interface Props {
@@ -161,7 +161,7 @@ export default function DashboardOverviewSection(props: Props) {
       className="w-full text-left bg-amber-500/10 border-2 border-amber-500/30 rounded-2xl p-3.5 flex items-center gap-3 active:scale-[0.99] transition-transform"
     >
       <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500 text-white flex-shrink-0">
-        <AppIcon name="Bell" className="h-5 w-5" />
+        <Bell className="h-5 w-5" />
         <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-destructive text-destructive-foreground text-[10px] font-black flex items-center justify-center border-2 border-background">
           {avisosCount}
         </span>
@@ -172,7 +172,7 @@ export default function DashboardOverviewSection(props: Props) {
         </h3>
         <p className="text-xs text-muted-foreground mt-0.5">Toque para ver e resolver</p>
       </div>
-      <AppIcon name="ChevronRight" className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+      <ChevronRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
     </button>
   )}
 
@@ -182,7 +182,7 @@ export default function DashboardOverviewSection(props: Props) {
       className="w-full text-left bg-primary/5 border-2 border-primary/40 rounded-2xl p-3.5 flex items-center gap-3 active:scale-[0.99] transition-transform"
     >
       <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground flex-shrink-0">
-        <AppIcon name="CreditCard" className="h-5 w-5" />
+        <CreditCard className="h-5 w-5" />
         <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-destructive border-2 border-background animate-pulse" />
       </div>
       <div className="flex-1 min-w-0">
@@ -191,7 +191,7 @@ export default function DashboardOverviewSection(props: Props) {
         </h3>
         <p className="text-xs text-muted-foreground mt-0.5">Toque para pagar via PIX</p>
       </div>
-      <AppIcon name="ChevronRight" className="h-5 w-5 text-primary flex-shrink-0" />
+      <ChevronRight className="h-5 w-5 text-primary flex-shrink-0" />
     </button>
   )}
 
@@ -221,7 +221,7 @@ export default function DashboardOverviewSection(props: Props) {
           <div className={`w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 ${
             urgent ? "bg-destructive/15 text-destructive" : "bg-primary/15 text-primary"
           }`}>
-            <AppIcon name="CalendarClock" className="h-5 w-5" />
+            <CalendarClock className="h-5 w-5" />
           </div>
           <div className="flex-1 min-w-0">
             <h3 className={`text-sm font-black ${urgent ? "text-destructive" : "text-foreground"}`}>
@@ -236,7 +236,7 @@ export default function DashboardOverviewSection(props: Props) {
               )}
             </p>
           </div>
-          <AppIcon name="ChevronRight" className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+          <ChevronRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
         </div>
         <div className="w-full h-2 rounded-full bg-muted overflow-hidden">
           <div
@@ -275,7 +275,7 @@ export default function DashboardOverviewSection(props: Props) {
       <div className={`w-12 h-12 rounded-2xl border flex items-center justify-center shrink-0 transition-colors ${
         isPdvOpen ? "bg-primary/20 border-primary/30" : "bg-primary/10 border-primary/20 group-hover:bg-primary/20"
       }`}>
-        <AppIcon name="Monitor" className="h-6 w-6 text-primary" />
+        <Monitor className="h-6 w-6 text-primary" />
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
@@ -297,7 +297,7 @@ export default function DashboardOverviewSection(props: Props) {
             : "Venda no balcão, mesa ou comanda. Sem taxa PIX — maquininha própria."}
         </p>
         <p className="text-[11px] text-primary font-semibold mt-1.5 flex items-center gap-1">
-          {isPdvOpen ? "Ir para o PDV" : "Abrir caixa"} <AppIcon name="ChevronRight" className="h-3.5 w-3.5" />
+          {isPdvOpen ? "Ir para o PDV" : "Abrir caixa"} <ChevronRight className="h-3.5 w-3.5" />
         </p>
       </div>
     </button>
@@ -359,7 +359,7 @@ export default function DashboardOverviewSection(props: Props) {
         onClick={exportCsv}
         className="inline-flex items-center gap-2 text-xs font-bold text-foreground bg-card border border-border hover:border-primary/40 px-4 py-2 rounded-xl transition-colors"
       >
-        <AppIcon name="Download" className="h-3.5 w-3.5" /> Exportar pedidos de hoje (CSV)
+        <Download className="h-3.5 w-3.5" /> Exportar pedidos de hoje (CSV)
       </button>
     </div>
   )}
@@ -378,7 +378,7 @@ export default function DashboardOverviewSection(props: Props) {
     className="w-full bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border-2 border-primary/30 rounded-2xl p-4 flex items-center gap-3 hover:shadow-lg hover:border-primary/50 active:scale-[0.99] transition-all text-left"
   >
     <div className="w-12 h-12 bg-primary/15 rounded-2xl flex items-center justify-center flex-shrink-0">
-      <AppIcon name="GraduationCap" className="h-6 w-6 text-primary" />
+      <GraduationCap className="h-6 w-6 text-primary" />
     </div>
     <div className="flex-1 min-w-0">
       <h3 className="font-black text-foreground text-sm flex items-center gap-2">
@@ -387,7 +387,7 @@ export default function DashboardOverviewSection(props: Props) {
       </h3>
       <p className="text-[11px] text-muted-foreground mt-0.5">Aprenda cada função do painel passo a passo, em linguagem simples</p>
     </div>
-    <AppIcon name="ArrowUpRight" className="h-5 w-5 text-primary flex-shrink-0" />
+    <ArrowUpRight className="h-5 w-5 text-primary flex-shrink-0" />
   </button>
 
   {delayedOrders.length > 0 && (
@@ -395,14 +395,14 @@ export default function DashboardOverviewSection(props: Props) {
       <button onClick={() => setShowDelayedPanel(!showDelayedPanel)} className="w-full flex items-center justify-between p-4">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-destructive/10 rounded-xl flex items-center justify-center">
-            <AppIcon name="AlertTriangle" className="h-5 w-5 text-destructive" />
+            <AlertTriangle className="h-5 w-5 text-destructive" />
           </div>
           <div className="text-left">
             <span className="text-sm font-black text-destructive">{delayedOrders.length} pedido{delayedOrders.length > 1 ? "s" : ""} em atraso</span>
             <p className="text-[10px] text-muted-foreground">Mais de 20 min sem atualização</p>
           </div>
         </div>
-        {showDelayedPanel ? <AppIcon name="ChevronUp" className="h-5 w-5 text-destructive" /> : <AppIcon name="ChevronDown" className="h-5 w-5 text-destructive" />}
+        {showDelayedPanel ? <ChevronUp className="h-5 w-5 text-destructive" /> : <ChevronDown className="h-5 w-5 text-destructive" />}
       </button>
       {showDelayedPanel && (
         <div className="px-4 pb-4 space-y-2">
@@ -515,9 +515,9 @@ export default function DashboardOverviewSection(props: Props) {
               <p className="text-xl font-black text-foreground">{formatBRL(Number(order.total_price))}</p>
             </div>
             <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3 flex-wrap">
-              <div className="flex items-center gap-1"><AppIcon name="User" className="h-3 w-3" /><span className="font-medium">{getClientName(order.client_id)}</span></div>
+              <div className="flex items-center gap-1"><User className="h-3 w-3" /><span className="font-medium">{getClientName(order.client_id)}</span></div>
               <span>•</span>
-              <div className="flex items-center gap-1"><AppIcon name="MapPin" className="h-3 w-3" /><span>{order.neighborhood}</span></div>
+              <div className="flex items-center gap-1"><MapPin className="h-3 w-3" /><span>{order.neighborhood}</span></div>
               <span>•</span>
               <span className="font-medium">{paymentIcons[order.payment_method]} {paymentLabels[order.payment_method] || order.payment_method}</span>
             </div>
@@ -532,7 +532,7 @@ export default function DashboardOverviewSection(props: Props) {
             {order.payment_method === "pix" && (
               <div className="text-center mb-3">
                 <span className="text-[11px] bg-muted text-muted-foreground px-3 py-1 rounded-lg font-bold inline-flex items-center gap-1">
-                  <AppIcon name="CheckCircle2" className="h-3 w-3" /> PIX Confirmado
+                  <CheckCircle2 className="h-3 w-3" /> PIX Confirmado
                 </span>
               </div>
             )}
@@ -607,7 +607,7 @@ export default function DashboardOverviewSection(props: Props) {
       <div className="flex items-center justify-between">
         <h3 className="font-black text-foreground text-base">Em Andamento</h3>
         <button onClick={() => setDashboardTab("orders")} className="text-xs text-primary font-bold hover:underline flex items-center gap-1">
-          Ver todos <AppIcon name="ArrowUpRight" className="h-3 w-3" />
+          Ver todos <ArrowUpRight className="h-3 w-3" />
         </button>
       </div>
       <div className="flex gap-2.5 overflow-x-auto no-scrollbar pb-1">
@@ -660,7 +660,7 @@ export default function DashboardOverviewSection(props: Props) {
   {pendingCount === 0 && preparingCount === 0 && readyCount === 0 && todayCount === 0 && clientAnalytics.length === 0 && (
     <div className="flex flex-col items-center justify-center py-16 text-center">
       <div className="w-24 h-24 bg-muted/50 rounded-3xl flex items-center justify-center mb-5">
-        <AppIcon name="Store" className="h-12 w-12 text-muted-foreground/50" />
+        <Store className="h-12 w-12 text-muted-foreground/50" />
       </div>
       <h3 className="text-lg font-black text-foreground mb-2">Tudo tranquilo por aqui! 😌</h3>
       <p className="text-sm text-muted-foreground max-w-xs">Nenhum pedido ainda hoje. Compartilhe o link da sua loja para começar a receber pedidos!</p>

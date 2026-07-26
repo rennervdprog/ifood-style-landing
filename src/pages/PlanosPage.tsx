@@ -1,4 +1,33 @@
 import { useState, useEffect, useRef } from "react";
+import {
+  Check,
+  Star,
+  Zap,
+  ArrowRight,
+  MessageCircle,
+  Smartphone,
+  QrCode,
+  Clock,
+  TrendingUp,
+  Utensils,
+  Bell,
+  Shield,
+  ChevronDown,
+  Users,
+  CreditCard,
+  BarChart3,
+  Gift,
+  Truck,
+  X,
+   BadgePercent,
+   Crown,
+   Rocket,
+   Sparkles,
+   Package,
+   Globe,
+   Loader2,
+   Info,
+ } from "lucide-react";
  import { Button } from "@/components/ui/button";
  import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
@@ -8,8 +37,7 @@ import { PLANS, PLANS_ORDER, DELIVERY_FEE_NOTE, PIX_FEE_NOTE, type PlanInfo } fr
 import PlansComparisonTable from "@/components/PlansComparisonTable";
 import { useSupporterCount } from "@/hooks/useSupporterCount";
 import { useAddonsFlag } from "@/hooks/useStorePdvAccess";
-import { AppIcon } from "@/components/ui/app-icon";
-import { Check, Star, ArrowRight, MessageCircle, Smartphone, QrCode, Bell, Shield, ChevronDown, CreditCard, BarChart3, Truck, Sparkles, Package, Globe, Loader2, Info, Monitor } from "lucide-react";
+import { Monitor } from "lucide-react";
 
 /* ─── animated counter hook ─── */
 function useCountUp(end: number, duration = 2000, start = false) {
@@ -145,7 +173,7 @@ const faqs = [
 
         <div className="relative mx-auto max-w-5xl text-center">
           <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 text-sm font-semibold text-primary mb-8 animate-fade-in">
-            <AppIcon name="Smartphone" className="h-4 w-4" />
+            <Smartphone className="h-4 w-4" />
             Seu cardápio digital profissional em minutos
           </div>
 
@@ -166,10 +194,10 @@ const faqs = [
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in">
             <Button size="lg" onClick={handleCTA} className="text-base px-8 py-6 rounded-2xl shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all">
-              Criar meu cardápio grátis <AppIcon name="ArrowRight" className="ml-2 h-5 w-5" />
+              Criar meu cardápio grátis <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
             <Button size="lg" variant="outline" onClick={handleWhatsApp} className="text-base px-8 py-6 rounded-2xl">
-              <AppIcon name="MessageCircle" className="mr-2 h-5 w-5" /> Tirar dúvidas
+              <MessageCircle className="mr-2 h-5 w-5" /> Tirar dúvidas
             </Button>
           </div>
 
@@ -365,7 +393,7 @@ const faqs = [
                           <PopoverTrigger asChild>
                             <button type="button" className="font-bold text-foreground inline-flex items-center gap-1 underline decoration-dotted underline-offset-2">
                               + R$ 2,00
-                              <AppIcon name="Info" className="h-3 w-3 text-muted-foreground" />
+                              <Info className="h-3 w-3 text-muted-foreground" />
                             </button>
                           </PopoverTrigger>
                           <PopoverContent side="top" align="end" className="w-72 text-xs space-y-2">
@@ -405,7 +433,7 @@ const faqs = [
                     <ul className="space-y-2.5 flex-1 mb-6">
                       {plan.features.map((f) => (
                         <li key={f} className="flex items-start gap-2 text-sm text-foreground">
-                          <AppIcon name="Check" className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                          <Check className="h-4 w-4 text-primary mt-0.5 shrink-0" />
                           {f}
                         </li>
                       ))}
@@ -422,11 +450,11 @@ const faqs = [
                        variant={plan.highlight ? "default" : (isSoldOut ? "secondary" : "outline")}
                      >
                        {supporterLoading && isSupporter ? (
-                         <AppIcon name="Loader2" className="h-4 w-4 animate-spin" />
+                         <Loader2 className="h-4 w-4 animate-spin" />
                        ) : (
                          <>
                            {isSoldOut ? "Esgotado" : (plan.monthlyFee === 0 ? "Começar grátis" : "Escolher plano")}
-                           {!isSoldOut && <AppIcon name="ArrowRight" className="ml-2 h-4 w-4" />}
+                           {!isSoldOut && <ArrowRight className="ml-2 h-4 w-4" />}
                          </>
                        )}
                      </Button>
@@ -481,7 +509,7 @@ const faqs = [
                 <CardContent className="pt-6">
                   <div className="flex gap-0.5 mb-3">
                     {Array.from({ length: t.rating }).map((_, i) => (
-                      <AppIcon name="Star" key={i} className="h-4 w-4 fill-primary text-primary" />
+                      <Star key={i} className="h-4 w-4 fill-primary text-primary" />
                     ))}
                   </div>
                   <p className="text-sm text-muted-foreground italic leading-relaxed mb-4">"{t.text}"</p>
@@ -521,9 +549,11 @@ const faqs = [
                   className="w-full flex items-center justify-between p-5 text-left"
                 >
                   <span className="font-semibold text-foreground text-sm pr-4">{faq.q}</span>
-                  <AppIcon name="ChevronDown" className={`h-5 w-5 text-muted-foreground shrink-0 transition-transform ${
+                  <ChevronDown
+                    className={`h-5 w-5 text-muted-foreground shrink-0 transition-transform ${
                       openFaq === i ? "rotate-180" : ""
-                    }`} />
+                    }`}
+                  />
                 </button>
                 {openFaq === i && (
                   <div className="px-5 pb-5 text-sm text-muted-foreground leading-relaxed animate-fade-in">
@@ -540,7 +570,7 @@ const faqs = [
       <section className="py-14 px-4 bg-muted/30 border-y border-border">
         <div className="mx-auto max-w-3xl text-center">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
-            <AppIcon name="Shield" className="h-8 w-8 text-primary" />
+            <Shield className="h-8 w-8 text-primary" />
           </div>
           <h2 className="text-2xl font-bold text-foreground mb-3">
             Sem risco. Sem surpresas.
@@ -565,10 +595,10 @@ const faqs = [
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Button size="lg" onClick={handleCTA} className="text-base px-8 py-6 rounded-2xl shadow-lg shadow-primary/20">
-              Criar meu cardápio grátis <AppIcon name="ArrowRight" className="ml-2 h-5 w-5" />
+              Criar meu cardápio grátis <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
             <Button size="lg" variant="outline" onClick={handleWhatsApp} className="text-base px-8 py-6 rounded-2xl">
-              <AppIcon name="MessageCircle" className="mr-2 h-5 w-5" /> Falar no WhatsApp
+              <MessageCircle className="mr-2 h-5 w-5" /> Falar no WhatsApp
             </Button>
           </div>
         </div>
@@ -597,7 +627,7 @@ function AddonsSection() {
       <div className="mx-auto max-w-3xl">
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold mb-3">
-            <AppIcon name="Sparkles" className="h-3.5 w-3.5" /> Módulos opcionais
+            <Sparkles className="h-3.5 w-3.5" /> Módulos opcionais
           </div>
           <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
             Turbine com módulos extras
@@ -610,7 +640,7 @@ function AddonsSection() {
         <Card className="border-2 border-primary/20">
           <CardContent className="p-6 flex flex-col sm:flex-row sm:items-center gap-4">
             <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0">
-              <AppIcon name="Monitor" className="h-7 w-7 text-primary" />
+              <Monitor className="h-7 w-7 text-primary" />
             </div>
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">

@@ -2,11 +2,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { ArrowLeft, Clock, Copy, Upload, Loader2, CheckCircle2, AlertTriangle, QrCode } from "lucide-react";
 import { formatBRL } from "@/lib/utils";
 import { copyToClipboard } from "@/lib/clipboard";
 import { formatPixKeyDisplay } from "@/lib/pixFormat";
-import { AppIcon } from "@/components/ui/app-icon";
-import { ArrowLeft, Clock, Copy, Upload, Loader2, CheckCircle2, AlertTriangle, QrCode } from "lucide-react";
 
 /**
  * Tela do cliente para pagamento via "Pix Direto".
@@ -117,7 +116,7 @@ const PixDiretoPaymentPage = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <AppIcon name="Loader2" className="h-6 w-6 animate-spin text-primary" />
+        <Loader2 className="h-6 w-6 animate-spin text-primary" />
       </div>
     );
   }
@@ -126,7 +125,7 @@ const PixDiretoPaymentPage = () => {
     <div className="min-h-screen bg-background pb-24">
       <header className="sticky top-0 z-40 bg-card/95 backdrop-blur border-b border-border flex items-center h-14 px-4 gap-3">
         <button onClick={() => navigate("/pedidos")} className="p-1 -ml-1">
-          <AppIcon name="ArrowLeft" className="h-5 w-5 text-foreground" />
+          <ArrowLeft className="h-5 w-5 text-foreground" />
         </button>
         <h1 className="font-bold text-foreground flex-1">Pagamento via Pix Direto</h1>
       </header>
@@ -143,7 +142,7 @@ const PixDiretoPaymentPage = () => {
 
         {!proofSent && !confirmed && !refused && !canceled && (
           <div className={`rounded-2xl border p-4 flex items-center gap-3 ${expired ? "border-destructive/40 bg-destructive/10" : "border-amber-500/30 bg-amber-500/10"}`}>
-            <AppIcon name="Clock" className={`h-5 w-5 ${expired ? "text-destructive" : "text-amber-600"}`} />
+            <Clock className={`h-5 w-5 ${expired ? "text-destructive" : "text-amber-600"}`} />
             <div className="flex-1">
               <p className={`text-sm font-bold ${expired ? "text-destructive" : "text-amber-700 dark:text-amber-400"}`}>
                 {expired ? "Tempo esgotado" : "Envie o comprovante em"}
@@ -159,7 +158,7 @@ const PixDiretoPaymentPage = () => {
 
         <div className="rounded-2xl border border-border bg-card p-4 space-y-3">
           <div className="flex items-center gap-2">
-            <AppIcon name="QrCode" className="h-4 w-4 text-primary" />
+            <QrCode className="h-4 w-4 text-primary" />
             <h2 className="text-sm font-bold text-foreground">Chave PIX da loja</h2>
           </div>
           {store?.pix_direto_beneficiary && (
@@ -169,7 +168,7 @@ const PixDiretoPaymentPage = () => {
           <div className="flex items-center gap-2">
             <div className="flex-1 min-w-0 bg-muted rounded-xl px-3 py-2.5 text-sm font-mono truncate">{keyDisplay || "—"}</div>
             <button onClick={handleCopy} className="p-2.5 rounded-xl bg-primary text-primary-foreground shrink-0" title="Copiar">
-              <AppIcon name="Copy" className="h-4 w-4" />
+              <Copy className="h-4 w-4" />
             </button>
           </div>
           {store?.pix_direto_instructions && (
@@ -179,7 +178,7 @@ const PixDiretoPaymentPage = () => {
 
         {confirmed ? (
           <div className="rounded-2xl border border-emerald-500/40 bg-emerald-500/10 p-4 flex items-center gap-3">
-            <AppIcon name="CheckCircle2" className="h-6 w-6 text-emerald-600" />
+            <CheckCircle2 className="h-6 w-6 text-emerald-600" />
             <div>
               <p className="text-sm font-bold text-emerald-700 dark:text-emerald-400">Pagamento confirmado!</p>
               <p className="text-xs text-emerald-700/80">Seu pedido já está em preparo.</p>
@@ -188,7 +187,7 @@ const PixDiretoPaymentPage = () => {
         ) : refused ? (
           <div className="rounded-2xl border border-destructive/40 bg-destructive/10 p-4 space-y-2">
             <div className="flex items-center gap-2">
-              <AppIcon name="AlertTriangle" className="h-5 w-5 text-destructive" />
+              <AlertTriangle className="h-5 w-5 text-destructive" />
               <p className="text-sm font-bold text-destructive">Comprovante recusado</p>
             </div>
             {order?.pix_refused_reason && (
@@ -201,7 +200,7 @@ const PixDiretoPaymentPage = () => {
           </div>
         ) : proofSent ? (
           <div className="rounded-2xl border border-primary/40 bg-primary/10 p-4 flex items-center gap-3">
-            <AppIcon name="Loader2" className="h-5 w-5 text-primary animate-spin" />
+            <Loader2 className="h-5 w-5 text-primary animate-spin" />
             <div>
               <p className="text-sm font-bold text-primary">Aguardando confirmação da loja</p>
               <p className="text-xs text-muted-foreground">Assim que confirmarem o recebimento, seu pedido entra em preparo.</p>
@@ -221,7 +220,7 @@ const PixDiretoPaymentPage = () => {
               disabled={uploading || expired}
               className="w-full inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground font-bold py-4 rounded-2xl disabled:opacity-50"
             >
-              {uploading ? <AppIcon name="Loader2" className="h-5 w-5 animate-spin" /> : <AppIcon name="Upload" className="h-5 w-5" />}
+              {uploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Upload className="h-5 w-5" />}
               {uploading ? "Enviando..." : "Enviar comprovante do PIX"}
             </button>
             <p className="text-[11px] text-center text-muted-foreground">JPG, PNG ou PDF · até 5 MB</p>

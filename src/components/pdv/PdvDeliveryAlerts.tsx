@@ -1,10 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { Bell, X } from "lucide-react";
 import { toast } from "sonner";
 import { ALERT_SOUND_URL } from "@/pages/admin/constants";
-import { AppIcon } from "@/components/ui/app-icon";
-import { Bell, X } from "lucide-react";
 
 interface PendingOrder {
   id: string;
@@ -110,7 +109,7 @@ export const PdvDeliveryAlerts = ({ storeId }: Props) => {
       onClick={() => navigate("/admin?tab=orders")}
       className="fixed bottom-4 right-4 z-50 flex items-center gap-2 rounded-full bg-primary px-4 py-3 text-primary-foreground shadow-lg shadow-primary/30 ring-2 ring-primary/40 animate-pulse hover:scale-105 transition-transform"
     >
-      <AppIcon name="Bell" className="h-5 w-5" />
+      <Bell className="h-5 w-5" />
       <span className="text-sm font-bold">
         {pending.length} novo{pending.length > 1 ? "s" : ""} no Delivery
       </span>
@@ -124,7 +123,7 @@ export const PdvDeliveryAlerts = ({ storeId }: Props) => {
         className="ml-1 rounded-full p-1 hover:bg-primary-foreground/20 cursor-pointer"
         aria-label="Ocultar"
       >
-        <AppIcon name="X" className="h-3.5 w-3.5" />
+        <X className="h-3.5 w-3.5" />
       </span>
     </button>
   );

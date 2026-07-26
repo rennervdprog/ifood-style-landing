@@ -10,8 +10,11 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { formatBRL } from "@/lib/utils";
 import SignOutConfirm from "@/components/SignOutConfirm";
-import { AppIcon } from "@/components/ui/app-icon";
-import { Store, Plus, LogOut, Building2, TrendingUp, DollarSign, ShoppingBag, MapPin, ChevronRight, Loader2, Users, X, AlertCircle } from "lucide-react";
+import {
+  Store, Plus, LogOut, Building2, TrendingUp, DollarSign,
+  ShoppingBag, MapPin, ChevronRight, Loader2, Users, X,
+  AlertCircle,
+} from "lucide-react";
 
 interface Network {
   id: string;
@@ -136,7 +139,7 @@ const MatrizDashboard = () => {
   if (loadingNetwork) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <AppIcon name="Loader2" className="h-8 w-8 animate-spin text-primary" />
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -145,7 +148,7 @@ const MatrizDashboard = () => {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background p-6">
         <div className="text-center max-w-sm">
-          <AppIcon name="Building2" className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <Building2 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
           <h2 className="text-lg font-black mb-2">Você não é matriz</h2>
           <p className="text-sm text-muted-foreground mb-4">Esta conta não está configurada como rede matriz.</p>
           <button onClick={() => navigate("/admin")} className="bg-primary text-primary-foreground rounded-xl px-4 py-2 text-sm font-bold">
@@ -166,7 +169,7 @@ const MatrizDashboard = () => {
               <img src={network.logo_url} alt={network.name} loading="lazy" decoding="async" className="w-10 h-10 rounded-xl object-cover" />
             ) : (
               <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                <AppIcon name="Building2" className="h-5 w-5 text-primary" />
+                <Building2 className="h-5 w-5 text-primary" />
               </div>
             )}
             <div className="min-w-0">
@@ -176,14 +179,14 @@ const MatrizDashboard = () => {
           </div>
           <SignOutConfirm redirectTo="/portal-parceiro">
             <button className="p-2 text-muted-foreground hover:text-foreground">
-              <AppIcon name="LogOut" className="h-4 w-4" />
+              <LogOut className="h-4 w-4" />
             </button>
           </SignOutConfirm>
         </div>
 
         {!network.is_approved && (
           <div className="px-4 py-2 bg-amber-500/10 border-t border-amber-500/20 flex items-center gap-2">
-            <AppIcon name="AlertCircle" className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+            <AlertCircle className="h-3.5 w-3.5 text-amber-500 shrink-0" />
             <p className="text-[11px] text-amber-700 dark:text-amber-400">Aguardando aprovação. Crie as unidades — elas serão liberadas automaticamente após aprovação.</p>
           </div>
         )}
@@ -219,12 +222,12 @@ const MatrizDashboard = () => {
               disabled={units.length >= network.max_units}
               className="w-full bg-primary text-primary-foreground rounded-xl p-3.5 font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50 active:scale-[0.98] transition-transform"
             >
-              <AppIcon name="Plus" className="h-4 w-4" /> Criar nova unidade ({units.length}/{network.max_units})
+              <Plus className="h-4 w-4" /> Criar nova unidade ({units.length}/{network.max_units})
             </button>
 
             {units.length === 0 ? (
               <div className="text-center py-12">
-                <AppIcon name="Store" className="h-12 w-12 text-muted-foreground/40 mx-auto mb-3" />
+                <Store className="h-12 w-12 text-muted-foreground/40 mx-auto mb-3" />
                 <p className="text-sm font-bold text-muted-foreground">Nenhuma unidade criada</p>
                 <p className="text-xs text-muted-foreground mt-1">Crie a primeira unidade da sua rede</p>
               </div>
@@ -237,7 +240,7 @@ const MatrizDashboard = () => {
                         <img src={unit.image_url} alt={unit.name} loading="lazy" decoding="async" className="w-12 h-12 rounded-xl object-cover" />
                       ) : (
                         <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                          <AppIcon name="Store" className="h-5 w-5 text-primary" />
+                          <Store className="h-5 w-5 text-primary" />
                         </div>
                       )}
                       <div className="flex-1 min-w-0">
@@ -245,7 +248,7 @@ const MatrizDashboard = () => {
                         <div className="flex items-center gap-1.5 mt-0.5">
                           {unit.address_city && (
                             <span className="text-[11px] text-muted-foreground flex items-center gap-0.5">
-                              <AppIcon name="MapPin" className="h-3 w-3" /> {unit.address_city}
+                              <MapPin className="h-3 w-3" /> {unit.address_city}
                             </span>
                           )}
                           <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
@@ -258,7 +261,7 @@ const MatrizDashboard = () => {
                         </div>
                       </div>
                       <button onClick={() => setShowLinkModal(unit)} className="p-2 text-muted-foreground hover:text-primary">
-                        <AppIcon name="Users" className="h-4 w-4" />
+                        <Users className="h-4 w-4" />
                       </button>
                     </div>
                   </div>
@@ -273,7 +276,7 @@ const MatrizDashboard = () => {
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-card border border-border rounded-2xl p-4">
                 <div className="flex items-center gap-2 mb-2">
-                  <AppIcon name="DollarSign" className="h-4 w-4 text-emerald-500" />
+                  <DollarSign className="h-4 w-4 text-emerald-500" />
                   <p className="text-[11px] font-bold text-muted-foreground uppercase">Faturamento</p>
                 </div>
                 <p className="text-xl font-black">{formatBRL(financials?.totalRevenue || 0)}</p>
@@ -281,7 +284,7 @@ const MatrizDashboard = () => {
               </div>
               <div className="bg-card border border-border rounded-2xl p-4">
                 <div className="flex items-center gap-2 mb-2">
-                  <AppIcon name="ShoppingBag" className="h-4 w-4 text-blue-500" />
+                  <ShoppingBag className="h-4 w-4 text-blue-500" />
                   <p className="text-[11px] font-bold text-muted-foreground uppercase">Pedidos</p>
                 </div>
                 <p className="text-xl font-black">{financials?.totalOrders || 0}</p>
@@ -374,7 +377,7 @@ const UnitReport = ({ unit }: { unit: Unit }) => {
           <p className="text-sm font-bold">{unit.name}</p>
           {unit.address_city && <p className="text-[11px] text-muted-foreground">{unit.address_city}</p>}
         </div>
-        <AppIcon name="ChevronRight" className="h-4 w-4 text-muted-foreground" />
+        <ChevronRight className="h-4 w-4 text-muted-foreground" />
       </div>
       <div className="mt-3 grid grid-cols-2 gap-2">
         <div className="bg-muted/40 rounded-xl p-2 text-center">
@@ -450,7 +453,7 @@ const CreateUnitModal = ({ onClose, onSubmit, submitting, networkId, sourceUnits
       <div className="bg-background w-full max-w-md rounded-t-3xl sm:rounded-3xl max-h-[90vh] overflow-y-auto">
         <div className="sticky top-0 bg-background border-b border-border px-5 py-3.5 flex items-center justify-between">
           <h2 className="text-sm font-black">Nova Unidade</h2>
-          <button onClick={onClose}><AppIcon name="X" className="h-4 w-4 text-muted-foreground" /></button>
+          <button onClick={onClose}><X className="h-4 w-4 text-muted-foreground" /></button>
         </div>
         <div className="p-5 space-y-3">
           <div>
@@ -516,7 +519,7 @@ const CreateUnitModal = ({ onClose, onSubmit, submitting, networkId, sourceUnits
 
           <button onClick={handleSubmit} disabled={submitting}
             className="w-full bg-primary text-primary-foreground rounded-xl py-3 font-black text-sm disabled:opacity-50 flex items-center justify-center gap-2">
-            {submitting ? <AppIcon name="Loader2" className="h-4 w-4 animate-spin" /> : <AppIcon name="Plus" className="h-4 w-4" />}
+            {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
             Criar unidade
           </button>
         </div>
@@ -559,7 +562,7 @@ const LinkUserModal = ({ unit, onClose }: { unit: Unit; onClose: () => void }) =
       <div className="bg-background w-full max-w-md rounded-t-3xl sm:rounded-3xl max-h-[90vh] overflow-y-auto">
         <div className="sticky top-0 bg-background border-b border-border px-5 py-3.5 flex items-center justify-between">
           <h2 className="text-sm font-black">Vincular gerente</h2>
-          <button onClick={onClose}><AppIcon name="X" className="h-4 w-4 text-muted-foreground" /></button>
+          <button onClick={onClose}><X className="h-4 w-4 text-muted-foreground" /></button>
         </div>
         <div className="p-5 space-y-4">
           <div className="bg-muted/40 rounded-xl p-3">
@@ -589,7 +592,7 @@ const LinkUserModal = ({ unit, onClose }: { unit: Unit; onClose: () => void }) =
 
           <button onClick={handleLink} disabled={linking}
             className="w-full bg-primary text-primary-foreground rounded-xl py-3 font-black text-sm disabled:opacity-50 flex items-center justify-center gap-2">
-            {linking ? <AppIcon name="Loader2" className="h-4 w-4 animate-spin" /> : <AppIcon name="Users" className="h-4 w-4" />}
+            {linking ? <Loader2 className="h-4 w-4 animate-spin" /> : <Users className="h-4 w-4" />}
             Vincular gerente
           </button>
         </div>

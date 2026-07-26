@@ -1,5 +1,4 @@
 import { assertExternalBackend } from "./lib/externalBackend";
-import "./lib/icons-bundle";
 
 assertExternalBackend();
 

@@ -2,8 +2,12 @@ import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { formatBRL } from "@/lib/utils";
-import { AppIcon } from "@/components/ui/app-icon";
-import { TrendingUp, BarChart3, Clock, Banknote, CreditCard, Smartphone, Loader2, Trophy, ChevronDown, ChevronUp, Calendar, ArrowUpRight, Percent, Receipt, Download, Users } from "lucide-react";
+import {
+  TrendingUp, ShoppingBag, BarChart3, Clock,
+  Banknote, CreditCard, Smartphone, Loader2,
+  Trophy, ChevronDown, ChevronUp, Calendar,
+  ArrowUpRight, Percent, Receipt, Download, Users,
+} from "lucide-react";
 
 // ─── tipos ────────────────────────────────────────────────────────────────────
 
@@ -293,7 +297,7 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <AppIcon name="Loader2" className="h-6 w-6 animate-spin text-primary" />
+        <Loader2 className="h-6 w-6 animate-spin text-primary" />
       </div>
     );
   }
@@ -315,7 +319,7 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
               className="ml-auto px-3 py-1.5 rounded-full text-[11px] font-bold border border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 transition-colors flex items-center gap-1"
               title="Exportar CSV"
             >
-              <AppIcon name="Download" className="h-3 w-3" /> CSV
+              <Download className="h-3 w-3" /> CSV
             </button>
           )}
         </div>
@@ -331,7 +335,7 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
 
       {!stats ? (
         <div className="text-center py-12 text-muted-foreground">
-          <AppIcon name="BarChart3" className="h-10 w-10 mx-auto mb-2 opacity-20" />
+          <BarChart3 className="h-10 w-10 mx-auto mb-2 opacity-20" />
           <p className="text-sm font-medium">Nenhuma venda no período</p>
           <p className="text-xs mt-1">Faça vendas no PDV para ver os relatórios</p>
         </div>
@@ -341,7 +345,7 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
           <div className="grid grid-cols-2 gap-2">
             <div className="bg-card border border-border rounded-2xl p-3.5">
               <div className="flex items-center gap-1.5 mb-1">
-                <AppIcon name="TrendingUp" className="h-3.5 w-3.5 text-primary" />
+                <TrendingUp className="h-3.5 w-3.5 text-primary" />
                 <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Faturamento</p>
               </div>
               <p className="text-xl font-black text-primary">{formatBRL(stats.totalSales)}</p>
@@ -350,7 +354,7 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
 
             <div className="bg-card border border-border rounded-2xl p-3.5">
               <div className="flex items-center gap-1.5 mb-1">
-                <AppIcon name="Receipt" className="h-3.5 w-3.5 text-blue-500" />
+                <Receipt className="h-3.5 w-3.5 text-blue-500" />
                 <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Ticket Médio</p>
               </div>
               <p className="text-xl font-black text-blue-500">{formatBRL(stats.avgTicket)}</p>
@@ -359,7 +363,7 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
 
             <div className="bg-card border border-border rounded-2xl p-3.5">
               <div className="flex items-center gap-1.5 mb-1">
-                <AppIcon name="Percent" className="h-3.5 w-3.5 text-amber-500" />
+                <Percent className="h-3.5 w-3.5 text-amber-500" />
                 <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Descontos</p>
               </div>
               <p className="text-xl font-black text-amber-500">{formatBRL(stats.totalDiscount)}</p>
@@ -368,7 +372,7 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
 
             <div className="bg-card border border-border rounded-2xl p-3.5">
               <div className="flex items-center gap-1.5 mb-1">
-                <AppIcon name="ArrowUpRight" className="h-3.5 w-3.5 text-emerald-500" />
+                <ArrowUpRight className="h-3.5 w-3.5 text-emerald-500" />
                 <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Comissão</p>
               </div>
               <p className="text-xl font-black text-emerald-500">{formatBRL(stats.totalCommission)}</p>
@@ -380,7 +384,7 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
           {stats.peakHour && (
             <div className="bg-card border border-border rounded-2xl p-4">
               <div className="flex items-center gap-2 mb-3">
-                <AppIcon name="Clock" className="h-4 w-4 text-primary" />
+                <Clock className="h-4 w-4 text-primary" />
                 <h3 className="text-sm font-black">Horário de Pico</h3>
                 <span className="text-[10px] bg-primary/10 text-primary font-bold px-2 py-0.5 rounded-full ml-auto">
                   {String(stats.peakHour.hour).padStart(2, "0")}:00 — {stats.peakHour.count} vendas
@@ -416,7 +420,7 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
           {/* ── Por forma de pagamento ── */}
           <div className="bg-card border border-border rounded-2xl p-4">
             <div className="flex items-center gap-2 mb-3">
-              <AppIcon name="Banknote" className="h-4 w-4 text-primary" />
+              <Banknote className="h-4 w-4 text-primary" />
               <h3 className="text-sm font-black">Formas de Pagamento</h3>
             </div>
             <div className="space-y-2.5">
@@ -449,7 +453,7 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
           {stats.topProducts.length > 0 && (
             <div className="bg-card border border-border rounded-2xl p-4">
               <div className="flex items-center gap-2 mb-1">
-                <AppIcon name="Trophy" className="h-4 w-4 text-amber-500" />
+                <Trophy className="h-4 w-4 text-amber-500" />
                 <h3 className="text-sm font-black">Ranking de Produtos</h3>
                 <span className="text-[10px] text-muted-foreground ml-auto">Curva ABC</span>
               </div>
@@ -495,7 +499,7 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
                   onClick={() => setExpandProducts(!expandProducts)}
                   className="w-full mt-3 py-2 text-xs font-bold text-muted-foreground hover:text-foreground transition-colors flex items-center justify-center gap-1"
                 >
-                  {expandProducts ? <><AppIcon name="ChevronUp" className="h-3 w-3" /> Mostrar menos</> : <><AppIcon name="ChevronDown" className="h-3 w-3" /> Ver todos ({stats.topProducts.length})</>}
+                  {expandProducts ? <><ChevronUp className="h-3 w-3" /> Mostrar menos</> : <><ChevronDown className="h-3 w-3" /> Ver todos ({stats.topProducts.length})</>}
                 </button>
               )}
             </div>
@@ -505,7 +509,7 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
           {operatorStats.length > 0 && (
             <div className="bg-card border border-border rounded-2xl p-4">
               <div className="flex items-center gap-2 mb-3">
-                <AppIcon name="Users" className="h-4 w-4 text-primary" />
+                <Users className="h-4 w-4 text-primary" />
                 <h3 className="text-sm font-black">Produtividade por Operador</h3>
               </div>
               <div className="space-y-2">
@@ -540,7 +544,7 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
           {Object.keys(stats.byDay).length > 1 && (
             <div className="bg-card border border-border rounded-2xl p-4">
               <div className="flex items-center gap-2 mb-3">
-                <AppIcon name="Calendar" className="h-4 w-4 text-primary" />
+                <Calendar className="h-4 w-4 text-primary" />
                 <h3 className="text-sm font-black">Vendas por Dia</h3>
               </div>
               <div className="grid grid-cols-7 gap-1">

@@ -3,10 +3,9 @@ import { formatBRL } from "@/lib/utils";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { Plus, Trash2, Edit2, Save, Circle } from "lucide-react";
 import { formatBRLDisplay, parseBRLCentsInput } from "@/hooks/useBRLInput";
 import { useConfirmDialog } from "@/hooks/useConfirmDialog";
-import { AppIcon } from "@/components/ui/app-icon";
-import { Plus, Trash2, Edit2, Save, Circle } from "lucide-react";
 
 interface PizzaBorderManagerProps {
   storeId: string;
@@ -113,14 +112,14 @@ const PizzaBorderManager = ({ storeId }: PizzaBorderManagerProps) => {
       <ConfirmDialog />
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <AppIcon name="Circle" className="h-5 w-5 text-primary" />
+          <Circle className="h-5 w-5 text-primary" />
           <h2 className="text-sm font-bold text-foreground/80 uppercase tracking-wider">Bordas de Pizza</h2>
         </div>
         <button
           onClick={() => setShowAdd(true)}
           className="flex items-center gap-1.5 bg-primary/20 text-primary px-3 py-2 rounded-xl text-xs font-bold"
         >
-          <AppIcon name="Plus" className="h-3.5 w-3.5" /> Nova Borda
+          <Plus className="h-3.5 w-3.5" /> Nova Borda
         </button>
       </div>
 
@@ -155,7 +154,7 @@ const PizzaBorderManager = ({ storeId }: PizzaBorderManagerProps) => {
           </div>
           <div className="flex gap-2">
             <button onClick={addBorder} className="flex-1 bg-primary text-primary-foreground py-2 rounded-lg text-sm font-bold">
-              <AppIcon name="Save" className="h-4 w-4 inline mr-1" /> Salvar
+              <Save className="h-4 w-4 inline mr-1" /> Salvar
             </button>
             <button onClick={() => { setShowAdd(false); setNewName(""); setNewPrice(""); }} className="px-4 py-2 text-muted-foreground text-sm">
               Cancelar
@@ -172,7 +171,7 @@ const PizzaBorderManager = ({ storeId }: PizzaBorderManagerProps) => {
         </div>
       ) : borders.length === 0 ? (
         <div className="bg-card border border-dashed border-border rounded-2xl p-8 text-center space-y-2">
-          <AppIcon name="Circle" className="h-8 w-8 text-muted-foreground mx-auto" />
+          <Circle className="h-8 w-8 text-muted-foreground mx-auto" />
           <p className="text-sm text-muted-foreground font-medium">Nenhuma borda cadastrada</p>
           <p className="text-xs text-muted-foreground">Adicione bordas para seus clientes escolherem</p>
         </div>
@@ -208,7 +207,7 @@ const PizzaBorderManager = ({ storeId }: PizzaBorderManagerProps) => {
                     />
                   </div>
                   <button onClick={() => saveEdit(border.id)} className="text-primary">
-                    <AppIcon name="Save" className="h-4 w-4" />
+                    <Save className="h-4 w-4" />
                   </button>
                 </div>
               ) : (
@@ -237,7 +236,7 @@ const PizzaBorderManager = ({ storeId }: PizzaBorderManagerProps) => {
                     }}
                     className="text-muted-foreground hover:text-foreground"
                   >
-                    <AppIcon name="Edit2" className="h-3.5 w-3.5" />
+                    <Edit2 className="h-3.5 w-3.5" />
                   </button>
                   <button
                     onClick={async () => {
@@ -251,7 +250,7 @@ const PizzaBorderManager = ({ storeId }: PizzaBorderManagerProps) => {
                     }}
                     className="text-muted-foreground hover:text-destructive"
                   >
-                    <AppIcon name="Trash2" className="h-3.5 w-3.5" />
+                    <Trash2 className="h-3.5 w-3.5" />
                   </button>
                 </>
               )}

@@ -3,7 +3,6 @@ import { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { AppIcon } from "@/components/ui/app-icon";
 import { Star, Save, Loader2 } from "lucide-react";
 
 interface LoyaltyConfigPanelProps {
@@ -135,7 +134,7 @@ const LoyaltyConfigPanel = ({ storeId }: LoyaltyConfigPanelProps) => {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <AppIcon name="Loader2" className="h-6 w-6 animate-spin text-primary" />
+        <Loader2 className="h-6 w-6 animate-spin text-primary" />
       </div>
     );
   }
@@ -145,7 +144,7 @@ const LoyaltyConfigPanel = ({ storeId }: LoyaltyConfigPanelProps) => {
       {/* Header */}
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-          <AppIcon name="Star" className="h-5 w-5 text-primary fill-primary" />
+          <Star className="h-5 w-5 text-primary fill-primary" />
         </div>
         <div>
           <h3 className="text-base font-bold text-foreground">Programa de Fidelidade</h3>
@@ -257,7 +256,7 @@ const LoyaltyConfigPanel = ({ storeId }: LoyaltyConfigPanelProps) => {
         disabled={saving}
         className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground font-bold py-3.5 rounded-xl active:scale-[0.98] transition-all disabled:opacity-50"
       >
-        {saving ? <AppIcon name="Loader2" className="h-4 w-4 animate-spin" /> : <AppIcon name="Save" className="h-4 w-4" />}
+        {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
         Salvar configuração
       </button>
     </div>

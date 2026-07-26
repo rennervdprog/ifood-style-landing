@@ -1,9 +1,8 @@
 import { useState } from "react";
+import { Store, Trash2, CheckCircle2, Clock, XCircle, Filter, Wallet, Loader2, Percent, DollarSign, ChevronDown, ChevronUp, Smartphone } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { AppIcon } from "@/components/ui/app-icon";
-import { Store, Trash2, CheckCircle2, Clock, XCircle, Filter, Loader2, Percent, DollarSign, ChevronUp, Smartphone } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -242,19 +241,19 @@ const AdminStoreManager = () => {
       case "ativo":
         return (
           <span className="px-2 py-0.5 bg-green-500/20 text-green-600 text-xs font-bold rounded-full flex items-center gap-1">
-            <AppIcon name="CheckCircle2" className="h-3 w-3" /> Ativa
+            <CheckCircle2 className="h-3 w-3" /> Ativa
           </span>
         );
       case "analise":
         return (
           <span className="px-2 py-0.5 bg-yellow-500/20 text-yellow-600 text-xs font-bold rounded-full flex items-center gap-1">
-            <AppIcon name="Clock" className="h-3 w-3" /> Pendente
+            <Clock className="h-3 w-3" /> Pendente
           </span>
         );
       case "bloqueado":
         return (
           <span className="px-2 py-0.5 bg-red-500/20 text-red-600 text-xs font-bold rounded-full flex items-center gap-1">
-            <AppIcon name="XCircle" className="h-3 w-3" /> Bloqueada
+            <XCircle className="h-3 w-3" /> Bloqueada
           </span>
         );
       default:
@@ -284,7 +283,7 @@ const AdminStoreManager = () => {
     <div className="space-y-4">
       {/* Filters */}
       <div className="flex items-center gap-2 overflow-x-auto hide-scrollbar pb-1">
-        <AppIcon name="Filter" className="h-4 w-4 text-muted-foreground shrink-0" />
+        <Filter className="h-4 w-4 text-muted-foreground shrink-0" />
         {filters.map((f) => (
           <button
             key={f.key}
@@ -352,7 +351,7 @@ const AdminStoreManager = () => {
                       <img loading="lazy" decoding="async" src={store.image_url} alt={store.name} className="w-11 h-11 rounded-xl object-cover shrink-0" />
                     ) : (
                       <div className="w-11 h-11 rounded-xl bg-muted flex items-center justify-center shrink-0">
-                        <AppIcon name="Store" className="h-5 w-5 text-muted-foreground" />
+                        <Store className="h-5 w-5 text-muted-foreground" />
                       </div>
                     )}
                     <div className="min-w-0 flex-1">
@@ -370,7 +369,7 @@ const AdminStoreManager = () => {
                           <>
                             <span className="text-muted-foreground/30">•</span>
                             <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-primary/20 text-primary flex items-center gap-0.5">
-                              <AppIcon name="Smartphone" className="h-2.5 w-2.5" /> App
+                              <Smartphone className="h-2.5 w-2.5" /> App
                             </span>
                           </>
                         )}
@@ -397,7 +396,7 @@ const AdminStoreManager = () => {
                         : "bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary"
                     }`}
                   >
-                    {togglingApp === store.id ? <AppIcon name="Loader2" className="h-3.5 w-3.5 animate-spin" /> : <AppIcon name="Smartphone" className="h-3.5 w-3.5" />}
+                    {togglingApp === store.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Smartphone className="h-3.5 w-3.5" />}
                     {(store as any).app_enabled ? "App ✓" : "Liberar App"}
                   </button>
                   <button
@@ -408,7 +407,7 @@ const AdminStoreManager = () => {
                         : "bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary"
                     }`}
                   >
-                    {editingPlan === store.id ? <AppIcon name="ChevronUp" className="h-3.5 w-3.5" /> : <AppIcon name="Percent" className="h-3.5 w-3.5" />}
+                    {editingPlan === store.id ? <ChevronUp className="h-3.5 w-3.5" /> : <Percent className="h-3.5 w-3.5" />}
                     Plano
                   </button>
                   <button
@@ -416,7 +415,7 @@ const AdminStoreManager = () => {
                     className="py-2 px-3 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500/20 active:scale-[0.97] transition-all flex items-center justify-center"
                     title="Excluir loja"
                   >
-                    <AppIcon name="Trash2" className="h-3.5 w-3.5" />
+                    <Trash2 className="h-3.5 w-3.5" />
                   </button>
                 </div>
 
@@ -463,7 +462,7 @@ const AdminStoreManager = () => {
                       <div>
                         <label className="text-xs text-muted-foreground mb-1 block">Mensalidade (R$)</label>
                         <div className="relative">
-                          <AppIcon name="DollarSign" className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                           <input
                             type="number"
                             value={planForm.monthly_fee}
@@ -481,7 +480,7 @@ const AdminStoreManager = () => {
                       <div>
                         <label className="text-xs text-muted-foreground mb-1 block">Taxa por pedido (%)</label>
                         <div className="relative">
-                          <AppIcon name="Percent" className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Percent className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                           <input
                             type="number"
                             value={planForm.commission_rate}
@@ -540,7 +539,7 @@ const AdminStoreManager = () => {
         <AlertDialogContent className="bg-card border-border max-w-sm mx-4">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-destructive flex items-center gap-2">
-              <AppIcon name="Trash2" className="h-5 w-5" />
+              <Trash2 className="h-5 w-5" />
               Excluir Loja
             </AlertDialogTitle>
             <AlertDialogDescription className="text-muted-foreground">

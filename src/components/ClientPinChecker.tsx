@@ -3,9 +3,8 @@ import { useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { toast } from "sonner";
-import { AppIcon } from "@/components/ui/app-icon";
 import { KeyRound, ShieldAlert } from "lucide-react";
+import { toast } from "sonner";
 
 /**
  * Modal global e bloqueante: força clientes antigos (role=cliente) sem
@@ -83,7 +82,7 @@ const ClientPinChecker = () => {
       >
         <DialogHeader>
           <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-2">
-            <AppIcon name="KeyRound" className="h-7 w-7 text-primary" />
+            <KeyRound className="h-7 w-7 text-primary" />
           </div>
           <DialogTitle className="text-center">Defina seu PIN de entrega</DialogTitle>
           <DialogDescription className="text-center">
@@ -93,7 +92,7 @@ const ClientPinChecker = () => {
 
         <form onSubmit={handleSave} className="space-y-3">
           <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 flex gap-2">
-            <AppIcon name="ShieldAlert" className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+            <ShieldAlert className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
             <p className="text-xs text-amber-800">
               Evite datas óbvias (aniversário, ano de nascimento). Escolha algo que só você saiba e memorize bem — sem o PIN o entregador não libera o pedido.
             </p>

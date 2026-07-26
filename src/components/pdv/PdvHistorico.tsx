@@ -2,10 +2,14 @@ import { useState, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { formatBRL } from "@/lib/utils";
+import {
+  Receipt, Banknote, CreditCard, Smartphone, Loader2,
+  Clock, ArrowDownCircle, ArrowUpCircle, ChevronRight,
+  ChevronDown, Package, Lock, Unlock, BarChart3,
+  Ban, XCircle, Search, Undo2,
+} from "lucide-react";
 import { PdvCancelSaleDialog } from "./PdvCancelSaleDialog";
 import { ApparelReturnDialog } from "@/pages/pdv/apparel/ApparelReturnDialog";
-import { AppIcon } from "@/components/ui/app-icon";
-import { Receipt, Banknote, CreditCard, Smartphone, Loader2, Clock, ArrowDownCircle, ArrowUpCircle, ChevronRight, ChevronDown, Package, Lock, Unlock, BarChart3, Ban, XCircle, Search, Undo2 } from "lucide-react";
 
 const PAYMENT_LABELS: Record<string, { label: string; icon: any; color: string }> = {
   dinheiro:           { label: "Dinheiro",       icon: Banknote,   color: "text-emerald-500" },
@@ -135,7 +139,7 @@ export const PdvHistorico = ({
           {session && (
             <div className="flex items-center gap-2">
               <div className="w-9 h-9 rounded-xl bg-emerald-500/10 flex items-center justify-center shrink-0">
-                <AppIcon name="Unlock" className="h-4 w-4 text-emerald-500" />
+                <Unlock className="h-4 w-4 text-emerald-500" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-[9px] text-muted-foreground uppercase font-bold tracking-wider">Turno atual</p>
@@ -164,7 +168,7 @@ export const PdvHistorico = ({
 
         <div className="px-3 pb-2 space-y-2">
           <div className="relative">
-            <AppIcon name="Search" className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -213,7 +217,7 @@ export const PdvHistorico = ({
           </div>
         ) : movements.length === 0 ? (
           <div className="text-center py-10 text-muted-foreground">
-            <AppIcon name="Receipt" className="h-10 w-10 mx-auto mb-2 opacity-30" />
+            <Receipt className="h-10 w-10 mx-auto mb-2 opacity-30" />
             <p className="text-sm font-medium">Nenhuma movimentação</p>
             <p className="text-xs mt-1">Vendas, sangrias e suprimentos aparecem aqui</p>
           </div>
@@ -359,7 +363,7 @@ const MovementRow = ({
             </p>
             {canceled && (
               <span className="inline-flex items-center gap-1 text-[9px] font-black text-red-500 bg-red-500/10 px-1.5 py-0.5 rounded">
-                <AppIcon name="Ban" className="h-2.5 w-2.5" />CANCELADA
+                <Ban className="h-2.5 w-2.5" />CANCELADA
               </span>
             )}
             {pm && MethodIcon && (
@@ -369,7 +373,7 @@ const MovementRow = ({
             )}
           </div>
           <p className="text-[11px] text-muted-foreground truncate mt-0.5 flex items-center gap-1">
-            <AppIcon name="Clock" className="h-3 w-3 shrink-0" />{formatTime(m.created_at)}
+            <Clock className="h-3 w-3 shrink-0" />{formatTime(m.created_at)}
             {itemsPreview && <><span>·</span><span className="truncate">{itemsPreview}</span></>}
             {!itemsPreview && m.description && <><span>·</span><span className="truncate">{m.description}</span></>}
           </p>
@@ -379,7 +383,7 @@ const MovementRow = ({
             {amountPrefix}{formatBRL(Number(m.amount))}
           </p>
           {isSale && (
-            <AppIcon name="ChevronDown" className={`h-3 w-3 text-muted-foreground transition-transform ${expanded ? "rotate-180" : ""}`} />
+            <ChevronDown className={`h-3 w-3 text-muted-foreground transition-transform ${expanded ? "rotate-180" : ""}`} />
           )}
         </div>
       </button>
@@ -414,14 +418,14 @@ const MovementRow = ({
                   onClick={(e) => { e.stopPropagation(); onReturn(m.order_id); }}
                   className="inline-flex items-center gap-1 text-[10px] font-bold text-primary bg-primary/10 hover:bg-primary/15 px-2 py-1 rounded-lg"
                 >
-                  <AppIcon name="Undo2" className="h-3 w-3" /> Trocar/Devolver
+                  <Undo2 className="h-3 w-3" /> Trocar/Devolver
                 </button>
               )}
               <button
                 onClick={(e) => { e.stopPropagation(); onCancel(m.order_id, Number(m.amount)); }}
                 className="inline-flex items-center gap-1 text-[10px] font-bold text-red-500 bg-red-500/10 hover:bg-red-500/15 px-2 py-1 rounded-lg"
               >
-                <AppIcon name="XCircle" className="h-3 w-3" /> Cancelar venda
+                <XCircle className="h-3 w-3" /> Cancelar venda
               </button>
             </div>
           )}
@@ -458,7 +462,7 @@ const PdvSessionDetail = ({ session, storeId }: { session: any; storeId: string 
     },
   });
 
-  if (movL || ordL) return <div className="flex items-center justify-center py-6"><AppIcon name="Loader2" className="h-4 w-4 animate-spin text-primary" /></div>;
+  if (movL || ordL) return <div className="flex items-center justify-center py-6"><Loader2 className="h-4 w-4 animate-spin text-primary" /></div>;
 
   const sales = movements.filter((m: any) => m.type === "sale");
   const totalVendido = sales.reduce((s: number, m: any) => s + Number(m.amount), 0);
@@ -553,7 +557,7 @@ const PdvSessionDetail = ({ session, storeId }: { session: any; storeId: string 
       {topProducts.length > 0 && (
         <div className="space-y-1.5">
           <p className="text-[10px] font-black text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-            <AppIcon name="Package" className="h-3 w-3" /> Produtos vendidos
+            <Package className="h-3 w-3" /> Produtos vendidos
           </p>
           {topProducts.map((p, i) => (
             <div key={p.name} className="flex items-center gap-2 bg-card border border-border/50 rounded-xl px-3 py-2">
@@ -583,11 +587,11 @@ const PdvSessionDetail = ({ session, storeId }: { session: any; storeId: string 
                   <span className="text-[10px] text-muted-foreground">{formatTime(o.created_at)}</span>
                   <p className={`text-xs font-black shrink-0 ${canceled ? "text-muted-foreground line-through" : "text-foreground"}`}>{formatBRL(Number(o.total_price))}</p>
                   {canceled ? (
-                    <span className="inline-flex items-center gap-1 text-[9px] font-black text-red-500 bg-red-500/10 px-1.5 py-0.5 rounded"><AppIcon name="Ban" className="h-2.5 w-2.5" />CANCELADA</span>
+                    <span className="inline-flex items-center gap-1 text-[9px] font-black text-red-500 bg-red-500/10 px-1.5 py-0.5 rounded"><Ban className="h-2.5 w-2.5" />CANCELADA</span>
                   ) : (
                     <button onClick={() => setCancelTarget({ id: o.id, total: Number(o.total_price) })}
                       className="p-1 rounded hover:bg-red-500/10 text-red-500" title="Cancelar venda">
-                      <AppIcon name="XCircle" className="h-3.5 w-3.5" />
+                      <XCircle className="h-3.5 w-3.5" />
                     </button>
                   )}
                 </div>
@@ -644,10 +648,10 @@ export const PdvSessionsList = ({
     enabled: !!storeId,
   });
 
-  if (isLoading) return <div className="flex items-center justify-center py-10"><AppIcon name="Loader2" className="h-5 w-5 animate-spin text-primary" /></div>;
+  if (isLoading) return <div className="flex items-center justify-center py-10"><Loader2 className="h-5 w-5 animate-spin text-primary" /></div>;
   if (sessions.length === 0) return (
     <div className="text-center py-10 text-muted-foreground">
-      <AppIcon name="Receipt" className="h-10 w-10 mx-auto mb-2 opacity-30" />
+      <Receipt className="h-10 w-10 mx-auto mb-2 opacity-30" />
       <p className="text-sm font-medium">Nenhum turno ainda</p>
     </div>
   );
@@ -667,7 +671,7 @@ export const PdvSessionsList = ({
             <div className="flex items-center">
               <button className="flex-1 text-left p-3.5 flex items-center gap-3" onClick={() => setExpandedId(isExpanded ? null : s.id)}>
               <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${isOpen ? "bg-emerald-500/10" : "bg-muted/40"}`}>
-                {isOpen ? <AppIcon name="Unlock" className="h-4 w-4 text-emerald-500" /> : <AppIcon name="Lock" className="h-4 w-4 text-muted-foreground" />}
+                {isOpen ? <Unlock className="h-4 w-4 text-emerald-500" /> : <Lock className="h-4 w-4 text-muted-foreground" />}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
@@ -681,7 +685,7 @@ export const PdvSessionsList = ({
                   {closed && ` · Fechado: ${closed}`}
                 </p>
               </div>
-                {isExpanded ? <AppIcon name="ChevronDown" className="h-4 w-4 text-muted-foreground shrink-0" /> : <AppIcon name="ChevronRight" className="h-4 w-4 text-muted-foreground shrink-0" />}
+                {isExpanded ? <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" /> : <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />}
               </button>
               {onViewRelatorio && (
                 <button
@@ -689,7 +693,7 @@ export const PdvSessionsList = ({
                   className="p-3.5 text-primary hover:bg-primary/5 rounded-r-2xl transition-colors shrink-0 flex flex-col items-center gap-0.5"
                   title="Ver relatório deste turno"
                 >
-                  <AppIcon name="BarChart3" className="h-4 w-4" />
+                  <BarChart3 className="h-4 w-4" />
                   <span className="text-[9px] font-bold">Relatório</span>
                 </button>
               )}

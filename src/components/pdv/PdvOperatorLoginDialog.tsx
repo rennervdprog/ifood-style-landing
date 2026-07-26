@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import type { PdvOperator } from "@/hooks/usePdvOperator";
-import { AppIcon } from "@/components/ui/app-icon";
 import { Loader2, User, KeyRound, Plus, ArrowLeft, X, Delete, Shield } from "lucide-react";
+import type { PdvOperator } from "@/hooks/usePdvOperator";
 
 interface Op { id: string; name: string; active: boolean; role?: string }
 
@@ -143,7 +142,7 @@ export function PdvOperatorLoginDialog({ open, storeId, onClose, onLogin, requir
           <div className="flex items-center gap-2">
             {step === "pin" && (
               <button onClick={() => { setStep("pick"); setPin(""); }} className="p-1 rounded hover:bg-muted">
-                <AppIcon name="ArrowLeft" className="h-4 w-4" />
+                <ArrowLeft className="h-4 w-4" />
               </button>
             )}
             <p className="text-sm font-black">
@@ -152,17 +151,17 @@ export function PdvOperatorLoginDialog({ open, storeId, onClose, onLogin, requir
                 : (title || (requiredRole === "gerente" ? "Autorização de gerente" : "Selecionar operador"))}
             </p>
           </div>
-          <button onClick={onClose} className="p-1 rounded hover:bg-muted"><AppIcon name="X" className="h-4 w-4" /></button>
+          <button onClick={onClose} className="p-1 rounded hover:bg-muted"><X className="h-4 w-4" /></button>
         </div>
 
         {loading ? (
-          <div className="p-10 flex justify-center"><AppIcon name="Loader2" className="h-5 w-5 animate-spin text-primary" /></div>
+          <div className="p-10 flex justify-center"><Loader2 className="h-5 w-5 animate-spin text-primary" /></div>
         ) : step === "create" ? (
           <div className="p-5 space-y-4">
             {!hasManager && (
               <div className="rounded-2xl border border-primary/30 bg-primary/5 p-4 space-y-2">
                 <div className="flex items-center gap-2">
-                  <AppIcon name="Shield" className="h-4 w-4 text-primary" />
+                  <Shield className="h-4 w-4 text-primary" />
                   <p className="text-xs font-black uppercase text-primary">Passo 1 · Cadastre o gerente</p>
                 </div>
                 <p className="text-[11px] leading-relaxed text-muted-foreground">
@@ -194,7 +193,7 @@ export function PdvOperatorLoginDialog({ open, storeId, onClose, onLogin, requir
                       newRole === r ? "bg-primary text-primary-foreground border-primary"
                                     : "bg-muted/40 text-muted-foreground border-border hover:bg-muted"
                     }`}>
-                    {r === "gerente" && <AppIcon name="Shield" className="h-3.5 w-3.5" />}
+                    {r === "gerente" && <Shield className="h-3.5 w-3.5" />}
                     {r === "operador" ? "Operador" : "Gerente"}
                   </button>
                 ))}
@@ -207,7 +206,7 @@ export function PdvOperatorLoginDialog({ open, storeId, onClose, onLogin, requir
             </div>
             <button onClick={createOp} disabled={busy}
               className="w-full h-12 bg-primary text-primary-foreground rounded-xl font-black flex items-center justify-center gap-2 disabled:opacity-60">
-              {busy ? <AppIcon name="Loader2" className="h-4 w-4 animate-spin" /> : <AppIcon name="Plus" className="h-4 w-4" />} Cadastrar
+              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Cadastrar
             </button>
             {ops.length > 0 && (
               <button onClick={() => setStep("pick")} className="w-full text-xs text-muted-foreground hover:text-foreground">
@@ -228,27 +227,27 @@ export function PdvOperatorLoginDialog({ open, storeId, onClose, onLogin, requir
               <button key={o.id} onClick={() => { setSelected(o); setStep("pin"); setPin(""); }}
                 className="w-full flex items-center gap-3 p-3 rounded-xl bg-muted/30 hover:bg-muted/60 transition-colors text-left">
                 <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  {o.role === "gerente" ? <AppIcon name="Shield" className="h-4 w-4 text-primary" /> : <AppIcon name="User" className="h-4 w-4 text-primary" />}
+                  {o.role === "gerente" ? <Shield className="h-4 w-4 text-primary" /> : <User className="h-4 w-4 text-primary" />}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-bold text-sm truncate">{o.name}</p>
                   {o.role === "gerente" && <p className="text-[10px] text-primary font-bold uppercase">Gerente</p>}
                 </div>
-                <AppIcon name="KeyRound" className="h-4 w-4 text-muted-foreground" />
+                <KeyRound className="h-4 w-4 text-muted-foreground" />
               </button>
             ))}
             {!requiredRole && (
               <button onClick={requestCreate}
                 className="w-full flex items-center justify-center gap-2 p-3 rounded-xl border border-dashed border-border/60 text-xs font-bold text-muted-foreground hover:text-foreground hover:border-primary/40">
-                <AppIcon name="Plus" className="h-3.5 w-3.5" /> Adicionar operador
-                {hasManager && <AppIcon name="Shield" className="h-3 w-3 ml-1 opacity-60" />}
+                <Plus className="h-3.5 w-3.5" /> Adicionar operador
+                {hasManager && <Shield className="h-3 w-3 ml-1 opacity-60" />}
               </button>
             )}
           </div>
         ) : step === "manager_gate" ? (
           <div className="p-5 space-y-4">
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <AppIcon name="Shield" className="h-4 w-4 text-primary" />
+              <Shield className="h-4 w-4 text-primary" />
               Autorização de gerente para cadastrar novo operador.
             </div>
             <input
@@ -261,7 +260,7 @@ export function PdvOperatorLoginDialog({ open, storeId, onClose, onLogin, requir
             />
             <button onClick={verifyManagerAndOpenCreate} disabled={busy || managerPin.length < 4}
               className="w-full h-12 bg-primary text-primary-foreground rounded-xl font-black flex items-center justify-center gap-2 disabled:opacity-60">
-              {busy ? <AppIcon name="Loader2" className="h-4 w-4 animate-spin" /> : <AppIcon name="KeyRound" className="h-4 w-4" />} Autorizar
+              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />} Autorizar
             </button>
             <button onClick={() => setStep("pick")} className="w-full text-xs text-muted-foreground hover:text-foreground">
               ← Cancelar
@@ -287,12 +286,12 @@ export function PdvOperatorLoginDialog({ open, storeId, onClose, onLogin, requir
                 className="h-14 rounded-xl bg-muted/40 hover:bg-muted text-xl font-black active:scale-95">0</button>
               <button onClick={popDigit}
                 className="h-14 rounded-xl bg-muted/40 hover:bg-muted flex items-center justify-center">
-                <AppIcon name="Delete" className="h-4 w-4" />
+                <Delete className="h-4 w-4" />
               </button>
             </div>
             <button onClick={tryLogin} disabled={busy || pin.length < 4}
               className="w-full h-12 bg-primary text-primary-foreground rounded-xl font-black flex items-center justify-center gap-2 disabled:opacity-60">
-              {busy ? <AppIcon name="Loader2" className="h-4 w-4 animate-spin" /> : <AppIcon name="KeyRound" className="h-4 w-4" />} Entrar
+              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />} Entrar
             </button>
           </div>
         )}

@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { Camera, Upload, Save, Store, Phone, Tag, MapPin, Link, Copy, Wallet, Search, Loader2, Bell, CreditCard, QrCode, Banknote, CheckCircle2, XCircle, Truck, Bike, MessageSquare, Eye, EyeOff, ExternalLink } from "lucide-react";
 import { requestPushPermissionAndRegister } from "@/lib/firebase";
 import { isGoNative, registerGoNativePlayer } from "@/lib/gonative";
 import { isCapacitorNative, registerCapacitorPush } from "@/lib/capacitorNative";
@@ -11,9 +12,8 @@ import { maskWhatsApp } from "@/lib/whatsapp";
 import { formatCep, fetchCep, resolveAddress } from "@/lib/location";
 import { formatBRL } from "@/lib/utils";
 import { useStorePlan } from "@/hooks/useStorePlan";
+import { RefreshCw } from "lucide-react";
 import { copyToClipboard } from "@/lib/clipboard";
-import { AppIcon } from "@/components/ui/app-icon";
-import { Camera, Upload, Save, Store, Phone, Tag, MapPin, Link, Copy, Search, Loader2, Bell, CreditCard, QrCode, Banknote, CheckCircle2, XCircle, Truck, MessageSquare, RefreshCw } from "lucide-react";
 const CATEGORY_OPTIONS = [
   { value: "lanches", label: "Lanches" },
   { value: "pizzas", label: "Pizzas" },
@@ -530,13 +530,13 @@ const NotificationSection = () => {
   return (
     <div className="bg-muted/50 border border-border rounded-2xl p-4 space-y-3">
       <label className="text-sm font-bold text-foreground/80 flex items-center gap-2">
-        <AppIcon name="Bell" className="h-4 w-4 text-primary" />
+        <Bell className="h-4 w-4 text-primary" />
         Notificações
       </label>
 
       {notifStatus === "granted" ? (
         <div className="flex items-center gap-2 bg-primary/10 border border-primary/30 rounded-xl p-3">
-          <AppIcon name="CheckCircle2" className="h-4 w-4 text-primary flex-shrink-0" />
+          <CheckCircle2 className="h-4 w-4 text-primary flex-shrink-0" />
           <div>
             <p className="text-xs font-bold text-primary">Notificações ativas</p>
           <p className="text-[10px] text-muted-foreground">Você receberá alertas de novos pedidos.</p>
@@ -544,7 +544,7 @@ const NotificationSection = () => {
         </div>
       ) : notifStatus === "denied" ? (
         <div className="flex items-center gap-2 bg-destructive/10 border border-destructive/30 rounded-xl p-3">
-          <AppIcon name="XCircle" className="h-4 w-4 text-destructive flex-shrink-0" />
+          <XCircle className="h-4 w-4 text-destructive flex-shrink-0" />
           <div>
             <p className="text-xs font-bold text-destructive">Notificações bloqueadas</p>
             <p className="text-[10px] text-muted-foreground">Acesse as configurações do navegador ou do app para desbloquear.</p>
@@ -560,7 +560,7 @@ const NotificationSection = () => {
           disabled={enabling}
           className="w-full bg-primary text-primary-foreground font-bold py-3 rounded-xl text-sm flex items-center justify-center gap-2 active:scale-[0.98] transition-transform disabled:opacity-50"
         >
-          <AppIcon name="Bell" className="h-4 w-4" />
+          <Bell className="h-4 w-4" />
           {enabling ? "Ativando..." : "Ativar Notificações"}
         </button>
       )}
@@ -577,11 +577,11 @@ const NotificationSection = () => {
             {imageUrl ? (
               <img loading="lazy" decoding="async" src={imageUrl} alt="Logo" className="w-full h-full object-cover" />
             ) : (
-              <AppIcon name="Store" className="h-10 w-10 text-muted-foreground/70" />
+              <Store className="h-10 w-10 text-muted-foreground/70" />
             )}
           </div>
           <label className="absolute bottom-0 right-0 bg-primary text-primary-foreground w-9 h-9 rounded-full flex items-center justify-center cursor-pointer shadow-lg active:scale-95 transition-transform">
-            <AppIcon name="Camera" className="h-4 w-4" />
+            <Camera className="h-4 w-4" />
             <input
               type="file"
               accept="image/*"
@@ -598,7 +598,7 @@ const NotificationSection = () => {
       {/* Store Name */}
       <div className="space-y-2">
         <label className="text-sm font-bold text-foreground/80 flex items-center gap-2">
-          <AppIcon name="Store" className="h-4 w-4 text-primary" />
+          <Store className="h-4 w-4 text-primary" />
           Nome do Estabelecimento
         </label>
         <input
@@ -614,7 +614,7 @@ const NotificationSection = () => {
       {/* Category */}
       <div className="space-y-2">
         <label className="text-sm font-bold text-foreground/80 flex items-center gap-2">
-          <AppIcon name="Tag" className="h-4 w-4 text-primary" />
+          <Tag className="h-4 w-4 text-primary" />
           Categorias da Loja
         </label>
         <p className="text-[11px] text-muted-foreground">
@@ -685,7 +685,7 @@ const NotificationSection = () => {
       {!pdvOnly && (
       <div className="space-y-2">
         <label className="text-sm font-bold text-foreground/80 flex items-center gap-2">
-          <AppIcon name="Phone" className="h-4 w-4 text-primary" />
+          <Phone className="h-4 w-4 text-primary" />
           WhatsApp de Atendimento
         </label>
         <input 
@@ -704,7 +704,7 @@ const NotificationSection = () => {
       {!pdvOnly && (
       <div className="space-y-2">
         <label className="text-sm font-bold text-foreground/80 flex items-center gap-2">
-          <AppIcon name="Link" className="h-4 w-4 text-primary" />
+          <Link className="h-4 w-4 text-primary" />
           Link Exclusivo da Loja
         </label>
         <div className="flex gap-2">
@@ -723,7 +723,7 @@ const NotificationSection = () => {
               className="flex-1 bg-transparent px-1 py-3 text-foreground text-sm focus:outline-none"
             />
             <span className="pr-3 text-xs font-bold flex items-center gap-1">
-              {slugStatus === "checking" && <AppIcon name="Loader2" className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
+              {slugStatus === "checking" && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
               {slugStatus === "available" && <span className="text-emerald-500">Disponível</span>}
               {slugStatus === "taken" && <span className="text-red-500">Em uso</span>}
               {slugStatus === "invalid" && <span className="text-amber-500">Curto</span>}
@@ -740,7 +740,7 @@ const NotificationSection = () => {
         )}
         {slug && (
           <div className="flex items-center gap-2 bg-primary/10 border border-primary/30 rounded-xl p-3">
-            <AppIcon name="Link" className="h-4 w-4 text-primary flex-shrink-0" />
+            <Link className="h-4 w-4 text-primary flex-shrink-0" />
             <span className="text-xs text-primary font-bold truncate">
               itasuper.com.br/{slug}
             </span>
@@ -751,7 +751,7 @@ const NotificationSection = () => {
               }}
               className="ml-auto flex items-center gap-1 bg-primary/20 text-primary font-bold px-2.5 py-1.5 rounded-lg text-xs active:scale-95 transition-transform"
             >
-              <AppIcon name="Copy" className="h-3 w-3" />
+              <Copy className="h-3 w-3" />
               Copiar
             </button>
           </div>
@@ -764,7 +764,7 @@ const NotificationSection = () => {
       {!pdvOnly && (
       <div className="space-y-2">
         <label className="text-sm font-bold text-muted-foreground flex items-center gap-2">
-          <AppIcon name="MessageSquare" className="h-4 w-4 text-primary" />
+          <MessageSquare className="h-4 w-4 text-primary" />
           Links anti-spam (WhatsApp)
         </label>
         <p className="text-[10px] text-muted-foreground -mt-1">
@@ -776,7 +776,7 @@ const NotificationSection = () => {
           )}
           {slugAliases.map((a) => (
             <div key={a} className="flex items-center gap-2 bg-muted/40 border border-border rounded-lg px-3 py-2">
-              <AppIcon name="Link" className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+              <Link className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
               <span className="text-xs font-mono truncate">itasuper.com.br/{a}</span>
               <button
                 type="button"
@@ -797,7 +797,7 @@ const NotificationSection = () => {
           disabled={regeneratingAliases}
           className="w-full flex items-center justify-center gap-2 bg-primary/10 text-primary font-bold text-xs px-3 py-2 rounded-lg active:scale-95 disabled:opacity-50"
         >
-          {regeneratingAliases ? <AppIcon name="Loader2" className="h-3.5 w-3.5 animate-spin" /> : <AppIcon name="RefreshCw" className="h-3.5 w-3.5" />}
+          {regeneratingAliases ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
           Regenerar aliases
         </button>
       </div>
@@ -806,7 +806,7 @@ const NotificationSection = () => {
       {/* Store Address */}
       <div className="space-y-3">
         <label className="text-sm font-bold text-muted-foreground flex items-center gap-2">
-          <AppIcon name="MapPin" className="h-4 w-4 text-primary" />
+          <MapPin className="h-4 w-4 text-primary" />
           Endereço da Loja
         </label>
         <p className="text-[10px] text-muted-foreground -mt-1">
@@ -845,7 +845,7 @@ const NotificationSection = () => {
             disabled={loadingCep}
             className="px-3 py-3 rounded-xl bg-primary text-primary-foreground text-sm font-bold disabled:opacity-50"
           >
-            {loadingCep ? <AppIcon name="Loader2" className="h-4 w-4 animate-spin" /> : <AppIcon name="Search" className="h-4 w-4" />}
+            {loadingCep ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
           </button>
         </div>
         <div className="grid grid-cols-3 gap-2">
@@ -913,7 +913,7 @@ const NotificationSection = () => {
         </div>
         {addressStreet && addressNumber && (
           <div className="bg-primary/10 border border-primary/30 rounded-xl p-3 flex items-start gap-2">
-            <AppIcon name="MapPin" className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+            <MapPin className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
             <div className="flex-1 min-w-0">
               <p className="text-xs text-primary font-bold">Endereço cadastrado</p>
               <p className="text-xs text-muted-foreground">
@@ -929,7 +929,7 @@ const NotificationSection = () => {
       {!pdvOnly && (<>
       <div className="bg-muted/50 border border-border rounded-2xl p-4 space-y-3">
         <label className="text-sm font-bold text-foreground/80 flex items-center gap-2">
-          <AppIcon name="Truck" className="h-4 w-4 text-primary" />
+          <Truck className="h-4 w-4 text-primary" />
           Modo de Entrega
         </label>
         <p className="text-[10px] text-muted-foreground/70">
@@ -938,7 +938,7 @@ const NotificationSection = () => {
         {deliveryMode === "own" && (
           <div className="space-y-3">
             <div className="bg-muted border border-border rounded-xl p-3 flex items-start gap-2">
-              <AppIcon name="Truck" className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+              <Truck className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
               <p className="text-[10px] text-muted-foreground">
                 Cadastre seus motoboys próprios no painel "Motoboys". Quando um pedido ficar pronto, ele é enviado aos seus motoboys vinculados e o motoboy escolhido aceita a corrida para sair para entrega.
               </p>
@@ -1227,7 +1227,7 @@ const NotificationSection = () => {
       <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
         <div>
           <h3 className="text-sm font-black text-foreground flex items-center gap-2">
-            <AppIcon name="QrCode" className="h-4 w-4 text-primary" />
+            <QrCode className="h-4 w-4 text-primary" />
             Métodos de Pagamento
           </h3>
           <p className="text-xs text-muted-foreground mt-1">
@@ -1258,7 +1258,7 @@ const NotificationSection = () => {
         }`}>
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2.5">
-              <AppIcon name="QrCode" className="h-4 w-4 text-primary shrink-0" />
+              <QrCode className="h-4 w-4 text-primary shrink-0" />
               <div>
                 <p className="text-sm font-bold text-foreground">PIX Online</p>
                 {!hasAsaasAccount && (
@@ -1302,7 +1302,7 @@ const NotificationSection = () => {
         <div className={`rounded-xl border p-3.5 ${acceptPixMachine ? "border-primary/30 bg-primary/5" : "border-border bg-muted/20"}`}>
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2.5">
-              <AppIcon name="QrCode" className="h-4 w-4 text-primary shrink-0" />
+              <QrCode className="h-4 w-4 text-primary shrink-0" />
               <div>
                 <p className="text-sm font-bold text-foreground">PIX na Maquininha</p>
                 <p className="text-[11px] text-muted-foreground">Cliente paga via PIX pela maquininha do lojista na entrega. Sem integração com Asaas.</p>
@@ -1322,7 +1322,7 @@ const NotificationSection = () => {
         <div className={`rounded-xl border p-3.5 ${acceptCard ? "border-primary/30 bg-primary/5" : "border-border bg-muted/20"}`}>
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2.5">
-              <AppIcon name="CreditCard" className="h-4 w-4 text-primary shrink-0" />
+              <CreditCard className="h-4 w-4 text-primary shrink-0" />
               <div>
                 <p className="text-sm font-bold text-foreground">Cartão na Entrega</p>
                 <p className="text-[11px] text-muted-foreground">Débito ou crédito pela maquininha na entrega.</p>
@@ -1342,7 +1342,7 @@ const NotificationSection = () => {
         <div className={`rounded-xl border p-3.5 space-y-3 ${pixDiretoEnabled ? "border-primary/30 bg-primary/5" : "border-border bg-muted/20"}`}>
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2.5">
-              <AppIcon name="QrCode" className="h-4 w-4 text-primary shrink-0" />
+              <QrCode className="h-4 w-4 text-primary shrink-0" />
               <div>
                 <p className="text-sm font-bold text-foreground">Pix Direto (com comprovante)</p>
                 <p className="text-[11px] text-muted-foreground">Cliente paga na sua chave PIX e envia o comprovante. Você confirma manualmente no painel. Sem taxa Asaas.</p>
@@ -1401,7 +1401,7 @@ const NotificationSection = () => {
         <div className={`rounded-xl border p-3.5 ${acceptCash ? "border-primary/30 bg-primary/5" : "border-border bg-muted/20"}`}>
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2.5">
-              <AppIcon name="Banknote" className="h-4 w-4 text-primary shrink-0" />
+              <Banknote className="h-4 w-4 text-primary shrink-0" />
               <div>
                 <p className="text-sm font-bold text-foreground">Dinheiro</p>
                 <p className="text-[11px] text-muted-foreground">Pagamento em espécie na entrega.</p>
@@ -1541,7 +1541,7 @@ const NotificationSection = () => {
         disabled={saving || uploading}
         className="w-full bg-primary text-primary-foreground font-bold py-4 rounded-2xl text-sm flex items-center justify-center gap-2 active:scale-[0.98] transition-transform disabled:opacity-50"
       >
-        <AppIcon name="Save" className="h-5 w-5" />
+        <Save className="h-5 w-5" />
         {saving ? "Salvando..." : "Salvar Alterações"}
       </button>
     </div>

@@ -1,8 +1,7 @@
 import { useEffect, useRef } from "react";
 import JsBarcode from "jsbarcode";
-import { formatBRL } from "@/lib/utils";
-import { AppIcon } from "@/components/ui/app-icon";
 import { X, Printer } from "lucide-react";
+import { formatBRL } from "@/lib/utils";
 
 export interface LabelData {
   productName: string;
@@ -57,10 +56,10 @@ export default function LabelPrintDialog({ items, onClose }: Props) {
               onClick={handlePrint}
               className="flex items-center gap-1.5 bg-primary text-primary-foreground rounded-lg px-3 py-1.5 text-xs font-bold"
             >
-              <AppIcon name="Printer" className="h-3.5 w-3.5" /> Imprimir
+              <Printer className="h-3.5 w-3.5" /> Imprimir
             </button>
             <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-muted">
-              <AppIcon name="X" className="h-4 w-4" />
+              <X className="h-4 w-4" />
             </button>
           </div>
         </div>

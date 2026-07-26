@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
-import { AppIcon } from "@/components/ui/app-icon";
 import { Eye, Users, Calendar, TrendingUp, Store, Smartphone, Globe } from "lucide-react";
 
 interface Stats {
@@ -129,7 +128,7 @@ const PageViewsCard = () => {
           {/* Top lojas */}
           <div className="bg-muted/30 rounded-xl p-3 border border-border/40">
             <p className="text-[11px] font-bold text-muted-foreground uppercase mb-2 flex items-center gap-1.5">
-              <AppIcon name="Store" className="h-3.5 w-3.5" /> Top lojas (7d)
+              <Store className="h-3.5 w-3.5" /> Top lojas (7d)
             </p>
             {(stats?.top_stores_7d || []).length === 0 ? (
               <p className="text-[11px] text-muted-foreground">Sem dados ainda</p>
@@ -147,7 +146,7 @@ const PageViewsCard = () => {
           {/* Top fontes */}
           <div className="bg-muted/30 rounded-xl p-3 border border-border/40">
             <p className="text-[11px] font-bold text-muted-foreground uppercase mb-2 flex items-center gap-1.5">
-              <AppIcon name="Globe" className="h-3.5 w-3.5" /> Fontes (7d)
+              <Globe className="h-3.5 w-3.5" /> Fontes (7d)
             </p>
             {(stats?.top_sources_7d || []).length === 0 ? (
               <p className="text-[11px] text-muted-foreground">Sem dados ainda</p>
@@ -165,7 +164,7 @@ const PageViewsCard = () => {
           {/* Devices */}
           <div className="bg-muted/30 rounded-xl p-3 border border-border/40">
             <p className="text-[11px] font-bold text-muted-foreground uppercase mb-2 flex items-center gap-1.5">
-              <AppIcon name="Smartphone" className="h-3.5 w-3.5" /> Dispositivos (7d)
+              <Smartphone className="h-3.5 w-3.5" /> Dispositivos (7d)
             </p>
             {Object.keys(stats?.devices_7d || {}).length === 0 ? (
               <p className="text-[11px] text-muted-foreground">Sem dados ainda</p>

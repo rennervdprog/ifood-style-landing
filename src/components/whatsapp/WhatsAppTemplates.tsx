@@ -2,10 +2,9 @@
  * Aba "Mensagens" — editor de templates com preview tipo bolha do WhatsApp.
  */
 import { useState } from "react";
+import { ChevronDown, ChevronUp, RotateCcw, Eye, AlertTriangle } from "lucide-react";
 import { DEFAULT_TEMPLATES, TemplateKey, TEMPLATE_VARIABLES, fillTemplate, SAMPLE_DATA } from "./templates";
 import WhatsAppBubblePreview from "./WhatsAppBubblePreview";
-import { AppIcon } from "@/components/ui/app-icon";
-import { ChevronDown, ChevronUp, RotateCcw, Eye, AlertTriangle } from "lucide-react";
 
 interface Props {
   storeName: string;
@@ -63,14 +62,14 @@ export default function WhatsAppTemplates({ storeName, templates, setTemplates }
                 </div>
                 <p className="text-[10px] text-muted-foreground truncate">{info.shortDesc}</p>
               </div>
-              {isOpen ? <AppIcon name="ChevronUp" className="h-4 w-4 text-muted-foreground" /> : <AppIcon name="ChevronDown" className="h-4 w-4 text-muted-foreground" />}
+              {isOpen ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
             </button>
 
             {isOpen && (
               <div className="border-t border-border bg-muted/20 p-3 space-y-3">
                 {missingPin && (
                   <div className="flex items-start gap-2 rounded-lg bg-amber-500/10 border border-amber-500/30 px-3 py-2">
-                    <AppIcon name="AlertTriangle" className="h-3.5 w-3.5 text-amber-600 shrink-0 mt-0.5" />
+                    <AlertTriangle className="h-3.5 w-3.5 text-amber-600 shrink-0 mt-0.5" />
                     <p className="text-[11px] text-amber-700 dark:text-amber-400 leading-snug">
                       Você removeu <code>{"{pin}"}</code> — o cliente não receberá o código de segurança para o motoboy.
                     </p>
@@ -88,7 +87,7 @@ export default function WhatsAppTemplates({ storeName, templates, setTemplates }
                           onClick={() => resetTemplate(key)}
                           className="text-[10px] text-muted-foreground hover:text-foreground flex items-center gap-1"
                         >
-                          <AppIcon name="RotateCcw" className="h-3 w-3" /> Restaurar padrão
+                          <RotateCcw className="h-3 w-3" /> Restaurar padrão
                         </button>
                       )}
                     </div>
@@ -116,7 +115,7 @@ export default function WhatsAppTemplates({ storeName, templates, setTemplates }
                   {/* Preview */}
                   <div className="space-y-2">
                     <label className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground flex items-center gap-1">
-                      <AppIcon name="Eye" className="h-3 w-3" /> Preview no WhatsApp
+                      <Eye className="h-3 w-3" /> Preview no WhatsApp
                     </label>
                     <WhatsAppBubblePreview text={fillTemplate(value, sample)} storeName={storeName} />
                     <p className="text-[10px] text-muted-foreground text-center">Dados de exemplo: cliente {sample.clientName}, pedido #{sample.orderId}</p>

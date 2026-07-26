@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { AppIcon } from "@/components/ui/app-icon";
 import { ChevronUp, ChevronDown, Loader2, Save, Palette, Hash } from "lucide-react";
 
 interface Section { id: string; name: string; sort_order: number; pdv_color: string | null }
@@ -112,25 +111,25 @@ export function PdvQuickGridEditor({ storeId }: { storeId: string }) {
         className="w-full flex items-center justify-between px-4 py-3 hover:bg-muted/30 transition-colors"
       >
         <div className="flex items-center gap-2">
-          <AppIcon name="Hash" className="h-4 w-4 text-primary" />
+          <Hash className="h-4 w-4 text-primary" />
           <span className="font-black text-sm">Teclas rápidas do PDV</span>
           <span className="text-[10px] text-muted-foreground font-semibold">
             Código curto · cor da categoria · ordem
           </span>
         </div>
-        <AppIcon name="ChevronDown" className={`h-4 w-4 transition-transform ${open ? "rotate-180" : ""}`} />
+        <ChevronDown className={`h-4 w-4 transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
 
       {open && (
         <div className="border-t border-border p-4 space-y-5">
           {sectLoading || prodLoading ? (
-            <div className="flex justify-center py-8"><AppIcon name="Loader2" className="h-5 w-5 animate-spin text-primary" /></div>
+            <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-primary" /></div>
           ) : (
             <>
               {/* Cor por categoria */}
               <div>
                 <div className="flex items-center gap-2 mb-2">
-                  <AppIcon name="Palette" className="h-3.5 w-3.5 text-muted-foreground" />
+                  <Palette className="h-3.5 w-3.5 text-muted-foreground" />
                   <p className="text-[11px] font-black uppercase tracking-wider text-muted-foreground">Cor das categorias</p>
                 </div>
                 <div className="space-y-2">
@@ -165,7 +164,7 @@ export function PdvQuickGridEditor({ storeId }: { storeId: string }) {
               {/* Código curto + ordem por produto */}
               <div>
                 <div className="flex items-center gap-2 mb-2">
-                  <AppIcon name="Hash" className="h-3.5 w-3.5 text-muted-foreground" />
+                  <Hash className="h-3.5 w-3.5 text-muted-foreground" />
                   <p className="text-[11px] font-black uppercase tracking-wider text-muted-foreground">Produtos</p>
                 </div>
                 <div className="space-y-1 max-h-[50vh] overflow-y-auto">
@@ -179,13 +178,13 @@ export function PdvQuickGridEditor({ storeId }: { storeId: string }) {
                             disabled={i === 0}
                             className="w-6 h-5 flex items-center justify-center rounded hover:bg-muted disabled:opacity-30"
                             aria-label="Subir"
-                          ><AppIcon name="ChevronUp" className="h-3 w-3" /></button>
+                          ><ChevronUp className="h-3 w-3" /></button>
                           <button
                             onClick={() => move(products, p.id, 1)}
                             disabled={i === products.length - 1}
                             className="w-6 h-5 flex items-center justify-center rounded hover:bg-muted disabled:opacity-30"
                             aria-label="Descer"
-                          ><AppIcon name="ChevronDown" className="h-3 w-3" /></button>
+                          ><ChevronDown className="h-3 w-3" /></button>
                         </div>
                         <input
                           value={cur.pdv_short_code || ""}
@@ -207,7 +206,7 @@ export function PdvQuickGridEditor({ storeId }: { storeId: string }) {
                   disabled={!dirty || saving}
                   className="h-10 px-4 rounded-xl bg-primary text-primary-foreground font-black text-sm flex items-center gap-2 disabled:opacity-50"
                 >
-                  {saving ? <AppIcon name="Loader2" className="h-4 w-4 animate-spin" /> : <AppIcon name="Save" className="h-4 w-4" />}
+                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                   Salvar teclas
                 </button>
               </div>

@@ -1,7 +1,6 @@
 import { useState } from "react";
+import { Search, XCircle, Calendar, Store as StoreIcon, TrendingUp } from "lucide-react";
 import { formatBRL } from "@/lib/utils";
-import { AppIcon } from "@/components/ui/app-icon";
-import { Search, XCircle, Calendar, TrendingUp } from "lucide-react";
 
 export type PeriodKey = "today" | "yesterday" | "7d" | "all";
 export type SourceKey = "all" | "delivery" | "pdv" | "manual";
@@ -53,7 +52,7 @@ export default function OrdersToolbar({
         <div className="flex items-start justify-between gap-3 flex-wrap">
           <div className="min-w-0">
             <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wide text-muted-foreground">
-              <AppIcon name="TrendingUp" className="h-3 w-3" />
+              <TrendingUp className="h-3 w-3" />
               <span>{periodLabel}</span>
               <span>·</span>
               <span>{periodSummary.count} pedido{periodSummary.count === 1 ? "" : "s"}</span>
@@ -82,7 +81,7 @@ export default function OrdersToolbar({
         {/* Filtros em linha única */}
         <div className="mt-3 flex items-center gap-2 flex-wrap">
           <div className="flex items-center gap-1 flex-1 min-w-0 overflow-x-auto no-scrollbar">
-            <AppIcon name="Calendar" className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+            <Calendar className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
             {PERIODS.map((p) => (
               <button
                 key={p.id}
@@ -95,7 +94,7 @@ export default function OrdersToolbar({
               </button>
             ))}
             <div className="w-px h-4 bg-border mx-1 shrink-0" />
-            <AppIcon name="Store" className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+            <StoreIcon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
             {SOURCES.map((s) => (
               <button
                 key={s.id}
@@ -116,14 +115,14 @@ export default function OrdersToolbar({
               }`}
               aria-label="Buscar pedidos"
             >
-              <AppIcon name="Search" className="h-3.5 w-3.5" />
+              <Search className="h-3.5 w-3.5" />
             </button>
           )}
         </div>
 
         {showSearch && (searchOpen || search) && (
           <div className="relative mt-2 animate-in fade-in slide-in-from-top-2 duration-200">
-            <AppIcon name="Search" className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <input
               type="text"
               autoFocus
@@ -137,7 +136,7 @@ export default function OrdersToolbar({
                 onClick={() => setSearch("")}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
               >
-                <AppIcon name="XCircle" className="h-4 w-4" />
+                <XCircle className="h-4 w-4" />
               </button>
             )}
           </div>

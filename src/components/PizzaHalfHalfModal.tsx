@@ -2,12 +2,11 @@ import { formatBRL } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { Pizza, ShoppingCart, Check, Minus, Plus, ChevronLeft, Circle, X, PlusCircle } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import type { CartAddon } from "@/contexts/CartContext";
 import { readPizzaCatalogConfig, hasPizzaCatalog, type PizzaSizeCatalogItem } from "@/types/pizza";
 import { priceForFlavorInSize, isFlavorAvailableInSize, combinePricesByMode } from "@/lib/pizzaPricing";
-import { AppIcon } from "@/components/ui/app-icon";
-import { Pizza, ShoppingCart, Check, Minus, Plus, ChevronLeft, Circle, X, PlusCircle } from "lucide-react";
 
 type FlavorCount = 2 | 3 | 4;
 const FRACTION_LABEL: Record<FlavorCount, string> = { 2: "½", 3: "⅓", 4: "¼" };
@@ -442,7 +441,7 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
           onClick={handleBack}
           className="w-9 h-9 rounded-full bg-muted flex items-center justify-center active:scale-90 transition-transform"
         >
-          <AppIcon name="ChevronLeft" className="h-5 w-5 text-foreground" />
+          <ChevronLeft className="h-5 w-5 text-foreground" />
         </button>
         <div className="flex-1 min-w-0">
           <h1 className="text-base font-black text-foreground truncate">Monte sua Pizza</h1>
@@ -452,7 +451,7 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
           onClick={handleClose}
           className="w-9 h-9 rounded-full bg-muted flex items-center justify-center active:scale-90 transition-transform"
         >
-          <AppIcon name="X" className="h-5 w-5 text-foreground" />
+          <X className="h-5 w-5 text-foreground" />
         </button>
       </div>
 
@@ -472,7 +471,7 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
         )}
         <div className="flex items-center gap-2">
           <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center">
-            {step === borderStep ? <AppIcon name="Circle" className="h-5 w-5 text-primary" /> : step === addonStep ? <AppIcon name="PlusCircle" className="h-5 w-5 text-primary" /> : <AppIcon name="Pizza" className="h-5 w-5 text-primary" />}
+            {step === borderStep ? <Circle className="h-5 w-5 text-primary" /> : step === addonStep ? <PlusCircle className="h-5 w-5 text-primary" /> : <Pizza className="h-5 w-5 text-primary" />}
           </div>
           <div>
             <p className="text-sm font-bold text-foreground">
@@ -658,7 +657,7 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
                             <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
                               isSelected ? "border-primary bg-primary" : "border-muted-foreground/40"
                             }`}>
-                              {isSelected && <AppIcon name="Check" className="h-3 w-3 text-primary-foreground" />}
+                              {isSelected && <Check className="h-3 w-3 text-primary-foreground" />}
                             </div>
                           )}
                           <div className="flex-1 min-w-0">
@@ -741,7 +740,7 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
                           <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 ${
                             isSel ? "border-primary bg-primary" : "border-muted-foreground/40"
                           }`}>
-                            {isSel && <AppIcon name="Check" className="h-3 w-3 text-primary-foreground" />}
+                            {isSel && <Check className="h-3 w-3 text-primary-foreground" />}
                           </div>
                           <div className="flex-1 min-w-0">
                             <span className="text-sm font-bold text-foreground">{it.name}</span>
@@ -797,7 +796,7 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
                       <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
                         isSelected ? "border-primary bg-primary" : "border-muted-foreground/40"
                       }`}>
-                        {isSelected && <AppIcon name="Check" className="h-3 w-3 text-primary-foreground" />}
+                        {isSelected && <Check className="h-3 w-3 text-primary-foreground" />}
                       </div>
                       <div className="flex-1 min-w-0">
                         <span className="text-sm font-bold text-foreground">{border.name}</span>
@@ -865,14 +864,14 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
                   onClick={() => setQuantity(q => Math.max(1, q - 1))}
                   className="w-9 h-9 rounded-full bg-background flex items-center justify-center active:scale-90 transition-transform"
                 >
-                  <AppIcon name="Minus" className="h-4 w-4" />
+                  <Minus className="h-4 w-4" />
                 </button>
                 <span className="font-black text-lg w-7 text-center">{quantity}</span>
                 <button
                   onClick={() => setQuantity(q => q + 1)}
                   className="w-9 h-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center active:scale-90 transition-transform"
                 >
-                  <AppIcon name="Plus" className="h-4 w-4" />
+                  <Plus className="h-4 w-4" />
                 </button>
               </div>
             </div>
@@ -885,7 +884,7 @@ const PizzaHalfHalfModal = ({ open, onClose, storeName, storeId, products, secti
                   : "bg-muted text-muted-foreground cursor-not-allowed"
               }`}
             >
-              <AppIcon name="ShoppingCart" className="h-5 w-5" />
+              <ShoppingCart className="h-5 w-5" />
               Adicionar • {formatBRL(lineTotal)}
             </button>
           </div>

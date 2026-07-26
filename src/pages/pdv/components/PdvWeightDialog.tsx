@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
+import { Scale, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { formatBRL } from "@/lib/utils";
 import type { Product } from "@/pages/pdv/types";
-import { AppIcon } from "@/components/ui/app-icon";
-import { Scale, Loader2 } from "lucide-react";
 
 interface Props {
   product: Product | null;
@@ -94,7 +93,7 @@ export const PdvWeightDialog = ({ product, open, onClose, onAdd }: Props) => {
       <div className="bg-card rounded-2xl border border-border w-full max-w-sm p-5 space-y-4 shadow-2xl">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-            <AppIcon name="Scale" className="h-5 w-5 text-primary" />
+            <Scale className="h-5 w-5 text-primary" />
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="font-black text-base truncate">{product.name}</h3>
@@ -140,7 +139,7 @@ export const PdvWeightDialog = ({ product, open, onClose, onAdd }: Props) => {
               disabled={reading}
               className="w-full mt-2 h-10 rounded-xl bg-primary/10 text-primary border border-primary/30 text-xs font-black flex items-center justify-center gap-2 disabled:opacity-60"
             >
-              {reading ? <AppIcon name="Loader2" className="h-3.5 w-3.5 animate-spin" /> : <AppIcon name="Scale" className="h-3.5 w-3.5" />}
+              {reading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Scale className="h-3.5 w-3.5" />}
               Ler balança
             </button>
           )}
@@ -167,7 +166,7 @@ export const PdvWeightDialog = ({ product, open, onClose, onAdd }: Props) => {
             disabled={!canAdd}
             className="flex-1 h-11 rounded-xl bg-primary text-primary-foreground text-sm font-black hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
           >
-            <AppIcon name="Loader2" className="h-4 w-4 hidden" />
+            <Loader2 className="h-4 w-4 hidden" />
             Adicionar
           </button>
         </div>

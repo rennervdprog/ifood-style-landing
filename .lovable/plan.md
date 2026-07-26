@@ -1,89 +1,104 @@
 ## Objetivo
+Corrigir o bug do teclado no app cliente onde, ao focar qualquer input, aparece um grande espaço branco/cinza entre o conteúdo e o teclado, deixando a tela difícil ou impossível de usar.
 
-Trocar **todos os ícones** da aplicação (Lucide → Solar/MDI via `AppIcon`) e depois deixar 100% **offline** — zero requests para `api.iconify.design`, funciona no APK sem internet.
+## Diagnóstico provável
+O problema não é mais a cor preta/cinza: agora o WebView está branco, mas o bug real continua porque o app está adicionando `padding-bottom` global no `#root` com a altura inteira do teclado.
 
-Escopo hoje: **286 arquivos** importam de `lucide-react` (`/cliente`, `/admin`, `/pdv`, `/super-admin`, `/reseller`, `auth`, componentes UI, etc).
+Na prática, quando o teclado abre:
 
----
-
-## Fase 1 — Mapa de ícones (fonte única da verdade)
-
-Criar `src/lib/icon-map.ts` mapeando cada ícone Lucide usado no app para o equivalente Solar (fallback MDI quando Solar não tem). Ex:
-
-```
-ShoppingCart → solar:cart-large-minimalistic
-Pizza        → mdi:pizza
-Hamburger    → mdi:hamburger
-Store        → solar:shop
-Search       → solar:magnifer
-...
+```text
+Tela normal
++ conteúdo
++ padding gigante = altura do teclado
++ teclado Android
 ```
 
-Auditoria automatizada: script varre `src/`, extrai todo símbolo importado de `lucide-react`, gera o mapa inicial. Ícones sem equivalente óbvio ficam marcados `// TODO` para revisão manual (poucos casos).
+Esse padding vira a “mancha enorme” visível na tela, especialmente em checkout, login e modais.
 
-## Fase 2 — Codemod: swap em massa
+## Plano de correção
 
-Script Node que, para cada `.tsx`:
-1. Remove `import { X, Y } from "lucide-react"`.
-2. Adiciona `import { AppIcon } from "@/components/ui/app-icon"`.
-3. Substitui `<X className="..." />` por `<AppIcon name="{mapa[X]}" className="..." />`.
-4. Preserva props (`className`, `size`, `aria-label`).
+### 1. Remover o padding global gigante do app
+Alterar `src/index.css` para parar de aplicar isso globalmente:
 
-Regra de variante:
-- **`bold-duotone`** em destaques (ativos, cards, hero, CTAs).
-- **`linear`** em UI utilitária (inputs, tabs inativas, botões secundários).
-- Detecção heurística por contexto (ex: dentro de `Button variant="ghost"` → linear).
+```css
+.native-app.keyboard-open #root {
+  padding-bottom: altura-do-teclado;
+}
+```
 
-Rollout em 6 lotes, um por área, cada lote = 1 commit + smoke test visual:
-1. `/cliente` (parcial já feito — completar checkout, cart, pedidos)
-2. `/admin` (dashboard, cardápio, pedidos, financeiro)
-3. `/pdv` (vender, mesas, comandas, relatórios, config)
-4. `/super-admin` (todas as abas)
-5. `/reseller`
-6. Componentes compartilhados (`components/ui`, headers, modais, toasts)
+Manter apenas `scroll-padding-bottom`, que ajuda o campo focado a não ficar escondido, mas sem criar um bloco branco visível.
 
-## Fase 3 — Validação
+### 2. Trocar a estratégia: teclado sobreposto + scroll controlado
+Manter no Android:
 
-- `tsgo --noEmit` a cada lote.
-- Screenshot Playwright de 8 rotas-chave antes/depois pra pegar ícones quebrados (nome errado no mapa).
-- Remover `lucide-react` do `package.json` no final (só se 0 imports restarem).
+```xml
+android:windowSoftInputMode="adjustNothing"
+```
 
-## Fase 4 — Offline (bundle local)
+e no Capacitor:
 
-Hoje `@iconify/react` busca cada ícone da API pública e cacheia em `localStorage`. No APK sem internet a 1ª carga fica em branco.
+```ts
+KeyboardResize.None
+```
 
-Solução:
-1. Gerar `src/lib/icons-bundle.ts` que importa **só os ícones usados** direto dos JSONs locais (`@iconify-json/solar/icons.json`, `@iconify-json/mdi/icons.json`) e registra via `addCollection()` do `@iconify/react`.
-2. Script lê `icon-map.ts`, extrai os ~60-80 ícones únicos, monta o bundle enxuto (~15-25 KB gzip).
-3. `AppIcon` continua igual — Iconify vê o ícone registrado localmente e nunca chama a API.
-4. Import do bundle em `src/main.tsx` (top-level).
+Mas o JavaScript não deve “empurrar” a página inteira; ele deve apenas rolar o input ativo para uma posição útil.
 
-Resultado: zero network, funciona offline no APK, bundle mínimo.
+### 3. Melhorar o `scrollFocusedFieldIntoView`
+Atualizar `src/lib/nativeBoot.ts` para:
 
-## Fase 5 — Versionamento
+- usar `requestAnimationFrame` + delay curto após o teclado abrir;
+- calcular se o input está atrás do teclado;
+- rolar somente o necessário;
+- não centralizar agressivamente campos que já estão visíveis;
+- evitar scroll quando o input está no topo e já pode ser usado.
 
-Bump patch a cada lote (v1.25.75 → v1.25.80 aprox), sincronizando `appVersion.ts` + `build.gradle` (versionName + versionCode).
+### 4. Corrigir telas com rodapé fixo durante teclado
+Auditar e ajustar telas críticas com input:
 
----
+- login/cadastro;
+- checkout `/checkout` e guest checkout;
+- modais de endereço/observação;
+- perfil/endereço;
+- busca.
 
-## Detalhes técnicos
+Quando o teclado estiver aberto no app nativo, rodapés fixos como resumo do pedido devem não criar espaço extra nem disputar com o teclado.
 
-- **Sem quebra de design system:** `AppIcon` já usa `currentColor` + `cn()`, então `text-primary`, `text-muted-foreground` etc continuam funcionando.
-- **Sem `size` prop:** Solar/MDI seguem `className` (`h-4 w-4`). Codemod converte `size={16}` → `className="h-4 w-4"`.
-- **Ícones muito específicos do Lucide sem par:** manter Lucide pontualmente (permitido — `AppIcon` e Lucide coexistem). Objetivo é ~95%+ migrado, não 100% forçado.
-- **Rollback:** cada lote é 1 commit; reverter é trivial. `icon-map.ts` centraliza qualquer ajuste posterior.
+### 5. Adicionar classe utilitária segura
+Criar uma regra CSS tipo:
 
-## Riscos
+```css
+.native-app.keyboard-open .native-hide-while-keyboard {
+  display: none;
+}
+```
 
-- Ícones com nome ambíguo (`Menu`, `Settings`, `MoreVertical`) — mapa curado manualmente.
-- Ícones customizados (SVGs próprios já importados como componente) — **não** são tocados.
-- Regressão visual em telas raras — mitigado pelos screenshots Playwright.
+Usar apenas em barras fixas que atrapalham inputs, como CTA/resumo fixo no checkout, se necessário.
 
-## Entregável final
+### 6. Validação real
+Como esse bug depende do teclado nativo Android, o teste final precisa ser no APK, mas antes vou validar no código:
 
-- 100% do app com visual Solar/MDI premium (tipo iFood/Rappi).
-- Bundle offline (~20 KB) sem depender da API pública.
-- `lucide-react` removido (ou reduzido a poucos casos).
-- Rollback simples via `icon-map.ts`.
+- sem `padding-bottom` global com altura do teclado;
+- sem `KeyboardResize.Body` ou `Native`;
+- sem `reload`/layout shift relacionado a OTA;
+- campos ainda recebem scroll automático.
 
-Aprova pra eu começar pela Fase 1 (mapa + auditoria)?
+Depois de gerar APK, testar no celular:
+
+1. login com senha;
+2. checkout/finalizar pedido;
+3. campo telefone/número;
+4. modal com input;
+5. fechar teclado e abrir de novo.
+
+## Arquivos que serão alterados
+
+- `src/index.css`
+- `src/lib/nativeBoot.ts`
+- possivelmente `src/pages/CheckoutPage.tsx` e `src/pages/GuestCheckoutPage.tsx` se o rodapé fixo estiver interferindo
+- versão sincronizada em:
+  - `src/lib/appVersion.ts`
+  - `android/app/build.gradle`
+  - `android/app/src/main/java/.../MainActivity.java`
+
+## Resultado esperado
+Ao abrir o teclado, a tela não deve criar uma faixa branca gigante; o teclado deve sobrepor a parte inferior e o app deve apenas rolar o campo ativo para ficar usável.

@@ -1,10 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
+import { TrendingUp } from "lucide-react";
 import { formatBRL } from "@/lib/utils";
 import { startOfMonth, endOfMonth } from "date-fns";
-import { AppIcon } from "@/components/ui/app-icon";
-import { TrendingUp } from "lucide-react";
 
 export default function RecebidoNoMesCard({ storeId }: { storeId: string }) {
   const { data } = useQuery({
@@ -56,7 +55,7 @@ export default function RecebidoNoMesCard({ storeId }: { storeId: string }) {
       <CardContent className="pt-5 space-y-2">
         <div className="flex items-center justify-between">
           <div className="text-[10px] uppercase tracking-widest font-semibold text-muted-foreground">Recebido líquido no mês</div>
-          <AppIcon name="TrendingUp" className="h-4 w-4 text-emerald-500" />
+          <TrendingUp className="h-4 w-4 text-emerald-500" />
         </div>
         <div className="text-3xl font-black text-emerald-600 dark:text-emerald-400">{formatBRL(data?.total ?? 0)}</div>
         <div className="text-[11px] text-muted-foreground">

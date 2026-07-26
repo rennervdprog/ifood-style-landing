@@ -1,11 +1,10 @@
 import { useEffect, useState } from "react";
+import { ArrowLeft, Loader2, Monitor, Unlock, User, KeyRound, LogOut, BarChart3, CreditCard, Shield } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { formatBRLDisplay, parseBRLCentsInput } from "@/hooks/useBRLInput";
 import { usePdvOperator } from "@/hooks/usePdvOperator";
 import { PdvOperatorLoginDialog } from "@/components/pdv/PdvOperatorLoginDialog";
 import { supabase } from "@/integrations/supabase/client";
-import { AppIcon } from "@/components/ui/app-icon";
-import { ArrowLeft, Loader2, Monitor, Unlock, User, KeyRound, LogOut, BarChart3, CreditCard, Shield } from "lucide-react";
 
 interface Props {
   storeName?: string;
@@ -42,9 +41,9 @@ export const PdvAberturaScreen = ({ storeName, storeId, openingAmount, setOpenin
     <div className="pdv-shell min-h-screen bg-background flex flex-col">
       <header className="h-14 border-b border-border flex items-center px-4 gap-3 bg-card">
         <button onClick={() => navigate("/admin")} className="p-1.5 rounded-xl hover:bg-muted transition-colors">
-          <AppIcon name="ArrowLeft" className="h-5 w-5" />
+          <ArrowLeft className="h-5 w-5" />
         </button>
-        <AppIcon name="Monitor" className="h-5 w-5 text-primary" />
+        <Monitor className="h-5 w-5 text-primary" />
         <div className="flex-1">
           <p className="text-sm font-bold">{storeName}</p>
           <p className="text-[10px] text-muted-foreground">PDV · Caixa fechado</p>
@@ -62,7 +61,7 @@ export const PdvAberturaScreen = ({ storeName, storeId, openingAmount, setOpenin
         >
           <div className="text-center space-y-3">
             <div className="w-20 h-20 rounded-3xl bg-primary/10 border-2 border-primary/20 flex items-center justify-center mx-auto">
-              <AppIcon name="Unlock" className="h-9 w-9 text-primary" />
+              <Unlock className="h-9 w-9 text-primary" />
             </div>
             <div>
               <h2 className="text-2xl font-black text-foreground">Abrir Caixa</h2>
@@ -77,14 +76,14 @@ export const PdvAberturaScreen = ({ storeName, storeId, openingAmount, setOpenin
               className="w-full text-left bg-card rounded-2xl border border-border p-3 flex items-center gap-3 hover:bg-muted/40 transition-colors"
             >
               <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
-                <AppIcon name="User" className="h-4 w-4 text-primary" />
+                <User className="h-4 w-4 text-primary" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-[10px] font-bold uppercase text-muted-foreground">Operador</p>
                 <p className="text-sm font-black truncate">{operator?.name || "Nenhum selecionado"}</p>
               </div>
               <span className="p-2 rounded-lg text-muted-foreground">
-                {operator ? <AppIcon name="LogOut" className="h-4 w-4" /> : <AppIcon name="KeyRound" className="h-4 w-4" />}
+                {operator ? <LogOut className="h-4 w-4" /> : <KeyRound className="h-4 w-4" />}
               </span>
             </button>
           )}
@@ -96,7 +95,7 @@ export const PdvAberturaScreen = ({ storeName, storeId, openingAmount, setOpenin
               className="w-full text-left rounded-2xl border border-primary/30 bg-primary/5 p-4 flex items-start gap-3 hover:bg-primary/10 transition-colors"
             >
               <div className="w-9 h-9 rounded-xl bg-primary/15 flex items-center justify-center shrink-0">
-                <AppIcon name="Shield" className="h-4 w-4 text-primary" />
+                <Shield className="h-4 w-4 text-primary" />
               </div>
               <div className="flex-1 min-w-0 space-y-1">
                 <p className="text-[11px] font-black uppercase tracking-wider text-primary">Primeiro acesso? Comece aqui</p>
@@ -135,7 +134,7 @@ export const PdvAberturaScreen = ({ storeName, storeId, openingAmount, setOpenin
               onClick={operator ? undefined : (e) => { e.preventDefault(); setPinOpen(true); }}
               className="w-full h-14 bg-primary text-primary-foreground font-black text-base rounded-2xl flex items-center justify-center gap-2.5 active:scale-[0.98] transition-all shadow-lg shadow-primary/30 disabled:opacity-60"
             >
-              {loading ? <AppIcon name="Loader2" className="h-5 w-5 animate-spin" /> : <AppIcon name="Unlock" className="h-5 w-5" />}
+              {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Unlock className="h-5 w-5" />}
               {operator ? "Abrir Caixa" : "Selecione o operador"}
             </button>
           </div>
@@ -152,7 +151,7 @@ export const PdvAberturaScreen = ({ storeName, storeId, openingAmount, setOpenin
                 onClick={onViewReports}
                 className="w-full h-14 bg-card border border-border hover:border-primary/40 hover:bg-muted/40 text-foreground font-black text-sm rounded-2xl flex items-center justify-center gap-2.5 active:scale-[0.98] transition-all"
               >
-                <AppIcon name="BarChart3" className="h-5 w-5 text-primary" />
+                <BarChart3 className="h-5 w-5 text-primary" />
                 Ver relatórios
               </button>
               <p className="text-[11px] text-center text-muted-foreground -mt-2">
@@ -167,7 +166,7 @@ export const PdvAberturaScreen = ({ storeName, storeId, openingAmount, setOpenin
               onClick={onViewPlan}
               className="w-full h-14 bg-card border border-border hover:border-primary/40 hover:bg-muted/40 text-foreground font-black text-sm rounded-2xl flex items-center justify-center gap-2.5 active:scale-[0.98] transition-all"
             >
-              <AppIcon name="CreditCard" className="h-5 w-5 text-primary" />
+              <CreditCard className="h-5 w-5 text-primary" />
               Meu Plano & Mensalidades
             </button>
           )}

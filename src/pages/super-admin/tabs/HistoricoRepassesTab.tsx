@@ -5,9 +5,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { brl, exportCSV } from "@/components/finance/financeExport";
-import { AppIcon } from "@/components/ui/app-icon";
 import { Download, CheckCircle2, Crown, Truck, Percent, ShoppingCart } from "lucide-react";
+import { brl, exportCSV } from "@/components/finance/financeExport";
 
 const KIND_LABEL: Record<string, { label: string; icon: typeof Crown; color: string }> = {
   mensalidade: { label: "Mensalidade", icon: Crown, color: "text-primary" },
@@ -101,7 +100,7 @@ const HistoricoRepassesTab = () => {
           }
           disabled={!filtered.length}
         >
-          <AppIcon name="Download" className="w-4 h-4 mr-1" /> CSV
+          <Download className="w-4 h-4 mr-1" /> CSV
         </Button>
       </div>
 

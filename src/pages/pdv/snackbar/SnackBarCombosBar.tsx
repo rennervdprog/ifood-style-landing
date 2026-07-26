@@ -2,10 +2,9 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { formatBRL } from "@/lib/utils";
+import { Layers } from "lucide-react";
 import type { Product } from "@/pages/pdv/types";
 import SnackBarComboBuilderDialog from "./SnackBarComboBuilderDialog";
-import { AppIcon } from "@/components/ui/app-icon";
-import { Layers } from "lucide-react";
 
 interface Combo {
   id: string;
@@ -67,7 +66,7 @@ export default function SnackBarCombosBar({ storeId, addItem }: Props) {
   return (
     <div className="border-b border-border bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 px-3 py-2">
       <div className="flex items-center gap-1.5 mb-2">
-        <AppIcon name="Layers" className="h-3.5 w-3.5 text-primary" />
+        <Layers className="h-3.5 w-3.5 text-primary" />
         <span className="text-[10px] font-bold uppercase tracking-wider text-primary">
           Combos
         </span>
@@ -88,7 +87,7 @@ export default function SnackBarCombosBar({ storeId, addItem }: Props) {
               />
             ) : (
               <div className="w-full h-20 rounded-lg bg-primary/10 flex items-center justify-center mb-1.5">
-                <AppIcon name="Layers" className="h-6 w-6 text-primary/40" />
+                <Layers className="h-6 w-6 text-primary/40" />
               </div>
             )}
             <p className="text-xs font-bold text-foreground line-clamp-1">{c.name}</p>

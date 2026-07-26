@@ -3,7 +3,6 @@ import { formatBRL } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
-import { AppIcon } from "@/components/ui/app-icon";
 import { TrendingUp, Star } from "lucide-react";
 
 const PopularProducts = memo(() => {
@@ -41,7 +40,7 @@ const PopularProducts = memo(() => {
   return (
     <div className="px-4 pt-4">
       <div className="flex items-center gap-1.5 mb-3">
-        <AppIcon name="TrendingUp" className="h-4 w-4 text-primary" />
+        <TrendingUp className="h-4 w-4 text-primary" />
         <h2 className="text-sm font-bold text-foreground">Mais Pedidos</h2>
       </div>
       <div className="flex overflow-x-auto gap-3 no-scrollbar -mx-1 px-1 pb-1">
@@ -63,7 +62,7 @@ const PopularProducts = memo(() => {
               />
             ) : (
               <div className="w-full h-20 bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
-                <AppIcon name="Star" className="h-6 w-6 text-primary/40" />
+                <Star className="h-6 w-6 text-primary/40" />
               </div>
             )}
             <div className="p-2">

@@ -1,12 +1,11 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { formatBRL } from "@/lib/utils";
+import { FlaskConical, Trash2, ShoppingBag, DollarSign, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { AppIcon } from "@/components/ui/app-icon";
-import { FlaskConical, Trash2, ShoppingBag, DollarSign, AlertCircle } from "lucide-react";
 
 const TestStoreFinancePanel = () => {
   const queryClient = useQueryClient();
@@ -99,7 +98,7 @@ const TestStoreFinancePanel = () => {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30">
-        <AppIcon name="FlaskConical" className="h-6 w-6 text-amber-500" />
+        <FlaskConical className="h-6 w-6 text-amber-500" />
         <div>
           <h2 className="font-bold text-foreground">Finanças de Teste (Fictícias)</h2>
           <p className="text-xs text-muted-foreground">
@@ -113,11 +112,11 @@ const TestStoreFinancePanel = () => {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Card><CardContent className="pt-4">
           <p className="text-[10px] uppercase text-muted-foreground">Lojas de teste</p>
-          <p className="text-2xl font-bold flex items-center gap-1"><AppIcon name="FlaskConical" className="h-4 w-4 text-amber-500" />{testStores.length}</p>
+          <p className="text-2xl font-bold flex items-center gap-1"><FlaskConical className="h-4 w-4 text-amber-500" />{testStores.length}</p>
         </CardContent></Card>
         <Card><CardContent className="pt-4">
           <p className="text-[10px] uppercase text-muted-foreground">Pedidos (todos)</p>
-          <p className="text-2xl font-bold flex items-center gap-1"><AppIcon name="ShoppingBag" className="h-4 w-4 text-blue-500" />{testOrders.length}</p>
+          <p className="text-2xl font-bold flex items-center gap-1"><ShoppingBag className="h-4 w-4 text-blue-500" />{testOrders.length}</p>
         </CardContent></Card>
         <Card><CardContent className="pt-4">
           <p className="text-[10px] uppercase text-muted-foreground">Pedidos finalizados</p>
@@ -125,7 +124,7 @@ const TestStoreFinancePanel = () => {
         </CardContent></Card>
         <Card><CardContent className="pt-4">
           <p className="text-[10px] uppercase text-muted-foreground">GMV fictício</p>
-          <p className="text-2xl font-bold flex items-center gap-1"><AppIcon name="DollarSign" className="h-4 w-4 text-amber-500" />{formatBRL(totalGMV)}</p>
+          <p className="text-2xl font-bold flex items-center gap-1"><DollarSign className="h-4 w-4 text-amber-500" />{formatBRL(totalGMV)}</p>
           <p className="text-[10px] text-muted-foreground">Comissão fake: {formatBRL(totalCommission)}</p>
         </CardContent></Card>
       </div>
@@ -150,7 +149,7 @@ const TestStoreFinancePanel = () => {
                       <div className="flex items-center gap-2">
                         <span className="font-bold">{store.name}</span>
                         <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/30 text-xs">
-                          <AppIcon name="FlaskConical" className="h-3 w-3 mr-1" />Teste
+                          <FlaskConical className="h-3 w-3 mr-1" />Teste
                         </Badge>
                         <Badge variant="secondary" className="text-xs">{store.status}</Badge>
                       </div>
@@ -162,7 +161,7 @@ const TestStoreFinancePanel = () => {
                         variant="outline"
                         onClick={() => handleResetBalance(store.id, store.name)}
                       >
-                        <AppIcon name="Trash2" className="h-3 w-3 mr-1" /> Zerar saldos
+                        <Trash2 className="h-3 w-3 mr-1" /> Zerar saldos
                       </Button>
                       <Button
                         size="sm"
@@ -225,7 +224,7 @@ const TestStoreFinancePanel = () => {
       )}
 
       <div className="flex items-start gap-2 p-3 rounded-lg bg-blue-500/10 border border-blue-500/30 text-xs">
-        <AppIcon name="AlertCircle" className="h-4 w-4 text-blue-500 shrink-0 mt-0.5" />
+        <AlertCircle className="h-4 w-4 text-blue-500 shrink-0 mt-0.5" />
         <div className="text-blue-600 dark:text-blue-400">
           <strong>Como funciona:</strong> Toda loja com a marcação de teste tem seus pedidos finalizados ignorados pelos triggers de comissão, repasse e moderador.
           Para alternar, use o botão acima ou marque/desmarque na aba "Lojas".

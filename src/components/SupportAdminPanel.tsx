@@ -2,8 +2,11 @@ import { useState, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { AppIcon } from "@/components/ui/app-icon";
-import { MessageCircle, User, Store, Bike, Loader2, Search, UserPlus, X, BarChart3, Users, ChevronDown, ChevronRight, Clock, AlertCircle, CheckCircle2 } from "lucide-react";
+import {
+  MessageCircle, User, Store, Bike, Loader2, Search,
+  UserPlus, X, BarChart3, Users, ChevronDown, ChevronRight,
+  Clock, TrendingUp, AlertCircle, CheckCircle2,
+} from "lucide-react";
 
 const STATUS: Record<string, { label: string; color: string; badge: string }> = {
   aberto:             { label: "Aberto",           color: "text-blue-600",     badge: "bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-400" },
@@ -136,7 +139,7 @@ const SupportAdminPanel = () => {
           <h3 className="text-sm font-black text-foreground">Visão geral</h3>
           {metrics.avgH > 0 && (
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-muted/40 px-3 py-1.5 rounded-xl">
-              <AppIcon name="Clock" className="h-3.5 w-3.5" />
+              <Clock className="h-3.5 w-3.5" />
               <span>Resolução média: <strong className="text-foreground">{metrics.avgH.toFixed(1)}h</strong></span>
             </div>
           )}
@@ -167,7 +170,7 @@ const SupportAdminPanel = () => {
       {Object.keys(metrics.byAgent).length > 0 && (
         <div className="bg-card border border-border/60 rounded-2xl p-4">
           <div className="flex items-center gap-2 mb-4">
-            <AppIcon name="BarChart3" className="h-4 w-4 text-primary" />
+            <BarChart3 className="h-4 w-4 text-primary" />
             <h3 className="text-sm font-black text-foreground">Desempenho por agente</h3>
           </div>
           <div className="space-y-3">
@@ -221,7 +224,7 @@ const SupportAdminPanel = () => {
           <div className="space-y-3">
             <div className="flex gap-2 flex-wrap">
               <div className="relative flex-1 min-w-48">
-                <AppIcon name="Search" className="absolute left-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                 <input value={search} onChange={e => setSearch(e.target.value)}
                   placeholder="Buscar tickets..."
                   className="w-full bg-muted/40 pl-9 pr-4 py-2.5 text-sm rounded-2xl border border-border/60 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all" />
@@ -239,7 +242,7 @@ const SupportAdminPanel = () => {
 
             {isLoading ? (
               <div className="flex items-center justify-center py-10">
-                <AppIcon name="Loader2" className="h-5 w-5 animate-spin text-primary" />
+                <Loader2 className="h-5 w-5 animate-spin text-primary" />
               </div>
             ) : (
               <div className="space-y-2">
@@ -274,8 +277,8 @@ const SupportAdminPanel = () => {
                           </div>
                         </div>
                         {isExp
-                          ? <AppIcon name="ChevronDown" className="h-4 w-4 text-muted-foreground shrink-0" />
-                          : <AppIcon name="ChevronRight" className="h-4 w-4 text-muted-foreground shrink-0" />
+                          ? <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
+                          : <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
                         }
                       </button>
                       {isExp && (
@@ -294,7 +297,7 @@ const SupportAdminPanel = () => {
                 })}
                 {filtered.length === 0 && (
                   <div className="text-center py-10 text-muted-foreground">
-                    <AppIcon name="CheckCircle2" className="h-8 w-8 mx-auto mb-2 opacity-20" />
+                    <CheckCircle2 className="h-8 w-8 mx-auto mb-2 opacity-20" />
                     <p className="text-sm">Nenhum ticket encontrado</p>
                   </div>
                 )}
@@ -312,7 +315,7 @@ const SupportAdminPanel = () => {
               </p>
               <button onClick={() => setShowAddAgent(!showAddAgent)}
                 className="flex items-center gap-2 text-sm font-bold bg-primary text-primary-foreground px-4 py-2 rounded-2xl active:scale-95 transition-transform">
-                <AppIcon name="UserPlus" className="h-3.5 w-3.5" />
+                <UserPlus className="h-3.5 w-3.5" />
                 Adicionar agente
               </button>
             </div>
@@ -328,7 +331,7 @@ const SupportAdminPanel = () => {
                     className="flex-1 bg-background border border-border/60 rounded-2xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all" />
                   <button onClick={addAgent} disabled={addingAgent || !agentEmail.trim()}
                     className="bg-primary text-primary-foreground font-bold px-5 py-2.5 rounded-2xl text-sm active:scale-95 transition-all disabled:opacity-40 flex items-center gap-2">
-                    {addingAgent ? <AppIcon name="Loader2" className="h-3.5 w-3.5 animate-spin" /> : "Adicionar"}
+                    {addingAgent ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Adicionar"}
                   </button>
                 </div>
               </div>
@@ -336,7 +339,7 @@ const SupportAdminPanel = () => {
 
             {agents.length === 0 ? (
               <div className="text-center py-10 text-muted-foreground">
-                <AppIcon name="Users" className="h-8 w-8 mx-auto mb-2 opacity-20" />
+                <Users className="h-8 w-8 mx-auto mb-2 opacity-20" />
                 <p className="text-sm">Nenhum agente cadastrado</p>
                 <p className="text-xs mt-1">Adicione agentes para atender os chamados</p>
               </div>
@@ -346,7 +349,7 @@ const SupportAdminPanel = () => {
                   <div key={ag.user_id}
                     className="flex items-center gap-3 bg-card border border-border/60 rounded-2xl px-4 py-3">
                     <div className="w-9 h-9 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0">
-                      <AppIcon name="User" className="h-4 w-4 text-primary" />
+                      <User className="h-4 w-4 text-primary" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-foreground truncate">{ag.full_name || "—"}</p>
@@ -361,7 +364,7 @@ const SupportAdminPanel = () => {
                     </span>
                     <button onClick={() => removeAgent(ag.user_id, ag.full_name || ag.email)}
                       className="w-8 h-8 rounded-xl hover:bg-red-50 dark:hover:bg-red-500/10 flex items-center justify-center transition-colors group">
-                      <AppIcon name="X" className="h-3.5 w-3.5 text-muted-foreground group-hover:text-red-500 transition-colors" />
+                      <X className="h-3.5 w-3.5 text-muted-foreground group-hover:text-red-500 transition-colors" />
                     </button>
                   </div>
                 ))}

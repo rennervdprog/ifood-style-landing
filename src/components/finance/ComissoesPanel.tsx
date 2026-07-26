@@ -5,12 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { Download, Truck, Wallet, AlertTriangle, Receipt } from "lucide-react";
 import { exportCSV, brl } from "./financeExport";
 import { ConfirmActionDialog } from "./ConfirmActionDialog";
 import { toast } from "sonner";
 import { planLabel } from "@/lib/plansInfo";
-import { AppIcon } from "@/components/ui/app-icon";
-import { Download, Truck, Wallet, AlertTriangle, Receipt } from "lucide-react";
 
 const ComissoesPanel = () => {
   const qc = useQueryClient();
@@ -79,7 +78,7 @@ const ComissoesPanel = () => {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2 text-muted-foreground text-xs mb-1">
-              <AppIcon name="Wallet" className="w-4 h-4" /> Comissão a Receber
+              <Wallet className="w-4 h-4" /> Comissão a Receber
             </div>
             <p className="text-2xl font-bold">{brl(totals.comissao)}</p>
           </CardContent>
@@ -87,7 +86,7 @@ const ComissoesPanel = () => {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2 text-muted-foreground text-xs mb-1">
-              <AppIcon name="Truck" className="w-4 h-4" /> R$2/Entrega a Pagar
+              <Truck className="w-4 h-4" /> R$2/Entrega a Pagar
             </div>
             <p className="text-2xl font-bold text-amber-500">{brl(totals.repasse)}</p>
           </CardContent>
@@ -95,7 +94,7 @@ const ComissoesPanel = () => {
         <Card className={risco ? "border-destructive bg-destructive/5" : "border-primary bg-primary/5"}>
           <CardContent className="p-4">
             <div className="flex items-center gap-2 text-muted-foreground text-xs mb-1">
-              {risco ? <AppIcon name="AlertTriangle" className="w-4 h-4 text-destructive" /> : <AppIcon name="Wallet" className="w-4 h-4" />}
+              {risco ? <AlertTriangle className="w-4 h-4 text-destructive" /> : <Wallet className="w-4 h-4" />}
               Net Plataforma
             </div>
             <p className={`text-2xl font-bold ${risco ? "text-destructive" : "text-primary"}`}>
@@ -109,7 +108,7 @@ const ComissoesPanel = () => {
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-base">Comissões & Repasses por Loja</CardTitle>
           <Button size="sm" variant="outline" onClick={() => exportCSV("comissoes-repasses", rows)} disabled={!rows.length}>
-            <AppIcon name="Download" className="h-4 w-4 mr-1" /> CSV
+            <Download className="h-4 w-4 mr-1" /> CSV
           </Button>
         </CardHeader>
         <CardContent className="space-y-2">
@@ -137,7 +136,7 @@ const ComissoesPanel = () => {
                       variant="outline"
                       onClick={() => setTarget({ id: r.store_id, name: r.name })}
                     >
-                      <AppIcon name="Receipt" className="h-3.5 w-3.5 mr-1" /> Cobrar
+                      <Receipt className="h-3.5 w-3.5 mr-1" /> Cobrar
                     </Button>
                   )}
                 </div>

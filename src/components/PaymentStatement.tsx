@@ -1,12 +1,14 @@
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  FileText, ChevronDown, ChevronUp, CheckCircle2, Clock, XCircle,
+  Copy, Filter, Download, Receipt, TrendingDown, TrendingUp, Wallet, Eye, X
+} from "lucide-react";
 import { formatBRL } from "@/lib/utils";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { AppIcon } from "@/components/ui/app-icon";
-import { FileText, ChevronDown, ChevronUp, CheckCircle2, Clock, XCircle, Copy, Download, Receipt, Eye, X } from "lucide-react";
 
  interface Props {
    storeId: string;
@@ -134,7 +136,7 @@ type FilterType = "all" | "paid" | "pending" | "failed";
       >
         <div className="flex items-center gap-3">
           <div className="bg-primary/10 p-2 rounded-xl">
-            <AppIcon name="FileText" className="h-5 w-5 text-primary" />
+            <FileText className="h-5 w-5 text-primary" />
           </div>
           <div className="text-left">
             <p className="text-sm font-bold text-foreground">Extrato Financeiro Completo</p>
@@ -143,7 +145,7 @@ type FilterType = "all" | "paid" | "pending" | "failed";
             </p>
           </div>
         </div>
-        {open ? <AppIcon name="ChevronUp" className="h-5 w-5 text-muted-foreground" /> : <AppIcon name="ChevronDown" className="h-5 w-5 text-muted-foreground" />}
+        {open ? <ChevronUp className="h-5 w-5 text-muted-foreground" /> : <ChevronDown className="h-5 w-5 text-muted-foreground" />}
       </button>
 
       {open && (
@@ -185,7 +187,7 @@ type FilterType = "all" | "paid" | "pending" | "failed";
                 onClick={exportCSV}
                 className="flex items-center gap-1 bg-primary/10 text-primary px-2.5 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap"
               >
-                <AppIcon name="Download" className="h-3 w-3" /> CSV
+                <Download className="h-3 w-3" /> CSV
               </button>
             </div>
 
@@ -228,7 +230,7 @@ type FilterType = "all" | "paid" | "pending" | "failed";
             )}
             {!isLoading && filtered.length === 0 && (
               <div className="text-center py-8 px-4">
-                <AppIcon name="Receipt" className="h-10 w-10 mx-auto mb-2 text-muted-foreground opacity-30" />
+                <Receipt className="h-10 w-10 mx-auto mb-2 text-muted-foreground opacity-30" />
                 <p className="text-xs text-muted-foreground">
                   Nenhuma transação encontrada com esses filtros.
                 </p>
@@ -266,7 +268,7 @@ type FilterType = "all" | "paid" | "pending" | "failed";
                               onClick={() => setSelectedTx(t)}
                               className="text-[10px] font-bold text-primary flex items-center gap-1 bg-primary/5 px-2 py-0.5 rounded-full hover:bg-primary/10 transition-colors"
                             >
-                              <AppIcon name="Eye" className="h-2.5 w-2.5" /> Detalhes
+                              <Eye className="h-2.5 w-2.5" /> Detalhes
                             </button>
                           )}
                         </div>
@@ -277,11 +279,11 @@ type FilterType = "all" | "paid" | "pending" | "failed";
               <div className="bg-card rounded-2xl w-full max-w-sm border border-border shadow-2xl overflow-hidden animate-in zoom-in-95" onClick={e => e.stopPropagation()}>
                 <div className="p-4 border-b border-border flex items-center justify-between bg-muted/30">
                   <div className="flex items-center gap-2">
-                    <AppIcon name="Receipt" className="h-4 w-4 text-primary" />
+                    <Receipt className="h-4 w-4 text-primary" />
                     <h3 className="font-bold text-sm">Comprovante de Operação</h3>
                   </div>
                   <button onClick={() => setSelectedTx(null)} className="p-1 rounded-full hover:bg-muted transition-colors">
-                    <AppIcon name="X" className="h-4 w-4 text-muted-foreground" />
+                    <X className="h-4 w-4 text-muted-foreground" />
                   </button>
                 </div>
                 
@@ -291,7 +293,7 @@ type FilterType = "all" | "paid" | "pending" | "failed";
                     <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">Valor da Transação</p>
                     <p className="text-3xl font-black text-foreground">{formatBRL(Number(selectedTx.amount))}</p>
                     <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold border bg-emerald-500/10 text-emerald-600 border-emerald-500/20">
-                      <AppIcon name="CheckCircle2" className="h-3 w-3" /> Operação {statusMeta[selectedTx.status]?.label || selectedTx.status}
+                      <CheckCircle2 className="h-3 w-3" /> Operação {statusMeta[selectedTx.status]?.label || selectedTx.status}
                     </div>
                   </div>
 
@@ -362,7 +364,7 @@ type FilterType = "all" | "paid" | "pending" | "failed";
                             }}
                             className="text-[10px] text-primary hover:underline flex items-center gap-1 shrink-0"
                           >
-                            <AppIcon name="Copy" className="h-3 w-3" /> PIX
+                            <Copy className="h-3 w-3" /> PIX
                           </button>
                         )}
                       </div>

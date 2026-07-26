@@ -15,6 +15,11 @@ import { toast } from "sonner";
 import { getOrderItemDisplayName } from "@/lib/orderItemName";
 import { notifyOrderStatusChange } from "@/lib/orderNotifications";
 import confetti from "canvas-confetti";
+import {
+  Bike, MapPin, Navigation, KeyRound, CheckCircle2, Package,
+  Store, ChevronRight, Route, Clock, User, Phone, ArrowRight,
+  Loader2, Zap, Wallet, Power, PowerOff, X, AlertTriangle
+} from "lucide-react";
 
 const DECLINED_TTL_MS = 1000 * 60 * 60 * 6; // 6h
 const declinedKey = (uid: string) => `store_driver_declined_${uid}`;
@@ -60,19 +65,17 @@ import {
 } from "@/lib/navUrls";
 import { optimizeRouteOsrm } from "@/lib/osrmRouting";
 import { startArrivalWatch, stopArrivalWatch } from "@/lib/arrivalGeofence";
-import { AppIcon } from "@/components/ui/app-icon";
-import { Bike, MapPin, Navigation, KeyRound, CheckCircle2, Package, Store, ChevronRight, Route, Clock, User, ArrowRight, Loader2, Zap, Power, X } from "lucide-react";
 
 const NavigationLinks = ({ target }: { target: NavTarget }) => {
   return (
     <div className="flex gap-2 mt-2">
       <a href={buildGoogleMapsUrl(target)} target="_blank" rel="noopener noreferrer"
         className="flex-1 flex items-center justify-center gap-1.5 bg-primary/10 text-primary text-xs font-bold px-3 py-2.5 rounded-xl active:scale-[0.97] transition-all">
-        <AppIcon name="Navigation" className="h-3.5 w-3.5" /> Google Maps
+        <Navigation className="h-3.5 w-3.5" /> Google Maps
       </a>
       <a href={buildWazeUrl(target)} target="_blank" rel="noopener noreferrer"
         className="flex-1 flex items-center justify-center gap-1.5 bg-success/10 text-success text-xs font-bold px-3 py-2.5 rounded-xl active:scale-[0.97] transition-all">
-        <AppIcon name="Navigation" className="h-3.5 w-3.5" /> Waze
+        <Navigation className="h-3.5 w-3.5" /> Waze
       </a>
     </div>
   );
@@ -1009,7 +1012,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
             activeTab === "routes" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
           }`}
         >
-          <AppIcon name="Route" className="h-4 w-4" />
+          <Route className="h-4 w-4" strokeWidth={2.5} />
           Entregas
           {totalActive > 0 && <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full ${activeTab === "routes" ? "bg-primary text-white" : "bg-muted text-muted-foreground"}`}>{totalActive}</span>}
         </button>
@@ -1020,7 +1023,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
             activeTab === "history" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
           }`}
         >
-          <AppIcon name="Clock" className="h-4 w-4" />
+          <Clock className="h-4 w-4" strokeWidth={2.5} />
           Histórico
         </button>
       </div>
@@ -1048,7 +1051,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
                       : "bg-card border border-border text-foreground hover:bg-muted/50"
                   }`}
                 >
-                  <AppIcon name="Store" className="h-3.5 w-3.5" />
+                  <Store className="h-3.5 w-3.5" />
                   <span className="truncate max-w-[120px]">{getStoreName(sid)}</span>
                   {count > 0 && (
                     <span className={`min-w-[20px] h-5 rounded-full text-[10px] font-black flex items-center justify-center ${
@@ -1073,7 +1076,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
           }`}
         >
           <div className="flex items-center gap-3">
-            <AppIcon name="Route" className={`h-5 w-5 ${useOptimized ? "text-primary" : "text-muted-foreground"}`} />
+            <Route className={`h-5 w-5 ${useOptimized ? "text-primary" : "text-muted-foreground"}`} strokeWidth={2} />
             <div className="text-left">
               <p className={`text-sm font-bold ${useOptimized ? "text-primary" : "text-foreground"}`}>Rota otimizada</p>
               <p className="text-xs text-muted-foreground">
@@ -1133,16 +1136,16 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
                   <p className="text-[10px] opacity-75">{stopIndex} de {totalStops} · faltam {remainingStops}</p>
                 </div>
               </div>
-              <AppIcon name="Zap" className="h-5 w-5 opacity-80" />
+              <Zap className="h-5 w-5 opacity-80" />
             </div>
 
             <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 mb-3">
               <div className="flex items-start gap-2 mb-1">
-                <AppIcon name="User" className="h-3.5 w-3.5 mt-0.5 opacity-80 flex-shrink-0" />
+                <User className="h-3.5 w-3.5 mt-0.5 opacity-80 flex-shrink-0" />
                 <p className="text-sm font-bold leading-tight">{contactName}</p>
               </div>
               <div className="flex items-start gap-2">
-                <AppIcon name="MapPin" className="h-3.5 w-3.5 mt-0.5 opacity-80 flex-shrink-0" />
+                <MapPin className="h-3.5 w-3.5 mt-0.5 opacity-80 flex-shrink-0" />
                 <p className="text-xs leading-snug opacity-95">{fullAddr}</p>
               </div>
             </div>
@@ -1153,9 +1156,9 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
               rel="noopener noreferrer"
               className="w-full flex items-center justify-center gap-2 bg-white text-primary font-black text-sm px-4 py-3 rounded-xl active:scale-[0.97] transition-all shadow-md"
             >
-              <AppIcon name="Navigation" className="h-4 w-4" />
+              <Navigation className="h-4 w-4" />
               {navApp === "google" ? "Iniciar no Google Maps" : "Iniciar no Waze"}
-              <AppIcon name="ArrowRight" className="h-4 w-4" />
+              <ArrowRight className="h-4 w-4" />
             </a>
 
             {/* Seletor de navegador preferido */}
@@ -1201,7 +1204,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
           <div className="flex items-center justify-between px-1">
             <div className="flex items-center gap-2.5">
               <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 flex items-center justify-center border border-primary/10">
-                <AppIcon name="Route" className="h-4 w-4 text-primary" />
+                <Route className="h-4 w-4 text-primary" strokeWidth={2.5} />
               </div>
               <div>
                 <p className="text-[10px] font-black text-primary uppercase tracking-widest leading-none">Sua Rota</p>
@@ -1221,7 +1224,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
                 disabled={departingId === "all"}
                 className="bg-warning text-warning-foreground px-3.5 py-2 rounded-xl text-[11px] font-black flex items-center gap-1.5 shadow-md shadow-warning/30 active:scale-95 transition-all disabled:opacity-50"
               >
-                {departingId === "all" ? <AppIcon name="Loader2" className="h-3.5 w-3.5 animate-spin" /> : <AppIcon name="Navigation" className="h-3.5 w-3.5" />}
+                {departingId === "all" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Navigation className="h-3.5 w-3.5" strokeWidth={2.6} />}
                 Sair Todos
               </button>
             )}
@@ -1252,7 +1255,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
                 rel="noopener noreferrer"
                 className="w-full flex items-center justify-center gap-2 bg-foreground text-background font-black text-sm px-4 py-3 rounded-2xl shadow-md active:scale-[0.97] transition-all"
               >
-                <AppIcon name="Route" className="h-4 w-4" />
+                <Route className="h-4 w-4" strokeWidth={2.5} />
                 Navegar rota completa ({stops.length}) no Google Maps
               </a>
             );
@@ -1307,7 +1310,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
                       {contactName} · #{order.id.slice(0, 6).toUpperCase()}
                     </p>
                   </div>
-                  <AppIcon name="ChevronRight" className={`h-5 w-5 text-muted-foreground/60 transition-transform shrink-0 ${isExpanded ? "rotate-90" : ""}`} />
+                  <ChevronRight className={`h-5 w-5 text-muted-foreground/60 transition-transform shrink-0 ${isExpanded ? "rotate-90" : ""}`} />
                 </button>
 
                 {isExpanded && (
@@ -1315,13 +1318,13 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
                     {/* Store name badge for multi-store */}
                     {multiStore && (
                       <div className="flex items-center gap-2 bg-primary/10 rounded-xl px-3 py-2 border border-primary/15">
-                        <AppIcon name="Store" className="h-3.5 w-3.5 text-primary" />
+                        <Store className="h-3.5 w-3.5 text-primary" strokeWidth={2.5} />
                         <span className="text-xs font-black text-primary">{(order as any).stores?.name}</span>
                       </div>
                     )}
 
                     <div className="flex items-start gap-3">
-                      <AppIcon name="MapPin" className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
+                      <MapPin className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-foreground">{order.neighborhood}</p>
                         <p className="text-xs text-muted-foreground">{order.address_details}</p>
@@ -1372,7 +1375,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
                       <div className="relative overflow-hidden bg-warning/8 border border-warning/30 rounded-2xl p-4 space-y-3">
                         <div className="flex items-center gap-2.5">
                           <div className="w-9 h-9 rounded-xl bg-warning/15 flex items-center justify-center">
-                            <AppIcon name="Bike" className="h-4.5 w-4.5 text-warning" />
+                            <Bike className="h-4.5 w-4.5 text-warning" strokeWidth={2.5} />
                           </div>
                           <div>
                             <p className="text-[10px] font-black text-warning uppercase tracking-widest leading-none">Pronto</p>
@@ -1385,7 +1388,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
                           disabled={departingId === order.id || departingId === "all"}
                           className="w-full h-14 bg-warning text-warning-foreground font-black rounded-2xl text-base shadow-md shadow-warning/25 disabled:opacity-50 flex items-center justify-center gap-2.5 active:scale-[0.97] transition-transform"
                         >
-                          {departingId === order.id ? <AppIcon name="Loader2" className="h-5 w-5 animate-spin" /> : <AppIcon name="Navigation" className="h-5 w-5" />}
+                          {departingId === order.id ? <Loader2 className="h-5 w-5 animate-spin" /> : <Navigation className="h-5 w-5" strokeWidth={2.5} />}
                           Sair para entrega
                         </button>
                       </div>
@@ -1402,7 +1405,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
                         <div className="absolute -top-10 -right-10 w-32 h-32 bg-success/15 rounded-full blur-2xl" />
                         <div className="relative flex items-center gap-2.5">
                           <div className="w-9 h-9 rounded-xl bg-success/20 flex items-center justify-center">
-                            <AppIcon name="KeyRound" className="h-4.5 w-4.5 text-success" />
+                            <KeyRound className="h-4.5 w-4.5 text-success" strokeWidth={2.5} />
                           </div>
                           <div>
                             <p className="text-[10px] font-black text-success uppercase tracking-widest leading-none">Última Etapa</p>
@@ -1431,7 +1434,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
                           disabled={!effectivePin || effectivePin.length !== 4 || verifyingId === order.id}
                           className="w-full h-14 bg-success text-success-foreground font-black rounded-2xl text-base shadow-md shadow-success/25 disabled:opacity-40 flex items-center justify-center gap-2.5 active:scale-[0.97] transition-transform"
                         >
-                          {verifyingId === order.id ? <AppIcon name="Loader2" className="h-5 w-5 animate-spin" /> : <AppIcon name="CheckCircle2" className="h-5 w-5" />}
+                          {verifyingId === order.id ? <Loader2 className="h-5 w-5 animate-spin" /> : <CheckCircle2 className="h-5 w-5" strokeWidth={2.5} />}
                           Confirmar entrega
                         </button>
                       </div>
@@ -1468,7 +1471,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
                 onClick={acceptAllFiltered}
                 className="bg-primary text-primary-foreground px-3 py-1.5 rounded-xl text-[11px] font-black flex items-center gap-1 shadow-sm shadow-primary/20 active:scale-95 transition-transform"
               >
-                <AppIcon name="Zap" className="h-3 w-3" /> Aceitar todos
+                <Zap className="h-3 w-3" strokeWidth={3} /> Aceitar todos
               </button>
             )}
           </div>
@@ -1476,7 +1479,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
           {hasActiveRoutes && (
             <div className="bg-warning/8 border border-warning/25 rounded-2xl px-4 py-3 flex items-start gap-2.5">
               <div className="w-7 h-7 rounded-lg bg-warning/15 flex items-center justify-center shrink-0">
-                <AppIcon name="Clock" className="h-3.5 w-3.5 text-warning" />
+                <Clock className="h-3.5 w-3.5 text-warning" strokeWidth={2.6} />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-[11px] font-black text-warning uppercase tracking-wider leading-none">Em rota</p>
@@ -1502,7 +1505,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
                   {/* Linha 1: loja + ID */}
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2 min-w-0">
-                      <AppIcon name="Store" className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                      <Store className="h-3.5 w-3.5 text-muted-foreground shrink-0" strokeWidth={2.4} />
                       <p className="text-xs font-bold text-muted-foreground truncate">
                         {(order as any).stores?.name || "Loja"}
                       </p>
@@ -1527,7 +1530,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
                   {/* Linha 3: chips compactos (itens · pagamento · troco) */}
                   <div className="flex flex-wrap items-center gap-1.5">
                     <span className="inline-flex items-center gap-1 text-[11px] font-bold text-foreground bg-muted px-2 py-1 rounded-lg">
-                      <AppIcon name="Package" className="h-3 w-3" />
+                      <Package className="h-3 w-3" strokeWidth={2.6} />
                       {itemsCount} {itemsCount === 1 ? "item" : "itens"}
                     </span>
                     <span className="inline-flex items-center gap-1 text-[11px] font-bold text-foreground bg-muted px-2 py-1 rounded-lg">
@@ -1556,13 +1559,13 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
                     >
                       {acceptingThisOrder ? (
                         <>
-                          <AppIcon name="Loader2" className="h-5 w-5 animate-spin" />
+                          <Loader2 className="h-5 w-5 animate-spin" />
                           Aceitando...
                         </>
                       ) : hasActiveRoutes ? "Finalize a rota atual" : (
                         <>
                           Aceitar entrega
-                          <AppIcon name="ArrowRight" className="h-5 w-5" />
+                          <ArrowRight className="h-5 w-5" strokeWidth={2.5} />
                         </>
                       )}
                     </button>
@@ -1571,7 +1574,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
                         onClick={() => declineOrder(order.id)}
                         className="w-full h-9 text-xs font-bold text-muted-foreground hover:text-destructive active:text-destructive transition-colors flex items-center justify-center gap-1.5"
                       >
-                        <AppIcon name="X" className="h-3.5 w-3.5" />
+                        <X className="h-3.5 w-3.5" strokeWidth={2.5} />
                         Recusar este pedido
                       </button>
                     )}
@@ -1613,7 +1616,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
             {isOnline && (
               <span className="absolute inset-0 rounded-[2rem] border-2 border-primary/20 animate-pulse" />
             )}
-            <AppIcon name="Bike" className={`h-11 w-11 ${isOnline ? "text-primary" : "text-muted-foreground"}`} />
+            <Bike className={`h-11 w-11 ${isOnline ? "text-primary" : "text-muted-foreground"}`} strokeWidth={1.8} />
           </div>
           <div className="space-y-1.5">
             <p className="text-xl font-black text-foreground tracking-tight">
@@ -1631,7 +1634,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
               disabled={togglingOnline}
               className="h-12 px-8 bg-primary text-primary-foreground font-black rounded-2xl text-sm shadow-md shadow-primary/25 active:scale-[0.97] transition-transform flex items-center gap-2"
             >
-              <AppIcon name="Power" className="h-4 w-4" />
+              <Power className="h-4 w-4" strokeWidth={2.6} />
               Ficar online
             </button>
           )}

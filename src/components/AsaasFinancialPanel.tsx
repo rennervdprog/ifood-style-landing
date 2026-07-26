@@ -13,8 +13,17 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { AppIcon } from "@/components/ui/app-icon";
-import { Wallet, RefreshCw, Send, KeyRound, ArrowDownCircle, ArrowUpCircle, Loader2, FileText, AlertCircle } from "lucide-react";
+import {
+  Wallet,
+  RefreshCw,
+  Send,
+  KeyRound,
+  ArrowDownCircle,
+   ArrowUpCircle,
+   Loader2,
+   FileText,
+   AlertCircle,
+ } from "lucide-react";
  import AsaasDocumentsUpload from "./AsaasDocumentsUpload";
 
 interface AsaasPayment {
@@ -175,7 +184,7 @@ function AsaasFinancialPanelInner({ storeId }: { storeId: string }) {
     return (
       <Card>
         <CardContent className="p-6 flex items-center justify-center text-muted-foreground gap-2">
-          <AppIcon name="Loader2" className="h-4 w-4 animate-spin" /> Carregando painel financeiro…
+          <Loader2 className="h-4 w-4 animate-spin" /> Carregando painel financeiro…
         </CardContent>
       </Card>
     );
@@ -187,7 +196,7 @@ function AsaasFinancialPanelInner({ storeId }: { storeId: string }) {
         <CardContent className="p-6 text-center text-sm text-muted-foreground">
           Não foi possível carregar os dados financeiros.
           <Button variant="outline" size="sm" className="mt-3" onClick={loadSummary}>
-            <AppIcon name="RefreshCw" className="h-4 w-4 mr-2" /> Tentar novamente
+            <RefreshCw className="h-4 w-4 mr-2" /> Tentar novamente
           </Button>
         </CardContent>
       </Card>
@@ -218,10 +227,10 @@ function AsaasFinancialPanelInner({ storeId }: { storeId: string }) {
          onClick={() => setShowDocs(true)}
        >
          <div className="flex items-center gap-2">
-           <AppIcon name="FileText" className="h-4 w-4 text-amber-600" />
+           <FileText className="h-4 w-4 text-amber-600" />
            <span className="text-sm font-medium">Ver Pendências de Documentos</span>
          </div>
-         <AppIcon name="AlertCircle" className="h-4 w-4 text-amber-500 group-hover:scale-110 transition-transform" />
+         <AlertCircle className="h-4 w-4 text-amber-500 group-hover:scale-110 transition-transform" />
        </Button>
 
        {/* SALDO */}
@@ -230,7 +239,7 @@ function AsaasFinancialPanelInner({ storeId }: { storeId: string }) {
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-                <AppIcon name="Wallet" className="h-3.5 w-3.5" /> Saldo disponível na sua subconta
+                <Wallet className="h-3.5 w-3.5" /> Saldo disponível na sua subconta
               </p>
               <p className="text-3xl font-bold mt-1">{fmtMoney(data.balance)}</p>
               {data.totalBalance !== undefined && data.totalBalance > data.balance && (
@@ -251,7 +260,7 @@ function AsaasFinancialPanelInner({ storeId }: { storeId: string }) {
               disabled={loading}
               title="Atualizar"
             >
-              <AppIcon name="RefreshCw" className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+              <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
             </Button>
           </div>
 
@@ -262,9 +271,9 @@ function AsaasFinancialPanelInner({ storeId }: { storeId: string }) {
             disabled={acting === "withdraw" || data.balance <= 0}
           >
             {acting === "withdraw" ? (
-              <AppIcon name="Loader2" className="h-4 w-4 mr-2 animate-spin" />
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
             ) : (
-              <AppIcon name="Send" className="h-4 w-4 mr-2" />
+              <Send className="h-4 w-4 mr-2" />
             )}
             Sacar tudo agora ({fmtMoney(data.balance)})
           </Button>
@@ -281,7 +290,7 @@ function AsaasFinancialPanelInner({ storeId }: { storeId: string }) {
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-sm flex items-center gap-2">
-            <AppIcon name="KeyRound" className="h-4 w-4" /> Chave PIX para receber
+            <KeyRound className="h-4 w-4" /> Chave PIX para receber
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -318,7 +327,7 @@ function AsaasFinancialPanelInner({ storeId }: { storeId: string }) {
             disabled={acting === "pix"}
           >
             {acting === "pix" ? (
-              <AppIcon name="Loader2" className="h-4 w-4 mr-2 animate-spin" />
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
             ) : null}
             Salvar Chave PIX
           </Button>
@@ -329,7 +338,7 @@ function AsaasFinancialPanelInner({ storeId }: { storeId: string }) {
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-sm flex items-center gap-2">
-            <AppIcon name="RefreshCw" className="h-4 w-4" /> Configuração de Saque
+            <RefreshCw className="h-4 w-4" /> Configuração de Saque
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -364,7 +373,7 @@ function AsaasFinancialPanelInner({ storeId }: { storeId: string }) {
             onClick={handleUpdateWithdrawConfig}
             disabled={acting === "config"}
           >
-            {acting === "config" ? <AppIcon name="Loader2" className="h-4 w-4 mr-2 animate-spin" /> : null}
+            {acting === "config" ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
             Salvar Configurações
           </Button>
         </CardContent>
@@ -374,7 +383,7 @@ function AsaasFinancialPanelInner({ storeId }: { storeId: string }) {
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-sm flex items-center gap-2">
-            <AppIcon name="ArrowDownCircle" className="h-4 w-4 text-green-600" /> Últimos recebimentos
+            <ArrowDownCircle className="h-4 w-4 text-green-600" /> Últimos recebimentos
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -410,7 +419,7 @@ function AsaasFinancialPanelInner({ storeId }: { storeId: string }) {
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-sm flex items-center gap-2">
-            <AppIcon name="ArrowUpCircle" className="h-4 w-4 text-orange-600" /> Últimos saques
+            <ArrowUpCircle className="h-4 w-4 text-orange-600" /> Últimos saques
           </CardTitle>
         </CardHeader>
         <CardContent>

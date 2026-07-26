@@ -23,8 +23,29 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { AppIcon } from "@/components/ui/app-icon";
-import { ShoppingBag, Store, Bike, Heart, UserPlus, Smartphone, Instagram, MessageCircle, FileText, Shield, Link as LinkIcon, Pencil, Trash2, Plus, ExternalLink, Star, ArrowUp, ArrowDown, Eye, EyeOff, Copy } from "lucide-react";
+import {
+  ShoppingBag,
+  Store,
+  Bike,
+  Heart,
+  UserPlus,
+  Smartphone,
+  Instagram,
+  MessageCircle,
+  FileText,
+  Shield,
+  Link as LinkIcon,
+  Pencil,
+  Trash2,
+  Plus,
+  ExternalLink,
+  Star,
+  ArrowUp,
+  ArrowDown,
+  Eye,
+  EyeOff,
+  Copy,
+} from "lucide-react";
 
 /* ----------- Allowed icons (whitelist for safety) ----------- */
 const ICON_MAP = {
@@ -217,10 +238,10 @@ export default function AppLinksManager() {
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={copyPublicUrl}>
-            <AppIcon name="Copy" className="w-4 h-4 mr-1.5" /> Copiar URL
+            <Copy className="w-4 h-4 mr-1.5" /> Copiar URL
           </Button>
           <Button size="sm" onClick={openNew}>
-            <AppIcon name="Plus" className="w-4 h-4 mr-1.5" /> Novo link
+            <Plus className="w-4 h-4 mr-1.5" /> Novo link
           </Button>
         </div>
       </div>
@@ -250,10 +271,10 @@ export default function AppLinksManager() {
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <span className="font-semibold text-sm truncate">{link.label}</span>
                     {link.is_highlight && (
-                      <AppIcon name="Star" className="w-3.5 h-3.5 text-primary fill-primary" />
+                      <Star className="w-3.5 h-3.5 text-primary fill-primary" />
                     )}
                     {link.is_external && (
-                      <AppIcon name="ExternalLink" className="w-3.5 h-3.5 text-muted-foreground" />
+                      <ExternalLink className="w-3.5 h-3.5 text-muted-foreground" />
                     )}
                   </div>
                   <div className="text-xs text-muted-foreground truncate">{link.url}</div>
@@ -266,7 +287,7 @@ export default function AppLinksManager() {
                     disabled={i === 0}
                     onClick={() => move(link, -1)}
                   >
-                    <AppIcon name="ArrowUp" className="w-4 h-4" />
+                    <ArrowUp className="w-4 h-4" />
                   </Button>
                   <Button
                     variant="ghost"
@@ -275,7 +296,7 @@ export default function AppLinksManager() {
                     disabled={i === links.length - 1}
                     onClick={() => move(link, 1)}
                   >
-                    <AppIcon name="ArrowDown" className="w-4 h-4" />
+                    <ArrowDown className="w-4 h-4" />
                   </Button>
                   <Button
                     variant="ghost"
@@ -284,7 +305,7 @@ export default function AppLinksManager() {
                     onClick={() => toggleActive(link)}
                     title={link.is_active ? "Desativar" : "Ativar"}
                   >
-                    {link.is_active ? <AppIcon name="Eye" className="w-4 h-4" /> : <AppIcon name="EyeOff" className="w-4 h-4" />}
+                    {link.is_active ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                   </Button>
                   <Button
                     variant="ghost"
@@ -292,7 +313,7 @@ export default function AppLinksManager() {
                     className="h-8 w-8"
                     onClick={() => openEdit(link)}
                   >
-                    <AppIcon name="Pencil" className="w-4 h-4" />
+                    <Pencil className="w-4 h-4" />
                   </Button>
                   <Button
                     variant="ghost"
@@ -300,7 +321,7 @@ export default function AppLinksManager() {
                     className="h-8 w-8 text-destructive"
                     onClick={() => remove(link)}
                   >
-                    <AppIcon name="Trash2" className="w-4 h-4" />
+                    <Trash2 className="w-4 h-4" />
                   </Button>
                 </div>
               </div>

@@ -1,4 +1,8 @@
 import { memo } from "react";
+import {
+  CheckCircle2, AlertTriangle, Timer, Bike, MapPin, ChevronDown, ChevronUp,
+  Store, Loader2, Truck, Banknote, MessageCircle, Copy, Printer
+} from "lucide-react";
 import { formatBRL } from "@/lib/utils";
 import { getOrderItemDisplayName } from "@/lib/orderItemName";
 import { openWhatsApp } from "@/lib/whatsapp";
@@ -8,8 +12,6 @@ import { parseOrderAddons } from "../helpers";
 import type { OrderStatus, RequiredAddonHighlight } from "../types";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { AppIcon } from "@/components/ui/app-icon";
-import { CheckCircle2, AlertTriangle, Timer, Bike, MapPin, ChevronDown, ChevronUp, Store, Loader2, Truck, Banknote, MessageCircle, Copy, Printer } from "lucide-react";
 
 interface RequiredAddonHighlightsProps { highlights: RequiredAddonHighlight[]; }
 const RequiredAddonHighlights = ({ highlights }: RequiredAddonHighlightsProps) => {
@@ -114,13 +116,13 @@ const AdminOrderCardImpl = (props: AdminOrderCardProps) => {
               className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-colors ${
                 isBatchSelected ? "bg-primary border-primary text-primary-foreground" : "border-muted-foreground/40 hover:border-primary"
               }`}>
-              {isBatchSelected && <AppIcon name="CheckCircle2" className="h-3.5 w-3.5" />}
+              {isBatchSelected && <CheckCircle2 className="h-3.5 w-3.5" />}
             </button>
           )}
           <span className={`text-[10px] font-bold uppercase ${sc.text}`}>{sc.label}</span>
           {isDelayed && (
             <span className="flex items-center gap-1 text-[10px] font-bold text-destructive bg-destructive/10 px-1.5 py-0.5 rounded-full">
-              <AppIcon name="AlertTriangle" className="h-2.5 w-2.5" /> Atrasado
+              <AlertTriangle className="h-2.5 w-2.5" /> Atrasado
             </span>
           )}
         </div>
@@ -131,7 +133,7 @@ const AdminOrderCardImpl = (props: AdminOrderCardProps) => {
               elapsedMin > 10 ? "bg-muted text-foreground" :
               "bg-muted text-muted-foreground"
             }`}>
-              <AppIcon name="Timer" className="h-2.5 w-2.5" />
+              <Timer className="h-2.5 w-2.5" />
               {elapsedMin}min
             </span>
           )}
@@ -153,7 +155,7 @@ const AdminOrderCardImpl = (props: AdminOrderCardProps) => {
           </div>
           {order.driver_id && (
             <div className="flex items-center gap-1 mt-1 text-[11px] font-semibold text-muted-foreground">
-              <AppIcon name="Bike" className="h-3 w-3" />
+              <Bike className="h-3 w-3" />
               <span>Motoboy: {driverName(order.driver_id)}</span>
             </div>
           )}
@@ -196,7 +198,7 @@ const AdminOrderCardImpl = (props: AdminOrderCardProps) => {
         })}
         {order.payment_method === "dinheiro" && (order as any).needs_change && Number((order as any).change_for) > 0 && (
           <div className="flex items-center gap-1 pt-1 border-t border-border">
-            <AppIcon name="Banknote" className="h-3 w-3 text-muted-foreground" />
+            <Banknote className="h-3 w-3 text-muted-foreground" />
             <span className="text-[10px] text-muted-foreground font-bold">Troco: {formatBRL(Number((order as any).change_for) - Number(order.total_price))}</span>
           </div>
         )}
@@ -205,16 +207,16 @@ const AdminOrderCardImpl = (props: AdminOrderCardProps) => {
       <div className="mx-3 mb-2">
         {order.neighborhood === "RETIRADA" ? (
           <div className="flex items-center gap-1.5 bg-muted border border-border rounded-xl px-3 py-2">
-            <AppIcon name="Store" className="h-3.5 w-3.5 text-muted-foreground" />
+            <Store className="h-3.5 w-3.5 text-muted-foreground" />
             <span className="text-xs font-bold text-foreground">Retirada na loja</span>
           </div>
         ) : (
           <>
             <button onClick={() => toggleAddress(order.id)}
               className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground w-full">
-              <AppIcon name="MapPin" className="h-3 w-3" />
+              <MapPin className="h-3 w-3" />
               <span className="truncate flex-1 text-left">{order.neighborhood}</span>
-              {isAddressExpanded ? <AppIcon name="ChevronUp" className="h-3 w-3" /> : <AppIcon name="ChevronDown" className="h-3 w-3" />}
+              {isAddressExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
             </button>
             {isAddressExpanded && (
               <div className="mt-1.5 bg-muted/30 rounded-lg p-2.5 text-xs text-muted-foreground space-y-0.5 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -229,7 +231,7 @@ const AdminOrderCardImpl = (props: AdminOrderCardProps) => {
       {order.neighborhood !== "RETIRADA" && order.status === "pronto_para_entrega" && !order.driver_id && !isOwnDelivery && (
         <div className="mx-3 mb-2 bg-muted border border-border rounded-xl px-3 py-2">
           <div className="flex items-center gap-1.5 mb-1">
-            <AppIcon name="Loader2" className="h-3.5 w-3.5 text-muted-foreground animate-spin" />
+            <Loader2 className="h-3.5 w-3.5 text-muted-foreground animate-spin" />
             <span className="text-xs text-foreground font-semibold">Aguardando entregador</span>
           </div>
           <div className="flex items-center gap-1.5">
@@ -243,7 +245,7 @@ const AdminOrderCardImpl = (props: AdminOrderCardProps) => {
       {order.neighborhood !== "RETIRADA" && order.status === "pronto_para_entrega" && isOwnDelivery && !order.driver_id && (
         <div className="mx-3 mb-2 bg-muted border border-border rounded-xl px-3 py-2 space-y-2">
           <div className="flex items-center gap-1.5">
-            <AppIcon name="Loader2" className="h-3.5 w-3.5 text-muted-foreground animate-spin" />
+            <Loader2 className="h-3.5 w-3.5 text-muted-foreground animate-spin" />
             <span className="text-xs text-foreground font-semibold">
               {(order as any).assigned_driver_id
                 ? `🎯 Designado para ${driverName((order as any).assigned_driver_id)}`
@@ -282,19 +284,19 @@ const AdminOrderCardImpl = (props: AdminOrderCardProps) => {
       )}
       {order.neighborhood !== "RETIRADA" && order.status === "pronto_para_entrega" && isOwnDelivery && order.driver_id && (
         <div className="mx-3 mb-2 flex items-center gap-1.5 bg-muted border border-border rounded-xl px-3 py-2">
-          <AppIcon name="Bike" className="h-3.5 w-3.5 text-muted-foreground" />
+          <Bike className="h-3.5 w-3.5 text-muted-foreground" />
           <span className="text-xs text-foreground font-semibold"> {driverName(order.driver_id)} aceitou o pedido</span>
         </div>
       )}
       {order.status === "saiu_entrega" && isOwnDelivery && (
         <div className="mx-3 mb-2 flex items-center gap-1.5 bg-muted border border-border rounded-xl px-3 py-2">
-          <AppIcon name="Truck" className="h-3.5 w-3.5 text-muted-foreground" />
+          <Truck className="h-3.5 w-3.5 text-muted-foreground" />
           <span className="text-xs text-foreground font-semibold">🛵 {order.driver_id ? driverName(order.driver_id) : "Motoboy"} está entregando</span>
         </div>
       )}
       {order.driver_id && (order.status === "em_transito" || (order.status === "saiu_entrega" && !isOwnDelivery)) && (
         <div className="mx-3 mb-2 flex items-center gap-1.5 bg-muted border border-border rounded-xl px-3 py-2">
-          <AppIcon name="Truck" className="h-3.5 w-3.5 text-muted-foreground" />
+          <Truck className="h-3.5 w-3.5 text-muted-foreground" />
           <span className="text-xs text-foreground font-semibold">🛵 {driverName(order.driver_id)} entregando</span>
         </div>
       )}
@@ -311,7 +313,7 @@ const AdminOrderCardImpl = (props: AdminOrderCardProps) => {
 
       {isOwnDelivery && (order as any).delivery_confirmed_by_client && ["entregue", "finalizado"].includes(order.status) && (
         <div className="mx-3 mb-2 flex items-center gap-1.5 bg-muted border border-border rounded-xl px-3 py-2">
-          <AppIcon name="CheckCircle2" className="h-3.5 w-3.5 text-primary" />
+          <CheckCircle2 className="h-3.5 w-3.5 text-primary" />
           <span className="text-xs text-foreground font-bold">Cliente confirmou entrega</span>
           {order.driver_id && (
             <span className="ml-auto text-[10px] text-muted-foreground">{driverName(order.driver_id)}</span>
@@ -330,7 +332,7 @@ const AdminOrderCardImpl = (props: AdminOrderCardProps) => {
         <div className="mx-3 mb-2 bg-muted border border-border rounded-xl p-3">
           {order.driver_id && (
             <div className="flex items-center gap-2 mb-2 pb-2 border-b border-border">
-              <AppIcon name="Bike" className="h-4 w-4 text-muted-foreground" />
+              <Bike className="h-4 w-4 text-muted-foreground" />
               <span className="text-sm font-bold text-foreground"> {driverName(order.driver_id)}</span>
               <span className="ml-auto text-[10px] bg-background text-foreground border border-border px-2 py-0.5 rounded-full font-bold">#{order.id.slice(0, 8).toUpperCase()}</span>
             </div>
@@ -339,7 +341,7 @@ const AdminOrderCardImpl = (props: AdminOrderCardProps) => {
             <p className="text-[10px] font-bold text-primary">Código de Acerto</p>
             <button onClick={() => { navigator.clipboard.writeText((order as any).settlement_code); toast.success("Copiado!"); }}
               className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground">
-              <AppIcon name="Copy" className="h-2.5 w-2.5" /> Copiar
+              <Copy className="h-2.5 w-2.5" /> Copiar
             </button>
           </div>
           <p className="text-3xl font-black text-primary tracking-[0.3em] text-center">{(order as any).settlement_code}</p>
@@ -348,7 +350,7 @@ const AdminOrderCardImpl = (props: AdminOrderCardProps) => {
       )}
       {["dinheiro", "cartao"].includes(order.payment_method) && (order as any).return_to_store_confirmed && ["entregue", "finalizado"].includes(order.status) && !isOwnDelivery && (
         <div className="mx-3 mb-2 flex items-center gap-1.5 bg-muted border border-border rounded-xl px-3 py-2">
-          <AppIcon name="CheckCircle2" className="h-3.5 w-3.5 text-primary" />
+          <CheckCircle2 className="h-3.5 w-3.5 text-primary" />
           <span className="text-xs text-foreground font-bold">Acerto realizado</span>
         </div>
       )}
@@ -361,7 +363,7 @@ const AdminOrderCardImpl = (props: AdminOrderCardProps) => {
                 const msg = `Olá ${clientName}! *ItaSuper*: Pedido aceito e em produção! 🍔\nPedido: #${order.id.slice(0, 8).toUpperCase()}\nTotal: ${formatBRL(Number(order.total_price))}`;
                 sendOrOpenWhatsApp(clientWhatsApp, msg);
               }} className="flex items-center gap-1 bg-primary/10 text-primary text-[10px] font-bold px-2 py-1 rounded-lg" title="Avisar cliente">
-                <AppIcon name="MessageCircle" className="h-3 w-3" /> <span className="hidden sm:inline">Avisar</span>
+                <MessageCircle className="h-3 w-3" /> <span className="hidden sm:inline">Avisar</span>
               </button>
             )}
             {(order.status === "em_transito" || order.status === "saiu_entrega") && (
@@ -369,7 +371,7 @@ const AdminOrderCardImpl = (props: AdminOrderCardProps) => {
                 const msg = `Olá ${clientName}! Motoboy *ItaSuper* saiu para entrega! 🚀\nEndereço: ${order.address_details}`;
                 sendOrOpenWhatsApp(clientWhatsApp, msg);
               }} className="flex items-center gap-1 bg-primary/10 text-primary text-[10px] font-bold px-2 py-1 rounded-lg" title="Informar saída">
-                <AppIcon name="MessageCircle" className="h-3 w-3" /> <span className="hidden sm:inline">Saiu</span>
+                <MessageCircle className="h-3 w-3" /> <span className="hidden sm:inline">Saiu</span>
               </button>
             )}
             <WhatsAppButton number={clientWhatsApp}
@@ -383,7 +385,7 @@ const AdminOrderCardImpl = (props: AdminOrderCardProps) => {
         <button onClick={() => handlePrint(order)}
           title="Imprimir"
           className="p-2.5 bg-muted rounded-xl text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
-          <AppIcon name="Printer" className="h-4 w-4" />
+          <Printer className="h-4 w-4" />
         </button>
         <div className="flex-1">
           {action && order.status === "pendente" ? (

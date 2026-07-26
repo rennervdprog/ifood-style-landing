@@ -4,12 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { ShieldCheck, AlertTriangle, RefreshCw, Download, Zap } from "lucide-react";
 import { exportCSV, brl } from "./financeExport";
 import { toast } from "sonner";
 import { useState } from "react";
 import { ConfirmActionDialog } from "./ConfirmActionDialog";
-import { AppIcon } from "@/components/ui/app-icon";
-import { ShieldCheck, AlertTriangle, RefreshCw, Download, Zap } from "lucide-react";
 
 const ConciliacaoAsaasPanel = () => {
   const [forceOpen, setForceOpen] = useState(false);
@@ -106,7 +105,7 @@ const ConciliacaoAsaasPanel = () => {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2 text-muted-foreground text-xs mb-1">
-              <AppIcon name="ShieldCheck" className="w-4 h-4 text-emerald-500" /> Subcontas Ativas
+              <ShieldCheck className="w-4 h-4 text-emerald-500" /> Subcontas Ativas
             </div>
             <p className="text-2xl font-bold">{recRows.length}</p>
           </CardContent>
@@ -114,7 +113,7 @@ const ConciliacaoAsaasPanel = () => {
         <Card className={queue.length ? "border-amber-500 bg-amber-500/5" : ""}>
           <CardContent className="p-4">
             <div className="flex items-center gap-2 text-muted-foreground text-xs mb-1">
-              <AppIcon name="AlertTriangle" className="w-4 h-4 text-amber-500" /> Fila de Revisão
+              <AlertTriangle className="w-4 h-4 text-amber-500" /> Fila de Revisão
             </div>
             <p className="text-2xl font-bold text-amber-500">{queue.length}</p>
           </CardContent>
@@ -122,7 +121,7 @@ const ConciliacaoAsaasPanel = () => {
         <Card className={errors.length ? "border-destructive bg-destructive/5" : ""}>
           <CardContent className="p-4">
             <div className="flex items-center gap-2 text-muted-foreground text-xs mb-1">
-              <AppIcon name="AlertTriangle" className="w-4 h-4 text-destructive" /> Webhooks com Erro
+              <AlertTriangle className="w-4 h-4 text-destructive" /> Webhooks com Erro
             </div>
             <p className="text-2xl font-bold text-destructive">{errors.length}</p>
           </CardContent>
@@ -143,13 +142,13 @@ const ConciliacaoAsaasPanel = () => {
                 toast.success("Conciliação atualizada");
               }}
             >
-              <AppIcon name="RefreshCw" className="h-4 w-4 mr-1" /> Atualizar
+              <RefreshCw className="h-4 w-4 mr-1" /> Atualizar
             </Button>
             <Button size="sm" variant="destructive" onClick={() => setForceOpen(true)}>
-              <AppIcon name="Zap" className="h-4 w-4 mr-1" /> Forçar
+              <Zap className="h-4 w-4 mr-1" /> Forçar
             </Button>
             <Button size="sm" variant="outline" onClick={() => exportCSV("conciliacao-asaas", recRows)}>
-              <AppIcon name="Download" className="h-4 w-4 mr-1" /> CSV
+              <Download className="h-4 w-4 mr-1" /> CSV
             </Button>
           </div>
         </CardHeader>

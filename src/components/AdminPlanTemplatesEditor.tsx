@@ -8,9 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { formatBRL } from "@/lib/utils";
-import { AppIcon } from "@/components/ui/app-icon";
 import { Loader2, Save, Settings2, RotateCcw } from "lucide-react";
+import { formatBRL } from "@/lib/utils";
 
 interface PlanTemplate {
   id: string;
@@ -167,7 +166,7 @@ export default function AdminPlanTemplatesEditor() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <AppIcon name="Loader2" className="h-6 w-6 animate-spin text-muted-foreground" />
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
       </div>
     );
   }
@@ -175,7 +174,7 @@ export default function AdminPlanTemplatesEditor() {
   return (
     <div className="bg-card rounded-xl border border-border overflow-hidden">
       <div className="p-4 border-b border-border bg-muted/30 flex items-center gap-2">
-        <AppIcon name="Settings2" className="h-5 w-5 text-primary" />
+        <Settings2 className="h-5 w-5 text-primary" />
         <div>
           <h3 className="font-bold">Editar Templates de Planos</h3>
           <p className="text-xs text-muted-foreground">
@@ -296,7 +295,7 @@ export default function AdminPlanTemplatesEditor() {
                   onClick={() => resetDraft(t)}
                   disabled={!dirty || saving === t.id}
                 >
-                  <AppIcon name="RotateCcw" className="h-3.5 w-3.5 mr-1" />
+                  <RotateCcw className="h-3.5 w-3.5 mr-1" />
                   Reverter
                 </Button>
                 <Button
@@ -305,9 +304,9 @@ export default function AdminPlanTemplatesEditor() {
                   disabled={!dirty || saving === t.id}
                 >
                   {saving === t.id ? (
-                    <AppIcon name="Loader2" className="h-3.5 w-3.5 mr-1 animate-spin" />
+                    <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
                   ) : (
-                    <AppIcon name="Save" className="h-3.5 w-3.5 mr-1" />
+                    <Save className="h-3.5 w-3.5 mr-1" />
                   )}
                   Salvar
                 </Button>

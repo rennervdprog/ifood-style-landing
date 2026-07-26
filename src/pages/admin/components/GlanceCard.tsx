@@ -1,5 +1,4 @@
 import * as React from "react";
-import { AppIcon } from "@/components/ui/app-icon";
 import { ArrowUpRight, ArrowDownRight } from "lucide-react";
 
 interface GlanceCardProps {
@@ -61,7 +60,7 @@ export const GlanceCard = ({
               trend === "up" ? "text-emerald-500 bg-emerald-500/15" : "text-red-500 bg-red-500/15"
             }`}
           >
-            {trend === "up" ? <AppIcon name="ArrowUpRight" className="h-3 w-3" /> : <AppIcon name="ArrowDownRight" className="h-3 w-3" />}
+            {trend === "up" ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
             {trend === "up" ? "Cresceu" : "Caiu"}
           </div>
         )}

@@ -1,8 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
+import { Activity, TrendingUp, Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { formatBRL } from "@/lib/utils";
-import { AppIcon } from "@/components/ui/app-icon";
-import { Activity, TrendingUp, Clock } from "lucide-react";
 
 interface Props {
   sessionId?: string | null;
@@ -60,7 +59,7 @@ export const PdvNowCard = ({ sessionId, vendasTotal, vendasCount, ticketMedio }:
   return (
     <div className="border-b border-border bg-gradient-to-r from-primary/5 via-background to-background px-3 py-2 shrink-0">
       <div className="flex items-center gap-2 mb-2">
-        <AppIcon name="Activity" className="h-3.5 w-3.5 text-primary" />
+        <Activity className="h-3.5 w-3.5 text-primary" />
         <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Agora</span>
         <span className="ml-auto flex items-center gap-1 text-[10px] text-muted-foreground">
           <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" /> ao vivo
@@ -75,7 +74,7 @@ export const PdvNowCard = ({ sessionId, vendasTotal, vendasCount, ticketMedio }:
         <div className="grid grid-cols-2 gap-3 pt-2 border-t border-border/60">
           <div>
             <div className="flex items-center gap-1 mb-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-              <AppIcon name="TrendingUp" className="h-3 w-3" /> Top 3
+              <TrendingUp className="h-3 w-3" /> Top 3
             </div>
             {topProducts.length === 0 ? (
               <div className="text-[11px] text-muted-foreground">—</div>
@@ -88,7 +87,7 @@ export const PdvNowCard = ({ sessionId, vendasTotal, vendasCount, ticketMedio }:
           </div>
           <div>
             <div className="flex items-center gap-1 mb-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-              <AppIcon name="Clock" className="h-3 w-3" /> Últimas
+              <Clock className="h-3 w-3" /> Últimas
             </div>
             {lastSales.length === 0 ? (
               <div className="text-[11px] text-muted-foreground">—</div>

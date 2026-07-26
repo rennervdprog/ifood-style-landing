@@ -1,7 +1,6 @@
+import { Check, X } from "lucide-react";
 import { PLANS, PLANS_ORDER, DELIVERY_FEE_NOTE, PIX_FEE_NOTE } from "@/lib/plansInfo";
 import type { StorePlanType } from "@/hooks/useStorePlan";
-import { AppIcon } from "@/components/ui/app-icon";
-import { Check, X } from "lucide-react";
 
 interface Row {
   label: string;
@@ -127,9 +126,9 @@ export default function PlansComparisonTable({
                     >
                       {typeof v === "boolean" ? (
                         v ? (
-                          <AppIcon name="Check" className="h-4 w-4 text-primary mx-auto" />
+                          <Check className="h-4 w-4 text-primary mx-auto" />
                         ) : (
-                          <AppIcon name="X" className="h-4 w-4 text-muted-foreground/40 mx-auto" />
+                          <X className="h-4 w-4 text-muted-foreground/40 mx-auto" />
                         )
                       ) : (
                         v

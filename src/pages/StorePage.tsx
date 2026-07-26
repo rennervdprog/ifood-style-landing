@@ -4,6 +4,7 @@ import NotFound from "@/pages/NotFound";
 import { useQuery, keepPreviousData, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCart, type CartAddon } from "@/contexts/CartContext";
+import { Star, Clock, ChevronRight, ChevronDown, ChevronUp, MapPin, Search, X, Navigation, CreditCard, Banknote, Smartphone, QrCode, RotateCcw, TrendingUp, ArrowLeft, Bike, Timer, Wallet } from "lucide-react";
 import LoyaltyBanner from "@/components/LoyaltyBanner";
 import NetworkUnitsCarousel from "@/components/NetworkUnitsCarousel";
 import { toast } from "sonner";
@@ -26,8 +27,6 @@ import { getStoreAppSlug } from "@/components/StoreAppGuard";
 import { checkStoreAccess, MAX_DISTANCE_KM } from "@/lib/fraudCheck";
 import { getEffectivePrice, isPromoActive, getPromoDiscountPct } from "@/lib/promoPrice";
 import { fetchProductAddons } from "@/lib/productAddons";
-import { AppIcon } from "@/components/ui/app-icon";
-import { Star, Clock, ChevronRight, ChevronDown, ChevronUp, MapPin, Search, X, Navigation, CreditCard, Banknote, QrCode, RotateCcw, TrendingUp, ArrowLeft, Bike, Timer, Wallet } from "lucide-react";
 
 interface Product {
   id: string;
@@ -942,7 +941,7 @@ const StorePage = () => {
             className="absolute left-4 h-10 w-10 rounded-full bg-background/90 backdrop-blur flex items-center justify-center shadow-md"
             aria-label="Voltar"
           >
-            <AppIcon name="ArrowLeft" className="h-5 w-5 text-foreground" />
+            <ArrowLeft className="h-5 w-5 text-foreground" />
           </button>
         </div>
         <div className="-mt-10 relative">
@@ -1004,7 +1003,7 @@ const StorePage = () => {
                   scrolled ? "bg-muted text-foreground" : "bg-card/90 backdrop-blur-md shadow-lg border border-border/50 text-foreground"
                 }`}
               >
-                <AppIcon name="ArrowLeft" className="h-5 w-5" />
+                <ArrowLeft className="h-5 w-5" />
               </button>
             )}
             {scrolled && (
@@ -1025,7 +1024,7 @@ const StorePage = () => {
                 scrolled ? "bg-muted text-foreground" : "bg-card/90 backdrop-blur-md shadow-lg border border-border/50 text-foreground"
               }`}
             >
-              <AppIcon name="Search" className="h-4 w-4" />
+              <Search className="h-4 w-4" />
             </button>
             {ownerProfile?.whatsapp_number && (
               <WhatsAppButton
@@ -1062,7 +1061,7 @@ const StorePage = () => {
                   </span>
                   {store?.rating && store.rating > 0 && (
                     <div className="flex items-center gap-1 bg-amber-400/10 px-2 py-0.5 rounded-md border border-amber-400/20">
-                      <AppIcon name="Star" className="h-2.5 w-2.5 fill-amber-400 text-amber-400" />
+                      <Star className="h-2.5 w-2.5 fill-amber-400 text-amber-400" />
                       <span className="text-[10px] font-black text-amber-600 dark:text-amber-400">{store.rating}</span>
                     </div>
                   )}
@@ -1089,7 +1088,7 @@ const StorePage = () => {
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-start gap-2.5 min-w-0">
                     <div className="mt-0.5 w-7 h-7 rounded-full bg-primary/5 flex items-center justify-center flex-shrink-0">
-                      <AppIcon name="MapPin" className="h-3.5 w-3.5 text-primary" />
+                      <MapPin className="h-3.5 w-3.5 text-primary" />
                     </div>
                     <div className="min-w-0">
                       <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-tight">Endereço</p>
@@ -1105,7 +1104,7 @@ const StorePage = () => {
                     aria-label="Abrir endereço no Google Maps"
                     className="flex items-center gap-1.5 bg-primary text-primary-foreground px-3 py-1.5 rounded-lg text-[10px] font-black hover:bg-primary/90 transition-all shadow-sm flex-shrink-0"
                   >
-                    <AppIcon name="Navigation" className="h-3 w-3" />
+                    <Navigation className="h-3 w-3" />
                     MAPS
                   </button>
                 </div>
@@ -1115,7 +1114,7 @@ const StorePage = () => {
             {/* Delivery info row: taxa, tempo, pedido mínimo */}
             {Number((store as any)?.free_delivery_threshold) > 0 && (
               <div className="mt-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 flex items-center gap-2">
-                <AppIcon name="Bike" className="h-4 w-4 text-emerald-500 shrink-0" />
+                <Bike className="h-4 w-4 text-emerald-500 shrink-0" />
                 <p className="text-[12px] font-bold text-emerald-700 dark:text-emerald-400 leading-tight">
                   🚚 Frete grátis acima de {formatBRL(Number((store as any).free_delivery_threshold))}
                 </p>
@@ -1127,7 +1126,7 @@ const StorePage = () => {
               (store as any)?.minimum_order_value) && (
               <div className="mt-3 grid grid-cols-3 gap-2">
                 <div className="bg-muted/30 rounded-xl p-2.5 border border-border/30 flex flex-col items-center text-center">
-                  <AppIcon name="Bike" className="h-3.5 w-3.5 text-primary mb-1" />
+                  <Bike className="h-3.5 w-3.5 text-primary mb-1" />
                   <span className="text-[11px] font-semibold text-muted-foreground uppercase">Taxa</span>
                   <span className="text-[11px] font-black text-foreground mt-0.5">
                     {(() => {
@@ -1157,14 +1156,14 @@ const StorePage = () => {
                   </span>
                 </div>
                 <div className="bg-muted/30 rounded-xl p-2.5 border border-border/30 flex flex-col items-center text-center">
-                  <AppIcon name="Timer" className="h-3.5 w-3.5 text-primary mb-1" />
+                  <Timer className="h-3.5 w-3.5 text-primary mb-1" />
                   <span className="text-[11px] font-semibold text-muted-foreground uppercase">Tempo</span>
                   <span className="text-[11px] font-black text-foreground mt-0.5">
                     {(store as any)?.estimated_delivery_time || "—"}
                   </span>
                 </div>
                 <div className="bg-muted/30 rounded-xl p-2.5 border border-border/30 flex flex-col items-center text-center">
-                  <AppIcon name="Wallet" className="h-3.5 w-3.5 text-primary mb-1" />
+                  <Wallet className="h-3.5 w-3.5 text-primary mb-1" />
                   <span className="text-[11px] font-semibold text-muted-foreground uppercase">Pedido mín.</span>
                   <span className="text-[11px] font-black text-foreground mt-0.5">
                     {(store as any)?.minimum_order_value
@@ -1184,10 +1183,10 @@ const StorePage = () => {
                   className="flex items-center justify-between w-full p-3 transition-colors hover:bg-muted/50"
                 >
                   <div className="flex items-center gap-2.5">
-                    <AppIcon name="Clock" className="h-3.5 w-3.5 text-primary" />
+                    <Clock className="h-3.5 w-3.5 text-primary" />
                     <span className="text-[11px] font-black text-foreground uppercase tracking-wider">Horários</span>
                   </div>
-                  {showHours ? <AppIcon name="ChevronUp" className="h-3.5 w-3.5 text-muted-foreground" /> : <AppIcon name="ChevronDown" className="h-3.5 w-3.5 text-muted-foreground" />}
+                  {showHours ? <ChevronUp className="h-3.5 w-3.5 text-muted-foreground" /> : <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />}
                 </button>
                 {showHours && (
                   <div className="px-3 pb-3 animate-in fade-in slide-in-from-top-1 duration-200">
@@ -1230,16 +1229,16 @@ const StorePage = () => {
                 const cash        = s.accept_cash        !== false;
                 const hasPix      = pixOnline || pixMachine;
                 const methods = [
-                  { show: pixOnline,  icon: <AppIcon name="QrCode" className="h-3 w-3 text-emerald-500" />,  label: "PIX Online",     badge: "bg-emerald-500/10 border-emerald-500/20 text-emerald-700 dark:text-emerald-400" },
-                  { show: pixMachine, icon: <AppIcon name="QrCode" className="h-3 w-3 text-primary" />,       label: "PIX",            badge: "" },
-                  { show: card,       icon: <AppIcon name="CreditCard" className="h-3 w-3 text-primary" />,   label: "Cartão",         badge: "" },
-                  { show: cash,       icon: <AppIcon name="Banknote" className="h-3 w-3 text-primary" />,     label: "Dinheiro",       badge: "" },
+                  { show: pixOnline,  icon: <QrCode className="h-3 w-3 text-emerald-500" />,  label: "PIX Online",     badge: "bg-emerald-500/10 border-emerald-500/20 text-emerald-700 dark:text-emerald-400" },
+                  { show: pixMachine, icon: <QrCode className="h-3 w-3 text-primary" />,       label: "PIX",            badge: "" },
+                  { show: card,       icon: <CreditCard className="h-3 w-3 text-primary" />,   label: "Cartão",         badge: "" },
+                  { show: cash,       icon: <Banknote className="h-3 w-3 text-primary" />,     label: "Dinheiro",       badge: "" },
                 ];
                 const active = methods.filter(m => m.show);
                 return (
                   <div className="bg-muted/30 rounded-xl p-3 border border-border/30">
                     <div className="flex items-center gap-2.5 mb-2.5">
-                      <AppIcon name="CreditCard" className="h-3.5 w-3.5 text-primary" />
+                      <CreditCard className="h-3.5 w-3.5 text-primary" />
                       <span className="text-[11px] font-black text-foreground uppercase tracking-wider">Pagamento</span>
                     </div>
                     <div className="flex flex-wrap gap-2">
@@ -1288,7 +1287,7 @@ const StorePage = () => {
                 <div className="flex flex-col items-center">
                   <span className="text-lg font-black text-amber-500 leading-none flex items-center gap-1">
                     {store.rating}
-                    <AppIcon name="Star" className="h-3 w-3 fill-amber-500" />
+                    <Star className="h-3 w-3 fill-amber-500" />
                   </span>
                   <span className="text-[11px] font-semibold text-muted-foreground mt-1">Avaliação</span>
                 </div>
@@ -1327,7 +1326,7 @@ const StorePage = () => {
 
       {!storeStatus.isOpen && !isSuspended && (
         <div className="mx-4 mt-3 bg-destructive/5 border border-destructive/20 rounded-xl p-3 flex items-center gap-3">
-          <AppIcon name="Clock" className="h-5 w-5 text-destructive flex-shrink-0" />
+          <Clock className="h-5 w-5 text-destructive flex-shrink-0" />
           <div>
             <p className="text-sm font-bold text-destructive">Loja fechada no momento</p>
             <p className="text-xs text-muted-foreground">{storeStatus.reason}</p>
@@ -1338,7 +1337,7 @@ const StorePage = () => {
       {/* ===== SEARCH BAR ===== */}
       <div className="mx-4 mt-3">
         <div className="relative">
-          <AppIcon name="Search" className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <input
             type="text"
             placeholder="Buscar produtos..."
@@ -1348,7 +1347,7 @@ const StorePage = () => {
           />
           {searchQuery && (
             <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2">
-              <AppIcon name="X" className="h-4 w-4 text-muted-foreground" />
+              <X className="h-4 w-4 text-muted-foreground" />
             </button>
           )}
         </div>
@@ -1358,7 +1357,7 @@ const StorePage = () => {
       {reorderProductsList.length > 0 && !filteredProducts && (
         <div className="px-4 mt-4">
           <div className="flex items-center gap-2 mb-3">
-            <AppIcon name="RotateCcw" className="h-4 w-4 text-primary" />
+            <RotateCcw className="h-4 w-4 text-primary" />
             <h2 className="text-sm font-black text-foreground">Peça de novo</h2>
           </div>
           <div className="flex overflow-x-auto gap-3 no-scrollbar pb-1">
@@ -1401,7 +1400,7 @@ const StorePage = () => {
       {popularProductsList.length > 0 && !filteredProducts && (
         <div className="px-4 mt-4">
           <div className="flex items-center gap-2 mb-3">
-            <AppIcon name="TrendingUp" className="h-4 w-4 text-primary" />
+            <TrendingUp className="h-4 w-4 text-primary" />
             <h2 className="text-sm font-black text-foreground">Mais pedidos</h2>
           </div>
           <div className="flex overflow-x-auto gap-3 no-scrollbar pb-1">
@@ -1482,7 +1481,7 @@ const StorePage = () => {
                 <h3 className="text-sm font-black text-foreground">Monte Sua Pizza</h3>
                 <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>
               </div>
-              <AppIcon name="ChevronRight" className="h-5 w-5 text-primary flex-shrink-0" />
+              <ChevronRight className="h-5 w-5 text-primary flex-shrink-0" />
             </button>
           </div>
         );
@@ -1518,7 +1517,7 @@ const StorePage = () => {
                 <h3 className="text-sm font-black text-foreground">Monte seu Pastel</h3>
                 <p className="text-xs text-muted-foreground mt-0.5">Combine sabores diferentes em um pastel</p>
               </div>
-              <AppIcon name="ChevronRight" className="h-5 w-5 text-primary flex-shrink-0" />
+              <ChevronRight className="h-5 w-5 text-primary flex-shrink-0" />
             </button>
           </div>
         );

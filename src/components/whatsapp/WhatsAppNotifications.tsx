@@ -1,8 +1,7 @@
-import { AppIcon } from "@/components/ui/app-icon";
-import { Zap, MessageCircle } from "lucide-react";
 /**
  * Aba "Notificações" — toggles por etapa do pedido + auto-resposta.
  */
+import { Zap, MessageCircle } from "lucide-react";
 
 interface Props {
   storeSlug: string;
@@ -49,7 +48,7 @@ export default function WhatsAppNotifications({
     <div className="space-y-4">
       <div className="rounded-2xl border border-border p-4 space-y-3">
         <div className="flex items-center gap-2">
-          <AppIcon name="Zap" className="h-4 w-4 text-primary" />
+          <Zap className="h-4 w-4 text-primary" />
           <div className="flex-1">
             <p className="text-sm font-bold text-foreground">Notificações por etapa</p>
             <p className="text-[11px] text-muted-foreground">Cada mudança de status dispara uma mensagem ao cliente.</p>
@@ -75,7 +74,7 @@ export default function WhatsAppNotifications({
       <div className="rounded-2xl border border-border p-4 space-y-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <AppIcon name="MessageCircle" className="h-4 w-4 text-primary" />
+            <MessageCircle className="h-4 w-4 text-primary" />
             <p className="text-sm font-bold text-foreground">Resposta automática</p>
           </div>
           <Toggle value={autoReply} onChange={() => setAutoReply(!autoReply)} />

@@ -3,9 +3,12 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { subscribeWithRejoin, cleanupChannel } from "@/lib/realtimeChannel";
+import {
+  X, Plus, Send, Loader2, MessageCircle, ChevronRight,
+  CheckCircle2, Package, CreditCard, Truck, Settings,
+  ChevronLeft, AlertTriangle, HelpCircle, ArrowRight,
+} from "lucide-react";
 import { toast } from "sonner";
-import { AppIcon } from "@/components/ui/app-icon";
-import { X, Plus, Send, Loader2, MessageCircle, ChevronRight, CheckCircle2, Package, CreditCard, Truck, Settings, ChevronLeft, AlertTriangle, HelpCircle, ArrowRight } from "lucide-react";
 
 const CATEGORIES = [
   { value: "pedido",     label: "Pedido",      icon: Package,       color: "text-orange-500",  bg: "bg-orange-500/10 border-orange-500/20" },
@@ -163,7 +166,7 @@ export const SupportTicketModal = ({ open, onClose, userRole, storeId }: Props) 
             {view !== "list" && (
               <button onClick={view === "new" ? goList : goList}
                 className="w-9 h-9 rounded-2xl bg-muted/60 flex items-center justify-center active:scale-90 transition-transform shrink-0">
-                <AppIcon name="ChevronLeft" className="h-4 w-4 text-foreground" />
+                <ChevronLeft className="h-4 w-4 text-foreground" />
               </button>
             )}
             <div className="flex-1 min-w-0">
@@ -203,12 +206,12 @@ export const SupportTicketModal = ({ open, onClose, userRole, storeId }: Props) 
               {view === "list" && (
                 <button onClick={() => setView("new")}
                   className="flex items-center gap-1 sm:gap-1.5 bg-primary text-primary-foreground text-xs font-bold px-2.5 sm:px-3.5 py-2 rounded-2xl active:scale-95 transition-transform">
-                  <AppIcon name="Plus" className="h-3.5 w-3.5" /> Novo
+                  <Plus className="h-3.5 w-3.5" /> Novo
                 </button>
               )}
               <button onClick={onClose}
                 className="w-9 h-9 rounded-2xl bg-muted/60 flex items-center justify-center active:scale-90 transition-transform">
-                <AppIcon name="X" className="h-4 w-4 text-foreground" />
+                <X className="h-4 w-4 text-foreground" />
               </button>
             </div>
           </div>
@@ -219,14 +222,14 @@ export const SupportTicketModal = ({ open, onClose, userRole, storeId }: Props) 
           <div className="flex-1 overflow-y-auto px-4 pb-4">
             {isLoading && (
               <div className="flex items-center justify-center py-16">
-                <AppIcon name="Loader2" className="h-5 w-5 animate-spin text-primary" />
+                <Loader2 className="h-5 w-5 animate-spin text-primary" />
               </div>
             )}
 
             {!isLoading && tickets.length === 0 && (
               <div className="flex flex-col items-center justify-center py-16 gap-4">
                 <div className="w-20 h-20 rounded-3xl bg-primary/8 flex items-center justify-center">
-                  <AppIcon name="MessageCircle" className="h-9 w-9 text-primary" />
+                  <MessageCircle className="h-9 w-9 text-primary" strokeWidth={1.5} />
                 </div>
                 <div className="text-center">
                   <p className="font-bold text-foreground text-base">Nenhum chamado</p>
@@ -268,7 +271,7 @@ export const SupportTicketModal = ({ open, onClose, userRole, storeId }: Props) 
                             </span>
                           </div>
                         </div>
-                        <AppIcon name="ChevronRight" className="h-4 w-4 text-muted-foreground/50 shrink-0 mt-1" />
+                        <ChevronRight className="h-4 w-4 text-muted-foreground/50 shrink-0 mt-1" />
                       </div>
                     </button>
                   );
@@ -320,7 +323,7 @@ export const SupportTicketModal = ({ open, onClose, userRole, storeId }: Props) 
 
             <button onClick={createTicket} disabled={sending || !form.subject.trim() || !form.message.trim()}
               className="w-full bg-primary text-primary-foreground font-bold py-3.5 rounded-2xl text-sm active:scale-[0.98] transition-all disabled:opacity-40 flex items-center justify-center gap-2">
-              {sending ? <AppIcon name="Loader2" className="h-4 w-4 animate-spin" /> : <AppIcon name="ArrowRight" className="h-4 w-4" />}
+              {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
               {sending ? "Enviando..." : "Abrir chamado"}
             </button>
           </div>
@@ -339,7 +342,7 @@ export const SupportTicketModal = ({ open, onClose, userRole, storeId }: Props) 
                   <div key={m.id} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
                     {!isMe && (
                       <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center shrink-0 mr-2 mt-auto mb-0.5">
-                        <AppIcon name="MessageCircle" className="h-3.5 w-3.5 text-primary-foreground" />
+                        <MessageCircle className="h-3.5 w-3.5 text-primary-foreground" />
                       </div>
                     )}
                     <div className={`max-w-[82%] sm:max-w-[78%] min-w-0 ${isMe ? "items-end" : "items-start"} flex flex-col gap-1`}>
@@ -364,7 +367,7 @@ export const SupportTicketModal = ({ open, onClose, userRole, storeId }: Props) 
             {["fechado", "resolvido"].includes(selected.status) ? (
               <div className="px-4 py-4 border-t border-border/50 shrink-0">
                 <div className="flex items-center justify-center gap-2 bg-emerald-500/8 rounded-2xl py-3">
-                  <AppIcon name="CheckCircle2" className="h-4 w-4 text-emerald-500" />
+                  <CheckCircle2 className="h-4 w-4 text-emerald-500" />
                   <p className="text-xs font-semibold text-emerald-600 text-center">
                     Chamado {selected.status} — obrigado pelo contato!
                   </p>
@@ -380,7 +383,7 @@ export const SupportTicketModal = ({ open, onClose, userRole, storeId }: Props) 
                     className="flex-1 min-w-0 bg-transparent text-sm resize-none focus:outline-none placeholder:text-muted-foreground/50 max-h-32" />
                   <button onClick={sendMsg} disabled={!msg.trim() || sending}
                     className="w-9 h-9 bg-primary rounded-xl flex items-center justify-center shrink-0 disabled:opacity-30 active:scale-90 transition-transform mb-0.5">
-                    {sending ? <AppIcon name="Loader2" className="h-3.5 w-3.5 text-white animate-spin" /> : <AppIcon name="Send" className="h-3.5 w-3.5 text-white" />}
+                    {sending ? <Loader2 className="h-3.5 w-3.5 text-white animate-spin" /> : <Send className="h-3.5 w-3.5 text-white" />}
                   </button>
                 </div>
               </div>

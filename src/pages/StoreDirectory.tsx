@@ -6,10 +6,15 @@ import { AsaasBadgeBar } from "@/components/AsaasBadge";
 import PartnerClientView from "@/components/PartnerClientView";
 import PlansComparisonTable from "@/components/PlansComparisonTable";
 import { PLANS, PLANS_ORDER } from "@/lib/plansInfo";
+import {
+  ArrowRight, Check, CheckCircle2, ChevronDown, Clock, CreditCard,
+  Menu, MessageCircle, ShieldCheck, ShoppingBag, Sparkles,
+  Store, Truck, X, Zap, Smartphone, BarChart3, Printer, Gift, MapPin,
+  AlertTriangle, PhoneCall, FileText,
+  Users, Split, HandCoins, Wallet, Shirt, Ban,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { prefetchHandlers } from "@/lib/prefetchRoute";
-import { AppIcon } from "@/components/ui/app-icon";
-import { ArrowRight, Check, CheckCircle2, ChevronDown, Clock, CreditCard, Menu, MessageCircle, ShieldCheck, ShoppingBag, Sparkles, Store, Truck, X, Zap, Smartphone, BarChart3, Printer, Gift, MapPin, AlertTriangle, PhoneCall, FileText, Users, Split, HandCoins, Wallet, Shirt, Ban } from "lucide-react";
 
 /* ─────────────────────────── CONTENT ─────────────────────────── */
 
@@ -178,7 +183,7 @@ const Navbar = ({ onNavigate, isLoggedIn }: { onNavigate: (p: string) => void; i
         <div className="hidden md:flex items-center gap-2">
           {isLoggedIn ? (
             <Button className="rounded-full font-bold text-sm px-6" onClick={() => onNavigate("/pedidos")}>
-              <AppIcon name="ShoppingBag" className="h-4 w-4 mr-2" /> Meus pedidos
+              <ShoppingBag className="h-4 w-4 mr-2" /> Meus pedidos
             </Button>
           ) : (
             <>
@@ -194,11 +199,11 @@ const Navbar = ({ onNavigate, isLoggedIn }: { onNavigate: (p: string) => void; i
             <Button size="sm" className="rounded-full font-bold text-xs px-4 h-9" onClick={() => onNavigate("/cadastro-lojista")}>Começar</Button>
           ) : (
             <Button size="sm" variant="outline" className="rounded-full font-bold text-xs px-3 h-9" onClick={() => onNavigate("/pedidos")}>
-              <AppIcon name="ShoppingBag" className="h-3.5 w-3.5 mr-1.5" /> Pedidos
+              <ShoppingBag className="h-3.5 w-3.5 mr-1.5" /> Pedidos
             </Button>
           )}
           <button onClick={() => setOpen(!open)} aria-label={open ? "Fechar" : "Menu"} className="h-9 w-9 inline-flex items-center justify-center rounded-full border border-border bg-card/70 active:scale-95 transition">
-            {open ? <AppIcon name="X" className="h-4 w-4" /> : <AppIcon name="Menu" className="h-4 w-4" />}
+            {open ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
           </button>
         </div>
       </div>
@@ -246,13 +251,13 @@ const HeroMock = () => (
         <p className="text-[8px] font-black uppercase tracking-wider text-muted-foreground mb-1">Entrega</p>
         <p className="text-[9px] font-semibold leading-tight">R. das Flores, 234 — Centro</p>
         <div className="mt-1.5 flex items-center gap-1 text-[8px] font-bold text-primary">
-          <AppIcon name="MapPin" className="h-2.5 w-2.5" /> 2,4 km · ~18 min
+          <MapPin className="h-2.5 w-2.5" /> 2,4 km · ~18 min
         </div>
       </div>
       <div className="mt-auto flex gap-1.5">
         <button className="flex-1 h-8 rounded-lg bg-primary text-[9px] font-black text-primary-foreground shadow-[0_4px_12px_-2px_hsl(var(--primary)/0.5)]">Aceitar pedido</button>
         <button className="h-8 w-8 rounded-lg border border-border bg-card grid place-items-center">
-          <AppIcon name="Printer" className="h-3.5 w-3.5" />
+          <Printer className="h-3.5 w-3.5" />
         </button>
       </div>
     </div>
@@ -423,10 +428,10 @@ const StoreDirectory = () => {
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
               <Button size="lg" onClick={handleCTA} className="min-h-[54px] px-7 rounded-2xl text-base font-black shadow-[0_20px_50px_-20px_hsl(var(--primary)/0.7)] hover:-translate-y-0.5 transition-all w-full sm:w-auto">
-                Criar minha loja grátis <AppIcon name="ArrowRight" className="ml-2 h-5 w-5" />
+                Criar minha loja grátis <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
               <Button size="lg" variant="outline" onClick={handleWhatsApp} className="min-h-[54px] px-6 rounded-2xl text-base font-bold w-full sm:w-auto border-2">
-                <AppIcon name="MessageCircle" className="mr-2 h-5 w-5" /> Falar no WhatsApp
+                <MessageCircle className="mr-2 h-5 w-5" /> Falar no WhatsApp
               </Button>
             </div>
 
@@ -495,8 +500,8 @@ const StoreDirectory = () => {
             {PAINS.map((p) => (
               <div key={p.pain} className="rounded-2xl border border-border bg-card p-5 md:p-6 grid grid-cols-[auto,1fr] gap-3 md:gap-4">
                 <div className="flex flex-col gap-2 pt-1">
-                  <span className="h-7 w-7 rounded-full bg-destructive/10 text-destructive grid place-items-center"><AppIcon name="X" className="h-4 w-4" /></span>
-                  <span className="h-7 w-7 rounded-full bg-primary/15 text-primary grid place-items-center"><AppIcon name="Check" className="h-4 w-4" /></span>
+                  <span className="h-7 w-7 rounded-full bg-destructive/10 text-destructive grid place-items-center"><X className="h-4 w-4" /></span>
+                  <span className="h-7 w-7 rounded-full bg-primary/15 text-primary grid place-items-center"><Check className="h-4 w-4" /></span>
                 </div>
                 <div className="flex flex-col gap-3">
                   <p className="text-sm md:text-base text-muted-foreground line-through">{p.pain}</p>
@@ -555,7 +560,7 @@ const StoreDirectory = () => {
             <HeroMock />
             <div className="hidden lg:block absolute -left-8 top-12 rounded-2xl border border-border bg-card/95 backdrop-blur px-3 py-2 shadow-[0_20px_40px_-20px_hsl(var(--foreground)/0.25)]">
               <div className="flex items-center gap-2">
-                <div className="h-8 w-8 rounded-xl bg-emerald-500/15 grid place-items-center"><AppIcon name="Zap" className="h-4 w-4 text-emerald-600" /></div>
+                <div className="h-8 w-8 rounded-xl bg-emerald-500/15 grid place-items-center"><Zap className="h-4 w-4 text-emerald-600" /></div>
                 <div>
                   <p className="text-[10px] font-black uppercase text-muted-foreground">PIX confirmado</p>
                   <p className="text-xs font-black text-foreground">+ R$ 69,00</p>
@@ -600,7 +605,7 @@ const StoreDirectory = () => {
             ))}
           </div>
           <p className="mt-6 text-center text-xs font-bold text-muted-foreground">
-            <AppIcon name="ShieldCheck" className="inline h-3.5 w-3.5 mr-1 text-primary" /> Muda quando quiser · sem falar com suporte
+            <ShieldCheck className="inline h-3.5 w-3.5 mr-1 text-primary" /> Muda quando quiser · sem falar com suporte
           </p>
         </div>
       </section>
@@ -721,7 +726,7 @@ const StoreDirectory = () => {
         <div className="mx-auto max-w-4xl rounded-3xl border-2 border-primary/25 bg-gradient-to-br from-primary/[0.06] via-card to-card p-6 md:p-10 shadow-[0_20px_60px_-20px_hsl(var(--primary)/0.25)]">
           <div className="flex items-start gap-3 md:gap-4">
             <div className="h-10 w-10 md:h-12 md:w-12 rounded-2xl bg-primary/15 text-primary grid place-items-center shrink-0">
-              <AppIcon name="AlertTriangle" className="h-5 w-5 md:h-6 md:w-6" />
+              <AlertTriangle className="h-5 w-5 md:h-6 md:w-6" />
             </div>
             <div>
               <p className="text-[11px] font-black uppercase tracking-[0.2em] text-primary mb-2">Transparência total</p>
@@ -730,7 +735,7 @@ const StoreDirectory = () => {
                 Quando sua loja atingir o gatilho de vendas (R$ 5.000 no Essencial ou R$ 2.500 no Autonomia em 60 dias), a mensalidade passa a valer com <b className="text-foreground">30 dias de aviso</b> e aceite expresso seu. Se você preferir não continuar, a loja fica <b className="text-foreground">suspensa até você aceitar</b> — não voltamos ao grátis pra sempre. Está escrito na cláusula 5.2 dos Termos, sem letra miúda.
               </p>
               <button onClick={() => navigate("/termos-de-uso")} className="mt-4 inline-flex items-center gap-1.5 text-sm font-black text-primary hover:underline">
-                <AppIcon name="FileText" className="h-4 w-4" /> Ler a cláusula
+                <FileText className="h-4 w-4" /> Ler a cláusula
               </button>
             </div>
           </div>
@@ -776,7 +781,7 @@ const StoreDirectory = () => {
                     aria-expanded={open}
                   >
                     <span className="font-black text-sm md:text-base leading-snug">{f.q}</span>
-                    <AppIcon name="ChevronDown" className={`h-5 w-5 shrink-0 text-muted-foreground transition-transform ${open ? "rotate-180 text-primary" : ""}`} />
+                    <ChevronDown className={`h-5 w-5 shrink-0 text-muted-foreground transition-transform ${open ? "rotate-180 text-primary" : ""}`} />
                   </button>
                   {open && (
                     <div className="px-5 md:px-6 pb-5 md:pb-6 text-sm md:text-base text-muted-foreground leading-relaxed">{f.a}</div>
@@ -802,10 +807,10 @@ const StoreDirectory = () => {
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
               <Button size="lg" variant="secondary" onClick={handleCTA} className="min-h-[56px] px-8 rounded-2xl text-base font-black bg-background text-foreground hover:bg-background/90 w-full sm:w-auto">
-                Criar minha loja grátis <AppIcon name="ArrowRight" className="ml-2 h-5 w-5" />
+                Criar minha loja grátis <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
               <Button size="lg" variant="outline" onClick={handleWhatsApp} className="min-h-[56px] px-6 rounded-2xl text-base font-bold border-2 border-primary-foreground/40 bg-transparent text-primary-foreground hover:bg-primary-foreground/10 w-full sm:w-auto">
-                <AppIcon name="PhoneCall" className="mr-2 h-5 w-5" /> Falar com humano
+                <PhoneCall className="mr-2 h-5 w-5" /> Falar com humano
               </Button>
             </div>
           </div>
@@ -836,7 +841,7 @@ const StoreDirectory = () => {
       {/* Sticky mobile CTA */}
       <div className="md:hidden fixed bottom-0 inset-x-0 z-40 px-4 pb-[max(env(safe-area-inset-bottom),12px)] pt-3 bg-gradient-to-t from-background via-background/95 to-background/0">
         <Button onClick={handleCTA} {...prefetchHandlers("/cadastro-lojista")} className="w-full min-h-[52px] rounded-2xl text-base font-black shadow-[0_16px_40px_-12px_hsl(var(--primary)/0.6)]">
-          <AppIcon name="Store" className="mr-2 h-5 w-5" /> Criar minha loja grátis <AppIcon name="ArrowRight" className="ml-2 h-5 w-5" />
+          <Store className="mr-2 h-5 w-5" /> Criar minha loja grátis <ArrowRight className="ml-2 h-5 w-5" />
         </Button>
       </div>
     </div>
@@ -890,7 +895,7 @@ function PlansSection({
                 {highlight && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                     <span className="inline-flex items-center gap-1 rounded-full bg-primary text-primary-foreground text-[10px] font-black uppercase tracking-widest px-3 py-1 shadow-md">
-                      <AppIcon name="Sparkles" className="h-3 w-3" /> Mais escolhido
+                      <Sparkles className="h-3 w-3" /> Mais escolhido
                     </span>
                   </div>
                 )}
@@ -922,7 +927,7 @@ function PlansSection({
                 <ul className="mt-6 space-y-2.5 flex-1">
                   {p.features.map((f) => (
                     <li key={f} className="flex items-start gap-2 text-sm">
-                      <AppIcon name="Check" className="h-4 w-4 mt-0.5 shrink-0 text-primary" />
+                      <Check className="h-4 w-4 mt-0.5 shrink-0 text-primary" />
                       <span className="leading-snug text-foreground">{f}</span>
                     </li>
                   ))}
@@ -935,7 +940,7 @@ function PlansSection({
                   }`}
                   variant={highlight ? "default" : "outline"}
                 >
-                  {isPdv ? "Contratar PDV" : "Começar grátis"} <AppIcon name="ArrowRight" className="ml-2 h-4 w-4" />
+                  {isPdv ? "Contratar PDV" : "Começar grátis"} <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
                 {highlight && (
                   <p className="mt-3 text-[11px] text-muted-foreground text-center font-semibold">
@@ -951,7 +956,7 @@ function PlansSection({
           <div className="rounded-2xl border border-border/60 bg-gradient-to-br from-muted/40 to-background p-5 sm:p-6">
             <div className="flex items-center gap-2 mb-4">
               <div className="h-8 w-8 rounded-xl bg-primary/10 grid place-items-center">
-                <AppIcon name="FileText" className="h-4 w-4 text-primary" />
+                <FileText className="h-4 w-4 text-primary" />
               </div>
               <h4 className="text-sm font-black tracking-tight">Regras claras, sem letra miúda</h4>
             </div>
@@ -975,7 +980,7 @@ function PlansSection({
         <div className="mt-8 text-center">
           <button onClick={onCompare} className="inline-flex items-center gap-1.5 text-sm font-black text-primary hover:underline">
             {showCompare ? "Ocultar" : "Ver"} comparação completa de recursos
-            <AppIcon name="ChevronDown" className={`h-4 w-4 transition-transform ${showCompare ? "rotate-180" : ""}`} />
+            <ChevronDown className={`h-4 w-4 transition-transform ${showCompare ? "rotate-180" : ""}`} />
           </button>
           {showCompare && (
             <div className="mt-6 text-left">

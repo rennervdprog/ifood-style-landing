@@ -1,10 +1,9 @@
+import { ArrowLeft, Monitor, Keyboard, ArrowUpCircle, ArrowDownCircle, Lock, Loader2, User, Wifi, WifiOff, RefreshCw, Menu, LogOut, CreditCard, LifeBuoy, UserCircle, BookOpen } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { formatBRL } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import SignOutConfirm from "@/components/SignOutConfirm";
-import { AppIcon } from "@/components/ui/app-icon";
-import { ArrowLeft, Monitor, Keyboard, ArrowUpCircle, ArrowDownCircle, Lock, Loader2, Wifi, WifiOff, RefreshCw, Menu, LogOut, CreditCard, LifeBuoy, UserCircle, BookOpen } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent,
   DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator,
@@ -61,17 +60,17 @@ export const PdvTopbar = ({
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button className="p-1.5 rounded-lg hover:bg-muted transition-colors" title="Menu">
-              <AppIcon name="Menu" className="h-4 w-4" />
+              <Menu className="h-4 w-4" />
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-56">
             <DropdownMenuLabel>{storeName || "Menu"}</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => navigate("/perfil")}>
-              <AppIcon name="UserCircle" className="h-4 w-4 mr-2" /> Perfil
+              <UserCircle className="h-4 w-4 mr-2" /> Perfil
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => navigate("/admin/cardapio")}>
-              <AppIcon name="BookOpen" className="h-4 w-4 mr-2" /> Cardápio
+              <BookOpen className="h-4 w-4 mr-2" /> Cardápio
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => {
@@ -79,29 +78,29 @@ export const PdvTopbar = ({
                 else navigate("/perfil?tab=plano");
               }}
             >
-              <AppIcon name="CreditCard" className="h-4 w-4 mr-2" /> Meu Plano
+              <CreditCard className="h-4 w-4 mr-2" /> Meu Plano
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => window.open("https://wa.me/5511999999999", "_blank")}
             >
-              <AppIcon name="LifeBuoy" className="h-4 w-4 mr-2" /> Suporte
+              <LifeBuoy className="h-4 w-4 mr-2" /> Suporte
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
               className="text-red-600 focus:text-red-600"
               onSelect={(e) => { e.preventDefault(); setSignOutOpen(true); }}
             >
-              <AppIcon name="LogOut" className="h-4 w-4 mr-2" /> Sair
+              <LogOut className="h-4 w-4 mr-2" /> Sair
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       ) : (
         <button onClick={() => navigate("/admin")} className="p-1.5 rounded-lg hover:bg-muted transition-colors">
-          <AppIcon name="ArrowLeft" className="h-4 w-4" />
+          <ArrowLeft className="h-4 w-4" />
         </button>
       )}
       <div className="w-px h-5 bg-border" />
-      <AppIcon name="Monitor" className="h-4 w-4 text-primary shrink-0" />
+      <Monitor className="h-4 w-4 text-primary shrink-0" />
       <div className="flex-1 min-w-0">
         <span className="text-xs font-bold text-foreground truncate">{storeName}</span>
         <span className="text-[10px] text-emerald-500 font-semibold ml-2 hidden sm:inline">
@@ -119,7 +118,7 @@ export const PdvTopbar = ({
               : "bg-red-500/10 border-red-500/30 text-red-600 animate-pulse"
           }`}
         >
-          {online ? <AppIcon name="Wifi" className="h-3.5 w-3.5" /> : <AppIcon name="WifiOff" className="h-3.5 w-3.5" />}
+          {online ? <Wifi className="h-3.5 w-3.5" /> : <WifiOff className="h-3.5 w-3.5" />}
         </div>
         {outboxCount > 0 && (
           <button
@@ -130,8 +129,8 @@ export const PdvTopbar = ({
             className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-bold text-amber-700 bg-amber-500/10 hover:bg-amber-500/20 transition-colors border border-amber-500/30"
           >
             {outboxFlushing
-              ? <AppIcon name="Loader2" className="h-3.5 w-3.5 animate-spin" />
-              : <AppIcon name="RefreshCw" className="h-3.5 w-3.5" />}
+              ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              : <RefreshCw className="h-3.5 w-3.5" />}
             <span>Sincronizar ({outboxCount})</span>
           </button>
         )}
@@ -156,14 +155,14 @@ export const PdvTopbar = ({
           title="Atalhos de teclado"
           className="hidden md:flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-bold text-muted-foreground bg-muted/50 hover:bg-muted transition-colors border border-border"
         >
-          <AppIcon name="Keyboard" className="h-3.5 w-3.5" />
+          <Keyboard className="h-3.5 w-3.5" />
         </button>
         <button
           onClick={onSuprimento}
           title="Suprimento"
           className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-bold text-blue-600 bg-blue-500/8 hover:bg-blue-500/15 transition-colors border border-blue-500/20"
         >
-          <AppIcon name="ArrowUpCircle" className="h-3.5 w-3.5" />
+          <ArrowUpCircle className="h-3.5 w-3.5" />
           <span className="hidden sm:block">Suprimento</span>
         </button>
         <button
@@ -171,14 +170,14 @@ export const PdvTopbar = ({
           title="Sangria"
           className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-bold text-red-600 bg-red-500/8 hover:bg-red-500/15 transition-colors border border-red-500/20"
         >
-          <AppIcon name="ArrowDownCircle" className="h-3.5 w-3.5" />
+          <ArrowDownCircle className="h-3.5 w-3.5" />
           <span className="hidden sm:block">Sangria</span>
         </button>
         <button
           onClick={onFechar} disabled={loading}
           className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-bold text-muted-foreground bg-muted hover:bg-muted/80 transition-colors border border-border"
         >
-          {loading ? <AppIcon name="Loader2" className="h-3.5 w-3.5 animate-spin" /> : <AppIcon name="Lock" className="h-3.5 w-3.5" />}
+          {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Lock className="h-3.5 w-3.5" />}
           <span className="hidden sm:block">Fechar</span>
         </button>
         {isPdvOnly && (
@@ -187,7 +186,7 @@ export const PdvTopbar = ({
               title="Sair da conta"
               className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-bold text-red-600 bg-red-500/8 hover:bg-red-500/15 transition-colors border border-red-500/20"
             >
-              <AppIcon name="LogOut" className="h-3.5 w-3.5" />
+              <LogOut className="h-3.5 w-3.5" />
               <span className="hidden sm:block">Sair</span>
             </button>
           </SignOutConfirm>

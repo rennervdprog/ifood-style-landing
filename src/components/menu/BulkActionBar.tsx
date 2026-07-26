@@ -1,4 +1,3 @@
-import { AppIcon } from "@/components/ui/app-icon";
 import { Pause, Play, PackageX, Package, ArrowRightLeft, Trash2, Loader2, X, Copy } from "lucide-react";
 
 interface BulkActionBarProps {
@@ -38,23 +37,23 @@ export const BulkActionBar = ({
         <span className="text-sm font-bold">
           {count} selecionado{count > 1 ? "s" : ""}
         </span>
-        {busy && <AppIcon name="Loader2" className="h-4 w-4 animate-spin" />}
+        {busy && <Loader2 className="h-4 w-4 animate-spin" />}
       </div>
       <div className="flex items-center gap-1.5 flex-wrap">
-        <BulkBtn onClick={onPause} icon={<AppIcon name="Pause" className="h-3.5 w-3.5" />} label="Pausar" disabled={busy} />
-        <BulkBtn onClick={onResume} icon={<AppIcon name="Play" className="h-3.5 w-3.5" />} label="Ativar" disabled={busy} />
-        <BulkBtn onClick={onOutOfStock} icon={<AppIcon name="PackageX" className="h-3.5 w-3.5" />} label="Esgotar" disabled={busy} destructive />
-        <BulkBtn onClick={onRestock} icon={<AppIcon name="Package" className="h-3.5 w-3.5" />} label="Repor" disabled={busy} />
-        <BulkBtn onClick={onMove} icon={<AppIcon name="ArrowRightLeft" className="h-3.5 w-3.5" />} label="Mover" disabled={busy} />
-        <BulkBtn onClick={onDuplicate} icon={<AppIcon name="Copy" className="h-3.5 w-3.5" />} label="Duplicar" disabled={busy} />
-        <BulkBtn onClick={onDelete} icon={<AppIcon name="Trash2" className="h-3.5 w-3.5" />} label="Excluir" disabled={busy} destructive />
+        <BulkBtn onClick={onPause} icon={<Pause className="h-3.5 w-3.5" />} label="Pausar" disabled={busy} />
+        <BulkBtn onClick={onResume} icon={<Play className="h-3.5 w-3.5" />} label="Ativar" disabled={busy} />
+        <BulkBtn onClick={onOutOfStock} icon={<PackageX className="h-3.5 w-3.5" />} label="Esgotar" disabled={busy} destructive />
+        <BulkBtn onClick={onRestock} icon={<Package className="h-3.5 w-3.5" />} label="Repor" disabled={busy} />
+        <BulkBtn onClick={onMove} icon={<ArrowRightLeft className="h-3.5 w-3.5" />} label="Mover" disabled={busy} />
+        <BulkBtn onClick={onDuplicate} icon={<Copy className="h-3.5 w-3.5" />} label="Duplicar" disabled={busy} />
+        <BulkBtn onClick={onDelete} icon={<Trash2 className="h-3.5 w-3.5" />} label="Excluir" disabled={busy} destructive />
         <button
           onClick={onClear}
           className="p-1.5 rounded-lg hover:bg-primary-foreground/15 transition-colors"
           aria-label="Limpar seleção"
           title="Limpar seleção"
         >
-          <AppIcon name="X" className="h-4 w-4" />
+          <X className="h-4 w-4" />
         </button>
       </div>
     </div>

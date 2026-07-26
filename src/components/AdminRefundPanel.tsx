@@ -4,7 +4,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { formatBRL } from "@/lib/utils";
-import { AppIcon } from "@/components/ui/app-icon";
 import { CheckCircle2, XCircle, Loader2, Clock, Download } from "lucide-react";
 
 const REASON_LABELS: Record<string, string> = {
@@ -153,7 +152,7 @@ const AdminRefundPanel = ({ storeId }: Props) => {
   if (!requests?.length) {
     return (
       <div className="text-center py-12">
-        <AppIcon name="CheckCircle2" className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+        <CheckCircle2 className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
         <p className="text-sm text-muted-foreground">Nenhuma solicitação de reembolso.</p>
       </div>
     );
@@ -184,7 +183,7 @@ const AdminRefundPanel = ({ storeId }: Props) => {
           onClick={exportCsv}
           className="shrink-0 ml-auto flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold border border-border bg-card text-foreground"
         >
-          <AppIcon name="Download" className="h-3 w-3" /> CSV
+          <Download className="h-3 w-3" /> CSV
         </button>
       </div>
 
@@ -201,11 +200,11 @@ const AdminRefundPanel = ({ storeId }: Props) => {
             <div className={`px-4 py-2.5 flex items-center justify-between ${status.bg} border-b border-border/30`}>
               <div className="flex items-center gap-2">
                 {isPending ? (
-                  <AppIcon name="Clock" className="h-4 w-4 text-muted-foreground" />
+                  <Clock className="h-4 w-4 text-muted-foreground" />
                 ) : req.status === "processed" ? (
-                  <AppIcon name="CheckCircle2" className="h-4 w-4 text-primary" />
+                  <CheckCircle2 className="h-4 w-4 text-primary" />
                 ) : (
-                  <AppIcon name="XCircle" className="h-4 w-4 text-destructive" />
+                  <XCircle className="h-4 w-4 text-destructive" />
                 )}
                 <span className={`text-xs font-bold ${status.color}`}>{status.label}</span>
               </div>
@@ -288,7 +287,7 @@ const AdminRefundPanel = ({ storeId }: Props) => {
                       disabled={processing === req.id}
                       className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 disabled:opacity-50 transition-colors"
                     >
-                      {processing === req.id ? <AppIcon name="Loader2" className="h-3.5 w-3.5 animate-spin" /> : <AppIcon name="CheckCircle2" className="h-3.5 w-3.5" />}
+                      {processing === req.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
                       Aprovar
                     </button>
                     <button
@@ -296,7 +295,7 @@ const AdminRefundPanel = ({ storeId }: Props) => {
                       disabled={processing === req.id}
                       className="flex-1 bg-destructive hover:bg-destructive/90 text-destructive-foreground font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 disabled:opacity-50 transition-colors"
                     >
-                      {processing === req.id ? <AppIcon name="Loader2" className="h-3.5 w-3.5 animate-spin" /> : <AppIcon name="XCircle" className="h-3.5 w-3.5" />}
+                      {processing === req.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <XCircle className="h-3.5 w-3.5" />}
                       Rejeitar
                     </button>
                   </div>

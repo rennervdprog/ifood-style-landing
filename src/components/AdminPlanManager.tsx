@@ -8,8 +8,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { AdminStoreAddonsPanel } from "@/components/admin/AdminStoreAddonsPanel";
-import { AppIcon } from "@/components/ui/app-icon";
-import { Store, Crown, Search, Loader2, Check, CreditCard, Heart, ChevronDown, ChevronUp, AlertCircle, CheckCircle2, XCircle, ArrowRight, Calendar, Pause, Play, Send, History, Settings2 } from "lucide-react";
+import {
+  Store, Crown, Search, Loader2, Check, X,
+  CreditCard, TrendingUp, Zap, Truck, Heart,
+  Image, Clock, BarChart3, Ticket, ChevronDown, ChevronUp,
+  AlertCircle, CheckCircle2, XCircle, ArrowRight,
+  Calendar, Pause, Play, Receipt, Send, History, Settings2
+} from "lucide-react";
 
 type PlanType = "fixed" | "hybrid" | "commission_only" | "autonomy";
 type DisplayPlan = PlanType | "supporter";
@@ -312,7 +317,7 @@ export default function AdminPlanManager() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <AppIcon name="Loader2" className="h-8 w-8 animate-spin text-primary" />
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -323,7 +328,7 @@ export default function AdminPlanManager() {
       {pendingRequests.length > 0 && (
         <div className="space-y-3">
           <div className="flex items-center gap-2">
-            <AppIcon name="AlertCircle" className="h-5 w-5 text-amber-500" />
+            <AlertCircle className="h-5 w-5 text-amber-500" />
             <h3 className="font-bold text-foreground">
               Solicitações de Troca ({pendingRequests.length})
             </h3>
@@ -350,7 +355,7 @@ export default function AdminPlanManager() {
         <div className="bg-card rounded-2xl p-4 border border-border">
           <div className="flex items-center gap-2 mb-2">
             <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center">
-              <AppIcon name="CreditCard" className="h-4 w-4 text-primary" />
+              <CreditCard className="h-4 w-4 text-primary" />
             </div>
           </div>
           <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Receita Mensal</p>
@@ -360,7 +365,7 @@ export default function AdminPlanManager() {
         <div className="bg-card rounded-2xl p-4 border-2 border-pink-500/30">
           <div className="flex items-center gap-2 mb-2">
             <div className="w-8 h-8 rounded-xl bg-pink-500/10 flex items-center justify-center">
-              <AppIcon name="Heart" className="h-4 w-4 text-pink-500" />
+              <Heart className="h-4 w-4 text-pink-500" />
             </div>
           </div>
           <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Apoiador</p>
@@ -373,7 +378,7 @@ export default function AdminPlanManager() {
               <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${
                 pt === "fixed" ? "bg-amber-500/10" : pt === "hybrid" ? "bg-blue-500/10" : pt === "autonomy" ? "bg-purple-500/10" : "bg-emerald-500/10"
               }`}>
-                <AppIcon name="Crown" className={`h-4 w-4 ${
+                <Crown className={`h-4 w-4 ${
                   pt === "fixed" ? "text-amber-500" : pt === "hybrid" ? "text-blue-500" : pt === "autonomy" ? "text-purple-500" : "text-emerald-500"
                 }`} />
               </div>
@@ -396,7 +401,7 @@ export default function AdminPlanManager() {
           }`}>
             <div className="flex items-center justify-between">
               <h3 className="font-bold text-foreground text-sm flex items-center gap-1">
-                {pt === "supporter" && <AppIcon name="Heart" className="h-3.5 w-3.5 text-pink-500" />}
+                {pt === "supporter" && <Heart className="h-3.5 w-3.5 text-pink-500" />}
                 {planLabels[pt]}
               </h3>
               <Badge className={`border text-xs ${planColors[pt]}`}>
@@ -416,7 +421,7 @@ export default function AdminPlanManager() {
             <div className="space-y-1.5">
               {featuresByPlan[pt].map(f => (
                 <div key={f} className="flex items-center gap-2 text-xs text-foreground">
-                  <AppIcon name="Check" className="h-3 w-3 text-primary shrink-0" />
+                  <Check className="h-3 w-3 text-primary shrink-0" />
                   {f}
                 </div>
               ))}
@@ -427,7 +432,7 @@ export default function AdminPlanManager() {
 
       {/* Search */}
       <div className="relative">
-        <AppIcon name="Search" className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <input
           value={search}
           onChange={e => setSearch(e.target.value)}
@@ -452,8 +457,8 @@ export default function AdminPlanManager() {
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
                     {currentDisplay === "supporter"
-                      ? <AppIcon name="Heart" className="h-4 w-4 text-pink-500" />
-                      : <AppIcon name="Store" className="h-4 w-4 text-primary" />}
+                      ? <Heart className="h-4 w-4 text-pink-500" />
+                      : <Store className="h-4 w-4 text-primary" />}
                   </div>
                   <div className="text-left">
                     <p className="text-sm font-bold text-foreground">{store.name}</p>
@@ -474,7 +479,7 @@ export default function AdminPlanManager() {
                       Sem plano
                     </Badge>
                   )}
-                  {isExpanded ? <AppIcon name="ChevronUp" className="h-4 w-4 text-muted-foreground" /> : <AppIcon name="ChevronDown" className="h-4 w-4 text-muted-foreground" />}
+                  {isExpanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
                 </div>
               </button>
 
@@ -522,10 +527,10 @@ export default function AdminPlanManager() {
                           >
                             <div className="flex items-center justify-between mb-1">
                               <span className="text-xs font-bold text-foreground flex items-center gap-1">
-                                {pt === "supporter" && <AppIcon name="Heart" className="h-3 w-3 text-pink-500" />}
+                                {pt === "supporter" && <Heart className="h-3 w-3 text-pink-500" />}
                                 {planLabels[pt]}
                               </span>
-                              {isCurrentPlan && <AppIcon name="Check" className="h-3.5 w-3.5 text-primary" />}
+                              {isCurrentPlan && <Check className="h-3.5 w-3.5 text-primary" />}
                             </div>
                             <p className="text-lg font-black text-foreground">
                               {defaults.monthly_fee > 0 ? `R$ ${defaults.monthly_fee}` : "R$ 0"}
@@ -540,7 +545,7 @@ export default function AdminPlanManager() {
                               </p>
                             )}
                             {saving === store.id && (
-                              <AppIcon name="Loader2" className="h-3.5 w-3.5 animate-spin text-primary mt-1" />
+                              <Loader2 className="h-3.5 w-3.5 animate-spin text-primary mt-1" />
                             )}
                           </button>
                         );
@@ -847,7 +852,7 @@ function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride
         className="w-full flex items-center justify-between px-4 py-3 bg-muted/30 hover:bg-muted/50 transition-colors"
       >
         <div className="flex items-center gap-2">
-          <AppIcon name="Crown" className="h-4 w-4 text-amber-500" />
+          <Crown className="h-4 w-4 text-amber-500" />
           <span className="text-xs font-black text-foreground">Configuração VIP</span>
           {isVip && (
             <span className="text-[10px] font-black bg-amber-500/15 text-amber-600 border border-amber-500/25 px-1.5 py-0.5 rounded-full">
@@ -855,7 +860,7 @@ function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride
             </span>
           )}
         </div>
-        <AppIcon name="ChevronDown" className={`h-4 w-4 text-muted-foreground transition-transform ${expanded ? "rotate-180" : ""}`} />
+        <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${expanded ? "rotate-180" : ""}`} />
       </button>
 
       {expanded && (
@@ -925,7 +930,7 @@ function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride
                 <label className="flex items-center justify-between cursor-pointer gap-3 pt-3 border-t border-border/40">
                   <div className="min-w-0">
                     <p className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                      <AppIcon name="Crown" className="h-3 w-3 text-amber-500" />
+                      <Crown className="h-3 w-3 text-amber-500" />
                       Essencial vitalício R$ 0
                     </p>
                     <p className="text-[10px] text-muted-foreground">Bloqueia o upgrade automático para R$ 89,90 ao atingir R$ 5.000 em vendas. Nenhuma cobrança será gerada.</p>
@@ -943,7 +948,7 @@ function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride
                 <label className="flex items-center justify-between cursor-pointer gap-3 pt-3 border-t border-border/40">
                   <div className="min-w-0">
                     <p className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                      <AppIcon name="Crown" className="h-3 w-3 text-purple-500" />
+                      <Crown className="h-3 w-3 text-purple-500" />
                       Autonomia vitalícia R$ 0
                     </p>
                     <p className="text-[10px] text-muted-foreground">Bloqueia o upgrade automático para R$ 199,90 ao atingir R$ 2.500 em vendas. Nenhuma cobrança será gerada.</p>
@@ -1075,7 +1080,7 @@ function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride
             )}
             <button onClick={handleSave} disabled={saving || !hasCustom}
               className="flex-1 py-2.5 rounded-xl bg-primary text-primary-foreground text-xs font-black disabled:opacity-40 active:scale-[0.98] transition-all flex items-center justify-center gap-1.5">
-              {saving ? <AppIcon name="Loader2" className="h-3.5 w-3.5 animate-spin" /> : <AppIcon name="Crown" className="h-3.5 w-3.5" />}
+              {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Crown className="h-3.5 w-3.5" />}
               {saving ? "Salvando..." : "Salvar Configuração VIP"}
             </button>
           </div>
@@ -1118,10 +1123,10 @@ function VipHistoryPanel({ storeId }: { storeId: string }) {
         className="w-full flex items-center justify-between px-4 py-3 bg-muted/30 hover:bg-muted/50 transition-colors"
       >
         <div className="flex items-center gap-2">
-          <AppIcon name="History" className="h-4 w-4 text-muted-foreground" />
+          <History className="h-4 w-4 text-muted-foreground" />
           <span className="text-xs font-black text-foreground">Histórico VIP</span>
         </div>
-        <AppIcon name="ChevronDown" className={`h-4 w-4 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
+        <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
       {open && (
         <div className="p-3 space-y-2 max-h-72 overflow-y-auto">
@@ -1300,7 +1305,7 @@ function FullControlPanel({ plan, storeName, currentDisplay, onChange }: {
     <div className="bg-muted/30 rounded-xl p-3 space-y-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <AppIcon name="Settings2" className="h-4 w-4 text-primary" />
+          <Settings2 className="h-4 w-4 text-primary" />
           <p className="text-xs font-bold text-foreground uppercase tracking-widest">Controle Total</p>
         </div>
         {isPaused ? (
@@ -1406,7 +1411,7 @@ function FullControlPanel({ plan, storeName, currentDisplay, onChange }: {
               disabled={savingDates}
               className="text-xs"
             >
-              {savingDates ? <AppIcon name="Loader2" className="h-3 w-3 animate-spin" /> : "Salvar datas"}
+              {savingDates ? <Loader2 className="h-3 w-3 animate-spin" /> : "Salvar datas"}
             </Button>
           </>
         ) : (
@@ -1417,7 +1422,7 @@ function FullControlPanel({ plan, storeName, currentDisplay, onChange }: {
               onClick={() => setEditing(true)}
               className="text-xs"
             >
-              <AppIcon name="Calendar" className="h-3 w-3 mr-1" /> Editar datas
+              <Calendar className="h-3 w-3 mr-1" /> Editar datas
             </Button>
             <Button
               size="sm"
@@ -1427,11 +1432,11 @@ function FullControlPanel({ plan, storeName, currentDisplay, onChange }: {
               className={`text-xs ${!isPaused ? "border-amber-500/40 text-amber-600 hover:bg-amber-500/10" : ""}`}
             >
               {pausing ? (
-                <AppIcon name="Loader2" className="h-3 w-3 animate-spin" />
+                <Loader2 className="h-3 w-3 animate-spin" />
               ) : isPaused ? (
-                <><AppIcon name="Play" className="h-3 w-3 mr-1" /> Reativar</>
+                <><Play className="h-3 w-3 mr-1" /> Reativar</>
               ) : (
-                <><AppIcon name="Pause" className="h-3 w-3 mr-1" /> Pausar</>
+                <><Pause className="h-3 w-3 mr-1" /> Pausar</>
               )}
             </Button>
           </>
@@ -1446,9 +1451,9 @@ function FullControlPanel({ plan, storeName, currentDisplay, onChange }: {
           className="w-full text-xs bg-primary"
         >
           {generating ? (
-            <><AppIcon name="Loader2" className="h-3 w-3 animate-spin mr-1" /> Gerando...</>
+            <><Loader2 className="h-3 w-3 animate-spin mr-1" /> Gerando...</>
           ) : (
-            <><AppIcon name="Send" className="h-3 w-3 mr-1" /> Gerar cobrança agora (R$ {Number(plan.monthly_fee).toFixed(0)})</>
+            <><Send className="h-3 w-3 mr-1" /> Gerar cobrança agora (R$ {Number(plan.monthly_fee).toFixed(0)})</>
           )}
         </Button>
       )}
@@ -1460,9 +1465,9 @@ function FullControlPanel({ plan, storeName, currentDisplay, onChange }: {
           className="w-full flex items-center justify-between text-xs font-bold text-muted-foreground py-2 hover:text-foreground"
         >
           <span className="flex items-center gap-1">
-            <AppIcon name="History" className="h-3 w-3" /> Histórico de cobranças
+            <History className="h-3 w-3" /> Histórico de cobranças
           </span>
-          {showHistory ? <AppIcon name="ChevronUp" className="h-3 w-3" /> : <AppIcon name="ChevronDown" className="h-3 w-3" />}
+          {showHistory ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
         </button>
         {showHistory && <BillingHistoryInline storeId={plan.store_id} />}
       </div>
@@ -1489,7 +1494,7 @@ function BillingHistoryInline({ storeId }: { storeId: string }) {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-3">
-        <AppIcon name="Loader2" className="h-4 w-4 animate-spin text-muted-foreground" />
+        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
       </div>
     );
   }
@@ -1579,7 +1584,7 @@ function PlanChangeRequestCard({ request, storeName, onProcessed }: {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl bg-amber-500/10 flex items-center justify-center">
-            <AppIcon name="Store" className="h-4 w-4 text-amber-500" />
+            <Store className="h-4 w-4 text-amber-500" />
           </div>
           <div>
             <p className="text-sm font-bold text-foreground">{storeName}</p>
@@ -1599,7 +1604,7 @@ function PlanChangeRequestCard({ request, storeName, onProcessed }: {
           <p className="text-sm font-bold text-foreground">{FALLBACK_LABELS[request.current_plan_type as PlanType]}</p>
           <p className="text-xs text-muted-foreground">R$ {Number(request.current_monthly_fee).toFixed(0)}/mês</p>
         </div>
-        <AppIcon name="ArrowRight" className="h-4 w-4 text-muted-foreground shrink-0" />
+        <ArrowRight className="h-4 w-4 text-muted-foreground shrink-0" />
         <div className="flex-1 text-center">
           <p className="text-[10px] text-muted-foreground uppercase font-semibold">Novo Plano</p>
           <p className="text-sm font-bold text-primary">{FALLBACK_LABELS[request.requested_plan_type as PlanType]}</p>
@@ -1644,7 +1649,7 @@ function PlanChangeRequestCard({ request, storeName, onProcessed }: {
           disabled={processing}
           onClick={handleReject}
         >
-          <AppIcon name="XCircle" className="h-4 w-4 mr-1" />
+          <XCircle className="h-4 w-4 mr-1" />
           Recusar
         </Button>
         <Button
@@ -1653,7 +1658,7 @@ function PlanChangeRequestCard({ request, storeName, onProcessed }: {
           disabled={processing}
           onClick={handleApprove}
         >
-          {processing ? <AppIcon name="Loader2" className="h-4 w-4 animate-spin mr-1" /> : <AppIcon name="CheckCircle2" className="h-4 w-4 mr-1" />}
+          {processing ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <CheckCircle2 className="h-4 w-4 mr-1" />}
           Aprovar e Aplicar
         </Button>
       </div>

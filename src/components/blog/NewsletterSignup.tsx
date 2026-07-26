@@ -2,7 +2,6 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { z } from "zod";
-import { AppIcon } from "@/components/ui/app-icon";
 import { Mail, Loader2 } from "lucide-react";
 
 const schema = z.object({
@@ -59,7 +58,7 @@ export default function NewsletterSignup({ source = "blog", variant = "card" }: 
       {variant === "card" && (
         <div className="mb-4">
           <div className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-primary">
-            <AppIcon name="Mail" className="h-3 w-3" /> Newsletter
+            <Mail className="h-3 w-3" /> Newsletter
           </div>
           <h3 className="font-editorial mt-3 text-lg md:text-xl font-bold leading-snug">
             Receba o melhor do blog ItaSuper
@@ -86,7 +85,7 @@ export default function NewsletterSignup({ source = "blog", variant = "card" }: 
           disabled={loading}
           className="inline-flex items-center justify-center gap-1.5 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-60 transition-colors"
         >
-          {loading ? <AppIcon name="Loader2" className="h-4 w-4 animate-spin" /> : "Inscrever"}
+          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Inscrever"}
         </button>
       </div>
     </form>

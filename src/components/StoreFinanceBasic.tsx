@@ -1,6 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  DollarSign, TrendingUp, TrendingDown, ShoppingBag, CreditCard, Banknote, Calendar,
+  Download, Wallet, Receipt, Clock, ArrowUpRight, ArrowDownRight, Target, Percent,
+  AlertTriangle, QrCode, Copy, Loader2, CheckCircle2, X, RotateCcw, AlertCircle,
+  TimerReset, ShieldAlert, Smartphone,
+} from "lucide-react";
 import { sumMoney, averageMoney, formatCurrency, formatBRL, multiplyMoney, subtractMoney } from "@/lib/utils";
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfDay, endOfDay, subWeeks, subMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -19,8 +25,6 @@ import {
   ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar,
 } from "recharts";
 import PaymentStatement from "@/components/PaymentStatement";
-import { AppIcon } from "@/components/ui/app-icon";
-import { TrendingUp, TrendingDown, CreditCard, Banknote, Calendar, Download, Receipt, ArrowUpRight, ArrowDownRight, QrCode, Copy, Loader2, CheckCircle2, X, RotateCcw, AlertCircle, TimerReset, ShieldAlert, Smartphone } from "lucide-react";
 
  interface StoreFinanceBasicProps {
    storeId: string;
@@ -515,7 +519,7 @@ const PIE_COLORS = [COLORS.green, COLORS.blue, COLORS.amber];
       <div className="bg-primary/5 border border-primary/20 rounded-2xl p-4">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-            <AppIcon name="CreditCard" className="h-5 w-5 text-primary" />
+            <CreditCard className="h-5 w-5 text-primary" />
           </div>
           <div className="flex-1">
             <h3 className="font-bold text-foreground text-sm">
@@ -539,7 +543,7 @@ const PIE_COLORS = [COLORS.green, COLORS.blue, COLORS.amber];
 
       {/* Date filter */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1">
-        <AppIcon name="Calendar" className="h-4 w-4 text-muted-foreground shrink-0" />
+        <Calendar className="h-4 w-4 text-muted-foreground shrink-0" />
         {(["today", "week", "month"] as DateFilter[]).map(f => (
           <button key={f} onClick={() => setDateFilter(f)}
             className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
@@ -593,7 +597,7 @@ const PIE_COLORS = [COLORS.green, COLORS.blue, COLORS.amber];
               <div className="relative">
                 <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Crescimento</p>
                 <div className="flex items-center gap-1.5 mt-1">
-                  {growthPercent >= 0 ? <AppIcon name="TrendingUp" className="h-5 w-5 text-emerald-400" /> : <AppIcon name="TrendingDown" className="h-5 w-5 text-red-400" />}
+                  {growthPercent >= 0 ? <TrendingUp className="h-5 w-5 text-emerald-400" /> : <TrendingDown className="h-5 w-5 text-red-400" />}
                   <p className={`text-2xl font-black tracking-tight ${growthPercent >= 0 ? "text-emerald-400" : "text-red-400"}`}>
                     {growthPercent >= 0 ? "+" : ""}{growthPercent.toFixed(1)}%
                   </p>
@@ -701,7 +705,7 @@ const PIE_COLORS = [COLORS.green, COLORS.blue, COLORS.amber];
             <div className="relative">
               <div className="flex items-center gap-2 mb-2">
                 <div className="w-8 h-8 rounded-xl bg-emerald-500/10 flex items-center justify-center">
-                  <AppIcon name="CheckCircle2" className="h-4 w-4 text-emerald-400" />
+                  <CheckCircle2 className="h-4 w-4 text-emerald-400" />
                 </div>
                 <p className="text-sm font-bold text-foreground">Vendas via App (PIX)</p>
                 <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30 text-[10px]">Automático</Badge>
@@ -722,7 +726,7 @@ const PIE_COLORS = [COLORS.green, COLORS.blue, COLORS.amber];
             <div className="relative">
               <div className="flex items-center gap-2 mb-2">
                 <div className="w-8 h-8 rounded-xl bg-blue-500/10 flex items-center justify-center">
-                  <AppIcon name="ArrowDownRight" className="h-4 w-4 text-blue-400" />
+                  <ArrowDownRight className="h-4 w-4 text-blue-400" />
                 </div>
                 <p className="text-sm font-bold text-foreground">Taxa Pendente — Entregas</p>
               </div>
@@ -735,7 +739,7 @@ const PIE_COLORS = [COLORS.green, COLORS.blue, COLORS.amber];
 
               {safetyModeMs > 0 && (
                 <div className="mt-3 rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 flex items-start gap-2">
-                  <AppIcon name="ShieldAlert" className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />
+                  <ShieldAlert className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />
                   <div>
                     <p className="text-xs font-bold text-amber-400">Manutenção temporária</p>
                     <p className="text-[10px] text-muted-foreground mt-1">Volta em {formatCooldownTime(safetyModeMs)}</p>
@@ -744,7 +748,7 @@ const PIE_COLORS = [COLORS.green, COLORS.blue, COLORS.amber];
               )}
               {!safetyModeMs && pixCooldownMs > 0 && (
                 <div className="mt-3 rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 flex items-start gap-2">
-                  <AppIcon name="AlertCircle" className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />
+                  <AlertCircle className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />
                   <div>
                     <p className="text-xs font-bold text-amber-400">Muitas tentativas</p>
                     <p className="text-[10px] text-muted-foreground mt-1">Aguarde {formatCooldownTime(pixCooldownMs)}</p>
@@ -761,11 +765,11 @@ const PIE_COLORS = [COLORS.green, COLORS.blue, COLORS.amber];
                     size="lg"
                   >
                     {generatingCharge ? (
-                      <><AppIcon name="Loader2" className="h-4 w-4 animate-spin" /> Gerando PIX...</>
+                      <><Loader2 className="h-4 w-4 animate-spin" /> Gerando PIX...</>
                     ) : isPixBlocked ? (
-                      <><AppIcon name="ShieldAlert" className="h-4 w-4" /> Aguarde...</>
+                      <><ShieldAlert className="h-4 w-4" /> Aguarde...</>
                     ) : (
-                      <><AppIcon name="QrCode" className="h-4 w-4" /> Pagar {formatBRL(pendingFee)} via PIX</>
+                      <><QrCode className="h-4 w-4" /> Pagar {formatBRL(pendingFee)} via PIX</>
                     )}
                   </Button>
                 ) : (
@@ -790,14 +794,14 @@ const PIE_COLORS = [COLORS.green, COLORS.blue, COLORS.amber];
           {chargeError && !chargeResult && (
             <div className="bg-card/60 rounded-2xl p-5 border border-red-500/20 space-y-3">
               <div className="flex items-start gap-3">
-                <AppIcon name="AlertCircle" className="h-5 w-5 text-red-400 shrink-0" />
+                <AlertCircle className="h-5 w-5 text-red-400 shrink-0" />
                 <div>
                   <p className="text-sm font-bold text-foreground">Erro ao gerar PIX</p>
                   <p className="text-xs text-muted-foreground">{chargeError}</p>
                 </div>
               </div>
               <Button onClick={handlePayPlatformFee} disabled={generatingCharge} className="w-full" variant="outline">
-                <AppIcon name="RotateCcw" className="h-4 w-4" /> Tentar Novamente
+                <RotateCcw className="h-4 w-4" /> Tentar Novamente
               </Button>
             </div>
           )}
@@ -808,7 +812,7 @@ const PIE_COLORS = [COLORS.green, COLORS.blue, COLORS.amber];
               <div className="flex items-center justify-between">
                 <p className="text-sm font-bold text-blue-400">Pague via PIX</p>
                 <button onClick={handleDismissChargeCard} className="text-muted-foreground hover:text-foreground">
-                  <AppIcon name="X" className="h-4 w-4" />
+                  <X className="h-4 w-4" />
                 </button>
               </div>
               {chargeResult.reference_code && (
@@ -821,7 +825,7 @@ const PIE_COLORS = [COLORS.green, COLORS.blue, COLORS.amber];
               {!isChargeExpired && !isChargeSettled && (
                 <div className="rounded-xl border border-border/50 bg-card/40 p-3 text-center space-y-2">
                   <div className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-bold ${isChargeUrgent ? "bg-red-500/20 text-red-400 animate-pulse" : "bg-blue-500/20 text-blue-400"}`}>
-                    <AppIcon name="TimerReset" className="h-4 w-4" />
+                    <TimerReset className="h-4 w-4" />
                     {formatCountdown(currentChargeRemainingMs)}
                   </div>
                   <p className="text-[10px] text-muted-foreground">QR Code válido por 5 minutos.</p>
@@ -830,15 +834,15 @@ const PIE_COLORS = [COLORS.green, COLORS.blue, COLORS.amber];
 
               {isChargeSettled ? (
                 <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4 text-center space-y-2">
-                  <AppIcon name="CheckCircle2" className="h-8 w-8 text-emerald-400 mx-auto" />
+                  <CheckCircle2 className="h-8 w-8 text-emerald-400 mx-auto" />
                   <p className="text-sm font-bold text-foreground">Pagamento confirmado</p>
                 </div>
               ) : isChargeExpired ? (
                 <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-4 text-center space-y-3">
-                  <AppIcon name="AlertCircle" className="h-8 w-8 text-red-400 mx-auto" />
+                  <AlertCircle className="h-8 w-8 text-red-400 mx-auto" />
                   <p className="text-sm font-bold text-foreground">QR Code expirou</p>
                   <Button onClick={handlePayPlatformFee} disabled={generatingCharge} className="w-full">
-                    {generatingCharge ? <AppIcon name="Loader2" className="h-4 w-4 animate-spin" /> : <AppIcon name="RotateCcw" className="h-4 w-4" />}
+                    {generatingCharge ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}
                     Gerar Nova Cobrança
                   </Button>
                 </div>
@@ -855,7 +859,7 @@ const PIE_COLORS = [COLORS.green, COLORS.blue, COLORS.amber];
                   )}
                   {chargeResult.qr_code && (
                     <Button onClick={() => copyPixCode(chargeResult.qr_code!)} variant="outline" className="w-full">
-                      <AppIcon name="Copy" className="h-4 w-4" /> Copiar Código PIX
+                      <Copy className="h-4 w-4" /> Copiar Código PIX
                     </Button>
                   )}
                   {SIMULATION_MODE && (
@@ -864,7 +868,7 @@ const PIE_COLORS = [COLORS.green, COLORS.blue, COLORS.amber];
                       disabled={simulatingPayment}
                       className="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold"
                     >
-                      {simulatingPayment ? <><AppIcon name="Loader2" className="h-4 w-4 animate-spin" /> Processando...</> : "🧪 Simular Pagamento"}
+                      {simulatingPayment ? <><Loader2 className="h-4 w-4 animate-spin" /> Processando...</> : "🧪 Simular Pagamento"}
                     </Button>
                   )}
                 </>
@@ -913,7 +917,7 @@ const PIE_COLORS = [COLORS.green, COLORS.blue, COLORS.amber];
             <div className="p-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-xl bg-amber-500/10 flex items-center justify-center">
-                  <AppIcon name="Banknote" className="h-4 w-4 text-amber-400" />
+                  <Banknote className="h-4 w-4 text-amber-400" />
                 </div>
                 <div>
                   <p className="text-sm font-medium text-foreground">Vendas Presenciais</p>
@@ -928,7 +932,7 @@ const PIE_COLORS = [COLORS.green, COLORS.blue, COLORS.amber];
             <div className="p-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-xl bg-emerald-500/10 flex items-center justify-center">
-                  <AppIcon name="Smartphone" className="h-4 w-4 text-emerald-400" />
+                  <Smartphone className="h-4 w-4 text-emerald-400" />
                 </div>
                 <div>
                   <p className="text-sm font-medium text-foreground">Vendas PIX App</p>
@@ -945,10 +949,10 @@ const PIE_COLORS = [COLORS.green, COLORS.blue, COLORS.amber];
           {/* Export buttons */}
           <div className="flex gap-2">
             <button onClick={copyToClipboard} className="flex-1 flex items-center justify-center gap-2 bg-card/60 hover:bg-card/80 text-foreground rounded-xl py-3 text-sm font-medium transition-colors border border-border/30">
-              <AppIcon name="Copy" className="h-4 w-4" /> Copiar
+              <Copy className="h-4 w-4" /> Copiar
             </button>
             <button onClick={downloadTxt} className="flex-1 flex items-center justify-center gap-2 bg-card/60 hover:bg-card/80 text-foreground rounded-xl py-3 text-sm font-medium transition-colors border border-border/30">
-              <AppIcon name="Download" className="h-4 w-4" /> Baixar Extrato
+              <Download className="h-4 w-4" /> Baixar Extrato
             </button>
           </div>
 
@@ -957,7 +961,7 @@ const PIE_COLORS = [COLORS.green, COLORS.blue, COLORS.amber];
             <div className="bg-card/60 backdrop-blur-sm rounded-2xl border border-border/30 overflow-hidden">
               <div className="p-4 border-b border-border/30">
                 <p className="text-xs font-bold text-foreground flex items-center gap-2">
-                  <AppIcon name="Receipt" className="h-4 w-4 text-blue-400" />
+                  <Receipt className="h-4 w-4 text-blue-400" />
                   Transações Recentes
                 </p>
               </div>
@@ -971,8 +975,8 @@ const PIE_COLORS = [COLORS.green, COLORS.blue, COLORS.amber];
                         tx.transaction_kind === "commission_charge" ? "bg-red-500/10" : "bg-blue-500/10"
                       }`}>
                         {tx.transaction_kind === "commission_charge"
-                          ? <AppIcon name="ArrowDownRight" className="h-4 w-4 text-red-400" />
-                          : <AppIcon name="ArrowUpRight" className="h-4 w-4 text-blue-400" />
+                          ? <ArrowDownRight className="h-4 w-4 text-red-400" />
+                          : <ArrowUpRight className="h-4 w-4 text-blue-400" />
                         }
                       </div>
                       <div className="flex-1 min-w-0">
@@ -994,7 +998,7 @@ const PIE_COLORS = [COLORS.green, COLORS.blue, COLORS.amber];
                           </p>
                           {canRetryExpiredCharge && (
                             <Button onClick={handlePayPlatformFee} size="sm" variant="outline" className="h-6 px-2 text-[10px]">
-                              <AppIcon name="RotateCcw" className="h-3 w-3" /> Nova cobrança
+                              <RotateCcw className="h-3 w-3" /> Nova cobrança
                             </Button>
                           )}
                         </div>
@@ -1058,7 +1062,7 @@ const PIE_COLORS = [COLORS.green, COLORS.blue, COLORS.amber];
                   return (
                     <div key={order.id} className={`p-3 flex items-center gap-3 hover:bg-card/40 transition-colors ${isNeg ? "bg-red-500/5 border-l-2 border-red-500" : ""}`} title={isNeg ? "Este pedido está gerando prejuízo (taxas maiores que o subtotal)" : undefined}>
                       <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 ${isPix ? "bg-emerald-500/10" : "bg-amber-500/10"}`}>
-                        {isPix ? <AppIcon name="Smartphone" className="h-4 w-4 text-emerald-400" /> : <AppIcon name="Banknote" className="h-4 w-4 text-amber-400" />}
+                        {isPix ? <Smartphone className="h-4 w-4 text-emerald-400" /> : <Banknote className="h-4 w-4 text-amber-400" />}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between">
@@ -1090,7 +1094,7 @@ const PIE_COLORS = [COLORS.green, COLORS.blue, COLORS.amber];
             </div>
           ) : (
             <div className="text-center py-12">
-              <AppIcon name="Receipt" className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
+              <Receipt className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
               <p className="text-muted-foreground text-sm">Nenhum pedido concluído neste período</p>
             </div>
           )}

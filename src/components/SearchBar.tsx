@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback, memo } from "react";
-import { AppIcon } from "@/components/ui/app-icon";
 import { Search, X } from "lucide-react";
 
 interface SearchBarProps {
@@ -26,7 +25,7 @@ const SearchBar = memo(({ value, onChange, placeholder = "Buscar lojas e produto
 
   return (
     <div className="relative">
-      <AppIcon name="Search" className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
       <input
         type="text"
         value={local}
@@ -39,7 +38,7 @@ const SearchBar = memo(({ value, onChange, placeholder = "Buscar lojas e produto
           onClick={() => { setLocal(""); onChange(""); }}
           className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
         >
-          <AppIcon name="X" className="h-4 w-4" />
+          <X className="h-4 w-4" />
         </button>
       )}
     </div>

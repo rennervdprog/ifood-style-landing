@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Loader2, MapPin, Search, Truck, User, Phone, Lock, ShoppingCart, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { formatBRL, addMoney } from "@/lib/utils";
@@ -12,8 +13,6 @@ import { calculateStoreOwnDeliveryFee, DEFAULT_DELIVERY_FEE_CONFIG } from "@/lib
 import { useStorePlan } from "@/hooks/useStorePlan";
 import { printPdvReceipt } from "@/lib/thermalPrint";
 import type { CartItem } from "@/pages/pdv/types";
-import { AppIcon } from "@/components/ui/app-icon";
-import { Loader2, MapPin, Search, Truck, User, Phone, Lock, ShoppingCart, CheckCircle2 } from "lucide-react";
 
 interface Props {
   open: boolean;
@@ -302,7 +301,7 @@ export function PdvDeliveryManualDialog({
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <AppIcon name="Truck" className="h-5 w-5 text-primary" />
+            <Truck className="h-5 w-5 text-primary" />
             Pedido Delivery Manual
           </DialogTitle>
         </DialogHeader>
@@ -322,7 +321,7 @@ export function PdvDeliveryManualDialog({
               </span>
             </div>
             <div className="rounded-xl border-2 border-dashed border-primary/40 bg-primary/5 p-5 text-center space-y-3">
-              <AppIcon name="ShoppingCart" className="h-10 w-10 text-primary mx-auto" />
+              <ShoppingCart className="h-10 w-10 text-primary mx-auto" />
               <div>
                 <p className="text-sm font-bold text-foreground">Passo 1 · Adicione os produtos</p>
                 <p className="text-xs text-muted-foreground mt-1">
@@ -339,7 +338,7 @@ export function PdvDeliveryManualDialog({
             {/* Stepper */}
             <div className="flex items-center justify-center gap-2 text-xs font-semibold">
               <span className="flex items-center gap-1 text-success">
-                <AppIcon name="CheckCircle2" className="h-4 w-4" />
+                <CheckCircle2 className="h-4 w-4" />
                 {cart.length} {cart.length === 1 ? "item" : "itens"}
               </span>
               <span className="h-px w-8 bg-border" />
@@ -355,7 +354,7 @@ export function PdvDeliveryManualDialog({
             {/* Cliente */}
             <section className="space-y-3">
               <h3 className="text-sm font-bold flex items-center gap-2">
-                <AppIcon name="User" className="h-4 w-4" /> Dados do cliente
+                <User className="h-4 w-4" /> Dados do cliente
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
@@ -363,7 +362,7 @@ export function PdvDeliveryManualDialog({
                   <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex.: Dona Maria" />
                 </div>
                 <div>
-                  <Label className="flex items-center gap-1"><AppIcon name="Phone" className="h-3 w-3" /> WhatsApp</Label>
+                  <Label className="flex items-center gap-1"><Phone className="h-3 w-3" /> WhatsApp</Label>
                   <Input
                     value={phone}
                     onChange={(e) => setPhone(formatPhoneBR(e.target.value))}
@@ -373,7 +372,7 @@ export function PdvDeliveryManualDialog({
                   />
                 </div>
                 <div>
-                  <Label className="flex items-center gap-1"><AppIcon name="Lock" className="h-3 w-3" /> PIN do cliente *</Label>
+                  <Label className="flex items-center gap-1"><Lock className="h-3 w-3" /> PIN do cliente *</Label>
                   <div className="flex gap-2">
                     <Input
                       value={pin}
@@ -395,7 +394,7 @@ export function PdvDeliveryManualDialog({
             {/* Endereço */}
             <section className="space-y-3">
               <h3 className="text-sm font-bold flex items-center gap-2">
-                <AppIcon name="MapPin" className="h-4 w-4" /> Endereço de entrega
+                <MapPin className="h-4 w-4" /> Endereço de entrega
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="sm:col-span-1">
@@ -408,7 +407,7 @@ export function PdvDeliveryManualDialog({
                       maxLength={9}
                     />
                     <Button type="button" variant="outline" size="icon" onClick={() => handleCepLookup()} disabled={loadingCep}>
-                      {loadingCep ? <AppIcon name="Loader2" className="h-4 w-4 animate-spin" /> : <AppIcon name="Search" className="h-4 w-4" />}
+                      {loadingCep ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
                     </Button>
                   </div>
                 </div>
@@ -438,7 +437,7 @@ export function PdvDeliveryManualDialog({
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Taxa de entrega calculada</span>
                   <span className="font-bold">
-                    {calcFee ? <AppIcon name="Loader2" className="h-4 w-4 animate-spin inline" /> : fee !== null ? formatBRL(fee) : "—"}
+                    {calcFee ? <Loader2 className="h-4 w-4 animate-spin inline" /> : fee !== null ? formatBRL(fee) : "—"}
                   </span>
                 </div>
                 {feeBreakdown && (
@@ -521,7 +520,7 @@ export function PdvDeliveryManualDialog({
                 Cancelar
               </Button>
               <Button onClick={handleConfirm} disabled={!canSave || saving}>
-                {saving ? <AppIcon name="Loader2" className="h-4 w-4 animate-spin mr-2" /> : <AppIcon name="Truck" className="h-4 w-4 mr-2" />}
+                {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Truck className="h-4 w-4 mr-2" />}
                 Criar pedido manual
               </Button>
             </div>

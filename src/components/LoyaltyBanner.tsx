@@ -2,7 +2,6 @@ import { formatBRL } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { AppIcon } from "@/components/ui/app-icon";
 import { Star, Gift } from "lucide-react";
 
 interface LoyaltyBannerProps {
@@ -54,7 +53,7 @@ const LoyaltyBanner = ({ storeId, storeName }: LoyaltyBannerProps) => {
   return (
     <div className="mt-3 pt-3 border-t border-border">
       <div className="flex items-center gap-1.5 mb-2">
-        <AppIcon name="Star" className="h-3.5 w-3.5 text-amber-500 fill-amber-500" />
+        <Star className="h-3.5 w-3.5 text-amber-500 fill-amber-500" />
         <span className="text-xs font-bold text-foreground">Programa de Fidelidade</span>
       </div>
 
@@ -67,7 +66,7 @@ const LoyaltyBanner = ({ storeId, storeName }: LoyaltyBannerProps) => {
             </div>
             {canRedeem && (
               <div className="flex items-center gap-1 bg-amber-500 text-white px-2.5 py-1 rounded-full">
-                <AppIcon name="Gift" className="h-3 w-3" />
+                <Gift className="h-3 w-3" />
                 <span className="text-[10px] font-bold">Resgate disponível!</span>
               </div>
             )}

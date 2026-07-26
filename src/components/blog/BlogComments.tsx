@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { z } from "zod";
-import { AppIcon } from "@/components/ui/app-icon";
 import { Loader2, MessageCircle } from "lucide-react";
 
 interface Comment {
@@ -70,7 +69,7 @@ export default function BlogComments({ postId }: { postId: string }) {
     <section className="border-t border-border bg-background">
       <div className="container mx-auto max-w-3xl px-4 py-12">
         <h2 className="font-editorial text-2xl md:text-3xl font-bold tracking-tight flex items-center gap-2">
-          <AppIcon name="MessageCircle" className="h-6 w-6 text-primary" />
+          <MessageCircle className="h-6 w-6 text-primary" />
           Comentários {comments.length > 0 && <span className="text-base text-muted-foreground">({comments.length})</span>}
         </h2>
 
@@ -112,7 +111,7 @@ export default function BlogComments({ postId }: { postId: string }) {
               disabled={submitting}
               className="inline-flex items-center gap-1.5 rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
             >
-              {submitting ? <AppIcon name="Loader2" className="h-4 w-4 animate-spin" /> : "Enviar"}
+              {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Enviar"}
             </button>
           </div>
         </form>

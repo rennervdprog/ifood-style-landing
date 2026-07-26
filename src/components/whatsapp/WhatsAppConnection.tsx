@@ -5,10 +5,9 @@ import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { FunctionsHttpError } from "@supabase/supabase-js";
 import { toast } from "sonner";
+import { Loader2, RefreshCw, Info, ChevronDown, ChevronUp, Shield, Smartphone, QrCode, Copy, Check } from "lucide-react";
 import WhatsAppStatusCard from "./WhatsAppStatusCard";
 import PasskeyWarning from "./PasskeyWarning";
-import { AppIcon } from "@/components/ui/app-icon";
-import { Loader2, RefreshCw, Info, ChevronDown, ChevronUp, Shield, Smartphone, QrCode, Copy, Check } from "lucide-react";
 
 interface Props {
   storeId: string;
@@ -232,7 +231,7 @@ export default function WhatsAppConnection({ storeId, storeName, expectedPhone, 
                 mode === "qr" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/70"
               }`}
             >
-              <AppIcon name="QrCode" className="h-3.5 w-3.5" /> QR Code
+              <QrCode className="h-3.5 w-3.5" /> QR Code
             </button>
             <button
               onClick={() => setMode("pairing")}
@@ -240,7 +239,7 @@ export default function WhatsAppConnection({ storeId, storeName, expectedPhone, 
                 mode === "pairing" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/70"
               }`}
             >
-              <AppIcon name="Smartphone" className="h-3.5 w-3.5" /> Código por número
+              <Smartphone className="h-3.5 w-3.5" /> Código por número
             </button>
           </div>
 
@@ -263,7 +262,7 @@ export default function WhatsAppConnection({ storeId, storeName, expectedPhone, 
                 disabled={pairingLoading}
                 className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-bold disabled:opacity-50"
               >
-                {pairingLoading ? <AppIcon name="Loader2" className="h-4 w-4 animate-spin" /> : <AppIcon name="Smartphone" className="h-4 w-4" />}
+                {pairingLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Smartphone className="h-4 w-4" />}
                 {pairingCode ? "Gerar novo código" : "Gerar código"}
               </button>
 
@@ -286,7 +285,7 @@ export default function WhatsAppConnection({ storeId, storeName, expectedPhone, 
                     onClick={() => { navigator.clipboard.writeText(pairingCode); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
                     className="w-full flex items-center justify-center gap-1.5 text-xs font-bold text-primary hover:underline"
                   >
-                    {copied ? <><AppIcon name="Check" className="h-3.5 w-3.5" /> Copiado</> : <><AppIcon name="Copy" className="h-3.5 w-3.5" /> Copiar código</>}
+                    {copied ? <><Check className="h-3.5 w-3.5" /> Copiado</> : <><Copy className="h-3.5 w-3.5" /> Copiar código</>}
                   </button>
                   <div className="text-[11px] text-muted-foreground space-y-1 pt-1 border-t border-border">
                     <p><strong className="text-foreground">1.</strong> WhatsApp → 3 pontinhos → <strong>Dispositivos conectados</strong></p>
@@ -309,7 +308,7 @@ export default function WhatsAppConnection({ storeId, storeName, expectedPhone, 
         return (
           <div className="rounded-2xl border border-border p-4 space-y-2.5">
             <div className="flex items-center gap-2">
-              <AppIcon name="Shield" className="h-4 w-4 text-emerald-500" />
+              <Shield className="h-4 w-4 text-emerald-500" />
               <p className="text-sm font-bold text-foreground flex-1">Saúde do chip</p>
               <span className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300">
                 {days === 0 ? "Novo" : `${days}d`}
@@ -362,7 +361,7 @@ export default function WhatsAppConnection({ storeId, storeName, expectedPhone, 
             QR expira em <span className="font-bold text-foreground">{countdown}s</span>. Se expirar, gere outro.
           </p>
           <button onClick={reload} className="flex items-center gap-1 text-[11px] text-primary hover:underline">
-            <AppIcon name="RefreshCw" className="h-3 w-3" /> Verificar agora
+            <RefreshCw className="h-3 w-3" /> Verificar agora
           </button>
         </div>
       )}
@@ -373,9 +372,9 @@ export default function WhatsAppConnection({ storeId, storeName, expectedPhone, 
           onClick={() => setShowGuide(!showGuide)}
           className="w-full flex items-center gap-2.5 px-4 py-3 bg-blue-500/5 text-left hover:bg-blue-500/10 transition-colors"
         >
-          <AppIcon name="Info" className="h-4 w-4 text-blue-500 shrink-0" />
+          <Info className="h-4 w-4 text-blue-500 shrink-0" />
           <p className="text-sm font-bold text-blue-700 dark:text-blue-400 flex-1">Como conectar o WhatsApp</p>
-          {showGuide ? <AppIcon name="ChevronUp" className="h-4 w-4 text-muted-foreground" /> : <AppIcon name="ChevronDown" className="h-4 w-4 text-muted-foreground" />}
+          {showGuide ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
         </button>
         {showGuide && (
           <div className="px-4 py-3 space-y-3 bg-card/50">
@@ -406,7 +405,7 @@ export default function WhatsAppConnection({ storeId, storeName, expectedPhone, 
 
       {qrLoading && (
         <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
-          <AppIcon name="Loader2" className="h-3.5 w-3.5 animate-spin" /> Gerando QR Code…
+          <Loader2 className="h-3.5 w-3.5 animate-spin" /> Gerando QR Code…
         </div>
       )}
     </div>

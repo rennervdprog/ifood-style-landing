@@ -1,10 +1,9 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { Loader2, ShieldCheck, Webhook, Activity, RefreshCw, ScrollText, CheckCircle2, AlertTriangle, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { AppIcon } from "@/components/ui/app-icon";
-import { Loader2, ShieldCheck, Webhook, Activity, RefreshCw, ScrollText, CheckCircle2, AlertTriangle, XCircle } from "lucide-react";
 
 type View = "audit" | "webhooks" | "compliance";
 
@@ -82,36 +81,36 @@ export default function AuditoriaTab() {
             variant={view === "audit" ? "default" : "outline"}
             onClick={() => setView("audit")}
           >
-            <AppIcon name="ShieldCheck" className="h-4 w-4 mr-1" /> Audit Log
+            <ShieldCheck className="h-4 w-4 mr-1" /> Audit Log
           </Button>
           <Button
             size="sm"
             variant={view === "webhooks" ? "default" : "outline"}
             onClick={() => setView("webhooks")}
           >
-            <AppIcon name="Webhook" className="h-4 w-4 mr-1" /> Webhooks Asaas
+            <Webhook className="h-4 w-4 mr-1" /> Webhooks Asaas
           </Button>
           <Button
             size="sm"
             variant={view === "compliance" ? "default" : "outline"}
             onClick={() => setView("compliance")}
           >
-            <AppIcon name="ScrollText" className="h-4 w-4 mr-1" /> Compliance Termos
+            <ScrollText className="h-4 w-4 mr-1" /> Compliance Termos
           </Button>
         </div>
         <div className="flex gap-2">
           {view === "compliance" ? (
             <Button size="sm" onClick={runCompliance} disabled={complianceLoading}>
-              {complianceLoading ? <AppIcon name="Loader2" className="h-4 w-4 mr-1 animate-spin" /> : <AppIcon name="ScrollText" className="h-4 w-4 mr-1" />}
+              {complianceLoading ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <ScrollText className="h-4 w-4 mr-1" />}
               Rodar auditoria
             </Button>
           ) : (
             <>
               <Button size="sm" variant="outline" onClick={() => view === "audit" ? refetchAudit() : refetchWh()}>
-                <AppIcon name="RefreshCw" className="h-4 w-4" />
+                <RefreshCw className="h-4 w-4" />
               </Button>
               <Button size="sm" onClick={runReconcile} disabled={reconciling}>
-                {reconciling ? <AppIcon name="Loader2" className="h-4 w-4 mr-1 animate-spin" /> : <AppIcon name="Activity" className="h-4 w-4 mr-1" />}
+                {reconciling ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Activity className="h-4 w-4 mr-1" />}
                 Reconciliar agora
               </Button>
             </>
@@ -122,10 +121,10 @@ export default function AuditoriaTab() {
       {view === "audit" && (
         <div className="rounded-xl border bg-card overflow-hidden">
           {auditLoading ? (
-            <div className="p-8 flex justify-center"><AppIcon name="Loader2" className="h-5 w-5 animate-spin text-muted-foreground" /></div>
+            <div className="p-8 flex justify-center"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
           ) : !audit || audit.length === 0 ? (
             <div className="p-10 flex flex-col items-center gap-2 text-muted-foreground">
-              <AppIcon name="ShieldCheck" className="h-8 w-8 opacity-40" />
+              <ShieldCheck className="h-8 w-8 opacity-40" />
               <p className="text-sm font-bold text-foreground">Nenhum evento registrado</p>
               <p className="text-xs">Eventos financeiros aparecerão aqui em tempo real.</p>
             </div>
@@ -149,10 +148,10 @@ export default function AuditoriaTab() {
       {view === "webhooks" && (
         <div className="rounded-xl border bg-card overflow-hidden">
           {whLoading ? (
-            <div className="p-8 flex justify-center"><AppIcon name="Loader2" className="h-5 w-5 animate-spin text-muted-foreground" /></div>
+            <div className="p-8 flex justify-center"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
           ) : !webhooks || webhooks.length === 0 ? (
             <div className="p-10 flex flex-col items-center gap-2 text-muted-foreground">
-              <AppIcon name="Webhook" className="h-8 w-8 opacity-40" />
+              <Webhook className="h-8 w-8 opacity-40" />
               <p className="text-sm font-bold text-foreground">Nenhum webhook recebido</p>
               <p className="text-xs">Webhooks do Asaas aparecerão aqui.</p>
             </div>
@@ -197,14 +196,14 @@ export default function AuditoriaTab() {
           <div className="rounded-xl border bg-card overflow-hidden">
             {!compliance ? (
               <div className="p-10 flex flex-col items-center gap-2 text-muted-foreground">
-                <AppIcon name="ScrollText" className="h-8 w-8 opacity-40" />
+                <ScrollText className="h-8 w-8 opacity-40" />
                 <p className="text-sm font-bold text-foreground">Auditoria Termos × Código</p>
                 <p className="text-xs text-center max-w-md">
                   Valida se o backend implementa fielmente as cláusulas dos Termos de Uso
                   (VIP vitalícia, grace period, restrição parcial, add-ons, saques, estornos, etc.).
                 </p>
                 <Button size="sm" className="mt-2" onClick={runCompliance} disabled={complianceLoading}>
-                  {complianceLoading ? <AppIcon name="Loader2" className="h-4 w-4 mr-1 animate-spin" /> : <AppIcon name="ScrollText" className="h-4 w-4 mr-1" />}
+                  {complianceLoading ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <ScrollText className="h-4 w-4 mr-1" />}
                   Rodar agora
                 </Button>
               </div>

@@ -2,9 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import Fuse from "fuse.js";
-import { supabase } from "@/integrations/supabase/client";
-import { AppIcon } from "@/components/ui/app-icon";
 import { Search, Clock, ArrowRight } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface BlogPost {
   id: string;
@@ -146,7 +145,7 @@ export default function BlogIndex() {
 
             {/* search */}
             <div className="mt-8 flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2.5 shadow-sm max-w-md focus-within:ring-2 focus-within:ring-primary/30">
-              <AppIcon name="Search" className="h-4 w-4 text-muted-foreground shrink-0" />
+              <Search className="h-4 w-4 text-muted-foreground shrink-0" />
               <input
                 type="search"
                 value={q}
@@ -244,14 +243,14 @@ export default function BlogIndex() {
                           <>
                             <span>•</span>
                             <span className="inline-flex items-center gap-1">
-                              <AppIcon name="Clock" className="h-3 w-3" />
+                              <Clock className="h-3 w-3" />
                               {featured.reading_minutes} min
                             </span>
                           </>
                         )}
                       </div>
                       <div className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-primary group-hover:gap-2.5 transition-all">
-                        Ler artigo <AppIcon name="ArrowRight" className="h-4 w-4" />
+                        Ler artigo <ArrowRight className="h-4 w-4" />
                       </div>
                     </div>
                   </div>
@@ -301,7 +300,7 @@ export default function BlogIndex() {
                             <>
                               <span>•</span>
                               <span className="inline-flex items-center gap-1">
-                                <AppIcon name="Clock" className="h-3 w-3" />
+                                <Clock className="h-3 w-3" />
                                 {p.reading_minutes} min
                               </span>
                             </>

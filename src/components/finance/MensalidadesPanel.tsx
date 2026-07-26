@@ -5,10 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { Crown, AlertTriangle, CheckCircle2, Clock, TrendingDown, Download } from "lucide-react";
 import { exportCSV, brl } from "./financeExport";
 import { planLabel } from "@/lib/plansInfo";
-import { AppIcon } from "@/components/ui/app-icon";
-import { Crown, AlertTriangle, CheckCircle2, Clock, TrendingDown, Download } from "lucide-react";
 
 type Status = "em_dia" | "atrasado" | "trial" | "inativo";
 
@@ -89,7 +88,7 @@ const MensalidadesPanel = () => {
         <Card>
           <CardContent className="p-4">
             <div className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
-              <AppIcon name="Crown" className="w-4 h-4" /> MRR
+              <Crown className="w-4 h-4" /> MRR
             </div>
             <p className="text-2xl font-bold">{brl(stats.mrr)}</p>
             <p className="text-[10px] text-muted-foreground">{stats.ativos} lojas ativas</p>
@@ -98,7 +97,7 @@ const MensalidadesPanel = () => {
         <Card className={stats.inadCount ? "border-destructive bg-destructive/5" : ""}>
           <CardContent className="p-4">
             <div className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
-              <AppIcon name="AlertTriangle" className="w-4 h-4 text-destructive" /> Inadimplência
+              <AlertTriangle className="w-4 h-4 text-destructive" /> Inadimplência
             </div>
             <p className="text-2xl font-bold text-destructive">{brl(stats.inadAmt)}</p>
             <p className="text-[10px] text-muted-foreground">
@@ -126,7 +125,7 @@ const MensalidadesPanel = () => {
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-base">Status de Mensalidades por Loja</CardTitle>
           <Button size="sm" variant="outline" onClick={() => exportCSV("mensalidades", rows)} disabled={!rows.length}>
-            <AppIcon name="Download" className="h-4 w-4 mr-1" /> CSV
+            <Download className="h-4 w-4 mr-1" /> CSV
           </Button>
         </CardHeader>
         <CardContent className="space-y-2">

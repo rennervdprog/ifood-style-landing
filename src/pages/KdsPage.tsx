@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { getOrderItemDisplayName } from "@/lib/orderItemName";
-import { AppIcon } from "@/components/ui/app-icon";
 import { Loader2, ChefHat, Package, AlertTriangle } from "lucide-react";
+import { getOrderItemDisplayName } from "@/lib/orderItemName";
 
 type KdsOrder = {
   id: string;
@@ -103,7 +102,7 @@ export default function KdsPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <AppIcon name="Loader2" className="h-10 w-10 animate-spin text-primary" />
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
       </div>
     );
   }
@@ -111,7 +110,7 @@ export default function KdsPage() {
   if (error) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 text-center gap-3">
-        <AppIcon name="AlertTriangle" className="h-12 w-12 text-destructive" />
+        <AlertTriangle className="h-12 w-12 text-destructive" />
         <h1 className="text-xl font-bold text-foreground">Acesso inválido</h1>
         <p className="text-sm text-muted-foreground max-w-md">
           O link do KDS não é válido ou expirou. Gere um novo no painel da loja em Configurações → Display de Cozinha.
@@ -140,7 +139,7 @@ export default function KdsPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-3">
         <Column
           title="Em preparo"
-          icon={<AppIcon name="ChefHat" className="h-5 w-5" />}
+          icon={<ChefHat className="h-5 w-5" />}
           accent="bg-amber-500/10 border-amber-500/30"
           orders={cols.preparando}
           actionLabel="Marcar pronto"
@@ -150,7 +149,7 @@ export default function KdsPage() {
         />
         <Column
           title="Prontos"
-          icon={<AppIcon name="Package" className="h-5 w-5" />}
+          icon={<Package className="h-5 w-5" />}
           accent="bg-emerald-500/10 border-emerald-500/30"
           orders={cols.pronto_para_entrega}
           actionLabel={null}

@@ -2,9 +2,8 @@ import { useMemo, useState, lazy, Suspense } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { formatCurrency } from "@/lib/utils";
+import { Calendar as CalIcon, Download, ArrowUpRight, ArrowDownRight, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { AppIcon } from "@/components/ui/app-icon";
-import { Download, ArrowUpRight, ArrowDownRight, Loader2 } from "lucide-react";
 
 const DailyRevenueChart = lazy(() =>
   import("@/components/admin/AdminCharts").then((m) => ({ default: m.DailyRevenueChart }))
@@ -193,13 +192,13 @@ export default function StoreReportsPanel({ storeId, storeName }: { storeId: str
           disabled={!data || isLoading}
           className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-bold shadow-lg shadow-primary/20 disabled:opacity-50"
         >
-          <AppIcon name="Download" className="h-3.5 w-3.5" /> Exportar CSV
+          <Download className="h-3.5 w-3.5" /> Exportar CSV
         </button>
       </div>
 
       {/* Preset chips */}
       <div className="flex items-center gap-1.5 overflow-x-auto pb-1 -mx-1 px-1">
-        <AppIcon name="Calendar" className="h-4 w-4 text-muted-foreground shrink-0" />
+        <CalIcon className="h-4 w-4 text-muted-foreground shrink-0" />
         {presets.map((p) => (
           <button
             key={p.key}
@@ -261,7 +260,7 @@ export default function StoreReportsPanel({ storeId, storeName }: { storeId: str
 
       <p className="text-xs text-muted-foreground">
         Período: <strong>{fmtPtBR(startDate)}</strong> a <strong>{fmtPtBR(endDate)}</strong>
-        {isFetching && <AppIcon name="Loader2" className="inline h-3 w-3 ml-2 animate-spin" />}
+        {isFetching && <Loader2 className="inline h-3 w-3 ml-2 animate-spin" />}
       </p>
 
       {error && (
@@ -272,7 +271,7 @@ export default function StoreReportsPanel({ storeId, storeName }: { storeId: str
 
       {isLoading && (
         <div className="flex items-center justify-center py-16">
-          <AppIcon name="Loader2" className="h-6 w-6 animate-spin text-primary" />
+          <Loader2 className="h-6 w-6 animate-spin text-primary" />
         </div>
       )}
 
@@ -300,7 +299,7 @@ export default function StoreReportsPanel({ storeId, storeName }: { storeId: str
                     <p className={`text-2xl font-black tracking-tight mt-1 text-${k.color}-500`}>{k.value}</p>
                     {k.g !== null && (
                       <div className={`flex items-center gap-1 mt-1 text-[10px] font-bold ${k.g >= 0 ? "text-emerald-500" : "text-red-500"}`}>
-                        {k.g >= 0 ? <AppIcon name="ArrowUpRight" className="h-3 w-3" /> : <AppIcon name="ArrowDownRight" className="h-3 w-3" />}
+                        {k.g >= 0 ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
                         {k.g >= 0 ? "+" : ""}{k.g.toFixed(1)}% vs período anterior
                       </div>
                     )}

@@ -5,7 +5,10 @@ import { useCart } from "@/contexts/CartContext";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { AppIcon } from "@/components/ui/app-icon";
+import {
+  Search, Clock, Repeat, ShoppingBag, Store as StoreIcon, MapPin, Bell, MessageCircle,
+  ChevronDown, ChevronRight, SlidersHorizontal, Sparkles,
+} from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 import ProductTour, { clienteTourSteps } from "@/components/ProductTour";
 import SupportTicketModal from "@/components/SupportTicketModal";
@@ -340,11 +343,11 @@ const ClientHomeContent = () => {
               Entregar em
             </span>
             <span className="flex items-center gap-1 min-w-0">
-              <AppIcon name="map-point" variant="bold-duotone" className="w-4 h-4 text-primary shrink-0" />
+              <MapPin className="w-4 h-4 text-primary shrink-0" />
               <span className="font-display text-sm font-bold text-foreground truncate max-w-[220px]">
                 {locationLabel}
               </span>
-              <AppIcon name="alt-arrow-down" variant="linear" className="w-4 h-4 text-muted-foreground shrink-0" />
+              <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />
             </span>
           </button>
           <div className="flex items-center gap-1.5 shrink-0">
@@ -353,7 +356,7 @@ const ClientHomeContent = () => {
               className="relative p-2 bg-muted rounded-xl hover:bg-muted/70 transition-colors"
               aria-label="Meus pedidos"
             >
-              <AppIcon name="bell" variant="bold-duotone" className="w-5 h-5 text-foreground" />
+              <Bell className="w-5 h-5 text-foreground" />
               <span className="absolute top-1.5 right-2 w-2 h-2 bg-primary rounded-full border-2 border-background" />
             </button>
             <button
@@ -361,14 +364,14 @@ const ClientHomeContent = () => {
               className="p-2 bg-muted rounded-xl hover:bg-muted/70 transition-colors"
               aria-label="Suporte"
             >
-              <AppIcon name="chat-round-dots" variant="bold-duotone" className="w-5 h-5 text-foreground" />
+              <MessageCircle className="w-5 h-5 text-foreground" />
             </button>
           </div>
         </div>
 
         <div className="px-4 pb-3 pt-1 flex gap-2" data-tour="search">
           <div className="flex-1 bg-muted rounded-xl flex items-center px-3 gap-2 border border-transparent focus-within:border-primary transition-colors">
-            <AppIcon name="magnifer" variant="linear" className="w-5 h-5 text-muted-foreground shrink-0" />
+            <Search className="w-5 h-5 text-muted-foreground shrink-0" />
             <input
               type="text"
               value={searchQuery}
@@ -383,7 +386,7 @@ const ClientHomeContent = () => {
             aria-label="Filtros"
             onClick={() => toast("Filtros em breve.")}
           >
-            <AppIcon name="tuning-2" variant="bold" className="w-5 h-5" />
+            <SlidersHorizontal className="w-5 h-5" />
           </button>
         </div>
       </header>
@@ -412,7 +415,7 @@ const ClientHomeContent = () => {
         {!searchQuery && lastOrder && (
           <section aria-labelledby="last-order-h">
             <h2 id="last-order-h" className="font-display text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
-              <AppIcon name="clock-circle" variant="bold-duotone" className="h-3.5 w-3.5" /> Último pedido
+              <Clock className="h-3.5 w-3.5" /> Último pedido
             </h2>
             <div className="bg-gradient-to-br from-primary/5 to-transparent border border-primary/20 rounded-3xl p-4">
               <div className="flex items-center gap-3 mb-3">
@@ -421,7 +424,7 @@ const ClientHomeContent = () => {
                     className="w-12 h-12 rounded-2xl object-cover" alt="" />
                 ) : (
                   <div className="w-12 h-12 rounded-2xl bg-primary/15 flex items-center justify-center">
-                    <AppIcon name="bag-4" variant="bold-duotone" className="h-5 w-5 text-primary" />
+                    <ShoppingBag className="h-5 w-5 text-primary" />
                   </div>
                 )}
                 <div className="min-w-0 flex-1">
@@ -439,13 +442,13 @@ const ClientHomeContent = () => {
                   onClick={() => goToStore(lastOrder.stores)}
                   className="flex-1 h-10 bg-card text-foreground text-xs font-bold rounded-xl border border-border hover:bg-muted/50 transition-colors flex items-center justify-center gap-1.5"
                 >
-                  <AppIcon name="shop" variant="bold-duotone" className="h-3.5 w-3.5" /> Ver loja
+                  <StoreIcon className="h-3.5 w-3.5" /> Ver loja
                 </button>
                 <button
                   onClick={() => handleReorder(lastOrder)}
                   className="flex-1 h-10 bg-primary text-primary-foreground text-xs font-bold rounded-xl shadow-sm shadow-primary/30 hover:brightness-105 transition-all flex items-center justify-center gap-1.5"
                 >
-                  <AppIcon name="refresh" variant="bold" className="h-3.5 w-3.5" /> Pedir de novo
+                  <Repeat className="h-3.5 w-3.5" /> Pedir de novo
                 </button>
               </div>
             </div>
@@ -456,7 +459,7 @@ const ClientHomeContent = () => {
         {!searchQuery && lastStores.length > 0 && (
           <section aria-labelledby="suas-lojas-h">
             <h2 id="suas-lojas-h" className="font-display text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
-              <AppIcon name="shop" variant="bold-duotone" className="h-3.5 w-3.5" /> Suas lojas
+              <StoreIcon className="h-3.5 w-3.5" /> Suas lojas
             </h2>
             <div className="flex overflow-x-auto gap-3 no-scrollbar -mx-1 px-1 pb-1">
               {lastStores.map((store: any) => (
@@ -470,7 +473,7 @@ const ClientHomeContent = () => {
                       className="w-16 h-16 rounded-full object-cover ring-2 ring-primary/20 ring-offset-2 ring-offset-background" alt={store.name} />
                   ) : (
                     <div className="w-16 h-16 rounded-full bg-primary/10 ring-2 ring-primary/20 ring-offset-2 ring-offset-background flex items-center justify-center">
-                      <AppIcon name="shop" variant="bold-duotone" className="h-6 w-6 text-primary" />
+                      <StoreIcon className="h-6 w-6 text-primary" />
                     </div>
                   )}
                   <p className="font-display text-[10px] font-semibold text-foreground text-center truncate w-full leading-tight">
@@ -487,7 +490,7 @@ const ClientHomeContent = () => {
           <section aria-labelledby="patrocinados-h">
             <div className="flex justify-between items-center mb-3">
               <h2 id="patrocinados-h" className="font-display text-base font-bold text-foreground flex items-center gap-1.5">
-                <AppIcon name="stars" variant="bold-duotone" className="w-4 h-4 text-primary" /> Destaques da região
+                <Sparkles className="w-4 h-4 text-primary" /> Destaques da região
               </h2>
             </div>
             <HighlightsBento stores={sponsoredStores} onSelect={goToStore} />
@@ -499,7 +502,7 @@ const ClientHomeContent = () => {
           <section aria-labelledby="descubra-h">
             <div className="flex justify-between items-center mb-3">
               <h2 id="descubra-h" className="font-display text-base font-bold text-foreground flex items-center gap-1.5">
-                <AppIcon name="stars" variant="bold-duotone" className="h-4 w-4 text-primary" /> Descubra
+                <Sparkles className="h-4 w-4 text-primary" /> Descubra
               </h2>
               <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wide">Selecionado pra você</span>
             </div>
@@ -553,7 +556,7 @@ const ClientHomeContent = () => {
           ) : listStores.length === 0 && sponsoredStores.length === 0 ? (
             <div className="text-center py-10">
               <div className="w-14 h-14 bg-muted rounded-2xl flex items-center justify-center mx-auto mb-3">
-                <AppIcon name="shop" variant="linear" className="h-6 w-6 text-muted-foreground" />
+                <StoreIcon className="h-6 w-6 text-muted-foreground" />
               </div>
               <p className="text-sm font-semibold text-foreground">
                 {searchQuery.length >= 2
@@ -598,16 +601,14 @@ const ClientHomeContent = () => {
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center bg-primary/10">
-                            <AppIcon name="shop" variant="bold-duotone" className="w-6 h-6 text-primary" />
+                            <StoreIcon className="w-6 h-6 text-primary" />
                           </div>
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex justify-between items-start gap-2">
                           <h3 className="font-bold text-foreground truncate">{store.name}</h3>
-                          <AppIcon
-                            name="alt-arrow-right"
-                            variant="linear"
+                          <ChevronRight
                             className={`w-5 h-5 shrink-0 mt-0.5 transition-colors ${
                               isOpen ? "text-muted-foreground group-hover:text-primary" : "text-muted-foreground/40"
                             }`}

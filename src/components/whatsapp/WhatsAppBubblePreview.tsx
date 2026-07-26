@@ -1,9 +1,8 @@
-import { AppIcon } from "@/components/ui/app-icon";
-import { Check } from "lucide-react";
 /**
  * Renderiza uma bolha verde estilo WhatsApp do template preenchido.
  * Converte *negrito* do WhatsApp em <strong> e preserva quebras de linha.
  */
+import { Check } from "lucide-react";
 
 interface Props {
   text: string;
@@ -51,8 +50,8 @@ export default function WhatsAppBubblePreview({ text, storeName = "Sua Loja" }: 
           </div>
           <div className="flex items-center justify-end gap-0.5 mt-1 -mb-0.5">
             <span className="text-[9px]" style={{ color: "rgba(233,237,239,0.6)" }}>{now}</span>
-            <AppIcon name="Check" className="h-2.5 w-2.5" style={{ color: "#53bdeb" }} />
-            <AppIcon name="Check" className="h-2.5 w-2.5 -ml-1.5" style={{ color: "#53bdeb" }} />
+            <Check className="h-2.5 w-2.5" style={{ color: "#53bdeb" }} strokeWidth={3} />
+            <Check className="h-2.5 w-2.5 -ml-1.5" style={{ color: "#53bdeb" }} strokeWidth={3} />
           </div>
         </div>
       </div>

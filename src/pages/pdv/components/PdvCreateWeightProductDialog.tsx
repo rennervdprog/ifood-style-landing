@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
+import { Scale, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { formatBRLDisplay, parseBRLCentsInput } from "@/hooks/useBRLInput";
-import { AppIcon } from "@/components/ui/app-icon";
-import { Scale, Loader2 } from "lucide-react";
 
 interface Props {
   open: boolean;
@@ -76,7 +75,7 @@ export const PdvCreateWeightProductDialog = ({ open, onClose, storeId, onCreated
       <div className="bg-card rounded-2xl border border-border w-full max-w-sm p-5 space-y-4 shadow-2xl">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-            <AppIcon name="Scale" className="h-5 w-5 text-primary" />
+            <Scale className="h-5 w-5 text-primary" />
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="font-black text-base">Novo produto por peso</h3>
@@ -127,7 +126,7 @@ export const PdvCreateWeightProductDialog = ({ open, onClose, storeId, onCreated
             disabled={!canSave}
             className="flex-1 h-11 rounded-xl bg-primary text-primary-foreground text-sm font-black hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
           >
-            {saving && <AppIcon name="Loader2" className="h-4 w-4 animate-spin" />}
+            {saving && <Loader2 className="h-4 w-4 animate-spin" />}
             Criar
           </button>
         </div>

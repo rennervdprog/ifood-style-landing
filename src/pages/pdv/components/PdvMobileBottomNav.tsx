@@ -1,8 +1,10 @@
 import { useState } from "react";
+import {
+  ShoppingCart, LayoutGrid, History, BarChart3, MoreHorizontal,
+  Receipt, CreditCard, Settings, X,
+} from "lucide-react";
 import type { PdvTab } from "@/pages/pdv/types";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { AppIcon } from "@/components/ui/app-icon";
-import { ShoppingCart, LayoutGrid, History, BarChart3, MoreHorizontal, Receipt, CreditCard, Settings, X } from "lucide-react";
 
 interface Props {
   tab: PdvTab;
@@ -85,7 +87,7 @@ export const PdvMobileBottomNav = ({ tab, onChange, showMeuPlano }: Props) => {
             {moreActive && (
               <span className="absolute top-0 left-1/2 -translate-x-1/2 h-0.5 w-8 rounded-b-full bg-primary" />
             )}
-            <AppIcon name="MoreHorizontal" className="h-[22px] w-[22px]" />
+            <MoreHorizontal className="h-[22px] w-[22px]" />
             <span className={`text-[10px] leading-none ${moreActive ? "font-black" : "font-semibold"}`}>
               Mais
             </span>
@@ -105,7 +107,7 @@ export const PdvMobileBottomNav = ({ tab, onChange, showMeuPlano }: Props) => {
               aria-label="Fechar"
               className="h-8 w-8 rounded-full flex items-center justify-center text-muted-foreground hover:bg-muted"
             >
-              <AppIcon name="X" className="h-4 w-4" />
+              <X className="h-4 w-4" />
             </button>
           </SheetHeader>
           <div className="grid grid-cols-2 gap-2 p-4 pt-2">

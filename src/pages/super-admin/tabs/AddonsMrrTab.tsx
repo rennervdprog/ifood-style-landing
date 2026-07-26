@@ -4,9 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { formatBRL } from "@/lib/utils";
-import { AppIcon } from "@/components/ui/app-icon";
 import { Loader2, Search, Puzzle, Crown, TrendingUp, XCircle } from "lucide-react";
+import { formatBRL } from "@/lib/utils";
 
 type AddonRow = {
   store_id: string;
@@ -113,7 +112,7 @@ export default function AddonsMrrTab() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <AppIcon name="Loader2" className="h-6 w-6 animate-spin text-primary" />
+        <Loader2 className="h-6 w-6 animate-spin text-primary" />
       </div>
     );
   }
@@ -125,7 +124,7 @@ export default function AddonsMrrTab() {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2 text-xs text-muted-foreground font-bold uppercase">
-              <AppIcon name="TrendingUp" className="h-3.5 w-3.5" /> MRR Add-ons
+              <TrendingUp className="h-3.5 w-3.5" /> MRR Add-ons
             </div>
             <div className="text-2xl font-black text-primary mt-1">{formatBRL(kpis.mrr)}</div>
             <div className="text-[11px] text-muted-foreground mt-0.5">
@@ -136,7 +135,7 @@ export default function AddonsMrrTab() {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2 text-xs text-muted-foreground font-bold uppercase">
-              <AppIcon name="Puzzle" className="h-3.5 w-3.5" /> Ativos pagantes
+              <Puzzle className="h-3.5 w-3.5" /> Ativos pagantes
             </div>
             <div className="text-2xl font-black mt-1">{kpis.activeCount - kpis.cancelingCount}</div>
             <div className="text-[11px] text-muted-foreground mt-0.5">Cobrança mensal ligada</div>
@@ -145,7 +144,7 @@ export default function AddonsMrrTab() {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2 text-xs text-muted-foreground font-bold uppercase">
-              <AppIcon name="Crown" className="h-3.5 w-3.5 text-amber-500" /> VIP grátis
+              <Crown className="h-3.5 w-3.5 text-amber-500" /> VIP grátis
             </div>
             <div className="text-2xl font-black text-amber-500 mt-1">{kpis.vipCount}</div>
             <div className="text-[11px] text-muted-foreground mt-0.5">price_override = 0</div>
@@ -154,7 +153,7 @@ export default function AddonsMrrTab() {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2 text-xs text-muted-foreground font-bold uppercase">
-              <AppIcon name="XCircle" className="h-3.5 w-3.5 text-destructive" /> Cancelamento agendado
+              <XCircle className="h-3.5 w-3.5 text-destructive" /> Cancelamento agendado
             </div>
             <div className="text-2xl font-black text-destructive mt-1">{kpis.cancelingCount}</div>
             <div className="text-[11px] text-muted-foreground mt-0.5">Some do MRR no vencimento</div>
@@ -194,7 +193,7 @@ export default function AddonsMrrTab() {
           <div className="flex items-center justify-between gap-2">
             <CardTitle className="text-sm font-bold">Add-ons por loja ({filtered.length})</CardTitle>
             <div className="relative w-52">
-              <AppIcon name="Search" className="h-3.5 w-3.5 absolute left-2 top-2.5 text-muted-foreground" />
+              <Search className="h-3.5 w-3.5 absolute left-2 top-2.5 text-muted-foreground" />
               <Input
                 placeholder="Buscar loja ou módulo"
                 value={q}

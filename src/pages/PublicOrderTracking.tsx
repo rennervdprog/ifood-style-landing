@@ -4,11 +4,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useSearchParams, Link, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { formatBRL } from "@/lib/utils";
+import { ArrowLeft, MapPin, MessageCircle, Loader2, CheckCircle2, Clock, Truck, KeyRound, ShieldAlert, QrCode, Copy, Upload, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { copyToClipboard } from "@/lib/clipboard";
 import { formatPixKeyDisplay } from "@/lib/pixFormat";
-import { AppIcon } from "@/components/ui/app-icon";
-import { ArrowLeft, MapPin, MessageCircle, Loader2, CheckCircle2, Clock, Truck, KeyRound, ShieldAlert, QrCode, Copy, Upload, AlertTriangle } from "lucide-react";
 
 const STATUS_LABEL: Record<string, { label: string; color: string; icon: any }> = {
   pendente: { label: "Recebido pela loja", color: "text-blue-600", icon: Clock },
@@ -113,7 +112,7 @@ const PublicOrderTracking = () => {
 
   if (loading) {
     return <div className="min-h-screen bg-background flex items-center justify-center">
-      <AppIcon name="Loader2" className="h-6 w-6 animate-spin text-muted-foreground" />
+      <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
     </div>;
   }
   if (error || !data) {
@@ -132,7 +131,7 @@ const PublicOrderTracking = () => {
   return (
     <div className="min-h-screen bg-background pb-16">
       <header className="sticky top-0 z-40 bg-card border-b border-border h-14 flex items-center px-4 gap-3">
-        <Link to="/" className="p-1 -ml-1"><AppIcon name="ArrowLeft" className="h-5 w-5" /></Link>
+        <Link to="/" className="p-1 -ml-1"><ArrowLeft className="h-5 w-5" /></Link>
         <h1 className="text-base font-bold">Seu pedido</h1>
       </header>
 
@@ -147,7 +146,7 @@ const PublicOrderTracking = () => {
         {isPixDireto && ["aguardando_comprovante", "comprovante_enviado", "pix_direto_recusado"].includes(order.status) && (
           <div className="rounded-2xl border border-border bg-card p-4 space-y-3">
             <div className="flex items-center gap-2">
-              <AppIcon name="QrCode" className="h-4 w-4 text-primary" />
+              <QrCode className="h-4 w-4 text-primary" />
               <h2 className="text-sm font-bold text-foreground">Pagamento via Pix Direto</h2>
             </div>
             <div className="flex items-baseline justify-between">
@@ -163,7 +162,7 @@ const PublicOrderTracking = () => {
             <div className="flex items-center gap-2">
               <div className="flex-1 min-w-0 bg-muted rounded-xl px-3 py-2.5 text-sm font-mono truncate">{keyDisplay || "—"}</div>
               <button onClick={copyKey} className="p-2.5 rounded-xl bg-primary text-primary-foreground shrink-0" title="Copiar">
-                <AppIcon name="Copy" className="h-4 w-4" />
+                <Copy className="h-4 w-4" />
               </button>
             </div>
             {store?.pix_direto_instructions && (
@@ -173,7 +172,7 @@ const PublicOrderTracking = () => {
             {order.status === "aguardando_comprovante" && (
               <>
                 <div className={`rounded-xl border p-3 flex items-center gap-3 ${pixExpired ? "border-destructive/40 bg-destructive/10" : "border-amber-500/30 bg-amber-500/10"}`}>
-                  <AppIcon name="Clock" className={`h-4 w-4 ${pixExpired ? "text-destructive" : "text-amber-600"}`} />
+                  <Clock className={`h-4 w-4 ${pixExpired ? "text-destructive" : "text-amber-600"}`} />
                   <div className="flex-1">
                     <p className={`text-xs font-bold ${pixExpired ? "text-destructive" : "text-amber-700 dark:text-amber-400"}`}>
                       {pixExpired ? "Tempo esgotado" : "Envie o comprovante em"}
@@ -191,7 +190,7 @@ const PublicOrderTracking = () => {
                   disabled={uploading || pixExpired}
                   className="w-full inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground font-bold py-3 rounded-xl disabled:opacity-50"
                 >
-                  {uploading ? <AppIcon name="Loader2" className="h-4 w-4 animate-spin" /> : <AppIcon name="Upload" className="h-4 w-4" />}
+                  {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
                   {uploading ? "Enviando..." : "Enviar comprovante do PIX"}
                 </button>
                 <p className="text-[11px] text-center text-muted-foreground">JPG, PNG ou PDF · até 5 MB</p>
@@ -200,7 +199,7 @@ const PublicOrderTracking = () => {
 
             {order.status === "comprovante_enviado" && (
               <div className="rounded-xl border border-primary/40 bg-primary/10 p-3 flex items-center gap-3">
-                <AppIcon name="Loader2" className="h-4 w-4 text-primary animate-spin" />
+                <Loader2 className="h-4 w-4 text-primary animate-spin" />
                 <div>
                   <p className="text-xs font-bold text-primary">Aguardando confirmação da loja</p>
                   <p className="text-[11px] text-muted-foreground">Assim que confirmarem, seu pedido entra em preparo.</p>
@@ -211,7 +210,7 @@ const PublicOrderTracking = () => {
             {order.status === "pix_direto_recusado" && (
               <div className="rounded-xl border border-destructive/40 bg-destructive/10 p-3 space-y-1">
                 <div className="flex items-center gap-2">
-                  <AppIcon name="AlertTriangle" className="h-4 w-4 text-destructive" />
+                  <AlertTriangle className="h-4 w-4 text-destructive" />
                   <p className="text-xs font-bold text-destructive">Comprovante recusado</p>
                 </div>
                 {order.pix_refused_reason && (
@@ -226,7 +225,7 @@ const PublicOrderTracking = () => {
           <div className="rounded-2xl border-2 border-primary/30 bg-primary/5 p-4 space-y-3">
             <div className="flex items-center gap-2">
               <div className="w-9 h-9 rounded-xl bg-primary/15 flex items-center justify-center">
-                <AppIcon name="KeyRound" className="h-4 w-4 text-primary" />
+                <KeyRound className="h-4 w-4 text-primary" />
               </div>
               <div>
                 <p className="text-sm font-bold text-foreground">Seu PIN de entrega</p>
@@ -235,7 +234,7 @@ const PublicOrderTracking = () => {
             </div>
             <p className="text-4xl font-black tracking-[0.5em] text-center text-primary">{data.delivery_pin || data.order.delivery_pin}</p>
             <div className="flex items-start gap-2 rounded-xl bg-amber-50 border border-amber-200 p-2.5">
-              <AppIcon name="ShieldAlert" className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+              <ShieldAlert className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
               <p className="text-[11px] text-amber-800">Não compartilhe este código com ninguém além do entregador na hora da entrega.</p>
             </div>
           </div>
@@ -244,13 +243,13 @@ const PublicOrderTracking = () => {
         <div className="bg-card border border-border rounded-2xl p-4 space-y-2">
           <h2 className="text-sm font-bold">{data.store?.name || "Loja"}</h2>
           <div className="text-xs text-muted-foreground flex items-start gap-2">
-            <AppIcon name="MapPin" className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
+            <MapPin className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
             <span>{data.order.address_details} — {data.order.neighborhood}</span>
           </div>
           {whats && (
             <a href={whats} target="_blank" rel="noopener noreferrer"
               className="mt-2 w-full h-11 rounded-xl bg-green-500 text-white text-sm font-bold flex items-center justify-center gap-2">
-              <AppIcon name="MessageCircle" className="h-4 w-4" /> Falar com a loja no WhatsApp
+              <MessageCircle className="h-4 w-4" /> Falar com a loja no WhatsApp
             </a>
           )}
         </div>

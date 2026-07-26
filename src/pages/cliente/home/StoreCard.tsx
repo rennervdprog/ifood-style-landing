@@ -1,4 +1,4 @@
-import { AppIcon } from "@/components/ui/app-icon";
+import { MapPin, Store as StoreIcon, Star } from "lucide-react";
 
 interface Props {
   store: any;
@@ -35,7 +35,7 @@ const StoreCard = ({ store, onClick, variant = "grid" }: Props) => {
             className="w-14 h-14 rounded-xl object-cover" />
         ) : (
           <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center">
-            <AppIcon name="shop" variant="bold-duotone" className="h-5 w-5 text-primary" />
+            <StoreIcon className="h-5 w-5 text-primary" />
           </div>
         )}
         <div className="min-w-0 flex-1">
@@ -53,7 +53,7 @@ const StoreCard = ({ store, onClick, variant = "grid" }: Props) => {
           <div className="flex items-center gap-2 mt-0.5 text-[10px] text-muted-foreground">
             {distance && (
               <span className="flex items-center gap-0.5">
-                <AppIcon name="map-point" variant="bold" className="h-2.5 w-2.5" /> {distance}
+                <MapPin className="h-2.5 w-2.5" /> {distance}
               </span>
             )}
             {!isOpen && store.statusReason && <span className="truncate">{store.statusReason}</span>}
@@ -92,7 +92,7 @@ const StoreCard = ({ store, onClick, variant = "grid" }: Props) => {
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-primary/10">
-            <AppIcon name="shop" variant="bold-duotone" className="h-8 w-8 text-primary" />
+            <StoreIcon className="h-8 w-8 text-primary" />
           </div>
         )}
         <span className={`absolute top-2 left-2 text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm ${
@@ -102,7 +102,7 @@ const StoreCard = ({ store, onClick, variant = "grid" }: Props) => {
         </span>
         {distance && (
           <span className="absolute top-2 right-2 text-[10px] font-bold px-2 py-0.5 rounded-full bg-black/55 text-white backdrop-blur-sm flex items-center gap-0.5">
-            <AppIcon name="map-point" variant="bold" className="h-2.5 w-2.5" /> {distance}
+            <MapPin className="h-2.5 w-2.5" /> {distance}
           </span>
         )}
       </div>

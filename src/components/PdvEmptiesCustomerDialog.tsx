@@ -3,9 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { toast } from "sonner";
-import { AppIcon } from "@/components/ui/app-icon";
 import { Recycle, Search } from "lucide-react";
+import { toast } from "sonner";
 
 interface Props {
   open: boolean;
@@ -60,7 +59,7 @@ const PdvEmptiesCustomerDialog = ({ open, orderId, onClose, onFound }: Props) =>
       <DialogContent className="max-w-sm">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <AppIcon name="Recycle" className="h-5 w-5 text-emerald-600" />
+            <Recycle className="h-5 w-5 text-emerald-600" />
             Cliente trocou casquinhas?
           </DialogTitle>
         </DialogHeader>
@@ -78,7 +77,7 @@ const PdvEmptiesCustomerDialog = ({ open, orderId, onClose, onFound }: Props) =>
         <DialogFooter className="flex gap-2 sm:gap-2">
           <Button variant="ghost" onClick={onClose} disabled={loading}>Pular</Button>
           <Button onClick={handleSearch} disabled={loading} className="bg-emerald-600 hover:bg-emerald-700">
-            <AppIcon name="Search" className="h-4 w-4 mr-1" />
+            <Search className="h-4 w-4 mr-1" />
             {loading ? "Buscando..." : "Buscar"}
           </Button>
         </DialogFooter>

@@ -3,7 +3,9 @@ import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { queryClient } from "@/lib/queryClient";
 import { USER_ROUTING_QUERY_KEY, type UserRoutingSnapshot } from "@/hooks/useUserRouting";
-import { AppIcon } from "@/components/ui/app-icon";
+import {
+  Mail, Lock, Eye, EyeOff, KeyRound, FileText, Phone, User, ShoppingBag, Zap, ShieldCheck,
+} from "lucide-react";
 import { maskWhatsApp } from "@/lib/whatsapp";
 import { formatDocument, sanitizeDocument, validateDocument } from "@/lib/documentFormat";
 import { toast } from "sonner";
@@ -161,7 +163,7 @@ const ClientAuthScreen = ({ onSuccess }: { onSuccess: () => void }) => {
     <div className="min-h-dvh flex flex-col bg-gradient-to-b from-white to-slate-50">
       <div className="flex items-center justify-center gap-2.5 pt-10 pb-6">
         <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
-          <AppIcon name="bolt" variant="bold" className="h-5 w-5 text-primary-foreground" />
+          <Zap className="h-5 w-5 text-primary-foreground" />
         </div>
         <span className="text-foreground font-black text-xl">ItaSuper</span>
       </div>
@@ -171,9 +173,9 @@ const ClientAuthScreen = ({ onSuccess }: { onSuccess: () => void }) => {
           <div className="mb-8 text-center">
             <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mb-4 mx-auto">
               {mode === "forgot" || mode === "reset" ? (
-                <AppIcon name="key" variant="bold-duotone" className="h-6 w-6 text-primary" />
+                <KeyRound className="h-6 w-6 text-primary" />
               ) : (
-                <AppIcon name="bag-4" variant="bold-duotone" className="h-6 w-6 text-primary" />
+                <ShoppingBag className="h-6 w-6 text-primary" />
               )}
             </div>
             <h1 className="text-2xl font-black text-foreground tracking-tight">{titles[mode]}</h1>
@@ -184,7 +186,7 @@ const ClientAuthScreen = ({ onSuccess }: { onSuccess: () => void }) => {
             {mode === "forgot" && resetSent ? (
               <div className="text-center space-y-4 py-6">
                 <div className="w-14 h-14 bg-green-50 rounded-2xl flex items-center justify-center mx-auto">
-                  <AppIcon name="key" variant="bold-duotone" className="h-7 w-7 text-green-500" />
+                  <KeyRound className="h-7 w-7 text-green-500" />
                 </div>
                 <h3 className="font-bold text-foreground text-lg">E-mail enviado!</h3>
                 <p className="text-sm text-slate-500 mt-1.5 leading-relaxed max-w-xs mx-auto">
@@ -200,7 +202,7 @@ const ClientAuthScreen = ({ onSuccess }: { onSuccess: () => void }) => {
                   <div>
                     <label className="text-xs font-semibold text-slate-500 tracking-wide mb-1.5 block">E-mail</label>
                     <div className="relative">
-                      <AppIcon name="letter" variant="linear" className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                       <input type="email" placeholder="seu@email.com" value={email} onChange={(e) => setEmail(e.target.value)} className={inputClass} autoComplete="email" />
                     </div>
                   </div>
@@ -211,10 +213,10 @@ const ClientAuthScreen = ({ onSuccess }: { onSuccess: () => void }) => {
                       {mode === "reset" ? "Nova senha" : "Senha"}
                     </label>
                     <div className="relative">
-                      <AppIcon name="lock-password" variant="linear" className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                       <input type={showPassword ? "text" : "password"} placeholder={mode === "reset" ? "Mínimo 6 caracteres" : "••••••"} value={password} onChange={(e) => setPassword(e.target.value)} className={inputClassPassword} autoComplete={mode === "login" ? "current-password" : "new-password"} />
                       <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 p-1" aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}>
-                        {showPassword ? <AppIcon name="eye-closed" variant="linear" className="h-4 w-4 text-slate-400" /> : <AppIcon name="eye" variant="linear" className="h-4 w-4 text-slate-400" />}
+                        {showPassword ? <EyeOff className="h-4 w-4 text-slate-400" /> : <Eye className="h-4 w-4 text-slate-400" />}
                       </button>
                     </div>
                   </div>
@@ -223,7 +225,7 @@ const ClientAuthScreen = ({ onSuccess }: { onSuccess: () => void }) => {
                   <div>
                     <label className="text-xs font-semibold text-slate-500 tracking-wide mb-1.5 block">Nome completo</label>
                     <div className="relative">
-                      <AppIcon name="user" variant="linear" className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                      <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                       <input type="text" placeholder="Seu nome" value={fullName}
                         onChange={(e) => setFullName(e.target.value)}
                         autoComplete="name" maxLength={80} className={inputClass} />
@@ -234,7 +236,7 @@ const ClientAuthScreen = ({ onSuccess }: { onSuccess: () => void }) => {
                   <div>
                     <label className="text-xs font-semibold text-slate-500 tracking-wide mb-1.5 block">CPF ou CNPJ</label>
                     <div className="relative">
-                      <AppIcon name="document-text" variant="linear" className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                      <FileText className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                       <input type="text" inputMode="numeric" placeholder="CPF ou CNPJ" value={cpf}
                         onChange={(e) => setCpf(formatDocument(e.target.value))}
                         maxLength={18} className={inputClass} />
@@ -245,7 +247,7 @@ const ClientAuthScreen = ({ onSuccess }: { onSuccess: () => void }) => {
                   <div>
                     <label className="text-xs font-semibold text-slate-500 tracking-wide mb-1.5 block">WhatsApp</label>
                     <div className="relative">
-                      <AppIcon name="phone" variant="linear" className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                       <input
                         type="tel"
                         inputMode="numeric"
@@ -287,7 +289,7 @@ const ClientAuthScreen = ({ onSuccess }: { onSuccess: () => void }) => {
                 {mode === "signup" && (
                   <div className="space-y-3 pt-1">
                     <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 flex gap-2.5">
-                      <AppIcon name="shield-check" variant="bold-duotone" className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                      <ShieldCheck className="h-5 w-5 text-primary shrink-0 mt-0.5" />
                       <div className="text-xs text-slate-600 leading-relaxed">
                         <strong className="text-foreground">PIN de entrega pessoal:</strong> escolha 4 dígitos que só você sabe. O entregador vai pedir esse mesmo código em <strong>todas</strong> as suas entregas para confirmar quem está recebendo. Evite datas óbvias (aniversário, ano de nascimento).
                       </div>
@@ -295,7 +297,7 @@ const ClientAuthScreen = ({ onSuccess }: { onSuccess: () => void }) => {
                     <div>
                       <label className="text-xs font-semibold text-slate-500 tracking-wide mb-1.5 block">PIN de entrega (4 dígitos)</label>
                       <div className="relative">
-                        <AppIcon name="key" variant="linear" className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                        <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                         <input
                           type="tel"
                           inputMode="numeric"
@@ -311,7 +313,7 @@ const ClientAuthScreen = ({ onSuccess }: { onSuccess: () => void }) => {
                     <div>
                       <label className="text-xs font-semibold text-slate-500 tracking-wide mb-1.5 block">Confirme o PIN</label>
                       <div className="relative">
-                        <AppIcon name="key" variant="linear" className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                        <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                         <input
                           type="tel"
                           inputMode="numeric"

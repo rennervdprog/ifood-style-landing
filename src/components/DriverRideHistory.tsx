@@ -3,8 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatBRL } from "@/lib/utils";
-import { AppIcon } from "@/components/ui/app-icon";
-import { Loader2, MapPin, Clock, Route, Bike, Calendar } from "lucide-react";
+import { Loader2, MapPin, Clock, Route, Bike, Store as StoreIcon, Calendar } from "lucide-react";
 
 interface Props {
   storeIds: string[];
@@ -134,7 +133,7 @@ const DriverRideHistory = ({ storeIds }: Props) => {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-10">
-        <AppIcon name="Loader2" className="h-5 w-5 animate-spin text-muted-foreground" />
+        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
       </div>
     );
   }
@@ -162,10 +161,10 @@ const DriverRideHistory = ({ storeIds }: Props) => {
 
       {/* Summary */}
       <div className="grid grid-cols-2 gap-2">
-        <SummaryCard icon={<AppIcon name="Route" className="h-4 w-4 text-primary" />} label="Distância" value={`${totals.totalKm.toFixed(1)} km`} sub={`Média ${totals.avgKm.toFixed(1)} km/entrega`} tooltip="Linha reta loja → cliente (não é a rota real percorrida)." />
-        <SummaryCard icon={<AppIcon name="Clock" className="h-4 w-4 text-primary" />} label="Tempo total" value={formatDurationMin(totals.totalMin)} sub={`Média ${formatDurationMin(totals.avgMin)}/entrega`} tooltip="Do pedido confirmado até o registro da entrega." />
-        <SummaryCard icon={<AppIcon name="Bike" className="h-4 w-4 text-success" />} label="Corridas" value={`${totals.count}`} sub="No período" />
-        <SummaryCard icon={<AppIcon name="Store" className="h-4 w-4 text-success" />} label="Ganhos" value={formatBRL(totals.totalAmount)} sub="Sua parte" />
+        <SummaryCard icon={<Route className="h-4 w-4 text-primary" />} label="Distância" value={`${totals.totalKm.toFixed(1)} km`} sub={`Média ${totals.avgKm.toFixed(1)} km/entrega`} tooltip="Linha reta loja → cliente (não é a rota real percorrida)." />
+        <SummaryCard icon={<Clock className="h-4 w-4 text-primary" />} label="Tempo total" value={formatDurationMin(totals.totalMin)} sub={`Média ${formatDurationMin(totals.avgMin)}/entrega`} tooltip="Do pedido confirmado até o registro da entrega." />
+        <SummaryCard icon={<Bike className="h-4 w-4 text-success" />} label="Corridas" value={`${totals.count}`} sub="No período" />
+        <SummaryCard icon={<StoreIcon className="h-4 w-4 text-success" />} label="Ganhos" value={formatBRL(totals.totalAmount)} sub="Sua parte" />
       </div>
 
       {/* List */}
@@ -194,7 +193,7 @@ const DriverRideHistory = ({ storeIds }: Props) => {
                     {s?.name || "Loja"}
                   </p>
                   <p className="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5">
-                    <AppIcon name="Calendar" className="h-3 w-3" />
+                    <Calendar className="h-3 w-3" />
                     {date.toLocaleDateString("pt-BR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
                     {" · #"}
                     {String(e.order_id).slice(0, 6).toUpperCase()}
@@ -208,7 +207,7 @@ const DriverRideHistory = ({ storeIds }: Props) => {
 
               {(o?.neighborhood || o?.address_details) && (
                 <div className="flex items-start gap-1.5 text-[11px] text-muted-foreground">
-                  <AppIcon name="MapPin" className="h-3 w-3 mt-0.5 shrink-0 text-primary" />
+                  <MapPin className="h-3 w-3 mt-0.5 shrink-0 text-primary" />
                   <span className="truncate">
                     {[o?.neighborhood, o?.address_details].filter(Boolean).join(" · ")}
                   </span>
@@ -216,9 +215,9 @@ const DriverRideHistory = ({ storeIds }: Props) => {
               )}
 
               <div className="grid grid-cols-3 gap-1.5 pt-1">
-                <Metric icon={<AppIcon name="Route" className="h-3 w-3" />} label="Distância" value={km != null ? `${km.toFixed(1)} km` : "—"} />
-                <Metric icon={<AppIcon name="Clock" className="h-3 w-3" />} label="Tempo" value={isFinite(durationMin) ? formatDurationMin(durationMin) : "—"} />
-                <Metric icon={<AppIcon name="Store" className="h-3 w-3" />} label="Taxa" value={formatBRL(Number(e.fee_total))} />
+                <Metric icon={<Route className="h-3 w-3" />} label="Distância" value={km != null ? `${km.toFixed(1)} km` : "—"} />
+                <Metric icon={<Clock className="h-3 w-3" />} label="Tempo" value={isFinite(durationMin) ? formatDurationMin(durationMin) : "—"} />
+                <Metric icon={<StoreIcon className="h-3 w-3" />} label="Taxa" value={formatBRL(Number(e.fee_total))} />
               </div>
             </div>
           );

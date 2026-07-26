@@ -6,11 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "@/hooks/use-toast";
+import { MessageCircle, RefreshCw, QrCode, Send, Loader2, History, Settings, Link as LinkIcon, Copy, Check, Smartphone, CheckCircle2, Phone, Power } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import PlatformWhatsAppHistory from "./PlatformWhatsAppHistory";
 import PasskeyWarning from "@/components/whatsapp/PasskeyWarning";
-import { AppIcon } from "@/components/ui/app-icon";
-import { MessageCircle, RefreshCw, QrCode, Send, Loader2, History, Settings, Copy, Check, Smartphone, CheckCircle2, Phone, Power } from "lucide-react";
 
 type Cfg = {
   id?: string;
@@ -229,7 +228,7 @@ export default function PlatformWhatsAppTab() {
     <div className="p-4 lg:p-6 max-w-5xl mx-auto space-y-4">
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-2xl bg-green-500/10 flex items-center justify-center">
-          <AppIcon name="MessageCircle" className="h-5 w-5 text-green-600" />
+          <MessageCircle className="h-5 w-5 text-green-600" />
         </div>
         <div>
           <h2 className="text-lg font-black">WhatsApp da Plataforma</h2>
@@ -242,9 +241,9 @@ export default function PlatformWhatsAppTab() {
 
       <Tabs defaultValue="conexao" className="w-full">
         <TabsList className="grid grid-cols-3 w-full">
-          <TabsTrigger value="conexao"><AppIcon name="Link" className="h-3.5 w-3.5 mr-1" />Conexão</TabsTrigger>
-          <TabsTrigger value="historico"><AppIcon name="History" className="h-3.5 w-3.5 mr-1" />Histórico</TabsTrigger>
-          <TabsTrigger value="config"><AppIcon name="Settings" className="h-3.5 w-3.5 mr-1" />Config.</TabsTrigger>
+          <TabsTrigger value="conexao"><LinkIcon className="h-3.5 w-3.5 mr-1" />Conexão</TabsTrigger>
+          <TabsTrigger value="historico"><History className="h-3.5 w-3.5 mr-1" />Histórico</TabsTrigger>
+          <TabsTrigger value="config"><Settings className="h-3.5 w-3.5 mr-1" />Config.</TabsTrigger>
         </TabsList>
 
         <TabsContent value="conexao" className="space-y-4 mt-4">
@@ -254,7 +253,7 @@ export default function PlatformWhatsAppTab() {
           <div className="rounded-2xl border-2 border-green-500/30 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/20 p-5 space-y-4">
             <div className="flex items-start gap-3">
               <div className="w-12 h-12 rounded-2xl bg-green-500 flex items-center justify-center shadow-lg shadow-green-500/30 shrink-0">
-                <AppIcon name="CheckCircle2" className="h-6 w-6 text-white" />
+                <CheckCircle2 className="h-6 w-6 text-white" />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="text-base font-black text-green-800 dark:text-green-300">WhatsApp conectado</div>
@@ -266,7 +265,7 @@ export default function PlatformWhatsAppTab() {
               <div className="rounded-xl bg-white/70 dark:bg-background/40 p-3">
                 <div className="text-[10px] uppercase tracking-wide text-muted-foreground font-bold">Número</div>
                 <div className="flex items-center gap-1.5 mt-0.5">
-                  <AppIcon name="Phone" className="h-3.5 w-3.5 text-green-600" />
+                  <Phone className="h-3.5 w-3.5 text-green-600" />
                   <div className="text-sm font-bold truncate">
                     {cfg?.phone_number ? formatBrPhone(cfg.phone_number) || cfg.phone_number : "—"}
                   </div>
@@ -296,7 +295,7 @@ export default function PlatformWhatsAppTab() {
                   qc.invalidateQueries({ queryKey: ["platform-wa-cfg"] });
                 }}
               >
-                <AppIcon name="RefreshCw" className="h-4 w-4 mr-1" /> Sincronizar
+                <RefreshCw className="h-4 w-4 mr-1" /> Sincronizar
               </Button>
               <Button
                 variant="outline"
@@ -318,21 +317,21 @@ export default function PlatformWhatsAppTab() {
                   }
                 }}
               >
-                <AppIcon name="Power" className="h-4 w-4 mr-1" /> Desconectar
+                <Power className="h-4 w-4 mr-1" /> Desconectar
               </Button>
             </div>
           </div>
 
           <div className="rounded-xl border bg-card p-4 space-y-3">
             <div className="flex items-center gap-2">
-              <AppIcon name="Send" className="h-4 w-4 text-green-600" />
+              <Send className="h-4 w-4 text-green-600" />
               <Label className="text-sm font-bold">Enviar mensagem de teste</Label>
             </div>
             <p className="text-xs text-muted-foreground">Envie uma mensagem para confirmar que tudo está funcionando.</p>
             <div className="flex flex-col sm:flex-row gap-2">
               <Input value={testPhone} onChange={(e) => setTestPhone(e.target.value)} placeholder="5522999999999" inputMode="tel" className="flex-1" />
               <Button onClick={sendTest} className="bg-green-600 hover:bg-green-700 text-white">
-                <AppIcon name="Send" className="h-4 w-4 mr-1" /> Enviar teste
+                <Send className="h-4 w-4 mr-1" /> Enviar teste
               </Button>
             </div>
           </div>
@@ -353,7 +352,7 @@ export default function PlatformWhatsAppTab() {
 
         <div className="flex gap-2 flex-wrap">
           <Button onClick={fetchQr} disabled={qrLoading} variant="outline" size="sm">
-            {qrLoading ? <AppIcon name="Loader2" className="h-4 w-4 animate-spin" /> : <AppIcon name="QrCode" className="h-4 w-4" />}
+            {qrLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <QrCode className="h-4 w-4" />}
             Gerar QR Code
           </Button>
           <Button
@@ -367,7 +366,7 @@ export default function PlatformWhatsAppTab() {
             variant="ghost"
             size="sm"
           >
-            <AppIcon name="RefreshCw" className="h-4 w-4" /> Sincronizar status
+            <RefreshCw className="h-4 w-4" /> Sincronizar status
           </Button>
         </div>
 
@@ -382,7 +381,7 @@ export default function PlatformWhatsAppTab() {
 
       <div className="rounded-xl border bg-card p-4 space-y-3">
         <div className="flex items-center gap-2">
-          <AppIcon name="Smartphone" className="h-4 w-4 text-green-600" />
+          <Smartphone className="h-4 w-4 text-green-600" />
           <div className="font-bold">Conectar por número de telefone</div>
         </div>
 
@@ -402,7 +401,7 @@ export default function PlatformWhatsAppTab() {
             className="flex-1"
           />
           <Button onClick={fetchPairing} disabled={pairingLoading} className="bg-green-600 hover:bg-green-700 text-white">
-            {pairingLoading ? <AppIcon name="Loader2" className="h-4 w-4 animate-spin mr-1" /> : <AppIcon name="Smartphone" className="h-4 w-4 mr-1" />}
+            {pairingLoading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Smartphone className="h-4 w-4 mr-1" />}
             Gerar código
           </Button>
         </div>
@@ -446,11 +445,11 @@ export default function PlatformWhatsAppTab() {
                   }}
                   disabled={expired}
                 >
-                  {copied ? <><AppIcon name="Check" className="h-4 w-4 mr-1" />Copiado</> : <><AppIcon name="Copy" className="h-4 w-4 mr-1" />Copiar código</>}
+                  {copied ? <><Check className="h-4 w-4 mr-1" />Copiado</> : <><Copy className="h-4 w-4 mr-1" />Copiar código</>}
                 </Button>
                 {expired && (
                   <Button size="sm" className="flex-1" onClick={fetchPairing} disabled={pairingLoading}>
-                    <AppIcon name="RefreshCw" className="h-4 w-4 mr-1" /> Gerar novo
+                    <RefreshCw className="h-4 w-4 mr-1" /> Gerar novo
                   </Button>
                 )}
               </div>
@@ -468,7 +467,7 @@ export default function PlatformWhatsAppTab() {
         <div className="flex gap-2">
           <Input value={testPhone} onChange={(e) => setTestPhone(e.target.value)} placeholder="5522..." />
           <Button onClick={sendTest} disabled={cfg?.status !== "connected"}>
-            <AppIcon name="Send" className="h-4 w-4 mr-1" /> Enviar
+            <Send className="h-4 w-4 mr-1" /> Enviar
           </Button>
         </div>
       </div>

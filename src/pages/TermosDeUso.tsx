@@ -1,7 +1,6 @@
 import { useNavigate } from "react-router-dom";
-import { Helmet } from "react-helmet-async";
-import { AppIcon } from "@/components/ui/app-icon";
 import { ArrowLeft } from "lucide-react";
+import { Helmet } from "react-helmet-async";
 
 const TermosDeUso = () => {
   const navigate = useNavigate();
@@ -19,7 +18,7 @@ const TermosDeUso = () => {
       </Helmet>
       <div className="sticky top-0 bg-card border-b border-border z-10 px-4 py-3 flex items-center gap-3">
         <button onClick={() => navigate(-1)} className="p-1.5 rounded-xl hover:bg-muted transition-colors">
-          <AppIcon name="ArrowLeft" className="h-5 w-5 text-foreground" />
+          <ArrowLeft className="h-5 w-5 text-foreground" />
         </button>
         <h1 className="font-bold text-foreground">Termos de Uso</h1>
         <span className="text-xs text-muted-foreground ml-auto">Atualizado em {dataAtualizacao} · v5.1</span>

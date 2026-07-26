@@ -3,7 +3,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { formatBRL } from "@/lib/utils";
-import { AppIcon } from "@/components/ui/app-icon";
 import { Wallet, CheckCircle2, Loader2, DollarSign, Banknote } from "lucide-react";
 
 interface Props {
@@ -96,7 +95,7 @@ const StoreDriverFinance = ({ storeId }: Props) => {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <AppIcon name="Loader2" className="h-6 w-6 animate-spin text-muted-foreground" />
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
       </div>
     );
   }
@@ -121,7 +120,7 @@ const StoreDriverFinance = ({ storeId }: Props) => {
       {/* Header */}
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center">
-          <AppIcon name="Wallet" className="h-5 w-5 text-emerald-500" />
+          <Wallet className="h-5 w-5 text-emerald-500" />
         </div>
         <div>
           <h2 className="text-lg font-bold text-foreground">Finanças dos Motoboys</h2>
@@ -140,19 +139,19 @@ const StoreDriverFinance = ({ storeId }: Props) => {
       {/* Summary */}
       <div className="grid grid-cols-3 gap-2">
         <div className="bg-amber-500/5 border border-amber-500/20 rounded-2xl p-3">
-          <AppIcon name="DollarSign" className="h-4 w-4 text-amber-500 mb-1" />
+          <DollarSign className="h-4 w-4 text-amber-500 mb-1" />
           <p className="text-[10px] font-bold text-muted-foreground uppercase">A Pagar</p>
           <p className="text-base font-black text-foreground mt-1">{formatBRL(pendingTotal)}</p>
           <p className="text-[10px] text-muted-foreground mt-0.5">{pending.length} entregas</p>
         </div>
         <div className="bg-blue-500/5 border border-blue-500/20 rounded-2xl p-3">
-          <AppIcon name="Loader2" className="h-4 w-4 text-blue-500 mb-1" />
+          <Loader2 className="h-4 w-4 text-blue-500 mb-1" />
           <p className="text-[10px] font-bold text-muted-foreground uppercase">Aguardando</p>
           <p className="text-base font-black text-foreground mt-1">{formatBRL(awaitingTotal)}</p>
           <p className="text-[10px] text-muted-foreground mt-0.5">{awaiting.length} a confirmar</p>
         </div>
         <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-2xl p-3">
-          <AppIcon name="CheckCircle2" className="h-4 w-4 text-emerald-500 mb-1" />
+          <CheckCircle2 className="h-4 w-4 text-emerald-500 mb-1" />
           <p className="text-[10px] font-bold text-muted-foreground uppercase">Pago</p>
           <p className="text-base font-black text-foreground mt-1">{formatBRL(paidTotal)}</p>
           <p className="text-[10px] text-muted-foreground mt-0.5">{paid.length} entregas</p>
@@ -163,7 +162,7 @@ const StoreDriverFinance = ({ storeId }: Props) => {
       {awaiting.length > 0 && (
         <div className="bg-blue-500/5 border border-blue-500/20 rounded-2xl p-4 space-y-2">
           <p className="text-xs font-bold text-blue-600 dark:text-blue-400 flex items-center gap-2">
-            <AppIcon name="Loader2" className="h-3.5 w-3.5" /> Aguardando confirmação do motoboy ({awaiting.length})
+            <Loader2 className="h-3.5 w-3.5" /> Aguardando confirmação do motoboy ({awaiting.length})
           </p>
           <p className="text-[11px] text-muted-foreground">
             Você marcou estas entregas como pagas. O motoboy precisa confirmar o recebimento no app dele.
@@ -226,9 +225,9 @@ const StoreDriverFinance = ({ storeId }: Props) => {
                     className="w-full bg-emerald-500 text-white font-bold py-2.5 rounded-xl text-sm disabled:opacity-50 flex items-center justify-center gap-2 active:scale-[0.98] transition-all"
                   >
                     {bulkDriverId === driverId ? (
-                      <AppIcon name="Loader2" className="h-4 w-4 animate-spin" />
+                      <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
-                      <AppIcon name="Banknote" className="h-4 w-4" />
+                      <Banknote className="h-4 w-4" />
                     )}
                     Quitar Tudo ({formatBRL(total)})
                   </button>
@@ -259,9 +258,9 @@ const StoreDriverFinance = ({ storeId }: Props) => {
                           className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-3 py-1.5 rounded-lg text-[11px] font-bold disabled:opacity-50 flex items-center gap-1"
                         >
                           {payingId === e.id ? (
-                            <AppIcon name="Loader2" className="h-3 w-3 animate-spin" />
+                            <Loader2 className="h-3 w-3 animate-spin" />
                           ) : (
-                            <AppIcon name="CheckCircle2" className="h-3 w-3" />
+                            <CheckCircle2 className="h-3 w-3" />
                           )}
                           Pago
                         </button>

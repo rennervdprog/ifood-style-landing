@@ -1,5 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import {
+  Loader2, Plus, X, Trash2, ArrowRightLeft, XCircle, Receipt, CheckCircle2,
+  Utensils, CreditCard, CircleDot, Clock, Users, Search, ChevronRight,
+} from "lucide-react";
 import { formatBRL } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { haptic } from "@/lib/haptics";
@@ -17,8 +21,6 @@ import {
   type PdvTabRow,
 } from "@/pages/pdv/state/usePdvTables";
 import type { Product, PdvSession } from "@/pages/pdv/types";
-import { AppIcon } from "@/components/ui/app-icon";
-import { Loader2, Plus, X, Trash2, ArrowRightLeft, XCircle, Receipt, CheckCircle2, Utensils, CreditCard, CircleDot, Clock, Users, Search, ChevronRight } from "lucide-react";
 
 interface Props {
   storeId: string;
@@ -150,7 +152,7 @@ export const PdvMesasView = ({ storeId, session, products }: Props) => {
         {!loading && tables.length === 0 && looseTabs.length === 0 && (
           <div className="text-center py-12 px-4">
             <div className="mx-auto w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mb-3">
-              <AppIcon name="Utensils" className="h-6 w-6 text-primary" />
+              <Utensils className="h-6 w-6 text-primary" />
             </div>
             <p className="font-bold text-sm mb-1">Nenhuma mesa cadastrada</p>
             <p className="text-xs text-muted-foreground mb-4">
@@ -194,7 +196,7 @@ export const PdvMesasView = ({ storeId, session, products }: Props) => {
                         </div>
                         <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
                           <span className="inline-flex items-center gap-0.5">
-                            <AppIcon name="Clock" className="h-2.5 w-2.5" /> {timeAgo(tab.opened_at)}
+                            <Clock className="h-2.5 w-2.5" /> {timeAgo(tab.opened_at)}
                           </span>
                           <span>·</span>
                           <span>{tot?.count ?? 0} itens</span>
@@ -205,7 +207,7 @@ export const PdvMesasView = ({ storeId, session, products }: Props) => {
                       </div>
                     ) : (
                       <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                        <AppIcon name="Users" className="h-3 w-3" /> {t.seats} lugares
+                        <Users className="h-3 w-3" /> {t.seats} lugares
                       </div>
                     )}
                   </button>
@@ -229,7 +231,7 @@ export const PdvMesasView = ({ storeId, session, products }: Props) => {
                   >
                     <div className="flex items-center justify-between">
                       <span className="font-black text-sm">{tab.code ? `#${tab.code}` : "Comanda"}</span>
-                      <AppIcon name="ChevronRight" className="h-3.5 w-3.5 text-muted-foreground" />
+                      <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
                     </div>
                     <div className="text-[15px] font-black tabular-nums mt-1">
                       {formatBRL(tot?.total ?? 0)}
@@ -254,7 +256,7 @@ export const PdvMesasView = ({ storeId, session, products }: Props) => {
         className="fixed bottom-24 right-4 z-20 h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center active:scale-95 transition"
         aria-label="Adicionar"
       >
-        <AppIcon name="Plus" className="h-6 w-6" />
+        <Plus className="h-6 w-6" />
       </button>
 
       {showAddSheet && (
@@ -264,7 +266,7 @@ export const PdvMesasView = ({ storeId, session, products }: Props) => {
             className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-accent text-left"
           >
             <div className="h-10 w-10 rounded-full bg-emerald-500/15 flex items-center justify-center">
-              <AppIcon name="Utensils" className="h-5 w-5 text-emerald-600" />
+              <Utensils className="h-5 w-5 text-emerald-600" />
             </div>
             <div>
               <div className="font-bold text-sm">Nova mesa</div>
@@ -276,7 +278,7 @@ export const PdvMesasView = ({ storeId, session, products }: Props) => {
             className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-accent text-left"
           >
             <div className="h-10 w-10 rounded-full bg-primary/15 flex items-center justify-center">
-              <AppIcon name="Receipt" className="h-5 w-5 text-primary" />
+              <Receipt className="h-5 w-5 text-primary" />
             </div>
             <div>
               <div className="font-bold text-sm">Comanda avulsa</div>
@@ -538,7 +540,7 @@ function TabDrawer({
     <div className="flex flex-col overflow-hidden h-full">
       <div className="p-2 border-b border-border">
         <div className="relative">
-          <AppIcon name="Search" className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
           <input
             autoFocus
             value={query}
@@ -566,7 +568,7 @@ function TabDrawer({
               <span className="text-sm font-bold tabular-nums shrink-0">
                 {formatBRL(Number(p.price ?? 0))}
               </span>
-              <AppIcon name="Plus" className="h-4 w-4 text-primary shrink-0" />
+              <Plus className="h-4 w-4 text-primary shrink-0" />
             </button>
           );
         })}
@@ -582,7 +584,7 @@ function TabDrawer({
       <div className="flex-1 overflow-y-auto p-2 space-y-1.5">
         {items.length === 0 && (
           <div className="text-center py-10 px-4">
-            <AppIcon name="Receipt" className="h-8 w-8 text-muted-foreground/40 mx-auto mb-2" />
+            <Receipt className="h-8 w-8 text-muted-foreground/40 mx-auto mb-2" />
             <p className="text-xs text-muted-foreground">
               Nenhum item ainda. Toque em <b>“Adicionar”</b> para começar.
             </p>
@@ -606,7 +608,7 @@ function TabDrawer({
               className="h-9 w-9 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 flex items-center justify-center shrink-0"
               aria-label="Remover"
             >
-              <AppIcon name="Trash2" className="h-4 w-4" />
+              <Trash2 className="h-4 w-4" />
             </button>
           </div>
         ))}
@@ -631,7 +633,7 @@ function TabDrawer({
             </div>
           </div>
           <button onClick={onClose} className="h-9 w-9 rounded-md hover:bg-accent flex items-center justify-center shrink-0">
-            <AppIcon name="X" className="h-4 w-4" />
+            <X className="h-4 w-4" />
           </button>
         </div>
 
@@ -651,7 +653,7 @@ function TabDrawer({
               mobileView === "add" ? "border-primary text-primary" : "border-transparent text-muted-foreground"
             }`}
           >
-            <AppIcon name="Plus" className="h-3.5 w-3.5" /> Adicionar
+            <Plus className="h-3.5 w-3.5" /> Adicionar
           </button>
         </div>
 
@@ -685,21 +687,21 @@ function TabDrawer({
               className="col-span-1 h-11 rounded-md border border-border hover:bg-accent flex items-center justify-center"
               aria-label="Transferir"
             >
-              <AppIcon name="ArrowRightLeft" className="h-4 w-4" />
+              <ArrowRightLeft className="h-4 w-4" />
             </button>
             <button
               onClick={() => setShowCancel(true)}
               className="col-span-1 h-11 rounded-md border border-destructive/40 text-destructive hover:bg-destructive/10 flex items-center justify-center"
               aria-label="Cancelar comanda"
             >
-              <AppIcon name="XCircle" className="h-4 w-4" />
+              <XCircle className="h-4 w-4" />
             </button>
             <button
               onClick={() => setShowClose(true)}
               disabled={items.length === 0 || !session}
               className="col-span-3 h-11 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 flex items-center justify-center gap-1.5 font-bold text-sm"
             >
-              <AppIcon name="Receipt" className="h-4 w-4" /> Fechar {formatBRL(total)}
+              <Receipt className="h-4 w-4" /> Fechar {formatBRL(total)}
             </button>
           </div>
           {!session && (
@@ -785,7 +787,7 @@ function CloseTabDialog({ tabId, sessionId, total, onClose, onDone }: {
         disabled={saving}
         className="w-full bg-primary text-primary-foreground rounded-md py-2 text-sm font-bold disabled:opacity-60 flex items-center justify-center gap-2"
       >
-        {saving ? <AppIcon name="Loader2" className="h-4 w-4 animate-spin" /> : <AppIcon name="CheckCircle2" className="h-4 w-4" />}
+        {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
         Confirmar pagamento
       </button>
     </ModalShell>
@@ -895,7 +897,7 @@ function ModalShell({ title, children, onClose }: { title: string; children: Rea
       <div className="bg-background rounded-lg w-full max-w-md p-4" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-3">
           <h4 className="font-bold text-sm">{title}</h4>
-          <button onClick={onClose} className="p-1"><AppIcon name="X" className="h-4 w-4" /></button>
+          <button onClick={onClose} className="p-1"><X className="h-4 w-4" /></button>
         </div>
         {children}
       </div>

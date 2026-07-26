@@ -3,13 +3,15 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import SignOutConfirm from "@/components/SignOutConfirm";
 import { toast } from "sonner";
+import {
+  Copy, LogOut, TrendingUp, Users, Wallet, Loader2, Download, MessageCircle,
+  User, Send, QrCode, Zap, ArrowUpRight, Gift, Building2, ChevronRight,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { AppIcon } from "@/components/ui/app-icon";
-import { Copy, LogOut, TrendingUp, Users, Wallet, Loader2, Download, MessageCircle, Send, QrCode, Zap, ArrowUpRight, Gift, Building2, ChevronRight } from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger,
 } from "@/components/ui/dialog";
@@ -187,7 +189,7 @@ export default function ResellerDashboard() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#FAFAFA]">
-        <AppIcon name="Loader2" className="h-8 w-8 animate-spin text-[#FF6A00]" />
+        <Loader2 className="h-8 w-8 animate-spin text-[#FF6A00]" />
       </div>
     );
   }
@@ -225,7 +227,7 @@ export default function ResellerDashboard() {
                 <Input value={rPix} onChange={e => setRPix(e.target.value)} placeholder="Sua chave" />
               </div>
               <Button onClick={handleRegister} disabled={rLoading} className="w-full bg-[#FF6A00] hover:bg-[#E65F00]">
-                {rLoading && <AppIcon name="Loader2" className="mr-2 h-4 w-4 animate-spin" />}
+                {rLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Cadastrar como revendedor
               </Button>
               <p className="text-xs text-muted-foreground text-center">
@@ -314,7 +316,7 @@ export default function ResellerDashboard() {
                   disabled={available < 5000 || isBlocked || isPending}
                   className="bg-[#FF6A00] hover:bg-[#E65F00] disabled:bg-neutral-200 disabled:text-neutral-400 text-white px-5 md:px-6 py-3 rounded-2xl font-bold text-sm transition-all shadow-md shadow-orange-100 flex items-center gap-2"
                 >
-                  <AppIcon name="Zap" className="h-4 w-4" /> Sacar via PIX
+                  <Zap className="h-4 w-4" /> Sacar via PIX
                 </button>
               </DialogTrigger>
               <DialogContent>
@@ -335,7 +337,7 @@ export default function ResellerDashboard() {
                 <DialogFooter>
                   <Button variant="outline" onClick={() => setWOpen(false)}>Cancelar</Button>
                   <Button onClick={requestWithdrawal} disabled={wLoading} className="bg-[#FF6A00] hover:bg-[#E65F00]">
-                    {wLoading && <AppIcon name="Loader2" className="mr-2 h-4 w-4 animate-spin" />}
+                    {wLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Confirmar saque
                   </Button>
                 </DialogFooter>
@@ -347,7 +349,7 @@ export default function ResellerDashboard() {
                 aria-label="Sair"
                 title="Sair"
               >
-                <AppIcon name="LogOut" className="h-4 w-4" />
+                <LogOut className="h-4 w-4" />
               </button>
             </SignOutConfirm>
           </div>
@@ -374,7 +376,7 @@ export default function ResellerDashboard() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
               <div className="bg-white p-5 rounded-3xl border border-neutral-100 flex flex-col gap-1">
                 <span className="text-[10px] text-neutral-500 font-bold uppercase tracking-wider flex items-center gap-1">
-                  <AppIcon name="Users" className="h-3 w-3" /> Lojas Ativas
+                  <Users className="h-3 w-3" /> Lojas Ativas
                 </span>
                 <div className="flex items-baseline gap-1">
                   <span className={`${font.sora} font-bold text-2xl`}>{s.active_referrals}</span>
@@ -383,7 +385,7 @@ export default function ResellerDashboard() {
               </div>
               <div className="bg-white p-5 rounded-3xl border border-neutral-100 flex flex-col gap-1">
                 <span className="text-[10px] text-neutral-500 font-bold uppercase tracking-wider flex items-center gap-1">
-                  <AppIcon name="TrendingUp" className="h-3 w-3" /> MRR Vitalício
+                  <TrendingUp className="h-3 w-3" /> MRR Vitalício
                 </span>
                 <span className={`${font.sora} font-bold text-2xl text-[#FF6A00]`}>
                   {(r.commission_rate * 100).toFixed(0)}%
@@ -391,7 +393,7 @@ export default function ResellerDashboard() {
               </div>
               <div className="bg-white p-5 rounded-3xl border border-neutral-100 flex flex-col gap-1">
                 <span className="text-[10px] text-neutral-500 font-bold uppercase tracking-wider flex items-center gap-1">
-                  <AppIcon name="Gift" className="h-3 w-3" /> Bônus / Loja
+                  <Gift className="h-3 w-3" /> Bônus / Loja
                 </span>
                 <span className={`${font.sora} font-bold text-2xl`}>
                   {brl(r.bounty_amount_cents)}
@@ -399,7 +401,7 @@ export default function ResellerDashboard() {
               </div>
               <div className="bg-white p-5 rounded-3xl border border-neutral-100 flex flex-col gap-1">
                 <span className="text-[10px] text-neutral-500 font-bold uppercase tracking-wider flex items-center gap-1">
-                  <AppIcon name="Wallet" className="h-3 w-3" /> Total Recebido
+                  <Wallet className="h-3 w-3" /> Total Recebido
                 </span>
                 <span className={`${font.sora} font-bold text-2xl`}>
                   {brl(s.withdrawn_cents)}
@@ -434,7 +436,7 @@ export default function ResellerDashboard() {
               {stores.length === 0 ? (
                 <div className="p-10 text-center">
                   <div className="w-14 h-14 rounded-2xl bg-orange-50 flex items-center justify-center mx-auto mb-3 text-[#FF6A00]">
-                    <AppIcon name="Building2" className="h-6 w-6" />
+                    <Building2 className="h-6 w-6" />
                   </div>
                   <p className="text-sm font-bold">Nenhuma loja indicada ainda</p>
                   <p className="text-xs text-neutral-400 mt-1">Compartilhe seu link no WhatsApp para começar</p>
@@ -513,7 +515,7 @@ export default function ResellerDashboard() {
             {/* Materiais de venda */}
             <div className="bg-white rounded-3xl border border-neutral-200 p-6">
               <h3 className={`${font.sora} font-bold text-lg mb-4 flex items-center gap-2`}>
-                <AppIcon name="Download" className="h-5 w-5 text-[#FF6A00]" /> Materiais de venda
+                <Download className="h-5 w-5 text-[#FF6A00]" /> Materiais de venda
               </h3>
               <a
                 href="/materiais/ItaSuper-Ebook-Lojistas-v2.pdf"
@@ -522,32 +524,32 @@ export default function ResellerDashboard() {
                 className="flex items-center gap-3 p-4 rounded-2xl border border-neutral-100 hover:bg-neutral-50 transition group"
               >
                 <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center text-[#FF6A00]">
-                  <AppIcon name="Download" className="h-5 w-5" />
+                  <Download className="h-5 w-5" />
                 </div>
                 <div className="flex-1">
                   <div className="text-sm font-bold">Ebook do Lojista (PDF)</div>
                   <div className="text-xs text-neutral-400">16 páginas — envie no WhatsApp antes de fechar</div>
                 </div>
-                <AppIcon name="ChevronRight" className="h-4 w-4 text-neutral-300 group-hover:text-[#FF6A00] transition" />
+                <ChevronRight className="h-4 w-4 text-neutral-300 group-hover:text-[#FF6A00] transition" />
               </a>
 
               <Accordion type="single" collapsible className="w-full mt-3">
                 <AccordionItem value="script-frio">
                   <AccordionTrigger className="text-sm">
-                    <AppIcon name="MessageCircle" className="h-4 w-4 mr-2 inline" /> Script de abordagem fria
+                    <MessageCircle className="h-4 w-4 mr-2 inline" /> Script de abordagem fria
                   </AccordionTrigger>
                   <AccordionContent className="text-sm space-y-2">
                     <p>Oi [Nome], tudo bem? Vi que você tem [nome da loja] aqui em [cidade].</p>
                     <p>Trabalho com o ItaSuper — um sistema de delivery próprio (site + app) que só cobra taxa quando a loja fatura acima de R$ 2.500/mês. Abaixo disso é 100% gratuito.</p>
                     <p>Faz sentido eu te mandar um resumo de 2 min pra ver se encaixa no seu momento?</p>
                     <Button size="sm" variant="outline" onClick={() => { navigator.clipboard.writeText("Oi [Nome], tudo bem? Vi que você tem [nome da loja] aqui em [cidade]. Trabalho com o ItaSuper — um sistema de delivery próprio (site + app) que só cobra taxa quando a loja fatura acima de R$ 2.500/mês. Abaixo disso é 100% gratuito. Faz sentido eu te mandar um resumo de 2 min pra ver se encaixa no seu momento?"); toast.success("Copiado"); }}>
-                      <AppIcon name="Copy" className="h-3 w-3 mr-1" /> Copiar
+                      <Copy className="h-3 w-3 mr-1" /> Copiar
                     </Button>
                   </AccordionContent>
                 </AccordionItem>
                 <AccordionItem value="script-followup">
                   <AccordionTrigger className="text-sm">
-                    <AppIcon name="MessageCircle" className="h-4 w-4 mr-2 inline" /> Follow-up (D+2)
+                    <MessageCircle className="h-4 w-4 mr-2 inline" /> Follow-up (D+2)
                   </AccordionTrigger>
                   <AccordionContent className="text-sm space-y-2">
                     <p>Oi [Nome], só relembrando o material do ItaSuper. Consegui ver o ebook?</p>
@@ -556,7 +558,7 @@ export default function ResellerDashboard() {
                 </AccordionItem>
                 <AccordionItem value="objecao">
                   <AccordionTrigger className="text-sm">
-                    <AppIcon name="MessageCircle" className="h-4 w-4 mr-2 inline" /> Objeção "vou pensar"
+                    <MessageCircle className="h-4 w-4 mr-2 inline" /> Objeção "vou pensar"
                   </AccordionTrigger>
                   <AccordionContent className="text-sm space-y-2">
                     <p>Entendo — a maior objeção que a gente ouve é "e se não vender?". Por isso o plano é grátis até faturar R$ 2.500/mês. Você só paga se já estiver ganhando com ele.</p>
@@ -584,7 +586,7 @@ export default function ResellerDashboard() {
                   onClick={() => copyLink(r.code)}
                   className="flex-1 py-3 bg-neutral-100 hover:bg-neutral-200 rounded-xl flex items-center justify-center transition-all text-neutral-700 font-bold text-xs gap-2"
                 >
-                  <AppIcon name="Copy" className="h-4 w-4" /> Copiar
+                  <Copy className="h-4 w-4" /> Copiar
                 </button>
                 <a
                   href={whatsShareUrl}
@@ -593,7 +595,7 @@ export default function ResellerDashboard() {
                   className="w-12 h-12 bg-emerald-50 hover:bg-emerald-100 rounded-xl flex items-center justify-center transition-all text-emerald-600"
                   title="Compartilhar no WhatsApp"
                 >
-                  <AppIcon name="Send" className="h-5 w-5" />
+                  <Send className="h-5 w-5" />
                 </a>
                 <a
                   href={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(referralUrl)}`}
@@ -602,7 +604,7 @@ export default function ResellerDashboard() {
                   className="w-12 h-12 bg-orange-50 hover:bg-orange-100 rounded-xl flex items-center justify-center transition-all text-[#FF6A00]"
                   title="Gerar QR Code"
                 >
-                  <AppIcon name="QrCode" className="h-5 w-5" />
+                  <QrCode className="h-5 w-5" />
                 </a>
               </div>
             </div>
@@ -653,7 +655,7 @@ export default function ResellerDashboard() {
                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
                           isBonus ? "bg-orange-50 text-[#FF6A00]" : "bg-neutral-50 text-neutral-400"
                         }`}>
-                          {isBonus ? <AppIcon name="Gift" className="h-5 w-5" /> : <AppIcon name="ArrowUpRight" className="h-5 w-5" />}
+                          {isBonus ? <Gift className="h-5 w-5" /> : <ArrowUpRight className="h-5 w-5" />}
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-bold truncate">
@@ -703,7 +705,7 @@ export default function ResellerDashboard() {
                       <DialogFooter>
                         <Button variant="outline" onClick={() => setPOpen(false)}>Cancelar</Button>
                         <Button onClick={savePix} disabled={pLoading} className="bg-[#FF6A00] hover:bg-[#E65F00]">
-                          {pLoading && <AppIcon name="Loader2" className="mr-2 h-4 w-4 animate-spin" />}
+                          {pLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                           Salvar
                         </Button>
                       </DialogFooter>

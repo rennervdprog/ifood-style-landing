@@ -4,9 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { toast } from "sonner";
-import { AppIcon } from "@/components/ui/app-icon";
 import { Loader2, Upload, CheckCircle2, AlertCircle, FileText, RefreshCw, Info } from "lucide-react";
+import { toast } from "sonner";
 
 interface AsaasDocument {
   id: string;
@@ -106,7 +105,7 @@ export default function AsaasDocumentsUpload({ storeId }: { storeId: string }) {
     return (
       <Card>
         <CardContent className="py-8 flex items-center justify-center">
-          <AppIcon name="Loader2" className="h-5 w-5 animate-spin text-muted-foreground" />
+          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
         </CardContent>
       </Card>
     );
@@ -118,12 +117,12 @@ export default function AsaasDocumentsUpload({ storeId }: { storeId: string }) {
     return (
       <Card>
         <CardContent className="py-6 text-center space-y-3">
-          <AppIcon name="CheckCircle2" className="h-8 w-8 text-green-600 mx-auto" />
+          <CheckCircle2 className="h-8 w-8 text-green-600 mx-auto" />
           <p className="text-sm text-muted-foreground">
             Nenhum documento adicional pendente no momento.
           </p>
           <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
-            <AppIcon name="RefreshCw" className={`h-3 w-3 mr-2 ${isFetching ? "animate-spin" : ""}`} />
+            <RefreshCw className={`h-3 w-3 mr-2 ${isFetching ? "animate-spin" : ""}`} />
             Atualizar
           </Button>
         </CardContent>
@@ -136,25 +135,25 @@ export default function AsaasDocumentsUpload({ storeId }: { storeId: string }) {
       <CardHeader className="py-3 px-4">
         <CardTitle className="text-sm flex items-center justify-between">
           <span className="flex items-center gap-2">
-            <AppIcon name="FileText" className="h-4 w-4 text-primary" />
+            <FileText className="h-4 w-4 text-primary" />
             Envio de Documentos
           </span>
           <Button variant="ghost" size="sm" onClick={() => refetch()} disabled={isFetching}>
-            <AppIcon name="RefreshCw" className={`h-3 w-3 ${isFetching ? "animate-spin" : ""}`} />
+            <RefreshCw className={`h-3 w-3 ${isFetching ? "animate-spin" : ""}`} />
           </Button>
         </CardTitle>
       </CardHeader>
       <CardContent className="py-2 px-4 space-y-3">
         {data?.rejectReasons && (
           <Alert className="border-red-500/40 bg-red-500/5">
-            <AppIcon name="AlertCircle" className="h-4 w-4 text-red-600" />
+            <AlertCircle className="h-4 w-4 text-red-600" />
             <AlertDescription className="text-xs text-red-700">
               <strong>Motivo da rejeição:</strong> {data.rejectReasons}
             </AlertDescription>
           </Alert>
         )}
         <Alert className="border-red-500/40 bg-red-500/5">
-          <AppIcon name="AlertCircle" className="h-4 w-4 text-red-600" />
+          <AlertCircle className="h-4 w-4 text-red-600" />
           <AlertDescription className="text-xs text-red-700">
             <strong>Envie apenas documentos reais e legíveis.</strong> Todos os arquivos passam por
             análise do Asaas. Documentos falsos, editados ou de terceiros resultam em bloqueio
@@ -163,7 +162,7 @@ export default function AsaasDocumentsUpload({ storeId }: { storeId: string }) {
         </Alert>
          <div className="p-3 bg-muted/40 rounded-xl space-y-2">
            <p className="text-[11px] font-bold text-foreground flex items-center gap-1">
-             <AppIcon name="Info" className="h-3 w-3" /> Dicas para aprovação rápida:
+             <Info className="h-3 w-3" /> Dicas para aprovação rápida:
            </p>
            <ul className="text-[10px] text-muted-foreground space-y-1 ml-4 list-disc">
              <li>Fotos nítidas e sem reflexo de luz.</li>
@@ -204,12 +203,12 @@ export default function AsaasDocumentsUpload({ storeId }: { storeId: string }) {
                 >
                   {isUp ? (
                     <>
-                      <AppIcon name="Loader2" className="h-3 w-3 animate-spin" />
+                      <Loader2 className="h-3 w-3 animate-spin" />
                       Enviando...
                     </>
                   ) : (
                     <>
-                      <AppIcon name="Upload" className="h-3 w-3" />
+                      <Upload className="h-3 w-3" />
                       {doc.status === "REJECTED" ? "Reenviar documento" : "Enviar documento"}
                     </>
                   )}

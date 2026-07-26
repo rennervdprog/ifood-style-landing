@@ -4,11 +4,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { AppIcon } from "@/components/ui/app-icon";
-import { Loader2, RefreshCw, Download } from "lucide-react";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import { Loader2, RefreshCw, Download } from "lucide-react";
 
 type Row = {
   id: string;
@@ -152,10 +151,10 @@ export default function PlatformWhatsAppHistory() {
           </div>
           <div className="flex gap-2">
             <Button size="sm" variant="ghost" onClick={() => refetch()}>
-              {isFetching ? <AppIcon name="Loader2" className="h-4 w-4 animate-spin" /> : <AppIcon name="RefreshCw" className="h-4 w-4" />}
+              {isFetching ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
             </Button>
             <Button size="sm" variant="outline" onClick={exportCsv} disabled={!filtered?.length}>
-              <AppIcon name="Download" className="h-4 w-4 mr-1" /> CSV
+              <Download className="h-4 w-4 mr-1" /> CSV
             </Button>
           </div>
         </div>
@@ -163,7 +162,7 @@ export default function PlatformWhatsAppHistory() {
 
       <div className="rounded-xl border bg-card divide-y">
         {isFetching && !rows?.length && (
-          <div className="p-8 text-center text-sm text-muted-foreground"><AppIcon name="Loader2" className="h-4 w-4 animate-spin inline mr-2" />Carregando…</div>
+          <div className="p-8 text-center text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin inline mr-2" />Carregando…</div>
         )}
         {!isFetching && !filtered.length && (
           <div className="p-8 text-center text-sm text-muted-foreground">Nenhum envio encontrado.</div>

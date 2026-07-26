@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { formatBRL } from "@/lib/utils";
 import { toast } from "sonner";
-import { AppIcon } from "@/components/ui/app-icon";
 import { Loader2, Undo2, Wallet, Banknote } from "lucide-react";
 
 interface Props {
@@ -84,12 +83,12 @@ export const ApparelReturnDialog = ({ open, onClose, orderId, onDone }: Props) =
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <AppIcon name="Undo2" className="h-4 w-4 text-primary" /> Trocar / Devolver
+            <Undo2 className="h-4 w-4 text-primary" /> Trocar / Devolver
           </DialogTitle>
         </DialogHeader>
 
         {loading ? (
-          <div className="py-8 flex justify-center"><AppIcon name="Loader2" className="h-5 w-5 animate-spin text-primary" /></div>
+          <div className="py-8 flex justify-center"><Loader2 className="h-5 w-5 animate-spin text-primary" /></div>
         ) : (
           <div className="space-y-3">
             <div className="space-y-1.5 max-h-64 overflow-y-auto pr-1">
@@ -131,14 +130,14 @@ export const ApparelReturnDialog = ({ open, onClose, orderId, onDone }: Props) =
                 onClick={() => setMode("credit")}
                 className={`flex flex-col items-center gap-1 p-3 rounded-lg border transition ${mode === "credit" ? "border-primary bg-primary/10" : "border-border bg-card"}`}
               >
-                <AppIcon name="Wallet" className={`h-4 w-4 ${mode === "credit" ? "text-primary" : "text-muted-foreground"}`} />
+                <Wallet className={`h-4 w-4 ${mode === "credit" ? "text-primary" : "text-muted-foreground"}`} />
                 <span className="text-[11px] font-bold">Vale-crédito</span>
               </button>
               <button
                 onClick={() => setMode("refund")}
                 className={`flex flex-col items-center gap-1 p-3 rounded-lg border transition ${mode === "refund" ? "border-primary bg-primary/10" : "border-border bg-card"}`}
               >
-                <AppIcon name="Banknote" className={`h-4 w-4 ${mode === "refund" ? "text-primary" : "text-muted-foreground"}`} />
+                <Banknote className={`h-4 w-4 ${mode === "refund" ? "text-primary" : "text-muted-foreground"}`} />
                 <span className="text-[11px] font-bold">Reembolso</span>
               </button>
             </div>
@@ -153,7 +152,7 @@ export const ApparelReturnDialog = ({ open, onClose, orderId, onDone }: Props) =
         <DialogFooter className="gap-2">
           <Button variant="ghost" onClick={onClose} disabled={saving}>Cancelar</Button>
           <Button onClick={submit} disabled={saving || totalReturn <= 0}>
-            {saving ? <AppIcon name="Loader2" className="h-4 w-4 animate-spin" /> : "Confirmar"}
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Confirmar"}
           </Button>
         </DialogFooter>
       </DialogContent>

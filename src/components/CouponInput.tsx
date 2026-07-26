@@ -2,9 +2,8 @@ import { formatBRL } from "@/lib/utils";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { toast } from "sonner";
-import { AppIcon } from "@/components/ui/app-icon";
 import { Tag, X, Loader2, CheckCircle2 } from "lucide-react";
+import { toast } from "sonner";
 
 interface CouponInputProps {
   subtotal: number;
@@ -127,14 +126,14 @@ const CouponInput = ({ subtotal, storeId, onApply, onRemove, appliedCode, applie
     return (
       <div className="flex items-center justify-between bg-green-500/10 border border-green-500/30 rounded-xl px-3 py-2.5">
         <div className="flex items-center gap-2">
-          <AppIcon name="CheckCircle2" className="h-4 w-4 text-green-500" />
+          <CheckCircle2 className="h-4 w-4 text-green-500" />
           <div>
             <span className="text-xs font-bold text-green-600">{appliedCode}</span>
             <p className="text-[10px] text-green-600/70">-{formatBRL(appliedDiscount)}</p>
           </div>
         </div>
         <button onClick={onRemove} className="text-muted-foreground hover:text-destructive">
-          <AppIcon name="X" className="h-4 w-4" />
+          <X className="h-4 w-4" />
         </button>
       </div>
     );
@@ -143,7 +142,7 @@ const CouponInput = ({ subtotal, storeId, onApply, onRemove, appliedCode, applie
   return (
     <div className="flex gap-2">
       <div className="relative flex-1">
-        <AppIcon name="Tag" className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+        <Tag className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
         <input
           type="text"
           inputMode="text"
@@ -162,7 +161,7 @@ const CouponInput = ({ subtotal, storeId, onApply, onRemove, appliedCode, applie
         disabled={!code.trim() || loading}
         className="bg-primary text-primary-foreground font-bold px-4 rounded-xl text-sm disabled:opacity-50"
       >
-        {loading ? <AppIcon name="Loader2" className="h-4 w-4 animate-spin" /> : "Aplicar"}
+        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Aplicar"}
       </button>
     </div>
   );

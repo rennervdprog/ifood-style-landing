@@ -1,13 +1,12 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Wallet, Store, Clock, FileText } from "lucide-react";
 import { formatBRL } from "@/lib/utils";
 import { KpiCard } from "@/components/ui/kpi-card";
 import AdminFixedPlanReceivables from "@/components/AdminFixedPlanReceivables";
 import AdminPlanTemplatesEditor from "@/components/AdminPlanTemplatesEditor";
 import AdminPlanManager from "@/components/AdminPlanManager";
-import { AppIcon } from "@/components/ui/app-icon";
-import { Wallet, Store, Clock, FileText } from "lucide-react";
 
 interface Kpis {
   receber: number;
@@ -57,15 +56,15 @@ export default function PlanosTab() {
       <Tabs defaultValue="lojas" className="w-full">
         <TabsList className="w-full grid grid-cols-3 h-auto p-1">
           <TabsTrigger value="lojas" className="flex items-center gap-1.5 py-2">
-            <AppIcon name="Store" className="h-4 w-4" />
+            <Store className="h-4 w-4" />
             <span>Lojas</span>
           </TabsTrigger>
           <TabsTrigger value="templates" className="flex items-center gap-1.5 py-2">
-            <AppIcon name="FileText" className="h-4 w-4" />
+            <FileText className="h-4 w-4" />
             <span>Templates</span>
           </TabsTrigger>
           <TabsTrigger value="receber" className="flex items-center gap-1.5 py-2 relative">
-            <AppIcon name="Wallet" className="h-4 w-4" />
+            <Wallet className="h-4 w-4" />
             <span>A Receber</span>
             {pendentesCount > 0 && (
               <span className="absolute -top-1 -right-1 h-5 min-w-[20px] px-1 rounded-full bg-amber-500 text-white text-[10px] font-bold flex items-center justify-center">

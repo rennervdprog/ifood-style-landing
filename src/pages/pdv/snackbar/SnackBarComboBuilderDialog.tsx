@@ -2,9 +2,8 @@ import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { formatBRL } from "@/lib/utils";
-import type { Product } from "@/pages/pdv/types";
-import { AppIcon } from "@/components/ui/app-icon";
 import { Loader2, X, Check } from "lucide-react";
+import type { Product } from "@/pages/pdv/types";
 
 interface Slot { name: string; product_ids: string[] }
 interface Combo {
@@ -77,11 +76,11 @@ export default function SnackBarComboBuilderDialog({ combo, storeId, onClose, on
             <h3 className="text-sm font-black">{combo.name}</h3>
             <p className="text-[11px] text-primary font-bold">{formatBRL(Number(combo.price))}</p>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded hover:bg-muted"><AppIcon name="X" className="h-4 w-4" /></button>
+          <button onClick={onClose} className="p-1.5 rounded hover:bg-muted"><X className="h-4 w-4" /></button>
         </div>
 
         <div className="p-4 space-y-4">
-          {isLoading && <AppIcon name="Loader2" className="h-5 w-5 animate-spin text-primary mx-auto" />}
+          {isLoading && <Loader2 className="h-5 w-5 animate-spin text-primary mx-auto" />}
           {slots.map((s, i) => (
             <div key={i}>
               <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
@@ -97,7 +96,7 @@ export default function SnackBarComboBuilderDialog({ combo, storeId, onClose, on
                       className={`text-left rounded-lg border p-2 transition-all ${sel ? "border-primary bg-primary/10" : "border-border hover:border-primary/40"}`}>
                       <div className="flex items-start justify-between gap-1">
                         <p className="text-xs font-bold line-clamp-2">{p.name}</p>
-                        {sel && <AppIcon name="Check" className="h-3.5 w-3.5 text-primary shrink-0" />}
+                        {sel && <Check className="h-3.5 w-3.5 text-primary shrink-0" />}
                       </div>
                     </button>
                   );

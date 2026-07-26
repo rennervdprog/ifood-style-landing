@@ -1,4 +1,3 @@
-import { AppIcon } from "@/components/ui/app-icon";
 import { ArrowDownCircle, ArrowUpCircle, Loader2 } from "lucide-react";
 
 // Slugs mapeados 1:1 ao enum pdv_movements.reason_category (Fase 1 item 5).
@@ -45,8 +44,8 @@ export const PdvMovementDialog = ({
     >
       <div className="flex items-center gap-3">
         {type === "sangria"
-          ? <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center"><AppIcon name="ArrowDownCircle" className="h-5 w-5 text-red-500" /></div>
-          : <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center"><AppIcon name="ArrowUpCircle" className="h-5 w-5 text-blue-500" /></div>
+          ? <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center"><ArrowDownCircle className="h-5 w-5 text-red-500" /></div>
+          : <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center"><ArrowUpCircle className="h-5 w-5 text-blue-500" /></div>
         }
         <div>
           <h3 className="font-black text-base capitalize">{type}</h3>
@@ -114,7 +113,7 @@ export const PdvMovementDialog = ({
             type === "sangria" ? "bg-red-500 hover:bg-red-600" : "bg-blue-500 hover:bg-blue-600"
           } transition-colors`}
         >
-          {loading ? <AppIcon name="Loader2" className="h-4 w-4 animate-spin" /> : "Confirmar"}
+          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Confirmar"}
         </button>
       </div>
     </div>

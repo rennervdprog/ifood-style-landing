@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
+import { Smartphone, X, Download } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { isCapacitorNative } from "@/lib/capacitorNative";
 import { isGoNative } from "@/lib/gonative";
-import { AppIcon } from "@/components/ui/app-icon";
-import { Smartphone, X, Download } from "lucide-react";
 
 /**
  * Banner exibido APENAS em navegadores Android (não-Capacitor, não-iOS),
@@ -68,11 +67,11 @@ const DownloadAppPrompt = () => {
         aria-label="Fechar"
         className="absolute top-3 right-3 text-muted-foreground hover:text-foreground"
       >
-        <AppIcon name="X" className="h-4 w-4" />
+        <X className="h-4 w-4" />
       </button>
       <div className="flex items-center gap-3">
         <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-          <AppIcon name="Smartphone" className="h-6 w-6 text-primary" />
+          <Smartphone className="h-6 w-6 text-primary" />
         </div>
         <div className="flex-1 min-w-0 pr-6">
           <h3 className="font-bold text-sm text-foreground">Baixe o app no Android</h3>
@@ -87,7 +86,7 @@ const DownloadAppPrompt = () => {
           }}
           className="bg-primary text-primary-foreground font-bold px-4 py-2 rounded-xl text-sm flex items-center gap-1.5 whitespace-nowrap active:scale-95 transition-transform"
         >
-          <AppIcon name="Download" className="h-3.5 w-3.5" />
+          <Download className="h-3.5 w-3.5" />
           Baixar
         </button>
       </div>

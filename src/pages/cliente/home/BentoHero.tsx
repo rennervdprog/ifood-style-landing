@@ -2,7 +2,7 @@ import { memo, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { AppIcon } from "@/components/ui/app-icon";
+import { ChevronRight, Wallet, Truck } from "lucide-react";
 
 /**
  * Bento hero — 1 banner grande + 2 mini-cards fixos (cashback / frete grátis).
@@ -75,7 +75,7 @@ const BentoHero = memo(({ activeAction, onExploreStores, onSelectNoFee, onSelect
             <p className="text-xs opacity-90 mt-0.5 line-clamp-1">{main.subtitle}</p>
           )}
           <div className="flex items-center gap-0.5 mt-2 text-[11px] font-bold opacity-95">
-            Ver mais <AppIcon name="alt-arrow-right" variant="linear" className="h-3 w-3" />
+            Ver mais <ChevronRight className="h-3 w-3" />
           </div>
         </div>
       </button>
@@ -91,7 +91,7 @@ const BentoHero = memo(({ activeAction, onExploreStores, onSelectNoFee, onSelect
             : "bg-primary/10 border-primary/20"
         }`}
       >
-        <AppIcon name="wallet" variant="bold-duotone" className={`h-4 w-4 ${activeAction === "no_fee" ? "text-primary-foreground" : "text-primary"}`} />
+        <Wallet className={`h-4 w-4 ${activeAction === "no_fee" ? "text-primary-foreground" : "text-primary"}`} />
         <div>
           <p className={`font-display font-bold text-xs leading-tight ${activeAction === "no_fee" ? "text-primary-foreground" : "text-foreground"}`}>Sem taxa</p>
           <p className={`text-[10px] leading-tight ${activeAction === "no_fee" ? "text-primary-foreground/80" : "text-muted-foreground"}`}>de serviço</p>
@@ -109,7 +109,7 @@ const BentoHero = memo(({ activeAction, onExploreStores, onSelectNoFee, onSelect
             : "bg-card border-border"
         }`}
       >
-        <AppIcon name="delivery" variant="bold-duotone" className={`h-4 w-4 ${activeAction === "direct_delivery" ? "text-primary-foreground" : "text-primary"}`} />
+        <Truck className={`h-4 w-4 ${activeAction === "direct_delivery" ? "text-primary-foreground" : "text-primary"}`} />
         <div>
           <p className={`font-display font-bold text-xs leading-tight ${activeAction === "direct_delivery" ? "text-primary-foreground" : "text-foreground"}`}>Entrega</p>
           <p className={`text-[10px] leading-tight ${activeAction === "direct_delivery" ? "text-primary-foreground/80" : "text-muted-foreground"}`}>direta da loja</p>

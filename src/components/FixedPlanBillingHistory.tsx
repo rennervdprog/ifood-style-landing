@@ -1,10 +1,9 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { Receipt, ChevronDown, ChevronUp, CheckCircle2, Clock, XCircle, Copy, Info } from "lucide-react";
 import { formatBRL } from "@/lib/utils";
 import { toast } from "sonner";
-import { AppIcon } from "@/components/ui/app-icon";
-import { Receipt, ChevronDown, ChevronUp, CheckCircle2, Clock, XCircle, Copy } from "lucide-react";
 
 interface Props {
   storeId: string;
@@ -57,7 +56,7 @@ const FixedPlanBillingHistory = ({ storeId, storeName }: Props) => {
         className="w-full flex items-center justify-between p-3 hover:bg-muted/40 transition-colors"
       >
         <div className="flex items-center gap-2">
-          <AppIcon name="Receipt" className="h-4 w-4 text-primary" />
+          <Receipt className="h-4 w-4 text-primary" />
           <span className="text-sm font-semibold">Histórico de cobranças</span>
           {open && total > 0 && (
             <span className="text-[10px] text-muted-foreground">
@@ -65,7 +64,7 @@ const FixedPlanBillingHistory = ({ storeId, storeName }: Props) => {
             </span>
           )}
         </div>
-        {open ? <AppIcon name="ChevronUp" className="h-4 w-4" /> : <AppIcon name="ChevronDown" className="h-4 w-4" />}
+        {open ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
       </button>
 
       {open && (
@@ -107,7 +106,7 @@ const FixedPlanBillingHistory = ({ storeId, storeName }: Props) => {
                           }}
                           className="text-[10px] text-primary hover:underline flex items-center gap-1"
                         >
-                          <AppIcon name="Copy" className="h-3 w-3" /> Pagar PIX
+                          <Copy className="h-3 w-3" /> Pagar PIX
                         </button>
                       )}
                     </div>

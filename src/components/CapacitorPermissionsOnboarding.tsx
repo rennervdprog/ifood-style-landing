@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
+import { Bell, MapPin, Check } from "lucide-react";
 import { isCapacitorNative, registerCapacitorPush, requestLocationPermission } from "@/lib/capacitorNative";
 import { isPartnerCapacitorApp } from "@/lib/capacitorAppMode";
-import { AppIcon } from "@/components/ui/app-icon";
-import { Bell, MapPin, Check } from "lucide-react";
 
 const STORAGE_KEY = "cap-permissions-onboarding-v4";
 
@@ -89,7 +88,7 @@ const CapacitorPermissionsOnboarding = () => {
         {step === "notifications" && (
           <>
             <div className="w-28 h-28 rounded-3xl bg-primary/10 flex items-center justify-center mb-8 animate-in zoom-in duration-500">
-              <AppIcon name="Bell" className="h-14 w-14 text-primary" />
+              <Bell className="h-14 w-14 text-primary" />
             </div>
             {isPartnerCapacitorApp() ? (
               <>
@@ -118,7 +117,7 @@ const CapacitorPermissionsOnboarding = () => {
         {step === "location" && (
           <>
             <div className="w-28 h-28 rounded-3xl bg-primary/10 flex items-center justify-center mb-8 animate-in zoom-in duration-500">
-              <AppIcon name="MapPin" className="h-14 w-14 text-primary" />
+              <MapPin className="h-14 w-14 text-primary" />
             </div>
             {isPartnerCapacitorApp() ? (
               <>
@@ -147,7 +146,7 @@ const CapacitorPermissionsOnboarding = () => {
         {step === "done" && (
           <>
             <div className="w-28 h-28 rounded-3xl bg-emerald-500/10 flex items-center justify-center mb-8 animate-in zoom-in duration-500">
-              <AppIcon name="Check" className="h-14 w-14 text-emerald-500" />
+              <Check className="h-14 w-14 text-emerald-500" />
             </div>
             <h1 className="text-2xl font-bold text-foreground mb-3">Tudo pronto!</h1>
             <p className="text-base text-muted-foreground leading-relaxed max-w-sm">

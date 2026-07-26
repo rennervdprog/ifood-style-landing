@@ -1,4 +1,5 @@
 import { useState, ReactNode } from "react";
+import { Loader2, LogOut } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -13,8 +14,6 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { AppIcon } from "@/components/ui/app-icon";
-import { Loader2, LogOut } from "lucide-react";
 
 interface SignOutConfirmProps {
   /** Custom trigger element. If not provided, a default icon button is rendered. */
@@ -88,7 +87,7 @@ const SignOutConfirm = ({
                   "p-2 rounded-xl hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
                 }
               >
-                <AppIcon name="LogOut" className="h-4 w-4" />
+                <LogOut className="h-4 w-4" />
               </button>
             )}
           </AlertDialogTrigger>
@@ -96,7 +95,7 @@ const SignOutConfirm = ({
         <AlertDialogContent className="rounded-2xl">
           <AlertDialogHeader>
             <div className="mx-auto sm:mx-0 w-12 h-12 rounded-2xl bg-destructive/10 flex items-center justify-center mb-2">
-              <AppIcon name="LogOut" className="h-6 w-6 text-destructive" />
+              <LogOut className="h-6 w-6 text-destructive" />
             </div>
             <AlertDialogTitle>Deseja realmente sair?</AlertDialogTitle>
             <AlertDialogDescription>
@@ -122,7 +121,7 @@ const SignOutConfirm = ({
           aria-live="polite"
         >
           <div className="w-14 h-14 rounded-2xl bg-destructive/10 flex items-center justify-center animate-scale-in">
-            <AppIcon name="Loader2" className="h-7 w-7 text-destructive animate-spin" />
+            <Loader2 className="h-7 w-7 text-destructive animate-spin" />
           </div>
           <p className="text-sm font-semibold text-foreground">Saindo...</p>
           <p className="text-xs text-muted-foreground">Até logo! 👋</p>

@@ -2,10 +2,9 @@ import { formatBRL } from "@/lib/utils";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { Banknote, QrCode, Copy, Loader2, X, ChevronDown, ChevronUp, CircleCheck, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { AppIcon } from "@/components/ui/app-icon";
-import { Banknote, QrCode, Copy, Loader2, X, AlertCircle } from "lucide-react";
 
 const LOCK_THRESHOLD = 500;  // R$500 → modal bloqueante
 const MIN_CHARGE = 30;       // R$30 → aparece o alerta (cobrança toda segunda-feira)
@@ -157,7 +156,7 @@ const PlatformSplitAlert = ({ storeId, storeName, splitPerOrder, onGoToFinance }
           {/* Header vermelho */}
           <div className="bg-red-500/10 border-b border-red-500/20 px-5 py-4 flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-red-500/15 flex items-center justify-center shrink-0">
-              <AppIcon name="AlertCircle" className="h-5 w-5 text-red-500" />
+              <AlertCircle className="h-5 w-5 text-red-500" />
             </div>
             <div>
               <p className="text-sm font-black text-foreground">Pagamento obrigatório</p>
@@ -197,7 +196,7 @@ const PlatformSplitAlert = ({ storeId, storeName, splitPerOrder, onGoToFinance }
                 )}
                 {pixData.qr_code && (
                   <button onClick={copyPixCode} className="w-full flex items-center justify-center gap-2 border border-border bg-muted/40 rounded-xl py-2.5 text-sm font-bold active:scale-[0.98] transition-transform">
-                    <AppIcon name="Copy" className="h-4 w-4" /> Copiar Código PIX
+                    <Copy className="h-4 w-4" /> Copiar Código PIX
                   </button>
                 )}
                 <p className="text-[10px] text-muted-foreground text-center">Após o pagamento, o painel é liberado automaticamente.</p>
@@ -206,8 +205,8 @@ const PlatformSplitAlert = ({ storeId, storeName, splitPerOrder, onGoToFinance }
               <button onClick={handlePayFee} disabled={generating}
                 className="w-full h-13 bg-red-500 text-white font-black rounded-2xl text-sm flex items-center justify-center gap-2 active:scale-[0.98] transition-transform disabled:opacity-60 shadow-lg shadow-red-500/25 py-3.5">
                 {generating
-                  ? <><AppIcon name="Loader2" className="h-4 w-4 animate-spin" /> Gerando PIX...</>
-                  : <><AppIcon name="QrCode" className="h-4 w-4" /> Gerar PIX — {formatBRL(total)}</>}
+                  ? <><Loader2 className="h-4 w-4 animate-spin" /> Gerando PIX...</>
+                  : <><QrCode className="h-4 w-4" /> Gerar PIX — {formatBRL(total)}</>}
               </button>
             )}
 
@@ -230,7 +229,7 @@ const PlatformSplitAlert = ({ storeId, storeName, splitPerOrder, onGoToFinance }
         {/* Header */}
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-2">
-            <AppIcon name="Banknote" className="h-6 w-6 text-blue-500" />
+            <Banknote className="h-6 w-6 text-blue-500" />
             <div>
               <h3 className="font-bold text-sm text-foreground">
                 Repasse Pendente — Taxa Plataforma
@@ -253,7 +252,7 @@ const PlatformSplitAlert = ({ storeId, storeName, splitPerOrder, onGoToFinance }
 
         {/* Info */}
         <div className="rounded-xl p-3 bg-blue-500/10 border border-blue-500/20 flex items-start gap-2">
-          <AppIcon name="Banknote" className="h-4 w-4 text-blue-400 shrink-0 mt-0.5" />
+          <Banknote className="h-4 w-4 text-blue-400 shrink-0 mt-0.5" />
           <div className="text-xs font-medium text-blue-400 space-y-1">
             <p>Pedidos pagos em <strong>dinheiro, cartão ou PIX maquininha</strong> acumulam aqui.</p>
             <p>O sistema gera uma cobrança via PIX toda <strong>segunda-feira</strong> quando o saldo atingir <strong>R$30</strong>.</p>
@@ -275,7 +274,7 @@ const PlatformSplitAlert = ({ storeId, storeName, splitPerOrder, onGoToFinance }
             <div className="flex items-center justify-between">
               <p className="text-sm font-bold text-foreground">Pague via PIX</p>
               <button onClick={() => setPixData(null)} className="text-muted-foreground hover:text-foreground">
-                <AppIcon name="X" className="h-4 w-4" />
+                <X className="h-4 w-4" />
               </button>
             </div>
             <p className="text-2xl font-black text-center text-foreground">{formatBRL(pixData.amount)}</p>
@@ -291,7 +290,7 @@ const PlatformSplitAlert = ({ storeId, storeName, splitPerOrder, onGoToFinance }
             )}
             {pixData.qr_code && (
               <Button onClick={copyPixCode} variant="outline" className="w-full">
-                <AppIcon name="Copy" className="h-4 w-4" /> Copiar Código PIX
+                <Copy className="h-4 w-4" /> Copiar Código PIX
               </Button>
             )}
             <p className="text-[10px] text-muted-foreground text-center">
@@ -306,9 +305,9 @@ const PlatformSplitAlert = ({ storeId, storeName, splitPerOrder, onGoToFinance }
             size="lg"
           >
             {generating ? (
-              <><AppIcon name="Loader2" className="h-4 w-4 animate-spin" /> Gerando PIX...</>
+              <><Loader2 className="h-4 w-4 animate-spin" /> Gerando PIX...</>
             ) : (
-              <><AppIcon name="QrCode" className="h-4 w-4" /> Pagar Pendência via PIX</>
+              <><QrCode className="h-4 w-4" /> Pagar Pendência via PIX</>
             )}
           </Button>
         ) : (

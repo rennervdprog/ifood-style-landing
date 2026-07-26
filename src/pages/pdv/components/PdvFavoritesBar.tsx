@@ -1,9 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
+import { Star } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { formatBRL } from "@/lib/utils";
 import type { Product } from "@/pages/pdv/types";
-import { AppIcon } from "@/components/ui/app-icon";
-import { Star } from "lucide-react";
 
 interface Props {
   storeId?: string | null;
@@ -62,7 +61,7 @@ export const PdvFavoritesBar = ({ storeId, products, addItem, getQty }: Props) =
   return (
     <div className="px-3 pt-2.5 shrink-0">
       <div className="flex items-center gap-1.5 mb-1.5">
-        <AppIcon name="Star" className="h-3 w-3 text-amber-500 fill-amber-500" />
+        <Star className="h-3 w-3 text-amber-500 fill-amber-500" />
         <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">
           Mais vendidos (30d)
         </span>

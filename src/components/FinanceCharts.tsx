@@ -6,13 +6,12 @@
 
 import { useMemo } from "react";
 import { formatBRL } from "@/lib/utils";
-import { AppIcon } from "@/components/ui/app-icon";
-import { TrendingUp, TrendingDown, Minus } from "lucide-react";
 import {
   AreaChart, Area, BarChart, Bar, LineChart, Line,
   XAxis, YAxis, Tooltip, ResponsiveContainer,
   CartesianGrid, Legend, PieChart, Pie, Cell, ReferenceLine,
 } from "recharts";
+import { TrendingUp, TrendingDown, Minus } from "lucide-react";
 
 // ─── Cores padrão ────────────────────────────────────────────────────────────
 
@@ -254,10 +253,10 @@ export const KpiCard = ({ label, value, sublabel, trend, color = "primary", mini
           <div className="flex items-center gap-1 mt-0.5">
             {trend !== undefined && (
               trend > 0
-                ? <AppIcon name="TrendingUp" className="h-3 w-3 text-emerald-500" />
+                ? <TrendingUp className="h-3 w-3 text-emerald-500" />
                 : trend < 0
-                  ? <AppIcon name="TrendingDown" className="h-3 w-3 text-red-400" />
-                  : <AppIcon name="Minus" className="h-3 w-3 text-muted-foreground" />
+                  ? <TrendingDown className="h-3 w-3 text-red-400" />
+                  : <Minus className="h-3 w-3 text-muted-foreground" />
             )}
             {trend !== undefined && (
               <span className={`text-[10px] font-bold ${trend > 0 ? "text-emerald-500" : trend < 0 ? "text-red-400" : "text-muted-foreground"}`}>

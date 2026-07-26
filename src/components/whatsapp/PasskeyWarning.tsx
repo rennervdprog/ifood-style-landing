@@ -4,7 +4,6 @@
  * Se o usuário não consegue parear, provavelmente a conta tem passkey ativa.
  */
 import { useState } from "react";
-import { AppIcon } from "@/components/ui/app-icon";
 import { ShieldAlert, ChevronDown, ChevronUp } from "lucide-react";
 
 interface Props {
@@ -26,11 +25,11 @@ export default function PasskeyWarning({ highlight = false, className = "" }: Pr
         onClick={() => setOpen((v) => !v)}
         className="w-full flex items-center gap-2 px-3 py-2.5 text-left"
       >
-        <AppIcon name="ShieldAlert" className="h-4 w-4 shrink-0" />
+        <ShieldAlert className="h-4 w-4 shrink-0" />
         <p className="text-xs font-bold flex-1">
           {highlight ? "Não conectou? Pode ser Passkey" : "Sua conta tem Passkey do WhatsApp?"}
         </p>
-        {open ? <AppIcon name="ChevronUp" className="h-3.5 w-3.5" /> : <AppIcon name="ChevronDown" className="h-3.5 w-3.5" />}
+        {open ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
       </button>
       {open && (
         <div className="px-3 pb-3 space-y-2 text-[11px] text-foreground/80 leading-relaxed">

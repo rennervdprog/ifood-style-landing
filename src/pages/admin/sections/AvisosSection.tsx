@@ -1,4 +1,3 @@
-import { AppIcon } from "@/components/ui/app-icon";
 import { AlertTriangle, ChevronRight, Clock, Bike, Bell, CheckCircle2 } from "lucide-react";
 
 interface Props {
@@ -26,7 +25,7 @@ export default function AvisosSection({
     <div className="p-4 lg:p-6 max-w-6xl mx-auto space-y-4">
       <div className="flex items-center gap-3 mb-1">
         <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center">
-          <AppIcon name="Bell" className="h-5 w-5 text-primary" />
+          <Bell className="h-5 w-5 text-primary" />
         </div>
         <div>
           <h2 className="text-lg font-black text-foreground tracking-tight">Avisos</h2>
@@ -41,7 +40,7 @@ export default function AvisosSection({
       {count === 0 && (
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <div className="w-20 h-20 rounded-3xl bg-emerald-500/10 flex items-center justify-center mb-4">
-            <AppIcon name="CheckCircle2" className="h-10 w-10 text-emerald-500" />
+            <CheckCircle2 className="h-10 w-10 text-emerald-500" />
           </div>
           <h3 className="font-black text-foreground mb-1">Tudo em ordem! 🎉</h3>
           <p className="text-sm text-muted-foreground max-w-xs">
@@ -56,7 +55,7 @@ export default function AvisosSection({
           className="w-full text-left bg-destructive/10 border-2 border-destructive/40 rounded-2xl p-4 flex items-start gap-3 active:scale-[0.99] transition-transform"
         >
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-destructive text-destructive-foreground flex-shrink-0">
-            <AppIcon name="AlertTriangle" className="h-5 w-5" />
+            <AlertTriangle className="h-5 w-5" />
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="font-black text-destructive text-sm">
@@ -66,7 +65,7 @@ export default function AvisosSection({
               Você ainda não criou sua subconta Asaas. <strong>Sem ela, você não recebe os pagamentos PIX</strong> dos pedidos. Leva 2 minutos e é gratuito.
             </p>
             <span className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-destructive-foreground bg-destructive px-3 py-1.5 rounded-lg">
-              Configurar agora <AppIcon name="ChevronRight" className="h-3 w-3" />
+              Configurar agora <ChevronRight className="h-3 w-3" />
             </span>
           </div>
         </button>
@@ -74,7 +73,7 @@ export default function AvisosSection({
 
       {allHoursClosed && (
         <div className="bg-muted border border-border rounded-2xl p-4 flex items-start gap-3">
-          <AppIcon name="AlertTriangle" className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+          <AlertTriangle className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
           <div className="flex-1">
             <h3 className="font-bold text-foreground text-sm">Configure seus horários</h3>
             <p className="text-xs text-muted-foreground mt-1">Sua loja está com todos os horários fechados.</p>
@@ -82,7 +81,7 @@ export default function AvisosSection({
               onClick={() => setDashboardTab("hours")}
               className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-primary-foreground bg-primary hover:bg-primary/90 px-3 py-1.5 rounded-lg transition-colors"
             >
-              <AppIcon name="Clock" className="inline h-3 w-3 mr-1" /> Configurar Horários
+              <Clock className="inline h-3 w-3 mr-1" /> Configurar Horários
             </button>
           </div>
         </div>
@@ -90,7 +89,7 @@ export default function AvisosSection({
 
       {isOwnDelivery && !driversLoading && !hasLinkedDrivers && (
         <div className="bg-destructive/10 border-2 border-destructive/30 rounded-2xl p-4 flex items-start gap-3">
-          <AppIcon name="AlertTriangle" className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
+          <AlertTriangle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
           <div className="flex-1">
             <h3 className="font-bold text-destructive text-sm">Cadastre um motoboy para receber pedidos</h3>
             <p className="text-xs text-muted-foreground mt-1">
@@ -100,7 +99,7 @@ export default function AvisosSection({
               onClick={() => setDashboardTab("drivers")}
               className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-destructive-foreground bg-destructive hover:bg-destructive/90 px-3 py-1.5 rounded-lg transition-colors"
             >
-              <AppIcon name="Bike" className="inline h-3 w-3 mr-1" /> Cadastrar Motoboy Agora
+              <Bike className="inline h-3 w-3 mr-1" /> Cadastrar Motoboy Agora
             </button>
           </div>
         </div>

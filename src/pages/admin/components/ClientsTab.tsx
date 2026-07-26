@@ -1,10 +1,12 @@
 import { memo } from "react";
+import {
+  Users, Heart, UserX, MapPinned, Search, AlertTriangle, ChevronUp, ChevronDown, Star,
+  Sparkles, Repeat, Crown, Clock, TrendingUp, Calendar, Download, ArrowUpDown,
+} from "lucide-react";
 import { formatBRL } from "@/lib/utils";
 import { formatCurrency } from "@/lib/utils";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import { statusColors } from "../constants";
-import { AppIcon } from "@/components/ui/app-icon";
-import { Users, UserX, MapPinned, Search, AlertTriangle, ChevronUp, ChevronDown, Star, Sparkles, Repeat, Crown, Clock, TrendingUp, Download, ArrowUpDown } from "lucide-react";
 
 export type ClientFilter =
   | "all" | "new" | "weekly" | "vip" | "atrisk"
@@ -144,14 +146,14 @@ const ClientsTabImpl = ({
       {/* Busca + ordenação + export */}
       <div className="flex gap-2 items-stretch">
         <div className="relative flex-1">
-          <AppIcon name="Search" className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <input type="text" value={clientSearch} onChange={e => setClientSearch(e.target.value)}
             placeholder="Buscar nome, bairro, telefone..."
             className="w-full pl-10 pr-3 py-2.5 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
         </div>
         {setClientSort && (
           <div className="relative">
-            <AppIcon name="ArrowUpDown" className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+            <ArrowUpDown className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
             <select value={clientSort} onChange={e => setClientSort(e.target.value as ClientSort)}
               className="appearance-none pl-8 pr-7 py-2.5 rounded-xl border border-border bg-card text-foreground text-xs font-bold focus:outline-none focus:ring-2 focus:ring-primary/50">
               <option value="orders">Mais pedidos</option>
@@ -165,13 +167,13 @@ const ClientsTabImpl = ({
           disabled={filteredClients.length === 0}
           title="Exportar CSV"
           className="px-3 py-2.5 rounded-xl border border-border bg-card text-foreground text-xs font-bold flex items-center gap-1.5 hover:bg-accent/40 disabled:opacity-40 disabled:cursor-not-allowed">
-          <AppIcon name="Download" className="h-3.5 w-3.5" />
+          <Download className="h-3.5 w-3.5" />
         </button>
       </div>
 
       {(clientFilter === "inactive30" || clientFilter === "inactive45" || clientFilter === "inactive60") && filteredClients.length > 0 && (
         <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 flex items-center gap-2">
-          <AppIcon name="AlertTriangle" className="h-4 w-4 text-amber-500 flex-shrink-0" />
+          <AlertTriangle className="h-4 w-4 text-amber-500 flex-shrink-0" />
           <p className="text-xs text-amber-600 dark:text-amber-400">
             <span className="font-bold">{filteredClients.length} clientes</span> sem pedidos —
             envie uma campanha de reativação com cupom no WhatsApp.
@@ -182,7 +184,7 @@ const ClientsTabImpl = ({
       <div className="space-y-2">
         {filteredClients.length === 0 ? (
           <div className="text-center py-12">
-            <AppIcon name="Users" className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+            <Users className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
             <p className="text-sm text-muted-foreground font-bold">
               {clientFilter === "atrisk" ? "Nenhum cliente em risco — bom trabalho!" :
                clientFilter === "inactive30" || clientFilter === "inactive45" || clientFilter === "inactive60" ? "Nenhum cliente inativo neste período" :
@@ -229,7 +231,7 @@ const ClientsTabImpl = ({
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                {expandedClient === client.clientId ? <AppIcon name="ChevronUp" className="h-4 w-4 text-muted-foreground" /> : <AppIcon name="ChevronDown" className="h-4 w-4 text-muted-foreground" />}
+                {expandedClient === client.clientId ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
               </div>
             </button>
 
@@ -246,7 +248,7 @@ const ClientsTabImpl = ({
                   </div>
                   <div className="bg-muted/50 rounded-xl p-2.5 text-center">
                     <div className="flex items-center justify-center gap-1">
-                      <AppIcon name="Star" className="h-3.5 w-3.5 text-amber-400 fill-amber-400" />
+                      <Star className="h-3.5 w-3.5 text-amber-400 fill-amber-400" />
                       <p className="text-xs font-black text-foreground truncate">{client.favProduct}</p>
                     </div>
                     <p className="text-[10px] text-muted-foreground">Favorito</p>

@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
-import { formatBRL, addMoney } from "@/lib/utils";
-import { AppIcon } from "@/components/ui/app-icon";
 import { ChevronDown, Coins } from "lucide-react";
+import { formatBRL, addMoney } from "@/lib/utils";
 
 const DENOMINATIONS = [
   { value: 200, label: "R$ 200" },
@@ -50,11 +49,11 @@ export const PdvDenominationCount = ({ onChange }: Props) => {
         onClick={() => setOpen((v) => !v)}
         className="w-full px-3 py-2.5 flex items-center gap-2 hover:bg-muted/50 transition-colors"
       >
-        <AppIcon name="Coins" className="h-4 w-4 text-amber-500" />
+        <Coins className="h-4 w-4 text-amber-500" />
         <span className="text-xs font-bold flex-1 text-left">
           Conferência por cédula {total > 0 && <span className="text-muted-foreground font-medium">— soma: {formatBRL(total)}</span>}
         </span>
-        <AppIcon name="ChevronDown" className={`h-4 w-4 transition-transform ${open ? "rotate-180" : ""}`} />
+        <ChevronDown className={`h-4 w-4 transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
       {open && (
         <div className="p-3 pt-0 space-y-1.5 border-t border-border/50">

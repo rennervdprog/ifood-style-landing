@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Bell } from "lucide-react";
 import { AdminOrderCard } from "../components/AdminOrderCard";
 import type { OrderStatus, OrderTabKey } from "../types";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,8 +10,6 @@ import PixDirectAlert from "../components/orders/PixDirectAlert";
 import BatchDispatchBar from "../components/orders/BatchDispatchBar";
 import OrdersEmptyState from "../components/orders/OrdersEmptyState";
 import OrderCardSkeleton from "../components/orders/OrderCardSkeleton";
-import { AppIcon } from "@/components/ui/app-icon";
-import { Bell } from "lucide-react";
 
 interface Props {
   store: any;
@@ -283,7 +282,7 @@ export default function OrdersSection(props: Props) {
           style={{ bottom: "calc(env(safe-area-inset-bottom) + 5rem)" }}
           className="fixed lg:!bottom-6 right-6 bg-primary text-primary-foreground font-black px-5 py-3 rounded-2xl shadow-xl animate-bounce flex items-center gap-2 text-sm z-30 ring-4 ring-primary/30"
         >
-          <AppIcon name="Bell" className="h-4 w-4" /> {pendingCount} novo{pendingCount > 1 ? "s" : ""}!
+          <Bell className="h-4 w-4" /> {pendingCount} novo{pendingCount > 1 ? "s" : ""}!
         </button>
       )}
     </>

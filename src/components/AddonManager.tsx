@@ -3,10 +3,9 @@ import { useState, useCallback, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { Plus, Trash2, Edit2, Save, X, ChevronDown, ChevronUp, Package, FileText, Layers, Link2, Sparkles, Copy, Eye, Search } from "lucide-react";
 import { formatBRLDisplay, parseBRLCentsInput } from "@/hooks/useBRLInput";
 import { useConfirmDialog } from "@/hooks/useConfirmDialog";
-import { AppIcon } from "@/components/ui/app-icon";
-import { Plus, Trash2, Edit2, Save, X, ChevronDown, ChevronUp, Package, FileText, Layers, Link2, Sparkles, Copy, Eye, Search } from "lucide-react";
 
 interface AddonManagerProps {
   storeId: string;
@@ -355,7 +354,7 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-start gap-2.5 min-w-0">
           <div className="bg-primary/15 text-primary rounded-xl p-2 flex-shrink-0">
-            <AppIcon name="Layers" className="h-4 w-4" />
+            <Layers className="h-4 w-4" />
           </div>
           <div className="min-w-0">
             <h2 className="text-base font-bold text-foreground leading-tight">Adicionais</h2>
@@ -366,7 +365,7 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
           onClick={() => setShowGroupForm(true)}
           className="flex items-center gap-1.5 bg-primary text-primary-foreground px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap shadow-sm flex-shrink-0"
         >
-          <AppIcon name="Plus" className="h-3.5 w-3.5" /> Novo grupo
+          <Plus className="h-3.5 w-3.5" /> Novo grupo
         </button>
       </div>
 
@@ -439,7 +438,7 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
           {/* Bulk import inside group creation */}
           <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 space-y-2">
             <div className="flex items-center gap-2">
-              <AppIcon name="FileText" className="h-4 w-4 text-primary" />
+              <FileText className="h-4 w-4 text-primary" />
               <span className="text-xs font-bold text-primary">Cole sua lista de adicionais (opcional)</span>
             </div>
             <p className="text-[11px] text-muted-foreground">
@@ -558,7 +557,7 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
                       </button>
                       <div className="flex gap-1">
                         <button onClick={() => updateGroup(group.id)} className="bg-primary text-primary-foreground px-3 py-1.5 rounded-lg text-xs font-bold">
-                          <AppIcon name="Save" className="h-3 w-3" />
+                          <Save className="h-3 w-3" />
                         </button>
                         <button onClick={() => setEditingGroup(null)} className="text-muted-foreground px-2 text-xs">Cancelar</button>
                       </div>
@@ -582,12 +581,12 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
                       </p>
                       <div className="flex flex-wrap items-center gap-1.5 mt-2">
                         <span className="inline-flex items-center gap-1 text-xs bg-muted text-foreground px-2 py-0.5 rounded-full font-semibold">
-                          <AppIcon name="Package" className="h-3 w-3" />
+                          <Package className="h-3 w-3" />
                           {(group.addon_items as any[])?.length || 0} {((group.addon_items as any[])?.length || 0) === 1 ? "item" : "itens"}
                         </span>
                         {linkedProducts.length > 0 && (
                           <span className="inline-flex items-center gap-1 text-xs bg-primary text-primary-foreground px-2 py-0.5 rounded-full font-semibold">
-                            <AppIcon name="Link2" className="h-3 w-3" />
+                            <Link2 className="h-3 w-3" />
                             {linkedProducts.length} produto{linkedProducts.length > 1 ? "s" : ""}
                           </span>
                         )}
@@ -607,21 +606,21 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
                       className="text-muted-foreground hover:text-foreground p-1.5"
                       title="Pré-visualizar como o cliente vê"
                     >
-                      <AppIcon name="Eye" className="h-3.5 w-3.5" />
+                      <Eye className="h-3.5 w-3.5" />
                     </button>
                     <button
                       onClick={(e) => { e.stopPropagation(); openLinkModal(group.id); }}
                       className="text-muted-foreground hover:text-primary p-1.5"
                       title="Vincular a produtos em lote"
                     >
-                      <AppIcon name="Link2" className="h-3.5 w-3.5" />
+                      <Link2 className="h-3.5 w-3.5" />
                     </button>
                     <button
                       onClick={(e) => { e.stopPropagation(); duplicateGroup(group); }}
                       className="text-muted-foreground hover:text-foreground p-1.5"
                       title="Duplicar grupo"
                     >
-                      <AppIcon name="Copy" className="h-3.5 w-3.5" />
+                      <Copy className="h-3.5 w-3.5" />
                     </button>
                     <button
                       onClick={(e) => {
@@ -636,7 +635,7 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
                       }}
                       className="text-muted-foreground hover:text-foreground p-1.5"
                     >
-                      <AppIcon name="Edit2" className="h-3.5 w-3.5" />
+                      <Edit2 className="h-3.5 w-3.5" />
                     </button>
                      <button
                        onClick={async (e) => {
@@ -651,9 +650,9 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
                        }}
                       className="text-destructive/70 hover:text-destructive p-1.5"
                     >
-                      <AppIcon name="Trash2" className="h-3.5 w-3.5" />
+                      <Trash2 className="h-3.5 w-3.5" />
                     </button>
-                    {isExpanded ? <AppIcon name="ChevronUp" className="h-4 w-4 text-muted-foreground" /> : <AppIcon name="ChevronDown" className="h-4 w-4 text-muted-foreground" />}
+                    {isExpanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
                   </div>
                 )}
               </div>
@@ -681,10 +680,10 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
                             placeholder="0,00"
                           />
                           <button onClick={() => updateItem(item.id)} className="bg-primary text-primary-foreground px-2 py-1 rounded text-xs font-bold">
-                            <AppIcon name="Save" className="h-3 w-3" />
+                            <Save className="h-3 w-3" />
                           </button>
                           <button onClick={() => setEditingItem(null)} className="text-muted-foreground px-1">
-                            <AppIcon name="X" className="h-3 w-3" />
+                            <X className="h-3 w-3" />
                           </button>
                         </div>
                       ) : (
@@ -701,7 +700,7 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
                                 className="text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed leading-none"
                                 title="Mover para cima"
                               >
-                                <AppIcon name="ChevronUp" className="h-3.5 w-3.5" />
+                                <ChevronUp className="h-3.5 w-3.5" />
                               </button>
                               <button
                                 onClick={() => moveItem(group, item.id, 1)}
@@ -709,7 +708,7 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
                                 className="text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed leading-none"
                                 title="Mover para baixo"
                               >
-                                <AppIcon name="ChevronDown" className="h-3.5 w-3.5" />
+                                <ChevronDown className="h-3.5 w-3.5" />
                               </button>
                             </div>
                             <button
@@ -719,7 +718,7 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
                               }}
                               className="text-muted-foreground hover:text-foreground p-1"
                             >
-                              <AppIcon name="Edit2" className="h-3 w-3" />
+                              <Edit2 className="h-3 w-3" />
                             </button>
                             <button
                               onClick={async () => {
@@ -733,7 +732,7 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
                               }}
                               className="text-destructive/70 hover:text-destructive p-1"
                             >
-                              <AppIcon name="Trash2" className="h-3 w-3" />
+                              <Trash2 className="h-3 w-3" />
                             </button>
                           </div>
                         </>
@@ -759,10 +758,10 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
                         placeholder="0,00"
                       />
                       <button onClick={() => addItem(group.id)} className="bg-primary text-primary-foreground px-3 py-2 rounded-lg text-sm font-bold">
-                        <AppIcon name="Plus" className="h-4 w-4" />
+                        <Plus className="h-4 w-4" />
                       </button>
                       <button onClick={() => { setShowItemForm(null); setItemForm({ name: "", price: "0" }); }} className="text-muted-foreground px-2">
-                        <AppIcon name="X" className="h-4 w-4" />
+                        <X className="h-4 w-4" />
                       </button>
                     </div>
                   ) : (
@@ -771,13 +770,13 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
                         onClick={() => setShowItemForm(group.id)}
                         className="flex-1 flex items-center justify-center gap-2 py-2.5 border-2 border-dashed border-border rounded-xl text-muted-foreground hover:text-foreground hover:border-border transition-colors text-xs"
                       >
-                        <AppIcon name="Plus" className="h-3.5 w-3.5" /> Adicionar Item
+                        <Plus className="h-3.5 w-3.5" /> Adicionar Item
                       </button>
                       <button
                         onClick={() => { setBulkGroupId(group.id); setBulkText(""); setBulkParsed([]); }}
                         className="flex items-center gap-1.5 px-3 py-2.5 border-2 border-dashed border-primary/30 rounded-xl text-primary hover:bg-primary/10 transition-colors text-xs font-bold"
                       >
-                        <AppIcon name="FileText" className="h-3.5 w-3.5" /> Importar Lista
+                        <FileText className="h-3.5 w-3.5" /> Importar Lista
                       </button>
                     </div>
                   )}
@@ -786,7 +785,7 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
                   {bulkGroupId === group.id && (
                     <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 space-y-3">
                       <div className="flex items-center gap-2">
-                        <AppIcon name="FileText" className="h-4 w-4 text-primary" />
+                        <FileText className="h-4 w-4 text-primary" />
                         <span className="text-xs font-bold text-primary">Importar adicionais em lote</span>
                       </div>
                       <p className="text-[11px] text-muted-foreground">
@@ -874,7 +873,7 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
             onClick={() => setShowGroupForm(true)}
             className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2.5 rounded-xl text-sm font-bold shadow-sm"
           >
-            <AppIcon name="Sparkles" className="h-4 w-4" /> Criar primeiro grupo
+            <Sparkles className="h-4 w-4" /> Criar primeiro grupo
           </button>
         </div>
       )}
@@ -889,10 +888,10 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
                   <h3 className="text-base font-bold text-foreground truncate">Vincular "{linkModalGroup.name}"</h3>
                   <p className="text-xs text-muted-foreground">Marque os produtos que devem usar este grupo.</p>
                 </div>
-                <button onClick={() => setLinkModalGroupId(null)} className="text-muted-foreground p-1"><AppIcon name="X" className="h-5 w-5" /></button>
+                <button onClick={() => setLinkModalGroupId(null)} className="text-muted-foreground p-1"><X className="h-5 w-5" /></button>
               </div>
               <div className="relative mt-3">
-                <AppIcon name="Search" className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <input
                   type="text"
                   value={linkSearch}
@@ -929,11 +928,11 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
                     {p.image_url ? (
                       <img src={p.image_url} alt={p.name} className="w-10 h-10 rounded-lg object-cover flex-shrink-0" loading="lazy" />
                     ) : (
-                      <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0"><AppIcon name="Package" className="h-4 w-4 text-muted-foreground" /></div>
+                      <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0"><Package className="h-4 w-4 text-muted-foreground" /></div>
                     )}
                     <span className="flex-1 text-sm text-foreground truncate">{p.name}</span>
                     <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 ${checked ? "bg-primary border-primary" : "border-muted-foreground/40"}`}>
-                      {checked && <AppIcon name="Save" className="h-3 w-3 text-primary-foreground" />}
+                      {checked && <Save className="h-3 w-3 text-primary-foreground" />}
                     </div>
                   </button>
                 );
@@ -955,7 +954,7 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
           <div className="bg-card w-full sm:max-w-sm rounded-t-2xl sm:rounded-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="p-4 border-b border-border flex items-center justify-between">
               <h3 className="text-sm font-bold text-foreground">Pré-visualização (como o cliente vê)</h3>
-              <button onClick={() => setPreviewGroupId(null)} className="text-muted-foreground"><AppIcon name="X" className="h-5 w-5" /></button>
+              <button onClick={() => setPreviewGroupId(null)} className="text-muted-foreground"><X className="h-5 w-5" /></button>
             </div>
             <div className="p-4 space-y-2 max-h-[70vh] overflow-y-auto">
               <div className="flex items-baseline justify-between gap-2">

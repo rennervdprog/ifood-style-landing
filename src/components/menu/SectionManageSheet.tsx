@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetClose } from "@/components/ui/sheet";
-import { AppIcon } from "@/components/ui/app-icon";
 import { ArrowUp, ArrowDown, Edit2, Trash2, Save, X, Plus, ArrowLeft } from "lucide-react";
 
 interface Section {
@@ -55,7 +54,7 @@ export const SectionManageSheet = ({
       <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto p-0">
         <SheetHeader className="sticky top-0 z-20 bg-background border-b border-border px-3 py-3 flex-row items-center gap-2 space-y-0">
           <SheetClose className="flex items-center gap-1.5 px-2.5 py-2 rounded-lg hover:bg-muted text-sm font-semibold text-foreground focus:outline-none focus:ring-2 focus:ring-ring">
-            <AppIcon name="ArrowLeft" className="h-4 w-4" />
+            <ArrowLeft className="h-4 w-4" />
             Voltar
           </SheetClose>
           <div className="min-w-0 flex-1">
@@ -80,7 +79,7 @@ export const SectionManageSheet = ({
               disabled={!newName.trim()}
               className="flex items-center gap-1 bg-primary text-primary-foreground px-3 py-2 rounded-lg text-sm font-bold disabled:opacity-50"
             >
-              <AppIcon name="Plus" className="h-4 w-4" /> Criar
+              <Plus className="h-4 w-4" /> Criar
             </button>
           </div>
 
@@ -105,7 +104,7 @@ export const SectionManageSheet = ({
                       className="p-1 rounded hover:bg-muted disabled:opacity-30"
                       aria-label="Subir"
                     >
-                      <AppIcon name="ArrowUp" className="h-3.5 w-3.5" />
+                      <ArrowUp className="h-3.5 w-3.5" />
                     </button>
                     <button
                       onClick={() => onMove(s.id, 1)}
@@ -113,7 +112,7 @@ export const SectionManageSheet = ({
                       className="p-1 rounded hover:bg-muted disabled:opacity-30"
                       aria-label="Descer"
                     >
-                      <AppIcon name="ArrowDown" className="h-3.5 w-3.5" />
+                      <ArrowDown className="h-3.5 w-3.5" />
                     </button>
                   </div>
                   <div className="flex-1 min-w-0">
@@ -142,14 +141,14 @@ export const SectionManageSheet = ({
                         className="p-1.5 rounded-lg bg-primary text-primary-foreground"
                         aria-label="Salvar"
                       >
-                        <AppIcon name="Save" className="h-3.5 w-3.5" />
+                        <Save className="h-3.5 w-3.5" />
                       </button>
                       <button
                         onClick={() => setEditingId(null)}
                         className="p-1.5 rounded-lg hover:bg-muted"
                         aria-label="Cancelar"
                       >
-                        <AppIcon name="X" className="h-3.5 w-3.5" />
+                        <X className="h-3.5 w-3.5" />
                       </button>
                     </>
                   ) : (
@@ -159,14 +158,14 @@ export const SectionManageSheet = ({
                         className="p-1.5 rounded-lg hover:bg-muted"
                         aria-label="Renomear"
                       >
-                        <AppIcon name="Edit2" className="h-3.5 w-3.5" />
+                        <Edit2 className="h-3.5 w-3.5" />
                       </button>
                       <button
                         onClick={() => onDelete(s.id, s.name, count)}
                         className="p-1.5 rounded-lg hover:bg-destructive/10 text-destructive"
                         aria-label="Excluir"
                       >
-                        <AppIcon name="Trash2" className="h-3.5 w-3.5" />
+                        <Trash2 className="h-3.5 w-3.5" />
                       </button>
                     </>
                   )}

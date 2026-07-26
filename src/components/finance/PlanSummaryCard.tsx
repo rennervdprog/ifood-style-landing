@@ -2,11 +2,10 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Crown, Calendar, Percent, Truck, ShoppingCart, Smartphone } from "lucide-react";
 import { formatBRL } from "@/lib/utils";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { AppIcon } from "@/components/ui/app-icon";
-import { Crown, Calendar, Percent, Truck, ShoppingCart, Smartphone } from "lucide-react";
 
 interface Props { storeId: string }
 
@@ -53,25 +52,25 @@ export default function PlanSummaryCard({ storeId }: Props) {
       <CardContent className="pt-5 space-y-4">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <AppIcon name="Crown" className="h-5 w-5 text-primary" />
+            <Crown className="h-5 w-5 text-primary" />
             <span className="font-bold">{PLAN_LABEL[plan.plan_type] ?? plan.plan_type}</span>
           </div>
           <Badge variant="outline" className="text-[10px]">Plano ativo</Badge>
         </div>
 
         <div className="grid grid-cols-2 gap-3 text-sm">
-          <Row icon={<AppIcon name="Calendar" className="h-3.5 w-3.5" />} label="Mensalidade" value={Number(plan.monthly_fee) > 0 ? `${formatBRL(Number(plan.monthly_fee))}/mês` : "Grátis"} />
+          <Row icon={<Calendar className="h-3.5 w-3.5" />} label="Mensalidade" value={Number(plan.monthly_fee) > 0 ? `${formatBRL(Number(plan.monthly_fee))}/mês` : "Grátis"} />
           {Number(plan.commission_rate) > 0 && (
-            <Row icon={<AppIcon name="Percent" className="h-3.5 w-3.5" />} label="Comissão" value={`${Number(plan.commission_rate)}% por pedido`} />
+            <Row icon={<Percent className="h-3.5 w-3.5" />} label="Comissão" value={`${Number(plan.commission_rate)}% por pedido`} />
           )}
           {showDelivery && (
-            <Row icon={<AppIcon name="Truck" className="h-3.5 w-3.5" />} label="Taxa por entrega" value={`${formatBRL(Number(deliverySplit))}`} />
+            <Row icon={<Truck className="h-3.5 w-3.5" />} label="Taxa por entrega" value={`${formatBRL(Number(deliverySplit))}`} />
           )}
           {pixFeePerOrder > 0 && (
-            <Row icon={<AppIcon name="Smartphone" className="h-3.5 w-3.5" />} label="Taxa PIX / pedido" value={`${formatBRL(pixFeePerOrder)}`} />
+            <Row icon={<Smartphone className="h-3.5 w-3.5" />} label="Taxa PIX / pedido" value={`${formatBRL(pixFeePerOrder)}`} />
           )}
           {plan.pdv_enabled && Number(plan.pdv_fixed_fee_per_sale) > 0 && (
-            <Row icon={<AppIcon name="ShoppingCart" className="h-3.5 w-3.5" />} label="Taxa PDV" value={`${formatBRL(Number(plan.pdv_fixed_fee_per_sale))}/venda`} />
+            <Row icon={<ShoppingCart className="h-3.5 w-3.5" />} label="Taxa PDV" value={`${formatBRL(Number(plan.pdv_fixed_fee_per_sale))}/venda`} />
           )}
         </div>
 

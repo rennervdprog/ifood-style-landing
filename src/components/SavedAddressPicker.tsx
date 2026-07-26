@@ -2,10 +2,9 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { MapPin, Plus, Trash2, Check, Home, Briefcase, MapPinned, Search, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { formatCep, fetchCep } from "@/lib/location";
-import { AppIcon } from "@/components/ui/app-icon";
-import { MapPin, Plus, Trash2, Check, Home, Briefcase, MapPinned, Search, Loader2 } from "lucide-react";
 
 interface SavedAddress {
   id: string;
@@ -150,7 +149,7 @@ const SavedAddressPicker = ({ onSelect, selectedId }: SavedAddressPickerProps) =
   return (
     <div className="space-y-2">
       <h3 className="text-xs font-bold text-foreground flex items-center gap-1.5">
-        <AppIcon name="MapPinned" className="h-3.5 w-3.5 text-primary" />
+        <MapPinned className="h-3.5 w-3.5 text-primary" />
         Endereços Salvos
       </h3>
 
@@ -172,12 +171,12 @@ const SavedAddressPicker = ({ onSelect, selectedId }: SavedAddressPickerProps) =
               </p>
               <p className="text-[10px] text-muted-foreground truncate">{addr.neighborhood}</p>
             </div>
-            {isSelected && <AppIcon name="Check" className="h-4 w-4 text-primary flex-shrink-0" />}
+            {isSelected && <Check className="h-4 w-4 text-primary flex-shrink-0" />}
             <button
               onClick={(e) => { e.stopPropagation(); handleDelete(addr.id); }}
               className="text-muted-foreground hover:text-destructive p-1"
             >
-              <AppIcon name="Trash2" className="h-3.5 w-3.5" />
+              <Trash2 className="h-3.5 w-3.5" />
             </button>
           </div>
         );
@@ -188,7 +187,7 @@ const SavedAddressPicker = ({ onSelect, selectedId }: SavedAddressPickerProps) =
           onClick={() => setShowForm(true)}
           className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-dashed border-border text-xs font-bold text-muted-foreground hover:text-foreground hover:border-primary transition-colors"
         >
-          <AppIcon name="Plus" className="h-3.5 w-3.5" />
+          <Plus className="h-3.5 w-3.5" />
           Novo Endereço
         </button>
       ) : (
@@ -223,7 +222,7 @@ const SavedAddressPicker = ({ onSelect, selectedId }: SavedAddressPickerProps) =
               disabled={loadingCep}
               className="px-2 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-bold disabled:opacity-50"
             >
-              {loadingCep ? <AppIcon name="Loader2" className="h-3.5 w-3.5 animate-spin" /> : <AppIcon name="Search" className="h-3.5 w-3.5" />}
+              {loadingCep ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Search className="h-3.5 w-3.5" />}
             </button>
           </div>
 

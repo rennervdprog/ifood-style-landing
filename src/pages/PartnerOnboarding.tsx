@@ -5,12 +5,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { z } from "zod";
+import {
+  Store, Bike, ArrowLeft, ArrowRight, Camera, Upload,
+  User, FileText, Truck, ChefHat, MessageCircle,
+  Package, TrendingUp, Crown, Check, Zap, Star,
+  Smartphone, QrCode, CreditCard, Bell, Shield,
+  Clock, BarChart3, Gift, ChevronDown, Rocket,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Constants } from "@/integrations/supabase/types";
 import { maskWhatsApp, isValidWhatsApp, formatWhatsAppNumber } from "@/lib/whatsapp";
-import { AppIcon } from "@/components/ui/app-icon";
-import { Store, Bike, ArrowLeft, ArrowRight, Camera, Upload, User, FileText, Truck, ChefHat, MessageCircle, Package, TrendingUp, Crown, Zap, Star, Smartphone, QrCode, CreditCard, Bell, Shield, BarChart3, Gift, ChevronDown, Rocket } from "lucide-react";
 
 type PartnerType = "lojista" | "motoboy" | null;
 
@@ -252,7 +257,7 @@ const PartnerOnboarding = () => {
 
           <div className="relative mx-auto max-w-4xl text-center">
             <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 text-sm font-semibold text-primary mb-6 animate-fade-in">
-              <AppIcon name="Zap" className="h-4 w-4" />
+              <Zap className="h-4 w-4" />
               Seja parceiro ItaSuper
             </div>
 
@@ -278,7 +283,7 @@ const PartnerOnboarding = () => {
                 }}
                 className="text-base px-8 py-6 rounded-2xl shadow-lg shadow-primary/20"
               >
-                Cadastrar minha loja — É grátis <AppIcon name="ArrowRight" className="ml-2 h-5 w-5" />
+                Cadastrar minha loja — É grátis <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
               <Button size="lg" variant="outline" onClick={() => navigate("/portal-parceiro")} className="text-base px-8 py-6 rounded-2xl">
                 Já sou parceiro
@@ -390,7 +395,7 @@ const PartnerOnboarding = () => {
             </div>
             <div className="text-center mt-8">
               <Button variant="outline" onClick={() => navigate("/planos")} className="rounded-2xl px-6">
-                Ver comparativo completo <AppIcon name="ArrowRight" className="ml-2 h-4 w-4" />
+                Ver comparativo completo <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </div>
           </div>
@@ -407,7 +412,7 @@ const PartnerOnboarding = () => {
                   <CardContent className="pt-6">
                     <div className="flex gap-0.5 mb-3">
                       {Array.from({ length: t.rating }).map((_, i) => (
-                        <AppIcon name="Star" key={i} className="h-4 w-4 fill-primary text-primary" />
+                        <Star key={i} className="h-4 w-4 fill-primary text-primary" />
                       ))}
                     </div>
                     <p className="text-sm text-muted-foreground italic leading-relaxed mb-4">"{t.text}"</p>
@@ -430,7 +435,7 @@ const PartnerOnboarding = () => {
                 <div key={i} className="rounded-2xl border border-border bg-card overflow-hidden">
                   <button onClick={() => setOpenFaq(openFaq === i ? null : i)} className="w-full flex items-center justify-between p-5 text-left">
                     <span className="font-semibold text-foreground text-sm pr-4">{faq.q}</span>
-                    <AppIcon name="ChevronDown" className={`h-5 w-5 text-muted-foreground shrink-0 transition-transform ${openFaq === i ? "rotate-180" : ""}`} />
+                    <ChevronDown className={`h-5 w-5 text-muted-foreground shrink-0 transition-transform ${openFaq === i ? "rotate-180" : ""}`} />
                   </button>
                   {openFaq === i && (
                     <div className="px-5 pb-5 text-sm text-muted-foreground leading-relaxed animate-fade-in">{faq.a}</div>
@@ -446,7 +451,7 @@ const PartnerOnboarding = () => {
           <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-accent/20 pointer-events-none" />
           <div className="relative mx-auto max-w-2xl text-center">
             <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-primary/10 mb-4">
-              <AppIcon name="Rocket" className="h-7 w-7 text-primary" />
+              <Rocket className="h-7 w-7 text-primary" />
             </div>
             <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3">Pronto para vender mais?</h2>
             <p className="text-muted-foreground mb-8 leading-relaxed max-w-lg mx-auto">
@@ -462,7 +467,7 @@ const PartnerOnboarding = () => {
                 }}
                 className="text-base px-8 py-6 rounded-2xl shadow-lg shadow-primary/20"
               >
-                Começar agora <AppIcon name="ArrowRight" className="ml-2 h-5 w-5" />
+                Começar agora <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
               <Button
                 size="lg"
@@ -470,7 +475,7 @@ const PartnerOnboarding = () => {
                 onClick={() => window.open("https://wa.me/5522992796291?text=Olá! Tenho interesse em ser parceiro.", "_blank")}
                 className="text-base px-8 py-6 rounded-2xl"
               >
-                <AppIcon name="MessageCircle" className="mr-2 h-5 w-5" /> Falar conosco
+                <MessageCircle className="mr-2 h-5 w-5" /> Falar conosco
               </Button>
             </div>
           </div>
@@ -480,7 +485,7 @@ const PartnerOnboarding = () => {
         <section className="py-10 px-4 bg-muted/30 border-y border-border">
           <div className="mx-auto max-w-3xl text-center">
             <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-primary/10 mb-3">
-              <AppIcon name="Shield" className="h-7 w-7 text-primary" />
+              <Shield className="h-7 w-7 text-primary" />
             </div>
             <h2 className="text-xl font-bold text-foreground mb-2">Seguro e confiável</h2>
             <p className="text-sm text-muted-foreground max-w-lg mx-auto leading-relaxed">
@@ -517,7 +522,7 @@ const PartnerOnboarding = () => {
       <header className="sticky top-0 z-50 bg-card border-b border-border px-4 py-3">
         <div className="flex items-center gap-3">
           <button onClick={() => step > 1 ? setStep(step - 1) : setStep(0)}>
-            <AppIcon name="ArrowLeft" className="h-5 w-5 text-foreground" />
+            <ArrowLeft className="h-5 w-5 text-foreground" />
           </button>
           <div className="flex-1">
             <h1 className="font-bold text-sm text-foreground">Seja um Parceiro</h1>
@@ -544,7 +549,7 @@ const PartnerOnboarding = () => {
               >
                 <div className="flex items-center gap-4">
                   <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center">
-                    <AppIcon name="Store" className="h-7 w-7 text-primary" />
+                    <Store className="h-7 w-7 text-primary" />
                   </div>
                   <div>
                     <h3 className="text-lg font-bold text-foreground">🏠 Quero Vender</h3>
@@ -558,7 +563,7 @@ const PartnerOnboarding = () => {
               >
                 <div className="flex items-center gap-4">
                   <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center">
-                    <AppIcon name="Bike" className="h-7 w-7 text-primary" />
+                    <Bike className="h-7 w-7 text-primary" />
                   </div>
                   <div>
                     <h3 className="text-lg font-bold text-foreground">🏍️ Quero Entregar</h3>
@@ -581,7 +586,7 @@ const PartnerOnboarding = () => {
             <button type="button" onClick={() => setSelectedPlan("fixed")}
               className={`w-full text-left rounded-2xl border-2 p-4 transition-all ${selectedPlan === "fixed" ? "border-primary bg-primary/5" : "border-border bg-card hover:border-primary/40"}`}>
               <div className="flex items-center gap-3 mb-2">
-                <div className="w-10 h-10 rounded-xl bg-muted/50 flex items-center justify-center"><AppIcon name="Package" className="h-5 w-5 text-foreground" /></div>
+                <div className="w-10 h-10 rounded-xl bg-muted/50 flex items-center justify-center"><Package className="h-5 w-5 text-foreground" /></div>
                 <div className="flex-1">
                   <h3 className="font-bold text-sm text-foreground">Plano Essencial</h3>
                   <p className="text-xs text-muted-foreground">Ideal para alto volume</p>
@@ -599,7 +604,7 @@ const PartnerOnboarding = () => {
               onClick={() => { if (selectedPlan) setStep(3); else toast.error("Selecione um plano."); }}
               disabled={!selectedPlan}
               className="w-full bg-primary text-primary-foreground font-bold py-3.5 rounded-2xl active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50">
-              Próximo <AppIcon name="ArrowRight" className="h-4 w-4" />
+              Próximo <ArrowRight className="h-4 w-4" />
             </button>
           </div>
         )}
@@ -621,12 +626,12 @@ const PartnerOnboarding = () => {
                   <img loading="lazy" decoding="async" src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
                 ) : (
                   <div className="flex flex-col items-center gap-1">
-                    <AppIcon name="Camera" className="h-6 w-6 text-muted-foreground" />
+                    <Camera className="h-6 w-6 text-muted-foreground" />
                     <span className="text-[10px] text-muted-foreground">Foto</span>
                   </div>
                 )}
                 <div className="absolute bottom-1 right-1 w-6 h-6 bg-primary rounded-full flex items-center justify-center">
-                  <AppIcon name="Upload" className="h-3 w-3 text-primary-foreground" />
+                  <Upload className="h-3 w-3 text-primary-foreground" />
                 </div>
               </button>
               <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageSelect} />
@@ -638,7 +643,7 @@ const PartnerOnboarding = () => {
 
               <div>
                 <label className="text-sm font-bold text-foreground mb-1.5 flex items-center gap-2">
-                  <AppIcon name="MessageCircle" className="h-4 w-4 text-green-500" />
+                  <MessageCircle className="h-4 w-4 text-green-500" />
                   {partnerType === "lojista" ? "WhatsApp do Estabelecimento" : "Seu WhatsApp para Contato"}
                 </label>
                 <p className="text-xs text-muted-foreground mb-2">Digite o número com DDD (ex: 15 99999-9999)</p>
@@ -653,7 +658,7 @@ const PartnerOnboarding = () => {
                   <InputField icon={Store} label="Nome da Loja" placeholder="Ex: Pizzaria do João" value={storeName} onChange={setStoreName} error={errors.storeName} />
                   <div>
                     <label className="text-sm font-bold text-foreground mb-1.5 flex items-center gap-2">
-                      <AppIcon name="ChefHat" className="h-4 w-4 text-muted-foreground" /> Categoria
+                      <ChefHat className="h-4 w-4 text-muted-foreground" /> Categoria
                     </label>
                     <select value={storeCategory} onChange={(e) => setStoreCategory(e.target.value)}
                       className="w-full px-4 py-3 rounded-xl border border-border bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm appearance-none">
@@ -685,9 +690,9 @@ const PartnerOnboarding = () => {
                 <span className="w-4 h-4 border-2 border-secondary-foreground/30 border-t-secondary-foreground rounded-full animate-spin" /> Cadastrando...
               </span>
             ) : partnerType === "lojista" ? (
-              <>Abrir Minha Loja <AppIcon name="ArrowRight" className="h-4 w-4" /></>
+              <>Abrir Minha Loja <ArrowRight className="h-4 w-4" /></>
             ) : (
-              <>Começar a Entregar <AppIcon name="ArrowRight" className="h-4 w-4" /></>
+              <>Começar a Entregar <ArrowRight className="h-4 w-4" /></>
             )}
           </button>
         </div>

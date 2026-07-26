@@ -1,11 +1,10 @@
+import { Banknote, CheckCircle2, Crown, CalendarClock } from "lucide-react";
 import CommissionAlert from "@/components/CommissionAlert";
 import PlatformSplitAlert from "@/components/PlatformSplitAlert";
 import RepassePendingCharges from "@/components/RepassePendingCharges";
 import { formatBRL } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { AppIcon } from "@/components/ui/app-icon";
-import { Banknote, CheckCircle2, Crown, CalendarClock } from "lucide-react";
 
 interface Props {
   store: any;
@@ -83,7 +82,7 @@ export default function RepasseSection({ store, storePlan, setDashboardTab, pend
     <div className="p-4 lg:p-6 max-w-6xl mx-auto space-y-4">
       <div className="flex items-center gap-3 mb-1">
         <div className="w-10 h-10 rounded-2xl bg-blue-500/10 flex items-center justify-center">
-          <AppIcon name="Banknote" className="h-5 w-5 text-blue-500" />
+          <Banknote className="h-5 w-5 text-blue-500" />
         </div>
         <div>
           <h2 className="text-lg font-black text-foreground tracking-tight">Repasse da Plataforma</h2>
@@ -101,7 +100,7 @@ export default function RepasseSection({ store, storePlan, setDashboardTab, pend
         <span className="text-sm font-bold text-foreground">{planLabel}</span>
         {storePlan?.isVip && (
           <span className="inline-flex items-center gap-1 text-[10px] font-black bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30 px-1.5 py-0.5 rounded-full">
-            <AppIcon name="Crown" className="h-3 w-3" /> VIP
+            <Crown className="h-3 w-3" /> VIP
           </span>
         )}
         <span className="text-muted-foreground text-xs">·</span>
@@ -114,7 +113,7 @@ export default function RepasseSection({ store, storePlan, setDashboardTab, pend
       <div className="rounded-xl border border-blue-500/20 bg-gradient-to-br from-blue-500/5 to-transparent p-4">
         <div className="flex items-start gap-3">
           <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center shrink-0">
-            <AppIcon name="CalendarClock" className="h-5 w-5 text-blue-500" />
+            <CalendarClock className="h-5 w-5 text-blue-500" />
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
@@ -143,7 +142,7 @@ export default function RepasseSection({ store, storePlan, setDashboardTab, pend
       {pendingTotal <= 0 && !showCommission && !showSplit && (
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <div className="w-20 h-20 rounded-3xl bg-emerald-500/10 flex items-center justify-center mb-4">
-            <AppIcon name="CheckCircle2" className="h-10 w-10 text-emerald-500" />
+            <CheckCircle2 className="h-10 w-10 text-emerald-500" />
           </div>
           <h3 className="font-black text-foreground mb-1">Sem pendências de repasse</h3>
           <p className="text-sm text-muted-foreground max-w-xs">

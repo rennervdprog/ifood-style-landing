@@ -2,10 +2,9 @@ import { useMemo, useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { formatBRL } from "@/lib/utils";
+import { Loader2, Search, Shirt, X, ArrowLeft, Tag } from "lucide-react";
 import type { Product } from "@/pages/pdv/types";
 import LabelPrintDialog, { type LabelData } from "./LabelPrintDialog";
-import { AppIcon } from "@/components/ui/app-icon";
-import { Loader2, Search, Shirt, X, ArrowLeft, Tag } from "lucide-react";
 
 interface Variant {
   id: string;
@@ -89,7 +88,7 @@ export default function ApparelCatalogGrid({ storeId, products, addItem, getQty 
     <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
       <div className="px-3 pt-2.5 pb-2 shrink-0">
         <div className="relative">
-          <AppIcon name="Search" className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
           <input
             type="text"
             placeholder="Buscar modelo…"
@@ -99,7 +98,7 @@ export default function ApparelCatalogGrid({ storeId, products, addItem, getQty 
           />
           {search && (
             <button onClick={() => setSearch("")} className="absolute right-2.5 top-1/2 -translate-y-1/2">
-              <AppIcon name="X" className="h-3.5 w-3.5 text-muted-foreground" />
+              <X className="h-3.5 w-3.5 text-muted-foreground" />
             </button>
           )}
         </div>
@@ -108,11 +107,11 @@ export default function ApparelCatalogGrid({ storeId, products, addItem, getQty 
       <div className="flex-1 overflow-y-auto px-3 pb-3">
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
-            <AppIcon name="Loader2" className="h-6 w-6 animate-spin text-primary" />
+            <Loader2 className="h-6 w-6 animate-spin text-primary" />
           </div>
         ) : filtered.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
-            <AppIcon name="Shirt" className="h-10 w-10 mx-auto mb-2 opacity-30" />
+            <Shirt className="h-10 w-10 mx-auto mb-2 opacity-30" />
             <p className="text-sm">Nenhum modelo com grade cadastrada.</p>
             <p className="text-xs mt-1 opacity-70">Cadastre em Cardápio → Modelos & Grade.</p>
           </div>
@@ -131,7 +130,7 @@ export default function ApparelCatalogGrid({ storeId, products, addItem, getQty 
                     {p.image_url ? (
                       <img src={p.image_url} alt={p.name} className="w-full h-full object-cover" />
                     ) : (
-                      <AppIcon name="Shirt" className="h-10 w-10 text-muted-foreground/40" />
+                      <Shirt className="h-10 w-10 text-muted-foreground/40" />
                     )}
                   </div>
                   <div className="p-2.5 space-y-1">
@@ -235,7 +234,7 @@ function VariantMatrixSheet({
       <div className="bg-background w-full sm:max-w-2xl sm:rounded-2xl rounded-t-2xl max-h-[90vh] overflow-hidden flex flex-col">
         <div className="flex items-center gap-2 p-3 border-b border-border">
           <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-muted">
-            <AppIcon name="ArrowLeft" className="h-4 w-4" />
+            <ArrowLeft className="h-4 w-4" />
           </button>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-bold truncate">{product.name}</p>
@@ -259,10 +258,10 @@ function VariantMatrixSheet({
             className="flex items-center gap-1 text-[11px] font-bold bg-muted/60 hover:bg-muted rounded-lg px-2 py-1.5"
             title="Imprimir etiquetas"
           >
-            <AppIcon name="Tag" className="h-3.5 w-3.5" /> Etiquetas
+            <Tag className="h-3.5 w-3.5" /> Etiquetas
           </button>
           <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-muted">
-            <AppIcon name="X" className="h-4 w-4" />
+            <X className="h-4 w-4" />
           </button>
         </div>
 

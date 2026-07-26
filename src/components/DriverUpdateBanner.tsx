@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
+import { AlertTriangle, Download } from "lucide-react";
 import { isCapacitorNative } from "@/lib/capacitorNative";
 import { supabase } from "@/integrations/supabase/client";
-import { AppIcon } from "@/components/ui/app-icon";
-import { AlertTriangle, Download } from "lucide-react";
 
 /**
  * Banner persistente (não-dispensável) exibido no topo do painel do motoboy
@@ -63,7 +62,7 @@ const DriverUpdateBanner = () => {
   return (
     <div className="sticky top-0 z-40 bg-amber-500 text-amber-950 border-b-2 border-amber-600 shadow-md">
       <div className="px-4 py-2.5 flex items-center gap-3">
-        <AppIcon name="AlertTriangle" className="h-5 w-5 flex-shrink-0" />
+        <AlertTriangle className="h-5 w-5 flex-shrink-0" />
         <div className="flex-1 min-w-0">
           <p className="text-sm font-black leading-tight">Atualize o app do motoboy</p>
           <p className="text-xs leading-tight opacity-90">
@@ -76,7 +75,7 @@ const DriverUpdateBanner = () => {
           }}
           className="flex items-center gap-1.5 bg-amber-950 text-amber-50 text-xs font-black px-3 py-2 rounded-lg active:scale-95 flex-shrink-0"
         >
-          <AppIcon name="Download" className="h-3.5 w-3.5" /> Atualizar
+          <Download className="h-3.5 w-3.5" /> Atualizar
         </button>
       </div>
     </div>

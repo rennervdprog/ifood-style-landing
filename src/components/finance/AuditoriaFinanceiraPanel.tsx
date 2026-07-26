@@ -4,9 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { exportCSV } from "./financeExport";
-import { AppIcon } from "@/components/ui/app-icon";
 import { Download, ShieldCheck } from "lucide-react";
+import { exportCSV } from "./financeExport";
 
 const FINANCIAL_ACTIONS = [
   "withdraw",
@@ -47,10 +46,10 @@ const AuditoriaFinanceiraPanel = () => {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-base flex items-center gap-2">
-            <AppIcon name="ShieldCheck" className="w-5 h-5 text-primary" /> Auditoria Financeira
+            <ShieldCheck className="w-5 h-5 text-primary" /> Auditoria Financeira
           </CardTitle>
           <Button size="sm" variant="outline" onClick={() => exportCSV("auditoria-financeira", rows)} disabled={!rows.length}>
-            <AppIcon name="Download" className="h-4 w-4 mr-1" /> CSV
+            <Download className="h-4 w-4 mr-1" /> CSV
           </Button>
         </CardHeader>
         <CardContent>

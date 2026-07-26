@@ -3,10 +3,9 @@ import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { z } from "zod";
+import { ArrowLeft, Mail, Lock, Eye, EyeOff, User, Phone, Bike, CheckCircle, Store, Loader2, Shield } from "lucide-react";
  import { maskWhatsApp, formatWhatsAppNumber } from "@/lib/whatsapp";
 import { PasswordStrengthIndicator, usePasswordStrength } from "@/components/PasswordStrengthIndicator";
-import { AppIcon } from "@/components/ui/app-icon";
-import { ArrowLeft, Mail, Lock, Eye, EyeOff, User, Phone, Bike, CheckCircle, Store, Shield } from "lucide-react";
 
 const schema = z.object({
   email: z.string().trim().email("E-mail inválido").max(255),
@@ -112,7 +111,7 @@ const CadastroMotoboyLoja = () => {
       <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6">
         <div className="text-center space-y-5 max-w-sm">
           <div className="w-20 h-20 bg-green-500/10 rounded-3xl flex items-center justify-center mx-auto">
-            <AppIcon name="CheckCircle" className="h-10 w-10 text-green-500" />
+            <CheckCircle className="h-10 w-10 text-green-500" />
           </div>
           <div>
              <h2 className="text-xl font-black text-foreground">Cadastro Realizado! 🎉</h2>
@@ -121,13 +120,13 @@ const CadastroMotoboyLoja = () => {
              </p>
           </div>
           <div className="bg-primary/5 border border-primary/10 rounded-2xl p-4 flex items-start gap-3">
-            <AppIcon name="Mail" className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+            <Mail className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
             <p className="text-xs text-muted-foreground text-left">
               Verifique seu e-mail <span className="font-bold text-foreground">{email}</span> para confirmar sua conta.
             </p>
           </div>
           <div className="bg-muted/50 rounded-2xl p-4 flex items-start gap-3">
-            <AppIcon name="Store" className="h-5 w-5 text-muted-foreground mt-0.5 flex-shrink-0" />
+            <Store className="h-5 w-5 text-muted-foreground mt-0.5 flex-shrink-0" />
             <p className="text-xs text-muted-foreground text-left">
               Após o dono da loja vincular seu telefone, você poderá acessar o painel de entregas em{" "}
               <span className="font-bold text-foreground">/entregador</span>.
@@ -152,7 +151,7 @@ const CadastroMotoboyLoja = () => {
       <div className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border">
         <div className="flex items-center gap-3 px-4 py-3 max-w-lg mx-auto">
           <button onClick={() => navigate(-1)} className="w-9 h-9 rounded-xl bg-muted/80 flex items-center justify-center">
-            <AppIcon name="ArrowLeft" className="h-4 w-4 text-foreground" />
+            <ArrowLeft className="h-4 w-4 text-foreground" />
           </button>
           <div>
             <h1 className="text-base font-black text-foreground">Cadastro Motoboy de Loja</h1>
@@ -165,7 +164,7 @@ const CadastroMotoboyLoja = () => {
         {/* Info banner */}
         <div className="bg-blue-500/5 border border-blue-500/10 rounded-2xl p-4 mb-6">
           <div className="flex items-start gap-3">
-            <AppIcon name="Store" className="h-5 w-5 text-blue-500 mt-0.5 flex-shrink-0" />
+            <Store className="h-5 w-5 text-blue-500 mt-0.5 flex-shrink-0" />
             <div>
               <p className="text-xs font-bold text-foreground mb-1">Como funciona?</p>
               <ol className="text-[11px] text-muted-foreground leading-relaxed list-decimal list-inside space-y-1">
@@ -181,7 +180,7 @@ const CadastroMotoboyLoja = () => {
         {/* Aviso de responsabilidade */}
         <div className="bg-amber-500/5 border border-amber-500/20 rounded-2xl p-4 mb-6">
           <div className="flex items-start gap-3">
-            <AppIcon name="Shield" className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
+            <Shield className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
             <div>
               <p className="text-xs font-bold text-foreground mb-1">Importante: vínculo com a loja</p>
               <p className="text-[11px] text-muted-foreground leading-relaxed">
@@ -199,7 +198,7 @@ const CadastroMotoboyLoja = () => {
           <div className="space-y-1.5">
             <label className="text-xs font-bold text-foreground">Senha</label>
             <div className="relative">
-              <AppIcon name="Lock" className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <input
                 type={showPassword ? "text" : "password"}
                 value={password}
@@ -208,7 +207,7 @@ const CadastroMotoboyLoja = () => {
                 className={`w-full pl-10 pr-10 py-3 bg-muted/50 border ${errors.password ? "border-red-500" : "border-border"} rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30`}
               />
               <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2">
-                {showPassword ? <AppIcon name="EyeOff" className="h-4 w-4 text-muted-foreground" /> : <AppIcon name="Eye" className="h-4 w-4 text-muted-foreground" />}
+                {showPassword ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
               </button>
             </div>
             {errors.password && <p className="text-[11px] text-red-500 font-medium">{errors.password}</p>}
@@ -238,7 +237,7 @@ const CadastroMotoboyLoja = () => {
               <div className="animate-spin h-4 w-4 border-2 border-primary-foreground border-t-transparent rounded-full" />
             ) : (
               <>
-                <AppIcon name="Bike" className="h-4 w-4" />
+                <Bike className="h-4 w-4" />
                 Criar Conta de Motoboy
               </>
             )}

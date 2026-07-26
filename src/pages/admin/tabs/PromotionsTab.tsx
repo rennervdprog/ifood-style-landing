@@ -2,10 +2,9 @@ import { memo, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { Flame, Plus, Trash2, Edit2, Save, X, Tag, Star, Loader2 } from "lucide-react";
 import { formatBRL } from "@/lib/utils";
 import { formatBRLDisplay, parseBRLCentsInput } from "@/hooks/useBRLInput";
-import { AppIcon } from "@/components/ui/app-icon";
-import { Flame, Plus, Trash2, Edit2, Save, X, Tag, Star, Loader2 } from "lucide-react";
 
 interface Props {
   storeId: string;
@@ -77,7 +76,7 @@ const PromotionsTab = memo(({ storeId }: Props) => {
     <div className="space-y-4">
       <div className="flex items-center gap-2">
         <div className="w-10 h-10 rounded-xl bg-orange-500/10 flex items-center justify-center">
-          <AppIcon name="Flame" className="h-5 w-5 text-orange-500" />
+          <Flame className="h-5 w-5 text-orange-500" />
         </div>
         <div>
           <h2 className="text-lg font-black text-foreground">Promoções</h2>
@@ -149,14 +148,14 @@ const ProductsPromoList = ({
         className="w-full bg-card text-foreground px-3 py-2.5 rounded-xl text-sm border border-border focus:border-primary focus:outline-none"
       />
 
-      {loading && <div className="py-8 text-center"><AppIcon name="Loader2" className="h-5 w-5 animate-spin inline text-primary" /></div>}
+      {loading && <div className="py-8 text-center"><Loader2 className="h-5 w-5 animate-spin inline text-primary" /></div>}
 
       {!loading && (
         <>
           {inPromo.length > 0 && (
             <section>
               <p className="text-xs font-black uppercase text-orange-500 mb-2 flex items-center gap-1.5">
-                <AppIcon name="Flame" className="h-3.5 w-3.5" /> Em promoção ({inPromo.length})
+                <Flame className="h-3.5 w-3.5" /> Em promoção ({inPromo.length})
               </p>
               <div className="space-y-2">
                 {inPromo.map(p => (
@@ -250,7 +249,7 @@ const PromoProductRow = ({
             onClick={() => setEditing(true)}
             className="text-xs font-bold px-3 py-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20"
           >
-            <AppIcon name="Plus" className="h-3 w-3 inline mr-1" />Promoção
+            <Plus className="h-3 w-3 inline mr-1" />Promoção
           </button>
         )}
         {!editing && product.promo_active && (
@@ -258,7 +257,7 @@ const PromoProductRow = ({
             onClick={() => setEditing(true)}
             className="text-xs font-bold px-3 py-1.5 rounded-lg bg-card border border-border hover:bg-muted"
           >
-            <AppIcon name="Edit2" className="h-3 w-3 inline mr-1" />Editar
+            <Edit2 className="h-3 w-3 inline mr-1" />Editar
           </button>
         )}
       </div>
@@ -304,7 +303,7 @@ const PromoProductRow = ({
               onChange={(e) => setBestseller(e.target.checked)}
               className="h-4 w-4 accent-primary"
             />
-            <AppIcon name="Star" className="h-3.5 w-3.5 text-amber-500" />
+            <Star className="h-3.5 w-3.5 text-amber-500" />
             Marcar como "+ Vendido"
           </label>
 
@@ -314,7 +313,7 @@ const PromoProductRow = ({
               disabled={saving}
               className="flex-1 bg-orange-500 text-white py-2 rounded-lg text-sm font-bold hover:bg-orange-600 disabled:opacity-50 flex items-center justify-center gap-1.5"
             >
-              {saving ? <AppIcon name="Loader2" className="h-4 w-4 animate-spin" /> : <AppIcon name="Flame" className="h-4 w-4" />}
+              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Flame className="h-4 w-4" />}
               Ativar promoção
             </button>
             {product.promo_active && (
@@ -351,18 +350,18 @@ const CollectionsList = ({
         onClick={() => setCreating(true)}
         className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground py-3 rounded-xl text-sm font-bold hover:bg-primary/90"
       >
-        <AppIcon name="Plus" className="h-4 w-4" /> Nova coleção de promoção
+        <Plus className="h-4 w-4" /> Nova coleção de promoção
       </button>
 
       {creating && (
         <CollectionForm storeId={storeId} onClose={() => setCreating(false)} onSaved={() => { setCreating(false); onChanged(); }} />
       )}
 
-      {loading && <div className="py-8 text-center"><AppIcon name="Loader2" className="h-5 w-5 animate-spin inline text-primary" /></div>}
+      {loading && <div className="py-8 text-center"><Loader2 className="h-5 w-5 animate-spin inline text-primary" /></div>}
 
       {!loading && collections.length === 0 && !creating && (
         <div className="text-center py-10 text-sm text-muted-foreground bg-card rounded-xl border border-border border-dashed">
-          <AppIcon name="Tag" className="h-8 w-8 mx-auto mb-2 opacity-50" />
+          <Tag className="h-8 w-8 mx-auto mb-2 opacity-50" />
           Nenhuma coleção ainda. Crie uma para agrupar produtos em promoção (ex: "Promoção Copa do Mundo").
         </div>
       )}
@@ -433,11 +432,11 @@ const CollectionForm = ({
           disabled={saving}
           className="flex-1 bg-primary text-primary-foreground py-2.5 rounded-lg text-sm font-bold hover:bg-primary/90 disabled:opacity-50 flex items-center justify-center gap-1.5"
         >
-          {saving ? <AppIcon name="Loader2" className="h-4 w-4 animate-spin" /> : <AppIcon name="Save" className="h-4 w-4" />}
+          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
           Salvar
         </button>
         <button onClick={onClose} className="px-4 py-2.5 text-sm text-muted-foreground hover:text-foreground">
-          <AppIcon name="X" className="h-4 w-4" />
+          <X className="h-4 w-4" />
         </button>
       </div>
     </div>
@@ -483,10 +482,10 @@ const CollectionRow = ({
         {collection.is_active ? "Pausar" : "Ativar"}
       </button>
       <button onClick={() => setEditing(true)} className="p-2 rounded-lg hover:bg-muted">
-        <AppIcon name="Edit2" className="h-4 w-4 text-foreground" />
+        <Edit2 className="h-4 w-4 text-foreground" />
       </button>
       <button onClick={remove} className="p-2 rounded-lg hover:bg-destructive/10 text-destructive">
-        <AppIcon name="Trash2" className="h-4 w-4" />
+        <Trash2 className="h-4 w-4" />
       </button>
     </div>
   );

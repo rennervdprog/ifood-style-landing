@@ -17,7 +17,6 @@ import {
   sortableKeyboardCoordinates,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { AppIcon } from "@/components/ui/app-icon";
 import { GripVertical } from "lucide-react";
 
 interface SortableProductGridProps {
@@ -86,7 +85,7 @@ const SortableItem = ({ id, children }: { id: string; children: ReactNode }) => 
         aria-label="Arrastar para reordenar"
         title="Arrastar para reordenar"
       >
-        <AppIcon name="GripVertical" className="h-4 w-4 text-muted-foreground" />
+        <GripVertical className="h-4 w-4 text-muted-foreground" />
       </button>
       {children}
     </div>

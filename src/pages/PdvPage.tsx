@@ -10,6 +10,15 @@ import { toast } from "sonner";
 import { formatBRL, addMoney, sumMoney, subtractMoney } from "@/lib/utils";
 import { parseBRL } from "@/hooks/useBRLInput";
 import { printPdvReceipt, printMovementReceipt, printZReport } from "@/lib/thermalPrint";
+import {
+  ArrowLeft, Search, Plus, Minus, Trash2,
+  Banknote, CreditCard, Smartphone, Monitor,
+  Loader2, CheckCircle2, X, Tag,
+  ArrowDownCircle, ArrowUpCircle, Lock, Unlock,
+  Receipt, ChevronDown, ChevronRight, RotateCcw,
+  Layers, ShoppingCart, ChevronLeft, Calculator, Wallet,
+  History, Printer, BarChart3, Split, EyeOff, Eye, Keyboard, BookOpen,
+} from "lucide-react";
 import { PdvHistorico, PdvSessionsList } from "@/components/pdv/PdvHistorico";
 import ProductDetailModal from "@/components/ProductDetailModal";
 import type { CartAddon } from "@/contexts/CartContext";
@@ -70,8 +79,6 @@ import { PdvSessionCard } from "@/pages/pdv/components/PdvSessionCard";
 import { PdvMesasView } from "@/pages/pdv/components/PdvMesasView";
 import StoreSubscription from "@/components/StoreSubscription";
 import { PdvStoreSettingsPanel } from "@/pages/pdv/components/PdvStoreSettingsPanel";
-import { AppIcon } from "@/components/ui/app-icon";
-import { ArrowLeft, Plus, Loader2, Lock, ChevronRight, Layers, ChevronLeft, BarChart3 } from "lucide-react";
 
 // Detecta se está em tela mobile (< 768px)
 const useIsMobile = () => {
@@ -819,7 +826,7 @@ const PdvPage = () => {
         isAdmin ? (
           <div className="max-w-sm w-full px-6 py-8">
             <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-primary/10 flex items-center justify-center">
-              <AppIcon name="Layers" className="h-7 w-7 text-primary" />
+              <Layers className="h-7 w-7 text-primary" />
             </div>
             <h1 className="text-lg font-black text-foreground mb-1 text-center">Escolher loja</h1>
             <p className="text-xs text-muted-foreground mb-5 text-center">
@@ -851,7 +858,7 @@ const PdvPage = () => {
         ) : (
           <div className="max-w-sm text-center px-6 py-10">
             <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-amber-500/10 flex items-center justify-center">
-              <AppIcon name="Lock" className="h-8 w-8 text-amber-500" />
+              <Lock className="h-8 w-8 text-amber-500" />
             </div>
             <h1 className="text-lg font-black text-foreground mb-1">PDV indisponível</h1>
             <p className="text-sm text-muted-foreground mb-5">
@@ -867,7 +874,7 @@ const PdvPage = () => {
           </div>
         )
       ) : (
-        <AppIcon name="Loader2" className="h-8 w-8 animate-spin text-primary" />
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       )}
     </div>
   );
@@ -891,9 +898,9 @@ const PdvPage = () => {
       <div className="pdv-shell min-h-screen bg-background flex flex-col">
         <header className="h-14 border-b border-border flex items-center px-4 gap-3 bg-card shrink-0">
           <button onClick={() => setPlanNoSession(false)} className="p-1.5 rounded-xl hover:bg-muted transition-colors">
-            <AppIcon name="ArrowLeft" className="h-5 w-5" />
+            <ArrowLeft className="h-5 w-5" />
           </button>
-          <AppIcon name="BarChart3" className="h-5 w-5 text-primary" />
+          <BarChart3 className="h-5 w-5 text-primary" />
           <div className="flex-1 min-w-0">
             <p className="text-sm font-bold truncate">{store?.name}</p>
             <p className="text-[10px] text-muted-foreground">Meu Plano · Caixa fechado</p>
@@ -907,9 +914,9 @@ const PdvPage = () => {
       <div className="pdv-shell min-h-screen bg-background flex flex-col">
         <header className="h-14 border-b border-border flex items-center px-4 gap-3 bg-card shrink-0">
           <button onClick={() => setReportsNoSession(false)} className="p-1.5 rounded-xl hover:bg-muted transition-colors">
-            <AppIcon name="ArrowLeft" className="h-5 w-5" />
+            <ArrowLeft className="h-5 w-5" />
           </button>
-          <AppIcon name="BarChart3" className="h-5 w-5 text-primary" />
+          <BarChart3 className="h-5 w-5 text-primary" />
           <div className="flex-1 min-w-0">
             <p className="text-sm font-bold truncate">{store?.name}</p>
             <p className="text-[10px] text-muted-foreground">Relatórios · Caixa fechado</p>
@@ -1030,7 +1037,7 @@ const PdvPage = () => {
             <p className="text-xs font-black text-foreground leading-tight">Monte a Pizza</p>
             <p className="text-[10px] text-muted-foreground leading-tight">Meio a meio · bordas</p>
           </div>
-          <AppIcon name="ChevronRight" className="h-4 w-4 text-primary shrink-0" />
+          <ChevronRight className="h-4 w-4 text-primary shrink-0" />
         </button>
       )}
       {pastelHalfEnabled && (
@@ -1044,7 +1051,7 @@ const PdvPage = () => {
             <p className="text-xs font-black text-foreground leading-tight">Monte o Pastel</p>
             <p className="text-[10px] text-muted-foreground leading-tight">Sabores · adicionais</p>
           </div>
-          <AppIcon name="ChevronRight" className="h-4 w-4 text-primary shrink-0" />
+          <ChevronRight className="h-4 w-4 text-primary shrink-0" />
         </button>
       )}
       <button
@@ -1057,7 +1064,7 @@ const PdvPage = () => {
           <p className="text-xs font-black text-foreground leading-tight">Novo produto por peso</p>
           <p className="text-[10px] text-muted-foreground leading-tight">Exclusivo do PDV · não vai pro cardápio</p>
         </div>
-        <AppIcon name="ChevronRight" className="h-4 w-4 text-muted-foreground shrink-0" />
+        <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
       </button>
       {pdvAccess.source !== "pdv_only" && (
       <button
@@ -1072,7 +1079,7 @@ const PdvPage = () => {
             Cliente pediu pelo WhatsApp
           </p>
         </div>
-        <AppIcon name="ChevronRight" className="h-4 w-4 text-success shrink-0" />
+        <ChevronRight className="h-4 w-4 text-success shrink-0" />
       </button>
       )}
     </div>
@@ -1156,7 +1163,7 @@ const PdvPage = () => {
                 onClick={goToTurnos}
                 className="flex items-center gap-1.5 text-xs font-bold text-primary hover:text-primary/80 transition-colors"
               >
-                <AppIcon name="ChevronLeft" className="h-3.5 w-3.5" />
+                <ChevronLeft className="h-3.5 w-3.5" />
                 Voltar aos turnos
               </button>
               <span className="text-[10px] text-muted-foreground">·</span>
@@ -1346,7 +1353,7 @@ const PdvPage = () => {
                           <span className="bg-white/20 rounded-lg w-7 h-7 flex items-center justify-center text-xs font-black">{totalItems}</span>
                           Ver carrinho
                         </span>
-                        <span className="flex items-center gap-1">{formatBRL(subtotal)} <AppIcon name="ChevronRight" className="h-4 w-4" /></span>
+                        <span className="flex items-center gap-1">{formatBRL(subtotal)} <ChevronRight className="h-4 w-4" /></span>
                       </button>
                     </div>
                   )}
@@ -1401,7 +1408,7 @@ const PdvPage = () => {
                       onClick={() => setMobileStep("catalog")}
                       className="flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-bold bg-muted/60 hover:bg-muted text-foreground transition-colors"
                     >
-                      <AppIcon name="ChevronLeft" className="h-3.5 w-3.5" /> Adicionar mais
+                      <ChevronLeft className="h-3.5 w-3.5" /> Adicionar mais
                     </button>
                     <p className="text-[10px] text-muted-foreground ml-auto">{totalItems} itens · {formatBRL(subtotal)}</p>
                   </div>
@@ -1566,7 +1573,7 @@ const PdvPage = () => {
         aria-label="Gerenciar cardápio"
         className="hidden md:flex fixed bottom-4 right-4 z-40 h-12 w-12 rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all items-center justify-center border-2 border-background"
       >
-        <AppIcon name="Plus" className="h-6 w-6" />
+        <Plus className="h-6 w-6" />
       </button>
     </div>
   );

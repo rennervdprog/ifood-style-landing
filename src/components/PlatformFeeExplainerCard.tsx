@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { AppIcon } from "@/components/ui/app-icon";
 import { ChevronDown, ChevronUp, Info, Truck, Calendar, QrCode, CheckCircle2 } from "lucide-react";
+import { Link } from "react-router-dom";
 
 interface Props {
   storeId: string;
@@ -46,7 +45,7 @@ export default function PlatformFeeExplainerCard({ storeId, splitPerOrder }: Pro
         className="w-full flex items-center gap-3 p-4 text-left"
       >
         <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
-          <AppIcon name="Info" className="h-5 w-5 text-primary" />
+          <Info className="h-5 w-5 text-primary" />
         </div>
         <div className="flex-1 min-w-0">
           <h3 className="text-sm font-bold text-foreground leading-tight">
@@ -57,9 +56,9 @@ export default function PlatformFeeExplainerCard({ storeId, splitPerOrder }: Pro
           </p>
         </div>
         {collapsed ? (
-          <AppIcon name="ChevronDown" className="h-4 w-4 text-muted-foreground shrink-0" />
+          <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
         ) : (
-          <AppIcon name="ChevronUp" className="h-4 w-4 text-muted-foreground shrink-0" />
+          <ChevronUp className="h-4 w-4 text-muted-foreground shrink-0" />
         )}
       </button>
 
@@ -94,7 +93,7 @@ export default function PlatformFeeExplainerCard({ storeId, splitPerOrder }: Pro
 
           {/* Consequências */}
           <div className="rounded-lg bg-amber-500/5 border border-amber-500/20 p-2.5 flex items-start gap-2">
-            <AppIcon name="CheckCircle2" className="h-3.5 w-3.5 text-amber-600 mt-0.5 shrink-0" />
+            <CheckCircle2 className="h-3.5 w-3.5 text-amber-600 mt-0.5 shrink-0" />
             <p className="text-[10.5px] text-foreground leading-snug">
               <strong>≥ R$ 500</strong> trava o painel até pagar · <strong>30 dias sem pagar</strong> suspende a loja.
             </p>

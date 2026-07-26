@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { AppIcon } from "@/components/ui/app-icon";
 import { AlertTriangle } from "lucide-react";
 
 const STORAGE_KEY = "age_gate_confirmed_v1";
@@ -52,7 +51,7 @@ export default function AgeGateModal({ storeId, storeName, active, onBlock }: Pr
       <div className="bg-background w-full max-w-sm rounded-2xl p-6 shadow-2xl border border-border animate-in fade-in zoom-in-95 duration-200">
         <div className="flex flex-col items-center text-center">
           <div className="h-14 w-14 rounded-full bg-amber-500/15 flex items-center justify-center mb-3">
-            <AppIcon name="AlertTriangle" className="h-7 w-7 text-amber-500" />
+            <AlertTriangle className="h-7 w-7 text-amber-500" />
           </div>
           <h2 className="text-lg font-black text-foreground">Conteúdo +18</h2>
           <p className="text-sm text-muted-foreground mt-2">

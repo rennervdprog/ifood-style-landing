@@ -3,7 +3,6 @@ import PizzaBorderManager from "@/components/PizzaBorderManager";
 import PizzaFlavorManager from "@/components/PizzaFlavorManager";
 import PastelBorderManager from "@/components/PastelBorderManager";
 import PastelFlavorManager from "@/components/PastelFlavorManager";
-import { AppIcon } from "@/components/ui/app-icon";
 import { Pizza, Circle, UtensilsCrossed } from "lucide-react";
 
 interface Props {
@@ -48,7 +47,7 @@ const BordasTab = ({ storeId, category, categories }: Props) => {
               kind === "pizza" ? "bg-background text-primary shadow-sm" : "text-muted-foreground"
             }`}
           >
-            <AppIcon name="Pizza" className="h-3.5 w-3.5" /> Pizza
+            <Pizza className="h-3.5 w-3.5" /> Pizza
           </button>
           <button
             onClick={() => setKind("pastel")}
@@ -56,7 +55,7 @@ const BordasTab = ({ storeId, category, categories }: Props) => {
               kind === "pastel" ? "bg-background text-primary shadow-sm" : "text-muted-foreground"
             }`}
           >
-            <AppIcon name="UtensilsCrossed" className="h-3.5 w-3.5" /> Pastel
+            <UtensilsCrossed className="h-3.5 w-3.5" /> Pastel
           </button>
         </div>
       )}

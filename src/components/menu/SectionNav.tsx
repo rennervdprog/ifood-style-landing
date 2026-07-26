@@ -1,6 +1,5 @@
-import { cn } from "@/lib/utils";
-import { AppIcon } from "@/components/ui/app-icon";
 import { Package, Grid3x3, Layers, Settings2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export type SectionScope = "all" | "none" | string;
 
@@ -76,7 +75,7 @@ export const SectionNav = ({
             className="flex items-center gap-1 px-3 py-2 rounded-full text-xs font-semibold whitespace-nowrap bg-card text-muted-foreground border border-dashed border-border hover:bg-muted flex-shrink-0"
             title="Gerenciar seções"
           >
-            <AppIcon name="Settings2" className="h-3.5 w-3.5" />
+            <Settings2 className="h-3.5 w-3.5" />
             Gerenciar
           </button>
         </div>
@@ -91,7 +90,7 @@ export const SectionNav = ({
             className="text-muted-foreground hover:text-foreground p-1 rounded-md hover:bg-muted transition-colors"
             title="Gerenciar seções"
           >
-            <AppIcon name="Settings2" className="h-3.5 w-3.5" />
+            <Settings2 className="h-3.5 w-3.5" />
           </button>
         </div>
         {allItems.map((item) => {

@@ -13,7 +13,6 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { AppIcon } from "@/components/ui/app-icon";
 import { ArrowLeft, ChefHat, Clock, CheckCircle2, Loader2 } from "lucide-react";
 
 type KdsOrder = {
@@ -157,7 +156,7 @@ export default function PdvKdsPage() {
   if (!storeId) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-3 text-muted-foreground p-6 text-center">
-        <AppIcon name="ChefHat" className="h-8 w-8 text-primary" />
+        <ChefHat className="h-8 w-8 text-primary" />
         <p className="text-sm font-bold">Nenhuma loja ativa selecionada.</p>
         <p className="text-xs">Abra o PDV primeiro e escolha uma loja para carregar o KDS.</p>
         <button
@@ -172,7 +171,7 @@ export default function PdvKdsPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center text-muted-foreground">
-        <AppIcon name="Loader2" className="h-6 w-6 animate-spin mr-2" /> Carregando KDS…
+        <Loader2 className="h-6 w-6 animate-spin mr-2" /> Carregando KDS…
       </div>
     );
   }
@@ -190,10 +189,10 @@ export default function PdvKdsPage() {
           onClick={() => navigate("/admin/pdv")}
           className="flex items-center gap-2 text-sm font-bold text-muted-foreground hover:text-foreground"
         >
-          <AppIcon name="ArrowLeft" className="h-4 w-4" /> Voltar
+          <ArrowLeft className="h-4 w-4" /> Voltar
         </button>
         <div className="flex items-center gap-2">
-          <AppIcon name="ChefHat" className="h-5 w-5 text-primary" />
+          <ChefHat className="h-5 w-5 text-primary" />
           <h1 className="text-lg font-black tracking-tight">Cozinha (KDS)</h1>
         </div>
         <div className="text-xs text-muted-foreground pdv-mono">{orders.length} ativos</div>
@@ -251,7 +250,7 @@ export default function PdvKdsPage() {
                         className="w-full h-9 rounded-lg bg-primary text-primary-foreground text-xs font-black uppercase tracking-wide disabled:opacity-60 flex items-center justify-center gap-1.5"
                       >
                         {updatingId === o.id ? (
-                          <AppIcon name="Loader2" className="h-3.5 w-3.5 animate-spin" />
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
                         ) : (
                           <>{target === "preparando" ? "Iniciar preparo" : "Marcar pronto"}</>
                         )}

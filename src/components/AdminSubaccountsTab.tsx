@@ -1,11 +1,21 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { formatBRL } from "@/lib/utils";
+import { 
+  AlertTriangle, 
+  CheckCircle2, 
+  Clock, 
+  FileText, 
+  Mail, 
+  MessageCircle, 
+  Search, 
+  Store,
+  ExternalLink,
+  ShieldAlert
+} from "lucide-react";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { AppIcon } from "@/components/ui/app-icon";
-import { AlertTriangle, CheckCircle2, Clock, FileText, MessageCircle, Search, Store, ExternalLink, ShieldAlert } from "lucide-react";
 
 export const AdminSubaccountsTab = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -93,7 +103,7 @@ export const AdminSubaccountsTab = () => {
   return (
     <div className="space-y-4">
       <div className="relative">
-        <AppIcon name="Search" className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
           placeholder="Buscar loja ou proprietário..."
           value={searchTerm}
@@ -111,7 +121,7 @@ export const AdminSubaccountsTab = () => {
       ) : filteredSubaccounts?.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12 text-center bg-card rounded-2xl border border-dashed border-border">
           <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center mb-4">
-            <AppIcon name="Store" className="h-6 w-6 text-muted-foreground" />
+            <Store className="h-6 w-6 text-muted-foreground" />
           </div>
           <p className="text-sm font-medium text-foreground">Nenhuma subconta encontrada</p>
           <p className="text-xs text-muted-foreground mt-1">Lojas sem configuração de Asaas não aparecem aqui.</p>
@@ -127,7 +137,7 @@ export const AdminSubaccountsTab = () => {
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                        <AppIcon name="Store" className="h-5 w-5 text-primary" />
+                        <Store className="h-5 w-5 text-primary" />
                       </div>
                       <div>
                         <h3 className="text-sm font-bold text-foreground line-clamp-1">{store.name}</h3>
@@ -157,7 +167,7 @@ export const AdminSubaccountsTab = () => {
                       disabled={!store.profiles?.phone}
                       className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-bold hover:bg-emerald-500/20 transition-colors disabled:opacity-50 disabled:grayscale"
                     >
-                      <AppIcon name="MessageCircle" className="h-3.5 w-3.5" />
+                      <MessageCircle className="h-3.5 w-3.5" />
                       Cobrar Documentos
                     </button>
                     <a
@@ -167,7 +177,7 @@ export const AdminSubaccountsTab = () => {
                       className="w-10 h-9 flex items-center justify-center rounded-xl bg-muted text-muted-foreground hover:bg-muted-foreground/10 transition-colors"
                       title="Ver no Asaas"
                     >
-                      <AppIcon name="ExternalLink" className="h-4 w-4" />
+                      <ExternalLink className="h-4 w-4" />
                     </a>
                   </div>
                 </div>

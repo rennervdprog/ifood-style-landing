@@ -2,9 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { formatBRL } from "@/lib/utils";
-import { AppIcon } from "@/components/ui/app-icon";
 import { AlertTriangle, ArrowRight, CheckCircle2 } from "lucide-react";
+import { formatBRL } from "@/lib/utils";
 
 interface Props {
   storeId: string;
@@ -49,7 +48,7 @@ export default function ValorAPagarCard({ storeId, onPayClick }: Props) {
       <CardContent className="pt-5 space-y-3">
         <div className="flex items-center justify-between">
           <div className="text-[10px] uppercase tracking-widest font-semibold text-muted-foreground">A pagar à plataforma</div>
-          {blocked ? <AppIcon name="AlertTriangle" className="h-4 w-4 text-destructive" /> : isZero ? <AppIcon name="CheckCircle2" className="h-4 w-4 text-emerald-500" /> : null}
+          {blocked ? <AlertTriangle className="h-4 w-4 text-destructive" /> : isZero ? <CheckCircle2 className="h-4 w-4 text-emerald-500" /> : null}
         </div>
         <div className={`text-3xl font-black ${blocked ? "text-destructive" : isZero ? "text-emerald-500" : "text-foreground"}`}>
           {formatBRL(total)}
@@ -74,7 +73,7 @@ export default function ValorAPagarCard({ storeId, onPayClick }: Props) {
           <div className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">Tudo em dia. Nenhum valor pendente.</div>
         ) : (
           <Button onClick={onPayClick} className="w-full font-bold gap-2" size="sm">
-            Pagar via PIX <AppIcon name="ArrowRight" className="h-3.5 w-3.5" />
+            Pagar via PIX <ArrowRight className="h-3.5 w-3.5" />
           </Button>
         )}
       </CardContent>

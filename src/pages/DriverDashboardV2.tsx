@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Bike, Store, Check, X, MapPin, Clock, ShieldCheck, RefreshCw, MessageCircle, LogOut, Headphones, Smartphone, User as UserIcon, Package } from "lucide-react";
 import SupportTicketModal from "@/components/SupportTicketModal";
 import { toast } from "sonner";
 import StoreDriverView from "@/components/StoreDriverView";
@@ -14,8 +15,6 @@ import { haptic } from "@/lib/haptics";
 import NativeShell from "@/components/native/NativeShell";
 import NativeBottomTabs, { type NativeTab } from "@/components/native/NativeBottomTabs";
 import { useRuntime } from "@/lib/runtime";
-import { AppIcon } from "@/components/ui/app-icon";
-import { Bike, Store, Check, X, MapPin, Clock, ShieldCheck, RefreshCw, LogOut, Headphones, Smartphone, Package } from "lucide-react";
 
 /**
  * DriverDashboard V2 — exclusivo para Motoboy de Loja.
@@ -125,7 +124,7 @@ const DriverDashboardV2 = () => {
           <div className="relative mx-auto w-24 h-24">
             <div className="absolute inset-0 bg-primary/20 rounded-[2rem] blur-2xl" />
             <div className="relative w-24 h-24 bg-gradient-to-br from-primary to-primary/70 rounded-[2rem] flex items-center justify-center shadow-xl shadow-primary/30">
-              <AppIcon name="Smartphone" className="h-12 w-12 text-primary-foreground" />
+              <Smartphone className="h-12 w-12 text-primary-foreground" />
             </div>
           </div>
           <h1 className="text-3xl font-black text-foreground tracking-tight">Acesso Mobile</h1>
@@ -176,12 +175,12 @@ const DriverDashboardV2 = () => {
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-2.5">
                 <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
-                  <AppIcon name="Bike" className="h-4.5 w-4.5 text-primary" />
+                  <Bike className="h-4.5 w-4.5 text-primary" strokeWidth={2.5} />
                 </div>
                 <p className="text-sm font-black text-foreground">{driverName}</p>
               </div>
               <SignOutConfirm redirectTo="/portal-parceiro" triggerClassName="w-9 h-9 rounded-xl bg-muted/60 flex items-center justify-center">
-                <AppIcon name="LogOut" className="h-4 w-4 text-muted-foreground" />
+                <LogOut className="h-4 w-4 text-muted-foreground" />
               </SignOutConfirm>
             </div>
             <div className="mb-5">
@@ -206,7 +205,7 @@ const DriverDashboardV2 = () => {
                     <div className="p-4 space-y-4">
                       <div className="flex items-center gap-3">
                         <div className="w-12 h-12 rounded-2xl bg-primary/8 flex items-center justify-center shrink-0">
-                          <AppIcon name="Store" className="h-6 w-6 text-primary" />
+                          <Store className="h-6 w-6 text-primary" strokeWidth={2} />
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Convite de loja</p>
@@ -233,7 +232,7 @@ const DriverDashboardV2 = () => {
                           onClick={() => handleInvitation(link.id, "rejected")}
                           className="md3-ripple md3-state-layer h-14 px-5 rounded-full border border-border bg-background text-muted-foreground text-sm font-bold flex items-center justify-center gap-1.5 active:scale-[0.97] transition-transform disabled:opacity-50"
                         >
-                          <AppIcon name="X" className="h-4 w-4" />
+                          <X className="h-4 w-4" strokeWidth={2.5} />
                           Recusar
                         </button>
                         <button
@@ -245,7 +244,7 @@ const DriverDashboardV2 = () => {
                             <div className="animate-spin h-5 w-5 border-2 border-primary-foreground border-t-transparent rounded-full" />
                           ) : (
                             <>
-                              <AppIcon name="Check" className="h-5 w-5" />
+                              <Check className="h-5 w-5" strokeWidth={2.8} />
                               Aceitar
                             </>
                           )}
@@ -269,7 +268,7 @@ const DriverDashboardV2 = () => {
             <div className="flex items-center justify-between px-5 pt-safe pt-4 pb-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center">
-                  <AppIcon name="Bike" className="h-5 w-5 text-primary" />
+                  <Bike className="h-5 w-5 text-primary" strokeWidth={2.5} />
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Bem-vindo</p>
@@ -277,14 +276,14 @@ const DriverDashboardV2 = () => {
                 </div>
               </div>
               <SignOutConfirm redirectTo="/portal-parceiro" triggerClassName="w-10 h-10 rounded-2xl bg-muted/60 flex items-center justify-center">
-                <AppIcon name="LogOut" className="h-4 w-4 text-muted-foreground" />
+                <LogOut className="h-4 w-4 text-muted-foreground" />
               </SignOutConfirm>
             </div>
 
             {/* Conteúdo */}
             <div className="flex-1 flex flex-col items-center justify-center px-6 text-center gap-6 pb-16">
               <div className="w-24 h-24 rounded-[2rem] bg-primary/8 flex items-center justify-center">
-                <AppIcon name="Bike" className="h-12 w-12 text-primary" />
+                <Bike className="h-12 w-12 text-primary" strokeWidth={1.8} />
               </div>
               <div>
                 <h1 className="text-xl font-black text-foreground mb-2">Aguardando vínculo</h1>
@@ -310,7 +309,7 @@ const DriverDashboardV2 = () => {
                 onClick={() => { haptic.light(); queryClient.invalidateQueries({ queryKey: ["v2-store-driver-links", user?.id] }); toast.success("Verificando..."); }}
                 className="md3-ripple md3-button-filled md3-elev-2 w-full max-w-sm h-14 bg-primary text-primary-foreground font-black text-sm flex items-center justify-center gap-2"
               >
-                <AppIcon name="RefreshCw" className="h-4 w-4" />
+                <RefreshCw className="h-4 w-4" strokeWidth={2.5} />
                 Verificar convites
               </button>
             </div>
@@ -324,9 +323,9 @@ const DriverDashboardV2 = () => {
   const driverFirstName = (driverProfile as any)?.full_name?.split(" ")[0] || "Entregador";
 
   const tabs: NativeTab[] = [
-    { key: "orders", label: "Pedidos", icon: <AppIcon name="Package" className="h-5 w-5" /> },
-    { key: "support", label: "Suporte", icon: <AppIcon name="Headphones" className="h-5 w-5" /> },
-    { key: "profile", label: "Perfil", icon: <AppIcon name="User" className="h-5 w-5" /> },
+    { key: "orders", label: "Pedidos", icon: <Package className="h-5 w-5" strokeWidth={2.2} /> },
+    { key: "support", label: "Suporte", icon: <Headphones className="h-5 w-5" strokeWidth={2.2} /> },
+    { key: "profile", label: "Perfil", icon: <UserIcon className="h-5 w-5" strokeWidth={2.2} /> },
   ];
 
   const handleTabChange = (key: string) => {
@@ -360,7 +359,7 @@ const DriverDashboardV2 = () => {
                   {(driverFirstName || "E").trim().charAt(0).toUpperCase()}
                 </span>
                 <span className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-card border-2 border-background flex items-center justify-center">
-                  <AppIcon name="Bike" className="h-2.5 w-2.5 text-primary" />
+                  <Bike className="h-2.5 w-2.5 text-primary" strokeWidth={3} />
                 </span>
               </div>
               <div className="min-w-0">
@@ -378,13 +377,13 @@ const DriverDashboardV2 = () => {
                 aria-label="Suporte"
                 className="md3-ripple md3-state-layer w-10 h-10 rounded-full bg-muted flex items-center justify-center active:scale-[0.93] transition-all"
               >
-                <AppIcon name="Headphones" className="h-[18px] w-[18px] text-foreground" />
+                <Headphones className="h-[18px] w-[18px] text-foreground" strokeWidth={2.2} />
               </button>
               <SignOutConfirm
                 redirectTo="/portal-parceiro"
                 triggerClassName="md3-ripple md3-state-layer w-10 h-10 rounded-full bg-muted flex items-center justify-center active:scale-[0.93] transition-all"
               >
-                <AppIcon name="LogOut" className="h-[18px] w-[18px] text-foreground" />
+                <LogOut className="h-[18px] w-[18px] text-foreground" strokeWidth={2.2} />
               </SignOutConfirm>
             </div>}
           </div>
@@ -411,7 +410,7 @@ const DriverDashboardV2 = () => {
                 type="button"
                 className="w-full h-14 rounded-2xl bg-destructive/10 text-destructive font-black flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
               >
-                <AppIcon name="LogOut" className="h-5 w-5" />
+                <LogOut className="h-5 w-5" strokeWidth={2.5} />
                 Sair da conta
               </button>
             </SignOutConfirm>

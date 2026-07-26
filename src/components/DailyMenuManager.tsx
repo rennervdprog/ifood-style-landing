@@ -1,9 +1,8 @@
-import { AppIcon } from "@/components/ui/app-icon";
-import { Utensils, Save, CheckCircle2, Circle, Loader2, Info } from "lucide-react";
  import { useState, useEffect } from "react";
  import { supabase } from "@/integrations/supabase/client";
  import { toast } from "sonner";
-  
+ import { Utensils, Save, CheckCircle2, Circle, Loader2, Info } from "lucide-react";
+ 
  interface DailyMenuManagerProps {
    storeId: string;
    products: any[];
@@ -90,7 +89,7 @@ import { Utensils, Save, CheckCircle2, Circle, Loader2, Info } from "lucide-reac
        >
          <div className="flex items-center gap-3">
            <div className="bg-primary p-2 rounded-xl text-primary-foreground shadow-sm group-hover:scale-110 transition-transform">
-             <AppIcon name="Utensils" className="h-5 w-5" />
+             <Utensils className="h-5 w-5" />
            </div>
            <div className="text-left">
              <h3 className="text-sm font-bold text-primary">Gestor de Cardápio do Dia</h3>
@@ -108,7 +107,7 @@ import { Utensils, Save, CheckCircle2, Circle, Loader2, Info } from "lucide-reac
      <div className="bg-accent/30 border border-primary/20 rounded-2xl overflow-hidden shadow-sm animate-in fade-in slide-in-from-top-4 duration-300">
        <div className="p-4 bg-primary text-primary-foreground flex items-center justify-between">
          <div className="flex items-center gap-2">
-           <AppIcon name="Utensils" className="h-5 w-5" />
+           <Utensils className="h-5 w-5" />
            <h3 className="font-bold text-sm text-primary-foreground">Atualizar Cardápio do Dia</h3>
          </div>
          <button 
@@ -122,7 +121,7 @@ import { Utensils, Save, CheckCircle2, Circle, Loader2, Info } from "lucide-reac
        <div className="p-4 space-y-4">
          <div className="space-y-2">
            <label className="text-xs font-bold text-primary flex items-center gap-1">
-             <AppIcon name="Info" className="h-3 w-3" />
+             <Info className="h-3 w-3" />
              O que será servido hoje?
            </label>
            <textarea
@@ -156,9 +155,9 @@ import { Utensils, Save, CheckCircle2, Circle, Loader2, Info } from "lucide-reac
                      <span className="text-[10px] opacity-70">R$ {product.price.toFixed(2)}</span>
                    </div>
                    {selectedIds.includes(product.id) ? (
-                     <AppIcon name="CheckCircle2" className="h-4 w-4 text-primary" />
+                     <CheckCircle2 className="h-4 w-4 text-primary" />
                    ) : (
-                     <AppIcon name="Circle" className="h-4 w-4 text-muted-foreground/30" />
+                     <Circle className="h-4 w-4 text-muted-foreground/30" />
                    )}
                  </button>
                ))
@@ -173,9 +172,9 @@ import { Utensils, Save, CheckCircle2, Circle, Loader2, Info } from "lucide-reac
              className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground py-3 rounded-xl font-bold hover:bg-primary/90 transition-all disabled:opacity-50 shadow-md shadow-primary/20"
            >
              {isSaving ? (
-               <AppIcon name="Loader2" className="h-4 w-4 animate-spin" />
+               <Loader2 className="h-4 w-4 animate-spin" />
              ) : (
-               <AppIcon name="Save" className="h-4 w-4" />
+               <Save className="h-4 w-4" />
              )}
              Atualizar {selectedIds.length} Produto{selectedIds.length !== 1 ? "s" : ""}
            </button>

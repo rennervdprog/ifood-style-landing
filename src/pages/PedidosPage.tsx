@@ -7,7 +7,8 @@ import { subscribeWithRejoin, cleanupChannel } from "@/lib/realtimeChannel";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import BottomNav from "@/components/BottomNav";
- import { toast } from "sonner";
+ import { ClipboardList, Clock, ChefHat, Truck, CheckCircle2, Lock, Copy, QrCode, XCircle, X, Loader2, Trash2, ShieldAlert, AlertCircle, TimerReset, RefreshCw, MessageCircle, Bell, AlertTriangle, Wallet, Zap } from "lucide-react";
+import { toast } from "sonner";
 import { notifyOrderPreparing, notifyOrderOnTheWay, notifyOrderDelivered, pushNotifyNewOrder } from "@/lib/notifications";
 import OrderRating from "@/components/OrderRating";
 
@@ -784,7 +785,7 @@ const PedidosPage = () => {
           <h1 className="font-bold text-foreground">Meus Pedidos</h1>
         </header>
         <div className="flex flex-col items-center justify-center py-24 text-center px-4">
-          <AppIcon name="ClipboardList" className="h-16 w-16 text-muted-foreground mb-4" />
+          <ClipboardList className="h-16 w-16 text-muted-foreground mb-4" />
           <h2 className="text-lg font-bold text-foreground mb-1">Faça login</h2>
           <p className="text-sm text-muted-foreground">Entre para ver seus pedidos.</p>
           <button
@@ -849,7 +850,7 @@ const PedidosPage = () => {
             })
           ) : (
             <div className="flex flex-col items-center justify-center py-24 text-center">
-              <AppIcon name="ClipboardList" className="h-16 w-16 text-muted-foreground mb-4" />
+              <ClipboardList className="h-16 w-16 text-muted-foreground mb-4" />
               <h2 className="text-lg font-bold text-foreground mb-1">Nenhum pedido</h2>
               <p className="text-sm text-muted-foreground">Sua loja ainda não recebeu pedidos.</p>
             </div>
@@ -872,11 +873,11 @@ const PedidosPage = () => {
       {showNewOrderNotifPrompt && (
         <div className="fixed top-4 left-4 right-4 z-50 bg-card border border-primary/30 rounded-2xl p-4 shadow-2xl animate-in slide-in-from-top-4">
           <button onClick={() => setShowNewOrderNotifPrompt(false)} className="absolute top-3 right-3 text-muted-foreground hover:text-foreground">
-            <AppIcon name="X" className="h-4 w-4" />
+            <X className="h-4 w-4" />
           </button>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-              <AppIcon name="Bell" className="h-5 w-5 text-primary" />
+              <Bell className="h-5 w-5 text-primary" />
             </div>
             <div className="flex-1 min-w-0">
               <h3 className="font-bold text-sm text-foreground">🔔 Ative as notificações!</h3>
@@ -921,7 +922,7 @@ const PedidosPage = () => {
       <header className="sticky top-0 z-50 bg-card/95 backdrop-blur-md border-b border-border">
         <div className="flex items-center justify-between h-14 px-4">
           <div className="flex items-center gap-2">
-            <AppIcon name="ClipboardList" className="h-5 w-5 text-primary" />
+            <ClipboardList className="h-5 w-5 text-primary" />
             <h1 className="font-black text-foreground">Meus Pedidos</h1>
           </div>
           {hasCompletedOrders && (
@@ -930,7 +931,7 @@ const PedidosPage = () => {
               disabled={clearingHistory}
               className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50 bg-muted/50 px-3 py-1.5 rounded-full"
             >
-              <AppIcon name="Trash2" className="h-3.5 w-3.5" />
+              <Trash2 className="h-3.5 w-3.5" />
               Limpar histórico
             </button>
           )}
@@ -939,7 +940,7 @@ const PedidosPage = () => {
             className="flex items-center gap-1.5 text-xs font-semibold text-amber-700 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/30 px-3 py-1.5 rounded-full hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-colors"
             title="Diagnosticar pedidos sumidos"
           >
-            <AppIcon name="ShieldAlert" className="h-3.5 w-3.5" />
+            <ShieldAlert className="h-3.5 w-3.5" />
             Diag
           </button>
         </div>
@@ -950,10 +951,10 @@ const PedidosPage = () => {
           <div className="bg-card rounded-2xl max-w-lg w-full max-h-[85vh] overflow-y-auto p-5 space-y-3" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h3 className="font-black text-foreground">🔍 Diagnóstico de Pedidos</h3>
-              <button onClick={() => setDiagnosticOpen(false)}><AppIcon name="X" className="h-5 w-5" /></button>
+              <button onClick={() => setDiagnosticOpen(false)}><X className="h-5 w-5" /></button>
             </div>
             {diagnosticLoading ? (
-              <div className="py-8 text-center"><AppIcon name="Loader2" className="h-6 w-6 animate-spin mx-auto" /></div>
+              <div className="py-8 text-center"><Loader2 className="h-6 w-6 animate-spin mx-auto" /></div>
             ) : diagnosticData?.error ? (
               <div className="text-destructive text-sm">{diagnosticData.error}</div>
             ) : diagnosticData ? (
@@ -1064,7 +1065,7 @@ const PedidosPage = () => {
                             <div className="bg-white dark:bg-card border border-amber-200 rounded-xl p-3">
                               <div className="flex items-center justify-between mb-2">
                                 <div className="flex items-center gap-2">
-                                  <AppIcon name="Loader2" className="h-4 w-4 text-amber-500 animate-spin" />
+                                  <Loader2 className="h-4 w-4 text-amber-500 animate-spin" />
                                   <span className="text-xs font-semibold text-amber-600">Aguardando Pagamento</span>
                                 </div>
                                 <button
@@ -1072,7 +1073,7 @@ const PedidosPage = () => {
                                   disabled={cancellingOrderId === order.id}
                                   className="text-muted-foreground hover:text-red-500 transition-colors"
                                 >
-                                  <AppIcon name="XCircle" className="h-4 w-4" />
+                                  <XCircle className="h-4 w-4" />
                                 </button>
                               </div>
 
@@ -1092,7 +1093,7 @@ const PedidosPage = () => {
                                       onClick={() => copyPixCode(hasSavedPix.qrCode!)}
                                       className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground font-bold py-2.5 rounded-xl text-xs"
                                     >
-                                      <AppIcon name="Copy" className="h-3.5 w-3.5" />
+                                      <Copy className="h-3.5 w-3.5" />
                                       Copiar Código PIX
                                     </button>
                                   )}
@@ -1109,7 +1110,7 @@ const PedidosPage = () => {
                                     disabled={payingOrderId === order.id || isPixBlocked}
                                     className="w-full flex items-center justify-center gap-2 text-muted-foreground font-medium py-1.5 text-[10px] hover:text-foreground transition-colors"
                                   >
-                                    <AppIcon name="RefreshCw" className="h-3 w-3" />
+                                    <RefreshCw className="h-3 w-3" />
                                     Gerar novo QR Code
                                   </button>
                                 </div>
@@ -1119,7 +1120,7 @@ const PedidosPage = () => {
                                 <>
                                   {safetyModeMs > 0 && (
                                     <div className="rounded-lg border border-amber-300 bg-amber-50 p-2 mb-2 flex items-start gap-2">
-                                      <AppIcon name="ShieldAlert" className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+                                      <ShieldAlert className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
                                       <p className="text-[10px] text-amber-600">
                                         Manutenção temporária. Voltará em {formatCooldownTime(safetyModeMs)}.
                                       </p>
@@ -1127,7 +1128,7 @@ const PedidosPage = () => {
                                   )}
                                   {!safetyModeMs && pixCooldownMs > 0 && (
                                     <div className="rounded-lg border border-amber-300 bg-amber-50 p-2 mb-2 flex items-start gap-2">
-                                      <AppIcon name="AlertCircle" className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+                                      <AlertCircle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
                                       <p className="text-[10px] text-amber-600">
                                         Muitas tentativas. Aguarde {formatCooldownTime(pixCooldownMs)}.
                                       </p>
@@ -1140,12 +1141,12 @@ const PedidosPage = () => {
                                   >
                                     {isPixBlocked ? (
                                       <>
-                                        <AppIcon name="ShieldAlert" className="h-3.5 w-3.5" />
+                                        <ShieldAlert className="h-3.5 w-3.5" />
                                         Aguarde...
                                       </>
                                     ) : (
                                       <>
-                                        <AppIcon name="QrCode" className="h-3.5 w-3.5" />
+                                        <QrCode className="h-3.5 w-3.5" />
                                         {payingOrderId === order.id ? "Gerando..." : "Pagar com PIX"}
                                       </>
                                     )}
@@ -1171,7 +1172,7 @@ const PedidosPage = () => {
                         {order.neighborhood !== "RETIRADA" && showPin && (
                           <div className="bg-white dark:bg-card border border-primary/20 rounded-xl p-3">
                             <div className="flex items-center gap-2 mb-1">
-                              <AppIcon name="Lock" className="h-4 w-4 text-primary" />
+                              <Lock className="h-4 w-4 text-primary" />
                               <span className="text-xs font-bold text-primary">Código de Entrega</span>
                             </div>
                             <div className="flex items-center justify-between">
@@ -1182,7 +1183,7 @@ const PedidosPage = () => {
                                 onClick={() => copyPin(order.delivery_pin)}
                                 className="flex items-center gap-1 text-xs text-primary font-bold px-3 py-1.5 rounded-lg bg-primary/10"
                               >
-                                <AppIcon name="Copy" className="h-3 w-3" />
+                                <Copy className="h-3 w-3" />
                                 Copiar
                               </button>
                             </div>
@@ -1208,7 +1209,7 @@ const PedidosPage = () => {
                         {order.neighborhood !== "RETIRADA" && ["saiu_entrega", "em_transito"].includes(order.status) && !(order as any).delivery_confirmed_by_client && (
                           <div className="bg-white dark:bg-card border border-emerald-200 rounded-xl p-3">
                             <div className="flex items-center gap-2 mb-2">
-                              <AppIcon name="CheckCircle2" className="h-4 w-4 text-emerald-500" />
+                              <CheckCircle2 className="h-4 w-4 text-emerald-500" />
                               <span className="text-xs font-bold text-emerald-600">Recebeu seu pedido?</span>
                             </div>
                             <button
@@ -1218,7 +1219,7 @@ const PedidosPage = () => {
                             >
                               {confirmingDelivery === order.id ? (
                                 <span className="flex items-center justify-center gap-2">
-                                  <AppIcon name="Loader2" className="h-3.5 w-3.5 animate-spin" />
+                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
                                   Confirmando...
                                 </span>
                               ) : (
@@ -1268,7 +1269,7 @@ const PedidosPage = () => {
                               onClick={() => cancelOrder(order.id)}
                               className="text-[10px] font-semibold text-muted-foreground hover:text-destructive transition-colors flex items-center gap-1"
                             >
-                              <AppIcon name="X" className="h-3 w-3" />
+                              <X className="h-3 w-3" />
                               Cancelar pedido
                             </button>
                           )}
@@ -1295,7 +1296,7 @@ const PedidosPage = () => {
                     <div key={order.id} className={`bg-white dark:bg-card rounded-2xl border overflow-hidden ${isCancelled ? "border-red-200 opacity-60" : "border-border"}`}>
                       {isCancelled && order.cancel_reason && (
                         <div className="px-4 py-2 bg-red-500/8 border-b border-red-200 dark:border-red-900/40 flex items-center gap-2">
-                          <AppIcon name="XCircle" className="h-3 w-3 text-red-500 shrink-0" />
+                          <XCircle className="h-3 w-3 text-red-500 shrink-0" />
                           <p className="text-[11px] text-red-700 dark:text-red-400 font-medium">
                             {{
                               out_of_stock:   "Produto esgotado no estoque",
@@ -1363,7 +1364,7 @@ const PedidosPage = () => {
                             }}
                             className="flex items-center gap-1.5 text-xs font-bold text-primary bg-primary/10 px-3 py-1.5 rounded-full hover:bg-primary/20 transition-colors"
                           >
-                            <AppIcon name="RefreshCw" className="h-3 w-3" />
+                            <RefreshCw className="h-3 w-3" />
                             Pedir novamente
                           </button>
                         )}
@@ -1372,7 +1373,7 @@ const PedidosPage = () => {
                             onClick={() => setShowRefundModal(order)}
                             className="flex items-center gap-1.5 text-xs font-bold text-amber-600 bg-amber-50 dark:bg-amber-950/30 px-3 py-1.5 rounded-full hover:bg-amber-100 dark:hover:bg-amber-950/50 transition-colors"
                           >
-                            <AppIcon name="AlertTriangle" className="h-3 w-3" />
+                            <AlertTriangle className="h-3 w-3" />
                             Reembolso
                           </button>
                         )}
@@ -1399,7 +1400,7 @@ const PedidosPage = () => {
         ) : (
           <div className="flex flex-col items-center justify-center py-20 text-center px-6">
             <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-              <AppIcon name="ClipboardList" className="h-10 w-10 text-primary" />
+              <ClipboardList className="h-10 w-10 text-primary" />
             </div>
             <h2 className="text-lg font-bold text-foreground mb-1">Nenhum pedido ainda</h2>
             <p className="text-sm text-muted-foreground mb-6">Explore as lojas e faça seu primeiro pedido!</p>
@@ -1413,7 +1414,7 @@ const PedidosPage = () => {
                <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold mb-4">Recomendado para você</p>
                <div className="bg-primary/5 rounded-2xl p-4 border border-primary/10 flex items-center gap-4 text-left" onClick={() => navigate("/lojas")}>
                  <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center shrink-0 shadow-lg shadow-primary/20">
-                   <AppIcon name="Zap" className="h-6 w-6 text-primary-foreground" />
+                   <Zap className="h-6 w-6 text-primary-foreground" />
                  </div>
                  <div>
                    <h4 className="text-sm font-bold text-foreground">Primeira fome do dia?</h4>
@@ -1432,18 +1433,18 @@ const PedidosPage = () => {
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                  <AppIcon name="QrCode" className="h-4 w-4 text-primary" />
+                  <QrCode className="h-4 w-4 text-primary" />
                 </div>
                 <h3 className="font-bold text-foreground">Pagamento PIX</h3>
               </div>
               <button onClick={() => setPixModal(null)} className="text-muted-foreground hover:text-foreground p-1 rounded-full hover:bg-muted transition-colors">
-                <AppIcon name="X" className="h-5 w-5" />
+                <X className="h-5 w-5" />
               </button>
             </div>
 
             {pixModal.loading ? (
               <div className="flex flex-col items-center py-8">
-                <AppIcon name="Loader2" className="h-10 w-10 text-primary animate-spin mb-3" />
+                <Loader2 className="h-10 w-10 text-primary animate-spin mb-3" />
                 <p className="text-sm text-muted-foreground">Gerando QR Code PIX...</p>
               </div>
             ) : (
@@ -1463,7 +1464,7 @@ const PedidosPage = () => {
                     onClick={() => copyPixCode(pixModal.qrCode!)}
                     className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground font-bold py-3 rounded-xl text-sm shadow-lg"
                   >
-                    <AppIcon name="Copy" className="h-4 w-4" />
+                    <Copy className="h-4 w-4" />
                     Copiar Código PIX
                   </button>
                 )}
@@ -1476,7 +1477,7 @@ const PedidosPage = () => {
                   >
                     {simulatingPayment ? (
                       <>
-                        <AppIcon name="Loader2" className="h-4 w-4 animate-spin" />
+                        <Loader2 className="h-4 w-4 animate-spin" />
                         Processando...
                       </>
                     ) : (
@@ -1569,7 +1570,7 @@ const PedidosPage = () => {
                   className="p-2 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground"
                   aria-label="Fechar"
                 >
-                  <AppIcon name="X" className="h-5 w-5" />
+                  <X className="h-5 w-5" />
                 </button>
               </div>
 
@@ -1728,8 +1729,6 @@ const PedidosPage = () => {
 
 import { useIsReseller as _useIsReseller } from "@/hooks/useIsReseller";
 import ResellerIndicacoes from "./revendedor/ResellerIndicacoes";
-import { AppIcon } from "@/components/ui/app-icon";
-import { ClipboardList, Clock, ChefHat, Truck, CheckCircle2, Lock, Copy, QrCode, XCircle, X, Loader2, Trash2, ShieldAlert, AlertCircle, RefreshCw, Bell, AlertTriangle, Wallet, Zap } from "lucide-react";
 
 const PedidosPageSwitch = () => {
   const { isReseller, loading } = _useIsReseller();

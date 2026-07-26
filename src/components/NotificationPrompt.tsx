@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
+import { Bell, X } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { isCapacitorNative, registerCapacitorPush } from "@/lib/capacitorNative";
-import { AppIcon } from "@/components/ui/app-icon";
-import { Bell, X } from "lucide-react";
 
 const NotificationPrompt = () => {
   const { user } = useAuth();
@@ -61,11 +60,11 @@ const NotificationPrompt = () => {
   return (
     <div className="fixed top-4 left-4 right-4 z-50 bg-card border border-border rounded-2xl p-4 shadow-2xl animate-in slide-in-from-top-4">
       <button onClick={handleDismiss} className="absolute top-3 right-3 text-muted-foreground hover:text-foreground">
-        <AppIcon name="X" className="h-4 w-4" />
+        <X className="h-4 w-4" />
       </button>
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-          <AppIcon name="Bell" className="h-5 w-5 text-primary" />
+          <Bell className="h-5 w-5 text-primary" />
         </div>
         <div className="flex-1 min-w-0">
           <h3 className="font-bold text-sm text-foreground">Ative as notificações!</h3>

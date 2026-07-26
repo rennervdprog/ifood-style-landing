@@ -1,5 +1,4 @@
 import { SIMULATION_MODE } from "@/lib/pixSimulation";
-import { AppIcon } from "@/components/ui/app-icon";
 import { AlertTriangle } from "lucide-react";
 
 const SimulationBanner = () => {
@@ -7,7 +6,7 @@ const SimulationBanner = () => {
 
   return (
     <div className="bg-amber-500/10 border-b border-amber-500/30 px-4 py-2 flex items-center justify-center gap-2">
-      <AppIcon name="AlertTriangle" className="h-4 w-4 text-amber-500 shrink-0" />
+      <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0" />
       <p className="text-xs font-bold text-amber-600 text-center">
         ⚠️ MODO DE SIMULAÇÃO ATIVO — Transações não são reais
       </p>

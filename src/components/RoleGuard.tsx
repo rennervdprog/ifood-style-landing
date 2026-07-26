@@ -2,10 +2,9 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { Shield } from "lucide-react";
 import { isPartnerCapacitorApp } from "@/lib/capacitorAppMode";
 import { useUserRouting } from "@/hooks/useUserRouting";
-import { AppIcon } from "@/components/ui/app-icon";
-import { Shield } from "lucide-react";
 
 interface RoleGuardProps {
   allowedRoles: string[];
@@ -89,7 +88,7 @@ const RoleGuard = ({ allowedRoles, redirectTo, children, requireApproval = false
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center text-center px-6">
         <div className="w-20 h-20 bg-amber-500/10 rounded-3xl flex items-center justify-center mb-5">
-          <AppIcon name="Shield" className="h-10 w-10 text-amber-500" />
+          <Shield className="h-10 w-10 text-amber-500" />
         </div>
         <h1 className="text-xl font-black text-foreground mb-2">Cadastro em Análise 🔍</h1>
         <p className="text-sm text-muted-foreground max-w-xs mb-3">

@@ -1,11 +1,10 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { formatBRL } from "@/lib/utils";
+import { TrendingUp, PartyPopper, Check, X, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useState } from "react";
-import { AppIcon } from "@/components/ui/app-icon";
-import { TrendingUp, PartyPopper, Check, X, AlertTriangle } from "lucide-react";
 
 const WINDOW_DAYS = 60;
 
@@ -113,7 +112,7 @@ export default function EssencialProgressCard({ store, storePlan }: Props) {
     return (
       <div className="rounded-2xl border-2 border-destructive/60 bg-gradient-to-br from-destructive/15 to-destructive/5 p-4 space-y-3">
         <div className="flex items-center gap-2">
-          <AppIcon name="AlertTriangle" className="h-5 w-5 text-destructive animate-pulse" />
+          <AlertTriangle className="h-5 w-5 text-destructive animate-pulse" />
           <div className="font-black text-destructive">Loja suspensa</div>
         </div>
         <p className="text-sm text-foreground">
@@ -123,7 +122,7 @@ export default function EssencialProgressCard({ store, storePlan }: Props) {
           Conforme os Termos de Uso (5.2), não há retorno ao plano gratuito. Para reativar, aceite a mensalidade abaixo.
         </p>
         <Button size="sm" disabled={saving} onClick={() => respond("accepted")} className="w-full gap-1">
-          <AppIcon name="Check" className="h-4 w-4" /> Aceitar mensalidade e reativar loja
+          <Check className="h-4 w-4" /> Aceitar mensalidade e reativar loja
         </Button>
       </div>
     );
@@ -135,7 +134,7 @@ export default function EssencialProgressCard({ store, storePlan }: Props) {
     return (
       <div className="rounded-2xl border border-amber-500/40 bg-gradient-to-br from-amber-500/10 to-orange-500/5 p-4 space-y-3">
         <div className="flex items-center gap-2">
-          <AppIcon name="PartyPopper" className="h-5 w-5 text-amber-600" />
+          <PartyPopper className="h-5 w-5 text-amber-600" />
           <div className="font-black text-foreground">Upgrade {PLAN_NAME} disponível</div>
         </div>
         <p className="text-sm text-muted-foreground">
@@ -146,15 +145,15 @@ export default function EssencialProgressCard({ store, storePlan }: Props) {
         </p>
         {accepted ? (
           <div className="text-xs font-semibold text-emerald-700 flex items-center gap-1">
-            <AppIcon name="Check" className="h-4 w-4" /> Upgrade aceito. Cobrança será gerada em {label}.
+            <Check className="h-4 w-4" /> Upgrade aceito. Cobrança será gerada em {label}.
           </div>
         ) : (
           <div className="flex gap-2 pt-1">
             <Button size="sm" disabled={saving} onClick={() => respond("accepted")} className="flex-1 gap-1">
-              <AppIcon name="Check" className="h-4 w-4" /> Aceitar upgrade
+              <Check className="h-4 w-4" /> Aceitar upgrade
             </Button>
             <Button size="sm" variant="outline" disabled={saving} onClick={() => respond("refused")} className="flex-1 gap-1">
-              <AppIcon name="X" className="h-4 w-4" /> Recusar
+              <X className="h-4 w-4" /> Recusar
             </Button>
           </div>
         )}
@@ -165,7 +164,7 @@ export default function EssencialProgressCard({ store, storePlan }: Props) {
   return (
     <div className="rounded-2xl border border-border/60 bg-card p-4 space-y-3">
       <div className="flex items-center gap-2">
-        <AppIcon name="TrendingUp" className="h-4 w-4 text-primary" />
+        <TrendingUp className="h-4 w-4 text-primary" />
         <div className="font-bold text-foreground text-sm">Progresso {PLAN_NAME} (últimos {WINDOW_DAYS} dias)</div>
       </div>
       <div className="flex items-baseline justify-between">

@@ -1,5 +1,4 @@
 import { Component, ErrorInfo, ReactNode } from "react";
-import { AppIcon } from "@/components/ui/app-icon";
 import { RefreshCw, AlertTriangle } from "lucide-react";
 
 interface Props { children: ReactNode }
@@ -74,7 +73,7 @@ class ErrorBoundary extends Component<Props, State> {
       return (
         <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4 p-6">
           <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
-            <AppIcon name="RefreshCw" className="h-6 w-6 text-primary animate-spin" />
+            <RefreshCw className="h-6 w-6 text-primary animate-spin" />
           </div>
           <div className="text-center space-y-1">
             <p className="font-bold text-foreground">Atualizando o app...</p>
@@ -87,7 +86,7 @@ class ErrorBoundary extends Component<Props, State> {
             }}
             className="mt-2 flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-xl font-bold text-sm active:scale-95 transition-transform"
           >
-            <AppIcon name="RefreshCw" className="h-4 w-4" />
+            <RefreshCw className="h-4 w-4" />
             Recarregar agora
           </button>
           <p className="text-[11px] text-muted-foreground/70 mt-1">Se a tela não mudar em alguns segundos, toque no botão.</p>
@@ -99,7 +98,7 @@ class ErrorBoundary extends Component<Props, State> {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-5 p-6">
         <div className="w-14 h-14 rounded-2xl bg-destructive/10 flex items-center justify-center">
-          <AppIcon name="AlertTriangle" className="h-7 w-7 text-destructive" />
+          <AlertTriangle className="h-7 w-7 text-destructive" />
         </div>
         <div className="text-center space-y-2 max-w-sm">
           <p className="text-lg font-black text-foreground">Algo deu errado</p>
@@ -119,7 +118,7 @@ class ErrorBoundary extends Component<Props, State> {
           }}
           className="flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-xl font-bold text-sm active:scale-95 transition-transform"
         >
-          <AppIcon name="RefreshCw" className="h-4 w-4" />
+          <RefreshCw className="h-4 w-4" />
           Recarregar página
         </button>
       </div>

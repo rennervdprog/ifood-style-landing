@@ -8,12 +8,11 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-  import { toast } from "sonner";
+  import { CheckCircle2, Loader2, Banknote, ShieldCheck, Copy, AlertCircle, FileText, ExternalLink, RefreshCw, User, MapPin, Landmark, ArrowRight, Wallet, Info } from "lucide-react";
+import { toast } from "sonner";
 import { formatPixKeyDisplay, sanitizePixKeyForAsaas, validatePixKey } from "@/lib/pixFormat";
 import { fetchCep } from "@/lib/location";
 import AsaasDocumentsUpload from "./AsaasDocumentsUpload";
-import { AppIcon } from "@/components/ui/app-icon";
-import { CheckCircle2, Loader2, Banknote, ShieldCheck, Copy, AlertCircle, FileText, ExternalLink, RefreshCw, User, Landmark, ArrowRight, Wallet, Info } from "lucide-react";
 
 interface Props {
   storeId: string;
@@ -201,7 +200,7 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
   const FieldError = ({ k }: { k: string }) =>
     touched[k] && errors[k] ? (
       <p className="text-[11px] text-destructive flex items-center gap-1 mt-1">
-        <AppIcon name="AlertCircle" className="h-3 w-3" /> {errors[k]}
+        <AlertCircle className="h-3 w-3" /> {errors[k]}
       </p>
     ) : null;
 
@@ -406,7 +405,7 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
     return (
       <Card>
         <CardContent className="py-8 flex items-center justify-center">
-          <AppIcon name="Loader2" className="h-5 w-5 animate-spin text-muted-foreground" />
+          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
         </CardContent>
       </Card>
     );
@@ -421,7 +420,7 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
     return (
       <div className="space-y-4">
         <Alert className={isPending ? "border-amber-500/40 bg-amber-500/5" : "border-green-500/40 bg-green-500/5"}>
-          {isPending ? <AppIcon name="AlertCircle" className="h-5 w-5 text-amber-600" /> : <AppIcon name="CheckCircle2" className="h-5 w-5 text-green-600" />}
+          {isPending ? <AlertCircle className="h-5 w-5 text-amber-600" /> : <CheckCircle2 className="h-5 w-5 text-green-600" />}
           <AlertTitle className={isPending ? "text-amber-700" : "text-green-700"}>
             {isPending ? "Subconta em análise / Pendente" : "Subconta 100% Ativa"}
           </AlertTitle>
@@ -440,25 +439,25 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
               <CardTitle className="text-sm flex items-center justify-between">
                 Situação da Ativação
                 <Button variant="ghost" size="sm" onClick={() => refetchStatus()} disabled={loadingStatus}>
-                  <AppIcon name="RefreshCw" className={`h-3 w-3 ${loadingStatus ? "animate-spin" : ""}`} />
+                  <RefreshCw className={`h-3 w-3 ${loadingStatus ? "animate-spin" : ""}`} />
                 </Button>
               </CardTitle>
             </CardHeader>
             <CardContent className="py-2 px-4 space-y-3">
                <div className="flex items-center justify-between text-xs">
-                 <span className="flex items-center gap-2"><AppIcon name="ShieldCheck" className="h-3 w-3" /> Dados Comerciais</span>
+                 <span className="flex items-center gap-2"><ShieldCheck className="h-3 w-3" /> Dados Comerciais</span>
                  <span className={activationStatus?.commercialInfo === "APPROVED" ? "text-green-600 font-bold" : "text-amber-600"}>
                    {activationStatus?.commercialInfo === "APPROVED" ? "Aprovado" : "Pendente"}
                  </span>
                </div>
                <div className="flex items-center justify-between text-xs">
-                 <span className="flex items-center gap-2"><AppIcon name="Banknote" className="h-3 w-3" /> Dados Bancários</span>
+                 <span className="flex items-center gap-2"><Banknote className="h-3 w-3" /> Dados Bancários</span>
                  <span className={activationStatus?.bankAccount === "APPROVED" ? "text-green-600 font-bold" : "text-amber-600"}>
                    {activationStatus?.bankAccount === "APPROVED" ? "Aprovado" : "Pendente"}
                  </span>
                </div>
                <div className="flex items-center justify-between text-xs">
-                 <span className="flex items-center gap-2"><AppIcon name="FileText" className="h-3 w-3" /> Documentos</span>
+                 <span className="flex items-center gap-2"><FileText className="h-3 w-3" /> Documentos</span>
                  <span className={activationStatus?.document === "APPROVED" ? "text-green-600 font-bold" : "text-amber-600"}>
                    {activationStatus?.document === "APPROVED" ? "Aprovado" : "Pendente"}
                  </span>
@@ -477,7 +476,7 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
                        rel="noopener noreferrer"
                        className="text-[11px] font-bold text-primary underline flex items-center gap-1"
                      >
-                       Completar <AppIcon name="ExternalLink" className="h-2.5 w-2.5" />
+                       Completar <ExternalLink className="h-2.5 w-2.5" />
                      </a>
                    </div>
                  )}
@@ -492,7 +491,7 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
                        rel="noopener noreferrer"
                        className="text-[11px] font-bold text-primary underline flex items-center gap-1"
                      >
-                       Completar <AppIcon name="ExternalLink" className="h-2.5 w-2.5" />
+                       Completar <ExternalLink className="h-2.5 w-2.5" />
                      </a>
                    </div>
                  )}
@@ -507,7 +506,7 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
                        rel="noopener noreferrer"
                        className="text-[11px] font-bold text-primary underline flex items-center gap-1"
                      >
-                       Enviar <AppIcon name="ExternalLink" className="h-2.5 w-2.5" />
+                       Enviar <ExternalLink className="h-2.5 w-2.5" />
                      </a>
                    </div>
                  )}
@@ -516,7 +515,7 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
                <div className="pt-1 space-y-1.5">
                  <Button variant="outline" className="w-full text-[11px] h-8 border-primary/30 text-primary hover:bg-primary/5" asChild>
                    <a href="https://www.asaas.com/childAccounts/list" target="_blank" rel="noopener noreferrer">
-                     Abrir painel Asaas completo <AppIcon name="ExternalLink" className="h-3 w-3 ml-1.5" />
+                     Abrir painel Asaas completo <ExternalLink className="h-3 w-3 ml-1.5" />
                    </a>
                  </Button>
                  <p className="text-[9px] text-center text-muted-foreground">
@@ -541,7 +540,7 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
           <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold z-10 transition-colors ${
             step >= s ? "bg-primary text-white" : "bg-muted text-muted-foreground"
           }`}>
-            {step > s ? <AppIcon name="CheckCircle2" className="h-4 w-4" /> : s}
+            {step > s ? <CheckCircle2 className="h-4 w-4" /> : s}
           </div>
           <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
             {s === 1 ? "Dados" : s === 2 ? "Endereço" : "Financeiro"}
@@ -561,7 +560,7 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
       <CardHeader className="bg-primary/5 border-b border-primary/10 pb-8">
         <div className="flex items-center gap-3 mb-2">
           <div className="p-2 bg-primary/10 rounded-xl">
-            <AppIcon name="Banknote" className="h-6 w-6 text-primary" />
+            <Banknote className="h-6 w-6 text-primary" />
           </div>
           <CardTitle className="text-xl font-bold tracking-tight">
             Configuração da Subconta
@@ -586,7 +585,7 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
                   className="flex-1 rounded-lg h-10"
                   onClick={() => setPersonType("FISICA")}
                 >
-                  <AppIcon name="User" className="h-4 w-4 mr-2" /> Pessoa Física
+                  <User className="h-4 w-4 mr-2" /> Pessoa Física
                 </Button>
                 <Button 
                   type="button"
@@ -594,7 +593,7 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
                   className="flex-1 rounded-lg h-10"
                   onClick={() => setPersonType("JURIDICA")}
                 >
-                  <AppIcon name="Landmark" className="h-4 w-4 mr-2" /> Pessoa Jurídica
+                  <Landmark className="h-4 w-4 mr-2" /> Pessoa Jurídica
                 </Button>
               </div>
 
@@ -646,11 +645,11 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
                   {form.emailConfirm && form.email && (
                     form.email.toLowerCase().trim() === form.emailConfirm.toLowerCase().trim() ? (
                       <p className="text-xs text-emerald-600 flex items-center gap-1.5 font-medium">
-                        <AppIcon name="CheckCircle2" className="h-3.5 w-3.5" /> E-mails conferem
+                        <CheckCircle2 className="h-3.5 w-3.5" /> E-mails conferem
                       </p>
                     ) : (
                       <p className="text-xs text-red-500 flex items-center gap-1.5 font-medium">
-                        <AppIcon name="AlertCircle" className="h-3.5 w-3.5" /> E-mails não coincidem
+                        <AlertCircle className="h-3.5 w-3.5" /> E-mails não coincidem
                       </p>
                     )
                   )}
@@ -707,7 +706,7 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
               }
               setStep(2);
             }}>
-              Continuar para Endereço <AppIcon name="ArrowRight" className="h-5 w-5 ml-2" />
+              Continuar para Endereço <ArrowRight className="h-5 w-5 ml-2" />
             </Button>
           </div>
         )}
@@ -769,7 +768,7 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
                  }
                  setStep(3);
               }}>
-                Dados Bancários <AppIcon name="ArrowRight" className="h-5 w-5 ml-2" />
+                Dados Bancários <ArrowRight className="h-5 w-5 ml-2" />
               </Button>
             </div>
           </div>
@@ -778,7 +777,7 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
         {step === 3 && (
           <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
             <Alert className="border-primary/20 bg-primary/5">
-              <AppIcon name="Info" className="h-4 w-4 text-primary" />
+              <Info className="h-4 w-4 text-primary" />
               <AlertDescription className="text-xs">
                 Informe a chave PIX onde você deseja receber seus saques. Pode ser de qualquer banco.
               </AlertDescription>
@@ -815,7 +814,7 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
             <div className="space-y-4">
               <div className="p-4 rounded-2xl bg-amber-500/5 border border-amber-500/20">
                 <div className="flex gap-3">
-                  <AppIcon name="AlertCircle" className="h-5 w-5 text-amber-600 shrink-0" />
+                  <AlertCircle className="h-5 w-5 text-amber-600 shrink-0" />
                   <div className="space-y-1">
                     <p className="text-xs font-bold text-amber-900 uppercase tracking-tight">Verificação de Segurança</p>
                     <p className="text-[11px] text-amber-800 leading-relaxed">
@@ -829,7 +828,7 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
               <div className="flex gap-3">
                 <Button variant="outline" className="flex-1 h-12" onClick={() => setStep(2)}>Voltar</Button>
                 <Button className="flex-[2] h-12 text-base font-bold bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20" onClick={submit} disabled={submitting}>
-                  {submitting ? <AppIcon name="Loader2" className="h-5 w-5 animate-spin mr-2" /> : <AppIcon name="ShieldCheck" className="h-5 w-5 mr-2" />}
+                  {submitting ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : <ShieldCheck className="h-5 w-5 mr-2" />}
                   Ativar Minha Conta
                 </Button>
               </div>
@@ -840,13 +839,13 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
         {/* Footer info always visible */}
         <div className="pt-6 border-t border-border mt-4 flex items-center justify-center gap-6">
           <div className="flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-            <AppIcon name="ShieldCheck" className="h-3 w-3 text-primary" /> 100% Seguro
+            <ShieldCheck className="h-3 w-3 text-primary" /> 100% Seguro
           </div>
           <div className="flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-            <AppIcon name="Landmark" className="h-3 w-3 text-primary" /> Homologado Asaas
+            <Landmark className="h-3 w-3 text-primary" /> Homologado Asaas
           </div>
           <div className="flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-            <AppIcon name="CheckCircle2" className="h-3 w-3 text-primary" /> Grátis
+            <CheckCircle2 className="h-3 w-3 text-primary" /> Grátis
           </div>
         </div>
 
@@ -855,7 +854,7 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
             {/* Ícone + título */}
             <div className="flex items-start gap-2.5">
               <div className="w-8 h-8 rounded-full bg-destructive/10 flex items-center justify-center shrink-0 mt-0.5">
-                <AppIcon name="AlertCircle" className="h-4 w-4 text-destructive" />
+                <AlertCircle className="h-4 w-4 text-destructive" />
               </div>
               <div className="flex-1 space-y-1">
                 <p className="text-sm font-bold text-destructive">Não foi possível criar a subconta</p>
@@ -881,7 +880,7 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
                   onClick={recoverSubaccount}
                   disabled={linking}
                 >
-                  {linking ? <AppIcon name="Loader2" className="h-3.5 w-3.5 mr-2 animate-spin" /> : <AppIcon name="CheckCircle2" className="h-3.5 w-3.5 mr-2" />}
+                  {linking ? <Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5 mr-2" />}
                   Vincular subconta já criada (sem novo CPF)
                 </Button>
               )}
@@ -891,7 +890,7 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
                 className="w-full h-9 text-[12px] border-destructive/30 text-destructive hover:bg-destructive/5"
                 onClick={() => { setLastError(null); setDebugInfo(null); setStep(1); }}
               >
-                <AppIcon name="RefreshCw" className="h-3.5 w-3.5 mr-2" />
+                <RefreshCw className="h-3.5 w-3.5 mr-2" />
                 Corrigir dados e tentar novamente
               </Button>
               <Button
@@ -904,7 +903,7 @@ export default function AsaasSubaccountSetup({ storeId, initialData }: Props) {
                   toast.success("Copiado para o suporte!");
                 }}
               >
-                <AppIcon name="Copy" className="h-3 w-3 mr-1.5" />
+                <Copy className="h-3 w-3 mr-1.5" />
                 Copiar erro para enviar ao suporte
               </Button>
             </div>

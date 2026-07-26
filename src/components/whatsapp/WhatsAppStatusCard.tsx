@@ -1,9 +1,8 @@
-import { AppIcon } from "@/components/ui/app-icon";
-import { MessageCircle, QrCode, Loader2, AlertTriangle, Wifi, WifiOff } from "lucide-react";
 /**
  * Card-hero de status da conexão WhatsApp.
  * Mostra avatar, número mascarado, pill animado e CTA contextual.
  */
+import { MessageCircle, QrCode, Loader2, AlertTriangle, Wifi, WifiOff } from "lucide-react";
 
 interface Props {
   status: "connected" | "connecting" | "disconnected";
@@ -85,7 +84,7 @@ export default function WhatsAppStatusCard({
             isConnected ? "bg-emerald-500" : isConnecting ? "bg-amber-500" : "bg-muted-foreground/30"
           }`}
         >
-          <AppIcon name="MessageCircle" className="h-6 w-6 text-white" />
+          <MessageCircle className="h-6 w-6 text-white" strokeWidth={2.4} />
           {isConnected && (
             <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-emerald-400 border-2 border-background" />
           )}
@@ -105,7 +104,7 @@ export default function WhatsAppStatusCard({
                   : "bg-muted text-muted-foreground"
               }`}
             >
-              {isConnected ? <AppIcon name="Wifi" className="h-2.5 w-2.5" /> : isConnecting ? <AppIcon name="Loader2" className="h-2.5 w-2.5 animate-spin" /> : <AppIcon name="WifiOff" className="h-2.5 w-2.5" />}
+              {isConnected ? <Wifi className="h-2.5 w-2.5" /> : isConnecting ? <Loader2 className="h-2.5 w-2.5 animate-spin" /> : <WifiOff className="h-2.5 w-2.5" />}
               {isConnected ? "Conectado" : isConnecting ? "Aguardando QR" : "Desconectado"}
             </span>
           </div>
@@ -123,7 +122,7 @@ export default function WhatsAppStatusCard({
 
       {phoneMismatch && (
         <div className="mt-3 flex items-start gap-2 rounded-lg bg-destructive/10 border border-destructive/30 px-3 py-2">
-          <AppIcon name="AlertTriangle" className="h-3.5 w-3.5 text-destructive shrink-0 mt-0.5" />
+          <AlertTriangle className="h-3.5 w-3.5 text-destructive shrink-0 mt-0.5" />
           <p className="text-[11px] text-destructive leading-snug">
             Número conectado ({formatPhone(connectedPhone)}) é diferente do cadastrado na loja ({formatPhone(expectedPhone)}). Reconecte com o número correto.
           </p>
@@ -137,9 +136,9 @@ export default function WhatsAppStatusCard({
         className="mt-3 w-full inline-flex items-center justify-center gap-2 rounded-xl bg-foreground text-background py-2.5 text-xs font-bold disabled:opacity-60 hover:opacity-90 transition-opacity"
       >
         {primaryLoading ? (
-          <AppIcon name="Loader2" className="h-3.5 w-3.5 animate-spin" />
+          <Loader2 className="h-3.5 w-3.5 animate-spin" />
         ) : (
-          <AppIcon name="QrCode" className="h-3.5 w-3.5" />
+          <QrCode className="h-3.5 w-3.5" />
         )}
         {isConnected ? "Reconectar outro número" : isConnecting ? "Recarregar QR Code" : "Gerar QR Code"}
       </button>

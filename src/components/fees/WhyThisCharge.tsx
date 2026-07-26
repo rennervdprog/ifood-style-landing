@@ -1,4 +1,3 @@
-import { AppIcon } from "@/components/ui/app-icon";
 import { HelpCircle } from "lucide-react";
 import {
   Popover,
@@ -22,7 +21,7 @@ export default function WhyThisCharge({ title, children, className = "" }: Props
           aria-label={`Por que ${title}?`}
           className={`inline-flex items-center justify-center text-muted-foreground hover:text-primary transition-colors ${className}`}
         >
-          <AppIcon name="HelpCircle" className="h-3.5 w-3.5" />
+          <HelpCircle className="h-3.5 w-3.5" />
         </button>
       </PopoverTrigger>
       <PopoverContent side="top" className="w-72 text-xs leading-relaxed">

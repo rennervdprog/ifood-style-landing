@@ -3,11 +3,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
+import { MapPin, Save, ArrowLeft, Search, Loader2, Navigation } from "lucide-react";
 import { toast } from "sonner";
 import { formatCep, fetchCep, readGpsFromGesture, reverseGeocode } from "@/lib/location";
 import { maskWhatsApp } from "@/lib/whatsapp";
-import { AppIcon } from "@/components/ui/app-icon";
-import { MapPin, Save, ArrowLeft, Search, Loader2, Navigation } from "lucide-react";
 
 interface AddressModalProps {
   onClose: () => void;
@@ -147,10 +146,10 @@ const AddressModal = ({ onClose, onSaved }: AddressModalProps) => {
       <div className="bg-card w-full max-w-md rounded-t-3xl sm:rounded-3xl p-6 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center gap-3 mb-4">
           <button onClick={onClose}>
-            <AppIcon name="ArrowLeft" className="h-5 w-5 text-foreground" />
+            <ArrowLeft className="h-5 w-5 text-foreground" />
           </button>
           <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
-            <AppIcon name="MapPin" className="h-5 w-5 text-primary" />
+            <MapPin className="h-5 w-5 text-primary" />
             Complete seu Endereço
           </h2>
         </div>
@@ -174,7 +173,7 @@ const AddressModal = ({ onClose, onSaved }: AddressModalProps) => {
               disabled={loadingCep}
               className="px-3 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-bold disabled:opacity-50 flex items-center gap-1"
             >
-              {loadingCep ? <AppIcon name="Loader2" className="h-4 w-4 animate-spin" /> : <AppIcon name="Search" className="h-4 w-4" />}
+              {loadingCep ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
             </button>
           </div>
 
@@ -189,7 +188,7 @@ const AddressModal = ({ onClose, onSaved }: AddressModalProps) => {
                 disabled={loadingGps}
                 className="w-full flex items-center justify-center gap-2 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-bold disabled:opacity-50"
               >
-                {loadingGps ? <AppIcon name="Loader2" className="h-4 w-4 animate-spin" /> : <AppIcon name="Navigation" className="h-4 w-4" />}
+                {loadingGps ? <Loader2 className="h-4 w-4 animate-spin" /> : <Navigation className="h-4 w-4" />}
                 {loadingGps ? "Obtendo localização..." : "Usar minha localização (GPS)"}
               </button>
             </div>
@@ -231,7 +230,7 @@ const AddressModal = ({ onClose, onSaved }: AddressModalProps) => {
             autoComplete="tel" />
           <button onClick={handleSave} disabled={saving}
             className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-primary text-primary-foreground font-bold text-sm disabled:opacity-50">
-            <AppIcon name="Save" className="h-4 w-4" />
+            <Save className="h-4 w-4" />
             {saving ? "Salvando..." : "Salvar e Continuar"}
           </button>
         </div>
