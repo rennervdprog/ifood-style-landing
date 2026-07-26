@@ -25,14 +25,20 @@ interface AppIconProps {
   /** Variante visual do Solar. Padrão: bold-duotone (moderno, tipo iFood/Rappi). */
   variant?: SolarVariant;
   className?: string;
+  style?: React.CSSProperties;
+  onClick?: React.MouseEventHandler<SVGElement>;
   "aria-hidden"?: boolean;
+  "aria-label"?: string;
 }
 
 export const AppIcon = ({
   name,
   variant = "bold-duotone",
   className,
+  style,
+  onClick,
   "aria-hidden": ariaHidden = true,
+  "aria-label": ariaLabel,
 }: AppIconProps) => {
   // 3 formas de nomear:
   // 1) Nome do Lucide (ex: "ShoppingCart") — resolve via ICON_MAP.
@@ -51,7 +57,10 @@ export const AppIcon = ({
     <Icon
       icon={icon}
       className={cn("shrink-0", className)}
+      style={style}
+      onClick={onClick as any}
       aria-hidden={ariaHidden}
+      aria-label={ariaLabel}
     />
   );
 };
