@@ -1,12 +1,13 @@
 import { useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { Monitor, Lock, Unlock, ArrowRight, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { formatBRL } from "@/lib/utils";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { AppIcon } from "@/components/ui/app-icon";
+import { Monitor, Lock, Unlock, ArrowRight, Loader2 } from "lucide-react";
 
 interface Props {
   storeId: string;
@@ -53,7 +54,7 @@ const CashRegisterTab = ({ storeId }: Props) => {
   if (isLoading) {
     return (
       <div className="p-6 flex items-center justify-center text-muted-foreground">
-        <Loader2 className="h-5 w-5 animate-spin mr-2" /> Carregando status do caixa…
+        <AppIcon name="Loader2" className="h-5 w-5 animate-spin mr-2" /> Carregando status do caixa…
       </div>
     );
   }
@@ -65,7 +66,7 @@ const CashRegisterTab = ({ storeId }: Props) => {
       <div className={`rounded-2xl border-2 p-5 ${isOpen ? "bg-primary/5 border-primary/30" : "bg-muted/50 border-border"}`}>
         <div className="flex items-start gap-4">
           <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${isOpen ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"}`}>
-            {isOpen ? <Unlock className="h-6 w-6" /> : <Lock className="h-6 w-6" />}
+            {isOpen ? <AppIcon name="Unlock" className="h-6 w-6" /> : <AppIcon name="Lock" className="h-6 w-6" />}
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="font-black text-foreground text-base">
@@ -91,9 +92,9 @@ const CashRegisterTab = ({ storeId }: Props) => {
           className="w-full mt-4 gap-2"
           size="lg"
         >
-          <Monitor className="h-4 w-4" />
+          <AppIcon name="Monitor" className="h-4 w-4" />
           {isOpen ? "Abrir PDV completo" : "Abrir caixa no PDV"}
-          <ArrowRight className="h-4 w-4" />
+          <AppIcon name="ArrowRight" className="h-4 w-4" />
         </Button>
       </div>
 

@@ -1,13 +1,11 @@
-import {
-  X, RotateCcw, ShoppingCart, Tag, ChevronDown, ChevronRight,
-  Split, Calculator, Wallet, Loader2, CheckCircle2, Send,
-} from "lucide-react";
 import { formatBRL } from "@/lib/utils";
 import { parseBRL } from "@/hooks/useBRLInput";
 import { PdvSplitPayment, type SplitPayment } from "@/components/pdv/PdvSplitPayment";
 import { PDV_METHODS, COLOR_MAP } from "@/pages/pdv/constants";
 import type { CartItem } from "@/pages/pdv/types";
 import { PdvTableSelector } from "./PdvTableSelector";
+import { AppIcon } from "@/components/ui/app-icon";
+import { X, RotateCcw, ShoppingCart, Tag, ChevronDown, ChevronRight, Split, Calculator, Wallet, Loader2, CheckCircle2, Send } from "lucide-react";
 
 interface Props {
   cart: CartItem[];
@@ -79,7 +77,7 @@ export const PdvCartSection = ({
           <span className="text-[10px] text-muted-foreground">{totalItems} itens</span>
           {cart.length > 0 && (
             <button onClick={() => { if (window.confirm("Limpar toda a venda atual?")) clearSale(); }} aria-label="Limpar venda" className="p-1 rounded-lg hover:bg-muted transition-colors">
-              <RotateCcw className="h-3.5 w-3.5 text-muted-foreground" />
+              <AppIcon name="RotateCcw" className="h-3.5 w-3.5 text-muted-foreground" />
             </button>
           )}
         </div>
@@ -96,7 +94,7 @@ export const PdvCartSection = ({
       {cart.length === 0 ? (
         <div className="flex flex-col items-center justify-center h-full gap-2 py-8">
           <div className="w-14 h-14 rounded-2xl bg-muted/40 flex items-center justify-center">
-            <ShoppingCart className="h-6 w-6 text-muted-foreground/40" />
+            <AppIcon name="ShoppingCart" className="h-6 w-6 text-muted-foreground/40" />
           </div>
           <p className="text-xs text-muted-foreground">Selecione os produtos</p>
         </div>
@@ -129,7 +127,7 @@ export const PdvCartSection = ({
             <p className="text-xs font-black text-foreground shrink-0 pdv-mono">{formatBRL(item.price * item.quantity)}</p>
             <button onClick={() => removeItem(idx)} className="p-0.5 text-muted-foreground hover:text-destructive transition-colors opacity-100 md:opacity-0 md:group-hover:opacity-100">
             {/* removeItem(idx) — não idx do produto (Bug P0 report) */}
-              <X className="h-3.5 w-3.5" />
+              <AppIcon name="X" className="h-3.5 w-3.5" />
             </button>
           </div>
         </div>
@@ -142,11 +140,11 @@ export const PdvCartSection = ({
       <div className="px-3 pt-2.5">
         <button onClick={() => setShowDiscount(!showDiscount)}
           className="flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-foreground transition-colors w-full">
-          <Tag className="h-3 w-3" />
+          <AppIcon name="Tag" className="h-3 w-3" />
           {discountAmount > 0
             ? <span className="text-emerald-500 font-bold">Desconto: −{formatBRL(discountAmount)}</span>
             : <span>Desconto</span>}
-          <ChevronDown className={`h-3 w-3 ml-auto transition-transform ${showDiscount ? "rotate-180" : ""}`} />
+          <AppIcon name="ChevronDown" className={`h-3 w-3 ml-auto transition-transform ${showDiscount ? "rotate-180" : ""}`} />
         </button>
         {showDiscount && (
           <div className="mt-2 flex items-center gap-1.5">
@@ -199,7 +197,7 @@ export const PdvCartSection = ({
                 : "bg-muted/50 text-muted-foreground border-border hover:bg-muted"
             }`}
           >
-            <Split className="h-3 w-3" />
+            <AppIcon name="Split" className="h-3 w-3" />
             {splitMode ? "Pagamento único" : "Dividir pagamento"}
           </button>
         </div>
@@ -236,7 +234,7 @@ export const PdvCartSection = ({
       {!splitMode && paymentMethod === "dinheiro" && (
         <div className="mx-3 mb-2 bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-3 space-y-2">
           <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
-            <Calculator className="h-3 w-3" /> Valor recebido
+            <AppIcon name="Calculator" className="h-3 w-3" /> Valor recebido
           </label>
           <div className="relative">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground">R$</span>
@@ -267,7 +265,7 @@ export const PdvCartSection = ({
           {cashReceived && (
             <div className={`flex justify-between items-center rounded-xl px-3 py-2.5 ${trocoNegativo ? "bg-red-500/10" : "bg-emerald-500/15"}`}>
               <span className={`text-xs font-bold ${trocoNegativo ? "text-red-500" : "text-emerald-700 dark:text-emerald-400"} flex items-center gap-1`}>
-                {trocoNegativo ? "⚠️ Falta" : <><Wallet className="h-3.5 w-3.5" /> Troco</>}
+                {trocoNegativo ? "⚠️ Falta" : <><AppIcon name="Wallet" className="h-3.5 w-3.5" /> Troco</>}
               </span>
               <span className={`text-xl font-black pdv-mono ${trocoNegativo ? "text-red-500" : "text-emerald-600 dark:text-emerald-400"}`}>
                 {trocoNegativo ? formatBRL(finalTotal_ - (parseBRL(cashReceived))) : formatBRL(troco)}
@@ -295,8 +293,8 @@ export const PdvCartSection = ({
                   disabled={!canSend}
                   className="w-full h-12 bg-amber-500 hover:bg-amber-600 text-white font-black text-sm rounded-2xl flex items-center justify-center gap-2 active:scale-[0.98] transition-all shadow-lg shadow-amber-500/25 disabled:opacity-50"
                 >
-                  {loading ? <><Loader2 className="h-4 w-4 animate-spin" /> Enviando...</>
-                    : <><Send className="h-4 w-4" /> Enviar {totalItems} {totalItems === 1 ? "item" : "itens"} à comanda</>}
+                  {loading ? <><AppIcon name="Loader2" className="h-4 w-4 animate-spin" /> Enviando...</>
+                    : <><AppIcon name="Send" className="h-4 w-4" /> Enviar {totalItems} {totalItems === 1 ? "item" : "itens"} à comanda</>}
                 </button>
                 <button
                   onClick={onFinalize}
@@ -315,9 +313,9 @@ export const PdvCartSection = ({
             <button onClick={onFinalize}
               disabled={!canFinalize}
               className="w-full h-12 bg-primary text-primary-foreground font-black text-sm rounded-2xl flex items-center justify-center gap-2 active:scale-[0.98] transition-all shadow-lg shadow-primary/25 disabled:opacity-50">
-              {loading ? <><Loader2 className="h-4 w-4 animate-spin" /> Registrando...</>
-                : orderDone ? <><CheckCircle2 className="h-4 w-4" /> Venda registrada!</>
-                : <>Finalizar {formatBRL(finalTotal)} <ChevronRight className="h-4 w-4" /></>}
+              {loading ? <><AppIcon name="Loader2" className="h-4 w-4 animate-spin" /> Registrando...</>
+                : orderDone ? <><AppIcon name="CheckCircle2" className="h-4 w-4" /> Venda registrada!</>
+                : <>Finalizar {formatBRL(finalTotal)} <AppIcon name="ChevronRight" className="h-4 w-4" /></>}
             </button>
           );
         })()}

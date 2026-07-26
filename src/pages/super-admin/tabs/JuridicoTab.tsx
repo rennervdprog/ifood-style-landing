@@ -2,7 +2,8 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { formatBRL } from "@/lib/utils";
-import { Scale, Search, Loader2, User, FileText, Mail, Phone, Shield, MapPin, Wallet, Calendar, CheckCircle2, AlertTriangle, Download, Eye, ChevronDown, ChevronUp, ShoppingBag } from "lucide-react";
+import { AppIcon } from "@/components/ui/app-icon";
+import { Scale, Search, Loader2, User, FileText, Mail, Phone, Shield, MapPin, Wallet, Calendar, CheckCircle2, AlertTriangle, Download, ShoppingBag } from "lucide-react";
 
 const JuridicoTab = () => {
   const [search, setSearch] = useState("");
@@ -190,7 +191,7 @@ const JuridicoTab = () => {
       <div className="bg-card rounded-2xl border border-border p-5">
         <div className="flex items-center gap-3 mb-4">
           <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-            <Scale className="h-5 w-5 text-primary" />
+            <AppIcon name="Scale" className="h-5 w-5 text-primary" />
           </div>
           <div>
             <h2 className="font-bold text-foreground">Consulta Jurídica</h2>
@@ -214,7 +215,7 @@ const JuridicoTab = () => {
         </div>
         <div className="flex gap-2">
           <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <AppIcon name="Search" className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <input
               value={search}
               onChange={e => setSearch(e.target.value)}
@@ -228,7 +229,7 @@ const JuridicoTab = () => {
             disabled={loading || !search.trim()}
             className="px-4 py-2.5 rounded-xl bg-primary text-primary-foreground font-bold text-sm disabled:opacity-50"
           >
-            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Buscar"}
+            {loading ? <AppIcon name="Loader2" className="h-4 w-4 animate-spin" /> : "Buscar"}
           </button>
         </div>
       </div>
@@ -240,7 +241,7 @@ const JuridicoTab = () => {
             <div className="bg-card rounded-2xl border border-border overflow-hidden">
               <div className="px-4 py-3 border-b border-border bg-muted/30">
                 <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
-                  <User className="h-4 w-4 text-primary" />
+                  <AppIcon name="User" className="h-4 w-4 text-primary" />
                   Contas Ativas ({results.length})
                 </h3>
               </div>
@@ -248,7 +249,7 @@ const JuridicoTab = () => {
                 {results.map((p: any) => (
                   <button key={p.id} onClick={() => selectProfile(p)} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/50 transition-colors text-left">
                     <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                      <User className="h-4 w-4 text-primary" />
+                      <AppIcon name="User" className="h-4 w-4 text-primary" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-foreground truncate">{p.full_name || "Sem nome"}</p>
@@ -269,7 +270,7 @@ const JuridicoTab = () => {
             <div className="bg-card rounded-2xl border border-destructive/30 overflow-hidden">
               <div className="px-4 py-3 border-b border-border bg-destructive/5">
                 <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
-                  <FileText className="h-4 w-4 text-destructive" />
+                  <AppIcon name="FileText" className="h-4 w-4 text-destructive" />
                   Contas Excluídas / Arquivadas ({archivedResults.length})
                 </h3>
               </div>
@@ -277,7 +278,7 @@ const JuridicoTab = () => {
                 {archivedResults.map((a: any) => (
                   <button key={a.id} onClick={() => selectArchived(a)} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/50 transition-colors text-left">
                     <div className="w-9 h-9 rounded-full bg-destructive/10 flex items-center justify-center flex-shrink-0">
-                      <FileText className="h-4 w-4 text-destructive" />
+                      <AppIcon name="FileText" className="h-4 w-4 text-destructive" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-foreground truncate">{a.full_name || "Sem nome"}</p>
@@ -308,7 +309,7 @@ const JuridicoTab = () => {
                 <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
                   selectedUser._type === "archived" ? "bg-destructive/10" : "bg-primary/10"
                 }`}>
-                  <User className={`h-6 w-6 ${selectedUser._type === "archived" ? "text-destructive" : "text-primary"}`} />
+                  <AppIcon name="User" className={`h-6 w-6 ${selectedUser._type === "archived" ? "text-destructive" : "text-primary"}`} />
                 </div>
                 <div>
                   <h3 className="font-bold text-foreground text-lg">{selectedUser.full_name}</h3>
@@ -320,7 +321,7 @@ const JuridicoTab = () => {
                 </div>
               </div>
               <button onClick={exportUserData} className="flex items-center gap-2 bg-primary/10 text-primary px-3 py-2 rounded-xl text-xs font-bold hover:bg-primary/20 transition-colors">
-                <Download className="h-3.5 w-3.5" />
+                <AppIcon name="Download" className="h-3.5 w-3.5" />
                 Exportar JSON
               </button>
             </div>
@@ -361,7 +362,7 @@ const JuridicoTab = () => {
             {selectedUser._type === "archived" && (
               <div className="bg-destructive/5 border border-destructive/20 rounded-xl p-3 space-y-2">
                 <h4 className="text-sm font-bold text-destructive flex items-center gap-2">
-                  <AlertTriangle className="h-4 w-4" />
+                  <AppIcon name="AlertTriangle" className="h-4 w-4" />
                   Dados de Exclusão
                 </h4>
                 <div className="grid grid-cols-2 gap-2 text-xs">
@@ -377,14 +378,14 @@ const JuridicoTab = () => {
 
           {/* Terms acceptance history */}
           {loadingDetails ? (
-            <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
+            <div className="flex justify-center py-8"><AppIcon name="Loader2" className="h-6 w-6 animate-spin text-primary" /></div>
           ) : (
             <>
               {userTerms.length > 0 && (
                 <div className="bg-card rounded-2xl border border-border overflow-hidden">
                   <div className="px-4 py-3 border-b border-border bg-muted/30">
                     <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
-                      <FileText className="h-4 w-4 text-primary" />
+                      <AppIcon name="FileText" className="h-4 w-4 text-primary" />
                       Aceites de Termos ({userTerms.length})
                     </h3>
                   </div>
@@ -407,7 +408,7 @@ const JuridicoTab = () => {
                 <div className="bg-card rounded-2xl border border-border overflow-hidden">
                   <div className="px-4 py-3 border-b border-border bg-muted/30">
                     <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
-                      <ShoppingBag className="h-4 w-4 text-primary" />
+                      <AppIcon name="ShoppingBag" className="h-4 w-4 text-primary" />
                       Histórico de Pedidos ({userOrders.length})
                     </h3>
                   </div>
@@ -445,7 +446,7 @@ const JuridicoTab = () => {
       {/* Empty state */}
       {results.length === 0 && archivedResults.length === 0 && !loading && searchAttempted && search.trim() && (
         <div className="text-center py-12">
-          <Search className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
+          <AppIcon name="Search" className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
           <p className="text-sm text-muted-foreground">Nenhum resultado encontrado para "{search}"</p>
         </div>
       )}
@@ -453,7 +454,7 @@ const JuridicoTab = () => {
       {/* Retention info */}
       <div className="bg-muted/30 rounded-2xl border border-border p-4 space-y-2">
         <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
-          <FileText className="h-4 w-4 text-primary" />
+          <AppIcon name="FileText" className="h-4 w-4 text-primary" />
           Política de Retenção de Dados
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-muted-foreground">

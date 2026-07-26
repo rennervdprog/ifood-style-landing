@@ -1,7 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Settings } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import StoreSettings from "@/components/StoreSettings";
+import { AppIcon } from "@/components/ui/app-icon";
+import { Loader2, Settings } from "lucide-react";
 
 /**
  * Wrapper que carrega o registro completo da loja e renderiza o
@@ -26,7 +27,7 @@ export function PdvStoreSettingsPanel({ storeId }: { storeId: string }) {
   if (isLoading || !store) {
     return (
       <div className="flex-1 flex items-center justify-center py-10">
-        <Loader2 className="h-5 w-5 animate-spin text-primary" />
+        <AppIcon name="Loader2" className="h-5 w-5 animate-spin text-primary" />
       </div>
     );
   }
@@ -34,7 +35,7 @@ export function PdvStoreSettingsPanel({ storeId }: { storeId: string }) {
   return (
     <div className="p-3">
       <div className="flex items-center gap-2 mb-3">
-        <Settings className="h-4 w-4 text-primary" />
+        <AppIcon name="Settings" className="h-4 w-4 text-primary" />
         <h2 className="text-sm font-black">Configurações da loja</h2>
       </div>
       <StoreSettings

@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { Package, ArrowLeft } from "lucide-react";
 import { formatBRL } from "@/lib/utils";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetClose } from "@/components/ui/sheet";
 import { ProductFormInline, ProductFormData } from "@/components/menu/ProductCard";
+import { AppIcon } from "@/components/ui/app-icon";
+import { Package, ArrowLeft } from "lucide-react";
 
 interface ProductSheetProps {
   open: boolean;
@@ -43,7 +44,7 @@ export const ProductSheet = ({
       >
         <SheetHeader className="sticky top-0 z-20 bg-background border-b border-border px-3 py-3 flex-row items-center gap-2 space-y-0">
           <SheetClose className="flex items-center gap-1.5 px-2.5 py-2 rounded-lg hover:bg-muted text-sm font-semibold text-foreground focus:outline-none focus:ring-2 focus:ring-ring">
-            <ArrowLeft className="h-4 w-4" />
+            <AppIcon name="ArrowLeft" className="h-4 w-4" />
             Voltar
           </SheetClose>
           <div className="min-w-0 flex-1">
@@ -65,7 +66,7 @@ export const ProductSheet = ({
               <img src={preview.image_url} alt="" className="w-16 h-16 rounded-lg object-cover flex-shrink-0" />
             ) : (
               <div className="w-16 h-16 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
-                <Package className="h-5 w-5 text-muted-foreground/50" />
+                <AppIcon name="Package" className="h-5 w-5 text-muted-foreground/50" />
               </div>
             )}
             <div className="min-w-0 flex-1">

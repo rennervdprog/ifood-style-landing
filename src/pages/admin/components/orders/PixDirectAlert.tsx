@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { QrCode, MessageCircle, ChevronDown, ChevronUp, XCircle } from "lucide-react";
 import { formatBRL } from "@/lib/utils";
+import { AppIcon } from "@/components/ui/app-icon";
+import { QrCode, MessageCircle, ChevronDown, ChevronUp, XCircle } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -46,7 +47,7 @@ export default function PixDirectAlert({
               className="ml-2 rounded-full bg-white/10 hover:bg-white/20 p-2"
               aria-label="Fechar"
             >
-              <XCircle className="h-5 w-5 text-white" />
+              <AppIcon name="XCircle" className="h-5 w-5 text-white" />
             </button>
           </div>
           <div className="flex-1 flex items-center justify-center p-4 overflow-auto" onClick={(e) => e.stopPropagation()}>
@@ -120,13 +121,13 @@ export default function PixDirectAlert({
               onClick={() => setCollapsed((v) => !v)}
               className="flex items-center gap-2 w-full text-left"
             >
-              <QrCode className="h-4 w-4 text-primary" />
+              <AppIcon name="QrCode" className="h-4 w-4 text-primary" />
               <p className="text-xs font-black text-primary uppercase tracking-wide">Pix Direto — aguardando você</p>
               <span className="ml-auto text-[10px] font-bold bg-primary text-primary-foreground px-2 py-0.5 rounded-full">
                 {pixPending.length}
               </span>
               {pixPending.length > 2 && (
-                collapsed ? <ChevronDown className="h-4 w-4 text-primary" /> : <ChevronUp className="h-4 w-4 text-primary" />
+                collapsed ? <AppIcon name="ChevronDown" className="h-4 w-4 text-primary" /> : <AppIcon name="ChevronUp" className="h-4 w-4 text-primary" />
               )}
             </button>
             {(!collapsed || pixPending.length <= 2) && (
@@ -175,7 +176,7 @@ export default function PixDirectAlert({
                         className="inline-flex items-center gap-1 text-[11px] font-black px-2.5 py-1.5 rounded-lg bg-green-600 hover:bg-green-700 text-white disabled:opacity-50"
                         title="Cliente enviou comprovante pelo WhatsApp"
                       >
-                        <MessageCircle className="h-3 w-3" />
+                        <AppIcon name="MessageCircle" className="h-3 w-3" />
                         Recebi no WhatsApp
                       </button>
                     </div>

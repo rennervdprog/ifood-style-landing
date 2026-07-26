@@ -4,8 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
 import { useNavigate } from "react-router-dom";
-import { Repeat, ShoppingBag } from "lucide-react";
 import { toast } from "sonner";
+import { AppIcon } from "@/components/ui/app-icon";
+import { Repeat, ShoppingBag } from "lucide-react";
 
 const ReorderSection = () => {
   const { user } = useAuth();
@@ -58,7 +59,7 @@ const ReorderSection = () => {
   return (
     <div className="px-4 pt-4">
       <div className="flex items-center gap-1.5 mb-3">
-        <Repeat className="h-4 w-4 text-primary" />
+        <AppIcon name="Repeat" className="h-4 w-4 text-primary" />
         <h2 className="text-sm font-bold text-foreground">Pedir de Novo</h2>
       </div>
       <div className="flex overflow-x-auto gap-3 no-scrollbar -mx-1 px-1 pb-1">
@@ -72,7 +73,7 @@ const ReorderSection = () => {
                 <img loading="lazy" decoding="async" src={order.stores.image_url} className="w-8 h-8 rounded-lg object-cover" alt="" />
               ) : (
                 <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <ShoppingBag className="h-4 w-4 text-primary" />
+                  <AppIcon name="ShoppingBag" className="h-4 w-4 text-primary" />
                 </div>
               )}
               <div className="min-w-0">
@@ -98,7 +99,7 @@ const ReorderSection = () => {
                 onClick={() => handleReorder(order)}
                 className="bg-primary text-primary-foreground text-[10px] font-bold px-2.5 py-1 rounded-lg flex items-center gap-1"
               >
-                <Repeat className="h-3 w-3" /> Pedir
+                <AppIcon name="Repeat" className="h-3 w-3" /> Pedir
               </button>
             </div>
           </div>

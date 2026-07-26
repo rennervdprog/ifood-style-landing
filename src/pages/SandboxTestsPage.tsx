@@ -3,8 +3,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, FlaskConical, Trash2, RefreshCw, Wallet, Receipt, Zap, Recycle } from "lucide-react";
 import { toast } from "sonner";
+import { AppIcon } from "@/components/ui/app-icon";
+import { Loader2, FlaskConical, Trash2, RefreshCw, Wallet, Receipt, Zap, Recycle } from "lucide-react";
 
 type Action = "seed" | "cleanup" | "status" | "provision-asaas" | "panel" | "e2e-pix" | "reuse-wallets";
 type Result = { ok?: boolean; created?: any[]; removed?: string[]; stores?: any[]; results?: any[]; password?: string; error?: string; steps?: any[]; issues?: string[]; final?: any; order_id?: string; asaas_payment_id?: string };
@@ -42,7 +43,7 @@ export default function SandboxTestsPage() {
   return (
     <div className="container max-w-3xl mx-auto p-4 space-y-4">
       <div className="flex items-center gap-2">
-        <FlaskConical className="h-6 w-6 text-primary" />
+        <AppIcon name="FlaskConical" className="h-6 w-6 text-primary" />
         <h1 className="text-xl font-bold">Sandbox · Testes Asaas</h1>
       </div>
 
@@ -57,31 +58,31 @@ export default function SandboxTestsPage() {
           </p>
           <div className="flex flex-wrap gap-2">
             <Button disabled={!!loading} onClick={() => run("seed")}>
-              {loading === "seed" ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <FlaskConical className="h-4 w-4 mr-2" />}
+              {loading === "seed" ? <AppIcon name="Loader2" className="h-4 w-4 animate-spin mr-2" /> : <AppIcon name="FlaskConical" className="h-4 w-4 mr-2" />}
               Criar perfis sandbox
             </Button>
             <Button variant="secondary" disabled={!!loading} onClick={() => run("status")}>
-              {loading === "status" ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <RefreshCw className="h-4 w-4 mr-2" />}
+              {loading === "status" ? <AppIcon name="Loader2" className="h-4 w-4 animate-spin mr-2" /> : <AppIcon name="RefreshCw" className="h-4 w-4 mr-2" />}
               Ver lojas de teste
             </Button>
             <Button variant="secondary" disabled={!!loading} onClick={() => run("provision-asaas")}>
-              {loading === "provision-asaas" ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Wallet className="h-4 w-4 mr-2" />}
+              {loading === "provision-asaas" ? <AppIcon name="Loader2" className="h-4 w-4 animate-spin mr-2" /> : <AppIcon name="Wallet" className="h-4 w-4 mr-2" />}
               Criar subcontas Asaas
             </Button>
             <Button variant="secondary" disabled={!!loading} onClick={() => run("reuse-wallets")}>
-              {loading === "reuse-wallets" ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Recycle className="h-4 w-4 mr-2" />}
+              {loading === "reuse-wallets" ? <AppIcon name="Loader2" className="h-4 w-4 animate-spin mr-2" /> : <AppIcon name="Recycle" className="h-4 w-4 mr-2" />}
               Reaproveitar wallets
             </Button>
             <Button variant="secondary" disabled={!!loading} onClick={() => run("panel")}>
-              {loading === "panel" ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Receipt className="h-4 w-4 mr-2" />}
+              {loading === "panel" ? <AppIcon name="Loader2" className="h-4 w-4 animate-spin mr-2" /> : <AppIcon name="Receipt" className="h-4 w-4 mr-2" />}
               Ver saldos sandbox
             </Button>
             <Button disabled={!!loading} onClick={() => run("e2e-pix")}>
-              {loading === "e2e-pix" ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Zap className="h-4 w-4 mr-2" />}
+              {loading === "e2e-pix" ? <AppIcon name="Loader2" className="h-4 w-4 animate-spin mr-2" /> : <AppIcon name="Zap" className="h-4 w-4 mr-2" />}
               Rodar fluxo PIX E2E
             </Button>
             <Button variant="destructive" disabled={!!loading} onClick={() => run("cleanup")}>
-              {loading === "cleanup" ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Trash2 className="h-4 w-4 mr-2" />}
+              {loading === "cleanup" ? <AppIcon name="Loader2" className="h-4 w-4 animate-spin mr-2" /> : <AppIcon name="Trash2" className="h-4 w-4 mr-2" />}
               Limpar tudo
             </Button>
           </div>

@@ -2,8 +2,9 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Bike, Plus, Trash2, Search, UserCheck, UserX, Loader2, Share2, Copy, Users, Wallet, Zap, Clock, Info, CheckCircle2, Smartphone, UserPlus, MapPin } from "lucide-react";
 import StoreDriverFinance from "@/components/StoreDriverFinance";
+import { AppIcon } from "@/components/ui/app-icon";
+import { Bike, Plus, Trash2, Search, UserCheck, UserX, Loader2, Share2, Copy, Users, Wallet, Zap, Clock, Info, Smartphone, UserPlus } from "lucide-react";
 
 interface StoreDriverManagerProps {
   storeId: string;
@@ -182,7 +183,7 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
       {/* Header */}
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-          <Bike className="h-5 w-5 text-primary" />
+          <AppIcon name="Bike" className="h-5 w-5 text-primary" />
         </div>
         <div>
           <h2 className="text-lg font-bold text-foreground">Motoboys da Loja</h2>
@@ -198,7 +199,7 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
             activeTab === "team" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
           }`}
         >
-          <Users className="h-3.5 w-3.5" /> Equipe
+          <AppIcon name="Users" className="h-3.5 w-3.5" /> Equipe
         </button>
         <button
           onClick={() => setActiveTab("finance")}
@@ -206,7 +207,7 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
             activeTab === "finance" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
           }`}
         >
-          <Wallet className="h-3.5 w-3.5" /> Financeiro
+          <AppIcon name="Wallet" className="h-3.5 w-3.5" /> Financeiro
         </button>
       </div>
 
@@ -218,7 +219,7 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
       {/* Como funciona — passo a passo */}
       <div className="bg-primary/5 border border-primary/20 rounded-2xl p-4 space-y-3">
         <div className="flex items-center gap-2">
-          <Info className="h-4 w-4 text-primary" />
+          <AppIcon name="Info" className="h-4 w-4 text-primary" />
           <h3 className="text-sm font-bold text-foreground">Como funciona</h3>
         </div>
         <ol className="space-y-2.5">
@@ -253,7 +254,7 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
       <div className="bg-muted border border-border rounded-2xl p-4 space-y-4">
         <div>
           <div className="flex items-center gap-2 mb-1.5">
-            <UserPlus className="h-4 w-4 text-primary" />
+            <AppIcon name="UserPlus" className="h-4 w-4 text-primary" />
             <p className="text-xs font-bold text-foreground">1. Link de cadastro do motoboy</p>
           </div>
           <p className="text-[11px] text-muted-foreground mb-2">
@@ -271,7 +272,7 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
             className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary hover:bg-primary/20 transition-colors"
             title="Copiar link de cadastro"
           >
-            <Copy className="h-4 w-4" />
+            <AppIcon name="Copy" className="h-4 w-4" />
           </button>
           <button
             onClick={() => {
@@ -282,7 +283,7 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
             className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary hover:bg-primary/20 transition-colors"
             title="Compartilhar via WhatsApp"
           >
-            <Share2 className="h-4 w-4" />
+            <AppIcon name="Share2" className="h-4 w-4" />
           </button>
         </div>
         </div>
@@ -290,7 +291,7 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
         {/* APK Parceiro download link */}
         <div className="pt-2 border-t border-border">
           <div className="flex items-center gap-2 mb-1.5">
-            <Smartphone className="h-4 w-4 text-primary" />
+            <AppIcon name="Smartphone" className="h-4 w-4 text-primary" />
             <p className="text-xs font-bold text-foreground">2. Link do app Parceiro (APK Android)</p>
           </div>
           <p className="text-[11px] text-muted-foreground mb-2">
@@ -308,7 +309,7 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
               className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary hover:bg-primary/20 transition-colors"
               title="Copiar link do app"
             >
-              <Copy className="h-4 w-4" />
+              <AppIcon name="Copy" className="h-4 w-4" />
             </button>
             <button
               onClick={() => {
@@ -319,7 +320,7 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
               className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary hover:bg-primary/20 transition-colors"
               title="Enviar link do app via WhatsApp"
             >
-              <Share2 className="h-4 w-4" />
+              <AppIcon name="Share2" className="h-4 w-4" />
             </button>
           </div>
         </div>
@@ -329,7 +330,7 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
       <div className="bg-card border border-border rounded-2xl p-4 space-y-3">
         <div>
           <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
-            <Plus className="h-4 w-4 text-primary" /> 3. Adicionar motoboy à equipe
+            <AppIcon name="Plus" className="h-4 w-4 text-primary" /> 3. Adicionar motoboy à equipe
           </h3>
           <p className="text-[11px] text-muted-foreground mt-1">
             Busque pelo <strong>nome, e-mail ou telefone</strong> que ele usou no cadastro.
@@ -337,7 +338,7 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
         </div>
         <div className="flex gap-2">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <AppIcon name="Search" className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <input
               type="text"
               placeholder="Nome, e-mail ou telefone"
@@ -352,7 +353,7 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
             disabled={searching || !searchTerm.trim()}
             className="bg-primary text-primary-foreground px-4 py-2.5 rounded-xl text-sm font-bold disabled:opacity-50 flex items-center gap-1.5"
           >
-            {searching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+            {searching ? <AppIcon name="Loader2" className="h-4 w-4 animate-spin" /> : <AppIcon name="Search" className="h-4 w-4" />}
             Buscar
           </button>
         </div>
@@ -365,7 +366,7 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <UserCheck className="h-4 w-4 text-primary" />
+                    <AppIcon name="UserCheck" className="h-4 w-4 text-primary" />
                   </div>
                   <div>
                     <p className="text-sm font-bold text-foreground">{driver.full_name}</p>
@@ -386,7 +387,7 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
                         : "border-border bg-card hover:border-primary/40"
                     }`}
                   >
-                    <Zap className={`h-4 w-4 mb-1 ${chosen === "instantaneo" ? "text-primary" : "text-muted-foreground"}`} />
+                    <AppIcon name="Zap" className={`h-4 w-4 mb-1 ${chosen === "instantaneo" ? "text-primary" : "text-muted-foreground"}`} />
                     <p className="text-[11px] font-bold text-foreground">Pagamento na hora</p>
                     <p className="text-[9px] text-muted-foreground">Acerta em dinheiro/Pix a cada entrega</p>
                   </button>
@@ -398,7 +399,7 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
                         : "border-border bg-card hover:border-primary/40"
                     }`}
                   >
-                    <Clock className={`h-4 w-4 mb-1 ${chosen === "fim_do_dia" ? "text-primary" : "text-muted-foreground"}`} />
+                    <AppIcon name="Clock" className={`h-4 w-4 mb-1 ${chosen === "fim_do_dia" ? "text-primary" : "text-muted-foreground"}`} />
                     <p className="text-[11px] font-bold text-foreground">Acerto fim do dia</p>
                     <p className="text-[9px] text-muted-foreground">Acumula tudo e paga de uma vez</p>
                   </button>
@@ -410,7 +411,7 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
                 disabled={adding}
                 className="w-full bg-primary text-primary-foreground hover:bg-primary/90 px-3 py-2.5 rounded-xl text-xs font-bold disabled:opacity-50 flex items-center justify-center gap-1"
               >
-                {adding ? <Loader2 className="h-3 w-3 animate-spin" /> : <Plus className="h-3 w-3" />}
+                {adding ? <AppIcon name="Loader2" className="h-3 w-3 animate-spin" /> : <AppIcon name="Plus" className="h-3 w-3" />}
                 Adicionar à equipe
               </button>
             </div>
@@ -431,14 +432,14 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
 
         {isLoading && (
           <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            <AppIcon name="Loader2" className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
         )}
 
         {!isLoading && (!storeDrivers || storeDrivers.length === 0) && (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <div className="w-14 h-14 rounded-2xl bg-muted/50 flex items-center justify-center mb-3">
-              <UserX className="h-7 w-7 text-muted-foreground/40" />
+              <AppIcon name="UserX" className="h-7 w-7 text-muted-foreground/40" />
             </div>
             <p className="text-sm font-bold text-foreground mb-1">Nenhum motoboy vinculado</p>
             <p className="text-xs text-muted-foreground max-w-xs">
@@ -452,7 +453,7 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="relative w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <Bike className="h-4 w-4 text-primary" />
+                  <AppIcon name="Bike" className="h-4 w-4 text-primary" />
                   <span
                     className={`absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-card ${
                       sd.is_online ? "bg-primary animate-pulse" : "bg-muted-foreground/40"
@@ -502,7 +503,7 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
                 onClick={() => handleRemove(sd.id, sd.profile?.full_name || "Motoboy")}
                 className="w-8 h-8 rounded-lg bg-destructive/10 flex items-center justify-center text-destructive hover:bg-destructive/20 transition-colors"
               >
-                <Trash2 className="h-4 w-4" />
+                <AppIcon name="Trash2" className="h-4 w-4" />
               </button>
             </div>
 
@@ -516,7 +517,7 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
                     : "border-border text-muted-foreground hover:text-foreground"
                 }`}
               >
-                <Zap className="h-3 w-3" /> Na hora
+                <AppIcon name="Zap" className="h-3 w-3" /> Na hora
               </button>
               <button
                 onClick={() => updatePaymentMode(sd.id, "fim_do_dia")}
@@ -526,7 +527,7 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
                     : "border-border text-muted-foreground hover:text-foreground"
                 }`}
               >
-                <Clock className="h-3 w-3" /> Fim do dia
+                <AppIcon name="Clock" className="h-3 w-3" /> Fim do dia
               </button>
             </div>
 

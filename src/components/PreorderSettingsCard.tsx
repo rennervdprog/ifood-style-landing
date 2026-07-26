@@ -2,10 +2,11 @@ import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { CalendarClock, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import { AppIcon } from "@/components/ui/app-icon";
+import { CalendarClock, Save } from "lucide-react";
 
 /**
  * Card de configuração de Pré-pedido (agendamento de abertura).
@@ -59,7 +60,7 @@ export const PreorderSettingsCard = ({ storeId }: { storeId: string }) => {
     <div className="bg-card/60 backdrop-blur-sm rounded-2xl border border-border/30 p-4 space-y-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <CalendarClock className="h-4 w-4 text-primary" />
+          <AppIcon name="CalendarClock" className="h-4 w-4 text-primary" />
           <span className="text-sm font-bold text-foreground">Pré-pedido</span>
           {enabled && (
             <Badge variant="secondary" className="text-[10px] bg-primary/15 text-primary border-0">
@@ -97,7 +98,7 @@ export const PreorderSettingsCard = ({ storeId }: { storeId: string }) => {
           size="sm"
           className="rounded-xl min-h-[40px] bg-primary hover:bg-primary/90 text-primary-foreground"
         >
-          <Save className="h-3.5 w-3.5 mr-1" /> Salvar
+          <AppIcon name="Save" className="h-3.5 w-3.5 mr-1" /> Salvar
         </Button>
       </div>
 

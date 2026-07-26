@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
-import { Loader2, LogOut, User, Copy, Wallet, KeyRound } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -16,6 +15,8 @@ import SignOutConfirm from "@/components/SignOutConfirm";
 import { useResellerDashboard, brl } from "./useResellerDashboard";
 import { APP_VERSION } from "@/lib/appVersion";
 import { FREE_GMV_EXPLAINER } from "@/lib/resellerEarnings";
+import { AppIcon } from "@/components/ui/app-icon";
+import { Loader2, LogOut, User, Copy, Wallet, KeyRound } from "lucide-react";
 
 export default function ResellerPerfil() {
   const navigate = useNavigate();
@@ -31,7 +32,7 @@ export default function ResellerPerfil() {
   if (isLoading) {
     return (
       <div className="min-h-dvh flex items-center justify-center bg-background">
-        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+        <AppIcon name="Loader2" className="h-6 w-6 animate-spin text-primary" />
       </div>
     );
   }
@@ -79,7 +80,7 @@ export default function ResellerPerfil() {
         <Card>
           <CardContent className="pt-4 flex items-center gap-3">
             <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-              <User className="h-5 w-5 text-primary" />
+              <AppIcon name="User" className="h-5 w-5 text-primary" />
             </div>
             <div className="min-w-0 flex-1">
               <div className="font-bold text-sm truncate">{user?.email}</div>
@@ -97,7 +98,7 @@ export default function ResellerPerfil() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2">
-              <Wallet className="h-4 w-4" /> Financeiro
+              <AppIcon name="Wallet" className="h-4 w-4" /> Financeiro
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
@@ -122,7 +123,7 @@ export default function ResellerPerfil() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2">
-              <KeyRound className="h-4 w-4" /> Chave PIX (recebimento)
+              <AppIcon name="KeyRound" className="h-4 w-4" /> Chave PIX (recebimento)
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
@@ -159,7 +160,7 @@ export default function ResellerPerfil() {
                 <DialogFooter>
                   <Button variant="outline" onClick={() => setPOpen(false)}>Cancelar</Button>
                   <Button onClick={savePix} disabled={pLoading}>
-                    {pLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    {pLoading && <AppIcon name="Loader2" className="mr-2 h-4 w-4 animate-spin" />}
                     Salvar
                   </Button>
                 </DialogFooter>
@@ -175,7 +176,7 @@ export default function ResellerPerfil() {
           <CardContent className="space-y-2">
             <div className="bg-muted/40 rounded-lg px-3 py-2 text-[11px] font-mono break-all">{link}</div>
             <Button size="sm" variant="outline" className="w-full" onClick={copyLink}>
-              <Copy className="h-3 w-3 mr-1" /> Copiar link
+              <AppIcon name="Copy" className="h-3 w-3 mr-1" /> Copiar link
             </Button>
             <p className="text-[10px] text-muted-foreground leading-snug pt-1">
               {FREE_GMV_EXPLAINER}
@@ -238,7 +239,7 @@ export default function ResellerPerfil() {
 
         <SignOutConfirm redirectTo="/revendedor/auth">
           <Button variant="ghost" className="w-full text-destructive">
-            <LogOut className="h-4 w-4 mr-2" /> Sair da conta
+            <AppIcon name="LogOut" className="h-4 w-4 mr-2" /> Sair da conta
           </Button>
         </SignOutConfirm>
 

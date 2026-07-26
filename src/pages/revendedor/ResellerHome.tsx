@@ -1,11 +1,12 @@
 import { useNavigate } from "react-router-dom";
-import { Copy, Share2, Users, Wallet, TrendingUp, ArrowRight, Loader2, Info, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import BottomNav from "@/components/BottomNav";
 import { useResellerDashboard, brl } from "./useResellerDashboard";
+import { AppIcon } from "@/components/ui/app-icon";
+import { Copy, Share2, Users, Wallet, TrendingUp, ArrowRight, Loader2, Info, Clock } from "lucide-react";
 import {
   getReferralEarningStage,
   RECURRING_STARTS_TOOLTIP,
@@ -19,7 +20,7 @@ export default function ResellerHome() {
   if (isLoading) {
     return (
       <div className="min-h-dvh flex items-center justify-center bg-background">
-        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+        <AppIcon name="Loader2" className="h-6 w-6 animate-spin text-primary" />
       </div>
     );
   }
@@ -66,7 +67,7 @@ export default function ResellerHome() {
             </p>
           </div>
           <Button size="sm" variant="ghost" onClick={() => navigate("/revendedor")}>
-            Painel completo <ArrowRight className="h-3 w-3 ml-1" />
+            Painel completo <AppIcon name="ArrowRight" className="h-3 w-3 ml-1" />
           </Button>
         </div>
       </header>
@@ -91,10 +92,10 @@ export default function ResellerHome() {
             <div className="bg-muted/40 rounded-lg px-3 py-2 text-xs font-mono break-all">{link}</div>
             <div className="flex gap-2">
               <Button size="sm" variant="outline" onClick={copy} className="flex-1">
-                <Copy className="h-3 w-3 mr-1" /> Copiar
+                <AppIcon name="Copy" className="h-3 w-3 mr-1" /> Copiar
               </Button>
               <Button size="sm" onClick={share} className="flex-1">
-                <Share2 className="h-3 w-3 mr-1" /> WhatsApp
+                <AppIcon name="Share2" className="h-3 w-3 mr-1" /> WhatsApp
               </Button>
             </div>
             <p className="text-[10px] text-muted-foreground leading-snug pt-1">
@@ -107,7 +108,7 @@ export default function ResellerHome() {
           <Card>
             <CardContent className="pt-4">
               <div className="text-[10px] text-muted-foreground flex items-center gap-1">
-                <Users className="h-3 w-3" /> Lojas ativas
+                <AppIcon name="Users" className="h-3 w-3" /> Lojas ativas
               </div>
               <div className="text-xl font-black">{s.active_referrals}</div>
               <div className="text-[9px] text-muted-foreground">de {s.total_referrals} indicadas</div>
@@ -119,8 +120,8 @@ export default function ResellerHome() {
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <div className="text-[10px] text-muted-foreground flex items-center gap-1 cursor-help">
-                      <Wallet className="h-3 w-3" /> Disponível
-                      <Info className="h-2.5 w-2.5 opacity-60" />
+                      <AppIcon name="Wallet" className="h-3 w-3" /> Disponível
+                      <AppIcon name="Info" className="h-2.5 w-2.5 opacity-60" />
                     </div>
                   </TooltipTrigger>
                   <TooltipContent side="bottom" className="max-w-[220px] text-[11px]">
@@ -135,7 +136,7 @@ export default function ResellerHome() {
           <Card>
             <CardContent className="pt-4">
               <div className="text-[10px] text-muted-foreground flex items-center gap-1">
-                <TrendingUp className="h-3 w-3" /> Comissão MRR
+                <AppIcon name="TrendingUp" className="h-3 w-3" /> Comissão MRR
               </div>
               <div className="text-xl font-black">{(r.commission_rate * 100).toFixed(0)}%</div>
               <div className="text-[9px] text-muted-foreground">após loja pagar plano</div>
@@ -144,7 +145,7 @@ export default function ResellerHome() {
           <Card>
             <CardContent className="pt-4">
               <div className="text-[10px] text-muted-foreground flex items-center gap-1">
-                <Clock className="h-3 w-3" /> Aguardando ativação
+                <AppIcon name="Clock" className="h-3 w-3" /> Aguardando ativação
               </div>
               <div className="text-xl font-black text-blue-600">{awaitingActivation}</div>
               <div className="text-[9px] text-muted-foreground">lojas em fase gratuita</div>

@@ -2,7 +2,6 @@ import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Ruler, Tag, Plus, X, Download, Eye, EyeOff } from "lucide-react";
 import {
   readPizzaCatalogConfig,
   slugifySizeName,
@@ -11,6 +10,8 @@ import {
   type PizzaPriceMatrix,
 } from "@/types/pizza";
 import { formatBRLDisplay, parseBRLCentsInput } from "@/hooks/useBRLInput";
+import { AppIcon } from "@/components/ui/app-icon";
+import { Ruler, Tag, Plus, X, Download, Eye, EyeOff } from "lucide-react";
 
 interface Props {
   storeId: string;
@@ -217,7 +218,7 @@ const PizzaSizesCatalogManager = ({ storeId }: Props) => {
             disabled={importing}
             className="mt-1 inline-flex items-center gap-1.5 text-[11px] font-bold bg-amber-500 text-white px-3 py-1.5 rounded-lg disabled:opacity-50"
           >
-            <Download className="h-3.5 w-3.5" />
+            <AppIcon name="Download" className="h-3.5 w-3.5" />
             {importing ? "Importando..." : "Importar tamanhos existentes"}
           </button>
         )}
@@ -226,7 +227,7 @@ const PizzaSizesCatalogManager = ({ storeId }: Props) => {
       {/* 1) Tamanhos da pizzaria */}
       <div className="bg-card border border-border rounded-2xl p-4 space-y-3">
         <div className="flex items-center gap-2">
-          <Ruler className="h-4 w-4 text-primary" />
+          <AppIcon name="Ruler" className="h-4 w-4 text-primary" />
           <h3 className="text-sm font-black text-foreground">Tamanhos da pizzaria</h3>
         </div>
         <p className="text-[11px] text-muted-foreground -mt-1">
@@ -258,14 +259,14 @@ const PizzaSizesCatalogManager = ({ storeId }: Props) => {
                   className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-primary"
                   title={s.active ? "Ocultar do cliente" : "Mostrar"}
                 >
-                  {s.active ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4 opacity-50" />}
+                  {s.active ? <AppIcon name="Eye" className="h-4 w-4" /> : <AppIcon name="EyeOff" className="h-4 w-4 opacity-50" />}
                 </button>
                 <button
                   type="button"
                   onClick={() => removeSize(s.id)}
                   className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-destructive"
                 >
-                  <X className="h-4 w-4" />
+                  <AppIcon name="X" className="h-4 w-4" />
                 </button>
               </div>
               <div className="flex items-center gap-1.5 flex-wrap pt-2 border-t border-border/50">
@@ -316,7 +317,7 @@ const PizzaSizesCatalogManager = ({ storeId }: Props) => {
             onClick={addSize}
             className="bg-primary text-primary-foreground px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1"
           >
-            <Plus className="h-3.5 w-3.5" /> Tamanho
+            <AppIcon name="Plus" className="h-3.5 w-3.5" /> Tamanho
           </button>
         </div>
       </div>
@@ -325,7 +326,7 @@ const PizzaSizesCatalogManager = ({ storeId }: Props) => {
       <div className="bg-card border border-border rounded-2xl p-4 space-y-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Tag className="h-4 w-4 text-primary" />
+            <AppIcon name="Tag" className="h-4 w-4 text-primary" />
             <h3 className="text-sm font-black text-foreground">Categorias de sabor</h3>
           </div>
           {cfg.categories.length === 0 && (
@@ -348,7 +349,7 @@ const PizzaSizesCatalogManager = ({ storeId }: Props) => {
                 className="bg-transparent focus:outline-none w-auto min-w-[60px]"
                 style={{ width: `${Math.max(c.name.length, 6)}ch` }}
               />
-              <button onClick={() => removeCategory(c.id)} className="hover:text-destructive"><X className="h-3 w-3" /></button>
+              <button onClick={() => removeCategory(c.id)} className="hover:text-destructive"><AppIcon name="X" className="h-3 w-3" /></button>
             </span>
           ))}
         </div>
@@ -362,7 +363,7 @@ const PizzaSizesCatalogManager = ({ storeId }: Props) => {
             className="flex-1 bg-muted text-foreground px-2.5 py-1.5 rounded-lg text-xs border border-border focus:border-primary focus:outline-none"
           />
           <button type="button" onClick={addCategory} className="bg-primary/20 text-primary px-2.5 py-1.5 rounded-lg text-xs font-bold">
-            <Plus className="h-3.5 w-3.5" />
+            <AppIcon name="Plus" className="h-3.5 w-3.5" />
           </button>
         </div>
       </div>

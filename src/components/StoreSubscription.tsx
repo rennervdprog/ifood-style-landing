@@ -4,12 +4,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useStorePlan, StorePlanType } from "@/hooks/useStorePlan";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  Check, X, Zap, ArrowUpRight, CreditCard, Ticket, Image as ImageIcon,
-  Calendar, Loader2, AlertCircle, CheckCircle2, XCircle,
-  Sparkles, Shield, Rocket, Info, Gift, Smartphone, BarChart3,
-   Heart, Truck, Clock, ArrowRight, Wallet, AlertTriangle, ChevronRight, Crown,
-} from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -21,6 +15,8 @@ import PlansComparisonTable from "@/components/PlansComparisonTable";
 import PlanFeeBreakdown from "@/components/fees/PlanFeeBreakdown";
 import DeliveryFeeExplainer from "@/components/fees/DeliveryFeeExplainer";
 import StoreAddonsPanel from "@/components/StoreAddonsPanel";
+import { AppIcon } from "@/components/ui/app-icon";
+import { Check, X, ArrowUpRight, CreditCard, Ticket, Image as ImageIcon, Calendar, Loader2, AlertCircle, CheckCircle2, XCircle, Sparkles, Shield, Rocket, Info, Gift, Smartphone, BarChart3, Heart, Truck, Clock, ArrowRight, Wallet, AlertTriangle, ChevronRight, Crown } from "lucide-react";
 
 interface Props {
   storeId: string;
@@ -220,7 +216,7 @@ export default function StoreSubscription({ storeId, storeName }: Props) {
       <Card className="border-0 shadow-sm bg-card">
         <CardContent className="p-4 space-y-3">
           <div className="flex items-center gap-2">
-            <Info className="h-4 w-4 text-primary" />
+            <AppIcon name="Info" className="h-4 w-4 text-primary" />
             <p className="text-sm font-bold text-foreground">
               Como cobramos no seu plano
             </p>
@@ -237,7 +233,7 @@ export default function StoreSubscription({ storeId, storeName }: Props) {
           <DeliveryFeeExplainer mode="store" platformFee={plan.platformDeliverySplit} />
           {plan.isVip && (
             <div className="flex items-start gap-2 rounded-lg bg-amber-500/10 border border-amber-500/25 p-2.5">
-              <Crown className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+              <AppIcon name="Crown" className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
               <p className="text-[11px] text-amber-700 dark:text-amber-400 leading-relaxed">
                 <strong>Condições personalizadas</strong> — sua loja tem valores negociados diferentes do plano padrão. Os números abaixo já refletem o seu acordo.
               </p>
@@ -266,7 +262,7 @@ export default function StoreSubscription({ storeId, storeName }: Props) {
               </Badge>
               {plan.isVip && (
                 <Badge className="bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30 gap-1">
-                  <Crown className="h-3 w-3" /> VIP
+                  <AppIcon name="Crown" className="h-3 w-3" /> VIP
                 </Badge>
               )}
             </div>
@@ -278,7 +274,7 @@ export default function StoreSubscription({ storeId, storeName }: Props) {
           {plan.isInTrial && (
             <div className="rounded-xl bg-primary/10 border border-primary/20 p-3">
               <div className="flex items-center gap-2 mb-2">
-                <Gift className="h-4 w-4 text-primary" />
+                <AppIcon name="Gift" className="h-4 w-4 text-primary" />
                 <p className="text-xs font-bold text-primary">
                   Período grátis · {plan.trialDaysLeft} {plan.trialDaysLeft === 1 ? "dia restante" : "dias restantes"}
                 </p>
@@ -320,7 +316,7 @@ export default function StoreSubscription({ storeId, storeName }: Props) {
             <div className="rounded-xl border border-primary/30 bg-primary/5 p-3">
               <div className="flex items-start gap-3">
                 <div className="h-9 w-9 rounded-xl bg-primary/15 flex items-center justify-center shrink-0">
-                  <Truck className="h-4 w-4 text-primary" />
+                  <AppIcon name="Truck" className="h-4 w-4 text-primary" />
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-xs font-semibold text-foreground">
@@ -337,7 +333,7 @@ export default function StoreSubscription({ storeId, storeName }: Props) {
             <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-3">
               <div className="flex items-start gap-3">
                 <div className="h-9 w-9 rounded-xl bg-emerald-500/15 flex items-center justify-center shrink-0">
-                  <Truck className="h-4 w-4 text-emerald-600" />
+                  <AppIcon name="Truck" className="h-4 w-4 text-emerald-600" />
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-xs font-semibold text-foreground">Sem taxa de plataforma na entrega</p>
@@ -354,7 +350,7 @@ export default function StoreSubscription({ storeId, storeName }: Props) {
             <div className="flex items-center justify-between gap-3 rounded-xl border border-border/60 bg-card p-3">
               <div className="flex items-center gap-3 min-w-0">
                 <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                  <Calendar className="h-4 w-4 text-primary" />
+                  <AppIcon name="Calendar" className="h-4 w-4 text-primary" />
                 </div>
                 <div className="min-w-0">
                   <p className="text-xs font-semibold text-foreground">Próxima cobrança</p>
@@ -373,7 +369,7 @@ export default function StoreSubscription({ storeId, storeName }: Props) {
           <CardContent className="p-4 space-y-3">
             <div className="flex items-start gap-3">
               <div className="h-10 w-10 rounded-xl bg-muted flex items-center justify-center shrink-0">
-                <AlertTriangle className="h-5 w-5 text-muted-foreground" />
+                <AppIcon name="AlertTriangle" className="h-5 w-5 text-muted-foreground" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-bold text-foreground">Cobrança em aberto</p>
@@ -430,7 +426,7 @@ export default function StoreSubscription({ storeId, storeName }: Props) {
                 </div>
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1">
                   <span>{planLabels[pendingRequest.current_plan_type as StorePlanType]}</span>
-                  <ArrowRight className="h-3 w-3" />
+                  <AppIcon name="ArrowRight" className="h-3 w-3" />
                   <span className="font-semibold text-foreground">{planLabels[pendingRequest.requested_plan_type as StorePlanType]}</span>
                 </div>
                 {pendingRequest.status === "pending" && (
@@ -472,7 +468,7 @@ export default function StoreSubscription({ storeId, storeName }: Props) {
                 <div key={f.key} className="flex items-center gap-2 rounded-lg bg-primary/5 border border-primary/15 p-2.5">
                   <Icon className="h-4 w-4 text-primary shrink-0" />
                   <span className="text-xs font-medium text-foreground truncate">{f.label}</span>
-                  <Check className="h-3.5 w-3.5 text-primary ml-auto shrink-0" />
+                  <AppIcon name="Check" className="h-3.5 w-3.5 text-primary ml-auto shrink-0" />
                 </div>
               );
             })}
@@ -482,7 +478,7 @@ export default function StoreSubscription({ storeId, storeName }: Props) {
                 <div key={f.key} className="flex items-center gap-2 rounded-lg bg-muted/30 border border-border/40 p-2.5 opacity-50">
                   <Icon className="h-4 w-4 text-muted-foreground shrink-0" />
                   <span className="text-xs text-muted-foreground line-through truncate">{f.label}</span>
-                  <X className="h-3.5 w-3.5 text-muted-foreground/50 ml-auto shrink-0" />
+                  <AppIcon name="X" className="h-3.5 w-3.5 text-muted-foreground/50 ml-auto shrink-0" />
                 </div>
               );
             })}
@@ -491,7 +487,7 @@ export default function StoreSubscription({ storeId, storeName }: Props) {
           {/* Coupons row */}
           <div className="flex items-center justify-between rounded-lg bg-muted/30 border border-border/40 p-3">
             <div className="flex items-center gap-2">
-              <Ticket className="h-4 w-4 text-primary" />
+              <AppIcon name="Ticket" className="h-4 w-4 text-primary" />
               <span className="text-xs font-medium text-foreground">Cupons ativos</span>
             </div>
             <span className="text-sm font-bold text-foreground">
@@ -506,7 +502,7 @@ export default function StoreSubscription({ storeId, storeName }: Props) {
         <Card>
           <CardContent className="p-5 space-y-3">
             <div className="flex items-center gap-2 mb-1">
-              <Wallet className="h-4 w-4 text-primary" />
+              <AppIcon name="Wallet" className="h-4 w-4 text-primary" />
               <h3 className="text-sm font-bold text-foreground">Detalhes da cobrança</h3>
             </div>
             <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
@@ -547,9 +543,9 @@ export default function StoreSubscription({ storeId, storeName }: Props) {
           className="w-full h-12 gap-2 border-dashed border-2"
           onClick={() => setShowChangePlan(true)}
         >
-          <ArrowUpRight className="h-4 w-4" />
+          <AppIcon name="ArrowUpRight" className="h-4 w-4" />
           <span className="font-semibold">Trocar de plano</span>
-          <ChevronRight className="h-4 w-4 ml-auto opacity-50" />
+          <AppIcon name="ChevronRight" className="h-4 w-4 ml-auto opacity-50" />
         </Button>
       )}
 
@@ -558,7 +554,7 @@ export default function StoreSubscription({ storeId, storeName }: Props) {
         <Card className="border-2 border-primary/30 overflow-hidden">
           <div className="bg-primary/5 p-4 border-b border-primary/10">
             <div className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-primary" />
+              <AppIcon name="Sparkles" className="h-5 w-5 text-primary" />
               <h3 className="text-base font-bold text-foreground">Escolher novo plano</h3>
             </div>
             <p className="text-xs text-muted-foreground mt-1">
@@ -570,7 +566,7 @@ export default function StoreSubscription({ storeId, storeName }: Props) {
             {/* Prorata credit info */}
             {plan.monthlyFee > 0 && (prorataCredit ?? 0) > 0 && (
               <div className="flex items-center gap-2 rounded-lg bg-primary/10 border border-primary/20 p-3">
-                <Gift className="h-4 w-4 text-primary shrink-0" />
+                <AppIcon name="Gift" className="h-4 w-4 text-primary shrink-0" />
                 <p className="text-xs text-primary">
                   Você tem <strong>{formatBRL(prorataCredit ?? 0)}</strong> de crédito não utilizado do plano atual.
                 </p>
@@ -617,7 +613,7 @@ export default function StoreSubscription({ storeId, storeName }: Props) {
                       <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 mt-1 ${
                         isSelected ? "border-primary bg-primary" : "border-muted-foreground/30"
                       }`}>
-                        {isSelected && <Check className="h-2.5 w-2.5 text-primary-foreground" />}
+                        {isSelected && <AppIcon name="Check" className="h-2.5 w-2.5 text-primary-foreground" />}
                       </div>
                     </div>
                   </button>
@@ -660,7 +656,7 @@ export default function StoreSubscription({ storeId, storeName }: Props) {
                 disabled={!selectedPlan || requesting}
                 onClick={handleRequestChange}
               >
-                {requesting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <ArrowUpRight className="h-4 w-4 mr-2" />}
+                {requesting ? <AppIcon name="Loader2" className="h-4 w-4 animate-spin mr-2" /> : <AppIcon name="ArrowUpRight" className="h-4 w-4 mr-2" />}
                 Solicitar
               </Button>
             </div>
@@ -670,7 +666,7 @@ export default function StoreSubscription({ storeId, storeName }: Props) {
 
       {/* ───────── HELP NOTE ───────── */}
       <div className="flex items-start gap-2 p-3 rounded-lg bg-muted/30 border border-border/40">
-        <Info className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+        <AppIcon name="Info" className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
         <p className="text-[11px] text-muted-foreground leading-relaxed">
           Dúvidas sobre seu plano? Entre em contato com o suporte. Trocas e cancelamentos são processados
           após aprovação do administrador.
@@ -730,7 +726,7 @@ function AppAddonCard({ storeId }: { storeId: string }) {
       <div className="bg-primary/5 p-4">
         <div className="flex items-center gap-3">
           <div className="h-11 w-11 rounded-2xl bg-primary/15 flex items-center justify-center shrink-0">
-            <Smartphone className="h-5 w-5 text-primary" />
+            <AppIcon name="Smartphone" className="h-5 w-5 text-primary" />
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
@@ -753,7 +749,7 @@ function AppAddonCard({ storeId }: { storeId: string }) {
             "Sem WhatsApp API",
           ].map((item) => (
             <div key={item} className="flex items-center gap-1.5">
-              <Check className="h-3 w-3 text-primary shrink-0" />
+              <AppIcon name="Check" className="h-3 w-3 text-primary shrink-0" />
               <span className="text-[11px] text-foreground">{item}</span>
             </div>
           ))}
@@ -766,18 +762,18 @@ function AppAddonCard({ storeId }: { storeId: string }) {
           disabled={subscribing}
         >
           {subscribing ? (
-            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+            <AppIcon name="Loader2" className="h-4 w-4 animate-spin mr-2" />
           ) : store.app_subscribed ? (
-            <XCircle className="h-4 w-4 mr-2" />
+            <AppIcon name="XCircle" className="h-4 w-4 mr-2" />
           ) : (
-            <Rocket className="h-4 w-4 mr-2" />
+            <AppIcon name="Rocket" className="h-4 w-4 mr-2" />
           )}
           {store.app_subscribed ? "Cancelar app" : "Assinar — R$ 99/mês"}
         </Button>
 
         {store.app_subscribed && (
           <div className="flex items-start gap-2 p-2.5 rounded-lg bg-primary/5 border border-primary/15">
-            <CheckCircle2 className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
+            <AppIcon name="CheckCircle2" className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
             <p className="text-[11px] text-muted-foreground leading-relaxed">
               App ativo! O administrador gerará o APK com a identidade da sua loja.
             </p>

@@ -15,6 +15,7 @@
  */
 import { Icon } from "@iconify/react";
 import { cn } from "@/lib/utils";
+import { ICON_MAP } from "@/lib/icon-map";
 
 type SolarVariant = "bold-duotone" | "bold" | "linear" | "outline" | "line-duotone";
 
@@ -24,22 +25,42 @@ interface AppIconProps {
   /** Variante visual do Solar. Padrão: bold-duotone (moderno, tipo iFood/Rappi). */
   variant?: SolarVariant;
   className?: string;
+  style?: React.CSSProperties;
+  onClick?: React.MouseEventHandler<SVGElement>;
   "aria-hidden"?: boolean;
+  "aria-label"?: string;
 }
 
 export const AppIcon = ({
   name,
   variant = "bold-duotone",
   className,
+  style,
+  onClick,
   "aria-hidden": ariaHidden = true,
+  "aria-label": ariaLabel,
 }: AppIconProps) => {
-  // Suporte a nomes completos "prefix:icon" (ex: "mdi:pizza") — pula o pack Solar.
-  const icon = name.includes(":") ? name : `solar:${name}-${variant}`;
+  // 3 formas de nomear:
+  // 1) Nome do Lucide (ex: "ShoppingCart") — resolve via ICON_MAP.
+  // 2) Full name Iconify (ex: "mdi:pizza") — usa direto.
+  // 3) Nome do Solar sem prefixo (ex: "pizza") — vira "solar:pizza-{variant}".
+  let icon: string;
+  if (name in ICON_MAP) {
+    const full = ICON_MAP[name as keyof typeof ICON_MAP];
+    icon = full.startsWith("solar:") ? `${full}-${variant}` : full;
+  } else if (name.includes(":")) {
+    icon = name;
+  } else {
+    icon = `solar:${name}-${variant}`;
+  }
   return (
     <Icon
       icon={icon}
       className={cn("shrink-0", className)}
+      style={style}
+      onClick={onClick as any}
       aria-hidden={ariaHidden}
+      aria-label={ariaLabel}
     />
   );
 };

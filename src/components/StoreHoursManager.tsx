@@ -2,10 +2,6 @@ import { useState, useEffect, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import {
-  Clock, Save, Power, Plus, Trash2, Copy, CalendarOff,
-  CalendarPlus, ChevronDown, ChevronUp, Zap, Pause, MoonStar,
-} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { getStoreOpenStatus } from "@/lib/storeStatus";
@@ -19,6 +15,8 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { PreorderSettingsCard } from "@/components/PreorderSettingsCard";
+import { AppIcon } from "@/components/ui/app-icon";
+import { Clock, Save, Power, Plus, Trash2, Copy, CalendarOff, CalendarPlus, ChevronDown, ChevronUp, Pause, MoonStar } from "lucide-react";
 
 const dayLabels = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 const dayLabelsFull = ["Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado"];
@@ -411,7 +409,7 @@ const StoreHoursManager = ({ storeId, forceClosed }: { storeId: string; forceClo
               : "border-border text-muted-foreground hover:bg-muted"
           )}
         >
-          <Power className="h-3.5 w-3.5" />
+          <AppIcon name="Power" className="h-3.5 w-3.5" />
           {localForceClosed ? "Reabrir" : "Fechar Agora"}
         </Button>
       </div>
@@ -420,7 +418,7 @@ const StoreHoursManager = ({ storeId, forceClosed }: { storeId: string; forceClo
       {localForceClosed && (
         <div className="bg-destructive/5 border border-destructive/20 rounded-2xl p-4 flex items-start gap-3">
           <div className="w-8 h-8 rounded-xl bg-destructive/10 flex items-center justify-center shrink-0">
-            <Power className="h-4 w-4 text-destructive" />
+            <AppIcon name="Power" className="h-4 w-4 text-destructive" />
           </div>
           <div>
             <p className="text-sm font-bold text-foreground">Fechamento de Emergência Ativo</p>
@@ -435,7 +433,7 @@ const StoreHoursManager = ({ storeId, forceClosed }: { storeId: string; forceClo
       <div className="bg-card/60 backdrop-blur-sm rounded-2xl border border-border/30 overflow-hidden">
         <div className="p-4 border-b border-border/30 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Clock className="h-4 w-4 text-muted-foreground" />
+            <AppIcon name="Clock" className="h-4 w-4 text-muted-foreground" />
             <h3 className="text-sm font-bold text-foreground">Horários da Semana</h3>
           </div>
         </div>
@@ -485,7 +483,7 @@ const StoreHoursManager = ({ storeId, forceClosed }: { storeId: string; forceClo
                     className="flex items-center gap-1 text-[10px] text-primary hover:text-primary/80 transition-colors font-semibold shrink-0"
                     title="Aplicar a todos os dias"
                   >
-                    <Copy className="h-3 w-3" />
+                    <AppIcon name="Copy" className="h-3 w-3" />
                     <span className="hidden sm:inline">Aplicar a todos</span>
                   </button>
                 )}
@@ -512,12 +510,12 @@ const StoreHoursManager = ({ storeId, forceClosed }: { storeId: string; forceClo
                           onClick={() => removeShift(day.day_of_week, si)}
                           className="text-muted-foreground hover:text-destructive transition-colors p-1"
                         >
-                          <Trash2 className="h-3.5 w-3.5" />
+                          <AppIcon name="Trash2" className="h-3.5 w-3.5" />
                         </button>
                       )}
                       {shift.close_time <= shift.open_time && (
                         <span title="Atravessa a meia-noite" className="inline-flex items-center gap-1 text-[10px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded-md">
-                          <MoonStar className="h-3 w-3" /> +1d
+                          <AppIcon name="MoonStar" className="h-3 w-3" /> +1d
                         </span>
                       )}
                     </div>
@@ -527,7 +525,7 @@ const StoreHoursManager = ({ storeId, forceClosed }: { storeId: string; forceClo
                     onClick={() => addShift(day.day_of_week)}
                     className="flex items-center gap-1 text-[10px] text-primary hover:text-primary/80 transition-colors font-semibold"
                   >
-                    <Plus className="h-3 w-3" />
+                    <AppIcon name="Plus" className="h-3 w-3" />
                     Adicionar turno
                   </button>
                 </div>
@@ -544,7 +542,7 @@ const StoreHoursManager = ({ storeId, forceClosed }: { storeId: string; forceClo
         className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-xl shadow-lg shadow-primary/20 min-h-[48px]"
         size="lg"
       >
-        <Save className="h-4 w-4" />
+        <AppIcon name="Save" className="h-4 w-4" />
         {saving ? "Salvando..." : "Salvar Cronograma"}
       </Button>
 
@@ -555,7 +553,7 @@ const StoreHoursManager = ({ storeId, forceClosed }: { storeId: string; forceClo
           className="w-full p-4 flex items-center justify-between hover:bg-card/40 transition-colors"
         >
           <div className="flex items-center gap-2">
-            <CalendarOff className="h-4 w-4 text-muted-foreground" />
+            <AppIcon name="CalendarOff" className="h-4 w-4 text-muted-foreground" />
             <span className="text-sm font-bold text-foreground">Feriados & Exceções</span>
             {holidays.length > 0 && (
               <Badge variant="secondary" className="text-[10px] bg-muted text-muted-foreground border-0">
@@ -564,9 +562,9 @@ const StoreHoursManager = ({ storeId, forceClosed }: { storeId: string; forceClo
             )}
           </div>
           {showHolidays ? (
-            <ChevronUp className="h-4 w-4 text-muted-foreground" />
+            <AppIcon name="ChevronUp" className="h-4 w-4 text-muted-foreground" />
           ) : (
-            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+            <AppIcon name="ChevronDown" className="h-4 w-4 text-muted-foreground" />
           )}
         </button>
 
@@ -590,7 +588,7 @@ const StoreHoursManager = ({ storeId, forceClosed }: { storeId: string; forceClo
                         !holidayDate && "text-muted-foreground"
                       )}
                     >
-                      <CalendarPlus className="h-3.5 w-3.5 mr-1.5" />
+                      <AppIcon name="CalendarPlus" className="h-3.5 w-3.5 mr-1.5" />
                       {holidayDate ? format(holidayDate, "dd/MM/yyyy") : "Selecionar data"}
                     </Button>
                   </PopoverTrigger>
@@ -621,7 +619,7 @@ const StoreHoursManager = ({ storeId, forceClosed }: { storeId: string; forceClo
                 size="sm"
                 className="rounded-xl min-h-[40px] bg-primary hover:bg-primary/90 text-primary-foreground"
               >
-                <Plus className="h-3.5 w-3.5" />
+                <AppIcon name="Plus" className="h-3.5 w-3.5" />
               </Button>
             </div>
 
@@ -636,7 +634,7 @@ const StoreHoursManager = ({ storeId, forceClosed }: { storeId: string; forceClo
                       className="flex items-center justify-between bg-muted rounded-xl p-2.5 border border-border"
                     >
                       <div className="flex items-center gap-2">
-                        <CalendarOff className="h-3.5 w-3.5 text-muted-foreground" />
+                        <AppIcon name="CalendarOff" className="h-3.5 w-3.5 text-muted-foreground" />
                         <span className="text-xs font-semibold text-foreground">
                           {format(new Date(h.date + "T12:00:00"), "dd/MM/yyyy (EEEE)", { locale: ptBR })}
                         </span>
@@ -648,7 +646,7 @@ const StoreHoursManager = ({ storeId, forceClosed }: { storeId: string; forceClo
                         onClick={() => removeHoliday(h)}
                         className="text-muted-foreground hover:text-destructive transition-colors p-1"
                       >
-                        <Trash2 className="h-3 w-3" />
+                        <AppIcon name="Trash2" className="h-3 w-3" />
                       </button>
                     </div>
                   ))}
@@ -673,7 +671,7 @@ const StoreHoursManager = ({ storeId, forceClosed }: { storeId: string; forceClo
           className="w-full p-4 flex items-center justify-between hover:bg-card/40 transition-colors"
         >
           <div className="flex items-center gap-2">
-            <Pause className="h-4 w-4 text-muted-foreground" />
+            <AppIcon name="Pause" className="h-4 w-4 text-muted-foreground" />
             <span className="text-sm font-bold text-foreground">Pausa Programada</span>
             {pauses.length > 0 && (
               <Badge variant="secondary" className="text-[10px] bg-muted text-muted-foreground border-0">
@@ -681,7 +679,7 @@ const StoreHoursManager = ({ storeId, forceClosed }: { storeId: string; forceClo
               </Badge>
             )}
           </div>
-          {showPauses ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+          {showPauses ? <AppIcon name="ChevronUp" className="h-4 w-4 text-muted-foreground" /> : <AppIcon name="ChevronDown" className="h-4 w-4 text-muted-foreground" />}
         </button>
         {showPauses && (
           <div className="p-4 pt-0 space-y-3">
@@ -730,21 +728,21 @@ const StoreHoursManager = ({ storeId, forceClosed }: { storeId: string; forceClo
               </div>
             </div>
             <Button onClick={addPause} size="sm" className="w-full rounded-xl min-h-[40px] bg-primary hover:bg-primary/90 text-primary-foreground">
-              <Plus className="h-3.5 w-3.5" /> Agendar pausa
+              <AppIcon name="Plus" className="h-3.5 w-3.5" /> Agendar pausa
             </Button>
             {pauses.length > 0 ? (
               <div className="space-y-1.5">
                 {pauses.map((p) => (
                   <div key={p.id} className="flex items-center justify-between bg-muted rounded-xl p-2.5 border border-border">
                     <div className="flex items-center gap-2 min-w-0">
-                      <Pause className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                      <AppIcon name="Pause" className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                       <span className="text-xs font-semibold text-foreground truncate">
                         {format(new Date(p.starts_at), "dd/MM HH:mm", { locale: ptBR })} → {format(new Date(p.ends_at), "HH:mm", { locale: ptBR })}
                       </span>
                       {p.reason && <span className="text-[10px] text-muted-foreground truncate">— {p.reason}</span>}
                     </div>
                     <button onClick={() => removePause(p.id)} className="text-muted-foreground hover:text-destructive transition-colors p-1">
-                      <Trash2 className="h-3 w-3" />
+                      <AppIcon name="Trash2" className="h-3 w-3" />
                     </button>
                   </div>
                 ))}

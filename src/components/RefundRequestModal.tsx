@@ -2,8 +2,9 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { X, AlertTriangle, Camera, Loader2, Send } from "lucide-react";
 import { formatBRL } from "@/lib/utils";
+import { AppIcon } from "@/components/ui/app-icon";
+import { X, AlertTriangle, Loader2, Send } from "lucide-react";
 
 const REASONS = [
   { value: "wrong_product", label: "Produto errado" },
@@ -93,12 +94,12 @@ const RefundRequestModal = ({ order, onClose, onSubmitted }: Props) => {
         <div className="sticky top-0 bg-card border-b border-border px-4 py-3 flex items-center justify-between rounded-t-3xl sm:rounded-t-2xl">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-full bg-amber-500/10 flex items-center justify-center">
-              <AlertTriangle className="h-4 w-4 text-amber-500" />
+              <AppIcon name="AlertTriangle" className="h-4 w-4 text-amber-500" />
             </div>
             <h2 className="font-bold text-foreground">Solicitar Reembolso</h2>
           </div>
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
-            <X className="h-5 w-5" />
+            <AppIcon name="X" className="h-5 w-5" />
           </button>
         </div>
 
@@ -216,12 +217,12 @@ const RefundRequestModal = ({ order, onClose, onSubmitted }: Props) => {
           >
             {loading ? (
               <>
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <AppIcon name="Loader2" className="h-4 w-4 animate-spin" />
                 Enviando...
               </>
             ) : (
               <>
-                <Send className="h-4 w-4" />
+                <AppIcon name="Send" className="h-4 w-4" />
                 Enviar Solicitação
               </>
             )}

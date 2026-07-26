@@ -4,7 +4,6 @@ import MenuImportCSV from "@/components/MenuImportCSV";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Plus, Loader2, Package, Sparkles, ArrowLeft } from "lucide-react";
 import { ProductCard, ProductFormData } from "@/components/menu/ProductCard";
 import { ConfirmDialog } from "@/components/menu/ConfirmDialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetClose } from "@/components/ui/sheet";
@@ -15,6 +14,8 @@ import { ProductSheet } from "@/components/menu/ProductSheet";
 import { SectionManageSheet } from "@/components/menu/SectionManageSheet";
 import { BulkActionBar } from "@/components/menu/BulkActionBar";
 import { SortableProductGrid } from "@/components/menu/SortableProductGrid";
+import { AppIcon } from "@/components/ui/app-icon";
+import { Plus, Package, Sparkles, ArrowLeft } from "lucide-react";
 
 interface MenuBuilderProps {
   storeId: string;
@@ -1039,7 +1040,7 @@ const MenuBuilder = ({ storeId, storeCategory, storeCategories }: MenuBuilderPro
           className="lg:hidden fixed bottom-20 right-4 z-30 bg-primary text-primary-foreground rounded-full shadow-lg hover:bg-primary/90 transition-all active:scale-95 flex items-center gap-2 px-5 py-3 font-bold text-sm"
           aria-label="Novo produto"
         >
-          <Plus className="h-5 w-5" /> Novo
+          <AppIcon name="Plus" className="h-5 w-5" /> Novo
         </button>
       )}
 
@@ -1085,7 +1086,7 @@ const MenuBuilder = ({ storeId, storeCategory, storeCategories }: MenuBuilderPro
         <SheetContent side="right" className="w-full sm:max-w-lg overflow-y-auto p-0">
           <SheetHeader className="sticky top-0 z-20 bg-background border-b border-border px-3 py-3 flex-row items-center gap-2 space-y-0">
             <SheetClose className="flex items-center gap-1.5 px-2.5 py-2 rounded-lg hover:bg-muted text-sm font-semibold text-foreground focus:outline-none focus:ring-2 focus:ring-ring">
-              <ArrowLeft className="h-4 w-4" />
+              <AppIcon name="ArrowLeft" className="h-4 w-4" />
               Voltar
             </SheetClose>
             <SheetTitle className="text-base leading-tight truncate flex-1">Importar cardápio</SheetTitle>
@@ -1102,7 +1103,7 @@ const MenuBuilder = ({ storeId, storeCategory, storeCategories }: MenuBuilderPro
           <SheetContent side="right" className="w-full sm:max-w-lg overflow-y-auto p-0">
             <SheetHeader className="sticky top-0 z-20 bg-background border-b border-border px-3 py-3 flex-row items-center gap-2 space-y-0">
               <SheetClose className="flex items-center gap-1.5 px-2.5 py-2 rounded-lg hover:bg-muted text-sm font-semibold text-foreground focus:outline-none focus:ring-2 focus:ring-ring">
-                <ArrowLeft className="h-4 w-4" />
+                <AppIcon name="ArrowLeft" className="h-4 w-4" />
                 Voltar
               </SheetClose>
               <SheetTitle className="text-base leading-tight truncate flex-1">Cardápio do dia</SheetTitle>
@@ -1144,7 +1145,7 @@ const EmptyState = ({
 }) => (
   <div className="bg-card border border-border rounded-2xl p-8 text-center max-w-lg mx-auto">
     <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-primary/10 flex items-center justify-center">
-      <Sparkles className="h-6 w-6 text-primary" />
+      <AppIcon name="Sparkles" className="h-6 w-6 text-primary" />
     </div>
     <h3 className="text-lg font-bold text-foreground">Vamos montar seu cardápio</h3>
     <p className="text-sm text-muted-foreground mt-1">
@@ -1180,7 +1181,7 @@ const EmptySectionState = ({
 }) => (
   <div className="bg-card border border-dashed border-border rounded-2xl p-8 text-center">
     <div className="w-12 h-12 mx-auto mb-3 rounded-2xl bg-muted flex items-center justify-center">
-      <Package className="h-5 w-5 text-muted-foreground" />
+      <AppIcon name="Package" className="h-5 w-5 text-muted-foreground" />
     </div>
     {hasSearch ? (
       <p className="text-sm text-muted-foreground">Nenhum produto encontrado para a busca.</p>
@@ -1201,7 +1202,7 @@ const EmptySectionState = ({
           onClick={onCreate}
           className="mt-3 inline-flex items-center gap-1.5 bg-primary text-primary-foreground px-4 py-2 rounded-xl text-sm font-bold hover:bg-primary/90 transition-colors"
         >
-          <Plus className="h-4 w-4" /> Adicionar primeiro produto
+          <AppIcon name="Plus" className="h-4 w-4" /> Adicionar primeiro produto
         </button>
       </>
     )}

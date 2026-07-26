@@ -4,10 +4,9 @@ import { formatBRLDisplay, parseBRLCentsInput } from "@/hooks/useBRLInput";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { compressImage } from "@/lib/compressImage";
-import {
-  Trash2, Edit2, Package, PackageX, Pause, Play, ArrowRightLeft, Link2, X, Upload, Loader2, MoreVertical, ChevronDown, Link as LinkIcon, Copy,
-} from "lucide-react";
 import CategoryProductFields from "@/components/CategoryProductFields";
+import { AppIcon } from "@/components/ui/app-icon";
+import { Trash2, Edit2, Package, PackageX, Pause, Play, ArrowRightLeft, Link2, X, Upload, Loader2, MoreVertical, ChevronDown, Copy } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
@@ -262,7 +261,7 @@ export const ProductFormInline = ({ initial, onSave, onCancel, storeCategory, st
               disabled={uploading}
               className="w-full flex items-center justify-center gap-2 bg-background text-muted-foreground px-3 py-2.5 rounded-lg text-sm border border-dashed border-border hover:border-primary hover:text-primary transition-colors"
             >
-              {uploading ? <><Loader2 className="h-4 w-4 animate-spin" /> Enviando...</> : <><Upload className="h-4 w-4" /> Foto</>}
+              {uploading ? <><AppIcon name="Loader2" className="h-4 w-4 animate-spin" /> Enviando...</> : <><AppIcon name="Upload" className="h-4 w-4" /> Foto</>}
             </button>
           )}
         </div>
@@ -407,7 +406,7 @@ const ProductCardImpl = (props: ProductCardProps) => {
           <img loading="lazy" decoding="async" src={product.image_url} alt={product.name} className="w-14 h-14 rounded-lg object-cover flex-shrink-0" />
         ) : (
           <div className="w-14 h-14 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
-            <Package className="h-5 w-5 text-muted-foreground/50" />
+            <AppIcon name="Package" className="h-5 w-5 text-muted-foreground/50" />
           </div>
         )}
         <div className="flex-1 min-w-0">
@@ -425,40 +424,40 @@ const ProductCardImpl = (props: ProductCardProps) => {
             <span className="text-sm font-black text-primary">{formatBRL(Number(product.price))}</span>
             <div className="flex items-center gap-0.5 flex-shrink-0">
               <button onClick={onEdit} className="p-2 rounded-lg hover:bg-muted transition-colors" title="Editar">
-                <Edit2 className="h-4 w-4 text-foreground" />
+                <AppIcon name="Edit2" className="h-4 w-4 text-foreground" />
               </button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button className="p-2 rounded-lg hover:bg-muted transition-colors" title="Mais ações">
-                    <MoreVertical className="h-4 w-4 text-muted-foreground" />
+                    <AppIcon name="MoreVertical" className="h-4 w-4 text-muted-foreground" />
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-52">
                   <DropdownMenuItem onClick={onToggleAvailable}>
                     {product.is_available
-                      ? <><Pause className="h-4 w-4 mr-2 text-yellow-500" /> Pausar produto</>
-                      : <><Play className="h-4 w-4 mr-2 text-primary" /> Reativar produto</>}
+                      ? <><AppIcon name="Pause" className="h-4 w-4 mr-2 text-yellow-500" /> Pausar produto</>
+                      : <><AppIcon name="Play" className="h-4 w-4 mr-2 text-primary" /> Reativar produto</>}
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={onToggleOutOfStock}>
                     {isOOS
-                      ? <><Package className="h-4 w-4 mr-2 text-primary" /> Repor estoque</>
-                      : <><PackageX className="h-4 w-4 mr-2 text-destructive" /> Marcar esgotado</>}
+                      ? <><AppIcon name="Package" className="h-4 w-4 mr-2 text-primary" /> Repor estoque</>
+                      : <><AppIcon name="PackageX" className="h-4 w-4 mr-2 text-destructive" /> Marcar esgotado</>}
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={onStartMove}>
-                    <ArrowRightLeft className="h-4 w-4 mr-2 text-muted-foreground" /> Mover de seção
+                    <AppIcon name="ArrowRightLeft" className="h-4 w-4 mr-2 text-muted-foreground" /> Mover de seção
                   </DropdownMenuItem>
                   {onDuplicate && (
                     <DropdownMenuItem onClick={onDuplicate}>
-                      <Copy className="h-4 w-4 mr-2 text-muted-foreground" /> Duplicar produto
+                      <AppIcon name="Copy" className="h-4 w-4 mr-2 text-muted-foreground" /> Duplicar produto
                     </DropdownMenuItem>
                   )}
                   {onCopyLink && (
                     <DropdownMenuItem onClick={onCopyLink}>
-                      <LinkIcon className="h-4 w-4 mr-2 text-muted-foreground" /> Copiar link público
+                      <AppIcon name="Link" className="h-4 w-4 mr-2 text-muted-foreground" /> Copiar link público
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuItem onClick={onDelete} className="text-destructive focus:text-destructive">
-                    <Trash2 className="h-4 w-4 mr-2" /> Excluir produto
+                    <AppIcon name="Trash2" className="h-4 w-4 mr-2" /> Excluir produto
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -497,7 +496,7 @@ const ProductCardImpl = (props: ProductCardProps) => {
                 <span className="text-foreground/80 font-bold">{group.name}</span>
                 <div className="flex items-center gap-1">
                   <span className="text-muted-foreground/70">{group.min_select > 0 ? `mín ${group.min_select}` : "opcional"}, máx {group.max_select}</span>
-                  <button onClick={() => onUnlinkGroup(group.id)} className="text-yellow-500 p-0.5"><X className="h-3 w-3" /></button>
+                  <button onClick={() => onUnlinkGroup(group.id)} className="text-yellow-500 p-0.5"><AppIcon name="X" className="h-3 w-3" /></button>
                 </div>
               </div>
               {group.addon_items?.map((item: any) => (
@@ -520,7 +519,7 @@ const ProductCardImpl = (props: ProductCardProps) => {
                 <span className="text-foreground/80 font-bold">{group.name}</span>
                 <div className="flex items-center gap-1">
                   <span className="text-muted-foreground/70">{group.min_select > 0 ? `mín ${group.min_select}` : "opcional"}, máx {group.max_select}</span>
-                  <button onClick={() => onDeleteAddonGroup(group.id)} className="text-destructive/70 p-0.5"><Trash2 className="h-3 w-3" /></button>
+                  <button onClick={() => onDeleteAddonGroup(group.id)} className="text-destructive/70 p-0.5"><AppIcon name="Trash2" className="h-3 w-3" /></button>
                 </div>
               </div>
               {group.addon_items?.map((item: any) => (
@@ -528,7 +527,7 @@ const ProductCardImpl = (props: ProductCardProps) => {
                   <span className="text-muted-foreground">{item.name}</span>
                   <div className="flex items-center gap-1">
                     <span className="text-muted-foreground/70">+{formatBRL(Number(item.price))}</span>
-                    <button onClick={() => onDeleteAddonItem?.(item.id)} className="text-destructive/70 p-0.5"><X className="h-2.5 w-2.5" /></button>
+                    <button onClick={() => onDeleteAddonItem?.(item.id)} className="text-destructive/70 p-0.5"><AppIcon name="X" className="h-2.5 w-2.5" /></button>
                   </div>
                 </div>
               ))}
@@ -587,13 +586,13 @@ const ProductCardImpl = (props: ProductCardProps) => {
           onClick={() => setShowAddonActions(true)}
           className="mt-2 text-xs text-primary hover:underline flex items-center gap-1"
         >
-          <ChevronDown className="h-3 w-3" /> Adicionais deste produto
+          <AppIcon name="ChevronDown" className="h-3 w-3" /> Adicionais deste produto
         </button>
       )}
       {(hasAnyAddons || showAddonActions || showLinkAddon || showAddonForm) && (
       <div className="mt-2 flex flex-wrap gap-3">
         <button onClick={() => setShowLinkAddon(true)} className="text-xs text-primary hover:underline flex items-center gap-1" title="Reutiliza um grupo de adicionais já criado em outro produto">
-          <Link2 className="h-3 w-3" /> Usar adicional existente
+          <AppIcon name="Link2" className="h-3 w-3" /> Usar adicional existente
         </button>
         {showAddonForm ? (
           <div className="flex-1 bg-muted/30 rounded-lg p-2 space-y-1">

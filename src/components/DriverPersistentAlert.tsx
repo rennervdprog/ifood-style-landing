@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import { Bike, X, Volume2 } from "lucide-react";
 import { isCapacitorNative, hapticFeedback } from "@/lib/capacitorNative";
+import { AppIcon } from "@/components/ui/app-icon";
+import { Bike, X, Volume2 } from "lucide-react";
 
 interface DriverPersistentAlertProps {
   /** Number of available orders (not yet accepted) */
@@ -114,18 +115,18 @@ export default function DriverPersistentAlert({
           onClick={() => setDismissed(true)}
           className="absolute top-3 right-3 w-8 h-8 rounded-full bg-muted flex items-center justify-center z-10"
         >
-          <X className="h-4 w-4 text-muted-foreground" />
+          <AppIcon name="X" className="h-4 w-4 text-muted-foreground" />
         </button>
 
         <div className="relative z-10 flex flex-col items-center text-center gap-4">
           {/* Animated icon */}
           <div className="w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center animate-bounce">
-            <Bike className="h-10 w-10 text-primary" />
+            <AppIcon name="Bike" className="h-10 w-10 text-primary" />
           </div>
 
           {/* Sound indicator */}
           <div className="flex items-center gap-1.5 text-primary">
-            <Volume2 className="h-4 w-4 animate-pulse" />
+            <AppIcon name="Volume2" className="h-4 w-4 animate-pulse" />
             <span className="text-xs font-semibold uppercase tracking-wider">Alerta ativo</span>
           </div>
 

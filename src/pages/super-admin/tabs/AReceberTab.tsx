@@ -5,10 +5,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Wallet, Crown, Truck, Percent, ShoppingCart, CheckCircle2, MessageCircle, AlertTriangle } from "lucide-react";
 import { brl } from "@/components/finance/financeExport";
 import { planLabel } from "@/lib/plansInfo";
 import { toast } from "sonner";
+import { AppIcon } from "@/components/ui/app-icon";
+import { Wallet, Crown, Truck, Percent, ShoppingCart, CheckCircle2, MessageCircle, AlertTriangle } from "lucide-react";
 
 type ReceivableKind = "mensalidade" | "comissao" | "entrega_fee" | "pdv_fee";
 
@@ -161,7 +162,7 @@ const AReceberTab = () => {
       <Card className="border-primary/40 bg-primary/5">
         <CardContent className="p-5">
           <div className="flex items-center gap-2 text-muted-foreground text-xs mb-1">
-            <Wallet className="w-4 h-4" /> Total a receber das lojas
+            <AppIcon name="Wallet" className="w-4 h-4" /> Total a receber das lojas
           </div>
           <p className="text-3xl font-black text-primary tabular-nums">{brl(totals.total)}</p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-4 text-xs">
@@ -191,7 +192,7 @@ const AReceberTab = () => {
                     <Badge variant="outline" className="text-[10px]">{planLabel(r.plan_type)}</Badge>
                     {r.mensalidade_overdue_days > 0 && (
                       <Badge variant="destructive" className="text-[10px] gap-1">
-                        <AlertTriangle className="w-3 h-3" /> {r.mensalidade_overdue_days}d atraso
+                        <AppIcon name="AlertTriangle" className="w-3 h-3" /> {r.mensalidade_overdue_days}d atraso
                       </Badge>
                     )}
                   </div>
@@ -221,7 +222,7 @@ const AReceberTab = () => {
                           onClick={() => markPaid(r, k, v)}
                           className="h-7 text-[11px] gap-1"
                         >
-                          <CheckCircle2 className="w-3 h-3" /> Pago
+                          <AppIcon name="CheckCircle2" className="w-3 h-3" /> Pago
                         </Button>
                       </div>
                     );
@@ -230,7 +231,7 @@ const AReceberTab = () => {
 
                 <div className="flex gap-2">
                   <Button size="sm" variant="outline" onClick={() => cobrarWhatsApp(r)} className="gap-1">
-                    <MessageCircle className="w-3.5 h-3.5" /> Cobrar via WhatsApp
+                    <AppIcon name="MessageCircle" className="w-3.5 h-3.5" /> Cobrar via WhatsApp
                   </Button>
                 </div>
               </CardContent>

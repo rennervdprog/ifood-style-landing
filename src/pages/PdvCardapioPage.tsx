@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useState, lazy, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Loader2, BookOpen, Layers, Pizza, Shirt, Package2, UtensilsCrossed } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStorePdvAccess } from "@/hooks/useStorePdvAccess";
 import { toast } from "sonner";
 import MenuBuilder from "@/components/MenuBuilder";
 import { PdvQuickGridEditor } from "@/pages/pdv/components/PdvQuickGridEditor";
+import { AppIcon } from "@/components/ui/app-icon";
+import { ArrowLeft, Loader2, BookOpen, Layers, Pizza, Shirt, Package2, UtensilsCrossed } from "lucide-react";
 
 // Sub-tabs pesadas — lazy para não pesar no primeiro paint do PDV.
 const AddonManager = lazy(() => import("@/components/AddonManager"));
@@ -103,7 +104,7 @@ const PdvCardapioPage = () => {
   if (!isFetched) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+        <AppIcon name="Loader2" className="h-6 w-6 animate-spin text-primary" />
       </div>
     );
   }
@@ -132,7 +133,7 @@ const PdvCardapioPage = () => {
           className="p-1.5 rounded-lg hover:bg-muted transition-colors"
           title="Voltar ao PDV"
         >
-          <ArrowLeft className="h-4 w-4" />
+          <AppIcon name="ArrowLeft" className="h-4 w-4" />
         </button>
         <div className="w-px h-5 bg-border" />
         <span className="text-sm font-bold">Cardápio · {store.name}</span>
@@ -178,7 +179,7 @@ const PdvCardapioPage = () => {
 
       <div className="p-3">
         {sub === "boutique" && isApparel && (
-          <Suspense fallback={<Loader2 className="h-5 w-5 animate-spin text-primary mx-auto mt-6" />}>
+          <Suspense fallback={<AppIcon name="Loader2" className="h-5 w-5 animate-spin text-primary mx-auto mt-6" />}>
             <ApparelProductForm storeId={store.id} />
           </Suspense>
         )}
@@ -189,22 +190,22 @@ const PdvCardapioPage = () => {
           </>
         )}
         {sub === "adicionais" && (
-          <Suspense fallback={<Loader2 className="h-5 w-5 animate-spin text-primary mx-auto mt-6" />}>
+          <Suspense fallback={<AppIcon name="Loader2" className="h-5 w-5 animate-spin text-primary mx-auto mt-6" />}>
             <AddonManager storeId={store.id} />
           </Suspense>
         )}
         {sub === "combos" && isSnackBar && (
-          <Suspense fallback={<Loader2 className="h-5 w-5 animate-spin text-primary mx-auto mt-6" />}>
+          <Suspense fallback={<AppIcon name="Loader2" className="h-5 w-5 animate-spin text-primary mx-auto mt-6" />}>
             <SnackBarCombosManager storeId={store.id} />
           </Suspense>
         )}
         {sub === "daily_menu" && isRestaurant && (
-          <Suspense fallback={<Loader2 className="h-5 w-5 animate-spin text-primary mx-auto mt-6" />}>
+          <Suspense fallback={<AppIcon name="Loader2" className="h-5 w-5 animate-spin text-primary mx-auto mt-6" />}>
             <RestaurantDailyMenuManager storeId={store.id} />
           </Suspense>
         )}
         {sub === "pizza_pastel" && showPizzaPastel && (
-          <Suspense fallback={<Loader2 className="h-5 w-5 animate-spin text-primary mx-auto mt-6" />}>
+          <Suspense fallback={<AppIcon name="Loader2" className="h-5 w-5 animate-spin text-primary mx-auto mt-6" />}>
             <BordasTab storeId={store.id} category={store.category} categories={(store as any).categories} />
           </Suspense>
         )}

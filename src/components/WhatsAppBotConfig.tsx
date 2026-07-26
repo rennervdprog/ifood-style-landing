@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { AppIcon } from "@/components/ui/app-icon";
 import { Bot, Loader2, Save } from "lucide-react";
 
 interface Props { storeId: string; storeName: string; }
@@ -67,14 +68,14 @@ export default function WhatsAppBotConfig({ storeId, storeName }: Props) {
   };
 
   if (loading) {
-    return <div className="flex items-center gap-2 text-sm text-muted-foreground py-4"><Loader2 className="h-4 w-4 animate-spin" /> Carregando…</div>;
+    return <div className="flex items-center gap-2 text-sm text-muted-foreground py-4"><AppIcon name="Loader2" className="h-4 w-4 animate-spin" /> Carregando…</div>;
   }
 
   return (
     <div className="rounded-2xl border border-border bg-card p-4 space-y-4">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <Bot className="h-5 w-5 text-primary" />
+          <AppIcon name="Bot" className="h-5 w-5 text-primary" />
           <h3 className="text-base font-bold text-foreground">Bot de Menu Guiado</h3>
         </div>
         <label className="inline-flex items-center gap-2 cursor-pointer">
@@ -127,7 +128,7 @@ export default function WhatsAppBotConfig({ storeId, storeName }: Props) {
         onClick={save} disabled={saving}
         className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-bold disabled:opacity-50"
       >
-        {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+        {saving ? <AppIcon name="Loader2" className="h-4 w-4 animate-spin" /> : <AppIcon name="Save" className="h-4 w-4" />}
         Salvar configuração
       </button>
     </div>

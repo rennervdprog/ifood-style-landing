@@ -1,11 +1,12 @@
 import StoreSettings from "@/components/StoreSettings";
 import WhatsAppSetup from "@/components/WhatsAppSetup";
 import WhatsAppBotConfig from "@/components/WhatsAppBotConfig";
-import { MessageCircle, Monitor, Copy, Loader2, RefreshCw, Ban, Store as StoreIcon } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useStorePlan } from "@/hooks/useStorePlan";
+import { AppIcon } from "@/components/ui/app-icon";
+import { MessageCircle, Monitor, Copy, Loader2, RefreshCw, Ban, Store as StoreIcon } from "lucide-react";
 
 interface Props {
   store: any;
@@ -77,7 +78,7 @@ const SettingsTab = ({ store }: Props) => {
     {subTab === "whatsapp" && !isPdvOnly && (
     <section className="rounded-2xl border border-border bg-card p-4 space-y-3">
       <div className="flex items-center gap-2">
-        <MessageCircle className="h-5 w-5 text-primary" />
+        <AppIcon name="MessageCircle" className="h-5 w-5 text-primary" />
         <h2 className="text-base font-bold text-foreground">WhatsApp</h2>
       </div>
       <WhatsAppSetup
@@ -93,7 +94,7 @@ const SettingsTab = ({ store }: Props) => {
     {subTab === "kds" && (
     <section className="rounded-2xl border border-border bg-card p-4 space-y-3">
       <div className="flex items-center gap-2">
-        <Monitor className="h-5 w-5 text-primary" />
+        <AppIcon name="Monitor" className="h-5 w-5 text-primary" />
         <h2 className="text-base font-bold text-foreground">Display de Cozinha (KDS)</h2>
       </div>
       <p className="text-xs text-muted-foreground">
@@ -114,7 +115,7 @@ const SettingsTab = ({ store }: Props) => {
             className="p-2 rounded-lg bg-primary text-primary-foreground"
             title="Copiar"
           >
-            <Copy className="h-4 w-4" />
+            <AppIcon name="Copy" className="h-4 w-4" />
           </button>
           <a
             href={kdsUrl}
@@ -132,7 +133,7 @@ const SettingsTab = ({ store }: Props) => {
           disabled={kdsLoading || kdsRevoking}
           className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-bold disabled:opacity-50"
         >
-          {kdsLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : kdsToken ? <RefreshCw className="h-4 w-4" /> : <Monitor className="h-4 w-4" />}
+          {kdsLoading ? <AppIcon name="Loader2" className="h-4 w-4 animate-spin" /> : kdsToken ? <AppIcon name="RefreshCw" className="h-4 w-4" /> : <AppIcon name="Monitor" className="h-4 w-4" />}
           {kdsToken ? "Gerar novo link" : "Gerar link do KDS"}
         </button>
         <button
@@ -141,7 +142,7 @@ const SettingsTab = ({ store }: Props) => {
           className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-destructive text-destructive-foreground text-sm font-bold disabled:opacity-50"
           title="Desativa o link atual e gera um novo. O link antigo deixa de funcionar imediatamente."
         >
-          {kdsRevoking ? <Loader2 className="h-4 w-4 animate-spin" /> : <Ban className="h-4 w-4" />}
+          {kdsRevoking ? <AppIcon name="Loader2" className="h-4 w-4 animate-spin" /> : <AppIcon name="Ban" className="h-4 w-4" />}
           Desativar link atual
         </button>
       </div>

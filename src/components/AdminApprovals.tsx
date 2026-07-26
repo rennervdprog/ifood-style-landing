@@ -1,8 +1,3 @@
-import {
-  Shield, Clock, Store, Bike, CheckCircle2, XCircle, Loader2, Trash2,
-  FileText, ChevronDown, ChevronUp, User, Phone, Mail, MapPin,
-  Calendar, CreditCard, Hash, Eye, EyeOff, AlertTriangle, Search, Filter, Zap, RefreshCw,
-} from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -11,6 +6,8 @@ import WhatsAppButton from "@/components/WhatsAppButton";
 import { openWhatsApp } from "@/lib/whatsapp";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { AppIcon } from "@/components/ui/app-icon";
+import { Clock, Store, Bike, CheckCircle2, XCircle, Loader2, Trash2, FileText, ChevronDown, ChevronUp, User, Phone, Mail, MapPin, Calendar, Hash, Eye, EyeOff, AlertTriangle, Search, Zap, RefreshCw } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader,
@@ -271,7 +268,7 @@ const AdminApprovals = () => {
             <div className={`h-9 w-9 rounded-full flex items-center justify-center shrink-0 ${
               p.role === "lojista" ? "bg-orange-500/15 text-orange-500" : "bg-primary/15 text-primary"
             }`}>
-              {p.role === "lojista" ? <Store className="h-4 w-4" /> : <Bike className="h-4 w-4" />}
+              {p.role === "lojista" ? <AppIcon name="Store" className="h-4 w-4" /> : <AppIcon name="Bike" className="h-4 w-4" />}
             </div>
             <div className="min-w-0">
               <p className="text-sm font-bold text-foreground truncate">{p.full_name || "Sem nome"}</p>
@@ -299,7 +296,7 @@ const AdminApprovals = () => {
             className={`p-1.5 rounded-lg transition-colors ${isSensitiveVisible ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground hover:text-foreground"}`}
             title={isSensitiveVisible ? "Ocultar dados sensíveis" : "Mostrar dados sensíveis"}
           >
-            {isSensitiveVisible ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+            {isSensitiveVisible ? <AppIcon name="Eye" className="h-4 w-4" /> : <AppIcon name="EyeOff" className="h-4 w-4" />}
           </button>
         </div>
 
@@ -314,7 +311,7 @@ const AdminApprovals = () => {
           {/* missing fields alert */}
           {missingFields.length > 0 && isPending && (
             <div className="flex items-start gap-2 bg-yellow-500/10 rounded-lg px-3 py-2">
-              <AlertTriangle className="h-3.5 w-3.5 text-yellow-500 mt-0.5 shrink-0" />
+              <AppIcon name="AlertTriangle" className="h-3.5 w-3.5 text-yellow-500 mt-0.5 shrink-0" />
               <p className="text-[11px] text-yellow-600">
                 <span className="font-bold">Campos faltando:</span> {missingFields.join(", ")}
               </p>
@@ -372,7 +369,7 @@ const AdminApprovals = () => {
                 disabled={syncingId === p.user_id}
                 className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-green-500 hover:bg-green-600 text-white text-sm font-bold active:scale-95 transition-all min-h-[44px] disabled:opacity-50"
               >
-                {syncingId === p.user_id ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+                {syncingId === p.user_id ? <AppIcon name="Loader2" className="h-4 w-4 animate-spin" /> : <AppIcon name="CheckCircle2" className="h-4 w-4" />}
                 Aprovar
               </button>
               <button
@@ -380,7 +377,7 @@ const AdminApprovals = () => {
                 disabled={syncingId === p.user_id}
                 className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-destructive hover:bg-destructive/90 text-destructive-foreground text-sm font-bold active:scale-95 transition-all min-h-[44px] disabled:opacity-50"
               >
-                <XCircle className="h-4 w-4" />
+                <AppIcon name="XCircle" className="h-4 w-4" />
                 Recusar
               </button>
             </>
@@ -403,7 +400,7 @@ const AdminApprovals = () => {
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
             <div className="h-8 w-8 rounded-full bg-primary/15 text-primary flex items-center justify-center shrink-0">
-              <Zap className="h-4 w-4" />
+              <AppIcon name="Zap" className="h-4 w-4" />
             </div>
             <div className="min-w-0">
               <p className="text-sm font-bold text-foreground">Aprovação automática</p>
@@ -456,7 +453,7 @@ const AdminApprovals = () => {
             onClick={reprocessPending}
             className="flex items-center gap-1.5 px-3 text-[11px] font-bold py-2 rounded-lg bg-primary/10 text-primary border border-primary/30 hover:bg-primary/20 disabled:opacity-50"
           >
-            {reprocessing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+            {reprocessing ? <AppIcon name="Loader2" className="h-3.5 w-3.5 animate-spin" /> : <AppIcon name="RefreshCw" className="h-3.5 w-3.5" />}
             Reprocessar
           </button>
         </div>
@@ -481,7 +478,7 @@ const AdminApprovals = () => {
       {/* Search & filter */}
       <div className="flex gap-2">
         <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <AppIcon name="Search" className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <input
             type="text"
             placeholder="Buscar por nome, CPF, e-mail..."
@@ -509,11 +506,11 @@ const AdminApprovals = () => {
       <Tabs defaultValue="pending" className="space-y-3">
         <TabsList className="w-full bg-muted/50">
           <TabsTrigger value="pending" className="flex-1 text-xs">
-            <Clock className="h-3.5 w-3.5 mr-1" />
+            <AppIcon name="Clock" className="h-3.5 w-3.5 mr-1" />
             Pendentes ({pending.length})
           </TabsTrigger>
           <TabsTrigger value="approved" className="flex-1 text-xs">
-            <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
+            <AppIcon name="CheckCircle2" className="h-3.5 w-3.5 mr-1" />
             Aprovados ({approved.length})
           </TabsTrigger>
         </TabsList>
@@ -531,7 +528,7 @@ const AdminApprovals = () => {
             </div>
           ) : (
             <div className="text-center py-8">
-              <CheckCircle2 className="h-10 w-10 mx-auto text-green-500/30 mb-2" />
+              <AppIcon name="CheckCircle2" className="h-10 w-10 mx-auto text-green-500/30 mb-2" />
               <p className="text-sm text-muted-foreground">Nenhum cadastro pendente</p>
             </div>
           )}
@@ -544,7 +541,7 @@ const AdminApprovals = () => {
             </div>
           ) : (
             <div className="text-center py-8">
-              <User className="h-10 w-10 mx-auto text-muted-foreground/30 mb-2" />
+              <AppIcon name="User" className="h-10 w-10 mx-auto text-muted-foreground/30 mb-2" />
               <p className="text-sm text-muted-foreground">Nenhum parceiro aprovado encontrado</p>
             </div>
           )}
@@ -563,7 +560,7 @@ const DeleteButton = ({ profile: p, deletingId, onDelete }: { profile: any; dele
         disabled={deletingId === p.user_id}
         className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-destructive/10 hover:bg-destructive/20 text-destructive text-sm font-bold active:scale-95 transition-all min-h-[44px] disabled:opacity-50"
       >
-        {deletingId === p.user_id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+        {deletingId === p.user_id ? <AppIcon name="Loader2" className="h-4 w-4 animate-spin" /> : <AppIcon name="Trash2" className="h-4 w-4" />}
       </button>
     </AlertDialogTrigger>
     <AlertDialogContent className="bg-card border-border">
@@ -622,9 +619,9 @@ const DriverDocuments = ({ profile }: { profile: any }) => {
         onClick={loadDocs}
         className="flex items-center gap-1.5 text-xs font-bold text-primary hover:text-primary/80 transition-colors"
       >
-        <Eye className="h-3.5 w-3.5" />
+        <AppIcon name="Eye" className="h-3.5 w-3.5" />
         {expanded ? "Ocultar documentos" : "📷 Ver documentos enviados"}
-        {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+        {expanded ? <AppIcon name="ChevronUp" className="h-3 w-3" /> : <AppIcon name="ChevronDown" className="h-3 w-3" />}
       </button>
       {expanded && (
         <div className="grid grid-cols-3 gap-2 mt-2">

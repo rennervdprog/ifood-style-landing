@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { AlertTriangle, QrCode, Copy, Loader2, CheckCircle2, X, ShieldAlert, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
  import { formatBRL } from "@/lib/utils";
 import { useStorePlan } from "@/hooks/useStorePlan";
+import { AppIcon } from "@/components/ui/app-icon";
+import { AlertTriangle, QrCode, Copy, Loader2, X, ShieldAlert, Clock } from "lucide-react";
 
 interface CommissionAlertProps {
   storeId: string;
@@ -182,9 +183,9 @@ const CommissionAlert = ({ storeId, storeName, onGoToFinance }: CommissionAlertP
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-2">
             {isBlocked ? (
-              <ShieldAlert className="h-6 w-6 text-red-500" />
+              <AppIcon name="ShieldAlert" className="h-6 w-6 text-red-500" />
             ) : (
-              <AlertTriangle className={`h-6 w-6 ${urgencyLevel === "critical" ? "text-red-500 animate-pulse" : "text-amber-500"}`} />
+              <AppIcon name="AlertTriangle" className={`h-6 w-6 ${urgencyLevel === "critical" ? "text-red-500 animate-pulse" : "text-amber-500"}`} />
             )}
             <div>
               <h3 className={`font-bold text-sm ${isBlocked ? "text-red-500" : "text-foreground"}`}>
@@ -210,7 +211,7 @@ const CommissionAlert = ({ storeId, storeName, onGoToFinance }: CommissionAlertP
           </div>
           {!isBlocked && !chargeResult && (
             <button onClick={() => setDismissed(true)} className="text-muted-foreground hover:text-foreground">
-              <X className="h-4 w-4" />
+              <AppIcon name="X" className="h-4 w-4" />
             </button>
           )}
         </div>
@@ -230,7 +231,7 @@ const CommissionAlert = ({ storeId, storeName, onGoToFinance }: CommissionAlertP
               ? "bg-red-500/10 border border-red-500/30"
               : "bg-amber-500/10 border border-amber-500/20"
           }`}>
-            <Clock className={`h-4 w-4 ${urgencyLevel === "critical" ? "text-red-400" : "text-amber-400"}`} />
+            <AppIcon name="Clock" className={`h-4 w-4 ${urgencyLevel === "critical" ? "text-red-400" : "text-amber-400"}`} />
             <p className={`text-xs font-medium ${urgencyLevel === "critical" ? "text-red-400" : "text-amber-400"}`}>
               {daysRemaining === 0
                 ? "⚠️ Último dia! Sua loja será suspensa hoje se o repasse não for efetuado."
@@ -254,7 +255,7 @@ const CommissionAlert = ({ storeId, storeName, onGoToFinance }: CommissionAlertP
             <div className="flex items-center justify-between">
               <p className="text-sm font-bold text-foreground">Pague via PIX</p>
               <button onClick={() => setChargeResult(null)} className="text-muted-foreground hover:text-foreground">
-                <X className="h-4 w-4" />
+                <AppIcon name="X" className="h-4 w-4" />
               </button>
             </div>
             <p className="text-xs text-muted-foreground text-center">
@@ -273,7 +274,7 @@ const CommissionAlert = ({ storeId, storeName, onGoToFinance }: CommissionAlertP
             )}
             {chargeResult.qr_code && (
               <Button onClick={() => copyPixCode(chargeResult.qr_code!)} variant="outline" className="w-full">
-                <Copy className="h-4 w-4" /> Copiar Código Pix
+                <AppIcon name="Copy" className="h-4 w-4" /> Copiar Código Pix
               </Button>
             )}
             <p className="text-[10px] text-muted-foreground text-center">
@@ -292,11 +293,11 @@ const CommissionAlert = ({ storeId, storeName, onGoToFinance }: CommissionAlertP
             size="lg"
           >
             {generating ? (
-              <><Loader2 className="h-4 w-4 animate-spin" /> Gerando PIX...</>
+              <><AppIcon name="Loader2" className="h-4 w-4 animate-spin" /> Gerando PIX...</>
             ) : !hasDocument ? (
-              <><AlertTriangle className="h-4 w-4" /> Cadastre CPF/CNPJ no perfil</>
+              <><AppIcon name="AlertTriangle" className="h-4 w-4" /> Cadastre CPF/CNPJ no perfil</>
             ) : (
-              <><QrCode className="h-4 w-4" /> Pagar Pendência via PIX</>
+              <><AppIcon name="QrCode" className="h-4 w-4" /> Pagar Pendência via PIX</>
             )}
           </Button>
         ) : (

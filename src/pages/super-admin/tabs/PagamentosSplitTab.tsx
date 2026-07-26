@@ -4,8 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { formatBRL } from "@/lib/utils";
 import { statusColors as globalStatusColors } from "@/lib/orderStatus";
-import { CreditCard, Store, CheckCircle2, Receipt, ChevronUp, ChevronDown, Wallet, Copy } from "lucide-react";
-import { AlertTriangle } from "lucide-react";
+import { AppIcon } from "@/components/ui/app-icon";
+import { CreditCard, Store, CheckCircle2, Receipt, ChevronUp, ChevronDown, Wallet, Copy, AlertTriangle } from "lucide-react";
 
 const PagamentosSplitTab = ({ stores }: { stores: any[] }) => {
   const [expandedStore, setExpandedStore] = useState<string | null>(null);
@@ -136,7 +136,7 @@ const PagamentosSplitTab = ({ stores }: { stores: any[] }) => {
       {failedSplits && failedSplits.length > 0 && (
         <div className="bg-destructive/10 border border-destructive/40 rounded-2xl p-4">
           <div className="flex items-center gap-2 mb-2">
-            <AlertTriangle className="h-4 w-4 text-destructive" />
+            <AppIcon name="AlertTriangle" className="h-4 w-4 text-destructive" />
             <h3 className="text-sm font-bold text-destructive">
               Repasses com falha ({failedSplits.length})
             </h3>
@@ -170,21 +170,21 @@ const PagamentosSplitTab = ({ stores }: { stores: any[] }) => {
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
         <div className="bg-card rounded-2xl p-4 border border-border">
           <div className="flex items-center gap-2 mb-1">
-            <CreditCard className="h-4 w-4 text-primary" />
+            <AppIcon name="CreditCard" className="h-4 w-4 text-primary" />
             <span className="text-xs text-muted-foreground">Transações</span>
           </div>
           <p className="text-lg font-black text-foreground tabular-nums">{transactions?.length || 0}</p>
         </div>
         <div className="bg-card rounded-2xl p-4 border border-border">
           <div className="flex items-center gap-2 mb-1">
-            <Store className="h-4 w-4 text-primary" />
+            <AppIcon name="Store" className="h-4 w-4 text-primary" />
             <span className="text-xs text-muted-foreground">Lojas</span>
           </div>
           <p className="text-lg font-black text-foreground tabular-nums">{storeGroups.length}</p>
         </div>
         <div className="bg-card rounded-2xl p-4 border border-border col-span-2 lg:col-span-1">
           <div className="flex items-center gap-2 mb-1">
-            <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+            <AppIcon name="CheckCircle2" className="h-4 w-4 text-emerald-500" />
             <span className="text-xs text-muted-foreground">Total Pago</span>
           </div>
           <p className="text-lg font-black text-emerald-500 tabular-nums">
@@ -196,7 +196,7 @@ const PagamentosSplitTab = ({ stores }: { stores: any[] }) => {
       {/* Store list */}
       {storeGroups.length === 0 ? (
         <div className="bg-card rounded-2xl p-8 text-center border border-border">
-          <Receipt className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+          <AppIcon name="Receipt" className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
           <p className="text-sm text-muted-foreground">Nenhuma transação registrada ainda.</p>
         </div>
       ) : (
@@ -212,7 +212,7 @@ const PagamentosSplitTab = ({ stores }: { stores: any[] }) => {
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                      <Store className="h-5 w-5 text-primary" />
+                      <AppIcon name="Store" className="h-5 w-5 text-primary" />
                     </div>
                     <div className="text-left">
                       <p className="font-bold text-foreground">{group.storeName}</p>
@@ -230,7 +230,7 @@ const PagamentosSplitTab = ({ stores }: { stores: any[] }) => {
                         <p className="text-xs text-amber-500 font-bold tabular-nums">{formatBRL(group.totalPending)} pend.</p>
                       )}
                     </div>
-                    {isExpanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+                    {isExpanded ? <AppIcon name="ChevronUp" className="h-4 w-4 text-muted-foreground" /> : <AppIcon name="ChevronDown" className="h-4 w-4 text-muted-foreground" />}
                   </div>
                 </button>
 
@@ -275,7 +275,7 @@ const PagamentosSplitTab = ({ stores }: { stores: any[] }) => {
                         {/* Metadata PIX key */}
                         {record.metadata?.pix_key && (
                           <div className="flex items-center gap-2 bg-muted/50 rounded-lg p-2">
-                            <Wallet className="h-3 w-3 text-emerald-500 flex-shrink-0" />
+                            <AppIcon name="Wallet" className="h-3 w-3 text-emerald-500 flex-shrink-0" />
                             <p className="text-xs text-foreground truncate">
                               {record.metadata.pix_type}: {record.metadata.pix_key}
                             </p>
@@ -308,9 +308,9 @@ const PagamentosSplitTab = ({ stores }: { stores: any[] }) => {
                           }`}
                         >
                           {copiedId === record.id ? (
-                            <><CheckCircle2 className="h-3.5 w-3.5" /> Copiado!</>
+                            <><AppIcon name="CheckCircle2" className="h-3.5 w-3.5" /> Copiado!</>
                           ) : (
-                            <><Copy className="h-3.5 w-3.5" /> Copiar Comprovante</>
+                            <><AppIcon name="Copy" className="h-3.5 w-3.5" /> Copiar Comprovante</>
                           )}
                         </button>
                       </div>

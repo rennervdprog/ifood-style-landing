@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
-import { Store as StoreIcon, ArrowLeft, Heart, TrendingUp, Flame } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { citySlug, cityDisplay } from "@/lib/citySlug";
+import { AppIcon } from "@/components/ui/app-icon";
+import { ArrowLeft, Heart, TrendingUp, Flame } from "lucide-react";
 
 interface StoreRow {
   id: string;
@@ -107,7 +108,7 @@ export default function CityStoresPage() {
             className="p-2 -ml-2 rounded-full hover:bg-muted active:scale-95 transition"
             aria-label="Voltar"
           >
-            <ArrowLeft className="h-5 w-5" />
+            <AppIcon name="ArrowLeft" className="h-5 w-5" />
           </button>
           <div className="flex-1 min-w-0">
             <h1 className="text-[15px] font-bold truncate leading-tight">
@@ -137,14 +138,14 @@ export default function CityStoresPage() {
         )}
 
         <div className="flex items-center gap-2 mb-4">
-          <StoreIcon className="h-6 w-6" strokeWidth={2.2} />
+          <AppIcon name="Store" className="h-6 w-6" />
           <h2 className="text-2xl font-black tracking-tight">Lojas</h2>
         </div>
 
         {!loading && stores.length === 0 && (
           <div className="flex flex-col items-center justify-center py-16 text-center rounded-2xl border border-dashed border-border bg-muted/20">
             <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center mb-3">
-              <StoreIcon className="h-6 w-6 text-muted-foreground" />
+              <AppIcon name="Store" className="h-6 w-6 text-muted-foreground" />
             </div>
             <p className="text-sm font-semibold">Nenhuma loja ativa em {cityName}</p>
             <p className="text-xs text-muted-foreground mt-1">Volte em breve, novidades chegando.</p>
@@ -175,7 +176,7 @@ export default function CityStoresPage() {
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                        <StoreIcon className="h-6 w-6" />
+                        <AppIcon name="Store" className="h-6 w-6" />
                       </div>
                     )}
                   </div>
@@ -190,7 +191,7 @@ export default function CityStoresPage() {
                           {s.category || "Restaurante"}
                         </p>
                       </div>
-                      <Heart className="h-[18px] w-[18px] text-muted-foreground/60 shrink-0" />
+                      <AppIcon name="Heart" className="h-[18px] w-[18px] text-muted-foreground/60 shrink-0" />
                     </div>
 
                     <div className="flex items-center gap-1.5 mt-2 flex-wrap">
@@ -211,13 +212,13 @@ export default function CityStoresPage() {
                       )}
                       {open && (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400 text-[11px] font-semibold">
-                          <Flame className="h-3 w-3" />
+                          <AppIcon name="Flame" className="h-3 w-3" />
                           Popular
                         </span>
                       )}
                       {!open && (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted text-muted-foreground text-[11px] font-semibold">
-                          <TrendingUp className="h-3 w-3" />
+                          <AppIcon name="TrendingUp" className="h-3 w-3" />
                           Em breve
                         </span>
                       )}

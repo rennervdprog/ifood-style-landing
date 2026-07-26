@@ -12,11 +12,9 @@ import { formatBRL } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  CheckCircle2, Clock, AlertCircle, Copy, ChevronDown, ChevronUp,
-  History, Banknote, Truck, TrendingDown, Zap, Loader2
-} from "lucide-react";
 import { toast } from "sonner";
+import { AppIcon } from "@/components/ui/app-icon";
+import { CheckCircle2, Clock, AlertCircle, Copy, ChevronDown, ChevronUp, History, Banknote, Truck, TrendingDown, Zap, Loader2 } from "lucide-react";
 
 interface RepasseHistoryProps {
   storeId: string;
@@ -65,7 +63,7 @@ function PixCard({ pixCode }: { pixCode: string }) {
           {pixCode.slice(0, 40)}...
         </p>
         <Button size="sm" variant="outline" className="h-7 px-2 shrink-0" onClick={handleCopy}>
-          <Copy className="h-3 w-3 mr-1" />
+          <AppIcon name="Copy" className="h-3 w-3 mr-1" />
           <span className="text-[10px]">{copied ? "Copiado!" : "Copiar"}</span>
         </Button>
       </div>
@@ -100,7 +98,7 @@ function RepasseCard({ record }: { record: RepasseRecord }) {
               onClick={() => setExpanded(!expanded)}
               className="text-[10px] text-muted-foreground flex items-center gap-0.5 hover:text-foreground transition-colors"
             >
-              {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+              {expanded ? <AppIcon name="ChevronUp" className="h-3 w-3" /> : <AppIcon name="ChevronDown" className="h-3 w-3" />}
               {expanded ? "Menos" : "Detalhes"}
             </button>
           </div>
@@ -113,7 +111,7 @@ function RepasseCard({ record }: { record: RepasseRecord }) {
               {record.repasse_amount > 0 && (
                 <div className="flex items-center justify-between text-[11px]">
                   <span className="flex items-center gap-1.5 text-muted-foreground">
-                    <Truck className="h-3 w-3" />
+                    <AppIcon name="Truck" className="h-3 w-3" />
                     Taxa de entrega (R$2/pedido físico)
                   </span>
                   <span className="font-bold text-foreground">{formatBRL(record.repasse_amount)}</span>
@@ -122,7 +120,7 @@ function RepasseCard({ record }: { record: RepasseRecord }) {
               {record.comissao_amount > 0 && (
                 <div className="flex items-center justify-between text-[11px]">
                   <span className="flex items-center gap-1.5 text-muted-foreground">
-                    <TrendingDown className="h-3 w-3" />
+                    <AppIcon name="TrendingDown" className="h-3 w-3" />
                     Comissão sobre vendas físicas
                   </span>
                   <span className="font-bold text-foreground">{formatBRL(record.comissao_amount)}</span>
@@ -236,7 +234,7 @@ export default function RepasseHistory({ storeId }: RepasseHistoryProps) {
         <CardContent className="pt-4 pb-4 px-4">
           <div className="flex items-center gap-3 flex-1">
             <div className="w-10 h-10 rounded-xl bg-amber-500/15 flex items-center justify-center shrink-0">
-              <Banknote className="h-5 w-5 text-amber-600" />
+              <AppIcon name="Banknote" className="h-5 w-5 text-amber-600" />
             </div>
             <div className="flex-1">
               <p className="text-[10px] font-black uppercase tracking-widest text-amber-700 dark:text-amber-400">
@@ -259,9 +257,9 @@ export default function RepasseHistory({ storeId }: RepasseHistoryProps) {
               disabled={paying}
             >
               {paying ? (
-                <Loader2 className="h-3 w-3 animate-spin mr-1.5" />
+                <AppIcon name="Loader2" className="h-3 w-3 animate-spin mr-1.5" />
               ) : (
-                <Zap className="h-3 w-3 mr-1.5" />
+                <AppIcon name="Zap" className="h-3 w-3 mr-1.5" />
               )}
               {paying ? "Gerando PIX..." : `Pagar agora — ${new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(pendingAmount)}`}
             </Button>
@@ -273,7 +271,7 @@ export default function RepasseHistory({ storeId }: RepasseHistoryProps) {
       {pendingCount > 0 && (
         <Card className="border-blue-500/20 bg-blue-500/5">
           <CardContent className="pt-3 pb-3 px-4 flex items-center gap-2">
-            <AlertCircle className="h-4 w-4 text-blue-600 shrink-0" />
+            <AppIcon name="AlertCircle" className="h-4 w-4 text-blue-600 shrink-0" />
             <p className="text-[11px] text-blue-700 dark:text-blue-400">
               Você tem {pendingCount} cobrança{pendingCount > 1 ? "s" : ""} aguardando pagamento.
               Pague via PIX para manter a loja ativa.
@@ -284,7 +282,7 @@ export default function RepasseHistory({ storeId }: RepasseHistoryProps) {
 
       {/* Histórico */}
       <div className="flex items-center gap-2">
-        <History className="h-4 w-4 text-muted-foreground" />
+        <AppIcon name="History" className="h-4 w-4 text-muted-foreground" />
         <h3 className="text-sm font-bold text-foreground">Histórico de repasses</h3>
       </div>
 
@@ -298,7 +296,7 @@ export default function RepasseHistory({ storeId }: RepasseHistoryProps) {
         isError ? (
         <Card className="border-destructive/30 bg-destructive/5">
           <CardContent className="py-8 text-center">
-            <AlertCircle className="h-7 w-7 text-destructive/60 mx-auto mb-2" />
+            <AppIcon name="AlertCircle" className="h-7 w-7 text-destructive/60 mx-auto mb-2" />
             <p className="text-sm text-destructive">Não foi possível carregar os repasses.</p>
             <p className="text-[11px] text-muted-foreground mt-1">
               {(error as any)?.message?.includes("row-level") ? "Sem permissão de acesso." : "Tente novamente em alguns instantes."}
@@ -308,7 +306,7 @@ export default function RepasseHistory({ storeId }: RepasseHistoryProps) {
         ) : (
         <Card className="border-border/30">
           <CardContent className="py-10 text-center">
-            <History className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
+            <AppIcon name="History" className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
             <p className="text-sm text-muted-foreground">Nenhum repasse registrado ainda.</p>
             <p className="text-[11px] text-muted-foreground mt-1">
               O primeiro repasse aparece aqui após a segunda-feira.

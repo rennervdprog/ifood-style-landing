@@ -10,12 +10,11 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import {
-  Loader2, Search, Users, Handshake, Wallet, CheckCircle2, XCircle, Ban, Store, DollarSign, Percent, Copy, Zap, ShieldAlert, FileDown,
-} from "lucide-react";
 import { formatBRL } from "@/lib/utils";
 import { KpiCard } from "@/components/ui/kpi-card";
 import AntiFraudPanel from "./reseller/AntiFraudPanel";
+import { AppIcon } from "@/components/ui/app-icon";
+import { Loader2, Search, Users, Wallet, CheckCircle2, XCircle, Ban, Store, DollarSign, Percent, Copy, Zap, ShieldAlert, FileDown } from "lucide-react";
 
 type Reseller = {
   id: string; user_id: string; email: string | null; code: string;
@@ -238,20 +237,20 @@ export default function RevendedoresTab() {
             if (error) return toast.error(error.message);
             toast.success(`Bounty: ${(data as any)?.processed ?? 0} processados`);
             qc.invalidateQueries();
-          }}><Zap className="h-3 w-3 mr-1" /> Rodar Bounty</Button>
+          }}><AppIcon name="Zap" className="h-3 w-3 mr-1" /> Rodar Bounty</Button>
           <Button size="sm" variant="outline" onClick={async () => {
             const { data, error } = await supabase.rpc("admin_reseller_run_recurring_cron" as any, { _ref_month: null, _dry_run: false });
             if (error) return toast.error(error.message);
             toast.success(`Recorrente ${(data as any)?.ref_month}: ${(data as any)?.processed ?? 0} processados`);
             qc.invalidateQueries();
-          }}><Wallet className="h-3 w-3 mr-1" /> Rodar Recorrente (mês anterior)</Button>
+          }}><AppIcon name="Wallet" className="h-3 w-3 mr-1" /> Rodar Recorrente (mês anterior)</Button>
           <Button size="sm" variant="outline" onClick={async () => {
             const { data, error } = await supabase.rpc("admin_reseller_run_fraud_cron" as any, { _dry_run: false });
             if (error) return toast.error(error.message);
             const alerts = (data as any)?.alerts?.length ?? 0;
             toast.success(`Anti-fraude: ${alerts} alertas · ${(data as any)?.blocked_resellers ?? 0} bloqueados`);
             qc.invalidateQueries();
-          }}><ShieldAlert className="h-3 w-3 mr-1" /> Rodar Anti-fraude</Button>
+          }}><AppIcon name="ShieldAlert" className="h-3 w-3 mr-1" /> Rodar Anti-fraude</Button>
           <p className="text-xs text-muted-foreground w-full pt-1">
             Crons agendados: bounty 03:00 UTC diário · recorrente dia 5 04:00 UTC · anti-fraude domingo 05:00 UTC
           </p>
@@ -265,7 +264,7 @@ export default function RevendedoresTab() {
         </CardHeader>
         <CardContent className="flex flex-wrap items-center gap-2">
           <Button size="sm" variant="outline" onClick={exportPendingCSV}>
-            <FileDown className="h-3 w-3 mr-1" /> Exportar CSV pendentes
+            <AppIcon name="FileDown" className="h-3 w-3 mr-1" /> Exportar CSV pendentes
           </Button>
           <p className="text-xs text-muted-foreground">
             Agrupa todas as comissões pendentes por revendedor com chave PIX. Use para pagar em lote e depois marque cada saque como pago.
@@ -298,13 +297,13 @@ export default function RevendedoresTab() {
           <CardHeader className="flex flex-row items-center justify-between gap-2">
             <CardTitle className="text-base">Revendedores</CardTitle>
             <div className="relative w-64 max-w-full">
-              <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <AppIcon name="Search" className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input className="pl-8 h-9" placeholder="Buscar código ou email" value={search} onChange={(e) => setSearch(e.target.value)} />
             </div>
           </CardHeader>
           <CardContent>
             {resellersQ.isLoading ? (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Carregando…</div>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground"><AppIcon name="Loader2" className="h-4 w-4 animate-spin" /> Carregando…</div>
             ) : filteredResellers.length === 0 ? (
               <p className="text-sm text-muted-foreground">Nenhum revendedor.</p>
             ) : (
@@ -338,12 +337,12 @@ export default function RevendedoresTab() {
                           <div className="flex gap-1 flex-wrap">
                             {r.status !== "approved" && (
                               <Button size="sm" variant="outline" className="h-7 px-2 text-emerald-700 border-emerald-300" onClick={() => setStatus(r, "approved")}>
-                                <CheckCircle2 className="h-3 w-3 mr-1" /> Aprovar
+                                <AppIcon name="CheckCircle2" className="h-3 w-3 mr-1" /> Aprovar
                               </Button>
                             )}
                             {r.status !== "blocked" && (
                               <Button size="sm" variant="outline" className="h-7 px-2 text-red-700 border-red-300" onClick={() => setStatus(r, "blocked")}>
-                                <Ban className="h-3 w-3 mr-1" /> Bloquear
+                                <AppIcon name="Ban" className="h-3 w-3 mr-1" /> Bloquear
                               </Button>
                             )}
                             <Button size="sm" variant="outline" className="h-7 px-2" onClick={() => {
@@ -351,7 +350,7 @@ export default function RevendedoresTab() {
                               setEditCommission(String(Number(r.commission_rate)));
                               setEditBounty(((r.bounty_amount_cents ?? 0) / 100).toFixed(2));
                             }}>
-                              <Percent className="h-3 w-3 mr-1" /> Config
+                              <AppIcon name="Percent" className="h-3 w-3 mr-1" /> Config
                             </Button>
                           </div>
                         </td>
@@ -370,7 +369,7 @@ export default function RevendedoresTab() {
           <CardHeader><CardTitle className="text-base">Saques de revendedores</CardTitle></CardHeader>
           <CardContent>
             {withdrawalsQ.isLoading ? (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Carregando…</div>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground"><AppIcon name="Loader2" className="h-4 w-4 animate-spin" /> Carregando…</div>
             ) : (withdrawalsQ.data ?? []).length === 0 ? (
               <p className="text-sm text-muted-foreground">Nenhuma solicitação.</p>
             ) : (
@@ -404,16 +403,16 @@ export default function RevendedoresTab() {
                           {w.status === "pending" && (
                             <div className="flex gap-1 flex-wrap">
                               <Button size="sm" variant="outline" className="h-7 px-2" onClick={() => copyToClipboard(w.pix_key, "Chave PIX")}>
-                                <Copy className="h-3 w-3 mr-1" /> PIX
+                                <AppIcon name="Copy" className="h-3 w-3 mr-1" /> PIX
                               </Button>
                               <Button size="sm" variant="outline" className="h-7 px-2" onClick={() => copyToClipboard((w.amount_cents / 100).toFixed(2), "Valor")}>
-                                <Copy className="h-3 w-3 mr-1" /> Valor
+                                <AppIcon name="Copy" className="h-3 w-3 mr-1" /> Valor
                               </Button>
                               <Button size="sm" className="h-7 px-2 bg-emerald-600 hover:bg-emerald-700" onClick={() => { setPayDialog(w); setAsaasId(""); }}>
-                                <CheckCircle2 className="h-3 w-3 mr-1" /> Marcar pago
+                                <AppIcon name="CheckCircle2" className="h-3 w-3 mr-1" /> Marcar pago
                               </Button>
                               <Button size="sm" variant="outline" className="h-7 px-2 text-red-700 border-red-300" onClick={() => { setRejectDialog(w); setRejectNotes(""); }}>
-                                <XCircle className="h-3 w-3 mr-1" /> Rejeitar
+                                <AppIcon name="XCircle" className="h-3 w-3 mr-1" /> Rejeitar
                               </Button>
                             </div>
                           )}
@@ -436,7 +435,7 @@ export default function RevendedoresTab() {
           <CardHeader><CardTitle className="text-base">Comissões (últimas 500)</CardTitle></CardHeader>
           <CardContent>
             {commissionsQ.isLoading ? (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Carregando…</div>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground"><AppIcon name="Loader2" className="h-4 w-4 animate-spin" /> Carregando…</div>
             ) : (commissionsQ.data ?? []).length === 0 ? (
               <p className="text-sm text-muted-foreground">Nenhuma comissão registrada ainda.</p>
             ) : (

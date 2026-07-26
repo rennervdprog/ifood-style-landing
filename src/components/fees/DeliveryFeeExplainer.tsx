@@ -1,3 +1,4 @@
+import { AppIcon } from "@/components/ui/app-icon";
 import { Info } from "lucide-react";
 
 interface Props {
@@ -32,7 +33,7 @@ export default function DeliveryFeeExplainer({ mode, storeFee, platformFee = 2, 
     <div
       className={`flex gap-2 items-start text-xs text-muted-foreground bg-muted/30 rounded-lg p-2 ${className}`}
     >
-      <Info className="h-3.5 w-3.5 mt-0.5 shrink-0 text-primary" />
+      <AppIcon name="Info" className="h-3.5 w-3.5 mt-0.5 shrink-0 text-primary" />
       <span>{text}</span>
     </div>
   );

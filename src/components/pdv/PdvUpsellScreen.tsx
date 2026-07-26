@@ -1,9 +1,10 @@
-import { ArrowLeft, Monitor, Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
+import { AppIcon } from "@/components/ui/app-icon";
+import { ArrowLeft, Monitor, Check, Loader2 } from "lucide-react";
 
 interface Props {
   storeId: string;
@@ -36,7 +37,7 @@ export default function PdvUpsellScreen({ storeId, monthlyPrice, onBack }: Props
     <div className="min-h-screen bg-background flex flex-col">
       <header className="flex items-center gap-3 p-4 border-b border-border">
         <button onClick={onBack} className="p-2 -ml-2 rounded-full hover:bg-muted" aria-label="Voltar">
-          <ArrowLeft className="h-5 w-5" />
+          <AppIcon name="ArrowLeft" className="h-5 w-5" />
         </button>
         <h1 className="text-base font-bold">PDV — Ponto de Venda</h1>
       </header>
@@ -44,7 +45,7 @@ export default function PdvUpsellScreen({ storeId, monthlyPrice, onBack }: Props
       <main className="flex-1 flex items-center justify-center p-4">
         <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 space-y-5">
           <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center">
-            <Monitor className="h-7 w-7 text-primary" />
+            <AppIcon name="Monitor" className="h-7 w-7 text-primary" />
           </div>
           <div>
             <h2 className="text-2xl font-black leading-tight">Ative o PDV da sua loja</h2>
@@ -62,7 +63,7 @@ export default function PdvUpsellScreen({ storeId, monthlyPrice, onBack }: Props
               "Atalhos de teclado profissionais",
             ].map((f) => (
               <li key={f} className="flex gap-2 items-start">
-                <Check className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                <AppIcon name="Check" className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                 <span>{f}</span>
               </li>
             ))}
@@ -79,7 +80,7 @@ export default function PdvUpsellScreen({ storeId, monthlyPrice, onBack }: Props
           </div>
 
           <Button className="w-full h-12 text-base font-bold" onClick={activate} disabled={loading}>
-            {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Ativar PDV agora"}
+            {loading ? <AppIcon name="Loader2" className="h-5 w-5 animate-spin" /> : "Ativar PDV agora"}
           </Button>
           <p className="text-[11px] text-center text-muted-foreground">
             A ativação libera o PDV imediatamente.

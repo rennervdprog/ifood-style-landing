@@ -1,5 +1,6 @@
-import { Crown } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
+import { AppIcon } from "@/components/ui/app-icon";
+import { Crown } from "lucide-react";
 
 export interface VipDiffs {
   fee?: boolean;
@@ -27,7 +28,7 @@ export function VipBadge({ diffs, className = "" }: { diffs?: VipDiffs; classNam
           <span
             className={`inline-flex items-center gap-0.5 text-[9px] font-black bg-amber-500/15 text-amber-600 border border-amber-500/25 px-1.5 py-0.5 rounded-full ${className}`}
           >
-            <Crown className="h-2.5 w-2.5" />
+            <AppIcon name="Crown" className="h-2.5 w-2.5" />
             VIP
           </span>
         </TooltipTrigger>

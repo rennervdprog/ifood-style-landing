@@ -3,10 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format, startOfMonth, endOfMonth, subMonths, subDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import {
-  ArrowDownCircle, ArrowUpCircle, Download, Search, ArrowUpDown,
-  TrendingUp, TrendingDown, Wallet, Receipt, Calendar, Filter
-} from "lucide-react";
 import { formatBRL } from "@/lib/utils";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -22,6 +18,8 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarPicker } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
+import { AppIcon } from "@/components/ui/app-icon";
+import { ArrowDownCircle, ArrowUpCircle, Download, Search, ArrowUpDown, TrendingUp, TrendingDown, Wallet, Receipt, Calendar, Filter } from "lucide-react";
 
 interface Props {
   storeId: string;
@@ -183,7 +181,7 @@ export default function FinancialStatement({ storeId, storeName }: Props) {
         <Card>
           <CardContent className="p-3 sm:p-4">
             <div className="flex items-center gap-2 mb-1">
-              <Wallet className="h-4 w-4 text-primary" />
+              <AppIcon name="Wallet" className="h-4 w-4 text-primary" />
               <p className="text-[10px] sm:text-xs text-muted-foreground font-medium">Saldo</p>
             </div>
             <p className={cn("text-base sm:text-xl font-black tabular-nums", totals.balance >= 0 ? "text-foreground" : "text-destructive")}>
@@ -194,7 +192,7 @@ export default function FinancialStatement({ storeId, storeName }: Props) {
         <Card>
           <CardContent className="p-3 sm:p-4">
             <div className="flex items-center gap-2 mb-1">
-              <TrendingUp className="h-4 w-4 text-emerald-600" />
+              <AppIcon name="TrendingUp" className="h-4 w-4 text-emerald-600" />
               <p className="text-[10px] sm:text-xs text-muted-foreground font-medium">Receitas</p>
             </div>
             <p className="text-base sm:text-xl font-black text-emerald-600 tabular-nums">{formatBRL(totals.income)}</p>
@@ -203,7 +201,7 @@ export default function FinancialStatement({ storeId, storeName }: Props) {
         <Card>
           <CardContent className="p-3 sm:p-4">
             <div className="flex items-center gap-2 mb-1">
-              <TrendingDown className="h-4 w-4 text-destructive" />
+              <AppIcon name="TrendingDown" className="h-4 w-4 text-destructive" />
               <p className="text-[10px] sm:text-xs text-muted-foreground font-medium">Despesas</p>
             </div>
             <p className="text-base sm:text-xl font-black text-destructive tabular-nums">{formatBRL(totals.expense)}</p>
@@ -212,7 +210,7 @@ export default function FinancialStatement({ storeId, storeName }: Props) {
         <Card>
           <CardContent className="p-3 sm:p-4">
             <div className="flex items-center gap-2 mb-1">
-              <Receipt className="h-4 w-4 text-amber-600" />
+              <AppIcon name="Receipt" className="h-4 w-4 text-amber-600" />
               <p className="text-[10px] sm:text-xs text-muted-foreground font-medium">Pendente</p>
             </div>
             <p className="text-base sm:text-xl font-black text-amber-600 tabular-nums">{formatBRL(totals.pending)}</p>
@@ -224,12 +222,12 @@ export default function FinancialStatement({ storeId, storeName }: Props) {
       <Card>
         <CardContent className="p-3 sm:p-4 space-y-3">
           <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
-            <Filter className="h-3.5 w-3.5" /> Filtros
+            <AppIcon name="Filter" className="h-3.5 w-3.5" /> Filtros
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             <Select value={period} onValueChange={(v) => setPeriod(v as PeriodKey)}>
               <SelectTrigger className="h-9 text-xs">
-                <Calendar className="h-3.5 w-3.5 mr-1" />
+                <AppIcon name="Calendar" className="h-3.5 w-3.5 mr-1" />
                 <SelectValue placeholder="Período" />
               </SelectTrigger>
               <SelectContent>
@@ -261,7 +259,7 @@ export default function FinancialStatement({ storeId, storeName }: Props) {
             </Select>
 
             <div className="relative">
-              <Search className="h-3.5 w-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <AppIcon name="Search" className="h-3.5 w-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -276,7 +274,7 @@ export default function FinancialStatement({ storeId, storeName }: Props) {
               <Popover>
                 <PopoverTrigger asChild>
                   <Button variant="outline" size="sm" className="h-9 justify-start text-xs font-normal">
-                    <Calendar className="h-3.5 w-3.5 mr-2" />
+                    <AppIcon name="Calendar" className="h-3.5 w-3.5 mr-2" />
                     {custom.from ? format(custom.from, "dd/MM/yyyy") : "De"}
                   </Button>
                 </PopoverTrigger>
@@ -287,7 +285,7 @@ export default function FinancialStatement({ storeId, storeName }: Props) {
               <Popover>
                 <PopoverTrigger asChild>
                   <Button variant="outline" size="sm" className="h-9 justify-start text-xs font-normal">
-                    <Calendar className="h-3.5 w-3.5 mr-2" />
+                    <AppIcon name="Calendar" className="h-3.5 w-3.5 mr-2" />
                     {custom.to ? format(custom.to, "dd/MM/yyyy") : "Até"}
                   </Button>
                 </PopoverTrigger>
@@ -301,7 +299,7 @@ export default function FinancialStatement({ storeId, storeName }: Props) {
           <div className="flex items-center justify-between gap-2">
             <p className="text-[11px] text-muted-foreground">{totals.count} {totals.count === 1 ? "transação" : "transações"}</p>
             <Button size="sm" variant="outline" onClick={exportCSV} className="h-8 text-xs">
-              <Download className="h-3.5 w-3.5 mr-1" /> Exportar CSV
+              <AppIcon name="Download" className="h-3.5 w-3.5 mr-1" /> Exportar CSV
             </Button>
           </div>
         </CardContent>
@@ -314,14 +312,14 @@ export default function FinancialStatement({ storeId, storeName }: Props) {
             <TableHeader>
               <TableRow>
                 <TableHead className="cursor-pointer select-none" onClick={() => toggleSort("date")}>
-                  <span className="inline-flex items-center gap-1">Data <ArrowUpDown className="h-3 w-3 opacity-50" /></span>
+                  <span className="inline-flex items-center gap-1">Data <AppIcon name="ArrowUpDown" className="h-3 w-3 opacity-50" /></span>
                 </TableHead>
                 <TableHead className="cursor-pointer select-none" onClick={() => toggleSort("description")}>
-                  <span className="inline-flex items-center gap-1">Descrição <ArrowUpDown className="h-3 w-3 opacity-50" /></span>
+                  <span className="inline-flex items-center gap-1">Descrição <AppIcon name="ArrowUpDown" className="h-3 w-3 opacity-50" /></span>
                 </TableHead>
                 <TableHead>Tipo</TableHead>
                 <TableHead className="text-right cursor-pointer select-none" onClick={() => toggleSort("amount")}>
-                  <span className="inline-flex items-center gap-1">Valor <ArrowUpDown className="h-3 w-3 opacity-50" /></span>
+                  <span className="inline-flex items-center gap-1">Valor <AppIcon name="ArrowUpDown" className="h-3 w-3 opacity-50" /></span>
                 </TableHead>
                 <TableHead>Status</TableHead>
               </TableRow>
@@ -352,7 +350,7 @@ export default function FinancialStatement({ storeId, storeName }: Props) {
                     <TableCell>
                       {info ? (
                         <Badge variant="outline" className={isIncome ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" : "bg-red-500/10 text-red-600 border-red-500/20"}>
-                          {isIncome ? <ArrowDownCircle className="h-3 w-3 mr-1" /> : <ArrowUpCircle className="h-3 w-3 mr-1" />}
+                          {isIncome ? <AppIcon name="ArrowDownCircle" className="h-3 w-3 mr-1" /> : <AppIcon name="ArrowUpCircle" className="h-3 w-3 mr-1" />}
                           {isIncome ? "Receita" : "Despesa"}
                         </Badge>
                       ) : <span className="text-xs text-muted-foreground">—</span>}
@@ -376,7 +374,7 @@ export default function FinancialStatement({ storeId, storeName }: Props) {
         {isLoading && <p className="text-center text-sm text-muted-foreground py-8">Carregando…</p>}
         {!isLoading && filtered.length === 0 && (
           <Card><CardContent className="py-10 text-center">
-            <Receipt className="h-10 w-10 mx-auto mb-2 text-muted-foreground opacity-40" />
+            <AppIcon name="Receipt" className="h-10 w-10 mx-auto mb-2 text-muted-foreground opacity-40" />
             <p className="text-sm text-muted-foreground">Nenhuma transação encontrada.</p>
           </CardContent></Card>
         )}

@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { formatBRL } from "@/lib/utils";
+import { AppIcon } from "@/components/ui/app-icon";
 import { Bell, Wallet, Clock, DollarSign, Trash2, CheckCircle2 } from "lucide-react";
 
 const SaquesTab = ({
@@ -87,7 +88,7 @@ const SaquesTab = ({
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
             <div className={`w-8 h-8 rounded-full flex items-center justify-center ${isPending ? "bg-amber-500/20" : isPaid ? "bg-emerald-500/20" : "bg-destructive/20"}`}>
-              <DollarSign className={`h-4 w-4 ${isPending ? "text-amber-600 dark:text-amber-400" : isPaid ? "text-emerald-600 dark:text-emerald-400" : "text-destructive"}`} />
+              <AppIcon name="DollarSign" className={`h-4 w-4 ${isPending ? "text-amber-600 dark:text-amber-400" : isPaid ? "text-emerald-600 dark:text-emerald-400" : "text-destructive"}`} />
             </div>
             <div>
               <p className="text-sm font-bold text-foreground">{driverName}</p>
@@ -107,7 +108,7 @@ const SaquesTab = ({
             <button onClick={() => handleDelete(req)}
               className={`p-2 rounded-lg transition-colors ${deletingId === req.id ? "bg-destructive text-destructive-foreground" : "bg-destructive/10 text-destructive hover:bg-destructive/20"}`}
               title={deletingId === req.id ? "Clique para confirmar" : "Excluir"}>
-              <Trash2 className="h-4 w-4" />
+              <AppIcon name="Trash2" className="h-4 w-4" />
             </button>
           </div>
         </div>
@@ -141,7 +142,7 @@ const SaquesTab = ({
               className={`w-full flex items-center justify-center gap-2 font-bold py-3 rounded-xl text-sm active:scale-95 transition-transform disabled:opacity-60 ${
                 confirmingId === req.id ? "bg-amber-500 hover:bg-amber-600 text-white" : "bg-emerald-600 hover:bg-emerald-700 text-white"
               }`}>
-              <CheckCircle2 className="h-4 w-4" />
+              <AppIcon name="CheckCircle2" className="h-4 w-4" />
               {processingId === req.id ? "Processando..." : confirmingId === req.id ? "Tocar novamente para confirmar" : "Confirmar Pagamento"}
             </button>
           </>
@@ -155,7 +156,7 @@ const SaquesTab = ({
       <div className="space-y-3">
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-sm font-bold text-foreground uppercase tracking-wider flex items-center gap-2">
-            <Bell className="h-4 w-4" /> Solicitações de Saque
+            <AppIcon name="Bell" className="h-4 w-4" /> Solicitações de Saque
           </h2>
           <button onClick={async () => {
             const { data, error } = await supabase.rpc("admin_cleanup_duplicate_withdrawals");
@@ -183,13 +184,13 @@ const SaquesTab = ({
       {saquesSubTab === "pendentes" ? (
         pendingList.length === 0 ? (
           <div className="bg-card rounded-2xl p-8 text-center border border-border">
-            <Wallet className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+            <AppIcon name="Wallet" className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
             <p className="text-sm text-muted-foreground">Nenhuma solicitação pendente.</p>
           </div>
         ) : <div className="space-y-3">{pendingList.map(renderCard)}</div>
       ) : historyList.length === 0 ? (
         <div className="bg-card rounded-2xl p-8 text-center border border-border">
-          <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+          <AppIcon name="Clock" className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
           <p className="text-sm text-muted-foreground">Nenhum saque no histórico.</p>
         </div>
       ) : <div className="space-y-3">{historyList.map(renderCard)}</div>}

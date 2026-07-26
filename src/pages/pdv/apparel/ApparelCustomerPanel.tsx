@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { formatBRL } from "@/lib/utils";
 import { toast } from "sonner";
+import { AppIcon } from "@/components/ui/app-icon";
 import { Loader2, Search, User, Wallet, X, Check } from "lucide-react";
 
 export interface ApparelCustomer {
@@ -92,7 +93,7 @@ export default function ApparelCustomerPanel({
   return (
     <div className="px-3 py-2 border-b border-border/40 bg-muted/20 space-y-2">
       <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-        <User className="h-3 w-3" /> Cliente da venda
+        <AppIcon name="User" className="h-3 w-3" /> Cliente da venda
       </div>
       <div className="flex items-center gap-1.5">
         <input
@@ -107,7 +108,7 @@ export default function ApparelCustomerPanel({
           disabled={loading || !customer.phone.trim()}
           className="px-2.5 py-1.5 rounded-lg bg-primary text-primary-foreground text-[11px] font-bold flex items-center gap-1 disabled:opacity-40"
         >
-          {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Search className="h-3 w-3" />}
+          {loading ? <AppIcon name="Loader2" className="h-3 w-3 animate-spin" /> : <AppIcon name="Search" className="h-3 w-3" />}
         </button>
       </div>
       <input
@@ -129,7 +130,7 @@ export default function ApparelCustomerPanel({
       {credits.length > 0 && (
         <div className="space-y-1">
           <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
-            <Wallet className="h-3 w-3" /> Vales disponíveis
+            <AppIcon name="Wallet" className="h-3 w-3" /> Vales disponíveis
           </p>
           <div className="space-y-1 max-h-32 overflow-y-auto">
             {credits.map((r) => {
@@ -142,7 +143,7 @@ export default function ApparelCustomerPanel({
                 >
                   <div className="flex items-center gap-1.5 min-w-0">
                     <span className={`w-4 h-4 rounded-full flex items-center justify-center border ${sel ? "bg-primary border-primary" : "border-border"}`}>
-                      {sel && <Check className="h-2.5 w-2.5 text-primary-foreground" />}
+                      {sel && <AppIcon name="Check" className="h-2.5 w-2.5 text-primary-foreground" />}
                     </span>
                     <span className="text-[11px] font-bold truncate">Vale-crédito</span>
                   </div>
@@ -157,7 +158,7 @@ export default function ApparelCustomerPanel({
               <div className="flex items-center gap-1.5">
                 <span className="text-[11px] font-black text-emerald-600 tabular-nums">−{formatBRL(credit.amount)}</span>
                 <button onClick={() => onCreditChange(null)} className="p-0.5 rounded hover:bg-emerald-500/10">
-                  <X className="h-3 w-3 text-emerald-600" />
+                  <AppIcon name="X" className="h-3 w-3 text-emerald-600" />
                 </button>
               </div>
             </div>

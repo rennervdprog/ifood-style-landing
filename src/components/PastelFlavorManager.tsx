@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { UtensilsCrossed as Pastel } from "lucide-react";
+import { AppIcon } from "@/components/ui/app-icon";
 
 interface PastelFlavorManagerProps {
   storeId: string;
@@ -66,7 +66,7 @@ const PastelFlavorManager = ({ storeId }: PastelFlavorManagerProps) => {
 
       {/* Header */}
       <div className="flex items-center gap-2">
-        <Pastel className="h-5 w-5 text-primary" />
+        <AppIcon name="UtensilsCrossed" className="h-5 w-5 text-primary" />
         <h2 className="text-sm font-bold text-foreground/80 uppercase tracking-wider">Regras de Combinação</h2>
       </div>
 

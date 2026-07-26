@@ -1,3 +1,4 @@
+import { AppIcon } from "@/components/ui/app-icon";
 import { Loader2, Power, PowerOff } from "lucide-react";
 
 interface DriverOnlineToggleProps {
@@ -27,15 +28,13 @@ export const DriverOnlineToggle = ({ isOnline, toggling, onToggle }: DriverOnlin
           }`}
         >
           {toggling ? (
-            <Loader2
-              className={`h-5 w-5 animate-spin ${
+            <AppIcon name="Loader2" className={`h-5 w-5 animate-spin ${
                 isOnline ? "text-success-foreground" : "text-muted-foreground"
-              }`}
-            />
+              }`} />
           ) : isOnline ? (
-            <Power className="h-5 w-5 text-success-foreground" strokeWidth={2.6} />
+            <AppIcon name="Power" className="h-5 w-5 text-success-foreground" />
           ) : (
-            <PowerOff className="h-5 w-5 text-muted-foreground" strokeWidth={2.4} />
+            <AppIcon name="PowerOff" className="h-5 w-5 text-muted-foreground" />
           )}
           {isOnline && !toggling && (
             <span className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-success-foreground border-2 border-success animate-pulse" />

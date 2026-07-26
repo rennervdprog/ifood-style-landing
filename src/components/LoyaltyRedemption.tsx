@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { AppIcon } from "@/components/ui/app-icon";
 import { Star, Gift, Minus, Plus, LogIn } from "lucide-react";
 
 interface LoyaltyRedemptionProps {
@@ -61,7 +62,7 @@ const LoyaltyRedemption = ({ storeId, subtotal, onApply, onRemove, appliedPoints
   if (!user) {
     return (
       <div className="bg-amber-500/5 border border-amber-500/15 rounded-xl p-3 flex items-center gap-2">
-        <LogIn className="h-4 w-4 text-amber-500 shrink-0" />
+        <AppIcon name="LogIn" className="h-4 w-4 text-amber-500 shrink-0" />
         <p className="text-xs text-foreground">
           Faça login para acumular e usar pontos. Ganhe <b>{pointsPerReal} ponto{pointsPerReal > 1 ? "s" : ""}</b> a cada R$ 1,00.
         </p>
@@ -78,7 +79,7 @@ const LoyaltyRedemption = ({ storeId, subtotal, onApply, onRemove, appliedPoints
     return (
       <div className="bg-amber-500/5 border border-amber-500/15 rounded-xl p-3 space-y-2">
         <div className="flex items-center gap-2">
-          <Star className="h-4 w-4 text-amber-500 fill-amber-500" />
+          <AppIcon name="Star" className="h-4 w-4 text-amber-500 fill-amber-500" />
           <p className="text-sm font-bold text-foreground">
             Você tem {availablePoints} ponto{availablePoints === 1 ? "" : "s"} nesta loja
           </p>
@@ -104,7 +105,7 @@ const LoyaltyRedemption = ({ storeId, subtotal, onApply, onRemove, appliedPoints
       <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Star className="h-4 w-4 text-amber-500 fill-amber-500" />
+            <AppIcon name="Star" className="h-4 w-4 text-amber-500 fill-amber-500" />
             <div>
               <p className="text-sm font-bold text-foreground">{appliedPoints} pontos aplicados</p>
               <p className="text-xs text-amber-600 font-semibold">-{formatBRL(discount)} de desconto</p>
@@ -123,7 +124,7 @@ const LoyaltyRedemption = ({ storeId, subtotal, onApply, onRemove, appliedPoints
   return (
     <div className="bg-amber-500/5 border border-amber-500/15 rounded-xl p-3 space-y-3">
       <div className="flex items-center gap-2">
-        <Star className="h-4 w-4 text-amber-500 fill-amber-500" />
+        <AppIcon name="Star" className="h-4 w-4 text-amber-500 fill-amber-500" />
         <div className="flex-1">
           <p className="text-sm font-bold text-foreground">Usar pontos de fidelidade</p>
           <p className="text-[10px] text-muted-foreground">Você tem {availablePoints} pontos disponíveis</p>
@@ -136,7 +137,7 @@ const LoyaltyRedemption = ({ storeId, subtotal, onApply, onRemove, appliedPoints
           disabled={pointsToUse <= minRedeem}
           className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center disabled:opacity-30"
         >
-          <Minus className="h-4 w-4" />
+          <AppIcon name="Minus" className="h-4 w-4" />
         </button>
 
         <div className="flex-1 text-center">
@@ -160,7 +161,7 @@ const LoyaltyRedemption = ({ storeId, subtotal, onApply, onRemove, appliedPoints
           disabled={(pointsToUse || minRedeem) >= maxPointsUsable}
           className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center disabled:opacity-30"
         >
-          <Plus className="h-4 w-4" />
+          <AppIcon name="Plus" className="h-4 w-4" />
         </button>
       </div>
 
@@ -172,7 +173,7 @@ const LoyaltyRedemption = ({ storeId, subtotal, onApply, onRemove, appliedPoints
         }}
         className="w-full bg-amber-500 text-white font-bold py-2.5 rounded-xl text-sm active:scale-[0.98] transition-transform flex items-center justify-center gap-2"
       >
-        <Gift className="h-4 w-4" />
+        <AppIcon name="Gift" className="h-4 w-4" />
         Aplicar {pointsToUse || minRedeem} pontos (-{formatBRL(((pointsToUse || minRedeem) * discountPerPoint))})
       </button>
     </div>

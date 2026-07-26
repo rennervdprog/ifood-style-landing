@@ -1,8 +1,9 @@
 import { memo, useEffect, useRef } from "react";
-import { Star, Clock, MapPin } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { AppIcon } from "@/components/ui/app-icon";
+import { Star, Clock, MapPin } from "lucide-react";
 
 interface StoreCardProps {
   id: string;
@@ -124,7 +125,7 @@ const StoreCard = memo(({ id, name, category, image_url, is_open, rating, status
             </div>
           ) : (
             <div className="px-3 py-1.5 rounded-full text-[10px] font-black bg-black/60 text-white/90 backdrop-blur-md border border-white/10 flex items-center gap-1">
-              <Clock className="h-3 w-3" />
+              <AppIcon name="Clock" className="h-3 w-3" />
               FECHADO
             </div>
           )}
@@ -146,7 +147,7 @@ const StoreCard = memo(({ id, name, category, image_url, is_open, rating, status
             </h3>
             {rating && (
               <div className="flex items-center gap-1 bg-amber-400/10 px-2 py-0.5 rounded-lg shrink-0">
-                <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                <AppIcon name="Star" className="h-3 w-3 fill-amber-400 text-amber-400" />
                 <span className="text-[11px] font-black text-amber-600 dark:text-amber-400">{rating.toFixed(1)}</span>
               </div>
             )}
@@ -154,14 +155,14 @@ const StoreCard = memo(({ id, name, category, image_url, is_open, rating, status
           
           <div className="flex items-center gap-3 flex-wrap pt-1 border-t border-border/40">
             <div className="flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground uppercase">
-              <Clock className="h-3 w-3 text-primary" />
+              <AppIcon name="Clock" className="h-3 w-3 text-primary" />
               <span>30-45 min</span>
             </div>
             {distanceLabel && (
               <>
                 <span className="w-1 h-1 rounded-full bg-border/60" />
                 <div className="flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground uppercase">
-                  <MapPin className="h-3 w-3 text-primary" />
+                  <AppIcon name="MapPin" className="h-3 w-3 text-primary" />
                   <span>{distanceLabel}</span>
                 </div>
               </>
@@ -172,7 +173,7 @@ const StoreCard = memo(({ id, name, category, image_url, is_open, rating, status
         {!is_open && statusReason && (
           <div className="mt-auto pt-2 border-t border-border/50">
             <p className="text-[10px] font-bold text-muted-foreground flex items-center gap-1.5">
-              <Clock className="h-3 w-3 text-destructive" />
+              <AppIcon name="Clock" className="h-3 w-3 text-destructive" />
               {statusReason}
             </p>
           </div>

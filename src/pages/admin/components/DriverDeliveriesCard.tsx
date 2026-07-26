@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { AppIcon } from "@/components/ui/app-icon";
 import { Bike } from "lucide-react";
 
 interface Props {
@@ -84,7 +85,7 @@ export default function DriverDeliveriesCard({ storeId, onClick }: Props) {
         className="w-full flex items-center gap-3 p-4 text-left active:bg-muted/40 transition-colors"
       >
         <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-          <Bike className="h-5 w-5 text-primary" />
+          <AppIcon name="Bike" className="h-5 w-5 text-primary" />
         </div>
         <div className="flex-1 min-w-0">
           <h3 className="text-sm font-black text-foreground">Entregas dos motoboys</h3>

@@ -2,9 +2,10 @@ import { formatBRL } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { UtensilsCrossed as Pastel, ShoppingCart, Check, Minus, Plus, ChevronLeft, Circle, X } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import type { CartAddon } from "@/contexts/CartContext";
+import { AppIcon } from "@/components/ui/app-icon";
+import { UtensilsCrossed as Pastel, ShoppingCart, Check, Minus, Plus, ChevronLeft, Circle, X } from "lucide-react";
 
 type FlavorCount = 2 | 3 | 4;
 const FRACTION_LABEL: Record<FlavorCount, string> = { 2: "½", 3: "⅓", 4: "¼" };
@@ -317,7 +318,7 @@ const PastelBuilderModal = ({ open, onClose, storeName, storeId, products, secti
           onClick={handleBack}
           className="w-9 h-9 rounded-full bg-muted flex items-center justify-center active:scale-90 transition-transform"
         >
-          <ChevronLeft className="h-5 w-5 text-foreground" />
+          <AppIcon name="ChevronLeft" className="h-5 w-5 text-foreground" />
         </button>
         <div className="flex-1 min-w-0">
           <h1 className="text-base font-black text-foreground truncate">Monte seu Pastel</h1>
@@ -327,7 +328,7 @@ const PastelBuilderModal = ({ open, onClose, storeName, storeId, products, secti
           onClick={handleClose}
           className="w-9 h-9 rounded-full bg-muted flex items-center justify-center active:scale-90 transition-transform"
         >
-          <X className="h-5 w-5 text-foreground" />
+          <AppIcon name="X" className="h-5 w-5 text-foreground" />
         </button>
       </div>
 
@@ -347,7 +348,7 @@ const PastelBuilderModal = ({ open, onClose, storeName, storeId, products, secti
         )}
         <div className="flex items-center gap-2">
           <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center">
-            {step === complementStep ? <Circle className="h-5 w-5 text-primary" /> : <Pastel className="h-5 w-5 text-primary" />}
+            {step === complementStep ? <AppIcon name="Circle" className="h-5 w-5 text-primary" /> : <AppIcon name="UtensilsCrossed" className="h-5 w-5 text-primary" />}
           </div>
           <div>
             <p className="text-sm font-bold text-foreground">
@@ -496,7 +497,7 @@ const PastelBuilderModal = ({ open, onClose, storeName, storeId, products, secti
                             <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
                               isSelected ? "border-primary bg-primary" : "border-muted-foreground/40"
                             }`}>
-                              {isSelected && <Check className="h-3 w-3 text-primary-foreground" />}
+                              {isSelected && <AppIcon name="Check" className="h-3 w-3 text-primary-foreground" />}
                             </div>
                           )}
                           <div className="flex-1 min-w-0">
@@ -571,7 +572,7 @@ const PastelBuilderModal = ({ open, onClose, storeName, storeId, products, secti
                       <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 ${
                         isSelected ? "border-primary bg-primary" : "border-muted-foreground/40"
                       }`}>
-                        {isSelected && <Check className="h-3 w-3 text-primary-foreground" />}
+                        {isSelected && <AppIcon name="Check" className="h-3 w-3 text-primary-foreground" />}
                       </div>
                       <div className="flex-1 min-w-0">
                         <span className="text-sm font-bold text-foreground">{c.name}</span>
@@ -639,14 +640,14 @@ const PastelBuilderModal = ({ open, onClose, storeName, storeId, products, secti
                   onClick={() => setQuantity(q => Math.max(1, q - 1))}
                   className="w-9 h-9 rounded-full bg-background flex items-center justify-center active:scale-90 transition-transform"
                 >
-                  <Minus className="h-4 w-4" />
+                  <AppIcon name="Minus" className="h-4 w-4" />
                 </button>
                 <span className="font-black text-lg w-7 text-center">{quantity}</span>
                 <button
                   onClick={() => setQuantity(q => q + 1)}
                   className="w-9 h-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center active:scale-90 transition-transform"
                 >
-                  <Plus className="h-4 w-4" />
+                  <AppIcon name="Plus" className="h-4 w-4" />
                 </button>
               </div>
             </div>
@@ -654,7 +655,7 @@ const PastelBuilderModal = ({ open, onClose, storeName, storeId, products, secti
               onClick={handleAdd}
               className="w-full py-4 rounded-xl font-bold text-base flex items-center justify-center gap-2 transition-all active:scale-[0.98] bg-primary text-primary-foreground shadow-lg"
             >
-              <ShoppingCart className="h-5 w-5" />
+              <AppIcon name="ShoppingCart" className="h-5 w-5" />
               Adicionar • {formatBRL(lineTotal)}
             </button>
           </div>

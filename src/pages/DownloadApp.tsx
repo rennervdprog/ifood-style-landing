@@ -3,12 +3,8 @@ import { Helmet } from "react-helmet-async";
 import { supabase } from "@/integrations/supabase/client";
 import { APP_VERSION } from "@/lib/appVersion";
 import { Link } from "react-router-dom";
-import {
-  Download, ShieldCheck, Star, Bell, Wifi, MapPin,
-  Camera, Mic, ChevronLeft, ChevronRight, Check,
-  Smartphone, Apple, ArrowLeft, Package, Clock,
-  BarChart3, MessageCircle, Zap,
-} from "lucide-react";
+import { AppIcon } from "@/components/ui/app-icon";
+import { Download, ShieldCheck, Star, Bell, Wifi, MapPin, Camera, Mic, Check, Smartphone, Apple, ArrowLeft, Package, Clock, BarChart3, MessageCircle, Zap } from "lucide-react";
 
 const PERM_ICONS: Record<string, any> = {
   bell: Bell, wifi: Wifi, "map-pin": MapPin, camera: Camera,
@@ -142,7 +138,7 @@ const DownloadApp = () => {
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border/60">
         <div className="flex items-center gap-3 px-4 py-3 max-w-2xl mx-auto">
           <Link to="/" className="w-8 h-8 rounded-xl bg-muted/60 flex items-center justify-center">
-            <ArrowLeft className="h-4 w-4" />
+            <AppIcon name="ArrowLeft" className="h-4 w-4" />
           </Link>
           <span className="text-sm font-bold text-foreground flex-1 truncate">{data.app_name}</span>
         </div>
@@ -159,7 +155,7 @@ const DownloadApp = () => {
                 <img src={data.icon_url} alt={data.app_name} className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full bg-primary/10 flex items-center justify-center">
-                  <Smartphone className="h-8 w-8 text-primary" />
+                  <AppIcon name="Smartphone" className="h-8 w-8 text-primary" />
                 </div>
               )}
             </div>
@@ -198,7 +194,7 @@ const DownloadApp = () => {
               onClick={() => window.open(data.play_store_url!, "_blank")}
               className="w-full h-13 bg-primary text-primary-foreground font-black rounded-2xl flex items-center justify-center gap-2 text-base active:scale-[0.98] transition-all shadow-lg shadow-primary/25 py-3.5"
             >
-              <Download className="h-5 w-5" />
+              <AppIcon name="Download" className="h-5 w-5" />
               Google Play Store
             </button>
           ) : data.apk_url ? (
@@ -210,18 +206,18 @@ const DownloadApp = () => {
               >
                 {downloading ? (
                   <>
-                    <Check className="h-5 w-5" />
+                    <AppIcon name="Check" className="h-5 w-5" />
                     Iniciando download...
                   </>
                 ) : (
                   <>
-                    <Download className="h-5 w-5" />
+                    <AppIcon name="Download" className="h-5 w-5" />
                     Baixar APK — {data.size_mb}
                   </>
                 )}
               </button>
               <p className="text-[11px] text-muted-foreground text-center flex items-center justify-center gap-1">
-                <ShieldCheck className="h-3 w-3 text-emerald-500" />
+                <AppIcon name="ShieldCheck" className="h-3 w-3 text-emerald-500" />
                 Arquivo verificado e seguro · Requer Android 7.0+
               </p>
             </div>
@@ -233,7 +229,7 @@ const DownloadApp = () => {
 
           {/* iOS */}
           <div className="mt-3 flex items-center gap-3 bg-muted/40 rounded-2xl px-4 py-3 border border-border/40">
-            <Apple className="h-5 w-5 text-muted-foreground shrink-0" />
+            <AppIcon name="Apple" className="h-5 w-5 text-muted-foreground shrink-0" />
             <div className="flex-1">
               <p className="text-xs font-bold text-foreground">iOS — Em breve</p>
               <p className="text-[10px] text-muted-foreground">Use a versão web em itasuper.com.br</p>

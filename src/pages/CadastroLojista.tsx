@@ -3,7 +3,6 @@ import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { z } from "zod";
-import { ArrowLeft, Mail, Lock, Eye, EyeOff, Store, FileText, CheckCircle, CheckCircle2, MapPin, Search, Loader2, Phone, Shield, ChevronRight, User, Users, Package, TrendingUp, Zap, CreditCard, BarChart3, Crown } from "lucide-react";
 import { PasswordStrengthIndicator, usePasswordStrength } from "@/components/PasswordStrengthIndicator";
 import { Constants } from "@/integrations/supabase/types";
 import { formatCep, fetchCep, resolveAddress } from "@/lib/location";
@@ -11,10 +10,10 @@ import { formatCep, fetchCep, resolveAddress } from "@/lib/location";
   import { formatDocument, sanitizeDocument, validateDocument } from "@/lib/documentFormat";
 import { PLANS, PLANS_ORDER, DELIVERY_FEE_NOTE, PIX_FEE_NOTE } from "@/lib/plansInfo";
 import { useSupporterCount } from "@/hooks/useSupporterCount";
-import { Check } from "lucide-react";
 import PlanFeeBreakdown from "@/components/fees/PlanFeeBreakdown";
 import WhyThisCharge from "@/components/fees/WhyThisCharge";
-import { ChevronDown } from "lucide-react";
+import { AppIcon } from "@/components/ui/app-icon";
+import { ArrowLeft, Mail, Lock, Eye, EyeOff, Store, FileText, CheckCircle, MapPin, Search, Loader2, Phone, Shield, ChevronRight, User, Users, Crown, Check, ChevronDown } from "lucide-react";
 
 const storeCategories = Constants.public.Enums.store_category;
 
@@ -497,10 +496,10 @@ const CadastroLojista = () => {
       {/* Header */}
       <header className="sticky top-0 z-50 bg-card/95 backdrop-blur-xl border-b border-border flex items-center h-14 px-4 gap-3">
         <button onClick={() => step > 0 ? setStep(step - 1) : navigate("/")} className="w-9 h-9 rounded-xl bg-muted/50 flex items-center justify-center">
-          <ArrowLeft className="h-4 w-4 text-foreground" />
+          <AppIcon name="ArrowLeft" className="h-4 w-4 text-foreground" />
         </button>
         <div className="flex items-center gap-2">
-          <Store className="h-5 w-5 text-primary" />
+          <AppIcon name="Store" className="h-5 w-5 text-primary" />
           <h1 className="font-bold text-foreground text-sm">Cadastro Lojista</h1>
         </div>
       </header>
@@ -508,7 +507,7 @@ const CadastroLojista = () => {
       {/* Referral Banner */}
       {referralCode && (
         <div className="mx-4 mt-2 bg-accent/20 border border-accent rounded-xl px-4 py-2 text-xs text-accent-foreground flex items-center gap-2">
-          <Users className="h-4 w-4" />
+          <AppIcon name="Users" className="h-4 w-4" />
           <span>Cadastro via indicação: <span className="font-bold font-mono">{referralCode}</span></span>
         </div>
       )}
@@ -516,7 +515,7 @@ const CadastroLojista = () => {
       {/* Promo Banner — campanha de captação */}
       {promoCode && (
         <div className="mx-4 mt-2 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl px-4 py-3 text-xs flex items-center gap-2 shadow-md">
-          <Crown className="h-5 w-5 text-yellow-300 shrink-0" />
+          <AppIcon name="Crown" className="h-5 w-5 text-yellow-300 shrink-0" />
           <span className="leading-snug">
             🎉 <strong>Vaga {promoCity || "promocional"} garantida!</strong><br />
             Plano Essencial travado em <strong>R$ 0/mês</strong> — sem comissão.
@@ -536,7 +535,7 @@ const CadastroLojista = () => {
                   isDone ? "bg-green-500/10 hover:bg-green-500/20" : isActive ? "bg-primary/10" : "bg-muted/50"
                 }`}>
                   {isDone ? (
-                    <CheckCircle className="h-5 w-5 text-green-500" />
+                    <AppIcon name="CheckCircle" className="h-5 w-5 text-green-500" />
                   ) : (
                     <s.icon className={`h-5 w-5 ${isActive ? "text-primary" : "text-muted-foreground/50"}`} />
                   )}
@@ -653,7 +652,7 @@ const CadastroLojista = () => {
                         aria-expanded={isExpanded}
                       >
                         {isExpanded ? "Ocultar detalhes" : "Ver detalhes"}
-                        <ChevronDown className={`h-3.5 w-3.5 transition-transform ${isExpanded ? "rotate-180" : ""}`} />
+                        <AppIcon name="ChevronDown" className={`h-3.5 w-3.5 transition-transform ${isExpanded ? "rotate-180" : ""}`} />
                       </button>
 
                       {/* Conteúdo expandido */}
@@ -673,7 +672,7 @@ const CadastroLojista = () => {
                           <ul className="space-y-1.5">
                             {p.features.map(f => (
                               <li key={f} className="flex items-start gap-2 text-[12px] text-foreground leading-relaxed">
-                                <Check className="h-3.5 w-3.5 text-primary mt-0.5 shrink-0" />
+                                <AppIcon name="Check" className="h-3.5 w-3.5 text-primary mt-0.5 shrink-0" />
                                 <span>{f}</span>
                               </li>
                             ))}
@@ -741,7 +740,7 @@ const CadastroLojista = () => {
                   disabled={!selectedPlan || (isDynamicPlan && !acceptedDynamic)}
                   className="w-full bg-primary text-primary-foreground font-bold py-3.5 rounded-2xl active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                 >
-                  Próximo <ChevronRight className="h-4 w-4" />
+                  Próximo <AppIcon name="ChevronRight" className="h-4 w-4" />
                 </button>
               </div>
             )}
@@ -757,12 +756,12 @@ const CadastroLojista = () => {
                 <FieldInput icon={Mail} type="email" placeholder="Seu e-mail" value={email} onChange={setEmail} error={errors.email} autoComplete="email" />
                 <FieldInput icon={Mail} type="email" placeholder="Confirme seu e-mail" value={confirmEmail} onChange={setConfirmEmail} error={errors.confirmEmail} autoComplete="email" />
                 <p className="text-[10px] text-muted-foreground -mt-2 px-1 flex items-center gap-1">
-                  <Shield className="h-3 w-3 text-primary flex-shrink-0" />
+                  <AppIcon name="Shield" className="h-3 w-3 text-primary flex-shrink-0" />
                   Garanta que o e-mail esteja correto. Será usado para notificações e repasses financeiros.
                 </p>
 
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <AppIcon name="Lock" className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <input
                     type={showPassword ? "text" : "password"}
                     placeholder="Sua senha (min. 6 caracteres)"
@@ -772,7 +771,7 @@ const CadastroLojista = () => {
                     autoComplete="new-password"
                   />
                   <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 p-1">
-                    {showPassword ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
+                    {showPassword ? <AppIcon name="EyeOff" className="h-4 w-4 text-muted-foreground" /> : <AppIcon name="Eye" className="h-4 w-4 text-muted-foreground" />}
                   </button>
                   {errors.password && <p className="text-xs text-destructive mt-1">{errors.password}</p>}
                 </div>
@@ -784,14 +783,14 @@ const CadastroLojista = () => {
                     onClick={() => setStep(0)}
                     className="flex-1 bg-muted text-foreground font-bold py-3.5 rounded-2xl active:scale-[0.98] transition-all flex items-center justify-center gap-2"
                   >
-                    <ArrowLeft className="h-4 w-4" /> Voltar
+                    <AppIcon name="ArrowLeft" className="h-4 w-4" /> Voltar
                   </button>
                   <button
                     type="button"
                     onClick={nextStep}
                     className="flex-1 bg-primary text-primary-foreground font-bold py-3.5 rounded-2xl active:scale-[0.98] transition-all flex items-center justify-center gap-2"
                   >
-                    Próximo <ChevronRight className="h-4 w-4" />
+                    Próximo <AppIcon name="ChevronRight" className="h-4 w-4" />
                   </button>
                 </div>
               </div>
@@ -839,7 +838,7 @@ const CadastroLojista = () => {
                 {!isPdvOnly && (
                 <div>
                   <div className="relative">
-                    <Store className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <AppIcon name="Store" className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <select
                       value={storeCategory}
                       onChange={(e) => setStoreCategory(e.target.value)}
@@ -865,7 +864,7 @@ const CadastroLojista = () => {
                   <label className="text-xs font-bold text-muted-foreground mb-1.5 block px-1">Localização da Loja</label>
                   <div className="flex gap-2">
                     <div className="relative flex-1">
-                      <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <AppIcon name="MapPin" className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <input
                         type="text"
                         placeholder="CEP (ex: 18690-000)"
@@ -882,7 +881,7 @@ const CadastroLojista = () => {
                       disabled={loadingCep}
                       className="px-4 h-12 rounded-2xl bg-primary text-primary-foreground text-sm font-bold disabled:opacity-50 flex items-center gap-1"
                     >
-                      {loadingCep ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                      {loadingCep ? <AppIcon name="Loader2" className="h-4 w-4 animate-spin" /> : <AppIcon name="Search" className="h-4 w-4" />}
                     </button>
                   </div>
                   {errors.cep && <p className="text-xs text-destructive mt-1 px-1">{errors.cep}</p>}
@@ -891,7 +890,7 @@ const CadastroLojista = () => {
                   {city && (
                     <div className="mt-2 p-3 rounded-2xl border border-border bg-muted/50">
                       <p className="text-sm font-bold text-foreground flex items-center gap-2">
-                        <MapPin className="h-4 w-4 text-primary" />
+                        <AppIcon name="MapPin" className="h-4 w-4 text-primary" />
                         {city}
                         {isPlatformCity ? (
                           <span className="text-xs bg-emerald-500/10 text-emerald-600 px-2 py-0.5 rounded-full">✅ Plataforma Completa</span>
@@ -952,14 +951,14 @@ const CadastroLojista = () => {
                     onClick={() => setStep(1)}
                     className="flex-1 bg-muted text-foreground font-bold py-3.5 rounded-2xl active:scale-[0.98] transition-all flex items-center justify-center gap-2"
                   >
-                    <ArrowLeft className="h-4 w-4" /> Voltar
+                    <AppIcon name="ArrowLeft" className="h-4 w-4" /> Voltar
                   </button>
                   <button
                     type="button"
                     onClick={nextStep}
                     className="flex-1 bg-primary text-primary-foreground font-bold py-3.5 rounded-2xl active:scale-[0.98] transition-all flex items-center justify-center gap-2"
                   >
-                    Próximo <ChevronRight className="h-4 w-4" />
+                    Próximo <AppIcon name="ChevronRight" className="h-4 w-4" />
                   </button>
                 </div>
               </div>
@@ -985,7 +984,7 @@ const CadastroLojista = () => {
 
                 <div>
                   <div className="relative">
-                    <FileText className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <AppIcon name="FileText" className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <input
                       type="date"
                       placeholder="Data de Nascimento"
@@ -1037,7 +1036,7 @@ const CadastroLojista = () => {
                     onClick={() => setStep(2)}
                     className="flex-1 bg-muted text-foreground font-bold py-3.5 rounded-2xl active:scale-[0.98] transition-all flex items-center justify-center gap-2"
                   >
-                    <ArrowLeft className="h-4 w-4" /> Voltar
+                    <AppIcon name="ArrowLeft" className="h-4 w-4" /> Voltar
                   </button>
                   <button
                     type="submit"

@@ -4,10 +4,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { formatBRL } from "@/lib/utils";
-import { DollarSign, Store, TrendingUp, Clock, CheckCircle2, Copy, Loader2, LogOut, Users } from "lucide-react";
 import { toast } from "sonner";
 import AppHeader from "@/components/AppHeader";
 import SignOutConfirm from "@/components/SignOutConfirm";
+import { AppIcon } from "@/components/ui/app-icon";
+import { DollarSign, Store, TrendingUp, Clock, CheckCircle2, Copy, Loader2, Users } from "lucide-react";
 
 const ModeradorDashboard = () => {
   const { user, loading: authLoading, signOut } = useAuth();
@@ -98,7 +99,7 @@ const ModeradorDashboard = () => {
   if (authLoading || modLoading || linking) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <AppIcon name="Loader2" className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -106,7 +107,7 @@ const ModeradorDashboard = () => {
   if (!user) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6 text-center">
-        <Users className="h-16 w-16 text-muted-foreground mb-4 opacity-30" />
+        <AppIcon name="Users" className="h-16 w-16 text-muted-foreground mb-4 opacity-30" />
         <h1 className="text-xl font-black text-foreground mb-2">Painel do Moderador</h1>
         <p className="text-sm text-muted-foreground mb-6">Faça login para acessar seu painel.</p>
         <button onClick={() => navigate("/auth")} className="bg-primary text-primary-foreground px-6 py-3 rounded-xl font-bold">
@@ -119,7 +120,7 @@ const ModeradorDashboard = () => {
   if (!moderator) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6 text-center">
-        <Users className="h-16 w-16 text-muted-foreground mb-4 opacity-30" />
+        <AppIcon name="Users" className="h-16 w-16 text-muted-foreground mb-4 opacity-30" />
         <h1 className="text-xl font-black text-foreground mb-2">Acesso Não Encontrado</h1>
         <p className="text-sm text-muted-foreground mb-2">
           Nenhum perfil de moderador vinculado a este e-mail.
@@ -158,7 +159,7 @@ const ModeradorDashboard = () => {
               {window.location.origin}/cadastro-lojista?ref={moderator.referral_code}
             </code>
             <button onClick={copyLink} className="bg-primary text-primary-foreground p-2 rounded-xl shrink-0">
-              <Copy className="h-4 w-4" />
+              <AppIcon name="Copy" className="h-4 w-4" />
             </button>
           </div>
           <p className="text-[10px] text-muted-foreground mt-2">
@@ -169,12 +170,12 @@ const ModeradorDashboard = () => {
         {/* Stats Cards */}
         <div className="grid grid-cols-2 gap-3">
           <div className="bg-card border border-border rounded-2xl p-4 text-center">
-            <Store className="h-5 w-5 text-primary mx-auto mb-1" />
+            <AppIcon name="Store" className="h-5 w-5 text-primary mx-auto mb-1" />
             <p className="text-2xl font-black text-foreground">{referrals?.length || 0}</p>
             <p className="text-xs text-muted-foreground">Lojas Indicadas</p>
           </div>
           <div className="bg-card border border-border rounded-2xl p-4 text-center">
-            <TrendingUp className="h-5 w-5 text-accent mx-auto mb-1" />
+            <AppIcon name="TrendingUp" className="h-5 w-5 text-accent mx-auto mb-1" />
             <p className="text-2xl font-black text-foreground">{formatBRL(totalAll)}</p>
             <p className="text-xs text-muted-foreground">Total Ganho</p>
           </div>
@@ -182,12 +183,12 @@ const ModeradorDashboard = () => {
 
         <div className="grid grid-cols-2 gap-3">
           <div className="bg-card border border-border rounded-2xl p-4 text-center">
-            <Clock className="h-5 w-5 text-destructive mx-auto mb-1" />
+            <AppIcon name="Clock" className="h-5 w-5 text-destructive mx-auto mb-1" />
             <p className="text-2xl font-black text-destructive">{formatBRL(totalUnpaid)}</p>
             <p className="text-xs text-muted-foreground">Pendente</p>
           </div>
           <div className="bg-card border border-border rounded-2xl p-4 text-center">
-            <CheckCircle2 className="h-5 w-5 text-accent mx-auto mb-1" />
+            <AppIcon name="CheckCircle2" className="h-5 w-5 text-accent mx-auto mb-1" />
             <p className="text-2xl font-black text-foreground">{formatBRL(totalPaid)}</p>
             <p className="text-xs text-muted-foreground">Já Recebido</p>
           </div>
@@ -216,12 +217,12 @@ const ModeradorDashboard = () => {
         {referrals && referrals.length > 0 && (
           <div className="bg-card border border-border rounded-2xl p-4">
             <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
-              <Store className="h-4 w-4 text-primary" /> Lojas Indicadas
+              <AppIcon name="Store" className="h-4 w-4 text-primary" /> Lojas Indicadas
             </h3>
             <div className="space-y-2">
               {referrals.map((ref: any) => (
                 <div key={ref.id} className="bg-muted rounded-xl px-4 py-2.5 flex items-center gap-2">
-                  <Store className="h-4 w-4 text-primary shrink-0" />
+                  <AppIcon name="Store" className="h-4 w-4 text-primary shrink-0" />
                   <span className="text-sm text-foreground font-medium truncate">{ref.stores?.name || "Loja removida"}</span>
                 </div>
               ))}
@@ -233,7 +234,7 @@ const ModeradorDashboard = () => {
         {earnings && earnings.length > 0 && (
           <div className="bg-card border border-border rounded-2xl p-4">
             <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
-              <DollarSign className="h-4 w-4 text-accent" /> Histórico de Ganhos
+              <AppIcon name="DollarSign" className="h-4 w-4 text-accent" /> Histórico de Ganhos
             </h3>
             <div className="max-h-60 overflow-y-auto space-y-1.5">
               {earnings.slice(0, 30).map((e: any) => (
@@ -260,7 +261,7 @@ const ModeradorDashboard = () => {
 
         {(!earnings || earnings.length === 0) && (
           <div className="text-center py-8 text-muted-foreground">
-            <DollarSign className="h-10 w-10 mx-auto mb-2 opacity-30" />
+            <AppIcon name="DollarSign" className="h-10 w-10 mx-auto mb-2 opacity-30" />
             <p className="text-sm font-bold">Nenhum ganho ainda</p>
             <p className="text-xs">Compartilhe seu link para começar a ganhar!</p>
           </div>

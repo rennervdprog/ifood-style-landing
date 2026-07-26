@@ -22,17 +22,13 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { planLabel } from "@/lib/plansInfo";
-import {
-  ArrowLeft, DollarSign, ShoppingBag, TrendingUp, Clock,
-  Store, Copy, AlertTriangle, Users, Bike, Wallet, CheckCircle2, Banknote, XCircle, Bell, Trash2, QrCode, Loader2, ArrowUpRight, ArrowDownRight, Settings,
-  LayoutDashboard, Shield, Ticket, RefreshCw, Truck, Menu, X, MapPin, Eye, Scale, Search, FileText, Mail, Phone, User, Download, Calendar, CreditCard, Receipt, ChevronDown, ChevronUp, Percent, Crown, Handshake, FlaskConical, Link as LinkIcon, Megaphone, Monitor, Sparkles, PanelLeftClose, PanelLeftOpen,
-  MessageCircle, Smartphone, ShieldCheck, Puzzle,
-} from "lucide-react";
  import { Switch } from "@/components/ui/switch";
  import { Badge } from "@/components/ui/badge";
 import { CommandDialog, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem } from "@/components/ui/command";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 // Hook + KPI/cores leves (sem recharts) — eager
+import { AppIcon } from "@/components/ui/app-icon";
+import { ArrowLeft, DollarSign, ShoppingBag, TrendingUp, Clock, Store, Copy, AlertTriangle, Users, Bike, Wallet, CheckCircle2, Bell, Loader2, LayoutDashboard, Shield, Ticket, RefreshCw, Truck, Menu, MapPin, Scale, Search, FileText, Crown, Handshake, FlaskConical, Link as LinkIcon, Megaphone, Sparkles, PanelLeftClose, PanelLeftOpen, MessageCircle, Smartphone, ShieldCheck, Puzzle } from "lucide-react";
 import {
   KpiCard, useFinanceChartData, CHART_COLORS,
 } from "@/components/FinanceChartsCore";
@@ -72,7 +68,7 @@ const AuditoriaFinanceiraPanel = lazy(() => import("@/components/finance/Auditor
 const MensalidadesPanel = lazy(() => import("@/components/finance/MensalidadesPanel"));
 const TabFallback = () => (
   <div className="flex items-center justify-center py-12">
-    <Loader2 className="h-6 w-6 animate-spin text-primary" />
+    <AppIcon name="Loader2" className="h-6 w-6 animate-spin text-primary" />
   </div>
 );
 
@@ -742,7 +738,7 @@ const TAB_SUBTITLE: Record<string, (ctx: {
   if (!user || !isAdmin) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center text-center px-6">
-        <AlertTriangle className="h-16 w-16 text-amber-500 dark:text-amber-400 mb-4" />
+        <AppIcon name="AlertTriangle" className="h-16 w-16 text-amber-500 dark:text-amber-400 mb-4" />
         <h1 className="text-xl font-bold text-foreground mb-2">Acesso Negado</h1>
         <p className="text-sm text-muted-foreground mb-6">Apenas o administrador pode acessar este painel.</p>
         <button onClick={() => navigate("/")} className="bg-primary text-primary-foreground font-bold px-6 py-3 rounded-xl">
@@ -808,7 +804,7 @@ const TAB_SUBTITLE: Record<string, (ctx: {
               showMoreSheet || moreTabs.some(t => t.key === activeTab) ? "bg-primary/10" : ""
             }`}
           >
-            <Menu className={`h-5 w-5 ${showMoreSheet || moreTabs.some(t => t.key === activeTab) ? "text-primary" : "text-muted-foreground"}`} />
+            <AppIcon name="Menu" className={`h-5 w-5 ${showMoreSheet || moreTabs.some(t => t.key === activeTab) ? "text-primary" : "text-muted-foreground"}`} />
             <span className={`text-[10px] font-bold ${showMoreSheet || moreTabs.some(t => t.key === activeTab) ? "text-primary" : "text-muted-foreground"}`}>Mais</span>
           </button>
         </div>
@@ -822,7 +818,7 @@ const TAB_SUBTITLE: Record<string, (ctx: {
             <div className="w-12 h-1 bg-muted-foreground/20 rounded-full mx-auto mt-3 mb-2" />
             <div className="px-4 pt-1 pb-2 sticky top-0 bg-card/95 backdrop-blur-xl z-10">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <AppIcon name="Search" className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <input
                   value={moreQuery}
                   onChange={(e) => setMoreQuery(e.target.value)}
@@ -871,7 +867,7 @@ const TAB_SUBTITLE: Record<string, (ctx: {
                 className="w-full flex items-center gap-3 px-4 py-3 mt-2 rounded-xl text-sm font-semibold text-muted-foreground hover:bg-accent hover:text-foreground border-t border-border/50 pt-4"
               >
                 <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 bg-muted/50">
-                  <ArrowLeft className="h-4 w-4" />
+                  <AppIcon name="ArrowLeft" className="h-4 w-4" />
                 </div>
                 <span>Voltar à Home</span>
               </button>
@@ -890,7 +886,7 @@ const TAB_SUBTITLE: Record<string, (ctx: {
         <div className={`border-b border-border/50 ${desktopCollapsed ? "p-3 flex justify-center" : "p-5"}`}>
           <div className={`flex items-center gap-3 min-w-0 ${desktopCollapsed ? "justify-center" : ""}`}>
             <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center flex-shrink-0 shadow-lg shadow-primary/20">
-              <LayoutDashboard className="h-5 w-5 text-primary-foreground" />
+              <AppIcon name="LayoutDashboard" className="h-5 w-5 text-primary-foreground" />
             </div>
             {!desktopCollapsed && (
               <div className="min-w-0">
@@ -921,7 +917,7 @@ const TAB_SUBTITLE: Record<string, (ctx: {
             </div>
             <div className="pt-2 border-t border-primary/10 flex items-center justify-between">
               <div className="flex items-center gap-1.5">
-                <TrendingUp className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                <AppIcon name="TrendingUp" className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
                 <span className="text-[10px] text-muted-foreground">Vendas</span>
               </div>
               <span className="text-sm font-black text-foreground tabular-nums">{formatBRL(metrics.totalSales)}</span>
@@ -1013,14 +1009,14 @@ const TAB_SUBTITLE: Record<string, (ctx: {
           <div className="bg-muted/30 rounded-xl p-3 space-y-2">
             <div className="flex items-center gap-2.5">
               <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Store className="h-3.5 w-3.5 text-primary" />
+                <AppIcon name="Store" className="h-3.5 w-3.5 text-primary" />
               </div>
               <span className="text-xs text-muted-foreground flex-1">Lojas</span>
               <span className="text-xs font-black text-foreground bg-accent px-2 py-0.5 rounded-md tabular-nums">{stores?.length || 0}</span>
             </div>
             <div className="flex items-center gap-2.5">
               <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Bike className="h-3.5 w-3.5 text-primary" />
+                <AppIcon name="Bike" className="h-3.5 w-3.5 text-primary" />
               </div>
               <span className="text-xs text-muted-foreground flex-1">Entregadores</span>
               <span className="text-xs font-black text-foreground bg-accent px-2 py-0.5 rounded-md tabular-nums">{drivers?.length || 0}</span>
@@ -1032,14 +1028,14 @@ const TAB_SUBTITLE: Record<string, (ctx: {
             className="w-full py-2 rounded-xl text-xs font-bold border border-border/60 text-muted-foreground hover:text-foreground hover:bg-accent/60 transition-all flex items-center justify-center gap-2"
             aria-label={desktopCollapsed ? "Expandir menu" : "Recolher menu"}
           >
-            {desktopCollapsed ? <PanelLeftOpen className="h-3.5 w-3.5" /> : <><PanelLeftClose className="h-3.5 w-3.5" /> Recolher</>}
+            {desktopCollapsed ? <AppIcon name="PanelLeftOpen" className="h-3.5 w-3.5" /> : <><AppIcon name="PanelLeftClose" className="h-3.5 w-3.5" /> Recolher</>}
           </button>
           <button
             onClick={() => navigate("/")}
             className={`w-full py-2.5 rounded-xl text-xs font-bold border border-border/60 text-muted-foreground hover:text-foreground hover:bg-accent/60 transition-all flex items-center justify-center gap-2 ${desktopCollapsed ? "px-0" : ""}`}
             aria-label="Voltar à Home"
           >
-            <ArrowLeft className="h-3.5 w-3.5" />
+            <AppIcon name="ArrowLeft" className="h-3.5 w-3.5" />
             {!desktopCollapsed && "Voltar à Home"}
           </button>
         </div>
@@ -1053,7 +1049,7 @@ const TAB_SUBTITLE: Record<string, (ctx: {
             {/* Mobile: show brand + current tab */}
             <div className="lg:hidden flex items-center gap-2.5 min-w-0">
               <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center flex-shrink-0">
-                <LayoutDashboard className="h-4 w-4 text-primary-foreground" />
+                <AppIcon name="LayoutDashboard" className="h-4 w-4 text-primary-foreground" />
               </div>
               <div className="min-w-0">
                 <h2 className="font-bold text-foreground text-sm truncate">{currentTab?.label || "Dashboard"}</h2>
@@ -1085,7 +1081,7 @@ const TAB_SUBTITLE: Record<string, (ctx: {
               className="hidden lg:inline-flex items-center gap-2 h-9 px-3 rounded-xl border border-border/60 bg-muted/30 hover:bg-muted/60 text-xs text-muted-foreground transition-colors"
               aria-label="Buscar (Ctrl+K)"
             >
-              <Search className="h-3.5 w-3.5" />
+              <AppIcon name="Search" className="h-3.5 w-3.5" />
               <span>Buscar…</span>
               <kbd className="ml-2 px-1.5 py-0.5 rounded bg-background border border-border/60 text-[10px] font-mono tabular-nums">⌘K</kbd>
             </button>
@@ -1094,7 +1090,7 @@ const TAB_SUBTITLE: Record<string, (ctx: {
                 onClick={generateReport}
                 className="flex items-center gap-2 bg-primary/10 text-primary px-3 py-2 rounded-xl text-xs font-bold hover:bg-primary/20 transition-colors"
               >
-                <Copy className="h-3.5 w-3.5" />
+                <AppIcon name="Copy" className="h-3.5 w-3.5" />
                 <span className="hidden sm:inline">Copiar Relatório</span>
               </button>
             )}
@@ -1103,7 +1099,7 @@ const TAB_SUBTITLE: Record<string, (ctx: {
                 onClick={() => handleTabChange("saques")}
                 className="relative p-2 rounded-xl bg-destructive/10 hover:bg-destructive/20 transition-colors lg:hidden"
               >
-                <Bell className="h-4 w-4 text-destructive" />
+                <AppIcon name="Bell" className="h-4 w-4 text-destructive" />
                 <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[8px] font-black w-4 h-4 flex items-center justify-center rounded-full tabular-nums">
                   {pendingWithdrawals.length}
                 </span>
@@ -1115,7 +1111,7 @@ const TAB_SUBTITLE: Record<string, (ctx: {
                 className="relative p-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 transition-colors lg:hidden"
                 aria-label="Cadastros pendentes"
               >
-                <Shield className="h-4 w-4 text-amber-600" />
+                <AppIcon name="Shield" className="h-4 w-4 text-amber-600" />
                 <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[8px] font-black w-4 h-4 flex items-center justify-center rounded-full tabular-nums">
                   {pendingApprovalsCount}
                 </span>
@@ -1131,14 +1127,14 @@ const TAB_SUBTITLE: Record<string, (ctx: {
             {(pendingWithdrawals.length > 0 || pendingApprovalsCount > 0) &&
               activeTab !== "approvals" && activeTab !== "saques" && activeTab !== "financeiro" && (
                 <div className="mb-4 rounded-2xl border border-amber-200 dark:border-amber-900/50 bg-amber-50 dark:bg-amber-950/30 px-4 py-3 flex flex-wrap items-center gap-2">
-                  <Bell className="h-4 w-4 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+                  <AppIcon name="Bell" className="h-4 w-4 text-amber-600 dark:text-amber-400 flex-shrink-0" />
                   <span className="text-xs font-bold text-amber-900 dark:text-amber-200 mr-1">Pendências:</span>
                   {pendingApprovalsCount > 0 && (
                     <button
                       onClick={() => handleTabChange("approvals")}
                       className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-800 dark:text-amber-200 hover:bg-amber-500/25 transition-colors inline-flex items-center gap-1.5"
                     >
-                      <Shield className="h-3 w-3" />
+                      <AppIcon name="Shield" className="h-3 w-3" />
                       {pendingApprovalsCount} cadastro{pendingApprovalsCount === 1 ? "" : "s"}
                     </button>
                   )}
@@ -1147,7 +1143,7 @@ const TAB_SUBTITLE: Record<string, (ctx: {
                       onClick={() => handleTabChange("financeiro")}
                       className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-destructive/15 text-destructive hover:bg-destructive/25 transition-colors inline-flex items-center gap-1.5"
                     >
-                      <Wallet className="h-3 w-3" />
+                      <AppIcon name="Wallet" className="h-3 w-3" />
                       {pendingWithdrawals.length} saque{pendingWithdrawals.length === 1 ? "" : "s"}
                     </button>
                   )}
@@ -1227,7 +1223,7 @@ const TAB_SUBTITLE: Record<string, (ctx: {
                 <div className="bg-card rounded-xl border border-border overflow-hidden">
                   <div className="p-4 border-b border-border bg-muted/30">
                     <h3 className="font-bold flex items-center gap-2">
-                      <FileText className="h-4 w-4" /> Histórico de Ações Administrativas
+                      <AppIcon name="FileText" className="h-4 w-4" /> Histórico de Ações Administrativas
                     </h3>
                   </div>
                   <div className="overflow-x-auto">
@@ -1275,7 +1271,7 @@ const TAB_SUBTITLE: Record<string, (ctx: {
                           <tr>
                             <td colSpan={4} className="px-4 py-12">
                               <div className="flex flex-col items-center justify-center text-center gap-2 text-muted-foreground">
-                                <FileText className="h-8 w-8 opacity-40" />
+                                <AppIcon name="FileText" className="h-8 w-8 opacity-40" />
                                 <p className="text-sm font-bold text-foreground">Nenhum log ainda</p>
                                 <p className="text-xs">Ações administrativas aparecerão aqui.</p>
                               </div>

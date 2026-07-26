@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { AppIcon } from "@/components/ui/app-icon";
 import { RefreshCw, CheckCircle2, Loader2, Store } from "lucide-react";
 
 const SyncExternalTab = () => {
@@ -39,7 +40,7 @@ const SyncExternalTab = () => {
     <div className="space-y-4">
       <div className="bg-card rounded-2xl p-5 border border-border space-y-4">
         <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
-          <RefreshCw className="h-5 w-5 text-primary" /> Sincronização Externa
+          <AppIcon name="RefreshCw" className="h-5 w-5 text-primary" /> Sincronização Externa
         </h2>
         <p className="text-sm text-muted-foreground">
           Envie dados para seu banco externo. Certifique-se de que os Secrets estão configurados.
@@ -47,7 +48,7 @@ const SyncExternalTab = () => {
         <div className="space-y-2">
           <button onClick={handleTestConnection} disabled={testing}
             className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground font-bold py-3 rounded-xl disabled:opacity-50">
-            {testing ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+            {testing ? <AppIcon name="Loader2" className="h-4 w-4 animate-spin" /> : <AppIcon name="CheckCircle2" className="h-4 w-4" />}
             {testing ? "Testando..." : "Teste de Conexão"}
           </button>
           {testResult && (
@@ -59,7 +60,7 @@ const SyncExternalTab = () => {
         <div className="space-y-2">
           <button onClick={handleSyncStores} disabled={syncing}
             className="w-full flex items-center justify-center gap-2 bg-accent text-accent-foreground font-bold py-3 rounded-xl disabled:opacity-50">
-            {syncing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Store className="h-4 w-4" />}
+            {syncing ? <AppIcon name="Loader2" className="h-4 w-4 animate-spin" /> : <AppIcon name="Store" className="h-4 w-4" />}
             {syncing ? "Sincronizando..." : "Sincronizar Dados"}
           </button>
           {syncResult && (

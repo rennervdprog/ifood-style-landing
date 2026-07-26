@@ -6,11 +6,12 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { Mail, Lock, Eye, EyeOff, Store, Shield, Bike } from "lucide-react";
 import { resolvePartnerDashboard } from "@/lib/partnerDashboard";
 import { queryClient } from "@/lib/queryClient";
 import { USER_ROUTING_QUERY_KEY } from "@/hooks/useUserRouting";
 import BiometricLoginButton from "@/components/BiometricLoginButton";
+import { AppIcon } from "@/components/ui/app-icon";
+import { Mail, Lock, Eye, EyeOff, Store, Shield, Bike } from "lucide-react";
 import {
   isBiometricAvailable,
   isBiometricEnabled,
@@ -160,7 +161,7 @@ const PartnerLogin = () => {
               <form onSubmit={handleSubmit} className="space-y-4">
                 <BiometricLoginButton />
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <AppIcon name="Mail" className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <input
                     type="email"
                     placeholder="Seu e-mail"
@@ -172,7 +173,7 @@ const PartnerLogin = () => {
                 </div>
 
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <AppIcon name="Lock" className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <input
                     type={showPassword ? "text" : "password"}
                     placeholder="Sua senha"
@@ -187,9 +188,9 @@ const PartnerLogin = () => {
                     className="absolute right-3 top-1/2 -translate-y-1/2"
                   >
                     {showPassword ? (
-                      <EyeOff className="h-4 w-4 text-muted-foreground" />
+                      <AppIcon name="EyeOff" className="h-4 w-4 text-muted-foreground" />
                     ) : (
-                      <Eye className="h-4 w-4 text-muted-foreground" />
+                      <AppIcon name="Eye" className="h-4 w-4 text-muted-foreground" />
                     )}
                   </button>
                 </div>
@@ -238,7 +239,7 @@ const PartnerLogin = () => {
                   className="w-full p-5 rounded-xl border-2 border-border bg-card hover:border-primary/50 transition-all flex items-center gap-4 active:scale-[0.98]"
                 >
                   <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <Store className="h-6 w-6 text-primary" />
+                    <AppIcon name="Store" className="h-6 w-6 text-primary" />
                   </div>
                   <div className="text-left">
                     <span className="text-base font-bold text-foreground block">Cadastrar Loja</span>
@@ -251,7 +252,7 @@ const PartnerLogin = () => {
                   className="w-full p-5 rounded-xl border-2 border-border bg-card hover:border-primary/50 transition-all flex items-center gap-4 active:scale-[0.98]"
                 >
                   <div className="w-12 h-12 rounded-xl bg-green-500/10 flex items-center justify-center flex-shrink-0">
-                    <Bike className="h-6 w-6 text-green-500" />
+                    <AppIcon name="Bike" className="h-6 w-6 text-green-500" />
                   </div>
                   <div className="text-left">
                     <span className="text-base font-bold text-foreground block">Cadastrar Motoboy</span>
@@ -274,7 +275,7 @@ const PartnerLogin = () => {
 
           <div className="mt-12 text-center space-y-4">
             <div className="flex items-center justify-center gap-2 text-[10px] text-muted-foreground/60 uppercase tracking-widest font-medium">
-              <Shield className="h-3 w-3" />
+              <AppIcon name="Shield" className="h-3 w-3" />
               <span>Área exclusiva para parceiros ItaSuper</span>
             </div>
             

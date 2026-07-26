@@ -3,9 +3,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { DEBUG_STORE_IDS } from "@/lib/debugStoreLogger";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Loader2, RefreshCw, Trash2, AlertTriangle, ArrowRight, CheckCircle2, XCircle } from "lucide-react";
 import { useState, Fragment } from "react";
 import { toast } from "sonner";
+import { AppIcon } from "@/components/ui/app-icon";
+import { Loader2, RefreshCw, Trash2, AlertTriangle, ArrowRight, CheckCircle2, XCircle } from "lucide-react";
 
 interface DebugLog {
   id: string;
@@ -21,9 +22,9 @@ interface DebugLog {
 }
 
 const DirectionIcon = ({ d }: { d: DebugLog["direction"] }) => {
-  if (d === "request") return <ArrowRight className="h-3.5 w-3.5 text-primary" />;
-  if (d === "response") return <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />;
-  return <XCircle className="h-3.5 w-3.5 text-destructive" />;
+  if (d === "request") return <AppIcon name="ArrowRight" className="h-3.5 w-3.5 text-primary" />;
+  if (d === "response") return <AppIcon name="CheckCircle2" className="h-3.5 w-3.5 text-emerald-500" />;
+  return <AppIcon name="XCircle" className="h-3.5 w-3.5 text-destructive" />;
 };
 
 const DebugLojaTab = () => {
@@ -57,7 +58,7 @@ const DebugLojaTab = () => {
     <div className="space-y-4">
       <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-500/30 rounded-xl p-4 text-sm">
         <div className="flex items-start gap-2">
-          <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
+          <AppIcon name="AlertTriangle" className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
           <div className="space-y-1">
             <p className="font-bold">Debug Loja — captura ativa</p>
             <p className="text-muted-foreground text-xs">
@@ -80,10 +81,10 @@ const DebugLojaTab = () => {
           ))}
         </select>
         <Button size="sm" variant="outline" onClick={() => refetch()}>
-          <RefreshCw className="h-3.5 w-3.5 mr-1" /> Atualizar
+          <AppIcon name="RefreshCw" className="h-3.5 w-3.5 mr-1" /> Atualizar
         </Button>
         <Button size="sm" variant="outline" onClick={clearOld}>
-          <Trash2 className="h-3.5 w-3.5 mr-1" /> Limpar &gt;24h
+          <AppIcon name="Trash2" className="h-3.5 w-3.5 mr-1" /> Limpar &gt;24h
         </Button>
       </div>
 
@@ -102,7 +103,7 @@ const DebugLojaTab = () => {
             </thead>
             <tbody className="divide-y divide-border">
               {isLoading ? (
-                <tr><td colSpan={6} className="px-4 py-8 text-center"><Loader2 className="h-5 w-5 animate-spin mx-auto text-muted-foreground" /></td></tr>
+                <tr><td colSpan={6} className="px-4 py-8 text-center"><AppIcon name="Loader2" className="h-5 w-5 animate-spin mx-auto text-muted-foreground" /></td></tr>
               ) : (logs ?? []).length === 0 ? (
                 <tr><td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">Sem logs ainda — dispare uma ação na loja monitorada.</td></tr>
               ) : logs!.map((l) => (

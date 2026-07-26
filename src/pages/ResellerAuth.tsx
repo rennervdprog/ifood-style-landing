@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { AppIcon } from "@/components/ui/app-icon";
 import { Loader2, Rocket, Mail, Lock, User, Eye, EyeOff, TrendingUp, Wallet, Shield } from "lucide-react";
 
 type Mode = "login" | "signup" | "forgot";
@@ -103,7 +104,7 @@ export default function ResellerAuth() {
         <header className="border-b bg-background/70 backdrop-blur">
           <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
             <Link to="/seja-revendedor" className="flex items-center gap-2 text-sm font-semibold">
-              <Rocket className="h-4 w-4 text-primary" /> Revendedores ItaSuper
+              <AppIcon name="Rocket" className="h-4 w-4 text-primary" /> Revendedores ItaSuper
             </Link>
             <Link to="/" className="text-xs text-muted-foreground hover:underline">Voltar ao site</Link>
           </div>
@@ -113,7 +114,7 @@ export default function ResellerAuth() {
           {/* Coluna esquerda: benefícios */}
           <section className="hidden md:block space-y-6">
             <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-3 py-1 rounded-full text-xs font-medium">
-              <Rocket className="h-3 w-3" /> Programa exclusivo
+              <AppIcon name="Rocket" className="h-3 w-3" /> Programa exclusivo
             </div>
             <h1 className="text-3xl lg:text-4xl font-bold leading-tight">
               Área do <span className="text-primary">Revendedor</span> ItaSuper
@@ -123,13 +124,13 @@ export default function ResellerAuth() {
               comissões e saques.
             </p>
             <ul className="space-y-3 text-sm">
-              <li className="flex gap-3"><TrendingUp className="h-5 w-5 text-primary shrink-0" />
+              <li className="flex gap-3"><AppIcon name="TrendingUp" className="h-5 w-5 text-primary shrink-0" />
                 <span><strong>20% vitalício</strong> sobre o MRR de cada loja indicada</span>
               </li>
-              <li className="flex gap-3"><Wallet className="h-5 w-5 text-primary shrink-0" />
+              <li className="flex gap-3"><AppIcon name="Wallet" className="h-5 w-5 text-primary shrink-0" />
                 <span><strong>R$ 50 de bônus</strong> por loja ativada (20 pedidos/30d)</span>
               </li>
-              <li className="flex gap-3"><Shield className="h-5 w-5 text-primary shrink-0" />
+              <li className="flex gap-3"><AppIcon name="Shield" className="h-5 w-5 text-primary shrink-0" />
                 <span>Sem meta, sem mensalidade — saque via PIX a partir de R$ 100</span>
               </li>
             </ul>
@@ -157,7 +158,7 @@ export default function ResellerAuth() {
                   <div>
                     <Label>Nome completo</Label>
                     <div className="relative">
-                      <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <AppIcon name="User" className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input className="pl-9" value={name} onChange={(e) => setName(e.target.value)} placeholder="Seu nome" autoComplete="name" />
                     </div>
                   </div>
@@ -165,7 +166,7 @@ export default function ResellerAuth() {
                 <div>
                   <Label>E-mail</Label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <AppIcon name="Mail" className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input className="pl-9" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="voce@exemplo.com" autoComplete="email" />
                   </div>
                 </div>
@@ -173,7 +174,7 @@ export default function ResellerAuth() {
                   <div>
                     <Label>Senha</Label>
                     <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <AppIcon name="Lock" className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input
                         className="pl-9 pr-9"
                         type={showPw ? "text" : "password"}
@@ -188,14 +189,14 @@ export default function ResellerAuth() {
                         className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
                         aria-label={showPw ? "Ocultar senha" : "Mostrar senha"}
                       >
-                        {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        {showPw ? <AppIcon name="EyeOff" className="h-4 w-4" /> : <AppIcon name="Eye" className="h-4 w-4" />}
                       </button>
                     </div>
                   </div>
                 )}
 
                 <Button className="w-full" onClick={submit} disabled={loading}>
-                  {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {loading && <AppIcon name="Loader2" className="mr-2 h-4 w-4 animate-spin" />}
                   {mode === "signup" ? "Criar conta e continuar" : mode === "login" ? "Entrar" : "Enviar link"}
                 </Button>
 

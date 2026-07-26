@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { AppIcon } from "@/components/ui/app-icon";
 import { MapPin, Store, X, Eye } from "lucide-react";
 
 const CidadesTab = ({ stores }: { stores: any[] | undefined }) => {
@@ -40,7 +41,7 @@ const CidadesTab = ({ stores }: { stores: any[] | undefined }) => {
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                      <MapPin className="h-5 w-5 text-primary" />
+                      <AppIcon name="MapPin" className="h-5 w-5 text-primary" />
                     </div>
                     <div className="text-left">
                       <p className="font-bold text-foreground">{c.displayName}</p>
@@ -55,7 +56,7 @@ const CidadesTab = ({ stores }: { stores: any[] | undefined }) => {
                     ) : (
                       <span className="text-xs bg-amber-500/10 text-amber-600 dark:text-amber-400 px-2 py-1 rounded-full font-bold">Cardápio Digital</span>
                     )}
-                    {isExpanded ? <X className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
+                    {isExpanded ? <AppIcon name="X" className="h-4 w-4 text-muted-foreground" /> : <AppIcon name="Eye" className="h-4 w-4 text-muted-foreground" />}
                   </div>
                 </button>
                 {isExpanded && (
@@ -63,7 +64,7 @@ const CidadesTab = ({ stores }: { stores: any[] | undefined }) => {
                     {c.stores.map((store: any) => (
                       <div key={store.id} className="flex items-center justify-between p-2 rounded-lg bg-card">
                         <div className="flex items-center gap-2">
-                          <Store className="h-4 w-4 text-primary" />
+                          <AppIcon name="Store" className="h-4 w-4 text-primary" />
                           <span className="text-sm font-medium text-foreground">{store.name}</span>
                         </div>
                         <div className="flex items-center gap-2">

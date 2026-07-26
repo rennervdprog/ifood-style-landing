@@ -7,7 +7,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { AsaasBadgeBar } from "@/components/AsaasBadge";
 import { toast } from "sonner";
 import { pushNotifyNewOrder } from "@/lib/notifications";
-import { ArrowLeft, MapPin, CreditCard, Banknote, QrCode, Edit3, Loader2, Truck, CheckCircle2, ShoppingBag, Tag, ChevronRight, Clock, AlertTriangle, Star, Wallet, Calendar, Store } from "lucide-react";
 import { getStoreOpenStatus, type OpeningHour } from "@/lib/storeStatus";
 import confetti from "canvas-confetti";
 import AddressModal from "@/components/AddressModal";
@@ -24,6 +23,8 @@ import { formatCep, fetchCep, reverseGeocode, readGps, readGpsFromGesture, resol
 import { checkStoreAccess, MAX_DISTANCE_KM } from "@/lib/fraudCheck";
 import EmptiesExchange, { type EmptiesExchangeSelection } from "@/components/EmptiesExchange";
 import { haptic } from "@/lib/haptics";
+import { AppIcon } from "@/components/ui/app-icon";
+import { ArrowLeft, MapPin, CreditCard, Banknote, QrCode, Edit3, Loader2, Truck, CheckCircle2, ShoppingBag, Tag, ChevronRight, Clock, AlertTriangle, Star, Wallet, Calendar, Store } from "lucide-react";
 
 const allPaymentMethods = [
   { id: "pix",         label: "PIX Online",         desc: "Pagamento instantâneo",   icon: QrCode },
@@ -748,7 +749,7 @@ const CheckoutPage = () => {
       {/* Header */}
       <header className="sticky top-0 z-50 bg-card/95 backdrop-blur-sm border-b border-border flex items-center h-14 px-4 gap-3">
         <button onClick={() => navigate(-1)} className="p-1 -ml-1">
-          <ArrowLeft className="h-5 w-5 text-foreground" />
+          <AppIcon name="ArrowLeft" className="h-5 w-5 text-foreground" />
         </button>
         <h1 className="font-bold text-foreground flex-1">Finalizar Pedido</h1>
         <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full">
@@ -760,7 +761,7 @@ const CheckoutPage = () => {
       {isStoreClosed && storeStatus && (
         <div className="mx-4 mt-4 bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 flex items-start gap-3">
           <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center shrink-0 mt-0.5">
-            <Clock className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+            <AppIcon name="Clock" className="h-5 w-5 text-amber-600 dark:text-amber-400" />
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="text-sm font-bold text-amber-700 dark:text-amber-300">Loja fechada no momento</h3>
@@ -768,7 +769,7 @@ const CheckoutPage = () => {
               Seu pedido não pode ser finalizado agora.
             </p>
             <div className="flex items-center gap-1.5 mt-2 bg-amber-500/10 rounded-lg px-3 py-1.5 w-fit">
-              <AlertTriangle className="h-3 w-3 text-amber-600 dark:text-amber-400" />
+              <AppIcon name="AlertTriangle" className="h-3 w-3 text-amber-600 dark:text-amber-400" />
               <span className="text-xs font-bold text-amber-700 dark:text-amber-300">
                 {storeStatus.reason}
               </span>
@@ -781,7 +782,7 @@ const CheckoutPage = () => {
       {!isStoreClosed && isPreorder && storeStatus?.releaseAt && (
         <div className="mx-4 mt-4 bg-primary/10 border border-primary/30 rounded-2xl p-4 flex items-start gap-3">
           <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center shrink-0 mt-0.5">
-            <Calendar className="h-5 w-5 text-primary" />
+            <AppIcon name="Calendar" className="h-5 w-5 text-primary" />
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="text-sm font-bold text-primary">Pré-pedido aceito</h3>
@@ -818,7 +819,7 @@ const CheckoutPage = () => {
                           : "bg-muted text-muted-foreground"
                     }`}
                   >
-                    {done ? <CheckCircle2 className="h-3.5 w-3.5" /> : i + 1}
+                    {done ? <AppIcon name="CheckCircle2" className="h-3.5 w-3.5" /> : i + 1}
                   </div>
                   {i < 2 && (
                     <div
@@ -846,7 +847,7 @@ const CheckoutPage = () => {
         <section className="bg-card rounded-2xl border border-border overflow-hidden">
           <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border/50">
             <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center">
-              <Truck className="h-4 w-4 text-primary" />
+              <AppIcon name="Truck" className="h-4 w-4 text-primary" />
             </div>
             <h2 className="text-sm font-bold text-foreground">Tipo de pedido</h2>
           </div>
@@ -858,7 +859,7 @@ const CheckoutPage = () => {
                   !isPickup ? "border-primary bg-primary/5" : "border-transparent bg-muted/50"
                 }`}
               >
-                <Truck className={`h-6 w-6 ${!isPickup ? "text-primary" : "text-muted-foreground"}`} />
+                <AppIcon name="Truck" className={`h-6 w-6 ${!isPickup ? "text-primary" : "text-muted-foreground"}`} />
                 <div className="text-center">
                 <span className={`text-sm font-bold block ${!isPickup ? "text-primary" : "text-foreground"}`}>Entrega</span>
                   <span className="text-[10px] text-muted-foreground">Receba em casa</span>
@@ -870,7 +871,7 @@ const CheckoutPage = () => {
                   isPickup ? "border-primary bg-primary/5" : "border-transparent bg-muted/50"
                 }`}
               >
-                <Store className={`h-6 w-6 ${isPickup ? "text-primary" : "text-muted-foreground"}`} />
+                <AppIcon name="Store" className={`h-6 w-6 ${isPickup ? "text-primary" : "text-muted-foreground"}`} />
                 <div className="text-center">
                   <span className={`text-sm font-bold block ${isPickup ? "text-primary" : "text-foreground"}`}>Retirada</span>
                   <span className="text-[10px] text-muted-foreground">Retire na loja</span>
@@ -879,7 +880,7 @@ const CheckoutPage = () => {
             </div>
             {isPickup && (
               <div className="mt-3 bg-primary/5 border border-primary/10 rounded-xl p-3 flex items-start gap-2">
-                <Store className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                <AppIcon name="Store" className="h-4 w-4 text-primary mt-0.5 shrink-0" />
                 <div>
                   <p className="text-xs font-bold text-foreground">Retirada na loja</p>
                   <p className="text-[11px] text-muted-foreground mt-0.5">
@@ -896,12 +897,12 @@ const CheckoutPage = () => {
         <section className="bg-card rounded-2xl border border-border overflow-hidden">
           <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border/50">
             <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${hasValidAddress ? "bg-primary/10" : "bg-muted"}`}>
-              <MapPin className={`h-4 w-4 ${hasValidAddress ? "text-primary" : "text-muted-foreground"}`} />
+              <AppIcon name="MapPin" className={`h-4 w-4 ${hasValidAddress ? "text-primary" : "text-muted-foreground"}`} />
             </div>
             <div className="flex-1">
               <h2 className="text-sm font-bold text-foreground">Endereço de entrega</h2>
             </div>
-            {hasValidAddress && <CheckCircle2 className="h-4 w-4 text-primary" />}
+            {hasValidAddress && <AppIcon name="CheckCircle2" className="h-4 w-4 text-primary" />}
           </div>
 
           <div className="p-4 space-y-3">
@@ -939,11 +940,11 @@ const CheckoutPage = () => {
                 <div className="flex items-center justify-between pt-2 border-t border-border/30">
                   {calculatingFee ? (
                     <span className="text-xs text-muted-foreground flex items-center gap-1">
-                      <Loader2 className="h-3 w-3 animate-spin" /> Calculando taxa...
+                      <AppIcon name="Loader2" className="h-3 w-3 animate-spin" /> Calculando taxa...
                     </span>
                   ) : (
                     <div className="flex items-center gap-1.5">
-                      <Truck className="h-3.5 w-3.5 text-primary" />
+                      <AppIcon name="Truck" className="h-3.5 w-3.5 text-primary" />
                       <span className="text-xs font-bold text-primary">
                         {formatBRL(activeDeliveryFee)}
                       </span>
@@ -985,18 +986,18 @@ const CheckoutPage = () => {
                 <div className="flex items-center justify-between pt-2 border-t border-border/30">
                   {calculatingFee ? (
                     <span className="text-xs text-muted-foreground flex items-center gap-1">
-                      <Loader2 className="h-3 w-3 animate-spin" /> Calculando taxa...
+                      <AppIcon name="Loader2" className="h-3 w-3 animate-spin" /> Calculando taxa...
                     </span>
                   ) : (
                     <div className="flex items-center gap-1.5">
-                      <Truck className="h-3.5 w-3.5 text-primary" />
+                      <AppIcon name="Truck" className="h-3.5 w-3.5 text-primary" />
                       <span className="text-xs font-bold text-primary">
                         {formatBRL(activeDeliveryFee)}
                       </span>
                     </div>
                   )}
                   <button onClick={() => navigate("/perfil")} className="text-xs text-primary font-semibold flex items-center gap-1">
-                    <Edit3 className="h-3 w-3" /> Alterar
+                    <AppIcon name="Edit3" className="h-3 w-3" /> Alterar
                   </button>
                 </div>
                 {!gpsAddress && (
@@ -1005,7 +1006,7 @@ const CheckoutPage = () => {
                     disabled={requestingLocation}
                     className="w-full mt-2 text-xs font-bold text-primary border border-primary/30 rounded-lg py-2 flex items-center justify-center gap-1.5 disabled:opacity-50"
                   >
-                    {requestingLocation ? <Loader2 className="h-3 w-3 animate-spin" /> : <MapPin className="h-3 w-3" />}
+                    {requestingLocation ? <AppIcon name="Loader2" className="h-3 w-3 animate-spin" /> : <AppIcon name="MapPin" className="h-3 w-3" />}
                     Usar minha localização atual (mais preciso)
                   </button>
                 )}
@@ -1014,7 +1015,7 @@ const CheckoutPage = () => {
 
             {!selectedSavedAddressId && !hasAddress && (
               <div className="bg-destructive/5 border border-destructive/20 rounded-xl p-4 text-center space-y-3">
-                <MapPin className="h-8 w-8 text-destructive/60 mx-auto" />
+                <AppIcon name="MapPin" className="h-8 w-8 text-destructive/60 mx-auto" />
                 <div>
                   <p className="text-sm font-bold text-foreground">Endereço necessário</p>
                   <p className="text-xs text-muted-foreground mt-0.5">
@@ -1037,12 +1038,12 @@ const CheckoutPage = () => {
         <section className="bg-card rounded-2xl border border-border overflow-hidden">
           <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border/50">
             <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${paymentMethod ? "bg-primary/10" : "bg-muted"}`}>
-              <CreditCard className={`h-4 w-4 ${paymentMethod ? "text-primary" : "text-muted-foreground"}`} />
+              <AppIcon name="CreditCard" className={`h-4 w-4 ${paymentMethod ? "text-primary" : "text-muted-foreground"}`} />
             </div>
             <div className="flex-1">
               <h2 className="text-sm font-bold text-foreground">Forma de pagamento</h2>
             </div>
-            {paymentMethod && <CheckCircle2 className="h-4 w-4 text-primary" />}
+            {paymentMethod && <AppIcon name="CheckCircle2" className="h-4 w-4 text-primary" />}
           </div>
 
           <div className="p-4 space-y-2">
@@ -1126,7 +1127,7 @@ const CheckoutPage = () => {
         <section className="bg-card rounded-2xl border border-border overflow-hidden">
           <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border/50">
             <div className="w-8 h-8 rounded-xl bg-muted flex items-center justify-center">
-              <Tag className="h-4 w-4 text-muted-foreground" />
+              <AppIcon name="Tag" className="h-4 w-4 text-muted-foreground" />
             </div>
             <h2 className="text-sm font-bold text-foreground">Cupom de desconto</h2>
           </div>
@@ -1156,7 +1157,7 @@ const CheckoutPage = () => {
         <section className={`bg-card rounded-2xl border border-border overflow-hidden ${loyaltyAvailable ? "" : "hidden"}`}>
           <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border/50">
             <div className="w-8 h-8 rounded-xl bg-amber-500/10 flex items-center justify-center">
-              <Star className="h-4 w-4 text-amber-500" />
+              <AppIcon name="Star" className="h-4 w-4 text-amber-500" />
             </div>
             <h2 className="text-sm font-bold text-foreground">Pontos de fidelidade</h2>
           </div>
@@ -1183,7 +1184,7 @@ const CheckoutPage = () => {
           <section className="bg-card rounded-2xl border border-border overflow-hidden">
             <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border/50">
               <div className="w-8 h-8 rounded-xl bg-emerald-500/10 flex items-center justify-center">
-                <Wallet className="h-4 w-4 text-emerald-500" />
+                <AppIcon name="Wallet" className="h-4 w-4 text-emerald-500" />
               </div>
               <h2 className="text-sm font-bold text-foreground flex-1">Crédito na plataforma</h2>
               <span className="text-xs font-bold text-emerald-600">{formatBRL(walletBalance)}</span>
@@ -1201,7 +1202,7 @@ const CheckoutPage = () => {
                 <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
                   useWallet ? "border-emerald-500 bg-emerald-500" : "border-muted-foreground"
                 }`}>
-                  {useWallet && <CheckCircle2 className="h-3 w-3 text-white" />}
+                  {useWallet && <AppIcon name="CheckCircle2" className="h-3 w-3 text-white" />}
                 </div>
               </button>
             </div>
@@ -1212,10 +1213,10 @@ const CheckoutPage = () => {
         <section className="bg-card rounded-2xl border border-border overflow-hidden">
           <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border/50">
             <div className="w-8 h-8 rounded-xl bg-blue-500/10 flex items-center justify-center">
-              <Calendar className="h-4 w-4 text-blue-500" />
+              <AppIcon name="Calendar" className="h-4 w-4 text-blue-500" />
             </div>
             <h2 className="text-sm font-bold text-foreground flex-1">{isPickup ? "Agendar retirada" : "Agendar entrega"}</h2>
-            {scheduledFor && <CheckCircle2 className="h-4 w-4 text-primary" />}
+            {scheduledFor && <AppIcon name="CheckCircle2" className="h-4 w-4 text-primary" />}
           </div>
           <div className="p-4 space-y-3">
             <div className="flex gap-2">
@@ -1248,7 +1249,7 @@ const CheckoutPage = () => {
                 />
                 {scheduledFor && (
                   <p className="text-xs text-primary font-medium flex items-center gap-1">
-                    <Clock className="h-3 w-3" />
+                    <AppIcon name="Clock" className="h-3 w-3" />
                     Agendado para {new Date(scheduledFor).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}
                   </p>
                 )}
@@ -1267,7 +1268,7 @@ const CheckoutPage = () => {
         <section className="bg-card rounded-2xl border border-border overflow-hidden">
           <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border/50">
             <div className="w-8 h-8 rounded-xl bg-muted flex items-center justify-center">
-              <ShoppingBag className="h-4 w-4 text-muted-foreground" />
+              <AppIcon name="ShoppingBag" className="h-4 w-4 text-muted-foreground" />
             </div>
             <h2 className="text-sm font-bold text-foreground">Resumo do pedido</h2>
             <span className="text-[11px] text-muted-foreground ml-auto">{items.length} {items.length === 1 ? "item" : "itens"}</span>
@@ -1314,7 +1315,7 @@ const CheckoutPage = () => {
               {couponDiscount > 0 && (
                 <div className="flex justify-between text-sm">
                   <span className="text-green-600 flex items-center gap-1">
-                    <Tag className="h-3 w-3" /> {couponCode}
+                    <AppIcon name="Tag" className="h-3 w-3" /> {couponCode}
                   </span>
                   <span className="font-bold text-green-600">-{formatBRL(couponDiscount)}</span>
                 </div>
@@ -1323,7 +1324,7 @@ const CheckoutPage = () => {
               {loyaltyDiscount > 0 && (
                 <div className="flex justify-between text-sm">
                   <span className="text-amber-600 flex items-center gap-1">
-                    <Star className="h-3 w-3 fill-amber-500" /> {loyaltyPointsUsed} pontos
+                    <AppIcon name="Star" className="h-3 w-3 fill-amber-500" /> {loyaltyPointsUsed} pontos
                   </span>
                   <span className="font-bold text-amber-600">-{formatBRL(loyaltyDiscount)}</span>
                 </div>
@@ -1332,7 +1333,7 @@ const CheckoutPage = () => {
               {walletDiscount > 0 && (
                 <div className="flex justify-between text-sm">
                   <span className="text-emerald-600 flex items-center gap-1">
-                    <Wallet className="h-3 w-3" /> Crédito
+                    <AppIcon name="Wallet" className="h-3 w-3" /> Crédito
                   </span>
                   <span className="font-bold text-emerald-600">-{formatBRL(walletDiscount)}</span>
                 </div>
@@ -1341,7 +1342,7 @@ const CheckoutPage = () => {
               {!isPickup && (
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground flex items-center gap-1">
-                  <Truck className="h-3 w-3" /> Taxa de entrega
+                  <AppIcon name="Truck" className="h-3 w-3" /> Taxa de entrega
                   <WhyThisCharge title="Como é calculada a taxa de entrega">
                     <p>A taxa de entrega cobre o trabalho do entregador (distância e tempo) e inclui <strong>R$ 2,00 da plataforma ItaSuper</strong> por pedido entregue, usados para manter o app, suporte e rastreio em tempo real.</p>
                     <p className="mt-2">Em pedidos para retirada na loja, não há taxa de entrega.</p>
@@ -1395,7 +1396,7 @@ const CheckoutPage = () => {
               {isPickup && (
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground flex items-center gap-1">
-                    <Store className="h-3 w-3" /> Retirada
+                    <AppIcon name="Store" className="h-3 w-3" /> Retirada
                   </span>
                   <span className="font-bold text-green-600">Grátis ✨</span>
                 </div>
@@ -1444,7 +1445,7 @@ const CheckoutPage = () => {
             disabled
             className="w-full bg-muted text-muted-foreground font-bold py-4 rounded-2xl text-base flex items-center justify-center gap-2 cursor-not-allowed"
           >
-            <Clock className="h-5 w-5" />
+            <AppIcon name="Clock" className="h-5 w-5" />
             {storeStatus?.nextOpenDay && storeStatus?.nextOpenTime
               ? `${storeStatus.nextOpenDay === "Hoje" ? "Abre" : `Abre ${storeStatus.nextOpenDay}`} às ${storeStatus.nextOpenTime}`
               : "Loja fechada"}
@@ -1457,12 +1458,12 @@ const CheckoutPage = () => {
           >
             {requestingLocation ? (
               <>
-                <Loader2 className="w-5 h-5 animate-spin" />
+                <AppIcon name="Loader2" className="w-5 h-5 animate-spin" />
                 Buscando GPS...
               </>
             ) : (
               <>
-                <MapPin className="h-5 w-5" />
+                <AppIcon name="MapPin" className="h-5 w-5" />
                 Ativar Localização
               </>
             )}
@@ -1475,7 +1476,7 @@ const CheckoutPage = () => {
           >
             {loading ? (
               <span className="flex items-center justify-center gap-2">
-                <Loader2 className="w-5 h-5 animate-spin" />
+                <AppIcon name="Loader2" className="w-5 h-5 animate-spin" />
                 Enviando pedido...
               </span>
             ) : belowMinimum ? (
@@ -1485,7 +1486,7 @@ const CheckoutPage = () => {
             ) : (
               <span className="flex items-center justify-center gap-2">
                 Confirmar Pedido
-                <ChevronRight className="h-5 w-5" />
+                <AppIcon name="ChevronRight" className="h-5 w-5" />
               </span>
             )}
           </button>

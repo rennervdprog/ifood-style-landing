@@ -3,8 +3,9 @@ import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Plus, Trash2, Tag, Percent, DollarSign, Truck } from "lucide-react";
 import { useStorePlan } from "@/hooks/useStorePlan";
+import { AppIcon } from "@/components/ui/app-icon";
+import { Plus, Trash2, Tag, Percent, DollarSign, Truck } from "lucide-react";
 
 interface CouponManagerProps {
   storeId?: string; // if provided, manage store-specific coupons
@@ -125,14 +126,14 @@ const CouponManager = ({ storeId, isAdmin }: CouponManagerProps) => {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="font-bold text-foreground flex items-center gap-2">
-          <Tag className="h-4 w-4 text-primary" />
+          <AppIcon name="Tag" className="h-4 w-4 text-primary" />
           Cupons de Desconto
         </h3>
         <button
           onClick={() => setShowForm(!showForm)}
           className="flex items-center gap-1 bg-primary text-primary-foreground px-3 py-1.5 rounded-lg text-xs font-bold"
         >
-          <Plus className="h-3.5 w-3.5" /> Novo
+          <AppIcon name="Plus" className="h-3.5 w-3.5" /> Novo
         </button>
       </div>
 
@@ -293,7 +294,7 @@ const CouponManager = ({ storeId, isAdmin }: CouponManagerProps) => {
                   </button>
                   {isAdmin && (
                     <button onClick={() => deleteCoupon(c.id)} className="p-1 text-muted-foreground hover:text-destructive">
-                      <Trash2 className="h-3.5 w-3.5" />
+                      <AppIcon name="Trash2" className="h-3.5 w-3.5" />
                     </button>
                   )}
                 </div>

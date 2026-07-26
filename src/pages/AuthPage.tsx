@@ -2,7 +2,6 @@ import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Mail, Lock, Eye, EyeOff, KeyRound, ShoppingBag, CheckCircle2, Check, X, Phone, User, FileText, ShieldCheck, MapPin } from "lucide-react";
  import { maskWhatsApp } from "@/lib/whatsapp";
 import { formatDocument, sanitizeDocument, validateDocument } from "@/lib/documentFormat";
 import { fetchCep, formatCep } from "@/lib/location/cep";
@@ -17,6 +16,8 @@ import {
   markBiometricPromptDismissed,
 } from "@/lib/biometricAuth";
 import { isCapacitorNative } from "@/lib/capacitorNative";
+import { AppIcon } from "@/components/ui/app-icon";
+import { Mail, Lock, Eye, EyeOff, KeyRound, ShoppingBag, CheckCircle2, Check, X, Phone, User, ShieldCheck, MapPin } from "lucide-react";
 
 type AuthMode = "login" | "signup" | "forgot" | "reset";
 
@@ -357,7 +358,7 @@ const AuthPage = () => {
       {mode === "forgot" && resetSent ? (
         <div className="text-center space-y-4 py-6">
           <div className="w-14 h-14 bg-green-50 rounded-2xl flex items-center justify-center mx-auto">
-            <KeyRound className="h-7 w-7 text-green-500" />
+            <AppIcon name="KeyRound" className="h-7 w-7 text-green-500" />
           </div>
           <div>
             <h3 className="font-bold text-foreground text-lg">E-mail enviado!</h3>
@@ -381,7 +382,7 @@ const AuthPage = () => {
             <div>
               <label className="text-xs font-semibold text-slate-500 tracking-wide mb-1.5 block">WhatsApp</label>
               <div className="relative">
-                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <AppIcon name="Phone" className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                 <input
                   type="tel"
                   inputMode="text"
@@ -401,7 +402,7 @@ const AuthPage = () => {
             <div>
               <label className="text-xs font-semibold text-slate-500 tracking-wide mb-1.5 block">E-mail</label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <AppIcon name="Mail" className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                 <input
                   type="email"
                   placeholder="seu@email.com"
@@ -418,7 +419,7 @@ const AuthPage = () => {
             <div>
               <label className="text-xs font-semibold text-slate-500 tracking-wide mb-1.5 block">WhatsApp</label>
               <div className="relative">
-                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <AppIcon name="Phone" className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                 <input
                   type="tel"
                   inputMode="numeric"
@@ -437,7 +438,7 @@ const AuthPage = () => {
               <div>
                 <label className="text-xs font-semibold text-slate-500 tracking-wide mb-1.5 block">Nome completo</label>
                 <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                  <AppIcon name="User" className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                   <input
                     type="text"
                     placeholder="Seu nome"
@@ -459,7 +460,7 @@ const AuthPage = () => {
                   {mode === "reset" ? "Nova senha" : "Senha"}
                 </label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                  <AppIcon name="Lock" className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                   <input
                     type={showPassword ? "text" : "password"}
                     placeholder={mode === "reset" ? "Crie uma senha forte" : "••••••"}
@@ -474,9 +475,9 @@ const AuthPage = () => {
                     className="absolute right-3 top-1/2 -translate-y-1/2 p-1"
                   >
                     {showPassword ? (
-                      <EyeOff className="h-4 w-4 text-slate-400" />
+                      <AppIcon name="EyeOff" className="h-4 w-4 text-slate-400" />
                     ) : (
-                      <Eye className="h-4 w-4 text-slate-400" />
+                      <AppIcon name="Eye" className="h-4 w-4 text-slate-400" />
                     )}
                   </button>
                 </div>
@@ -495,7 +496,7 @@ const AuthPage = () => {
                   <div className="grid grid-cols-1 gap-1">
                     {PASSWORD_RULES.map((rule, i) => (
                       <div key={i} className={`flex items-center gap-1.5 text-xs transition-colors ${ruleResults[i] ? "text-green-600" : "text-slate-400"}`}>
-                        {ruleResults[i] ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
+                        {ruleResults[i] ? <AppIcon name="Check" className="h-3 w-3" /> : <AppIcon name="X" className="h-3 w-3" />}
                         {rule.label}
                       </div>
                     ))}
@@ -520,7 +521,7 @@ const AuthPage = () => {
           {mode === "signup" && (
             <div className="space-y-3 pt-1">
               <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 flex gap-2.5">
-                <MapPin className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                <AppIcon name="MapPin" className="h-5 w-5 text-primary shrink-0 mt-0.5" />
                 <div className="text-xs text-slate-600 leading-relaxed">
                   <strong className="text-foreground">Endereço de entrega</strong> — usaremos para calcular frete e mostrar lojas perto de você.
                 </div>
@@ -614,7 +615,7 @@ const AuthPage = () => {
           {mode === "signup" && (
             <div className="space-y-3 pt-1">
               <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 flex gap-2.5">
-                <ShieldCheck className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                <AppIcon name="ShieldCheck" className="h-5 w-5 text-primary shrink-0 mt-0.5" />
                 <div className="text-xs text-slate-600 leading-relaxed">
                   <strong className="text-foreground">PIN de entrega pessoal:</strong> escolha 4 dígitos que só você sabe. O entregador vai pedir esse mesmo código em <strong>todas</strong> as suas entregas. Evite datas óbvias (aniversário, ano de nascimento).
                 </div>
@@ -623,7 +624,7 @@ const AuthPage = () => {
                 <div>
                   <label className="text-xs font-semibold text-slate-500 tracking-wide mb-1.5 block">PIN (4 dígitos)</label>
                   <div className="relative">
-                    <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <AppIcon name="KeyRound" className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                     <input
                       type="tel"
                       inputMode="numeric"
@@ -639,7 +640,7 @@ const AuthPage = () => {
                 <div>
                   <label className="text-xs font-semibold text-slate-500 tracking-wide mb-1.5 block">Confirme</label>
                   <div className="relative">
-                    <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <AppIcon name="KeyRound" className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                     <input
                       type="tel"
                       inputMode="numeric"
@@ -764,7 +765,7 @@ const AuthPage = () => {
           <div className="space-y-3 mb-12">
             {["Pedidos em tempo real", "Pagamento seguro", "Rastreie sua entrega"].map((text) => (
               <div key={text} className="flex items-center gap-2.5">
-                <CheckCircle2 className="h-4 w-4 text-primary flex-shrink-0" />
+                <AppIcon name="CheckCircle2" className="h-4 w-4 text-primary flex-shrink-0" />
                 <span className="text-white/70 text-xs">{text}</span>
               </div>
             ))}
@@ -799,9 +800,9 @@ const AuthPage = () => {
             <div className="mb-8 md:text-left text-center">
               <div className={`w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mb-4 md:mx-0 mx-auto`}>
                 {mode === "forgot" || mode === "reset" ? (
-                  <KeyRound className="h-6 w-6 text-primary" />
+                  <AppIcon name="KeyRound" className="h-6 w-6 text-primary" />
                 ) : (
-                  <ShoppingBag className="h-6 w-6 text-primary" />
+                  <AppIcon name="ShoppingBag" className="h-6 w-6 text-primary" />
                 )}
               </div>
               <h1 className="text-2xl font-black text-foreground tracking-tight">

@@ -3,8 +3,9 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatBRL } from "@/lib/utils";
-import { Recycle } from "lucide-react";
 import type { CartItem } from "@/contexts/CartContext";
+import { AppIcon } from "@/components/ui/app-icon";
+import { Recycle } from "lucide-react";
 
 export interface EmptiesExchangeSelection {
   group: string;
@@ -109,7 +110,7 @@ const EmptiesExchange = ({ storeId, items, onChange }: Props) => {
   return (
     <div className="rounded-2xl border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/60 dark:bg-emerald-950/20 p-3 space-y-2">
       <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400">
-        <Recycle className="h-4 w-4" />
+        <AppIcon name="Recycle" className="h-4 w-4" />
         <span className="text-xs font-bold">Trocar casquinhas que você já tem</span>
       </div>
       {availableLines.map(l => (

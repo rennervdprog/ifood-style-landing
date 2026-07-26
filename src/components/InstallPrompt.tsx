@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
-import { Download, X, Smartphone } from "lucide-react";
 import { isGoNative } from "@/lib/gonative";
 import { isCapacitorNative } from "@/lib/capacitorNative";
+import { AppIcon } from "@/components/ui/app-icon";
+import { Download, X, Smartphone } from "lucide-react";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>;
@@ -99,11 +100,11 @@ const InstallPrompt = () => {
     return (
       <div className="fixed bottom-20 left-4 right-4 z-50 bg-card border border-border rounded-2xl p-4 shadow-2xl animate-in slide-in-from-bottom-4">
         <button onClick={handleDismiss} className="absolute top-3 right-3 text-muted-foreground hover:text-foreground">
-          <X className="h-4 w-4" />
+          <AppIcon name="X" className="h-4 w-4" />
         </button>
         <div className="flex items-start gap-3">
           <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-            <Smartphone className="h-5 w-5 text-primary" />
+            <AppIcon name="Smartphone" className="h-5 w-5 text-primary" />
           </div>
           <div>
             <h3 className="font-bold text-sm text-foreground">Como instalar no iPhone:</h3>
@@ -121,7 +122,7 @@ const InstallPrompt = () => {
   return (
     <div className="fixed bottom-20 left-4 right-4 z-50 bg-card border border-border rounded-2xl p-4 shadow-2xl animate-in slide-in-from-bottom-4">
       <button onClick={handleDismiss} className="absolute top-3 right-3 text-muted-foreground hover:text-foreground">
-        <X className="h-4 w-4" />
+        <AppIcon name="X" className="h-4 w-4" />
       </button>
       <div className="flex items-center gap-3">
         <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
@@ -135,7 +136,7 @@ const InstallPrompt = () => {
           onClick={handleInstall}
           className="bg-primary text-primary-foreground font-bold px-4 py-2 rounded-xl text-sm flex items-center gap-1.5 whitespace-nowrap active:scale-95 transition-transform"
         >
-          <Download className="h-3.5 w-3.5" />
+          <AppIcon name="Download" className="h-3.5 w-3.5" />
           Instalar
         </button>
       </div>

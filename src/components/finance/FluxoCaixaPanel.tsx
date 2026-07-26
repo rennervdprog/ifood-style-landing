@@ -5,8 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowDownRight, ArrowUpRight, Download, Wallet } from "lucide-react";
 import { exportCSV, brl } from "./financeExport";
+import { AppIcon } from "@/components/ui/app-icon";
+import { ArrowDownRight, ArrowUpRight, Download, Wallet } from "lucide-react";
 
 type Period = "7" | "30" | "90";
 
@@ -76,7 +77,7 @@ const FluxoCaixaPanel = () => {
           onClick={() => exportCSV(`fluxo-caixa-${period}d`, byDay)}
           disabled={!byDay.length}
         >
-          <Download className="h-4 w-4 mr-1" /> CSV
+          <AppIcon name="Download" className="h-4 w-4 mr-1" /> CSV
         </Button>
       </div>
 
@@ -84,7 +85,7 @@ const FluxoCaixaPanel = () => {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2 text-muted-foreground text-xs mb-1">
-              <ArrowUpRight className="w-4 h-4 text-emerald-500" /> Entradas
+              <AppIcon name="ArrowUpRight" className="w-4 h-4 text-emerald-500" /> Entradas
             </div>
             <p className="text-2xl font-bold text-emerald-500">{brl(totalIn)}</p>
           </CardContent>
@@ -92,7 +93,7 @@ const FluxoCaixaPanel = () => {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2 text-muted-foreground text-xs mb-1">
-              <ArrowDownRight className="w-4 h-4 text-destructive" /> Saídas
+              <AppIcon name="ArrowDownRight" className="w-4 h-4 text-destructive" /> Saídas
             </div>
             <p className="text-2xl font-bold text-destructive">{brl(totalOut)}</p>
           </CardContent>
@@ -100,7 +101,7 @@ const FluxoCaixaPanel = () => {
         <Card className="border-primary bg-primary/5">
           <CardContent className="p-4">
             <div className="flex items-center gap-2 text-muted-foreground text-xs mb-1">
-              <Wallet className="w-4 h-4" /> Saldo do Período
+              <AppIcon name="Wallet" className="w-4 h-4" /> Saldo do Período
             </div>
             <p className={`text-2xl font-bold ${saldo >= 0 ? "text-primary" : "text-destructive"}`}>{brl(saldo)}</p>
           </CardContent>

@@ -4,6 +4,7 @@ import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { AppIcon } from "@/components/ui/app-icon";
 import { Store, Eye, Trash2, Loader2 } from "lucide-react";
 
 const CATEGORIES = [
@@ -96,7 +97,7 @@ const TestStoreCreator = () => {
   return (
     <div className="bg-card border border-border rounded-2xl p-4 space-y-4">
       <div className="flex items-center gap-2">
-        <Store className="h-5 w-5 text-primary" />
+        <AppIcon name="Store" className="h-5 w-5 text-primary" />
         <h3 className="text-sm font-bold text-foreground">🧪 Lojas de Teste</h3>
       </div>
       <p className="text-xs text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/30 rounded-lg p-2">
@@ -204,7 +205,7 @@ const TestStoreCreator = () => {
                     onClick={() => handleSimulate(store.id)}
                     className="flex items-center gap-1 bg-primary text-primary-foreground px-3 py-1.5 rounded-lg text-xs font-bold active:scale-95 transition-transform"
                   >
-                    <Eye className="h-3.5 w-3.5" />
+                    <AppIcon name="Eye" className="h-3.5 w-3.5" />
                     Abrir Painel
                   </button>
                   <button
@@ -212,7 +213,7 @@ const TestStoreCreator = () => {
                     disabled={deleting === store.id}
                     className="p-1.5 rounded-lg text-red-500 hover:bg-red-500/10 transition-colors"
                   >
-                    {deleting === store.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                    {deleting === store.id ? <AppIcon name="Loader2" className="h-4 w-4 animate-spin" /> : <AppIcon name="Trash2" className="h-4 w-4" />}
                   </button>
                 </div>
               </div>

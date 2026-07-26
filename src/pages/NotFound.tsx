@@ -1,5 +1,6 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { useEffect } from "react";
+import { AppIcon } from "@/components/ui/app-icon";
 import { Home, ArrowLeft } from "lucide-react";
 
 const NotFound = () => {
@@ -23,14 +24,14 @@ const NotFound = () => {
           onClick={() => navigate("/")}
           className="flex items-center justify-center gap-2 bg-primary text-primary-foreground rounded-2xl py-3 px-6 font-semibold hover:bg-primary/90 transition-colors"
         >
-          <Home className="h-4 w-4" />
+          <AppIcon name="Home" className="h-4 w-4" />
           Ir para o início
         </button>
         <button
           onClick={() => navigate(-1)}
           className="flex items-center justify-center gap-2 bg-muted text-foreground rounded-2xl py-3 px-6 font-semibold hover:bg-muted/70 transition-colors"
         >
-          <ArrowLeft className="h-4 w-4" />
+          <AppIcon name="ArrowLeft" className="h-4 w-4" />
           Voltar
         </button>
       </div>

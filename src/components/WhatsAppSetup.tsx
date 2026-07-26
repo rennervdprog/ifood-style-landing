@@ -5,10 +5,11 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2, CheckCircle2, Link2, Bell, MessageSquareText } from "lucide-react";
 import WhatsAppConnection from "./whatsapp/WhatsAppConnection";
 import WhatsAppNotifications from "./whatsapp/WhatsAppNotifications";
 import WhatsAppTemplates from "./whatsapp/WhatsAppTemplates";
+import { AppIcon } from "@/components/ui/app-icon";
+import { Loader2, CheckCircle2, Link2, Bell, MessageSquareText } from "lucide-react";
 
 interface Props {
   storeId: string;
@@ -128,7 +129,7 @@ export default function WhatsAppSetup({ storeId, storeSlug, storeName, expectedP
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        <AppIcon name="Loader2" className="h-5 w-5 animate-spin text-muted-foreground" />
       </div>
     );
   }
@@ -201,7 +202,7 @@ export default function WhatsAppSetup({ storeId, storeSlug, storeName, expectedP
           disabled={saving}
           className="w-full bg-primary text-primary-foreground py-3 rounded-xl text-sm font-bold disabled:opacity-50 flex items-center justify-center gap-2 sticky bottom-2"
         >
-          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+          {saving ? <AppIcon name="Loader2" className="h-4 w-4 animate-spin" /> : <AppIcon name="CheckCircle2" className="h-4 w-4" />}
           {saving ? "Salvando..." : "Salvar alterações"}
         </button>
       )}
