@@ -1,4 +1,5 @@
 import { formatBRL } from "@/lib/utils";
+import { describeStoreFee } from "@/lib/deliveryFeeDisplay";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import NotFound from "@/pages/NotFound";
 import { useQuery, keepPreviousData, useQueryClient } from "@tanstack/react-query";
