@@ -293,13 +293,24 @@ html.native-app,
 body.native-app {
   width: 100%;
   min-height: 100%;
-  overflow-x: hidden;
-  overflow-y: auto;
   background: hsl(var(--background));
 }
 
+/* IMPORTANTE: apenas UM scroll container no app nativo.
+   Se html E body têm overflow-y:auto, o Android WebView aninha dois
+   containers de rolagem e `position: sticky` deixa de grudar (o header
+   rola junto porque o body inteiro se move dentro do html). Aqui deixamos
+   só o html rolar; body flui livre. Assim `header.sticky.top-0` gruda
+   corretamente no topo da viewport do WebView. */
+html.native-app {
+  overflow-x: hidden;
+  overflow-y: auto;
+  height: 100%;
+}
 body.native-app {
   position: static;
+  overflow-x: hidden;
+  overflow-y: visible;
 }
 
 .native-app #root {
