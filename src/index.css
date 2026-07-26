@@ -274,22 +274,13 @@ body.native-app {
   touch-action: pan-y;
 }
 
-/* GLOBAL FIX: por padrão, todo o conteúdo do app nativo deixa o gesto
-   vertical passar para o scroll da página. Botões/links/cards continuam
-   clicáveis via tap, mas não sequestram o swipe vertical. Faixas
-   horizontais (carrosséis) sobrescrevem com pan-x abaixo. */
-.native-app,
-.native-app button,
-.native-app a,
-.native-app [role="button"],
-.native-app [data-slot="card"] {
-  touch-action: pan-y;
-}
-
-/* Carrosséis horizontais precisam permitir pan-x também */
+/* v1.25.79 — revertido o global de touch-action.
+   Setar touch-action em <html>/<body>/<button> no Android WebView
+   estava sequestrando o gesto vertical em vez de liberar. Deixamos
+   o default do WebView (`auto`) valer e só sobrescrevemos em carrosséis
+   horizontais explícitos. */
 .native-app .overflow-x-auto,
-.native-app .overflow-x-scroll,
-.native-app .no-scrollbar {
+.native-app .overflow-x-scroll {
   touch-action: pan-x pan-y;
 }
 
