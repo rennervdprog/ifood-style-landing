@@ -1,64 +1,54 @@
-# Plano — Taxa de entrega com fonte única de verdade
+# Plano — Unificar UX de Repasses do lojista
 
-**Problema:** hoje 6+ locais calculam a taxa de entrega com fórmulas diferentes. Resultado: Pastelão Carioca aparece como **R$ 3,00** (lista), **R$ 4,75** (StorePage) e cobraria outro valor no checkout. Regras de VIP/autonomy só valem no front, então o **repasse do lojista sai errado no backend**.
+Objetivo: eliminar divergências textuais, visuais e de cálculo na seção de Repasses do painel do lojista, com base na auditoria Playwright + leitura dos componentes.
 
-## Fase 1 — Backend: RPC canônica
+## 1. Nomenclatura única
+- Termo padrão de topo: **"Repasse"** (o que o lojista deve à plataforma).
+- Sub-rótulos permitidos apenas em detalhamento: "Comissão do plano", "Taxa operacional (R$ 0,99)", "PDV", "Split de entrega".
+- Renomear títulos em `CommissionAlert`, `PlatformSplitAlert`, `RepassePendingCharges`, `ValorAPagarCard` para seguir o padrão.
+- Renomear label do card "Cobrança PIX gerada" → "Repasse — pagamento via PIX".
 
-**Criar `public.compute_store_delivery_fee(_store_id uuid)`** que retorna JSON:
-```
-{ base_fee, platform_split_full, platform_add_customer,
-  platform_add_payout_deduction, split_mode, plan_type, is_autonomy,
-  customer_total }
-```
+## 2. Fonte única de valor pendente
+- Criar hook `usePendingRepasse(storeId)` retornando `{ total, breakdown: { comissao, taxaOperacional, pdv, splitEntrega }, hasPendingCharge }`.
+- Consumido por: `RepasseSection`, `CommissionAlert`, `PlatformSplitAlert`, `ValorAPagarCard`, badge da sub-aba (`useRepassePending`).
+- Refetch alinhado (30s em todos) para evitar valores divergentes na mesma tela.
 
-Lógica única (aplica todas as regras de negócio):
-1. Lê `stores.delivery_mode`, `stores.own_delivery_fee`, `stores.delivery_fee`, `stores.platform_fee_split`.
-2. Lê `store_plans.platform_delivery_split_override` e `store_plans.plan_type`.
-3. Lê `admin_settings.delivery_fee_config.platform_split` (default fixo **0,99** em todo lugar).
-4. Se `plan_type='autonomy'` → `platform_split_full = 0`.
-5. Se `delivery_mode='platform'` → `base_fee` já inclui split → `platform_add_customer = 0`.
-6. Se `delivery_mode='own'`:
-   - `cliente` → add cliente=full, deduz repasse=0
-   - `meio_a_meio` → add cliente=full/2, deduz=full/2
-   - `lojista` → add cliente=0, deduz=full
+## 3. Consolidar alerts duplicados
+- Fundir `CommissionAlert` + `PlatformSplitAlert` em um único `<RepasseAlert variant="commission|split|fee" />`.
+- Mesma estrutura: título, breakdown, prazo, botão "Gerar PIX", QR quando existir.
 
-**Aposentar** `get_store_platform_split` (fantasma, não existe nas migrations) e transformar `get_store_platform_fee_charge` em wrapper que chama a nova RPC (compat).
+## 4. Sistema de cores semântico
+- Âmbar (`amber-500/10`): pendência aberta.
+- Vermelho (`red-500/10`): bloqueio iminente/ativo (≥ R$ 500 ou após prazo).
+- Verde: quitado / sem pendência.
+- Azul apenas para informativos neutros ("Próximo repasse previsto").
+- Aplicar em todos os cards da seção.
 
-## Fase 2 — Backend: reconciliar pedido e repasse
+## 5. Regras de prazo em fonte única
+- Criar `src/lib/repasseRules.ts` exportando `{ SUSPENSION_DAYS, BLOCK_THRESHOLD_BRL, ... }`.
+- Corrigir divergência atual: **3 dias** (CommissionAlert) vs **30 dias** (PlatformFeeExplainerCard). Definir com o usuário qual é a regra real (sugestão: 7 dias) e usar em todos os textos + tooltip único "Como funcionam as cobranças".
 
-- **Trigger `validate_order_prices`**: recalcular `delivery_fee` server-side via RPC (frontend deixa de ser fonte de verdade do valor cobrado). Fecha vulnerabilidade de manipulação.
-- **Edge function `confirm-order-payment`**: usar `platform_add_payout_deduction` da RPC em vez de deduzir sempre o split cheio. Respeita split_mode e autonomy.
-- **Trigger `accrue_fixed_plan_split`**: mesma correção para pagamentos físicos (dinheiro/cartão).
+## 6. Hierarquia visual da RepasseSection
+Nova ordem (mais urgente → informativo):
+1. `RepassePendingCharges` (se houver cobrança PIX ativa) — topo, destaque máximo.
+2. `RepasseAlert` (se houver saldo acumulado sem cobrança emitida).
+3. Card "Próximo repasse previsto" (informativo).
+4. Card "Plano ativo" (contexto).
+5. Histórico de cobranças.
 
-## Fase 3 — Frontend: helper único
+## 7. Modal do PlatformSplitAlert
+- Remover modal bloqueante quando já existe alerta inline na mesma tela.
+- Manter modal só quando o lojista tenta usar função crítica com repasse ≥ threshold.
 
-- Criar `src/lib/deliveryFeeDisplay.ts` com `describeStoreFee(store, storePlan)` retornando `{ customerTotal, label, prefix }`.
-- Expor colunas necessárias na view `stores_public` (`platform_fee_split`, `platform_delivery_split_override`, `plan_type`) — sem N+1.
-- **Substituir** em todos os locais para usar a helper:
-  - `ClientHomeContent.formatFeeLabel`
-  - `StoreCard` (row + grid) — e corrigir bug de usar `own_delivery_fee` quando `delivery_mode='platform'`
-  - `ClientBuscaPage`
-  - `StorePage` — card "Taxa"
-  - `CheckoutPage` — linha de resumo
-- **`useStorePlan.ts`**: remover duplo default (`2.0` vs `0.99`) — único fallback = **0,99**.
+## 8. Detalhes técnicos
+- Arquivos a criar: `src/hooks/usePendingRepasse.ts`, `src/lib/repasseRules.ts`, `src/components/repasse/RepasseAlert.tsx`.
+- Arquivos a editar: `RepasseSection.tsx`, `RepassePendingCharges.tsx`, `CommissionAlert.tsx` (remover), `PlatformSplitAlert.tsx` (remover), `PlatformFeeExplainerCard.tsx`, `ValorAPagarCard.tsx`, `useRepassePending.ts`.
+- Sem mudança de schema no banco.
+- Bump de versão ao final (patch).
 
-## Fase 4 — Testes (Pastelão Carioca, base R$ 4,00)
+## Fora de escopo
+- Mudanças no fluxo de cobrança/geração de PIX (Asaas).
+- Regras de acúmulo no backend (já auditadas em v1.26.9).
 
-| split_mode | Home | StorePage | Checkout | Repasse deduz |
-|---|---|---|---|---|
-| cliente | R$ 4,99 | R$ 4,99 | R$ 4,99 | R$ 0,00 |
-| meio_a_meio | R$ 4,50 | R$ 4,50 | R$ 4,50 | R$ 0,50 |
-| lojista | R$ 4,00 | R$ 4,00 | R$ 4,00 | R$ 0,99 |
-| autonomy (qualquer) | R$ 4,00 | R$ 4,00 | R$ 4,00 | R$ 0,00 |
-
-## Detalhes técnicos (referência)
-
-- Nova RPC é `SECURITY DEFINER`, `SET search_path = public`.
-- View `stores_public` ganha 3 colunas via `CREATE OR REPLACE VIEW ... WITH (security_invoker = on)`.
-- Trigger `validate_order_prices` passa a chamar RPC — teste extra para pedidos legados.
-- Não mexer em `orders.app_fee` nem em comissão (fora de escopo).
-
-## Riscos
-
-- Trigger `validate_order_prices` reescrevendo `delivery_fee` pode divergir do que o cliente viu se a config mudou entre a exibição e o envio; solução: usar snapshot do split enviado pelo cliente e validar apenas margem de erro.
-- Migrar `get_store_platform_fee_charge` para wrapper pode afetar `accrue_fixed_plan_split` — testar em uma loja de teste antes de aplicar em prod.
+## Decisão pendente
+Qual prazo real de suspensão usar: **3, 7 ou 30 dias**?
