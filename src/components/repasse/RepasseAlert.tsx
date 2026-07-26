@@ -48,8 +48,15 @@ export default function RepasseAlert({ storeId, storeName, onGoToFinance }: Prop
 
   const isBlocked = storeData?.status === "bloqueado" || total >= REPASSE_RULES.BLOCK_THRESHOLD_BRL;
   const hasDocument = !!ownerProfile?.document;
+  const belowMin = total < REPASSE_RULES.MIN_AUTO_CHARGE_BRL;
+  // Só libera geração manual se atingiu o mínimo OU se a loja já está bloqueada (precisa quitar).
+  const canGenerate = !belowMin || isBlocked;
 
   const generate = async () => {
+    if (!canGenerate) {
+      toast.error(`Geração de PIX disponível a partir de ${formatBRL(REPASSE_RULES.MIN_AUTO_CHARGE_BRL)}.`);
+      return;
+    }
     if (!hasDocument) {
       toast.error("Cadastre seu CPF/CNPJ no perfil antes de pagar.");
       return;
@@ -171,7 +178,7 @@ export default function RepasseAlert({ storeId, storeName, onGoToFinance }: Prop
         ) : (
           <Button
             onClick={generate}
-            disabled={generating || !hasDocument}
+            disabled={generating || !hasDocument || !canGenerate}
             className={`w-full font-bold text-white shadow-lg ${tone.btn}`}
             size="lg"
           >
@@ -179,6 +186,8 @@ export default function RepasseAlert({ storeId, storeName, onGoToFinance }: Prop
               <><Loader2 className="h-4 w-4 animate-spin" /> Gerando PIX...</>
             ) : !hasDocument ? (
               <><AlertTriangle className="h-4 w-4" /> Cadastre CPF/CNPJ no perfil</>
+            ) : !canGenerate ? (
+              <><QrCode className="h-4 w-4" /> PIX a partir de {formatBRL(REPASSE_RULES.MIN_AUTO_CHARGE_BRL)}</>
             ) : (
               <><QrCode className="h-4 w-4" /> Gerar PIX — {formatBRL(total)}</>
             )}
@@ -186,6 +195,9 @@ export default function RepasseAlert({ storeId, storeName, onGoToFinance }: Prop
         )}
 
         <p className="text-[10px] text-muted-foreground text-center leading-relaxed">
+          {belowMin && !isBlocked && (
+            <>Cobrança PIX gerada automaticamente toda segunda-feira a partir de <strong>{formatBRL(REPASSE_RULES.MIN_AUTO_CHARGE_BRL)}</strong>.<br /></>
+          )}
           Sem pagamento em <strong>{REPASSE_RULES.SUSPENSION_DAYS} dias</strong>, a loja é suspensa.
           {" "}Saldo acima de <strong>{formatBRL(REPASSE_RULES.BLOCK_THRESHOLD_BRL)}</strong> trava o painel imediatamente.
         </p>
