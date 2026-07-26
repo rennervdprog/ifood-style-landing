@@ -69,7 +69,7 @@ export default function RepassePendingCharges({ storeId }: Props) {
               <div className="flex items-center gap-2">
                 <QrCode className="h-5 w-5 text-primary" />
                 <h3 className="text-xl font-extrabold text-foreground tracking-tight">
-                  Cobrança PIX gerada
+                  Repasse — pagamento via PIX
                 </h3>
               </div>
               <p className="text-sm text-muted-foreground leading-tight pl-7">
