@@ -80,8 +80,6 @@ import { useStorePlan } from "@/hooks/useStorePlan";
 import { useAvisosCount } from "./admin/useAvisosCount";
 import { useRepassePending } from "./admin/useRepassePending";
 import TrialExpiredGuard from "@/components/TrialExpiredGuard";
-import CommissionAlert from "@/components/CommissionAlert";
-import PlatformSplitAlert from "@/components/PlatformSplitAlert";
 import {
   ALERT_SOUND_URL,
   CASH_REGISTER_SOUND_URL,
