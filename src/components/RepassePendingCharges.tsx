@@ -54,7 +54,7 @@ export default function RepassePendingCharges({ storeId }: Props) {
         </div>
       )}
       {pendingList.map((pending: any, idx: number) => (
-        <div className="rounded-3xl border-2 border-primary/40 bg-card shadow-xl shadow-primary/10 overflow-hidden">
+        <div key={pending.id} className="rounded-3xl border-2 border-primary/40 bg-card shadow-xl shadow-primary/10 overflow-hidden">
           {/* Status header */}
           <div className="px-5 pt-5 pb-0">
             <div className="flex justify-between items-center mb-4">
