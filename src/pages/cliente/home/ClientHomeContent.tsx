@@ -14,6 +14,7 @@ import ProductTour, { clienteTourSteps } from "@/components/ProductTour";
 import SupportTicketModal from "@/components/SupportTicketModal";
 import { useUserLocation } from "@/hooks/useUserLocation";
 import { formatBRL } from "@/lib/utils";
+import { describeStoreFee } from "@/lib/deliveryFeeDisplay";
 import { mapStoresWithHours } from "../utils/mapStores";
 import CategoryChips, { normalizeCategory } from "./CategoryChips";
 import BentoHero from "./BentoHero";
@@ -38,22 +39,14 @@ const ROTATING_PLACEHOLDERS = [
 ];
 
 // Full select (para tabela `stores` — inclui colunas que só existem na tabela base).
-const FULL_STORE_SELECT = "id, name, image_url, slug, category, categories, is_open, force_closed, rating, status, delivery_mode, own_delivery_fee, delivery_fee, delivery_fee_type, delivery_fee_base, delivery_fee_per_km, estimated_delivery_time, minimum_order_value, free_delivery_threshold, address_cep, address_city, address_complement, address_neighborhood, address_number, address_reference, address_state, address_street, latitude, longitude, settings";
-// Select compatível com a view `stores_public` (não expõe delivery_fee/estimated_delivery_time/etc).
-const PUBLIC_VIEW_SELECT = "id, name, image_url, slug, category, categories, is_open, force_closed, rating, status, delivery_mode, own_delivery_fee, address_cep, address_city, address_complement, address_neighborhood, address_number, address_reference, address_state, address_street, latitude, longitude, settings";
+const FULL_STORE_SELECT = "id, name, image_url, slug, category, categories, is_open, force_closed, rating, status, delivery_mode, own_delivery_fee, delivery_fee, delivery_fee_type, delivery_fee_base, delivery_fee_per_km, estimated_delivery_time, minimum_order_value, free_delivery_threshold, address_cep, address_city, address_complement, address_neighborhood, address_number, address_reference, address_state, address_street, latitude, longitude, settings, platform_fee_split";
+// Select compatível com a view `stores_public` (agora expõe plan_type/override/autonomy_lifetime_free/delivery_fee/estimated_delivery_time).
+const PUBLIC_VIEW_SELECT = "id, name, image_url, slug, category, categories, is_open, force_closed, rating, status, delivery_mode, own_delivery_fee, delivery_fee, estimated_delivery_time, address_cep, address_city, address_complement, address_neighborhood, address_number, address_reference, address_state, address_street, latitude, longitude, settings, platform_fee_split, plan_type, platform_delivery_split_override, autonomy_lifetime_free";
 
-// A lista não conhece platform_fee_split/plano por loja (info exigiria RPC por item).
-// Para evitar divergência com a StorePage, exibimos apenas a taxa base do lojista
-// com prefixo "A partir de" — o total final (com split da plataforma) é calculado
-// na página da loja e no checkout, que são as fontes de verdade.
+// Fonte única de verdade — helper espelha RPC compute_store_delivery_fee.
 const formatFeeLabel = (store: any): { label: string; free: boolean; prefix?: string } => {
-  if (store.delivery_mode === "pickup") return { label: "Retirada", free: false };
-  const mode = store.delivery_mode;
-  const baseFee = mode === "own" ? store.own_delivery_fee : store.delivery_fee;
-  if (baseFee == null) return { label: "—", free: false };
-  const total = Number(baseFee || 0);
-  if (total <= 0) return { label: "Grátis", free: true };
-  return { label: formatBRL(total), free: false, prefix: "A partir de" };
+  const d = describeStoreFee(store);
+  return { label: d.label, free: d.free, prefix: d.prefix };
 };
 
 const formatDeliveryTime = (store: any): string => {

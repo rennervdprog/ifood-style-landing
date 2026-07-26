@@ -1,49 +1,64 @@
+# Plano — Taxa de entrega com fonte única de verdade
 
-## Diagnóstico
+**Problema:** hoje 6+ locais calculam a taxa de entrega com fórmulas diferentes. Resultado: Pastelão Carioca aparece como **R$ 3,00** (lista), **R$ 4,75** (StorePage) e cobraria outro valor no checkout. Regras de VIP/autonomy só valem no front, então o **repasse do lojista sai errado no backend**.
 
-Na web o `header sticky top-0` funciona. No Capacitor não. Causas prováveis (já validadas no código):
+## Fase 1 — Backend: RPC canônica
 
-1. **`backdrop-blur` + `bg-background/95`** — no Android WebView, `backdrop-filter` num elemento `position: sticky` frequentemente quebra a "pregação". O elemento vira layer composited e o browser deixa de re-stickar durante scroll do WebView.
-2. **Dois containers de rolagem** — hoje `html.native-app { overflow-y: auto; height: 100% }` + `body { overflow-y: visible }`. Em teoria só o html rola, mas o `#root { min-height: 100svh }` combinado com `min-h-dvh` no wrapper do ClientHomeContent pode criar um segundo scroller virtual (100dvh mede a viewport visual, não a layout — WebView Android reporta valores diferentes conforme a status bar).
-3. **Header dentro de `<div class="min-h-dvh">`** — se esse wrapper virar o scroller (por qualquer overflow implícito), o sticky gruda no topo do wrapper (que já está em 0) e "some" junto no scroll.
-4. **Regra `body.native-app header.sticky.top-0 { padding-top: env(safe-area-inset-top) }`** — aplica padding só no header, mas o `top-0` fica ancorado no topo do container. Em Android sem edge-to-edge configurado corretamente, `env(safe-area-inset-top)` retorna 0, então o header cola na status bar e "some" atrás dela.
+**Criar `public.compute_store_delivery_fee(_store_id uuid)`** que retorna JSON:
+```
+{ base_fee, platform_split_full, platform_add_customer,
+  platform_add_payout_deduction, split_mode, plan_type, is_autonomy,
+  customer_total }
+```
 
-## O que fazer
+Lógica única (aplica todas as regras de negócio):
+1. Lê `stores.delivery_mode`, `stores.own_delivery_fee`, `stores.delivery_fee`, `stores.platform_fee_split`.
+2. Lê `store_plans.platform_delivery_split_override` e `store_plans.plan_type`.
+3. Lê `admin_settings.delivery_fee_config.platform_split` (default fixo **0,99** em todo lugar).
+4. Se `plan_type='autonomy'` → `platform_split_full = 0`.
+5. Se `delivery_mode='platform'` → `base_fee` já inclui split → `platform_add_customer = 0`.
+6. Se `delivery_mode='own'`:
+   - `cliente` → add cliente=full, deduz repasse=0
+   - `meio_a_meio` → add cliente=full/2, deduz=full/2
+   - `lojista` → add cliente=0, deduz=full
 
-### 1. Trocar backdrop-blur por fundo sólido no app nativo
-No `src/pages/cliente/home/ClientHomeContent.tsx`, deixar o `<header>` sem `backdrop-blur` e usar `bg-background` opaco. Já temos regra global forçando `background-color: hsl(var(--card)) !important` em headers sticky no `.native-app` — reforçar removendo `backdrop-filter` da própria classe.
+**Aposentar** `get_store_platform_split` (fantasma, não existe nas migrations) e transformar `get_store_platform_fee_charge` em wrapper que chama a nova RPC (compat).
 
-### 2. Garantir um único scroller e altura consistente
-Em `src/index.css`:
-- Trocar `min-height: 100%` / `min-h-100svh` do `html.native-app` por `height: 100dvh` fixo, e no `body` `height: auto`.
-- Remover `min-h-dvh` do wrapper do ClientHomeContent no app nativo (usar classe condicional ou substituir por `min-h-full`). Wrappers com `min-h-dvh` competem com o `html` pelo papel de scroller.
+## Fase 2 — Backend: reconciliar pedido e repasse
 
-### 3. Edge-to-edge + status bar transparente (Android)
-Para `env(safe-area-inset-top)` retornar valor real no APK:
-- `MainActivity.java`: chamar `WindowCompat.setDecorFitsSystemWindows(getWindow(), false)`.
-- `styles.xml`: `<item name="android:statusBarColor">@android:color/transparent</item>` e `windowTranslucentStatus=false`.
-- `capacitor.config.ts`: `StatusBar: { overlaysWebView: true, style: 'DARK', backgroundColor: '#00000000' }`.
+- **Trigger `validate_order_prices`**: recalcular `delivery_fee` server-side via RPC (frontend deixa de ser fonte de verdade do valor cobrado). Fecha vulnerabilidade de manipulação.
+- **Edge function `confirm-order-payment`**: usar `platform_add_payout_deduction` da RPC em vez de deduzir sempre o split cheio. Respeita split_mode e autonomy.
+- **Trigger `accrue_fixed_plan_split`**: mesma correção para pagamentos físicos (dinheiro/cartão).
 
-Sem isso o header "cola" atrás da status bar e parece sumir.
+## Fase 3 — Frontend: helper único
 
-### 4. Fallback JS de detecção
-Se após 1–3 o problema persistir num device específico, adicionar em `nativeBoot.ts` um observador que aplica `position: fixed; top: 0` no header quando `Capacitor.isNativePlatform()` — fixed é imune a bug de sticky em WebView. Contrapartida: precisa `padding-top` equivalente à altura do header no `<main>` para não sobrepor conteúdo.
+- Criar `src/lib/deliveryFeeDisplay.ts` com `describeStoreFee(store, storePlan)` retornando `{ customerTotal, label, prefix }`.
+- Expor colunas necessárias na view `stores_public` (`platform_fee_split`, `platform_delivery_split_override`, `plan_type`) — sem N+1.
+- **Substituir** em todos os locais para usar a helper:
+  - `ClientHomeContent.formatFeeLabel`
+  - `StoreCard` (row + grid) — e corrigir bug de usar `own_delivery_fee` quando `delivery_mode='platform'`
+  - `ClientBuscaPage`
+  - `StorePage` — card "Taxa"
+  - `CheckoutPage` — linha de resumo
+- **`useStorePlan.ts`**: remover duplo default (`2.0` vs `0.99`) — único fallback = **0,99**.
 
-## Ordem de execução
+## Fase 4 — Testes (Pastelão Carioca, base R$ 4,00)
 
-1. Ajustar CSS do header (remover backdrop-blur no nativo) + tornar `html` o único scroller com altura fixa.
-2. Habilitar edge-to-edge + StatusBar overlay no Android.
-3. Gerar APK novo, testar. Se ainda falhar em algum device, aplicar fallback `position: fixed` só no `.native-app`.
-4. Bump de versão (1.26.4) nos dois lugares (PerfilPage + build.gradle com versionCode+1).
+| split_mode | Home | StorePage | Checkout | Repasse deduz |
+|---|---|---|---|---|
+| cliente | R$ 4,99 | R$ 4,99 | R$ 4,99 | R$ 0,00 |
+| meio_a_meio | R$ 4,50 | R$ 4,50 | R$ 4,50 | R$ 0,50 |
+| lojista | R$ 4,00 | R$ 4,00 | R$ 4,00 | R$ 0,99 |
+| autonomy (qualquer) | R$ 4,00 | R$ 4,00 | R$ 4,00 | R$ 0,00 |
 
-## Detalhes técnicos
+## Detalhes técnicos (referência)
 
-Arquivos afetados:
-- `src/index.css` — regras `.native-app` de scroll/header.
-- `src/pages/cliente/home/ClientHomeContent.tsx` — classes do `<header>` e do wrapper.
-- `android/app/src/main/java/.../MainActivity.java` — edge-to-edge.
-- `android/app/src/main/res/values/styles.xml` — status bar transparente.
-- `capacitor.config.ts` — StatusBar overlaysWebView.
-- `src/pages/PerfilPage.tsx` + `android/app/build.gradle` — bump 1.26.4.
+- Nova RPC é `SECURITY DEFINER`, `SET search_path = public`.
+- View `stores_public` ganha 3 colunas via `CREATE OR REPLACE VIEW ... WITH (security_invoker = on)`.
+- Trigger `validate_order_prices` passa a chamar RPC — teste extra para pedidos legados.
+- Não mexer em `orders.app_fee` nem em comissão (fora de escopo).
 
-Requer novo APK (mudanças nativas). OTA não cobre.
+## Riscos
+
+- Trigger `validate_order_prices` reescrevendo `delivery_fee` pode divergir do que o cliente viu se a config mudou entre a exibição e o envio; solução: usar snapshot do split enviado pelo cliente e validar apenas margem de erro.
+- Migrar `get_store_platform_fee_charge` para wrapper pode afetar `accrue_fixed_plan_split` — testar em uma loja de teste antes de aplicar em prod.

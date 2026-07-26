@@ -7,12 +7,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useUserLocation } from "@/hooks/useUserLocation";
 import { mapStoresWithHours } from "../utils/mapStores";
 import { formatBRL } from "@/lib/utils";
+import { describeStoreFee } from "@/lib/deliveryFeeDisplay";
 import BottomNav from "@/components/BottomNav";
 
-const PUBLIC_STORE_SELECT_FULL = "id, name, image_url, slug, category, categories, is_open, force_closed, rating, status, delivery_mode, own_delivery_fee, delivery_fee, delivery_fee_type, delivery_fee_base, delivery_fee_per_km, estimated_delivery_time, minimum_order_value, free_delivery_threshold, address_cep, address_city, address_complement, address_neighborhood, address_number, address_reference, address_state, address_street, latitude, longitude, settings, created_at";
-const PUBLIC_STORE_SELECT_VIEW = "id, name, image_url, slug, category, categories, is_open, force_closed, rating, status, delivery_mode, own_delivery_fee, address_cep, address_city, address_complement, address_neighborhood, address_number, address_reference, address_state, address_street, latitude, longitude, settings, created_at";
-
-const PLATFORM_OWN_SPLIT = 0.99;
+const PUBLIC_STORE_SELECT_FULL = "id, name, image_url, slug, category, categories, is_open, force_closed, rating, status, delivery_mode, own_delivery_fee, delivery_fee, delivery_fee_type, delivery_fee_base, delivery_fee_per_km, estimated_delivery_time, minimum_order_value, free_delivery_threshold, address_cep, address_city, address_complement, address_neighborhood, address_number, address_reference, address_state, address_street, latitude, longitude, settings, platform_fee_split, created_at";
+const PUBLIC_STORE_SELECT_VIEW = "id, name, image_url, slug, category, categories, is_open, force_closed, rating, status, delivery_mode, own_delivery_fee, delivery_fee, estimated_delivery_time, address_cep, address_city, address_complement, address_neighborhood, address_number, address_reference, address_state, address_street, latitude, longitude, settings, platform_fee_split, plan_type, platform_delivery_split_override, autonomy_lifetime_free, created_at";
 
 const norm = (v?: string | null) =>
   (v || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
@@ -46,14 +45,8 @@ const matchesCategory = (storeCategory: string | null | undefined, catKey: strin
 };
 
 const formatFeeLabel = (store: any): { label: string; free: boolean; prefix?: string } => {
-  if (store.delivery_mode === "pickup") return { label: "Retirada", free: false };
-  const mode = store.delivery_mode;
-  const baseFee = mode === "own" ? store.own_delivery_fee : store.delivery_fee;
-  if (baseFee == null) return { label: "—", free: false };
-  const platformAdd = mode === "own" ? PLATFORM_OWN_SPLIT : 0;
-  const total = Number(baseFee || 0) + platformAdd;
-  if (total <= 0) return { label: "Grátis", free: true };
-  return { label: formatBRL(total), free: false, prefix: "A partir de" };
+  const d = describeStoreFee(store);
+  return { label: d.label, free: d.free, prefix: d.prefix };
 };
 
 const formatDeliveryTime = (store: any): string => {
