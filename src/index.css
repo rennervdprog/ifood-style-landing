@@ -274,6 +274,25 @@ body.native-app {
   touch-action: pan-y;
 }
 
+/* GLOBAL FIX: por padrão, todo o conteúdo do app nativo deixa o gesto
+   vertical passar para o scroll da página. Botões/links/cards continuam
+   clicáveis via tap, mas não sequestram o swipe vertical. Faixas
+   horizontais (carrosséis) sobrescrevem com pan-x abaixo. */
+.native-app,
+.native-app button,
+.native-app a,
+.native-app [role="button"],
+.native-app [data-slot="card"] {
+  touch-action: pan-y;
+}
+
+/* Carrosséis horizontais precisam permitir pan-x também */
+.native-app .overflow-x-auto,
+.native-app .overflow-x-scroll,
+.native-app .no-scrollbar {
+  touch-action: pan-x pan-y;
+}
+
 /* App nativo: deixe o Android redimensionar o WebView com o teclado.
    Não fixe #root em 100dvh nem esconda overflow-y; isso cria a faixa branca/cinza
    entre input e teclado em alguns aparelhos. */
