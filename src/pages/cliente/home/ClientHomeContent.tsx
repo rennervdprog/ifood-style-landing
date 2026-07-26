@@ -16,6 +16,7 @@ import { useUserLocation } from "@/hooks/useUserLocation";
 import { formatBRL } from "@/lib/utils";
 import { describeStoreFee } from "@/lib/deliveryFeeDisplay";
 import { mapStoresWithHours } from "../utils/mapStores";
+import { filterStoresWithOnlineDrivers } from "@/lib/storeVisibility";
 import CategoryChips, { normalizeCategory } from "./CategoryChips";
 import BentoHero from "./BentoHero";
 import HighlightsBento from "./HighlightsBento";
@@ -114,7 +115,8 @@ const loadPublicStores = async ({
     stores = filtered.length > 0 || !fallbackToAll ? filtered : stores;
   }
 
-  return stores;
+  // Regra vitrine: esconde pdv_only e lojas sem entregador vinculado online.
+  return await filterStoresWithOnlineDrivers(stores);
 };
 
 const greeting = () => {
