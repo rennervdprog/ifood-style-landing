@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
   Search, Clock, Repeat, ShoppingBag, Store as StoreIcon, MapPin, Bell, MessageCircle,
-  ChevronDown, ChevronRight, SlidersHorizontal, Sparkles,
+  ChevronDown, ChevronRight, SlidersHorizontal, Sparkles, Star,
 } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 import ProductTour, { clienteTourSteps } from "@/components/ProductTour";
@@ -37,7 +37,7 @@ const ROTATING_PLACEHOLDERS = [
   "Buscar açaí...",
 ];
 
-const PUBLIC_STORE_SELECT = "id, name, image_url, slug, category, categories, is_open, force_closed, rating, status, delivery_mode, own_delivery_fee, address_cep, address_city, address_complement, address_neighborhood, address_number, address_reference, address_state, address_street, latitude, longitude, settings";
+const PUBLIC_STORE_SELECT = "id, name, image_url, slug, category, categories, is_open, force_closed, rating, status, delivery_mode, own_delivery_fee, delivery_fee_type, delivery_fee_base, delivery_fee_per_km, platform_split, address_cep, address_city, address_complement, address_neighborhood, address_number, address_reference, address_state, address_street, latitude, longitude, settings";
 
 type HeroFilter = "no_fee" | "direct_delivery" | null;
 
