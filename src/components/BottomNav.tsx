@@ -44,7 +44,18 @@ const BottomNav = memo(() => {
 
    const isLojista = (profile as any)?.role === "lojista";
    const isMotoboy = (profile as any)?.role === "motoboy" || (profile as any)?.role === "entregador";
-  const isStoreContext = !!currentStoreSlug;
+  // Only show store-scoped tabs when actually browsing the store (or its cart/checkout),
+  // never on /cliente, /cliente/busca, /pedidos, /perfil, etc. Isso evita que o bottom bar
+  // "grude" na loja depois que o cliente volta pra Home.
+  const path = location.pathname;
+  const onStoreRoute =
+    !!currentStoreSlug &&
+    (path === `/${currentStoreSlug}` ||
+      path.startsWith(`/${currentStoreSlug}/`) ||
+      path.startsWith("/loja/") ||
+      path === "/carrinho" ||
+      path.startsWith("/checkout"));
+  const isStoreContext = onStoreRoute;
 
   const tabs = useMemo(() => {
     if (isStoreContext) {
