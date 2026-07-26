@@ -37,7 +37,35 @@ const ROTATING_PLACEHOLDERS = [
   "Buscar açaí...",
 ];
 
-const PUBLIC_STORE_SELECT = "id, name, image_url, slug, category, categories, is_open, force_closed, rating, status, delivery_mode, own_delivery_fee, delivery_fee_type, delivery_fee_base, delivery_fee_per_km, platform_split, address_cep, address_city, address_complement, address_neighborhood, address_number, address_reference, address_state, address_street, latitude, longitude, settings";
+const PUBLIC_STORE_SELECT = "id, name, image_url, slug, category, categories, is_open, force_closed, rating, status, delivery_mode, own_delivery_fee, delivery_fee_type, delivery_fee_base, delivery_fee_per_km, address_cep, address_city, address_complement, address_neighborhood, address_number, address_reference, address_state, address_street, latitude, longitude, settings";
+
+// Taxa operacional da plataforma somada à entrega (fonte única: deliveryFee.ts).
+const PLATFORM_FEE = 0.99;
+
+const formatFeeLabel = (store: any): { label: string; free: boolean; prefix?: string } => {
+  if (store.delivery_mode === "pickup") return { label: "Retirada", free: false };
+  const type = store.delivery_fee_type || "fixed";
+  if (type === "km") {
+    const base = Number(store.delivery_fee_base || 0) + PLATFORM_FEE;
+    if (!base) return { label: "Grátis", free: true };
+    return { label: formatBRL(base), free: false, prefix: "A partir de" };
+  }
+  const total = Number(store.own_delivery_fee || 0) + PLATFORM_FEE;
+  if (!Number(store.own_delivery_fee || 0)) return { label: "Grátis", free: true };
+  return { label: formatBRL(total), free: false };
+};
+
+const formatDeliveryTime = (store: any): string => {
+  const min = Number(store?.settings?.delivery_time_min);
+  const max = Number(store?.settings?.delivery_time_max);
+  if (Number.isFinite(min) && Number.isFinite(max) && min > 0 && max > 0) {
+    return `${min}-${max} min`;
+  }
+  const km = typeof store.distanceKm === "number" ? store.distanceKm : null;
+  if (km === null) return "30-45 min";
+  const base = 20 + Math.round(km * 4);
+  return `${base}-${base + 15} min`;
+};
 
 type HeroFilter = "no_fee" | "direct_delivery" | null;
 
