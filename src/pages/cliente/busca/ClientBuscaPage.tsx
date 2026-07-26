@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserLocation } from "@/hooks/useUserLocation";
 import { mapStoresWithHours } from "../utils/mapStores";
+import { filterStoresWithOnlineDrivers } from "@/lib/storeVisibility";
 import { formatBRL } from "@/lib/utils";
 import { describeStoreFee } from "@/lib/deliveryFeeDisplay";
 import BottomNav from "@/components/BottomNav";
@@ -168,7 +169,7 @@ const ClientBuscaPage = () => {
         .eq("status", "ativo")
         .limit(100);
       if (error) throw error;
-      const rows = Array.isArray(data) ? data : [];
+      const rows = await filterStoresWithOnlineDrivers(Array.isArray(data) ? data : []);
       if (rows.length === 0) return [];
       const storeIds = rows.map((s: any) => s.id);
       const { data: allHours } = await supabase
