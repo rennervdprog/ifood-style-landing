@@ -242,8 +242,6 @@ html {
   user-select: none;
   -webkit-touch-callout: none;
   -webkit-tap-highlight-color: transparent;
-  touch-action: manipulation;
-  overscroll-behavior: none;
   background: hsl(var(--background));
   min-height: 100vh;
 }
