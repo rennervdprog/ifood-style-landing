@@ -246,13 +246,29 @@ html {
   min-height: 100vh;
 }
 
-/* Safe-area aplicada APENAS no body para evitar empilhamento de padding
-   quando elementos internos também recebem a classe .native-app. */
+/* Safe-area no body.
+   - Fallback: se a página NÃO tem header sticky, aplicamos padding-top para
+     não deixar conteúdo sob a status bar do Android/iOS.
+   - Quando existe header sticky (padrão iFood), o próprio header cobre o notch
+     — regra mais abaixo — e evitamos empilhar padding.
+   `:has()` é suportado no WebView Chromium moderno usado pelo Capacitor. */
 body.native-app {
-  padding-top: var(--safe-area-inset-top, env(safe-area-inset-top));
   padding-bottom: var(--safe-area-inset-bottom, env(safe-area-inset-bottom));
   padding-left: var(--safe-area-inset-left, env(safe-area-inset-left));
   padding-right: var(--safe-area-inset-right, env(safe-area-inset-right));
+}
+body.native-app:not(:has(header.sticky.top-0)) {
+  padding-top: var(--safe-area-inset-top, env(safe-area-inset-top));
+}
+
+/* Padrão iFood: todo header sticky no app nativo estende-se sob a status bar,
+   fica opaco (nunca translúcido) e ganha padding-top do notch. Assim, ao rolar
+   a página, o header permanece visível e cobre a área da bateria/hora. */
+body.native-app header.sticky.top-0 {
+  padding-top: env(safe-area-inset-top);
+  background-color: hsl(var(--card)) !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
 }
 
 /* Remove o realce cinza de tap no app nativo.
