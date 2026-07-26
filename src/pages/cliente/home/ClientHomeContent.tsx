@@ -37,25 +37,26 @@ const ROTATING_PLACEHOLDERS = [
   "Buscar açaí...",
 ];
 
-const PUBLIC_STORE_SELECT = "id, name, image_url, slug, category, categories, is_open, force_closed, rating, status, delivery_mode, own_delivery_fee, delivery_fee_type, delivery_fee_base, delivery_fee_per_km, address_cep, address_city, address_complement, address_neighborhood, address_number, address_reference, address_state, address_street, latitude, longitude, settings";
+const PUBLIC_STORE_SELECT = "id, name, image_url, slug, category, categories, is_open, force_closed, rating, status, delivery_mode, own_delivery_fee, delivery_fee, delivery_fee_type, delivery_fee_base, delivery_fee_per_km, estimated_delivery_time, minimum_order_value, free_delivery_threshold, address_cep, address_city, address_complement, address_neighborhood, address_number, address_reference, address_state, address_street, latitude, longitude, settings";
 
-// Taxa operacional da plataforma somada à entrega (fonte única: deliveryFee.ts).
-const PLATFORM_FEE = 0.99;
+// Split base cobrado pela plataforma quando a loja usa entrega própria
+// (mesma lógica do StorePage — fallback R$ 2 quando não temos platformInfo por loja).
+const PLATFORM_OWN_SPLIT = 2;
 
 const formatFeeLabel = (store: any): { label: string; free: boolean; prefix?: string } => {
   if (store.delivery_mode === "pickup") return { label: "Retirada", free: false };
-  const type = store.delivery_fee_type || "fixed";
-  if (type === "km") {
-    const base = Number(store.delivery_fee_base || 0) + PLATFORM_FEE;
-    if (!base) return { label: "Grátis", free: true };
-    return { label: formatBRL(base), free: false, prefix: "A partir de" };
-  }
-  const total = Number(store.own_delivery_fee || 0) + PLATFORM_FEE;
-  if (!Number(store.own_delivery_fee || 0)) return { label: "Grátis", free: true };
-  return { label: formatBRL(total), free: false };
+  const mode = store.delivery_mode;
+  const baseFee = mode === "own" ? store.own_delivery_fee : store.delivery_fee;
+  if (baseFee == null) return { label: "—", free: false };
+  const platformAdd = mode === "own" ? PLATFORM_OWN_SPLIT : 0;
+  const total = Number(baseFee || 0) + platformAdd;
+  if (total <= 0) return { label: "Grátis", free: true };
+  return { label: formatBRL(total), free: false, prefix: "A partir de" };
 };
 
 const formatDeliveryTime = (store: any): string => {
+  const raw = (store?.estimated_delivery_time || "").toString().trim();
+  if (raw) return raw.includes("min") ? raw : `${raw} min`;
   const min = Number(store?.settings?.delivery_time_min);
   const max = Number(store?.settings?.delivery_time_max);
   if (Number.isFinite(min) && Number.isFinite(max) && min > 0 && max > 0) {
