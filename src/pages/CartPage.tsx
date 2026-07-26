@@ -8,6 +8,7 @@ import { getStoreOpenStatus, type OpeningHour } from "@/lib/storeStatus";
 import BottomNav from "@/components/BottomNav";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEffect } from "react";
+import { Capacitor } from "@capacitor/core";
 
 const CartPage = () => {
   const { items, neighborhood, neighborhoodFee, subtotal, total, updateQuantity, removeItem, clearCart } = useCart();
@@ -15,12 +16,13 @@ const CartPage = () => {
   const { user } = useAuth();
 
   const storeId = items[0]?.store_id;
+  const isNative = Capacitor.isNativePlatform?.() === true;
 
   // Pré-carrega o chunk da próxima tela (auth/checkout/guest)
   useEffect(() => {
     if (user) import("./CheckoutPage");
-    else import("./GuestCheckoutPage");
-  }, [user]);
+    else if (!isNative) import("./GuestCheckoutPage");
+  }, [user, isNative]);
 
   // Guest checkout habilitado por loja (piloto Itatinga)
   const { data: guestFlag } = useQuery({
@@ -39,7 +41,8 @@ const CartPage = () => {
   const handleFinalize = () => {
     if (user) {
       navigate("/checkout");
-    } else if (guestFlag) {
+    } else if (guestFlag && !isNative) {
+      // No app Capacitor cliente priorizamos criar conta padrão — nunca guest.
       navigate("/checkout-rapido");
     } else {
       navigate("/auth", { state: { from: "/checkout" } });
