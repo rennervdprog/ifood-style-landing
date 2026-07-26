@@ -42,6 +42,7 @@ const StoreDirectory = lazy(() => import("./pages/StoreDirectory"));
 const CityStoresPage = lazy(() => import("./pages/CityStoresPage"));
 const LandingPage = lazy(() => import("./pages/LandingPage"));
 const ClientHome = lazy(() => import("./pages/ClientHome"));
+const ClientBuscaPage = lazy(() => import("./pages/cliente/busca/ClientBuscaPage"));
 const StorePage = lazy(() => import("./pages/StorePage"));
 const CartPage = lazy(() => import("./pages/CartPage"));
 const CheckoutPage = lazy(() => import("./pages/CheckoutPage"));
@@ -96,6 +97,7 @@ registerRoutePrefetch("/revendedor/auth", () => import("./pages/ResellerAuth"));
 registerRoutePrefetch("/portal-parceiro", () => import("./pages/PartnerLogin"));
 registerRoutePrefetch("/planos", () => import("./pages/PlanosPage"));
 registerRoutePrefetch("/cliente", () => import("./pages/ClientHome"));
+registerRoutePrefetch("/cliente/busca", () => import("./pages/cliente/busca/ClientBuscaPage"));
 registerRoutePrefetch("/cadastro-lojista", () => import("./pages/CadastroLojista"));
 
 /**
@@ -126,6 +128,7 @@ const AppRoutes = memo(function AppRoutes() {
       <Route path="/lojas" element={<Navigate to="/" replace />} />
       <Route path="/lojas/:cidade" element={<CityStoresPage />} />
       <Route path="/cliente" element={<ClientHome />} />
+      <Route path="/cliente/busca" element={<ClientBuscaPage />} />
       <Route
         path="/painel"
         element={
