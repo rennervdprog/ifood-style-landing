@@ -17,6 +17,11 @@
         <item name="android:windowBackground">@android:color/white</item>
         <!-- 🔒 Edge-to-edge: permite que o app desenhe atrás das barras do sistema -->
         <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
+        <!-- Status bar transparente: o header sticky do WebView desenha atrás
+             dela e `env(safe-area-inset-top)` retorna o valor real do notch. -->
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:windowTranslucentStatus">false</item>
+        <item name="android:windowLightStatusBar">true</item>
     </style>
 
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">

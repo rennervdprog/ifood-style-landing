@@ -369,8 +369,8 @@ const ClientHomeContent = () => {
     <div className="min-h-dvh bg-background pb-24">
       <SupportTicketModal open={showSupport} onClose={() => setShowSupport(false)} userRole="cliente" />
 
-      {/* Sticky header — marketplace style */}
-      <header className="sticky top-0 z-30 bg-background/95 backdrop-blur border-b border-border">
+      {/* Sticky header — marketplace style (opaco: backdrop-blur quebra sticky no Android WebView) */}
+      <header className="sticky top-0 z-30 bg-background border-b border-border">
         <div className="px-4 pt-3 pb-2 flex items-center justify-between gap-3">
           <button
             onClick={userLocation.refresh}

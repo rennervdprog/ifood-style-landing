@@ -5,9 +5,12 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.view.View;
+import android.view.WindowManager;
 import android.webkit.CookieManager;
 import android.webkit.WebView;
 import android.webkit.WebSettings;
+
+import androidx.core.view.WindowCompat;
 
 import com.getcapacitor.BridgeActivity;
 
@@ -18,9 +21,23 @@ public class MainActivity extends BridgeActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        enableEdgeToEdge();
         enableWebViewDebuggingIfDebugBuild();
         tuneWebViewForSmoothness();
         clearWebViewCacheAfterNativeUpdate();
+    }
+
+    /**
+     * Edge-to-edge: o WebView desenha atrás da status bar (transparente),
+     * então `env(safe-area-inset-top)` retorna o valor real do notch no CSS.
+     * Sem isso, headers sticky ficam escondidos atrás da status bar no APK.
+     */
+    private void enableEdgeToEdge() {
+        try {
+            WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
+            getWindow().setStatusBarColor(0x00000000);
+            getWindow().clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+        } catch (Exception ignored) {}
     }
 
     /**

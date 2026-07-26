@@ -271,6 +271,15 @@ body.native-app header.sticky.top-0 {
   backdrop-filter: none !important;
 }
 
+/* No Android WebView, um <header sticky> filho de wrappers com
+   `min-h-dvh` (100dvh) pode "descolar" ao rolar porque o wrapper
+   compete com o <html> pelo papel de scroller. Neutralize `min-h-dvh`
+   dentro do app nativo — deixe o <html> ser o único scroller. */
+.native-app .min-h-dvh,
+.native-app .min-h-screen {
+  min-height: 0 !important;
+}
+
 /* Remove o realce cinza de tap no app nativo.
    IMPORTANTE: não setar `touch-action: manipulation` aqui — isso bloqueia
    o gesto de rolagem quando o dedo começa em cima de um <button> (ex.:
@@ -305,12 +314,13 @@ body.native-app {
 html.native-app {
   overflow-x: hidden;
   overflow-y: auto;
-  height: 100%;
+  height: 100dvh;
 }
 body.native-app {
   position: static;
   overflow-x: hidden;
   overflow-y: visible;
+  height: auto;
 }
 
 .native-app #root {
