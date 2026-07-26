@@ -267,42 +267,28 @@ body.native-app {
   cursor: pointer;
 }
 
-/* Correção Android WebView: cards/listas clicáveis precisam declarar que o
-   gesto vertical pertence ao scroll da página, não ao click do botão. */
-.native-app [data-native-scroll-pan],
-.native-app [data-native-scroll-pan] * {
-  touch-action: pan-y;
-}
-
-/* v1.25.79 — revertido o global de touch-action.
-   Setar touch-action em <html>/<body>/<button> no Android WebView
-   estava sequestrando o gesto vertical em vez de liberar. Deixamos
-   o default do WebView (`auto`) valer e só sobrescrevemos em carrosséis
-   horizontais explícitos. */
-.native-app .overflow-x-auto,
-.native-app .overflow-x-scroll {
-  touch-action: pan-x pan-y;
-}
+/* Android WebView: não declare `touch-action` no app nativo. Em alguns
+   aparelhos o gesto vertical fica preso quando começa em cards/botões. */
 
 /* App nativo: deixe o Android redimensionar o WebView com o teclado.
    Não fixe #root em 100dvh nem esconda overflow-y; isso cria a faixa branca/cinza
    entre input e teclado em alguns aparelhos. */
 html.native-app,
 body.native-app {
-  overscroll-behavior-y: contain;
   width: 100%;
-  min-height: 100vh;
+  min-height: 100%;
   overflow-x: hidden;
+  overflow-y: auto;
   background: hsl(var(--background));
 }
 
 body.native-app {
-  position: relative;
+  position: static;
 }
 
 .native-app #root {
-  min-height: 100vh;
-  overflow-x: hidden;
+  min-height: 100%;
+  overflow: visible;
   -webkit-overflow-scrolling: touch;
 }
 
