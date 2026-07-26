@@ -230,9 +230,9 @@ div[style*="Edit with Lovable"],
 }
 
 /* ─── Native App Feel (GoNative / Capacitor) ─── */
-/* Bloqueia zoom (pinch e double-tap) em todas as telas */
+/* Base nativa: não force touch-action global; alguns Android WebViews
+   perdem o pan vertical quando o gesto começa em elementos clicáveis. */
 html {
-  touch-action: pan-x pan-y;
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
 }
@@ -265,6 +265,13 @@ body.native-app {
 .native-app [role="button"] {
   -webkit-tap-highlight-color: transparent;
   cursor: pointer;
+}
+
+/* Correção Android WebView: cards/listas clicáveis precisam declarar que o
+   gesto vertical pertence ao scroll da página, não ao click do botão. */
+.native-app [data-native-scroll-pan],
+.native-app [data-native-scroll-pan] * {
+  touch-action: pan-y;
 }
 
 /* App nativo: deixe o Android redimensionar o WebView com o teclado.

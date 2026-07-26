@@ -19,6 +19,7 @@ const StoreCard = ({ store, onClick, variant = "grid" }: Props) => {
     return (
       <button
         onClick={onClick}
+        data-native-scroll-pan
         onPointerEnter={() => {
           if (store.slug) {
             const link = document.createElement("link");
@@ -66,6 +67,7 @@ const StoreCard = ({ store, onClick, variant = "grid" }: Props) => {
   return (
     <button
       onClick={onClick}
+      data-native-scroll-pan
       onPointerEnter={() => {
         if (store.slug) {
           const link = document.createElement("link");

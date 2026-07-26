@@ -30,6 +30,7 @@ const DiscoverGrid = memo(({ products, storesMap, onSelect }: Props) => {
           <button
             key={p.id}
             onClick={() => openProduct(p, store)}
+            data-native-scroll-pan
             onPointerEnter={() => {
               if (store?.slug) {
                 const link = document.createElement("link");

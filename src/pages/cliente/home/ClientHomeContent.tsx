@@ -328,7 +328,7 @@ const ClientHomeContent = () => {
     typeof km === "number" ? (km < 1 ? `${Math.round(km * 1000)} m` : `${km.toFixed(1)} km`) : null;
 
   return (
-    <div className="min-h-dvh bg-background pb-24">
+    <div className="min-h-dvh bg-background pb-24" data-native-scroll-pan>
       <SupportTicketModal open={showSupport} onClose={() => setShowSupport(false)} userRole="cliente" />
 
       {/* Sticky header — marketplace style */}
@@ -391,7 +391,7 @@ const ClientHomeContent = () => {
         </div>
       </header>
 
-      <main className="px-4 pt-3 space-y-6">
+      <main className="px-4 pt-3 space-y-6" data-native-scroll-pan>
         {/* Bento hero */}
         {!searchQuery && (
           <BentoHero
@@ -576,7 +576,7 @@ const ClientHomeContent = () => {
               )}
             </div>
           ) : (
-            <ul className="space-y-5">
+            <ul className="space-y-5" data-native-scroll-pan>
               {listStores.map((store: any) => {
                 const isOpen = !!store.realIsOpen;
                 const dist = formatDistance(store.distanceKm);
@@ -584,6 +584,7 @@ const ClientHomeContent = () => {
                   <li key={store.id}>
                     <button
                       onClick={() => goToStore(store)}
+                      data-native-scroll-pan
                       className="group w-full flex items-start gap-3 text-left active:opacity-80"
                     >
                       <div

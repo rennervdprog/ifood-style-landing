@@ -22,6 +22,7 @@ const HighlightsBento = memo(({ stores, onSelect }: Props) => {
     <div className="grid grid-cols-3 grid-rows-2 gap-2 h-56">
       <button
         onClick={() => onSelect(featured)}
+        data-native-scroll-pan
         className="col-span-2 row-span-2 relative rounded-3xl overflow-hidden bg-card border border-border text-left active:scale-[0.99] transition-transform group"
       >
         {featured.image_url ? (
@@ -66,6 +67,7 @@ const HighlightsBento = memo(({ stores, onSelect }: Props) => {
         <button
           key={store.id}
           onClick={() => onSelect(store)}
+          data-native-scroll-pan
           className="relative rounded-2xl overflow-hidden bg-card border border-border text-left active:scale-[0.99] transition-transform group"
         >
           {store.image_url ? (
