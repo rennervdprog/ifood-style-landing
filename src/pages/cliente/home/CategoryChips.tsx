@@ -2,14 +2,14 @@ import { useMemo } from "react";
 import { AppIcon } from "@/components/ui/app-icon";
 
 const CATEGORY_META: Record<string, { label: string; icon: string }> = {
-  pizzaria:     { label: "Pizzaria",    icon: "pizza" },
-  pizza:        { label: "Pizza",       icon: "pizza" },
+  pizzaria:     { label: "Pizzaria",    icon: "mdi:pizza" },
+  pizza:        { label: "Pizza",       icon: "mdi:pizza" },
   mercado:      { label: "Mercado",     icon: "cart-large-minimalistic" },
   supermercado: { label: "Mercado",     icon: "cart-large-minimalistic" },
   marmitaria:   { label: "Marmita",     icon: "fork" },
   restaurante:  { label: "Restaurante", icon: "chef-hat" },
-  hamburgueria: { label: "Burger",      icon: "hamburger" },
-  lanchonete:   { label: "Lanches",     icon: "hamburger" },
+  hamburgueria: { label: "Burger",      icon: "mdi:hamburger" },
+  lanchonete:   { label: "Lanches",     icon: "mdi:hamburger" },
   doceria:      { label: "Doces",       icon: "cake" },
   confeitaria:  { label: "Doces",       icon: "cake" },
   sorveteria:   { label: "Sorvete",     icon: "cup-hot" },
