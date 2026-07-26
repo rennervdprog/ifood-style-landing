@@ -55,6 +55,7 @@ const BentoHero = memo(({ activeAction, onExploreStores, onSelectNoFee, onSelect
       {/* Banner principal */}
       <button
         onClick={() => handleBanner(main)}
+        data-native-scroll-pan
         className="col-span-2 row-span-2 relative rounded-3xl overflow-hidden bg-gradient-to-br from-primary/25 via-primary/10 to-primary/5 border border-primary/20 text-left active:scale-[0.99] transition-transform"
       >
         {main?.image_url && (
@@ -84,6 +85,7 @@ const BentoHero = memo(({ activeAction, onExploreStores, onSelectNoFee, onSelect
       <button
         type="button"
         onClick={onSelectNoFee}
+        data-native-scroll-pan
         aria-pressed={activeAction === "no_fee"}
         className={`rounded-2xl border p-3 flex flex-col justify-between text-left active:scale-[0.98] transition-all ${
           activeAction === "no_fee"
@@ -102,6 +104,7 @@ const BentoHero = memo(({ activeAction, onExploreStores, onSelectNoFee, onSelect
       <button
         type="button"
         onClick={onSelectDirectDelivery}
+        data-native-scroll-pan
         aria-pressed={activeAction === "direct_delivery"}
         className={`rounded-2xl border p-3 flex flex-col justify-between text-left active:scale-[0.98] transition-all ${
           activeAction === "direct_delivery"

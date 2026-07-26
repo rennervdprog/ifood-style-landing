@@ -576,7 +576,7 @@ const ClientHomeContent = () => {
               )}
             </div>
           ) : (
-            <ul className="space-y-5">
+            <ul className="space-y-5" data-native-scroll-pan>
               {listStores.map((store: any) => {
                 const isOpen = !!store.realIsOpen;
                 const dist = formatDistance(store.distanceKm);
@@ -584,6 +584,7 @@ const ClientHomeContent = () => {
                   <li key={store.id}>
                     <button
                       onClick={() => goToStore(store)}
+                      data-native-scroll-pan
                       className="group w-full flex items-start gap-3 text-left active:opacity-80"
                     >
                       <div
