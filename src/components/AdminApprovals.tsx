@@ -6,9 +6,9 @@ import WhatsAppButton from "@/components/WhatsAppButton";
 import { openWhatsApp } from "@/lib/whatsapp";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import {
 import { AppIcon } from "@/components/ui/app-icon";
 import { Clock, Store, Bike, CheckCircle2, XCircle, Loader2, Trash2, FileText, ChevronDown, ChevronUp, User, Phone, Mail, MapPin, Calendar, Hash, Eye, EyeOff, AlertTriangle, Search, Zap, RefreshCw } from "lucide-react";
+import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader,
   AlertDialogTitle, AlertDialogTrigger,

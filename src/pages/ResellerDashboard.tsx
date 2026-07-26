@@ -8,9 +8,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import {
 import { AppIcon } from "@/components/ui/app-icon";
 import { Copy, LogOut, TrendingUp, Users, Wallet, Loader2, Download, MessageCircle, Send, QrCode, Zap, ArrowUpRight, Gift, Building2, ChevronRight } from "lucide-react";
+import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger,
 } from "@/components/ui/dialog";
 const MrrAreaChart = lazy(() => import("@/components/reseller/MrrAreaChart"));

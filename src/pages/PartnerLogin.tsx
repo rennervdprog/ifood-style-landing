@@ -10,9 +10,9 @@ import { resolvePartnerDashboard } from "@/lib/partnerDashboard";
 import { queryClient } from "@/lib/queryClient";
 import { USER_ROUTING_QUERY_KEY } from "@/hooks/useUserRouting";
 import BiometricLoginButton from "@/components/BiometricLoginButton";
-import {
 import { AppIcon } from "@/components/ui/app-icon";
 import { Mail, Lock, Eye, EyeOff, Store, Shield, Bike } from "lucide-react";
+import {
   isBiometricAvailable,
   isBiometricEnabled,
   enableBiometricLogin,

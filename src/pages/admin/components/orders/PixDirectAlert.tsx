@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { formatBRL } from "@/lib/utils";
-import {
 import { AppIcon } from "@/components/ui/app-icon";
 import { QrCode, MessageCircle, ChevronDown, ChevronUp, XCircle } from "lucide-react";
+import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";

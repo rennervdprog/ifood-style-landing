@@ -6,9 +6,9 @@
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import {
 import { AppIcon } from "@/components/ui/app-icon";
 import { FileText, Shield, CheckCircle2, ChevronDown, ChevronUp, Loader2, AlertTriangle } from "lucide-react";
+import {
   LegalChange,
   PendingLegalChanges,
   recordLegalAcceptance,

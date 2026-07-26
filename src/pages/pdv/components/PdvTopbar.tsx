@@ -3,9 +3,9 @@ import { useEffect, useState } from "react";
 import { formatBRL } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import SignOutConfirm from "@/components/SignOutConfirm";
-import {
 import { AppIcon } from "@/components/ui/app-icon";
 import { ArrowLeft, Monitor, Keyboard, ArrowUpCircle, ArrowDownCircle, Lock, Loader2, Wifi, WifiOff, RefreshCw, Menu, LogOut, CreditCard, LifeBuoy, UserCircle, BookOpen } from "lucide-react";
+import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent,
   DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";

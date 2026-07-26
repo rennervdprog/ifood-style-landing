@@ -2,9 +2,9 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import {
 import { AppIcon } from "@/components/ui/app-icon";
 import { Store, Trash2, CheckCircle2, Clock, XCircle, Filter, Loader2, Percent, DollarSign, ChevronUp, Smartphone } from "lucide-react";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,

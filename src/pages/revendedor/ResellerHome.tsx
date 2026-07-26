@@ -5,9 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import BottomNav from "@/components/BottomNav";
 import { useResellerDashboard, brl } from "./useResellerDashboard";
-import {
 import { AppIcon } from "@/components/ui/app-icon";
 import { Copy, Share2, Users, Wallet, TrendingUp, ArrowRight, Loader2, Info, Clock } from "lucide-react";
+import {
   getReferralEarningStage,
   RECURRING_STARTS_TOOLTIP,
   FREE_GMV_EXPLAINER,

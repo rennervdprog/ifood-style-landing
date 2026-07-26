@@ -27,9 +27,9 @@ import { planLabel } from "@/lib/plansInfo";
 import { CommandDialog, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem } from "@/components/ui/command";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 // Hook + KPI/cores leves (sem recharts) — eager
-import {
 import { AppIcon } from "@/components/ui/app-icon";
 import { ArrowLeft, DollarSign, ShoppingBag, TrendingUp, Clock, Store, Copy, AlertTriangle, Users, Bike, Wallet, CheckCircle2, Bell, Loader2, LayoutDashboard, Shield, Ticket, RefreshCw, Truck, Menu, MapPin, Scale, Search, FileText, Crown, Handshake, FlaskConical, Link as LinkIcon, Megaphone, Sparkles, PanelLeftClose, PanelLeftOpen, MessageCircle, Smartphone, ShieldCheck, Puzzle } from "lucide-react";
+import {
   KpiCard, useFinanceChartData, CHART_COLORS,
 } from "@/components/FinanceChartsCore";
 // Gráficos pesados (recharts) — carregados sob demanda

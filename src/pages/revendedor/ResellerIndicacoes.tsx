@@ -5,9 +5,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import BottomNav from "@/components/BottomNav";
 import { useResellerDashboard, brl } from "./useResellerDashboard";
-import {
 import { AppIcon } from "@/components/ui/app-icon";
 import { Loader2, Search, ArrowLeft } from "lucide-react";
+import {
   getReferralEarningStage,
   stageBadge,
   remainingToPaidCents,

@@ -6,9 +6,9 @@
 
 import { useMemo } from "react";
 import { formatBRL } from "@/lib/utils";
-import {
 import { AppIcon } from "@/components/ui/app-icon";
 import { TrendingUp, TrendingDown, Minus } from "lucide-react";
+import {
   AreaChart, Area, BarChart, Bar, LineChart, Line,
   XAxis, YAxis, Tooltip, ResponsiveContainer,
   CartesianGrid, Legend, PieChart, Pie, Cell, ReferenceLine,
