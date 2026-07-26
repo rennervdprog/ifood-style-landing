@@ -35,8 +35,9 @@ const json = (body: unknown, status = 200) =>
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 
-// Mínimo para gerar cobrança (evita PIX de centavos)
-const MIN_CHARGE_AMOUNT = 5.0;
+// Mínimo por ciclo para gerar cobrança PIX (regra: só cobra quando o delta
+// acumulado desde a última cobrança emitida atinge esse piso).
+const MIN_CHARGE_AMOUNT = 150.0;
 
 // Dias de atraso antes de inativar a loja
 const OVERDUE_DAYS_TO_DEACTIVATE = 30;
@@ -285,42 +286,52 @@ Deno.serve(async (req) => {
         continue;
       }
 
-      // Verificar se já existe cobrança pendente não paga
-      const { data: existingCharge } = await supabase
+      // Buscar TODAS as cobranças em aberto: cada ciclo gera uma cobrança
+      // separada (não somamos com anteriores). Precisamos subtrair o que já
+      // foi cobrado para calcular o delta do ciclo atual.
+      const { data: openCharges } = await supabase
         .from("financial_transactions")
-        .select("id, created_at, status")
+        .select("id, amount, created_at")
         .eq("store_id", balance.store_id)
         .eq("transaction_kind", "commission_charge")
         .eq("status", "pending")
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
+        .order("created_at", { ascending: true });
 
-      if (existingCharge) {
-        // Verificar se está vencida há mais de OVERDUE_DAYS_TO_DEACTIVATE dias
-        const createdAt = new Date(existingCharge.created_at);
-        const daysPending = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24);
+      const alreadyBilled = (openCharges || []).reduce(
+        (sum: number, c: any) => sum + Number(c.amount || 0),
+        0,
+      );
 
+      // Se a cobrança mais antiga estourou o prazo, desativa a loja e não
+      // gera nova cobrança neste ciclo.
+      const oldest = (openCharges || [])[0];
+      if (oldest) {
+        const daysPending = (now.getTime() - new Date(oldest.created_at).getTime()) / (1000 * 60 * 60 * 24);
         if (daysPending > OVERDUE_DAYS_TO_DEACTIVATE) {
-          if (!dryRun) {
-            await deactivateOverdueStore(supabase, balance.store_id, store.name);
-          }
+          if (!dryRun) await deactivateOverdueStore(supabase, balance.store_id, store.name);
           results.push({
             store: store.name,
             status: "deactivated",
-            reason: `${Math.floor(daysPending)} dias sem pagar`,
+            reason: `${Math.floor(daysPending)} dias sem pagar cobrança mais antiga`,
             dry_run: dryRun,
           });
           continue;
         }
+      }
 
+      // Delta do ciclo = saldo atual − o que já foi emitido em cobranças abertas.
+      const cycleAmount = Number((chargeAmount - alreadyBilled).toFixed(2));
+      if (cycleAmount < MIN_CHARGE_AMOUNT) {
         results.push({
           store: store.name,
           status: "skip",
-          reason: `Já tem cobrança pendente há ${Math.floor(daysPending)} dias`,
+          reason: `Delta do ciclo (R$${cycleAmount.toFixed(2)}) abaixo do mínimo de R$${MIN_CHARGE_AMOUNT}`,
         });
         continue;
       }
+      // Substitui o valor a cobrar pelo delta do ciclo (cobrança separada).
+      chargeAmount = cycleAmount;
+      chargeDescription = `${chargeDescription} — ciclo ${new Date().toLocaleDateString("pt-BR")}`;
 
       if (dryRun) {
         results.push({
