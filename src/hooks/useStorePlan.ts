@@ -188,7 +188,7 @@ export function useStorePlan(storeId: string | undefined | null): StorePlanFeatu
     ? 0
     : _isOwn
       ? (_override ?? 2.0)
-      : (data?.feeConfig?.platform_split ?? 2.0);
+      : (data?.feeConfig?.platform_split ?? 0.99);
   const _splitMode = (data?.platformFeeSplit || "cliente") as "cliente" | "meio_a_meio" | "lojista";
   const _storeAbsorb = _isOwn
     ? (_splitMode === "lojista" ? _baseSplit : _splitMode === "meio_a_meio" ? Math.round((_baseSplit / 2) * 100) / 100 : 0)
@@ -247,8 +247,8 @@ export function useStorePlan(storeId: string | undefined | null): StorePlanFeatu
     platformDeliverySplit: _isAutonomy
       ? 0
       : data?.deliveryMode === "own"
-        ? ((data?.plan as any)?.platform_delivery_split_override ?? 2.00)
-        : (data?.feeConfig?.platform_split ?? 2.00),
+        ? ((data?.plan as any)?.platform_delivery_split_override ?? 0.99)
+        : (data?.feeConfig?.platform_split ?? 0.99),
     // Driver split: todos os planos que usam plataforma de entrega têm split pro motoboy
     driverDeliverySplit: data?.feeConfig?.driver_split ?? DEFAULT_DELIVERY_FEE_CONFIG.driver_split,
     platformFeeSplit: _splitMode,

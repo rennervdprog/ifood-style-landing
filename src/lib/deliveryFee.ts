@@ -169,7 +169,7 @@ export const DEFAULT_DELIVERY_FEE_CONFIG: DeliveryFeeConfig = {
   rural_base_fee: 5.0,
   rural_per_km: 0.6,
   driver_split: 4.0,
-  platform_split: 2.0,
+  platform_split: 0.99,
   pix_operational_fee: 1.99,
 };
 

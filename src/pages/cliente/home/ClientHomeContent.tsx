@@ -39,9 +39,9 @@ const ROTATING_PLACEHOLDERS = [
 
 const PUBLIC_STORE_SELECT = "id, name, image_url, slug, category, categories, is_open, force_closed, rating, status, delivery_mode, own_delivery_fee, delivery_fee, delivery_fee_type, delivery_fee_base, delivery_fee_per_km, estimated_delivery_time, minimum_order_value, free_delivery_threshold, address_cep, address_city, address_complement, address_neighborhood, address_number, address_reference, address_state, address_street, latitude, longitude, settings";
 
-// Split base cobrado pela plataforma quando a loja usa entrega própria
-// (mesma lógica do StorePage — fallback R$ 2 quando não temos platformInfo por loja).
-const PLATFORM_OWN_SPLIT = 2;
+// Split base cobrado pela plataforma quando a loja usa entrega própria.
+// Fonte da verdade: admin_settings.delivery_fee_config.platform_split (default R$ 0,99).
+const PLATFORM_OWN_SPLIT = 0.99;
 
 const formatFeeLabel = (store: any): { label: string; free: boolean; prefix?: string } => {
   if (store.delivery_mode === "pickup") return { label: "Retirada", free: false };
