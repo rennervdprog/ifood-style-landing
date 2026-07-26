@@ -1142,7 +1142,7 @@ const StorePage = () => {
                         const isAutonomy = platformInfo?.plan_type === "autonomy";
                         const baseSplit = isAutonomy
                           ? 0
-                          : Number(platformInfo?.platform_delivery_split_override ?? storePlan.platformDeliverySplit ?? 2);
+                          : Number(platformInfo?.platform_delivery_split_override ?? storePlan.platformDeliverySplit ?? 0.99);
                         const splitMode = (platformInfo?.platform_fee_split || storePlan.platformFeeSplit || "cliente") as "cliente" | "meio_a_meio" | "lojista";
                         platformAdd = splitMode === "lojista"
                           ? 0
