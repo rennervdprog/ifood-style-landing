@@ -2,6 +2,12 @@ import { assertExternalBackend } from "./lib/externalBackend";
 
 assertExternalBackend();
 
+// 🔐 Pré-hidrata a sessão do Supabase (Capacitor Preferences → localStorage)
+// ANTES de qualquer código importar o client. Sem isso, no cold-start do APK
+// o `getSession()` pode ler `null` e derrubar a sessão silenciosamente.
+import { hydrateAuthStorage } from "./integrations/supabase/authStorage";
+await hydrateAuthStorage();
+
 // Declarar extensões do Window para gonative/median (apps nativos WebView)
 declare global {
   interface Window {
