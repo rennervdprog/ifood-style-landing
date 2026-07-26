@@ -1,89 +1,69 @@
-# Plano: Nova aba "Busca" (estilo iFood)
+# Plano: Headers persistentes no app cliente (Capacitor)
 
-Inspirada no iFood, mas com identidade ItaSuper — não é cópia. Vira a segunda aba do BottomNav do `/cliente`.
+Objetivo: em **todas** as telas do fluxo `/cliente/**` e loja pública, o header (barra superior) fica **fixo no topo**, **respeita o notch/status bar do Android** (hora, bateria) e o conteúdo rola **por baixo** dele — igual ao iFood.
 
-## 1. Estrutura / navegação
+## 1. Criar primitivo único `AppHeader`
 
-- Nova rota: `/cliente/busca`
-- Adicionar item no `BottomNav.tsx`: Início · **Busca** · Pedidos · Perfil
-- Ícone: `solar:magnifer-bold-duotone` (Iconify, já instalado)
-- Lazy-load da página
+Arquivo: `src/components/cliente/AppHeader.tsx`
 
-## 2. Layout da tela `/cliente/busca` (estado inicial)
+Responsabilidades:
+- `position: sticky; top: 0; z-index: 40`
+- `padding-top: env(safe-area-inset-top)` (notch) + fundo sólido opaco (não translúcido) para nunca "vazar" atrás da status bar
+- Variantes: `solid` (padrão branco) / `transparent-to-solid` (StorePage — vira sólido no scroll) / `brand` (gradiente laranja da home)
+- Slots: `left` (voltar/menu), `center` (título/busca), `right` (ações — sino, favorito)
+- Prop `elevated` (sombra sutil ao rolar)
 
-Ordem vertical:
+## 2. Configurar StatusBar nativa uma vez
 
-1. **Search bar sticky no topo**
-   - Placeholder rotativo: "Pizza em 30 minutos", "Hambúrguer artesanal", "Marmita fitness"…
-   - Ao focar → abre modo "resultados" (ver seção 4)
+`src/lib/capacitorNative.ts`:
+- `StatusBar.setOverlaysWebView({ overlay: true })` (já usamos parcial)
+- `StatusBar.setStyle({ style: Style.Dark })` para ícones escuros sobre header branco; alternar para `Light` em telas com header brand (laranja)
+- Hook `useStatusBarStyle(variant)` chamado por cada `AppHeader`
 
-2. **Seção "Categorias"** (grid 2 colunas, cards coloridos com imagem à direita)
-   Categorias reais da base (`stores.category` / tags):
-   - Lanches (laranja)
-   - Pizzaria (vermelho)
-   - Marmita / Restaurante (âmbar)
-   - Açaí / Sobremesa (roxo)
-   - Bebidas (coral)
-   - Mercado (verde)
-   - Farmácia (azul)
-   - Promoções (magenta — filtro `has_active_coupon`)
-   
-   Cada card = filtro que abre lista de lojas daquela categoria.
+## 3. Telas a migrar para `AppHeader`
 
-3. **Seção "Em alta em Itatinga"** — carrossel horizontal de lojas mais pedidas (rating desc, pedidos últimos 7d)
+Todas usam padrão sticky + safe-area:
 
-4. **Seção "Novidades"** — lojas criadas nos últimos 30 dias
+| Tela | Arquivo | Variante |
+|---|---|---|
+| Home cliente | `ClientHomeContent.tsx` | `brand` (endereço + sino) |
+| Busca | `busca/ClientBuscaPage.tsx` | `solid` (já sticky — trocar wrapper) |
+| Categoria/resultados | mesma acima | `solid` |
+| Loja pública | `StorePage.tsx` | `transparent-to-solid` |
+| Cardápio item | `ProductPage.tsx` | `solid` |
+| Carrinho | `CartPage.tsx` | `solid` |
+| Checkout | `CheckoutPage.tsx` | `solid` |
+| Pedidos | `cliente/PedidosPage.tsx` | `solid` |
+| Detalhe pedido | `PedidoDetalhePage.tsx` | `solid` |
+| Perfil | `PerfilPage.tsx` | `solid` |
+| Endereços | `EnderecosPage.tsx` | `solid` |
+| Favoritos | `FavoritosPage.tsx` | `solid` |
+| Ajuda / Termos | `AjudaPage.tsx` etc. | `solid` |
 
-## 3. Tela de categoria `/cliente/busca/:categoria`
+## 4. Ajustes globais
 
-Header simples "LANCHES" + botão voltar + share.
+- Remover `paddingTop: env(safe-area-inset-top)` **do body/App** para as rotas `/cliente/**` (o header agora cuida disso). Rotas sem header próprio mantêm um `SafeAreaTop` filler.
+- `src/index.css`: garantir `html, body { background: white }` para o gap do notch nunca aparecer preto ao rolar bounce (iOS-like overscroll no Android também).
+- Bottom nav: já respeita `safe-area-inset-bottom`; sem mudanças.
 
-Filtros chip horizontais (scroll):
-- Ordenar (relevância / avaliação / tempo / taxa)
-- Entrega grátis (own_delivery_fee = 0)
-- Turbo (estimated_delivery_time ≤ 30 min)
-- Aberto agora
+## 5. Comportamento no scroll (iFood-like)
 
-Lista vertical de lojas com o **mesmo card** já usado em `ClientHomeContent.tsx` (logo redondo, nome, rating real, tempo, taxa calculada com split R$ 0,99). Reutilizar componente — sem duplicar código.
+- Sticky puro (não `fixed`) → conteúdo empurra normalmente, header acompanha o topo do viewport.
+- Sombra aparece após 8px de scroll via `IntersectionObserver` de um sentinel invisível — sem listener de `scroll` pesado.
+- StorePage: opacidade do fundo do header interpolada 0→1 nos primeiros 120px (já existe, será portado para `AppHeader`).
 
-Badge "Mais Pedido" nas top 3 da categoria.
+## 6. Versionamento
 
-## 4. Modo busca ativa
+Bump para **v1.26.0** (mudança visual global). Atualiza `src/lib/appVersion.ts` + `android/app/build.gradle` (`versionName` + `versionCode +1`).
 
-Ao digitar no input:
-- Debounce 250ms
-- Busca em `stores.name`, `products.name`, `stores.category`
-- Duas seções nos resultados: **Lojas** e **Pratos** (com preço + loja de origem)
-- Histórico de buscas recentes em localStorage (últimas 5)
-- Sugestões populares quando vazio
+## Detalhes técnicos
 
-## 5. Design / tokens
+- `sticky` funciona dentro do WebView do Capacitor sem precisar de `-webkit-` extra.
+- `env(safe-area-inset-top)` só devolve valor > 0 quando o `AndroidManifest` tem `windowLayoutInDisplayCutoutMode="shortEdges"` e `StatusBar.setOverlaysWebView(true)` — ambos já configurados.
+- Web (não-Capacitor) recebe `env()` = 0 → header cola no topo do navegador, sem regressão.
+- Evita `position: fixed` para não brigar com o teclado (bug do gap branco já resolvido).
 
-- **Não copiar cores do iFood** (nada de vermelho #EA1D2C)
-- Usar paleta atual ItaSuper: `--primary` + accents já definidos
-- Cards de categoria com gradientes vindos de `--gradient-*` do design system
-- Tipografia atual, sem fontes novas
-- Safe-area top/bottom respeitada (Capacitor)
+## Fora de escopo
 
-## 6. Detalhes técnicos
-
-- Página: `src/pages/ClientBuscaPage.tsx` (lazy)
-- Componentes novos: `SearchCategoryCard`, `SearchChipFilters`, `SearchResults`
-- Reuso: `StoreListCard` extraído de `ClientHomeContent.tsx` para arquivo próprio
-- Query: uma única RPC `search_stores_and_products(term, category, filters)` no Supabase externo pra evitar 2-3 roundtrips
-- Cache: React Query com `staleTime: 60s` nas categorias/em-alta
-- Realtime: OFF (já removido do plano de IO)
-
-## 7. Fora do escopo
-
-- Filtro por Vale-refeição (não temos integração)
-- "Super Restaurantes" / assinatura de frete grátis
-- Mapa de lojas próximas (fica pra fase 2)
-
-## 8. Versionamento
-
-Bump patch (`PerfilPage.tsx` + `android/app/build.gradle` versionName + versionCode+1) ao final da implementação.
-
----
-
-Se aprovar, implemento tudo em uma leva e te aviso a nova versão.
+- Redesign visual dos headers (só estrutura + sticky). Refinos de UI ficam para plano separado.
+- Rotas de super-admin / lojista / PDV.
