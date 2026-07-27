@@ -570,12 +570,24 @@ const CheckoutPage = () => {
         // Passa coordenadas do endereço de entrega (geocodificadas pelo CEP)
         // Isso garante que o bloqueio funciona mesmo sem GPS do dispositivo
         deliveryCoords: clientCoords ?? undefined,
+        maxDeliveryKm: (storeData as any).max_delivery_km ?? undefined,
       });
       if (!fraud.allowed) {
-        toast.error("Pedido bloqueado por segurança", {
-          description: `Você está a ${fraud.distanceKm?.toFixed(1)} km desta loja. Limite de ${MAX_DISTANCE_KM} km para entrega.`,
-          duration: 8000,
-        });
+        const maxKm = Number((storeData as any).max_delivery_km ?? MAX_DISTANCE_KM) || MAX_DISTANCE_KM;
+        const reason = fraud.reason || "";
+        let description: string;
+        if (typeof fraud.distanceKm === "number" && Number.isFinite(fraud.distanceKm)) {
+          description = `Você está a ${fraud.distanceKm.toFixed(1)} km desta loja. Limite de ${maxKm} km para entrega.`;
+        } else if (reason.startsWith("delivery_city_mismatch")) {
+          description = "O endereço de entrega está em uma cidade diferente da loja.";
+        } else if (reason.startsWith("rate_limited")) {
+          description = "Muitas tentativas bloqueadas recentemente. Tente novamente em 1 hora.";
+        } else if (reason.startsWith("fail_closed:no_gps_and_no_city")) {
+          description = "Não foi possível confirmar sua localização. Ative o GPS ou complete seu endereço.";
+        } else {
+          description = `Não foi possível validar a distância até a loja (limite ${maxKm} km).`;
+        }
+        toast.error("Pedido bloqueado por segurança", { description, duration: 8000 });
         return;
       }
     }
