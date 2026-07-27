@@ -1,7 +1,7 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Search, X, Clock, Star, Store as StoreIcon, ChevronRight, Flame, Sparkles } from "lucide-react";
+import { ArrowLeft, Search, X, Clock, Star, Store as StoreIcon, ChevronRight, Flame, Sparkles, MapPin } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserLocation } from "@/hooks/useUserLocation";
@@ -9,6 +9,7 @@ import { mapStoresWithHours } from "../utils/mapStores";
 import { filterStoresWithOnlineDrivers } from "@/lib/storeVisibility";
 import { formatBRL } from "@/lib/utils";
 import { describeStoreFee } from "@/lib/deliveryFeeDisplay";
+import { formatDistanceKm } from "@/lib/formatDistance";
 import BottomNav from "@/components/BottomNav";
 
 const PUBLIC_STORE_SELECT_FULL = "id, name, image_url, slug, category, categories, is_open, force_closed, rating, status, delivery_mode, own_delivery_fee, delivery_fee, delivery_fee_type, delivery_fee_base, delivery_fee_per_km, estimated_delivery_time, minimum_order_value, free_delivery_threshold, address_cep, address_city, address_complement, address_neighborhood, address_number, address_reference, address_state, address_street, latitude, longitude, settings, platform_fee_split, created_at";
@@ -85,6 +86,7 @@ const StoreRow = ({ store, onClick, badge }: { store: any; onClick: () => void; 
   const rating = typeof store.rating === "number" && store.rating > 0 ? Number(store.rating) : null;
   const fee = formatFeeLabel(store);
   const timeLabel = formatDeliveryTime(store);
+  const distLabel = formatDistanceKm(store.distanceKm);
   const categoryLabel = (store.category || "Loja").replace(/_/g, " ");
   return (
     <button
@@ -122,6 +124,12 @@ const StoreRow = ({ store, onClick, badge }: { store: any; onClick: () => void; 
         </p>
         <div className="flex items-center gap-1.5 mt-1 text-[12px]">
           <span className="text-muted-foreground">{timeLabel}</span>
+          {distLabel && (
+            <>
+              <span className="text-muted-foreground/50">•</span>
+              <span className="text-muted-foreground font-medium">{distLabel}</span>
+            </>
+          )}
           <span className="text-muted-foreground/50">•</span>
           {fee.prefix && <span className="text-muted-foreground">{fee.prefix}</span>}
           <span className={fee.free ? "font-bold text-emerald-600" : "font-semibold text-foreground"}>
