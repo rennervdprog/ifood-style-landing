@@ -109,6 +109,11 @@ const SavedAddressPicker = ({ onSelect, selectedId }: SavedAddressPickerProps) =
       toast.error("Preencha rua, número e bairro.");
       return;
     }
+    if (!pinCoords) {
+      toast.error("Confirme a localização no mapa antes de salvar.");
+      setShowPin(true);
+      return;
+    }
     setSaving(true);
     try {
       const isFirst = !addresses || addresses.length === 0;
