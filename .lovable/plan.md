@@ -1,34 +1,59 @@
 
-# Desativar bloqueio de "conta acessada em outro dispositivo"
+## Objetivo
+Fazer a aba **Busca** funcionar com a localização real do cliente e mostrar a distância até a loja em cada card (ex: `1,2 km`), estilo iFood/99/Rappi.
 
-Hoje o sistema tem `user_active_devices` com **UNIQUE (user_id)**, e ao logar em outro aparelho o `register_device_login` sobrescreve o device — o app antigo, ao chamar `check_device_active`, recebe `false` e é deslogado com o toast "Sua conta foi acessada em outro dispositivo".
+Escopo: só frontend/apresentação. Nada de mudar regras de taxa, backend ou pedidos.
 
-No cliente o `evaluateDeviceTracking` já retorna `false` (o polling não roda), mas o toast/logout ainda dispara em outros pontos e a estrutura continua ativa no banco. Vamos remover de vez.
+---
 
-## Mudanças
+## 1. Localização do cliente (fonte da verdade)
 
-### 1. `src/contexts/AuthContext.tsx`
-- Remover `registerDevice`, `checkDeviceStillActive`, `startDeviceCheck`, `stopDeviceCheck`, `evaluateDeviceTracking`, `deviceCheckRef`, `shouldTrackDeviceRef`, `DEVICE_CHECK_INTERVAL`.
-- Remover chamadas em `SIGNED_IN`, `SIGNED_OUT`, `TOKEN_REFRESHED` e no `visibilitychange`.
-- Remover import de `getDeviceId` se ninguém mais usar aqui.
-- Nunca mais mostrar o toast "Sua conta foi acessada em outro dispositivo".
+Já existe o hook `useUserLocation()` (`src/hooks/useUserLocation.ts`) que retorna `coords`, `city`, `state`. Ele **não** dispara prompt sem gesto — só lê se a permissão já foi concedida.
 
-### 2. Migration no Supabase externo
-- Trocar `register_device_login` por um no-op que só retorna `{registered:true}` (mantém a assinatura pra não quebrar clientes antigos com APK velho).
-- Trocar `check_device_active` por função que sempre retorna `true` (APKs antigos param de deslogar sozinhos).
-- Remover constraint `UNIQUE (user_id)` de `user_active_devices` (permite N linhas por usuário) — ou simplesmente parar de inserir. Preferência: dropar a UNIQUE pra não estourar erro em quem ainda chama a RPC antiga.
-- Opcional: `TRUNCATE public.user_active_devices` pra limpar registros órfãos.
+Ajustes na `ClientBuscaPage.tsx`:
+- Se `userLocation.ready && !userLocation.coords` → mostrar uma **faixa fina no topo do conteúdo** (abaixo do header): "📍 Ative a localização para ver a distância das lojas" com botão **"Usar minha localização"** que chama `userLocation.refresh()` (esse já usa `readGpsFromGesture` síncrono, respeita a política do Android/iOS).
+- Se `coords` existir → texto atual "Em alta em {cidade}" continua; nada muda visualmente.
+- Sem localização, a lista continua funcionando (só sem distância e sem ordenação por distância — cai no comportamento atual).
 
-### 3. Sem mudança de versão do banco de tokens/refresh
-- Não mexer em `authStorage`, `refreshSession`, JWT expiry — só o "kick out" está sendo removido. A sessão continua persistindo normalmente.
+## 2. Cálculo da distância
 
-## Resultado
-- Cliente, lojista, motoboy, admin: podem estar logados em **quantos aparelhos quiserem simultaneamente**.
-- APKs antigos (que ainda chamam `check_device_active`) recebem `true` e não deslogam mais.
-- Nenhum toast de "outro dispositivo".
+Já pronto em `src/pages/cliente/utils/mapStores.ts` — `mapStoresWithHours` já injeta `distanceKm` (haversine, em km) quando há `userCoords` + `latitude/longitude` da loja. Não precisa mexer.
+
+Formatação (helper novo, inline no arquivo da busca ou em `src/lib/formatDistance.ts` simples):
+```
+< 1 km  → "900 m"
+< 10 km → "1,2 km"
+≥ 10 km → "12 km"
+```
+
+## 3. Onde mostrar a distância
+
+Nos **cards de loja** da aba Busca:
+- **`StoreRow`** (lista de categoria / resultado de busca): adicionar o pill de distância na linha do tempo/taxa:
+  `20-35 min · 1,2 km · Entrega R$ 4,99`
+- **Carrossel "Em alta"**: badge pequeno sobre a imagem, canto inferior esquerdo (`1,2 km`), fundo `bg-black/60 text-white`.
+- **Carrossel "Novidades"**: mesmo badge.
+
+Se `distanceKm` for `null` (sem GPS ou loja sem coordenadas), oculta o campo — não mostra placeholder.
+
+## 4. Ordenação
+
+`mapStoresWithHours` já ordena: abertas primeiro → mesma cidade → menor distância. Manter.
+
+Ajuste pequeno em `categoryStores` e `searchResults`: eles hoje só filtram, herdam a ordem do `stores`. Ok, sem mudança.
+
+## 5. Versão
+
+Bump patch nos dois lugares (PerfilPage.tsx e android/app/build.gradle + versionCode +1). Sem novo APK necessário (mudança só de UI web, OTA cobre).
+
+---
+
+## Arquivos afetados
+- `src/pages/cliente/busca/ClientBuscaPage.tsx` — faixa "ativar localização", pill de distância em `StoreRow`, badge nos carrosséis.
+- `src/lib/formatDistance.ts` **(novo, pequeno)** — helper `formatDistanceKm(km)`.
+- `src/pages/PerfilPage.tsx` + `android/app/build.gradle` — bump de versão.
 
 ## Fora de escopo
-- Não vou remover a tabela `user_active_devices` (fica intacta, só sem constraint) pra evitar quebrar migrations futuras que a referenciem.
-- Auditoria de segurança: multi-sessão simultânea é padrão do Supabase; risco = se um refresh token vazar, todas as sessões continuam válidas. Se quiser reforço extra depois, dá pra adicionar biometria/PIN local por dispositivo (fase 2).
-
-Bumps: `1.26.18` em `PerfilPage.tsx` + `versionName/versionCode` no `build.gradle`.
+- Não muda cálculo de taxa de entrega (continua `describeStoreFee`).
+- Não muda a home `/cliente` (só a aba Busca). Se quiser depois replico o mesmo padrão lá.
+- Não usa Google Distance Matrix — haversine (linha reta) já é o padrão do iFood na listagem; roteamento real (OSRM) só na tela do carrinho, que já existe.
