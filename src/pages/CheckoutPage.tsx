@@ -21,6 +21,7 @@ import { useStorePlan } from "@/hooks/useStorePlan";
 import LoyaltyRedemption from "@/components/LoyaltyRedemption";
 import DeliveryTimeEstimate from "@/components/DeliveryTimeEstimate";
 import { formatCep, fetchCep, reverseGeocode, readGps, readGpsFromGesture, resolveAddress, type Coordinates, type ReverseResult } from "@/lib/location";
+import { resolveDistance } from "@/lib/location/distance";
 import { checkStoreAccess, MAX_DISTANCE_KM } from "@/lib/fraudCheck";
 import EmptiesExchange, { type EmptiesExchangeSelection } from "@/components/EmptiesExchange";
 import { haptic } from "@/lib/haptics";
@@ -57,6 +58,7 @@ const CheckoutPage = () => {
    const [coordsSource, setCoordsSource] = useState<"gps" | "address" | null>(null);
   const [calculatingFee, setCalculatingFee] = useState(false);
   const [feeBreakdown, setFeeBreakdown] = useState<string | null>(null);
+  const [divergenceKm, setDivergenceKm] = useState<number | null>(null);
   const [loyaltyDiscount, setLoyaltyDiscount] = useState(0);
   const [loyaltyPointsUsed, setLoyaltyPointsUsed] = useState(0);
   const [loyaltyAvailable, setLoyaltyAvailable] = useState(false);
