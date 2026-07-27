@@ -302,8 +302,10 @@ const CheckoutPage = () => {
        const lat = Number(savedAddressData.latitude);
        const lng = Number(savedAddressData.longitude);
        if (Number.isFinite(lat) && Number.isFinite(lng)) {
-         setClientCoords({ lat, lng });
-         setCoordsSource("address");
+         if (!clientCoords || Math.abs(clientCoords.lat - lat) > 0.000001 || Math.abs(clientCoords.lng - lng) > 0.000001) {
+           setClientCoords({ lat, lng });
+         }
+         if (coordsSource !== "address") setCoordsSource("address");
          return;
        }
      }
