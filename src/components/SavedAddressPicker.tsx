@@ -261,6 +261,35 @@ const SavedAddressPicker = ({ onSelect, selectedId }: SavedAddressPickerProps) =
           </div>
           <input type="text" placeholder="Ponto de referência" value={referencePoint} onChange={(e) => setReferencePoint(e.target.value)}
             className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-xs placeholder:text-muted-foreground" />
+
+          {/* Seletor de pino no mapa (Fase 3) */}
+          {showPin ? (
+            <AddressPinPicker
+              initialLat={pinCoords?.lat ?? null}
+              initialLng={pinCoords?.lng ?? null}
+              onCancel={() => setShowPin(false)}
+              onConfirm={(c, rev) => {
+                setPinCoords(c);
+                setShowPin(false);
+                if (rev?.street && !street) setStreet(rev.street);
+                if (rev?.neighborhood && !neighborhood) setNeighborhood(rev.neighborhood);
+                if (rev?.postalcode && !cep) setCep(formatCep(rev.postalcode));
+                toast.success("Localização confirmada no mapa.");
+              }}
+            />
+          ) : (
+            <button
+              type="button"
+              onClick={() => setShowPin(true)}
+              className={`w-full flex items-center justify-center gap-1.5 py-2 rounded-lg border text-xs font-bold transition-colors ${
+                pinCoords ? "border-primary bg-primary/5 text-primary" : "border-dashed border-border text-muted-foreground hover:border-primary hover:text-primary"
+              }`}
+            >
+              <MapPinnedIcon className="h-3.5 w-3.5" />
+              {pinCoords ? "Localização confirmada no mapa (tocar para reajustar)" : "Ajustar localização no mapa"}
+            </button>
+          )}
+
           <div className="flex gap-2">
             <button onClick={() => { setShowForm(false); setCep(""); }} className="flex-1 py-2 rounded-lg border border-border text-xs font-bold text-muted-foreground">
               Cancelar
