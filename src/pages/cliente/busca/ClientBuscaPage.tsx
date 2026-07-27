@@ -289,6 +289,26 @@ const ClientBuscaPage = () => {
       </header>
 
       <main className="px-4 pt-4 space-y-6">
+        {/* Faixa: ativar localização */}
+        {userLocation.ready && !userLocation.coords && !showResultsMode && (
+          <button
+            type="button"
+            onClick={() => userLocation.refresh()}
+            className="w-full flex items-center gap-3 rounded-2xl border border-primary/30 bg-primary/5 p-3 text-left active:scale-[0.99] transition-transform"
+          >
+            <div className="h-9 w-9 rounded-xl bg-primary/15 flex items-center justify-center shrink-0">
+              <MapPin className="w-4 h-4 text-primary" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[13px] font-bold text-foreground leading-tight">Ative sua localização</p>
+              <p className="text-[11px] text-muted-foreground leading-tight mt-0.5">
+                Veja a distância até as lojas e o que está mais perto de você.
+              </p>
+            </div>
+            <span className="text-[11px] font-bold text-primary shrink-0">Usar</span>
+          </button>
+        )}
+
         {/* Modo lista (categoria ou busca) */}
         {showResultsMode ? (
           <section>
@@ -396,10 +416,17 @@ const ClientBuscaPage = () => {
                       className="shrink-0 w-32 text-left active:opacity-70"
                     >
                       {s.image_url ? (
-                        <img
-                          loading="lazy" decoding="async" src={s.image_url} alt={s.name}
-                          className="w-32 h-32 rounded-2xl object-cover border border-border/50"
-                        />
+                        <div className="relative">
+                          <img
+                            loading="lazy" decoding="async" src={s.image_url} alt={s.name}
+                            className="w-32 h-32 rounded-2xl object-cover border border-border/50"
+                          />
+                          {formatDistanceKm(s.distanceKm) && (
+                            <span className="absolute bottom-1.5 left-1.5 px-1.5 py-0.5 rounded-md bg-black/65 text-white text-[10px] font-bold leading-none">
+                              {formatDistanceKm(s.distanceKm)}
+                            </span>
+                          )}
+                        </div>
                       ) : (
                         <div className="w-32 h-32 rounded-2xl bg-muted flex items-center justify-center">
                           <StoreIcon className="h-8 w-8 text-muted-foreground" />
