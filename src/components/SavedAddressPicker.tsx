@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { MapPin, Plus, Trash2, Check, Home, Briefcase, MapPinned, Search, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { formatCep, fetchCep } from "@/lib/location";
+import { formatCep, fetchCep, geocodeAddress } from "@/lib/location";
 
 interface SavedAddress {
   id: string;
@@ -16,6 +16,8 @@ interface SavedAddress {
   reference_point: string | null;
   is_default: boolean;
   cep: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 interface SavedAddressPickerProps {
@@ -107,6 +109,15 @@ const SavedAddressPicker = ({ onSelect, selectedId }: SavedAddressPickerProps) =
     setSaving(true);
     try {
       const isFirst = !addresses || addresses.length === 0;
+      // Geocoda uma vez ao salvar (Fase 2 — fonte única de coordenadas).
+      // Falha silenciosa: endereço fica sem coords e será geocodado depois.
+      const coords = await geocodeAddress({
+        street: street.trim(),
+        number: number.trim(),
+        neighborhood,
+        postalcode: cep.replace(/\D/g, "") || null,
+        country: "Brasil",
+      }).catch(() => null);
       const { error } = await supabase.from("saved_addresses" as any).insert({
         user_id: user!.id,
         label,
@@ -117,6 +128,8 @@ const SavedAddressPicker = ({ onSelect, selectedId }: SavedAddressPickerProps) =
         neighborhood,
         reference_point: referencePoint.trim() || null,
         is_default: isFirst,
+        latitude: coords?.lat ?? null,
+        longitude: coords?.lng ?? null,
       });
       if (error) throw error;
       toast.success("Endereço salvo!");
