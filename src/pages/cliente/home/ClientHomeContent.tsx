@@ -16,6 +16,7 @@ import { useUserLocation } from "@/hooks/useUserLocation";
 import { useBatchStoreDistances } from "@/hooks/useBatchStoreDistances";
 import { formatBRL } from "@/lib/utils";
 import { describeStoreFee } from "@/lib/deliveryFeeDisplay";
+import { formatDistanceKm } from "@/lib/formatDistance";
 import { mapStoresWithHours } from "../utils/mapStores";
 import { filterStoresWithOnlineDrivers } from "@/lib/storeVisibility";
 import CategoryChips, { normalizeCategory } from "./CategoryChips";
@@ -360,8 +361,7 @@ const ClientHomeContent = () => {
     [visibleStores, sponsoredIds]
   );
 
-  const formatDistance = (km?: number | null) =>
-    typeof km === "number" ? (km < 1 ? `${Math.round(km * 1000)} m` : `${km.toFixed(1)} km`) : null;
+  const formatDistance = (km?: number | null) => formatDistanceKm(km ?? null);
 
   return (
     <div className="min-h-dvh bg-background pb-24">
