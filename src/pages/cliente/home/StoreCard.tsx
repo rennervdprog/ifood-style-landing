@@ -1,6 +1,7 @@
 import type { KeyboardEvent } from "react";
 import { MapPin, Store as StoreIcon, Star } from "lucide-react";
 import { describeStoreFee } from "@/lib/deliveryFeeDisplay";
+import { formatDistanceKm } from "@/lib/formatDistance";
 
 interface Props {
   store: any;
