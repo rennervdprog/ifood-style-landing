@@ -116,6 +116,12 @@ Deno.serve(async (req) => {
       acc[r.source] = (acc[r.source] ?? 0) + 1; return acc;
     }, {});
     console.log(JSON.stringify({ evt: 'batch_distances', ip, n: results.length, sources: counts }));
+    // Persistência de métricas (best-effort, não bloqueia resposta).
+    Promise.all(
+      Object.entries(counts).map(([src, n]) =>
+        db.rpc('distance_metrics_bump', { _source: src, _n: n as number })
+      )
+    ).catch(() => { /* silencioso */ });
     return new Response(JSON.stringify({ ok: true, results }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   } catch (e) {
     return new Response(JSON.stringify({ error: String((e as Error).message || e) }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
