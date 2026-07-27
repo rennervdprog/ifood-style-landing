@@ -1048,7 +1048,7 @@ const CheckoutPage = () => {
               </div>
             )}
 
-            {!selectedSavedAddressId && hasAddress && (
+            {!selectedSavedAddressId && (hasAddress || usingGpsDelivery) && (
               <div className="bg-primary/5 rounded-xl p-3.5 space-y-1.5">
                 {usingGpsDelivery && gpsAddress ? (
                   <>
@@ -1101,7 +1101,7 @@ const CheckoutPage = () => {
               </div>
             )}
 
-            {!selectedSavedAddressId && !hasAddress && (
+            {!selectedSavedAddressId && !hasAddress && !usingGpsDelivery && (
               <div className="bg-destructive/5 border border-destructive/20 rounded-xl p-4 text-center space-y-3">
                 <MapPin className="h-8 w-8 text-destructive/60 mx-auto" />
                 <div>
