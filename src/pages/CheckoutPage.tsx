@@ -21,6 +21,7 @@ import { useStorePlan } from "@/hooks/useStorePlan";
 import LoyaltyRedemption from "@/components/LoyaltyRedemption";
 import DeliveryTimeEstimate from "@/components/DeliveryTimeEstimate";
 import { formatCep, fetchCep, reverseGeocode, readGps, readGpsFromGesture, resolveAddress, type Coordinates, type ReverseResult } from "@/lib/location";
+import { resolveDistance } from "@/lib/location/distance";
 import { checkStoreAccess, MAX_DISTANCE_KM } from "@/lib/fraudCheck";
 import EmptiesExchange, { type EmptiesExchangeSelection } from "@/components/EmptiesExchange";
 import { haptic } from "@/lib/haptics";
@@ -57,6 +58,7 @@ const CheckoutPage = () => {
    const [coordsSource, setCoordsSource] = useState<"gps" | "address" | null>(null);
   const [calculatingFee, setCalculatingFee] = useState(false);
   const [feeBreakdown, setFeeBreakdown] = useState<string | null>(null);
+  const [divergenceKm, setDivergenceKm] = useState<number | null>(null);
   const [loyaltyDiscount, setLoyaltyDiscount] = useState(0);
   const [loyaltyPointsUsed, setLoyaltyPointsUsed] = useState(0);
   const [loyaltyAvailable, setLoyaltyAvailable] = useState(false);
@@ -450,6 +452,34 @@ const CheckoutPage = () => {
  
      return () => { cancelled = true; };
     }, [profileCep, storeCep, config, savedAddressData, selectedSavedAddressId, profileNeighborhood, isOwnDelivery, storeDeliveryFeeType, storeDeliveryBaseKm, storeDeliveryFeeBase, storeDeliveryFeePerKm, storeOwnFee, storePlan.isFixedPlan, storePlan.platformDeliverySplit, effectivePlatformSplit, clientCoords]);
+
+  // Detecta divergência GPS x CEP do endereço salvo (Fase 4 do plano de GPS).
+  useEffect(() => {
+    if (isPickup) { setDivergenceKm(null); return; }
+    const storeLat = Number((storeData as any)?.latitude);
+    const storeLng = Number((storeData as any)?.longitude);
+    if (!Number.isFinite(storeLat) || !Number.isFinite(storeLng)) { setDivergenceKm(null); return; }
+    if (!clientCoords || !savedAddressData?.cep) { setDivergenceKm(null); return; }
+    let cancelled = false;
+    (async () => {
+      const res = await resolveDistance({
+        store: { lat: storeLat, lng: storeLng, cep: storeCep },
+        customer: {
+          lat: clientCoords.lat,
+          lng: clientCoords.lng,
+          cep: savedAddressData.cep,
+          street: savedAddressData.street,
+          number: savedAddressData.number,
+          neighborhood: savedAddressData.neighborhood,
+        },
+      });
+      if (cancelled) return;
+      const warn = res?.warning || "";
+      const m = /gps_cep_diverge_([\d.]+)km/.exec(warn);
+      setDivergenceKm(m ? Number(m[1]) : null);
+    })();
+    return () => { cancelled = true; };
+  }, [isPickup, clientCoords, savedAddressData, storeData, storeCep]);
 
   const buildAddressString = () => {
     if (!hasAddress) return "";
@@ -912,6 +942,20 @@ const CheckoutPage = () => {
                 setSavedAddressData(addr);
               }}
             />
+
+            {divergenceKm != null && (
+              <div className="flex items-start gap-2 rounded-xl border border-amber-300/60 bg-amber-50 dark:bg-amber-500/10 p-3">
+                <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-bold text-amber-800 dark:text-amber-300">
+                    Sua localização atual está a {divergenceKm.toFixed(1)} km do endereço salvo
+                  </p>
+                  <p className="text-[11px] text-amber-700/90 dark:text-amber-200/80 mt-0.5">
+                    Confirme se o endereço de entrega abaixo está correto antes de finalizar o pedido.
+                  </p>
+                </div>
+              </div>
+            )}
 
             {selectedSavedAddressId && savedAddressData && (
               <div className="bg-primary/5 rounded-xl p-3.5 space-y-1.5">
