@@ -98,6 +98,71 @@ const CoordsCoverageCard = () => {
   );
 };
 
+const DistanceMetricsCard = () => {
+  const { data, isLoading, refetch, isFetching } = useQuery({
+    queryKey: ["distance-metrics-7d"],
+    queryFn: async () => {
+      const since = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString().slice(0, 10);
+      const { data, error } = await (supabase as any)
+        .from("distance_metrics_daily")
+        .select("day, source, count")
+        .gte("day", since)
+        .order("day", { ascending: false });
+      if (error) throw error;
+      const totals: Record<string, number> = {};
+      let grand = 0;
+      for (const r of data as Array<{ source: string; count: number }>) {
+        totals[r.source] = (totals[r.source] ?? 0) + Number(r.count);
+        grand += Number(r.count);
+      }
+      return { totals, grand, rows: data as any[] };
+    },
+    refetchInterval: 60_000,
+  });
+
+  const pct = (n: number, total: number) => (total === 0 ? 0 : Math.round((n / total) * 100));
+  const haversinePct = data ? pct(data.totals["haversine"] ?? 0, data.grand) : 0;
+
+  return (
+    <div className="bg-card border rounded-xl p-4">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <MapPin className="h-4 w-4 text-primary" />
+          <p className="font-bold text-sm">Métricas de distância (7 dias)</p>
+        </div>
+        <Button size="sm" variant="outline" onClick={() => refetch()} disabled={isFetching}>
+          <RefreshCw className={`h-3.5 w-3.5 mr-1 ${isFetching ? "animate-spin" : ""}`} /> Atualizar
+        </Button>
+      </div>
+      {isLoading || !data ? (
+        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+      ) : data.grand === 0 ? (
+        <p className="text-xs text-muted-foreground">Sem chamadas registradas nos últimos 7 dias.</p>
+      ) : (
+        <>
+          <div className="grid grid-cols-4 gap-3 text-xs">
+            {(["osrm", "osrm_cache", "haversine", "no_coords"] as const).map((src) => {
+              const n = data.totals[src] ?? 0;
+              return (
+                <div key={src} className="p-3 rounded-lg bg-muted/40">
+                  <p className="text-muted-foreground">{src}</p>
+                  <p className="text-lg font-bold">{pct(n, data.grand)}%</p>
+                  <p className="text-muted-foreground">{n.toLocaleString("pt-BR")}</p>
+                </div>
+              );
+            })}
+          </div>
+          {haversinePct > 20 && (
+            <p className="mt-3 text-xs text-amber-600 flex items-center gap-1">
+              <AlertTriangle className="h-3.5 w-3.5" /> Fallback Haversine acima de 20% — verifique OSRM e lojas sem coords.
+            </p>
+          )}
+        </>
+      )}
+    </div>
+  );
+};
+
 const DebugLojaTab = () => {
   const qc = useQueryClient();
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -128,6 +193,7 @@ const DebugLojaTab = () => {
   return (
     <div className="space-y-4">
       <CoordsCoverageCard />
+      <DistanceMetricsCard />
       <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-500/30 rounded-xl p-4 text-sm">
         <div className="flex items-start gap-2">
           <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
