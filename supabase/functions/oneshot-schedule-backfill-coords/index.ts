@@ -18,6 +18,9 @@ Deno.serve(async (req) => {
         if exists (select 1 from cron.job where jobname = 'backfill-coords-weekly') then
           perform cron.unschedule('backfill-coords-weekly');
         end if;
+        if exists (select 1 from cron.job where jobname = 'backfill-coords-5min') then
+          perform cron.unschedule('backfill-coords-5min');
+        end if;
       end $$;
 
       select cron.schedule(
@@ -26,6 +29,24 @@ Deno.serve(async (req) => {
         $cron$
           select net.http_post(
             url := '${base}/functions/v1/backfill-coords?limit=100&target=both',
+            headers := jsonb_build_object(
+              'Content-Type','application/json',
+              'apikey','${anonKey}',
+              'Authorization','Bearer ${cronSecret}'
+            ),
+            body := '{}'::jsonb
+          );
+        $cron$
+      );
+
+      -- Fila incremental: a cada 5 min processa até 20 registros novos sem coords.
+      -- Rate-limit do Nominatim (1 req/s) fica confortável dentro desse teto.
+      select cron.schedule(
+        'backfill-coords-5min',
+        '*/5 * * * *',
+        $cron$
+          select net.http_post(
+            url := '${base}/functions/v1/backfill-coords?limit=20&target=both',
             headers := jsonb_build_object(
               'Content-Type','application/json',
               'apikey','${anonKey}',
@@ -53,7 +74,7 @@ Deno.serve(async (req) => {
       method: 'POST',
       headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        query: `select jobname, schedule from cron.job where jobname='backfill-coords-weekly';`,
+        query: `select jobname, schedule from cron.job where jobname in ('backfill-coords-weekly','backfill-coords-5min') order by jobname;`,
       }),
     })
     const jobs = await verify.json()
