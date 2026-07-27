@@ -357,7 +357,14 @@ const ClientHomeContent = () => {
 
   const sponsoredIds = useMemo(() => new Set(sponsoredStores.map((s: any) => s.id)), [sponsoredStores]);
   const listStores = useMemo(
-    () => (visibleStores || []).filter((s: any) => !sponsoredIds.has(s.id)),
+    () => {
+      const all = visibleStores || [];
+      // Só remove os "sponsored" da lista quando ainda sobra loja pra exibir.
+      // Se todas as lojas visíveis viraram destaque (ex.: cidade com poucas lojas),
+      // mantemos elas na lista pra não renderizar vazio com contador > 0.
+      const filtered = all.filter((s: any) => !sponsoredIds.has(s.id));
+      return filtered.length > 0 ? filtered : all;
+    },
     [visibleStores, sponsoredIds]
   );
 
