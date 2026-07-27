@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { DEBUG_STORE_IDS } from "@/lib/debugStoreLogger";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Loader2, RefreshCw, Trash2, AlertTriangle, ArrowRight, CheckCircle2, XCircle } from "lucide-react";
+import { Loader2, RefreshCw, Trash2, AlertTriangle, ArrowRight, CheckCircle2, XCircle, MapPin } from "lucide-react";
 import { useState, Fragment } from "react";
 import { toast } from "sonner";
 
@@ -55,6 +55,7 @@ const DebugLojaTab = () => {
 
   return (
     <div className="space-y-4">
+      <CoordsCoverageCard />
       <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-500/30 rounded-xl p-4 text-sm">
         <div className="flex items-start gap-2">
           <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
