@@ -453,6 +453,34 @@ const CheckoutPage = () => {
      return () => { cancelled = true; };
     }, [profileCep, storeCep, config, savedAddressData, selectedSavedAddressId, profileNeighborhood, isOwnDelivery, storeDeliveryFeeType, storeDeliveryBaseKm, storeDeliveryFeeBase, storeDeliveryFeePerKm, storeOwnFee, storePlan.isFixedPlan, storePlan.platformDeliverySplit, effectivePlatformSplit, clientCoords]);
 
+  // Detecta divergência GPS x CEP do endereço salvo (Fase 4 do plano de GPS).
+  useEffect(() => {
+    if (isPickup) { setDivergenceKm(null); return; }
+    const storeLat = Number((storeData as any)?.latitude);
+    const storeLng = Number((storeData as any)?.longitude);
+    if (!Number.isFinite(storeLat) || !Number.isFinite(storeLng)) { setDivergenceKm(null); return; }
+    if (!clientCoords || !savedAddressData?.cep) { setDivergenceKm(null); return; }
+    let cancelled = false;
+    (async () => {
+      const res = await resolveDistance({
+        store: { lat: storeLat, lng: storeLng, cep: storeCep },
+        customer: {
+          lat: clientCoords.lat,
+          lng: clientCoords.lng,
+          cep: savedAddressData.cep,
+          street: savedAddressData.street,
+          number: savedAddressData.number,
+          neighborhood: savedAddressData.neighborhood,
+        },
+      });
+      if (cancelled) return;
+      const warn = res?.warning || "";
+      const m = /gps_cep_diverge_([\d.]+)km/.exec(warn);
+      setDivergenceKm(m ? Number(m[1]) : null);
+    })();
+    return () => { cancelled = true; };
+  }, [isPickup, clientCoords, savedAddressData, storeData, storeCep]);
+
   const buildAddressString = () => {
     if (!hasAddress) return "";
     const parts = [profileStreet, profileNumber];
