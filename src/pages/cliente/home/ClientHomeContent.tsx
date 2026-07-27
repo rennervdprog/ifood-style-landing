@@ -360,8 +360,7 @@ const ClientHomeContent = () => {
     [visibleStores, sponsoredIds]
   );
 
-  const formatDistance = (km?: number | null) =>
-    typeof km === "number" ? (km < 1 ? `${Math.round(km * 1000)} m` : `${km.toFixed(1)} km`) : null;
+  const formatDistance = (km?: number | null) => formatDistanceKm(km ?? null);
 
   return (
     <div className="min-h-dvh bg-background pb-24">
