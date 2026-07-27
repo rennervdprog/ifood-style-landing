@@ -19,7 +19,7 @@ const StoreCard = ({ store, onClick, variant = "grid" }: Props) => {
     typeof store.distanceKm === "number"
       ? store.distanceKm < 1
         ? `${Math.round(store.distanceKm * 1000)} m`
-        : `${store.distanceKm.toFixed(1)} km`
+        : (formatDistanceKm(store.distanceKm) ?? `${store.distanceKm.toFixed(1)} km`)
       : null;
 
   const rating =
