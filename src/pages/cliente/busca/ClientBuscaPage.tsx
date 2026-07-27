@@ -5,6 +5,7 @@ import { ArrowLeft, Search, X, Clock, Star, Store as StoreIcon, ChevronRight, Fl
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserLocation } from "@/hooks/useUserLocation";
+import { useBatchStoreDistances } from "@/hooks/useBatchStoreDistances";
 import { mapStoresWithHours } from "../utils/mapStores";
 import { filterStoresWithOnlineDrivers } from "@/lib/storeVisibility";
 import { formatBRL } from "@/lib/utils";
@@ -189,7 +190,7 @@ const ClientBuscaPage = () => {
     staleTime: 1000 * 60,
   });
 
-  const stores = allStores || [];
+  const stores = useBatchStoreDistances(allStores || [], userLocation.coords);
 
   const searchMode = debouncedTerm.trim().length >= 2;
 
