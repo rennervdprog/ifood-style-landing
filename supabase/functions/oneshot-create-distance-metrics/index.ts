@@ -29,7 +29,7 @@ Deno.serve(async (req) => {
     DROP POLICY IF EXISTS "admins read metrics" ON public.distance_metrics_daily;
     CREATE POLICY "admins read metrics" ON public.distance_metrics_daily
       FOR SELECT TO authenticated
-      USING (public.has_role(auth.uid(), 'super_admin'::app_role));
+      USING (public.has_role(auth.uid(), 'admin'::app_role));
   `);
   out["fn"] = await q(`
     CREATE OR REPLACE FUNCTION public.distance_metrics_bump(_source text, _n integer)
