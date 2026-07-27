@@ -309,7 +309,13 @@ const ClientHomeContent = () => {
   };
 
   const firstName = profile?.full_name?.split(" ")[0] || "Cliente";
-  const locationLabel = userLocation.city || effectiveCity || (userLocation.ready ? "Sem localização" : "Detectando...");
+  const locationLabel = (() => {
+    const street = userLocation.street?.trim();
+    const number = userLocation.number?.trim();
+    if (street) return number ? `${street}, ${number}` : street;
+    if (userLocation.neighborhood) return userLocation.neighborhood;
+    return userLocation.city || effectiveCity || (userLocation.ready ? "Sem localização" : "Detectando...");
+  })();
 
   const sponsoredStores = useMemo(() => {
     return (visibleStores || [])
