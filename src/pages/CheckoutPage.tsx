@@ -943,6 +943,20 @@ const CheckoutPage = () => {
               }}
             />
 
+            {divergenceKm != null && (
+              <div className="flex items-start gap-2 rounded-xl border border-amber-300/60 bg-amber-50 dark:bg-amber-500/10 p-3">
+                <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-bold text-amber-800 dark:text-amber-300">
+                    Sua localização atual está a {divergenceKm.toFixed(1)} km do endereço salvo
+                  </p>
+                  <p className="text-[11px] text-amber-700/90 dark:text-amber-200/80 mt-0.5">
+                    Confirme se o endereço de entrega abaixo está correto antes de finalizar o pedido.
+                  </p>
+                </div>
+              </div>
+            )}
+
             {selectedSavedAddressId && savedAddressData && (
               <div className="bg-primary/5 rounded-xl p-3.5 space-y-1.5">
                 {gpsAddress ? (
