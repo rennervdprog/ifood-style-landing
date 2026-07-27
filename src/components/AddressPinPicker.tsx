@@ -80,11 +80,11 @@ const AddressPinPicker = ({ initialLat, initialLng, onConfirm, onCancel, height 
     setLoadingGps(true);
     try {
       const gps = await readGps();
-      if (!gps) {
+      if (!gps?.coords) {
         toast.error("Não foi possível obter GPS.");
         return;
       }
-      const c = { lat: gps.lat, lng: gps.lng };
+      const c = { lat: gps.coords.lat, lng: gps.coords.lng };
       setCoords(c);
       if (mapInstanceRef.current && markerRef.current) {
         mapInstanceRef.current.setView([c.lat, c.lng], 18);
