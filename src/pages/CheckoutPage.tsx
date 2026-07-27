@@ -20,7 +20,7 @@ import { addMoney, multiplyMoney, sumMoney, formatBRL } from "@/lib/utils";
 import { useStorePlan } from "@/hooks/useStorePlan";
 import LoyaltyRedemption from "@/components/LoyaltyRedemption";
 import DeliveryTimeEstimate from "@/components/DeliveryTimeEstimate";
-import { formatCep, fetchCep, reverseGeocode, readGps, readGpsFromGesture, resolveAddress, type Coordinates, type ReverseResult } from "@/lib/location";
+import { formatCep, fetchCep, reverseGeocode, readGpsFromGesture, resolveAddress, type Coordinates, type ReverseResult } from "@/lib/location";
 import { resolveDistance } from "@/lib/location/distance";
 import { checkStoreAccess, MAX_DISTANCE_KM } from "@/lib/fraudCheck";
 import EmptiesExchange, { type EmptiesExchangeSelection } from "@/components/EmptiesExchange";
@@ -361,35 +361,6 @@ const CheckoutPage = () => {
      });
    };
 
-   // Auto-tentar GPS no mount se permissão já estiver concedida (sem prompt)
-   useEffect(() => {
-     let cancelled = false;
-     const tryAutoLocate = async () => {
-       try {
-         if (typeof navigator === "undefined" || !navigator.geolocation) return;
-         // Em web: só dispara se permissão já está "granted" (não pede prompt)
-        if (navigator.permissions?.query) {
-           try {
-             const status = await navigator.permissions.query({ name: "geolocation" as PermissionName });
-             if (status.state !== "granted") return;
-           } catch {
-             return;
-           }
-         }
-        const gps = (await readGps()).coords;
-         if (cancelled || !gps) return;
-          setClientCoords(gps);
-         const res = await reverseGeocode(gps);
-         if (!cancelled && res) setGpsAddress(res);
-       } catch (e) {
-         console.warn("[Checkout] Auto-locate falhou:", e);
-       }
-     };
-     tryAutoLocate();
-     return () => { cancelled = true; };
-     // eslint-disable-next-line react-hooks/exhaustive-deps
-   }, []);
- 
    useEffect(() => {
       const useGpsAddress = coordsSource === "gps" && isLocationRequested && !!clientCoords;
       const customerCep = useGpsAddress && gpsAddress?.postalcode
