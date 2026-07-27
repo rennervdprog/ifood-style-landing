@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
   Search, Clock, Repeat, ShoppingBag, Store as StoreIcon, MapPin, Bell, MessageCircle,
-  ChevronDown, ChevronRight, SlidersHorizontal, Sparkles, Star,
+  ChevronDown, ChevronRight, SlidersHorizontal, Sparkles, Star, Pencil,
 } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 import ProductTour, { clienteTourSteps } from "@/components/ProductTour";
@@ -139,6 +139,11 @@ const ClientHomeContent = () => {
   const [heroFilter, setHeroFilter] = useState<HeroFilter>(null);
   const [placeholderIdx, setPlaceholderIdx] = useState(0);
   const [showSupport, setShowSupport] = useState(false);
+  const [numberOverride, setNumberOverride] = useState<string | null>(() => {
+    try { return localStorage.getItem("client:addr_number") || null; } catch { return null; }
+  });
+  const [editingNumber, setEditingNumber] = useState(false);
+  const [numberInput, setNumberInput] = useState("");
 
   useEffect(() => {
     if (searchQuery) return;
@@ -311,11 +316,26 @@ const ClientHomeContent = () => {
   const firstName = profile?.full_name?.split(" ")[0] || "Cliente";
   const locationLabel = (() => {
     const street = userLocation.street?.trim();
-    const number = userLocation.number?.trim();
+    const number = (numberOverride?.trim() || userLocation.number?.trim() || "");
     if (street) return number ? `${street}, ${number}` : street;
     if (userLocation.neighborhood) return userLocation.neighborhood;
     return userLocation.city || effectiveCity || (userLocation.ready ? "Sem localização" : "Detectando...");
   })();
+
+  const openNumberEditor = () => {
+    setNumberInput(numberOverride || userLocation.number || "");
+    setEditingNumber(true);
+  };
+  const saveNumberOverride = () => {
+    const clean = numberInput.trim().slice(0, 10);
+    setNumberOverride(clean || null);
+    try {
+      if (clean) localStorage.setItem("client:addr_number", clean);
+      else localStorage.removeItem("client:addr_number");
+    } catch {}
+    setEditingNumber(false);
+    toast.success(clean ? `Número ajustado para ${clean}` : "Número removido");
+  };
 
   const sponsoredStores = useMemo(() => {
     return (visibleStores || [])
@@ -399,6 +419,15 @@ const ClientHomeContent = () => {
               <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />
             </span>
           </button>
+          {userLocation.street && (
+            <button
+              onClick={openNumberEditor}
+              className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0"
+              aria-label="Editar número do endereço"
+            >
+              <Pencil className="w-3.5 h-3.5" />
+            </button>
+          )}
           <div className="flex items-center gap-1.5 shrink-0">
             <button
               onClick={() => navigate("/pedidos")}
@@ -441,6 +470,52 @@ const ClientHomeContent = () => {
       </header>
 
       <main className="px-4 pt-3 space-y-6">
+        {editingNumber && (
+          <div
+            className="fixed inset-0 z-[100] bg-black/50 flex items-end sm:items-center justify-center"
+            onClick={() => setEditingNumber(false)}
+          >
+            <div
+              className="bg-card w-full max-w-sm rounded-t-3xl sm:rounded-3xl p-5 space-y-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div>
+                <h3 className="font-display text-base font-bold text-foreground">Número do endereço</h3>
+                <p className="text-xs text-muted-foreground mt-0.5 truncate">
+                  {userLocation.street}
+                </p>
+              </div>
+              <input
+                type="text"
+                inputMode="numeric"
+                autoFocus
+                value={numberInput}
+                onChange={(e) => setNumberInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") saveNumberOverride(); }}
+                placeholder={userLocation.number || "Ex: 345"}
+                className="w-full px-3 py-3 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+              <p className="text-[11px] text-muted-foreground">
+                O GPS nem sempre acerta o número exato. Ajuste aqui para os entregadores encontrarem você.
+              </p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setEditingNumber(false)}
+                  className="flex-1 h-11 rounded-xl border border-border bg-background text-foreground text-sm font-bold"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={saveNumberOverride}
+                  className="flex-1 h-11 rounded-xl bg-primary text-primary-foreground text-sm font-bold shadow-sm shadow-primary/30"
+                >
+                  Salvar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Bento hero */}
         {!searchQuery && (
           <BentoHero
