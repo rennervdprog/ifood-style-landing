@@ -13,6 +13,7 @@ import BottomNav from "@/components/BottomNav";
 import ProductTour, { clienteTourSteps } from "@/components/ProductTour";
 import SupportTicketModal from "@/components/SupportTicketModal";
 import { useUserLocation } from "@/hooks/useUserLocation";
+import { useBatchStoreDistances } from "@/hooks/useBatchStoreDistances";
 import { formatBRL } from "@/lib/utils";
 import { describeStoreFee } from "@/lib/deliveryFeeDisplay";
 import { mapStoresWithHours } from "../utils/mapStores";
@@ -217,8 +218,11 @@ const ClientHomeContent = () => {
     retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 5000),
   });
 
+  const suggestedStoresEnriched = useBatchStoreDistances(suggestedStores || [], userLocation.coords);
+  const searchResultsEnriched = useBatchStoreDistances(searchResults || [], userLocation.coords);
+
   const visibleStores = useMemo(() => {
-    const base = searchQuery.length >= 2 ? searchResults || [] : suggestedStores || [];
+    const base = searchQuery.length >= 2 ? searchResultsEnriched || [] : suggestedStoresEnriched || [];
     const categoryFiltered = activeCategory
       ? base.filter((s: any) => normalizeCategory(s.category) === activeCategory)
       : base;
@@ -228,7 +232,7 @@ const ClientHomeContent = () => {
     }
 
     return categoryFiltered;
-  }, [searchQuery, searchResults, suggestedStores, activeCategory, heroFilter]);
+  }, [searchQuery, searchResultsEnriched, suggestedStoresEnriched, activeCategory, heroFilter]);
 
   const lastStores = useMemo(() => {
     if (!recentOrders) return [];
