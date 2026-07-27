@@ -12,7 +12,7 @@ import type { Coordinates } from "@/lib/location";
 
 type WithDistance = { id: string; distanceKm?: number | null; latitude?: number | null; longitude?: number | null };
 
-const CACHE_PREFIX = "itasuper:dist:v3";
+const CACHE_PREFIX = "itasuper:dist:v4";
 const roundCoord = (n: number) => Math.round(n * 1000) / 1000; // ~110m
 
 function cacheKey(cust: Coordinates, storeId: string) {
