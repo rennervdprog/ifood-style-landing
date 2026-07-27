@@ -11,6 +11,9 @@ export interface UserLocation {
   coords: Coordinates | null;
   city: string | null;
   state: string | null;
+  street: string | null;
+  number: string | null;
+  neighborhood: string | null;
   ready: boolean;
 }
 
@@ -20,12 +23,15 @@ async function detect(forceFresh = false, gesturePromise?: Promise<any>): Promis
   if (inflight && !forceFresh) return inflight;
   inflight = (async () => {
     const g = gesturePromise ? await gesturePromise : await readGps({ forceFresh });
-    if (!g.coords) return { coords: null, city: null, state: null, ready: true };
+    if (!g.coords) return { coords: null, city: null, state: null, street: null, number: null, neighborhood: null, ready: true };
     const rev = await reverseGeocode(g.coords);
     return {
       coords: g.coords,
       city: rev?.city ?? null,
       state: rev?.state ?? null,
+      street: rev?.street ?? null,
+      number: rev?.number ?? null,
+      neighborhood: rev?.neighborhood ?? null,
       ready: true,
     };
   })();
@@ -41,6 +47,9 @@ export function useUserLocation(): UserLocation & { refresh: () => void } {
     coords: null,
     city: null,
     state: null,
+    street: null,
+    number: null,
+    neighborhood: null,
     ready: false,
   });
 
@@ -51,7 +60,7 @@ export function useUserLocation(): UserLocation & { refresh: () => void } {
     (async () => {
       const perm = await checkLocationPermission();
       if (perm.state !== "granted") {
-        if (alive) setState({ coords: null, city: null, state: null, ready: true });
+        if (alive) setState({ coords: null, city: null, state: null, street: null, number: null, neighborhood: null, ready: true });
         return;
       }
       const r = await detect();
@@ -66,7 +75,7 @@ export function useUserLocation(): UserLocation & { refresh: () => void } {
     // IMPORTANTE: chamar readGpsFromGesture() SÍNCRONO no clique — sem await
     // antes — para o Chrome/Safari não descartarem o prompt de permissão.
     const p = readGpsFromGesture();
-    setState({ coords: null, city: null, state: null, ready: false });
+    setState({ coords: null, city: null, state: null, street: null, number: null, neighborhood: null, ready: false });
     detect(true, p).then(setState);
   };
 
