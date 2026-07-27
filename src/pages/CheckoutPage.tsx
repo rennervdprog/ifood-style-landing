@@ -309,7 +309,7 @@ const CheckoutPage = () => {
         address: { street: geoStreet, neighborhood: geoNeighborhood, postalcode: geoCep },
       }).then((r) => {
         if (r.coords && !clientCoords) {
-          console.log("[Checkout] Address geocoding fallback set:", r.coords);
+          // fallback silencioso — evita vazar coords no console em produção.
           setClientCoords(r.coords);
         }
       });

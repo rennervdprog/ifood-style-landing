@@ -20,6 +20,18 @@ const db = createClient(supabaseUrl, serviceKey);
 const UA = 'ItaSuper/1.6 (batch-store-distances)';
 const URBAN = 1.3;
 
+// Rate limit em memória: 30 req/min por IP. Basta pra bloquear scraping trivial;
+// não sobrevive a cold start (aceito — é read-only e dados são de baixa criticidade).
+const RL_WINDOW_MS = 60_000;
+const RL_MAX = 30;
+const rlMap = new Map<string, number[]>();
+function rateLimit(ip: string): boolean {
+  const now = Date.now();
+  const arr = (rlMap.get(ip) ?? []).filter((t) => now - t < RL_WINDOW_MS);
+  if (arr.length >= RL_MAX) { rlMap.set(ip, arr); return false; }
+  arr.push(now); rlMap.set(ip, arr); return true;
+}
+
 function haversineKm(a: Coords, b: Coords) {
   const R = 6371;
   const toRad = (d: number) => (d * Math.PI) / 180;
@@ -81,6 +93,10 @@ async function resolveOne(cust: Coords, s: StoreIn) {
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   try {
+    const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() || 'unknown';
+    if (!rateLimit(ip)) {
+      return new Response(JSON.stringify({ error: 'rate_limited' }), { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
     const body = (await req.json()) as Body;
     const cust = body?.customer;
     if (!cust || typeof cust.lat !== 'number' || typeof cust.lng !== 'number') {
@@ -95,6 +111,11 @@ Deno.serve(async (req) => {
       const r = await Promise.all(chunk.map((s) => resolveOne({ lat: cust.lat as number, lng: cust.lng as number }, s)));
       results.push(...r);
     }
+    // Observabilidade: contagem por fonte (aparece nos logs da edge).
+    const counts = results.reduce((acc: Record<string, number>, r: any) => {
+      acc[r.source] = (acc[r.source] ?? 0) + 1; return acc;
+    }, {});
+    console.log(JSON.stringify({ evt: 'batch_distances', ip, n: results.length, sources: counts }));
     return new Response(JSON.stringify({ ok: true, results }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   } catch (e) {
     return new Response(JSON.stringify({ error: String((e as Error).message || e) }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
