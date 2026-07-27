@@ -26,6 +26,78 @@ const DirectionIcon = ({ d }: { d: DebugLog["direction"] }) => {
   return <XCircle className="h-3.5 w-3.5 text-destructive" />;
 };
 
+const CoordsCoverageCard = () => {
+  const { data, isLoading, refetch, isFetching } = useQuery({
+    queryKey: ["coords-coverage"],
+    queryFn: async () => {
+      const [storesAll, storesMissing, addrAll, addrMissing, addrUnpinned] = await Promise.all([
+        (supabase as any).from("stores").select("id", { count: "exact", head: true }),
+        (supabase as any).from("stores").select("id", { count: "exact", head: true }).is("latitude", null),
+        (supabase as any).from("saved_addresses").select("id", { count: "exact", head: true }),
+        (supabase as any).from("saved_addresses").select("id", { count: "exact", head: true }).is("latitude", null),
+        (supabase as any).from("saved_addresses").select("id", { count: "exact", head: true }).eq("pin_confirmed", false),
+      ]);
+      return {
+        storesTotal: storesAll.count ?? 0,
+        storesMissing: storesMissing.count ?? 0,
+        addrTotal: addrAll.count ?? 0,
+        addrMissing: addrMissing.count ?? 0,
+        addrUnpinned: addrUnpinned.count ?? 0,
+      };
+    },
+    refetchInterval: 60_000,
+  });
+
+  const runBackfill = async () => {
+    try {
+      const { data, error } = await (supabase as any).functions.invoke("backfill-coords", { body: {} });
+      if (error) throw error;
+      toast.success(`Backfill: lojas ${data?.storesOk ?? 0}/${(data?.storesOk ?? 0) + (data?.storesFail ?? 0)}, endereços ${data?.addrOk ?? 0}/${(data?.addrOk ?? 0) + (data?.addrFail ?? 0)}`);
+      refetch();
+    } catch (e: any) { toast.error("Backfill falhou: " + (e?.message ?? e)); }
+  };
+
+  const pct = (miss: number, total: number) => (total === 0 ? 100 : Math.round(((total - miss) / total) * 100));
+
+  return (
+    <div className="bg-card border rounded-xl p-4">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <MapPin className="h-4 w-4 text-primary" />
+          <p className="font-bold text-sm">Cobertura de coordenadas (GPS/endereço)</p>
+        </div>
+        <div className="flex gap-2">
+          <Button size="sm" variant="outline" onClick={() => refetch()} disabled={isFetching}>
+            <RefreshCw className={`h-3.5 w-3.5 mr-1 ${isFetching ? "animate-spin" : ""}`} /> Atualizar
+          </Button>
+          <Button size="sm" onClick={runBackfill}>Rodar backfill</Button>
+        </div>
+      </div>
+      {isLoading || !data ? (
+        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+      ) : (
+        <div className="grid grid-cols-3 gap-3 text-xs">
+          <div className="p-3 rounded-lg bg-muted/40">
+            <p className="text-muted-foreground">Lojas com coords</p>
+            <p className="text-lg font-bold">{pct(data.storesMissing, data.storesTotal)}%</p>
+            <p className="text-muted-foreground">{data.storesTotal - data.storesMissing}/{data.storesTotal} • faltam {data.storesMissing}</p>
+          </div>
+          <div className="p-3 rounded-lg bg-muted/40">
+            <p className="text-muted-foreground">Endereços com coords</p>
+            <p className="text-lg font-bold">{pct(data.addrMissing, data.addrTotal)}%</p>
+            <p className="text-muted-foreground">{data.addrTotal - data.addrMissing}/{data.addrTotal} • faltam {data.addrMissing}</p>
+          </div>
+          <div className="p-3 rounded-lg bg-muted/40">
+            <p className="text-muted-foreground">Pino não confirmado</p>
+            <p className="text-lg font-bold">{data.addrUnpinned}</p>
+            <p className="text-muted-foreground">endereços sem PinPicker</p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 const DebugLojaTab = () => {
   const qc = useQueryClient();
   const [expandedId, setExpandedId] = useState<string | null>(null);
