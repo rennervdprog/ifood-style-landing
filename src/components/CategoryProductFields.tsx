@@ -439,31 +439,7 @@ const CategoryProductFields = ({ category, metadata, onChange, onNameChange, sto
   );
 
   const categoryFieldsMap: Record<string, React.ReactNode> = {
-    pizzas: (
-      <FieldBox emoji="🍕" title="Tamanhos da Pizza">
-        {pizzaSingleSize ? (
-          <p className="text-[11px] text-muted-foreground -mt-1">
-            Sua pizzaria está configurada para <b>um único tamanho</b>. O cliente verá apenas o preço base do produto.
-            Para vender pizza em vários tamanhos, desative essa opção em <b>Bordas/Sabores → Regras de Combinação</b>.
-          </p>
-        ) : pizzaCatalogActive ? (
-          <>
-            <p className="text-[11px] text-muted-foreground -mt-1">
-              Esta pizzaria usa o <b>catálogo profissional</b>. Escolha a categoria deste sabor — o preço sai da matriz.
-            </p>
-            <PizzaCatalogField metadata={metadata} onChange={onChange} catalog={pizzaCatalog} />
-          </>
-        ) : (
-          <>
-            <p className="text-[11px] text-muted-foreground -mt-1">
-              Defina os tamanhos disponíveis (ex: P, M, G, Família) com o preço de cada um.
-              Aparecem para o cliente ao escolher 1 sabor e no modal meio-a-meio.
-            </p>
-            <PizzaSizesField metadata={metadata} onChange={onChange} />
-          </>
-        )}
-      </FieldBox>
-    ),
+    pizzas: null,
     pasteis: (
       <FieldBox emoji="🥟" title="Tamanhos do Pastel">
         {pastelSingleSize ? (
@@ -505,14 +481,7 @@ const CategoryProductFields = ({ category, metadata, onChange, onNameChange, sto
         {metadata.is_combo && renderListField("Itens do Combo", "combo_items", "Ex: 10 esfihas + Refri...")}
       </FieldBox>
     ),
-    lanches: (
-      <FieldBox emoji="🍔" title="Detalhes do Lanche">
-        {renderListField("Tipos de pão disponíveis", "bread_types", "Ex: Brioche, Tradicional, Australiano, Ciabatta...")}
-        {renderToggle("Produto é um combo?", "is_combo")}
-        {metadata.is_combo && renderListField("Itens do Combo", "combo_items", "Ex: Hambúrguer, Batata M, Refri 500ml...")}
-        {renderTextField("Peso (opcional)", "patty_weight", "Ex: 150g, 200g...")}
-      </FieldBox>
-    ),
+    lanches: null,
     farmacias: (
       <FieldBox emoji="💊" title="Detalhes do Produto">
         {renderToggle("Receita obrigatória?", "requires_prescription")}

@@ -1,69 +1,97 @@
-# Plano: Headers persistentes no app cliente (Capacitor)
+# Plano — Deixar GPS/Endereço 100%
 
-Objetivo: em **todas** as telas do fluxo `/cliente/**` e loja pública, o header (barra superior) fica **fixo no topo**, **respeita o notch/status bar do Android** (hora, bateria) e o conteúdo rola **por baixo** dele — igual ao iFood.
+Objetivo: fechar os gaps restantes das Fases 1–4 e garantir consistência total entre card, busca, checkout, admin e tracking, tanto na web quanto no Capacitor.
 
-## 1. Criar primitivo único `AppHeader`
+---
 
-Arquivo: `src/components/cliente/AppHeader.tsx`
+## 1. Backfill de coordenadas (crítico)
 
-Responsabilidades:
-- `position: sticky; top: 0; z-index: 40`
-- `padding-top: env(safe-area-inset-top)` (notch) + fundo sólido opaco (não translúcido) para nunca "vazar" atrás da status bar
-- Variantes: `solid` (padrão branco) / `transparent-to-solid` (StorePage — vira sólido no scroll) / `brand` (gradiente laranja da home)
-- Slots: `left` (voltar/menu), `center` (título/busca), `right` (ações — sino, favorito)
-- Prop `elevated` (sombra sutil ao rolar)
+Hoje `stores.latitude/longitude` e `saved_addresses.latitude/longitude` existem, mas lojas e endereços antigos ainda estão sem coord — a Fase 1 cai em Haversine × 1.3 para eles.
 
-## 2. Configurar StatusBar nativa uma vez
+- Edge oneshot `backfill-coords` percorre `stores` e `saved_addresses` onde `latitude IS NULL` com CEP/rua preenchidos.
+- Chama `geocode-address` (Nominatim, respeitando 1 req/s) e grava lat/lng + `pin_confirmed=false`.
+- Log de resultado (quantos ok, quantos falharam) para o super admin.
+- Roda 1x manual + agendada semanal (via `pg_cron` chamando a edge) para novas entradas sem trigger.
 
-`src/lib/capacitorNative.ts`:
-- `StatusBar.setOverlaysWebView({ overlay: true })` (já usamos parcial)
-- `StatusBar.setStyle({ style: Style.Dark })` para ícones escuros sobre header branco; alternar para `Light` em telas com header brand (laranja)
-- Hook `useStatusBarStyle(variant)` chamado por cada `AppHeader`
+## 2. Trigger de geocode server-side
 
-## 3. Telas a migrar para `AppHeader`
+- Trigger `AFTER INSERT/UPDATE` em `stores` e `saved_addresses`: se coords nulas e CEP presente, marca `needs_geocode=true`.
+- Worker (edge cron a cada 5 min) processa a fila em lote respeitando rate limit do Nominatim.
+- Evita depender do front sempre passar coords.
 
-Todas usam padrão sticky + safe-area:
+## 3. Fluxo do PinPicker completo
 
-| Tela | Arquivo | Variante |
-|---|---|---|
-| Home cliente | `ClientHomeContent.tsx` | `brand` (endereço + sino) |
-| Busca | `busca/ClientBuscaPage.tsx` | `solid` (já sticky — trocar wrapper) |
-| Categoria/resultados | mesma acima | `solid` |
-| Loja pública | `StorePage.tsx` | `transparent-to-solid` |
-| Cardápio item | `ProductPage.tsx` | `solid` |
-| Carrinho | `CartPage.tsx` | `solid` |
-| Checkout | `CheckoutPage.tsx` | `solid` |
-| Pedidos | `cliente/PedidosPage.tsx` | `solid` |
-| Detalhe pedido | `PedidoDetalhePage.tsx` | `solid` |
-| Perfil | `PerfilPage.tsx` | `solid` |
-| Endereços | `EnderecosPage.tsx` | `solid` |
-| Favoritos | `FavoritosPage.tsx` | `solid` |
-| Ajuda / Termos | `AjudaPage.tsx` etc. | `solid` |
+- Cadastro de endereço do cliente (`SavedAddressPicker` novo endereço): abrir `AddressPinPicker` como passo obrigatório após CEP+número, gravando `pin_confirmed=true`.
+- Cadastro/edição de loja (admin `SettingsTab`): mesma coisa, pino obrigatório na criação.
+- Checkout: se endereço selecionado tem `pin_confirmed=false`, mostrar banner "Confirme o ponto exato" com botão que abre o PinPicker inline.
+- Corrige o WARN do E2E anterior (botão de novo endereço não estava disparando o picker).
 
-## 4. Ajustes globais
+## 4. Divergência GPS × CEP visível
 
-- Remover `paddingTop: env(safe-area-inset-top)` **do body/App** para as rotas `/cliente/**` (o header agora cuida disso). Rotas sem header próprio mantêm um `SafeAreaTop` filler.
-- `src/index.css`: garantir `html, body { background: white }` para o gap do notch nunca aparecer preto ao rolar bounce (iOS-like overscroll no Android também).
-- Bottom nav: já respeita `safe-area-inset-bottom`; sem mudanças.
+A edge `calculate-delivery-distance` já retorna `warning: gps_cep_diverge_Xkm`.
 
-## 5. Comportamento no scroll (iFood-like)
+- Exibir banner amarelo no checkout quando `warning` presente: "Sua localização atual está a X km do CEP salvo — confirme o endereço de entrega".
+- Ação do banner: abrir PinPicker ou trocar endereço.
 
-- Sticky puro (não `fixed`) → conteúdo empurra normalmente, header acompanha o topo do viewport.
-- Sombra aparece após 8px de scroll via `IntersectionObserver` de um sentinel invisível — sem listener de `scroll` pesado.
-- StorePage: opacidade do fundo do header interpolada 0→1 nos primeiros 120px (já existe, será portado para `AppHeader`).
+## 5. Cache client-side e performance
 
-## 6. Versionamento
+- `useBatchStoreDistances`: cachear resultado em `sessionStorage` por `(customerCoords arredondado 4 casas, storeIds hash)` — evita re-chamar a edge a cada troca de aba.
+- TTL 30 min. Invalida ao trocar de endereço.
+- Debounce de 300ms ao rolar/filtrar na busca para não disparar múltiplos batches.
 
-Bump para **v1.26.0** (mudança visual global). Atualiza `src/lib/appVersion.ts` + `android/app/build.gradle` (`versionName` + `versionCode +1`).
+## 6. Consistência de leitura
 
-## Detalhes técnicos
+Auditar e forçar todos os pontos a usarem `resolveDistance`/`useBatchStoreDistances`:
 
-- `sticky` funciona dentro do WebView do Capacitor sem precisar de `-webkit-` extra.
-- `env(safe-area-inset-top)` só devolve valor > 0 quando o `AndroidManifest` tem `windowLayoutInDisplayCutoutMode="shortEdges"` e `StatusBar.setOverlaysWebView(true)` — ambos já configurados.
-- Web (não-Capacitor) recebe `env()` = 0 → header cola no topo do navegador, sem regressão.
-- Evita `position: fixed` para não brigar com o teclado (bug do gap branco já resolvido).
+- `ClientHome.tsx`, `ClientBuscaPage.tsx`, `CityStoresPage.tsx`, `StoreCard.tsx`, `DiscoverGrid.tsx`, `CartPage.tsx`, tracking do pedido, admin de pedidos.
+- Remover qualquer `haversineMeters` remanescente fora da edge (fica só como fallback interno).
+- `formatDistanceKm` em 100% dos lugares (unidade única, 1 casa decimal).
+
+## 7. Capacitor: permissão e precisão
+
+- Ao abrir o app pela 1ª vez, se GPS negado, mostrar tela explicando por que precisa (já existe onboarding — só reforçar copy).
+- `readGps` com `enableHighAccuracy: true` e timeout 8s (hoje varia).
+- Se accuracy > 100m, sugerir usar o PinPicker automaticamente.
+- Fallback: se GPS off/negado, usar CEP do endereço padrão salvo sem pedir de novo.
+
+## 8. E2E completo do fluxo
+
+Novo `scripts/e2e/gps_full.py`:
+1. Login cliente → home mostra distância real (não Haversine).
+2. Novo endereço → PinPicker abre → confirma → salvo com `pin_confirmed=true`.
+3. Busca → cards mostram mesma distância do checkout (delta < 0,1 km).
+4. Checkout → frete = km × preço/km da loja (auditar match).
+5. Banner de divergência GPS×CEP dispara quando forçado.
+
+Rodar no CI (`.github/workflows`).
+
+## 9. Observabilidade
+
+- Adicionar métricas na edge: contador de `osrm`, `osrm_cache`, `haversine_fallback`, `nominatim_fail`.
+- Painel no super admin (`DebugLojaTab` ou nova aba): últimas 100 chamadas, % de fallback, lojas sem coord.
+- Alerta se `haversine_fallback > 20%` no dia (indica OSRM caindo ou lojas sem coord).
+
+## 10. Segurança e limpeza
+
+- RLS: `saved_addresses.latitude/longitude` — confirmar que só o dono lê/escreve (herdado, mas validar).
+- Rate limit por IP na `batch-store-distances` (hoje sem limite — evitar scraping de coords das lojas).
+- Remover `console.log` de coordenadas em produção.
+- Rodar `security--run_security_scan` ao final.
+
+---
+
+## Ordem de execução
+
+1. Backfill (item 1) — resolve 80% dos casos de Haversine hoje.
+2. Trigger + PinPicker obrigatório (2 e 3) — impede novos casos.
+3. Banner divergência + cache (4 e 5) — UX.
+4. Consistência de leitura (6) — auditoria final.
+5. Capacitor + E2E + observabilidade + segurança (7–10).
 
 ## Fora de escopo
+- Não troca de provider (Nominatim/OSRM ficam).
+- Não muda cálculo de taxa (`describeStoreFee` intacto).
+- Não mexe em tracking do entregador.
 
-- Redesign visual dos headers (só estrutura + sticky). Refinos de UI ficam para plano separado.
-- Rotas de super-admin / lojista / PDV.
+## Versão
+Ao concluir tudo: bump `1.27.0` (marco: GPS/endereço 100%).

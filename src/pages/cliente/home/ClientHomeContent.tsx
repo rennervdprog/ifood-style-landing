@@ -13,8 +13,12 @@ import BottomNav from "@/components/BottomNav";
 import ProductTour, { clienteTourSteps } from "@/components/ProductTour";
 import SupportTicketModal from "@/components/SupportTicketModal";
 import { useUserLocation } from "@/hooks/useUserLocation";
+import { useBatchStoreDistances } from "@/hooks/useBatchStoreDistances";
 import { formatBRL } from "@/lib/utils";
+import { describeStoreFee } from "@/lib/deliveryFeeDisplay";
+import { formatDistanceKm } from "@/lib/formatDistance";
 import { mapStoresWithHours } from "../utils/mapStores";
+import { filterStoresWithOnlineDrivers } from "@/lib/storeVisibility";
 import CategoryChips, { normalizeCategory } from "./CategoryChips";
 import BentoHero from "./BentoHero";
 import HighlightsBento from "./HighlightsBento";
@@ -38,23 +42,14 @@ const ROTATING_PLACEHOLDERS = [
 ];
 
 // Full select (para tabela `stores` — inclui colunas que só existem na tabela base).
-const FULL_STORE_SELECT = "id, name, image_url, slug, category, categories, is_open, force_closed, rating, status, delivery_mode, own_delivery_fee, delivery_fee, delivery_fee_type, delivery_fee_base, delivery_fee_per_km, estimated_delivery_time, minimum_order_value, free_delivery_threshold, address_cep, address_city, address_complement, address_neighborhood, address_number, address_reference, address_state, address_street, latitude, longitude, settings";
-// Select compatível com a view `stores_public` (não expõe delivery_fee/estimated_delivery_time/etc).
-const PUBLIC_VIEW_SELECT = "id, name, image_url, slug, category, categories, is_open, force_closed, rating, status, delivery_mode, own_delivery_fee, address_cep, address_city, address_complement, address_neighborhood, address_number, address_reference, address_state, address_street, latitude, longitude, settings";
+const FULL_STORE_SELECT = "id, name, image_url, slug, category, categories, is_open, force_closed, rating, status, delivery_mode, own_delivery_fee, delivery_fee, delivery_fee_type, delivery_fee_base, delivery_fee_per_km, estimated_delivery_time, minimum_order_value, free_delivery_threshold, address_cep, address_city, address_complement, address_neighborhood, address_number, address_reference, address_state, address_street, latitude, longitude, settings, platform_fee_split";
+// Select compatível com a view `stores_public` (agora expõe plan_type/override/autonomy_lifetime_free/delivery_fee/estimated_delivery_time).
+const PUBLIC_VIEW_SELECT = "id, name, image_url, slug, category, categories, is_open, force_closed, rating, status, delivery_mode, own_delivery_fee, delivery_fee, estimated_delivery_time, address_cep, address_city, address_complement, address_neighborhood, address_number, address_reference, address_state, address_street, latitude, longitude, settings, platform_fee_split, plan_type, platform_delivery_split_override, autonomy_lifetime_free";
 
-// Split base cobrado pela plataforma quando a loja usa entrega própria.
-// Fonte da verdade: admin_settings.delivery_fee_config.platform_split (default R$ 0,99).
-const PLATFORM_OWN_SPLIT = 0.99;
-
+// Fonte única de verdade — helper espelha RPC compute_store_delivery_fee.
 const formatFeeLabel = (store: any): { label: string; free: boolean; prefix?: string } => {
-  if (store.delivery_mode === "pickup") return { label: "Retirada", free: false };
-  const mode = store.delivery_mode;
-  const baseFee = mode === "own" ? store.own_delivery_fee : store.delivery_fee;
-  if (baseFee == null) return { label: "—", free: false };
-  const platformAdd = mode === "own" ? PLATFORM_OWN_SPLIT : 0;
-  const total = Number(baseFee || 0) + platformAdd;
-  if (total <= 0) return { label: "Grátis", free: true };
-  return { label: formatBRL(total), free: false, prefix: "A partir de" };
+  const d = describeStoreFee(store);
+  return { label: d.label, free: d.free, prefix: d.prefix };
 };
 
 const formatDeliveryTime = (store: any): string => {
@@ -122,7 +117,8 @@ const loadPublicStores = async ({
     stores = filtered.length > 0 || !fallbackToAll ? filtered : stores;
   }
 
-  return stores;
+  // Regra vitrine: esconde pdv_only e lojas sem entregador vinculado online.
+  return await filterStoresWithOnlineDrivers(stores);
 };
 
 const greeting = () => {
@@ -223,8 +219,11 @@ const ClientHomeContent = () => {
     retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 5000),
   });
 
+  const suggestedStoresEnriched = useBatchStoreDistances(suggestedStores || [], userLocation.coords);
+  const searchResultsEnriched = useBatchStoreDistances(searchResults || [], userLocation.coords);
+
   const visibleStores = useMemo(() => {
-    const base = searchQuery.length >= 2 ? searchResults || [] : suggestedStores || [];
+    const base = searchQuery.length >= 2 ? searchResultsEnriched || [] : suggestedStoresEnriched || [];
     const categoryFiltered = activeCategory
       ? base.filter((s: any) => normalizeCategory(s.category) === activeCategory)
       : base;
@@ -234,7 +233,7 @@ const ClientHomeContent = () => {
     }
 
     return categoryFiltered;
-  }, [searchQuery, searchResults, suggestedStores, activeCategory, heroFilter]);
+  }, [searchQuery, searchResultsEnriched, suggestedStoresEnriched, activeCategory, heroFilter]);
 
   const lastStores = useMemo(() => {
     if (!recentOrders) return [];
@@ -362,15 +361,14 @@ const ClientHomeContent = () => {
     [visibleStores, sponsoredIds]
   );
 
-  const formatDistance = (km?: number | null) =>
-    typeof km === "number" ? (km < 1 ? `${Math.round(km * 1000)} m` : `${km.toFixed(1)} km`) : null;
+  const formatDistance = (km?: number | null) => formatDistanceKm(km ?? null);
 
   return (
     <div className="min-h-dvh bg-background pb-24">
       <SupportTicketModal open={showSupport} onClose={() => setShowSupport(false)} userRole="cliente" />
 
-      {/* Sticky header — marketplace style */}
-      <header className="sticky top-0 z-30 bg-background/95 backdrop-blur border-b border-border">
+      {/* Sticky header — marketplace style (opaco: backdrop-blur quebra sticky no Android WebView) */}
+      <header className="sticky top-0 z-30 bg-background border-b border-border">
         <div className="px-4 pt-3 pb-2 flex items-center justify-between gap-3">
           <button
             onClick={userLocation.refresh}

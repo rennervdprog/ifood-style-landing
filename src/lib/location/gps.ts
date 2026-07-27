@@ -18,6 +18,8 @@ export interface GpsReadResult {
   fromCache: boolean;
   permission: PermissionResult["state"];
   error?: string;
+  /** Precisão em metros reportada pelo device (quando disponível). */
+  accuracy?: number;
 }
 
 let inflight: Promise<GpsReadResult> | null = null;
@@ -34,7 +36,7 @@ function readBrowserPosition(options: PositionOptions): Promise<GpsReadResult> {
       (pos) => {
         const coords: Coordinates = { lat: pos.coords.latitude, lng: pos.coords.longitude };
         cacheSet(KEY, coords, TTL.gps, { persist: true });
-        resolve({ coords, fromCache: false, permission: "granted" });
+        resolve({ coords, fromCache: false, permission: "granted", accuracy: pos.coords.accuracy });
       },
       (err) =>
         resolve({
@@ -51,7 +53,7 @@ function readBrowserPosition(options: PositionOptions): Promise<GpsReadResult> {
 async function readBrowserWithFallback(): Promise<GpsReadResult> {
   const precise = await readBrowserPosition({
     enableHighAccuracy: true,
-    timeout: 15_000,
+    timeout: 8_000,
     maximumAge: 60_000,
   });
 
@@ -61,7 +63,7 @@ async function readBrowserWithFallback(): Promise<GpsReadResult> {
   // Tenta localização de rede/última posição antes de mostrar erro ao usuário.
   return readBrowserPosition({
     enableHighAccuracy: false,
-    timeout: 12_000,
+    timeout: 8_000,
     maximumAge: 5 * 60_000,
   });
 }
@@ -72,22 +74,22 @@ async function readNativeWithFallback(): Promise<GpsReadResult> {
     try {
       const pos = await Geolocation.getCurrentPosition({
         enableHighAccuracy: true,
-        timeout: 15_000,
+        timeout: 8_000,
         maximumAge: 60_000,
       });
       const coords: Coordinates = { lat: pos.coords.latitude, lng: pos.coords.longitude };
       cacheSet(KEY, coords, TTL.gps, { persist: true });
-      return { coords, fromCache: false, permission: "granted" };
+      return { coords, fromCache: false, permission: "granted", accuracy: pos.coords.accuracy };
     } catch (firstError: any) {
       try {
         const pos = await Geolocation.getCurrentPosition({
           enableHighAccuracy: false,
-          timeout: 12_000,
+          timeout: 8_000,
           maximumAge: 5 * 60_000,
         });
         const coords: Coordinates = { lat: pos.coords.latitude, lng: pos.coords.longitude };
         cacheSet(KEY, coords, TTL.gps, { persist: true });
-        return { coords, fromCache: false, permission: "granted" };
+        return { coords, fromCache: false, permission: "granted", accuracy: pos.coords.accuracy };
       } catch (fallbackError: any) {
         const error = String(fallbackError?.message || firstError?.message || fallbackError || firstError);
         const state: PermissionResult["state"] =

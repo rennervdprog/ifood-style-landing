@@ -53,6 +53,9 @@ async function tryGps(opts: ResolveOptions, out: ResolvedLocation): Promise<bool
   out.coords = r.coords;
   out.source = "gps";
   out.accuracy = accuracyFor("gps");
+  if (typeof r.accuracy === "number" && r.accuracy > 100) {
+    out.warnings.push(`gps: low_accuracy_${Math.round(r.accuracy)}m`);
+  }
   // Tenta enriquecer com endereço.
   const rev = await reverseGeocode(r.coords);
   if (rev) out.address = rev;

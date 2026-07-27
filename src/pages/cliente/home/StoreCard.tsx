@@ -1,6 +1,7 @@
 import type { KeyboardEvent } from "react";
 import { MapPin, Store as StoreIcon, Star } from "lucide-react";
-import { formatBRL } from "@/lib/utils";
+import { describeStoreFee } from "@/lib/deliveryFeeDisplay";
+import { formatDistanceKm } from "@/lib/formatDistance";
 
 interface Props {
   store: any;
@@ -19,7 +20,7 @@ const StoreCard = ({ store, onClick, variant = "grid" }: Props) => {
     typeof store.distanceKm === "number"
       ? store.distanceKm < 1
         ? `${Math.round(store.distanceKm * 1000)} m`
-        : `${store.distanceKm.toFixed(1)} km`
+        : (formatDistanceKm(store.distanceKm) ?? `${store.distanceKm.toFixed(1)} km`)
       : null;
 
   const rating =
@@ -29,13 +30,9 @@ const StoreCard = ({ store, onClick, variant = "grid" }: Props) => {
     const base = 20 + Math.round(store.distanceKm * 4);
     return `${base}-${base + 15} min`;
   })();
-  const feeLabel = (() => {
-    if (store.delivery_mode === "pickup") return "Retirada";
-    const fee = Number(store.own_delivery_fee || 0);
-    if (!fee) return "Grátis";
-    return formatBRL(fee);
-  })();
-  const isFreeFee = feeLabel === "Grátis";
+  const feeInfo = describeStoreFee(store);
+  const feeLabel = feeInfo.label;
+  const isFreeFee = feeInfo.free;
 
   if (variant === "row") {
     return (

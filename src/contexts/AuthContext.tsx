@@ -6,7 +6,6 @@ import { SUPABASE_ANON_KEY, supabase } from "@/integrations/supabase/client";
 // (no APK nativo push é @capacitor/push-notifications, Firebase Web nunca roda).
 import { registerCapacitorPush, isCapacitorNative, reclaimStoredToken, resetPushRegistrationState } from "@/lib/capacitorNative";
 import { clearStoredPushState } from "@/lib/pushSession";
-import { getDeviceId } from "@/lib/deviceSession";
 import { setUser as setSentryUser } from "@/lib/sentry";
 import { queryClient } from "@/lib/queryClient";
 import { USER_ROUTING_QUERY_KEY } from "@/hooks/useUserRouting";
@@ -20,8 +19,6 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-const DEVICE_CHECK_INTERVAL = 60_000; // 60s (was 30s — less aggressive)
 
 // Chaves legadas do sistema antigo "Lembrar-me" — mantidas apenas para limpeza.
 const REMEMBER_FLAG = "itasuper_remember";
@@ -46,73 +43,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const currentUserIdRef = useRef<string | null>(null);
-  const deviceCheckRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const refreshIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const sessionRestoredRef = useRef(false);
-  const deviceCheckFailCountRef = useRef(0);
-  const shouldTrackDeviceRef = useRef(false);
-
-  // Multi-device liberado para TODOS os perfis (inclusive admin/lojista/super_admin).
-  // Nenhum dispositivo é desconectado ao logar em outro.
-  const evaluateDeviceTracking = async (_userId: string): Promise<boolean> => false;
-
-  // Register this device as the active one for the user
-  const registerDevice = async () => {
-    const deviceId = getDeviceId();
-    try {
-      await supabase.rpc("register_device_login", { _device_id: deviceId });
-      console.log("[Auth] 📱 Device registered:", deviceId.slice(0, 8));
-    } catch (e) {
-      console.warn("[Auth] Failed to register device:", e);
-    }
-  };
-
-  // Check if this device is still the active one; if not, sign out
-  const checkDeviceStillActive = async () => {
-    // Don't check if no session
-    if (!currentUserIdRef.current) return;
-
-    const deviceId = getDeviceId();
-    try {
-      const { data: isActive, error } = await supabase.rpc("check_device_active", {
-        _device_id: deviceId,
-      });
-      if (error) {
-        console.warn("[Auth] Device check error:", error);
-        // Don't sign out on transient errors — increment fail count
-        deviceCheckFailCountRef.current += 1;
-        // Only act after 3 consecutive failures
-        if (deviceCheckFailCountRef.current >= 3) {
-          console.warn("[Auth] Multiple device check failures, but keeping session.");
-        }
-        return;
-      }
-      // Reset fail count on success
-      deviceCheckFailCountRef.current = 0;
-
-      if (isActive === false) {
-        console.log("[Auth] 🚫 Device no longer active, signing out...");
-        toast.error("Sua conta foi acessada em outro dispositivo. Você foi desconectado.");
-        stopDeviceCheck();
-        await supabase.auth.signOut();
-      }
-    } catch (e) {
-      console.warn("[Auth] Device check failed:", e);
-    }
-  };
-
-  const startDeviceCheck = () => {
-    if (!shouldTrackDeviceRef.current) return;
-    stopDeviceCheck();
-    deviceCheckRef.current = setInterval(checkDeviceStillActive, DEVICE_CHECK_INTERVAL);
-  };
-
-  const stopDeviceCheck = () => {
-    if (deviceCheckRef.current) {
-      clearInterval(deviceCheckRef.current);
-      deviceCheckRef.current = null;
-    }
-  };
+  // Multi-device liberado — sessões simultâneas permitidas em todos os perfis.
+  // Nenhum device tracking / kick-out.
 
   // Refresh proativo do JWT enquanto o app está visível
   const startProactiveRefresh = () => {
@@ -140,8 +74,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     supabase.auth.getSession().then(async ({ data: { session: restoredSession }, error }) => {
       // Se o token salvo estiver corrompido (bad_jwt de projeto antigo), limpa e segue.
       if (error) {
-        console.warn("[Auth] getSession error, clearing local session:", error.message);
-        try { await supabase.auth.signOut({ scope: "local" as any }); } catch {}
+        const msg = (error.message || "").toLowerCase();
+        const isFatal =
+          msg.includes("bad_jwt") ||
+          msg.includes("invalid_grant") ||
+          msg.includes("refresh_token_not_found") ||
+          msg.includes("invalid refresh token");
+        if (isFatal) {
+          console.warn("[Auth] getSession fatal error, clearing local session:", error.message);
+          try { await supabase.auth.signOut({ scope: "local" as any }); } catch {}
+        } else {
+          // Erro transitório (rede, timeout, 5xx) — NÃO desloga.
+          console.warn("[Auth] getSession transient error, keeping session:", error.message);
+        }
       }
       console.log("[Auth] 🔄 Session restored from storage:", restoredSession?.user?.email ?? "none");
       try {
@@ -154,8 +99,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (restoredSession?.user) {
         setSentryUser({ id: restoredSession.user.id, email: restoredSession.user.email });
-        shouldTrackDeviceRef.current = await evaluateDeviceTracking(restoredSession.user.id);
-        registerDevice().then(() => startDeviceCheck());
         startProactiveRefresh();
       }
     });
@@ -202,9 +145,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       if (event === "SIGNED_OUT" && previousUserId) {
-        stopDeviceCheck();
         stopProactiveRefresh();
-        shouldTrackDeviceRef.current = false;
         try {
           localStorage.removeItem(`itasuper:userRole:${previousUserId}`);
           localStorage.removeItem(`itasuper:userPlan:${previousUserId}`);
@@ -221,25 +162,66 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Register device on explicit sign in (not token refresh)
       if (event === "SIGNED_IN" && nextUserId) {
         try { queryClient.invalidateQueries({ queryKey: [USER_ROUTING_QUERY_KEY, nextUserId] }); } catch {}
-        evaluateDeviceTracking(nextUserId).then((track) => {
-          shouldTrackDeviceRef.current = track;
-          registerDevice().then(() => startDeviceCheck());
-        });
         startProactiveRefresh();
       }
 
-      // On token refresh, just ensure device check is running
-      if (event === "TOKEN_REFRESHED" && nextUserId) {
-        if (shouldTrackDeviceRef.current && !deviceCheckRef.current) {
-          startDeviceCheck();
-        }
-      }
     });
 
     return () => {
       subscription.unsubscribe();
-      stopDeviceCheck();
       stopProactiveRefresh();
+    };
+  }, []);
+
+  // 📱 Capacitor App resume: `visibilitychange` não dispara de forma
+  // confiável no Android nativo. Escutar `App.resume` garante refresh do JWT
+  // quando o usuário volta ao app depois de horas/dias em background.
+  // Se o refresh falhar por rede, NÃO desloga — reagenda retry (5s, 15s, 45s).
+  useEffect(() => {
+    if (!isCapacitorNative()) return;
+    let cancelled = false;
+    let retryTimer: ReturnType<typeof setTimeout> | null = null;
+    let sub: { remove: () => void } | null = null;
+
+    const tryRefresh = async (attempt = 0) => {
+      if (cancelled) return;
+      try {
+        const { error } = await supabase.auth.refreshSession();
+        if (error) throw error;
+      } catch (e: any) {
+        const msg = (e?.message || "").toLowerCase();
+        const isFatal =
+          msg.includes("bad_jwt") ||
+          msg.includes("invalid_grant") ||
+          msg.includes("refresh_token_not_found") ||
+          msg.includes("invalid refresh token");
+        if (isFatal) {
+          console.warn("[Auth] resume refresh fatal:", e?.message);
+          return; // Supabase JS já vai emitir SIGNED_OUT
+        }
+        // Transiente — retry backoff 5s, 15s, 45s
+        const delays = [5_000, 15_000, 45_000];
+        if (attempt < delays.length) {
+          retryTimer = setTimeout(() => tryRefresh(attempt + 1), delays[attempt]);
+        }
+      }
+    };
+
+    (async () => {
+      try {
+        const { App } = await import("@capacitor/app");
+        const handle = await App.addListener("resume", () => tryRefresh(0));
+        if (cancelled) { handle.remove(); return; }
+        sub = handle;
+      } catch (e) {
+        console.warn("[Auth] failed to attach App.resume listener:", e);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      if (retryTimer) clearTimeout(retryTimer);
+      if (sub) { try { sub.remove(); } catch {} }
     };
   }, []);
 
@@ -247,18 +229,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     if (!session?.user) return;
 
-    let lastCheck = 0;
-    const DEBOUNCE_MS = 10_000; // Don't check more than once per 10s
-
     const handleVisibility = () => {
       if (document.visibilityState === "visible" && session?.user) {
         // Ao voltar do background, força um refresh do JWT para evitar
         // que a próxima query use um token já expirado.
         supabase.auth.refreshSession().catch(() => {});
-        const now = Date.now();
-        if (now - lastCheck < DEBOUNCE_MS) return;
-        lastCheck = now;
-        checkDeviceStillActive();
       }
     };
 
@@ -340,7 +315,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signOut = useCallback(async () => {
     const userId = currentUserIdRef.current || session?.user?.id || undefined;
-    stopDeviceCheck();
     if (!isCapacitorNative()) {
       await cleanupPushTokens(userId);
       clearStoredPushState();

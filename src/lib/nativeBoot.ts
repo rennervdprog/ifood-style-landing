@@ -157,4 +157,40 @@ export async function nativeBoot() {
   try {
     await import("@capacitor-community/safe-area");
   } catch {}
+
+  // 6) Header fixo nativo — mede a altura do `header.sticky.top-0` da
+  //    página atual e publica em `--native-header-h`. O CSS converte esses
+  //    headers em `position: fixed` (o `sticky` do Android WebView falha),
+  //    e usa a var como padding-top do #root pra não sobrepor conteúdo.
+  try {
+    const root = document.documentElement;
+    let currentHeader: HTMLElement | null = null;
+    let ro: ResizeObserver | null = null;
+
+    const syncVar = () => {
+      const h = currentHeader?.offsetHeight ?? 0;
+      if (h > 0) {
+        root.style.setProperty("--native-header-h", `${h}px`);
+      } else {
+        root.style.removeProperty("--native-header-h");
+      }
+    };
+
+    const attach = () => {
+      const el = document.querySelector<HTMLElement>("header.sticky.top-0");
+      if (el === currentHeader) return;
+      currentHeader = el;
+      if (ro) ro.disconnect();
+      if (el && "ResizeObserver" in window) {
+        ro = new ResizeObserver(syncVar);
+        ro.observe(el);
+      }
+      syncVar();
+    };
+
+    // Reage a mudanças de rota / re-render.
+    const mo = new MutationObserver(() => attach());
+    mo.observe(document.body, { childList: true, subtree: true });
+    attach();
+  } catch {}
 }

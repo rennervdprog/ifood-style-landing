@@ -15,6 +15,7 @@ import PopularProducts from "@/components/PopularProducts";
 import PromoBanners from "@/components/PromoBanners";
 import FirstOrderBanner from "@/components/FirstOrderBanner";
 import { getStoreOpenStatus, type OpeningHour } from "@/lib/storeStatus";
+import { filterStoresWithOnlineDrivers } from "@/lib/storeVisibility";
 
 const PartnerClientView = memo(() => {
   const { user } = useAuth();
@@ -68,7 +69,7 @@ const PartnerClientView = memo(() => {
         .select("*")
         .in("status", ["ativo", "bloqueado"]);
       if (error) throw error;
-      return data || [];
+      return await filterStoresWithOnlineDrivers(data || []);
     },
     staleTime: 1000 * 60 * 2,
   });

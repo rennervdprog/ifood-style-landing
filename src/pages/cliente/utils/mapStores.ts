@@ -1,6 +1,12 @@
 import { getStoreOpenStatus, type OpeningHour } from "@/lib/storeStatus";
 import { haversineMeters } from "@/lib/location";
 
+// Fator urbano: mesma constante usada pela edge `calculate-delivery-distance`
+// como fallback quando o OSRM falha. Aplicar aqui garante que o número no
+// card e no checkout sejam da MESMA ordem de grandeza (linha reta subestima
+// distância real em ~30%).
+const URBAN_FACTOR = 1.3;
+
 export const mapStoresWithHours = (
   stores: any[],
   allHours: any[] | null | undefined,
@@ -16,7 +22,7 @@ export const mapStoresWithHours = (
       const lng = store.longitude;
       const distanceKm =
         userCoords && typeof lat === "number" && typeof lng === "number"
-          ? haversineMeters(userCoords, { lat, lng }) / 1000
+          ? (haversineMeters(userCoords, { lat, lng }) / 1000) * URBAN_FACTOR
           : null;
       return { ...store, realIsOpen: status.isOpen, statusReason: status.reason, distanceKm };
     })

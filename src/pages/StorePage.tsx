@@ -1,4 +1,5 @@
 import { formatBRL } from "@/lib/utils";
+import { describeStoreFee } from "@/lib/deliveryFeeDisplay";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import NotFound from "@/pages/NotFound";
 import { useQuery, keepPreviousData, useQueryClient } from "@tanstack/react-query";
@@ -206,12 +207,18 @@ const StorePage = () => {
      queryKey: ["store-platform-split", storeId],
      queryFn: async () => {
        const { data } = await (supabase as any).rpc("get_store_platform_split", { _store_id: storeId });
-       const row = Array.isArray(data) ? data[0] : data;
-       return row as {
-         plan_type: string | null;
-         platform_delivery_split_override: number | null;
-         platform_fee_split: "cliente" | "meio_a_meio" | "lojista" | null;
-         delivery_mode: string | null;
+       // RPC agora retorna JSONB { base_fee, customer_total, platform_add_customer,
+       // platform_add_payout_deduction, split_mode, plan_type, is_autonomy, ... }
+       return (data ?? null) as {
+         base_fee: number;
+         customer_total: number;
+         platform_add_customer: number;
+         platform_add_payout_deduction: number;
+         platform_split_full: number;
+         split_mode: "cliente" | "meio_a_meio" | "lojista";
+         plan_type: string;
+         delivery_mode: string;
+         is_autonomy: boolean;
        } | null;
      },
      enabled: !!storeId,
@@ -1130,28 +1137,14 @@ const StorePage = () => {
                   <span className="text-[11px] font-semibold text-muted-foreground uppercase">Taxa</span>
                   <span className="text-[11px] font-black text-foreground mt-0.5">
                     {(() => {
-                      const mode = (store as any)?.delivery_mode;
-                      // Para entrega própria: taxa do lojista + R$2 da plataforma
-                      // Para entrega da plataforma: delivery_fee já é o total (inclui splits)
-                      const baseFee = mode === "own"
-                        ? (store as any)?.own_delivery_fee
-                        : (store as any)?.delivery_fee;
-                      if (baseFee == null) return "—";
-                      let platformAdd = 0;
-                      if (mode === "own") {
-                        const isAutonomy = platformInfo?.plan_type === "autonomy";
-                        const baseSplit = isAutonomy
-                          ? 0
-                          : Number(platformInfo?.platform_delivery_split_override ?? storePlan.platformDeliverySplit ?? 0.99);
-                        const splitMode = (platformInfo?.platform_fee_split || storePlan.platformFeeSplit || "cliente") as "cliente" | "meio_a_meio" | "lojista";
-                        platformAdd = splitMode === "lojista"
-                          ? 0
-                          : splitMode === "meio_a_meio"
-                            ? Math.round((baseSplit / 2) * 100) / 100
-                            : baseSplit;
+                      // Prefere RPC (fonte de verdade), com fallback ao helper caso ainda não carregou.
+                      if (platformInfo && typeof platformInfo.customer_total === "number") {
+                        return platformInfo.customer_total === 0
+                          ? "Grátis"
+                          : `A partir de ${formatBRL(platformInfo.customer_total)}`;
                       }
-                      const total = Number(baseFee) + platformAdd;
-                      return total === 0 ? "Grátis" : `A partir de ${formatBRL(total)}`;
+                      const d = describeStoreFee(store as any);
+                      return d.free ? "Grátis" : `${d.prefix ?? ""} ${d.label}`.trim();
                     })()}
                   </span>
                 </div>

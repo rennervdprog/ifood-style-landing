@@ -1,18 +1,20 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Search, X, Clock, Star, Store as StoreIcon, ChevronRight, Flame, Sparkles } from "lucide-react";
+import { ArrowLeft, Search, X, Clock, Star, Store as StoreIcon, ChevronRight, Flame, Sparkles, MapPin } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserLocation } from "@/hooks/useUserLocation";
+import { useBatchStoreDistances } from "@/hooks/useBatchStoreDistances";
 import { mapStoresWithHours } from "../utils/mapStores";
+import { filterStoresWithOnlineDrivers } from "@/lib/storeVisibility";
 import { formatBRL } from "@/lib/utils";
+import { describeStoreFee } from "@/lib/deliveryFeeDisplay";
+import { formatDistanceKm } from "@/lib/formatDistance";
 import BottomNav from "@/components/BottomNav";
 
-const PUBLIC_STORE_SELECT_FULL = "id, name, image_url, slug, category, categories, is_open, force_closed, rating, status, delivery_mode, own_delivery_fee, delivery_fee, delivery_fee_type, delivery_fee_base, delivery_fee_per_km, estimated_delivery_time, minimum_order_value, free_delivery_threshold, address_cep, address_city, address_complement, address_neighborhood, address_number, address_reference, address_state, address_street, latitude, longitude, settings, created_at";
-const PUBLIC_STORE_SELECT_VIEW = "id, name, image_url, slug, category, categories, is_open, force_closed, rating, status, delivery_mode, own_delivery_fee, address_cep, address_city, address_complement, address_neighborhood, address_number, address_reference, address_state, address_street, latitude, longitude, settings, created_at";
-
-const PLATFORM_OWN_SPLIT = 0.99;
+const PUBLIC_STORE_SELECT_FULL = "id, name, image_url, slug, category, categories, is_open, force_closed, rating, status, delivery_mode, own_delivery_fee, delivery_fee, delivery_fee_type, delivery_fee_base, delivery_fee_per_km, estimated_delivery_time, minimum_order_value, free_delivery_threshold, address_cep, address_city, address_complement, address_neighborhood, address_number, address_reference, address_state, address_street, latitude, longitude, settings, platform_fee_split, created_at";
+const PUBLIC_STORE_SELECT_VIEW = "id, name, image_url, slug, category, categories, is_open, force_closed, rating, status, delivery_mode, own_delivery_fee, delivery_fee, estimated_delivery_time, address_cep, address_city, address_complement, address_neighborhood, address_number, address_reference, address_state, address_street, latitude, longitude, settings, platform_fee_split, plan_type, platform_delivery_split_override, autonomy_lifetime_free, created_at";
 
 const norm = (v?: string | null) =>
   (v || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
@@ -46,14 +48,8 @@ const matchesCategory = (storeCategory: string | null | undefined, catKey: strin
 };
 
 const formatFeeLabel = (store: any): { label: string; free: boolean; prefix?: string } => {
-  if (store.delivery_mode === "pickup") return { label: "Retirada", free: false };
-  const mode = store.delivery_mode;
-  const baseFee = mode === "own" ? store.own_delivery_fee : store.delivery_fee;
-  if (baseFee == null) return { label: "—", free: false };
-  const platformAdd = mode === "own" ? PLATFORM_OWN_SPLIT : 0;
-  const total = Number(baseFee || 0) + platformAdd;
-  if (total <= 0) return { label: "Grátis", free: true };
-  return { label: formatBRL(total), free: false, prefix: "A partir de" };
+  const d = describeStoreFee(store);
+  return { label: d.label, free: d.free, prefix: d.prefix };
 };
 
 const formatDeliveryTime = (store: any): string => {
@@ -91,6 +87,7 @@ const StoreRow = ({ store, onClick, badge }: { store: any; onClick: () => void; 
   const rating = typeof store.rating === "number" && store.rating > 0 ? Number(store.rating) : null;
   const fee = formatFeeLabel(store);
   const timeLabel = formatDeliveryTime(store);
+  const distLabel = formatDistanceKm(store.distanceKm);
   const categoryLabel = (store.category || "Loja").replace(/_/g, " ");
   return (
     <button
@@ -128,6 +125,12 @@ const StoreRow = ({ store, onClick, badge }: { store: any; onClick: () => void; 
         </p>
         <div className="flex items-center gap-1.5 mt-1 text-[12px]">
           <span className="text-muted-foreground">{timeLabel}</span>
+          {distLabel && (
+            <>
+              <span className="text-muted-foreground/50">•</span>
+              <span className="text-muted-foreground font-medium">{distLabel}</span>
+            </>
+          )}
           <span className="text-muted-foreground/50">•</span>
           {fee.prefix && <span className="text-muted-foreground">{fee.prefix}</span>}
           <span className={fee.free ? "font-bold text-emerald-600" : "font-semibold text-foreground"}>
@@ -175,7 +178,7 @@ const ClientBuscaPage = () => {
         .eq("status", "ativo")
         .limit(100);
       if (error) throw error;
-      const rows = Array.isArray(data) ? data : [];
+      const rows = await filterStoresWithOnlineDrivers(Array.isArray(data) ? data : []);
       if (rows.length === 0) return [];
       const storeIds = rows.map((s: any) => s.id);
       const { data: allHours } = await supabase
@@ -187,7 +190,7 @@ const ClientBuscaPage = () => {
     staleTime: 1000 * 60,
   });
 
-  const stores = allStores || [];
+  const stores = useBatchStoreDistances(allStores || [], userLocation.coords);
 
   const searchMode = debouncedTerm.trim().length >= 2;
 
@@ -287,6 +290,26 @@ const ClientBuscaPage = () => {
       </header>
 
       <main className="px-4 pt-4 space-y-6">
+        {/* Faixa: ativar localização */}
+        {userLocation.ready && !userLocation.coords && !showResultsMode && (
+          <button
+            type="button"
+            onClick={() => userLocation.refresh()}
+            className="w-full flex items-center gap-3 rounded-2xl border border-primary/30 bg-primary/5 p-3 text-left active:scale-[0.99] transition-transform"
+          >
+            <div className="h-9 w-9 rounded-xl bg-primary/15 flex items-center justify-center shrink-0">
+              <MapPin className="w-4 h-4 text-primary" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[13px] font-bold text-foreground leading-tight">Ative sua localização</p>
+              <p className="text-[11px] text-muted-foreground leading-tight mt-0.5">
+                Veja a distância até as lojas e o que está mais perto de você.
+              </p>
+            </div>
+            <span className="text-[11px] font-bold text-primary shrink-0">Usar</span>
+          </button>
+        )}
+
         {/* Modo lista (categoria ou busca) */}
         {showResultsMode ? (
           <section>
@@ -394,10 +417,17 @@ const ClientBuscaPage = () => {
                       className="shrink-0 w-32 text-left active:opacity-70"
                     >
                       {s.image_url ? (
-                        <img
-                          loading="lazy" decoding="async" src={s.image_url} alt={s.name}
-                          className="w-32 h-32 rounded-2xl object-cover border border-border/50"
-                        />
+                        <div className="relative">
+                          <img
+                            loading="lazy" decoding="async" src={s.image_url} alt={s.name}
+                            className="w-32 h-32 rounded-2xl object-cover border border-border/50"
+                          />
+                          {formatDistanceKm(s.distanceKm) && (
+                            <span className="absolute bottom-1.5 left-1.5 px-1.5 py-0.5 rounded-md bg-black/65 text-white text-[10px] font-bold leading-none">
+                              {formatDistanceKm(s.distanceKm)}
+                            </span>
+                          )}
+                        </div>
                       ) : (
                         <div className="w-32 h-32 rounded-2xl bg-muted flex items-center justify-center">
                           <StoreIcon className="h-8 w-8 text-muted-foreground" />
