@@ -3,7 +3,7 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: cors });
   const url = Deno.env.get("EXTERNAL_SUPABASE_URL")!;
   const key = Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY")!;
-  const q = `select=name,city,latitude,longitude,cep,address,max_delivery_km&or=(name.ilike.*Ric*Burguer*,name.ilike.*Pastelao*,name.ilike.*Pastelão*)`;
+  const q = `select=*&or=(name.ilike.*Ric*Burguer*,name.ilike.*Pastelao*,name.ilike.*Pastelão*)`;
   const r = await fetch(`${url}/rest/v1/stores?${q}`, {
     headers: { apikey: key, Authorization: `Bearer ${key}` },
   });
