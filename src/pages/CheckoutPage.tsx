@@ -20,7 +20,7 @@ import { addMoney, multiplyMoney, sumMoney, formatBRL } from "@/lib/utils";
 import { useStorePlan } from "@/hooks/useStorePlan";
 import LoyaltyRedemption from "@/components/LoyaltyRedemption";
 import DeliveryTimeEstimate from "@/components/DeliveryTimeEstimate";
-import { formatCep, fetchCep, reverseGeocode, readGps, readGpsFromGesture, resolveAddress, type Coordinates, type ReverseResult } from "@/lib/location";
+import { formatCep, fetchCep, reverseGeocode, readGpsFromGesture, resolveAddress, type Coordinates, type ReverseResult } from "@/lib/location";
 import { resolveDistance } from "@/lib/location/distance";
 import { checkStoreAccess, MAX_DISTANCE_KM } from "@/lib/fraudCheck";
 import EmptiesExchange, { type EmptiesExchangeSelection } from "@/components/EmptiesExchange";
@@ -294,8 +294,21 @@ const CheckoutPage = () => {
   }, []);
   const finalTotal = Math.max(0, addMoney(subtotal, effectiveDeliveryFee, -effectiveCouponDiscount, -loyaltyDiscount, -walletDiscount, -emptiesDiscount));
 
-   // Background geocoding from address (initial estimate)
+   // Background geocoding from the selected delivery address (initial estimate).
+   // Nunca tenta GPS aqui: GPS só pode ser fonte final quando o cliente tocar no botão.
    useEffect(() => {
+     if (coordsSource === "gps") return;
+     if (selectedSavedAddressId && savedAddressData) {
+       const lat = Number(savedAddressData.latitude);
+       const lng = Number(savedAddressData.longitude);
+       if (Number.isFinite(lat) && Number.isFinite(lng)) {
+         if (!clientCoords || Math.abs(clientCoords.lat - lat) > 0.000001 || Math.abs(clientCoords.lng - lng) > 0.000001) {
+           setClientCoords({ lat, lng });
+         }
+         if (coordsSource !== "address") setCoordsSource("address");
+         return;
+       }
+     }
      if ((hasAddress || selectedSavedAddressId) && !clientCoords) {
        const geoCep = selectedSavedAddressId && savedAddressData?.cep ? savedAddressData.cep : profileCep;
        const geoStreet = selectedSavedAddressId && savedAddressData
@@ -304,24 +317,25 @@ const CheckoutPage = () => {
        const geoNeighborhood = selectedSavedAddressId && savedAddressData?.neighborhood ? savedAddressData.neighborhood : profileNeighborhood;
  
       resolveAddress({
-        prefer: "gps",
-        fallback: ["address", "cep"],
+        prefer: "address",
+        fallback: ["cep"],
         address: { street: geoStreet, neighborhood: geoNeighborhood, postalcode: geoCep },
       }).then((r) => {
         if (r.coords && !clientCoords) {
           // fallback silencioso — evita vazar coords no console em produção.
           setClientCoords(r.coords);
+          setCoordsSource("address");
         }
       });
      }
-   }, [hasAddress, selectedSavedAddressId, savedAddressData, profileCep, profileStreet, profileNumber, profileNeighborhood, clientCoords]);
+   }, [hasAddress, selectedSavedAddressId, savedAddressData, profileCep, profileStreet, profileNumber, profileNeighborhood, clientCoords, coordsSource]);
  
    const handleRequestLocation = () => {
      // IMPORTANTE: chamar SÍNCRONO no clique — sem await antes — pra
      // preservar o "user gesture" que o browser exige pro prompt de GPS.
      const gpsPromise = readGpsFromGesture();
      setRequestingLocation(true);
-     gpsPromise.then(async (gpsRead) => {
+      gpsPromise.then(async (gpsRead) => {
        try {
        const gps = gpsRead.coords;
       if (gps) {
@@ -329,10 +343,13 @@ const CheckoutPage = () => {
          setIsLocationRequested(true);
          setCoordsSource("gps");
          // Reverse geocode para mostrar o endereço real do GPS
-         reverseGeocode(gps).then((res) => {
-           if (res) setGpsAddress(res);
-         });
-         toast.success("Localização ativada com sucesso!");
+          const res = await reverseGeocode(gps);
+          if (res) setGpsAddress(res);
+          if (!res?.street || !(res.neighborhood || res.city)) {
+            toast.warning("GPS encontrado, mas não identifiquei a rua. Complete o endereço antes de finalizar.");
+          } else {
+            toast.success("Localização atual ativada para esta entrega.");
+          }
         } else {
           toast.error(gpsRead.error || "Não foi possível obter sua localização exata. Verifique se o GPS está ativado.");
        }
@@ -344,40 +361,14 @@ const CheckoutPage = () => {
      });
    };
 
-   // Auto-tentar GPS no mount se permissão já estiver concedida (sem prompt)
    useEffect(() => {
-     let cancelled = false;
-     const tryAutoLocate = async () => {
-       try {
-         if (typeof navigator === "undefined" || !navigator.geolocation) return;
-         // Em web: só dispara se permissão já está "granted" (não pede prompt)
-        if (navigator.permissions?.query) {
-           try {
-             const status = await navigator.permissions.query({ name: "geolocation" as PermissionName });
-             if (status.state !== "granted") return;
-           } catch {
-             return;
-           }
-         }
-        const gps = (await readGps()).coords;
-         if (cancelled || !gps) return;
-         setClientCoords(gps);
-         setIsLocationRequested(true);
-         setCoordsSource("gps");
-         const res = await reverseGeocode(gps);
-         if (!cancelled && res) setGpsAddress(res);
-       } catch (e) {
-         console.warn("[Checkout] Auto-locate falhou:", e);
-       }
-     };
-     tryAutoLocate();
-     return () => { cancelled = true; };
-     // eslint-disable-next-line react-hooks/exhaustive-deps
-   }, []);
- 
-   useEffect(() => {
-     const customerCep = selectedSavedAddressId && savedAddressData?.cep ? savedAddressData.cep : profileCep;
-     const activeNeighborhood = selectedSavedAddressId && savedAddressData?.neighborhood ? savedAddressData.neighborhood : profileNeighborhood;
+      const useGpsAddress = coordsSource === "gps" && isLocationRequested && !!clientCoords;
+      const customerCep = useGpsAddress && gpsAddress?.postalcode
+        ? gpsAddress.postalcode
+        : selectedSavedAddressId && savedAddressData?.cep ? savedAddressData.cep : profileCep;
+      const activeNeighborhood = useGpsAddress
+        ? (gpsAddress?.neighborhood || gpsAddress?.city || "")
+        : selectedSavedAddressId && savedAddressData?.neighborhood ? savedAddressData.neighborhood : profileNeighborhood;
  
       if (isOwnDelivery) {
         if (!customerCep || !storeCep) {
@@ -398,12 +389,12 @@ const CheckoutPage = () => {
           // Respeita o split escolhido pelo lojista (cliente | meio_a_meio | lojista).
           // Quando = 'lojista', effectivePlatformSplit é 0 e o cliente NÃO paga +R$2.
           platform_split: effectivePlatformSplit,
-          customer_street: selectedSavedAddressId && savedAddressData ? savedAddressData.street : profileStreet,
-          customer_number: selectedSavedAddressId && savedAddressData ? savedAddressData.number : profileNumber,
+          customer_street: useGpsAddress ? gpsAddress?.street : selectedSavedAddressId && savedAddressData ? savedAddressData.street : profileStreet,
+          customer_number: useGpsAddress ? gpsAddress?.number : selectedSavedAddressId && savedAddressData ? savedAddressData.number : profileNumber,
           customer_coords: clientCoords,
-          customer_neighborhood: selectedSavedAddressId && savedAddressData?.neighborhood ? savedAddressData.neighborhood : profileNeighborhood,
-          customer_city: selectedSavedAddressId && savedAddressData ? (savedAddressData as any).city : (userProfile as any)?.city,
-          customer_state: selectedSavedAddressId && savedAddressData ? (savedAddressData as any).state : (userProfile as any)?.state,
+          customer_neighborhood: activeNeighborhood,
+          customer_city: useGpsAddress ? gpsAddress?.city : selectedSavedAddressId && savedAddressData ? (savedAddressData as any).city : (userProfile as any)?.city,
+          customer_state: useGpsAddress ? gpsAddress?.state : selectedSavedAddressId && savedAddressData ? (savedAddressData as any).state : (userProfile as any)?.state,
           store_coords:
             (storeData as any)?.latitude && (storeData as any)?.longitude
               ? { lat: Number((storeData as any).latitude), lng: Number((storeData as any).longitude) }
@@ -451,7 +442,7 @@ const CheckoutPage = () => {
      });
  
      return () => { cancelled = true; };
-    }, [profileCep, storeCep, config, savedAddressData, selectedSavedAddressId, profileNeighborhood, isOwnDelivery, storeDeliveryFeeType, storeDeliveryBaseKm, storeDeliveryFeeBase, storeDeliveryFeePerKm, storeOwnFee, storePlan.isFixedPlan, storePlan.platformDeliverySplit, effectivePlatformSplit, clientCoords]);
+    }, [profileCep, storeCep, config, savedAddressData, selectedSavedAddressId, profileNeighborhood, isOwnDelivery, storeDeliveryFeeType, storeDeliveryBaseKm, storeDeliveryFeeBase, storeDeliveryFeePerKm, storeOwnFee, storePlan.isFixedPlan, storePlan.platformDeliverySplit, effectivePlatformSplit, clientCoords, coordsSource, isLocationRequested, gpsAddress, profileStreet, profileNumber, userProfile]);
 
   // Detecta divergência GPS x CEP do endereço salvo (Fase 4 do plano de GPS).
   useEffect(() => {
@@ -490,6 +481,8 @@ const CheckoutPage = () => {
   };
 
   const addressString = buildAddressString();
+  const usingGpsDelivery = !isPickup && coordsSource === "gps" && isLocationRequested && !!clientCoords;
+  const gpsAddressIsDeliverable = usingGpsDelivery && !!gpsAddress?.street && !!(gpsAddress.neighborhood || gpsAddress.city);
 
   useEffect(() => {
     if (authLoading) return;
@@ -524,12 +517,43 @@ const CheckoutPage = () => {
       toast.error(`Pedido mínimo desta loja: ${formatBRL(storeMinimumOrderValue)}. Adicione mais ${formatBRL(minimumMissing)}.`);
       return;
     }
-    const useSavedAddr = selectedSavedAddressId && savedAddressData;
-    const finalHasAddress = isPickup || useSavedAddr || hasAddress;
-    const finalNeighborhood = isPickup ? "RETIRADA" : (useSavedAddr ? savedAddressData.neighborhood : (profileNeighborhood || neighborhood));
+    let confirmedGpsAddress = gpsAddress;
+    if (usingGpsDelivery && !confirmedGpsAddress && clientCoords) {
+      confirmedGpsAddress = await reverseGeocode(clientCoords);
+      if (confirmedGpsAddress) setGpsAddress(confirmedGpsAddress);
+    }
+    if (usingGpsDelivery && (!confirmedGpsAddress?.street || !(confirmedGpsAddress.neighborhood || confirmedGpsAddress.city))) {
+      toast.error("Não consegui confirmar a rua da sua localização atual. Cadastre ou ajuste o endereço antes de finalizar.");
+      setShowAddressModal(true);
+      return;
+    }
+
+    const useSavedAddr = !usingGpsDelivery && selectedSavedAddressId && savedAddressData;
+    const selectedAddressLat = useSavedAddr ? Number(savedAddressData.latitude) : NaN;
+    const selectedAddressLng = useSavedAddr ? Number(savedAddressData.longitude) : NaN;
+    const finalCoords = isPickup
+      ? null
+      : usingGpsDelivery && clientCoords
+        ? clientCoords
+        : Number.isFinite(selectedAddressLat) && Number.isFinite(selectedAddressLng)
+          ? { lat: selectedAddressLat, lng: selectedAddressLng }
+          : clientCoords;
+    const finalHasAddress = isPickup || (usingGpsDelivery ? !!confirmedGpsAddress?.street : useSavedAddr || hasAddress);
+    const finalNeighborhood = isPickup
+      ? "RETIRADA"
+      : usingGpsDelivery
+        ? (confirmedGpsAddress?.neighborhood || confirmedGpsAddress?.city || "GPS")
+        : (useSavedAddr ? savedAddressData.neighborhood : (profileNeighborhood || neighborhood));
     const finalAddress = isPickup
       ? "Retirada na loja"
-      : (useSavedAddr
+      : usingGpsDelivery
+        ? [
+            confirmedGpsAddress?.street ? [confirmedGpsAddress.street, confirmedGpsAddress.number].filter(Boolean).join(", ") : null,
+            confirmedGpsAddress?.neighborhood,
+            confirmedGpsAddress?.city,
+            "Localização atual por GPS",
+          ].filter(Boolean).join(" - ")
+        : (useSavedAddr
         ? [savedAddressData.street, savedAddressData.number, savedAddressData.complement, savedAddressData.reference_point ? `Ref: ${savedAddressData.reference_point}` : ""].filter(Boolean).join(", ")
         : addressString);
 
@@ -566,10 +590,10 @@ const CheckoutPage = () => {
         storeCity: (storeData as any).address_city ?? null,
         storeLat: (storeData as any).latitude,
         storeLng: (storeData as any).longitude,
-        deliveryCity: useSavedAddr ? savedAddressData?.city : (userProfile as any)?.city,
+        deliveryCity: usingGpsDelivery ? confirmedGpsAddress?.city : useSavedAddr ? savedAddressData?.city : (userProfile as any)?.city,
         // Passa coordenadas do endereço de entrega (geocodificadas pelo CEP)
         // Isso garante que o bloqueio funciona mesmo sem GPS do dispositivo
-        deliveryCoords: clientCoords ?? undefined,
+        deliveryCoords: finalCoords ?? undefined,
         maxDeliveryKm: (storeData as any).max_delivery_km ?? undefined,
       });
       if (!fraud.allowed) {
@@ -594,8 +618,9 @@ const CheckoutPage = () => {
 
     setLoading(true);
     try {
-      // Geocode in PARALLEL — don't block order creation. We'll patch coords later.
+      // Geocode in PARALLEL only if the final address still has no coords.
       const geocodePromise: Promise<{ lat: number; lng: number } | null> = (async () => {
+        if (finalCoords) return finalCoords;
         try {
           const geoCep = useSavedAddr ? savedAddressData?.cep : profileCep;
           const geoStreet = useSavedAddr
@@ -604,8 +629,8 @@ const CheckoutPage = () => {
           const geoNeighborhood = useSavedAddr ? savedAddressData?.neighborhood : profileNeighborhood;
 
           const r = await resolveAddress({
-            prefer: "gps",
-            fallback: ["address", "cep"],
+            prefer: "address",
+            fallback: ["cep"],
             address: { street: geoStreet, neighborhood: geoNeighborhood, postalcode: geoCep },
           });
           return r.coords ? { lat: r.coords.lat, lng: r.coords.lng } : null;
@@ -657,6 +682,8 @@ const CheckoutPage = () => {
             payment_method: paymentMethod,
             neighborhood: finalNeighborhood,
             address_details: finalAddress,
+            client_lat: finalCoords?.lat ?? null,
+            client_lng: finalCoords?.lng ?? null,
             needs_change: paymentMethod === "dinheiro" && needsChange,
             change_for: changeValue,
             status: orderStatus,
@@ -782,7 +809,7 @@ const CheckoutPage = () => {
     }
   };
 
-  const hasValidAddress = isPickup || (selectedSavedAddressId ? !!savedAddressData : hasAddress);
+  const hasValidAddress = isPickup || (usingGpsDelivery ? gpsAddressIsDeliverable : (selectedSavedAddressId ? !!savedAddressData : hasAddress));
   const stepsDone = [isPickup || hasValidAddress, !!paymentMethod];
 
   return (
@@ -952,6 +979,12 @@ const CheckoutPage = () => {
               onSelect={(addr) => {
                 setSelectedSavedAddressId(addr.id);
                 setSavedAddressData(addr);
+                setGpsAddress(null);
+                setIsLocationRequested(false);
+                setCoordsSource("address");
+                const lat = Number((addr as any).latitude);
+                const lng = Number((addr as any).longitude);
+                if (Number.isFinite(lat) && Number.isFinite(lng)) setClientCoords({ lat, lng });
               }}
             />
 
@@ -971,7 +1004,7 @@ const CheckoutPage = () => {
 
             {selectedSavedAddressId && savedAddressData && (
               <div className="bg-primary/5 rounded-xl p-3.5 space-y-1.5">
-                {gpsAddress ? (
+                {usingGpsDelivery && gpsAddress ? (
                   <>
                     <div className="flex items-center gap-1.5">
                       <span className="text-[10px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded">📍 GPS</span>
@@ -1006,7 +1039,7 @@ const CheckoutPage = () => {
                     </div>
                   )}
                   <button
-                    onClick={() => { setSelectedSavedAddressId(null); setSavedAddressData(null); }}
+                    onClick={() => { setSelectedSavedAddressId(null); setSavedAddressData(null); setGpsAddress(null); setIsLocationRequested(false); setCoordsSource(null); setClientCoords(null); }}
                     className="text-xs text-primary font-semibold"
                   >
                     Alterar
@@ -1015,9 +1048,9 @@ const CheckoutPage = () => {
               </div>
             )}
 
-            {!selectedSavedAddressId && hasAddress && (
+            {!selectedSavedAddressId && (hasAddress || usingGpsDelivery) && (
               <div className="bg-primary/5 rounded-xl p-3.5 space-y-1.5">
-                {gpsAddress ? (
+                {usingGpsDelivery && gpsAddress ? (
                   <>
                     <div className="flex items-center gap-1.5">
                       <span className="text-[10px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded">📍 GPS</span>
@@ -1055,7 +1088,7 @@ const CheckoutPage = () => {
                     <Edit3 className="h-3 w-3" /> Alterar
                   </button>
                 </div>
-                {!gpsAddress && (
+                {!usingGpsDelivery && (
                   <button
                     onClick={handleRequestLocation}
                     disabled={requestingLocation}
@@ -1068,7 +1101,7 @@ const CheckoutPage = () => {
               </div>
             )}
 
-            {!selectedSavedAddressId && !hasAddress && (
+            {!selectedSavedAddressId && !hasAddress && !usingGpsDelivery && (
               <div className="bg-destructive/5 border border-destructive/20 rounded-xl p-4 text-center space-y-3">
                 <MapPin className="h-8 w-8 text-destructive/60 mx-auto" />
                 <div>
@@ -1505,9 +1538,9 @@ const CheckoutPage = () => {
               ? `${storeStatus.nextOpenDay === "Hoje" ? "Abre" : `Abre ${storeStatus.nextOpenDay}`} às ${storeStatus.nextOpenTime}`
               : "Loja fechada"}
           </button>
-        ) : !isPickup && !hasValidAddress && !isLocationRequested && !clientCoords ? (
+        ) : !isPickup && !hasValidAddress ? (
           <button
-            onClick={handleRequestLocation}
+            onClick={usingGpsDelivery ? () => setShowAddressModal(true) : handleRequestLocation}
             disabled={requestingLocation}
             className="w-full bg-primary text-primary-foreground font-bold py-4 rounded-2xl active:scale-[0.98] transition-all disabled:opacity-50 shadow-lg shadow-primary/25 text-base flex items-center justify-center gap-2"
           >
@@ -1519,7 +1552,7 @@ const CheckoutPage = () => {
             ) : (
               <>
                 <MapPin className="h-5 w-5" />
-                Ativar Localização
+                {usingGpsDelivery ? "Completar endereço" : "Ativar Localização"}
               </>
             )}
           </button>
