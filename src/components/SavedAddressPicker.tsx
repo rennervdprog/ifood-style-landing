@@ -2,9 +2,10 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { MapPin, Plus, Trash2, Check, Home, Briefcase, MapPinned, Search, Loader2 } from "lucide-react";
+import { MapPin, Plus, Trash2, Check, Home, Briefcase, MapPinned, Search, Loader2, MapPinnedIcon } from "lucide-react";
 import { toast } from "sonner";
 import { formatCep, fetchCep, geocodeAddress } from "@/lib/location";
+import AddressPinPicker from "./AddressPinPicker";
 
 interface SavedAddress {
   id: string;
@@ -43,6 +44,8 @@ const SavedAddressPicker = ({ onSelect, selectedId }: SavedAddressPickerProps) =
   const [referencePoint, setReferencePoint] = useState("");
   const [saving, setSaving] = useState(false);
   const [loadingCep, setLoadingCep] = useState(false);
+  const [showPin, setShowPin] = useState(false);
+  const [pinCoords, setPinCoords] = useState<{ lat: number; lng: number } | null>(null);
 
   const { data: addresses, isLoading } = useQuery({
     queryKey: ["saved-addresses", user?.id],
@@ -109,15 +112,16 @@ const SavedAddressPicker = ({ onSelect, selectedId }: SavedAddressPickerProps) =
     setSaving(true);
     try {
       const isFirst = !addresses || addresses.length === 0;
-      // Geocoda uma vez ao salvar (Fase 2 — fonte única de coordenadas).
-      // Falha silenciosa: endereço fica sem coords e será geocodado depois.
-      const coords = await geocodeAddress({
-        street: street.trim(),
-        number: number.trim(),
-        neighborhood,
-        postalcode: cep.replace(/\D/g, "") || null,
-        country: "Brasil",
-      }).catch(() => null);
+      // Prioridade: pino confirmado pelo usuário > geocoding automático.
+      const coords = pinCoords
+        ? pinCoords
+        : await geocodeAddress({
+            street: street.trim(),
+            number: number.trim(),
+            neighborhood,
+            postalcode: cep.replace(/\D/g, "") || null,
+            country: "Brasil",
+          }).catch(() => null);
       const { error } = await supabase.from("saved_addresses" as any).insert({
         user_id: user!.id,
         label,
@@ -130,6 +134,7 @@ const SavedAddressPicker = ({ onSelect, selectedId }: SavedAddressPickerProps) =
         is_default: isFirst,
         latitude: coords?.lat ?? null,
         longitude: coords?.lng ?? null,
+        pin_confirmed: !!pinCoords,
       });
       if (error) throw error;
       toast.success("Endereço salvo!");
@@ -140,6 +145,8 @@ const SavedAddressPicker = ({ onSelect, selectedId }: SavedAddressPickerProps) =
       setComplement("");
       setReferencePoint("");
       setNeighborhood("");
+      setPinCoords(null);
+      setShowPin(false);
       queryClient.invalidateQueries({ queryKey: ["saved-addresses", user?.id] });
     } catch (err: any) {
       toast.error(err.message || "Erro ao salvar.");
