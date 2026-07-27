@@ -1,13 +1,13 @@
 import { memo, type KeyboardEvent } from "react";
 import { Star, Clock, MapPin } from "lucide-react";
+import { formatDistanceKm } from "@/lib/formatDistance";
 
 interface Props {
   stores: any[];
   onSelect: (store: any) => void;
 }
 
-const distanceLabel = (km?: number | null) =>
-  typeof km === "number" ? (km < 1 ? `${Math.round(km * 1000)} m` : `${km.toFixed(1)} km`) : null;
+const distanceLabel = (km?: number | null) => formatDistanceKm(km ?? null);
 
 /**
  * Bento 2x2 de destaques — 1 loja grande + 2 laterais empilhadas.

@@ -16,6 +16,7 @@ import { useUserLocation } from "@/hooks/useUserLocation";
 import { useBatchStoreDistances } from "@/hooks/useBatchStoreDistances";
 import { formatBRL } from "@/lib/utils";
 import { describeStoreFee } from "@/lib/deliveryFeeDisplay";
+import { formatDistanceKm } from "@/lib/formatDistance";
 import { mapStoresWithHours } from "../utils/mapStores";
 import { filterStoresWithOnlineDrivers } from "@/lib/storeVisibility";
 import CategoryChips, { normalizeCategory } from "./CategoryChips";
