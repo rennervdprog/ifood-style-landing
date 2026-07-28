@@ -185,7 +185,7 @@ const ClientHomeContent = () => {
     queryFn: async () => {
       const rows = await loadPublicStores({
         city: effectiveCity,
-        fallbackToAll: false,
+        fallbackToAll: true,
         includeTest: !!user?.email?.endsWith("@itasuper.test"),
       });
       const storeIds = rows.map((s: any) => s.id);
