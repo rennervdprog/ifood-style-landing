@@ -58,6 +58,8 @@ const CheckoutPage = () => {
    const [gpsAddress, setGpsAddress] = useState<ReverseResult | null>(null);
    const [coordsSource, setCoordsSource] = useState<"gps" | "address" | null>(null);
   const [showPinPicker, setShowPinPicker] = useState(false);
+  const [showNumberPrompt, setShowNumberPrompt] = useState(false);
+  const [numberInput, setNumberInput] = useState("");
   const [calculatingFee, setCalculatingFee] = useState(false);
   const [feeBreakdown, setFeeBreakdown] = useState<string | null>(null);
   const [divergenceKm, setDivergenceKm] = useState<number | null>(null);
@@ -1651,12 +1653,67 @@ const CheckoutPage = () => {
                 } as ReverseResult));
                 setShowPinPicker(false);
                 if (rev?.street) {
-                  toast.success("Rua confirmada no mapa.");
+                  toast.success("Rua confirmada. Agora informe o número.");
                 } else {
-                  toast.warning("Não consegui a rua nesse ponto — ajuste o pino ou complete manualmente.");
+                  toast.warning("Não consegui a rua nesse ponto — confirme o número mesmo assim.");
                 }
+                setNumberInput(rev?.number || "");
+                setShowNumberPrompt(true);
               }}
             />
+          </div>
+        </div>
+      )}
+
+      {showNumberPrompt && (
+        <div className="fixed inset-0 z-[110] bg-black/60 flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="bg-background w-full sm:max-w-sm sm:rounded-2xl rounded-t-2xl p-4 space-y-3">
+            <div>
+              <h3 className="text-base font-bold">Qual o número da casa?</h3>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                O GPS não sabe o número exato. Informe pra entrega chegar certo.
+              </p>
+            </div>
+            <input
+              type="text"
+              inputMode="numeric"
+              autoFocus
+              value={numberInput}
+              onChange={(e) => setNumberInput(e.target.value)}
+              placeholder="Ex: 524"
+              className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm font-medium"
+            />
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setShowNumberPrompt(false)}
+                className="flex-1 py-2 rounded-lg bg-muted text-muted-foreground text-xs font-bold"
+              >
+                Depois
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const num = numberInput.trim();
+                  if (!num) {
+                    toast.error("Informe o número.");
+                    return;
+                  }
+                  setGpsAddress((prev) => {
+                    const base = (prev || {}) as ReverseResult;
+                    const display = [base.street ? `${base.street}, ${num}` : null, base.neighborhood]
+                      .filter(Boolean)
+                      .join(" - ") || base.display || "";
+                    return { ...base, number: num, display } as ReverseResult;
+                  });
+                  setShowNumberPrompt(false);
+                  toast.success("Número confirmado.");
+                }}
+                className="flex-1 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-bold"
+              >
+                Confirmar
+              </button>
+            </div>
           </div>
         </div>
       )}
