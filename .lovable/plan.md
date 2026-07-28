@@ -45,6 +45,13 @@ Feito: `src/routes/lazyPages.ts` centraliza os `lazy()` + `registerRoutePrefetch
 - Aplicado como wildcard `<Route path="X/*"/>` no fim dos domains: `/admin/*` (Admin Lojista), `/super-admin/*` (Super Admin), `/entregador/*`, `/revendedor/*`. Evita cair no 404 genérico ou no catch-all `/:slug` de loja.
 - `src/routes/capacitor/deepLinkResolver.ts`: extrai o rewrite de cold-start do `main.tsx` (`/` → `/portal-parceiro` no APK Parceiro) para um único ponto testável. Listeners `appUrlOpen`/`backButton`/push seguem em `capacitorNative.ts` até a Fase 6/migração para `createBrowserRouter`.
 
+## Fase 6 — SEO/prefetch tipados pelo manifest ✅ (v1.27.3)
+
+- `src/routes/meta.tsx`: `ROUTE_META` + `<RouteMeta path=... />` — fonte única de `<title>`/`<meta description>`/OG por path do manifest, com override manual opcional. `react-helmet-async` faz merge (páginas com Helmet próprio continuam vencendo).
+- Aplicado em `/`, `/planos`, `/seja-revendedor`, `/cliente`, `/cliente/busca`, `/carrinho`, `/checkout`.
+- `src/routes/lazyPages.ts`: `registerRoutePrefetch` agora consome `PREFETCH_MAP` chaveado por `ROUTES.*` — não mais strings soltas.
+- Refactor concluído. Fim da roadmap de rotas.
+
 ---
 
 ## Fase 4 — Layouts reais com `<Outlet/>` + guards compostos
