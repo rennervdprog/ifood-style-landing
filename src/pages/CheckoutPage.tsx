@@ -1728,15 +1728,36 @@ const CheckoutPage = () => {
         <div className="fixed inset-0 z-[110] bg-black/60 flex items-end sm:items-center justify-center p-0 sm:p-4">
           <div className="bg-background w-full sm:max-w-sm sm:rounded-2xl rounded-t-2xl p-4 space-y-3">
             <div>
-              <h3 className="text-base font-bold">Qual o número da casa?</h3>
+              <h3 className="text-base font-bold">Confirme o endereço</h3>
               <p className="text-xs text-muted-foreground mt-0.5">
-                O GPS não sabe o número exato. Informe pra entrega chegar certo.
+                {gpsAddress?.street
+                  ? "O GPS não sabe o número exato. Informe pra entrega chegar certo."
+                  : "Não identifiquei a rua pelo GPS — preencha manualmente."}
               </p>
             </div>
+            {!gpsAddress?.street && (
+              <>
+                <input
+                  type="text"
+                  autoFocus
+                  value={streetInput}
+                  onChange={(e) => setStreetInput(e.target.value)}
+                  placeholder="Rua / Avenida"
+                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm font-medium"
+                />
+                <input
+                  type="text"
+                  value={neighborhoodInput}
+                  onChange={(e) => setNeighborhoodInput(e.target.value)}
+                  placeholder="Bairro"
+                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm font-medium"
+                />
+              </>
+            )}
             <input
               type="text"
               inputMode="numeric"
-              autoFocus
+              autoFocus={!!gpsAddress?.street}
               value={numberInput}
               onChange={(e) => setNumberInput(e.target.value)}
               placeholder="Ex: 524"
@@ -1758,15 +1779,24 @@ const CheckoutPage = () => {
                     toast.error("Informe o número.");
                     return;
                   }
+                  const hadStreet = !!gpsAddress?.street;
+                  const manualStreet = streetInput.trim();
+                  const manualNeighborhood = neighborhoodInput.trim();
+                  if (!hadStreet && !manualStreet) {
+                    toast.error("Informe o nome da rua.");
+                    return;
+                  }
                   setGpsAddress((prev) => {
                     const base = (prev || {}) as ReverseResult;
-                    const display = [base.street ? `${base.street}, ${num}` : null, base.neighborhood]
+                    const finalStreet = base.street || manualStreet || null;
+                    const finalNeighborhood = base.neighborhood || manualNeighborhood || null;
+                    const display = [finalStreet ? `${finalStreet}, ${num}` : null, finalNeighborhood]
                       .filter(Boolean)
                       .join(" - ") || base.display || "";
-                    return { ...base, number: num, display } as ReverseResult;
+                    return { ...base, street: finalStreet, neighborhood: finalNeighborhood, number: num, display } as ReverseResult;
                   });
                   setShowNumberPrompt(false);
-                  toast.success("Número confirmado.");
+                  toast.success("Endereço confirmado.");
                 }}
                 className="flex-1 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-bold"
               >
