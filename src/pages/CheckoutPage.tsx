@@ -12,6 +12,7 @@ import { getStoreOpenStatus, type OpeningHour } from "@/lib/storeStatus";
 import confetti from "canvas-confetti";
 import AddressModal from "@/components/AddressModal";
 import SavedAddressPicker from "@/components/SavedAddressPicker";
+import AddressPinPicker from "@/components/AddressPinPicker";
 import CouponInput from "@/components/CouponInput";
  import { calculateDeliveryFee, calculateStoreOwnDeliveryFee, DEFAULT_DELIVERY_FEE_CONFIG, type DeliveryFeeConfig } from "@/lib/deliveryFee";
 import WhyThisCharge from "@/components/fees/WhyThisCharge";
@@ -56,6 +57,7 @@ const CheckoutPage = () => {
    const [requestingLocation, setRequestingLocation] = useState(false);
    const [gpsAddress, setGpsAddress] = useState<ReverseResult | null>(null);
    const [coordsSource, setCoordsSource] = useState<"gps" | "address" | null>(null);
+  const [showPinPicker, setShowPinPicker] = useState(false);
   const [calculatingFee, setCalculatingFee] = useState(false);
   const [feeBreakdown, setFeeBreakdown] = useState<string | null>(null);
   const [divergenceKm, setDivergenceKm] = useState<number | null>(null);
@@ -347,6 +349,8 @@ const CheckoutPage = () => {
           if (res) setGpsAddress(res);
           if (!res?.street || !(res.neighborhood || res.city)) {
             toast.warning("GPS encontrado, mas não identifiquei a rua. Complete o endereço antes de finalizar.");
+            // Abre o mapa para o cliente arrastar o pino até a rua exata.
+            setShowPinPicker(true);
           } else {
             toast.success("Localização atual ativada para esta entrega.");
           }
@@ -1607,6 +1611,54 @@ const CheckoutPage = () => {
             refetchProfile();
           }}
         />
+      )}
+
+      {showPinPicker && (
+        <div className="fixed inset-0 z-[100] bg-black/60 flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="bg-background w-full sm:max-w-lg sm:rounded-2xl rounded-t-2xl p-4 space-y-3 max-h-[92vh] overflow-y-auto">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h3 className="text-base font-bold">Confirme sua rua no mapa</h3>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Arraste o pino até a porta da sua casa e toque em <b>Confirmar</b>.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowPinPicker(false)}
+                className="text-muted-foreground text-xs font-bold px-2 py-1"
+                aria-label="Fechar"
+              >
+                Fechar
+              </button>
+            </div>
+            <AddressPinPicker
+              initialLat={clientCoords?.lat ?? null}
+              initialLng={clientCoords?.lng ?? null}
+              height={360}
+              onCancel={() => setShowPinPicker(false)}
+              onConfirm={(coords, rev) => {
+                setClientCoords(coords);
+                setCoordsSource("gps");
+                setIsLocationRequested(true);
+                setGpsAddress((prev) => ({
+                  ...(prev || {} as any),
+                  ...(rev || {}),
+                  display:
+                    [rev?.street, rev?.neighborhood].filter(Boolean).join(" - ") ||
+                    (prev as any)?.display ||
+                    "",
+                } as ReverseResult));
+                setShowPinPicker(false);
+                if (rev?.street) {
+                  toast.success("Rua confirmada no mapa.");
+                } else {
+                  toast.warning("Não consegui a rua nesse ponto — ajuste o pino ou complete manualmente.");
+                }
+              }}
+            />
+          </div>
+        </div>
       )}
     </div>
   );
