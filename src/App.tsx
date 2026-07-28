@@ -199,15 +199,9 @@ const AppRoutes = memo(function AppRoutes() {
       <Route path="/admin/blog/novo" element={<RoleGuard allowedRoles={["admin"]} redirectTo="/"><BlogAdminEditor /></RoleGuard>} />
       <Route path="/admin/blog/:id" element={<RoleGuard allowedRoles={["admin"]} redirectTo="/"><BlogAdminEditor /></RoleGuard>} />
       <Route path="/vaga/:cidade" element={<VagaPromoPage />} />
-      {/* Slugs reservados: evitam cair no catch-all "/:slug" (StorePage).
-          "termos"/"privacidade" já são <Navigate> logo acima e NÃO devem
-          aparecer aqui. */}
-      {[
-        "baixar-app","landing","home","sobre","contato",
-        "app","site","index"
-      ].map((s) => (
-        <Route key={s} path={`/${s}`} element={<NotFound />} />
-      ))}
+      {/* Slugs reservados agora vivem em `src/routes/reservedSlugs.ts` e
+          são bloqueados dentro de `StorePage` — evita duplicar a lista aqui
+          e no catch-all. */}
       <Route path="/:slug" element={<StorePage />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
