@@ -28,6 +28,7 @@ import { getStoreAppSlug } from "@/components/StoreAppGuard";
 import { checkStoreAccess, MAX_DISTANCE_KM } from "@/lib/fraudCheck";
 import { getEffectivePrice, isPromoActive, getPromoDiscountPct } from "@/lib/promoPrice";
 import { fetchProductAddons } from "@/lib/productAddons";
+import { isReservedSlug } from "@/routes/reservedSlugs";
 
 interface Product {
   id: string;
@@ -72,6 +73,12 @@ const isDocumentScrollElement = (element: HTMLElement) =>
 
 const StorePage = () => {
   const { id, slug } = useParams<{ id?: string; slug?: string }>();
+  // Guard: catch-all "/:slug" pode capturar rotas inexistentes/typos
+  // (`/baixar-app`, `/lp`, `/politica-privacidade`). Devolve 404 antes de
+  // qualquer fetch para evitar "🍽️ Loja fechada" falso.
+  if (!id && isReservedSlug(slug)) {
+    return <NotFound />;
+  }
   const navigate = useNavigate();
   const location = useLocation();
   // Esconde o botão "voltar" quando o usuário entra diretamente pelo link da loja
