@@ -31,26 +31,9 @@ Feito: `src/routes/manifest.ts` com `ROUTES` const tipado e builders (`store.byS
 
 ---
 
-## Fase 3 — `createBrowserRouter` + `RouteObject[]` por domínio
+## Fase 3 — Rotas por domínio ✅ (v1.27.0)
 
-Estrutura:
-
-```text
-src/routes/
-  index.tsx              # createBrowserRouter combinando domains
-  domains/
-    cliente.routes.tsx
-    lojista.routes.tsx   # /admin, /matriz, /admin/pdv*, /admin/cardapio
-    admin.routes.tsx     # /super-admin, /moderador, /suporte, /admin/blog*
-    driver.routes.tsx
-    pdv.routes.tsx
-    revendedor.routes.tsx
-    auth.routes.tsx
-    public.routes.tsx    # /, /lojas/:cidade, /blog*, /termos*
-    store.routes.tsx     # /loja/:id, /:slug
-```
-
-Feature parity: mesmo comportamento, apenas reorganização.
+Feito: `src/routes/lazyPages.ts` centraliza os `lazy()` + `registerRoutePrefetch`. Cada domínio (`public`, `cliente`, `auth`, `lojista`, `driver`, `admin`, `revendedor`, `store`) tem seu próprio `*.routes.tsx` que exporta um fragmento de `<Route>`s. `App.tsx` compõe os fragmentos dentro de `<Routes>` — feature parity total, ~140 linhas removidas. Migração para `createBrowserRouter` fica adiada para Fase 4/5 (traz layouts + errorElement por sub-árvore).
 
 ---
 
