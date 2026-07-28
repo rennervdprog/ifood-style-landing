@@ -25,12 +25,9 @@ Feito: `src/routes/reservedSlugs.ts` com `RESERVED_SLUGS` + `isReservedSlug()`, 
 
 ---
 
-## Fase 2 — Route manifest tipado
+## Fase 2 — Route manifest tipado ✅ (v1.26.48)
 
-Novo `src/routes/manifest.ts` com `ROUTES` const tipado (paths + builders `store.bySlug(slug)`, `admin.blogEdit(id)`).
-
-- Substituir strings literais `navigate("/admin")` por `navigate(ROUTES.lojista.admin)` incrementalmente (começa por `lojista`, maior superfície).
-- Fixa `useUserRouting.HomeRoute` incluindo `/moderador`, `/suporte`, `/revendedor`.
+Feito: `src/routes/manifest.ts` com `ROUTES` const tipado e builders (`store.bySlug`, `admin.blogEdit`, etc.). `useUserRouting` agora reconhece roles `moderador`/`suporte` e roteia para `/moderador`/`/suporte`. Migração dos call-sites `navigate("/…")` para `ROUTES.*` fica incremental sob demanda.
 
 ---
 

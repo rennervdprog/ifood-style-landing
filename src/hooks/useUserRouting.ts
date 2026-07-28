@@ -18,6 +18,8 @@ export type UserRole =
   | "lojista_matriz"
   | "lojista_unidade"
   | "motoboy"
+  | "moderador"
+  | "suporte"
   | "cliente"
   | null;
 
@@ -28,6 +30,8 @@ export type HomeRoute =
   | "/matriz"
   | "/entregador"
   | "/revendedor"
+  | "/moderador"
+  | "/suporte"
   | "/cliente"
   | "/portal-parceiro";
 
@@ -79,6 +83,8 @@ export function resolveUserRouting(input: {
     profileRole === "lojista_matriz" ||
     profileRole === "lojista_unidade" ||
     profileRole === "motoboy" ||
+    profileRole === "moderador" ||
+    profileRole === "suporte" ||
     profileRole === "cliente"
   ) {
     role = profileRole as UserRole;
@@ -122,6 +128,8 @@ export function resolveUserRouting(input: {
   else if (isMatriz) homeRoute = "/matriz";
   else if (isLojista) homeRoute = isPdvOnly ? "/admin/pdv" : "/admin";
   else if (isMotoboy) homeRoute = "/entregador";
+  else if (role === "moderador") homeRoute = "/moderador";
+  else if (role === "suporte") homeRoute = "/suporte";
   else if (isReseller) homeRoute = "/revendedor";
   else if (role === "cliente") homeRoute = "/cliente";
   else homeRoute = "/cliente"; // safe default for logged-in users without an explicit partner role
