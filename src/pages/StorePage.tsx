@@ -72,19 +72,6 @@ const isDocumentScrollElement = (element: HTMLElement) =>
 
 const StorePage = () => {
   const { id, slug } = useParams<{ id?: string; slug?: string }>();
-  // Slugs reservados nunca são lojas — evita cair no catch-all "/:slug" e
-  // renderizar "Loja fechada/indisponível" enquanto tenta buscar no DB.
-  const RESERVED_SLUGS = new Set([
-    "app", "baixar-app", "download", "lp", "landing", "home", "sobre",
-    "contato", "termos", "privacidade", "planos", "parceiro", "cliente",
-    "entregador", "admin", "auth", "login", "cadastro", "checkout",
-    "carrinho", "cart", "busca", "search", "lojas", "blog", "kds",
-    "moderador", "suporte", "portal-parceiro", "vaga", "revenda",
-    "favicon.ico", "robots.txt", "sitemap.xml", "manifest.json",
-  ]);
-  if (slug && RESERVED_SLUGS.has(slug.toLowerCase())) {
-    return <NotFound />;
-  }
   const navigate = useNavigate();
   const location = useLocation();
   // Esconde o botão "voltar" quando o usuário entra diretamente pelo link da loja
