@@ -1,5 +1,5 @@
 import { Route } from "react-router-dom";
-import RoleGuard from "@/components/RoleGuard";
+import { GuardedLayout } from "@/routes/layouts/GuardedLayout";
 import {
   ClientHome,
   ClientBuscaPage,
@@ -21,21 +21,10 @@ export const clienteRoutes = (
     <Route path="/checkout-rapido" element={<GuestCheckoutPage />} />
     <Route path="/pix-direto/:orderId" element={<PixDiretoPaymentPage />} />
     <Route path="/p/:orderId" element={<PublicOrderTracking />} />
-    <Route
-      path="/pedidos"
-      element={
-        <RoleGuard allowedRoles={["cliente"]} redirectTo="/auth">
-          <PedidosPage />
-        </RoleGuard>
-      }
-    />
-    <Route
-      path="/perfil"
-      element={
-        <RoleGuard allowedRoles={["cliente"]} redirectTo="/auth">
-          <PerfilPage />
-        </RoleGuard>
-      }
-    />
+    {/* Área autenticada do cliente */}
+    <Route element={<GuardedLayout allowedRoles={["cliente"]} redirectTo="/auth" />}>
+      <Route path="/pedidos" element={<PedidosPage />} />
+      <Route path="/perfil" element={<PerfilPage />} />
+    </Route>
   </>
 );
