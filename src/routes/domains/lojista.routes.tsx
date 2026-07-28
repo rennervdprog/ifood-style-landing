@@ -1,6 +1,6 @@
 import { Route, Navigate } from "react-router-dom";
-import RoleGuard from "@/components/RoleGuard";
-import LojistaHomeRedirect from "@/components/LojistaHomeRedirect";
+import { GuardedLayout } from "@/routes/layouts/GuardedLayout";
+import { LojistaHomeLayout } from "@/routes/layouts/LojistaLayout";
 import {
   AdminDashboardV2,
   MatrizDashboard,
@@ -11,53 +11,37 @@ import {
 
 export const lojistaRoutes = (
   <>
+    {/* /admin — dashboard raiz do lojista (com LojistaHomeRedirect) */}
     <Route
-      path="/admin"
       element={
-        <RoleGuard
+        <GuardedLayout
           allowedRoles={["lojista", "lojista_matriz", "lojista_unidade", "admin"]}
           redirectTo="/"
           requireApproval
-        >
-          <LojistaHomeRedirect>
-            <AdminDashboardV2 />
-          </LojistaHomeRedirect>
-        </RoleGuard>
+        />
       }
-    />
+    >
+      <Route element={<LojistaHomeLayout />}>
+        <Route path="/admin" element={<AdminDashboardV2 />} />
+      </Route>
+    </Route>
     <Route path="/admin2" element={<Navigate to="/admin" replace />} />
+
+    {/* /matriz — dashboard multi-unidade */}
+    <Route element={<GuardedLayout allowedRoles={["lojista_matriz", "admin"]} redirectTo="/" />}>
+      <Route path="/matriz" element={<MatrizDashboard />} />
+    </Route>
+
+    {/* PDV + Cardápio — mesmo guard */}
     <Route
-      path="/matriz"
       element={
-        <RoleGuard allowedRoles={["lojista_matriz", "admin"]} redirectTo="/">
-          <MatrizDashboard />
-        </RoleGuard>
+        <GuardedLayout allowedRoles={["lojista", "admin"]} redirectTo="/" requireApproval />
       }
-    />
-    <Route
-      path="/admin/pdv"
-      element={
-        <RoleGuard allowedRoles={["lojista", "admin"]} redirectTo="/" requireApproval>
-          <PdvPage />
-        </RoleGuard>
-      }
-    />
-    <Route
-      path="/admin/pdv/kds"
-      element={
-        <RoleGuard allowedRoles={["lojista", "admin"]} redirectTo="/" requireApproval>
-          <PdvKdsPage />
-        </RoleGuard>
-      }
-    />
-    <Route
-      path="/admin/cardapio"
-      element={
-        <RoleGuard allowedRoles={["lojista", "admin"]} redirectTo="/" requireApproval>
-          <PdvCardapioPage />
-        </RoleGuard>
-      }
-    />
+    >
+      <Route path="/admin/pdv" element={<PdvPage />} />
+      <Route path="/admin/pdv/kds" element={<PdvKdsPage />} />
+      <Route path="/admin/cardapio" element={<PdvCardapioPage />} />
+    </Route>
     <Route path="/admin/pdv/cardapio" element={<Navigate to="/admin/cardapio" replace />} />
   </>
 );
