@@ -1,4 +1,6 @@
 import { Route, Navigate } from "react-router-dom";
+import { RouteMeta } from "@/routes/meta";
+import { ROUTES } from "@/routes/manifest";
 import {
   StoreDirectory,
   CityStoresPage,
@@ -20,17 +22,41 @@ import {
  */
 export const publicRoutes = (
   <>
-    <Route path="/" element={<StoreDirectory />} />
+    <Route
+      path="/"
+      element={
+        <>
+          <RouteMeta path={ROUTES.public.home} />
+          <StoreDirectory />
+        </>
+      }
+    />
     <Route path="/lojas" element={<Navigate to="/" replace />} />
     <Route path="/lojas/:cidade" element={<CityStoresPage />} />
     <Route path="/termos-de-uso" element={<TermosDeUso />} />
     <Route path="/politica-de-privacidade" element={<PoliticaPrivacidade />} />
     <Route path="/termos" element={<Navigate to="/termos-de-uso" replace />} />
     <Route path="/privacidade" element={<Navigate to="/politica-de-privacidade" replace />} />
-    <Route path="/planos" element={<PlanosPage />} />
+    <Route
+      path="/planos"
+      element={
+        <>
+          <RouteMeta path={ROUTES.public.planos} />
+          <PlanosPage />
+        </>
+      }
+    />
     <Route path="/links" element={<LinksPage />} />
     <Route path="/download" element={<DownloadApp />} />
-    <Route path="/seja-revendedor" element={<SejaRevendedor />} />
+    <Route
+      path="/seja-revendedor"
+      element={
+        <>
+          <RouteMeta path={ROUTES.public.sejaRevendedor} />
+          <SejaRevendedor />
+        </>
+      }
+    />
     <Route path="/vaga/:cidade" element={<VagaPromoPage />} />
     <Route path="/blog" element={<BlogIndex />} />
     <Route path="/blog/:slug" element={<BlogPost />} />

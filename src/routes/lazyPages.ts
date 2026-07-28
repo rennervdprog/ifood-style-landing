@@ -7,6 +7,7 @@
  */
 import { lazy } from "react";
 import { registerRoutePrefetch } from "@/lib/prefetchRoute";
+import { ROUTES } from "@/routes/manifest";
 
 export const Index = lazy(() => import("@/pages/Index"));
 export const StoreDirectory = lazy(() => import("@/pages/StoreDirectory"));
@@ -57,15 +58,21 @@ export const BlogAdmin = lazy(() => import("@/pages/admin/BlogAdmin"));
 export const BlogAdminEditor = lazy(() => import("@/pages/admin/BlogAdminEditor"));
 export const VagaPromoPage = lazy(() => import("@/pages/VagaPromoPage"));
 
-registerRoutePrefetch("/super-admin", () => import("@/pages/SuperAdminDashboardV2"));
-registerRoutePrefetch("/admin", () => import("@/pages/AdminDashboardV2"));
-registerRoutePrefetch("/admin/pdv", () => import("@/pages/PdvPage"));
-registerRoutePrefetch("/matriz", () => import("@/pages/MatrizDashboard"));
-registerRoutePrefetch("/entregador", () => import("@/pages/DriverDashboardV2"));
-registerRoutePrefetch("/revendedor", () => import("@/pages/ResellerDashboard"));
-registerRoutePrefetch("/revendedor/auth", () => import("@/pages/ResellerAuth"));
-registerRoutePrefetch("/portal-parceiro", () => import("@/pages/PartnerLogin"));
-registerRoutePrefetch("/planos", () => import("@/pages/PlanosPage"));
-registerRoutePrefetch("/cliente", () => import("@/pages/ClientHome"));
-registerRoutePrefetch("/cliente/busca", () => import("@/pages/cliente/busca/ClientBuscaPage"));
-registerRoutePrefetch("/cadastro-lojista", () => import("@/pages/CadastroLojista"));
+// Fase 6 — prefetch tipado pelo manifest (paths não são mais strings mágicas).
+const PREFETCH_MAP: Record<string, () => Promise<unknown>> = {
+  [ROUTES.admin.superAdmin]: () => import("@/pages/SuperAdminDashboardV2"),
+  [ROUTES.lojista.admin]: () => import("@/pages/AdminDashboardV2"),
+  [ROUTES.lojista.pdv]: () => import("@/pages/PdvPage"),
+  [ROUTES.lojista.matriz]: () => import("@/pages/MatrizDashboard"),
+  [ROUTES.entregador.home]: () => import("@/pages/DriverDashboardV2"),
+  [ROUTES.revendedor.home]: () => import("@/pages/ResellerDashboard"),
+  [ROUTES.revendedor.entrar]: () => import("@/pages/ResellerAuth"),
+  [ROUTES.auth.portalParceiro]: () => import("@/pages/PartnerLogin"),
+  [ROUTES.public.planos]: () => import("@/pages/PlanosPage"),
+  [ROUTES.cliente.home]: () => import("@/pages/ClientHome"),
+  [ROUTES.cliente.busca]: () => import("@/pages/cliente/busca/ClientBuscaPage"),
+  [ROUTES.lojista.cadastroLojista]: () => import("@/pages/CadastroLojista"),
+};
+for (const [path, loader] of Object.entries(PREFETCH_MAP)) {
+  registerRoutePrefetch(path, loader);
+}
