@@ -1715,6 +1715,8 @@ const CheckoutPage = () => {
                   toast.warning("Não consegui a rua nesse ponto — confirme o número mesmo assim.");
                 }
                 setNumberInput(rev?.number || "");
+                setStreetInput(rev?.street || "");
+                setNeighborhoodInput(rev?.neighborhood || "");
                 setShowNumberPrompt(true);
               }}
             />
