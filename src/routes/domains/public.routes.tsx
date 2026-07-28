@@ -37,6 +37,16 @@ export const publicRoutes = (
     <Route path="/politica-de-privacidade" element={<PoliticaPrivacidade />} />
     <Route path="/termos" element={<Navigate to="/termos-de-uso" replace />} />
     <Route path="/privacidade" element={<Navigate to="/politica-de-privacidade" replace />} />
+    {/* Redirects de typos comuns (antes caíam em 404 global). */}
+    <Route path="/politica-privacidade" element={<Navigate to="/politica-de-privacidade" replace />} />
+    <Route path="/politica-de-privacidad" element={<Navigate to="/politica-de-privacidade" replace />} />
+    <Route path="/termo" element={<Navigate to="/termos-de-uso" replace />} />
+    <Route path="/baixar-app" element={<Navigate to="/download" replace />} />
+    <Route path="/app" element={<Navigate to="/download" replace />} />
+    <Route path="/lp" element={<Navigate to="/" replace />} />
+    <Route path="/home" element={<Navigate to="/" replace />} />
+    <Route path="/index" element={<Navigate to="/" replace />} />
+    <Route path="/landing" element={<Navigate to="/" replace />} />
     <Route
       path="/planos"
       element={
