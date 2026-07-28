@@ -39,6 +39,12 @@ Feito: `src/routes/lazyPages.ts` centraliza os `lazy()` + `registerRoutePrefetch
 
 `src/routes/layouts/GuardedLayout.tsx` embrulha `RoleGuard` uma única vez ao redor de um `<Outlet/>`. `LojistaHomeLayout` faz o mesmo com `LojistaHomeRedirect` (só em `/admin`). Domains refatorados: `lojista`, `admin`, `cliente`, `driver`, `revendedor` — agora usam `<Route element={<GuardedLayout .../>}><Route .../></Route>`. Eliminadas 14 repetições de `<RoleGuard>` (7 em admin/blog + super-admin, 3 em PDV, 2 em cliente, 1 driver, 1 revendedor). Zero mudança de comportamento; typecheck limpo.
 
+## Fase 5 — 404 escopado + deep-link resolver ✅ (v1.27.2)
+
+- `src/components/ScopedNotFound.tsx`: 404 contextual (`scope` + `homePath`) que loga o path e oferece CTA para a home do domínio.
+- Aplicado como wildcard `<Route path="X/*"/>` no fim dos domains: `/admin/*` (Admin Lojista), `/super-admin/*` (Super Admin), `/entregador/*`, `/revendedor/*`. Evita cair no 404 genérico ou no catch-all `/:slug` de loja.
+- `src/routes/capacitor/deepLinkResolver.ts`: extrai o rewrite de cold-start do `main.tsx` (`/` → `/portal-parceiro` no APK Parceiro) para um único ponto testável. Listeners `appUrlOpen`/`backButton`/push seguem em `capacitorNative.ts` até a Fase 6/migração para `createBrowserRouter`.
+
 ---
 
 ## Fase 4 — Layouts reais com `<Outlet/>` + guards compostos

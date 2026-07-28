@@ -1,5 +1,6 @@
 import { Route, Navigate } from "react-router-dom";
 import { GuardedLayout } from "@/routes/layouts/GuardedLayout";
+import { ScopedNotFound } from "@/components/ScopedNotFound";
 import {
   Index,
   SuperAdminDashboardV2,
@@ -31,5 +32,11 @@ export const adminRoutes = (
     <Route element={<GuardedLayout allowedRoles={["suporte", "admin"]} redirectTo="/auth" />}>
       <Route path="/suporte" element={<SupportAgentDashboard />} />
     </Route>
+
+    {/* 404 escopado para sub-árvores admin (Fase 5). */}
+    <Route
+      path="/super-admin/*"
+      element={<ScopedNotFound scope="Super Admin" homePath="/super-admin" />}
+    />
   </>
 );
