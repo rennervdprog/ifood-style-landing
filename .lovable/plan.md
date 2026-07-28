@@ -35,6 +35,10 @@ Feito: `src/routes/manifest.ts` com `ROUTES` const tipado e builders (`store.byS
 
 Feito: `src/routes/lazyPages.ts` centraliza os `lazy()` + `registerRoutePrefetch`. Cada domínio (`public`, `cliente`, `auth`, `lojista`, `driver`, `admin`, `revendedor`, `store`) tem seu próprio `*.routes.tsx` que exporta um fragmento de `<Route>`s. `App.tsx` compõe os fragmentos dentro de `<Routes>` — feature parity total, ~140 linhas removidas. Migração para `createBrowserRouter` fica adiada para Fase 4/5 (traz layouts + errorElement por sub-árvore).
 
+## Fase 4 — Layouts com `<Outlet/>` + guards compostos ✅ (v1.27.1)
+
+`src/routes/layouts/GuardedLayout.tsx` embrulha `RoleGuard` uma única vez ao redor de um `<Outlet/>`. `LojistaHomeLayout` faz o mesmo com `LojistaHomeRedirect` (só em `/admin`). Domains refatorados: `lojista`, `admin`, `cliente`, `driver`, `revendedor` — agora usam `<Route element={<GuardedLayout .../>}><Route .../></Route>`. Eliminadas 14 repetições de `<RoleGuard>` (7 em admin/blog + super-admin, 3 em PDV, 2 em cliente, 1 driver, 1 revendedor). Zero mudança de comportamento; typecheck limpo.
+
 ---
 
 ## Fase 4 — Layouts reais com `<Outlet/>` + guards compostos
