@@ -40,7 +40,6 @@ import { useNativeNavStackTracker } from "@/lib/nativeNavStack";
 const Index = lazy(() => import("./pages/Index"));
 const StoreDirectory = lazy(() => import("./pages/StoreDirectory"));
 const CityStoresPage = lazy(() => import("./pages/CityStoresPage"));
-const LandingPage = lazy(() => import("./pages/LandingPage"));
 const ClientHome = lazy(() => import("./pages/ClientHome"));
 const ClientBuscaPage = lazy(() => import("./pages/cliente/busca/ClientBuscaPage"));
 const StorePage = lazy(() => import("./pages/StorePage"));
@@ -143,8 +142,8 @@ const AppRoutes = memo(function AppRoutes() {
       <Route path="/checkout-rapido" element={<GuestCheckoutPage />} />
       <Route path="/pix-direto/:orderId" element={<PixDiretoPaymentPage />} />
       <Route path="/p/:orderId" element={<PublicOrderTracking />} />
-      <Route path="/pedidos" element={<PedidosPage />} />
-      <Route path="/perfil" element={<PerfilPage />} />
+      <Route path="/pedidos" element={<RoleGuard allowedRoles={["cliente"]} redirectTo="/auth"><PedidosPage /></RoleGuard>} />
+      <Route path="/perfil" element={<RoleGuard allowedRoles={["cliente"]} redirectTo="/auth"><PerfilPage /></RoleGuard>} />
       <Route path="/auth" element={<AuthPage />} />
       <Route path="/portal-parceiro" element={<PartnerLogin />} />
       <Route path="/admin" element={<RoleGuard allowedRoles={["lojista", "lojista_matriz", "lojista_unidade", "admin"]} redirectTo="/" requireApproval><LojistaHomeRedirect><AdminDashboardV2 /></LojistaHomeRedirect></RoleGuard>} />
@@ -176,7 +175,7 @@ const AppRoutes = memo(function AppRoutes() {
       <Route path="/super-admin2" element={<Navigate to="/super-admin" replace />} />
       <Route path="/super-admin/sandbox-tests" element={<RoleGuard allowedRoles={["admin"]} redirectTo="/"><SandboxTestsPage /></RoleGuard>} />
       <Route path="/parceiro" element={<PartnerOnboarding />} />
-      <Route path="/revendedor" element={<ResellerDashboard />} />
+      <Route path="/revendedor" element={<RoleGuard allowedRoles={["revendedor", "admin"]} redirectTo="/revendedor/entrar"><ResellerDashboard /></RoleGuard>} />
       <Route path="/seja-revendedor" element={<SejaRevendedor />} />
       <Route path="/revendedor/entrar" element={<ResellerAuth />} />
       <Route path="/revendedor/cadastro" element={<ResellerAuth />} />
@@ -189,7 +188,7 @@ const AppRoutes = memo(function AppRoutes() {
       <Route path="/privacidade" element={<Navigate to="/politica-de-privacidade" replace />} />
       <Route path="/parceiro/login" element={<Navigate to="/portal-parceiro" replace />} />
       <Route path="/planos" element={<PlanosPage />} />
-      <Route path="/moderador" element={<ModeradorDashboard />} />
+      <Route path="/moderador" element={<RoleGuard allowedRoles={["moderador", "admin"]} redirectTo="/auth"><ModeradorDashboard /></RoleGuard>} />
       <Route path="/suporte" element={<RoleGuard allowedRoles={["suporte","admin"]} redirectTo="/auth"><SupportAgentDashboard /></RoleGuard>} />
       <Route path="/links" element={<LinksPage />} />
       <Route path="/download" element={<DownloadApp />} />
@@ -200,9 +199,11 @@ const AppRoutes = memo(function AppRoutes() {
       <Route path="/admin/blog/novo" element={<RoleGuard allowedRoles={["admin"]} redirectTo="/"><BlogAdminEditor /></RoleGuard>} />
       <Route path="/admin/blog/:id" element={<RoleGuard allowedRoles={["admin"]} redirectTo="/"><BlogAdminEditor /></RoleGuard>} />
       <Route path="/vaga/:cidade" element={<VagaPromoPage />} />
-      {/* Slugs reservados: evitam cair no catch-all "/:slug" (StorePage) */}
+      {/* Slugs reservados: evitam cair no catch-all "/:slug" (StorePage).
+          "termos"/"privacidade" já são <Navigate> logo acima e NÃO devem
+          aparecer aqui. */}
       {[
-        "baixar-app","landing","home","sobre","contato","termos","privacidade",
+        "baixar-app","landing","home","sobre","contato",
         "app","site","index"
       ].map((s) => (
         <Route key={s} path={`/${s}`} element={<NotFound />} />

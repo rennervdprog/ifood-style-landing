@@ -1,97 +1,107 @@
-# Plano — Deixar GPS/Endereço 100%
+# Plano — Refatoração do Sistema de Rotas (MVC feature-based)
 
-Objetivo: fechar os gaps restantes das Fases 1–4 e garantir consistência total entre card, busca, checkout, admin e tracking, tanto na web quanto no Capacitor.
-
----
-
-## 1. Backfill de coordenadas (crítico)
-
-Hoje `stores.latitude/longitude` e `saved_addresses.latitude/longitude` existem, mas lojas e endereços antigos ainda estão sem coord — a Fase 1 cai em Haversine × 1.3 para eles.
-
-- Edge oneshot `backfill-coords` percorre `stores` e `saved_addresses` onde `latitude IS NULL` com CEP/rua preenchidos.
-- Chama `geocode-address` (Nominatim, respeitando 1 req/s) e grava lat/lng + `pin_confirmed=false`.
-- Log de resultado (quantos ok, quantos falharam) para o super admin.
-- Roda 1x manual + agendada semanal (via `pg_cron` chamando a edge) para novas entradas sem trigger.
-
-## 2. Trigger de geocode server-side
-
-- Trigger `AFTER INSERT/UPDATE` em `stores` e `saved_addresses`: se coords nulas e CEP presente, marca `needs_geocode=true`.
-- Worker (edge cron a cada 5 min) processa a fila em lote respeitando rate limit do Nominatim.
-- Evita depender do front sempre passar coords.
-
-## 3. Fluxo do PinPicker completo
-
-- Cadastro de endereço do cliente (`SavedAddressPicker` novo endereço): abrir `AddressPinPicker` como passo obrigatório após CEP+número, gravando `pin_confirmed=true`.
-- Cadastro/edição de loja (admin `SettingsTab`): mesma coisa, pino obrigatório na criação.
-- Checkout: se endereço selecionado tem `pin_confirmed=false`, mostrar banner "Confirme o ponto exato" com botão que abre o PinPicker inline.
-- Corrige o WARN do E2E anterior (botão de novo endereço não estava disparando o picker).
-
-## 4. Divergência GPS × CEP visível
-
-A edge `calculate-delivery-distance` já retorna `warning: gps_cep_diverge_Xkm`.
-
-- Exibir banner amarelo no checkout quando `warning` presente: "Sua localização atual está a X km do CEP salvo — confirme o endereço de entrega".
-- Ação do banner: abrir PinPicker ou trocar endereço.
-
-## 5. Cache client-side e performance
-
-- `useBatchStoreDistances`: cachear resultado em `sessionStorage` por `(customerCoords arredondado 4 casas, storeIds hash)` — evita re-chamar a edge a cada troca de aba.
-- TTL 30 min. Invalida ao trocar de endereço.
-- Debounce de 300ms ao rolar/filtrar na busca para não disparar múltiplos batches.
-
-## 6. Consistência de leitura
-
-Auditar e forçar todos os pontos a usarem `resolveDistance`/`useBatchStoreDistances`:
-
-- `ClientHome.tsx`, `ClientBuscaPage.tsx`, `CityStoresPage.tsx`, `StoreCard.tsx`, `DiscoverGrid.tsx`, `CartPage.tsx`, tracking do pedido, admin de pedidos.
-- Remover qualquer `haversineMeters` remanescente fora da edge (fica só como fallback interno).
-- `formatDistanceKm` em 100% dos lugares (unidade única, 1 casa decimal).
-
-## 7. Capacitor: permissão e precisão
-
-- Ao abrir o app pela 1ª vez, se GPS negado, mostrar tela explicando por que precisa (já existe onboarding — só reforçar copy).
-- `readGps` com `enableHighAccuracy: true` e timeout 8s (hoje varia).
-- Se accuracy > 100m, sugerir usar o PinPicker automaticamente.
-- Fallback: se GPS off/negado, usar CEP do endereço padrão salvo sem pedir de novo.
-
-## 8. E2E completo do fluxo
-
-Novo `scripts/e2e/gps_full.py`:
-1. Login cliente → home mostra distância real (não Haversine).
-2. Novo endereço → PinPicker abre → confirma → salvo com `pin_confirmed=true`.
-3. Busca → cards mostram mesma distância do checkout (delta < 0,1 km).
-4. Checkout → frete = km × preço/km da loja (auditar match).
-5. Banner de divergência GPS×CEP dispara quando forçado.
-
-Rodar no CI (`.github/workflows`).
-
-## 9. Observabilidade
-
-- Adicionar métricas na edge: contador de `osrm`, `osrm_cache`, `haversine_fallback`, `nominatim_fail`.
-- Painel no super admin (`DebugLojaTab` ou nova aba): últimas 100 chamadas, % de fallback, lojas sem coord.
-- Alerta se `haversine_fallback > 20%` no dia (indica OSRM caindo ou lojas sem coord).
-
-## 10. Segurança e limpeza
-
-- RLS: `saved_addresses.latitude/longitude` — confirmar que só o dono lê/escreve (herdado, mas validar).
-- Rate limit por IP na `batch-store-distances` (hoje sem limite — evitar scraping de coords das lojas).
-- Remover `console.log` de coordenadas em produção.
-- Rodar `security--run_security_scan` ao final.
+Baseado no relatório de auditoria. Migração **incremental**, cada fase é revertível e testável independentemente. Sem big-bang.
 
 ---
 
-## Ordem de execução
+## Fase 0 — Correções críticas (🔴, imediato, sem mudar estrutura)
 
-1. Backfill (item 1) — resolve 80% dos casos de Haversine hoje.
-2. Trigger + PinPicker obrigatório (2 e 3) — impede novos casos.
-3. Banner divergência + cache (4 e 5) — UX.
-4. Consistência de leitura (6) — auditoria final.
-5. Capacitor + E2E + observabilidade + segurança (7–10).
+Alvo: `src/App.tsx`, `src/components/CapacitorRouteGuard.tsx`.
 
-## Fora de escopo
-- Não troca de provider (Nominatim/OSRM ficam).
-- Não muda cálculo de taxa (`describeStoreFee` intacto).
-- Não mexe em tracking do entregador.
+- Adicionar `RoleGuard` em `/revendedor` (roles: `revendedor`, `admin`) e `/moderador` (roles: `moderador`, `admin`).
+- Adicionar guard de autenticação em `/pedidos` e `/perfil` (redireciona para `/auth` se não logado).
+- Sincronizar `PARTNER_ROUTES` e `PARTNER_ALLOWED_PREFIXES` com rotas reais: incluir `/matriz`, `/admin/pdv`, `/admin/cardapio`, `/suporte`, `/admin/blog`, `/revendedor`, `/seja-revendedor`; remover `/entregador2` (é só redirect).
+- Limpar `CLIENT_ALLOWED_PREFIXES` morto e duplicatas (`/auth`, `/cupons`).
+- Remover import morto de `LandingPage` OU registrar a rota (decidir com o usuário).
+- Remover `"termos"`/`"privacidade"` da lista de "reservados→NotFound" (já são `Navigate` funcionais antes).
 
-## Versão
-Ao concluir tudo: bump `1.27.0` (marco: GPS/endereço 100%).
+Ganho: fecha 7 bugs 🔴 sem tocar em arquitetura.
+
+---
+
+## Fase 1 — `RESERVED_SLUGS` como fonte única
+
+Novo arquivo `src/routes/reservedSlugs.ts` exportando `RESERVED_SLUGS` + `isReservedSlug(slug)`.
+
+- `StorePage` (catch-all `/:slug`) chama `isReservedSlug` no topo e devolve `<NotFound/>` antes de tentar buscar loja.
+- Remove os 9 `<Route>` estáticos de reservados em `App.tsx`.
+
+Ganho: fim do risco de "roubo de rota" pelo catch-all.
+
+---
+
+## Fase 2 — Route manifest tipado
+
+Novo `src/routes/manifest.ts` com `ROUTES` const tipado (paths + builders `store.bySlug(slug)`, `admin.blogEdit(id)`).
+
+- Substituir strings literais `navigate("/admin")` por `navigate(ROUTES.lojista.admin)` incrementalmente (começa por `lojista`, maior superfície).
+- Fixa `useUserRouting.HomeRoute` incluindo `/moderador`, `/suporte`, `/revendedor`.
+
+---
+
+## Fase 3 — `createBrowserRouter` + `RouteObject[]` por domínio
+
+Estrutura:
+
+```text
+src/routes/
+  index.tsx              # createBrowserRouter combinando domains
+  domains/
+    cliente.routes.tsx
+    lojista.routes.tsx   # /admin, /matriz, /admin/pdv*, /admin/cardapio
+    admin.routes.tsx     # /super-admin, /moderador, /suporte, /admin/blog*
+    driver.routes.tsx
+    pdv.routes.tsx
+    revendedor.routes.tsx
+    auth.routes.tsx
+    public.routes.tsx    # /, /lojas/:cidade, /blog*, /termos*
+    store.routes.tsx     # /loja/:id, /:slug
+```
+
+Feature parity: mesmo comportamento, apenas reorganização.
+
+---
+
+## Fase 4 — Layouts reais com `<Outlet/>` + guards compostos
+
+- `src/routes/layouts/` (`LojistaLayout`, `AdminLayout`, `ClienteLayout`, `DriverLayout`, `PdvLayout`, `PublicLayout`).
+- `src/routes/guards/` (`withAuth`, `withRole`, `withCapacitorMode`, `compose`).
+- Aplica `RoleGuard`/`TrialExpiredGuard` **1x** no layout pai — elimina 5 repetições em `/admin*`.
+- `RoleGuard` atual quebrado em peças puras e testáveis.
+
+---
+
+## Fase 5 — 404 por sub-árvore + deep links Capacitor
+
+- `errorElement` por domínio: `/admin/foo-invalido` mostra `NotFound scope="admin"` em vez de tentar renderizar como loja.
+- Novo `src/routes/capacitor/deepLinkResolver.ts` centralizando:
+  - `history.replaceState` cold-start (hoje em `main.tsx`).
+  - `PushNavigator` / `consumePendingPushNavigation` (hoje em `App.tsx`).
+  - `App.addListener('appUrlOpen', ...)` para Universal Links.
+  - `App.addListener('backButton', ...)` conectado ao `navigate(-1)` do router — remove stack customizada.
+- `PARTNER_ROUTES`/`CLIENT_*` **derivados automaticamente** do manifest (`domains.filter(d => d.audience === "partner")`) — impossível desalinhar.
+
+---
+
+## Fase 6 — SEO e prefetch tipados
+
+- `<RouteMeta>` declarativo por entrada do manifest (`title`, `description`, `ogImage`).
+- Aplicar em `/`, `/cliente`, `/loja/:id`, `/:slug` (maior tráfego, hoje sem `<Helmet>`).
+- `registerRoutePrefetch` alimentado pelo manifest — não mais lista manual.
+
+---
+
+## Detalhes técnicos
+
+- **Router:** migrar `<BrowserRouter>` + `<Routes>` para `createBrowserRouter(routes)` + `<RouterProvider>`. Mantém `BrowserRouter` internamente (hosting Lovable trata SPA fallback).
+- **Compat:** manter todos os redirects legados (`/admin2`, `/entregador1`, `/super-admin1`, etc.) durante toda a migração; remover só em release major.
+- **Testes:** snapshot de `RouteObject[]` antes/depois de cada fase; E2E Playwright existente (`e2e/routing-source-of-truth.spec.ts`) roda em cada fase.
+- **Versionamento:** cada fase incrementa patch; Fase 3 (nova arquitetura de router) incrementa minor.
+
+---
+
+## Ordem sugerida de execução
+
+Começar pela **Fase 0** (baixo risco, alto impacto — fecha todos os 🔴). As demais fases entram uma por commit, com validação em preview antes da próxima.
+
+Confirma que começo pela Fase 0?
