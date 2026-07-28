@@ -1,17 +1,19 @@
 import { Route } from "react-router-dom";
-import RoleGuard from "@/components/RoleGuard";
+import { GuardedLayout } from "@/routes/layouts/GuardedLayout";
 import { ResellerDashboard, ResellerAuth } from "@/routes/lazyPages";
 
 export const revendedorRoutes = (
   <>
     <Route
-      path="/revendedor"
       element={
-        <RoleGuard allowedRoles={["revendedor", "admin"]} redirectTo="/revendedor/entrar">
-          <ResellerDashboard />
-        </RoleGuard>
+        <GuardedLayout
+          allowedRoles={["revendedor", "admin"]}
+          redirectTo="/revendedor/entrar"
+        />
       }
-    />
+    >
+      <Route path="/revendedor" element={<ResellerDashboard />} />
+    </Route>
     <Route path="/revendedor/entrar" element={<ResellerAuth />} />
     <Route path="/revendedor/cadastro" element={<ResellerAuth />} />
   </>

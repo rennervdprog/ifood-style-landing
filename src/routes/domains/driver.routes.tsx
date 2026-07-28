@@ -1,17 +1,16 @@
 import { Route, Navigate } from "react-router-dom";
-import RoleGuard from "@/components/RoleGuard";
+import { GuardedLayout } from "@/routes/layouts/GuardedLayout";
 import { DriverDashboardV2 } from "@/routes/lazyPages";
 
 export const driverRoutes = (
   <>
     <Route
-      path="/entregador"
       element={
-        <RoleGuard allowedRoles={["motoboy", "admin"]} redirectTo="/" requireApproval>
-          <DriverDashboardV2 />
-        </RoleGuard>
+        <GuardedLayout allowedRoles={["motoboy", "admin"]} redirectTo="/" requireApproval />
       }
-    />
+    >
+      <Route path="/entregador" element={<DriverDashboardV2 />} />
+    </Route>
     <Route path="/entregador1" element={<Navigate to="/entregador" replace />} />
     <Route path="/entregador2" element={<Navigate to="/entregador" replace />} />
   </>
