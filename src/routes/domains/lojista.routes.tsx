@@ -1,6 +1,7 @@
 import { Route, Navigate } from "react-router-dom";
 import { GuardedLayout } from "@/routes/layouts/GuardedLayout";
 import { LojistaHomeLayout } from "@/routes/layouts/LojistaLayout";
+import { ScopedNotFound } from "@/components/ScopedNotFound";
 import {
   AdminDashboardV2,
   MatrizDashboard,
@@ -43,5 +44,11 @@ export const lojistaRoutes = (
       <Route path="/admin/cardapio" element={<PdvCardapioPage />} />
     </Route>
     <Route path="/admin/pdv/cardapio" element={<Navigate to="/admin/cardapio" replace />} />
+
+    {/* 404 escopado para sub-árvore /admin/* (Fase 5) — depois de todas as rotas conhecidas. */}
+    <Route
+      path="/admin/*"
+      element={<ScopedNotFound scope="Admin Lojista" homePath="/admin" />}
+    />
   </>
 );
