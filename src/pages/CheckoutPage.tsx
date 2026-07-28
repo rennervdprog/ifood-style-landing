@@ -506,12 +506,19 @@ const CheckoutPage = () => {
     return haversineMeters({ lat: sLat, lng: sLng }, { lat: cLat, lng: cLng }) / 1000;
   }, [storeData, selectedSavedAddressId, savedAddressData]);
 
-  // ≤ 0.3 km entre GPS e cadastrado = mesma localização (rede segura via divergenceKm calculado).
+  // Distância direta (haversine) entre coords do GPS e coords do endereço cadastrado.
+  const gpsVsSavedKm = useMemo(() => {
+    if (!usingGpsDelivery || !clientCoords) return null;
+    const cLat = selectedSavedAddressId && savedAddressData ? Number(savedAddressData.latitude) : NaN;
+    const cLng = selectedSavedAddressId && savedAddressData ? Number(savedAddressData.longitude) : NaN;
+    if (!isValidCoordinate(cLat, cLng)) return null;
+    return haversineMeters(clientCoords, { lat: cLat, lng: cLng }) / 1000;
+  }, [usingGpsDelivery, clientCoords, selectedSavedAddressId, savedAddressData]);
+
   const addressMatchState: "match" | "diverge" | null = useMemo(() => {
-    if (!usingGpsDelivery) return null;
-    if (divergenceKm == null) return null;
-    return divergenceKm <= 0.3 ? "match" : "diverge";
-  }, [usingGpsDelivery, divergenceKm]);
+    if (gpsVsSavedKm == null) return null;
+    return gpsVsSavedKm <= 0.3 ? "match" : "diverge";
+  }, [gpsVsSavedKm]);
 
   useEffect(() => {
     if (authLoading) return;
