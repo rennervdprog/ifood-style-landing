@@ -19,14 +19,9 @@ Ganho: fecha 7 bugs 🔴 sem tocar em arquitetura.
 
 ---
 
-## Fase 1 — `RESERVED_SLUGS` como fonte única
+## Fase 1 — `RESERVED_SLUGS` como fonte única ✅ (v1.26.47)
 
-Novo arquivo `src/routes/reservedSlugs.ts` exportando `RESERVED_SLUGS` + `isReservedSlug(slug)`.
-
-- `StorePage` (catch-all `/:slug`) chama `isReservedSlug` no topo e devolve `<NotFound/>` antes de tentar buscar loja.
-- Remove os 9 `<Route>` estáticos de reservados em `App.tsx`.
-
-Ganho: fim do risco de "roubo de rota" pelo catch-all.
+Feito: `src/routes/reservedSlugs.ts` com `RESERVED_SLUGS` + `isReservedSlug()`, guard no topo de `StorePage`, remoção do bloco de rotas estáticas duplicadas em `App.tsx`.
 
 ---
 
