@@ -17,7 +17,7 @@ function ensureLeafletCSS() {
 interface Props {
   initialLat?: number | null;
   initialLng?: number | null;
-  onConfirm: (coords: { lat: number; lng: number }, reverse?: { street?: string | null; neighborhood?: string | null; postalcode?: string | null } | null) => void;
+  onConfirm: (coords: { lat: number; lng: number }, reverse?: { street?: string | null; number?: string | null; neighborhood?: string | null; postalcode?: string | null } | null) => void;
   onCancel?: () => void;
   height?: number;
 }
@@ -103,7 +103,7 @@ const AddressPinPicker = ({ initialLat, initialLng, onConfirm, onCancel, height 
     setReversing(true);
     try {
       const rev = await reverseGeocode(coords).catch(() => null);
-      onConfirm(coords, rev ? { street: rev.street, neighborhood: rev.neighborhood, postalcode: rev.postalcode } : null);
+      onConfirm(coords, rev ? { street: rev.street, number: rev.number, neighborhood: rev.neighborhood, postalcode: rev.postalcode } : null);
     } finally {
       setReversing(false);
     }
