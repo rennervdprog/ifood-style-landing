@@ -23,6 +23,7 @@ import LoyaltyRedemption from "@/components/LoyaltyRedemption";
 import DeliveryTimeEstimate from "@/components/DeliveryTimeEstimate";
 import { formatCep, fetchCep, reverseGeocode, readGpsFromGesture, resolveAddress, type Coordinates, type ReverseResult } from "@/lib/location";
 import { resolveDistance } from "@/lib/location/distance";
+import { haversineMeters, isValidCoordinate } from "@/lib/location/distance";
 import { checkStoreAccess, MAX_DISTANCE_KM } from "@/lib/fraudCheck";
 import EmptiesExchange, { type EmptiesExchangeSelection } from "@/components/EmptiesExchange";
 import { haptic } from "@/lib/haptics";
@@ -489,6 +490,35 @@ const CheckoutPage = () => {
   const addressString = buildAddressString();
   const usingGpsDelivery = !isPickup && coordsSource === "gps" && isLocationRequested && !!clientCoords;
   const gpsAddressIsDeliverable = usingGpsDelivery && !!gpsAddress?.street && !!(gpsAddress.neighborhood || gpsAddress.city);
+
+  // Distância informativa (haversine) entre endereço cadastrado e loja.
+  const savedDistanceKm = useMemo(() => {
+    const sLat = Number((storeData as any)?.latitude);
+    const sLng = Number((storeData as any)?.longitude);
+    if (!isValidCoordinate(sLat, sLng)) return null;
+    const cLat = selectedSavedAddressId && savedAddressData
+      ? Number(savedAddressData.latitude)
+      : NaN;
+    const cLng = selectedSavedAddressId && savedAddressData
+      ? Number(savedAddressData.longitude)
+      : NaN;
+    if (!isValidCoordinate(cLat, cLng)) return null;
+    return haversineMeters({ lat: sLat, lng: sLng }, { lat: cLat, lng: cLng }) / 1000;
+  }, [storeData, selectedSavedAddressId, savedAddressData]);
+
+  // Distância direta (haversine) entre coords do GPS e coords do endereço cadastrado.
+  const gpsVsSavedKm = useMemo(() => {
+    if (!usingGpsDelivery || !clientCoords) return null;
+    const cLat = selectedSavedAddressId && savedAddressData ? Number(savedAddressData.latitude) : NaN;
+    const cLng = selectedSavedAddressId && savedAddressData ? Number(savedAddressData.longitude) : NaN;
+    if (!isValidCoordinate(cLat, cLng)) return null;
+    return haversineMeters(clientCoords, { lat: cLat, lng: cLng }) / 1000;
+  }, [usingGpsDelivery, clientCoords, selectedSavedAddressId, savedAddressData]);
+
+  const addressMatchState: "match" | "diverge" | null = useMemo(() => {
+    if (gpsVsSavedKm == null) return null;
+    return gpsVsSavedKm <= 0.3 ? "match" : "diverge";
+  }, [gpsVsSavedKm]);
 
   useEffect(() => {
     if (authLoading) return;
@@ -1008,62 +1038,28 @@ const CheckoutPage = () => {
               </div>
             )}
 
-            {selectedSavedAddressId && savedAddressData && (
-              <div className="bg-primary/5 rounded-xl p-3.5 space-y-1.5">
-                {usingGpsDelivery && gpsAddress ? (
-                  <>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-[10px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded">📍 GPS</span>
-                      <span className="text-[10px] text-muted-foreground">Localização atual</span>
-                    </div>
-                    <p className="text-sm font-bold text-foreground">{gpsAddress.display}</p>
-                    <p className="text-[10px] text-muted-foreground italic">Cadastrado: {savedAddressData.street}, {savedAddressData.number} - {savedAddressData.neighborhood}</p>
-                  </>
-                ) : (
+            {/* CARD 1: Endereço cadastrado (saved address ou profile) */}
+            {(selectedSavedAddressId && savedAddressData) || (!selectedSavedAddressId && hasAddress) ? (
+              <div className={`rounded-xl p-3.5 space-y-1.5 border ${usingGpsDelivery ? "bg-muted/30 border-border/50 opacity-70" : "bg-primary/5 border-primary/20"}`}>
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] font-bold text-foreground bg-muted px-1.5 py-0.5 rounded">📮 CADASTRADO</span>
+                    {!usingGpsDelivery && <span className="text-[10px] text-primary font-semibold">Em uso</span>}
+                  </div>
+                  {savedDistanceKm != null && (
+                    <span className="text-[10px] font-semibold text-muted-foreground">≈ {savedDistanceKm.toFixed(1)} km da loja</span>
+                  )}
+                </div>
+                {selectedSavedAddressId && savedAddressData ? (
                   <>
                     <p className="text-sm font-bold text-foreground">
                       {savedAddressData.street}, {savedAddressData.number}
                       {savedAddressData.complement ? ` - ${savedAddressData.complement}` : ""}
                     </p>
                     <p className="text-xs text-muted-foreground">{savedAddressData.neighborhood}</p>
-                  </>
-                )}
-                {savedAddressData.reference_point && (
-                  <p className="text-xs text-muted-foreground">📍 {savedAddressData.reference_point}</p>
-                )}
-                <div className="flex items-center justify-between pt-2 border-t border-border/30">
-                  {calculatingFee ? (
-                    <span className="text-xs text-muted-foreground flex items-center gap-1">
-                      <Loader2 className="h-3 w-3 animate-spin" /> Calculando taxa...
-                    </span>
-                  ) : (
-                    <div className="flex items-center gap-1.5">
-                      <Truck className="h-3.5 w-3.5 text-primary" />
-                      <span className="text-xs font-bold text-primary">
-                        {formatBRL(activeDeliveryFee)}
-                      </span>
-                    </div>
-                  )}
-                  <button
-                    onClick={() => { setSelectedSavedAddressId(null); setSavedAddressData(null); setGpsAddress(null); setIsLocationRequested(false); setCoordsSource(null); setClientCoords(null); }}
-                    className="text-xs text-primary font-semibold"
-                  >
-                    Alterar
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {!selectedSavedAddressId && (hasAddress || usingGpsDelivery) && (
-              <div className="bg-primary/5 rounded-xl p-3.5 space-y-1.5">
-                {usingGpsDelivery && gpsAddress ? (
-                  <>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-[10px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded">📍 GPS</span>
-                      <span className="text-[10px] text-muted-foreground">Localização atual</span>
-                    </div>
-                    <p className="text-sm font-bold text-foreground">{gpsAddress.display}</p>
-                    <p className="text-[10px] text-muted-foreground italic">Cadastrado: {profileStreet}, {profileNumber} - {profileNeighborhood}</p>
+                    {savedAddressData.reference_point && (
+                      <p className="text-xs text-muted-foreground">📍 {savedAddressData.reference_point}</p>
+                    )}
                   </>
                 ) : (
                   <>
@@ -1072,37 +1068,96 @@ const CheckoutPage = () => {
                       {profileComplement ? ` - ${profileComplement}` : ""}
                     </p>
                     <p className="text-xs text-muted-foreground">{profileNeighborhood}</p>
+                    {profileReference && (
+                      <p className="text-xs text-muted-foreground">📍 {profileReference}</p>
+                    )}
                   </>
-                )}
-                {profileReference && (
-                  <p className="text-xs text-muted-foreground">📍 {profileReference}</p>
                 )}
                 <div className="flex items-center justify-between pt-2 border-t border-border/30">
                   {calculatingFee ? (
                     <span className="text-xs text-muted-foreground flex items-center gap-1">
                       <Loader2 className="h-3 w-3 animate-spin" /> Calculando taxa...
                     </span>
-                  ) : (
+                  ) : !usingGpsDelivery ? (
                     <div className="flex items-center gap-1.5">
                       <Truck className="h-3.5 w-3.5 text-primary" />
-                      <span className="text-xs font-bold text-primary">
-                        {formatBRL(activeDeliveryFee)}
-                      </span>
+                      <span className="text-xs font-bold text-primary">{formatBRL(activeDeliveryFee)}</span>
                     </div>
+                  ) : <span />}
+                  {selectedSavedAddressId ? (
+                    <button
+                      onClick={() => { setSelectedSavedAddressId(null); setSavedAddressData(null); setGpsAddress(null); setIsLocationRequested(false); setCoordsSource(null); setClientCoords(null); }}
+                      className="text-xs text-primary font-semibold"
+                    >
+                      Alterar
+                    </button>
+                  ) : (
+                    <button onClick={() => navigate("/perfil")} className="text-xs text-primary font-semibold flex items-center gap-1">
+                      <Edit3 className="h-3 w-3" /> Alterar
+                    </button>
                   )}
-                  <button onClick={() => navigate("/perfil")} className="text-xs text-primary font-semibold flex items-center gap-1">
-                    <Edit3 className="h-3 w-3" /> Alterar
-                  </button>
                 </div>
-                {!usingGpsDelivery && (
-                  <button
-                    onClick={handleRequestLocation}
-                    disabled={requestingLocation}
-                    className="w-full mt-2 text-xs font-bold text-primary border border-primary/30 rounded-lg py-2 flex items-center justify-center gap-1.5 disabled:opacity-50"
-                  >
-                    {requestingLocation ? <Loader2 className="h-3 w-3 animate-spin" /> : <MapPin className="h-3 w-3" />}
-                    Usar minha localização atual (mais preciso)
-                  </button>
+              </div>
+            ) : null}
+
+            {/* CARD 2: Localização atual (GPS) — sempre separado */}
+            {(hasAddress || (selectedSavedAddressId && savedAddressData) || usingGpsDelivery) && (
+              <div className={`rounded-xl p-3.5 space-y-2 border-2 ${usingGpsDelivery ? "bg-primary/5 border-primary/40 border-solid" : "border-dashed border-primary/25"}`}>
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <MapPin className="h-3.5 w-3.5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-foreground leading-tight">Usar minha localização atual</p>
+                      <p className="text-[10px] text-muted-foreground">GPS do celular — mais preciso</p>
+                    </div>
+                  </div>
+                  {usingGpsDelivery ? (
+                    <span className="text-[10px] font-bold text-primary bg-primary/15 px-2 py-1 rounded">ATIVO</span>
+                  ) : (
+                    <button
+                      onClick={handleRequestLocation}
+                      disabled={requestingLocation}
+                      className="text-xs font-bold text-primary-foreground bg-primary px-3 py-1.5 rounded-lg flex items-center gap-1 disabled:opacity-50"
+                    >
+                      {requestingLocation ? <Loader2 className="h-3 w-3 animate-spin" /> : "Ativar"}
+                    </button>
+                  )}
+                </div>
+
+                {usingGpsDelivery && gpsAddress && (
+                  <div className="pt-1 border-t border-border/30 space-y-1.5">
+                    <p className="text-sm font-bold text-foreground">{gpsAddress.display}</p>
+                    {addressMatchState === "match" && (
+                      <div className="flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+                        <CheckCircle2 className="h-3 w-3" /> Localização confere com o endereço cadastrado
+                      </div>
+                    )}
+                    {addressMatchState === "diverge" && gpsVsSavedKm != null && (
+                      <div className="flex items-center gap-1 text-[11px] font-semibold text-amber-600 dark:text-amber-400">
+                        <AlertTriangle className="h-3 w-3" /> {gpsVsSavedKm.toFixed(1)} km do endereço cadastrado
+                      </div>
+                    )}
+                    <div className="flex items-center justify-between pt-1">
+                      {calculatingFee ? (
+                        <span className="text-xs text-muted-foreground flex items-center gap-1">
+                          <Loader2 className="h-3 w-3 animate-spin" /> Calculando taxa...
+                        </span>
+                      ) : (
+                        <div className="flex items-center gap-1.5">
+                          <Truck className="h-3.5 w-3.5 text-primary" />
+                          <span className="text-xs font-bold text-primary">{formatBRL(activeDeliveryFee)}</span>
+                        </div>
+                      )}
+                      <button
+                        onClick={() => { setGpsAddress(null); setIsLocationRequested(false); setCoordsSource(selectedSavedAddressId ? "address" : null); setClientCoords(selectedSavedAddressId && savedAddressData ? { lat: Number(savedAddressData.latitude), lng: Number(savedAddressData.longitude) } : null); }}
+                        className="text-xs text-muted-foreground font-semibold"
+                      >
+                        Voltar ao cadastrado
+                      </button>
+                    </div>
+                  </div>
                 )}
               </div>
             )}
