@@ -61,6 +61,8 @@ const CheckoutPage = () => {
   const [showPinPicker, setShowPinPicker] = useState(false);
   const [showNumberPrompt, setShowNumberPrompt] = useState(false);
   const [numberInput, setNumberInput] = useState("");
+  const [streetInput, setStreetInput] = useState("");
+  const [neighborhoodInput, setNeighborhoodInput] = useState("");
   const [calculatingFee, setCalculatingFee] = useState(false);
   const [feeBreakdown, setFeeBreakdown] = useState<string | null>(null);
   const [divergenceKm, setDivergenceKm] = useState<number | null>(null);
