@@ -23,6 +23,7 @@ import LoyaltyRedemption from "@/components/LoyaltyRedemption";
 import DeliveryTimeEstimate from "@/components/DeliveryTimeEstimate";
 import { formatCep, fetchCep, reverseGeocode, readGpsFromGesture, resolveAddress, type Coordinates, type ReverseResult } from "@/lib/location";
 import { resolveDistance } from "@/lib/location/distance";
+import { haversineMeters, isValidCoordinate } from "@/lib/location/distance";
 import { checkStoreAccess, MAX_DISTANCE_KM } from "@/lib/fraudCheck";
 import EmptiesExchange, { type EmptiesExchangeSelection } from "@/components/EmptiesExchange";
 import { haptic } from "@/lib/haptics";
@@ -489,6 +490,28 @@ const CheckoutPage = () => {
   const addressString = buildAddressString();
   const usingGpsDelivery = !isPickup && coordsSource === "gps" && isLocationRequested && !!clientCoords;
   const gpsAddressIsDeliverable = usingGpsDelivery && !!gpsAddress?.street && !!(gpsAddress.neighborhood || gpsAddress.city);
+
+  // Distância informativa (haversine) entre endereço cadastrado e loja.
+  const savedDistanceKm = useMemo(() => {
+    const sLat = Number((storeData as any)?.latitude);
+    const sLng = Number((storeData as any)?.longitude);
+    if (!isValidCoordinate(sLat, sLng)) return null;
+    const cLat = selectedSavedAddressId && savedAddressData
+      ? Number(savedAddressData.latitude)
+      : NaN;
+    const cLng = selectedSavedAddressId && savedAddressData
+      ? Number(savedAddressData.longitude)
+      : NaN;
+    if (!isValidCoordinate(cLat, cLng)) return null;
+    return haversineMeters({ lat: sLat, lng: sLng }, { lat: cLat, lng: cLng }) / 1000;
+  }, [storeData, selectedSavedAddressId, savedAddressData]);
+
+  // ≤ 0.3 km entre GPS e cadastrado = mesma localização (rede segura via divergenceKm calculado).
+  const addressMatchState: "match" | "diverge" | null = useMemo(() => {
+    if (!usingGpsDelivery) return null;
+    if (divergenceKm == null) return null;
+    return divergenceKm <= 0.3 ? "match" : "diverge";
+  }, [usingGpsDelivery, divergenceKm]);
 
   useEffect(() => {
     if (authLoading) return;
