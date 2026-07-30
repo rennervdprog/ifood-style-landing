@@ -571,8 +571,10 @@ const AdminDashboard = () => {
     queryKey: ["store-drivers-list", store?.id],
       staleTime: 60_000,         // 1min — lista de motoboys
     queryFn: async () => {
-      const { data: sdLinks } = await supabase.from("store_drivers").select("driver_user_id").eq("store_id", store!.id);
-      if (!sdLinks?.length) return [];
+      const { data: sdRaw } = await supabase.from("store_drivers").select("driver_user_id, status").eq("store_id", store!.id);
+      // Só considera vínculos ativos (status nulo = vínculo legado, também vale)
+      const sdLinks = (sdRaw || []).filter((d: any) => !d.status || d.status === "accepted");
+      if (!sdLinks.length) return [];
       const userIds = sdLinks.map(d => d.driver_user_id);
       const { data: profiles } = await supabase.from("profiles").select("user_id, full_name, phone, whatsapp_number").in("user_id", userIds);
       // If RLS blocks profile reads, still return driver links so hasLinkedDrivers is accurate
