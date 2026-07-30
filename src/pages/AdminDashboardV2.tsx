@@ -572,8 +572,8 @@ const AdminDashboard = () => {
       staleTime: 60_000,         // 1min — lista de motoboys
     queryFn: async () => {
       const { data: sdRaw } = await supabase.from("store_drivers").select("driver_user_id, status").eq("store_id", store!.id);
-      // Só considera vínculos ativos (status nulo = vínculo legado, também vale)
-      const sdLinks = (sdRaw || []).filter((d: any) => !d.status || d.status === "accepted");
+      // Só considera vínculos aceitos (status = accepted)
+      const sdLinks = (sdRaw || []).filter((d: any) => d.status === "accepted");
       if (!sdLinks.length) return [];
       const userIds = sdLinks.map(d => d.driver_user_id);
       const { data: profiles } = await supabase.from("profiles").select("user_id, full_name, phone, whatsapp_number").in("user_id", userIds);
