@@ -1,6 +1,7 @@
 import { Route, Navigate } from "react-router-dom";
 import { GuardedLayout } from "@/routes/layouts/GuardedLayout";
 import { LojistaHomeLayout } from "@/routes/layouts/LojistaLayout";
+import { PdvAccessLayout } from "@/routes/layouts/PdvAccessLayout";
 import { ScopedNotFound } from "@/components/ScopedNotFound";
 import {
   AdminDashboardV2,
@@ -39,9 +40,11 @@ export const lojistaRoutes = (
         <GuardedLayout allowedRoles={["lojista", "admin"]} redirectTo="/" requireApproval />
       }
     >
-      <Route path="/admin/pdv" element={<PdvPage />} />
-      <Route path="/admin/pdv/kds" element={<PdvKdsPage />} />
-      <Route path="/admin/cardapio" element={<PdvCardapioPage />} />
+      <Route element={<PdvAccessLayout />}>
+        <Route path="/admin/pdv" element={<PdvPage />} />
+        <Route path="/admin/pdv/kds" element={<PdvKdsPage />} />
+        <Route path="/admin/cardapio" element={<PdvCardapioPage />} />
+      </Route>
     </Route>
     <Route path="/admin/pdv/cardapio" element={<Navigate to="/admin/cardapio" replace />} />
 
