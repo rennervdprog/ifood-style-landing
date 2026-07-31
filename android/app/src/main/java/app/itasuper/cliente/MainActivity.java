@@ -1,4 +1,4 @@
-package app.lovable.e8d28aded6334d74be2161c8dbe24765;
+package app.itasuper.cliente;
 
 import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
