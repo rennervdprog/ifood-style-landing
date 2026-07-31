@@ -1,14 +1,14 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace = "app.lovable.e8d28aded6334d74be2161c8dbe24765"
+    namespace = "app.itasuper.cliente"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "app.lovable.e8d28aded6334d74be2161c8dbe24765"
+        applicationId "app.itasuper.cliente"
         minSdkVersion 26
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 10107
-        versionName "1.27.5"
+        versionCode 10108
+        versionName "1.27.6"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
