@@ -414,7 +414,7 @@ Deno.serve(async (req) => {
             .maybeSingle();
 
           let cleanCpf = String(ownerProfile?.document || "").replace(/\D/g, "");
-          const isSandbox = !ASAAS_API_KEY.startsWith("$aact_prod_");
+          const isSandbox = !String(ASAAS_API_KEY || "").startsWith("$aact_prod_");
           if (isSandbox && cleanCpf.length < 11) cleanCpf = "52998224725";
 
           // PRODUCTION requires a valid CPF/CNPJ — fail early with a clear message
