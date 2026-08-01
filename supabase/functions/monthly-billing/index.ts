@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { z } from "https://esm.sh/zod@3.23.8";
+import { abacatepayEnabled, createAbacatePix } from "../_shared/abacatepay.ts";
 
 const BodySchema = z.object({
   store_id: z.string().uuid().optional(),
@@ -95,11 +96,11 @@ Deno.serve(async (req) => {
     const supabase = createClient(EXTERNAL_URL, EXTERNAL_KEY);
 
     const ASAAS_API_KEY = Deno.env.get("ASAAS_API_KEY");
-    if (!ASAAS_API_KEY) {
+    if (!ASAAS_API_KEY && !abacatepayEnabled()) {
       return json({ error: "ASAAS_API_KEY not configured" }, 500);
     }
 
-    const asaasBaseUrl = ASAAS_API_KEY.startsWith("$aact_prod_")
+    const asaasBaseUrl = String(ASAAS_API_KEY || "").startsWith("$aact_prod_")
       ? "https://api.asaas.com/v3"
       : "https://sandbox.asaas.com/api/v3";
 
@@ -369,10 +370,42 @@ Deno.serve(async (req) => {
           continue;
         }
 
+        // Provider da cobrança: AbacatePay quando configurado (PIX mais barato),
+        // senão Asaas. Split não é mais necessário (repasse via Pix Direto).
+        const useAbacate = abacatepayEnabled();
+        const providerName = useAbacate ? "abacatepay" : "asaas";
+        let chargeId: string | null = null;
+        let pixQrCode: string | null = null;
+        let pixQrCodeBase64: string | null = null;
+        let pixCopyPaste: string | null = null;
+
+        if (useAbacate) {
+          const { data: ownerProfile } = await supabase
+            .from("profiles")
+            .select("full_name, email, document")
+            .eq("user_id", store.owner_id)
+            .maybeSingle();
+
+          const pix = await createAbacatePix({
+            amount: totalAmount,
+            description: description.substring(0, 140),
+            externalId: referenceCode,
+            customer: {
+              name: ownerProfile?.full_name || store.name || "Lojista",
+              email: ownerProfile?.email || `lojista-${(store.owner_id || "").substring(0, 8)}@itasuper.com`,
+              taxId: String(ownerProfile?.document || "").replace(/\D/g, ""),
+            },
+          });
+          chargeId = pix.id;
+          pixQrCode = pix.brCode;
+          pixQrCodeBase64 = pix.brCodeBase64;
+          pixCopyPaste = pix.brCode;
+        }
+
         // Resolve Asaas customer for this store
         let customerId: string | null = store.asaas_account_id || null;
 
-        if (!customerId) {
+        if (!useAbacate && !customerId) {
           // Look up store owner profile to create/find a customer
           const { data: ownerProfile } = await supabase
             .from("profiles")
@@ -381,7 +414,7 @@ Deno.serve(async (req) => {
             .maybeSingle();
 
           let cleanCpf = String(ownerProfile?.document || "").replace(/\D/g, "");
-          const isSandbox = !ASAAS_API_KEY.startsWith("$aact_prod_");
+          const isSandbox = !String(ASAAS_API_KEY || "").startsWith("$aact_prod_");
           if (isSandbox && cleanCpf.length < 11) cleanCpf = "52998224725";
 
           // PRODUCTION requires a valid CPF/CNPJ — fail early with a clear message
@@ -431,6 +464,7 @@ Deno.serve(async (req) => {
         }
 
         // Create Asaas charge
+        if (!useAbacate) {
         const chargeBody: any = {
           customer: customerId,
           billingType: "PIX",
@@ -459,11 +493,9 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        // Get PIX QR code
-        let pixQrCode = null;
-        let pixQrCodeBase64 = null;
-        let pixCopyPaste = null;
+        chargeId = chargeData.id || null;
 
+        // Get PIX QR code
         if (chargeData.id) {
           const pixResponse = await fetch(`${asaasBaseUrl}/payments/${chargeData.id}/pixQrCode`, {
             headers: { "access_token": ASAAS_API_KEY },
@@ -475,6 +507,7 @@ Deno.serve(async (req) => {
             pixCopyPaste = pixData.payload || null;
           }
         }
+        }
 
         // Save financial transaction
         await supabase.from("financial_transactions").insert({
@@ -483,8 +516,8 @@ Deno.serve(async (req) => {
           reference_code: referenceCode,
           amount: totalAmount,  // mensalidade + comissão PDV
           status: "pending",
-          provider: "asaas",
-          mercado_pago_payment_id: chargeData.id || null,
+          provider: providerName,
+          mercado_pago_payment_id: chargeId,
           pix_qr_code: pixQrCode,
           pix_qr_code_base64: pixQrCodeBase64,
           pix_copy_paste: pixCopyPaste,
