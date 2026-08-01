@@ -464,6 +464,7 @@ Deno.serve(async (req) => {
         }
 
         // Create Asaas charge
+        if (!useAbacate) {
         const chargeBody: any = {
           customer: customerId,
           billingType: "PIX",
@@ -492,11 +493,9 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        // Get PIX QR code
-        let pixQrCode = null;
-        let pixQrCodeBase64 = null;
-        let pixCopyPaste = null;
+        chargeId = chargeData.id || null;
 
+        // Get PIX QR code
         if (chargeData.id) {
           const pixResponse = await fetch(`${asaasBaseUrl}/payments/${chargeData.id}/pixQrCode`, {
             headers: { "access_token": ASAAS_API_KEY },
@@ -508,6 +507,7 @@ Deno.serve(async (req) => {
             pixCopyPaste = pixData.payload || null;
           }
         }
+        }
 
         // Save financial transaction
         await supabase.from("financial_transactions").insert({
@@ -516,8 +516,8 @@ Deno.serve(async (req) => {
           reference_code: referenceCode,
           amount: totalAmount,  // mensalidade + comissão PDV
           status: "pending",
-          provider: "asaas",
-          mercado_pago_payment_id: chargeData.id || null,
+          provider: providerName,
+          mercado_pago_payment_id: chargeId,
           pix_qr_code: pixQrCode,
           pix_qr_code_base64: pixQrCodeBase64,
           pix_copy_paste: pixCopyPaste,
