@@ -23,8 +23,8 @@ Deno.serve(async (req) => {
 
   const { data: existing } = await sb.from("store_balances").select("store_id").eq("store_id", ric.id).maybeSingle();
   out.ricburguer = existing
-    ? await sb.from("store_balances").update({ repasse_pendente: 89 }).eq("store_id", ric.id).select().single()
-    : await sb.from("store_balances").insert({ store_id: ric.id, repasse_pendente: 89, comissao_pendente: 0 }).select().single();
+    ? await sb.from("store_balances").update({ repasse_pendente: 178 }).eq("store_id", ric.id).select().single()
+    : await sb.from("store_balances").insert({ store_id: ric.id, repasse_pendente: 178, comissao_pendente: 0 }).select().single();
 
   return new Response(JSON.stringify({ pastel, ric, out }, null, 2), { headers: { ...cors, "Content-Type": "application/json" } });
 });
