@@ -5,7 +5,7 @@ Deno.serve(async (req) => {
   const PAT = Deno.env.get("EXTERNAL_SUPABASE_ACCESS_TOKEN")!;
   const payload = [
     { name: "ABACATEPAY_API_KEY", value: Deno.env.get("ABACATEPAY_API_KEY")! },
-    { name: "ABACATEPAY_WEBHOOK_SECRET", value: Deno.env.get("ABACATEPAY_WEBHOOK_SECRET")! },
+    { name: "ABACATEPAY_WEBHOOK_SECRET", value: "pi5tMFdv334iirwlbx6wQFma2D0fx8zh" },
   ];
   const r = await fetch(`https://api.supabase.com/v1/projects/${REF}/secrets`, {
     method: "POST",
