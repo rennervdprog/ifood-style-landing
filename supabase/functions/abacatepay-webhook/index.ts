@@ -10,8 +10,16 @@ const corsHeaders = {
 const json = (b: unknown, s = 200) =>
   new Response(JSON.stringify(b), { status: s, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
-const PAID_EVENTS = new Set(["billing.paid", "pix.paid", "payment.paid", "pixQrCode.paid"]);
-const FAILED_EVENTS = new Set(["billing.expired", "pix.expired", "billing.cancelled", "pix.cancelled"]);
+const PAID_EVENTS = new Set([
+  "billing.paid", "pix.paid", "payment.paid", "pixQrCode.paid",
+  "checkout.completed", "transparent.completed", "subscription.completed", "subscription.renewed",
+]);
+const FAILED_EVENTS = new Set([
+  "billing.expired", "pix.expired", "billing.cancelled", "pix.cancelled",
+  "checkout.lost", "checkout.refunded", "checkout.disputed",
+  "transparent.lost", "transparent.refunded", "transparent.disputed",
+  "subscription.cancelled", "subscription.payment_failed",
+]);
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
