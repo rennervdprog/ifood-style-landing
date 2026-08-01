@@ -1196,6 +1196,7 @@ async function routePixCreation(params: {
   storeId?: string;
   subtotal?: number;
   deliveryFee?: number;
+  preferAbacate?: boolean;
 }): Promise<Response> {
   // Get service role supabase client to allow RPC call
   const serviceClient = createClient(
@@ -1205,6 +1206,36 @@ async function routePixCreation(params: {
 
   const provider = await getActiveProviderFromDB();
   console.log(`[Route] 🎯 Active provider: ${provider} | hasAsaas=${hasAsaasCredentials()} hasMP=${hasMpCredentials()} hasEfi=${hasEfiCredentials()}`);
+
+  // ── AbacatePay (cobranças da plataforma: PIX mais barato) ──
+  if (params.preferAbacate && provider !== "SIMULATED" && abacatepayEnabled()) {
+    try {
+      const pix = await createAbacatePixInline({
+        amount: params.amount,
+        description: params.description,
+        externalId: params.externalReference,
+        customer: {
+          name: `${params.payerFirstName} ${params.payerLastName}`.trim(),
+          email: params.payerEmail,
+          taxId: params.payerCpf,
+        },
+      });
+      const resp: StandardPixResponse = {
+        status: "pending",
+        pix_code: pix.brCode,
+        qr_code_url: pix.brCodeBase64,
+        provider: "abacatepay",
+        reference_code: params.externalReference,
+        payment_id: pix.id,
+        amount: params.amount,
+        created_at: new Date().toISOString(),
+        expires_at: params.expiresAt || null,
+      };
+      return json(resp);
+    } catch (e) {
+      console.error("[Route] AbacatePay falhou, seguindo para provider padrão:", e);
+    }
+  }
 
   // ── Simulation ──
   if (provider === "SIMULATED") {
