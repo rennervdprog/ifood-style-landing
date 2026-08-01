@@ -22,7 +22,7 @@ export async function createAbacatePix(params: {
   const key = Deno.env.get("ABACATEPAY_API_KEY");
   if (!key) throw new Error("ABACATEPAY_API_KEY não configurada");
 
-  const body: Record<string, unknown> = {
+  const data: Record<string, unknown> = {
     amount: Math.round(params.amount * 100), // centavos
     expiresIn: params.expiresInSeconds ?? 60 * 60 * 24, // 24h
     description: String(params.description).substring(0, 140),
@@ -32,7 +32,7 @@ export async function createAbacatePix(params: {
   const c = params.customer;
   const taxId = String(c?.taxId || "").replace(/\D/g, "");
   if (c && (c.name || c.email)) {
-    body.customer = {
+    data.customer = {
       name: c.name || "Lojista",
       email: c.email || `lojista-${params.externalId}@itasuper.com`,
       cellphone: c.cellphone || "(22) 99999-9999",
@@ -40,13 +40,13 @@ export async function createAbacatePix(params: {
     };
   }
 
-  const res = await fetch("https://api.abacatepay.com/v1/pixQrCode/create", {
+  const res = await fetch("https://api.abacatepay.com/v2/transparents/create", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${key}`,
     },
-    body: JSON.stringify(body),
+    body: JSON.stringify({ method: "PIX", data }),
   });
 
   const payload = await res.json().catch(() => ({}));
@@ -55,10 +55,10 @@ export async function createAbacatePix(params: {
     throw new Error(payload?.error?.message || payload?.error || "Erro AbacatePay");
   }
 
-  const data = payload?.data || payload;
+  const out = payload?.data || payload;
   return {
-    id: String(data?.id || ""),
-    brCode: data?.brCode || null,
-    brCodeBase64: (data?.brCodeBase64 || "").replace(/^data:image\/\w+;base64,/, "") || null,
+    id: String(out?.id || ""),
+    brCode: out?.brCode || null,
+    brCodeBase64: (out?.brCodeBase64 || "").replace(/^data:image\/\w+;base64,/, "") || null,
   };
 }
