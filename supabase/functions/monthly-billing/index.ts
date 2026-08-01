@@ -96,11 +96,11 @@ Deno.serve(async (req) => {
     const supabase = createClient(EXTERNAL_URL, EXTERNAL_KEY);
 
     const ASAAS_API_KEY = Deno.env.get("ASAAS_API_KEY");
-    if (!ASAAS_API_KEY) {
+    if (!ASAAS_API_KEY && !abacatepayEnabled()) {
       return json({ error: "ASAAS_API_KEY not configured" }, 500);
     }
 
-    const asaasBaseUrl = ASAAS_API_KEY.startsWith("$aact_prod_")
+    const asaasBaseUrl = String(ASAAS_API_KEY || "").startsWith("$aact_prod_")
       ? "https://api.asaas.com/v3"
       : "https://sandbox.asaas.com/api/v3";
 
