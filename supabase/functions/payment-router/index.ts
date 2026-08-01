@@ -1008,6 +1008,7 @@ async function handleCommissionCharge(
     externalReference: referenceCode,
     idempotencyKey,
     expiresAt,
+    preferAbacate: true,
   });
 
   const resultBody = await result.clone().json();
