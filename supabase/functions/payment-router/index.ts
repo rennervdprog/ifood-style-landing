@@ -849,7 +849,7 @@ function createSimulatedPix(params: {
 
 // ── Helper: resolve active provider ──────────────────────────────────
 
-type Provider = "MERCADO_PAGO" | "EFI_BANK" | "ASAAS" | "SIMULATED";
+type Provider = "MERCADO_PAGO" | "EFI_BANK" | "ASAAS" | "ABACATEPAY" | "WOOVI" | "SIMULATED";
 
 function getServiceRoleKey(): string | undefined {
   return Deno.env.get("SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -871,6 +871,8 @@ async function getActiveProviderFromDB(): Promise<Provider> {
       const val = ((data.value as any)?.provider || "").toUpperCase().trim();
       if (val === "EFI_BANK") return "EFI_BANK";
       if (val === "ASAAS") return "ASAAS";
+      if (val === "ABACATEPAY") return "ABACATEPAY";
+      if (val === "WOOVI") return "WOOVI";
       if (val === "SIMULATED") return "SIMULATED";
       if (val === "MERCADO_PAGO") return "MERCADO_PAGO";
     }
@@ -881,6 +883,8 @@ async function getActiveProviderFromDB(): Promise<Provider> {
   const env = (Deno.env.get("ACTIVE_PAYMENT_PROVIDER") || "").toUpperCase().trim();
   if (env === "EFI_BANK") return "EFI_BANK";
   if (env === "MERCADO_PAGO") return "MERCADO_PAGO";
+  if (env === "ABACATEPAY") return "ABACATEPAY";
+  if (env === "WOOVI") return "WOOVI";
   if (env === "SIMULATED") return "SIMULATED";
   return "ASAAS";
 }
