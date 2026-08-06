@@ -61,6 +61,52 @@ async function createAbacatePixInline(params: {
 
 // ── Schemas ──────────────────────────────────────────────────────────
 
+// ── Woovi / OpenPix (inline: deploy externo não sobe subpastas) ──────
+function wooviEnabled(): boolean {
+  return !!(Deno.env.get("WOOVI_APP_ID") || Deno.env.get("OPENPIX_APP_ID"));
+}
+
+async function createWooviPixInline(params: {
+  amount: number;
+  description: string;
+  externalId: string;
+  customer?: { name?: string; email?: string; taxId?: string; phone?: string };
+}): Promise<{ id: string; brCode: string | null; brCodeBase64: string | null }> {
+  const appId = (Deno.env.get("WOOVI_APP_ID") || Deno.env.get("OPENPIX_APP_ID"))!;
+  const taxId = String(params.customer?.taxId || "").replace(/\D/g, "");
+  const body: Record<string, unknown> = {
+    correlationID: params.externalId,
+    value: Math.round(params.amount * 100),
+    comment: String(params.description).substring(0, 140),
+    expiresIn: 60 * 60 * 24,
+  };
+  if (params.customer?.name || params.customer?.email) {
+    body.customer = {
+      name: params.customer?.name || "Lojista",
+      email: params.customer?.email || `lojista-${params.externalId}@itasuper.com`,
+      ...(taxId.length === 11 || taxId.length === 14
+        ? { taxID: { taxID: taxId, type: taxId.length === 11 ? "BR:CPF" : "BR:CNPJ" } }
+        : {}),
+    };
+  }
+  const res = await fetch("https://api.woovi.com/api/v1/charge", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: appId },
+    body: JSON.stringify(body),
+  });
+  const payload = await res.json().catch(() => ({}));
+  if (!res.ok || payload?.error) {
+    console.error("[woovi] create error", res.status, JSON.stringify(payload));
+    throw new Error(payload?.error || "Erro Woovi");
+  }
+  const charge = payload?.charge || payload;
+  return {
+    id: String(charge?.identifier || charge?.correlationID || ""),
+    brCode: charge?.brCode || null,
+    brCodeBase64: null,
+  };
+}
+
 const OrderPixSchema = z.object({
   action: z.literal("order_pix"),
   order_id: z.string().uuid(),
@@ -803,7 +849,7 @@ function createSimulatedPix(params: {
 
 // ── Helper: resolve active provider ──────────────────────────────────
 
-type Provider = "MERCADO_PAGO" | "EFI_BANK" | "ASAAS" | "SIMULATED";
+type Provider = "MERCADO_PAGO" | "EFI_BANK" | "ASAAS" | "ABACATEPAY" | "WOOVI" | "SIMULATED";
 
 function getServiceRoleKey(): string | undefined {
   return Deno.env.get("SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -825,6 +871,8 @@ async function getActiveProviderFromDB(): Promise<Provider> {
       const val = ((data.value as any)?.provider || "").toUpperCase().trim();
       if (val === "EFI_BANK") return "EFI_BANK";
       if (val === "ASAAS") return "ASAAS";
+      if (val === "ABACATEPAY") return "ABACATEPAY";
+      if (val === "WOOVI") return "WOOVI";
       if (val === "SIMULATED") return "SIMULATED";
       if (val === "MERCADO_PAGO") return "MERCADO_PAGO";
     }
@@ -835,6 +883,8 @@ async function getActiveProviderFromDB(): Promise<Provider> {
   const env = (Deno.env.get("ACTIVE_PAYMENT_PROVIDER") || "").toUpperCase().trim();
   if (env === "EFI_BANK") return "EFI_BANK";
   if (env === "MERCADO_PAGO") return "MERCADO_PAGO";
+  if (env === "ABACATEPAY") return "ABACATEPAY";
+  if (env === "WOOVI") return "WOOVI";
   if (env === "SIMULATED") return "SIMULATED";
   return "ASAAS";
 }
@@ -1197,6 +1247,7 @@ async function routePixCreation(params: {
   subtotal?: number;
   deliveryFee?: number;
   preferAbacate?: boolean;
+  forceProvider?: Provider;
 }): Promise<Response> {
   // Get service role supabase client to allow RPC call
   const serviceClient = createClient(
@@ -1204,11 +1255,41 @@ async function routePixCreation(params: {
     Deno.env.get("SERVICE_ROLE_KEY")!,
   );
 
-  const provider = await getActiveProviderFromDB();
+  const provider = params.forceProvider ?? (await getActiveProviderFromDB());
   console.log(`[Route] 🎯 Active provider: ${provider} | hasAsaas=${hasAsaasCredentials()} hasMP=${hasMpCredentials()} hasEfi=${hasEfiCredentials()}`);
 
-  // ── AbacatePay (cobranças da plataforma: PIX mais barato) ──
-  if (params.preferAbacate && provider !== "SIMULATED" && abacatepayEnabled()) {
+  // ── Woovi / OpenPix (gateway selecionado no painel) ──
+  if (provider === "WOOVI" && wooviEnabled()) {
+    try {
+      const pix = await createWooviPixInline({
+        amount: params.amount,
+        description: params.description,
+        externalId: params.externalReference,
+        customer: {
+          name: `${params.payerFirstName} ${params.payerLastName}`.trim(),
+          email: params.payerEmail,
+          taxId: params.payerCpf,
+        },
+      });
+      const resp: StandardPixResponse = {
+        status: "pending",
+        pix_code: pix.brCode,
+        qr_code_url: pix.brCodeBase64,
+        provider: "woovi",
+        reference_code: params.externalReference,
+        payment_id: pix.id,
+        amount: params.amount,
+        created_at: new Date().toISOString(),
+        expires_at: params.expiresAt || null,
+      };
+      return json(resp);
+    } catch (e) {
+      console.error("[Route] Woovi falhou, seguindo para provider padrão:", e);
+    }
+  }
+
+  // ── AbacatePay (gateway selecionado no painel) ──
+  if (provider === "ABACATEPAY" && abacatepayEnabled()) {
     try {
       const pix = await createAbacatePixInline({
         amount: params.amount,
@@ -1485,6 +1566,11 @@ async function routePixCreation(params: {
     return json({ error: userMessage, provider: "mercado_pago" }, 500);
   }
 
+  // Fallback: gateway selecionado indisponível → tenta Asaas
+  if (!params.forceProvider && hasAsaasCredentials()) {
+    console.warn(`[Route] Provider ${provider} indisponível — fallback para ASAAS`);
+    return routePixCreation({ ...params, forceProvider: "ASAAS" });
+  }
   return json({ error: "Provedor de pagamentos não configurado." }, 500);
 }
 
