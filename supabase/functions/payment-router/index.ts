@@ -1247,6 +1247,7 @@ async function routePixCreation(params: {
   subtotal?: number;
   deliveryFee?: number;
   preferAbacate?: boolean;
+  forceProvider?: Provider;
 }): Promise<Response> {
   // Get service role supabase client to allow RPC call
   const serviceClient = createClient(
@@ -1254,7 +1255,7 @@ async function routePixCreation(params: {
     Deno.env.get("SERVICE_ROLE_KEY")!,
   );
 
-  const provider = await getActiveProviderFromDB();
+  const provider = params.forceProvider ?? (await getActiveProviderFromDB());
   console.log(`[Route] 🎯 Active provider: ${provider} | hasAsaas=${hasAsaasCredentials()} hasMP=${hasMpCredentials()} hasEfi=${hasEfiCredentials()}`);
 
   // ── Woovi / OpenPix (gateway selecionado no painel) ──
@@ -1565,6 +1566,11 @@ async function routePixCreation(params: {
     return json({ error: userMessage, provider: "mercado_pago" }, 500);
   }
 
+  // Fallback: gateway selecionado indisponível → tenta Asaas
+  if (!params.forceProvider && hasAsaasCredentials()) {
+    console.warn(`[Route] Provider ${provider} indisponível — fallback para ASAAS`);
+    return routePixCreation({ ...params, forceProvider: "ASAAS" });
+  }
   return json({ error: "Provedor de pagamentos não configurado." }, 500);
 }
 
