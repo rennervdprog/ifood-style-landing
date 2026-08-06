@@ -75,6 +75,67 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-api-version, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version, baggage, sentry-trace",
 };
 
+/* ── inline Woovi/OpenPix ── */
+export function wooviEnabled(): boolean {
+  return !!(Deno.env.get("WOOVI_APP_ID") || Deno.env.get("OPENPIX_APP_ID"));
+}
+
+export async function createWooviPix(params: {
+  amount: number;
+  description: string;
+  externalId: string;
+  customer?: { name?: string; email?: string; taxId?: string };
+}): Promise<{ id: string; brCode: string | null; brCodeBase64: string | null }> {
+  const appId = Deno.env.get("WOOVI_APP_ID") || Deno.env.get("OPENPIX_APP_ID");
+  if (!appId) throw new Error("WOOVI_APP_ID não configurada");
+  const taxId = String(params.customer?.taxId || "").replace(/\D/g, "");
+  const body: Record<string, unknown> = {
+    correlationID: params.externalId,
+    value: Math.round(params.amount * 100),
+    comment: String(params.description).substring(0, 140),
+    expiresIn: 60 * 60 * 24,
+  };
+  if (params.customer?.name || params.customer?.email) {
+    body.customer = {
+      name: params.customer?.name || "Lojista",
+      email: params.customer?.email || `lojista-${params.externalId}@itasuper.com`,
+      ...(taxId.length === 11 || taxId.length === 14
+        ? { taxID: { taxID: taxId, type: taxId.length === 11 ? "BR:CPF" : "BR:CNPJ" } }
+        : {}),
+    };
+  }
+  const res = await fetch("https://api.woovi.com/api/v1/charge", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: appId },
+    body: JSON.stringify(body),
+  });
+  const payload = await res.json().catch(() => ({}));
+  if (!res.ok || payload?.error) {
+    console.error("[woovi] create error", res.status, JSON.stringify(payload));
+    throw new Error(payload?.error || "Erro Woovi");
+  }
+  const charge = payload?.charge || payload;
+  return {
+    id: String(charge?.identifier || charge?.correlationID || ""),
+    brCode: charge?.brCode || null,
+    brCodeBase64: null,
+  };
+}
+
+/** Gateway ativo configurado no painel super admin (admin_settings.payment_gateway). */
+export async function getActiveGateway(client: any): Promise<string> {
+  try {
+    const { data } = await client
+      .from("admin_settings")
+      .select("value")
+      .eq("key", "payment_gateway")
+      .maybeSingle();
+    const val = String((data?.value as any)?.provider || "").toUpperCase().trim();
+    if (val) return val;
+  } catch (_e) { /* fallback abaixo */ }
+  return (Deno.env.get("ACTIVE_PAYMENT_PROVIDER") || "ASAAS").toUpperCase().trim();
+}
+
 const BodySchema = z.object({
   store_id: z.string().uuid(),
   amount: z.number().min(5).max(50000),
