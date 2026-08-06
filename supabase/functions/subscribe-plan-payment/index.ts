@@ -19,6 +19,93 @@ const BodySchema = z.object({
   store_id: z.string().uuid(),
 });
 
+/* ── Gateways inline (deploy externo nao sobe subpastas) ── */
+async function getActiveGateway(client: any): Promise<string> {
+  try {
+    const { data } = await client
+      .from("admin_settings")
+      .select("value")
+      .eq("key", "payment_gateway")
+      .maybeSingle();
+    const val = String((data?.value as any)?.provider || "").toUpperCase().trim();
+    if (val) return val;
+  } catch (_e) { /* fallback */ }
+  return (Deno.env.get("ACTIVE_PAYMENT_PROVIDER") || "ASAAS").toUpperCase().trim();
+}
+
+async function createWooviPix(params: {
+  amount: number; description: string; externalId: string;
+  customer?: { name?: string; email?: string; taxId?: string };
+}): Promise<{ id: string; brCode: string | null }> {
+  const appId = Deno.env.get("WOOVI_APP_ID") || Deno.env.get("OPENPIX_APP_ID");
+  if (!appId) throw new Error("WOOVI_APP_ID não configurada");
+  const taxId = String(params.customer?.taxId || "").replace(/\D/g, "");
+  const body: Record<string, unknown> = {
+    correlationID: params.externalId,
+    value: Math.round(params.amount * 100),
+    comment: String(params.description).substring(0, 140),
+    expiresIn: 60 * 60 * 24,
+  };
+  if (params.customer?.name || params.customer?.email) {
+    body.customer = {
+      name: params.customer?.name || "Lojista",
+      email: params.customer?.email || `lojista-${params.externalId}@itasuper.com`,
+      ...(taxId.length === 11 || taxId.length === 14
+        ? { taxID: { taxID: taxId, type: taxId.length === 11 ? "BR:CPF" : "BR:CNPJ" } }
+        : {}),
+    };
+  }
+  const res = await fetch("https://api.woovi.com/api/v1/charge", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: appId },
+    body: JSON.stringify(body),
+  });
+  const payload = await res.json().catch(() => ({}));
+  if (!res.ok || payload?.error) {
+    console.error("[woovi] create error", res.status, JSON.stringify(payload));
+    throw new Error(payload?.error || "Erro Woovi");
+  }
+  const charge = payload?.charge || payload;
+  return { id: String(charge?.identifier || charge?.correlationID || ""), brCode: charge?.brCode || null };
+}
+
+async function createAbacatePix(params: {
+  amount: number; description: string; externalId: string;
+  customer?: { name?: string; email?: string; taxId?: string };
+}): Promise<{ id: string; brCode: string | null; brCodeBase64: string | null }> {
+  const key = Deno.env.get("ABACATEPAY_API_KEY");
+  if (!key) throw new Error("ABACATEPAY_API_KEY não configurada");
+  const taxId = String(params.customer?.taxId || "").replace(/\D/g, "");
+  const data: Record<string, unknown> = {
+    amount: Math.round(params.amount * 100),
+    expiresIn: 60 * 60 * 24,
+    description: String(params.description).substring(0, 140),
+    metadata: { externalId: params.externalId },
+    customer: {
+      name: params.customer?.name || "Lojista",
+      email: params.customer?.email || `lojista-${params.externalId}@itasuper.com`,
+      cellphone: "(22) 99999-9999",
+      taxId: taxId.length >= 11 ? taxId : "529.982.247-25",
+    },
+  };
+  const res = await fetch("https://api.abacatepay.com/v2/transparents/create", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
+    body: JSON.stringify({ method: "PIX", data }),
+  });
+  const payload = await res.json().catch(() => ({}));
+  if (!res.ok || payload?.error) {
+    console.error("[abacatepay] create error", res.status, JSON.stringify(payload));
+    throw new Error(payload?.error?.message || payload?.error || "Erro AbacatePay");
+  }
+  const out = payload?.data || payload;
+  return {
+    id: String(out?.id || ""),
+    brCode: out?.brCode || null,
+    brCodeBase64: (out?.brCodeBase64 || "").replace(/^data:image\/\w+;base64,/, "") || null,
+  };
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
