@@ -1257,8 +1257,38 @@ async function routePixCreation(params: {
   const provider = await getActiveProviderFromDB();
   console.log(`[Route] 🎯 Active provider: ${provider} | hasAsaas=${hasAsaasCredentials()} hasMP=${hasMpCredentials()} hasEfi=${hasEfiCredentials()}`);
 
-  // ── AbacatePay (cobranças da plataforma: PIX mais barato) ──
-  if (params.preferAbacate && provider !== "SIMULATED" && abacatepayEnabled()) {
+  // ── Woovi / OpenPix (gateway selecionado no painel) ──
+  if (provider === "WOOVI" && wooviEnabled()) {
+    try {
+      const pix = await createWooviPixInline({
+        amount: params.amount,
+        description: params.description,
+        externalId: params.externalReference,
+        customer: {
+          name: `${params.payerFirstName} ${params.payerLastName}`.trim(),
+          email: params.payerEmail,
+          taxId: params.payerCpf,
+        },
+      });
+      const resp: StandardPixResponse = {
+        status: "pending",
+        pix_code: pix.brCode,
+        qr_code_url: pix.brCodeBase64,
+        provider: "woovi",
+        reference_code: params.externalReference,
+        payment_id: pix.id,
+        amount: params.amount,
+        created_at: new Date().toISOString(),
+        expires_at: params.expiresAt || null,
+      };
+      return json(resp);
+    } catch (e) {
+      console.error("[Route] Woovi falhou, seguindo para provider padrão:", e);
+    }
+  }
+
+  // ── AbacatePay (gateway selecionado no painel) ──
+  if (provider === "ABACATEPAY" && abacatepayEnabled()) {
     try {
       const pix = await createAbacatePixInline({
         amount: params.amount,
