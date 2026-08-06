@@ -198,6 +198,67 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Gateway ativo (seletor no painel super admin)
+    const gateway = await getActiveGateway(adminSupabase);
+
+    const { data: gwProfile } = await adminSupabase
+      .from("profiles")
+      .select("full_name, email, document")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    const { data: gwRef } = await adminSupabase.rpc("generate_financial_reference", { _prefix: "ASSIN" });
+    const gwReference = gwRef || `#ASSIN-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
+
+    const gwPlanLabel =
+      plan.plan_type === "fixed" ? "Plano Essencial"
+      : plan.plan_type === "supporter" ? "Plano Apoiador"
+      : plan.plan_type === "hybrid" ? "Plano Crescimento"
+      : "Plano";
+
+    if (gateway === "WOOVI" || gateway === "ABACATEPAY") {
+      try {
+        const customer = {
+          name: gwProfile?.full_name || "Lojista",
+          email: gwProfile?.email || userData.user.email || `lojista-${userId.substring(0, 8)}@itasuper.com`,
+          taxId: String(gwProfile?.document || ""),
+        };
+        const pix = gateway === "WOOVI"
+          ? { ...(await createWooviPix({ amount: Number(plan.monthly_fee), description: `${gwPlanLabel} - ${store.name}`, externalId: gwReference, customer })), brCodeBase64: null as string | null }
+          : await createAbacatePix({ amount: Number(plan.monthly_fee), description: `${gwPlanLabel} - ${store.name}`, externalId: gwReference, customer });
+
+        await adminSupabase.from("financial_transactions").insert({
+          store_id,
+          transaction_kind: "commission_charge",
+          amount: Number(plan.monthly_fee),
+          reference_code: gwReference,
+          status: "pending",
+          provider: gateway.toLowerCase(),
+          mercado_pago_payment_id: pix.id,
+          pix_qr_code: pix.brCode,
+          pix_qr_code_base64: pix.brCodeBase64,
+          pix_copy_paste: pix.brCode,
+          metadata: {
+            type: "plan_subscription",
+            plan_type: plan.plan_type,
+            plan_label: gwPlanLabel,
+            store_name: store.name,
+          },
+        });
+
+        return json({
+          payment_id: pix.id,
+          qr_code: pix.brCode,
+          qr_code_base64: pix.brCodeBase64,
+          reference_code: gwReference,
+          amount: Number(plan.monthly_fee),
+          provider: gateway.toLowerCase(),
+        });
+      } catch (e) {
+        console.error(`[${gateway}] mensalidade falhou, tentando Asaas:`, e);
+      }
+    }
+
     // Generate PIX charge via Asaas
     const ASAAS_API_KEY = Deno.env.get("ASAAS_API_KEY");
     if (!ASAAS_API_KEY) {
