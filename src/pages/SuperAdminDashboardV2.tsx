@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, lazy, Suspense } from "react";
+import GatewaySelector from "./super-admin/components/GatewaySelector";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import AdminApprovals from "@/components/AdminApprovals";
 import CouponManager from "@/components/CouponManager";
@@ -1292,6 +1293,7 @@ const TAB_SUBTITLE: Record<string, (ctx: {
             )}
              {activeTab === "financeiro" && (
                <div className="space-y-4">
+                 <GatewaySelector />
                  <SubTabsBar
                    value={financeSection}
                    onChange={(v) => setFinanceSection(v as FinanceSection)}
