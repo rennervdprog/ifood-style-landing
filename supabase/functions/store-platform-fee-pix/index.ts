@@ -251,17 +251,19 @@ Deno.serve(async (req) => {
     const amountToBalance = Math.min(amount, balanceBucket);
     const amountToPdv = Math.max(0, Number((amount - amountToBalance).toFixed(2)));
 
-    // Provider: AbacatePay quando configurado (PIX mais barato), senão Asaas.
-    const useAbacate = abacatepayEnabled();
+    // Provider: definido pelo seletor de gateway no painel super admin.
+    const gateway = await getActiveGateway(adminSupabase);
+    const useWoovi = gateway === "WOOVI" && wooviEnabled();
+    const useAbacate = !useWoovi && gateway === "ABACATEPAY" && abacatepayEnabled();
     const ASAAS_API_KEY = Deno.env.get("ASAAS_API_KEY");
-    if (!useAbacate && !ASAAS_API_KEY) {
+    if (!useAbacate && !useWoovi && !ASAAS_API_KEY) {
       return new Response(JSON.stringify({ error: "Chave de pagamento não configurada." }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const isSandbox = !useAbacate && !String(ASAAS_API_KEY).startsWith("$aact_prod_");
+    const isSandbox = !useAbacate && !useWoovi && !String(ASAAS_API_KEY).startsWith("$aact_prod_");
     const baseUrl = isSandbox
       ? "https://sandbox.asaas.com/api/v3"
       : "https://api.asaas.com/v3";
@@ -277,6 +279,56 @@ Deno.serve(async (req) => {
 
     let cleanCpf = String(profile?.document || "").replace(/\D/g, "");
     const referenceCode = `TAXA-${store_id.substring(0, 6).toUpperCase()}-${Date.now()}`;
+
+    // ─── Woovi ───
+    if (useWoovi) {
+      const customerEmailWv = profile?.email || userData.user.email || `lojista-${userId.substring(0, 8)}@itasuper.com`;
+      let pix;
+      try {
+        pix = await createWooviPix({
+          amount: Number(amount.toFixed(2)),
+          description: `Taxa plataforma - ${store.name}`,
+          externalId: referenceCode,
+          customer: { name: profile?.full_name || "Lojista", email: customerEmailWv, taxId: cleanCpf },
+        });
+      } catch (e) {
+        console.error("Woovi platform fee error:", e);
+        return new Response(JSON.stringify({ error: "Erro ao gerar PIX. Tente novamente." }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      await adminSupabase.from("financial_transactions").insert({
+        store_id,
+        transaction_kind: "commission_charge" as any,
+        amount,
+        reference_code: referenceCode,
+        status: "pending",
+        provider: "woovi",
+        mercado_pago_payment_id: pix.id,
+        pix_qr_code: pix.brCode,
+        pix_copy_paste: pix.brCode,
+        metadata: {
+          type: "platform_fee",
+          store_name: store.name,
+          balance_billed: amountToBalance,
+          pdv_pending_billed: amountToPdv,
+        },
+      });
+
+      return new Response(
+        JSON.stringify({
+          payment_id: pix.id,
+          qr_code: pix.brCode,
+          qr_code_base64: null,
+          reference_code: referenceCode,
+          amount,
+          provider: "woovi",
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     // ─── AbacatePay ───
     if (useAbacate) {
