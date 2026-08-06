@@ -48,7 +48,7 @@ Deno.serve(async (req) => {
     { kind: "repasse_semanal", value: 17800, comment: "E2E Repasse semanal plataforma" },
   ]) {
     const corr = `E2E-${c.kind}-${crypto.randomUUID().slice(0, 8)}`;
-    const r = await fetch("https://api.woovi.com/api/v1/charge", {
+    const r = await fetch("https://api.openpix.com.br/api/v1/charge", {
       method: "POST",
       headers: { Authorization: APP_ID, "Content-Type": "application/json" },
       body: JSON.stringify({ correlationID: corr, value: c.value, comment: c.comment }),

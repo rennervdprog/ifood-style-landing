@@ -119,6 +119,22 @@ const CheckoutPage = () => {
   const storePlan = useStorePlan(storeId);
   const lastPaymentKey = user && storeId ? `last_payment_method:${user.id}:${storeId}` : null;
 
+  // Gateway de pagamento ativo da plataforma (super admin → Financeiro).
+  // Só o Asaas usa subconta por loja; Woovi/AbacatePay cobram direto na plataforma.
+  const { data: activeGateway } = useQuery({
+    queryKey: ["active-payment-gateway"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("admin_settings")
+        .select("value")
+        .eq("key", "payment_gateway")
+        .maybeSingle();
+      const provider = String((data?.value as any)?.provider || "").toUpperCase().trim();
+      return provider || "ASAAS";
+    },
+    staleTime: 1000 * 60 * 5,
+  });
+
   // 🔒 PIX Online só fica liberado quando a subconta Asaas da loja está
   // 100% ativa (commercialInfo + bankAccount + document == APPROVED).
   // Enquanto a ativação não completa, o método "pix" é ocultado do checkout.
@@ -139,9 +155,12 @@ const CheckoutPage = () => {
         s.document === "APPROVED"
       );
     },
-    enabled: !!storeId,
+    enabled: !!storeId && activeGateway === "ASAAS",
     staleTime: 1000 * 60 * 5,
   });
+
+  // Gateway não-Asaas não depende de subconta da loja → PIX liberado direto.
+  const pixGatewayReady = activeGateway ? (activeGateway === "ASAAS" ? asaasReady === true : true) : false;
 
   // Filtrar métodos — storePaymentSettings declarado abaixo após storeData
   const paymentMethods = useMemo(() => {
@@ -180,14 +199,14 @@ const CheckoutPage = () => {
   // Re-declarar paymentMethods usando storePaymentSettings (agora declarado na ordem certa)
   const filteredPaymentMethods = useMemo(() => {
     return allPaymentMethods.filter(pm => {
-      if (pm.id === "pix")         return storePlan.allowPix && storePaymentSettings.accept_pix_online && asaasReady === true;
+      if (pm.id === "pix")         return storePlan.allowPix && storePaymentSettings.accept_pix_online && pixGatewayReady;
       if (pm.id === "pix_machine") return storePaymentSettings.accept_pix_machine;
       if (pm.id === "pix_direto")  return !!(storeData as any)?.pix_direto_enabled && !!(storeData as any)?.pix_direto_key;
       if (pm.id === "cartao")      return storePaymentSettings.accept_card;
       if (pm.id === "dinheiro")    return storePaymentSettings.accept_cash;
       return true;
     });
-  }, [storePlan.allowPix, storePaymentSettings, asaasReady, storeData]);
+  }, [storePlan.allowPix, storePaymentSettings, pixGatewayReady, storeData]);
 
   // Smart default: lembra a última forma de pagamento usada pelo usuário nesta loja
   useEffect(() => {
