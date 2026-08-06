@@ -1293,6 +1293,7 @@ const TAB_SUBTITLE: Record<string, (ctx: {
             )}
              {activeTab === "financeiro" && (
                <div className="space-y-4">
+                 <GatewaySelector />
                  <SubTabsBar
                    value={financeSection}
                    onChange={(v) => setFinanceSection(v as FinanceSection)}
