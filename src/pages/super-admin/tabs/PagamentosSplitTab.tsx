@@ -6,6 +6,7 @@ import { formatBRL } from "@/lib/utils";
 import { statusColors as globalStatusColors } from "@/lib/orderStatus";
 import { CreditCard, Store, CheckCircle2, Receipt, ChevronUp, ChevronDown, Wallet, Copy } from "lucide-react";
 import { AlertTriangle } from "lucide-react";
+import GatewaySelector from "../components/GatewaySelector";
 
 const PagamentosSplitTab = ({ stores }: { stores: any[] }) => {
   const [expandedStore, setExpandedStore] = useState<string | null>(null);
@@ -132,6 +133,8 @@ const PagamentosSplitTab = ({ stores }: { stores: any[] }) => {
 
   return (
     <div className="space-y-4">
+      <GatewaySelector />
+
       {/* Dead-letter: repasses com erro */}
       {failedSplits && failedSplits.length > 0 && (
         <div className="bg-destructive/10 border border-destructive/40 rounded-2xl p-4">
