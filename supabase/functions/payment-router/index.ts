@@ -61,6 +61,52 @@ async function createAbacatePixInline(params: {
 
 // ── Schemas ──────────────────────────────────────────────────────────
 
+// ── Woovi / OpenPix (inline: deploy externo não sobe subpastas) ──────
+function wooviEnabled(): boolean {
+  return !!(Deno.env.get("WOOVI_APP_ID") || Deno.env.get("OPENPIX_APP_ID"));
+}
+
+async function createWooviPixInline(params: {
+  amount: number;
+  description: string;
+  externalId: string;
+  customer?: { name?: string; email?: string; taxId?: string; phone?: string };
+}): Promise<{ id: string; brCode: string | null; brCodeBase64: string | null }> {
+  const appId = (Deno.env.get("WOOVI_APP_ID") || Deno.env.get("OPENPIX_APP_ID"))!;
+  const taxId = String(params.customer?.taxId || "").replace(/\D/g, "");
+  const body: Record<string, unknown> = {
+    correlationID: params.externalId,
+    value: Math.round(params.amount * 100),
+    comment: String(params.description).substring(0, 140),
+    expiresIn: 60 * 60 * 24,
+  };
+  if (params.customer?.name || params.customer?.email) {
+    body.customer = {
+      name: params.customer?.name || "Lojista",
+      email: params.customer?.email || `lojista-${params.externalId}@itasuper.com`,
+      ...(taxId.length === 11 || taxId.length === 14
+        ? { taxID: { taxID: taxId, type: taxId.length === 11 ? "BR:CPF" : "BR:CNPJ" } }
+        : {}),
+    };
+  }
+  const res = await fetch("https://api.woovi.com/api/v1/charge", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: appId },
+    body: JSON.stringify(body),
+  });
+  const payload = await res.json().catch(() => ({}));
+  if (!res.ok || payload?.error) {
+    console.error("[woovi] create error", res.status, JSON.stringify(payload));
+    throw new Error(payload?.error || "Erro Woovi");
+  }
+  const charge = payload?.charge || payload;
+  return {
+    id: String(charge?.identifier || charge?.correlationID || ""),
+    brCode: charge?.brCode || null,
+    brCodeBase64: null,
+  };
+}
+
 const OrderPixSchema = z.object({
   action: z.literal("order_pix"),
   order_id: z.string().uuid(),
