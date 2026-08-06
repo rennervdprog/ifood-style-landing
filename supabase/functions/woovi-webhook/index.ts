@@ -17,13 +17,63 @@ const PAID_EVENTS = new Set([
 ]);
 const FAILED_EVENTS = new Set(["OPENPIX:CHARGE_EXPIRED", "CHARGE_EXPIRED"]);
 
+/**
+ * Verifica a assinatura RSA-SHA256 enviada pela Woovi/OpenPix no header
+ * `x-webhook-signature` (base64) contra o corpo bruto da requisição.
+ * A chave pública fica em WOOVI_PUBLIC_KEY (PEM ou base64 do PEM).
+ */
+async function verifyWooviSignature(rawBody: string, signatureB64: string | null): Promise<boolean> {
+  if (!signatureB64) return false;
+  let pem = Deno.env.get("WOOVI_PUBLIC_KEY") || "";
+  if (!pem) return false;
+  try {
+    if (!pem.includes("BEGIN")) pem = atob(pem);
+    const der = Uint8Array.from(
+      atob(pem.replace(/-----(BEGIN|END)[^-]+-----/g, "").replace(/\s+/g, "")),
+      (c) => c.charCodeAt(0),
+    );
+    const key = await crypto.subtle.importKey(
+      "spki",
+      der,
+      { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
+      false,
+      ["verify"],
+    );
+    const sig = Uint8Array.from(atob(signatureB64), (c) => c.charCodeAt(0));
+    return await crypto.subtle.verify(
+      "RSASSA-PKCS1-v1_5",
+      key,
+      sig,
+      new TextEncoder().encode(rawBody),
+    );
+  } catch (e) {
+    console.error("[woovi-webhook] signature verify error", e);
+    return false;
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
-  const secret = Deno.env.get("WOOVI_WEBHOOK_SECRET") || "";
-  const url = new URL(req.url);
-  if (secret && url.searchParams.get("webhookSecret") !== secret) {
-    return json({ error: "unauthorized" }, 401);
+  const rawBody = await req.text();
+
+  // 1) Assinatura criptográfica (fonte da verdade quando WOOVI_PUBLIC_KEY existe)
+  const publicKey = Deno.env.get("WOOVI_PUBLIC_KEY") || "";
+  const signature = req.headers.get("x-webhook-signature");
+  if (publicKey) {
+    const valid = await verifyWooviSignature(rawBody, signature);
+    if (!valid) {
+      console.warn("[woovi-webhook] assinatura inválida — requisição rejeitada");
+      return json({ error: "invalid_signature" }, 401);
+    }
+  } else {
+    // 2) Fallback legado: secret na query string (menos seguro, só até a chave pública ser configurada)
+    const secret = Deno.env.get("WOOVI_WEBHOOK_SECRET") || "";
+    const url = new URL(req.url);
+    if (!secret || url.searchParams.get("webhookSecret") !== secret) {
+      return json({ error: "unauthorized" }, 401);
+    }
+    console.warn("[woovi-webhook] WOOVI_PUBLIC_KEY ausente — validando apenas por query secret");
   }
 
   const EXTERNAL_URL = Deno.env.get("EXTERNAL_SUPABASE_URL") || Deno.env.get("SUPABASE_URL")!;
@@ -31,7 +81,7 @@ Deno.serve(async (req) => {
   const supabase = createClient(EXTERNAL_URL, EXTERNAL_KEY);
 
   let payload: any = {};
-  try { payload = await req.json(); } catch { /* ignore */ }
+  try { payload = JSON.parse(rawBody); } catch { /* ignore */ }
 
   const event = String(payload?.event || payload?.evento || "");
   const charge = payload?.charge || payload?.pixQrCode || {};
