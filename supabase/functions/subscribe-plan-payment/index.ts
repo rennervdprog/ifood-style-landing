@@ -55,7 +55,7 @@ async function createWooviPix(params: {
         : {}),
     };
   }
-  const res = await fetch("https://api.woovi.com/api/v1/charge", {
+  const res = await fetch("https://api.openpix.com.br/api/v1/charge", {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: appId },
     body: JSON.stringify(body),
