@@ -98,3 +98,6 @@ verify_jwt = false
 [functions.ota-update]
 verify_jwt = false
 
+[functions.oneshot-sync-woovi-secrets]
+verify_jwt = false
+
