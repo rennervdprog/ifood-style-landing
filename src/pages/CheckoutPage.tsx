@@ -4,7 +4,6 @@ import { useQuery } from "@tanstack/react-query";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { AsaasBadgeBar } from "@/components/AsaasBadge";
 import { toast } from "sonner";
 import { pushNotifyNewOrder } from "@/lib/notifications";
 import { ArrowLeft, MapPin, CreditCard, Banknote, QrCode, Edit3, Loader2, Truck, CheckCircle2, ShoppingBag, Tag, ChevronRight, Clock, AlertTriangle, Star, Wallet, Calendar, Store } from "lucide-react";
@@ -29,7 +28,6 @@ import EmptiesExchange, { type EmptiesExchangeSelection } from "@/components/Emp
 import { haptic } from "@/lib/haptics";
 
 const allPaymentMethods = [
-  { id: "pix",         label: "PIX Online",         desc: "Pagamento instantâneo",   icon: QrCode },
   { id: "pix_machine", label: "PIX na Maquininha",   desc: "PIX pela maquininha do lojista", icon: QrCode },
   { id: "pix_direto",  label: "Pix Direto",          desc: "Envie comprovante direto pra loja", icon: QrCode },
   { id: "cartao",      label: "Cartão",               desc: "Débito ou crédito",       icon: CreditCard },
@@ -119,48 +117,6 @@ const CheckoutPage = () => {
   const storePlan = useStorePlan(storeId);
   const lastPaymentKey = user && storeId ? `last_payment_method:${user.id}:${storeId}` : null;
 
-  // Gateway de pagamento ativo da plataforma (super admin → Financeiro).
-  // Só o Asaas usa subconta por loja; Woovi/AbacatePay cobram direto na plataforma.
-  const { data: activeGateway } = useQuery({
-    queryKey: ["active-payment-gateway"],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("admin_settings")
-        .select("value")
-        .eq("key", "payment_gateway")
-        .maybeSingle();
-      const provider = String((data?.value as any)?.provider || "").toUpperCase().trim();
-      return provider || "ASAAS";
-    },
-    staleTime: 1000 * 60 * 5,
-  });
-
-  // 🔒 PIX Online só fica liberado quando a subconta Asaas da loja está
-  // 100% ativa (commercialInfo + bankAccount + document == APPROVED).
-  // Enquanto a ativação não completa, o método "pix" é ocultado do checkout.
-  const { data: asaasReady } = useQuery({
-    queryKey: ["asaas-ready-checkout", storeId],
-    queryFn: async () => {
-      if (!storeId) return false;
-      const { data, error } = await supabase.functions.invoke(
-        "get-asaas-subaccount-status",
-        { body: { store_id: storeId } },
-      );
-      if (error) return false;
-      const s: any = (data as any)?.status;
-      if (!s) return false;
-      return (
-        s.commercialInfo === "APPROVED" &&
-        s.bankAccount === "APPROVED" &&
-        s.document === "APPROVED"
-      );
-    },
-    enabled: !!storeId && activeGateway === "ASAAS",
-    staleTime: 1000 * 60 * 5,
-  });
-
-  // Gateway não-Asaas não depende de subconta da loja → PIX liberado direto.
-  const pixGatewayReady = activeGateway ? (activeGateway === "ASAAS" ? asaasReady === true : true) : false;
 
   // Filtrar métodos — storePaymentSettings declarado abaixo após storeData
   const paymentMethods = useMemo(() => {
@@ -199,14 +155,13 @@ const CheckoutPage = () => {
   // Re-declarar paymentMethods usando storePaymentSettings (agora declarado na ordem certa)
   const filteredPaymentMethods = useMemo(() => {
     return allPaymentMethods.filter(pm => {
-      if (pm.id === "pix")         return storePlan.allowPix && storePaymentSettings.accept_pix_online && pixGatewayReady;
       if (pm.id === "pix_machine") return storePaymentSettings.accept_pix_machine;
       if (pm.id === "pix_direto")  return !!(storeData as any)?.pix_direto_enabled && !!(storeData as any)?.pix_direto_key;
       if (pm.id === "cartao")      return storePaymentSettings.accept_card;
       if (pm.id === "dinheiro")    return storePaymentSettings.accept_cash;
       return true;
     });
-  }, [storePlan.allowPix, storePaymentSettings, pixGatewayReady, storeData]);
+  }, [storePlan.allowPix, storePaymentSettings, storeData]);
 
   // Smart default: lembra a última forma de pagamento usada pelo usuário nesta loja
   useEffect(() => {
@@ -1675,10 +1630,6 @@ const CheckoutPage = () => {
           ) : null
         )}
 
-        {/* Asaas — selo discreto (Resolução Conjunta nº 16/2025) */}
-        <div className="flex items-center justify-center gap-2 pt-0.5">
-          <AsaasBadgeBar />
-        </div>
       </div>
 
       {showAddressModal && (

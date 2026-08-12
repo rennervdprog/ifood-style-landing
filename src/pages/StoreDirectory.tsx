@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { AsaasBadgeBar } from "@/components/AsaasBadge";
 import PartnerClientView from "@/components/PartnerClientView";
 import PlansComparisonTable from "@/components/PlansComparisonTable";
 import { PLANS, PLANS_ORDER } from "@/lib/plansInfo";
@@ -27,7 +26,7 @@ const PAINS = [
 
 const FEATURES = [
   { icon: Smartphone, title: "Cardápio digital próprio",  desc: "Link exclusivo da sua loja. Cliente abre no navegador, sem baixar app." },
-  { icon: CreditCard, title: "PIX automático + Pix Direto", desc: "Asaas confirma na hora, ou receba direto na sua chave e confirme com 1 toque." },
+  { icon: CreditCard, title: "Pix Direto + Maquininha", desc: "Receba direto na sua chave PIX e confirme com 1 toque, ou cobre na maquininha." },
   { icon: MessageCircle, title: "WhatsApp Bot guiado",     desc: "Cliente faz o pedido conversando no seu WhatsApp — bot valida endereço, horário e taxa." },
   { icon: Truck, title: "Motoboy integrado",               desc: "Mapa em tempo real, cálculo de taxa por distância e código de entrega." },
   { icon: BarChart3, title: "Relatórios que fecham a conta", desc: "Vendas, comissão, PIX, mensalidade — tudo já descontado no líquido." },
@@ -92,8 +91,8 @@ const FEE_SPLIT_MODES = [
 ];
 
 const PAYMENT_MODES = [
-  { icon: Zap, title: "PIX Automático (Asaas)",
-    desc: "Cliente paga pelo checkout, Asaas confirma na hora e o pedido cai pronto pra despachar." },
+  { icon: Zap, title: "PIX na Maquininha",
+    desc: "Cliente paga pela maquininha na entrega, sem taxa extra da plataforma." },
   { icon: Wallet, title: "PIX Direto",
     desc: "Cai direto na sua chave PIX. Cliente anexa comprovante e você confirma com 1 toque." },
   { icon: CreditCard, title: "Dinheiro · Cartão · Maquininha",
@@ -834,7 +833,6 @@ const StoreDirectory = () => {
             >Já sou parceiro</button>
             <button onClick={handleWhatsApp} className="hover:text-foreground font-semibold">Contato</button>
           </div>
-          <AsaasBadgeBar />
         </div>
       </footer>
 

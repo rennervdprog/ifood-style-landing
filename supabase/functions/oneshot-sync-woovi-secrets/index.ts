@@ -5,6 +5,7 @@ Deno.serve(async (req) => {
   const PAT = Deno.env.get("EXTERNAL_SUPABASE_ACCESS_TOKEN")!;
   const payload = [
     { name: "WOOVI_APP_ID", value: Deno.env.get("WOOVI_APP_ID")! },
+    { name: "WOOVI_WEBHOOK_SECRET", value: Deno.env.get("WOOVI_WEBHOOK_SECRET")! },
   ];
   const r = await fetch(`https://api.supabase.com/v1/projects/${REF}/secrets`, {
     method: "POST",
