@@ -6,8 +6,7 @@ Deno.serve(async () => {
     method: "POST",
     headers: { Authorization: `Bearer ${PAT}`, "Content-Type": "application/json" },
     body: JSON.stringify({
-      query: `select jobname, schedule, active from cron.job order by jobname;
-              `,
+      query: `select 'gateway' as k, value::text as v from admin_settings where key='payment_gateway';`,
     }),
   });
   return new Response(await r.text(), { headers: { "Content-Type": "application/json" } });
