@@ -42,7 +42,73 @@ const MIN_CHARGE_AMOUNT = 150.0;
 // Dias de atraso antes de inativar a loja
 const OVERDUE_DAYS_TO_DEACTIVATE = 30;
 
-// ─── Gerar cobrança PIX no Asaas ──────────────────────────────────────────────
+// ─── Woovi/OpenPix (gateway padrão) ───────────────────────────────────────────
+
+function wooviEnabled(): boolean {
+  return !!(Deno.env.get("WOOVI_APP_ID") || Deno.env.get("OPENPIX_APP_ID"));
+}
+
+/** Gateway ativo configurado no super admin (admin_settings.payment_gateway). */
+async function getActiveGateway(client: any): Promise<string> {
+  try {
+    const { data } = await client
+      .from("admin_settings")
+      .select("value")
+      .eq("key", "payment_gateway")
+      .maybeSingle();
+    const val = String((data?.value as any)?.provider || "").toUpperCase().trim();
+    if (val) return val;
+  } catch (_e) { /* fallback abaixo */ }
+  return (Deno.env.get("ACTIVE_PAYMENT_PROVIDER") || "ASAAS").toUpperCase().trim();
+}
+
+async function createWooviCharge(params: {
+  amount: number;
+  description: string;
+  externalId: string;
+  customerName?: string;
+  customerEmail?: string;
+  customerCpfCnpj?: string;
+}): Promise<{ ok: boolean; paymentId?: string; pixCopyPaste?: string; pixQrCode?: string; error?: string }> {
+  const appId = Deno.env.get("WOOVI_APP_ID") || Deno.env.get("OPENPIX_APP_ID");
+  if (!appId) return { ok: false, error: "WOOVI_APP_ID não configurado" };
+  const taxId = String(params.customerCpfCnpj || "").replace(/\D/g, "");
+  const body: Record<string, unknown> = {
+    correlationID: params.externalId,
+    value: Math.round(params.amount * 100),
+    comment: String(params.description).substring(0, 140),
+    expiresIn: 60 * 60 * 24 * 7,
+    customer: {
+      name: params.customerName || "Lojista",
+      email: params.customerEmail || `lojista-${params.externalId}@itasuper.com`,
+      ...(taxId.length === 11 || taxId.length === 14
+        ? { taxID: { taxID: taxId, type: taxId.length === 11 ? "BR:CPF" : "BR:CNPJ" } }
+        : {}),
+    },
+  };
+  try {
+    const res = await fetch("https://api.openpix.com.br/api/v1/charge", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: appId },
+      body: JSON.stringify(body),
+    });
+    const payload = await res.json().catch(() => ({}));
+    if (!res.ok || payload?.error) {
+      return { ok: false, error: String(payload?.error || `Erro Woovi ${res.status}`) };
+    }
+    const charge = payload?.charge || payload;
+    return {
+      ok: true,
+      paymentId: String(charge?.identifier || charge?.correlationID || params.externalId),
+      pixCopyPaste: charge?.brCode || "",
+      pixQrCode: "",
+    };
+  } catch (err) {
+    return { ok: false, error: String(err) };
+  }
+}
+
+// ─── Gerar cobrança PIX no Asaas (fallback) ───────────────────────────────────
 
 async function createAsaasCharge(params: {
   amount: number;
