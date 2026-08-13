@@ -38,6 +38,8 @@ import PlansComparisonTable from "@/components/PlansComparisonTable";
 import { useSupporterCount } from "@/hooks/useSupporterCount";
 import { useAddonsFlag } from "@/hooks/useStorePdvAccess";
 import { Monitor } from "lucide-react";
+import { formatBRL } from "@/lib/utils";
+import { REPASSE_RULES } from "@/lib/repasseRules";
 
 /* ─── animated counter hook ─── */
 function useCountUp(end: number, duration = 2000, start = false) {

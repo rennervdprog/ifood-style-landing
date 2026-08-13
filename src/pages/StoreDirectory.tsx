@@ -14,6 +14,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { prefetchHandlers } from "@/lib/prefetchRoute";
+import { formatBRL } from "@/lib/utils";
+import { REPASSE_RULES } from "@/lib/repasseRules";
 
 /* ─────────────────────────── CONTENT ─────────────────────────── */
 
