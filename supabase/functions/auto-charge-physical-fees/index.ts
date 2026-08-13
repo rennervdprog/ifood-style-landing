@@ -279,6 +279,10 @@ Deno.serve(async (req) => {
     const results: any[] = [];
     const now = new Date();
 
+    // Gateway ativo (padrão Woovi). Fallback automático para Asaas se falhar.
+    const activeGateway = await getActiveGateway(supabase);
+    const useWoovi = activeGateway === "WOOVI" && wooviEnabled();
+
     // ── 1. Buscar lojas com saldo pendente de pagamentos físicos ──
     // store_balances.repasse_pendente = R$ 0,99/entrega (planos fixed/supporter)
     // store_balances.comissao_pendente = % sobre vendas físicas (commission_only)
@@ -417,22 +421,51 @@ Deno.serve(async (req) => {
       dueDate.setDate(dueDate.getDate() + 7); // 7 dias para pagar
       const dueDateStr = dueDate.toISOString().split("T")[0];
 
-      const charge = await createAsaasCharge({
-        storeAccountId: balance.store_id,
-        amount: chargeAmount,
-        description: chargeDescription,
-        dueDate: dueDateStr,
-        customerName: store.name,
-        customerEmail: "",
-        customerCpfCnpj: await (async () => {
-          const { data: prof } = await supabase
-            .from("profiles")
-            .select("document, email, full_name")
-            .eq("user_id", store.owner_id)
-            .maybeSingle();
-          return String((prof as any)?.document || "");
-        })(),
-      });
+      const { data: prof } = await supabase
+        .from("profiles")
+        .select("document, email, full_name")
+        .eq("user_id", store.owner_id)
+        .maybeSingle();
+      const ownerDoc = String((prof as any)?.document || "");
+      const ownerEmail = String((prof as any)?.email || "");
+
+      let provider = "asaas";
+      let charge: { ok: boolean; paymentId?: string; pixCopyPaste?: string; pixQrCode?: string; error?: string };
+
+      if (useWoovi) {
+        provider = "woovi";
+        charge = await createWooviCharge({
+          amount: chargeAmount,
+          description: chargeDescription,
+          externalId: `REP-${balance.store_id}-${Date.now()}`,
+          customerName: store.name,
+          customerEmail: ownerEmail,
+          customerCpfCnpj: ownerDoc,
+        });
+        if (!charge.ok) {
+          console.warn(`[auto-charge] Woovi falhou (${charge.error}) — fallback Asaas`);
+          provider = "asaas";
+          charge = await createAsaasCharge({
+            storeAccountId: balance.store_id,
+            amount: chargeAmount,
+            description: chargeDescription,
+            dueDate: dueDateStr,
+            customerName: store.name,
+            customerEmail: ownerEmail,
+            customerCpfCnpj: ownerDoc,
+          });
+        }
+      } else {
+        charge = await createAsaasCharge({
+          storeAccountId: balance.store_id,
+          amount: chargeAmount,
+          description: chargeDescription,
+          dueDate: dueDateStr,
+          customerName: store.name,
+          customerEmail: ownerEmail,
+          customerCpfCnpj: ownerDoc,
+        });
+      }
 
       if (!charge.ok) {
         results.push({ store: store.name, status: "error", reason: charge.error });
@@ -446,7 +479,7 @@ Deno.serve(async (req) => {
         reference_code: charge.paymentId,
         amount: chargeAmount,
         status: "pending",
-        provider: "asaas",
+        provider,
         pix_copy_paste: charge.pixCopyPaste,
         pix_qr_code_base64: charge.pixQrCode,
         metadata: {
@@ -458,7 +491,8 @@ Deno.serve(async (req) => {
           balance_billed: baseAmount,
           pdv_pending_billed: pdvPending,
           due_date: dueDateStr,
-          asaas_payment_id: charge.paymentId,
+          gateway: provider,
+          ...(provider === "asaas" ? { asaas_payment_id: charge.paymentId } : { woovi_charge_id: charge.paymentId }),
         },
       } as any);
 
@@ -480,7 +514,8 @@ Deno.serve(async (req) => {
         store: store.name,
         status: "charged",
         amount: chargeAmount,
-        asaas_id: charge.paymentId,
+        provider,
+        payment_id: charge.paymentId,
         due_date: dueDateStr,
         plan: planType,
       });
