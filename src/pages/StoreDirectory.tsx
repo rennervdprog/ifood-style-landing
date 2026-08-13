@@ -96,7 +96,7 @@ const PAYMENT_MODES = [
   { icon: Wallet, title: "PIX Direto",
     desc: "Cai direto na sua chave PIX. Cliente anexa comprovante e você confirma com 1 toque." },
   { icon: CreditCard, title: "Dinheiro · Cartão · Maquininha",
-    desc: "Cobrado só o R$ 0,99 da plataforma. Acumula um saldo e vira PIX de segunda quando passar de R$ 30." },
+    desc: `Cobrado só o R$ 0,99 da plataforma. Acumula um saldo e vira PIX de segunda quando passar de ${formatBRL(REPASSE_RULES.MIN_AUTO_CHARGE_BRL)}.` },
 ];
 
 const ADDONS = [
@@ -114,7 +114,7 @@ const RULES = [
   { icon: AlertTriangle, title: "Quando a mensalidade começa",
     desc: "Essencial: após R$ 5.000 em 60 dias vira R$ 89,90/mês. Autonomia: após R$ 2.500 vira R$ 199,90/mês. Sempre com 30 dias de aviso e aceite expresso (cláusula 5.2)." },
   { icon: Wallet, title: "Cobrança do PIX pendente",
-    desc: "Saldo passa de R$ 30 → gera PIX pra segunda-feira. Passa de R$ 500 → o painel limita novos pedidos até quitar. Sem surpresa." },
+    desc: `Saldo passa de ${formatBRL(REPASSE_RULES.MIN_AUTO_CHARGE_BRL)} → gera PIX pra segunda-feira. Passa de ${formatBRL(REPASSE_RULES.BLOCK_THRESHOLD_BRL)} → o painel limita novos pedidos até quitar. Sem surpresa.` },
   { icon: Ban, title: "Cancelamento",
     desc: "Sem multa, sem fidelidade, sem letra miúda. Desativa a loja no painel e acabou." },
 ];

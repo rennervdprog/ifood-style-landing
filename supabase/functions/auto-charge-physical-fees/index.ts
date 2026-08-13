@@ -9,7 +9,7 @@
  *  - Planos commission_only: cobrar comissao_pendente (% sobre vendas)
  *
  * Fluxo:
- *  1. Busca lojas com saldo pendente acima do mínimo configurado (default R$5)
+ *  1. Busca lojas com saldo pendente acima do mínimo configurado (R$ 150)
  *  2. Gera cobrança PIX via Asaas na subconta do lojista
  *  3. Salva em financial_transactions com status 'pending'
  *  4. Webhook Asaas confirma → zerará o saldo pendente

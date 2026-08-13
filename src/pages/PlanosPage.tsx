@@ -408,7 +408,7 @@ const faqs = [
                               PIX online no app: já descontado, sem repasse.
                             </p>
                             <p className="text-muted-foreground leading-relaxed pt-1 border-t border-border">
-                              Cobrança automática toda segunda quando o saldo chega a <strong className="text-foreground">R$ 30</strong>. Acompanhe no Dashboard e no Financeiro.
+                              Cobrança automática toda segunda quando o saldo chega a <strong className="text-foreground">{formatBRL(REPASSE_RULES.MIN_AUTO_CHARGE_BRL)}</strong>. Acompanhe no Dashboard e no Financeiro.
                             </p>
                           </PopoverContent>
                         </Popover>
