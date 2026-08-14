@@ -497,6 +497,17 @@ const CheckoutPage = () => {
   }, [gpsVsSavedKm]);
 
   useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (items.length > 0) {
+        e.preventDefault();
+        e.returnValue = "Você tem itens no carrinho. Deseja realmente sair?";
+      }
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [items.length]);
+
+  useEffect(() => {
     if (authLoading) return;
     if (!user) {
       navigate("/auth", { state: { from: "/checkout" }, replace: true });
@@ -508,17 +519,6 @@ const CheckoutPage = () => {
   if (authLoading || !user || items.length === 0) {
     return <div className="min-h-screen bg-background" />;
   }
-
-   useEffect(() => {
-     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-       if (items.length > 0) {
-         e.preventDefault();
-         e.returnValue = "Você tem itens no carrinho. Deseja realmente sair?";
-       }
-     };
-     window.addEventListener("beforeunload", handleBeforeUnload);
-     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
-   }, [items.length]);
 
    const handleConfirm = async () => {
     if (isStoreClosed) {

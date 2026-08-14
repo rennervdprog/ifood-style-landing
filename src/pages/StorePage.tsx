@@ -73,12 +73,9 @@ const isDocumentScrollElement = (element: HTMLElement) =>
 
 const StorePage = () => {
   const { id, slug } = useParams<{ id?: string; slug?: string }>();
-  // Guard: catch-all "/:slug" pode capturar rotas inexistentes/typos
-  // (`/baixar-app`, `/lp`, `/politica-privacidade`). Devolve 404 antes de
-  // qualquer fetch para evitar "🍽️ Loja fechada" falso.
-  if (!id && isReservedSlug(slug)) {
-    return <NotFound />;
-  }
+  // O catch-all "/:slug" pode capturar rotas reservadas. A decisão de
+  // renderização ocorre após todos os hooks para preservar sua ordem.
+  const isReservedRoute = !id && isReservedSlug(slug);
   const navigate = useNavigate();
   const location = useLocation();
   // Esconde o botão "voltar" quando o usuário entra diretamente pelo link da loja
@@ -143,7 +140,7 @@ const StorePage = () => {
       }
       return boot;
     },
-    enabled: !!(id || slug),
+    enabled: !!(id || slug) && !isReservedRoute,
     staleTime: 1000 * 60 * 3,
     gcTime: 1000 * 60 * 10,
   });
@@ -176,7 +173,7 @@ const StorePage = () => {
       if (error) throw error;
       return null;
     },
-    enabled: !!(id || slug) && bootstrapDone,
+    enabled: !!(id || slug) && !isReservedRoute && bootstrapDone,
     staleTime: 1000 * 60 * 3,
   });
 
@@ -882,6 +879,10 @@ const StorePage = () => {
   }, [store]);
 
   const totalProducts = products?.length || 0;
+
+  if (isReservedRoute) {
+    return <NotFound />;
+  }
 
   if (bootstrapDone && !storeLoading && !store && (id || slug)) {
     // Acessou via slug e não existe → tratar como rota inválida (evita catch-all confuso)

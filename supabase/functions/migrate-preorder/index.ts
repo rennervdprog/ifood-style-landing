@@ -48,8 +48,7 @@ DECLARE
 BEGIN
   WITH moved AS (
     UPDATE public.orders
-       SET status = 'pending',
-           updated_at = now()
+       SET status = 'pendente'
      WHERE status = 'scheduled'
        AND release_at IS NOT NULL
        AND release_at <= now()
