@@ -103,7 +103,7 @@ const PushNavigator = () => {
       if (pending) {
         console.log("[PushNav] 🚀 Replaying pending push navigation:", pending);
         navigate(pending, { replace: true });
-        try { queryClient.invalidateQueries(); } catch {}
+        try { void queryClient.refetchQueries({ type: "active" }); } catch {}
         try { window.dispatchEvent(new CustomEvent("capacitor-app-resume")); } catch {}
         return true;
       }
@@ -132,10 +132,10 @@ const PushNavigator = () => {
       consumePendingPushNavigation();
 
       // 🔄 Push tap can happen on cold start (no appStateChange fires) or while
-      // the app was suspended without a clean resume event. Force-invalidate
-      // every query and re-broadcast resume so dashboards (driver/lojista)
-      // refetch immediately — fixes "push chega mas pedido não aparece".
-      try { queryClient.invalidateQueries(); } catch {}
+      // the app was suspended without a clean resume event. Atualizamos apenas
+      // as consultas ativas e preservamos o cache de outras rotas, evitando uma
+      // avalanche de rede sem atrasar pedidos e dashboards atualmente visíveis.
+      try { void queryClient.refetchQueries({ type: "active" }); } catch {}
       try { window.dispatchEvent(new CustomEvent("capacitor-app-resume")); } catch {}
 
       // Parse path and query
@@ -280,10 +280,10 @@ const App = () => {
 
     const handleVisibility = () => {
       if (document.visibilityState !== "visible") return;
-      queryClient.invalidateQueries();
+      void queryClient.refetchQueries({ type: "active" });
     };
     const handleOnline = () => {
-      queryClient.invalidateQueries();
+      void queryClient.refetchQueries({ type: "active" });
     };
     document.addEventListener("visibilitychange", handleVisibility);
     window.addEventListener("online", handleOnline);

@@ -23,7 +23,6 @@ const AgeGateModal = lazy(() => import("@/components/AgeGateModal"));
 import { getStoreOpenStatus, type OpeningHour } from "@/lib/storeStatus";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStoreContext } from "@/contexts/StoreContext";
-import { useStorePlan } from "@/hooks/useStorePlan";
 import { getStoreAppSlug } from "@/components/StoreAppGuard";
 import { checkStoreAccess, MAX_DISTANCE_KM } from "@/lib/fraudCheck";
 import { getEffectivePrice, isPromoActive, getPromoDiscountPct } from "@/lib/promoPrice";
@@ -193,15 +192,40 @@ const StorePage = () => {
   // IMPORTANTE: nunca usar `id` (param de rota = slug) como storeId.
   // Isso disparava queries Supabase com slug onde se espera UUID (400 22P02).
   const storeId = store?.id ?? null;
+  const [loadEnhancements, setLoadEnhancements] = useState(false);
+
+  // O catálogo essencial já vem no bootstrap. Recursos complementares são
+  // carregados quando o navegador fica ocioso, evitando concorrência com o
+  // primeiro conteúdo visível em conexões móveis.
+  useEffect(() => {
+    setLoadEnhancements(false);
+    if (!storeId) return;
+
+    const schedule = (callback: () => void) => {
+      if (typeof window.requestIdleCallback === "function") {
+        return window.requestIdleCallback(callback, { timeout: 1_200 });
+      }
+      return window.setTimeout(callback, 800);
+    };
+    const cancel = (id: number) => {
+      if (typeof window.cancelIdleCallback === "function") window.cancelIdleCallback(id);
+      else window.clearTimeout(id);
+    };
+
+    const id = schedule(() => setLoadEnhancements(true));
+    return () => cancel(id);
+  }, [storeId]);
 
   useEffect(() => {
     if (!storeId) return;
     const warmProductModal = () => { void loadProductDetailModal(); };
-    const timer = window.setTimeout(warmProductModal, 120);
+    if (typeof window.requestIdleCallback === "function") {
+      const id = window.requestIdleCallback(warmProductModal, { timeout: 2_000 });
+      return () => window.cancelIdleCallback(id);
+    }
+    const timer = window.setTimeout(warmProductModal, 1_200);
     return () => window.clearTimeout(timer);
   }, [storeId]);
-
-   const storePlan = useStorePlan(storeId);
 
    // Guest (anon) não enxerga store_plans/admin_settings via RLS, então o
    // storePlan.platformFeeCustomerExtra cai para o default (R$2) e a taxa
@@ -225,7 +249,7 @@ const StorePage = () => {
          is_autonomy: boolean;
        } | null;
      },
-     enabled: !!storeId,
+     enabled: !!storeId && loadEnhancements,
      staleTime: 1000 * 60 * 5,
    });
 
@@ -438,7 +462,7 @@ const StorePage = () => {
       if (error) throw error;
       return (data || []) as PromoCollection[];
     },
-    enabled: !!storeId,
+    enabled: !!storeId && loadEnhancements,
     staleTime: 1000 * 60 * 3,
   });
 
@@ -476,7 +500,7 @@ const StorePage = () => {
         .slice(0, 10)
         .map(([pid]) => pid);
     },
-    enabled: !!storeId && !!user?.id,
+    enabled: !!storeId && !!user?.id && loadEnhancements,
     staleTime: 1000 * 60 * 10,
     placeholderData: keepPreviousData,
   });
@@ -503,7 +527,7 @@ const StorePage = () => {
         .slice(0, 6)
         .map(([pid, count]) => ({ productId: pid, count }));
     },
-    enabled: !!storeId,
+    enabled: !!storeId && loadEnhancements,
     staleTime: 1000 * 60 * 15,
     placeholderData: keepPreviousData,
   });
