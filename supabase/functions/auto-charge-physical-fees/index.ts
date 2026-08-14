@@ -255,7 +255,8 @@ Deno.serve(async (req) => {
     // ou um JWT de admin para chamada manual. Nunca aceitar requests anônimas.
     const authHeader = req.headers.get("Authorization") || "";
     const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
-    const cronSecret = Deno.env.get("CRON_SECRET") || "";
+    // Aceita o segredo privado usado pelos agendamentos externos, nunca a chave anônima.
+    const cronSecret = Deno.env.get("CRON_SECRET") || Deno.env.get("EXTERNAL_CRON_SECRET") || "";
     const isService =
       !!token && (token === serviceKey || (cronSecret !== "" && token === cronSecret));
 
@@ -279,9 +280,14 @@ Deno.serve(async (req) => {
     const results: any[] = [];
     const now = new Date();
 
-    // Gateway ativo (padrão Woovi). Fallback automático para Asaas se falhar.
+    // Novas cobranças de taxa de plataforma usam exclusivamente Woovi.
     const activeGateway = await getActiveGateway(supabase);
-    const useWoovi = activeGateway === "WOOVI" && wooviEnabled();
+    if (activeGateway !== "WOOVI") {
+      return json({ error: "payment_gateway deve estar configurado como WOOVI" }, 409);
+    }
+    if (!wooviEnabled()) {
+      return json({ error: "WOOVI_APP_ID não configurado" }, 500);
+    }
 
     // ── 1. Buscar lojas com saldo pendente de pagamentos físicos ──
     // store_balances.repasse_pendente = R$ 0,99/entrega (planos fixed/supporter)
@@ -429,43 +435,16 @@ Deno.serve(async (req) => {
       const ownerDoc = String((prof as any)?.document || "");
       const ownerEmail = String((prof as any)?.email || "");
 
-      let provider = "asaas";
-      let charge: { ok: boolean; paymentId?: string; pixCopyPaste?: string; pixQrCode?: string; error?: string };
-
-      if (useWoovi) {
-        provider = "woovi";
-        charge = await createWooviCharge({
-          amount: chargeAmount,
-          description: chargeDescription,
-          externalId: `REP-${balance.store_id}-${Date.now()}`,
-          customerName: store.name,
-          customerEmail: ownerEmail,
-          customerCpfCnpj: ownerDoc,
-        });
-        if (!charge.ok) {
-          console.warn(`[auto-charge] Woovi falhou (${charge.error}) — fallback Asaas`);
-          provider = "asaas";
-          charge = await createAsaasCharge({
-            storeAccountId: balance.store_id,
-            amount: chargeAmount,
-            description: chargeDescription,
-            dueDate: dueDateStr,
-            customerName: store.name,
-            customerEmail: ownerEmail,
-            customerCpfCnpj: ownerDoc,
-          });
-        }
-      } else {
-        charge = await createAsaasCharge({
-          storeAccountId: balance.store_id,
-          amount: chargeAmount,
-          description: chargeDescription,
-          dueDate: dueDateStr,
-          customerName: store.name,
-          customerEmail: ownerEmail,
-          customerCpfCnpj: ownerDoc,
-        });
-      }
+      const provider = "woovi";
+      const referenceCode = `#REP-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
+      const charge = await createWooviCharge({
+        amount: chargeAmount,
+        description: chargeDescription,
+        externalId: referenceCode,
+        customerName: store.name,
+        customerEmail: ownerEmail,
+        customerCpfCnpj: ownerDoc,
+      });
 
       if (!charge.ok) {
         results.push({ store: store.name, status: "error", reason: charge.error });
@@ -476,10 +455,11 @@ Deno.serve(async (req) => {
       await supabase.from("financial_transactions").insert({
         store_id: balance.store_id,
         transaction_kind: "commission_charge",
-        reference_code: charge.paymentId,
+        reference_code: referenceCode,
         amount: chargeAmount,
         status: "pending",
         provider,
+        mercado_pago_payment_id: charge.paymentId,
         pix_copy_paste: charge.pixCopyPaste,
         pix_qr_code_base64: charge.pixQrCode,
         metadata: {
@@ -492,7 +472,8 @@ Deno.serve(async (req) => {
           pdv_pending_billed: pdvPending,
           due_date: dueDateStr,
           gateway: provider,
-          ...(provider === "asaas" ? { asaas_payment_id: charge.paymentId } : { woovi_charge_id: charge.paymentId }),
+          charge_family: "weekly_delivery_fee",
+          woovi_charge_id: charge.paymentId,
         },
       } as any);
 
@@ -515,6 +496,7 @@ Deno.serve(async (req) => {
         status: "charged",
         amount: chargeAmount,
         provider,
+        reference_code: referenceCode,
         payment_id: charge.paymentId,
         due_date: dueDateStr,
         plan: planType,

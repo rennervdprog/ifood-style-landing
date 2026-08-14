@@ -1256,10 +1256,15 @@ async function routePixCreation(params: {
   );
 
   const provider = params.forceProvider ?? (await getActiveProviderFromDB());
-  console.log(`[Route] 🎯 Active provider: ${provider} | hasAsaas=${hasAsaasCredentials()} hasMP=${hasMpCredentials()} hasEfi=${hasEfiCredentials()}`);
+  if (provider !== "WOOVI") {
+    return json({ error: "payment_gateway deve estar configurado como WOOVI" }, 409);
+  }
+  if (!wooviEnabled()) {
+    return json({ error: "WOOVI_APP_ID não configurado" }, 500);
+  }
 
-  // ── Woovi / OpenPix (gateway selecionado no painel) ──
-  if (provider === "WOOVI" && wooviEnabled()) {
+  // ── Woovi / OpenPix: único gateway permitido para novas cobranças ──
+  if (provider === "WOOVI") {
     try {
       const pix = await createWooviPixInline({
         amount: params.amount,
@@ -1284,7 +1289,8 @@ async function routePixCreation(params: {
       };
       return json(resp);
     } catch (e) {
-      console.error("[Route] Woovi falhou, seguindo para provider padrão:", e);
+      console.error("[Route] Woovi falhou:", e);
+      return json({ error: "Não foi possível gerar o PIX pela Woovi. Tente novamente." }, 502);
     }
   }
 

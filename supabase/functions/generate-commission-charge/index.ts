@@ -68,6 +68,46 @@ export async function createAbacatePix(params: {
 }
 
 
+/* ── Woovi/OpenPix: único provedor para novas cobranças de comissão ── */
+type WooviPixResult = { id: string; brCode: string | null; brCodeBase64: string | null };
+function wooviEnabled(): boolean {
+  return !!(Deno.env.get("WOOVI_APP_ID") || Deno.env.get("OPENPIX_APP_ID"));
+}
+async function createWooviPix(params: {
+  amount: number; description: string; externalId: string;
+  customer?: { name?: string; email?: string; taxId?: string };
+}): Promise<WooviPixResult> {
+  const appId = Deno.env.get("WOOVI_APP_ID") || Deno.env.get("OPENPIX_APP_ID");
+  if (!appId) throw new Error("WOOVI_APP_ID não configurada");
+  const taxId = String(params.customer?.taxId || "").replace(/\D/g, "");
+  const body: Record<string, unknown> = {
+    correlationID: params.externalId,
+    value: Math.round(params.amount * 100),
+    comment: String(params.description).substring(0, 140),
+    expiresIn: 60 * 60 * 24,
+  };
+  if (params.customer?.name || params.customer?.email) {
+    body.customer = {
+      name: params.customer?.name || "Lojista",
+      email: params.customer?.email || `lojista-${params.externalId}@itasuper.com`,
+      ...(taxId.length === 11 || taxId.length === 14
+        ? { taxID: { taxID: taxId, type: taxId.length === 11 ? "BR:CPF" : "BR:CNPJ" } }
+        : {}),
+    };
+  }
+  const response = await fetch("https://api.openpix.com.br/api/v1/charge", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: appId },
+    body: JSON.stringify(body),
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok || payload?.error) throw new Error(String(payload?.error || `Erro Woovi ${response.status}`));
+  const charge = payload?.charge || payload;
+  const id = String(charge?.identifier || "");
+  if (!id || !charge?.brCode) throw new Error("Resposta Woovi sem identificador ou PIX copia e cola");
+  return { id, brCode: charge.brCode, brCodeBase64: charge?.brCodeBase64 || null };
+}
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -146,10 +186,8 @@ Deno.serve(async (req) => {
       return json({ error: "Sem permissão" }, 403);
     }
 
-    const useAbacate = abacatepayEnabled();
-    const ASAAS_API_KEY = Deno.env.get("ASAAS_API_KEY");
-    if (!useAbacate && !ASAAS_API_KEY) {
-      return json({ error: "Chave de pagamento não configurada." }, 500);
+    if (!wooviEnabled()) {
+      return json({ error: "WOOVI_APP_ID não configurada" }, 500);
     }
 
     // Check for existing pending charge (idempotency)
@@ -193,10 +231,7 @@ Deno.serve(async (req) => {
       .eq("status", "pending")
       .lt("created_at", fiveMinAgo);
 
-    const isSandbox = !useAbacate && !String(ASAAS_API_KEY).startsWith("$aact_prod_");
-    const baseUrl = isSandbox
-      ? "https://sandbox.asaas.com/api/v3"
-      : "https://api.asaas.com/v3";
+    const isSandbox = false;
 
     // Get store owner profile for customer info
     const { data: ownerProfile } = await serviceClient
@@ -213,11 +248,11 @@ Deno.serve(async (req) => {
     const customerEmail = ownerProfile?.email || userData.user.email || `lojista-${store.owner_id?.substring(0, 8)}@itasuper.com`;
     const desc0 = String(description || `Comissão ItaSuper - ${store.name} - ${referenceCode}`).substring(0, 140);
 
-    // ─── AbacatePay (provider padrão quando configurado: PIX mais barato) ───
-    if (useAbacate) {
+    // ─── Woovi/OpenPix: única emissão permitida ───
+    if (wooviEnabled()) {
       let pix;
       try {
-        pix = await createAbacatePix({
+        pix = await createWooviPix({
           amount: Number(amount.toFixed(2)),
           description: desc0,
           externalId: referenceCode,
@@ -228,8 +263,8 @@ Deno.serve(async (req) => {
           },
         });
       } catch (e) {
-        console.error("AbacatePay commission charge error:", e);
-        return json({ error: "Erro ao gerar cobrança PIX. Tente novamente." }, 500);
+        console.error("Woovi commission charge error:", e);
+        return json({ error: "Erro ao gerar cobrança PIX pela Woovi. Tente novamente." }, 502);
       }
 
       await serviceClient.from("financial_transactions").insert({
@@ -238,7 +273,7 @@ Deno.serve(async (req) => {
         reference_code: referenceCode,
         amount: Number(amount.toFixed(2)),
         status: "pending",
-        provider: "abacatepay",
+        provider: "woovi",
         mercado_pago_payment_id: pix.id,
         pix_qr_code: pix.brCode,
         pix_qr_code_base64: pix.brCodeBase64,
@@ -256,106 +291,13 @@ Deno.serve(async (req) => {
         qr_code_base64: pix.brCodeBase64,
         amount: Number(amount.toFixed(2)),
         created_at: createdAt,
-        provider: "abacatepay",
+        provider: "woovi",
       });
     }
 
-    // Find or create customer (Asaas)
-    let customerId: string | null = null;
-
-    if (cleanCpf.length >= 11) {
-      const searchRes = await fetch(`${baseUrl}/customers?cpfCnpj=${cleanCpf}`, {
-        headers: { "access_token": ASAAS_API_KEY },
-      });
-      if (searchRes.ok) {
-        const searchData = await searchRes.json();
-        if (searchData.data?.length > 0) {
-          customerId = searchData.data[0].id;
-        }
-      }
-    }
-
-    if (!customerId) {
-      const customerBody: Record<string, unknown> = {
-        name: ownerProfile?.full_name || "Lojista",
-        email: customerEmail,
-        notificationDisabled: true,
-      };
-      if (cleanCpf.length >= 11) customerBody.cpfCnpj = cleanCpf;
-
-      const createRes = await fetch(`${baseUrl}/customers`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "access_token": ASAAS_API_KEY },
-        body: JSON.stringify(customerBody),
-      });
-      if (!createRes.ok) {
-        const errData = await createRes.json();
-        return json({ error: errData?.errors?.[0]?.description || "Erro ao criar cliente." }, 500);
-      }
-      const customerData = await createRes.json();
-      customerId = customerData.id;
-    }
-
-    // Create PIX payment
-    const dueDate = new Date();
-    dueDate.setDate(dueDate.getDate() + 1);
-    const desc = desc0;
-
-    const paymentBody = {
-      customer: customerId,
-      billingType: "PIX",
-      notificationDisabled: true,
-      value: Number(amount.toFixed(2)),
-      dueDate: dueDate.toISOString().split("T")[0],
-      description: desc,
-      externalReference: referenceCode,
-    };
-
-    const paymentRes = await fetch(`${baseUrl}/payments`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "access_token": ASAAS_API_KEY },
-      body: JSON.stringify(paymentBody),
-    });
-
-    const paymentData = await paymentRes.json();
-    if (!paymentRes.ok) {
-      console.error("Asaas Commission Charge Error:", JSON.stringify(paymentData));
-      return json({ error: "Erro ao gerar cobrança PIX. Tente novamente." }, 500);
-    }
-
-    // Get QR code
-    const pixRes = await fetch(`${baseUrl}/payments/${paymentData.id}/pixQrCode`, {
-      headers: { "access_token": ASAAS_API_KEY },
-    });
-    const pixInfo = await pixRes.json();
-
-    // Save transaction
-    await serviceClient.from("financial_transactions").insert({
-      store_id,
-      transaction_kind: "commission_charge",
-      reference_code: referenceCode,
-      amount: Number(amount.toFixed(2)),
-      status: "pending",
-      provider: "asaas",
-      mercado_pago_payment_id: paymentData.id,
-      pix_qr_code: pixInfo?.payload || null,
-      pix_qr_code_base64: pixInfo?.encodedImage || null,
-      pix_copy_paste: pixInfo?.payload || null,
-      created_at: createdAt,
-      updated_at: createdAt,
-      metadata: { store_name: store.name, description: desc },
-    });
-
-    return json({
-      reference_code: referenceCode,
-      payment_id: paymentData.id,
-      status: "pending",
-      qr_code: pixInfo?.payload || null,
-      qr_code_base64: pixInfo?.encodedImage || null,
-      amount: Number(amount.toFixed(2)),
-      created_at: createdAt,
-      provider: "asaas",
-    });
+    // O bloco Woovi acima sempre retorna em sucesso ou falha; esta salvaguarda
+    // evita qualquer emissão por provedor legado caso o fluxo seja alterado no futuro.
+    return json({ error: "Emissão Woovi indisponível." }, 500);
   } catch (err) {
     console.error("Error:", err);
     return json({ error: "Erro interno" }, 500);
