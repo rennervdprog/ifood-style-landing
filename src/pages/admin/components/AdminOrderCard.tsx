@@ -585,7 +585,6 @@ const areEqual = (prev: AdminOrderCardProps, next: AdminOrderCardProps) => {
   if ((a as any).return_to_store_confirmed !== (b as any).return_to_store_confirmed) return false;
   if (a.total_price !== b.total_price) return false;
   if (prev.isAddressExpanded !== next.isAddressExpanded) return false;
-  if (prev.isBatchSelected !== next.isBatchSelected) return false;
   if (prev.cancelConfirm !== next.cancelConfirm && (prev.cancelConfirm === a.id || next.cancelConfirm === a.id)) return false;
   if (prev.cancelReason !== next.cancelReason && (prev.cancelConfirm === a.id || next.cancelConfirm === a.id)) return false;
   if (prev.cancellingOrder !== next.cancellingOrder) return false;
