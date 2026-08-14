@@ -800,7 +800,7 @@ const CheckoutPage = () => {
           for (const { storeId, orderId } of createdOrders) {
             try {
               const { data: storeData } = await supabase
-                .from("stores")
+                .from("stores_public")
                 .select("owner_id")
                 .eq("id", storeId)
                 .single();

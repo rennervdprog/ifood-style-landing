@@ -29,7 +29,7 @@ const CartPage = () => {
     queryKey: ["store-guest-flag", storeId],
     queryFn: async () => {
       const { data } = await (supabase as any)
-        .from("stores")
+        .from("stores_public")
         .select("guest_checkout_enabled")
         .eq("id", storeId!).maybeSingle();
       return !!data?.guest_checkout_enabled;

@@ -146,7 +146,7 @@ const LiveTrackingMap = ({ orderId, driverId, storeId, clientAddress, clientLat,
     queryKey: ["store-geo", storeId],
     queryFn: async () => {
       const { data } = await supabase
-        .from("stores")
+        .from("stores_public")
         .select("name, latitude, longitude, address_street, address_number, address_neighborhood, address_city, address_state, address_cep")
         .eq("id", storeId)
         .maybeSingle();
@@ -198,7 +198,7 @@ const LiveTrackingMap = ({ orderId, driverId, storeId, clientAddress, clientLat,
 
       // Fetch store address to use city/state as context for geocoding
       const { data: storeAddr } = await supabase
-        .from("stores")
+        .from("stores_public")
         .select("address_city, address_state, address_cep")
         .eq("id", storeId)
         .maybeSingle();

@@ -86,7 +86,7 @@ const DriverRideHistory = ({ storeIds }: Props) => {
     queryFn: async () => {
       if (!storeIdSet.length) return [];
       const { data } = await supabase
-        .from("stores")
+        .from("stores_public")
         .select("id, name, latitude, longitude")
         .in("id", storeIdSet);
       return data || [];
