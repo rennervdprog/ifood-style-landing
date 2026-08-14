@@ -7,7 +7,6 @@ import { toast } from "sonner";
 import OrdersToolbar, { type PeriodKey, type SourceKey } from "../components/orders/OrdersToolbar";
 import OrdersStatusPills from "../components/orders/OrdersStatusPills";
 import PixDirectAlert from "../components/orders/PixDirectAlert";
-import BatchDispatchBar from "../components/orders/BatchDispatchBar";
 import OrdersEmptyState from "../components/orders/OrdersEmptyState";
 import OrderCardSkeleton from "../components/orders/OrderCardSkeleton";
 
@@ -20,8 +19,6 @@ interface Props {
   orderTabs: any[];
   activeTab: OrderTabKey;
   setActiveTab: (t: OrderTabKey) => void;
-  batchSelected: Set<string>;
-  setBatchSelected: (s: Set<string>) => void;
   expandedAddresses: Set<string>;
   cancelConfirm: any;
   cancelReason: string;
@@ -36,10 +33,6 @@ interface Props {
   pendingCount: number;
   settlementSearch: string;
   setSettlementSearch: (s: string) => void;
-  batchDispatch: () => void;
-  batchDispatching: boolean;
-  selectAllReady: () => void;
-  toggleBatchOrder: (id: string) => void;
   toggleAddress: (id: string) => void;
   storeName: string | undefined;
   getClientName: (id: string) => string;
@@ -60,11 +53,10 @@ interface Props {
 export default function OrdersSection(props: Props) {
   const {
     store, orders, isLoading, filteredOrders, orderTabs, activeTab, setActiveTab,
-    batchSelected, setBatchSelected, expandedAddresses, cancelConfirm, setCancelConfirm,
+    expandedAddresses, cancelConfirm, setCancelConfirm,
     cancelReason, setCancelReason, cancellingOrder,
     isOwnDelivery, hasLinkedDrivers, driversLoading, onlineDrivers, linkedStoreDrivers,
-    pendingCount, settlementSearch, setSettlementSearch, batchDispatch, batchDispatching,
-    selectAllReady, toggleBatchOrder, toggleAddress,
+    pendingCount, settlementSearch, setSettlementSearch, toggleAddress,
     getClientName, getClientWhatsApp, getDriverName, getRequiredAddonHighlights, getMainAction,
     buildAcceptWhatsAppHref, buildReadyWhatsAppHref, updateOrderStatus, handleAcceptOrder,
     handleCancelOrder, handlePrint, invalidateOrders, evolutionConnected,
@@ -183,10 +175,6 @@ export default function OrdersSection(props: Props) {
     return { count: base.length, total, pdvCount, pdvTotal, deliveryCount, deliveryTotal, manualCount, manualTotal };
   }, [orders, periodRange]);
 
-  const showBatchBar =
-    isOwnDelivery && !hasLinkedDrivers && !driversLoading &&
-    activeTab === "pronto_para_entrega" && filteredOrders.length > 0;
-
   return (
     <>
       <OrdersToolbar
@@ -216,17 +204,8 @@ export default function OrdersSection(props: Props) {
         orders={orders}
         activeTab={activeTab}
         isOwnDelivery={isOwnDelivery}
-        onSelect={(t) => { setActiveTab(t); setBatchSelected(new Set()); }}
+        onSelect={setActiveTab}
       />
-
-      {showBatchBar && (
-        <BatchDispatchBar
-          selectedCount={batchSelected.size}
-          batchDispatching={batchDispatching}
-          onSelectAll={selectAllReady}
-          onDispatch={batchDispatch}
-        />
-      )}
 
       <div className="p-4 space-y-3 md:grid md:grid-cols-2 md:gap-4 md:space-y-0 xl:grid-cols-3 max-w-6xl mx-auto">
         {isLoading ? (
@@ -240,7 +219,6 @@ export default function OrdersSection(props: Props) {
               order={order}
               index={index}
               isAddressExpanded={expandedAddresses.has(order.id)}
-              isBatchSelected={batchSelected.has(order.id)}
               isOwnDelivery={isOwnDelivery}
               hasLinkedDrivers={hasLinkedDrivers}
               driversLoading={driversLoading}
@@ -261,7 +239,6 @@ export default function OrdersSection(props: Props) {
               acceptHref={buildAcceptWhatsAppHref(order)}
               readyHref={buildReadyWhatsAppHref(order)}
               toggleAddress={toggleAddress}
-              toggleBatchOrder={toggleBatchOrder}
               setActiveTab={setActiveTab}
               setCancelConfirm={setCancelConfirm}
               updateOrderStatus={updateOrderStatus}

@@ -255,8 +255,6 @@ const AdminDashboard = () => {
   const [showSupportModal, setShowSupportModal] = useState(false);
   const [selectedReportPeriod, setSelectedReportPeriod] = useState(30);
   const [reportSubTab, setReportSubTab] = useState<"overview" | "sales" | "products" | "hours">("overview");
-  const [batchSelected, setBatchSelected] = useState<Set<string>>(new Set());
-  const [batchDispatching, setBatchDispatching] = useState(false);
 
   const prevPendingCountRef = useRef(0);
 
@@ -1406,71 +1404,6 @@ const AdminDashboard = () => {
     }
   };
 
-  // ── BATCH DISPATCH (own delivery) ──
-  const toggleBatchOrder = (orderId: string) => {
-    setBatchSelected(prev => {
-      const next = new Set(prev);
-      if (next.has(orderId)) next.delete(orderId); else next.add(orderId);
-      return next;
-    });
-  };
-
-  const selectAllReady = () => {
-    const readyIds = (orders || []).filter(o => o.status === "pronto_para_entrega").map(o => o.id);
-    setBatchSelected(new Set(readyIds));
-  };
-
-  const batchDispatch = async () => {
-    if (batchSelected.size === 0) return;
-    setBatchDispatching(true);
-    try {
-      const ids = Array.from(batchSelected);
-      const { error } = await supabase
-        .from("orders")
-        .update({ status: "saiu_entrega" as any })
-        .in("id", ids);
-      if (error) { toast.error("Erro ao despachar pedidos em lote"); return; }
-
-      queryClient.invalidateQueries({ queryKey: ["store-orders", store?.id] });
-      toast.success(`🛵 ${ids.length} pedido(s) enviados para entrega!`);
-
-      // Send notifications for each order
-      const storeSettings = (store?.settings || {}) as Record<string, any>;
-      // Fire-and-forget em paralelo — antes rodava sequencial e travava UI com muitos pedidos
-      ids.forEach((orderId) => {
-        const order = orders?.find((o: any) => o.id === orderId);
-        if (!order) return;
-        const clientPhone = getClientWhatsApp(order.client_id);
-        const clientName = getClientName(order.client_id);
-        const items = order.order_items?.map((i: any) => `${i.quantity}x ${getOrderItemDisplayName(i)}`).join("\n") || "";
-        try {
-          notifyOrderStatusChange("saiu_entrega", {
-            orderId: order.id,
-            storeName: store?.name || "Loja",
-            storeId: store?.id || "",
-            clientId: order.client_id,
-            clientPhone,
-            clientName,
-            totalPrice: Number(order.total_price),
-            addressDetails: order.address_details,
-            items,
-            deliveryPin: order.delivery_pin,
-            paymentMethod: order.payment_method,
-          }, {
-            evolutionEnabled: evolutionConnected,
-            zapiEnabled: !!storeSettings.zapi_enabled,
-          });
-        } catch (e) { console.warn("batch notify error", e); }
-      });
-
-    } catch (e: any) {
-      toast.error(`Erro: ${e?.message}`);
-    } finally {
-      setBatchDispatching(false);
-      setBatchSelected(new Set());
-    }
-  };
-
   const toggleStoreOpen = async () => {
     if (!store) return;
     // Bloqueio: não permitir abrir a loja sem motoboy ativo
@@ -1594,13 +1527,11 @@ const AdminDashboard = () => {
         if (isPickupOrder) {
           return { label: "CLIENTE RETIROU", next: "finalizado" as OrderStatus, emoji: "✅" };
         }
-        if (isOwnDelivery) {
-          if (hasLinkedDrivers || driversLoading || order?.driver_id) return null;
-          return { label: "SAIU PARA ENTREGA", next: "saiu_entrega" as OrderStatus, emoji: "🛵" };
-        }
+        // Para delivery, o lojista apenas disponibiliza o pedido. A saída deve
+        // ser confirmada exclusivamente pelo entregador na tela dele.
         return null;
       case "saiu_entrega":
-        if (isOwnDelivery && !hasLinkedDrivers && !driversLoading) return { label: "MARCAR COMO ENTREGUE", next: "finalizado" as OrderStatus, emoji: "✅" };
+        // A conclusão da entrega também pertence ao fluxo do entregador/cliente.
         return null;
       default: return null;
     }
@@ -2165,8 +2096,6 @@ const AdminDashboard = () => {
                 orderTabs={orderTabs}
                 activeTab={activeTab}
                 setActiveTab={setActiveTab}
-                batchSelected={batchSelected}
-                setBatchSelected={setBatchSelected}
                 expandedAddresses={expandedAddresses}
                 cancelConfirm={cancelConfirm}
                 setCancelConfirm={setCancelConfirm}
@@ -2181,10 +2110,6 @@ const AdminDashboard = () => {
                 pendingCount={pendingCount}
                 settlementSearch={settlementSearch}
                 setSettlementSearch={setSettlementSearch}
-                batchDispatch={batchDispatch}
-                batchDispatching={batchDispatching}
-                selectAllReady={selectAllReady}
-                toggleBatchOrder={toggleBatchOrder}
                 toggleAddress={toggleAddress}
                 storeName={store?.name}
                 getClientName={getClientName}
