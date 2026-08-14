@@ -1,0 +1,18 @@
+const cors = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, apikey, content-type" };
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response(null, { headers: cors });
+  const REF = Deno.env.get("EXTERNAL_SUPABASE_PROJECT_REF")!;
+  const PAT = Deno.env.get("EXTERNAL_SUPABASE_ACCESS_TOKEN")!;
+  const payload = [
+    { name: "ABACATEPAY_API_KEY", value: Deno.env.get("ABACATEPAY_API_KEY")! },
+    { name: "ABACATEPAY_WEBHOOK_SECRET", value: "pi5tMFdv334iirwlbx6wQFma2D0fx8zh" },
+  ];
+  const r = await fetch(`https://api.supabase.com/v1/projects/${REF}/secrets`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${PAT}`, "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  return new Response(JSON.stringify({ status: r.status, body: await r.text() }), {
+    headers: { ...cors, "Content-Type": "application/json" },
+  });
+});

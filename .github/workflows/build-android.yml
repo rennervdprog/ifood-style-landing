@@ -190,7 +190,7 @@ jobs:
             # Extract appId from capacitor.config.ts
             APP_ID=$(grep -oP "appId: '\K[^']+" capacitor.config.ts || echo "app.itasuper.cliente")
             echo "📱 Setting applicationId to: $APP_ID"
-            sed -i "s/applicationId \"app\.lovable\.e8d28aded6334d74be2161c8dbe24765\"/applicationId \"$APP_ID\"/g" android/app/build.gradle
+            sed -i "s/applicationId \"[^\"]*\"/applicationId \"$APP_ID\"/g" android/app/build.gradle
             echo "✅ build.gradle updated with correct package name"
           fi
 
@@ -498,7 +498,7 @@ jobs:
             # Extract appId from capacitor.config.ts
             APP_ID=$(grep -oP "appId: '\K[^']+" capacitor.config.ts || echo "app.itasuper.parceiro")
             echo "📱 Setting applicationId to: $APP_ID"
-            sed -i "s/applicationId \"app\.lovable\.e8d28aded6334d74be2161c8dbe24765\"/applicationId \"$APP_ID\"/g" android/app/build.gradle
+            sed -i "s/applicationId \"[^\"]*\"/applicationId \"$APP_ID\"/g" android/app/build.gradle
             echo "✅ build.gradle updated with correct package name"
           fi
 
@@ -830,7 +830,7 @@ jobs:
           if [ -f "android/app/build.gradle" ]; then
             APP_ID="${STORE_APP_ID:-$(grep -oP "appId: '\K[^']+" capacitor.config.ts)}"
             echo "📱 Setting applicationId to: $APP_ID"
-            sed -i "s/applicationId \"app\.lovable\.e8d28aded6334d74be2161c8dbe24765\"/applicationId \"$APP_ID\"/g" android/app/build.gradle
+            sed -i "s/applicationId \"[^\"]*\"/applicationId \"$APP_ID\"/g" android/app/build.gradle
             echo "✅ build.gradle updated with correct package name"
           fi
 

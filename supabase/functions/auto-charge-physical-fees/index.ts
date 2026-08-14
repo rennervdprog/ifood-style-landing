@@ -9,7 +9,7 @@
  *  - Planos commission_only: cobrar comissao_pendente (% sobre vendas)
  *
  * Fluxo:
- *  1. Busca lojas com saldo pendente acima do mínimo configurado (default R$5)
+ *  1. Busca lojas com saldo pendente acima do mínimo configurado (R$ 150)
  *  2. Gera cobrança PIX via Asaas na subconta do lojista
  *  3. Salva em financial_transactions com status 'pending'
  *  4. Webhook Asaas confirma → zerará o saldo pendente
@@ -42,7 +42,73 @@ const MIN_CHARGE_AMOUNT = 150.0;
 // Dias de atraso antes de inativar a loja
 const OVERDUE_DAYS_TO_DEACTIVATE = 30;
 
-// ─── Gerar cobrança PIX no Asaas ──────────────────────────────────────────────
+// ─── Woovi/OpenPix (gateway padrão) ───────────────────────────────────────────
+
+function wooviEnabled(): boolean {
+  return !!(Deno.env.get("WOOVI_APP_ID") || Deno.env.get("OPENPIX_APP_ID"));
+}
+
+/** Gateway ativo configurado no super admin (admin_settings.payment_gateway). */
+async function getActiveGateway(client: any): Promise<string> {
+  try {
+    const { data } = await client
+      .from("admin_settings")
+      .select("value")
+      .eq("key", "payment_gateway")
+      .maybeSingle();
+    const val = String((data?.value as any)?.provider || "").toUpperCase().trim();
+    if (val) return val;
+  } catch (_e) { /* fallback abaixo */ }
+  return (Deno.env.get("ACTIVE_PAYMENT_PROVIDER") || "ASAAS").toUpperCase().trim();
+}
+
+async function createWooviCharge(params: {
+  amount: number;
+  description: string;
+  externalId: string;
+  customerName?: string;
+  customerEmail?: string;
+  customerCpfCnpj?: string;
+}): Promise<{ ok: boolean; paymentId?: string; pixCopyPaste?: string; pixQrCode?: string; error?: string }> {
+  const appId = Deno.env.get("WOOVI_APP_ID") || Deno.env.get("OPENPIX_APP_ID");
+  if (!appId) return { ok: false, error: "WOOVI_APP_ID não configurado" };
+  const taxId = String(params.customerCpfCnpj || "").replace(/\D/g, "");
+  const body: Record<string, unknown> = {
+    correlationID: params.externalId,
+    value: Math.round(params.amount * 100),
+    comment: String(params.description).substring(0, 140),
+    expiresIn: 60 * 60 * 24 * 7,
+    customer: {
+      name: params.customerName || "Lojista",
+      email: params.customerEmail || `lojista-${params.externalId}@itasuper.com`,
+      ...(taxId.length === 11 || taxId.length === 14
+        ? { taxID: { taxID: taxId, type: taxId.length === 11 ? "BR:CPF" : "BR:CNPJ" } }
+        : {}),
+    },
+  };
+  try {
+    const res = await fetch("https://api.openpix.com.br/api/v1/charge", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: appId },
+      body: JSON.stringify(body),
+    });
+    const payload = await res.json().catch(() => ({}));
+    if (!res.ok || payload?.error) {
+      return { ok: false, error: String(payload?.error || `Erro Woovi ${res.status}`) };
+    }
+    const charge = payload?.charge || payload;
+    return {
+      ok: true,
+      paymentId: String(charge?.identifier || charge?.correlationID || params.externalId),
+      pixCopyPaste: charge?.brCode || "",
+      pixQrCode: "",
+    };
+  } catch (err) {
+    return { ok: false, error: String(err) };
+  }
+}
+
+// ─── Gerar cobrança PIX no Asaas (fallback) ───────────────────────────────────
 
 async function createAsaasCharge(params: {
   amount: number;
@@ -213,6 +279,10 @@ Deno.serve(async (req) => {
     const results: any[] = [];
     const now = new Date();
 
+    // Gateway ativo (padrão Woovi). Fallback automático para Asaas se falhar.
+    const activeGateway = await getActiveGateway(supabase);
+    const useWoovi = activeGateway === "WOOVI" && wooviEnabled();
+
     // ── 1. Buscar lojas com saldo pendente de pagamentos físicos ──
     // store_balances.repasse_pendente = R$ 0,99/entrega (planos fixed/supporter)
     // store_balances.comissao_pendente = % sobre vendas físicas (commission_only)
@@ -351,22 +421,51 @@ Deno.serve(async (req) => {
       dueDate.setDate(dueDate.getDate() + 7); // 7 dias para pagar
       const dueDateStr = dueDate.toISOString().split("T")[0];
 
-      const charge = await createAsaasCharge({
-        storeAccountId: balance.store_id,
-        amount: chargeAmount,
-        description: chargeDescription,
-        dueDate: dueDateStr,
-        customerName: store.name,
-        customerEmail: "",
-        customerCpfCnpj: await (async () => {
-          const { data: prof } = await supabase
-            .from("profiles")
-            .select("document, email, full_name")
-            .eq("user_id", store.owner_id)
-            .maybeSingle();
-          return String((prof as any)?.document || "");
-        })(),
-      });
+      const { data: prof } = await supabase
+        .from("profiles")
+        .select("document, email, full_name")
+        .eq("user_id", store.owner_id)
+        .maybeSingle();
+      const ownerDoc = String((prof as any)?.document || "");
+      const ownerEmail = String((prof as any)?.email || "");
+
+      let provider = "asaas";
+      let charge: { ok: boolean; paymentId?: string; pixCopyPaste?: string; pixQrCode?: string; error?: string };
+
+      if (useWoovi) {
+        provider = "woovi";
+        charge = await createWooviCharge({
+          amount: chargeAmount,
+          description: chargeDescription,
+          externalId: `REP-${balance.store_id}-${Date.now()}`,
+          customerName: store.name,
+          customerEmail: ownerEmail,
+          customerCpfCnpj: ownerDoc,
+        });
+        if (!charge.ok) {
+          console.warn(`[auto-charge] Woovi falhou (${charge.error}) — fallback Asaas`);
+          provider = "asaas";
+          charge = await createAsaasCharge({
+            storeAccountId: balance.store_id,
+            amount: chargeAmount,
+            description: chargeDescription,
+            dueDate: dueDateStr,
+            customerName: store.name,
+            customerEmail: ownerEmail,
+            customerCpfCnpj: ownerDoc,
+          });
+        }
+      } else {
+        charge = await createAsaasCharge({
+          storeAccountId: balance.store_id,
+          amount: chargeAmount,
+          description: chargeDescription,
+          dueDate: dueDateStr,
+          customerName: store.name,
+          customerEmail: ownerEmail,
+          customerCpfCnpj: ownerDoc,
+        });
+      }
 
       if (!charge.ok) {
         results.push({ store: store.name, status: "error", reason: charge.error });
@@ -380,7 +479,7 @@ Deno.serve(async (req) => {
         reference_code: charge.paymentId,
         amount: chargeAmount,
         status: "pending",
-        provider: "asaas",
+        provider,
         pix_copy_paste: charge.pixCopyPaste,
         pix_qr_code_base64: charge.pixQrCode,
         metadata: {
@@ -392,7 +491,8 @@ Deno.serve(async (req) => {
           balance_billed: baseAmount,
           pdv_pending_billed: pdvPending,
           due_date: dueDateStr,
-          asaas_payment_id: charge.paymentId,
+          gateway: provider,
+          ...(provider === "asaas" ? { asaas_payment_id: charge.paymentId } : { woovi_charge_id: charge.paymentId }),
         },
       } as any);
 
@@ -414,7 +514,8 @@ Deno.serve(async (req) => {
         store: store.name,
         status: "charged",
         amount: chargeAmount,
-        asaas_id: charge.paymentId,
+        provider,
+        payment_id: charge.paymentId,
         due_date: dueDateStr,
         plan: planType,
       });

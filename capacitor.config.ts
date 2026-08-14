@@ -1,4 +1,5 @@
 import type { CapacitorConfig } from '@capacitor/cli';
+import { APP_VERSION } from './src/lib/appVersion';
 
 const config: CapacitorConfig = {
   appId: 'app.itasuper.cliente',
@@ -13,7 +14,7 @@ const config: CapacitorConfig = {
     // Bridge nova (MessageChannel) — mais rápida que a legada.
     useLegacyBridge: false,
     // CDN identifica o app e serve Cache-Control agressivo.
-    appendUserAgent: 'ItaSuperApp/1.26.4',
+    appendUserAgent: `ItaSuperApp/${APP_VERSION}`,
     // Não focar automaticamente inputs — evita reflow no boot.
     initialFocus: false,
   },
@@ -47,16 +48,6 @@ const config: CapacitorConfig = {
       smallIcon: 'ic_stat_icon_config_sample',
       iconColor: '#FF6B00',
       sound: 'beep.wav',
-    },
-    BackgroundRunner: {
-      label: 'app.itasuper.driver.background',
-      src: 'runners/driverBackground.js',
-      event: 'checkForOrders',
-      repeat: true,
-      // Android: 15 min é o mínimo permitido pelo JobScheduler.
-      // iOS: BGTask só roda quando o sistema decide (~horas).
-      interval: 15,
-      autoStart: true,
     },
     CapacitorUpdater: {
       // OTA self-hosted no bucket `app-releases` do Supabase externo.

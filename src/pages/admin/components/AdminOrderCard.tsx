@@ -36,7 +36,6 @@ export interface AdminOrderCardProps {
   order: any;
   index: number;
   isAddressExpanded: boolean;
-  isBatchSelected: boolean;
   isOwnDelivery: boolean;
   hasLinkedDrivers: boolean;
   driversLoading: boolean;
@@ -57,7 +56,6 @@ export interface AdminOrderCardProps {
   acceptHref: string;
   readyHref: string;
   toggleAddress: (id: string) => void;
-  toggleBatchOrder: (id: string) => void;
   setActiveTab: (t: any) => void;
   setCancelConfirm: (id: string | null) => void;
   updateOrderStatus: (id: string, s: OrderStatus) => void;
@@ -69,11 +67,11 @@ export interface AdminOrderCardProps {
 
 const AdminOrderCardImpl = (props: AdminOrderCardProps) => {
   const {
-    order, index, isAddressExpanded, isBatchSelected, isOwnDelivery, hasLinkedDrivers,
+    order, index, isAddressExpanded, isOwnDelivery, hasLinkedDrivers,
     driversLoading, cancelConfirm, cancelReason, setCancelReason, cancellingOrder,
     storeName, storeId, evolutionConnected, onlineDriversCount, linkedStoreDrivers,
     highlights, clientName, clientWhatsApp, driverName, mainAction, acceptHref, readyHref,
-    toggleAddress, toggleBatchOrder, setActiveTab, setCancelConfirm, updateOrderStatus,
+    toggleAddress, setActiveTab, setCancelConfirm, updateOrderStatus,
     handleAcceptOrder, handleCancelOrder, handlePrint, invalidateOrders,
   } = props;
 
@@ -104,21 +102,12 @@ const AdminOrderCardImpl = (props: AdminOrderCardProps) => {
     <div
       style={{ animationDelay: `${index * 50}ms` }}
       className={`bg-card rounded-2xl overflow-hidden border transition-all duration-300 animate-in fade-in slide-in-from-bottom-4 duration-500 ${
-        isBatchSelected ? "border-primary ring-2 ring-primary/30" :
         isDelayed ? "border-destructive/50 shadow-[0_0_12px_-4px] shadow-destructive/20" :
         order.status === "pendente" ? "border-primary/40 shadow-primary/5 animate-pulse-border" : "border-border"
       } hover:shadow-md`}
     >
       <div className={`px-3 py-1.5 ${sc.bg} flex items-center justify-between`}>
         <div className="flex items-center gap-2">
-          {isOwnDelivery && !hasLinkedDrivers && !driversLoading && order.status === "pronto_para_entrega" && (
-            <button onClick={() => toggleBatchOrder(order.id)}
-              className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-colors ${
-                isBatchSelected ? "bg-primary border-primary text-primary-foreground" : "border-muted-foreground/40 hover:border-primary"
-              }`}>
-              {isBatchSelected && <CheckCircle2 className="h-3.5 w-3.5" />}
-            </button>
-          )}
           <span className={`text-[10px] font-bold uppercase ${sc.text}`}>{sc.label}</span>
           {isDelayed && (
             <span className="flex items-center gap-1 text-[10px] font-bold text-destructive bg-destructive/10 px-1.5 py-0.5 rounded-full">

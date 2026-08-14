@@ -709,23 +709,23 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
       queryClient.invalidateQueries({ queryKey: myKey });
       toast.error("Não foi possível aceitar o pedido.");
     } else {
-      toast.success("🛵 Saindo para entrega!");
+      toast.success("🛵 Pedido aceito. Confirme a saída quando deixar a loja.");
       if (acceptedOrder) {
         const previousMy = queryClient.getQueryData<any[]>(myKey) || [];
         queryClient.setQueryData(
           myKey,
-          [{ ...acceptedOrder, driver_id: user?.id, status: "saiu_entrega" }, ...previousMy.filter((o: any) => o.id !== orderId)],
+          [{ ...acceptedOrder, driver_id: user?.id, status: "pronto_para_entrega" }, ...previousMy.filter((o: any) => o.id !== orderId)],
         );
       }
       // Sync with server in background
       queryClient.invalidateQueries({ queryKey: availableKey });
       queryClient.invalidateQueries({ queryKey: myKey });
 
-      // Notify store owner in background
+      // O aceite apenas vincula o pedido ao entregador. A notificação de saída
+      // é enviada exclusivamente em departForDelivery, após a confirmação dele.
       if (acceptedOrder) {
         const driverName = user?.user_metadata?.full_name || "Entregador";
-        notifyStoreOwner(acceptedOrder, "🛵 Saiu para entrega!", `${driverName} aceitou e saiu para entregar o pedido #${orderId.slice(0, 8).toUpperCase()}`);
-        notifyClientFromDriver(acceptedOrder, "saiu_entrega");
+        notifyStoreOwner(acceptedOrder, "🛵 Entregador aceitou!", `${driverName} aceitou o pedido #${orderId.slice(0, 8).toUpperCase()}.`);
       }
     }
     setAcceptingOrderIds((prev) => {

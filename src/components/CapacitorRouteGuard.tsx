@@ -28,7 +28,6 @@ export const PARTNER_ROUTES = [
   "/portal-parceiro",
   "/admin",
   "/entregador",
-  "/entregador2",
   "/cadastro-entregador",
   "/cadastro-lojista",
   "/cadastro-motoboy-loja",
@@ -37,6 +36,10 @@ export const PARTNER_ROUTES = [
   "/super-admin",
   "/planos",
   "/moderador",
+  "/matriz",
+  "/suporte",
+  "/revendedor",
+  "/seja-revendedor",
 ];
 
 /**
@@ -48,11 +51,12 @@ const PARTNER_ALLOWED_PREFIXES = [
   "/portal-parceiro",
   "/admin",
   "/entregador",
-  "/entregador2",
   "/super-admin",
   "/painel",
   "/parceiro",
   "/moderador",
+  "/matriz",
+  "/suporte",
   "/cadastro-entregador",
   "/cadastro-lojista",
   "/cadastro-motoboy-loja",
@@ -60,7 +64,6 @@ const PARTNER_ALLOWED_PREFIXES = [
   "/auth",
   "/termos-de-uso",
    "/politica-de-privacidade",
-   "/auth",
  ];
  
  /**
@@ -84,7 +87,6 @@ const PARTNER_ALLOWED_PREFIXES = [
    "/ajuda",
    "/configuracoes",
    "/notificacoes",
-   "/cupons",
    "/sac",
 ];
 

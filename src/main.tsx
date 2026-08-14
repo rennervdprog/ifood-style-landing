@@ -43,19 +43,10 @@ if (Capacitor.isNativePlatform?.()) {
   import("./lib/nativeBoot").then(({ notifyOtaAppReady }) => notifyOtaAppReady()).catch(() => {});
 }
 
-// 🚀 Cold-start: no APK Parceiro, se a URL inicial é "/" (rota padrão do
-// Capacitor), reescreve para /portal-parceiro ANTES do React montar.
-// Evita carregar o chunk pesado de StoreDirectory + queries de lojas/cidades
-// só pra o RouteGuard redirecionar depois. Economiza ~1-2s no cold start.
-try {
-  const isCap = Capacitor.isNativePlatform?.();
-  const appId = (Capacitor as any).getAppId?.() || "";
-  const mode = import.meta.env.VITE_CAPACITOR_APP_MODE;
-  const isPartner = mode === "parceiro" || appId.includes("parceiro");
-  if (isCap && isPartner && (location.pathname === "/" || location.pathname === "/index")) {
-    history.replaceState(null, "", "/portal-parceiro" + location.search + location.hash);
-  }
-} catch {}
+// 🚀 Cold-start deep-link resolver (Fase 5). Centralizado em routes/capacitor.
+// Evita carregar chunks pesados só pra o RouteGuard redirecionar depois.
+import { resolveNativeColdStartPath } from "./routes/capacitor/deepLinkResolver";
+resolveNativeColdStartPath();
 
 // 🚀 Sentry + Analytics saem do caminho crítico do boot — carregados só
 // depois do primeiro paint via requestIdleCallback (evita bloquear ~150KB

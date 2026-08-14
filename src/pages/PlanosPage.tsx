@@ -38,6 +38,8 @@ import PlansComparisonTable from "@/components/PlansComparisonTable";
 import { useSupporterCount } from "@/hooks/useSupporterCount";
 import { useAddonsFlag } from "@/hooks/useStorePdvAccess";
 import { Monitor } from "lucide-react";
+import { formatBRL } from "@/lib/utils";
+import { REPASSE_RULES } from "@/lib/repasseRules";
 
 /* ─── animated counter hook ─── */
 function useCountUp(end: number, duration = 2000, start = false) {
@@ -408,7 +410,7 @@ const faqs = [
                               PIX online no app: já descontado, sem repasse.
                             </p>
                             <p className="text-muted-foreground leading-relaxed pt-1 border-t border-border">
-                              Cobrança automática toda segunda quando o saldo chega a <strong className="text-foreground">R$ 30</strong>. Acompanhe no Dashboard e no Financeiro.
+                              Cobrança automática toda segunda quando o saldo chega a <strong className="text-foreground">{formatBRL(REPASSE_RULES.MIN_AUTO_CHARGE_BRL)}</strong>. Acompanhe no Dashboard e no Financeiro.
                             </p>
                           </PopoverContent>
                         </Popover>

@@ -1,6 +1,73 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { z } from "https://esm.sh/zod@3.25.76";
 
+/* ── inline de _shared/abacatepay.ts (deploy externo nao sobe subpastas) ── */
+// Helper AbacatePay — PIX QR Code para cobranças da plataforma (mensalidade/comissão).
+// Mais barato que o Asaas por transação PIX. Não faz split (não é mais necessário
+// desde que o repasse ao lojista passou a ser via Pix Direto).
+
+export interface AbacatePixResult {
+  id: string;
+  brCode: string | null;
+  brCodeBase64: string | null;
+}
+
+export function abacatepayEnabled(): boolean {
+  return !!Deno.env.get("ABACATEPAY_API_KEY");
+}
+
+export async function createAbacatePix(params: {
+  amount: number; // em reais
+  description: string;
+  externalId: string;
+  customer?: { name?: string; email?: string; taxId?: string; cellphone?: string };
+  expiresInSeconds?: number;
+}): Promise<AbacatePixResult> {
+  const key = Deno.env.get("ABACATEPAY_API_KEY");
+  if (!key) throw new Error("ABACATEPAY_API_KEY não configurada");
+
+  const data: Record<string, unknown> = {
+    amount: Math.round(params.amount * 100), // centavos
+    expiresIn: params.expiresInSeconds ?? 60 * 60 * 24, // 24h
+    description: String(params.description).substring(0, 140),
+    metadata: { externalId: params.externalId },
+  };
+
+  const c = params.customer;
+  const taxId = String(c?.taxId || "").replace(/\D/g, "");
+  if (c && (c.name || c.email)) {
+    data.customer = {
+      name: c.name || "Lojista",
+      email: c.email || `lojista-${params.externalId}@itasuper.com`,
+      cellphone: c.cellphone || "(22) 99999-9999",
+      taxId: taxId.length >= 11 ? taxId : "529.982.247-25",
+    };
+  }
+
+  const res = await fetch("https://api.abacatepay.com/v2/transparents/create", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${key}`,
+    },
+    body: JSON.stringify({ method: "PIX", data }),
+  });
+
+  const payload = await res.json().catch(() => ({}));
+  if (!res.ok || payload?.error) {
+    console.error("[abacatepay] create error", res.status, JSON.stringify(payload));
+    throw new Error(payload?.error?.message || payload?.error || "Erro AbacatePay");
+  }
+
+  const out = payload?.data || payload;
+  return {
+    id: String(out?.id || ""),
+    brCode: out?.brCode || null,
+    brCodeBase64: (out?.brCodeBase64 || "").replace(/^data:image\/\w+;base64,/, "") || null,
+  };
+}
+
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -79,8 +146,9 @@ Deno.serve(async (req) => {
       return json({ error: "Sem permissão" }, 403);
     }
 
+    const useAbacate = abacatepayEnabled();
     const ASAAS_API_KEY = Deno.env.get("ASAAS_API_KEY");
-    if (!ASAAS_API_KEY) {
+    if (!useAbacate && !ASAAS_API_KEY) {
       return json({ error: "Chave de pagamento não configurada." }, 500);
     }
 
@@ -107,7 +175,7 @@ Deno.serve(async (req) => {
         amount: Number(existingCharge.amount),
         created_at: existingCharge.created_at,
         reused: true,
-        provider: "asaas",
+        provider: existingCharge.provider || "asaas",
       });
     }
 
@@ -125,7 +193,7 @@ Deno.serve(async (req) => {
       .eq("status", "pending")
       .lt("created_at", fiveMinAgo);
 
-    const isSandbox = !ASAAS_API_KEY.startsWith("$aact_prod_");
+    const isSandbox = !useAbacate && !String(ASAAS_API_KEY).startsWith("$aact_prod_");
     const baseUrl = isSandbox
       ? "https://sandbox.asaas.com/api/v3"
       : "https://api.asaas.com/v3";
@@ -142,9 +210,58 @@ Deno.serve(async (req) => {
       cleanCpf = "52998224725";
     }
 
-    // Find or create customer
-    let customerId: string | null = null;
     const customerEmail = ownerProfile?.email || userData.user.email || `lojista-${store.owner_id?.substring(0, 8)}@itasuper.com`;
+    const desc0 = String(description || `Comissão ItaSuper - ${store.name} - ${referenceCode}`).substring(0, 140);
+
+    // ─── AbacatePay (provider padrão quando configurado: PIX mais barato) ───
+    if (useAbacate) {
+      let pix;
+      try {
+        pix = await createAbacatePix({
+          amount: Number(amount.toFixed(2)),
+          description: desc0,
+          externalId: referenceCode,
+          customer: {
+            name: ownerProfile?.full_name || "Lojista",
+            email: customerEmail,
+            taxId: cleanCpf,
+          },
+        });
+      } catch (e) {
+        console.error("AbacatePay commission charge error:", e);
+        return json({ error: "Erro ao gerar cobrança PIX. Tente novamente." }, 500);
+      }
+
+      await serviceClient.from("financial_transactions").insert({
+        store_id,
+        transaction_kind: "commission_charge",
+        reference_code: referenceCode,
+        amount: Number(amount.toFixed(2)),
+        status: "pending",
+        provider: "abacatepay",
+        mercado_pago_payment_id: pix.id,
+        pix_qr_code: pix.brCode,
+        pix_qr_code_base64: pix.brCodeBase64,
+        pix_copy_paste: pix.brCode,
+        created_at: createdAt,
+        updated_at: createdAt,
+        metadata: { store_name: store.name, description: desc0 },
+      });
+
+      return json({
+        reference_code: referenceCode,
+        payment_id: pix.id,
+        status: "pending",
+        qr_code: pix.brCode,
+        qr_code_base64: pix.brCodeBase64,
+        amount: Number(amount.toFixed(2)),
+        created_at: createdAt,
+        provider: "abacatepay",
+      });
+    }
+
+    // Find or create customer (Asaas)
+    let customerId: string | null = null;
 
     if (cleanCpf.length >= 11) {
       const searchRes = await fetch(`${baseUrl}/customers?cpfCnpj=${cleanCpf}`, {
@@ -182,7 +299,7 @@ Deno.serve(async (req) => {
     // Create PIX payment
     const dueDate = new Date();
     dueDate.setDate(dueDate.getDate() + 1);
-    const desc = String(description || `Comissão ItaSuper - ${store.name} - ${referenceCode}`).substring(0, 140);
+    const desc = desc0;
 
     const paymentBody = {
       customer: customerId,

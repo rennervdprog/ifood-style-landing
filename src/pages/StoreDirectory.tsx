@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { AsaasBadgeBar } from "@/components/AsaasBadge";
 import PartnerClientView from "@/components/PartnerClientView";
 import PlansComparisonTable from "@/components/PlansComparisonTable";
 import { PLANS, PLANS_ORDER } from "@/lib/plansInfo";
@@ -15,6 +14,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { prefetchHandlers } from "@/lib/prefetchRoute";
+import { formatBRL } from "@/lib/utils";
+import { REPASSE_RULES } from "@/lib/repasseRules";
 
 /* ─────────────────────────── CONTENT ─────────────────────────── */
 
@@ -27,7 +28,7 @@ const PAINS = [
 
 const FEATURES = [
   { icon: Smartphone, title: "Cardápio digital próprio",  desc: "Link exclusivo da sua loja. Cliente abre no navegador, sem baixar app." },
-  { icon: CreditCard, title: "PIX automático + Pix Direto", desc: "Asaas confirma na hora, ou receba direto na sua chave e confirme com 1 toque." },
+  { icon: CreditCard, title: "Pix Direto + Maquininha", desc: "Receba direto na sua chave PIX e confirme com 1 toque, ou cobre na maquininha." },
   { icon: MessageCircle, title: "WhatsApp Bot guiado",     desc: "Cliente faz o pedido conversando no seu WhatsApp — bot valida endereço, horário e taxa." },
   { icon: Truck, title: "Motoboy integrado",               desc: "Mapa em tempo real, cálculo de taxa por distância e código de entrega." },
   { icon: BarChart3, title: "Relatórios que fecham a conta", desc: "Vendas, comissão, PIX, mensalidade — tudo já descontado no líquido." },
@@ -92,12 +93,12 @@ const FEE_SPLIT_MODES = [
 ];
 
 const PAYMENT_MODES = [
-  { icon: Zap, title: "PIX Automático (Asaas)",
-    desc: "Cliente paga pelo checkout, Asaas confirma na hora e o pedido cai pronto pra despachar." },
+  { icon: Zap, title: "PIX na Maquininha",
+    desc: "Cliente paga pela maquininha na entrega, sem taxa extra da plataforma." },
   { icon: Wallet, title: "PIX Direto",
     desc: "Cai direto na sua chave PIX. Cliente anexa comprovante e você confirma com 1 toque." },
   { icon: CreditCard, title: "Dinheiro · Cartão · Maquininha",
-    desc: "Cobrado só o R$ 0,99 da plataforma. Acumula um saldo e vira PIX de segunda quando passar de R$ 30." },
+    desc: `Cobrado só o R$ 0,99 da plataforma. Acumula um saldo e vira PIX de segunda quando passar de ${formatBRL(REPASSE_RULES.MIN_AUTO_CHARGE_BRL)}.` },
 ];
 
 const ADDONS = [
@@ -115,7 +116,7 @@ const RULES = [
   { icon: AlertTriangle, title: "Quando a mensalidade começa",
     desc: "Essencial: após R$ 5.000 em 60 dias vira R$ 89,90/mês. Autonomia: após R$ 2.500 vira R$ 199,90/mês. Sempre com 30 dias de aviso e aceite expresso (cláusula 5.2)." },
   { icon: Wallet, title: "Cobrança do PIX pendente",
-    desc: "Saldo passa de R$ 30 → gera PIX pra segunda-feira. Passa de R$ 500 → o painel limita novos pedidos até quitar. Sem surpresa." },
+    desc: `Saldo passa de ${formatBRL(REPASSE_RULES.MIN_AUTO_CHARGE_BRL)} → gera PIX pra segunda-feira. Passa de ${formatBRL(REPASSE_RULES.BLOCK_THRESHOLD_BRL)} → o painel limita novos pedidos até quitar. Sem surpresa.` },
   { icon: Ban, title: "Cancelamento",
     desc: "Sem multa, sem fidelidade, sem letra miúda. Desativa a loja no painel e acabou." },
 ];
@@ -834,7 +835,6 @@ const StoreDirectory = () => {
             >Já sou parceiro</button>
             <button onClick={handleWhatsApp} className="hover:text-foreground font-semibold">Contato</button>
           </div>
-          <AsaasBadgeBar />
         </div>
       </footer>
 

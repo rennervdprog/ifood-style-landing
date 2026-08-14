@@ -4,7 +4,6 @@ import { useQuery } from "@tanstack/react-query";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { AsaasBadgeBar } from "@/components/AsaasBadge";
 import { toast } from "sonner";
 import { pushNotifyNewOrder } from "@/lib/notifications";
 import { ArrowLeft, MapPin, CreditCard, Banknote, QrCode, Edit3, Loader2, Truck, CheckCircle2, ShoppingBag, Tag, ChevronRight, Clock, AlertTriangle, Star, Wallet, Calendar, Store } from "lucide-react";
@@ -12,6 +11,7 @@ import { getStoreOpenStatus, type OpeningHour } from "@/lib/storeStatus";
 import confetti from "canvas-confetti";
 import AddressModal from "@/components/AddressModal";
 import SavedAddressPicker from "@/components/SavedAddressPicker";
+import AddressPinPicker from "@/components/AddressPinPicker";
 import CouponInput from "@/components/CouponInput";
  import { calculateDeliveryFee, calculateStoreOwnDeliveryFee, DEFAULT_DELIVERY_FEE_CONFIG, type DeliveryFeeConfig } from "@/lib/deliveryFee";
 import WhyThisCharge from "@/components/fees/WhyThisCharge";
@@ -20,14 +20,14 @@ import { addMoney, multiplyMoney, sumMoney, formatBRL } from "@/lib/utils";
 import { useStorePlan } from "@/hooks/useStorePlan";
 import LoyaltyRedemption from "@/components/LoyaltyRedemption";
 import DeliveryTimeEstimate from "@/components/DeliveryTimeEstimate";
-import { formatCep, fetchCep, reverseGeocode, readGps, readGpsFromGesture, resolveAddress, type Coordinates, type ReverseResult } from "@/lib/location";
+import { formatCep, fetchCep, reverseGeocode, readGpsFromGesture, resolveAddress, type Coordinates, type ReverseResult } from "@/lib/location";
 import { resolveDistance } from "@/lib/location/distance";
+import { haversineMeters, isValidCoordinate } from "@/lib/location/distance";
 import { checkStoreAccess, MAX_DISTANCE_KM } from "@/lib/fraudCheck";
 import EmptiesExchange, { type EmptiesExchangeSelection } from "@/components/EmptiesExchange";
 import { haptic } from "@/lib/haptics";
 
 const allPaymentMethods = [
-  { id: "pix",         label: "PIX Online",         desc: "Pagamento instantâneo",   icon: QrCode },
   { id: "pix_machine", label: "PIX na Maquininha",   desc: "PIX pela maquininha do lojista", icon: QrCode },
   { id: "pix_direto",  label: "Pix Direto",          desc: "Envie comprovante direto pra loja", icon: QrCode },
   { id: "cartao",      label: "Cartão",               desc: "Débito ou crédito",       icon: CreditCard },
@@ -56,6 +56,11 @@ const CheckoutPage = () => {
    const [requestingLocation, setRequestingLocation] = useState(false);
    const [gpsAddress, setGpsAddress] = useState<ReverseResult | null>(null);
    const [coordsSource, setCoordsSource] = useState<"gps" | "address" | null>(null);
+  const [showPinPicker, setShowPinPicker] = useState(false);
+  const [showNumberPrompt, setShowNumberPrompt] = useState(false);
+  const [numberInput, setNumberInput] = useState("");
+  const [streetInput, setStreetInput] = useState("");
+  const [neighborhoodInput, setNeighborhoodInput] = useState("");
   const [calculatingFee, setCalculatingFee] = useState(false);
   const [feeBreakdown, setFeeBreakdown] = useState<string | null>(null);
   const [divergenceKm, setDivergenceKm] = useState<number | null>(null);
@@ -112,29 +117,6 @@ const CheckoutPage = () => {
   const storePlan = useStorePlan(storeId);
   const lastPaymentKey = user && storeId ? `last_payment_method:${user.id}:${storeId}` : null;
 
-  // 🔒 PIX Online só fica liberado quando a subconta Asaas da loja está
-  // 100% ativa (commercialInfo + bankAccount + document == APPROVED).
-  // Enquanto a ativação não completa, o método "pix" é ocultado do checkout.
-  const { data: asaasReady } = useQuery({
-    queryKey: ["asaas-ready-checkout", storeId],
-    queryFn: async () => {
-      if (!storeId) return false;
-      const { data, error } = await supabase.functions.invoke(
-        "get-asaas-subaccount-status",
-        { body: { store_id: storeId } },
-      );
-      if (error) return false;
-      const s: any = (data as any)?.status;
-      if (!s) return false;
-      return (
-        s.commercialInfo === "APPROVED" &&
-        s.bankAccount === "APPROVED" &&
-        s.document === "APPROVED"
-      );
-    },
-    enabled: !!storeId,
-    staleTime: 1000 * 60 * 5,
-  });
 
   // Filtrar métodos — storePaymentSettings declarado abaixo após storeData
   const paymentMethods = useMemo(() => {
@@ -173,14 +155,13 @@ const CheckoutPage = () => {
   // Re-declarar paymentMethods usando storePaymentSettings (agora declarado na ordem certa)
   const filteredPaymentMethods = useMemo(() => {
     return allPaymentMethods.filter(pm => {
-      if (pm.id === "pix")         return storePlan.allowPix && storePaymentSettings.accept_pix_online && asaasReady === true;
       if (pm.id === "pix_machine") return storePaymentSettings.accept_pix_machine;
       if (pm.id === "pix_direto")  return !!(storeData as any)?.pix_direto_enabled && !!(storeData as any)?.pix_direto_key;
       if (pm.id === "cartao")      return storePaymentSettings.accept_card;
       if (pm.id === "dinheiro")    return storePaymentSettings.accept_cash;
       return true;
     });
-  }, [storePlan.allowPix, storePaymentSettings, asaasReady, storeData]);
+  }, [storePlan.allowPix, storePaymentSettings, storeData]);
 
   // Smart default: lembra a última forma de pagamento usada pelo usuário nesta loja
   useEffect(() => {
@@ -294,8 +275,21 @@ const CheckoutPage = () => {
   }, []);
   const finalTotal = Math.max(0, addMoney(subtotal, effectiveDeliveryFee, -effectiveCouponDiscount, -loyaltyDiscount, -walletDiscount, -emptiesDiscount));
 
-   // Background geocoding from address (initial estimate)
+   // Background geocoding from the selected delivery address (initial estimate).
+   // Nunca tenta GPS aqui: GPS só pode ser fonte final quando o cliente tocar no botão.
    useEffect(() => {
+     if (coordsSource === "gps") return;
+     if (selectedSavedAddressId && savedAddressData) {
+       const lat = Number(savedAddressData.latitude);
+       const lng = Number(savedAddressData.longitude);
+       if (Number.isFinite(lat) && Number.isFinite(lng)) {
+         if (!clientCoords || Math.abs(clientCoords.lat - lat) > 0.000001 || Math.abs(clientCoords.lng - lng) > 0.000001) {
+           setClientCoords({ lat, lng });
+         }
+         if (coordsSource !== "address") setCoordsSource("address");
+         return;
+       }
+     }
      if ((hasAddress || selectedSavedAddressId) && !clientCoords) {
        const geoCep = selectedSavedAddressId && savedAddressData?.cep ? savedAddressData.cep : profileCep;
        const geoStreet = selectedSavedAddressId && savedAddressData
@@ -304,24 +298,25 @@ const CheckoutPage = () => {
        const geoNeighborhood = selectedSavedAddressId && savedAddressData?.neighborhood ? savedAddressData.neighborhood : profileNeighborhood;
  
       resolveAddress({
-        prefer: "gps",
-        fallback: ["address", "cep"],
+        prefer: "address",
+        fallback: ["cep"],
         address: { street: geoStreet, neighborhood: geoNeighborhood, postalcode: geoCep },
       }).then((r) => {
         if (r.coords && !clientCoords) {
           // fallback silencioso — evita vazar coords no console em produção.
           setClientCoords(r.coords);
+          setCoordsSource("address");
         }
       });
      }
-   }, [hasAddress, selectedSavedAddressId, savedAddressData, profileCep, profileStreet, profileNumber, profileNeighborhood, clientCoords]);
+   }, [hasAddress, selectedSavedAddressId, savedAddressData, profileCep, profileStreet, profileNumber, profileNeighborhood, clientCoords, coordsSource]);
  
    const handleRequestLocation = () => {
      // IMPORTANTE: chamar SÍNCRONO no clique — sem await antes — pra
      // preservar o "user gesture" que o browser exige pro prompt de GPS.
      const gpsPromise = readGpsFromGesture();
      setRequestingLocation(true);
-     gpsPromise.then(async (gpsRead) => {
+      gpsPromise.then(async (gpsRead) => {
        try {
        const gps = gpsRead.coords;
       if (gps) {
@@ -329,10 +324,15 @@ const CheckoutPage = () => {
          setIsLocationRequested(true);
          setCoordsSource("gps");
          // Reverse geocode para mostrar o endereço real do GPS
-         reverseGeocode(gps).then((res) => {
-           if (res) setGpsAddress(res);
-         });
-         toast.success("Localização ativada com sucesso!");
+          const res = await reverseGeocode(gps);
+          if (res) setGpsAddress(res);
+          if (!res?.street || !(res.neighborhood || res.city)) {
+            toast.warning("GPS encontrado, mas não identifiquei a rua. Complete o endereço antes de finalizar.");
+            // Abre o mapa para o cliente arrastar o pino até a rua exata.
+            setShowPinPicker(true);
+          } else {
+            toast.success("Localização atual ativada para esta entrega.");
+          }
         } else {
           toast.error(gpsRead.error || "Não foi possível obter sua localização exata. Verifique se o GPS está ativado.");
        }
@@ -344,40 +344,14 @@ const CheckoutPage = () => {
      });
    };
 
-   // Auto-tentar GPS no mount se permissão já estiver concedida (sem prompt)
    useEffect(() => {
-     let cancelled = false;
-     const tryAutoLocate = async () => {
-       try {
-         if (typeof navigator === "undefined" || !navigator.geolocation) return;
-         // Em web: só dispara se permissão já está "granted" (não pede prompt)
-        if (navigator.permissions?.query) {
-           try {
-             const status = await navigator.permissions.query({ name: "geolocation" as PermissionName });
-             if (status.state !== "granted") return;
-           } catch {
-             return;
-           }
-         }
-        const gps = (await readGps()).coords;
-         if (cancelled || !gps) return;
-         setClientCoords(gps);
-         setIsLocationRequested(true);
-         setCoordsSource("gps");
-         const res = await reverseGeocode(gps);
-         if (!cancelled && res) setGpsAddress(res);
-       } catch (e) {
-         console.warn("[Checkout] Auto-locate falhou:", e);
-       }
-     };
-     tryAutoLocate();
-     return () => { cancelled = true; };
-     // eslint-disable-next-line react-hooks/exhaustive-deps
-   }, []);
- 
-   useEffect(() => {
-     const customerCep = selectedSavedAddressId && savedAddressData?.cep ? savedAddressData.cep : profileCep;
-     const activeNeighborhood = selectedSavedAddressId && savedAddressData?.neighborhood ? savedAddressData.neighborhood : profileNeighborhood;
+      const useGpsAddress = coordsSource === "gps" && isLocationRequested && !!clientCoords;
+      const customerCep = useGpsAddress && gpsAddress?.postalcode
+        ? gpsAddress.postalcode
+        : selectedSavedAddressId && savedAddressData?.cep ? savedAddressData.cep : profileCep;
+      const activeNeighborhood = useGpsAddress
+        ? (gpsAddress?.neighborhood || gpsAddress?.city || "")
+        : selectedSavedAddressId && savedAddressData?.neighborhood ? savedAddressData.neighborhood : profileNeighborhood;
  
       if (isOwnDelivery) {
         if (!customerCep || !storeCep) {
@@ -398,12 +372,12 @@ const CheckoutPage = () => {
           // Respeita o split escolhido pelo lojista (cliente | meio_a_meio | lojista).
           // Quando = 'lojista', effectivePlatformSplit é 0 e o cliente NÃO paga +R$2.
           platform_split: effectivePlatformSplit,
-          customer_street: selectedSavedAddressId && savedAddressData ? savedAddressData.street : profileStreet,
-          customer_number: selectedSavedAddressId && savedAddressData ? savedAddressData.number : profileNumber,
+          customer_street: useGpsAddress ? gpsAddress?.street : selectedSavedAddressId && savedAddressData ? savedAddressData.street : profileStreet,
+          customer_number: useGpsAddress ? gpsAddress?.number : selectedSavedAddressId && savedAddressData ? savedAddressData.number : profileNumber,
           customer_coords: clientCoords,
-          customer_neighborhood: selectedSavedAddressId && savedAddressData?.neighborhood ? savedAddressData.neighborhood : profileNeighborhood,
-          customer_city: selectedSavedAddressId && savedAddressData ? (savedAddressData as any).city : (userProfile as any)?.city,
-          customer_state: selectedSavedAddressId && savedAddressData ? (savedAddressData as any).state : (userProfile as any)?.state,
+          customer_neighborhood: activeNeighborhood,
+          customer_city: useGpsAddress ? gpsAddress?.city : selectedSavedAddressId && savedAddressData ? (savedAddressData as any).city : (userProfile as any)?.city,
+          customer_state: useGpsAddress ? gpsAddress?.state : selectedSavedAddressId && savedAddressData ? (savedAddressData as any).state : (userProfile as any)?.state,
           store_coords:
             (storeData as any)?.latitude && (storeData as any)?.longitude
               ? { lat: Number((storeData as any).latitude), lng: Number((storeData as any).longitude) }
@@ -451,7 +425,7 @@ const CheckoutPage = () => {
      });
  
      return () => { cancelled = true; };
-    }, [profileCep, storeCep, config, savedAddressData, selectedSavedAddressId, profileNeighborhood, isOwnDelivery, storeDeliveryFeeType, storeDeliveryBaseKm, storeDeliveryFeeBase, storeDeliveryFeePerKm, storeOwnFee, storePlan.isFixedPlan, storePlan.platformDeliverySplit, effectivePlatformSplit, clientCoords]);
+    }, [profileCep, storeCep, config, savedAddressData, selectedSavedAddressId, profileNeighborhood, isOwnDelivery, storeDeliveryFeeType, storeDeliveryBaseKm, storeDeliveryFeeBase, storeDeliveryFeePerKm, storeOwnFee, storePlan.isFixedPlan, storePlan.platformDeliverySplit, effectivePlatformSplit, clientCoords, coordsSource, isLocationRequested, gpsAddress, profileStreet, profileNumber, userProfile]);
 
   // Detecta divergência GPS x CEP do endereço salvo (Fase 4 do plano de GPS).
   useEffect(() => {
@@ -490,6 +464,37 @@ const CheckoutPage = () => {
   };
 
   const addressString = buildAddressString();
+  const usingGpsDelivery = !isPickup && coordsSource === "gps" && isLocationRequested && !!clientCoords;
+  const gpsAddressIsDeliverable = usingGpsDelivery && !!gpsAddress?.street && !!(gpsAddress.neighborhood || gpsAddress.city);
+
+  // Distância informativa (haversine) entre endereço cadastrado e loja.
+  const savedDistanceKm = useMemo(() => {
+    const sLat = Number((storeData as any)?.latitude);
+    const sLng = Number((storeData as any)?.longitude);
+    if (!isValidCoordinate(sLat, sLng)) return null;
+    const cLat = selectedSavedAddressId && savedAddressData
+      ? Number(savedAddressData.latitude)
+      : NaN;
+    const cLng = selectedSavedAddressId && savedAddressData
+      ? Number(savedAddressData.longitude)
+      : NaN;
+    if (!isValidCoordinate(cLat, cLng)) return null;
+    return haversineMeters({ lat: sLat, lng: sLng }, { lat: cLat, lng: cLng }) / 1000;
+  }, [storeData, selectedSavedAddressId, savedAddressData]);
+
+  // Distância direta (haversine) entre coords do GPS e coords do endereço cadastrado.
+  const gpsVsSavedKm = useMemo(() => {
+    if (!usingGpsDelivery || !clientCoords) return null;
+    const cLat = selectedSavedAddressId && savedAddressData ? Number(savedAddressData.latitude) : NaN;
+    const cLng = selectedSavedAddressId && savedAddressData ? Number(savedAddressData.longitude) : NaN;
+    if (!isValidCoordinate(cLat, cLng)) return null;
+    return haversineMeters(clientCoords, { lat: cLat, lng: cLng }) / 1000;
+  }, [usingGpsDelivery, clientCoords, selectedSavedAddressId, savedAddressData]);
+
+  const addressMatchState: "match" | "diverge" | null = useMemo(() => {
+    if (gpsVsSavedKm == null) return null;
+    return gpsVsSavedKm <= 0.3 ? "match" : "diverge";
+  }, [gpsVsSavedKm]);
 
   useEffect(() => {
     if (authLoading) return;
@@ -524,12 +529,43 @@ const CheckoutPage = () => {
       toast.error(`Pedido mínimo desta loja: ${formatBRL(storeMinimumOrderValue)}. Adicione mais ${formatBRL(minimumMissing)}.`);
       return;
     }
-    const useSavedAddr = selectedSavedAddressId && savedAddressData;
-    const finalHasAddress = isPickup || useSavedAddr || hasAddress;
-    const finalNeighborhood = isPickup ? "RETIRADA" : (useSavedAddr ? savedAddressData.neighborhood : (profileNeighborhood || neighborhood));
+    let confirmedGpsAddress = gpsAddress;
+    if (usingGpsDelivery && !confirmedGpsAddress && clientCoords) {
+      confirmedGpsAddress = await reverseGeocode(clientCoords);
+      if (confirmedGpsAddress) setGpsAddress(confirmedGpsAddress);
+    }
+    if (usingGpsDelivery && (!confirmedGpsAddress?.street || !(confirmedGpsAddress.neighborhood || confirmedGpsAddress.city))) {
+      toast.error("Não consegui confirmar a rua da sua localização atual. Cadastre ou ajuste o endereço antes de finalizar.");
+      setShowAddressModal(true);
+      return;
+    }
+
+    const useSavedAddr = !usingGpsDelivery && selectedSavedAddressId && savedAddressData;
+    const selectedAddressLat = useSavedAddr ? Number(savedAddressData.latitude) : NaN;
+    const selectedAddressLng = useSavedAddr ? Number(savedAddressData.longitude) : NaN;
+    const finalCoords = isPickup
+      ? null
+      : usingGpsDelivery && clientCoords
+        ? clientCoords
+        : Number.isFinite(selectedAddressLat) && Number.isFinite(selectedAddressLng)
+          ? { lat: selectedAddressLat, lng: selectedAddressLng }
+          : clientCoords;
+    const finalHasAddress = isPickup || (usingGpsDelivery ? !!confirmedGpsAddress?.street : useSavedAddr || hasAddress);
+    const finalNeighborhood = isPickup
+      ? "RETIRADA"
+      : usingGpsDelivery
+        ? (confirmedGpsAddress?.neighborhood || confirmedGpsAddress?.city || "GPS")
+        : (useSavedAddr ? savedAddressData.neighborhood : (profileNeighborhood || neighborhood));
     const finalAddress = isPickup
       ? "Retirada na loja"
-      : (useSavedAddr
+      : usingGpsDelivery
+        ? [
+            confirmedGpsAddress?.street ? [confirmedGpsAddress.street, confirmedGpsAddress.number].filter(Boolean).join(", ") : null,
+            confirmedGpsAddress?.neighborhood,
+            confirmedGpsAddress?.city,
+            "Localização atual por GPS",
+          ].filter(Boolean).join(" - ")
+        : (useSavedAddr
         ? [savedAddressData.street, savedAddressData.number, savedAddressData.complement, savedAddressData.reference_point ? `Ref: ${savedAddressData.reference_point}` : ""].filter(Boolean).join(", ")
         : addressString);
 
@@ -566,24 +602,37 @@ const CheckoutPage = () => {
         storeCity: (storeData as any).address_city ?? null,
         storeLat: (storeData as any).latitude,
         storeLng: (storeData as any).longitude,
-        deliveryCity: useSavedAddr ? savedAddressData?.city : (userProfile as any)?.city,
+        deliveryCity: usingGpsDelivery ? confirmedGpsAddress?.city : useSavedAddr ? savedAddressData?.city : (userProfile as any)?.city,
         // Passa coordenadas do endereço de entrega (geocodificadas pelo CEP)
         // Isso garante que o bloqueio funciona mesmo sem GPS do dispositivo
-        deliveryCoords: clientCoords ?? undefined,
+        deliveryCoords: finalCoords ?? undefined,
+        maxDeliveryKm: (storeData as any).max_delivery_km ?? undefined,
       });
       if (!fraud.allowed) {
-        toast.error("Pedido bloqueado por segurança", {
-          description: `Você está a ${fraud.distanceKm?.toFixed(1)} km desta loja. Limite de ${MAX_DISTANCE_KM} km para entrega.`,
-          duration: 8000,
-        });
+        const maxKm = Number((storeData as any).max_delivery_km ?? MAX_DISTANCE_KM) || MAX_DISTANCE_KM;
+        const reason = fraud.reason || "";
+        let description: string;
+        if (typeof fraud.distanceKm === "number" && Number.isFinite(fraud.distanceKm)) {
+          description = `Você está a ${fraud.distanceKm.toFixed(1)} km desta loja. Limite de ${maxKm} km para entrega.`;
+        } else if (reason.startsWith("delivery_city_mismatch")) {
+          description = "O endereço de entrega está em uma cidade diferente da loja.";
+        } else if (reason.startsWith("rate_limited")) {
+          description = "Muitas tentativas bloqueadas recentemente. Tente novamente em 1 hora.";
+        } else if (reason.startsWith("fail_closed:no_gps_and_no_city")) {
+          description = "Não foi possível confirmar sua localização. Ative o GPS ou complete seu endereço.";
+        } else {
+          description = `Não foi possível validar a distância até a loja (limite ${maxKm} km).`;
+        }
+        toast.error("Pedido bloqueado por segurança", { description, duration: 8000 });
         return;
       }
     }
 
     setLoading(true);
     try {
-      // Geocode in PARALLEL — don't block order creation. We'll patch coords later.
+      // Geocode in PARALLEL only if the final address still has no coords.
       const geocodePromise: Promise<{ lat: number; lng: number } | null> = (async () => {
+        if (finalCoords) return finalCoords;
         try {
           const geoCep = useSavedAddr ? savedAddressData?.cep : profileCep;
           const geoStreet = useSavedAddr
@@ -592,8 +641,8 @@ const CheckoutPage = () => {
           const geoNeighborhood = useSavedAddr ? savedAddressData?.neighborhood : profileNeighborhood;
 
           const r = await resolveAddress({
-            prefer: "gps",
-            fallback: ["address", "cep"],
+            prefer: "address",
+            fallback: ["cep"],
             address: { street: geoStreet, neighborhood: geoNeighborhood, postalcode: geoCep },
           });
           return r.coords ? { lat: r.coords.lat, lng: r.coords.lng } : null;
@@ -645,6 +694,8 @@ const CheckoutPage = () => {
             payment_method: paymentMethod,
             neighborhood: finalNeighborhood,
             address_details: finalAddress,
+            client_lat: finalCoords?.lat ?? null,
+            client_lng: finalCoords?.lng ?? null,
             needs_change: paymentMethod === "dinheiro" && needsChange,
             change_for: changeValue,
             status: orderStatus,
@@ -770,7 +821,7 @@ const CheckoutPage = () => {
     }
   };
 
-  const hasValidAddress = isPickup || (selectedSavedAddressId ? !!savedAddressData : hasAddress);
+  const hasValidAddress = isPickup || (usingGpsDelivery ? gpsAddressIsDeliverable : (selectedSavedAddressId ? !!savedAddressData : hasAddress));
   const stepsDone = [isPickup || hasValidAddress, !!paymentMethod];
 
   return (
@@ -940,6 +991,12 @@ const CheckoutPage = () => {
               onSelect={(addr) => {
                 setSelectedSavedAddressId(addr.id);
                 setSavedAddressData(addr);
+                setGpsAddress(null);
+                setIsLocationRequested(false);
+                setCoordsSource("address");
+                const lat = Number((addr as any).latitude);
+                const lng = Number((addr as any).longitude);
+                if (Number.isFinite(lat) && Number.isFinite(lng)) setClientCoords({ lat, lng });
               }}
             />
 
@@ -957,62 +1014,28 @@ const CheckoutPage = () => {
               </div>
             )}
 
-            {selectedSavedAddressId && savedAddressData && (
-              <div className="bg-primary/5 rounded-xl p-3.5 space-y-1.5">
-                {gpsAddress ? (
-                  <>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-[10px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded">📍 GPS</span>
-                      <span className="text-[10px] text-muted-foreground">Localização atual</span>
-                    </div>
-                    <p className="text-sm font-bold text-foreground">{gpsAddress.display}</p>
-                    <p className="text-[10px] text-muted-foreground italic">Cadastrado: {savedAddressData.street}, {savedAddressData.number} - {savedAddressData.neighborhood}</p>
-                  </>
-                ) : (
+            {/* CARD 1: Endereço cadastrado (saved address ou profile) */}
+            {(selectedSavedAddressId && savedAddressData) || (!selectedSavedAddressId && hasAddress) ? (
+              <div className={`rounded-xl p-3.5 space-y-1.5 border ${usingGpsDelivery ? "bg-muted/30 border-border/50 opacity-70" : "bg-primary/5 border-primary/20"}`}>
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] font-bold text-foreground bg-muted px-1.5 py-0.5 rounded">📮 CADASTRADO</span>
+                    {!usingGpsDelivery && <span className="text-[10px] text-primary font-semibold">Em uso</span>}
+                  </div>
+                  {savedDistanceKm != null && (
+                    <span className="text-[10px] font-semibold text-muted-foreground">≈ {savedDistanceKm.toFixed(1)} km da loja</span>
+                  )}
+                </div>
+                {selectedSavedAddressId && savedAddressData ? (
                   <>
                     <p className="text-sm font-bold text-foreground">
                       {savedAddressData.street}, {savedAddressData.number}
                       {savedAddressData.complement ? ` - ${savedAddressData.complement}` : ""}
                     </p>
                     <p className="text-xs text-muted-foreground">{savedAddressData.neighborhood}</p>
-                  </>
-                )}
-                {savedAddressData.reference_point && (
-                  <p className="text-xs text-muted-foreground">📍 {savedAddressData.reference_point}</p>
-                )}
-                <div className="flex items-center justify-between pt-2 border-t border-border/30">
-                  {calculatingFee ? (
-                    <span className="text-xs text-muted-foreground flex items-center gap-1">
-                      <Loader2 className="h-3 w-3 animate-spin" /> Calculando taxa...
-                    </span>
-                  ) : (
-                    <div className="flex items-center gap-1.5">
-                      <Truck className="h-3.5 w-3.5 text-primary" />
-                      <span className="text-xs font-bold text-primary">
-                        {formatBRL(activeDeliveryFee)}
-                      </span>
-                    </div>
-                  )}
-                  <button
-                    onClick={() => { setSelectedSavedAddressId(null); setSavedAddressData(null); }}
-                    className="text-xs text-primary font-semibold"
-                  >
-                    Alterar
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {!selectedSavedAddressId && hasAddress && (
-              <div className="bg-primary/5 rounded-xl p-3.5 space-y-1.5">
-                {gpsAddress ? (
-                  <>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-[10px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded">📍 GPS</span>
-                      <span className="text-[10px] text-muted-foreground">Localização atual</span>
-                    </div>
-                    <p className="text-sm font-bold text-foreground">{gpsAddress.display}</p>
-                    <p className="text-[10px] text-muted-foreground italic">Cadastrado: {profileStreet}, {profileNumber} - {profileNeighborhood}</p>
+                    {savedAddressData.reference_point && (
+                      <p className="text-xs text-muted-foreground">📍 {savedAddressData.reference_point}</p>
+                    )}
                   </>
                 ) : (
                   <>
@@ -1021,42 +1044,101 @@ const CheckoutPage = () => {
                       {profileComplement ? ` - ${profileComplement}` : ""}
                     </p>
                     <p className="text-xs text-muted-foreground">{profileNeighborhood}</p>
+                    {profileReference && (
+                      <p className="text-xs text-muted-foreground">📍 {profileReference}</p>
+                    )}
                   </>
-                )}
-                {profileReference && (
-                  <p className="text-xs text-muted-foreground">📍 {profileReference}</p>
                 )}
                 <div className="flex items-center justify-between pt-2 border-t border-border/30">
                   {calculatingFee ? (
                     <span className="text-xs text-muted-foreground flex items-center gap-1">
                       <Loader2 className="h-3 w-3 animate-spin" /> Calculando taxa...
                     </span>
-                  ) : (
+                  ) : !usingGpsDelivery ? (
                     <div className="flex items-center gap-1.5">
                       <Truck className="h-3.5 w-3.5 text-primary" />
-                      <span className="text-xs font-bold text-primary">
-                        {formatBRL(activeDeliveryFee)}
-                      </span>
+                      <span className="text-xs font-bold text-primary">{formatBRL(activeDeliveryFee)}</span>
                     </div>
+                  ) : <span />}
+                  {selectedSavedAddressId ? (
+                    <button
+                      onClick={() => { setSelectedSavedAddressId(null); setSavedAddressData(null); setGpsAddress(null); setIsLocationRequested(false); setCoordsSource(null); setClientCoords(null); }}
+                      className="text-xs text-primary font-semibold"
+                    >
+                      Alterar
+                    </button>
+                  ) : (
+                    <button onClick={() => navigate("/perfil")} className="text-xs text-primary font-semibold flex items-center gap-1">
+                      <Edit3 className="h-3 w-3" /> Alterar
+                    </button>
                   )}
-                  <button onClick={() => navigate("/perfil")} className="text-xs text-primary font-semibold flex items-center gap-1">
-                    <Edit3 className="h-3 w-3" /> Alterar
-                  </button>
                 </div>
-                {!gpsAddress && (
-                  <button
-                    onClick={handleRequestLocation}
-                    disabled={requestingLocation}
-                    className="w-full mt-2 text-xs font-bold text-primary border border-primary/30 rounded-lg py-2 flex items-center justify-center gap-1.5 disabled:opacity-50"
-                  >
-                    {requestingLocation ? <Loader2 className="h-3 w-3 animate-spin" /> : <MapPin className="h-3 w-3" />}
-                    Usar minha localização atual (mais preciso)
-                  </button>
+              </div>
+            ) : null}
+
+            {/* CARD 2: Localização atual (GPS) — sempre separado */}
+            {(hasAddress || (selectedSavedAddressId && savedAddressData) || usingGpsDelivery) && (
+              <div className={`rounded-xl p-3.5 space-y-2 border-2 ${usingGpsDelivery ? "bg-primary/5 border-primary/40 border-solid" : "border-dashed border-primary/25"}`}>
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <MapPin className="h-3.5 w-3.5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-foreground leading-tight">Usar minha localização atual</p>
+                      <p className="text-[10px] text-muted-foreground">GPS do celular — mais preciso</p>
+                    </div>
+                  </div>
+                  {usingGpsDelivery ? (
+                    <span className="text-[10px] font-bold text-primary bg-primary/15 px-2 py-1 rounded">ATIVO</span>
+                  ) : (
+                    <button
+                      onClick={handleRequestLocation}
+                      disabled={requestingLocation}
+                      className="text-xs font-bold text-primary-foreground bg-primary px-3 py-1.5 rounded-lg flex items-center gap-1 disabled:opacity-50"
+                    >
+                      {requestingLocation ? <Loader2 className="h-3 w-3 animate-spin" /> : "Ativar"}
+                    </button>
+                  )}
+                </div>
+
+                {usingGpsDelivery && gpsAddress && (
+                  <div className="pt-1 border-t border-border/30 space-y-1.5">
+                    <p className="text-sm font-bold text-foreground">{gpsAddress.display}</p>
+                    {addressMatchState === "match" && (
+                      <div className="flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+                        <CheckCircle2 className="h-3 w-3" /> Localização confere com o endereço cadastrado
+                      </div>
+                    )}
+                    {addressMatchState === "diverge" && gpsVsSavedKm != null && (
+                      <div className="flex items-center gap-1 text-[11px] font-semibold text-amber-600 dark:text-amber-400">
+                        <AlertTriangle className="h-3 w-3" /> {gpsVsSavedKm.toFixed(1)} km do endereço cadastrado
+                      </div>
+                    )}
+                    <div className="flex items-center justify-between pt-1">
+                      {calculatingFee ? (
+                        <span className="text-xs text-muted-foreground flex items-center gap-1">
+                          <Loader2 className="h-3 w-3 animate-spin" /> Calculando taxa...
+                        </span>
+                      ) : (
+                        <div className="flex items-center gap-1.5">
+                          <Truck className="h-3.5 w-3.5 text-primary" />
+                          <span className="text-xs font-bold text-primary">{formatBRL(activeDeliveryFee)}</span>
+                        </div>
+                      )}
+                      <button
+                        onClick={() => { setGpsAddress(null); setIsLocationRequested(false); setCoordsSource(selectedSavedAddressId ? "address" : null); setClientCoords(selectedSavedAddressId && savedAddressData ? { lat: Number(savedAddressData.latitude), lng: Number(savedAddressData.longitude) } : null); }}
+                        className="text-xs text-muted-foreground font-semibold"
+                      >
+                        Voltar ao cadastrado
+                      </button>
+                    </div>
+                  </div>
                 )}
               </div>
             )}
 
-            {!selectedSavedAddressId && !hasAddress && (
+            {!selectedSavedAddressId && !hasAddress && !usingGpsDelivery && (
               <div className="bg-destructive/5 border border-destructive/20 rounded-xl p-4 text-center space-y-3">
                 <MapPin className="h-8 w-8 text-destructive/60 mx-auto" />
                 <div>
@@ -1493,9 +1575,9 @@ const CheckoutPage = () => {
               ? `${storeStatus.nextOpenDay === "Hoje" ? "Abre" : `Abre ${storeStatus.nextOpenDay}`} às ${storeStatus.nextOpenTime}`
               : "Loja fechada"}
           </button>
-        ) : !isPickup && !hasValidAddress && !isLocationRequested && !clientCoords ? (
+        ) : !isPickup && !hasValidAddress ? (
           <button
-            onClick={handleRequestLocation}
+            onClick={usingGpsDelivery ? () => setShowAddressModal(true) : handleRequestLocation}
             disabled={requestingLocation}
             className="w-full bg-primary text-primary-foreground font-bold py-4 rounded-2xl active:scale-[0.98] transition-all disabled:opacity-50 shadow-lg shadow-primary/25 text-base flex items-center justify-center gap-2"
           >
@@ -1507,7 +1589,7 @@ const CheckoutPage = () => {
             ) : (
               <>
                 <MapPin className="h-5 w-5" />
-                Ativar Localização
+                {usingGpsDelivery ? "Completar endereço" : "Ativar Localização"}
               </>
             )}
           </button>
@@ -1548,10 +1630,6 @@ const CheckoutPage = () => {
           ) : null
         )}
 
-        {/* Asaas — selo discreto (Resolução Conjunta nº 16/2025) */}
-        <div className="flex items-center justify-center gap-2 pt-0.5">
-          <AsaasBadgeBar />
-        </div>
       </div>
 
       {showAddressModal && (
@@ -1562,6 +1640,141 @@ const CheckoutPage = () => {
             refetchProfile();
           }}
         />
+      )}
+
+      {showPinPicker && (
+        <div className="fixed inset-0 z-[100] bg-black/60 flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="bg-background w-full sm:max-w-lg sm:rounded-2xl rounded-t-2xl p-4 space-y-3 max-h-[92vh] overflow-y-auto">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h3 className="text-base font-bold">Confirme sua rua no mapa</h3>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Arraste o pino até a porta da sua casa e toque em <b>Confirmar</b>.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowPinPicker(false)}
+                className="text-muted-foreground text-xs font-bold px-2 py-1"
+                aria-label="Fechar"
+              >
+                Fechar
+              </button>
+            </div>
+            <AddressPinPicker
+              initialLat={clientCoords?.lat ?? null}
+              initialLng={clientCoords?.lng ?? null}
+              height={360}
+              onCancel={() => setShowPinPicker(false)}
+              onConfirm={(coords, rev) => {
+                setClientCoords(coords);
+                setCoordsSource("gps");
+                setIsLocationRequested(true);
+                setGpsAddress((prev) => ({
+                  ...(prev || {} as any),
+                  ...(rev || {}),
+                  display:
+                    [rev?.street, rev?.neighborhood].filter(Boolean).join(" - ") ||
+                    (prev as any)?.display ||
+                    "",
+                } as ReverseResult));
+                setShowPinPicker(false);
+                if (rev?.street) {
+                  toast.success("Rua confirmada. Agora informe o número.");
+                } else {
+                  toast.warning("Não consegui a rua nesse ponto — confirme o número mesmo assim.");
+                }
+                setNumberInput(rev?.number || "");
+                setStreetInput(rev?.street || "");
+                setNeighborhoodInput(rev?.neighborhood || "");
+                setShowNumberPrompt(true);
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {showNumberPrompt && (
+        <div className="fixed inset-0 z-[110] bg-black/60 flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="bg-background w-full sm:max-w-sm sm:rounded-2xl rounded-t-2xl p-4 space-y-3">
+            <div>
+              <h3 className="text-base font-bold">Confirme o endereço</h3>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {gpsAddress?.street
+                  ? "O GPS não sabe o número exato. Informe pra entrega chegar certo."
+                  : "Não identifiquei a rua pelo GPS — preencha manualmente."}
+              </p>
+            </div>
+            {!gpsAddress?.street && (
+              <>
+                <input
+                  type="text"
+                  autoFocus
+                  value={streetInput}
+                  onChange={(e) => setStreetInput(e.target.value)}
+                  placeholder="Rua / Avenida"
+                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm font-medium"
+                />
+                <input
+                  type="text"
+                  value={neighborhoodInput}
+                  onChange={(e) => setNeighborhoodInput(e.target.value)}
+                  placeholder="Bairro"
+                  className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm font-medium"
+                />
+              </>
+            )}
+            <input
+              type="text"
+              inputMode="numeric"
+              autoFocus={!!gpsAddress?.street}
+              value={numberInput}
+              onChange={(e) => setNumberInput(e.target.value)}
+              placeholder="Ex: 524"
+              className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm font-medium"
+            />
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setShowNumberPrompt(false)}
+                className="flex-1 py-2 rounded-lg bg-muted text-muted-foreground text-xs font-bold"
+              >
+                Depois
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const num = numberInput.trim();
+                  if (!num) {
+                    toast.error("Informe o número.");
+                    return;
+                  }
+                  const hadStreet = !!gpsAddress?.street;
+                  const manualStreet = streetInput.trim();
+                  const manualNeighborhood = neighborhoodInput.trim();
+                  if (!hadStreet && !manualStreet) {
+                    toast.error("Informe o nome da rua.");
+                    return;
+                  }
+                  setGpsAddress((prev) => {
+                    const base = (prev || {}) as ReverseResult;
+                    const finalStreet = base.street || manualStreet || null;
+                    const finalNeighborhood = base.neighborhood || manualNeighborhood || null;
+                    const display = [finalStreet ? `${finalStreet}, ${num}` : null, finalNeighborhood]
+                      .filter(Boolean)
+                      .join(" - ") || base.display || "";
+                    return { ...base, street: finalStreet, neighborhood: finalNeighborhood, number: num, display } as ReverseResult;
+                  });
+                  setShowNumberPrompt(false);
+                  toast.success("Endereço confirmado.");
+                }}
+                className="flex-1 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-bold"
+              >
+                Confirmar
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
