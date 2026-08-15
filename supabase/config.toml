@@ -47,9 +47,6 @@ verify_jwt = false
 [functions.manage-store-addon]
 verify_jwt = false
 
-[functions.migrate-preorder]
-verify_jwt = false
-
 [functions.platform-whatsapp-send]
 verify_jwt = false
 
