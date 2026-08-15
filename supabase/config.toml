@@ -21,21 +21,6 @@ verify_jwt = false
 [functions.admin-set-pin-autofill]
 verify_jwt = false
 
-[functions.oneshot-setup-pdv-only]
-verify_jwt = false
-
-[functions.oneshot-reset-e2e-password]
-verify_jwt = false
-
-[functions.oneshot-fix-e2e-boutique]
-verify_jwt = false
-
-[functions.oneshot-reseller-fraud-report]
-verify_jwt = false
-
-[functions.oneshot-diag-e2e-boutique]
-verify_jwt = false
-
 [functions.auto-withdraw-subaccounts]
 verify_jwt = false
 
@@ -71,33 +56,9 @@ verify_jwt = false
 [functions.billing-reminders]
 verify_jwt = false
 
-[functions.oneshot-platform-whatsapp]
-verify_jwt = false
-
-[functions.oneshot-balance-shadow]
-verify_jwt = false
-
 [functions.check-balance-restrictions]
 verify_jwt = false
 
-[functions.oneshot-verify-external-target]
-verify_jwt = false
-
-[functions.oneshot-disconnect-pastelao]
-verify_jwt = false
-
-[functions.oneshot-provision-e2e-admin]
-verify_jwt = false
-
-[functions.oneshot-reseller-full-flow]
-verify_jwt = false
-
-[functions.oneshot-user-routing-rpc]
-verify_jwt = false
-
 [functions.ota-update]
-verify_jwt = false
-
-[functions.oneshot-sync-woovi-secrets]
 verify_jwt = false
 
