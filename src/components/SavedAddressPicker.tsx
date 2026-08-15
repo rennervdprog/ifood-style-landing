@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -46,6 +46,7 @@ const SavedAddressPicker = ({ onSelect, selectedId }: SavedAddressPickerProps) =
   const [loadingCep, setLoadingCep] = useState(false);
   const [showPin, setShowPin] = useState(false);
   const [pinCoords, setPinCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const didAutoSelect = useRef(false);
 
   const { data: addresses, isLoading } = useQuery({
     queryKey: ["saved-addresses", user?.id],
@@ -68,6 +69,14 @@ const SavedAddressPicker = ({ onSelect, selectedId }: SavedAddressPickerProps) =
       return data || [];
     },
   });
+
+  // Mantém a experiência anterior: quando há endereço salvo, o padrão já é
+  // utilizado no checkout. A taxa continua vindo exclusivamente da cotação central.
+  useEffect(() => {
+    if (didAutoSelect.current || selectedId || !addresses?.length) return;
+    didAutoSelect.current = true;
+    onSelect(addresses.find((address) => address.is_default) || addresses[0]);
+  }, [addresses, onSelect, selectedId]);
 
   const handleCepChange = (value: string) => {
     const formatted = formatCep(value);
