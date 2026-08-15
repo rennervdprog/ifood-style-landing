@@ -719,7 +719,7 @@ const CheckoutPage = () => {
 
         const r = resolved as {
           ok?: boolean; normalized_address?: string; cep?: string; city?: string;
-          state?: string; lat?: number; lng?: number; reason?: string;
+          state?: string; neighborhood?: string; lat?: number; lng?: number; reason?: string;
         } | null;
 
         if (resolveErr || !r?.ok || !Number.isFinite(Number(r?.lat)) || !Number.isFinite(Number(r?.lng))) {
@@ -734,9 +734,20 @@ const CheckoutPage = () => {
           return;
         }
 
+        const resolvedNeighborhood =
+          (r.neighborhood || "").trim() || src.neighborhood?.trim() || finalNeighborhood?.trim() || "";
+        if (!resolvedNeighborhood) {
+          toast.error("Não foi possível confirmar o endereço de entrega", {
+            description: "Informe o bairro para continuar.",
+            duration: 8000,
+          });
+          setLoading(false);
+          return;
+        }
+
         deliverySnapshot = {
           address_details: r.normalized_address || finalAddress,
-          neighborhood: src.neighborhood?.trim() || finalNeighborhood || r.city!,
+          neighborhood: resolvedNeighborhood,
           delivery_cep: r.cep || cepDigits,
           delivery_city: r.city!,
           delivery_state: r.state!,
