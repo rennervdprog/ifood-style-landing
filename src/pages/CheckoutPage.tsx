@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { SUPABASE_ANON_KEY, SUPABASE_URL, supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { pushNotifyNewOrder } from "@/lib/notifications";
 import { ArrowLeft, MapPin, CreditCard, Banknote, QrCode, Edit3, Loader2, Truck, CheckCircle2, ShoppingBag, Tag, ChevronRight, Clock, AlertTriangle, Star, Wallet, Calendar, Store } from "lucide-react";
@@ -709,11 +709,10 @@ const CheckoutPage = () => {
           resolveErr = new Error("missing_authenticated_session");
         } else {
           try {
-            const response = await fetch(`${SUPABASE_URL}/functions/v1/resolve-delivery-address`, {
+            const response = await fetch("/api/resolve-delivery-address", {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
-                apikey: SUPABASE_ANON_KEY,
                 Authorization: `Bearer ${session.access_token}`,
               },
               body: JSON.stringify({
@@ -742,9 +741,11 @@ const CheckoutPage = () => {
           const reason = r?.reason || "";
           const description = reason === "address_not_found"
             ? "Não localizamos esse endereço. Revise rua, número, bairro, cidade/UF e CEP e tente novamente."
-            : reason.startsWith("missing_") || reason.startsWith("invalid_")
-              ? "Complete corretamente rua, número, bairro, cidade/UF e CEP."
-              : "Serviço de endereços indisponível no momento. Seu carrinho foi preservado — tente novamente em instantes.";
+            : reason === "unauthorized"
+              ? "Sua sessão expirou. Entre novamente para confirmar o endereço."
+              : reason.startsWith("missing_") || reason.startsWith("invalid_")
+                ? "Complete corretamente rua, número, bairro, cidade/UF e CEP."
+                : "Serviço de endereços indisponível no momento. Seu carrinho foi preservado — tente novamente em instantes.";
           toast.error("Não foi possível confirmar o endereço de entrega", { description, duration: 8000 });
           setLoading(false);
           return;
