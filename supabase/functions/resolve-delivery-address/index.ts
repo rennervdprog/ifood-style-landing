@@ -1,7 +1,24 @@
 // Fase 3a — resolução estruturada do endereço de entrega.
-// Uso: cliente autenticado no checkout web. Não altera dados, apenas resolve.
-import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+// Uso: cliente autenticado no checkout web. Só escreve no cache de geocodificação.
 import { createClient } from "npm:@supabase/supabase-js@2";
+
+// --- CORS: allowlist explícita (sem "*") ---
+const ALLOWED_ORIGINS = new Set([
+  "https://itasuper.lovable.app",
+  "https://id-preview--e8d28ade-d633-4d74-be21-61c8dbe24765.lovable.app",
+  "http://localhost:8080",
+  "http://localhost:5173",
+  "http://127.0.0.1:8080",
+]);
+
+function cors(origin: string | null): Record<string, string> {
+  return {
+    "Access-Control-Allow-Origin": origin && ALLOWED_ORIGINS.has(origin) ? origin : "null",
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Vary": "Origin",
+  };
+}
 
 interface AddressInput {
   street?: string;
@@ -19,18 +36,56 @@ interface ResolveResponse {
   cep?: string;
   city?: string;
   state?: string;
+  neighborhood?: string;
   lat?: number;
   lng?: number;
   precision?: "address" | "street" | "cep";
   reason?: string;
 }
 
-const UA = "ItaSuper/1.0 (delivery-address-resolver)";
-const json = (body: ResolveResponse, status = 200) =>
-  new Response(JSON.stringify(body), {
-    status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
+const UA = "ItaSuper/1.0 (delivery-address-resolver; contato@itasuper.com.br)";
+
+// Cliente de serviço apenas para o cache central de geocodificação.
+const admin = createClient(
+  Deno.env.get("SUPABASE_URL")!,
+  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+  { auth: { persistSession: false } },
+);
+
+const GEO_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const MIN_INTERVAL_MS = 1100; // política Nominatim: no máx. 1 req/s
+let lastUpstreamCall = 0;
+
+async function rateLimit() {
+  const wait = MIN_INTERVAL_MS - (Date.now() - lastUpstreamCall);
+  if (wait > 0) await new Promise((r) => setTimeout(r, wait));
+  lastUpstreamCall = Date.now();
+}
+
+async function cacheGet(key: string) {
+  const { data } = await admin
+    .from("geocode_cache")
+    .select("lat, lng, source, expires_at")
+    .eq("cache_key", key)
+    .maybeSingle();
+  if (!data?.lat || !data?.lng) return null;
+  if (data.expires_at && new Date(data.expires_at).getTime() < Date.now()) return null;
+  return data;
+}
+
+async function cacheSet(key: string, lat: number, lng: number, source: string) {
+  await admin.from("geocode_cache").upsert(
+    {
+      cache_key: key,
+      kind: "geocode",
+      lat,
+      lng,
+      source,
+      expires_at: new Date(Date.now() + GEO_TTL_MS).toISOString(),
+    },
+    { onConflict: "cache_key" },
+  );
+}
 
 const clean = (v: unknown, max = 120) => String(v ?? "").trim().replace(/\s+/g, " ").slice(0, max);
 
@@ -65,6 +120,10 @@ type Geo = { lat: number; lng: number; precision: "address" | "street" | "cep" }
 
 async function nominatim(params: Record<string, string>, precision: Geo["precision"]): Promise<Geo | null> {
   const qs = new URLSearchParams({ format: "jsonv2", limit: "1", countrycodes: "br", ...params });
+  const key = `geo|v2|${precision}|${qs.toString()}`;
+  const cached = await cacheGet(key);
+  if (cached) return { lat: Number(cached.lat), lng: Number(cached.lng), precision };
+  await rateLimit();
   return await withTimeout(async (signal) => {
     const r = await fetch(`https://nominatim.openstreetmap.org/search?${qs.toString()}`, {
       signal,
@@ -77,11 +136,19 @@ async function nominatim(params: Record<string, string>, precision: Geo["precisi
     const lat = Number(hit.lat);
     const lng = Number(hit.lon);
     if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+    await cacheSet(key, lat, lng, `nominatim:${precision}`);
     return { lat, lng, precision };
   });
 }
 
 Deno.serve(async (req) => {
+  const corsHeaders = cors(req.headers.get("Origin"));
+  const json = (body: ResolveResponse, status = 200) =>
+    new Response(JSON.stringify(body), {
+      status,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json({ ok: false, reason: "method_not_allowed" }, 405);
 
@@ -150,6 +217,7 @@ Deno.serve(async (req) => {
     cep,
     city,
     state,
+    neighborhood,
     lat: geo.lat,
     lng: geo.lng,
     precision: geo.precision,

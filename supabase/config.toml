@@ -61,4 +61,4 @@ verify_jwt = false
 
 
 [functions.resolve-delivery-address]
-verify_jwt = false
+verify_jwt = true
