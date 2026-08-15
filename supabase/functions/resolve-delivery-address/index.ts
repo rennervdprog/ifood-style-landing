@@ -154,17 +154,21 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json({ ok: false, reason: "method_not_allowed" }, 405);
 
-  // --- Autenticação: exige JWT válido de usuário (sem privilégio admin) ---
+  // --- Autenticação: usuário autenticado ou chamada interna service-role ---
   const authHeader = req.headers.get("Authorization") || "";
   const token = authHeader.replace(/^Bearer\s+/i, "").trim();
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+  const isInternalServiceCall = !!serviceRoleKey && token === serviceRoleKey;
   if (!token) return json({ ok: false, reason: "unauthorized" }, 401);
-  const sb = createClient(
-    Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_ANON_KEY")!,
-    { auth: { persistSession: false }, global: { headers: { Authorization: `Bearer ${token}` } } },
-  );
-  const { data: userData, error: userErr } = await sb.auth.getUser(token);
-  if (userErr || !userData?.user) return json({ ok: false, reason: "unauthorized" }, 401);
+  if (!isInternalServiceCall) {
+    const sb = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { auth: { persistSession: false }, global: { headers: { Authorization: `Bearer ${token}` } } },
+    );
+    const { data: userData, error: userErr } = await sb.auth.getUser(token);
+    if (userErr || !userData?.user) return json({ ok: false, reason: "unauthorized" }, 401);
+  }
 
   let body: AddressInput;
   try {

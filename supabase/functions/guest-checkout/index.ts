@@ -36,6 +36,34 @@ interface Payload {
   consent: boolean;
 }
 
+async function resolveGuestAddress(p: Payload) {
+  if (p.is_pickup || !p.address) return null;
+  const a = p.address;
+  const cep = String(a.cep || "").replace(/\D/g, "");
+  if (cep.length !== 8) return { ok: false, reason: "invalid_cep" };
+  let city = "";
+  let state = "";
+  try {
+    const via = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+    const data = await via.json();
+    if (!data?.erro) { city = String(data.localidade || "").trim(); state = String(data.uf || "").trim().toUpperCase(); }
+  } catch { /* o resolver central fará a validação final */ }
+  if (!city || !/^[A-Z]{2}$/.test(state)) return { ok: false, reason: "address_not_normalized" };
+  const base = Deno.env.get("SUPABASE_URL")!;
+  const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  try {
+    const response = await fetch(`${base}/functions/v1/resolve-delivery-address`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", apikey: key, Authorization: `Bearer ${key}` },
+      body: JSON.stringify({ street: a.street, number: a.number, complement: a.complement, neighborhood: p.neighborhood, city, state, cep }),
+    });
+    const result = await response.json().catch(() => null);
+    return response.ok ? result : { ok: false, reason: result?.reason || "address_not_resolved" };
+  } catch {
+    return { ok: false, reason: "address_resolver_unavailable" };
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405);
@@ -103,13 +131,18 @@ Deno.serve(async (req) => {
       }
     }
 
-    // 2) Endereço → string a partir do payload (não bate no DB)
+    // 2) Endereço → resolver antes do INSERT (retirada não exige geocodificação)
     let addressString = "Retirada na loja";
     const neighborhood = p.is_pickup ? "RETIRADA" : p.neighborhood;
+    let deliverySnapshot: any = null;
     if (!p.is_pickup && p.address) {
       const a = p.address;
       const parts = [a.street.trim(), a.number.trim(), a.complement, a.reference_point ? `Ref: ${a.reference_point}` : ""].filter(Boolean);
       addressString = parts.join(", ");
+      deliverySnapshot = await resolveGuestAddress(p);
+      if (!deliverySnapshot?.ok || !Number.isFinite(Number(deliverySnapshot.lat)) || !Number.isFinite(Number(deliverySnapshot.lng))) {
+        return json({ error: "address_not_resolved", reason: deliverySnapshot?.reason || "address_not_resolved" }, 400);
+      }
     }
 
     const { data: pinProfile } = await sb.from("profiles")
@@ -127,8 +160,13 @@ Deno.serve(async (req) => {
       total_price: p.total_price,
       commission_rate: p.commission_rate ?? 0,
       payment_method: p.payment_method,
-      neighborhood,
-      address_details: addressString,
+      neighborhood: deliverySnapshot?.neighborhood || neighborhood,
+      address_details: deliverySnapshot?.normalized_address || addressString,
+      delivery_cep: deliverySnapshot?.cep || null,
+      delivery_city: deliverySnapshot?.city || null,
+      delivery_state: deliverySnapshot?.state || null,
+      client_lat: deliverySnapshot?.lat ?? null,
+      client_lng: deliverySnapshot?.lng ?? null,
       needs_change: !!p.needs_change,
       change_for: p.change_for || 0,
       status: isPixDireto ? "aguardando_comprovante" : "pendente",

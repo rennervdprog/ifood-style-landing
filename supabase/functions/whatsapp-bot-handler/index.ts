@@ -20,7 +20,7 @@ type Step =
   | "awaiting_name" | "awaiting_category" | "awaiting_product"
   | "awaiting_addon" | "awaiting_observation" | "awaiting_more" | "awaiting_delivery_type"
   | "awaiting_address_choice"
-  | "awaiting_street" | "awaiting_number" | "awaiting_neighborhood" | "awaiting_reference"
+  | "awaiting_street" | "awaiting_number" | "awaiting_neighborhood" | "awaiting_cep" | "awaiting_reference"
   | "awaiting_payment" | "awaiting_change" | "awaiting_confirm"
   | "awaiting_pix_proof"
   | "post_order_cooldown";
@@ -370,6 +370,11 @@ const askNeighborhood = async (admin: any, storeId: string, phone: string, sessi
   await setSession(admin, session);
   await sendText(storeId, phone, "*🏘️ Qual o *bairro*?*");
 };
+const askCep = async (admin: any, storeId: string, phone: string, session: Session) => {
+  session.current_step = "awaiting_cep";
+  await setSession(admin, session);
+  await sendText(storeId, phone, "*📮 Qual o CEP do endereço de entrega?*\n\n_Envie 8 números, com ou sem hífen._");
+};
 const askReference = async (admin: any, storeId: string, phone: string, session: Session) => {
   session.current_step = "awaiting_reference";
   await setSession(admin, session);
@@ -459,8 +464,13 @@ const startPixDireto = async (admin: any, storeId: string, phone: string, sessio
     delivery_fee: deliveryFee,
     total_price: total,
     payment_method: "pix_direto",
-    neighborhood: isDelivery ? (addr.neighborhood || "não informado") : "RETIRADA",
-    address_details: addressString,
+    neighborhood: isDelivery ? (session.context.resolved_address?.neighborhood || addr.neighborhood || "não informado") : "RETIRADA",
+    address_details: isDelivery ? (session.context.resolved_address?.normalized_address || addressString) : addressString,
+    delivery_cep: isDelivery ? (session.context.resolved_address?.cep || session.context.cep || null) : null,
+    delivery_city: isDelivery ? (session.context.resolved_address?.city || session.context.city || null) : null,
+    delivery_state: isDelivery ? (session.context.resolved_address?.state || session.context.state || null) : null,
+    client_lat: isDelivery ? (session.context.resolved_address?.lat ?? null) : null,
+    client_lng: isDelivery ? (session.context.resolved_address?.lng ?? null) : null,
     needs_change: false,
     change_for: 0,
     is_guest: true,
@@ -989,25 +999,9 @@ Deno.serve(async (req) => {
           session.context.number = saved.number;
           session.context.neighborhood = saved.neighborhood;
           session.context.reference = saved.reference_point || saved.complement || "";
-          const PLATFORM_FEE = store?.platform_delivery_split_override != null
-            ? Number(store.platform_delivery_split_override)
-            : 0.99;
-          const flat =
-            Number(store?.own_delivery_fee || 0) ||
-            Number(store?.delivery_fee || 0) ||
-            Number(store?.delivery_fee_base || 0);
-          session.context.delivery_fee = Math.round((flat + PLATFORM_FEE) * 100) / 100;
-          await sendDeliveryFeeInfo(store_id, phone, flat, PLATFORM_FEE);
-          const baseMethods = cfg.accepted_payment_methods || ["pix", "cash", "card"];
-          const withPix = pixDiretoOn && !baseMethods.includes("pix") ? ["pix", ...baseMethods] : baseMethods;
-          const methods = withPix.filter((m: string) => {
-            if (m === "pix") return accepts.pix;
-            if (m === "cash") return accepts.cash;
-            if (m === "card") return accepts.card;
-            return true;
-          });
-          await askPayment(admin, store_id, phone, session, methods, pixDiretoOn);
-          return json({ handled: true, action: "used_saved_address" });
+          await askCep(admin, store_id, phone, session);
+          return json({ handled: true, action: "saved_address_awaiting_cep" });
+
         }
         if (num === 2) {
           await askStreet(admin, store_id, phone, session);
@@ -1038,12 +1032,55 @@ Deno.serve(async (req) => {
           return json({ handled: true });
         }
         session.context.neighborhood = nb;
-        await askReference(admin, store_id, phone, session);
+        await askCep(admin, store_id, phone, session);
         return json({ handled: true });
+      }
+      case "awaiting_cep": {
+        const cep = text.replace(/\D/g, "");
+        if (cep.length !== 8) {
+          await sendText(store_id, phone, "CEP inválido. Envie os 8 números do CEP, por exemplo *01001-000*.");
+          return json({ handled: true, action: "invalid_cep" });
+        }
+        try {
+          const via = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+          const data = await via.json();
+          if (data?.erro || !data.localidade || !data.uf) throw new Error("cep_not_found");
+          session.context.cep = cep;
+          session.context.city = String(data.localidade).trim();
+          session.context.state = String(data.uf).trim().toUpperCase();
+          await askReference(admin, store_id, phone, session);
+        } catch {
+          await sendText(store_id, phone, "Não consegui validar esse CEP. Confira e envie novamente.");
+        }
+        return json({ handled: true, action: "cep_received" });
       }
       case "awaiting_reference": {
         const ref = text.trim();
         session.context.reference = (ref === "-" || ref === "") ? "" : ref.slice(0, 120);
+        const resolverBase = Deno.env.get("SUPABASE_URL")!;
+        const resolverKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+        try {
+          const resolverResponse = await fetch(`${resolverBase}/functions/v1/resolve-delivery-address`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", apikey: resolverKey, Authorization: `Bearer ${resolverKey}` },
+            body: JSON.stringify({
+              street: session.context.street,
+              number: session.context.number,
+              complement: session.context.reference || undefined,
+              neighborhood: session.context.neighborhood,
+              city: session.context.city,
+              state: session.context.state,
+              cep: session.context.cep,
+            }),
+          });
+          const resolved = await resolverResponse.json().catch(() => null);
+          if (!resolverResponse.ok || !resolved?.ok || !Number.isFinite(Number(resolved.lat)) || !Number.isFinite(Number(resolved.lng))) throw new Error("address_not_resolved");
+          session.context.resolved_address = resolved;
+        } catch {
+          await sendText(store_id, phone, "Não consegui confirmar a localização desse endereço. Vou pedir o CEP novamente.");
+          await askCep(admin, store_id, phone, session);
+          return json({ handled: true, action: "address_not_resolved" });
+        }
         // Cálculo simples: taxa fixa da loja + taxa da plataforma (override por loja VIP se houver).
         const PLATFORM_FEE = store?.platform_delivery_split_override != null
           ? Number(store.platform_delivery_split_override)
