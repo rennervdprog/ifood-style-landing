@@ -130,7 +130,24 @@ const PerfilPage = () => {
     queryKey: ["delivery-fee-config"],
     queryFn: async () => {
       const { data } = await supabase.from("admin_settings").select("value").eq("key", "delivery_fee_config").maybeSingle();
-      return data?.value ? (data.value as unknown as DeliveryFeeConfig) : DEFAULT_DELIVERY_FEE_CONFIG;
+      // Mescla com os defaults: linhas incompletas/zeradas no admin_settings
+      // faziam a estimativa exibir "R$ 0,00 + 0km × R$ 0,00".
+      const raw = (data?.value ?? {}) as Partial<Record<keyof DeliveryFeeConfig, unknown>>;
+      const num = (v: unknown, fallback: number) => {
+        const n = Number(v);
+        return Number.isFinite(n) && n > 0 ? n : fallback;
+      };
+      const cfg: DeliveryFeeConfig = {
+        ...DEFAULT_DELIVERY_FEE_CONFIG,
+        city_name: (raw.city_name as string) || DEFAULT_DELIVERY_FEE_CONFIG.city_name,
+        city_fee: num(raw.city_fee, DEFAULT_DELIVERY_FEE_CONFIG.city_fee),
+        rural_base_fee: num(raw.rural_base_fee, DEFAULT_DELIVERY_FEE_CONFIG.rural_base_fee),
+        rural_per_km: num(raw.rural_per_km, DEFAULT_DELIVERY_FEE_CONFIG.rural_per_km),
+        driver_split: num(raw.driver_split, DEFAULT_DELIVERY_FEE_CONFIG.driver_split),
+        platform_split: num(raw.platform_split, DEFAULT_DELIVERY_FEE_CONFIG.platform_split),
+        pix_operational_fee: num(raw.pix_operational_fee, DEFAULT_DELIVERY_FEE_CONFIG.pix_operational_fee),
+      };
+      return cfg;
     },
   });
 
@@ -779,7 +796,7 @@ const PerfilPage = () => {
               <InputField label="Complemento" placeholder="Apto, bloco, casa..." value={complement} onChange={(e) => setComplement(e.target.value)} />
               <InputField label="Bairro" placeholder="Preenchido pelo CEP" value={neighborhood} onChange={(e) => setNeighborhoodLocal(e.target.value)} />
 
-              {calculatedFee !== null && (
+              {calculatedFee !== null && calculatedFee > 0 && (
                 <div className="flex items-center gap-2.5 bg-primary/5 border border-primary/20 rounded-xl px-4 py-3">
                   <Truck className="h-4 w-4 text-primary shrink-0" />
                   <div>
