@@ -1399,20 +1399,6 @@ const CheckoutPage = () => {
                 </div>
               )}
 
-              {!isPickup && !freeDeliveryByThreshold && thresholdMissing > 0 && (
-                <div className="mt-1 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2">
-                  <p className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">
-                    Adicione mais <strong>{formatBRL(thresholdMissing)}</strong> e ganhe <strong>frete grátis</strong>!
-                  </p>
-                  <div className="mt-1.5 h-1.5 w-full rounded-full bg-emerald-500/20 overflow-hidden">
-                    <div
-                      className="h-full bg-emerald-500 transition-all"
-                      style={{ width: `${Math.min(100, (subtotal / storeFreeThreshold) * 100)}%` }}
-                    />
-                  </div>
-                </div>
-              )}
-
               {!isPickup && quoteBreakdown && couponType !== "free_shipping" && (
                 <p className="-mt-1 pl-4 text-[11px] text-muted-foreground/80">{quoteBreakdown}</p>
               )}
