@@ -36,31 +36,34 @@ interface Payload {
   consent: boolean;
 }
 
-async function resolveGuestAddress(p: Payload) {
-  if (p.is_pickup || !p.address) return null;
+async function quoteGuestDelivery(p: Payload) {
+  if (p.is_pickup) return { ok: true, fulfillment: "pickup", destination: null, pricing: { delivery_fee: 0, platform_fee_store_absorbed: 0 } };
+  if (!p.address) return { ok: false, reason: "missing_address" };
+
   const a = p.address;
-  const cep = String(a.cep || "").replace(/\D/g, "");
-  if (cep.length !== 8) return { ok: false, reason: "invalid_cep" };
-  let city = "";
-  let state = "";
-  try {
-    const via = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
-    const data = await via.json();
-    if (!data?.erro) { city = String(data.localidade || "").trim(); state = String(data.uf || "").trim().toUpperCase(); }
-  } catch { /* o resolver central fará a validação final */ }
-  if (!city || !/^[A-Z]{2}$/.test(state)) return { ok: false, reason: "address_not_normalized" };
   const base = Deno.env.get("SUPABASE_URL")!;
   const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   try {
-    const response = await fetch(`${base}/functions/v1/resolve-delivery-address`, {
+    const response = await fetch(`${base}/functions/v1/quote-delivery`, {
       method: "POST",
       headers: { "Content-Type": "application/json", apikey: key, Authorization: `Bearer ${key}` },
-      body: JSON.stringify({ street: a.street, number: a.number, complement: a.complement, neighborhood: p.neighborhood, city, state, cep }),
+      body: JSON.stringify({
+        store_id: p.store_id,
+        fulfillment: "delivery",
+        subtotal: Number(p.subtotal || 0),
+        address: {
+          street: a.street,
+          number: a.number,
+          complement: a.complement,
+          neighborhood: p.neighborhood,
+          cep: a.cep,
+        },
+      }),
     });
     const result = await response.json().catch(() => null);
-    return response.ok ? result : { ok: false, reason: result?.reason || "address_not_resolved" };
+    return response.ok ? result : { ok: false, reason: result?.reason || "delivery_quote_unavailable" };
   } catch {
-    return { ok: false, reason: "address_resolver_unavailable" };
+    return { ok: false, reason: "delivery_quote_unavailable" };
   }
 }
 
@@ -131,19 +134,18 @@ Deno.serve(async (req) => {
       }
     }
 
-    // 2) Endereço → resolver antes do INSERT (retirada não exige geocodificação)
-    let addressString = "Retirada na loja";
-    const neighborhood = p.is_pickup ? "RETIRADA" : p.neighborhood;
-    let deliverySnapshot: any = null;
-    if (!p.is_pickup && p.address) {
-      const a = p.address;
-      const parts = [a.street.trim(), a.number.trim(), a.complement, a.reference_point ? `Ref: ${a.reference_point}` : ""].filter(Boolean);
-      addressString = parts.join(", ");
-      deliverySnapshot = await resolveGuestAddress(p);
-      if (!deliverySnapshot?.ok || !Number.isFinite(Number(deliverySnapshot.lat)) || !Number.isFinite(Number(deliverySnapshot.lng))) {
-        return json({ error: "address_not_resolved", reason: deliverySnapshot?.reason || "address_not_resolved" }, 400);
+      // 2) Cotação única antes do INSERT. Entrega só segue com endereço,
+      // distância, elegibilidade e taxa retornados pelo backend central.
+      const quote = await quoteGuestDelivery(p);
+      if (!quote?.ok) {
+        return json({ error: "delivery_quote_failed", reason: quote?.reason || "delivery_quote_failed" }, 400);
       }
-    }
+      const deliverySnapshot: any = quote.destination || null;
+      const addressString = deliverySnapshot?.normalized_address || "Retirada na loja";
+      const neighborhood = p.is_pickup ? "RETIRADA" : deliverySnapshot?.neighborhood;
+      if (!p.is_pickup && (!deliverySnapshot || !Number.isFinite(Number(deliverySnapshot.lat)) || !Number.isFinite(Number(deliverySnapshot.lng)))) {
+        return json({ error: "address_not_resolved", reason: "address_not_resolved" }, 400);
+      }
 
     const { data: pinProfile } = await sb.from("profiles")
       .select("delivery_pin")
@@ -156,8 +158,9 @@ Deno.serve(async (req) => {
       client_id: userId,
       store_id: p.store_id,
       subtotal: p.subtotal,
-      delivery_fee: p.delivery_fee,
-      total_price: p.total_price,
+      delivery_fee: Number((quote as any)?.pricing?.delivery_fee || 0),
+      delivery_fee_absorbed_by_store: Number((quote as any)?.pricing?.platform_fee_store_absorbed || 0),
+      total_price: Number(p.subtotal || 0) + Number((quote as any)?.pricing?.delivery_fee || 0),
       commission_rate: p.commission_rate ?? 0,
       payment_method: p.payment_method,
       neighborhood: deliverySnapshot?.neighborhood || neighborhood,
@@ -173,6 +176,20 @@ Deno.serve(async (req) => {
       scheduled_for: p.scheduled_for || null,
       is_guest: true,
       delivery_pin: deliveryPin,
+      metadata: p.is_pickup ? null : { delivery_quote: {
+        policy_version: (quote as any)?.policy_version || 1,
+        distance_km: Number((quote as any)?.distance?.km || 0),
+        distance_source: (quote as any)?.distance?.source || "haversine",
+        max_delivery_km: (quote as any)?.distance?.max_km ?? null,
+        destination_precision: (deliverySnapshot as any)?.precision || "cep",
+        store_delivery_base: Number((quote as any)?.pricing?.store_delivery_base || 0),
+        platform_fee_customer: Number((quote as any)?.pricing?.platform_fee_customer || 0),
+        platform_fee_store_absorbed: Number((quote as any)?.pricing?.platform_fee_store_absorbed || 0),
+        delivery_fee: Number((quote as any)?.pricing?.delivery_fee || 0),
+        vip_override_applied: (quote as any)?.pricing?.vip_override_applied ?? null,
+        split_mode: (quote as any)?.pricing?.split_mode ?? null,
+        plan_type: (quote as any)?.pricing?.plan_type ?? null,
+      } },
     } as any).select("id").single();
 
     if (orderErr || !order?.id) {

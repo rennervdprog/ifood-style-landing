@@ -183,11 +183,11 @@ export function useStorePlan(storeId: string | undefined | null): StorePlanFeatu
   const _isAutonomy = planType === "autonomy";
   const _isOwn = data?.deliveryMode === "own";
   const _override = (data?.plan as any)?.platform_delivery_split_override;
-  // Autonomia: NUNCA cobra a taxa de R$2 da plataforma (em entrega própria nem na plataforma)
+  // Autonomia: NUNCA cobra a taxa da plataforma (em entrega própria nem na plataforma)
   const _baseSplit = _isAutonomy
     ? 0
     : _isOwn
-      ? (_override ?? 2.0)
+      ? (_override ?? 0.99)
       : (data?.feeConfig?.platform_split ?? 0.99);
   const _splitMode = (data?.platformFeeSplit || "cliente") as "cliente" | "meio_a_meio" | "lojista";
   const _storeAbsorb = _isOwn
@@ -241,7 +241,7 @@ export function useStorePlan(storeId: string | undefined | null): StorePlanFeatu
     pixOperationalFee: isFixedPlan
       ? ((data?.plan as any)?.pix_operational_fee_override ?? 1.99)
       : 0,
-    // 🔒 R$2 plataforma se aplica a TODOS os planos (regra de negócio global)
+    // 🔒 R$0,99 plataforma se aplica a TODOS os planos (regra de negócio global)
     // own delivery: somado em cima da taxa do lojista no CheckoutPage
     // platform delivery: incluso no cálculo via deliveryFee.ts config.platform_split
     platformDeliverySplit: _isAutonomy

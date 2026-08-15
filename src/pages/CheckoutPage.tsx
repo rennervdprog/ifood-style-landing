@@ -619,6 +619,9 @@ const CheckoutPage = () => {
         client_lat: number;
         client_lng: number;
       } | null = null;
+      let quotedDeliveryFee = isPickup ? 0 : effectiveDeliveryFee;
+      let quotedStoreAbsorbedFee = isPickup ? 0 : storeAbsorbedDeliveryFee;
+      let deliveryQuoteSnapshot: Record<string, unknown> | null = null;
 
       if (!isPickup) {
         const src: DeliveryAddressInput = usingGpsDelivery
@@ -669,107 +672,103 @@ const CheckoutPage = () => {
           : "";
 
         const { data: { session } } = await supabase.auth.getSession();
-        let resolved: unknown = null;
-        let resolveErr: Error | null = null;
+        let quoted: unknown = null;
+        let quoteErr: Error | null = null;
         if (!session?.access_token) {
-          resolveErr = new Error("missing_authenticated_session");
+          quoteErr = new Error("missing_authenticated_session");
         } else {
           try {
-            const response = await fetch("/api/resolve-delivery-address", {
+            const response = await fetch("/api/quote-delivery", {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
                 Authorization: `Bearer ${session.access_token}`,
               },
               body: JSON.stringify({
-                street: src.street.trim(),
-                number: src.number.trim(),
-                complement: src.complement?.trim() || undefined,
-                neighborhood: src.neighborhood?.trim() || "",
-                city: src.city?.trim() || "",
-                state: stateUf,
-                cep: cepDigits,
-              } satisfies DeliveryAddressInput),
+                store_id: storeId,
+                fulfillment: "delivery",
+                subtotal: subtotalAfterProductDiscounts,
+                address: {
+                  street: src.street.trim(),
+                  number: src.number.trim(),
+                  complement: src.complement?.trim() || undefined,
+                  neighborhood: src.neighborhood?.trim() || "",
+                  city: src.city?.trim() || "",
+                  state: stateUf,
+                  cep: cepDigits,
+                },
+              }),
             });
-            resolved = await response.json().catch(() => null);
-            if (!response.ok) resolveErr = new Error(`resolver_http_${response.status}`);
+            quoted = await response.json().catch(() => null);
+            if (!response.ok) quoteErr = new Error(`quote_http_${response.status}`);
           } catch (error) {
-            resolveErr = error instanceof Error ? error : new Error("resolver_network_error");
+            quoteErr = error instanceof Error ? error : new Error("quote_network_error");
           }
         }
 
-        const r = resolved as {
-          ok?: boolean; normalized_address?: string; cep?: string; city?: string;
-          state?: string; neighborhood?: string; lat?: number; lng?: number; reason?: string;
+        const quote = quoted as {
+          ok?: boolean;
+          reason?: string;
+          destination?: { normalized_address?: string; neighborhood?: string; cep?: string; city?: string; state?: string; lat?: number; lng?: number; precision?: string };
+          distance?: { km?: number; max_km?: number | null; source?: string; eligible?: boolean };
+          pricing?: { store_delivery_base?: number; platform_fee_customer?: number; platform_fee_store_absorbed?: number; delivery_fee?: number; vip_override_applied?: number | null; split_mode?: string | null; plan_type?: string | null; free_delivery_applied?: boolean };
+          policy_version?: number;
         } | null;
 
-        if (resolveErr || !r?.ok || !Number.isFinite(Number(r?.lat)) || !Number.isFinite(Number(r?.lng))) {
-          const reason = r?.reason || "";
-          const description = reason === "address_not_found"
-            ? "Não localizamos esse endereço. Revise rua, número, bairro, cidade/UF e CEP e tente novamente."
-            : reason === "unauthorized"
-              ? "Sua sessão expirou. Entre novamente para confirmar o endereço."
-              : reason.startsWith("missing_") || reason.startsWith("invalid_")
-                ? "Complete corretamente rua, número, bairro, cidade/UF e CEP."
-                : "Serviço de endereços indisponível no momento. Seu carrinho foi preservado — tente novamente em instantes.";
-          toast.error("Não foi possível confirmar o endereço de entrega", { description, duration: 8000 });
+        const destination = quote?.destination;
+        const pricing = quote?.pricing;
+        const reason = quote?.reason || "";
+        if (quoteErr || !quote?.ok || !destination || !pricing || !Number.isFinite(Number(destination.lat)) || !Number.isFinite(Number(destination.lng))) {
+          let description = "Não foi possível calcular a entrega agora. Seu carrinho foi preservado — tente novamente em instantes.";
+          if (reason === "delivery_unavailable") description = "Esta loja não está aceitando pedidos de entrega no momento.";
+          else if (reason === "outside_delivery_area") {
+            const km = Number(quote?.distance?.km);
+            const maxKm = Number(quote?.distance?.max_km);
+            description = Number.isFinite(km) && Number.isFinite(maxKm)
+              ? `O endereço de entrega está a ${km.toFixed(1)} km da loja. Limite de ${maxKm} km.`
+              : "O endereço informado está fora da área de entrega da loja.";
+          } else if (reason === "address_unavailable") description = "Não localizamos esse endereço. Revise rua, número, bairro, cidade/UF e CEP.";
+          else if (reason === "unauthorized") description = "Sua sessão expirou. Entre novamente para confirmar o endereço.";
+          toast.error("Não foi possível confirmar a entrega", { description, duration: 8000 });
           setLoading(false);
           return;
         }
 
-        const resolvedNeighborhood =
-          (r.neighborhood || "").trim() || src.neighborhood?.trim() || finalNeighborhood?.trim() || "";
-        if (!resolvedNeighborhood) {
+        deliverySnapshot = {
+          address_details: destination.normalized_address || finalAddress,
+          neighborhood: String(destination.neighborhood || src.neighborhood || finalNeighborhood || "").trim(),
+          delivery_cep: String(destination.cep || cepDigits).replace(/\D/g, ""),
+          delivery_city: String(destination.city || "").trim(),
+          delivery_state: String(destination.state || "").trim().toUpperCase(),
+          client_lat: Number(destination.lat),
+          client_lng: Number(destination.lng),
+        };
+        if (!deliverySnapshot.neighborhood || !deliverySnapshot.delivery_city || !/^[A-Z]{2}$/.test(deliverySnapshot.delivery_state)) {
           toast.error("Não foi possível confirmar o endereço de entrega", {
-            description: "Informe o bairro para continuar.",
+            description: "Complete corretamente rua, número, bairro, cidade/UF e CEP.",
             duration: 8000,
           });
           setLoading(false);
           return;
         }
 
-        deliverySnapshot = {
-          address_details: r.normalized_address || finalAddress,
-          neighborhood: resolvedNeighborhood,
-          delivery_cep: r.cep || cepDigits,
-          delivery_city: r.city!,
-          delivery_state: r.state!,
-          client_lat: Number(r.lat),
-          client_lng: Number(r.lng),
+        quotedDeliveryFee = Number(pricing.delivery_fee || 0);
+        quotedStoreAbsorbedFee = Number(pricing.platform_fee_store_absorbed || 0);
+        deliveryQuoteSnapshot = {
+          policy_version: quote.policy_version || 1,
+          distance_km: Number(quote.distance?.km || 0),
+          distance_source: quote.distance?.source || "haversine",
+          max_delivery_km: quote.distance?.max_km ?? null,
+          destination_precision: destination.precision || "cep",
+          store_delivery_base: Number(pricing.store_delivery_base || 0),
+          platform_fee_customer: Number(pricing.platform_fee_customer || 0),
+          platform_fee_store_absorbed: Number(pricing.platform_fee_store_absorbed || 0),
+          delivery_fee: quotedDeliveryFee,
+          vip_override_applied: pricing.vip_override_applied ?? null,
+          split_mode: pricing.split_mode ?? null,
+          plan_type: pricing.plan_type ?? null,
+          free_delivery_applied: Boolean(pricing.free_delivery_applied),
         };
-      }
-
-      // ===== ANTIFRAUDE: usa somente o destino geocodificado do pedido =====
-      // O GPS do aparelho pode estar em outro local e não deve bloquear uma
-      // entrega cujo endereço confirmado esteja dentro da área da loja.
-      if (!isPickup && deliverySnapshot && storeData && (storeData as any).latitude && (storeData as any).longitude) {
-        const fraud = await checkStoreAccess({
-          storeId: storeId!,
-          storeName: (storeData as any).name ?? null,
-          storeCity: (storeData as any).address_city ?? null,
-          storeLat: (storeData as any).latitude,
-          storeLng: (storeData as any).longitude,
-          deliveryCity: deliverySnapshot.delivery_city,
-          deliveryCoords: { lat: deliverySnapshot.client_lat, lng: deliverySnapshot.client_lng },
-          maxDeliveryKm: (storeData as any).max_delivery_km ?? undefined,
-        });
-        if (!fraud.allowed) {
-          const maxKm = Number((storeData as any).max_delivery_km ?? MAX_DISTANCE_KM) || MAX_DISTANCE_KM;
-          const reason = fraud.reason || "";
-          let description: string;
-          if (typeof fraud.distanceKm === "number" && Number.isFinite(fraud.distanceKm)) {
-            description = `O endereço de entrega está a ${fraud.distanceKm.toFixed(1)} km da loja. Limite de ${maxKm} km.`;
-          } else if (reason.startsWith("delivery_city_mismatch")) {
-            description = "O endereço de entrega está em uma cidade diferente da loja.";
-          } else if (reason.startsWith("rate_limited")) {
-            description = "Muitas tentativas bloqueadas recentemente. Tente novamente em 1 hora.";
-          } else {
-            description = `Não foi possível validar a distância do endereço até a loja (limite ${maxKm} km).`;
-          }
-          toast.error("Pedido bloqueado por segurança", { description, duration: 8000 });
-          setLoading(false);
-          return;
-        }
       }
 
       const storeGroups = items.reduce((acc, item) => {
@@ -787,7 +786,7 @@ const CheckoutPage = () => {
           storeItems.some(it => (it.metadata as any)?.returnable_group === s.group)
         );
         const storeEmptiesDiscount = storeEmpties.reduce((sum, s) => sum + s.qty * s.unit_price, 0);
-        const storeTotalPrice = Math.max(0, addMoney(storeSubtotal, effectiveDeliveryFee, -effectiveCouponDiscount, -loyaltyDiscount, -storeEmptiesDiscount));
+        const storeTotalPrice = Math.max(0, addMoney(storeSubtotal, quotedDeliveryFee, -effectiveCouponDiscount, -loyaltyDiscount, -storeEmptiesDiscount));
 
         const changeValue = paymentMethod === "dinheiro" && needsChange ? addMoney(parseFloat(changeFor)) : 0;
         // Pré-pedido: se a loja ainda não abriu mas aceita pedidos agendados,
@@ -806,8 +805,8 @@ const CheckoutPage = () => {
             client_id: user.id,
             store_id: storeId,
             subtotal: storeSubtotal,
-            delivery_fee: effectiveDeliveryFee,
-            delivery_fee_absorbed_by_store: storeAbsorbedDeliveryFee,
+            delivery_fee: quotedDeliveryFee,
+            delivery_fee_absorbed_by_store: quotedStoreAbsorbedFee,
             commission_rate: storePlan.commissionRate ?? 0,
             total_price: storeTotalPrice,
             wallet_discount: walletDiscount,
@@ -825,7 +824,12 @@ const CheckoutPage = () => {
             status: orderStatus,
             scheduled_for: scheduledFor ? new Date(scheduledFor).toISOString() : null,
             release_at: releaseAt,
-            metadata: storeEmpties.length > 0 ? { empties_exchange: storeEmpties } : null,
+            metadata: deliveryQuoteSnapshot || storeEmpties.length > 0
+              ? {
+                  ...(deliveryQuoteSnapshot ? { delivery_quote: deliveryQuoteSnapshot } : {}),
+                  ...(storeEmpties.length > 0 ? { empties_exchange: storeEmpties } : {}),
+                }
+              : null,
           } as any)
           .select("id")
           .single();

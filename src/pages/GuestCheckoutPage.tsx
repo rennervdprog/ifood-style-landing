@@ -93,11 +93,11 @@ const GuestCheckoutPage = () => {
   // Anon não tem RLS em admin_settings; usamos default e cobrimos platform_split
   // via RPC get_store_platform_split (respeita override do lojista).
   const config = DEFAULT_DELIVERY_FEE_CONFIG;
-  // Split efetivo: override do plano da loja > default (2). Autonomia = 0.
+  // Split efetivo: override do plano da loja > default (0,99). Autonomia = 0.
   const isAutonomy = platformInfo?.plan_type === "autonomy";
   const baseSplit = isAutonomy
     ? 0
-    : (Number(platformInfo?.platform_delivery_split_override ?? 2));
+    : (Number(platformInfo?.platform_delivery_split_override ?? 0.99));
   const splitMode = (platformInfo?.platform_fee_split || "cliente") as "cliente" | "meio_a_meio" | "lojista";
   const platformCustomerExtra = isOwnDelivery
     ? (splitMode === "lojista"
