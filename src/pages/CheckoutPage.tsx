@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
+import { SUPABASE_ANON_KEY, SUPABASE_URL, supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { pushNotifyNewOrder } from "@/lib/notifications";
 import { ArrowLeft, MapPin, CreditCard, Banknote, QrCode, Edit3, Loader2, Truck, CheckCircle2, ShoppingBag, Tag, ChevronRight, Clock, AlertTriangle, Star, Wallet, Calendar, Store } from "lucide-react";
@@ -702,20 +702,36 @@ const CheckoutPage = () => {
           ? String(src.state).trim().toUpperCase()
           : "";
 
-        const { data: resolved, error: resolveErr } = await supabase.functions.invoke(
-          "resolve-delivery-address",
-          {
-            body: {
-              street: src.street.trim(),
-              number: src.number.trim(),
-              complement: src.complement?.trim() || undefined,
-              neighborhood: src.neighborhood?.trim() || "",
-              city: src.city?.trim() || "",
-              state: stateUf,
-              cep: cepDigits,
-            } satisfies DeliveryAddressInput,
-          },
-        );
+        const { data: { session } } = await supabase.auth.getSession();
+        let resolved: unknown = null;
+        let resolveErr: Error | null = null;
+        if (!session?.access_token) {
+          resolveErr = new Error("missing_authenticated_session");
+        } else {
+          try {
+            const response = await fetch(`${SUPABASE_URL}/functions/v1/resolve-delivery-address`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                apikey: SUPABASE_ANON_KEY,
+                Authorization: `Bearer ${session.access_token}`,
+              },
+              body: JSON.stringify({
+                street: src.street.trim(),
+                number: src.number.trim(),
+                complement: src.complement?.trim() || undefined,
+                neighborhood: src.neighborhood?.trim() || "",
+                city: src.city?.trim() || "",
+                state: stateUf,
+                cep: cepDigits,
+              } satisfies DeliveryAddressInput),
+            });
+            resolved = await response.json().catch(() => null);
+            if (!response.ok) resolveErr = new Error(`resolver_http_${response.status}`);
+          } catch (error) {
+            resolveErr = error instanceof Error ? error : new Error("resolver_network_error");
+          }
+        }
 
         const r = resolved as {
           ok?: boolean; normalized_address?: string; cep?: string; city?: string;
