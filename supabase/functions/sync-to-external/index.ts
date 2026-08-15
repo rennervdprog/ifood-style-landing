@@ -83,14 +83,14 @@ serve(async (req) => {
           url: !externalUrl,
           service_key: !externalKey,
         },
-      }, 500);
+      }, 500, cors);
     }
 
     const externalClient = createClient(externalUrl, externalKey);
 
     // Auth: accept service_role key (DB triggers) or admin JWT
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) return jsonRes({ error: "Missing authorization" }, 401);
+    if (!authHeader) return jsonRes({ error: "Missing authorization" }, 401, cors);
 
     const token = authHeader.replace("Bearer ", "");
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
@@ -101,12 +101,12 @@ serve(async (req) => {
         const authClient = createClient(internalUrl, serviceRoleKey || internalServiceKey);
         const { data: { user }, error: authError } = await authClient.auth.getUser(token);
 
-        if (authError || !user) return jsonRes({ error: "Unauthorized" }, 401);
+        if (authError || !user) return jsonRes({ error: "Unauthorized" }, 401, cors);
 
         const { data: isAdmin } = await internalClient.rpc("is_platform_admin", { _user_id: user.id });
-        if (!isAdmin) return jsonRes({ error: "Admin only" }, 403);
+        if (!isAdmin) return jsonRes({ error: "Admin only" }, 403, cors);
       } catch {
-        return jsonRes({ error: "Unauthorized" }, 401);
+        return jsonRes({ error: "Unauthorized" }, 401, cors);
       }
     }
 
@@ -122,17 +122,17 @@ serve(async (req) => {
           success: connected,
           message: connected ? "Conexão com banco externo ativa!" : `Erro: ${testError?.message}`,
           external_url: externalUrl.replace(/\/\/(.{4}).*@/, "//$1***@"),
-        });
+        }, 200, cors);
       } catch (e) {
-        return jsonRes({ success: false, message: `Falha na conexão: ${e.message}` });
+        return jsonRes({ success: false, message: `Falha na conexão: ${e.message}` }, 200, cors);
       }
     }
 
     // ── sync_record (generic single-record upsert from triggers) ──
     if (action === "sync_record") {
       const { table, record, conflict_column } = payload || {};
-      if (!table || !record) return jsonRes({ error: "Missing table or record" }, 400);
-      if (!ALLOWED_SYNC_TABLES.has(table)) return jsonRes({ error: "Table not allowed for sync" }, 400);
+      if (!table || !record) return jsonRes({ error: "Missing table or record" }, 400, cors);
+      if (!ALLOWED_SYNC_TABLES.has(table)) return jsonRes({ error: "Table not allowed for sync" }, 400, cors);
 
       // Enrich profiles with email from auth.users
       if (table === "profiles" && record.user_id && !record.email) {
@@ -164,14 +164,14 @@ serve(async (req) => {
         .upsert(record, { onConflict: conflict_column || "id" });
       if (error) {
         console.error(`Sync ${table} error:`, error);
-        return jsonRes({ error: `Sync ${table} failed: ${error.message}` }, 500);
+        return jsonRes({ error: `Sync ${table} failed: ${error.message}` }, 500, cors);
       }
-      return jsonRes({ success: true, synced: table, id: record.id });
+      return jsonRes({ success: true, synced: table, id: record.id }, 200, cors);
     }
 
     // ── sync_order (single order + items) ──
     if (action === "sync_order") {
-      if (!payload?.order) return jsonRes({ error: "Missing order data" }, 400);
+      if (!payload?.order) return jsonRes({ error: "Missing order data" }, 400, cors);
 
       const { error: upsertError } = await externalClient
         .from("orders")
@@ -179,7 +179,7 @@ serve(async (req) => {
 
       if (upsertError) {
         console.error("Sync order error:", upsertError);
-        return jsonRes({ error: `Sync failed: ${upsertError.message}` }, 500);
+        return jsonRes({ error: `Sync failed: ${upsertError.message}` }, 500, cors);
       }
 
       if (payload.order_items?.length) {
@@ -189,12 +189,12 @@ serve(async (req) => {
         if (itemsError) console.error("Sync order_items error:", itemsError);
       }
 
-      return jsonRes({ success: true, synced: "order", id: payload.order.id });
+      return jsonRes({ success: true, synced: "order", id: payload.order.id }, 200, cors);
     }
 
     // ── sync_profile ──
     if (action === "sync_profile") {
-      if (!payload?.profile) return jsonRes({ error: "Missing profile data" }, 400);
+      if (!payload?.profile) return jsonRes({ error: "Missing profile data" }, 400, cors);
 
       // If email not in profile data, fetch from auth.users
       let email = payload.profile.email;
@@ -232,7 +232,7 @@ serve(async (req) => {
         console.error("Sync profile exception:", e.message);
       }
 
-      return jsonRes({ success: true, synced: "profile", id: profileData.id });
+      return jsonRes({ success: true, synced: "profile", id: profileData.id }, 200, cors);
     }
 
     // ── sync_all (bulk sync of ALL operational tables) ──
@@ -286,12 +286,12 @@ serve(async (req) => {
 
       const hasErrors = Object.values(results).some((r) => r.error);
 
-      return jsonRes({ success: !hasErrors, results });
+      return jsonRes({ success: !hasErrors, results }, 200, cors);
     }
 
-    return jsonRes({ error: "Unknown action" }, 400);
+    return jsonRes({ error: "Unknown action" }, 400, cors);
   } catch (err) {
     console.error("sync-to-external error:", err);
-    return jsonRes({ error: "Internal error" }, 500);
+    return jsonRes({ error: "Internal error" }, 500, cors);
   }
 });
