@@ -194,39 +194,8 @@ const LiveTrackingMap = ({ orderId, driverId, storeId, clientAddress, clientLat,
         return { lat: (orderData as any).client_lat, lng: (orderData as any).client_lng };
       }
 
-      if (!clientAddress && !orderData?.address_details) return null;
-
-      // Fetch store address to use city/state as context for geocoding
-      const { data: storeAddr } = await supabase
-        .from("stores_public")
-        .select("address_city, address_state, address_cep")
-        .eq("id", storeId)
-        .maybeSingle();
-
-      // Parse address_details which is formatted as "Rua X, 123, Complemento, Ref: ..."
-      const rawAddress = clientAddress || orderData?.address_details || "";
-      const parts = rawAddress.split(",").map((p: string) => p.trim());
-      const streetWithNumber = parts.length >= 2 && /^\d+/.test(parts[1])
-        ? `${parts[0]} ${parts[1]}`
-        : parts[0];
-
-      const geo = await geocodeAddress({
-        street: streetWithNumber,
-        neighborhood: orderData?.neighborhood || undefined,
-        city: storeAddr?.address_city || undefined,
-        state: storeAddr?.address_state || undefined,
-        postalcode: undefined,
-      });
-
-      if (geo) {
-        supabase
-          .from("orders")
-          .update({ client_lat: geo.lat, client_lng: geo.lng } as any)
-          .eq("id", orderId)
-          .then();
-        return geo;
-      }
-
+      // O destino do pedido é um snapshot imutável. Pedidos legados sem
+      // coordenadas não devem ser alterados silenciosamente pelo rastreio.
       return null;
     },
     staleTime: 1000 * 60 * 60,
