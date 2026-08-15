@@ -152,15 +152,33 @@ const Index = () => {
     queryKey: ["stores"],
     queryFn: async () => {
       const { data, error } = await (supabase
-        .from("stores") as any)
-        .select(`
-          id, name, slug, image_url, category, categories, rating, is_open, force_closed, status, delivery_mode, own_delivery_fee, latitude, longitude, address_city, address_state, is_matriz,
-          opening_hours (*)
-        `)
+        .from("stores_public") as any)
+        .select("id, name, slug, image_url, category, categories, rating, is_open, force_closed, status, delivery_mode, own_delivery_fee, latitude, longitude, address_city, address_state, is_matriz")
         .eq("is_matriz", false)
         .order("rating", { ascending: false });
       if (error) throw error;
-      return (data || []).filter((s: any) => !s.status || s.status === "ativo");
+
+      const visibleStores = (data || []).filter((store: any) => !store.status || store.status === "ativo");
+      const storeIds = visibleStores.map((store: any) => store.id);
+      if (!storeIds.length) return visibleStores;
+
+      const { data: hours, error: hoursError } = await supabase
+        .from("opening_hours")
+        .select("*")
+        .in("store_id", storeIds);
+      if (hoursError) throw hoursError;
+
+      const hoursByStore = new Map<string, any[]>();
+      (hours || []).forEach((hour: any) => {
+        const current = hoursByStore.get(hour.store_id) || [];
+        current.push(hour);
+        hoursByStore.set(hour.store_id, current);
+      });
+
+      return visibleStores.map((store: any) => ({
+        ...store,
+        opening_hours: hoursByStore.get(store.id) || [],
+      }));
     },
   });
 

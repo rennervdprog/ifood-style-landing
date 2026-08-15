@@ -1,6 +1,7 @@
 import { ArrowLeft, Lock, Loader2, Receipt, EyeOff, Eye, Scale } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { chunk } from "@/lib/batch";
 import { formatBRL } from "@/lib/utils";
 import { parseBRL, parseBRLCentsInput, formatBRLDisplay } from "@/hooks/useBRLInput";
 import { PdvDenominationCount } from "@/components/pdv/PdvDenominationCount";
@@ -48,10 +49,17 @@ export const PdvFechamentoScreen = ({
         .eq("pdv_session_id", currentSession!.id);
       const ids = (orders || []).map((o: any) => o.id);
       if (ids.length === 0) return { totalGrams: 0, totalValue: 0, byProduct: [] as any[] };
-      const { data: items } = await supabase
-        .from("order_items")
-        .select("product_id, quantity, unit_price, metadata, products(name)")
-        .in("order_id", ids);
+      const batches = await Promise.all(
+        chunk(ids, 100).map(async (orderIds) => {
+          const { data, error } = await supabase
+            .from("order_items")
+            .select("product_id, quantity, unit_price, metadata, products(name)")
+            .in("order_id", orderIds);
+          if (error) throw error;
+          return data ?? [];
+        }),
+      );
+      const items = batches.flat();
       let totalGrams = 0;
       let totalValue = 0;
       const byProduct = new Map<string, { name: string; grams: number; value: number }>();

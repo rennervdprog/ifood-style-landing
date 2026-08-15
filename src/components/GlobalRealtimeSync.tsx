@@ -4,6 +4,7 @@ import { SUPABASE_ANON_KEY, supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from "@/hooks/useUserRole";
 import { cleanupChannel, subscribeWithRejoin } from "@/lib/realtimeChannel";
+import { invalidateCachedStoreBootstrap } from "@/lib/storeBootstrap";
 
 type PgPayload = {
   eventType?: "INSERT" | "UPDATE" | "DELETE";
@@ -81,6 +82,7 @@ const GlobalRealtimeSync = () => {
 
   const invalidateStoreCatalog = (storeId?: string | null) => {
     schedule(`catalog:${storeId || "all"}`, () => {
+      invalidateCachedStoreBootstrap(storeId);
       [
         "products",
         "menu-sections",

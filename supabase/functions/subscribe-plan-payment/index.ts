@@ -198,8 +198,11 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Gateway ativo (seletor no painel super admin)
+    // Novas assinaturas da plataforma são emitidas exclusivamente pela Woovi.
     const gateway = await getActiveGateway(adminSupabase);
+    if (gateway !== "WOOVI") {
+      return json({ error: "payment_gateway deve estar configurado como WOOVI" }, 409);
+    }
 
     const { data: gwProfile } = await adminSupabase
       .from("profiles")
@@ -216,16 +219,22 @@ Deno.serve(async (req) => {
       : plan.plan_type === "hybrid" ? "Plano Crescimento"
       : "Plano";
 
-    if (gateway === "WOOVI" || gateway === "ABACATEPAY") {
+    if (gateway === "WOOVI") {
       try {
         const customer = {
           name: gwProfile?.full_name || "Lojista",
           email: gwProfile?.email || userData.user.email || `lojista-${userId.substring(0, 8)}@itasuper.com`,
           taxId: String(gwProfile?.document || ""),
         };
-        const pix = gateway === "WOOVI"
-          ? { ...(await createWooviPix({ amount: Number(plan.monthly_fee), description: `${gwPlanLabel} - ${store.name}`, externalId: gwReference, customer })), brCodeBase64: null as string | null }
-          : await createAbacatePix({ amount: Number(plan.monthly_fee), description: `${gwPlanLabel} - ${store.name}`, externalId: gwReference, customer });
+        const pix = {
+          ...(await createWooviPix({
+            amount: Number(plan.monthly_fee),
+            description: `${gwPlanLabel} - ${store.name}`,
+            externalId: gwReference,
+            customer,
+          })),
+          brCodeBase64: null as string | null,
+        };
 
         await adminSupabase.from("financial_transactions").insert({
           store_id,
@@ -255,7 +264,8 @@ Deno.serve(async (req) => {
           provider: gateway.toLowerCase(),
         });
       } catch (e) {
-        console.error(`[${gateway}] mensalidade falhou, tentando Asaas:`, e);
+        console.error("[woovi] mensalidade falhou:", e);
+        return json({ error: "Não foi possível gerar o PIX pela Woovi. Tente novamente." }, 502);
       }
     }
 

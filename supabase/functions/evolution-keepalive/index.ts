@@ -4,6 +4,16 @@ const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, sentry-trace, baggage",
 };
+
+const DEFAULT_MAX_INSTANCES = 12;
+const MAX_INSTANCES = 12;
+const EXTERNAL_TIMEOUT_MS = 5_000;
+
+const readLimit = (value: string | null) => {
+  const parsed = Number(value ?? DEFAULT_MAX_INSTANCES);
+  if (!Number.isFinite(parsed)) return DEFAULT_MAX_INSTANCES;
+  return Math.min(Math.max(Math.trunc(parsed), 1), MAX_INSTANCES);
+};
 const json = (b: unknown, s = 200) =>
   new Response(JSON.stringify(b), { status: s, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
@@ -17,7 +27,7 @@ const webhookUrlOf = (body: any): string => String(body?.url || body?.webhook?.u
 const webhookEnabledOf = (body: any): boolean => Boolean(body?.enabled ?? body?.webhook?.enabled);
 
 const fetchJson = async (url: string, init: RequestInit = {}) => {
-  const r = await fetch(url, { ...init, signal: AbortSignal.timeout(20_000) });
+  const r = await fetch(url, { ...init, signal: AbortSignal.timeout(EXTERNAL_TIMEOUT_MS) });
   return { ok: r.ok, status: r.status, data: await parseJson(r) };
 };
 
@@ -100,7 +110,18 @@ Deno.serve(async (req) => {
       .select("store_id, evolution_instance_name, status")
       .not("evolution_instance_name", "is", null);
     if (onlyStoreId) q = q.eq("store_id", onlyStoreId);
-    const { data: configs } = await q;
+    const { data: allConfigs, error: configError } = await q;
+    if (configError) throw configError;
+
+    const maxInstances = onlyStoreId ? 1 : readLimit(url.searchParams.get("limit"));
+    const orderedConfigs = allConfigs ?? [];
+    const rotation = orderedConfigs.length > 0
+      ? Math.floor(Date.now() / (5 * 60_000)) % orderedConfigs.length
+      : 0;
+    const configs = orderedConfigs
+      .slice(rotation)
+      .concat(orderedConfigs.slice(0, rotation))
+      .slice(0, maxInstances);
 
     const root = baseUrl.replace(/\/$/, "");
     const webhookUrl = `${functionBaseUrl.replace(/\/$/, "")}/functions/v1/evolution-webhook?token=${webhookToken}`;
@@ -112,15 +133,15 @@ Deno.serve(async (req) => {
       if (!inst) continue;
       seen.add(inst);
       try {
-        const r = await fetch(`${root}/instance/connectionState/${inst}`, { headers: { apikey: apiKey } });
-        const j: any = await r.json().catch(() => ({}));
-        const state: string = j?.instance?.state || j?.state || "";
+        const connection = await fetchJson(`${root}/instance/connectionState/${inst}`, { headers: { apikey: apiKey } });
+        if (!connection.ok) throw new Error(`connection_state_${connection.status}`);
+        const state: string = connection.data?.instance?.state || connection.data?.state || "";
         const isOpen = state === "open";
         const webhook = await ensureWebhook(root, inst, apiKey, webhookUrl);
 
         if (!isOpen) {
           // tenta reconectar usando auth salvo — não exige QR novo se a sessão ainda existir
-          await fetch(`${root}/instance/connect/${inst}`, { headers: { apikey: apiKey } }).catch(() => {});
+          await fetchJson(`${root}/instance/connect/${inst}`, { headers: { apikey: apiKey } }).catch(() => undefined);
           await ensureWebhook(root, inst, apiKey, webhookUrl).catch(() => undefined);
         }
 
@@ -130,8 +151,8 @@ Deno.serve(async (req) => {
         let realPhone: string | undefined;
         if (isOpen) {
           try {
-            const fr = await fetch(`${root}/instance/fetchInstances?instanceName=${inst}`, { headers: { apikey: apiKey } });
-            const arr: any = await fr.json().catch(() => []);
+            const instancesResponse = await fetchJson(`${root}/instance/fetchInstances?instanceName=${inst}`, { headers: { apikey: apiKey } });
+            const arr: any = instancesResponse.data ?? [];
             const info = Array.isArray(arr) ? arr[0] : arr;
             const owner = info?.ownerJid || info?.owner;
             if (typeof owner === "string") realPhone = owner.split("@")[0].replace(/\D/g, "");
@@ -160,10 +181,12 @@ Deno.serve(async (req) => {
       }
     }
 
-    const { data: platformConfigs } = await admin
+    const { data: platformConfigs, error: platformConfigError } = await admin
       .from("platform_whatsapp_config")
       .select("id, instance_name, status")
-      .not("instance_name", "is", null);
+      .not("instance_name", "is", null)
+      .limit(1);
+    if (platformConfigError) throw platformConfigError;
     for (const cfg of (platformConfigs ?? [])) {
       const inst = String((cfg as any).instance_name || "");
       if (!inst) continue;
@@ -174,7 +197,7 @@ Deno.serve(async (req) => {
         const isOpen = state === "open";
         const webhook = await ensureWebhook(root, inst, apiKey, webhookUrl);
         if (!isOpen) {
-          await fetch(`${root}/instance/connect/${inst}`, { headers: { apikey: apiKey } }).catch(() => {});
+          await fetchJson(`${root}/instance/connect/${inst}`, { headers: { apikey: apiKey } }).catch(() => undefined);
           await ensureWebhook(root, inst, apiKey, webhookUrl).catch(() => undefined);
         }
         const newStatus = isOpen ? "connected" : (state === "connecting" ? "connecting" : "disconnected");
@@ -187,18 +210,20 @@ Deno.serve(async (req) => {
       }
     }
 
-    try {
-      const instances = await fetchJson(`${root}/instance/fetchInstances`, { headers: { apikey: apiKey } });
-      const list = Array.isArray(instances.data) ? instances.data : [];
-      for (const item of list) {
-        const inst = String(item?.name || item?.instance?.instanceName || item?.instanceName || "");
-        if (!inst || seen.has(inst)) continue;
-        if (!inst.startsWith("store-") && inst !== "itasuper-platform") continue;
-        const webhook = await ensureWebhook(root, inst, apiKey, webhookUrl);
-        results.push({ kind: "orphan-instance", instance: inst, state: item?.connectionStatus || item?.instance?.state || null, action: "webhook-check", webhook });
+    if (url.searchParams.get("audit_orphans") === "true") {
+      try {
+        const instances = await fetchJson(`${root}/instance/fetchInstances`, { headers: { apikey: apiKey } });
+        const list = Array.isArray(instances.data) ? instances.data : [];
+        for (const item of list) {
+          const inst = String(item?.name || item?.instance?.instanceName || item?.instanceName || "");
+          if (!inst || seen.has(inst)) continue;
+          if (!inst.startsWith("store-") && inst !== "itasuper-platform") continue;
+          const webhook = await ensureWebhook(root, inst, apiKey, webhookUrl);
+          results.push({ kind: "orphan-instance", instance: inst, state: item?.connectionStatus || item?.instance?.state || null, action: "webhook-check", webhook });
+        }
+      } catch (e) {
+        results.push({ kind: "instance-audit", error: String(e) });
       }
-    } catch (e) {
-      results.push({ kind: "instance-audit", error: String(e) });
     }
 
     return json({ success: true, count: results.length, results });

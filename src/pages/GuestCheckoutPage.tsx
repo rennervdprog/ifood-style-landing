@@ -51,7 +51,7 @@ const GuestCheckoutPage = () => {
     queryKey: ["guest-store", storeId],
     queryFn: async () => {
       const { data } = await supabase
-        .from("stores")
+        .from("stores_public")
         .select("id, name, address_city, minimum_order_value, own_delivery_fee, delivery_mode, delivery_fee_type, delivery_base_km, delivery_fee_base, delivery_fee_per_km, address_cep, latitude, longitude, free_delivery_threshold, guest_checkout_enabled, pix_direto_enabled, pix_direto_key")
         .eq("id", storeId!).maybeSingle();
       return (data as any) || null;

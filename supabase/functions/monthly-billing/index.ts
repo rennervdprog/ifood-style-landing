@@ -67,10 +67,60 @@ export async function createAbacatePix(params: {
   };
 }
 
+/* ── Woovi/OpenPix: único provedor para novas cobranças de plataforma ── */
+type WooviCharge = { id: string; brCode: string | null; brCodeBase64: string | null };
+
+function wooviEnabled(): boolean {
+  return !!(Deno.env.get("WOOVI_APP_ID") || Deno.env.get("OPENPIX_APP_ID"));
+}
+
+async function createWooviCharge(params: {
+  amount: number;
+  description: string;
+  externalId: string;
+  customer?: { name?: string; email?: string; taxId?: string };
+  expiresInSeconds: number;
+}): Promise<WooviCharge> {
+  const appId = Deno.env.get("WOOVI_APP_ID") || Deno.env.get("OPENPIX_APP_ID");
+  if (!appId) throw new Error("WOOVI_APP_ID não configurada");
+
+  const taxId = String(params.customer?.taxId || "").replace(/\D/g, "");
+  const body: Record<string, unknown> = {
+    correlationID: params.externalId,
+    value: Math.round(params.amount * 100),
+    comment: String(params.description).substring(0, 140),
+    expiresIn: params.expiresInSeconds,
+  };
+  if (params.customer?.name || params.customer?.email) {
+    body.customer = {
+      name: params.customer?.name || "Lojista",
+      email: params.customer?.email || `lojista-${params.externalId}@itasuper.com`,
+      ...(taxId.length === 11 || taxId.length === 14
+        ? { taxID: { taxID: taxId, type: taxId.length === 11 ? "BR:CPF" : "BR:CNPJ" } }
+        : {}),
+    };
+  }
+
+  const response = await fetch("https://api.openpix.com.br/api/v1/charge", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: appId },
+    body: JSON.stringify(body),
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok || payload?.error) {
+    throw new Error(String(payload?.error || `Erro Woovi ${response.status}`));
+  }
+
+  const charge = payload?.charge || payload;
+  const id = String(charge?.identifier || "");
+  if (!id || !charge?.brCode) throw new Error("Resposta Woovi sem identificador ou PIX copia e cola");
+  return { id, brCode: charge.brCode, brCodeBase64: charge?.brCodeBase64 || null };
+}
 
 const BodySchema = z.object({
   store_id: z.string().uuid().optional(),
   force: z.boolean().optional(),
+  dry_run: z.boolean().optional(),
 }).partial();
 
 const corsHeaders = {
@@ -104,7 +154,9 @@ Deno.serve(async (req) => {
   const apikeyHeader = req.headers.get("apikey") || "";
   const serviceKey = Deno.env.get("SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
   const externalAnon = Deno.env.get("EXTERNAL_SUPABASE_ANON_KEY") || "";
-  const cronSecret = Deno.env.get("CRON_SECRET") || "";
+  // Compatibilidade com o segredo já usado pelos agendamentos externos.
+  // A chave anônima nunca é aceita como credencial administrativa.
+  const cronSecret = Deno.env.get("CRON_SECRET") || Deno.env.get("EXTERNAL_CRON_SECRET") || "";
   const token = authHeader?.replace("Bearer ", "") || apikeyHeader;
 
   // SECURITY: only accept service-role keys or an explicit CRON_SECRET for scheduled jobs.
@@ -161,18 +213,14 @@ Deno.serve(async (req) => {
   try {
     const supabase = createClient(EXTERNAL_URL, EXTERNAL_KEY);
 
-    const ASAAS_API_KEY = Deno.env.get("ASAAS_API_KEY");
-    if (!ASAAS_API_KEY && !abacatepayEnabled()) {
-      return json({ error: "ASAAS_API_KEY not configured" }, 500);
+    if (!wooviEnabled()) {
+      return json({ error: "WOOVI_APP_ID não configurada" }, 500);
     }
 
-    const asaasBaseUrl = String(ASAAS_API_KEY || "").startsWith("$aact_prod_")
-      ? "https://api.asaas.com/v3"
-      : "https://sandbox.asaas.com/api/v3";
-
-    // Optional manual trigger by admin: { store_id, force }
+    // Disparo manual restrito ou cron. dry_run lista elegíveis sem criar PIX.
     let manualStoreId: string | null = null;
     let force = false;
+    let dryRun = false;
     if (req.method === "POST") {
       try {
         const raw = await req.json();
@@ -182,6 +230,7 @@ Deno.serve(async (req) => {
         }
         manualStoreId = parsed.data.store_id ?? null;
         force = !!parsed.data.force;
+        dryRun = !!parsed.data.dry_run;
       } catch (_) {
         // no body
       }
@@ -213,7 +262,7 @@ Deno.serve(async (req) => {
     }
     let query = supabase
       .from("store_plans")
-      .select("*, stores!inner(id, name, owner_id, asaas_account_id, status)")
+      .select("*, stores!inner(id, name, owner_id, status)")
       .or(orClauses.join(","))
       .eq("is_active", true);
 
@@ -285,35 +334,34 @@ Deno.serve(async (req) => {
       if (!store || store.status !== "ativo") continue;
 
       try {
-        // Atomic lock: only one concurrent run may bill this plan.
-        // Conditional update succeeds only if last_billing_attempt_at is
-        // unchanged from what we read (null or older than the 20h cooldown).
-        const prevAttempt = (plan as any).last_billing_attempt_at ?? null;
-        const cooldownIso = new Date(now.getTime() - 20 * 60 * 60 * 1000).toISOString();
-        let lockQ = supabase
-          .from("store_plans")
-          .update({ last_billing_attempt_at: now.toISOString() })
-          .eq("id", plan.id);
-        lockQ = prevAttempt === null
-          ? lockQ.is("last_billing_attempt_at", null)
-          : lockQ.eq("last_billing_attempt_at", prevAttempt);
-        const { data: lockRows, error: lockErr } = await lockQ.select("id");
-        if (lockErr) {
-          console.error(`[monthly-billing] lock error for ${store.name}:`, lockErr);
-          continue;
-        }
-        if (!lockRows || lockRows.length === 0) {
-          // Another concurrent invocation already grabbed this plan; also
-          // covers the case where cooldown was bumped between read and write.
-          if (!force) continue;
-          // force=true bypasses the lock (manual admin trigger)
+        if (!dryRun) {
+          // Reserva atômica: uma execução manual pode ignorar elegibilidade,
+          // mas nunca a proteção contra duas cobranças concorrentes.
+          const prevAttempt = (plan as any).last_billing_attempt_at ?? null;
+          let lockQ = supabase
+            .from("store_plans")
+            .update({ last_billing_attempt_at: now.toISOString() })
+            .eq("id", plan.id);
+          lockQ = prevAttempt === null
+            ? lockQ.is("last_billing_attempt_at", null)
+            : lockQ.eq("last_billing_attempt_at", prevAttempt);
+          const { data: lockRows, error: lockErr } = await lockQ.select("id");
+          if (lockErr) {
+            console.error(`[monthly-billing] lock error for ${store.name}:`, lockErr);
+            continue;
+          }
+          if (!lockRows || lockRows.length === 0) continue;
         }
 
-        // Generate reference
-        const { data: refData } = await supabase.rpc("generate_financial_reference", {
-          _prefix: "MENS",
-        });
-        const referenceCode = refData || `#MENS-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
+        // O modo seco não consome numeração financeira nem altera qualquer estado.
+        const referenceCode = dryRun
+          ? `#MENS-DRY-${String(plan.id).slice(0, 8).toUpperCase()}`
+          : (() => null)();
+        let resolvedReferenceCode = referenceCode;
+        if (!resolvedReferenceCode) {
+          const { data: refData } = await supabase.rpc("generate_financial_reference", { _prefix: "MENS" });
+          resolvedReferenceCode = refData || `#MENS-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
+        }
 
         const dueDate = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000); // 3 days to pay
         const dueDateStr = dueDate.toISOString().split("T")[0];
@@ -366,9 +414,11 @@ Deno.serve(async (req) => {
           }
         }
         if (addonsToDisable.length) {
-          await supabase.from("store_addons")
-            .update({ enabled: false, cancels_at: null, first_charge_done: false })
-            .eq("store_id", store.id).in("addon_code", addonsToDisable);
+          if (!dryRun) {
+            await supabase.from("store_addons")
+              .update({ enabled: false, cancels_at: null, first_charge_done: false })
+              .eq("store_id", store.id).in("addon_code", addonsToDisable);
+          }
         }
 
         // Proração da mensalidade do próprio plano pdv_only na 1ª cobrança.
@@ -402,14 +452,18 @@ Deno.serve(async (req) => {
         const addonsDesc = addonLines.length ? ` + ${addonLines.join(" + ")}` : "";
         const proratedTag = pdvOnlyFirst ? " (proporcional 1º mês)" : "";
         const creditTag = creditApplied > 0 ? ` (- crédito R$${creditApplied.toFixed(2)})` : "";
-        const description = `${planLabel}${vipTag}${proratedTag}${pdvLine}${addonsDesc}${creditTag} - ${store.name} - ${referenceCode}`;
+        const description = `${planLabel}${vipTag}${proratedTag}${pdvLine}${addonsDesc}${creditTag} - ${store.name} - ${resolvedReferenceCode}`;
 
         // Se totalAmount == 0 (crédito zerou tudo), pula cobrança Asaas mas registra e consome crédito.
         if (totalAmount <= 0) {
+          if (dryRun) {
+            results.push({ store: store.name, reference: resolvedReferenceCode, status: "would_credit_cover" });
+            continue;
+          }
           await supabase.from("financial_transactions").insert({
             store_id: store.id,
             transaction_kind: "commission_charge",
-            reference_code: referenceCode,
+            reference_code: resolvedReferenceCode,
             amount: 0,
             status: "paid",
             provider: "credit",
@@ -432,148 +486,37 @@ Deno.serve(async (req) => {
               .eq("store_id", store.id).in("addon_code", addonsBilledFirst);
           }
           billed++;
-          results.push({ store: store.name, reference: referenceCode, status: "credit_covered" });
+          results.push({ store: store.name, reference: resolvedReferenceCode, status: "credit_covered" });
           continue;
         }
 
-        // Provider da cobrança: AbacatePay quando configurado (PIX mais barato),
-        // senão Asaas. Split não é mais necessário (repasse via Pix Direto).
-        const useAbacate = abacatepayEnabled();
-        const providerName = useAbacate ? "abacatepay" : "asaas";
-        let chargeId: string | null = null;
-        let pixQrCode: string | null = null;
-        let pixQrCodeBase64: string | null = null;
-        let pixCopyPaste: string | null = null;
-
-        if (useAbacate) {
-          const { data: ownerProfile } = await supabase
-            .from("profiles")
-            .select("full_name, email, document")
-            .eq("user_id", store.owner_id)
-            .maybeSingle();
-
-          const pix = await createAbacatePix({
-            amount: totalAmount,
-            description: description.substring(0, 140),
-            externalId: referenceCode,
-            customer: {
-              name: ownerProfile?.full_name || store.name || "Lojista",
-              email: ownerProfile?.email || `lojista-${(store.owner_id || "").substring(0, 8)}@itasuper.com`,
-              taxId: String(ownerProfile?.document || "").replace(/\D/g, ""),
-            },
-          });
-          chargeId = pix.id;
-          pixQrCode = pix.brCode;
-          pixQrCodeBase64 = pix.brCodeBase64;
-          pixCopyPaste = pix.brCode;
+        if (dryRun) {
+          results.push({ store: store.name, reference: resolvedReferenceCode, status: "would_bill", amount: totalAmount, due_date: dueDateStr });
+          continue;
         }
 
-        // Resolve Asaas customer for this store
-        let customerId: string | null = store.asaas_account_id || null;
+        const { data: ownerProfile } = await supabase
+          .from("profiles")
+          .select("full_name, email, document")
+          .eq("user_id", store.owner_id)
+          .maybeSingle();
 
-        if (!useAbacate && !customerId) {
-          // Look up store owner profile to create/find a customer
-          const { data: ownerProfile } = await supabase
-            .from("profiles")
-            .select("full_name, email, document")
-            .eq("user_id", store.owner_id)
-            .maybeSingle();
-
-          let cleanCpf = String(ownerProfile?.document || "").replace(/\D/g, "");
-          const isSandbox = !String(ASAAS_API_KEY || "").startsWith("$aact_prod_");
-          if (isSandbox && cleanCpf.length < 11) cleanCpf = "52998224725";
-
-          // PRODUCTION requires a valid CPF/CNPJ — fail early with a clear message
-          if (!isSandbox && cleanCpf.length < 11) {
-            console.error(`[monthly-billing] Store ${store.name} owner has no CPF/CNPJ — cannot bill`);
-            failed++;
-            results.push({
-              store: store.name,
-              error: "CPF/CNPJ do dono da loja não cadastrado. Peça ao lojista para preencher o documento no perfil.",
-              owner_id: store.owner_id,
-            });
-            continue;
-          }
-
-          if (cleanCpf.length >= 11) {
-            const searchRes = await fetch(`${asaasBaseUrl}/customers?cpfCnpj=${cleanCpf}`, {
-              headers: { "access_token": ASAAS_API_KEY },
-            });
-            if (searchRes.ok) {
-              const sd = await searchRes.json();
-              if (sd.data?.length > 0) customerId = sd.data[0].id;
-            }
-          }
-
-          if (!customerId) {
-            const customerEmail = ownerProfile?.email || `lojista-${(store.owner_id || "").substring(0, 8)}@itasuper.com`;
-            const cBody: Record<string, unknown> = {
-              name: ownerProfile?.full_name || store.name || "Lojista",
-              email: customerEmail,
-            };
-            if (cleanCpf.length >= 11) cBody.cpfCnpj = cleanCpf;
-
-            const createRes = await fetch(`${asaasBaseUrl}/customers`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json", "access_token": ASAAS_API_KEY },
-              body: JSON.stringify(cBody),
-            });
-            const cData = await createRes.json();
-            if (!createRes.ok) {
-              console.error(`Asaas customer create failed for ${store.name}:`, JSON.stringify(cData));
-              failed++;
-              results.push({ store: store.name, error: cData });
-              continue;
-            }
-            customerId = cData.id;
-          }
-        }
-
-        // Create Asaas charge
-        if (!useAbacate) {
-        const chargeBody: any = {
-          customer: customerId,
-          billingType: "PIX",
-      notificationDisabled: true,
-          value: totalAmount,  // mensalidade + comissão PDV acumulada
-          dueDate: dueDateStr,
-          description: description.substring(0, 256),
-          externalReference: referenceCode,
-        };
-
-        const chargeResponse = await fetch(`${asaasBaseUrl}/payments`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "access_token": ASAAS_API_KEY,
+        const wooviCharge = await createWooviCharge({
+          amount: totalAmount,
+          description,
+          externalId: resolvedReferenceCode,
+          expiresInSeconds: 3 * 24 * 60 * 60,
+          customer: {
+            name: ownerProfile?.full_name || store.name || "Lojista",
+            email: ownerProfile?.email || `lojista-${(store.owner_id || "").substring(0, 8)}@itasuper.com`,
+            taxId: String(ownerProfile?.document || ""),
           },
-          body: JSON.stringify(chargeBody),
         });
-
-        const chargeData = await chargeResponse.json();
-
-        if (!chargeResponse.ok) {
-          console.error(`Asaas charge failed for ${store.name}:`, JSON.stringify(chargeData));
-          failed++;
-          results.push({ store: store.name, error: chargeData });
-          continue;
-        }
-
-        chargeId = chargeData.id || null;
-
-        // Get PIX QR code
-        if (chargeData.id) {
-          const pixResponse = await fetch(`${asaasBaseUrl}/payments/${chargeData.id}/pixQrCode`, {
-            headers: { "access_token": ASAAS_API_KEY },
-          });
-          if (pixResponse.ok) {
-            const pixData = await pixResponse.json();
-            pixQrCode = pixData.payload || null;
-            pixQrCodeBase64 = pixData.encodedImage || null;
-            pixCopyPaste = pixData.payload || null;
-          }
-        }
-        }
+        const providerName = "woovi";
+        const chargeId = wooviCharge.id;
+        const pixQrCode = wooviCharge.brCode;
+        const pixQrCodeBase64 = wooviCharge.brCodeBase64;
+        const pixCopyPaste = wooviCharge.brCode;
 
         // Save financial transaction
         await supabase.from("financial_transactions").insert({
@@ -592,6 +535,8 @@ Deno.serve(async (req) => {
             plan_label: planLabel,
             store_name: store.name,
             billing_period: now.toISOString(),
+            charge_family: "monthly_subscription",
+            due_date: dueDateStr,
             pdv_pending_billed: pdvPending, // webhook usa para zerar APÓS pagamento
             credit_applied: creditApplied,
             addons_billed_first: addonsBilledFirst,
@@ -600,9 +545,8 @@ Deno.serve(async (req) => {
         });
 
         // NÃO zera pdv_commission_pending aqui — se o lojista não pagar o PIX,
-        // o valor seria perdido. Zeramento é feito pelo asaas-webhook ao confirmar
-        // o pagamento (via RPC decrement_pdv_commission_pending), subtraindo apenas
-        // o valor faturado e preservando comissão acumulada no período de espera.
+        // o valor seria perdido. O woovi-webhook confirma a liquidação e só então
+        // baixa o valor faturado, preservando comissão acumulada no período de espera.
 
         // Marca first_charge_done já na emissão do PIX (proteção anti-duplo-proração).
         // Se o lojista não pagar, cobrança segue como "pending" e a próxima tentativa

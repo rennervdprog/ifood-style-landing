@@ -50,6 +50,8 @@ export function PdvDeliveryManualDialog({
   const [phone, setPhone] = useState("");
   const [pin, setPin] = useState(genPin());
   const [cep, setCep] = useState("");
+  const [city, setCity] = useState("");
+  const [state, setState] = useState("");
   const [street, setStreet] = useState("");
   const [number, setNumber] = useState("");
   const [neighborhood, setNeighborhood] = useState("");
@@ -69,7 +71,7 @@ export function PdvDeliveryManualDialog({
   useEffect(() => {
     if (open) {
       setName(""); setPhone(""); setPin(genPin());
-      setCep(""); setStreet(""); setNumber(""); setNeighborhood("");
+      setCep(""); setCity(""); setState(""); setStreet(""); setNumber(""); setNeighborhood("");
       setComplement(""); setReference("");
       setPaymentMethod("dinheiro"); setChangeFor("");
       setFee(null); setFeeBreakdown(null); setManualFee("");
@@ -109,6 +111,8 @@ export function PdvDeliveryManualDialog({
       if (!r) { toast.error("CEP não encontrado."); return; }
       if (r.logradouro) setStreet(r.logradouro);
       if (r.bairro) setNeighborhood(r.bairro);
+      if (r.localidade) setCity(r.localidade);
+      if (r.uf) setState(r.uf.toUpperCase());
       if (r.complemento && !complement) setComplement(r.complemento);
     } catch {
       toast.error("Erro ao buscar CEP.");
@@ -211,6 +215,27 @@ export function PdvDeliveryManualDialog({
       const address = addressParts.join(", ");
       const needsChange = paymentMethod === "dinheiro" && changeFor.trim().length > 0;
       const changeValue = needsChange ? Number(changeFor.replace(",", ".")) : 0;
+      const cepDigits = cep.replace(/\D/g, "");
+      if (cepDigits.length !== 8 || !city.trim() || !/^[A-Za-z]{2}$/.test(state.trim())) {
+        toast.error("Informe um CEP válido para completar cidade e UF.");
+        return;
+      }
+
+      const { data: resolvedAddress, error: addressError } = await supabase.functions.invoke("resolve-delivery-address", {
+        body: {
+          street: street.trim(),
+          number: number.trim(),
+          complement: complement.trim() || undefined,
+          neighborhood: neighborhood.trim(),
+          city: city.trim(),
+          state: state.trim().toUpperCase(),
+          cep: cepDigits,
+        },
+      });
+      if (addressError || !resolvedAddress?.ok || !Number.isFinite(Number(resolvedAddress.lat)) || !Number.isFinite(Number(resolvedAddress.lng))) {
+        toast.error("Não foi possível confirmar a localização deste endereço. Corrija o CEP e tente novamente.");
+        return;
+      }
 
       const { data: order, error: oe } = await supabase
         .from("orders")
@@ -225,8 +250,13 @@ export function PdvDeliveryManualDialog({
           total_price: finalTotal,
           app_fee: 0,
           payment_method: paymentMethod,
-          neighborhood,
-          address_details: address,
+          neighborhood: resolvedAddress.neighborhood || neighborhood,
+          address_details: resolvedAddress.normalized_address || address,
+          delivery_cep: resolvedAddress.cep || cepDigits,
+          delivery_city: resolvedAddress.city || city.trim(),
+          delivery_state: resolvedAddress.state || state.trim().toUpperCase(),
+          client_lat: Number(resolvedAddress.lat),
+          client_lng: Number(resolvedAddress.lng),
           needs_change: needsChange,
           change_for: changeValue,
           status: "preparando",

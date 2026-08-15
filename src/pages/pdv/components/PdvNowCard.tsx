@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Activity, TrendingUp, Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { chunk } from "@/lib/batch";
 import { formatBRL } from "@/lib/utils";
 
 interface Props {
@@ -24,17 +25,24 @@ export const PdvNowCard = ({ sessionId, vendasTotal, vendasCount, ticketMedio }:
         .from("orders")
         .select("id, total_price, created_at, status")
         .eq("pdv_session_id", sessionId!)
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .limit(200);
       const ok = (orders || []).filter((o: any) => o.status !== "cancelado");
       const ids = ok.map((o: any) => o.id);
       let topProducts: { name: string; qty: number }[] = [];
       if (ids.length) {
-        const { data: items } = await supabase
-          .from("order_items")
-          .select("product_id, quantity, products(name)")
-          .in("order_id", ids);
+        const batches = await Promise.all(
+          chunk(ids, 100).map(async (orderIds) => {
+            const { data, error } = await supabase
+              .from("order_items")
+              .select("product_id, quantity, products(name)")
+              .in("order_id", orderIds);
+            if (error) throw error;
+            return data ?? [];
+          }),
+        );
         const map = new Map<string, { name: string; qty: number }>();
-        (items || []).forEach((it: any) => {
+        batches.flat().forEach((it: any) => {
           const name = it.products?.name || "Produto";
           const cur = map.get(it.product_id) || { name, qty: 0 };
           cur.qty += Number(it.quantity || 0);

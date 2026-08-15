@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Star } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { chunk } from "@/lib/batch";
 import { formatBRL } from "@/lib/utils";
 import type { Product } from "@/pages/pdv/types";
 
@@ -36,12 +37,18 @@ export const PdvFavoritesBar = ({ storeId, products, addItem, getQty }: Props) =
         .limit(500);
       const ids = (orders || []).map((o: any) => o.id);
       if (!ids.length) return [] as string[];
-      const { data: items } = await supabase
-        .from("order_items")
-        .select("product_id, quantity")
-        .in("order_id", ids);
+      const batches = await Promise.all(
+        chunk(ids, 100).map(async (orderIds) => {
+          const { data, error } = await supabase
+            .from("order_items")
+            .select("product_id, quantity")
+            .in("order_id", orderIds);
+          if (error) throw error;
+          return data ?? [];
+        }),
+      );
       const counts = new Map<string, number>();
-      (items || []).forEach((it: any) => {
+      batches.flat().forEach((it: any) => {
         if (!it.product_id) return;
         counts.set(it.product_id, (counts.get(it.product_id) || 0) + Number(it.quantity || 0));
       });

@@ -160,8 +160,15 @@ Deno.serve(async (req) => {
   }
 
   if (FAILED_EVENTS.has(event)) {
-    await supabase.from("financial_transactions").update({ status: "failed" }).eq("id", tx.id);
-    return json({ ok: true, type: "payment_failed" });
+    // Não permitir que uma notificação atrasada de expiração reverta uma baixa já confirmada.
+    const { data: failedRows, error: failedErr } = await supabase
+      .from("financial_transactions")
+      .update({ status: "failed" })
+      .eq("id", tx.id)
+      .neq("status", "paid")
+      .select("id");
+    if (failedErr) return json({ ok: false, error: "tx_failure_update_failed" }, 500);
+    return json({ ok: true, type: "payment_failed", idempotent: !failedRows?.length });
   }
 
   return json({ ok: true, ignored: event });

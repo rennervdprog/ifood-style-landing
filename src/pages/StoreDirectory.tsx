@@ -330,7 +330,7 @@ const StoreDirectory = () => {
     let cancelled = false;
     (async () => {
       try {
-        const { data } = await supabase.from("stores").select("address_city").eq("status", "ativo").eq("is_test", false);
+        const { data } = await supabase.from("stores_public").select("address_city").eq("status", "ativo");
         if (cancelled || !data) return;
         const cities = new Set(data.map((s: any) => (s.address_city || "").trim().toLowerCase()).filter(Boolean));
         setLiveStats({ stores: data.length, cities: cities.size });
