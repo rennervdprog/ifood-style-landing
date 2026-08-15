@@ -1,8 +1,25 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { corsHeaders } from "https://esm.sh/@supabase/supabase-js@2/cors";
 
-const JSON_HEADERS = { ...corsHeaders, "Content-Type": "application/json" };
+/** Origens oficiais permitidas (produção + desenvolvimento local). */
+const ALLOWED_ORIGINS = new Set<string>([
+  "https://itasuper.lovable.app",
+  "https://id-preview--e8d28ade-d633-4d74-be21-61c8dbe24765.lovable.app",
+  "http://localhost:8080",
+  "http://localhost:5173",
+  "http://127.0.0.1:8080",
+]);
+
+function buildCors(req: Request): Record<string, string> {
+  const origin = req.headers.get("origin") || "";
+  const allowed = ALLOWED_ORIGINS.has(origin);
+  return {
+    "Access-Control-Allow-Origin": allowed ? origin : "null",
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Vary": "Origin",
+  };
+}
 
 const ALLOWED_SYNC_TABLES = new Set([
   "stores", "products", "menu_sections", "neighborhood_fees", "profiles",
@@ -12,8 +29,11 @@ const ALLOWED_SYNC_TABLES = new Set([
   "banners", "withdrawal_requests",
 ]);
 
-function jsonRes(data: unknown, status = 200) {
-  return new Response(JSON.stringify(data), { status, headers: JSON_HEADERS });
+function jsonRes(data: unknown, status = 200, cors: Record<string, string> = {}) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { ...cors, "Content-Type": "application/json" },
+  });
 }
 
 async function syncTable(
@@ -35,8 +55,9 @@ async function syncTable(
 }
 
 serve(async (req) => {
+  const cors = buildCors(req);
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return new Response("ok", { headers: cors });
   }
 
   try {
