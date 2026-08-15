@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { MapPin, Plus, Trash2, Check, Home, Briefcase, MapPinned, Search, Loader2, MapPinnedIcon } from "lucide-react";
 import { toast } from "sonner";
-import { formatCep, fetchCep, geocodeAddress } from "@/lib/location";
+import { formatCep, fetchCep } from "@/lib/location";
 import AddressPinPicker from "./AddressPinPicker";
 
 interface SavedAddress {
@@ -105,28 +105,21 @@ const SavedAddressPicker = ({ onSelect, selectedId }: SavedAddressPickerProps) =
   };
 
   const handleSave = async () => {
+    const cepDigits = cep.replace(/\D/g, "");
     if (!street.trim() || !number.trim() || !neighborhood) {
       toast.error("Preencha rua, número e bairro.");
       return;
     }
-    if (!pinCoords) {
-      toast.error("Confirme a localização no mapa antes de salvar.");
-      setShowPin(true);
+    if (cepDigits.length !== 8) {
+      toast.error("Informe um CEP válido para confirmar o endereço.");
       return;
     }
     setSaving(true);
     try {
       const isFirst = !addresses || addresses.length === 0;
-      // Prioridade: pino confirmado pelo usuário > geocoding automático.
-      const coords = pinCoords
-        ? pinCoords
-        : await geocodeAddress({
-            street: street.trim(),
-            number: number.trim(),
-            neighborhood,
-            postalcode: cep.replace(/\D/g, "") || null,
-            country: "Brasil",
-          }).catch(() => null);
+      // O pino é opcional. Sem ele, a cotação central normaliza o endereço
+      // no checkout; nenhuma coordenada é inventada ou gravada localmente.
+      const coords = pinCoords;
       const { error } = await supabase.from("saved_addresses" as any).insert({
         user_id: user!.id,
         label,

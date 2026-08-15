@@ -2,7 +2,6 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
-import { useCart } from "@/contexts/CartContext";
 import { supabase, SUPABASE_URL } from "@/integrations/supabase/client";
 import { isCapacitorNative } from "@/lib/capacitorNative";
 import BottomNav from "@/components/BottomNav";
@@ -17,7 +16,6 @@ import { toast } from "sonner";
 import ThemeToggle from "@/components/ThemeToggle";
 import { maskWhatsApp, formatWhatsAppNumber, isValidWhatsApp } from "@/lib/whatsapp";
 import { formatCep, fetchCep } from "@/lib/location";
-import { calculateDeliveryFee, DEFAULT_DELIVERY_FEE_CONFIG, type DeliveryFeeConfig } from "@/lib/deliveryFee";
 import SignOutConfirm from "@/components/SignOutConfirm";
  import { formatPixKeyDisplay, sanitizePixKeyForAsaas, validatePixKey, PIX_PLACEHOLDERS } from "@/lib/pixFormat";
  import { formatDocument, sanitizeDocument, validateDocument } from "@/lib/documentFormat";
@@ -68,7 +66,6 @@ const StatusBadge = ({ done, label }: { done: boolean; label: string }) => (
 
 const PerfilPage = () => {
   const { user, signOut } = useAuth();
-  const { setNeighborhood } = useCart();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -126,31 +123,6 @@ const PerfilPage = () => {
     enabled: !!user,
   });
 
-  const { data: deliveryFeeConfig } = useQuery({
-    queryKey: ["delivery-fee-config"],
-    queryFn: async () => {
-      const { data } = await supabase.from("admin_settings").select("value").eq("key", "delivery_fee_config").maybeSingle();
-      // Mescla com os defaults: linhas incompletas/zeradas no admin_settings
-      // faziam a estimativa exibir "R$ 0,00 + 0km × R$ 0,00".
-      const raw = (data?.value ?? {}) as Partial<Record<keyof DeliveryFeeConfig, unknown>>;
-      const num = (v: unknown, fallback: number) => {
-        const n = Number(v);
-        return Number.isFinite(n) && n > 0 ? n : fallback;
-      };
-      const cfg: DeliveryFeeConfig = {
-        ...DEFAULT_DELIVERY_FEE_CONFIG,
-        city_name: (raw.city_name as string) || DEFAULT_DELIVERY_FEE_CONFIG.city_name,
-        city_fee: num(raw.city_fee, DEFAULT_DELIVERY_FEE_CONFIG.city_fee),
-        rural_base_fee: num(raw.rural_base_fee, DEFAULT_DELIVERY_FEE_CONFIG.rural_base_fee),
-        rural_per_km: num(raw.rural_per_km, DEFAULT_DELIVERY_FEE_CONFIG.rural_per_km),
-        driver_split: num(raw.driver_split, DEFAULT_DELIVERY_FEE_CONFIG.driver_split),
-        platform_split: num(raw.platform_split, DEFAULT_DELIVERY_FEE_CONFIG.platform_split),
-        pix_operational_fee: num(raw.pix_operational_fee, DEFAULT_DELIVERY_FEE_CONFIG.pix_operational_fee),
-      };
-      return cfg;
-    },
-  });
-
    const { data: orderCount, isLoading: loadingOrders } = useQuery({
      queryKey: ["my-order-count", user?.id],
      queryFn: async () => {
@@ -161,14 +133,13 @@ const PerfilPage = () => {
    });
 
   /* ── Local state ── */
-  const [calculatedFee, setCalculatedFee] = useState<number | null>(null);
-  const [feeBreakdown, setFeeBreakdown] = useState<string>("");
   const [cep, setCep] = useState("");
   const [street, setStreet] = useState("");
   const [number, setNumber] = useState("");
   const [complement, setComplement] = useState("");
   const [referencePoint, setReferencePoint] = useState("");
   const [neighborhood, setNeighborhoodLocal] = useState("");
+  const [city, setCity] = useState("");
   const [phone, setPhone] = useState("");
   const [whatsappNumber, setWhatsappNumber] = useState("");
   const [savingAddress, setSavingAddress] = useState(false);
@@ -271,6 +242,7 @@ const PerfilPage = () => {
       setComplement((profile as any).complement || "");
       setReferencePoint((profile as any).reference_point || "");
       setNeighborhoodLocal((profile as any).neighborhood || "");
+      setCity((profile as any).city || "");
       setPhone((profile as any).phone || "");
       const wn = (profile as any).whatsapp_number || "";
       setWhatsappNumber(wn ? maskWhatsApp(wn) : "");
@@ -349,19 +321,10 @@ const PerfilPage = () => {
       setStreet(result.logradouro || "");
       if (result.complemento) setComplement(result.complemento);
       if (result.bairro) setNeighborhoodLocal(result.bairro);
+      if (result.localidade) setCity(result.localidade);
       toast.success("Endereço preenchido pelo CEP!");
     } catch { toast.error("Erro ao buscar CEP."); } finally { setLoadingCep(false); }
   };
-
-  useEffect(() => {
-    const cepDigits = cep.replace(/\D/g, "");
-    if (cepDigits.length !== 8 || !deliveryFeeConfig) { setCalculatedFee(null); setFeeBreakdown(""); return; }
-    let cancelled = false;
-    calculateDeliveryFee(cepDigits, "", deliveryFeeConfig).then((result) => {
-      if (!cancelled) { setCalculatedFee(result.fee); setFeeBreakdown(result.breakdown); }
-    });
-    return () => { cancelled = true; };
-  }, [cep, deliveryFeeConfig]);
 
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
 
@@ -376,12 +339,12 @@ const PerfilPage = () => {
       const { error } = await supabase.from("profiles").upsert({
         user_id: user!.id, cep: cep.replace(/\D/g, "") || null, street: street.trim(),
          number: number.trim(), complement: complement.trim(), reference_point: referencePoint.trim(),
-         neighborhood, 
+         neighborhood,
+         city: city.trim() || null,
          phone: phone.replace(/\D/g, "") ? formatWhatsAppNumber(phone) : null,
          whatsapp_number: whatsappNumber.replace(/\D/g, "") ? formatWhatsAppNumber(whatsappNumber) : null,
        } as any, { onConflict: "user_id" });
       if (error) throw error;
-      if (neighborhood && calculatedFee !== null) setNeighborhood(neighborhood, calculatedFee);
       toast.success("Endereço salvo!");
        queryClient.invalidateQueries({ queryKey: ["my-profile", user?.id] });
        queryClient.invalidateQueries({ queryKey: ["my-profile-checkout", user?.id] });
@@ -795,16 +758,6 @@ const PerfilPage = () => {
               </div>
               <InputField label="Complemento" placeholder="Apto, bloco, casa..." value={complement} onChange={(e) => setComplement(e.target.value)} />
               <InputField label="Bairro" placeholder="Preenchido pelo CEP" value={neighborhood} onChange={(e) => setNeighborhoodLocal(e.target.value)} />
-
-              {calculatedFee !== null && calculatedFee > 0 && (
-                <div className="flex items-center gap-2.5 bg-primary/5 border border-primary/20 rounded-xl px-4 py-3">
-                  <Truck className="h-4 w-4 text-primary shrink-0" />
-                  <div>
-                    <span className="text-sm font-bold text-primary">Taxa estimada: R$ {calculatedFee.toFixed(2)}</span>
-                    {feeBreakdown && <p className="text-[10px] text-muted-foreground">{feeBreakdown}</p>}
-                  </div>
-                </div>
-              )}
 
               <InputField label="Ponto de referência" placeholder="Próximo ao mercado, escola..." value={referencePoint} onChange={(e) => setReferencePoint(e.target.value)} />
               <InputField 
