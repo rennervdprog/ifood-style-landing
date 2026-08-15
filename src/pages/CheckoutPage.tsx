@@ -91,7 +91,7 @@ const CheckoutPage = () => {
     queryFn: async () => {
       const { data } = await supabase
         .from("profiles")
-        .select("street, number, complement, neighborhood, reference_point, phone, whatsapp_number, cep")
+        .select("street, number, complement, neighborhood, reference_point, phone, whatsapp_number, cep, city, state")
         .eq("user_id", user!.id)
         .maybeSingle();
       return data;
