@@ -64,3 +64,7 @@ verify_jwt = false
 # A função valida explicitamente o JWT de usuário no código e aceita somente
 # chamadas internas autenticadas pelo service_role para guest checkout e WhatsApp.
 verify_jwt = false
+
+[functions.quote-delivery]
+# A cotação valida a sessão no código e aceita chamadas internas somente com service_role.
+verify_jwt = false

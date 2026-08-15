@@ -9,8 +9,6 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { formatBRL, addMoney } from "@/lib/utils";
 import { fetchCep, formatCep } from "@/lib/location";
-import { calculateStoreOwnDeliveryFee, DEFAULT_DELIVERY_FEE_CONFIG } from "@/lib/deliveryFee";
-import { useStorePlan } from "@/hooks/useStorePlan";
 import { printPdvReceipt } from "@/lib/thermalPrint";
 import type { CartItem } from "@/pages/pdv/types";
 
@@ -43,7 +41,6 @@ export function PdvDeliveryManualDialog({
   open, onClose, storeId, storeName, storeSettings, cart, subtotal, discountAmount, onSuccess,
 }: Props) {
   const queryClient = useQueryClient();
-  const storePlan = useStorePlan(storeId);
 
   // ── Form ──
   const [name, setName] = useState("");
@@ -64,7 +61,7 @@ export function PdvDeliveryManualDialog({
   const [fee, setFee] = useState<number | null>(null);
   const [feeBreakdown, setFeeBreakdown] = useState<string | null>(null);
   const [calcFee, setCalcFee] = useState(false);
-  const [manualFee, setManualFee] = useState<string>("");
+  const [deliveryQuote, setDeliveryQuote] = useState<any | null>(null);
   const [saving, setSaving] = useState(false);
 
   // Reset ao abrir
@@ -74,7 +71,7 @@ export function PdvDeliveryManualDialog({
       setCep(""); setCity(""); setState(""); setStreet(""); setNumber(""); setNeighborhood("");
       setComplement(""); setReference("");
       setPaymentMethod("dinheiro"); setChangeFor("");
-      setFee(null); setFeeBreakdown(null); setManualFee("");
+      setFee(null); setFeeBreakdown(null); setDeliveryQuote(null);
     }
   }, [open]);
 
@@ -121,78 +118,69 @@ export function PdvDeliveryManualDialog({
     }
   };
 
-  // Recalcula a taxa quando temos CEP e dados da loja
+  // A cotação central é a única fonte de preço e localização da entrega manual.
+  // O PDV não aplica defaults locais, nem override manual de taxa.
   useEffect(() => {
-    const customerCep = cep.replace(/\D/g, "");
-    if (!open || !storeFull) {
-      return;
-    }
-    const s: any = storeFull;
-    const isOwn = s.delivery_mode === "own";
-    const storeCep = (s.address_cep || "").replace(/\D/g, "");
-
-    // Fallback: loja sem CEP, ou cliente sem CEP, ou modo fixo → usa own_delivery_fee diretamente
-    const isFixedMode = (s.delivery_fee_type || "fixed") === "fixed";
-    if (!storeCep || customerCep.length !== 8 || (isOwn && isFixedMode)) {
-      if (isOwn) {
-        const fixed = Number(s.own_delivery_fee || 0);
-        setFee(fixed);
-        setFeeBreakdown(
-          fixed > 0
-            ? `Taxa fixa da loja: ${formatBRL(fixed)}`
-            : "Loja sem taxa configurada — defina manualmente abaixo.",
-        );
-      } else {
-        const cfg = DEFAULT_DELIVERY_FEE_CONFIG;
-        setFee(cfg.city_fee || 0);
-        setFeeBreakdown(`Entrega plataforma: ${formatBRL(cfg.city_fee || 0)}`);
-      }
-      setCalcFee(false);
+    const cepDigits = cep.replace(/\D/g, "");
+    if (!open || !storeId || cepDigits.length !== 8 || !street.trim() || !number.trim() || !neighborhood.trim()) {
+      setFee(null);
+      setFeeBreakdown(null);
+      setDeliveryQuote(null);
       return;
     }
 
     let cancelled = false;
     setCalcFee(true);
-
-    // Opção C: cobra apenas a taxa de entrega (com platform split).
-    // Para lojas no plano fixo (sem comissão), platformDeliverySplit pode ser 0,
-    // mas garantimos pelo menos o split do customerExtra padrão.
-    const platformSplit = isOwn
-      ? (storePlan.platformFeeCustomerExtra ?? (storePlan.platformDeliverySplit > 0 ? storePlan.platformDeliverySplit : 2))
-      : (storePlan.platformDeliverySplit ?? 2);
-
-    if (isOwn) {
-      const ownConfig = {
-        delivery_fee_type: (s.delivery_fee_type || "fixed") as "fixed" | "km",
-        delivery_base_km: Number(s.delivery_base_km || 0),
-        delivery_fee_base: Number(s.delivery_fee_base || 0),
-        delivery_fee_per_km: Number(s.delivery_fee_per_km || 0),
-        own_delivery_fee: Number(s.own_delivery_fee || 0),
-        platform_split: platformSplit,
-        customer_street: street,
-        customer_number: number,
-        customer_neighborhood: neighborhood,
-        customer_coords: null,
-        store_coords: s.latitude && s.longitude ? { lat: Number(s.latitude), lng: Number(s.longitude) } : null,
-      };
-      calculateStoreOwnDeliveryFee(customerCep, storeCep, ownConfig)
-        .then((r) => { if (!cancelled) { setFee(r.fee); setFeeBreakdown(r.breakdown); } })
-        .catch(() => { if (!cancelled) { setFee(null); setFeeBreakdown("Erro ao calcular taxa."); } })
-        .finally(() => { if (!cancelled) setCalcFee(false); });
-    } else {
-      // Loja usa plataforma: usamos fee city padrão. Lojista pode ajustar manual.
-      const cfg = DEFAULT_DELIVERY_FEE_CONFIG;
-      setFee(cfg.city_fee || 0);
-      setFeeBreakdown(`Entrega plataforma: ${formatBRL(cfg.city_fee || 0)}`);
-      setCalcFee(false);
-    }
+    (async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.access_token) throw new Error("session_expired");
+        const response = await fetch("/api/quote-delivery", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+          body: JSON.stringify({
+            store_id: storeId,
+            fulfillment: "delivery",
+            subtotal: Math.max(0, subtotal - discountAmount),
+            address: {
+              street: street.trim(),
+              number: number.trim(),
+              complement: complement.trim() || undefined,
+              neighborhood: neighborhood.trim(),
+              city: city.trim(),
+              state: state.trim().toUpperCase(),
+              cep: cepDigits,
+            },
+          }),
+        });
+        const quote = await response.json().catch(() => null);
+        if (!response.ok || !quote?.ok || !quote?.pricing || !quote?.destination) {
+          throw new Error(quote?.reason || "quote_failed");
+        }
+        if (!cancelled) {
+          const quotedFee = Number(quote.pricing.delivery_fee || 0);
+          setDeliveryQuote(quote);
+          setFee(quotedFee);
+          const base = Number(quote.pricing.store_delivery_base || 0);
+          const platform = Number(quote.pricing.platform_fee_customer || 0);
+          const distance = Number(quote.distance?.km || 0);
+          setFeeBreakdown(`Distância ${distance.toFixed(1)} km · Frete da loja ${formatBRL(base)} · Plataforma ${formatBRL(platform)}`);
+        }
+      } catch {
+        if (!cancelled) {
+          setFee(null);
+          setDeliveryQuote(null);
+          setFeeBreakdown("Não foi possível calcular a entrega para este endereço.");
+        }
+      } finally {
+        if (!cancelled) setCalcFee(false);
+      }
+    })();
 
     return () => { cancelled = true; };
-  }, [cep, street, number, neighborhood, storeFull, open, storePlan.platformFeeCustomerExtra, storePlan.platformDeliverySplit]);
+  }, [open, storeId, cep, street, number, complement, neighborhood, city, state, subtotal, discountAmount]);
 
-  // Permite override manual da taxa (lojista pode digitar)
-  const manualFeeNum = manualFee.trim() ? Number(manualFee.replace(",", ".")) : null;
-  const deliveryFee = manualFeeNum !== null && !Number.isNaN(manualFeeNum) ? manualFeeNum : (fee ?? 0);
+  const deliveryFee = fee ?? 0;
   const finalTotal = Math.max(0, addMoney(subtotal, deliveryFee, -discountAmount));
 
   const canSave = useMemo(() => {
@@ -201,9 +189,11 @@ export function PdvDeliveryManualDialog({
       name.trim().length >= 2 &&
       street.trim().length > 0 &&
       number.trim().length > 0 &&
-      pin.length === 4
+      pin.length === 4 &&
+      !!deliveryQuote &&
+      fee !== null
     );
-  }, [cart.length, name, street, number, pin]);
+  }, [cart.length, name, street, number, pin, deliveryQuote, fee]);
 
   const handleConfirm = async () => {
     if (!canSave || saving) return;
@@ -221,21 +211,15 @@ export function PdvDeliveryManualDialog({
         return;
       }
 
-      const { data: resolvedAddress, error: addressError } = await supabase.functions.invoke("resolve-delivery-address", {
-        body: {
-          street: street.trim(),
-          number: number.trim(),
-          complement: complement.trim() || undefined,
-          neighborhood: neighborhood.trim(),
-          city: city.trim(),
-          state: state.trim().toUpperCase(),
-          cep: cepDigits,
-        },
-      });
-      if (addressError || !resolvedAddress?.ok || !Number.isFinite(Number(resolvedAddress.lat)) || !Number.isFinite(Number(resolvedAddress.lng))) {
-        toast.error("Não foi possível confirmar a localização deste endereço. Corrija o CEP e tente novamente.");
+      const resolvedAddress = deliveryQuote?.destination;
+      const quotePricing = deliveryQuote?.pricing;
+      if (!resolvedAddress || !quotePricing || !Number.isFinite(Number(resolvedAddress.lat)) || !Number.isFinite(Number(resolvedAddress.lng))) {
+        toast.error("A cotação de entrega expirou. Aguarde o cálculo concluir e tente novamente.");
         return;
       }
+      const quotedDeliveryFee = Number(quotePricing.delivery_fee || 0);
+      const quotedStoreAbsorbedFee = Number(quotePricing.platform_fee_store_absorbed || 0);
+      const quotedFinalTotal = Math.max(0, addMoney(subtotal, quotedDeliveryFee, -discountAmount));
 
       const { data: order, error: oe } = await supabase
         .from("orders")
@@ -244,10 +228,11 @@ export function PdvDeliveryManualDialog({
           client_id: null,
           order_source: "manual",
           subtotal,
-          delivery_fee: deliveryFee,
+          delivery_fee: quotedDeliveryFee,
+          delivery_fee_absorbed_by_store: quotedStoreAbsorbedFee,
           pdv_discount: discountAmount,
-          commission_rate: 0, // Opção C: sem comissão em pedidos manuais
-          total_price: finalTotal,
+          commission_rate: 0, // Calculada no banco conforme o plano ativo
+          total_price: quotedFinalTotal,
           app_fee: 0,
           payment_method: paymentMethod,
           neighborhood: resolvedAddress.neighborhood || neighborhood,
@@ -262,10 +247,20 @@ export function PdvDeliveryManualDialog({
           status: "preparando",
           delivery_pin: pin,
           metadata: {
-            manual_customer: {
-              name: name.trim(),
-              phone: phone.trim() || null,
-              pin,
+            manual_customer: { name: name.trim(), phone: phone.trim() || null, pin },
+            delivery_quote: {
+              policy_version: deliveryQuote?.policy_version || 1,
+              distance_km: Number(deliveryQuote?.distance?.km || 0),
+              distance_source: deliveryQuote?.distance?.source || "haversine",
+              max_delivery_km: deliveryQuote?.distance?.max_km ?? null,
+              destination_precision: resolvedAddress?.precision || "cep",
+              store_delivery_base: Number(quotePricing?.store_delivery_base || 0),
+              platform_fee_customer: Number(quotePricing?.platform_fee_customer || 0),
+              platform_fee_store_absorbed: quotedStoreAbsorbedFee,
+              delivery_fee: quotedDeliveryFee,
+              vip_override_applied: quotePricing?.vip_override_applied ?? null,
+              split_mode: quotePricing?.split_mode ?? null,
+              plan_type: quotePricing?.plan_type ?? null,
             },
           },
         } as any)
@@ -473,16 +468,7 @@ export function PdvDeliveryManualDialog({
                 {feeBreakdown && (
                   <p className="text-[11px] text-muted-foreground mt-1">{feeBreakdown}</p>
                 )}
-                <div className="mt-2 flex items-center gap-2">
-                  <Label className="text-[11px] text-muted-foreground whitespace-nowrap">Ajustar taxa (R$)</Label>
-                  <Input
-                    value={manualFee}
-                    onChange={(e) => setManualFee(e.target.value)}
-                    placeholder={fee !== null ? fee.toFixed(2) : "0.00"}
-                    inputMode="decimal"
-                    className="h-8 text-sm"
-                  />
-                </div>
+                <p className="mt-2 text-[11px] text-muted-foreground">A taxa é definida pela cotação central da loja e não pode ser alterada manualmente neste pedido.</p>
               </div>
             </section>
 

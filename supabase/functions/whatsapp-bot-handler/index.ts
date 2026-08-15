@@ -439,6 +439,37 @@ const showConfirmation = async (admin: any, storeId: string, phone: string, sess
   await sendText(storeId, phone, msg);
 };
 
+const quoteBotDelivery = async (storeId: string, session: Session) => {
+  const address = session.context;
+  const subtotal = session.cart.reduce((sum, item) => sum + item.unit_price * item.quantity, 0);
+  const base = Deno.env.get("SUPABASE_URL")!;
+  const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  try {
+    const response = await fetch(`${base}/functions/v1/quote-delivery`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", apikey: key, Authorization: `Bearer ${key}` },
+      body: JSON.stringify({
+        store_id: storeId,
+        fulfillment: "delivery",
+        subtotal,
+        address: {
+          street: address.street,
+          number: address.number,
+          complement: address.reference || undefined,
+          neighborhood: address.neighborhood,
+          city: address.city,
+          state: address.state,
+          cep: address.cep,
+        },
+      }),
+    });
+    const quote = await response.json().catch(() => null);
+    return response.ok ? quote : { ok: false, reason: quote?.reason || "delivery_quote_failed" };
+  } catch {
+    return { ok: false, reason: "delivery_quote_unavailable" };
+  }
+};
+
 const pixKeyLabel = (t?: string | null) =>
   ({ cpf: "CPF", cnpj: "CNPJ", email: "E-mail", phone: "Telefone", random: "Chave aleatória" } as any)[t || ""] || "Chave";
 
@@ -447,6 +478,7 @@ const startPixDireto = async (admin: any, storeId: string, phone: string, sessio
   const deliveryFee = Number(session.context.delivery_fee || 0);
   const total = subtotal + deliveryFee;
   const isDelivery = session.context.delivery_type === "delivery";
+  const deliveryQuote = session.context.delivery_quote || null;
   const addr = session.context;
   const addressString = isDelivery
     ? [addr.street, addr.number, addr.reference ? `Ref: ${addr.reference}` : ""].filter(Boolean).join(", ")
@@ -462,6 +494,7 @@ const startPixDireto = async (admin: any, storeId: string, phone: string, sessio
     status: "aguardando_comprovante",
     subtotal,
     delivery_fee: deliveryFee,
+    delivery_fee_absorbed_by_store: Number(deliveryQuote?.pricing?.platform_fee_store_absorbed || 0),
     total_price: total,
     payment_method: "pix_direto",
     neighborhood: isDelivery ? (session.context.resolved_address?.neighborhood || addr.neighborhood || "não informado") : "RETIRADA",
@@ -486,6 +519,20 @@ const startPixDireto = async (admin: any, storeId: string, phone: string, sessio
       address_number: addr.number || null,
       address_neighborhood: addr.neighborhood || null,
       address_reference: addr.reference || null,
+      delivery_quote: deliveryQuote ? {
+        policy_version: deliveryQuote.policy_version || 1,
+        distance_km: Number(deliveryQuote.distance?.km || 0),
+        distance_source: deliveryQuote.distance?.source || "haversine",
+        max_delivery_km: deliveryQuote.distance?.max_km ?? null,
+        destination_precision: addr.resolved_address?.precision || "cep",
+        store_delivery_base: Number(deliveryQuote.pricing?.store_delivery_base || 0),
+        platform_fee_customer: Number(deliveryQuote.pricing?.platform_fee_customer || 0),
+        platform_fee_store_absorbed: Number(deliveryQuote.pricing?.platform_fee_store_absorbed || 0),
+        delivery_fee: deliveryFee,
+        vip_override_applied: deliveryQuote.pricing?.vip_override_applied ?? null,
+        split_mode: deliveryQuote.pricing?.split_mode ?? null,
+        plan_type: deliveryQuote.pricing?.plan_type ?? null,
+      } : null,
     },
   }).select("id").single();
   if (error || !order) {
@@ -611,6 +658,7 @@ const createOrder = async (admin: any, storeId: string, phone: string, session: 
   const deliveryFee = Number(session.context.delivery_fee || 0);
   const total = subtotal + deliveryFee;
   const isDelivery = session.context.delivery_type === "delivery";
+  const deliveryQuote = session.context.delivery_quote || null;
   const customerName = String(session.context.customer_name || "").trim();
   const addr = session.context;
   const addressString = isDelivery
@@ -626,10 +674,16 @@ const createOrder = async (admin: any, storeId: string, phone: string, session: 
     status: "pendente",
     subtotal,
     delivery_fee: deliveryFee,
+    delivery_fee_absorbed_by_store: Number(deliveryQuote?.pricing?.platform_fee_store_absorbed || 0),
     total_price: total,
     payment_method: session.context.payment_method,
-    neighborhood: isDelivery ? (session.context.neighborhood || "não informado") : "RETIRADA",
-    address_details: addressString,
+    neighborhood: isDelivery ? (session.context.resolved_address?.neighborhood || session.context.neighborhood || "não informado") : "RETIRADA",
+    address_details: isDelivery ? (session.context.resolved_address?.normalized_address || addressString) : addressString,
+    delivery_cep: isDelivery ? (session.context.resolved_address?.cep || session.context.cep || null) : null,
+    delivery_city: isDelivery ? (session.context.resolved_address?.city || session.context.city || null) : null,
+    delivery_state: isDelivery ? (session.context.resolved_address?.state || session.context.state || null) : null,
+    client_lat: isDelivery ? (session.context.resolved_address?.lat ?? null) : null,
+    client_lng: isDelivery ? (session.context.resolved_address?.lng ?? null) : null,
     needs_change: !!session.context.needs_change,
     change_for: Number(session.context.change_for || 0),
     is_guest: true,
@@ -643,6 +697,20 @@ const createOrder = async (admin: any, storeId: string, phone: string, session: 
       address_number: addr.number || null,
       address_neighborhood: addr.neighborhood || null,
       address_reference: addr.reference || null,
+      delivery_quote: deliveryQuote ? {
+        policy_version: deliveryQuote.policy_version || 1,
+        distance_km: Number(deliveryQuote.distance?.km || 0),
+        distance_source: deliveryQuote.distance?.source || "haversine",
+        max_delivery_km: deliveryQuote.distance?.max_km ?? null,
+        destination_precision: addr.resolved_address?.precision || "cep",
+        store_delivery_base: Number(deliveryQuote.pricing?.store_delivery_base || 0),
+        platform_fee_customer: Number(deliveryQuote.pricing?.platform_fee_customer || 0),
+        platform_fee_store_absorbed: Number(deliveryQuote.pricing?.platform_fee_store_absorbed || 0),
+        delivery_fee: deliveryFee,
+        vip_override_applied: deliveryQuote.pricing?.vip_override_applied ?? null,
+        split_mode: deliveryQuote.pricing?.split_mode ?? null,
+        plan_type: deliveryQuote.pricing?.plan_type ?? null,
+      } : null,
     },
   }).select("id, order_number").single();
   if (error || !order) {
@@ -1057,40 +1125,24 @@ Deno.serve(async (req) => {
       case "awaiting_reference": {
         const ref = text.trim();
         session.context.reference = (ref === "-" || ref === "") ? "" : ref.slice(0, 120);
-        const resolverBase = Deno.env.get("SUPABASE_URL")!;
-        const resolverKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-        try {
-          const resolverResponse = await fetch(`${resolverBase}/functions/v1/resolve-delivery-address`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json", apikey: resolverKey, Authorization: `Bearer ${resolverKey}` },
-            body: JSON.stringify({
-              street: session.context.street,
-              number: session.context.number,
-              complement: session.context.reference || undefined,
-              neighborhood: session.context.neighborhood,
-              city: session.context.city,
-              state: session.context.state,
-              cep: session.context.cep,
-            }),
-          });
-          const resolved = await resolverResponse.json().catch(() => null);
-          if (!resolverResponse.ok || !resolved?.ok || !Number.isFinite(Number(resolved.lat)) || !Number.isFinite(Number(resolved.lng))) throw new Error("address_not_resolved");
-          session.context.resolved_address = resolved;
-        } catch {
-          await sendText(store_id, phone, "Não consegui confirmar a localização desse endereço. Vou pedir o CEP novamente.");
+        const quote = await quoteBotDelivery(store_id, session);
+        if (!quote?.ok || !quote?.destination || !quote?.pricing) {
+          const message = quote?.reason === "outside_delivery_area"
+            ? "Esse endereço está fora da área de entrega da loja. Vou pedir o CEP novamente."
+            : "Não consegui confirmar a entrega nesse endereço. Vou pedir o CEP novamente.";
+          await sendText(store_id, phone, message);
           await askCep(admin, store_id, phone, session);
-          return json({ handled: true, action: "address_not_resolved" });
+          return json({ handled: true, action: "delivery_quote_failed" });
         }
-        // Cálculo simples: taxa fixa da loja + taxa da plataforma (override por loja VIP se houver).
-        const PLATFORM_FEE = store?.platform_delivery_split_override != null
-          ? Number(store.platform_delivery_split_override)
-          : 0.99;
-        const flat =
-          Number(store?.own_delivery_fee || 0) ||
-          Number(store?.delivery_fee || 0) ||
-          Number(store?.delivery_fee_base || 0);
-        session.context.delivery_fee = Math.round((flat + PLATFORM_FEE) * 100) / 100;
-        await sendDeliveryFeeInfo(store_id, phone, flat, PLATFORM_FEE);
+        session.context.resolved_address = quote.destination;
+        session.context.delivery_quote = quote;
+        session.context.delivery_fee = Number(quote.pricing.delivery_fee || 0);
+        await sendDeliveryFeeInfo(
+          store_id,
+          phone,
+          Number(quote.pricing.store_delivery_base || 0),
+          Number(quote.pricing.platform_fee_customer || 0),
+        );
         const baseMethods = cfg.accepted_payment_methods || ["pix", "cash", "card"];
         const withPix = pixDiretoOn && !baseMethods.includes("pix") ? ["pix", ...baseMethods] : baseMethods;
         const methods = withPix.filter((m: string) => {
