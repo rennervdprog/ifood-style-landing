@@ -120,6 +120,10 @@ type Geo = { lat: number; lng: number; precision: "address" | "street" | "cep" }
 
 async function nominatim(params: Record<string, string>, precision: Geo["precision"]): Promise<Geo | null> {
   const qs = new URLSearchParams({ format: "jsonv2", limit: "1", countrycodes: "br", ...params });
+  const key = `geo|v2|${precision}|${qs.toString()}`;
+  const cached = await cacheGet(key);
+  if (cached) return { lat: Number(cached.lat), lng: Number(cached.lng), precision };
+  await rateLimit();
   return await withTimeout(async (signal) => {
     const r = await fetch(`https://nominatim.openstreetmap.org/search?${qs.toString()}`, {
       signal,
@@ -132,11 +136,19 @@ async function nominatim(params: Record<string, string>, precision: Geo["precisi
     const lat = Number(hit.lat);
     const lng = Number(hit.lon);
     if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+    await cacheSet(key, lat, lng, `nominatim:${precision}`);
     return { lat, lng, precision };
   });
 }
 
 Deno.serve(async (req) => {
+  const corsHeaders = cors(req.headers.get("Origin"));
+  const json = (body: ResolveResponse, status = 200) =>
+    new Response(JSON.stringify(body), {
+      status,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json({ ok: false, reason: "method_not_allowed" }, 405);
 
@@ -205,6 +217,7 @@ Deno.serve(async (req) => {
     cep,
     city,
     state,
+    neighborhood,
     lat: geo.lat,
     lng: geo.lng,
     precision: geo.precision,
