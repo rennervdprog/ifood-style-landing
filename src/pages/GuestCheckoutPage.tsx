@@ -154,6 +154,9 @@ const GuestCheckoutPage = () => {
 
   const matchedFee = isPickup ? 0 : Number(deliveryQuote?.pricing.delivery_fee || 0);
   const total = useMemo(() => addMoney(subtotal, matchedFee), [subtotal, matchedFee]);
+  const quoteReady = isPickup || isSuccessfulDeliveryQuote(deliveryQuote);
+  const quoteNeedsAddress = !isPickup && !deliveryAddress;
+  const quoteFailureMessage = deliveryQuoteFailure ? deliveryQuoteFailureMessage(deliveryQuoteFailure) : null;
   const quoteBreakdown = deliveryQuoteBreakdown(deliveryQuote);
 
   const handleCepChange = (v: string) => {
@@ -533,14 +536,14 @@ const GuestCheckoutPage = () => {
               <span className="text-muted-foreground flex items-center gap-1.5">
                 {isPickup ? <><Store className="h-3 w-3" /> Retirada</> : <>Entrega</>}
               </span>
-              <span className="font-medium">{isPickup ? "Grátis" : (calculatingFee ? "Calculando..." : (isSuccessfulDeliveryQuote(deliveryQuote) ? formatBRL(matchedFee) : "—"))}</span>
+              <span className="font-medium">{isPickup ? "Grátis" : (calculatingFee ? "Calculando..." : (quoteNeedsAddress ? "Informe o endereço" : (quoteFailureMessage ? "Indisponível" : (quoteReady ? formatBRL(matchedFee) : "A calcular"))))}</span>
             </div>
             {!isPickup && isSuccessfulDeliveryQuote(deliveryQuote) && (
               <div className="text-[11px] text-primary flex items-center gap-1"><MapPin className="h-3 w-3" /> Endereço confirmado · {deliveryQuote.distance.km.toFixed(1)} km da loja</div>
             )}
             {!isPickup && quoteBreakdown && <p className="text-[11px] text-muted-foreground">{quoteBreakdown}</p>}
-            {!isPickup && deliveryQuoteFailure && <p className="text-[11px] text-destructive">{deliveryQuoteFailureMessage(deliveryQuoteFailure)}</p>}
-            <div className="flex justify-between text-base font-bold pt-2 border-t border-border"><span>Total</span><span className="text-primary">{formatBRL(total)}</span></div>
+            {!isPickup && quoteFailureMessage && <p className="text-[11px] text-destructive">{quoteFailureMessage}</p>}
+            <div className="flex justify-between text-base font-bold pt-2 border-t border-border"><span>Total</span><span className="text-primary">{quoteReady ? formatBRL(total) : "A calcular"}</span></div>
           </div>
         </section>
 
@@ -553,7 +556,7 @@ const GuestCheckoutPage = () => {
       <div className="native-hide-while-keyboard fixed bottom-0 inset-x-0 bg-card border-t border-border p-4">
         <button onClick={handleConfirm} disabled={submitting || (!isPickup && (calculatingFee || !isSuccessfulDeliveryQuote(deliveryQuote)))}
           className="w-full h-12 bg-primary text-primary-foreground font-bold rounded-xl active:scale-[0.98] disabled:opacity-50">
-          {submitting ? "Enviando..." : `Confirmar pedido — ${formatBRL(total)}`}
+          {submitting ? "Enviando..." : !isPickup && calculatingFee ? "Calculando entrega..." : !isPickup && !quoteReady ? (quoteNeedsAddress ? "Informe o endereço" : "Revise o endereço") : `Confirmar pedido — ${formatBRL(total)}`}
         </button>
       </div>
     </div>

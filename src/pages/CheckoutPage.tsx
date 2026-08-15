@@ -306,6 +306,9 @@ const CheckoutPage = () => {
     () => quoteRequestKey(storeId, subtotal, deliveryAddressInput),
     [storeId, subtotal, deliveryAddressInput],
   );
+  const quoteReady = isPickup || isSuccessfulDeliveryQuote(deliveryQuote);
+  const quoteNeedsAddress = !isPickup && !deliveryAddressInput;
+  const quoteFailureMessage = deliveryQuoteFailure ? deliveryQuoteFailureMessage(deliveryQuoteFailure) : null;
 
   useEffect(() => {
     if (isPickup) {
@@ -1374,22 +1377,31 @@ const CheckoutPage = () => {
               )}
 
               {!isPickup && (
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground flex items-center gap-1">
-                  <Truck className="h-3 w-3" /> Taxa de entrega
-                  <WhyThisCharge title="Como é calculada a taxa de entrega">
-                    <p>A taxa de entrega cobre o trabalho do entregador (distância e tempo) e inclui <strong>R$ 2,00 da plataforma ItaSuper</strong> por pedido entregue, usados para manter o app, suporte e rastreio em tempo real.</p>
-                    <p className="mt-2">Em pedidos para retirada na loja, não há taxa de entrega.</p>
-                  </WhyThisCharge>
-                </span>
-                <span className={`font-semibold ${(couponType === "free_shipping" || freeDeliveryByThreshold) ? "text-green-600 line-through" : "text-foreground"}`}>
-                  {calculatingFee ? (
-                    <span className="inline-block h-3.5 w-16 rounded bg-muted animate-pulse align-middle" />
-                  ) : (
-                    formatBRL(activeDeliveryFee)
-                  )}
-                </span>
-              </div>
+                <div className="space-y-1">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground flex items-center gap-1">
+                      <Truck className="h-3 w-3" /> Taxa de entrega
+                      <WhyThisCharge title="Como é calculada a taxa de entrega">
+                        <p>A taxa segue a configuração da loja: valor fixo ou por quilômetro, além da parcela operacional conforme a opção escolhida pelo lojista.</p>
+                        <p className="mt-2">A parcela operacional pode ser paga pelo cliente, dividida com a loja ou absorvida integralmente pela loja. Em retirada, não há taxa de entrega.</p>
+                      </WhyThisCharge>
+                    </span>
+                    <span className={`font-semibold ${(couponType === "free_shipping" || freeDeliveryByThreshold) ? "text-green-600 line-through" : "text-foreground"}`}>
+                      {calculatingFee ? (
+                        <span className="inline-flex items-center gap-1 text-muted-foreground"><Loader2 className="h-3.5 w-3.5 animate-spin" /> Calculando</span>
+                      ) : quoteNeedsAddress ? (
+                        <span className="text-muted-foreground">Informe o endereço</span>
+                      ) : quoteFailureMessage ? (
+                        <span className="text-destructive">Indisponível</span>
+                      ) : isSuccessfulDeliveryQuote(deliveryQuote) ? (
+                        formatBRL(activeDeliveryFee)
+                      ) : (
+                        <span className="text-muted-foreground">A calcular</span>
+                      )}
+                    </span>
+                  </div>
+                  {quoteFailureMessage && <p className="text-[11px] text-destructive pl-4">{quoteFailureMessage}</p>}
+                </div>
               )}
 
               {!isPickup && freeDeliveryByThreshold && (
@@ -1435,7 +1447,7 @@ const CheckoutPage = () => {
         {/* Total */}
         <div className="flex items-center justify-between py-1" aria-live="polite" aria-atomic="true">
           <span className="text-base font-bold text-foreground">Total</span>
-          <span className="text-2xl font-black text-primary" aria-label={`Total ${formatBRL(finalTotal)}`}>{formatBRL(finalTotal)}</span>
+          <span className="text-2xl font-black text-primary" aria-label={quoteReady ? `Total ${formatBRL(finalTotal)}` : "Total será calculado após validar a entrega"}>{quoteReady ? formatBRL(finalTotal) : "A calcular"}</span>
         </div>
 
         {belowMinimum && (
@@ -1484,6 +1496,14 @@ const CheckoutPage = () => {
                 {usingGpsDelivery ? "Completar endereço" : "Ativar Localização"}
               </>
             )}
+          </button>
+        ) : !isPickup && calculatingFee ? (
+          <button disabled className="w-full bg-muted text-muted-foreground font-bold py-4 rounded-2xl text-base flex items-center justify-center gap-2 cursor-not-allowed">
+            <Loader2 className="w-5 h-5 animate-spin" /> Calculando entrega...
+          </button>
+        ) : !isPickup && !quoteReady ? (
+          <button onClick={() => setShowAddressModal(true)} className="w-full bg-primary text-primary-foreground font-bold py-4 rounded-2xl active:scale-[0.98] transition-all shadow-lg shadow-primary/25 text-base flex items-center justify-center gap-2">
+            <MapPin className="w-5 h-5" /> Revisar endereço de entrega
           </button>
         ) : (
           <button
