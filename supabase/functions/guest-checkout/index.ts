@@ -18,6 +18,7 @@ function normalizePhoneBR(input: unknown): string | null {
 }
 
 interface Payload {
+  quote_only?: boolean;
   phone: string;
   name: string;
   store_id: string;
@@ -28,7 +29,7 @@ interface Payload {
   commission_rate?: number;
   payment_method: string;
   neighborhood: string;
-  address: { label?: string; cep?: string | null; street: string; number: string; complement?: string | null; reference_point?: string | null } | null;
+  address: { label?: string; cep?: string | null; street: string; number: string; complement?: string | null; reference_point?: string | null; city?: string | null; state?: string | null } | null;
   is_pickup: boolean;
   needs_change?: boolean;
   change_for?: number;
@@ -56,6 +57,8 @@ async function quoteGuestDelivery(p: Payload) {
           number: a.number,
           complement: a.complement,
           neighborhood: p.neighborhood,
+          city: a.city || "",
+          state: a.state || "",
           cep: a.cep,
         },
       }),
@@ -98,6 +101,13 @@ Deno.serve(async (req) => {
     const store = storeRes.data;
     const existing = existingRes.data;
     if (!store || !(store as any).guest_checkout_enabled) return json({ error: "guest_not_enabled" }, 403);
+
+    // Prévia sem efeitos: a tela convidada usa exatamente a mesma cotação que
+    // será revalidada abaixo antes do INSERT definitivo.
+    if (p.quote_only === true) {
+      const quote = await quoteGuestDelivery(p);
+      return json(quote);
+    }
 
     // Se o método for pix_direto, valida que a loja tem chave configurada
     const isPixDireto = p.payment_method === "pix_direto";

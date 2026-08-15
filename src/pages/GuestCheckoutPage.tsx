@@ -10,7 +10,7 @@ import { ArrowLeft, MapPin, CreditCard, Banknote, QrCode, Search, Loader2, Shopp
 import { formatCep, fetchCep } from "@/lib/location";
 import { maskWhatsApp } from "@/lib/whatsapp";
 import { formatBRL, addMoney } from "@/lib/utils";
-import { calculateStoreOwnDeliveryFee, calculateDeliveryFee, DEFAULT_DELIVERY_FEE_CONFIG, type DeliveryFeeConfig } from "@/lib/deliveryFee";
+import { asDeliveryAddress, deliveryQuoteBreakdown, deliveryQuoteFailureMessage, isSuccessfulDeliveryQuote, quoteErrorFromUnknown, quoteRequestKey, type DeliveryQuote, type DeliveryQuoteFailure } from "@/lib/deliveryQuote";
 
 const BASE_PAY_METHODS = [
   { id: "pix_machine", label: "PIX na maquininha", icon: QrCode },
@@ -67,99 +67,94 @@ const GuestCheckoutPage = () => {
     }
   }, [store, navigate]);
 
-  // Split efetivo da plataforma para esta loja (respeita override do plano).
-  // Guest (anon) não tem acesso a store_plans/admin_settings via RLS, então
-  // usamos uma RPC SECURITY DEFINER dedicada.
-  const { data: platformInfo } = useQuery({
-    queryKey: ["guest-platform-split", storeId],
-    queryFn: async () => {
-      const { data } = await (supabase as any).rpc("get_store_platform_split", { _store_id: storeId });
-      const row = Array.isArray(data) ? data[0] : data;
-      return row as {
-        plan_type: string | null;
-        platform_delivery_split_override: number | null;
-        platform_fee_split: "cliente" | "meio_a_meio" | "lojista" | null;
-        delivery_mode: string | null;
-      } | null;
-    },
-    enabled: !!storeId,
-    staleTime: 1000 * 60 * 5,
-  });
-
-  const [calculatedFee, setCalculatedFee] = useState<number | null>(null);
+  const [deliveryQuote, setDeliveryQuote] = useState<DeliveryQuote | null>(null);
+  const [deliveryQuoteFailure, setDeliveryQuoteFailure] = useState<DeliveryQuoteFailure | null>(null);
   const [calculatingFee, setCalculatingFee] = useState(false);
 
-  const isOwnDelivery = ((store as any)?.delivery_mode || "platform") === "own";
-  // Anon não tem RLS em admin_settings; usamos default e cobrimos platform_split
-  // via RPC get_store_platform_split (respeita override do lojista).
-  const config = DEFAULT_DELIVERY_FEE_CONFIG;
-  // Split efetivo: override do plano da loja > default (0,99). Autonomia = 0.
-  const isAutonomy = platformInfo?.plan_type === "autonomy";
-  const baseSplit = isAutonomy
-    ? 0
-    : (Number(platformInfo?.platform_delivery_split_override ?? 0.99));
-  const splitMode = (platformInfo?.platform_fee_split || "cliente") as "cliente" | "meio_a_meio" | "lojista";
-  const platformCustomerExtra = isOwnDelivery
-    ? (splitMode === "lojista"
-        ? 0
-        : splitMode === "meio_a_meio"
-          ? Math.round((baseSplit / 2) * 100) / 100
-          : baseSplit)
-    : 0;
-
-  // Fee: mesma lógica do checkout normal
-  //  - entrega própria (own): calculateStoreOwnDeliveryFee (fixa OU km) + platformCustomerExtra
-  //  - entrega da plataforma: calculateDeliveryFee (config global city_fee / rural)
-  // Debounce dos inputs de endereço pra não geocodificar/rotear a cada tecla.
-  const [debouncedAddr, setDebouncedAddr] = useState({ cep, street, number, neighborhood });
-  useEffect(() => {
-    const t = setTimeout(() => setDebouncedAddr({ cep, street, number, neighborhood }), 400);
-    return () => clearTimeout(t);
-  }, [cep, street, number, neighborhood]);
+  const deliveryAddress = useMemo(() => asDeliveryAddress({
+    street,
+    number,
+    complement,
+    neighborhood,
+    cep,
+  }), [street, number, complement, neighborhood, cep]);
+  const deliveryQuoteInputKey = useMemo(
+    () => quoteRequestKey(storeId, subtotal, deliveryAddress),
+    [storeId, subtotal, deliveryAddress],
+  );
 
   useEffect(() => {
-    const s: any = store;
-    if (!s) return;
-    if (isPickup) { setCalculatedFee(0); setCalculatingFee(false); return; }
-    const customerCep = debouncedAddr.cep.replace(/\D/g, "");
-    const storeCep = (s.address_cep || "").replace(/\D/g, "");
+    const digits = phone.replace(/\D/g, "");
+    if (isPickup) {
+      setDeliveryQuote(null);
+      setDeliveryQuoteFailure(null);
+      setCalculatingFee(false);
+      return;
+    }
+    if (!storeId || !deliveryAddress || digits.length < 10 || name.trim().length < 2 || !consent || items.length === 0) {
+      setDeliveryQuote(null);
+      setDeliveryQuoteFailure(null);
+      setCalculatingFee(false);
+      return;
+    }
+
     let cancelled = false;
     setCalculatingFee(true);
-    const promise = isOwnDelivery
-      ? (() => {
-          const feeType = (s.delivery_fee_type as "fixed" | "km") || "fixed";
-          if (feeType === "km" && (!customerCep || !debouncedAddr.street.trim())) {
-            return Promise.resolve<{ fee: number } | null>(null);
-          }
-          return calculateStoreOwnDeliveryFee(customerCep, storeCep, {
-            delivery_fee_type: feeType,
-            delivery_base_km: Number(s.delivery_base_km || 0),
-            delivery_fee_base: Number(s.delivery_fee_base || 0),
-            delivery_fee_per_km: Number(s.delivery_fee_per_km || 0),
-            own_delivery_fee: Number(s.own_delivery_fee || 0),
-            platform_split: platformCustomerExtra,
-            customer_street: debouncedAddr.street || null,
-            customer_number: debouncedAddr.number || null,
-            customer_neighborhood: debouncedAddr.neighborhood || null,
-            store_coords: s.latitude && s.longitude ? { lat: Number(s.latitude), lng: Number(s.longitude) } : null,
-          });
-        })()
-      : (customerCep
-          ? calculateDeliveryFee(customerCep, storeCep, config)
-          : Promise.resolve<{ fee: number } | null>(null));
-    Promise.resolve(promise)
-      .then((r) => { if (!cancelled) setCalculatedFee(r ? r.fee : null); })
-      .catch(() => { if (!cancelled) setCalculatedFee(null); })
-      .finally(() => { if (!cancelled) setCalculatingFee(false); });
+    setDeliveryQuote(null);
+    setDeliveryQuoteFailure(null);
+
+    (async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke("guest-checkout", {
+          body: {
+            quote_only: true,
+            phone: digits,
+            name: name.trim(),
+            store_id: storeId,
+            items: items.map((it) => ({ product_id: it.id, quantity: it.quantity, unit_price: it.price })),
+            subtotal,
+            delivery_fee: 0,
+            total_price: subtotal,
+            payment_method: "preview",
+            neighborhood: deliveryAddress.neighborhood,
+            address: {
+              label: "Casa",
+              cep: deliveryAddress.cep,
+              street: deliveryAddress.street,
+              number: deliveryAddress.number,
+              complement: deliveryAddress.complement || null,
+              reference_point: reference.trim() || null,
+              city: deliveryAddress.city || null,
+              state: deliveryAddress.state || null,
+            },
+            is_pickup: false,
+            consent: true,
+          },
+        });
+        if (cancelled) return;
+        if (error || !isSuccessfulDeliveryQuote(data as any)) {
+          setDeliveryQuote(null);
+          setDeliveryQuoteFailure((data && typeof data === "object" ? data : quoteErrorFromUnknown(error)) as DeliveryQuoteFailure);
+          return;
+        }
+        setDeliveryQuote(data as DeliveryQuote);
+        setDeliveryQuoteFailure(null);
+      } catch (error) {
+        if (!cancelled) {
+          setDeliveryQuote(null);
+          setDeliveryQuoteFailure(quoteErrorFromUnknown(error));
+        }
+      } finally {
+        if (!cancelled) setCalculatingFee(false);
+      }
+    })();
+
     return () => { cancelled = true; };
-  }, [store, debouncedAddr, platformCustomerExtra, isOwnDelivery, config, isPickup]);
+  }, [deliveryQuoteInputKey, storeId, subtotal, deliveryAddress, phone, name, consent, items, isPickup, reference]);
 
-  // Frete grátis por valor mínimo (loja absorve) — igual checkout normal
-  const storeFreeThreshold = Number((store as any)?.free_delivery_threshold || 0);
-  const freeDeliveryByThreshold = !isPickup && storeFreeThreshold > 0 && subtotal >= storeFreeThreshold;
-  const matchedFee = isPickup ? 0 : (freeDeliveryByThreshold ? 0 : (calculatedFee ?? 0));
-
+  const matchedFee = isPickup ? 0 : Number(deliveryQuote?.pricing.delivery_fee || 0);
   const total = useMemo(() => addMoney(subtotal, matchedFee), [subtotal, matchedFee]);
+  const quoteBreakdown = deliveryQuoteBreakdown(deliveryQuote);
 
   const handleCepChange = (v: string) => {
     const formatted = formatCep(v);
@@ -228,6 +223,10 @@ const GuestCheckoutPage = () => {
       toast.error("Preencha rua, número e bairro."); return;
     }
     if (!payment) { toast.error("Escolha a forma de pagamento."); return; }
+    if (!isPickup && (calculatingFee || !isSuccessfulDeliveryQuote(deliveryQuote))) {
+      toast.error("Não foi possível confirmar a entrega", { description: deliveryQuoteFailureMessage(deliveryQuoteFailure) });
+      return;
+    }
     if (!consent) { toast.error("Aceite os termos para continuar."); return; }
     if (payment === "dinheiro" && needsChange && !changeFor) {
       toast.error("Informe o valor do troco."); return;
@@ -534,8 +533,13 @@ const GuestCheckoutPage = () => {
               <span className="text-muted-foreground flex items-center gap-1.5">
                 {isPickup ? <><Store className="h-3 w-3" /> Retirada</> : <>Entrega</>}
               </span>
-              <span className="font-medium">{isPickup ? "Grátis" : (matchedFee > 0 ? formatBRL(matchedFee) : (calculatingFee ? "..." : "—"))}</span>
+              <span className="font-medium">{isPickup ? "Grátis" : (calculatingFee ? "Calculando..." : (isSuccessfulDeliveryQuote(deliveryQuote) ? formatBRL(matchedFee) : "—"))}</span>
             </div>
+            {!isPickup && isSuccessfulDeliveryQuote(deliveryQuote) && (
+              <div className="text-[11px] text-primary flex items-center gap-1"><MapPin className="h-3 w-3" /> Endereço confirmado · {deliveryQuote.distance.km.toFixed(1)} km da loja</div>
+            )}
+            {!isPickup && quoteBreakdown && <p className="text-[11px] text-muted-foreground">{quoteBreakdown}</p>}
+            {!isPickup && deliveryQuoteFailure && <p className="text-[11px] text-destructive">{deliveryQuoteFailureMessage(deliveryQuoteFailure)}</p>}
             <div className="flex justify-between text-base font-bold pt-2 border-t border-border"><span>Total</span><span className="text-primary">{formatBRL(total)}</span></div>
           </div>
         </section>
@@ -547,7 +551,7 @@ const GuestCheckoutPage = () => {
       </div>
 
       <div className="native-hide-while-keyboard fixed bottom-0 inset-x-0 bg-card border-t border-border p-4">
-        <button onClick={handleConfirm} disabled={submitting}
+        <button onClick={handleConfirm} disabled={submitting || (!isPickup && (calculatingFee || !isSuccessfulDeliveryQuote(deliveryQuote)))}
           className="w-full h-12 bg-primary text-primary-foreground font-bold rounded-xl active:scale-[0.98] disabled:opacity-50">
           {submitting ? "Enviando..." : `Confirmar pedido — ${formatBRL(total)}`}
         </button>
