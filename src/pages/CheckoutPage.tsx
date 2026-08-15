@@ -605,40 +605,6 @@ const CheckoutPage = () => {
        return;
      }
 
-    // ===== ANTIFRAUDE: bloqueia se cliente está muito longe da loja =====
-    if (!isPickup && storeData && (storeData as any).latitude && (storeData as any).longitude) {
-      const fraud = await checkStoreAccess({
-        storeId: storeId!,
-        storeName: (storeData as any).name ?? null,
-        storeCity: (storeData as any).address_city ?? null,
-        storeLat: (storeData as any).latitude,
-        storeLng: (storeData as any).longitude,
-        deliveryCity: usingGpsDelivery ? confirmedGpsAddress?.city : useSavedAddr ? savedAddressData?.city : (userProfile as any)?.city,
-        // Passa coordenadas do endereço de entrega (geocodificadas pelo CEP)
-        // Isso garante que o bloqueio funciona mesmo sem GPS do dispositivo
-        deliveryCoords: finalCoords ?? undefined,
-        maxDeliveryKm: (storeData as any).max_delivery_km ?? undefined,
-      });
-      if (!fraud.allowed) {
-        const maxKm = Number((storeData as any).max_delivery_km ?? MAX_DISTANCE_KM) || MAX_DISTANCE_KM;
-        const reason = fraud.reason || "";
-        let description: string;
-        if (typeof fraud.distanceKm === "number" && Number.isFinite(fraud.distanceKm)) {
-          description = `Você está a ${fraud.distanceKm.toFixed(1)} km desta loja. Limite de ${maxKm} km para entrega.`;
-        } else if (reason.startsWith("delivery_city_mismatch")) {
-          description = "O endereço de entrega está em uma cidade diferente da loja.";
-        } else if (reason.startsWith("rate_limited")) {
-          description = "Muitas tentativas bloqueadas recentemente. Tente novamente em 1 hora.";
-        } else if (reason.startsWith("fail_closed:no_gps_and_no_city")) {
-          description = "Não foi possível confirmar sua localização. Ative o GPS ou complete seu endereço.";
-        } else {
-          description = `Não foi possível validar a distância até a loja (limite ${maxKm} km).`;
-        }
-        toast.error("Pedido bloqueado por segurança", { description, duration: 8000 });
-        return;
-      }
-    }
-
     setLoading(true);
     try {
       // ===== Fase 3a: snapshot geográfico obrigatório para DELIVERY =====
@@ -771,6 +737,39 @@ const CheckoutPage = () => {
           client_lat: Number(r.lat),
           client_lng: Number(r.lng),
         };
+      }
+
+      // ===== ANTIFRAUDE: usa somente o destino geocodificado do pedido =====
+      // O GPS do aparelho pode estar em outro local e não deve bloquear uma
+      // entrega cujo endereço confirmado esteja dentro da área da loja.
+      if (!isPickup && deliverySnapshot && storeData && (storeData as any).latitude && (storeData as any).longitude) {
+        const fraud = await checkStoreAccess({
+          storeId: storeId!,
+          storeName: (storeData as any).name ?? null,
+          storeCity: (storeData as any).address_city ?? null,
+          storeLat: (storeData as any).latitude,
+          storeLng: (storeData as any).longitude,
+          deliveryCity: deliverySnapshot.delivery_city,
+          deliveryCoords: { lat: deliverySnapshot.client_lat, lng: deliverySnapshot.client_lng },
+          maxDeliveryKm: (storeData as any).max_delivery_km ?? undefined,
+        });
+        if (!fraud.allowed) {
+          const maxKm = Number((storeData as any).max_delivery_km ?? MAX_DISTANCE_KM) || MAX_DISTANCE_KM;
+          const reason = fraud.reason || "";
+          let description: string;
+          if (typeof fraud.distanceKm === "number" && Number.isFinite(fraud.distanceKm)) {
+            description = `O endereço de entrega está a ${fraud.distanceKm.toFixed(1)} km da loja. Limite de ${maxKm} km.`;
+          } else if (reason.startsWith("delivery_city_mismatch")) {
+            description = "O endereço de entrega está em uma cidade diferente da loja.";
+          } else if (reason.startsWith("rate_limited")) {
+            description = "Muitas tentativas bloqueadas recentemente. Tente novamente em 1 hora.";
+          } else {
+            description = `Não foi possível validar a distância do endereço até a loja (limite ${maxKm} km).`;
+          }
+          toast.error("Pedido bloqueado por segurança", { description, duration: 8000 });
+          setLoading(false);
+          return;
+        }
       }
 
       const storeGroups = items.reduce((acc, item) => {
