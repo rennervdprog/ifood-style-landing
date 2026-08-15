@@ -13,17 +13,15 @@ import AddressModal from "@/components/AddressModal";
 import SavedAddressPicker from "@/components/SavedAddressPicker";
 import AddressPinPicker from "@/components/AddressPinPicker";
 import CouponInput from "@/components/CouponInput";
- import { calculateDeliveryFee, calculateStoreOwnDeliveryFee, DEFAULT_DELIVERY_FEE_CONFIG, type DeliveryFeeConfig } from "@/lib/deliveryFee";
+import { asDeliveryAddress, deliveryQuoteBreakdown, deliveryQuoteFailureMessage, hasUsableCoordinates, isSuccessfulDeliveryQuote, quoteErrorFromUnknown, quoteRequestKey, requestAuthenticatedDeliveryQuote, serializeDeliveryQuote, snapshotFromDeliveryQuote, type DeliveryQuote, type DeliveryQuoteFailure } from "@/lib/deliveryQuote";
 import WhyThisCharge from "@/components/fees/WhyThisCharge";
-import DeliveryAccuracyBadge from "@/components/fees/DeliveryAccuracyBadge";
 import { addMoney, multiplyMoney, sumMoney, formatBRL } from "@/lib/utils";
 import { useStorePlan } from "@/hooks/useStorePlan";
 import LoyaltyRedemption from "@/components/LoyaltyRedemption";
 import DeliveryTimeEstimate from "@/components/DeliveryTimeEstimate";
-import { formatCep, fetchCep, reverseGeocode, readGpsFromGesture, resolveAddress, type Coordinates, type ReverseResult } from "@/lib/location";
+import { formatCep, fetchCep, reverseGeocode, readGpsFromGesture, type Coordinates, type ReverseResult } from "@/lib/location";
 import { resolveDistance } from "@/lib/location/distance";
 import { haversineMeters, isValidCoordinate } from "@/lib/location/distance";
-import { checkStoreAccess, MAX_DISTANCE_KM } from "@/lib/fraudCheck";
 import EmptiesExchange, { type EmptiesExchangeSelection } from "@/components/EmptiesExchange";
 import { haptic } from "@/lib/haptics";
 
@@ -33,17 +31,6 @@ const allPaymentMethods = [
   { id: "cartao",      label: "Cartão",               desc: "Débito ou crédito",       icon: CreditCard },
   { id: "dinheiro",    label: "Dinheiro",             desc: "Em espécie",              icon: Banknote },
 ];
-
-/** Contrato estruturado do destino de entrega (Fase 3a). */
-type DeliveryAddressInput = {
-  street: string;
-  number: string;
-  complement?: string;
-  neighborhood: string;
-  city: string;
-  state: string;
-  cep: string;
-};
 
 const CheckoutPage = () => {
   const { items, neighborhood, neighborhoodFee, subtotal, total, clearCart, setNeighborhood } = useCart();
@@ -61,8 +48,9 @@ const CheckoutPage = () => {
   const [couponId, setCouponId] = useState<string | null>(null);
   const [couponCode, setCouponCode] = useState<string | null>(null);
   const [couponType, setCouponType] = useState<string | null>(null);
-   const [calculatedDeliveryFee, setCalculatedDeliveryFee] = useState<number | null>(null);
-   const [clientCoords, setClientCoords] = useState<Coordinates | null>(null);
+  const [deliveryQuote, setDeliveryQuote] = useState<DeliveryQuote | null>(null);
+  const [deliveryQuoteFailure, setDeliveryQuoteFailure] = useState<DeliveryQuoteFailure | null>(null);
+  const [clientCoords, setClientCoords] = useState<Coordinates | null>(null);
    const [isLocationRequested, setIsLocationRequested] = useState(false);
    const [requestingLocation, setRequestingLocation] = useState(false);
    const [gpsAddress, setGpsAddress] = useState<ReverseResult | null>(null);
@@ -73,7 +61,6 @@ const CheckoutPage = () => {
   const [streetInput, setStreetInput] = useState("");
   const [neighborhoodInput, setNeighborhoodInput] = useState("");
   const [calculatingFee, setCalculatingFee] = useState(false);
-  const [feeBreakdown, setFeeBreakdown] = useState<string | null>(null);
   const [divergenceKm, setDivergenceKm] = useState<number | null>(null);
   const [loyaltyDiscount, setLoyaltyDiscount] = useState(0);
   const [loyaltyPointsUsed, setLoyaltyPointsUsed] = useState(0);
@@ -109,19 +96,6 @@ const CheckoutPage = () => {
     },
     enabled: !!user,
     staleTime: 1000 * 60 * 5,
-  });
-
-  const { data: deliveryFeeConfig } = useQuery({
-    queryKey: ["delivery-fee-config-checkout"],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("admin_settings")
-        .select("value")
-        .eq("key", "delivery_fee_config")
-        .maybeSingle();
-      return data?.value as unknown as DeliveryFeeConfig | null;
-    },
-    staleTime: 1000 * 60 * 10, // config rarely changes
   });
 
   const storeId = items[0]?.store_id;
@@ -229,54 +203,16 @@ const CheckoutPage = () => {
   const profileCep = (userProfile as any)?.cep;
   const hasAddress = !!profileStreet && !!profileNumber && !!profileNeighborhood;
   const storeCep = (storeData as any)?.address_cep;
-  const storeDeliveryMode = (storeData as any)?.delivery_mode || "platform";
-  const storeOwnFee = (storeData as any)?.own_delivery_fee || 0;
-  const isOwnDelivery = storeDeliveryMode === "own";
-  const config = deliveryFeeConfig || DEFAULT_DELIVERY_FEE_CONFIG;
-  const storeSettings = ((storeData as any)?.settings || {}) as Record<string, any>;
-  const storeDeliveryFeeType = ((storeData as any)?.delivery_fee_type || storeSettings.delivery_fee_type || "fixed") as "fixed" | "km";
-  const storeDeliveryBaseKm = Number((storeData as any)?.delivery_base_km ?? storeSettings.delivery_base_km ?? 0);
-  const storeDeliveryFeeBase = Number((storeData as any)?.delivery_fee_base ?? storeSettings.delivery_fee_base ?? 0);
-  const storeDeliveryFeePerKm = Number((storeData as any)?.delivery_fee_per_km ?? storeSettings.delivery_fee_per_km ?? 0);
   const storeMinimumOrderValue = Number((storeData as any)?.minimum_order_value || 0);
   const belowMinimum = storeMinimumOrderValue > 0 && subtotal < storeMinimumOrderValue;
   const minimumMissing = belowMinimum ? storeMinimumOrderValue - subtotal : 0;
-  const isKmOwnDelivery = isOwnDelivery && storeDeliveryFeeType === "km";
-  // For own delivery stores on FIXED plan: always add platform split on top of store's own fee.
-  // Fallback to admin_settings.platform_split (default R$2) if useStorePlan is still loading
-  // or hasn't computed the split yet, so the customer always sees the correct total.
-  const platformSplitFallback = config.platform_split ?? DEFAULT_DELIVERY_FEE_CONFIG.platform_split;
-  const effectivePlatformSplit = isOwnDelivery
-    ? (storePlan.platformFeeCustomerExtra ?? (storePlan.platformDeliverySplit > 0 ? storePlan.platformDeliverySplit : platformSplitFallback))
-    : 0;
-  const ownDeliveryFallbackFee = isKmOwnDelivery
-    ? addMoney(storeDeliveryFeeBase, effectivePlatformSplit)
-    : addMoney(storeOwnFee, effectivePlatformSplit);
-  const activeDeliveryFee = isPickup
-    ? 0
-    : (calculatedDeliveryFee !== null ? calculatedDeliveryFee : (isOwnDelivery ? ownDeliveryFallbackFee : config.city_fee));
-  // Cupom "frete grátis": cliente paga R$ 0 de entrega, mas a loja absorve a taxa
-  // de R$ 2,00 da plataforma (modelo iFood/Rappi). Registramos delivery_fee = R$ 2
-  // no pedido (rota normalmente para a plataforma via split) e neutralizamos no
-  // cálculo do total para o cliente somando R$ 2 ao desconto do cupom.
-  const freeShipPlatformAbsorb = (couponType === "free_shipping" && !isPickup)
-    ? (storePlan.platformFeeCustomerExtra ?? (storePlan.platformDeliverySplit > 0 ? storePlan.platformDeliverySplit : platformSplitFallback))
-    : 0;
-  // Frete grátis por valor mínimo (configurado pela loja).
-  // Diferente do cupom: a LOJA absorve a taxa cheia da entrega (motoboy + plataforma),
-  // não só a parte da plataforma. Para o cliente, frete = R$ 0,00.
-  const storeFreeThreshold = Number((storeData as any)?.free_delivery_threshold || 0);
-  const freeDeliveryByThreshold = !isPickup && storeFreeThreshold > 0 && subtotal >= storeFreeThreshold;
-  const thresholdMissing = !isPickup && storeFreeThreshold > 0 && subtotal < storeFreeThreshold
-    ? storeFreeThreshold - subtotal
-    : 0;
-  const storeAbsorbedDeliveryFee = freeDeliveryByThreshold ? activeDeliveryFee : 0;
-  const effectiveDeliveryFee = isPickup
-    ? 0
-    : freeDeliveryByThreshold
-      ? 0
-      : (couponType === "free_shipping" ? freeShipPlatformAbsorb : activeDeliveryFee);
-  const effectiveCouponDiscount = couponDiscount + (freeDeliveryByThreshold ? 0 : freeShipPlatformAbsorb);
+  // A taxa exibida e gravada vem exclusivamente de quote-delivery.
+  const activeDeliveryFee = isPickup ? 0 : Number(deliveryQuote?.pricing.delivery_fee || 0);
+  const freeDeliveryByThreshold = !isPickup && Boolean(deliveryQuote?.pricing.free_delivery_applied);
+  const storeAbsorbedDeliveryFee = isPickup ? 0 : Number(deliveryQuote?.pricing.platform_fee_store_absorbed || 0);
+  const couponDeliveryCredit = couponType === "free_shipping" && !isPickup ? activeDeliveryFee : 0;
+  const effectiveDeliveryFee = isPickup || freeDeliveryByThreshold ? 0 : activeDeliveryFee;
+  const effectiveCouponDiscount = couponDiscount + couponDeliveryCredit;
   const walletDiscount = useWallet ? Math.min(walletBalance, Math.max(0, addMoney(subtotal, effectiveDeliveryFee, -effectiveCouponDiscount, -loyaltyDiscount))) : 0;
   const [emptiesSelections, setEmptiesSelections] = useState<EmptiesExchangeSelection[]>([]);
   const [emptiesDiscount, setEmptiesDiscount] = useState(0);
@@ -285,43 +221,20 @@ const CheckoutPage = () => {
     setEmptiesDiscount(disc);
   }, []);
   const finalTotal = Math.max(0, addMoney(subtotal, effectiveDeliveryFee, -effectiveCouponDiscount, -loyaltyDiscount, -walletDiscount, -emptiesDiscount));
+  const quoteBreakdown = deliveryQuoteBreakdown(deliveryQuote);
 
-   // Background geocoding from the selected delivery address (initial estimate).
-   // Nunca tenta GPS aqui: GPS só pode ser fonte final quando o cliente tocar no botão.
-   useEffect(() => {
-     if (coordsSource === "gps") return;
-     if (selectedSavedAddressId && savedAddressData) {
-       const lat = Number(savedAddressData.latitude);
-       const lng = Number(savedAddressData.longitude);
-       if (Number.isFinite(lat) && Number.isFinite(lng)) {
-         if (!clientCoords || Math.abs(clientCoords.lat - lat) > 0.000001 || Math.abs(clientCoords.lng - lng) > 0.000001) {
-           setClientCoords({ lat, lng });
-         }
-         if (coordsSource !== "address") setCoordsSource("address");
-         return;
-       }
-     }
-     if ((hasAddress || selectedSavedAddressId) && !clientCoords) {
-       const geoCep = selectedSavedAddressId && savedAddressData?.cep ? savedAddressData.cep : profileCep;
-       const geoStreet = selectedSavedAddressId && savedAddressData
-         ? [savedAddressData.street, savedAddressData.number].filter(Boolean).join(" ")
-         : [profileStreet, profileNumber].filter(Boolean).join(" ");
-       const geoNeighborhood = selectedSavedAddressId && savedAddressData?.neighborhood ? savedAddressData.neighborhood : profileNeighborhood;
- 
-      resolveAddress({
-        prefer: "address",
-        fallback: ["cep"],
-        address: { street: geoStreet, neighborhood: geoNeighborhood, postalcode: geoCep },
-      }).then((r) => {
-        if (r.coords && !clientCoords) {
-          // fallback silencioso — evita vazar coords no console em produção.
-          setClientCoords(r.coords);
-          setCoordsSource("address");
-        }
-      });
-     }
-   }, [hasAddress, selectedSavedAddressId, savedAddressData, profileCep, profileStreet, profileNumber, profileNeighborhood, clientCoords, coordsSource]);
- 
+  // Coordenadas de endereço salvo são apenas informativas. A cotação oficial
+  // resolve endereço, distância e taxa sem reutilizar coordenadas ausentes/legadas.
+  useEffect(() => {
+    if (coordsSource === "gps" || !selectedSavedAddressId || !savedAddressData) return;
+    if (hasUsableCoordinates(savedAddressData.latitude, savedAddressData.longitude)) {
+      setClientCoords({ lat: Number(savedAddressData.latitude), lng: Number(savedAddressData.longitude) });
+      if (coordsSource !== "address") setCoordsSource("address");
+    } else {
+      setClientCoords(null);
+    }
+  }, [selectedSavedAddressId, savedAddressData, coordsSource]);
+
    const handleRequestLocation = () => {
      // IMPORTANTE: chamar SÍNCRONO no clique — sem await antes — pra
      // preservar o "user gesture" que o browser exige pro prompt de GPS.
@@ -355,88 +268,95 @@ const CheckoutPage = () => {
      });
    };
 
-   useEffect(() => {
-      const useGpsAddress = coordsSource === "gps" && isLocationRequested && !!clientCoords;
-      const customerCep = useGpsAddress && gpsAddress?.postalcode
-        ? gpsAddress.postalcode
-        : selectedSavedAddressId && savedAddressData?.cep ? savedAddressData.cep : profileCep;
-      const activeNeighborhood = useGpsAddress
-        ? (gpsAddress?.neighborhood || gpsAddress?.city || "")
-        : selectedSavedAddressId && savedAddressData?.neighborhood ? savedAddressData.neighborhood : profileNeighborhood;
- 
-      if (isOwnDelivery) {
-        if (!customerCep || !storeCep) {
-          setCalculatedDeliveryFee(null);
-          setFeeBreakdown(null);
+  const deliveryAddressInput = useMemo(() => {
+    const useGpsAddress = coordsSource === "gps" && isLocationRequested && !!clientCoords;
+    if (useGpsAddress) {
+      return asDeliveryAddress({
+        street: gpsAddress?.street,
+        number: gpsAddress?.number,
+        neighborhood: gpsAddress?.neighborhood || gpsAddress?.city,
+        city: gpsAddress?.city,
+        state: gpsAddress?.state,
+        cep: gpsAddress?.postalcode,
+      });
+    }
+    if (selectedSavedAddressId && savedAddressData) {
+      return asDeliveryAddress({
+        street: savedAddressData.street,
+        number: savedAddressData.number,
+        complement: savedAddressData.complement,
+        neighborhood: savedAddressData.neighborhood,
+        city: savedAddressData.city,
+        state: savedAddressData.state,
+        cep: savedAddressData.cep,
+      });
+    }
+    return asDeliveryAddress({
+      street: profileStreet,
+      number: profileNumber,
+      complement: profileComplement,
+      neighborhood: profileNeighborhood,
+      city: (userProfile as any)?.city,
+      state: (userProfile as any)?.state,
+      cep: profileCep,
+    });
+  }, [coordsSource, isLocationRequested, clientCoords, gpsAddress, selectedSavedAddressId, savedAddressData, profileStreet, profileNumber, profileComplement, profileNeighborhood, profileCep, userProfile]);
+
+  const deliveryQuoteInputKey = useMemo(
+    () => quoteRequestKey(storeId, subtotal, deliveryAddressInput),
+    [storeId, subtotal, deliveryAddressInput],
+  );
+
+  useEffect(() => {
+    if (isPickup) {
+      setDeliveryQuote(null);
+      setDeliveryQuoteFailure(null);
+      setCalculatingFee(false);
+      return;
+    }
+    if (!storeId || !user || !deliveryAddressInput) {
+      setDeliveryQuote(null);
+      setDeliveryQuoteFailure(null);
+      setCalculatingFee(false);
+      return;
+    }
+
+    let cancelled = false;
+    setCalculatingFee(true);
+    setDeliveryQuote(null);
+    setDeliveryQuoteFailure(null);
+
+    (async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.access_token) throw new Error("missing_authenticated_session");
+        const quote = await requestAuthenticatedDeliveryQuote({
+          accessToken: session.access_token,
+          storeId,
+          subtotal,
+          address: deliveryAddressInput,
+        });
+        if (cancelled) return;
+        if (!isSuccessfulDeliveryQuote(quote)) {
+          setDeliveryQuote(null);
+          setDeliveryQuoteFailure(quote);
           return;
         }
-  
-        let cancelled = false;
-        setCalculatingFee(true);
-  
-        const ownConfig = {
-          delivery_fee_type: storeDeliveryFeeType,
-          delivery_base_km: storeDeliveryBaseKm,
-          delivery_fee_base: storeDeliveryFeeBase,
-          delivery_fee_per_km: storeDeliveryFeePerKm,
-          own_delivery_fee: storeOwnFee,
-          // Respeita o split escolhido pelo lojista (cliente | meio_a_meio | lojista).
-          // Quando = 'lojista', effectivePlatformSplit é 0 e o cliente NÃO paga +R$2.
-          platform_split: effectivePlatformSplit,
-          customer_street: useGpsAddress ? gpsAddress?.street : selectedSavedAddressId && savedAddressData ? savedAddressData.street : profileStreet,
-          customer_number: useGpsAddress ? gpsAddress?.number : selectedSavedAddressId && savedAddressData ? savedAddressData.number : profileNumber,
-          customer_coords: clientCoords,
-          customer_neighborhood: activeNeighborhood,
-          customer_city: useGpsAddress ? gpsAddress?.city : selectedSavedAddressId && savedAddressData ? (savedAddressData as any).city : (userProfile as any)?.city,
-          customer_state: useGpsAddress ? gpsAddress?.state : selectedSavedAddressId && savedAddressData ? (savedAddressData as any).state : (userProfile as any)?.state,
-          store_coords:
-            (storeData as any)?.latitude && (storeData as any)?.longitude
-              ? { lat: Number((storeData as any).latitude), lng: Number((storeData as any).longitude) }
-              : null,
-        };
-  
-        calculateStoreOwnDeliveryFee(customerCep, storeCep, ownConfig).then((result) => {
-          if (cancelled) return;
-          setCalculatedDeliveryFee(result.fee);
-          setFeeBreakdown(result.breakdown);
-          if (activeNeighborhood) setNeighborhood(activeNeighborhood, result.fee);
-          setCalculatingFee(false);
-        }).catch(() => {
-          if (cancelled) return;
-          setCalculatingFee(false);
-        });
-  
-        return () => { cancelled = true; };
+        setDeliveryQuote(quote);
+        setDeliveryQuoteFailure(null);
+        setNeighborhood(quote.destination?.neighborhood || deliveryAddressInput.neighborhood, Number(quote.pricing.delivery_fee || 0));
+      } catch (error) {
+        if (!cancelled) {
+          setDeliveryQuote(null);
+          setDeliveryQuoteFailure(quoteErrorFromUnknown(error));
+        }
+      } finally {
+        if (!cancelled) setCalculatingFee(false);
       }
- 
-     if (!customerCep || !storeCep) {
-       setCalculatedDeliveryFee(null);
-       setFeeBreakdown(null);
-       return;
-     }
- 
-     let cancelled = false;
-     setCalculatingFee(true);
- 
-      const deliveryConfigWithPlatform: any = {
-        ...config,
-        // Ensure we use the latest platform split from the store plan or admin settings
-        platform_split: storePlan.platformDeliverySplit ?? config.platform_split ?? 0.99
-      };
+    })();
 
-      calculateDeliveryFee(customerCep, storeCep, deliveryConfigWithPlatform, clientCoords).then((result) => {
-       if (cancelled) return;
-       setCalculatedDeliveryFee(result.fee);
-       setFeeBreakdown(result.breakdown);
-       setNeighborhood(activeNeighborhood || neighborhood || "", result.fee);
-       setCalculatingFee(false);
-     }).catch(() => {
-       if (cancelled) return;
-       setCalculatingFee(false);
-     });
- 
-     return () => { cancelled = true; };
-    }, [profileCep, storeCep, config, savedAddressData, selectedSavedAddressId, profileNeighborhood, isOwnDelivery, storeDeliveryFeeType, storeDeliveryBaseKm, storeDeliveryFeeBase, storeDeliveryFeePerKm, storeOwnFee, storePlan.isFixedPlan, storePlan.platformDeliverySplit, effectivePlatformSplit, clientCoords, coordsSource, isLocationRequested, gpsAddress, profileStreet, profileNumber, userProfile]);
+    return () => { cancelled = true; };
+  }, [deliveryQuoteInputKey, deliveryAddressInput, isPickup, storeId, subtotal, user, setNeighborhood]);
 
   // Detecta divergência GPS x CEP do endereço salvo (Fase 4 do plano de GPS).
   useEffect(() => {
@@ -478,27 +398,19 @@ const CheckoutPage = () => {
   const usingGpsDelivery = !isPickup && coordsSource === "gps" && isLocationRequested && !!clientCoords;
   const gpsAddressIsDeliverable = usingGpsDelivery && !!gpsAddress?.street && !!(gpsAddress.neighborhood || gpsAddress.city);
 
-  // Distância informativa (haversine) entre endereço cadastrado e loja.
-  const savedDistanceKm = useMemo(() => {
-    const sLat = Number((storeData as any)?.latitude);
-    const sLng = Number((storeData as any)?.longitude);
-    if (!isValidCoordinate(sLat, sLng)) return null;
-    const cLat = selectedSavedAddressId && savedAddressData
-      ? Number(savedAddressData.latitude)
-      : NaN;
-    const cLng = selectedSavedAddressId && savedAddressData
-      ? Number(savedAddressData.longitude)
-      : NaN;
-    if (!isValidCoordinate(cLat, cLng)) return null;
-    return haversineMeters({ lat: sLat, lng: sLng }, { lat: cLat, lng: cLng }) / 1000;
-  }, [storeData, selectedSavedAddressId, savedAddressData]);
+  // A distância apresentada ao cliente é a mesma distância validada pelo servidor.
+  const quotedDistanceKm = !isPickup && deliveryQuote
+    ? Number(deliveryQuote.distance.km)
+    : null;
 
   // Distância direta (haversine) entre coords do GPS e coords do endereço cadastrado.
   const gpsVsSavedKm = useMemo(() => {
     if (!usingGpsDelivery || !clientCoords) return null;
-    const cLat = selectedSavedAddressId && savedAddressData ? Number(savedAddressData.latitude) : NaN;
-    const cLng = selectedSavedAddressId && savedAddressData ? Number(savedAddressData.longitude) : NaN;
-    if (!isValidCoordinate(cLat, cLng)) return null;
+    const rawLat = selectedSavedAddressId && savedAddressData ? savedAddressData.latitude : null;
+    const rawLng = selectedSavedAddressId && savedAddressData ? savedAddressData.longitude : null;
+    if (!hasUsableCoordinates(rawLat, rawLng)) return null;
+    const cLat = Number(rawLat);
+    const cLng = Number(rawLng);
     return haversineMeters(clientCoords, { lat: cLat, lng: cLng }) / 1000;
   }, [usingGpsDelivery, clientCoords, selectedSavedAddressId, savedAddressData]);
 
@@ -624,125 +536,16 @@ const CheckoutPage = () => {
       let deliveryQuoteSnapshot: Record<string, unknown> | null = null;
 
       if (!isPickup) {
-        const src: DeliveryAddressInput = usingGpsDelivery
-          ? {
-              street: confirmedGpsAddress?.street || "",
-              number: confirmedGpsAddress?.number || "",
-              neighborhood: confirmedGpsAddress?.neighborhood || confirmedGpsAddress?.city || "",
-              city: confirmedGpsAddress?.city || "",
-              state: confirmedGpsAddress?.state || "",
-              cep: confirmedGpsAddress?.postalcode || "",
-            }
-          : useSavedAddr
-            ? {
-                street: savedAddressData.street || "",
-                number: savedAddressData.number || "",
-                complement: savedAddressData.complement || "",
-                neighborhood: savedAddressData.neighborhood || "",
-                city: (savedAddressData as any).city || "",
-                state: (savedAddressData as any).state || "",
-                cep: savedAddressData.cep || "",
-              }
-            : {
-                street: profileStreet || "",
-                number: profileNumber || "",
-                complement: profileComplement || "",
-                neighborhood: profileNeighborhood || "",
-                city: (userProfile as any)?.city || "",
-                state: "",
-                cep: profileCep || "",
-              };
-
-        const cepDigits = String(src.cep || "").replace(/\D/g, "");
-        if (cepDigits.length !== 8) {
-          toast.error("CEP inválido", { description: "Informe um CEP com 8 dígitos no endereço de entrega." });
-          setLoading(false);
-          setShowAddressModal(true);
-          return;
-        }
-        if (!src.street?.trim() || !src.number?.trim()) {
-          toast.error("Endereço incompleto", { description: "Rua e número são obrigatórios para entrega." });
-          setLoading(false);
-          setShowAddressModal(true);
-          return;
-        }
-
-        const stateUf = /^[A-Za-z]{2}$/.test(String(src.state || "").trim())
-          ? String(src.state).trim().toUpperCase()
-          : "";
-
-        const { data: { session } } = await supabase.auth.getSession();
-        let quoted: unknown = null;
-        let quoteErr: Error | null = null;
-        if (!session?.access_token) {
-          quoteErr = new Error("missing_authenticated_session");
-        } else {
-          try {
-            const response = await fetch("/api/quote-delivery", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${session.access_token}`,
-              },
-              body: JSON.stringify({
-                store_id: storeId,
-                fulfillment: "delivery",
-                subtotal: subtotalAfterProductDiscounts,
-                address: {
-                  street: src.street.trim(),
-                  number: src.number.trim(),
-                  complement: src.complement?.trim() || undefined,
-                  neighborhood: src.neighborhood?.trim() || "",
-                  city: src.city?.trim() || "",
-                  state: stateUf,
-                  cep: cepDigits,
-                },
-              }),
-            });
-            quoted = await response.json().catch(() => null);
-            if (!response.ok) quoteErr = new Error(`quote_http_${response.status}`);
-          } catch (error) {
-            quoteErr = error instanceof Error ? error : new Error("quote_network_error");
-          }
-        }
-
-        const quote = quoted as {
-          ok?: boolean;
-          reason?: string;
-          destination?: { normalized_address?: string; neighborhood?: string; cep?: string; city?: string; state?: string; lat?: number; lng?: number; precision?: string };
-          distance?: { km?: number; max_km?: number | null; source?: string; eligible?: boolean };
-          pricing?: { store_delivery_base?: number; platform_fee_customer?: number; platform_fee_store_absorbed?: number; delivery_fee?: number; vip_override_applied?: number | null; split_mode?: string | null; plan_type?: string | null; free_delivery_applied?: boolean };
-          policy_version?: number;
-        } | null;
-
-        const destination = quote?.destination;
-        const pricing = quote?.pricing;
-        const reason = quote?.reason || "";
-        if (quoteErr || !quote?.ok || !destination || !pricing || !Number.isFinite(Number(destination.lat)) || !Number.isFinite(Number(destination.lng))) {
-          let description = "Não foi possível calcular a entrega agora. Seu carrinho foi preservado — tente novamente em instantes.";
-          if (reason === "delivery_unavailable") description = "Esta loja não está aceitando pedidos de entrega no momento.";
-          else if (reason === "outside_delivery_area") {
-            const km = Number(quote?.distance?.km);
-            const maxKm = Number(quote?.distance?.max_km);
-            description = Number.isFinite(km) && Number.isFinite(maxKm)
-              ? `O endereço de entrega está a ${km.toFixed(1)} km da loja. Limite de ${maxKm} km.`
-              : "O endereço informado está fora da área de entrega da loja.";
-          } else if (reason === "address_unavailable") description = "Não localizamos esse endereço. Revise rua, número, bairro, cidade/UF e CEP.";
-          else if (reason === "unauthorized") description = "Sua sessão expirou. Entre novamente para confirmar o endereço.";
-          toast.error("Não foi possível confirmar a entrega", { description, duration: 8000 });
+        if (calculatingFee || !isSuccessfulDeliveryQuote(deliveryQuote)) {
+          toast.error("Não foi possível confirmar a entrega", {
+            description: deliveryQuoteFailureMessage(deliveryQuoteFailure),
+            duration: 8000,
+          });
           setLoading(false);
           return;
         }
 
-        deliverySnapshot = {
-          address_details: destination.normalized_address || finalAddress,
-          neighborhood: String(destination.neighborhood || src.neighborhood || finalNeighborhood || "").trim(),
-          delivery_cep: String(destination.cep || cepDigits).replace(/\D/g, ""),
-          delivery_city: String(destination.city || "").trim(),
-          delivery_state: String(destination.state || "").trim().toUpperCase(),
-          client_lat: Number(destination.lat),
-          client_lng: Number(destination.lng),
-        };
+        deliverySnapshot = snapshotFromDeliveryQuote(deliveryQuote);
         if (!deliverySnapshot.neighborhood || !deliverySnapshot.delivery_city || !/^[A-Z]{2}$/.test(deliverySnapshot.delivery_state)) {
           toast.error("Não foi possível confirmar o endereço de entrega", {
             description: "Complete corretamente rua, número, bairro, cidade/UF e CEP.",
@@ -752,23 +555,9 @@ const CheckoutPage = () => {
           return;
         }
 
-        quotedDeliveryFee = Number(pricing.delivery_fee || 0);
-        quotedStoreAbsorbedFee = Number(pricing.platform_fee_store_absorbed || 0);
-        deliveryQuoteSnapshot = {
-          policy_version: quote.policy_version || 1,
-          distance_km: Number(quote.distance?.km || 0),
-          distance_source: quote.distance?.source || "haversine",
-          max_delivery_km: quote.distance?.max_km ?? null,
-          destination_precision: destination.precision || "cep",
-          store_delivery_base: Number(pricing.store_delivery_base || 0),
-          platform_fee_customer: Number(pricing.platform_fee_customer || 0),
-          platform_fee_store_absorbed: Number(pricing.platform_fee_store_absorbed || 0),
-          delivery_fee: quotedDeliveryFee,
-          vip_override_applied: pricing.vip_override_applied ?? null,
-          split_mode: pricing.split_mode ?? null,
-          plan_type: pricing.plan_type ?? null,
-          free_delivery_applied: Boolean(pricing.free_delivery_applied),
-        };
+        quotedDeliveryFee = Number(deliveryQuote.pricing.delivery_fee || 0);
+        quotedStoreAbsorbedFee = Number(deliveryQuote.pricing.platform_fee_store_absorbed || 0);
+        deliveryQuoteSnapshot = serializeDeliveryQuote(deliveryQuote);
       }
 
       const storeGroups = items.reduce((acc, item) => {
@@ -1110,9 +899,13 @@ const CheckoutPage = () => {
                 setGpsAddress(null);
                 setIsLocationRequested(false);
                 setCoordsSource("address");
-                const lat = Number((addr as any).latitude);
-                const lng = Number((addr as any).longitude);
-                if (Number.isFinite(lat) && Number.isFinite(lng)) setClientCoords({ lat, lng });
+                setDeliveryQuote(null);
+                setDeliveryQuoteFailure(null);
+                if (hasUsableCoordinates((addr as any).latitude, (addr as any).longitude)) {
+                  setClientCoords({ lat: Number((addr as any).latitude), lng: Number((addr as any).longitude) });
+                } else {
+                  setClientCoords(null);
+                }
               }}
             />
 
@@ -1138,8 +931,8 @@ const CheckoutPage = () => {
                     <span className="text-[10px] font-bold text-foreground bg-muted px-1.5 py-0.5 rounded">📮 CADASTRADO</span>
                     {!usingGpsDelivery && <span className="text-[10px] text-primary font-semibold">Em uso</span>}
                   </div>
-                  {savedDistanceKm != null && (
-                    <span className="text-[10px] font-semibold text-muted-foreground">≈ {savedDistanceKm.toFixed(1)} km da loja</span>
+                  {quotedDistanceKm != null && (
+                    <span className="text-[10px] font-semibold text-muted-foreground">≈ {quotedDistanceKm.toFixed(1)} km da loja</span>
                   )}
                 </div>
                 {selectedSavedAddressId && savedAddressData ? (
@@ -1178,7 +971,7 @@ const CheckoutPage = () => {
                   ) : <span />}
                   {selectedSavedAddressId ? (
                     <button
-                      onClick={() => { setSelectedSavedAddressId(null); setSavedAddressData(null); setGpsAddress(null); setIsLocationRequested(false); setCoordsSource(null); setClientCoords(null); }}
+                      onClick={() => { setSelectedSavedAddressId(null); setSavedAddressData(null); setGpsAddress(null); setIsLocationRequested(false); setCoordsSource(null); setClientCoords(null); setDeliveryQuote(null); setDeliveryQuoteFailure(null); }}
                       className="text-xs text-primary font-semibold"
                     >
                       Alterar
@@ -1243,7 +1036,7 @@ const CheckoutPage = () => {
                         </div>
                       )}
                       <button
-                        onClick={() => { setGpsAddress(null); setIsLocationRequested(false); setCoordsSource(selectedSavedAddressId ? "address" : null); setClientCoords(selectedSavedAddressId && savedAddressData ? { lat: Number(savedAddressData.latitude), lng: Number(savedAddressData.longitude) } : null); }}
+                        onClick={() => { setGpsAddress(null); setIsLocationRequested(false); setCoordsSource(selectedSavedAddressId ? "address" : null); setClientCoords(selectedSavedAddressId && hasUsableCoordinates(savedAddressData?.latitude, savedAddressData?.longitude) ? { lat: Number(savedAddressData.latitude), lng: Number(savedAddressData.longitude) } : null); }}
                         className="text-xs text-muted-foreground font-semibold"
                       >
                         Voltar ao cadastrado
@@ -1620,11 +1413,8 @@ const CheckoutPage = () => {
                 </div>
               )}
 
-              {!isPickup && feeBreakdown && couponType !== "free_shipping" && (
-                <div className="-mt-1 pl-4 flex flex-col gap-1">
-                  <DeliveryAccuracyBadge breakdown={feeBreakdown} />
-                  <p className="text-[11px] text-muted-foreground/80">{feeBreakdown}</p>
-                </div>
+              {!isPickup && quoteBreakdown && couponType !== "free_shipping" && (
+                <p className="-mt-1 pl-4 text-[11px] text-muted-foreground/80">{quoteBreakdown}</p>
               )}
 
               {!isPickup && couponType === "free_shipping" && (
