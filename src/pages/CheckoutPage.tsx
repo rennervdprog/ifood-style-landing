@@ -34,6 +34,17 @@ const allPaymentMethods = [
   { id: "dinheiro",    label: "Dinheiro",             desc: "Em espécie",              icon: Banknote },
 ];
 
+/** Contrato estruturado do destino de entrega (Fase 3a). */
+type DeliveryAddressInput = {
+  street: string;
+  number: string;
+  complement?: string;
+  neighborhood: string;
+  city: string;
+  state: string;
+  cep: string;
+};
+
 const CheckoutPage = () => {
   const { items, neighborhood, neighborhoodFee, subtotal, total, clearCart, setNeighborhood } = useCart();
   const { user, loading: authLoading } = useAuth();
