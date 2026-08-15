@@ -61,4 +61,6 @@ verify_jwt = false
 
 
 [functions.resolve-delivery-address]
-verify_jwt = true
+# A função valida explicitamente o JWT de usuário no código e aceita somente
+# chamadas internas autenticadas pelo service_role para guest checkout e WhatsApp.
+verify_jwt = false
