@@ -796,7 +796,7 @@ const PerfilPage = () => {
               <InputField label="Complemento" placeholder="Apto, bloco, casa..." value={complement} onChange={(e) => setComplement(e.target.value)} />
               <InputField label="Bairro" placeholder="Preenchido pelo CEP" value={neighborhood} onChange={(e) => setNeighborhoodLocal(e.target.value)} />
 
-              {calculatedFee !== null && (
+              {calculatedFee !== null && calculatedFee > 0 && (
                 <div className="flex items-center gap-2.5 bg-primary/5 border border-primary/20 rounded-xl px-4 py-3">
                   <Truck className="h-4 w-4 text-primary shrink-0" />
                   <div>
