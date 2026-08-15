@@ -4,6 +4,8 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 
 // --- CORS: allowlist explícita (sem "*") ---
 const ALLOWED_ORIGINS = new Set([
+  "https://itasuper.com.br",
+  "https://www.itasuper.com.br",
   "https://itasuper.lovable.app",
   "https://id-preview--e8d28ade-d633-4d74-be21-61c8dbe24765.lovable.app",
   "http://localhost:8080",
