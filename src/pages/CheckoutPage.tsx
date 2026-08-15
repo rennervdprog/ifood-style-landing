@@ -34,6 +34,17 @@ const allPaymentMethods = [
   { id: "dinheiro",    label: "Dinheiro",             desc: "Em espécie",              icon: Banknote },
 ];
 
+/** Contrato estruturado do destino de entrega (Fase 3a). */
+type DeliveryAddressInput = {
+  street: string;
+  number: string;
+  complement?: string;
+  neighborhood: string;
+  city: string;
+  state: string;
+  cep: string;
+};
+
 const CheckoutPage = () => {
   const { items, neighborhood, neighborhoodFee, subtotal, total, clearCart, setNeighborhood } = useCart();
   const { user, loading: authLoading } = useAuth();
@@ -91,7 +102,7 @@ const CheckoutPage = () => {
     queryFn: async () => {
       const { data } = await supabase
         .from("profiles")
-        .select("street, number, complement, neighborhood, reference_point, phone, whatsapp_number, cep")
+        .select("street, number, complement, neighborhood, reference_point, phone, whatsapp_number, cep, city")
         .eq("user_id", user!.id)
         .maybeSingle();
       return data;
@@ -630,26 +641,109 @@ const CheckoutPage = () => {
 
     setLoading(true);
     try {
-      // Geocode in PARALLEL only if the final address still has no coords.
-      const geocodePromise: Promise<{ lat: number; lng: number } | null> = (async () => {
-        if (finalCoords) return finalCoords;
-        try {
-          const geoCep = useSavedAddr ? savedAddressData?.cep : profileCep;
-          const geoStreet = useSavedAddr
-            ? [savedAddressData.street, savedAddressData.number].filter(Boolean).join(" ")
-            : [profileStreet, profileNumber].filter(Boolean).join(" ");
-          const geoNeighborhood = useSavedAddr ? savedAddressData?.neighborhood : profileNeighborhood;
+      // ===== Fase 3a: snapshot geográfico obrigatório para DELIVERY =====
+      // O pedido só é criado depois que o endereço confirmado pelo cliente
+      // é resolvido em coordenadas. Nada de UPDATE assíncrono depois.
+      let deliverySnapshot: {
+        address_details: string;
+        neighborhood: string;
+        delivery_cep: string;
+        delivery_city: string;
+        delivery_state: string;
+        client_lat: number;
+        client_lng: number;
+      } | null = null;
 
-          const r = await resolveAddress({
-            prefer: "address",
-            fallback: ["cep"],
-            address: { street: geoStreet, neighborhood: geoNeighborhood, postalcode: geoCep },
-          });
-          return r.coords ? { lat: r.coords.lat, lng: r.coords.lng } : null;
-        } catch {
-          return null;
+      if (!isPickup) {
+        const src: DeliveryAddressInput = usingGpsDelivery
+          ? {
+              street: confirmedGpsAddress?.street || "",
+              number: confirmedGpsAddress?.number || "",
+              neighborhood: confirmedGpsAddress?.neighborhood || confirmedGpsAddress?.city || "",
+              city: confirmedGpsAddress?.city || "",
+              state: confirmedGpsAddress?.state || "",
+              cep: confirmedGpsAddress?.postalcode || "",
+            }
+          : useSavedAddr
+            ? {
+                street: savedAddressData.street || "",
+                number: savedAddressData.number || "",
+                complement: savedAddressData.complement || "",
+                neighborhood: savedAddressData.neighborhood || "",
+                city: (savedAddressData as any).city || "",
+                state: (savedAddressData as any).state || "",
+                cep: savedAddressData.cep || "",
+              }
+            : {
+                street: profileStreet || "",
+                number: profileNumber || "",
+                complement: profileComplement || "",
+                neighborhood: profileNeighborhood || "",
+                city: (userProfile as any)?.city || "",
+                state: "",
+                cep: profileCep || "",
+              };
+
+        const cepDigits = String(src.cep || "").replace(/\D/g, "");
+        if (cepDigits.length !== 8) {
+          toast.error("CEP inválido", { description: "Informe um CEP com 8 dígitos no endereço de entrega." });
+          setLoading(false);
+          setShowAddressModal(true);
+          return;
         }
-      })();
+        if (!src.street?.trim() || !src.number?.trim()) {
+          toast.error("Endereço incompleto", { description: "Rua e número são obrigatórios para entrega." });
+          setLoading(false);
+          setShowAddressModal(true);
+          return;
+        }
+
+        const stateUf = /^[A-Za-z]{2}$/.test(String(src.state || "").trim())
+          ? String(src.state).trim().toUpperCase()
+          : "";
+
+        const { data: resolved, error: resolveErr } = await supabase.functions.invoke(
+          "resolve-delivery-address",
+          {
+            body: {
+              street: src.street.trim(),
+              number: src.number.trim(),
+              complement: src.complement?.trim() || undefined,
+              neighborhood: src.neighborhood?.trim() || "",
+              city: src.city?.trim() || "",
+              state: stateUf,
+              cep: cepDigits,
+            } satisfies DeliveryAddressInput,
+          },
+        );
+
+        const r = resolved as {
+          ok?: boolean; normalized_address?: string; cep?: string; city?: string;
+          state?: string; lat?: number; lng?: number; reason?: string;
+        } | null;
+
+        if (resolveErr || !r?.ok || !Number.isFinite(Number(r?.lat)) || !Number.isFinite(Number(r?.lng))) {
+          const reason = r?.reason || "";
+          const description = reason === "address_not_found"
+            ? "Não localizamos esse endereço. Revise rua, número, bairro, cidade/UF e CEP e tente novamente."
+            : reason.startsWith("missing_") || reason.startsWith("invalid_")
+              ? "Complete corretamente rua, número, bairro, cidade/UF e CEP."
+              : "Serviço de endereços indisponível no momento. Seu carrinho foi preservado — tente novamente em instantes.";
+          toast.error("Não foi possível confirmar o endereço de entrega", { description, duration: 8000 });
+          setLoading(false);
+          return;
+        }
+
+        deliverySnapshot = {
+          address_details: r.normalized_address || finalAddress,
+          neighborhood: src.neighborhood?.trim() || finalNeighborhood || r.city!,
+          delivery_cep: r.cep || cepDigits,
+          delivery_city: r.city!,
+          delivery_state: r.state!,
+          client_lat: Number(r.lat),
+          client_lng: Number(r.lng),
+        };
+      }
 
       const storeGroups = items.reduce((acc, item) => {
         if (!acc[item.store_id]) acc[item.store_id] = [];
@@ -692,10 +786,13 @@ const CheckoutPage = () => {
             wallet_discount: walletDiscount,
             app_fee: appFee,
             payment_method: paymentMethod,
-            neighborhood: finalNeighborhood,
-            address_details: finalAddress,
-            client_lat: finalCoords?.lat ?? null,
-            client_lng: finalCoords?.lng ?? null,
+            neighborhood: deliverySnapshot?.neighborhood ?? finalNeighborhood,
+            address_details: deliverySnapshot?.address_details ?? finalAddress,
+            delivery_cep: deliverySnapshot?.delivery_cep ?? null,
+            delivery_city: deliverySnapshot?.delivery_city ?? null,
+            delivery_state: deliverySnapshot?.delivery_state ?? null,
+            client_lat: deliverySnapshot?.client_lat ?? null,
+            client_lng: deliverySnapshot?.client_lng ?? null,
             needs_change: paymentMethod === "dinheiro" && needsChange,
             change_for: changeValue,
             status: orderStatus,
@@ -782,20 +879,8 @@ const CheckoutPage = () => {
         navigate("/pedidos?new_order=1", { replace: true });
       }
 
-      // Background tasks (non-blocking): patch coords + notify store owners
+      // Background tasks (non-blocking): notify store owners
       (async () => {
-        try {
-          const coords = await geocodePromise;
-          if (coords) {
-            for (const { orderId } of createdOrders) {
-              supabase.from("orders")
-                .update({ client_lat: coords.lat, client_lng: coords.lng } as any)
-                .eq("id", orderId)
-                .then(() => {});
-            }
-          }
-        } catch {}
-
         if (paymentMethod !== "pix") { // pix_machine e cartão/dinheiro notificam o lojista
           for (const { storeId, orderId } of createdOrders) {
             try {
