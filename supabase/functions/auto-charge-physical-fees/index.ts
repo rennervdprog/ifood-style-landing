@@ -458,16 +458,36 @@ Deno.serve(async (req) => {
       const ownerDoc = String((prof as any)?.document || "");
       const ownerEmail = String((prof as any)?.email || "");
 
-      const provider = "woovi";
+      const activeGateway = await getActiveGateway(supabase);
+      if (activeGateway !== "WOOVI" && activeGateway !== "ASAAS") {
+        results.push({
+          store: store.name,
+          status: "error",
+          reason: `Gateway de cobrança não suportado: ${activeGateway || "não configurado"}`,
+        });
+        continue;
+      }
+
+      const provider = activeGateway.toLowerCase();
       const referenceCode = `#REP-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
-      const charge = await createWooviCharge({
-        amount: chargeAmount,
-        description: chargeDescription,
-        externalId: referenceCode,
-        customerName: store.name,
-        customerEmail: ownerEmail,
-        customerCpfCnpj: ownerDoc,
-      });
+      const charge = activeGateway === "WOOVI"
+        ? await createWooviCharge({
+            amount: chargeAmount,
+            description: chargeDescription,
+            externalId: referenceCode,
+            customerName: store.name,
+            customerEmail: ownerEmail,
+            customerCpfCnpj: ownerDoc,
+          })
+        : await createAsaasCharge({
+            amount: chargeAmount,
+            description: chargeDescription,
+            dueDate: dueDateStr,
+            storeAccountId: balance.store_id,
+            customerName: store.name,
+            customerEmail: ownerEmail,
+            customerCpfCnpj: ownerDoc,
+          });
 
       if (!charge.ok) {
         results.push({ store: store.name, status: "error", reason: charge.error });

@@ -1,6 +1,7 @@
 // Webhook Woovi/OpenPix — confirma pagamentos de mensalidade/comissão da plataforma.
 // URL: <functions>/woovi-webhook?webhookSecret=<WOOVI_WEBHOOK_SECRET>
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { REPASSE_POLICY } from "../_shared/repasse-policy.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -156,6 +157,32 @@ Deno.serve(async (req) => {
         await supabase.rpc("decrement_pdv_commission_pending", { _store_id: tx.store_id, _amount: pdvBilled });
       }
     }
+    // Reativa somente bloqueios criados pela política financeira e somente
+    // depois de quitar todas as cobranças de comissão ainda pendentes.
+    const { data: balanceAfterPayment } = await supabase
+      .from("store_balances")
+      .select("repasse_pendente, comissao_pendente")
+      .eq("store_id", tx.store_id)
+      .maybeSingle();
+    const remainingBalance = Number(balanceAfterPayment?.repasse_pendente || 0) +
+      Number(balanceAfterPayment?.comissao_pendente || 0);
+    const { count: unresolvedCharges } = await supabase
+      .from("financial_transactions")
+      .select("id", { count: "exact", head: true })
+      .eq("store_id", tx.store_id)
+      .eq("transaction_kind", "commission_charge")
+      .eq("status", "pending");
+
+    if ((unresolvedCharges || 0) === 0 && remainingBalance < REPASSE_POLICY.BLOCK_THRESHOLD_BRL) {
+      const { error: restoreErr } = await supabase
+        .from("stores")
+        .update({ status: "ativo", billing_blocked_at: null, billing_block_reason: null } as any)
+        .eq("id", tx.store_id)
+        .eq("status", "bloqueado")
+        .not("billing_blocked_at", "is", null);
+      if (restoreErr) console.error("[woovi-webhook] store reactivation error", restoreErr);
+    }
+
     return json({ ok: true, type: "payment_confirmed", transaction_id: tx.id });
   }
 
