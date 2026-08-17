@@ -285,6 +285,30 @@ Deno.serve(async (req) => {
       console.log(`[asaas-webhook] taxa física paga store=${tx.store_id} plan=${planType} valor=${paidAmount}`);
     }
 
+    // Reativa somente bloqueios financeiros criados pela política unificada.
+    // Bloqueios administrativos não têm billing_blocked_at e nunca são alterados aqui.
+    const { data: balanceAfterPayment } = await supabase
+      .from("store_balances")
+      .select("repasse_pendente, comissao_pendente")
+      .eq("store_id", tx.store_id)
+      .maybeSingle();
+    const remainingBalance = Number(balanceAfterPayment?.repasse_pendente || 0) + Number(balanceAfterPayment?.comissao_pendente || 0);
+    const { count: openChargeCount } = await supabase
+      .from("financial_transactions")
+      .select("id", { count: "exact", head: true })
+      .eq("store_id", tx.store_id)
+      .eq("transaction_kind", "commission_charge")
+      .eq("status", "pending");
+    if (remainingBalance < 500 && Number(openChargeCount || 0) === 0) {
+      const { error: restoreErr } = await supabase
+        .from("stores")
+        .update({ status: "ativo", billing_blocked_at: null, billing_block_reason: null } as any)
+        .eq("id", tx.store_id)
+        .eq("status", "bloqueado")
+        .not("billing_blocked_at", "is", null);
+      if (restoreErr) console.error("[asaas-webhook] store reactivation error", restoreErr);
+    }
+
     return json({ ok: true, type: "payment_confirmed", transaction_id: tx.id });
   }
 

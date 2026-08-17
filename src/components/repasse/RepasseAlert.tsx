@@ -115,7 +115,7 @@ export default function RepasseAlert({ storeId, storeName, onGoToFinance }: Prop
             {isBlocked ? <ShieldAlert className={`h-6 w-6 ${tone.icon}`} /> : <AlertTriangle className={`h-6 w-6 ${tone.icon}`} />}
             <div>
               <h3 className="font-bold text-sm text-foreground">
-                {isBlocked ? "Painel bloqueado — quite o repasse" : REPASSE_LABELS.pendingTitle}
+                {isBlocked ? "Loja bloqueada — quite o repasse" : REPASSE_LABELS.pendingTitle}
               </h3>
               <p className="text-[11px] text-muted-foreground mt-0.5">
                 Pedidos pagos em dinheiro, cartão ou PIX na maquininha acumulam aqui.
@@ -198,8 +198,10 @@ export default function RepasseAlert({ storeId, storeName, onGoToFinance }: Prop
           {belowMin && !isBlocked && (
             <>Cobrança PIX gerada automaticamente toda segunda-feira a partir de <strong>{formatBRL(REPASSE_RULES.MIN_AUTO_CHARGE_BRL)}</strong>.<br /></>
           )}
-          Sem pagamento em <strong>{REPASSE_RULES.SUSPENSION_DAYS} dias</strong>, a loja é suspensa.
-          {" "}Saldo acima de <strong>{formatBRL(REPASSE_RULES.BLOCK_THRESHOLD_BRL)}</strong> trava o painel imediatamente.
+          A cobrança automática ocorre toda segunda-feira a partir de <strong>{formatBRL(REPASSE_RULES.MIN_AUTO_CHARGE_BRL)}</strong>.<br />
+          Saldo acima de <strong>{formatBRL(REPASSE_RULES.BLOCK_THRESHOLD_BRL)}</strong> bloqueia novos pedidos imediatamente.
+          {" "}A cobrança pendente mais antiga bloqueia a loja após <strong>{REPASSE_RULES.SUSPENSION_DAYS} dias</strong>.
+          Após a quitação integral, a loja é reativada automaticamente.
         </p>
 
         {onGoToFinance && !pix && (
