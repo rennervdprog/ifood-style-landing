@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
  import { formatBRL } from "@/lib/utils";
 import { useStorePlan } from "@/hooks/useStorePlan";
+import { REPASSE_RULES } from "@/lib/repasseRules";
 
 interface CommissionAlertProps {
   storeId: string;
@@ -42,17 +43,20 @@ const CommissionAlert = ({ storeId, storeName, onGoToFinance }: CommissionAlertP
     refetchInterval: 60000,
   });
 
-  const { data: minPayoutSetting } = useQuery({
-    queryKey: ["min-payout-amount"],
+  const { data: activePlanBalance } = useQuery({
+    queryKey: ["store-plan-balance-alert", storeId],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("admin_settings")
-        .select("value")
-        .eq("key", "min_payout_amount")
+      const { data, error } = await supabase
+        .from("store_plans")
+        .select("plan_type, pdv_commission_pending")
+        .eq("store_id", storeId)
+        .eq("is_active", true)
         .maybeSingle();
-      return Number(data?.value || 100);
+      if (error) throw error;
+      return data;
     },
-    staleTime: 1000 * 60 * 10,
+    enabled: !!storeId,
+    staleTime: 30_000,
   });
 
   // Check store status to see if blocked
@@ -105,17 +109,28 @@ const CommissionAlert = ({ storeId, storeName, onGoToFinance }: CommissionAlertP
   });
 
   const pendingCommission = Number(storeBalance?.comissao_pendente || storeBalance?.pending_commission || 0);
+  const pendingRepasse = Number(storeBalance?.repasse_pendente || 0);
+  const pendingPdv = Number(activePlanBalance?.pdv_commission_pending || 0);
+  const activePlanType = String(activePlanBalance?.plan_type || plan.planType || "commission_only");
+  const balanceBilled = activePlanType === "fixed" || activePlanType === "supporter"
+    ? pendingRepasse
+    : activePlanType === "hybrid"
+      ? pendingRepasse + pendingCommission
+      : activePlanType === "commission_only"
+        ? pendingCommission
+        : 0;
+  const pendingChargeAmount = Number((balanceBilled + pendingPdv).toFixed(2));
   const hasDocument = !!ownerProfile?.document;
   const isBlocked = storeData?.status === "bloqueado";
-  const minPayout = minPayoutSetting ?? 100;
-  const canPay = pendingCommission >= minPayout || isBlocked;
+  const minPayout = REPASSE_RULES.MIN_AUTO_CHARGE_BRL;
+  const canPay = pendingChargeAmount >= minPayout || isBlocked;
 
-  // Calculate days until deactivation
+  // Regra canônica: bloqueio por cobrança pendente mais antiga após 30 dias.
   const daysRemaining = oldestPending?.created_at
-    ? Math.max(0, 3 - Math.floor((Date.now() - new Date(oldestPending.created_at).getTime()) / (1000 * 60 * 60 * 24)))
+    ? Math.max(0, REPASSE_RULES.SUSPENSION_DAYS - Math.floor((Date.now() - new Date(oldestPending.created_at).getTime()) / (1000 * 60 * 60 * 24)))
     : null;
 
-  if (dismissed || pendingCommission <= 0) return null;
+  if (dismissed || pendingChargeAmount <= 0) return null;
 
   const handlePayCommission = async () => {
     if (!hasDocument) {
@@ -128,7 +143,7 @@ const CommissionAlert = ({ storeId, storeName, onGoToFinance }: CommissionAlertP
         body: {
           action: "commission_charge",
           store_id: storeId,
-          amount: pendingCommission,
+          amount: pendingChargeAmount,
           description: `Comissão ItaSuper - ${storeName}`,
         },
       });
@@ -141,7 +156,7 @@ const CommissionAlert = ({ storeId, storeName, onGoToFinance }: CommissionAlertP
         qr_code: data.pix_code ?? data.qr_code ?? null,
         qr_code_base64: data.qr_code_url ?? data.qr_code_base64 ?? null,
         reference_code: data.reference_code,
-        amount: Number(data.amount || pendingCommission),
+        amount: Number(data.amount || pendingChargeAmount),
         status: data.status || "pending",
       });
       toast.success(`Cobrança ${data.reference_code} gerada!`);
@@ -219,7 +234,7 @@ const CommissionAlert = ({ storeId, storeName, onGoToFinance }: CommissionAlertP
         <div className="text-center py-2">
           <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Valor a Pagar</p>
           <p className={`text-3xl font-black ${isBlocked ? "text-red-500" : "text-amber-500"}`}>
-            {formatBRL(pendingCommission)}
+            {formatBRL(pendingChargeAmount)}
           </p>
         </div>
 
@@ -244,7 +259,7 @@ const CommissionAlert = ({ storeId, storeName, onGoToFinance }: CommissionAlertP
         {/* Always show the deactivation warning */}
         {!isBlocked && (
           <p className="text-[10px] text-muted-foreground text-center">
-            ⚠️ Se a comissão não for paga em até <strong>3 dias</strong>, sua loja será automaticamente suspensa.
+            ⚠️ A cobrança pendente mais antiga pode suspender a loja após <strong>{REPASSE_RULES.SUSPENSION_DAYS} dias</strong> sem pagamento.
           </p>
         )}
 
@@ -304,12 +319,12 @@ const CommissionAlert = ({ storeId, storeName, onGoToFinance }: CommissionAlertP
             <div className="w-full bg-muted rounded-full h-3 overflow-hidden">
               <div
                 className="h-full bg-gradient-to-r from-amber-500 to-orange-500 rounded-full transition-all duration-500"
-                style={{ width: `${Math.min(100, (pendingCommission / minPayout) * 100)}%` }}
+                style={{ width: `${Math.min(100, (pendingChargeAmount / minPayout) * 100)}%` }}
               />
             </div>
             <p className="text-xs text-muted-foreground text-center">
               PIX disponível a partir de <strong className="text-foreground">{formatBRL(minPayout)}</strong>
-              {" "}— faltam <strong className="text-amber-500">{formatBRL((minPayout - pendingCommission))}</strong>
+              {" "}— faltam <strong className="text-amber-500">{formatBRL((minPayout - pendingChargeAmount))}</strong>
             </p>
           </div>
         )}

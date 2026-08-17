@@ -5,9 +5,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Banknote, QrCode, Copy, Loader2, X, ChevronDown, ChevronUp, CircleCheck, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { REPASSE_RULES } from "@/lib/repasseRules";
 
-const LOCK_THRESHOLD = 500;  // R$500 → modal bloqueante
-const MIN_CHARGE = 30;       // R$30 → aparece o alerta (cobrança toda segunda-feira)
+const LOCK_THRESHOLD = REPASSE_RULES.BLOCK_THRESHOLD_BRL;
 
 interface PlatformSplitAlertProps {
   storeId: string;
@@ -37,33 +37,20 @@ const PlatformSplitAlert = ({ storeId, storeName, splitPerOrder, onGoToFinance }
     refetchInterval: 30000,
   });
 
-  const { data: pdvPending } = useQuery({
-    queryKey: ["store-pdv-pending", storeId],
+  const { data: planBalance } = useQuery({
+    queryKey: ["store-plan-balance-split", storeId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("store_plans")
-        .select("pdv_commission_pending")
+        .select("plan_type, pdv_commission_pending")
         .eq("store_id", storeId)
         .eq("is_active", true)
         .maybeSingle();
       if (error) throw error;
-      return Number(data?.pdv_commission_pending || 0);
+      return data;
     },
     enabled: !!storeId,
     refetchInterval: 30000,
-  });
-
-  const { data: minPayoutSetting } = useQuery({
-    queryKey: ["min-payout-amount"],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("admin_settings")
-        .select("value")
-        .eq("key", "min_payout_amount")
-        .maybeSingle();
-      return Number(data?.value || 100);
-    },
-    staleTime: 1000 * 60 * 10,
   });
 
   const { data: pendingCharge } = useQuery({
@@ -85,15 +72,22 @@ const PlatformSplitAlert = ({ storeId, storeName, splitPerOrder, onGoToFinance }
     refetchInterval: 30000,
   });
 
-  const minPayout = minPayoutSetting ?? 100;
+  const minPayout = REPASSE_RULES.MIN_AUTO_CHARGE_BRL;
   const repasse = Number(storeBalance?.repasse_pendente || 0);
   const comissao = Number(storeBalance?.comissao_pendente || 0);
-  const pdv = Number(pdvPending || 0);
-  // Total pendente: repasse (R$/entrega) + comissão (%) + PDV (R$/venda PDV)
-  const pendingFee = repasse + comissao + pdv;
+  const pdv = Number(planBalance?.pdv_commission_pending || 0);
+  const planType = String(planBalance?.plan_type || "commission_only");
+  const balanceBilled = planType === "fixed" || planType === "supporter"
+    ? repasse
+    : planType === "hybrid"
+      ? repasse + comissao
+      : planType === "commission_only"
+        ? comissao
+        : 0;
+  // Valor exato aceito pelo backend e pelo webhook, incluindo PDV quando aplicável.
+  const pendingFee = Number((balanceBilled + pdv).toFixed(2));
   const total = pendingFee;
-  // Cobrança automática a partir de R$30 toda segunda-feira
-  const canPay = pendingFee >= 30;
+  const canPay = pendingFee >= minPayout;
 
   const handlePayFee = async () => {
     setGenerating(true);
@@ -255,8 +249,8 @@ const PlatformSplitAlert = ({ storeId, storeName, splitPerOrder, onGoToFinance }
           <Banknote className="h-4 w-4 text-blue-400 shrink-0 mt-0.5" />
           <div className="text-xs font-medium text-blue-400 space-y-1">
             <p>Pedidos pagos em <strong>dinheiro, cartão ou PIX maquininha</strong> acumulam aqui.</p>
-            <p>O sistema gera uma cobrança via PIX toda <strong>segunda-feira</strong> quando o saldo atingir <strong>R$30</strong>.</p>
-            <p>Se não pagar em 30 dias a loja é suspensa. Saldo acima de R$500 trava o painel imediatamente.</p>
+            <p>O sistema gera uma cobrança via PIX toda <strong>segunda-feira</strong> quando o saldo atingir <strong>{formatBRL(REPASSE_RULES.MIN_AUTO_CHARGE_BRL)}</strong>.</p>
+            <p>Se não pagar em {REPASSE_RULES.SUSPENSION_DAYS} dias a loja é suspensa. Saldo acima de {formatBRL(REPASSE_RULES.BLOCK_THRESHOLD_BRL)} trava o painel imediatamente.</p>
             {(Number(repasse > 0) + Number(comissao > 0) + Number(pdv > 0)) >= 1 && (
               <div className="mt-1.5 space-y-0.5 text-[10px] text-blue-300 border-t border-blue-500/20 pt-1.5">
                 {repasse > 0 && <p>Delivery ({formatBRL(splitPerOrder)}/entrega): <strong>{formatBRL(repasse)}</strong></p>}

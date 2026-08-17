@@ -39,16 +39,16 @@ export function usePendingRepasse(storeId?: string): PendingRepasseResult {
     refetchInterval: 30_000,
   });
 
-  const { data: pdv, isLoading: loadingPdv } = useQuery({
-    queryKey: ["repasse-pdv-pending", storeId],
+  const { data: plan, isLoading: loadingPlan } = useQuery({
+    queryKey: ["repasse-plan-balance", storeId],
     queryFn: async () => {
       const { data } = await supabase
         .from("store_plans")
-        .select("pdv_commission_pending")
+        .select("plan_type, pdv_commission_pending")
         .eq("store_id", storeId!)
         .eq("is_active", true)
         .maybeSingle();
-      return Number(data?.pdv_commission_pending || 0);
+      return data;
     },
     enabled,
     refetchInterval: 30_000,
@@ -71,14 +71,24 @@ export function usePendingRepasse(storeId?: string): PendingRepasseResult {
     refetchInterval: 30_000,
   });
 
-  const splitEntrega = Number(balance?.repasse_pendente || 0);
-  const comissao = Number(balance?.comissao_pendente || 0);
-  const pdvPend = Number(pdv || 0);
+  const storedSplitEntrega = Number(balance?.repasse_pendente || 0);
+  const storedComissao = Number(balance?.comissao_pendente || 0);
+  const pdvPend = Number(plan?.pdv_commission_pending || 0);
+  const planType = String(plan?.plan_type || "commission_only");
+
+  // Espelha o contrato do backend de cobrança e dos webhooks de baixa.
+  const splitEntrega = planType === "fixed" || planType === "supporter" || planType === "hybrid"
+    ? storedSplitEntrega
+    : 0;
+  const comissao = planType === "commission_only" || planType === "hybrid"
+    ? storedComissao
+    : 0;
+  const total = Number((splitEntrega + comissao + pdvPend).toFixed(2));
 
   return {
-    total: splitEntrega + comissao + pdvPend,
+    total,
     breakdown: { comissao, splitEntrega, pdv: pdvPend },
     hasPendingCharge: !!charge,
-    isLoading: loadingBalance || loadingPdv || loadingCharge,
+    isLoading: loadingBalance || loadingPlan || loadingCharge,
   };
 }

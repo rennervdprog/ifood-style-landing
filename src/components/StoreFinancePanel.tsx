@@ -18,6 +18,7 @@ import {
 } from "@/lib/pixSafeGuard";
 import { SIMULATION_MODE, createSimulatedPixCharge, simulatePaymentDelay } from "@/lib/pixSimulation";
 import { multiplyMoney, subtractMoney, sumMoney, averageMoney, formatBRL } from "@/lib/utils";
+import { REPASSE_RULES } from "@/lib/repasseRules";
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip,
   ResponsiveContainer, PieChart, Pie, Cell,
@@ -257,20 +258,8 @@ const DONUT_COLORS = [NEON_COLORS.pink, NEON_COLORS.blue, NEON_COLORS.amber];
     enabled: !!storeId,
   });
 
-  const { data: minPayoutSetting } = useQuery({
-    queryKey: ["min-payout-amount"],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("admin_settings")
-        .select("value")
-        .eq("key", "min_payout_amount")
-        .maybeSingle();
-      return Number(data?.value || 100);
-    },
-    staleTime: 1000 * 60 * 10,
-  });
-
-  const minPayout = minPayoutSetting ?? 100;
+  // A interface reutiliza a regra canônica do backend: R$150 no ciclo semanal.
+  const minPayout = REPASSE_RULES.MIN_AUTO_CHARGE_BRL;
 
   // Fetch store owner profile to check PIX key + use plan commission rate
   const { data: storeData } = useQuery({
@@ -383,8 +372,19 @@ const DONUT_COLORS = [NEON_COLORS.pink, NEON_COLORS.blue, NEON_COLORS.amber];
   const prevTotalSales = sumMoney((prevOrders || []).map(o => o.subtotal));
   const growthPercent = prevTotalSales > 0 ? ((totalSales - prevTotalSales) / prevTotalSales) * 100 : 0;
 
-  // DB balance
+  // Saldos do banco são a fonte de verdade para cobrança manual.
   const dbComissaoPendente = Number(storeBalance?.comissao_pendente || storeBalance?.pending_commission || 0);
+  const dbRepassePendente = Number(storeBalance?.repasse_pendente || 0);
+  const dbPdvPendente = Number(pdvPlanData?.pdv_commission_pending || 0);
+  const activePlanType = String((storeData as any)?.plan_type || "commission_only");
+  const dbBalanceBilled = activePlanType === "fixed" || activePlanType === "supporter"
+    ? dbRepassePendente
+    : activePlanType === "hybrid"
+      ? dbRepassePendente + dbComissaoPendente
+      : activePlanType === "commission_only"
+        ? dbComissaoPendente
+        : 0;
+  const manualChargeAmount = Number((dbBalanceBilled + dbPdvPendente).toFixed(2));
 
   // Chart data: daily sales
   const chartData = useMemo(() => {
@@ -487,13 +487,13 @@ const DONUT_COLORS = [NEON_COLORS.pink, NEON_COLORS.blue, NEON_COLORS.amber];
       toast.error("Muitas tentativas. Aguarde alguns minutos.");
       return;
     }
-    if (dbComissaoPendente <= 0 && commissionDue <= 0) {
-      toast.info("Não há comissões pendentes.");
+    if (manualChargeAmount <= 0) {
+      toast.info("Não há saldo pendente faturável.");
       return;
     }
-    const chargeAmount = dbComissaoPendente > 0 ? dbComissaoPendente : commissionDue;
+    const chargeAmount = manualChargeAmount;
     if (chargeAmount < minPayout) {
-      toast.error(`Valor mínimo para cobrança é ${formatBRL(minPayout)}. Faltam ${formatBRL(minPayout - chargeAmount)}.`);
+      toast.error(`A cobrança automática é liberada a partir de ${formatBRL(minPayout)}. Faltam ${formatBRL(minPayout - chargeAmount)}.`);
       return;
     }
     if (!SIMULATION_MODE) {

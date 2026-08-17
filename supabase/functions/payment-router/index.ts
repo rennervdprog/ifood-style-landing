@@ -971,6 +971,69 @@ async function handleOrderPix(
 
 // ── Route: commission charge ─────────────────────────────────────────
 
+type ManualCommissionChargeContext = {
+  planType: string;
+  repassePendente: number;
+  comissaoPendente: number;
+  pdvPending: number;
+  balanceBilled: number;
+  totalAmount: number;
+};
+
+/**
+ * Fonte de verdade da cobrança manual. O cliente informa apenas a intenção
+ * de pagar; o servidor calcula os buckets faturáveis para evitar baixa em
+ * saldo incorreto no webhook.
+ */
+async function resolveManualCommissionChargeContext(
+  serviceClient: any,
+  storeId: string,
+): Promise<ManualCommissionChargeContext> {
+  const [balanceResult, planResult] = await Promise.all([
+    serviceClient
+      .from("store_balances")
+      .select("repasse_pendente, comissao_pendente, pending_commission")
+      .eq("store_id", storeId)
+      .maybeSingle(),
+    serviceClient
+      .from("store_plans")
+      .select("plan_type, pdv_commission_pending")
+      .eq("store_id", storeId)
+      .eq("is_active", true)
+      .maybeSingle(),
+  ]);
+
+  if (balanceResult.error || planResult.error) {
+    throw new Error("Não foi possível calcular o saldo pendente da loja.");
+  }
+
+  const planType = String(planResult.data?.plan_type || "commission_only");
+  const repassePendente = Number(balanceResult.data?.repasse_pendente || 0);
+  const comissaoPendente = Number(
+    balanceResult.data?.comissao_pendente || balanceResult.data?.pending_commission || 0,
+  );
+  const pdvPending = Number(planResult.data?.pdv_commission_pending || 0);
+
+  let balanceBilled = 0;
+  if (planType === "fixed" || planType === "supporter") {
+    balanceBilled = repassePendente;
+  } else if (planType === "hybrid") {
+    balanceBilled = repassePendente + comissaoPendente;
+  } else if (planType === "commission_only") {
+    balanceBilled = comissaoPendente;
+  }
+
+  balanceBilled = Number(balanceBilled.toFixed(2));
+  return {
+    planType,
+    repassePendente: Number(repassePendente.toFixed(2)),
+    comissaoPendente: Number(comissaoPendente.toFixed(2)),
+    pdvPending: Number(pdvPending.toFixed(2)),
+    balanceBilled,
+    totalAmount: Number((balanceBilled + pdvPending).toFixed(2)),
+  };
+}
+
 async function handleCommissionCharge(
   body: z.infer<typeof CommissionChargeSchema>,
   userId: string,
@@ -1032,6 +1095,17 @@ async function handleCommissionCharge(
     } satisfies StandardPixResponse);
   }
 
+  const chargeContext = await resolveManualCommissionChargeContext(serviceClient, store_id);
+  if (chargeContext.totalAmount <= 0) {
+    return json({ error: "Não há saldo pendente faturável para esta loja." }, 400);
+  }
+  if (Math.abs(Number(amount.toFixed(2)) - chargeContext.totalAmount) > 0.01) {
+    return json({
+      error: "O saldo pendente foi atualizado. Atualize a tela e gere uma nova cobrança.",
+      expected_amount: chargeContext.totalAmount,
+    }, 409);
+  }
+
   const { data: refData } = await serviceClient.rpc("generate_financial_reference", { _prefix: "FAT" });
   const referenceCode = refData || `#FAT-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
   const createdAt = new Date().toISOString();
@@ -1049,7 +1123,7 @@ async function handleCommissionCharge(
   const idempotencyKey = `commission-${store_id}-${referenceCode}`;
 
   const result = await routePixCreation({
-    amount: Number(amount.toFixed(2)),
+    amount: chargeContext.totalAmount,
     description: desc,
     payerEmail: ownerProfile?.email || userEmail || "lojista@itasuper.com",
     payerFirstName: ownerProfile?.full_name?.split(" ")[0] || store.name.substring(0, 100),
@@ -1068,7 +1142,7 @@ async function handleCommissionCharge(
       store_id,
       transaction_kind: "commission_charge",
       reference_code: referenceCode,
-      amount: Number(amount.toFixed(2)),
+      amount: chargeContext.totalAmount,
       status: "pending",
       provider: resultBody.provider || "mercado_pago",
       mercado_pago_payment_id: resultBody.payment_id ? String(resultBody.payment_id) : null,
@@ -1077,7 +1151,18 @@ async function handleCommissionCharge(
       pix_copy_paste: resultBody.pix_code || null,
       created_at: createdAt,
       updated_at: createdAt,
-      metadata: { store_name: store.name, description: desc, expires_at: expiresAt },
+      metadata: {
+        store_name: store.name,
+        description: desc,
+        expires_at: expiresAt,
+        plan_type: chargeContext.planType,
+        repasse_pendente: chargeContext.repassePendente,
+        comissao_pendente: chargeContext.comissaoPendente,
+        pdv_commission_pending: chargeContext.pdvPending,
+        balance_billed: chargeContext.balanceBilled,
+        pdv_pending_billed: chargeContext.pdvPending,
+        charge_family: "manual_delivery_fee",
+      },
     });
   }
 
