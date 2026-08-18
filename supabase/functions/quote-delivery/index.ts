@@ -167,6 +167,22 @@ Deno.serve(async (req) => {
     return json({ ok: false, reason: "delivery_unavailable" }, 409);
   }
 
+  if (store.delivery_mode === "own") {
+    const { data: availability, error: availabilityError } = await admin
+      .rpc("store_delivery_availability", { _store_id: storeId })
+      .maybeSingle();
+    if (availabilityError || !availability) {
+      return json({ ok: false, reason: "delivery_availability_unavailable" }, 503);
+    }
+    if (!(availability as any).can_accept_delivery_orders) {
+      return json({
+        ok: false,
+        reason: (availability as any).reason_code || "no_driver_available",
+        message: (availability as any).reason_message || "Esta loja está sem entregador disponível no momento.",
+      }, 409);
+    }
+  }
+
   const storeLat = Number(store.latitude);
   const storeLng = Number(store.longitude);
   if (!Number.isFinite(storeLat) || !Number.isFinite(storeLng)) {
