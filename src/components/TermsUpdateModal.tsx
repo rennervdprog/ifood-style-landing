@@ -209,12 +209,18 @@ export const TermsUpdateModal = ({ pending, onAccepted }: Props) => {
           style={{ paddingBottom: "max(16px, env(safe-area-inset-bottom))" }}>
 
           {pending.needs_terms && (
-            <button onClick={() => setCheckedTerms(!checkedTerms)} className="w-full flex items-start gap-3 text-left">
-              <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 mt-0.5 transition-colors ${
-                checkedTerms ? "bg-primary border-primary" : "bg-background border-border"
-              }`}>
+            <div className="flex items-start gap-3">
+              <button
+                type="button"
+                onClick={() => setCheckedTerms(!checkedTerms)}
+                aria-pressed={checkedTerms}
+                aria-label="Confirmar aceite dos Termos de Uso"
+                className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 mt-0.5 transition-colors ${
+                  checkedTerms ? "bg-primary border-primary" : "bg-background border-border"
+                }`}
+              >
                 {checkedTerms && <CheckCircle2 className="h-3.5 w-3.5 text-primary-foreground" />}
-              </div>
+              </button>
               <p className="text-xs text-muted-foreground leading-relaxed">
                 Li e aceito os{" "}
                 <a href="/termos" target="_blank" rel="noopener noreferrer" className="font-bold text-primary underline underline-offset-2">
@@ -222,16 +228,22 @@ export const TermsUpdateModal = ({ pending, onAccepted }: Props) => {
                 </a>{" "}
                 versão {termsVer}.
               </p>
-            </button>
+            </div>
           )}
 
           {pending.needs_privacy && (
-            <button onClick={() => setCheckedPrivacy(!checkedPrivacy)} className="w-full flex items-start gap-3 text-left">
-              <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 mt-0.5 transition-colors ${
-                checkedPrivacy ? "bg-emerald-500 border-emerald-500" : "bg-background border-border"
-              }`}>
+            <div className="flex items-start gap-3">
+              <button
+                type="button"
+                onClick={() => setCheckedPrivacy(!checkedPrivacy)}
+                aria-pressed={checkedPrivacy}
+                aria-label="Confirmar aceite da Política de Privacidade"
+                className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 mt-0.5 transition-colors ${
+                  checkedPrivacy ? "bg-emerald-500 border-emerald-500" : "bg-background border-border"
+                }`}
+              >
                 {checkedPrivacy && <CheckCircle2 className="h-3.5 w-3.5 text-white" />}
-              </div>
+              </button>
               <p className="text-xs text-muted-foreground leading-relaxed">
                 Li e aceito a{" "}
                 <a href="/privacidade" target="_blank" rel="noopener noreferrer" className="font-bold text-emerald-600 underline underline-offset-2">
@@ -239,7 +251,7 @@ export const TermsUpdateModal = ({ pending, onAccepted }: Props) => {
                 </a>{" "}
                 versão {privacyVer}.
               </p>
-            </button>
+            </div>
           )}
 
           {/* Botão aceitar */}
