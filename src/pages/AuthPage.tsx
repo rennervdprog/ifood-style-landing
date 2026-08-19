@@ -42,12 +42,17 @@ const SESSION_ALIVE_KEY = "itasuper_session_alive";
  * Login still accepts a real e-mail (legacy/admin/lojista accounts).
  */
 const waToSynthEmail = (digits: string) => `wa${digits}@itasuper.app`;
-const looksLikeEmail = (v: string) => v.includes("@");
+const looksLikeEmail = (value: string) => /^\S+@\S+\.\S+$/.test(value.trim());
+const isLegacyWhatsAppLogin = (value: string) => {
+  const digits = value.replace(/\D/g, "");
+  return digits.length === 10 || digits.length === 11;
+};
 
 const AuthPage = () => {
   const [mode, setMode] = useState<AuthMode>("login");
-  const [identifier, setIdentifier] = useState(""); // login: WhatsApp ou e-mail
+  const [identifier, setIdentifier] = useState(""); // login: e-mail; WhatsApp é aceito somente para contas legadas
   const [email, setEmail] = useState(""); // usado só em "forgot"
+  const [signupEmail, setSignupEmail] = useState("");
   const [password, setPassword] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
   const [fullName, setFullName] = useState("");
@@ -107,11 +112,20 @@ const AuthPage = () => {
 
     if (mode === "login") {
       if (!identifier.trim() || !password.trim()) {
-        toast.error("Preencha WhatsApp e senha.");
+        toast.error("Preencha e-mail e senha.");
+        return;
+      }
+      if (!looksLikeEmail(identifier) && !isLegacyWhatsAppLogin(identifier)) {
+        toast.error("Informe um e-mail válido. Contas antigas também podem usar o WhatsApp cadastrado.");
         return;
       }
     }
     if (mode === "signup") {
+      const registrationEmail = signupEmail.trim().toLowerCase();
+      if (!looksLikeEmail(registrationEmail)) {
+        toast.error("Informe um e-mail válido. Ele será usado para entrar e recuperar sua senha.");
+        return;
+      }
       const whatsDigits = whatsapp.replace(/\D/g, "");
       if (whatsDigits.length < 10 || whatsDigits.length > 11) {
         toast.error("Informe um WhatsApp válido com DDD.");
@@ -122,6 +136,7 @@ const AuthPage = () => {
         return;
       }
       if (fullName.trim().length < 3) { toast.error("Informe seu nome completo."); return; }
+      if (!validateDocument(cpf)) { toast.error("Informe um CPF ou CNPJ válido."); return; }
       if (!/^\d{4}$/.test(deliveryPin)) { toast.error("Defina um PIN de entrega com 4 dígitos numéricos."); return; }
       if (deliveryPin !== confirmPin) { toast.error("Os PINs informados não coincidem."); return; }
       if (!pinAcknowledged) { toast.error("Confirme que este PIN será usado em todas as suas entregas."); return; }
@@ -149,9 +164,10 @@ const AuthPage = () => {
     try {
       if (mode === "login") {
         const id = identifier.trim();
-        const loginEmail = looksLikeEmail(id)
-          ? id
-          : waToSynthEmail(`55${id.replace(/\D/g, "")}`);
+        const isLegacyLogin = !looksLikeEmail(id);
+        const loginEmail = isLegacyLogin
+          ? waToSynthEmail(`55${id.replace(/\D/g, "")}`)
+          : id.toLowerCase();
         const { data: signInData, error } = await supabase.auth.signInWithPassword({ email: loginEmail, password });
         if (error) throw error;
 
@@ -214,7 +230,11 @@ const AuthPage = () => {
           localStorage.removeItem(REMEMBER_KEY);
           sessionStorage.removeItem(SESSION_ALIVE_KEY);
         } catch {}
-        toast.success("Login realizado com sucesso!");
+        if (isLegacyLogin) {
+          toast.info("Sua conta usa WhatsApp como acesso antigo. Cadastre um e-mail no Perfil para recuperar sua senha com segurança.", { duration: 7000 });
+        } else {
+          toast.success("Login realizado com sucesso!");
+        }
         
         const { data: { user: loggedUser } } = await supabase.auth.getUser();
         if (loggedUser) {
@@ -259,9 +279,9 @@ const AuthPage = () => {
         }
       } else if (mode === "signup") {
         const whatsDigits = `55${whatsapp.replace(/\D/g, "")}`;
-        const synthEmail = waToSynthEmail(whatsDigits);
+        const registrationEmail = signupEmail.trim().toLowerCase();
         const { data: signUpData, error } = await supabase.auth.signUp({
-          email: synthEmail,
+          email: registrationEmail,
           password,
           options: {
             emailRedirectTo: window.location.origin,
@@ -285,6 +305,8 @@ const AuthPage = () => {
             terms_accepted_at: new Date().toISOString(),
             whatsapp_number: whatsDigits,
             full_name: fullName.trim(),
+            document: sanitizeDocument(cpf),
+            email: registrationEmail,
             delivery_pin: deliveryPin,
           }).eq("user_id", signUpData.user.id);
           await supabase.from("saved_addresses").insert({
@@ -379,22 +401,20 @@ const AuthPage = () => {
           )}
           {mode === "login" && (
             <div>
-              <label className="text-xs font-semibold text-slate-500 tracking-wide mb-1.5 block">WhatsApp</label>
+              <label className="text-xs font-semibold text-slate-500 tracking-wide mb-1.5 block">E-mail</label>
               <div className="relative">
-                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                 <input
-                  type="tel"
-                  inputMode="text"
-                  placeholder="(14) 99999-9999"
+                  type="email"
+                  inputMode="email"
+                  placeholder="seu@email.com"
                   value={identifier}
-                  onChange={(e) => {
-                    const v = e.target.value;
-                    setIdentifier(looksLikeEmail(v) ? v : maskWhatsApp(v));
-                  }}
+                  onChange={(e) => setIdentifier(e.target.value)}
                   className={inputClass}
                   autoComplete="username"
                 />
               </div>
+              <p className="text-[11px] text-slate-400 mt-1.5">Conta criada antigamente com WhatsApp? Você ainda pode informar o número nesta tela.</p>
             </div>
           )}
           {mode === "forgot" && (
@@ -411,6 +431,25 @@ const AuthPage = () => {
                   autoComplete="email"
                 />
               </div>
+            </div>
+          )}
+
+          {mode === "signup" && (
+            <div>
+              <label className="text-xs font-semibold text-slate-500 tracking-wide mb-1.5 block">E-mail</label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <input
+                  type="email"
+                  inputMode="email"
+                  placeholder="seu@email.com"
+                  value={signupEmail}
+                  onChange={(e) => setSignupEmail(e.target.value)}
+                  className={inputClass}
+                  autoComplete="email"
+                />
+              </div>
+              <p className="text-[11px] text-slate-400 mt-1.5">Usaremos este e-mail para acesso e recuperação de senha.</p>
             </div>
           )}
 
@@ -445,6 +484,22 @@ const AuthPage = () => {
                     onChange={(e) => setFullName(e.target.value)}
                     maxLength={80}
                     autoComplete="name"
+                    className={inputClass}
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-slate-500 tracking-wide mb-1.5 block">CPF ou CNPJ</label>
+                <div className="relative">
+                  <FileText className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="000.000.000-00"
+                    value={formatDocument(cpf)}
+                    onChange={(e) => setCpf(formatDocument(e.target.value))}
+                    maxLength={18}
+                    autoComplete="off"
                     className={inputClass}
                   />
                 </div>
