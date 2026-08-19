@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Bike, Plus, Trash2, Search, UserCheck, UserX, Loader2, Share2, Copy, Users, Wallet, Zap, Clock, Info, CheckCircle2, Smartphone, UserPlus, MapPin } from "lucide-react";
+import { Bike, Plus, Trash2, Search, UserCheck, UserX, Loader2, Share2, Copy, Users, Wallet, Zap, Clock, Info, CheckCircle2, Smartphone, UserPlus, MapPin, MessageCircle, ShieldCheck } from "lucide-react";
 import StoreDriverFinance from "@/components/StoreDriverFinance";
 
 interface StoreDriverManagerProps {
@@ -16,9 +16,26 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [searching, setSearching] = useState(false);
   const [foundDrivers, setFoundDrivers] = useState<{ user_id: string; full_name: string; phone: string; vehicle: string; email: string }[]>([]);
+  const [directorySearch, setDirectorySearch] = useState("");
+  const [directorySearching, setDirectorySearching] = useState(false);
+  const [directoryDrivers, setDirectoryDrivers] = useState<{ user_id: string; full_name: string; city: string; vehicle: string; phone: string }[]>([]);
   const [adding, setAdding] = useState(false);
   const [activeTab, setActiveTab] = useState<"team" | "finance">("team");
   const [paymentModeChoice, setPaymentModeChoice] = useState<Record<string, PaymentMode>>({});
+
+  const { data: storeLocation } = useQuery({
+    queryKey: ["store-driver-directory-city", storeId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("stores")
+        .select("address_city")
+        .eq("id", storeId)
+        .maybeSingle();
+      if (error) throw error;
+      return data as { address_city?: string | null } | null;
+    },
+    staleTime: 1000 * 60 * 10,
+  });
 
   // Fetch linked drivers
   const { data: storeDrivers, isLoading } = useQuery({
@@ -131,6 +148,37 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
     }
   };
 
+  const handleDirectorySearch = async () => {
+    setDirectorySearching(true);
+    setDirectoryDrivers([]);
+    try {
+      const { data, error } = await supabase.rpc("list_store_city_opt_in_drivers" as any, {
+        _store_id: storeId,
+        _search: directorySearch.trim() || null,
+      } as any);
+      if (error) throw error;
+
+      const candidates = ((data as any[]) || [])
+        .filter((driver) => !storeDrivers?.some((linked: any) => linked.driver_user_id === driver.user_id))
+        .map((driver) => ({
+          user_id: driver.user_id,
+          full_name: driver.full_name || "Motoboy",
+          city: driver.city || "",
+          vehicle: driver.vehicle || "Veículo não informado",
+          phone: driver.whatsapp_number || "",
+        }));
+
+      setDirectoryDrivers(candidates);
+      if (candidates.length === 0) {
+        toast.info("Nenhum motoboy com contato autorizado foi encontrado para esta cidade.");
+      }
+    } catch (error: any) {
+      toast.error(error?.message || "Não foi possível consultar a base de motoboys.");
+    } finally {
+      setDirectorySearching(false);
+    }
+  };
+
   const handleAdd = async (driver: typeof foundDrivers[0]) => {
     const mode: PaymentMode = paymentModeChoice[driver.user_id] || "fim_do_dia";
     setAdding(true);
@@ -237,13 +285,13 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
           <li className="flex gap-2.5">
             <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center">3</span>
             <p className="text-xs text-foreground leading-relaxed">
-              <strong>Busque pelo nome/telefone</strong> dele abaixo e adicione à sua equipe, escolhendo o modo de pagamento da taxa.
+              <strong>Encontre profissionais da sua cidade</strong> na base voluntária ou busque pelo nome/telefone de um motoboy que você já conhece.
             </p>
           </li>
           <li className="flex gap-2.5">
             <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center">4</span>
             <p className="text-xs text-foreground leading-relaxed">
-              Pronto! Ele verá <strong>apenas os pedidos da sua loja</strong> e confirma entrega com o <strong>PIN do cliente</strong>.
+              Após combinarem a contratação <strong>diretamente entre vocês</strong>, adicione-o à equipe. Ele verá apenas os pedidos da sua loja e confirma entregas com o <strong>PIN do cliente</strong>.
             </p>
           </li>
         </ol>
@@ -325,14 +373,85 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
         </div>
       </div>
 
-      {/* Search & Add */}
+      {/* Base voluntária por cidade */}
+      <div className="bg-card border border-border rounded-2xl p-4 space-y-4">
+        <div className="flex items-start gap-3">
+          <div className="w-10 h-10 shrink-0 rounded-xl bg-primary/10 flex items-center justify-center">
+            <MapPin className="h-5 w-5 text-primary" />
+          </div>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-bold text-foreground">Base de motoboys da cidade</h3>
+              <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-primary/10 text-primary uppercase tracking-wide">Opcional</span>
+            </div>
+            <p className="text-[11px] text-muted-foreground mt-1 leading-relaxed">
+              Profissionais que autorizaram voluntariamente o contato de lojistas em {storeLocation?.address_city || "sua cidade"}.
+            </p>
+          </div>
+        </div>
+
+        <div className="rounded-xl bg-muted/50 border border-border px-3 py-2.5 flex gap-2.5">
+          <ShieldCheck className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+          <p className="text-[10px] text-muted-foreground leading-relaxed">
+            A ItaSuper apenas disponibiliza o contato autorizado. <strong className="text-foreground">Contratação, pagamento, escala e seguro são tratados diretamente entre loja e motoboy.</strong>
+          </p>
+        </div>
+
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Nome ou veículo (opcional)"
+              value={directorySearch}
+              onChange={e => setDirectorySearch(e.target.value)}
+              onKeyDown={e => e.key === "Enter" && handleDirectorySearch()}
+              className="w-full pl-9 pr-3 py-2.5 bg-muted/50 border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+            />
+          </div>
+          <button
+            onClick={handleDirectorySearch}
+            disabled={directorySearching}
+            className="bg-primary text-primary-foreground px-4 py-2.5 rounded-xl text-sm font-bold disabled:opacity-50 flex items-center gap-1.5"
+          >
+            {directorySearching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Users className="h-4 w-4" />}
+            Ver base
+          </button>
+        </div>
+
+        {directoryDrivers.length > 0 && (
+          <div className="space-y-2 pt-1">
+            {directoryDrivers.map((driver) => (
+              <div key={driver.user_id} className="border border-border rounded-xl p-3 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                  <Bike className="h-4 w-4 text-primary" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-bold text-foreground truncate">{driver.full_name}</p>
+                  <p className="text-[11px] text-muted-foreground truncate">{driver.vehicle} · {driver.city}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => window.open(`https://wa.me/${driver.phone.replace(/\D/g, "")}`, "_blank", "noopener,noreferrer")}
+                  className="shrink-0 h-9 px-3 rounded-lg bg-[#25D366]/10 text-[#128C4A] hover:bg-[#25D366]/20 text-[11px] font-bold flex items-center gap-1.5 transition-colors"
+                >
+                  <MessageCircle className="h-3.5 w-3.5" />
+                  WhatsApp
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Busca manual e vínculo direto */}
       <div className="bg-card border border-border rounded-2xl p-4 space-y-3">
         <div>
           <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
-            <Plus className="h-4 w-4 text-primary" /> 3. Adicionar motoboy à equipe
+            <Plus className="h-4 w-4 text-primary" /> Adicionar motoboy à equipe
           </h3>
           <p className="text-[11px] text-muted-foreground mt-1">
-            Busque pelo <strong>nome, e-mail ou telefone</strong> que ele usou no cadastro.
+            Use para vincular diretamente um profissional que você já conhece, pelo <strong>nome, e-mail ou telefone</strong> do cadastro.
           </p>
         </div>
         <div className="flex gap-2">

@@ -12,6 +12,7 @@ import DriverPersistentAlert from "@/components/DriverPersistentAlert";
 import DriverUpdateBanner from "@/components/DriverUpdateBanner";
 import SignOutConfirm from "@/components/SignOutConfirm";
 import { haptic } from "@/lib/haptics";
+import DriverDirectoryOptInCard from "@/components/DriverDirectoryOptInCard";
 import NativeShell from "@/components/native/NativeShell";
 import NativeBottomTabs, { type NativeTab } from "@/components/native/NativeBottomTabs";
 import { useRuntime } from "@/lib/runtime";
@@ -41,7 +42,7 @@ const DriverDashboardV2 = () => {
     queryFn: async () => {
       const { data } = await supabase
         .from("profiles")
-        .select("full_name, role")
+        .select("full_name, role, city")
         .eq("user_id", user!.id)
         .maybeSingle();
       return data;
@@ -256,6 +257,10 @@ const DriverDashboardV2 = () => {
               })}
             </div>
 
+            <div className="mt-6">
+              <DriverDirectoryOptInCard userId={user.id} initialCity={(driverProfile as any)?.city} />
+            </div>
+
             <SignOutConfirm
               redirectTo="/portal-parceiro"
               triggerClassName="block mx-auto text-xs text-muted-foreground hover:text-destructive transition-colors mt-8 font-medium"
@@ -312,6 +317,10 @@ const DriverDashboardV2 = () => {
                 <RefreshCw className="h-4 w-4" strokeWidth={2.5} />
                 Verificar convites
               </button>
+
+              <div className="w-full max-w-sm text-left">
+                <DriverDirectoryOptInCard userId={user.id} initialCity={(driverProfile as any)?.city} />
+              </div>
             </div>
           </div>
         )}
@@ -405,6 +414,7 @@ const DriverDashboardV2 = () => {
                 <p className="text-base font-black text-foreground truncate">{(driverProfile as any)?.full_name || driverFirstName}</p>
               </div>
             </div>
+            <DriverDirectoryOptInCard userId={user.id} initialCity={(driverProfile as any)?.city} />
             <SignOutConfirm redirectTo="/portal-parceiro">
               <button
                 type="button"
