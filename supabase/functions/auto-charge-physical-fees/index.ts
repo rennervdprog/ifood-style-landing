@@ -18,6 +18,7 @@
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { z } from "https://esm.sh/zod@3.23.8";
+import { REPASSE_POLICY, ageInDays } from "../_shared/repasse-policy.ts";
 
 const BodySchema = z.object({
   store_id: z.string().uuid().optional(),
@@ -35,12 +36,9 @@ const json = (body: unknown, status = 200) =>
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 
-// Mínimo por ciclo para gerar cobrança PIX (regra: só cobra quando o delta
-// acumulado desde a última cobrança emitida atinge esse piso).
-const MIN_CHARGE_AMOUNT = 150.0;
-
-// Dias de atraso antes de inativar a loja
-const OVERDUE_DAYS_TO_DEACTIVATE = 30;
+// Valores canônicos: não criar limiares ou prazos paralelos nesta função.
+const MIN_CHARGE_AMOUNT = REPASSE_POLICY.MIN_AUTO_CHARGE_BRL;
+const OVERDUE_DAYS_TO_BLOCK = REPASSE_POLICY.SUSPENSION_DAYS;
 
 // ─── Woovi/OpenPix (gateway padrão) ───────────────────────────────────────────
 
@@ -218,27 +216,29 @@ async function createAsaasCharge(params: {
   }
 }
 
-// ─── Inativar loja por inadimplência ──────────────────────────────────────────
+// ─── Bloqueio financeiro reversível ─────────────────────────────────────────
 
-async function deactivateOverdueStore(
+async function blockStoreForBilling(
   supabase: ReturnType<typeof createClient>,
   storeId: string,
-  storeName: string
+  reason: "threshold" | "overdue"
 ) {
-  // Inativa a loja
-  await supabase
+  const nowIso = new Date().toISOString();
+  const { error } = await supabase
     .from("stores")
-    .update({ status: "inativo" } as any)
-    .eq("id", storeId);
+    .update({
+      status: "bloqueado",
+      billing_blocked_at: nowIso,
+      billing_block_reason: reason,
+    } as any)
+    .eq("id", storeId)
+    .eq("status", "ativo");
+  if (error) throw new Error(`Erro ao bloquear loja: ${error.message}`);
+}
 
-  // Desativa o plano
-  await supabase
-    .from("store_plans")
-    .update({ is_active: false } as any)
-    .eq("store_id", storeId)
-    .eq("is_active", true);
-
-  console.log(`[auto-charge] Loja ${storeName} inativada por inadimplência`);
+function brasiliaWeekday(now: Date): number {
+  const local = new Date(now.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
+  return local.getDay();
 }
 
 // ─── Handler principal ────────────────────────────────────────────────────────
@@ -279,6 +279,16 @@ Deno.serve(async (req) => {
 
     const results: any[] = [];
     const now = new Date();
+
+    // A emissão automática é semanal, na segunda-feira, em horário de Brasília.
+    // A chamada manual por store_id continua disponível apenas para suporte/admin.
+    if (!manualStoreId && brasiliaWeekday(now) !== REPASSE_POLICY.WEEKLY_CHARGE_WEEKDAY) {
+      return json({
+        success: true,
+        skipped: true,
+        reason: "Cobrança automática programada para segunda-feira (horário de Brasília).",
+      });
+    }
 
     // Novas cobranças de taxa de plataforma usam exclusivamente Woovi.
     const activeGateway = await getActiveGateway(supabase);
@@ -362,6 +372,19 @@ Deno.serve(async (req) => {
         continue;
       }
 
+      // O teto de R$ 500 bloqueia novas vendas até a quitação, sem desativar o plano.
+      if (chargeAmount >= REPASSE_POLICY.BLOCK_THRESHOLD_BRL) {
+        if (!dryRun) await blockStoreForBilling(supabase, balance.store_id, "threshold");
+        results.push({
+          store: store.name,
+          status: dryRun ? "would_block" : "blocked",
+          reason: `Saldo pendente atingiu R$${REPASSE_POLICY.BLOCK_THRESHOLD_BRL}`,
+          amount: chargeAmount,
+          dry_run: dryRun,
+        });
+        continue;
+      }
+
       // Buscar TODAS as cobranças em aberto: cada ciclo gera uma cobrança
       // separada (não somamos com anteriores). Precisamos subtrair o que já
       // foi cobrado para calcular o delta do ciclo atual.
@@ -378,16 +401,16 @@ Deno.serve(async (req) => {
         0,
       );
 
-      // Se a cobrança mais antiga estourou o prazo, desativa a loja e não
-      // gera nova cobrança neste ciclo.
+      // A cobrança mais antiga sem quitação bloqueia após o prazo canônico.
+      // O plano não é desativado: o webhook reativa após a quitação integral.
       const oldest = (openCharges || [])[0];
       if (oldest) {
-        const daysPending = (now.getTime() - new Date(oldest.created_at).getTime()) / (1000 * 60 * 60 * 24);
-        if (daysPending > OVERDUE_DAYS_TO_DEACTIVATE) {
-          if (!dryRun) await deactivateOverdueStore(supabase, balance.store_id, store.name);
+        const daysPending = ageInDays(oldest.created_at, now);
+        if (daysPending > OVERDUE_DAYS_TO_BLOCK) {
+          if (!dryRun) await blockStoreForBilling(supabase, balance.store_id, "overdue");
           results.push({
             store: store.name,
-            status: "deactivated",
+            status: dryRun ? "would_block" : "blocked",
             reason: `${Math.floor(daysPending)} dias sem pagar cobrança mais antiga`,
             dry_run: dryRun,
           });
@@ -435,16 +458,36 @@ Deno.serve(async (req) => {
       const ownerDoc = String((prof as any)?.document || "");
       const ownerEmail = String((prof as any)?.email || "");
 
-      const provider = "woovi";
+      const activeGateway = await getActiveGateway(supabase);
+      if (activeGateway !== "WOOVI" && activeGateway !== "ASAAS") {
+        results.push({
+          store: store.name,
+          status: "error",
+          reason: `Gateway de cobrança não suportado: ${activeGateway || "não configurado"}`,
+        });
+        continue;
+      }
+
+      const provider = activeGateway.toLowerCase();
       const referenceCode = `#REP-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
-      const charge = await createWooviCharge({
-        amount: chargeAmount,
-        description: chargeDescription,
-        externalId: referenceCode,
-        customerName: store.name,
-        customerEmail: ownerEmail,
-        customerCpfCnpj: ownerDoc,
-      });
+      const charge = activeGateway === "WOOVI"
+        ? await createWooviCharge({
+            amount: chargeAmount,
+            description: chargeDescription,
+            externalId: referenceCode,
+            customerName: store.name,
+            customerEmail: ownerEmail,
+            customerCpfCnpj: ownerDoc,
+          })
+        : await createAsaasCharge({
+            amount: chargeAmount,
+            description: chargeDescription,
+            dueDate: dueDateStr,
+            storeAccountId: balance.store_id,
+            customerName: store.name,
+            customerEmail: ownerEmail,
+            customerCpfCnpj: ownerDoc,
+          });
 
       if (!charge.ok) {
         results.push({ store: store.name, status: "error", reason: charge.error });

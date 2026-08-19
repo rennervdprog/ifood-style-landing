@@ -3,9 +3,9 @@
  * Qualquer texto/número sobre suspensão, bloqueio ou cobrança automática deve vir daqui.
  */
 export const REPASSE_RULES = {
-  /** Prazo em dias para suspensão automática por não-pagamento. */
+  /** Prazo desde a cobrança pendente mais antiga para bloqueio por não-pagamento. */
   SUSPENSION_DAYS: 30,
-  /** Saldo (BRL) que trava o painel imediatamente até quitar. */
+  /** Saldo (BRL) que bloqueia novos pedidos imediatamente até quitar. */
   BLOCK_THRESHOLD_BRL: 500,
   /** Saldo mínimo (BRL) para geração automática de PIX na segunda-feira. */
   MIN_AUTO_CHARGE_BRL: 150,
@@ -33,7 +33,7 @@ export function repasseRulesSummary(): string {
     REPASSE_RULES.MIN_AUTO_CHARGE_BRL
   }. Cobranças de ciclos diferentes ficam separadas — não são somadas. Saldo total acima de R$ ${
     REPASSE_RULES.BLOCK_THRESHOLD_BRL
-  } trava o painel imediatamente. Sem pagamento em ${
+  } bloqueia novos pedidos até a quitação. A cobrança pendente mais antiga bloqueia a loja após ${
     REPASSE_RULES.SUSPENSION_DAYS
-  } dias, a loja é suspensa.`;
+  } dias. Após a quitação integral, a loja é reativada automaticamente.`;
 }

@@ -29,6 +29,9 @@ const Card = ({ children, className = "" }: { children: React.ReactNode; classNa
   <div className={`bg-card rounded-2xl border border-border overflow-hidden shadow-sm ${className}`}>{children}</div>
 );
 
+const isTechnicalWhatsAppEmail = (value?: string | null) => /^wa55\d{10,11}@itasuper\.app$/i.test(value?.trim() || "");
+const isValidAccountEmail = (value: string) => /^\S+@\S+\.\S+$/.test(value.trim());
+
 const MenuRow = ({ icon: Icon, iconBg = "bg-primary/10", iconColor = "text-primary", title, subtitle, onClick, trailing, danger = false }: {
   icon: React.ElementType; iconBg?: string; iconColor?: string; title: string; subtitle?: string;
   onClick?: () => void; trailing?: React.ReactNode; danger?: boolean;
@@ -156,7 +159,9 @@ const PerfilPage = () => {
   const [deleteStep, setDeleteStep] = useState(0);
   const [fullName, setFullName] = useState("");
   const [document, setDocument] = useState("");
+  const [accountEmail, setAccountEmail] = useState("");
   const [savingPersonal, setSavingPersonal] = useState(false);
+  const [savingAccountEmail, setSavingAccountEmail] = useState(false);
    const [personalLoaded, setPersonalLoaded] = useState(false);
   const [appVersion, setAppVersion] = useState(APP_VERSION);
 
@@ -265,6 +270,10 @@ const PerfilPage = () => {
       setPersonalLoaded(true);
     }
   }, [profile, personalLoaded]);
+
+  useEffect(() => {
+    setAccountEmail(user?.email || "");
+  }, [user?.email]);
 
   /* ── PWA Install ── */
   interface BeforeInstallPromptEvent extends Event {
@@ -385,6 +394,33 @@ const PerfilPage = () => {
     } catch (err: any) { toast.error(err.message || "Erro ao salvar."); } finally { setSavingPersonal(false); }
   };
 
+  const handleSaveAccountEmail = async () => {
+    const nextEmail = accountEmail.trim().toLowerCase();
+    if (!isValidAccountEmail(nextEmail)) {
+      toast.error("Informe um e-mail válido para acesso e recuperação de senha.");
+      return;
+    }
+    if (nextEmail === user?.email?.trim().toLowerCase()) {
+      toast.message("Este já é o e-mail cadastrado na conta.");
+      return;
+    }
+    setSavingAccountEmail(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ email: nextEmail });
+      if (error) throw error;
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .update({ email: nextEmail } as any)
+        .eq("user_id", user!.id);
+      if (profileError) console.warn("[Perfil] O e-mail será sincronizado após a confirmação", profileError);
+      toast.success("Enviamos um link de confirmação para o novo e-mail. Confirme-o para concluir a alteração.", { duration: 7000 });
+    } catch (err: any) {
+      toast.error(err.message || "Não foi possível atualizar seu e-mail agora.");
+    } finally {
+      setSavingAccountEmail(false);
+    }
+  };
+
   const copyPixKey = () => { if (pixKey) { navigator.clipboard.writeText(pixKey); toast.success("Chave PIX copiada!"); } };
 
   const handleSavePin = async () => {
@@ -486,7 +522,8 @@ const PerfilPage = () => {
   /* ── Derived values ── */
   const profileRole = (profile as any)?.role;
   const isApproved = (profile as any)?.is_approved;
-  const userName = (profile as any)?.full_name || user.email?.split("@")[0] || "Usuário";
+  const hasRecoveryEmail = !!user?.email && !isTechnicalWhatsAppEmail(user.email);
+  const userName = (profile as any)?.full_name || (hasRecoveryEmail ? user.email?.split("@")[0] : "") || "Cliente ItaSuper";
   const userInitials = userName.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2);
   const roleLabel = profileRole === "lojista" ? "Lojista" : profileRole === "motoboy" ? "Entregador" : "Cliente";
   const hasAddress = !!(street && number && neighborhood);
@@ -501,6 +538,7 @@ const PerfilPage = () => {
         { key: "personal", label: "Dados pessoais", done: !!fullName && !!document },
         { key: "address", label: "Endereço", done: hasAddress },
         { key: "whatsapp", label: "WhatsApp", done: !!whatsappNumber.replace(/\D/g, "") },
+        { key: "email", label: "E-mail de acesso", done: hasRecoveryEmail },
         { key: "pin", label: "PIN de entrega", done: hasPin },
       ]
     : [
@@ -516,6 +554,7 @@ const PerfilPage = () => {
       personal: "personal",
       address: "address",
       whatsapp: "address",
+      email: "personal",
       pix: "pix",
     };
     const target = map[firstPending.key];
@@ -543,7 +582,7 @@ const PerfilPage = () => {
           </Avatar>
           <div className="flex-1 min-w-0">
             <h1 className="text-base font-black text-white truncate leading-tight">{userName}</h1>
-            <p className="text-[11px] text-white/75 truncate mt-0.5">{user.email}</p>
+            <p className="text-[11px] text-white/75 truncate mt-0.5">{hasRecoveryEmail ? user.email : "Cadastre seu e-mail de recuperação"}</p>
             <div className="mt-1.5 flex flex-wrap items-center gap-2">
               <span className="text-[9px] font-bold uppercase tracking-wider bg-white/20 text-white px-2 py-0.5 rounded-full backdrop-blur-sm">
                 {roleLabel}
@@ -702,11 +741,15 @@ const PerfilPage = () => {
                     </p>
                   )}
                 </div>
-              <div>
-                <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">E-mail</label>
-                <input value={user?.email || ""} disabled
-                  className="w-full px-4 py-3 rounded-xl border border-border bg-muted text-muted-foreground text-sm cursor-not-allowed" />
-                <p className="text-[10px] text-muted-foreground mt-1">O e-mail não pode ser alterado.</p>
+              <div className="pt-1 border-t border-border/50 mt-1">
+                <p className="text-xs font-bold text-foreground mt-3">E-mail de acesso e recuperação</p>
+                <p className="text-[11px] text-muted-foreground mt-1 mb-3">Use um e-mail que você possa acessar. Enviaremos uma confirmação antes de concluir a alteração.</p>
+                <InputField label="E-mail" type="email" inputMode="email" placeholder="seu@email.com" value={accountEmail} onChange={(e) => setAccountEmail(e.target.value)} autoComplete="email" />
+                <button onClick={handleSaveAccountEmail} disabled={savingAccountEmail}
+                  className="mt-3 w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-primary/30 text-primary font-bold text-sm disabled:opacity-50 transition-all active:scale-[0.98]">
+                  {savingAccountEmail ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
+                  {savingAccountEmail ? "Enviando confirmação..." : hasRecoveryEmail ? "Alterar e-mail" : "Cadastrar e-mail de recuperação"}
+                </button>
               </div>
               <button onClick={handleSavePersonal} disabled={savingPersonal}
                 className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-primary text-primary-foreground font-bold text-sm disabled:opacity-50 transition-all active:scale-[0.98] shadow-sm">

@@ -534,28 +534,34 @@ const StorePage = () => {
 
   const isSuspended = store?.status === "bloqueado";
 
-  // Verificar se tem driver online (apenas para lojas com motoboy próprio)
+  // Fonte canônica de disponibilidade: vínculo aceito + motorista ativo,
+  // online e com presença recente. O estado só bloqueia ENTREGA; retirada segue possível.
   const isOwnDeliveryStore = (store as any)?.delivery_mode === "own";
-  const { data: onlineDriversCount = 0, isSuccess: driversChecked } = useQuery({
-    queryKey: ["store-online-drivers", store?.id],
+  const { data: deliveryAvailability, isSuccess: availabilityChecked } = useQuery({
+    queryKey: ["store-delivery-availability", store?.id],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc(
-        "store_active_drivers_count" as any,
-        { _store_id: store!.id } as any
-      );
-      if (error) return 0;
-      return (data as number) || 0;
+      const { data, error } = await (supabase as any).rpc(
+        "store_delivery_availability",
+        { _store_id: store!.id }
+      ).maybeSingle();
+      if (error) throw error;
+      return data as {
+        can_accept_delivery_orders: boolean;
+        available_drivers_count: number;
+        reason_code: string;
+        reason_message: string;
+        checked_at: string;
+      };
     },
     enabled: !!store?.id && isOwnDeliveryStore,
-    refetchInterval: 60_000,
-    staleTime: 30_000,
+    refetchInterval: 30_000,
+    staleTime: 15_000,
   });
 
-  // Loja own sem nenhum driver vinculado = sem entrega disponível
-  // Só consideramos "sem motoboy" depois que a contagem realmente carregou,
-  // para evitar flash do banner amarelo enquanto a query roda.
-  const hasNoDrivers =
-    isOwnDeliveryStore && driversChecked && onlineDriversCount === 0;
+  // Não assumimos indisponibilidade em falha de rede; só após resposta canônica.
+  const hasNoDrivers = isOwnDeliveryStore
+    && availabilityChecked
+    && deliveryAvailability?.can_accept_delivery_orders === false;
 
   const storeStatus = store
     ? getStoreOpenStatus(
@@ -793,10 +799,6 @@ const StorePage = () => {
       toast.error(`Esta loja está fechada. ${storeStatus.reason}`);
       return;
     }
-    if (hasNoDrivers) {
-      toast.error("Esta loja não tem entregador disponível no momento.");
-      return;
-    }
     if ((product as any)?.metadata?.out_of_stock) {
       toast.error("Produto esgotado");
       return;
@@ -858,10 +860,6 @@ const StorePage = () => {
   const quickAddAdega = useCallback((product: Product) => {
     if (!storeStatus.isOpen) {
       toast.error(`Esta loja está fechada. ${storeStatus.reason}`);
-      return;
-    }
-    if (hasNoDrivers) {
-      toast.error("Esta loja não tem entregador disponível no momento.");
       return;
     }
     if ((product as any)?.metadata?.out_of_stock) {
@@ -1337,13 +1335,11 @@ const StorePage = () => {
       {/* Banner: sem entregador vinculado */}
       {isOwnDeliveryStore && hasNoDrivers && storeStatus.isOpen && (
         <div className="mx-4 mt-3 bg-amber-500/10 border border-amber-500/30 rounded-2xl px-4 py-3 flex items-start gap-3">
-          <span className="text-lg shrink-0">🛵</span>
+          <Bike className="h-5 w-5 text-amber-700 shrink-0 mt-0.5" />
           <div>
-            <p className="text-sm font-bold text-amber-300">
-              Sem entregador disponível
-            </p>
-            <p className="text-xs text-amber-100/80 mt-0.5">
-              Esta loja ainda não tem motoboy cadastrado. Entre em contato com a loja para confirmar a entrega.
+            <p className="text-sm font-bold text-amber-900">Entrega temporariamente indisponível</p>
+            <p className="text-xs text-amber-900/75 mt-0.5">
+              {deliveryAvailability?.reason_message || "Esta loja está sem entregador disponível no momento."} Você ainda pode fazer seu pedido para retirada.
             </p>
           </div>
         </div>
@@ -1391,7 +1387,7 @@ const StorePage = () => {
                 key={`reorder-${product.id}`}
                 onClick={() => openProduct(product)}
                 className={`flex-shrink-0 w-36 bg-card rounded-xl border border-border overflow-hidden text-left transition-all ${
-                  !storeStatus.isOpen || hasNoDrivers || (product as any).metadata?.out_of_stock ? "opacity-60" : "hover:shadow-lg hover:border-primary/20 active:scale-[0.97]"
+                  !storeStatus.isOpen || (product as any).metadata?.out_of_stock ? "opacity-60" : "hover:shadow-lg hover:border-primary/20 active:scale-[0.97]"
                 }`}
               >
                 <div className="relative">
@@ -1434,7 +1430,7 @@ const StorePage = () => {
                 key={`popular-${product.id}`}
                 onClick={() => openProduct(product)}
                 className={`flex-shrink-0 w-36 bg-card rounded-xl border border-border overflow-hidden text-left transition-all relative ${
-                  !storeStatus.isOpen || hasNoDrivers || (product as any).metadata?.out_of_stock ? "opacity-60" : "hover:shadow-lg hover:border-primary/20 active:scale-[0.97]"
+                  !storeStatus.isOpen || (product as any).metadata?.out_of_stock ? "opacity-60" : "hover:shadow-lg hover:border-primary/20 active:scale-[0.97]"
                 }`}
               >
                 <span className="absolute top-1.5 right-1.5 bg-primary/90 text-primary-foreground text-[9px] font-bold px-1.5 py-0.5 rounded-full z-10">

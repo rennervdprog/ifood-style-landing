@@ -126,6 +126,65 @@ const BodySchema = z.object({
   description: z.string().max(256).optional(),
 });
 
+type ManualCommissionChargeContext = {
+  planType: string;
+  repassePendente: number;
+  comissaoPendente: number;
+  pdvPending: number;
+  balanceBilled: number;
+  totalAmount: number;
+};
+
+/** Mantém a cobrança manual compatível com a conciliação dos webhooks. */
+async function resolveManualCommissionChargeContext(
+  serviceClient: any,
+  storeId: string,
+): Promise<ManualCommissionChargeContext> {
+  const [balanceResult, planResult] = await Promise.all([
+    serviceClient
+      .from("store_balances")
+      .select("repasse_pendente, comissao_pendente, pending_commission")
+      .eq("store_id", storeId)
+      .maybeSingle(),
+    serviceClient
+      .from("store_plans")
+      .select("plan_type, pdv_commission_pending")
+      .eq("store_id", storeId)
+      .eq("is_active", true)
+      .maybeSingle(),
+  ]);
+
+  if (balanceResult.error || planResult.error) {
+    throw new Error("Não foi possível calcular o saldo pendente da loja.");
+  }
+
+  const planType = String(planResult.data?.plan_type || "commission_only");
+  const repassePendente = Number(balanceResult.data?.repasse_pendente || 0);
+  const comissaoPendente = Number(
+    balanceResult.data?.comissao_pendente || balanceResult.data?.pending_commission || 0,
+  );
+  const pdvPending = Number(planResult.data?.pdv_commission_pending || 0);
+
+  let balanceBilled = 0;
+  if (planType === "fixed" || planType === "supporter") {
+    balanceBilled = repassePendente;
+  } else if (planType === "hybrid") {
+    balanceBilled = repassePendente + comissaoPendente;
+  } else if (planType === "commission_only") {
+    balanceBilled = comissaoPendente;
+  }
+
+  balanceBilled = Number(balanceBilled.toFixed(2));
+  return {
+    planType,
+    repassePendente: Number(repassePendente.toFixed(2)),
+    comissaoPendente: Number(comissaoPendente.toFixed(2)),
+    pdvPending: Number(pdvPending.toFixed(2)),
+    balanceBilled,
+    totalAmount: Number((balanceBilled + pdvPending).toFixed(2)),
+  };
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -217,6 +276,17 @@ Deno.serve(async (req) => {
       });
     }
 
+    const chargeContext = await resolveManualCommissionChargeContext(serviceClient, store_id);
+    if (chargeContext.totalAmount <= 0) {
+      return json({ error: "Não há saldo pendente faturável para esta loja." }, 400);
+    }
+    if (Math.abs(Number(amount.toFixed(2)) - chargeContext.totalAmount) > 0.01) {
+      return json({
+        error: "O saldo pendente foi atualizado. Atualize a tela e gere uma nova cobrança.",
+        expected_amount: chargeContext.totalAmount,
+      }, 409);
+    }
+
     // Generate reference code
     const { data: refData } = await serviceClient.rpc("generate_financial_reference", { _prefix: "FAT" });
     const referenceCode = refData || `#FAT-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
@@ -253,7 +323,7 @@ Deno.serve(async (req) => {
       let pix;
       try {
         pix = await createWooviPix({
-          amount: Number(amount.toFixed(2)),
+          amount: chargeContext.totalAmount,
           description: desc0,
           externalId: referenceCode,
           customer: {
@@ -271,7 +341,7 @@ Deno.serve(async (req) => {
         store_id,
         transaction_kind: "commission_charge",
         reference_code: referenceCode,
-        amount: Number(amount.toFixed(2)),
+        amount: chargeContext.totalAmount,
         status: "pending",
         provider: "woovi",
         mercado_pago_payment_id: pix.id,
@@ -280,7 +350,17 @@ Deno.serve(async (req) => {
         pix_copy_paste: pix.brCode,
         created_at: createdAt,
         updated_at: createdAt,
-        metadata: { store_name: store.name, description: desc0 },
+        metadata: {
+          store_name: store.name,
+          description: desc0,
+          plan_type: chargeContext.planType,
+          repasse_pendente: chargeContext.repassePendente,
+          comissao_pendente: chargeContext.comissaoPendente,
+          pdv_commission_pending: chargeContext.pdvPending,
+          balance_billed: chargeContext.balanceBilled,
+          pdv_pending_billed: chargeContext.pdvPending,
+          charge_family: "manual_delivery_fee",
+        },
       });
 
       return json({
@@ -289,7 +369,7 @@ Deno.serve(async (req) => {
         status: "pending",
         qr_code: pix.brCode,
         qr_code_base64: pix.brCodeBase64,
-        amount: Number(amount.toFixed(2)),
+        amount: chargeContext.totalAmount,
         created_at: createdAt,
         provider: "woovi",
       });

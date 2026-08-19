@@ -8,6 +8,7 @@ import {
   TimerReset, ShieldAlert, Smartphone,
 } from "lucide-react";
 import { sumMoney, averageMoney, formatCurrency, formatBRL, multiplyMoney, subtractMoney } from "@/lib/utils";
+import { REPASSE_RULES } from "@/lib/repasseRules";
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfDay, endOfDay, subWeeks, subMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
@@ -132,17 +133,20 @@ const PIE_COLORS = [COLORS.green, COLORS.blue, COLORS.amber];
     refetchInterval: 30000,
   });
 
-  const { data: minPayoutSetting } = useQuery({
-    queryKey: ["min-payout-amount"],
+  const { data: activePlanBalance } = useQuery({
+    queryKey: ["store-plan-balance-basic", storeId],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("admin_settings")
-        .select("value")
-        .eq("key", "min_payout_amount")
+      const { data, error } = await supabase
+        .from("store_plans")
+        .select("plan_type, pdv_commission_pending")
+        .eq("store_id", storeId)
+        .eq("is_active", true)
         .maybeSingle();
-      return Number(data?.value || 100);
+      if (error) throw error;
+      return data;
     },
-    staleTime: 1000 * 60 * 10,
+    enabled: !!storeId,
+    staleTime: 30_000,
   });
 
   const { data: transactions } = useQuery({
@@ -161,8 +165,19 @@ const PIE_COLORS = [COLORS.green, COLORS.blue, COLORS.amber];
     refetchInterval: 15000,
   });
 
-  const minPayout = minPayoutSetting ?? 100;
-  const pendingFee = Number(storeBalance?.repasse_pendente || 0);
+  const minPayout = REPASSE_RULES.MIN_AUTO_CHARGE_BRL;
+  const pendingRepasse = Number(storeBalance?.repasse_pendente || 0);
+  const pendingCommission = Number(storeBalance?.comissao_pendente || storeBalance?.pending_commission || 0);
+  const pendingPdv = Number(activePlanBalance?.pdv_commission_pending || 0);
+  const activePlanType = String(activePlanBalance?.plan_type || storePlan.planType || "commission_only");
+  const balanceBilled = activePlanType === "fixed" || activePlanType === "supporter"
+    ? pendingRepasse
+    : activePlanType === "hybrid"
+      ? pendingRepasse + pendingCommission
+      : activePlanType === "commission_only"
+        ? pendingCommission
+        : 0;
+  const pendingFee = Number((balanceBilled + pendingPdv).toFixed(2));
   const canPay = pendingFee >= minPayout;
 
   const now = new Date();
@@ -382,7 +397,7 @@ const PIE_COLORS = [COLORS.green, COLORS.blue, COLORS.amber];
       return;
     }
     if (pendingFee < minPayout) {
-      toast.error(`Valor mínimo para pagamento é ${formatBRL(minPayout)}. Faltam ${formatBRL(minPayout - pendingFee)}.`);
+      toast.error(`A cobrança automática é liberada a partir de ${formatBRL(minPayout)}. Faltam ${formatBRL(minPayout - pendingFee)}.`);
       return;
     }
     if (!SIMULATION_MODE) {

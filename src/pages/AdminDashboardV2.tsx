@@ -394,6 +394,7 @@ const AdminDashboard = () => {
       queryClient.refetchQueries({ queryKey: ["store-drivers-list", store.id], type: "active" }),
       queryClient.refetchQueries({ queryKey: ["client-profiles", store.id], type: "active" }),
       queryClient.refetchQueries({ queryKey: ["online-drivers-count"], type: "active" }),
+      queryClient.refetchQueries({ queryKey: ["store-delivery-availability", store.id], type: "active" }),
     ]);
   }, [activeSimulateStoreId, queryClient, store?.id, user?.id]);
 
@@ -527,6 +528,26 @@ const AdminDashboard = () => {
     enabled: !!store && storeAddonGroups.length > 0,
   });
 
+  const { data: storeDeliveryAvailability, isSuccess: deliveryAvailabilityChecked } = useQuery({
+    queryKey: ["store-delivery-availability", store?.id],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .rpc("store_delivery_availability", { _store_id: store!.id })
+        .maybeSingle();
+      if (error) throw error;
+      return data as {
+        can_accept_delivery_orders: boolean;
+        available_drivers_count: number;
+        reason_code: string;
+        reason_message: string;
+      };
+    },
+    enabled: !!store && (store as any)?.delivery_mode === "own",
+    refetchInterval: 30_000,
+    staleTime: 15_000,
+    refetchOnReconnect: true,
+  });
+
   const { data: onlineDrivers } = useQuery({
     queryKey: ["online-drivers-count"],
     queryFn: async () => {
@@ -550,7 +571,10 @@ const AdminDashboard = () => {
         city
           ? { event: "*", schema: "public", table: "drivers", filter: `city=eq.${city}` }
           : { event: "*", schema: "public", table: "drivers" },
-        () => queryClient.invalidateQueries({ queryKey: ["online-drivers-count"] })
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["online-drivers-count"] });
+          queryClient.invalidateQueries({ queryKey: ["store-delivery-availability", store.id] });
+        }
       );
     subscribeWithRejoin(ch, (status) => setRealtimeDriversConnected(status === "SUBSCRIBED"));
     return () => { cleanupChannel(ch); };
@@ -1360,6 +1384,11 @@ const AdminDashboard = () => {
   }, [storeHours]);
 
   const isStoreReallyOpen = store?.is_open && isCurrentlyOpenByHours;
+  const isDeliveryUnavailable = Boolean(
+    (store as any)?.delivery_mode === "own"
+      && deliveryAvailabilityChecked
+      && storeDeliveryAvailability?.can_accept_delivery_orders === false
+  );
 
   const handleCancelOrder = async (order: any) => {
     if (!cancelReason) { toast.error("Selecione o motivo do cancelamento."); return; }
@@ -1406,11 +1435,6 @@ const AdminDashboard = () => {
 
   const toggleStoreOpen = async () => {
     if (!store) return;
-    // Bloqueio: não permitir abrir a loja sem motoboy ativo
-    if (!store.is_open && (onlineDrivers?.length || 0) === 0) {
-      toast.error("Sem motoboy ativo. Ative um entregador antes de abrir a loja.");
-      return;
-    }
     // Bloqueio: não permitir abrir a loja fora do horário de funcionamento
     if (!store.is_open && !isCurrentlyOpenByHours) {
       toast.error("Fora do horário de funcionamento. Ajuste os horários para abrir a loja.");
@@ -1777,7 +1801,7 @@ const AdminDashboard = () => {
             <span className="text-xs text-muted-foreground flex-1">Entregadores</span>
             <span className={`flex items-center gap-1 text-xs font-bold ${(onlineDrivers?.length || 0) > 0 ? "text-emerald-500" : "text-muted-foreground"}`}>
               <span className={`w-2 h-2 rounded-full ${(onlineDrivers?.length || 0) > 0 ? "bg-emerald-500 animate-pulse" : "bg-muted"}`} />
-              {onlineDrivers?.length || 0}
+              {(store as any)?.delivery_mode === "own" ? (storeDeliveryAvailability?.available_drivers_count || 0) : (onlineDrivers?.length || 0)}
             </span>
           </div>
           <div className="grid grid-cols-4 gap-1">
@@ -1878,6 +1902,23 @@ const AdminDashboard = () => {
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto pb-20 lg:pb-0">
+          {isDeliveryUnavailable && isStoreReallyOpen && (
+            <div className="mx-4 mt-4 lg:mx-6 max-w-6xl border border-amber-500/35 bg-amber-500/10 rounded-xl px-4 py-3 flex items-start gap-3" role="status">
+              <Bike className="h-5 w-5 text-amber-700 shrink-0 mt-0.5" />
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-bold text-amber-950">Entrega indisponível: nenhum motoboy com presença ativa</p>
+                <p className="text-xs text-amber-900/80 mt-0.5">
+                  {storeDeliveryAvailability?.reason_message || "Clientes podem continuar fazendo pedidos para retirada."} A loja permanece aberta; apenas pedidos de entrega ficam bloqueados.
+                </p>
+              </div>
+              <button
+                onClick={() => setDashboardTab("drivers")}
+                className="text-xs font-bold text-amber-900 underline underline-offset-2 whitespace-nowrap"
+              >
+                Ver entregadores
+              </button>
+            </div>
+          )}
           {/* Sub-tabs do grupo ativo (mesmo padrão visual da aba Pizzaria) */}
           {store && activeGroup && (
             <GroupTabsBar

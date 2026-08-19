@@ -38,6 +38,7 @@ export type DeliveryQuote = {
 export type DeliveryQuoteFailure = {
   ok: false;
   reason?: string;
+  message?: string;
   distance?: Partial<DeliveryQuote["distance"]>;
 };
 
@@ -73,6 +74,8 @@ export function isSuccessfulDeliveryQuote(value: DeliveryQuoteResponse | null): 
 export function deliveryQuoteFailureMessage(value: DeliveryQuoteFailure | null | undefined): string {
   const reason = value?.reason || "";
   if (reason === "delivery_unavailable") return "Esta loja não está aceitando pedidos de entrega no momento.";
+  if (reason === "no_driver_available") return value?.message || "Esta loja está sem entregador disponível no momento. Você ainda pode escolher retirada.";
+  if (reason === "delivery_availability_unavailable") return "Não foi possível confirmar a disponibilidade de entrega agora. Tente novamente em instantes.";
   if (reason === "outside_delivery_area") {
     const km = Number(value?.distance?.km);
     const maxKm = Number(value?.distance?.max_km);
