@@ -8,8 +8,8 @@ import { CheckCircle2, TrendingUp, Wallet, Shield, Users, Rocket, Info } from "l
 
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
-// Premissas conservadoras: 60% Essencial R$89,90, 40% Autonomia R$199,90.
-const AVG_MRR_PER_STORE = 89.90 * 0.6 + 199.90 * 0.4; // ≈ 133,90
+// Oferta vigente para novas indicações: Essencial a R$ 89,90 após o gatilho aplicável.
+const AVG_MRR_PER_STORE = 89.90;
 const COMMISSION = 0.20; // 20% vitalício
 const BOUNTY = 50;
 
@@ -97,8 +97,7 @@ export default function SejaRevendedor() {
                 <span className="w-6 h-6 rounded-full bg-blue-500/15 text-blue-600 text-xs font-bold flex items-center justify-center shrink-0">2</span>
                 <div>
                   <strong>Loja em fase gratuita → R$ 0 de recorrente.</strong> Enquanto a loja ficar abaixo do GMV gratuito
-                  (Essencial até R$ 5.000/mês · Autonomia até R$ 2.500/mês) a mensalidade é zero — logo, sua comissão
-                  recorrente também.
+                  de R$ 5.000 no período de análise do Essencial, a mensalidade é zero — logo, sua comissão recorrente também.
                 </div>
               </li>
               <li className="flex gap-3">
@@ -117,7 +116,7 @@ export default function SejaRevendedor() {
           {[
             { icon: <Wallet className="h-5 w-5 text-primary" />, title: "Comissão vitalícia", desc: "20% do MRR da loja indicada, todo mês, enquanto ela pagar o plano." },
             { icon: <TrendingUp className="h-5 w-5 text-primary" />, title: "Bônus de ativação", desc: "R$ 50 quando a loja atingir 20 pedidos entregues em 30 dias." },
-            { icon: <Shield className="h-5 w-5 text-primary" />, title: "Grátis até faturar", desc: "Loja só paga acima de R$ 2.500/mês — fácil de vender, difícil de recusar." },
+            { icon: <Shield className="h-5 w-5 text-primary" />, title: "Grátis até faturar", desc: "No Essencial, a loja começa grátis e só pode ter mensalidade após o gatilho de R$ 5.000 no período de análise." },
             { icon: <Users className="h-5 w-5 text-primary" />, title: "Link exclusivo", desc: "Toda loja cadastrada no seu link fica vinculada permanentemente." },
             { icon: <CheckCircle2 className="h-5 w-5 text-primary" />, title: "Pagamento em PIX", desc: "Saque a partir de R$ 100. Pagamento manual em até 3 dias úteis." },
             { icon: <Rocket className="h-5 w-5 text-primary" />, title: "Materiais prontos", desc: "Ebook, scripts de WhatsApp e artes — tudo dentro do painel." },
@@ -189,14 +188,14 @@ export default function SejaRevendedor() {
             <AccordionItem value="q2b">
               <AccordionTrigger>Quando começo a receber a mensalidade (20%)?</AccordionTrigger>
               <AccordionContent>
-                A partir do primeiro mês em que a loja indicada ultrapassa o GMV gratuito (R$ 5.000 no Essencial ou
-                R$ 2.500 na Autonomia) e passa a pagar a mensalidade. Enquanto a loja estiver na faixa gratuita, a
-                mensalidade é R$ 0 — e por isso a comissão recorrente também é R$ 0.
+                A partir do mês em que a loja indicada ultrapassa o GMV gratuito de R$ 5.000 no período de análise do Essencial
+                e passa a pagar a mensalidade. Enquanto a loja estiver na faixa gratuita, a mensalidade é R$ 0 — e por isso a
+                comissão recorrente também é R$ 0.
               </AccordionContent>
             </AccordionItem>
             <AccordionItem value="q3">
               <AccordionTrigger>E se a loja não vender?</AccordionTrigger>
-              <AccordionContent>Sem problema — o plano é grátis até faturar R$ 2.500/mês. A loja só paga quando cresce, e você ganha quando ela paga.</AccordionContent>
+              <AccordionContent>Sem problema — no Essencial, a loja começa grátis até o gatilho de R$ 5.000 no período de análise. A loja só passa a pagar quando cresce, e você ganha quando ela paga.</AccordionContent>
             </AccordionItem>
             <AccordionItem value="q4">
               <AccordionTrigger>Qual o valor mínimo do saque?</AccordionTrigger>

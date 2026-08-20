@@ -9,8 +9,7 @@ import { Constants } from "@/integrations/supabase/types";
 import { formatCep, fetchCep, resolveAddress } from "@/lib/location";
   import { maskWhatsApp, formatWhatsAppNumber } from "@/lib/whatsapp";
   import { formatDocument, sanitizeDocument, validateDocument } from "@/lib/documentFormat";
-import { PLANS, PLANS_ORDER, DELIVERY_FEE_NOTE, PIX_FEE_NOTE } from "@/lib/plansInfo";
-import { useSupporterCount } from "@/hooks/useSupporterCount";
+import { PLANS, NEW_STORE_PLAN_TYPES, DELIVERY_FEE_NOTE, PIX_FEE_NOTE } from "@/lib/plansInfo";
 import { Check } from "lucide-react";
 import PlanFeeBreakdown from "@/components/fees/PlanFeeBreakdown";
 import WhyThisCharge from "@/components/fees/WhyThisCharge";
@@ -51,7 +50,7 @@ const PLATFORM_CITIES = ["itatinga"];
   street: z.string().trim().min(2, "Rua é obrigatória"),
   addressNumber: z.string().trim().min(1, "Número é obrigatório"),
   neighborhood: z.string().trim().min(2, "Bairro é obrigatório"),
-  selectedPlan: z.enum(["supporter", "fixed", "hybrid", "commission_only", "autonomy", "pdv_only"], { errorMap: () => ({ message: "Selecione um plano" }) }),
+  selectedPlan: z.enum(["fixed", "pdv_only"], { errorMap: () => ({ message: "Selecione um plano" }) }),
 }).refine((data) => data.email === data.confirmEmail, {
   message: "Os e-mails não coincidem",
   path: ["confirmEmail"],
@@ -91,12 +90,12 @@ const CadastroLojista = () => {
   const [networkName, setNetworkName] = useState("");
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [selectedPlan, setSelectedPlan] = useState<"supporter" | "fixed" | "hybrid" | "commission_only" | "autonomy" | "pdv_only" | "">("");
+  const [selectedPlan, setSelectedPlan] = useState<"fixed" | "pdv_only" | "">("");
   const [acceptedDynamic, setAcceptedDynamic] = useState(false);
-  const [expandedPlan, setExpandedPlan] = useState<"supporter" | "fixed" | "hybrid" | "commission_only" | "autonomy" | "pdv_only" | "">("");
+  const [expandedPlan, setExpandedPlan] = useState<"fixed" | "pdv_only" | "">("");
   const isPdvOnly = selectedPlan === "pdv_only";
 
-  const isDynamicPlan = selectedPlan === "fixed" || selectedPlan === "hybrid" || selectedPlan === "autonomy";
+  const isDynamicPlan = selectedPlan === "fixed";
   useEffect(() => {
     setAcceptedDynamic(false);
   }, [selectedPlan]);
@@ -118,11 +117,6 @@ const CadastroLojista = () => {
   useEffect(() => {
     import("@/lib/pageView").then((m) => m.trackPageView("cadastro_lojista"));
   }, []);
-  const { count: supporterCountRaw, loading: supporterLoading } = useSupporterCount();
-  const supporterCount = supporterCountRaw ?? 0;
-  const supporterAvailable = !supporterLoading && supporterCount < 10;
-  const supporterRemaining = Math.max(0, 10 - supporterCount);
-
   const handleCepChange = (value: string) => {
     const digits = value.replace(/\D/g, "").slice(0, 8);
     const formatted = formatCep(digits);
@@ -322,10 +316,10 @@ const CadastroLojista = () => {
               _network_name: networkName.trim(),
               _user_id: signUpData.user.id, // passar explícito — auth.uid() pode ser null neste momento
               _plan_type: selectedPlan,
-              _monthly_fee: selectedPlan === "hybrid" ? 50 : selectedPlan === "supporter" ? 75 : 0,
-              _revenue_threshold: selectedPlan === "fixed" ? 5000 : selectedPlan === "autonomy" ? 2500 : selectedPlan === "hybrid" ? 5000 : null,
-              _upgrade_monthly_fee: selectedPlan === "fixed" ? 89.90 : selectedPlan === "autonomy" ? 199.90 : selectedPlan === "hybrid" ? 100 : null,
-              _upgrade_trigger_months: (selectedPlan === "fixed" || selectedPlan === "hybrid" || selectedPlan === "autonomy") ? 2 : null,
+              _monthly_fee: 0,
+              _revenue_threshold: selectedPlan === "fixed" ? 5000 : null,
+              _upgrade_monthly_fee: selectedPlan === "fixed" ? 89.90 : null,
+              _upgrade_trigger_months: selectedPlan === "fixed" ? 2 : null,
             });
             if (matrizErr) {
               console.warn("register_as_matriz aviso:", matrizErr.message);
@@ -572,12 +566,12 @@ const CadastroLojista = () => {
 
                 {/* Cards compactos — toque em "Ver detalhes" para expandir */}
                 <div className="space-y-3">
-                {(["fixed", "autonomy", "pdv_only"] as const).map((id) => {
+                {NEW_STORE_PLAN_TYPES.map((id) => {
                   const p = PLANS[id];
                   const Icon = p.icon;
                   const selected = selectedPlan === id;
                   const isExpanded = expandedPlan === id || selected;
-                  const isDynamic = id === "fixed" || id === "autonomy";
+                  const isDynamic = id === "fixed";
                   return (
                     <div
                       key={id}
@@ -630,7 +624,7 @@ const CadastroLojista = () => {
                             PIX {p.pixFee === 0 ? "grátis" : `R$${p.pixFee.toFixed(2).replace(".", ",")}`}
                           </span>
                           <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted text-foreground/80">
-                            {id === "pdv_only" ? "Sem delivery" : `Entrega ${id === "autonomy" ? "sem taxa" : "+R$ 0,99"}`}
+                            {id === "pdv_only" ? "Sem delivery" : "Entrega +R$ 0,99"}
                           </span>
                           {p.monthlyFee > 0 && (
                             <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-400">
@@ -690,9 +684,7 @@ const CadastroLojista = () => {
                           {id !== "pdv_only" && (
                             <div className="flex items-start gap-1.5 text-[11px] text-muted-foreground leading-relaxed">
                               <span>
-                                {id === "autonomy"
-                                  ? <>✨ Sem os R$ 0,99 da plataforma: você define a taxa de entrega e fica com 100%.</>
-                                  : <>Entrega: cliente paga sua taxa + R$ 0,99 da plataforma. Nada sai do seu caixa.</>}
+                                <>Entrega: cliente paga sua taxa + R$ 0,99 da plataforma. Nada sai do seu caixa.</>
                               </span>
                               <WhyThisCharge title="Taxa de entrega">{DELIVERY_FEE_NOTE}</WhyThisCharge>
                             </div>
@@ -708,7 +700,7 @@ const CadastroLojista = () => {
                           {isDynamic && (
                             <div className="rounded-lg border border-amber-500/40 bg-amber-500/5 px-3 py-2">
                               <p className="text-[11px] text-foreground leading-relaxed">
-                                <strong>📈 Plano dinâmico:</strong> começa em R$ 0/mês. Quando sua loja faturar <strong>R$ {id === "autonomy" ? "2.500" : "5.000"}</strong> (60 dias), a mensalidade passa a <strong>R$ {id === "autonomy" ? "199,90" : "89,90"}/mês</strong> — com 30 dias de aviso e seu aceite expresso.
+                                <strong>📈 Plano dinâmico:</strong> começa em R$ 0/mês. Quando sua loja faturar <strong>R$ 5.000</strong> (60 dias), a mensalidade passa a <strong>R$ 89,90/mês</strong> — com 30 dias de aviso e seu aceite expresso.
                               </p>
                             </div>
                           )}

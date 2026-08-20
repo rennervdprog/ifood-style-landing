@@ -193,11 +193,11 @@ export const TermsUpdateModal = ({ pending, onAccepted }: Props) => {
 
           {/* Links leitura completa */}
           <div className="flex gap-2">
-            <a href="/termos" target="_blank" rel="noopener noreferrer"
+            <a href="/termos-de-uso" target="_blank" rel="noopener noreferrer"
               className="flex-1 flex items-center justify-center gap-1.5 bg-muted/40 border border-border rounded-xl py-2.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors">
               <FileText className="h-3.5 w-3.5" /> Ler Termos
             </a>
-            <a href="/privacidade" target="_blank" rel="noopener noreferrer"
+            <a href="/politica-de-privacidade" target="_blank" rel="noopener noreferrer"
               className="flex-1 flex items-center justify-center gap-1.5 bg-muted/40 border border-border rounded-xl py-2.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors">
               <Shield className="h-3.5 w-3.5" /> Ler Política
             </a>
@@ -223,7 +223,7 @@ export const TermsUpdateModal = ({ pending, onAccepted }: Props) => {
               </button>
               <p className="text-xs text-muted-foreground leading-relaxed">
                 Li e aceito os{" "}
-                <a href="/termos" target="_blank" rel="noopener noreferrer" className="font-bold text-primary underline underline-offset-2">
+                <a href="/termos-de-uso" target="_blank" rel="noopener noreferrer" className="font-bold text-primary underline underline-offset-2">
                   Termos de Uso
                 </a>{" "}
                 versão {termsVer}.
@@ -246,7 +246,7 @@ export const TermsUpdateModal = ({ pending, onAccepted }: Props) => {
               </button>
               <p className="text-xs text-muted-foreground leading-relaxed">
                 Li e aceito a{" "}
-                <a href="/privacidade" target="_blank" rel="noopener noreferrer" className="font-bold text-emerald-600 underline underline-offset-2">
+                <a href="/politica-de-privacidade" target="_blank" rel="noopener noreferrer" className="font-bold text-emerald-600 underline underline-offset-2">
                   Política de Privacidade
                 </a>{" "}
                 versão {privacyVer}.

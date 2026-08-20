@@ -88,9 +88,9 @@ hybrid.example = exampleText(hybrid);
 const fixed: PlanInfo = {
   id: "fixed",
   name: "Essencial",
-  tagline: "Grátis pra começar — R$ 0/mês. Vira R$ 89,90/mês quando você faturar R$ 5.000",
-  forWho: "Pra quem quer começar sem custo fixo e crescer sem pagar comissão por pedido",
-  monthlyFee: 0,
+  tagline: "Grátis até R$ 5.000 em vendas — depois R$ 89,90/mês",
+  forWho: "Para quem quer começar sem custo fixo e crescer sem pagar comissão por pedido",
+  monthlyFee: 89.90,
   commissionRate: 0,
   pixFee: 1.99,
   deliveryFee: 0.99,
@@ -100,8 +100,8 @@ const fixed: PlanInfo = {
   badge: "🎁 Grátis pra começar",
   highlight: true,
   features: [
-    "R$ 0/mês nos 2 primeiros meses",
-    "Sobe pra R$ 89,90/mês após atingir R$ 5.000 em vendas",
+    "Grátis até atingir R$ 5.000 em vendas no período de análise",
+    "R$ 89,90/mês após o gatilho, com aviso prévio de 30 dias",
     "Sem comissão por pedido",
     "Motoboy integrado + Suporte VIP",
     "PDV: módulo opcional (+ R$ 49/mês)",
@@ -134,12 +134,16 @@ const supporter: PlanInfo = {
 };
 supporter.example = exampleText(supporter);
 
+/**
+ * Plano legado: mantido para leitura, cálculo e operação de lojas já vinculadas.
+ * Não deve ser incluído em fluxos de aquisição ou migração voluntária.
+ */
 const autonomy: PlanInfo = {
   id: "autonomy",
   name: "Autonomia",
-  tagline: "Grátis pra começar — R$ 0/mês. Vira R$ 199,90/mês quando faturar R$ 2.500",
-  forWho: "Pra quem quer máxima autonomia: fica com 100% da taxa de entrega que cobra",
-  monthlyFee: 0,
+  tagline: "Grátis até R$ 2.500 em vendas — depois R$ 199,90/mês",
+  forWho: "Para quem quer máxima autonomia e fica com 100% da taxa de entrega que cobra",
+  monthlyFee: 199.90,
   commissionRate: 0,
   pixFee: 1.99,
   deliveryFee: 0,
@@ -149,8 +153,8 @@ const autonomy: PlanInfo = {
   badge: "🎁 Grátis pra começar",
   highlight: false,
   features: [
-    "R$ 0/mês até atingir R$ 2.500 em vendas",
-    "Sobe pra R$ 199,90/mês após o gatilho (com 30 dias de aviso)",
+    "Grátis até atingir R$ 2.500 em vendas no período de análise",
+    "R$ 199,90/mês após o gatilho, com aviso prévio de 30 dias",
     "Sem comissão por pedido",
     "Sem taxa de R$ 0,99 da plataforma na entrega",
     "Você fica com 100% da taxa que cobra",
@@ -199,15 +203,18 @@ export const PLANS: Record<StorePlanType, PlanInfo> = {
  *  Lojas já vinculadas ao Crescimento continuam funcionando normalmente. */
 /** Plano "commission_only" descontinuado para novos cadastros — oculto na UI pública.
  *  Lojas legado continuam funcionando com as regras antigas. */
-export const PLANS_ORDER: StorePlanType[] = ["fixed", "autonomy", "pdv_only"];
+/** Plano "autonomy" descontinuado para novos cadastros e migrações voluntárias.
+ *  A definição permanece para que lojas legadas mantenham regras, cálculos e histórico. */
+export const NEW_STORE_PLAN_TYPES = ["fixed", "pdv_only"] as const satisfies readonly StorePlanType[];
+export const PLANS_ORDER: StorePlanType[] = [...NEW_STORE_PLAN_TYPES];
 
-/** Linha única de explicação universal sobre a taxa de entrega. */
+/** Linha única de explicação da taxa de entrega para as ofertas vigentes. */
 export const DELIVERY_FEE_NOTE =
-  "Taxa de entrega: nos planos Comissão e Essencial a plataforma adiciona R$ 0,99 EM CIMA da taxa que você (lojista) cobra. Ex.: você cobra R$ 5 → cliente paga R$ 5,99. Os R$ 0,99 ficam com a plataforma, os R$ 5 são seus. Nada sai do seu caixa. No plano Autonomia esse acréscimo é zero — o cliente paga exatamente a taxa que você define.";
+  "No plano Essencial, a plataforma pode adicionar R$ 0,99 à taxa de entrega informada pela loja. Ex.: você cobra R$ 5 → o cliente paga R$ 5,99. Os R$ 0,99 ficam com a plataforma e os R$ 5 são seus; nada é descontado da taxa de entrega definida pela loja.";
 
-/** Linha única para a taxa PIX (apenas Essencial/Apoiador). */
+/** Linha única para a taxa PIX, conforme o plano e o meio de pagamento utilizado. */
 export const PIX_FEE_NOTE =
-  "Apenas pedidos pagos via PIX têm taxa de R$ 1,99 (cobrada no repasse). Dinheiro e cartão não têm taxa.";
+  "A taxa operacional de PIX é aplicada somente a pedidos PIX online, conforme o plano. Ela é exibida no pedido e no financeiro da loja.";
 
 /**
  * Label canônico do plano. Use SEMPRE isto em vez de strings soltas

@@ -193,7 +193,7 @@ export default function ResellerHome() {
           <CardContent className="text-xs text-muted-foreground space-y-1.5">
             <p>• Toda loja cadastrada pelo seu link fica <strong>vinculada permanentemente</strong> à sua conta.</p>
             <p>• Bônus de <strong>R$ 50</strong> por loja que ativa e completa 20 pedidos.</p>
-            <p>• <strong>{(r.commission_rate * 100).toFixed(0)}% da mensalidade</strong> a partir do mês em que a loja passa do GMV gratuito (R$ 5.000 no Essencial · R$ 2.500 na Autonomia).</p>
+            <p>• <strong>{(r.commission_rate * 100).toFixed(0)}% da mensalidade</strong> a partir do mês em que a loja passa do GMV gratuito de R$ 5.000 no Essencial.</p>
             <p>• Enquanto a loja estiver em fase gratuita, a mensalidade é R$ 0 — a comissão recorrente também.</p>
             <p>• Se a loja cancelar, a comissão daquele mês encerra automaticamente.</p>
           </CardContent>

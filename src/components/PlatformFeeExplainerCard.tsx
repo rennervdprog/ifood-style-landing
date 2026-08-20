@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { ChevronDown, ChevronUp, Info, Truck, Calendar, QrCode, CheckCircle2 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { REPASSE_RULES } from "@/lib/repasseRules";
 
 interface Props {
   storeId: string;
@@ -10,8 +11,8 @@ interface Props {
 /**
  * Card permanente no Dashboard explicando a taxa de R$ X/entrega.
  * - A taxa é PAGA PELO CLIENTE (somada à taxa de entrega).
- * - O lojista só REPASSA quando o pedido for em dinheiro/cartão/PIX maquininha.
- * - Cobrança automática toda segunda quando saldo ≥ R$ 30.
+ * - A parcela da plataforma é acompanhada em vendas pagas fora do PIX online.
+ * - Cobrança semanal quando o ciclo atingir o mínimo vigente.
  * Estado colapsado é persistido por loja em localStorage.
  */
 export default function PlatformFeeExplainerCard({ storeId, splitPerOrder }: Props) {
@@ -33,7 +34,7 @@ export default function PlatformFeeExplainerCard({ storeId, splitPerOrder }: Pro
     });
   };
 
-  const valor = splitPerOrder > 0 ? splitPerOrder : 2;
+  const valor = splitPerOrder > 0 ? splitPerOrder : 0.99;
   const valorFmt = `R$ ${valor.toFixed(2).replace(".", ",")}`;
 
   return (
@@ -52,7 +53,7 @@ export default function PlatformFeeExplainerCard({ storeId, splitPerOrder }: Pro
             Como funciona a taxa de {valorFmt}/entrega
           </h3>
           <p className="text-[11px] text-muted-foreground mt-0.5">
-            Pago pelo cliente. Você só repassa em pagamentos físicos.
+            Paga pelo cliente. Acompanhe a taxa no Financeiro em pagamentos físicos.
           </p>
         </div>
         {collapsed ? (
@@ -68,10 +69,10 @@ export default function PlatformFeeExplainerCard({ storeId, splitPerOrder }: Pro
             <strong>A taxa de {valorFmt} por entrega é paga pelo cliente</strong> — ela já vem somada à taxa de entrega no checkout.
           </p>
           <p className="text-xs text-foreground leading-relaxed">
-            Você só precisa <strong>repassar para a plataforma</strong> quando o pedido for pago em <strong>dinheiro, cartão na entrega ou PIX maquininha</strong> (porque nesses casos o valor inteiro fica com você).
+            Em pedidos pagos em <strong>dinheiro, cartão na entrega ou PIX maquininha</strong>, a parcela da plataforma é registrada em <strong>taxas e comissões em aberto</strong>, pois o valor é recebido diretamente pela loja.
           </p>
           <p className="text-xs text-muted-foreground leading-relaxed">
-            Pedidos pagos por <strong>PIX online no app</strong> não geram repasse — a taxa já é descontada automaticamente.
+            Pedidos pagos por <strong>PIX online no app</strong> seguem o fluxo automático de pagamento; a taxa operacional aplicável é tratada nesse próprio fluxo.
           </p>
 
           {/* Timeline */}
@@ -79,7 +80,7 @@ export default function PlatformFeeExplainerCard({ storeId, splitPerOrder }: Pro
             {[
               { icon: Truck, label: "Pedido físico" },
               { icon: Info, label: `Acumula ${valorFmt}` },
-              { icon: Calendar, label: "Segunda, se ≥ R$ 30" },
+              { icon: Calendar, label: `Segunda, se ≥ R$ ${REPASSE_RULES.MIN_AUTO_CHARGE_BRL}` },
               { icon: QrCode, label: "PIX no painel" },
             ].map((step, i) => (
               <div key={i} className="flex flex-col items-center text-center gap-1">
@@ -95,7 +96,7 @@ export default function PlatformFeeExplainerCard({ storeId, splitPerOrder }: Pro
           <div className="rounded-lg bg-amber-500/5 border border-amber-500/20 p-2.5 flex items-start gap-2">
             <CheckCircle2 className="h-3.5 w-3.5 text-amber-600 mt-0.5 shrink-0" />
             <p className="text-[10.5px] text-foreground leading-snug">
-              <strong>≥ R$ 500</strong> trava o painel até pagar · <strong>30 dias sem pagar</strong> suspende a loja.
+              <strong>R$ 500 ou mais</strong> pode bloquear novos pedidos · uma cobrança pendente por <strong>{REPASSE_RULES.SUSPENSION_DAYS} dias</strong> também pode bloquear a loja até a regularização.
             </p>
           </div>
 

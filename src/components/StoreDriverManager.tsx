@@ -152,9 +152,13 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
     () => linkedDrivers.filter((driver: any) => driver.status === "pending"),
     [linkedDrivers],
   );
-  const onlineDrivers = useMemo(
-    () => linkedDrivers.filter((driver: any) => driver.status !== "rejected" && driver.is_online),
+  const acceptedDrivers = useMemo(
+    () => linkedDrivers.filter((driver: any) => driver.status === "accepted"),
     [linkedDrivers],
+  );
+  const onlineDrivers = useMemo(
+    () => acceptedDrivers.filter((driver: any) => driver.is_online),
+    [acceptedDrivers],
   );
   const hasOperationalDriver = onlineDrivers.length > 0;
 
@@ -232,9 +236,14 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
     try {
       const { error } = await supabase
         .from("store_drivers")
-        .insert({ store_id: storeId, driver_user_id: driver.user_id, payment_mode: mode } as any);
+        .insert({
+          store_id: storeId,
+          driver_user_id: driver.user_id,
+          payment_mode: mode,
+          status: "pending",
+        } as any);
       if (error) throw error;
-      toast.success(`${driver.full_name} vinculado! Modo: ${mode === "instantaneo" ? "Pagamento na hora" : "Acerto fim do dia"}`);
+      toast.success(`Convite enviado para ${driver.full_name}. O vínculo será ativado após o aceite no app do entregador.`);
       setFoundDrivers((current) => current.filter((candidate) => candidate.user_id !== driver.user_id));
       setSearchTerm("");
       queryClient.invalidateQueries({ queryKey: ["store-drivers", storeId] });
@@ -363,7 +372,7 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
 
       <section className="grid divide-y divide-border border-y border-border sm:grid-cols-3 sm:divide-x sm:divide-y-0">
         <div className="px-1 py-3 sm:px-4">
-          <p className="text-2xl font-black tabular-nums text-foreground">{linkedDrivers.length}</p>
+          <p className="text-2xl font-black tabular-nums text-foreground">{acceptedDrivers.length}</p>
           <p className="mt-1 text-xs text-muted-foreground">Motoboys na equipe</p>
         </div>
         <div className="px-1 py-3 sm:px-4">
@@ -380,7 +389,7 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
       </section>
 
       <nav className="flex gap-6 overflow-x-auto border-b border-border" aria-label="Seções de motoboys">
-        <button onClick={() => setActiveTab("team")} className={tabClass("team")}>Equipe ({linkedDrivers.length})</button>
+        <button onClick={() => setActiveTab("team")} className={tabClass("team")}>Equipe ({acceptedDrivers.length})</button>
         <button onClick={() => setActiveTab("directory")} className={tabClass("directory")}>Base em {cityName}</button>
         <button onClick={() => setActiveTab("invites")} className={tabClass("invites")}>Convites{pendingInvites.length ? ` (${pendingInvites.length})` : ""}</button>
         <button onClick={() => setActiveTab("finance")} className={tabClass("finance")}>Financeiro</button>
@@ -392,7 +401,7 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
             <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
           )}
 
-          {!isLoading && linkedDrivers.length === 0 && (
+          {!isLoading && acceptedDrivers.length === 0 && (
             <div className="border border-border bg-card px-5 py-10 text-center">
               <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-lg bg-muted text-muted-foreground">
                 <Bike className="h-7 w-7" />
@@ -421,7 +430,7 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
             </div>
           )}
 
-          {linkedDrivers.map((driver: any) => {
+          {acceptedDrivers.map((driver: any) => {
             const stats = deliveryStats?.[driver.driver_user_id];
             const selectedMode = driver.payment_mode || "fim_do_dia";
             const driverName = driver.profile?.full_name || "Motoboy";
@@ -492,10 +501,10 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
             <InviteLinkCard icon={<Smartphone className="h-5 w-5" />} title="Envie o app Parceiro" description="Depois do cadastro, o motoboy instala o app para receber e entregar pedidos." url="https://itasuper.com.br/download" onCopy={copyDriverApp} onShare={shareDriverApp} />
           </div>
           <div className="border border-border bg-card p-5">
-            <h3 className="flex items-center gap-2 text-base font-black text-foreground"><Search className="h-4 w-4 text-primary" /> Buscar e vincular alguém conhecido</h3>
-            <p className="mt-1 text-xs text-muted-foreground">Use nome, e-mail ou telefone do profissional já cadastrado. O vínculo libera somente os pedidos desta loja.</p>
+            <h3 className="flex items-center gap-2 text-base font-black text-foreground"><Search className="h-4 w-4 text-primary" /> Buscar e convidar alguém conhecido</h3>
+            <p className="mt-1 text-xs text-muted-foreground">Use nome, e-mail ou telefone do profissional já cadastrado. Ele receberá um convite no aplicativo e só entra na equipe após aceitar.</p>
             <div className="mt-4 flex flex-col gap-2 sm:flex-row"><div className="relative flex-1"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><input type="text" placeholder="Nome, e-mail ou telefone" value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} onKeyDown={(event) => event.key === "Enter" && handleSearch()} className="w-full border border-border bg-background py-2.5 pl-9 pr-3 text-sm text-foreground outline-none focus:border-primary" /></div><button onClick={handleSearch} disabled={searching || !searchTerm.trim()} className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-black text-primary-foreground disabled:opacity-50">{searching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />} Buscar</button></div>
-            {foundDrivers.length > 0 && <div className="mt-4 space-y-3">{foundDrivers.map((driver) => { const selected = paymentModeChoice[driver.user_id] || "fim_do_dia"; return <div key={driver.user_id} className="border border-border p-4"><div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary"><UserCheck className="h-4 w-4" /></div><div><p className="text-sm font-black text-foreground">{driver.full_name}</p><p className="mt-1 text-xs text-muted-foreground">{driver.email || driver.phone} · {driver.vehicle || "Veículo não informado"}</p></div></div><div className="mt-4 grid gap-3 lg:grid-cols-[1fr_180px]"><div><p className="text-[10px] font-black uppercase tracking-wide text-muted-foreground">Como será o acerto da entrega?</p><div className="mt-2 grid grid-cols-2 gap-2"><button onClick={() => setPaymentModeChoice((current) => ({ ...current, [driver.user_id]: "instantaneo" }))} className={`border p-2 text-left text-xs font-bold ${selected === "instantaneo" ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground"}`}><Zap className="mb-1 h-4 w-4" />Na hora<br /><span className="text-[10px] font-normal">A cada entrega</span></button><button onClick={() => setPaymentModeChoice((current) => ({ ...current, [driver.user_id]: "fim_do_dia" }))} className={`border p-2 text-left text-xs font-bold ${selected === "fim_do_dia" ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground"}`}><Clock className="mb-1 h-4 w-4" />Fim do dia<br /><span className="text-[10px] font-normal">Acerto acumulado</span></button></div></div><button onClick={() => handleAdd(driver)} disabled={adding} className="self-end rounded-lg bg-primary px-4 py-2.5 text-xs font-black text-primary-foreground disabled:opacity-50">{adding ? "Vinculando..." : "Adicionar à equipe"}</button></div></div>; })}</div>}
+            {foundDrivers.length > 0 && <div className="mt-4 space-y-3">{foundDrivers.map((driver) => { const selected = paymentModeChoice[driver.user_id] || "fim_do_dia"; return <div key={driver.user_id} className="border border-border p-4"><div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary"><UserCheck className="h-4 w-4" /></div><div><p className="text-sm font-black text-foreground">{driver.full_name}</p><p className="mt-1 text-xs text-muted-foreground">{driver.email || driver.phone} · {driver.vehicle || "Veículo não informado"}</p></div></div><div className="mt-4 grid gap-3 lg:grid-cols-[1fr_180px]"><div><p className="text-[10px] font-black uppercase tracking-wide text-muted-foreground">Como será o acerto da entrega?</p><div className="mt-2 grid grid-cols-2 gap-2"><button onClick={() => setPaymentModeChoice((current) => ({ ...current, [driver.user_id]: "instantaneo" }))} className={`border p-2 text-left text-xs font-bold ${selected === "instantaneo" ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground"}`}><Zap className="mb-1 h-4 w-4" />Na hora<br /><span className="text-[10px] font-normal">A cada entrega</span></button><button onClick={() => setPaymentModeChoice((current) => ({ ...current, [driver.user_id]: "fim_do_dia" }))} className={`border p-2 text-left text-xs font-bold ${selected === "fim_do_dia" ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground"}`}><Clock className="mb-1 h-4 w-4" />Fim do dia<br /><span className="text-[10px] font-normal">Acerto acumulado</span></button></div></div><button onClick={() => handleAdd(driver)} disabled={adding} className="self-end rounded-lg bg-primary px-4 py-2.5 text-xs font-black text-primary-foreground disabled:opacity-50">{adding ? "Enviando convite..." : "Enviar convite"}</button></div></div>; })}</div>}
           </div>
           {pendingInvites.length > 0 && <div className="border border-amber-500/30 bg-amber-500/5 p-4"><p className="text-sm font-black text-foreground">Convites aguardando aceite</p><p className="mt-1 text-xs text-muted-foreground">{pendingInvites.map((driver: any) => driver.profile?.full_name || "Motoboy").join(", ")}.</p></div>}
         </section>

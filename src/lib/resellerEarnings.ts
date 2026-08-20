@@ -2,7 +2,7 @@
  * Fonte da verdade única sobre como o revendedor ganha.
  * Regras alinhadas com os templates de plano no banco externo:
  *  - Essencial: R$ 89,90/mês, cobra só após R$ 5.000 de GMV mensal
- *  - Autonomia: R$ 199,90/mês, cobra só após R$ 2.500 de GMV mensal
+ *  - Autonomia: condição legada preservada apenas para vínculos já existentes
  *  - Comissão recorrente: 20% da mensalidade paga pela loja
  *  - Bounty: R$ 50 por loja que atinge 20 pedidos entregues
  *
@@ -36,7 +36,7 @@ export function freeGmvCentsFor(planType?: string | null): number {
  * Frase padrão usada em headers/tooltips.
  */
 export const FREE_GMV_EXPLAINER =
-  "Você recebe 20% da mensalidade a partir do mês em que a loja indicada passar de R$ 5.000 (Essencial) ou R$ 2.500 (Autonomia) em vendas.";
+  "Para novas indicações, você recebe 20% da mensalidade a partir do mês em que a loja indicada no Essencial passar de R$ 5.000 em vendas. Vínculos legados seguem as condições exibidas no painel.";
 
 export const RECURRING_STARTS_TOOLTIP =
   "Só entra saldo recorrente quando a loja indicada passa do GMV gratuito e a mensalidade é cobrada.";

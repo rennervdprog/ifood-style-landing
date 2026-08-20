@@ -538,12 +538,12 @@ const PIE_COLORS = [COLORS.green, COLORS.blue, COLORS.amber];
           </div>
           <div className="flex-1">
             <h3 className="font-bold text-foreground text-sm">
-              Plano {storePlan.planType === "fixed" ? "Essencial" : storePlan.planType === "hybrid" ? "Crescimento" : "Comissão"}
+              Plano {storePlan.planType === "fixed" ? "Essencial" : storePlan.planType === "autonomy" ? "Autonomia" : storePlan.planType === "hybrid" ? "Crescimento" : "Comissão"}
             </h3>
             <p className="text-xs text-muted-foreground">
               {formatBRL(storePlan.monthlyFee)}/mês
               {storePlan.isFixedPlan
-                ? ` • R$${(storePlan.pixOperationalFee || 1.99).toFixed(2).replace(".", ",")}/pedido PIX • R$${(storePlan.platformDeliverySplit || 2).toFixed(2).replace(".", ",")}/entrega`
+                ? ` • R$${(storePlan.pixOperationalFee ?? 1.99).toFixed(2).replace(".", ",")}/pedido PIX • R$${(storePlan.platformDeliverySplit ?? 0.99).toFixed(2).replace(".", ",")}/entrega`
                 : storePlan.commissionRate > 0 ? ` + ${storePlan.commissionRate}% por pedido` : ""
               }
             </p>
@@ -727,7 +727,7 @@ const PIE_COLORS = [COLORS.green, COLORS.blue, COLORS.amber];
               </div>
               <p className="text-2xl font-black text-emerald-400">{formatBRL(paymentBreakdown.pix.total)}</p>
               <p className="text-[10px] text-muted-foreground mt-1">
-                {pixOrders.length} pedidos via PIX. Taxa operacional de R${(storePlan.pixOperationalFee || 1.99).toFixed(2).replace(".", ",")}/pedido (total: {formatBRL(pixOperationalCost)}) descontada automaticamente.
+                {pixOrders.length} pedidos via PIX. Taxa operacional de R${(storePlan.pixOperationalFee ?? 1.99).toFixed(2).replace(".", ",")}/pedido (total: {formatBRL(pixOperationalCost)}) descontada automaticamente.
               </p>
               <div className="mt-2 rounded-xl bg-emerald-500/5 border border-emerald-500/10 p-2.5">
                 <p className="text-[10px] text-emerald-400 font-semibold">✅ Valor já depositado na sua conta — nada a fazer</p>
@@ -743,10 +743,10 @@ const PIE_COLORS = [COLORS.green, COLORS.blue, COLORS.amber];
                 <div className="w-8 h-8 rounded-xl bg-blue-500/10 flex items-center justify-center">
                   <ArrowDownRight className="h-4 w-4 text-blue-400" />
                 </div>
-                <p className="text-sm font-bold text-foreground">Taxa Pendente — Entregas</p>
+                <p className="text-sm font-bold text-foreground">Taxas em aberto — Entregas</p>
               </div>
               <p className="text-xs text-muted-foreground mb-1">
-                Taxa de R${storePlan.platformDeliverySplit || 2}/entrega para pedidos finalizados com pagamento físico. Acumula até atingir o valor mínimo.
+                Taxa de plataforma de R${(storePlan.platformDeliverySplit ?? 0.99).toFixed(2).replace(".", ",")}/entrega em pedidos pagos fora do PIX online. O valor é detalhado por ciclo e só gera PIX quando atingir o mínimo aplicável.
               </p>
               <p className="text-2xl font-black text-blue-400">
                 {formatBRL(pendingFee)}

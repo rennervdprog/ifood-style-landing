@@ -194,7 +194,7 @@ export default function ResellerPerfil() {
             </div>
             <div className="flex gap-2">
               <span className="w-5 h-5 rounded-full bg-blue-500/15 text-blue-600 text-[10px] font-bold flex items-center justify-center shrink-0">2</span>
-              <p><strong>Fase gratuita → R$ 0 recorrente.</strong> Enquanto a loja ficar abaixo do GMV gratuito (R$ 5.000 Essencial / R$ 2.500 Autonomia).</p>
+              <p><strong>Fase gratuita → R$ 0 recorrente.</strong> Enquanto a loja ficar abaixo do GMV gratuito de R$ 5.000 no Essencial.</p>
             </div>
             <div className="flex gap-2">
               <span className="w-5 h-5 rounded-full bg-green-500/15 text-green-600 text-[10px] font-bold flex items-center justify-center shrink-0">3</span>

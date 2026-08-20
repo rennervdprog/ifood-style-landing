@@ -27,7 +27,7 @@ export default function FinanceCenter({ storeId, storeName, hasCommission }: Fin
         <div>
           <p className="text-xs font-semibold text-muted-foreground">Gestão / Financeiro</p>
           <h2 className="mt-1 text-2xl font-black tracking-tight text-foreground">Financeiro</h2>
-          <p className="mt-1 text-sm text-muted-foreground">Entenda o que entrou, o que será repassado e suas próximas cobranças.</p>
+          <p className="mt-1 text-sm text-muted-foreground">Acompanhe seus recebimentos, valores a pagar à plataforma e próximas cobranças.</p>
         </div>
 
       </header>
@@ -41,7 +41,7 @@ export default function FinanceCenter({ storeId, storeName, hasCommission }: Fin
         <TabsList className="h-auto w-full justify-start gap-6 rounded-none border-b border-border bg-transparent p-0">
           <TabsTrigger value="summary" className="gap-2 rounded-none border-b-2 border-transparent px-1 pb-3 text-xs font-black text-muted-foreground data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary"><LayoutDashboard className="h-4 w-4" />Resumo</TabsTrigger>
           <TabsTrigger value="history" className="gap-2 rounded-none border-b-2 border-transparent px-1 pb-3 text-xs font-black text-muted-foreground data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary"><Receipt className="h-4 w-4" />Extrato</TabsTrigger>
-          <TabsTrigger value="repasse" className="gap-2 rounded-none border-b-2 border-transparent px-1 pb-3 text-xs font-black text-muted-foreground data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary"><Truck className="h-4 w-4" />Repasses</TabsTrigger>
+          <TabsTrigger value="repasse" className="gap-2 rounded-none border-b-2 border-transparent px-1 pb-3 text-xs font-black text-muted-foreground data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary"><Truck className="h-4 w-4" />Cobranças</TabsTrigger>
         </TabsList>
 
         <TabsContent value="summary" className="mt-5 space-y-5">

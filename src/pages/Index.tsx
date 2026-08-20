@@ -114,9 +114,8 @@ const painPoints = [
  ];
 
 const plans = [
-  { name: "Essencial", price: "R$0", sub: "/mês", desc: "0% comissão", icon: Crown, tags: ["Grátis pra começar", "Sobe pra R$89,90 quando faturar R$5.000"], subtitle: "Comece sem pagar mensalidade. Taxa PIX R$ 1,99 + entrega R$ 0,99.", popular: true },
-  { name: "Autonomia", price: "R$199,90", sub: "/mês", desc: "0% comissão + sem taxa R$ 0,99", icon: Crown, tags: ["Sem taxa de R$ 0,99 da plataforma", "100% da sua taxa de entrega"], subtitle: "Cliente paga exatamente a taxa que você define. 7 dias grátis.", popular: false },
-  { name: "Somente PDV", price: "R$69", sub: "/mês", desc: "Só o caixa presencial", icon: CreditCard, tags: ["Sem delivery", "Sem vitrine pública"], subtitle: "Pra loja física que não quer delivery. Só o PDV completo.", popular: false },
+  { name: "Essencial", price: "R$0", sub: "/mês", desc: "0% comissão", icon: Crown, tags: ["Grátis pra começar", "R$ 89,90 após o gatilho de R$ 5.000"], subtitle: "Comece sem pagar mensalidade. Taxa PIX R$ 1,99 + entrega R$ 0,99 quando aplicável.", popular: true },
+  { name: "Somente PDV", price: "R$69", sub: "/mês", desc: "Só o caixa presencial", icon: CreditCard, tags: ["Sem delivery", "Sem vitrine pública"], subtitle: "Para loja física que não quer delivery: PDV completo no balcão.", popular: false },
 ];
 
 const testimonials = [
@@ -459,7 +458,7 @@ const Index = () => {
                Sem fidelidade ou taxas escondidas. Mude de plano quando quiser.
              </p>
            </div>
-           <div className="grid sm:grid-cols-3 gap-8">
+           <div className="grid gap-8 sm:grid-cols-2">
              {plans.map((plan) => (
                <Card key={plan.name} className={`rounded-[2.5rem] border-2 overflow-hidden transition-all hover:shadow-2xl relative ${plan.popular ? "border-primary shadow-xl scale-105 z-10" : "border-border shadow-md"}`}>
                  {plan.popular && (
