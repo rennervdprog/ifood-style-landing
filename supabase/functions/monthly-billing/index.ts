@@ -101,7 +101,10 @@ async function createWooviCharge(params: {
     };
   }
 
-  const response = await fetch("https://api.openpix.com.br/api/v1/charge", {
+  // Produção permanece como padrão. A URL só muda quando configurada
+  // explicitamente em um ambiente isolado de homologação.
+  const wooviBaseUrl = (Deno.env.get("WOOVI_API_BASE_URL") || "https://api.openpix.com.br").replace(/\/+$/, "");
+  const response = await fetch(`${wooviBaseUrl}/api/v1/charge`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: appId },
     body: JSON.stringify(body),
@@ -522,7 +525,9 @@ Deno.serve(async (req) => {
         await supabase.from("financial_transactions").insert({
           store_id: store.id,
           transaction_kind: "commission_charge",
-          reference_code: referenceCode,
+          // Deve ser a mesma referência enviada à Woovi como correlationID.
+          // O webhook usa esse vínculo para reconhecer a mensalidade e renovar o plano.
+          reference_code: resolvedReferenceCode,
           amount: totalAmount,  // mensalidade + comissão PDV
           status: "pending",
           provider: providerName,
@@ -566,8 +571,8 @@ Deno.serve(async (req) => {
         }
 
         billed++;
-        results.push({ store: store.name, reference: referenceCode, status: "billed" });
-        console.log(`Monthly billing created for ${store.name}: ${referenceCode}`);
+        results.push({ store: store.name, reference: resolvedReferenceCode, status: "billed" });
+        console.log(`Monthly billing created for ${store.name}: ${resolvedReferenceCode}`);
       } catch (err) {
         console.error(`Error billing ${store.name}:`, err);
         failed++;

@@ -1,12 +1,12 @@
-import { Search, X, MoreHorizontal, Plus, CheckSquare, Filter } from "lucide-react";
+import { CheckSquare, MoreHorizontal, Plus, Search, X } from "lucide-react";
 import {
   DropdownMenu,
-  DropdownMenuTrigger,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuCheckboxItem,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 
@@ -14,9 +14,9 @@ export type ProductFilter = "all" | "active" | "paused" | "out_of_stock" | "no_i
 
 interface MenuToolbarProps {
   search: string;
-  onSearchChange: (v: string) => void;
+  onSearchChange: (value: string) => void;
   filter: ProductFilter;
-  onFilterChange: (f: ProductFilter) => void;
+  onFilterChange: (filter: ProductFilter) => void;
   filterCounts?: Partial<Record<ProductFilter, number>>;
   selectionMode: boolean;
   onToggleSelectionMode: () => void;
@@ -27,13 +27,12 @@ interface MenuToolbarProps {
   disableDailyMenu?: boolean;
 }
 
-const FILTER_LABELS: Record<ProductFilter, string> = {
-  all: "Todos",
-  active: "Ativos",
-  paused: "Pausados",
-  out_of_stock: "Esgotados",
-  no_image: "Sem imagem",
-};
+const PRIMARY_FILTERS: { id: ProductFilter; label: string }[] = [
+  { id: "all", label: "Todos" },
+  { id: "active", label: "Ativos" },
+  { id: "paused", label: "Pausados" },
+  { id: "out_of_stock", label: "Esgotados" },
+];
 
 export const MenuToolbar = ({
   search,
@@ -48,120 +47,60 @@ export const MenuToolbar = ({
   onOpenDailyMenu,
   onOpenSectionManage,
   disableDailyMenu,
-}: MenuToolbarProps) => {
-  return (
-    <div className="sticky top-0 z-20 -mx-2 px-2 py-2 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/70 border-b border-border/50">
+}: MenuToolbarProps) => (
+  <div className="sticky top-0 z-20 -mx-2 border-b border-border bg-background/95 px-2 py-3 backdrop-blur">
+    <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
+      <div className="relative min-w-0 flex-1">
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <input
+          type="search"
+          placeholder="Buscar produto"
+          value={search}
+          onChange={(event) => onSearchChange(event.target.value)}
+          className="h-10 w-full border border-border bg-card py-2 pl-10 pr-10 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-primary"
+        />
+        {search && <button onClick={() => onSearchChange("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" aria-label="Limpar busca"><X className="h-4 w-4" /></button>}
+      </div>
+
+      <div className="no-scrollbar flex min-w-0 overflow-x-auto border border-border bg-card">
+        {PRIMARY_FILTERS.map((item) => (
+          <button
+            key={item.id}
+            onClick={() => onFilterChange(item.id)}
+            className={cn(
+              "shrink-0 border-r border-border px-3 py-2 text-xs font-bold last:border-r-0",
+              filter === item.id ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted hover:text-foreground",
+            )}
+          >
+            {item.label}
+            {filterCounts?.[item.id] ? <span className="ml-1.5 text-[10px] tabular-nums">{filterCounts[item.id]}</span> : null}
+          </button>
+        ))}
+      </div>
+
       <div className="flex items-center gap-2">
-        {/* Busca */}
-        <div className="relative flex-1 min-w-0">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-          <input
-            type="text"
-            placeholder="Buscar produto..."
-            value={search}
-            onChange={(e) => onSearchChange(e.target.value)}
-            className="w-full bg-card pl-9 pr-8 py-2 rounded-xl text-sm border border-border focus:border-primary focus:outline-none"
-          />
-          {search && (
-            <button
-              onClick={() => onSearchChange("")}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1"
-              aria-label="Limpar busca"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          )}
-        </div>
-
-        {/* Filtro */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button
-              className={cn(
-                "flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-semibold border transition-colors flex-shrink-0",
-                filter !== "all"
-                  ? "bg-primary/10 text-primary border-primary/30"
-                  : "bg-card text-foreground/80 border-border hover:bg-muted"
-              )}
-              aria-label="Filtrar"
-            >
-              <Filter className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">{FILTER_LABELS[filter]}</span>
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-44">
-            <DropdownMenuLabel className="text-xs">Filtrar produtos</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            {(Object.keys(FILTER_LABELS) as ProductFilter[]).map((f) => (
-              <DropdownMenuCheckboxItem
-                key={f}
-                checked={filter === f}
-                onCheckedChange={() => onFilterChange(f)}
-              >
-                <span className="flex-1">{FILTER_LABELS[f]}</span>
-                {filterCounts?.[f] !== undefined && (
-                  <span className="ml-2 text-[10px] font-bold text-muted-foreground tabular-nums">
-                    {filterCounts[f]}
-                  </span>
-                )}
-              </DropdownMenuCheckboxItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        {/* Modo seleção */}
-        <button
-          onClick={onToggleSelectionMode}
-          className={cn(
-            "hidden sm:flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-semibold border transition-colors flex-shrink-0",
-            selectionMode
-              ? "bg-primary text-primary-foreground border-primary"
-              : "bg-card text-foreground/80 border-border hover:bg-muted"
-          )}
-          aria-label="Modo seleção"
-        >
-          <CheckSquare className="h-3.5 w-3.5" />
-          <span>Selecionar</span>
+        <button onClick={onToggleSelectionMode} className={cn("hidden h-10 items-center gap-2 border px-3 text-xs font-bold sm:inline-flex", selectionMode ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-foreground hover:bg-muted")}>
+          <CheckSquare className="h-4 w-4" /> Selecionar vários
         </button>
-
-        {/* Menu Mais */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button
-              className="p-2 rounded-xl border border-border bg-card hover:bg-muted transition-colors flex-shrink-0"
-              aria-label="Mais opções"
-            >
-              <MoreHorizontal className="h-4 w-4" />
-            </button>
+            <button className="inline-flex h-10 w-10 items-center justify-center border border-border bg-card text-foreground hover:bg-muted" aria-label="Mais opções"><MoreHorizontal className="h-4 w-4" /></button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuItem onClick={onToggleSelectionMode} className="sm:hidden">
-              <CheckSquare className="h-4 w-4 mr-2" /> Modo seleção
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={onOpenSectionManage}>
-              Gerenciar seções
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={onOpenImport}>
-              Importar cardápio (CSV)
-            </DropdownMenuItem>
-            {!disableDailyMenu && (
-              <DropdownMenuItem onClick={onOpenDailyMenu}>
-                Cardápio do dia
-              </DropdownMenuItem>
-            )}
+            <DropdownMenuLabel className="text-xs">Mais ações</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={onToggleSelectionMode} className="sm:hidden"><CheckSquare className="mr-2 h-4 w-4" />Selecionar vários</DropdownMenuItem>
+            <DropdownMenuCheckboxItem checked={filter === "no_image"} onCheckedChange={() => onFilterChange(filter === "no_image" ? "all" : "no_image")}>Sem imagem {filterCounts?.no_image ? `(${filterCounts.no_image})` : ""}</DropdownMenuCheckboxItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={onOpenSectionManage}>Gerenciar seções</DropdownMenuItem>
+            <DropdownMenuItem onClick={onOpenImport}>Importar cardápio (CSV)</DropdownMenuItem>
+            {!disableDailyMenu && <DropdownMenuItem onClick={onOpenDailyMenu}>Cardápio do dia</DropdownMenuItem>}
           </DropdownMenuContent>
         </DropdownMenu>
-
-        {/* Novo produto — destaque */}
-        <button
-          onClick={onNewProduct}
-          className="hidden sm:flex items-center gap-1.5 bg-primary text-primary-foreground px-3 py-2 rounded-xl text-sm font-bold shadow-sm hover:bg-primary/90 transition-colors flex-shrink-0"
-        >
-          <Plus className="h-4 w-4" /> Novo
-        </button>
+        <button onClick={onNewProduct} className="inline-flex h-10 items-center gap-2 bg-primary px-3 text-sm font-black text-primary-foreground hover:bg-primary/90"><Plus className="h-4 w-4" /><span className="hidden sm:inline">Novo produto</span><span className="sm:hidden">Novo</span></button>
       </div>
     </div>
-  );
-};
+  </div>
+);
 
 export default MenuToolbar;

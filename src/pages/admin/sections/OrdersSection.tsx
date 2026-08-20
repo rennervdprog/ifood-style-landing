@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Bell } from "lucide-react";
+import { AlertTriangle, ArrowRight, Bell } from "lucide-react";
 import { AdminOrderCard } from "../components/AdminOrderCard";
 import type { OrderStatus, OrderTabKey } from "../types";
 import { supabase } from "@/integrations/supabase/client";
@@ -175,6 +175,8 @@ export default function OrdersSection(props: Props) {
     return { count: base.length, total, pdvCount, pdvTotal, deliveryCount, deliveryTotal, manualCount, manualTotal };
   }, [orders, periodRange]);
 
+  const attentionCount = pendingCount + pixPending.length;
+
   return (
     <>
       <OrdersToolbar
@@ -187,6 +189,19 @@ export default function OrdersSection(props: Props) {
         periodSummary={periodSummary}
         showSearch={(orders?.length || 0) > 1}
       />
+
+      {attentionCount > 0 && (
+        <section className="mx-auto mt-4 flex max-w-6xl flex-col gap-3 border border-primary/30 border-l-4 border-l-primary bg-card px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <AlertTriangle className="h-5 w-5 shrink-0 text-primary" />
+            <div>
+              <p className="text-sm font-black text-foreground">{attentionCount} pedido{attentionCount > 1 ? "s precisam" : " precisa"} da sua atenção</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">Revise novos pedidos e confirmações de PIX antes de iniciar o preparo.</p>
+            </div>
+          </div>
+          <button onClick={() => setActiveTab("pendente")} className="inline-flex items-center justify-center gap-2 self-start rounded-lg bg-primary px-3 py-2 text-xs font-black text-primary-foreground hover:bg-primary/90 sm:self-auto">Ver pendentes <ArrowRight className="h-4 w-4" /></button>
+        </section>
+      )}
 
       <PixDirectAlert
         pixPending={pixPending}
@@ -207,7 +222,7 @@ export default function OrdersSection(props: Props) {
         onSelect={setActiveTab}
       />
 
-      <div className="p-4 space-y-3 md:grid md:grid-cols-2 md:gap-4 md:space-y-0 xl:grid-cols-3 max-w-6xl mx-auto">
+      <div className="mx-auto grid max-w-6xl gap-4 space-y-0 p-4 md:grid-cols-2 xl:grid-cols-3 lg:px-6">
         {isLoading ? (
           <>
             {Array.from({ length: 4 }).map((_, i) => <OrderCardSkeleton key={i} />)}
@@ -257,7 +272,7 @@ export default function OrdersSection(props: Props) {
         <button
           onClick={() => setActiveTab("pendente")}
           style={{ bottom: "calc(env(safe-area-inset-bottom) + 5rem)" }}
-          className="fixed lg:!bottom-6 right-6 bg-primary text-primary-foreground font-black px-5 py-3 rounded-2xl shadow-xl animate-bounce flex items-center gap-2 text-sm z-30 ring-4 ring-primary/30"
+          className="fixed right-6 z-30 flex items-center gap-2 rounded-lg bg-primary px-5 py-3 text-sm font-black text-primary-foreground shadow-xl ring-4 ring-primary/30 lg:!bottom-6"
         >
           <Bell className="h-4 w-4" /> {pendingCount} novo{pendingCount > 1 ? "s" : ""}!
         </button>

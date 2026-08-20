@@ -44,8 +44,8 @@ export default function ValorAPagarCard({ storeId, onPayClick }: Props) {
   const blocked = total >= 500;
 
   return (
-    <Card className={blocked ? "border-destructive bg-destructive/5" : isZero ? "border-emerald-500/30 bg-emerald-500/5" : "border-amber-500/30 bg-amber-500/5"}>
-      <CardContent className="pt-5 space-y-3">
+    <Card className={blocked ? "rounded-none border-0 border-l-4 border-l-destructive bg-card shadow-none" : isZero ? "rounded-none border-0 border-l-4 border-l-emerald-500 bg-card shadow-none" : "rounded-none border-0 border-l-4 border-l-amber-500 bg-card shadow-none"}>
+      <CardContent className="space-y-3 px-4 pb-4 pt-4">
         <div className="flex items-center justify-between">
           <div className="text-[10px] uppercase tracking-widest font-semibold text-muted-foreground">A pagar à plataforma</div>
           {blocked ? <AlertTriangle className="h-4 w-4 text-destructive" /> : isZero ? <CheckCircle2 className="h-4 w-4 text-emerald-500" /> : null}
