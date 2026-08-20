@@ -1,8 +1,8 @@
 import { test, expect } from "@playwright/test";
 
 /**
- * Fonte da verdade dos planos dinâmicos (Essencial + Autonomia).
- * Garante que plan_templates no banco reflete os valores acordados.
+ * Fonte da verdade das ofertas vigentes (Essencial + Somente PDV).
+ * Garante que plan_templates público reflete o catálogo atualmente disponível.
  */
 
 // Backend externo (mesmo que src/integrations/supabase/client.ts). Hardcoded para
@@ -27,11 +27,9 @@ test.describe("Planos — fonte da verdade única", () => {
     expect(byKey.fixed?.platform_fee_included).toBe(true);
     expect(byKey.fixed?.is_active).toBe(true);
 
-    // Autonomia dinâmico: grátis até 2500 → R$ 199,90 sem taxa da plataforma.
-    expect(Number(byKey.autonomy?.monthly_fee)).toBe(199.9);
-    expect(Number(byKey.autonomy?.revenue_threshold)).toBe(2500);
-    expect(byKey.autonomy?.platform_fee_included).toBe(false);
-    expect(byKey.autonomy?.is_active).toBe(true);
+    // Autonomia é plano legado descontinuado para novas adesões e não pode
+    // aparecer na consulta pública protegida por is_active=true.
+    expect(byKey.autonomy).toBeUndefined();
 
     // PDV Only fixo R$ 69,00 sem taxa.
     expect(Number(byKey.pdv_only?.monthly_fee)).toBe(69);

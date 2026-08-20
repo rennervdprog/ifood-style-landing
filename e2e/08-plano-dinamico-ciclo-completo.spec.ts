@@ -1,12 +1,12 @@
 import { test, expect } from "@playwright/test";
 
 /**
- * Ciclo completo do plano dinâmico Essencial + Autonomia.
+ * Ciclo completo do plano dinâmico Essencial.
  *
  * Delega para a edge function `e2e-dynamic-upgrade-flow` (executada com
  * service-role no backend externo) que faz o ciclo real:
  *   1. reseta loja sandbox para grátis
- *   2. injeta pedidos fake acima do threshold (5000 fixed / 2500 autonomy)
+ *   2. injeta pedidos fake acima do threshold de R$ 5.000 do Essencial
  *   3. dispara `check-essencial-upgrade` → deve agendar upgrade
  *   4. simula grace period vencido + aceite do lojista
  *   5. dispara `check-essencial-upgrade` de novo → deve aplicar a fee do plan_templates
@@ -24,7 +24,7 @@ const E2E_ADMIN_SECRET = process.env.E2E_ADMIN_SECRET || "";
 
 const STORE_ID = process.env.E2E_UPGRADE_STORE_ID || "";
 
-async function runFlow(request: any, planType: "fixed" | "autonomy") {
+async function runFlow(request: any, planType: "fixed") {
   const res = await request.post(`${SUPABASE_URL}/functions/v1/e2e-dynamic-upgrade-flow`, {
     headers: {
       "x-e2e-secret": E2E_ADMIN_SECRET,
@@ -49,12 +49,4 @@ test.describe("Plano dinâmico — ciclo completo (GMV → aceite → fee)", () 
     expect(body?.threshold).toBe(5000);
   });
 
-  test("Autonomia: injeta > R$ 2.500 → agenda → aceita → cobra R$ 199,90", async ({ request }) => {
-    const { status, body } = await runFlow(request, "autonomy");
-    expect(status, JSON.stringify(body?.steps || body)).toBe(200);
-    expect(body?.ok).toBe(true);
-    expect(body?.expected_fee).toBe(199.9);
-    expect(body?.applied_fee).toBe(199.9);
-    expect(body?.threshold).toBe(2500);
-  });
 });
