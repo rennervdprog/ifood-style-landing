@@ -204,21 +204,21 @@ const CommissionAlert = ({ storeId, storeName, onGoToFinance }: CommissionAlertP
             <div>
               <h3 className={`font-bold text-sm ${isBlocked ? "text-red-500" : "text-foreground"}`}>
                 {isBlocked
-                  ? "⛔ Loja Suspensa — Comissão Pendente"
-                  : (isFeeOnly ? "Repasse Pendente — Taxa da Plataforma" : "Comissão Pendente — Repasse Plataforma")}
+                  ? "⛔ Loja bloqueada — valores em aberto"
+                  : (isFeeOnly ? "Taxas da plataforma em aberto" : "Taxas e comissões em aberto")}
               </h3>
               <div className="text-[10px] text-muted-foreground mt-0.5 space-y-0.5">
                 <p>
                   {isBlocked
-                    ? "Sua loja foi suspensa por falta de pagamento. Pague para reativar imediatamente."
+                    ? "Existem valores pendentes que bloquearam novos pedidos. Após a confirmação do pagamento, a situação da loja será reavaliada automaticamente."
                     : (isFeeOnly
-                        ? "Você possui taxas de entrega e PDV pendentes de vendas físicas (dinheiro/cartão)."
-                        : "Você possui taxas e comissões pendentes de vendas físicas (dinheiro/cartão).")}
+                        ? "Você possui taxas de entrega e PDV pendentes de vendas pagas fora do PIX online."
+                        : "Você possui taxas e comissões pendentes de vendas pagas fora do PIX online.")}
                 </p>
                 <p>
                   {isFeeOnly
-                    ? "O valor corresponde à taxa da plataforma sobre entregas e vendas no PDV."
-                    : "O valor inclui a comissão sobre produtos e a taxa de entrega da plataforma."}
+                    ? "O valor pode incluir taxa da plataforma nas entregas e taxa do PDV."
+                    : "O valor pode incluir comissão do plano, taxa da plataforma nas entregas e taxa do PDV."}
                 </p>
               </div>
             </div>
@@ -292,7 +292,7 @@ const CommissionAlert = ({ storeId, storeName, onGoToFinance }: CommissionAlertP
               </Button>
             )}
             <p className="text-[10px] text-muted-foreground text-center">
-              Após o pagamento, a confirmação é automática e sua comissão será zerada.
+              Após o pagamento, a confirmação é automática e os valores quitados serão atualizados no Financeiro.
             </p>
           </div>
         ) : canPay ? (

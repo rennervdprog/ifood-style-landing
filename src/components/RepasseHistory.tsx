@@ -1,6 +1,6 @@
 /**
  * RepasseHistory
- * Histórico de cobranças de repasse físico (R$2/entrega + comissões)
+ * Histórico de cobranças semanais de taxas e comissões de vendas físicas
  * Mostra status de pagamento, PIX copia e cola e histórico semanal
  */
 
@@ -17,6 +17,8 @@ import {
   History, Banknote, Truck, TrendingDown, Zap, Loader2
 } from "lucide-react";
 import { toast } from "sonner";
+import { REPASSE_RULES } from "@/lib/repasseRules";
+import { FINANCE_COPY, weeklyChargeRuleText } from "@/lib/financeCommunication";
 
 interface RepasseHistoryProps {
   storeId: string;
@@ -114,7 +116,7 @@ function RepasseCard({ record }: { record: RepasseRecord }) {
                 <div className="flex items-center justify-between text-[11px]">
                   <span className="flex items-center gap-1.5 text-muted-foreground">
                     <Truck className="h-3 w-3" />
-                    Taxa de entrega (R$2/pedido físico)
+                    Taxa de plataforma nas entregas
                   </span>
                   <span className="font-bold text-foreground">{formatBRL(record.repasse_amount)}</span>
                 </div>
@@ -239,18 +241,18 @@ export default function RepasseHistory({ storeId }: RepasseHistoryProps) {
               <Banknote className="h-5 w-5 text-amber-600" />
             </div>
             <div className="flex-1">
-              <p className="text-[10px] font-black uppercase tracking-widest text-amber-700 dark:text-amber-400">
-                Acumulando esta semana
+                <p className="text-[10px] font-black uppercase tracking-widest text-amber-700 dark:text-amber-400">
+                {FINANCE_COPY.outstandingTitle}
               </p>
               <p className="text-lg font-black text-foreground">
                 {formatBRL(pendingAmount)}
               </p>
               <p className="text-[10px] text-muted-foreground leading-tight">
-                Cobrado toda segunda-feira quando atingir R$30,00
+                {weeklyChargeRuleText()}
               </p>
             </div>
           </div>
-          {pendingAmount >= 5 && (
+          {pendingAmount >= REPASSE_RULES.MIN_AUTO_CHARGE_BRL && (
             <Button
               size="sm"
               variant="outline"
@@ -275,8 +277,7 @@ export default function RepasseHistory({ storeId }: RepasseHistoryProps) {
           <CardContent className="pt-3 pb-3 px-4 flex items-center gap-2">
             <AlertCircle className="h-4 w-4 text-blue-600 shrink-0" />
             <p className="text-[11px] text-blue-700 dark:text-blue-400">
-              Você tem {pendingCount} cobrança{pendingCount > 1 ? "s" : ""} aguardando pagamento.
-              Pague via PIX para manter a loja ativa.
+              Você tem {pendingCount} cobrança{pendingCount > 1 ? "s" : ""} aguardando pagamento. Cada uma corresponde a um ciclo separado; pague via PIX para regularizar os ciclos em aberto.
             </p>
           </CardContent>
         </Card>
@@ -285,7 +286,7 @@ export default function RepasseHistory({ storeId }: RepasseHistoryProps) {
       {/* Histórico */}
       <div className="flex items-center gap-2">
         <History className="h-4 w-4 text-muted-foreground" />
-        <h3 className="text-sm font-bold text-foreground">Histórico de repasses</h3>
+        <h3 className="text-sm font-bold text-foreground">Histórico de cobranças semanais</h3>
       </div>
 
       {isLoading ? (

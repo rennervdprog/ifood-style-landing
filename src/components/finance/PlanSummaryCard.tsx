@@ -36,13 +36,13 @@ export default function PlanSummaryCard({ storeId }: Props) {
     queryFn: async () => {
       const { data } = await supabase.from("admin_settings").select("value").eq("key", "delivery_fee_config").maybeSingle();
       const v: any = data?.value;
-      return Number(v?.platform_split ?? 2);
+      return Number(v?.platform_split ?? 0.99);
     },
   });
 
   if (!plan) return null;
 
-  const deliverySplit = plan.platform_delivery_split_override ?? globalSplit ?? 2;
+  const deliverySplit = plan.platform_delivery_split_override ?? globalSplit ?? 0.99;
   const showDelivery = plan.plan_type !== "autonomy";
   const isFixedPlan = ["fixed", "supporter", "autonomy"].includes(plan.plan_type);
   const pixFeePerOrder = isFixedPlan ? 1.99 : 0;
@@ -64,7 +64,7 @@ export default function PlanSummaryCard({ storeId }: Props) {
             <Row icon={<Percent className="h-3.5 w-3.5" />} label="Comissão" value={`${Number(plan.commission_rate)}% por pedido`} />
           )}
           {showDelivery && (
-            <Row icon={<Truck className="h-3.5 w-3.5" />} label="Taxa por entrega" value={`${formatBRL(Number(deliverySplit))}`} />
+            <Row icon={<Truck className="h-3.5 w-3.5" />} label="Taxa de plataforma / entrega" value={`${formatBRL(Number(deliverySplit))}`} />
           )}
           {pixFeePerOrder > 0 && (
             <Row icon={<Smartphone className="h-3.5 w-3.5" />} label="Taxa PIX / pedido" value={`${formatBRL(pixFeePerOrder)}`} />

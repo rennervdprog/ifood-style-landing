@@ -88,9 +88,9 @@ hybrid.example = exampleText(hybrid);
 const fixed: PlanInfo = {
   id: "fixed",
   name: "Essencial",
-  tagline: "Grátis pra começar — R$ 0/mês. Vira R$ 89,90/mês quando você faturar R$ 5.000",
-  forWho: "Pra quem quer começar sem custo fixo e crescer sem pagar comissão por pedido",
-  monthlyFee: 0,
+  tagline: "Grátis até R$ 5.000 em vendas — depois R$ 89,90/mês",
+  forWho: "Para quem quer começar sem custo fixo e crescer sem pagar comissão por pedido",
+  monthlyFee: 89.90,
   commissionRate: 0,
   pixFee: 1.99,
   deliveryFee: 0.99,
@@ -100,8 +100,8 @@ const fixed: PlanInfo = {
   badge: "🎁 Grátis pra começar",
   highlight: true,
   features: [
-    "R$ 0/mês nos 2 primeiros meses",
-    "Sobe pra R$ 89,90/mês após atingir R$ 5.000 em vendas",
+    "Grátis até atingir R$ 5.000 em vendas no período de análise",
+    "R$ 89,90/mês após o gatilho, com aviso prévio de 30 dias",
     "Sem comissão por pedido",
     "Motoboy integrado + Suporte VIP",
     "PDV: módulo opcional (+ R$ 49/mês)",
@@ -137,9 +137,9 @@ supporter.example = exampleText(supporter);
 const autonomy: PlanInfo = {
   id: "autonomy",
   name: "Autonomia",
-  tagline: "Grátis pra começar — R$ 0/mês. Vira R$ 199,90/mês quando faturar R$ 2.500",
-  forWho: "Pra quem quer máxima autonomia: fica com 100% da taxa de entrega que cobra",
-  monthlyFee: 0,
+  tagline: "Grátis até R$ 2.500 em vendas — depois R$ 199,90/mês",
+  forWho: "Para quem quer máxima autonomia e fica com 100% da taxa de entrega que cobra",
+  monthlyFee: 199.90,
   commissionRate: 0,
   pixFee: 1.99,
   deliveryFee: 0,
@@ -149,8 +149,8 @@ const autonomy: PlanInfo = {
   badge: "🎁 Grátis pra começar",
   highlight: false,
   features: [
-    "R$ 0/mês até atingir R$ 2.500 em vendas",
-    "Sobe pra R$ 199,90/mês após o gatilho (com 30 dias de aviso)",
+    "Grátis até atingir R$ 2.500 em vendas no período de análise",
+    "R$ 199,90/mês após o gatilho, com aviso prévio de 30 dias",
     "Sem comissão por pedido",
     "Sem taxa de R$ 0,99 da plataforma na entrega",
     "Você fica com 100% da taxa que cobra",
@@ -207,7 +207,7 @@ export const DELIVERY_FEE_NOTE =
 
 /** Linha única para a taxa PIX (apenas Essencial/Apoiador). */
 export const PIX_FEE_NOTE =
-  "Apenas pedidos pagos via PIX têm taxa de R$ 1,99 (cobrada no repasse). Dinheiro e cartão não têm taxa.";
+  "A taxa operacional de PIX é aplicada somente a pedidos PIX online, conforme o plano. Ela é exibida no pedido e no financeiro da loja.";
 
 /**
  * Label canônico do plano. Use SEMPRE isto em vez de strings soltas

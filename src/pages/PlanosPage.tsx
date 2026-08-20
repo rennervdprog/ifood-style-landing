@@ -110,7 +110,8 @@ const faqs = [
   { q: "Preciso baixar algum aplicativo?", a: "Não! Você gerencia tudo pelo navegador do celular ou computador. Seus clientes também pedem direto pelo link, sem instalar nada." },
   { q: "Como funciona o PIX automático?", a: "Quando o cliente escolhe PIX, geramos um QR Code automaticamente. Assim que ele paga, a confirmação é instantânea — sem precisar conferir extrato." },
   { q: "Posso trocar de plano depois?", a: "Sim! Você pode migrar entre planos a qualquer momento. Basta solicitar pelo painel da loja e o admin aprova a troca." },
-  { q: "O plano Essencial cobra alguma comissão?", a: "Não! Zero comissão. Você fica com 100% do pedido. Há apenas uma taxa PIX fixa de R$ 1,99 por transação e R$ 2,00 por entrega via plataforma (valor pago pelo cliente somado à sua taxa)." },
+  { q: "O plano Essencial cobra alguma comissão?", a: "Não. O Essencial não cobra comissão por pedido. Quando aplicável, há taxa operacional de PIX online de R$ 1,99 por pedido e taxa de plataforma de R$ 0,99 por entrega, somada à taxa de entrega informada pela loja." },
+  { q: "Como funciona a cobrança semanal de taxas?", a: "Taxas e comissões aplicáveis a vendas físicas ficam detalhadas no Financeiro. Quando o saldo do ciclo atinge R$ 150,00, uma cobrança PIX pode ser gerada na segunda-feira. Cada ciclo é separado; uma cobrança pendente por 30 dias ou um saldo de R$ 500,00 ou mais pode bloquear novos pedidos até a regularização." },
   { q: "Como recebo os pedidos?", a: "Você recebe notificação sonora e push no celular em tempo real. O painel mostra todos os pedidos organizados para você gerenciar." },
 ];
 
@@ -313,8 +314,7 @@ const faqs = [
             Escolha o plano ideal para sua loja
           </h2>
           <p className="text-center text-muted-foreground mb-14 max-w-2xl mx-auto">
-            Todos os planos incluem cardápio digital completo, PIX online e notificações.
-            Comece grátis e migre quando quiser.
+            Os planos online incluem cardápio digital, PIX online e notificações. Escolha o plano compatível com a sua operação e acompanhe todos os custos antes da contratação.
           </p>
 
           <div className="grid md:grid-cols-3 gap-6 items-start">
@@ -323,7 +323,12 @@ const faqs = [
                const isSupporter = plan.id === "supporter";
                const taken = isSupporter ? supporterCount ?? 0 : 0;
                const remaining = isSupporter ? Math.max(0, 10 - taken) : null;
-               const isSoldOut = isSupporter && remaining === 0;
+                              const isSoldOut = isSupporter && remaining === 0;
+               const freeEntryNote = plan.id === "fixed"
+                 ? "Grátis até o gatilho de faturamento. Depois, R$ 89,90/mês com aviso prévio de 30 dias."
+                 : plan.id === "autonomy"
+                   ? "Grátis até o gatilho de faturamento. Depois, R$ 199,90/mês com aviso prévio de 30 dias."
+                   : null;
 
                const planBadge = isSupporter
                  ? (supporterLoading
@@ -362,20 +367,11 @@ const faqs = [
                       <span className="text-muted-foreground text-sm">/mês</span>
                     </div>
 
-                    {/* Trial badge — apenas planos pagos */}
-                    {plan.monthlyFee > 0 && (
-                      <div className="mb-3 rounded-xl border-2 border-emerald-500/40 bg-emerald-500/10 px-3 py-2.5 space-y-1.5">
-                        <div className="flex items-center gap-2">
-                          <span className="text-lg">🎁</span>
-                          <p className="text-xs font-extrabold text-emerald-700 dark:text-emerald-400 leading-tight">
-                            7 DIAS GRÁTIS para testar
-                          </p>
-                        </div>
-                        <ul className="text-[10px] text-emerald-700/90 dark:text-emerald-400/90 leading-snug space-y-0.5 pl-1">
-                          <li>• <strong>Dia 1 ao 7:</strong> uso liberado, sem cobrança</li>
-                          <li>• <strong>Dia 8:</strong> 1ª cobrança de R$ {plan.monthlyFee} (se não cancelar)</li>
-                          <li>• Cancele a qualquer momento antes do dia 8</li>
-                        </ul>
+                    {freeEntryNote && (
+                      <div className="mb-3 rounded-xl border-2 border-emerald-500/40 bg-emerald-500/10 px-3 py-2.5">
+                        <p className="text-xs font-extrabold text-emerald-700 dark:text-emerald-400 leading-tight">
+                          {freeEntryNote}
+                        </p>
                       </div>
                     )}
 
@@ -394,29 +390,26 @@ const faqs = [
                         <Popover>
                           <PopoverTrigger asChild>
                             <button type="button" className="font-bold text-foreground inline-flex items-center gap-1 underline decoration-dotted underline-offset-2">
-                              + R$ 2,00
+                              {plan.deliveryFee > 0 ? `+ ${formatBRL(plan.deliveryFee)}` : "Não cobra"}
                               <Info className="h-3 w-3 text-muted-foreground" />
                             </button>
                           </PopoverTrigger>
                           <PopoverContent side="top" align="end" className="w-72 text-xs space-y-2">
-                            <p className="font-bold text-foreground">Taxa de R$ 2,00 por entrega</p>
-                            <p className="text-muted-foreground leading-relaxed">
-                              <strong className="text-foreground">Pago pelo cliente</strong>, somado à sua taxa de entrega no checkout.
-                            </p>
-                            <p className="text-muted-foreground leading-relaxed">
-                              Você só repassa quando o pedido for em <strong className="text-foreground">dinheiro, cartão na entrega ou PIX maquininha</strong>.
-                            </p>
-                            <p className="text-muted-foreground leading-relaxed">
-                              PIX online no app: já descontado, sem repasse.
-                            </p>
-                            <p className="text-muted-foreground leading-relaxed pt-1 border-t border-border">
-                              Cobrança automática toda segunda quando o saldo chega a <strong className="text-foreground">{formatBRL(REPASSE_RULES.MIN_AUTO_CHARGE_BRL)}</strong>. Acompanhe no Dashboard e no Financeiro.
-                            </p>
+                            {plan.deliveryFee > 0 ? (
+                              <>
+                                <p className="font-bold text-foreground">Taxa de {formatBRL(plan.deliveryFee)} por entrega</p>
+                                <p className="text-muted-foreground leading-relaxed"><strong className="text-foreground">Paga pelo cliente</strong>, somada à taxa de entrega informada pela loja no checkout.</p>
+                                <p className="text-muted-foreground leading-relaxed">Em vendas pagas em dinheiro, cartão na entrega ou PIX maquininha, a parte da plataforma é acompanhada no Financeiro.</p>
+                                <p className="text-muted-foreground leading-relaxed pt-1 border-t border-border">Quando o ciclo atingir <strong className="text-foreground">{formatBRL(REPASSE_RULES.MIN_AUTO_CHARGE_BRL)}</strong>, uma cobrança PIX poderá ser criada na segunda-feira.</p>
+                              </>
+                            ) : (
+                              <p className="text-muted-foreground leading-relaxed">Este plano não adiciona taxa da plataforma à entrega. A loja recebe integralmente a taxa de entrega que definir.</p>
+                            )}
                           </PopoverContent>
                         </Popover>
                       </div>
                       <p className="text-[10px] text-muted-foreground italic leading-snug pt-1">
-                        Os R$ 2,00 são somados à sua taxa de entrega e pagos pelo cliente.
+                        A taxa da plataforma é somada à taxa de entrega da loja e paga pelo cliente quando aplicável.
                       </p>
                     </div>
 
@@ -455,7 +448,7 @@ const faqs = [
                          <Loader2 className="h-4 w-4 animate-spin" />
                        ) : (
                          <>
-                           {isSoldOut ? "Esgotado" : (plan.monthlyFee === 0 ? "Começar grátis" : "Escolher plano")}
+                           {isSoldOut ? "Esgotado" : (freeEntryNote ? "Começar grátis" : "Escolher plano")}
                            {!isSoldOut && <ArrowRight className="ml-2 h-4 w-4" />}
                          </>
                        )}

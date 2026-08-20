@@ -153,8 +153,8 @@ const PlatformSplitAlert = ({ storeId, storeName, splitPerOrder, onGoToFinance }
               <AlertCircle className="h-5 w-5 text-red-500" />
             </div>
             <div>
-              <p className="text-sm font-black text-foreground">Pagamento obrigatório</p>
-              <p className="text-xs text-muted-foreground">Acesso ao painel suspenso temporariamente</p>
+              <p className="text-sm font-black text-foreground">Regularização necessária</p>
+              <p className="text-xs text-muted-foreground">Novos pedidos estão bloqueados temporariamente</p>
             </div>
           </div>
 
@@ -167,7 +167,7 @@ const PlatformSplitAlert = ({ storeId, storeName, splitPerOrder, onGoToFinance }
 
             {/* Explicação */}
             <p className="text-xs text-muted-foreground leading-relaxed text-center">
-              Você tem <strong className="text-foreground">{formatBRL(total)}</strong> em taxas de pedidos pagos em dinheiro/cartão que ainda não foram repassados à plataforma. Para continuar usando o painel, efetue o pagamento via PIX.
+              Você tem <strong className="text-foreground">{formatBRL(total)}</strong> em taxas e comissões de vendas pagas fora do PIX online. Para regularizar a loja e voltar a receber pedidos, efetue o pagamento via PIX.
             </p>
 
             {/* Detalhamento */}
@@ -226,11 +226,11 @@ const PlatformSplitAlert = ({ storeId, storeName, splitPerOrder, onGoToFinance }
             <Banknote className="h-6 w-6 text-blue-500" />
             <div>
               <h3 className="font-bold text-sm text-foreground">
-                Repasse Pendente — Taxa Plataforma
+                Taxas e comissões em aberto
               </h3>
               <div className="text-[10px] text-muted-foreground mt-0.5 space-y-0.5">
-                <p>Taxa de {formatBRL(splitPerOrder)} por entrega + comissão (se houver) em pedidos físicos.</p>
-                <p>Efetue o repasse via PIX para manter sua conta regularizada.</p>
+                <p>Custos operacionais de vendas pagas fora do PIX online, conforme seu plano e recursos usados.</p>
+                <p>Regularize via PIX para manter a operação disponível.</p>
               </div>
             </div>
           </div>
@@ -238,7 +238,7 @@ const PlatformSplitAlert = ({ storeId, storeName, splitPerOrder, onGoToFinance }
 
         {/* Amount */}
         <div className="text-center py-2">
-          <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Valor a Repassar</p>
+          <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Valor a pagar à plataforma</p>
           <p className="text-3xl font-black text-blue-500">
             {formatBRL(pendingFee)}
           </p>
@@ -248,9 +248,9 @@ const PlatformSplitAlert = ({ storeId, storeName, splitPerOrder, onGoToFinance }
         <div className="rounded-xl p-3 bg-blue-500/10 border border-blue-500/20 flex items-start gap-2">
           <Banknote className="h-4 w-4 text-blue-400 shrink-0 mt-0.5" />
           <div className="text-xs font-medium text-blue-400 space-y-1">
-            <p>Pedidos pagos em <strong>dinheiro, cartão ou PIX maquininha</strong> acumulam aqui.</p>
-            <p>O sistema gera uma cobrança via PIX toda <strong>segunda-feira</strong> quando o saldo atingir <strong>{formatBRL(REPASSE_RULES.MIN_AUTO_CHARGE_BRL)}</strong>.</p>
-            <p>Se não pagar em {REPASSE_RULES.SUSPENSION_DAYS} dias a loja é suspensa. Saldo acima de {formatBRL(REPASSE_RULES.BLOCK_THRESHOLD_BRL)} trava o painel imediatamente.</p>
+            <p>Vendas pagas em <strong>dinheiro, cartão na entrega ou PIX maquininha</strong> podem acumular custos operacionais aqui.</p>
+            <p>O sistema pode gerar uma cobrança PIX na <strong>segunda-feira</strong> quando o ciclo atingir <strong>{formatBRL(REPASSE_RULES.MIN_AUTO_CHARGE_BRL)}</strong>.</p>
+            <p>Uma cobrança pendente por {REPASSE_RULES.SUSPENSION_DAYS} dias pode bloquear novos pedidos. Saldo de {formatBRL(REPASSE_RULES.BLOCK_THRESHOLD_BRL)} ou mais também pode bloquear a loja até a regularização.</p>
             {(Number(repasse > 0) + Number(comissao > 0) + Number(pdv > 0)) >= 1 && (
               <div className="mt-1.5 space-y-0.5 text-[10px] text-blue-300 border-t border-blue-500/20 pt-1.5">
                 {repasse > 0 && <p>Delivery ({formatBRL(splitPerOrder)}/entrega): <strong>{formatBRL(repasse)}</strong></p>}
@@ -288,7 +288,7 @@ const PlatformSplitAlert = ({ storeId, storeName, splitPerOrder, onGoToFinance }
               </Button>
             )}
             <p className="text-[10px] text-muted-foreground text-center">
-              Após o pagamento, a confirmação é automática e o saldo será zerado.
+              Após o pagamento, a confirmação é automática e os valores quitados serão atualizados no Financeiro.
             </p>
           </div>
         ) : canPay ? (
