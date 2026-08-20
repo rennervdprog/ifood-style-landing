@@ -113,50 +113,43 @@ Deno.serve(async (req) => {
   if (!tx) return json({ ok: true, ignored: "transaction_not_found", ref: externalRef });
 
   if (PAID_EVENTS.has(event)) {
-    if (tx.status === "paid") return json({ ok: true, idempotent: true, transaction_id: tx.id });
-
-    const nowIso = new Date().toISOString();
-    const { data: updRows, error: updErr } = await supabase
-      .from("financial_transactions")
-      .update({ status: "paid", settled_at: nowIso })
-      .eq("id", tx.id)
-      .neq("status", "paid")
-      .select("id");
-    if (updErr) return json({ ok: false, error: "tx_update_failed" }, 500);
-    if (!updRows?.length) return json({ ok: true, idempotent: true, transaction_id: tx.id });
-
-    const ref = String(tx.reference_code || "");
-    const isMonthly = ref.startsWith("#MENS-") || ref.startsWith("#ASSIN-");
-    const meta: any = tx.metadata || {};
+    // Mensalidades são liquidadas em uma única RPC transacional: baixa da transação,
+    // renovação de plano e comissão PDV. Isso elimina o estado parcial em caso de falha.
+    const isMonthly = String(tx.reference_code || "").startsWith("#MENS-")
+      || String(tx.reference_code || "").startsWith("#ASSIN-");
 
     if (isMonthly) {
-      const next = new Date();
-      next.setUTCDate(next.getUTCDate() + 30);
-      await supabase.from("store_plans").update({
-        last_billed_at: nowIso,
-        next_billing_date: next.toISOString(),
-        last_billing_attempt_at: null,
-      }).eq("store_id", tx.store_id).eq("is_active", true);
-
-      const pdvBilled = Number(meta.pdv_pending_billed || 0);
-      if (pdvBilled > 0) {
-        await supabase.rpc("decrement_pdv_commission_pending", { _store_id: tx.store_id, _amount: pdvBilled });
+      const { data: settlement, error: settlementError } = await supabase
+        .rpc("settle_monthly_subscription_payment", {
+          _transaction_id: tx.id,
+          _settled_at: new Date().toISOString(),
+        })
+        .maybeSingle();
+      if (settlementError) {
+        console.error("[woovi-webhook] monthly settlement error", settlementError);
+        return json({ ok: false, error: "monthly_settlement_failed" }, 500);
+      }
+      if (settlement?.already_applied) {
+        return json({ ok: true, idempotent: true, transaction_id: tx.id });
       }
     } else {
-      const paidAmount = Number(tx.amount || 0);
-      const balanceBilled = Number(meta.balance_billed ?? paidAmount);
-      const pdvBilled = Number(meta.pdv_pending_billed ?? 0);
-      if (balanceBilled > 0) {
-        await supabase.rpc("reconcile_debit_store_balance", {
-          _store_id: tx.store_id,
-          _amount: balanceBilled,
-          _plan_type: meta.plan_type || "",
-        });
+      // Repasse semanal também é conciliado atomicamente: status, saldo financeiro
+      // e comissão PDV só avançam juntos quando o PIX é confirmado.
+      const { data: settlement, error: settlementError } = await supabase
+        .rpc("settle_commission_charge_payment", {
+          _transaction_id: tx.id,
+          _settled_at: new Date().toISOString(),
+        })
+        .maybeSingle();
+      if (settlementError) {
+        console.error("[woovi-webhook] commission settlement error", settlementError);
+        return json({ ok: false, error: "commission_settlement_failed" }, 500);
       }
-      if (pdvBilled > 0) {
-        await supabase.rpc("decrement_pdv_commission_pending", { _store_id: tx.store_id, _amount: pdvBilled });
+      if (settlement?.already_applied) {
+        return json({ ok: true, idempotent: true, transaction_id: tx.id });
       }
     }
+
     // Reativa somente bloqueios criados pela política financeira e somente
     // depois de quitar todas as cobranças de comissão ainda pendentes.
     const { data: balanceAfterPayment } = await supabase
@@ -195,6 +188,33 @@ Deno.serve(async (req) => {
       .neq("status", "paid")
       .select("id");
     if (failedErr) return json({ ok: false, error: "tx_failure_update_failed" }, 500);
+
+    // Uma expiração pode encerrar a última pendência que mantinha a loja bloqueada.
+    // Reavalia a mesma política financeira usada após confirmação de pagamento.
+    if (failedRows?.length) {
+      const { data: balanceAfterFailure } = await supabase
+        .from("store_balances")
+        .select("repasse_pendente, comissao_pendente")
+        .eq("store_id", tx.store_id)
+        .maybeSingle();
+      const remainingBalance = Number(balanceAfterFailure?.repasse_pendente || 0) +
+        Number(balanceAfterFailure?.comissao_pendente || 0);
+      const { count: unresolvedCharges } = await supabase
+        .from("financial_transactions")
+        .select("id", { count: "exact", head: true })
+        .eq("store_id", tx.store_id)
+        .eq("transaction_kind", "commission_charge")
+        .eq("status", "pending");
+      if ((unresolvedCharges || 0) === 0 && remainingBalance < REPASSE_POLICY.BLOCK_THRESHOLD_BRL) {
+        const { error: restoreErr } = await supabase
+          .from("stores")
+          .update({ status: "ativo", billing_blocked_at: null, billing_block_reason: null } as any)
+          .eq("id", tx.store_id)
+          .eq("status", "bloqueado")
+          .not("billing_blocked_at", "is", null);
+        if (restoreErr) console.error("[woovi-webhook] store reactivation after expiry error", restoreErr);
+      }
+    }
     return json({ ok: true, type: "payment_failed", idempotent: !failedRows?.length });
   }
 

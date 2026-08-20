@@ -67,9 +67,9 @@ async function createWooviCharge(params: {
   customerName?: string;
   customerEmail?: string;
   customerCpfCnpj?: string;
-}): Promise<{ ok: boolean; paymentId?: string; pixCopyPaste?: string; pixQrCode?: string; error?: string }> {
+}): Promise<{ ok: boolean; paymentId?: string; pixCopyPaste?: string; pixQrCode?: string; error?: string; safeToRelease?: boolean }> {
   const appId = Deno.env.get("WOOVI_APP_ID") || Deno.env.get("OPENPIX_APP_ID");
-  if (!appId) return { ok: false, error: "WOOVI_APP_ID não configurado" };
+  if (!appId) return { ok: false, error: "WOOVI_APP_ID não configurado", safeToRelease: true };
   const taxId = String(params.customerCpfCnpj || "").replace(/\D/g, "");
   const body: Record<string, unknown> = {
     correlationID: params.externalId,
@@ -92,7 +92,7 @@ async function createWooviCharge(params: {
     });
     const payload = await res.json().catch(() => ({}));
     if (!res.ok || payload?.error) {
-      return { ok: false, error: String(payload?.error || `Erro Woovi ${res.status}`) };
+      return { ok: false, error: String(payload?.error || `Erro Woovi ${res.status}`), safeToRelease: true };
     }
     const charge = payload?.charge || payload;
     return {
@@ -102,7 +102,9 @@ async function createWooviCharge(params: {
       pixQrCode: "",
     };
   } catch (err) {
-    return { ok: false, error: String(err) };
+    // Falha de transporte pode ter ocorrido após a criação remota. Não é
+    // seguro liberar a reserva: o retry deve reutilizar o correlationID.
+    return { ok: false, error: String(err), safeToRelease: false };
   }
 }
 
@@ -239,6 +241,26 @@ async function blockStoreForBilling(
 function brasiliaWeekday(now: Date): number {
   const local = new Date(now.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
   return local.getDay();
+}
+
+function weeklyCycleKey(now: Date): string {
+  const local = new Date(now.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
+  const daysSinceMonday = (local.getDay() + 6) % 7;
+  local.setDate(local.getDate() - daysSinceMonday);
+  const year = local.getFullYear();
+  const month = String(local.getMonth() + 1).padStart(2, "0");
+  const day = String(local.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+async function loadReservedTransaction(supabase: any, transactionId: string) {
+  const { data, error } = await supabase
+    .from("financial_transactions")
+    .select("id, reference_code, amount, status, mercado_pago_payment_id, pix_copy_paste")
+    .eq("id", transactionId)
+    .maybeSingle();
+  if (error) throw new Error(`Erro ao carregar cobrança reservada: ${error.message}`);
+  return data;
 }
 
 // ─── Handler principal ────────────────────────────────────────────────────────
@@ -428,7 +450,6 @@ Deno.serve(async (req) => {
         });
         continue;
       }
-      // Substitui o valor a cobrar pelo delta do ciclo (cobrança separada).
       chargeAmount = cycleAmount;
       chargeDescription = `${chargeDescription} — ciclo ${new Date().toLocaleDateString("pt-BR")}`;
 
@@ -443,12 +464,106 @@ Deno.serve(async (req) => {
         continue;
       }
 
-      // ── 2. Gerar PIX Asaas ──
-      // Cobrança cai na conta principal (super admin). Não requer subconta do lojista.
-
       const dueDate = new Date(now);
-      dueDate.setDate(dueDate.getDate() + 7); // 7 dias para pagar
+      dueDate.setDate(dueDate.getDate() + 7);
       const dueDateStr = dueDate.toISOString().split("T")[0];
+      const chargeFamily = "weekly_delivery_fee";
+      const idempotencyKey = `${chargeFamily}:${balance.store_id}:${weeklyCycleKey(now)}`;
+      const referenceCandidate = `#REP-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
+      const reservationMetadata = {
+        description: chargeDescription,
+        plan_type: planType,
+        repasse_pendente: repasse,
+        comissao_pendente: comissao,
+        pdv_commission_pending: pdvPending,
+        balance_billed: baseAmount,
+        pdv_pending_billed: pdvPending,
+        due_date: dueDateStr,
+        gateway: "woovi",
+        charge_family: chargeFamily,
+        idempotency_key: idempotencyKey,
+      };
+
+      // A reserva é feita antes da chamada externa. O índice único de ciclo
+      // garante que cron, retry e execuções concorrentes compartilhem a mesma
+      // reference_code/correlationID.
+      const { data: reservationData, error: reservationError } = await supabase
+        .rpc("reserve_commission_charge_reservation", {
+          _store_id: balance.store_id,
+          _idempotency_key: idempotencyKey,
+          _reference_code: referenceCandidate,
+          _amount: chargeAmount,
+          _charge_family: chargeFamily,
+          _provider: "woovi",
+          _metadata: reservationMetadata,
+        })
+        .maybeSingle();
+      if (reservationError || !reservationData) {
+        results.push({ store: store.name, status: "error", reason: "Falha ao reservar cobrança semanal" });
+        continue;
+      }
+      const reservation: any = reservationData;
+      if (!reservation.created_new && reservation.state === "issuing" && !reservation.transaction_id) {
+        // A tentativa anterior pode ter alcançado a Woovi e perdido a resposta.
+        // Não repetimos o POST automaticamente: a reserva e o correlationID
+        // ficam preservados para reconciliação segura, sem segundo PIX.
+        results.push({
+          store: store.name,
+          status: "reconciliation_pending",
+          reference_code: reservation.reference_code,
+          reason: "Cobrança em emissão ambígua; aguardando reconciliação segura",
+        });
+        continue;
+      }
+      if (reservation.transaction_id) {
+        const transaction = await loadReservedTransaction(supabase, reservation.transaction_id);
+        results.push({
+          store: store.name,
+          status: "reused",
+          amount: transaction?.amount ?? reservation.amount,
+          provider: "woovi",
+          reference_code: transaction?.reference_code ?? reservation.reference_code,
+          payment_id: transaction?.mercado_pago_payment_id,
+          due_date: dueDateStr,
+          plan: planType,
+        });
+        continue;
+      }
+
+      const { data: claimData, error: claimError } = await supabase
+        .rpc("claim_commission_charge_reservation", {
+          _reservation_id: reservation.reservation_id,
+          _lease_seconds: 300,
+        })
+        .maybeSingle();
+      if (claimError || !claimData) {
+        results.push({ store: store.name, status: "error", reason: "Falha ao adquirir reserva semanal" });
+        continue;
+      }
+      const claim: any = claimData;
+      if (claim.finalized && claim.transaction_id) {
+        const transaction = await loadReservedTransaction(supabase, claim.transaction_id);
+        results.push({
+          store: store.name,
+          status: "reused",
+          amount: transaction?.amount ?? claim.amount,
+          provider: "woovi",
+          reference_code: transaction?.reference_code ?? claim.reference_code,
+          payment_id: transaction?.mercado_pago_payment_id,
+          due_date: dueDateStr,
+          plan: planType,
+        });
+        continue;
+      }
+      if (!claim.acquired) {
+        results.push({
+          store: store.name,
+          status: "processing",
+          reference_code: claim.reference_code,
+          reason: "Cobrança já está sendo emitida por outra execução",
+        });
+        continue;
+      }
 
       const { data: prof } = await supabase
         .from("profiles")
@@ -457,90 +572,87 @@ Deno.serve(async (req) => {
         .maybeSingle();
       const ownerDoc = String((prof as any)?.document || "");
       const ownerEmail = String((prof as any)?.email || "");
-
-      const activeGateway = await getActiveGateway(supabase);
-      if (activeGateway !== "WOOVI" && activeGateway !== "ASAAS") {
-        results.push({
-          store: store.name,
-          status: "error",
-          reason: `Gateway de cobrança não suportado: ${activeGateway || "não configurado"}`,
-        });
-        continue;
-      }
-
-      const provider = activeGateway.toLowerCase();
-      const referenceCode = `#REP-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
-      const charge = activeGateway === "WOOVI"
-        ? await createWooviCharge({
-            amount: chargeAmount,
-            description: chargeDescription,
-            externalId: referenceCode,
-            customerName: store.name,
-            customerEmail: ownerEmail,
-            customerCpfCnpj: ownerDoc,
-          })
-        : await createAsaasCharge({
-            amount: chargeAmount,
-            description: chargeDescription,
-            dueDate: dueDateStr,
-            storeAccountId: balance.store_id,
-            customerName: store.name,
-            customerEmail: ownerEmail,
-            customerCpfCnpj: ownerDoc,
-          });
+      const referenceCode = String(claim.reference_code);
+      const charge = await createWooviCharge({
+        amount: Number(claim.amount),
+        description: chargeDescription,
+        externalId: referenceCode,
+        customerName: store.name,
+        customerEmail: ownerEmail,
+        customerCpfCnpj: ownerDoc,
+      });
 
       if (!charge.ok) {
-        results.push({ store: store.name, status: "error", reason: charge.error });
+        if (charge.safeToRelease) {
+          await supabase.rpc("release_commission_charge_reservation", {
+            _reservation_id: reservation.reservation_id,
+            _reason: charge.error || "Falha confirmada da Woovi",
+          });
+        }
+        results.push({
+          store: store.name,
+          status: charge.safeToRelease ? "error" : "reconciliation_pending",
+          reason: charge.error,
+        });
         continue;
       }
 
-      // ── 3. Salvar em financial_transactions ──
-      await supabase.from("financial_transactions").insert({
-        store_id: balance.store_id,
-        transaction_kind: "commission_charge",
-        reference_code: referenceCode,
-        amount: chargeAmount,
-        status: "pending",
-        provider,
-        mercado_pago_payment_id: charge.paymentId,
-        pix_copy_paste: charge.pixCopyPaste,
-        pix_qr_code_base64: charge.pixQrCode,
-        metadata: {
-          description: chargeDescription,
-          plan_type: planType,
-          repasse_pendente: repasse,
-          comissao_pendente: comissao,
-          pdv_commission_pending: pdvPending,
-          balance_billed: baseAmount,
-          pdv_pending_billed: pdvPending,
-          due_date: dueDateStr,
-          gateway: provider,
-          charge_family: "weekly_delivery_fee",
-          woovi_charge_id: charge.paymentId,
-        },
-      } as any);
-
-      // ── 3.1 Notificar lojista via push ──
-      try {
-        await supabase.functions.invoke("send-push", {
-          body: {
-            user_ids: [store.owner_id],
-            title: "💰 Nova cobrança de repasse",
-            body: `${store.name}: R$${chargeAmount.toFixed(2)} — vence em ${dueDateStr.split("-").reverse().join("/")}. Pague pelo app.`,
-            data: { type: "commission_charge", store_id: balance.store_id },
-          },
+      if (!charge.paymentId || !charge.pixCopyPaste) {
+        // A Woovi pode ter aceitado a cobrança, mas a resposta ficou incompleta.
+        // Mantemos a reserva em issuing para que o retry reutilize o mesmo ID.
+        results.push({
+          store: store.name,
+          status: "reconciliation_pending",
+          reference_code: referenceCode,
+          reason: "Resposta da Woovi sem identificador ou PIX",
         });
-      } catch (e) {
-        console.warn("[auto-charge] push falhou:", e);
+        continue;
+      }
+
+      const { data: finalizedData, error: finalizeError } = await supabase
+        .rpc("finalize_commission_charge_reservation", {
+          _reservation_id: reservation.reservation_id,
+          _provider: "woovi",
+          _provider_payment_id: charge.paymentId,
+          _pix_qr_code: "",
+          _pix_qr_code_base64: charge.pixQrCode || "",
+          _pix_copy_paste: charge.pixCopyPaste,
+          _metadata: { woovi_charge_id: charge.paymentId },
+        })
+        .maybeSingle();
+      if (finalizeError || !finalizedData) {
+        results.push({
+          store: store.name,
+          status: "reconciliation_pending",
+          reference_code: referenceCode,
+          reason: "Cobrança emitida; finalização financeira pendente",
+        });
+        continue;
+      }
+      const transaction: any = finalizedData;
+
+      if (transaction.created_new) {
+        try {
+          await supabase.functions.invoke("send-push", {
+            body: {
+              user_ids: [store.owner_id],
+              title: "💰 Nova cobrança de repasse",
+              body: `${store.name}: R$${Number(transaction.amount).toFixed(2)} — vence em ${dueDateStr.split("-").reverse().join("/")}. Pague pelo app.`,
+              data: { type: "commission_charge", store_id: balance.store_id },
+            },
+          });
+        } catch (e) {
+          console.warn("[auto-charge] push falhou:", e);
+        }
       }
 
       results.push({
         store: store.name,
-        status: "charged",
-        amount: chargeAmount,
-        provider,
-        reference_code: referenceCode,
-        payment_id: charge.paymentId,
+        status: transaction.created_new ? "charged" : "reused",
+        amount: transaction.amount,
+        provider: "woovi",
+        reference_code: transaction.reference_code,
+        payment_id: transaction.provider_payment_id,
         due_date: dueDateStr,
         plan: planType,
       });
