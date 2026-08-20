@@ -51,8 +51,8 @@ export default function RecebidoNoMesCard({ storeId }: { storeId: string }) {
   });
 
   return (
-    <Card className="border-emerald-500/20 bg-gradient-to-br from-emerald-500/5 to-transparent">
-      <CardContent className="pt-5 space-y-2">
+    <Card className="rounded-none border-0 border-l-4 border-l-emerald-500 bg-card shadow-none">
+      <CardContent className="space-y-2 px-4 pb-4 pt-4">
         <div className="flex items-center justify-between">
           <div className="text-[10px] uppercase tracking-widest font-semibold text-muted-foreground">Recebido líquido no mês</div>
           <TrendingUp className="h-4 w-4 text-emerald-500" />

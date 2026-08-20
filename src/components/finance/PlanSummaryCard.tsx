@@ -48,8 +48,8 @@ export default function PlanSummaryCard({ storeId }: Props) {
   const pixFeePerOrder = isFixedPlan ? 1.99 : 0;
 
   return (
-    <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
-      <CardContent className="pt-5 space-y-4">
+    <Card className="rounded-none border-0 border-l-4 border-l-primary bg-card shadow-none">
+      <CardContent className="space-y-4 px-4 pb-4 pt-4">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <Crown className="h-5 w-5 text-primary" />

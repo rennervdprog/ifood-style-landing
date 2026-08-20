@@ -892,21 +892,24 @@ const MenuBuilder = ({ storeId, storeCategory, storeCategories }: MenuBuilderPro
 
   return (
     <div className="max-w-6xl mx-auto w-full">
-      {/* Header + stats */}
-      <div className="flex items-end justify-between flex-wrap gap-2 mb-3 px-1">
-        <div>
-          <h2 className="text-xl font-bold text-foreground">Cardápio</h2>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            <span className="text-primary font-bold">{activeCount} ativos</span>
-            {pausedCount > 0 && <span> · {pausedCount} pausados</span>}
-            {outOfStockCount > 0 && (
-              <span className="text-destructive"> · {outOfStockCount} esgotado{outOfStockCount > 1 ? "s" : ""}</span>
-            )}
-            {" · "}
-            {sections?.length || 0} {(sections?.length || 0) === 1 ? "seção" : "seções"}
-          </p>
+      <header className="mb-4 border-b border-border px-1 pb-4">
+        <p className="text-xs font-semibold text-muted-foreground">Operação / Cardápio</p>
+        <div className="mt-1 flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h2 className="text-2xl font-black tracking-tight text-foreground">Cardápio</h2>
+            <p className="mt-1 text-sm text-muted-foreground">Mantenha seus produtos organizados e prontos para vender.</p>
+          </div>
+          <p className="text-xs font-bold text-muted-foreground"><span className="text-primary">{activeCount} ativos</span>{pausedCount > 0 ? ` · ${pausedCount} pausados` : ""} · {sections?.length || 0} {(sections?.length || 0) === 1 ? "seção" : "seções"}</p>
         </div>
-      </div>
+      </header>
+
+      {(noImageCount > 0 || outOfStockCount > 0 || unsectionedProducts.length > 0) && (
+        <section className="mb-4 grid divide-y divide-border border border-border bg-card sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+          <button onClick={() => { setFilter("no_image"); setActiveSection("all"); }} className="flex items-center gap-2 px-4 py-3 text-left hover:bg-muted"><Package className="h-4 w-4 text-primary" /><span className="text-xs text-muted-foreground"><strong className="text-foreground">{noImageCount}</strong> item{noImageCount === 1 ? "" : "s"} sem imagem</span></button>
+          <button onClick={() => { setFilter("out_of_stock"); setActiveSection("all"); }} className="flex items-center gap-2 px-4 py-3 text-left hover:bg-muted"><Package className="h-4 w-4 text-destructive" /><span className="text-xs text-muted-foreground"><strong className="text-foreground">{outOfStockCount}</strong> produto{outOfStockCount === 1 ? "" : "s"} esgotado{outOfStockCount === 1 ? "" : "s"}</span></button>
+          <button onClick={() => { setFilter("all"); setActiveSection("none"); }} className="flex items-center gap-2 px-4 py-3 text-left hover:bg-muted"><Package className="h-4 w-4 text-amber-500" /><span className="text-xs text-muted-foreground"><strong className="text-foreground">{unsectionedProducts.length}</strong> produto{unsectionedProducts.length === 1 ? "" : "s"} sem seção</span></button>
+        </section>
+      )}
 
       {showFullEmpty ? (
         <EmptyState

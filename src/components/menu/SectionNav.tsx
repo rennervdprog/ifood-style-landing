@@ -1,4 +1,4 @@
-import { Package, Grid3x3, Layers, Settings2 } from "lucide-react";
+import { Grid3x3, Layers, Package, Plus, Settings2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export type SectionScope = "all" | "none" | string;
@@ -19,10 +19,6 @@ interface SectionNavProps {
   unsectionedCount: number;
 }
 
-/**
- * Navegação de seções: sidebar vertical no desktop, chips horizontais no mobile.
- * Mostra "Todos" e "Sem seção" além das seções reais.
- */
 export const SectionNav = ({
   items,
   activeId,
@@ -32,99 +28,70 @@ export const SectionNav = ({
   totalProducts,
   unsectionedCount,
 }: SectionNavProps) => {
-  const fixedItems: SectionNavItem[] = [
-    { id: "all", name: "Todos", count: totalProducts },
+  const allItems: SectionNavItem[] = [
+    { id: "all", name: "Todos os produtos", count: totalProducts },
+    ...items,
     ...(unsectionedCount > 0 ? [{ id: "none" as const, name: "Sem seção", count: unsectionedCount }] : []),
   ];
-  const allItems = [...fixedItems, ...items];
+
+  const getIcon = (id: SectionScope) => (id === "all" ? Grid3x3 : id === "none" ? Package : Layers);
 
   return (
     <>
-      {/* Mobile: chips horizontais */}
-      <div className="lg:hidden -mx-2 px-2">
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+      <nav className="-mx-2 overflow-x-auto border-b border-border px-2 pb-3 lg:hidden" aria-label="Seções do cardápio">
+        <div className="flex min-w-max items-center gap-1.5">
           {allItems.map((item) => {
+            const Icon = getIcon(item.id);
             const active = item.id === activeId;
-            const Icon = item.id === "all" ? Grid3x3 : item.id === "none" ? Package : Layers;
+            return (
+              <button
+                key={String(item.id)}
+                onClick={() => onSelect(item.id)}
+                className={`inline-flex items-center gap-1.5 border px-3 py-2 text-xs font-bold ${
+                  active ? "border-primary bg-primary/10 text-primary" : "border-border bg-card text-muted-foreground"
+                }`}
+              >
+                <Icon className="h-3.5 w-3.5" />
+                {item.name}
+                <span className="text-[10px] tabular-nums">{item.count}</span>
+              </button>
+            );
+          })}
+          <button onClick={onManage} className="inline-flex items-center gap-1.5 border border-dashed border-border px-3 py-2 text-xs font-bold text-muted-foreground">
+            <Settings2 className="h-3.5 w-3.5" /> Gerenciar
+          </button>
+        </div>
+      </nav>
+
+      <aside className="sticky top-4 hidden w-56 shrink-0 self-start border-r border-border pr-4 lg:block" aria-label="Seções do cardápio">
+        <div className="mb-2 flex items-center justify-between px-2 py-2">
+          <h3 className="text-sm font-black text-foreground">Seções</h3>
+          <button onClick={onManage} className="inline-flex h-8 w-8 items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground" title="Gerenciar seções">
+            <Settings2 className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="space-y-0.5">
+          {allItems.map((item) => {
+            const Icon = getIcon(item.id);
+            const active = item.id === activeId;
             return (
               <button
                 key={String(item.id)}
                 onClick={() => onSelect(item.id)}
                 className={cn(
-                  "flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-semibold whitespace-nowrap border transition-colors flex-shrink-0",
-                  active
-                    ? "bg-primary text-primary-foreground border-primary shadow-sm"
-                    : "bg-card text-foreground/80 border-border hover:bg-muted"
+                  "flex w-full items-center gap-2 border-l-2 px-2 py-2.5 text-left text-sm transition-colors",
+                  active ? "border-primary bg-primary/5 font-black text-primary" : "border-transparent font-medium text-muted-foreground hover:bg-muted hover:text-foreground",
                 )}
               >
-                <Icon className="h-3.5 w-3.5" />
-                <span>{item.name}</span>
-                <span
-                  className={cn(
-                    "text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center",
-                    active ? "bg-primary-foreground/20" : "bg-muted text-muted-foreground"
-                  )}
-                >
-                  {item.count}
-                </span>
+                <Icon className="h-4 w-4 shrink-0" />
+                <span className="flex-1 truncate">{item.name}</span>
+                <span className={`min-w-[22px] border px-1.5 py-0.5 text-center text-[10px] font-bold tabular-nums ${active ? "border-primary/20 bg-primary/10 text-primary" : "border-border text-muted-foreground"}`}>{item.count}</span>
               </button>
             );
           })}
-          <button
-            onClick={onManage}
-            className="flex items-center gap-1 px-3 py-2 rounded-full text-xs font-semibold whitespace-nowrap bg-card text-muted-foreground border border-dashed border-border hover:bg-muted flex-shrink-0"
-            title="Gerenciar seções"
-          >
-            <Settings2 className="h-3.5 w-3.5" />
-            Gerenciar
-          </button>
         </div>
-      </div>
-
-      {/* Desktop: sidebar vertical */}
-      <aside className="hidden lg:flex lg:flex-col lg:w-56 lg:flex-shrink-0 lg:sticky lg:top-4 lg:self-start bg-card border border-border rounded-2xl p-2 gap-1 max-h-[calc(100vh-2rem)] overflow-y-auto">
-        <div className="flex items-center justify-between px-2 py-2">
-          <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Seções</span>
-          <button
-            onClick={onManage}
-            className="text-muted-foreground hover:text-foreground p-1 rounded-md hover:bg-muted transition-colors"
-            title="Gerenciar seções"
-          >
-            <Settings2 className="h-3.5 w-3.5" />
-          </button>
-        </div>
-        {allItems.map((item) => {
-          const active = item.id === activeId;
-          const Icon = item.id === "all" ? Grid3x3 : item.id === "none" ? Package : Layers;
-          return (
-            <button
-              key={String(item.id)}
-              onClick={() => onSelect(item.id)}
-              className={cn(
-                "flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-colors text-left",
-                active
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-foreground/80 hover:bg-muted"
-              )}
-            >
-              <Icon className="h-4 w-4 flex-shrink-0" />
-              <span className="flex-1 truncate">{item.name}</span>
-              <span
-                className={cn(
-                  "text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center",
-                  active ? "bg-primary-foreground/20" : "bg-muted text-muted-foreground"
-                )}
-              >
-                {item.count}
-              </span>
-            </button>
-          );
-        })}
-        <button
-          onClick={onNewSection}
-          className="mt-2 flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold text-primary hover:bg-primary/10 border border-dashed border-primary/40 transition-colors"
-        >
-          + Nova seção
+        <button onClick={onNewSection} className="mt-4 inline-flex items-center gap-2 px-2 py-2 text-sm font-black text-primary hover:bg-primary/5">
+          <Plus className="h-4 w-4" /> Nova seção
         </button>
       </aside>
     </>
