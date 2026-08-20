@@ -16,7 +16,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useState } from "react";
 import { Progress } from "@/components/ui/progress";
 import FixedPlanBillingHistory from "@/components/FixedPlanBillingHistory";
-import { PLANS, DELIVERY_FEE_NOTE, PIX_FEE_NOTE } from "@/lib/plansInfo";
+import { PLANS, NEW_STORE_PLAN_TYPES, DELIVERY_FEE_NOTE, PIX_FEE_NOTE } from "@/lib/plansInfo";
 import PlansComparisonTable from "@/components/PlansComparisonTable";
 import PlanFeeBreakdown from "@/components/fees/PlanFeeBreakdown";
 import DeliveryFeeExplainer from "@/components/fees/DeliveryFeeExplainer";
@@ -72,13 +72,13 @@ interface Props {
    pdv_only: "bg-primary/10",
  };
 
-/** Opções de plano para troca — fonte única em plansInfo, filtrando destinos válidos. */
-// Apenas planos ATIVOS podem ser escolhidos como destino de troca.
-// hybrid / commission_only / supporter são legados — lojas neles continuam funcionando,
-// mas ninguém pode migrar PRA eles.
-const ALL_SWITCHABLE: StorePlanType[] = ["fixed", "autonomy", "pdv_only"];
+/**
+ * Destinos permitidos para troca voluntária: somente as ofertas vigentes.
+ * Autonomia e os demais planos históricos permanecem interpretáveis para lojas legadas,
+ * mas não podem ser escolhidos como destino de uma nova solicitação.
+ */
 const planOptions: { type: StorePlanType; label: string; fee: number; rate: number; tagline: string; bullets: string[] }[] =
-  ALL_SWITCHABLE.filter((id) => !!PLANS[id]).map((id) => {
+  NEW_STORE_PLAN_TYPES.filter((id) => !!PLANS[id]).map((id) => {
     const p = PLANS[id];
     return {
       type: id,

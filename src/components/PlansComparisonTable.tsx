@@ -4,85 +4,57 @@ import type { StorePlanType } from "@/hooks/useStorePlan";
 
 interface Row {
   label: string;
-  values: Record<StorePlanType, string | boolean>;
+  values: Partial<Record<StorePlanType, string | boolean>>;
 }
 
+/** Comparativo das ofertas disponíveis para novas lojas. */
 const ROWS: Row[] = [
   {
     label: "Mensalidade",
-    values: {
-      commission_only: "R$ 0",
-      fixed: "R$ 89,90*",
-      supporter: "R$ 75",
-      autonomy: "R$ 199,90*",
-    } as Record<StorePlanType, string>,
+    values: { fixed: "R$ 89,90*", pdv_only: "R$ 69/mês" },
   },
   {
     label: "Comissão por pedido",
-    values: {
-      commission_only: "6%",
-      fixed: "0%",
-      supporter: "0%",
-      autonomy: "0%",
-    } as Record<StorePlanType, string>,
+    values: { fixed: "0%", pdv_only: "Não se aplica" },
   },
   {
-    label: "Taxa por PIX (lojista)",
-    values: {
-      commission_only: "Grátis",
-      fixed: "R$ 1,99",
-      supporter: "R$ 1,99",
-      autonomy: "R$ 1,99",
-    } as Record<StorePlanType, string>,
+    label: "Taxa por PIX online",
+    values: { fixed: "R$ 1,99", pdv_only: "Não se aplica" },
   },
   {
-    label: "Taxa da plataforma na entrega (somada à sua taxa, paga pelo cliente)",
-    values: {
-      commission_only: "+ R$ 0,99",
-      fixed: "+ R$ 0,99",
-      supporter: "+ R$ 0,99",
-      autonomy: "Não cobra",
-    } as Record<StorePlanType, string>,
+    label: "Taxa da plataforma na entrega",
+    values: { fixed: "+ R$ 0,99", pdv_only: "Sem delivery" },
   },
   {
-    label: "Cardápio digital",
-    values: { commission_only: true, fixed: true, supporter: true, autonomy: true } as Record<StorePlanType, boolean>,
+    label: "Cardápio e pedidos online",
+    values: { fixed: true, pdv_only: false },
   },
   {
-    label: "Relatórios completos",
-    values: { commission_only: false, fixed: true, supporter: true, autonomy: true } as Record<StorePlanType, boolean>,
+    label: "Vitrine e entregas",
+    values: { fixed: true, pdv_only: false },
   },
   {
-    label: "Banners e destaque",
-    values: { commission_only: false, fixed: true, supporter: true, autonomy: true } as Record<StorePlanType, boolean>,
+    label: "Relatórios da operação",
+    values: { fixed: true, pdv_only: true },
   },
   {
     label: "Motoboy integrado",
-    values: { commission_only: false, fixed: true, supporter: true, autonomy: true } as Record<StorePlanType, boolean>,
+    values: { fixed: true, pdv_only: false },
   },
   {
-    label: "Suporte VIP",
-    values: { commission_only: false, fixed: true, supporter: true, autonomy: true } as Record<StorePlanType, boolean>,
-  },
-  {
-    label: "PDV (módulo opcional)",
-    values: {
-      commission_only: "+ R$ 49/mês",
-      fixed: "+ R$ 49/mês",
-      supporter: "+ R$ 49/mês",
-      autonomy: "+ R$ 49/mês",
-    } as Record<StorePlanType, string>,
+    label: "PDV de balcão",
+    values: { fixed: "+ R$ 49/mês", pdv_only: "Incluído" },
   },
 ];
 
 interface Props {
-  /** Quais planos mostrar (padrão: todos exceto Apoiador). */
+  /** Planos a exibir. Por padrão, somente as ofertas disponíveis para novas lojas. */
   plans?: StorePlanType[];
   className?: string;
 }
 
 export default function PlansComparisonTable({
-  plans = ["fixed", "autonomy"],
+  plans = PLANS_ORDER,
   className = "",
 }: Props) {
   const cols = plans.map((id) => PLANS[id]);
@@ -93,45 +65,43 @@ export default function PlansComparisonTable({
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border bg-muted/30">
-              <th className="text-left p-3 font-semibold text-muted-foreground text-xs uppercase tracking-wider">
+              <th className="p-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Recurso
               </th>
-              {cols.map((p) => (
+              {cols.map((plan) => (
                 <th
-                  key={p.id}
-                  className={`p-3 text-center font-bold text-xs ${
-                    p.highlight ? "text-primary" : "text-foreground"
+                  key={plan.id}
+                  className={`p-3 text-center text-xs font-bold ${
+                    plan.highlight ? "text-primary" : "text-foreground"
                   }`}
                 >
-                  {p.name}
+                  {plan.name}
                 </th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {ROWS.map((row, i) => (
+            {ROWS.map((row, index) => (
               <tr
                 key={row.label}
-                className={`border-b border-border last:border-0 ${i < 4 ? "bg-muted/20" : ""}`}
+                className={`border-b border-border last:border-0 ${index < 4 ? "bg-muted/20" : ""}`}
               >
-                <td className="p-3 text-foreground text-xs md:text-sm">{row.label}</td>
-                {cols.map((p) => {
-                  const v = row.values[p.id];
+                <td className="p-3 text-xs text-foreground md:text-sm">{row.label}</td>
+                {cols.map((plan) => {
+                  const value = row.values[plan.id] ?? "—";
                   return (
                     <td
-                      key={p.id}
-                      className={`p-3 text-center text-xs md:text-sm ${
-                        p.highlight ? "font-semibold" : ""
-                      }`}
+                      key={plan.id}
+                      className={`p-3 text-center text-xs md:text-sm ${plan.highlight ? "font-semibold" : ""}`}
                     >
-                      {typeof v === "boolean" ? (
-                        v ? (
-                          <Check className="h-4 w-4 text-primary mx-auto" />
+                      {typeof value === "boolean" ? (
+                        value ? (
+                          <Check className="mx-auto h-4 w-4 text-primary" />
                         ) : (
-                          <X className="h-4 w-4 text-muted-foreground/40 mx-auto" />
+                          <X className="mx-auto h-4 w-4 text-muted-foreground/40" />
                         )
                       ) : (
-                        v
+                        value
                       )}
                     </td>
                   );
@@ -141,11 +111,11 @@ export default function PlansComparisonTable({
           </tbody>
         </table>
       </div>
-      <div className="space-y-1 text-[11px] text-muted-foreground px-1">
-        <p>💡 * A mensalidade é gratuita até atingir o gatilho de faturamento (R$ 5.000 no Essencial ou R$ 2.500 no Autonomia, no período de análise). Após isso, a mensalidade é ativada com aviso prévio de 30 dias.</p>
+      <div className="space-y-1 px-1 text-[11px] text-muted-foreground">
+        <p>💡 * O Essencial começa em R$ 0,00 enquanto o faturamento acumulado no período de análise de 60 dias permanecer até R$ 5.000,00. Depois, a mensalidade de R$ 89,90 pode ser ativada com aviso prévio de 30 dias.</p>
         <p>💡 {DELIVERY_FEE_NOTE}</p>
         <p>💡 {PIX_FEE_NOTE}</p>
-        <p>💡 PDV é um módulo opcional: novas lojas contratam por R$ 49/mês. Lojas antigas mantêm a regra atual de R$ 1 por venda.</p>
+        <p>💡 O Somente PDV é voltado ao balcão: não possui vitrine, pedidos online nem entregas.</p>
       </div>
     </div>
   );

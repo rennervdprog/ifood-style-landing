@@ -35,7 +35,6 @@ import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover
 import { useNavigate } from "react-router-dom";
 import { PLANS, PLANS_ORDER, DELIVERY_FEE_NOTE, PIX_FEE_NOTE, type PlanInfo } from "@/lib/plansInfo";
 import PlansComparisonTable from "@/components/PlansComparisonTable";
-import { useSupporterCount } from "@/hooks/useSupporterCount";
 import { useAddonsFlag } from "@/hooks/useStorePdvAccess";
 import { Monitor } from "lucide-react";
 import { formatBRL } from "@/lib/utils";
@@ -120,9 +119,7 @@ const faqs = [
  export default function PlanosPage() {
    const navigate = useNavigate();
    const [openFaq, setOpenFaq] = useState<number | null>(null);
-   const { count: supporterCount, loading: supporterLoading } = useSupporterCount();
-
-  const statsRef = useInView(0.3);
+   const statsRef = useInView(0.3);
   const storesCount = useCountUp(50, 2000, statsRef.visible);
   const ordersCount = useCountUp(10, 2000, statsRef.visible);
 
@@ -317,24 +314,13 @@ const faqs = [
             Os planos online incluem cardápio digital, PIX online e notificações. Escolha o plano compatível com a sua operação e acompanhe todos os custos antes da contratação.
           </p>
 
-          <div className="grid md:grid-cols-3 gap-6 items-start">
+          <div className="grid gap-6 md:grid-cols-2 items-start">
              {plans.map((plan) => {
                const Icon = plan.icon;
-               const isSupporter = plan.id === "supporter";
-               const taken = isSupporter ? supporterCount ?? 0 : 0;
-               const remaining = isSupporter ? Math.max(0, 10 - taken) : null;
-                              const isSoldOut = isSupporter && remaining === 0;
                const freeEntryNote = plan.id === "fixed"
                  ? "Grátis até o gatilho de faturamento. Depois, R$ 89,90/mês com aviso prévio de 30 dias."
-                 : plan.id === "autonomy"
-                   ? "Grátis até o gatilho de faturamento. Depois, R$ 199,90/mês com aviso prévio de 30 dias."
-                   : null;
-
-               const planBadge = isSupporter
-                 ? (supporterLoading
-                     ? "🚀 Carregando vagas..."
-                      : (isSoldOut ? "❌ Vagas esgotadas" : `🚀 ${remaining} de 10 vagas restantes`))
-                 : plan.badge;
+                 : null;
+               const planBadge = plan.badge;
  
                return (
                  <Card
@@ -345,11 +331,11 @@ const faqs = [
                        : "border-border hover:border-primary/30"
                    }`}
                  >
-                   {planBadge && (
-                     <div className={`absolute -top-3.5 left-1/2 -translate-x-1/2 ${isSoldOut ? 'bg-muted-foreground' : 'bg-primary'} text-primary-foreground text-xs font-bold px-5 py-1.5 rounded-full shadow-md whitespace-nowrap transition-colors`}>
-                       {planBadge}
-                     </div>
-                   )}
+                  {planBadge && (
+                    <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-primary px-5 py-1.5 text-xs font-bold text-primary-foreground shadow-md transition-colors">
+                      {planBadge}
+                    </div>
+                  )}
 
                   <CardContent className="flex flex-col flex-1 p-6 pt-8">
                     {/* Header */}
@@ -435,23 +421,18 @@ const faqs = [
                     </ul>
 
                      <Button
-                       onClick={isSoldOut ? undefined : handleCTA}
-                       disabled={isSoldOut}
+                       onClick={handleCTA}
                        className={`w-full rounded-2xl py-5 text-base font-semibold ${
                          plan.highlight
                            ? "shadow-lg shadow-primary/20"
                            : ""
                        }`}
-                       variant={plan.highlight ? "default" : (isSoldOut ? "secondary" : "outline")}
+                       variant={plan.highlight ? "default" : "outline"}
                      >
-                       {supporterLoading && isSupporter ? (
-                         <Loader2 className="h-4 w-4 animate-spin" />
-                       ) : (
-                         <>
-                           {isSoldOut ? "Esgotado" : (freeEntryNote ? "Começar grátis" : "Escolher plano")}
-                           {!isSoldOut && <ArrowRight className="ml-2 h-4 w-4" />}
-                         </>
-                       )}
+                       <>
+                         {freeEntryNote ? "Começar grátis" : "Escolher plano"}
+                         <ArrowRight className="ml-2 h-4 w-4" />
+                       </>
                      </Button>
                   </CardContent>
                 </Card>
@@ -739,7 +720,7 @@ function ROICalculator() {
       </div>
 
       {/* Plan cards */}
-      <div className="grid sm:grid-cols-3 gap-4">
+      <div className="grid gap-4 sm:grid-cols-2">
         {results.map((r) => {
           const isBest = r.plan.id === cheapest.plan.id;
           return (

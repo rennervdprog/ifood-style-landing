@@ -4,9 +4,10 @@
  * Valida, para CADA plano oferecido no cadastro, que o store_plans
  * criado bate com a especificação de negócio:
  *
- *   commission_only : LEGADO (mantido só pra lojas atuais)
- *   fixed (Essencial): R$0/mês (grátis) → R$180/mês após R$5k GMV | 0% | PIX R$1,99 | +R$2 entrega | PDV R$1 fixo
- *   autonomy         : R$239,90 | 0% | PIX R$1,99 | SEM +R$2 entrega  | PDV R$1 fixo
+ *   fixed (Essencial): R$0/mês na entrada, sem comissão por pedido
+ *   pdv_only         : R$69/mês, operação de balcão sem delivery
+ *
+ * Autonomia é legado: não pode ser selecionado por uma nova loja.
  *
  * Roda contra o Supabase EXTERNO. Requer:
  *   EXTERNAL_SUPABASE_URL, EXTERNAL_SUPABASE_SERVICE_KEY, EXTERNAL_SUPABASE_ANON_KEY
@@ -29,40 +30,26 @@ interface PlanSpec {
   monthlyFee: number;
   commissionRate: number;
   pixOperationalFee: number; // R$ por pedido PIX
-  platformDeliveryExtra: number; // R$2 na entrega, 0 no autonomia
-  pdvFixedFee: number; // R$ por venda PDV (0 se usar %)
-  pdvCommissionRate: number; // % PDV (0 se usar fixo)
+  platformDeliveryExtra?: number; // Taxa da plataforma em entrega própria, quando aplicável
+  pdvCommissionRate: number; // % PDV
 }
 
 const SPECS: PlanSpec[] = [
   {
-    selected: "commission_only",
-    planType: "commission_only",
+    selected: "fixed",
+    planType: "fixed",
     monthlyFee: 0,
-    commissionRate: 6,
+    commissionRate: 0,
     pixOperationalFee: 1.99,
-    platformDeliveryExtra: 2,
-    pdvFixedFee: 0,
+    platformDeliveryExtra: 0.99,
     pdvCommissionRate: 2,
   },
   {
-    selected: "fixed",
-    planType: "fixed",
-    monthlyFee: 0, // grátis na entrada; sobe pra R$180 após R$5k GMV via check-essencial-upgrade
+    selected: "pdv_only",
+    planType: "pdv_only",
+    monthlyFee: 69,
     commissionRate: 0,
     pixOperationalFee: 1.99,
-    platformDeliveryExtra: 2,
-    pdvFixedFee: 1,
-    pdvCommissionRate: 0,
-  },
-  {
-    selected: "autonomy",
-    planType: "autonomy",
-    monthlyFee: 0, // grátis na entrada; sobe pra R$239,90 após R$2,5k GMV via check-essencial-upgrade
-    commissionRate: 0,
-    pixOperationalFee: 1.99,
-    platformDeliveryExtra: 0,
-    pdvFixedFee: 1,
     pdvCommissionRate: 0,
   },
 ];
@@ -87,6 +74,29 @@ async function cleanup(userId: string) {
   await admin!.from("profiles").delete().eq("user_id", userId);
   await admin!.auth.admin.deleteUser(userId);
 }
+
+Deno.test("register_as_lojista rejeita Autonomia em novos cadastros", opts, async () => {
+  const tag = `test_autonomy_retired_${Date.now()}`;
+  const { userId, sb } = await createUserAndClient(`${tag}@itasuper-test.local`, "TestPass!234");
+
+  try {
+    const { data: storeId, error } = await sb.rpc("register_as_lojista", {
+      _full_name: "Loja Teste Autonomia",
+      _document: "00000000000",
+      _store_name: `${tag}_loja`,
+      _store_category: "lanches" as any,
+      _avatar_url: null,
+      _whatsapp: "11999999999",
+      _selected_plan: "autonomy",
+    });
+
+    assertEquals(storeId, null, "não deve criar loja no plano descontinuado");
+    assert(error, "cadastro Autonomia deve ser rejeitado");
+    assert(error.message.includes("Plano indisponível para novos cadastros"), error.message);
+  } finally {
+    await cleanup(userId);
+  }
+});
 
 for (const spec of SPECS) {
   Deno.test(`register_as_lojista → ${spec.selected}`, opts, async () => {
@@ -131,17 +141,11 @@ for (const spec of SPECS) {
         `pdv_commission_rate (esperado ${spec.pdvCommissionRate}%)`
       );
 
-      // Taxa PDV fixa (R$1) para fixed/autonomy é cobrada via trigger
-      // trg_accrue_pdv_fixed_fee (não fica em coluna) — validado em outros testes.
-
-      // Split da plataforma na entrega própria
-      const splitOverride = plan.platform_delivery_split_override;
-      if (spec.platformDeliveryExtra === 0) {
-        assertEquals(Number(splitOverride ?? -1), 0, "autonomy: override deve ser 0");
-      } else {
-        // commission_only/fixed: null (usa default R$2) OU 2
-        const eff = splitOverride == null ? 2 : Number(splitOverride);
-        assertEquals(eff, spec.platformDeliveryExtra, "platform_delivery_split_override efetivo");
+      // Split da plataforma na entrega própria, quando o plano possui delivery.
+      if (spec.platformDeliveryExtra !== undefined) {
+        const splitOverride = plan.platform_delivery_split_override;
+        const effectiveExtra = splitOverride == null ? 0.99 : Number(splitOverride);
+        assertEquals(effectiveExtra, spec.platformDeliveryExtra, "platform_delivery_split_override efetivo");
       }
     } finally {
       await cleanup(userId);

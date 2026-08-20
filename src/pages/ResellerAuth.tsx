@@ -135,7 +135,7 @@ export default function ResellerAuth() {
             </ul>
             <div className="mt-4 rounded-lg border border-blue-500/30 bg-blue-500/5 p-3 text-[11px] text-muted-foreground">
               ℹ️ Os 20% recorrentes só entram a partir do mês em que a loja indicada passa do GMV gratuito
-              (R$ 5.000 no Essencial ou R$ 2.500 na Autonomia) e começa a pagar mensalidade.
+              de R$ 5.000 no Essencial e começa a pagar mensalidade.
             </div>
           </section>
 
