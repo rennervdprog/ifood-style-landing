@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { formatBRL } from "@/lib/utils";
-import { CheckCircle2, XCircle, Loader2, Clock, Download } from "lucide-react";
+import { CheckCircle2, XCircle, Loader2, Clock, Landmark, FileCheck2, Send, ExternalLink } from "lucide-react";
 
 const REASON_LABELS: Record<string, string> = {
   wrong_product: "Produto errado",
@@ -13,296 +13,210 @@ const REASON_LABELS: Record<string, string> = {
   late_delivery: "Atraso na entrega",
   poor_quality: "Qualidade ruim",
   other: "Outro motivo",
+  cancelled_order: "Pedido cancelado",
 };
 
 const STATUS_LABELS: Record<string, { label: string; color: string; bg: string }> = {
-  pending: { label: "Pendente", color: "text-foreground", bg: "bg-muted" },
-  approved: { label: "Em análise", color: "text-foreground", bg: "bg-muted" },
-  processed: { label: "Processado", color: "text-primary", bg: "bg-primary/10" },
-  rejected: { label: "Rejeitado", color: "text-destructive", bg: "bg-destructive/10" },
+  opened: { label: "Aguardando loja", color: "text-amber-700 dark:text-amber-300", bg: "bg-amber-50 dark:bg-amber-950/30" },
+  under_review: { label: "Em análise", color: "text-foreground", bg: "bg-muted" },
+  refund_due_by_store: { label: "Aguardando devolução", color: "text-primary", bg: "bg-primary/10" },
+  proof_submitted: { label: "Comprovante enviado", color: "text-blue-700 dark:text-blue-300", bg: "bg-blue-50 dark:bg-blue-950/30" },
+  completed: { label: "Concluído", color: "text-emerald-700 dark:text-emerald-300", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
+  rejected: { label: "Recusado", color: "text-destructive", bg: "bg-destructive/10" },
+  disputed: { label: "Contestado", color: "text-orange-700 dark:text-orange-300", bg: "bg-orange-50 dark:bg-orange-950/30" },
+  withdrawn: { label: "Encerrado", color: "text-muted-foreground", bg: "bg-muted" },
 };
 
 interface Props {
-  storeId?: string; // If provided, filter by store. Otherwise show all (admin).
+  storeId?: string;
 }
 
 const AdminRefundPanel = ({ storeId }: Props) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [processing, setProcessing] = useState<string | null>(null);
-  const [adminNotes, setAdminNotes] = useState<Record<string, string>>({});
-  const [adjustedAmounts, setAdjustedAmounts] = useState<Record<string, string>>({});
-  const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "processed" | "rejected">("all");
+  const [responses, setResponses] = useState<Record<string, string>>({});
+  const [refundAmounts, setRefundAmounts] = useState<Record<string, string>>({});
+  const [refundReferences, setRefundReferences] = useState<Record<string, string>>({});
+  const [refundProofUrls, setRefundProofUrls] = useState<Record<string, string>>({});
+  const [statusFilter, setStatusFilter] = useState("all");
 
-  const { data: requests, isLoading } = useQuery({
-    queryKey: ["refund-requests", storeId],
+  const { data: cases, isLoading } = useQuery({
+    queryKey: ["pix-direto-refund-cases", storeId],
     queryFn: async () => {
-      let query = supabase
-        .from("refund_requests")
-        .select(`
-          *,
-          orders!refund_requests_order_id_fkey(
-            payment_method, created_at, total_price
-          ),
-          profiles!refund_requests_requester_id_fkey(
-            full_name, email
-          )
-        `)
+      let query = (supabase as any)
+        .from("pix_direto_refund_cases")
+        .select("id, order_id, requester_id, payment_confirmed_at, eligible_amount, requested_amount, reason, description, evidence_urls, status, store_response, store_responded_at, refund_amount, refund_reference, refund_proof_url, refund_submitted_at, created_at")
         .order("created_at", { ascending: false });
-
-      if (storeId) {
-        query = query.eq("store_id", storeId);
-      }
-
+      if (storeId) query = query.eq("store_id", storeId);
       const { data, error } = await query;
       if (error) throw error;
-      return data || [];
+      return (data || []) as any[];
     },
     enabled: !!user,
   });
 
+  const filtered = useMemo(() => {
+    const list = cases || [];
+    return statusFilter === "all" ? list : list.filter((item) => item.status === statusFilter);
+  }, [cases, statusFilter]);
+
   const counts = useMemo(() => {
-    const list = requests || [];
+    const list = cases || [];
     return {
       all: list.length,
-      pending: list.filter((r: any) => r.status === "pending").length,
-      processed: list.filter((r: any) => r.status === "processed").length,
-      rejected: list.filter((r: any) => r.status === "rejected").length,
+      pending: list.filter((item) => ["opened", "under_review", "disputed"].includes(item.status)).length,
+      due: list.filter((item) => item.status === "refund_due_by_store").length,
+      proof: list.filter((item) => item.status === "proof_submitted").length,
+      completed: list.filter((item) => item.status === "completed").length,
     };
-  }, [requests]);
+  }, [cases]);
 
-  const filtered = useMemo(() => {
-    const list = requests || [];
-    if (statusFilter === "all") return list;
-    if (statusFilter === "pending") return list.filter((r: any) => r.status === "pending" || r.status === "approved");
-    return list.filter((r: any) => r.status === statusFilter);
-  }, [requests, statusFilter]);
+  const refresh = () => queryClient.invalidateQueries({ queryKey: ["pix-direto-refund-cases"] });
 
-  const exportCsv = () => {
-    const rows = filtered;
-    if (!rows.length) {
-      toast.info("Nada para exportar neste filtro.");
-      return;
-    }
-    const header = ["Data", "Pedido", "Cliente", "Motivo", "Solicitado", "Aprovado", "Status", "Pagamento"];
-    const escape = (v: any) => `"${String(v ?? "").replace(/"/g, '""')}"`;
-    const lines = [header.join(",")].concat(
-      rows.map((r: any) => [
-        new Date(r.created_at).toLocaleString("pt-BR"),
-        r.order_id?.slice(0, 8).toUpperCase() || "",
-        r.profiles?.full_name || "",
-        REASON_LABELS[r.reason] || r.reason,
-        Number(r.requested_amount || 0).toFixed(2),
-        r.approved_amount != null ? Number(r.approved_amount).toFixed(2) : "",
-        STATUS_LABELS[r.status]?.label || r.status,
-        r.orders?.payment_method || "",
-      ].map(escape).join(","))
-    );
-    const blob = new Blob(["\uFEFF" + lines.join("\n")], { type: "text/csv;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `reembolsos-${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const handleProcess = async (refundId: string, approve: boolean) => {
-    setProcessing(refundId);
+  const respond = async (caseId: string, approve: boolean) => {
+    setProcessing(caseId);
     try {
-      const req = requests?.find((r) => r.id === refundId);
-      if (!req) throw new Error("Solicitação não encontrada.");
-
-      const amount = approve
-        ? Number(adjustedAmounts[refundId] || req.requested_amount)
-        : 0;
-
-      const { error } = await supabase.rpc("process_refund", {
-        _refund_id: refundId,
-        _approved_amount: amount,
-        _admin_notes: adminNotes[refundId] || null,
+      const { error } = await (supabase as any).rpc("respond_pix_direto_refund_case", {
+        p_case_id: caseId,
+        p_approve: approve,
+        p_response: responses[caseId] || null,
       });
-
       if (error) throw error;
       toast.success(approve
-        ? "✅ Reembolso aprovado! Crédito adicionado à carteira do cliente."
-        : "❌ Solicitação rejeitada.");
-      queryClient.invalidateQueries({ queryKey: ["refund-requests"] });
-      // TODO: enviar push notification ao cliente via edge function
-    } catch (err: any) {
-      toast.error(err.message || "Erro ao processar.");
+        ? "Caso encaminhado para devolução direta do PIX pela loja."
+        : "Caso recusado com a justificativa registrada.");
+      refresh();
+    } catch (error: any) {
+      toast.error(error?.message || "Não foi possível responder ao caso.");
+    } finally {
+      setProcessing(null);
+    }
+  };
+
+  const submitProof = async (item: any) => {
+    const amount = Number(refundAmounts[item.id] || item.eligible_amount || 0);
+    setProcessing(item.id);
+    try {
+      const { error } = await (supabase as any).rpc("submit_pix_direto_refund_proof", {
+        p_case_id: item.id,
+        p_refund_amount: amount,
+        p_reference: refundReferences[item.id] || null,
+        p_proof_url: refundProofUrls[item.id] || null,
+      });
+      if (error) throw error;
+      toast.success("Devolução registrada. O cliente poderá confirmar o recebimento.");
+      refresh();
+    } catch (error: any) {
+      toast.error(error?.message || "Não foi possível registrar a devolução.");
     } finally {
       setProcessing(null);
     }
   };
 
   if (isLoading) {
-    return (
-      <div className="space-y-3">
-        {[1, 2].map((i) => (
-          <div key={i} className="bg-card rounded-2xl border border-border p-4 animate-pulse space-y-2">
-            <div className="h-4 bg-muted rounded w-1/2" />
-            <div className="h-3 bg-muted rounded w-3/4" />
-          </div>
-        ))}
-      </div>
-    );
-  }
-
-  if (!requests?.length) {
-    return (
-      <div className="text-center py-12">
-        <CheckCircle2 className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-        <p className="text-sm text-muted-foreground">Nenhuma solicitação de reembolso.</p>
-      </div>
-    );
+    return <div className="space-y-3">{[1, 2].map((item) => <div key={item} className="bg-card rounded-2xl border border-border p-4 animate-pulse h-28" />)}</div>;
   }
 
   return (
     <div className="space-y-3">
+      <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-xl p-3 flex gap-2">
+        <Landmark className="h-4 w-4 text-blue-700 dark:text-blue-300 shrink-0 mt-0.5" />
+        <p className="text-xs text-blue-800 dark:text-blue-200">
+          Esta fila contém somente casos de PIX Direto confirmado. A devolução é feita pela loja ao cliente; o ItaSuper registra a decisão e o comprovante, sem gerar crédito automático em carteira.
+        </p>
+      </div>
+
       <div className="flex items-center gap-1.5 overflow-x-auto -mx-1 px-1">
-        {([
-          { key: "all", label: "Todos" },
-          { key: "pending", label: "Pendentes" },
-          { key: "processed", label: "Aprovados" },
-          { key: "rejected", label: "Recusados" },
-        ] as const).map(t => (
+        {[
+          { key: "all", label: "Todos", count: counts.all },
+          { key: "opened", label: "Aguardando", count: counts.pending },
+          { key: "refund_due_by_store", label: "Devolver PIX", count: counts.due },
+          { key: "proof_submitted", label: "Comprovados", count: counts.proof },
+          { key: "completed", label: "Concluídos", count: counts.completed },
+        ].map((filter) => (
           <button
-            key={t.key}
-            onClick={() => setStatusFilter(t.key)}
-            className={`shrink-0 px-3 py-1 rounded-full text-[11px] font-bold border ${
-              statusFilter === t.key
-                ? "bg-primary text-primary-foreground border-primary"
-                : "bg-card text-muted-foreground border-border"
-            }`}
+            key={filter.key}
+            onClick={() => setStatusFilter(filter.key)}
+            className={`shrink-0 px-3 py-1 rounded-full text-[11px] font-bold border ${statusFilter === filter.key ? "bg-primary text-primary-foreground border-primary" : "bg-card text-muted-foreground border-border"}`}
           >
-            {t.label} <span className="opacity-70">({counts[t.key]})</span>
+            {filter.label} <span className="opacity-70">({filter.count})</span>
           </button>
         ))}
-        <button
-          onClick={exportCsv}
-          className="shrink-0 ml-auto flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold border border-border bg-card text-foreground"
-        >
-          <Download className="h-3 w-3" /> CSV
-        </button>
       </div>
 
       {filtered.length === 0 && (
-        <p className="text-center text-xs text-muted-foreground py-6">Nenhuma solicitação neste filtro.</p>
+        <div className="text-center py-10">
+          <CheckCircle2 className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
+          <p className="text-sm text-muted-foreground">Nenhum caso de PIX Direto neste filtro.</p>
+        </div>
       )}
-      {filtered.map((req) => {
-        const status = STATUS_LABELS[req.status] || STATUS_LABELS.pending;
-        const isPending = req.status === "pending";
+
+      {filtered.map((item) => {
+        const status = STATUS_LABELS[item.status] || STATUS_LABELS.opened;
+        const canRespond = ["opened", "under_review", "disputed"].includes(item.status);
+        const canSubmitProof = item.status === "refund_due_by_store";
 
         return (
-          <div key={req.id} className="bg-card rounded-2xl border border-border overflow-hidden">
-            {/* Header */}
+          <article key={item.id} className="bg-card rounded-2xl border border-border overflow-hidden">
             <div className={`px-4 py-2.5 flex items-center justify-between ${status.bg} border-b border-border/30`}>
               <div className="flex items-center gap-2">
-                {isPending ? (
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                ) : req.status === "processed" ? (
-                  <CheckCircle2 className="h-4 w-4 text-primary" />
-                ) : (
-                  <XCircle className="h-4 w-4 text-destructive" />
-                )}
+                {item.status === "completed" ? <CheckCircle2 className={`h-4 w-4 ${status.color}`} /> : item.status === "rejected" ? <XCircle className={`h-4 w-4 ${status.color}`} /> : <Clock className={`h-4 w-4 ${status.color}`} />}
                 <span className={`text-xs font-bold ${status.color}`}>{status.label}</span>
               </div>
-              <span className="text-[10px] text-muted-foreground">
-                {new Date(req.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
-              </span>
+              <span className="text-[10px] text-muted-foreground">{new Date(item.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</span>
             </div>
 
             <div className="p-4 space-y-3">
-              {/* Info */}
-              <div className="flex items-center justify-between">
+              <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-xs text-muted-foreground">
-                    Pedido #{req.order_id.slice(0, 8).toUpperCase()}
-                    {(req as any).orders?.payment_method && (
-                      <span className="ml-1.5 bg-muted px-1.5 py-0.5 rounded text-[10px] font-bold">
-                        {(req as any).orders.payment_method.toUpperCase()}
-                      </span>
-                    )}
-                  </p>
-                  <p className="text-sm font-bold text-foreground">
-                    {REASON_LABELS[req.reason] || req.reason}
-                  </p>
-                  {(req as any).profiles?.full_name && (
-                    <p className="text-xs text-muted-foreground">
-                      Cliente: {(req as any).profiles.full_name}
-                    </p>
-                  )}
+                  <p className="text-xs text-muted-foreground">Pedido #{item.order_id.slice(0, 8).toUpperCase()} · PIX Direto</p>
+                  <p className="text-sm font-bold text-foreground">{REASON_LABELS[item.reason] || item.reason}</p>
+                  <p className="text-xs text-muted-foreground">Pagamento confirmado em {new Date(item.payment_confirmed_at).toLocaleDateString("pt-BR")}</p>
                 </div>
-                <span className="text-sm font-black text-primary">
-                  {formatBRL(Number(req.requested_amount))}
-                </span>
+                <span className="text-sm font-black text-primary">{formatBRL(Number(item.eligible_amount))}</span>
               </div>
 
-              {req.description && (
-                <div className="bg-muted/30 rounded-xl p-3">
-                  <p className="text-xs text-foreground">{req.description}</p>
-                </div>
-              )}
+              {item.description && <div className="bg-muted/30 rounded-xl p-3 text-xs text-foreground">{item.description}</div>}
+              {item.store_response && <div className="bg-muted rounded-xl p-3 text-xs text-foreground"><strong>Resposta registrada:</strong> {item.store_response}</div>}
+              {item.refund_amount != null && <div className="bg-primary/10 rounded-xl p-3 text-xs text-foreground">Devolução informada: <strong>{formatBRL(Number(item.refund_amount))}</strong>{item.refund_reference ? ` · Referência: ${item.refund_reference}` : ""}</div>}
+              {item.refund_proof_url && /^https?:\/\//.test(item.refund_proof_url) && <a className="text-xs text-primary font-bold inline-flex items-center gap-1" href={item.refund_proof_url} target="_blank" rel="noreferrer"><ExternalLink className="h-3.5 w-3.5" /> Abrir comprovante</a>}
 
-              {req.admin_notes && (
-                <div className="bg-muted rounded-xl p-3">
-                  <p className="text-xs text-foreground">
-                    <strong>Nota:</strong> {req.admin_notes}
-                  </p>
-                </div>
-              )}
-
-              {req.approved_amount != null && req.status === "processed" && (
-                <div className="bg-primary/10 rounded-xl p-3">
-                  <p className="text-xs text-foreground">
-                    ✅ Creditado: <strong>{formatBRL(Number(req.approved_amount))}</strong> na carteira do cliente
-                  </p>
-                </div>
-              )}
-
-              {/* Actions for pending */}
-              {isPending && (
+              {canRespond && (
                 <div className="space-y-2 pt-1">
-                  <div className="flex gap-2">
-                    <input
-                      type="number"
-                      step="0.01"
-                      placeholder="Valor (opcional)"
-                      value={adjustedAmounts[req.id] || ""}
-                      onChange={(e) => setAdjustedAmounts((p) => ({ ...p, [req.id]: e.target.value }))}
-                      className="flex-1 bg-muted/30 border border-border rounded-xl px-3 py-2 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
-                    />
-                  </div>
                   <textarea
-                    placeholder="Nota interna (opcional)"
-                    value={adminNotes[req.id] || ""}
-                    onChange={(e) => setAdminNotes((p) => ({ ...p, [req.id]: e.target.value }))}
+                    placeholder="Resposta para o cliente (obrigatória ao recusar)"
+                    value={responses[item.id] || ""}
+                    onChange={(event) => setResponses((previous) => ({ ...previous, [item.id]: event.target.value }))}
                     rows={2}
                     className="w-full bg-muted/30 border border-border rounded-xl px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground resize-none focus:outline-none focus:ring-2 focus:ring-primary/30"
                   />
                   <div className="flex gap-2">
-                    <button
-                      onClick={() => handleProcess(req.id, true)}
-                      disabled={processing === req.id}
-                      className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 disabled:opacity-50 transition-colors"
-                    >
-                      {processing === req.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
-                      Aprovar
+                    <button onClick={() => respond(item.id, true)} disabled={processing === item.id} className="flex-1 bg-primary text-primary-foreground font-bold py-2.5 rounded-xl text-xs disabled:opacity-50">
+                      {processing === item.id ? <Loader2 className="h-3.5 w-3.5 animate-spin mx-auto" /> : "Solicitar devolução"}
                     </button>
-                    <button
-                      onClick={() => handleProcess(req.id, false)}
-                      disabled={processing === req.id}
-                      className="flex-1 bg-destructive hover:bg-destructive/90 text-destructive-foreground font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 disabled:opacity-50 transition-colors"
-                    >
-                      {processing === req.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <XCircle className="h-3.5 w-3.5" />}
-                      Rejeitar
+                    <button onClick={() => respond(item.id, false)} disabled={processing === item.id || !responses[item.id]?.trim()} className="flex-1 bg-destructive text-destructive-foreground font-bold py-2.5 rounded-xl text-xs disabled:opacity-50">
+                      Recusar
                     </button>
                   </div>
                 </div>
               )}
+
+              {canSubmitProof && (
+                <div className="space-y-2 pt-1 border-t border-border/60 pt-3">
+                  <p className="text-xs font-bold text-foreground">Registrar devolução feita pela loja</p>
+                  <input type="number" min="0.01" max={item.eligible_amount} step="0.01" placeholder="Valor devolvido" value={refundAmounts[item.id] ?? String(item.eligible_amount)} onChange={(event) => setRefundAmounts((previous) => ({ ...previous, [item.id]: event.target.value }))} className="w-full bg-muted/30 border border-border rounded-xl px-3 py-2 text-xs text-foreground" />
+                  <input placeholder="Identificador, E2E ou referência da transferência" value={refundReferences[item.id] || ""} onChange={(event) => setRefundReferences((previous) => ({ ...previous, [item.id]: event.target.value }))} className="w-full bg-muted/30 border border-border rounded-xl px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground" />
+                  <input placeholder="URL do comprovante (opcional se houver referência)" value={refundProofUrls[item.id] || ""} onChange={(event) => setRefundProofUrls((previous) => ({ ...previous, [item.id]: event.target.value }))} className="w-full bg-muted/30 border border-border rounded-xl px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground" />
+                  <button onClick={() => submitProof(item)} disabled={processing === item.id} className="w-full bg-primary text-primary-foreground font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 disabled:opacity-50">
+                    {processing === item.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <><FileCheck2 className="h-3.5 w-3.5" /> Registrar devolução</>}
+                  </button>
+                </div>
+              )}
+
+              {item.status === "proof_submitted" && <p className="text-xs text-blue-700 dark:text-blue-300 flex items-center gap-1"><Send className="h-3.5 w-3.5" /> Aguardando confirmação de recebimento pelo cliente.</p>}
             </div>
-          </div>
+          </article>
         );
       })}
     </div>

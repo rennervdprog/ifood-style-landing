@@ -1394,16 +1394,11 @@ const AdminDashboard = () => {
     if (!cancelReason) { toast.error("Selecione o motivo do cancelamento."); return; }
     setCancellingOrder(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const res = await supabase.functions.invoke("cancel-order-refund", {
-        body: { order_id: order.id, cancel_reason: cancelReason },
-        headers: { Authorization: `Bearer ${session?.access_token}` },
+      const { data: cancellation, error } = await (supabase as any).rpc("apply_cancellation_policy", {
+        _order_id: order.id,
+        _reason: cancelReason,
       });
-
-      // supabase-js retorna mensagem genérica em res.error; o motivo real
-      // vem no corpo (res.data.error). Preferir o corpo quando existir.
-      if (res.data?.error) throw new Error(res.data.error);
-      if (res.error) throw new Error(res.error.message || "Falha ao cancelar pedido");
+      if (error) throw error;
 
       queryClient.invalidateQueries({ queryKey: ["store-orders", store?.id] });
       setCancelConfirm(null);
@@ -1425,7 +1420,12 @@ const AdminDashboard = () => {
         zapiEnabled: !!cancelSettings.zapi_enabled,
       });
 
-      toast.success(res.data?.message || "Pedido cancelado.", { duration: 8000 });
+      toast.success(
+        cancellation?.requires_store_refund
+          ? "Pedido cancelado. Registre a devolução do PIX Direto no caso aberto para o cliente."
+          : "Pedido cancelado. Pagamentos físicos não geram reembolso financeiro pela plataforma.",
+        { duration: 8000 }
+      );
     } catch (e: any) {
       toast.error(`Erro ao cancelar: ${e?.message}`);
     } finally {

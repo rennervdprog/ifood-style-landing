@@ -27,7 +27,7 @@ import { haptic } from "@/lib/haptics";
 
 const allPaymentMethods = [
   { id: "pix_machine", label: "PIX na Maquininha",   desc: "PIX pela maquininha do lojista", icon: QrCode },
-  { id: "pix_direto",  label: "Pix Direto",          desc: "Envie comprovante direto pra loja", icon: QrCode },
+  { id: "pix_direto",  label: "Pix Direto",          desc: "Transferência à loja com comprovante", icon: QrCode },
   { id: "cartao",      label: "Cartão",               desc: "Débito ou crédito",       icon: CreditCard },
   { id: "dinheiro",    label: "Dinheiro",             desc: "Em espécie",              icon: Banknote },
 ];
