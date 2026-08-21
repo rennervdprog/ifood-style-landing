@@ -230,7 +230,7 @@ const PedidosPage = () => {
     queryFn: async () => {
       let query = supabase
         .from("orders")
-        .select("id, created_at, status, store_id, client_id, total_price, subtotal, delivery_fee, app_fee, payment_method, neighborhood, address_details, delivery_pin, collection_code, settlement_code, visible_to_client, return_to_store_confirmed, delivery_confirmed_by_client, confirmed_at, driver_id, scheduled_for, change_for, needs_change, stores(name, delivery_mode, slug, owner_id), order_items(id, quantity, unit_price, observations, addons, products(name))")
+        .select("id, created_at, status, store_id, client_id, total_price, subtotal, delivery_fee, app_fee, payment_method, neighborhood, address_details, delivery_pin, collection_code, settlement_code, visible_to_client, return_to_store_confirmed, delivery_confirmed_by_client, confirmed_at, refund_request_expires_at, driver_id, scheduled_for, change_for, needs_change, stores(name, delivery_mode, slug, owner_id), order_items(id, quantity, unit_price, observations, addons, products(name))")
         .eq("client_id", user!.id)
         .eq("visible_to_client", true)
         .order("created_at", { ascending: false })
@@ -1369,7 +1369,7 @@ const PedidosPage = () => {
                             Pedir novamente
                           </button>
                         )}
-                        {canOpenPixDiretoRefundCase(order.payment_method, order.status) && (
+                        {canOpenPixDiretoRefundCase(order.payment_method, order.status, order.refund_request_expires_at) && (
                           <button
                             onClick={() => setShowRefundModal(order)}
                             className="flex items-center gap-1.5 text-xs font-bold text-amber-600 bg-amber-50 dark:bg-amber-950/30 px-3 py-1.5 rounded-full hover:bg-amber-100 dark:hover:bg-amber-950/50 transition-colors"

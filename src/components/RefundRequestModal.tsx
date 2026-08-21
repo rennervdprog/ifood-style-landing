@@ -3,7 +3,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { X, AlertTriangle, Loader2, Send, Landmark } from "lucide-react";
 import { formatBRL } from "@/lib/utils";
-import { isPixDiretoPayment, physicalPaymentExplanation } from "@/lib/refundEligibility";
+import {
+  canOpenPixDiretoRefundCase,
+  isPixDiretoPayment,
+  physicalPaymentExplanation,
+  REFUND_WINDOW_EXPIRED_MESSAGE,
+} from "@/lib/refundEligibility";
 
 const REASONS = [
   { value: "wrong_product", label: "Produto errado" },
@@ -20,6 +25,8 @@ interface Props {
     store_id: string;
     total_price: number;
     payment_method?: string;
+    status?: string;
+    refund_request_expires_at?: string | null;
     stores?: { name?: string };
   };
   onClose: () => void;
@@ -35,7 +42,13 @@ const RefundRequestModal = ({ order, onClose, onSubmitted }: Props) => {
   const [reason, setReason] = useState<(typeof REASONS)[number]["value"] | "">("");
   const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
-  const eligible = isPixDiretoPayment(order.payment_method);
+  const isPixDireto = isPixDiretoPayment(order.payment_method);
+  const eligible = canOpenPixDiretoRefundCase(
+    order.payment_method,
+    order.status,
+    order.refund_request_expires_at,
+  );
+  const ineligibilityMessage = isPixDireto ? REFUND_WINDOW_EXPIRED_MESSAGE : physicalPaymentExplanation;
 
   const handleSubmit = async () => {
     if (!reason) {
@@ -43,7 +56,7 @@ const RefundRequestModal = ({ order, onClose, onSubmitted }: Props) => {
       return;
     }
     if (!eligible) {
-      toast.error("Somente pedidos pagos por PIX Direto confirmado podem abrir um caso pela plataforma.");
+      toast.error(ineligibilityMessage);
       return;
     }
 
@@ -101,7 +114,7 @@ const RefundRequestModal = ({ order, onClose, onSubmitted }: Props) => {
           {!eligible ? (
             <div className="bg-destructive/10 border border-destructive/20 rounded-xl p-3">
               <p className="text-xs text-destructive">
-                {physicalPaymentExplanation}
+                {ineligibilityMessage}
               </p>
             </div>
           ) : (

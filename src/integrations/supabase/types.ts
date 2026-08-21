@@ -2039,6 +2039,7 @@ export type Database = {
           confirmed_at: string | null
           created_at: string
           delivery_confirmed_by_client: boolean
+          refund_request_expires_at: string | null
           delivery_fee: number
           delivery_pin: string | null
           driver_id: string | null
@@ -2079,6 +2080,7 @@ export type Database = {
           confirmed_at?: string | null
           created_at?: string
           delivery_confirmed_by_client?: boolean
+          refund_request_expires_at?: string | null
           delivery_fee?: number
           delivery_pin?: string | null
           driver_id?: string | null
@@ -2119,6 +2121,7 @@ export type Database = {
           confirmed_at?: string | null
           created_at?: string
           delivery_confirmed_by_client?: boolean
+          refund_request_expires_at?: string | null
           delivery_fee?: number
           delivery_pin?: string | null
           driver_id?: string | null
