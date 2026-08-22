@@ -520,6 +520,22 @@ const CheckoutPage = () => {
        return;
      }
 
+    const restrictedPharmacyItem = items.find((item) => {
+      const metadata = (item.metadata || {}) as Record<string, any>;
+      return Boolean(
+        metadata.requires_prescription ||
+        metadata.controlled ||
+        (metadata.sale_mode && metadata.sale_mode !== "platform_checkout")
+      );
+    });
+    if (restrictedPharmacyItem) {
+      toast.error("Este produto exige validação da farmácia", {
+        description: "Remova o item do carrinho para continuar pelo checkout comum do ItaSuper.",
+        duration: 7000,
+      });
+      return;
+    }
+
     setLoading(true);
     try {
       // ===== Fase 3a: snapshot geográfico obrigatório para DELIVERY =====

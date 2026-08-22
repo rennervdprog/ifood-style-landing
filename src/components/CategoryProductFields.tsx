@@ -483,11 +483,86 @@ const CategoryProductFields = ({ category, metadata, onChange, onNameChange, sto
     ),
     lanches: null,
     farmacias: (
-      <FieldBox emoji="💊" title="Detalhes do Produto">
-        {renderToggle("Receita obrigatória?", "requires_prescription")}
-        {renderTextField("Dosagem / Volume", "dosage", "Ex: 500mg, 200ml...")}
-        {renderTextField("Fabricante / Marca", "manufacturer", "Ex: EMS, Medley, Nivea...")}
-        {renderTextField("Qtd na embalagem", "pack_quantity", "Ex: 20 comprimidos, 100ml...")}
+      <FieldBox emoji="💊" title="Classificação e detalhes de farmácia">
+        <p className="-mt-1 text-[11px] leading-relaxed text-muted-foreground">
+          Informe somente dados objetivos do produto. Itens que dependem de receita ou validação da farmácia ficam visíveis no catálogo, mas não entram no checkout do ItaSuper.
+        </p>
+
+        <div className="space-y-1.5">
+          <label className="text-xs font-bold text-foreground/70">Tipo de item</label>
+          <select
+            value={metadata.pharma_type || "other"}
+            onChange={(event) => set("pharma_type", event.target.value)}
+            className="w-full rounded-lg border border-border bg-muted px-3 py-2 text-xs text-foreground focus:border-primary focus:outline-none"
+          >
+            <option value="medicine">Medicamento</option>
+            <option value="personal_care">Higiene e cuidados pessoais</option>
+            <option value="baby">Bebê e infantil</option>
+            <option value="vitamin_supplement">Vitaminas e suplementos</option>
+            <option value="convenience">Conveniência</option>
+            <option value="other">Outro item de farmácia</option>
+          </select>
+        </div>
+
+        <div className="space-y-1.5">
+          <label className="text-xs font-bold text-foreground/70">Modalidade de venda no app</label>
+          <select
+            value={metadata.sale_mode || (metadata.requires_prescription || metadata.controlled ? "pharmacy_validation" : "platform_checkout")}
+            onChange={(event) => set("sale_mode", event.target.value)}
+            className="w-full rounded-lg border border-border bg-muted px-3 py-2 text-xs text-foreground focus:border-primary focus:outline-none"
+          >
+            <option value="platform_checkout">Venda normal pelo checkout</option>
+            <option value="pharmacy_validation">Validação pela farmácia (fora do checkout)</option>
+            <option value="not_available_app">Somente consulta no catálogo</option>
+          </select>
+          <p className="text-[10px] leading-relaxed text-muted-foreground">
+            Use checkout normal somente para itens liberados pela operação da loja. Não use esta tela para prometer validação de receita pela plataforma.
+          </p>
+        </div>
+
+        <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3 space-y-2">
+          <div className="flex items-center justify-between gap-3">
+            <label className="text-xs font-bold text-foreground/80">📋 Receita obrigatória?</label>
+            <button
+              type="button"
+              onClick={() => onChange({
+                ...metadata,
+                requires_prescription: !metadata.requires_prescription,
+                sale_mode: !metadata.requires_prescription ? "pharmacy_validation" : (metadata.sale_mode === "pharmacy_validation" ? "platform_checkout" : metadata.sale_mode || "platform_checkout"),
+              })}
+              className={`relative h-5 w-10 rounded-full transition-colors ${metadata.requires_prescription ? "bg-primary" : "bg-muted-foreground/30"}`}
+              aria-label="Alternar receita obrigatória"
+            >
+              <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition-transform ${metadata.requires_prescription ? "translate-x-5" : "translate-x-0.5"}`} />
+            </button>
+          </div>
+          <div className="flex items-center justify-between gap-3">
+            <label className="text-xs font-bold text-foreground/80">🔒 Produto controlado?</label>
+            <button
+              type="button"
+              onClick={() => onChange({
+                ...metadata,
+                controlled: !metadata.controlled,
+                sale_mode: !metadata.controlled ? "pharmacy_validation" : (metadata.sale_mode === "pharmacy_validation" ? "platform_checkout" : metadata.sale_mode || "platform_checkout"),
+              })}
+              className={`relative h-5 w-10 rounded-full transition-colors ${metadata.controlled ? "bg-primary" : "bg-muted-foreground/30"}`}
+              aria-label="Alternar produto controlado"
+            >
+              <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition-transform ${metadata.controlled ? "translate-x-5" : "translate-x-0.5"}`} />
+            </button>
+          </div>
+          {(metadata.requires_prescription || metadata.controlled) && (
+            <p className="text-[10px] leading-relaxed text-amber-800 dark:text-amber-200">
+              Este item será bloqueado no carrinho e no checkout comum. A farmácia deve seguir seu processo próprio de validação e dispensação.
+            </p>
+          )}
+        </div>
+
+        {renderTextField("Princípio ativo", "active_ingredient", "Ex: paracetamol...")}
+        {renderTextField("Dosagem / concentração", "dosage", "Ex: 500 mg, 200 ml...")}
+        {renderTextField("Forma farmacêutica", "pharma_form", "Ex: comprimido, cápsula, solução...")}
+        {renderTextField("Fabricante / marca", "manufacturer", "Ex: EMS, Medley, Nivea...")}
+        {renderTextField("Quantidade na embalagem", "pack_quantity", "Ex: 20 comprimidos, 100 ml...")}
         {renderToggle("Produto genérico?", "is_generic")}
       </FieldBox>
     ),

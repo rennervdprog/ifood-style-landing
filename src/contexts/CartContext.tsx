@@ -45,6 +45,14 @@ function generateCartKey(item: { id: string; addons?: CartAddon[]; observations?
   return `${item.id}__${addonStr}__${obsStr}`;
 }
 
+function requiresPharmacyValidation(metadata?: Record<string, any>) {
+  return Boolean(
+    metadata?.requires_prescription ||
+    metadata?.controlled ||
+    (metadata?.sale_mode && metadata.sale_mode !== "platform_checkout")
+  );
+}
+
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [items, setItems] = useState<CartItem[]>(() => {
     const saved = localStorage.getItem("cart_items");
@@ -96,6 +104,12 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const addItem = useCallback((item: Omit<CartItem, "quantity" | "cartKey">, qty = 1) => {
+    if (requiresPharmacyValidation(item.metadata)) {
+      if (typeof window !== "undefined") {
+        window.alert("Este item exige validação da farmácia e não pode ser incluído no checkout comum do ItaSuper.");
+      }
+      return;
+    }
     const cartKey = generateCartKey(item);
     setItems(prev => {
       // Bloqueio de carrinho misto: só permite produtos da mesma loja

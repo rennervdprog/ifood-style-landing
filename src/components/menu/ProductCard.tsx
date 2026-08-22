@@ -140,7 +140,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   bebidas: "🥤 Bebidas",
   doces: "🍰 Doces",
   mercado: "🛒 Mercado",
-  farmacia: "💊 Farmácia",
+  farmacias: "💊 Farmácia",
   petshop: "🐾 Petshop",
   adegas: "🍷 Adegas",
   padaria: "🥖 Padaria",
