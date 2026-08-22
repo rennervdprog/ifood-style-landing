@@ -277,8 +277,9 @@ export const ProductFormInline = ({ initial, onSave, onCancel, storeCategory, st
 
       {availableCategories.length > 1 && (
         <div className="space-y-1">
-          <label className="text-xs font-bold text-foreground/70">Categoria do produto</label>
+          <label htmlFor="product-category" className="text-xs font-bold text-foreground/70">Categoria do produto</label>
           <select
+            id="product-category"
             value={effectiveCategory || ""}
             onChange={(e) => setForm((p) => ({ ...p, metadata: { ...(p.metadata || {}), product_category: e.target.value } }))}
             className="w-full bg-background text-foreground px-3 py-2.5 rounded-lg text-sm border border-border focus:border-primary focus:outline-none"

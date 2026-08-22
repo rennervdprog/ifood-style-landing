@@ -326,22 +326,32 @@ const MenuBuilder = ({ storeId, storeCategory, storeCategories }: MenuBuilderPro
   };
 
   // ---------- Product CRUD ----------
-  const addProduct = async (sectionId: string | null, formData: ProductFormData) => {
+  const validateProductForm = (formData: ProductFormData) => {
     const finalPrice = parseFloat(formData.price) || 0;
     if (!formData.name.trim()) {
       toast.error("Preencha o nome do produto");
-      return;
+      return null;
     }
     if (!formData.price || finalPrice <= 0) {
       toast.error("Preencha o preço do produto");
-      return;
+      return null;
     }
+
     const soldByWeight = !!formData.metadata?.sold_by_weight;
     const pricePerKg = Number(formData.metadata?.price_per_kg ?? 0) || null;
     if (soldByWeight && (!pricePerKg || pricePerKg <= 0)) {
       toast.error("Defina o preço por kg para vender por peso");
-      return;
+      return null;
     }
+
+    return { finalPrice, soldByWeight, pricePerKg };
+  };
+
+  const addProduct = async (sectionId: string | null, formData: ProductFormData) => {
+    const validated = validateProductForm(formData);
+    if (!validated) return;
+    const { finalPrice, soldByWeight, pricePerKg } = validated;
+
     const { error } = await supabase.from("products").insert({
       store_id: storeId,
       section_id: sectionId,
@@ -365,13 +375,10 @@ const MenuBuilder = ({ storeId, storeCategory, storeCategories }: MenuBuilderPro
   };
 
   const updateProduct = async (id: string, formData: ProductFormData) => {
-    const finalPrice = parseFloat(formData.price) || 0;
-    const soldByWeight = !!formData.metadata?.sold_by_weight;
-    const pricePerKg = Number(formData.metadata?.price_per_kg ?? 0) || null;
-    if (soldByWeight && (!pricePerKg || pricePerKg <= 0)) {
-      toast.error("Defina o preço por kg para vender por peso");
-      return;
-    }
+    const validated = validateProductForm(formData);
+    if (!validated) return;
+    const { finalPrice, soldByWeight, pricePerKg } = validated;
+
     const { error } = await supabase
       .from("products")
       .update({
@@ -789,6 +796,10 @@ const MenuBuilder = ({ storeId, storeCategory, storeCategories }: MenuBuilderPro
     setProductSheet({ mode: "create", sectionId });
   };
 
+  const openFirstProduct = () => {
+    setProductSheet({ mode: "create", sectionId: null });
+  };
+
   const openEdit = (product: any) => {
     const sectionName =
       product.section_id ? (sections || []).find((s: any) => s.id === product.section_id)?.name || null : null;
@@ -913,6 +924,7 @@ const MenuBuilder = ({ storeId, storeCategory, storeCategories }: MenuBuilderPro
 
       {showFullEmpty ? (
         <EmptyState
+          onCreateProduct={openFirstProduct}
           onCreateSection={() => setSectionSheetOpen(true)}
           onOpenImport={() => setImportOpen(true)}
         />
@@ -1053,16 +1065,12 @@ const MenuBuilder = ({ storeId, storeCategory, storeCategories }: MenuBuilderPro
           onOpenChange={(v) => !v && setProductSheet(null)}
           mode={productSheet.mode}
           initial={productSheet.mode === "edit" ? productSheet.initial : undefined}
-          sectionName={
+          sectionId={productSheet.mode === "create" ? productSheet.sectionId : undefined}
+          sectionName={productSheet.mode === "edit" ? productSheet.sectionName : undefined}
+          sections={(sections || []).map((section: any) => ({ id: section.id, name: section.name }))}
+          onSave={(data, targetSectionId) =>
             productSheet.mode === "create"
-              ? productSheet.sectionId
-                ? (sections || []).find((s: any) => s.id === productSheet.sectionId)?.name || null
-                : null
-              : productSheet.sectionName
-          }
-          onSave={(data) =>
-            productSheet.mode === "create"
-              ? addProduct(productSheet.sectionId, data)
+              ? addProduct(targetSectionId ?? productSheet.sectionId, data)
               : updateProduct(productSheet.id, data)
           }
           storeCategory={storeCategory}
@@ -1139,9 +1147,11 @@ const MenuBuilder = ({ storeId, storeCategory, storeCategories }: MenuBuilderPro
 
 // ---------- Empty states ----------
 const EmptyState = ({
+  onCreateProduct,
   onCreateSection,
   onOpenImport,
 }: {
+  onCreateProduct: () => void;
   onCreateSection: () => void;
   onOpenImport: () => void;
 }) => (
@@ -1151,12 +1161,18 @@ const EmptyState = ({
     </div>
     <h3 className="text-lg font-bold text-foreground">Vamos montar seu cardápio</h3>
     <p className="text-sm text-muted-foreground mt-1">
-      Comece criando uma seção (ex: Hambúrgueres) ou importe seu cardápio de um CSV em poucos segundos.
+      Comece pelo primeiro produto, crie uma seção para organizar melhor ou importe um cardápio de CSV.
     </p>
     <div className="flex flex-col sm:flex-row gap-2 justify-center mt-5">
       <button
-        onClick={onCreateSection}
+        onClick={onCreateProduct}
         className="bg-primary text-primary-foreground px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-primary/90 transition-colors"
+      >
+        Adicionar primeiro produto
+      </button>
+      <button
+        onClick={onCreateSection}
+        className="bg-card border border-border text-foreground px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-muted transition-colors"
       >
         Criar primeira seção
       </button>
