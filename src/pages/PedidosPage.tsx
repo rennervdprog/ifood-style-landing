@@ -31,8 +31,6 @@ import {
   getSafetyModeRemainingMs,
   formatCooldownTime,
 } from "@/lib/pixSafeGuard";
-import { SIMULATION_MODE, createSimulatedPixCharge, simulatePaymentDelay } from "@/lib/pixSimulation";
-import SimulationBanner from "@/components/SimulationBanner";
 
 const statusConfig: Record<string, { label: string; icon: React.ElementType; color: string; bg: string; border: string }> = {
    aguardando_pagamento: { label: "Aguardando Pagamento", icon: Clock, color: "text-amber-700 dark:text-amber-400", bg: "bg-amber-50 dark:bg-amber-900/20", border: "border-amber-200 dark:border-amber-800" },
@@ -293,11 +291,9 @@ const PedidosPage = () => {
     // Confirmação via toast com ação de desfazer.
     setClearingHistory(true);
     try {
-      const { error } = await supabase
-        .from("orders")
-        .update({ visible_to_client: false } as any)
-        .eq("client_id", user.id)
-        .in("status", ["entregue", "finalizado", "cancelado"]);
+      const { error } = await supabase.rpc("client_set_completed_orders_visibility", {
+        _visible: false,
+      });
       if (error) throw error;
       toast.success("Histórico limpo!");
       queryClient.invalidateQueries({ queryKey: ["orders", user.id] });
@@ -342,11 +338,10 @@ const PedidosPage = () => {
 
   const restoreOrderVisibility = async (orderId: string) => {
     try {
-      const { error } = await supabase
-        .from("orders")
-        .update({ visible_to_client: true } as any)
-        .eq("id", orderId)
-        .eq("client_id", user!.id);
+      const { error } = await supabase.rpc("client_set_order_visibility", {
+        _order_id: orderId,
+        _visible: true,
+      });
       if (error) throw error;
       toast.success("Pedido restaurado!");
       queryClient.invalidateQueries({ queryKey: ["orders", user?.id] });
@@ -479,7 +474,6 @@ const PedidosPage = () => {
 
   const [payingOrderId, setPayingOrderId] = useState<string | null>(null);
   const [cancellingOrderId, setCancellingOrderId] = useState<string | null>(null);
-  const [simulatingPayment, setSimulatingPayment] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState<any>(null);
   const [showRefundModal, setShowRefundModal] = useState<any>(null);
   const [detailsOrder, setDetailsOrder] = useState<any>(null);
@@ -572,42 +566,26 @@ const PedidosPage = () => {
   const generatePix = async (order: any) => {
     if (!user) return;
 
-    if (!SIMULATION_MODE && isSafetyModeActive()) {
+    if (isSafetyModeActive()) {
       toast.error("Sistema de pagamentos em manutenção temporária. Aguarde alguns minutos.");
       return;
     }
-    if (!SIMULATION_MODE && isPixCooldownActive("order_pix")) {
+    if (isPixCooldownActive("order_pix")) {
       toast.error("Muitas tentativas sem pagamento. Por segurança, aguarde alguns minutos.");
       return;
     }
 
-    if (!SIMULATION_MODE) {
-      recordPixAttempt("order_pix");
-      if (isPixCooldownActive("order_pix")) {
-        activatePixCooldown("order_pix");
-        toast.error("Muitas tentativas sem pagamento. Por segurança, aguarde alguns minutos.");
-        return;
-      }
+    recordPixAttempt("order_pix");
+    if (isPixCooldownActive("order_pix")) {
+      activatePixCooldown("order_pix");
+      toast.error("Muitas tentativas sem pagamento. Por segurança, aguarde alguns minutos.");
+      return;
     }
 
     setPayingOrderId(order.id);
     setPixModal({ orderId: order.id, qrCode: null, qrCodeBase64: null, loading: true });
 
     try {
-      if (SIMULATION_MODE) {
-        // --- SIMULATION MODE: bypass real payment ---
-        const sim = createSimulatedPixCharge(Number(order.total_price), "PIX");
-        setPixModal({
-          orderId: order.id,
-          qrCode: sim.qr_code,
-          qrCodeBase64: sim.qr_code_base64,
-          loading: false,
-        });
-        toast.success(`[SIMULAÇÃO] PIX ${sim.reference_code} gerado!`);
-        setPayingOrderId(null);
-        return;
-      }
-
       // Roteador universal de pagamentos com failover automático
       const { data: profile } = await supabase
         .from("profiles")
@@ -702,39 +680,6 @@ const PedidosPage = () => {
       setPixModal(null);
     } finally {
       setPayingOrderId(null);
-    }
-  };
-
-  const handleSimulateOrderPayment = async () => {
-    if (!pixModal || !user) return;
-    setSimulatingPayment(true);
-    try {
-      await simulatePaymentDelay();
-      // Update order status from aguardando_pagamento to pendente via secure RPC
-      const { error } = await supabase
-        .rpc("confirm_order_payment", { _order_id: pixModal.orderId });
-      if (error) throw error;
-
-      // Send push notification to store owner after PIX payment confirmed
-      const order = orders?.find((o: any) => o.id === pixModal.orderId);
-      if (order?.store_id) {
-        const { data: storeData } = await supabase
-          .from("stores")
-          .select("owner_id")
-          .eq("id", order.store_id)
-          .single();
-        if (storeData?.owner_id) {
-          pushNotifyNewOrder([storeData.owner_id], order.id).catch(console.error);
-        }
-      }
-
-      toast.success("[SIMULAÇÃO] Pagamento confirmado! Pedido enviado à loja.");
-      setPixModal(null);
-      queryClient.invalidateQueries({ queryKey: ["orders", user.id] });
-    } catch (err: any) {
-      toast.error(err?.message || "Erro ao simular pagamento.");
-    } finally {
-      setSimulatingPayment(false);
     }
   };
 
@@ -868,7 +813,6 @@ const PedidosPage = () => {
 
   return (
     <div className="min-h-screen bg-background pb-32 overflow-y-auto">
-      <SimulationBanner />
 
       {/* New order notification prompt */}
       {showNewOrderNotifPrompt && (
@@ -1470,28 +1414,9 @@ const PedidosPage = () => {
                   </button>
                 )}
 
-                {SIMULATION_MODE && (
-                  <button
-                    onClick={handleSimulateOrderPayment}
-                    disabled={simulatingPayment}
-                    className="w-full flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 rounded-xl text-sm disabled:opacity-50"
-                  >
-                    {simulatingPayment ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        Processando...
-                      </>
-                    ) : (
-                      "🧪 Simular Pagamento (Ambiente de Teste)"
-                    )}
-                  </button>
-                )}
-
                 <div className="bg-muted/50 rounded-xl p-3 text-center">
                   <p className="text-xs text-muted-foreground">
-                    {SIMULATION_MODE
-                      ? "⚠️ Modo de simulação ativo. Use o botão acima para simular o pagamento."
-                      : "📱 Abra o app do seu banco, escolha Pagar com PIX e escaneie o QR Code ou cole o código copiado."}
+                    Abra o app do seu banco, escolha Pagar com PIX e escaneie o QR Code ou cole o código copiado.
                   </p>
                   <p className="text-xs text-primary font-bold mt-2">
                     ✅ Após pagar, seu pedido será liberado automaticamente!

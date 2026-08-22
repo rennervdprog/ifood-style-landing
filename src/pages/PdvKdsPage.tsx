@@ -137,7 +137,10 @@ export default function PdvKdsPage() {
         ? prev.filter((o) => o.id !== order.id)
         : prev.map((o) => (o.id === order.id ? { ...o, status: target } : o)),
     );
-    const { error } = await supabase.from("orders").update({ status: target as any }).eq("id", order.id);
+    const { error } = await supabase.rpc("store_transition_order_status", {
+      _order_id: order.id,
+      _target_status: target as any,
+    });
     setUpdatingId(null);
     if (error) { toast.error("Não foi possível atualizar o pedido."); fetchOrders(); return; }
     if (target === "pronto_para_entrega") toast.success("Pedido pronto!");
