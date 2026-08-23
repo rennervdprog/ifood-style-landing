@@ -2039,7 +2039,6 @@ export type Database = {
           confirmed_at: string | null
           created_at: string
           delivery_confirmed_by_client: boolean
-          refund_request_expires_at: string | null
           delivery_fee: number
           delivery_pin: string | null
           driver_id: string | null
@@ -2080,7 +2079,6 @@ export type Database = {
           confirmed_at?: string | null
           created_at?: string
           delivery_confirmed_by_client?: boolean
-          refund_request_expires_at?: string | null
           delivery_fee?: number
           delivery_pin?: string | null
           driver_id?: string | null
@@ -2121,7 +2119,6 @@ export type Database = {
           confirmed_at?: string | null
           created_at?: string
           delivery_confirmed_by_client?: boolean
-          refund_request_expires_at?: string | null
           delivery_fee?: number
           delivery_pin?: string | null
           driver_id?: string | null
@@ -4038,14 +4035,7 @@ export type Database = {
         Args: { _order_id: string }
         Returns: undefined
       }
-      client_set_completed_orders_visibility: {
-        Args: { _visible: boolean }
-        Returns: number
-      }
-      client_set_order_visibility: {
-        Args: { _order_id: string; _visible: boolean }
-        Returns: undefined
-      }
+      confirm_order_payment: { Args: { _order_id: string }; Returns: undefined }
       count_supporter_plans: { Args: never; Returns: number }
       credit_store_commission: {
         Args: { _amount: number; _store_id: string }
@@ -4062,10 +4052,6 @@ export type Database = {
       }
       driver_confirm_store_return: {
         Args: { _order_id: string; _settlement_code?: string }
-        Returns: undefined
-      }
-      driver_depart_route: {
-        Args: { _order_ids?: string[] }
         Returns: undefined
       }
       driver_finish_delivery: {
@@ -4232,26 +4218,6 @@ export type Database = {
       }
       store_assign_order_driver: {
         Args: { _driver_user_id: string; _order_id: string }
-        Returns: undefined
-      }
-      store_claim_order_print: {
-        Args: { _order_id: string }
-        Returns: boolean
-      }
-      store_clear_order_print_claim: {
-        Args: { _order_id: string }
-        Returns: undefined
-      }
-      store_link_order_client: {
-        Args: { _client_id: string; _order_id: string }
-        Returns: undefined
-      }
-      store_set_order_customer_contact: {
-        Args: { _customer_name?: string | null; _customer_phone?: string | null; _order_id: string }
-        Returns: undefined
-      }
-      store_transition_order_status: {
-        Args: { _order_id: string; _target_status: Database["public"]["Enums"]["order_status"] }
         Returns: undefined
       }
       store_mark_all_driver_earnings_paid: {
