@@ -97,7 +97,7 @@ describe("printPdvReceipt", () => {
 });
 
 describe("printPdvReceipt — fase 3", () => {
-  it("usa order_number sequencial quando disponível", () => {
+  it("usa sempre o ID curto como número principal", () => {
     printPdvReceipt(
       {
         id: "abcdef1234",
@@ -111,9 +111,10 @@ describe("printPdvReceipt — fase 3", () => {
       "Loja",
     );
     const html = getContainerHtml();
-    expect(html).toContain("VENDA PDV #42");
-    expect(html).toContain("ref: ABCDEF12");
+    expect(html).toContain("VENDA PDV #ABCDEF12");
+    expect(html).toContain("pedido nº 42");
   });
+
 
   it("imprime banner de origem MESA/COMANDA", () => {
     printPdvReceipt(
