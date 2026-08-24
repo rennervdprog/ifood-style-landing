@@ -805,7 +805,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
     }
     toast.success("🚀 Saiu para entrega!");
 
-    const { error } = await supabase.rpc("driver_depart_route", {
+    const { error } = await (supabase as any).rpc("driver_depart_route", {
       _order_ids: [orderId],
     });
     if (error) {
@@ -823,7 +823,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
     const readyOrders = filteredDeliveries.filter((o: any) => o.status === "pronto_para_entrega");
     if (!readyOrders.length) return;
     setDepartingId("all");
-    const { error } = await supabase.rpc("driver_depart_route", {
+    const { error } = await (supabase as any).rpc("driver_depart_route", {
       _order_ids: readyOrders.map((order: any) => order.id),
     });
     if (error) {

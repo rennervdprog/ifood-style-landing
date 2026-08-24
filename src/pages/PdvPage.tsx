@@ -576,7 +576,7 @@ const PdvPage = () => {
             if (phone) {
               // Anexa telefone/nome ao pedido criado (usado depois pela devolução)
               try {
-                await supabase.rpc("store_set_order_customer_contact", {
+                await (supabase as any).rpc("store_set_order_customer_contact", {
                   _order_id: orderId,
                   _customer_phone: phone,
                   _customer_name: apparelCustomer.name || null,

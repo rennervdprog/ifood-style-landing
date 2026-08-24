@@ -137,7 +137,7 @@ export default function PdvKdsPage() {
         ? prev.filter((o) => o.id !== order.id)
         : prev.map((o) => (o.id === order.id ? { ...o, status: target } : o)),
     );
-    const { error } = await supabase.rpc("store_transition_order_status", {
+    const { error } = await (supabase as any).rpc("store_transition_order_status", {
       _order_id: order.id,
       _target_status: target as any,
     });
