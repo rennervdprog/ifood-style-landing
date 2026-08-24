@@ -206,11 +206,13 @@ function originBanner(label: string): string {
 }
 
 function formatOrderNumber(order: { id: string; order_number?: number | null }): { big: string; small: string } {
-  if (order.order_number && order.order_number > 0) {
-    return { big: `#${order.order_number}`, small: `ref: ${order.id.slice(0, 8).toUpperCase()}` };
-  }
-  return { big: `#${order.id.slice(0, 8).toUpperCase()}`, small: "" };
+  // Sempre usamos o ID curto como identificador principal para que impressão
+  // automática e manual mostrem exatamente o mesmo número (#B96FB481).
+  const big = `#${order.id.slice(0, 8).toUpperCase()}`;
+  const small = order.order_number && order.order_number > 0 ? `pedido nº ${order.order_number}` : "";
+  return { big, small };
 }
+
 
 function renderAddress(order: PrintOrder): string {
   const a = order.delivery_address;
