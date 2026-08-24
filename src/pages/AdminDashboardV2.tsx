@@ -934,7 +934,7 @@ const AdminDashboard = () => {
       }
       // Marca antes de imprimir de forma atômica: somente o dispositivo que
       // conquistar o claim no servidor pode imprimir o pedido.
-      const { data: claim, error: claimError } = await supabase.rpc("store_claim_order_print", {
+      const { data: claim, error: claimError } = await (supabase as any).rpc("store_claim_order_print", {
         _order_id: orderId,
       });
       if (claimError || !claim) {
@@ -961,7 +961,7 @@ const AdminDashboard = () => {
       } catch (e) {
         // Falhou depois do claim — libera o pedido pra outra tentativa/dispositivo.
         console.warn("[auto-print] print falhou, revertendo claim", e);
-        await supabase.rpc("store_clear_order_print_claim", { _order_id: orderId });
+        await (supabase as any).rpc("store_clear_order_print_claim", { _order_id: orderId });
       }
     } catch (e) {
       console.warn("[auto-print] falhou", e);
@@ -1239,7 +1239,7 @@ const AdminDashboard = () => {
     try {
       // A transição é validada no servidor contra a matriz de estados e a
       // autorização da loja; a interface apenas solicita o avanço permitido.
-      const { error } = await supabase.rpc("store_transition_order_status", {
+      const { error } = await (supabase as any).rpc("store_transition_order_status", {
         _order_id: orderId,
         _target_status: newStatus,
       });

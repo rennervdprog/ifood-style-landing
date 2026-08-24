@@ -291,7 +291,7 @@ const PedidosPage = () => {
     // Confirmação via toast com ação de desfazer.
     setClearingHistory(true);
     try {
-      const { error } = await supabase.rpc("client_set_completed_orders_visibility", {
+      const { error } = await (supabase as any).rpc("client_set_completed_orders_visibility", {
         _visible: false,
       });
       if (error) throw error;
@@ -338,7 +338,7 @@ const PedidosPage = () => {
 
   const restoreOrderVisibility = async (orderId: string) => {
     try {
-      const { error } = await supabase.rpc("client_set_order_visibility", {
+      const { error } = await (supabase as any).rpc("client_set_order_visibility", {
         _order_id: orderId,
         _visible: true,
       });
