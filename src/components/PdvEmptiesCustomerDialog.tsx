@@ -40,10 +40,10 @@ const PdvEmptiesCustomerDialog = ({ open, orderId, onClose, onFound }: Props) =>
         toast.error("Cliente não encontrado.");
         return;
       }
-      const { error: upErr } = await supabase
-        .from("orders")
-        .update({ client_id: data.user_id })
-        .eq("id", orderId);
+      const { error: upErr } = await (supabase as any).rpc("store_link_order_client", {
+        _order_id: orderId,
+        _client_id: data.user_id,
+      });
       if (upErr) throw upErr;
       onFound(data.user_id, data.full_name);
       setInput("");

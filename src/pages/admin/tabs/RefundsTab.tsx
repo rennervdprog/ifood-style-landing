@@ -7,9 +7,9 @@ interface Props {
 const RefundsTab = ({ storeId }: Props) => (
   <div className="space-y-4">
     <div>
-      <h2 className="text-lg font-black text-foreground">Solicitações de Reembolso</h2>
+      <h2 className="text-lg font-black text-foreground">Casos de devolução PIX Direto</h2>
       <p className="text-xs text-muted-foreground">
-        Gerencie pedidos de reembolso e disputas dos clientes
+        Acompanhe a resposta da loja, a devolução direta ao cliente e os comprovantes
       </p>
     </div>
     <AdminRefundPanel storeId={storeId} />

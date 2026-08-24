@@ -153,11 +153,11 @@ const STATUS_MESSAGES: Record<string, {
   },
   cancelado: {
     pushTitle: "❌ Pedido cancelado",
-    pushBody: (p) => `Seu pedido #${p.orderId.slice(0, 8).toUpperCase()} foi cancelado.${p.paymentMethod === "pix" ? " O reembolso será processado." : ""}`,
+    pushBody: (p) => `Seu pedido #${p.orderId.slice(0, 8).toUpperCase()} foi cancelado.${p.paymentMethod === "pix_direto" ? " A loja foi chamada para registrar a devolução do PIX." : ""}`,
     whatsApp: (p) =>
-      p.paymentMethod === "pix"
-        ? `❌ *${p.storeName}* informa: Seu pedido #${p.orderId.slice(0, 8).toUpperCase()} foi cancelado.\n\n💰 O reembolso de ${formatBRL(p.totalPrice)} via PIX será processado em breve.\n\nDesculpe o transtorno! 🙏`
-        : `❌ *${p.storeName}* informa: Seu pedido #${p.orderId.slice(0, 8).toUpperCase()} foi cancelado.\n\nDesculpe o transtorno! 🙏`,
+      p.paymentMethod === "pix_direto"
+        ? `❌ *${p.storeName}* informa: Seu pedido #${p.orderId.slice(0, 8).toUpperCase()} foi cancelado.\n\nComo o PIX foi pago diretamente à loja, ela foi chamada para registrar a devolução e o comprovante. Acompanhe o caso pelo ItaSuper.\n\nDesculpe o transtorno!`
+        : `❌ *${p.storeName}* informa: Seu pedido #${p.orderId.slice(0, 8).toUpperCase()} foi cancelado.\n\nO pagamento desta modalidade é tratado presencialmente; não há reembolso financeiro processado pelo ItaSuper.\n\nDesculpe o transtorno!`,
   },
 };
 

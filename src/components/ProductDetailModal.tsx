@@ -108,6 +108,11 @@ const ProductDetailModal = ({ product, storeName, storeCategory, singleSize = fa
   const breadTypes: string[] = meta.bread_types || [];
 
   const isPharmacy = cat === "farmacias";
+  const requiresPharmacyValidation = isPharmacy && (
+    !!meta.requires_prescription ||
+    !!meta.controlled ||
+    (meta.sale_mode && meta.sale_mode !== "platform_checkout")
+  );
   const isJapanese = cat === "japonesa" && !isBeverage;
 
   const isCafe = cat === "cafeteria" && !isBeverage;
@@ -552,10 +557,13 @@ const ProductDetailModal = ({ product, storeName, storeCategory, singleSize = fa
 
       {isPharmacy && (
         <section className="space-y-2">
-          {meta.requires_prescription && (
-            <div className="flex items-center gap-2 rounded-2xl border border-destructive/20 bg-destructive/10 p-3">
-              <AlertTriangle className="h-4 w-4 shrink-0 text-destructive" />
-              <span className="text-xs font-bold text-destructive">Este produto exige receita médica</span>
+          {requiresPharmacyValidation && (
+            <div className="flex items-start gap-2 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-3">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" />
+              <div className="space-y-1">
+                <span className="block text-xs font-bold text-amber-900">Validação pela farmácia necessária</span>
+                <span className="block text-[11px] leading-relaxed text-amber-900/80">Este item pode ser consultado no catálogo, mas não é incluído no checkout comum do ItaSuper.</span>
+              </div>
             </div>
           )}
           <div className="space-y-2 rounded-2xl border border-border bg-card p-3">
@@ -840,7 +848,7 @@ const ProductDetailModal = ({ product, storeName, storeCategory, singleSize = fa
   );
 
   const handlePrimary = () => {
-    if (isOutOfStock) return;
+    if (isOutOfStock || requiresPharmacyValidation) return;
     if (totalSteps === 2 && step === 1) {
       setStep(2);
       return;
@@ -866,7 +874,9 @@ const ProductDetailModal = ({ product, storeName, storeCategory, singleSize = fa
     closeAndReset();
   };
 
-  const primaryLabel = totalSteps === 2 && step === 1
+  const primaryLabel = requiresPharmacyValidation
+    ? "Validação pela farmácia necessária"
+    : totalSteps === 2 && step === 1
     ? "Próximo: Personalizar"
     : isOutOfStock
       ? "Esgotado"
@@ -874,7 +884,7 @@ const ProductDetailModal = ({ product, storeName, storeCategory, singleSize = fa
         ? "Carregando opções..."
       : `Adicionar • ${formatBRL(lineTotal)}`;
 
-  const primaryEnabled = totalSteps === 2 && step === 1 ? !isOutOfStock : !addonsPending && allRequiredMet && !isOutOfStock;
+  const primaryEnabled = !requiresPharmacyValidation && (totalSteps === 2 && step === 1 ? !isOutOfStock : !addonsPending && allRequiredMet && !isOutOfStock);
 
   return (
     <Dialog open={open} onOpenChange={(nextOpen) => { if (!nextOpen) closeAndReset(); }}>

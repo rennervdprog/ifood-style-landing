@@ -576,10 +576,11 @@ const PdvPage = () => {
             if (phone) {
               // Anexa telefone/nome ao pedido criado (usado depois pela devolução)
               try {
-                await supabase.from("orders").update({
-                  customer_phone: phone,
-                  customer_name: apparelCustomer.name || null,
-                } as any).eq("id", orderId);
+                await (supabase as any).rpc("store_set_order_customer_contact", {
+                  _order_id: orderId,
+                  _customer_phone: phone,
+                  _customer_name: apparelCustomer.name || null,
+                });
               } catch {}
               await (supabase as any).rpc("apparel_touch_customer", {
                 _store_id: store.id,

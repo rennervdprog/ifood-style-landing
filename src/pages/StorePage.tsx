@@ -1893,6 +1893,11 @@ const ProductCard = memo(({ product, disabled, onClick, onPrefetch, storeCategor
   // ===== PIZZA =====
   // ===== FARMACIA =====
   const isPharmacy = cat === "farmacias";
+  const requiresPharmacyValidation = isPharmacy && (
+    !!meta.requires_prescription ||
+    !!meta.controlled ||
+    (meta.sale_mode && meta.sale_mode !== "platform_checkout")
+  );
 
   // Price display logic
   const priceDisplay = `${formatBRL(effective)}`;
@@ -1901,7 +1906,7 @@ const ProductCard = memo(({ product, disabled, onClick, onPrefetch, storeCategor
   const ctaLabel = (() => {
     if (isOutOfStock) return "Esgotado";
     if (disabled) return "Indisponível";
-    if (isPharmacy && meta.requires_prescription) return "Ver detalhes";
+    if (requiresPharmacyValidation) return "Ver detalhes";
     return "Adicionar";
   })();
 
@@ -1943,6 +1948,16 @@ const ProductCard = memo(({ product, disabled, onClick, onPrefetch, storeCategor
             {isPharmacy && meta.requires_prescription && (
               <span className="text-[10px] bg-destructive/10 text-destructive px-1.5 py-0.5 rounded-full font-bold">
                 📋 Receita obrigatória
+              </span>
+            )}
+            {isPharmacy && meta.controlled && (
+              <span className="text-[10px] bg-amber-500/10 text-amber-700 px-1.5 py-0.5 rounded-full font-bold">
+                🔒 Controlado
+              </span>
+            )}
+            {isPharmacy && meta.sale_mode === "not_available_app" && (
+              <span className="text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded-full font-bold">
+                Somente consulta
               </span>
             )}
             {/* Pharmacy: generic badge */}
@@ -2093,11 +2108,11 @@ const ProductCard = memo(({ product, disabled, onClick, onPrefetch, storeCategor
 
 
           {/* Farmacia: dosage + manufacturer */}
-          {isPharmacy && (meta.dosage || meta.manufacturer) && (
+          {isPharmacy && (meta.dosage || meta.manufacturer || meta.pharma_form || meta.pack_quantity) && (
             <p className="text-[10px] text-muted-foreground mt-1">
-              {meta.dosage && <span className="font-medium">{meta.dosage}</span>}
-              {meta.dosage && meta.manufacturer && " · "}
-              {meta.manufacturer && <span>{meta.manufacturer}</span>}
+              {[meta.dosage, meta.pharma_form, meta.pack_quantity, meta.manufacturer].filter(Boolean).map((value: string, index: number) => (
+                <span key={`${value}-${index}`}>{index > 0 && " · "}{value}</span>
+              ))}
             </p>
           )}
 

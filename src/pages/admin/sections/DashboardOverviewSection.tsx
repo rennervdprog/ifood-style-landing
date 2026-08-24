@@ -541,15 +541,23 @@ export default function DashboardOverviewSection(props: Props) {
               href={buildAcceptWhatsAppHref(order)}
               target="_blank"
               rel="noopener noreferrer"
-              onClick={(e) => {
-                if (buildAcceptWhatsAppHref(order) === "#") e.preventDefault();
-                handleAcceptOrder(order);
-                updateOrderStatus(order.id, "preparando");
+              onClick={async (e) => {
+                // Grava o status ANTES de imprimir/abrir o WhatsApp — a navegação
+                // do link podia cancelar a requisição e o pedido não ia p/ preparando.
+                e.preventDefault();
+                const href = buildAcceptWhatsAppHref(order);
+                if (href !== "#") window.open(href, "_blank", "noopener,noreferrer");
+                try {
+                  await updateOrderStatus(order.id, "preparando");
+                } finally {
+                  handleAcceptOrder(order);
+                }
               }}
               className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-black py-3.5 rounded-xl text-sm active:scale-[0.98] transition-all h-12 flex items-center justify-center no-underline"
             >
               {order.payment_method === "pix" ? "🍳 COMEÇAR PRODUÇÃO" : "✓ ACEITAR PEDIDO"}
             </a>
+
             {cancelConfirm === order.id ? (
               <div className="mt-2 space-y-2 rounded-xl border border-destructive/20 bg-destructive/5 p-3">
                 <p className="text-xs font-bold text-destructive">Motivo do cancelamento</p>

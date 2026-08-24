@@ -388,16 +388,24 @@ const AdminOrderCardImpl = (props: AdminOrderCardProps) => {
                 href={acceptHref}
                 target="_blank"
                 rel="noopener noreferrer"
-                onClick={(e) => {
-                  if (acceptHref === "#") e.preventDefault();
-                  handleAcceptOrder(order);
+                onClick={async (e) => {
+                  // Sempre controlamos a ordem: 1) grava status, 2) imprime, 3) WhatsApp.
+                  // A navegação nativa do <a> podia cancelar o request em andamento.
+                  e.preventDefault();
+                  const waWindow = acceptHref !== "#" ? window.open(acceptHref, "_blank", "noopener,noreferrer") : null;
                   setActiveTab("preparando");
-                  updateOrderStatus(order.id, "preparando");
+                  try {
+                    await updateOrderStatus(order.id, "preparando");
+                  } finally {
+                    void waWindow;
+                    handleAcceptOrder(order);
+                  }
                 }}
                 className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-black py-3 rounded-xl text-sm active:scale-[0.98] transition-transform h-12 flex items-center justify-center no-underline"
               >
                 {order.payment_method === "pix" ? "🍳 COMEÇAR PRODUÇÃO" : "✓ ACEITAR PEDIDO"}
               </a>
+
               {cancelConfirm === order.id ? (
                 <div className="space-y-2 bg-destructive/5 border border-destructive/20 rounded-xl p-3">
                   <p className="text-xs font-bold text-destructive">Motivo do cancelamento</p>
@@ -418,11 +426,11 @@ const AdminOrderCardImpl = (props: AdminOrderCardProps) => {
                       {opt.label}
                     </button>
                   ))}
-                  {order.payment_method === "pix" && (
+                  {order.payment_method === "pix_direto" && (
                     <div className="flex items-start gap-1.5 bg-amber-500/10 border border-amber-500/20 rounded-lg px-2.5 py-2 mt-1">
                       <span className="text-[10px] text-amber-600">💡</span>
                       <p className="text-[10px] text-amber-700 dark:text-amber-400">
-                        Pagamento via PIX Online — o reembolso será processado automaticamente via Asaas.
+                        PIX Direto confirmado: ao cancelar, a loja deverá devolver o valor ao cliente e registrar o comprovante no caso de reembolso.
                       </p>
                     </div>
                   )}
@@ -491,11 +499,11 @@ const AdminOrderCardImpl = (props: AdminOrderCardProps) => {
                       {opt.label}
                     </button>
                   ))}
-                  {order.payment_method === "pix" && (
+                  {order.payment_method === "pix_direto" && (
                     <div className="flex items-start gap-1.5 bg-amber-500/10 border border-amber-500/20 rounded-lg px-2.5 py-2 mt-1">
                       <span className="text-[10px] text-amber-600">💡</span>
                       <p className="text-[10px] text-amber-700 dark:text-amber-400">
-                        Pagamento via PIX Online — o reembolso será processado automaticamente via Asaas.
+                        PIX Direto confirmado: ao cancelar, a loja deverá devolver o valor ao cliente e registrar o comprovante no caso de reembolso.
                       </p>
                     </div>
                   )}
@@ -539,11 +547,11 @@ const AdminOrderCardImpl = (props: AdminOrderCardProps) => {
                     {opt.label}
                   </button>
                 ))}
-                {order.payment_method === "pix" && (
+                {order.payment_method === "pix_direto" && (
                   <div className="flex items-start gap-1.5 bg-amber-500/10 border border-amber-500/20 rounded-lg px-2.5 py-2 mt-1">
                     <span className="text-[10px] text-amber-600">💡</span>
                     <p className="text-[10px] text-amber-700 dark:text-amber-400">
-                      Pagamento via PIX Online — o reembolso será processado automaticamente via Asaas.
+                      PIX Direto confirmado: ao cancelar, a loja deverá devolver o valor ao cliente e registrar o comprovante no caso de reembolso.
                     </p>
                   </div>
                 )}

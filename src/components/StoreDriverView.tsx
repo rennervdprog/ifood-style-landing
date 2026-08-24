@@ -805,10 +805,9 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
     }
     toast.success("🚀 Saiu para entrega!");
 
-    const { error } = await supabase
-      .from("orders")
-      .update({ status: "saiu_entrega" as any })
-      .eq("id", orderId);
+    const { error } = await (supabase as any).rpc("driver_depart_route", {
+      _order_ids: [orderId],
+    });
     if (error) {
       if (previousMy) queryClient.setQueryData(myKey, previousMy);
       toast.error("Erro ao atualizar status.");
@@ -824,10 +823,15 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
     const readyOrders = filteredDeliveries.filter((o: any) => o.status === "pronto_para_entrega");
     if (!readyOrders.length) return;
     setDepartingId("all");
-    for (const order of readyOrders) {
-      await supabase.from("orders").update({ status: "saiu_entrega" as any }).eq("id", order.id);
-      notifyClientFromDriver(order, "saiu_entrega");
+    const { error } = await (supabase as any).rpc("driver_depart_route", {
+      _order_ids: readyOrders.map((order: any) => order.id),
+    });
+    if (error) {
+      toast.error(error.message || "Não foi possível iniciar a rota.");
+      setDepartingId(null);
+      return;
     }
+    readyOrders.forEach((order: any) => notifyClientFromDriver(order, "saiu_entrega"));
     toast.success(`🚀 ${readyOrders.length} pedido(s) saíram para entrega!`);
     queryClient.invalidateQueries({ queryKey: ["store-driver-my-deliveries", user?.id] });
     setDepartingId(null);

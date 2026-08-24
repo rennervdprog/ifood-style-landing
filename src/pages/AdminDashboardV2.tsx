@@ -932,16 +932,12 @@ const AdminDashboard = () => {
         console.info("[auto-print] pulado: motivo=already-printed", orderId);
         return;
       }
-      // Marca ANTES de imprimir de forma atômica (só quem "ganhar" a corrida
-      // imprime). Se a UPDATE não afetar linha, outro dispositivo já pegou.
-      const { data: claim } = await supabase
-        .from("orders")
-        .update({ printed_at: new Date().toISOString() } as any)
-        .eq("id", orderId)
-        .is("printed_at", null)
-        .select("id")
-        .maybeSingle();
-      if (!claim) {
+      // Marca antes de imprimir de forma atômica: somente o dispositivo que
+      // conquistar o claim no servidor pode imprimir o pedido.
+      const { data: claim, error: claimError } = await (supabase as any).rpc("store_claim_order_print", {
+        _order_id: orderId,
+      });
+      if (claimError || !claim) {
         console.info("[auto-print] pulado: motivo=claim-lost", orderId);
         return;
       }
@@ -965,7 +961,7 @@ const AdminDashboard = () => {
       } catch (e) {
         // Falhou depois do claim — libera o pedido pra outra tentativa/dispositivo.
         console.warn("[auto-print] print falhou, revertendo claim", e);
-        await supabase.from("orders").update({ printed_at: null } as any).eq("id", orderId);
+        await (supabase as any).rpc("store_clear_order_print_claim", { _order_id: orderId });
       }
     } catch (e) {
       console.warn("[auto-print] falhou", e);
@@ -1241,11 +1237,12 @@ const AdminDashboard = () => {
     // to ensure: 1) print happens first, 2) WhatsApp opens after with PIN.
 
     try {
-      // Direct update and refetch to ensure source of truth and instant tab switch without ghosting
-      const { error } = await supabase
-        .from("orders")
-        .update({ status: newStatus })
-        .eq("id", orderId);
+      // A transição é validada no servidor contra a matriz de estados e a
+      // autorização da loja; a interface apenas solicita o avanço permitido.
+      const { error } = await (supabase as any).rpc("store_transition_order_status", {
+        _order_id: orderId,
+        _target_status: newStatus,
+      });
 
       if (error) {
         toast.error(`Erro ao atualizar pedido: ${error.message}`);
@@ -1394,16 +1391,11 @@ const AdminDashboard = () => {
     if (!cancelReason) { toast.error("Selecione o motivo do cancelamento."); return; }
     setCancellingOrder(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const res = await supabase.functions.invoke("cancel-order-refund", {
-        body: { order_id: order.id, cancel_reason: cancelReason },
-        headers: { Authorization: `Bearer ${session?.access_token}` },
+      const { data: cancellation, error } = await (supabase as any).rpc("apply_cancellation_policy", {
+        _order_id: order.id,
+        _reason: cancelReason,
       });
-
-      // supabase-js retorna mensagem genérica em res.error; o motivo real
-      // vem no corpo (res.data.error). Preferir o corpo quando existir.
-      if (res.data?.error) throw new Error(res.data.error);
-      if (res.error) throw new Error(res.error.message || "Falha ao cancelar pedido");
+      if (error) throw error;
 
       queryClient.invalidateQueries({ queryKey: ["store-orders", store?.id] });
       setCancelConfirm(null);
@@ -1425,7 +1417,12 @@ const AdminDashboard = () => {
         zapiEnabled: !!cancelSettings.zapi_enabled,
       });
 
-      toast.success(res.data?.message || "Pedido cancelado.", { duration: 8000 });
+      toast.success(
+        cancellation?.requires_store_refund
+          ? "Pedido cancelado. Registre a devolução do PIX Direto no caso aberto para o cliente."
+          : "Pedido cancelado. Pagamentos físicos não geram reembolso financeiro pela plataforma.",
+        { duration: 8000 }
+      );
     } catch (e: any) {
       toast.error(`Erro ao cancelar: ${e?.message}`);
     } finally {
