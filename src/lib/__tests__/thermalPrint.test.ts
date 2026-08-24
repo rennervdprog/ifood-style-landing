@@ -358,15 +358,16 @@ describe("printThermalReceipt — delivery", () => {
     expect(getContainerHtml()).toContain("PEDIDO AGENDADO");
   });
 
-  it("nº de pedido sequencial quando disponível", () => {
+  it("mantém o ID curto mesmo com order_number sequencial", () => {
     printThermalReceipt(
       { ...baseOrder, order_number: 1024 },
       "Pizzaria", "Lia",
     );
     const html = getContainerHtml();
-    expect(html).toContain("PEDIDO #1024");
-    expect(html).toContain("ref:");
+    expect(html).toContain("pedido nº 1024");
+    expect(countOccurrences(html, "PEDIDO #")).toBeGreaterThanOrEqual(1);
   });
+
 
   it("imprime 2 vias por padrão", () => {
     printThermalReceipt(baseOrder, "Pizzaria", "Lia");
