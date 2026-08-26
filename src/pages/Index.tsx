@@ -128,7 +128,7 @@ const faqs = [
   { q: "Preciso baixar algum aplicativo?", a: "Não! Você gerencia tudo pelo navegador do celular ou computador. Seus clientes também pedem direto pelo link, sem instalar nada." },
   { q: "Como funciona o PIX automático?", a: "Quando o cliente escolhe PIX, geramos um QR Code automaticamente. Assim que ele paga, a confirmação é instantânea — sem precisar conferir extrato." },
   { q: "Posso trocar de plano depois?", a: "Sim! Você pode migrar entre planos a qualquer momento. Basta solicitar pelo painel da loja e o admin aprova a troca." },
-  { q: "O plano Essencial cobra alguma comissão?", a: "Não! Zero comissão. Começa em R$ 0/mês e sobe pra R$ 89,90/mês quando sua loja atingir R$ 5.000 em vendas. Há apenas uma taxa PIX fixa de R$ 1,99 por transação e R$ 0,99 por entrega via plataforma." },
+  { q: "O plano Essencial cobra alguma comissão?", a: "Não! Zero comissão. Começa em R$ 0/mês e passa para R$ 89,90/mês quando sua loja acumular R$ 5.000 em vendas dentro da janela de análise de 60 dias. Há uma taxa PIX online de R$ 1,99 quando aplicável e R$ 0,99 de taxa de plataforma na entrega, conforme a configuração da oferta." },
   { q: "Como recebo os pedidos?", a: "Você recebe notificação sonora e push no celular em tempo real. O painel mostra todos os pedidos organizados para você gerenciar." },
 ];
 
@@ -278,7 +278,7 @@ const Index = () => {
               <CheckCircle2 className="h-4 w-4 text-primary" /> Sem cartão de crédito
             </span>
             <span className="flex items-center gap-1.5">
-              <Clock className="h-4 w-4 text-primary" /> Aprovação em 24h
+              <Clock className="h-4 w-4 text-primary" /> Análise do cadastro
             </span>
             <span className="flex items-center gap-1.5">
               <CheckCircle2 className="h-4 w-4 text-primary" /> Cancele quando quiser
@@ -501,7 +501,7 @@ const Index = () => {
             { value: `${storesCount}+`, label: "Lojas ativas" },
             { value: `${ordersCount}k+`, label: "Pedidos recebidos" },
             { value: "< 5min", label: "Para criar cardápio" },
-            { value: "24h", label: "Suporte disponível" },
+            { value: "WhatsApp", label: "Canal de suporte" },
           ].map((s) => (
             <div key={s.label}>
               <p className="text-3xl md:text-4xl font-extrabold text-primary">{s.value}</p>
@@ -585,7 +585,7 @@ const Index = () => {
              Pronto para profissionalizar o seu delivery?
            </h2>
            <p className="text-black/70 text-xl md:text-2xl mb-12 font-medium max-w-2xl mx-auto">
-             Junte-se a centenas de lojistas que já estão lucrando com o ItaSuper.
+             Organize sua operação de pedidos e delivery com o ItaSuper.
            </p>
            <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
              <Button size="lg" onClick={handleCTA} className="bg-black text-white hover:bg-black/90 text-xl font-bold px-12 py-8 rounded-full shadow-2xl transition-all hover:scale-105">
@@ -596,7 +596,7 @@ const Index = () => {
              </Button>
            </div>
            <p className="mt-8 text-black/50 font-bold text-sm tracking-widest uppercase">
-             Aprovação em até 24h • Sem fidelidade • Suporte humanizado
+             Cadastro sujeito à análise • Sem fidelidade • Suporte via WhatsApp
            </p>
          </div>
        </section>

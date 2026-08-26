@@ -85,11 +85,11 @@ const features = [
   { icon: Package, title: "Gestão De Pedidos", desc: "Emissão de nota e mensagem de atualização sobre os pedidos pro WhatsApp (abre o WhatsApp para envio manual)." },
   { icon: BarChart3, title: "Finanças e Relatórios", desc: "Tudo 100% detalhado: saiba qual produto mais vende, qual dia vendeu mais e tenha relatórios de todos os dias." },
   { icon: Truck, title: "Motoboy Integrado", desc: "Ao marcar pedido como pronto, um alerta sonoro avisa instantaneamente o motoboy no aplicativo." },
-  { icon: CreditCard, title: "PIX Automático", desc: "Pagamento confirmado na hora, sem necessidade de conferência manual de extrato bancário." },
+  { icon: CreditCard, title: "PIX online", desc: "Pagamento e confirmação conforme a modalidade habilitada para a loja e escolhida no checkout." },
   { icon: Smartphone, title: "Cardápio no Celular", desc: "Link profissional com fotos em HD. O cliente abre e já pede, sem baixar nenhum app." },
   { icon: QrCode, title: "QR Code Exclusivo", desc: "O cliente aponta a câmera para o QR Code e faz o pedido digital sozinho." },
   { icon: Bell, title: "Alerta Instantâneo", desc: "Notificação push e alerta sonoro no celular para você nunca perder um pedido novo." },
-  { icon: Globe, title: "Brasil Inteiro", desc: "Plataforma robusta pronta para atender lojistas e motoboys em qualquer cidade do país." },
+  { icon: Globe, title: "Disponível por cidade", desc: "Confira as cidades e lojas disponíveis na plataforma antes de começar a operar." },
 ];
 
 const steps = [
@@ -107,10 +107,10 @@ const testimonials = [
 
 const faqs = [
   { q: "Preciso baixar algum aplicativo?", a: "Não! Você gerencia tudo pelo navegador do celular ou computador. Seus clientes também pedem direto pelo link, sem instalar nada." },
-  { q: "Como funciona o PIX automático?", a: "Quando o cliente escolhe PIX, geramos um QR Code automaticamente. Assim que ele paga, a confirmação é instantânea — sem precisar conferir extrato." },
+  { q: "Como funciona o PIX?", a: "No checkout, o Cliente pode encontrar Pix online, Pix direto ou Pix em maquininha conforme a configuração da loja. Na relação ItaSuper–Lojista, o PIX também é usado para mensalidades e para a cobrança dos repasses acumulados; são fluxos diferentes e as condições aparecem no painel." },
   { q: "Posso trocar de plano depois?", a: "Sim! Você pode migrar entre planos a qualquer momento. Basta solicitar pelo painel da loja e o admin aprova a troca." },
-  { q: "O plano Essencial cobra alguma comissão?", a: "Não. O Essencial não cobra comissão por pedido. Quando aplicável, há taxa operacional de PIX online de R$ 1,99 por pedido e taxa de plataforma de R$ 0,99 por entrega, somada à taxa de entrega informada pela loja." },
-  { q: "Como funciona a cobrança semanal de taxas?", a: "Taxas e comissões aplicáveis a vendas físicas ficam detalhadas no Financeiro. Quando o saldo do ciclo atinge R$ 150,00, uma cobrança PIX pode ser gerada na segunda-feira. Cada ciclo é separado; uma cobrança pendente por 30 dias ou um saldo de R$ 500,00 ou mais pode bloquear novos pedidos até a regularização." },
+  { q: "O plano Essencial cobra alguma comissão?", a: "Não há comissão sobre pedido online no Essencial. Quando aplicável, o checkout pode exibir taxa operacional de PIX online de R$ 1,99 por pedido. Na entrega, a taxa de plataforma de R$ 0,99 é acrescentada à taxa definida pela loja e paga pelo Cliente." },
+  { q: "Como funciona a cobrança dos repasses?", a: "Quando o Lojista recebe diretamente em dinheiro ou PIX, os R$ 0,99 da taxa de plataforma acumulam no Financeiro. A cobrança do valor acumulado é gerada via PIX toda segunda-feira, conforme o ciclo e as regras operacionais exibidas no painel. Parâmetros adicionais de mínimo, bloqueio ou suspensão dependem da contratação e da configuração vigente." },
   { q: "Como recebo os pedidos?", a: "Você recebe notificação sonora e push no celular em tempo real. O painel mostra todos os pedidos organizados para você gerenciar." },
 ];
 
@@ -120,8 +120,6 @@ const faqs = [
    const navigate = useNavigate();
    const [openFaq, setOpenFaq] = useState<number | null>(null);
    const statsRef = useInView(0.3);
-  const storesCount = useCountUp(50, 2000, statsRef.visible);
-  const ordersCount = useCountUp(10, 2000, statsRef.visible);
 
   const handleCTA = () => navigate("/cadastro-lojista");
   const handleWhatsApp = () =>
@@ -183,13 +181,13 @@ const faqs = [
               <span className="relative z-10 text-primary">ItaSuper</span>
               <span className="absolute bottom-1 left-0 w-full h-3 bg-primary/15 -z-0 rounded" />
             </span>
-            <span className="block text-2xl sm:text-3xl lg:text-4xl mt-2 text-muted-foreground font-bold">Cardápio digital, PIX e PDV sem comissão por pedido</span>
+            <span className="block text-2xl sm:text-3xl lg:text-4xl mt-2 text-muted-foreground font-bold">Cardápio digital, PIX e PDV com regras claras por plano</span>
           </h1>
 
           <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 animate-fade-in leading-relaxed">
-            Crie um <strong className="text-foreground">cardápio digital completo</strong> com fotos, PIX automático e notificação de pedidos.
-            Seus clientes pedem pelo celular — você recebe tudo organizado.
-            <span className="block mt-2 text-primary font-semibold">A partir de R$ 0/mês.</span>
+            Escolha o plano adequado para sua operação: <strong className="text-foreground">cardápio digital, pedidos online, PIX e PDV</strong> conforme a opção contratada.
+            Confira custos, recursos e condições antes de finalizar.
+            <span className="block mt-2 text-primary font-semibold">O plano Essencial começa em R$ 0/mês, conforme as regras exibidas.</span>
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in">
@@ -201,16 +199,8 @@ const faqs = [
             </Button>
           </div>
 
-          {/* social proof micro */}
-          <div className="mt-10 flex items-center justify-center gap-3 text-sm text-muted-foreground animate-fade-in">
-            <div className="flex -space-x-2">
-              {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="w-8 h-8 rounded-full bg-primary/20 border-2 border-background flex items-center justify-center text-xs font-bold text-primary">
-                  {["M", "J", "A", "R"][i - 1]}
-                </div>
-              ))}
-            </div>
-            <span>+50 lojas já usam • 10.000+ pedidos recebidos</span>
+          <div className="mt-10 flex items-center justify-center text-sm text-muted-foreground animate-fade-in">
+            <span>Planos transparentes, custos apresentados antes da contratação</span>
           </div>
         </div>
       </section>
@@ -271,7 +261,7 @@ const faqs = [
             Tudo que seu delivery precisa
           </h2>
           <p className="text-center text-muted-foreground mb-14 max-w-xl mx-auto">
-            Praticidade total para você e para seu cliente. Incluso em todos os planos.
+            Recursos disponíveis conforme o plano contratado e a configuração da loja.
           </p>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {features.map((f) => (
@@ -291,10 +281,10 @@ const faqs = [
       <section ref={statsRef.ref} className="py-14 border-y border-border">
         <div className="mx-auto max-w-4xl grid grid-cols-2 md:grid-cols-4 gap-8 text-center px-4">
           {[
-            { value: `${storesCount}+`, label: "Lojas ativas" },
-            { value: `${ordersCount}k+`, label: "Pedidos recebidos" },
-            { value: "< 5min", label: "Para criar cardápio" },
-            { value: "24h", label: "Suporte disponível" },
+            { value: "2", label: "Planos para novas lojas" },
+            { value: "Conforme oferta", label: "Período inicial" },
+            { value: "0%", label: "Comissão no Essencial" },
+            { value: "WhatsApp", label: "Suporte disponível" },
           ].map((s) => (
             <div key={s.label}>
               <p className="text-3xl md:text-4xl font-extrabold text-primary">{s.value}</p>
@@ -348,7 +338,7 @@ const faqs = [
                     {/* Price */}
                     <div className="mb-3">
                       <span className="text-4xl font-extrabold text-foreground">
-                        R$ {plan.monthlyFee}
+                        R$ {plan.monthlyFee.toFixed(2).replace(".", ",")}
                       </span>
                       <span className="text-muted-foreground text-sm">/mês</span>
                     </div>
@@ -386,7 +376,7 @@ const faqs = [
                                 <p className="font-bold text-foreground">Taxa de {formatBRL(plan.deliveryFee)} por entrega</p>
                                 <p className="text-muted-foreground leading-relaxed"><strong className="text-foreground">Paga pelo cliente</strong>, somada à taxa de entrega informada pela loja no checkout.</p>
                                 <p className="text-muted-foreground leading-relaxed">Em vendas pagas em dinheiro, cartão na entrega ou PIX maquininha, a parte da plataforma é acompanhada no Financeiro.</p>
-                                <p className="text-muted-foreground leading-relaxed pt-1 border-t border-border">Quando o ciclo atingir <strong className="text-foreground">{formatBRL(REPASSE_RULES.MIN_AUTO_CHARGE_BRL)}</strong>, uma cobrança PIX poderá ser criada na segunda-feira.</p>
+                                <p className="text-muted-foreground leading-relaxed pt-1 border-t border-border">Em pedidos recebidos diretamente pelo Lojista em dinheiro ou PIX, a parte da plataforma acumula no Financeiro. A cobrança do acumulado é gerada via PIX às segundas-feiras, conforme o ciclo e as regras exibidas no painel.</p>
                               </>
                             ) : (
                               <p className="text-muted-foreground leading-relaxed">Este plano não adiciona taxa da plataforma à entrega. A loja recebe integralmente a taxa de entrega que definir.</p>

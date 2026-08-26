@@ -67,7 +67,7 @@ const TUTORIAIS: TutorialSection[] = [
       },
       {
         title: "Modo de Entrega",
-        content: "Aqui você define se quer usar SEU motoboy próprio. Se escolher motoboy próprio, digite quanto cobra de taxa de entrega. O sistema mostra automaticamente quanto o cliente vai pagar (sua taxa + taxa da plataforma).",
+        content: "Aqui você define a taxa de entrega da sua loja. O motoboy é escolhido, contratado e pago pelo Lojista fora do ItaSuper; o aplicativo serve para facilitar a integração. O sistema mostra automaticamente quanto o Cliente poderá pagar (sua taxa + taxa da plataforma de R$ 0,99, quando aplicável).",
         tip: "Veja sempre o quadro 'Como o cliente vai ver' para entender o valor final.",
       },
       {
@@ -323,7 +323,7 @@ const TUTORIAIS: TutorialSection[] = [
     id: "drivers",
     icon: Bike,
     title: "Motoboys",
-    shortDesc: "Cadastrar e gerenciar seus entregadores próprios",
+    shortDesc: "Integrar os motoboys contratados pela loja",
     color: "text-primary",
     bgColor: "bg-primary/10",
     category: "operacao",

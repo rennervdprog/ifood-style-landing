@@ -97,7 +97,7 @@ describe("printPdvReceipt", () => {
 });
 
 describe("printPdvReceipt — fase 3", () => {
-  it("usa order_number sequencial quando disponível", () => {
+  it("usa sempre o ID curto como número principal", () => {
     printPdvReceipt(
       {
         id: "abcdef1234",
@@ -111,9 +111,10 @@ describe("printPdvReceipt — fase 3", () => {
       "Loja",
     );
     const html = getContainerHtml();
-    expect(html).toContain("VENDA PDV #42");
-    expect(html).toContain("ref: ABCDEF12");
+    expect(html).toContain("VENDA PDV #ABCDEF12");
+    expect(html).toContain("pedido nº 42");
   });
+
 
   it("imprime banner de origem MESA/COMANDA", () => {
     printPdvReceipt(
@@ -357,15 +358,16 @@ describe("printThermalReceipt — delivery", () => {
     expect(getContainerHtml()).toContain("PEDIDO AGENDADO");
   });
 
-  it("nº de pedido sequencial quando disponível", () => {
+  it("mantém o ID curto mesmo com order_number sequencial", () => {
     printThermalReceipt(
       { ...baseOrder, order_number: 1024 },
       "Pizzaria", "Lia",
     );
     const html = getContainerHtml();
-    expect(html).toContain("PEDIDO #1024");
-    expect(html).toContain("ref:");
+    expect(html).toContain("pedido nº 1024");
+    expect(countOccurrences(html, "PEDIDO #")).toBeGreaterThanOrEqual(1);
   });
+
 
   it("imprime 2 vias por padrão", () => {
     printThermalReceipt(baseOrder, "Pizzaria", "Lia");

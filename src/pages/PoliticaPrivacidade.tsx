@@ -2,7 +2,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
-import privacyMd from "@/content/legal/privacy_v6_1.md?raw";
+import privacyMd from "@/content/legal/privacy_v6_2.md?raw";
 
 /**
  * Página pública da Política de Privacidade.

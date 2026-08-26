@@ -1096,13 +1096,12 @@ const PerfilPage = () => {
                   </div>
                   <div className="bg-destructive/5 border border-destructive/20 rounded-xl p-3.5 space-y-2 text-xs text-muted-foreground">
                     <p className="font-bold text-destructive text-sm">O que acontece ao excluir:</p>
-                    <p>• Seus dados pessoais serão removidos</p>
-                    <p>• Endereços e tokens de notificação apagados</p>
+                    <p>• Seus dados pessoais serão removidos ou anonimizados quando não houver necessidade de retenção</p>
+                    <p>• Endereços salvos e tokens de notificação serão apagados quando possível</p>
                     <p>• Você não poderá mais acessar sua conta</p>
-                    <p className="font-bold text-foreground mt-2">Dados retidos por lei (LGPD/CTN):</p>
-                    <p>• Histórico de pedidos: 5 anos</p>
-                    <p>• Dados financeiros: 5 anos</p>
-                    <p>• Aceites de termos: mantidos como prova legal</p>
+                    <p className="font-bold text-foreground mt-2">Registros que podem ser preservados:</p>
+                    <p>• Pedidos, transações, aceites, logs e evidências podem ser mantidos pelo prazo necessário a obrigações legais, disputas, segurança e defesa de direitos</p>
+                    <p>• Esses registros terão acesso restrito e poderão ser anonimizados quando a finalidade permitir</p>
                   </div>
                   <button onClick={() => setDeleteStep(1)}
                     className="w-full py-3.5 rounded-xl bg-destructive text-destructive-foreground font-bold text-sm">
