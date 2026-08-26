@@ -112,7 +112,7 @@ describe("printPdvReceipt — fase 3", () => {
     );
     const html = getContainerHtml();
     expect(html).toContain("VENDA PDV #ABCDEF12");
-    expect(html).toContain("pedido nº 42");
+    expect(html).not.toContain("pedido nº 42");
   });
 
 
@@ -358,14 +358,14 @@ describe("printThermalReceipt — delivery", () => {
     expect(getContainerHtml()).toContain("PEDIDO AGENDADO");
   });
 
-  it("mantém o ID curto mesmo com order_number sequencial", () => {
+  it("imprime somente o código curto mesmo com order_number sequencial", () => {
     printThermalReceipt(
       { ...baseOrder, order_number: 1024 },
       "Pizzaria", "Lia",
     );
     const html = getContainerHtml();
-    expect(html).toContain("pedido nº 1024");
-    expect(countOccurrences(html, "PEDIDO #")).toBeGreaterThanOrEqual(1);
+    expect(html).toContain("PEDIDO #DEL00001");
+    expect(html).not.toContain("pedido nº 1024");
   });
 
 
@@ -375,5 +375,77 @@ describe("printThermalReceipt — delivery", () => {
     expect(html).toContain("VIA COZINHA");
     expect(html).toContain("VIA CLIENTE");
     expect(countOccurrences(html, "PEDIDO #")).toBeGreaterThanOrEqual(2);
+  });
+});
+
+
+describe("renderItems e endereço — cobertura de categorias", () => {
+  const coverageBaseOrder = {
+    id: "cov00001",
+    created_at: "2026-06-28T15:00:00Z",
+    subtotal: 50,
+    delivery_fee: 10,
+    total_price: 60,
+    payment_method: "dinheiro",
+    neighborhood: "Centro",
+    address_details: "Rua das Flores, 100",
+  };
+
+  it("preserva tamanho, borda, complemento, observação e endereço plano", () => {
+    printThermalReceipt(
+      {
+        ...coverageBaseOrder,
+        delivery_cep: "18690000",
+        delivery_city: "Itatinga",
+        delivery_state: "SP",
+        order_items: [
+          {
+            quantity: 1,
+            unit_price: 42,
+            products: { name: "Marmita" },
+            addons: [
+              { name: "Tamanho: Grande", price: 0 },
+              { name: "Borda: Catupiry", price: 4 },
+              { name: "Complemento: Feijão", price: 2 },
+            ],
+            observations: "Sem cebola",
+          },
+        ],
+      },
+      "Restaurante",
+      "Cliente",
+    );
+    const html = getContainerHtml();
+    expect(html).toContain("TAMANHO: GRANDE");
+    expect(html).toContain("BORDA: CATUPIRY");
+    expect(html).toContain("COMPLEMENTO: FEIJÃO");
+    expect(html).toContain("OBS: Sem cebola");
+    expect(html).toContain("Itatinga/SP");
+    expect(html).toContain("CEP: 18690000");
+  });
+
+  it("renderiza pizza/pastel multi-sabor a partir dos adicionais fracionados", () => {
+    printThermalReceipt(
+      {
+        ...coverageBaseOrder,
+        order_items: [
+          {
+            quantity: 1,
+            unit_price: 55,
+            products: { name: "Pizza Grande" },
+            addons: [
+              { name: "½ Calabresa", price: 0 },
+              { name: "½ Frango com Catupiry", price: 0 },
+            ],
+          },
+        ],
+      },
+      "Pizzaria",
+      "Cliente",
+    );
+    const html = getContainerHtml();
+    expect(html).toContain("Pizza Meio a Meio");
+    expect(html).toContain("½ Calabresa");
+    expect(html).toContain("½ Frango com Catupiry");
   });
 });

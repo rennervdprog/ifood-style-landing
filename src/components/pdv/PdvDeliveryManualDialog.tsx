@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { formatBRL, addMoney } from "@/lib/utils";
 import { fetchCep, formatCep } from "@/lib/location";
-import { printPdvReceipt } from "@/lib/thermalPrint";
+import { printThermalReceipt } from "@/lib/thermalPrint";
 import type { CartItem } from "@/pages/pdv/types";
 
 interface Props {
@@ -284,24 +284,46 @@ export function PdvDeliveryManualDialog({
 
       // Impressão térmica — best-effort
       try {
-        printPdvReceipt(
+        printThermalReceipt(
           {
             id: order.id,
             created_at: new Date().toISOString(),
             subtotal,
-            pdv_discount: discountAmount,
+            delivery_fee: quotedDeliveryFee,
             total_price: finalTotal,
             payment_method: paymentMethod,
-            table_identifier: `DELIVERY MANUAL · PIN ${pin}`,
-            address_details: `${name}${phone ? ` (${phone})` : ""} — ${address} · ${neighborhood}`,
+            neighborhood: resolvedAddress.neighborhood || neighborhood,
+            address_details: resolvedAddress.normalized_address || address,
+            delivery_cep: resolvedAddress.cep || cepDigits,
+            delivery_city: resolvedAddress.city || city.trim(),
+            delivery_state: resolvedAddress.state || state.trim().toUpperCase(),
+            delivery_pin: pin,
+            delivery_mode: "delivery",
+            delivery_address: {
+              street: street.trim(),
+              number: number.trim(),
+              complement: complement.trim() || null,
+              neighborhood: resolvedAddress.neighborhood || neighborhood,
+              city: resolvedAddress.city || city.trim(),
+              state: resolvedAddress.state || state.trim().toUpperCase(),
+              cep: resolvedAddress.cep || cepDigits,
+              reference: reference.trim() || null,
+            },
+            needs_change: needsChange,
+            change_for: changeValue,
             order_items: cart.map((item) => ({
               quantity: item.quantity,
               unit_price: item.price,
               products: { name: item.name },
+              addons: item.addons && item.addons.length > 0 ? item.addons : null,
+              observations: item.observations || null,
               metadata: item.metadata || null,
+              printer_target: item.printer_target ?? null,
             })),
           } as any,
           storeName || "Loja",
+          name.trim() || "Cliente",
+          phone.trim() || null,
           {
             copies: (storeSettings as any)?.print_copies === 1 ? 1 : 2,
             paperWidth: (storeSettings as any)?.print_paper_width === 58 ? 58 : 80,
