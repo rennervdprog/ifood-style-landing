@@ -9,7 +9,7 @@ const features = [
   { t: "Cardápio digital", d: "Sua loja com link próprio, fotos dos produtos, categorias e busca — pronto para receber pedidos em minutos." },
   { t: "Pedidos online 24h", d: "Cliente pede sozinho pelo celular, sem precisar atendente no WhatsApp. Notificação automática quando entra pedido." },
   { t: "Painel da loja", d: "Acompanhe pedidos em tempo real, edite cardápio, controle horários, formas de pagamento e taxas de entrega." },
-  { t: "Motoboy próprio", d: "Cadastre seus entregadores, atribua pedidos e acompanhe a entrega no mapa. Sem comissão por entrega." },
+  { t: "Integração com motoboy do Lojista", d: "O Lojista escolhe e contrata o motoboy fora da Plataforma; o aplicativo facilita a comunicação, o status e a integração da entrega." },
   { t: "PDV integrado", d: "Lance pedidos de balcão e telefone no mesmo sistema. Tudo conta para o relatório do dia." },
   { t: "KDS na cozinha", d: "Tela de cozinha com os pedidos em andamento, organizados por tempo. Reduz erro e atraso." },
   { t: "Multi-unidade (matriz/filial)", d: "Tem mais de uma loja? Centralize no painel matriz e veja faturamento consolidado." },
@@ -20,7 +20,7 @@ const faq = [
   { q: "Quanto custa o ItaSuper?", a: "O ItaSuper trabalha com plano fixo mensal, sem cobrar comissão por pedido. Veja os planos atuais na página /planos." },
   { q: "Preciso de site próprio?", a: "Não. Sua loja recebe um link próprio (itasuper.com.br/sua-loja) que você compartilha no Instagram, WhatsApp e Google." },
   { q: "Funciona para qualquer tipo de loja?", a: "Sim. Atende pizzaria, hamburgueria, restaurante, adega, açaí, padaria, farmácia, mercado e qualquer negócio que entrega ou retira no balcão." },
-  { q: "Como o ItaSuper se compara a marketplaces de delivery?", a: "Você não paga comissão por pedido — só uma mensalidade fixa. E diferente de soluções que só repassam o pedido pro WhatsApp, o ItaSuper entrega o pacote completo: atendente IA, painel, KDS, PDV e motoboy próprio integrados." },
+  { q: "Como o ItaSuper se compara a marketplaces de delivery?", a: "As condições dependem do plano contratado. O ItaSuper oferece atendente de IA, painel, KDS, PDV e integração opcional com o motoboy escolhido e contratado pelo Lojista, sem que o ItaSuper mantenha entregadores próprios." },
   { q: "Como o cliente paga?", a: "Pix, cartão na entrega, dinheiro ou pagamento online — você define as opções no painel." },
   { q: "Tem app para o entregador?", a: "Sim, app Android para os motoboys com mapa, status de entrega e notificações em tempo real." },
 ];
@@ -59,10 +59,10 @@ export default function LandingPage() {
     <div className="min-h-screen bg-background text-foreground">
       <Helmet>
         <title>ItaSuper — Sistema de delivery e cardápio digital</title>
-        <meta name="description" content="Sistema de delivery e cardápio digital para restaurantes, pizzarias, adegas e mercados. Pedidos online, PDV e motoboy próprio — sem comissão." />
+        <meta name="description" content="Sistema de delivery e cardápio digital para restaurantes, pizzarias, adegas e mercados. Pedidos online, PDV e integração com o motoboy contratado pelo Lojista." />
         <link rel="canonical" href="https://itasuper.com.br/" />
         <meta property="og:title" content="ItaSuper — Sistema de delivery e cardápio digital" />
-        <meta property="og:description" content="Atendente IA no WhatsApp + cardápio digital, PDV, KDS e motoboy próprio integrados. Sem comissão por pedido." />
+        <meta property="og:description" content="Atendente IA no WhatsApp, cardápio digital, PDV, KDS e integração com o motoboy contratado pelo Lojista." />
         <meta property="og:url" content="https://itasuper.com.br/" />
         <meta property="og:type" content="website" />
         <script type="application/ld+json">{JSON.stringify(softwareJsonLd)}</script>
@@ -90,17 +90,17 @@ export default function LandingPage() {
           O delivery da sua loja, no seu link — sem entregar 27% pra ninguém.
         </h1>
         <p className="mt-5 text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto">
-          Cardápio próprio, PIX confirmado na hora, atendente de IA no WhatsApp que tira o pedido sozinho 24h e motoboy com rastreio em tempo real. O cliente pede pelo navegador — sem baixar app, sem cadastro chato.
+          Cardápio próprio, formas de pagamento configuráveis, atendente de IA no WhatsApp e integração opcional com o motoboy contratado pelo Lojista. O cliente pede pelo navegador — sem baixar app.
         </p>
         <p className="mt-3 text-base sm:text-lg font-semibold max-w-2xl mx-auto">
-          Grátis até R$ 5.000 em vendas. Depois, mensalidade fixa. Você fica com o cliente, com a marca e com o dinheiro.
+          Consulte as condições de entrada, gatilho e mensalidade do plano escolhido. Você fica com o cliente e com a marca da sua loja.
         </p>
         <div className="mt-8 flex flex-wrap gap-3 justify-center">
           <Link to="/cadastro-lojista" className="bg-primary text-primary-foreground font-bold px-6 py-3 rounded-xl">
             Cadastrar minha loja grátis
           </Link>
           <Link to="/cliente" className="bg-muted text-foreground font-bold px-6 py-3 rounded-xl">
-            Ver lojas em Itanhaém
+            Ver lojas disponíveis
           </Link>
         </div>
       </section>
@@ -140,7 +140,7 @@ export default function LandingPage() {
             {[
               { t: "0% de comissão por pedido", d: "Você fica com 100% do valor de cada venda. Cobramos apenas uma mensalidade fixa." },
               { t: "Atendente IA no WhatsApp", d: "Responde o cliente em segundos, envia o cardápio e converte conversa em pedido — 24h por dia." },
-              { t: "PDV + KDS + Motoboy próprio", d: "Caixa, cozinha e entrega no mesmo sistema. Sem precisar contratar 3 ferramentas separadas." },
+              { t: "PDV + KDS + Integração de entrega", d: "Caixa, cozinha e integração com o motoboy contratado pelo Lojista no mesmo sistema." },
               { t: "Dados do cliente são seus", d: "Histórico, telefone e endereço ficam com a sua loja — pra fidelizar e remarketing." },
             ].map((b) => (
               <div key={b.t} className="bg-card border border-border/40 rounded-2xl p-5">

@@ -1,10 +1,11 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "npm:@supabase/supabase-js@2";
 import { z } from "https://esm.sh/zod@3.23.8";
+import { REPASSE_POLICY, ageInDays } from "../_shared/repasse-policy.ts";
 
 // Endpoint exclusivo de homologação. Nunca usa a Woovi de produção e só aceita loja is_test.
 const WOOVI_SANDBOX_API = "https://api.woovi-sandbox.com";
-const MIN_CHARGE_AMOUNT = 150;
-const BLOCK_THRESHOLD = 500;
+const MIN_CHARGE_AMOUNT = REPASSE_POLICY.MIN_AUTO_CHARGE_BRL;
+const BLOCK_THRESHOLD = REPASSE_POLICY.BLOCK_THRESHOLD_BRL;
 const RESERVATION_LEASE_SECONDS = 300;
 const BodySchema = z.object({
   store_id: z.string().uuid(),
@@ -132,12 +133,12 @@ Deno.serve(async (req) => {
     .eq("status", "pending").eq("provider", "woovi_sandbox")
     .like("reference_code", "#REP-SBX-%").order("created_at", { ascending: true }).limit(1).maybeSingle();
   if (pending) {
-    const ageInDays = (Date.now() - new Date(pending.created_at).getTime()) / (1000 * 60 * 60 * 24);
-    if (ageInDays > 30) {
+    const daysPending = ageInDays(pending.created_at);
+    if (daysPending > REPASSE_POLICY.SUSPENSION_DAYS) {
       await supabase.from("stores").update({
         status: "bloqueado", billing_blocked_at: new Date().toISOString(), billing_block_reason: "overdue",
       }).eq("id", store.id).eq("is_test", true).eq("status", "ativo");
-      return json({ ok: true, environment: "sandbox", status: "blocked", reason: "overdue", days_pending: Math.floor(ageInDays) });
+      return json({ ok: true, environment: "sandbox", status: "blocked", reason: "overdue", days_pending: Math.floor(daysPending) });
     }
     return json({ ok: true, environment: "sandbox", reused: true, transaction: pending });
   }

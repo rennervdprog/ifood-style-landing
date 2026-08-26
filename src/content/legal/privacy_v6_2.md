@@ -1,12 +1,12 @@
 # Política de Privacidade do ItaSuper
 
-**Versão 6.1 — vigente a partir de 17 de agosto de 2026**
+**Versão 6.2 — minuta preparada em 26 de agosto de 2026; não publicada nem vigente**
 
 ## 1. Quem controla os dados e como falar conosco
 
-Esta Política explica como o **ItaSuper** trata dados pessoais ao disponibilizar seu site, aplicações web, aplicativos móveis e serviços relacionados. O controlador das operações de tratamento descritas nesta Política é **Renner Vinicius Dias (MEI)**, CNPJ **66.155.289/0001-26**, com endereço físico na **Rua São Francisco, 635, Itatinga/SP**, doravante denominado **ItaSuper**.
+Esta Política explica como o **ItaSuper** trata dados pessoais ao disponibilizar seu site, aplicações web, aplicativos móveis e serviços relacionados. O controlador das operações de tratamento descritas nesta Política é **Renner Vinicius Dias (MEI)**, CNPJ **66.155.289/0001-26**, com endereço físico na **Rua São Francisco, 635, Itatinga/SP**, doravante denominado **ItaSuper**. **Renner Vinicius Dias é o responsável pelo canal de privacidade**, atendido pelo e-mail **Itasupersuporte@gmail.com** e pelo WhatsApp **+55 22 99279-6291**.
 
-Para dúvidas, solicitações ou exercício de direitos previstos na Lei Geral de Proteção de Dados Pessoais — LGPD, o titular pode escrever para **Itasupersuporte@gmail.com** ou utilizar o suporte disponível na Plataforma. O contato deve informar, quando possível, o nome, e-mail/telefone vinculado à conta, pedido realizado e a solicitação desejada. Poderemos pedir informação adicional razoável para confirmar a identidade e proteger os dados contra acesso indevido.
+Para dúvidas, solicitações ou exercício de direitos previstos na Lei Geral de Proteção de Dados Pessoais — LGPD, o titular pode escrever para **Itasupersuporte@gmail.com** ou falar com o responsável pelo canal, **Renner Vinicius Dias**, pelo WhatsApp **+55 22 99279-6291**. O contato deve informar, quando possível, o nome, e-mail/telefone vinculado à conta, pedido realizado e a solicitação desejada. Poderemos pedir informação adicional razoável para confirmar a identidade e proteger os dados contra acesso indevido.
 
 ## 2. A quem esta Política se aplica e papéis no tratamento
 
@@ -27,7 +27,7 @@ O Lojista normalmente decide finalidades relevantes do tratamento de dados de se
 | Comunicação e suporte | Chamados, mensagens, registros de atendimento, confirmação de envio de notificações e comunicações por canais habilitados. | Responder solicitações, registrar atendimento, prevenir abuso e aperfeiçoar o serviço. |
 | Conteúdo enviado a IA | Conversas ou textos que o administrador/lojista voluntariamente inserir no recurso Sales Coach. | Gerar sugestão de comunicação comercial. Não insira dados sensíveis, dados financeiros, senhas, documentos ou dados de terceiros sem autorização e base legal adequada. |
 
-O ItaSuper não solicita o número completo do cartão quando o pagamento online é coletado diretamente pelo parceiro de pagamento. Se o Usuário fornecer informação opcional em campos livres, poderá tratar-se de dado pessoal adicional; por isso, pedimos que evite compartilhar dados sensíveis ou dados de terceiros sem necessidade.
+No checkout do Cliente, os métodos atualmente previstos são **Pix Direto com comprovante, cartão e dinheiro**. O Cliente não utiliza PIX online ItaSuper nem PIX na maquininha pelo checkout. No Pix Direto, o comprovante e os dados de conferência podem ser enviados à loja; a transferência ocorre fora da liquidação do ItaSuper. PIX online é reservado à relação financeira entre Lojista e ItaSuper, como mensalidades e repasses. O ItaSuper não solicita o número completo do cartão quando o pagamento online é coletado diretamente pelo parceiro de pagamento. Se o Usuário fornecer informação opcional em campos livres, poderá tratar-se de dado pessoal adicional; por isso, pedimos que evite compartilhar dados sensíveis ou dados de terceiros sem necessidade.
 
 ## 4. Por que tratamos dados e qual é a base legal
 
@@ -45,7 +45,7 @@ Compartilhamos apenas os dados necessários para a finalidade correspondente, ob
 |---|---|
 | Lojista responsável pelo Pedido | Receber e atender o Pedido, preparar produtos, organizar a entrega com seu próprio motoboy, contato operacional e suporte ao consumidor. |
 | Motoboy indicado pelo Lojista, quando o aplicativo de integração for utilizado | Dados mínimos para retirar e entregar o Pedido, como identificação, endereço, contato operacional e status. O compartilhamento é limitado ao necessário para a entrega; o motoboy é contratado e gerido pelo Lojista, fora do ItaSuper. |
-| Processadores de pagamento e instituições financeiras indicados no fluxo | Criar cobranças, processar pagamentos, administrar subcontas, conciliar transações, repasses, estornos ou obrigações de segurança. Podem incluir, conforme o fluxo habilitado, parceiros como Asaas, Woovi, Mercado Pago, AbacatePay ou outro fornecedor apresentado ao Usuário. |
+| Processadores de pagamento e instituições financeiras indicados no fluxo | Criar cobranças, processar pagamentos, administrar subcontas, conciliar transações, repasses, estornos ou obrigações de segurança. Podem incluir, conforme o fluxo habilitado, parceiros observados na configuração, como Woovi, Asaas ou outro fornecedor apresentado ao Usuário. O Pix Direto do Cliente ocorre fora da liquidação do ItaSuper. |
 | Hospedagem, banco de dados, autenticação e arquivos | Provedores técnicos como Supabase e Vercel, necessários para armazenar e disponibilizar a Plataforma. |
 | Notificações e diagnóstico | Provedores como Firebase/Google, OneSignal e Sentry, quando habilitados, para enviar notificações, medir estabilidade e diagnosticar falhas técnicas. |
 | Geocodificação e mapas | Serviços de mapas/geocodificação, como OpenStreetMap/Nominatim, quando necessários para converter endereço em coordenadas ou calcular cobertura. |
@@ -65,7 +65,7 @@ As notificações push dependem de permissão no sistema operacional e podem ser
 
 Mantemos dados pelo período necessário para as finalidades descritas nesta Política, para cumprir obrigações legais, fiscais, contábeis e regulatórias, prevenir fraude, resolver disputas, exercer direitos e manter a segurança dos sistemas. O prazo concreto pode variar conforme a categoria de dado, o tipo de conta, o Pedido e a obrigação aplicável.
 
-Quando uma conta é excluída, o ItaSuper pode apagar dados que não sejam mais necessários, remover endereços salvos e identificadores de notificação, encerrar credenciais de autenticação e anonimizar o perfil ativo. Registros relacionados a pedidos, transações, aceite de documentos, prevenção a fraude, obrigações legais ou defesa de direitos podem ser preservados pelo prazo necessário. Backups podem reter cópias temporárias até serem substituídos nos ciclos técnicos de segurança.
+Quando uma conta é excluída, o fluxo atual verifica pedidos ativos, registra uma cópia restrita de auditoria em arquivo de contas arquivadas, remove endereços salvos e identificadores de notificação, anonimiza o perfil ativo e tenta encerrar as credenciais de autenticação. Registros relacionados a pedidos, transações, aceite de documentos, prevenção a fraude, obrigações legais ou defesa de direitos podem ser preservados pelo prazo necessário. Backups podem reter cópias temporárias até serem substituídos nos ciclos técnicos de segurança. O arquivo de auditoria deve ter acesso restrito e seguir matriz interna de retenção e eliminação.
 
 A exclusão pode ser temporariamente impedida enquanto houver Pedido ativo ou obrigação operacional pendente. Isso não impede o titular de solicitar informação sobre o tratamento ou de exercer outros direitos previstos em lei.
 
@@ -97,9 +97,12 @@ Podemos atualizar esta Política para refletir mudanças legais, tecnológicas, 
 
 ## 13. Contato
 
-**Assuntos de privacidade e proteção de dados:** Itasupersuporte@gmail.com
-**Suporte geral:** canais disponíveis na Plataforma e WhatsApp **+55 22 99279-6291**
+**Responsável pelo canal de privacidade:** Renner Vinicius Dias
+**Assuntos de privacidade e proteção de dados:** Itasupersuporte@gmail.com · WhatsApp **+55 22 99279-6291**
+**Suporte geral:** canais disponíveis na Plataforma
 **Controlador:** Renner Vinicius Dias (MEI) — CNPJ 66.155.289/0001-26 — Rua São Francisco, 635, Itatinga/SP.
+
+**Última atualização da minuta:** 26 de agosto de 2026. **Publicação e vigência:** pendentes de revisão jurídica, aprovação do responsável e mecanismo de reaceite.
 
 ---
 

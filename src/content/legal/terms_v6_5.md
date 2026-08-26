@@ -1,10 +1,10 @@
 # Termos de Uso do ItaSuper
 
-**Versão 6.1 — vigente a partir de 17 de agosto de 2026**
+**Versão 6.5 — vigente a partir de 26 de agosto de 2026**
 
 ## 1. Quem somos e alcance destes Termos
 
-O **ItaSuper** é uma plataforma digital operada por **Renner Vinicius Dias (MEI)**, inscrito no CNPJ sob o nº **66.155.289/0001-26**, com endereço físico na **Rua São Francisco, 635, Itatinga/SP**. Estes Termos regulam o uso do site, aplicações web, aplicativos móveis e demais interfaces ItaSuper por Clientes, Lojistas, motoboys indicados por Lojistas e demais pessoas cadastradas.
+O **ItaSuper** é uma plataforma digital de intermediação tecnológica operada por **Renner Vinicius Dias (MEI)**, inscrito no CNPJ sob o nº **66.155.289/0001-26**, com endereço físico na **Rua São Francisco, 635, Itatinga/SP**. Estes Termos regulam o uso do site, aplicações web, aplicativos móveis e demais interfaces ItaSuper por Clientes, Lojistas, motoboys indicados por Lojistas e demais pessoas cadastradas.
 
 O ItaSuper disponibiliza infraestrutura tecnológica para apresentação de lojas e cardápios, realização e acompanhamento de pedidos, comunicação relacionada ao pedido, recursos de pagamento disponibilizados por parceiros, integração e apoio operacional à entrega, ferramentas de gestão para lojistas e, quando contratado ou habilitado, recursos como PDV, cupons, fidelidade, relatórios e suporte. Cada produto, oferta, loja, preço, prazo, área de entrega e forma de pagamento depende da configuração e da disponibilidade informadas no fluxo aplicável.
 
@@ -42,18 +42,18 @@ O ItaSuper disponibiliza recursos para que o Cliente identifique e corrija dados
 
 ## 6. Planos comerciais, taxas, mensalidades e cobranças de Lojistas
 
-As formas de pagamento do Pedido exibidas no checkout dependem da configuração da loja e do Pedido e podem incluir Pix online, Pix direto, Pix em maquininha, cartão e dinheiro. Quando houver processamento online, os serviços de pagamento são prestados pelo parceiro ou instituição identificada no fluxo correspondente, sujeitos também aos seus próprios termos e políticas. Separadamente, na relação ItaSuper–Lojista, o PIX é utilizado para mensalidades e para cobranças de repasses acumulados. O ItaSuper não solicita nem armazena dados completos de cartão de pagamento quando o processamento é realizado diretamente pelo parceiro habilitado.
+As formas de pagamento do Pedido exibidas no checkout dependem da configuração da loja e do Pedido e podem incluir **Pix Direto com comprovante, cartão e dinheiro**. O Cliente **não utiliza PIX online ItaSuper nem PIX na maquininha pelo checkout**. No Pix Direto, a transferência é feita para a chave informada pelo Lojista, fora da liquidação do ItaSuper; Cliente e Lojista devem conferir chave, valor, favorecido, comprovante e confirmação efetiva. Separadamente, na relação ItaSuper–Lojista, o PIX é utilizado para mensalidades e para cobranças de repasses acumulados. O ItaSuper não solicita nem armazena dados completos de cartão de pagamento quando o processamento é realizado diretamente pelo parceiro habilitado.
 
 ### 6.1. Valores e regras dos planos comerciais vigentes
 
-A tabela abaixo explicita os valores e regras comerciais cadastrados como planos públicos ativos em **17 de agosto de 2026**. Os valores são expressos em reais (R$). Para lojas com proposta, contrato ou condição comercial individual, prevalecerá a condição específica que tiver sido formalmente acordada e apresentada ao Lojista.
+A tabela abaixo explicita os valores e regras comerciais cadastrados como planos públicos ativos em **26 de agosto de 2026**. Os valores são expressos em reais (R$). Para lojas com proposta, contrato ou condição comercial individual, prevalecerá a condição específica que tiver sido formalmente acordada e apresentada ao Lojista.
 
 | Plano ou módulo | Valor mensal | Regra de ativação e componentes previstos |
 |---|---:|---|
-| **Essencial** | **R$ 89,90/mês** | Para novos cadastros, período de análise de **60 dias** e gratuidade até o gatilho acumulado de **R$ 5.000,00**, conforme a oferta apresentada. Após o gatilho e o aviso aplicável, incide a mensalidade de R$ 89,90; **0% de comissão por pedido online**; taxa da plataforma de **R$ 0,99 acrescentada à taxa de entrega**; e PDV conforme a configuração comercial vigente. |
+| **Essencial** | **R$ 89,90/mês** | Para novos cadastros, período de análise de **60 dias** e gratuidade até o gatilho acumulado de **R$ 5.000,00**, conforme a oferta apresentada. Após o gatilho e o aviso aplicável, incide a mensalidade de R$ 89,90, sem retorno automático à gratuidade após a ativação; **0% de comissão por pedido online**; taxa da plataforma de **R$ 0,99 acrescentada à taxa de entrega**; e PDV conforme a configuração comercial vigente. |
 | **Autonomia** | **R$ 199,90/mês** | Plano legado ou condição individual, não apresentado como opção de novo cadastro nesta revisão. Se aplicável a determinada loja, prevalecem a contratação e as regras formalmente apresentadas ao Lojista. |
 | **Somente PDV** | **R$ 69,00/mês** | Sistema PDV para operação física e balcão, sem comissão por venda e sem taxa de plataforma por entrega. Não inclui vitrine pública, cardápio online ou serviços de delivery. |
-| **PDV Add-on** | **R$ 49,00/mês** | Módulo adicional de PDV integrado a plano principal compatível (Essencial ou Autonomia). O valor é adicionado à cobrança mensal enquanto o módulo estiver ativo. |
+| **PDV Add-on** | **R$ 49,00/mês** | Módulo adicional de PDV integrado ao plano Essencial quando habilitado. Lojas legadas ou com condição histórica/individual podem ter regra própria exibida no painel. O valor é adicionado à cobrança mensal enquanto o módulo estiver ativo. |
 | **Plano individual** | Conforme proposta | Condições contratuais ou empresariais específicas acordadas com o estabelecimento, com valores, comissões e prazos definidos no instrumento correspondente. |
 
 ### 6.2. Alterações de preços, planos e regras comerciais
@@ -64,7 +64,7 @@ A alteração de preços ou taxas **não terá efeito retroativo** sobre ciclos 
 
 Caso o Lojista não concorde com a alteração comunicada, poderá solicitar o cancelamento da assinatura ou a migração para outro plano compatível antes da data de vigência da mudança, sem incidência de multa de rescisão, ressalvada a quitação de valores devidos por serviços já prestados e pedidos já entregues.
 
-O Lojista deve conferir os lançamentos exibidos no painel e comunicar eventuais divergências pelo suporte antes do vencimento. A taxa ItaSuper de **R$ 0,99**, acrescentada à taxa de entrega definida pelo Lojista e paga pelo Cliente, acumula-se no painel quando o pedido é recebido diretamente pelo Lojista em dinheiro ou PIX direto. A cobrança do valor acumulado é gerada via **PIX toda segunda-feira**, conforme o ciclo operacional. Eventuais valores mínimos para geração, bloqueio ou suspensão devem ser exibidos no painel e confirmados na contratação antes de integrarem a versão definitiva destes Termos. Em caso de inadimplência, o ItaSuper poderá enviar avisos, restringir funcionalidades não essenciais ou suspender o acesso conforme a gravidade, o contrato comercial e a legislação, assegurando canal de atendimento para regularização e preservando o tratamento adequado de pedidos em andamento quando aplicável.
+O Lojista deve conferir os lançamentos exibidos no painel e comunicar eventuais divergências pelo suporte antes do vencimento. A taxa ItaSuper de **R$ 0,99**, acrescentada à taxa de entrega definida pelo Lojista e paga pelo Cliente, acumula-se no painel quando o pedido é recebido diretamente pelo Lojista em dinheiro ou PIX direto. A cobrança do valor acumulado é gerada via **PIX toda segunda-feira** quando o ciclo atingir **R$ 150,00**. O saldo pode gerar bloqueio operacional a partir de **R$ 500,00**, e uma cobrança não regularizada por mais de **30 dias** pode resultar em suspensão, conforme avisos e procedimentos do painel. Em caso de inadimplência, o ItaSuper poderá enviar avisos, restringir funcionalidades não essenciais ou suspender o acesso conforme a gravidade, o contrato comercial e a legislação, assegurando canal de atendimento para regularização e preservando o tratamento adequado de pedidos em andamento quando aplicável.
 
 ## 7. Cancelamentos, reembolsos e direito do consumidor
 
@@ -80,7 +80,7 @@ O Cliente deve informar endereço e contato corretos, estar disponível para rec
 
 ## 9. Obrigações do Lojista
 
-O Lojista deve possuir autorização para operar o estabelecimento e comercializar os itens ofertados, observar normas sanitárias, de defesa do consumidor, fiscais e de proteção de dados que lhe sejam aplicáveis, e manter seus dados e informações comerciais atualizados. O Lojista responde pelo conteúdo do cardápio, imagens, marcas e materiais que publicar, garantindo que possui os direitos necessários para utilizá-los.
+O Lojista deve possuir autorização para operar o estabelecimento e comercializar os itens ofertados, observar normas sanitárias, de defesa do consumidor, fiscais e de proteção de dados que lhe sejam aplicáveis, e manter seus dados e informações comerciais atualizados. Produtos de farmácia, medicamentos ou produtos que exijam receita, validação profissional, idade mínima ou outro controle permanecem **bloqueados no checkout comum do ItaSuper** até que exista fluxo específico validado. O Lojista responde pelo conteúdo do cardápio, imagens, marcas e materiais que publicar, garantindo que possui os direitos necessários para utilizá-los.
 
 O Lojista autoriza o ItaSuper a exibir seu nome comercial, marca, cardápio, fotos, preços, horários e informações necessárias para divulgar e executar seus pedidos enquanto a relação estiver ativa. Após o encerramento, o ItaSuper poderá manter informações estritamente necessárias para concluir pedidos pendentes, cumprir obrigações legais, resguardar direitos e remover conteúdos de caches, backups e índices dentro de seus ciclos técnicos aplicáveis.
 
@@ -132,5 +132,5 @@ Dúvidas, solicitações, reclamações e pedidos de informação podem ser enca
 
 ---
 
-**Controlador/Operador da Plataforma:** 66.155.289 Renner Vinicius Dias (MEI) — CNPJ 66.155.289/0001-26.  
-**Última atualização:** 17 de agosto de 2026.
+**Controlador/Operador da Plataforma:** 66.155.289 Renner Vinicius Dias (MEI) — CNPJ 66.155.289/0001-26.
+**Última atualização:** 26 de agosto de 2026. **Vigência:** a partir de 26 de agosto de 2026, sujeita aos direitos legais aplicáveis e às condições específicas formalmente contratadas por Lojistas legados.

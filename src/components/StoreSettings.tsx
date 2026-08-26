@@ -170,7 +170,6 @@ type PizzaPriceMode = "maior" | "media" | "soma";
   const [pizzaPriceMode, setPizzaPriceMode] = useState<PizzaPriceMode>(storeSettings?.pizza_price_mode || "maior");
 
   // Métodos de pagamento aceitos — inicializados direto do storeSettings
-  const [acceptPixMachine, setAcceptPixMachine] = useState<boolean>(storeSettings?.accept_pix_machine === true);
   const [acceptCard,       setAcceptCard]       = useState<boolean>(storeSettings?.accept_card        !== false);
   const [acceptCash,       setAcceptCash]       = useState<boolean>(storeSettings?.accept_cash        !== false);
 
@@ -344,9 +343,10 @@ type PizzaPriceMode = "maior" | "media" | "soma";
         delivery_fee_base: parseFloat(deliveryFeeBase.toString().replace(",", ".")) || 0,
         delivery_fee_per_km: parseFloat(deliveryFeePerKm.toString().replace(",", ".")) || 0,
         // Métodos de pagamento aceitos
-        // PIX Online desativado: repasse é feito pela plataforma.
+        // PIX online e PIX na maquininha não são oferecidos ao Cliente.
+        // O Cliente usa PIX Direto por comprovante quando a loja habilita sua chave.
         accept_pix_online: false,
-        accept_pix_machine: acceptPixMachine,
+        accept_pix_machine: false,
         accept_card:        acceptCard,
         accept_cash:        acceptCash,
         // Quantidade de vias da impressão térmica (1 = só cliente, 2 = cozinha + cliente)
@@ -1214,31 +1214,11 @@ const NotificationSection = () => {
         <div className="bg-muted border border-border rounded-xl p-3 space-y-1.5">
           <p className="text-[11px] font-bold text-foreground">Como funciona o repasse</p>
           <p className="text-[11px] text-muted-foreground leading-relaxed">
-            <strong className="text-foreground">Todos os pagamentos são recebidos direto por você</strong> (dinheiro, cartão, PIX na maquininha ou Pix Direto na sua chave).
+            <strong className="text-foreground">Os pagamentos do pedido são recebidos diretamente por você</strong> (dinheiro, cartão ou Pix Direto na sua chave).
           </p>
           <p className="text-[11px] text-muted-foreground leading-relaxed">
-            <strong className="text-foreground">Dinheiro, Cartão e PIX Maquininha:</strong> o cliente paga direto a você. A taxa de R$2,00 por entrega acumula no painel e é cobrada toda <strong className="text-foreground">segunda-feira</strong> quando atingir R$30.
+            <strong className="text-foreground">Dinheiro, Cartão e Pix Direto:</strong> o cliente paga diretamente à loja. A taxa ItaSuper de R$ 0,99 por entrega aplicável acumula no painel e gera cobrança via PIX toda <strong className="text-foreground">segunda-feira</strong> a partir de R$ 150,00.
           </p>
-        </div>
-
-        {/* PIX Maquininha */}
-        <div className={`rounded-xl border p-3.5 ${acceptPixMachine ? "border-primary/30 bg-primary/5" : "border-border bg-muted/20"}`}>
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2.5">
-              <QrCode className="h-4 w-4 text-primary shrink-0" />
-              <div>
-                <p className="text-sm font-bold text-foreground">PIX na Maquininha</p>
-                <p className="text-[11px] text-muted-foreground">Cliente paga via PIX pela maquininha do lojista na entrega. </p>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => setAcceptPixMachine(!acceptPixMachine)}
-              className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${acceptPixMachine ? "bg-primary" : "bg-muted-foreground/30"}`}
-            >
-              <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${acceptPixMachine ? "translate-x-5" : "translate-x-0"}`} />
-            </button>
-          </div>
         </div>
 
         {/* Cartão */}
@@ -1341,7 +1321,7 @@ const NotificationSection = () => {
         </div>
 
         {/* Aviso mínimo */}
-        {!acceptPixMachine && !acceptCard && !acceptCash && (
+        {!acceptCard && !acceptCash && (
           <div className="bg-destructive/10 border border-destructive/20 rounded-xl px-3 py-2.5">
             <p className="text-xs font-bold text-destructive">⚠️ Nenhum método ativo — os clientes não conseguirão finalizar pedidos.</p>
           </div>

@@ -75,7 +75,7 @@ const CidadesTab = ({ stores }: { stores: any[] | undefined }) => {
                             {store.status === "ativo" ? "Ativa" : store.status === "analise" ? "Em Análise" : "Bloqueada"}
                           </span>
                           <span className="text-xs text-muted-foreground">
-                            {store.delivery_mode === "own" ? "Motoboy Próprio" : "Plataforma"}
+                            {store.delivery_mode === "own" ? "Entrega da loja" : "Plataforma"}
                           </span>
                         </div>
                       </div>

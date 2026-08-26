@@ -240,18 +240,18 @@ const DebugOverlay = () => {
         {/* Test notification buttons */}
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
           <button style={btnStyle} onClick={() => sendTestPush(
-            "vinivias13@gmail.com",
+            "Itasupersuporte@gmail.com",
             "🧪 Teste — Pedido Preparando",
-            "Notificação de TESTE para vinivias13."
+            "Notificação de TESTE para o canal ItaSuper.",
           )}>
-            📩 Push vinivias13
+            📩 Push ItaSuper
           </button>
           <button style={btnStyle} onClick={() => sendTestPush(
-            "vinivias13@gmail.com",
+            "Itasupersuporte@gmail.com",
             "🛵 Teste — Saiu para entrega!",
             "TESTE: Seu pedido saiu para entrega."
           )}>
-            🛵 Entrega vinivias13
+            🛵 Entrega ItaSuper
           </button>
           <button style={{ ...btnStyle, background: "#16a34a" }} onClick={sendTestToMotoboys}>
             🏍️ Push Motoboys

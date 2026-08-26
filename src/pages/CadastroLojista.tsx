@@ -319,7 +319,7 @@ const CadastroLojista = () => {
               _monthly_fee: 0,
               _revenue_threshold: selectedPlan === "fixed" ? 5000 : null,
               _upgrade_monthly_fee: selectedPlan === "fixed" ? 89.90 : null,
-              _upgrade_trigger_months: selectedPlan === "fixed" ? 2 : null,
+              _upgrade_trigger_months: null,
             });
             if (matrizErr) {
               console.warn("register_as_matriz aviso:", matrizErr.message);
@@ -331,8 +331,8 @@ const CadastroLojista = () => {
 
         await supabase.from("terms_acceptance").insert({
           user_id: signUpData.user.id,
-          terms_version: "3.0",
-          privacy_version: "3.0",
+          terms_version: "6.1",
+          privacy_version: "6.1",
           user_agent: navigator.userAgent,
         });
          await supabase.from("profiles").update({
@@ -412,10 +412,11 @@ const CadastroLojista = () => {
               }).eq("store_id", storeRow.id);
               await (supabase as any).from("store_addons").upsert({
                 store_id: storeRow.id,
-                addon_key: "pdv",
-                status: "active",
+                addon_code: "pdv",
+                enabled: true,
                 price_override: 0,
-              }, { onConflict: "store_id,addon_key" });
+                first_charge_done: true,
+              }, { onConflict: "store_id,addon_code" });
             } catch (e) {
               console.warn("[CadastroLojista] pdv_only setup falhou:", e);
             }
@@ -560,7 +561,7 @@ const CadastroLojista = () => {
                 <div className="text-center mb-2">
                   <h2 className="text-lg font-black text-foreground">Escolha seu plano</h2>
                   <p className="text-xs text-muted-foreground mt-1">
-                    7 dias grátis · sem contrato · troque quando quiser
+                    Condições, valores e início da cobrança conforme a oferta do plano
                   </p>
                 </div>
 
@@ -609,7 +610,7 @@ const CadastroLojista = () => {
                           </div>
                           <div className="text-right shrink-0">
                             <span className="text-xl font-black text-foreground tabular-nums">
-                              {p.monthlyFee === 0 ? "Grátis" : `R$${p.monthlyFee}`}
+                              {p.monthlyFee === 0 ? "Grátis" : `R$${p.monthlyFee.toFixed(2).replace(".", ",")}`}
                             </span>
                             {p.monthlyFee > 0 && <span className="text-[10px] text-muted-foreground ml-0.5">/mês</span>}
                           </div>
@@ -628,7 +629,7 @@ const CadastroLojista = () => {
                           </span>
                           {p.monthlyFee > 0 && (
                             <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-400">
-                              🎁 7 dias grátis
+                              Condições da oferta
                             </span>
                           )}
                           {isDynamic && (
@@ -655,11 +656,11 @@ const CadastroLojista = () => {
                         <div className="px-4 pb-4 pt-1 space-y-3 border-t border-border/50">
                           {p.monthlyFee > 0 && (
                             <div className="rounded-lg bg-primary/5 border border-primary/20 px-3 py-2">
-                              <p className="text-[12px] font-bold text-foreground mb-1">🎁 7 dias grátis para testar</p>
+                              <p className="text-[12px] font-bold text-foreground mb-1">Condições do período inicial</p>
                               <ul className="text-[11px] text-muted-foreground leading-relaxed space-y-0.5">
-                                <li>• Dia 1–7: liberado, sem cobrar nada</li>
-                                <li>• Dia 8: 1ª cobrança de R${p.monthlyFee}/mês (se não cancelar)</li>
-                                <li>• Cancele a qualquer hora antes do dia 8</li>
+                                <li>• Duração, gatilho e início da cobrança conforme a oferta exibida</li>
+                                <li>• Confira o valor mensal e as condições antes de aceitar</li>
+                                {isDynamic && <li>• Essencial: a tela informa análise de 60 dias até R$ 5.000, com mensalidade após o gatilho</li>}
                               </ul>
                             </div>
                           )}
@@ -894,7 +895,7 @@ const CadastroLojista = () => {
                       {street && <p className="text-xs text-muted-foreground mt-1">{street}{addressNumber ? `, ${addressNumber}` : ""}{neighborhood ? ` - ${neighborhood}` : ""}</p>}
                       {!isPlatformCity && (
                         <p className="text-xs text-amber-600 mt-1">
-                          Sua loja funcionará com motoboy próprio. Cadastre seus entregadores no painel para realizar as entregas.
+                          A entrega é organizada pela própria loja: o Lojista escolhe, contrata e paga o motoboy fora da Plataforma. Use as ferramentas de integração para facilitar a operação.
                         </p>
                       )}
                     </div>

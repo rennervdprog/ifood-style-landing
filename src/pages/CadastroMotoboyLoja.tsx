@@ -89,8 +89,8 @@ const CadastroMotoboyLoja = () => {
 
       await supabase.from("terms_acceptance").insert({
         user_id: userId,
-        terms_version: "3.0",
-        privacy_version: "3.0",
+        terms_version: "6.1",
+        privacy_version: "6.1",
         user_agent: navigator.userAgent,
       });
 
@@ -116,7 +116,7 @@ const CadastroMotoboyLoja = () => {
           <div>
              <h2 className="text-xl font-black text-foreground">Cadastro Realizado! 🎉</h2>
              <p className="text-sm text-muted-foreground mt-2">
-               Sua conta ainda está em análise aguarde. Agora peça ao dono da loja para te adicionar como motoboy próprio.
+               Sua conta ainda está em análise. Agora peça ao dono da loja para te adicionar como motoboy da loja.
              </p>
           </div>
           <div className="bg-primary/5 border border-primary/10 rounded-2xl p-4 flex items-start gap-3">
@@ -155,7 +155,7 @@ const CadastroMotoboyLoja = () => {
           </button>
           <div>
             <h1 className="text-base font-black text-foreground">Cadastro Motoboy de Loja</h1>
-            <p className="text-[11px] text-muted-foreground">Entregador próprio vinculado a uma loja</p>
+            <p className="text-[11px] text-muted-foreground">Motoboy contratado e vinculado a uma loja</p>
           </div>
         </div>
       </div>
@@ -170,7 +170,7 @@ const CadastroMotoboyLoja = () => {
               <ol className="text-[11px] text-muted-foreground leading-relaxed list-decimal list-inside space-y-1">
                 <li>Cadastre-se aqui com seus dados básicos</li>
                 <li>Informe seu telefone ao dono da loja</li>
-                <li>O dono da loja vai te adicionar como motoboy próprio</li>
+                <li>O dono da loja vai te adicionar como motoboy da loja</li>
                 <li>Acesse o painel de entregas e veja apenas os pedidos da sua loja</li>
               </ol>
             </div>

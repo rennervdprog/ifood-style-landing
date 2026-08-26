@@ -88,7 +88,7 @@ hybrid.example = exampleText(hybrid);
 const fixed: PlanInfo = {
   id: "fixed",
   name: "Essencial",
-  tagline: "Grátis até R$ 5.000 em vendas — depois R$ 89,90/mês",
+  tagline: "Grátis na análise de 60 dias até R$ 5.000 — depois R$ 89,90/mês",
   forWho: "Para quem quer começar sem custo fixo e crescer sem pagar comissão por pedido",
   monthlyFee: 89.90,
   commissionRate: 0,
@@ -100,10 +100,10 @@ const fixed: PlanInfo = {
   badge: "🎁 Grátis pra começar",
   highlight: true,
   features: [
-    "Grátis até atingir R$ 5.000 em vendas no período de análise",
+    "Gratuidade até atingir R$ 5.000 no período de análise de 60 dias",
     "R$ 89,90/mês após o gatilho, com aviso prévio de 30 dias",
     "Sem comissão por pedido",
-    "Motoboy integrado + Suporte VIP",
+    "Integração com motoboy contratado pelo Lojista + Suporte conforme plano",
     "PDV: módulo opcional (+ R$ 49/mês)",
   ],
   example: (_: number) => "",

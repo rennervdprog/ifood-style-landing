@@ -104,11 +104,11 @@ const testimonials = [
 ];
 
 const faqs = [
-  { q: "Quanto tempo leva para começar a vender?", a: "Após o cadastro, sua loja pode estar ativa em menos de 24 horas. Basta montar seu cardápio e começar a receber pedidos." },
+  { q: "Quanto tempo leva para começar a vender?", a: "Após o cadastro e a análise, a ativação depende da aprovação e da configuração do cardápio. O prazo pode variar; confira o status pelo canal de suporte." },
   { q: "Preciso de computador para gerenciar?", a: "Não! Tudo funciona perfeitamente pelo celular. O painel é 100% responsivo e otimizado para mobile." },
   { q: "Posso trocar de plano depois?", a: "Sim! Você pode mudar de plano a qualquer momento, sem multa ou fidelidade. Basta solicitar pelo painel." },
-  { q: "Como funciona o período de teste?", a: "No plano Essencial você ganha 7 dias grátis para testar tudo. O plano Comissão já é gratuito — sem mensalidade!" },
-  { q: "Como faço para receber meus pagamentos?", a: "Os pagamentos via PIX são depositados diretamente na sua conta. Para pedidos em dinheiro/cartão, o repasse é semanal." },
+  { q: "Como funciona o período inicial?", a: "As condições dependem do plano e da oferta apresentada no cadastro. Confira duração, gatilho, valor mensal e início da cobrança antes de aceitar; o ItaSuper não deve cobrar regra diferente da oferta confirmada." },
+  { q: "Como funcionam pagamentos e repasses?", a: "No checkout do Cliente, a loja pode disponibilizar Pix online, Pix direto, Pix em maquininha, cartão e dinheiro. Na relação ItaSuper–Lojista, o PIX é usado para mensalidades e repasses: a taxa ItaSuper de R$ 0,99 acrescentada à taxa de entrega acumula no painel quando o Lojista recebe em dinheiro ou PIX direto, e a cobrança do acumulado é gerada toda segunda-feira." },
 ];
 
 const PartnerOnboarding = () => {
@@ -331,7 +331,7 @@ const PartnerOnboarding = () => {
               { value: `${storesCount}+`, label: "Lojas parceiras" },
               { value: `${ordersCount}k+`, label: "Pedidos entregues" },
               { value: "< 5min", label: "Para montar o cardápio" },
-              { value: "24h", label: "Suporte dedicado" },
+              { value: "WhatsApp", label: "Canal de suporte" },
             ].map((s) => (
               <div key={s.label}>
                 <p className="text-3xl md:text-4xl font-extrabold text-primary">{s.value}</p>
@@ -594,7 +594,7 @@ const PartnerOnboarding = () => {
                 <div className="text-right"><span className="text-lg font-black text-foreground">R$90</span><span className="text-xs text-muted-foreground">/mês</span></div>
               </div>
               <div className="flex flex-wrap gap-1.5 mt-2">
-                {["0% taxa", "Dinheiro/Cartão", "Apenas motoboy próprio"].map(tag => (
+                {["0% taxa", "Dinheiro/Cartão", "Motoboy contratado pela loja"].map(tag => (
                   <span key={tag} className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-muted text-muted-foreground">{tag}</span>
                 ))}
               </div>

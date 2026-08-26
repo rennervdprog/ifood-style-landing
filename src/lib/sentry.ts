@@ -48,7 +48,9 @@ export const initSentry = () => {
 
   if (isNative) {
     // Envelopa o SDK React com a camada nativa (captura crashes Java/Kotlin/NDK + ANR)
-    SentryCapacitor.init(options as any, Sentry.init);
+    // O wrapper Capacitor pode carregar uma versão diferente dos tipos do SDK browser.
+    // Mantemos o callback compatível sem alterar a inicialização do Sentry React.
+    SentryCapacitor.init(options as any, (passedOptions: any) => Sentry.init(passedOptions as any));
     console.log("[Sentry] Inicializado (Capacitor + React).");
   } else {
     Sentry.init(options as any);

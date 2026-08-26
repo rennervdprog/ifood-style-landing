@@ -26,7 +26,6 @@ import EmptiesExchange, { type EmptiesExchangeSelection } from "@/components/Emp
 import { haptic } from "@/lib/haptics";
 
 const allPaymentMethods = [
-  { id: "pix_machine", label: "PIX na Maquininha",   desc: "PIX pela maquininha do lojista", icon: QrCode },
   { id: "pix_direto",  label: "Pix Direto",          desc: "Transferência à loja com comprovante", icon: QrCode },
   { id: "cartao",      label: "Cartão",               desc: "Débito ou crédito",       icon: CreditCard },
   { id: "dinheiro",    label: "Dinheiro",             desc: "Em espécie",              icon: Banknote },
@@ -103,14 +102,6 @@ const CheckoutPage = () => {
   const lastPaymentKey = user && storeId ? `last_payment_method:${user.id}:${storeId}` : null;
 
 
-  // Filtrar métodos — storePaymentSettings declarado abaixo após storeData
-  const paymentMethods = useMemo(() => {
-    if (!storePlan.allowPix) {
-      return allPaymentMethods.filter(pm => pm.id !== "pix");
-    }
-    return allPaymentMethods;
-  }, [storePlan.allowPix]);
-
   const { data: storeData } = useQuery({
     queryKey: ["store-checkout", storeId],
     queryFn: async () => {
@@ -130,23 +121,21 @@ const CheckoutPage = () => {
   const storePaymentSettings = useMemo(() => {
     const s = (storeData as any)?.settings || {};
     return {
-      accept_pix_online:  s.accept_pix_online  !== false,
-      accept_pix_machine: s.accept_pix_machine === true,
       accept_card:        s.accept_card        !== false,
       accept_cash:        s.accept_cash        !== false,
     };
   }, [storeData]);
 
-  // Re-declarar paymentMethods usando storePaymentSettings (agora declarado na ordem certa)
+  // No checkout do Cliente, o único método PIX disponível é o PIX Direto por comprovante.
+  // PIX online fica reservado à relação financeira Lojista–ItaSuper.
   const filteredPaymentMethods = useMemo(() => {
     return allPaymentMethods.filter(pm => {
-      if (pm.id === "pix_machine") return storePaymentSettings.accept_pix_machine;
-      if (pm.id === "pix_direto")  return !!(storeData as any)?.pix_direto_enabled && !!(storeData as any)?.pix_direto_key;
-      if (pm.id === "cartao")      return storePaymentSettings.accept_card;
-      if (pm.id === "dinheiro")    return storePaymentSettings.accept_cash;
+      if (pm.id === "pix_direto") return !!(storeData as any)?.pix_direto_enabled && !!(storeData as any)?.pix_direto_key;
+      if (pm.id === "cartao") return storePaymentSettings.accept_card;
+      if (pm.id === "dinheiro") return storePaymentSettings.accept_cash;
       return true;
     });
-  }, [storePlan.allowPix, storePaymentSettings, storeData]);
+  }, [storePaymentSettings, storeData]);
 
   // Smart default: lembra a última forma de pagamento usada pelo usuário nesta loja
   useEffect(() => {
@@ -600,13 +589,10 @@ const CheckoutPage = () => {
         // Pré-pedido: se a loja ainda não abriu mas aceita pedidos agendados,
         // grava com status `scheduled` e `release_at`. O cron
         // `release_scheduled_orders()` migra para `pendente` no horário.
-        const orderStatus = paymentMethod === "pix"
-          ? "aguardando_pagamento"
-          : paymentMethod === "pix_direto"
-            ? "aguardando_comprovante"
-            : (isPreorder ? "scheduled" : "pendente");
-        const releaseAt = isPreorder && paymentMethod !== "pix" ? storeStatus?.releaseAt : null;
-        // pix_machine = físico (igual cartão/dinheiro) — não aguarda confirmação Asaas
+        const orderStatus = paymentMethod === "pix_direto"
+          ? "aguardando_comprovante"
+          : (isPreorder ? "scheduled" : "pendente");
+        const releaseAt = isPreorder ? storeStatus?.releaseAt : null;
         const { data: order, error: orderError } = await supabase
           .from("orders")
           .insert({
@@ -701,17 +687,10 @@ const CheckoutPage = () => {
 
       // Clear cart + navigate IMMEDIATELY — push notifications and geocoding patching happen in background
       clearCart();
-      if (paymentMethod === "pix") {
-        toast.success("Pedido criado! Acesse 'Meus Pedidos' para pagar com PIX.", { duration: 5000 });
-        navigate("/pedidos?new_order=1");
-      } else if (paymentMethod === "pix_direto") {
+      if (paymentMethod === "pix_direto") {
         const first = createdOrders[0];
         toast.success("Pedido criado! Envie o comprovante do PIX.");
         navigate(first ? `/pix-direto/${first.orderId}` : "/pedidos?new_order=1", { replace: true });
-      } else if (paymentMethod === "pix_machine") {
-        confetti({ particleCount: 120, spread: 80, origin: { y: 0.7 } });
-        toast.success("Pedido enviado! Pague via PIX na maquininha na entrega.");
-        navigate("/pedidos?new_order=1", { replace: true });
       } else {
         confetti({ particleCount: 120, spread: 80, origin: { y: 0.7 } });
         toast.success("Pedido enviado com sucesso! Acompanhe pelo chat.");
@@ -720,8 +699,7 @@ const CheckoutPage = () => {
 
       // Background tasks (non-blocking): notify store owners
       (async () => {
-        if (paymentMethod !== "pix") { // pix_machine e cartão/dinheiro notificam o lojista
-          for (const { storeId, orderId } of createdOrders) {
+        for (const { storeId, orderId } of createdOrders) {
             try {
               const { data: storeData } = await supabase
                 .from("stores_public")
@@ -734,7 +712,6 @@ const CheckoutPage = () => {
             } catch (e) {
               console.warn("notify store owner error:", e);
             }
-          }
         }
       })();
 
