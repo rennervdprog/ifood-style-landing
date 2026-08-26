@@ -811,13 +811,13 @@ const AuthPage = () => {
             Peça online.<br />Receba em casa.
           </h2>
              <p className="text-white/60 text-sm max-w-xs">
-               Cardápio digital e delivery profissional para todo o Brasil.
+               Cardápio digital e delivery profissional conforme a disponibilidade da sua cidade.
              </p>
         </div>
 
         <div className="relative z-10">
           <div className="space-y-3 mb-12">
-            {["Pedidos em tempo real", "Pagamento seguro", "Rastreie sua entrega"].map((text) => (
+            {["Pedidos em tempo real", "Formas de pagamento claras", "Acompanhe o status da entrega"].map((text) => (
               <div key={text} className="flex items-center gap-2.5">
                 <CheckCircle2 className="h-4 w-4 text-primary flex-shrink-0" />
                 <span className="text-white/70 text-xs">{text}</span>

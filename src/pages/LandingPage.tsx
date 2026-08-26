@@ -19,9 +19,9 @@ const features = [
 const faq = [
   { q: "Quanto custa o ItaSuper?", a: "O ItaSuper trabalha com plano fixo mensal, sem cobrar comissão por pedido. Veja os planos atuais na página /planos." },
   { q: "Preciso de site próprio?", a: "Não. Sua loja recebe um link próprio (itasuper.com.br/sua-loja) que você compartilha no Instagram, WhatsApp e Google." },
-  { q: "Funciona para qualquer tipo de loja?", a: "Sim. Atende pizzaria, hamburgueria, restaurante, adega, açaí, padaria, farmácia, mercado e qualquer negócio que entrega ou retira no balcão." },
+  { q: "Funciona para qualquer tipo de loja?", a: "A plataforma atende diferentes categorias, conforme os recursos habilitados e a operação disponível. Pizzarias, restaurantes, adegas, açaí, padarias e mercados podem operar com delivery ou retirada; categorias reguladas, como farmácia, podem permanecer restritas até revisão específica." },
   { q: "Como o ItaSuper se compara a marketplaces de delivery?", a: "As condições dependem do plano contratado. O ItaSuper oferece atendente de IA, painel, KDS, PDV e integração opcional com o motoboy escolhido e contratado pelo Lojista, sem que o ItaSuper mantenha entregadores próprios." },
-  { q: "Como o cliente paga?", a: "Pix, cartão na entrega, dinheiro ou pagamento online — você define as opções no painel." },
+  { q: "Como o cliente paga?", a: "No checkout, o Cliente pode usar Pix Direto com envio de comprovante, cartão ou dinheiro, conforme a configuração da loja. PIX online fica reservado à relação financeira entre Lojista e ItaSuper." },
   { q: "Tem app para o entregador?", a: "Sim, app Android para os motoboys com mapa, status de entrega e notificações em tempo real." },
 ];
 
@@ -79,6 +79,7 @@ export default function LandingPage() {
           <nav className="flex items-center gap-3 text-sm font-semibold">
             <Link to="/cliente" className="hidden sm:inline text-muted-foreground hover:text-foreground">Ver lojas</Link>
             <Link to="/planos" className="hidden sm:inline text-muted-foreground hover:text-foreground">Planos</Link>
+            <Link to="/auth" className="text-muted-foreground hover:text-foreground">Entrar</Link>
             <Link to="/cadastro-lojista" className="bg-primary text-primary-foreground px-3 py-2 rounded-lg">Cadastrar loja</Link>
           </nav>
         </div>

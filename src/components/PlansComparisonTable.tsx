@@ -1,5 +1,5 @@
 import { Check, X } from "lucide-react";
-import { PLANS, PLANS_ORDER, DELIVERY_FEE_NOTE, PIX_FEE_NOTE } from "@/lib/plansInfo";
+import { PLANS, PLANS_ORDER, DELIVERY_FEE_NOTE } from "@/lib/plansInfo";
 import type { StorePlanType } from "@/hooks/useStorePlan";
 
 interface Row {
@@ -18,8 +18,8 @@ const ROWS: Row[] = [
     values: { fixed: "0%", pdv_only: "Não se aplica" },
   },
   {
-    label: "Taxa por PIX online",
-    values: { fixed: "R$ 1,99", pdv_only: "Não se aplica" },
+    label: "Pix Direto do Cliente",
+    values: { fixed: "Comprovante", pdv_only: "Não se aplica" },
   },
   {
     label: "Taxa da plataforma na entrega",
@@ -114,7 +114,7 @@ export default function PlansComparisonTable({
       <div className="space-y-1 px-1 text-[11px] text-muted-foreground">
         <p>💡 * O Essencial começa em R$ 0,00 enquanto o faturamento acumulado no período de análise de 60 dias permanecer até R$ 5.000,00. Depois, a mensalidade de R$ 89,90 pode ser ativada com aviso prévio de 30 dias.</p>
         <p>💡 {DELIVERY_FEE_NOTE}</p>
-        <p>💡 {PIX_FEE_NOTE}</p>
+        <p>💡 No checkout, o Cliente não usa PIX online: quando disponível, utiliza Pix Direto com envio de comprovante, além de cartão ou dinheiro. PIX online fica reservado à relação financeira entre Lojista e ItaSuper.</p>
         <p>💡 O Somente PDV é voltado ao balcão: não possui vitrine, pedidos online nem entregas.</p>
       </div>
     </div>
