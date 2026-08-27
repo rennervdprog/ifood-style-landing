@@ -31,6 +31,43 @@ function normCity(v?: string | null) {
   return (v || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
 }
 
+export type StoreAccessPreviewReason = "city" | "distance" | null;
+
+export interface StoreAccessPreview {
+  allowed: boolean;
+  distanceKm: number | null;
+  reason: StoreAccessPreviewReason;
+}
+
+/**
+ * Preview síncrono para vitrines e cards. Não consulta GPS, não grava auditoria
+ * e permanece fail-open quando faltam coordenadas; a cotação do checkout segue
+ * sendo a autoridade final para pedidos de entrega.
+ */
+export function previewStoreAccess(
+  store: { address_city?: string | null; latitude?: number | string | null; longitude?: number | string | null; max_delivery_km?: number | string | null; delivery_radius?: number | string | null },
+  deliveryCoords: Coordinates | null,
+  deliveryCity?: string | null,
+): StoreAccessPreview {
+  const storeCity = normCity(store?.address_city);
+  const clientCity = normCity(deliveryCity);
+  if (storeCity && clientCity && storeCity !== clientCity) {
+    return { allowed: false, distanceKm: null, reason: "city" };
+  }
+
+  const storeLat = Number(store?.latitude);
+  const storeLng = Number(store?.longitude);
+  if (!deliveryCoords || !Number.isFinite(storeLat) || !Number.isFinite(storeLng)) {
+    return { allowed: true, distanceKm: null, reason: null };
+  }
+
+  const distanceKm = haversineMeters(deliveryCoords, { lat: storeLat, lng: storeLng }) / 1000;
+  const maxKm = Number(store?.max_delivery_km ?? store?.delivery_radius ?? DEFAULT_MAX_DISTANCE_KM) || DEFAULT_MAX_DISTANCE_KM;
+  return distanceKm > maxKm
+    ? { allowed: false, distanceKm, reason: "distance" }
+    : { allowed: true, distanceKm, reason: null };
+}
+
 async function logAttempt(params: FraudCheckParams, result: FraudCheckResult) {
   try {
     const { data: { user } } = await supabase.auth.getUser();

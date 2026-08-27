@@ -86,9 +86,9 @@ const CheckoutPage = () => {
   const { data: userProfile, refetch: refetchProfile } = useQuery({
     queryKey: ["my-profile-checkout", user?.id],
     queryFn: async () => {
-      const { data } = await supabase
+      const { data } = await (supabase as any)
         .from("profiles")
-        .select("street, number, complement, neighborhood, reference_point, phone, whatsapp_number, cep, city")
+        .select("street, number, complement, neighborhood, reference_point, phone, whatsapp_number, cep, city, state")
         .eq("user_id", user!.id)
         .maybeSingle();
       return data;
@@ -937,7 +937,10 @@ const CheckoutPage = () => {
                       {savedAddressData.street}, {savedAddressData.number}
                       {savedAddressData.complement ? ` - ${savedAddressData.complement}` : ""}
                     </p>
-                    <p className="text-xs text-muted-foreground">{savedAddressData.neighborhood}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {savedAddressData.neighborhood}
+                      {savedAddressData.cep ? ` • CEP ${savedAddressData.cep}` : ""}
+                    </p>
                     {savedAddressData.reference_point && (
                       <p className="text-xs text-muted-foreground">📍 {savedAddressData.reference_point}</p>
                     )}
@@ -948,7 +951,11 @@ const CheckoutPage = () => {
                       {profileStreet}, {profileNumber}
                       {profileComplement ? ` - ${profileComplement}` : ""}
                     </p>
-                    <p className="text-xs text-muted-foreground">{profileNeighborhood}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {profileNeighborhood}
+                      {(userProfile as any)?.city ? ` • ${(userProfile as any).city}${(userProfile as any)?.state ? `/${(userProfile as any).state}` : ""}` : ""}
+                      {profileCep ? ` • CEP ${profileCep}` : ""}
+                    </p>
                     {profileReference && (
                       <p className="text-xs text-muted-foreground">📍 {profileReference}</p>
                     )}

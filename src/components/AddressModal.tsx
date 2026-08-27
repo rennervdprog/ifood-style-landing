@@ -22,6 +22,8 @@ const AddressModal = ({ onClose, onSaved }: AddressModalProps) => {
   const [complement, setComplement] = useState("");
   const [referencePoint, setReferencePoint] = useState("");
   const [neighborhood, setNeighborhoodLocal] = useState("");
+  const [city, setCity] = useState("");
+  const [state, setState] = useState("");
   const [phone, setPhone] = useState("");
   const [saving, setSaving] = useState(false);
   const [loadingCep, setLoadingCep] = useState(false);
@@ -61,6 +63,8 @@ const AddressModal = ({ onClose, onSaved }: AddressModalProps) => {
       setStreet(result.logradouro || "");
       if (result.complemento) setComplement(result.complemento);
       if (result.bairro) setNeighborhoodLocal(result.bairro);
+      if (result.localidade) setCity(result.localidade);
+      if (result.uf) setState(result.uf);
       if (!result.logradouro && !result.bairro) {
         setShowGpsHint(true);
         toast.info("CEP genérico — use o GPS para preencher com precisão.");
@@ -92,6 +96,8 @@ const AddressModal = ({ onClose, onSaved }: AddressModalProps) => {
         if (rev.street) setStreet(rev.street);
         if (rev.number) setNumber(String(rev.number));
         if (rev.neighborhood) setNeighborhoodLocal(rev.neighborhood);
+        if (rev.city) setCity(rev.city);
+        if (rev.state) setState(rev.state);
         if (rev.postalcode && !cep) setCep(formatCep(rev.postalcode));
         setShowGpsHint(false);
         toast.success("Endereço preenchido pelo GPS! Confira e ajuste se necessário.");
@@ -120,6 +126,8 @@ const AddressModal = ({ onClose, onSaved }: AddressModalProps) => {
           complement: complement.trim(),
           reference_point: referencePoint.trim(),
           neighborhood: neighborhood.trim(),
+          city: city.trim() || null,
+          state: state.trim() || null,
           phone: phone.trim(),
         } as any, { onConflict: "user_id" });
       if (error) throw error;
