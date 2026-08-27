@@ -13,6 +13,7 @@ import {
   Clock3,
   CreditCard,
   FileText,
+  LogIn,
   Menu,
   MessageCircle,
   PackageCheck,
@@ -44,13 +45,13 @@ const SEGMENTS = [
 const PAINS = [
   ["Depende de apps e comissões altas", "Venda no seu canal, sem comissão"],
   ["Pedidos perdidos e confirmação manual", "Cardápio e pedido organizados"],
-  ["Sem confirmação de pagamento", "PIX confirmado na hora"],
+  ["Conferência manual de pagamentos", "Recebimento organizado no painel"],
   ["Sem dados para tomar decisões", "Relatórios e controle na sua mão"],
 ] as const;
 
 const FEATURES = [
   { icon: Store, title: "Cardápio próprio", desc: "Monte seu cardápio e divulgue seu link." },
-  { icon: Zap, title: "PIX online", desc: "Receba pagamentos com confirmação na hora." },
+  { icon: Zap, title: "Pix Direto", desc: "Receba por Pix Direto com comprovante, cartão ou dinheiro, conforme sua operação." },
   { icon: MessageCircle, title: "WhatsApp", desc: "Atenda e envie atualizações com um clique." },
   { icon: Truck, title: "Entrega da loja", desc: "Integração com o motoboy escolhido e contratado pelo Lojista." },
   { icon: BarChart3, title: "Relatórios", desc: "Acompanhe vendas, clientes e produtos." },
@@ -67,7 +68,7 @@ const STEPS = [
 const COMPARISON = [
   ["Venda no seu canal", "Sim", "Não", "Sim"],
   ["Comissão por pedido", "0%", "Varia", "0%"],
-  ["PIX confirmado", "Sim", "Depende", "Não"],
+  ["Pix Direto / cartão", "Sim", "Depende", "Não"],
   ["Gestão de entregas", "Sim", "Limitado", "Não"],
   ["Relatórios e dados", "Completos", "Limitados", "Não"],
   ["Facilidade de uso", "Alta", "Média", "Baixa"],
@@ -80,7 +81,7 @@ const FAQS = [
   },
   {
     question: "Quais são as formas de pagamento aceitas?",
-    answer: "Sua loja pode receber por PIX online, PIX na maquininha, dinheiro, cartão ou maquininha conforme as opções configuradas no painel.",
+    answer: "No checkout do Cliente, a loja pode oferecer Pix Direto com comprovante, cartão ou dinheiro, conforme a configuração da operação. PIX online fica reservado à relação financeira entre Lojista e ItaSuper, como mensalidades e repasses.",
   },
   {
     question: "Posso cancelar quando quiser?",
@@ -235,9 +236,9 @@ function DashboardPreview() {
                 <div className="mt-3 flex items-center justify-between border-t border-border pt-3"><span className="text-sm font-black">R$ 59,80</span><Button size="sm" className="h-7 rounded-lg px-2 text-[9px] font-black">Aceitar pedido</Button></div>
               </div>
               <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3">
-                <p className="text-[9px] font-black uppercase tracking-wider text-emerald-700">PIX confirmado</p>
+                <p className="text-[9px] font-black uppercase tracking-wider text-emerald-700">Pagamento registrado</p>
                 <div className="mt-4 grid h-10 w-10 place-items-center rounded-xl bg-emerald-500/15"><CheckCircle2 className="h-5 w-5 text-emerald-600" /></div>
-                <p className="mt-4 text-[9px] text-muted-foreground">Pagamento aprovado</p><p className="text-base font-black text-emerald-700">R$ 59,80</p>
+                <p className="mt-4 text-[9px] text-muted-foreground">Comprovante conferido</p><p className="text-base font-black text-emerald-700">R$ 59,80</p>
               </div>
             </div>
             <div className="mt-3 grid grid-cols-3 gap-2">
@@ -247,7 +248,7 @@ function DashboardPreview() {
         </div>
       </div>
       <div className="absolute -right-2 top-[38%] hidden rounded-2xl border border-emerald-500/15 bg-card px-3 py-2 shadow-[0_16px_38px_-24px_hsl(var(--foreground)/0.4)] md:block">
-        <p className="text-[9px] font-black uppercase tracking-wider text-emerald-600">Pagamento confirmado</p><p className="mt-1 text-xs font-black">+ R$ 59,80</p>
+        <p className="text-[9px] font-black uppercase tracking-wider text-emerald-600">Pagamento conferido</p><p className="mt-1 text-xs font-black">+ R$ 59,80</p>
       </div>
     </div>
   );
@@ -274,13 +275,13 @@ const StoreDirectory = () => {
   const handleWhatsApp = () => window.open("https://wa.me/5522992796291?text=Olá! Tenho interesse em cadastrar minha loja no ItaSuper.", "_blank");
 
   useEffect(() => {
-    document.title = "ItaSuper — Delivery, PIX e PDV para sua loja";
+    document.title = "ItaSuper — Delivery, Pix Direto e PDV para sua loja";
     const setMeta = (name: string, content: string, attr: "name" | "property" = "name") => {
       let element = document.head.querySelector<HTMLMetaElement>(`meta[${attr}="${name}"]`);
       if (!element) { element = document.createElement("meta"); element.setAttribute(attr, name); document.head.appendChild(element); }
       element.setAttribute("content", content);
     };
-    const description = "Cardápio digital próprio, PIX confirmado, WhatsApp, entregas e PDV para sua loja vender no próprio canal.";
+    const description = "Cardápio digital próprio, Pix Direto, WhatsApp, entregas e PDV para sua loja vender no próprio canal.";
     setMeta("description", description);
     setMeta("og:title", "ItaSuper — Seu delivery, sua marca, seu cliente", "property");
     setMeta("og:description", description, "property");
@@ -353,8 +354,9 @@ const StoreDirectory = () => {
             <div className="max-w-xl">
               <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-[11px] font-bold text-muted-foreground"><span className="relative flex h-2 w-2"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-70" /><span className="relative inline-flex h-2 w-2 rounded-full bg-primary" /></span>{storesCount}+ lojas ativas em {citiesCount} cidades</div>
               <h1 className="text-[2.85rem] font-black leading-[0.94] tracking-[-0.055em] text-foreground sm:text-6xl lg:text-7xl">Seu delivery.<br />Sua marca.<br /><span className="text-primary">Seu cliente.</span></h1>
-              <p className="mt-6 max-w-lg text-base leading-relaxed text-muted-foreground md:text-lg">Tenha seu cardápio digital, receba pedidos com PIX confirmado, atenda pelo WhatsApp e tenha controle real das suas entregas.</p>
+              <p className="mt-6 max-w-lg text-base leading-relaxed text-muted-foreground md:text-lg">Tenha seu cardápio digital, receba pedidos com formas de pagamento claras, atenda pelo WhatsApp e tenha controle real das suas entregas.</p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row"><Button size="lg" onClick={handleCTA} {...prefetchHandlers("/cadastro-lojista")} className="h-14 rounded-2xl px-7 text-base font-black shadow-[0_18px_36px_-18px_hsl(var(--primary)/0.9)]">Criar minha loja grátis <ArrowRight className="ml-2 h-5 w-5" /></Button><Button size="lg" variant="outline" onClick={handleWhatsApp} className="h-14 rounded-2xl border-2 bg-card px-6 text-base font-bold"><MessageCircle className="mr-2 h-5 w-5" /> Falar no WhatsApp</Button></div>
+              <div className="mt-4 flex items-center gap-2 text-sm font-semibold text-muted-foreground"><span>Já tem uma conta?</span><button type="button" onClick={() => navigate("/auth")} className="inline-flex items-center gap-1.5 text-primary underline underline-offset-4 hover:text-primary/80"><LogIn className="h-4 w-4" /> Entrar</button></div>
               <div className="mt-7 grid grid-cols-3 gap-3 border-t border-border pt-5 text-[11px] font-bold text-muted-foreground sm:flex sm:flex-wrap sm:gap-x-5"><span className="inline-flex items-center gap-1.5"><CreditCard className="h-3.5 w-3.5 text-primary" /> Sem cartão</span><span className="inline-flex items-center gap-1.5"><Clock3 className="h-3.5 w-3.5 text-primary" /> Pronto em 10 min</span><span className="inline-flex items-center gap-1.5"><ShieldCheck className="h-3.5 w-3.5 text-primary" /> Cancele quando quiser</span></div>
             </div>
             <DashboardPreview />
@@ -369,9 +371,9 @@ const StoreDirectory = () => {
 
         <section className="border-y border-border bg-muted/20 px-5 py-16 md:px-6 md:py-24"><div className="mx-auto max-w-6xl"><SectionHeading eyebrow="A diferença" title={<>Menos improviso.<br /><span className="text-primary">Mais controle.</span></>} /><div className="mt-10 overflow-hidden rounded-3xl border border-border bg-card"><div className="grid grid-cols-2 border-b border-border text-[10px] font-black uppercase tracking-[0.16em] md:text-xs"><div className="bg-destructive/[0.04] px-5 py-3 text-destructive">Antes</div><div className="bg-emerald-500/[0.04] px-5 py-3 text-emerald-700">Depois</div></div>{PAINS.map(([before, after]) => <div key={before} className="grid grid-cols-2 border-b border-border last:border-0"><p className="flex items-center gap-2 px-4 py-4 text-xs leading-snug text-muted-foreground md:px-5 md:text-sm"><X className="h-4 w-4 shrink-0 text-destructive/70" />{before}</p><p className="flex items-center gap-2 border-l border-border px-4 py-4 text-xs font-bold leading-snug md:px-5 md:text-sm"><Check className="h-4 w-4 shrink-0 text-emerald-600" />{after}</p></div>)}</div></div></section>
 
-        <section id="recursos" className="px-5 py-16 md:px-6 md:py-24"><div className="mx-auto max-w-6xl"><SectionHeading eyebrow="Seu canal de vendas" title={<>Tudo para vender<br />no <span className="text-primary">seu canal.</span></>} description="Recursos para vender no seu canal, organizar a operação e ainda aproveitar a descoberta da vitrine ItaSuper." /><div className="mt-10 grid gap-3 md:grid-cols-4"><div className="rounded-3xl border border-border bg-card p-5 shadow-[0_18px_55px_-42px_hsl(var(--foreground)/0.45)] md:col-span-2 md:row-span-2 md:p-7"><div className="flex items-center justify-between"><p className="text-sm font-black">Resumo da sua loja</p><span className="rounded-full bg-emerald-500/10 px-2 py-1 text-[10px] font-black text-emerald-700">Loja ativa</span></div><div className="mt-6 grid grid-cols-3 gap-3"><MiniMetric label="Pedidos hoje" value="28" /><MiniMetric label="Faturamento" value="R$ 1.284,50" /><MiniMetric label="Ticket médio" value="R$ 45,88" /></div><div className="mt-6 flex h-32 items-end gap-2 rounded-2xl bg-muted/45 p-4">{[35, 55, 42, 67, 58, 84, 62, 94, 77, 100].map((height, index) => <span key={index} className="flex-1 rounded-t bg-primary/20" style={{ height: `${height}%` }} />)}</div><p className="mt-4 text-sm text-muted-foreground">Acompanhe vendas, pedidos e desempenho numa única tela.</p></div>{FEATURES.map(({ icon: Icon, title, desc }) => <article key={title} className="rounded-2xl border border-border bg-card p-4 transition hover:-translate-y-0.5 hover:border-primary/35"><span className="grid h-9 w-9 place-items-center rounded-xl bg-primary/10 text-primary"><Icon className="h-4 w-4" /></span><h3 className="mt-4 text-sm font-black">{title}</h3><p className="mt-1 text-xs leading-relaxed text-muted-foreground">{desc}</p></article>)}</div></div></section>
+        <section id="recursos" className="px-5 py-16 md:px-6 md:py-24"><div className="mx-auto max-w-6xl"><SectionHeading eyebrow="Seu canal de vendas" title={<>Tudo para vender<br />no <span className="text-primary">seu canal.</span></>} description="Recursos para vender no seu canal, organizar a operação e ainda aproveitar a descoberta da vitrine ItaSuper." /><div className="mt-10 grid gap-3 md:grid-cols-4"><div className="rounded-3xl border border-border bg-card p-5 shadow-[0_18px_55px_-42px_hsl(var(--foreground)/0.45)] md:col-span-2 md:row-span-2 md:p-7"><div className="flex items-center justify-between"><p className="text-sm font-black">Resumo da sua loja</p><span className="rounded-full bg-emerald-500/10 px-2 py-1 text-[10px] font-black text-emerald-700">Loja ativa</span></div><div className="mt-6 grid grid-cols-3 gap-3"><MiniMetric label="Pedidos hoje" value="28" /><MiniMetric label="Faturamento" value="R$ 1.284,50" /><MiniMetric label="Ticket médio" value="R$ 45,88" /></div>              <div className="mt-6 flex h-32 items-end gap-2 rounded-2xl bg-muted/45 p-4">{[35, 55, 42, 67, 58, 84, 62, 94, 77, 100].map((height, index) => <span key={index} className="flex-1 rounded-t bg-primary/20" style={{ height: `${height}%` }} />)}</div><p className="mt-4 text-sm text-muted-foreground">Acompanhe vendas, pedidos e desempenho numa única tela.</p></div>{FEATURES.map(({ icon: Icon, title, desc }) => <article key={title} className="rounded-2xl border border-border bg-card p-4 transition hover:-translate-y-0.5 hover:border-primary/35"><span className="grid h-9 w-9 place-items-center rounded-xl bg-primary/10 text-primary"><Icon className="h-4 w-4" /></span><h3 className="mt-4 text-sm font-black">{title}</h3><p className="mt-1 text-xs leading-relaxed text-muted-foreground">{desc}</p></article>)}</div></div></section>
 
-        <section id="como-funciona" className="border-y border-border bg-muted/20 px-5 py-16 md:px-6 md:py-24"><div className="mx-auto max-w-6xl"><SectionHeading eyebrow="Como funciona" title={<>Do zero ao primeiro pedido<br />em <span className="text-primary">10 minutos.</span></>} /><div className="mt-10 rounded-3xl border border-border bg-card p-5 md:p-7"><div className="grid gap-6 md:grid-cols-4">{STEPS.map((step, index) => <div key={step.number} className="relative"><span className="grid h-8 w-8 place-items-center rounded-full bg-primary text-xs font-black text-primary-foreground">{step.number}</span>{index < STEPS.length - 1 && <span className="absolute left-10 right-0 top-4 hidden h-px bg-border md:block" />}<h3 className="mt-4 text-base font-black">{step.title}</h3><p className="mt-1 text-sm leading-relaxed text-muted-foreground">{step.desc}</p></div>)}</div><div className="mt-7 flex flex-col items-start justify-between gap-3 rounded-2xl border border-emerald-500/15 bg-emerald-500/[0.04] px-4 py-3 sm:flex-row sm:items-center"><span className="text-sm font-bold">Pedido #1257 pronto para operar</span><span className="inline-flex items-center gap-1.5 text-xs font-black text-emerald-700"><CheckCircle2 className="h-4 w-4" /> Pagamento via PIX confirmado</span></div></div></div></section>
+        <section id="como-funciona" className="border-y border-border bg-muted/20 px-5 py-16 md:px-6 md:py-24"><div className="mx-auto max-w-6xl"><SectionHeading eyebrow="Como funciona" title={<>Do zero ao primeiro pedido<br />em <span className="text-primary">10 minutos.</span></>} /><div className="mt-10 rounded-3xl border border-border bg-card p-5 md:p-7"><div className="grid gap-6 md:grid-cols-4">{STEPS.map((step, index) => <div key={step.number} className="relative"><span className="grid h-8 w-8 place-items-center rounded-full bg-primary text-xs font-black text-primary-foreground">{step.number}</span>{index < STEPS.length - 1 && <span className="absolute left-10 right-0 top-4 hidden h-px bg-border md:block" />}<h3 className="mt-4 text-base font-black">{step.title}</h3><p className="mt-1 text-sm leading-relaxed text-muted-foreground">{step.desc}</p></div>)}</div><div className="mt-7 flex flex-col items-start justify-between gap-3 rounded-2xl border border-emerald-500/15 bg-emerald-500/[0.04] px-4 py-3 sm:flex-row sm:items-center"><span className="text-sm font-bold">Pedido #1257 pronto para operar</span><span className="inline-flex items-center gap-1.5 text-xs font-black text-emerald-700"><CheckCircle2 className="h-4 w-4" /> Pagamento conforme a forma escolhida</span></div></div></div></section>
 
         <section className="px-5 py-16 md:px-6 md:py-24"><div className="mx-auto max-w-6xl"><SectionHeading eyebrow="Transparência" title={<>Custos claros,<br /><span className="text-primary">sem surpresa.</span></>} description="Planos, taxas e cobranças aparecem de forma separada no seu painel para você saber exatamente o que está pagando." /><div className="mt-10 grid gap-3 md:grid-cols-3"><CostCard icon={FileText} title="Seu plano"><p>Pague apenas após o gatilho de faturamento aplicável ao seu plano.</p><p className="mt-3 font-black text-foreground">Planos a partir de R$ 89,90/mês</p></CostCard><CostCard icon={Wallet} title="A taxa de plataforma (R$ 0,99)"><p>No plano Essencial, a taxa de R$ 0,99 é acrescentada à taxa de entrega definida pelo Lojista e paga pelo Cliente. Ela não é comissão sobre o valor dos produtos.</p><div className="mt-4 space-y-2 rounded-xl bg-muted/50 p-3 text-xs"><p><b className="text-foreground">Cliente paga:</b> R$ 0,99 são somados à taxa de entrega.</p><p><b className="text-foreground">Pagamento direto:</b> quando o Lojista recebe em dinheiro ou PIX direto, os R$ 0,99 acumulam no painel para cobrança posterior.</p></div></CostCard><CostCard icon={Clock3} title="Cobrança dos repasses"><p>Quando o Lojista recebe o Pedido em dinheiro ou PIX direto, os R$ 0,99 da plataforma acumulam no painel. A cobrança do valor acumulado é gerada via PIX toda segunda-feira, conforme o ciclo e as regras operacionais vigentes.</p></CostCard></div></div></section>
 

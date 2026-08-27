@@ -108,7 +108,8 @@ const fixed: PlanInfo = {
   ],
   example: (_: number) => "",
 };
-fixed.example = exampleText(fixed);
+fixed.example = (_orderValue: number) =>
+  "Sem comissão sobre o pedido; a taxa de plataforma, quando aplicável, é informada junto da entrega";
 
 const supporter: PlanInfo = {
   id: "supporter",
@@ -185,7 +186,7 @@ const pdv_only: PlanInfo = {
     "Relatórios financeiros do caixa",
     "Sem vitrine pública, sem delivery",
   ],
-  example: (_: number) => "Sem pedidos online — você usa só o caixa presencial.",
+  example: (_: number) => "Sem pedidos online — você usa só o caixa presencial",
 };
 
 export const PLANS: Record<StorePlanType, PlanInfo> = {
@@ -214,7 +215,7 @@ export const DELIVERY_FEE_NOTE =
 
 /** Linha única para a taxa PIX, conforme o plano e o meio de pagamento utilizado. */
 export const PIX_FEE_NOTE =
-  "A taxa operacional de PIX é aplicada somente a pedidos PIX online, conforme o plano. Ela é exibida no pedido e no financeiro da loja.";
+  "No checkout público, o Cliente usa Pix Direto com comprovante, cartão ou dinheiro conforme a configuração da loja. PIX online fica reservado à relação financeira entre Lojista e ItaSuper.";
 
 /**
  * Label canônico do plano. Use SEMPRE isto em vez de strings soltas

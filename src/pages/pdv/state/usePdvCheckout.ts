@@ -360,6 +360,8 @@ export function usePdvCheckout() {
               quantity: item.quantity,
               unit_price: item.price,
               products: { name: item.name },
+              addons: item.addons && item.addons.length > 0 ? item.addons : null,
+              observations: item.observations || null,
               metadata: item.metadata || null,
               printer_target: (item as any).printer_target ?? null,
             })),

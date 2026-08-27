@@ -35,7 +35,7 @@ function fmtDate(iso: string): string {
  * endereço fica num único lugar — evita divergência entre fluxos.
  *
  * Recursos:
- *  - Nº de pedido sequencial (`order_number`) com fallback para UUID curto.
+ *  - Código curto legível do pedido derivado do ID, no formato `#XXXXXXXX`.
  *  - Banner de origem (DELIVERY / BALCÃO / MESA / RETIRADA).
  *  - Endereço quebrado em linhas (rua/nº/compl/bairro/cidade/CEP/ref).
  *  - Observação geral do pedido + observação por item.
@@ -71,6 +71,11 @@ interface PrintOrder {
   payment_method: string;
   neighborhood: string;
   address_details: string;
+  /** Campos planos do snapshot de endereço do pedido online/manual. */
+  delivery_cep?: string | null;
+  delivery_city?: string | null;
+  delivery_state?: string | null;
+  reference_point?: string | null;
   /** Endereço estruturado (opcional). */
   delivery_address?: {
     street?: string | null;
@@ -93,6 +98,7 @@ interface PrintOrder {
   coupon_code?: string | null;
   coupon_discount?: number | null;
   delivery_mode?: string | null;
+  delivery_pin?: string | null;
   client_phone?: string | null;
   payments?: { method: string; amount: number }[] | null;
   order_items?: PrintOrderItem[];
@@ -205,12 +211,10 @@ function originBanner(label: string): string {
   return `<div class="tp-origin" style="text-align:center;font-weight:bold;font-size:14px;letter-spacing:2px;background:#000;color:#fff;padding:4px;margin:4px 0">${label}</div>`;
 }
 
-function formatOrderNumber(order: { id: string; order_number?: number | null }): { big: string; small: string } {
-  // Sempre usamos o ID curto como identificador principal para que impressão
-  // automática e manual mostrem exatamente o mesmo número (#B96FB481).
-  const big = `#${order.id.slice(0, 8).toUpperCase()}`;
-  const small = order.order_number && order.order_number > 0 ? `pedido nº ${order.order_number}` : "";
-  return { big, small };
+function formatOrderNumber(order: { id: string }): string {
+  // A impressão usa somente o código curto estável do pedido; não exibe
+  // order_number sequencial, que pode confundir o lojista e o cliente.
+  return `#${order.id.slice(0, 8).toUpperCase()}`;
 }
 
 
@@ -227,6 +231,20 @@ function renderAddress(order: PrintOrder): string {
   } else {
     if (order.neighborhood) lines.push(`<b>Bairro:</b> ${esc(order.neighborhood)}`);
     if (order.address_details) lines.push(`<b>Endereço:</b> ${esc(order.address_details)}`);
+
+    // O checkout grava o snapshot de entrega em colunas planas. Complementamos
+    // o texto para a térmica não perder cidade/UF/CEP quando não existe
+    // delivery_address estruturado (inclusive no endereço resolvido por GPS).
+    const addressText = String(order.address_details || "").toLowerCase();
+    const city = String(order.delivery_city || "").trim();
+    const state = String(order.delivery_state || "").trim().toUpperCase();
+    if ((city && !addressText.includes(city.toLowerCase())) || (state && !addressText.includes(state.toLowerCase()))) {
+      lines.push(`${esc(city)}${state ? "/" + esc(state) : ""}`.trim());
+    }
+    const cep = String(order.delivery_cep || "").replace(/\D/g, "");
+    const addressDigits = String(order.address_details || "").replace(/\D/g, "");
+    if (cep && !addressDigits.includes(cep)) lines.push(`CEP: ${esc(order.delivery_cep)}`);
+    if (order.reference_point) lines.push(`Ref.: ${esc(order.reference_point)}`);
   }
   return lines.map((l) => `<div class="tp-info">${l}</div>`).join("");
 }
@@ -458,8 +476,7 @@ export function printThermalReceipt(
 ${storeHeader(storeName, options)}
 <div class="tp-info" style="text-align:center">${date}</div>
 ${originBanner(origin)}
-<div class="tp-order-id" style="text-align:center;font-size:22px;font-weight:bold">PEDIDO ${num.big}</div>
-${num.small ? `<div style="text-align:center;font-size:10px;color:#666">${num.small}</div>` : ""}
+<div class="tp-order-id" style="text-align:center;font-size:22px;font-weight:bold">PEDIDO ${num}</div>
 ${scheduledHtml}
 <div class="tp-divider"></div>
 ${renderItems(order.order_items)}
@@ -474,8 +491,9 @@ ${discountHtml}
 ${paymentHtml}
 <div class="tp-divider"></div>
 <div class="tp-info"><b>Cliente:</b> ${esc(clientName)}</div>
-${phone ? `<div class="tp-info"><b>Telefone:</b> ${esc(phone)}</div>` : ""}
-${isPickup ? `<div class="tp-info" style="font-weight:bold">✓ Cliente vai retirar no balcão</div>` : renderAddress(order)}
+  ${phone ? `<div class="tp-info"><b>Telefone:</b> ${esc(phone)}</div>` : ""}
+  ${order.delivery_pin ? `<div class="tp-info" style="font-weight:bold;border:2px solid #000;padding:4px;text-align:center">PIN ENTREGA: ${esc(order.delivery_pin)}</div>` : ""}
+  ${isPickup ? `<div class="tp-info" style="font-weight:bold">✓ Cliente vai retirar no balcão</div>` : renderAddress(order)}
 <div class="tp-divider"></div>
 ${renderFooter()}
 `;
@@ -689,8 +707,7 @@ export function printPdvReceipt(order: PrintPdvOrder, storeName: string, options
 ${storeHeader(storeName, options)}
 <div class="tp-info" style="text-align:center">${date}</div>
 ${originBanner(origin)}
-<div class="tp-order-id" style="text-align:center;font-size:22px;font-weight:bold">VENDA PDV ${num.big}</div>
-${num.small ? `<div style="text-align:center;font-size:10px;color:#666">${num.small}</div>` : ""}
+<div class="tp-order-id" style="text-align:center;font-size:22px;font-weight:bold">VENDA PDV ${num}</div>
 <div class="tp-divider"></div>
 ${renderItems(order.order_items)}
 ${generalObsHtml}
@@ -713,7 +730,7 @@ ${renderFooter()}
     // Ticket da cozinha (sem preços, letra grande, só o essencial)
     const kitchenBody = `
 ${originBanner("COZINHA — PREPARAR")}
-<div class="tp-order-id" style="text-align:center;font-size:26px;font-weight:bold">${origin === "BALCÃO" ? "VENDA" : origin} ${num.big}</div>
+<div class="tp-order-id" style="text-align:center;font-size:26px;font-weight:bold">${origin === "BALCÃO" ? "VENDA" : origin} ${num}</div>
 <div class="tp-info" style="text-align:center">${date}</div>
 <div class="tp-divider"></div>
 ${kitchenItems

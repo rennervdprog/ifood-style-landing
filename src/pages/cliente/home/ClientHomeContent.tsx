@@ -17,6 +17,7 @@ import { useBatchStoreDistances } from "@/hooks/useBatchStoreDistances";
 import { formatBRL } from "@/lib/utils";
 import { describeStoreFee } from "@/lib/deliveryFeeDisplay";
 import { formatDistanceKm } from "@/lib/formatDistance";
+import { previewStoreAccess } from "@/lib/fraudCheck";
 import { mapStoresWithHours } from "../utils/mapStores";
 import { filterStoresWithOnlineDrivers } from "@/lib/storeVisibility";
 import CategoryChips, { normalizeCategory } from "./CategoryChips";
@@ -42,9 +43,9 @@ const ROTATING_PLACEHOLDERS = [
 ];
 
 // Full select (para tabela `stores` — inclui colunas que só existem na tabela base).
-const FULL_STORE_SELECT = "id, name, image_url, slug, category, categories, is_open, force_closed, rating, status, delivery_mode, own_delivery_fee, delivery_fee, delivery_fee_type, delivery_fee_base, delivery_fee_per_km, estimated_delivery_time, minimum_order_value, free_delivery_threshold, address_cep, address_city, address_complement, address_neighborhood, address_number, address_reference, address_state, address_street, latitude, longitude, settings, platform_fee_split";
+const FULL_STORE_SELECT = "id, name, image_url, slug, category, categories, is_open, force_closed, rating, status, delivery_mode, own_delivery_fee, delivery_fee, delivery_fee_type, delivery_fee_base, delivery_fee_per_km, estimated_delivery_time, minimum_order_value, free_delivery_threshold, max_delivery_km, delivery_radius, address_cep, address_city, address_complement, address_neighborhood, address_number, address_reference, address_state, address_street, latitude, longitude, settings, platform_fee_split";
 // Select da view de vitrine: não inclui plano, comissão ou outros dados comerciais internos.
-const PUBLIC_VIEW_SELECT = "id, name, image_url, slug, category, categories, is_open, force_closed, rating, status, delivery_mode, own_delivery_fee, delivery_fee, delivery_fee_type, delivery_base_km, delivery_fee_base, delivery_fee_per_km, estimated_delivery_time, minimum_order_value, free_delivery_threshold, address_cep, address_city, address_complement, address_neighborhood, address_number, address_reference, address_state, address_street, latitude, longitude, settings, platform_fee_split, network_id, is_matriz, is_visible";
+const PUBLIC_VIEW_SELECT = "id, name, image_url, slug, category, categories, is_open, force_closed, rating, status, delivery_mode, own_delivery_fee, delivery_fee, delivery_fee_type, delivery_base_km, delivery_fee_base, delivery_fee_per_km, estimated_delivery_time, minimum_order_value, free_delivery_threshold, max_delivery_km, delivery_radius, address_cep, address_city, address_complement, address_neighborhood, address_number, address_reference, address_state, address_street, latitude, longitude, settings, platform_fee_split, network_id, is_matriz, is_visible";
 
 // Fonte única de verdade — helper espelha RPC compute_store_delivery_fee.
 const formatFeeLabel = (store: any): { label: string; free: boolean; prefix?: string } => {
@@ -121,6 +122,8 @@ const loadPublicStores = async ({
   return await filterStoresWithOnlineDrivers(stores);
 };
 
+const getStoreAccessPreview = (store: any, coords: { lat: number; lng: number } | null, city?: string | null) => previewStoreAccess(store, coords, city);
+
 const greeting = () => {
   const h = new Date().getHours();
   if (h < 12) return "Bom dia";
@@ -133,6 +136,14 @@ const ClientHomeContent = () => {
   const navigate = useNavigate();
   const { addItem } = useCart();
   const userLocation = useUserLocation();
+  const [locationMode, setLocationMode] = useState<"saved" | "current">(() => {
+    try {
+      return localStorage.getItem("client:location_mode") === "current" ? "current" : "saved";
+    } catch {
+      return "saved";
+    }
+  });
+  const [showLocationChooser, setShowLocationChooser] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
@@ -154,7 +165,11 @@ const ClientHomeContent = () => {
   const { data: profile } = useQuery({
     queryKey: ["client-profile", user?.id],
     queryFn: async () => {
-      const { data } = await supabase.from("profiles").select("full_name, city").eq("user_id", user!.id).maybeSingle();
+      const { data } = await (supabase as any)
+        .from("profiles")
+        .select("full_name, street, number, neighborhood, city, state, cep")
+        .eq("user_id", user!.id)
+        .maybeSingle();
       return data;
     },
     enabled: !!user,
@@ -178,10 +193,13 @@ const ClientHomeContent = () => {
     staleTime: 1000 * 60 * 2,
   });
 
-  const effectiveCity = userLocation.city?.trim() || profile?.city?.trim() || null;
+  const activeCoords = locationMode === "current" ? userLocation.coords : null;
+  const effectiveCity = locationMode === "current"
+    ? userLocation.city?.trim() || null
+    : profile?.city?.trim() || null;
 
   const { data: suggestedStores, isLoading: loadingStores } = useQuery({
-    queryKey: ["available-stores", effectiveCity || "all", userLocation.coords?.lat, userLocation.coords?.lng],
+    queryKey: ["available-stores", effectiveCity || "all", activeCoords?.lat, activeCoords?.lng, locationMode],
     queryFn: async () => {
       const rows = await loadPublicStores({
         city: effectiveCity,
@@ -194,7 +212,7 @@ const ClientHomeContent = () => {
         .from("opening_hours")
         .select("store_id, day_of_week, open_time, close_time, is_closed_all_day")
         .in("store_id", storeIds);
-      return mapStoresWithHours(rows, allHours, userLocation.coords, userLocation.city);
+      return mapStoresWithHours(rows, allHours, activeCoords, effectiveCity);
     },
     enabled: true,
     staleTime: 1000 * 60 * 5,
@@ -202,8 +220,8 @@ const ClientHomeContent = () => {
     retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 8000),
   });
 
-  const { data: searchResults } = useQuery({
-    queryKey: ["client-store-search", searchQuery, userLocation.coords?.lat, userLocation.coords?.lng],
+  const { data: searchResults, isLoading: loadingSearchResults } = useQuery({
+    queryKey: ["client-store-search", searchQuery, activeCoords?.lat, activeCoords?.lng, locationMode],
     queryFn: async () => {
       const stores = await loadPublicStores({
         query: searchQuery,
@@ -216,7 +234,7 @@ const ClientHomeContent = () => {
         .from("opening_hours")
         .select("store_id, day_of_week, open_time, close_time, is_closed_all_day")
         .in("store_id", storeIds);
-      return mapStoresWithHours(stores, allHours, userLocation.coords, userLocation.city);
+      return mapStoresWithHours(stores, allHours, activeCoords, effectiveCity);
     },
     enabled: searchQuery.length >= 2,
     staleTime: 1000 * 60,
@@ -224,8 +242,9 @@ const ClientHomeContent = () => {
     retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 5000),
   });
 
-  const suggestedStoresEnriched = useBatchStoreDistances(suggestedStores || [], userLocation.coords);
-  const searchResultsEnriched = useBatchStoreDistances(searchResults || [], userLocation.coords);
+  const isStoresLoading = searchQuery.length >= 2 ? loadingSearchResults : loadingStores;
+  const suggestedStoresEnriched = useBatchStoreDistances(suggestedStores || [], activeCoords);
+  const searchResultsEnriched = useBatchStoreDistances(searchResults || [], activeCoords);
 
   const visibleStores = useMemo(() => {
     const base = searchQuery.length >= 2 ? searchResultsEnriched || [] : suggestedStoresEnriched || [];
@@ -235,6 +254,9 @@ const ClientHomeContent = () => {
 
     if (heroFilter === "direct_delivery") {
       return categoryFiltered.filter((s: any) => s.delivery_mode === "own");
+    }
+    if (heroFilter === "no_fee") {
+      return categoryFiltered.filter((s: any) => formatFeeLabel(s).free);
     }
 
     return categoryFiltered;
@@ -249,9 +271,22 @@ const ClientHomeContent = () => {
 
   const lastOrder = recentOrders?.[0];
 
-  const goToStore = (store: any) => {
-    if (store?.slug) navigate(`/${store.slug}`);
-    else if (store?.id) navigate(`/loja/${store.id}`);
+  const goToStore = (store: any, enforceArea = true) => {
+    if (!store) return;
+    if (enforceArea) {
+      const preview = getStoreAccessPreview(store, activeCoords, effectiveCity);
+      if (!preview.allowed) {
+        if (preview.reason === "city") {
+          toast.warning(`A entrega desta loja atende ${store.address_city || "outra cidade"}. Você ainda pode consultar o cardápio e verificar retirada.`);
+        } else if (preview.distanceKm !== null) {
+          toast.warning(`A entrega desta loja está fora do raio para o endereço selecionado (${preview.distanceKm.toFixed(1)} km). Você ainda pode consultar retirada.`);
+        } else {
+          toast.warning("A entrega desta loja pode não atender o endereço selecionado. Você ainda pode consultar retirada.");
+        }
+      }
+    }
+    if (store.slug) navigate(`/${store.slug}`);
+    else if (store.id) navigate(`/loja/${store.id}`);
   };
 
   const handleStoreKeyDown = (event: KeyboardEvent<HTMLDivElement>, store: any) => {
@@ -314,18 +349,40 @@ const ClientHomeContent = () => {
   };
 
   const firstName = profile?.full_name?.split(" ")[0] || "Cliente";
+  const hasSavedAddress = Boolean(profile?.street && profile?.number && profile?.neighborhood);
   const locationLabel = (() => {
+    if (locationMode === "saved") {
+      const street = profile?.street?.trim();
+      const number = profile?.number?.trim() || "";
+      if (street) return number ? `${street}, ${number}` : street;
+      if (profile?.neighborhood) return profile.neighborhood;
+      return profile?.city || "Cadastre um endereço";
+    }
     const street = userLocation.street?.trim();
     const number = (numberOverride?.trim() || userLocation.number?.trim() || "");
     if (street) return number ? `${street}, ${number}` : street;
     if (userLocation.neighborhood) return userLocation.neighborhood;
-    return userLocation.city || effectiveCity || (userLocation.ready ? "Sem localização" : "Detectando...");
+    return userLocation.city || "Localização atual";
   })();
 
   const openNumberEditor = () => {
     setNumberInput(numberOverride || userLocation.number || "");
     setEditingNumber(true);
   };
+  const chooseSavedAddress = () => {
+    setLocationMode("saved");
+    try { localStorage.setItem("client:location_mode", "saved"); } catch {}
+    setShowLocationChooser(false);
+    toast.success("Endereço salvo selecionado para a entrega.");
+  };
+
+  const chooseCurrentLocation = () => {
+    setLocationMode("current");
+    try { localStorage.setItem("client:location_mode", "current"); } catch {}
+    setShowLocationChooser(false);
+    userLocation.refresh();
+  };
+
   const saveNumberOverride = () => {
     const clean = numberInput.trim().slice(0, 10);
     setNumberOverride(clean || null);
@@ -400,16 +457,55 @@ const ClientHomeContent = () => {
     <div className="min-h-dvh bg-background pb-24">
       <SupportTicketModal open={showSupport} onClose={() => setShowSupport(false)} userRole="cliente" />
 
+      {showLocationChooser && (
+        <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center bg-black/40 p-0 sm:p-4" role="dialog" aria-modal="true" aria-labelledby="location-chooser-title">
+          <div className="w-full max-w-md rounded-t-3xl sm:rounded-3xl bg-background p-5 shadow-2xl">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 id="location-chooser-title" className="text-lg font-black text-foreground">Onde você quer receber?</h2>
+                <p className="mt-1 text-xs text-muted-foreground">Escolha o endereço usado para encontrar lojas e calcular a entrega.</p>
+              </div>
+              <button onClick={() => setShowLocationChooser(false)} className="rounded-full px-2 py-1 text-xl leading-none text-muted-foreground hover:bg-muted" aria-label="Fechar seleção de endereço">×</button>
+            </div>
+
+            <div className="mt-5 grid gap-3">
+              <button
+                onClick={chooseSavedAddress}
+                disabled={!hasSavedAddress}
+                className="flex items-start gap-3 rounded-2xl border border-border bg-card p-4 text-left transition-colors hover:bg-muted/60 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <MapPin className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+                <span className="min-w-0">
+                  <span className="block text-sm font-black text-foreground">Usar endereço salvo</span>
+                  <span className="mt-1 block truncate text-xs text-muted-foreground">{hasSavedAddress ? `${profile.street}, ${profile.number} — ${profile.city || "cidade não informada"}` : "Cadastre um endereço completo no seu perfil"}</span>
+                </span>
+              </button>
+
+              <button
+                onClick={chooseCurrentLocation}
+                className="flex items-start gap-3 rounded-2xl border border-primary/30 bg-primary/5 p-4 text-left transition-colors hover:bg-primary/10"
+              >
+                <MapPin className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+                <span>
+                  <span className="block text-sm font-black text-foreground">Usar localização atual</span>
+                  <span className="mt-1 block text-xs text-muted-foreground">Usaremos o GPS agora. Confira o endereço antes de confirmar o pedido.</span>
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Sticky header — marketplace style (opaco: backdrop-blur quebra sticky no Android WebView) */}
       <header className="sticky top-0 z-30 bg-background border-b border-border">
         <div className="px-4 pt-3 pb-2 flex items-center justify-between gap-3">
           <button
-            onClick={userLocation.refresh}
+            onClick={() => setShowLocationChooser(true)}
             className="flex flex-col text-left min-w-0 active:opacity-70"
-            aria-label="Atualizar localização"
+            aria-label="Selecionar endereço de entrega"
           >
             <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">
-              Entregar em
+              {locationMode === "current" ? "Usar localização atual" : "Entregar no endereço salvo"}
             </span>
             <span className="flex items-center gap-1 min-w-0">
               <MapPin className="w-4 h-4 text-primary shrink-0" />
@@ -563,7 +659,7 @@ const ClientHomeContent = () => {
               </div>
               <div className="flex gap-2">
                 <button
-                  onClick={() => goToStore(lastOrder.stores)}
+                  onClick={() => goToStore(lastOrder.stores, false)}
                   className="flex-1 h-10 bg-card text-foreground text-xs font-bold rounded-xl border border-border hover:bg-muted/50 transition-colors flex items-center justify-center gap-1.5"
                 >
                   <StoreIcon className="h-3.5 w-3.5" /> Ver loja
@@ -669,7 +765,7 @@ const ClientHomeContent = () => {
             </div>
           </div>
 
-          {loadingStores ? (
+          {isStoresLoading ? (
             <div className="space-y-4">
               {Array.from({ length: 5 }).map((_, i) => (
                 <div key={i} className="flex items-center gap-3">
@@ -693,6 +789,8 @@ const ClientHomeContent = () => {
                   ? "Nenhuma loja nesta categoria"
                   : heroFilter === "direct_delivery"
                   ? "Nenhuma loja com entrega direta no momento."
+                  : heroFilter === "no_fee"
+                  ? "Nenhuma loja sem taxa de serviço no momento."
                   : effectiveCity
                   ? `Nenhuma loja disponível em ${effectiveCity}`
                   : "Nenhuma loja disponível no momento."}
@@ -761,6 +859,11 @@ const ClientHomeContent = () => {
                           {dist ? ` • ${dist}` : ""}
                           {rating === null ? " • Novo" : ""}
                         </p>
+                        {!getStoreAccessPreview(store, activeCoords, effectiveCity).allowed && (
+                          <p className="mt-1 text-[10px] font-bold text-amber-700 dark:text-amber-300">
+                            Escolha um endereço compatível para pedir
+                          </p>
+                        )}
                         <div className="flex items-center gap-1.5 mt-1 text-[12px]">
                           <span className="text-muted-foreground">{timeLabel}</span>
                           <span className="text-muted-foreground/50">•</span>

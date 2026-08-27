@@ -107,7 +107,7 @@ const StorePage = () => {
   const pageRef = useRef<HTMLDivElement>(null);
   const navRef = useRef<HTMLDivElement>(null);
   const programmaticScrollRef = useRef<number>(0);
-  const [fraudBlock, setFraudBlock] = useState<{ distanceKm: number; storeCity: string | null } | null>(null);
+  const [fraudBlock, setFraudBlock] = useState<{ distanceKm: number; storeCity: string | null; maxDistanceKm: number } | null>(null);
 
   const queryClient = useQueryClient();
 
@@ -148,7 +148,7 @@ const StorePage = () => {
      queryKey: ["store", id || slug, isSandbox],
     queryFn: async () => {
       const baseTable = isSandbox ? "stores" : "stores_public";
-      let query = ((supabase as any).from(baseTable)).select("id, name, slug, slug_aliases, image_url, category, categories, rating, is_open, force_closed, status, delivery_mode, own_delivery_fee, delivery_fee, minimum_order_value, estimated_delivery_time, owner_id, address_cep, address_city, address_complement, address_neighborhood, address_number, address_reference, address_state, address_street, latitude, longitude, settings, network_id, is_matriz, free_delivery_threshold").in("status", ["ativo", "bloqueado"]);
+      let query = ((supabase as any).from(baseTable)).select("id, name, slug, slug_aliases, image_url, category, categories, rating, is_open, force_closed, status, delivery_mode, own_delivery_fee, delivery_fee, minimum_order_value, estimated_delivery_time, owner_id, address_cep, address_city, address_complement, address_neighborhood, address_number, address_reference, address_state, address_street, latitude, longitude, max_delivery_km, delivery_radius, settings, network_id, is_matriz, free_delivery_threshold").in("status", ["ativo", "bloqueado"]);
       if (id) query = query.eq("id", id);
       else if (slug) query = query.or(`slug.eq.${slug},slug_aliases.cs.{${slug}}`);
       const { data, error } = await query.maybeSingle();
@@ -590,10 +590,15 @@ const StorePage = () => {
       storeCity: (store as any).address_city ?? null,
       storeLat: lat,
       storeLng: lng,
+      maxDeliveryKm: Number((store as any).max_delivery_km ?? (store as any).delivery_radius ?? MAX_DISTANCE_KM) || MAX_DISTANCE_KM,
     }).then((res) => {
       if (cancelled) return;
       if (!res.allowed && typeof res.distanceKm === "number") {
-        setFraudBlock({ distanceKm: res.distanceKm, storeCity: (store as any).address_city ?? null });
+        setFraudBlock({
+          distanceKm: res.distanceKm,
+          storeCity: (store as any).address_city ?? null,
+          maxDistanceKm: Number((store as any).max_delivery_km ?? (store as any).delivery_radius ?? MAX_DISTANCE_KM) || MAX_DISTANCE_KM,
+        });
       } else {
         setFraudBlock(null);
       }
@@ -1004,7 +1009,7 @@ const StorePage = () => {
         <div className="sticky top-0 z-40 bg-amber-500/95 text-white text-center text-xs px-4 py-2 shadow">
           📍 Você está a <span className="font-bold">{fraudBlock.distanceKm.toFixed(1)} km</span> desta loja
           {fraudBlock.storeCity ? <> em <span className="font-bold">{fraudBlock.storeCity}</span></> : null}.
-          Você pode navegar pelo cardápio, mas só permitimos pedidos a até {MAX_DISTANCE_KM} km.
+          O limite desta loja é de até {fraudBlock.maxDistanceKm} km. Escolha um endereço compatível para continuar.
         </div>
       )}
       {/* ===== HERO ===== */}
@@ -1484,7 +1489,7 @@ const StorePage = () => {
           <div className="px-4 mt-4">
             <button
               onClick={() => {
-                if (!storeStatus.isOpen) { toast.error(`Loja fechada. ${storeStatus.reason}`); return; }
+                            if (!storeStatus.isOpen) { toast.error(`Loja fechada. ${storeStatus.reason}`); return; }
                 if (!products || products.length < 2) {
                   toast.error("Cadastre pelo menos 2 sabores de pizza para usar o meio a meio.");
                   return;
@@ -1520,7 +1525,7 @@ const StorePage = () => {
           <div className="px-4 mt-4">
             <button
               onClick={() => {
-                if (!storeStatus.isOpen) { toast.error(`Loja fechada. ${storeStatus.reason}`); return; }
+                            if (!storeStatus.isOpen) { toast.error(`Loja fechada. ${storeStatus.reason}`); return; }
                 if (!products || products.length < 2) {
                   toast.error("Cadastre pelo menos 2 sabores de pastel para usar o meio a meio.");
                   return;

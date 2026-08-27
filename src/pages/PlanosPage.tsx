@@ -77,7 +77,7 @@ const plans: PlanInfo[] = PLANS_ORDER.map((id) => PLANS[id]);
 const painPoints = [
   { emoji: "📸", pain: "Manda foto do cardápio pelo WhatsApp", solution: "Link profissional com fotos e preços atualizados" },
   { emoji: "📝", pain: "Anota pedido na mão e erra", solution: "Pedidos organizados e detalhados automaticamente" },
-  { emoji: "💸", pain: "Confere PIX no extrato um por um", solution: "Pagamento confirmado na hora, sem conferir nada" },
+  { emoji: "💸", pain: "Confere comprovantes e pedidos manualmente", solution: "Pagamentos e pedidos organizados no painel" },
   { emoji: "🔇", pain: "Perde pedido porque não ouviu a mensagem", solution: "Alerta sonoro + notificação push no celular" },
 ];
 
@@ -85,7 +85,7 @@ const features = [
   { icon: Package, title: "Gestão De Pedidos", desc: "Emissão de nota e mensagem de atualização sobre os pedidos pro WhatsApp (abre o WhatsApp para envio manual)." },
   { icon: BarChart3, title: "Finanças e Relatórios", desc: "Tudo 100% detalhado: saiba qual produto mais vende, qual dia vendeu mais e tenha relatórios de todos os dias." },
   { icon: Truck, title: "Motoboy Integrado", desc: "Ao marcar pedido como pronto, um alerta sonoro avisa instantaneamente o motoboy no aplicativo." },
-  { icon: CreditCard, title: "PIX online", desc: "Pagamento e confirmação conforme a modalidade habilitada para a loja e escolhida no checkout." },
+  { icon: CreditCard, title: "Pagamentos claros", desc: "Pix Direto com comprovante, cartão ou dinheiro no checkout, conforme a operação da loja." },
   { icon: Smartphone, title: "Cardápio no Celular", desc: "Link profissional com fotos em HD. O cliente abre e já pede, sem baixar nenhum app." },
   { icon: QrCode, title: "QR Code Exclusivo", desc: "O cliente aponta a câmera para o QR Code e faz o pedido digital sozinho." },
   { icon: Bell, title: "Alerta Instantâneo", desc: "Notificação push e alerta sonoro no celular para você nunca perder um pedido novo." },
@@ -107,10 +107,10 @@ const testimonials = [
 
 const faqs = [
   { q: "Preciso baixar algum aplicativo?", a: "Não! Você gerencia tudo pelo navegador do celular ou computador. Seus clientes também pedem direto pelo link, sem instalar nada." },
-  { q: "Como funciona o PIX?", a: "No checkout, o Cliente pode encontrar Pix online, Pix direto ou Pix em maquininha conforme a configuração da loja. Na relação ItaSuper–Lojista, o PIX também é usado para mensalidades e para a cobrança dos repasses acumulados; são fluxos diferentes e as condições aparecem no painel." },
+  { q: "Como funciona o PIX?", a: "No checkout, o Cliente pode usar Pix Direto com envio de comprovante, cartão ou dinheiro, conforme a configuração da loja. PIX online não é oferecido ao Cliente; ele fica reservado à relação ItaSuper–Lojista para mensalidades e repasses acumulados." },
   { q: "Posso trocar de plano depois?", a: "Sim! Você pode migrar entre planos a qualquer momento. Basta solicitar pelo painel da loja e o admin aprova a troca." },
-  { q: "O plano Essencial cobra alguma comissão?", a: "Não há comissão sobre pedido online no Essencial. Quando aplicável, o checkout pode exibir taxa operacional de PIX online de R$ 1,99 por pedido. Na entrega, a taxa de plataforma de R$ 0,99 é acrescentada à taxa definida pela loja e paga pelo Cliente." },
-  { q: "Como funciona a cobrança dos repasses?", a: "Quando o Lojista recebe diretamente em dinheiro ou PIX, os R$ 0,99 da taxa de plataforma acumulam no Financeiro. A cobrança do valor acumulado é gerada via PIX toda segunda-feira, conforme o ciclo e as regras operacionais exibidas no painel. Parâmetros adicionais de mínimo, bloqueio ou suspensão dependem da contratação e da configuração vigente." },
+  { q: "O plano Essencial cobra alguma comissão?", a: "Não há comissão sobre pedidos no Essencial. A plataforma pode acrescentar R$ 0,99 à taxa de entrega definida pela loja, conforme a configuração de quem paga. O Essencial permanece sem mensalidade até atingir R$ 5.000 acumulados em uma janela móvel de 60 dias; depois, passa a R$ 89,90/mês sem retorno automático à gratuidade." },
+  { q: "Como funciona a cobrança dos repasses?", a: "Quando o Lojista recebe diretamente em dinheiro ou Pix Direto, os R$ 0,99 da taxa de plataforma acumulam no Financeiro. O repasse é processado às segundas-feiras, com mínimo de R$ 150; a partir de R$ 500 pode haver bloqueio operacional, e cobrança pendente por mais de 30 dias pode suspender ou bloquear a operação, conforme as regras vigentes." },
   { q: "Como recebo os pedidos?", a: "Você recebe notificação sonora e push no celular em tempo real. O painel mostra todos os pedidos organizados para você gerenciar." },
 ];
 
@@ -122,6 +122,7 @@ const faqs = [
    const statsRef = useInView(0.3);
 
   const handleCTA = () => navigate("/cadastro-lojista");
+  const handleLogin = () => navigate("/auth");
   const handleWhatsApp = () =>
     window.open("https://wa.me/5522992796291?text=Olá! Tenho interesse em cadastrar minha loja na plataforma.", "_blank");
 
@@ -181,11 +182,11 @@ const faqs = [
               <span className="relative z-10 text-primary">ItaSuper</span>
               <span className="absolute bottom-1 left-0 w-full h-3 bg-primary/15 -z-0 rounded" />
             </span>
-            <span className="block text-2xl sm:text-3xl lg:text-4xl mt-2 text-muted-foreground font-bold">Cardápio digital, PIX e PDV com regras claras por plano</span>
+            <span className="block text-2xl sm:text-3xl lg:text-4xl mt-2 text-muted-foreground font-bold">Cardápio digital, pagamentos e PDV com regras claras por plano</span>
           </h1>
 
           <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 animate-fade-in leading-relaxed">
-            Escolha o plano adequado para sua operação: <strong className="text-foreground">cardápio digital, pedidos online, PIX e PDV</strong> conforme a opção contratada.
+            Escolha o plano adequado para sua operação: <strong className="text-foreground">cardápio digital, pedidos e PDV</strong> conforme a opção contratada.
             Confira custos, recursos e condições antes de finalizar.
             <span className="block mt-2 text-primary font-semibold">O plano Essencial começa em R$ 0/mês, conforme as regras exibidas.</span>
           </p>
@@ -199,8 +200,10 @@ const faqs = [
             </Button>
           </div>
 
-          <div className="mt-10 flex items-center justify-center text-sm text-muted-foreground animate-fade-in">
+          <div className="mt-10 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm text-muted-foreground animate-fade-in">
             <span>Planos transparentes, custos apresentados antes da contratação</span>
+            <span aria-hidden="true">·</span>
+            <button type="button" onClick={handleLogin} className="font-bold text-primary underline underline-offset-4 hover:text-primary/80">Já tenho uma conta — entrar</button>
           </div>
         </div>
       </section>
@@ -301,7 +304,7 @@ const faqs = [
             Escolha o plano ideal para sua loja
           </h2>
           <p className="text-center text-muted-foreground mb-14 max-w-2xl mx-auto">
-            Os planos online incluem cardápio digital, PIX online e notificações. Escolha o plano compatível com a sua operação e acompanhe todos os custos antes da contratação.
+            Os planos públicos incluem cardápio digital, pedidos e notificações. Escolha entre Essencial e Somente PDV e acompanhe todos os custos antes da contratação.
           </p>
 
           <div className="grid gap-6 md:grid-cols-2 items-start">
@@ -356,10 +359,6 @@ const faqs = [
                       <div className="flex items-center justify-between text-xs">
                         <span className="text-muted-foreground">Comissão por pedido</span>
                         <span className="font-bold text-foreground">{plan.commissionRate === 0 ? "Grátis" : `${plan.commissionRate}%`}</span>
-                      </div>
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-muted-foreground">Taxa por PIX</span>
-                        <span className="font-bold text-foreground">{plan.pixFee === 0 ? "Grátis" : `R$ ${plan.pixFee.toFixed(2).replace(".", ",")}`}</span>
                       </div>
                       <div className="flex items-center justify-between text-xs">
                         <span className="text-muted-foreground">Entrega da plataforma</span>
@@ -539,11 +538,10 @@ const faqs = [
             <Shield className="h-8 w-8 text-primary" />
           </div>
           <h2 className="text-2xl font-bold text-foreground mb-3">
-            Sem risco. Sem surpresas.
+            Comece com clareza.
           </h2>
           <p className="text-muted-foreground max-w-lg mx-auto leading-relaxed">
-            Comece pelo plano Essencial (grátis pra começar) e migre quando quiser.
-            Sem fidelidade, sem multa, sem pegadinha. Cancele a qualquer momento.
+            Comece pelo plano Essencial, acompanhe o gatilho e os custos no painel e escolha o caminho adequado para sua operação. As condições de cancelamento e valores devidos aparecem antes da confirmação.
           </p>
         </div>
       </section>
@@ -634,10 +632,8 @@ function AddonsSection() {
 function ROICalculator() {
   const [orders, setOrders] = useState(200);
   const [ticket, setTicket] = useState(40);
-  const [pixShare, setPixShare] = useState(70);
 
   const revenue = orders * ticket;
-  const pixOrders = orders * (pixShare / 100);
 
   const brl = (n: number) =>
     n.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -645,9 +641,8 @@ function ROICalculator() {
   const results = PLANS_ORDER.map((id) => {
     const p = PLANS[id];
     const commission = revenue * (p.commissionRate / 100);
-    const pixCost = pixOrders * p.pixFee;
-    const total = p.monthlyFee + commission + pixCost;
-    return { plan: p, commission, pixCost, total, monthlyFee: p.monthlyFee };
+    const total = p.monthlyFee + commission;
+    return { plan: p, commission, total, monthlyFee: p.monthlyFee };
   });
 
   const cheapest = results.reduce((a, b) => (a.total <= b.total ? a : b));
@@ -657,7 +652,7 @@ function ROICalculator() {
   return (
     <div className="rounded-3xl border border-border bg-card p-6 md:p-8">
       {/* Inputs */}
-      <div className="grid sm:grid-cols-3 gap-6 mb-8">
+      <div className="grid sm:grid-cols-2 gap-6 mb-8">
         <div>
           <label className="text-sm font-semibold text-foreground mb-2 block">
             Pedidos por mês
@@ -687,21 +682,6 @@ function ROICalculator() {
             className="w-full accent-primary"
           />
           <p className="text-2xl font-bold text-primary mt-1">R$ {ticket}</p>
-        </div>
-        <div>
-          <label className="text-sm font-semibold text-foreground mb-2 block">
-            % pago via PIX
-          </label>
-          <input
-            type="range"
-            min={0}
-            max={100}
-            step={5}
-            value={pixShare}
-            onChange={(e) => setPixShare(Number(e.target.value))}
-            className="w-full accent-primary"
-          />
-          <p className="text-2xl font-bold text-primary mt-1">{pixShare}%</p>
         </div>
       </div>
 
@@ -739,10 +719,6 @@ function ROICalculator() {
                   <span>Comissão ({r.plan.commissionRate}%)</span>
                   <span className="tabular-nums">R$ {brl(r.commission)}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span>PIX ({pixShare}%)</span>
-                  <span className="tabular-nums">R$ {brl(r.pixCost)}</span>
-                </div>
               </div>
               <div className="h-px bg-border my-2" />
               <div className="flex justify-between items-baseline">
@@ -775,7 +751,7 @@ function ROICalculator() {
       )}
 
       <p className="text-[11px] text-muted-foreground text-center mt-4">
-        Simulação aproximada. Não inclui a taxa de entrega da plataforma (paga pelo cliente).
+        Simulação aproximada. Não inclui a taxa de entrega da plataforma, que pode ser somada à entrega e paga pelo Cliente quando aplicável. O Pix Direto do Cliente não é tratado como PIX online nesta simulação.
       </p>
     </div>
   );
