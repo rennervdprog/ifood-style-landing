@@ -2,7 +2,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
-import termsMd from "@/content/legal/terms_v6_2.md?raw";
+import termsMd from "@/content/legal/terms_v6_5.md?raw";
 
 /**
  * Página pública dos Termos de Uso.
