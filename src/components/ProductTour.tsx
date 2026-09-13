@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { X, ChevronRight, ChevronLeft, SkipForward } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { isLegalVersionAtLeast } from "@/lib/legalVersions";
 import { motion, AnimatePresence } from "framer-motion";
 
 export interface TourStep {
@@ -38,7 +39,8 @@ const ProductTour = ({ steps, tourKey, onComplete }: ProductTourProps) => {
         .eq("user_id", user.id)
         .maybeSingle();
       const d = data as any;
-      const termsOk = (d?.terms_version_accepted || "1.0") >= "4.2";
+      // Comparação numérica: com `>=` de string, "10.0" >= "4.2" dá false.
+      const termsOk = isLegalVersionAtLeast(d?.terms_version_accepted || "1.0", "4.2");
       if (d && !d.has_seen_onboarding && termsOk) {
         setTimeout(() => setVisible(true), 800);
       }
