@@ -124,87 +124,21 @@ Deno.serve(async (req) => {
     const modes = settingsData.value as Record<string, string>;
     const results: any[] = [];
 
-    // ── AUTO DRIVER PAYOUTS ──────────────────────────────────────────
+    // ── REPASSE A MOTOBOY: DESATIVADO ────────────────────────────────
+    // O ItaSuper é o software que conecta lojista e motoboy — não remunera
+    // entregador. O valor da entrega é combinado e pago diretamente entre os
+    // dois, fora da plataforma. Pagar motoboy daqui contradiz os Termos de Uso
+    // ("Não vinculação") e é índice de vínculo empregatício.
+    //
+    // O bloco original (transferência Asaas via `driver_balances`) foi removido
+    // junto com a migração do modelo antigo. `driver_balances`,
+    // `driver_earnings` e `withdrawal_requests` de motoboy são legado.
     if (modes.driver_payout === "auto") {
-      const { data: balances } = await supabase
-        .from("driver_balances")
-        .select("*")
-        .gt("pending_amount", 0);
-
-      for (const balance of balances || []) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("full_name, pix_key, pix_type")
-          .eq("user_id", balance.driver_user_id)
-          .single();
-
-        if (!profile?.pix_key) {
-          results.push({ type: "driver", id: balance.driver_user_id, status: "skipped", reason: "Sem chave PIX" });
-          continue;
-        }
-
-        const amount = Number(balance.pending_amount);
-        if (amount < 1) {
-          results.push({ type: "driver", id: balance.driver_user_id, status: "skipped", reason: "Valor muito baixo" });
-          continue;
-        }
-
-        const { data: existingWithdrawal } = await supabase
-          .from("withdrawal_requests")
-          .select("id")
-          .eq("driver_user_id", balance.driver_user_id)
-          .eq("status", "processando")
-          .limit(1);
-
-        if (existingWithdrawal && existingWithdrawal.length > 0) {
-          results.push({ type: "driver", id: balance.driver_user_id, status: "skipped", reason: "Já em processamento" });
-          continue;
-        }
-
-        const transfer = await createAsaasTransfer({
-          amount,
-          pixKey: profile.pix_key,
-          pixType: profile.pix_type || "cpf",
-          description: `Repasse auto motoboy ${profile.full_name}`,
-        });
-
-        if (transfer.ok) {
-          await supabase
-            .from("driver_balances")
-            .update({
-              pending_amount: 0,
-              paid_amount: Number(balance.paid_amount) + amount,
-              updated_at: new Date().toISOString(),
-            })
-            .eq("driver_user_id", balance.driver_user_id);
-
-          await supabase
-            .from("driver_earnings")
-            .update({ status: "pago" })
-            .eq("driver_user_id", balance.driver_user_id)
-            .eq("status", "pendente");
-
-          await supabase.from("payout_history").insert({
-            admin_user_id: "00000000-0000-0000-0000-000000000000",
-            entity_type: "driver",
-            entity_id: balance.driver_user_id,
-            entity_name: profile.full_name || "Motoboy",
-            amount,
-            payout_type: "auto_asaas",
-            notes: `Transfer ID: ${transfer.data.transfer_id}`,
-          });
-
-          await supabase
-            .from("withdrawal_requests")
-            .update({ status: "pago", processed_at: new Date().toISOString(), admin_notes: "Pago automaticamente via Asaas" })
-            .eq("driver_user_id", balance.driver_user_id)
-            .eq("status", "solicitado");
-
-          results.push({ type: "driver", id: balance.driver_user_id, name: profile.full_name, status: "paid", amount });
-        } else {
-          results.push({ type: "driver", id: balance.driver_user_id, status: "error", error: transfer.data.message });
-        }
-      }
+      results.push({
+        type: "driver",
+        status: "disabled",
+        reason: "Repasse a motoboy não é feito pela plataforma — acerto direto entre lojista e motoboy.",
+      });
     }
 
     // ── AUTO STORE PAYOUTS ───────────────────────────────────────────

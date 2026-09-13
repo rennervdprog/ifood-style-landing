@@ -2,8 +2,20 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { formatBRL } from "@/lib/utils";
-import { Loader2, MapPin, Clock, Route, Bike, Store as StoreIcon, Calendar } from "lucide-react";
+import { Loader2, MapPin, Route, Bike, Store as StoreIcon, Calendar } from "lucide-react";
+
+/**
+ * Histórico operacional de entregas do motoboy.
+ *
+ * Só métricas de operação (data, loja, bairro, distância, tempo). O ItaSuper é
+ * o software que conecta lojista e motoboy — não define, não intermedeia e não
+ * tem ciência dos valores combinados entre eles. Por isso esta tela não exibe
+ * valor a receber, ganho ou status de pagamento: a plataforma não é parte
+ * dessa relação. Ver "Não vinculação" nos Termos de Uso.
+ *
+ * A fonte é `orders` (RLS: motoboy lê o que entregou), não a tabela legada
+ * `store_driver_earnings`.
+ */
 
 interface Props {
   storeIds: string[];
@@ -21,14 +33,6 @@ function haversineKm(lat1?: number | null, lng1?: number | null, lat2?: number |
   return 2 * R * Math.asin(Math.sqrt(a));
 }
 
-function formatDurationMin(min: number): string {
-  if (!isFinite(min) || min < 0) return "—";
-  if (min < 60) return `${Math.round(min)} min`;
-  const h = Math.floor(min / 60);
-  const m = Math.round(min % 60);
-  return m ? `${h}h ${m}min` : `${h}h`;
-}
-
 type Period = "7d" | "30d" | "all";
 
 const DriverRideHistory = ({ storeIds }: Props) => {
@@ -42,13 +46,13 @@ const DriverRideHistory = ({ storeIds }: Props) => {
     return d.toISOString();
   }, [period]);
 
-  const { data: earnings, isLoading } = useQuery({
-    queryKey: ["driver-ride-history", user?.id, storeIds, period],
+  const { data: orders, isLoading } = useQuery({
+    queryKey: ["driver-ride-history", user?.id, period],
     queryFn: async () => {
       let q = supabase
-        .from("store_driver_earnings" as any)
-        .select("id, store_id, order_id, fee_total, driver_amount, status, paid_at, created_at")
-        .eq("driver_user_id", user!.id)
+        .from("orders")
+        .select("id, created_at, confirmed_at, status, neighborhood, address_details, client_lat, client_lng, store_id")
+        .eq("driver_id", user!.id)
         .order("created_at", { ascending: false })
         .limit(period === "all" ? 1000 : 200);
       if (since) q = q.gte("created_at", since);
@@ -57,22 +61,6 @@ const DriverRideHistory = ({ storeIds }: Props) => {
       return (data as any[]) || [];
     },
     enabled: !!user,
-  });
-
-  const orderIds = useMemo(() => Array.from(new Set((earnings || []).map((e) => e.order_id))), [earnings]);
-
-  const { data: orders } = useQuery({
-    queryKey: ["driver-ride-history-orders", orderIds],
-    queryFn: async () => {
-      if (!orderIds.length) return [];
-      const { data, error } = await supabase
-        .from("orders")
-        .select("id, created_at, confirmed_at, neighborhood, address_details, client_lat, client_lng, store_id, total_price")
-        .in("id", orderIds);
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: orderIds.length > 0,
   });
 
   const storeIdSet = useMemo(() => {
@@ -94,11 +82,6 @@ const DriverRideHistory = ({ storeIds }: Props) => {
     enabled: storeIdSet.length > 0,
   });
 
-  const ordersById = useMemo(() => {
-    const m = new Map<string, any>();
-    (orders || []).forEach((o: any) => m.set(o.id, o));
-    return m;
-  }, [orders]);
   const storesById = useMemo(() => {
     const m = new Map<string, any>();
     (stores || []).forEach((s: any) => m.set(s.id, s));
@@ -106,28 +89,26 @@ const DriverRideHistory = ({ storeIds }: Props) => {
   }, [stores]);
 
   const enriched = useMemo(() => {
-    return (earnings || []).map((e) => {
-      const o = ordersById.get(e.order_id);
-      const s = storesById.get(o?.store_id || e.store_id);
+    return (orders || []).map((o) => {
+      const s = storesById.get(o.store_id);
       const km = haversineKm(s?.latitude, s?.longitude, o?.client_lat, o?.client_lng);
-      const startISO = o?.confirmed_at || o?.created_at || e.created_at;
-      // Usa created_at do earning (gerado no momento da entrega), não paid_at
-      // que reflete apenas quando o admin liberou o repasse.
-      const endISO = e.created_at;
-      const durationMin =
-        startISO && endISO ? (new Date(endISO).getTime() - new Date(startISO).getTime()) / 60000 : NaN;
-      return { e, o, s, km, durationMin, startISO, endISO };
+      // `driver_finish_delivery` sobrescreve `confirmed_at` no momento da
+      // entrega, então ele marca o fim da corrida — não o início. Sem um
+      // carimbo de início preservado não há como medir duração sem mentir,
+      // por isso a tela não exibe tempo.
+      const dateISO = o?.confirmed_at || o?.created_at;
+      const concluida = o?.status === "entregue" || o?.status === "finalizado";
+      return { o, s, km, dateISO, concluida };
     });
-  }, [earnings, ordersById, storesById]);
+  }, [orders, storesById]);
 
   const totals = useMemo(() => {
     const totalKm = enriched.reduce((sum, r) => sum + (r.km || 0), 0);
-    const totalMin = enriched.reduce((sum, r) => sum + (isFinite(r.durationMin) ? r.durationMin : 0), 0);
-    const totalAmount = enriched.reduce((sum, r) => sum + Number(r.e.driver_amount || 0), 0);
     const count = enriched.length;
     const avgKm = count ? totalKm / count : 0;
-    const avgMin = count ? totalMin / count : 0;
-    return { totalKm, totalMin, totalAmount, count, avgKm, avgMin };
+    const lojas = new Set(enriched.map((r) => r.o.store_id)).size;
+    const concluidas = enriched.filter((r) => r.concluida).length;
+    return { totalKm, count, avgKm, lojas, concluidas };
   }, [enriched]);
 
   if (isLoading) {
@@ -162,9 +143,9 @@ const DriverRideHistory = ({ storeIds }: Props) => {
       {/* Summary */}
       <div className="grid grid-cols-2 gap-2">
         <SummaryCard icon={<Route className="h-4 w-4 text-primary" />} label="Distância" value={`${totals.totalKm.toFixed(1)} km`} sub={`Média ${totals.avgKm.toFixed(1)} km/entrega`} tooltip="Linha reta loja → cliente (não é a rota real percorrida)." />
-        <SummaryCard icon={<Clock className="h-4 w-4 text-primary" />} label="Tempo total" value={formatDurationMin(totals.totalMin)} sub={`Média ${formatDurationMin(totals.avgMin)}/entrega`} tooltip="Do pedido confirmado até o registro da entrega." />
-        <SummaryCard icon={<Bike className="h-4 w-4 text-success" />} label="Corridas" value={`${totals.count}`} sub="No período" />
-        <SummaryCard icon={<StoreIcon className="h-4 w-4 text-success" />} label="Ganhos" value={formatBRL(totals.totalAmount)} sub="Sua parte" />
+        <SummaryCard icon={<Bike className="h-4 w-4 text-primary" />} label="Corridas" value={`${totals.count}`} sub="No período" />
+        <SummaryCard icon={<Bike className="h-4 w-4 text-success" />} label="Concluídas" value={`${totals.concluidas}`} sub="Entregues no período" />
+        <SummaryCard icon={<StoreIcon className="h-4 w-4 text-success" />} label="Lojas" value={`${totals.lojas}`} sub="Atendidas no período" />
       </div>
 
       {/* List */}
@@ -179,14 +160,10 @@ const DriverRideHistory = ({ storeIds }: Props) => {
           </div>
         )}
 
-        {enriched.map(({ e, o, s, km, durationMin, startISO }) => {
-          const date = new Date(startISO);
-          const statusLabel =
-            e.status === "pago" ? "Recebido" : e.status === "aguardando_confirmacao" ? "Confirmar" : "Pendente";
-          const statusColor =
-            e.status === "pago" ? "text-success" : e.status === "aguardando_confirmacao" ? "text-primary" : "text-warning";
+        {enriched.map(({ o, s, km, dateISO, concluida }) => {
+          const date = new Date(dateISO);
           return (
-            <div key={e.id} className="bg-card border border-border rounded-2xl p-3 space-y-2">
+            <div key={o.id} className="bg-card border border-border rounded-2xl p-3 space-y-2">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                   <p className="text-sm font-black text-foreground truncate">
@@ -196,12 +173,13 @@ const DriverRideHistory = ({ storeIds }: Props) => {
                     <Calendar className="h-3 w-3" />
                     {date.toLocaleDateString("pt-BR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
                     {" · #"}
-                    {String(e.order_id).slice(0, 6).toUpperCase()}
+                    {String(o.id).slice(0, 6).toUpperCase()}
                   </p>
                 </div>
                 <div className="text-right shrink-0">
-                  <p className="text-sm font-black text-foreground">{formatBRL(Number(e.driver_amount))}</p>
-                  <p className={`text-[10px] font-bold uppercase ${statusColor}`}>{statusLabel}</p>
+                  <p className={`text-[10px] font-bold uppercase ${concluida ? "text-success" : "text-warning"}`}>
+                    {concluida ? "Entregue" : "Em andamento"}
+                  </p>
                 </div>
               </div>
 
@@ -214,10 +192,9 @@ const DriverRideHistory = ({ storeIds }: Props) => {
                 </div>
               )}
 
-              <div className="grid grid-cols-3 gap-1.5 pt-1">
+              <div className="grid grid-cols-2 gap-1.5 pt-1">
                 <Metric icon={<Route className="h-3 w-3" />} label="Distância" value={km != null ? `${km.toFixed(1)} km` : "—"} />
-                <Metric icon={<Clock className="h-3 w-3" />} label="Tempo" value={isFinite(durationMin) ? formatDurationMin(durationMin) : "—"} />
-                <Metric icon={<StoreIcon className="h-3 w-3" />} label="Taxa" value={formatBRL(Number(e.fee_total))} />
+                <Metric icon={<StoreIcon className="h-3 w-3" />} label="Bairro" value={o?.neighborhood || "—"} />
               </div>
             </div>
           );
@@ -225,7 +202,8 @@ const DriverRideHistory = ({ storeIds }: Props) => {
       </div>
 
       <p className="text-[10px] text-muted-foreground text-center px-3 leading-relaxed">
-        Distância calculada em linha reta (loja → cliente). Tempo medido do pedido confirmado até o registro de entrega.
+        Distância calculada em linha reta (loja → cliente), não é a rota real percorrida.
+        Os valores da entrega são combinados diretamente entre você e a loja — o ItaSuper não participa dessa negociação.
       </p>
     </div>
   );
