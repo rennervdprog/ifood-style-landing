@@ -4,11 +4,15 @@ name: E2E Playwright (authenticated)
 # PR and push to main. Publishes the HTML report and failure traces as
 # artifacts so failures can be inspected without re-running locally.
 
+# PAUSADO: o projeto Supabase está suspenso e a `global-setup.ts` depende da
+# edge function `e2e-mint-session` para autenticar. Enquanto isso, a suíte roda
+# só sob demanda (workflow_dispatch). Para reativar, descomentar os gatilhos
+# `pull_request` e `push` abaixo.
 on:
-  pull_request:
-    branches: [main]
-  push:
-    branches: [main]
+  # pull_request:
+  #   branches: [main]
+  # push:
+  #   branches: [main]
   workflow_dispatch:
 
 concurrency:
