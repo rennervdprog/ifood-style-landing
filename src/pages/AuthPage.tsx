@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Mail, Lock, Eye, EyeOff, KeyRound, ShoppingBag, CheckCircle2, Check, X, Phone, User, FileText, ShieldCheck, MapPin } from "lucide-react";
  import { maskWhatsApp } from "@/lib/whatsapp";
 import { formatDocument, sanitizeDocument, validateDocument } from "@/lib/documentFormat";
+import { CURRENT_TERMS_VERSION, CURRENT_PRIVACY_VERSION } from "@/lib/legalVersions";
 import { fetchCep, formatCep } from "@/lib/location/cep";
 import { isPartnerCapacitorApp, persistCapacitorAppMode } from "@/lib/capacitorAppMode";
 import { PARTNER_ROUTES } from "@/components/CapacitorRouteGuard";
@@ -297,8 +298,8 @@ const AuthPage = () => {
         if (signUpData?.user?.id) {
           await supabase.from("terms_acceptance").insert({
             user_id: signUpData.user.id,
-            terms_version: "6.1",
-            privacy_version: "6.1",
+            terms_version: CURRENT_TERMS_VERSION,
+            privacy_version: CURRENT_PRIVACY_VERSION,
             user_agent: navigator.userAgent,
           });
           await supabase.from("profiles").update({

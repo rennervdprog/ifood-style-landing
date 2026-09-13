@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { maskWhatsApp } from "@/lib/whatsapp";
 import { formatDocument, sanitizeDocument, validateDocument } from "@/lib/documentFormat";
+import { CURRENT_TERMS_VERSION, CURRENT_PRIVACY_VERSION } from "@/lib/legalVersions";
 import { toast } from "sonner";
 
 type AuthMode = "login" | "signup" | "forgot" | "reset";
@@ -114,8 +115,8 @@ const ClientAuthScreen = ({ onSuccess }: { onSuccess: () => void }) => {
         if (signUpData?.user?.id) {
           await supabase.from("terms_acceptance").insert({
             user_id: signUpData.user.id,
-            terms_version: "6.1",
-            privacy_version: "6.1",
+            terms_version: CURRENT_TERMS_VERSION,
+            privacy_version: CURRENT_PRIVACY_VERSION,
             user_agent: navigator.userAgent,
           });
           await supabase.from("profiles").update({
