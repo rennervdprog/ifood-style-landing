@@ -1,9 +1,27 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { formatBRL } from "@/lib/utils";
-import { Bell, Wallet, Clock, DollarSign, Trash2, CheckCircle2 } from "lucide-react";
+import { Bell, Wallet, Clock, DollarSign, Trash2, Archive } from "lucide-react";
+
+/**
+ * Saques de motoboy — SOMENTE LEITURA (legado).
+ *
+ * O ItaSuper é o software que conecta lojista e motoboy: não remunera
+ * entregador, não mantém saldo dele e não intermedeia o valor da corrida, que é
+ * combinado e pago diretamente entre os dois. Ver "Não vinculação" nos Termos
+ * de Uso.
+ *
+ * Esta aba era o último ponto em que a plataforma liquidava dinheiro de
+ * motoboy: `handleConfirmPayment` marcava `withdrawal_requests.status = 'pago'`,
+ * zerava `driver_balances.pending_amount` e quitava `driver_earnings`. Isso foi
+ * removido — pagar entregador pelo painel é índice de vínculo empregatício e
+ * contradiz os Termos.
+ *
+ * O que sobrou: ver e **excluir** os registros do modelo antigo. Nenhuma escrita
+ * em `driver_balances` ou `driver_earnings`. A entrada nova também está
+ * fechada — a function `create-withdrawal-request` responde 410.
+ */
 
 const SaquesTab = ({
   withdrawalRequests,
@@ -18,8 +36,6 @@ const SaquesTab = ({
 }) => {
   const [saquesSubTab, setSaquesSubTab] = useState<"pendentes" | "historico">("pendentes");
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [confirmingId, setConfirmingId] = useState<string | null>(null);
-  const [processingId, setProcessingId] = useState<string | null>(null);
 
   const pendingList = pendingWithdrawals;
   const historyList = (withdrawalRequests || []).filter((w: any) => w.status !== "solicitado");
@@ -34,46 +50,6 @@ const SaquesTab = ({
     if (error) { toast.error("Erro ao excluir."); return; }
     toast.success("Solicitação excluída.");
     setDeletingId(null);
-    queryClient.invalidateQueries({ queryKey: ["withdrawal-requests"] });
-  };
-
-  const handleConfirmPayment = async (req: any, driverName: string) => {
-    // Two-tap confirmation to prevent accidental irreversible payment
-    if (confirmingId !== req.id) {
-      setConfirmingId(req.id);
-      setTimeout(() => setConfirmingId((cur) => (cur === req.id ? null : cur)), 5000);
-      return;
-    }
-    if (processingId === req.id) return;
-    setProcessingId(req.id);
-    const { error: updateError } = await supabase
-      .from("withdrawal_requests" as any)
-      .update({ status: "pago", processed_at: new Date().toISOString() } as any)
-      .eq("id", req.id);
-    if (updateError) { toast.error("Erro ao confirmar."); setProcessingId(null); setConfirmingId(null); return; }
-    const { data: currentBalance } = await supabase
-      .from("driver_balances" as any)
-      .select("paid_amount")
-      .eq("driver_user_id", req.driver_user_id)
-      .single();
-    const previousPaid = Number((currentBalance as any)?.paid_amount || 0);
-    const { error: balanceError } = await supabase
-      .from("driver_balances" as any)
-      .update({
-        pending_amount: 0,
-        paid_amount: previousPaid + Number(req.amount),
-        updated_at: new Date().toISOString()
-      } as any)
-      .eq("driver_user_id", req.driver_user_id);
-    if (balanceError) {
-      console.error("Balance update error:", balanceError);
-      toast.warning("Pagamento marcado, mas saldo do entregador pode estar fora de sincronia. Verifique manualmente.");
-    }
-    await supabase.from("driver_earnings" as any).update({ status: "pago" } as any)
-      .eq("driver_user_id", req.driver_user_id).eq("status", "pendente");
-    toast.success(`✅ ${formatBRL(Number(req.amount))} para ${driverName} confirmada!`);
-    setConfirmingId(null);
-    setProcessingId(null);
     queryClient.invalidateQueries({ queryKey: ["withdrawal-requests"] });
   };
 
@@ -116,9 +92,9 @@ const SaquesTab = ({
             <p className="text-xs text-destructive font-medium">Deseja excluir? Clique na 🗑️ novamente.</p>
           </div>
         )}
-        <div className="bg-muted rounded-xl p-3 space-y-1 mb-3">
+        <div className="bg-muted rounded-xl p-3 space-y-1">
           <p className="text-xs text-muted-foreground">Entregador: <span className="text-foreground font-medium">{driverName}</span></p>
-          <p className="text-xs text-muted-foreground">Valor: <span className="text-foreground font-bold tabular-nums">{formatBRL(Number(req.amount))}</span></p>
+          <p className="text-xs text-muted-foreground">Valor solicitado: <span className="text-foreground font-bold tabular-nums">{formatBRL(Number(req.amount))}</span></p>
           <p className="text-xs text-muted-foreground">PIX: <span className="text-foreground font-medium">{req.pix_key}</span></p>
           <p className="text-xs text-muted-foreground">Tipo: <span className="text-foreground font-medium">{req.pix_type?.toUpperCase()}</span></p>
           {req.processed_at && (
@@ -128,23 +104,13 @@ const SaquesTab = ({
           )}
         </div>
         {isPending && (
-          <>
-            {confirmingId === req.id && (
-              <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 mb-2 text-center">
-                <p className="text-xs text-amber-600 dark:text-amber-400 font-bold">
-                  ⚠️ Ação irreversível. Toque novamente para confirmar o pagamento de {formatBRL(Number(req.amount))}.
-                </p>
-              </div>
-            )}
-            <button onClick={() => handleConfirmPayment(req, driverName)}
-              disabled={processingId === req.id}
-              className={`w-full flex items-center justify-center gap-2 font-bold py-3 rounded-xl text-sm active:scale-95 transition-transform disabled:opacity-60 ${
-                confirmingId === req.id ? "bg-amber-500 hover:bg-amber-600 text-white" : "bg-emerald-600 hover:bg-emerald-700 text-white"
-              }`}>
-              <CheckCircle2 className="h-4 w-4" />
-              {processingId === req.id ? "Processando..." : confirmingId === req.id ? "Tocar novamente para confirmar" : "Confirmar Pagamento"}
-            </button>
-          </>
+          <div className="mt-2 bg-amber-500/5 border border-amber-500/20 rounded-xl p-3">
+            <p className="text-[11px] text-muted-foreground leading-relaxed">
+              Registro do modelo antigo. A plataforma <strong className="text-foreground">não paga entregador</strong> —
+              o acerto é combinado e pago diretamente entre a loja e o motoboy. Oriente o entregador a acertar
+              com a loja e exclua este registro.
+            </p>
+          </div>
         )}
       </div>
     );
@@ -152,6 +118,19 @@ const SaquesTab = ({
 
   return (
     <div className="space-y-4">
+      <div className="bg-amber-500/5 border border-amber-500/25 rounded-2xl p-4 flex gap-3">
+        <Archive className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+        <div className="space-y-1">
+          <p className="text-sm font-bold text-foreground">Saque de motoboy é legado</p>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            O ItaSuper é o software que conecta lojista e motoboy — não remunera entregador nem mantém saldo
+            dele. O valor da entrega é combinado e pago <strong className="text-foreground">diretamente entre
+            os dois</strong>, fora da plataforma. Novas solicitações estão bloqueadas; esta tela só exibe o
+            histórico do modelo antigo e permite limpá-lo.
+          </p>
+        </div>
+      </div>
+
       <div className="space-y-3">
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-sm font-bold text-foreground uppercase tracking-wider flex items-center gap-2">

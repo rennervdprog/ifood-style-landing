@@ -122,24 +122,22 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("store_driver_earnings" as any)
-        .select("driver_user_id, driver_amount, status, created_at")
+        .select("driver_user_id, status, created_at")
         .eq("store_id", storeId)
         .in("driver_user_id", driverIds);
       if (error) throw error;
 
       const now = new Date();
       const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-      const stats: Record<string, { total: number; today: number; pending: number; pendingAmount: number; totalAmount: number }> = {};
+      // Só contagem de entregas. O valor combinado entre lojista e motoboy não
+      // passa pela plataforma — ver "Não vinculação" nos Termos de Uso.
+      const stats: Record<string, { total: number; today: number; pending: number }> = {};
       (data as any[] || []).forEach((earning) => {
         const key = earning.driver_user_id;
-        if (!stats[key]) stats[key] = { total: 0, today: 0, pending: 0, pendingAmount: 0, totalAmount: 0 };
+        if (!stats[key]) stats[key] = { total: 0, today: 0, pending: 0 };
         stats[key].total += 1;
-        stats[key].totalAmount += Number(earning.driver_amount || 0);
         if (new Date(earning.created_at).getTime() >= startOfToday) stats[key].today += 1;
-        if (earning.status !== "pago") {
-          stats[key].pending += 1;
-          stats[key].pendingAmount += Number(earning.driver_amount || 0);
-        }
+        if (earning.status !== "pago") stats[key].pending += 1;
       });
       return stats;
     },

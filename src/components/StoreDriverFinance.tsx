@@ -2,20 +2,29 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { formatBRL } from "@/lib/utils";
-import { Wallet, CheckCircle2, Loader2, DollarSign, Banknote } from "lucide-react";
+import { Wallet, CheckCircle2, Loader2, Bike } from "lucide-react";
+
+/**
+ * Controle de acerto entre lojista e motoboy.
+ *
+ * O ItaSuper é o software que conecta os dois: não define, não intermedeia e
+ * não tem ciência do valor combinado entre lojista e motoboy. Por isso esta
+ * tela conta entregas e registra o acerto, mas nunca calcula nem exibe valor
+ * a pagar — quem combina o preço da corrida são as duas partes, fora da
+ * plataforma. Ver "Não vinculação" nos Termos de Uso.
+ *
+ * `store_driver_earnings.driver_amount` / `platform_cut` são legado do modelo
+ * antigo (plataforma retinha R$ 2,00 por entrega) e não devem voltar à UI.
+ */
 
 interface Props {
   storeId: string;
 }
 
-interface Earning {
+interface Delivery {
   id: string;
   driver_user_id: string;
   order_id: string;
-  fee_total: number;
-  platform_cut: number;
-  driver_amount: number;
   status: string;
   paid_at: string | null;
   created_at: string;
@@ -26,29 +35,29 @@ const StoreDriverFinance = ({ storeId }: Props) => {
   const [payingId, setPayingId] = useState<string | null>(null);
   const [bulkDriverId, setBulkDriverId] = useState<string | null>(null);
 
-  const { data: earnings, isLoading } = useQuery({
+  const { data: deliveries, isLoading } = useQuery({
     queryKey: ["store-driver-finance", storeId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("store_driver_earnings" as any)
-        .select("id, driver_user_id, order_id, fee_total, platform_cut, driver_amount, status, paid_at, created_at")
+        .select("id, driver_user_id, order_id, status, paid_at, created_at")
         .eq("store_id", storeId)
         .order("created_at", { ascending: false })
         .limit(200);
       if (error) throw error;
-      return (data as unknown as Earning[]) || [];
+      return (data as unknown as Delivery[]) || [];
     },
   });
 
   // Fetch driver names
-  const driverIds = Array.from(new Set((earnings || []).map((e) => e.driver_user_id)));
+  const driverIds = Array.from(new Set((deliveries || []).map((e) => e.driver_user_id)));
   const { data: profiles } = useQuery({
     queryKey: ["store-driver-finance-profiles", driverIds],
     queryFn: async () => {
       if (!driverIds.length) return [];
       const { data } = await supabase
         .from("profiles")
-        .select("user_id, full_name, phone, whatsapp_number, pix_key, pix_type")
+        .select("user_id, full_name, phone, whatsapp_number")
         .in("user_id", driverIds);
       return data || [];
     },
@@ -57,7 +66,7 @@ const StoreDriverFinance = ({ storeId }: Props) => {
 
   const getProfile = (id: string) => profiles?.find((p) => p.user_id === id);
 
-  const markPaid = async (earningId: string) => {
+  const markSettled = async (earningId: string) => {
     setPayingId(earningId);
     try {
       const { error } = await supabase.rpc("store_mark_driver_earning_paid" as any, {
@@ -65,17 +74,17 @@ const StoreDriverFinance = ({ storeId }: Props) => {
         _notes: null,
       });
       if (error) throw error;
-      toast.success("Pagamento enviado! Aguardando confirmação do motoboy.");
+      toast.success("Acerto registrado! Aguardando confirmação do motoboy.");
       queryClient.invalidateQueries({ queryKey: ["store-driver-finance", storeId] });
     } catch (err: any) {
-      toast.error(err.message || "Erro ao registrar pagamento.");
+      toast.error(err.message || "Erro ao registrar o acerto.");
     } finally {
       setPayingId(null);
     }
   };
 
-  const payAllForDriver = async (driverId: string, name: string) => {
-    if (!confirm(`Marcar TODAS as entregas pendentes de ${name} como pagas? O motoboy precisará confirmar o recebimento.`)) return;
+  const settleAllForDriver = async (driverId: string, name: string) => {
+    if (!confirm(`Registrar TODAS as entregas pendentes de ${name} como acertadas? O motoboy precisará confirmar.`)) return;
     setBulkDriverId(driverId);
     try {
       const { data, error } = await supabase.rpc("store_mark_all_driver_earnings_paid" as any, {
@@ -86,7 +95,7 @@ const StoreDriverFinance = ({ storeId }: Props) => {
       toast.success(`${data || 0} entregas enviadas para confirmação.`);
       queryClient.invalidateQueries({ queryKey: ["store-driver-finance", storeId] });
     } catch (err: any) {
-      toast.error(err.message || "Erro ao registrar pagamentos.");
+      toast.error(err.message || "Erro ao registrar os acertos.");
     } finally {
       setBulkDriverId(null);
     }
@@ -100,17 +109,13 @@ const StoreDriverFinance = ({ storeId }: Props) => {
     );
   }
 
-  const list = earnings || [];
+  const list = deliveries || [];
   const pending = list.filter((e) => e.status === "pendente");
   const awaiting = list.filter((e) => e.status === "aguardando_confirmacao");
-  const paid = list.filter((e) => e.status === "pago");
-
-  const pendingTotal = pending.reduce((s, e) => s + Number(e.driver_amount), 0);
-  const awaitingTotal = awaiting.reduce((s, e) => s + Number(e.driver_amount), 0);
-  const paidTotal = paid.reduce((s, e) => s + Number(e.driver_amount), 0);
+  const settled = list.filter((e) => e.status === "pago");
 
   // Group pending by driver
-  const byDriver = pending.reduce<Record<string, Earning[]>>((acc, e) => {
+  const byDriver = pending.reduce<Record<string, Delivery[]>>((acc, e) => {
     (acc[e.driver_user_id] ||= []).push(e);
     return acc;
   }, {});
@@ -123,38 +128,39 @@ const StoreDriverFinance = ({ storeId }: Props) => {
           <Wallet className="h-5 w-5 text-emerald-500" />
         </div>
         <div>
-          <h2 className="text-lg font-bold text-foreground">Finanças dos Motoboys</h2>
-          <p className="text-xs text-muted-foreground">Controle os acertos com seus entregadores</p>
+          <h2 className="text-lg font-bold text-foreground">Acertos com Motoboys</h2>
+          <p className="text-xs text-muted-foreground">Controle das entregas já acertadas</p>
         </div>
       </div>
 
       {/* Info */}
       <div className="bg-blue-500/5 border border-blue-500/10 rounded-2xl p-4">
         <p className="text-xs text-muted-foreground">
-          💡 O valor que aparece para o motoboy é a <strong>taxa de entrega que você define</strong> menos a taxa
-          fixa da plataforma (R$2,00 por entrega). O pagamento é feito manualmente por você ao motoboy.
+          💡 O valor de cada entrega é combinado <strong>diretamente entre você e o motoboy</strong> — o
+          ItaSuper não define, não intermedeia e não tem acesso a esses valores. Esta tela serve apenas
+          para vocês dois controlarem quais entregas já foram acertadas.
         </p>
       </div>
 
       {/* Summary */}
       <div className="grid grid-cols-3 gap-2">
         <div className="bg-amber-500/5 border border-amber-500/20 rounded-2xl p-3">
-          <DollarSign className="h-4 w-4 text-amber-500 mb-1" />
-          <p className="text-[10px] font-bold text-muted-foreground uppercase">A Pagar</p>
-          <p className="text-base font-black text-foreground mt-1">{formatBRL(pendingTotal)}</p>
-          <p className="text-[10px] text-muted-foreground mt-0.5">{pending.length} entregas</p>
+          <Bike className="h-4 w-4 text-amber-500 mb-1" />
+          <p className="text-[10px] font-bold text-muted-foreground uppercase">A Acertar</p>
+          <p className="text-base font-black text-foreground mt-1">{pending.length}</p>
+          <p className="text-[10px] text-muted-foreground mt-0.5">entregas</p>
         </div>
         <div className="bg-blue-500/5 border border-blue-500/20 rounded-2xl p-3">
           <Loader2 className="h-4 w-4 text-blue-500 mb-1" />
           <p className="text-[10px] font-bold text-muted-foreground uppercase">Aguardando</p>
-          <p className="text-base font-black text-foreground mt-1">{formatBRL(awaitingTotal)}</p>
-          <p className="text-[10px] text-muted-foreground mt-0.5">{awaiting.length} a confirmar</p>
+          <p className="text-base font-black text-foreground mt-1">{awaiting.length}</p>
+          <p className="text-[10px] text-muted-foreground mt-0.5">a confirmar</p>
         </div>
         <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-2xl p-3">
           <CheckCircle2 className="h-4 w-4 text-emerald-500 mb-1" />
-          <p className="text-[10px] font-bold text-muted-foreground uppercase">Pago</p>
-          <p className="text-base font-black text-foreground mt-1">{formatBRL(paidTotal)}</p>
-          <p className="text-[10px] text-muted-foreground mt-0.5">{paid.length} entregas</p>
+          <p className="text-[10px] font-bold text-muted-foreground uppercase">Acertadas</p>
+          <p className="text-base font-black text-foreground mt-1">{settled.length}</p>
+          <p className="text-[10px] text-muted-foreground mt-0.5">entregas</p>
         </div>
       </div>
 
@@ -165,7 +171,7 @@ const StoreDriverFinance = ({ storeId }: Props) => {
             <Loader2 className="h-3.5 w-3.5" /> Aguardando confirmação do motoboy ({awaiting.length})
           </p>
           <p className="text-[11px] text-muted-foreground">
-            Você marcou estas entregas como pagas. O motoboy precisa confirmar o recebimento no app dele.
+            Você registrou estas entregas como acertadas. O motoboy precisa confirmar no app dele.
           </p>
           <div className="space-y-1.5 mt-2">
             {awaiting.slice(0, 8).map((e) => {
@@ -175,8 +181,8 @@ const StoreDriverFinance = ({ storeId }: Props) => {
                   <span className="text-foreground font-medium">
                     {profile?.full_name || "Motoboy"} · #{e.order_id.slice(0, 6).toUpperCase()}
                   </span>
-                  <span className="font-bold text-blue-600 dark:text-blue-400">
-                    {formatBRL(Number(e.driver_amount))}
+                  <span className="text-muted-foreground">
+                    {new Date(e.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}
                   </span>
                 </div>
               );
@@ -188,16 +194,15 @@ const StoreDriverFinance = ({ storeId }: Props) => {
       {/* Pending grouped by driver */}
       {Object.keys(byDriver).length === 0 ? (
         <div className="text-center py-10 text-sm text-muted-foreground bg-card border border-border rounded-2xl">
-          🎉 Nenhum pagamento pendente!
+          🎉 Nenhuma entrega pendente de acerto!
         </div>
       ) : (
         <div className="space-y-4">
           <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-1">
-            Pagamentos Pendentes
+            Entregas Pendentes de Acerto
           </p>
           {Object.entries(byDriver).map(([driverId, items]) => {
             const profile = getProfile(driverId);
-            const total = items.reduce((s, e) => s + Number(e.driver_amount), 0);
             const name = profile?.full_name || "Motoboy";
             return (
               <div key={driverId} className="bg-card border border-border rounded-2xl overflow-hidden">
@@ -208,28 +213,23 @@ const StoreDriverFinance = ({ storeId }: Props) => {
                       <p className="text-[11px] text-muted-foreground">
                         {profile?.phone || profile?.whatsapp_number || "Sem telefone"}
                       </p>
-                      {profile?.pix_key && (
-                        <p className="text-[11px] text-emerald-600 dark:text-emerald-400 mt-0.5">
-                          PIX ({profile.pix_type}): {profile.pix_key}
-                        </p>
-                      )}
                     </div>
                     <div className="text-right">
-                      <p className="text-lg font-black text-foreground">{formatBRL(total)}</p>
-                      <p className="text-[10px] text-muted-foreground">{items.length} entregas</p>
+                      <p className="text-lg font-black text-foreground">{items.length}</p>
+                      <p className="text-[10px] text-muted-foreground">entregas</p>
                     </div>
                   </div>
                   <button
-                    onClick={() => payAllForDriver(driverId, name)}
+                    onClick={() => settleAllForDriver(driverId, name)}
                     disabled={bulkDriverId === driverId}
                     className="w-full bg-emerald-500 text-white font-bold py-2.5 rounded-xl text-sm disabled:opacity-50 flex items-center justify-center gap-2 active:scale-[0.98] transition-all"
                   >
                     {bulkDriverId === driverId ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
-                      <Banknote className="h-4 w-4" />
+                      <CheckCircle2 className="h-4 w-4" />
                     )}
-                    Quitar Tudo ({formatBRL(total)})
+                    Marcar todas como acertadas ({items.length})
                   </button>
                 </div>
                 <div className="divide-y divide-border">
@@ -244,27 +244,20 @@ const StoreDriverFinance = ({ storeId }: Props) => {
                             day: "2-digit",
                             month: "short",
                           })}
-                          {" · Taxa "}
-                          {formatBRL(Number(e.fee_total))}
                         </p>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-black text-foreground">
-                          {formatBRL(Number(e.driver_amount))}
-                        </span>
-                        <button
-                          onClick={() => markPaid(e.id)}
-                          disabled={payingId === e.id}
-                          className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-3 py-1.5 rounded-lg text-[11px] font-bold disabled:opacity-50 flex items-center gap-1"
-                        >
-                          {payingId === e.id ? (
-                            <Loader2 className="h-3 w-3 animate-spin" />
-                          ) : (
-                            <CheckCircle2 className="h-3 w-3" />
-                          )}
-                          Pago
-                        </button>
-                      </div>
+                      <button
+                        onClick={() => markSettled(e.id)}
+                        disabled={payingId === e.id}
+                        className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-3 py-1.5 rounded-lg text-[11px] font-bold disabled:opacity-50 flex items-center gap-1"
+                      >
+                        {payingId === e.id ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <CheckCircle2 className="h-3 w-3" />
+                        )}
+                        Acertado
+                      </button>
                     </div>
                   ))}
                 </div>
@@ -275,12 +268,12 @@ const StoreDriverFinance = ({ storeId }: Props) => {
       )}
 
       {/* History */}
-      {paid.length > 0 && (
+      {settled.length > 0 && (
         <div className="space-y-2">
           <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-1">
-            Últimos Pagamentos
+            Últimos Acertos
           </p>
-          {paid.slice(0, 15).map((e) => {
+          {settled.slice(0, 15).map((e) => {
             const profile = getProfile(e.driver_user_id);
             return (
               <div
@@ -292,7 +285,7 @@ const StoreDriverFinance = ({ storeId }: Props) => {
                     {profile?.full_name || "Motoboy"} · #{e.order_id.slice(0, 6).toUpperCase()}
                   </p>
                   <p className="text-[10px] text-muted-foreground">
-                    Pago em{" "}
+                    Acertado em{" "}
                     {e.paid_at
                       ? new Date(e.paid_at).toLocaleDateString("pt-BR", {
                           day: "2-digit",
@@ -301,9 +294,7 @@ const StoreDriverFinance = ({ storeId }: Props) => {
                       : "—"}
                   </p>
                 </div>
-                <span className="text-sm font-black text-emerald-500">
-                  {formatBRL(Number(e.driver_amount))}
-                </span>
+                <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
               </div>
             );
           })}

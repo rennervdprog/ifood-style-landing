@@ -10,6 +10,7 @@ import { formatCep, fetchCep, resolveAddress } from "@/lib/location";
   import { maskWhatsApp, formatWhatsAppNumber } from "@/lib/whatsapp";
   import { formatDocument, sanitizeDocument, validateDocument } from "@/lib/documentFormat";
 import { PLANS, NEW_STORE_PLAN_TYPES, DELIVERY_FEE_NOTE, PIX_FEE_NOTE } from "@/lib/plansInfo";
+import { CURRENT_TERMS_VERSION, CURRENT_PRIVACY_VERSION } from "@/lib/legalVersions";
 import { Check } from "lucide-react";
 import PlanFeeBreakdown from "@/components/fees/PlanFeeBreakdown";
 import WhyThisCharge from "@/components/fees/WhyThisCharge";
@@ -331,8 +332,8 @@ const CadastroLojista = () => {
 
         await supabase.from("terms_acceptance").insert({
           user_id: signUpData.user.id,
-          terms_version: "6.1",
-          privacy_version: "6.1",
+          terms_version: CURRENT_TERMS_VERSION,
+          privacy_version: CURRENT_PRIVACY_VERSION,
           user_agent: navigator.userAgent,
         });
          await supabase.from("profiles").update({

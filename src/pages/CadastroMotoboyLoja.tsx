@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { CURRENT_TERMS_VERSION, CURRENT_PRIVACY_VERSION } from "@/lib/legalVersions";
 import { toast } from "sonner";
 import { z } from "zod";
 import { ArrowLeft, Mail, Lock, Eye, EyeOff, User, Phone, Bike, CheckCircle, Store, Loader2, Shield } from "lucide-react";
@@ -89,8 +90,8 @@ const CadastroMotoboyLoja = () => {
 
       await supabase.from("terms_acceptance").insert({
         user_id: userId,
-        terms_version: "6.1",
-        privacy_version: "6.1",
+        terms_version: CURRENT_TERMS_VERSION,
+        privacy_version: CURRENT_PRIVACY_VERSION,
         user_agent: navigator.userAgent,
       });
 
