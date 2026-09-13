@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, useState } from "react";
 import {
   CheckCircle2, AlertTriangle, Timer, Bike, MapPin, ChevronDown, ChevronUp,
   Store, Loader2, Truck, Banknote, MessageCircle, Copy, Printer
@@ -12,6 +12,7 @@ import { parseOrderAddons } from "../helpers";
 import type { OrderStatus, RequiredAddonHighlight } from "../types";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 interface RequiredAddonHighlightsProps { highlights: RequiredAddonHighlight[]; }
 const RequiredAddonHighlights = ({ highlights }: RequiredAddonHighlightsProps) => {
@@ -58,7 +59,7 @@ export interface AdminOrderCardProps {
   toggleAddress: (id: string) => void;
   setActiveTab: (t: any) => void;
   setCancelConfirm: (id: string | null) => void;
-  updateOrderStatus: (id: string, s: OrderStatus) => void;
+  updateOrderStatus: (id: string, s: OrderStatus, assignedDriverId?: string | null) => void;
   handleAcceptOrder: (order: any) => void;
   handleCancelOrder: (order: any) => void;
   handlePrint: (order: any) => void;
@@ -97,6 +98,47 @@ const AdminOrderCardImpl = (props: AdminOrderCardProps) => {
   const elapsedMin = Math.floor(elapsedMs / 60000);
   const isDelayed = elapsedMin > 20 && ["pendente", "preparando"].includes(order.status);
   const action = mainAction;
+
+  // Escolha inicial do motoboy: só faz sentido quando a entrega é da própria loja,
+  // não é retirada no balcão e existe mais de um motoboy vinculado (há escolha real).
+  const canChooseDriverOnReady =
+    order.neighborhood !== "RETIRADA" &&
+    isOwnDelivery &&
+    !order.driver_id &&
+    !!linkedStoreDrivers &&
+    linkedStoreDrivers.length > 1;
+
+  const [driverPickerOpen, setDriverPickerOpen] = useState(false);
+  const [pickedDriverId, setPickedDriverId] = useState<string>("");
+  const [confirmingReady, setConfirmingReady] = useState(false);
+
+  /**
+   * Designa o motoboy ANTES de mudar o status. A ordem importa: `pronto_para_entrega`
+   * é o que dispara Realtime e push para os entregadores — designar depois deixaria o
+   * pedido aberto a todos por alguns segundos.
+   */
+  const confirmReadyWithDriver = async () => {
+    if (confirmingReady) return;
+    setConfirmingReady(true);
+    const target = pickedDriverId || null;
+    try {
+      const { error } = await supabase.rpc("store_assign_order_driver" as any, {
+        _order_id: order.id,
+        _driver_user_id: target,
+      });
+      if (error) throw error;
+    } catch (err: any) {
+      setConfirmingReady(false);
+      toast.error(err?.message || "Erro ao designar motoboy");
+      return; // Mantém o pedido no status anterior.
+    }
+    // Ainda dentro do gesto do usuário: o popup blocker não bloqueia.
+    if (readyHref !== "#") window.open(readyHref, "_blank", "noopener,noreferrer");
+    setDriverPickerOpen(false);
+    setConfirmingReady(false);
+    setActiveTab("pronto_para_entrega");
+    updateOrderStatus(order.id, "pronto_para_entrega", target);
+  };
 
   return (
     <div
@@ -455,7 +497,15 @@ const AdminOrderCardImpl = (props: AdminOrderCardProps) => {
             </div>
           ) : action ? (
             <div className="space-y-1">
-              {action.next === "pronto_para_entrega" ? (
+              {action.next === "pronto_para_entrega" && canChooseDriverOnReady ? (
+                <button
+                  type="button"
+                  onClick={() => { setPickedDriverId(""); setDriverPickerOpen(true); }}
+                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-3 rounded-xl text-sm active:scale-[0.98] transition-transform h-12"
+                >
+                  {action.emoji} {action.label}
+                </button>
+              ) : action.next === "pronto_para_entrega" ? (
                 <a
                   href={readyHref}
                   target="_blank"
@@ -576,6 +626,56 @@ const AdminOrderCardImpl = (props: AdminOrderCardProps) => {
           ) : null}
         </div>
       </div>
+
+      <Dialog open={driverPickerOpen} onOpenChange={(open) => { if (!confirmingReady) setDriverPickerOpen(open); }}>
+        <DialogContent className="max-w-sm rounded-2xl p-4 gap-3">
+          <DialogHeader className="space-y-1 text-left">
+            <DialogTitle className="text-base">Quem vai entregar?</DialogTitle>
+            <DialogDescription className="text-xs">
+              Pedido #{String(order.id).slice(0, 8)} — escolha o motoboy antes de marcar como pronto.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-1.5 max-h-[45vh] overflow-y-auto">
+            <button type="button"
+              onClick={() => setPickedDriverId("")}
+              className={`w-full text-left text-sm px-3 py-3 rounded-xl border transition-colors ${
+                pickedDriverId === ""
+                  ? "bg-primary/10 border-primary/40 text-primary font-bold"
+                  : "border-border text-muted-foreground hover:text-foreground"
+              }`}>
+              🌐 Enviar para todos
+            </button>
+            {(linkedStoreDrivers || []).map((d: any) => (
+              <button key={d.user_id} type="button"
+                onClick={() => setPickedDriverId(d.user_id)}
+                className={`w-full text-left text-sm px-3 py-3 rounded-xl border transition-colors ${
+                  pickedDriverId === d.user_id
+                    ? "bg-primary/10 border-primary/40 text-primary font-bold"
+                    : "border-border text-muted-foreground hover:text-foreground"
+                }`}>
+                🎯 Enviar para {d.full_name}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex flex-col gap-1.5 pt-1">
+            <button type="button"
+              onClick={confirmReadyWithDriver}
+              disabled={confirmingReady}
+              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold py-3 rounded-xl text-sm h-12 disabled:opacity-40 flex items-center justify-center gap-2">
+              {confirmingReady && <Loader2 className="h-4 w-4 animate-spin" />}
+              {confirmingReady ? "Enviando..." : "Confirmar e marcar como pronto"}
+            </button>
+            <button type="button"
+              onClick={() => setDriverPickerOpen(false)}
+              disabled={confirmingReady}
+              className="w-full text-center text-xs text-muted-foreground py-2 disabled:opacity-40">
+              Cancelar
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
@@ -599,6 +699,9 @@ const areEqual = (prev: AdminOrderCardProps, next: AdminOrderCardProps) => {
   if (prev.onlineDriversCount !== next.onlineDriversCount && a.status === "pronto_para_entrega" && !a.driver_id) return false;
   if (prev.isOwnDelivery !== next.isOwnDelivery) return false;
   if (prev.hasLinkedDrivers !== next.hasLinkedDrivers) return false;
+  // O modal de escolha inicial lista os motoboys vinculados — sem isso o memo
+  // congelaria uma lista antiga (ou o botão ficaria no modo sem escolha).
+  if ((prev.linkedStoreDrivers?.length || 0) !== (next.linkedStoreDrivers?.length || 0)) return false;
   if (prev.driversLoading !== next.driversLoading) return false;
   if (prev.clientName !== next.clientName) return false;
   if (prev.clientWhatsApp !== next.clientWhatsApp) return false;

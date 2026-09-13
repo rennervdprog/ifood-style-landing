@@ -43,7 +43,7 @@ interface Props {
   buildAcceptWhatsAppHref: (o: any) => string;
   buildReadyWhatsAppHref: (o: any) => string;
   evolutionConnected?: boolean;
-  updateOrderStatus: (id: string, status: any) => void;
+  updateOrderStatus: (id: string, status: any, assignedDriverId?: string | null) => void;
   handleAcceptOrder: (o: any) => void;
   handleCancelOrder: (o: any) => void;
   handlePrint: (o: any) => void;
