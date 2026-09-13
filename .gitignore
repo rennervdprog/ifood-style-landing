@@ -23,6 +23,10 @@ node_modules
 dist
 build
 
+# O CI usa bun; lockfile de pnpm só aparece em instalação local avulsa.
+pnpm-lock.yaml
+pnpm-workspace.yaml
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

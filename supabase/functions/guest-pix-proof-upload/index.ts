@@ -75,17 +75,21 @@ Deno.serve(async (req) => {
       return json({ error: "upload_failed" }, 500);
     }
 
-    const { error: updErr } = await sb.from("orders")
+    const { data: updatedOrder, error: updErr } = await sb.from("orders")
       .update({
         pix_proof_url: path,
         pix_proof_uploaded_at: new Date().toISOString(),
         status: "comprovante_enviado",
       } as any)
       .eq("id", orderId)
-      .eq("status", "aguardando_comprovante");
-    if (updErr) {
-      console.error("[guest-pix-proof-upload] order update:", updErr);
-      return json({ error: "order_update_failed" }, 500);
+      .eq("status", "aguardando_comprovante")
+      .gt("pix_expires_at", new Date().toISOString())
+      .select("id")
+      .maybeSingle();
+    if (updErr || !updatedOrder) {
+      await sb.storage.from("pix-proofs").remove([path]);
+      if (updErr) console.error("[guest-pix-proof-upload] order update:", updErr);
+      return json({ error: updatedOrder ? "order_update_failed" : "expired" }, updatedOrder ? 500 : 410);
     }
 
     // Notifica loja (best-effort)

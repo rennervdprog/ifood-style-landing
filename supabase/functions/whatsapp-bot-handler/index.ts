@@ -1230,17 +1230,25 @@ Deno.serve(async (req) => {
           await sendText(store_id, phone, "⚠️ Não consegui salvar o comprovante. Pode tentar enviar de novo?");
           return json({ handled: true, action: "pix_proof_upload_failed" });
         }
-        // Marca no pedido (bypass RPC pois roda como service role)
-        const { error: upErr } = await admin.from("orders").update({
+        // A atualização precisa continuar válida no momento do commit, não apenas no início do upload.
+        const { data: updatedOrder, error: upErr } = await admin.from("orders").update({
           pix_proof_url: path,
           pix_proof_uploaded_at: new Date().toISOString(),
           status: "comprovante_enviado",
-        }).eq("id", orderId).eq("status", "aguardando_comprovante");
-        if (upErr) {
-          console.error("[bot] pix proof update failed", upErr);
-          await sendText(store_id, phone, "⚠️ Ocorreu um erro ao registrar seu comprovante. Um atendente vai te ajudar.");
+        }).eq("id", orderId)
+          .eq("status", "aguardando_comprovante")
+          .eq("payment_method", "pix_direto")
+          .gt("pix_expires_at", new Date().toISOString())
+          .select("id")
+          .maybeSingle();
+        if (upErr || !updatedOrder) {
+          await admin.storage.from("pix-proofs").remove([path]);
+          if (upErr) console.error("[bot] pix proof update failed", upErr);
+          await sendText(store_id, phone, updatedOrder
+            ? "⚠️ Ocorreu um erro ao registrar seu comprovante. Um atendente vai te ajudar."
+            : "⏰ O prazo de 20 minutos para enviar o comprovante terminou. Faça um novo pedido se ainda desejar comprar.");
           await clearSession(admin, store_id, phone);
-          return json({ handled: true, action: "pix_proof_update_failed" });
+          return json({ handled: true, action: updatedOrder ? "pix_proof_update_failed" : "pix_proof_expired" });
         }
         await sendText(store_id, phone,
           `✅ *Comprovante recebido!*\n\nO lojista vai validar e confirmar seu pedido em instantes. Você recebe uma mensagem assim que for aceito. ✨`);

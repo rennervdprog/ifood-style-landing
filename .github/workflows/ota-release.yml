@@ -7,17 +7,20 @@ name: OTA Release
 # Não precisa gerar APK — o APK só muda quando código nativo mudar
 # (workflow build-android.yml).
 
+# PAUSADO: o projeto Supabase está suspenso e `scripts/publish-ota.mjs` publica o
+# bundle no bucket `app-releases`. Enquanto isso, roda só sob demanda
+# (workflow_dispatch). Para reativar, descomentar o bloco `push` abaixo.
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'src/**'
-      - 'public/**'
-      - 'index.html'
-      - 'vite.config.ts'
-      - 'package.json'
-      - 'bun.lockb'
-      - 'package-lock.json'
+  # push:
+  #   branches: [main]
+  #   paths:
+  #     - 'src/**'
+  #     - 'public/**'
+  #     - 'index.html'
+  #     - 'vite.config.ts'
+  #     - 'package.json'
+  #     - 'bun.lockb'
+  #     - 'package-lock.json'
   workflow_dispatch:
 
 concurrency:

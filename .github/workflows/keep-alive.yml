@@ -5,9 +5,11 @@ name: keep-alive
 # na primeira query (getSession) quando o app abre depois de horas parado.
 # GitHub Actions grátis: até 2000 min/mês em repos privados — usamos ~5min/mês.
 
+# PAUSADO: o projeto Supabase está suspenso — não há Postgres para manter morno e
+# o ping só queimaria minutos de Actions. Para reativar, descomentar o `schedule`.
 on:
-  schedule:
-    - cron: "*/10 * * * *"
+  # schedule:
+  #   - cron: "*/10 * * * *"
   workflow_dispatch:
 
 jobs:

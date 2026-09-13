@@ -55,10 +55,11 @@ const PixDiretoPaymentPage = () => {
   }, [orderId]);
 
   const expiresAt = order?.pix_expires_at ? new Date(order.pix_expires_at).getTime() : null;
-  const remainingMs = expiresAt ? Math.max(0, expiresAt - now) : 0;
+  const hasValidExpiry = Number.isFinite(expiresAt);
+  const remainingMs = hasValidExpiry ? Math.max(0, (expiresAt as number) - now) : 0;
   const mm = Math.floor(remainingMs / 60000);
   const ss = Math.floor((remainingMs % 60000) / 1000);
-  const expired = expiresAt !== null && remainingMs === 0 && order?.status === "aguardando_comprovante";
+  const expired = !hasValidExpiry || (remainingMs === 0 && order?.status === "aguardando_comprovante");
 
   const status: string = order?.status || "";
   const proofSent = status === "comprovante_enviado";
@@ -94,7 +95,10 @@ const PixDiretoPaymentPage = () => {
         p_order_id: order.id,
         p_proof_path: path,
       });
-      if (rpcErr) throw rpcErr;
+      if (rpcErr) {
+        await supabase.storage.from("pix-proofs").remove([path]);
+        throw rpcErr;
+      }
       toast.success("Comprovante enviado! Aguarde a confirmação da loja.");
       await load();
     } catch (e: any) {
@@ -145,7 +149,7 @@ const PixDiretoPaymentPage = () => {
             <Clock className={`h-5 w-5 ${expired ? "text-destructive" : "text-amber-600"}`} />
             <div className="flex-1">
               <p className={`text-sm font-bold ${expired ? "text-destructive" : "text-amber-700 dark:text-amber-400"}`}>
-                {expired ? "Tempo esgotado" : "Envie o comprovante em"}
+                {expired ? (hasValidExpiry ? "Tempo esgotado" : "Prazo indisponível") : "Envie o comprovante em"}
               </p>
               {!expired && (
                 <p className="text-2xl font-black tabular-nums text-amber-700 dark:text-amber-400">
@@ -223,7 +227,9 @@ const PixDiretoPaymentPage = () => {
               {uploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Upload className="h-5 w-5" />}
               {uploading ? "Enviando..." : "Enviar comprovante do PIX"}
             </button>
-            <p className="text-[11px] text-center text-muted-foreground">JPG, PNG ou PDF · até 5 MB</p>
+            <p className="text-[11px] text-center text-muted-foreground">
+              {hasValidExpiry ? "JPG, PNG ou PDF · até 5 MB" : "Não é possível enviar sem um prazo válido do pedido"}
+            </p>
           </div>
         )}
       </div>

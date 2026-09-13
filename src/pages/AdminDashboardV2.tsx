@@ -1230,7 +1230,7 @@ const AdminDashboard = () => {
     toast.success(next ? "Impressão automática ativada em todos dispositivos" : "Impressão automática desativada");
   };
 
-  const updateOrderStatus = async (orderId: string, newStatus: OrderStatus) => {
+  const updateOrderStatus = async (orderId: string, newStatus: OrderStatus, assignedDriverId?: string | null) => {
     const order = orders?.find((o: any) => o.id === orderId);
     
     // Auto-print is now handled directly in the ACEITAR PEDIDO button click
@@ -1326,8 +1326,14 @@ const AdminDashboard = () => {
           const driverUserIds = onlineDrivers.map((d: any) => d.user_id);
           pushNotifyDeliveryAvailable(driverUserIds, orderId).catch(console.error);
         } else if (isOwnDelivery && linkedStoreDrivers && linkedStoreDrivers.length > 0) {
-          const storeDriverUserIds = linkedStoreDrivers.map((d: any) => d.user_id);
-          pushNotifyDeliveryAvailable(storeDriverUserIds, orderId).catch(console.error);
+          // Quando o pedido foi designado a um motoboy específico, só ele recebe o push —
+          // os demais não conseguiriam aceitar e receberiam notificação fantasma.
+          const storeDriverUserIds = assignedDriverId
+            ? linkedStoreDrivers.filter((d: any) => d.user_id === assignedDriverId).map((d: any) => d.user_id)
+            : linkedStoreDrivers.map((d: any) => d.user_id);
+          if (storeDriverUserIds.length > 0) {
+            pushNotifyDeliveryAvailable(storeDriverUserIds, orderId).catch(console.error);
+          }
         }
       }
     } catch (e: any) {
