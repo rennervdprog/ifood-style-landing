@@ -28,7 +28,8 @@ import { TermsUpdateModal } from "@/components/TermsUpdateModal";
 import ClientPinChecker from "@/components/ClientPinChecker";
 import RecoveryRedirect from "@/components/RecoveryRedirect";
 import GlobalRealtimeSync from "@/components/GlobalRealtimeSync";
-import { fetchPendingLegalChanges, type PendingLegalChanges } from "@/lib/legalDocuments";
+import { audienceForRole, fetchPendingLegalChanges, type PendingLegalChanges } from "@/lib/legalDocuments";
+import { useUserRouting } from "@/hooks/useUserRouting";
 import { APP_VERSION } from "@/lib/appVersion";
 import { useDelayedFallback } from "@/lib/useDelayedFallback";
 import { useNativeNavStackTracker } from "@/lib/nativeNavStack";
@@ -158,14 +159,30 @@ const PushNavigator = () => {
   return null;
 };
 
-/** Verifica e exibe modal de novos termos — precisa estar dentro do AuthProvider */
+/**
+ * Verifica e exibe o modal de novos termos — precisa estar dentro do AuthProvider.
+ *
+ * O papel do usuário é passado para a RPC filtrar as mudanças: motoboy não
+ * precisa ver tabela de planos, e a mudança que o afeta de verdade não pode
+ * ficar soterrada no meio de assunto de lojista.
+ *
+ * Quando o documento é publicado com vigência futura, a RPC devolve
+ * `mode = 'notice'` e o modal vira aviso adiável — é o aviso prévio de 30 dias
+ * que os Termos prometem. O adiamento é guardado por versão em
+ * `sessionStorage`: reaparece no próximo acesso, some quando vira `binding`.
+ */
+const NOTICE_DISMISS_KEY = "legal-notice-dismissed";
+
 const TermsChecker = () => {
   const { user } = useAuth();
+  const { role, loading: roleLoading } = useUserRouting();
   const [pending, setPending] = useState<PendingLegalChanges | null>(null);
   const [termsChecked, setTermsChecked] = useState(false);
 
   useEffect(() => {
-    if (!user || termsChecked) return;
+    // Espera o papel resolver: consultar antes faria o filtro cair em "all" e
+    // mostrar a lista inteira a quem não é do público.
+    if (!user || termsChecked || roleLoading) return;
     const check = async () => {
       const { data } = await supabase
         .from("profiles")
@@ -174,20 +191,34 @@ const TermsChecker = () => {
         .maybeSingle();
       const termsAcc = (data as any)?.terms_version_accepted || null;
       const privAcc = (data as any)?.privacy_version_accepted || termsAcc || null;
-      const result = await fetchPendingLegalChanges(termsAcc, privAcc);
+      const result = await fetchPendingLegalChanges(termsAcc, privAcc, audienceForRole(role));
       if (result && (result.needs_terms || result.needs_privacy)) {
-        setPending(result);
+        const versionKey = `${result.current_terms_version}/${result.current_privacy_version}`;
+        const dismissed =
+          result.mode === "notice" &&
+          sessionStorage.getItem(NOTICE_DISMISS_KEY) === versionKey;
+        if (!dismissed) setPending(result);
       }
       setTermsChecked(true);
     };
     check();
-  }, [user, termsChecked]);
+  }, [user, termsChecked, role, roleLoading]);
 
   if (!pending || !user) return null;
+
+  const handleDismiss = () => {
+    sessionStorage.setItem(
+      NOTICE_DISMISS_KEY,
+      `${pending.current_terms_version}/${pending.current_privacy_version}`
+    );
+    setPending(null);
+  };
+
   return (
     <TermsUpdateModal
       pending={pending}
       onAccepted={() => { setPending(null); }}
+      onDismiss={pending.mode === "notice" ? handleDismiss : undefined}
     />
   );
 };
