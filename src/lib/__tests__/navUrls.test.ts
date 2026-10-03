@@ -38,6 +38,22 @@ describe("buildWazeUrl / buildGoogleMapsUrl", () => {
     expect(u).toContain("ll=-23.5,-46.6");
     expect(u).toContain("navigate=yes");
   });
+  it("Waze usa o endereço quando a coordenada é apenas do CEP", () => {
+    const u = buildWazeUrl({
+      lat: -22.87278,
+      lng: -42.34306,
+      precision: "cep",
+      street: "Rua Country Club dos Engenheiros",
+      number: "320",
+      neighborhood: "Clube dos Engenheiros",
+      city: "Araruama",
+      state: "RJ",
+      cep: "28984-876",
+    });
+    expect(u).toContain("q=");
+    expect(u).not.toContain("ll=");
+    expect(decodeURIComponent(u)).toContain("Rua Country Club dos Engenheiros, 320");
+  });
   it("Waze usa q= quando não há coords", () => {
     const u = buildWazeUrl({ street: "Rua A", number: "1", city: "SP", state: "SP" });
     expect(u).toContain("q=");

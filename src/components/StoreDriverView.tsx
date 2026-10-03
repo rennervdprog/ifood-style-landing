@@ -1123,6 +1123,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
           neighborhood: nextStop.neighborhood,
           city: (nextStop.stores as any)?.address_city,
           state: (nextStop.stores as any)?.address_state,
+          precision: nextStop.metadata?.delivery_quote?.destination_precision,
         }, navApp);
         const contactName = (getContact(nextStop.client_id) as any)?.full_name
           || (nextStop as any)?.metadata?.manual_customer?.name
@@ -1246,6 +1247,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
                 neighborhood: o.neighborhood,
                 city: (o.stores as any)?.address_city,
                 state: (o.stores as any)?.address_state,
+                precision: o.metadata?.delivery_quote?.destination_precision,
               } as NavTarget));
             if (stops.length < 2) return null;
             const origin: NavTarget | undefined = activeStoreCoords
@@ -1339,6 +1341,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
                           neighborhood: order.neighborhood,
                           city: (order as any).stores?.address_city,
                           state: (order as any).stores?.address_state,
+                          precision: (order as any).metadata?.delivery_quote?.destination_precision,
                         }} />
                       </div>
                     </div>
