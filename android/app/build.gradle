@@ -7,7 +7,7 @@ android {
         applicationId "app.itasuper.cliente"
         minSdkVersion 26
         targetSdkVersion rootProject.ext.targetSdkVersion
-versionCode 10143
+        versionCode 10143
         versionName "1.27.41"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
