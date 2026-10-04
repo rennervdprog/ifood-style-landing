@@ -78,6 +78,7 @@ const CadastroLojista = () => {
   const [document, setDocument] = useState("");
   const [storeCategory, setStoreCategory] = useState("");
   const [birthDate, setBirthDate] = useState("");
+  const [birthDateDisplay, setBirthDateDisplay] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
   const [cep, setCep] = useState("");
   const [city, setCity] = useState("");
@@ -981,10 +982,21 @@ const CadastroLojista = () => {
                   <div className="relative">
                     <FileText className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <input
-                      type="date"
-                      placeholder="Data de Nascimento"
-                      value={birthDate}
-                      onChange={(e) => setBirthDate(e.target.value)}
+                      type="text"
+                      inputMode="numeric"
+                      autoComplete="bday"
+                      placeholder="Data de nascimento (DD/MM/AAAA)"
+                      maxLength={10}
+                      value={birthDateDisplay}
+                      onChange={(e) => {
+                        // Máscara DD/MM/AAAA; estado interno segue ISO (AAAA-MM-DD) para validação/gravação.
+                        const digits = e.target.value.replace(/\D/g, "").slice(0, 8);
+                        let masked = digits;
+                        if (digits.length > 4) masked = `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+                        else if (digits.length > 2) masked = `${digits.slice(0, 2)}/${digits.slice(2)}`;
+                        setBirthDateDisplay(masked);
+                        setBirthDate(digits.length === 8 ? `${digits.slice(4)}-${digits.slice(2, 4)}-${digits.slice(0, 2)}` : "");
+                      }}
                       className="w-full h-12 pl-10 pr-4 rounded-2xl border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm"
                     />
                   </div>
