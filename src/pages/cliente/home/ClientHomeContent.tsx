@@ -215,7 +215,10 @@ const ClientHomeContent = () => {
       return mapStoresWithHours(rows, allHours, activeCoords, effectiveCity);
     },
     enabled: true,
-    staleTime: 1000 * 60 * 5,
+    // Vitrine depende de entregador online: cache curto + refetch ao voltar à tela.
+    staleTime: 1000 * 30,
+    refetchOnWindowFocus: true,
+    refetchInterval: 1000 * 60,
     retry: 3,
     retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 8000),
   });
