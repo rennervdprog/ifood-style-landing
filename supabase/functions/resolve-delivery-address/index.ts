@@ -120,6 +120,30 @@ async function viaCep(cep: string) {
 
 type Geo = { lat: number; lng: number; precision: "address" | "street" | "cep" };
 
+/**
+ * O Nominatim não possui todos os logradouros e faixas de CEP brasileiros.
+ * BrasilAPI fornece o centróide do CEP e permite validar a entrega sem
+ * rejeitar um endereço oficial apenas porque a rua não está no OpenStreetMap.
+ */
+async function brasilApiCep(cep: string): Promise<Geo | null> {
+  const key = `geo|v2|brasilapi|cep|${cep}`;
+  const cached = await cacheGet(key);
+  if (cached) return { lat: Number(cached.lat), lng: Number(cached.lng), precision: "cep" };
+  return await withTimeout(async (signal) => {
+    const response = await fetch(`https://brasilapi.com.br/api/cep/v2/${cep}`, {
+      signal,
+      headers: { "User-Agent": UA, "Accept-Language": "pt-BR" },
+    });
+    if (!response.ok) return null;
+    const payload = await response.json();
+    const latitude = Number(payload?.location?.coordinates?.latitude);
+    const longitude = Number(payload?.location?.coordinates?.longitude);
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return null;
+    await cacheSet(key, latitude, longitude, "brasilapi:cep");
+    return { lat: latitude, lng: longitude, precision: "cep" };
+  });
+}
+
 async function nominatim(params: Record<string, string>, precision: Geo["precision"]): Promise<Geo | null> {
   const qs = new URLSearchParams({ format: "jsonv2", limit: "1", countrycodes: "br", ...params });
   const key = `geo|v2|${precision}|${qs.toString()}`;
@@ -205,7 +229,8 @@ Deno.serve(async (req) => {
   let geo =
     (await nominatim({ street: `${number} ${street}`, city, state, postalcode: cep }, "address")) ??
     (await nominatim({ street, city, state }, "street")) ??
-    (await nominatim({ postalcode: cep, country: "Brasil" }, "cep"));
+    (await nominatim({ postalcode: cep, country: "Brasil" }, "cep")) ??
+    (await brasilApiCep(cep));
 
   if (!geo) return json({ ok: false, reason: "address_not_found" });
 

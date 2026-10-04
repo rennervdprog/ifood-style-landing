@@ -23,6 +23,8 @@ export interface NavTarget {
   city?: string | null;
   state?: string | null;
   cep?: string | null;
+  /** Precisão da resolução: coordenadas de CEP são centróides, não o imóvel. */
+  precision?: "address" | "street" | "cep" | string | null;
   /** Already-formatted address (used as fallback when individual parts aren't available) */
   fallbackAddress?: string | null;
 }
@@ -61,9 +63,9 @@ export function buildFullAddress(t: NavTarget): string {
   return composed;
 }
 
-/** Waze deep link — prefers `ll=` GPS, falls back to `q=` text. */
+/** Waze deep link — evita usar centróide de CEP como se fosse o imóvel. */
 export function buildWazeUrl(t: NavTarget): string {
-  if (isValidCoord(t.lat, t.lng)) {
+  if (isValidCoord(t.lat, t.lng) && t.precision !== "cep") {
     // ll=lat,lng forces Waze to use the exact coordinate (no re-geocoding)
     return `https://waze.com/ul?ll=${t.lat},${t.lng}&navigate=yes`;
   }
