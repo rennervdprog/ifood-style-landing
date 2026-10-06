@@ -144,7 +144,12 @@ export async function requestAuthenticatedDeliveryQuote(input: {
   if (!error) return data as DeliveryQuoteResponse;
   // FunctionsHttpError traz o corpo da resposta (reason da cotação) em context.
   const ctx = (error as { context?: Response }).context;
-  const body = ctx && typeof ctx.json === "function" ? await ctx.json().catch(() => null) : null;
+  // Lê como texto e faz parse manual: tolera corpo vazio/HTML sem perder o reason.
+  let body: Record<string, unknown> | null = null;
+  if (ctx && typeof ctx.text === "function") {
+    const raw = await ctx.text().catch(() => "");
+    try { body = raw ? JSON.parse(raw) : null; } catch { body = null; }
+  }
   return { ...(body || { reason: "quote_unreachable" }), ok: false } as DeliveryQuoteFailure;
 }
 
