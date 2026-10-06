@@ -134,13 +134,18 @@ export async function requestAuthenticatedDeliveryQuote(input: {
   subtotal: number;
   address: DeliveryAddressInput;
 }): Promise<DeliveryQuoteResponse> {
-  const response = await fetch("/api/quote-delivery", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${input.accessToken}` },
-    body: JSON.stringify({ store_id: input.storeId, fulfillment: "delivery", subtotal: input.subtotal, address: input.address }),
+  // Chama a edge function direto: o proxy /api/quote-delivery só existe na Vercel
+  // e, em outros hosts (lovable.app), devolvia o index.html → "quote_unreachable".
+  const { supabase } = await import("@/integrations/supabase/client");
+  const { data, error } = await supabase.functions.invoke("quote-delivery", {
+    headers: { Authorization: `Bearer ${input.accessToken}` },
+    body: { store_id: input.storeId, fulfillment: "delivery", subtotal: input.subtotal, address: input.address },
   });
-  const body = await response.json().catch(() => ({ ok: false, reason: "quote_unreachable" }));
-  return response.ok ? body as DeliveryQuoteResponse : { ...(body || {}), ok: false } as DeliveryQuoteFailure;
+  if (!error) return data as DeliveryQuoteResponse;
+  // FunctionsHttpError traz o corpo da resposta (reason da cotação) em context.
+  const ctx = (error as { context?: Response }).context;
+  const body = ctx && typeof ctx.json === "function" ? await ctx.json().catch(() => null) : null;
+  return { ...(body || { reason: "quote_unreachable" }), ok: false } as DeliveryQuoteFailure;
 }
 
 export function hasUsableCoordinates(lat: unknown, lng: unknown): boolean {
