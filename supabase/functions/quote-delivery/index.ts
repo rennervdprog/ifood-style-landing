@@ -166,7 +166,7 @@ Deno.serve(async (req) => {
   // Nenhuma tela do lojista grava `delivery_enabled` (default false), então ele
   // não pode bloquear a entrega: só lojas explicitamente "retirada" recusam.
   // Disponibilidade real (entregador online) é checada logo abaixo.
-  if (store.delivery_enabled === false && store.delivery_mode === "pickup" || store.delivery_mode === "pickup") {
+  if (store.delivery_mode === "pickup") {
     return json({ ok: false, reason: "delivery_unavailable" }, 409);
   }
 
