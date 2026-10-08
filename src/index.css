@@ -183,8 +183,8 @@ div[style*="Edit with Lovable"],
 }
 
 @media print {
-  /* Hide everything except the thermal print zone */
-  body > *:not(.thermal-print-zone) {
+  /* Hide everything except the print zones (thermal ticket or PDV A4 report) */
+  body > *:not(.thermal-print-zone):not(.pdv-report-print-zone) {
     display: none !important;
   }
   .thermal-print-zone {
@@ -227,6 +227,21 @@ div[style*="Edit with Lovable"],
   .tp-info { font-size: 14px; margin: 3px 0; }
   .tp-change { font-size: 16px; margin: 4px 0; }
   .tp-footer { text-align: center; font-size: 13px; margin-top: 8px; }
+}
+
+/* ─── Relatório PDV (A4) — visão imprimível/exportável em PDF ───
+   Renderizada via portal direto no body (.pdv-report-print-zone),
+   seguindo o mesmo padrão da zona térmica. */
+.pdv-report-print-zone {
+  display: none;
+}
+
+@media print {
+  .pdv-report-print-zone {
+    display: block !important;
+    background: #fff !important;
+    color: #000 !important;
+  }
 }
 
 /* ─── Native App Feel (GoNative / Capacitor) ─── */
