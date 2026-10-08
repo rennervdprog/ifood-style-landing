@@ -10,6 +10,10 @@ import {
 } from "lucide-react";
 import { PdvCancelSaleDialog } from "./PdvCancelSaleDialog";
 import { ApparelReturnDialog } from "@/pages/pdv/apparel/ApparelReturnDialog";
+import {
+  usePdvSessionMovements,
+  calcPdvTurnoResumo,
+} from "./usePdvTurnoResumo";
 
 const PAYMENT_LABELS: Record<string, { label: string; icon: any; color: string }> = {
   dinheiro:           { label: "Dinheiro",       icon: Banknote,   color: "text-emerald-500" },
@@ -438,18 +442,10 @@ const MovementRow = ({
 // ─── Detalhe completo de um turno ────────────────────────────────────────────
 
 const PdvSessionDetail = ({ session, storeId }: { session: any; storeId: string }) => {
-  const opening = Number(session.opening_amount || 0);
-  const closing = Number(session.closing_amount || 0);
   const queryClient = useQueryClient();
   const [cancelTarget, setCancelTarget] = useState<{ id: string; total: number } | null>(null);
 
-  const { data: movements = [], isLoading: movL } = useQuery({
-    queryKey: ["pdv-session-mov", session.id],
-    queryFn: async () => {
-      const { data } = await supabase.from("pdv_movements" as any).select("*").eq("session_id", session.id).order("created_at", { ascending: false });
-      return (data || []) as any[];
-    },
-  });
+  const { data: movements = [], isLoading: movL } = usePdvSessionMovements(session.id);
 
   const { data: orders = [], isLoading: ordL } = useQuery({
     queryKey: ["pdv-session-orders", session.id],
@@ -464,14 +460,19 @@ const PdvSessionDetail = ({ session, storeId }: { session: any; storeId: string 
 
   if (movL || ordL) return <div className="flex items-center justify-center py-6"><Loader2 className="h-4 w-4 animate-spin text-primary" /></div>;
 
+  // Conferência de caixa — mesma lógica do relatório do turno (usePdvTurnoResumo).
+  const {
+    opening,
+    closing,
+    totalVendido,
+    totalSangrias,
+    totalSuprimentos,
+    saldoEsperado,
+    diff,
+    isOk,
+    byPayment,
+  } = calcPdvTurnoResumo(session, movements);
   const sales = movements.filter((m: any) => m.type === "sale");
-  const totalVendido = sales.reduce((s: number, m: any) => s + Number(m.amount), 0);
-  const totalSangrias = movements.filter((m: any) => m.type === "sangria").reduce((s: number, m: any) => s + Number(m.amount), 0);
-  const totalSuprimentos = movements.filter((m: any) => m.type === "suprimento").reduce((s: number, m: any) => s + Number(m.amount), 0);
-  const dinheiro = sales.filter((m: any) => m.payment_method === "dinheiro").reduce((s: number, m: any) => s + Number(m.amount), 0);
-  const saldoEsperado = opening + dinheiro + totalSuprimentos - totalSangrias;
-  const diff = closing > 0 ? closing - saldoEsperado : null;
-  const isOk = diff !== null && Math.abs(diff) < 0.05;
 
   // Produtos
   const productMap: Record<string, { name: string; qty: number; revenue: number }> = {};
@@ -484,10 +485,6 @@ const PdvSessionDetail = ({ session, storeId }: { session: any; storeId: string 
     });
   });
   const topProducts = Object.values(productMap).sort((a, b) => b.revenue - a.revenue);
-
-  // Por método
-  const byPayment: Record<string, number> = {};
-  sales.forEach((m: any) => { const k = m.payment_method || "outros"; byPayment[k] = (byPayment[k] || 0) + Number(m.amount); });
 
   return (
     <div className="space-y-4 pt-3">

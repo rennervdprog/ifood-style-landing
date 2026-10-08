@@ -14,7 +14,14 @@ import {
   ResponsiveContainer, PieChart, Pie, Cell,
 } from "recharts";
 import PdvRelatorioPrint from "@/components/pdv/PdvRelatorioPrint";
-import type { PdvPrintStats, PdvPrintOperator } from "@/components/pdv/PdvRelatorioPrint";
+import type { PdvPrintStats, PdvPrintOperator, PdvPrintConferencia } from "@/components/pdv/PdvRelatorioPrint";
+import PdvTurnoConferenciaCard from "@/components/pdv/PdvTurnoConferenciaCard";
+import {
+  usePdvSession,
+  usePdvSessionMovements,
+  calcPdvTurnoResumo,
+  formatPdvDateTime,
+} from "@/components/pdv/usePdvTurnoResumo";
 
 // ─── tipos ────────────────────────────────────────────────────────────────────
 
@@ -141,6 +148,9 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
   const [customEnd, setCustomEnd] = useState("");
   const [expandProducts, setExpandProducts] = useState(false);
 
+  // Drill-down de turno: a sessão já delimita os dados — o filtro de data não se aplica.
+  const isDrillDown = !!sessionId;
+
   const dateRange = useMemo(() =>
     getDateRange(period, period === "custom" ? { start: customStart, end: customEnd } : undefined),
     [period, customStart, customEnd]
@@ -164,9 +174,9 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
       let q = (supabase.from("pdv_movements" as any) as any)
         .select("amount, created_by, operator_id")
         .eq("store_id", storeId)
-        .eq("type", "sale")
-        .gte("created_at", dateRange.start)
-        .lte("created_at", dateRange.end);
+        .eq("type", "sale");
+      // No drill-down de turno a sessão delimita os dados — sem filtro de data.
+      if (!sessionId) q = q.gte("created_at", dateRange.start).lte("created_at", dateRange.end);
       if (sessionId) q = q.eq("session_id", sessionId);
       const { data } = await q;
       const rows = (data || []) as any[];
@@ -216,12 +226,14 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
         .select("id, subtotal, total_price, pdv_discount, payment_method, created_at, commission_rate, pdv_session_id, order_items(quantity, unit_price, products(name))")
         .eq("store_id", storeId)
         .eq("order_source" as any, "pdv")
-        .eq("status", "finalizado")
-        .gte("created_at", dateRange.start)
-        .lte("created_at", dateRange.end)
         .order("created_at", { ascending: false });
 
-      if (sessionId) q = q.eq("pdv_session_id" as any, sessionId);
+      if (sessionId) {
+        // Mesmo critério do detalhe inline do histórico (inclui canceladas).
+        q = q.in("status", ["finalizado", "cancelado"]).eq("pdv_session_id" as any, sessionId);
+      } else {
+        q = q.eq("status", "finalizado").gte("created_at", dateRange.start).lte("created_at", dateRange.end);
+      }
 
       const { data } = await q;
       return (data || []) as any[];
@@ -237,9 +249,9 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
         .select("*")
         .eq("store_id", storeId)
         .eq("type", "sale")
-        .gte("created_at", dateRange.start)
-        .lte("created_at", dateRange.end)
         .order("created_at", { ascending: false });
+      // No drill-down de turno a sessão delimita os dados — sem filtro de data.
+      if (!sessionId) q = q.gte("created_at", dateRange.start).lte("created_at", dateRange.end);
       if (sessionId) q = q.eq("session_id", sessionId);
       const { data } = await q;
       return (data || []) as any[];
@@ -376,12 +388,39 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
     [dateRange]
   );
 
+  // ── Drill-down de turno: sessão + todas as movimentações (para conferência/impressão) ──
+  // Usa as mesmas queryKeys do card de conferência — um único fetch compartilhado.
+  const { data: drillSession } = usePdvSession(isDrillDown ? sessionId : undefined);
+  const { data: drillMovements = [] } = usePdvSessionMovements(isDrillDown ? sessionId : undefined);
+  const drillResumo = useMemo(
+    () => (isDrillDown && drillSession ? calcPdvTurnoResumo(drillSession, drillMovements) : null),
+    [isDrillDown, drillSession, drillMovements]
+  );
+  const drillPeriodLabel = useMemo(() => {
+    if (!isDrillDown || !drillSession) return dateRangeLabel;
+    const fim = drillSession.status === "open" ? "agora" : formatPdvDateTime(drillSession.closed_at);
+    return `${formatPdvDateTime(drillSession.opened_at)} → ${fim}`;
+  }, [isDrillDown, drillSession, dateRangeLabel]);
+
   const exportCsv = () => {
     if (!stats) return;
     const lines: string[] = [];
-    lines.push(`Relatório PDV;${periodLabels[period]}`);
-    lines.push(`Período;${new Date(dateRange.start).toLocaleString("pt-BR")};${new Date(dateRange.end).toLocaleString("pt-BR")}`);
+    lines.push(`Relatório PDV;${isDrillDown ? "Relatório do turno" : periodLabels[period]}`);
+    lines.push(`Período;${isDrillDown ? drillPeriodLabel : `${new Date(dateRange.start).toLocaleString("pt-BR")};${new Date(dateRange.end).toLocaleString("pt-BR")}`}`);
     lines.push("");
+    if (isDrillDown && drillResumo) {
+      lines.push("CONFERÊNCIA DE CAIXA");
+      lines.push(`Operador;${operatorStats[0]?.name || "Operador"}`);
+      lines.push(`Abertura;${drillResumo.opening.toFixed(2)}`);
+      lines.push(`Vendas (${drillResumo.salesCount});${drillResumo.totalVendido.toFixed(2)}`);
+      lines.push(`Suprimentos;${drillResumo.totalSuprimentos.toFixed(2)}`);
+      lines.push(`Sangrias;${drillResumo.totalSangrias.toFixed(2)}`);
+      lines.push(`Saldo esperado;${drillResumo.saldoEsperado.toFixed(2)}`);
+      if (drillResumo.closing > 0) lines.push(`Valor contado;${drillResumo.closing.toFixed(2)}`);
+      if (drillResumo.diff !== null)
+        lines.push(`Diferença;${drillResumo.isOk ? "0,00 (conferido)" : drillResumo.diff.toFixed(2)}`);
+      lines.push("");
+    }
     lines.push("RESUMO");
     lines.push(`Faturamento;${stats.totalSales.toFixed(2)}`);
     lines.push(`Vendas;${stats.count}`);
@@ -459,6 +498,22 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
         byPayment: stats.byPayment,
         topProducts: stats.topProducts,
         peakHour: stats.peakHour,
+        conferencia:
+          isDrillDown && drillResumo
+            ? {
+                operador: operatorStats[0]?.name || "Operador",
+                periodo: drillPeriodLabel,
+                abertura: drillResumo.opening,
+                vendas: drillResumo.totalVendido,
+                vendasQtd: drillResumo.salesCount,
+                vendasPorPagamento: drillResumo.byPayment,
+                suprimentos: drillResumo.totalSuprimentos,
+                sangrias: drillResumo.totalSangrias,
+                saldoEsperado: drillResumo.saldoEsperado,
+                valorContado: drillResumo.closing > 0 ? drillResumo.closing : null,
+                diferenca: drillResumo.diff,
+              }
+            : null,
       }
     : null;
   const printOperators: PdvPrintOperator[] = operatorStats.map((o) => ({
@@ -471,10 +526,10 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
   return (
     <>
       <div className="p-3 space-y-4 pb-6">
-        {/* Seletor de período */}
+        {/* Seletor de período — oculto no drill-down de turno (a sessão delimita os dados) */}
         <div className="space-y-2">
           <div className="flex gap-1.5 flex-wrap items-center">
-            {(["today", "week", "month", "custom"] as Period[]).map(p => (
+            {!isDrillDown && (["today", "week", "month", "custom"] as Period[]).map(p => (
               <button key={p} onClick={() => setPeriod(p)}
                 className={`px-3 py-1.5 rounded-full text-[11px] font-bold border transition-colors ${period === p ? "bg-primary text-primary-foreground border-primary" : "bg-muted/50 text-muted-foreground border-border hover:bg-muted"}`}>
                 {periodLabels[p]}
@@ -499,7 +554,7 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
               </div>
             )}
           </div>
-          {period === "custom" && (
+          {period === "custom" && !isDrillDown && (
             <div className="flex gap-2">
               <input type="date" value={customStart} onChange={e => setCustomStart(e.target.value)}
                 className="flex-1 px-3 py-2 bg-muted/40 rounded-xl text-xs border border-border/50 focus:outline-none focus:ring-2 focus:ring-primary/30" />
@@ -509,10 +564,20 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
           )}
         </div>
 
+        {/* Conferência de caixa do turno (drill-down) */}
+        {isDrillDown && sessionId && (
+          <PdvTurnoConferenciaCard
+            sessionId={sessionId}
+            operatorName={operatorStats[0]?.name}
+          />
+        )}
+
         {!stats ? (
           <div className="text-center py-12 text-muted-foreground">
             <BarChart3 className="h-10 w-10 mx-auto mb-2 opacity-20" />
-            <p className="text-sm font-medium">Nenhuma venda no período</p>
+            <p className="text-sm font-medium">
+              {isDrillDown ? "Nenhuma venda neste turno" : "Nenhuma venda no período"}
+            </p>
             <p className="text-xs mt-1">Faça vendas no PDV para ver os relatórios</p>
           </div>
         ) : (
@@ -571,7 +636,8 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
               </div>
             </div>
 
-            {/* ── Faturamento por dia ── */}
+            {/* ── Faturamento por dia (oculto no drill-down: buckets vazios) ── */}
+            {!isDrillDown && (
             <div className="bg-card border border-border rounded-2xl p-4">
               <div className="flex items-center gap-2 mb-3">
                 <BarChart3 className="h-4 w-4 text-primary" />
@@ -604,6 +670,7 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
                 </ResponsiveContainer>
               </div>
             </div>
+            )}
 
             {/* ── Por forma de pagamento ── */}
             <div className="bg-card border border-border rounded-2xl p-4">
@@ -814,7 +881,7 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
           <PdvRelatorioPrint
             storeId={storeId}
             periodLabel={sessionId ? "Relatório do turno" : periodLabels[period]}
-            dateRangeLabel={dateRangeLabel}
+            dateRangeLabel={drillPeriodLabel}
             stats={printStats}
             operators={printOperators}
           />
@@ -824,14 +891,3 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
     </>
   );
 };
-
-// ─── Relatório de um turno específico ────────────────────────────────────────
-
-export const PdvTurnoRelatorio = ({ sessionId, storeId }: { sessionId: string; storeId: string }) => (
-  <div className="space-y-1">
-    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-3 pt-2">
-      Relatório deste turno
-    </p>
-    <PdvRelatorios storeId={storeId} sessionId={sessionId} />
-  </div>
-);
