@@ -1,13 +1,20 @@
 import { useState, useMemo } from "react";
+import { createPortal } from "react-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { formatBRL } from "@/lib/utils";
 import {
-  TrendingUp, ShoppingBag, BarChart3, Clock,
+  TrendingUp, TrendingDown, ShoppingBag, BarChart3, Clock,
   Banknote, CreditCard, Smartphone, Loader2,
-  Trophy, ChevronDown, ChevronUp, Calendar,
-  ArrowUpRight, Percent, Receipt, Download, Users,
+  Trophy, ChevronDown, ChevronUp,
+  ArrowUpRight, Percent, Receipt, Download, Users, Printer,
 } from "lucide-react";
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
+  ResponsiveContainer, PieChart, Pie, Cell,
+} from "recharts";
+import PdvRelatorioPrint from "@/components/pdv/PdvRelatorioPrint";
+import type { PdvPrintStats, PdvPrintOperator } from "@/components/pdv/PdvRelatorioPrint";
 
 // ─── tipos ────────────────────────────────────────────────────────────────────
 
@@ -26,6 +33,14 @@ const PAYMENT_LABELS: Record<string, { label: string; icon: any; color: string }
   maquininha_debito:  { label: "Débito",         icon: CreditCard, color: "text-indigo-500 bg-indigo-500/10" },
   maquininha_pix:     { label: "PIX Maquininha", icon: Smartphone, color: "text-primary bg-primary/10" },
 };
+
+const PAYMENT_COLORS: Record<string, string> = {
+  dinheiro: "#10b981",
+  maquininha_credito: "#3b82f6",
+  maquininha_debito: "#6366f1",
+  maquininha_pix: "#f97316",
+};
+const PAYMENT_FALLBACK_COLORS = ["#6b7280", "#a855f7", "#ec4899", "#14b8a6", "#eab308"];
 
 const getDateRange = (period: Period, custom?: { start: string; end: string }) => {
   const now = new Date();
@@ -59,6 +74,65 @@ const getDateRange = (period: Period, custom?: { start: string; end: string }) =
   return { start: startOfLocalDay(now), end: endOfLocalDay(now) };
 };
 
+/** Badge de variação % vs período anterior (verde = alta, vermelho = queda). */
+function VariationBadge({ current, previous }: { current: number; previous: number }) {
+  if (!previous || previous <= 0) return null;
+  const pct = ((current - previous) / previous) * 100;
+  const up = pct >= 0;
+  const Icon = up ? TrendingUp : TrendingDown;
+  return (
+    <span
+      className={`inline-flex items-center gap-0.5 text-[10px] font-black px-1.5 py-0.5 rounded-full tabular-nums ${
+        up
+          ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+          : "bg-red-500/10 text-red-500"
+      }`}
+      title={`Período anterior: ${previous.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}`}
+    >
+      <Icon className="h-2.5 w-2.5" />
+      {Math.abs(pct).toFixed(1)}%
+    </span>
+  );
+}
+
+interface ChartTooltipEntry {
+  name: string;
+  value: number | string;
+  color?: string;
+  payload?: { fill?: string };
+}
+
+/** Tooltip padronizado dos gráficos do relatório. */
+function PdvChartTooltip({ active, payload, label, formatter }: {
+  active?: boolean;
+  payload?: ChartTooltipEntry[];
+  label?: string | number;
+  formatter?: (v: number) => string;
+}) {
+  if (!active || !payload || payload.length === 0) return null;
+  return (
+    <div className="bg-card border border-border rounded-xl shadow-xl px-3 py-2 min-w-[130px]">
+      {label !== undefined && label !== "" && (
+        <p className="text-[10px] text-muted-foreground font-semibold mb-1">{label}</p>
+      )}
+      {payload.map((entry, i) => (
+        <div key={i} className="flex items-center justify-between gap-3">
+          <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+            <span
+              className="w-2 h-2 rounded-full shrink-0"
+              style={{ backgroundColor: entry.color ?? entry.payload?.fill ?? "#3b82f6" }}
+            />
+            {entry.name}
+          </span>
+          <span className="text-[11px] font-black tabular-nums text-foreground">
+            {formatter ? formatter(Number(entry.value)) : entry.value}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // ─── componente principal ──────────────────────────────────────────────────────
 
 export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
@@ -71,6 +145,17 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
     getDateRange(period, period === "custom" ? { start: customStart, end: customEnd } : undefined),
     [period, customStart, customEnd]
   );
+
+  // Período anterior com a mesma duração (para comparativo). Sem sentido no drill-down de turno.
+  const prevRange = useMemo(() => {
+    const startMs = new Date(dateRange.start).getTime();
+    const endMs = new Date(dateRange.end).getTime();
+    const dur = Math.max(endMs - startMs, 1);
+    return {
+      start: new Date(startMs - dur).toISOString(),
+      end: new Date(startMs - 1).toISOString(),
+    };
+  }, [dateRange]);
 
   // ── Produtividade por operador ──
   const { data: operatorStats = [] } = useQuery({
@@ -162,6 +247,23 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
     enabled: !!storeId,
   });
 
+  // ── Período anterior (comparativo dos KPIs) ──
+  const { data: prevData } = useQuery({
+    queryKey: ["pdv-relatorio-prev", storeId, prevRange.start, prevRange.end],
+    queryFn: async () => {
+      const { data } = await (supabase.from("pdv_movements" as any) as any)
+        .select("amount")
+        .eq("store_id", storeId)
+        .eq("type", "sale")
+        .gte("created_at", prevRange.start)
+        .lte("created_at", prevRange.end);
+      const rows = (data || []) as { amount: number | string | null }[];
+      const total = rows.reduce((s, r) => s + Number(r.amount || 0), 0);
+      return { total, count: rows.length, avg: rows.length > 0 ? total / rows.length : 0 };
+    },
+    enabled: !!storeId && !sessionId,
+  });
+
   // ── Cálculos principais ──
   const stats = useMemo(() => {
     // Usa movements como fonte primária (mais confiável) e orders para detalhes de produto
@@ -228,22 +330,39 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
     });
     const peakHour = Object.entries(byHour).sort((a, b) => Number(b[1]) - Number(a[1]))[0];
 
-    // Vendas por dia da semana
-    const dayNames = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
-    const byDay: Record<number, number> = {};
-    (hasMov ? movements : orders).forEach((o: any) => {
-      const d = new Date(o.created_at).getDay();
-      byDay[d] = (byDay[d] || 0) + 1;
-    });
-
     return {
       totalSales, totalSubtotal, totalDiscount, totalCommission,
       avgTicket, discountRate, count,
       byPayment, topProducts: productsWithABC,
-      byHour, byDay, dayNames,
+      byHour,
       peakHour: peakHour ? { hour: Number(peakHour[0]), count: Number(peakHour[1]) } : null,
     };
   }, [orders, movements]);
+
+  // ── Faturamento por dia (gráfico) ──
+  const dailyRevenue = useMemo(() => {
+    if (!stats) return [];
+    const rows = (movements.length > 0 ? movements : orders) as any[];
+    const start = new Date(dateRange.start); start.setHours(0, 0, 0, 0);
+    const end = new Date(dateRange.end); end.setHours(0, 0, 0, 0);
+    const days: { label: string; total: number }[] = [];
+    const index = new Map<string, number>();
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+      index.set(key, days.length);
+      days.push({
+        label: d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }),
+        total: 0,
+      });
+    }
+    rows.forEach((r: any) => {
+      const d = new Date(r.created_at);
+      const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+      const i = index.get(key);
+      if (i !== undefined) days[i].total += Number(r.amount ?? r.total_price ?? 0);
+    });
+    return days;
+  }, [stats, movements, orders, dateRange]);
 
   const periodLabels: Record<Period, string> = {
     today: "Hoje",
@@ -251,6 +370,11 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
     month: "Este mês",
     custom: "Personalizado",
   };
+
+  const dateRangeLabel = useMemo(() =>
+    `${new Date(dateRange.start).toLocaleDateString("pt-BR")} – ${new Date(dateRange.end).toLocaleDateString("pt-BR")}`,
+    [dateRange]
+  );
 
   const exportCsv = () => {
     if (!stats) return;
@@ -294,6 +418,12 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
     URL.revokeObjectURL(url);
   };
 
+  /** Exportar PDF: limpa resíduo do cupom térmico e imprime a visão A4 do relatório. */
+  const handlePrintPdf = () => {
+    document.getElementById("thermal-print-container")?.replaceChildren();
+    window.print();
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -302,278 +432,396 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
     );
   }
 
+  // Dados derivados para os gráficos (só quando há stats)
+  const paymentData = stats
+    ? Object.entries(stats.byPayment)
+        .sort((a, b) => b[1] - a[1])
+        .map(([method, value], i) => ({
+          name: PAYMENT_LABELS[method]?.label || method,
+          value,
+          color: PAYMENT_COLORS[method] || PAYMENT_FALLBACK_COLORS[i % PAYMENT_FALLBACK_COLORS.length],
+        }))
+    : [];
+  const hourData = stats
+    ? Array.from({ length: 24 }, (_, h) => ({
+        hour: `${String(h).padStart(2, "0")}h`,
+        vendas: stats.byHour[h] || 0,
+      }))
+    : [];
+
+  const printStats: PdvPrintStats | null = stats
+    ? {
+        totalSales: stats.totalSales,
+        totalDiscount: stats.totalDiscount,
+        totalCommission: stats.totalCommission,
+        avgTicket: stats.avgTicket,
+        count: stats.count,
+        byPayment: stats.byPayment,
+        topProducts: stats.topProducts,
+        peakHour: stats.peakHour,
+      }
+    : null;
+  const printOperators: PdvPrintOperator[] = operatorStats.map((o) => ({
+    user_id: o.user_id,
+    name: o.name,
+    count: o.count,
+    total: o.total,
+  }));
+
   return (
-    <div className="p-3 space-y-4 pb-6">
-      {/* Seletor de período */}
-      <div className="space-y-2">
-        <div className="flex gap-1.5 flex-wrap">
-          {(["today", "week", "month", "custom"] as Period[]).map(p => (
-            <button key={p} onClick={() => setPeriod(p)}
-              className={`px-3 py-1.5 rounded-full text-[11px] font-bold border transition-colors ${period === p ? "bg-primary text-primary-foreground border-primary" : "bg-muted/50 text-muted-foreground border-border hover:bg-muted"}`}>
-              {periodLabels[p]}
-            </button>
-          ))}
-          {stats && (
-            <button
-              onClick={exportCsv}
-              className="ml-auto px-3 py-1.5 rounded-full text-[11px] font-bold border border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 transition-colors flex items-center gap-1"
-              title="Exportar CSV"
-            >
-              <Download className="h-3 w-3" /> CSV
-            </button>
+    <>
+      <div className="p-3 space-y-4 pb-6">
+        {/* Seletor de período */}
+        <div className="space-y-2">
+          <div className="flex gap-1.5 flex-wrap items-center">
+            {(["today", "week", "month", "custom"] as Period[]).map(p => (
+              <button key={p} onClick={() => setPeriod(p)}
+                className={`px-3 py-1.5 rounded-full text-[11px] font-bold border transition-colors ${period === p ? "bg-primary text-primary-foreground border-primary" : "bg-muted/50 text-muted-foreground border-border hover:bg-muted"}`}>
+                {periodLabels[p]}
+              </button>
+            ))}
+            {stats && (
+              <div className="ml-auto flex gap-1.5">
+                <button
+                  onClick={handlePrintPdf}
+                  className="px-3 py-1.5 rounded-full text-[11px] font-bold border border-border bg-muted/50 text-muted-foreground hover:bg-muted transition-colors flex items-center gap-1"
+                  title="Exportar PDF (imprimir)"
+                >
+                  <Printer className="h-3 w-3" /> PDF
+                </button>
+                <button
+                  onClick={exportCsv}
+                  className="px-3 py-1.5 rounded-full text-[11px] font-bold border border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 transition-colors flex items-center gap-1"
+                  title="Exportar CSV"
+                >
+                  <Download className="h-3 w-3" /> CSV
+                </button>
+              </div>
+            )}
+          </div>
+          {period === "custom" && (
+            <div className="flex gap-2">
+              <input type="date" value={customStart} onChange={e => setCustomStart(e.target.value)}
+                className="flex-1 px-3 py-2 bg-muted/40 rounded-xl text-xs border border-border/50 focus:outline-none focus:ring-2 focus:ring-primary/30" />
+              <input type="date" value={customEnd} onChange={e => setCustomEnd(e.target.value)}
+                className="flex-1 px-3 py-2 bg-muted/40 rounded-xl text-xs border border-border/50 focus:outline-none focus:ring-2 focus:ring-primary/30" />
+            </div>
           )}
         </div>
-        {period === "custom" && (
-          <div className="flex gap-2">
-            <input type="date" value={customStart} onChange={e => setCustomStart(e.target.value)}
-              className="flex-1 px-3 py-2 bg-muted/40 rounded-xl text-xs border border-border/50 focus:outline-none focus:ring-2 focus:ring-primary/30" />
-            <input type="date" value={customEnd} onChange={e => setCustomEnd(e.target.value)}
-              className="flex-1 px-3 py-2 bg-muted/40 rounded-xl text-xs border border-border/50 focus:outline-none focus:ring-2 focus:ring-primary/30" />
+
+        {!stats ? (
+          <div className="text-center py-12 text-muted-foreground">
+            <BarChart3 className="h-10 w-10 mx-auto mb-2 opacity-20" />
+            <p className="text-sm font-medium">Nenhuma venda no período</p>
+            <p className="text-xs mt-1">Faça vendas no PDV para ver os relatórios</p>
           </div>
+        ) : (
+          <>
+            {/* ── Resumo geral (com comparativo) ── */}
+            <div className="grid grid-cols-2 gap-2">
+              <div className="bg-card border border-border rounded-2xl p-3.5">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <TrendingUp className="h-3.5 w-3.5 text-primary" />
+                  <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Faturamento</p>
+                  {!sessionId && (
+                    <span className="ml-auto">
+                      <VariationBadge current={stats.totalSales} previous={prevData?.total ?? 0} />
+                    </span>
+                  )}
+                </div>
+                <p className="text-xl font-black tabular-nums text-primary">{formatBRL(stats.totalSales)}</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5 flex items-center gap-1.5">
+                  {stats.count} venda{stats.count !== 1 ? "s" : ""}
+                  {!sessionId && (
+                    <VariationBadge current={stats.count} previous={prevData?.count ?? 0} />
+                  )}
+                </p>
+              </div>
+
+              <div className="bg-card border border-border rounded-2xl p-3.5">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <Receipt className="h-3.5 w-3.5 text-blue-500" />
+                  <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Ticket Médio</p>
+                  {!sessionId && (
+                    <span className="ml-auto">
+                      <VariationBadge current={stats.avgTicket} previous={prevData?.avg ?? 0} />
+                    </span>
+                  )}
+                </div>
+                <p className="text-xl font-black tabular-nums text-blue-500">{formatBRL(stats.avgTicket)}</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">por venda</p>
+              </div>
+
+              <div className="bg-card border border-border rounded-2xl p-3.5">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <Percent className="h-3.5 w-3.5 text-amber-500" />
+                  <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Descontos</p>
+                </div>
+                <p className="text-xl font-black tabular-nums text-amber-500">{formatBRL(stats.totalDiscount)}</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">{stats.discountRate.toFixed(1)}% do total</p>
+              </div>
+
+              <div className="bg-card border border-border rounded-2xl p-3.5">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <ArrowUpRight className="h-3.5 w-3.5 text-emerald-500" />
+                  <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Comissão</p>
+                </div>
+                <p className="text-xl font-black tabular-nums text-emerald-500">{formatBRL(stats.totalCommission)}</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">plataforma</p>
+              </div>
+            </div>
+
+            {/* ── Faturamento por dia ── */}
+            <div className="bg-card border border-border rounded-2xl p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <BarChart3 className="h-4 w-4 text-primary" />
+                <h3 className="text-sm font-black">Faturamento por Dia</h3>
+              </div>
+              <div className="h-44">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={dailyRevenue} margin={{ top: 4, right: 4, bottom: 0, left: -8 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" opacity={0.5} />
+                    <XAxis
+                      dataKey="label"
+                      tick={{ fontSize: 8, fill: "hsl(var(--muted-foreground))" }}
+                      tickLine={false}
+                      axisLine={false}
+                      minTickGap={24}
+                    />
+                    <YAxis
+                      tick={{ fontSize: 8, fill: "hsl(var(--muted-foreground))" }}
+                      tickLine={false}
+                      axisLine={false}
+                      width={44}
+                      tickFormatter={(v: number) => (v >= 1000 ? `${(v / 1000).toFixed(1)}k` : `${v}`)}
+                    />
+                    <Tooltip
+                      content={<PdvChartTooltip formatter={(v) => formatBRL(v)} />}
+                      cursor={{ fill: "hsl(var(--muted))", opacity: 0.35 }}
+                    />
+                    <Bar dataKey="total" name="Faturamento" fill="#3b82f6" radius={[3, 3, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* ── Por forma de pagamento ── */}
+            <div className="bg-card border border-border rounded-2xl p-4">
+              <div className="flex items-center gap-2 mb-1">
+                <Banknote className="h-4 w-4 text-primary" />
+                <h3 className="text-sm font-black">Formas de Pagamento</h3>
+              </div>
+              <div className="relative h-44">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={paymentData}
+                      dataKey="value"
+                      nameKey="name"
+                      innerRadius="62%"
+                      outerRadius="88%"
+                      paddingAngle={2}
+                      strokeWidth={0}
+                    >
+                      {paymentData.map((entry) => (
+                        <Cell key={entry.name} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip content={<PdvChartTooltip formatter={(v) => formatBRL(v)} />} />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                  <p className="text-[9px] text-muted-foreground uppercase font-bold tracking-wider">Total</p>
+                  <p className="text-base font-black tabular-nums">{formatBRL(stats.totalSales)}</p>
+                </div>
+              </div>
+              <div className="space-y-2.5 mt-2">
+                {paymentData.map((entry) => {
+                  const pct = stats.totalSales > 0 ? (entry.value / stats.totalSales) * 100 : 0;
+                  const methodKey = Object.keys(PAYMENT_LABELS).find(
+                    (k) => PAYMENT_LABELS[k].label === entry.name
+                  );
+                  const pm = methodKey ? PAYMENT_LABELS[methodKey] : null;
+                  const Icon = pm?.icon || Receipt;
+                  return (
+                    <div key={entry.name}>
+                      <div className="flex items-center gap-2 mb-1">
+                        <div
+                          className="w-6 h-6 rounded-lg flex items-center justify-center"
+                          style={{ backgroundColor: `${entry.color}1a`, color: entry.color }}
+                        >
+                          <Icon className="h-3 w-3" />
+                        </div>
+                        <span className="text-xs font-semibold text-foreground flex-1">{entry.name}</span>
+                        <span className="text-xs font-black tabular-nums text-foreground">{formatBRL(entry.value)}</span>
+                        <span className="text-[10px] text-muted-foreground w-8 text-right tabular-nums">{pct.toFixed(0)}%</span>
+                      </div>
+                      <div className="h-1.5 bg-muted/40 rounded-full overflow-hidden ml-8">
+                        <div
+                          className="h-full rounded-full transition-all"
+                          style={{ width: `${pct}%`, backgroundColor: entry.color }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* ── Horário de pico ── */}
+            {stats.peakHour && (
+              <div className="bg-card border border-border rounded-2xl p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <Clock className="h-4 w-4 text-primary" />
+                  <h3 className="text-sm font-black">Horário de Pico</h3>
+                  <span className="text-[10px] bg-primary/10 text-primary font-bold px-2 py-0.5 rounded-full ml-auto tabular-nums">
+                    {String(stats.peakHour.hour).padStart(2, "0")}:00 — {stats.peakHour.count} vendas
+                  </span>
+                </div>
+                <div className="h-36">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={hourData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" opacity={0.5} />
+                      <XAxis
+                        dataKey="hour"
+                        tick={{ fontSize: 8, fill: "hsl(var(--muted-foreground))" }}
+                        interval={5}
+                        tickLine={false}
+                        axisLine={false}
+                      />
+                      <YAxis
+                        tick={{ fontSize: 8, fill: "hsl(var(--muted-foreground))" }}
+                        tickLine={false}
+                        axisLine={false}
+                        allowDecimals={false}
+                        width={28}
+                      />
+                      <Tooltip
+                        content={<PdvChartTooltip />}
+                        cursor={{ fill: "hsl(var(--muted))", opacity: 0.35 }}
+                      />
+                      <Bar dataKey="vendas" name="Vendas" radius={[3, 3, 0, 0]}>
+                        {hourData.map((d, i) => (
+                          <Cell
+                            key={i}
+                            fill={d.hour === `${String(stats.peakHour!.hour).padStart(2, "0")}h` ? "#f97316" : "#f9731655"}
+                          />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+            )}
+
+            {/* ── Produtos mais vendidos (Curva ABC) ── */}
+            {stats.topProducts.length > 0 && (
+              <div className="bg-card border border-border rounded-2xl p-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <Trophy className="h-4 w-4 text-amber-500" />
+                  <h3 className="text-sm font-black">Ranking de Produtos</h3>
+                  <span className="text-[10px] text-muted-foreground ml-auto">Curva ABC</span>
+                </div>
+                <p className="text-[10px] text-muted-foreground mb-3">
+                  <span className="text-emerald-600 font-bold">A</span> = 80% da receita ·{" "}
+                  <span className="text-amber-500 font-bold">B</span> = 15% ·{" "}
+                  <span className="text-red-400 font-bold">C</span> = 5%
+                </p>
+
+                <div className="space-y-2">
+                  {(expandProducts ? stats.topProducts : stats.topProducts.slice(0, 5)).map((p, i) => {
+                    const abcColors: Record<string, string> = {
+                      A: "bg-emerald-500/15 text-emerald-600 border-emerald-500/30",
+                      B: "bg-amber-500/15 text-amber-600 border-amber-500/30",
+                      C: "bg-red-400/15 text-red-500 border-red-400/30",
+                    };
+                    const maxRevenue = stats.topProducts[0]?.revenue || 1;
+                    const pct = (p.revenue / maxRevenue) * 100;
+
+                    return (
+                      <div key={p.name} className="flex items-center gap-2">
+                        <span className="text-[10px] font-black text-muted-foreground w-4 tabular-nums">{i + 1}</span>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5 mb-0.5">
+                            <p className="text-xs font-semibold text-foreground truncate">{p.name}</p>
+                            <span className={`text-[9px] font-black px-1 py-0.5 rounded border ${abcColors[p.abc]}`}>{p.abc}</span>
+                          </div>
+                          <div className="h-1.5 bg-muted/40 rounded-full overflow-hidden">
+                            <div className="h-full bg-amber-500/70 rounded-full" style={{ width: `${pct}%` }} />
+                          </div>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <p className="text-xs font-black tabular-nums text-foreground">{formatBRL(p.revenue)}</p>
+                          <p className="text-[10px] text-muted-foreground tabular-nums">{p.qty}x</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {stats.topProducts.length > 5 && (
+                  <button
+                    onClick={() => setExpandProducts(!expandProducts)}
+                    className="w-full mt-3 py-2 text-xs font-bold text-muted-foreground hover:text-foreground transition-colors flex items-center justify-center gap-1"
+                  >
+                    {expandProducts ? <><ChevronUp className="h-3 w-3" /> Mostrar menos</> : <><ChevronDown className="h-3 w-3" /> Ver todos ({stats.topProducts.length})</>}
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* ── Produtividade por operador ── */}
+            {operatorStats.length > 0 && (
+              <div className="bg-card border border-border rounded-2xl p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <Users className="h-4 w-4 text-primary" />
+                  <h3 className="text-sm font-black">Produtividade por Operador</h3>
+                </div>
+                <div className="space-y-2">
+                  {operatorStats.map((o, i) => {
+                    const max = operatorStats[0]?.total || 1;
+                    const pct = (o.total / max) * 100;
+                    const share = stats.totalSales > 0 ? (o.total / stats.totalSales) * 100 : 0;
+                    return (
+                      <div key={o.user_id} className="flex items-center gap-2">
+                        <span className="text-[10px] font-black text-muted-foreground w-4 tabular-nums">{i + 1}</span>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5 mb-0.5">
+                            <p className="text-xs font-semibold text-foreground truncate">{o.name}</p>
+                            <span className="text-[9px] font-bold text-muted-foreground tabular-nums">{o.count} vendas</span>
+                          </div>
+                          <div className="h-1.5 bg-muted/40 rounded-full overflow-hidden">
+                            <div className="h-full bg-primary/70 rounded-full" style={{ width: `${pct}%` }} />
+                          </div>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <p className="text-xs font-black tabular-nums text-foreground">{formatBRL(o.total)}</p>
+                          <p className="text-[10px] text-muted-foreground tabular-nums">{share.toFixed(0)}%</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
 
-      {!stats ? (
-        <div className="text-center py-12 text-muted-foreground">
-          <BarChart3 className="h-10 w-10 mx-auto mb-2 opacity-20" />
-          <p className="text-sm font-medium">Nenhuma venda no período</p>
-          <p className="text-xs mt-1">Faça vendas no PDV para ver os relatórios</p>
-        </div>
-      ) : (
-        <>
-          {/* ── Resumo geral ── */}
-          <div className="grid grid-cols-2 gap-2">
-            <div className="bg-card border border-border rounded-2xl p-3.5">
-              <div className="flex items-center gap-1.5 mb-1">
-                <TrendingUp className="h-3.5 w-3.5 text-primary" />
-                <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Faturamento</p>
-              </div>
-              <p className="text-xl font-black text-primary">{formatBRL(stats.totalSales)}</p>
-              <p className="text-[10px] text-muted-foreground mt-0.5">{stats.count} venda{stats.count !== 1 ? "s" : ""}</p>
-            </div>
-
-            <div className="bg-card border border-border rounded-2xl p-3.5">
-              <div className="flex items-center gap-1.5 mb-1">
-                <Receipt className="h-3.5 w-3.5 text-blue-500" />
-                <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Ticket Médio</p>
-              </div>
-              <p className="text-xl font-black text-blue-500">{formatBRL(stats.avgTicket)}</p>
-              <p className="text-[10px] text-muted-foreground mt-0.5">por venda</p>
-            </div>
-
-            <div className="bg-card border border-border rounded-2xl p-3.5">
-              <div className="flex items-center gap-1.5 mb-1">
-                <Percent className="h-3.5 w-3.5 text-amber-500" />
-                <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Descontos</p>
-              </div>
-              <p className="text-xl font-black text-amber-500">{formatBRL(stats.totalDiscount)}</p>
-              <p className="text-[10px] text-muted-foreground mt-0.5">{stats.discountRate.toFixed(1)}% do total</p>
-            </div>
-
-            <div className="bg-card border border-border rounded-2xl p-3.5">
-              <div className="flex items-center gap-1.5 mb-1">
-                <ArrowUpRight className="h-3.5 w-3.5 text-emerald-500" />
-                <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Comissão</p>
-              </div>
-              <p className="text-xl font-black text-emerald-500">{formatBRL(stats.totalCommission)}</p>
-              <p className="text-[10px] text-muted-foreground mt-0.5">plataforma</p>
-            </div>
-          </div>
-
-          {/* ── Horário de pico ── */}
-          {stats.peakHour && (
-            <div className="bg-card border border-border rounded-2xl p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <Clock className="h-4 w-4 text-primary" />
-                <h3 className="text-sm font-black">Horário de Pico</h3>
-                <span className="text-[10px] bg-primary/10 text-primary font-bold px-2 py-0.5 rounded-full ml-auto">
-                  {String(stats.peakHour.hour).padStart(2, "0")}:00 — {stats.peakHour.count} vendas
-                </span>
-              </div>
-              {/* Gráfico de barras por hora */}
-              <div className="flex items-end gap-0.5 h-14">
-                {Array.from({ length: 24 }, (_, h) => {
-                  const count = stats.byHour[h] || 0;
-                  const max = Math.max(...Object.values(stats.byHour), 1);
-                  const pct = (count / max) * 100;
-                  const isPeak = h === stats.peakHour?.hour;
-                  return (
-                    <div key={h} className="flex-1 flex flex-col items-center gap-0.5" title={`${h}h: ${count} vendas`}>
-                      <div
-                        className={`w-full rounded-sm transition-all ${isPeak ? "bg-primary" : count > 0 ? "bg-primary/40" : "bg-muted/30"}`}
-                        style={{ height: `${Math.max(pct, count > 0 ? 8 : 0)}%` }}
-                      />
-                    </div>
-                  );
-                })}
-              </div>
-              <div className="flex justify-between mt-1">
-                <span className="text-[9px] text-muted-foreground">00h</span>
-                <span className="text-[9px] text-muted-foreground">06h</span>
-                <span className="text-[9px] text-muted-foreground">12h</span>
-                <span className="text-[9px] text-muted-foreground">18h</span>
-                <span className="text-[9px] text-muted-foreground">23h</span>
-              </div>
-            </div>
-          )}
-
-          {/* ── Por forma de pagamento ── */}
-          <div className="bg-card border border-border rounded-2xl p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <Banknote className="h-4 w-4 text-primary" />
-              <h3 className="text-sm font-black">Formas de Pagamento</h3>
-            </div>
-            <div className="space-y-2.5">
-              {Object.entries(stats.byPayment)
-                .sort((a, b) => b[1] - a[1])
-                .map(([method, amount]) => {
-                  const pm = PAYMENT_LABELS[method] || { label: method, icon: Receipt, color: "text-muted-foreground bg-muted/50" };
-                  const Icon = pm.icon;
-                  const pct = stats.totalSales > 0 ? (amount / stats.totalSales) * 100 : 0;
-                  return (
-                    <div key={method}>
-                      <div className="flex items-center gap-2 mb-1">
-                        <div className={`w-6 h-6 rounded-lg flex items-center justify-center ${pm.color}`}>
-                          <Icon className="h-3 w-3" />
-                        </div>
-                        <span className="text-xs font-semibold text-foreground flex-1">{pm.label}</span>
-                        <span className="text-xs font-black text-foreground">{formatBRL(amount)}</span>
-                        <span className="text-[10px] text-muted-foreground w-8 text-right">{pct.toFixed(0)}%</span>
-                      </div>
-                      <div className="h-1.5 bg-muted/40 rounded-full overflow-hidden ml-8">
-                        <div className="h-full bg-primary/60 rounded-full transition-all" style={{ width: `${pct}%` }} />
-                      </div>
-                    </div>
-                  );
-                })}
-            </div>
-          </div>
-
-          {/* ── Produtos mais vendidos (Curva ABC) ── */}
-          {stats.topProducts.length > 0 && (
-            <div className="bg-card border border-border rounded-2xl p-4">
-              <div className="flex items-center gap-2 mb-1">
-                <Trophy className="h-4 w-4 text-amber-500" />
-                <h3 className="text-sm font-black">Ranking de Produtos</h3>
-                <span className="text-[10px] text-muted-foreground ml-auto">Curva ABC</span>
-              </div>
-              <p className="text-[10px] text-muted-foreground mb-3">
-                <span className="text-emerald-600 font-bold">A</span> = 80% da receita ·{" "}
-                <span className="text-amber-500 font-bold">B</span> = 15% ·{" "}
-                <span className="text-red-400 font-bold">C</span> = 5%
-              </p>
-
-              <div className="space-y-2">
-                {(expandProducts ? stats.topProducts : stats.topProducts.slice(0, 5)).map((p, i) => {
-                  const abcColors: Record<string, string> = {
-                    A: "bg-emerald-500/15 text-emerald-600 border-emerald-500/30",
-                    B: "bg-amber-500/15 text-amber-600 border-amber-500/30",
-                    C: "bg-red-400/15 text-red-500 border-red-400/30",
-                  };
-                  const maxRevenue = stats.topProducts[0]?.revenue || 1;
-                  const pct = (p.revenue / maxRevenue) * 100;
-
-                  return (
-                    <div key={p.name} className="flex items-center gap-2">
-                      <span className="text-[10px] font-black text-muted-foreground w-4">{i + 1}</span>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5 mb-0.5">
-                          <p className="text-xs font-semibold text-foreground truncate">{p.name}</p>
-                          <span className={`text-[9px] font-black px-1 py-0.5 rounded border ${abcColors[p.abc]}`}>{p.abc}</span>
-                        </div>
-                        <div className="h-1.5 bg-muted/40 rounded-full overflow-hidden">
-                          <div className="h-full bg-amber-500/70 rounded-full" style={{ width: `${pct}%` }} />
-                        </div>
-                      </div>
-                      <div className="text-right shrink-0">
-                        <p className="text-xs font-black text-foreground">{formatBRL(p.revenue)}</p>
-                        <p className="text-[10px] text-muted-foreground">{p.qty}x</p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {stats.topProducts.length > 5 && (
-                <button
-                  onClick={() => setExpandProducts(!expandProducts)}
-                  className="w-full mt-3 py-2 text-xs font-bold text-muted-foreground hover:text-foreground transition-colors flex items-center justify-center gap-1"
-                >
-                  {expandProducts ? <><ChevronUp className="h-3 w-3" /> Mostrar menos</> : <><ChevronDown className="h-3 w-3" /> Ver todos ({stats.topProducts.length})</>}
-                </button>
-              )}
-            </div>
-          )}
-
-          {/* ── Produtividade por operador ── */}
-          {operatorStats.length > 0 && (
-            <div className="bg-card border border-border rounded-2xl p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <Users className="h-4 w-4 text-primary" />
-                <h3 className="text-sm font-black">Produtividade por Operador</h3>
-              </div>
-              <div className="space-y-2">
-                {operatorStats.map((o, i) => {
-                  const max = operatorStats[0]?.total || 1;
-                  const pct = (o.total / max) * 100;
-                  const share = stats.totalSales > 0 ? (o.total / stats.totalSales) * 100 : 0;
-                  return (
-                    <div key={o.user_id} className="flex items-center gap-2">
-                      <span className="text-[10px] font-black text-muted-foreground w-4">{i + 1}</span>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5 mb-0.5">
-                          <p className="text-xs font-semibold text-foreground truncate">{o.name}</p>
-                          <span className="text-[9px] font-bold text-muted-foreground">{o.count} vendas</span>
-                        </div>
-                        <div className="h-1.5 bg-muted/40 rounded-full overflow-hidden">
-                          <div className="h-full bg-primary/70 rounded-full" style={{ width: `${pct}%` }} />
-                        </div>
-                      </div>
-                      <div className="text-right shrink-0">
-                        <p className="text-xs font-black text-foreground">{formatBRL(o.total)}</p>
-                        <p className="text-[10px] text-muted-foreground">{share.toFixed(0)}%</p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* ── Dias da semana ── */}
-          {Object.keys(stats.byDay).length > 1 && (
-            <div className="bg-card border border-border rounded-2xl p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <Calendar className="h-4 w-4 text-primary" />
-                <h3 className="text-sm font-black">Vendas por Dia</h3>
-              </div>
-              <div className="grid grid-cols-7 gap-1">
-                {[0,1,2,3,4,5,6].map(d => {
-                  const count = stats.byDay[d] || 0;
-                  const max = Math.max(...Object.values(stats.byDay), 1);
-                  const pct = (count / max) * 100;
-                  const isToday = new Date().getDay() === d;
-                  return (
-                    <div key={d} className="flex flex-col items-center gap-1">
-                      <div className="w-full h-12 flex items-end">
-                        <div
-                          className={`w-full rounded-md transition-all ${count > 0 ? (isToday ? "bg-primary" : "bg-primary/40") : "bg-muted/20"}`}
-                          style={{ height: `${Math.max(pct, count > 0 ? 15 : 0)}%` }}
-                        />
-                      </div>
-                      <span className={`text-[10px] font-bold ${isToday ? "text-primary" : "text-muted-foreground"}`}>
-                        {stats.dayNames[d]}
-                      </span>
-                      {count > 0 && <span className="text-[9px] text-muted-foreground">{count}</span>}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-        </>
+      {/* Visão de impressão (PDF/A4) — portal no body, visível só na impressão */}
+      {printStats && typeof document !== "undefined" && createPortal(
+        <div className="pdv-report-print-zone">
+          <PdvRelatorioPrint
+            storeId={storeId}
+            periodLabel={sessionId ? "Relatório do turno" : periodLabels[period]}
+            dateRangeLabel={dateRangeLabel}
+            stats={printStats}
+            operators={printOperators}
+          />
+        </div>,
+        document.body
       )}
-    </div>
+    </>
   );
 };
 
