@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { chunk } from "@/lib/batch";
 import { formatBRL } from "@/lib/utils";
-import { parseBRL, parseBRLCentsInput, formatBRLDisplay } from "@/hooks/useBRLInput";
+import { parseBRL, formatBRLDisplay } from "@/hooks/useBRLInput";
 import { PdvDenominationCount } from "@/components/pdv/PdvDenominationCount";
 import { PDV_METHODS } from "@/pages/pdv/constants";
 import { useConfirmDialog } from "@/hooks/useConfirmDialog";
@@ -222,8 +222,13 @@ export const PdvFechamentoScreen = ({
                 type="text" inputMode="decimal" placeholder="0,00"
                 value={closingAmount}
                 onChange={e => {
-                  const n = parseBRLCentsInput(e.target.value);
-                  setClosingAmount(n > 0 ? formatBRLDisplay(n) : "");
+                  const digits = e.target.value.replace(/\D/g, "");
+                  // Campo limpo = não preenchido (botão continua desabilitado).
+                  if (!digits) { setClosingAmount(""); return; }
+                  const n = Number(digits) / 100;
+                  // Zero digitado explicitamente é válido ("0,00"): permite fechar
+                  // turno sem movimento sem criar divergência fictícia de R$ 0,01.
+                  setClosingAmount(n === 0 ? "0,00" : formatBRLDisplay(n));
                 }}
                 className="w-full pl-10 pr-4 py-3.5 bg-muted/40 rounded-xl text-xl font-bold focus:outline-none focus:ring-2 focus:ring-primary/40"
               />
