@@ -3,20 +3,28 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, baggage, sentry-trace",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-// Este endpoint escreve no banco EXTERNO (qkjhguziuchqsbxzruea).
+// Roda no projeto Supabase que hospeda esta função (externo, em produção).
+// Usa as env vars padrão disponíveis em qualquer projeto Supabase, com
+// fallback para as vars EXTERNAL_* (deploy no projeto interno legado).
 function externalClient() {
-  const url = Deno.env.get("EXTERNAL_SUPABASE_URL");
-  const key = Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY");
-  if (!url || !key) throw new Error("EXTERNAL_SUPABASE_* não configurados.");
+  const url = Deno.env.get("SUPABASE_URL") || Deno.env.get("EXTERNAL_SUPABASE_URL") || "";
+  const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || "";
+  if (!url || !key) throw new Error("SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY não configurados.");
   return createClient(url, key, { auth: { persistSession: false } });
 }
 
-// Cliente pra validar o JWT enviado pelo usuário (mesma URL do banco externo).
+// Cliente pra validar o JWT enviado pelo usuário (mesmo projeto da função).
 function authClient() {
-  const url = Deno.env.get("EXTERNAL_SUPABASE_URL")!;
-  const anon = Deno.env.get("EXTERNAL_SUPABASE_ANON_KEY") || Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY")!;
+  const url = Deno.env.get("SUPABASE_URL") || Deno.env.get("EXTERNAL_SUPABASE_URL") || "";
+  const anon =
+    Deno.env.get("SUPABASE_ANON_KEY") ||
+    Deno.env.get("EXTERNAL_SUPABASE_ANON_KEY") ||
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ||
+    Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || "";
+  if (!url || !anon) throw new Error("SUPABASE_URL / SUPABASE_ANON_KEY não configurados.");
   return createClient(url, anon, { auth: { persistSession: false } });
 }
 
