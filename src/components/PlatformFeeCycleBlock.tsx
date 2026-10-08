@@ -2,10 +2,12 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { nextMonday, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Calendar, QrCode, TrendingUp, CircleDashed } from "lucide-react";
+import { AlertTriangle, Calendar, QrCode, TrendingUp, CircleDashed } from "lucide-react";
 import { formatBRL } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
 import { REPASSE_RULES } from "@/lib/repasseRules";
 import { FINANCE_COPY, weeklyChargeRuleText } from "@/lib/financeCommunication";
+import QueryErrorState from "@/components/QueryErrorState";
 
 interface Props {
   storeId: string;
@@ -13,7 +15,7 @@ interface Props {
 
 /** Bloco do ciclo semanal de taxas e comissões no resumo financeiro. */
 export default function PlatformFeeCycleBlock({ storeId }: Props) {
-  const { data } = useQuery({
+  const { data, isLoading, isSuccess, refetch } = useQuery({
     queryKey: ["store-balance-split", storeId],
     queryFn: async () => {
       const { data } = await supabase
@@ -30,17 +32,22 @@ export default function PlatformFeeCycleBlock({ storeId }: Props) {
   const pendente = Number(data?.repasse_pendente || 0);
   const proximaSegunda = format(nextMonday(new Date()), "EEEE, dd/MM", { locale: ptBR });
 
-  type Estado = "zerado" | "acumulando" | "pronto";
-  const estado: Estado = pendente >= REPASSE_RULES.MIN_AUTO_CHARGE_BRL
-    ? "pronto"
-    : pendente > 0
-      ? "acumulando"
-      : "zerado";
+  type Estado = "zerado" | "acumulando" | "pronto" | "indisponivel";
+  // Sem isSuccess, o valor nunca é exibido — badge fica neutro/âmbar
+  // (evita "Ciclo aberto (sem saldo)" em verde com dado ausente).
+  const estado: Estado = !isSuccess
+    ? "indisponivel"
+    : pendente >= REPASSE_RULES.MIN_AUTO_CHARGE_BRL
+      ? "pronto"
+      : pendente > 0
+        ? "acumulando"
+        : "zerado";
 
   const estados: Record<Estado, { label: string; cls: string; Icon: typeof Calendar }> = {
     zerado: { label: "Ciclo aberto (sem saldo)", cls: "bg-emerald-500/10 text-emerald-700 border-emerald-500/30", Icon: CircleDashed },
     acumulando: { label: "Acumulando", cls: "bg-muted text-muted-foreground border-border", Icon: TrendingUp },
     pronto: { label: `Elegível para cobrança (≥ ${formatBRL(REPASSE_RULES.MIN_AUTO_CHARGE_BRL)})`, cls: "bg-amber-500/10 text-amber-700 border-amber-500/30", Icon: QrCode },
+    indisponivel: { label: "Indisponível", cls: "bg-amber-500/10 text-amber-700 border-amber-500/30", Icon: AlertTriangle },
   };
   const cur = estados[estado];
 
@@ -60,10 +67,23 @@ export default function PlatformFeeCycleBlock({ storeId }: Props) {
       </div>
 
       <div className="grid grid-cols-2 gap-2">
-        <div className="rounded-xl bg-muted/40 border border-border p-3">
-          <p className="text-[10px] text-muted-foreground uppercase tracking-wide">{FINANCE_COPY.cycleLabel}</p>
-          <p className="text-lg font-bold text-foreground mt-0.5">{formatBRL(pendente)}</p>
-        </div>
+        {isLoading ? (
+          <div className="rounded-xl bg-muted/40 border border-border p-3 space-y-2">
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wide">{FINANCE_COPY.cycleLabel}</p>
+            <Skeleton className="h-7 w-24" />
+          </div>
+        ) : isSuccess ? (
+          <div className="rounded-xl bg-muted/40 border border-border p-3">
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wide">{FINANCE_COPY.cycleLabel}</p>
+            <p className="text-lg font-bold text-foreground mt-0.5">{formatBRL(pendente)}</p>
+          </div>
+        ) : (
+          <QueryErrorState
+            title="Não foi possível carregar o ciclo"
+            message="O valor acumulado não está disponível no momento."
+            onRetry={() => refetch()}
+          />
+        )}
         <div className="rounded-xl bg-muted/40 border border-border p-3">
           <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Próxima segunda-feira</p>
           <p className="text-sm font-bold text-foreground mt-1 capitalize">{proximaSegunda}</p>

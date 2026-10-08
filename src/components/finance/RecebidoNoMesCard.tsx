@@ -1,12 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { TrendingUp } from "lucide-react";
 import { formatBRL } from "@/lib/utils";
 import { startOfMonth, endOfMonth } from "date-fns";
+import QueryErrorState from "@/components/QueryErrorState";
 
 export default function RecebidoNoMesCard({ storeId }: { storeId: string }) {
-  const { data } = useQuery({
+  const { data, isLoading, isSuccess, refetch } = useQuery({
     queryKey: ["recebido-mes", storeId],
     queryFn: async () => {
       const start = startOfMonth(new Date()).toISOString();
@@ -57,10 +59,24 @@ export default function RecebidoNoMesCard({ storeId }: { storeId: string }) {
           <div className="text-[10px] uppercase tracking-widest font-semibold text-muted-foreground">Recebido líquido no mês</div>
           <TrendingUp className="h-4 w-4 text-emerald-500" />
         </div>
-        <div className="text-3xl font-black text-emerald-600 dark:text-emerald-400">{formatBRL(data?.total ?? 0)}</div>
-        <div className="text-[11px] text-muted-foreground">
-          {data?.count ?? 0} pedidos entregues · já descontadas taxas
-        </div>
+        {isLoading ? (
+          <div className="space-y-2">
+            <Skeleton className="h-9 w-40" />
+            <Skeleton className="h-3.5 w-56" />
+          </div>
+        ) : isSuccess ? (
+          <>
+            <div className="text-3xl font-black text-emerald-600 dark:text-emerald-400">{formatBRL(data?.total ?? 0)}</div>
+            <div className="text-[11px] text-muted-foreground">
+              {data?.count ?? 0} pedidos entregues · já descontadas taxas
+            </div>
+          </>
+        ) : (
+          <QueryErrorState
+            title="Não foi possível carregar o recebido do mês"
+            onRetry={() => refetch()}
+          />
+        )}
       </CardContent>
     </Card>
   );
