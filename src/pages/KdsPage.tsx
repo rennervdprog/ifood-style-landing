@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, ChefHat, Package, AlertTriangle } from "lucide-react";
 import { getOrderItemDisplayName } from "@/lib/orderItemName";
+import { toast } from "sonner";
 
 type KdsOrder = {
   id: string;
@@ -41,6 +42,10 @@ export default function KdsPage() {
   const [error, setError] = useState<string | null>(null);
   const [busyIds, setBusyIds] = useState<Set<string>>(new Set());
   const [tick, setTick] = useState(0);
+  // Falha transitória (rede/500): mantém os últimos pedidos e mostra banner discreto.
+  // Erro de token inválido (401/"invalid token") usa o `error` fatal abaixo.
+  const [refreshFailed, setRefreshFailed] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
   const fetchOrders = useCallback(async () => {
     try {
@@ -48,12 +53,32 @@ export default function KdsPage() {
         body: { action: "get-orders", token },
       });
       if (error) throw error;
-      if ((data as any)?.error) throw new Error((data as any).error);
+      const dataError = (data as any)?.error;
+      if (dataError) throw new Error(String(dataError));
       setOrders(((data as any).orders || []) as KdsOrder[]);
       setStoreName((data as any).store_name || "");
       setError(null);
+      setRefreshFailed(false);
+      setLastUpdated(new Date());
     } catch (e: any) {
-      setError(e?.message || "Erro ao carregar pedidos");
+      const status =
+        e?.status ?? e?.context?.status ?? e?.response?.status;
+      const msg = String(e?.message || "Erro ao carregar pedidos");
+      const isInvalidToken =
+        status === 401 ||
+        /invalid token/i.test(msg) ||
+        /token inválido/i.test(msg) ||
+        /token invalido/i.test(msg);
+      if (isInvalidToken) {
+        // Token inválido/expirado: tela de acesso inválido.
+        setError(msg);
+        setRefreshFailed(false);
+      } else {
+        // Erro transitório (rede, 500, timeout): mantém os últimos
+        // pedidos exibidos e mostra banner discreto. O polling
+        // existente (setInterval abaixo) tenta novamente sozinho.
+        setRefreshFailed(true);
+      }
     } finally {
       setLoading(false);
     }
@@ -63,6 +88,20 @@ export default function KdsPage() {
     fetchOrders();
     const id = setInterval(fetchOrders, POLL_MS);
     return () => clearInterval(id);
+  }, [fetchOrders]);
+
+  // Refetch ao voltar para a aba e ao recuperar a conexão.
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === "visible") fetchOrders();
+    };
+    const onOnline = () => fetchOrders();
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("online", onOnline);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("online", onOnline);
+    };
   }, [fetchOrders]);
 
   // re-render por minuto para atualizar cronômetros
@@ -81,6 +120,7 @@ export default function KdsPage() {
       });
       if (error || (data as any)?.error) throw new Error((data as any)?.error || error?.message);
     } catch {
+      toast.error("Não foi possível marcar o pedido como pronto. Tente novamente.");
       fetchOrders();
     } finally {
       setBusyIds((s) => {
@@ -126,6 +166,7 @@ export default function KdsPage() {
           <h1 className="text-lg font-black">KDS — {storeName || "Cozinha"}</h1>
           <p className="text-[11px] text-muted-foreground">
             Atualização automática a cada {POLL_MS / 1000}s · {orders.length} pedidos ativos
+            {lastUpdated && <> · atualizado às {lastUpdated.toLocaleTimeString("pt-BR")}</>}
           </p>
         </div>
         <button
@@ -135,6 +176,12 @@ export default function KdsPage() {
           Atualizar
         </button>
       </header>
+
+      {refreshFailed && !error && (
+        <div className="bg-amber-500/10 border-b border-amber-500/30 text-amber-700 dark:text-amber-400 text-xs font-semibold px-4 py-2 text-center">
+          Falha ao atualizar — tentando novamente…
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-3">
         <Column

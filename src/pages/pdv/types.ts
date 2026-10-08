@@ -67,4 +67,4 @@ export type PdvScreen = "loading" | "abertura" | "venda" | "fechamento";
 export type PdvMobileStep = "catalog" | "cart";
 
 /** Abas dentro da tela de venda. */
-export type PdvTab = "venda" | "mesas" | "historico" | "turnos" | "relatorios" | "meu_plano" | "configuracoes";
+export type PdvTab = "venda" | "mesas" | "historico" | "turnos" | "relatorios" | "financeiro" | "meu_plano" | "configuracoes";

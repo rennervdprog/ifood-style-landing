@@ -2,10 +2,12 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { AlertTriangle, ArrowRight, CheckCircle2 } from "lucide-react";
 import { formatBRL } from "@/lib/utils";
 import { REPASSE_RULES } from "@/lib/repasseRules";
 import { FINANCE_COPY } from "@/lib/financeCommunication";
+import QueryErrorState from "@/components/QueryErrorState";
 
 interface Props {
   storeId: string;
@@ -13,7 +15,7 @@ interface Props {
 }
 
 export default function ValorAPagarCard({ storeId, onPayClick }: Props) {
-  const { data } = useQuery({
+  const { data, isLoading, isSuccess, refetch } = useQuery({
     queryKey: ["valor-a-pagar", storeId],
     queryFn: async () => {
       const [{ data: bal }, { data: plan }, { data: monthlyCharges }] = await Promise.all([
@@ -32,6 +34,35 @@ export default function ValorAPagarCard({ storeId, onPayClick }: Props) {
     },
     refetchInterval: 60_000,
   });
+
+  if (isLoading) {
+    return (
+      <Card className="rounded-none border-0 border-l-4 border-l-border bg-card shadow-none">
+        <CardContent className="space-y-3 px-4 pb-4 pt-4">
+          <Skeleton className="h-3 w-32" />
+          <Skeleton className="h-9 w-40" />
+          <Skeleton className="h-8 w-full" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Erro: card NEUTRO com retry. Nunca verde, nunca "Tudo em dia" — R$ 0,00
+  // em erro seria uma decisão financeira sobre dado ausente.
+  if (!isSuccess) {
+    return (
+      <Card className="rounded-none border-0 border-l-4 border-l-amber-500 bg-card shadow-none">
+        <CardContent className="space-y-3 px-4 pb-4 pt-4">
+          <div className="text-[10px] uppercase tracking-widest font-semibold text-muted-foreground">{FINANCE_COPY.outstandingShortTitle}</div>
+          <QueryErrorState
+            title="Não foi possível carregar os valores a pagar"
+            message="Os dados não foram carregados — não assumimos que está tudo em dia. Tente novamente."
+            onRetry={() => refetch()}
+          />
+        </CardContent>
+      </Card>
+    );
+  }
 
   const total = data?.total ?? 0;
   const isZero = total === 0;

@@ -79,6 +79,8 @@ import { PdvSessionCard } from "@/pages/pdv/components/PdvSessionCard";
 import { PdvMesasView } from "@/pages/pdv/components/PdvMesasView";
 import StoreSubscription from "@/components/StoreSubscription";
 import { PdvStoreSettingsPanel } from "@/pages/pdv/components/PdvStoreSettingsPanel";
+import PdvFinanceiro from "@/pages/pdv/components/PdvFinanceiro";
+import PdvBillingAlert from "@/pages/pdv/components/PdvBillingAlert";
 
 // Detecta se está em tela mobile (< 768px)
 const useIsMobile = () => {
@@ -142,11 +144,43 @@ const PdvPage = () => {
     setSelectedSessionId(null);
   };
 
+  // Cartão pós-fechamento: abre o relatório do turno recém-fechado
+  // (reaproveita o drill-down do PdvRelatorios, sem precisar de caixa aberto).
+  const handleViewClosedSessionReport = () => {
+    if (!lastClosedSession) return;
+    setSelectedSessionId(lastClosedSession.sessionId);
+    setLastClosedSession(null);
+    setReportsNoSession(true);
+  };
+
+  // Cartão pós-fechamento: reimprime o resumo (Relatório Z) do turno fechado.
+  const handleReprintClosedSession = () => {
+    if (!lastClosedSession) return;
+    try {
+      const settingsObj = (store as any)?.settings || {};
+      printZReport(
+        lastClosedSession.zInput,
+        store?.name || "Loja",
+        {
+          paperWidth: settingsObj.print_paper_width === 58 ? 58 : 80,
+          storePhone: (store as any)?.phone || null,
+          storeCnpj: (store as any)?.cnpj || null,
+        },
+      );
+    } catch (e) { console.warn("reprint Z report", e); }
+  };
+
   // Abertura
   const [openingAmount, setOpeningAmount] = useState("");
   // Ver relatórios sem abrir o caixa (a partir da tela de abertura)
   const [reportsNoSession, setReportsNoSession] = useState(false);
   const [planNoSession, setPlanNoSession] = useState(false);
+  // Sessão recém-fechada: cartão de sucesso na tela de abertura com
+  // atalhos para o relatório do turno e reimpressão do resumo (Z).
+  const [lastClosedSession, setLastClosedSession] = useState<null | {
+    sessionId: string;
+    zInput: Parameters<typeof printZReport>[0];
+  }>(null);
 
   // Venda — estado de carrinho/pagamento agora vive em usePdvCart.
   const [search, setSearch] = useState("");
@@ -714,33 +748,34 @@ const PdvPage = () => {
     });
     if (ok) {
       // Relatório Z — cupom padrão do mercado. Best-effort (não bloqueia).
+      const settingsObj = (store as any)?.settings || {};
+      const paymentLabels = Object.fromEntries(
+        PDV_METHODS.map((m: any) => [m.id, m.label]),
+      );
+      const ticketMedio = snapshot.totalOrders > 0
+        ? snapshot.totalSales / snapshot.totalOrders
+        : 0;
+      const zInput = {
+        sessionId: snapshot.sessionId,
+        openedAt: snapshot.openedAt,
+        closedAt: new Date().toISOString(),
+        operator: user?.email || null,
+        openingAmount: snapshot.openingAmount,
+        totalSales: snapshot.totalSales,
+        totalOrders: snapshot.totalOrders,
+        ticketMedio,
+        byPayment: snapshot.byPayment,
+        paymentLabels,
+        sangrias: snapshot.sangrias,
+        suprimentos: snapshot.suprimentos,
+        expectedCash: snapshot.expectedCash,
+        countedCash: snapshot.countedCash,
+        difference: snapshot.countedCash - snapshot.expectedCash,
+        blindClose: snapshot.blindClose,
+      };
       try {
-        const settingsObj = (store as any)?.settings || {};
-        const paymentLabels = Object.fromEntries(
-          PDV_METHODS.map((m: any) => [m.id, m.label]),
-        );
-        const ticketMedio = snapshot.totalOrders > 0
-          ? snapshot.totalSales / snapshot.totalOrders
-          : 0;
         printZReport(
-          {
-            sessionId: snapshot.sessionId,
-            openedAt: snapshot.openedAt,
-            closedAt: new Date().toISOString(),
-            operator: user?.email || null,
-            openingAmount: snapshot.openingAmount,
-            totalSales: snapshot.totalSales,
-            totalOrders: snapshot.totalOrders,
-            ticketMedio,
-            byPayment: snapshot.byPayment,
-            paymentLabels,
-            sangrias: snapshot.sangrias,
-            suprimentos: snapshot.suprimentos,
-            expectedCash: snapshot.expectedCash,
-            countedCash: snapshot.countedCash,
-            difference: snapshot.countedCash - snapshot.expectedCash,
-            blindClose: snapshot.blindClose,
-          },
+          zInput,
           store?.name || "Loja",
           {
             paperWidth: settingsObj.print_paper_width === 58 ? 58 : 80,
@@ -749,6 +784,8 @@ const PdvPage = () => {
           },
         );
       } catch (e) { console.warn("print Z report", e); }
+      // Guarda o resumo para o cartão pós-fechamento (relatório + reimpressão).
+      setLastClosedSession({ sessionId: snapshot.sessionId, zInput });
       setSessionSummary(null);
       clearSale();
       setBlindClose(false);
@@ -914,7 +951,7 @@ const PdvPage = () => {
     ) : reportsNoSession && store?.id ? (
       <div className="pdv-shell min-h-screen bg-background flex flex-col">
         <header className="h-14 border-b border-border flex items-center px-4 gap-3 bg-card shrink-0">
-          <button onClick={() => setReportsNoSession(false)} className="p-1.5 rounded-xl hover:bg-muted transition-colors">
+          <button onClick={() => { setReportsNoSession(false); setSelectedSessionId(null); }} className="p-1.5 rounded-xl hover:bg-muted transition-colors">
             <ArrowLeft className="h-5 w-5" />
           </button>
           <BarChart3 className="h-5 w-5 text-primary" />
@@ -924,20 +961,52 @@ const PdvPage = () => {
           </div>
         </header>
         <div className="flex-1 overflow-y-auto">
-          <PdvRelatorios storeId={store.id} />
+          <PdvRelatorios storeId={store.id} sessionId={selectedSessionId || undefined} />
         </div>
       </div>
     ) : (
-      <PdvAberturaScreen
-        storeName={store?.name}
-        storeId={store?.id}
-        openingAmount={openingAmount}
-        setOpeningAmount={setOpeningAmount}
-        onOpen={handleAbrirCaixa}
-        loading={sessionLoading || loading}
-        onViewReports={() => setReportsNoSession(true)}
-        onViewPlan={pdvAccess.source === "pdv_only" ? () => setPlanNoSession(true) : undefined}
-      />
+      <>
+        {/* Cartão pós-fechamento: atalhos para relatório do turno e reimpressão */}
+        {lastClosedSession && (
+          <div className="shrink-0 border-b border-emerald-500/30 bg-emerald-500/10 px-4 py-3">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+              <p className="flex-1 text-sm font-bold">Caixa fechado com sucesso.</p>
+              <button
+                onClick={() => setLastClosedSession(null)}
+                aria-label="Dispensar"
+                className="p-1.5 rounded-xl hover:bg-muted transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="mt-2 flex gap-2">
+              <button
+                onClick={handleViewClosedSessionReport}
+                className="flex-1 h-10 rounded-xl bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center gap-1.5 hover:opacity-90 transition-opacity"
+              >
+                <BarChart3 className="h-4 w-4" /> Ver relatório do turno
+              </button>
+              <button
+                onClick={handleReprintClosedSession}
+                className="flex-1 h-10 rounded-xl border border-border bg-card text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-muted/50 transition-colors"
+              >
+                <Printer className="h-4 w-4" /> Imprimir resumo
+              </button>
+            </div>
+          </div>
+        )}
+        <PdvAberturaScreen
+          storeName={store?.name}
+          storeId={store?.id}
+          openingAmount={openingAmount}
+          setOpeningAmount={setOpeningAmount}
+          onOpen={handleAbrirCaixa}
+          loading={sessionLoading || loading}
+          onViewReports={() => { setSelectedSessionId(null); setReportsNoSession(true); }}
+          onViewPlan={pdvAccess.source === "pdv_only" ? () => setPlanNoSession(true) : undefined}
+        />
+      </>
     )
   );
 
@@ -1091,6 +1160,11 @@ const PdvPage = () => {
 
       {store?.id && <PdvDeliveryAlerts storeId={store.id} />}
 
+      {/* Alerta de cobrança em aberto — CTA leva à aba Financeiro */}
+      {store?.id && (
+        <PdvBillingAlert storeId={store.id} onOpenFinanceiro={() => setTab("financeiro")} />
+      )}
+
       <PdvTopbar
         storeName={store?.name}
         operatorName={operatorName}
@@ -1177,6 +1251,17 @@ const PdvPage = () => {
               sessionId={selectedSessionId || undefined}
             />
           )}
+        </div>
+      )}
+
+      {/* ── FINANCEIRO ── */}
+      {tab === "financeiro" && store?.id && (
+        <div className="flex-1 overflow-y-auto">
+          <PdvFinanceiro
+            storeId={store.id}
+            storeName={store.name || ""}
+            onPayClick={pdvAccess.source === "pdv_only" ? () => setTab("meu_plano") : undefined}
+          />
         </div>
       )}
 
