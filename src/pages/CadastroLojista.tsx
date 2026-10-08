@@ -192,8 +192,8 @@ const CadastroLojista = () => {
     if (validateStep(step)) setStep(prev => Math.min(prev + 1, 3));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent) => {
+    e?.preventDefault();
     setErrors({});
 
     const result = schema.safeParse({ email, confirmEmail, password, storeName, document, birthDate, whatsapp, storeCategory, cep, city, street, addressNumber, neighborhood, selectedPlan });
@@ -331,12 +331,17 @@ const CadastroLojista = () => {
           }
         }
 
-        await supabase.from("terms_acceptance").insert({
+        const { error: termsErr } = await supabase.from("terms_acceptance").insert({
           user_id: signUpData.user.id,
           terms_version: CURRENT_TERMS_VERSION,
           privacy_version: CURRENT_PRIVACY_VERSION,
           user_agent: navigator.userAgent,
         });
+        if (termsErr) {
+          // Não bloqueia o cadastro, mas o lojista/sistema precisa saber.
+          console.warn("[CadastroLojista] terms_acceptance insert falhou:", termsErr.message);
+          toast.warning("Não foi possível registrar o aceite dos Termos de Uso. Seu cadastro continua, mas confira depois em Configurações.");
+        }
          await supabase.from("profiles").update({
            terms_accepted_at: new Date().toISOString(),
            birth_date: birthDate,
@@ -477,11 +482,22 @@ const CadastroLojista = () => {
               // Não bloqueia o cadastro
             }
           }
-        }
-      }
 
-      toast.success("Cadastro realizado! Sua loja já está ativa. 🎉");
-       navigate(accountType === "matriz" ? "/matriz" : "/admin", { replace: true });
+          // Loja criada com sucesso: só aqui o lojista entra no painel.
+          toast.success("Cadastro realizado! Sua loja já está ativa. 🎉");
+          navigate(accountType === "matriz" ? "/matriz" : "/admin", { replace: true });
+        } else {
+          // A loja não foi criada (nem via RPC nem via trigger): não entra no painel.
+          toast.error("Não foi possível criar sua loja. Verifique sua conexão e tente novamente.", {
+            action: { label: "Tentar novamente", onClick: () => handleSubmit() },
+          });
+        }
+      } else {
+        // Conta criada mas sem usuário retornado: não entra no painel.
+        toast.error("Não foi possível concluir o cadastro. Tente novamente.", {
+          action: { label: "Tentar novamente", onClick: () => handleSubmit() },
+        });
+      }
     } catch (err: any) {
       toast.error(err.message || "Erro ao cadastrar.");
     } finally {
@@ -968,13 +984,13 @@ const CadastroLojista = () => {
                   <p className="text-xs text-muted-foreground mt-1">Documento, contato e dados de pagamento</p>
                 </div>
 
-                 <FieldInput 
-                   icon={FileText} 
-                   placeholder="CPF ou CNPJ" 
-                   value={document} 
-                   onChange={(v) => setDocument(formatDocument(v))} 
-                   error={errors.document} 
-                   inputMode="numeric" 
+                 <FieldInput
+                   icon={FileText}
+                   placeholder="CPF ou CNPJ"
+                   value={document}
+                   onChange={(v) => setDocument(formatDocument(v))}
+                   error={errors.document}
+                   inputMode="numeric"
                    maxLength={18}
                  />
 
@@ -1005,16 +1021,16 @@ const CadastroLojista = () => {
                 </div>
 
                  <div>
-                   <FieldInput 
-                     icon={Phone} 
-                     placeholder="(14) 99999-9999" 
-                     value={whatsapp} 
+                   <FieldInput
+                     icon={Phone}
+                     placeholder="(14) 99999-9999"
+                     value={whatsapp}
                      onChange={(v) => {
                        const digits = v.replace(/\D/g, "");
                        setWhatsapp(digits.slice(0, 11));
-                     }} 
-                     error={errors.whatsapp} 
-                     inputMode="tel" 
+                     }}
+                     error={errors.whatsapp}
+                     inputMode="tel"
                      isPhone={true}
                    />
                    <p className="text-[10px] text-muted-foreground mt-1 px-1">Usado para contato e Asaas.</p>

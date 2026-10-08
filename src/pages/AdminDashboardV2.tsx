@@ -63,6 +63,7 @@ const RepasseSection = lazy(() => import("./admin/sections/RepasseSection"));
 const OrdersSection = lazy(() => import("./admin/sections/OrdersSection"));
 import AdminOrderCard from "./admin/components/AdminOrderCard";
 import ClientsTab from "./admin/components/ClientsTab";
+import ErrorBoundary from "@/components/ErrorBoundary";
 const StoreReportsPanel = lazy(() => import("@/components/store/StoreReportsPanel"));
 
 const TabFallback = () => (
@@ -2035,6 +2036,7 @@ const AdminDashboard = () => {
                   </div>
                 );
               })()}
+              <ErrorBoundary>
               <Suspense fallback={<TabFallback />}>
                 <DashboardOverviewSection
                 store={store}
@@ -2079,12 +2081,14 @@ const AdminDashboard = () => {
                 handleAcceptOrder={handleAcceptOrder}
                 handleCancelOrder={handleCancelOrder}
               />
-            </Suspense>
+              </Suspense>
+              </ErrorBoundary>
             </>
           )}
 
           {/* ══════ AVISOS TAB ══════ */}
           {dashboardTab === "avisos" && store && (
+            <ErrorBoundary>
             <Suspense fallback={<TabFallback />}>
               <AvisosSection
                 store={store}
@@ -2097,10 +2101,12 @@ const AdminDashboard = () => {
                 count={avisosCount}
               />
             </Suspense>
+            </ErrorBoundary>
           )}
 
           {/* ══════ REPASSE TAB ══════ */}
           {dashboardTab === "repasse" && store && (
+            <ErrorBoundary>
             <Suspense fallback={<TabFallback />}>
               <RepasseSection
                 store={store}
@@ -2109,6 +2115,7 @@ const AdminDashboard = () => {
                 pendingTotal={repassePending}
               />
             </Suspense>
+            </ErrorBoundary>
           )}
 
           {/* ══════ CLIENTS TAB ══════ */}
@@ -2130,6 +2137,7 @@ const AdminDashboard = () => {
 
           {/* ══════ ORDERS TAB ══════ */}
           {dashboardTab === "orders" && store && (
+            <ErrorBoundary>
             <Suspense fallback={<TabFallback />}>
               <OrdersSection
                 store={store}
@@ -2171,11 +2179,13 @@ const AdminDashboard = () => {
                 invalidateOrders={() => queryClient.invalidateQueries({ queryKey: ["admin-orders"] })}
               />
             </Suspense>
+            </ErrorBoundary>
           )}
 
           {/* ══════ OTHER TABS ══════ */}
           {!["dashboard", "avisos", "repasse", "orders", "clients"].includes(dashboardTab) && store && (
             <div className="p-4 lg:p-6 max-w-6xl mx-auto">
+              <ErrorBoundary key={dashboardTab}>
               <Suspense fallback={<TabFallback />}>
                 {dashboardTab === "menu" && <MenuTab storeId={store.id} storeCategory={store.category} />}
                 {dashboardTab === "cash_register" && <CashRegisterTab storeId={store.id} />}
@@ -2203,10 +2213,13 @@ const AdminDashboard = () => {
                 {dashboardTab === "drivers" && store && <DriversTab storeId={store.id} />}
                 {dashboardTab === "refunds" && store && <RefundsTab storeId={store.id} />}
               </Suspense>
+              </ErrorBoundary>
               {dashboardTab === "reports" && (
+                <ErrorBoundary key={dashboardTab}>
                 <Suspense fallback={<TabFallback />}>
                   <StoreReportsPanel storeId={store.id} storeName={store.name} />
                 </Suspense>
+                </ErrorBoundary>
               )}
             </div>
           )}
