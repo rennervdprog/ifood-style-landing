@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { Shield } from "lucide-react";
+import { Shield, Loader2 } from "lucide-react";
 import { isPartnerCapacitorApp } from "@/lib/capacitorAppMode";
 import { useUserRouting } from "@/hooks/useUserRouting";
 
@@ -66,20 +66,25 @@ const RoleGuard = ({ allowedRoles, redirectTo, children, requireApproval = false
   })();
 
   if (authLoading || checking) {
-    // Sem spinner aqui: o Suspense global só mostra spinner após 180ms.
-    // Só renderiza fallback se estiver demorando muito (rede ruim).
-    if (!slow) return null;
+    // Spinner imediato (antes era tela branca via `return null`).
+    // Se demorar mais que 8s (rede ruim), mostra também a mensagem
+    // de "verifique sua conexão" com botão de recarregar.
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4 px-6 text-center">
-        <p className="text-sm text-muted-foreground max-w-xs">
-          Está demorando mais que o normal. Verifique sua conexão e tente novamente.
-        </p>
-        <button
-          onClick={() => window.location.reload()}
-          className="bg-primary text-primary-foreground font-bold px-5 py-2.5 rounded-xl text-sm"
-        >
-          Tentar novamente
-        </button>
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        {slow && (
+          <>
+            <p className="text-sm text-muted-foreground max-w-xs">
+              Está demorando mais que o normal. Verifique sua conexão e tente novamente.
+            </p>
+            <button
+              onClick={() => window.location.reload()}
+              className="bg-primary text-primary-foreground font-bold px-5 py-2.5 rounded-xl text-sm"
+            >
+              Tentar novamente
+            </button>
+          </>
+        )}
       </div>
     );
   }
