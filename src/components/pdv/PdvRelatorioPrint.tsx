@@ -13,6 +13,8 @@ export interface PdvPrintStats {
   byPayment: Record<string, number>;
   topProducts: { name: string; qty: number; revenue: number; abc: string }[];
   peakHour: { hour: number; count: number } | null;
+  /** Conferência de caixa — presente no relatório de turno. */
+  conferencia?: PdvPrintConferencia | null;
 }
 
 export interface PdvPrintOperator {
@@ -20,6 +22,20 @@ export interface PdvPrintOperator {
   name: string;
   count: number;
   total: number;
+}
+
+export interface PdvPrintConferencia {
+  operador: string;
+  periodo: string;
+  abertura: number;
+  vendas: number;
+  vendasQtd: number;
+  vendasPorPagamento: Record<string, number>;
+  suprimentos: number;
+  sangrias: number;
+  saldoEsperado: number;
+  valorContado: number | null;
+  diferenca: number | null;
 }
 
 interface Props {
@@ -87,9 +103,51 @@ export default function PdvRelatorioPrint({
         </p>
       </div>
 
+      {/* Conferência de caixa (relatório de turno) */}
+      {stats.conferencia && (
+        <>
+          <h2 className="text-sm font-black uppercase tracking-wider mb-2">Conferência de caixa</h2>
+          <table className="w-full mb-6">
+            <tbody>
+              {[
+                ["Operador", stats.conferencia.operador],
+                ["Abertura", formatBRL(stats.conferencia.abertura)],
+                [`Vendas (${stats.conferencia.vendasQtd})`, formatBRL(stats.conferencia.vendas)],
+                ...Object.entries(stats.conferencia.vendasPorPagamento)
+                  .sort((a, b) => b[1] - a[1])
+                  .map(([m, v]): [string, string] => [
+                    `· ${PAYMENT_LABELS[m] ?? m}`,
+                    formatBRL(v),
+                  ]),
+                ["Suprimentos", formatBRL(stats.conferencia.suprimentos)],
+                ["Sangrias", formatBRL(stats.conferencia.sangrias)],
+                ["Saldo esperado", formatBRL(stats.conferencia.saldoEsperado)],
+                ...(stats.conferencia.valorContado !== null
+                  ? [["Valor contado", formatBRL(stats.conferencia.valorContado)] as [string, string][]]
+                  : []),
+                ...(stats.conferencia.diferenca !== null
+                  ? [[
+                      "Diferença",
+                      Math.abs(stats.conferencia.diferenca) < 0.05
+                        ? "Conferido"
+                        : stats.conferencia.diferenca > 0
+                          ? `Sobra ${formatBRL(stats.conferencia.diferenca)}`
+                          : `Falta ${formatBRL(Math.abs(stats.conferencia.diferenca))}`,
+                    ] as [string, string][]]
+                  : []),
+              ].map(([label, value]) => (
+                <tr key={label}>
+                  <td className={td + " text-gray-600"}>{label}</td>
+                  <td className={tdNum}>{value}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </>
+      )}
+
       {/* Resumo */}
-      <h2 className="text-sm font-black uppercase tracking-wider mb-2">Resumo</h2>
-      <table className="w-full mb-6">
+      <h2 className="text-sm font-black uppercase tracking-wider mb-2">Resumo</h2>      <table className="w-full mb-6">
         <tbody>
           {[
             ["Faturamento", formatBRL(stats.totalSales)],
