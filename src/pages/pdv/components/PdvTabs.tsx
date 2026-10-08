@@ -1,4 +1,4 @@
-import { ShoppingCart, History, Receipt, BarChart3, LayoutGrid, CreditCard, Settings } from "lucide-react";
+import { ShoppingCart, History, Receipt, BarChart3, LayoutGrid, CreditCard, Settings, Wallet } from "lucide-react";
 import type { PdvTab } from "@/pages/pdv/types";
 
 interface Props {
@@ -15,6 +15,7 @@ const BASE_TABS: { id: PdvTab; label: string; icon: any }[] = [
   { id: "historico", label: "Histórico", icon: History },
   { id: "turnos", label: "Turnos", icon: Receipt },
   { id: "relatorios", label: "Relatórios", icon: BarChart3 },
+  { id: "financeiro", label: "Financeiro", icon: Wallet },
 ];
 
 export const PdvTabs = ({ tab, onChange, showMeuPlano }: Props) => {
