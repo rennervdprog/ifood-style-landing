@@ -51,7 +51,10 @@ async function findWooviSandboxCharge(appId: string, correlationID: string): Pro
 }> {
   try {
     const response = await fetch(`${WOOVI_SANDBOX_API}/api/v1/charge/${encodeURIComponent(correlationID)}`, {
-      headers: { Authorization: appId },
+      headers: {
+        Authorization: appId,
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
+      },
     });
     if (response.status === 404) return { found: false };
     const payload = await response.json().catch(() => ({}));
@@ -242,7 +245,11 @@ Deno.serve(async (req) => {
     try {
       response = await fetch(`${WOOVI_SANDBOX_API}/api/v1/charge`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: sandboxAppId },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: sandboxAppId,
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
+        },
         body: JSON.stringify({
           correlationID: referenceCode,
           value: Math.round(Number(claim.amount) * 100),
