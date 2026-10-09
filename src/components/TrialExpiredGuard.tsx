@@ -22,9 +22,23 @@ export default function TrialExpiredGuard({ storePlan, storeId, children }: Tria
     qr_code_base64: string | null;
     reference_code: string;
     amount: number;
-  } | null>(null);
+  } | null>(() => {
+    // Restaura PIX pendente do localStorage (sobrevive ao reload)
+    try {
+      const saved = localStorage.getItem(`trial-pix-${storeId}`);
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
   const [copied, setCopied] = useState(false);
-  const [polling, setPolling] = useState(false);
+  const [polling, setPolling] = useState(() => {
+    try {
+      return !!localStorage.getItem(`trial-pix-${storeId}`);
+    } catch {
+      return false;
+    }
+  });
 
   // Número/link de suporte da plataforma (fallback via admin_settings.support_whatsapp)
   const { data: supportCfg } = useQuery({
@@ -99,6 +113,9 @@ export default function TrialExpiredGuard({ storePlan, storeId, children }: Tria
       if (data?.status === "paid") {
         setPolling(false);
         setPixData(null);
+        try {
+          localStorage.removeItem(`trial-pix-${storeId}`);
+        } catch {}
         toast.success("Pagamento confirmado! Acesso liberado.");
         queryClient.invalidateQueries({ queryKey: ["store-plan", storeId] });
         queryClient.invalidateQueries({ queryKey: ["pending-subscription-payment", storeId] });
@@ -111,15 +128,19 @@ export default function TrialExpiredGuard({ storePlan, storeId, children }: Tria
   // Auto-show existing pending payment PIX
   useEffect(() => {
     if (hasUnpaidBill && pendingPayment?.pix_copy_paste && !pixData) {
-      setPixData({
+      const restored = {
         qr_code: pendingPayment.pix_copy_paste,
         qr_code_base64: pendingPayment.pix_qr_code_base64,
         reference_code: pendingPayment.reference_code,
         amount: Number(pendingPayment.amount),
-      });
+      };
+      setPixData(restored);
       setPolling(true);
+      try {
+        localStorage.setItem(`trial-pix-${storeId}`, JSON.stringify(restored));
+      } catch {}
     }
-  }, [hasUnpaidBill, pendingPayment, pixData]);
+  }, [hasUnpaidBill, pendingPayment, pixData, storeId]);
 
   // 🔓 Bypass total quando a mensalidade é R$0 (Essencial gratuito).
   // Sem isso, cobranças órfãs de planos antigos travariam o lojista.
@@ -147,6 +168,9 @@ export default function TrialExpiredGuard({ storePlan, storeId, children }: Tria
 
       setPixData(res.data);
       setPolling(true);
+      try {
+        localStorage.setItem(`trial-pix-${storeId}`, JSON.stringify(res.data));
+      } catch {}
     } catch {
       toast.error("Erro ao gerar PIX. Tente novamente.");
     } finally {
