@@ -114,8 +114,8 @@ export default function PdvKdsPage() {
   useEffect(() => {
     if (!storeId) return;
     fetchOrders();
-    // Polling backup — 10s.
-    pollRef.current = window.setInterval(fetchOrders, 10000);
+    // Polling backup — 60s (o realtime acima é a fonte principal).
+    pollRef.current = window.setInterval(fetchOrders, 60000);
     // Realtime — pode falhar silenciosamente; o polling cobre.
     const ch = supabase
       .channel(`kds-${storeId}`)
