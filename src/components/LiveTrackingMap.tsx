@@ -94,7 +94,8 @@ const LiveTrackingMap = ({ orderId, driverId, storeId, clientAddress, clientLat,
       return data;
     },
     enabled: !!driverId,
-    refetchInterval: 5000,
+    // 30s como fallback — o realtime abaixo já entrega atualização instantânea.
+    refetchInterval: 30000,
   });
 
   // Subscribe to Realtime changes on driver_locations for instant updates
