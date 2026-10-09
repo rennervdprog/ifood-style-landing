@@ -66,7 +66,7 @@ export default function OrdersSection(props: Props) {
   const [sourceFilter, setSourceFilter] = useState<SourceKey>("all");
 
   const pixPending = useMemo(
-    () => (orders || []).filter((o: any) => o.status === "comprovante_enviado" || o.status === "aguardando_comprovante"),
+    () => (orders || []).filter((o: any) => o.status === "comprovante_enviado"),
     [orders]
   );
   const [pixBusyId, setPixBusyId] = useState<string | null>(null);
@@ -147,6 +147,9 @@ export default function OrdersSection(props: Props) {
 
   const finalOrders = useMemo(() => {
     return filteredOrders.filter((o: any) => {
+      // Pedidos PIX direto aguardando comprovante ficam invisíveis pro lojista
+      // até o cliente enviar o comprovante.
+      if (o.status === "aguardando_comprovante") return false;
       const t = new Date(o.created_at).getTime();
       if (t < periodRange.from || t >= periodRange.to) return false;
       if (sourceFilter !== "all") {
