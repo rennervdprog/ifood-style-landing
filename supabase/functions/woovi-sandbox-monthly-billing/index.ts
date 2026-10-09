@@ -94,7 +94,7 @@ Deno.serve(async (req) => {
       name: owner?.full_name || store.name || "Loja de teste ItaSuper",
       email: owner?.email || `sandbox-${store.id.slice(0, 8)}@itasuper.test`,
       ...(taxId.length === 11 || taxId.length === 14
-        ? { taxID: { taxID: taxId, type: taxId.length === 11 ? "BR:CPF" : "BR:CNPJ" } }
+        ? { taxID: taxId }
         : {}),
     },
   };
