@@ -103,7 +103,11 @@ Deno.serve(async (req) => {
   try {
     const response = await fetch(`${WOOVI_SANDBOX_API}/api/v1/charge`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: sandboxAppId },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: sandboxAppId,
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
+      },
       body: JSON.stringify(chargeBody),
     });
     wooviPayload = await response.json().catch(() => ({}));
