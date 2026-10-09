@@ -80,14 +80,18 @@ async function createWooviCharge(params: {
       name: params.customerName || "Lojista",
       email: params.customerEmail || `lojista-${params.externalId}@itasuper.com`,
       ...(taxId.length === 11 || taxId.length === 14
-        ? { taxID: { taxID: taxId, type: taxId.length === 11 ? "BR:CPF" : "BR:CNPJ" } }
+        ? { taxID: taxId }
         : {}),
     },
   };
   try {
-    const res = await fetch("https://api.openpix.com.br/api/v1/charge", {
+    const res = await fetch("https://api.woovi.com/api/v1/charge", {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: appId },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: appId,
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
+      },
       body: JSON.stringify(body),
     });
     const payload = await res.json().catch(() => ({}));
