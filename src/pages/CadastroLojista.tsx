@@ -304,6 +304,10 @@ const CadastroLojista = () => {
                 _avatar_url: null,
                 _whatsapp: formatWhatsAppNumber(whatsapp),
                 _selected_plan: selectedPlan,
+                // No cadastro, o WhatsApp ainda não foi verificado (o usuário
+                // acabou de criar a conta). Pular a verificação OTP aqui —
+                // ela será exigida em fluxos posteriores, não no signup.
+                _skip_otp_check: true,
               }
             );
             if (rpcErr) {
