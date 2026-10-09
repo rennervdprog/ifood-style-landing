@@ -182,9 +182,11 @@ const Index = () => {
   });
 
   const { data: products } = useQuery({
-    queryKey: ["all-products-search"],
+    queryKey: ["products-search", search],
     queryFn: async () => {
-      const { data, error } = await supabase.from("products").select("id, name, store_id").eq("is_available", true);
+      // Busca server-side com limite: evita baixar a tabela products inteira
+      // a cada tecla digitada. O filtro client-side abaixo continua valendo.
+      const { data, error } = await supabase.from("products").select("id, name, store_id").eq("is_available", true).ilike("name", `%${search}%`).limit(50);
       if (error) throw error;
       return data || [];
     },

@@ -287,28 +287,46 @@ const CadastroLojista = () => {
           return;
         }
 
-        // Criar loja via RPC (fallback: trigger no banco garante criação mesmo se falhar)
+        // Criar loja via RPC com retry (o plano selecionado DEVE ser respeitado).
+        // Se a RPC falhar, o fallback (trigger) cria a loja com o plano legado
+        // 'commission_only' (DEFAULT da coluna), ignorando a escolha do usuário.
         let createdStoreId: string | null = null;
-        try {
-          const { data: storeIdRpc, error: rpcErr } = await (supabase as any).rpc(
-            "register_as_lojista",
-            {
-              _full_name: storeName.trim(),
-              _document: sanitizeDocument(document),
-              _store_name: storeName.trim(),
-              _store_category: storeCategory,
-              _avatar_url: null,
-              _whatsapp: formatWhatsAppNumber(whatsapp),
-              _selected_plan: selectedPlan,
+        let rpcOk = false;
+        for (let rpcAttempt = 1; rpcAttempt <= 3 && !rpcOk; rpcAttempt++) {
+          try {
+            const { data: storeIdRpc, error: rpcErr } = await (supabase as any).rpc(
+              "register_as_lojista",
+              {
+                _full_name: storeName.trim(),
+                _document: sanitizeDocument(document),
+                _store_name: storeName.trim(),
+                _store_category: storeCategory,
+                _avatar_url: null,
+                _whatsapp: formatWhatsAppNumber(whatsapp),
+                _selected_plan: selectedPlan,
+              }
+            );
+            if (rpcErr) {
+              console.warn(`register_as_lojista tentativa ${rpcAttempt} falhou:`, rpcErr.message);
+              if (rpcAttempt < 3) await new Promise(r => setTimeout(r, rpcAttempt * 1500));
+            } else {
+              rpcOk = true;
+              if (typeof storeIdRpc === "string") {
+                createdStoreId = storeIdRpc;
+              }
             }
-          );
-          if (rpcErr) {
-            console.warn("register_as_lojista aviso (não-fatal):", rpcErr.message);
-          } else if (typeof storeIdRpc === "string") {
-            createdStoreId = storeIdRpc;
+          } catch (rpcEx) {
+            console.warn(`register_as_lojista tentativa ${rpcAttempt} exceção:`, rpcEx);
+            if (rpcAttempt < 3) await new Promise(r => setTimeout(r, rpcAttempt * 1500));
           }
-        } catch (rpcEx) {
-          console.warn("RPC exception (não-fatal, trigger garante loja):", rpcEx);
+        }
+        if (!rpcOk) {
+          // Não prosseguir silenciosamente com plano errado — o usuário escolheu
+          // um plano e o sistema deve respeitar. Sem a RPC, o fallback cria
+          // 'commission_only' (legado), que não foi o selecionado.
+          setLoading(false);
+          toast.error("Não foi possível ativar o plano escolhido. Tente novamente em alguns instantes.");
+          return;
         }
 
         // Se for cadastro como matriz, registrar a rede após criar a loja

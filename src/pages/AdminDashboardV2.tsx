@@ -554,8 +554,15 @@ const AdminDashboard = () => {
     queryFn: async () => {
       const { data: allOnline, error } = await supabase.from("drivers").select("id, name, user_id").eq("is_online", true).eq("is_active", true);
       if (error) throw error;
-      const { data: busyDriverIds } = await supabase.from("orders").select("driver_id").in("status", ["pronto_para_entrega", "em_transito", "saiu_entrega", "entregue"] as any[]).not("driver_id", "is", null);
-      const busySet = new Set((busyDriverIds || []).map((o: any) => o.driver_id));
+      // Só consulta os pedidos dos entregadores online (usa idx_orders_driver_status)
+      // em vez de escanear todos os pedidos da plataforma. Resultado idêntico:
+      // um entregador fora da lista de online nunca entraria no retorno de qualquer forma.
+      const onlineUserIds = (allOnline || []).map((d: any) => d.user_id).filter(Boolean);
+      let busySet = new Set<string>();
+      if (onlineUserIds.length > 0) {
+        const { data: busyDriverIds } = await supabase.from("orders").select("driver_id").in("status", ["pronto_para_entrega", "em_transito", "saiu_entrega", "entregue"] as any[]).not("driver_id", "is", null).in("driver_id", onlineUserIds);
+        busySet = new Set((busyDriverIds || []).map((o: any) => o.driver_id));
+      }
       return (allOnline || []).filter((d: any) => !busySet.has(d.user_id));
     },
     staleTime: 1000 * 30,
