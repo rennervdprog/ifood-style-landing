@@ -96,17 +96,21 @@ async function createWooviCharge(params: {
       name: params.customer?.name || "Lojista",
       email: params.customer?.email || `lojista-${params.externalId}@itasuper.com`,
       ...(taxId.length === 11 || taxId.length === 14
-        ? { taxID: { taxID: taxId, type: taxId.length === 11 ? "BR:CPF" : "BR:CNPJ" } }
+        ? { taxID: taxId }
         : {}),
     };
   }
 
   // Produção permanece como padrão. A URL só muda quando configurada
   // explicitamente em um ambiente isolado de homologação.
-  const wooviBaseUrl = (Deno.env.get("WOOVI_API_BASE_URL") || "https://api.openpix.com.br").replace(/\/+$/, "");
+  const wooviBaseUrl = (Deno.env.get("WOOVI_API_BASE_URL") || "https://api.woovi.com").replace(/\/+$/, "");
   const response = await fetch(`${wooviBaseUrl}/api/v1/charge`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: appId },
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: appId,
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
+    },
     body: JSON.stringify(body),
   });
   const payload = await response.json().catch(() => ({}));
