@@ -428,6 +428,7 @@ const PdvPage = () => {
     sectionMap,
     filtered,
     grouped,
+    stockMap,
   } = usePdvCatalog({
     storeId: store?.id,
     search,
@@ -1335,6 +1336,7 @@ const PdvPage = () => {
                     searchInputRef={searchInputRef}
                     hideSectionTabs
                     allProducts={products}
+                    stockMap={stockMap}
                     scrollTopSlot={
                       <>
                         {isSnackBar && (
@@ -1422,6 +1424,7 @@ const PdvPage = () => {
                       getQty={getQty} addItem={addItem} decItem={decItem}
                       searchInputRef={searchInputRef}
                       allProducts={products}
+                    stockMap={stockMap}
                       scrollTopSlot={
                         <>
                           <PdvNowCard
