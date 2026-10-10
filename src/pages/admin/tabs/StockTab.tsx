@@ -223,15 +223,15 @@ export default function StockTab({ storeId }: Props) {
     <div className="space-y-4 p-4 max-w-3xl mx-auto">
       {/* Como funciona */}
       {trackedItems.length === 0 && (
-        <Card className="border-blue-200 bg-blue-50 dark:bg-blue-950/20">
+        <Card className="border-blue-600 border-2 bg-blue-50 dark:bg-blue-950">
           <CardContent className="pt-4">
             <div className="flex gap-3">
-              <Info className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
+              <Info className="h-6 w-6 text-blue-700 shrink-0 mt-0.5" />
               <div className="text-sm">
-                <p className="font-semibold text-blue-900 dark:text-blue-200 mb-1">
+                <p className="font-bold text-blue-900 dark:text-blue-100 text-base mb-2">
                   Como funciona o controle de estoque
                 </p>
-                <ol className="list-decimal list-inside space-y-1 text-blue-800 dark:text-blue-300">
+                <ol className="list-decimal list-inside space-y-1 text-blue-900 dark:text-blue-200 font-medium">
                   <li>Clique em <strong>"Ativar controle"</strong> no produto</li>
                   <li>Digite quantas unidades você tem agora</li>
                   <li>Pronto! O sistema baixa sozinho a cada venda</li>
@@ -244,17 +244,17 @@ export default function StockTab({ storeId }: Props) {
 
       {/* Alerta estoque baixo */}
       {lowStock.length > 0 && (
-        <Card className="border-amber-200 bg-amber-50 dark:bg-amber-950/20">
+        <Card className="border-orange-500 border-2 bg-orange-50 dark:bg-orange-950">
           <CardContent className="pt-4">
-            <div className="flex items-center gap-2 text-amber-700">
-              <AlertTriangle className="h-5 w-5" />
-              <span className="font-semibold">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="h-6 w-6 text-orange-600" />
+              <span className="font-bold text-orange-800 dark:text-orange-200 text-base">
                 ⚠️ {lowStock.length} produto{lowStock.length > 1 ? "s" : ""} precisando repor
               </span>
             </div>
-            <div className="mt-2 flex flex-wrap gap-2">
+            <div className="mt-3 flex flex-wrap gap-2">
               {lowStock.map((p: any) => (
-                <Badge key={p.product_id} variant="outline" className="bg-white">
+                <Badge key={p.product_id} className="bg-orange-600 text-white font-bold text-sm px-3 py-1">
                   {p.product_name}: só {p.quantity} un
                 </Badge>
               ))}
@@ -293,24 +293,28 @@ export default function StockTab({ storeId }: Props) {
           <div className="space-y-2">
             {filtered.filter((i) => i.track_stock).map((item) => {
               const isLow = item.quantity <= item.min_quantity;
+              const isZero = item.quantity <= 0;
               return (
-                <Card key={item.product_id} className={isLow ? "border-amber-300" : ""}>
+                <Card key={item.product_id} className={isZero ? "border-red-500 border-2" : isLow ? "border-orange-400 border-2" : ""}>
                   <CardContent className="p-3">
                     <div className="flex items-center gap-3">
                       <div className="flex-1 min-w-0">
                         <p className="font-medium truncate">{item.product_name}</p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <span className={`text-2xl font-bold ${item.quantity <= 0 ? "text-red-600" : isLow ? "text-amber-600" : "text-emerald-600"}`}>
+                        <div className="flex items-center gap-2 mt-2">
+                          <span className={`text-3xl font-black px-3 py-1 rounded-lg ${isZero ? "bg-red-600 text-white" : isLow ? "bg-orange-500 text-white" : "bg-green-600 text-white"}`}>
                             {item.quantity}
                           </span>
-                          <span className="text-sm text-muted-foreground">unidades</span>
-                          {isLow && item.quantity > 0 && (
-                            <Badge variant="outline" className="border-amber-500 text-amber-700 text-xs">
-                              Repor! Mín: {item.min_quantity}
-                            </Badge>
+                          <span className="text-sm font-medium">unidades</span>
+                        </div>
+                        <div className="mt-1">
+                          {isZero && (
+                            <Badge className="bg-red-600 text-white font-bold">ESGOTADO</Badge>
                           )}
-                          {item.quantity <= 0 && (
-                            <Badge variant="destructive" className="text-xs">Esgotado</Badge>
+                          {isLow && !isZero && (
+                            <Badge className="bg-orange-500 text-white font-bold">⚠️ REPOR — mín: {item.min_quantity}</Badge>
+                          )}
+                          {!isLow && !isZero && (
+                            <Badge className="bg-green-600 text-white">Em estoque</Badge>
                           )}
                         </div>
                       </div>
