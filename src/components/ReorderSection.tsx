@@ -1,4 +1,5 @@
 import { formatBRL } from "@/lib/utils";
+import { getEffectivePrice } from "@/lib/promoPrice";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -17,7 +18,7 @@ const ReorderSection = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orders")
-        .select("*, stores(id, name, image_url, is_open), order_items(*, products(id, name, price, is_available, image_url, store_id))")
+        .select("*, stores(id, name, image_url, is_open), order_items(*, products(id, name, price, promo_active, promo_price, promo_starts_at, promo_ends_at, is_available, image_url, store_id))")
         .eq("client_id", user!.id)
         .in("status", ["entregue", "finalizado"])
         .order("created_at", { ascending: false })
@@ -39,11 +40,12 @@ const ReorderSection = () => {
     
     availableItems.forEach((item: any) => {
       if (item.products) {
+        const effective = getEffectivePrice(item.products);
         addItem({
           id: item.products.id,
           name: item.products.name,
-          price: item.products.price,
-          basePrice: item.products.price,
+          price: effective,
+          basePrice: Number(item.products.price),
           store_id: item.products.store_id,
           store_name: order.stores?.name || "",
           image_url: item.products.image_url,
