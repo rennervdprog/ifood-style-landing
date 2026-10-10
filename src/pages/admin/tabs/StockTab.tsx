@@ -223,8 +223,8 @@ export default function StockTab({ storeId }: Props) {
 
   return (
     <div className="space-y-4 p-4 max-w-3xl mx-auto">
-      {/* Como funciona - design claro */}
-      {trackedItems.length === 0 && (
+      {/* Como funciona - design claro (só mostra se não tem nenhum controle ativo) */}
+      {trackedItems.length === 0 && lowStock.length === 0 && (
         <Card className="bg-white">
           <CardContent className="pt-4">
             <div className="flex gap-3">
@@ -268,14 +268,41 @@ export default function StockTab({ storeId }: Props) {
               </span>
             </div>
             <div className="space-y-2">
-              {lowStock.map((p: any) => (
-                <div key={p.product_id} className="flex items-center justify-between bg-orange-50 rounded-lg px-3 py-2">
-                  <span className="font-medium text-sm">{p.product_name}</span>
-                  <span className={`font-bold text-sm px-2 py-1 rounded ${Number(p.quantity) <= 0 ? "bg-red-600 text-white" : "bg-orange-500 text-white"}`}>
-                    {Number(p.quantity) <= 0 ? "ESGOTADO" : `só ${p.quantity} un`}
-                  </span>
-                </div>
-              ))}
+              {lowStock.map((p: any) => {
+                const item = items.find((i) => i.product_id === p.product_id);
+                return (
+                  <div key={p.product_id} className="flex items-center gap-2 bg-orange-50 rounded-lg px-3 py-2">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm truncate">{p.product_name}</p>
+                      <span className={`font-bold text-xs px-2 py-0.5 rounded inline-block mt-1 ${Number(p.quantity) <= 0 ? "bg-red-600 text-white" : "bg-orange-500 text-white"}`}>
+                        {Number(p.quantity) <= 0 ? "ESGOTADO" : `só ${p.quantity} un`}
+                      </span>
+                    </div>
+                    <Button
+                      size="sm"
+                      className="bg-green-600 hover:bg-green-700 text-white font-bold shrink-0"
+                      onClick={() => {
+                        if (item) {
+                          setAdjustDialog(item);
+                        } else {
+                          // Fallback: cria item temporário com dados do alerta
+                          setAdjustDialog({
+                            product_id: p.product_id,
+                            product_name: p.product_name,
+                            product_price: 0,
+                            product_image: null,
+                            quantity: Number(p.quantity),
+                            min_quantity: Number(p.min_quantity),
+                            track_stock: true,
+                          });
+                        }
+                      }}
+                    >
+                      <Plus className="h-4 w-4 mr-1" /> Repor
+                    </Button>
+                  </div>
+                );
+              })}
             </div>
           </CardContent>
         </Card>
