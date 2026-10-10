@@ -203,7 +203,7 @@ function SectionHeading({ eyebrow, title, description, centered = false }: { eye
 
 function DashboardPreview() {
   return (
-    <div className="relative mx-auto w-full max-w-[650px]">
+    <div className="relative mx-auto w-full max-w-[650px] overflow-hidden">
       <div className="overflow-hidden rounded-[1.65rem] border border-border bg-card shadow-[0_28px_80px_-38px_hsl(var(--foreground)/0.38)]">
         <div className="flex h-10 items-center gap-2 border-b border-border bg-muted/40 px-4">
           <span className="h-2.5 w-2.5 rounded-full bg-primary/70" />
@@ -218,22 +218,22 @@ function DashboardPreview() {
               <div key={item} className={`mb-1 rounded-lg px-2.5 py-2 text-[10px] font-bold ${index === 0 ? "bg-primary/10 text-primary" : "text-muted-foreground"}`}>{item}</div>
             ))}
           </aside>
-          <div className="p-4 sm:p-5">
+          <div className="p-3 sm:p-5">
             <div className="mb-4 flex items-start justify-between gap-3">
-              <div>
+              <div className="min-w-0">
                 <p className="text-xs font-black text-foreground sm:text-sm">Pedidos</p>
                 <div className="mt-2 flex gap-3 text-[9px] font-semibold text-muted-foreground sm:text-[10px]">
                   <span className="border-b-2 border-primary pb-1 text-primary">Todos</span><span>Novos 3</span><span className="hidden sm:inline">Em preparo 2</span><span className="hidden sm:inline">Concluídos</span>
                 </div>
               </div>
-              <div className="flex items-center gap-1.5 text-[9px] font-bold text-emerald-600"><span className="h-2 w-2 rounded-full bg-emerald-500" /> Loja ativa</div>
+              <div className="flex shrink-0 items-center gap-1.5 text-[9px] font-bold text-emerald-600"><span className="h-2 w-2 rounded-full bg-emerald-500" /> Loja ativa</div>
             </div>
             <div className="grid gap-3 md:grid-cols-[1.35fr,0.8fr]">
-              <div className="rounded-xl border border-border bg-background p-3 shadow-sm">
-                <div className="mb-3 flex items-center justify-between"><div><span className="text-sm font-black">#1257</span><span className="ml-2 rounded-full bg-primary/10 px-1.5 py-0.5 text-[8px] font-black text-primary">NOVO</span></div><span className="text-[9px] text-muted-foreground">há 2 min</span></div>
+              <div className="min-w-0 rounded-xl border border-border bg-background p-3 shadow-sm">
+                <div className="mb-3 flex items-center justify-between gap-2"><div className="flex items-center gap-2"><span className="text-sm font-black">#1257</span><span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[8px] font-black text-primary">NOVO</span></div><span className="shrink-0 text-[9px] text-muted-foreground">há 2 min</span></div>
                 <p className="text-[10px] font-semibold">João Silva</p>
                 <p className="mt-1 text-[9px] text-muted-foreground">1× Pizza Calabresa · 1× Refrigerante</p>
-                <div className="mt-3 flex items-center justify-between border-t border-border pt-3"><span className="text-sm font-black">R$ 59,80</span><Button size="sm" className="h-7 rounded-lg px-2 text-[9px] font-black">Aceitar pedido</Button></div>
+                <div className="mt-3 flex items-center justify-between gap-2 border-t border-border pt-3"><span className="text-sm font-black">R$ 59,80</span><Button size="sm" className="h-7 shrink-0 rounded-lg px-2 text-[9px] font-black">Aceitar pedido</Button></div>
               </div>
               <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3">
                 <p className="text-[9px] font-black uppercase tracking-wider text-emerald-700">Pagamento registrado</p>
@@ -242,7 +242,7 @@ function DashboardPreview() {
               </div>
             </div>
             <div className="mt-3 grid grid-cols-3 gap-2">
-              {["28 pedidos", "R$ 1.284,50", "Ticket R$ 45,88"].map((metric) => <div key={metric} className="rounded-lg bg-muted/55 px-2 py-2 text-center text-[8px] font-black text-muted-foreground sm:text-[9px]">{metric}</div>)}
+              {["28 pedidos", "R$ 1.284,50", "Ticket R$ 45,88"].map((metric) => <div key={metric} className="min-w-0 rounded-lg bg-muted/55 px-2 py-2 text-center text-[8px] font-black text-muted-foreground sm:text-[9px]"><span className="block truncate">{metric}</span></div>)}
             </div>
           </div>
         </div>
