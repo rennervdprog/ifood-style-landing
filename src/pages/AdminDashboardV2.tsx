@@ -48,6 +48,7 @@ const SubscriptionTab = lazy(() => import("./admin/tabs/SubscriptionTab"));
 const LoyaltyTab = lazy(() => import("./admin/tabs/LoyaltyTab"));
 const RefundsTab = lazy(() => import("./admin/tabs/RefundsTab"));
 const MenuTab = lazy(() => import("./admin/tabs/MenuTab"));
+const StockTab = lazy(() => import("./admin/tabs/StockTab"));
 const CashRegisterTab = lazy(() => import("./admin/tabs/CashRegisterTab"));
 const AddonsTab = lazy(() => import("./admin/tabs/AddonsTab"));
 const BordasTab = lazy(() => import("./admin/tabs/BordasTab"));
@@ -2195,6 +2196,7 @@ const AdminDashboard = () => {
               <ErrorBoundary key={dashboardTab}>
               <Suspense fallback={<TabFallback />}>
                 {dashboardTab === "menu" && <MenuTab storeId={store.id} storeCategory={store.category} />}
+                {dashboardTab === "stock" && <StockTab storeId={store.id} />}
                 {dashboardTab === "cash_register" && <CashRegisterTab storeId={store.id} />}
                 {dashboardTab === "tutoriais" && <TutoriaisTab />}
                 {dashboardTab === "addons" && <AddonsTab storeId={store.id} />}
