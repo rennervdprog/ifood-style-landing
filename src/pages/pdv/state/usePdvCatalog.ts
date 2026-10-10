@@ -115,5 +115,19 @@ export function usePdvCatalog(params: {
     return result;
   }, [filtered, sectionMap]);
 
-  return { sections, products, prodLoading, sectionMap, filtered, grouped };
+  // Estoque dos produtos (para badges no catálogo)
+  const { data: stockMap = new Map() } = useQuery({
+    queryKey: ["pdv-stock", storeId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("product_stock")
+        .select("product_id, quantity, min_quantity, track_stock")
+        .eq("store_id", storeId!);
+      return new Map((data || []).map((s: any) => [s.product_id, s]));
+    },
+    enabled: !!storeId,
+    staleTime: 30_000,
+  });
+
+  return { sections, products, prodLoading, sectionMap, filtered, grouped, stockMap };
 }
