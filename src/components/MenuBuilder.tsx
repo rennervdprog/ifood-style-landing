@@ -352,7 +352,7 @@ const MenuBuilder = ({ storeId, storeCategory, storeCategories }: MenuBuilderPro
     if (!validated) return;
     const { finalPrice, soldByWeight, pricePerKg } = validated;
 
-    const { error } = await supabase.from("products").insert({
+    const { data: inserted, error } = await supabase.from("products").insert({
       store_id: storeId,
       section_id: sectionId,
       name: formData.name.trim(),
@@ -363,11 +363,37 @@ const MenuBuilder = ({ storeId, storeCategory, storeCategories }: MenuBuilderPro
       sold_by_weight: soldByWeight,
       price_per_kg: soldByWeight ? pricePerKg : null,
       weight_unit: "kg",
-    } as any);
+    } as any).select("id").single();
     if (error) {
       console.error("[MenuBuilder] insert products failed:", error);
       toast.error(`Erro ao adicionar produto: ${error.message || error.code || "desconhecido"}`);
       return;
+    }
+    // Controle de estoque: cria registro se ativado no formulário
+    const meta = formData.metadata as any;
+    if (inserted?.id && meta?.track_stock) {
+      try {
+        await supabase.rpc("stock_toggle_tracking" as any, {
+          _product_id: inserted.id,
+          _track: true,
+        });
+        const initialQty = Number(meta?.initial_stock) || 0;
+        if (initialQty > 0) {
+          await supabase.rpc("stock_adjust" as any, {
+            _product_id: inserted.id,
+            _quantity: initialQty,
+            _type: "in",
+            _reason: "Estoque inicial",
+          });
+        }
+        const minQty = Number(meta?.min_stock) || 0;
+        if (minQty > 0) {
+          await supabase.rpc("stock_set_min" as any, {
+            _product_id: inserted.id,
+            _min_quantity: minQty,
+          });
+        }
+      } catch {}
     }
     toast.success("Produto adicionado!");
     setProductSheet(null);
@@ -395,6 +421,20 @@ const MenuBuilder = ({ storeId, storeCategory, storeCategories }: MenuBuilderPro
       toast.error("Erro ao atualizar");
       return;
     }
+    // Controle de estoque: atualiza toggle e mínimo
+    const meta = formData.metadata as any;
+    try {
+      await supabase.rpc("stock_toggle_tracking" as any, {
+        _product_id: id,
+        _track: !!meta?.track_stock,
+      });
+      if (meta?.track_stock && meta?.min_stock !== undefined) {
+        await supabase.rpc("stock_set_min" as any, {
+          _product_id: id,
+          _min_quantity: Number(meta.min_stock) || 0,
+        });
+      }
+    } catch {}
     toast.success("Produto atualizado!");
     setProductSheet(null);
     invalidateProducts();

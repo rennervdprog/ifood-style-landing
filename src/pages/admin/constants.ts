@@ -122,6 +122,7 @@ export const dashboardGroups: DashboardGroup[] = [
     icon: UtensilsCrossed,
     subTabs: [
       { key: "menu", label: "Produtos", icon: UtensilsCrossed },
+      { key: "stock", label: "Estoque", icon: Package },
       { key: "addons", label: "Adicionais", icon: Plus },
       { key: "promotions", label: "Promoções", icon: Flame, hideOnPdvOnly: true },
       { key: "bordas", label: "Pizzaria/Pastel", icon: CircleDot, pizzaOnly: true },

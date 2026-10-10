@@ -161,12 +161,25 @@ export const PdvHistorico = ({
           )}
 
           <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar -mx-3 px-3 pb-0.5">
-            <Kpi label="Vendas" value={String(kpis.count)} />
-            <Kpi label="Total" value={formatBRL(kpis.total)} tone="emerald" />
-            <Kpi label="Ticket" value={formatBRL(kpis.avg)} />
-            <Kpi label="Dinheiro" value={formatBRL(kpis.cash)} />
-            {kpis.sangria > 0 && <Kpi label="Sangria" value={`−${formatBRL(kpis.sangria)}`} tone="red" />}
-            {kpis.suprimento > 0 && <Kpi label="Supr." value={`+${formatBRL(kpis.suprimento)}`} tone="blue" />}
+            {isLoading ? (
+              <>
+                {[0, 1, 2, 3].map(i => (
+                  <div key={i} className="shrink-0 bg-card border border-border/50 rounded-xl px-2.5 py-1.5 min-w-[74px] animate-pulse">
+                    <div className="h-2 w-10 rounded bg-muted/60" />
+                    <div className="h-3.5 w-14 rounded bg-muted/60 mt-1.5" />
+                  </div>
+                ))}
+              </>
+            ) : (
+              <>
+                <Kpi label="Vendas" value={String(kpis.count)} />
+                <Kpi label="Total" value={formatBRL(kpis.total)} tone="emerald" />
+                <Kpi label="Ticket" value={formatBRL(kpis.avg)} />
+                <Kpi label="Dinheiro" value={formatBRL(kpis.cash)} />
+                {kpis.sangria > 0 && <Kpi label="Sangria" value={`−${formatBRL(kpis.sangria)}`} tone="red" />}
+                {kpis.suprimento > 0 && <Kpi label="Supr." value={`+${formatBRL(kpis.suprimento)}`} tone="blue" />}
+              </>
+            )}
           </div>
         </div>
 
