@@ -840,9 +840,21 @@ const MenuBuilder = ({ storeId, storeCategory, storeCategories }: MenuBuilderPro
     setProductSheet({ mode: "create", sectionId: null });
   };
 
-  const openEdit = (product: any) => {
+  const openEdit = async (product: any) => {
     const sectionName =
       product.section_id ? (sections || []).find((s: any) => s.id === product.section_id)?.name || null : null;
+
+    // Busca o estoque REAL atual (não o valor antigo do metadata)
+    let realStock: any = null;
+    try {
+      const { data } = await supabase
+        .from("product_stock")
+        .select("quantity, min_quantity, track_stock")
+        .eq("product_id", product.id)
+        .single();
+      realStock = data;
+    } catch {}
+
     setProductSheet({
       mode: "edit",
       id: product.id,
@@ -854,6 +866,10 @@ const MenuBuilder = ({ storeId, storeCategory, storeCategories }: MenuBuilderPro
         image_url: product.image_url || "",
         metadata: {
           ...((product as any).metadata || {}),
+          // Usa o estoque real, não o valor desatualizado do metadata
+          track_stock: realStock?.track_stock ?? (product as any).metadata?.track_stock ?? false,
+          current_stock: realStock ? Number(realStock.quantity) : undefined,
+          min_stock: realStock ? Number(realStock.min_quantity) : (product as any).metadata?.min_stock,
           ...((product as any).sold_by_weight
             ? {
                 sold_by_weight: true,

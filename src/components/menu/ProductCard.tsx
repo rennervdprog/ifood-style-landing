@@ -329,21 +329,35 @@ export const ProductFormInline = ({ initial, onSave, onCancel, storeCategory, st
           </button>
         </div>
         {!!(form.metadata as any)?.track_stock && (
-          <div className="grid grid-cols-2 gap-2 pt-1">
-            <div>
-              <label className="text-xs font-medium">Quantas tem agora?</label>
-              <input
-                type="number"
-                min="0"
-                value={(form.metadata as any)?.initial_stock || ""}
-                onChange={(e) => setForm((p) => ({
-                  ...p,
-                  metadata: { ...(p.metadata || {}), initial_stock: e.target.value }
-                }))}
-                placeholder="Ex: 50"
-                className="w-full bg-background px-3 py-2.5 rounded-lg text-base border border-border focus:border-primary focus:outline-none"
-              />
-            </div>
+          <div className="space-y-2 pt-1">
+            {(form.metadata as any)?.current_stock !== undefined ? (
+              /* Modo edição: mostra estoque atual (somente leitura) */
+              <div className="bg-background rounded-lg p-3 border">
+                <p className="text-xs text-muted-foreground">Estoque atual</p>
+                <p className="text-2xl font-bold">
+                  {(form.metadata as any).current_stock} <span className="text-sm font-normal">unidades</span>
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Para ajustar, use a aba <strong>Estoque</strong> no menu Cardápio
+                </p>
+              </div>
+            ) : (
+              /* Modo criação: permite definir estoque inicial */
+              <div>
+                <label className="text-xs font-medium">Quantas tem agora?</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={(form.metadata as any)?.initial_stock || ""}
+                  onChange={(e) => setForm((p) => ({
+                    ...p,
+                    metadata: { ...(p.metadata || {}), initial_stock: e.target.value }
+                  }))}
+                  placeholder="Ex: 50"
+                  className="w-full bg-background px-3 py-2.5 rounded-lg text-base border border-border focus:border-primary focus:outline-none"
+                />
+              </div>
+            )}
             <div>
               <label className="text-xs font-medium">Avisar quando chegar em</label>
               <input
@@ -357,6 +371,9 @@ export const ProductFormInline = ({ initial, onSave, onCancel, storeCategory, st
                 placeholder="Ex: 10"
                 className="w-full bg-background px-3 py-2.5 rounded-lg text-base border border-border focus:border-primary focus:outline-none"
               />
+              <p className="text-xs text-muted-foreground mt-1">
+                Vamos avisar quando faltar pouco
+              </p>
             </div>
           </div>
         )}
