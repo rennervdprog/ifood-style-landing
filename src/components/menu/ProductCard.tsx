@@ -308,10 +308,13 @@ export const ProductFormInline = ({ initial, onSave, onCancel, storeCategory, st
 
       {/* Vender por peso agora é exclusivo do PDV — criar pela tela do PDV (botão "Novo produto por peso"). */}
 
-      {/* Controle de estoque */}
-      <div className="border border-border rounded-lg p-3 space-y-3">
+      {/* Controle de estoque - simples */}
+      <div className="bg-muted/50 rounded-lg p-3 space-y-2">
         <div className="flex items-center justify-between">
-          <label className="text-xs font-bold text-foreground/70">Controlar estoque</label>
+          <div>
+            <p className="text-sm font-bold">Controlar estoque?</p>
+            <p className="text-xs text-muted-foreground">Baixa sozinho a cada venda</p>
+          </div>
           <button
             type="button"
             role="switch"
@@ -320,15 +323,15 @@ export const ProductFormInline = ({ initial, onSave, onCancel, storeCategory, st
               ...p,
               metadata: { ...(p.metadata || {}), track_stock: !(p.metadata as any)?.track_stock }
             }))}
-            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${!!(form.metadata as any)?.track_stock ? "bg-primary" : "bg-muted"}`}
+            className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors shrink-0 ${!!(form.metadata as any)?.track_stock ? "bg-green-600" : "bg-gray-300"}`}
           >
-            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${!!(form.metadata as any)?.track_stock ? "translate-x-6" : "translate-x-1"}`} />
+            <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${!!(form.metadata as any)?.track_stock ? "translate-x-6" : "translate-x-1"}`} />
           </button>
         </div>
         {!!(form.metadata as any)?.track_stock && (
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-2 pt-1">
             <div>
-              <label className="text-xs text-muted-foreground">Estoque inicial</label>
+              <label className="text-xs font-medium">Quantas tem agora?</label>
               <input
                 type="number"
                 min="0"
@@ -337,12 +340,12 @@ export const ProductFormInline = ({ initial, onSave, onCancel, storeCategory, st
                   ...p,
                   metadata: { ...(p.metadata || {}), initial_stock: e.target.value }
                 }))}
-                placeholder="0"
-                className="w-full bg-background text-foreground px-3 py-2 rounded-lg text-sm border border-border focus:border-primary focus:outline-none"
+                placeholder="Ex: 50"
+                className="w-full bg-background px-3 py-2.5 rounded-lg text-base border border-border focus:border-primary focus:outline-none"
               />
             </div>
             <div>
-              <label className="text-xs text-muted-foreground">Estoque mínimo</label>
+              <label className="text-xs font-medium">Avisar quando chegar em</label>
               <input
                 type="number"
                 min="0"
@@ -351,15 +354,12 @@ export const ProductFormInline = ({ initial, onSave, onCancel, storeCategory, st
                   ...p,
                   metadata: { ...(p.metadata || {}), min_stock: e.target.value }
                 }))}
-                placeholder="0"
-                className="w-full bg-background text-foreground px-3 py-2 rounded-lg text-sm border border-border focus:border-primary focus:outline-none"
+                placeholder="Ex: 10"
+                className="w-full bg-background px-3 py-2.5 rounded-lg text-base border border-border focus:border-primary focus:outline-none"
               />
             </div>
           </div>
         )}
-        <p className="text-[10px] text-muted-foreground">
-          Com o controle ativo, o estoque baixa automaticamente a cada venda.
-        </p>
       </div>
 
       <div className="flex gap-2 pt-1">
