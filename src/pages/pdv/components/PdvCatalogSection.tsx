@@ -1,5 +1,6 @@
 import { Search, Plus, Minus, Layers, Loader2, X, Hash } from "lucide-react";
 import { formatBRL } from "@/lib/utils";
+import { toast } from "sonner";
 import { useState, type RefObject, type ReactNode } from "react";
 import type { Product, MenuSection } from "@/pages/pdv/types";
 
@@ -23,12 +24,14 @@ interface Props {
   hideSectionTabs?: boolean;
   /** Lista bruta de produtos, pra lookup por pdv_short_code. */
   allProducts?: Product[];
+  /** Mapa de estoque: product_id -> {quantity, min_quantity, track_stock} */
+  stockMap?: Map<string, any>;
 }
 
 export const PdvCatalogSection = ({
   search, setSearch, sections, activeSection, setActiveSection,
   grouped, prodLoading, getQty, addItem, decItem, searchInputRef, topSlot,
-  scrollTopSlot, hideSectionTabs, allProducts,
+  scrollTopSlot, hideSectionTabs, allProducts, stockMap,
 }: Props) => {
   const [code, setCode] = useState("");
   const submitCode = () => {
@@ -115,10 +118,21 @@ export const PdvCatalogSection = ({
             <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-1.5">
               {items.map((product) => {
                 const qty = getQty(product.id);
+                const stock = stockMap?.get(product.id);
+                const hasStockControl = stock?.track_stock === true;
+                const stockQty = hasStockControl ? Number(stock.quantity) : null;
+                const isOutOfStock = hasStockControl && stockQty !== null && stockQty <= 0;
+                const isLowStock = hasStockControl && stockQty !== null && stockQty > 0 && stockQty <= Number(stock.min_quantity);
                 return (
                   <div key={product.id}
-                    className={`flex items-center gap-2.5 p-2.5 rounded-xl border transition-all cursor-pointer ${qty > 0 ? "bg-primary/5 border-primary/25 shadow-sm" : "bg-card border-border/60 hover:bg-muted/20"}`}
-                    onClick={() => addItem(product)}>
+                    className={`flex items-center gap-2.5 p-2.5 rounded-xl border transition-all ${isOutOfStock ? "opacity-50 bg-muted/30 border-border/40 cursor-not-allowed" : `cursor-pointer ${qty > 0 ? "bg-primary/5 border-primary/25 shadow-sm" : "bg-card border-border/60 hover:bg-muted/20"}`}`}
+                    onClick={() => {
+                      if (isOutOfStock) {
+                        toast.error(`${product.name} está esgotado`);
+                        return;
+                      }
+                      addItem(product);
+                    }}>
                     {product.image_url ? (
                       <img src={product.image_url} alt={product.name} className="w-11 h-11 rounded-lg object-cover shrink-0 border border-border/30" />
                     ) : (
@@ -136,6 +150,18 @@ export const PdvCatalogSection = ({
                         <p className="text-sm font-semibold text-foreground leading-tight truncate">{product.name}</p>
                       </div>
                       <p className={`text-sm font-black mt-0.5 pdv-mono ${qty > 0 ? "text-primary" : "text-muted-foreground"}`}>{formatBRL(Number(product.price))}</p>
+                      {/* Badge de estoque */}
+                      {hasStockControl && (
+                        <div className="mt-1">
+                          {isOutOfStock ? (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-600 text-white">ESGOTADO</span>
+                          ) : isLowStock ? (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-orange-500 text-white">Só {stockQty} un</span>
+                          ) : (
+                            <span className="text-[10px] text-muted-foreground">{stockQty} un</span>
+                          )}
+                        </div>
+                      )}
                     </div>
                     <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
                       {qty > 0 && (
