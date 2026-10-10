@@ -205,7 +205,7 @@ const PdvPage = () => {
     subtotal, totalItems, discountAmount, finalTotal, cashVal, troco, trocoNegativo,
     getQty,
     openProduct, handleModalAdd, addScannedProduct, decItem, removeItem,
-    clearSale: clearSaleCart,
+    clearSale: clearSaleCart, restoreCart,
   } = usePdvCart();
 
   // Fix v1.20.20 — em mobile, ao remover o último item do carrinho (em modo
@@ -1385,7 +1385,7 @@ const PdvPage = () => {
                   selectedTable={selectedTable} setSelectedTable={setSelectedTable}
                   selectedTabId={selectedTabId} setSelectedTabId={setSelectedTabId}
                   onSendToTab={handleSendToTab}
-                  totalItems={totalItems} clearSale={clearSale}
+                  totalItems={totalItems} clearSale={clearSale} restoreCart={restoreCart}
                   subtotal={subtotal} discountAmount={discountAmount} finalTotal={finalTotal}
                   showDiscount={showDiscount} setShowDiscount={setShowDiscount}
                   discountType={discountType} setDiscountType={setDiscountType}
@@ -1496,7 +1496,7 @@ const PdvPage = () => {
                       selectedTable={selectedTable} setSelectedTable={setSelectedTable}
                       selectedTabId={selectedTabId} setSelectedTabId={setSelectedTabId}
                       onSendToTab={handleSendToTab}
-                      totalItems={totalItems} clearSale={clearSale}
+                      totalItems={totalItems} clearSale={clearSale} restoreCart={restoreCart}
                       subtotal={subtotal} discountAmount={discountAmount} finalTotal={finalTotal}
                       showDiscount={showDiscount} setShowDiscount={setShowDiscount}
                       discountType={discountType} setDiscountType={setDiscountType}
