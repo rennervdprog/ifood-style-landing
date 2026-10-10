@@ -106,6 +106,26 @@ export function usePdvCheckout() {
         return;
       }
 
+      // ── Validação de estoque (bloqueia venda sem estoque) ──
+      const stockCheckItems = cart.filter(
+        (i: any) => !(i.metadata as any)?.apparel_variant_id && i.product_id
+      );
+      if (stockCheckItems.length > 0) {
+        const productIds = stockCheckItems.map((i: any) => i.product_id);
+        const { data: stocks } = await supabase
+          .from("product_stock")
+          .select("product_id, quantity, track_stock")
+          .in("product_id", productIds);
+        const stockMap = new Map((stocks || []).map((s: any) => [s.product_id, s]));
+        for (const item of stockCheckItems) {
+          const s = stockMap.get(item.product_id);
+          if (s && s.track_stock && Number(s.quantity) < Math.abs(item.quantity)) {
+            toast.error(`Estoque insuficiente: ${item.name} (tem ${s.quantity})`);
+            return;
+          }
+        }
+      }
+
       // ── Validação de pagamento ──
       if (splitMode) {
         const splitTotal = sumMoney(splitPayments.map((p) => p.amount));
