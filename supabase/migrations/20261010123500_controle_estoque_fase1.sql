@@ -1,4 +1,4 @@
--- Controle de estoque: tabelas product_stock e stock_movements + RPCs + RLS
+-- Controle de estoque: tabelas product_stock e product_stock_movements + RPCs + RLS
 -- Decisões (2026-10-10, Renner):
 --  1. Bloquear venda sem estoque no PDV; só avisar no delivery
 --  2. Vitrine mostra "Esgotado" (não oculta)
@@ -22,7 +22,7 @@ CREATE INDEX IF NOT EXISTS idx_product_stock_low
   ON public.product_stock(store_id) WHERE track_stock = true;
 
 -- ─── Tabela: histórico de movimentações ──────────────────────────────────────
-CREATE TABLE IF NOT EXISTS public.stock_movements (
+CREATE TABLE IF NOT EXISTS public.product_stock_movements (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   product_id uuid NOT NULL REFERENCES public.products(id) ON DELETE CASCADE,
   store_id uuid NOT NULL REFERENCES public.stores(id) ON DELETE CASCADE,
@@ -35,12 +35,12 @@ CREATE TABLE IF NOT EXISTS public.stock_movements (
   created_at timestamptz NOT NULL DEFAULT now()
 );
 
-CREATE INDEX IF NOT EXISTS idx_stock_movements_product ON public.stock_movements(product_id, created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_stock_movements_store ON public.stock_movements(store_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_product_stock_movements_product ON public.product_stock_movements(product_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_product_stock_movements_store ON public.product_stock_movements(store_id, created_at DESC);
 
 -- ─── RLS ────────────────────────────────────────────────────────────────────
 ALTER TABLE public.product_stock ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.stock_movements ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.product_stock_movements ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Owner manages product_stock" ON public.product_stock;
 CREATE POLICY "Owner manages product_stock"
@@ -52,14 +52,14 @@ CREATE POLICY "Owner manages product_stock"
     EXISTS (SELECT 1 FROM public.stores s WHERE s.id = product_stock.store_id AND s.owner_id = auth.uid())
   );
 
-DROP POLICY IF EXISTS "Owner manages stock_movements" ON public.stock_movements;
-CREATE POLICY "Owner manages stock_movements"
-  ON public.stock_movements FOR ALL TO authenticated
+DROP POLICY IF EXISTS "Owner manages product_stock_movements" ON public.product_stock_movements;
+CREATE POLICY "Owner manages product_stock_movements"
+  ON public.product_stock_movements FOR ALL TO authenticated
   USING (
-    EXISTS (SELECT 1 FROM public.stores s WHERE s.id = stock_movements.store_id AND s.owner_id = auth.uid())
+    EXISTS (SELECT 1 FROM public.stores s WHERE s.id = product_stock_movements.store_id AND s.owner_id = auth.uid())
   )
   WITH CHECK (
-    EXISTS (SELECT 1 FROM public.stores s WHERE s.id = stock_movements.store_id AND s.owner_id = auth.uid())
+    EXISTS (SELECT 1 FROM public.stores s WHERE s.id = product_stock_movements.store_id AND s.owner_id = auth.uid())
   );
 
 -- ─── RPC: ajuste manual de estoque ──────────────────────────────────────────
@@ -108,7 +108,7 @@ BEGIN
    WHERE product_id = _product_id
   RETURNING * INTO v_row;
 
-  INSERT INTO public.stock_movements
+  INSERT INTO public.product_stock_movements
     (product_id, store_id, type, quantity, balance_after, reason, created_by)
   VALUES
     (_product_id, v_store_id, _type, _quantity, v_new_qty, _reason, auth.uid());
@@ -143,7 +143,7 @@ BEGIN
      SET quantity = v_new_qty, updated_at = now()
    WHERE product_id = _product_id;
 
-  INSERT INTO public.stock_movements
+  INSERT INTO public.product_stock_movements
     (product_id, store_id, type, quantity, balance_after, order_id, created_by)
   VALUES
     (_product_id, v_row.store_id, 'sale', _quantity, v_new_qty, _order_id, auth.uid());
