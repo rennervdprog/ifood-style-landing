@@ -203,6 +203,11 @@ export function usePdvCart() {
     setSplitPayments([]);
   }, []);
 
+  /** Restaura o carrinho (para desfazer "limpar venda"). */
+  const restoreCart = useCallback((items: CartItem[]) => {
+    setCart(items);
+  }, []);
+
   return {
     // estado
     cart,
@@ -247,5 +252,6 @@ export function usePdvCart() {
     decItem,
     removeItem,
     clearSale,
+    restoreCart,
   };
 }
