@@ -212,9 +212,8 @@ export default function StockTab({ storeId }: Props) {
     if (search && !item.product_name.toLowerCase().includes(search.toLowerCase()))
       return false;
     if (showOnlyLow) {
-      // Mostra produtos com controle ativo E (zerados OU abaixo do mínimo)
-      if (!item.track_stock) return false;
-      return item.quantity <= 0 || item.quantity <= item.min_quantity;
+      // Usa a mesma lógica do RPC: track ativo E quantidade <= mínimo
+      return item.track_stock && Number(item.quantity) <= Number(item.min_quantity);
     }
     return true;
   });
