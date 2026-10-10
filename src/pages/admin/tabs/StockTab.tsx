@@ -211,8 +211,11 @@ export default function StockTab({ storeId }: Props) {
   const filtered = items.filter((item) => {
     if (search && !item.product_name.toLowerCase().includes(search.toLowerCase()))
       return false;
-    if (showOnlyLow)
-      return item.track_stock && item.quantity <= item.min_quantity;
+    if (showOnlyLow) {
+      // Mostra produtos com controle ativo E (zerados OU abaixo do mínimo)
+      if (!item.track_stock) return false;
+      return item.quantity <= 0 || item.quantity <= item.min_quantity;
+    }
     return true;
   });
 
@@ -221,42 +224,58 @@ export default function StockTab({ storeId }: Props) {
 
   return (
     <div className="space-y-4 p-4 max-w-3xl mx-auto">
-      {/* Como funciona */}
+      {/* Como funciona - design claro */}
       {trackedItems.length === 0 && (
-        <Card className="border-blue-600 border-2 bg-blue-50 dark:bg-blue-950">
+        <Card className="bg-white">
           <CardContent className="pt-4">
             <div className="flex gap-3">
-              <Info className="h-6 w-6 text-blue-700 shrink-0 mt-0.5" />
-              <div className="text-sm">
-                <p className="font-bold text-blue-900 dark:text-blue-100 text-base mb-2">
-                  Como funciona o controle de estoque
+              <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
+                <Info className="h-5 w-5 text-blue-600" />
+              </div>
+              <div>
+                <p className="font-bold text-base mb-2">
+                  Como funciona
                 </p>
-                <ol className="list-decimal list-inside space-y-1 text-blue-900 dark:text-blue-200 font-medium">
-                  <li>Clique em <strong>"Ativar controle"</strong> no produto</li>
-                  <li>Digite quantas unidades você tem agora</li>
-                  <li>Pronto! O sistema baixa sozinho a cada venda</li>
-                </ol>
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-start gap-2">
+                    <span className="w-6 h-6 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center shrink-0">1</span>
+                    <span>Clique em <strong>"Ativar"</strong> no produto abaixo</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="w-6 h-6 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center shrink-0">2</span>
+                    <span>Digite <strong>quantas unidades</strong> você tem</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="w-6 h-6 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center shrink-0">3</span>
+                    <span>Pronto! <strong>Baixa sozinho</strong> a cada venda</span>
+                  </div>
+                </div>
               </div>
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Alerta estoque baixo */}
+      {/* Alerta estoque baixo - design claro */}
       {lowStock.length > 0 && (
-        <Card className="border-orange-500 border-2 bg-orange-50 dark:bg-orange-950">
+        <Card className="bg-white border-l-4 border-l-orange-500">
           <CardContent className="pt-4">
-            <div className="flex items-center gap-2">
-              <AlertTriangle className="h-6 w-6 text-orange-600" />
-              <span className="font-bold text-orange-800 dark:text-orange-200 text-base">
-                ⚠️ {lowStock.length} produto{lowStock.length > 1 ? "s" : ""} precisando repor
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center">
+                <AlertTriangle className="h-5 w-5 text-orange-600" />
+              </div>
+              <span className="font-bold text-base">
+                {lowStock.length} produto{lowStock.length > 1 ? "s" : ""} precisando repor
               </span>
             </div>
-            <div className="mt-3 flex flex-wrap gap-2">
+            <div className="space-y-2">
               {lowStock.map((p: any) => (
-                <Badge key={p.product_id} className="bg-orange-600 text-white font-bold text-sm px-3 py-1">
-                  {p.product_name}: só {p.quantity} un
-                </Badge>
+                <div key={p.product_id} className="flex items-center justify-between bg-orange-50 rounded-lg px-3 py-2">
+                  <span className="font-medium text-sm">{p.product_name}</span>
+                  <span className={`font-bold text-sm px-2 py-1 rounded ${Number(p.quantity) <= 0 ? "bg-red-600 text-white" : "bg-orange-500 text-white"}`}>
+                    {Number(p.quantity) <= 0 ? "ESGOTADO" : `só ${p.quantity} un`}
+                  </span>
+                </div>
               ))}
             </div>
           </CardContent>
