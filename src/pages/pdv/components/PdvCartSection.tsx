@@ -21,6 +21,7 @@ interface Props {
   onSendToTab?: () => void;
   totalItems: number;
   clearSale: () => void;
+  restoreCart?: (items: CartItem[]) => void;
   subtotal: number;
   discountAmount: number;
   finalTotal: number;
@@ -52,7 +53,7 @@ interface Props {
 export const PdvCartSection = ({
   cart, storeId, tableId, setTableId,
   selectedTable, setSelectedTable, selectedTabId, setSelectedTabId, onSendToTab,
-  totalItems, clearSale,
+  totalItems, clearSale, restoreCart,
   subtotal, discountAmount, finalTotal,
   showDiscount, setShowDiscount, discountType, setDiscountType,
   discountInput, setDiscountInput,
@@ -78,7 +79,17 @@ export const PdvCartSection = ({
         <div className="flex items-center gap-1.5">
           <span className="text-[10px] text-muted-foreground">{totalItems} itens</span>
           {cart.length > 0 && (
-            <button onClick={() => { if (window.confirm("Limpar toda a venda atual?")) clearSale(); }} aria-label="Limpar venda" className="p-1 rounded-lg hover:bg-muted transition-colors">
+            <button onClick={() => {
+              const backup = [...cart];
+              clearSale();
+              toast.warning("Venda limpa", {
+                action: restoreCart ? {
+                  label: "Desfazer",
+                  onClick: () => restoreCart(backup),
+                } : undefined,
+                duration: 5000,
+              });
+            }} aria-label="Limpar venda" title="Limpar venda (ESC)" className="p-1 rounded-lg hover:bg-muted transition-colors">
               <RotateCcw className="h-3.5 w-3.5 text-muted-foreground" />
             </button>
           )}
@@ -127,9 +138,10 @@ export const PdvCartSection = ({
               )}
             </div>
             <p className="text-xs font-black text-foreground shrink-0 pdv-mono">{formatBRL(item.price * item.quantity)}</p>
-            <button onClick={() => removeItem(idx)} className="p-0.5 text-muted-foreground hover:text-destructive transition-colors opacity-100 md:opacity-0 md:group-hover:opacity-100">
+            <button onClick={() => removeItem(idx)} aria-label="Remover item"
+              className="p-1.5 -m-1 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors shrink-0">
             {/* removeItem(idx) — não idx do produto (Bug P0 report) */}
-              <X className="h-3.5 w-3.5" />
+              <X className="h-4 w-4" />
             </button>
           </div>
         </div>
@@ -141,11 +153,13 @@ export const PdvCartSection = ({
       {/* Desconto */}
       <div className="px-3 pt-2.5">
         <button onClick={() => setShowDiscount(!showDiscount)}
+          title="Desconto (F3)"
           className="flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-foreground transition-colors w-full">
           <Tag className="h-3 w-3" />
           {discountAmount > 0
             ? <span className="text-emerald-500 font-bold">Desconto: −{formatBRL(discountAmount)}</span>
             : <span>Desconto</span>}
+          <kbd className="ml-1 px-1.5 py-0.5 rounded bg-muted text-[9px] font-black text-muted-foreground">F3</kbd>
           <ChevronDown className={`h-3 w-3 ml-auto transition-transform ${showDiscount ? "rotate-180" : ""}`} />
         </button>
         {showDiscount && (
@@ -193,6 +207,7 @@ export const PdvCartSection = ({
               setPaymentMethod("");
               setCashReceived("");
             }}
+            title="Dividir pagamento (F4)"
             className={`flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-lg border transition-colors ${
               splitMode
                 ? "bg-primary text-primary-foreground border-primary"
@@ -201,6 +216,7 @@ export const PdvCartSection = ({
           >
             <Split className="h-3 w-3" />
             {splitMode ? "Pagamento único" : "Dividir pagamento"}
+            <kbd className="px-1 rounded bg-black/10 text-[8px] font-black">F4</kbd>
           </button>
         </div>
       )}
@@ -314,10 +330,11 @@ export const PdvCartSection = ({
           return (
             <button onClick={onFinalize}
               disabled={!canFinalize}
+              title="Finalizar venda (F8)"
               className="w-full h-12 bg-primary text-primary-foreground font-black text-sm rounded-2xl flex items-center justify-center gap-2 active:scale-[0.98] transition-all shadow-lg shadow-primary/25 disabled:opacity-50">
               {loading ? <><Loader2 className="h-4 w-4 animate-spin" /> Registrando...</>
                 : orderDone ? <><CheckCircle2 className="h-4 w-4" /> Venda registrada!</>
-                : <>Finalizar {formatBRL(finalTotal)} <ChevronRight className="h-4 w-4" /></>}
+                : <>Finalizar {formatBRL(finalTotal)} <ChevronRight className="h-4 w-4" /><kbd className="ml-1 px-1.5 py-0.5 rounded bg-black/20 text-[10px] font-black">F8</kbd></>}
             </button>
           );
         })()}

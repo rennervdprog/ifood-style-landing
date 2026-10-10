@@ -28,6 +28,83 @@ interface Props {
   stockMap?: Map<string, any>;
 }
 
+interface ProductCardProps {
+  product: Product;
+  qty: number;
+  stock?: any;
+  addItem: (p: Product) => void;
+  decItem: (id: string) => void;
+}
+
+/** Card individual do produto com feedback visual ao adicionar. */
+const PdvProductCard = ({ product, qty, stock, addItem, decItem }: ProductCardProps) => {
+  const [justAdded, setJustAdded] = useState(false);
+  const hasStockControl = stock?.track_stock === true;
+  const stockQty = hasStockControl ? Number(stock.quantity) : null;
+  const isOutOfStock = hasStockControl && stockQty !== null && stockQty <= 0;
+  const isLowStock = hasStockControl && stockQty !== null && stockQty > 0 && stockQty <= Number(stock.min_quantity);
+
+  const handleAdd = () => {
+    if (isOutOfStock) {
+      toast.error(`${product.name} está esgotado`);
+      return;
+    }
+    addItem(product);
+    // Feedback visual: flash verde + scale
+    setJustAdded(true);
+    setTimeout(() => setJustAdded(false), 350);
+  };
+
+  return (
+    <div
+      className={`flex items-center gap-2.5 p-2.5 rounded-xl border transition-all duration-200 ${isOutOfStock ? "opacity-50 bg-muted/30 border-border/40 cursor-not-allowed" : `cursor-pointer ${justAdded ? "bg-emerald-500/25 border-emerald-500/60 scale-[1.03] shadow-md" : qty > 0 ? "bg-primary/5 border-primary/25 shadow-sm" : "bg-card border-border/60 hover:bg-muted/20 active:scale-[0.98]"}`}`}
+      onClick={handleAdd}>
+      {product.image_url ? (
+        <img src={product.image_url} alt={product.name} className="w-11 h-11 rounded-lg object-cover shrink-0 border border-border/30" />
+      ) : (
+        <div className="w-11 h-11 rounded-lg bg-muted/60 flex items-center justify-center shrink-0 border border-border/30">
+          <span className="text-base font-bold text-muted-foreground">{product.name[0]}</span>
+        </div>
+      )}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-1.5">
+          {product.pdv_short_code && (
+            <span className="pdv-mono text-[10px] font-black px-1.5 py-0.5 rounded bg-muted text-muted-foreground shrink-0">
+              {product.pdv_short_code}
+            </span>
+          )}
+          <p className="text-sm font-semibold text-foreground leading-tight truncate">{product.name}</p>
+        </div>
+        <p className={`text-sm font-black mt-0.5 pdv-mono ${qty > 0 ? "text-primary" : "text-muted-foreground"}`}>{formatBRL(Number(product.price))}</p>
+        {hasStockControl && (
+          <div className="mt-1">
+            {isOutOfStock ? (
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-600 text-white">ESGOTADO</span>
+            ) : isLowStock ? (
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-orange-500 text-white">Só {stockQty} un</span>
+            ) : (
+              <span className="text-[10px] text-muted-foreground">{stockQty} un</span>
+            )}
+          </div>
+        )}
+      </div>
+      <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+        {qty > 0 && (
+          <>
+            <button onClick={() => decItem(product.id)} className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center active:scale-90">
+              <Minus className="h-4 w-4" />
+            </button>
+            <span className="w-6 text-center text-sm font-black">{qty}</span>
+          </>
+        )}
+        <button onClick={handleAdd} className={`w-8 h-8 rounded-lg flex items-center justify-center active:scale-90 shadow-sm ${qty > 0 ? "bg-primary shadow-primary/30" : "bg-primary/80 hover:bg-primary shadow-primary/20"}`}>
+          <Plus className="h-4 w-4 text-primary-foreground" />
+        </button>
+      </div>
+    </div>
+  );
+};
+
 export const PdvCatalogSection = ({
   search, setSearch, sections, activeSection, setActiveSection,
   grouped, prodLoading, getQty, addItem, decItem, searchInputRef, topSlot,
@@ -116,69 +193,16 @@ export const PdvCatalogSection = ({
               </div>
             )}
             <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-1.5">
-              {items.map((product) => {
-                const qty = getQty(product.id);
-                const stock = stockMap?.get(product.id);
-                const hasStockControl = stock?.track_stock === true;
-                const stockQty = hasStockControl ? Number(stock.quantity) : null;
-                const isOutOfStock = hasStockControl && stockQty !== null && stockQty <= 0;
-                const isLowStock = hasStockControl && stockQty !== null && stockQty > 0 && stockQty <= Number(stock.min_quantity);
-                return (
-                  <div key={product.id}
-                    className={`flex items-center gap-2.5 p-2.5 rounded-xl border transition-all ${isOutOfStock ? "opacity-50 bg-muted/30 border-border/40 cursor-not-allowed" : `cursor-pointer ${qty > 0 ? "bg-primary/5 border-primary/25 shadow-sm" : "bg-card border-border/60 hover:bg-muted/20"}`}`}
-                    onClick={() => {
-                      if (isOutOfStock) {
-                        toast.error(`${product.name} está esgotado`);
-                        return;
-                      }
-                      addItem(product);
-                    }}>
-                    {product.image_url ? (
-                      <img src={product.image_url} alt={product.name} className="w-11 h-11 rounded-lg object-cover shrink-0 border border-border/30" />
-                    ) : (
-                      <div className="w-11 h-11 rounded-lg bg-muted/60 flex items-center justify-center shrink-0 border border-border/30">
-                        <span className="text-base font-bold text-muted-foreground">{product.name[0]}</span>
-                      </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5">
-                        {product.pdv_short_code && (
-                          <span className="pdv-mono text-[10px] font-black px-1.5 py-0.5 rounded bg-muted text-muted-foreground shrink-0">
-                            {product.pdv_short_code}
-                          </span>
-                        )}
-                        <p className="text-sm font-semibold text-foreground leading-tight truncate">{product.name}</p>
-                      </div>
-                      <p className={`text-sm font-black mt-0.5 pdv-mono ${qty > 0 ? "text-primary" : "text-muted-foreground"}`}>{formatBRL(Number(product.price))}</p>
-                      {/* Badge de estoque */}
-                      {hasStockControl && (
-                        <div className="mt-1">
-                          {isOutOfStock ? (
-                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-600 text-white">ESGOTADO</span>
-                          ) : isLowStock ? (
-                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-orange-500 text-white">Só {stockQty} un</span>
-                          ) : (
-                            <span className="text-[10px] text-muted-foreground">{stockQty} un</span>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
-                      {qty > 0 && (
-                        <>
-                          <button onClick={() => decItem(product.id)} className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center active:scale-90">
-                            <Minus className="h-4 w-4" />
-                          </button>
-                          <span className="w-6 text-center text-sm font-black">{qty}</span>
-                        </>
-                      )}
-                      <button onClick={() => addItem(product)} className={`w-8 h-8 rounded-lg flex items-center justify-center active:scale-90 shadow-sm ${qty > 0 ? "bg-primary shadow-primary/30" : "bg-primary/80 hover:bg-primary shadow-primary/20"}`}>
-                        <Plus className="h-4 w-4 text-primary-foreground" />
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
+              {items.map((product) => (
+                <PdvProductCard
+                  key={product.id}
+                  product={product}
+                  qty={getQty(product.id)}
+                  stock={stockMap?.get(product.id)}
+                  addItem={addItem}
+                  decItem={decItem}
+                />
+              ))}
             </div>
           </div>
         ))
