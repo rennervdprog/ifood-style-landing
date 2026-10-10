@@ -602,6 +602,26 @@ const PdvPage = () => {
           queryClient.invalidateQueries({ queryKey: ["apparel-variants", store?.id] });
         })();
       }
+      // Controle de estoque: decrementa estoque de produtos normais vendidos
+      const regularItems = cart.filter((i) => !(i.metadata as any)?.apparel_variant_id && i.product_id);
+      if (regularItems.length) {
+        (async () => {
+          for (const it of regularItems) {
+            try {
+              const { data: ok } = await supabase.rpc("stock_decrement_sale" as any, {
+                _product_id: it.product_id,
+                _quantity: Math.abs(it.quantity),
+                _order_id: orderId || null,
+              });
+              if (ok === false) {
+                toast.warning(`Estoque insuficiente: ${it.name}`);
+              }
+            } catch {}
+          }
+          queryClient.invalidateQueries({ queryKey: ["stock-list"] });
+          queryClient.invalidateQueries({ queryKey: ["low-stock"] });
+        })();
+      }
       // Fase 4.2 Boutique — CRM + vale-crédito
       if (isApparel && store?.id && orderId) {
         (async () => {

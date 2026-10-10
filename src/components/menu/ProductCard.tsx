@@ -308,6 +308,60 @@ export const ProductFormInline = ({ initial, onSave, onCancel, storeCategory, st
 
       {/* Vender por peso agora é exclusivo do PDV — criar pela tela do PDV (botão "Novo produto por peso"). */}
 
+      {/* Controle de estoque */}
+      <div className="border border-border rounded-lg p-3 space-y-3">
+        <div className="flex items-center justify-between">
+          <label className="text-xs font-bold text-foreground/70">Controlar estoque</label>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={!!(form.metadata as any)?.track_stock}
+            onClick={() => setForm((p) => ({
+              ...p,
+              metadata: { ...(p.metadata || {}), track_stock: !(p.metadata as any)?.track_stock }
+            }))}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${!!(form.metadata as any)?.track_stock ? "bg-primary" : "bg-muted"}`}
+          >
+            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${!!(form.metadata as any)?.track_stock ? "translate-x-6" : "translate-x-1"}`} />
+          </button>
+        </div>
+        {!!(form.metadata as any)?.track_stock && (
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="text-xs text-muted-foreground">Estoque inicial</label>
+              <input
+                type="number"
+                min="0"
+                value={(form.metadata as any)?.initial_stock || ""}
+                onChange={(e) => setForm((p) => ({
+                  ...p,
+                  metadata: { ...(p.metadata || {}), initial_stock: e.target.value }
+                }))}
+                placeholder="0"
+                className="w-full bg-background text-foreground px-3 py-2 rounded-lg text-sm border border-border focus:border-primary focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground">Estoque mínimo</label>
+              <input
+                type="number"
+                min="0"
+                value={(form.metadata as any)?.min_stock || ""}
+                onChange={(e) => setForm((p) => ({
+                  ...p,
+                  metadata: { ...(p.metadata || {}), min_stock: e.target.value }
+                }))}
+                placeholder="0"
+                className="w-full bg-background text-foreground px-3 py-2 rounded-lg text-sm border border-border focus:border-primary focus:outline-none"
+              />
+            </div>
+          </div>
+        )}
+        <p className="text-[10px] text-muted-foreground">
+          Com o controle ativo, o estoque baixa automaticamente a cada venda.
+        </p>
+      </div>
+
       <div className="flex gap-2 pt-1">
         <button type="button" onClick={() => onSave(form)} className="flex-1 bg-primary text-primary-foreground py-2.5 rounded-lg text-sm font-bold hover:bg-primary/90 transition-colors">
           Salvar Produto
