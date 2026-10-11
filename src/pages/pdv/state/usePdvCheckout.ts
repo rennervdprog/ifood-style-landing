@@ -323,6 +323,12 @@ export function usePdvCheckout() {
         queryClient.invalidateQueries({
           queryKey: ["pdv-movements", session.id],
         });
+        // Invalida estoque do catálogo para atualizar badges imediatamente
+        if (store?.id) {
+          queryClient.invalidateQueries({
+            queryKey: ["pdv-stock", store.id],
+          });
+        }
         onSuccess({ orderId });
         if (!offlineQueued) toast.success("✅ Venda finalizada!");
 
