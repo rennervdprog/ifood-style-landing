@@ -167,7 +167,7 @@ async function pontoFatoBuscar(
     });
     if (!r.ok) return null;
     const payload = await r.json();
-    const results = Array.isArray(payload) ? payload : payload?.resultados || payload?.data || [];
+    const results = Array.isArray(payload) ? payload : payload?.items || payload?.resultados || payload?.data || [];
     const hit = Array.isArray(results) ? results[0] : null;
     if (!hit) return null;
     const lat = Number(hit.lat ?? hit.latitude);
