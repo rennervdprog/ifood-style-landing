@@ -66,6 +66,7 @@ const DebugLojaTab = lazy(() => import("./super-admin/tabs/DebugLojaTab"));
 const PlatformWhatsAppTab = lazy(() => import("./super-admin/tabs/PlatformWhatsAppTab"));
 const AddonsMrrTab = lazy(() => import("./super-admin/tabs/AddonsMrrTab"));
 const RevendedoresTab = lazy(() => import("./super-admin/tabs/RevendedoresTab"));
+const ConsolidadoTab = lazy(() => import("./super-admin/tabs/ConsolidadoTab"));
 // Painéis financeiros profissionais (Fase 1)
 const FluxoCaixaPanel = lazy(() => import("@/components/finance/FluxoCaixaPanel"));
 const ConciliacaoAsaasPanel = lazy(() => import("@/components/finance/ConciliacaoAsaasPanel"));
@@ -169,7 +170,7 @@ const TAB_SUBTITLE: Record<string, (ctx: {
   whatsapp_plataforma: () => "WhatsApp oficial da plataforma (avisos automáticos)",
 };
 
- import { FinanceTab as FinanceTabFull, MetricCard } from "./admin/components/FinanceTab";
+ import { MetricCard } from "./admin/components/FinanceTab";
 
  const SuperAdminDashboardV2 = () => {
   const { user, loading: authLoading } = useAuth();
@@ -178,7 +179,6 @@ const TAB_SUBTITLE: Record<string, (ctx: {
   const [dateFilter, setDateFilter] = useState<DateFilter>("today");
   const [activeTab, setActiveTab] = useState<AdminTab>("dashboard");
   const [financeFilter, setFinanceFilter] = useState<"week" | "month">("week");
-  const [financeSubTab, setFinanceSubTab] = useState<"stores" | "drivers" | "subaccounts">("stores");
   const [selectedStore, setSelectedStore] = useState<string>("all");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showMoreSheet, setShowMoreSheet] = useState(false);
@@ -202,7 +202,7 @@ const TAB_SUBTITLE: Record<string, (ctx: {
   }, []);
   // Sub-seções dos grupos unificados
   type FinanceSection =
-    | "overview"
+    | "consolidado"
     | "fluxo"
     | "saques"
     | "areceber"
@@ -216,7 +216,7 @@ const TAB_SUBTITLE: Record<string, (ctx: {
     | "addons"
     | "revendedores"
     | "auditoria";
-  const [financeSection, setFinanceSection] = useState<FinanceSection>("overview");
+  const [financeSection, setFinanceSection] = useState<FinanceSection>("consolidado");
   type StoresSection = "lojas" | "cidades" | "entrega";
   const [storesSection, setStoresSection] = useState<StoresSection>("lojas");
   type AppPageSection = "page" | "links";
@@ -701,38 +701,6 @@ const TAB_SUBTITLE: Record<string, (ctx: {
     toast.success("Relatório copiado! Cole no WhatsApp.");
   };
 
-  const generateStoreWhatsApp = (entry: typeof storeSettlement[0]) => {
-    const period = financeFilter === "week" ? "Semana" : "Mês";
-    const storePlan = parentStorePlans?.find((p: any) => p.store_id === entry.storeId);
-    const isFixed = storePlan?.plan_type === "fixed";
-    const storeRate = Math.round(getStoreRate(entry.storeId) * 100);
-
-    let msg: string;
-    if (isFixed) {
-      msg = `💰 *Resumo ItaSuper (${period})*\n\nOlá *${entry.name}*!\n\n` +
-        `📋 Plano: ${planLabel(storePlan?.plan_type)} — ${formatBRL(Number(storePlan?.monthly_fee || 90))}/mês\n\n` +
-        `📦 Total de Pedidos: ${entry.orderCount}\n` +
-        `💵 Vendas Totais: ${formatBRL(entry.totalSales)}\n\n` +
-        `✅ Sem taxas por pedido. Toda receita é sua!\n` +
-        `📌 Assinatura mensal cobrada à parte.`;
-    } else {
-      const balanceText = entry.finalBalance >= 0
-        ? `✅ O ItaSuper deve transferir ${formatBRL(entry.finalBalance)} para você.`
-        : `⚠️ Valor a acertar com o ItaSuper: ${formatBRL(Math.abs(entry.finalBalance))}.`;
-      msg = `💰 *Fechamento ItaSuper (${period})*\n\nOlá *${entry.name}*!\n\n` +
-        `📋 Plano: ${planLabel(storePlan?.plan_type)}\n\n` +
-        `📦 Total de Pedidos: ${entry.orderCount}\n` +
-        `💵 Vendas Físicas (Dinheiro/Cartão): ${formatBRL(entry.physicalSales)}\n` +
-        `📱 Vendas App (Pix): ${formatBRL(entry.appSales)}\n` +
-        (entry.pdvSales > 0 ? `🖥️ Vendas PDV (Presencial): ${formatBRL(entry.pdvSales)}\n` : "") +
-        `🏷️ Comissão ${storeRate}% sobre Físicas: ${formatBRL(entry.commissionDue)}\n` +
-        `💸 Repasse Líquido (App - ${storeRate}%): ${formatBRL(entry.netTransfer)}\n\n` +
-        `---\n${balanceText}\n---`;
-    }
-    navigator.clipboard.writeText(msg);
-    toast.success(`Extrato de ${entry.name} copiado!`);
-  };
-
   const handleTabChange = (tab: AdminTab) => {
     setActiveTab(tab);
     setSidebarOpen(false);
@@ -1164,7 +1132,7 @@ const TAB_SUBTITLE: Record<string, (ctx: {
                   value={storesSection}
                   onChange={(v) => setStoresSection(v as StoresSection)}
                   items={[
-                    { key: "lojas", label: "Lojas", icon: Store },
+                    { key: "lojas", label: "Gestão", icon: Store },
                     { key: "cidades", label: "Cidades", icon: MapPin },
                     { key: "entrega", label: "Entrega", icon: Truck },
                   ]}
@@ -1294,45 +1262,77 @@ const TAB_SUBTITLE: Record<string, (ctx: {
              {activeTab === "financeiro" && (
                <div className="space-y-4">
                  <GatewaySelector />
-                 <SubTabsBar
-                   value={financeSection}
-                   onChange={(v) => setFinanceSection(v as FinanceSection)}
-                   items={[
-                     { key: "overview", label: "Visão Geral", icon: LayoutDashboard },
-                     { key: "areceber", label: "A Receber", icon: Wallet },
-                      { key: "mensalidades", label: "Mensalidades", icon: Crown },
-                     { key: "planos-lojas", label: "Planos (Lojas)", icon: Store },
-                     { key: "planos-templates", label: "Planos (Templates)", icon: FileText },
-                      { key: "addons", label: "Add-ons / MRR", icon: Puzzle },
-                      { key: "revendedores", label: "Revendedores", icon: Handshake },
-                     { key: "historico", label: "Histórico Pago", icon: CheckCircle2 },
-                     { key: "fluxo", label: "Fluxo de Caixa", icon: TrendingUp },
-                     { key: "saques", label: "Saques", icon: Wallet, badge: pendingWithdrawals.length },
-                     { key: "conciliacao", label: "Conciliação", icon: ShieldCheck },
-                     { key: "socios", label: "Sócios", icon: Handshake },
-                     { key: "test", label: "Lojas Teste", icon: FlaskConical },
-                     { key: "auditoria", label: "Auditoria Financeira", icon: FileText },
-                   ]}
-                 />
-                 {financeSection === "overview" && (
-                   <FinanceTabFull
-                     storeSettlement={storeSettlement}
-                     driverSettlement={driverSettlement}
-                     financeTotals={financeTotals}
-                     financeFilter={financeFilter}
-                     setFinanceFilter={setFinanceFilter}
-                     financeSubTab={financeSubTab}
-                     setFinanceSubTab={setFinanceSubTab}
-                     selectedStore={selectedStore}
-                     setSelectedStore={setSelectedStore}
-                     stores={stores || []}
-                     loading={financeLoading}
-                     generateStoreWhatsApp={generateStoreWhatsApp}
-                     storeBalances={storeBalances || []}
-                     queryClient={queryClient}
-                     withdrawalRequests={withdrawalRequests || []}
-                     parentStorePlans={parentStorePlans || []}
-                   />
+                 {/* Sub-abas do Financeiro organizadas em grupos visuais */}
+                 <div className="space-y-3">
+                   {[
+                     { group: "Consolidado", items: [
+                       { key: "consolidado", label: "Consolidado", icon: LayoutDashboard },
+                     ]},
+                     { group: "Receitas", items: [
+                       { key: "areceber", label: "A Receber", icon: Wallet },
+                       { key: "mensalidades", label: "Mensalidades", icon: Crown },
+                       { key: "addons", label: "Add-ons / MRR", icon: Puzzle },
+                       { key: "planos-lojas", label: "Planos (Lojas)", icon: Store },
+                       { key: "planos-templates", label: "Planos (Templates)", icon: FileText },
+                     ]},
+                     { group: "Pagamentos", items: [
+                       { key: "historico", label: "Histórico Pago", icon: CheckCircle2 },
+                       { key: "fluxo", label: "Fluxo de Caixa", icon: TrendingUp },
+                       { key: "conciliacao", label: "Conciliação", icon: ShieldCheck },
+                       { key: "saques", label: "Saques (legado)", icon: Wallet, badge: pendingWithdrawals.length },
+                     ]},
+                     { group: "Parceiros", items: [
+                       { key: "revendedores", label: "Revendedores", icon: Handshake },
+                       { key: "socios", label: "Sócios", icon: Handshake },
+                     ]},
+                     { group: "Sistema", items: [
+                       { key: "auditoria", label: "Auditoria Financeira", icon: FileText },
+                       { key: "test", label: "Lojas Teste", icon: FlaskConical },
+                     ]},
+                   ].map((g) => (
+                     <div key={g.group}>
+                       <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-1.5 px-1">
+                         {g.group}
+                       </p>
+                       <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-thin">
+                         {g.items.map((it) => {
+                           const Icon = it.icon;
+                           const isActive = financeSection === it.key;
+                           return (
+                             <button
+                               key={it.key}
+                               onClick={() => setFinanceSection(it.key as FinanceSection)}
+                               className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-colors ${
+                                 isActive
+                                   ? "bg-primary text-primary-foreground shadow-sm"
+                                   : "bg-muted text-muted-foreground hover:text-foreground hover:bg-muted/80"
+                               }`}
+                             >
+                               {Icon && <Icon className="h-3.5 w-3.5" />}
+                               <span>{it.label}</span>
+                               {!!it.badge && it.badge > 0 && (
+                                 <span className={`ml-1 text-[10px] font-black rounded-full px-1.5 py-0.5 ${isActive ? "bg-primary-foreground/20" : "bg-destructive text-destructive-foreground"}`}>
+                                   {it.badge}
+                                 </span>
+                               )}
+                             </button>
+                           );
+                         })}
+                       </div>
+                     </div>
+                   ))}
+                 </div>
+                 {financeSection === "consolidado" && (
+                   <Suspense fallback={<TabFallback />}>
+                     <ConsolidadoTab
+                       storeBalances={storeBalances || []}
+                       parentStorePlans={parentStorePlans || []}
+                       stores={stores || []}
+                       testStoreIds={testStoreIds}
+                       financeTotals={financeTotals}
+                       loading={financeLoading}
+                     />
+                   </Suspense>
                  )}
                  {financeSection === "saques" && (
                    <Suspense fallback={<TabFallback />}>
