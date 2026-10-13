@@ -283,7 +283,8 @@ export default function StoreSubscription({ storeId, storeName }: Props) {
                   Período grátis · {plan.trialDaysLeft} {plan.trialDaysLeft === 1 ? "dia restante" : "dias restantes"}
                 </p>
               </div>
-              <Progress value={((7 - plan.trialDaysLeft) / 7) * 100} className="h-1.5" />
+              {/* 4.10: trial real é de 60 dias (estava hardcoded 7) */}
+              <Progress value={Math.min(100, Math.max(0, ((60 - plan.trialDaysLeft) / 60) * 100))} className="h-1.5" />
             </div>
           )}
 

@@ -156,6 +156,11 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
     [period, customStart, customEnd]
   );
 
+  // 4.9: datas personalizadas invertidas (início > fim) — inputs type="date" usam yyyy-MM-dd,
+  // então a comparação lexicográfica equivale à cronológica.
+  const customDatesInverted =
+    period === "custom" && !!customStart && !!customEnd && customStart > customEnd;
+
   // Período anterior com a mesma duração (para comparativo). Sem sentido no drill-down de turno.
   const prevRange = useMemo(() => {
     const startMs = new Date(dateRange.start).getTime();
@@ -437,8 +442,22 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
     lines.push(`Vendas;${stats.count}`);
     lines.push(`Ticket médio;${stats.avgTicket.toFixed(2)}`);
     lines.push(`Descontos;${stats.totalDiscount.toFixed(2)}`);
+    lines.push(`Taxa de desconto;${stats.discountRate.toFixed(1)}%`);
     lines.push(`Comissão plataforma;${stats.totalCommission.toFixed(2)}`);
     lines.push("");
+    // 4.7: comparativo vs período anterior (só no modo período, onde prevData existe)
+    if (!isDrillDown && prevData) {
+      const varPct = (cur: number, prev: number) =>
+        prev > 0 ? `${(((cur - prev) / prev) * 100).toFixed(1)}%` : "—";
+      lines.push("COMPARATIVO (período anterior)");
+      lines.push(`Faturamento anterior;${prevData.total.toFixed(2)}`);
+      lines.push(`Variação faturamento;${varPct(stats.totalSales, prevData.total)}`);
+      lines.push(`Vendas anteriores;${prevData.count}`);
+      lines.push(`Variação vendas;${varPct(stats.count, prevData.count)}`);
+      lines.push(`Ticket médio anterior;${prevData.avg.toFixed(2)}`);
+      lines.push(`Variação ticket médio;${varPct(stats.avgTicket, prevData.avg)}`);
+      lines.push("");
+    }
     lines.push("PAGAMENTOS");
     lines.push("Método;Valor");
     Object.entries(stats.byPayment).forEach(([k, v]) => {
@@ -457,6 +476,29 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
       operatorStats.forEach((o, i) => {
         lines.push(`${i + 1};${o.name.replace(/;/g, ",")};${o.count};${o.total.toFixed(2)}`);
       });
+    }
+    // 4.7: seções que faltavam no CSV
+    if (dailyRevenue.length) {
+      lines.push("");
+      lines.push("FATURAMENTO POR DIA");
+      lines.push("Data;Faturamento");
+      dailyRevenue.forEach((d) => {
+        lines.push(`${d.label};${d.total.toFixed(2)}`);
+      });
+    }
+    const hoursSorted = Object.entries(stats.byHour)
+      .map(([h, c]) => ({ hour: Number(h), count: Number(c) }))
+      .sort((a, b) => a.hour - b.hour);
+    if (hoursSorted.length) {
+      lines.push("");
+      lines.push("HORÁRIO DE PICO");
+      lines.push("Hora;Vendas");
+      hoursSorted.forEach(({ hour, count }) => {
+        lines.push(`${String(hour).padStart(2, "0")}:00;${count}`);
+      });
+      if (stats.peakHour) {
+        lines.push(`Pico;${String(stats.peakHour.hour).padStart(2, "0")}:00 (${stats.peakHour.count} vendas)`);
+      }
     }
     const csv = "\uFEFF" + lines.join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
@@ -566,11 +608,16 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
             )}
           </div>
           {period === "custom" && !isDrillDown && (
-            <div className="flex gap-2">
-              <input type="date" value={customStart} onChange={e => setCustomStart(e.target.value)}
-                className="flex-1 px-3 py-2 bg-muted/40 rounded-xl text-xs border border-border/50 focus:outline-none focus:ring-2 focus:ring-primary/30" />
-              <input type="date" value={customEnd} onChange={e => setCustomEnd(e.target.value)}
-                className="flex-1 px-3 py-2 bg-muted/40 rounded-xl text-xs border border-border/50 focus:outline-none focus:ring-2 focus:ring-primary/30" />
+            <div className="space-y-1.5">
+              <div className="flex gap-2">
+                <input type="date" value={customStart} onChange={e => setCustomStart(e.target.value)}
+                  className="flex-1 px-3 py-2 bg-muted/40 rounded-xl text-xs border border-border/50 focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                <input type="date" value={customEnd} onChange={e => setCustomEnd(e.target.value)}
+                  className="flex-1 px-3 py-2 bg-muted/40 rounded-xl text-xs border border-border/50 focus:outline-none focus:ring-2 focus:ring-primary/30" />
+              </div>
+              {customDatesInverted && (
+                <p className="text-[11px] font-bold text-red-500">Data inicial maior que a final.</p>
+              )}
             </div>
           )}
         </div>
@@ -587,9 +634,13 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
           <div className="text-center py-12 text-muted-foreground">
             <BarChart3 className="h-10 w-10 mx-auto mb-2 opacity-20" />
             <p className="text-sm font-medium">
-              {isDrillDown ? "Nenhuma venda neste turno" : "Nenhuma venda no período"}
+              {customDatesInverted
+                ? "Data inicial maior que a final"
+                : isDrillDown ? "Nenhuma venda neste turno" : "Nenhuma venda no período"}
             </p>
-            <p className="text-xs mt-1">Faça vendas no PDV para ver os relatórios</p>
+            {!customDatesInverted && (
+              <p className="text-xs mt-1">Faça vendas no PDV para ver os relatórios</p>
+            )}
           </div>
         ) : (
           <>
