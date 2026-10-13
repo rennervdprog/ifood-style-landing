@@ -889,12 +889,15 @@ const PdvPage = () => {
   });
 
   // ── Leitor de código de barras (USB HID) ──
-  // Busca produto por nome (substring) — fácil de evoluir pra coluna SKU/barcode no futuro
+  // Match exato primeiro (id ou código curto); startsWith só como fallback
+  // para não casar o produto errado quando dois ids compartilham prefixo.
   const handleBarcodeScan = useCallback((code: string) => {
-    const found = products.find(p =>
-      p.name.toLowerCase().includes(code.toLowerCase()) ||
-      p.id.startsWith(code)
-    );
+    const normalized = code.trim().toLowerCase();
+    const found = products.find(p => p.id.toLowerCase() === normalized)
+      ?? products.find(p =>
+        p.name.toLowerCase().includes(normalized) ||
+        p.id.toLowerCase().startsWith(normalized)
+      );
     if (found) {
       // Mesma trava de esgotado do card (PdvProductCard.handleAdd).
       const stock = stockMap?.get(found.id);
