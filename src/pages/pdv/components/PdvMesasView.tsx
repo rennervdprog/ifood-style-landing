@@ -5,6 +5,7 @@ import {
   Utensils, CreditCard, CircleDot, Clock, Users, Search, ChevronRight,
 } from "lucide-react";
 import { formatBRL } from "@/lib/utils";
+import { parseBRL } from "@/hooks/useBRLInput";
 import { supabase } from "@/integrations/supabase/client";
 import { haptic } from "@/lib/haptics";
 import {
@@ -383,12 +384,22 @@ function NewTableDialog({ storeId, onClose, onCreated }: { storeId: string; onCl
 
   const create = async () => {
     if (!label.trim()) return toast.error("Informe o nome da mesa");
+    const seatsNum = Number(seats);
+    if (!seats || seatsNum <= 0) return toast.error("Informe a quantidade de lugares (maior que 0)");
     setSaving(true);
     try {
+      // Evita duplicidade (case-insensitive)
+      const { data: existing } = await (supabase as any).from("pdv_tables")
+        .select("id").eq("store_id", storeId).ilike("label", label.trim()).limit(1);
+      if (existing && existing.length > 0) {
+        toast.error(`Já existe uma mesa com o nome "${label.trim()}"`);
+        setSaving(false);
+        return;
+      }
       const { error } = await (supabase as any).from("pdv_tables").insert({
         store_id: storeId,
         label: label.trim(),
-        seats: Number(seats) || 4,
+        seats: seatsNum,
       });
       if (error) throw error;
       toast.success("Mesa criada");
@@ -489,6 +500,7 @@ function TabDrawer({
   const [showClose, setShowClose] = useState(false);
   const [showTransfer, setShowTransfer] = useState(false);
   const [showCancel, setShowCancel] = useState(false);
+  const [confirmRemove, setConfirmRemove] = useState<{ id: string; name: string } | null>(null);
   const [mobileView, setMobileView] = useState<"itens" | "add">("itens");
 
   const total = items.reduce((s, it) => s + Number(it.quantity) * Number(it.unit_price), 0);
@@ -604,7 +616,7 @@ function TabDrawer({
               </div>
             </div>
             <button
-              onClick={() => removeItem(it.id)}
+              onClick={() => setConfirmRemove({ id: it.id, name: it.name })}
               className="h-9 w-9 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 flex items-center justify-center shrink-0"
               aria-label="Remover"
             >
@@ -737,6 +749,27 @@ function TabDrawer({
             onDone={() => { setShowCancel(false); onAfterAction(); onClose(); }}
           />
         )}
+        {confirmRemove && (
+          <ModalShell title="Remover item" onClose={() => setConfirmRemove(null)}>
+            <p className="text-sm mb-4">
+              Remover <b>{confirmRemove.name}</b> da comanda?
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setConfirmRemove(null)}
+                className="flex-1 border border-input rounded-md py-2 text-sm font-bold"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => { removeItem(confirmRemove.id); setConfirmRemove(null); }}
+                className="flex-1 bg-destructive text-destructive-foreground rounded-md py-2 text-sm font-bold"
+              >
+                Remover
+              </button>
+            </div>
+          </ModalShell>
+        )}
       </div>
     </div>
   );
@@ -745,15 +778,33 @@ function TabDrawer({
 function CloseTabDialog({ tabId, sessionId, total, onClose, onDone }: {
   tabId: string; sessionId: string; total: number; onClose: () => void; onDone: () => void;
 }) {
-  const [method, setMethod] = useState<"dinheiro" | "debito" | "credito" | "pix">("dinheiro");
+  // Mesmo enum do balcão (PDV_METHODS) — unificado para filtros/relatórios casarem.
+  const [method, setMethod] = useState<"dinheiro" | "maquininha_credito" | "maquininha_debito" | "maquininha_pix">("dinheiro");
+  const [discountType, setDiscountType] = useState<"R$" | "%">("R$");
+  const [discountInput, setDiscountInput] = useState("");
+  const [cashReceived, setCashReceived] = useState("");
   const [saving, setSaving] = useState(false);
 
+  const discountAmount = (() => {
+    const v = parseBRL(discountInput);
+    if (discountType === "%") return Math.min(total, total * (v / 100));
+    return Math.min(total, v);
+  })();
+  const finalTotal = Math.max(0, total - discountAmount);
+  const cashVal = parseBRL(cashReceived);
+  const troco = cashVal - finalTotal;
+
   const submit = async () => {
+    if (method === "dinheiro" && troco < 0) {
+      toast.error("Valor recebido menor que o total");
+      return;
+    }
     setSaving(true);
     try {
       await rpcCloseTab({
         tabId, sessionId,
-        payments: [{ method, amount: total }],
+        payments: [{ method, amount: finalTotal }],
+        pdvDiscount: discountAmount,
       });
       toast.success("Comanda fechada");
       onDone();
@@ -764,27 +815,70 @@ function CloseTabDialog({ tabId, sessionId, total, onClose, onDone }: {
     }
   };
 
+  const METHODS = [
+    { id: "dinheiro", label: "Dinheiro" },
+    { id: "maquininha_credito", label: "Crédito" },
+    { id: "maquininha_debito", label: "Débito" },
+    { id: "maquininha_pix", label: "PIX" },
+  ] as const;
+
   return (
-    <ModalShell title={`Fechar — ${formatBRL(total)}`} onClose={onClose}>
+    <ModalShell title={`Fechar — ${formatBRL(finalTotal)}`} onClose={onClose}>
       <label className="block text-xs font-bold mb-2">Forma de pagamento</label>
       <div className="grid grid-cols-2 gap-1.5 mb-4">
-        {(["dinheiro", "debito", "credito", "pix"] as const).map((m) => (
+        {METHODS.map((m) => (
           <button
-            key={m}
-            onClick={() => setMethod(m)}
+            key={m.id}
+            onClick={() => setMethod(m.id)}
             className={`text-xs font-bold px-3 py-2 rounded-md border-2 uppercase ${
-              method === m
+              method === m.id
                 ? "border-primary bg-primary/10 text-primary"
                 : "border-border text-muted-foreground"
             }`}
           >
-            {m}
+            {m.label}
           </button>
         ))}
       </div>
+
+      <label className="block text-xs font-bold mb-2">Desconto</label>
+      <div className="flex items-center gap-1.5 mb-4">
+        <div className="flex rounded-lg overflow-hidden border border-border shrink-0">
+          <button onClick={() => setDiscountType("R$")} className={`px-2.5 py-1.5 text-[11px] font-bold transition-colors ${discountType === "R$" ? "bg-primary text-white" : "bg-muted/50 text-muted-foreground"}`}>R$</button>
+          <button onClick={() => setDiscountType("%")} className={`px-2.5 py-1.5 text-[11px] font-bold transition-colors ${discountType === "%" ? "bg-primary text-white" : "bg-muted/50 text-muted-foreground"}`}>%</button>
+        </div>
+        <input type="text" inputMode="decimal"
+          placeholder={discountType === "%" ? "10" : "5,00"}
+          value={discountInput} onChange={(e) => setDiscountInput(e.target.value.replace(/[^0-9.,]/g, ""))}
+          className="flex-1 px-2.5 py-1.5 bg-muted/40 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-primary/30 border border-border/50" />
+      </div>
+      {discountAmount > 0 && (
+        <p className="text-xs text-emerald-500 font-bold mb-4 -mt-2">Desconto: −{formatBRL(discountAmount)}</p>
+      )}
+
+      {method === "dinheiro" && (
+        <>
+          <label className="block text-xs font-bold mb-2">Valor recebido</label>
+          <input type="text" inputMode="decimal"
+            placeholder="0,00"
+            value={cashReceived} onChange={(e) => setCashReceived(e.target.value.replace(/[^0-9.,]/g, ""))}
+            className="w-full px-3 py-2.5 bg-muted/40 rounded-lg text-xl font-black text-center focus:outline-none focus:ring-1 focus:ring-primary/30 border border-border/50 mb-2" />
+          {cashReceived && (
+            <div className={`flex justify-between items-center rounded-xl px-3 py-2 mb-4 ${troco < 0 ? "bg-red-500/10" : "bg-emerald-500/15"}`}>
+              <span className={`text-xs font-bold ${troco < 0 ? "text-red-500" : "text-emerald-700"}`}>
+                {troco < 0 ? "⚠️ Falta" : "Troco"}
+              </span>
+              <span className={`text-xl font-black ${troco < 0 ? "text-red-500" : "text-emerald-600"}`}>
+                {formatBRL(Math.abs(troco))}
+              </span>
+            </div>
+          )}
+        </>
+      )}
+
       <button
         onClick={submit}
-        disabled={saving}
+        disabled={saving || (method === "dinheiro" && !!cashReceived && troco < 0)}
         className="w-full bg-primary text-primary-foreground rounded-md py-2 text-sm font-bold disabled:opacity-60 flex items-center justify-center gap-2"
       >
         {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}

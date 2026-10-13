@@ -205,7 +205,7 @@ const PdvPage = () => {
     subtotal, totalItems, discountAmount, finalTotal, cashVal, troco, trocoNegativo,
     getQty,
     openProduct, handleModalAdd, addScannedProduct, decItem, removeItem,
-    clearSale: clearSaleCart, restoreCart,
+    clearSale: clearSaleCart, restoreCart, clearSaleIfUnchanged,
   } = usePdvCart();
 
   // Fix v1.20.20 — em mobile, ao remover o último item do carrinho (em modo
@@ -331,10 +331,16 @@ const PdvPage = () => {
     initialDataUpdatedAt: 0,
   });
 
+  // Fallback por categoria (igual ao PdvCardapioPage): lojas com categoria
+  // "lanches"/"restaurante" também vendem combos/prato do dia no caixa.
+  const storeCats = useMemo(() => {
+    if (!store) return [] as string[];
+    return [store.category, ...(((store as any).categories || []) as string[])].filter(Boolean);
+  }, [store]);
   const isApparel = (store as any)?.store_type === "apparel";
-  const isSnackBar = (store as any)?.store_type === "snack_bar";
+  const isSnackBar = (store as any)?.store_type === "snack_bar" || storeCats.includes("lanches");
   const isPizzeria = (store as any)?.store_type === "pizzeria";
-  const isRestaurant = (store as any)?.store_type === "restaurant";
+  const isRestaurant = (store as any)?.store_type === "restaurant" || storeCats.includes("restaurante");
 
   // Fase 4.2 Boutique — cliente + vale-crédito da venda atual
   const [apparelCustomer, setApparelCustomer] = useState<ApparelCustomer>({ phone: "", name: "" });
@@ -484,12 +490,16 @@ const PdvPage = () => {
   };
 
   // ── Enviar itens do carrinho para a comanda selecionada (Mesa/Comanda) ──
-  const handleSendToTab = async () => {
-    if (!selectedTabId || cart.length === 0) return;
+  const handleSendToTab = async (): Promise<boolean> => {
+    if (!selectedTabId || cart.length === 0) return true;
     setLoading(true);
+    // Snapshot do carrinho no início — o que for enviado com sucesso sai do
+    // carrinho; o que falhar permanece (retry não duplica).
+    const snapshot = [...cart];
+    let sentCount = 0;
     try {
       const { rpcAddTabItem } = await import("@/pages/pdv/state/usePdvTables");
-      for (const item of cart) {
+      for (const item of snapshot) {
         await rpcAddTabItem({
           tabId: selectedTabId,
           productId: item.id,
@@ -500,10 +510,11 @@ const PdvPage = () => {
           observations: item.observations ?? null,
           metadata: item.metadata ?? null,
         });
+        sentCount++;
       }
       queryClient.invalidateQueries({ queryKey: ["pdv-tabs-open", store?.id] });
       queryClient.invalidateQueries({ queryKey: ["pdv-tab-items", selectedTabId] });
-      toast.success(`${cart.length} ${cart.length === 1 ? "item enviado" : "itens enviados"} à comanda`);
+      toast.success(`${snapshot.length} ${snapshot.length === 1 ? "item enviado" : "itens enviados"} à comanda`);
       // Mantém a comanda selecionada para próximos envios; limpa só os itens.
       setCart([]);
       setPaymentMethod("");
@@ -511,8 +522,21 @@ const PdvPage = () => {
       setSplitMode(false);
       setSplitPayments([]);
       if (isMobile) setMobileStep("catalog");
+      return true;
     } catch (e: any) {
-      toast.error(`Falha ao enviar: ${e?.message ?? "erro"}`);
+      // Falha parcial: remove do carrinho só o que foi enviado; o resto fica
+      // para retry sem duplicar.
+      if (sentCount > 0) {
+        setCart(snapshot.slice(sentCount));
+        toast.error(
+          `Falha ao enviar: ${e?.message ?? "erro"}. ` +
+          `${sentCount} ${sentCount === 1 ? "item foi enviado" : "itens foram enviados"}; ` +
+          `o restante continua no carrinho.`
+        );
+      } else {
+        toast.error(`Falha ao enviar: ${e?.message ?? "erro"}`);
+      }
+      return false;
     } finally {
       setLoading(false);
     }
@@ -522,8 +546,10 @@ const PdvPage = () => {
   const handleCloseTab = async () => {
     if (!selectedTabId || !currentSession?.id) return;
     // Se ainda há itens no carrinho, envia-os primeiro para a comanda.
+    // Aborta o fechamento se o envio falhar (evita perder itens).
     if (cart.length > 0) {
-      await handleSendToTab();
+      const sent = await handleSendToTab();
+      if (!sent) return;
     }
     const payments = splitMode && splitPayments.length > 0
       ? splitPayments.map((p) => ({ method: p.method, amount: Number(p.amount) }))
@@ -604,13 +630,14 @@ const PdvPage = () => {
         })();
       }
       // Controle de estoque: decrementa estoque de produtos normais vendidos
-      const regularItems = cart.filter((i) => !(i.metadata as any)?.apparel_variant_id && i.product_id);
+      // (CartItem usa `id` como id do produto.)
+      const regularItems = cart.filter((i) => !(i.metadata as any)?.apparel_variant_id && i.id);
       if (regularItems.length) {
         (async () => {
           for (const it of regularItems) {
             try {
               const { data: ok } = await supabase.rpc("stock_decrement_sale" as any, {
-                _product_id: it.product_id,
+                _product_id: it.id,
                 _quantity: Math.abs(it.quantity),
                 _order_id: orderId || null,
               });
@@ -659,7 +686,11 @@ const PdvPage = () => {
         })();
       }
     },
-      onClearScheduled: clearSale,
+      onClearScheduled: (finalizedCart) => {
+        // Só limpa se o carrinho não mudou desde a finalização —
+        // o operador pode ter iniciado uma nova venda nos 2s do delay.
+        clearSaleIfUnchanged(finalizedCart);
+      },
       onEmptiesFlowStart: ({ orderId, items }) =>
         setEmptiesFlow({ step: "lookup", orderId, items }),
     });
@@ -858,20 +889,29 @@ const PdvPage = () => {
   });
 
   // ── Leitor de código de barras (USB HID) ──
-  // Busca produto por nome (substring) — fácil de evoluir pra coluna SKU/barcode no futuro
+  // Match exato primeiro (id ou código curto); startsWith só como fallback
+  // para não casar o produto errado quando dois ids compartilham prefixo.
   const handleBarcodeScan = useCallback((code: string) => {
-    const found = products.find(p =>
-      p.name.toLowerCase().includes(code.toLowerCase()) ||
-      p.id.startsWith(code)
-    );
+    const normalized = code.trim().toLowerCase();
+    const found = products.find(p => p.id.toLowerCase() === normalized)
+      ?? products.find(p =>
+        p.name.toLowerCase().includes(normalized) ||
+        p.id.toLowerCase().startsWith(normalized)
+      );
     if (found) {
+      // Mesma trava de esgotado do card (PdvProductCard.handleAdd).
+      const stock = stockMap?.get(found.id);
+      if (stock?.track_stock === true && Number(stock.quantity) <= 0) {
+        toast.error(`${found.name} está esgotado`);
+        return;
+      }
       // Adiciona direto ao carrinho (sem abrir modal de adicionais)
       addScannedProduct(found);
       toast.success(`+ ${found.name}`, { duration: 1200 });
     } else {
       toast.warning(`Código não encontrado: ${code}`);
     }
-  }, [products, addScannedProduct]);
+  }, [products, addScannedProduct, stockMap]);
 
   usePdvBarcodeScanner(handleBarcodeScan, screen === "venda" && tab === "venda");
 

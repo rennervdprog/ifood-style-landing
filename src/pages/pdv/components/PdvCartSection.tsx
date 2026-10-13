@@ -2,11 +2,12 @@ import {
   X, RotateCcw, ShoppingCart, Tag, ChevronDown, ChevronRight,
   Split, Calculator, Wallet, Loader2, CheckCircle2, Send,
 } from "lucide-react";
+import { toast } from "sonner";
 import { formatBRL } from "@/lib/utils";
 import { parseBRL } from "@/hooks/useBRLInput";
 import { PdvSplitPayment, type SplitPayment } from "@/components/pdv/PdvSplitPayment";
 import { PDV_METHODS, COLOR_MAP } from "@/pages/pdv/constants";
-import type { CartItem } from "@/pages/pdv/types";
+import type { CartItem, SaleSnapshot } from "@/pages/pdv/types";
 import { PdvTableSelector } from "./PdvTableSelector";
 
 interface Props {
@@ -21,7 +22,7 @@ interface Props {
   onSendToTab?: () => void;
   totalItems: number;
   clearSale: () => void;
-  restoreCart?: (items: CartItem[]) => void;
+  restoreCart?: (snapshot: SaleSnapshot) => void;
   subtotal: number;
   discountAmount: number;
   finalTotal: number;
@@ -80,12 +81,24 @@ export const PdvCartSection = ({
           <span className="text-[10px] text-muted-foreground">{totalItems} itens</span>
           {cart.length > 0 && (
             <button onClick={() => {
-              const backup = [...cart];
+              // Snapshot completo da venda para o "Desfazer".
+              const snapshot: SaleSnapshot = {
+                items: [...cart],
+                paymentMethod,
+                tableId,
+                selectedTable,
+                selectedTabId,
+                discountType,
+                discountInput,
+                cashReceived,
+                splitMode,
+                splitPayments: [...splitPayments],
+              };
               clearSale();
               toast.warning("Venda limpa", {
                 action: restoreCart ? {
                   label: "Desfazer",
-                  onClick: () => restoreCart(backup),
+                  onClick: () => restoreCart(snapshot),
                 } : undefined,
                 duration: 5000,
               });

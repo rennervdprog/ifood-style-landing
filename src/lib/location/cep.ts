@@ -18,11 +18,11 @@ export const formatCep = (value: string): string => {
   return `${digits.slice(0, 5)}-${digits.slice(5)}`;
 };
 
-async function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
+async function fetchWithTimeout(url: string, ms: number): Promise<Response> {
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), ms);
   try {
-    return await p;
+    return await fetch(url, { signal: ctrl.signal });
   } finally {
     clearTimeout(t);
   }
@@ -37,8 +37,8 @@ export async function fetchCep(cep: string): Promise<CepResult | null> {
 
   // ViaCEP
   try {
-    const res = await withTimeout(
-      fetch(`https://viacep.com.br/ws/${digits}/json/`),
+    const res = await fetchWithTimeout(
+      `https://viacep.com.br/ws/${digits}/json/`,
       5000,
     );
     if (res.ok) {
@@ -54,8 +54,8 @@ export async function fetchCep(cep: string): Promise<CepResult | null> {
 
   // BrasilAPI
   try {
-    const res = await withTimeout(
-      fetch(`https://brasilapi.com.br/api/cep/v2/${digits}`),
+    const res = await fetchWithTimeout(
+      `https://brasilapi.com.br/api/cep/v2/${digits}`,
       5000,
     );
     if (res.ok) {

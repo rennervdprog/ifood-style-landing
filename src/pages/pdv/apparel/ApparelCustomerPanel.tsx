@@ -84,8 +84,8 @@ export default function ApparelCustomerPanel({
 
   const toggleCredit = (row: CreditRow) => {
     if (credit?.id === row.id) { onCreditChange(null); return; }
-    // Nunca aplicar mais do que o total do carrinho
-    const applyAmount = Math.min(Number(row.balance), Math.max(0, finalTotal + Number(row.balance)));
+    // Nunca aplicar mais do que o total do carrinho — o restante permanece como saldo do cliente
+    const applyAmount = Math.min(Number(row.balance), Math.max(0, finalTotal));
     onCreditChange({ id: row.id, amount: applyAmount });
   };
 

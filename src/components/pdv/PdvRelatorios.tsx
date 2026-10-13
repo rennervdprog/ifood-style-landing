@@ -156,6 +156,11 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
     [period, customStart, customEnd]
   );
 
+  // 4.9: datas personalizadas invertidas (início > fim) — inputs type="date" usam yyyy-MM-dd,
+  // então a comparação lexicográfica equivale à cronológica.
+  const customDatesInverted =
+    period === "custom" && !!customStart && !!customEnd && customStart > customEnd;
+
   // Período anterior com a mesma duração (para comparativo). Sem sentido no drill-down de turno.
   const prevRange = useMemo(() => {
     const startMs = new Date(dateRange.start).getTime();
@@ -278,21 +283,28 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
 
   // ── Cálculos principais ──
   const stats = useMemo(() => {
+    // Vendas canceladas continuam com type='sale' no movimento — excluir dos totais.
+    // (No modo período, orders já vem só com 'finalizado', então o set fica vazio.)
+    const canceledIds = new Set(
+      (orders || []).filter((o: any) => o.status === "cancelado").map((o: any) => o.id)
+    );
+    const validMovements = movements.filter((m: any) => !canceledIds.has(m.order_id));
+    const validOrders = (orders || []).filter((o: any) => o.status !== "cancelado");
     // Usa movements como fonte primária (mais confiável) e orders para detalhes de produto
-    const hasMov = movements.length > 0;
-    const hasOrders = orders.length > 0;
+    const hasMov = validMovements.length > 0;
+    const hasOrders = validOrders.length > 0;
     if (!hasMov && !hasOrders) return null;
 
     // Totais financeiros — de movements (mais confiável, não depende de order_items RLS)
     const totalSales = hasMov
-      ? movements.reduce((s: number, m: any) => s + Number(m.amount || 0), 0)
-      : orders.reduce((s, o) => s + Number(o.total_price || 0), 0);
+      ? validMovements.reduce((s: number, m: any) => s + Number(m.amount || 0), 0)
+      : validOrders.reduce((s, o) => s + Number(o.total_price || 0), 0);
 
-    const count = hasMov ? movements.length : orders.length;
+    const count = hasMov ? validMovements.length : validOrders.length;
 
-    const totalSubtotal = orders.reduce((s, o) => s + Number(o.subtotal || 0), 0);
-    const totalDiscount = orders.reduce((s, o) => s + Number(o.pdv_discount || 0), 0);
-    const totalCommission = orders.reduce((s, o) =>
+    const totalSubtotal = validOrders.reduce((s, o) => s + Number(o.subtotal || 0), 0);
+    const totalDiscount = validOrders.reduce((s, o) => s + Number(o.pdv_discount || 0), 0);
+    const totalCommission = validOrders.reduce((s, o) =>
       s + (Number(o.subtotal || 0) * (Number(o.commission_rate || 0) / 100)), 0
     );
     const avgTicket = count > 0 ? totalSales / count : 0;
@@ -301,12 +313,12 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
     // Por método de pagamento — de movements (mais confiável)
     const byPayment: Record<string, number> = {};
     if (hasMov) {
-      movements.forEach((m: any) => {
+      validMovements.forEach((m: any) => {
         const k = m.payment_method || "outros";
         byPayment[k] = (byPayment[k] || 0) + Number(m.amount || 0);
       });
     } else {
-      orders.forEach(o => {
+      validOrders.forEach(o => {
         const k = o.payment_method || "outros";
         byPayment[k] = (byPayment[k] || 0) + Number(o.total_price || 0);
       });
@@ -314,7 +326,7 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
 
     // Produtos mais vendidos
     const productMap: Record<string, { name: string; qty: number; revenue: number }> = {};
-    orders.forEach(o => {
+    validOrders.forEach(o => {
       (o.order_items || []).forEach((item: any) => {
         const name = item.products?.name || "Item";
         if (!productMap[name]) productMap[name] = { name, qty: 0, revenue: 0 };
@@ -336,7 +348,7 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
 
     // Vendas por hora — de movements
     const byHour: Record<number, number> = {};
-    (hasMov ? movements : orders).forEach((o: any) => {
+    (hasMov ? validMovements : validOrders).forEach((o: any) => {
       const h = new Date(o.created_at).getHours();
       byHour[h] = (byHour[h] || 0) + 1;
     });
@@ -392,10 +404,14 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
   // Usa as mesmas queryKeys do card de conferência — um único fetch compartilhado.
   const { data: drillSession } = usePdvSession(isDrillDown ? sessionId : undefined);
   const { data: drillMovements = [] } = usePdvSessionMovements(isDrillDown ? sessionId : undefined);
-  const drillResumo = useMemo(
-    () => (isDrillDown && drillSession ? calcPdvTurnoResumo(drillSession, drillMovements) : null),
-    [isDrillDown, drillSession, drillMovements]
-  );
+  const drillResumo = useMemo(() => {
+    if (!isDrillDown || !drillSession) return null;
+    // Exclui vendas canceladas dos totais (continuam com type='sale' no movimento).
+    const canceledIds = new Set(
+      (orders || []).filter((o: any) => o.status === "cancelado").map((o: any) => o.id)
+    );
+    return calcPdvTurnoResumo(drillSession, drillMovements, canceledIds);
+  }, [isDrillDown, drillSession, drillMovements, orders]);
   const drillPeriodLabel = useMemo(() => {
     if (!isDrillDown || !drillSession) return dateRangeLabel;
     const fim = drillSession.status === "open" ? "agora" : formatPdvDateTime(drillSession.closed_at);
@@ -426,8 +442,22 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
     lines.push(`Vendas;${stats.count}`);
     lines.push(`Ticket médio;${stats.avgTicket.toFixed(2)}`);
     lines.push(`Descontos;${stats.totalDiscount.toFixed(2)}`);
+    lines.push(`Taxa de desconto;${stats.discountRate.toFixed(1)}%`);
     lines.push(`Comissão plataforma;${stats.totalCommission.toFixed(2)}`);
     lines.push("");
+    // 4.7: comparativo vs período anterior (só no modo período, onde prevData existe)
+    if (!isDrillDown && prevData) {
+      const varPct = (cur: number, prev: number) =>
+        prev > 0 ? `${(((cur - prev) / prev) * 100).toFixed(1)}%` : "—";
+      lines.push("COMPARATIVO (período anterior)");
+      lines.push(`Faturamento anterior;${prevData.total.toFixed(2)}`);
+      lines.push(`Variação faturamento;${varPct(stats.totalSales, prevData.total)}`);
+      lines.push(`Vendas anteriores;${prevData.count}`);
+      lines.push(`Variação vendas;${varPct(stats.count, prevData.count)}`);
+      lines.push(`Ticket médio anterior;${prevData.avg.toFixed(2)}`);
+      lines.push(`Variação ticket médio;${varPct(stats.avgTicket, prevData.avg)}`);
+      lines.push("");
+    }
     lines.push("PAGAMENTOS");
     lines.push("Método;Valor");
     Object.entries(stats.byPayment).forEach(([k, v]) => {
@@ -446,6 +476,29 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
       operatorStats.forEach((o, i) => {
         lines.push(`${i + 1};${o.name.replace(/;/g, ",")};${o.count};${o.total.toFixed(2)}`);
       });
+    }
+    // 4.7: seções que faltavam no CSV
+    if (dailyRevenue.length) {
+      lines.push("");
+      lines.push("FATURAMENTO POR DIA");
+      lines.push("Data;Faturamento");
+      dailyRevenue.forEach((d) => {
+        lines.push(`${d.label};${d.total.toFixed(2)}`);
+      });
+    }
+    const hoursSorted = Object.entries(stats.byHour)
+      .map(([h, c]) => ({ hour: Number(h), count: Number(c) }))
+      .sort((a, b) => a.hour - b.hour);
+    if (hoursSorted.length) {
+      lines.push("");
+      lines.push("HORÁRIO DE PICO");
+      lines.push("Hora;Vendas");
+      hoursSorted.forEach(({ hour, count }) => {
+        lines.push(`${String(hour).padStart(2, "0")}:00;${count}`);
+      });
+      if (stats.peakHour) {
+        lines.push(`Pico;${String(stats.peakHour.hour).padStart(2, "0")}:00 (${stats.peakHour.count} vendas)`);
+      }
     }
     const csv = "\uFEFF" + lines.join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
@@ -555,11 +608,19 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
             )}
           </div>
           {period === "custom" && !isDrillDown && (
-            <div className="flex gap-2">
-              <input type="date" value={customStart} onChange={e => setCustomStart(e.target.value)}
-                className="flex-1 px-3 py-2 bg-muted/40 rounded-xl text-xs border border-border/50 focus:outline-none focus:ring-2 focus:ring-primary/30" />
-              <input type="date" value={customEnd} onChange={e => setCustomEnd(e.target.value)}
-                className="flex-1 px-3 py-2 bg-muted/40 rounded-xl text-xs border border-border/50 focus:outline-none focus:ring-2 focus:ring-primary/30" />
+            <div className="space-y-1.5">
+              <div className="flex gap-2">
+                <input type="date" value={customStart} onChange={e => setCustomStart(e.target.value)}
+                  className="flex-1 px-3 py-2 bg-muted/40 rounded-xl text-xs border border-border/50 focus:outline-none focus:ring-2 focus:ring-primary/30" />
+                <input type="date" value={customEnd} onChange={e => setCustomEnd(e.target.value)}
+                  className="flex-1 px-3 py-2 bg-muted/40 rounded-xl text-xs border border-border/50 focus:outline-none focus:ring-2 focus:ring-primary/30" />
+              </div>
+              {customDatesInverted && (
+                <p className="text-[11px] font-bold text-red-500">Data inicial maior que a final.</p>
+              )}
+              {period === "custom" && (!customStart || !customEnd) && (
+                <p className="text-[11px] font-bold text-amber-600">Selecione as duas datas — sem elas, são exibidos os dados de hoje.</p>
+              )}
             </div>
           )}
         </div>
@@ -576,9 +637,13 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
           <div className="text-center py-12 text-muted-foreground">
             <BarChart3 className="h-10 w-10 mx-auto mb-2 opacity-20" />
             <p className="text-sm font-medium">
-              {isDrillDown ? "Nenhuma venda neste turno" : "Nenhuma venda no período"}
+              {customDatesInverted
+                ? "Data inicial maior que a final"
+                : isDrillDown ? "Nenhuma venda neste turno" : "Nenhuma venda no período"}
             </p>
-            <p className="text-xs mt-1">Faça vendas no PDV para ver os relatórios</p>
+            {!customDatesInverted && (
+              <p className="text-xs mt-1">Faça vendas no PDV para ver os relatórios</p>
+            )}
           </div>
         ) : (
           <>

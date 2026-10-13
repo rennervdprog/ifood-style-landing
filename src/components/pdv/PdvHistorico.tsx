@@ -88,7 +88,10 @@ export const PdvHistorico = ({
   });
 
   const kpis = useMemo(() => {
-    const sales = movements.filter((m: any) => m.type === "sale");
+    // Exclui vendas canceladas (continuam com type='sale' no movimento).
+    const sales = movements.filter(
+      (m: any) => m.type === "sale" && ordersMap[m.order_id]?.status !== "cancelado"
+    );
     const total = sales.reduce((s: number, m: any) => s + Number(m.amount), 0);
     const cash = sales.filter((m: any) => m.payment_method === "dinheiro")
       .reduce((s: number, m: any) => s + Number(m.amount), 0);
@@ -97,7 +100,7 @@ export const PdvHistorico = ({
     const suprimento = movements.filter((m: any) => m.type === "suprimento")
       .reduce((s: number, m: any) => s + Number(m.amount), 0);
     return { count: sales.length, total, avg: sales.length ? total / sales.length : 0, cash, sangria, suprimento };
-  }, [movements]);
+  }, [movements, ordersMap]);
 
   const openedAt = session?.opened_at ? new Date(session.opened_at) : null;
   const durMin = openedAt ? Math.max(0, Math.round((Date.now() - openedAt.getTime()) / 60000)) : 0;
@@ -201,7 +204,7 @@ export const PdvHistorico = ({
               { id: "suprimento", label: "Suprimentos" },
               { id: "canceladas", label: "Canceladas" },
             ] as { id: FilterType; label: string }[]).map(f => (
-              <button key={f.id} onClick={() => setFilter(f.id)}
+              <button key={f.id} onClick={() => { setFilter(f.id); if (f.id !== "all" && f.id !== "sale") setMethodFilter(null); }}
                 className={`shrink-0 text-[10px] font-bold px-2.5 py-1 rounded-full border transition-colors ${
                   filter === f.id
                     ? "bg-primary text-primary-foreground border-primary"
@@ -474,6 +477,11 @@ const PdvSessionDetail = ({ session, storeId }: { session: any; storeId: string 
   if (movL || ordL) return <div className="flex items-center justify-center py-6"><Loader2 className="h-4 w-4 animate-spin text-primary" /></div>;
 
   // Conferência de caixa — mesma lógica do relatório do turno (usePdvTurnoResumo).
+  // Vendas canceladas: excluídas dos totais (continuam com type='sale' no movimento).
+  const canceledOrderIds = useMemo(
+    () => new Set((orders || []).filter((o: any) => o.status === "cancelado").map((o: any) => o.id)),
+    [orders]
+  );
   const {
     opening,
     closing,
@@ -484,12 +492,15 @@ const PdvSessionDetail = ({ session, storeId }: { session: any; storeId: string 
     diff,
     isOk,
     byPayment,
-  } = calcPdvTurnoResumo(session, movements);
-  const sales = movements.filter((m: any) => m.type === "sale");
+  } = calcPdvTurnoResumo(session, movements, canceledOrderIds);
+  const sales = movements.filter(
+    (m: any) => m.type === "sale" && !canceledOrderIds.has(m.order_id)
+  );
 
-  // Produtos
+  // Produtos (só de pedidos não cancelados)
   const productMap: Record<string, { name: string; qty: number; revenue: number }> = {};
   orders.forEach((o: any) => {
+    if (o.status === "cancelado") return;
     (o.order_items || []).forEach((item: any) => {
       const name = item.products?.name || "Item";
       if (!productMap[name]) productMap[name] = { name, qty: 0, revenue: 0 };

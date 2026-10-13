@@ -1,4 +1,5 @@
 import type { CartAddon } from "@/contexts/CartContext";
+import type { SplitPayment } from "@/components/pdv/PdvSplitPayment";
 
 /** Produto exibido no catálogo do PDV. */
 export interface Product {
@@ -68,3 +69,20 @@ export type PdvMobileStep = "catalog" | "cart";
 
 /** Abas dentro da tela de venda. */
 export type PdvTab = "venda" | "mesas" | "historico" | "turnos" | "relatorios" | "financeiro" | "meu_plano" | "configuracoes";
+
+/**
+ * Snapshot completo do estado de venda — usado pelo "Desfazer" do "Limpar venda".
+ * Restaura itens + desconto + pagamento + mesa + split + valor recebido.
+ */
+export interface SaleSnapshot {
+  items: CartItem[];
+  paymentMethod: string;
+  tableId: string;
+  selectedTable: { id: string; label: string } | null;
+  selectedTabId: string | null;
+  discountType: "R$" | "%";
+  discountInput: string;
+  cashReceived: string;
+  splitMode: boolean;
+  splitPayments: SplitPayment[];
+}

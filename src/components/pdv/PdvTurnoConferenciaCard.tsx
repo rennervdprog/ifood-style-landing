@@ -1,4 +1,6 @@
-import { useQueryClient } from "@tanstack/react-query";
+import { useMemo } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Scale, ArrowDownLeft, ArrowUpRight, Wallet, Banknote } from "lucide-react";
@@ -36,6 +38,26 @@ export default function PdvTurnoConferenciaCard({
   const { data: movements = [], isLoading: movL, isError: movE, refetch: refetchMov } =
     usePdvSessionMovements(sessionId);
 
+  // Ids de pedidos cancelados da sessão — vendas canceladas continuam com
+  // type='sale' no movimento e precisam ser excluídas dos totais.
+  const orderIds = useMemo(
+    () => movements.filter((m: any) => m.order_id).map((m: any) => m.order_id),
+    [movements]
+  );
+  const { data: canceledOrderIds } = useQuery({
+    queryKey: ["pdv-conferencia-canceled", sessionId, orderIds.slice().sort().join(",")],
+    queryFn: async () => {
+      if (!orderIds.length) return new Set<string>();
+      const { data } = await (supabase as any)
+        .from("orders")
+        .select("id")
+        .in("id", orderIds)
+        .eq("status", "cancelado");
+      return new Set<string>((data || []).map((o: any) => o.id));
+    },
+    enabled: !!sessionId && orderIds.length > 0,
+  });
+
   const isLoading = sessL || movL;
   const isError = sessE || movE;
   const refetch = () => {
@@ -43,7 +65,7 @@ export default function PdvTurnoConferenciaCard({
     refetchMov();
   };
 
-  const resumo = !isLoading && !isError && session ? calcPdvTurnoResumo(session, movements) : null;
+  const resumo = !isLoading && !isError && session ? calcPdvTurnoResumo(session, movements, canceledOrderIds ?? null) : null;
   const isOpen = session?.status === "open";
   const payEntries = resumo ? Object.entries(resumo.byPayment).sort((a, b) => b[1] - a[1]) : [];
 

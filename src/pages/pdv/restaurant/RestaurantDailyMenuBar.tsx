@@ -23,7 +23,9 @@ interface Props {
  * cadastrado para hoje. Clicar adiciona linha fechada no carrinho.
  */
 export default function RestaurantDailyMenuBar({ storeId, addItem }: Props) {
-  const today = new Date().toISOString().slice(0, 10);
+  // Data LOCAL (não UTC): toISOString() vira "amanhã" entre 21h e 0h no BR.
+  const _d = new Date();
+  const today = `${_d.getFullYear()}-${String(_d.getMonth() + 1).padStart(2, "0")}-${String(_d.getDate()).padStart(2, "0")}`;
   const { data: menus } = useQuery({
     queryKey: ["daily-menus", storeId, today],
     enabled: !!storeId,
