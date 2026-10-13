@@ -126,6 +126,8 @@ export const PdvCatalogSection = ({
       }
       addItem(found);
       setCode("");
+    } else {
+      toast.error(`Produto não encontrado para o código "${c}"`);
     }
   };
   return (
