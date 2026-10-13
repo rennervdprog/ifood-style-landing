@@ -24,10 +24,18 @@ export interface PdvTurnoResumo {
  * Mesma lógica do detalhe inline do histórico (PdvSessionDetail) —
  * fonte única para não duplicar regra de negócio.
  */
-export function calcPdvTurnoResumo(session: any, movements: any[]): PdvTurnoResumo {
+export function calcPdvTurnoResumo(
+  session: any,
+  movements: any[],
+  /** Ids de pedidos cancelados — vendas vinculadas são excluídas dos totais. */
+  canceledOrderIds?: Set<string> | null
+): PdvTurnoResumo {
   const opening = Number(session?.opening_amount || 0);
   const closing = Number(session?.closing_amount || 0);
-  const sales = movements.filter((m: any) => m.type === "sale");
+  // Vendas canceladas continuam com type='sale' no movimento — excluir aqui.
+  const isCanceledSale = (m: any) =>
+    !!m.order_id && !!canceledOrderIds?.has(m.order_id);
+  const sales = movements.filter((m: any) => m.type === "sale" && !isCanceledSale(m));
   const totalVendido = sales.reduce((s: number, m: any) => s + Number(m.amount), 0);
   const totalSangrias = movements
     .filter((m: any) => m.type === "sangria")

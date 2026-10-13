@@ -278,21 +278,28 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
 
   // ── Cálculos principais ──
   const stats = useMemo(() => {
+    // Vendas canceladas continuam com type='sale' no movimento — excluir dos totais.
+    // (No modo período, orders já vem só com 'finalizado', então o set fica vazio.)
+    const canceledIds = new Set(
+      (orders || []).filter((o: any) => o.status === "cancelado").map((o: any) => o.id)
+    );
+    const validMovements = movements.filter((m: any) => !canceledIds.has(m.order_id));
+    const validOrders = (orders || []).filter((o: any) => o.status !== "cancelado");
     // Usa movements como fonte primária (mais confiável) e orders para detalhes de produto
-    const hasMov = movements.length > 0;
-    const hasOrders = orders.length > 0;
+    const hasMov = validMovements.length > 0;
+    const hasOrders = validOrders.length > 0;
     if (!hasMov && !hasOrders) return null;
 
     // Totais financeiros — de movements (mais confiável, não depende de order_items RLS)
     const totalSales = hasMov
-      ? movements.reduce((s: number, m: any) => s + Number(m.amount || 0), 0)
-      : orders.reduce((s, o) => s + Number(o.total_price || 0), 0);
+      ? validMovements.reduce((s: number, m: any) => s + Number(m.amount || 0), 0)
+      : validOrders.reduce((s, o) => s + Number(o.total_price || 0), 0);
 
-    const count = hasMov ? movements.length : orders.length;
+    const count = hasMov ? validMovements.length : validOrders.length;
 
-    const totalSubtotal = orders.reduce((s, o) => s + Number(o.subtotal || 0), 0);
-    const totalDiscount = orders.reduce((s, o) => s + Number(o.pdv_discount || 0), 0);
-    const totalCommission = orders.reduce((s, o) =>
+    const totalSubtotal = validOrders.reduce((s, o) => s + Number(o.subtotal || 0), 0);
+    const totalDiscount = validOrders.reduce((s, o) => s + Number(o.pdv_discount || 0), 0);
+    const totalCommission = validOrders.reduce((s, o) =>
       s + (Number(o.subtotal || 0) * (Number(o.commission_rate || 0) / 100)), 0
     );
     const avgTicket = count > 0 ? totalSales / count : 0;
@@ -301,12 +308,12 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
     // Por método de pagamento — de movements (mais confiável)
     const byPayment: Record<string, number> = {};
     if (hasMov) {
-      movements.forEach((m: any) => {
+      validMovements.forEach((m: any) => {
         const k = m.payment_method || "outros";
         byPayment[k] = (byPayment[k] || 0) + Number(m.amount || 0);
       });
     } else {
-      orders.forEach(o => {
+      validOrders.forEach(o => {
         const k = o.payment_method || "outros";
         byPayment[k] = (byPayment[k] || 0) + Number(o.total_price || 0);
       });
@@ -314,7 +321,7 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
 
     // Produtos mais vendidos
     const productMap: Record<string, { name: string; qty: number; revenue: number }> = {};
-    orders.forEach(o => {
+    validOrders.forEach(o => {
       (o.order_items || []).forEach((item: any) => {
         const name = item.products?.name || "Item";
         if (!productMap[name]) productMap[name] = { name, qty: 0, revenue: 0 };
@@ -336,7 +343,7 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
 
     // Vendas por hora — de movements
     const byHour: Record<number, number> = {};
-    (hasMov ? movements : orders).forEach((o: any) => {
+    (hasMov ? validMovements : validOrders).forEach((o: any) => {
       const h = new Date(o.created_at).getHours();
       byHour[h] = (byHour[h] || 0) + 1;
     });
@@ -392,10 +399,14 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
   // Usa as mesmas queryKeys do card de conferência — um único fetch compartilhado.
   const { data: drillSession } = usePdvSession(isDrillDown ? sessionId : undefined);
   const { data: drillMovements = [] } = usePdvSessionMovements(isDrillDown ? sessionId : undefined);
-  const drillResumo = useMemo(
-    () => (isDrillDown && drillSession ? calcPdvTurnoResumo(drillSession, drillMovements) : null),
-    [isDrillDown, drillSession, drillMovements]
-  );
+  const drillResumo = useMemo(() => {
+    if (!isDrillDown || !drillSession) return null;
+    // Exclui vendas canceladas dos totais (continuam com type='sale' no movimento).
+    const canceledIds = new Set(
+      (orders || []).filter((o: any) => o.status === "cancelado").map((o: any) => o.id)
+    );
+    return calcPdvTurnoResumo(drillSession, drillMovements, canceledIds);
+  }, [isDrillDown, drillSession, drillMovements, orders]);
   const drillPeriodLabel = useMemo(() => {
     if (!isDrillDown || !drillSession) return dateRangeLabel;
     const fim = drillSession.status === "open" ? "agora" : formatPdvDateTime(drillSession.closed_at);

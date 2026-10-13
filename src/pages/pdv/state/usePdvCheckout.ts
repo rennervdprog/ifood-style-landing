@@ -1,4 +1,3 @@
-// @ts-nocheck — tabelas/RPCs de estoque vivem no banco externo e não estão nos tipos gerados
 import { useCallback, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -67,7 +66,12 @@ export interface CheckoutContext {
   operatorId?: string | null;
   /** Callbacks de UI após sucesso. Recebe o `orderId` gerado (ou placeholder offline). */
   onSuccess: (info: { orderId: string | null }) => void;
-  onClearScheduled: () => void;
+  /**
+   * Agendado 2s após o sucesso. Recebe o carrinho finalizado para que o
+   * chamador só limpe se ele não mudou (evita apagar nova venda iniciada
+   * no intervalo — item 2.7 da auditoria).
+   */
+  onClearScheduled: (finalizedCart: CartItem[]) => void;
   onEmptiesFlowStart: (args: {
     orderId: string;
     items: { product_id: string; quantity: number }[];
@@ -108,18 +112,19 @@ export function usePdvCheckout() {
       }
 
       // ── Validação de estoque (bloqueia venda sem estoque) ──
+      // CartItem usa `id` como id do produto (não existe `product_id` no tipo).
       const stockCheckItems = cart.filter(
-        (i: any) => !(i.metadata as any)?.apparel_variant_id && i.product_id
+        (i: any) => !(i.metadata as any)?.apparel_variant_id && i.id
       );
       if (stockCheckItems.length > 0) {
-        const productIds = stockCheckItems.map((i: any) => i.product_id);
+        const productIds = stockCheckItems.map((i: any) => i.id);
         const { data: stocks } = await supabase
           .from("product_stock")
           .select("product_id, quantity, track_stock")
           .in("product_id", productIds);
         const stockMap = new Map((stocks || []).map((s: any) => [s.product_id, s]));
         for (const item of stockCheckItems) {
-          const s = stockMap.get(item.product_id);
+          const s = stockMap.get(item.id);
           if (s && s.track_stock && Number(s.quantity) < Math.abs(item.quantity)) {
             toast.error(`Estoque insuficiente: ${item.name} (tem ${s.quantity})`);
             return;
@@ -324,12 +329,6 @@ export function usePdvCheckout() {
         queryClient.invalidateQueries({
           queryKey: ["pdv-movements", session.id],
         });
-        // Invalida estoque do catálogo para atualizar badges imediatamente
-        if (store?.id) {
-          queryClient.invalidateQueries({
-            queryKey: ["pdv-stock", store.id],
-          });
-        }
         onSuccess({ orderId });
         if (!offlineQueued) toast.success("✅ Venda finalizada!");
 
@@ -434,7 +433,7 @@ export function usePdvCheckout() {
           }
         } catch (e) { console.warn("[PDV] cash drawer skipped:", e); }
 
-        setTimeout(onClearScheduled, 2000);
+        setTimeout(() => onClearScheduled(cart), 2000);
       } catch (e: any) {
         toast.error(e.message || "Erro ao finalizar.");
       } finally {
