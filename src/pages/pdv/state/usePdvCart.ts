@@ -1,8 +1,8 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { sumMoney, subtractMoney } from "@/lib/utils";
 import { parseBRL } from "@/hooks/useBRLInput";
 import type { CartAddon } from "@/contexts/CartContext";
-import type { CartItem, Product } from "../types";
+import type { CartItem, Product, SaleSnapshot } from "../types";
 import type { SplitPayment } from "@/components/pdv/PdvSplitPayment";
 
 /** Chave de agrupamento de carrinho por addons normalizada. */
@@ -203,10 +203,41 @@ export function usePdvCart() {
     setSplitPayments([]);
   }, []);
 
-  /** Restaura o carrinho (para desfazer "limpar venda"). */
-  const restoreCart = useCallback((items: CartItem[]) => {
-    setCart(items);
+  /** Restaura a venda completa (para desfazer "limpar venda"). */
+  const restoreCart = useCallback((snapshot: SaleSnapshot) => {
+    setCart(snapshot.items);
+    setPaymentMethod(snapshot.paymentMethod);
+    setTableId(snapshot.tableId);
+    setSelectedTable(snapshot.selectedTable);
+    setSelectedTabId(snapshot.selectedTabId);
+    setDiscountType(snapshot.discountType);
+    setDiscountInput(snapshot.discountInput);
+    setShowDiscount(!!snapshot.discountInput);
+    setCashReceived(snapshot.cashReceived);
+    setSplitMode(snapshot.splitMode);
+    setSplitPayments(snapshot.splitPayments);
+    setOrderDone(false);
   }, []);
+
+  // Ref síncrona do carrinho — permite decidir sem depender de closure stale.
+  const cartRef = useRef<CartItem[]>([]);
+  cartRef.current = cart;
+
+  /**
+   * Limpa a venda somente se o carrinho não mudou desde `expected`
+   * (snapshot do carrinho no momento da finalização).
+   * Evita que o timeout pós-venda apague uma nova venda iniciada no intervalo.
+   */
+  const clearSaleIfUnchanged = useCallback((expected: CartItem[]) => {
+    const current = cartRef.current;
+    const same =
+      current.length === expected.length &&
+      current.every(
+        (it, idx) => it.id === expected[idx]?.id && it.quantity === expected[idx]?.quantity
+      );
+    if (same) clearSale();
+    return same;
+  }, [clearSale]);
 
   return {
     // estado
@@ -253,5 +284,6 @@ export function usePdvCart() {
     removeItem,
     clearSale,
     restoreCart,
+    clearSaleIfUnchanged,
   };
 }

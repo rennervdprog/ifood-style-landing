@@ -118,6 +118,12 @@ export const PdvCatalogSection = ({
       (p) => (p.pdv_short_code || "").toLowerCase() === c.toLowerCase(),
     );
     if (found) {
+      // Mesma trava de esgotado do card (PdvProductCard.handleAdd).
+      const stock = stockMap?.get(found.id);
+      if (stock?.track_stock === true && Number(stock.quantity) <= 0) {
+        toast.error(`${found.name} está esgotado`);
+        return;
+      }
       addItem(found);
       setCode("");
     }

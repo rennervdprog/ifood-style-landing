@@ -95,7 +95,7 @@ export function usePdvSession(params: {
         // sessão aberta (evita dois caixas abertos em tabs distintas).
         const { data: existing } = await supabase
           .from("pdv_sessions" as any)
-          .select("id")
+          .select("*")
           .eq("store_id", storeId)
           .eq("status", "open")
           .maybeSingle();
@@ -103,6 +103,7 @@ export function usePdvSession(params: {
           const s = existing as any;
           toast.error("Já existe um caixa aberto para esta loja.");
           setCurrentSession(s as any as PdvSession);
+          writeCachedSession(storeId, s as any as PdvSession);
           setScreen("venda");
           return false;
         }
