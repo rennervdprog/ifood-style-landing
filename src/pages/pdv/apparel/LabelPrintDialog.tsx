@@ -69,7 +69,7 @@ export default function LabelPrintDialog({ items, onClose }: Props) {
             {items.map((it, i) => (
               <div
                 key={i}
-                className="border border-dashed border-border rounded-md p-1.5 text-center text-[10px] break-inside-avoid print:border-none print:page-break-after-always"
+                className={`border border-dashed border-border rounded-md p-1.5 text-center text-[10px] break-inside-avoid print:border-none ${i < items.length - 1 ? "print:page-break-after-always" : ""}`}
                 style={{ width: "50mm", minHeight: "30mm" }}
               >
                 <p className="font-bold truncate leading-tight text-[11px]">{it.productName}</p>

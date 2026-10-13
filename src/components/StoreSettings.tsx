@@ -419,8 +419,6 @@ type PizzaPriceMode = "maior" | "media" | "soma";
       pix_direto_instructions: pixDiretoInstructions.trim() || null,
     };
 
-    console.log("[DEBUG] Salvando configurações da loja:", { storeId, updateData });
-
     // Geocoda endereço para gravar latitude/longitude (não-bloqueante).
     try {
       const resolved = await resolveAddress({

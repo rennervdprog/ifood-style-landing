@@ -618,6 +618,9 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
               {customDatesInverted && (
                 <p className="text-[11px] font-bold text-red-500">Data inicial maior que a final.</p>
               )}
+              {period === "custom" && (!customStart || !customEnd) && (
+                <p className="text-[11px] font-bold text-amber-600">Selecione as duas datas — sem elas, são exibidos os dados de hoje.</p>
+              )}
             </div>
           )}
         </div>
