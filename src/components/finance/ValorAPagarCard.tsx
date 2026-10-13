@@ -8,6 +8,7 @@ import { formatBRL } from "@/lib/utils";
 import { REPASSE_RULES } from "@/lib/repasseRules";
 import { FINANCE_COPY } from "@/lib/financeCommunication";
 import QueryErrorState from "@/components/QueryErrorState";
+import { usePendingRepasse } from "@/hooks/usePendingRepasse";
 
 interface Props {
   storeId: string;
@@ -15,25 +16,27 @@ interface Props {
 }
 
 export default function ValorAPagarCard({ storeId, onPayClick }: Props) {
-  const { data, isLoading, isSuccess, refetch } = useQuery({
-    queryKey: ["valor-a-pagar", storeId],
+  // Operacional (repasse/comissão/PDV) via hook canônico — filtra por tipo de plano.
+  const { total: operationalTotal, breakdown, isLoading: repasseLoading } = usePendingRepasse(storeId);
+  const { data: mensalidadeData, isLoading: mensalidadeLoading, isSuccess, refetch } = useQuery({
+    queryKey: ["valor-a-pagar-mensalidade", storeId],
     queryFn: async () => {
-      const [{ data: bal }, { data: plan }, { data: monthlyCharges }] = await Promise.all([
-        (supabase as any).from("store_balances").select("repasse_pendente, comissao_pendente").eq("store_id", storeId).maybeSingle(),
-        (supabase as any).from("store_plans").select("pdv_commission_pending").eq("store_id", storeId).eq("is_active", true).maybeSingle(),
-        (supabase as any).from("financial_transactions").select("amount").eq("store_id", storeId).eq("transaction_kind", "monthly_fee").eq("status", "pending").limit(50),
-      ]);
-
-      const repasse = Number(bal?.repasse_pendente || 0);
-      const comissao = Number(bal?.comissao_pendente || 0);
-      const pdv = Number(plan?.pdv_commission_pending || 0);
+      const { data: monthlyCharges } = await (supabase as any).from("financial_transactions").select("amount").eq("store_id", storeId).eq("transaction_kind", "monthly_fee").eq("status", "pending").limit(50);
       const mensalidade = (monthlyCharges || []).reduce((sum: number, charge: any) => sum + Number(charge.amount || 0), 0);
-      const operationalTotal = repasse + comissao + pdv;
-      const total = operationalTotal + mensalidade;
-      return { repasse, comissao, pdv, mensalidade, operationalTotal, total };
+      return { mensalidade };
     },
     refetchInterval: 60_000,
   });
+
+  const isLoading = repasseLoading || mensalidadeLoading;
+  const data = mensalidadeData ? {
+    repasse: breakdown.splitEntrega,
+    comissao: breakdown.comissao,
+    pdv: breakdown.pdv,
+    mensalidade: mensalidadeData.mensalidade,
+    operationalTotal,
+    total: operationalTotal + mensalidadeData.mensalidade,
+  } : undefined;
 
   if (isLoading) {
     return (
