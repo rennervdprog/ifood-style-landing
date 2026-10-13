@@ -64,7 +64,7 @@ export function usePdvCart() {
   const trocoNegativo = !!cashReceived && cashVal < finalTotal;
 
   const getQty = useCallback(
-    (id: string) => cart.find((i) => i.id === id)?.quantity ?? 0,
+    (id: string) => cart.filter((i) => i.id === id).reduce((sum, i) => sum + i.quantity, 0),
     [cart],
   );
 
@@ -171,10 +171,14 @@ export function usePdvCart() {
 
   const decItem = useCallback((id: string) => {
     setCart((prev) => {
-      const it = prev.find((i) => i.id === id);
-      if (!it) return prev;
-      if (it.quantity === 1) return prev.filter((i) => i.id !== id);
-      return prev.map((i) => (i.id === id ? { ...i, quantity: i.quantity - 1 } : i));
+      // Decrementa UMA linha por vez (a mais recente com esse produto).
+      // Antes usava find + filter por id, o que apagava TODAS as linhas
+      // do mesmo produto quando a quantidade chegava a 1.
+      const idx = prev.map((i) => i.id).lastIndexOf(id);
+      if (idx === -1) return prev;
+      const it = prev[idx];
+      if (it.quantity === 1) return prev.filter((_, i) => i !== idx);
+      return prev.map((i, index) => (index === idx ? { ...i, quantity: i.quantity - 1 } : i));
     });
   }, []);
 

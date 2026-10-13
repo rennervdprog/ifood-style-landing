@@ -204,7 +204,7 @@ export const PdvHistorico = ({
               { id: "suprimento", label: "Suprimentos" },
               { id: "canceladas", label: "Canceladas" },
             ] as { id: FilterType; label: string }[]).map(f => (
-              <button key={f.id} onClick={() => setFilter(f.id)}
+              <button key={f.id} onClick={() => { setFilter(f.id); if (f.id !== "all" && f.id !== "sale") setMethodFilter(null); }}
                 className={`shrink-0 text-[10px] font-bold px-2.5 py-1 rounded-full border transition-colors ${
                   filter === f.id
                     ? "bg-primary text-primary-foreground border-primary"

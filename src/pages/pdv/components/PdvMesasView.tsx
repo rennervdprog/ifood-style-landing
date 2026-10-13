@@ -384,12 +384,22 @@ function NewTableDialog({ storeId, onClose, onCreated }: { storeId: string; onCl
 
   const create = async () => {
     if (!label.trim()) return toast.error("Informe o nome da mesa");
+    const seatsNum = Number(seats);
+    if (!seats || seatsNum <= 0) return toast.error("Informe a quantidade de lugares (maior que 0)");
     setSaving(true);
     try {
+      // Evita duplicidade (case-insensitive)
+      const { data: existing } = await (supabase as any).from("pdv_tables")
+        .select("id").eq("store_id", storeId).ilike("label", label.trim()).limit(1);
+      if (existing && existing.length > 0) {
+        toast.error(`Já existe uma mesa com o nome "${label.trim()}"`);
+        setSaving(false);
+        return;
+      }
       const { error } = await (supabase as any).from("pdv_tables").insert({
         store_id: storeId,
         label: label.trim(),
-        seats: Number(seats) || 4,
+        seats: seatsNum,
       });
       if (error) throw error;
       toast.success("Mesa criada");
