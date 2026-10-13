@@ -331,10 +331,16 @@ const PdvPage = () => {
     initialDataUpdatedAt: 0,
   });
 
+  // Fallback por categoria (igual ao PdvCardapioPage): lojas com categoria
+  // "lanches"/"restaurante" também vendem combos/prato do dia no caixa.
+  const storeCats = useMemo(() => {
+    if (!store) return [] as string[];
+    return [store.category, ...(((store as any).categories || []) as string[])].filter(Boolean);
+  }, [store]);
   const isApparel = (store as any)?.store_type === "apparel";
-  const isSnackBar = (store as any)?.store_type === "snack_bar";
+  const isSnackBar = (store as any)?.store_type === "snack_bar" || storeCats.includes("lanches");
   const isPizzeria = (store as any)?.store_type === "pizzeria";
-  const isRestaurant = (store as any)?.store_type === "restaurant";
+  const isRestaurant = (store as any)?.store_type === "restaurant" || storeCats.includes("restaurante");
 
   // Fase 4.2 Boutique — cliente + vale-crédito da venda atual
   const [apparelCustomer, setApparelCustomer] = useState<ApparelCustomer>({ phone: "", name: "" });

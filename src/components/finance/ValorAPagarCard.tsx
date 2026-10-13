@@ -97,11 +97,11 @@ export default function ValorAPagarCard({ storeId, onPayClick }: Props) {
 
         {isZero ? (
           <div className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">Tudo em dia. Nenhum valor pendente.</div>
-        ) : (
+        ) : onPayClick ? (
           <Button onClick={onPayClick} className="w-full font-bold gap-2" size="sm">
             Ver cobranças PIX <ArrowRight className="h-3.5 w-3.5" />
           </Button>
-        )}
+        ) : null}
       </CardContent>
     </Card>
   );

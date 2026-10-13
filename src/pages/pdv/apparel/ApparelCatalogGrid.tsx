@@ -2,6 +2,7 @@ import { useMemo, useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { formatBRL } from "@/lib/utils";
+import { toast } from "sonner";
 import { Loader2, Search, Shirt, X, ArrowLeft, Tag } from "lucide-react";
 import type { Product } from "@/pages/pdv/types";
 import LabelPrintDialog, { type LabelData } from "./LabelPrintDialog";
@@ -210,6 +211,11 @@ function VariantMatrixSheet({
     if (v.stock_qty <= 0) return;
     // ID composto pra virar linha independente no carrinho por variante
     const compositeId = `${product.id}::${v.id}`;
+    // Não permite adicionar além do estoque (oversell).
+    if (getQty(compositeId) >= v.stock_qty) {
+      toast.warning("Estoque máximo desta variação já está no carrinho");
+      return;
+    }
     const variantLabel = [v.size, v.color].filter(Boolean).join(" · ");
     const pseudo: Product = {
       ...product,

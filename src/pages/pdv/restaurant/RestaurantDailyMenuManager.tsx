@@ -21,7 +21,10 @@ interface DailyMenu {
 /** CRUD do "Prato do Dia" (marmitex) para lojas restaurant. Filtra por data. */
 export default function RestaurantDailyMenuManager({ storeId }: { storeId: string }) {
   const qc = useQueryClient();
-  const [date, setDate] = useState<string>(new Date().toISOString().slice(0, 10));
+  // Data LOCAL (não UTC): toISOString() vira "amanhã" entre 21h e 0h no BR.
+  const _d0 = new Date();
+  const _today0 = `${_d0.getFullYear()}-${String(_d0.getMonth() + 1).padStart(2, "0")}-${String(_d0.getDate()).padStart(2, "0")}`;
+  const [date, setDate] = useState<string>(_today0);
   const [draft, setDraft] = useState<{ name: string; description: string; price: string }>({
     name: "", description: "", price: "",
   });
