@@ -164,7 +164,8 @@ export default function FinancialStatement({ storeId, storeName }: Props) {
       const flowLbl = info?.flow === "income" ? "Receita" : info?.flow === "expense" ? "Despesa" : "—";
       return `"${date}","${info?.label || t.transaction_kind}","${flowLbl}","${Number(t.amount).toFixed(2)}","${sm}","${t.reference_code}"`;
     }).join("\n");
-    const blob = new Blob([header + rows], { type: "text/csv;charset=utf-8;" });
+    // 4.8: BOM para acentos não corromperem no Excel Windows (igual ao CSV de Relatórios)
+    const blob = new Blob(["\uFEFF" + header + rows], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;

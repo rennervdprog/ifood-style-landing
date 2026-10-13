@@ -106,7 +106,7 @@ const FixedPlanBillingHistory = ({ storeId, storeName }: Props) => {
                           }}
                           className="text-[10px] text-primary hover:underline flex items-center gap-1"
                         >
-                          <Copy className="h-3 w-3" /> Pagar PIX
+                          <Copy className="h-3 w-3" /> Copiar código PIX
                         </button>
                       )}
                     </div>
