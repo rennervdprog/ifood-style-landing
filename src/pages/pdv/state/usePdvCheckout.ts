@@ -329,6 +329,9 @@ export function usePdvCheckout() {
         queryClient.invalidateQueries({
           queryKey: ["pdv-movements", session.id],
         });
+        queryClient.invalidateQueries({
+          queryKey: ["pdv-stock"],
+        });
         onSuccess({ orderId });
         if (!offlineQueued) toast.success("✅ Venda finalizada!");
 
