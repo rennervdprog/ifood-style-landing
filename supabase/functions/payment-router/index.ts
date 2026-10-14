@@ -1269,6 +1269,40 @@ async function handleStorePayout(
 
   if (storeError || !store) return json({ error: "Loja não encontrada" }, 404);
 
+    // ── FASE 2 (2026-10-14): valida o valor contra a dívida real da loja
+    // ANTES de gerar a cobrança e reserva o valor atomicamente.
+    // Fecha: cobrança acima da dívida + duplicada por duplo clique/race (bug L4).
+    const payoutAmount = Number(Number(amount).toFixed(2));
+    const { data: bal } = await serviceClient
+      .from("store_balances")
+      .select("repasse_pendente, comissao_pendente, pending_commission")
+      .eq("store_id", store_id)
+      .maybeSingle();
+    const dividaTotal = Number(bal?.repasse_pendente || 0)
+      + Number(bal?.comissao_pendente || 0)
+      + Number(bal?.pending_commission || 0);
+    if (payoutAmount > dividaTotal + 0.005) {
+      return json({
+        error: "Valor acima da dívida da loja.",
+        divida_total: Number(dividaTotal.toFixed(2)),
+        solicitado: payoutAmount,
+      }, 400);
+    }
+    const { error: reserveErr } = await serviceClient.rpc("debit_store_repasse", {
+      _store_id: store_id,
+      _amount: payoutAmount,
+    });
+    if (reserveErr) {
+      return json({ error: "Saldo insuficiente para este valor.", detail: reserveErr.message }, 409);
+    }
+    // Devolve a reserva se a cobrança falhar adiante (crédito atômico).
+    const devolverReserva = async () => {
+      await serviceClient.rpc("credit_store_repasse", {
+        _store_id: store_id,
+        _amount: payoutAmount,
+      });
+    };
+
   const { data: refData } = await serviceClient.rpc("generate_financial_reference", { _prefix: "REP" });
   const referenceCode = refData || `#REP-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
   const desc = `Repasse ItaSuper - ${store.name} - ${referenceCode}`;
@@ -1305,7 +1339,11 @@ async function handleStorePayout(
       provider: "asaas",
       mercado_pago_payment_id: String(transferData?.transfer_id || ""),
       settled_at: new Date().toISOString(),
-      metadata: { store_name: store.name, pix_key, pix_type, description: desc, transfer_type: "asaas_transfer" },
+      metadata: {
+        store_name: store.name,
+        pix_key_masked: pix_key ? `${String(pix_key).slice(0, 3)}***${String(pix_key).slice(-2)}` : null,
+        pix_type, description: desc, transfer_type: "asaas_transfer"
+      },
     };
     await serviceClient.from("financial_transactions").insert(txRecord);
 
@@ -1316,15 +1354,12 @@ async function handleStorePayout(
       entity_name: store.name,
       amount: Number(amount.toFixed(2)),
       payout_type: "auto_asaas",
-      notes: `Transferência automática Asaas: ${referenceCode} | PIX: ${pix_key} (${pix_type})`,
+      notes: `Transferência automática Asaas: ${referenceCode} | PIX: ${pix_key ? String(pix_key).slice(0, 3) + "***" : "n/a"} (${pix_type})`,
       admin_user_id: userId,
     });
 
-    // Zero balances
-    await serviceClient
-      .from("store_balances")
-      .update({ repasse_pendente: 0, comissao_pendente: 0, pending_commission: 0 })
-      .eq("store_id", store_id);
+    // FASE 2: débito já feito de forma atômica via debit_store_repasse ANTES da
+    // transferência. Zeramento total removido (bug: apagava a dívida restante).
 
     return json({
       success: true,
@@ -1369,6 +1404,7 @@ async function handleStorePayout(
   await serviceClient.from("financial_transactions").insert(txRecord);
 
   if (!result.ok) {
+    await devolverReserva();
     return json({
       reference_code: referenceCode,
       status: "manual_required",
@@ -1380,10 +1416,7 @@ async function handleStorePayout(
     });
   }
 
-  await serviceClient
-    .from("store_balances")
-    .update({ repasse_pendente: 0 })
-    .eq("store_id", store_id);
+  // FASE 2: débito já feito via debit_store_repasse. Zeramento removido.
 
   return result;
 }
