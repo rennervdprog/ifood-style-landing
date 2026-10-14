@@ -134,6 +134,7 @@ export const dashboardGroups: DashboardGroup[] = [
     icon: Users,
     subTabs: [
       { key: "clients", label: "Clientes", icon: Users, requiresFullReports: true, hideOnPdvOnly: true },
+      { key: "reviews", label: "Avaliações", icon: MessageCircle, hideOnPdvOnly: true },
       { key: "loyalty", label: "Fidelidade", icon: Star, hideOnPdvOnly: true },
       { key: "coupons", label: "Cupons", icon: Tag, hideOnPdvOnly: true },
     ],

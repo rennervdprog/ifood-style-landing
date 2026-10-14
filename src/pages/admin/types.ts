@@ -31,7 +31,8 @@ export type DashboardTab =
   | "suporte"
   | "coupons"
   | "promotions"
-  | "stock";
+  | "stock"
+  | "reviews";
 
 export type StoreAddonGroup = {
   id: string;
