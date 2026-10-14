@@ -431,6 +431,10 @@ const AdminOrderCardImpl = (props: AdminOrderCardProps) => {
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={async (e) => {
+                  // Fase 7 (L16): trava de duplo clique
+                  const btn = e.currentTarget as HTMLAnchorElement;
+                  if (btn.dataset.processing === "1") return;
+                  btn.dataset.processing = "1";
                   // Sempre controlamos a ordem: 1) grava status, 2) imprime, 3) WhatsApp.
                   // A navegação nativa do <a> podia cancelar o request em andamento.
                   e.preventDefault();
@@ -441,6 +445,7 @@ const AdminOrderCardImpl = (props: AdminOrderCardProps) => {
                   } finally {
                     void waWindow;
                     handleAcceptOrder(order);
+                    btn.dataset.processing = "";
                   }
                 }}
                 className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-black py-3 rounded-xl text-sm active:scale-[0.98] transition-transform h-12 flex items-center justify-center no-underline"
