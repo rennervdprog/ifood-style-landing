@@ -74,6 +74,40 @@ Deno.serve(async (req) => {
       return json({ error: "Loja não encontrada" }, 404);
     }
 
+    // ── FASE 2 (2026-10-14): valida o valor contra a dívida real da loja
+    // ANTES de gerar a cobrança e reserva o valor atomicamente.
+    // Fecha: cobrança acima da dívida + duplicada por duplo clique/race (bug L4).
+    const payoutAmount = Number(Number(amount).toFixed(2));
+    const { data: bal } = await serviceClient
+      .from("store_balances")
+      .select("repasse_pendente, comissao_pendente, pending_commission")
+      .eq("store_id", store_id)
+      .maybeSingle();
+    const dividaTotal = Number(bal?.repasse_pendente || 0)
+      + Number(bal?.comissao_pendente || 0)
+      + Number(bal?.pending_commission || 0);
+    if (payoutAmount > dividaTotal + 0.005) {
+      return json({
+        error: "Valor acima da dívida da loja.",
+        divida_total: Number(dividaTotal.toFixed(2)),
+        solicitado: payoutAmount,
+      }, 400);
+    }
+    const { error: reserveErr } = await serviceClient.rpc("debit_store_repasse", {
+      _store_id: store_id,
+      _amount: payoutAmount,
+    });
+    if (reserveErr) {
+      return json({ error: "Saldo insuficiente para este valor.", detail: reserveErr.message }, 409);
+    }
+    // Devolve a reserva se a cobrança falhar adiante (crédito atômico).
+    const devolverReserva = async () => {
+      await serviceClient.rpc("credit_store_repasse", {
+        _store_id: store_id,
+        _amount: payoutAmount,
+      });
+    };
+
     const ASAAS_API_KEY = Deno.env.get("ASAAS_API_KEY");
     if (!ASAAS_API_KEY) {
       return json({ error: "Chave de pagamento não configurada." }, 500);
@@ -105,14 +139,21 @@ Deno.serve(async (req) => {
     const maskedPix = pix_key ? `${String(pix_key).slice(0,3)}***${String(pix_key).slice(-2)}` : "";
     console.log(`[Asaas] Creating transfer: R$${amount.toFixed(2)} to ${maskedPix} (${pix_type})`);
 
-    const transferRes = await fetch(`${baseUrl}/transfers`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "access_token": ASAAS_API_KEY,
-      },
-      body: JSON.stringify(transferBody),
-    });
+    let transferRes: Response;
+    try {
+      transferRes = await fetch(`${baseUrl}/transfers`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "access_token": ASAAS_API_KEY,
+        },
+        body: JSON.stringify(transferBody),
+      });
+    } catch (fetchErr) {
+      await devolverReserva();
+      console.error("Asaas Transfer fetch failed:", fetchErr);
+      return json({ error: "Falha de comunicação com o Asaas. A reserva foi estornada." }, 502);
+    }
 
     const transferData = await transferRes.json();
 
@@ -141,6 +182,7 @@ Deno.serve(async (req) => {
     await serviceClient.from("financial_transactions").insert(txRecord);
 
     if (!transferRes.ok) {
+      await devolverReserva();
       console.error("Asaas Transfer Error:", JSON.stringify(transferData));
       const errorMsg = transferData?.errors?.[0]?.description || transferData?.message || "Erro na transferência";
       return json({
@@ -187,23 +229,9 @@ Deno.serve(async (req) => {
       }
     } catch (e) { console.error("[admin-payout-store] wa notify failed", e); }
 
-    // Débito atômico via RPC com FOR UPDATE — valida saldo suficiente e
-    // evita race-condition com auto-payout-cron (double payout).
-    const { error: debitErr } = await serviceClient.rpc("debit_store_repasse", {
-      _store_id: store_id,
-      _amount: Number(amount.toFixed(2)),
-    });
-    if (debitErr) {
-      console.error("[admin-payout-store] debit_store_repasse failed:", debitErr);
-      return json({
-        success: true,
-        reference_code: referenceCode,
-        transfer_id: transferData.id,
-        status: "approved_balance_warning",
-        amount: Number(amount.toFixed(2)),
-        warning: `Transferência feita, mas saldo não pôde ser debitado: ${debitErr.message}. Verifique manualmente.`,
-      });
-    }
+    // FASE 2: o débito do saldo já foi feito de forma atômica via debit_store_repasse
+    // ANTES da transferência (reserva). O débito pós-transferência foi removido —
+    // ele criava a janela transfer-before-debit (bug M2: duplo clique pagava 2x).
 
     return json({
       success: true,
