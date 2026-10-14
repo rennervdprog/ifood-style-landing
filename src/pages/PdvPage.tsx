@@ -613,42 +613,66 @@ const PdvPage = () => {
       setOrderDone(true);
       // Refresca o dashboard "Agora" após cada venda concluída.
       queryClient.invalidateQueries({ queryKey: ["pdv-now", currentSession?.id] });
+      // Fase 6 (L14): baixa de estoque com retry — antes era fire-and-forget,
+      // se a rede caísse o estoque nunca baixava.
+      const decrementWithRetry = async (
+        rpcName: string,
+        params: Record<string, any>,
+        itemName: string
+      ): Promise<boolean> => {
+        for (let attempt = 1; attempt <= 3; attempt++) {
+          try {
+            const { data: ok, error } = await supabase.rpc(rpcName as any, params);
+            if (error) throw error;
+            if (ok === false) {
+              toast.warning(`Estoque insuficiente: ${itemName}`);
+              return true; // sem estoque é resposta válida, não retry
+            }
+            return true;
+          } catch (e) {
+            console.error(`[PDV] Falha na baixa de estoque (tentativa ${attempt}/3):`, itemName, e);
+            if (attempt === 3) {
+              toast.error(`Não foi possível baixar o estoque de "${itemName}". Verifique manualmente.`);
+              return false;
+            }
+            await new Promise((r) => setTimeout(r, 500 * attempt));
+          }
+        }
+        return false;
+      };
       // Boutique: decrementa estoque de cada variante vendida
       const apparelItems = cart.filter((i) => (i.metadata as any)?.apparel_variant_id);
+      for (const it of apparelItems) {
+        await decrementWithRetry(
+          "apparel_adjust_stock",
+          {
+            _variant_id: (it.metadata as any).apparel_variant_id,
+            _delta: -Math.abs(it.quantity),
+            _reason: "sale",
+          },
+          it.name
+        );
+      }
       if (apparelItems.length) {
-        (async () => {
-          for (const it of apparelItems) {
-            try {
-              await supabase.rpc("apparel_adjust_stock" as any, {
-                _variant_id: (it.metadata as any).apparel_variant_id,
-                _delta: -Math.abs(it.quantity),
-                _reason: "sale",
-              });
-            } catch {}
-          }
-          queryClient.invalidateQueries({ queryKey: ["apparel-variants", store?.id] });
-        })();
+        queryClient.invalidateQueries({ queryKey: ["apparel-variants", store?.id] });
       }
       // Controle de estoque: decrementa estoque de produtos normais vendidos
       // (CartItem usa `id` como id do produto.)
       const regularItems = cart.filter((i) => !(i.metadata as any)?.apparel_variant_id && i.id);
+      for (const it of regularItems) {
+        await decrementWithRetry(
+          "stock_decrement_sale",
+          {
+            _product_id: it.id,
+            _quantity: Math.abs(it.quantity),
+            _order_id: orderId || null,
+          },
+          it.name
+        );
+      }
       if (regularItems.length) {
-        (async () => {
-          for (const it of regularItems) {
-            try {
-              const { data: ok } = await supabase.rpc("stock_decrement_sale" as any, {
-                _product_id: it.id,
-                _quantity: Math.abs(it.quantity),
-                _order_id: orderId || null,
-              });
-              if (ok === false) {
-                toast.warning(`Estoque insuficiente: ${it.name}`);
-              }
-            } catch {}
-          }
-          queryClient.invalidateQueries({ queryKey: ["stock-list"] });
-          queryClient.invalidateQueries({ queryKey: ["low-stock"] });
-        })();
+        queryClient.invalidateQueries({ queryKey: ["stock-list"] });
+        queryClient.invalidateQueries({ queryKey: ["low-stock"] });
       }
       // Fase 4.2 Boutique — CRM + vale-crédito
       if (isApparel && store?.id && orderId) {
