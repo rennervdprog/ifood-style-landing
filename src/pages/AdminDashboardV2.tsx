@@ -58,6 +58,7 @@ const DriversTab = lazy(() => import("./admin/tabs/DriversTab"));
 const SettingsTab = lazy(() => import("./admin/tabs/SettingsTab"));
 const CouponsTab = lazy(() => import("./admin/tabs/CouponsTab"));
 const PromotionsTab = lazy(() => import("./admin/tabs/PromotionsTab"));
+const ReviewsTab = lazy(() => import("./admin/tabs/ReviewsTab"));
 const DashboardOverviewSection = lazy(() => import("./admin/sections/DashboardOverviewSection"));
 const AvisosSection = lazy(() => import("./admin/sections/AvisosSection"));
 const RepasseSection = lazy(() => import("./admin/sections/RepasseSection"));
@@ -1882,6 +1883,7 @@ const AdminDashboard = () => {
                 {dashboardTab === "settings" && "Configurações da loja"}
                 {dashboardTab === "subscription" && "Seu plano e mensalidade"}
                 {dashboardTab === "loyalty" && "Programa de pontos para clientes"}
+                {dashboardTab === "reviews" && "O que seus clientes estão achando"}
                 {dashboardTab === "drivers" && "Seus entregadores vinculados"}
                 {dashboardTab === "reports" && "Relatórios e estatísticas"}
                 {dashboardTab === "cash_register" && "Caixa presencial — PDV"}
@@ -2219,6 +2221,7 @@ const AdminDashboard = () => {
                 )}
                 {dashboardTab === "coupons" && <CouponsTab storeId={store.id} />}
                 {dashboardTab === "promotions" && <PromotionsTab storeId={store.id} />}
+                {dashboardTab === "reviews" && <ReviewsTab storeId={store.id} />}
                 {dashboardTab === "drivers" && store && <DriversTab storeId={store.id} />}
                 {dashboardTab === "refunds" && store && <RefundsTab storeId={store.id} />}
               </Suspense>
