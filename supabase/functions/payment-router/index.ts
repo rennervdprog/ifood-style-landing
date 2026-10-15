@@ -918,7 +918,7 @@ async function handleOrderPix(
 
   const { data: order, error: orderError } = await supabase
     .from("orders")
-    .select("id, client_id, total_price, subtotal, delivery_fee, status, store_id")
+    .select("id, client_id, total_price, subtotal, delivery_fee, status, store_id, wallet_discount, loyalty_discount")
     .eq("id", order_id)
     .eq("client_id", userId)
     .single();
@@ -926,6 +926,16 @@ async function handleOrderPix(
   if (orderError || !order) {
     console.warn(`[OrderPix] ❌ Order not found: ${orderError?.message}`);
     return json({ error: "Pedido não encontrado" }, 404);
+  }
+  // L12: Bloqueia PIX se a loja está fechada forçadamente
+  const { data: storeCheck } = await supabase
+    .from("stores")
+    .select("force_closed")
+    .eq("id", order.store_id)
+    .single();
+  if (storeCheck?.force_closed) {
+    console.warn(`[OrderPix] ❌ Loja fechada forçadamente: ${order.store_id}`);
+    return json({ error: "Loja temporariamente indisponível" }, 400);
   }
   console.log(`[OrderPix] ✅ Order ok: status=${order.status} total=${order.total_price} store=${order.store_id}`);
   if (order.status !== "aguardando_pagamento") {
@@ -999,7 +1009,7 @@ async function handleOrderPix(
         }
         calcSubtotal += realPrice * Number(item.quantity || 1);
       }
-      const calcTotal = calcSubtotal + Number(order.delivery_fee || 0);
+      const calcTotal = calcSubtotal + Number(order.delivery_fee || 0) - Number(order.wallet_discount || 0) - Number(order.loyalty_discount || 0);
       // Tolerância de R$ 0,01 para arredondamentos
       if (Math.abs(calcTotal - amount) > 0.01) {
         console.error(`[Router Security] Price manipulation: calculado=${calcTotal}, recebido=${amount}, pedido=${order_id}`);
