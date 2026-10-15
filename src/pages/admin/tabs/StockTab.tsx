@@ -30,6 +30,10 @@ import {
   Search,
   History,
   PackageX,
+  PackageCheck,
+  Boxes,
+  TrendingDown,
+  CircleDollarSign,
   ArrowUpCircle,
   ArrowDownCircle,
   Info,
@@ -225,8 +229,62 @@ export default function StockTab({ storeId }: Props) {
   const trackedItems = items.filter((i) => i.track_stock);
   const notTracked = items.filter((i) => !i.track_stock);
 
+  // KPIs do estoque
+  const totalUnits = trackedItems.reduce((sum, i) => sum + Number(i.quantity || 0), 0);
+  const outOfStock = trackedItems.filter((i) => Number(i.quantity || 0) === 0).length;
+  const stockValue = trackedItems.reduce((sum, i) => sum + Number(i.quantity || 0) * Number(i.product_price || 0), 0);
+
   return (
     <div className="space-y-4 p-4 max-w-3xl mx-auto">
+      {/* KPIs - resumo do estoque */}
+      {trackedItems.length > 0 && (
+        <div className="grid grid-cols-2 gap-3">
+          <Card className="bg-white">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-1">
+                <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                  <PackageCheck className="h-4 w-4 text-blue-600" />
+                </div>
+                <span className="text-xs text-muted-foreground font-medium">Produtos controlados</span>
+              </div>
+              <p className="text-2xl font-bold">{trackedItems.length}</p>
+            </CardContent>
+          </Card>
+          <Card className="bg-white">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-1">
+                <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
+                  <Boxes className="h-4 w-4 text-green-600" />
+                </div>
+                <span className="text-xs text-muted-foreground font-medium">Unidades em estoque</span>
+              </div>
+              <p className="text-2xl font-bold">{totalUnits}</p>
+            </CardContent>
+          </Card>
+          <Card className="bg-white">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-1">
+                <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center">
+                  <TrendingDown className="h-4 w-4 text-orange-600" />
+                </div>
+                <span className="text-xs text-muted-foreground font-medium">Estoque baixo</span>
+              </div>
+              <p className="text-2xl font-bold text-orange-600">{lowStock.length}</p>
+            </CardContent>
+          </Card>
+          <Card className="bg-white">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-1">
+                <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center">
+                  <CircleDollarSign className="h-4 w-4 text-emerald-600" />
+                </div>
+                <span className="text-xs text-muted-foreground font-medium">Valor em estoque</span>
+              </div>
+              <p className="text-2xl font-bold">R$ {stockValue.toFixed(2)}</p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
       {/* Como funciona - design claro (só mostra se não tem nenhum controle ativo) */}
       {trackedItems.length === 0 && lowStock.length === 0 && (
         <Card className="bg-white">
