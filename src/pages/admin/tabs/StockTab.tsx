@@ -35,6 +35,8 @@ import {
   Info,
 } from "lucide-react";
 import { toast } from "sonner";
+import BarcodeScanner from "@/components/BarcodeScanner";
+import { ScanLine } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -75,6 +77,7 @@ export default function StockTab({ storeId }: Props) {
   const [adjustQty, setAdjustQty] = useState("");
   const [adjustReason, setAdjustReason] = useState("");
   const [historyProduct, setHistoryProduct] = useState<StockItem | null>(null);
+  const [showScanner, setShowScanner] = useState(false);
 
   const { data: items = [], isLoading } = useQuery({
     queryKey: ["stock-list", storeId],
@@ -309,15 +312,36 @@ export default function StockTab({ storeId }: Props) {
         </Card>
       )}
 
-      {/* Busca */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Buscar produto..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="pl-9"
+      {/* Busca + Scanner */}
+      <div className="flex gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar produto ou código..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+        <Button
+          size="icon"
+          variant="outline"
+          onClick={() => setShowScanner(true)}
+          title="Escanear código de barras"
+        >
+          <ScanLine className="h-5 w-5" />
+        </Button>
+      </div>
+      {showScanner && (
+        <BarcodeScanner
+          onScan={(code) => {
+            setShowScanner(false);
+            setSearch(code);
+            toast.success(`Código lido: ${code}`);
+          }}
+          onClose={() => setShowScanner(false)}
         />
+      )}
       </div>
 
       {lowStock.length > 0 && (
