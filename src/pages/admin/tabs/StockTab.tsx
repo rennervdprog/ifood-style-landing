@@ -342,7 +342,6 @@ export default function StockTab({ storeId }: Props) {
           onClose={() => setShowScanner(false)}
         />
       )}
-      </div>
 
       {lowStock.length > 0 && (
         <Button
