@@ -397,6 +397,8 @@ const MenuBuilder = ({ storeId, storeCategory, storeCategories }: MenuBuilderPro
       } catch {}
     }
     toast.success("Produto adicionado!");
+    queryClient.invalidateQueries({ queryKey: ["store-products", storeId] });
+    queryClient.invalidateQueries({ queryKey: ["menu-sections", storeId] });
     setProductSheet(null);
     invalidateProducts();
   };
