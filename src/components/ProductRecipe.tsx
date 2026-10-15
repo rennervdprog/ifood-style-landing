@@ -74,6 +74,9 @@ export default function ProductRecipe({ productId, productName, storeId, onClose
       setQty("");
       toast.success("Ingrediente adicionado!");
     },
+    onError: () => {
+      toast.error("Erro ao adicionar ingrediente");
+    },
   });
 
   const removeMutation = useMutation({
@@ -83,6 +86,9 @@ export default function ProductRecipe({ productId, productName, storeId, onClose
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["recipe", productId] });
       toast.success("Ingrediente removido!");
+    },
+    onError: () => {
+      toast.error("Erro ao remover ingrediente");
     },
   });
 

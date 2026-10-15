@@ -63,6 +63,7 @@ export default function RestaurantDailyMenuManager({ storeId }: { storeId: strin
     const { error } = await (supabase as any).from("daily_menus")
       .update({ active: !m.active }).eq("id", m.id);
     if (error) return toast.error(error.message);
+    toast.success(m.active ? "Prato desativado" : "Prato ativado");
     refresh();
   };
 
