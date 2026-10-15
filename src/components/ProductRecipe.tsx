@@ -1,0 +1,174 @@
+// @ts-nocheck
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import { ChefHat, Plus, Trash2, X } from "lucide-react";
+import { toast } from "sonner";
+
+interface Props {
+  productId: string;
+  productName: string;
+  storeId: string;
+  onClose: () => void;
+}
+
+/**
+ * Ficha técnica: define os ingredientes de um produto.
+ * Na venda, os insumos baixam automaticamente.
+ * Fase 2 do plano de melhoria do estoque.
+ */
+export default function ProductRecipe({ productId, productName, storeId, onClose }: Props) {
+  const queryClient = useQueryClient();
+  const [showAdd, setShowAdd] = useState(false);
+  const [ingredientId, setIngredientId] = useState("");
+  const [qty, setQty] = useState("");
+
+  const { data: ingredients = [] } = useQuery({
+    queryKey: ["recipe", productId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("product_recipes")
+        .select("id, quantity, unit, ingredient_product_id, products!product_recipes_ingredient_product_id_fkey(name)")
+        .eq("product_id", productId);
+      return data || [];
+    },
+  });
+
+  const { data: products = [] } = useQuery({
+    queryKey: ["all-products", storeId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("products")
+        .select("id, name")
+        .eq("store_id", storeId)
+        .eq("is_active", true)
+        .neq("id", productId)
+        .order("name");
+      return data || [];
+    },
+  });
+
+  const addMutation = useMutation({
+    mutationFn: async () => {
+      await supabase.from("product_recipes").insert({
+        product_id: productId,
+        ingredient_product_id: ingredientId,
+        quantity: Number(qty),
+        unit: "un",
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["recipe", productId] });
+      setShowAdd(false);
+      setIngredientId("");
+      setQty("");
+      toast.success("Ingrediente adicionado!");
+    },
+  });
+
+  const removeMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await supabase.from("product_recipes").delete().eq("id", id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["recipe", productId] });
+      toast.success("Ingrediente removido!");
+    },
+  });
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/50 flex items-end sm:items-center justify-center p-4">
+      <Card className="w-full max-w-md max-h-[90vh] overflow-y-auto">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <ChefHat className="h-5 w-5 text-orange-600" />
+              <h3 className="font-bold text-lg">Ficha técnica</h3>
+            </div>
+            <Button size="sm" variant="ghost" onClick={onClose}>
+              <X className="h-5 w-5" />
+            </Button>
+          </div>
+          <p className="text-sm text-muted-foreground mb-4">
+            <b>{productName}</b> é feito com o quê? Na venda, os ingredientes baixam sozinhos.
+          </p>
+
+          <div className="space-y-2 mb-4">
+            {ingredients.length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                Nenhum ingrediente cadastrado.<br />Adicione o primeiro abaixo.
+              </p>
+            )}
+            {ingredients.map((ing: any) => (
+              <div key={ing.id} className="flex items-center gap-2 bg-orange-50 rounded-lg px-3 py-2">
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-sm truncate">
+                    {ing.products?.name || "Ingrediente"}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {ing.quantity} {ing.unit} por unidade
+                  </p>
+                </div>
+                <Button
+                  size="sm" variant="ghost" className="text-red-600"
+                  onClick={() => removeMutation.mutate(ing.id)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
+          </div>
+
+          {!showAdd ? (
+            <Button className="w-full" variant="outline" onClick={() => setShowAdd(true)}>
+              <Plus className="h-4 w-4 mr-1" /> Adicionar ingrediente
+            </Button>
+          ) : (
+            <div className="space-y-3 border-t pt-4">
+              <div>
+                <Label>Ingrediente</Label>
+                <Select value={ingredientId} onValueChange={setIngredientId}>
+                  <SelectTrigger><SelectValue placeholder="Escolha o produto" /></SelectTrigger>
+                  <SelectContent>
+                    {products.map((p: any) => (
+                      <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Quantidade por unidade</Label>
+                <Input
+                  type="number" min="0" step="0.01" placeholder="Ex: 1"
+                  value={qty} onChange={(e) => setQty(e.target.value)}
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" className="flex-1" onClick={() => setShowAdd(false)}>
+                  Cancelar
+                </Button>
+                <Button
+                  className="flex-1 bg-green-600 hover:bg-green-700"
+                  disabled={!ingredientId || !qty}
+                  onClick={() => addMutation.mutate()}
+                >
+                  Adicionar
+                </Button>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

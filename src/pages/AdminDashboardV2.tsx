@@ -1564,8 +1564,7 @@ const AdminDashboard = () => {
         if (isPickupOrder) {
           return { label: "CLIENTE RETIROU", next: "finalizado" as OrderStatus, emoji: "✅" };
         }
-        // Para delivery, o lojista apenas disponibiliza o pedido. A saída deve
-        // ser confirmada exclusivamente pelo entregador na tela dele.
+        // A saída para entrega é marcada no app do entregador (botão legado removido).
         return null;
       case "saiu_entrega":
         // A conclusão da entrega também pertence ao fluxo do entregador/cliente.
