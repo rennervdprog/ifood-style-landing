@@ -412,9 +412,36 @@ export default function StockTab({ storeId }: Props) {
       {/* Produtos SEM controle */}
       {notTracked.length > 0 && filtered.some((i) => !i.track_stock) && (
         <div>
-          <h3 className="font-semibold text-sm text-muted-foreground mb-2">
-            ⭕ Sem controle ({notTracked.length}) — clique para ativar
-          </h3>
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="font-semibold text-sm text-muted-foreground">
+              ⭕ Sem controle ({notTracked.length})
+            </h3>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                if (confirm(`Ativar controle de estoque para ${notTracked.length} produtos?\n\nVocê poderá ajustar as quantidades depois.`)) {
+                  // Ativa todos de uma vez com quantidade 0
+                  Promise.all(
+                    notTracked.map((item) =>
+                      supabase.from("product_stock").upsert({
+                        product_id: item.product_id,
+                        store_id: storeId,
+                        quantity: 0,
+                        min_quantity: 5,
+                        track_stock: true,
+                      }, { onConflict: "product_id,store_id" })
+                    )
+                  ).then(() => {
+                    queryClient.invalidateQueries({ queryKey: ["stock-list", storeId] });
+                    toast.success(`${notTracked.length} produtos com controle ativado! Ajuste as quantidades.`);
+                  });
+                }
+              }}
+            >
+              Ativar todos
+            </Button>
+          </div>
           <div className="space-y-2">
             {filtered.filter((i) => !i.track_stock).map((item) => (
               <Card key={item.product_id} className="opacity-75">
