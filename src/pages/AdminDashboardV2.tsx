@@ -1564,9 +1564,8 @@ const AdminDashboard = () => {
         if (isPickupOrder) {
           return { label: "CLIENTE RETIROU", next: "finalizado" as OrderStatus, emoji: "✅" };
         }
-        // Fase 6 (L7): se nenhum entregador aceitar, o lojista pode liberar manualmente
-        // para não deixar o pedido travado.
-        return { label: "SAIU P/ ENTREGA", next: "saiu_entrega" as OrderStatus, emoji: "🛵" };
+        // A saída para entrega é marcada no app do entregador (botão legado removido).
+        return null;
       case "saiu_entrega":
         // A conclusão da entrega também pertence ao fluxo do entregador/cliente.
         return null;
