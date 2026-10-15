@@ -609,7 +609,7 @@ const PdvPage = () => {
       tableId,
       pdvCommissionRate: storePlan.pdvCommissionRate ?? 0,
       operatorId: pdvOperator?.id ?? null,
-    onSuccess: ({ orderId }) => {
+    onSuccess: async ({ orderId }) => {
       setOrderDone(true);
       // Refresca o dashboard "Agora" após cada venda concluída.
       queryClient.invalidateQueries({ queryKey: ["pdv-now", currentSession?.id] });
