@@ -80,6 +80,9 @@ export default function InventoryMode({ storeId, onClose }: Props) {
       toast.success("Inventário aplicado com sucesso!");
       onClose();
     },
+    onError: (e: any) => {
+      toast.error(e?.message || "Erro ao aplicar inventário");
+    },
   });
 
   if (isLoading) return <p className="text-center py-8">Carregando produtos...</p>;

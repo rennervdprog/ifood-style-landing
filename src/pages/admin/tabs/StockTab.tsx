@@ -193,6 +193,9 @@ export default function StockTab({ storeId }: Props) {
       toast.success("Controle desativado");
       refresh();
     },
+    onError: (e: any) => {
+      toast.error(e?.message || "Erro ao desativar controle");
+    },
   });
 
   const adjustMutation = useMutation({
