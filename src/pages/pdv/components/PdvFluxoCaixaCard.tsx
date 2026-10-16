@@ -22,7 +22,7 @@ export default function PdvFluxoCaixaCard({ storeId }: { storeId: string }) {
         .from("pdv_movements")
         .select("amount, type")
         .eq("store_id", storeId)
-        .in("type", ["sale", "sangria", "suprimento"])
+        .in("type", ["sale", "sangria", "suprimento", "cancellation"])
         .gte("created_at", start)
         .lte("created_at", end);
       if (error) throw error;

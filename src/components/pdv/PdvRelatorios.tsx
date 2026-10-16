@@ -228,7 +228,7 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
     queryFn: async () => {
        let q = (supabase as any)
         .from("orders")
-        .select("id, subtotal, total_price, pdv_discount, payment_method, created_at, commission_rate, pdv_session_id, order_items(quantity, unit_price, products(name))")
+        .select("id, subtotal, total_price, pdv_discount, payment_method, created_at, commission_rate, pdv_session_id, status, order_items(quantity, unit_price, products(name))")
         .eq("store_id", storeId)
         .eq("order_source" as any, "pdv")
         .order("created_at", { ascending: false });

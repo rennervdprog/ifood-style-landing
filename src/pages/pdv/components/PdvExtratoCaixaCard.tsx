@@ -47,7 +47,7 @@ export default function PdvExtratoCaixaCard({ storeId }: { storeId: string }) {
         .from("pdv_movements")
         .select("id, type, amount, payment_method, description, created_at")
         .eq("store_id", storeId)
-        .in("type", ["sale", "sangria", "suprimento", "refund"])
+        .in("type", ["sale", "sangria", "suprimento", "refund", "cancellation"])
         .gte("created_at", start)
         .lte("created_at", end)
         .order("created_at", { ascending: false })
