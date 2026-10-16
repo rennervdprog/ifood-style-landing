@@ -31,11 +31,11 @@ export const PdvMobileBottomNav = ({ tab, onChange, showMeuPlano }: Props) => {
     { id: "turnos", label: "Turnos", icon: Receipt },
     { id: "estoque" as PdvTab, label: "Estoque", icon: Package },
     { id: "financeiro" as PdvTab, label: "Financeiro", icon: Wallet },
+    { id: "operadores" as PdvTab, label: "Operadores", icon: Users },
     ...(showMeuPlano
       ? [
           { id: "meu_plano" as PdvTab, label: "Meu Plano", icon: CreditCard },
           { id: "configuracoes" as PdvTab, label: "Configurações", icon: Settings },
-          { id: "operadores" as PdvTab, label: "Operadores", icon: Users },
         ]
       : []),
   ];
