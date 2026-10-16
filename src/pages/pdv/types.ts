@@ -61,6 +61,9 @@ export interface PdvSession {
   status: string;
 }
 
+/** Passos do checkout: carrinho → pagamento → venda concluída. */
+export type PdvCheckoutStep = "cart" | "payment" | "success";
+
 /** Telas principais do PDV. */
 export type PdvScreen = "loading" | "abertura" | "venda" | "fechamento";
 

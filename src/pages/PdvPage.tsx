@@ -46,6 +46,7 @@ import type {
   PdvScreen as Screen,
   PdvMobileStep as MobileStep,
   PdvTab as Tab,
+  PdvCheckoutStep,
 } from "@/pages/pdv/types";
 import { PDV_METHODS, COLOR_MAP } from "@/pages/pdv/constants";
 import { usePdvCatalog } from "@/pages/pdv/state/usePdvCatalog";
@@ -54,6 +55,8 @@ import { usePdvCart } from "@/pages/pdv/state/usePdvCart";
 import { usePdvCheckout } from "@/pages/pdv/state/usePdvCheckout";
 import { usePdvOutbox } from "@/pages/pdv/state/usePdvOutbox";
 import { PdvCatalogSection } from "@/pages/pdv/components/PdvCatalogSection";
+import { PdvPaymentScreen } from "@/pages/pdv/components/PdvPaymentScreen";
+import { PdvSaleSuccessScreen } from "@/pages/pdv/components/PdvSaleSuccessScreen";
 import ApparelCatalogGrid from "@/pages/pdv/apparel/ApparelCatalogGrid";
 import ApparelCustomerPanel, { type ApparelCustomer, type ApparelCredit } from "@/pages/pdv/apparel/ApparelCustomerPanel";
 import SnackBarCombosBar from "@/pages/pdv/snackbar/SnackBarCombosBar";
@@ -129,6 +132,15 @@ const PdvPage = () => {
 
   // Mobile: etapas de venda
   const [mobileStep, setMobileStep] = useState<MobileStep>("catalog");
+
+  // Checkout em estágios (UI/UX): carrinho → pagamento → venda concluída
+  const [checkoutStep, setCheckoutStep] = useState<PdvCheckoutStep>("cart");
+  const [lastSale, setLastSale] = useState<{
+    total: number;
+    paymentMethodLabel: string;
+    cashReceived: number | null;
+    troco: number | null;
+  } | null>(null);
 
   // Abas da tela de venda
   const [tab, setTab] = useState<Tab>("venda");
@@ -493,7 +505,24 @@ const PdvPage = () => {
   };
   const clearSale = () => {
     clearSaleCart();
+    setCheckoutStep("cart");
+    setOrderDone(false);
+    setLastSale(null);
     if (isMobile) setMobileStep("catalog");
+  };
+
+  // Vai para a tela de pagamento (fluxo: carrinho → pagamento)
+  const handleGoToPayment = () => {
+    if (cart.length === 0) return;
+    setCheckoutStep("payment");
+  };
+
+  // Volta do pagamento para o carrinho
+  const handleBackToCart = () => setCheckoutStep("cart");
+
+  // "Nova venda" na tela de sucesso: limpa tudo e recomeça
+  const handleNewSale = () => {
+    clearSale();
   };
 
   // ── Enviar itens do carrinho para a comanda selecionada (Mesa/Comanda) ──
@@ -618,6 +647,17 @@ const PdvPage = () => {
       pdvCommissionRate: storePlan.pdvCommissionRate ?? 0,
       operatorId: pdvOperator?.id ?? null,
     onSuccess: async ({ orderId }) => {
+      // UI/UX: vai para a tela de "Venda concluída" (o carrinho só limpa no "Nova venda")
+      const pmLabel = splitMode
+        ? "Dividido"
+        : (PDV_METHODS.find(p => p.id === paymentMethod)?.label || paymentMethod || "—");
+      setLastSale({
+        total: finalTotal,
+        paymentMethodLabel: pmLabel,
+        cashReceived: paymentMethod === "dinheiro" && !splitMode ? (parseBRL(cashReceived) || null) : null,
+        troco: paymentMethod === "dinheiro" && !splitMode && !trocoNegativo ? troco : null,
+      });
+      setCheckoutStep("success");
       setOrderDone(true);
       // Refresca o dashboard "Agora" após cada venda concluída.
       queryClient.invalidateQueries({ queryKey: ["pdv-now", currentSession?.id] });
@@ -718,15 +758,21 @@ const PdvPage = () => {
         })();
       }
     },
-      onClearScheduled: (finalizedCart) => {
-        // Só limpa se o carrinho não mudou desde a finalização —
-        // o operador pode ter iniciado uma nova venda nos 2s do delay.
-        clearSaleIfUnchanged(finalizedCart);
+      onClearScheduled: () => {
+        // UI/UX: o carrinho NÃO limpa sozinho — a tela de "Venda concluída"
+        // fica visível até o operador tocar em "Nova venda".
       },
       onEmptiesFlowStart: ({ orderId, items }) =>
         setEmptiesFlow({ step: "lookup", orderId, items }),
     });
   };
+
+  // UI/UX: pode confirmar o pagamento? (lógica era do PdvCartSection)
+  const splitTotalConfirm = (splitPayments || []).reduce((s, p) => s + Number(p.amount || 0), 0);
+  const splitCompleteConfirm = splitMode && Math.abs(splitTotalConfirm - finalTotal) < 0.01;
+  const canConfirmPayment =
+    !loading && !checkoutLoading && !orderDone && cart.length > 0 &&
+    (splitMode ? splitCompleteConfirm : (!!paymentMethod && !trocoNegativo));
 
   // ── Movimentação ──
   const handleMoviment = async (type: "sangria" | "suprimento") => {
@@ -1281,6 +1327,8 @@ const PdvPage = () => {
         tab={tab}
         onChange={(t) => {
           if (t === "relatorios") setSelectedSessionId(null);
+          // UI/UX: ao trocar de aba, volta o checkout para o carrinho
+          if (t !== "venda") { setCheckoutStep("cart"); setOrderDone(false); }
           setTab(t);
         }}
         showMeuPlano={pdvAccess.source === "pdv_only"}
@@ -1471,6 +1519,8 @@ const PdvPage = () => {
                     finalTotal={finalTotal}
                   />
                 )}
+                {/* UI/UX: checkout em estágios — carrinho → pagamento → concluída */}
+                {checkoutStep === "cart" && (
                 <PdvCartSection
                   cart={cart} storeId={store?.id}
                   tableId={tableId} setTableId={setTableId}
@@ -1482,14 +1532,34 @@ const PdvPage = () => {
                   showDiscount={showDiscount} setShowDiscount={setShowDiscount}
                   discountType={discountType} setDiscountType={setDiscountType}
                   discountInput={discountInput} setDiscountInput={setDiscountInput}
-                  paymentMethod={paymentMethod} setPaymentMethod={setPaymentMethod}
-                  setCashReceived={setCashReceived} cashReceived={cashReceived}
-                  troco={troco} trocoNegativo={trocoNegativo} finalTotal_={finalTotal}
-                  removeItem={removeItem} onFinalize={handleVenda}
+                  removeItem={removeItem}
                   loading={loading || checkoutLoading} orderDone={orderDone}
+                  onGoToPayment={handleGoToPayment}
+                />
+                )}
+                {checkoutStep === "payment" && (
+                <PdvPaymentScreen
+                  finalTotal={finalTotal}
+                  paymentMethod={paymentMethod} setPaymentMethod={setPaymentMethod}
+                  cashReceived={cashReceived} setCashReceived={setCashReceived}
+                  troco={troco} trocoNegativo={trocoNegativo}
                   splitMode={splitMode} setSplitMode={setSplitMode}
                   splitPayments={splitPayments} setSplitPayments={setSplitPayments}
+                  onBack={handleBackToCart}
+                  onConfirm={handleVenda}
+                  loading={loading || checkoutLoading}
+                  canConfirm={canConfirmPayment}
                 />
+                )}
+                {checkoutStep === "success" && lastSale && (
+                <PdvSaleSuccessScreen
+                  total={lastSale.total}
+                  paymentMethodLabel={lastSale.paymentMethodLabel}
+                  cashReceived={lastSale.cashReceived}
+                  troco={lastSale.troco}
+                  onNewSale={handleNewSale}
+                />
+                )}
               </aside>
             </div>
           )}
@@ -1561,8 +1631,8 @@ const PdvPage = () => {
                 </>
               )}
 
-              {/* Etapa: carrinho + pagamento */}
-              {mobileStep === "cart" && (
+              {/* Etapa: carrinho → pagamento → concluída (UI/UX) */}
+              {mobileStep === "cart" && checkoutStep === "cart" && (
                 <>
                   {/* Total fixo no topo (PDV de mão — Fase 5) */}
                   <div className="border-b border-border bg-primary/5 px-3 py-2 flex items-center justify-between shrink-0">
@@ -1593,13 +1663,9 @@ const PdvPage = () => {
                       showDiscount={showDiscount} setShowDiscount={setShowDiscount}
                       discountType={discountType} setDiscountType={setDiscountType}
                       discountInput={discountInput} setDiscountInput={setDiscountInput}
-                      paymentMethod={paymentMethod} setPaymentMethod={setPaymentMethod}
-                      setCashReceived={setCashReceived} cashReceived={cashReceived}
-                      troco={troco} trocoNegativo={trocoNegativo} finalTotal_={finalTotal}
-                      removeItem={removeItem} onFinalize={handleVenda}
+                      removeItem={removeItem}
                       loading={loading || checkoutLoading} orderDone={orderDone}
-                      splitMode={splitMode} setSplitMode={setSplitMode}
-                      splitPayments={splitPayments} setSplitPayments={setSplitPayments}
+                      onGoToPayment={handleGoToPayment}
                       mobileScroll
                     />
                   </div>
@@ -1615,6 +1681,37 @@ const PdvPage = () => {
                   </div>
                 </>
               )}
+
+              {/* Etapa: pagamento (UI/UX) */}
+              {mobileStep === "cart" && checkoutStep === "payment" && (
+                <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
+                  <PdvPaymentScreen
+                    finalTotal={finalTotal}
+                    paymentMethod={paymentMethod} setPaymentMethod={setPaymentMethod}
+                    cashReceived={cashReceived} setCashReceived={setCashReceived}
+                    troco={troco} trocoNegativo={trocoNegativo}
+                    splitMode={splitMode} setSplitMode={setSplitMode}
+                    splitPayments={splitPayments} setSplitPayments={setSplitPayments}
+                    onBack={handleBackToCart}
+                    onConfirm={handleVenda}
+                    loading={loading || checkoutLoading}
+                    canConfirm={canConfirmPayment}
+                  />
+                </div>
+              )}
+
+              {/* Etapa: venda concluída (UI/UX) */}
+              {checkoutStep === "success" && lastSale && (
+                <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
+                  <PdvSaleSuccessScreen
+                    total={lastSale.total}
+                    paymentMethodLabel={lastSale.paymentMethodLabel}
+                    cashReceived={lastSale.cashReceived}
+                    troco={lastSale.troco}
+                    onNewSale={handleNewSale}
+                  />
+                </div>
+              )}
             </div>
           )}
         </>
@@ -1625,6 +1722,8 @@ const PdvPage = () => {
         tab={tab}
         onChange={(t) => {
           if (t === "relatorios") setSelectedSessionId(null);
+          // UI/UX: ao trocar de aba, volta o checkout para o carrinho
+          if (t !== "venda") { setCheckoutStep("cart"); setOrderDone(false); }
           setTab(t);
         }}
         showMeuPlano={pdvAccess.source === "pdv_only"}

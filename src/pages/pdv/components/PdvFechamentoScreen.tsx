@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowLeft, Lock, Loader2, Receipt, EyeOff, Eye, Scale } from "lucide-react";
+import { ArrowLeft, Lock, Loader2, Receipt, EyeOff, Eye, Scale, Check } from "lucide-react";
 import { PdvOperatorLoginDialog } from "@/components/pdv/PdvOperatorLoginDialog";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -40,8 +40,28 @@ export const PdvFechamentoScreen = ({
   // Fase 2: fechamento de caixa exige PIN do gerente.
   const [managerGateOpen, setManagerGateOpen] = useState(false);
   const storeId = propStoreId || currentSession?.store_id;
-  const isOk = !!closingAmount && Math.abs(diffAmount) < 0.05;
+  const hasAmount = !!closingAmount && !Number.isNaN(parseBRL(closingAmount));
+  const isOk = hasAmount && Math.abs(diffAmount) < 0.05;
   const { confirm, ConfirmDialog } = useConfirmDialog();
+
+  // Passo atual do stepper (visual): 1 = contar, 2 = comparar, 3 = autorizar, 4 = pronto
+  const currentStep = managerGateOpen ? 3 : hasAmount ? 2 : 1;
+
+  const handleContinue = async () => {
+    if (!closingAmount || Number.isNaN(parseBRL(closingAmount))) {
+      toast.error("Informe o valor conferido no caixa antes de fechar.");
+      return;
+    }
+    const ok = await confirm({
+      title: "Confirmar fechamento do caixa?",
+      description: "Esta ação não pode ser desfeita.",
+      confirmText: "Fechar caixa",
+      variant: "destructive",
+    });
+    if (!ok) return;
+    // Fase 2: exige PIN do gerente antes de fechar.
+    setManagerGateOpen(true);
+  };
 
   // Vendas por peso — agrega gramas/valor a partir de order_items.metadata
   // dos pedidos do turno (PDV). Sem schema novo.
@@ -90,209 +110,222 @@ export const PdvFechamentoScreen = ({
     staleTime: 30_000,
   });
 
+  const stepState = (n: number): "done" | "now" | "todo" => {
+    if (n < currentStep) return "done";
+    if (n === currentStep) return "now";
+    return "todo";
+  };
+
+  const renderStepDot = (n: number) => {
+    const s = stepState(n);
+    return (
+      <div className="flex flex-col items-center shrink-0">
+        <div
+          className={`w-[30px] h-[30px] rounded-full flex items-center justify-center text-sm font-extrabold transition-all ${
+            s === "done"
+              ? "bg-green-600 text-white"
+              : s === "now"
+                ? "bg-primary text-white shadow-[0_0_0_5px_rgba(255,106,0,0.15)]"
+                : "bg-muted text-muted-foreground"
+          }`}
+        >
+          {s === "done" ? <Check className="h-4 w-4" strokeWidth={3} /> : n}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="pdv-shell min-h-screen bg-background flex flex-col">
-      <header className="h-14 border-b border-border flex items-center px-4 gap-3 bg-card">
-        <button onClick={onBack} className="p-1.5 rounded-xl hover:bg-muted">
+      <header className="h-14 border-b border-border flex items-center px-4 gap-3 bg-card shrink-0">
+        <button onClick={onBack} className="p-2 rounded-xl hover:bg-muted active:scale-95 transition-all" aria-label="Voltar">
           <ArrowLeft className="h-5 w-5" />
         </button>
-        <Lock className="h-5 w-5 text-destructive" />
         <div className="flex-1">
-          <p className="text-sm font-bold">Fechamento de Caixa</p>
+          <p className="text-base font-bold">Fechar o caixa</p>
           <p className="text-[10px] text-muted-foreground">
             Aberto às {currentSession && new Date(currentSession.opened_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
           </p>
         </div>
+        <span className="text-xs font-bold text-muted-foreground">passo {currentStep} de 4</span>
       </header>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-28">
-        <div className="bg-card rounded-2xl border border-border p-4 space-y-4">
-          <h3 className="text-sm font-black flex items-center gap-2">
-            <Receipt className="h-4 w-4 text-primary" /> Resumo do Turno
-          </h3>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className="bg-emerald-500/8 border border-emerald-500/15 rounded-xl p-3 space-y-0.5">
-              <p className="text-[10px] text-muted-foreground uppercase font-semibold tracking-wider">Total Vendido</p>
-              <p className="text-xl font-black text-emerald-500">{formatBRL(sessionSummary?.total_sales ?? 0)}</p>
-              <p className="text-[10px] text-muted-foreground">{sessionSummary?.total_orders ?? 0} vendas</p>
-            </div>
-            <div className="bg-muted/40 rounded-xl p-3 space-y-0.5">
-              <p className="text-[10px] text-muted-foreground uppercase font-semibold tracking-wider">Abertura</p>
-              <p className="text-xl font-black text-foreground">{formatBRL(currentSession?.opening_amount ?? 0)}</p>
-              <p className="text-[10px] text-muted-foreground">troco inicial</p>
-            </div>
-            {turnoSangrias > 0 && (
-              <div className="bg-red-500/8 border border-red-500/15 rounded-xl p-3">
-                <p className="text-[10px] text-muted-foreground uppercase font-semibold">Sangrias</p>
-                <p className="text-lg font-black text-red-500">−{formatBRL(turnoSangrias)}</p>
-              </div>
-            )}
-            {turnoSuprimentos > 0 && (
-              <div className="bg-blue-500/8 border border-blue-500/15 rounded-xl p-3">
-                <p className="text-[10px] text-muted-foreground uppercase font-semibold">Suprimentos</p>
-                <p className="text-lg font-black text-blue-500">+{formatBRL(turnoSuprimentos)}</p>
-              </div>
-            )}
-          </div>
-
-          {Object.keys(byPayment).length > 0 && (
-            <div className="border-t border-border/40 pt-3 space-y-2">
-              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Por pagamento</p>
-              {Object.entries(byPayment).map(([m, v]) => {
-                const pm = PDV_METHODS.find(p => p.id === m);
-                return (
-                  <div key={m} className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">{pm?.label || m}</span>
-                    <span className="text-sm font-bold">{formatBRL(Number(v))}</span>
+      <div className="flex-1 overflow-y-auto p-4 pb-32">
+        {/* Stepper */}
+        <div className="flex flex-col">
+          {/* Passo 1 — Quanto tem na gaveta? */}
+          <div className="flex gap-3.5">
+            {renderStepDot(1)}
+            <div className="flex-1 pb-6">
+              <p className="text-[15px] font-bold">Quanto tem na gaveta?</p>
+              <p className="text-[13px] text-muted-foreground mt-0.5">Conte o dinheiro e digite o valor.</p>
+              {stepState(1) === "now" && (
+                <div className="mt-3 space-y-3">
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-bold text-muted-foreground">R$</span>
+                    <input
+                      type="text" inputMode="decimal" placeholder="0,00"
+                      value={closingAmount}
+                      onChange={e => {
+                        const digits = e.target.value.replace(/\D/g, "");
+                        if (!digits) { setClosingAmount(""); return; }
+                        const n = Number(digits) / 100;
+                        setClosingAmount(n === 0 ? "0,00" : formatBRLDisplay(n));
+                      }}
+                      className="w-full pl-11 pr-4 py-4 bg-card border-2 border-border rounded-2xl text-[22px] font-extrabold text-center focus:outline-none focus:border-primary transition-colors"
+                    />
                   </div>
-                );
-              })}
+                  <PdvDenominationCount
+                    onChange={(total, counts) => {
+                      setDenominationCounts(counts);
+                      if (total > 0) setClosingAmount(total.toFixed(2).replace(".", ","));
+                    }}
+                  />
+                </div>
+              )}
+              {stepState(1) === "done" && (
+                <p className="text-[26px] font-extrabold mt-2 tabular-nums">{formatBRL(parseBRL(closingAmount))}</p>
+              )}
             </div>
-          )}
+          </div>
+          <div className="w-0.5 bg-border ml-[27px] -mt-4 mb-0 h-4" />
 
-          {!blindClose ? (
-            <div className="bg-amber-500/8 border border-amber-500/20 rounded-xl p-3.5 flex items-center justify-between">
-              <div>
-                <p className="text-xs font-bold text-amber-700 dark:text-amber-400">Dinheiro esperado no caixa</p>
-                <p className="text-[11px] text-muted-foreground mt-0.5">Abertura + vendas − sangrias + suprimentos</p>
-              </div>
-              <p className="text-xl font-black text-amber-500">{formatBRL(saldoEsperado)}</p>
-            </div>
-          ) : (
-            <div className="bg-purple-500/8 border border-purple-500/30 rounded-xl p-3.5 flex items-center gap-3">
-              <EyeOff className="h-5 w-5 text-purple-500 shrink-0" />
-              <div className="flex-1">
-                <p className="text-xs font-bold text-purple-700 dark:text-purple-300">Fechamento cego ativo</p>
-                <p className="text-[11px] text-muted-foreground mt-0.5">
-                  O valor esperado fica oculto até você confirmar o fechamento. Padrão antifraude.
+          {/* Passo 2 — Confere com o esperado? */}
+          <div className="flex gap-3.5">
+            {renderStepDot(2)}
+            <div className="flex-1 pb-6">
+              <p className="text-[15px] font-bold">Confere com o esperado?</p>
+              {!blindClose ? (
+                <p className="text-[13px] text-muted-foreground mt-0.5">
+                  O sistema esperava <b className="text-foreground">{formatBRL(saldoEsperado)}</b>.
                 </p>
-              </div>
+              ) : (
+                <p className="text-[13px] text-muted-foreground mt-0.5 flex items-center gap-1.5">
+                  <EyeOff className="h-3.5 w-3.5" /> Fechamento cego: o esperado está oculto.
+                </p>
+              )}
+              {hasAmount && !blindClose && (
+                <div className={`mt-2.5 rounded-xl px-4 py-3 flex justify-between items-center font-bold ${
+                  isOk ? "bg-green-600/10 text-green-700 dark:text-green-400"
+                  : diffAmount > 0 ? "bg-green-600/10 text-green-700 dark:text-green-400"
+                  : "bg-red-500/10 text-red-600 dark:text-red-400"
+                }`}>
+                  <span className="text-sm uppercase tracking-wide">
+                    {isOk ? "Conferido" : diffAmount > 0 ? "Sobra" : "Falta"}
+                  </span>
+                  <span className="text-xl font-extrabold tabular-nums">
+                    {isOk ? "—" : formatBRL(Math.abs(diffAmount))}
+                  </span>
+                </div>
+              )}
+              {hasAmount && blindClose && (
+                <p className="text-xs text-purple-600 dark:text-purple-400 font-bold mt-2">
+                  A diferença será calculada após confirmar.
+                </p>
+              )}
+              <button
+                type="button"
+                onClick={() => setBlindClose(v => !v)}
+                className="mt-2 text-[11px] font-bold text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5"
+              >
+                {blindClose ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
+                {blindClose ? "Mostrar valor esperado" : "Fechamento cego (anti-fraude)"}
+              </button>
             </div>
-          )}
+          </div>
+          <div className="w-0.5 bg-border ml-[27px] -mt-4 mb-0 h-4" />
 
-          <button
-            type="button"
-            onClick={() => setBlindClose(v => !v)}
-            className="w-full text-[11px] font-bold text-muted-foreground hover:text-foreground transition-colors flex items-center justify-center gap-1.5"
-          >
-            {blindClose ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
-            {blindClose ? "Mostrar valor esperado" : "Ativar fechamento cego (anti-fraude)"}
-          </button>
+          {/* Passo 3 — Gerente autoriza */}
+          <div className="flex gap-3.5">
+            {renderStepDot(3)}
+            <div className="flex-1 pb-6">
+              <p className="text-[15px] font-bold">Gerente autoriza</p>
+              <p className="text-[13px] text-muted-foreground mt-0.5">PIN do gerente pra confirmar o fechamento.</p>
+            </div>
+          </div>
+          <div className="w-0.5 bg-border ml-[27px] -mt-4 mb-0 h-4" />
+
+          {/* Passo 4 — Pronto */}
+          <div className="flex gap-3.5">
+            {renderStepDot(4)}
+            <div className="flex-1">
+              <p className="text-[15px] font-bold">Pronto!</p>
+              <p className="text-[13px] text-muted-foreground mt-0.5">Resumo do turno salvo.</p>
+            </div>
+          </div>
         </div>
 
-        {weightSummary && weightSummary.totalGrams > 0 && (
-          <div className="bg-card rounded-2xl border border-border p-4 space-y-3">
-            <h3 className="text-sm font-black flex items-center gap-2">
-              <Scale className="h-4 w-4 text-primary" /> Vendas por peso
-            </h3>
+        {/* Resumo do turno (compacto) */}
+        <details className="mt-4 bg-card rounded-2xl border border-border">
+          <summary className="p-4 text-sm font-bold flex items-center gap-2 cursor-pointer list-none">
+            <Receipt className="h-4 w-4 text-primary" /> Resumo do turno
+            <span className="ml-auto text-xs text-muted-foreground font-semibold">ver</span>
+          </summary>
+          <div className="px-4 pb-4 space-y-3">
             <div className="grid grid-cols-2 gap-3">
-              <div className="bg-primary/8 border border-primary/15 rounded-xl p-3">
-                <p className="text-[10px] text-muted-foreground uppercase font-semibold">Peso total</p>
-                <p className="text-lg font-black text-primary">
-                  {(weightSummary.totalGrams / 1000).toFixed(3).replace(".", ",")} kg
-                </p>
+              <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3">
+                <p className="text-[10px] text-muted-foreground uppercase font-semibold">Total vendido</p>
+                <p className="text-xl font-extrabold text-emerald-600">{formatBRL(sessionSummary?.total_sales ?? 0)}</p>
+                <p className="text-[10px] text-muted-foreground">{sessionSummary?.total_orders ?? 0} vendas</p>
               </div>
-              <div className="bg-emerald-500/8 border border-emerald-500/15 rounded-xl p-3">
-                <p className="text-[10px] text-muted-foreground uppercase font-semibold">Valor</p>
-                <p className="text-lg font-black text-emerald-500">
-                  {formatBRL(weightSummary.totalValue)}
-                </p>
+              <div className="bg-muted/40 rounded-xl p-3">
+                <p className="text-[10px] text-muted-foreground uppercase font-semibold">Abertura</p>
+                <p className="text-xl font-extrabold">{formatBRL(currentSession?.opening_amount ?? 0)}</p>
+                <p className="text-[10px] text-muted-foreground">troco inicial</p>
               </div>
+              {turnoSangrias > 0 && (
+                <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3">
+                  <p className="text-[10px] text-muted-foreground uppercase font-semibold">Sangrias</p>
+                  <p className="text-lg font-extrabold text-red-500">−{formatBRL(turnoSangrias)}</p>
+                </div>
+              )}
+              {turnoSuprimentos > 0 && (
+                <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-3">
+                  <p className="text-[10px] text-muted-foreground uppercase font-semibold">Suprimentos</p>
+                  <p className="text-lg font-extrabold text-blue-500">+{formatBRL(turnoSuprimentos)}</p>
+                </div>
+              )}
             </div>
-            {weightSummary.byProduct.length > 0 && (
-              <div className="border-t border-border/40 pt-2 space-y-1.5">
-                {weightSummary.byProduct.map((p: any, i: number) => (
-                  <div key={i} className="flex justify-between items-center text-sm">
-                    <span className="text-foreground truncate pr-2">
-                      {p.name}
-                      <span className="text-[10px] text-muted-foreground ml-1">
-                        · {(p.grams / 1000).toFixed(3).replace(".", ",")} kg
-                      </span>
-                    </span>
-                    <span className="font-bold tabular-nums">{formatBRL(p.value)}</span>
-                  </div>
-                ))}
+            {Object.keys(byPayment).length > 0 && (
+              <div className="border-t border-border/40 pt-3 space-y-1.5">
+                <p className="text-[10px] font-bold text-muted-foreground uppercase">Por pagamento</p>
+                {Object.entries(byPayment).map(([m, v]) => {
+                  const pm = PDV_METHODS.find(p => p.id === m);
+                  return (
+                    <div key={m} className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">{pm?.label || m}</span>
+                      <span className="text-sm font-bold tabular-nums">{formatBRL(Number(v))}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+            {weightSummary && weightSummary.totalGrams > 0 && (
+              <div className="border-t border-border/40 pt-3">
+                <p className="text-sm font-bold flex items-center gap-2">
+                  <Scale className="h-4 w-4 text-primary" /> Vendas por peso
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {(weightSummary.totalGrams / 1000).toFixed(3).replace(".", ",")} kg · {formatBRL(weightSummary.totalValue)}
+                </p>
               </div>
             )}
           </div>
-        )}
-
-        <div className="bg-card rounded-2xl border border-border p-4 space-y-3">
-          <h3 className="text-sm font-black">Conferência</h3>
-          <div>
-            <label className="text-xs font-bold text-muted-foreground">Dinheiro contado no caixa</label>
-            <div className="relative mt-2">
-              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-muted-foreground">R$</span>
-              <input
-                type="text" inputMode="decimal" placeholder="0,00"
-                value={closingAmount}
-                onChange={e => {
-                  const digits = e.target.value.replace(/\D/g, "");
-                  // Campo limpo = não preenchido (botão continua desabilitado).
-                  if (!digits) { setClosingAmount(""); return; }
-                  const n = Number(digits) / 100;
-                  // Zero digitado explicitamente é válido ("0,00"): permite fechar
-                  // turno sem movimento sem criar divergência fictícia de R$ 0,01.
-                  setClosingAmount(n === 0 ? "0,00" : formatBRLDisplay(n));
-                }}
-                className="w-full pl-10 pr-4 py-3.5 bg-muted/40 rounded-xl text-xl font-bold focus:outline-none focus:ring-2 focus:ring-primary/40"
-              />
-            </div>
-          </div>
-
-          <PdvDenominationCount
-            onChange={(total, counts) => {
-              setDenominationCounts(counts);
-              if (total > 0) setClosingAmount(total.toFixed(2).replace(".", ","));
-            }}
-          />
-
-          {closingAmount && !blindClose && (
-            <div className={`rounded-xl p-3 flex justify-between items-center border ${isOk ? "bg-emerald-500/8 border-emerald-500/20" : "bg-red-500/8 border-red-500/20"}`}>
-              <p className={`text-sm font-bold ${isOk ? "text-emerald-600" : "text-red-500"}`}>
-                {isOk ? "✅ Caixa conferido" : diffAmount > 0 ? "⚠️ Sobra" : "⚠️ Falta"}
-              </p>
-              <p className={`text-lg font-black ${isOk ? "text-emerald-500" : "text-red-500"}`}>
-                {isOk ? "—" : formatBRL(Math.abs(diffAmount))}
-              </p>
-            </div>
-          )}
-          {closingAmount && blindClose && (
-            <div className="rounded-xl p-3 bg-purple-500/8 border border-purple-500/20">
-              <p className="text-xs text-purple-600 dark:text-purple-400 font-bold flex items-center gap-1.5">
-                <EyeOff className="h-3.5 w-3.5" /> A diferença será calculada após confirmar
-              </p>
-            </div>
-          )}
-        </div>
+        </details>
       </div>
 
+      {/* CTA fixo */}
       <div
         className="fixed bottom-0 left-0 right-0 p-4 bg-card/95 backdrop-blur-sm border-t border-border"
         style={{ paddingBottom: "calc(1rem + env(safe-area-inset-bottom))" }}
       >
         <button
-          onClick={async () => {
-            if (!closingAmount || Number.isNaN(parseBRL(closingAmount))) {
-              toast.error("Informe o valor conferido no caixa antes de fechar.");
-              return;
-            }
-            const ok = await confirm({
-              title: "Confirmar fechamento do caixa?",
-              description: "Esta ação não pode ser desfeita.",
-              confirmText: "Fechar caixa",
-              variant: "destructive",
-            });
-            if (!ok) return;
-            // Fase 2: exige PIN do gerente antes de fechar.
-            setManagerGateOpen(true);
-          }}
-          disabled={loading || !closingAmount}
-          className="w-full h-14 bg-destructive text-destructive-foreground font-black text-base rounded-2xl flex items-center justify-center gap-2 active:scale-[0.98] transition-all disabled:opacity-60"
+          onClick={handleContinue}
+          disabled={loading || !hasAmount}
+          className="w-full h-14 bg-primary text-white font-extrabold text-base rounded-2xl flex items-center justify-center gap-2 active:scale-[0.98] transition-all shadow-lg shadow-primary/30 disabled:opacity-50"
         >
           {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Lock className="h-5 w-5" />}
-          Confirmar Fechamento
+          Continuar
         </button>
       </div>
       <ConfirmDialog />
