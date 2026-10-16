@@ -1,4 +1,6 @@
+import { useState } from "react";
 import { ArrowLeft, Lock, Loader2, Receipt, EyeOff, Eye, Scale } from "lucide-react";
+import { PdvOperatorLoginDialog } from "@/components/pdv/PdvOperatorLoginDialog";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { chunk } from "@/lib/batch";
@@ -34,6 +36,9 @@ export const PdvFechamentoScreen = ({
 }: Props) => {
   const byPayment: Record<string, number> = sessionSummary?.by_payment || {};
   const diffAmount = parseBRL(closingAmount) - saldoEsperado;
+  // Fase 2: fechamento de caixa exige PIN do gerente.
+  const [managerGateOpen, setManagerGateOpen] = useState(false);
+  const storeId = currentSession?.store_id;
   const isOk = !!closingAmount && Math.abs(diffAmount) < 0.05;
   const { confirm, ConfirmDialog } = useConfirmDialog();
 
@@ -279,7 +284,8 @@ export const PdvFechamentoScreen = ({
               variant: "destructive",
             });
             if (!ok) return;
-            onConfirm();
+            // Fase 2: exige PIN do gerente antes de fechar.
+            setManagerGateOpen(true);
           }}
           disabled={loading || !closingAmount}
           className="w-full h-14 bg-destructive text-destructive-foreground font-black text-base rounded-2xl flex items-center justify-center gap-2 active:scale-[0.98] transition-all disabled:opacity-60"
@@ -289,6 +295,20 @@ export const PdvFechamentoScreen = ({
         </button>
       </div>
       <ConfirmDialog />
+      {managerGateOpen && storeId && (
+        <PdvOperatorLoginDialog
+          open={managerGateOpen}
+          storeId={storeId}
+          requiredRole="gerente"
+          title="Gerente: autorize o fechamento"
+          onClose={() => setManagerGateOpen(false)}
+          onLogin={(op) => {
+            setManagerGateOpen(false);
+            toast.success(`Fechamento autorizado por ${op.name}`);
+            onConfirm();
+          }}
+        />
+      )}
     </div>
   );
 };
