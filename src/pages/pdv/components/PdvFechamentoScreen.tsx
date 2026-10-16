@@ -72,7 +72,8 @@ export const PdvFechamentoScreen = ({
       const { data: orders } = await supabase
         .from("orders")
         .select("id")
-        .eq("pdv_session_id", currentSession!.id);
+        .eq("pdv_session_id", currentSession!.id)
+        .neq("status", "cancelado");
       const ids = (orders || []).map((o: any) => o.id);
       if (ids.length === 0) return { totalGrams: 0, totalValue: 0, byProduct: [] as any[] };
       const batches = await Promise.all(
