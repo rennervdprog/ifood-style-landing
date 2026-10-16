@@ -2,7 +2,7 @@ import { useState } from "react";
 import {
   ShoppingCart, LayoutGrid, History, BarChart3, MoreHorizontal,
   Receipt, CreditCard, Settings, X, Wallet, Package,
-  Users
+  Users, FileText
 } from "lucide-react";
 import type { PdvTab } from "@/pages/pdv/types";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -33,6 +33,7 @@ export const PdvMobileBottomNav = ({ tab, onChange, showMeuPlano }: Props) => {
     { id: "estoque" as PdvTab, label: "Estoque", icon: Package },
     { id: "financeiro" as PdvTab, label: "Financeiro", icon: Wallet },
     { id: "operadores" as PdvTab, label: "Operadores", icon: Users },
+    { id: "auditoria" as PdvTab, label: "Auditoria", icon: FileText },
     ...(showMeuPlano
       ? [
           { id: "meu_plano" as PdvTab, label: "Meu Plano", icon: CreditCard },
