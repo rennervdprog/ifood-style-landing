@@ -74,6 +74,7 @@ export default function StockTab({ storeId }: Props) {
 
   // Dialogs
   const [activateDialog, setActivateDialog] = useState<StockItem | null>(null);
+  const [hideHowItWorks, setHideHowItWorks] = useState(false);
   const [activateQty, setActivateQty] = useState("");
   const [activateMin, setActivateMin] = useState("");
   const [adjustDialog, setAdjustDialog] = useState<StockItem | null>(null);
@@ -288,10 +289,17 @@ export default function StockTab({ storeId }: Props) {
           </Card>
         </div>
       )}
-      {/* Como funciona - design claro (só mostra se não tem nenhum controle ativo) */}
-      {trackedItems.length === 0 && lowStock.length === 0 && (
-        <Card className="bg-white">
+      {/* Como funciona - design claro (só mostra se não tem nenhum controle ativo, dispensável) */}
+      {trackedItems.length === 0 && lowStock.length === 0 && !hideHowItWorks && (
+        <Card className="bg-white relative">
           <CardContent className="pt-4">
+            <button
+              onClick={() => setHideHowItWorks(true)}
+              className="absolute top-2 right-2 w-7 h-7 rounded-full bg-muted flex items-center justify-center text-muted-foreground hover:bg-muted/80"
+              aria-label="Fechar"
+            >
+              <X className="h-4 w-4" />
+            </button>
             <div className="flex gap-3">
               <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
                 <Info className="h-5 w-5 text-blue-600" />
@@ -550,9 +558,19 @@ export default function StockTab({ storeId }: Props) {
       )}
 
       {filtered.length === 0 && !isLoading && (
-        <p className="text-center text-muted-foreground py-8">
-          Nenhum produto encontrado
-        </p>
+        <div className="text-center py-8">
+          <div className="w-14 h-14 rounded-2xl bg-muted/60 flex items-center justify-center mx-auto mb-3">
+            <Package className="h-7 w-7 text-muted-foreground" />
+          </div>
+          <p className="font-semibold text-sm">
+            {items.length === 0 ? "Nenhum produto cadastrado" : "Nenhum produto encontrado"}
+          </p>
+          <p className="text-xs text-muted-foreground mt-1">
+            {items.length === 0
+              ? "Cadastre produtos no cardápio para controlar o estoque"
+              : "Tente buscar por outro nome ou código"}
+          </p>
+        </div>
       )}
 
       {/* Dialog: Ativar controle */}
