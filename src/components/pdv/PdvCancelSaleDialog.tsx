@@ -105,7 +105,7 @@ export function PdvCancelSaleDialog({
             )}
           </div>
           <div className="space-y-2">
-            <label className="text-[11px] font-bold uppercase text-muted-foreground">PIN do operador</label>
+            <label className="text-[11px] font-bold uppercase text-muted-foreground">PIN do gerente</label>
             <input value={pin} onChange={e => setPin(e.target.value.replace(/\D/g, "").slice(0, 8))}
               inputMode="numeric" placeholder="••••"
               className="w-full px-3 py-3 bg-muted/40 rounded-xl text-center tracking-[0.5em] text-lg font-black focus:outline-none focus:ring-2 focus:ring-primary/40" />

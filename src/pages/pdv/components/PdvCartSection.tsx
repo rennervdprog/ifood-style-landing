@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   X, RotateCcw, ShoppingCart, Tag, ChevronDown, ChevronRight,
   Split, Calculator, Wallet, Loader2, CheckCircle2, Send,
@@ -9,6 +10,7 @@ import { PdvSplitPayment, type SplitPayment } from "@/components/pdv/PdvSplitPay
 import { PDV_METHODS, COLOR_MAP } from "@/pages/pdv/constants";
 import type { CartItem, SaleSnapshot } from "@/pages/pdv/types";
 import { PdvTableSelector } from "./PdvTableSelector";
+import { PdvOperatorLoginDialog } from "@/components/pdv/PdvOperatorLoginDialog";
 
 interface Props {
   cart: CartItem[];
@@ -63,7 +65,44 @@ export const PdvCartSection = ({
   removeItem, onFinalize, loading, orderDone,
   splitMode, setSplitMode, splitPayments, setSplitPayments,
   mobileScroll = false,
-}: Props) => (
+}: Props) => {
+  // Proteção de desconto: acima de 10% exige PIN do gerente
+  const [showManagerGate, setShowManagerGate] = useState(false);
+  const [pendingDiscount, setPendingDiscount] = useState<string | null>(null);
+
+  const DISCOUNT_MANAGER_LIMIT = 10; // %
+
+  const handleDiscountChange = (raw: string) => {
+    const clean = raw.replace(/[^\d,]/g, "");
+    // Se for %, verifica se excede o limite
+    if (discountType === "%") {
+      const pct = parseFloat(clean.replace(",", "."));
+      if (!isNaN(pct) && pct > DISCOUNT_MANAGER_LIMIT) {
+        // Guarda o valor pendente e pede autorização do gerente
+        setPendingDiscount(clean);
+        setShowManagerGate(true);
+        return;
+      }
+    }
+    setDiscountInput(clean);
+  };
+
+  const handleManagerApproved = () => {
+    if (pendingDiscount !== null) {
+      setDiscountInput(pendingDiscount);
+      toast.success("Desconto autorizado pelo gerente");
+    }
+    setPendingDiscount(null);
+    setShowManagerGate(false);
+  };
+
+  const handleManagerClosed = () => {
+    setPendingDiscount(null);
+    setShowManagerGate(false);
+    toast.info("Desconto acima de 10% precisa de autorização do gerente");
+  };
+
+  return (
   <div className={mobileScroll ? "flex flex-col min-h-0 overflow-visible" : "flex flex-col h-full min-h-0 overflow-hidden"}>
     {/* Cabeçalho */}
     <div className={`px-3 pt-2.5 pb-2 border-b shrink-0 transition-colors ${selectedTabId ? "border-amber-500/40 bg-amber-500/5" : "border-border"}`}>
@@ -183,7 +222,7 @@ export const PdvCartSection = ({
             </div>
             <input type="text" inputMode="decimal"
               placeholder={discountType === "%" ? "10" : "5,00"}
-              value={discountInput} onChange={(e) => setDiscountInput(e.target.value.replace(/[^0-9.,]/g, ""))}
+              value={discountInput} onChange={(e) => handleDiscountChange(e.target.value)}
               className="flex-1 px-2.5 py-1.5 bg-muted/40 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-primary/30 border border-border/50" />
           </div>
         )}
@@ -353,5 +392,17 @@ export const PdvCartSection = ({
         })()}
       </div>
     </div>
-  </div>
-);
+      {/* Autorização do gerente para desconto alto */}
+      {showManagerGate && storeId && (
+        <PdvOperatorLoginDialog
+          open={showManagerGate}
+          storeId={storeId}
+          onClose={handleManagerClosed}
+          onLogin={handleManagerApproved}
+          requiredRole="gerente"
+          title="Autorização do gerente"
+        />
+      )}
+    </div>
+  );
+};

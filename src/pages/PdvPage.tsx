@@ -75,6 +75,7 @@ import { PdvTopbar } from "@/pages/pdv/components/PdvTopbar";
 import { PdvTabs } from "@/pages/pdv/components/PdvTabs";
 import { PdvMobileBottomNav } from "@/pages/pdv/components/PdvMobileBottomNav";
 import StockTab from "@/pages/admin/tabs/StockTab";
+import { PdvOperatorsManager } from "@/pages/pdv/components/PdvOperatorsManager";
 import { PdvStatusBar } from "@/pages/pdv/components/PdvStatusBar";
 import { PdvSessionCard } from "@/pages/pdv/components/PdvSessionCard";
 import { PdvMesasView } from "@/pages/pdv/components/PdvMesasView";
@@ -1351,6 +1352,13 @@ const PdvPage = () => {
       {tab === "estoque" && store?.id && (
         <div className="flex-1 overflow-y-auto">
           <StockTab storeId={store.id} />
+        </div>
+      )}
+
+      {/* ── OPERADORES (gerente) ── */}
+      {tab === "operadores" && store?.id && (
+        <div className="flex-1 overflow-y-auto">
+          <PdvOperatorsManager storeId={store.id} />
         </div>
       )}
 
