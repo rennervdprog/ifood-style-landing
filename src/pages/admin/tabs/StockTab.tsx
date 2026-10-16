@@ -37,7 +37,8 @@ import {
   ArrowUpCircle,
   ArrowDownCircle,
   Info,
-, X} from "lucide-react";
+  X
+} from "lucide-react";
 import { toast } from "sonner";
 import BarcodeScanner from "@/components/BarcodeScanner";
 import { ScanLine } from "lucide-react";
