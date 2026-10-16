@@ -77,7 +77,7 @@ export const PdvSaleSuccessScreen = ({
         <button
           type="button"
           onClick={onNewSale}
-          className="w-full font-extrabold text-white"
+          className="w-full font-extrabold text-white cursor-pointer select-none"
           style={{
             height: 56,
             borderRadius: 16,
