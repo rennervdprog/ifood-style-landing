@@ -32,6 +32,7 @@ export default function ProductRecipe({ productId, productName, storeId, onClose
   const [showAdd, setShowAdd] = useState(false);
   const [ingredientId, setIngredientId] = useState("");
   const [qty, setQty] = useState("");
+  const [unit, setUnit] = useState("g");
 
   const { data: ingredients = [] } = useQuery({
     queryKey: ["recipe", productId],
@@ -64,7 +65,7 @@ export default function ProductRecipe({ productId, productName, storeId, onClose
         product_id: productId,
         ingredient_product_id: ingredientId,
         quantity: Number(qty),
-        unit: "un",
+        unit: unit,
       });
     },
     onSuccess: () => {
@@ -72,6 +73,7 @@ export default function ProductRecipe({ productId, productName, storeId, onClose
       setShowAdd(false);
       setIngredientId("");
       setQty("");
+      setUnit("g");
       toast.success("Ingrediente adicionado!");
     },
     onError: () => {
@@ -152,12 +154,27 @@ export default function ProductRecipe({ productId, productName, storeId, onClose
                   </SelectContent>
                 </Select>
               </div>
-              <div>
-                <Label>Quantidade por unidade</Label>
-                <Input
-                  type="number" min="0" step="0.01" placeholder="Ex: 1"
-                  value={qty} onChange={(e) => setQty(e.target.value)}
-                />
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <Label>Quantidade por unidade</Label>
+                  <Input
+                    type="number" min="0" step="0.01" placeholder="Ex: 150"
+                    value={qty} onChange={(e) => setQty(e.target.value)}
+                  />
+                </div>
+                <div className="w-28">
+                  <Label>Unidade</Label>
+                  <Select value={unit} onValueChange={setUnit}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="g">g</SelectItem>
+                      <SelectItem value="kg">kg</SelectItem>
+                      <SelectItem value="ml">ml</SelectItem>
+                      <SelectItem value="L">L</SelectItem>
+                      <SelectItem value="un">un</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
               <div className="flex gap-2">
                 <Button variant="outline" className="flex-1" onClick={() => setShowAdd(false)}>
