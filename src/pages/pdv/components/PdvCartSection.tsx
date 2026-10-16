@@ -65,7 +65,7 @@ export const PdvCartSection = ({
   removeItem, onFinalize, loading, orderDone,
   splitMode, setSplitMode, splitPayments, setSplitPayments,
   mobileScroll = false,
-: Props) => {
+}: Props) => {
   // Proteção de desconto: acima de 10% exige PIN do gerente
   const [showManagerGate, setShowManagerGate] = useState(false);
   const [pendingDiscount, setPendingDiscount] = useState<string | null>(null);
