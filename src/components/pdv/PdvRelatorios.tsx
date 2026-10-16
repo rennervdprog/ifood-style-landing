@@ -177,9 +177,10 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
     queryKey: ["pdv-relatorio-operators", storeId, sessionId, dateRange.start, dateRange.end],
     queryFn: async () => {
       let q = (supabase.from("pdv_movements" as any) as any)
-        .select("amount, created_by, operator_id")
+        .select("amount, created_by, operator_id, orders!inner(status)")
         .eq("store_id", storeId)
-        .eq("type", "sale");
+        .eq("type", "sale")
+        .eq("orders.status", "finalizado");
       // No drill-down de turno a sessão delimita os dados — sem filtro de data.
       if (!sessionId) q = q.gte("created_at", dateRange.start).lte("created_at", dateRange.end);
       if (sessionId) q = q.eq("session_id", sessionId);
@@ -251,9 +252,10 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
     queryKey: ["pdv-relatorio-movements", storeId, sessionId, dateRange.start, dateRange.end],
     queryFn: async () => {
       let q = (supabase.from("pdv_movements" as any) as any)
-        .select("*")
+        .select("*, orders!inner(status)")
         .eq("store_id", storeId)
         .eq("type", "sale")
+        .eq("orders.status", "finalizado")
         .order("created_at", { ascending: false });
       // No drill-down de turno a sessão delimita os dados — sem filtro de data.
       if (!sessionId) q = q.gte("created_at", dateRange.start).lte("created_at", dateRange.end);
@@ -269,9 +271,10 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
     queryKey: ["pdv-relatorio-prev", storeId, prevRange.start, prevRange.end],
     queryFn: async () => {
       const { data } = await (supabase.from("pdv_movements" as any) as any)
-        .select("amount")
+        .select("amount, orders!inner(status)")
         .eq("store_id", storeId)
         .eq("type", "sale")
+        .eq("orders.status", "finalizado")
         .gte("created_at", prevRange.start)
         .lte("created_at", prevRange.end);
       const rows = (data || []) as { amount: number | string | null }[];
