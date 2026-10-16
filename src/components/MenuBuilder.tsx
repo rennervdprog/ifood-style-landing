@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Plus, Loader2, Package, Sparkles, ArrowLeft } from "lucide-react";
 import { ProductCard, ProductFormData } from "@/components/menu/ProductCard";
+import ProductRecipe from "@/components/ProductRecipe";
 import { ConfirmDialog } from "@/components/menu/ConfirmDialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetClose } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -45,6 +46,7 @@ const MenuBuilder = ({ storeId, storeCategory, storeCategories }: MenuBuilderPro
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkBusy, setBulkBusy] = useState(false);
 
+  const [recipeProduct, setRecipeProduct] = useState<any | null>(null);
   const [productSheet, setProductSheet] = useState<
     | { mode: "create"; sectionId: string | null }
     | { mode: "edit"; id: string; initial: ProductFormData; sectionName: string | null }
@@ -915,6 +917,7 @@ const MenuBuilder = ({ storeId, storeCategory, storeCategories }: MenuBuilderPro
       onDuplicate={() => duplicateProduct(product)}
       onCopyLink={() => copyProductLink(product)}
       onEdit={() => openEdit(product)}
+      onOpenRecipe={() => setRecipeProduct(product)}
       isEditing={false}
       onSaveEdit={() => {}}
       onCancelEdit={() => {}}
@@ -1198,6 +1201,15 @@ const MenuBuilder = ({ storeId, storeCategory, storeCategories }: MenuBuilderPro
           destructive={confirmState.destructive}
           confirmText={confirmState.confirmText}
           onConfirm={confirmState.onConfirm}
+        />
+      )}
+      {/* Ficha técnica do produto */}
+      {recipeProduct && (
+        <ProductRecipe
+          productId={recipeProduct.id}
+          productName={recipeProduct.name}
+          storeId={storeId}
+          onClose={() => setRecipeProduct(null)}
         />
       )}
     </div>
