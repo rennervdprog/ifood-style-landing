@@ -2,7 +2,8 @@ import { useState } from "react";
 import {
   ShoppingCart, LayoutGrid, History, BarChart3, MoreHorizontal,
   Receipt, CreditCard, Settings, X, Wallet, Package,
-, Users} from "lucide-react";
+  Users
+} from "lucide-react";
 import type { PdvTab } from "@/pages/pdv/types";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
