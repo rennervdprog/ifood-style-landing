@@ -927,14 +927,16 @@ const PdvPage = () => {
   };
 
   // ── Totais do turno ──
-  const turnoVendido = sumMoney(movements.filter(m => m.type === "sale" || m.type === "cancellation").map(m => m.amount));
-  const turnoDinheiro = sumMoney(movements.filter(m => m.type === "sale" && m.payment_method === "dinheiro").map(m => m.amount));
+  // Pedidos cancelados: excluir seus movimentos dos totais (evita "falta" fantasma no caixa)
+  const canceledOrderIds = new Set(movements.filter(m => m.type === "cancellation").map((m: any) => m.order_id));
+  const turnoVendido = sumMoney(movements.filter(m => m.type === "sale" && !canceledOrderIds.has((m as any).order_id)).map(m => m.amount));
+  const turnoDinheiro = sumMoney(movements.filter(m => m.type === "sale" && m.payment_method === "dinheiro" && !canceledOrderIds.has((m as any).order_id)).map(m => m.amount));
   const turnoSangrias = sumMoney(movements.filter(m => m.type === "sangria").map(m => m.amount));
   const turnoSuprimentos = sumMoney(movements.filter(m => m.type === "suprimento").map(m => m.amount));
   const saldoEsperado = addMoney((currentSession?.opening_amount ?? 0), turnoDinheiro, turnoSuprimentos, -turnoSangrias);
 
   // ── Ticket médio do turno ──
-  const turnoVendasCount = movements.filter(m => m.type === "sale").length - movements.filter(m => m.type === "cancellation").length;
+  const turnoVendasCount = movements.filter(m => m.type === "sale" && !canceledOrderIds.has((m as any).order_id)).length;
   const ticketMedio = turnoVendasCount > 0 ? turnoVendido / turnoVendasCount : 0;
 
   // ── Atalhos de teclado (PDV profissional) ──
