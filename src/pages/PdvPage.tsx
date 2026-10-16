@@ -1109,6 +1109,7 @@ const PdvPage = () => {
   if (screen === "fechamento") return (
     <PdvFechamentoScreen
       currentSession={currentSession}
+      storeId={store?.id}
       sessionSummary={sessionSummary}
       closingAmount={closingAmount}
       setClosingAmount={setClosingAmount}

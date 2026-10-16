@@ -26,19 +26,20 @@ interface Props {
   onBack: () => void;
   onConfirm: () => void;
   loading: boolean;
+  storeId?: string;
 }
 
 export const PdvFechamentoScreen = ({
   currentSession, sessionSummary, closingAmount, setClosingAmount,
   saldoEsperado, turnoSangrias, turnoSuprimentos,
   blindClose, setBlindClose, setDenominationCounts,
-  onBack, onConfirm, loading,
+  onBack, onConfirm, loading, storeId: propStoreId,
 }: Props) => {
   const byPayment: Record<string, number> = sessionSummary?.by_payment || {};
   const diffAmount = parseBRL(closingAmount) - saldoEsperado;
   // Fase 2: fechamento de caixa exige PIN do gerente.
   const [managerGateOpen, setManagerGateOpen] = useState(false);
-  const storeId = currentSession?.store_id;
+  const storeId = propStoreId || currentSession?.store_id;
   const isOk = !!closingAmount && Math.abs(diffAmount) < 0.05;
   const { confirm, ConfirmDialog } = useConfirmDialog();
 
