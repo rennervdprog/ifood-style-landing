@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { compressImage } from "@/lib/compressImage";
 import {
-  Trash2, Edit2, Package, PackageX, Pause, Play, ArrowRightLeft, Link2, X, Upload, Loader2, MoreVertical, ChevronDown, Link as LinkIcon, Copy,
+  Trash2, Edit2, Package, PackageX, Pause, Play, ArrowRightLeft, Link2, X, Upload, Loader2, MoreVertical, ChevronDown, Link as LinkIcon, Copy, ChefHat,
 } from "lucide-react";
 import CategoryProductFields from "@/components/CategoryProductFields";
 import {
@@ -411,6 +411,7 @@ interface ProductCardProps {
   onEdit: () => void;
   onDuplicate?: () => void;
   onCopyLink?: () => void;
+  onOpenRecipe?: () => void;
   isEditing: boolean;
   initialEditForm?: ProductFormData;
   onSaveEdit: (data: ProductFormData) => void;
@@ -440,7 +441,7 @@ const ProductCardImpl = (props: ProductCardProps) => {
   const {
     product, sections, addonGroups, linkedGroups, storeAddonGroups, linkedGroupIds,
     selected, onToggleSelect, onLinkGroup, onUnlinkGroup, showLinkAddon, setShowLinkAddon,
-    onToggleAvailable, onToggleOutOfStock, onDelete, onEdit, onDuplicate, isEditing, initialEditForm, onSaveEdit, onCancelEdit,
+    onToggleAvailable, onToggleOutOfStock, onDelete, onEdit, onDuplicate, onOpenRecipe, isEditing, initialEditForm, onSaveEdit, onCancelEdit,
     onCopyLink,
     showAddonForm, setShowAddonForm, addonGroupForm, setAddonGroupForm,
     onAddAddonGroup, onDeleteAddonGroup, showAddonItemForm, setShowAddonItemForm,
@@ -519,6 +520,11 @@ const ProductCardImpl = (props: ProductCardProps) => {
                   <DropdownMenuItem onClick={onStartMove}>
                     <ArrowRightLeft className="h-4 w-4 mr-2 text-muted-foreground" /> Mover de seção
                   </DropdownMenuItem>
+                  {onOpenRecipe && (
+                    <DropdownMenuItem onClick={onOpenRecipe}>
+                      <ChefHat className="h-4 w-4 mr-2 text-orange-600" /> Ficha técnica
+                    </DropdownMenuItem>
+                  )}
                   {onDuplicate && (
                     <DropdownMenuItem onClick={onDuplicate}>
                       <Copy className="h-4 w-4 mr-2 text-muted-foreground" /> Duplicar produto
