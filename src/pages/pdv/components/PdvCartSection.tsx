@@ -392,7 +392,6 @@ export const PdvCartSection = ({
         })()}
       </div>
     </div>
-  </div>
       {/* Autorização do gerente para desconto alto */}
       {showManagerGate && storeId && (
         <PdvOperatorLoginDialog
