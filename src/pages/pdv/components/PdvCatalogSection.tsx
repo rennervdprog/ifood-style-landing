@@ -42,7 +42,7 @@ const PdvProductCard = ({ product, qty, stock, addItem, decItem }: ProductCardPr
   const hasStockControl = stock?.track_stock === true;
   const stockQty = hasStockControl ? Number(stock.quantity) : null;
   const isOutOfStock = hasStockControl && stockQty !== null && stockQty <= 0;
-  const isLowStock = hasStockControl && stockQty !== null && stockQty > 0 && stockQty <= Number(stock.min_quantity);
+  const isLowStock = hasStockControl && stockQty !== null && stockQty > 0 && stockQty <= 5;
 
   const handleAdd = () => {
     if (isOutOfStock) {
@@ -50,55 +50,54 @@ const PdvProductCard = ({ product, qty, stock, addItem, decItem }: ProductCardPr
       return;
     }
     addItem(product);
-    // Feedback visual: flash verde + scale
     setJustAdded(true);
     setTimeout(() => setJustAdded(false), 350);
   };
 
+  const priceStr = `R$ ${Number(product.price).toFixed(2).replace(".", ",")}`;
+  const stockStr = hasStockControl
+    ? isOutOfStock ? "esgotado" : `${stockQty} un`
+    : "";
+
   return (
     <div
-      className={`flex items-center gap-2.5 p-2.5 rounded-xl border transition-all duration-200 ${isOutOfStock ? "opacity-50 bg-muted/30 border-border/40 cursor-not-allowed" : `cursor-pointer ${justAdded ? "bg-emerald-500/25 border-emerald-500/60 scale-[1.03] shadow-md" : qty > 0 ? "bg-primary/5 border-primary/25 shadow-sm" : "bg-card border-border/60 hover:bg-muted/20 active:scale-[0.98]"}`}`}
+      className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl transition-all duration-200 cursor-pointer active:scale-[0.99] ${
+        justAdded ? "bg-primary/10" : "bg-muted/40 hover:bg-muted/70"
+      } ${isOutOfStock ? "opacity-50" : ""}`}
       onClick={handleAdd}>
-      {product.image_url ? (
-        <img src={product.image_url} alt={product.name} className="w-11 h-11 rounded-lg object-cover shrink-0 border border-border/30" />
+      {product.pdv_short_code ? (
+        <span className="pdv-mono text-xs font-black px-2 py-1.5 rounded-lg bg-foreground text-background shrink-0 min-w-[44px] text-center">
+          {product.pdv_short_code}
+        </span>
       ) : (
-        <div className="w-11 h-11 rounded-lg bg-muted/60 flex items-center justify-center shrink-0 border border-border/30">
-          <span className="text-base font-bold text-muted-foreground">{product.name[0]}</span>
-        </div>
+        <span className="w-[44px] h-[32px] rounded-lg bg-muted flex items-center justify-center shrink-0 text-sm font-bold text-muted-foreground">
+          {product.name[0]?.toUpperCase()}
+        </span>
       )}
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-1.5">
-          {product.pdv_short_code && (
-            <span className="pdv-mono text-[10px] font-black px-1.5 py-0.5 rounded bg-muted text-muted-foreground shrink-0">
-              {product.pdv_short_code}
-            </span>
-          )}
-          <p className="text-sm font-semibold text-foreground leading-tight truncate">{product.name}</p>
-        </div>
-        <p className={`text-sm font-black mt-0.5 pdv-mono ${qty > 0 ? "text-primary" : "text-muted-foreground"}`}>{formatBRL(Number(product.price))}</p>
-        {hasStockControl && (
-          <div className="mt-1">
-            {isOutOfStock ? (
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-600 text-white">ESGOTADO</span>
-            ) : isLowStock ? (
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-orange-500 text-white">Só {stockQty} un</span>
-            ) : (
-              <span className="text-[10px] text-muted-foreground">{stockQty} un</span>
-            )}
-          </div>
-        )}
+        <p className="text-[13px] font-semibold text-foreground leading-tight truncate">{product.name}</p>
+        <p className={`text-[13px] font-black pdv-mono ${isOutOfStock ? "text-muted-foreground" : "text-primary"}`}>
+          {priceStr}
+          {stockStr && <span className="font-medium text-muted-foreground"> · {stockStr}</span>}
+          {isLowStock && <span className="font-bold text-orange-600"> · baixo!</span>}
+        </p>
       </div>
-      <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+      <div className="flex items-center gap-1.5 shrink-0" onClick={(e) => e.stopPropagation()}>
         {qty > 0 && (
           <>
-            <button onClick={() => decItem(product.id)} className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center active:scale-90">
+            <button onClick={() => decItem(product.id)} className="w-8 h-8 rounded-full bg-muted flex items-center justify-center active:scale-95 transition-transform">
               <Minus className="h-4 w-4" />
             </button>
-            <span className="w-6 text-center text-sm font-black">{qty}</span>
+            <span className="w-6 text-center text-sm font-black tabular-nums">{qty}</span>
           </>
         )}
-        <button onClick={handleAdd} className={`w-8 h-8 rounded-lg flex items-center justify-center active:scale-90 shadow-sm ${qty > 0 ? "bg-primary shadow-primary/30" : "bg-primary/80 hover:bg-primary shadow-primary/20"}`}>
-          <Plus className="h-4 w-4 text-primary-foreground" />
+        <button
+          onClick={handleAdd}
+          disabled={isOutOfStock}
+          className={`w-9 h-9 rounded-full flex items-center justify-center active:scale-90 transition-all ${
+            justAdded ? "bg-green-600" : "bg-primary"
+          } ${isOutOfStock ? "opacity-40" : "shadow-md shadow-primary/25"}`}>
+          <Plus className="h-4.5 w-4.5 text-primary-foreground" strokeWidth={2.5} />
         </button>
       </div>
     </div>
