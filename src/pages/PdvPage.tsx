@@ -393,11 +393,15 @@ const PdvPage = () => {
   const addonsFlag = useAddonsFlag();
   // Operador logado por PIN (Fase 1) — usado como operator_id nas movimentações.
   const { operator: pdvOperator } = usePdvOperator(store?.id);
-  // Limite de sangria sem alçada de gerente (Fase 2 item 8). Default R$ 200.
+  // Limite de sangria sem alçada de gerente. Default R$ 200.
+  // Fase 2: limite por loja (stores.settings.pdv_sangria_manager_limit)
+  // tem prioridade sobre o global (admin_settings).
   const { data: sangriaLimit } = useQuery({
-    queryKey: ["pdv-sangria-manager-limit"],
+    queryKey: ["pdv-sangria-manager-limit", store?.id, (store as any)?.settings?.pdv_sangria_manager_limit],
     staleTime: 5 * 60_000,
     queryFn: async () => {
+      const storeVal = Number((store as any)?.settings?.pdv_sangria_manager_limit);
+      if (Number.isFinite(storeVal) && storeVal >= 0) return storeVal;
       const { data } = await supabase.from("admin_settings")
         .select("value").eq("key", "pdv_sangria_manager_limit").maybeSingle();
       const v = Number((data?.value as any) ?? 200);
@@ -584,8 +588,9 @@ const PdvPage = () => {
   };
 
   // ── Abrir caixa (delegado a usePdvSession) ──
+  // Fase 2: registra o operador (PIN) que abriu o caixa.
   const handleAbrirCaixa = async () => {
-    await openSession(parseBRL(openingAmount));
+    await openSession(parseBRL(openingAmount), pdvOperator?.id ?? null);
   };
 
   // ── Finalizar venda (delegado a usePdvCheckout) ──

@@ -34,6 +34,9 @@ export function PdvOperatorsManager({ storeId }: Props) {
   const [saving, setSaving] = useState(false);
   const [changingPinFor, setChangingPinFor] = useState<Operator | null>(null);
   const [newPin, setNewPin] = useState("");
+  // Fase 2: limite de sangria por loja (PIN do gerente acima do valor).
+  const [sangriaLimit, setSangriaLimit] = useState("");
+  const [sangriaSaving, setSangriaSaving] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -51,8 +54,53 @@ export function PdvOperatorsManager({ storeId }: Props) {
   };
 
   useEffect(() => {
-    if (authorized) load();
+    if (authorized) {
+      load();
+      loadSangriaLimit();
+    }
   }, [authorized]);
+
+  // Fase 2: lê o limite de sangria da loja (stores.settings).
+  const loadSangriaLimit = async () => {
+    try {
+      const { data } = await supabase
+        .from("stores")
+        .select("settings")
+        .eq("id", storeId)
+        .maybeSingle();
+      const v = (data as any)?.settings?.pdv_sangria_manager_limit;
+      setSangriaLimit(v !== undefined && v !== null ? String(v) : "");
+    } catch { /* mantém vazio = usa o global */ }
+  };
+
+  const saveSangriaLimit = async () => {
+    const v = sangriaLimit.trim() === "" ? null : Number(sangriaLimit.replace(",", "."));
+    if (v !== null && (!Number.isFinite(v) || v < 0)) {
+      toast.error("Valor inválido");
+      return;
+    }
+    setSangriaSaving(true);
+    try {
+      const { data: store } = await supabase
+        .from("stores")
+        .select("settings")
+        .eq("id", storeId)
+        .maybeSingle();
+      const settings = { ...((store as any)?.settings || {}) };
+      if (v === null) delete settings.pdv_sangria_manager_limit;
+      else settings.pdv_sangria_manager_limit = v;
+      const { error } = await supabase
+        .from("stores")
+        .update({ settings })
+        .eq("id", storeId);
+      if (error) throw error;
+      toast.success("Limite de sangria atualizado");
+    } catch (e: any) {
+      toast.error(e.message || "Erro ao salvar");
+    } finally {
+      setSangriaSaving(false);
+    }
+  };
 
   const handleAuthorized = () => {
     setAuthorized(true);
@@ -214,6 +262,36 @@ export function PdvOperatorsManager({ storeId }: Props) {
         >
           <Plus className="h-4 w-4" /> Novo
         </button>
+      </div>
+
+      {/* Fase 2: limite de sangria por loja */}
+      <div className="bg-card rounded-2xl border border-border p-4 space-y-3">
+        <div>
+          <p className="text-sm font-black">Sangria sem PIN do gerente até</p>
+          <p className="text-[11px] text-muted-foreground mt-0.5">
+            Valores acima exigem autorização do gerente. Vazio = usa o padrão (R$ 200).
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-muted-foreground">R$</span>
+            <input
+              value={sangriaLimit}
+              onChange={(e) => setSangriaLimit(e.target.value.replace(/[^0-9.,]/g, ""))}
+              inputMode="decimal"
+              placeholder="200"
+              className="w-full pl-9 pr-3 py-2.5 bg-muted/40 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-primary/40"
+            />
+          </div>
+          <button
+            onClick={saveSangriaLimit}
+            disabled={sangriaSaving}
+            className="px-5 py-2.5 bg-primary text-primary-foreground rounded-xl font-bold text-sm disabled:opacity-60 flex items-center gap-1.5"
+          >
+            {sangriaSaving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+            Salvar
+          </button>
+        </div>
       </div>
 
       {loading ? (
