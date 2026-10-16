@@ -76,6 +76,7 @@ import { PdvTabs } from "@/pages/pdv/components/PdvTabs";
 import { PdvMobileBottomNav } from "@/pages/pdv/components/PdvMobileBottomNav";
 import StockTab from "@/pages/admin/tabs/StockTab";
 import { PdvOperatorsManager } from "@/pages/pdv/components/PdvOperatorsManager";
+import { PdvAuditReport } from "@/pages/pdv/components/PdvAuditReport";
 import { PdvStatusBar } from "@/pages/pdv/components/PdvStatusBar";
 import { PdvSessionCard } from "@/pages/pdv/components/PdvSessionCard";
 import { PdvMesasView } from "@/pages/pdv/components/PdvMesasView";
@@ -392,7 +393,7 @@ const PdvPage = () => {
   const pdvAccess = useStorePdvAccess(store?.id);
   const addonsFlag = useAddonsFlag();
   // Operador logado por PIN (Fase 1) — usado como operator_id nas movimentações.
-  const { operator: pdvOperator } = usePdvOperator(store?.id);
+  const { operator: pdvOperator, setOperator: setPdvOperator } = usePdvOperator(store?.id);
   // Limite de sangria sem alçada de gerente. Default R$ 200.
   // Fase 2: limite por loja (stores.settings.pdv_sangria_manager_limit)
   // tem prioridade sobre o global (admin_settings).
@@ -871,6 +872,8 @@ const PdvPage = () => {
       setLastClosedSession({ sessionId: snapshot.sessionId, zInput });
       setSessionSummary(null);
       clearSale();
+      // Fase 3: fechar o caixa encerra a sessão do operador (exige novo PIN na próxima abertura).
+      setPdvOperator(null);
       setBlindClose(false);
       setDenominationCounts({});
       setClosingAmount("");
@@ -1365,6 +1368,13 @@ const PdvPage = () => {
       {tab === "operadores" && store?.id && (
         <div className="flex-1 overflow-y-auto">
           <PdvOperatorsManager storeId={store.id} />
+        </div>
+      )}
+
+      {/* ── AUDITORIA (gerente) ── */}
+      {tab === "auditoria" && store?.id && (
+        <div className="flex-1 overflow-y-auto">
+          <PdvAuditReport storeId={store.id} />
         </div>
       )}
 

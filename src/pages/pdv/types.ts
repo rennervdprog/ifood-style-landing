@@ -68,7 +68,7 @@ export type PdvScreen = "loading" | "abertura" | "venda" | "fechamento";
 export type PdvMobileStep = "catalog" | "cart";
 
 /** Abas dentro da tela de venda. */
-export type PdvTab = "venda" | "mesas" | "historico" | "turnos" | "relatorios" | "financeiro" | "meu_plano" | "configuracoes" | "operadores" | "estoque";
+export type PdvTab = "venda" | "mesas" | "historico" | "turnos" | "relatorios" | "financeiro" | "meu_plano" | "configuracoes" | "operadores" | "estoque" | "auditoria";
 
 /**
  * Snapshot completo do estado de venda — usado pelo "Desfazer" do "Limpar venda".
