@@ -522,7 +522,14 @@ const PdvPage = () => {
 
   // "Nova venda" na tela de sucesso: limpa tudo e recomeça
   const handleNewSale = () => {
-    clearSale();
+    try { clearSaleCart(); } catch {}
+    setCheckoutStep("cart");
+    setOrderDone(false);
+    setLastSale(null);
+    setCashReceived(null);
+    setCashVal("");
+    setDiscountDraft({ type: "percent", value: "" });
+    if (isMobile) setMobileStep("catalog");
   };
 
   // ── Enviar itens do carrinho para a comanda selecionada (Mesa/Comanda) ──
