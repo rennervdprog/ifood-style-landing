@@ -1873,6 +1873,7 @@ const PdvPage = () => {
       {/* FAB — gerenciar cardápio. No mobile já existe atalho no menu (☰) do topbar
           e no bottom-nav, então mostramos só em telas ≥ md pra evitar sobreposição
           com FABs específicos (ex.: "criar mesa" na aba Mesas). */}
+      {checkoutStep === "cart" && (
       <button
         type="button"
         onClick={() => navigate("/admin/cardapio")}
@@ -1882,6 +1883,7 @@ const PdvPage = () => {
       >
         <Plus className="h-6 w-6" />
       </button>
+      )}
     </div>
   );
 };
