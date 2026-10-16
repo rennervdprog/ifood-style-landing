@@ -1,13 +1,9 @@
 import { useState } from "react";
 import {
-  X, RotateCcw, ShoppingCart, Tag, ChevronDown, ChevronRight,
-  Split, Calculator, Wallet, Loader2, CheckCircle2, Send,
+  X, RotateCcw, ShoppingCart, Tag, ChevronDown, Loader2, Send,
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatBRL } from "@/lib/utils";
-import { parseBRL } from "@/hooks/useBRLInput";
-import { PdvSplitPayment, type SplitPayment } from "@/components/pdv/PdvSplitPayment";
-import { PDV_METHODS, COLOR_MAP } from "@/pages/pdv/constants";
 import type { CartItem, SaleSnapshot } from "@/pages/pdv/types";
 import { PdvTableSelector } from "./PdvTableSelector";
 import { PdvOperatorLoginDialog } from "@/components/pdv/PdvOperatorLoginDialog";
@@ -34,23 +30,13 @@ interface Props {
   setDiscountType: (v: "R$" | "%") => void;
   discountInput: string;
   setDiscountInput: (v: string) => void;
-  paymentMethod: string;
-  setPaymentMethod: (v: string) => void;
-  setCashReceived: (v: string) => void;
-  cashReceived: string;
-  troco: number;
-  trocoNegativo: boolean;
-  finalTotal_: number;
   /** Recebe o índice da linha (permite remover linhas diferentes do mesmo produto). */
   removeItem: (index: number) => void;
-  onFinalize: () => void;
   loading: boolean;
   orderDone: boolean;
-  splitMode: boolean;
-  setSplitMode: (v: boolean) => void;
-  splitPayments: SplitPayment[];
-  setSplitPayments: (v: SplitPayment[]) => void;
   mobileScroll?: boolean;
+  /** Vai para a tela de pagamento (fluxo: carrinho → pagamento). */
+  onGoToPayment: () => void;
 }
 
 export const PdvCartSection = ({
@@ -60,11 +46,9 @@ export const PdvCartSection = ({
   subtotal, discountAmount, finalTotal,
   showDiscount, setShowDiscount, discountType, setDiscountType,
   discountInput, setDiscountInput,
-  paymentMethod, setPaymentMethod, setCashReceived, cashReceived,
-  troco, trocoNegativo, finalTotal_,
-  removeItem, onFinalize, loading, orderDone,
-  splitMode, setSplitMode, splitPayments, setSplitPayments,
+  removeItem, loading, orderDone,
   mobileScroll = false,
+  onGoToPayment,
 }: Props) => {
   // Proteção de desconto: acima de 10% exige PIN do gerente
   const [showManagerGate, setShowManagerGate] = useState(false);
@@ -102,10 +86,39 @@ export const PdvCartSection = ({
     toast.info("Desconto acima de 10% precisa de autorização do gerente");
   };
 
+  const inTabMode = !!selectedTabId;
+  const cartEmpty = cart.length === 0;
+  const ctaDisabled = cartEmpty || loading || orderDone;
+
+  const handleClearSale = () => {
+    // Snapshot da venda para o "Desfazer" (campos de pagamento preenchidos vazios —
+    // o pagamento agora acontece na tela própria).
+    const snapshot: SaleSnapshot = {
+      items: [...cart],
+      paymentMethod: "",
+      tableId,
+      selectedTable,
+      selectedTabId,
+      discountType,
+      discountInput,
+      cashReceived: "",
+      splitMode: false,
+      splitPayments: [],
+    };
+    clearSale();
+    toast.warning("Venda limpa", {
+      action: restoreCart ? {
+        label: "Desfazer",
+        onClick: () => restoreCart(snapshot),
+      } : undefined,
+      duration: 5000,
+    });
+  };
+
   return (
   <div className={mobileScroll ? "flex flex-col min-h-0 overflow-visible" : "flex flex-col h-full min-h-0 overflow-hidden"}>
     {/* Cabeçalho */}
-    <div className={`px-3 pt-2.5 pb-2 border-b shrink-0 transition-colors ${selectedTabId ? "border-amber-500/40 bg-amber-500/5" : "border-border"}`}>
+    <div className={`px-3 pt-2.5 pb-2 border-b shrink-0 transition-colors ${inTabMode ? "border-amber-500/40 bg-amber-500/5" : "border-border"}`}>
       <div className="flex items-center justify-between">
         <PdvTableSelector
           storeId={storeId}
@@ -118,36 +131,15 @@ export const PdvCartSection = ({
         />
         <div className="flex items-center gap-1.5">
           <span className="text-[10px] text-muted-foreground">{totalItems} itens</span>
-          {cart.length > 0 && (
-            <button onClick={() => {
-              // Snapshot completo da venda para o "Desfazer".
-              const snapshot: SaleSnapshot = {
-                items: [...cart],
-                paymentMethod,
-                tableId,
-                selectedTable,
-                selectedTabId,
-                discountType,
-                discountInput,
-                cashReceived,
-                splitMode,
-                splitPayments: [...splitPayments],
-              };
-              clearSale();
-              toast.warning("Venda limpa", {
-                action: restoreCart ? {
-                  label: "Desfazer",
-                  onClick: () => restoreCart(snapshot),
-                } : undefined,
-                duration: 5000,
-              });
-            }} aria-label="Limpar venda" title="Limpar venda (ESC)" className="p-1 rounded-lg hover:bg-muted transition-colors">
-              <RotateCcw className="h-3.5 w-3.5 text-muted-foreground" />
+          {!cartEmpty && (
+            <button onClick={handleClearSale} aria-label="Limpar venda" title="Limpar venda (ESC)"
+              className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg hover:bg-muted transition-colors">
+              <RotateCcw className="h-4 w-4 text-muted-foreground" />
             </button>
           )}
         </div>
       </div>
-      {selectedTabId && (
+      {inTabMode && (
         <p className="text-[10px] text-amber-700 dark:text-amber-300 mt-1.5 font-semibold">
           Modo comanda — itens serão acumulados sem cobrar.
         </p>
@@ -156,7 +148,7 @@ export const PdvCartSection = ({
 
     {/* Itens */}
     <div className={mobileScroll ? "p-2 space-y-1" : "flex-1 overflow-y-auto p-2 space-y-1 min-h-0"}>
-      {cart.length === 0 ? (
+      {cartEmpty ? (
         <div className="flex flex-col items-center justify-center h-full gap-2 py-8">
           <div className="w-14 h-14 rounded-2xl bg-muted/40 flex items-center justify-center">
             <ShoppingCart className="h-6 w-6 text-muted-foreground/40" />
@@ -190,17 +182,17 @@ export const PdvCartSection = ({
               )}
             </div>
             <p className="text-xs font-black text-foreground shrink-0 pdv-mono">{formatBRL(item.price * item.quantity)}</p>
+            {/* removeItem(idx) — índice da linha, não do produto */}
             <button onClick={() => removeItem(idx)} aria-label="Remover item"
-              className="p-1.5 -m-1 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors shrink-0">
-            {/* removeItem(idx) — não idx do produto (Bug P0 report) */}
-              <X className="h-4 w-4" />
+              className="min-w-[44px] min-h-[44px] flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors shrink-0">
+              <X className="h-5 w-5" />
             </button>
           </div>
         </div>
       ))}
     </div>
 
-    {/* Pagamento */}
+    {/* Rodapé: desconto, totais e ação */}
     <div className="border-t border-border shrink-0 bg-card">
       {/* Desconto */}
       <div className="px-3 pt-2.5">
@@ -241,168 +233,56 @@ export const PdvCartSection = ({
           </div>
         )}
         <div className="flex justify-between items-baseline pt-1 border-t border-border/40">
-          <span className="text-sm font-black">Total</span>
-          <span className="text-2xl font-black text-primary pdv-mono">{formatBRL(finalTotal)}</span>
+          <span className="text-sm font-extrabold">Total</span>
+          <span className="text-2xl font-extrabold text-primary pdv-mono">{formatBRL(finalTotal)}</span>
         </div>
       </div>
 
-      {/* Toggle Split */}
-      {finalTotal > 0 && (
-        <div className="px-3 pt-1 pb-1.5 flex items-center justify-between">
-          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-            Pagamento
-          </span>
-          <button
-            onClick={() => {
-              setSplitMode(!splitMode);
-              setSplitPayments([]);
-              setPaymentMethod("");
-              setCashReceived("");
-            }}
-            title="Dividir pagamento (F4)"
-            className={`flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-lg border transition-colors ${
-              splitMode
-                ? "bg-primary text-primary-foreground border-primary"
-                : "bg-muted/50 text-muted-foreground border-border hover:bg-muted"
-            }`}
-          >
-            <Split className="h-3 w-3" />
-            {splitMode ? "Pagamento único" : "Dividir pagamento"}
-            <kbd className="px-1 rounded bg-black/10 text-[8px] font-black">F4</kbd>
-          </button>
-        </div>
-      )}
-
-      {/* Métodos OU Split */}
-      {splitMode ? (
-        <div className="px-3 pb-2">
-          <PdvSplitPayment
-            total={finalTotal}
-            payments={splitPayments}
-            onChange={setSplitPayments}
-          />
-        </div>
-      ) : (
-        <div className="px-3 pt-1 pb-2 grid grid-cols-2 gap-1.5">
-          {PDV_METHODS.map(pm => {
-            const Icon = pm.icon;
-            const sel = paymentMethod === pm.id;
-            return (
-              <button key={pm.id}
-                onClick={() => { setPaymentMethod(pm.id); setCashReceived(""); }}
-                data-sel={sel}
-                className={`flex items-center gap-1.5 px-2.5 py-2.5 rounded-xl border text-left transition-all active:scale-[0.97] ${COLOR_MAP[pm.color]}`}>
-                <Icon className="h-3.5 w-3.5 shrink-0" />
-                <span className="text-[11px] font-bold truncate">{pm.label}</span>
-              </button>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Troco */}
-      {!splitMode && paymentMethod === "dinheiro" && (
-        <div className="mx-3 mb-2 bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-3 space-y-2">
-          <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
-            <Calculator className="h-3 w-3" /> Valor recebido
-          </label>
-          <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground">R$</span>
-            <input type="text" inputMode="decimal"
-              placeholder={finalTotal_.toFixed(2).replace(".", ",")}
-              value={cashReceived}
-              onChange={(e) => setCashReceived(e.target.value.replace(/[^0-9.,]/g, ""))}
-              data-pdv-no-hotkey
-              className={`w-full pl-8 pr-3 py-2.5 rounded-xl text-xl font-black text-center focus:outline-none focus:ring-2 transition-colors ${trocoNegativo ? "bg-red-500/10 text-red-500 border border-red-500/30" : "bg-white dark:bg-muted/50 border border-border/50 focus:ring-primary/30"}`}
-            />
-          </div>
-          {/* Sugestões de cédulas */}
-          {finalTotal_ > 0 && !cashReceived && (
-            <div className="flex gap-1.5 flex-wrap">
-              {[
-                Math.ceil(finalTotal_ / 5) * 5,
-                Math.ceil(finalTotal_ / 10) * 10,
-                Math.ceil(finalTotal_ / 20) * 20,
-                Math.ceil(finalTotal_ / 50) * 50,
-              ].filter((v, i, a) => v >= finalTotal_ && a.indexOf(v) === i).slice(0, 4).map(v => (
-                <button key={v} onClick={() => setCashReceived(v.toFixed(2).replace(".", ","))}
-                  className="text-[11px] font-bold bg-muted/60 hover:bg-muted px-2.5 py-1 rounded-lg transition-colors">
-                  R$ {v.toFixed(0)}
-                </button>
-              ))}
-            </div>
-          )}
-          {cashReceived && (
-            <div className={`flex justify-between items-center rounded-xl px-3 py-2.5 ${trocoNegativo ? "bg-red-500/10" : "bg-emerald-500/15"}`}>
-              <span className={`text-xs font-bold ${trocoNegativo ? "text-red-500" : "text-emerald-700 dark:text-emerald-400"} flex items-center gap-1`}>
-                {trocoNegativo ? "⚠️ Falta" : <><Wallet className="h-3.5 w-3.5" /> Troco</>}
-              </span>
-              <span className={`text-xl font-black pdv-mono ${trocoNegativo ? "text-red-500" : "text-emerald-600 dark:text-emerald-400"}`}>
-                {trocoNegativo ? formatBRL(finalTotal_ - (parseBRL(cashReceived))) : formatBRL(troco)}
-              </span>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Finalizar */}
-      <div className="px-3 pb-3">
-        {(() => {
-          const splitTotal = (splitPayments || []).reduce((s, p) => s + Number(p.amount || 0), 0);
-          const splitComplete = splitMode && Math.abs(splitTotal - finalTotal) < 0.01;
-          const canFinalize =
-            !loading && !orderDone && cart.length > 0 &&
-            (splitMode ? splitComplete : (!!paymentMethod && !trocoNegativo));
-          const inTabMode = !!selectedTabId;
-          if (inTabMode) {
-            const canSend = !loading && !orderDone && cart.length > 0;
-            return (
-              <div className="space-y-1.5">
-                <button
-                  onClick={onSendToTab}
-                  disabled={!canSend}
-                  className="w-full h-12 bg-amber-500 hover:bg-amber-600 text-white font-black text-sm rounded-2xl flex items-center justify-center gap-2 active:scale-[0.98] transition-all shadow-lg shadow-amber-500/25 disabled:opacity-50"
-                >
-                  {loading ? <><Loader2 className="h-4 w-4 animate-spin" /> Enviando...</>
-                    : <><Send className="h-4 w-4" /> Enviar {totalItems} {totalItems === 1 ? "item" : "itens"} à comanda</>}
-                </button>
-                <button
-                  onClick={onFinalize}
-                  disabled={!canFinalize}
-                  className="w-full h-10 bg-primary/10 text-primary border border-primary/30 font-bold text-xs rounded-xl flex items-center justify-center gap-2 active:scale-[0.98] transition-all disabled:opacity-40"
-                >
-                  Cobrar e fechar comanda ({formatBRL(finalTotal)})
-                </button>
-                <p className="text-[10px] text-muted-foreground text-center pt-0.5">
-                  Para cobrar, escolha o método de pagamento acima.
-                </p>
-              </div>
-            );
-          }
-          return (
-            <button onClick={onFinalize}
-              disabled={!canFinalize}
-              title="Finalizar venda (F8)"
-              className="w-full h-12 bg-primary text-primary-foreground font-black text-sm rounded-2xl flex items-center justify-center gap-2 active:scale-[0.98] transition-all shadow-lg shadow-primary/25 disabled:opacity-50">
-              {loading ? <><Loader2 className="h-4 w-4 animate-spin" /> Registrando...</>
-                : orderDone ? <><CheckCircle2 className="h-4 w-4" /> Venda registrada!</>
-                : <>Finalizar {formatBRL(finalTotal)} <ChevronRight className="h-4 w-4" /><kbd className="ml-1 px-1.5 py-0.5 rounded bg-black/20 text-[10px] font-black">F8</kbd></>}
+      {/* Ações */}
+      <div className="px-3 pb-3 pt-1 space-y-1.5">
+        {inTabMode ? (
+          <>
+            <button
+              onClick={onSendToTab}
+              disabled={ctaDisabled}
+              className="w-full h-12 bg-amber-500 hover:bg-amber-600 text-white font-black text-sm rounded-2xl flex items-center justify-center gap-2 active:scale-[0.98] transition-all shadow-lg shadow-amber-500/25 disabled:opacity-50"
+            >
+              {loading ? <><Loader2 className="h-4 w-4 animate-spin" /> Enviando...</>
+                : <><Send className="h-4 w-4" /> Enviar {totalItems} {totalItems === 1 ? "item" : "itens"} à comanda</>}
             </button>
-          );
-        })()}
+            <button
+              onClick={onGoToPayment}
+              disabled={ctaDisabled}
+              className="w-full h-12 bg-primary/10 text-primary border border-primary/30 font-extrabold text-[15px] rounded-2xl flex items-center justify-center gap-2 active:scale-[0.98] transition-all disabled:opacity-40"
+            >
+              {loading ? <><Loader2 className="h-4 w-4 animate-spin" /> Aguarde...</>
+                : <>Receber {formatBRL(finalTotal)}</>}
+            </button>
+          </>
+        ) : (
+          <button
+            onClick={onGoToPayment}
+            disabled={ctaDisabled}
+            className="w-full h-14 bg-primary text-white font-extrabold text-[17px] rounded-2xl flex items-center justify-center gap-2 active:scale-[0.98] transition-all shadow-lg shadow-primary/25 disabled:opacity-50"
+          >
+            {loading ? <><Loader2 className="h-4 w-4 animate-spin" /> Aguarde...</>
+              : <>Receber {formatBRL(finalTotal)}</>}
+          </button>
+        )}
       </div>
     </div>
-      {/* Autorização do gerente para desconto alto */}
-      {showManagerGate && storeId && (
-        <PdvOperatorLoginDialog
-          open={showManagerGate}
-          storeId={storeId}
-          onClose={handleManagerClosed}
-          onLogin={handleManagerApproved}
-          requiredRole="gerente"
-          title="Autorização do gerente"
-        />
-      )}
-    </div>
+
+    {/* Autorização do gerente para desconto alto */}
+    {showManagerGate && storeId && (
+      <PdvOperatorLoginDialog
+        open={showManagerGate}
+        storeId={storeId}
+        onClose={handleManagerClosed}
+        onLogin={handleManagerApproved}
+        requiredRole="gerente"
+        title="Autorização do gerente"
+      />
+    )}
+  </div>
   );
 };
