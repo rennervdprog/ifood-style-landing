@@ -721,6 +721,20 @@ const PdvPage = () => {
       if (regularItems.length) {
         queryClient.invalidateQueries({ queryKey: ["stock-list"] });
         queryClient.invalidateQueries({ queryKey: ["low-stock"] });
+        // Fase 3 ficha técnica: avisa se algum ingrediente zerou/ficou baixo
+        try {
+          const { data: alerts } = await (supabase as any).rpc("get_recipe_stock_alerts", {
+            _product_ids: regularItems.map((i) => i.id),
+          });
+          if (alerts && alerts.length > 0) {
+            const nomes = alerts.map((a: any) =>
+              `${a.ingredient_name} (${a.is_zero ? "zerou" : `${a.quantity} ${a.unit} restantes`})`
+            ).join(", ");
+            toast.warning(`Estoque de ingrediente: ${nomes}`, { duration: 6000 });
+          }
+        } catch {
+          // Não bloqueia a venda se o alerta falhar
+        }
       }
       // Fase 4.2 Boutique — CRM + vale-crédito
       if (isApparel && store?.id && orderId) {
