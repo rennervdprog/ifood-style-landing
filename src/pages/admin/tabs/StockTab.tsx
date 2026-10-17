@@ -57,6 +57,7 @@ interface StockItem {
   quantity: number;
   min_quantity: number;
   track_stock: boolean;
+  unit: string;
 }
 
 const MOVEMENT_LABELS: Record<string, string> = {
@@ -78,6 +79,7 @@ export default function StockTab({ storeId }: Props) {
   const [hideHowItWorks, setHideHowItWorks] = useState(false);
   const [activateQty, setActivateQty] = useState("");
   const [activateMin, setActivateMin] = useState("");
+  const [activateUnit, setActivateUnit] = useState("un");
   const [adjustDialog, setAdjustDialog] = useState<StockItem | null>(null);
   const [adjustType, setAdjustType] = useState("in");
   const [adjustQty, setAdjustQty] = useState("");
@@ -109,6 +111,7 @@ export default function StockTab({ storeId }: Props) {
           quantity: s ? Number(s.quantity) : 0,
           min_quantity: s ? Number(s.min_quantity) : 0,
           track_stock: s ? s.track_stock : false,
+          unit: s?.unit || "un",
         } as StockItem;
       });
     },
@@ -157,6 +160,12 @@ export default function StockTab({ storeId }: Props) {
       });
       if (e1) throw e1;
 
+      const { error: eUnit } = await (supabase as any).rpc("stock_set_unit", {
+        _product_id: activateDialog.product_id,
+        _unit: activateUnit,
+      });
+      if (eUnit) throw eUnit;
+
       if (qty > 0) {
         const { error: e2 } = await supabase.rpc("stock_adjust", {
           _product_id: activateDialog.product_id,
@@ -179,6 +188,7 @@ export default function StockTab({ storeId }: Props) {
       setActivateDialog(null);
       setActivateQty("");
       setActivateMin("");
+      setActivateUnit("un");
     },
     onError: (e: any) => toast.error(e.message),
   });
