@@ -21,7 +21,7 @@ export default function ValorAPagarCard({ storeId, onPayClick }: Props) {
   const { data: mensalidadeData, isLoading: mensalidadeLoading, isSuccess, refetch } = useQuery({
     queryKey: ["valor-a-pagar-mensalidade", storeId],
     queryFn: async () => {
-      const { data: monthlyCharges } = await (supabase as any).from("financial_transactions").select("amount").eq("store_id", storeId).eq("transaction_kind", "monthly_fee").eq("status", "pending").limit(50);
+      const { data: monthlyCharges } = await (supabase as any).from("financial_transactions").select("amount").eq("store_id", storeId).eq("transaction_kind", "commission_charge").or("reference_code.like.#MENS-*,reference_code.like.#ASSIN-*").eq("status", "pending").limit(50);
       const mensalidade = (monthlyCharges || []).reduce((sum: number, charge: any) => sum + Number(charge.amount || 0), 0);
       return { mensalidade };
     },
