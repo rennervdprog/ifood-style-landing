@@ -44,17 +44,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
   const currentUserIdRef = useRef<string | null>(null);
   const refreshIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+const refreshFailCountRef = useRef(0);
   const sessionRestoredRef = useRef(false);
   // Multi-device liberado — sessões simultâneas permitidas em todos os perfis.
   // Nenhum device tracking / kick-out.
 
-  // Refresh proativo do JWT enquanto o app está visível
+  // Refresh proativo do JWT enquanto o app está visível.
+  // Circuit breaker: 3 falhas seguidas = sessão inválida; para de tentar
+  // e desloga localmente em vez de martelar o servidor em loop.
   const startProactiveRefresh = () => {
     if (refreshIntervalRef.current) return;
+    refreshFailCountRef.current = 0;
     refreshIntervalRef.current = setInterval(() => {
       if (document.visibilityState !== "visible") return;
-      supabase.auth.refreshSession().catch((e) => {
-        console.warn("[Auth] proactive refreshSession failed:", e);
+      supabase.auth.refreshSession().then(({ error }) => {
+        if (error) throw error;
+        refreshFailCountRef.current = 0;
+      }).catch((e) => {
+        refreshFailCountRef.current += 1;
+        console.warn(`[Auth] proactive refreshSession failed (${refreshFailCountRef.current}/3):`, e);
+        if (refreshFailCountRef.current >= 3) {
+          console.warn("[Auth] refresh falhou 3x seguidas — parando retry e limpando sessão local");
+          stopProactiveRefresh();
+          supabase.auth.signOut({ scope: "local" as any }).catch(() => {});
+        }
       });
     }, REFRESH_INTERVAL);
   };
@@ -105,6 +118,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Set up listener AFTER getSession to handle subsequent auth events
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, newSession) => {
+      // Refresh automático do gotrue falhou: sessão inválida; limpa local
+      // para não ficar em loop de retry contra o servidor.
+      if ((event as string) === "TOKEN_REFRESH_FAILED") {
+        console.warn("[Auth] TOKEN_REFRESH_FAILED — limpando sessão local");
+        stopProactiveRefresh();
+        supabase.auth.signOut({ scope: "local" as any }).catch(() => {});
+        setSession(null);
+        currentUserIdRef.current = null;
+        setLoading(false);
+        return;
+      }
       const previousUserId = currentUserIdRef.current;
       const nextUserId = newSession?.user?.id ?? null;
       const nextEmail = newSession?.user?.email ?? "null";
