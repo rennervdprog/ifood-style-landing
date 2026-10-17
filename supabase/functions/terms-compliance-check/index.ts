@@ -66,13 +66,13 @@ Deno.serve(async (req) => {
       : warn("pdv_addon_price", "4.1", "Add-on PDV a R$ 49/mês", "Nenhum template de add-on PDV com R$ 49 encontrado.");
   } catch (e: any) { warn("pdv_addon_price", "4.1", "Add-on PDV", e?.message || "erro"); }
 
-  // 5. Plano PDV Standalone R$ 69
+  // 5. Plano PDV Standalone R$ 120
   try {
     const { data } = await sb.from("plan_templates").select("id, name, monthly_fee, plan_type");
-    const pdvOnly = (data || []).find((p: any) => Number(p.monthly_fee) === 69 && String(p.name || "").toLowerCase().includes("pdv"));
+    const pdvOnly = (data || []).find((p: any) => Number(p.monthly_fee) === 120 && String(p.name || "").toLowerCase().includes("pdv"));
     pdvOnly
-      ? pass("pdv_only_price", "4.2", "Plano PDV Standalone R$ 69", `Template: ${(pdvOnly as any).name}`)
-      : warn("pdv_only_price", "4.2", "Plano PDV Standalone R$ 69", "Template PDV standalone R$ 69 não localizado.");
+      ? pass("pdv_only_price", "4.2", "Plano PDV Standalone R$ 120", `Template: ${(pdvOnly as any).name}`)
+      : warn("pdv_only_price", "4.2", "Plano PDV Standalone R$ 120", "Template PDV standalone R$ 120 não localizado.");
   } catch (e: any) { warn("pdv_only_price", "4.2", "Plano PDV Standalone", e?.message || "erro"); }
 
   // 6. Saque mínimo entregador R$ 5
