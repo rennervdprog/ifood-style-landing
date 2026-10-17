@@ -171,7 +171,7 @@ const pdv_only: PlanInfo = {
   name: "Somente PDV",
   tagline: "R$ 120/mês — só o caixa, sem delivery",
   forWho: "Pra quem já tem clientela na loja física e quer só a frente de caixa",
-  monthlyFee: 69,
+  monthlyFee: 120,
   commissionRate: 0,
   pixFee: 0,
   deliveryFee: 0,
