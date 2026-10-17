@@ -453,7 +453,7 @@ export default function StockTab({ storeId }: Props) {
                           <span className={`text-3xl font-black px-3 py-1 rounded-lg ${isZero ? "bg-red-600 text-white" : isLow ? "bg-orange-500 text-white" : "bg-green-600 text-white"}`}>
                             {item.quantity}
                           </span>
-                          <span className="text-sm font-medium">unidades</span>
+                          <span className="text-sm font-medium">{item.unit === "un" ? "unidades" : item.unit}</span>
                         </div>
                         <div className="mt-1">
                           {isZero && (
