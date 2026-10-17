@@ -62,7 +62,7 @@ export function useStorePdvAccess(storeId: string | undefined | null): PdvAccess
   const catalogPrice = data?.catalogPrice ?? 49;
   const isPdvOnly = data?.planType === "pdv_only";
 
-  // Plano "Somente PDV": PDV já embutido no preço do plano (R$ 69/mês)
+  // Plano "Somente PDV": PDV já embutido no preço do plano (R$ 120/mês)
   if (isPdvOnly) {
     return {
       enabled: true,
