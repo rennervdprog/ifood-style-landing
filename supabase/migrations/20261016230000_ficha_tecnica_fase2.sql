@@ -95,7 +95,7 @@ BEGIN
 
   v_new_qty := v_row.quantity - _quantity;
   UPDATE public.product_stock
-     SET quantity = v_ing_new_qty, updated_at = now()
+     SET quantity = v_new_qty, updated_at = now()
    WHERE product_id = _product_id;
 
   INSERT INTO public.product_stock_movements
