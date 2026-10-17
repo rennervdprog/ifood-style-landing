@@ -596,17 +596,32 @@ export default function StockTab({ storeId }: Props) {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div>
-              <Label className="text-base">Quantidade atual</Label>
-              <Input
-                type="number"
-                min="0"
-                value={activateQty}
-                onChange={(e) => setActivateQty(e.target.value)}
-                placeholder="Ex: 50"
-                className="text-lg h-12"
-                autoFocus
-              />
+            <div className="flex gap-2">
+              <div className="flex-1">
+                <Label className="text-base">Quantidade atual</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  value={activateQty}
+                  onChange={(e) => setActivateQty(e.target.value)}
+                  placeholder="Ex: 50"
+                  className="text-lg h-12"
+                  autoFocus
+                />
+              </div>
+              <div className="w-28">
+                <Label className="text-base">Unidade</Label>
+                <Select value={activateUnit} onValueChange={setActivateUnit}>
+                  <SelectTrigger className="text-lg h-12"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="un">un</SelectItem>
+                    <SelectItem value="kg">kg</SelectItem>
+                    <SelectItem value="g">g</SelectItem>
+                    <SelectItem value="L">L</SelectItem>
+                    <SelectItem value="ml">ml</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             <div>
               <Label>Avise-me quando chegar em (opcional)</Label>
