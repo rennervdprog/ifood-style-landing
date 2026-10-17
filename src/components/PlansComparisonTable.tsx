@@ -11,7 +11,7 @@ interface Row {
 const ROWS: Row[] = [
   {
     label: "Mensalidade",
-    values: { fixed: "R$ 89,90*", pdv_only: "R$ 69/mês" },
+    values: { fixed: "R$ 89,90*", pdv_only: "R$ 120/mês" },
   },
   {
     label: "Comissão por pedido",
