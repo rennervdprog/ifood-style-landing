@@ -118,6 +118,17 @@ const refreshFailCountRef = useRef(0);
 
     // Set up listener AFTER getSession to handle subsequent auth events
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, newSession) => {
+      // Refresh automático do gotrue falhou: sessão inválida; limpa local
+      // para não ficar em loop de retry contra o servidor.
+      if ((event as string) === "TOKEN_REFRESH_FAILED") {
+        console.warn("[Auth] TOKEN_REFRESH_FAILED — limpando sessão local");
+        stopProactiveRefresh();
+        supabase.auth.signOut({ scope: "local" as any }).catch(() => {});
+        setSession(null);
+        currentUserIdRef.current = null;
+        setLoading(false);
+        return;
+      }
       const previousUserId = currentUserIdRef.current;
       const nextUserId = newSession?.user?.id ?? null;
       const nextEmail = newSession?.user?.email ?? "null";
