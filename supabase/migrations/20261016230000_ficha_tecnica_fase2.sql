@@ -113,3 +113,25 @@ BEGIN
   RETURN true;
 END;
 $function$;
+
+-- 4. RPC: define a unidade do estoque (kg, g, L, ml, un)
+CREATE OR REPLACE FUNCTION public.stock_set_unit(_product_id uuid, _unit text)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_store_id uuid;
+BEGIN
+  SELECT store_id INTO v_store_id FROM public.products WHERE id = _product_id;
+  IF NOT EXISTS (SELECT 1 FROM public.stores WHERE id = v_store_id AND owner_id = auth.uid()) THEN
+    RAISE EXCEPTION 'Sem permissão';
+  END IF;
+  IF _unit NOT IN ('g', 'kg', 'ml', 'L', 'un') THEN
+    RAISE EXCEPTION 'Unidade inválida';
+  END IF;
+  UPDATE public.product_stock SET unit = _unit, updated_at = now()
+   WHERE product_id = _product_id;
+END;
+$function$;
