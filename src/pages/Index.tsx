@@ -115,7 +115,7 @@ const painPoints = [
 
 const plans = [
   { name: "Essencial", price: "R$0", sub: "/mês", desc: "0% comissão", icon: Crown, tags: ["Grátis pra começar", "R$ 89,90 após o gatilho de R$ 5.000"], subtitle: "Comece sem pagar mensalidade. Taxa PIX R$ 1,99 + entrega R$ 0,99 quando aplicável.", popular: true },
-  { name: "Somente PDV", price: "R$69", sub: "/mês", desc: "Só o caixa presencial", icon: CreditCard, tags: ["Sem delivery", "Sem vitrine pública"], subtitle: "Para loja física que não quer delivery: PDV completo no balcão.", popular: false },
+  { name: "Somente PDV", price: "R$120", sub: "/mês", desc: "Só o caixa presencial", icon: CreditCard, tags: ["Sem delivery", "Sem vitrine pública"], subtitle: "Para loja física que não quer delivery: PDV completo no balcão.", popular: false },
 ];
 
 const testimonials = [
