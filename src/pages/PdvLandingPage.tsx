@@ -3,9 +3,6 @@ import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Check, X, ShieldCheck, WifiOff, Receipt, ChefHat, Lock, BarChart3, Users, ArrowRight, MessageCircle } from "lucide-react";
 
-const TITLE = "Sistema PDV para Restaurante e Comércio | R$ 120/mês";
-const DESCRIPTION = "PDV online para restaurante, lanchonete e loja: frente de caixa no navegador, estoque automático e fechamento de caixa em 1 clique. R$ 120/mês fixos, R$ 0 por venda. Teste grátis.";
-
 const FAQS = [
   {
     q: "É caro?",
@@ -146,31 +143,12 @@ function PhoneMock() {
   );
 }
 
+// SEO da página é gerenciado via <RouteMeta path={ROUTES.public.pdv} /> na rota
+// (src/routes/domains/public.routes.tsx + src/routes/meta.tsx).
+// NÃO renderizar <title>/<meta>/<link>/<script> crus aqui — causa React error #60.
 export default function PdvLandingPage() {
   return (
     <>
-      <title>{TITLE}</title>
-      <meta name="description" content={DESCRIPTION} />
-      <meta property="og:title" content={TITLE} />
-      <meta property="og:description" content={DESCRIPTION} />
-      <meta property="og:type" content="website" />
-      <meta name="twitter:card" content="summary_large_image" />
-      <link rel="canonical" href={typeof window !== "undefined" ? `${window.location.origin}/pdv` : ""} />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "FAQPage",
-            mainEntity: FAQS.map((f) => ({
-              "@type": "Question",
-              name: f.q,
-              acceptedAnswer: { "@type": "Answer", text: f.a.replace(/<[^>]*>/g, "") },
-            })),
-          }),
-        }}
-      />
-
       <div className="min-h-screen bg-white text-neutral-900 antialiased">
         {/* NAV */}
         <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur border-b border-orange-100">
