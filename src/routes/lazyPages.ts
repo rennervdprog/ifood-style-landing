@@ -57,6 +57,7 @@ export const BlogPost = lazy(() => import("@/pages/blog/BlogPost"));
 export const BlogAdmin = lazy(() => import("@/pages/admin/BlogAdmin"));
 export const BlogAdminEditor = lazy(() => import("@/pages/admin/BlogAdminEditor"));
 export const VagaPromoPage = lazy(() => import("@/pages/VagaPromoPage"));
+export const PdvLandingPage = lazy(() => import("@/pages/PdvLandingPage"));
 
 // Fase 6 — prefetch tipado pelo manifest (paths não são mais strings mágicas).
 const PREFETCH_MAP: Record<string, () => Promise<unknown>> = {
@@ -69,6 +70,7 @@ const PREFETCH_MAP: Record<string, () => Promise<unknown>> = {
   [ROUTES.revendedor.entrar]: () => import("@/pages/ResellerAuth"),
   [ROUTES.auth.portalParceiro]: () => import("@/pages/PartnerLogin"),
   [ROUTES.public.planos]: () => import("@/pages/PlanosPage"),
+  [ROUTES.public.pdv]: () => import("@/pages/PdvLandingPage"),
   [ROUTES.cliente.home]: () => import("@/pages/ClientHome"),
   [ROUTES.cliente.busca]: () => import("@/pages/cliente/busca/ClientBuscaPage"),
   [ROUTES.lojista.cadastroLojista]: () => import("@/pages/CadastroLojista"),
