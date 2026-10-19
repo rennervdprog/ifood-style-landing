@@ -22,6 +22,7 @@ export const ROUTES = {
     sejaRevendedor: "/seja-revendedor",
     vaga: (cidade: string) => `/vaga/${encodeURIComponent(cidade)}`,
     links: "/links",
+    pdv: "/pdv",
   },
   auth: {
     login: "/auth",
