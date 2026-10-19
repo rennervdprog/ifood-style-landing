@@ -387,7 +387,9 @@ export default function PdvLandingPage() {
               {FAQS.map((f, i) => (
                 <AccordionItem key={i} value={`q${i}`} className="border-[1.5px] border-orange-100 rounded-2xl px-5 sm:px-6 bg-white data-[state=open]:border-primary">
                   <AccordionTrigger className="font-bold text-left text-[15px] sm:text-base py-4 sm:py-5 hover:no-underline">{f.q}</AccordionTrigger>
-                  <AccordionContent className="text-muted-foreground text-[14.5px] sm:text-[15px] pb-5" dangerouslySetInnerHTML={{ __html: f.a.replace(/\*\*(.+?)\*\*/g, "<b>$1</b>") }} />
+                  <AccordionContent className="text-muted-foreground text-[14.5px] sm:text-[15px] pb-5">
+                    <div dangerouslySetInnerHTML={{ __html: f.a.replace(/\*\*(.+?)\*\*/g, "<b>$1</b>") }} />
+                  </AccordionContent>
                 </AccordionItem>
               ))}
             </Accordion>
