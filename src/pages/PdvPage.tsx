@@ -620,7 +620,16 @@ const PdvPage = () => {
   };
 
   // ── Finalizar venda (delegado a usePdvCheckout) ──
+  // Trava anti-duplicidade: enquanto uma finalização está em andamento,
+  // novas chamadas são ignoradas NA HORA. Sem isso, uma rajada de cliques
+  // ou a repetição automática da tecla F8 executava a venda várias vezes
+  // em frações de segundo — vendas duplicadas e a janela de impressão
+  // abrindo sem parar (bug de 2026-10-20: 5 vendas iguais em 0,2s).
+  const finalizingRef = useRef(false);
   const handleVenda = async () => {
+    if (finalizingRef.current) return;
+    finalizingRef.current = true;
+    try {
     // Se há comanda ativa: fecha a comanda em vez de criar venda avulsa.
     if (selectedTabId) {
       await handleCloseTab();
@@ -775,6 +784,9 @@ const PdvPage = () => {
       onEmptiesFlowStart: ({ orderId, items }) =>
         setEmptiesFlow({ step: "lookup", orderId, items }),
     });
+    } finally {
+      finalizingRef.current = false;
+    }
   };
 
   // UI/UX: pode confirmar o pagamento? (lógica era do PdvCartSection)
