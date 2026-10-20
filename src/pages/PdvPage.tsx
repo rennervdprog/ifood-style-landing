@@ -1062,6 +1062,7 @@ const PdvPage = () => {
           loading={sessionLoading || loading}
           onViewReports={() => { setSelectedSessionId(null); setReportsNoSession(true); }}
           onViewPlan={pdvAccess.source === "pdv_only" ? () => setPlanNoSession(true) : undefined}
+          showSignOut={pdvAccess.source === "pdv_only"}
         />
       </>
     )
