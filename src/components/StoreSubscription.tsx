@@ -225,16 +225,26 @@ export default function StoreSubscription({ storeId, storeName }: Props) {
               Como cobramos no seu plano
             </p>
           </div>
-          <PlanFeeBreakdown
-            planId={plan.planType}
-            orderValue={50}
-            viaPix
-            monthlyFeeOverride={plan.monthlyFee}
-            commissionRateOverride={plan.commissionRate}
-            pixFeeOverride={plan.pixOperationalFee}
-            isVip={plan.isVip}
-          />
-          <DeliveryFeeExplainer mode="store" platformFee={plan.platformDeliverySplit} />
+          {plan.planType === "pdv_only" ? (
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              No Somente PDV você paga só a mensalidade de{" "}
+              <strong className="text-foreground">{formatBRL(plan.monthlyFee)}/mês</strong> —
+              sem comissão, sem taxa por venda e sem taxa de entrega.
+            </p>
+          ) : (
+            <>
+              <PlanFeeBreakdown
+                planId={plan.planType}
+                orderValue={50}
+                viaPix
+                monthlyFeeOverride={plan.monthlyFee}
+                commissionRateOverride={plan.commissionRate}
+                pixFeeOverride={plan.pixOperationalFee}
+                isVip={plan.isVip}
+              />
+              <DeliveryFeeExplainer mode="store" platformFee={plan.platformDeliverySplit} />
+            </>
+          )}
           {plan.isVip && (
             <div className="flex items-start gap-2 rounded-lg bg-amber-500/10 border border-amber-500/25 p-2.5">
               <Crown className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
