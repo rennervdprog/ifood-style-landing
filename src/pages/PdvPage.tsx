@@ -1103,10 +1103,6 @@ const PdvPage = () => {
   if (typeof window !== "undefined") {
     (window as any).__pdvScaleEnabled = storeSettings.pdv_scale_enabled === true;
   }
-  const storeCats: string[] = [
-    (store as any)?.category,
-    ...(((store as any)?.categories || []) as string[]),
-  ].filter(Boolean);
   const isPizzaria =
     storeCats.includes("pizzas") ||
     (store as any)?.store_type === "pizzeria";
