@@ -1171,6 +1171,7 @@ const PdvPage = () => {
           onViewReports={() => { setSelectedSessionId(null); setReportsNoSession(true); }}
           onViewPlan={pdvAccess.source === "pdv_only" ? () => setPlanNoSession(true) : undefined}
           showSignOut={pdvAccess.source === "pdv_only"}
+          isPdvOnly={pdvAccess.source === "pdv_only"}
         />
       </>
     )
@@ -1345,6 +1346,9 @@ const PdvPage = () => {
         isPdvOnly={pdvAccess.source === "pdv_only"}
         onOpenMeuPlano={
           pdvAccess.source === "pdv_only" ? () => setTab("meu_plano") : undefined
+        }
+        onOpenConfiguracoes={
+          pdvAccess.source === "pdv_only" ? () => setTab("configuracoes") : undefined
         }
       />
 
