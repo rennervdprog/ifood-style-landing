@@ -333,7 +333,13 @@ export function usePdvCheckout() {
           queryKey: ["pdv-stock"],
         });
         onSuccess({ orderId });
-        if (!offlineQueued) toast.success("✅ Venda finalizada!");
+        // SEM toast de sucesso aqui: a tela "Venda concluída!" já é a
+        // confirmação visual da venda. O toast antigo ("✅ Venda
+        // finalizada!") renderizava no rodapé bem sobre o botão
+        // "Nova venda" e não sumia — o operador ficava preso na tela
+        // de sucesso sem conseguir iniciar a próxima venda
+        // (bug de 2026-10-20). Avisos importantes (offline, cupom
+        // manual) continuam existindo nos seus próprios fluxos.
 
         // 4) Empties (garrafas retornáveis) — best-effort
         if (!offlineQueued && !browserOffline) {
