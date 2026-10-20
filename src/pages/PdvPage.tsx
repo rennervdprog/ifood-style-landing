@@ -222,7 +222,7 @@ const PdvPage = () => {
     subtotal, totalItems, discountAmount, finalTotal, cashVal, troco, trocoNegativo,
     getQty,
     openProduct, handleModalAdd, addScannedProduct, decItem, removeItem,
-    clearSale: clearSaleCart, restoreCart, clearSaleIfUnchanged,
+    clearSale: clearSaleCart, restoreCart, clearSaleIfUnchanged, setCartScope,
   } = usePdvCart();
 
   // (Removido o retorno automático ao catálogo com carrinho vazio: com o caixa
@@ -432,6 +432,14 @@ const PdvPage = () => {
     closeSession,
     loading: sessionLoading,
   } = usePdvSession({ storeId: store?.id, userId: user?.id });
+
+  // Escopo do rascunho da venda (loja + turno): o carrinho salva a venda em
+  // andamento nesse escopo e a restaura se a página recarregar.
+  useEffect(() => {
+    setCartScope(
+      store?.id ? `${store.id}:${currentSession?.id ?? "sem-turno"}` : null,
+    );
+  }, [store?.id, currentSession?.id, setCartScope]);
 
   // Hook de finalização de venda.
   const { handleVenda: runCheckout, checkoutLoading } = usePdvCheckout();

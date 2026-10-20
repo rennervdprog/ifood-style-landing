@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { sumMoney, subtractMoney } from "@/lib/utils";
 import { parseBRL } from "@/hooks/useBRLInput";
 import type { CartAddon } from "@/contexts/CartContext";
@@ -10,6 +10,11 @@ function addonKeyOf(addons?: CartAddon[]): string {
   if (!addons || addons.length === 0) return "";
   return addons.map((a) => a.name).sort().join(",");
 }
+
+/** Chave do rascunho da venda em andamento (persistido por loja+turno). */
+const DRAFT_KEY = (scope: string) => `pdv_cart_draft_v1:${scope}`;
+/** Rascunho mais velho que isso é ignorado (venda abandonada de outro dia). */
+const DRAFT_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 
 /**
  * Estado do carrinho do PDV (itens, desconto, pagamento, troco, split).
@@ -243,6 +248,87 @@ export function usePdvCart() {
     return same;
   }, [clearSale]);
 
+  // ── Persistência do rascunho (venda à prova de reload) ──
+  // A venda em andamento é salva no navegador a cada mudança e restaurada
+  // se a página recarregar (deploy, queda de luz, navegador travando).
+  // Escopo = "lojaId:turnoId" informado pelo PdvPage via setCartScope —
+  // rascunho de um turno nunca vaza para outro.
+  const [cartScope, setCartScopeState] = useState<string | null>(null);
+  const hydratedScopeRef = useRef<string | null>(null);
+
+  const setCartScope = useCallback((scope: string | null) => {
+    setCartScopeState(scope);
+  }, []);
+
+  // Hidrata 1x por escopo, só com o carrinho ainda vazio (nunca sobrescreve
+  // uma venda que o operador já começou nesta montagem).
+  useEffect(() => {
+    if (!cartScope || hydratedScopeRef.current === cartScope) return;
+    hydratedScopeRef.current = cartScope;
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY(cartScope));
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      const d = parsed?.data as SaleSnapshot | undefined;
+      if (!d || !Array.isArray(d.items) || d.items.length === 0) return;
+      if (Date.now() - Number(parsed?.savedAt || 0) > DRAFT_MAX_AGE_MS) {
+        localStorage.removeItem(DRAFT_KEY(cartScope));
+        return;
+      }
+      if (cartRef.current.length > 0) return;
+      restoreCart({
+        items: d.items,
+        paymentMethod: d.paymentMethod ?? "",
+        tableId: d.tableId ?? "",
+        selectedTable: d.selectedTable ?? null,
+        selectedTabId: d.selectedTabId ?? null,
+        discountType: d.discountType === "%" ? "%" : "R$",
+        discountInput: d.discountInput ?? "",
+        cashReceived: d.cashReceived ?? "",
+        splitMode: !!d.splitMode,
+        splitPayments: Array.isArray(d.splitPayments) ? d.splitPayments : [],
+      });
+    } catch {}
+  }, [cartScope, restoreCart]);
+
+  // Salva a cada mudança (após hidratar). Carrinho vazio = apaga o rascunho
+  // — é o que limpa o rascunho ao finalizar/cancelar (clearSale zera tudo).
+  useEffect(() => {
+    if (!cartScope || hydratedScopeRef.current !== cartScope) return;
+    try {
+      const hasContent =
+        cart.length > 0 ||
+        !!paymentMethod ||
+        !!discountInput ||
+        !!cashReceived ||
+        splitPayments.length > 0 ||
+        !!selectedTabId;
+      if (!hasContent) {
+        localStorage.removeItem(DRAFT_KEY(cartScope));
+        return;
+      }
+      const data: SaleSnapshot = {
+        items: cart,
+        paymentMethod,
+        tableId,
+        selectedTable,
+        selectedTabId,
+        discountType,
+        discountInput,
+        cashReceived,
+        splitMode,
+        splitPayments,
+      };
+      localStorage.setItem(
+        DRAFT_KEY(cartScope),
+        JSON.stringify({ v: 1, savedAt: Date.now(), data }),
+      );
+    } catch {}
+  }, [
+    cartScope, cart, paymentMethod, tableId, selectedTable, selectedTabId,
+    discountType, discountInput, cashReceived, splitMode, splitPayments,
+  ]);
+
   return {
     // estado
     cart,
@@ -289,5 +375,6 @@ export function usePdvCart() {
     clearSale,
     restoreCart,
     clearSaleIfUnchanged,
+    setCartScope,
   };
 }
