@@ -1,4 +1,4 @@
-import { ArrowLeft, Monitor, Keyboard, ArrowUpCircle, ArrowDownCircle, Lock, Loader2, User, Wifi, WifiOff, RefreshCw, Menu, LogOut, CreditCard, LifeBuoy, UserCircle, BookOpen } from "lucide-react";
+import { ArrowLeft, Monitor, Keyboard, ArrowUpCircle, ArrowDownCircle, Lock, Loader2, User, Wifi, WifiOff, RefreshCw, Menu, LogOut, CreditCard, Settings } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { formatBRL } from "@/lib/utils";
@@ -29,13 +29,16 @@ interface Props {
   /** Quando fornecido (PDV Only), o item "Meu Plano" do menu troca para a aba interna
    *  em vez de navegar para /perfil?tab=plano. */
   onOpenMeuPlano?: () => void;
+  /** Quando fornecido (PDV Only), o item "Configurações" do menu abre a aba interna
+   *  de configurações da loja em vez de navegar para /perfil (página do cliente). */
+  onOpenConfiguracoes?: () => void;
 }
 
 export const PdvTopbar = ({
   storeName, operatorName, turnoVendasCount, turnoVendido, ticketMedio,
   loading, onShowShortcuts, onSuprimento, onSangria, onFechar,
   outboxCount = 0, outboxFlushing = false, onSyncOutbox, isPdvOnly = false,
-  onOpenMeuPlano,
+  onOpenMeuPlano, onOpenConfiguracoes,
 }: Props) => {
   const navigate = useNavigate();
   const initial = (operatorName || "").trim().charAt(0).toUpperCase() || "?";
@@ -66,11 +69,13 @@ export const PdvTopbar = ({
           <DropdownMenuContent align="start" className="w-56">
             <DropdownMenuLabel>{storeName || "Menu"}</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => navigate("/perfil")}>
-              <UserCircle className="h-4 w-4 mr-2" /> Perfil
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => navigate("/admin/cardapio")}>
-              <BookOpen className="h-4 w-4 mr-2" /> Cardápio
+            <DropdownMenuItem
+              onClick={() => {
+                if (onOpenConfiguracoes) onOpenConfiguracoes();
+                else navigate("/perfil");
+              }}
+            >
+              <Settings className="h-4 w-4 mr-2" /> Configurações
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => {
@@ -79,11 +84,6 @@ export const PdvTopbar = ({
               }}
             >
               <CreditCard className="h-4 w-4 mr-2" /> Meu Plano
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => window.open("https://wa.me/5511999999999", "_blank")}
-            >
-              <LifeBuoy className="h-4 w-4 mr-2" /> Suporte
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
