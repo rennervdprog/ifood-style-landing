@@ -1126,7 +1126,8 @@ type PizzaPriceMode = "maior" | "media" | "soma";
       )}
 
 
-      {/* ─── Métodos de Pagamento ──────────────────────────────────── */}
+      {/* ─── Métodos de Pagamento (loja online/delivery) — oculto no PDV Only ─── */}
+      {!pdvOnly && (
       <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
         <div>
           <h3 className="text-sm font-black text-foreground flex items-center gap-2">
@@ -1255,9 +1256,10 @@ type PizzaPriceMode = "maior" | "media" | "soma";
           </div>
         )}
       </div>
+      )}
 
-      {/* Notifications Section */}
-      <NotificationSection />
+      {/* Notifications Section — avisos de pedidos online; oculto no PDV Only */}
+      {!pdvOnly && <NotificationSection />}
 
       {/* Impressão térmica */}
       <div className="space-y-3">

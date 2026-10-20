@@ -14,6 +14,7 @@ const PLAN_LABEL: Record<string, string> = {
   commission_only: "Comissão (sem mensalidade)",
   autonomy: "Autonomia (sem taxa por entrega)",
   supporter: "Apoiador",
+  pdv_only: "Somente PDV",
 };
 
 export default function PlanSummaryCard({ storeId }: Props) {
@@ -43,7 +44,7 @@ export default function PlanSummaryCard({ storeId }: Props) {
   if (!plan) return null;
 
   const deliverySplit = plan.platform_delivery_split_override ?? globalSplit ?? 0.99;
-  const showDelivery = plan.plan_type !== "autonomy";
+  const showDelivery = plan.plan_type !== "autonomy" && (plan.plan_type as string) !== "pdv_only";
   const isFixedPlan = ["fixed", "supporter", "autonomy"].includes(plan.plan_type);
   const pixFeePerOrder = isFixedPlan ? 1.99 : 0;
 

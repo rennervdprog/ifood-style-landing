@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft, BarChart3, ChevronRight, CreditCard, Loader2, LogOut, Shield, Unlock } from "lucide-react";
+import { ArrowLeft, BarChart3, ChevronRight, CreditCard, Loader2, LogOut, Pencil, Shield, Unlock, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import { formatBRLDisplay, parseBRLCentsInput } from "@/hooks/useBRLInput";
 import { usePdvOperator } from "@/hooks/usePdvOperator";
 import { PdvOperatorLoginDialog } from "@/components/pdv/PdvOperatorLoginDialog";
@@ -27,6 +28,9 @@ interface Props {
   onViewPlan?: () => void;
   /** Se true, exibe botão "Sair da conta" no fim da tela (lojas PDV Only). */
   showSignOut?: boolean;
+  /** Se true (lojas PDV Only), esconde o botão "voltar" — o painel /admin
+   *  (delivery) não é acessível para essas lojas, o botão não leva a nada. */
+  isPdvOnly?: boolean;
 }
 
 const CHANGE_CHIPS = [
@@ -35,7 +39,7 @@ const CHANGE_CHIPS = [
   { label: "R$ 200", value: 200 },
 ];
 
-export const PdvAberturaScreen = ({ storeName, storeId, openingAmount, setOpeningAmount, onOpen, loading, onViewReports, onViewPlan, showSignOut }: Props) => {
+export const PdvAberturaScreen = ({ storeName, storeId, openingAmount, setOpeningAmount, onOpen, loading, onViewReports, onViewPlan, showSignOut, isPdvOnly }: Props) => {
   const navigate = useNavigate();
   const { operator, setOperator } = usePdvOperator(storeId);
   const [pinOpen, setPinOpen] = useState(false);
@@ -59,18 +63,58 @@ export const PdvAberturaScreen = ({ storeName, storeId, openingAmount, setOpenin
     return () => { cancelled = true; };
   }, [storeId, pinOpen]);
 
+  // Edição rápida de nome/cargo direto na lista inicial (mesma RPC da aba Operadores).
+  const [editingOp, setEditingOp] = useState<PdvOperatorListItem | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editRole, setEditRole] = useState<"gerente" | "operador">("operador");
+  const [savingEdit, setSavingEdit] = useState(false);
+
+  const reloadOperators = async () => {
+    if (!storeId) return;
+    const { data, error } = await supabase.rpc("pdv_list_operators" as any, { _store_id: storeId } as any);
+    if (error) return;
+    const list = ((((data as any[]) || []).filter((o: any) => o.active)) as PdvOperatorListItem[]);
+    setOperators(list);
+    setHasManager(list.some((o) => o.active && o.role === "gerente"));
+  };
+
+  const saveEdit = async () => {
+    if (!editingOp || !storeId) return;
+    if (editName.trim().length < 2) { toast.error("Nome muito curto"); return; }
+    setSavingEdit(true);
+    try {
+      const { error } = await supabase.rpc("pdv_upsert_operator" as any, {
+        _store_id: storeId, _id: editingOp.id, _name: editName.trim(), _pin: null, _role: editRole,
+      } as any);
+      if (error) {
+        const msg = error.message || "";
+        if (msg.includes("last_manager")) toast.error("Não pode remover o último gerente");
+        else toast.error(msg || "Erro ao salvar");
+        return;
+      }
+      toast.success("Operador atualizado");
+      if (operator?.id === editingOp.id) setOperator({ ...operator, name: editName.trim() });
+      setEditingOp(null);
+      await reloadOperators();
+    } catch (e: any) {
+      toast.error(e.message || "Erro ao salvar");
+    } finally { setSavingEdit(false); }
+  };
+
   const storeLabel = storeName || "";
 
   return (
     <div className="pdv-shell min-h-screen bg-background flex flex-col">
       <header className="h-14 border-b border-border flex items-center px-4 gap-2 bg-card shrink-0">
-        <button
-          onClick={() => navigate("/admin")}
-          aria-label="Voltar"
-          className="p-2 -ml-2 rounded-xl hover:bg-muted transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </button>
+        {!isPdvOnly && (
+          <button
+            onClick={() => navigate("/admin")}
+            aria-label="Voltar"
+            className="p-2 -ml-2 rounded-xl hover:bg-muted transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </button>
+        )}
         <p className="text-[16px] font-bold text-foreground flex-1 truncate">{storeLabel || "Abrir o caixa"}</p>
         <span className="text-xs font-bold text-muted-foreground">passo 1 de 2</span>
       </header>
@@ -107,30 +151,47 @@ export const PdvAberturaScreen = ({ storeName, storeId, openingAmount, setOpenin
                 : operators.map((op) => {
                     const selected = operator?.id === op.id;
                     return (
-                      <button
+                      <div
                         key={op.id}
-                        type="button"
-                        onClick={() => setPinOpen(true)}
-                        className={`w-full min-h-[64px] rounded-2xl p-3 flex items-center gap-3 text-left transition-all active:scale-[0.99] ${
+                        className={`w-full min-h-[64px] rounded-2xl flex items-stretch transition-all ${
                           selected
                             ? "border-2 border-primary bg-primary/10"
                             : "border-2 border-border bg-card hover:bg-muted/40"
                         }`}
                       >
-                        <div
-                          className="w-11 h-11 rounded-full flex items-center justify-center shrink-0"
-                          style={{ background: "linear-gradient(135deg,#FF6A00,#FF9A3D)" }}
+                        <button
+                          type="button"
+                          onClick={() => setPinOpen(true)}
+                          className="flex-1 min-w-0 p-3 flex items-center gap-3 text-left active:scale-[0.99] transition-all"
                         >
-                          <span className="text-white text-lg font-extrabold">
-                            {op.name.trim().charAt(0).toUpperCase()}
-                          </span>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-[15px] font-bold text-foreground truncate">{op.name}</p>
-                          <p className="text-xs text-muted-foreground">{op.role === "gerente" ? "gerente" : "operador"}</p>
-                        </div>
-                        <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
-                      </button>
+                          <div
+                            className="w-11 h-11 rounded-full flex items-center justify-center shrink-0"
+                            style={{ background: "linear-gradient(135deg,#FF6A00,#FF9A3D)" }}
+                          >
+                            <span className="text-white text-lg font-extrabold">
+                              {op.name.trim().charAt(0).toUpperCase()}
+                            </span>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[15px] font-bold text-foreground truncate">{op.name}</p>
+                            <p className="text-xs text-muted-foreground">{op.role === "gerente" ? "gerente" : "operador"}</p>
+                          </div>
+                          <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
+                        </button>
+                        <button
+                          type="button"
+                          aria-label={`Editar nome de ${op.name}`}
+                          title="Editar nome"
+                          onClick={() => {
+                            setEditingOp(op);
+                            setEditName(op.name);
+                            setEditRole(op.role === "gerente" ? "gerente" : "operador");
+                          }}
+                          className="px-3 flex items-center justify-center text-muted-foreground hover:text-primary transition-colors"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                      </div>
                     );
                   })}
             </div>
@@ -244,6 +305,61 @@ export const PdvAberturaScreen = ({ storeName, storeId, openingAmount, setOpenin
           )}
         </form>
       </div>
+
+      {editingOp && (
+        <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="w-full max-w-sm bg-card rounded-3xl border border-border shadow-2xl overflow-hidden">
+            <div className="h-12 border-b border-border flex items-center justify-between px-4">
+              <p className="text-sm font-black">Editar operador</p>
+              <button onClick={() => setEditingOp(null)} className="p-1 rounded hover:bg-muted" aria-label="Fechar">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="p-5 space-y-4">
+              <div className="space-y-2">
+                <label className="text-[11px] font-bold uppercase text-muted-foreground">Nome</label>
+                <input
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  placeholder="Ex: Maria"
+                  className="w-full px-3 py-3 bg-muted/40 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-primary/40"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[11px] font-bold uppercase text-muted-foreground">Cargo</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {([["operador", "Operador"], ["gerente", "Gerente"]] as const).map(([r, label]) => (
+                    <button
+                      key={r}
+                      type="button"
+                      onClick={() => setEditRole(r)}
+                      className={`h-11 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 border transition-colors ${
+                        editRole === r
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "bg-muted/40 text-muted-foreground border-border hover:bg-muted"
+                      }`}
+                    >
+                      {r === "gerente" && <Shield className="h-3.5 w-3.5" />}
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[10px] text-muted-foreground">
+                  O PIN não muda aqui — para trocar o PIN, use a aba Operadores.
+                </p>
+              </div>
+              <button
+                onClick={saveEdit}
+                disabled={savingEdit}
+                className="w-full h-12 bg-primary text-primary-foreground rounded-xl font-black flex items-center justify-center gap-2 disabled:opacity-60"
+              >
+                {savingEdit ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                Salvar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {storeId && (
         <PdvOperatorLoginDialog
