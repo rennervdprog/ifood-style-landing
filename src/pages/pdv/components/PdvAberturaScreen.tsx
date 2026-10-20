@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft, BarChart3, ChevronRight, CreditCard, Loader2, Shield, Unlock } from "lucide-react";
+import { ArrowLeft, BarChart3, ChevronRight, CreditCard, Loader2, LogOut, Shield, Unlock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { formatBRLDisplay, parseBRLCentsInput } from "@/hooks/useBRLInput";
 import { usePdvOperator } from "@/hooks/usePdvOperator";
 import { PdvOperatorLoginDialog } from "@/components/pdv/PdvOperatorLoginDialog";
+import SignOutConfirm from "@/components/SignOutConfirm";
 import { supabase } from "@/integrations/supabase/client";
 
 interface PdvOperatorListItem {
@@ -24,6 +25,8 @@ interface Props {
   onViewReports?: () => void;
   /** Se fornecido, exibe botão "Meu Plano" (usado por lojas PDV Only). */
   onViewPlan?: () => void;
+  /** Se true, exibe botão "Sair da conta" no fim da tela (lojas PDV Only). */
+  showSignOut?: boolean;
 }
 
 const CHANGE_CHIPS = [
@@ -32,7 +35,7 @@ const CHANGE_CHIPS = [
   { label: "R$ 200", value: 200 },
 ];
 
-export const PdvAberturaScreen = ({ storeName, storeId, openingAmount, setOpeningAmount, onOpen, loading, onViewReports, onViewPlan }: Props) => {
+export const PdvAberturaScreen = ({ storeName, storeId, openingAmount, setOpeningAmount, onOpen, loading, onViewReports, onViewPlan, showSignOut }: Props) => {
   const navigate = useNavigate();
   const { operator, setOperator } = usePdvOperator(storeId);
   const [pinOpen, setPinOpen] = useState(false);
@@ -226,6 +229,18 @@ export const PdvAberturaScreen = ({ storeName, storeId, openingAmount, setOpenin
               <CreditCard className="h-5 w-5 text-primary" />
               Meu Plano & Mensalidades
             </button>
+          )}
+
+          {showSignOut && (
+            <SignOutConfirm redirectTo="/portal-parceiro">
+              <button
+                type="button"
+                className="w-full h-14 bg-card border border-border hover:border-destructive/40 hover:bg-destructive/5 text-foreground font-black text-sm rounded-2xl flex items-center justify-center gap-2.5 active:scale-[0.98] transition-all"
+              >
+                <LogOut className="h-5 w-5 text-destructive" />
+                Sair da conta
+              </button>
+            </SignOutConfirm>
           )}
         </form>
       </div>
