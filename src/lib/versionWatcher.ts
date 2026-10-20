@@ -14,6 +14,10 @@ const CRITICAL_ROUTES = [
   /^\/checkout/,
   /^\/cart/,
   /^\/pdv/,
+  // Painel do lojista inteiro — inclui o PDV em /admin/pdv (a rota /pdv é a
+  // landing pública; o caixa de verdade mora em /admin/pdv e NAO pode ser
+  // interrompido por atualização no meio de uma venda/atendimento).
+  /^\/admin/,
   /^\/motoboy/,
   /^\/driver/,
 ];

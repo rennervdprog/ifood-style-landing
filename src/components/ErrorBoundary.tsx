@@ -37,8 +37,8 @@ class ErrorBoundary extends Component<Props, State> {
       if (regs) await Promise.all(regs.map((r) => r.unregister()));
     } catch {}
     // Cache-buster na URL para garantir HTML/assets novos.
-    // Se for retry após chunk error, vai para "/" para não tentar
-    // recarregar a mesma rota cujo chunk falhou (evita loop).
+    // goHome=true (botão manual, último recurso) vai para "/" — o reload
+    // automático usa goHome=false e volta para a mesma rota.
     const target = goHome ? "/" : window.location.pathname + window.location.search;
     const sep = target.includes("?") ? "&" : "?";
     window.location.replace(target + sep + "_v=" + Date.now());
@@ -47,7 +47,11 @@ class ErrorBoundary extends Component<Props, State> {
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error("[ErrorBoundary]", error, errorInfo);
 
-    // Chunk error: limpar caches e forçar hard reload automático (1x por sessão)
+    // Chunk error: limpar caches e recarregar NA MESMA ROTA (1x por sessão).
+    // Depois da limpeza de cache/SW, o HTML novo referencia os chunks novos,
+    // então a mesma rota carrega normalmente e o usuário continua onde estava
+    // (antes ia para "/" e perdia a tela). Se falhar de novo na mesma sessão,
+    // nao recarrega mais sozinho — a tela abaixo oferece o botao manual.
     if (
       error.message?.includes("Failed to fetch dynamically imported module") ||
       error.message?.includes("Importing a module script failed") ||
@@ -58,9 +62,8 @@ class ErrorBoundary extends Component<Props, State> {
       const count = parseInt(sessionStorage.getItem(reloadKey) || "0", 10);
       if (count < 1) {
         sessionStorage.setItem(reloadKey, String(count + 1));
-        // Pequeno delay para feedback. Vai para "/" para evitar pedir o mesmo
-        // chunk quebrado de novo (causa do loop percebido pelo usuário).
-        setTimeout(() => this.hardReload(true), 600);
+        // Pequeno delay para feedback.
+        setTimeout(() => this.hardReload(false), 600);
       }
     }
   }
