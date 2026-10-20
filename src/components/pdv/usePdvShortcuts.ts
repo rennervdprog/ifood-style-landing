@@ -57,6 +57,9 @@ export function usePdvShortcuts({
       // em um campo marcado com `data-pdv-no-hotkey` (ex.: valor recebido).
       // Bug do relatório: F8 podia finalizar prematuramente durante a digitação.
       if (e.key === "F8") {
+        // Segurar a tecla NÃO pode finalizar várias vendas: o SO repete o
+        // keydown ~30x/s. Só a primeira pressão conta.
+        if (e.repeat) return;
         const t = e.target as HTMLElement | null;
         if (t?.hasAttribute?.("data-pdv-no-hotkey")) return;
         e.preventDefault();
