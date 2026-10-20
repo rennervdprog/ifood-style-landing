@@ -277,11 +277,22 @@ export function PdvOperatorLoginDialog({ open, storeId, onClose, onLogin, requir
           </div>
         ) : step === "pick" ? (
           <div className="p-4 space-y-2 max-h-[60vh] overflow-y-auto">
-            {ops.length === 0 && (
+            {ops.length === 0 && requiredRole === "gerente" && (
+              <div className="py-6 space-y-3">
+                <p className="text-xs text-center text-muted-foreground">
+                  Nenhum gerente cadastrado nesta loja. Cadastre o gerente agora para continuar.
+                </p>
+                <button
+                  onClick={() => { setNewRole("gerente"); setStep("create"); }}
+                  className="w-full h-11 bg-primary text-primary-foreground rounded-xl text-sm font-black flex items-center justify-center gap-2"
+                >
+                  <Shield className="h-4 w-4" /> Cadastrar gerente agora
+                </button>
+              </div>
+            )}
+            {ops.length === 0 && requiredRole !== "gerente" && (
               <p className="text-xs text-center text-muted-foreground py-6">
-                {requiredRole === "gerente"
-                  ? "Nenhum gerente cadastrado. Cadastre um em Perfil → Operadores."
-                  : "Nenhum operador ativo."}
+                Nenhum operador ativo.
               </p>
             )}
             {ops.map(o => (
