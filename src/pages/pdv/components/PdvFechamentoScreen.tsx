@@ -160,7 +160,7 @@ export const PdvFechamentoScreen = ({
             <div className="flex-1 pb-6">
               <p className="text-[15px] font-bold">Quanto tem na gaveta?</p>
               <p className="text-[13px] text-muted-foreground mt-0.5">Conte o dinheiro e digite o valor.</p>
-              {stepState(1) === "now" && (
+              {!managerGateOpen && (
                 <div className="mt-3 space-y-3">
                   <div className="relative">
                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-bold text-muted-foreground">R$</span>
@@ -184,7 +184,7 @@ export const PdvFechamentoScreen = ({
                   />
                 </div>
               )}
-              {stepState(1) === "done" && (
+              {managerGateOpen && (
                 <p className="text-[26px] font-extrabold mt-2 tabular-nums">{formatBRL(parseBRL(closingAmount))}</p>
               )}
             </div>

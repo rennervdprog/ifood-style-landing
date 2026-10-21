@@ -99,7 +99,13 @@ export const PdvHistorico = ({
       .reduce((s: number, m: any) => s + Number(m.amount), 0);
     const suprimento = movements.filter((m: any) => m.type === "suprimento")
       .reduce((s: number, m: any) => s + Number(m.amount), 0);
-    return { count: sales.length, total, avg: sales.length ? total / sales.length : 0, cash, sangria, suprimento };
+    // Vendas = pedidos distintos, não movimentos (venda dividida gera um
+    // movimento por forma de pagamento, mas é uma venda só).
+    const saleOrderIds = new Set<string>();
+    let salesSemPedido = 0;
+    sales.forEach((m: any) => { if (m.order_id) saleOrderIds.add(m.order_id); else salesSemPedido += 1; });
+    const salesCount = saleOrderIds.size + salesSemPedido;
+    return { count: salesCount, total, avg: salesCount ? total / salesCount : 0, cash, sangria, suprimento };
   }, [movements, ordersMap]);
 
   const openedAt = session?.opened_at ? new Date(session.opened_at) : null;

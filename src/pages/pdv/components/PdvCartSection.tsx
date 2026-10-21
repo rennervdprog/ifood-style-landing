@@ -54,6 +54,10 @@ export const PdvCartSection = ({
   const [showManagerGate, setShowManagerGate] = useState(false);
   const [pendingDiscount, setPendingDiscount] = useState<string | null>(null);
 
+  // Limpar a venda e remover item também exigem PIN do gerente
+  const [gatePurpose, setGatePurpose] = useState<"clear" | "remove" | null>(null);
+  const [pendingRemoveIndex, setPendingRemoveIndex] = useState<number | null>(null);
+
   const DISCOUNT_MANAGER_LIMIT = 10; // %
 
   const handleDiscountChange = (raw: string) => {
@@ -91,6 +95,11 @@ export const PdvCartSection = ({
   const ctaDisabled = cartEmpty || loading || orderDone;
 
   const handleClearSale = () => {
+    // Limpar a venda inteira exige autorização do gerente.
+    setGatePurpose("clear");
+  };
+
+  const executeClearSale = () => {
     // Snapshot da venda para o "Desfazer" (campos de pagamento preenchidos vazios —
     // o pagamento agora acontece na tela própria).
     const snapshot: SaleSnapshot = {
@@ -183,7 +192,7 @@ export const PdvCartSection = ({
             </div>
             <p className="text-xs font-black text-foreground shrink-0 pdv-mono">{formatBRL(item.price * item.quantity)}</p>
             {/* removeItem(idx) — índice da linha, não do produto */}
-            <button onClick={() => removeItem(idx)} aria-label="Remover item"
+            <button onClick={() => { setPendingRemoveIndex(idx); setGatePurpose("remove"); }} aria-label="Remover item"
               className="min-w-[44px] min-h-[44px] flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors shrink-0">
               <X className="h-5 w-5" />
             </button>
@@ -279,6 +288,23 @@ export const PdvCartSection = ({
         storeId={storeId}
         onClose={handleManagerClosed}
         onLogin={handleManagerApproved}
+        requiredRole="gerente"
+        title="Autorização do gerente"
+      />
+    )}
+
+    {/* Autorização do gerente para limpar a venda / remover item */}
+    {gatePurpose !== null && storeId && (
+      <PdvOperatorLoginDialog
+        open
+        storeId={storeId}
+        onClose={() => { setGatePurpose(null); setPendingRemoveIndex(null); }}
+        onLogin={() => {
+          if (gatePurpose === "clear") executeClearSale();
+          else if (gatePurpose === "remove" && pendingRemoveIndex !== null) removeItem(pendingRemoveIndex);
+          setGatePurpose(null);
+          setPendingRemoveIndex(null);
+        }}
         requiredRole="gerente"
         title="Autorização do gerente"
       />

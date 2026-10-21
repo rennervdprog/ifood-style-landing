@@ -94,7 +94,7 @@ export default function StockTab({ storeId }: Props) {
         .from("products")
         .select("id, name, price, image_url")
         .eq("store_id", storeId)
-        .eq("is_active", true)
+        .eq("is_available", true)
         .order("name");
       const { data: stocks } = await supabase
         .from("product_stock")
