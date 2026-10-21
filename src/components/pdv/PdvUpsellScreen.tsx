@@ -33,7 +33,7 @@ export default function PdvUpsellScreen({ storeId, monthlyPrice, onBack }: Props
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-dvh bg-background flex flex-col">
       <header className="flex items-center gap-3 p-4 border-b border-border">
         <button onClick={onBack} className="p-2 -ml-2 rounded-full hover:bg-muted" aria-label="Voltar">
           <ArrowLeft className="h-5 w-5" />
