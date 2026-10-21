@@ -46,16 +46,26 @@ export default function ProductRecipe({ productId, productName, storeId, onClose
   });
 
   const { data: products = [] } = useQuery({
-    queryKey: ["all-products", storeId],
+    queryKey: ["recipe-ingredient-options", storeId],
     queryFn: async () => {
       const { data } = await supabase
         .from("products")
-        .select("id, name")
+        .select("id, name, is_available, metadata")
         .eq("store_id", storeId)
-        .eq("is_active", true)
         .neq("id", productId)
         .order("name");
-      return data || [];
+      // Ingrediente válido: produto à venda OU insumo (só estoque).
+      // (A coluna is_active não existe em products — a consulta antiga
+      // voltava sempre vazia e o seletor não listava nada.)
+      const list = ((data || []) as any[]).filter(
+        (p) => p.is_available || p.metadata?.is_ingredient === true,
+      );
+      // Insumos primeiro — são os ingredientes mais usados nas fichas
+      return list.sort((a, b) => {
+        const ai = a.metadata?.is_ingredient ? 0 : 1;
+        const bi = b.metadata?.is_ingredient ? 0 : 1;
+        return ai - bi || a.name.localeCompare(b.name);
+      });
     },
   });
 
@@ -146,10 +156,10 @@ export default function ProductRecipe({ productId, productName, storeId, onClose
               <div>
                 <Label>Ingrediente</Label>
                 <Select value={ingredientId} onValueChange={setIngredientId}>
-                  <SelectTrigger><SelectValue placeholder="Escolha o produto" /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder="Escolha o insumo ou produto" /></SelectTrigger>
                   <SelectContent>
                     {products.map((p: any) => (
-                      <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                      <SelectItem key={p.id} value={p.id}>{p.name}{p.metadata?.is_ingredient ? " (insumo)" : ""}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>

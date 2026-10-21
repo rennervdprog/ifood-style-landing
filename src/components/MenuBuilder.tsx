@@ -5,9 +5,10 @@ import MenuImportCSV from "@/components/MenuImportCSV";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Plus, Loader2, Package, Sparkles, ArrowLeft } from "lucide-react";
+import { Plus, Loader2, Package, Sparkles, ArrowLeft, ChefHat } from "lucide-react";
 import { ProductCard, ProductFormData } from "@/components/menu/ProductCard";
 import ProductRecipe from "@/components/ProductRecipe";
+import RecipeManager from "@/components/RecipeManager";
 import { ConfirmDialog } from "@/components/menu/ConfirmDialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetClose } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -88,7 +89,8 @@ const MenuBuilder = ({ storeId, storeCategory, storeCategories }: MenuBuilderPro
           !p?.metadata?.pdv_only &&
           !p?.sold_by_weight &&
           !p?.metadata?.sold_by_weight &&
-          !p?.metadata?.hidden
+          !p?.metadata?.hidden &&
+          !p?.metadata?.is_ingredient
       );
     },
   });
@@ -103,6 +105,38 @@ const MenuBuilder = ({ storeId, storeCategory, storeCategories }: MenuBuilderPro
   });
 
   const productIds = useMemo(() => (products || []).map((p: any) => p.id), [products]);
+
+  // ---------- Fichas técnicas (aba) ----------
+  const [cardapioView, setCardapioView] = useState<"produtos" | "fichas">("produtos");
+
+  const { data: recipes = [] } = useQuery({
+    queryKey: ["store-recipes", storeId],
+    queryFn: async () => {
+      if (productIds.length === 0) return [];
+      const { data, error } = await supabase
+        .from("product_recipes")
+        .select("id, product_id, quantity, unit, ingredient_product_id, products!product_recipes_ingredient_product_id_fkey(name)")
+        .in("product_id", productIds);
+      if (error) throw error;
+      return (data || []) as any[];
+    },
+    enabled: productIds.length > 0,
+  });
+
+  const recipesByProduct = useMemo(() => {
+    const map = new Map<string, any[]>();
+    (recipes as any[]).forEach((r) => {
+      const list = map.get(r.product_id) || [];
+      list.push(r);
+      map.set(r.product_id, list);
+    });
+    return map;
+  }, [recipes]);
+
+  const semFichaCount = useMemo(
+    () => (products || []).filter((p: any) => !recipesByProduct.has(p.id)).length,
+    [products, recipesByProduct],
+  );
 
   const { data: addonGroups } = useQuery({
     queryKey: ["addon-groups", storeId, productIds.length],
@@ -976,6 +1010,41 @@ const MenuBuilder = ({ storeId, storeCategory, storeCategories }: MenuBuilderPro
         </div>
       </header>
 
+      {/* Alternância Produtos × Fichas técnicas */}
+      <div className="mb-4 flex gap-1 rounded-xl border border-border bg-card p-1">
+        <button
+          onClick={() => setCardapioView("produtos")}
+          className={`flex-1 rounded-lg px-3 py-2 text-[13px] font-bold transition-colors ${
+            cardapioView === "produtos" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          Produtos
+        </button>
+        <button
+          onClick={() => setCardapioView("fichas")}
+          className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-[13px] font-bold transition-colors ${
+            cardapioView === "fichas" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <ChefHat className="h-4 w-4" />
+          Fichas técnicas
+          {semFichaCount > 0 && (
+            <span className="rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-extrabold text-primary-foreground">
+              {semFichaCount} sem ficha
+            </span>
+          )}
+        </button>
+      </div>
+
+      {cardapioView === "fichas" ? (
+        <RecipeManager
+          products={products || []}
+          recipesByProduct={recipesByProduct}
+          onOpenRecipe={(p) => setRecipeProduct(p)}
+        />
+      ) : (
+      <>
+
       {(noImageCount > 0 || outOfStockCount > 0 || unsectionedProducts.length > 0) && (
         <section className="mb-4 grid divide-y divide-border border border-border bg-card sm:grid-cols-3 sm:divide-x sm:divide-y-0">
           <button onClick={() => { setFilter("no_image"); setActiveSection("all"); }} className="flex items-center gap-2 px-4 py-3 text-left hover:bg-muted"><Package className="h-4 w-4 text-primary" /><span className="text-xs text-muted-foreground"><strong className="text-foreground">{noImageCount}</strong> item{noImageCount === 1 ? "" : "s"} sem imagem</span></button>
@@ -1108,9 +1177,11 @@ const MenuBuilder = ({ storeId, storeCategory, storeCategories }: MenuBuilderPro
           </div>
         </div>
       )}
+      </>
+      )}
 
       {/* Mobile FAB */}
-      {!showFullEmpty && productSheet === null && selectedIds.size === 0 && (
+      {cardapioView === "produtos" && !showFullEmpty && productSheet === null && selectedIds.size === 0 && (
         <button
           onClick={openCreate}
           className="lg:hidden fixed bottom-20 right-4 z-30 bg-primary text-primary-foreground rounded-full shadow-lg hover:bg-primary/90 transition-all active:scale-95 flex items-center gap-2 px-5 py-3 font-bold text-sm"
@@ -1209,7 +1280,10 @@ const MenuBuilder = ({ storeId, storeCategory, storeCategories }: MenuBuilderPro
           productId={recipeProduct.id}
           productName={recipeProduct.name}
           storeId={storeId}
-          onClose={() => setRecipeProduct(null)}
+          onClose={() => {
+            setRecipeProduct(null);
+            queryClient.invalidateQueries({ queryKey: ["store-recipes", storeId] });
+          }}
         />
       )}
     </div>
