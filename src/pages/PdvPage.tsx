@@ -263,6 +263,7 @@ const PdvPage = () => {
   const [movReason, setMovReason] = useState("");
   // Fase 2 item 8 — alçada de gerente para sangria acima do limite.
   const [managerGateOpen, setManagerGateOpen] = useState(false);
+  const [clearGateOpen, setClearGateOpen] = useState(false);
   const pendingSangria = useRef<null | ((mgrId: string) => void)>(null);
 
   // Fechamento
@@ -966,7 +967,18 @@ const PdvPage = () => {
   const saldoEsperado = addMoney((currentSession?.opening_amount ?? 0), turnoDinheiro, turnoSuprimentos, -turnoSangrias);
 
   // ── Ticket médio do turno ──
-  const turnoVendasCount = movements.filter(m => m.type === "sale" && !canceledOrderIds.has((m as any).order_id)).length;
+  // Conta VENDAS (pedidos distintos), não movimentos: a venda dividida gera
+  // um movimento por forma de pagamento, mas é uma venda só.
+  const turnoVendasCount = (() => {
+    const saleMovs = movements.filter(m => m.type === "sale" && !canceledOrderIds.has((m as any).order_id));
+    const orderIds = new Set<string>();
+    let semPedido = 0;
+    saleMovs.forEach(m => {
+      const oid = (m as any).order_id as string | null;
+      if (oid) orderIds.add(oid); else semPedido += 1;
+    });
+    return orderIds.size + semPedido;
+  })();
   const ticketMedio = turnoVendasCount > 0 ? turnoVendido / turnoVendasCount : 0;
 
   // ── Atalhos de teclado (PDV profissional) ──
@@ -990,9 +1002,7 @@ const PdvPage = () => {
       if (cart.length > 0 && !loading && !orderDone) handleVenda();
     },
     onClearSale: () => {
-      if (cart.length > 0) {
-        if (window.confirm("Limpar venda atual?")) clearSale();
-      }
+      if (cart.length > 0) setClearGateOpen(true);
     },
     onHelp: () => setShowShortcuts(true),
     onSangria: () => setMovModal("sangria"),
@@ -1339,7 +1349,7 @@ const PdvPage = () => {
 
       <PdvTopbar
         storeName={store?.name}
-        operatorName={operatorName}
+        operatorName={pdvOperator?.name || operatorName}
         turnoVendasCount={turnoVendasCount}
         turnoVendido={turnoVendido}
         ticketMedio={ticketMedio}
@@ -1906,6 +1916,21 @@ const PdvPage = () => {
             const fn = pendingSangria.current;
             pendingSangria.current = null;
             if (fn) fn(mgr.id);
+          }}
+        />
+      )}
+
+      {/* Limpar a venda (ESC) exige autorização do gerente. */}
+      {clearGateOpen && store?.id && (
+        <PdvOperatorLoginDialog
+          open
+          storeId={store.id}
+          requiredRole="gerente"
+          title="Autorização de gerente"
+          onClose={() => setClearGateOpen(false)}
+          onLogin={() => {
+            setClearGateOpen(false);
+            clearSale();
           }}
         />
       )}
