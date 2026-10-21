@@ -137,7 +137,7 @@ export const PdvFechamentoScreen = ({
   };
 
   return (
-    <div className="pdv-shell min-h-screen bg-background flex flex-col">
+    <div className="pdv-shell min-h-dvh bg-background flex flex-col">
       <header className="h-14 border-b border-border flex items-center px-4 gap-3 bg-card shrink-0">
         <button onClick={onBack} className="p-2 rounded-xl hover:bg-muted active:scale-95 transition-all" aria-label="Voltar">
           <ArrowLeft className="h-5 w-5" />

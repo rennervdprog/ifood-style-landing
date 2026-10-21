@@ -1042,7 +1042,7 @@ const PdvPage = () => {
   // ─────────────────────────────────────────────────────────────────────────
 
   if (screen === "loading") return (
-    <div className="min-h-screen bg-background flex items-center justify-center">
+    <div className="min-h-dvh bg-background flex items-center justify-center">
       {storeFetched && !store ? (
         isAdmin ? (
           <div className="max-w-sm w-full px-6 py-8">
@@ -1116,7 +1116,7 @@ const PdvPage = () => {
 
   if (screen === "abertura") return (
     planNoSession && store?.id ? (
-      <div className="pdv-shell min-h-screen bg-background flex flex-col">
+      <div className="pdv-shell min-h-dvh bg-background flex flex-col">
         <header className="h-14 border-b border-border flex items-center px-4 gap-3 bg-card shrink-0">
           <button onClick={() => setPlanNoSession(false)} className="p-1.5 rounded-xl hover:bg-muted transition-colors">
             <ArrowLeft className="h-5 w-5" />
@@ -1132,7 +1132,7 @@ const PdvPage = () => {
         </div>
       </div>
     ) : reportsNoSession && store?.id ? (
-      <div className="pdv-shell min-h-screen bg-background flex flex-col">
+      <div className="pdv-shell min-h-dvh bg-background flex flex-col">
         <header className="h-14 border-b border-border flex items-center px-4 gap-3 bg-card shrink-0">
           <button onClick={() => { setReportsNoSession(false); setSelectedSessionId(null); }} className="p-1.5 rounded-xl hover:bg-muted transition-colors">
             <ArrowLeft className="h-5 w-5" />
@@ -1338,7 +1338,7 @@ const PdvPage = () => {
   );
 
   return (
-    <div className="pdv-shell h-screen bg-background flex flex-col overflow-hidden">
+    <div className="pdv-shell h-dvh bg-background flex flex-col overflow-hidden">
 
       {store?.id && <PdvDeliveryAlerts storeId={store.id} />}
 

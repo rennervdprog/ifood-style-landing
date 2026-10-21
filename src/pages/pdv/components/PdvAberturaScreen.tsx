@@ -104,7 +104,7 @@ export const PdvAberturaScreen = ({ storeName, storeId, openingAmount, setOpenin
   const storeLabel = storeName || "";
 
   return (
-    <div className="pdv-shell min-h-screen bg-background flex flex-col">
+    <div className="pdv-shell min-h-dvh bg-background flex flex-col">
       <header className="h-14 border-b border-border flex items-center px-4 gap-2 bg-card shrink-0">
         {!isPdvOnly && (
           <button
