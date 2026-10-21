@@ -1338,7 +1338,7 @@ const PdvPage = () => {
   );
 
   return (
-    <div className="pdv-shell h-dvh bg-background flex flex-col overflow-hidden">
+    <div className="pdv-shell fixed inset-0 bg-background flex flex-col overflow-hidden">
 
       {store?.id && <PdvDeliveryAlerts storeId={store.id} />}
 
