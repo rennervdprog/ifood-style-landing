@@ -86,6 +86,7 @@ import { PdvMesasView } from "@/pages/pdv/components/PdvMesasView";
 import StoreSubscription from "@/components/StoreSubscription";
 import { PdvStoreSettingsPanel } from "@/pages/pdv/components/PdvStoreSettingsPanel";
 import PdvFinanceiro from "@/pages/pdv/components/PdvFinanceiro";
+import PdvMigratePlanCard from "@/pages/pdv/components/PdvMigratePlanCard";
 import PdvBillingAlert from "@/pages/pdv/components/PdvBillingAlert";
 
 // Detecta se está em tela mobile (< 768px)
@@ -1476,6 +1477,7 @@ const PdvPage = () => {
       {/* ── MEU PLANO (PDV Only) ── */}
       {tab === "meu_plano" && store?.id && (
         <div className="flex-1 overflow-y-auto">
+          <PdvMigratePlanCard storeId={store.id} />
           <StoreSubscription storeId={store.id} storeName={store.name || ""} />
         </div>
       )}

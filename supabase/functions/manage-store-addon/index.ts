@@ -43,7 +43,7 @@ Deno.serve(async (req) => {
     const store_id = String(body?.store_id || "");
     const addon_code = String(body?.addon_code || "");
     const action = String(body?.action || "");
-    if (!store_id || !addon_code || !["activate", "cancel", "reactivate", "admin_set"].includes(action)) {
+    if (!store_id || !addon_code || !["activate", "cancel", "reactivate", "admin_set", "migrate_to_essencial"].includes(action)) {
       return json({ error: "Parâmetros inválidos." }, 400);
     }
     if (addon_code !== "pdv") return json({ error: "Add-on não suportado." }, 400);
@@ -116,6 +116,51 @@ Deno.serve(async (req) => {
       }
       await logAction({ enabled, price_override: priceOverride });
       return json({ ok: true, action, enabled, price_override: priceOverride });
+    }
+
+    if (action === "migrate_to_essencial") {
+      // Migração Somente PDV → Essencial MANTENDO o PDV (vira add-on ativo).
+      // Ordem pensada pra nunca derrubar o acesso ao caixa no meio do caminho:
+      // 1) PDV vira add-on ativo; 2) plano vira Essencial; 3) loja vira Essencial.
+      const { data: storeFull } = await admin.from("stores")
+        .select("id, plan_type").eq("id", store_id).maybeSingle();
+      if (!storeFull || storeFull.plan_type !== "pdv_only") {
+        return json({ error: "Só lojas do plano Somente PDV podem migrar por aqui." }, 400);
+      }
+      const { data: plan } = await admin.from("store_plans")
+        .select("id, plan_type")
+        .eq("store_id", store_id).eq("is_active", true).maybeSingle();
+      if (!plan || plan.plan_type !== "pdv_only") {
+        return json({ error: "Plano atual não encontrado. Fale com o suporte." }, 400);
+      }
+      const { error: addonErr } = await admin.from("store_addons").upsert({
+        store_id, addon_code,
+        enabled: true,
+        activated_at: new Date().toISOString(),
+        first_charge_done: false,
+        cancels_at: null,
+        created_by: user.id,
+      }, { onConflict: "store_id,addon_code" });
+      if (addonErr) throw addonErr;
+      // Essencial já pago (sem fase gratuita): quem migra já é cliente pagante.
+      const { error: planErr } = await admin.from("store_plans").update({
+        plan_type: "fixed",
+        monthly_fee: 89.9,
+        commission_rate: 0,
+        pix_operational_fee_override: 1.99,
+        revenue_threshold: 5000,
+        upgrade_monthly_fee: 89.9,
+        upgrade_trigger_months: 1,
+        upgraded_at: new Date().toISOString(),
+        pdv_enabled: true,
+        updated_at: new Date().toISOString(),
+      }).eq("id", plan.id);
+      if (planErr) throw planErr;
+      const { error: storeErr } = await admin.from("stores")
+        .update({ plan_type: "essencial" }).eq("id", store_id);
+      if (storeErr) throw storeErr;
+      await logAction({ from_plan: "pdv_only", to_plan: "essencial", monthly_fee: 89.9, addon_monthly: 49 });
+      return json({ ok: true, action, monthly_fee: 89.9, addon_monthly: 49, total_monthly: 138.9 });
     }
 
     if (action === "activate") {
