@@ -271,15 +271,20 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
     queryKey: ["pdv-relatorio-prev", storeId, prevRange.start, prevRange.end],
     queryFn: async () => {
       const { data } = await (supabase.from("pdv_movements" as any) as any)
-        .select("amount, orders!inner(status)")
+        .select("amount, order_id, orders!inner(status)")
         .eq("store_id", storeId)
         .eq("type", "sale")
         .eq("orders.status", "finalizado")
         .gte("created_at", prevRange.start)
         .lte("created_at", prevRange.end);
-      const rows = (data || []) as { amount: number | string | null }[];
+      const rows = (data || []) as { amount: number | string | null; order_id?: string | null }[];
       const total = rows.reduce((s, r) => s + Number(r.amount || 0), 0);
-      return { total, count: rows.length, avg: rows.length > 0 ? total / rows.length : 0 };
+      // Vendas = pedidos distintos (venda dividida tem 1 movimento por forma).
+      const prevIds = new Set<string>();
+      let prevSemPedido = 0;
+      rows.forEach(r => { if (r.order_id) prevIds.add(r.order_id); else prevSemPedido += 1; });
+      const count = prevIds.size + prevSemPedido;
+      return { total, count, avg: count > 0 ? total / count : 0 };
     },
     enabled: !!storeId && !sessionId,
   });
@@ -303,7 +308,18 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
       ? validMovements.reduce((s: number, m: any) => s + Number(m.amount || 0), 0)
       : validOrders.reduce((s, o) => s + Number(o.total_price || 0), 0);
 
-    const count = hasMov ? validMovements.length : validOrders.length;
+    // Vendas = pedidos distintos, não movimentos (venda dividida gera um
+    // movimento por forma de pagamento, mas é uma venda só).
+    const count = hasMov
+      ? (() => {
+          const ids = new Set<string>();
+          let semPedido = 0;
+          validMovements.forEach((m: any) => {
+            if (m.order_id) ids.add(m.order_id); else semPedido += 1;
+          });
+          return ids.size + semPedido;
+        })()
+      : validOrders.length;
 
     const totalSubtotal = validOrders.reduce((s, o) => s + Number(o.subtotal || 0), 0);
     const totalDiscount = validOrders.reduce((s, o) => s + Number(o.pdv_discount || 0), 0);

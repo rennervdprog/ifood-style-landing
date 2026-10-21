@@ -101,7 +101,7 @@ export function usePdvCatalog(params: {
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
-    let list = q ? products.filter((p) => p.name.toLowerCase().includes(q)) : products;
+    let list = q ? products.filter((p) => p.name.toLowerCase().includes(q) || (p.pdv_short_code || "").toLowerCase().includes(q)) : products;
     if (activeSection && !q) list = list.filter((p) => p.section_id === activeSection);
     return list;
   }, [products, search, activeSection]);
