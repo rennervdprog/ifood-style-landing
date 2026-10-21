@@ -58,6 +58,7 @@ interface StockItem {
   min_quantity: number;
   track_stock: boolean;
   unit: string;
+  is_ingredient?: boolean;
 }
 
 const MOVEMENT_LABELS: Record<string, string> = {
@@ -80,6 +81,11 @@ export default function StockTab({ storeId }: Props) {
   const [activateQty, setActivateQty] = useState("");
   const [activateMin, setActivateMin] = useState("");
   const [activateUnit, setActivateUnit] = useState("un");
+  // Novo insumo (só estoque)
+  const [insumoName, setInsumoName] = useState("");
+  const [insumoQty, setInsumoQty] = useState("");
+  const [insumoUnit, setInsumoUnit] = useState("kg");
+  const [insumoMin, setInsumoMin] = useState("");
   const [adjustDialog, setAdjustDialog] = useState<StockItem | null>(null);
   const [adjustType, setAdjustType] = useState("in");
   const [adjustQty, setAdjustQty] = useState("");
@@ -117,6 +123,40 @@ export default function StockTab({ storeId }: Props) {
     },
   });
 
+  // Insumos: itens só de estoque (metadata.is_ingredient) — não são
+  // produtos do cardápio; são os ingredientes das fichas técnicas.
+  const { data: insumos = [] } = useQuery({
+    queryKey: ["stock-insumos", storeId],
+    queryFn: async () => {
+      const { data: prods } = await supabase
+        .from("products")
+        .select("id, name, price, image_url, metadata")
+        .eq("store_id", storeId)
+        .order("name");
+      const { data: stocks } = await supabase
+        .from("product_stock")
+        .select("*")
+        .eq("store_id", storeId);
+      const stockMap = new Map((stocks || []).map((s: any) => [s.product_id, s]));
+      return ((prods || []) as any[])
+        .filter((p) => p.metadata?.is_ingredient === true)
+        .map((p) => {
+          const s = stockMap.get(p.id);
+          return {
+            product_id: p.id,
+            product_name: p.name,
+            product_price: Number(p.price),
+            product_image: p.image_url,
+            quantity: s ? Number(s.quantity) : 0,
+            min_quantity: s ? Number(s.min_quantity) : 0,
+            track_stock: s ? s.track_stock : false,
+            unit: s?.unit || "un",
+            is_ingredient: true,
+          } as StockItem;
+        });
+    },
+  });
+
   const { data: lowStock = [] } = useQuery({
     queryKey: ["low-stock", storeId],
     queryFn: async () => {
@@ -144,6 +184,7 @@ export default function StockTab({ storeId }: Props) {
 
   const refresh = () => {
     queryClient.invalidateQueries({ queryKey: ["stock-list"] });
+    queryClient.invalidateQueries({ queryKey: ["stock-insumos"] });
     queryClient.invalidateQueries({ queryKey: ["low-stock"] });
   };
 
@@ -231,6 +272,66 @@ export default function StockTab({ storeId }: Props) {
     onError: (e: any) => toast.error(e.message),
   });
 
+  // Criar insumo: nasce como item só de estoque (metadata.is_ingredient,
+  // is_available=false) — não aparece no cardápio, no PDV nem pra clientes.
+  const createInsumoMutation = useMutation({
+    mutationFn: async () => {
+      const name = insumoName.trim();
+      if (!name) throw new Error("Digite o nome do insumo");
+      const { data: inserted, error } = await supabase
+        .from("products")
+        .insert({
+          store_id: storeId,
+          name,
+          price: 0,
+          is_available: false,
+          metadata: { is_ingredient: true },
+        } as any)
+        .select("id")
+        .single();
+      if (error) throw error;
+      const pid = (inserted as any).id;
+
+      const { error: e1 } = await supabase.rpc("stock_toggle_tracking", {
+        _product_id: pid,
+        _track: true,
+      });
+      if (e1) throw e1;
+
+      const { error: eUnit } = await (supabase as any).rpc("stock_set_unit", {
+        _product_id: pid,
+        _unit: insumoUnit,
+      });
+      if (eUnit) throw eUnit;
+
+      const qty = Number(insumoQty) || 0;
+      if (qty > 0) {
+        const { error: e2 } = await supabase.rpc("stock_adjust", {
+          _product_id: pid,
+          _quantity: qty,
+          _type: "in",
+          _reason: "Estoque inicial",
+        });
+        if (e2) throw e2;
+      }
+      const min = Number(insumoMin) || 0;
+      if (min > 0) {
+        await supabase.rpc("stock_set_min", {
+          _product_id: pid,
+          _min_quantity: min,
+        });
+      }
+    },
+    onSuccess: () => {
+      toast.success("Insumo adicionado!");
+      refresh();
+      setInsumoName("");
+      setInsumoQty("");
+      setInsumoMin("");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const filtered = items.filter((item) => {
     if (search && !item.product_name.toLowerCase().includes(search.toLowerCase()))
       return false;
@@ -243,16 +344,21 @@ export default function StockTab({ storeId }: Props) {
 
   const trackedItems = items.filter((i) => i.track_stock);
   const notTracked = items.filter((i) => !i.track_stock);
+  const trackedInsumos = insumos.filter((i) => i.track_stock);
+  const insumosFiltrados = insumos.filter(
+    (i) => !search || i.product_name.toLowerCase().includes(search.toLowerCase()),
+  );
 
-  // KPIs do estoque
-  const totalUnits = trackedItems.reduce((sum, i) => sum + Number(i.quantity || 0), 0);
-  const outOfStock = trackedItems.filter((i) => Number(i.quantity || 0) === 0).length;
-  const stockValue = trackedItems.reduce((sum, i) => sum + Number(i.quantity || 0) * Number(i.product_price || 0), 0);
+  // KPIs do estoque (produtos controlados + insumos)
+  const allTracked = [...trackedItems, ...trackedInsumos];
+  const totalUnits = allTracked.reduce((sum, i) => sum + Number(i.quantity || 0), 0);
+  const outOfStock = allTracked.filter((i) => Number(i.quantity || 0) === 0).length;
+  const stockValue = allTracked.reduce((sum, i) => sum + Number(i.quantity || 0) * Number(i.product_price || 0), 0);
 
   return (
     <div className="space-y-4 p-4 max-w-3xl mx-auto">
       {/* KPIs - resumo do estoque */}
-      {trackedItems.length > 0 && (
+      {allTracked.length > 0 && (
         <div className="grid grid-cols-2 gap-3">
           <Card className="bg-white">
             <CardContent className="p-4">
@@ -262,7 +368,7 @@ export default function StockTab({ storeId }: Props) {
                 </div>
                 <span className="text-xs text-muted-foreground font-medium">Produtos controlados</span>
               </div>
-              <p className="text-2xl font-bold">{trackedItems.length}</p>
+              <p className="text-2xl font-bold">{allTracked.length}</p>
             </CardContent>
           </Card>
           <Card className="bg-white">
@@ -567,6 +673,167 @@ export default function StockTab({ storeId }: Props) {
           </div>
         </div>
       )}
+
+      {/* Insumos — só estoque (não aparecem no cardápio nem pra clientes) */}
+      <div>
+        <h3 className="font-semibold text-sm text-muted-foreground mb-1">
+          Insumos — só estoque ({insumosFiltrados.length})
+        </h3>
+        <p className="text-xs text-muted-foreground mb-2">
+          Arroz, feijão, óleo… não aparecem no cardápio nem pra clientes. São os ingredientes das fichas técnicas.
+        </p>
+        {insumosFiltrados.length > 0 && (
+          <div className="space-y-2">
+            {insumosFiltrados.map((item) => {
+              if (!item.track_stock) {
+                return (
+                  <Card key={item.product_id} className="opacity-75">
+                    <CardContent className="p-3">
+                      <div className="flex items-center gap-3">
+                        <Package className="h-8 w-8 text-muted-foreground shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium truncate">{item.product_name}</p>
+                          <p className="text-xs text-muted-foreground">Insumo</p>
+                        </div>
+                        <Button size="sm" onClick={() => setActivateDialog(item)}>
+                          Ativar controle
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              }
+              const isLow = item.quantity <= item.min_quantity;
+              const isZero = item.quantity <= 0;
+              return (
+                <Card key={item.product_id} className={isZero ? "border-red-500 border-2" : isLow ? "border-orange-400 border-2" : ""}>
+                  <CardContent className="p-3">
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium truncate">{item.product_name}</p>
+                        <div className="flex items-center gap-2 mt-2">
+                          <span className={`text-3xl font-black px-3 py-1 rounded-lg ${isZero ? "bg-red-600 text-white" : isLow ? "bg-orange-500 text-white" : "bg-green-600 text-white"}`}>
+                            {item.quantity}
+                          </span>
+                          <span className="text-sm font-medium">{item.unit === "un" ? "unidades" : item.unit}</span>
+                        </div>
+                        <div className="mt-1">
+                          {isZero && (
+                            <Badge className="bg-red-600 text-white font-bold">ESGOTADO</Badge>
+                          )}
+                          {isLow && !isZero && (
+                            <Badge className="bg-orange-500 text-white font-bold">⚠️ REPOR — mín: {item.min_quantity}</Badge>
+                          )}
+                          {!isLow && !isZero && (
+                            <Badge className="bg-green-600 text-white">Em estoque</Badge>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <div className="flex gap-1">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={async () => {
+                              await supabase.rpc("stock_adjust", {
+                                _product_id: item.product_id,
+                                _quantity: 1,
+                                _type: "out",
+                                _reason: "Saída manual",
+                              });
+                              refresh();
+                            }}
+                          >
+                            <Minus className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setAdjustDialog(item)}
+                          >
+                            <Plus className="h-4 w-4" /> Ajustar
+                          </Button>
+                        </div>
+                        <div className="flex gap-1">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="text-xs h-7"
+                            onClick={() => setHistoryProduct(item)}
+                          >
+                            <History className="h-3 w-3 mr-1" /> Ver histórico
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Novo insumo */}
+        <Card className="mt-3">
+          <CardContent className="p-4 space-y-3">
+            <p className="font-bold text-sm">Novo insumo</p>
+            <div>
+              <Label>Nome do insumo</Label>
+              <Input
+                placeholder="Ex: Arroz branco"
+                value={insumoName}
+                onChange={(e) => setInsumoName(e.target.value)}
+              />
+            </div>
+            <div className="flex gap-2">
+              <div className="flex-1">
+                <Label>Quantidade atual</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="Ex: 5"
+                  value={insumoQty}
+                  onChange={(e) => setInsumoQty(e.target.value)}
+                />
+              </div>
+              <div className="w-24">
+                <Label>Unidade</Label>
+                <Select value={insumoUnit} onValueChange={setInsumoUnit}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="un">un</SelectItem>
+                    <SelectItem value="kg">kg</SelectItem>
+                    <SelectItem value="g">g</SelectItem>
+                    <SelectItem value="L">L</SelectItem>
+                    <SelectItem value="ml">ml</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex-1">
+                <Label>Mínimo (opcional)</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="Ex: 1"
+                  value={insumoMin}
+                  onChange={(e) => setInsumoMin(e.target.value)}
+                />
+              </div>
+            </div>
+            <Button
+              className="w-full"
+              onClick={() => createInsumoMutation.mutate()}
+              disabled={!insumoName.trim() || createInsumoMutation.isPending}
+            >
+              <Plus className="h-4 w-4 mr-1" /> Adicionar insumo
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
 
       {filtered.length === 0 && !isLoading && (
         <div className="text-center py-8">
