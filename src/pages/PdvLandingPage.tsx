@@ -33,6 +33,10 @@ const FAQS = [
     a: "Restaurantes, lanchonetes, padarias, pizzarias, mercadinhos, sorveterias, cafeterias e lojas de roupa (com modo vestuário: grade tamanho × cor, vales-troca e etiquetas com código de barras). O sistema também gerencia mesas e comandas.",
   },
   {
+    q: "Posso abrir o caixa em mais de um computador ao mesmo tempo?",
+    a: "Hoje o PDV é feito para lojas com **1 caixa**: fica um turno aberto por vez, e vários operadores podem se revezar nele — cada um com seu PIN, e os relatórios mostram as vendas por operador. Se a sua loja trabalha com 2 ou mais caixas simultâneos, esse plano ainda não é o ideal.",
+  },
+  {
     q: "Meus dados estão seguros?",
     a: "Sim. Tudo em nuvem com backup automático — se o computador quebrar, nada se perde. E você pode exportar seus dados quando quiser.",
   },
@@ -372,6 +376,7 @@ export default function PdvLandingPage() {
               <Link to="/cadastro-lojista" className="block"><Button size="lg" className="w-full text-lg">Começar teste grátis →</Button></Link>
               <p className="text-[13px] text-muted-foreground mt-2.5">Sem cartão de crédito</p>
             </div>
+            <p className="text-sm text-muted-foreground mt-6 max-w-xl mx-auto"><b className="text-neutral-900">Feito para lojas com 1 caixa:</b> abertura, venda e fechamento num turno só — com vários operadores se revezando, cada um com seu PIN.</p>
             <p className="flex items-center justify-center gap-2.5 mt-7 text-muted-foreground text-[15px]"><ShieldCheck className="h-5 w-5 text-green-600" /><span><b className="text-neutral-900">Sem fidelidade.</b> Cancele quando quiser, sem multa. Seus dados são exportáveis.</span></p>
           </div>
         </section>
