@@ -102,14 +102,14 @@ export const PdvTopbar = ({
       <div className="w-px h-5 bg-border" />
       <Monitor className="h-4 w-4 text-primary shrink-0" />
       <div className="flex-1 min-w-0">
-        <span className="text-xs font-bold text-foreground truncate">{storeName}</span>
+        <span className="block text-xs font-bold text-foreground truncate">{storeName}</span>
         <span className="text-[10px] text-emerald-500 font-semibold ml-2 hidden sm:inline">
           ● {turnoVendasCount} vendas · <span className="pdv-mono">{formatBRL(turnoVendido)}</span>
           {ticketMedio > 0 && <span className="text-muted-foreground ml-1.5">· tkt <span className="pdv-mono">{formatBRL(ticketMedio)}</span></span>}
         </span>
       </div>
 
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1 shrink-0">
         <div
           title={online ? "Online — sincronizado" : "Offline — sem conexão"}
           className={`flex items-center gap-1 px-1.5 py-1 rounded-lg border ${
