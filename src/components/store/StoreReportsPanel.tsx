@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { formatCurrency } from "@/lib/utils";
 import { Calendar as CalIcon, Download, ArrowUpRight, ArrowDownRight, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import TutorialHelpButton from "@/components/TutorialHelp";
 
 const DailyRevenueChart = lazy(() =>
   import("@/components/admin/AdminCharts").then((m) => ({ default: m.DailyRevenueChart }))
@@ -187,6 +188,8 @@ export default function StoreReportsPanel({ storeId, storeName }: { storeId: str
     <div className="space-y-5">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <h3 className="text-lg font-bold text-foreground">Relatórios Detalhados</h3>
+        <div className="flex items-center gap-2">
+        <TutorialHelpButton tutorialId="reports" />
         <button
           onClick={exportCSV}
           disabled={!data || isLoading}
@@ -194,6 +197,7 @@ export default function StoreReportsPanel({ storeId, storeName }: { storeId: str
         >
           <Download className="h-3.5 w-3.5" /> Exportar CSV
         </button>
+        </div>
       </div>
 
       {/* Preset chips */}

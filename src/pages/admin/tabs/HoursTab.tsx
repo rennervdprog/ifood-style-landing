@@ -8,7 +8,7 @@ interface Props {
 
 const HoursTab = ({ storeId, forceClosed }: Props) => (
   <div className="space-y-4">
-    <TabHeader title="Horários" subtitle="Quando sua loja aparece aberta e aceita pedidos" />
+    <TabHeader title="Horários" subtitle="Quando sua loja aparece aberta e aceita pedidos" tutorialId="hours" />
     <StoreHoursManager storeId={storeId} forceClosed={forceClosed} />
   </div>
 );
