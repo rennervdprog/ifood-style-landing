@@ -105,8 +105,8 @@ export default function ProductRecipe({ productId, productName, storeId, onClose
   });
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 flex items-end sm:items-center justify-center p-4">
-      <Card className="w-full max-w-md max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-[70] bg-black/50 flex items-end sm:items-center justify-center p-4">
+      <Card className="w-full max-w-md max-h-[calc(100dvh-2rem)] overflow-y-auto">
         <CardContent className="p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">

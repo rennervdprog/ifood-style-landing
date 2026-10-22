@@ -20,7 +20,7 @@ export const PdvSaleSuccessScreen = ({
   const isDinheiro = troco !== null;
 
   return (
-    <div className="flex min-h-full flex-col bg-white">
+    <div className="flex h-full min-h-0 flex-col bg-white">
       {/* Conteúdo central */}
       <div className="flex flex-1 flex-col items-center justify-center px-7 py-8 text-center">
         <div
