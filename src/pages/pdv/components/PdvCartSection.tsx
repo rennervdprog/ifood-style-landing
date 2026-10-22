@@ -62,12 +62,16 @@ export const PdvCartSection = ({
 
   const handleDiscountChange = (raw: string) => {
     const clean = raw.replace(/[^\d,]/g, "");
-    // Se for %, verifica se excede o limite
-    if (discountType === "%") {
-      const pct = parseFloat(clean.replace(",", "."));
-      if (!isNaN(pct) && pct > DISCOUNT_MANAGER_LIMIT) {
-        // Guarda o valor pendente e pede autorização do gerente
+    // Proteção nos DOIS modos: no modo R$, converte o valor pra % do subtotal
+    // e aplica o mesmo limite (antes, desconto alto em R$ burlava a autorização).
+    const v = parseFloat(clean.replace(",", "."));
+    if (!isNaN(v)) {
+      const pct = discountType === "%" ? v : subtotal > 0 ? (v / subtotal) * 100 : 0;
+      if (pct > DISCOUNT_MANAGER_LIMIT + 1e-9) {
+        // Guarda o valor pendente, limpa o campo (não deixa desconto parcial
+        // aplicado atrás do modal) e pede autorização do gerente
         setPendingDiscount(clean);
+        setDiscountInput("");
         setShowManagerGate(true);
         return;
       }
