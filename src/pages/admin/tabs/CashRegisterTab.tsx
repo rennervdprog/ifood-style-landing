@@ -63,7 +63,7 @@ const CashRegisterTab = ({ storeId }: Props) => {
 
   return (
     <div className="p-4 lg:p-6 max-w-3xl mx-auto space-y-4">
-      <TabHeader title="PDV / Caixa" subtitle="Venda de balcão: monte a venda, receba e feche o caixa do turno" />
+      <TabHeader title="PDV / Caixa" subtitle="Venda de balcão: monte a venda, receba e feche o caixa do turno" tutorialId="pdv" />
       <div className={`rounded-2xl border-2 p-5 ${isOpen ? "bg-primary/5 border-primary/30" : "bg-muted/50 border-border"}`}>
         <div className="flex items-start gap-4">
           <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${isOpen ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"}`}>

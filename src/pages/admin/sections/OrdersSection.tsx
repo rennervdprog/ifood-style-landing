@@ -9,6 +9,7 @@ import OrdersStatusPills from "../components/orders/OrdersStatusPills";
 import PixDirectAlert from "../components/orders/PixDirectAlert";
 import OrdersEmptyState from "../components/orders/OrdersEmptyState";
 import OrderCardSkeleton from "../components/orders/OrderCardSkeleton";
+import TutorialHelpButton from "@/components/TutorialHelp";
 
 interface Props {
   store: any;
@@ -182,6 +183,9 @@ export default function OrdersSection(props: Props) {
 
   return (
     <>
+      <div className="flex justify-end px-4 lg:px-6 pt-4 max-w-6xl mx-auto w-full">
+        <TutorialHelpButton tutorialId="orders" />
+      </div>
       <OrdersToolbar
         period={period}
         setPeriod={setPeriod}

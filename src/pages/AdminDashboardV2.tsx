@@ -100,6 +100,7 @@ import {
 } from "./admin/constants";
 import GroupTabsBar from "./admin/components/GroupTabsBar";
 import SetupChecklist, { buildSetupSteps } from "./admin/components/SetupChecklist";
+import DashboardSearch from "./admin/components/DashboardSearch";
 import {
   parseOrderAddons,
   normalizeAddonName,
@@ -1915,6 +1916,7 @@ const AdminDashboard = () => {
             </div>
           </div>
           <div className="flex items-center gap-1.5">
+            <DashboardSearch groups={visibleGroups} isPdvOnly={isPdvOnly} onNavigate={handleTabChange} />
             {showSoundPrompt && !soundEnabled && !Capacitor.isNativePlatform() && (
               <button onClick={activateSound}
                 className="flex items-center gap-1 bg-amber-400/10 border border-amber-400/30 text-amber-500 px-2.5 py-1.5 rounded-xl text-[11px] font-bold animate-pulse">

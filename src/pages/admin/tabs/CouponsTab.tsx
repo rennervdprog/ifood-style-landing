@@ -7,7 +7,7 @@ interface Props {
 
 const CouponsTab = ({ storeId }: Props) => (
   <div className="space-y-4">
-    <TabHeader title="Cupons" subtitle="Códigos de desconto da sua loja e quanto eles trouxeram de vendas" />
+    <TabHeader title="Cupons" subtitle="Códigos de desconto da sua loja e quanto eles trouxeram de vendas" tutorialId="coupons" />
     <CouponManager storeId={storeId} isAdmin />
   </div>
 );

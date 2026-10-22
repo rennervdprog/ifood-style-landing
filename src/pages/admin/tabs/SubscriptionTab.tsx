@@ -8,7 +8,7 @@ interface Props {
 
 const SubscriptionTab = ({ storeId, storeName }: Props) => (
   <div className="max-w-2xl mx-auto">
-    <TabHeader title="Meu Plano" subtitle="Seu plano atual, mensalidade e o que está incluído" />
+    <TabHeader title="Meu Plano" subtitle="Seu plano atual, mensalidade e o que está incluído" tutorialId="subscription" />
     <StoreSubscription storeId={storeId} storeName={storeName} />
   </div>
 );
