@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Scale, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { formatBRL } from "@/lib/utils";
+import { useBRLInput } from "@/hooks/useBRLInput";
 import type { Product } from "@/pages/pdv/types";
 
 interface Props {
@@ -20,10 +21,19 @@ interface Props {
 
 /**
  * Modal para venda por peso (PDV).
- * Entrada manual em gramas. Calcula o total proporcional ao preço por kg.
+ * Dois modos: "Por peso (g)" — entrada manual em gramas, total proporcional
+ * ao preço por kg; "Por valor (R$)" — a operadora digita o valor direto e as
+ * gramas são derivadas dele (o total cobrado é exatamente o valor digitado).
  */
 export const PdvWeightDialog = ({ product, open, onClose, onAdd }: Props) => {
+  const [mode, setMode] = useState<"weight" | "value">("weight");
   const [grams, setGrams] = useState("");
+  const {
+    display: amountDisplay,
+    value: amountValue,
+    onChange: amountOnChange,
+    reset: amountReset,
+  } = useBRLInput(0);
   const [reading, setReading] = useState(false);
   const [scaleSupported, setScaleSupported] = useState(false);
 
@@ -44,8 +54,12 @@ export const PdvWeightDialog = ({ product, open, onClose, onAdd }: Props) => {
   }, [open]);
 
   useEffect(() => {
-    if (open) setGrams("");
-  }, [open, product?.id]);
+    if (open) {
+      setGrams("");
+      setMode("weight");
+      amountReset(0);
+    }
+  }, [open, product?.id, amountReset]);
 
   const handleReadScale = async () => {
     setReading(true);
@@ -67,10 +81,20 @@ export const PdvWeightDialog = ({ product, open, onClose, onAdd }: Props) => {
     () => Math.round(((gramsNum / 1000) * pricePerKg) * 100) / 100,
     [gramsNum, pricePerKg],
   );
+  // Modo "Por valor": gramas derivadas do valor digitado. O total da linha é o
+  // valor digitado — nunca recalculado a partir das gramas arredondadas.
+  const derivedGrams = useMemo(
+    () => (pricePerKg > 0 && amountValue > 0 ? Math.round((amountValue / pricePerKg) * 1000) : 0),
+    [amountValue, pricePerKg],
+  );
+  const effectiveGrams = mode === "value" ? derivedGrams : gramsNum;
+  const finalTotal = mode === "value" ? amountValue : total;
 
   if (!open || !product) return null;
 
-  const canAdd = gramsNum > 0 && total > 0;
+  const canAdd = mode === "value"
+    ? amountValue > 0 && pricePerKg > 0 && derivedGrams > 0
+    : gramsNum > 0 && total > 0;
   const per100g = pricePerKg / 10;
 
   const handleAdd = () => {
@@ -78,10 +102,10 @@ export const PdvWeightDialog = ({ product, open, onClose, onAdd }: Props) => {
     onAdd(
       product,
       [],
-      `${gramsNum} g`,
+      `${effectiveGrams} g`,
       1,
-      total,
-      { weight_grams: gramsNum, price_per_kg: pricePerKg, weight_unit: "kg" },
+      finalTotal,
+      { weight_grams: effectiveGrams, price_per_kg: pricePerKg, weight_unit: "kg" },
     );
     onClose();
   };
@@ -104,6 +128,25 @@ export const PdvWeightDialog = ({ product, open, onClose, onAdd }: Props) => {
           </div>
         </div>
 
+        {/* Seletor de modo: por peso ou por valor */}
+        <div className="flex rounded-xl overflow-hidden border border-border">
+          <button
+            type="button"
+            onClick={() => setMode("weight")}
+            className={`flex-1 py-2 text-xs font-black transition-colors ${mode === "weight" ? "bg-primary text-primary-foreground" : "bg-muted/50 text-muted-foreground"}`}
+          >
+            Por peso (g)
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode("value")}
+            className={`flex-1 py-2 text-xs font-black transition-colors ${mode === "value" ? "bg-primary text-primary-foreground" : "bg-muted/50 text-muted-foreground"}`}
+          >
+            Por valor (R$)
+          </button>
+        </div>
+
+        {mode === "weight" ? (
         <div>
           <label className="text-xs font-bold text-muted-foreground">Peso (gramas)</label>
           <div className="relative mt-1.5">
@@ -144,12 +187,36 @@ export const PdvWeightDialog = ({ product, open, onClose, onAdd }: Props) => {
             </button>
           )}
         </div>
+        ) : (
+        <div>
+          <label className="text-xs font-bold text-muted-foreground">Valor (R$)</label>
+          <div className="relative mt-1.5">
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-bold text-muted-foreground">
+              R$
+            </span>
+            <input
+              type="text"
+              inputMode="decimal"
+              autoFocus
+              placeholder="0,00"
+              value={amountDisplay}
+              onChange={(e) => amountOnChange(e.target.value)}
+              className="w-full pl-12 pr-4 py-3 bg-muted/40 rounded-xl text-2xl font-black text-center focus:outline-none focus:ring-2 focus:ring-primary/40"
+            />
+          </div>
+          {amountValue > 0 && derivedGrams > 0 && (
+            <p className="mt-2 text-xs text-muted-foreground text-center">
+              ≈ {derivedGrams} g × {formatBRL(pricePerKg)}/kg
+            </p>
+          )}
+        </div>
+        )}
 
         <div className="rounded-xl bg-primary/8 border border-primary/20 p-3 flex items-center justify-between">
           <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
             Total
           </span>
-          <span className="text-2xl font-black text-primary pdv-mono">{formatBRL(total)}</span>
+          <span className="text-2xl font-black text-primary pdv-mono">{formatBRL(finalTotal)}</span>
         </div>
 
         <div className="flex gap-2">
