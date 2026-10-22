@@ -11,14 +11,23 @@ Deno.serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const cronSecret = Deno.env.get("CRON_SECRET") || "";
 
-    // Auth: CRON_SECRET (cron) ou platform admin
+    // Auth: only service_role (cron) or platform admin.
+    // Os agendamentos internos se autenticam com a chave de serviço do projeto
+    // (mesmo padrão aceito pelo reconcile-payments/monthly-billing): o env
+    // SUPABASE_SERVICE_ROLE_KEY do runtime traz a chave nova (sb_secret_), então
+    // aceitamos também os slots onde fica a chave de serviço (JWT) dos crons.
+    const serviceKeys = [
+      serviceKey,
+      Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY"),
+      Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY"),
+      Deno.env.get("SERVICE_ROLE_KEY"),
+    ].filter(Boolean) as string[];
     const authHeader = req.headers.get("Authorization");
     const token = authHeader?.replace("Bearer ", "") || "";
-    const isCron = cronSecret.length > 0 && (token === cronSecret || req.headers.get("x-cron-secret") === cronSecret);
+    const isServiceRole = serviceKeys.includes(token);
 
-    if (!isCron) {
+    if (!isServiceRole) {
       if (!authHeader?.startsWith("Bearer ")) {
         return new Response(JSON.stringify({ error: "Unauthorized" }), {
           status: 401,
@@ -52,7 +61,7 @@ Deno.serve(async (req) => {
 
     if (error) {
       console.error("auto_finalize_stale_orders error:", error);
-      return new Response(JSON.stringify({ error: "Internal error" }), {
+      return new Response(JSON.stringify({ error: error.message }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
