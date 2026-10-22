@@ -11,6 +11,7 @@ import { statusColors, paymentIcons } from "../constants";
 import { parseOrderAddons } from "../helpers";
 import type { OrderStatus, RequiredAddonHighlight } from "../types";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchWhatsappMode } from "@/lib/orderNotifications";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
@@ -76,7 +77,7 @@ const AdminOrderCardImpl = (props: AdminOrderCardProps) => {
     handleAcceptOrder, handleCancelOrder, handlePrint, invalidateOrders,
   } = props;
 
-  const sendOrOpenWhatsApp = (phone: string, msg: string) => {
+  const sendViaEvolutionOrManual = (phone: string, msg: string) => {
     if (evolutionConnected && storeId) {
       supabase.functions.invoke("evolution-send-message", {
         body: { store_id: storeId, phone, message: msg, kind: "order_status" },
@@ -91,6 +92,34 @@ const AdminOrderCardImpl = (props: AdminOrderCardProps) => {
     } else {
       openWhatsApp(phone, msg);
     }
+  };
+
+  const sendOrOpenWhatsApp = (phone: string, msg: string) => {
+    if (!storeId) {
+      sendViaEvolutionOrManual(phone, msg);
+      return;
+    }
+    // Migração API oficial: loja no canal oficial envia pelo
+    // official-whatsapp-send (texto livre) em vez da Evolution. Em qualquer
+    // outro caso — ou se a checagem falhar — segue o fluxo atual.
+    fetchWhatsappMode(storeId)
+      .then((mode) => {
+        if (mode !== "official") {
+          sendViaEvolutionOrManual(phone, msg);
+          return;
+        }
+        supabase.functions.invoke("official-whatsapp-send", {
+          body: { store_id: storeId, phone, text: msg, kind: "order_status" },
+        }).then(({ data, error }) => {
+          if (error || (data as any)?.ok === false) {
+            toast.error("Falha ao enviar via WhatsApp automático. Abrindo manual...");
+            openWhatsApp(phone, msg);
+          } else {
+            toast.success("Mensagem enviada via WhatsApp automático ✅");
+          }
+        }).catch(() => openWhatsApp(phone, msg));
+      })
+      .catch(() => sendViaEvolutionOrManual(phone, msg));
   };
 
   const sc = statusColors[order.status] || statusColors.pendente;
