@@ -157,7 +157,7 @@ export default function ProductRecipe({ productId, productName, storeId, onClose
                 <Label>Ingrediente</Label>
                 <Select value={ingredientId} onValueChange={setIngredientId}>
                   <SelectTrigger><SelectValue placeholder="Escolha o insumo ou produto" /></SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="z-[80]">
                     {products.map((p: any) => (
                       <SelectItem key={p.id} value={p.id}>{p.name}{p.metadata?.is_ingredient ? " (insumo)" : ""}</SelectItem>
                     ))}
@@ -176,7 +176,7 @@ export default function ProductRecipe({ productId, productName, storeId, onClose
                   <Label>Unidade</Label>
                   <Select value={unit} onValueChange={setUnit}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="z-[80]">
                       <SelectItem value="g">g</SelectItem>
                       <SelectItem value="kg">kg</SelectItem>
                       <SelectItem value="ml">ml</SelectItem>
