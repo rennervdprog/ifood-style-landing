@@ -99,6 +99,7 @@ import {
   type DashboardGroupKey,
 } from "./admin/constants";
 import GroupTabsBar from "./admin/components/GroupTabsBar";
+import SetupChecklist, { buildSetupSteps } from "./admin/components/SetupChecklist";
 import {
   parseOrderAddons,
   normalizeAddonName,
@@ -1679,6 +1680,24 @@ const AdminDashboard = () => {
     ? !bottomNavGroupKeys.includes(activeGroupKey)
     : false;
 
+  // ── Checklist "Configurar Loja" (Fase 2) ──
+  // Passos calculados aqui porque o selo de pendências vai na barra de
+  // sub-abas (GroupTabsBar) e o cartão vai na Visão Geral — mesma conta.
+  const setupSteps = buildSetupSteps({
+    imageUrl: store?.image_url,
+    storeHours,
+    menuProductCount,
+    deliveryMode: (store as any)?.delivery_mode,
+    maxDeliveryKm: (store as any)?.max_delivery_km,
+    deliveryRadius: (store as any)?.delivery_radius,
+    estimatedDeliveryTime: (store as any)?.estimated_delivery_time,
+    isOwnDelivery,
+    hasLinkedDrivers,
+    driversLoading,
+    whatsappConnected: evolutionConnected,
+  });
+  const setupPendingCount = setupSteps.filter((s) => !s.done).length;
+
   // ── RENDER ──
   // PDV-only: enquanto o plano carrega OU quando é pdv_only, não renderizar
   // o dashboard de delivery — evita flash da UI errada antes do redirect.
@@ -1945,7 +1964,7 @@ const AdminDashboard = () => {
               onSelect={handleTabChange}
               isPizza={isPizza}
               allowFullReports={allowFullReports}
-              badges={{ avisos: avisosCount }}
+              badges={{ avisos: avisosCount, dashboard: setupPendingCount }}
               pulseTabs={{ repasse: repassePending > 0 }}
             />
           )}
@@ -2001,55 +2020,8 @@ const AdminDashboard = () => {
           )}
           {dashboardTab === "dashboard" && isApproved && store && (
             <>
-              {/* ── BANNER SETUP INCOMPLETO ── */}
-              {(() => {
-                const missingMenu   = menuProductCount === 0;
-                const missingHours  = !storeHours || storeHours.length === 0 || (storeHours as any[]).every((h: any) => h.is_closed_all_day === true);
-                const missingLogo   = !store.image_url;
-                const missingDriver = isOwnDelivery && !hasLinkedDrivers && !driversLoading;
-                const items = [
-                  missingDriver && { key: "driver", label: "Vincular entregador",         desc: "Sem motoboy cadastrado clientes não conseguem pedir", tab: "drivers", urgente: true },
-                  missingMenu   && { key: "menu",   label: "Adicionar produtos",          desc: "Seu cardápio está vazio — clientes não conseguem pedir", tab: "menu", urgente: true },
-                  missingHours  && { key: "hours",  label: "Configurar horários",         desc: "Sem horários a loja aparece sempre fechada", tab: "hours", urgente: false },
-                  missingLogo   && { key: "logo",   label: "Adicionar logo da loja",      desc: "Uma boa foto aumenta a conversão de clientes", tab: "settings", urgente: false },
-                ].filter(Boolean) as { key: string; label: string; desc: string; tab: string; urgente: boolean }[];
-                if (items.length === 0) return null;
-                const temUrgente = items.some(i => i.urgente);
-                return (
-                  <div className="px-4 pt-4 pb-0">
-                    <div className={`rounded-2xl border p-4 ${temUrgente ? "bg-amber-50 dark:bg-amber-500/8 border-amber-200 dark:border-amber-500/20" : "bg-blue-50 dark:bg-blue-500/8 border-blue-200 dark:border-blue-500/20"}`}>
-                      <div className="flex items-center gap-2 mb-3">
-                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-base ${temUrgente ? "bg-amber-500/15" : "bg-blue-500/15"}`}>
-                          {temUrgente ? "⚠️" : "💡"}
-                        </div>
-                        <div>
-                          <p className={`text-xs font-black ${temUrgente ? "text-amber-700 dark:text-amber-400" : "text-blue-700 dark:text-blue-400"}`}>
-                            {temUrgente ? "Configure para começar a receber pedidos" : "Complete a configuração da sua loja"}
-                          </p>
-                          <p className="text-[10px] text-muted-foreground">{items.length} pendência{items.length > 1 ? "s" : ""}</p>
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        {items.map(item => (
-                          <button key={item.key} onClick={() => setDashboardTab(item.tab as any)}
-                            className={`w-full flex items-center gap-3 p-3 rounded-xl text-left transition-all active:scale-[0.98] ${
-                              item.urgente ? "bg-amber-100/70 dark:bg-amber-500/10 hover:bg-amber-100 dark:hover:bg-amber-500/15" : "bg-blue-100/70 dark:bg-blue-500/10 hover:bg-blue-100 dark:hover:bg-blue-500/15"
-                            }`}>
-                            <div className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 text-[11px] font-black text-white ${item.urgente ? "bg-amber-500" : "bg-blue-500"}`}>
-                              {item.urgente ? "!" : "→"}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className={`text-xs font-bold ${item.urgente ? "text-amber-800 dark:text-amber-300" : "text-blue-800 dark:text-blue-300"}`}>{item.label}</p>
-                              <p className="text-[10px] text-muted-foreground truncate">{item.desc}</p>
-                            </div>
-                            <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })()}
+              {/* ── CHECKLIST CONFIGURAR LOJA (Fase 2) ── */}
+              <SetupChecklist storeId={store.id} steps={setupSteps} onNavigate={setDashboardTab} />
               <ErrorBoundary>
               <Suspense fallback={<TabFallback />}>
                 <DashboardOverviewSection
