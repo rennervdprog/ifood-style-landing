@@ -207,9 +207,42 @@ const fetchCustomTemplate = async (storeId: string, status: string): Promise<str
 };
 
 /**
+ * Canal ativo de WhatsApp da loja ('evolution' | 'official').
+ * Em qualquer erro, cai pra 'evolution' (comportamento atual).
+ */
+export const fetchWhatsappMode = async (storeId: string): Promise<'evolution' | 'official'> => {
+  try {
+    const { data } = await (supabase as any)
+      .from("store_whatsapp_config")
+      .select("whatsapp_mode")
+      .eq("store_id", storeId)
+      .maybeSingle();
+    return data?.whatsapp_mode === "official" ? "official" : "evolution";
+  } catch {
+    return "evolution";
+  }
+};
+
+/**
  * Envia mensagem WhatsApp via Evolution API (substitui o Z-API)
  */
 const sendEvolutionMessage = async (storeId: string, phone: string, message: string) => {
+  // Migração API oficial: loja no canal oficial recebe pelo
+  // official-whatsapp-send (texto livre) em vez da Evolution.
+  if (await fetchWhatsappMode(storeId) === "official") {
+    try {
+      console.log("[Official] 📤 invoke official-whatsapp-send", { storeId, phone, msgLen: message.length });
+      const { data, error } = await supabase.functions.invoke("official-whatsapp-send", {
+        body: { store_id: storeId, phone, text: message, kind: "order_status" },
+      });
+      if (error) console.error("[Official] ❌ send error:", error);
+      else console.log("[Official] ✅ response:", data);
+      return data;
+    } catch (e) {
+      console.error("[Official] ❌ invoke exception:", e);
+    }
+    return;
+  }
   try {
     console.log("[Evolution] 📤 invoke evolution-send-message", { storeId, phone, msgLen: message.length });
     const { data, error } = await supabase.functions.invoke("evolution-send-message", {
