@@ -2,6 +2,7 @@ import { memo, useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import EmptyState from "@/components/EmptyState";
 import {
   Star, MessageSquareReply, Loader2, Sparkles, Clock,
   CheckCircle2, AlertTriangle, Send, X, ChevronDown,
@@ -273,13 +274,11 @@ const ReviewsTab = memo(({ storeId }: Props) => {
             <Loader2 className="h-5 w-5 animate-spin mr-2" /> Carregando...
           </div>
         ) : reviews.length === 0 ? (
-          <div className="text-center py-8">
-            <Star className="h-10 w-10 text-muted-foreground/20 mx-auto mb-2" />
-            <p className="text-sm text-muted-foreground">Nenhuma avaliação ainda.</p>
-            <p className="text-xs text-muted-foreground mt-1">
-              Quando um cliente avaliar um pedido entregue, aparece aqui.
-            </p>
-          </div>
+          <EmptyState
+            icon={<Star className="h-10 w-10 text-muted-foreground/30" />}
+            title="Nenhuma avaliação ainda"
+            description="Quando um cliente avaliar um pedido, a avaliação aparece aqui."
+          />
         ) : (
           <div className="space-y-4">
             {reviews.map((r) => {

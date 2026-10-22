@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
+import TabHeader from "@/components/TabHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -357,6 +358,7 @@ export default function StockTab({ storeId }: Props) {
 
   return (
     <div className="space-y-4 p-4 max-w-3xl mx-auto">
+      <TabHeader title="Estoque" subtitle="Quantidades dos produtos e insumos — a venda baixa daqui automaticamente" />
       {/* KPIs - resumo do estoque */}
       {allTracked.length > 0 && (
         <div className="grid grid-cols-2 gap-3">
@@ -680,7 +682,7 @@ export default function StockTab({ storeId }: Props) {
           Insumos — só estoque ({insumosFiltrados.length})
         </h3>
         <p className="text-xs text-muted-foreground mb-2">
-          Arroz, feijão, óleo… não aparecem no cardápio nem pra clientes. São os ingredientes das fichas técnicas.
+          Arroz, feijão, óleo… não aparecem no cardápio nem pra clientes. São os ingredientes das fichas técnicas. É dos insumos que a ficha técnica baixa o estoque a cada venda.
         </p>
         {insumosFiltrados.length > 0 && (
           <div className="space-y-2">
