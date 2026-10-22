@@ -4,6 +4,7 @@ import RepassePendingCharges from "@/components/RepassePendingCharges";
 import { formatBRL } from "@/lib/utils";
 import { usePendingRepasse } from "@/hooks/usePendingRepasse";
 import { REPASSE_RULES } from "@/lib/repasseRules";
+import TutorialHelpButton from "@/components/TutorialHelp";
 
 interface Props {
   store: any;
@@ -69,6 +70,9 @@ export default function RepasseSection({ store, storePlan, setDashboardTab, pend
               ? "Você tem valor acumulado a repassar à plataforma"
               : "Nenhum repasse pendente no momento"}
           </p>
+        </div>
+        <div className="ml-auto">
+          <TutorialHelpButton tutorialId="finance" />
         </div>
       </div>
 

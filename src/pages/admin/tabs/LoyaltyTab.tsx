@@ -1,5 +1,6 @@
 import { Star } from "lucide-react";
 import LoyaltyConfigPanel from "@/components/LoyaltyConfigPanel";
+import TutorialHelpButton from "@/components/TutorialHelp";
 
 interface Props {
   storeId: string;
@@ -8,7 +9,14 @@ interface Props {
 
 const LoyaltyTab = ({ storeId, allowLoyalty }: Props) => {
   if (allowLoyalty) {
-    return <LoyaltyConfigPanel storeId={storeId} />;
+    return (
+      <div className="space-y-2">
+        <div className="flex justify-end">
+          <TutorialHelpButton tutorialId="loyalty" />
+        </div>
+        <LoyaltyConfigPanel storeId={storeId} />
+      </div>
+    );
   }
 
   return (

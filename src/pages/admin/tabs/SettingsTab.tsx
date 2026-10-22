@@ -4,10 +4,17 @@ import WhatsAppSetup from "@/components/WhatsAppSetup";
 import WhatsAppBotConfig from "@/components/WhatsAppBotConfig";
 import WhatsAppConversations from "@/components/whatsapp/WhatsAppConversations";
 import { MessageCircle, MessagesSquare, Monitor, Copy, Loader2, RefreshCw, Ban, Store as StoreIcon } from "lucide-react";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useStorePlan } from "@/hooks/useStorePlan";
+import {
+  SETTINGS_GOTO_EVENT,
+  SETTINGS_SECTIONS,
+  consumePendingSettingsSection,
+  scrollToElementById,
+  type SettingsSection,
+} from "../settingsSections";
 
 interface Props {
   store: any;
@@ -49,6 +56,33 @@ const SettingsTab = ({ store }: Props) => {
     }
   };
 
+  // ── Âncoras "Nesta página" (Fase 4): troca a sub-aba e rola até a seção ──
+  const gotoSection = useCallback(
+    (section: SettingsSection) => {
+      if (section.hideOnPdvOnly && isPdvOnly) return;
+      setSubTab(section.subTab);
+      scrollToElementById(section.id);
+    },
+    [isPdvOnly],
+  );
+
+  useEffect(() => {
+    const pending = consumePendingSettingsSection();
+    if (pending) {
+      const s = SETTINGS_SECTIONS.find((x) => x.id === pending);
+      if (s) gotoSection(s);
+    }
+    const handler = (e: Event) => {
+      const id = (e as CustomEvent<string>).detail;
+      const s = SETTINGS_SECTIONS.find((x) => x.id === id);
+      if (s) gotoSection(s);
+    };
+    window.addEventListener(SETTINGS_GOTO_EVENT, handler);
+    return () => window.removeEventListener(SETTINGS_GOTO_EVENT, handler);
+  }, [gotoSection]);
+
+  const visibleSections = SETTINGS_SECTIONS.filter((s) => !(s.hideOnPdvOnly && isPdvOnly));
+
   const generateKdsLink = () => callKds("generate-token");
   const revokeKdsLink = () => callKds("revoke-token");
 
@@ -56,7 +90,20 @@ const SettingsTab = ({ store }: Props) => {
 
   return (
   <div className="space-y-6">
-    <TabHeader title="Configurações da loja" subtitle="Dados da loja, entrega, pagamentos e as conversas do WhatsApp" />
+    <TabHeader title="Configurações da loja" subtitle="Dados da loja, entrega, pagamentos e as conversas do WhatsApp" tutorialId="settings" />
+    <div className="flex items-center gap-1.5 overflow-x-auto -mx-1 px-1 pb-1">
+      <span className="shrink-0 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Nesta página</span>
+      {visibleSections.map((s) => (
+        <button
+          key={s.id}
+          type="button"
+          onClick={() => gotoSection(s)}
+          className="shrink-0 rounded-full border border-border bg-muted/60 px-2.5 py-1 text-[11px] font-bold text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
+        >
+          {s.label}
+        </button>
+      ))}
+    </div>
     <div className="flex gap-1.5 overflow-x-auto -mx-1 px-1 pb-1">
       {([
         { key: "loja" as SubTab, label: isPdvOnly ? "Loja" : "Loja & Entrega", icon: StoreIcon },
@@ -78,7 +125,7 @@ const SettingsTab = ({ store }: Props) => {
     </div>
 
     {subTab === "whatsapp" && !isPdvOnly && (
-    <section className="rounded-2xl border border-border bg-card p-4 space-y-3">
+    <section id="config-whatsapp" className="rounded-2xl border border-border bg-card p-4 space-y-3 scroll-mt-24">
       <div className="flex items-center gap-2">
         <MessageCircle className="h-5 w-5 text-primary" />
         <h2 className="text-base font-bold text-foreground">WhatsApp</h2>
@@ -94,7 +141,7 @@ const SettingsTab = ({ store }: Props) => {
     )}
 
     {subTab === "conversas" && !isPdvOnly && (
-    <section className="rounded-2xl border border-border bg-card p-4 space-y-3">
+    <section id="config-conversas" className="rounded-2xl border border-border bg-card p-4 space-y-3 scroll-mt-24">
       <div className="flex items-center gap-2">
         <MessagesSquare className="h-5 w-5 text-primary" />
         <h2 className="text-base font-bold text-foreground">Conversas do WhatsApp</h2>
@@ -104,7 +151,7 @@ const SettingsTab = ({ store }: Props) => {
     )}
 
     {subTab === "kds" && (
-    <section className="rounded-2xl border border-border bg-card p-4 space-y-3">
+    <section id="config-kds" className="rounded-2xl border border-border bg-card p-4 space-y-3 scroll-mt-24">
       <div className="flex items-center gap-2">
         <Monitor className="h-5 w-5 text-primary" />
         <h2 className="text-base font-bold text-foreground">Display de Cozinha (KDS)</h2>

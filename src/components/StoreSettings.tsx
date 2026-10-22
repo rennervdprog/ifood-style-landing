@@ -474,7 +474,7 @@ type PizzaPriceMode = "maior" | "media" | "soma";
   return (
     <div className="space-y-6 pb-32">
       {/* Logo Upload */}
-      <div className="flex flex-col items-center gap-4">
+      <div id="config-loja" className="flex flex-col items-center gap-4 scroll-mt-24">
         <div className="relative">
           <div className="w-28 h-28 rounded-full bg-muted border-4 border-border overflow-hidden flex items-center justify-center">
             {imageUrl ? (
@@ -707,7 +707,7 @@ type PizzaPriceMode = "maior" | "media" | "soma";
       )}
 
       {/* Store Address */}
-      <div className="space-y-3">
+      <div id="config-endereco" className="space-y-3 scroll-mt-24">
         <label className="text-sm font-bold text-muted-foreground flex items-center gap-2">
           <MapPin className="h-4 w-4 text-primary" />
           Endereço da Loja
@@ -830,7 +830,7 @@ type PizzaPriceMode = "maior" | "media" | "soma";
 
       {/* Delivery Mode — motoboy da plataforma oculto, forçar "own" */}
       {!pdvOnly && (<>
-      <div className="bg-muted/50 border border-border rounded-2xl p-4 space-y-3">
+      <div id="config-entrega" className="bg-muted/50 border border-border rounded-2xl p-4 space-y-3 scroll-mt-24">
         <label className="text-sm font-bold text-foreground/80 flex items-center gap-2">
           <Truck className="h-4 w-4 text-primary" />
           Modo de Entrega
@@ -1128,7 +1128,7 @@ type PizzaPriceMode = "maior" | "media" | "soma";
 
       {/* ─── Métodos de Pagamento (loja online/delivery) — oculto no PDV Only ─── */}
       {!pdvOnly && (
-      <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
+      <div id="config-pagamentos" className="rounded-2xl border border-border bg-card p-5 space-y-4 scroll-mt-24">
         <div>
           <h3 className="text-sm font-black text-foreground flex items-center gap-2">
             <QrCode className="h-4 w-4 text-primary" />

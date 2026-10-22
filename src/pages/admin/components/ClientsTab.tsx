@@ -7,6 +7,7 @@ import { formatBRL } from "@/lib/utils";
 import { formatCurrency } from "@/lib/utils";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import EmptyState from "@/components/EmptyState";
+import TutorialHelpButton from "@/components/TutorialHelp";
 import { statusColors } from "../constants";
 
 export type ClientFilter =
@@ -111,6 +112,9 @@ const ClientsTabImpl = ({
 
   return (
     <div className="p-4 lg:p-6 max-w-5xl mx-auto space-y-3">
+      <div className="flex justify-end">
+        <TutorialHelpButton tutorialId="clients" />
+      </div>
       {/* Mini-cards de métricas */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
         {metricCards.map(m => (
