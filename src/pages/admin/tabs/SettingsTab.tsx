@@ -1,7 +1,8 @@
 import StoreSettings from "@/components/StoreSettings";
 import WhatsAppSetup from "@/components/WhatsAppSetup";
 import WhatsAppBotConfig from "@/components/WhatsAppBotConfig";
-import { MessageCircle, Monitor, Copy, Loader2, RefreshCw, Ban, Store as StoreIcon } from "lucide-react";
+import WhatsAppConversations from "@/components/whatsapp/WhatsAppConversations";
+import { MessageCircle, MessagesSquare, Monitor, Copy, Loader2, RefreshCw, Ban, Store as StoreIcon } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -11,7 +12,7 @@ interface Props {
   store: any;
 }
 
-type SubTab = "loja" | "whatsapp" | "kds";
+type SubTab = "loja" | "whatsapp" | "conversas" | "kds";
 
 const SettingsTab = ({ store }: Props) => {
   const storePlan = useStorePlan(store?.id);
@@ -57,7 +58,7 @@ const SettingsTab = ({ store }: Props) => {
     <div className="flex gap-1.5 overflow-x-auto -mx-1 px-1 pb-1">
       {([
         { key: "loja" as SubTab, label: isPdvOnly ? "Loja" : "Loja & Entrega", icon: StoreIcon },
-        ...(isPdvOnly ? [] : [{ key: "whatsapp" as SubTab, label: "WhatsApp", icon: MessageCircle }]),
+        ...(isPdvOnly ? [] : [{ key: "whatsapp" as SubTab, label: "WhatsApp", icon: MessageCircle }, { key: "conversas" as SubTab, label: "Conversas", icon: MessagesSquare }]),
         { key: "kds" as SubTab, label: "KDS", icon: Monitor },
       ]).map(t => (
         <button
@@ -87,6 +88,16 @@ const SettingsTab = ({ store }: Props) => {
         expectedPhone={store.whatsapp_number || store.whatsapp || store.phone || null}
       />
       <WhatsAppBotConfig storeId={store.id} storeName={store.name} />
+    </section>
+    )}
+
+    {subTab === "conversas" && !isPdvOnly && (
+    <section className="rounded-2xl border border-border bg-card p-4 space-y-3">
+      <div className="flex items-center gap-2">
+        <MessagesSquare className="h-5 w-5 text-primary" />
+        <h2 className="text-base font-bold text-foreground">Conversas do WhatsApp</h2>
+      </div>
+      <WhatsAppConversations storeId={store.id} />
     </section>
     )}
 
