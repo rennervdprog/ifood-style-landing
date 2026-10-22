@@ -1306,6 +1306,8 @@ const AdminDashboard = () => {
         const paymentLabel = paymentLabels?.[order.payment_method] || String(order.payment_method || "").toUpperCase();
         // Fire-and-forget — never await notification dispatch
         try {
+          // WhatsApp de status (aceito/saiu/cancelado) é enviado pelo servidor
+          // (order-status-whatsapp, via trigger no banco). Aqui vai só o push.
           notifyOrderStatusChange(newStatus, {
             orderId: order.id,
             storeName: store?.name || "Loja",
@@ -1324,6 +1326,7 @@ const AdminDashboard = () => {
             etaText,
             neighborhood: order.neighborhood,
           }, {
+            skipWhatsApp: true,
             evolutionEnabled: evolutionConnected,
             zapiEnabled: !!storeSettings.zapi_enabled,
           });
@@ -1419,6 +1422,7 @@ const AdminDashboard = () => {
 
       const clientPhone = getClientWhatsApp(order.client_id);
       const cancelSettings = (store?.settings || {}) as Record<string, any>;
+      // Cancelamento: o aviso de WhatsApp sai pelo servidor; aqui só push.
       notifyOrderStatusChange("cancelado", {
         orderId: order.id,
         storeName: store?.name || "Loja",
@@ -1429,6 +1433,7 @@ const AdminDashboard = () => {
         totalPrice: Number(order.total_price),
         paymentMethod: order.payment_method,
       }, {
+        skipWhatsApp: true,
         evolutionEnabled: evolutionConnected,
         zapiEnabled: !!cancelSettings.zapi_enabled,
       });
