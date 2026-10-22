@@ -6,6 +6,7 @@ import {
 import { formatBRL } from "@/lib/utils";
 import { formatCurrency } from "@/lib/utils";
 import WhatsAppButton from "@/components/WhatsAppButton";
+import EmptyState from "@/components/EmptyState";
 import { statusColors } from "../constants";
 
 export type ClientFilter =
@@ -183,6 +184,13 @@ const ClientsTabImpl = ({
 
       <div className="space-y-2">
         {filteredClients.length === 0 ? (
+          clientFilter === "all" && !clientSearch.trim() ? (
+            <EmptyState
+              icon={<Users className="h-10 w-10" />}
+              title="Nenhum cliente ainda"
+              description="Seus clientes aparecem aqui quando fazem o primeiro pedido."
+            />
+          ) : (
           <div className="text-center py-12">
             <Users className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
             <p className="text-sm text-muted-foreground font-bold">
@@ -191,6 +199,7 @@ const ClientsTabImpl = ({
                "Nenhum cliente encontrado"}
             </p>
           </div>
+          )
         ) : filteredClients.map(client => (
           <div key={client.clientId} className="bg-card border border-border rounded-2xl overflow-hidden">
             <button onClick={() => setExpandedClient(expandedClient === client.clientId ? null : client.clientId)}

@@ -269,7 +269,7 @@ export const ProductFormInline = ({ initial, onSave, onCancel, storeCategory, st
       </div>
       <input
         type="text"
-        placeholder="Descrição (opcional)"
+        placeholder="Ex.: Açaí 500ml com leite ninho e morango"
         value={form.description}
         onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
         className="w-full bg-background text-foreground px-3 py-2.5 rounded-lg text-sm border border-border focus:border-primary focus:outline-none"

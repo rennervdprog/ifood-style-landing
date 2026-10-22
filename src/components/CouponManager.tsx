@@ -139,7 +139,7 @@ const CouponManager = ({ storeId, isAdmin }: CouponManagerProps) => {
       {showForm && (
         <div className="bg-card border border-border rounded-xl p-4 space-y-3">
           <input
-            placeholder="CÓDIGO (ex: PROMO10)"
+            placeholder="CÓDIGO (ex: BEMVINDO10)"
             value={form.code}
             onChange={(e) => setForm(f => ({ ...f, code: e.target.value.toUpperCase() }))}
             className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm"
@@ -216,6 +216,9 @@ const CouponManager = ({ storeId, isAdmin }: CouponManagerProps) => {
               Criar Cupom
             </button>
           </div>
+          <p className="text-[11px] text-muted-foreground">
+            O desconto do cupom sai do valor da venda — o cliente vê o preço final antes de confirmar.
+          </p>
         </div>
       )}
 

@@ -1,4 +1,5 @@
 import StoreSubscription from "@/components/StoreSubscription";
+import TabHeader from "@/components/TabHeader";
 
 interface Props {
   storeId: string;
@@ -6,7 +7,10 @@ interface Props {
 }
 
 const SubscriptionTab = ({ storeId, storeName }: Props) => (
-  <StoreSubscription storeId={storeId} storeName={storeName} />
+  <div className="max-w-2xl mx-auto">
+    <TabHeader title="Meu Plano" subtitle="Seu plano atual, mensalidade e o que está incluído" />
+    <StoreSubscription storeId={storeId} storeName={storeName} />
+  </div>
 );
 
 export default SubscriptionTab;

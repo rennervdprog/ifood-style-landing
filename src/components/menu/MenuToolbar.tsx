@@ -54,7 +54,7 @@ export const MenuToolbar = ({
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <input
           type="search"
-          placeholder="Buscar produto"
+          placeholder="Buscar por nome ou código (ex.: TST1)"
           value={search}
           onChange={(event) => onSearchChange(event.target.value)}
           className="h-10 w-full border border-border bg-card py-2 pl-10 pr-10 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-primary"
