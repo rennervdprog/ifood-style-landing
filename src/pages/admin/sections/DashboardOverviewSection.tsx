@@ -8,6 +8,7 @@ import { formatBRL } from "@/lib/utils";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import PlatformFeeExplainerCard from "@/components/PlatformFeeExplainerCard";
 import EssencialProgressCard from "@/components/EssencialProgressCard";
+import TabHeader from "@/components/TabHeader";
 import { GlanceCard } from "../components/GlanceCard";
 import DriverDeliveriesCard from "../components/DriverDeliveriesCard";
 import { CalendarClock } from "lucide-react";
@@ -154,6 +155,8 @@ export default function DashboardOverviewSection(props: Props) {
 
   return (
 <div className="p-4 lg:p-6 max-w-6xl mx-auto space-y-5 lg:space-y-6">
+
+  <TabHeader title="Visão Geral" subtitle="Como sua loja está hoje: pedidos, vendas e o que precisa da sua atenção" />
 
   {avisosCount > 0 && (
     <button

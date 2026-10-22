@@ -1,4 +1,5 @@
 import StoreSettings from "@/components/StoreSettings";
+import TabHeader from "@/components/TabHeader";
 import WhatsAppSetup from "@/components/WhatsAppSetup";
 import WhatsAppBotConfig from "@/components/WhatsAppBotConfig";
 import WhatsAppConversations from "@/components/whatsapp/WhatsAppConversations";
@@ -55,6 +56,7 @@ const SettingsTab = ({ store }: Props) => {
 
   return (
   <div className="space-y-6">
+    <TabHeader title="Configurações da loja" subtitle="Dados da loja, entrega, pagamentos e as conversas do WhatsApp" />
     <div className="flex gap-1.5 overflow-x-auto -mx-1 px-1 pb-1">
       {([
         { key: "loja" as SubTab, label: isPdvOnly ? "Loja" : "Loja & Entrega", icon: StoreIcon },
