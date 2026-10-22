@@ -7,6 +7,7 @@ import {
 import { formatBRL } from "@/lib/utils";
 import { parseBRL } from "@/hooks/useBRLInput";
 import { supabase } from "@/integrations/supabase/client";
+import { PdvOperatorLoginDialog } from "@/components/pdv/PdvOperatorLoginDialog";
 import { haptic } from "@/lib/haptics";
 import {
   usePdvTables,
@@ -330,6 +331,7 @@ export const PdvMesasView = ({ storeId, session, products }: Props) => {
       {selectedTabId && (
         <TabDrawer
           tabId={selectedTabId}
+          storeId={storeId}
           session={session}
           products={products}
           tables={tables}
@@ -484,9 +486,10 @@ function QuickTabDialog({ storeId, onClose, onCreated }: { storeId: string; onCl
 }
 
 function TabDrawer({
-  tabId, session, products, tables, allTabs, onClose, onAfterAction,
+  tabId, storeId, session, products, tables, allTabs, onClose, onAfterAction,
 }: {
   tabId: string;
+  storeId: string;
   session: PdvSession | null;
   products: Product[];
   tables: PdvTableRow[];
@@ -726,6 +729,7 @@ function TabDrawer({
         {showClose && session && (
           <CloseTabDialog
             tabId={tabId}
+            storeId={storeId}
             sessionId={session.id}
             total={total}
             onClose={() => setShowClose(false)}
@@ -775,8 +779,8 @@ function TabDrawer({
   );
 }
 
-function CloseTabDialog({ tabId, sessionId, total, onClose, onDone }: {
-  tabId: string; sessionId: string; total: number; onClose: () => void; onDone: () => void;
+function CloseTabDialog({ tabId, storeId, sessionId, total, onClose, onDone }: {
+  tabId: string; storeId: string; sessionId: string; total: number; onClose: () => void; onDone: () => void;
 }) {
   // Mesmo enum do balcão (PDV_METHODS) — unificado para filtros/relatórios casarem.
   const [method, setMethod] = useState<"dinheiro" | "maquininha_credito" | "maquininha_debito" | "maquininha_pix">("dinheiro");
@@ -784,6 +788,7 @@ function CloseTabDialog({ tabId, sessionId, total, onClose, onDone }: {
   const [discountInput, setDiscountInput] = useState("");
   const [cashReceived, setCashReceived] = useState("");
   const [saving, setSaving] = useState(false);
+  const [showDiscountGate, setShowDiscountGate] = useState(false);
 
   const discountAmount = (() => {
     const v = parseBRL(discountInput);
@@ -795,6 +800,16 @@ function CloseTabDialog({ tabId, sessionId, total, onClose, onDone }: {
   const troco = cashVal - finalTotal;
 
   const submit = async () => {
+    // Desconto acima de 10% do total exige autorização do gerente
+    // (mesma regra do balcão; aqui não havia trava nenhuma, em nenhum modo).
+    if (total > 0 && discountAmount / total > 0.1 + 1e-9) {
+      setShowDiscountGate(true);
+      return;
+    }
+    await performSubmit();
+  };
+
+  const performSubmit = async () => {
     if (method === "dinheiro" && troco < 0) {
       toast.error("Valor recebido menor que o total");
       return;
@@ -884,6 +899,18 @@ function CloseTabDialog({ tabId, sessionId, total, onClose, onDone }: {
         {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
         Confirmar pagamento
       </button>
+
+      {/* Autorização do gerente para desconto alto no fechamento da comanda */}
+      {showDiscountGate && (
+        <PdvOperatorLoginDialog
+          open={showDiscountGate}
+          storeId={storeId}
+          onClose={() => setShowDiscountGate(false)}
+          onLogin={() => { setShowDiscountGate(false); void performSubmit(); }}
+          requiredRole="gerente"
+          title="Autorização do gerente"
+        />
+      )}
     </ModalShell>
   );
 }
