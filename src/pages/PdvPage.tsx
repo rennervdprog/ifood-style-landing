@@ -55,6 +55,7 @@ import { usePdvCart } from "@/pages/pdv/state/usePdvCart";
 import { usePdvCheckout } from "@/pages/pdv/state/usePdvCheckout";
 import { usePdvOutbox } from "@/pages/pdv/state/usePdvOutbox";
 import { PdvCatalogSection } from "@/pages/pdv/components/PdvCatalogSection";
+import { PdvQuickSearch } from "@/pages/pdv/components/PdvQuickSearch";
 import { PdvPaymentScreen } from "@/pages/pdv/components/PdvPaymentScreen";
 import { PdvSaleSuccessScreen } from "@/pages/pdv/components/PdvSaleSuccessScreen";
 import ApparelCatalogGrid from "@/pages/pdv/apparel/ApparelCatalogGrid";
@@ -1507,6 +1508,16 @@ const PdvPage = () => {
                   saldoEsperado={saldoEsperado}
                   drawerEnabled={drawerEnabled}
                 />
+                {/* Busca rápida fixa no caixa (busca + código sem abrir a gaveta) */}
+                {checkoutStep === "cart" && !isApparel && (
+                  <PdvQuickSearch
+                    products={products}
+                    getQty={getQty}
+                    addItem={addItem}
+                    decItem={decItem}
+                    stockMap={stockMap}
+                  />
+                )}
                 {/* Botão Ver produtos */}
                 <div className="px-3 py-2.5 border-b border-border shrink-0">
                   <button
