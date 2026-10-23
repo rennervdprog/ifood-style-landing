@@ -2,7 +2,7 @@
 // Espelha toda a lógica anti-ban de evolution-send-message, mas lê de
 // platform_whatsapp_config (instance + connected_at) e loga em
 // platform_whatsapp_send_log (sem store_id).
-import { createClient } from "npm:@supabase/supabase-js@2.49.4";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",

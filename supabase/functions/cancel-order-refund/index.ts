@@ -6,7 +6,7 @@
  * geram crédito/reembolso na plataforma e PIX Direto confirmado abre um caso
  * de devolução direta pela loja. Não há chamada Asaas nem crédito de carteira.
  */
-import { createClient } from "npm:@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",

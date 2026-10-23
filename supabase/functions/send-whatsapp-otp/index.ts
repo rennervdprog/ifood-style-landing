@@ -1,5 +1,5 @@
 // Envia OTP de 6 dígitos via WhatsApp da plataforma. Grava hash em whatsapp_otp.
-import { createClient } from "npm:@supabase/supabase-js@2.49.4";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 
 const cors = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type" };
 const json = (b: unknown, s = 200) =>

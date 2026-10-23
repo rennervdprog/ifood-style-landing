@@ -5,7 +5,7 @@
 // Mensagens espelham src/lib/orderNotifications.ts (painel web): "preparando"
 // usa o formato rico forçado (sem template customizado, igual ao painel);
 // "saiu_entrega" aceita o template customizado da loja.
-import { createClient } from "npm:@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",

@@ -1,5 +1,5 @@
 // Diagnóstico completo do WhatsApp de uma loja. Requer usuário admin/super_admin.
-import { createClient } from "npm:@supabase/supabase-js@2.49.4";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
