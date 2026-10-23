@@ -1,7 +1,7 @@
 // Bot de menu guiado do WhatsApp (sem IA).
 // Invocado pelo evolution-webhook quando a loja tem `whatsapp_bot_config.enabled = true`.
 // Máquina de estados baseada em texto numerado (compatível com qualquer versão do WhatsApp).
-import { createClient } from "npm:@supabase/supabase-js@2.49.4";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 const cors = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-internal-token"
