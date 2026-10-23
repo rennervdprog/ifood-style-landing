@@ -1,7 +1,7 @@
 // Cron diário: envia lembretes de mensalidade via WhatsApp da plataforma.
 // D-3, D-1 (aviso), D+1 (atraso), D+3 (aviso pós-bloqueio).
 // Roda contra Supabase EXTERNO. Só dispara para cobranças pending #MENS-* ou #ASSIN-*.
-import { createClient } from "npm:@supabase/supabase-js@2.49.4";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",

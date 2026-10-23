@@ -3,7 +3,7 @@
 // 2) confirma o pagamento via receiveInCash + webhook PAYMENT_RECEIVED
 // 3) valida que financial_transactions virou paid, store_plans avançou next_billing_date
 // 4) reporta o estado de store_balances (repasse/comissão) — sanidade pós-pagamento
-import { createClient } from "npm:@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",

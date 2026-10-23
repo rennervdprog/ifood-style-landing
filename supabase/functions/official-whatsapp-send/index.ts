@@ -6,7 +6,7 @@
 // Body: { store_id, phone, template_name?, params?: string[], text?, kind? }
 //  - template_name+params: mensagem utilidade fora da janela de 24h (avisos de pedido)
 //  - text: resposta livre — só funciona dentro da janela de 24h do cliente
-import { createClient } from "npm:@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const json = (body: Record<string, unknown>, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });

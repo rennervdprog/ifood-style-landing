@@ -1,4 +1,4 @@
-import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { corsHeaders } from "https://esm.sh/@supabase/supabase-js@2/cors";
 
 // Desativa SMS, ligação e WhatsApp em TODAS as notificações de TODOS os
 // customers do Asaas (mantém apenas e-mail, que é gratuito).

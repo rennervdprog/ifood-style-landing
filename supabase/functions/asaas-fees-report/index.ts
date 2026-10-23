@@ -1,4 +1,4 @@
-import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { corsHeaders } from "https://esm.sh/@supabase/supabase-js@2/cors";
 
 // Lista taxas cobradas pelo Asaas nos últimos N dias (default 30).
 // Usa /financialTransactions e agrupa por tipo.

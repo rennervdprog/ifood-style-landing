@@ -1,6 +1,6 @@
 // Cotação central de entrega — fonte única para endereço, distância e preço.
 // Não cria pedido nem altera dados do cliente ou da loja.
-import { createClient } from "npm:@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const ALLOWED_ORIGINS = new Set([
   "https://itasuper.com.br",

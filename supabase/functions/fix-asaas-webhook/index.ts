@@ -1,4 +1,4 @@
-import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { corsHeaders } from "https://esm.sh/@supabase/supabase-js@2/cors";
 
 const WEBHOOK_URL = "https://qkjhguziuchqsbxzruea.supabase.co/functions/v1/asaas-webhook";
 const WEBHOOK_NAME = "Itasuper";

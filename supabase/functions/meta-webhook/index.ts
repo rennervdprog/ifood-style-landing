@@ -20,7 +20,7 @@
 // interação no meio de um pedido, retomar a conversa por iniciativa da loja
 // exigiria um template de utilidade aprovado — o bot NÃO retoma
 // proativamente; a conversa recomeça quando o cliente chamar de novo.
-import { createClient } from "npm:@supabase/supabase-js@2.49.4";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, sentry-trace, baggage, x-hub-signature-256"

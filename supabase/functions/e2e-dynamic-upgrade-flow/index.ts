@@ -9,7 +9,7 @@
 //
 // Auth: x-e2e-secret == E2E_ADMIN_SECRET OU Bearer == service-role.
 // Body: { store_id?: string, plan_type?: "fixed"|"autonomy" }  (default: fixed)
-import { createClient } from "npm:@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
