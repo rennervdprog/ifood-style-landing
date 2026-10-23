@@ -118,7 +118,8 @@ export function usePdvCheckout() {
       );
       if (stockCheckItems.length > 0) {
         const productIds = stockCheckItems.map((i: any) => i.id);
-        const { data: stocks } = await supabase
+        // Tabela fora dos tipos gerados — cast para evitar TS2589.
+        const { data: stocks } = await (supabase as any)
           .from("product_stock")
           .select("product_id, quantity, track_stock")
           .in("product_id", productIds);
