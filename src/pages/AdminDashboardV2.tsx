@@ -925,9 +925,13 @@ const AdminDashboard = () => {
       console.info("[auto-print] pulado: motivo=pdv", orderId);
       return;
     }
-    const storeAutoDelivery = (store?.settings as any)?.auto_print_delivery !== false;
-    if (!storeAutoDelivery) {
-      console.info("[auto-print] pulado: motivo=settings-off", orderId);
+    // Modo de impressão do delivery: 'auto' | 'on_accept' | 'manual'.
+    // A impressão automática (chegada, confirmação de Pix, varredura) só roda
+    // no modo 'auto'. Sem a chave nova, herda do auto_print_delivery.
+    const sAuto = (store?.settings as any) || {};
+    const modeAuto = sAuto.print_mode_delivery ?? (sAuto.auto_print_delivery === false ? "on_accept" : "auto");
+    if (modeAuto !== "auto") {
+      console.info("[auto-print] pulado: motivo=mode-" + modeAuto, orderId);
       return;
     }
     try {
@@ -1195,7 +1199,33 @@ const AdminDashboard = () => {
    * O WhatsApp é aberto via link <a> no JSX (não via window.open).
    */
   const handleAcceptOrder = useCallback(async (order: any) => {
-    // Se a notinha já foi disparada automaticamente (auto-print), pergunta
+    const sAcc = (store?.settings as any) || {};
+    const modeAcc = sAcc.print_mode_delivery ?? (sAcc.auto_print_delivery === false ? "on_accept" : "auto");
+    // Modo manual: aceitar nunca imprime (só o botão Imprimir).
+    if (modeAcc === "manual") return;
+    const copies = (store?.settings as any)?.print_copies === 1 ? 1 : 2;
+    const paperWidth = (store?.settings as any)?.print_paper_width === 58 ? 58 : 80;
+    if (modeAcc === "on_accept") {
+      // Imprime uma única vez: reivindica o printed_at no servidor (a mesma
+      // trava da impressão automática). Se outro dispositivo já imprimiu,
+      // o claim falha e nada sai duplicado.
+      try {
+        const { data: claim, error: claimError } = await (supabase as any).rpc("store_claim_order_print", {
+          _order_id: order.id,
+        });
+        if (claimError || !claim) return;
+        try {
+          await doPrintOrder(order, copies, paperWidth);
+        } catch (e) {
+          await (supabase as any).rpc("store_clear_order_print_claim", { _order_id: order.id });
+          throw e;
+        }
+      } catch (e) {
+        console.warn("print error", e);
+      }
+      return;
+    }
+    // Modo 'auto': se a notinha já foi disparada automaticamente, pergunta
     // ao lojista se quer reimprimir em vez de imprimir silenciosamente.
     if ((order as any)?.printed_at) {
       const ok = await confirmReprint({
@@ -1208,16 +1238,18 @@ const AdminDashboard = () => {
     }
     // Print da notinha
     try {
-      const copies = (store?.settings as any)?.print_copies === 1 ? 1 : 2;
-      const paperWidth = (store?.settings as any)?.print_paper_width === 58 ? 58 : 80;
       doPrintOrder(order, copies, paperWidth);
     } catch (e) {
       console.warn("print error", e);
     }
   }, [store?.name, store?.settings, doPrintOrder, confirmReprint]);
 
-  // Deriva do banco (fonte única). Default ON.
-  const autoPrint = (store?.settings as any)?.auto_print_delivery !== false;
+  // Modo de impressão do delivery — deriva do banco (fonte única).
+  // Sem a chave nova: auto_print_delivery ligado -> 'auto', desligado -> 'on_accept'.
+  const settingsAny = (store?.settings as any) || {};
+  const printMode: "auto" | "on_accept" | "manual" =
+    settingsAny.print_mode_delivery ?? (settingsAny.auto_print_delivery === false ? "on_accept" : "auto");
+  const autoPrint = printMode === "auto";
 
   const toggleAutoPrint = async () => {
     if (!store?.id || autoPrintSaving) return;
@@ -1226,9 +1258,9 @@ const AdminDashboard = () => {
     // Optimistic update no cache do react-query.
     queryClient.setQueryData(["my-store", user?.id, activeSimulateStoreId], (old: any) => {
       if (!old) return old;
-      return { ...old, settings: { ...(old.settings || {}), auto_print_delivery: next } };
+      return { ...old, settings: { ...(old.settings || {}), auto_print_delivery: next, print_mode_delivery: next ? "auto" : "on_accept" } };
     });
-    const merged = { ...((store.settings as any) || {}), auto_print_delivery: next };
+    const merged = { ...((store.settings as any) || {}), auto_print_delivery: next, print_mode_delivery: next ? "auto" : "on_accept" };
     const { error } = await supabase.from("stores").update({ settings: merged }).eq("id", store.id);
     setAutoPrintSaving(false);
     if (error) {

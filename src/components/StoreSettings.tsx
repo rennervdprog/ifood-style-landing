@@ -195,8 +195,12 @@ type PizzaPriceMode = "maior" | "media" | "soma";
   const [autoPrintPdv, setAutoPrintPdv] = useState<boolean>(
     storeSettings?.auto_print_pdv !== false
   );
-  const [autoPrintDelivery, setAutoPrintDelivery] = useState<boolean>(
-    storeSettings?.auto_print_delivery !== false
+  // Modo de impressão do delivery: 'auto' (ao chegar) | 'on_accept' (só ao
+  // aceitar) | 'manual' (só no botão Imprimir). Sem a chave nova, herda do
+  // auto_print_delivery: ligado -> 'auto', desligado -> 'on_accept'.
+  const [printModeDelivery, setPrintModeDelivery] = useState<"auto" | "on_accept" | "manual">(
+    (storeSettings as any)?.print_mode_delivery ??
+      (storeSettings?.auto_print_delivery === false ? "on_accept" : "auto")
   );
 
   // Z-API foi substituído pela aba WhatsApp (Evolution API) — bloco removido.
@@ -391,7 +395,9 @@ type PizzaPriceMode = "maior" | "media" | "soma";
         print_paper_width: printPaperWidth,
         // Impressão automática — se false, o lojista imprime manualmente.
         auto_print_pdv: autoPrintPdv,
-        auto_print_delivery: autoPrintDelivery,
+        // Modo do delivery + espelho booleano (leitores antigos usam o boolean).
+        print_mode_delivery: printModeDelivery,
+        auto_print_delivery: printModeDelivery === "auto",
       },
       delivery_mode: deliveryMode,
       own_delivery_fee: parsedOwnFee,
@@ -1350,20 +1356,33 @@ type PizzaPriceMode = "maior" | "media" | "soma";
           </label>
 
           {!pdvOnly && (
-          <label className="flex items-start gap-3 rounded-xl border border-border bg-muted/20 p-3 cursor-pointer">
-            <input
-              type="checkbox"
-              className="mt-1 h-4 w-4 accent-primary"
-              checked={autoPrintDelivery}
-              onChange={(e) => setAutoPrintDelivery(e.target.checked)}
-            />
+          <div className="rounded-xl border border-border bg-muted/20 p-3 space-y-3">
             <div>
-              <p className="text-sm font-bold text-foreground">Delivery — imprimir ao chegar pedido novo</p>
+              <p className="text-sm font-bold text-foreground">Delivery — quando a notinha imprime</p>
               <p className="text-[11px] text-muted-foreground">
-                Assim que um pedido entra no painel, o cupom sai sozinho na térmica.
+                Escolha se o cupom do pedido sai sozinho, só quando você aceita, ou só no botão Imprimir.
               </p>
             </div>
-          </label>
+            {[
+              { v: "auto", t: "Ao chegar o pedido", d: "Assim que um pedido entra no painel, o cupom sai sozinho na térmica." },
+              { v: "on_accept", t: "Somente ao aceitar", d: "Nada sai na chegada. A notinha imprime uma vez, quando você clica em Aceitar pedido." },
+              { v: "manual", t: "Manual", d: "Nunca imprime sozinha. Só sai quando você clica em Imprimir no pedido." },
+            ].map((o) => (
+              <label key={o.v} className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="radio"
+                  name="print-mode-delivery"
+                  className="mt-1 h-4 w-4 accent-primary"
+                  checked={printModeDelivery === o.v}
+                  onChange={() => setPrintModeDelivery(o.v as "auto" | "on_accept" | "manual")}
+                />
+                <div>
+                  <p className="text-sm font-bold text-foreground">{o.t}</p>
+                  <p className="text-[11px] text-muted-foreground">{o.d}</p>
+                </div>
+              </label>
+            ))}
+          </div>
           )}
         </div>
       </div>
