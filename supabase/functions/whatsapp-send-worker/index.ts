@@ -3,7 +3,7 @@
 // falha transitória da Evolution), com backoff e validade. Chamado por pg_cron (1 min).
 // O envio passa pelo evolution-send-message com x-queue-worker: 1 — ele NÃO
 // reenfileira; quem reagenda é este worker.
-import { createClient } from "npm:@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const json = (body: Record<string, unknown>, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });

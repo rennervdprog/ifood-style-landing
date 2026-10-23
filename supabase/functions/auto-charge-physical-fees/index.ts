@@ -16,7 +16,7 @@
  *  5. Se não pagar em N dias → inativa a loja
  */
 
-import { createClient } from "npm:@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { z } from "https://esm.sh/zod@3.23.8";
 import { REPASSE_POLICY, ageInDays } from "../_shared/repasse-policy.ts";
 

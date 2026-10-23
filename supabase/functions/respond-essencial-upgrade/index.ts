@@ -1,6 +1,6 @@
-import { createClient } from "npm:@supabase/supabase-js@2";
-import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
-import { z } from "npm:zod@3.25.76";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { corsHeaders } from "https://esm.sh/@supabase/supabase-js@2/cors";
+import { z } from "https://esm.sh/zod@3.25.76";
 
 const BodySchema = z.object({
   response: z.enum(["accepted", "refused"]),

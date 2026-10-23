@@ -123,7 +123,7 @@ export function usePdvCheckout() {
           .from("product_stock")
           .select("product_id, quantity, track_stock")
           .in("product_id", productIds);
-        const stockMap = new Map((stocks || []).map((s: any) => [s.product_id, s]));
+        const stockMap = new Map<string, any>((stocks || []).map((s: any) => [s.product_id, s]));
         for (const item of stockCheckItems) {
           const s = stockMap.get(item.id);
           if (s && s.track_stock && Number(s.quantity) < Math.abs(item.quantity)) {

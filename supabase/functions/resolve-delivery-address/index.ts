@@ -1,6 +1,6 @@
 // Fase 3a — resolução estruturada do endereço de entrega.
 // Uso: cliente autenticado no checkout web. Só escreve no cache de geocodificação.
-import { createClient } from "npm:@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 // --- CORS: allowlist explícita (sem "*") ---
 const ALLOWED_ORIGINS = new Set([
