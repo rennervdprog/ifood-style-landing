@@ -485,7 +485,7 @@ Deno.serve(async (req)=>{
         if (change.field === "messages") {
           const names: Record<string, string> = {};
           for (const c of value?.contacts || []) names[String(c?.wa_id || "")] = String(c?.profile?.name || "");
-          for (const msg of value instanceof Error ? e.message : String(e)s || []){
+          for (const msg of value?.messages || []){
             try {
               await handleMessage(storeId, cfg, names[String(msg?.from || "")] || "", msg);
             } catch (e) {
