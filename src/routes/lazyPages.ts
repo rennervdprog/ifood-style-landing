@@ -28,6 +28,7 @@ export const AdminDashboardV2 = lazy(() => import("@/pages/AdminDashboardV2"));
 export const AdminDashboardV2Teste = lazy(() => import("@/pages/AdminDashboardV2Teste"));
 export const MatrizDashboard = lazy(() => import("@/pages/MatrizDashboard"));
 export const PdvPage = lazy(() => import("@/pages/PdvPage"));
+export const PdvPageTeste = lazy(() => import("@/pages/PdvPageTeste"));
 export const PdvKdsPage = lazy(() => import("@/pages/PdvKdsPage"));
 export const PdvCardapioPage = lazy(() => import("@/pages/PdvCardapioPage"));
 export const DriverDashboardV2 = lazy(() => import("@/pages/DriverDashboardV2"));
@@ -79,3 +80,4 @@ const PREFETCH_MAP: Record<string, () => Promise<unknown>> = {
 for (const [path, loader] of Object.entries(PREFETCH_MAP)) {
   registerRoutePrefetch(path, loader);
 }
+

@@ -5,17 +5,22 @@
  *  b. marcar como pronto NÃO abre aba do WhatsApp (nem no fluxo com motoboy
  *     nem no sem escolha) — avisar o cliente é o botão explícito
  *     "Avisar cliente" no card quando o pedido está pronto.
+ *  c. TELA 5 — o botão "Chat" NÃO abre aba externa do WhatsApp: abre um
+ *     painel de conversa DENTRO do /admin-teste (WhatsAppConversationsTeste
+ *     com o telefone do cliente), sobre a aba Pedidos. Fechar o painel
+ *     volta ao card sem recarregar nada — a aba Pedidos nunca é desmontada
+ *     (o painel é um overlay fixo renderizado pelo próprio card).
  * Todo o resto (aceitar, cancelar, PIN, motoboy, impressão) é idêntico.
  */
 import { memo, useState } from "react";
 import {
   CheckCircle2, AlertTriangle, Timer, Bike, MapPin, ChevronDown, ChevronUp,
-  Store, Loader2, Truck, Banknote, MessageCircle, Copy, Printer
+  Store, Loader2, Truck, Banknote, MessageCircle, Copy, Printer, X
 } from "lucide-react";
 import { formatBRL } from "@/lib/utils";
 import { getOrderItemDisplayName } from "@/lib/orderItemName";
 import { openWhatsApp } from "@/lib/whatsapp";
-import WhatsAppButton from "@/components/WhatsAppButton";
+import WhatsAppConversationsTeste from "./teste/WhatsAppConversationsTeste";
 import { paymentIcons } from "../constants";
 import { statusColorsTeste } from "../constants-teste";
 import { parseOrderAddons } from "../helpers";
@@ -147,6 +152,7 @@ const AdminOrderCardTesteImpl = (props: AdminOrderCardTesteProps) => {
     !!linkedStoreDrivers &&
     linkedStoreDrivers.length > 1;
 
+  const [chatOpen, setChatOpen] = useState(false);
   const [driverPickerOpen, setDriverPickerOpen] = useState(false);
   const [pickedDriverId, setPickedDriverId] = useState<string>("");
   const [confirmingReady, setConfirmingReady] = useState(false);
@@ -450,9 +456,42 @@ const AdminOrderCardTesteImpl = (props: AdminOrderCardTesteProps) => {
                 <MessageCircle className="h-3 w-3" /> <span className="hidden sm:inline">Avisar cliente</span>
               </button>
             )}
-            <WhatsAppButton number={clientWhatsApp}
-              message={`Olá ${clientName}! Aqui é do ${storeName}. Pedido #${order.id.slice(0, 8).toUpperCase()}...`}
-              label="Chat" size="sm" />
+            {clientWhatsApp ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setChatOpen(true)}
+                  className="inline-flex items-center justify-center gap-1.5 bg-green-500 hover:bg-green-600 text-white font-bold rounded-xl active:scale-95 transition-transform px-3 py-2 text-xs min-h-[44px]"
+                  title="Conversar com o cliente sem sair do painel"
+                >
+                  <MessageCircle className="h-3.5 w-3.5" /> Chat
+                </button>
+                {chatOpen && storeId ? (
+                  <div className="fixed inset-0 z-[100] bg-black/60 flex justify-end" role="dialog" aria-label={`Conversa com ${clientName}`}>
+                    {/* z-[100]: acima da bottom nav (z-50), abaixo dos diálogos Radix (z-[110]). */}
+                    <div className="w-full max-w-md h-full bg-card shadow-xl flex flex-col">
+                      <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-border">
+                        <div className="min-w-0">
+                          <p className="text-sm font-bold text-foreground truncate">Conversa com {clientName}</p>
+                          <p className="text-xs text-muted-foreground">Pedido #{order.id.slice(0, 8).toUpperCase()} — sem sair do painel</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setChatOpen(false)}
+                          className="shrink-0 h-9 w-9 inline-flex items-center justify-center rounded-full hover:bg-muted"
+                          aria-label="Fechar conversa e voltar aos pedidos"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                      <div className="flex-1 overflow-y-auto p-3">
+                        <WhatsAppConversationsTeste storeId={storeId} initialPhone={clientWhatsApp} />
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+              </>
+            ) : null}
           </>
         )}
       </div>

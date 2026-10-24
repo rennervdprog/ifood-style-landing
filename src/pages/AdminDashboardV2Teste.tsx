@@ -48,20 +48,21 @@ const SubscriptionTab = lazy(() => import("./admin/tabs/SubscriptionTab"));
 const LoyaltyTab = lazy(() => import("./admin/tabs/LoyaltyTab"));
 const RefundsTab = lazy(() => import("./admin/tabs/RefundsTab"));
 const MenuTab = lazy(() => import("./admin/tabs/MenuTab"));
+const MenuTabTeste = lazy(() => import("./admin/tabs/MenuTabTeste"));
 const StockTab = lazy(() => import("./admin/tabs/StockTab"));
-const CashRegisterTab = lazy(() => import("./admin/tabs/CashRegisterTab"));
+const CashRegisterTabTeste = lazy(() => import("./admin/tabs/CashRegisterTabTeste"));
 const AddonsTab = lazy(() => import("./admin/tabs/AddonsTab"));
 const BordasTab = lazy(() => import("./admin/tabs/BordasTab"));
 const HoursTab = lazy(() => import("./admin/tabs/HoursTab"));
-const FinanceTab = lazy(() => import("./admin/tabs/FinanceTab"));
+const FinanceTabTeste = lazy(() => import("./admin/tabs/FinanceTabTeste"));
 const DriversTab = lazy(() => import("./admin/tabs/DriversTab"));
 const SettingsTab = lazy(() => import("./admin/tabs/SettingsTab"));
+const SettingsTabTeste = lazy(() => import("./admin/tabs/SettingsTabTeste"));
 const CouponsTab = lazy(() => import("./admin/tabs/CouponsTab"));
 const PromotionsTab = lazy(() => import("./admin/tabs/PromotionsTab"));
 const ReviewsTab = lazy(() => import("./admin/tabs/ReviewsTab"));
-const DashboardOverviewSection = lazy(() => import("./admin/sections/DashboardOverviewSection"));
+const DashboardOverviewSectionTeste = lazy(() => import("./admin/sections/DashboardOverviewSectionTeste"));
 const AvisosSection = lazy(() => import("./admin/sections/AvisosSection"));
-const RepasseSection = lazy(() => import("./admin/sections/RepasseSection"));
 const OrdersSectionTeste = lazy(() => import("./admin/sections/OrdersSectionTeste"));
 import AdminOrderCard from "./admin/components/AdminOrderCard";
 import ClientsTab from "./admin/components/ClientsTab";
@@ -91,16 +92,20 @@ import {
   paymentLabels,
   paymentIcons,
   dashboardGroups,
-  bottomNavGroupKeys,
-  moreSheetGroupKeys,
   filterSubTab,
-  getGroupForTab,
   type DashboardGroup,
   type DashboardGroupKey,
 } from "./admin/constants";
 import GroupTabsBar from "./admin/components/GroupTabsBar";
-import SetupChecklist, { buildSetupSteps } from "./admin/components/SetupChecklist";
-import DashboardSearch from "./admin/components/DashboardSearch";
+import { AdminMoneyTeste } from "./admin/components/teste/AdminBaseTeste";
+import {
+  AdminBottomNavTeste,
+  AdminBreadcrumbTeste,
+  AdminSearchBarTeste,
+  filterTesteNavGroups,
+  getTesteActiveGroup,
+} from "./admin/components/teste/AdminNavTeste";
+import { buildSetupSteps } from "./admin/components/SetupChecklist";
 import {
   parseOrderAddons,
   normalizeAddonName,
@@ -205,9 +210,16 @@ export type ClientSort = "orders" | "spent" | "recent" | "inactive";
  * CÓPIA DE TESTE (/admin-teste) de AdminDashboardV2.
  * Idêntica ao original, EXCETO:
  *  - a aba Pedidos renderiza OrdersSectionTeste (correções do relatório);
+ *  - a aba Cardápio renderiza MenuTabTeste (Tela 3: selo de status no
+ *    card, pausar em 1 toque, "Editar" com rótulo, foto em destaque,
+ *    preço rotulado, seção obrigatória, erro inline no campo);
  *  - os badges de "Novos" do shell usam vermelho (coerente com o novo sinal
  *    de "Novo"), não âmbar;
  *  - a query de pedidos expõe o erro para a seção (estado de erro com retry).
+ *  - a aba Configurações renderiza SettingsTabTeste (Tela 5: salvar por
+ *    seção, navegação única, dois WhatsApps explicados, toggles com estado
+ *    visível, resposta nas conversas dentro do painel, prévia de mídia e
+ *    Chat do pedido sem sair do painel).
  * Todas as outras abas reutilizam os componentes originais sem alteração.
  */
 const AdminDashboardTeste = () => {
@@ -265,7 +277,6 @@ const AdminDashboardTeste = () => {
   const [cancelReason, setCancelReason] = useState<string>("");
   const [cancellingOrder, setCancellingOrder] = useState(false);
   const [showDelayedPanel, setShowDelayedPanel] = useState(false);
-  const [showMoreSheet, setShowMoreSheet] = useState(false);
   const [showSupportModal, setShowSupportModal] = useState(false);
   const [selectedReportPeriod, setSelectedReportPeriod] = useState(30);
   const [reportSubTab, setReportSubTab] = useState<"overview" | "sales" | "products" | "hours">("overview");
@@ -1624,10 +1635,9 @@ const AdminDashboardTeste = () => {
   const handleTabChange = (tab: DashboardTab) => {
     if (tab === "suporte") {
       setShowSupportModal(true);
-      setShowMoreSheet(false);
       return;
     }
-    startTabTransition(() => setDashboardTab(tab)); setSidebarOpen(false); setShowMoreSheet(false);
+    startTabTransition(() => setDashboardTab(tab)); setSidebarOpen(false);
   };
 
   // ─── Navegação agrupada ───
@@ -1674,9 +1684,15 @@ const AdminDashboardTeste = () => {
     },
     [isPizza, allowFullReports, isPdvOnly],
   );
-  const visibleGroupMap = useMemo(
-    () => new Map(visibleGroups.map(g => [g.key, g])),
+  // TELA 1: navegação filtrada — Repasse sai do grupo Início e fica só
+  // no Financeiro. Todo o resto do shell lê visibleGroupsTeste.
+  const visibleGroupsTeste = useMemo(
+    () => filterTesteNavGroups(visibleGroups),
     [visibleGroups],
+  );
+  const visibleGroupMap = useMemo(
+    () => new Map(visibleGroupsTeste.map(g => [g.key, g])),
+    [visibleGroupsTeste],
   );
 
   // Se a aba atual ficou oculta (ex.: loja migrada pra pdv_only), redireciona pra
@@ -1693,13 +1709,13 @@ const AdminDashboardTeste = () => {
   const [preferredGroupKey, setPreferredGroupKey] = useState<DashboardGroupKey | null>(null);
   const activeGroup = useMemo(() => {
     if (preferredGroupKey) {
-      const g = dashboardGroups.find(
+      const g = visibleGroupsTeste.find(
         gr => gr.key === preferredGroupKey && gr.subTabs.some(s => s.key === dashboardTab),
       );
       if (g) return g;
     }
-    return getGroupForTab(dashboardTab);
-  }, [preferredGroupKey, dashboardTab]);
+    return getTesteActiveGroup(visibleGroupsTeste, dashboardTab);
+  }, [preferredGroupKey, dashboardTab, visibleGroupsTeste]);
   const activeGroupKey = activeGroup?.key;
 
   const handleGroupChange = (groupKey: DashboardGroupKey) => {
@@ -1711,16 +1727,6 @@ const AdminDashboardTeste = () => {
     handleTabChange(inGroup ? dashboardTab : g.subTabs[0].key);
   };
 
-  const bottomNavGroups = bottomNavGroupKeys
-    .map(k => visibleGroupMap.get(k))
-    .filter(Boolean) as DashboardGroup[];
-  const moreSheetGroups = moreSheetGroupKeys
-    .map(k => visibleGroupMap.get(k))
-    .filter(Boolean) as DashboardGroup[];
-
-  const isBottomNavMore = activeGroupKey
-    ? !bottomNavGroupKeys.includes(activeGroupKey)
-    : false;
 
   // ── Checklist "Configurar Loja" (Fase 2) ──
   // Passos calculados aqui porque o selo de pendências vai na barra de
@@ -1774,32 +1780,6 @@ const AdminDashboardTeste = () => {
         />
       )}
 
-      {showMoreSheet && <div className="fixed inset-0 bg-black/60 z-[60] lg:hidden" onClick={() => setShowMoreSheet(false)} />}
-
-      {/* ── MORE BOTTOM SHEET (mobile) ── */}
-      {showMoreSheet && (
-        <div className="fixed inset-x-0 bottom-0 z-[70] lg:hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
-          <div className="bg-card border-t border-border rounded-t-2xl pb-safe">
-            <div className="flex justify-center pt-3 pb-2">
-              <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
-            </div>
-            <div className="px-4 pb-4 grid grid-cols-3 gap-3">
-              {moreSheetGroups.map(group => {
-                const Icon = group.icon;
-                const isActive = activeGroupKey === group.key;
-                return (
-                  <button key={group.key} onClick={() => handleGroupChange(group.key)}
-                    className={`flex flex-col items-center gap-2 p-3 rounded-2xl transition-all ${isActive ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent"}`}>
-                    <Icon className="h-5 w-5" />
-                    <span className="text-[11px] font-bold">{group.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* ── SIDEBAR (desktop only) ── */}
       <aside className={`fixed lg:sticky top-0 left-0 z-50 h-screen w-64 bg-card border-r border-border flex flex-col transition-transform duration-300 ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}>
         <div className="p-4 border-b border-border">
@@ -1840,7 +1820,7 @@ const AdminDashboardTeste = () => {
               <span className="text-xs text-muted-foreground">Hoje</span>
             </div>
             <div className="text-right">
-              <p className="text-sm font-bold text-foreground">{formatBRL(todayTotal)}</p>
+              <AdminMoneyTeste value={formatBRL(todayTotal)} className="text-foreground" />
               <p className="text-[10px] text-muted-foreground">{todayCount} pedidos</p>
             </div>
           </div>
@@ -1848,7 +1828,7 @@ const AdminDashboardTeste = () => {
 
         {/* Navigation — agrupada por grupos com sub-tabs */}
         <nav className="flex-1 p-2 space-y-0.5 overflow-y-auto">
-          {visibleGroups.map(group => {
+          {visibleGroupsTeste.map(group => {
             const isActive = activeGroupKey === group.key;
             const Icon = group.icon;
             const tourKey = group.key === "pedidos" ? "loja-orders"
@@ -1957,7 +1937,7 @@ const AdminDashboardTeste = () => {
             </div>
           </div>
           <div className="flex items-center gap-1.5">
-            <DashboardSearch groups={visibleGroups} isPdvOnly={isPdvOnly} onNavigate={handleTabChange} />
+            <AdminSearchBarTeste groups={visibleGroupsTeste} isPdvOnly={isPdvOnly} onNavigate={handleTabChange} />
             {showSoundPrompt && !soundEnabled && !Capacitor.isNativePlatform() && (
               <button onClick={activateSound}
                 className="flex items-center gap-1 bg-amber-400/10 border border-amber-400/30 text-amber-500 px-2.5 py-1.5 rounded-xl text-[11px] font-bold animate-pulse">
@@ -1998,6 +1978,14 @@ const AdminDashboardTeste = () => {
                 Ver entregadores
               </button>
             </div>
+          )}
+          {/* TELA 1 — breadcrumb "Grupo › Sub-aba" (navegação em 2 níveis) */}
+          {store && activeGroup && (
+            <AdminBreadcrumbTeste
+              group={activeGroup}
+              tabLabel={activeGroup.subTabs.find(s => s.key === dashboardTab)?.label}
+              onGroupClick={() => handleGroupChange(activeGroup.key)}
+            />
           )}
           {/* Sub-tabs do grupo ativo (mesmo padrão visual da aba Pizzaria) */}
           {store && activeGroup && (
@@ -2063,11 +2051,9 @@ const AdminDashboardTeste = () => {
           )}
           {dashboardTab === "dashboard" && isApproved && store && (
             <>
-              {/* ── CHECKLIST CONFIGURAR LOJA (Fase 2) ── */}
-              <SetupChecklist storeId={store.id} steps={setupSteps} onNavigate={setDashboardTab} />
               <ErrorBoundary>
               <Suspense fallback={<TabFallback />}>
-                <DashboardOverviewSection
+                <DashboardOverviewSectionTeste
                 store={store}
                 storePlan={storePlan}
                 isApproved={isApproved}
@@ -2109,6 +2095,8 @@ const AdminDashboardTeste = () => {
                 updateOrderStatus={updateOrderStatus}
                 handleAcceptOrder={handleAcceptOrder}
                 handleCancelOrder={handleCancelOrder}
+                setupSteps={setupSteps}
+                repassePending={repassePending}
               />
               </Suspense>
               </ErrorBoundary>
@@ -2134,14 +2122,17 @@ const AdminDashboardTeste = () => {
           )}
 
           {/* ══════ REPASSE TAB ══════ */}
+          {/* TELA 4: repasse vive SÓ dentro do Financeiro — a aba
+              "repasse" abre o FinanceiroTeste já no bloco de repasse. */}
           {dashboardTab === "repasse" && store && (
             <ErrorBoundary>
             <Suspense fallback={<TabFallback />}>
-              <RepasseSection
-                store={store}
-                storePlan={storePlan}
-                setDashboardTab={setDashboardTab}
-                pendingTotal={repassePending}
+              <FinanceTabTeste
+                storeId={store.id}
+                storeName={store.name}
+                hasCommission={storePlan.hasCommission}
+                isPlatformAdmin={isPlatformAdmin}
+                focusSection="repasse"
               />
             </Suspense>
             </ErrorBoundary>
@@ -2218,19 +2209,19 @@ const AdminDashboardTeste = () => {
             <div className="p-4 lg:p-6 max-w-6xl mx-auto">
               <ErrorBoundary key={dashboardTab}>
               <Suspense fallback={<TabFallback />}>
-                {dashboardTab === "menu" && <MenuTab storeId={store.id} storeCategory={store.category} />}
+                {dashboardTab === "menu" && <MenuTabTeste storeId={store.id} storeCategory={store.category} />}
                 {dashboardTab === "stock" && <StockTab storeId={store.id} />}
-                {dashboardTab === "cash_register" && <CashRegisterTab storeId={store.id} />}
+                {dashboardTab === "cash_register" && <CashRegisterTabTeste storeId={store.id} />}
                 {dashboardTab === "tutoriais" && <TutoriaisTab />}
                 {dashboardTab === "addons" && <AddonsTab storeId={store.id} />}
                 {dashboardTab === "bordas" && <BordasTab storeId={store.id} category={store.category} categories={(store as any).categories} />}
                 {dashboardTab === "hours" && <HoursTab storeId={store.id} forceClosed={(store as any).force_closed || false} />}
-                {dashboardTab === "settings" && <SettingsTab store={store} />}
+                {dashboardTab === "settings" && <SettingsTabTeste store={store} />}
                 {dashboardTab === "finance" && (
-                  <FinanceTab 
-                    storeId={store.id} 
-                    storeName={store.name} 
-                    hasCommission={storePlan.hasCommission} 
+                  <FinanceTabTeste
+                    storeId={store.id}
+                    storeName={store.name}
+                    hasCommission={storePlan.hasCommission}
                     isPlatformAdmin={isPlatformAdmin}
                   />
                 )}
@@ -2258,43 +2249,13 @@ const AdminDashboardTeste = () => {
           )}
         </div>
 
-        {/* ── FIXED MODERN BOTTOM NAVIGATION (mobile only) ── */}
-        <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-xl border-t border-border/50 lg:hidden pb-safe">
-          <div className="flex items-center justify-around h-16 px-2">
-            {bottomNavGroups.map(group => {
-              const Icon = group.icon;
-              const isActive = activeGroupKey === group.key && !showMoreSheet;
-              return (
-                <button key={group.key} onClick={() => handleGroupChange(group.key)}
-                  className={`flex flex-col items-center justify-center flex-1 h-full transition-all duration-300 relative ${
-                    isActive ? "text-primary translate-y-[-2px]" : "text-muted-foreground/60 hover:text-muted-foreground"
-                  }`}>
-                  {isActive && <div className="absolute top-0 w-8 h-1 bg-primary rounded-full animate-in fade-in zoom-in duration-300" />}
-                  <div className="relative mt-1">
-                    <Icon className={`h-6 w-6 transition-transform duration-300 ${isActive ? "scale-110" : "group-active:scale-90"}`} strokeWidth={isActive ? 2.5 : 2} />
-                    {group.key === "pedidos" && pendingCount > 0 && (
-                      <span className="absolute -top-1.5 -right-2 bg-destructive text-destructive-foreground text-[10px] font-black min-w-[18px] h-[18px] rounded-full flex items-center justify-center ring-2 ring-background shadow-lg animate-pulse">{pendingCount}</span>
-                    )}
-                  </div>
-                  <span className={`text-[11px] mt-1 transition-all duration-300 ${isActive ? "font-black tracking-tight" : "font-bold"}`}>{group.label}</span>
-                </button>
-              );
-            })}
-            {/* More button */}
-            <button onClick={() => setShowMoreSheet(!showMoreSheet)}
-              className={`flex flex-col items-center justify-center flex-1 h-full transition-all duration-300 relative ${
-                (isBottomNavMore || showMoreSheet) ? "text-primary translate-y-[-2px]" : "text-muted-foreground/60 hover:text-muted-foreground"
-              }`}>
-              {(isBottomNavMore || showMoreSheet) && <div className="absolute top-0 w-8 h-1 bg-primary rounded-full animate-in fade-in zoom-in duration-300" />}
-              <div className="relative mt-1">
-                <div className={`transition-all duration-300 ${showMoreSheet ? "rotate-90 scale-110" : ""}`}>
-                  {showMoreSheet ? <X className="h-6 w-6" strokeWidth={2.5} /> : <Menu className="h-6 w-6" strokeWidth={2} />}
-                </div>
-              </div>
-              <span className={`text-[11px] mt-1 transition-all duration-300 ${(isBottomNavMore || showMoreSheet) ? "font-black tracking-tight" : "font-bold"}`}>Mais</span>
-            </button>
-          </div>
-        </nav>
+        {/* TELA 1 — barra inferior mobile: todos os grupos, sem "Mais" */}
+        <AdminBottomNavTeste
+          groups={visibleGroupsTeste}
+          activeGroupKey={activeGroupKey}
+          pendingCount={pendingCount}
+          onGroupChange={handleGroupChange}
+        />
       </main>
       <ProductTour steps={lojistaTourSteps} tourKey="lojista" />
     </div>
@@ -2304,3 +2265,5 @@ const AdminDashboardTeste = () => {
 };
 
 export default AdminDashboardTeste;
+
+
