@@ -237,8 +237,14 @@ Deno.serve(async (req)=>{
       count: "exact",
       head: true
     }).eq("store_id", store_id).neq("message_hash", "greet_pending").gte("sent_at", dayStart.toISOString());
+    // Bot guiado (kind="bot", desde a reativação em 2026-10-24): passa
+    // pelo teto diário como qualquer envio (sem `force`), mas NÃO vai
+    // pra fila quando bate o teto — uma resposta de bot entregue horas
+    // depois estaria obsoleta (a sessão do cliente já andou) e o worker
+    // a reenviaria fora de contexto. Falha rápido com 429 e o webhook
+    // registra; o cliente pode chamar de novo no dia seguinte.
     if (!force && (sentToday ?? 0) >= dailyLimit) {
-      if (!fromQueueWorker && await enqueueForLater(admin, store_id, number, message, kind, "daily_cap")) {
+      if (kind !== "bot" && !fromQueueWorker && await enqueueForLater(admin, store_id, number, message, kind, "daily_cap")) {
         return json({ success: true, queued: true, reason: "daily_cap" });
       }
       return json({
@@ -321,7 +327,9 @@ Deno.serve(async (req)=>{
         status: r?.status,
         data
       });
-      if (!fromQueueWorker && await enqueueForLater(admin, store_id, number, message, kind, "evolution_failure")) {
+      // (Bot: sem fila também em falha de envio — mesmo motivo do teto:
+      // resposta de bot requentada horas depois chega fora de contexto.)
+      if (kind !== "bot" && !fromQueueWorker && await enqueueForLater(admin, store_id, number, message, kind, "evolution_failure")) {
         return json({ success: true, queued: true, reason: "evolution_failure" });
       }
       return json({

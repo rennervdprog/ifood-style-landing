@@ -156,15 +156,14 @@ export default function WhatsAppNotifications({
           <Toggle value={autoReply} onChange={() => setAutoReply(!autoReply)} />
         </div>
         <p className="text-xs text-muted-foreground">
-          Quando um cliente manda mensagem, o bot envia <strong>uma única resposta</strong> com saudação + link do cardápio e some. Nada de bate-papo — o objetivo é levar o cliente ao cardápio o mais rápido possível.
+          Quando um cliente manda mensagem e o bot guiado não assume a conversa, o sistema envia <strong>uma única resposta</strong> com saudação + link do cardápio e some. Nada de bate-papo — o objetivo é levar o cliente ao cardápio o mais rápido possível. Com o bot guiado ativo, é ele quem conduz o pedido no WhatsApp; esta resposta automática só aparece quando o bot não responde.
         </p>
         {autoReply && (
           <div className="bg-emerald-500/8 border border-emerald-500/20 rounded-lg px-3 py-2.5 space-y-2">
             <p className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400">🛡️ Modo antibanimento ativo</p>
             <ul className="text-[11px] text-muted-foreground leading-relaxed space-y-1 list-disc pl-4">
-              <li><strong>1 resposta por cliente a cada 24h.</strong> Depois disso, o bot fica em silêncio (não responde de novo).</li>
-              <li><strong>Ignora o 1º "oi".</strong> Só responde se o cliente mandar 2 mensagens em 10 minutos — filtra engano e cliente que desistiu.</li>
-              <li><strong>Uma mensagem só:</strong> saudação + link <code className="text-[10px] bg-muted px-1 py-0.5 rounded">itasuper.com.br/{storeSlug}</code> no mesmo envio. Sem "digite 1 para…".</li>
+              <li><strong>1 resposta por cliente a cada 16h.</strong> Depois disso, o sistema fica em silêncio (não responde de novo).</li>
+              <li><strong>Uma mensagem só</strong> quando o bot guiado não assume: saudação + link <code className="text-[10px] bg-muted px-1 py-0.5 rounded">itasuper.com.br/{storeSlug}</code> no mesmo envio. Sem "digite 1 para…".</li>
               <li><strong>Cliente digita PARAR</strong> → é adicionado à lista de opt-out e nunca mais recebe resposta automática.</li>
               <li>Fora do horário: envia 1 aviso de "fechado" com o link do cardápio e o próximo horário de abertura.</li>
             </ul>

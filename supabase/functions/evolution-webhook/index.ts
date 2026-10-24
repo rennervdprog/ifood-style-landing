@@ -129,6 +129,10 @@ const fetchImageBase64 = async (instance: string, data: EvolutionIncoming)=>{
 };
 const normalize = (text: string)=>text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 const isOptOut = (text: string)=>/(^|\s)(parar|stop|cancelar|sair|remover|nao receber)(\s|$|!|\.|,)/i.test(normalize(text));
+// Opt-out EXPLÍCITO ("PARAR"/"STOP", palavra exata): é o único que
+// registra a blacklist ANTES do bot. "cancelar"/"sair" NÃO entram aqui —
+// durante o bot, são só "encerrar atendimento" e seguem pro handler.
+const isExplicitOptOut = (text: string)=>/^(parar|stop)[!.,\s]*$/i.test(normalize(text));
 // P2 — "placa de entre aqui": bot fala 1x por número / 16h e some.
 const SILENCE_AFTER_LINK_MS = 16 * 60 * 60_000; // 16h
 // P2 — pula 1º contato: só responde se cliente mandar ≥2 msgs em 10min
@@ -225,7 +229,7 @@ Deno.serve(async (req)=>{
     const backendKey = Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     if (!backendUrl || !backendKey) return json({ error: "Backend não configurado" }, 500);
     const admin = createClient(backendUrl, backendKey);
-    const { data: cfg } = await admin.from("store_whatsapp_config").select("store_id, auto_reply_enabled, auto_reply_message, evolution_api_url, evolution_instance_name, status").eq("evolution_instance_name", instance).maybeSingle();
+    const { data: cfg } = await admin.from("store_whatsapp_config").select("store_id, auto_reply_enabled, auto_reply_message, evolution_api_url, evolution_instance_name, status, send_disabled").eq("evolution_instance_name", instance).maybeSingle();
     if (!cfg) {
       // Instância da plataforma (ItaSuper) — sincroniza status em platform_whatsapp_config.
       if (/connection/i.test(event)) {
@@ -360,12 +364,95 @@ Deno.serve(async (req)=>{
           push_name: String((data as any)?.pushName || "")
         });
         if (inboundLogError) console.warn("[evolution-webhook] inbound log skipped", inboundLogError.message);
-        // Sem bot guiado: mensagem sem conteúdo humano (mídia sem legenda etc.) é ignorada.
-        if (!hasHumanContent(data)) return json({
+        // Modo observação (send_disabled): registra e NÃO dispara nada —
+        // nem bot, nem saudação (paridade com o meta-webhook).
+        if ((cfg as any).send_disabled) return json({
+          ok: true,
+          skipped: "send_disabled"
+        });
+        // Conteúdo humano: texto/legenda, áudio, documento e sticker
+        // contam; imagem SEM legenda só conta quando o bot está aguardando
+        // comprovante Pix (paridade com o meta-webhook).
+        let humanish = hasHumanContent(data);
+        let awaitingProof = false;
+        if (!humanish && hasImageMessage(data)) {
+          const { data: sessPeek } = await admin.from("whatsapp_bot_sessions")
+            .select("current_step").eq("store_id", cfg.store_id).eq("phone", number).maybeSingle();
+          awaitingProof = (sessPeek as any)?.current_step === "awaiting_pix_proof";
+          if (awaitingProof) humanish = true;
+        }
+        if (!humanish) return json({
           ok: true,
           skipped: "non_human_message"
         });
-        // Se auto-reply está desligado, para aqui.
+        // ── Opt-out ANTES do bot ─────────────────────────────────────
+        // "PARAR"/"STOP" registra a blacklist e não despacha nada; quem
+        // já optou antes também não chega ao bot (paridade com o
+        // meta-webhook). "cancelar"/"sair" NÃO entram aqui: no bot, são
+        // só "encerrar atendimento" e seguem pro handler.
+        if (isExplicitOptOut(text)) {
+          await admin.from("whatsapp_send_log").insert({
+            store_id: cfg.store_id,
+            phone: number,
+            message_hash: "optout",
+            kind: "opt_out",
+            sent_at: new Date().toISOString()
+          });
+          await admin.from("whatsapp_bot_sessions").delete().eq("store_id", cfg.store_id).eq("phone", number);
+          return json({
+            ok: true,
+            skipped: "opt_out_registered"
+          });
+        }
+        {
+          const { data: blocked } = await admin.from("whatsapp_send_log").select("id").eq("store_id", cfg.store_id).eq("phone", number).eq("kind", "opt_out").limit(1).maybeSingle();
+          if (blocked) return json({
+            ok: true,
+            skipped: "blacklisted"
+          });
+        }
+        // ── Bot de menu guiado (Fase 1) ──────────────────────────────
+        // Restaurado na reativação (2026-10-24): o bloco foi removido no
+        // commit 9affd874 (22/10) e volta idêntico, com o portão de
+        // opt-out/blacklist acima. Roda ANTES do auto-reply e independe
+        // de auto_reply_enabled.
+        try {
+          const { data: botCfg } = await admin
+            .from("whatsapp_bot_config")
+            .select("enabled").eq("store_id", cfg.store_id).maybeSingle();
+          if (botCfg?.enabled) {
+            // Se a sessão do bot está aguardando comprovante e chegou imagem,
+            // baixamos base64 e passamos junto pro handler processar.
+            let image_base64: string | undefined;
+            let image_mime: string | undefined;
+            if (hasImageMessage(data) && awaitingProof) {
+              const img = await fetchImageBase64(instance, data);
+              if (img) { image_base64 = img.base64; image_mime = img.mime; }
+            }
+            const botBase = Deno.env.get("SUPABASE_URL") || Deno.env.get("EXTERNAL_SUPABASE_URL")!;
+            const botKey = Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+            const botRes = await fetch(`${botBase}/functions/v1/whatsapp-bot-handler`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                apikey: botKey,
+                Authorization: `Bearer ${botKey}`,
+                "x-internal-token": Deno.env.get("EVOLUTION_WEBHOOK_TOKEN") || "",
+              },
+              body: JSON.stringify({ store_id: cfg.store_id, phone: number, text, image_base64, image_mime }),
+            });
+            const botOut = await botRes.json().catch(() => ({} as any));
+            console.log("[evolution-webhook] bot dispatch", { store: cfg.store_id, phone: number, status: botRes.status, out: botOut });
+            if (botOut?.handled) {
+              return json({ ok: true, bot: botOut.action || "handled" });
+            }
+            // handled=false → cai pra fluxo auto-reply normal (ex.: mensagem sem gatilho)
+          }
+        } catch (e) {
+          console.error("[evolution-webhook] bot dispatch failed", e instanceof Error ? e.message : String(e));
+        }
+
+        // Se auto-reply está desligado, para aqui (bot já teve a chance).
         if (!cfg.auto_reply_enabled) return json({
           ok: true,
           skipped: "auto_reply_off"
@@ -390,8 +477,8 @@ Deno.serve(async (req)=>{
           ok: true,
           skipped: "blacklisted"
         });
-        // P2 — silêncio 24h: se já mandamos (ou estamos mandando) saudação
-        // nas últimas 24h, some. INCLUI greet_pending para bloquear rajada
+        // P2 — silêncio 16h: se já mandamos (ou estamos mandando) saudação
+        // nas últimas 16h, some. INCLUI greet_pending para bloquear rajada
         // de mensagens que chegam em segundos (bug: 2 respostas seguidas).
         const silenceSince = new Date(Date.now() - SILENCE_AFTER_LINK_MS).toISOString();
         const { data: recentGreet } = await admin.from("whatsapp_send_log").select("id").eq("store_id", cfg.store_id).eq("phone", number).eq("kind", "auto_reply").gte("sent_at", silenceSince).limit(1).maybeSingle();
@@ -400,7 +487,7 @@ Deno.serve(async (req)=>{
           skipped: "silence_24h"
         });
         // P2 — 1º contato: agora respondemos imediatamente na 1ª mensagem.
-        //  Camadas anti-ban restantes: dedupe 24h, opt-out, limite diário,
+        //  Camadas anti-ban restantes: dedupe 16h, opt-out, limite diário,
         //  delay 2-4s, rotação de templates + zero-width e slug alias rotativo.
         // Janela de operação baseada nos horários do lojista (fuso SP).
         // Se não houver horários cadastrados, cai no fallback 08h-22h.

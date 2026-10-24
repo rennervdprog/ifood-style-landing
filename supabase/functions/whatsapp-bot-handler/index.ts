@@ -1,5 +1,6 @@
 // Bot de menu guiado do WhatsApp (sem IA).
-// Invocado pelo evolution-webhook quando a loja tem `whatsapp_bot_config.enabled = true`.
+// Invocado pelo evolution-webhook e pelo meta-webhook quando a loja tem
+// `whatsapp_bot_config.enabled = true`.
 // Máquina de estados baseada em texto numerado (compatível com qualquer versão do WhatsApp).
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 const cors = {
@@ -145,6 +146,11 @@ const sendText = async (storeId, phone, message)=>{
       return true;
     }
   }
+  // Envio Evolution SEM `force`: o bot passa pelo dedupe por hash (1h) e
+  // pelo teto diário como qualquer outro envio — `force: true` desligava
+  // os dois e o bot podia disparar sem limite. No teto, o sender NÃO
+  // enfileira mensagens do bot (resposta de bot entregue horas depois
+  // estaria obsoleta); falha rápido com 429 e o webhook registra.
   const r = await fetch(`${base}/functions/v1/evolution-send-message`, {
     method: "POST",
     headers: {
@@ -157,8 +163,7 @@ const sendText = async (storeId, phone, message)=>{
       store_id: storeId,
       phone,
       message,
-      kind: "bot",
-      force: true
+      kind: "bot"
     })
   });
   const out = await r.json().catch(()=>({}));
@@ -832,7 +837,22 @@ const createOrder = async (admin, storeId, phone, session, storeName)=>{
   await sendText(storeId, phone, `🎉 *Pedido ${num} confirmado!*\n\nA *${storeName}* recebeu seu pedido e vai começar a preparar em instantes.\n\nVocê será avisado quando o pedido for aceito. ✨`);
   await setPostOrderCooldown(admin, storeId, phone, num);
 };
-const isCancel = (t)=>/^(cancelar|sair|parar)$/i.test(normalize(t));
+const isCancel = (t)=>/^(cancelar|sair)$/i.test(normalize(t));
+// Opt-out explícito ("PARAR"/"STOP"): NÃO é só "encerrar atendimento".
+// Registra a blacklist (whatsapp_send_log kind=opt_out) para o cliente
+// nunca mais receber envios automáticos — os webhooks checam essa lista
+// antes de despachar o bot ou a saudação. "cancelar"/"sair" continuam
+// sendo só "encerrar atendimento" (sem opt-out).
+const isOptOutWord = (t)=>/^(parar|stop)[!.,\s]*$/i.test(normalize(t));
+const registerOptOut = async (admin, storeId, phone)=>{
+  await admin.from("whatsapp_send_log").insert({
+    store_id: storeId,
+    phone,
+    message_hash: "optout",
+    kind: "opt_out",
+    sent_at: new Date().toISOString()
+  });
+};
 Deno.serve(async (req)=>{
   if (req.method === "OPTIONS") return new Response(null, {
     headers: cors
@@ -878,6 +898,21 @@ Deno.serve(async (req)=>{
       return json({
         handled: true,
         action: "escape"
+      });
+    }
+    // "PARAR" durante o bot = opt-out: registra a blacklist e encerra a
+    // sessão. (Defesa em profundidade: os webhooks já interceptam "PARAR"
+    // antes de despachar o bot; este trecho cobre invocação direta.)
+    // Sem mensagem de despedida, de propósito: quem optou por não receber
+    // mais mensagens não recebe nem a confirmação — é o mesmo padrão
+    // silencioso dos webhooks (e a despedida seria barrada pela própria
+    // blacklist no canal oficial).
+    if (isOptOutWord(text)) {
+      await registerOptOut(admin, store_id, phone);
+      await clearSession(admin, store_id, phone);
+      return json({
+        handled: true,
+        action: "opt_out"
       });
     }
     if (isCancel(text)) {
@@ -970,7 +1005,15 @@ Deno.serve(async (req)=>{
           action: "existing_order_prompt"
         });
       }
-      const greeting = knownName ? `Olá, *${String(knownName).split(" ")[0]}*! 👋 Que bom te ver de novo na *${storeName}*.` : `Olá! 👋 Bem-vindo à *${storeName}*.`;
+      // Mensagem de boas-vindas configurada no painel (whatsapp_bot_config.
+      // welcome_message): quando preenchida, ela ABRE o menu no lugar da
+      // saudação fixa — "{loja}" vira o nome da loja. Sem ela, vale a
+      // saudação padrão abaixo. (Antes desta mudança o campo era salvo no
+      // painel e nunca lido: a saudação era fixa no código.)
+      const customWelcome = String(cfg.welcome_message || "").trim();
+      const greeting = customWelcome
+        ? customWelcome.replaceAll("{loja}", storeName)
+        : knownName ? `Olá, *${String(knownName).split(" ")[0]}*! 👋 Que bom te ver de novo na *${storeName}*.` : `Olá! 👋 Bem-vindo à *${storeName}*.`;
       const menu = [
         greeting,
         "",
