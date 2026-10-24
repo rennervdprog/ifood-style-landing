@@ -1,9 +1,10 @@
 /**
  * TELA 4 — Conta do mês (/admin-teste).
  *
- * A conta decomposta, num só lugar: bruto − taxas − reembolsos = líquido.
- * Recebe o resumo do hook único (useFinanceiroTeste) — NÃO consulta
- * outra fonte, para o número aqui ser sempre o mesmo do extrato.
+ * A conta decomposta, num só lugar: bruto + frete − descontos − taxas
+ * − reembolsos = líquido. Recebe o resumo do hook único
+ * (useFinanceiroTeste) — NÃO consulta outra fonte, para o número aqui
+ * ser sempre o mesmo do extrato.
  * Todos os valores usam AdminMoneyTeste (fonte tabular, Tela 1).
  */
 import { format, nextMonday } from "date-fns";
@@ -13,6 +14,7 @@ import { formatBRL } from "@/lib/utils";
 import { REPASSE_RULES } from "@/lib/repasseRules";
 import { usePendingRepasse } from "@/hooks/usePendingRepasse";
 import {
+  AdminButtonTeste,
   AdminCardTeste,
   AdminCardDescriptionTeste,
   AdminCardTitleTeste,
@@ -27,12 +29,14 @@ function Linha({
   value,
   strong,
   negative,
+  positive,
 }: {
   label: string;
   detail?: string;
   value: number;
   strong?: boolean;
   negative?: boolean;
+  positive?: boolean;
 }) {
   return (
     <div className="flex items-baseline justify-between gap-3">
@@ -41,7 +45,7 @@ function Linha({
         {detail && <span className="block text-xs">{detail}</span>}
       </span>
       <AdminMoneyTeste
-        value={`${negative ? "− " : ""}${formatBRL(value)}`}
+        value={`${negative ? "− " : positive ? "+ " : ""}${formatBRL(value)}`}
         className={strong ? "text-base" : undefined}
       />
     </div>
@@ -59,6 +63,12 @@ export default function FinanceSummaryTeste({
   // para o bloco único de repasse abaixo, nunca uma segunda conta.
   const { total: aPagar } = usePendingRepasse(storeId);
   const proximaSegunda = nextMonday(new Date());
+  const minimo = REPASSE_RULES.MIN_AUTO_CHARGE_BRL;
+  // O "a pagar" é um SALDO ACUMULADO desde o último acerto, não a taxa
+  // do período: o que passar da taxa + comissão deste período vem de
+  // movimentos anteriores ainda não quitados.
+  const destePeriodo = resumo.taxaPlataforma + resumo.comissao;
+  const anteriores = Math.max(0, aPagar - destePeriodo);
 
   return (
     <AdminCardTeste id="financeiro-conta" className="scroll-mt-24 space-y-4">
@@ -83,8 +93,22 @@ export default function FinanceSummaryTeste({
         <div className="space-y-2">
           <Linha label="Bruto (vendas)" value={resumo.bruto} />
           <Linha
+            label="Frete cobrado do cliente"
+            detail="O que o cliente pagou pela entrega"
+            value={resumo.freteTotal}
+            positive
+          />
+          {resumo.descontosTotal > 0 && (
+            <Linha
+              label="Descontos"
+              detail="Diferença entre o subtotal e o valor cobrado do cliente"
+              value={resumo.descontosTotal}
+              negative
+            />
+          )}
+          <Linha
             label="Taxa de plataforma"
-            detail={`${resumo.countEntregas} entregas × ${formatBRL(resumo.taxaPlataformaPorEntrega)}`}
+            detail={`${resumo.countEntregas} ${resumo.countEntregas === 1 ? "entrega" : "entregas"} × ${formatBRL(resumo.taxaPlataformaPorEntrega)}`}
             value={resumo.taxaPlataforma}
             negative
           />
@@ -116,8 +140,14 @@ export default function FinanceSummaryTeste({
             <AdminMoneyTeste value={formatBRL(resumo.liquido)} className="text-base" />
           </div>
           <p className="text-xs text-muted-foreground">
-            O frete cobrado do cliente aparece por pedido no extrato e não é
-            somado ao líquido acima.
+            Frete = o que o cliente pagou pela entrega (não é lucro da loja:
+            a taxa de plataforma é descontada abaixo). Taxa de plataforma ={" "}
+            {formatBRL(resumo.taxaPlataformaPorEntrega)} por entrega.
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Descontos = diferença entre o subtotal e o valor cobrado do
+            cliente. O painel original usava o valor cobrado; esta conta
+            mostra os dois, para fechar.
           </p>
         </div>
       )}
@@ -133,19 +163,44 @@ export default function FinanceSummaryTeste({
           </p>
           <p className="text-xs text-muted-foreground">
             Cobrança semanal toda segunda-feira, a partir de{" "}
-            {formatBRL(REPASSE_RULES.MIN_AUTO_CHARGE_BRL)} acumulados.
+            {formatBRL(minimo)} acumulados.
           </p>
+          {aPagar > 0 && aPagar < minimo && (
+            <p className="mt-1 text-xs font-bold text-foreground">
+              Faltam {formatBRL(minimo - aPagar)} para a cobrança automática
+            </p>
+          )}
+          {aPagar >= minimo && (
+            <p className="mt-1 text-xs font-bold text-foreground">
+              Acima do mínimo — cobrança na próxima segunda
+            </p>
+          )}
+          {anteriores > 0 && (
+            <p className="mt-1 text-xs text-muted-foreground">
+              Saldo acumulado: {formatBRL(destePeriodo)} deste período +{" "}
+              {formatBRL(anteriores)} de movimentos anteriores ainda não
+              quitados — o repasse só zera quando a cobrança é paga
+            </p>
+          )}
         </div>
         <div className="shrink-0 text-right">
           <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
             A pagar
           </p>
           <AdminMoneyTeste value={formatBRL(aPagar)} />
-          <p className="text-xs text-muted-foreground">
-            <a href="#financeiro-repasse" className="text-primary hover:underline">
-              Ver no repasse
-            </a>
-          </p>
+          <div className="mt-2">
+            <AdminButtonTeste
+              variant="primary"
+              className="h-9 px-3 text-xs"
+              onClick={() => {
+                document
+                  .getElementById("financeiro-repasse")
+                  ?.scrollIntoView({ behavior: "smooth" });
+              }}
+            >
+              Ver repasse
+            </AdminButtonTeste>
+          </div>
         </div>
       </div>
     </AdminCardTeste>

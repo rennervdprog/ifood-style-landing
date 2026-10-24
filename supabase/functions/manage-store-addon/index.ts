@@ -105,9 +105,9 @@ Deno.serve(async (req) => {
         const price = Number(prevAddon?.price_override ?? 0) || 49; // fallback PDV
         const credit = computeUnusedCredit(price, new Date());
         if (credit > 0) {
-          await admin.rpc("increment_billing_credit_cents", {
+          await Promise.resolve(admin.rpc("increment_billing_credit_cents", {
             _store_id: store_id, _delta: credit,
-          }).catch(async () => {
+          })).catch(async () => {
             const { data: sp } = await admin.from("store_plans").select("billing_credit_cents").eq("store_id", store_id).maybeSingle();
             const cur = Number((sp as any)?.billing_credit_cents ?? 0);
             await admin.from("store_plans").update({ billing_credit_cents: cur + credit }).eq("store_id", store_id);

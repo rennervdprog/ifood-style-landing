@@ -9,8 +9,16 @@
  * a mesma lista de pedidos e a mesma conta; o extrato nunca pode
  * zerar havendo pedidos no resumo do mesmo período.
  *
- * Conta (por pedido entregue/finalizado, mesma base do resumo original):
+ * Conta (por pedido entregue/finalizado, reconciliada com o original):
  *   venda      = subtotal
+ *   frete      = delivery_fee (o que o cliente pagou pela entrega)
+ *   cobrado    = total_price ?? (subtotal + frete) — o valor cobrado
+ *     do cliente. O original calculava Faturamento/Receita líquida
+ *     sobre total_price, enquanto esta cópia usava só subtotal e
+ *     ignorava descontos — por isso os números divergiam.
+ *   desconto   = max(0, subtotal + frete − cobrado) — a diferença entre
+ *     o subtotal e o valor cobrado, explicitada em linha própria em
+ *     vez de sumir da conta.
  *   taxa de plataforma = R$ 0,99 por pedido com frete (delivery_fee > 0),
  *     usando o override do plano, senão a config global, senão 0,99.
  *     (O fallback "2" que aparece em RecebidoNoMesCard/StoreFinanceBasic
@@ -20,29 +28,55 @@
  *   taxa PIX   = R$ 0,00 — Pix direto na conta da loja, sem taxa do
  *     ItaSuper. O texto de taxa PIX por pedido do original é legado e NÃO
  *     entra na conta desta cópia.
- *   líquido    = venda − taxa de plataforma − comissão
- * O frete cobrado do cliente aparece à parte em cada linha e NÃO é
- * somado ao líquido (mesma conta do resumo original, que parte do
- * subtotal). Reembolsos não vivem em `orders`: vêm de
- * `financial_transactions` (kind "refund", pagos/liquidados) no mesmo
- * período, como linha própria do extrato, e entram na conta final:
- *   líquido final = bruto − taxas − reembolsos
+ *   líquido    = cobrado − taxa de plataforma − comissão
+ * Conta do período:
+ *   Líquido = Bruto (Σ venda) + Frete cobrado do cliente (Σ frete)
+ *     − Descontos (Σ desconto) − Taxa de plataforma − Comissão
+ *     (se rate > 0) − Reembolsos.
+ * Checagem na loja demo (30 pedidos finalizados): 3.030,00 + 0,99
+ *   − 185,00 − 0,99 − 0 = 2.845,00 — igual à Receita líquida do
+ *   original. Antes desta correção o líquido aqui era 3.029,01; a
+ *   mudança para 2.845,00 É a correção, não regressão.
+ * Reembolsos não vivem em `orders`: vêm de `financial_transactions`
+ * (kind "refund", pagos/liquidados) no mesmo período, como linha
+ * própria do extrato, e entram na conta final.
+ * Indicadores (FinanceIndicatorsTeste) e Tendência (FinanceTrendTeste)
+ * calculam da MESMA lista: Faturamento = Σ cobrado; Ticket médio =
+ * Σ subtotal ÷ nº de pedidos (fórmula original); Crescimento =
+ * (Σ subtotal período − Σ subtotal período anterior) ÷ Σ subtotal
+ * anterior, com o período anterior de igual duração. "Tudo" não tem
+ * crescimento (mostra "—").
  * Nada aqui muda dado, fluxo de saque ou fluxo de pagamento — só a
- * decomposição e a coerência entre os dois blocos.
+ * decomposição e a coerência entre os blocos.
  */
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { startOfMonth, endOfMonth, subDays } from "date-fns";
+import {
+  endOfDay,
+  endOfMonth,
+  format,
+  startOfDay,
+  startOfMonth,
+  subDays,
+  subMonths,
+} from "date-fns";
 
-export type FinanceiroPeriodoTeste = "mes_atual" | "30d" | "tudo";
+export type FinanceiroPeriodoTeste =
+  | "hoje"
+  | "7d"
+  | "30d"
+  | "mes_atual"
+  | "tudo";
 
 export const FINANCEIRO_PERIODOS_TESTE: {
   key: FinanceiroPeriodoTeste;
   label: string;
 }[] = [
-  { key: "mes_atual", label: "Mês atual" },
+  { key: "hoje", label: "Hoje" },
+  { key: "7d", label: "Últimos 7 dias" },
   { key: "30d", label: "Últimos 30 dias" },
+  { key: "mes_atual", label: "Mês atual" },
   { key: "tudo", label: "Tudo" },
 ];
 
@@ -55,6 +89,8 @@ export interface PedidoFinanceiroTeste {
   paymentMethod: string;
   venda: number;
   frete: number;
+  cobrado: number;
+  desconto: number;
   taxaPlataforma: number;
   comissao: number;
   liquido: number;
@@ -69,18 +105,31 @@ export interface ReembolsoFinanceiroTeste {
 
 export interface FinanceiroResumoTeste {
   periodo: FinanceiroPeriodoTeste;
+  /** Rótulo do intervalo do período, ex.: "18/10 — 24/10". */
+  intervaloLabel: string;
   pedidos: PedidoFinanceiroTeste[];
   reembolsos: ReembolsoFinanceiroTeste[];
   /** Nº de pedidos entregues/finalizados no período. */
   countPedidos: number;
   /** Nº de pedidos com frete (base da taxa de plataforma). */
   countEntregas: number;
+  /** Σ subtotal do período. */
   bruto: number;
+  /** Σ total_price do período — o Faturamento dos indicadores. */
+  faturamento: number;
+  /** Σ delivery_fee do período (frete cobrado do cliente). */
+  freteTotal: number;
+  /** Σ desconto do período (subtotal + frete − cobrado, quando > 0). */
+  descontosTotal: number;
   taxaPlataforma: number;
   comissao: number;
   taxas: number;
   reembolsosTotal: number;
   liquido: number;
+  /** Σ subtotal ÷ nº de pedidos (fórmula original). */
+  ticketMedio: number;
+  /** Crescimento em % vs. o período anterior; null = sem base ("—"). */
+  crescimentoPercent: number | null;
   taxaPlataformaPorEntrega: number;
   commissionRate: number;
   isLoading: boolean;
@@ -88,11 +137,47 @@ export interface FinanceiroResumoTeste {
   refetch: () => void;
 }
 
-function resolvePeriodo(periodo: FinanceiroPeriodoTeste, now: Date) {
+interface Range {
+  from?: Date;
+  to?: Date;
+}
+
+function resolvePeriodo(periodo: FinanceiroPeriodoTeste, now: Date): Range {
+  if (periodo === "hoje")
+    return { from: startOfDay(now), to: endOfDay(now) };
+  if (periodo === "7d")
+    return { from: startOfDay(subDays(now, 6)), to: endOfDay(now) };
+  if (periodo === "30d")
+    return { from: startOfDay(subDays(now, 29)), to: endOfDay(now) };
   if (periodo === "mes_atual")
     return { from: startOfMonth(now), to: endOfMonth(now) };
-  if (periodo === "30d") return { from: subDays(now, 30), to: now };
-  return { from: undefined, to: undefined };
+  return {};
+}
+
+/** Faixa anterior de igual duração (Hoje → ontem; Tudo → nenhuma). */
+function resolvePeriodoAnterior(
+  periodo: FinanceiroPeriodoTeste,
+  now: Date,
+): Range | null {
+  if (periodo === "hoje") {
+    const ontem = subDays(now, 1);
+    return { from: startOfDay(ontem), to: endOfDay(ontem) };
+  }
+  if (periodo === "7d")
+    return {
+      from: startOfDay(subDays(now, 13)),
+      to: endOfDay(subDays(now, 7)),
+    };
+  if (periodo === "30d")
+    return {
+      from: startOfDay(subDays(now, 59)),
+      to: endOfDay(subDays(now, 30)),
+    };
+  if (periodo === "mes_atual") {
+    const anterior = subMonths(now, 1);
+    return { from: startOfMonth(anterior), to: endOfMonth(anterior) };
+  }
+  return null;
 }
 
 export function useFinanceiroTeste(
@@ -105,7 +190,9 @@ export function useFinanceiroTeste(
       const [ordersRes, planRes, cfgRes, refundsRes] = await Promise.all([
         supabase
           .from("orders")
-          .select("id, subtotal, delivery_fee, payment_method, status, created_at")
+          .select(
+            "id, subtotal, total_price, delivery_fee, payment_method, status, created_at",
+          )
           .eq("store_id", storeId)
           .in("status", ["entregue", "finalizado"])
           .order("created_at", { ascending: false })
@@ -145,10 +232,11 @@ export function useFinanceiroTeste(
   return useMemo(() => {
     const now = new Date();
     const range = resolvePeriodo(periodo, now);
-    const inRange = (iso: string) => {
+    const prevRange = resolvePeriodoAnterior(periodo, now);
+    const inRange = (iso: string, r: Range) => {
       const d = new Date(iso);
-      if (range.from && d < range.from) return false;
-      if (range.to && d > range.to) return false;
+      if (r.from && d < r.from) return false;
+      if (r.to && d > r.to) return false;
       return true;
     };
     const split = Number(
@@ -161,26 +249,34 @@ export function useFinanceiroTeste(
       : TAXA_PLATAFORMA_POR_ENTREGA_TESTE;
     const commissionRate = Number(data?.plan?.commission_rate ?? 0) / 100;
 
-    const pedidos: PedidoFinanceiroTeste[] = (data?.orders ?? [])
-      .filter((o) => inRange(o.created_at))
-      .map((o) => {
-        const venda = Number(o.subtotal ?? 0);
-        const frete = Number(o.delivery_fee ?? 0);
-        const taxaPlataforma = frete > 0 ? taxaSplit : 0;
-        const comissao = venda * commissionRate;
-        return {
-          id: String(o.id),
-          createdAt: String(o.created_at),
-          paymentMethod: String(o.payment_method ?? ""),
-          venda,
-          frete,
-          taxaPlataforma,
-          comissao,
-          liquido: venda - taxaPlataforma - comissao,
-        };
-      });
+    const mapPedido = (o: any): PedidoFinanceiroTeste => {
+      const venda = Number(o.subtotal ?? 0);
+      const frete = Number(o.delivery_fee ?? 0);
+      const cobrado =
+        o.total_price != null ? Number(o.total_price) : venda + frete;
+      const desconto = Math.max(0, venda + frete - cobrado);
+      const taxaPlataforma = frete > 0 ? taxaSplit : 0;
+      const comissao = venda * commissionRate;
+      return {
+        id: String(o.id),
+        createdAt: String(o.created_at),
+        paymentMethod: String(o.payment_method ?? ""),
+        venda,
+        frete,
+        cobrado,
+        desconto,
+        taxaPlataforma,
+        comissao,
+        liquido: cobrado - taxaPlataforma - comissao,
+      };
+    };
+    const todos = (data?.orders ?? []).map(mapPedido);
+    const pedidos = todos.filter((p) => inRange(p.createdAt, range));
+    const pedidosAnteriores = prevRange
+      ? todos.filter((p) => inRange(p.createdAt, prevRange))
+      : [];
     const reembolsos: ReembolsoFinanceiroTeste[] = (data?.refunds ?? [])
-      .filter((t) => inRange(t.created_at))
+      .filter((t) => inRange(t.created_at, range))
       .map((t) => ({
         id: String(t.id),
         createdAt: String(t.created_at),
@@ -189,21 +285,45 @@ export function useFinanceiroTeste(
       }));
 
     const bruto = pedidos.reduce((s, p) => s + p.venda, 0);
+    const faturamento = pedidos.reduce((s, p) => s + p.cobrado, 0);
+    const freteTotal = pedidos.reduce((s, p) => s + p.frete, 0);
+    const descontosTotal = pedidos.reduce((s, p) => s + p.desconto, 0);
     const taxaPlataforma = pedidos.reduce((s, p) => s + p.taxaPlataforma, 0);
     const comissao = pedidos.reduce((s, p) => s + p.comissao, 0);
     const reembolsosTotal = reembolsos.reduce((s, r) => s + r.valor, 0);
+    const subtotalAnterior = pedidosAnteriores.reduce(
+      (s, p) => s + p.venda,
+      0,
+    );
+    const crescimentoPercent =
+      prevRange && subtotalAnterior > 0
+        ? ((bruto - subtotalAnterior) / subtotalAnterior) * 100
+        : null;
+    const intervaloLabel =
+      range.from && range.to
+        ? format(range.from, "dd/MM") === format(range.to, "dd/MM")
+          ? format(range.from, "dd/MM")
+          : `${format(range.from, "dd/MM")} — ${format(range.to, "dd/MM")}`
+        : "Todo o período";
     return {
       periodo,
+      intervaloLabel,
       pedidos,
       reembolsos,
       countPedidos: pedidos.length,
       countEntregas: pedidos.filter((p) => p.frete > 0).length,
       bruto,
+      faturamento,
+      freteTotal,
+      descontosTotal,
       taxaPlataforma,
       comissao,
       taxas: taxaPlataforma + comissao,
       reembolsosTotal,
-      liquido: bruto - taxaPlataforma - comissao - reembolsosTotal,
+      liquido:
+        bruto + freteTotal - descontosTotal - taxaPlataforma - comissao - reembolsosTotal,
+      ticketMedio: pedidos.length > 0 ? bruto / pedidos.length : 0,
+      crescimentoPercent,
       taxaPlataformaPorEntrega: taxaSplit,
       commissionRate,
       isLoading,

@@ -44,7 +44,7 @@ import { getStoreOpenStatus } from "@/lib/storeStatus";
 import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 // Tabs carregadas sob demanda — só baixa o JS quando o lojista abrir a aba
 const TutoriaisTab = lazy(() => import("./admin/tabs/TutoriaisTab"));
-const SubscriptionTab = lazy(() => import("./admin/tabs/SubscriptionTab"));
+const SubscriptionTabTeste = lazy(() => import("./admin/tabs/SubscriptionTabTeste"));
 const LoyaltyTab = lazy(() => import("./admin/tabs/LoyaltyTab"));
 const RefundsTab = lazy(() => import("./admin/tabs/RefundsTab"));
 const MenuTab = lazy(() => import("./admin/tabs/MenuTab"));
@@ -2226,7 +2226,7 @@ const AdminDashboardTeste = () => {
                   />
                 )}
                 {dashboardTab === "subscription" && (
-                  <SubscriptionTab storeId={store.id} storeName={store.name} />
+                  <SubscriptionTabTeste storeId={store.id} storeName={store.name} />
                 )}
                 {dashboardTab === "loyalty" && (
                   <LoyaltyTab storeId={store.id} allowLoyalty={storePlan.allowLoyalty} />

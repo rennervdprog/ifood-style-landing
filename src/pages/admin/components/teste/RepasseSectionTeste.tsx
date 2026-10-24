@@ -29,13 +29,16 @@ import {
   AdminMoneyTeste,
   AdminTextTeste,
 } from "./AdminBaseTeste";
+import type { FinanceiroResumoTeste } from "./useFinanceiroTeste";
 
 interface Props {
   storeId: string;
   storeName: string;
+  /** Resumo do período (hook único) — só para decompor o saldo acumulado. */
+  resumo?: FinanceiroResumoTeste | null;
 }
 
-export default function RepasseSectionTeste({ storeId, storeName }: Props) {
+export default function RepasseSectionTeste({ storeId, storeName, resumo }: Props) {
   const { total: hookTotal, hasPendingCharge } = usePendingRepasse(storeId);
   const displayTotal = hookTotal || 0;
   const showAlert = displayTotal > 0 && !hasPendingCharge;
@@ -77,6 +80,12 @@ export default function RepasseSectionTeste({ storeId, storeName }: Props) {
     0,
     Math.ceil((nextMonday.getTime() - Date.now()) / 86400000),
   );
+  // Saldo acumulado vs. taxa do período: o que passar da taxa +
+  // comissão do período vem de movimentos anteriores ainda não quitados.
+  // (O hook não enxerga pedidos cancelados, então a UI nunca os cita.)
+  const minimo = REPASSE_RULES.MIN_AUTO_CHARGE_BRL;
+  const destePeriodo = resumo ? resumo.taxaPlataforma + resumo.comissao : 0;
+  const anteriores = resumo ? Math.max(0, displayTotal - destePeriodo) : 0;
   const nextMondayLabel = nextMonday.toLocaleDateString("pt-BR", {
     weekday: "long",
     day: "2-digit",
@@ -168,6 +177,23 @@ export default function RepasseSectionTeste({ storeId, storeName }: Props) {
                 ? "Hoje é dia de repasse"
                 : `Em ${daysUntil} dia${daysUntil > 1 ? "s" : ""} · Repasses são processados toda segunda-feira`}
             </p>
+            {displayTotal > 0 && displayTotal < minimo && (
+              <p className="mt-1 text-xs font-bold text-foreground">
+                Faltam {formatBRL(minimo - displayTotal)} para a cobrança automática
+              </p>
+            )}
+            {displayTotal >= minimo && (
+              <p className="mt-1 text-xs font-bold text-foreground">
+                Acima do mínimo — cobrança na próxima segunda
+              </p>
+            )}
+            {anteriores > 0 && (
+              <p className="mt-1 text-xs text-muted-foreground">
+                Saldo acumulado: {formatBRL(destePeriodo)} deste período +{" "}
+                {formatBRL(anteriores)} de movimentos anteriores ainda não
+                quitados — o repasse só zera quando a cobrança é paga
+              </p>
+            )}
           </div>
           <div className="shrink-0 text-right">
             <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
