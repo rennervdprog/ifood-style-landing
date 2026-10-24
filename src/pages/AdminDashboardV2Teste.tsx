@@ -59,7 +59,7 @@ const SettingsTab = lazy(() => import("./admin/tabs/SettingsTab"));
 const CouponsTab = lazy(() => import("./admin/tabs/CouponsTab"));
 const PromotionsTab = lazy(() => import("./admin/tabs/PromotionsTab"));
 const ReviewsTab = lazy(() => import("./admin/tabs/ReviewsTab"));
-const DashboardOverviewSection = lazy(() => import("./admin/sections/DashboardOverviewSection"));
+const DashboardOverviewSectionTeste = lazy(() => import("./admin/sections/DashboardOverviewSectionTeste"));
 const AvisosSection = lazy(() => import("./admin/sections/AvisosSection"));
 const RepasseSection = lazy(() => import("./admin/sections/RepasseSection"));
 const OrdersSectionTeste = lazy(() => import("./admin/sections/OrdersSectionTeste"));
@@ -104,7 +104,7 @@ import {
   filterTesteNavGroups,
   getTesteActiveGroup,
 } from "./admin/components/teste/AdminNavTeste";
-import SetupChecklist, { buildSetupSteps } from "./admin/components/SetupChecklist";
+import { buildSetupSteps } from "./admin/components/SetupChecklist";
 import {
   parseOrderAddons,
   normalizeAddonName,
@@ -2043,11 +2043,9 @@ const AdminDashboardTeste = () => {
           )}
           {dashboardTab === "dashboard" && isApproved && store && (
             <>
-              {/* ── CHECKLIST CONFIGURAR LOJA (Fase 2) ── */}
-              <SetupChecklist storeId={store.id} steps={setupSteps} onNavigate={setDashboardTab} />
               <ErrorBoundary>
               <Suspense fallback={<TabFallback />}>
-                <DashboardOverviewSection
+                <DashboardOverviewSectionTeste
                 store={store}
                 storePlan={storePlan}
                 isApproved={isApproved}
@@ -2089,6 +2087,8 @@ const AdminDashboardTeste = () => {
                 updateOrderStatus={updateOrderStatus}
                 handleAcceptOrder={handleAcceptOrder}
                 handleCancelOrder={handleCancelOrder}
+                setupSteps={setupSteps}
+                repassePending={repassePending}
               />
               </Suspense>
               </ErrorBoundary>
