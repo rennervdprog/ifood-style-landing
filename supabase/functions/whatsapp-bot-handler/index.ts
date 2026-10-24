@@ -240,6 +240,18 @@ const loadSession = async (admin, storeId, phone)=>{
   }
   return data;
 };
+// Só exibição: nome todo em maiúsculas vira formato normal e nomes longos
+// são cortados numa linha. O cadastro e o nome gravado no pedido não mudam.
+const displayName = (name: string): string => {
+  const raw = String(name || "").trim();
+  if (!raw) return raw;
+  const letters = raw.replace(/[^A-Za-zÀ-ÿ]/g, "");
+  let out = raw;
+  if (letters && letters === letters.toUpperCase()) {
+    out = raw.toLowerCase().replace(/(^|[\s\-/])([a-zà-ÿ])/g, (_m, sep, ch) => sep + ch.toUpperCase());
+  }
+  return out.length > 40 ? out.slice(0, 39).trimEnd() + "…" : out;
+};
 const showCategories = async (admin, storeId, phone, session)=>{
   const { data: sections } = await admin.from("menu_sections").select("id, name").eq("store_id", storeId).order("sort_order");
   if (!sections || sections.length === 0) {
@@ -251,7 +263,7 @@ const showCategories = async (admin, storeId, phone, session)=>{
     "*📋 Escolha uma categoria:*",
     ""
   ];
-  sections.slice(0, 20).forEach((s, i)=>lines.push(`*${i + 1}* — ${s.name}`));
+  sections.slice(0, 20).forEach((s, i)=>lines.push(`*${i + 1}* — ${displayName(s.name)}`));
   lines.push("", "_Responda com o *número* da categoria._", "_Digite *CANCELAR* para sair._");
   session.current_step = "awaiting_category";
   session.context = {
@@ -272,7 +284,7 @@ const showProducts = async (admin, storeId, phone, session, categoryId)=>{
     "*🍽️ Escolha um item:*",
     ""
   ];
-  products.forEach((p, i)=>lines.push(`*${i + 1}* — ${p.name} — ${BRL(Number(p.price))}`));
+  products.forEach((p, i)=>lines.push(`*${i + 1}* — ${displayName(p.name)} — ${BRL(Number(p.price))}`));
   lines.push("", "_Responda com o *número* do item._", "_Digite *0* para voltar às categorias._");
   session.current_step = "awaiting_product";
   session.context = {
@@ -833,7 +845,9 @@ const createOrder = async (admin, storeId, phone, session, storeName)=>{
         }))
     }));
   await admin.from("order_items").insert(items);
-  const num = `#${order.id.slice(0, 8).toUpperCase()}`;
+  // Um número só para o cliente: o nº do pedido (o cooldown só usa o
+  // código para exibir no aviso de silêncio — a mecânica não muda).
+  const num = order.order_number ? `nº ${order.order_number}` : `#${order.id.slice(0, 8).toUpperCase()}`;
   await sendText(storeId, phone, `🎉 *Pedido ${num} confirmado!*\n\nA *${storeName}* recebeu seu pedido e vai começar a preparar em instantes.\n\nVocê será avisado quando o pedido for aceito. ✨`);
   await setPostOrderCooldown(admin, storeId, phone, num);
 };
