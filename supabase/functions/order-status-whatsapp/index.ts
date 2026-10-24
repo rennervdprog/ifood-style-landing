@@ -21,9 +21,25 @@ const PAYMENT_LABELS: Record<string, string> = {
   pix: "PIX",
   cartao: "Cartão",
   dinheiro: "Dinheiro",
+  card: "Cartão",
+  cash: "Dinheiro",
+  pix_direto: "Pix direto",
   maquininha_credito: "Cartão Crédito (maquininha)",
   maquininha_debito: "Cartão Débito (maquininha)",
   maquininha_pix: "PIX (maquininha)",
+};
+
+// Só exibição: nome todo em maiúsculas vira formato normal e nomes longos
+// são cortados numa linha. O cadastro e o nome gravado no pedido não mudam.
+const displayName = (name: string): string => {
+  const raw = String(name || "").trim();
+  if (!raw) return raw;
+  const letters = raw.replace(/[^A-Za-zÀ-ÿ]/g, "");
+  let out = raw;
+  if (letters && letters === letters.toUpperCase()) {
+    out = raw.toLowerCase().replace(/(^|[\s\-/])([a-zà-ÿ])/g, (_m, sep, ch) => sep + ch.toUpperCase());
+  }
+  return out.length > 40 ? out.slice(0, 39).trimEnd() + "…" : out;
 };
 
 const TARGET: Record<string, { flag: string }> = {
@@ -38,14 +54,14 @@ function buildRichItemsBlock(items: any[]): string {
   const lines: string[] = [];
   for (const item of items) {
     const qty = Number(item.quantity || 1);
-    const name = item.products?.name || item.name || "Item";
+    const name = displayName(item.products?.name || item.name || "Item");
     lines.push(`➡ \`\`\`${qty}x ${name}\`\`\``);
     let addons: any = item.addons;
     if (typeof addons === "string") { try { addons = JSON.parse(addons); } catch { addons = []; } }
     if (Array.isArray(addons) && addons.length > 0) {
       const groups = new Map<string, any[]>();
       for (const a of addons) {
-        const g = (a?.groupName as string) || "Adicional";
+        const g = displayName((a?.groupName as string) || "Adicional");
         if (!groups.has(g)) groups.set(g, []);
         groups.get(g)!.push(a);
       }
@@ -53,7 +69,7 @@ function buildRichItemsBlock(items: any[]): string {
         lines.push(`      _${group}_`);
         for (const a of arr) {
           const aqty = Number(a.quantity || 1);
-          const aname = String(a.name || "").trim();
+          const aname = displayName(String(a.name || "").trim());
           if (aname) lines.push(`          \`\`\`${aqty}x ${aname}\`\`\``);
         }
       }
@@ -79,14 +95,18 @@ function buildAcceptedMessage(p: {
   total: number; pin: string;
 }): string {
   const feeTxt = p.isDelivery && p.deliveryFee > 0 ? ` (taxa de: *${fmtBRL(p.deliveryFee)}*)` : "";
+  // Não repete o bairro quando ele já está dentro do endereço.
+  const nb = (p.neighborhood || "").trim();
+  const addr = (p.addressDetails || "").trim();
+  const enderecoPartes = [addr];
+  if (nb && !addr.toLowerCase().includes(nb.toLowerCase())) enderecoPartes.push(nb);
   const enderecoLinha = p.isDelivery
-    ? `🏠 ${[p.addressDetails, p.neighborhood].filter(Boolean).join(", ")}`
+    ? `🏠 ${enderecoPartes.filter(Boolean).join(", ")}`
     : `🏃 Retirada no balcão`;
   const etaLinha = p.isDelivery ? `\n(Previsão de Entrega: ${buildEtaWindow()})` : "";
   const pinLinha = p.pin ? `\n\n🔑 *PIN de Segurança: ${p.pin}*` : "";
   return (
     `${p.clientName || "Cliente"}, o pedido Nº *${p.num}* está em produção.\n\n` +
-    `Pedido *nº ${p.num}*\n\n` +
     `*Itens:*\n${p.itemsBlock}\n\n` +
     (p.paymentLabel ? `📱 *${p.paymentLabel}*\n\n` : "") +
     (p.isDelivery
@@ -98,8 +118,8 @@ function buildAcceptedMessage(p: {
   );
 }
 
-function buildOutMessage(p: { storeName: string; shortId: string; address: string; pin: string }): string {
-  return `🛵 *${p.storeName}* informa: Seu pedido #${p.shortId} saiu para entrega! 🚀\n` +
+function buildOutMessage(p: { storeName: string; num: string; address: string; pin: string }): string {
+  return `🛵 *${p.storeName}* informa: Seu pedido #${p.num} saiu para entrega! 🚀\n` +
     (p.address ? `Endereço: ${p.address}` : "") +
     (p.pin ? `\n\n🔑 *PIN de Segurança: ${p.pin}*` : "");
 }
@@ -220,7 +240,7 @@ Deno.serve(async (req) => {
           deliveryType: "Delivery", eta: "", neighborhood: String(order.neighborhood || ""),
         });
       } else {
-        message = buildOutMessage({ storeName, shortId, address, pin });
+        message = buildOutMessage({ storeName, num: order.order_number ? String(order.order_number) : shortId, address, pin });
       }
     }
 
