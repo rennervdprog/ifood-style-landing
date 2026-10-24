@@ -8,6 +8,8 @@
  *  - own + cliente    → total = own_delivery_fee + split_full
  *  - own + meio       → total = own_delivery_fee + round(split_full/2)
  *  - own + lojista    → total = own_delivery_fee (split sai do repasse)
+ *  - own + km (delivery_fee_type='km') → base = delivery_fee_base (piso "a partir de");
+ *    o valor final por distância continua vindo da cotação do servidor (quote-delivery)
  *  - plan_type=autonomy OU autonomy_lifetime_free → split_full = 0
  *  - platform_delivery_split_override (numeric) sobrescreve o admin_settings
  *
@@ -34,6 +36,8 @@ interface StoreLike {
   plan_type?: string | null;
   platform_delivery_split_override?: number | string | null;
   autonomy_lifetime_free?: boolean | null;
+  delivery_fee_type?: string | null;
+  delivery_fee_base?: number | string | null;
 }
 
 export function describeStoreFee(store: StoreLike, adminSplit = DEFAULT_ADMIN_SPLIT): FeeDisplay {
@@ -69,7 +73,12 @@ export function describeStoreFee(store: StoreLike, adminSplit = DEFAULT_ADMIN_SP
   }
 
   // own delivery
-  const base = Number(store?.own_delivery_fee ?? 0);
+  // Loja por km: o piso exibido é delivery_fee_base + split (não own_delivery_fee).
+  // O valor final por distância continua vindo da cotação do servidor (quote-delivery).
+  const base =
+    store?.delivery_fee_type === "km"
+      ? Number(store?.delivery_fee_base ?? 0)
+      : Number(store?.own_delivery_fee ?? 0);
   const splitMode = (store?.platform_fee_split || "cliente") as string;
   let addCustomer = 0;
   if (splitMode === "cliente") addCustomer = splitFull;
