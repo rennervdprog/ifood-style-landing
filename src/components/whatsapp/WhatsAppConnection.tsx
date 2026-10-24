@@ -39,13 +39,14 @@ const samePhone = (a?: string | null, b?: string | null) => {
   return !!left && !!right && left === right;
 };
 
-// Fases de aquecimento (P0 — mesmas do edge function evolution-send-message)
+// Fases de aquecimento (mesma escada do edge function evolution-send-message:
+// 60/120/200/300/300 — decisão do dono do produto, 2026-10-24)
 const phaseFor = (days: number) => {
-  if (days < 7)  return { label: "Semana 1 (aquecimento)", limit: 20 };
-  if (days < 14) return { label: "Semana 2", limit: 50 };
-  if (days < 28) return { label: "Semanas 3-4", limit: 100 };
-  if (days < 56) return { label: "Mês 2", limit: 150 };
-  return { label: "Mês 3+ (chip maduro)", limit: 200 };
+  if (days < 7)  return { label: "Semana 1 (aquecimento)", limit: 60 };
+  if (days < 14) return { label: "Semana 2", limit: 120 };
+  if (days < 30) return { label: "Semanas 3-4", limit: 200 };
+  if (days < 60) return { label: "Mês 2", limit: 300 };
+  return { label: "Mês 3+ (chip maduro)", limit: 300 };
 };
 
 const STEPS = [
@@ -408,7 +409,7 @@ export default function WhatsAppConnection({ storeId, storeName, expectedPhone, 
       {status === "connected" && config?.connected_at && (() => {
         const days = Math.floor((Date.now() - new Date(config.connected_at).getTime()) / 86_400_000);
         const phase = phaseFor(days);
-        const nextThreshold = days < 7 ? 7 : days < 14 ? 14 : days < 28 ? 28 : days < 56 ? 56 : null;
+        const nextThreshold = days < 7 ? 7 : days < 14 ? 14 : days < 30 ? 30 : days < 60 ? 60 : null;
         const daysToNext = nextThreshold ? Math.max(0, nextThreshold - days) : 0;
         return (
           <div className="rounded-2xl border border-border p-4 space-y-2.5">
@@ -426,7 +427,7 @@ export default function WhatsAppConnection({ storeId, storeName, expectedPhone, 
             <div className="h-1.5 rounded-full bg-muted overflow-hidden">
               <div
                 className="h-full bg-emerald-500 transition-all"
-                style={{ width: `${Math.min(100, (phase.limit / 200) * 100)}%` }}
+                style={{ width: `${Math.min(100, (phase.limit / 300) * 100)}%` }}
               />
             </div>
             {nextThreshold ? (
@@ -435,7 +436,7 @@ export default function WhatsAppConnection({ storeId, storeName, expectedPhone, 
               </p>
             ) : (
               <p className="text-[10px] text-muted-foreground">
-                Chip totalmente maduro — limite máximo liberado. Mantenha o bot enxuto (1 msg/24h por cliente) e ele dura meses.
+                Chip totalmente maduro — limite máximo liberado. Mantenha o bot enxuto (1 msg/16h por cliente) e ele dura meses.
               </p>
             )}
           </div>
@@ -501,7 +502,7 @@ export default function WhatsAppConnection({ storeId, storeName, expectedPhone, 
                 ⚠️ Use um número de WhatsApp <strong>exclusivo da loja</strong>. Não use seu número pessoal — ele ficará conectado neste painel.
               </p>
               <p className="text-[10px] text-muted-foreground leading-relaxed">
-                Para proteger o chip de banimento, o sistema aplica intervalos automáticos, dedupe de 24h por cliente e limite diário progressivo: semana 1: 20/dia · semana 2: 50/dia · 3ª–4ª: 100/dia · mês 2: 150/dia · mês 3+: 200/dia.
+                Para proteger o chip de banimento, o sistema aplica intervalos automáticos, dedupe de 16h por cliente e limite diário progressivo: semana 1: 60/dia · semana 2: 120/dia · 3ª–4ª: 200/dia · mês 2: 300/dia · mês 3+: 300/dia.
               </p>
             </div>
           </div>

@@ -8,7 +8,7 @@
 //  - despacha pro bot guiado (whatsapp-bot-handler) quando a loja tem
 //    whatsapp_bot_config.enabled — handled=false cai pra saudação;
 //  - saudação com o link do cardápio portada do evolution-webhook v75
-//    (texto aberto/fechado pelos horários, silêncio 24h, opt-out "PARAR"),
+//    (texto aberto/fechado pelos horários, silêncio 16h, opt-out "PARAR"),
 //    enviada via official-whatsapp-send em texto livre (o cliente sempre
 //    inicia a conversa → janela de 24h aberta).
 //
@@ -42,6 +42,10 @@ const json = (b: unknown, s = 200)=>new Response(JSON.stringify(b), {
 const sleep = (ms: number)=>new Promise((resolve)=>setTimeout(resolve, ms));
 const normalize = (text: string)=>text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 const isOptOut = (text: string)=>/(^|\s)(parar|stop|cancelar|sair|remover|nao receber)(\s|$|!|\.|,)/i.test(normalize(text));
+// Opt-out EXPLÍCITO ("PARAR"/"STOP", palavra exata): é o único que
+// registra a blacklist ANTES do bot. "cancelar"/"sair" NÃO entram aqui —
+// durante o bot, são só "encerrar atendimento" e seguem pro handler.
+const isExplicitOptOut = (text: string)=>/^(parar|stop)[!.,\s]*$/i.test(normalize(text));
 // P2 — "placa de entre aqui": bot fala 1x por número / 16h e some.
 const SILENCE_AFTER_LINK_MS = 16 * 60 * 60_000; // 16h
 // Pega hora atual no fuso de São Paulo (UTC-3)
@@ -246,8 +250,8 @@ Deno.serve(async (req)=>{
       // Verifica blacklist (opt-out anterior)
       const { data: blocked } = await admin.from("whatsapp_send_log").select("id").eq("store_id", storeId).eq("phone", number).eq("kind", "opt_out").limit(1).maybeSingle();
       if (blocked) return "blacklisted";
-      // P2 — silêncio 24h: se já mandamos (ou estamos mandando) saudação
-      // nas últimas 24h, some. INCLUI greet_pending para bloquear rajada.
+      // P2 — silêncio 16h: se já mandamos (ou estamos mandando) saudação
+      // nas últimas 16h, some. INCLUI greet_pending para bloquear rajada.
       const silenceSince = new Date(Date.now() - SILENCE_AFTER_LINK_MS).toISOString();
       const { data: recentGreet } = await admin.from("whatsapp_send_log").select("id").eq("store_id", storeId).eq("phone", number).eq("kind", "auto_reply").gte("sent_at", silenceSince).limit(1).maybeSingle();
       if (recentGreet) return "silence_24h";
@@ -409,6 +413,27 @@ Deno.serve(async (req)=>{
         if (!hasText && awaitingProof) humanish = true;
       }
       if (!humanish) return;
+      // ── Opt-out ANTES do bot ───────────────────────────────────────
+      // Antes desta mudança o bot era despachado primeiro e tratava
+      // "parar" só como cancelar: limpava a sessão, respondia e voltava
+      // `handled:true` sem registrar o opt-out — o cliente seguia
+      // recebendo saudação/bot. Agora "PARAR"/"STOP" registra a blacklist
+      // e não despacha nada; quem já optou antes também não chega ao bot.
+      if (isExplicitOptOut(text)) {
+        await admin.from("whatsapp_send_log").insert({
+          store_id: storeId,
+          phone: number,
+          message_hash: "optout",
+          kind: "opt_out",
+          sent_at: new Date().toISOString()
+        });
+        await admin.from("whatsapp_bot_sessions").delete().eq("store_id", storeId).eq("phone", number);
+        return;
+      }
+      {
+        const { data: blocked } = await admin.from("whatsapp_send_log").select("id").eq("store_id", storeId).eq("phone", number).eq("kind", "opt_out").limit(1).maybeSingle();
+        if (blocked) return;
+      }
       // ── Bot de menu guiado (B1) ─────────────────────────────────────
       // Roda ANTES do auto-reply e independe de auto_reply_enabled.
       if (botCfg?.enabled) {
