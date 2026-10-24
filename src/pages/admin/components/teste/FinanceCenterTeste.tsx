@@ -1,26 +1,29 @@
 /**
  * TELA 4 — Financeiro reestruturado (/admin-teste).
  *
- * Substitui o FinanceCenter original SÓ no /admin-teste. Uma única
- * página, sem abas internas que escondem a conta:
- *  1. Conta do período — bruto − taxas − reembolsos = líquido, com a
- *     data do próximo repasse (FinanceSummaryTeste).
- *  2. Extrato — os MESMOS pedidos e a MESMA conta da seção 1
- *     (FinanceStatementTeste). Nunca mais resumo com valor e extrato
- *     zerado: os dois blocos recebem o mesmo resumo do hook único.
- *  3. Plano — card do plano com o texto corrigido (Pix direto, sem taxa).
- *  4. Repasse — o ÚNICO lugar do repasse no /admin-teste
- *     (RepasseSectionTeste). A aba "repasse" do shell aponta para cá.
- * O seletor de período é único e alimenta as seções 1 e 2 juntas, para
- * a conta nunca divergir entre os blocos. Relatórios detalhados
- * (StoreReportsPanel) continuam na aba própria "Relatórios" e o plano
- * completo continua em "Meu Plano" — fora desta tela, por decisão
- * deliberada (não duplicar superfícies aqui).
+ * Substitui o FinanceCenter original SÓ no /admin-teste. Duas visões,
+ * escolhidas por `focusSection` (o shell já passa "repasse" só na aba
+ * Repasse — nada muda no shell):
+ *  - Visão Resumo (padrão): seletor de período único + Indicadores,
+ *    Conta, Tendência, Extrato, Plano, Repasse e Histórico. O período
+ *    vale para a conta e para o extrato juntos, para a conta nunca
+ *    divergir entre os blocos.
+ *  - Visão Repasse (`focusSection === "repasse"`): SÓ o cabeçalho +
+ *    Repasse + Histórico. A rolagem por âncora numa página longa não
+ *    sinaliza troca de aba: quem abre a aba "Repasse" espera ver o
+ *    repasse, não rolar uma página de resumo até o fim — por isso a
+ *    visão própria, em vez de só rolar até o bloco.
+ * Relatórios detalhados (StoreReportsPanel) continuam na aba própria
+ * "Relatórios" e o plano completo continua em "Meu Plano" — fora
+ * desta tela, por decisão deliberada (não duplicar superfícies aqui).
  */
 import { useEffect, useState } from "react";
 import { AdminTextTeste } from "./AdminBaseTeste";
 import FinanceSummaryTeste from "./FinanceSummaryTeste";
 import FinanceStatementTeste from "./FinanceStatementTeste";
+import FinanceIndicatorsTeste from "./FinanceIndicatorsTeste";
+import FinanceTrendTeste from "./FinanceTrendTeste";
+import FinanceHistoryTeste from "./FinanceHistoryTeste";
 import PlanSummaryCardTeste from "./PlanSummaryCardTeste";
 import RepasseSectionTeste from "./RepasseSectionTeste";
 import {
@@ -35,7 +38,7 @@ interface Props {
   storeName: string;
   hasCommission: boolean;
   isPlatformAdmin?: boolean;
-  /** Quando "repasse", rola até o bloco de repasse ao abrir. */
+  /** Quando "repasse", mostra só a visão de repasse. */
   focusSection?: "resumo" | "repasse";
 }
 
@@ -68,36 +71,56 @@ export default function FinanceCenterTeste({
         </p>
       </header>
 
-      <div
-        role="group"
-        aria-label="Período do financeiro"
-        className="flex flex-wrap gap-2"
-      >
-        {FINANCEIRO_PERIODOS_TESTE.map((p) => (
-          <button
-            key={p.key}
-            type="button"
-            onClick={() => setPeriodo(p.key)}
-            aria-pressed={periodo === p.key}
-            className={cn(
-              "rounded-full border px-3 py-2 text-sm font-bold",
-              periodo === p.key
-                ? "border-primary bg-primary text-primary-foreground"
-                : "border-border bg-card text-foreground",
-            )}
+      {focusSection === "repasse" ? (
+        <>
+          <RepasseSectionTeste
+            storeId={storeId}
+            storeName={storeName}
+            resumo={resumo}
+          />
+          <FinanceHistoryTeste storeId={storeId} />
+        </>
+      ) : (
+        <>
+          <div
+            role="group"
+            aria-label="Período do financeiro"
+            className="flex flex-wrap gap-2"
           >
-            {p.label}
-          </button>
-        ))}
-      </div>
-      <p className="text-xs text-muted-foreground">
-        O período vale para a conta e para o extrato juntos.
-      </p>
+            {FINANCEIRO_PERIODOS_TESTE.map((p) => (
+              <button
+                key={p.key}
+                type="button"
+                onClick={() => setPeriodo(p.key)}
+                aria-pressed={periodo === p.key}
+                className={cn(
+                  "rounded-full border px-3 py-2 text-sm font-bold",
+                  periodo === p.key
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-border bg-card text-foreground",
+                )}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            O período vale para a conta e para o extrato juntos.
+          </p>
 
-      <FinanceSummaryTeste storeId={storeId} resumo={resumo} />
-      <FinanceStatementTeste resumo={resumo} />
-      <PlanSummaryCardTeste storeId={storeId} />
-      <RepasseSectionTeste storeId={storeId} storeName={storeName} />
+          <FinanceIndicatorsTeste resumo={resumo} />
+          <FinanceSummaryTeste storeId={storeId} resumo={resumo} />
+          <FinanceTrendTeste resumo={resumo} />
+          <FinanceStatementTeste resumo={resumo} />
+          <PlanSummaryCardTeste storeId={storeId} />
+          <RepasseSectionTeste
+            storeId={storeId}
+            storeName={storeName}
+            resumo={resumo}
+          />
+          <FinanceHistoryTeste storeId={storeId} />
+        </>
+      )}
     </div>
   );
 }
