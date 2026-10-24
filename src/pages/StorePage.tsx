@@ -148,7 +148,7 @@ const StorePage = () => {
      queryKey: ["store", id || slug, isSandbox],
     queryFn: async () => {
       const baseTable = isSandbox ? "stores" : "stores_public";
-      let query = ((supabase as any).from(baseTable)).select("id, name, slug, slug_aliases, image_url, category, categories, rating, is_open, force_closed, status, delivery_mode, own_delivery_fee, delivery_fee, minimum_order_value, estimated_delivery_time, owner_id, address_cep, address_city, address_complement, address_neighborhood, address_number, address_reference, address_state, address_street, latitude, longitude, max_delivery_km, delivery_radius, settings, network_id, is_matriz, free_delivery_threshold").in("status", ["ativo", "bloqueado"]);
+      let query = ((supabase as any).from(baseTable)).select("id, name, slug, slug_aliases, image_url, category, categories, rating, is_open, force_closed, status, delivery_mode, own_delivery_fee, delivery_fee, delivery_fee_type, delivery_fee_base, minimum_order_value, estimated_delivery_time, owner_id, address_cep, address_city, address_complement, address_neighborhood, address_number, address_reference, address_state, address_street, latitude, longitude, max_delivery_km, delivery_radius, settings, network_id, is_matriz, free_delivery_threshold").in("status", ["ativo", "bloqueado"]);
       if (id) query = query.eq("id", id);
       else if (slug) query = query.or(`slug.eq.${slug},slug_aliases.cs.{${slug}}`);
       const { data, error } = await query.maybeSingle();
@@ -1172,6 +1172,16 @@ const StorePage = () => {
                   <span className="text-[11px] font-semibold text-muted-foreground uppercase">Taxa</span>
                   <span className="text-[11px] font-black text-foreground mt-0.5">
                     {(() => {
+                      // Loja por km: o piso exibido é a base do km + split (o total da RPC
+                      // usa own_delivery_fee e não vale para km). Checkout continua via quote-delivery.
+                      if ((store as any)?.delivery_fee_type === "km" && (store as any)?.delivery_fee_base != null) {
+                        const add =
+                          platformInfo && typeof platformInfo.platform_add_customer === "number"
+                            ? platformInfo.platform_add_customer
+                            : describeStoreFee(store as any).platformAddCustomer;
+                        const total = Number((store as any).delivery_fee_base) + add;
+                        return total <= 0 ? "Grátis" : `A partir de ${formatBRL(total)}`;
+                      }
                       // Prefere RPC (fonte de verdade), com fallback ao helper caso ainda não carregou.
                       if (platformInfo && typeof platformInfo.customer_total === "number") {
                         return platformInfo.customer_total === 0
