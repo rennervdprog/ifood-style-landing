@@ -5,6 +5,7 @@ import { PdvAccessLayout } from "@/routes/layouts/PdvAccessLayout";
 import { ScopedNotFound } from "@/components/ScopedNotFound";
 import {
   AdminDashboardV2,
+  AdminDashboardV2Teste,
   MatrizDashboard,
   PdvPage,
   PdvKdsPage,
@@ -25,6 +26,10 @@ export const lojistaRoutes = (
     >
       <Route element={<LojistaHomeLayout />}>
         <Route path="/admin" element={<AdminDashboardV2 />} />
+      </Route>
+      {/* /admin-teste — cópia de teste do painel (PREVIEW; publicação depende da palavra do Renner) */}
+      <Route element={<LojistaHomeLayout />}>
+        <Route path="/admin-teste" element={<AdminDashboardV2Teste />} />
       </Route>
     </Route>
     <Route path="/admin2" element={<Navigate to="/admin" replace />} />
