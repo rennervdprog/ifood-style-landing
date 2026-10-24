@@ -52,9 +52,7 @@ export default function WhatsAppNotificationsTeste({
 }: Props) {
   const items = [
     { label: "Pedido aceito / em preparo", emoji: "✅", value: notifyAccepted, set: setNotifyAccepted, desc: "Quando o lojista aceita o pedido" },
-    { label: "Pronto para entrega", emoji: "📦", value: notifyReady, set: setNotifyReady, desc: "Pedido finalizado na cozinha" },
     { label: "Saiu para entrega", emoji: "🛵", value: notifyOutDelivery, set: setNotifyOutDelivery, desc: "Motoboy a caminho" },
-    { label: "Entregue", emoji: "🍽️", value: notifyDelivered, set: setNotifyDelivered, desc: "Confirmação final ao cliente" },
     { label: "Cancelado", emoji: "❌", value: notifyCancelled, set: setNotifyCancelled, desc: "Aviso quando cancelar o pedido" },
   ];
 
