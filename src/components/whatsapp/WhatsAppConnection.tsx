@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { FunctionsHttpError } from "@supabase/supabase-js";
 import { toast } from "sonner";
-import { Loader2, RefreshCw, Info, ChevronDown, ChevronUp, Shield, Smartphone, QrCode, Copy, Check } from "lucide-react";
+import { Loader2, RefreshCw, Info, ChevronDown, ChevronUp, Shield, Smartphone, QrCode, Copy, Check, AlertTriangle } from "lucide-react";
 import WhatsAppStatusCard from "./WhatsAppStatusCard";
 import PasskeyWarning from "./PasskeyWarning";
 
@@ -56,6 +56,15 @@ const STEPS = [
   { step: 5, title: "Pronto!", desc: "Cada mudança de status do pedido dispara uma mensagem automática.", icon: "✅" },
 ];
 
+// Etapa 1 — "Antes de conectar": as 3 confirmações são obrigatórias para
+// liberar o QR Code (etapa 2). Redação do ItaSuper, em português simples.
+type PreConnectKey = "warmed" | "organic" | "risk";
+const PRE_CONNECT_CHECKS: { key: PreConnectKey; label: string }[] = [
+  { key: "warmed", label: "Meu número está aquecido — comecei com mensagens manuais e interações reais para evitar bloqueios." },
+  { key: "organic", label: "Entendo que devo usar o WhatsApp de forma orgânica no início (mensagens manuais) para criar confiança." },
+  { key: "risk", label: "Entendo que, nesse formato de conexão, a Meta pode bloquear ou restringir meu número se eu não seguir as diretrizes de uso do WhatsApp." },
+];
+
 export default function WhatsAppConnection({ storeId, storeName, expectedPhone, config, reload }: Props) {
   const [qrLoading, setQrLoading] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
@@ -68,6 +77,12 @@ export default function WhatsAppConnection({ storeId, storeName, expectedPhone, 
   const [pairingLeft, setPairingLeft] = useState(60);
   const [copied, setCopied] = useState(false);
   const [failCount, setFailCount] = useState(0);
+  // Etapa 1 — "Antes de conectar": só aparece para loja desconectada (ou
+  // reconectando); loja conectada não vê o aviso de novo.
+  const [preConnectChecks, setPreConnectChecks] = useState<Record<PreConnectKey, boolean>>({ warmed: false, organic: false, risk: false });
+  const [preConnectAccepted, setPreConnectAccepted] = useState(false);
+  const [reconnectIntent, setReconnectIntent] = useState(false);
+  const preConnectRef = useRef<HTMLDivElement | null>(null);
   const pollRef = useRef<number | null>(null);
   const countdownRef = useRef<number | null>(null);
 
@@ -78,6 +93,11 @@ export default function WhatsAppConnection({ storeId, storeName, expectedPhone, 
   const expectedStorePhone = onlyDigits(expectedPhone);
   const phoneMismatch =
     status === "connected" && !!connectedPhone && !!expectedStorePhone && !samePhone(connectedPhone, expectedStorePhone);
+
+  const allPreConnectChecked = preConnectChecks.warmed && preConnectChecks.organic && preConnectChecks.risk;
+  // Aviso visível: loja desconectada que ainda não confirmou, ou loja
+  // conectada que clicou em "Reconectar outro número".
+  const showPreConnect = !preConnectAccepted && (status === "disconnected" || reconnectIntent);
 
   const getQrCode = async (forceReconnect = false) => {
     setQrLoading(true);
@@ -204,6 +224,46 @@ export default function WhatsAppConnection({ storeId, storeName, expectedPhone, 
     prevStatusRef.current = status;
   }, [status]);
 
+  // Se a conexão cair depois de conectada, o aviso volta a ser exigido na
+  // próxima tentativa (é uma reconexão). Ref própria porque o prevStatusRef
+  // acima já é atualizado no efeito do toast.
+  const prevStatusForPreConnectRef = useRef(status);
+  useEffect(() => {
+    if (prevStatusForPreConnectRef.current === "connected" && status === "disconnected") {
+      setPreConnectAccepted(false);
+      setPreConnectChecks({ warmed: false, organic: false, risk: false });
+      setReconnectIntent(false);
+    }
+    if (status === "connected") setReconnectIntent(false);
+    prevStatusForPreConnectRef.current = status;
+  }, [status]);
+
+  // Botão principal do card de status: enquanto o aviso (etapa 1) não foi
+  // confirmado, ele só rola até o aviso; depois dele, gera o QR (etapa 2).
+  // Loja conectada que clica em "Reconectar outro número" vê o aviso antes
+  // de gerar outro QR.
+  const handlePrimaryAction = () => {
+    if (status === "connected" && !preConnectAccepted) {
+      setReconnectIntent(true);
+      window.setTimeout(() => preConnectRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 0);
+      return;
+    }
+    if (showPreConnect) {
+      preConnectRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+    getQrCode(status !== "disconnected");
+  };
+
+  // "Continuar" (etapa 1) — só habilitado com as 3 confirmações marcadas —
+  // leva direto ao QR Code (etapa 2).
+  const acceptPreConnect = () => {
+    if (!allPreConnectChecked) return;
+    setPreConnectAccepted(true);
+    setReconnectIntent(false);
+    getQrCode(status !== "disconnected");
+  };
+
   return (
     <div className="space-y-4">
       <WhatsAppStatusCard
@@ -213,16 +273,61 @@ export default function WhatsAppConnection({ storeId, storeName, expectedPhone, 
         expectedPhone={expectedStorePhone}
         phoneMismatch={phoneMismatch}
         connectedAt={config?.connected_at}
-        onPrimaryAction={() => getQrCode(status !== "disconnected")}
+        onPrimaryAction={handlePrimaryAction}
         primaryLoading={qrLoading}
       />
+
+      {/* Etapa 1 — "Antes de conectar": só antes do QR Code (etapa 2) */}
+      {showPreConnect && (
+        <div ref={preConnectRef} className="rounded-2xl border border-amber-500/30 bg-amber-500/5 p-4 space-y-3">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0" />
+            <p className="text-sm font-bold text-foreground flex-1">Antes de conectar</p>
+            <span className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300">
+              Etapa 1 de 2
+            </span>
+          </div>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            O ItaSuper conecta o WhatsApp pelo <strong className="text-foreground">WhatsApp Web</strong> — essa não é a conexão oficial da Meta. Se o número for usado fora das regras do WhatsApp, a Meta pode bloquear ou restringir o número.
+          </p>
+          <div className="space-y-2">
+            {PRE_CONNECT_CHECKS.map((item) => (
+              <label key={item.key} className="flex items-start gap-3 rounded-xl border border-border bg-card p-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={preConnectChecks[item.key]}
+                  onChange={(e) => setPreConnectChecks((prev) => ({ ...prev, [item.key]: e.target.checked }))}
+                  className="mt-0.5 h-4 w-4 shrink-0 rounded border-border accent-primary"
+                />
+                <span className="text-xs text-foreground leading-relaxed">{item.label}</span>
+              </label>
+            ))}
+          </div>
+          <button
+            onClick={acceptPreConnect}
+            disabled={!allPreConnectChecked || qrLoading}
+            className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-bold disabled:opacity-50"
+          >
+            {qrLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+            Continuar
+          </button>
+          {reconnectIntent && (
+            <button
+              onClick={() => setReconnectIntent(false)}
+              className="w-full text-center text-[11px] font-bold text-muted-foreground hover:text-foreground"
+            >
+              Cancelar reconexão
+            </button>
+          )}
+        </div>
+      )}
 
       {status !== "connected" && (
         <PasskeyWarning highlight={failCount >= 2} />
       )}
 
-      {/* Seletor de método: QR Code x Código por número */}
-      {status !== "connected" && (
+      {/* Seletor de método: QR Code x Código por número (etapa 2 — só depois do aviso) */}
+      {status !== "connected" && !showPreConnect && (
         <div className="rounded-2xl border border-border p-3 space-y-3">
           <div className="grid grid-cols-2 gap-2">
             <button
