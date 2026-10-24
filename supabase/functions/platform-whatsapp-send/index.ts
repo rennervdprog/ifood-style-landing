@@ -34,11 +34,11 @@ const EVOLUTION_MAX_RETRIES = 2;
 const EVOLUTION_RETRY_DELAY_MS = 2_000;
 
 const dailyLimitForAge = (days: number) => {
-  if (days < 7) return 20;
-  if (days < 14) return 50;
-  if (days < 30) return 100;
-  if (days < 60) return 150;
-  return 200;
+  if (days < 7) return 60; // semana 1
+  if (days < 14) return 120; // semana 2
+  if (days < 30) return 200; // semanas 3-4
+  if (days < 60) return 300; // mês 2
+  return 300; // mês 3+
 };
 
 const logNormalDelay = () => {
