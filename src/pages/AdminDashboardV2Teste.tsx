@@ -50,7 +50,7 @@ const RefundsTab = lazy(() => import("./admin/tabs/RefundsTab"));
 const MenuTab = lazy(() => import("./admin/tabs/MenuTab"));
 const MenuTabTeste = lazy(() => import("./admin/tabs/MenuTabTeste"));
 const StockTab = lazy(() => import("./admin/tabs/StockTab"));
-const CashRegisterTab = lazy(() => import("./admin/tabs/CashRegisterTab"));
+const CashRegisterTabTeste = lazy(() => import("./admin/tabs/CashRegisterTabTeste"));
 const AddonsTab = lazy(() => import("./admin/tabs/AddonsTab"));
 const BordasTab = lazy(() => import("./admin/tabs/BordasTab"));
 const HoursTab = lazy(() => import("./admin/tabs/HoursTab"));
@@ -2211,7 +2211,7 @@ const AdminDashboardTeste = () => {
               <Suspense fallback={<TabFallback />}>
                 {dashboardTab === "menu" && <MenuTabTeste storeId={store.id} storeCategory={store.category} />}
                 {dashboardTab === "stock" && <StockTab storeId={store.id} />}
-                {dashboardTab === "cash_register" && <CashRegisterTab storeId={store.id} />}
+                {dashboardTab === "cash_register" && <CashRegisterTabTeste storeId={store.id} />}
                 {dashboardTab === "tutoriais" && <TutoriaisTab />}
                 {dashboardTab === "addons" && <AddonsTab storeId={store.id} />}
                 {dashboardTab === "bordas" && <BordasTab storeId={store.id} category={store.category} categories={(store as any).categories} />}
@@ -2265,4 +2265,5 @@ const AdminDashboardTeste = () => {
 };
 
 export default AdminDashboardTeste;
+
 
