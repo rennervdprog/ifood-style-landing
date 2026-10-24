@@ -8,6 +8,7 @@ import {
   AdminDashboardV2Teste,
   MatrizDashboard,
   PdvPage,
+  PdvPageTeste,
   PdvKdsPage,
   PdvCardapioPage,
 } from "@/routes/lazyPages";
@@ -47,6 +48,7 @@ export const lojistaRoutes = (
     >
       <Route element={<PdvAccessLayout />}>
         <Route path="/admin/pdv" element={<PdvPage />} />
+        <Route path="/admin-teste/pdv" element={<PdvPageTeste />} />
         <Route path="/admin/pdv/kds" element={<PdvKdsPage />} />
         <Route path="/admin/cardapio" element={<PdvCardapioPage />} />
       </Route>
@@ -60,3 +62,4 @@ export const lojistaRoutes = (
     />
   </>
 );
+
