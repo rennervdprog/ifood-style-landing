@@ -48,6 +48,7 @@ const SubscriptionTab = lazy(() => import("./admin/tabs/SubscriptionTab"));
 const LoyaltyTab = lazy(() => import("./admin/tabs/LoyaltyTab"));
 const RefundsTab = lazy(() => import("./admin/tabs/RefundsTab"));
 const MenuTab = lazy(() => import("./admin/tabs/MenuTab"));
+const MenuTabTeste = lazy(() => import("./admin/tabs/MenuTabTeste"));
 const StockTab = lazy(() => import("./admin/tabs/StockTab"));
 const CashRegisterTab = lazy(() => import("./admin/tabs/CashRegisterTab"));
 const AddonsTab = lazy(() => import("./admin/tabs/AddonsTab"));
@@ -209,6 +210,9 @@ export type ClientSort = "orders" | "spent" | "recent" | "inactive";
  * CÓPIA DE TESTE (/admin-teste) de AdminDashboardV2.
  * Idêntica ao original, EXCETO:
  *  - a aba Pedidos renderiza OrdersSectionTeste (correções do relatório);
+ *  - a aba Cardápio renderiza MenuTabTeste (Tela 3: selo de status no
+ *    card, pausar em 1 toque, "Editar" com rótulo, foto em destaque,
+ *    preço rotulado, seção obrigatória, erro inline no campo);
  *  - os badges de "Novos" do shell usam vermelho (coerente com o novo sinal
  *    de "Novo"), não âmbar;
  *  - a query de pedidos expõe o erro para a seção (estado de erro com retry).
@@ -2198,7 +2202,7 @@ const AdminDashboardTeste = () => {
             <div className="p-4 lg:p-6 max-w-6xl mx-auto">
               <ErrorBoundary key={dashboardTab}>
               <Suspense fallback={<TabFallback />}>
-                {dashboardTab === "menu" && <MenuTab storeId={store.id} storeCategory={store.category} />}
+                {dashboardTab === "menu" && <MenuTabTeste storeId={store.id} storeCategory={store.category} />}
                 {dashboardTab === "stock" && <StockTab storeId={store.id} />}
                 {dashboardTab === "cash_register" && <CashRegisterTab storeId={store.id} />}
                 {dashboardTab === "tutoriais" && <TutoriaisTab />}
