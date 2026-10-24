@@ -143,10 +143,13 @@ export default defineConfig(({ mode }) => ({
       template: "treemap",
     }),
     VitePWA({
-      // "autoUpdate" com skipWaiting=false: o SW novo instala em background,
-      // e o versionWatcher decide o momento certo de recarregar (fora de
-      // rotas críticas como checkout/PDV/motoboy em rota).
-      registerType: "autoUpdate",
+      // "prompt" com skipWaiting=false: o SW novo fica em "waiting" até o
+      // usuário aceitar (o versionWatcher decide o momento seguro, fora de
+      // rotas críticas como checkout/PDV/motoboy em rota). Nada de
+      // skipWaiting/clientsClaim forçados — com "autoUpdate" o plugin
+      // forçava os dois para true no SW gerado e cada deploy recarregava
+      // sozinho qualquer aba aberta.
+      registerType: "prompt",
       injectRegister: null,
       filename: "sw.js",
       devOptions: { enabled: false },

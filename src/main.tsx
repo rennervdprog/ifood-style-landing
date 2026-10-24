@@ -72,10 +72,6 @@ const isInIframe = (() => {
   }
 })();
 
-const isPreviewHost =
-  (window as any).location.hostname.includes("id-preview--") ||
-  (window as any).location.hostname.includes("lovableproject.com");
-
 const isCapacitor = Capacitor.isNativePlatform();
 
 // PWA: registro guardado em src/lib/registerPWA.ts (NetworkFirst em /api/store/*
@@ -90,35 +86,6 @@ if (typeof window !== "undefined" && "serviceWorker" in navigator && !isCapacito
 if (window.gonative || window.median || isCapacitor) {
   document.documentElement.classList.add("native-app");
   document.body.classList.add("native-app");
-}
-
-// Listener de atualização do Service Worker
-// Quando um novo SW toma controle, limpar caches e recarregar
-if ("serviceWorker" in navigator && !isPreviewHost && !isInIframe && !isCapacitor) {
-  navigator.serviceWorker.addEventListener("controllerchange", () => {
-    // Ignorar trocas de controlador do firebase-messaging-sw.js — esse SW
-    // só serve push em background e atualiza sozinho, não deve disparar reload.
-    const ctrl = navigator.serviceWorker.controller;
-    if (ctrl && ctrl.scriptURL && ctrl.scriptURL.includes("firebase-messaging-sw")) {
-      return;
-    }
-    // Usar localStorage com timestamp — persiste entre reloads, evita loop
-    const reloadKey = "sw-update-reload-ts";
-    const lastReload = Number(localStorage.getItem(reloadKey) || 0);
-    const now = Date.now();
-    // Só recarrega se não houve reload nos últimos 5 minutos
-    if (now - lastReload > 5 * 60 * 1000) {
-      localStorage.setItem(reloadKey, String(now));
-      if ("caches" in window) {
-        caches.keys()
-          .then(keys => Promise.all(keys.map(k => caches.delete(k))))
-          .catch(() => {})
-          .finally(() => (window as any).location.reload());
-      } else {
-        (window as any).location.reload();
-      }
-    }
-  });
 }
 
 async function bootstrap() {
