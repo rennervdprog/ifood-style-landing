@@ -1,7 +1,6 @@
 import StoreSettings from "@/components/StoreSettings";
 import TabHeader from "@/components/TabHeader";
 import WhatsAppSetup from "@/components/WhatsAppSetup";
-import WhatsAppBotConfig from "@/components/WhatsAppBotConfig";
 import WhatsAppConversations from "@/components/whatsapp/WhatsAppConversations";
 import { MessageCircle, MessagesSquare, Monitor, Copy, Loader2, RefreshCw, Ban, Store as StoreIcon } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
@@ -136,7 +135,6 @@ const SettingsTab = ({ store }: Props) => {
         storeName={store.name}
         expectedPhone={store.whatsapp_number || store.whatsapp || store.phone || null}
       />
-      <WhatsAppBotConfig storeId={store.id} storeName={store.name} />
     </section>
     )}
 

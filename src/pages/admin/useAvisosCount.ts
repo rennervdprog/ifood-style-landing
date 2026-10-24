@@ -23,7 +23,6 @@ export function useAvisosCount({
 
   let count = 0;
 
-  if (!store.asaas_wallet_id) count++;
   if (allHoursClosed) count++;
   if (isOwnDelivery && !driversLoading && !hasLinkedDrivers) count++;
 
