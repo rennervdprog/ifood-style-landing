@@ -57,6 +57,7 @@ const HoursTab = lazy(() => import("./admin/tabs/HoursTab"));
 const FinanceTabTeste = lazy(() => import("./admin/tabs/FinanceTabTeste"));
 const DriversTab = lazy(() => import("./admin/tabs/DriversTab"));
 const SettingsTab = lazy(() => import("./admin/tabs/SettingsTab"));
+const SettingsTabTeste = lazy(() => import("./admin/tabs/SettingsTabTeste"));
 const CouponsTab = lazy(() => import("./admin/tabs/CouponsTab"));
 const PromotionsTab = lazy(() => import("./admin/tabs/PromotionsTab"));
 const ReviewsTab = lazy(() => import("./admin/tabs/ReviewsTab"));
@@ -215,6 +216,10 @@ export type ClientSort = "orders" | "spent" | "recent" | "inactive";
  *  - os badges de "Novos" do shell usam vermelho (coerente com o novo sinal
  *    de "Novo"), não âmbar;
  *  - a query de pedidos expõe o erro para a seção (estado de erro com retry).
+ *  - a aba Configurações renderiza SettingsTabTeste (Tela 5: salvar por
+ *    seção, navegação única, dois WhatsApps explicados, toggles com estado
+ *    visível, resposta nas conversas dentro do painel, prévia de mídia e
+ *    Chat do pedido sem sair do painel).
  * Todas as outras abas reutilizam os componentes originais sem alteração.
  */
 const AdminDashboardTeste = () => {
@@ -2211,7 +2216,7 @@ const AdminDashboardTeste = () => {
                 {dashboardTab === "addons" && <AddonsTab storeId={store.id} />}
                 {dashboardTab === "bordas" && <BordasTab storeId={store.id} category={store.category} categories={(store as any).categories} />}
                 {dashboardTab === "hours" && <HoursTab storeId={store.id} forceClosed={(store as any).force_closed || false} />}
-                {dashboardTab === "settings" && <SettingsTab store={store} />}
+                {dashboardTab === "settings" && <SettingsTabTeste store={store} />}
                 {dashboardTab === "finance" && (
                   <FinanceTabTeste
                     storeId={store.id}
