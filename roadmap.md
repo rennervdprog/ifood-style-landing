@@ -8,4 +8,4 @@
 
 - [x] Preservar os padrões genéricos do cliente sem alterar autorização ou envios.
 - [x] Sincronizar versão web e Android em v1.27.47.
-- [ ] Confirmar validação automática da prévia e testes disponíveis.
+- [x] Confirmar validação automática da prévia (build OK) e 11 testes básicos aprovados.
