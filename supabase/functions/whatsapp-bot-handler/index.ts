@@ -845,9 +845,7 @@ const createOrder = async (admin, storeId, phone, session, storeName)=>{
         }))
     }));
   await admin.from("order_items").insert(items);
-  // Um número só para o cliente: o nº do pedido (o cooldown só usa o
-  // código para exibir no aviso de silêncio — a mecânica não muda).
-  const num = order.order_number ? `nº ${order.order_number}` : `#${order.id.slice(0, 8).toUpperCase()}`;
+  const num = `#${order.id.slice(0, 8).toUpperCase()}`;
   await sendText(storeId, phone, `🎉 *Pedido ${num} confirmado!*\n\nA *${storeName}* recebeu seu pedido e vai começar a preparar em instantes.\n\nVocê será avisado quando o pedido for aceito. ✨`);
   await setPostOrderCooldown(admin, storeId, phone, num);
 };
