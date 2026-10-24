@@ -44,7 +44,7 @@ import { getStoreOpenStatus } from "@/lib/storeStatus";
 import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 // Tabs carregadas sob demanda — só baixa o JS quando o lojista abrir a aba
 const TutoriaisTab = lazy(() => import("./admin/tabs/TutoriaisTab"));
-const SubscriptionTabTeste = lazy(() => import("./admin/tabs/SubscriptionTabTeste"));
+const SubscriptionTab = lazy(() => import("./admin/tabs/SubscriptionTab"));
 const LoyaltyTab = lazy(() => import("./admin/tabs/LoyaltyTab"));
 const RefundsTab = lazy(() => import("./admin/tabs/RefundsTab"));
 const MenuTab = lazy(() => import("./admin/tabs/MenuTab"));
@@ -54,7 +54,7 @@ const CashRegisterTabTeste = lazy(() => import("./admin/tabs/CashRegisterTabTest
 const AddonsTab = lazy(() => import("./admin/tabs/AddonsTab"));
 const BordasTab = lazy(() => import("./admin/tabs/BordasTab"));
 const HoursTab = lazy(() => import("./admin/tabs/HoursTab"));
-const FinanceTabTeste = lazy(() => import("./admin/tabs/FinanceTabTeste"));
+const FinanceTab = lazy(() => import("./admin/tabs/FinanceTab"));
 const DriversTab = lazy(() => import("./admin/tabs/DriversTab"));
 const SettingsTab = lazy(() => import("./admin/tabs/SettingsTab"));
 const SettingsTabTeste = lazy(() => import("./admin/tabs/SettingsTabTeste"));
@@ -63,6 +63,7 @@ const PromotionsTab = lazy(() => import("./admin/tabs/PromotionsTab"));
 const ReviewsTab = lazy(() => import("./admin/tabs/ReviewsTab"));
 const DashboardOverviewSectionTeste = lazy(() => import("./admin/sections/DashboardOverviewSectionTeste"));
 const AvisosSection = lazy(() => import("./admin/sections/AvisosSection"));
+const RepasseSection = lazy(() => import("./admin/sections/RepasseSection"));
 const OrdersSectionTeste = lazy(() => import("./admin/sections/OrdersSectionTeste"));
 import AdminOrderCard from "./admin/components/AdminOrderCard";
 import ClientsTab from "./admin/components/ClientsTab";
@@ -2122,17 +2123,16 @@ const AdminDashboardTeste = () => {
           )}
 
           {/* ══════ REPASSE TAB ══════ */}
-          {/* TELA 4: repasse vive SÓ dentro do Financeiro — a aba
-              "repasse" abre o FinanceiroTeste já no bloco de repasse. */}
+          {/* Financeiro revertido ao original: a aba "repasse" volta a
+              renderizar o RepasseSection original, como no /admin. */}
           {dashboardTab === "repasse" && store && (
             <ErrorBoundary>
             <Suspense fallback={<TabFallback />}>
-              <FinanceTabTeste
-                storeId={store.id}
-                storeName={store.name}
-                hasCommission={storePlan.hasCommission}
-                isPlatformAdmin={isPlatformAdmin}
-                focusSection="repasse"
+              <RepasseSection
+                store={store}
+                storePlan={storePlan}
+                setDashboardTab={setDashboardTab}
+                pendingTotal={repassePending}
               />
             </Suspense>
             </ErrorBoundary>
@@ -2218,7 +2218,7 @@ const AdminDashboardTeste = () => {
                 {dashboardTab === "hours" && <HoursTab storeId={store.id} forceClosed={(store as any).force_closed || false} />}
                 {dashboardTab === "settings" && <SettingsTabTeste store={store} />}
                 {dashboardTab === "finance" && (
-                  <FinanceTabTeste
+                  <FinanceTab
                     storeId={store.id}
                     storeName={store.name}
                     hasCommission={storePlan.hasCommission}
@@ -2226,7 +2226,7 @@ const AdminDashboardTeste = () => {
                   />
                 )}
                 {dashboardTab === "subscription" && (
-                  <SubscriptionTabTeste storeId={store.id} storeName={store.name} />
+                  <SubscriptionTab storeId={store.id} storeName={store.name} />
                 )}
                 {dashboardTab === "loyalty" && (
                   <LoyaltyTab storeId={store.id} allowLoyalty={storePlan.allowLoyalty} />
