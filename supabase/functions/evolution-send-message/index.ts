@@ -42,7 +42,9 @@ const sendPresence = async (baseUrl: string, instance: string, apiKey: string, n
     })
   }).catch(()=>undefined);
 };
-const isAuthorizedForStore = async (admin: ReturnType<typeof createClient>, req: Request, storeId: string)=>{
+// A fábrica concreta preserva os padrões genéricos do cliente (schema public).
+const createAdminClient = (url: string, key: string) => createClient(url, key);
+const isAuthorizedForStore = async (admin: ReturnType<typeof createAdminClient>, req: Request, storeId: string)=>{
   const authHeader = req.headers.get("Authorization") || "";
   const externalServiceRole = Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
   if (externalServiceRole && authHeader === `Bearer ${externalServiceRole}`) return true;
@@ -145,7 +147,7 @@ Deno.serve(async (req)=>{
     const backendUrl = Deno.env.get("EXTERNAL_SUPABASE_URL") || Deno.env.get("SUPABASE_URL");
     const backendKey = Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     if (!backendUrl || !backendKey) return json({ error: "Backend não configurado" }, 500);
-    const admin = createClient(backendUrl, backendKey);
+    const admin = createAdminClient(backendUrl, backendKey);
     if (!await isAuthorizedForStore(admin, req, store_id)) {
       console.error("[evolution-send-message] ⛔ Forbidden — auth check failed for store", store_id);
       return json({
