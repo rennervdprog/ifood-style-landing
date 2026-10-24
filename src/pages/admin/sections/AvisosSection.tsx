@@ -1,4 +1,4 @@
-import { AlertTriangle, ChevronRight, Clock, Bike, Bell, CheckCircle2 } from "lucide-react";
+import { AlertTriangle, Clock, Bike, Bell, CheckCircle2 } from "lucide-react";
 
 interface Props {
   store: any;
@@ -49,27 +49,6 @@ export default function AvisosSection({
         </div>
       )}
 
-      {!store.asaas_wallet_id && (
-        <button
-          onClick={() => setDashboardTab("finance")}
-          className="w-full text-left bg-destructive/10 border-2 border-destructive/40 rounded-2xl p-4 flex items-start gap-3 active:scale-[0.99] transition-transform"
-        >
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-destructive text-destructive-foreground flex-shrink-0">
-            <AlertTriangle className="h-5 w-5" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <h3 className="font-black text-destructive text-sm">
-              Configure sua conta de recebimento (prioridade)
-            </h3>
-            <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-              Você ainda não criou sua subconta Asaas. <strong>Sem ela, você não recebe os pagamentos PIX</strong> dos pedidos. Leva 2 minutos e é gratuito.
-            </p>
-            <span className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-destructive-foreground bg-destructive px-3 py-1.5 rounded-lg">
-              Configurar agora <ChevronRight className="h-3 w-3" />
-            </span>
-          </div>
-        </button>
-      )}
 
       {allHoursClosed && (
         <div className="bg-muted border border-border rounded-2xl p-4 flex items-start gap-3">
