@@ -1,20 +1,37 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
+interface EvolutionMessage {
+  conversation?: string; extendedTextMessage?: { text?: string };
+  imageMessage?: { caption?: string; mimetype?: string }; videoMessage?: { caption?: string };
+  protocolMessage?: unknown; reactionMessage?: unknown; senderKeyDistributionMessage?: unknown;
+  audioMessage?: unknown; documentMessage?: unknown; stickerMessage?: unknown;
+}
+interface EvolutionIncoming {
+  messageTimestamp?: number | string; timestamp?: number | string; date_time?: number | string;
+  message?: EvolutionMessage;
+  key?: { remoteJid?: string; remoteJidAlt?: string; participant?: string; fromMe?: boolean };
+  messages?: EvolutionIncoming[];
+}
+interface ConnectionPatch {
+  status: string; phone_number?: string | null; updated_at: string;
+  qr_code?: string | null; connected_at?: string | null;
+}
+interface OpeningHour { day_of_week: number; open_time: string | null; close_time: string | null; is_closed_all_day: boolean; }
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, sentry-trace, baggage"
 };
-const json = (b, s = 200)=>new Response(JSON.stringify(b), {
+const json = (b: unknown, s = 200)=>new Response(JSON.stringify(b), {
     status: s,
     headers: {
       ...corsHeaders,
       "Content-Type": "application/json"
     }
   });
-const sleep = (ms)=>new Promise((resolve)=>setTimeout(resolve, ms));
+const sleep = (ms: number)=>new Promise((resolve)=>setTimeout(resolve, ms));
 // Busca o ownerJid real da instância no Evolution (fonte de verdade).
 // Usado no CONNECTION_UPDATE quando state='open' — data.wuid/number vem
 // do que o usuário digitou no pairing, não do chip que realmente pareou.
-async function resolveOwnerJid(instance) {
+async function resolveOwnerJid(instance: string) {
   const baseUrl = Deno.env.get("EVOLUTION_API_URL");
   const apiKey = Deno.env.get("EVOLUTION_GLOBAL_API_KEY");
   if (!baseUrl || !apiKey) return null;
@@ -35,13 +52,13 @@ async function resolveOwnerJid(instance) {
       return num || null;
     }
   } catch (e) {
-    console.warn("[evolution-webhook] resolveOwnerJid failed", instance, e?.message);
+    console.warn("[evolution-webhook] resolveOwnerJid failed", instance, e instanceof Error ? e.message : String(e));
   } finally{
     clearTimeout(timer);
   }
   return null;
 }
-const isRecentIncomingMessage = (data)=>{
+const isRecentIncomingMessage = (data: EvolutionIncoming)=>{
   const rawTimestamp = data?.messageTimestamp || data?.timestamp || data?.date_time;
   if (!rawTimestamp) return true;
   const ts = typeof rawTimestamp === "number" ? rawTimestamp : Number(rawTimestamp);
@@ -49,29 +66,29 @@ const isRecentIncomingMessage = (data)=>{
   const tsMs = ts > 10_000_000_000 ? ts : ts * 1000;
   return Date.now() - tsMs <= 5 * 60_000;
 };
-const hasHumanContent = (data)=>{
+const hasHumanContent = (data: EvolutionIncoming)=>{
   const msg = data?.message || data?.messages?.[0]?.message;
   if (!msg) return true;
   if (msg.protocolMessage || msg.reactionMessage || msg.senderKeyDistributionMessage) return false;
   return Boolean(msg.conversation || msg.extendedTextMessage?.text || msg.imageMessage?.caption || msg.videoMessage?.caption || msg.audioMessage || msg.documentMessage || msg.stickerMessage);
 };
-const incomingText = (data)=>{
+const incomingText = (data: EvolutionIncoming)=>{
   const msg = data?.message || data?.messages?.[0]?.message || {};
   return String(msg.conversation || msg.extendedTextMessage?.text || msg.imageMessage?.caption || msg.videoMessage?.caption || "");
 };
-const incomingPhone = (data)=>{
+const incomingPhone = (data: EvolutionIncoming)=>{
   const key = data?.key || data?.messages?.[0]?.key || {};
   const jid = String(key.remoteJid || "");
   const altJid = String(key.remoteJidAlt || key.participant || "");
   const best = altJid.includes("@s.whatsapp.net") ? altJid : jid;
   return best.split("@")[0].replace(/\D/g, "");
 };
-const hasImageMessage = (data)=>{
+const hasImageMessage = (data: EvolutionIncoming)=>{
   const msg = data?.message || data?.messages?.[0]?.message || {};
   return Boolean(msg.imageMessage);
 };
 // Baixa imagem via Evolution API (base64) — usado para comprovantes Pix Direto do bot.
-const fetchImageBase64 = async (instance, data)=>{
+const fetchImageBase64 = async (instance: string, data: EvolutionIncoming)=>{
   const baseUrl = Deno.env.get("EVOLUTION_API_URL");
   const apiKey = Deno.env.get("EVOLUTION_GLOBAL_API_KEY");
   if (!baseUrl || !apiKey) return null;
@@ -106,12 +123,12 @@ const fetchImageBase64 = async (instance, data)=>{
       mime
     };
   } catch (e) {
-    console.warn("[evolution-webhook] getBase64 error", e?.message);
+    console.warn("[evolution-webhook] getBase64 error", e instanceof Error ? e.message : String(e));
     return null;
   }
 };
-const normalize = (text)=>text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
-const isOptOut = (text)=>/(^|\s)(parar|stop|cancelar|sair|remover|nao receber)(\s|$|!|\.|,)/i.test(normalize(text));
+const normalize = (text: string)=>text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+const isOptOut = (text: string)=>/(^|\s)(parar|stop|cancelar|sair|remover|nao receber)(\s|$|!|\.|,)/i.test(normalize(text));
 // P2 — "placa de entre aqui": bot fala 1x por número / 16h e some.
 const SILENCE_AFTER_LINK_MS = 16 * 60 * 60_000; // 16h
 // P2 — pula 1º contato: só responde se cliente mandar ≥2 msgs em 10min
@@ -122,12 +139,12 @@ const spHour = ()=>{
   const now = new Date();
   return (now.getUTCHours() - 3 + 24) % 24;
 };
-const greetingPrefix = (h)=>h >= 6 && h < 12 ? "Bom dia" : h >= 12 && h < 18 ? "Boa tarde" : "Boa noite";
+const greetingPrefix = (h: number)=>h >= 6 && h < 12 ? "Bom dia" : h >= 12 && h < 18 ? "Boa tarde" : "Boa noite";
 // Fase 3 — rotação de templates + micro-variação invisível para evitar
 // detecção de "mesma mensagem" pela Meta. Cada envio combina um template
 // aleatório com pequenas variações de emoji/pontuação e um caractere
 // zero-width no fim (invisível), gerando hash único a cada envio.
-const pick = (arr)=>arr[Math.floor(Math.random() * arr.length)];
+const pick = (arr: readonly string[])=>arr[Math.floor(Math.random() * arr.length)];
 const ZW = [
   "\u200B",
   "\u200C",
@@ -148,7 +165,7 @@ const OPT_OUT = [
   "_(Envie PARAR se não quiser mais receber)_",
   "_(Digite PARAR para sair desta lista)_"
 ];
-const buildOneShot = (storeName, link)=>{
+const buildOneShot = (storeName: string, link: string)=>{
   const prefix = greetingPrefix(spHour());
   const emoji = pick(EMOJIS_OPEN);
   const opt = pick(OPT_OUT);
@@ -161,7 +178,7 @@ const buildOneShot = (storeName, link)=>{
   ];
   return pick(templates) + zw;
 };
-const buildClosedOneShot = (storeName, link, nextOpen)=>{
+const buildClosedOneShot = (storeName: string, link: string, nextOpen: string)=>{
   const opt = pick(OPT_OUT);
   const zw = pick(ZW);
   const templates = [
@@ -204,7 +221,10 @@ Deno.serve(async (req)=>{
     if (!instance) return json({
       ok: true
     });
-    const admin = createClient(Deno.env.get("EXTERNAL_SUPABASE_URL") || Deno.env.get("SUPABASE_URL"), Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"));
+    const backendUrl = Deno.env.get("EXTERNAL_SUPABASE_URL") || Deno.env.get("SUPABASE_URL");
+    const backendKey = Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!backendUrl || !backendKey) return json({ error: "Backend não configurado" }, 500);
+    const admin = createClient(backendUrl, backendKey);
     const { data: cfg } = await admin.from("store_whatsapp_config").select("store_id, auto_reply_enabled, auto_reply_message, evolution_api_url, evolution_instance_name, status").eq("evolution_instance_name", instance).maybeSingle();
     if (!cfg) {
       // Instância da plataforma (ItaSuper) — sincroniza status em platform_whatsapp_config.
@@ -223,9 +243,9 @@ Deno.serve(async (req)=>{
             if (real) phone = real;
           }
           if (newStatus) {
-            const norm = (v)=>String(v || "").replace(/\D/g, "");
+            const norm = (v: unknown)=>String(v || "").replace(/\D/g, "");
             const phoneChanged = !!phone && norm(phone) !== norm(pcfg.phone_number);
-            const patch = {
+            const patch: ConnectionPatch = {
               status: newStatus,
               phone_number: phone ?? undefined,
               updated_at: new Date().toISOString()
@@ -278,9 +298,9 @@ Deno.serve(async (req)=>{
       }
       if (newStatus) {
         const { data: cur } = await admin.from("store_whatsapp_config").select("phone_number, status").eq("store_id", cfg.store_id).maybeSingle();
-        const norm = (v)=>String(v || "").replace(/\D/g, "");
+        const norm = (v: unknown)=>String(v || "").replace(/\D/g, "");
         const phoneChanged = !!phone && norm(phone) !== norm(cur?.phone_number);
-        const patch = {
+        const patch: ConnectionPatch = {
           status: newStatus,
           phone_number: phone ?? undefined,
           qr_code: newStatus === "connected" ? null : undefined,
@@ -410,7 +430,7 @@ Deno.serve(async (req)=>{
             "sexta",
             "sábado"
           ];
-          const findNextOpen = (list)=>{
+          const findNextOpen = (list: OpeningHour[])=>{
             for(let off = 0; off <= 7; off++){
               const d = (brDay + off) % 7;
               const h = list.find((x)=>x.day_of_week === d);
@@ -424,7 +444,7 @@ Deno.serve(async (req)=>{
             return "em breve";
           };
           if (hours && hours.length > 0) {
-            const isOpenAt = (day, minutes)=>{
+            const isOpenAt = (day: number, minutes: number)=>{
               const h = hours.find((x)=>x.day_of_week === day);
               if (!h || h.is_closed_all_day) return false;
               const [oH, oM] = String(h.open_time).split(":").map(Number);
@@ -472,7 +492,7 @@ Deno.serve(async (req)=>{
           skipped: "no_link_configured"
         });
         const oneShotMessage = storeClosedInfo ? buildClosedOneShot(storeName, link, storeClosedInfo.nextOpenLabel) : buildOneShot(storeName, link);
-        const sendMsg = async (message)=>{
+        const sendMsg = async (message: string)=>{
           // Functions must call the current Cloud functions host. EXTERNAL_SUPABASE_URL
           // is only the production data backend; using it here can route webhooks to
           // stale external functions and make incoming WhatsApp messages disappear.
