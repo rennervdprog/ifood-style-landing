@@ -21,20 +21,27 @@
 // exigiria um template de utilidade aprovado — o bot NÃO retoma
 // proativamente; a conversa recomeça quando o cliente chamar de novo.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
+interface MetaConfig { auto_reply_enabled?: boolean; send_disabled?: boolean; }
+interface MetaMessage {
+  from?: string; to?: string; timestamp?: string | number; type?: string;
+  text?: { body?: string }; image?: { caption?: string; id?: string }; video?: { caption?: string };
+}
+interface MetaEchoValue { message_echoes?: MetaMessage[]; }
+interface OpeningHour { day_of_week: number; open_time: string | null; close_time: string | null; is_closed_all_day: boolean; }
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, sentry-trace, baggage, x-hub-signature-256"
 };
-const json = (b, s = 200)=>new Response(JSON.stringify(b), {
+const json = (b: unknown, s = 200)=>new Response(JSON.stringify(b), {
     status: s,
     headers: {
       ...corsHeaders,
       "Content-Type": "application/json"
     }
   });
-const sleep = (ms)=>new Promise((resolve)=>setTimeout(resolve, ms));
-const normalize = (text)=>text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
-const isOptOut = (text)=>/(^|\s)(parar|stop|cancelar|sair|remover|nao receber)(\s|$|!|\.|,)/i.test(normalize(text));
+const sleep = (ms: number)=>new Promise((resolve)=>setTimeout(resolve, ms));
+const normalize = (text: string)=>text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+const isOptOut = (text: string)=>/(^|\s)(parar|stop|cancelar|sair|remover|nao receber)(\s|$|!|\.|,)/i.test(normalize(text));
 // P2 — "placa de entre aqui": bot fala 1x por número / 16h e some.
 const SILENCE_AFTER_LINK_MS = 16 * 60 * 60_000; // 16h
 // Pega hora atual no fuso de São Paulo (UTC-3)
@@ -42,12 +49,12 @@ const spHour = ()=>{
   const now = new Date();
   return (now.getUTCHours() - 3 + 24) % 24;
 };
-const greetingPrefix = (h)=>h >= 6 && h < 12 ? "Bom dia" : h >= 12 && h < 18 ? "Boa tarde" : "Boa noite";
+const greetingPrefix = (h: number)=>h >= 6 && h < 12 ? "Bom dia" : h >= 12 && h < 18 ? "Boa tarde" : "Boa noite";
 // Fase 3 — rotação de templates + micro-variação invisível para evitar
 // detecção de "mesma mensagem" pela Meta. Cada envio combina um template
 // aleatório com pequenas variações de emoji/pontuação e um caractere
 // zero-width no fim (invisível), gerando hash único a cada envio.
-const pick = (arr)=>arr[Math.floor(Math.random() * arr.length)];
+const pick = (arr: readonly string[])=>arr[Math.floor(Math.random() * arr.length)];
 const ZW = [
   "\u200B",
   "\u200C",
@@ -68,7 +75,7 @@ const OPT_OUT = [
   "_(Envie PARAR se não quiser mais receber)_",
   "_(Digite PARAR para sair desta lista)_"
 ];
-const buildOneShot = (storeName, link)=>{
+const buildOneShot = (storeName: string, link: string)=>{
   const prefix = greetingPrefix(spHour());
   const emoji = pick(EMOJIS_OPEN);
   const opt = pick(OPT_OUT);
@@ -81,7 +88,7 @@ const buildOneShot = (storeName, link)=>{
   ];
   return pick(templates) + zw;
 };
-const buildClosedOneShot = (storeName, link, nextOpen)=>{
+const buildClosedOneShot = (storeName: string, link: string, nextOpen: string)=>{
   const opt = pick(OPT_OUT);
   const zw = pick(ZW);
   const templates = [
@@ -92,7 +99,7 @@ const buildClosedOneShot = (storeName, link, nextOpen)=>{
   return pick(templates) + zw;
 };
 // Assinatura do webhook Meta: HMAC-SHA256 do corpo cru com o app secret.
-const hmacSha256Hex = async (secret, raw)=>{
+const hmacSha256Hex = async (secret: string, raw: string)=>{
   const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(secret), {
     name: "HMAC",
     hash: "SHA-256"
@@ -102,7 +109,7 @@ const hmacSha256Hex = async (secret, raw)=>{
   const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(raw));
   return Array.from(new Uint8Array(sig)).map((b)=>b.toString(16).padStart(2, "0")).join("");
 };
-const timingSafeEqual = (a, b)=>{
+const timingSafeEqual = (a: string, b: string)=>{
   if (a.length !== b.length) return false;
   let diff = 0;
   for(let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
@@ -111,7 +118,7 @@ const timingSafeEqual = (a, b)=>{
 // Baixa mídia recebida via Graph API (B3) — usado para comprovantes Pix
 // Direto do bot. Falha suave: sem token ou com erro, retorna null e a
 // mensagem segue sem imagem.
-const fetchMediaBase64 = async (mediaId)=>{
+const fetchMediaBase64 = async (mediaId: string | undefined)=>{
   const token = Deno.env.get("META_WHATSAPP_TOKEN") || "";
   if (!token || !mediaId) return null;
   try {
@@ -140,12 +147,12 @@ const fetchMediaBase64 = async (mediaId)=>{
       mime
     };
   } catch (e) {
-    console.warn("[meta-webhook] fetchMediaBase64 error", e?.message);
+    console.warn("[meta-webhook] fetchMediaBase64 error", e instanceof Error ? e.message : String(e));
     return null;
   }
 };
 // Mesma janela anti-backlog do evolution-webhook (5 min).
-const isRecentTs = (tsSeconds)=>{
+const isRecentTs = (tsSeconds: string | number | undefined)=>{
   const ts = Number(tsSeconds);
   if (!Number.isFinite(ts) || ts <= 0) return true;
   return Date.now() - ts * 1000 <= 5 * 60_000;
@@ -194,13 +201,16 @@ Deno.serve(async (req)=>{
     if (body?.object !== "whatsapp_business_account") return json({
       ok: true
     });
-    const admin = createClient(Deno.env.get("EXTERNAL_SUPABASE_URL") || Deno.env.get("SUPABASE_URL"), Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "");
+    const backendUrl = Deno.env.get("EXTERNAL_SUPABASE_URL") || Deno.env.get("SUPABASE_URL");
+    const backendKey = Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!backendUrl || !backendKey) return json({ error: "Backend não configurado" }, 500);
+    const admin = createClient(backendUrl, backendKey);
     const serviceKey = Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
     // Functions são chamadas pelo host de functions atual (SUPABASE_URL) —
     // mesma observação do evolution-webhook v75.
     const functionsBase = Deno.env.get("SUPABASE_URL") || Deno.env.get("EXTERNAL_SUPABASE_URL");
     const internalToken = Deno.env.get("EVOLUTION_WEBHOOK_TOKEN") || "";
-    const callFunction = async (slug, payload)=>{
+    const callFunction = async (slug: string, payload: Record<string, unknown>)=>{
       const r = await fetch(`${functionsBase}/functions/v1/${slug}`, {
         method: "POST",
         headers: {
@@ -219,7 +229,7 @@ Deno.serve(async (req)=>{
     };
     // Saudação (A3) — portada do evolution-webhook v75, trocando só o canal
     // de envio (official-whatsapp-send, texto livre). Retorna o desfecho.
-    const sendGreeting = async (storeId, cfg, number, text)=>{
+    const sendGreeting = async (storeId: string, cfg: MetaConfig, number: string, text: string)=>{
       // Se auto-reply está desligado, para aqui (o bot já teve a chance).
       if (!cfg.auto_reply_enabled) return "auto_reply_off";
       // P2 — opt-out: cliente digita PARAR -> registra blacklist e não responde
@@ -269,7 +279,7 @@ Deno.serve(async (req)=>{
           "sexta",
           "sábado"
         ];
-        const findNextOpen = (list)=>{
+        const findNextOpen = (list: OpeningHour[])=>{
           for(let off = 0; off <= 7; off++){
             const d = (brDay + off) % 7;
             const h = list.find((x)=>x.day_of_week === d);
@@ -283,7 +293,7 @@ Deno.serve(async (req)=>{
           return "em breve";
         };
         if (hours && hours.length > 0) {
-          const isOpenAt = (day, minutes)=>{
+          const isOpenAt = (day: number, minutes: number)=>{
             const h = hours.find((x)=>x.day_of_week === day);
             if (!h || h.is_closed_all_day) return false;
             const [oH, oM] = String(h.open_time).split(":").map(Number);
@@ -328,7 +338,7 @@ Deno.serve(async (req)=>{
       const link = pickedSlug ? `https://itasuper.com.br/${pickedSlug}` : "";
       if (!link) return "no_link_configured";
       const oneShotMessage = storeClosedInfo ? buildClosedOneShot(storeName, link, storeClosedInfo.nextOpenLabel) : buildOneShot(storeName, link);
-      const sendMsg = async (message)=>{
+      const sendMsg = async (message: string)=>{
         const { r, out } = await callFunction("official-whatsapp-send", {
           store_id: storeId,
           phone: number,
@@ -366,7 +376,7 @@ Deno.serve(async (req)=>{
       return storeClosedInfo ? "closed_oneshot" : "oneshot";
     };
     // Uma mensagem recebida (field "messages" da Cloud API).
-    const handleMessage = async (storeId, cfg, pushName, msg)=>{
+    const handleMessage = async (storeId: string, cfg: MetaConfig, pushName: string, msg: MetaMessage)=>{
       const number = String(msg?.from || "").replace(/\D/g, "");
       if (!number) return;
       if (!isRecentTs(msg?.timestamp)) return; // backlog/retry antigo: nem loga (paridade "old_message" do v75)
@@ -427,7 +437,7 @@ Deno.serve(async (req)=>{
           if (botOut?.handled) return;
         // handled=false → cai pra fluxo auto-reply normal (ex.: mensagem sem gatilho)
         } catch (e) {
-          console.error("[meta-webhook] bot dispatch failed", e?.message);
+          console.error("[meta-webhook] bot dispatch failed", e instanceof Error ? e.message : String(e));
         }
       }
       await sendGreeting(storeId, cfg, number, text);
@@ -437,7 +447,7 @@ Deno.serve(async (req)=>{
     // com direction='out' pra conversa ficar completa na aba Conversas,
     // igual ao fromMe da Evolution. Best-effort: formato de echo sem
     // destinatário/texto é simplesmente ignorado.
-    const handleEchoes = async (storeId, value)=>{
+    const handleEchoes = async (storeId: string, value: MetaEchoValue)=>{
       for (const echo of value?.message_echoes || []){
         try {
           const to = String(echo?.to || "").replace(/\D/g, "");
@@ -452,7 +462,7 @@ Deno.serve(async (req)=>{
             direction: "out"
           });
         } catch (e) {
-          console.warn("[meta-webhook] echo log skipped", e?.message);
+          console.warn("[meta-webhook] echo log skipped", e instanceof Error ? e.message : String(e));
         }
       }
     };
@@ -479,7 +489,7 @@ Deno.serve(async (req)=>{
             try {
               await handleMessage(storeId, cfg, names[String(msg?.from || "")] || "", msg);
             } catch (e) {
-              console.error("[meta-webhook] message failed", e?.message);
+              console.error("[meta-webhook] message failed", e instanceof Error ? e.message : String(e));
             }
           }
         } else if (change.field === "smb_message_echoes") {

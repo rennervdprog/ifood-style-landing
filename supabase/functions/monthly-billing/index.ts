@@ -367,7 +367,9 @@ Deno.serve(async (req) => {
         let resolvedReferenceCode = referenceCode;
         if (!resolvedReferenceCode) {
           const { data: refData } = await supabase.rpc("generate_financial_reference", { _prefix: "MENS" });
-          resolvedReferenceCode = refData || `#MENS-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
+          resolvedReferenceCode = typeof refData === "string" && refData
+            ? refData
+            : `#MENS-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
         }
 
         const dueDate = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000); // 3 days to pay

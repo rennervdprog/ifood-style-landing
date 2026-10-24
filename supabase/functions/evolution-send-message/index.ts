@@ -4,7 +4,7 @@ const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, sentry-trace, baggage"
 };
-const json = (b, s = 200)=>new Response(JSON.stringify(b), {
+const json = (b: unknown, s = 200)=>new Response(JSON.stringify(b), {
     status: s,
     headers: {
       ...corsHeaders,
@@ -23,12 +23,12 @@ const BodySchema = z.object({
   ]).optional(),
   force: z.boolean().optional()
 });
-const sleep = (ms)=>new Promise((r)=>setTimeout(r, ms));
-const hashMsg = async (s)=>{
+const sleep = (ms: number)=>new Promise((r)=>setTimeout(r, ms));
+const hashMsg = async (s: string)=>{
   const buf = await crypto.subtle.digest("SHA-1", new TextEncoder().encode(s));
   return Array.from(new Uint8Array(buf)).map((b)=>b.toString(16).padStart(2, "0")).join("").slice(0, 16);
 };
-const sendPresence = async (baseUrl, instance, apiKey, number)=>{
+const sendPresence = async (baseUrl: string, instance: string, apiKey: string, number: string)=>{
   await fetch(`${baseUrl.replace(/\/$/, "")}/chat/sendPresence/${instance}`, {
     method: "POST",
     headers: {
@@ -42,7 +42,7 @@ const sendPresence = async (baseUrl, instance, apiKey, number)=>{
     })
   }).catch(()=>undefined);
 };
-const isAuthorizedForStore = async (admin, req, storeId)=>{
+const isAuthorizedForStore = async (admin: ReturnType<typeof createClient>, req: Request, storeId: string)=>{
   const authHeader = req.headers.get("Authorization") || "";
   const externalServiceRole = Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
   if (externalServiceRole && authHeader === `Bearer ${externalServiceRole}`) return true;
@@ -85,7 +85,7 @@ const PER_PHONE_MIN_GAP_MS = 3_000; // gap mínimo entre envios p/ mesmo número
 const EVOLUTION_MAX_RETRIES = 2; // tentativas extras em falha transitória
 const EVOLUTION_RETRY_DELAY_MS = 2_000; // base de espera entre retries
 // P1.3 — limites diários por fase do chip (dias após connected_at)
-const dailyLimitForAge = (days)=>{
+const dailyLimitForAge = (days: number)=>{
   if (days < 7) return 20; // semana 1
   if (days < 14) return 50; // semana 2
   if (days < 30) return 100; // semana 3-4
@@ -142,7 +142,10 @@ Deno.serve(async (req)=>{
     const fromQueueWorker = !!internalToken && req.headers.get("x-queue-worker") === "1" && req.headers.get("x-internal-token") === internalToken;
     const maskedPhone = phone ? `${phone.slice(0, 4)}****${phone.slice(-2)}` : "";
     console.log("[evolution-send-message] ▶ store_id=", store_id, "phone=", maskedPhone, "kind=", kind, "msgLen=", message.length);
-    const admin = createClient(Deno.env.get("EXTERNAL_SUPABASE_URL") || Deno.env.get("SUPABASE_URL"), Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"));
+    const backendUrl = Deno.env.get("EXTERNAL_SUPABASE_URL") || Deno.env.get("SUPABASE_URL");
+    const backendKey = Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!backendUrl || !backendKey) return json({ error: "Backend não configurado" }, 500);
+    const admin = createClient(backendUrl, backendKey);
     if (!await isAuthorizedForStore(admin, req, store_id)) {
       console.error("[evolution-send-message] ⛔ Forbidden — auth check failed for store", store_id);
       return json({
@@ -338,8 +341,8 @@ Deno.serve(async (req)=>{
     console.error("evolution-send-message error:", e);
     return json({
       error: "Internal error",
-      message: e.message,
-      stack: e.stack
+      message: e instanceof Error ? e.message : String(e),
+      stack: e instanceof Error ? e.stack : undefined
     }, 500);
   }
 });
