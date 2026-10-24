@@ -54,7 +54,7 @@ const CashRegisterTab = lazy(() => import("./admin/tabs/CashRegisterTab"));
 const AddonsTab = lazy(() => import("./admin/tabs/AddonsTab"));
 const BordasTab = lazy(() => import("./admin/tabs/BordasTab"));
 const HoursTab = lazy(() => import("./admin/tabs/HoursTab"));
-const FinanceTab = lazy(() => import("./admin/tabs/FinanceTab"));
+const FinanceTabTeste = lazy(() => import("./admin/tabs/FinanceTabTeste"));
 const DriversTab = lazy(() => import("./admin/tabs/DriversTab"));
 const SettingsTab = lazy(() => import("./admin/tabs/SettingsTab"));
 const CouponsTab = lazy(() => import("./admin/tabs/CouponsTab"));
@@ -62,7 +62,6 @@ const PromotionsTab = lazy(() => import("./admin/tabs/PromotionsTab"));
 const ReviewsTab = lazy(() => import("./admin/tabs/ReviewsTab"));
 const DashboardOverviewSectionTeste = lazy(() => import("./admin/sections/DashboardOverviewSectionTeste"));
 const AvisosSection = lazy(() => import("./admin/sections/AvisosSection"));
-const RepasseSection = lazy(() => import("./admin/sections/RepasseSection"));
 const OrdersSectionTeste = lazy(() => import("./admin/sections/OrdersSectionTeste"));
 import AdminOrderCard from "./admin/components/AdminOrderCard";
 import ClientsTab from "./admin/components/ClientsTab";
@@ -2118,14 +2117,17 @@ const AdminDashboardTeste = () => {
           )}
 
           {/* ══════ REPASSE TAB ══════ */}
+          {/* TELA 4: repasse vive SÓ dentro do Financeiro — a aba
+              "repasse" abre o FinanceiroTeste já no bloco de repasse. */}
           {dashboardTab === "repasse" && store && (
             <ErrorBoundary>
             <Suspense fallback={<TabFallback />}>
-              <RepasseSection
-                store={store}
-                storePlan={storePlan}
-                setDashboardTab={setDashboardTab}
-                pendingTotal={repassePending}
+              <FinanceTabTeste
+                storeId={store.id}
+                storeName={store.name}
+                hasCommission={storePlan.hasCommission}
+                isPlatformAdmin={isPlatformAdmin}
+                focusSection="repasse"
               />
             </Suspense>
             </ErrorBoundary>
@@ -2211,10 +2213,10 @@ const AdminDashboardTeste = () => {
                 {dashboardTab === "hours" && <HoursTab storeId={store.id} forceClosed={(store as any).force_closed || false} />}
                 {dashboardTab === "settings" && <SettingsTab store={store} />}
                 {dashboardTab === "finance" && (
-                  <FinanceTab 
-                    storeId={store.id} 
-                    storeName={store.name} 
-                    hasCommission={storePlan.hasCommission} 
+                  <FinanceTabTeste
+                    storeId={store.id}
+                    storeName={store.name}
+                    hasCommission={storePlan.hasCommission}
                     isPlatformAdmin={isPlatformAdmin}
                   />
                 )}
