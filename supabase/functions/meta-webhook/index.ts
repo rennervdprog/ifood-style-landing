@@ -448,7 +448,7 @@ Deno.serve(async (req)=>{
     // igual ao fromMe da Evolution. Best-effort: formato de echo sem
     // destinatário/texto é simplesmente ignorado.
     const handleEchoes = async (storeId: string, value: MetaEchoValue)=>{
-      for (const echo of value instanceof Error ? e.message : String(e)_echoes || []){
+      for (const echo of value?.message_echoes || []){
         try {
           const to = String(echo?.to || "").replace(/\D/g, "");
           if (!to) continue;
