@@ -1892,7 +1892,7 @@ const AdminDashboardTeste = () => {
       {/* ── MAIN CONTENT ── */}
       <main className="flex-1 min-w-0 flex flex-col">
         {/* Mobile Header */}
-        <header className="sticky top-0 z-30 bg-card/95 backdrop-blur border-b border-border px-4 py-2.5 flex items-center justify-between">
+        <header className="sticky top-0 z-30 bg-card/95 backdrop-blur border-b border-border px-3 py-2.5 sm:px-4 flex items-center justify-between gap-2">
           <div className="flex items-center gap-3 min-w-0">
             {/* Desktop: hamburger for sidebar */}
             <button onClick={() => setSidebarOpen(true)} className="hidden lg:hidden p-2 -ml-2 rounded-xl hover:bg-accent">
@@ -1900,9 +1900,9 @@ const AdminDashboardTeste = () => {
             </button>
             <div className="min-w-0">
               <h2 className="font-bold text-foreground text-base truncate">{store?.name || "Painel"}</h2>
-              <div className="flex items-center gap-2 mt-0.5 lg:hidden">
+              <div className="flex flex-wrap items-center gap-1.5 mt-0.5 lg:hidden">
                 <button onClick={toggleStoreOpen}
-                  className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-bold transition-colors ${
+                  className={`inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded-full text-[11px] font-bold transition-colors ${
                     store?.is_open
                       ? "bg-emerald-500/10 text-emerald-600"
                       : "bg-red-500/10 text-red-500"
@@ -1910,7 +1910,7 @@ const AdminDashboardTeste = () => {
                   <span className={`w-1.5 h-1.5 rounded-full ${store?.is_open ? "bg-emerald-500" : "bg-red-500"}`} />
                   {store?.is_open ? "Online" : "Offline"}
                 </button>
-                <div className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${isStoreReallyOpen ? "text-emerald-500 bg-emerald-500/5" : "text-red-500 bg-red-500/5"}`}>
+                <div className={`text-[10px] font-black uppercase px-1.5 py-0.5 rounded-full ${isStoreReallyOpen ? "text-emerald-500 bg-emerald-500/5" : "text-red-500 bg-red-500/5"}`}>
                   {isStoreReallyOpen ? "Aberta" : "Fechada"}
                 </div>
               </div>
@@ -1937,27 +1937,27 @@ const AdminDashboardTeste = () => {
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex min-w-0 items-center gap-1.5">
             <AdminSearchBarTeste groups={visibleGroupsTeste} isPdvOnly={isPdvOnly} onNavigate={handleTabChange} />
             {showSoundPrompt && !soundEnabled && !Capacitor.isNativePlatform() && (
-              <button onClick={activateSound}
-                className="flex items-center gap-1 bg-amber-400/10 border border-amber-400/30 text-amber-500 px-2.5 py-1.5 rounded-xl text-[11px] font-bold animate-pulse">
-                <Bell className="h-3.5 w-3.5" /> Alertas
+              <button onClick={activateSound} title="Alertas sonoros" aria-label="Alertas sonoros"
+                className="flex shrink-0 items-center gap-1 whitespace-nowrap bg-amber-400/10 border border-amber-400/30 text-amber-500 px-2.5 py-1.5 rounded-xl text-[11px] font-bold animate-pulse">
+                <Bell className="h-3.5 w-3.5" /> <span className="max-[400px]:hidden">Alertas</span>
               </button>
             )}
             {pendingCount > 0 && dashboardTab !== "orders" && !isPdvOnly && (
               <button onClick={() => { setDashboardTab("orders"); setActiveTab("pendente"); }}
-                className="flex items-center gap-1 bg-destructive text-destructive-foreground px-2.5 py-1.5 rounded-xl text-[11px] font-bold animate-bounce">
+                className="flex shrink-0 items-center gap-1 whitespace-nowrap bg-destructive text-destructive-foreground px-2 py-1.5 sm:px-2.5 rounded-xl text-[11px] font-bold animate-bounce">
                 <Clock className="h-3.5 w-3.5" /> {pendingCount}
               </button>
             )}
             {soundEnabled && (
               <button onClick={() => setSoundMuted(prev => { if (!prev) toast("🔇 Silenciado"); else toast.success("🔊 Ativo!"); return !prev; })}
-                className={`p-2 rounded-xl lg:hidden ${soundMuted ? "text-destructive" : "text-emerald-500"}`}>
+                className={`shrink-0 p-2 rounded-xl lg:hidden ${soundMuted ? "text-destructive" : "text-emerald-500"}`}>
                 {soundMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
               </button>
             )}
-            <SignOutConfirm redirectTo="/portal-parceiro" />
+            <SignOutConfirm redirectTo="/portal-parceiro" triggerClassName="shrink-0 p-2 rounded-xl hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors" />
           </div>
         </header>
 
