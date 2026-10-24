@@ -8,9 +8,11 @@
  * O 3º nível (seções internas de cada aba) não muda nesta tela.
  *
  * O que muda em relação ao shell original:
- * 1. FIM do sheet "Mais" no mobile: Operação, Financeiro e
- *    Configurações (e, com elas, Motoboys) passam a aparecer direto na
- *    barra inferior rolável — AdminBottomNavTeste.
+ * 1. "Mais" restaurado no mobile (como o original): a barra inferior
+ *    fixa mostra só Início, Pedidos, Cardápio, Clientes + "Mais";
+ *    Operação, Financeiro e Configurações (e, com elas, Motoboys)
+ *    vivem no sheet do "Mais" — AdminBottomNavTeste. Só entram no
+ *    sheet os grupos já visíveis para a loja (visibleGroupsTeste).
  * 2. Repasse num SÓ lugar: filterTesteNavGroups remove a sub-aba
  *    "Repasse" do grupo Início e a mantém só no Financeiro. O destino,
  *    o componente e o texto não mudam — some só o caminho duplicado.
@@ -27,7 +29,7 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
-import { ChevronRight, Search, Settings } from "lucide-react";
+import { ChevronRight, Menu, Search, Settings, X } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import {
   Command,
@@ -38,6 +40,7 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import type { DashboardGroup } from "../../constants";
+import { bottomNavGroupKeys, moreSheetGroupKeys } from "../../constants";
 import type { DashboardTab } from "../../types";
 import { SETTINGS_SECTIONS, requestSettingsSection } from "../../settingsSections";
 import { cn } from "@/lib/utils";
@@ -229,9 +232,21 @@ export function AdminSearchBarTeste({
   );
 }
 
-/* ── Barra inferior mobile: todos os grupos, sem "Mais" ──────────
- * Rolável na horizontal para caberem os 7 grupos sem espremer rótulo:
- * nenhum grupo fica escondido atrás de um segundo toque. */
+/* ── Barra inferior mobile: 4 fixos + "Mais" (como o original) ──
+ * Fixa, sem rolagem: os 4 grupos de bottomNavGroupKeys + o botão
+ * "Mais" ocupam sempre a largura toda (flex-1 cada), então nenhum
+ * item fica fora da tela. O sheet do "Mais" lista só os grupos de
+ * moreSheetGroupKeys que já vieram em `groups` (visibilidade da loja
+ * respeitada — ex.: pdv_only, que já filtra Operação fora).
+ * Cores — só tokens do tema, nenhum hex inventado:
+ * - ativo: text-primary + barrinha bg-primary no topo + ícone
+ *   ampliado (scale-110) + rótulo font-black;
+ * - inativo: text-muted-foreground (tom cheio, não /60, para o ícone
+ *   não sumir no cinza) + hover:text-foreground;
+ * - badge de pendentes no Pedidos: bg-amber-500 pulsante (como o
+ *   original), não destructive;
+ * - sheet: item ativo bg-primary/10 + text-primary + rótulo
+ *   font-black; inativos com ícone em tamanho legível (h-6 w-6). */
 
 export function AdminBottomNavTeste({
   groups,
@@ -244,54 +259,181 @@ export function AdminBottomNavTeste({
   pendingCount: number;
   onGroupChange: (groupKey: DashboardGroup["key"]) => void;
 }) {
+  const [showMoreSheet, setShowMoreSheet] = useState(false);
+
+  const groupMap = useMemo(
+    () => new Map(groups.map((g) => [g.key, g])),
+    [groups],
+  );
+  // Ordem canônica do original; grupos invisíveis para a loja já não
+  // estão em `groups` e caem fora aqui pelo filter(Boolean).
+  const bottomNavGroups = bottomNavGroupKeys
+    .map((k) => groupMap.get(k))
+    .filter(Boolean) as DashboardGroup[];
+  const moreSheetGroups = moreSheetGroupKeys
+    .map((k) => groupMap.get(k))
+    .filter(Boolean) as DashboardGroup[];
+
+  // activeGroupKey chega como string; o cast é seguro porque toda chave
+  // de grupo vem de DashboardGroupKey (as listas acima são exaustivas).
+  const isBottomNavMore = activeGroupKey
+    ? !bottomNavGroupKeys.includes(activeGroupKey as DashboardGroup["key"])
+    : false;
+  const isMoreActive = isBottomNavMore || showMoreSheet;
+
+  // Navegação por outro caminho (busca, sidebar, breadcrumb) fecha o
+  // sheet aberto, como o original faz em handleTabChange.
+  useEffect(() => {
+    setShowMoreSheet(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeGroupKey]);
+
+  const goGroup = (groupKey: DashboardGroup["key"]) => {
+    setShowMoreSheet(false);
+    onGroupChange(groupKey);
+  };
+
   return (
-    <nav
-      aria-label="Navegação principal"
-      className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-xl border-t border-border/50 lg:hidden pb-safe"
-    >
-      <div className="flex h-16 items-stretch overflow-x-auto px-2">
-        {groups.map((group) => {
-          const Icon = group.icon;
-          const isActive = activeGroupKey === group.key;
-          return (
-            <button
-              key={group.key}
-              type="button"
-              onClick={() => onGroupChange(group.key)}
-              aria-current={isActive ? "page" : undefined}
-              className={cn(
-                "relative flex h-full min-w-[76px] shrink-0 flex-col items-center justify-center px-2 transition-colors",
-                isActive
-                  ? "text-primary"
-                  : "text-muted-foreground/60 hover:text-muted-foreground",
-              )}
-            >
-              {isActive && (
-                <div className="absolute top-0 h-1 w-8 rounded-full bg-primary" />
-              )}
-              <div className="relative mt-1">
-                <Icon
-                  className="h-6 w-6"
-                  strokeWidth={isActive ? 2.5 : 2}
-                />
-                {group.key === "pedidos" && pendingCount > 0 && (
-                  <span className="absolute -top-1.5 -right-2 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-destructive px-1 text-xs font-black text-destructive-foreground ring-2 ring-background shadow-lg animate-pulse">
-                    {pendingCount}
-                  </span>
-                )}
-              </div>
-              <span
+    <>
+      {showMoreSheet && (
+        <div
+          className="fixed inset-0 z-[60] bg-black/60 lg:hidden"
+          onClick={() => setShowMoreSheet(false)}
+        />
+      )}
+
+      {showMoreSheet && (
+        <div className="fixed inset-x-0 bottom-0 z-[70] animate-in fade-in slide-in-from-bottom-4 duration-500 lg:hidden">
+          <div className="rounded-t-2xl border-t border-border bg-card pb-safe">
+            <div className="flex justify-center pb-2 pt-3">
+              <div className="h-1 w-10 rounded-full bg-muted-foreground/30" />
+            </div>
+            <div className="grid grid-cols-3 gap-3 px-4 pb-4">
+              {moreSheetGroups.map((group) => {
+                const Icon = group.icon;
+                const isActive = activeGroupKey === group.key;
+                return (
+                  <button
+                    key={group.key}
+                    type="button"
+                    onClick={() => goGroup(group.key)}
+                    aria-current={isActive ? "page" : undefined}
+                    className={cn(
+                      "flex flex-col items-center gap-2 rounded-2xl border p-3 transition-all",
+                      isActive
+                        ? "border-primary/30 bg-primary/10 text-primary"
+                        : "border-transparent text-muted-foreground hover:bg-accent hover:text-foreground",
+                    )}
+                  >
+                    <Icon
+                      className={cn("h-6 w-6", isActive && "scale-110")}
+                      strokeWidth={isActive ? 2.5 : 2}
+                    />
+                    <span
+                      className={cn(
+                        "text-[11px]",
+                        isActive ? "font-black tracking-tight" : "font-bold",
+                      )}
+                    >
+                      {group.label}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <nav
+        aria-label="Navegação principal"
+        className="fixed bottom-0 left-0 right-0 z-50 border-t border-border/50 bg-background/95 pb-safe backdrop-blur-xl lg:hidden"
+      >
+        <div className="flex h-16 items-center justify-around px-2">
+          {bottomNavGroups.map((group) => {
+            const Icon = group.icon;
+            const isActive = activeGroupKey === group.key && !showMoreSheet;
+            return (
+              <button
+                key={group.key}
+                type="button"
+                onClick={() => goGroup(group.key)}
+                aria-current={isActive ? "page" : undefined}
                 className={cn(
-                  "mt-1 text-xs",
-                  isActive ? "font-black tracking-tight" : "font-bold",
+                  "relative flex h-full flex-1 flex-col items-center justify-center transition-all duration-300",
+                  isActive
+                    ? "translate-y-[-2px] text-primary"
+                    : "text-muted-foreground hover:text-foreground",
                 )}
               >
-                {group.label}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-    </nav>
+                {isActive && (
+                  <div className="absolute top-0 h-1 w-8 animate-in fade-in zoom-in rounded-full bg-primary duration-300" />
+                )}
+                <div className="relative mt-1">
+                  <Icon
+                    className={cn(
+                      "h-6 w-6 transition-transform duration-300",
+                      isActive ? "scale-110" : "group-active:scale-90",
+                    )}
+                    strokeWidth={isActive ? 2.5 : 2}
+                  />
+                  {group.key === "pedidos" && pendingCount > 0 && (
+                    <span className="absolute -right-2 -top-1.5 flex h-[18px] min-w-[18px] animate-pulse items-center justify-center rounded-full bg-amber-500 px-1 text-[10px] font-black text-white shadow-lg ring-2 ring-background">
+                      {pendingCount}
+                    </span>
+                  )}
+                </div>
+                <span
+                  className={cn(
+                    "mt-1 text-[11px] transition-all duration-300",
+                    isActive ? "font-black tracking-tight" : "font-bold",
+                  )}
+                >
+                  {group.label}
+                </span>
+              </button>
+            );
+          })}
+          <button
+            type="button"
+            onClick={() => setShowMoreSheet(!showMoreSheet)}
+            aria-expanded={showMoreSheet}
+            aria-current={isMoreActive ? "page" : undefined}
+            className={cn(
+              "relative flex h-full flex-1 flex-col items-center justify-center transition-all duration-300",
+              isMoreActive
+                ? "translate-y-[-2px] text-primary"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {isMoreActive && (
+              <div className="absolute top-0 h-1 w-8 animate-in fade-in zoom-in rounded-full bg-primary duration-300" />
+            )}
+            <div className="relative mt-1">
+              <div
+                className={cn(
+                  "transition-all duration-300",
+                  showMoreSheet && "rotate-90 scale-110",
+                )}
+              >
+                {showMoreSheet ? (
+                  <X className="h-6 w-6" strokeWidth={2.5} />
+                ) : (
+                  <Menu className="h-6 w-6" strokeWidth={2} />
+                )}
+              </div>
+            </div>
+            <span
+              className={cn(
+                "mt-1 text-[11px] transition-all duration-300",
+                isMoreActive ? "font-black tracking-tight" : "font-bold",
+              )}
+            >
+              Mais
+            </span>
+          </button>
+        </div>
+      </nav>
+    </>
   );
 }
