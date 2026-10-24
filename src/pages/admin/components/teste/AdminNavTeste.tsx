@@ -160,7 +160,7 @@ export function AdminSearchBarTeste({
         type="button"
         onClick={() => setOpen(true)}
         title="Buscar telas (Ctrl+K)"
-        className="flex min-w-0 flex-1 items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 text-left text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+        className="flex min-w-0 flex-1 items-center gap-2 rounded-xl border border-border bg-card px-2.5 py-2 sm:px-3 text-left text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
       >
         <Search className="h-4 w-4 shrink-0" />
         <span className="min-w-0 flex-1 truncate">
