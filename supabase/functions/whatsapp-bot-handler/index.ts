@@ -1428,6 +1428,14 @@ Deno.serve(async (req)=>{
           session.context.reference = ref === "-" || ref === "" ? "" : ref.slice(0, 120);
           const quote = await quoteBotDelivery(store_id, session);
           if (!quote?.ok || !quote?.destination || !quote?.pricing) {
+            if (quote?.reason === "no_driver_available") {
+              await clearSession(admin, store_id, phone);
+              await sendText(store_id, phone, "⚠️ A loja está sem entregador disponível no momento, então não consigo confirmar a entrega agora.\n\nTente novamente em alguns minutos — assim que um entregador estiver online, é só mandar *MENU* para finalizar o pedido por aqui. 🙂");
+              return json({
+                handled: true,
+                action: "no_driver_available"
+              });
+            }
             const message = quote?.reason === "outside_delivery_area" ? "Esse endereço está fora da área de entrega da loja. Vou pedir o CEP novamente." : "Não consegui confirmar a entrega nesse endereço. Vou pedir o CEP novamente.";
             await sendText(store_id, phone, message);
             await askCep(admin, store_id, phone, session);
