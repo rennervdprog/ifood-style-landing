@@ -106,7 +106,7 @@ function buildAcceptedMessage(p: {
   const etaLinha = p.isDelivery ? `\n(Previsão de Entrega: ${buildEtaWindow()})` : "";
   const pinLinha = p.pin ? `\n\n🔑 *PIN de Segurança: ${p.pin}*` : "";
   return (
-    `${p.clientName || "Cliente"}, o pedido Nº *${p.num}* está em produção.\n\n` +
+    `${p.clientName || "Cliente"}, o pedido *#${p.num}* está em produção.\n\n` +
     `*Itens:*\n${p.itemsBlock}\n\n` +
     (p.paymentLabel ? `📱 *${p.paymentLabel}*\n\n` : "") +
     (p.isDelivery
@@ -118,8 +118,8 @@ function buildAcceptedMessage(p: {
   );
 }
 
-function buildOutMessage(p: { storeName: string; num: string; address: string; pin: string }): string {
-  return `🛵 *${p.storeName}* informa: Seu pedido #${p.num} saiu para entrega! 🚀\n` +
+function buildOutMessage(p: { storeName: string; shortId: string; address: string; pin: string }): string {
+  return `🛵 *${p.storeName}* informa: Seu pedido #${p.shortId} saiu para entrega! 🚀\n` +
     (p.address ? `Endereço: ${p.address}` : "") +
     (p.pin ? `\n\n🔑 *PIN de Segurança: ${p.pin}*` : "");
 }
@@ -192,7 +192,7 @@ Deno.serve(async (req) => {
       const method = String(order.payment_method || "");
       message = buildAcceptedMessage({
         clientName,
-        num: order.order_number ? String(order.order_number) : shortId,
+        num: shortId,
         itemsBlock: buildRichItemsBlock(items || []),
         paymentLabel: PAYMENT_LABELS[method] || (method ? method.toUpperCase() : ""),
         isDelivery,
@@ -206,7 +206,7 @@ Deno.serve(async (req) => {
       // cancelado — espelha o painel (orderNotifications), incl. variante pix_direto.
       const customTpl = (cfg as any).message_templates?.["cancelado"];
       const firstName = clientName.split(" ")[0];
-      const num = order.order_number ? String(order.order_number) : shortId;
+      const num = shortId;
       if (typeof customTpl === "string" && customTpl.trim().length > 0) {
         message = applyTemplate(customTpl, {
           storeName, clientName, orderId: num,
@@ -232,7 +232,7 @@ Deno.serve(async (req) => {
           itemsBlock = buildRichItemsBlock(items || []);
         }
         message = applyTemplate(customTpl, {
-          storeName, clientName, orderId: order.order_number ? String(order.order_number) : shortId,
+          storeName, clientName, orderId: shortId,
           total: fmtBRL(Number(order.total_price || 0)),
           pin, address, items: itemsBlock,
           payment: String(order.payment_method || "").toUpperCase(),
@@ -240,7 +240,7 @@ Deno.serve(async (req) => {
           deliveryType: "Delivery", eta: "", neighborhood: String(order.neighborhood || ""),
         });
       } else {
-        message = buildOutMessage({ storeName, num: order.order_number ? String(order.order_number) : shortId, address, pin });
+        message = buildOutMessage({ storeName, shortId, address, pin });
       }
     }
 
@@ -253,7 +253,7 @@ Deno.serve(async (req) => {
         .eq("store_id", order.store_id).maybeSingle();
       const tplName = status === "preparando" ? ocfg?.template_accepted : status === "saiu_entrega" ? ocfg?.template_out : ocfg?.template_cancelled;
       if (!tplName) return json({ ok: false, error: "official_template_missing", status });
-      const num = order.order_number ? String(order.order_number) : shortId;
+      const num = shortId;
       const firstName = clientName.split(" ")[0];
       const etaTxt = (() => {
         const fmt = (d: Date) => new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit", hour12: false }).format(d);
