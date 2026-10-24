@@ -42,7 +42,9 @@ const sendPresence = async (baseUrl: string, instance: string, apiKey: string, n
     })
   }).catch(()=>undefined);
 };
-const isAuthorizedForStore = async (admin: ReturnType<typeof createClient>, req: Request, storeId: string)=>{
+// A fábrica concreta preserva os padrões genéricos do cliente (schema public).
+const createAdminClient = (url: string, key: string) => createClient(url, key);
+const isAuthorizedForStore = async (admin: ReturnType<typeof createAdminClient>, req: Request, storeId: string)=>{
   const authHeader = req.headers.get("Authorization") || "";
   const externalServiceRole = Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
   if (externalServiceRole && authHeader === `Bearer ${externalServiceRole}`) return true;
@@ -85,12 +87,20 @@ const PER_PHONE_MIN_GAP_MS = 3_000; // gap mínimo entre envios p/ mesmo número
 const EVOLUTION_MAX_RETRIES = 2; // tentativas extras em falha transitória
 const EVOLUTION_RETRY_DELAY_MS = 2_000; // base de espera entre retries
 // P1.3 — limites diários por fase do chip (dias após connected_at)
+// Escada atualizada em 2026-10-24 (decisão do dono do produto): 60/120/200/300/300.
+// Semana 1 fica em 60, ABAIXO do precedente de ban: chip novo disparando
+// 80/dia já foi banido (ver comentário no warm-up abaixo) — por isso o
+// aquecimento continua gradual e o limite sobe sozinho com o tempo de uso.
+// O lojista pode AUMENTAR o teto (coluna daily_limit_override, máx. 500),
+// mas nunca diminuí-lo abaixo do teto da idade: o efetivo é o maior entre
+// os dois, travado em 500 (ver cálculo em "2) Limite diário" abaixo).
+const DAILY_LIMIT_OVERRIDE_MAX = 500;
 const dailyLimitForAge = (days: number)=>{
-  if (days < 7) return 20; // semana 1
-  if (days < 14) return 50; // semana 2
-  if (days < 30) return 100; // semana 3-4
-  if (days < 60) return 150; // mês 2
-  return 200; // mês 3+
+  if (days < 7) return 60; // semana 1
+  if (days < 14) return 120; // semana 2
+  if (days < 30) return 200; // semana 3-4
+  if (days < 60) return 300; // mês 2
+  return 300; // mês 3+
 };
 // Fila de envios (2026-10-22): cap/falha transitoria enfileira em vez de perder.
 const QUEUE_TTL_MS: Record<string, number> = { auto_reply: 2 * 3600_000, order_status: 6 * 3600_000, manual: 6 * 3600_000 };
@@ -145,14 +155,14 @@ Deno.serve(async (req)=>{
     const backendUrl = Deno.env.get("EXTERNAL_SUPABASE_URL") || Deno.env.get("SUPABASE_URL");
     const backendKey = Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     if (!backendUrl || !backendKey) return json({ error: "Backend não configurado" }, 500);
-    const admin = createClient(backendUrl, backendKey);
+    const admin = createAdminClient(backendUrl, backendKey);
     if (!await isAuthorizedForStore(admin, req, store_id)) {
       console.error("[evolution-send-message] ⛔ Forbidden — auth check failed for store", store_id);
       return json({
         error: "Forbidden"
       }, 403);
     }
-    const { data: cfg } = await admin.from("store_whatsapp_config").select("evolution_instance_name, status, connected_at, established_number, send_disabled, whatsapp_mode").eq("store_id", store_id).maybeSingle();
+    const { data: cfg } = await admin.from("store_whatsapp_config").select("evolution_instance_name, status, connected_at, established_number, daily_limit_override, send_disabled, whatsapp_mode").eq("store_id", store_id).maybeSingle();
     console.log("[evolution-send-message] cfg:", cfg);
     // Migração API oficial: loja com whatsapp_mode='official' não envia NADA
     // pela Evolution (a instância é desligada na virada). Retorno cedo, antes
@@ -214,7 +224,13 @@ Deno.serve(async (req)=>{
     // P0: warm-up honesto — auto_reply respeita o mesmo limite da fase.
     // (antes: Math.max(80,…) anulava o warm-up e chip novo já disparava 80/dia → banimento)
     const effAgeDays = (cfg as any).established_number ? Math.max(ageDays, 20) : ageDays;
-    const dailyLimit = dailyLimitForAge(effAgeDays);
+    const ageLimit = dailyLimitForAge(effAgeDays);
+    // Override do lojista (2026-10-24): só AUMENTA o teto, nunca diminui —
+    // o efetivo é o maior entre o teto da idade e o override, travado em 500.
+    // Override null/0/inválido = vale só o teto da idade.
+    const overrideRaw = (cfg as any).daily_limit_override;
+    const override = typeof overrideRaw === "number" && Number.isFinite(overrideRaw) && overrideRaw > 0 ? overrideRaw : null;
+    const dailyLimit = override !== null ? Math.min(Math.max(ageLimit, override), DAILY_LIMIT_OVERRIDE_MAX) : ageLimit;
     const dayStart = new Date();
     dayStart.setHours(0, 0, 0, 0);
     const { count: sentToday } = await admin.from("whatsapp_send_log").select("id", {
