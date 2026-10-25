@@ -430,6 +430,17 @@ const ProductDetailModal = ({ product, storeName, storeCategory, singleSize = fa
               {isRequired ? `Escolha ${group.min_select}` : "Opcional"}
               {group.max_select > 1 ? ` • máximo ${group.max_select}` : ""}
             </p>
+            {/* Grupo de sabor (price_replaces_base): o preço do sabor É o preço
+                da pizza, não um adicional — mostrar a regra que a loja configurou,
+                na mesma linguagem da tela de configuração (aba Pizzaria).
+                Borda e outros adicionais sempre somam e não precisam da linha. */}
+            {group.price_replaces_base && (
+              <p className="mt-1 text-xs font-semibold text-primary">
+                {useHighestFlavor
+                  ? "A pizza custa o preço do sabor mais caro."
+                  : "Os sabores somam no preço da pizza."}
+              </p>
+            )}
           </div>
           {isRequired && (
             <span className={cn("shrink-0 rounded-full px-2 py-1 text-[11px] font-bold", currentSelected >= group.min_select ? "bg-primary/10 text-primary" : "bg-destructive/10 text-destructive")}>
@@ -446,8 +457,12 @@ const ProductDetailModal = ({ product, storeName, storeCategory, singleSize = fa
             const groupCap = group.max_select && group.max_select > 0 ? group.max_select : Infinity;
             const atCap = groupTotal(group.id) >= groupCap;
             const selectedRow = selectedRowsByItem.get(`${group.id}:${item.id}`);
+            // Grupo de sabor (price_replaces_base): o preço do item NÃO é um
+            // acréscimo — ele É o preço da pizza. Por isso o item não mostra
+            // "+ R$ ..." (que faria parecer soma): mostra só o preço.
             // No modo "maior", o sabor duplicado conta uma vez só no total — o
-            // "+ R$ ..." da linha mostra o preço unitário, não o lineTotal.
+            // valor da linha é o preço unitário, não o lineTotal.
+            const isFlavorItem = !!group.price_replaces_base;
             const itemLineTotal = selectedRow
               ? (selectedRow.replacesBasePrice && useHighestFlavor ? selectedRow.unitPrice : selectedRow.lineTotal)
               : Number(item.price || 0);
@@ -519,9 +534,9 @@ const ProductDetailModal = ({ product, storeName, storeCategory, singleSize = fa
                     {qty > 1 ? (
                       <>
                         <span className="block text-[11px] font-bold text-muted-foreground">{formatBRL(Number(item.price || 0))} × {qty}</span>
-                        <span className="block">+ {formatBRL(itemLineTotal)}</span>
+                        <span className="block">{isFlavorItem ? formatBRL(itemLineTotal) : `+ ${formatBRL(itemLineTotal)}`}</span>
                       </>
-                    ) : `+ ${formatBRL(Number(item.price || 0))}`}
+                    ) : isFlavorItem ? formatBRL(Number(item.price || 0)) : `+ ${formatBRL(Number(item.price || 0))}`}
                   </span>
                 )}
 
