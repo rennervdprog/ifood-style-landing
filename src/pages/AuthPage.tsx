@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Mail, Lock, Eye, EyeOff, KeyRound, ShoppingBag, CheckCircle2, Check, X, Phone, User } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, KeyRound, CheckCircle2, Check, X, Phone, User } from "lucide-react";
  import { maskWhatsApp } from "@/lib/whatsapp";
 import { CURRENT_TERMS_VERSION, CURRENT_PRIVACY_VERSION } from "@/lib/legalVersions";
 import { fetchCep, formatCep } from "@/lib/location/cep";
@@ -495,9 +495,9 @@ const AuthPage = () => {
     reset: "Nova senha",
   };
 
-  const subtitles: Record<AuthMode, string> = {
+  // Sem "signup": no cadastro o subtítulo muda a cada passo (SIGNUP_STEPS[].subtitle).
+  const subtitles: Record<Exclude<AuthMode, "signup">, string> = {
     login: "Entre para pedir seus pratos favoritos",
-    signup: "Cadastre-se e peça no ItaSuper",
     forgot: "Enviaremos um link de recuperação",
     reset: "Escolha uma nova senha segura",
   };
@@ -508,25 +508,25 @@ const AuthPage = () => {
   const inputClassPassword =
     "w-full h-11 pl-10 pr-12 rounded-xl border border-border bg-white text-foreground placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm";
 
-  // Erro inline (cadastro em passos): mesma base, borda vermelha no lugar da borda padrão.
+  // Erro inline (cadastro em passos): mesma base, borda laranja no lugar da borda padrão.
   const inputClassError =
-    "w-full h-11 pl-10 pr-4 rounded-xl border border-red-500 bg-white text-foreground placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all text-sm";
+    "w-full h-11 pl-10 pr-4 rounded-xl border border-orange-700 bg-white text-foreground placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-700/20 focus:border-orange-700 transition-all text-sm";
 
   const inputClassPasswordError =
-    "w-full h-11 pl-10 pr-12 rounded-xl border border-red-500 bg-white text-foreground placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all text-sm";
+    "w-full h-11 pl-10 pr-12 rounded-xl border border-orange-700 bg-white text-foreground placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-700/20 focus:border-orange-700 transition-all text-sm";
 
   const plainInputClass =
     "w-full h-11 px-3 rounded-xl border border-border bg-white text-foreground placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm";
 
   const plainInputClassError =
-    "w-full h-11 px-3 rounded-xl border border-red-500 bg-white text-foreground placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 text-sm";
+    "w-full h-11 px-3 rounded-xl border border-orange-700 bg-white text-foreground placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-700/20 focus:border-orange-700 text-sm";
 
   const signupFieldClass = (key: keyof SignupValues, withIcon = true) =>
     signupErrors[key] ? (withIcon ? inputClassError : plainInputClassError) : (withIcon ? inputClass : plainInputClass);
 
   const signupErrorText = (key: keyof SignupValues) =>
     signupErrors[key] ? (
-      <p className="text-[11px] text-red-600 font-medium mt-1.5">{signupErrors[key]}</p>
+      <p className="text-[11px] text-orange-700 font-medium mt-1.5">{signupErrors[key]}</p>
     ) : null;
 
   const formContent = (
@@ -624,13 +624,6 @@ const AuthPage = () => {
                   autoComplete="email"
                 />
               </div>
-            </div>
-          )}
-
-          {mode === "signup" && signupStep === 1 && (
-            <div>
-              <h2 className="text-base font-bold text-foreground">Sua conta</h2>
-              <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">Seus dados de acesso. Usaremos o e-mail para entrar e recuperar a senha.</p>
             </div>
           )}
 
@@ -765,13 +758,6 @@ const AuthPage = () => {
           )}
 
           {mode === "signup" && signupStep === 2 && (
-            <div>
-              <h2 className="text-base font-bold text-foreground">Seu endereço de entrega</h2>
-              <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">Usaremos para calcular o frete e mostrar lojas perto de você.</p>
-            </div>
-          )}
-
-          {mode === "signup" && signupStep === 2 && (
             <div className="space-y-3 pt-1">
               <div className="grid grid-cols-2 gap-3">
                 <div className="col-span-1">
@@ -788,7 +774,7 @@ const AuthPage = () => {
                   />
                   {signupErrorText("cep")}
                   {cepNotFound && !signupErrors.cep && (
-                    <p className="text-[11px] text-red-600 font-medium mt-1.5">CEP não encontrado. Confira os números ou preencha o endereço manualmente.</p>
+                    <p className="text-[11px] text-orange-700 font-medium mt-1.5">CEP não encontrado. Confira os números ou preencha o endereço manualmente.</p>
                   )}
                 </div>
                 <div className="col-span-1">
@@ -853,13 +839,6 @@ const AuthPage = () => {
                   className={plainInputClass}
                 />
               </div>
-            </div>
-          )}
-
-          {mode === "signup" && signupStep === 3 && (
-            <div>
-              <h2 className="text-base font-bold text-foreground">Seu PIN de entrega</h2>
-              <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">Escolha 4 dígitos que só você sabe. O entregador vai pedir esse código em <strong>todas</strong> as suas entregas.</p>
             </div>
           )}
 
@@ -1053,36 +1032,30 @@ const AuthPage = () => {
       </div>
 
       <div className="flex-1 flex flex-col bg-gradient-to-b from-white to-slate-50 md:bg-white">
-        <div className="md:hidden flex items-center justify-center pt-10 pb-6">
+        <header className="md:hidden sticky top-0 z-10 bg-white border-b border-slate-100 h-14 flex items-center px-3">
           <img
             src="/itasuper-logo-horizontal.webp"
             alt="ItaSuper"
-            width={190}
-            height={45}
+            width={119}
+            height={28}
             decoding="async"
-            className="h-11 w-auto object-contain"
+            className="h-7 w-auto object-contain"
           />
-        </div>
+        </header>
 
-        <div className="flex-1 flex items-start md:items-center justify-center px-5 pb-8 md:px-10">
+        <div className="flex-1 flex items-start md:items-center justify-center px-2 pt-3 pb-8 md:px-10 md:pt-0">
           <div className="w-full max-w-sm">
-            <div className="mb-8 md:text-left text-center">
-              <div className={`w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mb-4 md:mx-0 mx-auto`}>
-                {mode === "forgot" || mode === "reset" ? (
-                  <KeyRound className="h-6 w-6 text-primary" />
-                ) : (
-                  <ShoppingBag className="h-6 w-6 text-primary" />
-                )}
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 px-4 py-5 md:shadow-none md:border-0 md:p-0">
+              <div className="mb-4">
+                <h1 className="text-2xl font-black text-foreground tracking-tight">
+                  {titles[mode]}
+                </h1>
+                <p className="text-sm text-slate-500 mt-1">
+                  {mode === "signup"
+                    ? SIGNUP_STEPS.find((s) => s.step === signupStep)?.subtitle
+                    : subtitles[mode]}
+                </p>
               </div>
-              <h1 className="text-2xl font-black text-foreground tracking-tight">
-                {titles[mode]}
-              </h1>
-              <p className="text-sm text-slate-500 mt-1 max-w-xs md:mx-0 mx-auto">
-                {subtitles[mode]}
-              </p>
-            </div>
-
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 md:shadow-none md:border-0 md:p-0">
               {formContent}
             </div>
 
