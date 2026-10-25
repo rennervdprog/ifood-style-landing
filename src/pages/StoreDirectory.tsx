@@ -141,7 +141,7 @@ function Navbar({ onNavigate, isLoggedIn }: { onNavigate: (path: string) => void
     <nav className={`sticky top-0 z-[70] transition-all duration-200 ${scrolled ? "border-b border-border bg-background/95 shadow-[0_8px_28px_-22px_hsl(var(--foreground)/0.36)] backdrop-blur-xl" : "bg-background/75 backdrop-blur-md"}`}>
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5 md:px-6">
         <button onClick={() => scrollTo("#hero")} aria-label="Início ItaSuper" className="shrink-0">
-          <img src="/itasuper-logo-horizontal.webp" alt="ItaSuper" width={170} height={40} className="h-7 w-auto md:h-8" decoding="async" />
+          <img src="/itasuper-logo-horizontal.webp?v=2" alt="ItaSuper" width={170} height={40} className="h-7 w-auto md:h-8" decoding="async" />
         </button>
 
         <div className="hidden items-center gap-1 md:flex">
@@ -213,7 +213,7 @@ function DashboardPreview() {
         </div>
         <div className="grid min-h-[330px] grid-cols-1 bg-card sm:grid-cols-[126px,1fr]">
           <aside className="hidden border-r border-border bg-muted/30 px-3 py-4 sm:block">
-            <img src="/itasuper-logo-horizontal.webp" alt="" className="mb-7 h-5 w-auto" />
+            <img src="/itasuper-logo-horizontal.webp?v=2" alt="" className="mb-7 h-5 w-auto" />
             {["Resumo", "Pedidos", "Cardápio", "Clientes", "Entregas", "Relatórios"].map((item, index) => (
               <div key={item} className={`mb-1 rounded-lg px-2.5 py-2 text-[10px] font-bold ${index === 0 ? "bg-primary/10 text-primary" : "text-muted-foreground"}`}>{item}</div>
             ))}
@@ -386,7 +386,7 @@ const StoreDirectory = () => {
         <section className="px-5 py-16 md:px-6 md:py-24"><div className="mx-auto grid max-w-6xl items-center gap-7 rounded-[2rem] border border-primary/20 bg-card p-7 shadow-[0_26px_72px_-45px_hsl(var(--foreground)/0.5)] md:grid-cols-[1fr,auto] md:p-12"><div><p className="text-[11px] font-black uppercase tracking-[0.18em] text-primary">Comece hoje</p><h2 className="mt-3 text-3xl font-black leading-[1.03] tracking-tight md:text-5xl">Crie sua loja e comece a vender hoje.</h2><p className="mt-4 max-w-xl text-base text-muted-foreground">Seu canal, sua marca e seus resultados. Sem cartão para começar e sem fidelidade.</p></div><div className="flex flex-col gap-3"><Button size="lg" onClick={handleCTA} className="h-14 rounded-2xl px-7 font-black">Criar loja grátis <ArrowRight className="ml-2 h-5 w-5" /></Button><Button size="lg" variant="outline" onClick={handleWhatsApp} className="h-12 rounded-2xl border-2 bg-card font-bold"><MessageCircle className="mr-2 h-4 w-4" /> Falar no WhatsApp</Button></div></div></section>
       </main>
 
-      <footer className="border-t border-border bg-card px-5 py-10 md:px-6"><div className="mx-auto flex max-w-6xl flex-col justify-between gap-6 md:flex-row md:items-center"><div><img src="/itasuper-logo-horizontal.webp" alt="ItaSuper" width={140} height={32} className="h-7 w-auto" /><p className="mt-2 text-xs text-muted-foreground">Plataforma independente para delivery e loja física.</p></div><div className="flex flex-wrap gap-x-6 gap-y-2 text-sm font-semibold text-muted-foreground"><button onClick={() => navigate("/planos")} className="hover:text-foreground">Planos</button><button onClick={() => navigate("/termos-de-uso")} className="hover:text-foreground">Termos</button><button onClick={() => navigate("/politica-de-privacidade")} className="hover:text-foreground">Privacidade</button><button onClick={handleWhatsApp} className="hover:text-foreground">Contato</button></div></div></footer>
+      <footer className="border-t border-border bg-card px-5 py-10 md:px-6"><div className="mx-auto flex max-w-6xl flex-col justify-between gap-6 md:flex-row md:items-center"><div><img src="/itasuper-logo-horizontal.webp?v=2" alt="ItaSuper" width={140} height={32} className="h-7 w-auto" /><p className="mt-2 text-xs text-muted-foreground">Plataforma independente para delivery e loja física.</p></div><div className="flex flex-wrap gap-x-6 gap-y-2 text-sm font-semibold text-muted-foreground"><button onClick={() => navigate("/planos")} className="hover:text-foreground">Planos</button><button onClick={() => navigate("/termos-de-uso")} className="hover:text-foreground">Termos</button><button onClick={() => navigate("/politica-de-privacidade")} className="hover:text-foreground">Privacidade</button><button onClick={handleWhatsApp} className="hover:text-foreground">Contato</button></div></div></footer>
 
       <div className="fixed inset-x-0 bottom-0 z-50 bg-gradient-to-t from-[#FAFAFA] via-[#FAFAFA]/95 to-transparent px-4 pb-[max(12px,env(safe-area-inset-bottom))] pt-5 md:hidden"><Button onClick={handleCTA} {...prefetchHandlers("/cadastro-lojista")} className="h-[52px] w-full rounded-2xl text-base font-black shadow-[0_18px_36px_-18px_hsl(var(--primary)/0.85)]"><Store className="mr-2 h-5 w-5" /> Criar minha loja grátis <ArrowRight className="ml-2 h-5 w-5" /></Button></div>
     </div>
