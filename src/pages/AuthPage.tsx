@@ -1,12 +1,23 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Mail, Lock, Eye, EyeOff, KeyRound, ShoppingBag, CheckCircle2, Check, X, Phone, User, FileText, ShieldCheck, MapPin } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, KeyRound, ShoppingBag, CheckCircle2, Check, X, Phone, User } from "lucide-react";
  import { maskWhatsApp } from "@/lib/whatsapp";
-import { formatDocument, sanitizeDocument, validateDocument } from "@/lib/documentFormat";
 import { CURRENT_TERMS_VERSION, CURRENT_PRIVACY_VERSION } from "@/lib/legalVersions";
 import { fetchCep, formatCep } from "@/lib/location/cep";
+import {
+  SIGNUP_STEPS,
+  SIGNUP_STEP_TITLES,
+  clearSignupDraft,
+  firstErrorField,
+  loadSignupDraft,
+  saveSignupDraft,
+  validateSignupStep,
+  type SignupErrors,
+  type SignupStep,
+  type SignupValues,
+} from "@/lib/signupSteps";
 import { isPartnerCapacitorApp, persistCapacitorAppMode } from "@/lib/capacitorAppMode";
 import { PARTNER_ROUTES } from "@/components/CapacitorRouteGuard";
 import BiometricLoginButton from "@/components/BiometricLoginButton";
@@ -57,7 +68,6 @@ const AuthPage = () => {
   const [password, setPassword] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
   const [fullName, setFullName] = useState("");
-  const [cpf, setCpf] = useState("");
   const [deliveryPin, setDeliveryPin] = useState("");
   const [confirmPin, setConfirmPin] = useState("");
   const [pinAcknowledged, setPinAcknowledged] = useState(false);
@@ -72,6 +82,13 @@ const AuthPage = () => {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [loading, setLoading] = useState(false);
   const [resetSent, setResetSent] = useState(false);
+  // Cadastro em 3 passos (só o modo signup): passo atual, erros inline por
+  // campo e "CEP não encontrado" (aviso, não trava o passo — o endereço pode
+  // ser preenchido manualmente).
+  const [signupStep, setSignupStep] = useState<SignupStep>(1);
+  const [signupErrors, setSignupErrors] = useState<SignupErrors>({});
+  const [cepNotFound, setCepNotFound] = useState(false);
+  const cepLookupRef = useRef(0);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -89,6 +106,134 @@ const AuthPage = () => {
       navigate("/portal-parceiro", { replace: true });
     }
   }, [mode, navigate]);
+
+  // --- Cadastro em 3 passos (só o modo signup) ---------------------------
+  const signupValues: SignupValues = {
+    email: signupEmail,
+    whatsapp,
+    fullName,
+    password,
+    cep,
+    number,
+    street,
+    neighborhood,
+    complement,
+    referencePoint,
+    deliveryPin,
+    confirmPin,
+    pinAcknowledged,
+    acceptedTerms,
+  };
+
+  const clearFieldError = (key: keyof SignupErrors) => {
+    setSignupErrors((prev) => {
+      if (!prev[key]) return prev;
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+  };
+
+  const focusSignupField = (key: keyof SignupValues) => {
+    document.getElementById(`signup-${key}`)?.focus();
+  };
+
+  /** Valida o passo atual; se válido, avança. Retorna se avançou. */
+  const advanceSignupStep = (): boolean => {
+    const errors = validateSignupStep(signupStep, signupValues, passedCount === PASSWORD_RULES.length);
+    if (Object.keys(errors).length > 0) {
+      setSignupErrors(errors);
+      const first = firstErrorField(signupStep, errors);
+      if (first) focusSignupField(first);
+      return false;
+    }
+    setSignupErrors({});
+    setSignupStep((signupStep + 1) as SignupStep);
+    window.scrollTo(0, 0);
+    return true;
+  };
+
+  /** Ir para um passo pelo rótulo do progresso: voltar é direto; avançar revalida os passos do meio. */
+  const goToSignupStep = (target: SignupStep) => {
+    if (target === signupStep) return;
+    if (target < signupStep) {
+      setSignupErrors({});
+      setSignupStep(target);
+      window.scrollTo(0, 0);
+      return;
+    }
+    for (let s = signupStep; s < target; s++) {
+      const step = s as SignupStep;
+      const errors = validateSignupStep(step, signupValues, passedCount === PASSWORD_RULES.length);
+      if (Object.keys(errors).length > 0) {
+        setSignupStep(step);
+        setSignupErrors(errors);
+        const first = firstErrorField(step, errors);
+        if (first) focusSignupField(first);
+        return;
+      }
+    }
+    setSignupErrors({});
+    setSignupStep(target);
+    window.scrollTo(0, 0);
+  };
+
+  /** Busca do CEP (ViaCEP → BrasilAPI): preenche rua/bairro só se vazios, como hoje; CEP não encontrado vira aviso inline (não trava o passo). */
+  const handleCepChange = async (raw: string) => {
+    const v = formatCep(raw);
+    setCep(v);
+    setCepNotFound(false);
+    clearFieldError("cep");
+    const digits = v.replace(/\D/g, "");
+    if (digits.length === 8) {
+      const lookupId = ++cepLookupRef.current;
+      setCepLoading(true);
+      try {
+        const r = await fetchCep(digits);
+        if (cepLookupRef.current !== lookupId) return; // resposta de um CEP antigo
+        if (r) {
+          if (!street) setStreet(r.logradouro || "");
+          if (!neighborhood) setNeighborhood(r.bairro || "");
+        } else {
+          setCepNotFound(true);
+        }
+      } finally {
+        if (cepLookupRef.current === lookupId) setCepLoading(false);
+      }
+    }
+  };
+
+  // Rascunho local: ao entrar no modo cadastro, restaura o progresso salvo
+  // neste aparelho (se houver); apagado ao concluir o cadastro.
+  // Declarado ANTES do efeito que salva, para ler o rascunho antes de
+  // qualquer escrita na mesma transição.
+  useEffect(() => {
+    if (mode !== "signup") return;
+    const draft = loadSignupDraft();
+    if (!draft) return;
+    setSignupEmail(draft.values.email);
+    setWhatsapp(draft.values.whatsapp);
+    setFullName(draft.values.fullName);
+    setPassword(draft.values.password);
+    setCep(draft.values.cep);
+    setNumber(draft.values.number);
+    setStreet(draft.values.street);
+    setNeighborhood(draft.values.neighborhood);
+    setComplement(draft.values.complement);
+    setReferencePoint(draft.values.referencePoint);
+    setDeliveryPin(draft.values.deliveryPin);
+    setConfirmPin(draft.values.confirmPin);
+    setPinAcknowledged(draft.values.pinAcknowledged);
+    setAcceptedTerms(draft.values.acceptedTerms);
+    setSignupStep(draft.step);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode]);
+
+  useEffect(() => {
+    if (mode !== "signup") return;
+    saveSignupDraft(signupValues, signupStep);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode, signupStep, signupEmail, whatsapp, fullName, password, cep, street, number, complement, neighborhood, referencePoint, deliveryPin, confirmPin, pinAcknowledged, acceptedTerms]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -122,37 +267,25 @@ const AuthPage = () => {
       }
     }
     if (mode === "signup") {
-      const registrationEmail = signupEmail.trim().toLowerCase();
-      if (!looksLikeEmail(registrationEmail)) {
-        toast.error("Informe um e-mail válido. Ele será usado para entrar e recuperar sua senha.");
+      // Cadastro em 3 passos: "Continuar" valida o passo atual e avança;
+      // no passo 3, revalida tudo (rede de segurança) e envia.
+      if (signupStep < 3) {
+        advanceSignupStep();
         return;
       }
-      const whatsDigits = whatsapp.replace(/\D/g, "");
-      if (whatsDigits.length < 10 || whatsDigits.length > 11) {
-        toast.error("Informe um WhatsApp válido com DDD.");
-        return;
+      for (const s of [1, 2, 3] as SignupStep[]) {
+        const errors = validateSignupStep(s, signupValues, passedCount === PASSWORD_RULES.length);
+        if (Object.keys(errors).length > 0) {
+          setSignupStep(s);
+          setSignupErrors(errors);
+          const first = firstErrorField(s, errors);
+          if (first) focusSignupField(first);
+          return;
+        }
       }
-      if (!password.trim()) {
-        toast.error("Crie uma senha.");
-        return;
-      }
-      if (fullName.trim().length < 3) { toast.error("Informe seu nome completo."); return; }
-      if (!validateDocument(cpf)) { toast.error("Informe um CPF ou CNPJ válido."); return; }
-      if (!/^\d{4}$/.test(deliveryPin)) { toast.error("Defina um PIN de entrega com 4 dígitos numéricos."); return; }
-      if (deliveryPin !== confirmPin) { toast.error("Os PINs informados não coincidem."); return; }
-      if (!pinAcknowledged) { toast.error("Confirme que este PIN será usado em todas as suas entregas."); return; }
-      const cepDigits = cep.replace(/\D/g, "");
-      if (cepDigits.length !== 8) { toast.error("CEP inválido."); return; }
-      if (!street.trim() || !number.trim() || !neighborhood.trim()) {
-        toast.error("Preencha rua, número e bairro do endereço.");
-        return;
-      }
+      setSignupErrors({});
     }
-    if (mode === "signup" && !acceptedTerms) {
-      toast.error("Você precisa aceitar os Termos de Uso e Política de Privacidade.");
-      return;
-    }
-    if ((mode === "signup" || mode === "reset") && passedCount < PASSWORD_RULES.length) {
+    if (mode === "reset" && passedCount < PASSWORD_RULES.length) {
       toast.error("Sua senha não atende todos os requisitos. Verifique abaixo.");
       return;
     }
@@ -306,7 +439,6 @@ const AuthPage = () => {
             terms_accepted_at: new Date().toISOString(),
             whatsapp_number: whatsDigits,
             full_name: fullName.trim(),
-            document: sanitizeDocument(cpf),
             email: registrationEmail,
             delivery_pin: deliveryPin,
           }).eq("user_id", signUpData.user.id);
@@ -323,6 +455,7 @@ const AuthPage = () => {
           });
         }
         toast.success("Conta criada com sucesso!");
+        clearSignupDraft();
         if (isPartnerCapacitorApp()) {
           // A client signing up in the partner app? Send back to partner portal
           navigate("/portal-parceiro", { replace: true });
@@ -375,6 +508,27 @@ const AuthPage = () => {
   const inputClassPassword =
     "w-full h-11 pl-10 pr-12 rounded-xl border border-border bg-white text-foreground placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm";
 
+  // Erro inline (cadastro em passos): mesma base, borda vermelha no lugar da borda padrão.
+  const inputClassError =
+    "w-full h-11 pl-10 pr-4 rounded-xl border border-red-500 bg-white text-foreground placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all text-sm";
+
+  const inputClassPasswordError =
+    "w-full h-11 pl-10 pr-12 rounded-xl border border-red-500 bg-white text-foreground placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all text-sm";
+
+  const plainInputClass =
+    "w-full h-11 px-3 rounded-xl border border-border bg-white text-foreground placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm";
+
+  const plainInputClassError =
+    "w-full h-11 px-3 rounded-xl border border-red-500 bg-white text-foreground placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 text-sm";
+
+  const signupFieldClass = (key: keyof SignupValues, withIcon = true) =>
+    signupErrors[key] ? (withIcon ? inputClassError : plainInputClassError) : (withIcon ? inputClass : plainInputClass);
+
+  const signupErrorText = (key: keyof SignupValues) =>
+    signupErrors[key] ? (
+      <p className="text-[11px] text-red-600 font-medium mt-1.5">{signupErrors[key]}</p>
+    ) : null;
+
   const formContent = (
     <>
       {mode === "forgot" && resetSent ? (
@@ -397,6 +551,44 @@ const AuthPage = () => {
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
+          {mode === "signup" && (
+            <div>
+              <div className="flex gap-1.5">
+                {SIGNUP_STEPS.map(({ step }) => (
+                  <div
+                    key={step}
+                    className={`flex-1 h-1.5 rounded-full overflow-hidden relative ${
+                      step < signupStep ? "bg-primary" : step === signupStep ? "bg-slate-200" : "bg-slate-200"
+                    }`}
+                  >
+                    {step === signupStep && (
+                      <div className="absolute inset-y-0 left-0 w-1/2 bg-primary rounded-full" />
+                    )}
+                  </div>
+                ))}
+              </div>
+              <div className="flex gap-1.5 mt-2">
+                {SIGNUP_STEPS.map(({ step, label }) => (
+                  <button
+                    key={step}
+                    type="button"
+                    onClick={() => goToSignupStep(step)}
+                    className={`flex-1 text-left text-[11px] font-bold p-0 bg-transparent border-0 cursor-pointer ${
+                      step < signupStep ? "text-primary" : step === signupStep ? "text-foreground" : "text-slate-400"
+                    }`}
+                  >
+                    {step} · {label}
+                  </button>
+                ))}
+              </div>
+              <p className="text-xs text-slate-500 font-semibold mt-2">
+                Passo {signupStep} de 3 — {SIGNUP_STEP_TITLES[signupStep]}
+              </p>
+              <p className="text-[11px] text-slate-400 mt-0.5">
+                Seu progresso fica salvo neste aparelho até você concluir.
+              </p>
+            </div>
+          )}
           {mode === "login" && (
             <BiometricLoginButton onSuccess={() => navigate("/cliente", { replace: true })} />
           )}
@@ -435,80 +627,77 @@ const AuthPage = () => {
             </div>
           )}
 
-          {mode === "signup" && (
+          {mode === "signup" && signupStep === 1 && (
+            <div>
+              <h2 className="text-base font-bold text-foreground">Sua conta</h2>
+              <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">Seus dados de acesso. Usaremos o e-mail para entrar e recuperar a senha.</p>
+            </div>
+          )}
+
+          {mode === "signup" && signupStep === 1 && (
             <div>
               <label className="text-xs font-semibold text-slate-500 tracking-wide mb-1.5 block">E-mail</label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                 <input
+                  id="signup-email"
                   type="email"
                   inputMode="email"
                   placeholder="seu@email.com"
                   value={signupEmail}
-                  onChange={(e) => setSignupEmail(e.target.value)}
-                  className={inputClass}
+                  onChange={(e) => { setSignupEmail(e.target.value); clearFieldError("email"); }}
+                  className={signupFieldClass("email")}
                   autoComplete="email"
                 />
               </div>
+              {signupErrorText("email")}
               <p className="text-[11px] text-slate-400 mt-1.5">Usaremos este e-mail para acesso e recuperação de senha.</p>
             </div>
           )}
 
-          {mode === "signup" && (
+          {mode === "signup" && signupStep === 1 && (
             <div>
               <label className="text-xs font-semibold text-slate-500 tracking-wide mb-1.5 block">WhatsApp</label>
               <div className="relative">
                 <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                 <input
+                  id="signup-whatsapp"
                   type="tel"
                   inputMode="numeric"
                   placeholder="(14) 99999-9999"
                   value={whatsapp}
-                  onChange={(e) => setWhatsapp(maskWhatsApp(e.target.value))}
+                  onChange={(e) => { setWhatsapp(maskWhatsApp(e.target.value)); clearFieldError("whatsapp"); }}
                   maxLength={15}
-                  className={inputClass}
+                  className={signupFieldClass("whatsapp")}
                 />
               </div>
+              {signupErrorText("whatsapp")}
             </div>
           )}
 
-          {mode === "signup" && (
+          {mode === "signup" && signupStep === 1 && (
             <>
               <div>
                 <label className="text-xs font-semibold text-slate-500 tracking-wide mb-1.5 block">Nome completo</label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                   <input
+                    id="signup-fullName"
                     type="text"
                     placeholder="Seu nome"
                     value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
+                    onChange={(e) => { setFullName(e.target.value); clearFieldError("fullName"); }}
                     maxLength={80}
                     autoComplete="name"
-                    className={inputClass}
+                    className={signupFieldClass("fullName")}
                   />
                 </div>
-              </div>
-              <div>
-                <label className="text-xs font-semibold text-slate-500 tracking-wide mb-1.5 block">CPF ou CNPJ</label>
-                <div className="relative">
-                  <FileText className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    placeholder="000.000.000-00"
-                    value={formatDocument(cpf)}
-                    onChange={(e) => setCpf(formatDocument(e.target.value))}
-                    maxLength={18}
-                    autoComplete="off"
-                    className={inputClass}
-                  />
-                </div>
+                {signupErrorText("fullName")}
               </div>
             </>
           )}
 
-          {mode !== "forgot" && (
+          {(mode === "login" || mode === "reset" || (mode === "signup" && signupStep === 1)) && (
             <>
               <div>
                 <label className="text-xs font-semibold text-slate-500 tracking-wide mb-1.5 block">
@@ -517,11 +706,12 @@ const AuthPage = () => {
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                   <input
+                    id={mode === "signup" ? "signup-password" : undefined}
                     type={showPassword ? "text" : "password"}
                     placeholder={mode === "reset" ? "Crie uma senha forte" : "••••••"}
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className={inputClassPassword}
+                    onChange={(e) => { setPassword(e.target.value); clearFieldError("password"); }}
+                    className={mode === "signup" && signupErrors.password ? inputClassPasswordError : inputClassPassword}
                     autoComplete={mode === "login" ? "current-password" : "new-password"}
                   />
                   <button
@@ -536,9 +726,10 @@ const AuthPage = () => {
                     )}
                   </button>
                 </div>
+                {mode === "signup" && signupErrorText("password")}
               </div>
 
-              {(mode === "signup" || mode === "reset") && password.length > 0 && (
+              {((mode === "signup" && signupStep === 1) || mode === "reset") && password.length > 0 && (
                 <div className="space-y-2">
                   <div className="flex gap-1 h-1.5 rounded-full overflow-hidden bg-slate-100">
                     {PASSWORD_RULES.map((_, i) => (
@@ -573,74 +764,72 @@ const AuthPage = () => {
             </div>
           )}
 
-          {mode === "signup" && (
+          {mode === "signup" && signupStep === 2 && (
+            <div>
+              <h2 className="text-base font-bold text-foreground">Seu endereço de entrega</h2>
+              <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">Usaremos para calcular o frete e mostrar lojas perto de você.</p>
+            </div>
+          )}
+
+          {mode === "signup" && signupStep === 2 && (
             <div className="space-y-3 pt-1">
-              <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 flex gap-2.5">
-                <MapPin className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-                <div className="text-xs text-slate-600 leading-relaxed">
-                  <strong className="text-foreground">Endereço de entrega</strong> — usaremos para calcular frete e mostrar lojas perto de você.
-                </div>
-              </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="col-span-1">
                   <label className="text-xs font-semibold text-slate-500 tracking-wide mb-1.5 block">CEP</label>
                   <input
+                    id="signup-cep"
                     type="tel"
                     inputMode="numeric"
                     placeholder="00000-000"
                     value={cep}
-                    onChange={async (e) => {
-                      const v = formatCep(e.target.value);
-                      setCep(v);
-                      const digits = v.replace(/\D/g, "");
-                      if (digits.length === 8) {
-                        setCepLoading(true);
-                        try {
-                          const r = await fetchCep(digits);
-                          if (r) {
-                            if (!street) setStreet(r.logradouro || "");
-                            if (!neighborhood) setNeighborhood(r.bairro || "");
-                          }
-                        } finally { setCepLoading(false); }
-                      }
-                    }}
+                    onChange={(e) => { void handleCepChange(e.target.value); }}
                     maxLength={9}
-                    className="w-full h-11 px-3 rounded-xl border border-border bg-white text-foreground placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm"
+                    className={signupFieldClass("cep", false)}
                   />
+                  {signupErrorText("cep")}
+                  {cepNotFound && !signupErrors.cep && (
+                    <p className="text-[11px] text-red-600 font-medium mt-1.5">CEP não encontrado. Confira os números ou preencha o endereço manualmente.</p>
+                  )}
                 </div>
                 <div className="col-span-1">
                   <label className="text-xs font-semibold text-slate-500 tracking-wide mb-1.5 block">Número</label>
                   <input
+                    id="signup-number"
                     type="text"
                     placeholder="123"
                     value={number}
-                    onChange={(e) => setNumber(e.target.value)}
+                    onChange={(e) => { setNumber(e.target.value); clearFieldError("number"); }}
                     maxLength={10}
-                    className="w-full h-11 px-3 rounded-xl border border-border bg-white text-foreground placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm"
+                    className={signupFieldClass("number", false)}
                   />
+                  {signupErrorText("number")}
                 </div>
               </div>
               <div>
                 <label className="text-xs font-semibold text-slate-500 tracking-wide mb-1.5 block">Rua / Logradouro {cepLoading && <span className="text-slate-400 font-normal">(buscando...)</span>}</label>
                 <input
+                  id="signup-street"
                   type="text"
                   placeholder="Rua das Flores"
                   value={street}
-                  onChange={(e) => setStreet(e.target.value)}
+                  onChange={(e) => { setStreet(e.target.value); clearFieldError("street"); }}
                   maxLength={120}
-                  className="w-full h-11 px-3 rounded-xl border border-border bg-white text-foreground placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm"
+                  className={signupFieldClass("street", false)}
                 />
+                {signupErrorText("street")}
               </div>
               <div>
                 <label className="text-xs font-semibold text-slate-500 tracking-wide mb-1.5 block">Bairro</label>
                 <input
+                  id="signup-neighborhood"
                   type="text"
                   placeholder="Centro"
                   value={neighborhood}
-                  onChange={(e) => setNeighborhood(e.target.value)}
+                  onChange={(e) => { setNeighborhood(e.target.value); clearFieldError("neighborhood"); }}
                   maxLength={80}
-                  className="w-full h-11 px-3 rounded-xl border border-border bg-white text-foreground placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm"
+                  className={signupFieldClass("neighborhood", false)}
                 />
+                {signupErrorText("neighborhood")}
               </div>
               <div>
                 <label className="text-xs font-semibold text-slate-500 tracking-wide mb-1.5 block">Complemento (opcional)</label>
@@ -650,7 +839,7 @@ const AuthPage = () => {
                   value={complement}
                   onChange={(e) => setComplement(e.target.value)}
                   maxLength={80}
-                  className="w-full h-11 px-3 rounded-xl border border-border bg-white text-foreground placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm"
+                  className={plainInputClass}
                 />
               </div>
               <div>
@@ -661,104 +850,129 @@ const AuthPage = () => {
                   value={referencePoint}
                   onChange={(e) => setReferencePoint(e.target.value)}
                   maxLength={120}
-                  className="w-full h-11 px-3 rounded-xl border border-border bg-white text-foreground placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm"
+                  className={plainInputClass}
                 />
               </div>
             </div>
           )}
 
-          {mode === "signup" && (
+          {mode === "signup" && signupStep === 3 && (
+            <div>
+              <h2 className="text-base font-bold text-foreground">Seu PIN de entrega</h2>
+              <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">Escolha 4 dígitos que só você sabe. O entregador vai pedir esse código em <strong>todas</strong> as suas entregas.</p>
+            </div>
+          )}
+
+          {mode === "signup" && signupStep === 3 && (
             <div className="space-y-3 pt-1">
-              <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 flex gap-2.5">
-                <ShieldCheck className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-                <div className="text-xs text-slate-600 leading-relaxed">
-                  <strong className="text-foreground">PIN de entrega pessoal:</strong> escolha 4 dígitos que só você sabe. O entregador vai pedir esse mesmo código em <strong>todas</strong> as suas entregas. Evite datas óbvias (aniversário, ano de nascimento).
-                </div>
-              </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-semibold text-slate-500 tracking-wide mb-1.5 block">PIN (4 dígitos)</label>
                   <div className="relative">
                     <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                     <input
+                      id="signup-deliveryPin"
                       type="tel"
                       inputMode="numeric"
                       placeholder="••••"
                       value={deliveryPin}
-                      onChange={(e) => setDeliveryPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                      onChange={(e) => { setDeliveryPin(e.target.value.replace(/\D/g, "").slice(0, 4)); clearFieldError("deliveryPin"); }}
                       maxLength={4}
-                      className={inputClass}
+                      className={signupFieldClass("deliveryPin")}
                       autoComplete="off"
                     />
                   </div>
+                  {signupErrorText("deliveryPin")}
+                  <p className="text-[11px] text-slate-400 mt-1.5">Evite datas óbvias, como aniversário ou ano de nascimento.</p>
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-slate-500 tracking-wide mb-1.5 block">Confirme</label>
                   <div className="relative">
                     <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                     <input
+                      id="signup-confirmPin"
                       type="tel"
                       inputMode="numeric"
                       placeholder="••••"
                       value={confirmPin}
-                      onChange={(e) => setConfirmPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                      onChange={(e) => { setConfirmPin(e.target.value.replace(/\D/g, "").slice(0, 4)); clearFieldError("confirmPin"); }}
                       maxLength={4}
-                      className={inputClass}
+                      className={signupFieldClass("confirmPin")}
                       autoComplete="off"
                     />
                   </div>
+                  {signupErrorText("confirmPin")}
                 </div>
               </div>
-              <label className="flex items-start gap-2.5 cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={pinAcknowledged}
-                  onChange={(e) => setPinAcknowledged(e.target.checked)}
-                  className="w-4 h-4 rounded border-border accent-primary mt-0.5 shrink-0"
-                />
-                <span className="text-xs text-slate-500 leading-relaxed">
-                  Entendi que <strong>este PIN será usado em todas as minhas entregas</strong> e é minha responsabilidade mantê-lo em sigilo.
-                </span>
-              </label>
+              <div>
+                <label className="flex items-start gap-2.5 cursor-pointer select-none">
+                  <input
+                    id="signup-pinAcknowledged"
+                    type="checkbox"
+                    checked={pinAcknowledged}
+                    onChange={(e) => { setPinAcknowledged(e.target.checked); clearFieldError("pinAcknowledged"); }}
+                    className="w-4 h-4 rounded border-border accent-primary mt-0.5 shrink-0"
+                  />
+                  <span className="text-xs text-slate-500 leading-relaxed">
+                    Entendi que <strong>este PIN será usado em todas as minhas entregas</strong>.
+                  </span>
+                </label>
+                {signupErrorText("pinAcknowledged")}
+              </div>
             </div>
           )}
 
-          {mode === "signup" && (
-            <label className="flex items-start gap-2.5 cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={acceptedTerms}
-                onChange={(e) => setAcceptedTerms(e.target.checked)}
-                className="w-4 h-4 rounded border-border accent-primary mt-0.5 shrink-0"
-              />
-              <span className="text-xs text-slate-500 leading-relaxed">
-                Li e aceito os{" "}
-                <Link to="/termos-de-uso" target="_blank" className="text-primary font-semibold underline">
-                  Termos de Uso
-                </Link>{" "}
-                e a{" "}
-                <Link to="/politica-de-privacidade" target="_blank" className="text-primary font-semibold underline">
-                  Política de Privacidade
-                </Link>
-              </span>
-            </label>
+          {mode === "signup" && signupStep === 3 && (
+            <div>
+              <label className="flex items-start gap-2.5 cursor-pointer select-none">
+                <input
+                  id="signup-acceptedTerms"
+                  type="checkbox"
+                  checked={acceptedTerms}
+                  onChange={(e) => { setAcceptedTerms(e.target.checked); clearFieldError("acceptedTerms"); }}
+                  className="w-4 h-4 rounded border-border accent-primary mt-0.5 shrink-0"
+                />
+                <span className="text-xs text-slate-500 leading-relaxed">
+                  Li e aceito os{" "}
+                  <Link to="/termos-de-uso" target="_blank" className="text-primary font-semibold underline">
+                    Termos de Uso
+                  </Link>{" "}
+                  e a{" "}
+                  <Link to="/politica-de-privacidade" target="_blank" className="text-primary font-semibold underline">
+                    Política de Privacidade
+                  </Link>
+                </span>
+              </label>
+              {signupErrorText("acceptedTerms")}
+            </div>
           )}
 
-          <button
-            disabled={loading || ((mode === "signup" || mode === "reset") && passedCount < PASSWORD_RULES.length && password.length > 0)}
-            className="w-full h-11 bg-primary text-primary-foreground font-bold rounded-xl active:scale-[0.98] transition-all disabled:opacity-50 shadow-md shadow-primary/20 hover:brightness-105"
-          >
-            {loading ? (
-              <span className="flex items-center justify-center gap-2">
-                <span className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
-                Aguarde...
-              </span>
-            ) : mode === "login" ? "Entrar"
-              : mode === "signup" ? "Criar conta"
-              : mode === "forgot" ? "Enviar link"
-              : "Salvar nova senha"
-            }
-          </button>
+          <div className={mode === "signup" && signupStep > 1 ? "flex gap-3" : ""}>
+            {mode === "signup" && signupStep > 1 && (
+              <button
+                type="button"
+                onClick={() => goToSignupStep((signupStep - 1) as SignupStep)}
+                className="flex-1 h-11 bg-white text-foreground font-bold rounded-xl border border-border active:scale-[0.98] transition-all"
+              >
+                Voltar
+              </button>
+            )}
+            <button
+              disabled={loading || (mode === "reset" && passedCount < PASSWORD_RULES.length && password.length > 0)}
+              className={`${mode === "signup" && signupStep > 1 ? "flex-1" : "w-full"} h-11 bg-primary text-primary-foreground font-bold rounded-xl active:scale-[0.98] transition-all disabled:opacity-50 shadow-md shadow-primary/20 hover:brightness-105`}
+            >
+              {loading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <span className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+                  Aguarde...
+                </span>
+              ) : mode === "login" ? "Entrar"
+                : mode === "signup" ? (signupStep === 3 ? "Criar conta" : "Continuar")
+                : mode === "forgot" ? "Enviar link"
+                : "Salvar nova senha"
+              }
+            </button>
+          </div>
         </form>
       )}
 
