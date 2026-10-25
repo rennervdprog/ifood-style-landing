@@ -22,6 +22,9 @@ interface Payload {
   phone: string;
   name: string;
   store_id: string;
+  // Fase 3: chave de idempotência gerada pela página (um UUID por tentativa
+  // de checkout). Sem ela, o retry geraria chave nova na edge e duplicaria.
+  idempotency_key?: string;
   items: Array<{ product_id: string; quantity: number; unit_price: number; addons?: unknown; observations?: string | null }>;
   subtotal: number;
   delivery_fee: number;
@@ -163,61 +166,70 @@ Deno.serve(async (req) => {
       .maybeSingle();
     const deliveryPin = (pinProfile as any)?.delivery_pin || String(Math.floor(1000 + Math.random() * 9000));
 
-    // 3) Pedido (crítico — bloqueia a resposta)
-    const { data: order, error: orderErr } = await sb.from("orders").insert({
-      client_id: userId,
-      store_id: p.store_id,
-      subtotal: p.subtotal,
+    // 3) Pedido transacional (Fase 3): a RPC `create_order_with_items`
+    // cria pedido + itens numa transação só, com idempotência. Se a RPC
+    // falhar, o pedido FALHA — nunca retorna sucesso com órfão (era o P0-7
+    // do guest: o insert dos itens falhava, o erro era só logado e a função
+    // retornava sucesso). O guest não usa cupom/fidelidade/carteira/
+    // vasilhames; o subtotal e o total são recalculados no servidor.
+    const idempotencyKey = p.idempotency_key || crypto.randomUUID();
+    const deliveryQuoteSnapshot = p.is_pickup ? null : {
+      policy_version: (quote as any)?.policy_version || 1,
+      distance_km: Number((quote as any)?.distance?.km || 0),
+      distance_source: (quote as any)?.distance?.source || "haversine",
+      max_delivery_km: (quote as any)?.distance?.max_km ?? null,
+      destination_precision: (deliverySnapshot as any)?.precision || "cep",
+      store_delivery_base: Number((quote as any)?.pricing?.store_delivery_base || 0),
+      platform_fee_customer: Number((quote as any)?.pricing?.platform_fee_customer || 0),
+      platform_fee_store_absorbed: Number((quote as any)?.pricing?.platform_fee_store_absorbed || 0),
       delivery_fee: Number((quote as any)?.pricing?.delivery_fee || 0),
-      delivery_fee_absorbed_by_store: Number((quote as any)?.pricing?.platform_fee_store_absorbed || 0),
-      total_price: Number(p.subtotal || 0) + Number((quote as any)?.pricing?.delivery_fee || 0),
-      commission_rate: p.commission_rate ?? 0,
-      payment_method: p.payment_method,
-      neighborhood: deliverySnapshot?.neighborhood || neighborhood,
-      address_details: deliverySnapshot?.normalized_address || addressString,
-      delivery_cep: deliverySnapshot?.cep || null,
-      delivery_city: deliverySnapshot?.city || null,
-      delivery_state: deliverySnapshot?.state || null,
-      client_lat: deliverySnapshot?.lat ?? null,
-      client_lng: deliverySnapshot?.lng ?? null,
-      needs_change: !!p.needs_change,
-      change_for: p.change_for || 0,
-      status: isPixDireto ? "aguardando_comprovante" : "pendente",
-      scheduled_for: p.scheduled_for || null,
-      is_guest: true,
-      delivery_pin: deliveryPin,
-      metadata: p.is_pickup ? null : { delivery_quote: {
-        policy_version: (quote as any)?.policy_version || 1,
-        distance_km: Number((quote as any)?.distance?.km || 0),
-        distance_source: (quote as any)?.distance?.source || "haversine",
-        max_delivery_km: (quote as any)?.distance?.max_km ?? null,
-        destination_precision: (deliverySnapshot as any)?.precision || "cep",
-        store_delivery_base: Number((quote as any)?.pricing?.store_delivery_base || 0),
-        platform_fee_customer: Number((quote as any)?.pricing?.platform_fee_customer || 0),
-        platform_fee_store_absorbed: Number((quote as any)?.pricing?.platform_fee_store_absorbed || 0),
-        delivery_fee: Number((quote as any)?.pricing?.delivery_fee || 0),
-        vip_override_applied: (quote as any)?.pricing?.vip_override_applied ?? null,
-        split_mode: (quote as any)?.pricing?.split_mode ?? null,
-        plan_type: (quote as any)?.pricing?.plan_type ?? null,
-      } },
-    } as any).select("id").single();
-
-    if (orderErr || !order?.id) {
-      console.error("[guest-checkout] order insert error:", orderErr);
-      return json({ error: "order_create_failed", detail: orderErr?.message }, 500);
+      vip_override_applied: (quote as any)?.pricing?.vip_override_applied ?? null,
+      split_mode: (quote as any)?.pricing?.split_mode ?? null,
+      plan_type: (quote as any)?.pricing?.plan_type ?? null,
+    };
+    const { data: created, error: orderErr } = await sb.rpc("create_order_with_items", {
+      p_client_id: userId,
+      p_store_id: p.store_id,
+      p_idempotency_key: idempotencyKey,
+      p_items: p.items.map((it) => ({
+        product_id: it.product_id,
+        quantity: it.quantity,
+        unit_price: it.unit_price,
+        addons: it.addons ?? null,
+        observations: it.observations || null,
+      })),
+      p_delivery_fee: Number((quote as any)?.pricing?.delivery_fee || 0),
+      p_delivery_fee_absorbed: Number((quote as any)?.pricing?.platform_fee_store_absorbed || 0),
+      p_payment_method: p.payment_method,
+      p_neighborhood: deliverySnapshot?.neighborhood || neighborhood,
+      p_address_details: deliverySnapshot?.normalized_address || addressString,
+      p_delivery_cep: deliverySnapshot?.cep || null,
+      p_delivery_city: deliverySnapshot?.city || null,
+      p_delivery_state: deliverySnapshot?.state || null,
+      p_client_lat: deliverySnapshot?.lat ?? null,
+      p_client_lng: deliverySnapshot?.lng ?? null,
+      p_needs_change: !!p.needs_change,
+      p_change_for: p.change_for || 0,
+      p_is_pickup: p.is_pickup,
+      p_is_preorder: false,
+      p_scheduled_for: p.scheduled_for || null,
+      p_coupon_id: null,
+      p_coupon_discount: 0,
+      p_loyalty_points: 0,
+      p_loyalty_discount: 0,
+      p_wallet_discount: 0,
+      p_empties_discount: 0,
+      p_empties: [],
+      p_delivery_quote: deliveryQuoteSnapshot,
+      p_is_guest: true,
+      p_delivery_pin: deliveryPin,
+      p_order_source: "delivery",
+    });
+    if (orderErr || !(created as any)?.order_id) {
+      console.error("[guest-checkout] create_order_with_items error:", orderErr);
+      return json({ error: "order_create_failed", detail: orderErr?.message || "Falha ao criar pedido" }, 500);
     }
-
-    // 4) Itens (crítico)
-    const rows = p.items.map((it) => ({
-      order_id: order.id,
-      product_id: it.product_id,
-      quantity: it.quantity,
-      unit_price: it.unit_price,
-      addons: it.addons ?? null,
-      observations: it.observations || null,
-    }));
-    const { error: itemsErr } = await sb.from("order_items").insert(rows);
-    if (itemsErr) console.error("[guest-checkout] items insert error:", itemsErr);
+    const order = { id: (created as any).order_id };
 
     // 5) Dados mínimos do guest necessários para a tela pública validar e mostrar o PIN.
     //    Mantém esta parte síncrona para evitar a página /p/:orderId abrir antes do vínculo existir.
