@@ -245,6 +245,28 @@ function buildBotMetadataPatch(
     address_reference: context.reference || null,
   };
 }
+
+/**
+ * Envio best-effort: um envio que pode falhar (instância desconectada,
+ * teto atingido) nunca pode abortar a transição do fluxo — a sessão já
+ * foi (ou vai ser) gravada pelo passo seguinte. Devolve false quando o
+ * envio falhou, sem lançar. Usado nos envios que antecedem uma transição
+ * (saudações "Perfeito"/"Prazer", descrição do produto, aviso de mínimo).
+ */
+async function sendBestEffort(
+  send: () => Promise<unknown>,
+): Promise<boolean> {
+  try {
+    await send();
+    return true;
+  } catch (e) {
+    console.error(
+      "[bot] sendBestEffort failed (flow continues)",
+      e instanceof Error ? e.message : e,
+    );
+    return false;
+  }
+}
 // ── FIM inline de orderMapping.ts ──
 // Verifica se a loja está aberta agora (horário Brasília) com base em opening_hours + force_closed + is_open.
 const dayNamesBR = [
@@ -490,7 +512,7 @@ const showCategories = async (admin, storeId, phone, session)=>{
 const showProducts = async (admin, storeId, phone, session, categoryId)=>{
   const { data: products } = await admin.from("products").select("id, name, price, description").eq("store_id", storeId).eq("section_id", categoryId).eq("is_available", true).order("name").limit(20);
   if (!products || products.length === 0) {
-    await sendText(storeId, phone, "Essa categoria está sem itens no momento. Escolha outra.");
+    await sendBestEffort(() => sendText(storeId, phone, "Essa categoria está sem itens no momento. Escolha outra."));
     await showCategories(admin, storeId, phone, session);
     return;
   }
@@ -702,7 +724,7 @@ const showConfirmation = async (admin, storeId, phone, session, storeName, minim
   const minimum = Number(minimumOrderValue || 0);
   if (minimum > 0 && subtotal < minimum) {
     const missing = Math.round((minimum - subtotal) * 100) / 100;
-    await sendText(storeId, phone, `⚠️ Falta *${BRL(missing)}* para o pedido mínimo desta loja (${BRL(minimum)}).\n\nAdicione mais itens ao carrinho para continuar. 🙂`);
+    await sendBestEffort(() => sendText(storeId, phone, `⚠️ Falta *${BRL(missing)}* para o pedido mínimo desta loja (${BRL(minimum)}).\n\nAdicione mais itens ao carrinho para continuar. 🙂`));
     await askMore(admin, storeId, phone, session);
     return;
   }
@@ -1408,7 +1430,7 @@ Deno.serve(async (req)=>{
             if (session.context.customer_name) {
               session.current_step = "awaiting_main_menu";
               await setSession(admin, session);
-              await sendText(store_id, phone, `Perfeito, *${String(session.context.customer_name).split(" ")[0]}*! Bora escolher. 🛒`);
+              await sendBestEffort(() => sendText(store_id, phone, `Perfeito, *${String(session.context.customer_name).split(" ")[0]}*! Bora escolher. 🛒`));
               await showCategories(admin, store_id, phone, session);
             } else {
               session.current_step = "awaiting_name";
@@ -1462,7 +1484,7 @@ Deno.serve(async (req)=>{
           }
           if (num === 1) {
             if (session.context.customer_name) {
-              await sendText(store_id, phone, `Perfeito, *${String(session.context.customer_name).split(" ")[0]}*! Bora escolher. 🛒`);
+              await sendBestEffort(() => sendText(store_id, phone, `Perfeito, *${String(session.context.customer_name).split(" ")[0]}*! Bora escolher. 🛒`));
               await showCategories(admin, store_id, phone, session);
             } else {
               session.current_step = "awaiting_name";
@@ -1491,7 +1513,7 @@ Deno.serve(async (req)=>{
             });
           }
           session.context.customer_name = name;
-          await sendText(store_id, phone, `Prazer, *${name}*! 👋`);
+          await sendBestEffort(() => sendText(store_id, phone, `Prazer, *${name}*! 👋`));
           await showCategories(admin, store_id, phone, session);
           return json({
             handled: true,
@@ -1535,7 +1557,7 @@ Deno.serve(async (req)=>{
           // Se o produto tem descrição (ex.: "cardápio do dia" — arroz, feijão, mistura...),
           // mostra ao cliente antes de pedir os adicionais obrigatórios.
           if (p.description) {
-            await sendText(store_id, phone, `🍱 *${p.name}*\n${p.description}`);
+            await sendBestEffort(() => sendText(store_id, phone, `🍱 *${p.name}*\n${p.description}`));
           }
           const groups = await fetchAddonGroupsFor(admin, store_id, p.id);
           if (groups.length === 0) {
@@ -1808,7 +1830,7 @@ Deno.serve(async (req)=>{
               });
             }
             const message = quote?.reason === "outside_delivery_area" ? "Esse endereço está fora da área de entrega da loja. Vou pedir o CEP novamente." : "Não consegui confirmar a entrega nesse endereço. Vou pedir o CEP novamente.";
-            await sendText(store_id, phone, message);
+            await sendBestEffort(() => sendText(store_id, phone, message));
             await askCep(admin, store_id, phone, session);
             return json({
               handled: true,

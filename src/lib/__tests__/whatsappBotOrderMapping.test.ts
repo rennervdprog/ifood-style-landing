@@ -11,6 +11,7 @@ import {
   translateRpcError,
   buildDeliveryQuoteSnapshot,
   buildBotMetadataPatch,
+  sendBestEffort,
 } from "../../../supabase/functions/whatsapp-bot-handler/orderMapping";
 
 describe("mapPaymentMethodToRpc", () => {
@@ -213,6 +214,26 @@ describe("buildBotMetadataPatch", () => {
       address_neighborhood: "Centro",
       address_reference: "ao lado da praça",
     });
+  });
+});
+
+describe("sendBestEffort", () => {
+  it("devolve true quando o envio dá certo", async () => {
+    await expect(sendBestEffort(async () => "ok")).resolves.toBe(true);
+  });
+
+  it("devolve false e não lança quando o envio falha (a transição continua)", async () => {
+    await expect(
+      sendBestEffort(async () => {
+        throw new Error("send_text_failed_400");
+      }),
+    ).resolves.toBe(false);
+  });
+
+  it("devolve false e não lança quando o envio rejeita com valor não-Error", async () => {
+    await expect(sendBestEffort(async () => {
+      throw "boom";
+    })).resolves.toBe(false);
   });
 });
 

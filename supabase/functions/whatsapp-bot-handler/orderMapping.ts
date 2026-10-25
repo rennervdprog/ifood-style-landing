@@ -224,3 +224,25 @@ export function buildBotMetadataPatch(
     address_reference: context.reference || null,
   };
 }
+
+/**
+ * Envio best-effort: um envio que pode falhar (instância desconectada,
+ * teto atingido) nunca pode abortar a transição do fluxo — a sessão já
+ * foi (ou vai ser) gravada pelo passo seguinte. Devolve false quando o
+ * envio falhou, sem lançar. Usado nos envios que antecedem uma transição
+ * (saudações "Perfeito"/"Prazer", descrição do produto, aviso de mínimo).
+ */
+export async function sendBestEffort(
+  send: () => Promise<unknown>,
+): Promise<boolean> {
+  try {
+    await send();
+    return true;
+  } catch (e) {
+    console.error(
+      "[bot] sendBestEffort failed (flow continues)",
+      e instanceof Error ? e.message : e,
+    );
+    return false;
+  }
+}
