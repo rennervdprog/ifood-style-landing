@@ -280,21 +280,27 @@ const ProductDetailModal = ({ product, storeName, storeCategory, singleSize = fa
     return map;
   }, [selectedAddonRows]);
 
+  // Lojas com pizza_price_mode="maior" (ex.: Bittenca's — igual ao Anota AI):
+  // o sabor vale o MAIOR escolhido, e um sabor duplicado conta uma vez só.
+  const useHighestFlavor = (storeSettings as any)?.pizza_price_mode === "maior";
+
   const priceSummary = useMemo(() => {
     const hasPriceReplacingGroup = addonGroups.some((g) => g.price_replaces_base);
     const replacementRows = selectedAddonRows.filter((row) => row.replacesBasePrice);
     const normalRows = selectedAddonRows.filter((row) => !row.replacesBasePrice);
     // Lojas com pizza_price_mode="maior" (ex.: Bittenca's — igual ao Anota AI):
     // cada grupo que substitui a base vale o MAIOR item escolhido, não a soma.
+    // O mesmo sabor 2x conta UMA vez só (só ocupa mais frações da pizza): por
+    // isso o "maior" recebe o preço UNITÁRIO de cada item distinto, e não o
+    // lineTotal (unitPrice × qty) — 2x Calabresa 79,99 vale 79,99, não 159,98.
     // Lojas sem o modo (ou com outro valor): soma, exatamente como antes.
-    const useHighestFlavor = (storeSettings as any)?.pizza_price_mode === "maior";
     const replacementTotal = useHighestFlavor
       ? sumMoney(
           addonGroups
             .filter((g) => g.price_replaces_base)
             .map((g) =>
               combinePricesByMode(
-                replacementRows.filter((row) => row.groupId === g.id).map((row) => row.lineTotal),
+                replacementRows.filter((row) => row.groupId === g.id).map((row) => row.unitPrice),
                 "maior",
               ),
             ),
@@ -316,7 +322,7 @@ const ProductDetailModal = ({ product, storeName, storeCategory, singleSize = fa
       unitPrice,
       lineTotal: multiplyMoney(unitPrice, quantity),
     };
-  }, [addonGroups, hasSizes, product, quantity, selectedAddonRows, selectedSize, sizes, storeSettings]);
+  }, [addonGroups, hasSizes, product, quantity, selectedAddonRows, selectedSize, sizes, useHighestFlavor]);
 
   const { unitPrice, lineTotal } = priceSummary;
 
@@ -432,7 +438,11 @@ const ProductDetailModal = ({ product, storeName, storeCategory, singleSize = fa
             const groupCap = group.max_select && group.max_select > 0 ? group.max_select : Infinity;
             const atCap = groupTotal(group.id) >= groupCap;
             const selectedRow = selectedRowsByItem.get(`${group.id}:${item.id}`);
-            const itemLineTotal = selectedRow?.lineTotal ?? Number(item.price || 0);
+            // No modo "maior", o sabor duplicado conta uma vez só no total — o
+            // "+ R$ ..." da linha mostra o preço unitário, não o lineTotal.
+            const itemLineTotal = selectedRow
+              ? (selectedRow.replacesBasePrice && useHighestFlavor ? selectedRow.unitPrice : selectedRow.lineTotal)
+              : Number(item.price || 0);
             return (
               <div
                 key={item.id}
