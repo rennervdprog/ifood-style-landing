@@ -56,7 +56,22 @@ function requiresPharmacyValidation(metadata?: Record<string, any>) {
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [items, setItems] = useState<CartItem[]>(() => {
     const saved = localStorage.getItem("cart_items");
-    return saved ? JSON.parse(saved) : [];
+    if (!saved) return [];
+    try {
+      const parsed: unknown = JSON.parse(saved);
+      if (!Array.isArray(parsed)) return [];
+      return parsed as CartItem[];
+    } catch {
+      // Fase 2 (P0-8): carrinho corrompido no localStorage derrubava o app
+      // inteiro (o CartProvider envolve o roteador e o ErrorBoundary está
+      // dentro dele). Descarta a chave e começa com o carrinho vazio.
+      try {
+        localStorage.removeItem("cart_items");
+      } catch {
+        // Armazenamento indisponível: segue com o carrinho vazio.
+      }
+      return [];
+    }
   });
   const [neighborhood, setNeighborhoodState] = useState<string | null>(() => {
     return localStorage.getItem("selected_neighborhood");

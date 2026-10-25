@@ -435,10 +435,13 @@ const StorePage = () => {
   });
 
   // Produtos visíveis no cardápio (oculta itens marcados como "apenas no modal" de pastel)
+  // Fase 2: produto indisponível (is_available=false) não aparece na vitrine.
+  // A RPC store_bootstrap já filtra; isto cobre o cache antigo.
   const displayProducts = useMemo(
     () =>
       (products || []).filter(
         (p) =>
+          (p as any).is_available !== false &&
           !((p.metadata as any)?.modal_only && (p.metadata as any)?.is_pastel_flavor) &&
           !(p as any).sold_by_weight &&
           !((p.metadata as any)?.pdv_only) &&
@@ -808,6 +811,13 @@ const StorePage = () => {
       toast.error("Produto esgotado");
       return;
     }
+    // Fase 2: produto indisponível ou com preço zero não pode ser vendido
+    // na vitrine (o preço aqui é o do item — base + adicionais — para não
+    // bloquear pizza cujo preço vem do sabor escolhido).
+    if ((product as any)?.is_available === false || Number(unitPrice) <= 0) {
+      toast.error("Produto esgotado");
+      return;
+    }
     addItem(
       {
         id: product.id,
@@ -872,6 +882,11 @@ const StorePage = () => {
       return;
     }
     const effective = getEffectivePrice(product as any);
+    // Fase 2: produto indisponível ou com preço zero não pode ser vendido.
+    if ((product as any)?.is_available === false || Number(effective) <= 0) {
+      toast.error("Produto esgotado");
+      return;
+    }
     addItem(
       {
         id: product.id,
@@ -905,7 +920,8 @@ const StorePage = () => {
     }
   }, [store]);
 
-  const totalProducts = products?.length || 0;
+  // Fase 2 (P2-10): o contador conta o que está listado, não o payload todo.
+  const totalProducts = displayProducts?.length || 0;
 
   if (isReservedRoute) {
     return <NotFound />;
@@ -1895,7 +1911,12 @@ const ProductCard = memo(({ product, disabled, onClick, onPrefetch, storeCategor
   const isBeverage = !!meta.is_beverage;
   const emoji = categoryEmoji[cat] || "🍴";
   const isOutOfStock = !!meta.out_of_stock;
-  const isBlocked = disabled || isOutOfStock;
+  // Fase 2: indisponível ou preço zero não pode ser comprado. O preço é o
+  // efetivo do produto (chamada direta aqui porque `effective` só é
+  // calculado abaixo); pizza com sabor tem base > 0, então não é afetada.
+  const isUnavailable = (product as any).is_available === false || getEffectivePrice(product as any) <= 0;
+  const isUnbuyable = isOutOfStock || isUnavailable;
+  const isBlocked = disabled || isUnbuyable;
   // Layout de adega agora usa o mesmo card horizontal das demais categorias
   const isAdegaCard = false;
   const isAdega = cat === "adegas";
@@ -1920,6 +1941,7 @@ const ProductCard = memo(({ product, disabled, onClick, onPrefetch, storeCategor
   // CTA label
   const ctaLabel = (() => {
     if (isOutOfStock) return "Esgotado";
+    if (isUnavailable) return "Indisponível";
     if (disabled) return "Indisponível";
     if (requiresPharmacyValidation) return "Ver detalhes";
     return "Adicionar";
@@ -1934,11 +1956,11 @@ const ProductCard = memo(({ product, disabled, onClick, onPrefetch, storeCategor
 
   return (
     <button
-      onClick={isOutOfStock ? undefined : onClick}
-      onPointerDown={isOutOfStock ? undefined : onPrefetch}
-      onMouseEnter={isOutOfStock ? undefined : onPrefetch}
-      onFocus={isOutOfStock ? undefined : onPrefetch}
-      disabled={isOutOfStock}
+      onClick={isUnbuyable ? undefined : onClick}
+      onPointerDown={isUnbuyable ? undefined : onPrefetch}
+      onMouseEnter={isUnbuyable ? undefined : onPrefetch}
+      onFocus={isUnbuyable ? undefined : onPrefetch}
+      disabled={isUnbuyable}
       className={`w-full text-left transition-all group rounded-2xl ${
         isAdegaCard
           ? `flex flex-col-reverse bg-card border border-border p-2.5 gap-2 ${isBlocked ? "opacity-60" : "hover:border-primary/40 active:scale-[0.98]"}`

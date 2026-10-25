@@ -329,6 +329,14 @@ const ProductDetailModal = ({ product, storeName, storeCategory, singleSize = fa
   if (!product) return null;
 
   const isOutOfStock = !!(product as any).metadata?.out_of_stock;
+  // Fase 2: produto indisponível não pode ser comprado. Preço zero só vale
+  // na hora de adicionar (passo final): antes de escolher o sabor, a pizza
+  // com grupo substituidor tem unitPrice 0 transitório — bloquear ali
+  // travaria o botão "Próximo: Personalizar".
+  const isUnavailable = (product as any).is_available === false;
+  const isFinalStep = totalSteps !== 2 || step === 2;
+  const isZeroPrice = isFinalStep && unitPrice <= 0;
+  const isUnbuyable = isOutOfStock || isUnavailable || isZeroPrice;
 
   const closeAndReset = () => {
     onClose();
@@ -873,7 +881,7 @@ const ProductDetailModal = ({ product, storeName, storeCategory, singleSize = fa
   );
 
   const handlePrimary = () => {
-    if (isOutOfStock || requiresPharmacyValidation) return;
+    if (isUnbuyable || requiresPharmacyValidation) return;
     if (totalSteps === 2 && step === 1) {
       setStep(2);
       return;
@@ -902,14 +910,18 @@ const ProductDetailModal = ({ product, storeName, storeCategory, singleSize = fa
   const primaryLabel = requiresPharmacyValidation
     ? "Validação pela farmácia necessária"
     : totalSteps === 2 && step === 1
-    ? "Próximo: Personalizar"
+    ? isUnbuyable
+      ? "Indisponível"
+      : "Próximo: Personalizar"
     : isOutOfStock
       ? "Esgotado"
-      : addonsPending
-        ? "Carregando opções..."
-      : `Adicionar • ${formatBRL(lineTotal)}`;
+      : isUnbuyable
+        ? "Indisponível"
+        : addonsPending
+          ? "Carregando opções..."
+          : `Adicionar • ${formatBRL(lineTotal)}`;
 
-  const primaryEnabled = !requiresPharmacyValidation && (totalSteps === 2 && step === 1 ? !isOutOfStock : !addonsPending && allRequiredMet && !isOutOfStock);
+  const primaryEnabled = !requiresPharmacyValidation && (totalSteps === 2 && step === 1 ? !isUnbuyable : !addonsPending && allRequiredMet && !isUnbuyable);
 
   return (
     <Dialog open={open} onOpenChange={(nextOpen) => { if (!nextOpen) closeAndReset(); }}>
