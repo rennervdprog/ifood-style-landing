@@ -26,7 +26,10 @@ Deno.serve(async (req) => {
     const includeBlocked = body.include_blocked === true;
     const limit = Math.min(Math.max(Number(body.limit) || 20, 1), 50);
 
-    const baseSelect = "id, name, image_url, slug, category, categories, is_open, force_closed, rating, status, delivery_mode, own_delivery_fee, address_cep, address_city, address_complement, address_neighborhood, address_number, address_reference, address_state, address_street, latitude, longitude, settings";
+    // Inclui os campos de taxa: sem eles o describeStoreFee calculava base 0
+    // e todo card vindo desta funcao exibia "Gratis". O split vem resolvido
+    // do servidor (platform_split_effective), igual ao payload da view.
+    const baseSelect = "id, name, image_url, slug, category, categories, is_open, force_closed, rating, status, delivery_mode, own_delivery_fee, delivery_fee, delivery_fee_type, delivery_fee_base, delivery_fee_per_km, platform_fee_split, plan_type, platform_split_effective, address_cep, address_city, address_complement, address_neighborhood, address_number, address_reference, address_state, address_street, latitude, longitude, settings";
 
     // Esta função usa credencial de serviço; a origem não pode ser escolhida
     // pelo visitante, sob risco de contornar a projeção pública limitada.
