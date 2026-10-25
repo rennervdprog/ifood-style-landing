@@ -158,6 +158,37 @@ const AddonManagerTeste = ({ storeId }: AddonManagerTesteProps) => {
     enabled: groupIds.length > 0,
   });
 
+  // Modo de preço da pizza da loja — mesma query da aba Pizzaria
+  // (PizzaFlavorManagerTeste), com a mesma chave: o cache é compartilhado,
+  // então quando o modo muda lá a linha da regra aqui atualiza junto.
+  // Só leitura: o sheet nunca grava o modo.
+  const { data: storeRow } = useQuery({
+    queryKey: ["store-for-pizza", storeId],
+    queryFn: async () => {
+      const { data } = await supabase.from("stores").select("settings").eq("id", storeId).single();
+      return data;
+    },
+  });
+  const priceMode = ((storeRow?.settings || {}) as Record<string, any>).pizza_price_mode as "maior" | "media" | "soma" | undefined;
+  // "media" e "soma" são a mesma regra (somar) em todos os fluxos — a
+  // linguagem é a mesma da tela de configuração (PR #356) e do modal (PR #358).
+  const priceRuleText = priceMode === "maior"
+    ? "A pizza custa o preço do sabor mais caro."
+    : "Os sabores somam no preço da pizza.";
+
+  // Linha da regra de preço no sheet: quando o grupo define o preço, mostra
+  // a regra que a loja configurou (e onde mudar); quando não define, os itens
+  // sempre somam — não há nada para configurar nesses grupos.
+  const priceRuleBox = (definesPrice: boolean) => (
+    <p className="text-xs text-foreground/80 bg-muted/40 rounded-xl px-3 py-2 leading-relaxed">
+      {definesPrice ? (
+        <>{priceRuleText} <b>Mudar em Pizzaria/Pastel → Regras.</b></>
+      ) : (
+        "Os itens deste grupo sempre somam no preço."
+      )}
+    </p>
+  );
+
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ["store-addon-groups", storeId] });
     queryClient.invalidateQueries({ queryKey: ["addon-group-links"] });
@@ -1026,6 +1057,8 @@ const AddonManagerTeste = ({ storeId }: AddonManagerTesteProps) => {
                     <p className="text-[11px] text-muted-foreground mt-2">
                       O tipo já ajusta obrigatório e preço: sabor nasce obrigatório e define o preço da pizza; borda e outro nascem opcionais, no máximo 1. Dá pra ajustar tudo no passo 2.
                     </p>
+                    {/* Regra de preço do tipo escolhido — acompanha a escolha em tempo real */}
+                    {priceRuleBox(sheetType === "sabor")}
                   </div>
                 </>
               ) : (
@@ -1085,6 +1118,9 @@ const AddonManagerTeste = ({ storeId }: AddonManagerTesteProps) => {
                       <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform shadow ${sheetForm.price_replaces_base ? "translate-x-5" : "translate-x-0.5"}`} />
                     </div>
                   </button>
+
+                  {/* Regra de preço deste grupo — acompanha o interruptor em tempo real */}
+                  {priceRuleBox(sheetForm.price_replaces_base)}
 
                   {/* Importação em lote (só na criação) */}
                   {groupSheet.mode === "create" && (
