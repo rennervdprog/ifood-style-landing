@@ -939,8 +939,8 @@ const AddonManagerTeste = ({ storeId }: AddonManagerTesteProps) => {
 
       {/* Menu "•••" do grupo */}
       {menuGroupId && menuGroup && (
-        <div className="fixed inset-0 z-50 bg-black/60 flex items-end sm:items-center justify-center" onClick={() => setMenuGroupId(null)}>
-          <div className="bg-card w-full sm:max-w-sm rounded-t-2xl sm:rounded-2xl p-2 pb-6" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[70] bg-black/60 flex items-end sm:items-center justify-center" onClick={() => setMenuGroupId(null)}>
+          <div className="bg-card w-full sm:max-w-sm rounded-t-2xl sm:rounded-2xl p-2 pb-[calc(1.5rem+env(safe-area-inset-bottom))]" onClick={(e) => e.stopPropagation()}>
             <button
               onClick={() => { setMenuGroupId(null); setPreviewGroupId(menuGroup.id); }}
               className="w-full flex items-center gap-3 px-3 py-3.5 rounded-xl text-sm text-foreground hover:bg-muted/50 text-left"
@@ -978,8 +978,8 @@ const AddonManagerTeste = ({ storeId }: AddonManagerTesteProps) => {
 
       {/* Bottom sheet de novo/edição de grupo — 2 passos */}
       {groupSheet && (
-        <div className="fixed inset-0 z-50 bg-black/60 flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={closeSheet}>
-          <div className="bg-card w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl max-h-[88vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[70] bg-black/60 flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={closeSheet}>
+          <div className="bg-card w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl max-h-[88vh] flex flex-col pb-[env(safe-area-inset-bottom)]" onClick={(e) => e.stopPropagation()}>
             <div className="p-4 border-b border-border flex items-center justify-between gap-2">
               <div className="min-w-0">
                 <h3 className="text-base font-bold text-foreground truncate">
@@ -1174,8 +1174,8 @@ const AddonManagerTeste = ({ storeId }: AddonManagerTesteProps) => {
 
       {/* Link Products Modal */}
       {linkModalGroupId && linkModalGroup && (
-        <div className="fixed inset-0 z-50 bg-black/60 flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={() => !linkSaving && setLinkModalGroupId(null)}>
-          <div className="bg-card w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl max-h-[85vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[70] bg-black/60 flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={() => !linkSaving && setLinkModalGroupId(null)}>
+          <div className="bg-card w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl max-h-[85vh] flex flex-col pb-[env(safe-area-inset-bottom)]" onClick={(e) => e.stopPropagation()}>
             <div className="p-4 border-b border-border">
               <div className="flex items-center justify-between gap-2">
                 <div className="min-w-0">
@@ -1244,7 +1244,7 @@ const AddonManagerTeste = ({ storeId }: AddonManagerTesteProps) => {
 
       {/* Preview Modal */}
       {previewGroupId && previewGroup && (
-        <div className="fixed inset-0 z-50 bg-black/60 flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={() => setPreviewGroupId(null)}>
+        <div className="fixed inset-0 z-[70] bg-black/60 flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={() => setPreviewGroupId(null)}>
           <div className="bg-card w-full sm:max-w-sm rounded-t-2xl sm:rounded-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="p-4 border-b border-border flex items-center justify-between">
               <h3 className="text-sm font-bold text-foreground">Pré-visualização (como o cliente vê)</h3>
