@@ -997,7 +997,16 @@ const uploadPixProofFromBase64 = async (storeId, orderId, base64, mime)=>{
   return path;
 };
 const ensureClient = async (admin, storeId, phone, session)=>{
-  if (session.context.client_id) return session.context.client_id;
+  if (session.context.client_id) {
+    // A saudação já resolve o client_id, e este retorno cedo pulava a
+    // resolução do PIN — a RPC recebia um PIN aleatório em vez do PIN do
+    // perfil (regressão da Fase 1: na v4 o PIN vinha do ensureClient).
+    if (!session.context._delivery_pin) {
+      const { data: prof } = await admin.from("profiles").select("delivery_pin").eq("user_id", session.context.client_id).maybeSingle();
+      session.context._delivery_pin = prof?.delivery_pin || String(Math.floor(1000 + Math.random() * 9000));
+    }
+    return session.context.client_id;
+  }
   const customerName = String(session.context.customer_name || "").trim();
   try {
     const digits = onlyDigits(phone);
