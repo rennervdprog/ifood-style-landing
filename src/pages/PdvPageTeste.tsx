@@ -1822,6 +1822,7 @@ const PdvPageTeste = () => {
       <ProductDetailModal
         product={productModal}
         storeName={store?.name || ""}
+        storeSettings={storeSettings}
         open={!!productModal}
         onClose={() => setProductModal(null)}
         onAdd={handleModalAdd}
