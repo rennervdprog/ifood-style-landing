@@ -14,7 +14,7 @@ import { formatDistanceKm } from "@/lib/formatDistance";
 import BottomNav from "@/components/BottomNav";
 
 const PUBLIC_STORE_SELECT_FULL = "id, name, image_url, slug, category, categories, is_open, force_closed, rating, status, delivery_mode, own_delivery_fee, delivery_fee, delivery_fee_type, delivery_fee_base, delivery_fee_per_km, estimated_delivery_time, minimum_order_value, free_delivery_threshold, address_cep, address_city, address_complement, address_neighborhood, address_number, address_reference, address_state, address_street, latitude, longitude, settings, platform_fee_split, created_at";
-const PUBLIC_STORE_SELECT_VIEW = "id, name, image_url, slug, category, categories, is_open, force_closed, rating, status, delivery_mode, own_delivery_fee, delivery_fee, estimated_delivery_time, address_cep, address_city, address_complement, address_neighborhood, address_number, address_reference, address_state, address_street, latitude, longitude, settings, platform_fee_split, plan_type, platform_delivery_split_override, autonomy_lifetime_free, created_at";
+const PUBLIC_STORE_SELECT_VIEW = "id, name, image_url, slug, category, categories, is_open, force_closed, rating, status, delivery_mode, own_delivery_fee, delivery_fee, estimated_delivery_time, address_cep, address_city, address_complement, address_neighborhood, address_number, address_reference, address_state, address_street, latitude, longitude, settings, platform_fee_split, plan_type, platform_split_effective, created_at";
 
 const norm = (v?: string | null) =>
   (v || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();

@@ -148,7 +148,12 @@ const StorePage = () => {
      queryKey: ["store", id || slug, isSandbox],
     queryFn: async () => {
       const baseTable = isSandbox ? "stores" : "stores_public";
-      let query = ((supabase as any).from(baseTable)).select("id, name, slug, slug_aliases, image_url, category, categories, rating, is_open, force_closed, status, delivery_mode, own_delivery_fee, delivery_fee, delivery_fee_type, delivery_fee_base, minimum_order_value, estimated_delivery_time, owner_id, address_cep, address_city, address_complement, address_neighborhood, address_number, address_reference, address_state, address_street, latitude, longitude, max_delivery_km, delivery_radius, settings, network_id, is_matriz, free_delivery_threshold").in("status", ["ativo", "bloqueado"]);
+      // platform_split_effective so existe na view (vem de get_public_stores);
+      // a tabela `stores` do sandbox nao tem a coluna — incluir so no publico.
+      const storeSelect =
+        "id, name, slug, slug_aliases, image_url, category, categories, rating, is_open, force_closed, status, delivery_mode, own_delivery_fee, delivery_fee, delivery_fee_type, delivery_fee_base, minimum_order_value, estimated_delivery_time, owner_id, address_cep, address_city, address_complement, address_neighborhood, address_number, address_reference, address_state, address_street, latitude, longitude, max_delivery_km, delivery_radius, settings, network_id, is_matriz, free_delivery_threshold" +
+        (isSandbox ? "" : ", platform_split_effective");
+      let query = ((supabase as any).from(baseTable)).select(storeSelect).in("status", ["ativo", "bloqueado"]);
       if (id) query = query.eq("id", id);
       else if (slug) query = query.or(`slug.eq.${slug},slug_aliases.cs.{${slug}}`);
       const { data, error } = await query.maybeSingle();
@@ -1199,10 +1204,12 @@ const StorePage = () => {
                         return total <= 0 ? "Grátis" : `A partir de ${formatBRL(total)}`;
                       }
                       // Prefere RPC (fonte de verdade), com fallback ao helper caso ainda não carregou.
+                      // O total da RPC e exato (so km e piso) — sem "A partir de" aqui;
+                      // o ramo do km acima e o unico que usa o prefixo.
                       if (platformInfo && typeof platformInfo.customer_total === "number") {
                         return platformInfo.customer_total === 0
                           ? "Grátis"
-                          : `A partir de ${formatBRL(platformInfo.customer_total)}`;
+                          : formatBRL(platformInfo.customer_total);
                       }
                       const d = describeStoreFee(store as any);
                       return d.free ? "Grátis" : `${d.prefix ?? ""} ${d.label}`.trim();
