@@ -52,7 +52,7 @@ const MenuTabTeste = lazy(() => import("./admin/tabs/MenuTabTeste"));
 const StockTab = lazy(() => import("./admin/tabs/StockTab"));
 const CashRegisterTabTeste = lazy(() => import("./admin/tabs/CashRegisterTabTeste"));
 const AddonsTabTeste = lazy(() => import("./admin/tabs/AddonsTabTeste"));
-const BordasTab = lazy(() => import("./admin/tabs/BordasTab"));
+const BordasTabTeste = lazy(() => import("./admin/tabs/BordasTabTeste"));
 const HoursTab = lazy(() => import("./admin/tabs/HoursTab"));
 const FinanceTab = lazy(() => import("./admin/tabs/FinanceTab"));
 const DriversTab = lazy(() => import("./admin/tabs/DriversTab"));
@@ -2214,7 +2214,7 @@ const AdminDashboardTeste = () => {
                 {dashboardTab === "cash_register" && <CashRegisterTabTeste storeId={store.id} />}
                 {dashboardTab === "tutoriais" && <TutoriaisTab />}
                 {dashboardTab === "addons" && <AddonsTabTeste storeId={store.id} />}
-                {dashboardTab === "bordas" && <BordasTab storeId={store.id} category={store.category} categories={(store as any).categories} />}
+                {dashboardTab === "bordas" && <BordasTabTeste storeId={store.id} category={store.category} categories={(store as any).categories} />}
                 {dashboardTab === "hours" && <HoursTab storeId={store.id} forceClosed={(store as any).force_closed || false} />}
                 {dashboardTab === "settings" && <SettingsTabTeste store={store} />}
                 {dashboardTab === "finance" && (
