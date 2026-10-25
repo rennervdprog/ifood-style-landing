@@ -147,7 +147,7 @@ const LiveTrackingMap = ({ orderId, driverId, storeId, clientAddress, clientLat,
     queryKey: ["store-geo", storeId],
     queryFn: async () => {
       const { data } = await supabase
-        .from("stores_public")
+        .from("stores")
         .select("name, latitude, longitude, address_street, address_number, address_neighborhood, address_city, address_state, address_cep")
         .eq("id", storeId)
         .maybeSingle();
