@@ -2,8 +2,7 @@
  * useUserRouting — single source of truth for role + plan + home-route decisions.
  *
  * Consolidates the queries that were previously duplicated across `RoleGuard`,
- * `resolvePartnerDashboard`, `ClientAuthScreen.redirectByRole`, `ClientGuard`,
- * `useIsReseller` and `useStorePlan` (routing bits only). One react-query
+ * `resolvePartnerDashboard`, `ClientGuard`, `useIsReseller` and `useStorePlan` (routing bits only). One react-query
  * cache entry per user, consumed by every guard/screen — no more cascading
  * spinners, no more divergent branches.
  */
