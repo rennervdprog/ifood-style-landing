@@ -1350,14 +1350,19 @@ Deno.serve(async (req)=>{
       }).limit(1).maybeSingle();
       const knownName = known?.full_name || null;
       const clientId = known?.user_id || null;
-      // Verifica se este telefone tem pedido em aberto (não finalizado)
+      // Verifica se este telefone tem pedido em aberto (não finalizado).
+      // "recusado" NÃO é um valor do enum order_status (o valor é
+      // pix_direto_recusado) — com ele na lista a query falhava (22P02) e,
+      // como o erro era ignorado, o prompt de pedido em aberto NUNCA
+      // aparecia. Exclui só os estados terminais.
       const digitsPhone = digits;
       // orders não tem coluna customer_phone; usa client_id (quando conhecido) ou anon_session_id (=phone)
-      let openOrdersQuery = admin.from("orders").select("id, order_number, status, created_at").eq("store_id", store_id).not("status", "in", "(entregue,cancelado,recusado,finalizado)").order("created_at", {
+      let openOrdersQuery = admin.from("orders").select("id, order_number, status, created_at").eq("store_id", store_id).not("status", "in", "(entregue,cancelado,finalizado,pix_direto_recusado)").order("created_at", {
         ascending: false
       }).limit(1);
       openOrdersQuery = clientId ? openOrdersQuery.or(`client_id.eq.${clientId},anon_session_id.eq.${digitsPhone}`) : openOrdersQuery.eq("anon_session_id", digitsPhone);
-      const { data: openOrders } = await openOrdersQuery;
+      const { data: openOrders, error: openOrdersError } = await openOrdersQuery;
+      if (openOrdersError) console.error("[bot] open-order lookup failed", openOrdersError);
       const openOrder = (openOrders || [])[0];
       if (openOrder) {
         // Fase 1 (item 11): o número curto é SEMPRE o prefixo do UUID
