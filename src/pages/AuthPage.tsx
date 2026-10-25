@@ -991,7 +991,7 @@ const AuthPage = () => {
 
         <div className="relative z-10">
           <img
-            src="/itasuper-logo-horizontal.webp"
+            src="/itasuper-logo-horizontal.webp?v=2"
             alt="ItaSuper"
             width={220}
             height={52}
@@ -1034,7 +1034,7 @@ const AuthPage = () => {
       <div className="flex-1 flex flex-col bg-gradient-to-b from-white to-slate-50 md:bg-white">
         <header className="md:hidden sticky top-0 z-10 bg-white border-b border-slate-100 h-14 flex items-center px-3">
           <img
-            src="/itasuper-logo-horizontal.webp"
+            src="/itasuper-logo-horizontal.webp?v=2"
             alt="ItaSuper"
             width={119}
             height={28}

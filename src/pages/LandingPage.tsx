@@ -73,7 +73,7 @@ export default function LandingPage() {
       <header className="border-b border-border/40 sticky top-0 bg-background/80 backdrop-blur z-40">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
-            <img src="/logo-itasuper-128.webp" alt="ItaSuper" className="w-8 h-8" />
+            <img src="/logo-itasuper-128.webp?v=2" alt="ItaSuper" className="w-8 h-8" />
             <span className="font-extrabold text-lg">ItaSuper</span>
           </Link>
           <nav className="flex items-center gap-3 text-sm font-semibold">

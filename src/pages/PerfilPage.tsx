@@ -444,7 +444,7 @@ const PerfilPage = () => {
       setNotifStatus(perm);
       if (perm === "granted") {
         toast.success("Notificações ativadas!");
-        new Notification("ItaSuper", { body: "Notificações funcionando ✅", icon: "/logo-itasuper-128.webp" });
+        new Notification("ItaSuper", { body: "Notificações funcionando ✅", icon: "/logo-itasuper-128.webp?v=2" });
       } else if (perm === "denied") {
         toast.error("Permissão negada. Ative nas configurações do navegador.");
       }
