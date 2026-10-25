@@ -32,6 +32,220 @@ const DEFAULT_TRIGGER_KEYWORDS = [
 ];
 const CANONICAL_HOST = "https://itasuper.com.br";
 const onlyDigits = (p)=>String(p || "").replace(/\D/g, "");
+// ── INÍCIO inline de orderMapping.ts (Fase 1) ──
+// Fonte da verdade: supabase/functions/whatsapp-bot-handler/orderMapping.ts
+// (deploy externo só sobe index.ts — manter os dois idênticos; o teste
+//  src/lib/__tests__/whatsappBotOrderMapping.test.ts trava divergência.)
+type BotPaymentMethod = string;
+
+const BOT_PAYMENT_TO_RPC: Record<string, string> = {
+  pix: "pix_machine",
+  cash: "dinheiro",
+  card: "cartao",
+  pix_direto: "pix_direto",
+};
+
+/** Vocabulário do bot -> vocabulário do site/RPC. Desconhecido passa direto. */
+function mapPaymentMethodToRpc(botMethod: BotPaymentMethod): string {
+  return BOT_PAYMENT_TO_RPC[botMethod] ?? botMethod;
+}
+
+interface BotCartAddon {
+  id?: string | null;
+  group_id?: string | null;
+  groupId?: string | null;
+  group_name?: string | null;
+  groupName?: string | null;
+  name: string;
+  price: number;
+}
+
+interface BotCartItem {
+  product_id: string;
+  quantity: number;
+  unit_price: number;
+  addons?: BotCartAddon[] | null;
+  observations?: string | null;
+}
+
+interface RpcOrderItem {
+  product_id: string;
+  quantity: number;
+  unit_price: number;
+  addons: Array<{
+    id: string | null;
+    groupId: string | null;
+    groupName: string | null;
+    name: string;
+    price: number;
+  }>;
+  observations: string | null;
+}
+
+/**
+ * Carrinho da sessão -> `p_items` no formato que a RPC valida.
+ * Sem o `id` do adicional a RPC cai para busca por nome; com ele, resolve
+ * pelo UUID dentro do grupo. `null` explícito = "não informado" (a RPC trata
+ * como ausente e cai para o nome) — cobre sessões em andamento no deploy.
+ */
+function mapCartToRpcItems(cart: BotCartItem[]): RpcOrderItem[] {
+  return (cart || []).map((i) => ({
+    product_id: i.product_id,
+    quantity: i.quantity,
+    unit_price: i.unit_price,
+    addons: (i.addons || []).map((a) => ({
+      id: a.id ?? null,
+      groupId: a.groupId ?? a.group_id ?? null,
+      groupName: a.groupName ?? a.group_name ?? null,
+      name: a.name,
+      price: a.price,
+    })),
+    observations: i.observations || null,
+  }));
+}
+
+/** Número curto do pedido: prefixo do UUID, igual ao painel (#2A27F312). */
+function shortOrderCode(orderId: string): string {
+  return `#${String(orderId || "").slice(0, 8).toUpperCase()}`;
+}
+
+/** Link de acompanhamento público do pedido (PIN = últimos 4 do telefone). */
+function buildTrackingLink(orderId: string, phone: string): string {
+  const digits = String(phone || "").replace(/\D/g, "");
+  return `https://www.itasuper.com.br/p/${orderId}?t=${digits.slice(-4)}`;
+}
+
+type RpcErrorKind =
+  | "closed"
+  | "below_minimum"
+  | "price_changed"
+  | "unavailable"
+  | "unknown";
+
+function classifyRpcError(message: string): RpcErrorKind {
+  const m = String(message || "").toLowerCase();
+  if (m.includes("loja fechada")) return "closed";
+  if (m.includes("pedido mínimo")) return "below_minimum";
+  if (m.includes("divergente") || m.includes("revise o carrinho")) return "price_changed";
+  if (
+    m.includes("indisponível") ||
+    m.includes("indisponivel") ||
+    m.includes("não foi encontrado") ||
+    m.includes("não pertence") ||
+    m.includes("produto do pedido inválido")
+  ) {
+    return "unavailable";
+  }
+  return "unknown";
+}
+
+/**
+ * Exceção da RPC -> mensagem amigável no WhatsApp. A sessão é mantida em
+ * todos os casos (o cliente não perde o pedido); preço divergente e item
+ * indisponível pedem para cancelar e montar de novo — o carrinho com o
+ * preço velho não passa na RPC de novo.
+ */
+function translateRpcError(message: string): { kind: RpcErrorKind; text: string } {
+  const kind = classifyRpcError(message);
+  switch (kind) {
+    case "closed":
+      return {
+        kind,
+        text: "🌙 A loja está fechada no momento — não consegui confirmar seu pedido.\n\nQuando abrir, é só mandar *MENU* que te atendo. 💚",
+      };
+    case "below_minimum": {
+      const min = String(message || "").match(/R\$ ?[\d.,]+/);
+      return {
+        kind,
+        text: `⚠️ O pedido mínimo desta loja é ${min ? min[0] : "maior que o subtotal"} — seu carrinho ficou abaixo dele.\n\nAdicione mais itens e tente de novo, ou responda *2* para cancelar. 🙂`,
+      };
+    }
+    case "price_changed":
+      return {
+        kind,
+        text: "⚠️ O preço de um item mudou enquanto você montava o pedido — não consegui confirmar com o valor antigo.\n\nResponda *2* para cancelar e montar o pedido de novo com os preços atualizados.",
+      };
+    case "unavailable":
+      return {
+        kind,
+        text: "⚠️ Um item do seu pedido ficou indisponível — não consegui confirmar.\n\nResponda *2* para cancelar e montar o pedido de novo.",
+      };
+    default:
+      return {
+        kind,
+        text: "❌ Não consegui confirmar seu pedido agora. Um atendente já vai te chamar — seu carrinho continua aqui. 🙂",
+      };
+  }
+}
+
+interface DeliveryQuoteSnapshot {
+  policy_version: number;
+  distance_km: number;
+  distance_source: string;
+  max_delivery_km: number | null;
+  destination_precision: string;
+  store_delivery_base: number;
+  platform_fee_customer: number;
+  platform_fee_store_absorbed: number;
+  delivery_fee: number;
+  vip_override_applied: unknown;
+  split_mode: unknown;
+  plan_type: unknown;
+}
+
+/**
+ * Snapshot da cotação no formato que a RPC grava em `metadata.delivery_quote`
+ * — o mesmo que a edge guest-checkout monta. A RPC não aceita o quote cheio.
+ */
+function buildDeliveryQuoteSnapshot(
+  quote: any,
+  deliveryFee: number,
+  precisionFallback = "cep",
+): DeliveryQuoteSnapshot | null {
+  if (!quote) return null;
+  return {
+    policy_version: quote.policy_version || 1,
+    distance_km: Number(quote.distance?.km || 0),
+    distance_source: quote.distance?.source || "haversine",
+    max_delivery_km: quote.distance?.max_km ?? null,
+    destination_precision: quote.destination?.precision || precisionFallback,
+    store_delivery_base: Number(quote.pricing?.store_delivery_base || 0),
+    platform_fee_customer: Number(quote.pricing?.platform_fee_customer || 0),
+    platform_fee_store_absorbed: Number(quote.pricing?.platform_fee_store_absorbed || 0),
+    delivery_fee: deliveryFee,
+    vip_override_applied: quote.pricing?.vip_override_applied ?? null,
+    split_mode: quote.pricing?.split_mode ?? null,
+    plan_type: quote.pricing?.plan_type ?? null,
+  };
+}
+
+/**
+ * Campos que o bot acrescenta ao `metadata` do pedido depois da RPC.
+ * A RPC monta o metadata só a partir do delivery_quote (e vasilhames) — o
+ * resto do que o painel/debug lê hoje volta aqui, por cima do que a RPC
+ * gravou (o merge é feito no handler, sem apagar o delivery_quote).
+ */
+function buildBotMetadataPatch(
+  context: {
+    customer_name?: string | null;
+    street?: string | null;
+    number?: string | null;
+    neighborhood?: string | null;
+    reference?: string | null;
+  },
+  phone: string,
+): Record<string, unknown> {
+  return {
+    source: "whatsapp_bot",
+    customer_phone: phone,
+    customer_name: context.customer_name || null,
+    address_street: context.street || null,
+    address_number: context.number || null,
+    address_neighborhood: context.neighborhood || null,
+    address_reference: context.reference || null,
+  };
+}
+// ── FIM inline de orderMapping.ts ──
 // Verifica se a loja está aberta agora (horário Brasília) com base em opening_hours + force_closed + is_open.
 const dayNamesBR = [
   "Domingo",
@@ -386,6 +600,7 @@ const finalizeProductWithAddons = async (admin, storeId, phone, session)=>{
     unit_price,
     quantity: 1,
     addons: addons.map((a)=>({
+        id: a.id,
         group_id: a.group_id,
         group_name: a.group_name,
         name: a.name,
@@ -412,7 +627,7 @@ const addressSummary = (a)=>{
 const maybeOfferSavedAddress = async (admin, storeId, phone, session)=>{
   const clientId = session.context.client_id;
   if (clientId) {
-    const { data: addrs } = await admin.from("saved_addresses").select("id, street, number, neighborhood, reference_point, complement").eq("user_id", clientId).order("is_default", {
+    const { data: addrs } = await admin.from("saved_addresses").select("id, street, number, neighborhood, reference_point, complement, cep, city, state, latitude, longitude").eq("user_id", clientId).order("is_default", {
       ascending: false
     }).order("created_at", {
       ascending: false
@@ -477,10 +692,24 @@ const askPayment = async (admin, storeId, phone, session, methods, pixDiretoOn =
   await setSession(admin, session);
   await sendText(storeId, phone, `*💰 Forma de pagamento:*\n\n${opts.join("\n")}`);
 };
-const showConfirmation = async (admin, storeId, phone, session, storeName)=>{
+const showConfirmation = async (admin, storeId, phone, session, storeName, minimumOrderValue = 0)=>{
   const subtotal = session.cart.reduce((s, i)=>s + i.unit_price * i.quantity, 0);
   const deliveryFee = Number(session.context.delivery_fee || 0);
   const total = subtotal + deliveryFee;
+  // Fase 1 (decisão c): pré-checagem do mínimo ANTES do "confirmar" — a RPC
+  // continua sendo a trava final, mas o cliente não chega até ela para
+  // descobrir. O mínimo é o subtotal (igual à RPC), sem a taxa.
+  const minimum = Number(minimumOrderValue || 0);
+  if (minimum > 0 && subtotal < minimum) {
+    const missing = Math.round((minimum - subtotal) * 100) / 100;
+    await sendText(storeId, phone, `⚠️ Falta *${BRL(missing)}* para o pedido mínimo desta loja (${BRL(minimum)}).\n\nAdicione mais itens ao carrinho para continuar. 🙂`);
+    await askMore(admin, storeId, phone, session);
+    return;
+  }
+  // Chave de idempotência gerada na confirmação e guardada na sessão:
+  // o retry (confirmar duas vezes) reutiliza a mesma chave e a RPC devolve
+  // o pedido existente em vez de criar outro.
+  if (!session.context.idempotency_key) session.context.idempotency_key = crypto.randomUUID();
   const cartText = session.cart.map((i)=>{
     const ad = (i.addons || []).map((a)=>`   ↳ ${a.name}`).join("\n");
     return `• ${i.quantity}x ${i.name} — ${BRL(i.unit_price * i.quantity)}${ad ? "\n" + ad : ""}`;
@@ -568,103 +797,160 @@ const pixKeyLabel = (t)=>({
     phone: "Telefone",
     random: "Chave aleatória"
   })[t || ""] || "Chave";
-const startPixDireto = async (admin, storeId, phone, session, store, storeName)=>{
-  const subtotal = session.cart.reduce((s, i)=>s + i.unit_price * i.quantity, 0);
-  const deliveryFee = Number(session.context.delivery_fee || 0);
-  const total = subtotal + deliveryFee;
+// Fase 1: criação de pedido pela RPC `create_order_with_items` — o ÚNICO
+// caminho de criação do bot. Os dois INSERTs diretos em orders/order_items
+// saíram: a RPC valida loja ativa/visível, itens (existem, são da loja,
+// disponíveis, preço > 0, preços do banco), loja aberta ou pré-pedido,
+// pedido mínimo e teto de frete grátis — tudo numa transação, com
+// idempotência pela chave da sessão (gerada na confirmação, reutilizada em
+// retry). Os parâmetros espelham a edge guest-checkout.
+const createOrderViaRpc = async (admin, storeId, phone, session, paymentMethodRpc)=>{
   const isDelivery = session.context.delivery_type === "delivery";
   const deliveryQuote = session.context.delivery_quote || null;
+  const deliveryFee = isDelivery ? Number(session.context.delivery_fee || 0) : 0;
+  const absorbed = isDelivery ? Number(deliveryQuote?.pricing?.platform_fee_store_absorbed || 0) : 0;
   const addr = session.context;
   const addressString = isDelivery ? [
     addr.street,
     addr.number,
     addr.reference ? `Ref: ${addr.reference}` : ""
   ].filter(Boolean).join(", ") : "Retirada no balcão";
-  // Garante client vinculado + delivery_pin
-  const clientId = await ensureClient(admin, storeId, phone, session);
-  const pin = session.context._delivery_pin || String(Math.floor(1000 + Math.random() * 9000));
-  const { data: order, error } = await admin.from("orders").insert({
-    store_id: storeId,
-    client_id: clientId,
-    status: "aguardando_comprovante",
-    subtotal,
-    delivery_fee: deliveryFee,
-    delivery_fee_absorbed_by_store: Number(deliveryQuote?.pricing?.platform_fee_store_absorbed || 0),
-    total_price: total,
-    payment_method: "pix_direto",
-    neighborhood: isDelivery ? session.context.resolved_address?.neighborhood || addr.neighborhood || "não informado" : "RETIRADA",
-    address_details: isDelivery ? session.context.resolved_address?.normalized_address || addressString : addressString,
-    delivery_cep: isDelivery ? session.context.resolved_address?.cep || session.context.cep || null : null,
-    delivery_city: isDelivery ? session.context.resolved_address?.city || session.context.city || null : null,
-    delivery_state: isDelivery ? session.context.resolved_address?.state || session.context.state || null : null,
-    client_lat: isDelivery ? session.context.resolved_address?.lat ?? null : null,
-    client_lng: isDelivery ? session.context.resolved_address?.lng ?? null : null,
-    needs_change: false,
-    change_for: 0,
-    is_guest: true,
-    order_source: "whatsapp_bot",
-    delivery_pin: pin,
-    pix_expires_at: new Date(Date.now() + 20 * 60_000).toISOString(),
-    anon_session_id: phone,
-    metadata: {
-      source: "whatsapp_bot",
-      customer_phone: phone,
-      customer_name: session.context.customer_name,
-      address_street: addr.street || null,
-      address_number: addr.number || null,
-      address_neighborhood: addr.neighborhood || null,
-      address_reference: addr.reference || null,
-      delivery_quote: deliveryQuote ? {
-        policy_version: deliveryQuote.policy_version || 1,
-        distance_km: Number(deliveryQuote.distance?.km || 0),
-        distance_source: deliveryQuote.distance?.source || "haversine",
-        max_delivery_km: deliveryQuote.distance?.max_km ?? null,
-        destination_precision: addr.resolved_address?.precision || "cep",
-        store_delivery_base: Number(deliveryQuote.pricing?.store_delivery_base || 0),
-        platform_fee_customer: Number(deliveryQuote.pricing?.platform_fee_customer || 0),
-        platform_fee_store_absorbed: Number(deliveryQuote.pricing?.platform_fee_store_absorbed || 0),
-        delivery_fee: deliveryFee,
-        vip_override_applied: deliveryQuote.pricing?.vip_override_applied ?? null,
-        split_mode: deliveryQuote.pricing?.split_mode ?? null,
-        plan_type: deliveryQuote.pricing?.plan_type ?? null
-      } : null
-    }
-  }).select("id").single();
-  if (error || !order) {
-    console.error("[bot] pix_direto order insert failed", error);
-    await sendText(storeId, phone, "❌ Erro ao gerar Pix direto. Um atendente já vai te chamar.");
-    await clearSession(admin, storeId, phone);
-    return;
+  const quoteSnapshot = isDelivery ? buildDeliveryQuoteSnapshot(deliveryQuote, deliveryFee, addr.resolved_address?.precision) : null;
+  if (!session.context.idempotency_key) session.context.idempotency_key = crypto.randomUUID();
+  const { data: created, error } = await admin.rpc("create_order_with_items", {
+    p_client_id: session.context.client_id,
+    p_store_id: storeId,
+    p_idempotency_key: session.context.idempotency_key,
+    p_items: mapCartToRpcItems(session.cart),
+    p_delivery_fee: deliveryFee,
+    p_delivery_fee_absorbed: absorbed,
+    p_payment_method: paymentMethodRpc,
+    p_neighborhood: isDelivery ? session.context.resolved_address?.neighborhood || addr.neighborhood || "não informado" : "RETIRADA",
+    p_address_details: isDelivery ? session.context.resolved_address?.normalized_address || addressString : addressString,
+    p_delivery_cep: isDelivery ? session.context.resolved_address?.cep || session.context.cep || null : null,
+    p_delivery_city: isDelivery ? session.context.resolved_address?.city || session.context.city || null : null,
+    p_delivery_state: isDelivery ? session.context.resolved_address?.state || session.context.state || null : null,
+    p_client_lat: isDelivery ? session.context.resolved_address?.lat ?? null : null,
+    p_client_lng: isDelivery ? session.context.resolved_address?.lng ?? null : null,
+    p_needs_change: !!session.context.needs_change,
+    p_change_for: Number(session.context.change_for || 0),
+    p_is_pickup: !isDelivery,
+    p_is_preorder: false,
+    p_is_guest: true,
+    p_delivery_pin: session.context._delivery_pin || String(Math.floor(1000 + Math.random() * 9000)),
+    p_order_source: "whatsapp_bot",
+    p_delivery_quote: quoteSnapshot
+  });
+  return {
+    created,
+    error,
+    quoteSnapshot
+  };
+};
+// Depois da RPC: a RPC monta o metadata só a partir do delivery_quote —
+// acrescentar o que o painel/debug lê hoje (merge com o que a RPC gravou,
+// sem apagar o delivery_quote). O anon_session_id volta por compatibilidade
+// com a busca de pedido em aberto (client_id desconhecido -> anon = telefone).
+// `extra` cobre o pix_expires_at do Pix Direto (a RPC não grava).
+const patchOrderAfterRpc = async (admin, orderId, phone, session, extra)=>{
+  try {
+    const { data: row } = await admin.from("orders").select("metadata").eq("id", orderId).maybeSingle();
+    const metadata = {
+      ...(row?.metadata || {}),
+      ...buildBotMetadataPatch(session.context, phone)
+    };
+    const { error } = await admin.from("orders").update({
+      metadata,
+      anon_session_id: phone,
+      ...(extra || {})
+    }).eq("id", orderId);
+    if (error) console.error("[bot] post-RPC order patch failed", error);
+  } catch (e) {
+    console.error("[bot] post-RPC order patch failed", e);
   }
-  const items = session.cart.map((i)=>({
-      order_id: order.id,
-      product_id: i.product_id,
-      quantity: i.quantity,
-      unit_price: i.unit_price,
-      observations: i.observations || null,
-      addons: (i.addons || []).map((a)=>({
-          name: a.name,
-          price: a.price,
-          group_name: a.group_name
-        }))
-    }));
-  await admin.from("order_items").insert(items);
+};
+const startPixDireto = async (admin, storeId, phone, session, store, storeName)=>{
+  // Garante client vinculado + delivery_pin — OBRIGATÓRIO (P1-7): sem
+  // client_id o pedido NÃO é criado; a sessão é mantida.
+  const clientId = await ensureClient(admin, storeId, phone, session);
+  if (!clientId) {
+    console.error("[bot] startPixDireto aborted: ensureClient returned null", {
+      store_id: storeId,
+      phone
+    });
+    try {
+      await sendText(storeId, phone, "❌ Não consegui identificar seu cadastro para gerar o Pix direto. Um atendente já vai te chamar — seu carrinho continua aqui. 🙂");
+    } catch (e) {
+      console.error("[bot] startPixDireto client-not-identified notify failed", e);
+    }
+    return {
+      ok: false,
+      reason: "client_not_identified"
+    };
+  }
+  if (session.context.delivery_type === "delivery") await saveAddressIfNew(admin, session);
+  const { created, error } = await createOrderViaRpc(admin, storeId, phone, session, "pix_direto");
+  if (error || !created?.order_id) {
+    const msg = error?.message || String(error || "order_create_failed");
+    console.error("[bot] pix_direto create_order_with_items failed", error);
+    const friendly = translateRpcError(msg);
+    try {
+      await sendText(storeId, phone, friendly.text);
+    } catch (e) {
+      console.error("[bot] startPixDireto rpc-error notify failed", e);
+    }
+    return {
+      ok: false,
+      reason: "rpc_error",
+      kind: friendly.kind,
+      detail: msg
+    };
+  }
+  const orderId = created.order_id;
+  const total = Number(created.total_price || 0);
+  const pin = created.delivery_pin || session.context._delivery_pin;
+  // A RPC não grava pix_expires_at: +20 min aqui, junto com o metadata.
+  const pixExpiresAt = new Date(Date.now() + 20 * 60_000).toISOString();
+  await patchOrderAfterRpc(admin, orderId, phone, session, {
+    pix_expires_at: pixExpiresAt
+  });
   const label = pixKeyLabel(store.pix_direto_key_type);
   const benef = store.pix_direto_beneficiary ? `\n*Favorecido:* ${store.pix_direto_beneficiary}` : "";
   const extra = store.pix_direto_instructions ? `\n\n${store.pix_direto_instructions}` : "";
+  const num = shortOrderCode(orderId);
+  const link = buildTrackingLink(orderId, phone);
   const msg = [
     `*💠 Pix direto — ${storeName}*`,
     "",
+    `*Pedido:* ${num}`,
     `*Valor:* ${BRL(total)}`,
     `*${label}:* ${store.pix_direto_key}${benef}`,
+    "",
+    `*PIN de entrega:* ${pin}`,
+    `*Acompanhe:* ${link}`,
     "",
     `⚠️ O pedido é confirmado *só depois* que o lojista validar o comprovante.`,
     `Você tem *20 minutos* para pagar e enviar o comprovante *aqui mesmo* (foto).${extra}`
   ].join("\n");
-  session.context.pix_order_id = order.id;
+  session.context.pix_order_id = orderId;
   session.current_step = "awaiting_pix_proof";
   await setSession(admin, session);
-  await sendText(storeId, phone, msg);
+  try {
+    await sendText(storeId, phone, msg);
+  } catch (e) {
+    // O pedido já existe (idempotente): a falha é só do envio — logar e
+    // seguir em vez de perder o pedido.
+    console.error("[bot] pix_direto send failed (order kept)", e);
+  }
+  return {
+    ok: true,
+    order_id: orderId,
+    order_number: created.order_number,
+    status: created.status,
+    total_price: total,
+    delivery_pin: pin,
+    is_new: created.is_new !== false
+  };
 };
 const uploadPixProofFromBase64 = async (storeId, orderId, base64, mime)=>{
   const base = Deno.env.get("SUPABASE_URL") || Deno.env.get("EXTERNAL_SUPABASE_URL");
@@ -693,7 +979,9 @@ const ensureClient = async (admin, storeId, phone, session)=>{
   const customerName = String(session.context.customer_name || "").trim();
   try {
     const digits = onlyDigits(phone);
-    const { data: prof } = await admin.from("profiles").select("user_id, delivery_pin").eq("phone", digits).order("created_at", {
+    // Fase 3 (lado do bot): o site grava em `profiles.whatsapp_number` e o
+    // bot procurava só em `profiles.phone` (P0-3) — buscar nos dois campos.
+    const { data: prof } = await admin.from("profiles").select("user_id, delivery_pin").or(`phone.eq.${digits},whatsapp_number.eq.${digits}`).order("created_at", {
       ascending: false
     }).limit(1).maybeSingle();
     let clientId = prof?.user_id || null;
@@ -704,7 +992,7 @@ const ensureClient = async (admin, storeId, phone, session)=>{
       if (!clientId) {
         const email = `guest+${phone}@guest.itasuper.app`;
         const password = crypto.randomUUID() + crypto.randomUUID();
-        const { data: created } = await admin.auth.admin.createUser({
+        const { data: created, error: createErr } = await admin.auth.admin.createUser({
           email,
           password,
           email_confirm: true,
@@ -716,18 +1004,45 @@ const ensureClient = async (admin, storeId, phone, session)=>{
           }
         });
         clientId = created?.user?.id || null;
+        if (!clientId && createErr) {
+          // Fallback de e-mail duplicado (mesmo padrão da Fase 2): o usuário
+          // sintético pode já existir (1ª tentativa falhou depois de criar)
+          // — resolver pelo e-mail em vez de desistir. 163 usuários no
+          // total: uma varredura paginada basta.
+          console.warn("[bot] ensureClient createUser failed, trying email fallback", createErr?.message || createErr);
+          try {
+            const { data: listed } = await admin.auth.admin.listUsers({
+              page: 1,
+              perPage: 1000
+            });
+            const found = (listed?.users || []).find((u)=>u.email === email);
+            if (found?.id) {
+              console.warn("[bot] ensureClient email fallback healed", {
+                phone
+              });
+              clientId = found.id;
+            }
+          } catch (listErr) {
+            console.error("[bot] ensureClient email fallback failed", listErr);
+          }
+        }
       }
     }
     if (clientId) {
-      await admin.from("profiles").upsert({
+      // Erros dos upserts passam a ser LOGADOS (antes eram ignorados — é o
+      // que explica o PIN nulo do P1-8 sem causa identificada). O pedido não
+      // é bloqueado por isso: client_id existe e o PIN vive na sessão.
+      const { error: profErr } = await admin.from("profiles").upsert({
         user_id: clientId,
         full_name: customerName || null,
         phone,
+        whatsapp_number: digits,
         delivery_pin: pin
       }, {
         onConflict: "user_id"
       });
-      await admin.from("guest_customers").upsert({
+      if (profErr) console.error("[bot] ensureClient profiles upsert failed", profErr);
+      const { error: guestErr } = await admin.from("guest_customers").upsert({
         phone,
         user_id: clientId,
         name: customerName || null,
@@ -736,6 +1051,7 @@ const ensureClient = async (admin, storeId, phone, session)=>{
       }, {
         onConflict: "phone"
       });
+      if (guestErr) console.error("[bot] ensureClient guest_customers upsert failed", guestErr);
       session.context.client_id = clientId;
       session.context._delivery_pin = pin;
     }
@@ -753,12 +1069,22 @@ const saveAddressIfNew = async (admin, session)=>{
   try {
     const { data: existing } = await admin.from("saved_addresses").select("id").eq("user_id", clientId).eq("street", a.street).eq("number", a.number).eq("neighborhood", a.neighborhood).maybeSingle();
     if (existing) return;
+    // Fase 1 (P2-9): salvar o endereço COMPLETO — rua/número/bairro/
+    // referência + cep, city, state, lat/lng do endereço já resolvido na
+    // sessão. Antes o salvo não tinha CEP e o bot perguntava o CEP em todo
+    // pedido; com o CEP salvo, o endereço de sempre pula a pergunta.
+    const resolved = a.resolved_address || {};
     await admin.from("saved_addresses").insert({
       user_id: clientId,
       street: a.street,
       number: a.number,
       neighborhood: a.neighborhood,
       reference_point: a.reference || null,
+      cep: resolved.cep || a.cep || null,
+      city: resolved.city || a.city || null,
+      state: resolved.state || a.state || null,
+      latitude: resolved.lat ?? null,
+      longitude: resolved.lng ?? null,
       label: "WhatsApp",
       is_default: false
     });
@@ -767,87 +1093,88 @@ const saveAddressIfNew = async (admin, session)=>{
   }
 };
 const createOrder = async (admin, storeId, phone, session, storeName)=>{
-  const subtotal = session.cart.reduce((s, i)=>s + i.unit_price * i.quantity, 0);
-  const deliveryFee = Number(session.context.delivery_fee || 0);
-  const total = subtotal + deliveryFee;
-  const isDelivery = session.context.delivery_type === "delivery";
-  const deliveryQuote = session.context.delivery_quote || null;
   const customerName = String(session.context.customer_name || "").trim();
-  const addr = session.context;
-  const addressString = isDelivery ? [
-    addr.street,
-    addr.number,
-    addr.reference ? `Ref: ${addr.reference}` : ""
-  ].filter(Boolean).join(", ") : "Retirada no balcão";
+  // ensureClient é OBRIGATÓRIO (P1-7): sem client_id o pedido NÃO é criado.
+  // A sessão é mantida (carrinho não se perde) e o bot oferece um atendente.
   const clientId = await ensureClient(admin, storeId, phone, session);
-  if (isDelivery) await saveAddressIfNew(admin, session);
-  const { data: order, error } = await admin.from("orders").insert({
-    store_id: storeId,
-    client_id: clientId,
-    status: "pendente",
-    subtotal,
-    delivery_fee: deliveryFee,
-    delivery_fee_absorbed_by_store: Number(deliveryQuote?.pricing?.platform_fee_store_absorbed || 0),
-    total_price: total,
-    payment_method: session.context.payment_method,
-    neighborhood: isDelivery ? session.context.resolved_address?.neighborhood || session.context.neighborhood || "não informado" : "RETIRADA",
-    address_details: isDelivery ? session.context.resolved_address?.normalized_address || addressString : addressString,
-    delivery_cep: isDelivery ? session.context.resolved_address?.cep || session.context.cep || null : null,
-    delivery_city: isDelivery ? session.context.resolved_address?.city || session.context.city || null : null,
-    delivery_state: isDelivery ? session.context.resolved_address?.state || session.context.state || null : null,
-    client_lat: isDelivery ? session.context.resolved_address?.lat ?? null : null,
-    client_lng: isDelivery ? session.context.resolved_address?.lng ?? null : null,
-    needs_change: !!session.context.needs_change,
-    change_for: Number(session.context.change_for || 0),
-    is_guest: true,
-    order_source: "whatsapp_bot",
-    delivery_pin: session.context._delivery_pin || String(Math.floor(1000 + Math.random() * 9000)),
-    metadata: {
-      source: "whatsapp_bot",
-      customer_phone: phone,
-      customer_name: customerName,
-      address_street: addr.street || null,
-      address_number: addr.number || null,
-      address_neighborhood: addr.neighborhood || null,
-      address_reference: addr.reference || null,
-      delivery_quote: deliveryQuote ? {
-        policy_version: deliveryQuote.policy_version || 1,
-        distance_km: Number(deliveryQuote.distance?.km || 0),
-        distance_source: deliveryQuote.distance?.source || "haversine",
-        max_delivery_km: deliveryQuote.distance?.max_km ?? null,
-        destination_precision: addr.resolved_address?.precision || "cep",
-        store_delivery_base: Number(deliveryQuote.pricing?.store_delivery_base || 0),
-        platform_fee_customer: Number(deliveryQuote.pricing?.platform_fee_customer || 0),
-        platform_fee_store_absorbed: Number(deliveryQuote.pricing?.platform_fee_store_absorbed || 0),
-        delivery_fee: deliveryFee,
-        vip_override_applied: deliveryQuote.pricing?.vip_override_applied ?? null,
-        split_mode: deliveryQuote.pricing?.split_mode ?? null,
-        plan_type: deliveryQuote.pricing?.plan_type ?? null
-      } : null
+  if (!clientId) {
+    console.error("[bot] createOrder aborted: ensureClient returned null", {
+      store_id: storeId,
+      phone
+    });
+    try {
+      await sendText(storeId, phone, "❌ Não consegui identificar seu cadastro para registrar o pedido. Um atendente já vai te chamar — seu carrinho continua aqui. 🙂");
+    } catch (e) {
+      console.error("[bot] createOrder client-not-identified notify failed", e);
     }
-  }).select("id, order_number").single();
-  if (error || !order) {
-    console.error("[bot] order insert failed", error);
-    await sendText(storeId, phone, "❌ Erro ao registrar seu pedido. Um atendente já vai te chamar.");
-    await clearSession(admin, storeId, phone);
-    return;
+    return {
+      ok: false,
+      reason: "client_not_identified"
+    };
   }
-  const items = session.cart.map((i)=>({
-      order_id: order.id,
-      product_id: i.product_id,
-      quantity: i.quantity,
-      unit_price: i.unit_price,
-      observations: i.observations || null,
-      addons: (i.addons || []).map((a)=>({
-          name: a.name,
-          price: a.price,
-          group_name: a.group_name
-        }))
-    }));
-  await admin.from("order_items").insert(items);
-  const num = `#${order.id.slice(0, 8).toUpperCase()}`;
-  await sendText(storeId, phone, `🎉 *Pedido ${num} confirmado!*\n\nA *${storeName}* recebeu seu pedido e vai começar a preparar em instantes.\n\nVocê será avisado quando o pedido for aceito. ✨`);
+  if (session.context.delivery_type === "delivery") await saveAddressIfNew(admin, session);
+  const paymentMethodRpc = mapPaymentMethodToRpc(session.context.payment_method);
+  const { created, error } = await createOrderViaRpc(admin, storeId, phone, session, paymentMethodRpc);
+  if (error || !created?.order_id) {
+    const msg = error?.message || String(error || "order_create_failed");
+    console.error("[bot] create_order_with_items failed", error);
+    const friendly = translateRpcError(msg);
+    try {
+      await sendText(storeId, phone, friendly.text);
+    } catch (e) {
+      console.error("[bot] createOrder rpc-error notify failed", e);
+    }
+    // Sessão mantida (awaiting_confirm): o cliente não perde o pedido e pode
+    // cancelar (2) ou tentar confirmar de novo (1) com a mesma chave de
+    // idempotência — a RPC devolve o pedido existente em vez de duplicar.
+    return {
+      ok: false,
+      reason: "rpc_error",
+      kind: friendly.kind,
+      detail: msg
+    };
+  }
+  const orderId = created.order_id;
+  const orderNumber = created.order_number;
+  const status = created.status;
+  // Totais da RPC (recalculados pelo catálogo) — não os da sessão.
+  const total = Number(created.total_price || 0);
+  const pin = created.delivery_pin || session.context._delivery_pin;
+  await patchOrderAfterRpc(admin, orderId, phone, session);
+  const num = shortOrderCode(orderId);
+  const link = buildTrackingLink(orderId, phone);
+  // Pré-pedido: a RPC aceita criar scheduled quando a loja aceita — a
+  // confirmação informa que ficou agendado para a abertura.
+  let scheduledNote = "";
+  if (status === "scheduled") {
+    const { data: sched } = await admin.from("orders").select("release_at").eq("id", orderId).maybeSingle();
+    const when = sched?.release_at ? new Date(sched.release_at).toLocaleString("pt-BR", {
+      timeZone: "America/Sao_Paulo",
+      day: "2-digit",
+      month: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit"
+    }) : null;
+    scheduledNote = `\n\n🗓️ A loja está fechada agora — seu pedido ficou *agendado para a abertura*${when ? ` (${when})` : ""}.`;
+  }
+  const msg = `🎉 *Pedido ${num} confirmado!*\n\nA *${storeName}* recebeu seu pedido e vai começar a preparar em instantes.${scheduledNote}\n\n*Total:* ${BRL(total)}\n*PIN de entrega:* ${pin}\n*Acompanhe:* ${link}\n\nVocê será avisado quando o pedido for aceito. ✨`;
+  try {
+    await sendText(storeId, phone, msg);
+  } catch (e) {
+    // O pedido já existe (idempotente): a falha é só do envio — logar e
+    // seguir para o cooldown em vez de perder o pedido ou duplicá-lo.
+    console.error("[bot] order confirmation send failed (order kept)", e);
+  }
   await setPostOrderCooldown(admin, storeId, phone, num);
+  return {
+    ok: true,
+    order_id: orderId,
+    order_number: orderNumber,
+    status,
+    total_price: total,
+    delivery_pin: pin,
+    is_new: created.is_new !== false
+  };
 };
 const isCancel = (t)=>/^(cancelar|sair)$/i.test(normalize(t));
 // Opt-out explícito ("PARAR"/"STOP"): NÃO é só "encerrar atendimento".
@@ -882,6 +1209,21 @@ Deno.serve(async (req)=>{
     if (!store_id || !phone || typeof text !== "string") return json({
       error: "invalid payload"
     }, 400);
+    // Cópia de teste (`whatsapp-bot-handler-teste`): allowlist no topo — só
+    // a loja de teste e só o número do Renner. Qualquer outro store_id ou
+    // telefone é recusado com 403. A função original (`whatsapp-bot-handler`,
+    // v4) fica intacta; o redeploy v4->v5 de produção só acontece na
+    // publicação, com a palavra do Renner. O modo teste é detectado pela URL
+    // de invocação, então o código é o mesmo nos dois deploys.
+    const TEST_STORE_ID = "8197bdd8-f041-410d-acc0-af9ecb448f55";
+    const TEST_PHONE_DIGITS = "5514991624997";
+    const isTestFunction = new URL(req.url).pathname.endsWith("-teste");
+    if (isTestFunction && (store_id !== TEST_STORE_ID || onlyDigits(phone) !== TEST_PHONE_DIGITS)) {
+      return json({
+        handled: false,
+        reason: "test_function_allowlist"
+      }, 403);
+    }
     const admin = createClient(Deno.env.get("SUPABASE_URL") || Deno.env.get("EXTERNAL_SUPABASE_URL"), Deno.env.get("EXTERNAL_SUPABASE_SERVICE_KEY") || Deno.env.get("EXTERNAL_SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"));
     const { data: cfg } = await admin.from("whatsapp_bot_config").select("*").eq("store_id", store_id).maybeSingle();
     if (!cfg || !cfg.enabled) return json({
@@ -969,9 +1311,10 @@ Deno.serve(async (req)=>{
         handled: false,
         reason: "no_trigger"
       });
-      // Reconhece cliente pelo telefone
+      // Reconhece cliente pelo telefone (Fase 3, lado do bot: buscar em
+      // `phone` OU `whatsapp_number` — o site grava neste último).
       const digits = onlyDigits(phone);
-      const { data: known } = await admin.from("profiles").select("user_id, full_name").eq("phone", digits).order("created_at", {
+      const { data: known } = await admin.from("profiles").select("user_id, full_name").or(`phone.eq.${digits},whatsapp_number.eq.${digits}`).order("created_at", {
         ascending: false
       }).limit(1).maybeSingle();
       const knownName = known?.full_name || null;
@@ -986,7 +1329,10 @@ Deno.serve(async (req)=>{
       const { data: openOrders } = await openOrdersQuery;
       const openOrder = (openOrders || [])[0];
       if (openOrder) {
-        const code = openOrder.order_number ? `#${openOrder.order_number}` : `#${String(openOrder.id).slice(0, 8).toUpperCase()}`;
+        // Fase 1 (item 11): o número curto é SEMPRE o prefixo do UUID
+        // (#2A27F312), igual ao painel — o nº sequencial (order_number) não
+        // é o que o cliente vê no painel.
+        const code = shortOrderCode(openOrder.id);
         const firstName = knownName ? String(knownName).split(" ")[0] : null;
         const hi = firstName ? `Olá, *${firstName}*! 👋` : "Olá! 👋";
         session = {
@@ -1258,6 +1604,7 @@ Deno.serve(async (req)=>{
           for (const i of picks){
             const it = g.items[i - 1];
             pp.addons.push({
+              id: it.id,
               group_id: g.id,
               group_name: g.name,
               name: it.name,
@@ -1350,6 +1697,18 @@ Deno.serve(async (req)=>{
             session.context.number = saved.number;
             session.context.neighborhood = saved.neighborhood;
             session.context.reference = saved.reference_point || saved.complement || "";
+            // P2-9: o endereço salvo agora tem CEP — quando tem, pula a
+            // pergunta do CEP e vai direto para a referência.
+            if (saved.cep) {
+              session.context.cep = saved.cep;
+              session.context.city = saved.city || null;
+              session.context.state = saved.state || null;
+              await askReference(admin, store_id, phone, session);
+              return json({
+                handled: true,
+                action: "saved_address_awaiting_reference"
+              });
+            }
             await askCep(admin, store_id, phone, session);
             return json({
               handled: true,
@@ -1494,10 +1853,11 @@ Deno.serve(async (req)=>{
           session.context.payment_method = opts[num - 1];
           // Pix + Pix Direto habilitado → fluxo com comprovante
           if (session.context.payment_method === "pix" && session.context.pix_direto_on && pixDiretoOn) {
-            await startPixDireto(admin, store_id, phone, session, store, storeName);
+            const pixResult = await startPixDireto(admin, store_id, phone, session, store, storeName);
             return json({
               handled: true,
-              action: "pix_direto_started"
+              action: "pix_direto_started",
+              result: pixResult
             });
           }
           // Se dinheiro → pergunta troco antes de confirmar
@@ -1512,7 +1872,7 @@ Deno.serve(async (req)=>{
           }
           session.context.needs_change = false;
           session.context.change_for = 0;
-          await showConfirmation(admin, store_id, phone, session, storeName);
+          await showConfirmation(admin, store_id, phone, session, storeName, Number(store?.minimum_order_value || 0));
           return json({
             handled: true,
             action: "show_confirm"
@@ -1545,7 +1905,7 @@ Deno.serve(async (req)=>{
             session.context.needs_change = true;
             session.context.change_for = Math.round(value * 100) / 100;
           }
-          await showConfirmation(admin, store_id, phone, session, storeName);
+          await showConfirmation(admin, store_id, phone, session, storeName, Number(store?.minimum_order_value || 0));
           return json({
             handled: true,
             action: "show_confirm"
@@ -1554,10 +1914,11 @@ Deno.serve(async (req)=>{
       case "awaiting_confirm":
         {
           if (num === 1) {
-            await createOrder(admin, store_id, phone, session, storeName);
+            const orderResult = await createOrder(admin, store_id, phone, session, storeName);
             return json({
               handled: true,
-              action: "order_created"
+              action: "order_created",
+              result: orderResult
             });
           }
           if (num === 2) {
