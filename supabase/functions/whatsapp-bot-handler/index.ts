@@ -1978,7 +1978,14 @@ Deno.serve(async (req)=>{
               action: updatedOrder ? "pix_proof_update_failed" : "pix_proof_expired"
             });
           }
-          await sendText(store_id, phone, `✅ *Comprovante recebido!*\n\nO lojista vai validar e confirmar seu pedido em instantes. Você recebe uma mensagem assim que for aceito. ✨`);
+          // O comprovante já foi gravado (update acima): se o envio falhar, o
+          // pedido não volta para awaiting_pix_proof — logar e seguir para o
+          // cooldown (mesma tolerância da confirmação do pedido, Fase 1).
+          try {
+            await sendText(store_id, phone, `✅ *Comprovante recebido!*\n\nO lojista vai validar e confirmar seu pedido em instantes. Você recebe uma mensagem assim que for aceito. ✨`);
+          } catch (e) {
+            console.error("[bot] pix proof ack send failed (proof kept)", e);
+          }
           await setPostOrderCooldown(admin, store_id, phone, `#${String(orderId).slice(0, 8).toUpperCase()}`);
           return json({
             handled: true,
