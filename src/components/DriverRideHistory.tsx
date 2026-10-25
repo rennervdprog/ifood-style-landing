@@ -73,11 +73,15 @@ const DriverRideHistory = ({ storeIds }: Props) => {
     queryKey: ["driver-ride-history-stores", storeIdSet],
     queryFn: async () => {
       if (!storeIdSet.length) return [];
-      const { data } = await supabase
-        .from("stores_public")
-        .select("id, name, latitude, longitude")
-        .in("id", storeIdSet);
-      return data || [];
+      // O motoboy nao pode ler a tabela stores direto (RLS: so dono/gestor/admin),
+      // e stores_public nao traz mais loja oculta (ex.: demo). A RPC estreita
+      // get_driver_history_stores devolve so id/nome/lat/lng das lojas onde
+      // ele entregou (ou das quais e dono/gestor/admin).
+      const { data } = await supabase.rpc(
+        "get_driver_history_stores" as any,
+        { p_store_ids: storeIdSet },
+      );
+      return (data as any[]) || [];
     },
     enabled: storeIdSet.length > 0,
   });
