@@ -21,9 +21,25 @@ const PAYMENT_LABELS: Record<string, string> = {
   pix: "PIX",
   cartao: "Cartão",
   dinheiro: "Dinheiro",
+  card: "Cartão",
+  cash: "Dinheiro",
+  pix_direto: "Pix direto",
   maquininha_credito: "Cartão Crédito (maquininha)",
   maquininha_debito: "Cartão Débito (maquininha)",
   maquininha_pix: "PIX (maquininha)",
+};
+
+// Só exibição: nome todo em maiúsculas vira formato normal e nomes longos
+// são cortados numa linha. O cadastro e o nome gravado no pedido não mudam.
+const displayName = (name: string): string => {
+  const raw = String(name || "").trim();
+  if (!raw) return raw;
+  const letters = raw.replace(/[^A-Za-zÀ-ÿ]/g, "");
+  let out = raw;
+  if (letters && letters === letters.toUpperCase()) {
+    out = raw.toLowerCase().replace(/(^|[\s\-/])([a-zà-ÿ])/g, (_m, sep, ch) => sep + ch.toUpperCase());
+  }
+  return out.length > 40 ? out.slice(0, 39).trimEnd() + "…" : out;
 };
 
 const TARGET: Record<string, { flag: string }> = {
@@ -38,14 +54,14 @@ function buildRichItemsBlock(items: any[]): string {
   const lines: string[] = [];
   for (const item of items) {
     const qty = Number(item.quantity || 1);
-    const name = item.products?.name || item.name || "Item";
+    const name = displayName(item.products?.name || item.name || "Item");
     lines.push(`➡ \`\`\`${qty}x ${name}\`\`\``);
     let addons: any = item.addons;
     if (typeof addons === "string") { try { addons = JSON.parse(addons); } catch { addons = []; } }
     if (Array.isArray(addons) && addons.length > 0) {
       const groups = new Map<string, any[]>();
       for (const a of addons) {
-        const g = (a?.groupName as string) || "Adicional";
+        const g = displayName((a?.groupName as string) || "Adicional");
         if (!groups.has(g)) groups.set(g, []);
         groups.get(g)!.push(a);
       }
@@ -53,7 +69,7 @@ function buildRichItemsBlock(items: any[]): string {
         lines.push(`      _${group}_`);
         for (const a of arr) {
           const aqty = Number(a.quantity || 1);
-          const aname = String(a.name || "").trim();
+          const aname = displayName(String(a.name || "").trim());
           if (aname) lines.push(`          \`\`\`${aqty}x ${aname}\`\`\``);
         }
       }
@@ -79,14 +95,18 @@ function buildAcceptedMessage(p: {
   total: number; pin: string;
 }): string {
   const feeTxt = p.isDelivery && p.deliveryFee > 0 ? ` (taxa de: *${fmtBRL(p.deliveryFee)}*)` : "";
+  // Não repete o bairro quando ele já está dentro do endereço.
+  const nb = (p.neighborhood || "").trim();
+  const addr = (p.addressDetails || "").trim();
+  const enderecoPartes = [addr];
+  if (nb && !addr.toLowerCase().includes(nb.toLowerCase())) enderecoPartes.push(nb);
   const enderecoLinha = p.isDelivery
-    ? `🏠 ${[p.addressDetails, p.neighborhood].filter(Boolean).join(", ")}`
+    ? `🏠 ${enderecoPartes.filter(Boolean).join(", ")}`
     : `🏃 Retirada no balcão`;
   const etaLinha = p.isDelivery ? `\n(Previsão de Entrega: ${buildEtaWindow()})` : "";
   const pinLinha = p.pin ? `\n\n🔑 *PIN de Segurança: ${p.pin}*` : "";
   return (
-    `${p.clientName || "Cliente"}, o pedido Nº *${p.num}* está em produção.\n\n` +
-    `Pedido *nº ${p.num}*\n\n` +
+    `${p.clientName || "Cliente"}, o pedido *#${p.num}* está em produção.\n\n` +
     `*Itens:*\n${p.itemsBlock}\n\n` +
     (p.paymentLabel ? `📱 *${p.paymentLabel}*\n\n` : "") +
     (p.isDelivery
@@ -172,7 +192,7 @@ Deno.serve(async (req) => {
       const method = String(order.payment_method || "");
       message = buildAcceptedMessage({
         clientName,
-        num: order.order_number ? String(order.order_number) : shortId,
+        num: shortId,
         itemsBlock: buildRichItemsBlock(items || []),
         paymentLabel: PAYMENT_LABELS[method] || (method ? method.toUpperCase() : ""),
         isDelivery,
@@ -186,7 +206,7 @@ Deno.serve(async (req) => {
       // cancelado — espelha o painel (orderNotifications), incl. variante pix_direto.
       const customTpl = (cfg as any).message_templates?.["cancelado"];
       const firstName = clientName.split(" ")[0];
-      const num = order.order_number ? String(order.order_number) : shortId;
+      const num = shortId;
       if (typeof customTpl === "string" && customTpl.trim().length > 0) {
         message = applyTemplate(customTpl, {
           storeName, clientName, orderId: num,
@@ -212,7 +232,7 @@ Deno.serve(async (req) => {
           itemsBlock = buildRichItemsBlock(items || []);
         }
         message = applyTemplate(customTpl, {
-          storeName, clientName, orderId: order.order_number ? String(order.order_number) : shortId,
+          storeName, clientName, orderId: shortId,
           total: fmtBRL(Number(order.total_price || 0)),
           pin, address, items: itemsBlock,
           payment: String(order.payment_method || "").toUpperCase(),
@@ -233,7 +253,7 @@ Deno.serve(async (req) => {
         .eq("store_id", order.store_id).maybeSingle();
       const tplName = status === "preparando" ? ocfg?.template_accepted : status === "saiu_entrega" ? ocfg?.template_out : ocfg?.template_cancelled;
       if (!tplName) return json({ ok: false, error: "official_template_missing", status });
-      const num = order.order_number ? String(order.order_number) : shortId;
+      const num = shortId;
       const firstName = clientName.split(" ")[0];
       const etaTxt = (() => {
         const fmt = (d: Date) => new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit", hour12: false }).format(d);

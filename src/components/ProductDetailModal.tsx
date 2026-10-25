@@ -8,7 +8,7 @@ import { Minus, Plus, ShoppingCart, Pizza, AlertTriangle, X, ArrowLeft } from "l
 import type { CartAddon } from "@/contexts/CartContext";
 import { getEffectivePrice, isPromoActive, getPromoDiscountPct } from "@/lib/promoPrice";
 import { readPizzaCatalogConfig, hasPizzaCatalog } from "@/types/pizza";
-import { priceForFlavorInSize, isFlavorAvailableInSize } from "@/lib/pizzaPricing";
+import { priceForFlavorInSize, isFlavorAvailableInSize, combinePricesByMode } from "@/lib/pizzaPricing";
 import { fetchProductAddons, type ProductAddonGroup, type ProductAddonItem } from "@/lib/productAddons";
 
 interface Product {
@@ -284,7 +284,22 @@ const ProductDetailModal = ({ product, storeName, storeCategory, singleSize = fa
     const hasPriceReplacingGroup = addonGroups.some((g) => g.price_replaces_base);
     const replacementRows = selectedAddonRows.filter((row) => row.replacesBasePrice);
     const normalRows = selectedAddonRows.filter((row) => !row.replacesBasePrice);
-    const replacementTotal = sumMoney(replacementRows.map((row) => row.lineTotal));
+    // Lojas com pizza_price_mode="maior" (ex.: Bittenca's — igual ao Anota AI):
+    // cada grupo que substitui a base vale o MAIOR item escolhido, não a soma.
+    // Lojas sem o modo (ou com outro valor): soma, exatamente como antes.
+    const useHighestFlavor = (storeSettings as any)?.pizza_price_mode === "maior";
+    const replacementTotal = useHighestFlavor
+      ? sumMoney(
+          addonGroups
+            .filter((g) => g.price_replaces_base)
+            .map((g) =>
+              combinePricesByMode(
+                replacementRows.filter((row) => row.groupId === g.id).map((row) => row.lineTotal),
+                "maior",
+              ),
+            ),
+        )
+      : sumMoney(replacementRows.map((row) => row.lineTotal));
     const normalAddonsTotal = sumMoney(normalRows.map((row) => row.lineTotal));
     const hasReplacementSelected = replacementRows.length > 0;
     const effectiveProductPrice = product ? getEffectivePrice(product as any) || 0 : 0;
@@ -301,7 +316,7 @@ const ProductDetailModal = ({ product, storeName, storeCategory, singleSize = fa
       unitPrice,
       lineTotal: multiplyMoney(unitPrice, quantity),
     };
-  }, [addonGroups, hasSizes, product, quantity, selectedAddonRows, selectedSize, sizes]);
+  }, [addonGroups, hasSizes, product, quantity, selectedAddonRows, selectedSize, sizes, storeSettings]);
 
   const { unitPrice, lineTotal } = priceSummary;
 

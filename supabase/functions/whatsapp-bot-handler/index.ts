@@ -240,6 +240,18 @@ const loadSession = async (admin, storeId, phone)=>{
   }
   return data;
 };
+// Só exibição: nome todo em maiúsculas vira formato normal e nomes longos
+// são cortados numa linha. O cadastro e o nome gravado no pedido não mudam.
+const displayName = (name: string): string => {
+  const raw = String(name || "").trim();
+  if (!raw) return raw;
+  const letters = raw.replace(/[^A-Za-zÀ-ÿ]/g, "");
+  let out = raw;
+  if (letters && letters === letters.toUpperCase()) {
+    out = raw.toLowerCase().replace(/(^|[\s\-/])([a-zà-ÿ])/g, (_m, sep, ch) => sep + ch.toUpperCase());
+  }
+  return out.length > 40 ? out.slice(0, 39).trimEnd() + "…" : out;
+};
 const showCategories = async (admin, storeId, phone, session)=>{
   const { data: sections } = await admin.from("menu_sections").select("id, name").eq("store_id", storeId).order("sort_order");
   if (!sections || sections.length === 0) {
@@ -251,7 +263,7 @@ const showCategories = async (admin, storeId, phone, session)=>{
     "*📋 Escolha uma categoria:*",
     ""
   ];
-  sections.slice(0, 20).forEach((s, i)=>lines.push(`*${i + 1}* — ${s.name}`));
+  sections.slice(0, 20).forEach((s, i)=>lines.push(`*${i + 1}* — ${displayName(s.name)}`));
   lines.push("", "_Responda com o *número* da categoria._", "_Digite *CANCELAR* para sair._");
   session.current_step = "awaiting_category";
   session.context = {
@@ -272,7 +284,7 @@ const showProducts = async (admin, storeId, phone, session, categoryId)=>{
     "*🍽️ Escolha um item:*",
     ""
   ];
-  products.forEach((p, i)=>lines.push(`*${i + 1}* — ${p.name} — ${BRL(Number(p.price))}`));
+  products.forEach((p, i)=>lines.push(`*${i + 1}* — ${displayName(p.name)} — ${BRL(Number(p.price))}`));
   lines.push("", "_Responda com o *número* do item._", "_Digite *0* para voltar às categorias._");
   session.current_step = "awaiting_product";
   session.context = {
@@ -1428,6 +1440,14 @@ Deno.serve(async (req)=>{
           session.context.reference = ref === "-" || ref === "" ? "" : ref.slice(0, 120);
           const quote = await quoteBotDelivery(store_id, session);
           if (!quote?.ok || !quote?.destination || !quote?.pricing) {
+            if (quote?.reason === "no_driver_available") {
+              await clearSession(admin, store_id, phone);
+              await sendText(store_id, phone, "⚠️ A loja está sem entregador disponível no momento, então não consigo confirmar a entrega agora.\n\nTente novamente em alguns minutos — assim que um entregador estiver online, é só mandar *MENU* para finalizar o pedido por aqui. 🙂");
+              return json({
+                handled: true,
+                action: "no_driver_available"
+              });
+            }
             const message = quote?.reason === "outside_delivery_area" ? "Esse endereço está fora da área de entrega da loja. Vou pedir o CEP novamente." : "Não consegui confirmar a entrega nesse endereço. Vou pedir o CEP novamente.";
             await sendText(store_id, phone, message);
             await askCep(admin, store_id, phone, session);
