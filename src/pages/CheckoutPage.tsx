@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useCart } from "@/contexts/CartContext";
@@ -16,7 +16,7 @@ import CouponInput from "@/components/CouponInput";
 import { asDeliveryAddress, deliveryQuoteBreakdown, deliveryQuoteFailureMessage, hasUsableCoordinates, isSuccessfulDeliveryQuote, quoteErrorFromUnknown, quoteRequestKey, requestAuthenticatedDeliveryQuote, serializeDeliveryQuote, snapshotFromDeliveryQuote, type DeliveryQuote, type DeliveryQuoteFailure } from "@/lib/deliveryQuote";
 import WhyThisCharge from "@/components/fees/WhyThisCharge";
 import { addMoney, multiplyMoney, sumMoney, formatBRL } from "@/lib/utils";
-import { useStorePlan } from "@/hooks/useStorePlan";
+import { buildCreateOrderPayload, isCreateOrderResult } from "@/lib/createOrder";
 import LoyaltyRedemption from "@/components/LoyaltyRedemption";
 import DeliveryTimeEstimate from "@/components/DeliveryTimeEstimate";
 import { formatCep, fetchCep, reverseGeocode, readGpsFromGesture, type Coordinates, type ReverseResult } from "@/lib/location";
@@ -98,7 +98,10 @@ const CheckoutPage = () => {
   });
 
   const storeId = items[0]?.store_id;
-  const storePlan = useStorePlan(storeId);
+  // Fase 3: chave de idempotência do checkout — gerada UMA vez por montagem
+  // da página e reutilizada no retry do mesmo submit. É ela que faz o
+  // segundo submit devolver o pedido já criado, sem duplicar.
+  const idempotencyKeyRef = useRef<string>(crypto.randomUUID());
   const lastPaymentKey = user && storeId ? `last_payment_method:${user.id}:${storeId}` : null;
 
 
@@ -576,113 +579,60 @@ const CheckoutPage = () => {
 
       const createdOrders: Array<{ storeId: string; orderId: string }> = [];
 
+      // O carrinho só tem itens de uma loja — o loop roda 1x na prática.
       for (const [storeId, storeItems] of Object.entries(storeGroups)) {
-        const storeSubtotal = sumMoney(storeItems.map((item) => item.price * item.quantity));
-        const appFee = 0; // Calculated by DB trigger using store's commission_rate
         const storeEmpties = emptiesSelections.filter(s =>
           storeItems.some(it => (it.metadata as any)?.returnable_group === s.group)
         );
         const storeEmptiesDiscount = storeEmpties.reduce((sum, s) => sum + s.qty * s.unit_price, 0);
-        const storeTotalPrice = Math.max(0, addMoney(storeSubtotal, quotedDeliveryFee, -effectiveCouponDiscount, -loyaltyDiscount, -storeEmptiesDiscount));
 
         const changeValue = paymentMethod === "dinheiro" && needsChange ? addMoney(parseFloat(changeFor)) : 0;
-        // Pré-pedido: se a loja ainda não abriu mas aceita pedidos agendados,
-        // grava com status `scheduled` e `release_at`. O cron
-        // `release_scheduled_orders()` migra para `pendente` no horário.
-        const orderStatus = paymentMethod === "pix_direto"
-          ? "aguardando_comprovante"
-          : (isPreorder ? "scheduled" : "pendente");
-        const releaseAt = isPreorder ? storeStatus?.releaseAt : null;
-        const { data: order, error: orderError } = await supabase
-          .from("orders")
-          .insert({
-            client_id: user.id,
-            store_id: storeId,
-            subtotal: storeSubtotal,
-            delivery_fee: quotedDeliveryFee,
-            delivery_fee_absorbed_by_store: quotedStoreAbsorbedFee,
-            commission_rate: storePlan.commissionRate ?? 0,
-            total_price: storeTotalPrice,
-            wallet_discount: walletDiscount,
-            app_fee: appFee,
-            payment_method: paymentMethod,
-            neighborhood: deliverySnapshot?.neighborhood ?? finalNeighborhood,
-            address_details: deliverySnapshot?.address_details ?? finalAddress,
-            delivery_cep: deliverySnapshot?.delivery_cep ?? null,
-            delivery_city: deliverySnapshot?.delivery_city ?? null,
-            delivery_state: deliverySnapshot?.delivery_state ?? null,
-            client_lat: deliverySnapshot?.client_lat ?? null,
-            client_lng: deliverySnapshot?.client_lng ?? null,
-            needs_change: paymentMethod === "dinheiro" && needsChange,
-            change_for: changeValue,
-            status: orderStatus,
-            scheduled_for: scheduledFor ? new Date(scheduledFor).toISOString() : null,
-            release_at: releaseAt,
-            metadata: deliveryQuoteSnapshot || storeEmpties.length > 0
-              ? {
-                  ...(deliveryQuoteSnapshot ? { delivery_quote: deliveryQuoteSnapshot } : {}),
-                  ...(storeEmpties.length > 0 ? { empties_exchange: storeEmpties } : {}),
-                }
-              : null,
-          } as any)
-          .select("id")
-          .single();
 
+        // Fase 3: pedido transacional — a RPC `create_order_with_items`
+        // cria pedido + itens + descontos numa transação só, com
+        // idempotência. Some o insert direto em orders/order_items e as
+        // chamadas avulsas de fidelidade/carteira/cupom (agora tudo dentro
+        // da RPC). Status, release_at e totais são calculados no servidor.
+        const payload = buildCreateOrderPayload({
+          clientId: user.id,
+          storeId,
+          idempotencyKey: idempotencyKeyRef.current,
+          items: storeItems,
+          deliveryFee: quotedDeliveryFee,
+          deliveryFeeAbsorbed: quotedStoreAbsorbedFee,
+          paymentMethod,
+          neighborhood: deliverySnapshot?.neighborhood ?? finalNeighborhood,
+          addressDetails: deliverySnapshot?.address_details ?? finalAddress,
+          deliveryCep: deliverySnapshot?.delivery_cep ?? null,
+          deliveryCity: deliverySnapshot?.delivery_city ?? null,
+          deliveryState: deliverySnapshot?.delivery_state ?? null,
+          clientLat: deliverySnapshot?.client_lat ?? null,
+          clientLng: deliverySnapshot?.client_lng ?? null,
+          needsChange: paymentMethod === "dinheiro" && needsChange,
+          changeFor: changeValue,
+          isPickup,
+          isPreorder,
+          scheduledFor: scheduledFor ? new Date(scheduledFor).toISOString() : null,
+          couponId,
+          couponDiscount: effectiveCouponDiscount,
+          loyaltyPoints: loyaltyPointsUsed,
+          loyaltyDiscount,
+          walletDiscount,
+          emptiesDiscount: storeEmptiesDiscount,
+          empties: storeEmpties,
+          deliveryQuote: deliveryQuoteSnapshot,
+        });
+
+        const { data: created, error: orderError } = await (supabase as any).rpc(
+          "create_order_with_items",
+          payload,
+        );
         if (orderError) throw orderError;
-
-        createdOrders.push({ storeId, orderId: order.id });
-
-        // Resgatar pontos de fidelidade se foram aplicados
-        if (loyaltyPointsUsed > 0 && loyaltyDiscount > 0) {
-          const { error: loyaltyErr } = await (supabase as any).rpc("redeem_loyalty_points", {
-            _order_id: order.id,
-            _store_id: storeId,
-            _points_to_use: loyaltyPointsUsed,
-          });
-          if (loyaltyErr) {
-            console.warn("[loyalty] Erro ao resgatar pontos:", loyaltyErr.message);
-            // Não bloqueia o pedido — pontos podem ser ajustados manualmente
-          }
+        if (!isCreateOrderResult(created)) {
+          throw new Error("Resposta inesperada ao criar o pedido.");
         }
 
-        const orderItems = storeItems.map((item) => ({
-          order_id: order.id,
-          product_id: item.id,
-          quantity: item.quantity,
-          unit_price: item.price,
-          addons: item.addons && item.addons.length > 0 ? JSON.stringify(item.addons) : null,
-          observations: item.observations || null,
-        }));
-
-        const { error: itemsError } = await supabase
-          .from("order_items")
-          .insert(orderItems);
-
-        if (itemsError) throw itemsError;
-
-        // FIX: Debitar wallet se cliente usou crédito
-        if (walletDiscount > 0 && user) {
-          const { error: walletErr } = await supabase.rpc("apply_wallet_discount" as any, {
-            _order_id: order.id,
-            _user_id: user.id,
-            _discount_amount: walletDiscount,
-          });
-          if (walletErr) {
-            // Não bloquear o pedido — logar e seguir
-            console.error("[checkout] wallet debit error:", walletErr.message);
-          }
-        }
-
-        if (couponId && user) {
-          // Fire-and-forget: don't block UI on coupon registration
-          supabase.rpc("use_coupon" as any, {
-            _coupon_id: couponId,
-            _user_id: user.id,
-            _order_id: order.id,
-          }).then(({ error: couponError }) => {
-            if (couponError) console.warn("Coupon usage error:", couponError.message);
-          });
-        }
+        createdOrders.push({ storeId, orderId: created.order_id });
       }
 
       // Clear cart + navigate IMMEDIATELY — push notifications and geocoding patching happen in background

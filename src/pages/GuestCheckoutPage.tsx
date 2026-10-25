@@ -27,6 +27,9 @@ const GuestCheckoutPage = () => {
   const [name, setName] = useState("");
   const [lookedUp, setLookedUp] = useState(false);
   const lastLookupRef = useRef<string>("");
+  // Fase 3: chave de idempotência do checkout — gerada UMA vez por montagem
+  // da página e reutilizada no retry do mesmo submit (a edge repassa à RPC).
+  const idempotencyKeyRef = useRef<string>(crypto.randomUUID());
   const [cep, setCep] = useState("");
   const [street, setStreet] = useState("");
   const [number, setNumber] = useState("");
@@ -241,6 +244,7 @@ const GuestCheckoutPage = () => {
         phone: digits,
         name: name.trim(),
         store_id: storeId,
+        idempotency_key: idempotencyKeyRef.current,
         items: items.map((it) => ({
           product_id: it.id,
           quantity: it.quantity,
