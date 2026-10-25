@@ -136,7 +136,7 @@ export function useStorePlan(storeId: string | undefined | null): StorePlanFeatu
           .eq("is_active", true)
           .maybeSingle(),
         supabase
-          .from("stores_public")
+          .from("stores")
           .select("address_city, delivery_mode, platform_fee_split")
           .eq("id", storeId!)
           .maybeSingle(),
