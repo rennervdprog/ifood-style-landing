@@ -9,6 +9,7 @@ import {
   buildTrackingLink,
   classifyRpcError,
   translateRpcError,
+  decideMinimumGate,
   buildDeliveryQuoteSnapshot,
   buildBotMetadataPatch,
   sendBestEffort,
@@ -150,6 +151,34 @@ describe("classifyRpcError / translateRpcError", () => {
     const { kind, text } = translateRpcError("algo muito estranho");
     expect(kind).toBe("unknown");
     expect(text).toContain("atendente");
+  });
+});
+
+describe("decideMinimumGate", () => {
+  it("mínimo desconhecido (leitura da loja falhou) trava FECHADO — nunca vira 0", () => {
+    // O caso T4: subtotal 19 < mínimo 20, mas a leitura falhou — sem o
+    // fail-closed o bot mostraria a confirmação e geraria idempotency_key.
+    expect(decideMinimumGate(19, null)).toEqual({ action: "minimum_unknown" });
+    expect(decideMinimumGate(19, undefined)).toEqual({ action: "minimum_unknown" });
+    expect(decideMinimumGate(19, NaN)).toEqual({ action: "minimum_unknown" });
+  });
+
+  it("mínimo desconhecido trava mesmo com subtotal alto", () => {
+    expect(decideMinimumGate(500, null)).toEqual({ action: "minimum_unknown" });
+  });
+
+  it("sem mínimo (0) confirma normal", () => {
+    expect(decideMinimumGate(19, 0)).toEqual({ action: "show_confirmation" });
+  });
+
+  it("abaixo do mínimo volta ao carrinho com o quanto falta", () => {
+    expect(decideMinimumGate(19, 20)).toEqual({ action: "below_minimum", missing: 1 });
+    expect(decideMinimumGate(19.5, 20)).toEqual({ action: "below_minimum", missing: 0.5 });
+  });
+
+  it("no mínimo ou acima confirma normal", () => {
+    expect(decideMinimumGate(20, 20)).toEqual({ action: "show_confirmation" });
+    expect(decideMinimumGate(22, 20)).toEqual({ action: "show_confirmation" });
   });
 });
 

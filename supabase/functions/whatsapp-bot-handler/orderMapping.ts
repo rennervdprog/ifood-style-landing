@@ -13,6 +13,9 @@
 // - Pagamento: o vocabulário do bot (pix/cash/card) vira o do site antes de
 //   chamar a RPC — pix -> pix_machine, cash -> dinheiro, card -> cartao;
 //   pix_direto não muda. As mensagens do bot mantêm o vocabulário dele.
+// - Mínimo: a pré-checagem antes da confirmação é fail-closed — leitura da
+//   loja falhou (mínimo desconhecido) = segurar a sessão e pedir para tentar
+//   de novo, nunca assumir mínimo 0 (decideMinimumGate).
 // - Preço do cliente vira referência: a RPC recalcula tudo pelo catálogo.
 
 export type BotPaymentMethod = string;
@@ -155,6 +158,42 @@ export function translateRpcError(message: string): { kind: RpcErrorKind; text: 
         text: "❌ Não consegui confirmar seu pedido agora. Um atendente já vai te chamar — seu carrinho continua aqui. 🙂",
       };
   }
+}
+
+export type MinimumGateDecision =
+  | { action: "show_confirmation" }
+  | { action: "below_minimum"; missing: number }
+  | { action: "minimum_unknown" };
+
+/**
+ * Pré-checagem do pedido mínimo antes da confirmação (Fase 1, decisão c).
+ * `minimumOrderValue === null` = a leitura da loja falhou (ou a loja não
+ * existe): o mínimo é DESCONHECIDO e a decisão é fail-closed — nunca
+ * assumir mínimo 0 e mostrar a confirmação. O chamador segura a sessão
+ * (sem avançar o passo, sem gerar idempotency_key) e pede para tentar de
+ * novo; a próxima mensagem do cliente relê a loja. Mínimo 0 (ou ausente
+ * na loja carregada) = sem mínimo, confirma normal. A RPC continua sendo
+ * a trava final em todos os casos.
+ */
+export function decideMinimumGate(
+  subtotal: number,
+  minimumOrderValue: number | null | undefined,
+): MinimumGateDecision {
+  if (
+    minimumOrderValue === null ||
+    minimumOrderValue === undefined ||
+    !Number.isFinite(minimumOrderValue)
+  ) {
+    return { action: "minimum_unknown" };
+  }
+  const minimum = Number(minimumOrderValue);
+  if (minimum > 0 && subtotal < minimum) {
+    return {
+      action: "below_minimum",
+      missing: Math.round((minimum - subtotal) * 100) / 100,
+    };
+  }
+  return { action: "show_confirmation" };
 }
 
 export interface DeliveryQuoteSnapshot {

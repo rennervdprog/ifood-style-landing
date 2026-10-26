@@ -178,6 +178,42 @@ function translateRpcError(message: string): { kind: RpcErrorKind; text: string 
   }
 }
 
+type MinimumGateDecision =
+  | { action: "show_confirmation" }
+  | { action: "below_minimum"; missing: number }
+  | { action: "minimum_unknown" };
+
+/**
+ * Pré-checagem do pedido mínimo antes da confirmação (Fase 1, decisão c).
+ * `minimumOrderValue === null` = a leitura da loja falhou (ou a loja não
+ * existe): o mínimo é DESCONHECIDO e a decisão é fail-closed — nunca
+ * assumir mínimo 0 e mostrar a confirmação. O chamador segura a sessão
+ * (sem avançar o passo, sem gerar idempotency_key) e pede para tentar de
+ * novo; a próxima mensagem do cliente relê a loja. Mínimo 0 (ou ausente
+ * na loja carregada) = sem mínimo, confirma normal. A RPC continua sendo
+ * a trava final em todos os casos.
+ */
+function decideMinimumGate(
+  subtotal: number,
+  minimumOrderValue: number | null | undefined,
+): MinimumGateDecision {
+  if (
+    minimumOrderValue === null ||
+    minimumOrderValue === undefined ||
+    !Number.isFinite(minimumOrderValue)
+  ) {
+    return { action: "minimum_unknown" };
+  }
+  const minimum = Number(minimumOrderValue);
+  if (minimum > 0 && subtotal < minimum) {
+    return {
+      action: "below_minimum",
+      missing: Math.round((minimum - subtotal) * 100) / 100,
+    };
+  }
+  return { action: "show_confirmation" };
+}
+
 interface DeliveryQuoteSnapshot {
   policy_version: number;
   distance_km: number;
@@ -714,19 +750,28 @@ const askPayment = async (admin, storeId, phone, session, methods, pixDiretoOn =
   await setSession(admin, session);
   await sendText(storeId, phone, `*💰 Forma de pagamento:*\n\n${opts.join("\n")}`);
 };
-const showConfirmation = async (admin, storeId, phone, session, storeName, minimumOrderValue = 0)=>{
+const showConfirmation = async (admin, storeId, phone, session, storeName, minimumOrderValue = null)=>{
   const subtotal = session.cart.reduce((s, i)=>s + i.unit_price * i.quantity, 0);
   const deliveryFee = Number(session.context.delivery_fee || 0);
   const total = subtotal + deliveryFee;
   // Fase 1 (decisão c): pré-checagem do mínimo ANTES do "confirmar" — a RPC
   // continua sendo a trava final, mas o cliente não chega até ela para
   // descobrir. O mínimo é o subtotal (igual à RPC), sem a taxa.
-  const minimum = Number(minimumOrderValue || 0);
-  if (minimum > 0 && subtotal < minimum) {
-    const missing = Math.round((minimum - subtotal) * 100) / 100;
+  // Fail-closed (T4): mínimo DESCONHECIDO (leitura da loja falhou, mesmo
+  // com retry) = NÃO mostrar a confirmação e NÃO gerar idempotency_key.
+  // A sessão fica no passo em que estava (awaiting_payment /
+  // awaiting_change) e a próxima resposta do cliente relê a loja.
+  const gate = decideMinimumGate(subtotal, minimumOrderValue);
+  if (gate.action === "minimum_unknown") {
+    await sendBestEffort(() => sendText(storeId, phone, "⚠️ Não consegui verificar o pedido mínimo da loja agora. Tente de novo em instantes respondendo novamente, por favor. 🙂"));
+    return "minimum_unknown";
+  }
+  if (gate.action === "below_minimum") {
+    const minimum = Number(minimumOrderValue);
+    const missing = gate.missing;
     await sendBestEffort(() => sendText(storeId, phone, `⚠️ Falta *${BRL(missing)}* para o pedido mínimo desta loja (${BRL(minimum)}).\n\nAdicione mais itens ao carrinho para continuar. 🙂`));
     await askMore(admin, storeId, phone, session);
-    return;
+    return "below_minimum";
   }
   // Chave de idempotência gerada na confirmação e guardada na sessão:
   // o retry (confirmar duas vezes) reutiliza a mesma chave e a RPC devolve
@@ -771,6 +816,7 @@ const showConfirmation = async (admin, storeId, phone, session, storeName, minim
   session.current_step = "awaiting_confirm";
   await setSession(admin, session);
   await sendText(storeId, phone, msg);
+  return "show_confirmation";
 };
 const quoteBotDelivery = async (storeId, session)=>{
   const address = session.context;
@@ -1265,8 +1311,21 @@ Deno.serve(async (req)=>{
       handled: false,
       reason: "bot_disabled"
     });
-    const { data: store, error: storeErr } = await admin.from("stores").select("name, slug, settings, delivery_mode, delivery_fee_type, own_delivery_fee, delivery_fee, delivery_fee_base, minimum_order_value, pix_direto_enabled, pix_direto_key, pix_direto_key_type, pix_direto_beneficiary, pix_direto_instructions, is_open, force_closed, preorder_enabled, preorder_minutes_before").eq("id", store_id).maybeSingle();
-    if (storeErr) console.error("[bot] store select error", storeErr);
+    // Leitura da loja (mínimo, pix direto, horários): se falhar, tenta de
+    // novo uma vez. Se falhar de novo, `store` fica indefinido e a
+    // pré-checagem do mínimo trava FECHADA (decideMinimumGate: mínimo
+    // desconhecido nunca vira mínimo 0) — ver showConfirmation.
+    const STORE_COLUMNS = "name, slug, settings, delivery_mode, delivery_fee_type, own_delivery_fee, delivery_fee, delivery_fee_base, minimum_order_value, pix_direto_enabled, pix_direto_key, pix_direto_key_type, pix_direto_beneficiary, pix_direto_instructions, is_open, force_closed, preorder_enabled, preorder_minutes_before";
+    let storeRes = await admin.from("stores").select(STORE_COLUMNS).eq("id", store_id).maybeSingle();
+    let store = storeRes.data;
+    let storeErr = storeRes.error;
+    if (storeErr) {
+      console.error("[bot] store select error (tentativa 1)", storeErr);
+      storeRes = await admin.from("stores").select(STORE_COLUMNS).eq("id", store_id).maybeSingle();
+      store = storeRes.data;
+      storeErr = storeRes.error;
+      if (storeErr) console.error("[bot] store select error (tentativa 2)", storeErr);
+    }
     const storeName = store?.name || "loja";
     const settings = store?.settings || {};
     const pixDiretoOn = Boolean(store?.pix_direto_enabled && store?.pix_direto_key);
@@ -1912,10 +1971,12 @@ Deno.serve(async (req)=>{
           }
           session.context.needs_change = false;
           session.context.change_for = 0;
-          await showConfirmation(admin, store_id, phone, session, storeName, Number(store?.minimum_order_value || 0));
+          // Loja sem leitura (mesmo com retry) -> mínimo null: showConfirmation
+          // segura a sessão em awaiting_payment sem gerar idempotency_key.
+          const confirmResult = await showConfirmation(admin, store_id, phone, session, storeName, store ? Number(store.minimum_order_value || 0) : null);
           return json({
             handled: true,
-            action: "show_confirm"
+            action: confirmResult === "minimum_unknown" ? "show_confirm_deferred" : "show_confirm"
           });
         }
       case "awaiting_change":
@@ -1945,10 +2006,14 @@ Deno.serve(async (req)=>{
             session.context.needs_change = true;
             session.context.change_for = Math.round(value * 100) / 100;
           }
-          await showConfirmation(admin, store_id, phone, session, storeName, Number(store?.minimum_order_value || 0));
+          // Loja sem leitura (mesmo com retry) -> mínimo null: showConfirmation
+          // segura a sessão em awaiting_change sem gerar idempotency_key
+          // (o troco acima só vive em memória e se perde — o cliente responde
+          // o troco de novo na próxima mensagem e a loja é relida).
+          const confirmResult = await showConfirmation(admin, store_id, phone, session, storeName, store ? Number(store.minimum_order_value || 0) : null);
           return json({
             handled: true,
-            action: "show_confirm"
+            action: confirmResult === "minimum_unknown" ? "show_confirm_deferred" : "show_confirm"
           });
         }
       case "awaiting_confirm":
