@@ -1058,7 +1058,9 @@ const ensureClient = async (admin, storeId, phone, session)=>{
     const digits = onlyDigits(phone);
     // Fase 3 (lado do bot): o site grava em `profiles.whatsapp_number` e o
     // bot procurava só em `profiles.phone` (P0-3) — buscar nos dois campos.
-    const { data: prof } = await admin.from("profiles").select("user_id, delivery_pin").or(`phone.eq.${digits},whatsapp_number.eq.${digits}`).order("created_at", {
+    // Só perfil `cliente`: o mesmo telefone pode pertencer a uma conta
+    // lojista (ex.: o Renner tem a "Campanario"), que não é o cliente.
+    const { data: prof } = await admin.from("profiles").select("user_id, delivery_pin").eq("role", "cliente").or(`phone.eq.${digits},whatsapp_number.eq.${digits}`).order("created_at", {
       ascending: false
     }).limit(1).maybeSingle();
     let clientId = prof?.user_id || null;
@@ -1407,8 +1409,10 @@ Deno.serve(async (req)=>{
       });
       // Reconhece cliente pelo telefone (Fase 3, lado do bot: buscar em
       // `phone` OU `whatsapp_number` — o site grava neste último).
+      // Só perfil `cliente`: o mesmo telefone pode pertencer a uma conta
+      // lojista (ex.: o Renner tem a "Campanario"), que não é o cliente.
       const digits = onlyDigits(phone);
-      const { data: known } = await admin.from("profiles").select("user_id, full_name").or(`phone.eq.${digits},whatsapp_number.eq.${digits}`).order("created_at", {
+      const { data: known } = await admin.from("profiles").select("user_id, full_name").eq("role", "cliente").or(`phone.eq.${digits},whatsapp_number.eq.${digits}`).order("created_at", {
         ascending: false
       }).limit(1).maybeSingle();
       const knownName = known?.full_name || null;
