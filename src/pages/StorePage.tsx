@@ -116,7 +116,7 @@ const StorePage = () => {
   // ⚡ Bootstrap: 1 round-trip que pré-popula store + hours + sections + products +
   // owner_profile + online_drivers_count. As useQuery() abaixo continuam existindo
   // como fallback / refetch — mas pegam initialData do cache e não mostram loading.
-  const { isFetched: bootstrapDone } = useQuery({
+  const { data: bootstrap, isFetched: bootstrapDone } = useQuery({
     queryKey: ["store-bootstrap", id || slug, isSandbox],
     queryFn: async () => {
       const key = id || slug || "";
@@ -130,8 +130,8 @@ const StorePage = () => {
         queryClient.setQueryData(["store-hours", sid], boot.hours || []);
         queryClient.setQueryData(["menu-sections", sid], boot.sections || []);
         queryClient.setQueryData(["products", sid], boot.products || []);
-        if (s.owner_id && boot.owner_profile) {
-          queryClient.setQueryData(["store-owner", s.owner_id], boot.owner_profile);
+        if (boot.owner_profile) {
+          queryClient.setQueryData(["store-owner", boot.owner_profile.id], boot.owner_profile);
         }
         if (s.delivery_mode === "own") {
           queryClient.setQueryData(["store-online-drivers", sid], boot.online_drivers_count || 0);
@@ -148,11 +148,11 @@ const StorePage = () => {
      queryKey: ["store", id || slug, isSandbox],
     queryFn: async () => {
       const baseTable = isSandbox ? "stores" : "stores_public";
-      // platform_split_effective so existe na view (vem de get_public_stores);
-      // a tabela `stores` do sandbox nao tem a coluna — incluir so no publico.
+      // owner_id só existe na tabela `stores` (sandbox) — a vista pública
+      // não devolve mais (Fase 5). No público o id do dono vem do bootstrap.
       const storeSelect =
-        "id, name, slug, slug_aliases, image_url, category, categories, rating, is_open, force_closed, status, delivery_mode, own_delivery_fee, delivery_fee, delivery_fee_type, delivery_fee_base, minimum_order_value, estimated_delivery_time, owner_id, address_cep, address_city, address_complement, address_neighborhood, address_number, address_reference, address_state, address_street, latitude, longitude, max_delivery_km, delivery_radius, settings, network_id, is_matriz, free_delivery_threshold" +
-        (isSandbox ? "" : ", platform_split_effective");
+        "id, name, slug, slug_aliases, image_url, category, categories, rating, is_open, force_closed, status, delivery_mode, own_delivery_fee, delivery_fee, delivery_fee_type, delivery_fee_base, minimum_order_value, estimated_delivery_time, address_cep, address_city, address_complement, address_neighborhood, address_number, address_reference, address_state, address_street, latitude, longitude, max_delivery_km, delivery_radius, settings, network_id, is_matriz, free_delivery_threshold" +
+        (isSandbox ? ", owner_id" : ", platform_split_effective");
       let query = ((supabase as any).from(baseTable)).select(storeSelect).in("status", ["ativo", "bloqueado"]);
       if (id) query = query.eq("id", id);
       else if (slug) query = query.or(`slug.eq.${slug},slug_aliases.cs.{${slug}}`);
@@ -290,18 +290,24 @@ const StorePage = () => {
     staleTime: 1000 * 60 * 5,
   });
 
+  // Fase 5 — owner_id saiu de stores_public: o id do dono vem do bootstrap
+  // (owner_profile, semeado na query acima) e, no sandbox, da tabela
+  // stores. O botão de WhatsApp da loja continua igual.
+  const bootstrapOwnerId = (bootstrap as any)?.owner_profile?.id as string | undefined;
+  const storeOwnerId = (store as any)?.owner_id as string | undefined;
+  const ownerId = bootstrapOwnerId ?? storeOwnerId;
   const { data: ownerProfile } = useQuery({
-    queryKey: ["store-owner", store?.owner_id],
+    queryKey: ["store-owner", ownerId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
         .select("whatsapp_number")
-        .eq("user_id", store!.owner_id!)
+        .eq("user_id", ownerId!)
         .maybeSingle();
       if (error) throw error;
       return data;
     },
-    enabled: !!store?.owner_id,
+    enabled: !!ownerId,
     staleTime: 1000 * 60 * 10,
   });
 
