@@ -11,6 +11,7 @@ import { formatCep, fetchCep } from "@/lib/location";
 import { maskWhatsApp } from "@/lib/whatsapp";
 import { formatBRL, addMoney } from "@/lib/utils";
 import { getStoreOpenStatus, type OpeningHour } from "@/lib/storeStatus";
+import { isPixDiretoAvailable } from "@/lib/pixDiretoAvailability";
 import { computeGuestCheckoutGates } from "@/lib/guestCheckoutGates";
 import { asDeliveryAddress, deliveryQuoteBreakdown, deliveryQuoteFailureMessage, isSuccessfulDeliveryQuote, quoteErrorFromUnknown, quoteRequestKey, type DeliveryQuote, type DeliveryQuoteFailure } from "@/lib/deliveryQuote";
 
@@ -57,7 +58,7 @@ const GuestCheckoutPage = () => {
     queryFn: async () => {
       const { data } = await supabase
         .from("stores_public")
-        .select("id, name, address_city, minimum_order_value, own_delivery_fee, delivery_mode, delivery_fee_type, delivery_base_km, delivery_fee_base, delivery_fee_per_km, address_cep, latitude, longitude, free_delivery_threshold, guest_checkout_enabled, pix_direto_enabled, pix_direto_key, is_open, force_closed, preorder_enabled, preorder_minutes_before")
+        .select("id, name, address_city, minimum_order_value, own_delivery_fee, delivery_mode, delivery_fee_type, delivery_base_km, delivery_fee_base, delivery_fee_per_km, address_cep, latitude, longitude, free_delivery_threshold, guest_checkout_enabled, pix_direto_enabled, pix_direto_key_configured, is_open, force_closed, preorder_enabled, preorder_minutes_before")
         .eq("id", storeId!).maybeSingle();
       return (data as any) || null;
     },
@@ -331,7 +332,9 @@ const GuestCheckoutPage = () => {
   if (!storeId || !items.length) return null;
 
   const guestEnabled = (store as any)?.guest_checkout_enabled === true;
-  const pixDiretoAvailable = !!(store as any)?.pix_direto_enabled && !!((store as any)?.pix_direto_key || "").trim();
+  // PIX Direto: a loja pode mostrar a opção sem revelar a chave — o que
+  // chega aqui é só o booleano pix_direto_key_configured (Fase 5).
+  const pixDiretoAvailable = isPixDiretoAvailable(store as any);
   const payMethods = pixDiretoAvailable
     ? [...BASE_PAY_METHODS, { id: "pix_direto", label: "Pix Direto (chave do lojista)", icon: QrCode }]
     : BASE_PAY_METHODS;

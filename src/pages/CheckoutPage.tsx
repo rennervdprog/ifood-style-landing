@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { pushNotifyNewOrder } from "@/lib/notifications";
 import { ArrowLeft, MapPin, CreditCard, Banknote, QrCode, Edit3, Loader2, Truck, CheckCircle2, ShoppingBag, Tag, ChevronRight, Clock, AlertTriangle, Star, Wallet, Calendar, Store } from "lucide-react";
 import { getStoreOpenStatus, type OpeningHour } from "@/lib/storeStatus";
+import { isPixDiretoAvailable } from "@/lib/pixDiretoAvailability";
 import confetti from "canvas-confetti";
 import AddressModal from "@/components/AddressModal";
 import SavedAddressPicker from "@/components/SavedAddressPicker";
@@ -111,7 +112,7 @@ const CheckoutPage = () => {
       const { data } = await supabase
          .from("stores_public")
          // 🔒 Inclui campos de km para cálculo correto da taxa de entrega
-           .select("name, address_cep, address_city, latitude, longitude, delivery_mode, own_delivery_fee, settings, is_open, force_closed, delivery_fee_type, delivery_base_km, delivery_fee_base, delivery_fee_per_km, minimum_order_value, free_delivery_threshold, preorder_enabled, preorder_minutes_before, pix_direto_enabled, pix_direto_key")
+           .select("name, address_cep, address_city, latitude, longitude, delivery_mode, own_delivery_fee, settings, is_open, force_closed, delivery_fee_type, delivery_base_km, delivery_fee_base, delivery_fee_per_km, minimum_order_value, free_delivery_threshold, preorder_enabled, preorder_minutes_before, pix_direto_enabled, pix_direto_key_configured")
          .eq("id", storeId!)
         .maybeSingle();
       return data;
@@ -133,7 +134,7 @@ const CheckoutPage = () => {
   // PIX online fica reservado à relação financeira Lojista–ItaSuper.
   const filteredPaymentMethods = useMemo(() => {
     return allPaymentMethods.filter(pm => {
-      if (pm.id === "pix_direto") return !!(storeData as any)?.pix_direto_enabled && !!(storeData as any)?.pix_direto_key;
+      if (pm.id === "pix_direto") return isPixDiretoAvailable(storeData as any);
       if (pm.id === "cartao") return storePaymentSettings.accept_card;
       if (pm.id === "dinheiro") return storePaymentSettings.accept_cash;
       return true;
@@ -651,13 +652,13 @@ const CheckoutPage = () => {
       (async () => {
         for (const { storeId, orderId } of createdOrders) {
             try {
-              const { data: storeData } = await supabase
-                .from("stores_public")
-                .select("owner_id")
-                .eq("id", storeId)
-                .single();
-              if (storeData?.owner_id) {
-                pushNotifyNewOrder([storeData.owner_id], orderId).catch(console.error);
+              // Fase 5 — owner_id saiu de stores_public: a RPC estreita
+              // get_order_store_owner só devolve o dono se quem chama for
+              // o cliente do pedido (mesmo padrão de get_store_pix_direto).
+              const { data: ownerRows } = await supabase.rpc("get_order_store_owner" as any, { p_order_id: orderId });
+              const ownerId = ((ownerRows as any[]) || [])[0]?.owner_id;
+              if (ownerId) {
+                pushNotifyNewOrder([ownerId], orderId).catch(console.error);
               }
             } catch (e) {
               console.warn("notify store owner error:", e);
