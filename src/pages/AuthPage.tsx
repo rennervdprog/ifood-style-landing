@@ -19,6 +19,14 @@ import {
   type SignupValues,
 } from "@/lib/signupSteps";
 import { isPartnerCapacitorApp, persistCapacitorAppMode } from "@/lib/capacitorAppMode";
+import {
+  callClaimFunction,
+  normalizeClaimPhone,
+  type ClaimCheckResult,
+  type ClaimSendOtpResult,
+  type ClaimStatus,
+  type ClaimVerifyOtpResult,
+} from "@/lib/claimAccount";
 import { PARTNER_ROUTES } from "@/components/CapacitorRouteGuard";
 import BiometricLoginButton from "@/components/BiometricLoginButton";
 import {
@@ -88,6 +96,21 @@ const AuthPage = () => {
   const [signupStep, setSignupStep] = useState<SignupStep>(1);
   const [signupErrors, setSignupErrors] = useState<SignupErrors>({});
   const [cepNotFound, setCepNotFound] = useState(false);
+  // Fase 6D Opção A2 — "Reivindicar no cadastro": antes de criar a conta, o
+  // claim-check procura o WhatsApp em conta real ou guest. Se for guest, o
+  // cadastro pede o código de 6 dígitos e converte o cadastro existente
+  // (claim-verify-otp) em vez de criar outro.
+  const [claimStatus, setClaimStatus] = useState<ClaimStatus | null>(null);
+  const [claimCheckedPhone, setClaimCheckedPhone] = useState<string | null>(null);
+  const [claimGuestId, setClaimGuestId] = useState<string | null>(null);
+  const [claimLastStoreName, setClaimLastStoreName] = useState<string | null>(null);
+  const [claimLastOrderId, setClaimLastOrderId] = useState<string | null>(null);
+  const [claimCode, setClaimCode] = useState("");
+  const [claimOtpSent, setClaimOtpSent] = useState(false);
+  const [showClaimOtp, setShowClaimOtp] = useState(false);
+  const [claimFallback, setClaimFallback] = useState(false);
+  const [claimResendIn, setClaimResendIn] = useState(0);
+  const [claimBusy, setClaimBusy] = useState(false);
   const cepLookupRef = useRef(0);
   const navigate = useNavigate();
   const location = useLocation();
@@ -153,14 +176,148 @@ const AuthPage = () => {
     return true;
   };
 
+  /** Limpa o estado da reivindicação (ex.: o número foi editado). */
+  const resetClaimState = () => {
+    setClaimStatus(null);
+    setClaimGuestId(null);
+    setClaimLastStoreName(null);
+    setClaimLastOrderId(null);
+    setClaimCheckedPhone(null);
+    setClaimCode("");
+    setClaimOtpSent(false);
+    setShowClaimOtp(false);
+    setClaimFallback(false);
+    setClaimResendIn(0);
+  };
+
+  /** Envia (ou reenvia) o código de 6 dígitos no WhatsApp do guest. */
+  const sendClaimOtp = async (phone: string, guestUserId: string): Promise<boolean> => {
+    setClaimBusy(true);
+    try {
+      const { status, data } = await callClaimFunction<ClaimSendOtpResult>("claim-send-otp", {
+        phone,
+        guest_user_id: guestUserId,
+      });
+      if (data.error === "store_whatsapp_unavailable") {
+        // Loja do último pedido sem WhatsApp conectado: oferece a Opção A
+        // (reivindicar pela página de acompanhamento) em vez de travar.
+        setClaimFallback(true);
+        setShowClaimOtp(false);
+        return false;
+      }
+      if (status === 429) {
+        toast.error(
+          data.error === "resend_too_soon"
+            ? `Aguarde ${data.retry_after_seconds ?? 60}s para reenviar o código.`
+            : "Muitos códigos enviados. Tente novamente em 1 hora.",
+        );
+        return false;
+      }
+      if (!data.ok) {
+        toast.error("Não foi possível enviar o código. Tente novamente.");
+        return false;
+      }
+      setClaimOtpSent(true);
+      setShowClaimOtp(true);
+      setClaimFallback(false);
+      setClaimResendIn(data.resend_after_seconds ?? 60);
+      toast.success("Código enviado no seu WhatsApp!");
+      return true;
+    } finally {
+      setClaimBusy(false);
+    }
+  };
+
+  /**
+   * Valida o passo 1 e roda o claim-check. Não navega: só preenche o
+   * estado da reivindicação (real / new / guest + envio do código).
+   * Retorna o resultado ou null se a validação ou a chamada falhar.
+   */
+  const runClaimCheck = async (): Promise<ClaimCheckResult | null> => {
+    const errors = validateSignupStep(1, signupValues, passedCount === PASSWORD_RULES.length);
+    if (Object.keys(errors).length > 0) {
+      setSignupErrors(errors);
+      const first = firstErrorField(1, errors);
+      if (first) focusSignupField(first);
+      return null;
+    }
+    setSignupErrors({});
+    const phone = normalizeClaimPhone(whatsapp);
+    if (!phone) return null;
+    // Número já verificado nesta sessão: não chama a edge de novo.
+    if (claimStatus && claimCheckedPhone === phone) {
+      if (claimStatus === "guest" && claimOtpSent) setShowClaimOtp(true);
+      return {
+        status: claimStatus,
+        guest_user_id: claimGuestId ?? undefined,
+        last_store_name: claimLastStoreName,
+        last_order_id: claimLastOrderId,
+      };
+    }
+    setClaimBusy(true);
+    try {
+      const { status, data } = await callClaimFunction<ClaimCheckResult>("claim-check", { phone });
+      if (status !== 200 || data.error || !data.status) {
+        toast.error("Não foi possível verificar o número. Tente novamente.");
+        return null;
+      }
+      setClaimCheckedPhone(phone);
+      if (data.status === "real") {
+        setClaimStatus("real");
+        return data;
+      }
+      if (data.status === "new") {
+        setClaimStatus("new");
+        return data;
+      }
+      setClaimStatus("guest");
+      setClaimGuestId(data.guest_user_id ?? null);
+      setClaimLastStoreName(data.last_store_name ?? null);
+      setClaimLastOrderId(data.last_order_id ?? null);
+      if (data.guest_user_id) await sendClaimOtp(phone, data.guest_user_id);
+      return data;
+    } finally {
+      setClaimBusy(false);
+    }
+  };
+
+  /** Avança do passo 1: número novo segue; guest pede o código; real bloqueia. */
+  const advanceFromStep1 = async (): Promise<boolean> => {
+    // Guest que já digitou o código: segue para o passo 2. A correção do
+    // código só é validada no submit final — o claim-verify-otp verifica
+    // E converte numa só chamada, então não há verificação avulsa antes.
+    if (claimStatus === "guest" && claimCode.replace(/\D/g, "").length === 6 && claimGuestId) {
+      setShowClaimOtp(false);
+      setClaimFallback(false);
+      setSignupStep(2);
+      window.scrollTo(0, 0);
+      return true;
+    }
+    const result = await runClaimCheck();
+    if (!result) return false;
+    if (result.status === "new") {
+      setSignupStep(2);
+      window.scrollTo(0, 0);
+      return true;
+    }
+    return false; // guest → tela de código; real → banner de bloqueio
+  };
+
   /** Ir para um passo pelo rótulo do progresso: voltar é direto; avançar revalida os passos do meio. */
-  const goToSignupStep = (target: SignupStep) => {
+  const goToSignupStep = async (target: SignupStep) => {
     if (target === signupStep) return;
     if (target < signupStep) {
       setSignupErrors({});
+      setShowClaimOtp(false);
+      setClaimFallback(false);
       setSignupStep(target);
       window.scrollTo(0, 0);
       return;
+    }
+    // Avançar a partir do passo 1 passa pela verificação do telefone.
+    if (signupStep === 1) {
+      const ok = await advanceFromStep1();
+      if (!ok) return;
     }
     for (let s = signupStep; s < target; s++) {
       const step = s as SignupStep;
@@ -177,6 +334,13 @@ const AuthPage = () => {
     setSignupStep(target);
     window.scrollTo(0, 0);
   };
+
+  /** Contagem regressiva do reenvio do código (60 s). */
+  useEffect(() => {
+    if (claimResendIn <= 0) return;
+    const t = setTimeout(() => setClaimResendIn((v) => Math.max(0, v - 1)), 1000);
+    return () => clearTimeout(t);
+  }, [claimResendIn]);
 
   /** Busca do CEP (ViaCEP → BrasilAPI): preenche rua/bairro só se vazios, como hoje; CEP não encontrado vira aviso inline (não trava o passo). */
   const handleCepChange = async (raw: string) => {
@@ -267,10 +431,35 @@ const AuthPage = () => {
       }
     }
     if (mode === "signup") {
+      // Tela de código (guest): exige os 6 dígitos para seguir aos passos
+      // 2–3. A correção do código só é validada no submit final, pelo
+      // claim-verify-otp (verifica E converte numa só chamada).
+      if (showClaimOtp) {
+        if (claimCode.replace(/\D/g, "").length !== 6) {
+          toast.error("Digite o código de 6 dígitos enviado no seu WhatsApp.");
+          return;
+        }
+        setClaimCode(claimCode.replace(/\D/g, ""));
+        setShowClaimOtp(false);
+        setSignupStep(2);
+        window.scrollTo(0, 0);
+        return;
+      }
+      // Fallback (loja sem WhatsApp): o botão principal tenta o envio de novo.
+      if (claimFallback) {
+        const phone = normalizeClaimPhone(whatsapp);
+        if (phone && claimGuestId) await sendClaimOtp(phone, claimGuestId);
+        return;
+      }
       // Cadastro em 3 passos: "Continuar" valida o passo atual e avança;
       // no passo 3, revalida tudo (rede de segurança) e envia.
       if (signupStep < 3) {
-        advanceSignupStep();
+        // Passo 1 passa pelo claim-check (real / new / guest + código).
+        if (signupStep === 1) {
+          await advanceFromStep1();
+        } else {
+          advanceSignupStep();
+        }
         return;
       }
       for (const s of [1, 2, 3] as SignupStep[]) {
@@ -284,6 +473,13 @@ const AuthPage = () => {
         }
       }
       setSignupErrors({});
+      // Rascunho restaurado sem verificação (recarregou a página no passo
+      // 2–3): verifica o número antes de criar a conta, para não duplicar
+      // um guest. Número novo segue para o signUp normal abaixo.
+      if (claimStatus === null) {
+        const result = await runClaimCheck();
+        if (!result || result.status !== "new") return;
+      }
     }
     if (mode === "reset" && passedCount < PASSWORD_RULES.length) {
       toast.error("Sua senha não atende todos os requisitos. Verifique abaixo.");
@@ -414,6 +610,85 @@ const AuthPage = () => {
       } else if (mode === "signup") {
         const whatsDigits = `55${whatsapp.replace(/\D/g, "")}`;
         const registrationEmail = signupEmail.trim().toLowerCase();
+        // Fase 6D A2 — o número já era guest: converte o cadastro existente
+        // em vez de criar outro (mesmo user_id, histórico preservado).
+        if (claimStatus === "real") {
+          toast.error("Esse número já tem conta. Entre ou recupere a senha.");
+          return;
+        }
+        if (claimStatus === "guest" && claimGuestId) {
+          if (claimCode.replace(/\D/g, "").length !== 6) {
+            setShowClaimOtp(true);
+            toast.error("Digite o código de 6 dígitos enviado no seu WhatsApp.");
+            return;
+          }
+          const { data: verifyData } = await callClaimFunction<ClaimVerifyOtpResult>("claim-verify-otp", {
+            phone: whatsDigits,
+            guest_user_id: claimGuestId,
+            code: claimCode.replace(/\D/g, ""),
+            email: registrationEmail,
+            password,
+            full_name: fullName.trim(),
+            address: {
+              cep: formatCep(cep),
+              street: street.trim(),
+              number: number.trim(),
+              complement: complement.trim(),
+              neighborhood: neighborhood.trim(),
+              reference_point: referencePoint.trim(),
+            },
+            delivery_pin: deliveryPin,
+            terms_version: CURRENT_TERMS_VERSION,
+            privacy_version: CURRENT_PRIVACY_VERSION,
+            user_agent: navigator.userAgent,
+          });
+          if (!verifyData.ok) {
+            if (verifyData.error === "invalid_code") {
+              toast.error(
+                `Código incorreto.${verifyData.attempts_remaining != null ? ` Restam ${verifyData.attempts_remaining} tentativas.` : ""}`,
+              );
+              setClaimCode("");
+              setShowClaimOtp(true);
+              return;
+            }
+            if (verifyData.error === "too_many_attempts") {
+              toast.error("Muitas tentativas com o código errado. Peça um novo código.");
+              setClaimCode("");
+              setShowClaimOtp(true);
+              return;
+            }
+            if (verifyData.error === "code_expired_or_not_found") {
+              toast.error("Código expirado. Peça um novo código.");
+              setClaimCode("");
+              setShowClaimOtp(true);
+              return;
+            }
+            if (verifyData.error === "email_in_use") {
+              toast.error("Esse e-mail já está em uso por outra conta.");
+              return;
+            }
+            if (verifyData.error === "already_registered") {
+              toast.error("Esse número já tem conta. Entre ou recupere a senha.");
+              setClaimStatus("real");
+              return;
+            }
+            throw new Error("Não foi possível criar sua conta. Tente novamente.");
+          }
+          // Conversão OK: entra com o e-mail e a senha novos.
+          const { error: claimSignInError } = await supabase.auth.signInWithPassword({
+            email: registrationEmail,
+            password,
+          });
+          if (claimSignInError) throw claimSignInError;
+          toast.success("Conta criada com sucesso! Seus pedidos anteriores foram mantidos.");
+          clearSignupDraft();
+          if (isPartnerCapacitorApp()) {
+            navigate("/portal-parceiro", { replace: true });
+          } else {
+            navigate("/cliente", { replace: true });
+          }
+          return;
+        }
         const { data: signUpData, error } = await supabase.auth.signUp({
           email: registrationEmail,
           password,
@@ -593,6 +868,83 @@ const AuthPage = () => {
               </p>
             </div>
           )}
+          {mode === "signup" && showClaimOtp && (
+            <div className="space-y-3 pt-1">
+              <div className="rounded-xl bg-orange-50 border border-orange-200 px-3 py-3">
+                <p className="text-sm font-bold text-foreground">Você já pediu como visitante!</p>
+                <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                  Encontramos pedidos anteriores no WhatsApp {maskWhatsApp(whatsapp)}
+                  {claimLastStoreName ? ` (${claimLastStoreName})` : ""}. Enviamos um código de 6 dígitos
+                  para confirmar que o número é seu — com ele, sua conta nova mantém o histórico de pedidos.
+                </p>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-slate-500 tracking-wide mb-1.5 block">Código de 6 dígitos</label>
+                <input
+                  id="signup-claim-code"
+                  type="tel"
+                  inputMode="numeric"
+                  placeholder="••••••"
+                  value={claimCode}
+                  onChange={(e) => setClaimCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                  maxLength={6}
+                  className={plainInputClass}
+                  autoComplete="one-time-code"
+                />
+                <p className="text-[11px] text-slate-400 mt-1.5">O código vale por 10 minutos.</p>
+              </div>
+              <div className="flex items-center justify-between">
+                <button
+                  type="button"
+                  disabled={claimResendIn > 0 || claimBusy}
+                  onClick={() => { const ph = normalizeClaimPhone(whatsapp); if (ph && claimGuestId) void sendClaimOtp(ph, claimGuestId); }}
+                  className="text-sm text-primary font-semibold disabled:opacity-50"
+                >
+                  {claimResendIn > 0 ? `Reenviar código em ${claimResendIn}s` : "Reenviar código"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowClaimOtp(false)}
+                  className="text-sm text-slate-500 font-medium"
+                >
+                  Voltar
+                </button>
+              </div>
+            </div>
+          )}
+
+          {mode === "signup" && claimFallback && (
+            <div className="space-y-3 pt-1">
+              <div className="rounded-xl bg-amber-50 border border-amber-200 px-3 py-3">
+                <p className="text-sm font-bold text-foreground">Não conseguimos enviar o código agora</p>
+                <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                  O WhatsApp da loja do seu último pedido não está conectado no momento. Você ainda pode
+                  criar sua conta pela página de acompanhamento do pedido — é o mesmo cadastro, sem perder
+                  o histórico.
+                </p>
+              </div>
+              {claimLastOrderId ? (
+                <Link
+                  to={`/p/${claimLastOrderId}?t=${(normalizeClaimPhone(whatsapp) ?? "").slice(-4)}`}
+                  className="block text-center h-11 leading-[2.75rem] bg-primary text-primary-foreground font-bold rounded-xl active:scale-[0.98] transition-all"
+                >
+                  Reivindicar pela página do pedido
+                </Link>
+              ) : (
+                <p className="text-xs text-slate-500">
+                  Abra a página de acompanhamento do seu último pedido para reivindicar a conta por lá.
+                </p>
+              )}
+              <button
+                type="button"
+                onClick={() => setClaimFallback(false)}
+                className="w-full text-sm text-slate-500 font-medium"
+              >
+                Voltar
+              </button>
+            </div>
+          )}
+
           {mode === "login" && (
             <BiometricLoginButton onSuccess={() => navigate("/cliente", { replace: true })} />
           )}
@@ -631,7 +983,7 @@ const AuthPage = () => {
             </div>
           )}
 
-          {mode === "signup" && signupStep === 1 && (
+          {mode === "signup" && signupStep === 1 && !showClaimOtp && !claimFallback && (
             <div>
               <label className="text-xs font-semibold text-slate-500 tracking-wide mb-1.5 block">E-mail</label>
               <div className="relative">
@@ -652,7 +1004,7 @@ const AuthPage = () => {
             </div>
           )}
 
-          {mode === "signup" && signupStep === 1 && (
+          {mode === "signup" && signupStep === 1 && !showClaimOtp && !claimFallback && (
             <div>
               <label className="text-xs font-semibold text-slate-500 tracking-wide mb-1.5 block">WhatsApp</label>
               <div className="relative">
@@ -663,7 +1015,7 @@ const AuthPage = () => {
                   inputMode="numeric"
                   placeholder="(14) 99999-9999"
                   value={whatsapp}
-                  onChange={(e) => { setWhatsapp(maskWhatsApp(e.target.value)); clearFieldError("whatsapp"); }}
+                  onChange={(e) => { setWhatsapp(maskWhatsApp(e.target.value)); clearFieldError("whatsapp"); if (claimStatus !== null) resetClaimState(); }}
                   maxLength={15}
                   className={signupFieldClass("whatsapp")}
                 />
@@ -672,7 +1024,7 @@ const AuthPage = () => {
             </div>
           )}
 
-          {mode === "signup" && signupStep === 1 && (
+          {mode === "signup" && signupStep === 1 && !showClaimOtp && !claimFallback && (
             <>
               <div>
                 <label className="text-xs font-semibold text-slate-500 tracking-wide mb-1.5 block">Nome completo</label>
@@ -694,7 +1046,7 @@ const AuthPage = () => {
             </>
           )}
 
-          {(mode === "login" || mode === "reset" || (mode === "signup" && signupStep === 1)) && (
+          {(mode === "login" || mode === "reset" || (mode === "signup" && signupStep === 1 && !showClaimOtp && !claimFallback)) && (
             <>
               <div>
                 <label className="text-xs font-semibold text-slate-500 tracking-wide mb-1.5 block">
@@ -930,6 +1282,31 @@ const AuthPage = () => {
             </div>
           )}
 
+          {mode === "signup" && signupStep === 1 && claimStatus === "real" && (
+            <div className="rounded-xl bg-red-50 border border-red-200 px-3 py-3 space-y-2">
+              <p className="text-sm font-bold text-foreground">Esse número já tem conta</p>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                Entre com seu e-mail e senha ou recupere a senha para continuar.
+              </p>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setMode("login")}
+                  className="flex-1 h-10 bg-primary text-primary-foreground text-sm font-bold rounded-xl"
+                >
+                  Ir para login
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMode("forgot")}
+                  className="flex-1 h-10 bg-white text-foreground text-sm font-bold rounded-xl border border-border"
+                >
+                  Recuperar senha
+                </button>
+              </div>
+            </div>
+          )}
+
           <div className={mode === "signup" && signupStep > 1 ? "flex gap-3" : ""}>
             {mode === "signup" && signupStep > 1 && (
               <button
@@ -941,16 +1318,16 @@ const AuthPage = () => {
               </button>
             )}
             <button
-              disabled={loading || (mode === "reset" && passedCount < PASSWORD_RULES.length && password.length > 0)}
+              disabled={loading || claimBusy || (mode === "reset" && passedCount < PASSWORD_RULES.length && password.length > 0)}
               className={`${mode === "signup" && signupStep > 1 ? "flex-1" : "w-full"} h-11 bg-primary text-primary-foreground font-bold rounded-xl active:scale-[0.98] transition-all disabled:opacity-50 shadow-md shadow-primary/20 hover:brightness-105`}
             >
-              {loading ? (
+              {loading || claimBusy ? (
                 <span className="flex items-center justify-center gap-2">
                   <span className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
                   Aguarde...
                 </span>
               ) : mode === "login" ? "Entrar"
-                : mode === "signup" ? (signupStep === 3 ? "Criar conta" : "Continuar")
+                : mode === "signup" ? (claimFallback ? "Tentar enviar novamente" : showClaimOtp ? "Confirmar código" : signupStep === 3 ? "Criar conta" : "Continuar")
                 : mode === "forgot" ? "Enviar link"
                 : "Salvar nova senha"
               }
