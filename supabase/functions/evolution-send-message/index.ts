@@ -146,6 +146,20 @@ Deno.serve(async (req)=>{
       }, 400);
     }
     const { store_id, phone, message, kind = "manual" } = parsed.data;
+    // Número normalizado (55 + DDD + número) — é o formato gravado no
+    // whatsapp_send_log e o que o opt-out usa.
+    const digits = phone.replace(/\D/g, "");
+    const number = digits.length <= 11 ? "55" + digits : digits;
+    // Cópia de teste (`evolution-send-message-teste`, Fase 6C): allowlist —
+    // só a loja de teste e só o número do Renner. Mesmo padrão do
+    // whatsapp-bot-handler-teste. A função original fica intacta.
+    const TEST_STORE_ID = "8197bdd8-f041-410d-acc0-af9ecb448f55";
+    const TEST_PHONE_DIGITS = "5514991624997";
+    if (new URL(req.url).pathname.endsWith("-teste") && (store_id !== TEST_STORE_ID || number !== TEST_PHONE_DIGITS)) {
+      return json({
+        error: "test_function_allowlist"
+      }, 403);
+    }
     const internalToken = Deno.env.get("EVOLUTION_WEBHOOK_TOKEN") || "";
     const requestedForce = parsed.data.force === true;
     const force = requestedForce && !!internalToken && req.headers.get("x-internal-token") === internalToken;
@@ -164,6 +178,36 @@ Deno.serve(async (req)=>{
     }
     const { data: cfg } = await admin.from("store_whatsapp_config").select("evolution_instance_name, status, connected_at, established_number, daily_limit_override, send_disabled, whatsapp_mode").eq("store_id", store_id).maybeSingle();
     console.log("[evolution-send-message] cfg:", cfg);
+    // Fase 6C (P2-3): opt-out absoluto — quem digitou PARAR nunca mais
+    // recebe envio por aqui, de nenhum kind e nem com `force` (é o PARAR
+    // do cliente). Mesmo padrão de consulta dos webhooks
+    // (whatsapp_send_log por store_id + phone + kind='opt_out'). O
+    // bloqueio é registrado no log com kind próprio ('opt_out_blocked'):
+    // com kind='opt_out' o upsert colidiria no índice único por bucket
+    // de minuto com a linha do próprio registro do opt-out e o bloqueio
+    // sumiria do log quando os dois caíssem no mesmo minuto.
+    const { data: optedOut } = await admin.from("whatsapp_send_log").select("id").eq("store_id", store_id).eq("phone", number).eq("kind", "opt_out").limit(1).maybeSingle();
+    if (optedOut) {
+      console.log("[evolution-send-message] ⛔ opt-out — envio bloqueado", {
+        store_id,
+        phone: maskedPhone,
+        kind
+      });
+      await admin.from("whatsapp_send_log").upsert({
+        store_id,
+        phone: number,
+        message_hash: "optout_blocked",
+        kind: "opt_out_blocked",
+        sent_at: new Date().toISOString()
+      }, {
+        onConflict: "store_id,phone,kind,sent_bucket_min",
+        ignoreDuplicates: true
+      });
+      return json({
+        success: false,
+        skipped: "opt_out"
+      });
+    }
     // Migração API oficial: loja com whatsapp_mode='official' não envia NADA
     // pela Evolution (a instância é desligada na virada). Retorno cedo, antes
     // de qualquer envio — os chamadores roteiam pro canal oficial.
@@ -197,8 +241,6 @@ Deno.serve(async (req)=>{
     if (!baseUrl || !apiKey) return json({
       error: "Servidor Evolution não configurado"
     }, 500);
-    let number = phone.replace(/\D/g, "");
-    if (number.length <= 11) number = "55" + number;
     // === ANTI-SPAM ===
     const msgHash = await hashMsg(message);
     const nowIso = new Date().toISOString();

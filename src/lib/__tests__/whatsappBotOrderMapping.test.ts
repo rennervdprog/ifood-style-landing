@@ -13,6 +13,8 @@ import {
   buildDeliveryQuoteSnapshot,
   buildBotMetadataPatch,
   sendBestEffort,
+  normalizePersonName,
+  parseQuantity,
 } from "../../../supabase/functions/whatsapp-bot-handler/orderMapping";
 
 describe("mapPaymentMethodToRpc", () => {
@@ -263,6 +265,49 @@ describe("sendBestEffort", () => {
     await expect(sendBestEffort(async () => {
       throw "boom";
     })).resolves.toBe(false);
+  });
+});
+
+describe("normalizePersonName (Fase 6C, P2-8)", () => {
+  it("capitaliza a primeira letra de cada palavra", () => {
+    expect(normalizePersonName("ana")).toBe("Ana");
+    expect(normalizePersonName("ana maria")).toBe("Ana Maria");
+    expect(normalizePersonName("renner teste")).toBe("Renner Teste");
+  });
+
+  it("capitaliza após hífen", () => {
+    expect(normalizePersonName("joão-pedro")).toBe("João-Pedro");
+    expect(normalizePersonName("maria-josé silva")).toBe("Maria-José Silva");
+  });
+
+  it("não força o resto para minúsculas (McDonald não quebra)", () => {
+    expect(normalizePersonName("McDonald")).toBe("McDonald");
+    expect(normalizePersonName("ANA MARIA")).toBe("ANA MARIA");
+    expect(normalizePersonName("maria McDonald")).toBe("Maria McDonald");
+  });
+
+  it("apara espaços e aceita vazio", () => {
+    expect(normalizePersonName("  ana  ")).toBe("Ana");
+    expect(normalizePersonName("")).toBe("");
+  });
+});
+
+describe("parseQuantity (Fase 6C, P2-5)", () => {
+  it("aceita inteiros de 1 a 10", () => {
+    expect(parseQuantity("1")).toBe(1);
+    expect(parseQuantity("2")).toBe(2);
+    expect(parseQuantity("10")).toBe(10);
+    expect(parseQuantity(" 3 ")).toBe(3);
+  });
+
+  it("recusa 0, 11+, texto, decimal e vazio", () => {
+    expect(parseQuantity("0")).toBeNull();
+    expect(parseQuantity("11")).toBeNull();
+    expect(parseQuantity("99")).toBeNull();
+    expect(parseQuantity("dois")).toBeNull();
+    expect(parseQuantity("2.5")).toBeNull();
+    expect(parseQuantity("")).toBeNull();
+    expect(parseQuantity("   ")).toBeNull();
   });
 });
 
