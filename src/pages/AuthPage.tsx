@@ -437,6 +437,10 @@ const AuthPage = () => {
           });
           await supabase.from("profiles").update({
             terms_accepted_at: new Date().toISOString(),
+            // Fase 3 (P0-3): gravar o telefone nos DOIS campos — o bot
+            // busca por `phone` OU `whatsapp_number`; sem o `phone` o
+            // cadastro do site nunca era achado pelo bot e nascia duplicado.
+            phone: whatsDigits,
             whatsapp_number: whatsDigits,
             full_name: fullName.trim(),
             email: registrationEmail,
