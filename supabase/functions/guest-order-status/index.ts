@@ -131,12 +131,25 @@ Deno.serve(async (req) => {
       return json({ error: "not_found" }, 404);
     }
 
-    const [{ data: store }, { data: items }] = await Promise.all([
+    // Fix do rastreio: o select antigo pedia `whatsapp_number` em `stores`,
+    // coluna que NÃO existe — o PostgREST devolvia 400 (42703), o select
+    // inteiro falhava e `store` voltava null (a página mostrava "Loja" como
+    // nome e a seção Pix vazia). O número de WhatsApp da loja vive em
+    // `store_whatsapp_config.phone_number` (o número conectado como WhatsApp
+    // da loja); sem WhatsApp conectado, `whatsapp_number` é null e o front
+    // só esconde o botão "Falar com a loja" (nome e Pix continuam vindo).
+    // Espelho testado em src/lib/trackingStore.ts.
+    const [{ data: storeRow }, { data: items }, { data: wcfg }] = await Promise.all([
       sb.from("stores")
-        .select("name, slug, whatsapp_number, pix_direto_enabled, pix_direto_key, pix_direto_key_type, pix_direto_beneficiary, pix_direto_instructions").eq("id", (order as any).store_id).maybeSingle(),
+        .select("name, slug, pix_direto_enabled, pix_direto_key, pix_direto_key_type, pix_direto_beneficiary, pix_direto_instructions").eq("id", (order as any).store_id).maybeSingle(),
       sb.from("order_items")
         .select("quantity, unit_price, products(name)").eq("order_id", orderId),
+      sb.from("store_whatsapp_config")
+        .select("phone_number").eq("store_id", (order as any).store_id).maybeSingle(),
     ]);
+    const store = storeRow
+      ? { ...storeRow, whatsapp_number: (wcfg as any)?.phone_number ?? null }
+      : null;
 
     let deliveryPin = (order as any)?.delivery_pin || (profile as any)?.delivery_pin || null;
     if (!deliveryPin) {
