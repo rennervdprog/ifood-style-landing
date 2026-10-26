@@ -303,6 +303,32 @@ async function sendBestEffort(
     return false;
   }
 }
+
+/**
+ * Nome do cliente ao SALVAR (Fase 6C, P2-8): capitaliza a primeira letra
+ * de cada palavra (início, espaço ou hífen). Não força o resto para
+ * minúsculas — "McDonald" continua "McDonald" e "ANA" continua "ANA"
+ * (só a 1ª letra de cada palavra sobe). Aplica-se no ponto de captura do
+ * nome e no `ensureClient` (defesa); a exibição continua em `displayName`.
+ */
+function normalizePersonName(name: string): string {
+  return String(name || "")
+    .trim()
+    .replace(/(^|[\s-])(\p{L})/gu, (_m, sep, ch) => sep + ch.toUpperCase());
+}
+
+/**
+ * Quantidade do item no bot (Fase 6C, P2-5): aceita só inteiro de 1 a 10.
+ * Qualquer outra coisa (0, 11, texto, decimal, vazio) devolve null e o
+ * bot pergunta de novo — sem tocar no carrinho.
+ */
+function parseQuantity(text: string): number | null {
+  const raw = String(text || "").trim();
+  if (!/^\d+$/.test(raw)) return null;
+  const n = parseInt(raw, 10);
+  if (!Number.isFinite(n) || n < 1 || n > 10) return null;
+  return n;
+}
 // ── FIM inline de orderMapping.ts ──
 // Verifica se a loja está aberta agora (horário Brasília) com base em opening_hours + force_closed + is_open.
 const dayNamesBR = [
@@ -467,7 +493,7 @@ async function sendDeliveryFeeInfo(storeId, phone, storeFee, platformFee) {
   }
 }
 const setSession = async (admin, s)=>{
-  const expires = new Date(Date.now() + 15 * 60_000).toISOString();
+  const expires = new Date(Date.now() + 30 * 60_000).toISOString();
   await admin.from("whatsapp_bot_sessions").upsert({
     store_id: s.store_id,
     phone: s.phone,
@@ -480,9 +506,11 @@ const setSession = async (admin, s)=>{
     onConflict: "store_id,phone"
   });
 };
-// Cooldown pós-pedido: 2h de silêncio (só 1 aviso na 1ª mensagem).
+// Cooldown pós-pedido: 30 min de silêncio (só 1 aviso na 1ª mensagem).
 // Evita rajada de respostas que aumenta risco de ban do chip.
-const POST_ORDER_COOLDOWN_MS = 2 * 60 * 60_000;
+// (Fase 6C, P1-4, decisão e: era 2h — 30 min é o meio-termo entre
+// anti-ban e o cliente que quer pedir de novo logo.)
+const POST_ORDER_COOLDOWN_MS = 30 * 60_000;
 const setPostOrderCooldown = async (admin, storeId, phone, orderCode)=>{
   const expires = new Date(Date.now() + POST_ORDER_COOLDOWN_MS).toISOString();
   await admin.from("whatsapp_bot_sessions").upsert({
@@ -588,6 +616,16 @@ const askObservation = async (admin, storeId, phone, session)=>{
   await setSession(admin, session);
   await sendText(storeId, phone, "📝 *Alguma observação para este item?*\n\n_Ex.: sem cebola, ponto da carne, tirar o queijo..._\n\nDigite sua observação ou envie *0* para pular.");
 };
+// Fase 6C (P2-5): quantidade do item recém-adicionado — o carrinho já
+// tem o item com quantity 1; aqui o cliente escolhe de 1 a 10 unidades
+// antes de ir para a observação. O último item do carrinho é sempre o
+// que acabou de entrar (adicionais finalizados ou sem adicionais).
+const askQuantity = async (admin, storeId, phone, session)=>{
+  const last = session.cart[session.cart.length - 1];
+  session.current_step = "awaiting_quantity";
+  await setSession(admin, session);
+  await sendText(storeId, phone, `🔢 *Quantas unidades de ${last?.name || "este item"}?*\n\nResponda de *1* a *10*.`);
+};
 // Busca grupos de adicionais (diretos e vinculados via product_addon_groups) + itens.
 const fetchAddonGroupsFor = async (admin, storeId, productId)=>{
   const sel = "id,name,min_select,max_select,sort_order,price_replaces_base,addon_items(id,name,price,sort_order)";
@@ -666,7 +704,7 @@ const finalizeProductWithAddons = async (admin, storeId, phone, session)=>{
       }))
   });
   session.context.pending_product = null;
-  await askObservation(admin, storeId, phone, session);
+  await askQuantity(admin, storeId, phone, session);
 };
 const askDeliveryType = async (admin, storeId, phone, session)=>{
   session.current_step = "awaiting_delivery_type";
@@ -749,6 +787,76 @@ const askPayment = async (admin, storeId, phone, session, methods, pixDiretoOn =
   };
   await setSession(admin, session);
   await sendText(storeId, phone, `*💰 Forma de pagamento:*\n\n${opts.join("\n")}`);
+};
+// Métodos de pagamento do fluxo: o mesmo cálculo que vivia duplicado no
+// ramo de retirada e no sucesso da cotação — agora compartilhado também
+// com a troca para retirada (sem entregador / fora da área).
+const askPaymentOptions = async (admin, storeId, phone, session, cfg, accepts, pixDiretoOn)=>{
+  const baseMethods = cfg.accepted_payment_methods || [
+    "pix",
+    "cash",
+    "card"
+  ];
+  const withPix = pixDiretoOn && !baseMethods.includes("pix") ? [
+    "pix",
+    ...baseMethods
+  ] : baseMethods;
+  const methods = withPix.filter((m)=>{
+    if (m === "pix") return accepts.pix;
+    if (m === "cash") return accepts.cash;
+    if (m === "card") return accepts.card;
+    return true;
+  });
+  await askPayment(admin, storeId, phone, session, methods, pixDiretoOn);
+};
+// Fase 6C (P1-3): sem entregador, a sessão e o carrinho são MANTIDOS —
+// o cliente escolhe retirada ou tenta a entrega de novo, em vez de
+// recomeçar do zero.
+const askNoDriver = async (admin, storeId, phone, session)=>{
+  session.current_step = "awaiting_no_driver";
+  await setSession(admin, session);
+  await sendText(storeId, phone, "⚠️ A loja está sem entregador disponível no momento.\n\nSeu pedido continua aqui — escolha uma opção:\n\n*1* — Retirada no balcão\n*2* — Tentar a entrega de novo");
+};
+// Fase 6C (P2-6): fora da área, oferecer retirada ou novo endereço —
+// em vez de pedir o CEP de novo em loop.
+const askOutOfArea = async (admin, storeId, phone, session)=>{
+  session.current_step = "awaiting_out_of_area";
+  await setSession(admin, session);
+  await sendText(storeId, phone, "📍 Esse endereço está fora da área de entrega da loja.\n\nSeu pedido continua aqui — escolha uma opção:\n\n*1* — Retirada no balcão\n*2* — Informar outro endereço");
+};
+// Troca para retirada: limpa os restos da tentativa de delivery (taxa,
+// cotação e endereço resolvido de uma tentativa anterior) e pergunta o
+// pagamento. O carrinho e o resto da sessão não mudam.
+const switchToPickup = async (admin, storeId, phone, session, cfg, accepts, pixDiretoOn)=>{
+  session.context.delivery_type = "retirada";
+  session.context.delivery_fee = 0;
+  session.context.delivery_quote = null;
+  session.context.resolved_address = null;
+  await askPaymentOptions(admin, storeId, phone, session, cfg, accepts, pixDiretoOn);
+};
+// Cotação OK: grava endereço resolvido + taxa e pergunta o pagamento.
+const proceedAfterSuccessfulQuote = async (admin, storeId, phone, session, quote, cfg, accepts, pixDiretoOn)=>{
+  session.context.resolved_address = quote.destination;
+  session.context.delivery_quote = quote;
+  session.context.delivery_fee = Number(quote.pricing.delivery_fee || 0);
+  await sendDeliveryFeeInfo(storeId, phone, Number(quote.pricing.store_delivery_base || 0), Number(quote.pricing.platform_fee_customer || 0));
+  await askPaymentOptions(admin, storeId, phone, session, cfg, accepts, pixDiretoOn);
+};
+// Cotação falhou: roteia sem apagar a sessão — sem entregador ou fora da
+// área oferecem alternativa; qualquer outra falha pede o CEP de novo
+// (mesmo comportamento de antes). Devolve o nome da ação p/ o log.
+const handleFailedQuote = async (admin, storeId, phone, session, quote)=>{
+  if (quote?.reason === "no_driver_available") {
+    await askNoDriver(admin, storeId, phone, session);
+    return "no_driver_available";
+  }
+  if (quote?.reason === "outside_delivery_area") {
+    await askOutOfArea(admin, storeId, phone, session);
+    return "outside_delivery_area";
+  }
+  await sendBestEffort(() => sendText(storeId, phone, "Não consegui confirmar a entrega nesse endereço. Vou pedir o CEP novamente."));
+  await askCep(admin, storeId, phone, session);
+  return "delivery_quote_failed";
 };
 const showConfirmation = async (admin, storeId, phone, session, storeName, minimumOrderValue = null)=>{
   const subtotal = session.cart.reduce((s, i)=>s + i.unit_price * i.quantity, 0);
@@ -1053,7 +1161,9 @@ const ensureClient = async (admin, storeId, phone, session)=>{
     }
     return session.context.client_id;
   }
-  const customerName = String(session.context.customer_name || "").trim();
+  // Fase 6C (P2-8): normalizar AO SALVAR (defesa — o ponto de captura já
+  // normaliza; quem chegar aqui com o nome cru também sai normalizado).
+  const customerName = normalizePersonName(String(session.context.customer_name || "").trim());
   try {
     const digits = onlyDigits(phone);
     // Fase 3 (lado do bot): o site grava em `profiles.whatsapp_number` e o
@@ -1121,13 +1231,20 @@ const ensureClient = async (admin, storeId, phone, session)=>{
         onConflict: "user_id"
       });
       if (profErr) console.error("[bot] ensureClient profiles upsert failed", profErr);
-      const { error: guestErr } = await admin.from("guest_customers").upsert({
+      // Fase 6C (P2-6, guest-lookup): gravar a cidade do CEP validado —
+      // só quando há valor, para nunca anular um city_slug já gravado.
+      const citySlug = String(session.context.city || "").trim();
+      const guestRow = {
         phone,
         user_id: clientId,
         name: customerName || null,
         last_store_id: storeId,
-        consent_at: new Date().toISOString()
-      }, {
+        consent_at: new Date().toISOString(),
+        ...(citySlug ? {
+          city_slug: citySlug
+        } : {})
+      };
+      const { error: guestErr } = await admin.from("guest_customers").upsert(guestRow, {
         onConflict: "phone"
       });
       if (guestErr) console.error("[bot] ensureClient guest_customers upsert failed", guestErr);
@@ -1585,7 +1702,10 @@ Deno.serve(async (req)=>{
         }
       case "awaiting_name":
         {
-          const name = text.trim().slice(0, 80);
+          // Fase 6C (P2-8): o nome é normalizado AO SALVAR — "ana" vira
+          // "Ana" já aqui, no ponto de captura (o ensureClient normaliza
+          // de novo, como defesa).
+          const name = normalizePersonName(text.trim().slice(0, 80));
           if (name.length < 2) {
             await sendText(store_id, phone, "Nome muito curto. Envie seu nome completo (mínimo 2 letras).");
             return json({
@@ -1649,7 +1769,7 @@ Deno.serve(async (req)=>{
               quantity: 1,
               addons: []
             });
-            await askObservation(admin, store_id, phone, session);
+            await askQuantity(admin, store_id, phone, session);
             return json({
               handled: true,
               action: "added_item"
@@ -1742,6 +1862,24 @@ Deno.serve(async (req)=>{
             action: "observation_saved"
           });
         }
+      case "awaiting_quantity":
+        {
+          const qty = parseQuantity(text);
+          if (qty === null) {
+            await sendText(store_id, phone, "Quantidade inválida. Responda com um número de *1* a *10*.");
+            return json({
+              handled: true,
+              action: "invalid_quantity"
+            });
+          }
+          const last = session.cart[session.cart.length - 1];
+          if (last) last.quantity = qty;
+          await askObservation(admin, store_id, phone, session);
+          return json({
+            handled: true,
+            action: "quantity_saved"
+          });
+        }
       case "awaiting_more":
         {
           if (num === 1) {
@@ -1768,23 +1906,7 @@ Deno.serve(async (req)=>{
             session.context.delivery_type = "delivery";
             await maybeOfferSavedAddress(admin, store_id, phone, session);
           } else if (num === 2) {
-            session.context.delivery_type = "retirada";
-            const baseMethods = cfg.accepted_payment_methods || [
-              "pix",
-              "cash",
-              "card"
-            ];
-            const withPix = pixDiretoOn && !baseMethods.includes("pix") ? [
-              "pix",
-              ...baseMethods
-            ] : baseMethods;
-            const methods = withPix.filter((m)=>{
-              if (m === "pix") return accepts.pix;
-              if (m === "cash") return accepts.cash;
-              if (m === "card") return accepts.card;
-              return true;
-            });
-            await askPayment(admin, store_id, phone, session, methods, pixDiretoOn);
+            await switchToPickup(admin, store_id, phone, session, cfg, accepts, pixDiretoOn);
           } else {
             await sendText(store_id, phone, "Responda *1* para Delivery ou *2* para Retirada.");
           }
@@ -1902,45 +2024,68 @@ Deno.serve(async (req)=>{
           session.context.reference = ref === "-" || ref === "" ? "" : ref.slice(0, 120);
           const quote = await quoteBotDelivery(store_id, session);
           if (!quote?.ok || !quote?.destination || !quote?.pricing) {
-            if (quote?.reason === "no_driver_available") {
-              await clearSession(admin, store_id, phone);
-              await sendText(store_id, phone, "⚠️ A loja está sem entregador disponível no momento, então não consigo confirmar a entrega agora.\n\nTente novamente em alguns minutos — assim que um entregador estiver online, é só mandar *MENU* para finalizar o pedido por aqui. 🙂");
-              return json({
-                handled: true,
-                action: "no_driver_available"
-              });
-            }
-            const message = quote?.reason === "outside_delivery_area" ? "Esse endereço está fora da área de entrega da loja. Vou pedir o CEP novamente." : "Não consegui confirmar a entrega nesse endereço. Vou pedir o CEP novamente.";
-            await sendBestEffort(() => sendText(store_id, phone, message));
-            await askCep(admin, store_id, phone, session);
+            const action = await handleFailedQuote(admin, store_id, phone, session, quote);
             return json({
               handled: true,
-              action: "delivery_quote_failed"
+              action
             });
           }
-          session.context.resolved_address = quote.destination;
-          session.context.delivery_quote = quote;
-          session.context.delivery_fee = Number(quote.pricing.delivery_fee || 0);
-          await sendDeliveryFeeInfo(store_id, phone, Number(quote.pricing.store_delivery_base || 0), Number(quote.pricing.platform_fee_customer || 0));
-          const baseMethods = cfg.accepted_payment_methods || [
-            "pix",
-            "cash",
-            "card"
-          ];
-          const withPix = pixDiretoOn && !baseMethods.includes("pix") ? [
-            "pix",
-            ...baseMethods
-          ] : baseMethods;
-          const methods = withPix.filter((m)=>{
-            if (m === "pix") return accepts.pix;
-            if (m === "cash") return accepts.cash;
-            if (m === "card") return accepts.card;
-            return true;
-          });
-          await askPayment(admin, store_id, phone, session, methods, pixDiretoOn);
+          await proceedAfterSuccessfulQuote(admin, store_id, phone, session, quote, cfg, accepts, pixDiretoOn);
           return json({
             handled: true,
             action: "address_saved"
+          });
+        }
+      case "awaiting_no_driver":
+        {
+          if (num === 1) {
+            await switchToPickup(admin, store_id, phone, session, cfg, accepts, pixDiretoOn);
+            return json({
+              handled: true,
+              action: "no_driver_pickup"
+            });
+          }
+          if (num === 2) {
+            const quote = await quoteBotDelivery(store_id, session);
+            if (!quote?.ok || !quote?.destination || !quote?.pricing) {
+              const action = await handleFailedQuote(admin, store_id, phone, session, quote);
+              return json({
+                handled: true,
+                action: action === "no_driver_available" ? "no_driver_retry_still_unavailable" : action
+              });
+            }
+            await proceedAfterSuccessfulQuote(admin, store_id, phone, session, quote, cfg, accepts, pixDiretoOn);
+            return json({
+              handled: true,
+              action: "no_driver_retry_ok"
+            });
+          }
+          await sendText(store_id, phone, "Responda *1* para Retirada ou *2* para tentar a entrega de novo.");
+          return json({
+            handled: true,
+            action: "invalid_no_driver"
+          });
+        }
+      case "awaiting_out_of_area":
+        {
+          if (num === 1) {
+            await switchToPickup(admin, store_id, phone, session, cfg, accepts, pixDiretoOn);
+            return json({
+              handled: true,
+              action: "out_of_area_pickup"
+            });
+          }
+          if (num === 2) {
+            await askCep(admin, store_id, phone, session);
+            return json({
+              handled: true,
+              action: "out_of_area_new_address"
+            });
+          }
+          await sendText(store_id, phone, "Responda *1* para Retirada ou *2* para informar outro endereço.");
+          return json({
+            handled: true,
+            action: "invalid_out_of_area"
           });
         }
       case "awaiting_payment":
@@ -2114,7 +2259,7 @@ Deno.serve(async (req)=>{
               ...session,
               current_step: "post_order_cooldown"
             });
-            // Reafirma expires_at longo (setSession usa 15min por padrão).
+            // Reafirma expires_at longo (setSession usa 30min por padrão).
             await admin.from("whatsapp_bot_sessions").update({
               expires_at: new Date(Date.now() + POST_ORDER_COOLDOWN_MS).toISOString()
             }).eq("store_id", store_id).eq("phone", phone);
