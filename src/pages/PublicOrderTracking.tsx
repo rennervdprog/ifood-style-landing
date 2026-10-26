@@ -7,6 +7,7 @@ import { formatBRL } from "@/lib/utils";
 import { ArrowLeft, MapPin, MessageCircle, Loader2, CheckCircle2, Clock, Truck, KeyRound, ShieldAlert, QrCode, Copy, Upload, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { copyToClipboard } from "@/lib/clipboard";
+import { clearGuestIdempotencyKey } from "@/lib/guestIdempotency";
 import { formatPixKeyDisplay } from "@/lib/pixFormat";
 
 const STATUS_LABEL: Record<string, { label: string; color: string; icon: any }> = {
@@ -61,6 +62,14 @@ const PublicOrderTracking = () => {
     const t = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(t);
   }, []);
+
+  // Fase 6B (P2-3): o pedido confirmou e chegou aqui — a chave de
+  // idempotência da loja pode sair do sessionStorage (o checkout também
+  // limpa antes de navegar; isto cobre o caminho sem o checkout, ex.:
+  // guest_link_failed ou link aberto depois).
+  useEffect(() => {
+    if (data?.order?.store_id) clearGuestIdempotencyKey(data.order.store_id);
+  }, [data?.order?.store_id]);
 
   const order = data?.order;
   const store = data?.store;

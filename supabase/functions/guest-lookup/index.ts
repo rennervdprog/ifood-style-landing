@@ -28,6 +28,22 @@ Deno.serve(async (req) => {
     if (!phone) return json({ error: "invalid_phone" }, 400);
     if (!storeId) return json({ error: "missing_store_id" }, 400);
 
+    // Cópia de teste (`guest-lookup-teste`): allowlist no topo — só a loja
+    // de teste e só os telefones de teste. Mesmo padrão da guest-checkout:
+    // o modo teste é detectado pela URL de invocação, então o código é o
+    // mesmo nos dois deploys e a produção não muda.
+    const TEST_STORE_ID = "8197bdd8-f041-410d-acc0-af9ecb448f55";
+    const TEST_PHONES = new Set([
+      "5514991624997", // Renner
+      "5514988885555", // brickado 05/07/2026
+      "5514988886666", // brickado 05/07/2026
+      "5514988887777", // brickado 05/07/2026
+    ]);
+    const isTestFunction = new URL(req.url).pathname.endsWith("-teste");
+    if (isTestFunction && (storeId !== TEST_STORE_ID || !TEST_PHONES.has(phone))) {
+      return json({ error: "forbidden", reason: "test_function_allowlist" }, 403);
+    }
+
     const sb = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
@@ -56,16 +72,18 @@ Deno.serve(async (req) => {
         String((store as any).address_city || "").toLowerCase();
     if (!sameCity) return json({ found: true, name: (guest as any).name || null });
 
-    const { data: addr } = await sb
+    // Fase 6B (P2-6): todos os endereços do guest — o padrão primeiro,
+    // depois os mais recentes. `lastAddress` continua, para compatibilidade
+    // com o front atual (GuestCheckoutPage usa só ele).
+    const { data: addresses } = await sb
       .from("saved_addresses")
-      .select("id, label, cep, street, number, complement, neighborhood, reference_point")
+      .select("id, label, cep, street, number, complement, neighborhood, reference_point, is_default")
       .eq("user_id", (guest as any).user_id)
       .order("is_default", { ascending: false })
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
+      .order("created_at", { ascending: false });
 
-    return json({ found: true, name: (guest as any).name || null, lastAddress: addr || null });
+    const all = (addresses || []) as Array<Record<string, unknown>>;
+    return json({ found: true, name: (guest as any).name || null, addresses: all, lastAddress: all[0] || null });
   } catch (e) {
     console.error("[guest-lookup] error:", e);
     return json({ error: "internal_error" }, 500);
