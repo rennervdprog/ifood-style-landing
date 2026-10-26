@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { copyToClipboard } from "@/lib/clipboard";
 import { clearGuestIdempotencyKey } from "@/lib/guestIdempotency";
 import { formatPixKeyDisplay } from "@/lib/pixFormat";
+import { validateClaimForm } from "@/lib/claimValidation";
 
 const STATUS_LABEL: Record<string, { label: string; color: string; icon: any }> = {
   pendente: { label: "Recebido pela loja", color: "text-blue-600", icon: Clock },
@@ -35,6 +36,64 @@ const PublicOrderTracking = () => {
   const [uploading, setUploading] = useState(false);
   const [now, setNow] = useState<number>(Date.now());
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // Fase 6D Opção A — "Reivindicar minha conta": transforma o guest deste
+  // pedido numa conta com e-mail e senha (mesmo user_id — histórico,
+  // endereços e fidelidade preservados). A prova de posse é o próprio link
+  // de rastreio + os últimos 4 dígitos, que a página já tem na URL.
+  const [claimEmail, setClaimEmail] = useState("");
+  const [claimPassword, setClaimPassword] = useState("");
+  const [claimPassword2, setClaimPassword2] = useState("");
+  const [claiming, setClaiming] = useState(false);
+  const [claimDone, setClaimDone] = useState(false);
+  const [claimError, setClaimError] = useState<string | null>(null);
+  const [claimAlreadyHasAccount, setClaimAlreadyHasAccount] = useState(false);
+
+  const claimErrorMessage = (code: string | null): string => {
+    switch (code) {
+      case "invalid_email": return "Digite um e-mail válido.";
+      case "weak_password": return "A senha deve ter pelo menos 6 caracteres.";
+      case "password_mismatch": return "As senhas não conferem.";
+      case "not_found": return "Não encontramos esse pedido com esses dados — confira o link e tente de novo.";
+      case "already_has_account": return "Esse número já tem conta. Entre com seu e-mail e senha ou recupere a senha.";
+      case "email_in_use": return "Esse e-mail já está em uso por outra conta. Use outro e-mail.";
+      default: return "Não foi possível criar sua conta agora. Tente de novo.";
+    }
+  };
+
+  const submitClaim = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (claiming || claimDone || !orderId) return;
+    const formError = validateClaimForm(claimEmail, claimPassword, claimPassword2);
+    if (formError) { setClaimError(formError); setClaimAlreadyHasAccount(false); return; }
+    setClaiming(true);
+    setClaimError(null);
+    setClaimAlreadyHasAccount(false);
+    try {
+      const url = `${(supabase as any).supabaseUrl}/functions/v1/claim-guest-account`;
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${(supabase as any).supabaseKey}`,
+          apikey: (supabase as any).supabaseKey,
+        },
+        body: JSON.stringify({ order_id: orderId, last4, email: claimEmail.trim(), password: claimPassword }),
+      });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setClaimError(j?.error || "error");
+        setClaimAlreadyHasAccount(j?.error === "already_has_account");
+        return;
+      }
+      setClaimDone(true);
+      toast.success("Conta criada! Entre com seu e-mail e senha.");
+    } catch (err: any) {
+      setClaimError(err?.message || "error");
+    } finally {
+      setClaiming(false);
+    }
+  };
 
   const load = async () => {
     setLoading(true);
@@ -284,6 +343,64 @@ const PublicOrderTracking = () => {
             <span>Total</span><span>{formatBRL(data.order.total_price)}</span>
           </div>
           <p className="text-[11px] text-muted-foreground pt-1">Pagamento: {data.order.payment_method}</p>
+        </div>
+
+        {/* Fase 6D Opção A — "Reivindicar minha conta" */}
+        <div className="bg-card border border-border rounded-2xl p-4 space-y-3">
+          <h2 className="text-sm font-bold">Criar minha conta com este pedido</h2>
+          {claimDone ? (
+            <div className="space-y-2">
+              <p className="text-sm text-green-600 font-bold">Conta criada! Entre com seu e-mail e senha.</p>
+              <p className="text-xs text-muted-foreground">Seu histórico de pedidos, endereços e pontos continuam na mesma conta.</p>
+              <Link to="/auth" className="inline-flex items-center justify-center w-full h-11 rounded-xl bg-primary text-primary-foreground text-sm font-bold">
+                Entrar com e-mail e senha
+              </Link>
+            </div>
+          ) : (
+            <form onSubmit={submitClaim} className="space-y-3">
+              <p className="text-xs text-muted-foreground">Crie sua conta com o e-mail e a senha que você quiser usar para entrar. Seus pedidos e endereços continuam na mesma conta.</p>
+              <input
+                type="email"
+                value={claimEmail}
+                onChange={(e) => setClaimEmail(e.target.value)}
+                placeholder="Seu e-mail"
+                autoComplete="email"
+                className="w-full h-11 rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-primary"
+              />
+              <input
+                type="password"
+                value={claimPassword}
+                onChange={(e) => setClaimPassword(e.target.value)}
+                placeholder="Senha (mínimo 6 caracteres)"
+                autoComplete="new-password"
+                className="w-full h-11 rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-primary"
+              />
+              <input
+                type="password"
+                value={claimPassword2}
+                onChange={(e) => setClaimPassword2(e.target.value)}
+                placeholder="Confirmar senha"
+                autoComplete="new-password"
+                className="w-full h-11 rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-primary"
+              />
+              {claimError && (
+                <p className="text-xs text-destructive">{claimErrorMessage(claimError)}</p>
+              )}
+              {claimAlreadyHasAccount && (
+                <Link to="/auth" className="block text-center text-sm font-bold text-primary">
+                  Ir para o login
+                </Link>
+              )}
+              <button
+                type="submit"
+                disabled={claiming}
+                className="w-full inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground font-bold py-3 rounded-xl disabled:opacity-50"
+              >
+                {claiming ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                {claiming ? "Criando conta..." : "Criar minha conta"}
+              </button>
+            </form>
+          )}
         </div>
 
         <p className="text-[11px] text-center text-muted-foreground">Esta página atualiza sozinha a cada 20s.</p>
