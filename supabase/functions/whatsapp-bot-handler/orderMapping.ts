@@ -285,3 +285,29 @@ export async function sendBestEffort(
     return false;
   }
 }
+
+/**
+ * Nome do cliente ao SALVAR (Fase 6C, P2-8): capitaliza a primeira letra
+ * de cada palavra (início, espaço ou hífen). Não força o resto para
+ * minúsculas — "McDonald" continua "McDonald" e "ANA" continua "ANA"
+ * (só a 1ª letra de cada palavra sobe). Aplica-se no ponto de captura do
+ * nome e no `ensureClient` (defesa); a exibição continua em `displayName`.
+ */
+export function normalizePersonName(name: string): string {
+  return String(name || "")
+    .trim()
+    .replace(/(^|[\s-])(\p{L})/gu, (_m, sep, ch) => sep + ch.toUpperCase());
+}
+
+/**
+ * Quantidade do item no bot (Fase 6C, P2-5): aceita só inteiro de 1 a 10.
+ * Qualquer outra coisa (0, 11, texto, decimal, vazio) devolve null e o
+ * bot pergunta de novo — sem tocar no carrinho.
+ */
+export function parseQuantity(text: string): number | null {
+  const raw = String(text || "").trim();
+  if (!/^\d+$/.test(raw)) return null;
+  const n = parseInt(raw, 10);
+  if (!Number.isFinite(n) || n < 1 || n > 10) return null;
+  return n;
+}
