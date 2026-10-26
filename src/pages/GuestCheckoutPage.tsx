@@ -6,10 +6,12 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCart } from "@/contexts/CartContext";
 import { toast } from "sonner";
-import { ArrowLeft, MapPin, CreditCard, Banknote, QrCode, Search, Loader2, ShoppingBag, MessageCircle, Truck, Store, CheckCircle2, User } from "lucide-react";
+import { ArrowLeft, MapPin, CreditCard, Banknote, QrCode, Search, Loader2, ShoppingBag, MessageCircle, Truck, Store, CheckCircle2, User, Clock, AlertTriangle, Calendar } from "lucide-react";
 import { formatCep, fetchCep } from "@/lib/location";
 import { maskWhatsApp } from "@/lib/whatsapp";
 import { formatBRL, addMoney } from "@/lib/utils";
+import { getStoreOpenStatus, type OpeningHour } from "@/lib/storeStatus";
+import { computeGuestCheckoutGates } from "@/lib/guestCheckoutGates";
 import { asDeliveryAddress, deliveryQuoteBreakdown, deliveryQuoteFailureMessage, isSuccessfulDeliveryQuote, quoteErrorFromUnknown, quoteRequestKey, type DeliveryQuote, type DeliveryQuoteFailure } from "@/lib/deliveryQuote";
 
 const BASE_PAY_METHODS = [
@@ -55,7 +57,7 @@ const GuestCheckoutPage = () => {
     queryFn: async () => {
       const { data } = await supabase
         .from("stores_public")
-        .select("id, name, address_city, minimum_order_value, own_delivery_fee, delivery_mode, delivery_fee_type, delivery_base_km, delivery_fee_base, delivery_fee_per_km, address_cep, latitude, longitude, free_delivery_threshold, guest_checkout_enabled, pix_direto_enabled, pix_direto_key")
+        .select("id, name, address_city, minimum_order_value, own_delivery_fee, delivery_mode, delivery_fee_type, delivery_base_km, delivery_fee_base, delivery_fee_per_km, address_cep, latitude, longitude, free_delivery_threshold, guest_checkout_enabled, pix_direto_enabled, pix_direto_key, is_open, force_closed, preorder_enabled, preorder_minutes_before")
         .eq("id", storeId!).maybeSingle();
       return (data as any) || null;
     },
@@ -69,6 +71,37 @@ const GuestCheckoutPage = () => {
       navigate("/auth", { state: { from: "/checkout" }, replace: true });
     }
   }, [store, navigate]);
+
+  // Fase 4: mesmo padrão do checkout logado — busca o horário da loja e usa
+  // getStoreOpenStatus para travar loja fechada e pedido mínimo no front.
+  // O servidor (RPC create_order_with_items) continua sendo o trava final.
+  const { data: storeHours } = useQuery({
+    queryKey: ["guest-store-hours", storeId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("opening_hours")
+        .select("day_of_week, open_time, close_time, is_closed_all_day")
+        .eq("store_id", storeId!);
+      return (data || []) as OpeningHour[];
+    },
+    enabled: !!storeId,
+    refetchInterval: 60_000,
+  });
+
+  const storeStatus = store && storeHours
+    ? getStoreOpenStatus(
+        storeHours,
+        (store as any).force_closed ?? false,
+        (store as any).is_open ?? true,
+        {
+          enabled: !!(store as any).preorder_enabled,
+          minutesBefore: Number((store as any).preorder_minutes_before ?? 0),
+        },
+      )
+    : null;
+  const storeMinimumOrderValue = Number((store as any)?.minimum_order_value || 0);
+  const { isStoreClosed, isPreorder, belowMinimum, minimumMissing, submitError, minimumButtonLabel, closedButtonLabel } =
+    computeGuestCheckoutGates({ subtotal, minimumOrderValue: storeMinimumOrderValue, storeStatus });
 
   const [deliveryQuote, setDeliveryQuote] = useState<DeliveryQuote | null>(null);
   const [deliveryQuoteFailure, setDeliveryQuoteFailure] = useState<DeliveryQuoteFailure | null>(null);
@@ -222,6 +255,9 @@ const GuestCheckoutPage = () => {
   }, [phone, storeId]);
 
   const handleConfirm = async () => {
+    // Fase 4: mesmas travas do checkout logado — loja fechada e pedido
+    // mínimo recusam antes de chamar a edge.
+    if (submitError) { toast.error(submitError); return; }
     const digits = phone.replace(/\D/g, "");
     if (digits.length < 10) { toast.error("Informe um WhatsApp válido."); return; }
     if (!name.trim() || name.trim().length < 2) { toast.error("Informe seu nome."); return; }
@@ -311,6 +347,50 @@ const GuestCheckoutPage = () => {
         <button onClick={() => navigate(-1)} className="p-1 -ml-1"><ArrowLeft className="h-5 w-5" /></button>
         <h1 className="text-base font-bold">Finalizar pedido</h1>
       </header>
+
+      {/* Fase 4: loja fechada — mesmo aviso do checkout logado */}
+      {isStoreClosed && storeStatus && (
+        <div className="mx-4 mt-4 bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 flex items-start gap-3">
+          <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center shrink-0 mt-0.5">
+            <Clock className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="text-sm font-bold text-amber-700 dark:text-amber-300">Loja fechada no momento</h3>
+            <p className="text-xs text-amber-600/80 dark:text-amber-400/80 mt-0.5">
+              Seu pedido não pode ser finalizado agora.
+            </p>
+            <div className="flex items-center gap-1.5 mt-2 bg-amber-500/10 rounded-lg px-3 py-1.5 w-fit">
+              <AlertTriangle className="h-3 w-3 text-amber-600 dark:text-amber-400" />
+              <span className="text-xs font-bold text-amber-700 dark:text-amber-300">
+                {storeStatus.reason}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Pré-pedido (loja ainda não abriu, mas aceita agendamento) */}
+      {!isStoreClosed && isPreorder && storeStatus?.releaseAt && (
+        <div className="mx-4 mt-4 bg-primary/10 border border-primary/30 rounded-2xl p-4 flex items-start gap-3">
+          <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center shrink-0 mt-0.5">
+            <Calendar className="h-5 w-5 text-primary" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="text-sm font-bold text-primary">Pré-pedido aceito</h3>
+            <p className="text-xs text-foreground/80 mt-0.5">
+              A loja ainda não abriu, mas você já pode finalizar.
+              Seu pedido será enviado para a cozinha automaticamente às{" "}
+              <strong>
+                {new Date(storeStatus.releaseAt).toLocaleTimeString("pt-BR", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  timeZone: "America/Sao_Paulo",
+                })}
+              </strong>.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Progress steps — igual ao checkout normal */}
       <div className="px-4 pt-4 pb-2">
@@ -536,6 +616,24 @@ const GuestCheckoutPage = () => {
           </div>
           <div className="p-4 space-y-2">
             <div className="flex justify-between text-sm"><span className="text-muted-foreground">Subtotal</span><span className="font-medium">{formatBRL(subtotal)}</span></div>
+            {/* Fase 4: pedido mínimo — mesmo cartão do checkout logado */}
+            {belowMinimum && (
+              <div className="rounded-2xl border border-amber-500/40 bg-amber-500/10 p-3 space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-bold text-amber-700 dark:text-amber-400">Pedido mínimo: {formatBRL(storeMinimumOrderValue)}</span>
+                  <span className="font-black text-amber-700 dark:text-amber-400">Faltam {formatBRL(minimumMissing)}</span>
+                </div>
+                <div className="h-1.5 w-full bg-amber-500/20 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-amber-500 transition-all"
+                    style={{ width: `${Math.min(100, (subtotal / storeMinimumOrderValue) * 100)}%` }}
+                  />
+                </div>
+                <p className="text-[11px] text-amber-700/90 dark:text-amber-400/90 leading-snug">
+                  Adicione mais itens ao carrinho para atingir o valor mínimo desta loja.
+                </p>
+              </div>
+            )}
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground flex items-center gap-1.5">
                 {isPickup ? <><Store className="h-3 w-3" /> Retirada</> : <>Entrega</>}
@@ -558,10 +656,20 @@ const GuestCheckoutPage = () => {
       </div>
 
       <div className="native-hide-while-keyboard fixed bottom-0 inset-x-0 bg-card border-t border-border p-4">
-        <button onClick={handleConfirm} disabled={submitting || (!isPickup && (calculatingFee || !isSuccessfulDeliveryQuote(deliveryQuote)))}
-          className="w-full h-12 bg-primary text-primary-foreground font-bold rounded-xl active:scale-[0.98] disabled:opacity-50">
-          {submitting ? "Enviando..." : !isPickup && calculatingFee ? "Calculando entrega..." : !isPickup && !quoteReady ? (quoteNeedsAddress ? "Informe o endereço" : "Revise o endereço") : `Confirmar pedido — ${formatBRL(total)}`}
-        </button>
+        {isStoreClosed ? (
+          <button
+            disabled
+            className="w-full h-12 bg-muted text-muted-foreground font-bold rounded-xl flex items-center justify-center gap-2 cursor-not-allowed"
+          >
+            <Clock className="h-5 w-5" />
+            {closedButtonLabel}
+          </button>
+        ) : (
+          <button onClick={handleConfirm} disabled={submitting || belowMinimum || (!isPickup && (calculatingFee || !isSuccessfulDeliveryQuote(deliveryQuote)))}
+            className="w-full h-12 bg-primary text-primary-foreground font-bold rounded-xl active:scale-[0.98] disabled:opacity-50">
+            {submitting ? "Enviando..." : belowMinimum ? minimumButtonLabel : !isPickup && calculatingFee ? "Calculando entrega..." : !isPickup && !quoteReady ? (quoteNeedsAddress ? "Informe o endereço" : "Revise o endereço") : `Confirmar pedido — ${formatBRL(total)}`}
+          </button>
+        )}
       </div>
     </div>
   );
