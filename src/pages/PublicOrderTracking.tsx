@@ -116,8 +116,11 @@ const PublicOrderTracking = () => {
     </div>;
   }
   if (error || !data) {
+    // Fase 5 — rate limit no rastreio: com muitas tentativas erradas, a
+    // edge volta 429 e a página avisa para aguardar (em vez do erro genérico).
+    const rateLimited = error === "rate_limited";
     return <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-3 p-6 text-center">
-      <p className="text-sm text-muted-foreground">Pedido não encontrado ou link inválido.</p>
+      <p className="text-sm text-muted-foreground">{rateLimited ? "Muitas tentativas — aguarde alguns minutos e tente de novo." : "Pedido não encontrado ou link inválido."}</p>
       <Link to="/" className="text-primary text-sm font-bold">Voltar para o início</Link>
     </div>;
   }
