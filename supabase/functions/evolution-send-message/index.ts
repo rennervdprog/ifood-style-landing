@@ -182,8 +182,10 @@ Deno.serve(async (req)=>{
     // recebe envio por aqui, de nenhum kind e nem com `force` (é o PARAR
     // do cliente). Mesmo padrão de consulta dos webhooks
     // (whatsapp_send_log por store_id + phone + kind='opt_out'). O
-    // bloqueio é registrado no log (upsert com ignoreDuplicates: um
-    // bloqueio por minuto basta — o índice único é por bucket de minuto).
+    // bloqueio é registrado no log com kind próprio ('opt_out_blocked'):
+    // com kind='opt_out' o upsert colidiria no índice único por bucket
+    // de minuto com a linha do próprio registro do opt-out e o bloqueio
+    // sumiria do log quando os dois caíssem no mesmo minuto.
     const { data: optedOut } = await admin.from("whatsapp_send_log").select("id").eq("store_id", store_id).eq("phone", number).eq("kind", "opt_out").limit(1).maybeSingle();
     if (optedOut) {
       console.log("[evolution-send-message] ⛔ opt-out — envio bloqueado", {
@@ -195,7 +197,7 @@ Deno.serve(async (req)=>{
         store_id,
         phone: number,
         message_hash: "optout_blocked",
-        kind: "opt_out",
+        kind: "opt_out_blocked",
         sent_at: new Date().toISOString()
       }, {
         onConflict: "store_id,phone,kind,sent_bucket_min",
