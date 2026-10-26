@@ -1249,7 +1249,11 @@ Deno.serve(async (req)=>{
     const TEST_STORE_ID = "8197bdd8-f041-410d-acc0-af9ecb448f55";
     const TEST_PHONE_DIGITS = "5514991624997";
     const isTestFunction = new URL(req.url).pathname.endsWith("-teste");
-    if (isTestFunction && (store_id !== TEST_STORE_ID || onlyDigits(phone) !== TEST_PHONE_DIGITS)) {
+    // Aceita o número de teste e os derivados dele (o T7 usa o mesmo número
+    // com dígitos extras para o e-mail guest passar de 255 chars e o
+    // createUser falhar). Qualquer outro número continua recusado.
+    const phoneDigits = onlyDigits(phone);
+    if (isTestFunction && (store_id !== TEST_STORE_ID || !phoneDigits.startsWith(TEST_PHONE_DIGITS))) {
       return json({
         handled: false,
         reason: "test_function_allowlist"
