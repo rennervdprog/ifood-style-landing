@@ -13,6 +13,7 @@ import { formatBRL, addMoney } from "@/lib/utils";
 import { getStoreOpenStatus, type OpeningHour } from "@/lib/storeStatus";
 import { isPixDiretoAvailable } from "@/lib/pixDiretoAvailability";
 import { computeGuestCheckoutGates } from "@/lib/guestCheckoutGates";
+import { clearGuestIdempotencyKey, getGuestIdempotencyKey } from "@/lib/guestIdempotency";
 import { asDeliveryAddress, deliveryQuoteBreakdown, deliveryQuoteFailureMessage, isSuccessfulDeliveryQuote, quoteErrorFromUnknown, quoteRequestKey, type DeliveryQuote, type DeliveryQuoteFailure } from "@/lib/deliveryQuote";
 
 const BASE_PAY_METHODS = [
@@ -20,6 +21,21 @@ const BASE_PAY_METHODS = [
   { id: "cartao",      label: "Cartão na entrega", icon: CreditCard },
   { id: "dinheiro",    label: "Dinheiro",           icon: Banknote },
 ];
+
+// Fase 6B (P2-5/P2-7): lê o corpo JSON de um FunctionsHttpError da edge
+// guest-checkout — `supabase.functions.invoke` devolve o erro com a Response
+// em `context` (mesmo padrão de `requestAuthenticatedDeliveryQuote` em
+// deliveryQuote.ts). Sem ele, só sobra a mensagem genérica do erro HTTP.
+async function guestCheckoutErrorBody(error: unknown): Promise<Record<string, unknown> | null> {
+  const ctx = (error as { context?: Response })?.context;
+  if (!ctx || typeof ctx.text !== "function") return null;
+  try {
+    const raw = await ctx.text();
+    return raw ? (JSON.parse(raw) as Record<string, unknown>) : null;
+  } catch {
+    return null;
+  }
+}
 
 const GuestCheckoutPage = () => {
   const navigate = useNavigate();
@@ -30,9 +46,9 @@ const GuestCheckoutPage = () => {
   const [name, setName] = useState("");
   const [lookedUp, setLookedUp] = useState(false);
   const lastLookupRef = useRef<string>("");
-  // Fase 3: chave de idempotência do checkout — gerada UMA vez por montagem
-  // da página e reutilizada no retry do mesmo submit (a edge repassa à RPC).
-  const idempotencyKeyRef = useRef<string>(crypto.randomUUID());
+  // Fase 6B (P2-3): a chave de idempotência vive no sessionStorage por loja
+  // (src/lib/guestIdempotency.ts) — sobrevive à remontagem da página e é
+  // reutilizada no retry do mesmo submit; limpa no sucesso.
   const [cep, setCep] = useState("");
   const [street, setStreet] = useState("");
   const [number, setNumber] = useState("");
@@ -255,6 +271,21 @@ const GuestCheckoutPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phone, storeId]);
 
+  // Fase 6B (P2-5): o pedido já existe — leva ao acompanhamento em vez de
+  // mostrar erro genérico. A chave de idempotência é limpa: o pedido confirmou.
+  const handleCreatedOrder = (orderId: string, last4: string, deliveryPin: string | null, pixDireto: boolean) => {
+    clearGuestIdempotencyKey(storeId);
+    clearCart();
+    toast.success("Pedido criado!", {
+      description: "Seu pedido foi registrado. Acompanhe o status por aqui.",
+    });
+    const suffix = pixDireto ? "&pix=1" : "";
+    navigate(`/p/${orderId}?t=${last4}${suffix}`, {
+      replace: true,
+      state: { delivery_pin: deliveryPin },
+    });
+  };
+
   const handleConfirm = async () => {
     // Fase 4: mesmas travas do checkout logado — loja fechada e pedido
     // mínimo recusam antes de chamar a edge.
@@ -281,7 +312,8 @@ const GuestCheckoutPage = () => {
         phone: digits,
         name: name.trim(),
         store_id: storeId,
-        idempotency_key: idempotencyKeyRef.current,
+        // Fase 6B (P2-3): mesma chave por loja até o pedido confirmar.
+        idempotency_key: getGuestIdempotencyKey(storeId),
         items: items.map((it) => ({
           product_id: it.id,
           quantity: it.quantity,
@@ -310,9 +342,51 @@ const GuestCheckoutPage = () => {
         consent: true,
       };
       const { data, error } = await supabase.functions.invoke("guest-checkout", { body: payload });
-      if (error) throw error;
+      if (error) {
+        const body = await guestCheckoutErrorBody(error);
+        // Fase 6B (P2-5): guest_link_failed com order_id = pedido já criado
+        // (o vínculo do guest falhou depois da RPC) — mostrar "pedido criado"
+        // com o acompanhamento, em vez do erro genérico.
+        if (body?.error === "guest_link_failed" && typeof body.order_id === "string" && body.order_id) {
+          handleCreatedOrder(
+            body.order_id,
+            (typeof body.phone_last4 === "string" && body.phone_last4) || digits.slice(-4),
+            null,
+            false,
+          );
+          return;
+        }
+        // Fase 6B (P2-7): a cotação não resolveu o endereço — orientar o CEP
+        // em vez do erro genérico. Só quando o motivo é de endereço: a edge
+        // devolve `delivery_quote_failed` para qualquer falha de cotação
+        // (ex.: sem entregador), e o motivo vem em `reason` — sem ele, a
+        // mensagem de CEP seria enganosa (ex.: loja sem motoboy).
+        const quoteReason = typeof body?.reason === "string" ? body.reason : "";
+        const isAddressFailure =
+          body?.error === "address_not_resolved" ||
+          quoteReason === "address_not_resolved" ||
+          quoteReason === "address_unavailable" ||
+          quoteReason === "delivery_quote_failed" ||
+          quoteReason === "delivery_quote_unavailable";
+        if (isAddressFailure) {
+          toast.error("Não conseguimos localizar o endereço", {
+            description: deliveryQuoteFailureMessage({ ok: false, reason: "address_not_resolved" }),
+          });
+          return;
+        }
+        throw error;
+      }
       const res = data as any;
-      if (!res?.ok) throw new Error(res?.error || "Falha ao criar pedido");
+      if (!res?.ok) {
+        // Mesmo tratamento do P2-5 caso a edge devolva o erro com 200.
+        if (res?.error === "guest_link_failed" && res?.order_id) {
+          handleCreatedOrder(res.order_id, res.phone_last4 || digits.slice(-4), null, false);
+          return;
+        }
+        throw new Error(res?.error || "Falha ao criar pedido");
+      }
+      // Fase 6B (P2-3): pedido confirmou — a chave sai do sessionStorage.
+      clearGuestIdempotencyKey(storeId);
       clearCart();
       // Lazy-load canvas-confetti só no sucesso (economiza ~7 KB gzip no bundle inicial)
       import("canvas-confetti").then(({ default: confetti }) => {

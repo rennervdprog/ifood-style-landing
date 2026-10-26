@@ -283,7 +283,10 @@ Deno.serve(async (req) => {
     } as any, { onConflict: "phone" });
     if (guestErr) {
       console.error("[guest-checkout] guest upsert error:", guestErr);
-      return json({ error: "guest_link_failed" }, 500);
+      // Fase 6B (P2-5): o pedido JÁ foi criado pela RPC — devolver o
+      // order_id (e os últimos 4 do telefone) para o front mostrar "pedido
+      // criado" com o link de acompanhamento, em vez do erro genérico.
+      return json({ error: "guest_link_failed", order_id: order.id, phone_last4: phone.slice(-4) }, 500);
     }
 
     // 5) Trabalho não-crítico → em background (não bloqueia a resposta).
