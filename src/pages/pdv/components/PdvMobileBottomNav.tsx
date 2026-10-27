@@ -1,8 +1,9 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   ShoppingCart, LayoutGrid, History, BarChart3, MoreHorizontal,
   Receipt, CreditCard, Settings, X, Wallet, Package,
-  Users, FileText
+  Users, FileText, UtensilsCrossed
 } from "lucide-react";
 import type { PdvTab } from "@/pages/pdv/types";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -23,12 +24,18 @@ const PRIMARY: { id: PdvTab; label: string; icon: any }[] = [
 /**
  * Barra de navegação inferior estilo nativo, exclusiva para mobile.
  * Mostra 4 abas principais + botão "Mais" que abre bottom sheet
- * com as secundárias (Turnos, Meu Plano, Configurações).
+ * com as secundárias (Cardápio, Turnos, Estoque, Financeiro,
+ * Operadores, Auditoria, Meu Plano, Configurações).
  */
 export const PdvMobileBottomNav = ({ tab, onChange, showMeuPlano }: Props) => {
   const [moreOpen, setMoreOpen] = useState(false);
+  const navigate = useNavigate();
 
-  const secondary: { id: PdvTab; label: string; icon: any }[] = [
+  // "Cardápio" não é uma aba do PDV (PdvTab) — é a página /admin/cardapio,
+  // que existe justamente para lojas pdv_only (sem painel do lojista).
+  // Por isso o item carrega `href` e navega em vez de trocar de aba.
+  const secondary: { id: PdvTab; label: string; icon: any; href?: string }[] = [
+    { id: "cardapio" as PdvTab, label: "Cardápio", icon: UtensilsCrossed, href: "/admin/cardapio" },
     { id: "turnos", label: "Turnos", icon: Receipt },
     { id: "estoque" as PdvTab, label: "Estoque", icon: Package },
     { id: "financeiro" as PdvTab, label: "Financeiro", icon: Wallet },
@@ -116,13 +123,18 @@ export const PdvMobileBottomNav = ({ tab, onChange, showMeuPlano }: Props) => {
             </button>
           </SheetHeader>
           <div className="grid grid-cols-2 gap-2 p-4 pt-2">
-            {secondary.map(({ id, label, icon: Icon }) => {
+            {secondary.map(({ id, label, icon: Icon, href }) => {
               const active = tab === id;
               return (
                 <button
                   key={id}
                   onClick={() => {
-                    pick(id);
+                    if (href) {
+                      navigate(href);
+                      try { (navigator as any).vibrate?.(10); } catch {}
+                    } else {
+                      pick(id);
+                    }
                     setMoreOpen(false);
                   }}
                   className={`min-h-[88px] rounded-xl border p-3 flex flex-col items-center justify-center gap-1.5 transition-all active:scale-95 ${
