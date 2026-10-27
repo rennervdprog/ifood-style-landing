@@ -17,7 +17,9 @@ export type SuperAdminFinanceSection =
   | "planos-templates"
   | "addons"
   | "revendedores"
-  | "auditoria";
+  | "auditoria"
+  | "repasses-falha"
+  | "comissoes";
 
 export type SuperAdminStoresSection = "lojas" | "cidades" | "entrega";
 export type SuperAdminAppPageSection = "page" | "links";
@@ -86,6 +88,8 @@ const FINANCE_SECTIONS = new Set([
   "addons",
   "revendedores",
   "auditoria",
+  "repasses-falha",
+  "comissoes",
 ]);
 
 const STORES_SECTIONS = new Set(["lojas", "cidades", "entrega"]);

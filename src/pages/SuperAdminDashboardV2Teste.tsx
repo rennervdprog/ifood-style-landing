@@ -8,7 +8,7 @@
  * Regra: só arquivos *Teste — nunca editar o original por aqui.
  */
 import { useState, useMemo, useEffect, lazy, Suspense } from "react";
-import GatewaySelector from "./super-admin/components/GatewaySelector";
+import GatewaySelectorTeste from "./super-admin/components/GatewaySelectorTeste";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import AdminApprovals from "@/components/AdminApprovals";
 import CouponManager from "@/components/CouponManager";
@@ -39,6 +39,7 @@ import {
   LayoutDashboard, Shield, Ticket, RefreshCw, Truck, Menu, X, MapPin, Eye, Scale, Search, FileText, Mail, Phone, User, Download, Calendar, CreditCard, Receipt, ChevronDown, ChevronUp, Percent, Crown, Handshake, FlaskConical, Link as LinkIcon, Megaphone, Monitor, Sparkles, PanelLeftClose, PanelLeftOpen,
   MessageCircle, Smartphone, ShieldCheck, Puzzle,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
  import { Switch } from "@/components/ui/switch";
  import { Badge } from "@/components/ui/badge";
 import { CommandDialog, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem } from "@/components/ui/command";
@@ -68,7 +69,7 @@ const SyncExternalTab = lazy(() => import("./super-admin/tabs/SyncExternalTab"))
 const JuridicoTab = lazy(() => import("./super-admin/tabs/JuridicoTab"));
 const CidadesTab = lazy(() => import("./super-admin/tabs/CidadesTab"));
 const SaquesTab = lazy(() => import("./super-admin/tabs/SaquesTab"));
-const PagamentosSplitTab = lazy(() => import("./super-admin/tabs/PagamentosSplitTab"));
+const PagamentosSplitTabTeste = lazy(() => import("./super-admin/tabs/PagamentosSplitTabTeste"));
 const AuditoriaTab = lazy(() => import("./super-admin/tabs/AuditoriaTab"));
 const AReceberTab = lazy(() => import("./super-admin/tabs/AReceberTab"));
 const HistoricoRepassesTab = lazy(() => import("./super-admin/tabs/HistoricoRepassesTab"));
@@ -82,11 +83,48 @@ const FluxoCaixaPanel = lazy(() => import("@/components/finance/FluxoCaixaPanel"
 const ConciliacaoAsaasPanel = lazy(() => import("@/components/finance/ConciliacaoAsaasPanel"));
 const AuditoriaFinanceiraPanel = lazy(() => import("@/components/finance/AuditoriaFinanceiraPanel"));
 const MensalidadesPanel = lazy(() => import("@/components/finance/MensalidadesPanel"));
+const ComissoesPanel = lazy(() => import("@/components/finance/ComissoesPanel"));
 const TabFallback = () => (
   <div className="flex items-center justify-center py-12">
     <Loader2 className="h-6 w-6 animate-spin text-primary" />
   </div>
 );
+
+// Fase 2 — grupos do Financeiro (só na versão Teste): rótulos padronizados
+// ("Planos das lojas" em vez de "Planos (Lojas)", "Saques" em vez de
+// "Saques (legado)") + descrição de cada seção, usada pelo cabeçalho
+// padronizado da seção ativa. As duas seções resgatadas (repasses-falha e
+// comissoes) entram no grupo Pagamentos.
+// (sem import aqui: LucideIcon vem do bloco de imports do topo)
+type FinanceGroupItem = { key: string; label: string; desc: string; icon: LucideIcon };
+const FINANCE_GROUPS: { group: string; items: FinanceGroupItem[] }[] = [
+  { group: "Consolidado", items: [
+    { key: "consolidado", label: "Consolidado", desc: "Resumo do dinheiro: saldos, a receber e repasses.", icon: LayoutDashboard },
+  ]},
+  { group: "Receitas", items: [
+    { key: "areceber", label: "A Receber", desc: "Valores a receber das lojas.", icon: Wallet },
+    { key: "mensalidades", label: "Mensalidades", desc: "Cobranças mensais dos planos.", icon: Crown },
+    { key: "addons", label: "Add-ons / MRR", desc: "Add-ons contratados e receita recorrente.", icon: Puzzle },
+    { key: "planos-lojas", label: "Planos das lojas", desc: "Plano ativo em cada loja.", icon: Store },
+    { key: "planos-templates", label: "Templates de planos", desc: "Modelos de plano para criar ou editar.", icon: FileText },
+  ]},
+  { group: "Pagamentos", items: [
+    { key: "historico", label: "Histórico Pago", desc: "Repasses já pagos.", icon: CheckCircle2 },
+    { key: "fluxo", label: "Fluxo de Caixa", desc: "Entradas e saídas de caixa.", icon: TrendingUp },
+    { key: "conciliacao", label: "Conciliação", desc: "Conferência dos valores com o Asaas.", icon: ShieldCheck },
+    { key: "saques", label: "Saques", desc: "Pedidos de saque pendentes e histórico.", icon: Wallet },
+    { key: "repasses-falha", label: "Repasses com falha", desc: "Repasses que falharam e ficaram presos.", icon: XCircle },
+    { key: "comissoes", label: "Cobrança de comissão", desc: "Comissão pendente por loja, pronta para cobrar.", icon: Receipt },
+  ]},
+  { group: "Parceiros", items: [
+    { key: "revendedores", label: "Revendedores", desc: "Revendedores e suas comissões.", icon: Handshake },
+    { key: "socios", label: "Sócios", desc: "Divisão com os sócios.", icon: Handshake },
+  ]},
+  { group: "Sistema", items: [
+    { key: "auditoria", label: "Auditoria Financeira", desc: "Trilha de auditoria financeira.", icon: FileText },
+    { key: "test", label: "Lojas Teste", desc: "Lojas de teste e seus valores.", icon: FlaskConical },
+  ]},
+];
 
 // Barra de sub-abas reutilizável (usada pelas seções consolidadas: Financeiro, Lojas, App, Auditoria)
 const SubTabsBar = ({
@@ -231,7 +269,9 @@ const TAB_SUBTITLE: Record<string, (ctx: {
     | "planos-templates"
     | "addons"
     | "revendedores"
-    | "auditoria";
+    | "auditoria"
+    | "repasses-falha"
+    | "comissoes";
   const [financeSection, setFinanceSection] = useState<FinanceSection>(initialDeepLink.financeSection ?? "consolidado");
   type StoresSection = "lojas" | "cidades" | "entrega";
   const [storesSection, setStoresSection] = useState<StoresSection>(initialDeepLink.storesSection ?? "lojas");
@@ -1244,7 +1284,7 @@ const TAB_SUBTITLE: Record<string, (ctx: {
               </div>
             )}
             {activeTab === "planos" && <AdminPlanManager />}
-            {activeTab === "pagamentos" && <Suspense fallback={<TabFallback />}><PagamentosSplitTab stores={stores || []} /></Suspense>}
+            {activeTab === "pagamentos" && <Suspense fallback={<TabFallback />}><PagamentosSplitTabTeste stores={stores || []} /></Suspense>}
             {activeTab === "juridico" && <Suspense fallback={<TabFallback />}><JuridicoTab /></Suspense>}
             {activeTab === "moderadores" && <ModeratorManager />}
             {activeTab === "suporte" && <SupportAdminPanel />}
@@ -1355,35 +1395,10 @@ const TAB_SUBTITLE: Record<string, (ctx: {
             )}
              {activeTab === "financeiro" && (
                <div className="space-y-4">
-                 <GatewaySelector />
+                 <GatewaySelectorTeste />
                  {/* Sub-abas do Financeiro organizadas em grupos visuais */}
                  <div className="space-y-3">
-                   {[
-                     { group: "Consolidado", items: [
-                       { key: "consolidado", label: "Consolidado", icon: LayoutDashboard },
-                     ]},
-                     { group: "Receitas", items: [
-                       { key: "areceber", label: "A Receber", icon: Wallet },
-                       { key: "mensalidades", label: "Mensalidades", icon: Crown },
-                       { key: "addons", label: "Add-ons / MRR", icon: Puzzle },
-                       { key: "planos-lojas", label: "Planos (Lojas)", icon: Store },
-                       { key: "planos-templates", label: "Planos (Templates)", icon: FileText },
-                     ]},
-                     { group: "Pagamentos", items: [
-                       { key: "historico", label: "Histórico Pago", icon: CheckCircle2 },
-                       { key: "fluxo", label: "Fluxo de Caixa", icon: TrendingUp },
-                       { key: "conciliacao", label: "Conciliação", icon: ShieldCheck },
-                       { key: "saques", label: "Saques (legado)", icon: Wallet, badge: pendingWithdrawals.length },
-                     ]},
-                     { group: "Parceiros", items: [
-                       { key: "revendedores", label: "Revendedores", icon: Handshake },
-                       { key: "socios", label: "Sócios", icon: Handshake },
-                     ]},
-                     { group: "Sistema", items: [
-                       { key: "auditoria", label: "Auditoria Financeira", icon: FileText },
-                       { key: "test", label: "Lojas Teste", icon: FlaskConical },
-                     ]},
-                   ].map((g) => (
+                   {FINANCE_GROUPS.map((g) => (
                      <div key={g.group}>
                        <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-1.5 px-1">
                          {g.group}
@@ -1404,9 +1419,9 @@ const TAB_SUBTITLE: Record<string, (ctx: {
                              >
                                {Icon && <Icon className="h-3.5 w-3.5" />}
                                <span>{it.label}</span>
-                               {!!it.badge && it.badge > 0 && (
+                               {it.key === "saques" && pendingWithdrawals.length > 0 && (
                                  <span className={`ml-1 text-[10px] font-black rounded-full px-1.5 py-0.5 ${isActive ? "bg-primary-foreground/20" : "bg-destructive text-destructive-foreground"}`}>
-                                   {it.badge}
+                                   {pendingWithdrawals.length}
                                  </span>
                                )}
                              </button>
@@ -1416,6 +1431,23 @@ const TAB_SUBTITLE: Record<string, (ctx: {
                      </div>
                    ))}
                  </div>
+                 {/* Fase 2 — cabeçalho padronizado da seção ativa (rótulo + o que ela mostra). */}
+                 {(() => {
+                   const item = FINANCE_GROUPS.flatMap((g) => g.items).find((it) => it.key === financeSection);
+                   if (!item) return null;
+                   const SectionIcon = item.icon;
+                   return (
+                     <div className="flex items-start gap-2.5 px-1 pt-1">
+                       <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-primary/10">
+                         <SectionIcon className="h-4 w-4 text-primary" />
+                       </span>
+                       <div>
+                         <h2 className="text-sm font-black text-foreground">{item.label}</h2>
+                         <p className="text-xs text-muted-foreground">{item.desc}</p>
+                       </div>
+                     </div>
+                   );
+                 })()}
                  {financeSection === "consolidado" && (
                    <Suspense fallback={<TabFallback />}>
                      <ConsolidadoTab
@@ -1437,6 +1469,13 @@ const TAB_SUBTITLE: Record<string, (ctx: {
                        queryClient={queryClient}
                      />
                    </Suspense>
+                 )}
+                 {/* Fase 2 — telas resgatadas: antes só existiam numa aba antiga sem link. */}
+                 {financeSection === "repasses-falha" && (
+                   <Suspense fallback={<TabFallback />}><PagamentosSplitTabTeste stores={stores || []} /></Suspense>
+                 )}
+                 {financeSection === "comissoes" && (
+                   <Suspense fallback={<TabFallback />}><ComissoesPanel /></Suspense>
                  )}
                  {financeSection === "areceber" && (
                    <Suspense fallback={<TabFallback />}><AReceberTab /></Suspense>
