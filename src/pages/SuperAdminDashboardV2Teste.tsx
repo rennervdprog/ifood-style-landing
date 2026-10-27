@@ -1,7 +1,9 @@
 /**
  * CÓPIA DE TESTE (/super-admin-teste) de SuperAdminDashboardV2.
- * Fase 0 do plano de reestruturação do super-admin: cópia idêntica ao
- * original, só com o selo "TESTE" no topo. Nenhuma mudança de função.
+ * Fase 0: cópia idêntica ao original, só com o selo "TESTE" no topo.
+ * Fase 1: links diretos (?aba=/&secao=), ⌘K com lojas e ações, Saques
+ * direto no Financeiro (sem o atalho de aba legada) e tela nova
+ * "Pedidos atrasados". Aprovações fica FORA do plano (decisão do Renner).
  * Publicação depende da palavra do Renner, fase por fase.
  * Regra: só arquivos *Teste — nunca editar o original por aqui.
  */
@@ -27,7 +29,8 @@ import SalesCoachPanel from "@/components/SalesCoachPanel";
 import PageViewsCard from "@/components/PageViewsCard";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { parseSuperAdminDeepLink, buildSuperAdminDeepLink } from "@/lib/superAdminDeepLink";
 import { toast } from "sonner";
 import { planLabel } from "@/lib/plansInfo";
 import {
@@ -123,11 +126,13 @@ const SubTabsBar = ({
 );
 
 type DateFilter = "today" | "yesterday" | "week";
-type AdminTab = "dashboard" | "approvals" | "stores" | "financeiro" | "pagamentos" | "saques" | "sync" | "coupons" | "entrega" | "cidades" | "juridico" | "planos" | "moderadores" | "socios" | "suporte" | "app-page" | "test_finance" | "links" | "broadcast" | "logs" | "coach" | "auditoria" | "whatsapp_plataforma";
+type AdminTab = "dashboard" | "approvals" | "stores" | "financeiro" | "pagamentos" | "saques" | "sync" | "coupons" | "entrega" | "cidades" | "juridico" | "planos" | "moderadores" | "socios" | "suporte" | "app-page" | "test_finance" | "links" | "broadcast" | "logs" | "coach" | "auditoria" | "whatsapp_plataforma" | "atrasados";
 
 const sidebarItems: { key: AdminTab; label: string; icon: React.ElementType; group: string }[] = [
   // Início
   { key: "dashboard", label: "Visão Geral", icon: LayoutDashboard, group: "Início" },
+  // Fase 1 — lista dos pedidos há mais de 60 min (o número já existia no card "Atraso")
+  { key: "atrasados", label: "Pedidos atrasados", icon: AlertTriangle, group: "Início" },
   // Lojas (Cidades + Entrega vivem como sub-abas dentro de "Lojas")
   { key: "stores", label: "Lojas", icon: Store, group: "Lojas" },
   { key: "coupons", label: "Cupons", icon: Ticket, group: "Lojas" },
@@ -154,6 +159,7 @@ const TAB_SUBTITLE: Record<string, (ctx: {
   storesCount: number;
 }) => string> = {
   dashboard: (c) => `${c.totalOrders} pedidos no período`,
+  atrasados: () => "Pedidos há mais de 60 min sem sair do lugar",
   financeiro: () => "Gestão financeira e repasses",
   saques: (c) => `${c.pendingWithdrawals} solicitação${c.pendingWithdrawals === 1 ? "" : "ões"} pendente${c.pendingWithdrawals === 1 ? "" : "s"}`,
   entrega: () => "Configurações de taxa de entrega",
@@ -182,9 +188,12 @@ const TAB_SUBTITLE: Record<string, (ctx: {
  const SuperAdminDashboardV2Teste = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  // Fase 1 — deep link: a tela inicial vem da URL (?aba= & ?secao=).
+  const [initialDeepLink] = useState(() => parseSuperAdminDeepLink(`?${searchParams.toString()}`));
   const queryClient = useQueryClient();
   const [dateFilter, setDateFilter] = useState<DateFilter>("today");
-  const [activeTab, setActiveTab] = useState<AdminTab>("dashboard");
+  const [activeTab, setActiveTab] = useState<AdminTab>(initialDeepLink.tab as AdminTab);
   const [financeFilter, setFinanceFilter] = useState<"week" | "month">("week");
   const [selectedStore, setSelectedStore] = useState<string>("all");
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -223,13 +232,13 @@ const TAB_SUBTITLE: Record<string, (ctx: {
     | "addons"
     | "revendedores"
     | "auditoria";
-  const [financeSection, setFinanceSection] = useState<FinanceSection>("consolidado");
+  const [financeSection, setFinanceSection] = useState<FinanceSection>(initialDeepLink.financeSection ?? "consolidado");
   type StoresSection = "lojas" | "cidades" | "entrega";
-  const [storesSection, setStoresSection] = useState<StoresSection>("lojas");
+  const [storesSection, setStoresSection] = useState<StoresSection>(initialDeepLink.storesSection ?? "lojas");
   type AppPageSection = "page" | "links";
-  const [appPageSection, setAppPageSection] = useState<AppPageSection>("page");
+  const [appPageSection, setAppPageSection] = useState<AppPageSection>(initialDeepLink.appPageSection ?? "page");
   type AuditoriaSection = "auditoria" | "logs" | "debug-loja";
-  const [auditoriaSection, setAuditoriaSection] = useState<AuditoriaSection>("auditoria");
+  const [auditoriaSection, setAuditoriaSection] = useState<AuditoriaSection>(initialDeepLink.auditoriaSection ?? "auditoria");
 
   // Redireciona deep-links de abas antigas para a aba consolidada correspondente
   useEffect(() => {
@@ -252,6 +261,21 @@ const TAB_SUBTITLE: Record<string, (ctx: {
     }
     void legacyFinance;
   }, [activeTab]);
+
+  // Fase 1 — deep link: a URL sempre reflete a tela atual (?aba= & ?secao=).
+  // Atualizar a página volta no mesmo lugar; dá para compartilhar o link.
+  useEffect(() => {
+    const next = buildSuperAdminDeepLink({
+      tab: activeTab,
+      financeSection: activeTab === "financeiro" ? financeSection : undefined,
+      storesSection: activeTab === "stores" ? storesSection : undefined,
+      appPageSection: activeTab === "app-page" ? appPageSection : undefined,
+      auditoriaSection: activeTab === "auditoria" ? auditoriaSection : undefined,
+    });
+    if (next !== `?${searchParams.toString()}`) {
+      setSearchParams(new URLSearchParams(next.slice(1)), { replace: true });
+    }
+  }, [activeTab, financeSection, storesSection, appPageSection, auditoriaSection, searchParams, setSearchParams]);
 
   // Memoizado para evitar recriação a cada render (causava re-fetch de queries)
   const getDateRange = useMemo(() => (filter: DateFilter) => {
@@ -732,10 +756,18 @@ const TAB_SUBTITLE: Record<string, (ctx: {
   const currentTab = sidebarItems.find(i => i.key === activeTab);
 
   // Bottom nav tabs (mobile)
-  const bottomTabs: { key: AdminTab; label: string; icon: React.ElementType }[] = [
+  const bottomTabs: { key: AdminTab; label: string; icon: React.ElementType; action?: () => void; isActive?: boolean }[] = [
     { key: "dashboard", label: "Visão Geral", icon: LayoutDashboard },
     { key: "financeiro", label: "Financeiro", icon: DollarSign },
-    { key: "saques", label: "Saques", icon: Wallet },
+    // Fase 1 — "Saques" abre o Financeiro direto na seção Saques, sem passar
+    // pelo redirecionamento de aba legada (o botão antigo dependia dele).
+    {
+      key: "saques",
+      label: "Saques",
+      icon: Wallet,
+      action: () => { setActiveTab("financeiro"); setFinanceSection("saques"); setShowMoreSheet(false); },
+      isActive: activeTab === "financeiro" && financeSection === "saques",
+    },
     { key: "stores", label: "Lojas", icon: Store },
   ];
 
@@ -754,13 +786,13 @@ const TAB_SUBTITLE: Record<string, (ctx: {
       <div className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-xl border-t border-border lg:hidden" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
         <div className="flex items-center justify-around h-16">
           {bottomTabs.map((tab) => {
-            const isActive = activeTab === tab.key;
+            const isActive = tab.isActive ?? activeTab === tab.key;
             const Icon = tab.icon;
             const hasBadge = tab.key === "saques" && pendingWithdrawals.length > 0;
             return (
               <button
                 key={tab.key}
-                onClick={() => { handleTabChange(tab.key); setShowMoreSheet(false); }}
+                onClick={() => { if (tab.action) tab.action(); else { handleTabChange(tab.key); setShowMoreSheet(false); } }}
                 className={`flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-xl transition-all relative ${
                   isActive ? "bg-primary/10" : ""
                 }`}
@@ -924,7 +956,8 @@ const TAB_SUBTITLE: Record<string, (ctx: {
                     const badgeCount =
                       item.key === "saques" ? pendingWithdrawals.length :
                       item.key === "approvals" ? pendingApprovalsCount :
-                      item.key === "dashboard" ? delayedOrders.length : 0;
+                      item.key === "dashboard" ? delayedOrders.length :
+                      item.key === "atrasados" ? delayedOrders.length : 0;
                     const btn = (
                       <button
                         key={item.key}
@@ -957,6 +990,11 @@ const TAB_SUBTITLE: Record<string, (ctx: {
                           </span>
                         )}
                         {!desktopCollapsed && item.key === "dashboard" && delayedOrders.length > 0 && (
+                          <span className="tabular-nums bg-destructive text-destructive-foreground text-[10px] font-black min-w-[20px] h-5 flex items-center justify-center px-1.5 rounded-full">
+                            {delayedOrders.length}
+                          </span>
+                        )}
+                        {!desktopCollapsed && item.key === "atrasados" && delayedOrders.length > 0 && (
                           <span className="tabular-nums bg-destructive text-destructive-foreground text-[10px] font-black min-w-[20px] h-5 flex items-center justify-center px-1.5 rounded-full">
                             {delayedOrders.length}
                           </span>
@@ -1132,6 +1170,52 @@ const TAB_SUBTITLE: Record<string, (ctx: {
                   )}
                 </div>
               )}
+            {/* Fase 1 — Pedidos atrasados: o número do card "Atraso" vira lista.
+                Usa os mesmos pedidos já carregados do dashboard (período do filtro). */}
+            {activeTab === "atrasados" && (
+              <div>
+                <div className="bg-card rounded-2xl border border-border p-4 mb-4">
+                  <p className="text-sm font-bold text-foreground">
+                    {delayedOrders.length} pedido{delayedOrders.length === 1 ? "" : "s"} atrasado{delayedOrders.length === 1 ? "" : "s"}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Em andamento há mais de 60 min — período: {filterLabels[dateFilter]}. O mais parado aparece primeiro.
+                  </p>
+                </div>
+                {delayedOrders.length === 0 ? (
+                  <div className="bg-card rounded-2xl border border-border p-8 text-center">
+                    <CheckCircle2 className="h-10 w-10 text-emerald-500 mx-auto mb-2" />
+                    <p className="text-sm font-bold text-foreground">Nenhum pedido atrasado</p>
+                    <p className="text-xs text-muted-foreground">Nada parado há mais de 60 min neste período.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {[...delayedOrders]
+                      .sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+                      .map((o: any) => {
+                        const waitMin = Math.max(0, Math.floor((Date.now() - new Date(o.created_at).getTime()) / 60000));
+                        const waitLabel = waitMin >= 60 ? `${Math.floor(waitMin / 60)}h ${String(waitMin % 60).padStart(2, "0")}min` : `${waitMin} min`;
+                        const statusLabel = o.status === "pendente" ? "Pendente" : o.status === "preparando" ? "Em preparo" : o.status === "pronto_para_entrega" ? "Pronto p/ entrega" : o.status;
+                        return (
+                          <div key={o.id} className="bg-card rounded-2xl border border-border p-4 flex items-center gap-3">
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-bold text-foreground truncate">{o.stores?.name || "Loja"}</p>
+                              <p className="text-xs text-muted-foreground">
+                                #{String(o.id).slice(0, 8).toUpperCase()} · {new Date(o.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                              </p>
+                            </div>
+                            <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 whitespace-nowrap">{statusLabel}</span>
+                            <div className="text-right flex-shrink-0">
+                              <p className="text-sm font-bold text-foreground">{formatBRL(o.total_price || 0)}</p>
+                              <p className="text-xs font-bold text-destructive">há {waitLabel}</p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                )}
+              </div>
+            )}
             {activeTab === "approvals" && <AdminApprovals />}
             {activeTab === "entrega" && <DeliveryFeeConfigPanel />}
             {activeTab === "sync" && <Suspense fallback={<TabFallback />}><SyncExternalTab /></Suspense>}
@@ -1405,7 +1489,10 @@ const TAB_SUBTITLE: Record<string, (ctx: {
                    <MetricCard icon={ShoppingBag} label="Vendas" value={formatBRL(metrics.totalSales)} sublabel={`${metrics.totalOrders} pedidos`} />
                    <MetricCard icon={TrendingUp} label="Comissão Total" value={formatBRL(metrics.commission)} sublabel={`📦 Delivery: ${formatBRL(metrics.commissionDelivery)}`} sublabel2={`🖥️ PDV: ${formatBRL(metrics.commissionPdv)}`} highlight />
                    <MetricCard icon={Clock} label="Ativos" value={String(metrics.activeOrders)} sublabel="em andamento" />
-                   <MetricCard icon={AlertTriangle} label="Atraso" value={String(delayedOrders.length)} sublabel="> 60 min" alert={delayedOrders.length > 0} />
+                   {/* Fase 1 — o card "Atraso" abre a lista de pedidos atrasados */}
+                   <div onClick={() => handleTabChange("atrasados")} className="cursor-pointer" title="Ver pedidos atrasados" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter") handleTabChange("atrasados"); }}>
+                     <MetricCard icon={AlertTriangle} label="Atraso" value={String(delayedOrders.length)} sublabel="> 60 min" alert={delayedOrders.length > 0} />
+                   </div>
                  </div>
                  <div className="mb-6"><PageViewsCard /></div>
                  {adminChartData.dailyData.length > 0 && (
@@ -1451,11 +1538,11 @@ const TAB_SUBTITLE: Record<string, (ctx: {
         </div>
       </main>
 
-      {/* ⌘K Command Palette */}
+      {/* ⌘K Command Palette — Fase 1: abas + lojas + ações */}
       <CommandDialog open={cmdOpen} onOpenChange={setCmdOpen}>
-        <CommandInput placeholder="Buscar abas do painel…" />
+        <CommandInput placeholder="Buscar abas, lojas e ações…" />
         <CommandList>
-          <CommandEmpty>Nenhuma aba encontrada.</CommandEmpty>
+          <CommandEmpty>Nenhum resultado encontrado.</CommandEmpty>
           {["Início", "Lojas", "Financeiro", "Crescimento", "Sistema"].map(group => {
             const items = sidebarItems.filter(i => i.group === group);
             if (items.length === 0) return null;
@@ -1477,6 +1564,40 @@ const TAB_SUBTITLE: Record<string, (ctx: {
               </CommandGroup>
             );
           })}
+          <CommandGroup heading="Lojas">
+            {(stores || []).map((store: any) => (
+              <CommandItem
+                key={store.id}
+                value={`loja ${store.name}`}
+                onSelect={() => { handleTabChange("stores"); setCmdOpen(false); }}
+              >
+                <Store className="h-4 w-4 mr-2 text-muted-foreground" />
+                <span>{store.name}</span>
+              </CommandItem>
+            ))}
+          </CommandGroup>
+          <CommandGroup heading="Ações">
+            <CommandItem value="Novo cupom" onSelect={() => { handleTabChange("coupons"); setCmdOpen(false); }}>
+              <Ticket className="h-4 w-4 mr-2 text-muted-foreground" />
+              <span>Novo cupom</span>
+            </CommandItem>
+            <CommandItem value="Pedidos atrasados" onSelect={() => { handleTabChange("atrasados"); setCmdOpen(false); }}>
+              <AlertTriangle className="h-4 w-4 mr-2 text-muted-foreground" />
+              <span>Pedidos atrasados</span>
+            </CommandItem>
+            <CommandItem value="Enviar notificação" onSelect={() => { handleTabChange("broadcast"); setCmdOpen(false); }}>
+              <Megaphone className="h-4 w-4 mr-2 text-muted-foreground" />
+              <span>Enviar notificação</span>
+            </CommandItem>
+            <CommandItem value="Gerar cobrança de plano" onSelect={() => { handleTabChange("financeiro"); setFinanceSection("planos-lojas"); setCmdOpen(false); }}>
+              <DollarSign className="h-4 w-4 mr-2 text-muted-foreground" />
+              <span>Gerar cobrança de plano</span>
+            </CommandItem>
+            <CommandItem value="Copiar relatório" onSelect={() => { generateReport(); setCmdOpen(false); }}>
+              <Copy className="h-4 w-4 mr-2 text-muted-foreground" />
+              <span>Copiar relatório</span>
+            </CommandItem>
+          </CommandGroup>
         </CommandList>
       </CommandDialog>
     </div>
