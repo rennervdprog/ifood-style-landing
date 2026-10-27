@@ -72,6 +72,23 @@ describe("buildSuperAdminDeepLink", () => {
     ).toBe("?aba=auditoria&secao=logs");
   });
 
+  it("Fase 2 — as seções resgatadas têm deep link", () => {
+    expect(parseSuperAdminDeepLink("?aba=financeiro&secao=repasses-falha")).toEqual({
+      tab: "financeiro",
+      financeSection: "repasses-falha",
+    });
+    expect(parseSuperAdminDeepLink("?aba=financeiro&secao=comissoes")).toEqual({
+      tab: "financeiro",
+      financeSection: "comissoes",
+    });
+    expect(
+      buildSuperAdminDeepLink({ tab: "financeiro", financeSection: "repasses-falha" }),
+    ).toBe("?aba=financeiro&secao=repasses-falha");
+    expect(
+      buildSuperAdminDeepLink({ tab: "financeiro", financeSection: "comissoes" }),
+    ).toBe("?aba=financeiro&secao=comissoes");
+  });
+
   it("round-trip: parse(build(x)) preserva aba e seção", () => {
     const cases = [
       { tab: "financeiro", financeSection: "conciliacao" },
@@ -79,6 +96,8 @@ describe("buildSuperAdminDeepLink", () => {
       { tab: "app-page", appPageSection: "links" },
       { tab: "auditoria", auditoriaSection: "debug-loja" },
       { tab: "atrasados" },
+      { tab: "financeiro", financeSection: "repasses-falha" },
+      { tab: "financeiro", financeSection: "comissoes" },
     ] as const;
     for (const c of cases) {
       const built = buildSuperAdminDeepLink(c);
