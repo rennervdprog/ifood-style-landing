@@ -4,6 +4,7 @@ import { ScopedNotFound } from "@/components/ScopedNotFound";
 import {
   Index,
   SuperAdminDashboardV2,
+  SuperAdminDashboardV2Teste,
   SandboxTestsPage,
   ModeradorDashboard,
   SupportAgentDashboard,
@@ -17,6 +18,8 @@ export const adminRoutes = (
     <Route element={<GuardedLayout allowedRoles={["admin"]} redirectTo="/" />}>
       <Route path="/painel" element={<Index />} />
       <Route path="/super-admin" element={<SuperAdminDashboardV2 />} />
+      {/* /super-admin-teste — cópia de teste do super-admin (PREVIEW; publicação depende da palavra do Renner) */}
+      <Route path="/super-admin-teste" element={<SuperAdminDashboardV2Teste />} />
       <Route path="/super-admin/sandbox-tests" element={<SandboxTestsPage />} />
       <Route path="/admin/blog" element={<BlogAdmin />} />
       <Route path="/admin/blog/novo" element={<BlogAdminEditor />} />
