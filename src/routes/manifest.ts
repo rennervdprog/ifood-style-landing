@@ -58,6 +58,7 @@ export const ROUTES = {
   },
   admin: {
     superAdmin: "/super-admin",
+    superAdminTeste: "/super-admin-teste",
     sandbox: "/super-admin/sandbox-tests",
     moderador: "/moderador",
     suporte: "/suporte",

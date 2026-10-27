@@ -38,6 +38,12 @@ export const SuperAdminDashboardV2 = lazy(() =>
     return { default: () => null };
   }),
 );
+export const SuperAdminDashboardV2Teste = lazy(() =>
+  import("@/pages/SuperAdminDashboardV2Teste").catch(() => {
+    window.location.reload();
+    return { default: () => null };
+  }),
+);
 export const PartnerOnboarding = lazy(() => import("@/pages/PartnerOnboarding"));
 export const CadastroLojista = lazy(() => import("@/pages/CadastroLojista"));
 export const CadastroMotoboyLoja = lazy(() => import("@/pages/CadastroMotoboyLoja"));
@@ -64,6 +70,7 @@ export const PdvLandingPage = lazy(() => import("@/pages/PdvLandingPage"));
 // Fase 6 — prefetch tipado pelo manifest (paths não são mais strings mágicas).
 const PREFETCH_MAP: Record<string, () => Promise<unknown>> = {
   [ROUTES.admin.superAdmin]: () => import("@/pages/SuperAdminDashboardV2"),
+  [ROUTES.admin.superAdminTeste]: () => import("@/pages/SuperAdminDashboardV2Teste"),
   [ROUTES.lojista.admin]: () => import("@/pages/AdminDashboardV2"),
   [ROUTES.lojista.pdv]: () => import("@/pages/PdvPage"),
   [ROUTES.lojista.matriz]: () => import("@/pages/MatrizDashboard"),
