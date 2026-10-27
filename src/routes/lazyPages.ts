@@ -8,6 +8,7 @@
 import { lazy } from "react";
 import { registerRoutePrefetch } from "@/lib/prefetchRoute";
 import { ROUTES } from "@/routes/manifest";
+import { loadLazyOnce } from "@/routes/lazyLoadOnce";
 
 export const Index = lazy(() => import("@/pages/Index"));
 export const StoreDirectory = lazy(() => import("@/pages/StoreDirectory"));
@@ -32,17 +33,13 @@ export const PdvPageTeste = lazy(() => import("@/pages/PdvPageTeste"));
 export const PdvKdsPage = lazy(() => import("@/pages/PdvKdsPage"));
 export const PdvCardapioPage = lazy(() => import("@/pages/PdvCardapioPage"));
 export const DriverDashboardV2 = lazy(() => import("@/pages/DriverDashboardV2"));
-export const SuperAdminDashboardV2 = lazy(() =>
-  import("@/pages/SuperAdminDashboardV2").catch(() => {
-    window.location.reload();
-    return { default: () => null };
-  }),
+// O carregamento usa loadLazyOnce (UMA recarga; na 2ª falha mostra a tela
+// de erro com botão — nunca loop infinito; ver src/routes/lazyLoadOnce.tsx).
+export const SuperAdminDashboardV2 = loadLazyOnce("super-admin", () =>
+  import("@/pages/SuperAdminDashboardV2"),
 );
-export const SuperAdminDashboardV2Teste = lazy(() =>
-  import("@/pages/SuperAdminDashboardV2Teste").catch(() => {
-    window.location.reload();
-    return { default: () => null };
-  }),
+export const SuperAdminDashboardV2Teste = loadLazyOnce("super-admin-teste", () =>
+  import("@/pages/SuperAdminDashboardV2Teste"),
 );
 export const PartnerOnboarding = lazy(() => import("@/pages/PartnerOnboarding"));
 export const CadastroLojista = lazy(() => import("@/pages/CadastroLojista"));
