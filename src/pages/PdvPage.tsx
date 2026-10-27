@@ -1971,9 +1971,10 @@ const PdvPage = () => {
         />
       )}
 
-      {/* FAB — gerenciar cardápio. No mobile já existe atalho no menu (☰) do topbar
-          e no bottom-nav, então mostramos só em telas ≥ md pra evitar sobreposição
-          com FABs específicos (ex.: "criar mesa" na aba Mesas). */}
+      {/* FAB — gerenciar cardápio. No mobile o atalho está no "Mais" da barra
+          inferior (PdvMobileBottomNav → /admin/cardapio), então mostramos o FAB
+          só em telas ≥ md pra evitar sobreposição com FABs específicos
+          (ex.: "criar mesa" na aba Mesas). */}
       {checkoutStep === "cart" && (
       <button
         type="button"
