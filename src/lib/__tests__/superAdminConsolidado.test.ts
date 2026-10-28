@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   getStoresWithDebt,
+  exactDeliveryCount,
   summarizeFailedPayouts,
   computeStoreSettlement,
   summarizeSettlement,
@@ -68,6 +69,45 @@ describe("getStoresWithDebt", () => {
         STORES
       )
     ).toEqual([]);
+  });
+
+  it("contagem de entregas só quando o saldo é múltiplo exato de R$ 0,99 (Fase 5)", () => {
+    // Pastelão: R$ 6,00 NÃO é 6 × R$ 0,99 (R$ 5,94) — saldo residual
+    // após cobrança parcial. A Fase 4 arredondava e mostrava "6 entregas".
+    const list = getStoresWithDebt(
+      [{ store_id: "pastelao", comissao_pendente: 0, repasse_pendente: 6 }],
+      STORES
+    );
+    expect(list[0].deliveries).toBe(0);
+    expect(list[0].originLabel).toBe("Taxa de entrega");
+  });
+
+  it("1 entrega no singular quando o saldo é R$ 0,99", () => {
+    const list = getStoresWithDebt(
+      [{ store_id: "demo", comissao_pendente: 0, repasse_pendente: 0.99 }],
+      STORES
+    );
+    expect(list[0].deliveries).toBe(1);
+    expect(list[0].originLabel).toBe("Taxa de entrega · 1 entrega a R$ 0,99");
+  });
+});
+
+describe("exactDeliveryCount", () => {
+  it("múltiplos exatos voltam a contagem", () => {
+    expect(exactDeliveryCount(29.7)).toBe(30);
+    expect(exactDeliveryCount(5.94)).toBe(6);
+    expect(exactDeliveryCount(3.96)).toBe(4);
+    expect(exactDeliveryCount(0.99)).toBe(1);
+  });
+
+  it("saldo residual volta null (a contagem não pode ser derivada)", () => {
+    expect(exactDeliveryCount(6)).toBeNull();
+    expect(exactDeliveryCount(10)).toBeNull();
+  });
+
+  it("zero ou negativo volta null", () => {
+    expect(exactDeliveryCount(0)).toBeNull();
+    expect(exactDeliveryCount(-1)).toBeNull();
   });
 });
 

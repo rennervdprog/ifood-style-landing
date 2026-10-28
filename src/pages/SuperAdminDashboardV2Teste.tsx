@@ -73,7 +73,7 @@ const CidadesTab = lazy(() => import("./super-admin/tabs/CidadesTab"));
 const SaquesTab = lazy(() => import("./super-admin/tabs/SaquesTab"));
 const PagamentosSplitTabTeste = lazy(() => import("./super-admin/tabs/PagamentosSplitTabTeste"));
 const AuditoriaTab = lazy(() => import("./super-admin/tabs/AuditoriaTab"));
-const AReceberTab = lazy(() => import("./super-admin/tabs/AReceberTab"));
+const AReceberTab = lazy(() => import("./super-admin/tabs/AReceberTabTeste"));
 const HistoricoRepassesTab = lazy(() => import("./super-admin/tabs/HistoricoRepassesTab"));
 const DebugLojaTab = lazy(() => import("./super-admin/tabs/DebugLojaTab"));
 const PlatformWhatsAppTab = lazy(() => import("./super-admin/tabs/PlatformWhatsAppTab"));
