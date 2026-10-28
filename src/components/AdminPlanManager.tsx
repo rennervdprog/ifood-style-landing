@@ -819,7 +819,7 @@ function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride
 
   const [pixOverride, setPixOverride] = useState(currentPixOverride ?? 1.99);
   const [deliveryOverrideEnabled, setDeliveryOverrideEnabled] = useState(currentDeliveryOverride != null);
-  const [deliveryOverride, setDeliveryOverride] = useState(currentDeliveryOverride ?? 2.00);
+  const [deliveryOverride, setDeliveryOverride] = useState(currentDeliveryOverride ?? 0.99);
   const [saving, setSaving] = useState(false);
   // Fase 4b: motivo da condição VIP, exibido quando os valores editados
   // divergem do template (opcional; vazio grava "sem motivo informado").
@@ -1128,7 +1128,7 @@ function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride
                 <label className="flex items-center justify-between cursor-pointer">
                   <div>
                     <p className="text-xs font-bold text-foreground">Taxa de entrega personalizada</p>
-                    <p className="text-[10px] text-muted-foreground">Padrão: R$ 2,00 por entrega — só cobrada quando a loja absorve a taxa (split ≠ cliente)</p>
+                    <p className="text-[10px] text-muted-foreground">Padrão: R$ 0,99 por entrega — só cobrada quando a loja absorve a taxa (split ≠ cliente)</p>
                   </div>
                   <button
                     onClick={() => setDeliveryOverrideEnabled(!deliveryOverrideEnabled)}
@@ -1181,7 +1181,7 @@ function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride
               <div className="flex justify-between text-xs">
                 <span className="text-muted-foreground">Taxa entrega</span>
                 <span className="font-bold text-foreground">
-                  {finalDelivery === null ? "R$ 2,00 (padrão)" : `R$ ${Number(finalDelivery).toFixed(2).replace(".", ",")}`}
+                  {finalDelivery === null ? "R$ 0,99 (padrão)" : `R$ ${Number(finalDelivery).toFixed(2).replace(".", ",")}`}
                 </span>
               </div>
               <div className="flex justify-between text-xs">

@@ -6,6 +6,7 @@
 import { describe, it, expect } from "vitest";
 import {
   detectVipDivergence,
+  DEFAULT_DELIVERY_SPLIT,
   defaultPdvFixedFee,
   classifyVipKind,
   vipKindLabel,
@@ -41,17 +42,54 @@ describe("detectVipDivergence (loja)", () => {
     expect(r.divergedFields).not.toContain("pix_operational_fee_override");
   });
 
-  it("override de entrega igual ao padrão (2,00) NÃO é VIP", () => {
+  it("override de entrega igual ao padrão (0,99) NÃO é VIP", () => {
     expect(
       detectVipDivergence(
         {
           monthly_fee: 89.9, commission_rate: 0,
-          platform_delivery_split_override: 2.0, pdv_fixed_fee_per_sale: 1,
+          platform_delivery_split_override: 0.99, pdv_fixed_fee_per_sale: 1,
         },
         TEMPLATE_FIXED,
         1,
       ).isVip,
     ).toBe(false);
+  });
+
+  it("override de entrega 2,00 (antigo prefill) É VIP — diverge do padrão 0,99", () => {
+    const r = detectVipDivergence(
+      {
+        monthly_fee: 89.9, commission_rate: 0,
+        platform_delivery_split_override: 2.0, pdv_fixed_fee_per_sale: 1,
+      },
+      TEMPLATE_FIXED,
+      1,
+    );
+    expect(r.isVip).toBe(true);
+    expect(r.divergedFields).toContain("platform_delivery_split_override");
+    expect(classifyVipKind({ diverges: r.isVip, isSystemicFree: false })).toBe("granted");
+  });
+
+  it("override de entrega ausente NÃO é VIP e o padrão é 0,99", () => {
+    expect(DEFAULT_DELIVERY_SPLIT).toBe(0.99);
+    const r = detectVipDivergence(
+      { monthly_fee: 89.9, commission_rate: 0, pdv_fixed_fee_per_sale: 1 },
+      TEMPLATE_FIXED,
+      1,
+    );
+    expect(r.isVip).toBe(false);
+    expect(classifyVipKind({ diverges: r.isVip, isSystemicFree: false })).toBe("none");
+  });
+
+  it("override de entrega 0,99 → selo none (não-VIP)", () => {
+    const r = detectVipDivergence(
+      {
+        monthly_fee: 89.9, commission_rate: 0,
+        platform_delivery_split_override: 0.99, pdv_fixed_fee_per_sale: 1,
+      },
+      TEMPLATE_FIXED,
+      1,
+    );
+    expect(classifyVipKind({ diverges: r.isVip, isSystemicFree: false })).toBe("none");
   });
 
   it("mensalidade divergente É VIP e lista o campo", () => {

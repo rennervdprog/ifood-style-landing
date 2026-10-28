@@ -143,9 +143,10 @@ describe("B4 — edge monthly-billing sem colunas fantasmas", () => {
     expect(edge).not.toContain("pix_fee, delivery_split, pdv_fixed");
   });
 
-  it("selo VIP da loja usa padrões operacionais (1,99 / 2,00) e distingue sistêmico", () => {
+  it("selo VIP da loja usa padrões operacionais (1,99 / 0,99) e distingue sistêmico", () => {
     expect(edge).toContain("1.99");
-    expect(edge).toContain("2.00");
+    expect(edge).toContain("0.99");
+    expect(edge).not.toContain("!== 2.00");
     expect(edge).toContain('vip_kind');
     expect(edge).toContain('"systemic"');
   });

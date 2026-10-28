@@ -18,12 +18,12 @@
  * Padrões operacionais (NÃO estão em `plan_templates` — são os defaults
  * que o próprio editor VIP já usava):
  *  - Taxa PIX padrão: R$ 1,99 por transação.
- *  - Taxa de entrega padrão: R$ 2,00 por entrega.
+ *  - Taxa de entrega padrão: R$ 0,99 por entrega (decisão do Renner, 28/10/2026).
  *  - Taxa fixa PDV padrão: R$ 1,00 para fixed/autonomy, R$ 0 nos demais.
  */
 
 export const DEFAULT_PIX_FEE = 1.99;
-export const DEFAULT_DELIVERY_SPLIT = 2.0;
+export const DEFAULT_DELIVERY_SPLIT = 0.99;
 
 /** Taxa fixa PDV padrão por tipo de plano (mesma tabela do editor VIP). */
 export function defaultPdvFixedFee(planType: string): number {

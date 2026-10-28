@@ -493,7 +493,7 @@ Deno.serve(async (req) => {
         // src/lib/vipDetection.ts — edges são self-contained, por isso a
         // lógica é inline aqui e não importada). Override igual ao padrão
         // NÃO é VIP. Eixos: mensalidade/comissão vs template; PIX vs
-        // R$ 1,99, entrega vs R$ 2,00, PDV fixo vs padrão do plano
+        // R$ 1,99, entrega vs R$ 0,99, PDV fixo vs padrão do plano
         // (R$ 1,00 fixed/autonomy, R$ 0 demais).
         const tpl = templateByType.get(plan.plan_type);
         const defaultPdvFixed = (plan.plan_type === "fixed" || plan.plan_type === "autonomy") ? 1 : 0;
@@ -501,7 +501,7 @@ Deno.serve(async (req) => {
           Number(tpl.monthly_fee ?? 0) !== Number(plan.monthly_fee ?? 0) ||
           Number(tpl.commission_rate ?? 0) !== Number(plan.commission_rate ?? 0) ||
           (plan.pix_operational_fee_override != null && Number(plan.pix_operational_fee_override) !== 1.99) ||
-          (plan.platform_delivery_split_override != null && Number(plan.platform_delivery_split_override) !== 2.00) ||
+          (plan.platform_delivery_split_override != null && Number(plan.platform_delivery_split_override) !== 0.99) ||
           (plan.pdv_fixed_fee_per_sale != null && Number(plan.pdv_fixed_fee_per_sale) !== defaultPdvFixed)
         );
         // Distinção concedido x sistêmico: mensalidade zerada pela rede
