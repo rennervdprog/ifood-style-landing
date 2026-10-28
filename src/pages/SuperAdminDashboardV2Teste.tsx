@@ -31,6 +31,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { parseSuperAdminDeepLink, buildSuperAdminDeepLink } from "@/lib/superAdminDeepLink";
+import { filterBillableOrders } from "@/lib/superAdminBillable";
 import { toast } from "sonner";
 import { planLabel } from "@/lib/plansInfo";
 import {
@@ -49,11 +50,12 @@ import {
   KpiCard, useFinanceChartData, CHART_COLORS,
 } from "@/components/FinanceChartsCore";
 // Gráficos pesados (recharts) — carregados sob demanda
+// Visão Geral Teste usa as cópias Teste (teto do eixo Y + legenda sem estouro)
 const DailySalesChart = lazy(() =>
-  import("@/components/FinanceCharts").then(m => ({ default: m.DailySalesChart }))
+  import("@/components/FinanceChartsTeste").then(m => ({ default: m.DailySalesChartTeste }))
 );
 const PaymentBreakdownChart = lazy(() =>
-  import("@/components/FinanceCharts").then(m => ({ default: m.PaymentBreakdownChart }))
+  import("@/components/FinanceChartsTeste").then(m => ({ default: m.PaymentBreakdownChartTeste }))
 );
 const HourlyChart = lazy(() =>
   import("@/components/FinanceCharts").then(m => ({ default: m.HourlyChart }))
@@ -602,7 +604,7 @@ const TAB_SUBTITLE: Record<string, (ctx: {
 
   const metrics = useMemo(() => {
     if (!orders) return { totalSales: 0, commission: 0, commissionDelivery: 0, commissionPdv: 0, activeOrders: 0, totalOrders: 0 };
-    const billableOrders = orders.filter(o => !["cancelado", "aguardando_pagamento"].includes(o.status));
+    const billableOrders = filterBillableOrders(orders);
     const totalSales = sumMoney(billableOrders.map((order) => order.total_price));
 
     // Separar pedidos por canal
@@ -629,21 +631,23 @@ const TAB_SUBTITLE: Record<string, (ctx: {
     return { totalSales, commission, commissionDelivery, commissionPdv, activeOrders, totalOrders: billableOrders.length };
   }, [orders, stores, parentStorePlans]);
 
-  // Hook unificado de gráficos (mesma lógica do lojista)
-  const adminChartData = useFinanceChartData(orders || []);
+  // Gráficos só com pedidos faturáveis — mesma base do herói. O hook soma
+  // tudo que recebe, então passar todos os pedidos (como o original faz)
+  // deixava o total dos gráficos maior que o do herói (cancelados dentro).
+  const billableOrdersForCharts = useMemo(() => filterBillableOrders(orders || []), [orders]);
+  const adminChartData = useFinanceChartData(billableOrdersForCharts);
 
-  // Totais dos últimos 7 dias p/ o contexto do herói (independe do filtro)
+  // Contexto do herói: os mesmos 7 dias do filtro (mesma janela de
+  // getDateRange("week")). Antes era rolante 7x24h e divergia do filtro.
   const { data: weekOrders } = useQuery({
     queryKey: ["admin-week-totals", testStoreIds.join(",")],
     queryFn: async () => {
-      const end = new Date();
-      const start = new Date();
-      start.setDate(start.getDate() - 7);
+      const { start, end } = getDateRange("week");
       let query = supabase
         .from("orders")
         .select("total_price, status")
-        .gte("created_at", start.toISOString())
-        .lte("created_at", end.toISOString());
+        .gte("created_at", start)
+        .lte("created_at", end);
       if (testStoreIds.length > 0) query = query.not("store_id", "in", `(${testStoreIds.join(",")})`);
       const { data, error } = await query;
       if (error) throw error;
@@ -653,7 +657,7 @@ const TAB_SUBTITLE: Record<string, (ctx: {
   });
 
   const weekTotals = useMemo(() => {
-    const billable = (weekOrders || []).filter((o: any) => !["cancelado", "aguardando_pagamento"].includes(o.status));
+    const billable = filterBillableOrders(weekOrders || []);
     const total = sumMoney(billable.map((o: any) => o.total_price));
     const count = billable.length;
     return { total, count, ticket: count > 0 ? total / count : 0 };
@@ -1645,11 +1649,9 @@ const TAB_SUBTITLE: Record<string, (ctx: {
                      <h2 className="text-sm font-bold text-foreground mb-3">Formas de pagamento</h2>
                      <div className="bg-card rounded-2xl border border-border p-4">
                        {adminChartData.paymentData.length > 0 ? (
-                         <div className="h-32">
-                           <Suspense fallback={null}>
-                             <PaymentBreakdownChart data={adminChartData.paymentData} />
-                           </Suspense>
-                         </div>
+                         <Suspense fallback={null}>
+                           <PaymentBreakdownChart data={adminChartData.paymentData} />
+                         </Suspense>
                        ) : (
                          <p className="text-sm text-muted-foreground py-6 text-center">Sem vendas neste período.</p>
                        )}
