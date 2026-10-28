@@ -156,3 +156,44 @@ describe("grants e limites de escopo", () => {
     expect(code).not.toContain("truncate");
   });
 });
+
+describe("auto-clone na criação da subloja (Fase 3, decisão do Renner 28/10)", () => {
+  const sql = readMigration(M);
+  const code = codeWithoutComments(sql);
+
+  it("redefine create_network_unit nesta migration (depois do clone)", () => {
+    expect(code).toContain("create or replace function public.create_network_unit(");
+    expect(
+      code.indexOf("create or replace function public.clone_menu_from_matriz("),
+    ).toBeLessThan(
+      code.indexOf("create or replace function public.create_network_unit("),
+    );
+  });
+
+  it("o hook copia o cardápio da loja-matriz (guia) para a unidade nova", () => {
+    expect(code).toContain("perform public.clone_menu_from_matriz(_guide_store_id, _store_id)");
+  });
+
+  it("o guia é a loja-matriz da rede, e sem guia o clone é pulado sem erro", () => {
+    expect(code).toContain("coalesce(is_matriz, false)");
+    expect(code).toContain("if _guide_store_id is not null then");
+  });
+
+  it("o auto-clone NÃO publica a subloja (não toca is_draft/is_visible)", () => {
+    expect(code).not.toContain("is_visible = true");
+    expect(code).not.toContain("is_draft = false");
+  });
+
+  it("a subloja continua nascendo rascunho/invisível (INSERT original intacto)", () => {
+    expect(code).toContain("'analise'::store_status, 'own', true, false");
+  });
+
+  it("reaplica os grants de create_network_unit", () => {
+    expect(code).toContain(
+      "revoke execute on function public.create_network_unit(text, text, text, text, text, text, text, text, text, numeric, numeric, numeric) from public, anon",
+    );
+    expect(code).toContain(
+      "grant execute on function public.create_network_unit(text, text, text, text, text, text, text, text, text, numeric, numeric, numeric) to authenticated, service_role",
+    );
+  });
+});

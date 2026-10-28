@@ -585,3 +585,116 @@ REVOKE EXECUTE ON FUNCTION public.resync_menu_from_matriz(uuid, uuid, boolean) F
 GRANT EXECUTE ON FUNCTION public.resync_menu_from_matriz(uuid, uuid, boolean) TO authenticated, service_role;
 REVOKE EXECUTE ON FUNCTION public.network_menu_divergence(uuid, uuid) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.network_menu_divergence(uuid, uuid) TO authenticated, service_role;
+
+-- ---------------------------------------------------------------------------
+-- 6. create_network_unit COM auto-clone (Fase 3 — decisão do Renner
+--    28/10: a subloja nasce com a cópia do cardápio da matriz).
+--    Redefinição da função da Fase 2 (141000), idêntica, mais o passo
+--    final: copiar o cardápio da loja-matriz (guia) para a unidade nova.
+--    Regras do auto-clone:
+--      (a) NÃO publica: o clone não toca is_draft/is_visible/status —
+--          a subloja continua rascunho/invisível até o dono publicar
+--          com o checklist completo (publish_network_unit).
+--      (b) NÃO falha a criação: sem guia na rede, pula o clone; guia
+--          sem cardápio, o clone devolve 0/0 sem erro (fonte vazia =
+--          0 linhas, nenhuma exceção). O clone só levanta erro para
+--          loja inexistente, rede diferente ou sem permissão —
+--          impossíveis aqui (guia e unidade são da mesma rede e do
+--          mesmo dono, ambos existem, chamador autenticado).
+--      (c) Idempotente: o clone casa por network_code — rodar de novo
+--          não duplica nada.
+--      (d) O sync manual pelo botão continua existindo (o auto-clone
+--          não o substitui): é ele que cobre as mudanças depois.
+--    Ordem: esta seção vem DEPOIS da definição do clone (seção 2) —
+--    o CREATE OR REPLACE abaixo referencia clone_menu_from_matriz.
+-- ---------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.create_network_unit(_name text, _slug text, _category text, _address_street text DEFAULT NULL::text, _address_number text DEFAULT NULL::text, _address_neighborhood text DEFAULT NULL::text, _address_city text DEFAULT NULL::text, _address_state text DEFAULT NULL::text, _address_cep text DEFAULT NULL::text, _delivery_fee numeric DEFAULT NULL::numeric, _delivery_radius numeric DEFAULT NULL::numeric, _minimum_order_value numeric DEFAULT NULL::numeric)
+RETURNS uuid
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public'
+AS $function$
+DECLARE
+  _user_id uuid := auth.uid();
+  _network record;
+  _store_id uuid;
+  _unit_count int;
+  _guide_store_id uuid;
+BEGIN
+  IF _user_id IS NULL THEN
+    RAISE EXCEPTION 'Não autenticado.';
+  END IF;
+
+  SELECT * INTO _network FROM store_networks WHERE owner_id = _user_id LIMIT 1;
+  IF _network IS NULL THEN
+    RAISE EXCEPTION 'Você não é matriz de nenhuma rede.';
+  END IF;
+
+  -- M1 / decisão 4: o limite é de 10 SUBLOJAS — a matriz não entra na conta.
+  SELECT COUNT(*) INTO _unit_count FROM stores WHERE network_id = _network.id AND NOT COALESCE(is_matriz, false);
+  IF _unit_count >= _network.max_units THEN
+    RAISE EXCEPTION 'Limite de % unidades atingido para esta rede.', _network.max_units;
+  END IF;
+
+  -- C9/M8: endereço completo é obrigatório — sem filial sem rua, número e
+  -- bairro. O formulário antigo nem pedia esses campos.
+  IF nullif(trim(coalesce(_address_street, '')), '') IS NULL
+     OR nullif(trim(coalesce(_address_number, '')), '') IS NULL
+     OR nullif(trim(coalesce(_address_neighborhood, '')), '') IS NULL
+     OR nullif(trim(coalesce(_address_city, '')), '') IS NULL
+     OR nullif(trim(coalesce(_address_cep, '')), '') IS NULL THEN
+    RAISE EXCEPTION 'Endereço incompleto: preencha rua, número, bairro, cidade e CEP.';
+  END IF;
+
+  -- Slug único, com erro legível (antes estourava a constraint crua).
+  IF EXISTS (SELECT 1 FROM stores WHERE slug = _slug) THEN
+    RAISE EXCEPTION 'Já existe uma loja com este endereço (slug). Escolha outro slug.';
+  END IF;
+
+  -- C9: a subloja nasce RASCUNHO invisível — is_draft = true, is_visible =
+  -- false, status = 'analise'. Fora da vitrine e sem vender, até o dono
+  -- publicar com o checklist completo (publish_network_unit).
+  INSERT INTO stores (
+    name, slug, category, owner_id, network_id,
+    address_street, address_number, address_neighborhood,
+    address_city, address_state, address_cep,
+    delivery_fee, delivery_radius, minimum_order_value,
+    plan_type, status, delivery_mode, is_draft, is_visible
+  ) VALUES (
+    _name, _slug, _category::store_category, _user_id, _network.id,
+    _address_street, _address_number, _address_neighborhood,
+    _address_city, _address_state, _address_cep,
+    _delivery_fee, _delivery_radius, _minimum_order_value,
+    _network.plan_type, 'analise'::store_status, 'own', true, false
+  ) RETURNING id INTO _store_id;
+
+  -- Decisão 1: a subloja NÃO tem mensalidade própria — o plano nasce com
+  -- monthly_fee = 0 e sem vencimento. A cobrança é 1 por rede (Fase 4);
+  -- o plano de R$ 0 aqui só preserva a invariante "toda loja tem um plano
+  -- ativo" sem nunca cobrar.
+  INSERT INTO store_plans (store_id, plan_type, monthly_fee, is_active, next_billing_date)
+  VALUES (
+    _store_id,
+    _network.plan_type::store_plan_type,
+    0,
+    true,
+    NULL
+  );
+
+  -- Fase 3 — auto-clone: copia o cardápio da loja-matriz (guia, a mais
+  -- antiga da rede) para a unidade nova. Sem guia, pula sem erro.
+  SELECT id INTO _guide_store_id FROM public.stores
+   WHERE network_id = _network.id AND COALESCE(is_matriz, false)
+   ORDER BY created_at ASC LIMIT 1;
+  IF _guide_store_id IS NOT NULL THEN
+    PERFORM public.clone_menu_from_matriz(_guide_store_id, _store_id);
+  END IF;
+
+  RETURN _store_id;
+END;
+$function$;
+
+-- Grants da função redefinida (CREATE OR REPLACE preserva, mas o padrão
+-- do arquivo reaplica explicitamente).
+REVOKE EXECUTE ON FUNCTION public.create_network_unit(text, text, text, text, text, text, text, text, text, numeric, numeric, numeric) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.create_network_unit(text, text, text, text, text, text, text, text, text, numeric, numeric, numeric) TO authenticated, service_role;
