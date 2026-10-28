@@ -7,6 +7,7 @@ import {
   AdminDashboardV2,
   AdminDashboardV2Teste,
   MatrizDashboard,
+  MatrizDashboardV2,
   PdvPage,
   PdvPageTeste,
   PdvKdsPage,
@@ -38,6 +39,8 @@ export const lojistaRoutes = (
     {/* /matriz — dashboard multi-unidade */}
     <Route element={<GuardedLayout allowedRoles={["lojista_matriz", "admin"]} redirectTo="/" />}>
       <Route path="/matriz" element={<MatrizDashboard />} />
+      {/* /matriz-v2 — painel da matriz refeito (Fase 2); o antigo fica intacto */}
+      <Route path="/matriz-v2" element={<MatrizDashboardV2 />} />
     </Route>
 
     {/* PDV + Cardápio — mesmo guard */}

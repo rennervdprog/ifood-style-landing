@@ -38,7 +38,7 @@ import {
   ArrowLeft, DollarSign, TrendingUp, Clock,
   Store, Copy, AlertTriangle, Users, Bike, Wallet, CheckCircle2, Banknote, XCircle, Bell, Trash2, QrCode, Loader2, ArrowUpRight, ArrowDownRight, Settings,
   LayoutDashboard, Shield, Ticket, RefreshCw, Truck, Menu, X, MapPin, Eye, Scale, Search, FileText, Mail, Phone, User, Download, Calendar, CreditCard, Receipt, ChevronDown, ChevronUp, Percent, Crown, Handshake, FlaskConical, Link as LinkIcon, Megaphone, Monitor, Sparkles, PanelLeftClose, PanelLeftOpen,
-  MessageCircle, Smartphone, ShieldCheck, Puzzle,
+  MessageCircle, Smartphone, ShieldCheck, Puzzle, Building2,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
  import { Switch } from "@/components/ui/switch";
@@ -81,6 +81,7 @@ const AddonsMrrTab = lazy(() => import("./super-admin/tabs/AddonsMrrTab"));
 const RevendedoresTab = lazy(() => import("./super-admin/tabs/RevendedoresTab"));
 const ConsolidadoTabTeste = lazy(() => import("./super-admin/tabs/ConsolidadoTabTeste"));
 const AdminPlanManagerTeste = lazy(() => import("@/components/AdminPlanManagerTeste"));
+const RedesTabTeste = lazy(() => import("@/components/RedesTabTeste"));
 // Painéis financeiros profissionais (Fase 1)
 const FluxoCaixaPanel = lazy(() => import("@/components/finance/FluxoCaixaPanel"));
 const ConciliacaoAsaasPanel = lazy(() => import("@/components/finance/ConciliacaoAsaasPanel"));
@@ -122,6 +123,10 @@ const FINANCE_GROUPS: { group: string; items: FinanceGroupItem[] }[] = [
   { group: "Parceiros", items: [
     { key: "revendedores", label: "Revendedores", desc: "Revendedores e suas comissões.", icon: Handshake },
     { key: "socios", label: "Sócios", desc: "Divisão com os sócios.", icon: Handshake },
+  ]},
+  // Fase 2 (matriz): tela "Redes" — só leitura nesta fase.
+  { group: "Redes", items: [
+    { key: "redes", label: "Redes", desc: "Redes (matriz) e suas sublojas — só leitura.", icon: Building2 },
   ]},
   { group: "Sistema", items: [
     { key: "auditoria", label: "Auditoria Financeira", desc: "Trilha de auditoria financeira.", icon: FileText },
@@ -274,6 +279,7 @@ const TAB_SUBTITLE: Record<string, (ctx: {
     | "revendedores"
     | "auditoria"
     | "repasses-falha"
+    | "redes"
     | "comissoes";
   const [financeSection, setFinanceSection] = useState<FinanceSection>(initialDeepLink.financeSection ?? "consolidado");
   type StoresSection = "lojas" | "cidades" | "entrega";
@@ -1547,6 +1553,9 @@ const TAB_SUBTITLE: Record<string, (ctx: {
                   )}
                   {financeSection === "planos-lojas" && (
                     <Suspense fallback={<TabFallback />}><AdminPlanManagerTeste /></Suspense>
+                  )}
+                  {financeSection === "redes" && (
+                    <Suspense fallback={<TabFallback />}><RedesTabTeste /></Suspense>
                   )}
                   {financeSection === "planos-templates" && <AdminPlanTemplatesEditor />}
                    {financeSection === "addons" && (

@@ -19,6 +19,7 @@ export type SuperAdminFinanceSection =
   | "revendedores"
   | "auditoria"
   | "repasses-falha"
+  | "redes"
   | "comissoes";
 
 export type SuperAdminStoresSection = "lojas" | "cidades" | "entrega";
@@ -89,6 +90,7 @@ const FINANCE_SECTIONS = new Set([
   "revendedores",
   "auditoria",
   "repasses-falha",
+  "redes",
   "comissoes",
 ]);
 
