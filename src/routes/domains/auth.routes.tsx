@@ -5,6 +5,7 @@ import {
   PartnerOnboarding,
   CadastroLojista,
   CadastroMotoboyLoja,
+  ConviteRede,
 } from "@/routes/lazyPages";
 
 export const authRoutes = (
@@ -16,5 +17,7 @@ export const authRoutes = (
     <Route path="/cadastro-entregador" element={<Navigate to="/cadastro-motoboy-loja" replace />} />
     <Route path="/cadastro-lojista" element={<CadastroLojista />} />
     <Route path="/cadastro-motoboy-loja" element={<CadastroMotoboyLoja />} />
+    {/* /convite-rede/:code — aceite do convite de gerente de subloja (Fase 2) */}
+    <Route path="/convite-rede/:code" element={<ConviteRede />} />
   </>
 );

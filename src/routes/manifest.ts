@@ -27,6 +27,7 @@ export const ROUTES = {
   auth: {
     login: "/auth",
     portalParceiro: "/portal-parceiro",
+    conviteRede: (code: string) => `/convite-rede/${code}`,
   },
   cliente: {
     home: "/cliente",
@@ -46,6 +47,7 @@ export const ROUTES = {
   lojista: {
     admin: "/admin",
     matriz: "/matriz",
+    matrizV2: "/matriz-v2",
     pdv: "/admin/pdv",
     pdvKds: "/admin/pdv/kds",
     cardapio: "/admin/cardapio",
