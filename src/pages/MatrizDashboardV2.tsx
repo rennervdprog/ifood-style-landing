@@ -676,11 +676,10 @@ const MatrizDashboardV2 = () => {
       )}
 
       {/* Modal: Sincronizar cardápio (Fase 3) */}
-      {syncUnit && matrizStore && (
+      {syncUnit && network && (
         <MenuSyncModal
           unit={syncUnit}
-          matrizStoreId={matrizStore.id}
-          matrizStoreName={matrizStore.name}
+          networkId={network.id}
           onClose={() => setSyncUnit(null)}
           onSynced={() => { invalidateAll(); }}
         />
@@ -751,36 +750,54 @@ const MatrizDashboardV2 = () => {
 
 // ─── COMPONENTE: Card de relatório por unidade ─────────────────────────────
 // ─── MODAL: Sincronizar cardápio (Fase 3) ───────────────────────────────
-// Mostra a divergência entre a loja-matriz e a subloja (por código
-// estável) e sincroniza. Preço próprio NUNCA é sobrescrito sem a
-// confirmação explícita do botão "Sobrescrever preços próprios".
-const MenuSyncModal = ({ unit, matrizStoreId, matrizStoreName, onClose, onSynced }: {
+// Mostra a divergência entre a loja-fonte (subloja publicada mais antiga
+// da rede, resolvida por network_menu_source — o guia nunca tem
+// cardápio) e a subloja (por código estável) e sincroniza. Preço próprio
+// NUNCA é sobrescrito sem a confirmação explícita do botão
+// "Sobrescrever preços próprios".
+const MenuSyncModal = ({ unit, networkId, onClose, onSynced }: {
   unit: Unit;
-  matrizStoreId: string;
-  matrizStoreName: string;
+  networkId: string;
   onClose: () => void;
   onSynced: () => void;
 }) => {
   const queryClient = useQueryClient();
   const [overwriteOpen, setOverwriteOpen] = useState(false);
 
+  // Fonte do clone (opção B): a subloja publicada mais antiga da rede.
+  // NULL = nenhuma publicada ainda — o modal explica e não sincroniza.
+  const { data: sourceStoreId, isLoading: sourceLoading, isError: sourceError } = useQuery({
+    queryKey: ["matriz-v2-menu-source", networkId],
+    queryFn: async (): Promise<string | null> => {
+      const { data, error } = await (supabase as any).rpc("network_menu_source", {
+        _network_id: networkId,
+      });
+      if (error) throw error;
+      return (data as string | null) ?? null;
+    },
+  });
+
   const { data: items = [], isLoading, isError } = useQuery({
-    queryKey: ["matriz-v2-divergence", matrizStoreId, unit.id],
+    queryKey: ["matriz-v2-divergence", sourceStoreId, unit.id],
+    enabled: !!sourceStoreId,
     queryFn: async (): Promise<MenuDivergenceItem[]> => {
       const { data, error } = await (supabase as any).rpc("network_menu_divergence", {
-        _source_store_id: matrizStoreId,
+        _source_store_id: sourceStoreId,
         _target_store_id: unit.id,
       });
       if (error) throw error;
       return parseMenuDivergence(data);
     },
   });
+  const loading = sourceLoading || isLoading;
+  const loadError = sourceError || isError;
   const summary = summarizeMenuDivergence(items);
 
   const syncMutation = useMutation({
     mutationFn: async (overwrite: boolean) => {
+      if (!sourceStoreId) throw new Error("Nenhuma loja-fonte resolvida.");
       const { data, error } = await (supabase as any).rpc("resync_menu_from_matriz", {
-        _source_store_id: matrizStoreId,
+        _source_store_id: sourceStoreId,
         _target_store_id: unit.id,
         _overwrite_price: overwrite,
       });
@@ -791,7 +808,7 @@ const MenuSyncModal = ({ unit, matrizStoreId, matrizStoreName, onClose, onSynced
       const parts = [`${r.productsCopied} novos`, `${r.productsUpdated} atualizados`, `${r.productsPriceSynced} preços atualizados`];
       if (r.productsPriceSkipped > 0) parts.push(`${r.productsPriceSkipped} preços próprios preservados`);
       if (r.productsPriceOverwritten > 0) parts.push(`${r.productsPriceOverwritten} preços próprios sobrescritos`);
-      if (r.productsRemovedFromMatriz > 0) parts.push(`${r.productsRemovedFromMatriz} produtos saíram da matriz (não apagados)`);
+      if (r.productsRemovedFromMatriz > 0) parts.push(`${r.productsRemovedFromMatriz} produtos saíram da fonte (não apagados)`);
       toast.success(`Cardápio sincronizado! ${parts.join(" · ")}.`);
       queryClient.invalidateQueries({ queryKey: ["matriz-v2-divergence"] });
       queryClient.invalidateQueries({ queryKey: ["matriz-v2-checklists"] });
@@ -814,26 +831,31 @@ const MenuSyncModal = ({ unit, matrizStoreId, matrizStoreName, onClose, onSynced
         </div>
         <div className="p-5 space-y-3">
           <p className="text-xs text-muted-foreground">
-            Compara com a loja-matriz ({matrizStoreName}) e copia o que é novo, atualiza o que mudou.
+            Compara com a loja-fonte do cardápio da rede (a subloja publicada mais antiga) e copia o que é novo, atualiza o que mudou.
             Preço próprio da subloja nunca é sobrescrito sem você confirmar.
           </p>
 
-          {isLoading && (
+          {loading && (
             <p className="text-sm text-muted-foreground flex items-center gap-2">
               <Loader2 className="h-4 w-4 animate-spin" /> Comparando cardápios…
             </p>
           )}
-          {isError && (
+          {loadError && (
             <p className="text-sm text-red-600 flex items-center gap-2">
               <AlertCircle className="h-4 w-4" /> Não deu para comparar os cardápios. Tente de novo.
             </p>
           )}
-          {!isLoading && !isError && items.length === 0 && (
+          {!loading && !loadError && !sourceStoreId && (
             <p className="text-sm text-muted-foreground">
-              A loja-matriz ainda não tem cardápio — não há nada para sincronizar.
+              Nenhuma subloja publicada na rede para usar como fonte — publique a primeira subloja para habilitar a sincronização.
             </p>
           )}
-          {!isLoading && !isError && items.length > 0 && (
+          {!loading && !loadError && sourceStoreId && items.length === 0 && (
+            <p className="text-sm text-muted-foreground">
+              A loja-fonte ainda não tem cardápio — não há nada para sincronizar.
+            </p>
+          )}
+          {!loading && !loadError && items.length > 0 && (
             <>
               <div className="bg-muted/40 rounded-xl p-3 text-xs space-y-1">
                 <p><b>{summary.needsSync}</b> {summary.needsSync === 1 ? "item precisa" : "itens precisam"} de sincronização</p>
@@ -841,10 +863,10 @@ const MenuSyncModal = ({ unit, matrizStoreId, matrizStoreName, onClose, onSynced
                   <p><b>{summary.ownPrice}</b> {summary.ownPrice === 1 ? "preço próprio" : "preços próprios"} (só sobrescreve com confirmação)</p>
                 )}
                 {summary.newInMatriz > 0 && (
-                  <p><b>{summary.newInMatriz}</b> {summary.newInMatriz === 1 ? "produto novo" : "produtos novos"} na matriz</p>
+                  <p><b>{summary.newInMatriz}</b> {summary.newInMatriz === 1 ? "produto novo" : "produtos novos"} na fonte</p>
                 )}
                 {summary.removedFromMatriz > 0 && (
-                  <p><b>{summary.removedFromMatriz}</b> {summary.removedFromMatriz === 1 ? "produto saiu" : "produtos saíram"} da matriz (não serão apagados)</p>
+                  <p><b>{summary.removedFromMatriz}</b> {summary.removedFromMatriz === 1 ? "produto saiu" : "produtos saíram"} da fonte (não serão apagados)</p>
                 )}
               </div>
 
@@ -862,7 +884,7 @@ const MenuSyncModal = ({ unit, matrizStoreId, matrizStoreName, onClose, onSynced
                       </span>
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
-                      {it.matrizPrice !== null && <>Matriz: {formatBRL(it.matrizPrice)} · </>}
+                      {it.matrizPrice !== null && <>Fonte: {formatBRL(it.matrizPrice)} · </>}
                       {it.sublojaPrice !== null ? <>Subloja: {formatBRL(it.sublojaPrice)}</> : "Ainda não copiado"}
                       {it.changedFields.length > 0 && (
                         <> · Difere em: {it.changedFields.map((f) => DIVERGENCE_FIELD_LABELS[f] ?? f).join(", ")}</>
@@ -882,7 +904,7 @@ const MenuSyncModal = ({ unit, matrizStoreId, matrizStoreName, onClose, onSynced
           <div className="flex gap-2 pt-1">
             <button
               onClick={() => syncMutation.mutate(false)}
-              disabled={isLoading || syncMutation.isPending || summary.needsSync === 0}
+              disabled={loading || syncMutation.isPending || summary.needsSync === 0}
               className="flex-1 bg-primary text-primary-foreground rounded-xl py-2.5 font-bold text-xs disabled:opacity-50 flex items-center justify-center gap-1.5"
             >
               {syncMutation.isPending
@@ -893,7 +915,7 @@ const MenuSyncModal = ({ unit, matrizStoreId, matrizStoreName, onClose, onSynced
             {summary.ownPrice > 0 && (
               <button
                 onClick={() => setOverwriteOpen(true)}
-                disabled={isLoading || syncMutation.isPending}
+                disabled={loading || syncMutation.isPending}
                 className="flex-1 bg-card border border-amber-500/50 text-amber-600 rounded-xl py-2.5 font-bold text-xs disabled:opacity-50"
               >
                 Sobrescrever preços próprios
@@ -909,7 +931,7 @@ const MenuSyncModal = ({ unit, matrizStoreId, matrizStoreName, onClose, onSynced
             <AlertDialogTitle>Sobrescrever os preços próprios?</AlertDialogTitle>
             <AlertDialogDescription>
               {summary.ownPrice} {summary.ownPrice === 1 ? "produto tem" : "produtos têm"} preço próprio na {unit.name}.
-              Confirmando, esses preços voltam a ser iguais aos da matriz. Dá para mudar de novo depois, na subloja.
+              Confirmando, esses preços voltam a ser iguais aos da fonte. Dá para mudar de novo depois, na subloja.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
