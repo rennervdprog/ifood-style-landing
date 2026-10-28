@@ -20,6 +20,7 @@ const MIGRATIONS_DIR = join(process.cwd(), "supabase", "migrations");
 const M1 = "20261028140000_matriz_fase2_draft_pause_trigger.sql";
 const M2 = "20261028141000_matriz_fase2_register_unit_rewrite.sql";
 const M3 = "20261028142000_matriz_fase2_invites_checklist_publish.sql";
+const M4 = "20261028143000_matriz_fase2_bugfixes.sql";
 
 function readMigration(name: string): string {
   return readFileSync(join(MIGRATIONS_DIR, name), "utf8");
@@ -34,7 +35,7 @@ function codeWithoutComments(sql: string): string {
 }
 
 describe("migrations da Fase 2 existem", () => {
-  it.each([M1, M2, M3])("existe %s", (name) => {
+  it.each([M1, M2, M3, M4])("existe %s", (name) => {
     expect(() => readMigration(name)).not.toThrow();
   });
 });
@@ -161,6 +162,47 @@ describe("M3 — convites, checklist, publicar e pausa", () => {
 
   it("get_network_invite pode ser chamada sem login (o código é o segredo)", () => {
     expect(sql).toContain("GRANT EXECUTE ON FUNCTION public.get_network_invite(text) TO anon, authenticated, service_role");
+  });
+
+  it("não tem DELETE destrutivo nem toque em billing/repasse", () => {
+    const code = codeWithoutComments(sql);
+    expect(code).not.toContain("delete from");
+    expect(code).not.toContain("monthly_billing");
+    expect(code).not.toContain("repasse");
+  });
+});
+
+describe("M4 — bugfixes: array_append no publicar + vencido persiste", () => {
+  const sql = readMigration(M4);
+
+  it("publicar usa array_append nos 4 itens e nenhum `||` com array", () => {
+    expect(sql).toContain("array_append(_missing, 'endereço')");
+    expect(sql).toContain("array_append(_missing, 'horário')");
+    expect(sql).toContain("array_append(_missing, 'cardápio')");
+    expect(sql).toContain("array_append(_missing, 'entregador')");
+    // O padrão quebrado (`text[] || 'literal'` vira concatenação de
+    // arrays e dá "malformed array literal") não pode voltar.
+    // (O cabeçalho do arquivo cita o padrão antigo; por isso o teste
+    // olha só o código, sem comentários.)
+    expect(codeWithoutComments(sql)).not.toContain("_missing ||");
+    expect(sql).toContain("RAISE EXCEPTION 'Falta concluir: %.'");
+  });
+
+  it("accept/decline: DROP da assinatura antiga + retorno jsonb estruturado", () => {
+    expect(sql).toContain("DROP FUNCTION IF EXISTS public.accept_network_invite(text);");
+    expect(sql).toContain("DROP FUNCTION IF EXISTS public.decline_network_invite(text);");
+    expect(sql).toContain("CREATE FUNCTION public.accept_network_invite(_code text)");
+    expect(sql).toContain("CREATE FUNCTION public.decline_network_invite(_code text)");
+    expect(sql).toContain("RETURNS jsonb");
+    // Vencido: grava 'expired' e DEVOLVE o erro (não levanta exceção,
+    // senão a exceção aborta a transação e o UPDATE some junto).
+    expect(sql).toContain("RETURN jsonb_build_object('ok', false, 'error'");
+    expect(sql).toContain("RETURN jsonb_build_object('ok', true, 'store_id', _invite.store_id)");
+    expect(sql).toContain("RETURN jsonb_build_object('ok', true)");
+    // Grants reaplicados (o DROP remove os antigos).
+    expect(sql).toContain("GRANT EXECUTE ON FUNCTION public.accept_network_invite(text) TO authenticated, service_role");
+    expect(sql).toContain("GRANT EXECUTE ON FUNCTION public.decline_network_invite(text) TO authenticated, service_role");
+    expect(sql).toContain("GRANT EXECUTE ON FUNCTION public.publish_network_unit(uuid) TO authenticated, service_role");
   });
 
   it("não tem DELETE destrutivo nem toque em billing/repasse", () => {

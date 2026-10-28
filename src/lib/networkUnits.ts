@@ -2,7 +2,7 @@
  * Regras do painel da Matriz e das sublojas — Fase 2 (plano 28/10/2026).
  *
  * Funções PURAS que espelham as regras aplicadas no banco pelas migrations
- * 20261028140000 / 20261028141000 / 20261028142000. A fonte da verdade é o
+ * 20261028140000 / 20261028141000 / 20261028142000 / 20261028143000. A fonte
  * banco (RLS + triggers + SECURITY DEFINER); estas funções existem para o
  * app decidir o que mostrar/habilitar e para os testes unitários — nunca
  * para autorizar nada sozinhas.
@@ -206,4 +206,35 @@ export function buildInviteLink(origin: string, code: string): string {
 /** O convite está vencido para exibição (mesma regra do banco: 7 dias)? */
 export function isInvitePastDue(expiresAt: string | Date, now: Date = new Date()): boolean {
   return new Date(expiresAt).getTime() <= now.getTime();
+}
+
+/**
+ * Resultado estruturado de accept/decline_network_invite (bugfix Fase 2,
+ * migration 20261028143000): o ramo de vencido devolve {ok:false, error}
+ * em vez de levantar exceção, para o UPDATE para 'expired' persistir.
+ */
+export interface InviteActionResult {
+  ok: boolean;
+  storeId?: string;
+  error?: string;
+}
+
+/** Interpreta o retorno jsonb de accept/decline_network_invite. */
+export function parseInviteActionResult(data: unknown): InviteActionResult {
+  if (data && typeof data === "object") {
+    const d = data as Record<string, unknown>;
+    if (d.ok === true) {
+      return {
+        ok: true,
+        storeId: typeof d.store_id === "string" ? d.store_id : undefined,
+      };
+    }
+    if (d.ok === false) {
+      return {
+        ok: false,
+        error: typeof d.error === "string" ? d.error : "Convite inválido.",
+      };
+    }
+  }
+  return { ok: false, error: "Resposta inesperada do servidor." };
 }

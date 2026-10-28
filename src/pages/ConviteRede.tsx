@@ -12,7 +12,8 @@ import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { parseInviteActionResult } from "@/lib/networkUnits";
 import { toast } from "sonner";
 import { Building2, Store, Loader2, CheckCircle2, XCircle, Clock, LogIn } from "lucide-react";
 
@@ -32,6 +33,7 @@ const ConviteRede = () => {
   const { code } = useParams<{ code: string }>();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [declined, setDeclined] = useState(false);
 
   const { data: invite, isLoading } = useQuery({
@@ -48,25 +50,39 @@ const ConviteRede = () => {
     mutationFn: async () => {
       const { data, error } = await (supabase as any).rpc("accept_network_invite", { _code: code });
       if (error) throw error;
-      return data as string;
+      // Bugfix Fase 2: vencido devolve {ok:false, error} (não exceção),
+      // para o status 'expired' persistir no banco.
+      const result = parseInviteActionResult(data);
+      if (!result.ok) throw new Error(result.error || "Erro ao aceitar convite.");
+      return result.storeId;
     },
     onSuccess: () => {
       toast.success("Convite aceito! Você agora é gerente desta subloja.");
       navigate("/admin");
     },
-    onError: (err: any) => toast.error(err.message || "Erro ao aceitar convite."),
+    onError: (err: any) => {
+      // Recarrega o convite: se venceu, a página passa a mostrar "venceu".
+      void queryClient.invalidateQueries({ queryKey: ["network-invite", code] });
+      toast.error(err.message || "Erro ao aceitar convite.");
+    },
   });
 
   const declineMutation = useMutation({
     mutationFn: async () => {
-      const { error } = await (supabase as any).rpc("decline_network_invite", { _code: code });
+      const { data, error } = await (supabase as any).rpc("decline_network_invite", { _code: code });
       if (error) throw error;
+      // Bugfix Fase 2: vencido devolve {ok:false, error} (não exceção).
+      const result = parseInviteActionResult(data);
+      if (!result.ok) throw new Error(result.error || "Erro ao recusar convite.");
     },
     onSuccess: () => {
       setDeclined(true);
       toast.success("Convite recusado.");
     },
-    onError: (err: any) => toast.error(err.message || "Erro ao recusar convite."),
+    onError: (err: any) => {
+      void queryClient.invalidateQueries({ queryKey: ["network-invite", code] });
+      toast.error(err.message || "Erro ao recusar convite.");
+    },
   });
 
   if (isLoading) {

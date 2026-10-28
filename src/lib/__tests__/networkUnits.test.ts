@@ -22,6 +22,7 @@ import {
   parseMoneyField,
   buildInviteLink,
   isInvitePastDue,
+  parseInviteActionResult,
   type UnitChecklist,
   type CreateUnitForm,
 } from "../networkUnits";
@@ -181,5 +182,39 @@ describe("campos monetários e link do convite", () => {
     const now = new Date("2026-10-28T12:00:00Z");
     expect(isInvitePastDue("2026-10-28T11:00:00Z", now)).toBe(true);
     expect(isInvitePastDue("2026-11-04T12:00:00Z", now)).toBe(false);
+  });
+});
+
+describe("resultado estruturado de accept/decline (bugfix Fase 2)", () => {
+  it("aceite ok devolve storeId", () => {
+    expect(parseInviteActionResult({ ok: true, store_id: "loja-1" })).toEqual({
+      ok: true,
+      storeId: "loja-1",
+    });
+  });
+
+  it("vencido devolve ok:false com a mensagem do banco", () => {
+    expect(
+      parseInviteActionResult({ ok: false, error: "Este convite venceu (7 dias)." }),
+    ).toEqual({ ok: false, error: "Este convite venceu (7 dias)." });
+  });
+
+  it("recusa ok não tem erro", () => {
+    expect(parseInviteActionResult({ ok: true })).toEqual({ ok: true, storeId: undefined });
+  });
+
+  it("resposta malformada vira erro genérico", () => {
+    expect(parseInviteActionResult(null)).toEqual({
+      ok: false,
+      error: "Resposta inesperada do servidor.",
+    });
+    expect(parseInviteActionResult({})).toEqual({
+      ok: false,
+      error: "Resposta inesperada do servidor.",
+    });
+    expect(parseInviteActionResult({ ok: false })).toEqual({
+      ok: false,
+      error: "Convite inválido.",
+    });
   });
 });
