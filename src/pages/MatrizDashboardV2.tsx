@@ -18,7 +18,9 @@
  *  - Pausar a rede pausa as sublojas junto (decisão 9), com confirmação.
  *  - Financeiro mostra o repasse por subloja (só leitura — cada subloja
  *    paga o seu, decisão 7) e a mensalidade efetiva da rede (decisão 1+2).
- *  - Sem cópia de cardápio na criação: herança de cardápio é Fase 3.
+ *  - Herança de cardápio (Fase 3): por subloja, "Sincronizar cardápio"
+ *    abre a divergência (preço próprio nunca sobrescrito sem aviso) e
+ *    sincroniza da loja-matriz por código estável — sem duplicar.
  */
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
@@ -42,7 +44,7 @@ import {
   Store, Plus, LogOut, Building2, TrendingUp, DollarSign,
   ShoppingBag, MapPin, ChevronRight, Loader2, Users, X,
   AlertCircle, CheckCircle2, Pause, Play, UserPlus, UserX,
-  ExternalLink, Copy, Link as LinkIcon, Clock,
+  ExternalLink, Copy, Link as LinkIcon, Clock, RefreshCw,
 } from "lucide-react";
 import {
   CHECKLIST_LABELS,
@@ -58,8 +60,14 @@ import {
   validateCreateUnitForm,
   parseMoneyField,
   buildInviteLink,
+  parseMenuDivergence,
+  parseResyncMenuResult,
+  summarizeMenuDivergence,
+  MENU_DIVERGENCE_LABELS,
+  DIVERGENCE_FIELD_LABELS,
   type UnitChecklist,
   type CreateUnitForm,
+  type MenuDivergenceItem,
 } from "@/lib/networkUnits";
 import { calcNetworkMonthlyFee } from "@/lib/networkLinkRules";
 
@@ -125,6 +133,7 @@ const MatrizDashboardV2 = () => {
   const [inviteUnit, setInviteUnit] = useState<Unit | null>(null);
   const [unlinkUnit, setUnlinkUnit] = useState<{ unit: Unit; managerEmail: string | null } | null>(null);
   const [publishUnit, setPublishUnit] = useState<Unit | null>(null);
+  const [syncUnit, setSyncUnit] = useState<Unit | null>(null);
   const [pauseConfirmOpen, setPauseConfirmOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"unidades" | "financeiro" | "relatorios">("unidades");
 
@@ -553,6 +562,14 @@ const MatrizDashboardV2 = () => {
                             <UserX className="h-3.5 w-3.5" /> Desvincular
                           </button>
                         )}
+                        {matrizStore && (
+                          <button
+                            onClick={() => setSyncUnit(unit)}
+                            className="flex-1 bg-card border border-border rounded-xl py-2.5 font-bold text-xs flex items-center justify-center gap-1.5"
+                          >
+                            <RefreshCw className="h-3.5 w-3.5" /> Sincronizar cardápio
+                          </button>
+                        )}
                       </div>
                     </div>
                   );
@@ -658,6 +675,17 @@ const MatrizDashboardV2 = () => {
         />
       )}
 
+      {/* Modal: Sincronizar cardápio (Fase 3) */}
+      {syncUnit && matrizStore && (
+        <MenuSyncModal
+          unit={syncUnit}
+          matrizStoreId={matrizStore.id}
+          matrizStoreName={matrizStore.name}
+          onClose={() => setSyncUnit(null)}
+          onSynced={() => { invalidateAll(); }}
+        />
+      )}
+
       {/* Confirmar: publicar subloja */}
       <AlertDialog open={publishUnit !== null} onOpenChange={(open) => { if (!open) setPublishUnit(null); }}>
         <AlertDialogContent>
@@ -722,6 +750,180 @@ const MatrizDashboardV2 = () => {
 };
 
 // ─── COMPONENTE: Card de relatório por unidade ─────────────────────────────
+// ─── MODAL: Sincronizar cardápio (Fase 3) ───────────────────────────────
+// Mostra a divergência entre a loja-matriz e a subloja (por código
+// estável) e sincroniza. Preço próprio NUNCA é sobrescrito sem a
+// confirmação explícita do botão "Sobrescrever preços próprios".
+const MenuSyncModal = ({ unit, matrizStoreId, matrizStoreName, onClose, onSynced }: {
+  unit: Unit;
+  matrizStoreId: string;
+  matrizStoreName: string;
+  onClose: () => void;
+  onSynced: () => void;
+}) => {
+  const queryClient = useQueryClient();
+  const [overwriteOpen, setOverwriteOpen] = useState(false);
+
+  const { data: items = [], isLoading, isError } = useQuery({
+    queryKey: ["matriz-v2-divergence", matrizStoreId, unit.id],
+    queryFn: async (): Promise<MenuDivergenceItem[]> => {
+      const { data, error } = await (supabase as any).rpc("network_menu_divergence", {
+        _source_store_id: matrizStoreId,
+        _target_store_id: unit.id,
+      });
+      if (error) throw error;
+      return parseMenuDivergence(data);
+    },
+  });
+  const summary = summarizeMenuDivergence(items);
+
+  const syncMutation = useMutation({
+    mutationFn: async (overwrite: boolean) => {
+      const { data, error } = await (supabase as any).rpc("resync_menu_from_matriz", {
+        _source_store_id: matrizStoreId,
+        _target_store_id: unit.id,
+        _overwrite_price: overwrite,
+      });
+      if (error) throw error;
+      return parseResyncMenuResult(data);
+    },
+    onSuccess: (r) => {
+      const parts = [`${r.productsCopied} novos`, `${r.productsUpdated} atualizados`, `${r.productsPriceSynced} preços atualizados`];
+      if (r.productsPriceSkipped > 0) parts.push(`${r.productsPriceSkipped} preços próprios preservados`);
+      if (r.productsPriceOverwritten > 0) parts.push(`${r.productsPriceOverwritten} preços próprios sobrescritos`);
+      if (r.productsRemovedFromMatriz > 0) parts.push(`${r.productsRemovedFromMatriz} produtos saíram da matriz (não apagados)`);
+      toast.success(`Cardápio sincronizado! ${parts.join(" · ")}.`);
+      queryClient.invalidateQueries({ queryKey: ["matriz-v2-divergence"] });
+      queryClient.invalidateQueries({ queryKey: ["matriz-v2-checklists"] });
+      setOverwriteOpen(false);
+      onSynced();
+      onClose();
+    },
+    onError: (err: unknown) => {
+      const message = err instanceof Error ? err.message : "Falha ao sincronizar cardápio.";
+      toast.error(message);
+    },
+  });
+
+  return (
+    <div className="fixed inset-0 z-[100] bg-black/50 flex items-end sm:items-center justify-center p-4">
+      <div className="bg-background w-full max-w-md rounded-t-3xl sm:rounded-3xl max-h-[90vh] overflow-y-auto">
+        <div className="sticky top-0 bg-background border-b border-border px-5 py-3.5 flex items-center justify-between">
+          <h2 className="text-sm font-black">Sincronizar cardápio · {unit.name}</h2>
+          <button onClick={onClose}><X className="h-4 w-4 text-muted-foreground" /></button>
+        </div>
+        <div className="p-5 space-y-3">
+          <p className="text-xs text-muted-foreground">
+            Compara com a loja-matriz ({matrizStoreName}) e copia o que é novo, atualiza o que mudou.
+            Preço próprio da subloja nunca é sobrescrito sem você confirmar.
+          </p>
+
+          {isLoading && (
+            <p className="text-sm text-muted-foreground flex items-center gap-2">
+              <Loader2 className="h-4 w-4 animate-spin" /> Comparando cardápios…
+            </p>
+          )}
+          {isError && (
+            <p className="text-sm text-red-600 flex items-center gap-2">
+              <AlertCircle className="h-4 w-4" /> Não deu para comparar os cardápios. Tente de novo.
+            </p>
+          )}
+          {!isLoading && !isError && items.length === 0 && (
+            <p className="text-sm text-muted-foreground">
+              A loja-matriz ainda não tem cardápio — não há nada para sincronizar.
+            </p>
+          )}
+          {!isLoading && !isError && items.length > 0 && (
+            <>
+              <div className="bg-muted/40 rounded-xl p-3 text-xs space-y-1">
+                <p><b>{summary.needsSync}</b> {summary.needsSync === 1 ? "item precisa" : "itens precisam"} de sincronização</p>
+                {summary.ownPrice > 0 && (
+                  <p><b>{summary.ownPrice}</b> {summary.ownPrice === 1 ? "preço próprio" : "preços próprios"} (só sobrescreve com confirmação)</p>
+                )}
+                {summary.newInMatriz > 0 && (
+                  <p><b>{summary.newInMatriz}</b> {summary.newInMatriz === 1 ? "produto novo" : "produtos novos"} na matriz</p>
+                )}
+                {summary.removedFromMatriz > 0 && (
+                  <p><b>{summary.removedFromMatriz}</b> {summary.removedFromMatriz === 1 ? "produto saiu" : "produtos saíram"} da matriz (não serão apagados)</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                {items.filter((it) => it.status !== "ok").map((it) => (
+                  <div key={it.networkCode} className="bg-card border border-border rounded-xl p-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-sm font-bold truncate">{it.productName}</p>
+                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0 ${
+                        it.status === "preco_proprio" ? "bg-amber-500/10 text-amber-600"
+                        : it.status === "removido_na_matriz" ? "bg-red-500/10 text-red-600"
+                        : "bg-blue-500/10 text-blue-600"
+                      }`}>
+                        {MENU_DIVERGENCE_LABELS[it.status]}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {it.matrizPrice !== null && <>Matriz: {formatBRL(it.matrizPrice)} · </>}
+                      {it.sublojaPrice !== null ? <>Subloja: {formatBRL(it.sublojaPrice)}</> : "Ainda não copiado"}
+                      {it.changedFields.length > 0 && (
+                        <> · Difere em: {it.changedFields.map((f) => DIVERGENCE_FIELD_LABELS[f] ?? f).join(", ")}</>
+                      )}
+                    </p>
+                  </div>
+                ))}
+                {summary.needsSync === 0 && (
+                  <p className="text-sm text-green-600 flex items-center gap-1.5">
+                    <CheckCircle2 className="h-4 w-4" /> Cardápio sincronizado — nada para atualizar.
+                  </p>
+                )}
+              </div>
+            </>
+          )}
+
+          <div className="flex gap-2 pt-1">
+            <button
+              onClick={() => syncMutation.mutate(false)}
+              disabled={isLoading || syncMutation.isPending || summary.needsSync === 0}
+              className="flex-1 bg-primary text-primary-foreground rounded-xl py-2.5 font-bold text-xs disabled:opacity-50 flex items-center justify-center gap-1.5"
+            >
+              {syncMutation.isPending
+                ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                : <RefreshCw className="h-3.5 w-3.5" />}
+              Sincronizar
+            </button>
+            {summary.ownPrice > 0 && (
+              <button
+                onClick={() => setOverwriteOpen(true)}
+                disabled={isLoading || syncMutation.isPending}
+                className="flex-1 bg-card border border-amber-500/50 text-amber-600 rounded-xl py-2.5 font-bold text-xs disabled:opacity-50"
+              >
+                Sobrescrever preços próprios
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <AlertDialog open={overwriteOpen} onOpenChange={setOverwriteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Sobrescrever os preços próprios?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {summary.ownPrice} {summary.ownPrice === 1 ? "produto tem" : "produtos têm"} preço próprio na {unit.name}.
+              Confirmando, esses preços voltam a ser iguais aos da matriz. Dá para mudar de novo depois, na subloja.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={() => syncMutation.mutate(true)}>
+              Sobrescrever e sincronizar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+};
+
 const UnitReport = ({ unit }: { unit: Unit }) => {
   const { data: stats } = useQuery({
     queryKey: ["matriz-v2-unit-stats", unit.id],

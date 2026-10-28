@@ -238,3 +238,198 @@ export function parseInviteActionResult(data: unknown): InviteActionResult {
   }
   return { ok: false, error: "Resposta inesperada do servidor." };
 }
+
+// ─── Herança de cardápio (Fase 3, migration 20261028170000) ────────────
+
+/**
+ * Resultado de clone_menu_from_matriz. A função antiga devolvia
+ * {sections, products, addon_groups} e o painel lia
+ * {categories_copied, products_copied} → 0/0 no toast (causa 2 do bug
+ * "0 produtos copiados"). A reescrita devolve as chaves novas + as
+ * legadas; o parser aceita as duas.
+ */
+export interface CloneMenuResult {
+  categoriesCopied: number;
+  productsCopied: number;
+  productsSkipped: number;
+  addonGroupsCopied: number;
+  addonItemsCopied: number;
+}
+
+function asNonNegativeNumber(value: unknown): number {
+  return typeof value === "number" && Number.isFinite(value) && value >= 0
+    ? Math.floor(value)
+    : 0;
+}
+
+/** Interpreta o retorno jsonb de clone_menu_from_matriz. */
+export function parseCloneMenuResult(data: unknown): CloneMenuResult {
+  const d = data && typeof data === "object" ? (data as Record<string, unknown>) : {};
+  return {
+    categoriesCopied: asNonNegativeNumber(d.categories_copied ?? d.sections),
+    productsCopied: asNonNegativeNumber(d.products_copied ?? d.products),
+    productsSkipped: asNonNegativeNumber(d.products_skipped),
+    addonGroupsCopied: asNonNegativeNumber(d.addon_groups_copied ?? d.addon_groups),
+    addonItemsCopied: asNonNegativeNumber(d.addon_items_copied),
+  };
+}
+
+/** Resultado de resync_menu_from_matriz. */
+export interface ResyncMenuResult {
+  categoriesCopied: number;
+  categoriesUpdated: number;
+  productsCopied: number;
+  productsUpdated: number;
+  productsPriceSynced: number;
+  productsPriceSkipped: number;
+  productsPriceOverwritten: number;
+  addonGroupsCopied: number;
+  addonGroupsUpdated: number;
+  addonItemsCopied: number;
+  addonItemsUpdated: number;
+  productsRemovedFromMatriz: number;
+}
+
+/** Interpreta o retorno jsonb de resync_menu_from_matriz. */
+export function parseResyncMenuResult(data: unknown): ResyncMenuResult {
+  const d = data && typeof data === "object" ? (data as Record<string, unknown>) : {};
+  return {
+    categoriesCopied: asNonNegativeNumber(d.categories_copied),
+    categoriesUpdated: asNonNegativeNumber(d.categories_updated),
+    productsCopied: asNonNegativeNumber(d.products_copied),
+    productsUpdated: asNonNegativeNumber(d.products_updated),
+    productsPriceSynced: asNonNegativeNumber(d.products_price_synced),
+    productsPriceSkipped: asNonNegativeNumber(d.products_price_skipped),
+    productsPriceOverwritten: asNonNegativeNumber(d.products_price_overwritten),
+    addonGroupsCopied: asNonNegativeNumber(d.addon_groups_copied),
+    addonGroupsUpdated: asNonNegativeNumber(d.addon_groups_updated),
+    addonItemsCopied: asNonNegativeNumber(d.addon_items_copied),
+    addonItemsUpdated: asNonNegativeNumber(d.addon_items_updated),
+    productsRemovedFromMatriz: asNonNegativeNumber(d.products_removed_from_matriz),
+  };
+}
+
+/**
+ * Status de um produto na divergência (network_menu_divergence).
+ *  - ok: preço igual e nenhum campo não-preço divergente.
+ *  - divergente: preço igual, mas nome/descrição/imagem/disponibilidade/
+ *    seção divergem (o re-sync atualiza esses campos).
+ *  - preco_proprio: o dono mudou o preço depois do sync — o re-sync NÃO
+ *    sobrescreve sem confirmação explícita (sobrescrever preços).
+ *  - desatualizado: a matriz mudou o preço depois do sync — o re-sync
+ *    atualiza.
+ *  - novo_na_matriz: existe na matriz, ainda não foi copiado.
+ *  - removido_na_matriz: cópia herdada cujo produto sumiu da matriz
+ *    (o re-sync apenas reporta — nunca apaga na subloja).
+ */
+export type MenuDivergenceStatus =
+  | "ok"
+  | "divergente"
+  | "preco_proprio"
+  | "desatualizado"
+  | "novo_na_matriz"
+  | "removido_na_matriz";
+
+export interface MenuDivergenceItem {
+  networkCode: string;
+  productName: string;
+  matrizPrice: number | null;
+  sublojaPrice: number | null;
+  lastSyncedPrice: number | null;
+  status: MenuDivergenceStatus;
+  changedFields: string[];
+}
+
+const DIVERGENCE_STATUSES: readonly string[] = [
+  "ok",
+  "divergente",
+  "preco_proprio",
+  "desatualizado",
+  "novo_na_matriz",
+  "removido_na_matriz",
+];
+
+/** Rótulo exibido de cada status de divergência. */
+export const MENU_DIVERGENCE_LABELS: Record<MenuDivergenceStatus, string> = {
+  ok: "Sincronizado",
+  divergente: "Divergente",
+  preco_proprio: "Preço próprio",
+  desatualizado: "Desatualizado",
+  novo_na_matriz: "Novo na matriz",
+  removido_na_matriz: "Removido na matriz",
+};
+
+/** Rótulo exibido de cada campo não-preço divergente. */
+export const DIVERGENCE_FIELD_LABELS: Record<string, string> = {
+  name: "nome",
+  description: "descrição",
+  image_url: "imagem",
+  is_available: "disponibilidade",
+  section: "seção",
+};
+
+/** Interpreta o retorno jsonb de network_menu_divergence. */
+export function parseMenuDivergence(data: unknown): MenuDivergenceItem[] {
+  if (!data || typeof data !== "object") return [];
+  const items = (data as Record<string, unknown>).items;
+  if (!Array.isArray(items)) return [];
+  return items
+    .filter((it): it is Record<string, unknown> => !!it && typeof it === "object")
+    .map((it) => {
+      const rawStatus = typeof it.status === "string" ? it.status : "";
+      const status: MenuDivergenceStatus = (DIVERGENCE_STATUSES as readonly string[]).includes(rawStatus)
+        ? (rawStatus as MenuDivergenceStatus)
+        : "ok";
+      const changedFields = Array.isArray(it.changed_fields)
+        ? it.changed_fields.filter((f): f is string => typeof f === "string")
+        : [];
+      return {
+        networkCode: typeof it.network_code === "string" ? it.network_code : "",
+        productName: typeof it.product_name === "string" ? it.product_name : "Produto",
+        matrizPrice: typeof it.matriz_price === "number" ? it.matriz_price : null,
+        sublojaPrice: typeof it.subloja_price === "number" ? it.subloja_price : null,
+        lastSyncedPrice: typeof it.last_synced_price === "number" ? it.last_synced_price : null,
+        status,
+        changedFields,
+      };
+    });
+}
+
+/** Resumo da divergência: quantos itens em cada status que exige ação. */
+export interface MenuDivergenceSummary {
+  total: number;
+  needsSync: number;
+  ownPrice: number;
+  newInMatriz: number;
+  removedFromMatriz: number;
+}
+
+/** Conta os itens que pedem ação (tudo menos "ok"). */
+export function summarizeMenuDivergence(items: readonly MenuDivergenceItem[]): MenuDivergenceSummary {
+  const count = (s: MenuDivergenceStatus) => items.filter((it) => it.status === s).length;
+  const needsSync = items.filter((it) => it.status !== "ok").length;
+  return {
+    total: items.length,
+    needsSync,
+    ownPrice: count("preco_proprio"),
+    newInMatriz: count("novo_na_matriz"),
+    removedFromMatriz: count("removido_na_matriz"),
+  };
+}
+
+/**
+ * Regra de preço do re-sync, espelhada do banco (para o painel decidir o
+ * que avisar antes de sincronizar — o banco é quem aplica de verdade):
+ * preço próprio = preço atual difere do preço da matriz E difere do
+ * último sync (não-nulo). Sem registro de sync, trata como desatualizado.
+ */
+export function isOwnPrice(args: {
+  matrizPrice: number | null;
+  sublojaPrice: number | null;
+  lastSyncedPrice: number | null;
+}): boolean {
+  if (args.matrizPrice === null || args.sublojaPrice === null) return false;
+  if (args.matrizPrice === args.sublojaPrice) return false;
+  if (args.lastSyncedPrice === null) return false;
+  return args.sublojaPrice !== args.lastSyncedPrice;
+}
