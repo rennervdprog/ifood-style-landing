@@ -84,7 +84,7 @@ const ConsolidadoTabTeste = lazy(() => import("./super-admin/tabs/ConsolidadoTab
 const FluxoCaixaPanel = lazy(() => import("@/components/finance/FluxoCaixaPanel"));
 const ConciliacaoAsaasPanel = lazy(() => import("@/components/finance/ConciliacaoAsaasPanel"));
 const AuditoriaFinanceiraPanel = lazy(() => import("@/components/finance/AuditoriaFinanceiraPanel"));
-const MensalidadesPanel = lazy(() => import("@/components/finance/MensalidadesPanel"));
+const MensalidadesPanel = lazy(() => import("@/components/finance/MensalidadesPanelTeste"));
 const ComissoesPanel = lazy(() => import("@/components/finance/ComissoesPanel"));
 const TabFallback = () => (
   <div className="flex items-center justify-center py-12">
