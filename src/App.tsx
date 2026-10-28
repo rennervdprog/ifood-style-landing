@@ -11,7 +11,6 @@ import { StoreProvider } from "@/contexts/StoreContext";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import InstallPrompt from "@/components/InstallPrompt";
 import NotificationPrompt from "@/components/NotificationPrompt";
-import DownloadAppPrompt from "@/components/DownloadAppPrompt";
 import CapacitorPermissionsOnboarding from "@/components/CapacitorPermissionsOnboarding";
 import DebugOverlay from "@/components/DebugOverlay";
 import { initCapacitorNative, isCapacitorNative, consumePendingPushNavigation } from "@/lib/capacitorNative";
@@ -364,7 +363,6 @@ const App = () => {
             {showAncillary && !partnerNative && <StoreAppGuard />}
             {showAncillary && <TermsChecker />}
             {showAncillary && !partnerNative && <ClientPinChecker />}
-            {showAncillary && !partnerNative && <DownloadAppPrompt />}
             <ErrorBoundary>
             <Suspense fallback={<PageLoader />}>
               <AppRoutes />
