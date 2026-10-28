@@ -80,6 +80,7 @@ const PlatformWhatsAppTab = lazy(() => import("./super-admin/tabs/PlatformWhatsA
 const AddonsMrrTab = lazy(() => import("./super-admin/tabs/AddonsMrrTab"));
 const RevendedoresTab = lazy(() => import("./super-admin/tabs/RevendedoresTab"));
 const ConsolidadoTabTeste = lazy(() => import("./super-admin/tabs/ConsolidadoTabTeste"));
+const AdminPlanManagerTeste = lazy(() => import("@/components/AdminPlanManagerTeste"));
 // Painéis financeiros profissionais (Fase 1)
 const FluxoCaixaPanel = lazy(() => import("@/components/finance/FluxoCaixaPanel"));
 const ConciliacaoAsaasPanel = lazy(() => import("@/components/finance/ConciliacaoAsaasPanel"));
@@ -1544,7 +1545,9 @@ const TAB_SUBTITLE: Record<string, (ctx: {
                   {financeSection === "mensalidades" && (
                     <Suspense fallback={<TabFallback />}><MensalidadesPanel /></Suspense>
                   )}
-                  {financeSection === "planos-lojas" && <AdminPlanManager />}
+                  {financeSection === "planos-lojas" && (
+                    <Suspense fallback={<TabFallback />}><AdminPlanManagerTeste /></Suspense>
+                  )}
                   {financeSection === "planos-templates" && <AdminPlanTemplatesEditor />}
                    {financeSection === "addons" && (
                      <Suspense fallback={<TabFallback />}><AddonsMrrTab /></Suspense>
