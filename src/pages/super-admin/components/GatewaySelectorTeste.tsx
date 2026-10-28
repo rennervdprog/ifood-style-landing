@@ -80,10 +80,15 @@ const GatewaySelectorTeste = () => {
     <section className="bg-card rounded-2xl border border-border p-4">
       <div className="flex items-center gap-2 mb-1">
         <Landmark className="h-4 w-4 text-primary" />
-        <h3 className="text-sm font-black text-foreground">Gateway de pagamento</h3>
+        <h3 className="text-sm font-black text-foreground">Gateway ativo</h3>
+        {!isLoading && currentLabel && (
+          <span className="text-[11px] font-black rounded-full px-2 py-0.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+            {currentLabel}
+          </span>
+        )}
       </div>
       <p className="text-xs text-muted-foreground mb-3">
-        Define quem processa os PIX de mensalidade, comissão e pedidos. Troca imediata, sem perder o histórico.
+        Trocar o gateway muda como todas as lojas recebem. A troca pede confirmação antes de valer.
       </p>
 
       {isLoading ? (

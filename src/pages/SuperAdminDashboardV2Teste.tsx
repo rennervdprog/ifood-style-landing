@@ -8,7 +8,6 @@
  * Regra: só arquivos *Teste — nunca editar o original por aqui.
  */
 import { useState, useMemo, useEffect, lazy, Suspense } from "react";
-import GatewaySelectorTeste from "./super-admin/components/GatewaySelectorTeste";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import AdminApprovals from "@/components/AdminApprovals";
 import CouponManager from "@/components/CouponManager";
@@ -32,6 +31,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { parseSuperAdminDeepLink, buildSuperAdminDeepLink } from "@/lib/superAdminDeepLink";
 import { filterBillableOrders } from "@/lib/superAdminBillable";
+import { computeStoreSettlement, summarizeSettlement, summarizeFailedPayouts } from "@/lib/superAdminConsolidado";
 import { toast } from "sonner";
 import { planLabel } from "@/lib/plansInfo";
 import {
@@ -63,7 +63,7 @@ const HourlyChart = lazy(() =>
 const ChannelCompareChart = lazy(() =>
   import("@/components/FinanceCharts").then(m => ({ default: m.ChannelCompareChart }))
 );
- import { addMoney, multiplyMoney, subtractMoney, sumMoney, formatBRL } from "@/lib/utils";
+ import { addMoney, multiplyMoney, sumMoney, formatBRL } from "@/lib/utils";
  import { statusColors as globalStatusColors } from "@/lib/orderStatus";
 
 // Lazy-loaded tabs (carregadas só ao abrir)
@@ -79,7 +79,7 @@ const DebugLojaTab = lazy(() => import("./super-admin/tabs/DebugLojaTab"));
 const PlatformWhatsAppTab = lazy(() => import("./super-admin/tabs/PlatformWhatsAppTab"));
 const AddonsMrrTab = lazy(() => import("./super-admin/tabs/AddonsMrrTab"));
 const RevendedoresTab = lazy(() => import("./super-admin/tabs/RevendedoresTab"));
-const ConsolidadoTab = lazy(() => import("./super-admin/tabs/ConsolidadoTab"));
+const ConsolidadoTabTeste = lazy(() => import("./super-admin/tabs/ConsolidadoTabTeste"));
 // Painéis financeiros profissionais (Fase 1)
 const FluxoCaixaPanel = lazy(() => import("@/components/finance/FluxoCaixaPanel"));
 const ConciliacaoAsaasPanel = lazy(() => import("@/components/finance/ConciliacaoAsaasPanel"));
@@ -344,9 +344,11 @@ const TAB_SUBTITLE: Record<string, (ctx: {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dateFilter]);
 
-  const getFinanceDateRange = () => {
+  // Fase 4 — aceita o período como parâmetro: o Consolidado mostra o
+  // período ativo no herói e o outro período na linha de contexto.
+  const getFinanceDateRange = (filter: "week" | "month" = financeFilter) => {
     const now = new Date();
-    const days = financeFilter === "week" ? 7 : 30;
+    const days = filter === "week" ? 7 : 30;
     const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - days);
     return { start: start.toISOString(), end: now.toISOString() };
   };
@@ -410,6 +412,48 @@ const TAB_SUBTITLE: Record<string, (ctx: {
       const { data, error } = await query;
       if (error) throw error;
       return data;
+    },
+    enabled: isAdmin && activeTab === "financeiro",
+  });
+
+  // Fase 4 — pedidos do OUTRO período (para a linha de contexto do herói
+  // do Consolidado: herói em 7 dias mostra o contexto de 30 dias e vice-versa).
+  const otherFinanceFilter = financeFilter === "week" ? "month" : "week";
+  const { data: financeOrdersOther } = useQuery({
+    queryKey: ["finance-orders", otherFinanceFilter, testStoreIds.join(",")],
+    queryFn: async () => {
+      const { start, end } = getFinanceDateRange(otherFinanceFilter);
+      let query = supabase
+        .from("orders")
+        .select("*, stores(name, id), order_items(quantity, unit_price), order_source")
+        .gte("created_at", start)
+        .lte("created_at", end)
+        .in("status", ["finalizado", "entregue"])
+        .order("created_at", { ascending: false });
+      if (testStoreIds.length > 0) query = query.not("store_id", "in", `(${testStoreIds.join(",")})`);
+      const { data, error } = await query;
+      if (error) throw error;
+      return data;
+    },
+    enabled: isAdmin && activeTab === "financeiro",
+  });
+
+  // Fase 4 — repasses com falha (financial_transactions: store_payout com
+  // status failed). É a fonte dos 2 repasses do Pastelão (R$ 39,00 cada,
+  // 01/07/2026) que o Consolidado mostra em "Precisa de atenção".
+  // Não confundir com o dead-letter de pedidos (orders.store_payout_error),
+  // que hoje está vazio.
+  const { data: failedPayoutRows } = useQuery({
+    queryKey: ["finance-failed-payouts"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("financial_transactions")
+        .select("id, store_id, amount, created_at")
+        .eq("transaction_kind", "store_payout")
+        .eq("status", "failed")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data || [];
     },
     enabled: isAdmin && activeTab === "financeiro",
   });
@@ -663,55 +707,17 @@ const TAB_SUBTITLE: Record<string, (ctx: {
     return { total, count, ticket: count > 0 ? total / count : 0 };
   }, [weekOrders]);
 
-  const storeSettlement = useMemo(() => {
-    if (!financeOrders || !stores) return [];
-    const testIds = new Set((stores || []).filter((s: any) => s.is_test).map((s: any) => s.id));
-    const map = new Map<string, {
-      name: string; storeId: string; physicalSales: number; appSales: number; totalSales: number;
-      commissionDue: number; netTransfer: number; finalBalance: number; orderCount: number; deliveryFees: number;
-      // PDV separado
-      pdvSales: number; pdvOrders: number; pdvCommission: number;
-    }>();
-    stores.filter((s: any) => !s.is_test).forEach(s => map.set(s.id, {
-      name: s.name, storeId: s.id, physicalSales: 0, appSales: 0, totalSales: 0,
-      commissionDue: 0, netTransfer: 0, finalBalance: 0, orderCount: 0, deliveryFees: 0,
-      pdvSales: 0, pdvOrders: 0, pdvCommission: 0,
-    }));
-    const filtered = (selectedStore === "all" ? financeOrders : financeOrders.filter(o => o.store_id === selectedStore))
-      .filter(o => !testIds.has(o.store_id));
-    filtered.forEach(o => {
-      const entry = map.get(o.store_id);
-      if (!entry) return;
-      const subtotal = o.subtotal;
-      const deliveryFee = o.delivery_fee;
-      const isPdv = (o as any).order_source === "pdv";
-
-      if (isPdv) {
-        // PDV: canal separado
-        entry.pdvSales = addMoney(entry.pdvSales, subtotal);
-        entry.pdvOrders += 1;
-        // Comissão PDV = commission_rate do pedido (taxa PDV, menor que delivery)
-        const pdvRate = Number((o as any).commission_rate || 0) / 100;
-        entry.pdvCommission = addMoney(entry.pdvCommission, multiplyMoney(subtotal, pdvRate));
-      } else {
-        // Delivery: lógica original
-        const isPhysical = o.payment_method === "dinheiro" || o.payment_method === "cartao";
-        if (isPhysical) entry.physicalSales = addMoney(entry.physicalSales, subtotal);
-        else entry.appSales = addMoney(entry.appSales, subtotal);
-      }
-
-      entry.totalSales = addMoney(entry.totalSales, subtotal);
-      entry.deliveryFees = addMoney(entry.deliveryFees, deliveryFee);
-      entry.orderCount += 1;
-    });
-    map.forEach((entry, storeId) => {
-      const rate = getStoreRate(storeId);
-      entry.commissionDue = multiplyMoney(entry.physicalSales, rate);
-      entry.netTransfer = subtractMoney(entry.appSales, multiplyMoney(entry.appSales, rate));
-      entry.finalBalance = subtractMoney(entry.netTransfer, entry.commissionDue);
-    });
-    return Array.from(map.values()).filter(e => e.orderCount > 0).sort((a, b) => b.totalSales - a.totalSales);
-  }, [financeOrders, stores, selectedStore, parentStorePlans]);
+  // Fase 4 — liquidação por loja (mesmo cálculo de antes, movido para
+  // `@/lib/superAdminConsolidado` para rodar para os dois períodos do
+  // herói do Consolidado: o ativo e o outro, da linha de contexto).
+  const storeSettlement = useMemo(
+    () => computeStoreSettlement(financeOrders, stores, selectedStore, parentStorePlans, getStoreRate),
+    [financeOrders, stores, selectedStore, parentStorePlans]
+  );
+  const storeSettlementOther = useMemo(
+    () => computeStoreSettlement(financeOrdersOther, stores, selectedStore, parentStorePlans, getStoreRate),
+    [financeOrdersOther, stores, selectedStore, parentStorePlans]
+  );
 
   const driverSettlement = useMemo(() => {
     if (!financeOrders || !drivers) return [];
@@ -737,19 +743,22 @@ const TAB_SUBTITLE: Record<string, (ctx: {
   }, [financeOrders, drivers, stores]);
 
   const financeTotals = useMemo(() => {
-    const totalVolume = sumMoney(storeSettlement.map((entry) => entry.totalSales));
-    const grossProfit = sumMoney(
-      storeSettlement.map((entry) =>
-        addMoney(
-          entry.commissionDue,                               // comissão delivery físico
-          subtractMoney(entry.appSales, entry.netTransfer),  // comissão delivery PIX
-          entry.pdvCommission                                // comissão PDV
-        )
-      )
-    );
+    const totals = summarizeSettlement(storeSettlement);
     const totalDriverFees = sumMoney(driverSettlement.map((entry) => entry.appFees));
-    return { totalVolume, grossProfit, totalDriverFees };
+    return { ...totals, totalDriverFees };
   }, [storeSettlement, driverSettlement, stores, parentStorePlans]);
+
+  // Fase 4 — totais do OUTRO período (linha de contexto do herói).
+  const financeTotalsOther = useMemo(
+    () => summarizeSettlement(storeSettlementOther),
+    [storeSettlementOther]
+  );
+
+  // Fase 4 — resumo dos repasses com falha para o "Precisa de atenção".
+  const failedPayoutsSummary = useMemo(
+    () => summarizeFailedPayouts((failedPayoutRows || []) as any, stores || []),
+    [failedPayoutRows, stores]
+  );
 
   const storeConciliation = useMemo(() => {
     if (!orders || !stores) return [];
@@ -1426,29 +1435,30 @@ const TAB_SUBTITLE: Record<string, (ctx: {
             )}
              {activeTab === "financeiro" && (
                <div className="space-y-4">
-                 <GatewaySelectorTeste />
-                 {/* Sub-abas do Financeiro organizadas em grupos visuais */}
-                 <div className="space-y-3">
+                 {/* Fase 4 — navegação redesenhada: os 5 grupos com as 14
+                     sub-seções em chips que quebram linha, tudo visível de
+                     uma vez (sem as 5 fileiras de rolagem horizontal).
+                     O gateway saiu do topo: agora vive no cartão próprio
+                     dentro do Consolidado. */}
+                 <div className="bg-card rounded-2xl border border-border p-4 space-y-3">
                    {FINANCE_GROUPS.map((g) => (
                      <div key={g.group}>
                        <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-1.5 px-1">
                          {g.group}
                        </p>
-                       <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-thin">
+                       <div className="flex flex-wrap gap-2">
                          {g.items.map((it) => {
-                           const Icon = it.icon;
                            const isActive = financeSection === it.key;
                            return (
                              <button
                                key={it.key}
                                onClick={() => setFinanceSection(it.key as FinanceSection)}
-                               className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-colors ${
+                               className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-bold transition-colors ${
                                  isActive
                                    ? "bg-primary text-primary-foreground shadow-sm"
                                    : "bg-muted text-muted-foreground hover:text-foreground hover:bg-muted/80"
                                }`}
                              >
-                               {Icon && <Icon className="h-3.5 w-3.5" />}
                                <span>{it.label}</span>
                                {it.key === "saques" && pendingWithdrawals.length > 0 && (
                                  <span className={`ml-1 text-[10px] font-black rounded-full px-1.5 py-0.5 ${isActive ? "bg-primary-foreground/20" : "bg-destructive text-destructive-foreground"}`}>
@@ -1481,12 +1491,18 @@ const TAB_SUBTITLE: Record<string, (ctx: {
                  })()}
                  {financeSection === "consolidado" && (
                    <Suspense fallback={<TabFallback />}>
-                     <ConsolidadoTab
+                     <ConsolidadoTabTeste
                        storeBalances={storeBalances || []}
                        parentStorePlans={parentStorePlans || []}
                        stores={stores || []}
                        testStoreIds={testStoreIds}
                        financeTotals={financeTotals}
+                       financeTotalsOther={financeTotalsOther}
+                       financeFilter={financeFilter}
+                       onFinanceFilterChange={setFinanceFilter}
+                       failedPayouts={failedPayoutsSummary}
+                       pendingWithdrawalsCount={pendingWithdrawals.length}
+                       onGoToSection={(s: string) => setFinanceSection(s as FinanceSection)}
                        loading={financeLoading}
                      />
                    </Suspense>
