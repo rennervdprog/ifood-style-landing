@@ -118,7 +118,28 @@ Deno.serve(async (req) => {
     const isMonthly = String(tx.reference_code || "").startsWith("#MENS-")
       || String(tx.reference_code || "").startsWith("#ASSIN-");
 
-    if (isMonthly) {
+    // Fase 4: mensalidade da REDE (charge_family própria, referência
+    // #REDE-). NÃO pode cair no settle mensal de loja: ele avançaria o
+    // plano da loja-guia, que pela regra não tem plano próprio. A RPC
+    // própria avança só o vencimento da rede (idempotente).
+    const isNetworkMonthly =
+      (tx.metadata as any)?.charge_family === "network_monthly_subscription";
+
+    if (isNetworkMonthly) {
+      const { data: settlement, error: settlementError } = await supabase
+        .rpc("settle_network_monthly_payment", {
+          _transaction_id: tx.id,
+          _settled_at: new Date().toISOString(),
+        })
+        .maybeSingle();
+      if (settlementError) {
+        console.error("[woovi-webhook] network monthly settlement error", settlementError);
+        return json({ ok: false, error: "network_settlement_failed" }, 500);
+      }
+      if (settlement?.already_applied) {
+        return json({ ok: true, idempotent: true, transaction_id: tx.id });
+      }
+    } else if (isMonthly) {
       const { data: settlement, error: settlementError } = await supabase
         .rpc("settle_monthly_subscription_payment", {
           _transaction_id: tx.id,
