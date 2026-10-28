@@ -130,6 +130,10 @@ const PageViewsCardTeste = () => {
       <Card className="border-border/60">
         <CardContent className="p-4 space-y-4">
           <div>
+            <h3 className="text-sm font-bold text-foreground">Onde olham</h3>
+            <p className="text-xs text-muted-foreground">Top lojas, fontes e dispositivos — últimos 7 dias</p>
+          </div>
+          <div>
             <p className="text-[11px] font-bold text-muted-foreground uppercase mb-2 flex items-center gap-1.5">
               <Store className="h-3.5 w-3.5" /> Top lojas (7d)
             </p>
