@@ -11,6 +11,20 @@ import { addMoney, multiplyMoney, subtractMoney, sumMoney } from "@/lib/utils";
 /** Taxa oficial de entrega: R$ 0,99 por entrega em pagamento físico. */
 export const DELIVERY_FEE = 0.99;
 
+/**
+ * Nº de entregas de um repasse — SÓ quando o saldo é múltiplo exato de
+ * R$ 0,99 (diferença de no máximo R$ 0,01, para absorver o ruído de
+ * ponto flutuante). Quando o saldo é residual (ex.: Pastelão, R$ 6,00 —
+ * sobra de cobrança parcial; 6 × R$ 0,99 = R$ 5,94 ≠ R$ 6,00), a
+ * contagem NÃO pode ser derivada e volta null. Corrigido na Fase 5:
+ * a Fase 4 arredondava (Math.round) e mostrava "6 entregas" errado.
+ */
+export function exactDeliveryCount(repasse: number): number | null {
+  if (repasse <= 0) return null;
+  const n = Math.round(repasse / DELIVERY_FEE);
+  return Math.abs(repasse - n * DELIVERY_FEE) <= 0.01 ? n : null;
+}
+
 // ── Saldos por loja ────────────────────────────────────────────────
 
 export interface StoreDebt {
@@ -20,9 +34,12 @@ export interface StoreDebt {
   total: number;
   comissao: number;
   repasse: number;
-  /** Nº de entregas que geraram o repasse (repasse / 0,99). */
+  /**
+   * Nº de entregas que geraram o repasse — só quando o saldo é múltiplo
+   * exato de R$ 0,99; 0 quando o saldo é residual (contagem desconhecida).
+   */
   deliveries: number;
-  /** Origem legível, ex.: "Taxa de entrega · 30 entregas a R$ 0,99". */
+  /** Origem legível, ex.: "Taxa de entrega · 30 entregas a R$ 0,99" (ou só "Taxa de entrega" quando residual). */
   originLabel: string;
 }
 
@@ -55,12 +72,18 @@ export function getStoresWithDebt(
     const repasse = Number(b.repasse_pendente || 0);
     const total = sumMoney([comissao, repasse]);
     if (total <= 0) continue;
-    const deliveries = repasse > 0 ? Math.round(repasse / DELIVERY_FEE) : 0;
+    // Contagem só quando exata: saldo residual (ex.: Pastelão, R$ 6,00)
+    // não tem nº de entregas derivável — mostrar a contagem arredondada
+    // seria mentir (6 × R$ 0,99 = R$ 5,94 ≠ R$ 6,00).
+    const exactDeliveries = exactDeliveryCount(repasse);
+    const deliveries = exactDeliveries ?? 0;
     const originLabel =
       comissao > 0 && repasse > 0
         ? "Comissão + taxa de entrega"
         : repasse > 0
-          ? `Taxa de entrega · ${deliveries} ${deliveries === 1 ? "entrega" : "entregas"} a R$ 0,99`
+          ? exactDeliveries !== null
+            ? `Taxa de entrega · ${deliveries} ${deliveries === 1 ? "entrega" : "entregas"} a R$ 0,99`
+            : "Taxa de entrega"
           : "Comissão %";
     list.push({
       storeId: b.store_id,
