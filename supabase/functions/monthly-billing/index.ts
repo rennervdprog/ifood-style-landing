@@ -327,10 +327,16 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Load plan templates to detect VIP (personalized) conditions per store
+    // Load plan templates to detect VIP (personalized) conditions per store.
+    // Fase 4b (B4): plan_templates NÃO tem pix_fee, delivery_split nem
+    // pdv_fixed no schema real — o select antigo pedia colunas fantasmas
+    // (a comparação resultante era sempre divergente e marcava VIP à toa).
+    // Colunas reais: monthly_fee, commission_rate, pdv_commission_rate,
+    // revenue_threshold, platform_fee_included (+ metadados). Os eixos
+    // PIX/entrega/PDV usam os padrões operacionais do editor VIP.
     const { data: templates } = await supabase
       .from("plan_templates")
-      .select("plan_type, monthly_fee, commission_rate, pix_fee, delivery_split, pdv_fixed");
+      .select("plan_type, monthly_fee, commission_rate, pdv_commission_rate, revenue_threshold, platform_fee_included");
     const templateByType = new Map<string, any>();
     (templates || []).forEach((t: any) => templateByType.set(t.plan_type, t));
 
@@ -483,18 +489,26 @@ Deno.serve(async (req) => {
           totalAmount = Math.max(0, Math.round((totalAmount - creditApplied) * 100) / 100);
         }
 
-        // Detect VIP: any store_plans value diverges from plan_templates default
+        // Detect VIP por DIVERGÊNCIA DE VALOR (Fase 4b, espelho de
+        // src/lib/vipDetection.ts — edges são self-contained, por isso a
+        // lógica é inline aqui e não importada). Override igual ao padrão
+        // NÃO é VIP. Eixos: mensalidade/comissão vs template; PIX vs
+        // R$ 1,99, entrega vs R$ 2,00, PDV fixo vs padrão do plano
+        // (R$ 1,00 fixed/autonomy, R$ 0 demais).
         const tpl = templateByType.get(plan.plan_type);
+        const defaultPdvFixed = (plan.plan_type === "fixed" || plan.plan_type === "autonomy") ? 1 : 0;
         const isVip = !!tpl && (
           Number(tpl.monthly_fee ?? 0) !== Number(plan.monthly_fee ?? 0) ||
           Number(tpl.commission_rate ?? 0) !== Number(plan.commission_rate ?? 0) ||
-          Number(tpl.pix_fee ?? 0) !== Number(plan.pix_operational_fee_override ?? tpl.pix_fee ?? 0) ||
-          Number(tpl.delivery_split ?? 0) !== Number(plan.platform_delivery_split_override ?? tpl.delivery_split ?? 0) ||
-          Number(tpl.pdv_fixed ?? 0) !== Number(plan.pdv_fixed_fee_per_sale ?? tpl.pdv_fixed ?? 0)
+          (plan.pix_operational_fee_override != null && Number(plan.pix_operational_fee_override) !== 1.99) ||
+          (plan.platform_delivery_split_override != null && Number(plan.platform_delivery_split_override) !== 2.00) ||
+          (plan.pdv_fixed_fee_per_sale != null && Number(plan.pdv_fixed_fee_per_sale) !== defaultPdvFixed)
         );
-        // Com a mensalidade zerada pela rede, o selo VIP (plano 0 vs
-        // template) seria falso — a loja não tem condição especial.
-        const vipTag = !networkUnitMonthlyZeroed && isVip ? " (condição VIP)" : "";
+        // Distinção concedido x sistêmico: mensalidade zerada pela rede
+        // (ou PDV grátis sistêmico) NÃO é VIP concedido — é regra do
+        // sistema. O selo só aparece para VIP concedido.
+        const vipKind = networkUnitMonthlyZeroed ? "systemic" : isVip ? "granted" : "none";
+        const vipTag = vipKind === "granted" ? " (condição VIP)" : "";
         const addonsDesc = addonLines.length ? ` + ${addonLines.join(" + ")}` : "";
         const proratedTag = pdvOnlyFirst ? " (proporcional 1º mês)" : "";
         const creditTag = creditApplied > 0 ? ` (- crédito R$${creditApplied.toFixed(2)})` : "";
@@ -552,7 +566,7 @@ Deno.serve(async (req) => {
         }
 
         if (dryRun) {
-          results.push({ store: store.name, reference: resolvedReferenceCode, status: "would_bill", amount: totalAmount, due_date: dueDateStr });
+          results.push({ store: store.name, reference: resolvedReferenceCode, status: "would_bill", amount: totalAmount, due_date: dueDateStr, vip_kind: vipKind });
           continue;
         }
 
@@ -648,7 +662,7 @@ Deno.serve(async (req) => {
       if (!manualStoreId) {
         let netQuery = supabase
           .from("store_networks")
-          .select("id, name, owner_id, plan_type, matriz_store_id, is_approved, is_paused, next_billing_date, last_billing_attempt_at, billing_enabled");
+          .select("id, name, owner_id, plan_type, matriz_store_id, is_approved, is_paused, next_billing_date, last_billing_attempt_at, billing_enabled, monthly_fee_override");
         if (manualNetworkId) {
           netQuery = netQuery.eq("id", manualNetworkId);
         } else {
@@ -730,6 +744,11 @@ Deno.serve(async (req) => {
               const baseFee = Number(breakdown.base_monthly_fee || 0);
               const extraFee = Number(breakdown.extra_fee || 0);
               const freeByGmv = !!breakdown.free_by_gmv;
+              // Fase 4b: a base vem da RPC (override > template > guardado,
+              // P1 base 0 para rede só-PDV); a edge só repassa o breakdown
+              // e o selo VIP por divergência — nunca recomputa a base.
+              const netVipKind = String(breakdown.vip_kind || "none");
+              const netVipTag = netVipKind === "granted" ? " (condição VIP)" : "";
 
               const netReferenceCode = dryRun
                 ? `#REDE-DRY-${String(net.id).slice(0, 8).toUpperCase()}`
@@ -786,6 +805,8 @@ Deno.serve(async (req) => {
                   reference: resolvedNetReference,
                   status: freeByGmv ? "free_gmv" : "zero",
                   breakdown,
+                  vip_kind: netVipKind,
+                  base_reason: breakdown.base_reason,
                 });
                 continue;
               }
@@ -796,6 +817,8 @@ Deno.serve(async (req) => {
                   reference: resolvedNetReference,
                   status: "would_bill", amount: total, due_date: netDueDateStr,
                   breakdown,
+                  vip_kind: netVipKind,
+                  base_reason: breakdown.base_reason,
                 });
                 continue;
               }
@@ -813,7 +836,7 @@ Deno.serve(async (req) => {
               const fmt = (v: number) => `R$${v.toFixed(2)}`;
               const extrasDesc = extraFee > 0 ? ` + extras ${fmt(extraFee)}` : "";
               const netDescription =
-                `Mensalidade rede ${net.name} (${fmt(baseFee)}${extrasDesc}) - ${resolvedNetReference}`.substring(0, 140);
+                `Mensalidade rede ${net.name}${netVipTag} (${fmt(baseFee)}${extrasDesc}) - ${resolvedNetReference}`.substring(0, 140);
               const wooviCharge = await createWooviCharge({
                 amount: total,
                 description: netDescription,
@@ -854,6 +877,8 @@ Deno.serve(async (req) => {
                 network: net.name, network_id: net.id,
                 reference: resolvedNetReference, status: "billed",
                 breakdown,
+                vip_kind: netVipKind,
+                base_reason: breakdown.base_reason,
               });
               console.log(`Monthly billing created for network ${net.name}: ${resolvedNetReference}`);
             } catch (netErr) {

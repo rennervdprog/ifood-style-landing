@@ -18,6 +18,13 @@
  *    a mensalidade da guia é zerada na edge (ela não vende).
  *  - Flag: tudo isso SÓ vale para redes com billing_enabled ligado. Com
  *    a flag desligada, a cobrança segue exatamente como hoje.
+ *  - Fase 4b (decisões do Renner, 28/10/2026):
+ *    P1: rede composta SÓ de unidades só-PDV tem base 0 (REGRA, não
+ *    override) — ver `calcNetworkFeeDetailed` (base_reason
+ *    "pdv_only_network"). Rede mista inalterada.
+ *    P2: precedência da base override > template > guardado — ver
+ *    `resolveNetworkBaseFee` / `isNetworkVip` (espelhos de
+ *    `src/lib/vipDetection.ts`, que é a fonte da regra de divergência).
  */
 
 export type NetworkUnitLike = {
@@ -101,6 +108,111 @@ export function shouldSkipUnitPlanBill(input: UnitPlanSkipInput): boolean {
     input.addonsTotal <= 0 &&
     input.billingCreditCents <= 0
   );
+}
+
+export type NetworkFeeBreakdownInput = {
+  /** Valor guardado em store_networks.monthly_fee (fallback). */
+  storedFee: number;
+  /** Preço do plano em plan_templates (null = sem template ativo). */
+  templateFee: number | null;
+  /** Override negociado da rede (null = sem negociação). */
+  overrideFee: number | null;
+  deliveryUnitCount: number;
+  pdvOnlyUnitCount: number;
+  gmv60d: number;
+};
+
+export type NetworkFeeBreakdown = {
+  baseMonthlyFee: number;
+  /** "override" | "template" | "stored_fallback" | "pdv_only_network". */
+  baseReason: string;
+  isVip: boolean;
+  /** "granted" (override divergente) | "systemic" (base zerada por regra) | "none". */
+  vipKind: "granted" | "systemic" | "none";
+  extraUnitCount: number;
+  extraFee: number;
+  freeByGmv: boolean;
+  totalMonthlyFee: number;
+};
+
+/**
+ * Precedência da base da rede (P2): override (não-nulo) > template >
+ * guardado. Espelha `resolveNetworkBaseFee` de `vipDetection.ts`.
+ */
+export function resolveNetworkBaseFee(input: {
+  storedFee: number | null | undefined;
+  templateFee: number | null | undefined;
+  overrideFee: number | null | undefined;
+}): number {
+  if (input.overrideFee != null) return Number(input.overrideFee);
+  if (input.templateFee != null) return Number(input.templateFee);
+  return Number(input.storedFee ?? 0);
+}
+
+/**
+ * Selo VIP da rede por divergência de valor (P2): override presente E
+ * diferente da referência (template, ou guardado sem template).
+ * Override igual ao template NÃO é VIP. Espelha `isNetworkVip`.
+ */
+export function isNetworkVip(input: {
+  storedFee: number | null | undefined;
+  templateFee: number | null | undefined;
+  overrideFee: number | null | undefined;
+}): boolean {
+  if (input.overrideFee == null) return false;
+  const reference = input.templateFee ?? input.storedFee;
+  if (reference == null) return true;
+  return Number(input.overrideFee) !== Number(reference);
+}
+
+/**
+ * Cálculo completo da mensalidade da rede (espelho puro da RPC
+ * `calculate_network_monthly_fee` pós-4b).
+ * P1: 0 sublojas de delivery + >= 1 só-PDV → base 0, base_reason
+ * "pdv_only_network" (vence o override: as unidades já pagam o próprio
+ * plano; cobrar base em cima seria dupla cobrança). Rede mista: base
+ * cheia + R$ 39,90 por delivery além de 3. Gratuidade GMV <= 5000 zera
+ * o total em qualquer caso.
+ */
+export function calcNetworkFeeDetailed(
+  input: NetworkFeeBreakdownInput,
+): NetworkFeeBreakdown {
+  const { deliveryUnitCount, pdvOnlyUnitCount, gmv60d } = input;
+  let baseMonthlyFee: number;
+  let baseReason: string;
+  let isVip: boolean;
+  if (deliveryUnitCount === 0 && pdvOnlyUnitCount > 0) {
+    baseMonthlyFee = 0;
+    baseReason = "pdv_only_network";
+    isVip = false;
+  } else if (input.overrideFee != null) {
+    baseMonthlyFee = Number(input.overrideFee);
+    baseReason = "override";
+    isVip = isNetworkVip(input);
+  } else if (input.templateFee != null) {
+    baseMonthlyFee = Number(input.templateFee);
+    baseReason = "template";
+    isVip = false;
+  } else {
+    baseMonthlyFee = Number(input.storedFee ?? 0);
+    baseReason = "stored_fallback";
+    isVip = false;
+  }
+  const extraUnitCount = Math.max(0, deliveryUnitCount - 3);
+  const extraFee = extraUnitCount * 39.9;
+  const freeByGmv = gmv60d <= 5000;
+  const vipKind =
+    baseReason === "pdv_only_network" ? "systemic" : isVip ? "granted" : "none";
+  return {
+    baseMonthlyFee,
+    baseReason,
+    isVip,
+    vipKind,
+    extraUnitCount,
+    extraFee,
+    freeByGmv,
+    totalMonthlyFee: freeByGmv ? 0 : baseMonthlyFee + extraFee,
+  };
 }
 
 /**
