@@ -28,6 +28,8 @@ export const PartnerLogin = lazy(() => import("@/pages/PartnerLogin"));
 export const AdminDashboardV2 = lazy(() => import("@/pages/AdminDashboardV2"));
 export const AdminDashboardV2Teste = lazy(() => import("@/pages/AdminDashboardV2Teste"));
 export const MatrizDashboard = lazy(() => import("@/pages/MatrizDashboard"));
+export const MatrizDashboardV2 = lazy(() => import("@/pages/MatrizDashboardV2"));
+export const ConviteRede = lazy(() => import("@/pages/ConviteRede"));
 export const PdvPage = lazy(() => import("@/pages/PdvPage"));
 export const PdvPageTeste = lazy(() => import("@/pages/PdvPageTeste"));
 export const PdvKdsPage = lazy(() => import("@/pages/PdvKdsPage"));
@@ -71,6 +73,7 @@ const PREFETCH_MAP: Record<string, () => Promise<unknown>> = {
   [ROUTES.lojista.admin]: () => import("@/pages/AdminDashboardV2"),
   [ROUTES.lojista.pdv]: () => import("@/pages/PdvPage"),
   [ROUTES.lojista.matriz]: () => import("@/pages/MatrizDashboard"),
+  [ROUTES.lojista.matrizV2]: () => import("@/pages/MatrizDashboardV2"),
   [ROUTES.entregador.home]: () => import("@/pages/DriverDashboardV2"),
   [ROUTES.revendedor.home]: () => import("@/pages/ResellerDashboard"),
   [ROUTES.revendedor.entrar]: () => import("@/pages/ResellerAuth"),
