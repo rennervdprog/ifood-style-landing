@@ -26,7 +26,7 @@ import TestStoreFinancePanel from "@/components/TestStoreFinancePanel";
 import AppLinksManager from "@/components/AppLinksManager";
 import AdminBroadcastPush from "@/components/AdminBroadcastPush";
 import SalesCoachPanel from "@/components/SalesCoachPanel";
-import PageViewsCard from "@/components/PageViewsCard";
+import PageViewsCardTeste from "@/components/PageViewsCardTeste";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -34,7 +34,7 @@ import { parseSuperAdminDeepLink, buildSuperAdminDeepLink } from "@/lib/superAdm
 import { toast } from "sonner";
 import { planLabel } from "@/lib/plansInfo";
 import {
-  ArrowLeft, DollarSign, ShoppingBag, TrendingUp, Clock,
+  ArrowLeft, DollarSign, TrendingUp, Clock,
   Store, Copy, AlertTriangle, Users, Bike, Wallet, CheckCircle2, Banknote, XCircle, Bell, Trash2, QrCode, Loader2, ArrowUpRight, ArrowDownRight, Settings,
   LayoutDashboard, Shield, Ticket, RefreshCw, Truck, Menu, X, MapPin, Eye, Scale, Search, FileText, Mail, Phone, User, Download, Calendar, CreditCard, Receipt, ChevronDown, ChevronUp, Percent, Crown, Handshake, FlaskConical, Link as LinkIcon, Megaphone, Monitor, Sparkles, PanelLeftClose, PanelLeftOpen,
   MessageCircle, Smartphone, ShieldCheck, Puzzle,
@@ -221,7 +221,7 @@ const TAB_SUBTITLE: Record<string, (ctx: {
   whatsapp_plataforma: () => "WhatsApp oficial da plataforma (avisos automáticos)",
 };
 
- import { MetricCard } from "./admin/components/FinanceTab";
+ import SuperAdminMetricCardTeste from "./super-admin/components/SuperAdminMetricCardTeste";
 
  const SuperAdminDashboardV2Teste = () => {
   const { user, loading: authLoading } = useAuth();
@@ -631,6 +631,33 @@ const TAB_SUBTITLE: Record<string, (ctx: {
 
   // Hook unificado de gráficos (mesma lógica do lojista)
   const adminChartData = useFinanceChartData(orders || []);
+
+  // Totais dos últimos 7 dias p/ o contexto do herói (independe do filtro)
+  const { data: weekOrders } = useQuery({
+    queryKey: ["admin-week-totals", testStoreIds.join(",")],
+    queryFn: async () => {
+      const end = new Date();
+      const start = new Date();
+      start.setDate(start.getDate() - 7);
+      let query = supabase
+        .from("orders")
+        .select("total_price, status")
+        .gte("created_at", start.toISOString())
+        .lte("created_at", end.toISOString());
+      if (testStoreIds.length > 0) query = query.not("store_id", "in", `(${testStoreIds.join(",")})`);
+      const { data, error } = await query;
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: isAdmin,
+  });
+
+  const weekTotals = useMemo(() => {
+    const billable = (weekOrders || []).filter((o: any) => !["cancelado", "aguardando_pagamento"].includes(o.status));
+    const total = sumMoney(billable.map((o: any) => o.total_price));
+    const count = billable.length;
+    return { total, count, ticket: count > 0 ? total / count : 0 };
+  }, [weekOrders]);
 
   const storeSettlement = useMemo(() => {
     if (!financeOrders || !stores) return [];
@@ -1507,70 +1534,139 @@ const TAB_SUBTITLE: Record<string, (ctx: {
                    )}
                </div>
              )}
-             {activeTab === "dashboard" && (
-               <div className="space-y-4">
-                 <div className="inline-flex items-center gap-1 p-1 bg-muted rounded-xl mb-4">
-                   {(["today", "yesterday", "week"] as DateFilter[]).map(f => (
-                     <button
-                       key={f}
-                       onClick={() => setDateFilter(f)}
-                       className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                         dateFilter === f
-                           ? "bg-background text-foreground shadow-sm"
-                           : "text-muted-foreground hover:text-foreground"
-                       }`}
-                     >
-                       {filterLabels[f]}
-                     </button>
-                   ))}
-                 </div>
-                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-                   <MetricCard icon={ShoppingBag} label="Vendas" value={formatBRL(metrics.totalSales)} sublabel={`${metrics.totalOrders} pedidos`} />
-                   <MetricCard icon={TrendingUp} label="Comissão Total" value={formatBRL(metrics.commission)} sublabel={`📦 Delivery: ${formatBRL(metrics.commissionDelivery)}`} sublabel2={`🖥️ PDV: ${formatBRL(metrics.commissionPdv)}`} highlight />
-                   <MetricCard icon={Clock} label="Ativos" value={String(metrics.activeOrders)} sublabel="em andamento" />
-                   {/* Fase 1 — o card "Atraso" abre a lista de pedidos atrasados */}
-                   <div onClick={() => handleTabChange("atrasados")} className="cursor-pointer" title="Ver pedidos atrasados" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter") handleTabChange("atrasados"); }}>
-                     <MetricCard icon={AlertTriangle} label="Atraso" value={String(delayedOrders.length)} sublabel="> 60 min" alert={delayedOrders.length > 0} />
+                          {activeTab === "dashboard" && (
+               <div className="space-y-6">
+                 {/* Período — filtro rotulado */}
+                 <div className="flex items-center gap-2">
+                   <span className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Período</span>
+                   <div className="inline-flex items-center gap-1 p-1 bg-muted rounded-xl">
+                     {(["today", "yesterday", "week"] as DateFilter[]).map(f => (
+                       <button
+                         key={f}
+                         onClick={() => setDateFilter(f)}
+                         className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                           dateFilter === f
+                             ? "bg-background text-foreground shadow-sm"
+                             : "text-muted-foreground hover:text-foreground"
+                         }`}
+                       >
+                         {filterLabels[f]}
+                       </button>
+                     ))}
                    </div>
                  </div>
-                 <div className="mb-6"><PageViewsCard /></div>
-                 {adminChartData.dailyData.length > 0 && (
-                   <div className="bg-card rounded-2xl border border-border p-4 mb-4">
-                     <div className="flex items-center justify-between mb-3">
-                       <p className="text-xs font-bold text-foreground">Evolução — Delivery vs PDV</p>
-                       <div className="text-[10px] text-muted-foreground flex gap-3">
-                         <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-primary inline-block"/>Delivery</span>
-                         <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-sky-500 inline-block"/>PDV</span>
-                       </div>
+
+                 {/* Herói — vendas do período */}
+                 <div className="bg-card rounded-2xl border border-border p-5">
+                   <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Vendas {filterLabels[dateFilter].toLowerCase()}</p>
+                   <p className="text-4xl font-black text-primary tabular-nums leading-tight mt-1">{formatBRL(metrics.totalSales)}</p>
+                   <p className="text-sm text-muted-foreground mt-1">
+                     {metrics.totalOrders} pedidos · Ticket médio {formatBRL(metrics.totalOrders > 0 ? metrics.totalSales / metrics.totalOrders : 0)}
+                   </p>
+                   {dateFilter !== "week" && (
+                     <p className="text-xs text-muted-foreground mt-3 pt-3 border-t border-border/60">
+                       Nos últimos 7 dias: <b className="text-foreground">{formatBRL(weekTotals.total)}</b> em <b className="text-foreground">{weekTotals.count} pedidos</b> · Ticket médio <b className="text-foreground">{formatBRL(weekTotals.ticket)}</b>
+                     </p>
+                   )}
+                 </div>
+
+                 {/* Apoio — comissão, ativos e atraso */}
+                 <div className="grid grid-cols-3 gap-3">
+                   <SuperAdminMetricCardTeste icon={TrendingUp} label="Comissão" value={formatBRL(metrics.commission)} sublabel={`Delivery ${formatBRL(metrics.commissionDelivery)}`} sublabel2={`PDV ${formatBRL(metrics.commissionPdv)}`} highlight />
+                   <SuperAdminMetricCardTeste icon={Clock} label="Ativos" value={String(metrics.activeOrders)} sublabel="em andamento" />
+                   <SuperAdminMetricCardTeste icon={AlertTriangle} label="Atraso" value={String(delayedOrders.length)} sublabel="mais de 60 min" alert={delayedOrders.length > 0} onClick={() => handleTabChange("atrasados")} />
+                 </div>
+
+                 {/* Precisa de atenção */}
+                 <section>
+                   <h2 className="text-sm font-bold text-foreground mb-3">Precisa de atenção</h2>
+                   {delayedOrders.length === 0 && pendingWithdrawals.length === 0 ? (
+                     <p className="flex items-center gap-2 text-sm text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl px-4 py-3">
+                       <CheckCircle2 className="h-4 w-4 shrink-0" /> Tudo em dia — nenhum pedido atrasado e nenhum saque pendente.
+                     </p>
+                   ) : (
+                     <div className="space-y-3">
+                       {delayedOrders.length > 0 && (
+                         <div className="flex items-center gap-3 bg-destructive/5 border border-destructive/30 rounded-2xl px-4 py-3">
+                           <AlertTriangle className="h-5 w-5 text-destructive shrink-0" />
+                           <div className="min-w-0 flex-1">
+                             <p className="text-sm font-bold text-foreground">{delayedOrders.length} {delayedOrders.length === 1 ? "pedido atrasado" : "pedidos atrasados"}</p>
+                             <p className="text-xs text-muted-foreground">Parados há mais de 60 min.</p>
+                           </div>
+                           <button onClick={() => handleTabChange("atrasados")} className="shrink-0 text-xs font-bold text-destructive bg-destructive/10 px-3 py-2 rounded-xl">Ver atrasados</button>
+                         </div>
+                       )}
+                       {pendingWithdrawals.length > 0 && (
+                         <div className="flex items-center gap-3 bg-amber-500/10 border border-amber-500/30 rounded-2xl px-4 py-3">
+                           <Wallet className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0" />
+                           <div className="min-w-0 flex-1">
+                             <p className="text-sm font-bold text-foreground">{pendingWithdrawals.length} {pendingWithdrawals.length === 1 ? "saque pendente" : "saques pendentes"}</p>
+                             <p className="text-xs text-muted-foreground">Aguardando aprovação.</p>
+                           </div>
+                           <button onClick={() => { handleTabChange("financeiro"); setFinanceSection("saques"); }} className="shrink-0 text-xs font-bold text-amber-700 dark:text-amber-400 bg-amber-500/10 px-3 py-2 rounded-xl">Ver saques</button>
+                         </div>
+                       )}
                      </div>
-                      <div className="h-44">
-                        <Suspense fallback={null}>
-                          <DailySalesChart data={adminChartData.dailyData} showPdv={adminChartData.totalPdv > 0} />
-                        </Suspense>
-                      </div>
-                     <div className="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-border/30 text-center">
-                       <div><p className="text-[10px] text-muted-foreground">Delivery</p><p className="text-sm font-black text-primary">{formatBRL(adminChartData.totalDelivery)}</p></div>
-                       <div className="border-x border-border/30"><p className="text-[10px] text-muted-foreground">PDV</p><p className="text-sm font-black text-sky-600 dark:text-sky-400 tabular-nums">{formatBRL(adminChartData.totalPdv)}</p></div>
-                       <div><p className="text-[10px] text-muted-foreground">Ticket Médio</p><p className="text-sm font-black text-foreground">{formatBRL(adminChartData.ticketMedio)}</p></div>
+                   )}
+                 </section>
+
+                 {/* Evolução — sempre visível, com estado vazio */}
+                 <section>
+                   <div className="flex items-center justify-between mb-3">
+                     <h2 className="text-sm font-bold text-foreground">Evolução — Delivery vs PDV</h2>
+                     <div className="text-[10px] text-muted-foreground flex gap-3">
+                       <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-primary inline-block" />Delivery</span>
+                       <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-sky-500 inline-block" />PDV</span>
                      </div>
                    </div>
-                 )}
-                 {adminChartData.paymentData.length > 0 && (
-                   <div className="bg-card rounded-2xl border border-border p-4 mb-4">
-                     <p className="text-xs font-bold text-foreground mb-3">Formas de Pagamento</p>
-                      <div className="h-32">
-                        <Suspense fallback={null}>
-                          <PaymentBreakdownChart data={adminChartData.paymentData} />
-                        </Suspense>
-                      </div>
+                   <div className="bg-card rounded-2xl border border-border p-4">
+                     {adminChartData.dailyData.length > 0 ? (
+                       <>
+                         <div className="h-44">
+                           <Suspense fallback={null}>
+                             <DailySalesChart data={adminChartData.dailyData} showPdv={adminChartData.totalPdv > 0} />
+                           </Suspense>
+                         </div>
+                         <div className="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-border/30 text-center">
+                           <div><p className="text-[10px] text-muted-foreground">Delivery</p><p className="text-sm font-black text-primary">{formatBRL(adminChartData.totalDelivery)}</p></div>
+                           <div className="border-x border-border/30"><p className="text-[10px] text-muted-foreground">PDV</p><p className="text-sm font-black text-sky-600 dark:text-sky-400 tabular-nums">{formatBRL(adminChartData.totalPdv)}</p></div>
+                           <div><p className="text-[10px] text-muted-foreground">Ticket Médio</p><p className="text-sm font-black text-foreground">{formatBRL(adminChartData.ticketMedio)}</p></div>
+                         </div>
+                       </>
+                     ) : (
+                       <p className="text-sm text-muted-foreground py-6 text-center">Sem vendas neste período.</p>
+                     )}
                    </div>
-                 )}
-                 <div className="bg-card rounded-2xl border border-border p-4">
-                   <p className="text-xs font-bold text-foreground mb-3">Horário de Pico</p>
-                    <Suspense fallback={null}>
-                      <HourlyChart data={adminChartData.hourlyData} />
-                    </Suspense>
+                 </section>
+
+                 {/* Pagamento e horário */}
+                 <div className="grid lg:grid-cols-2 gap-4">
+                   <section>
+                     <h2 className="text-sm font-bold text-foreground mb-3">Formas de pagamento</h2>
+                     <div className="bg-card rounded-2xl border border-border p-4">
+                       {adminChartData.paymentData.length > 0 ? (
+                         <div className="h-32">
+                           <Suspense fallback={null}>
+                             <PaymentBreakdownChart data={adminChartData.paymentData} />
+                           </Suspense>
+                         </div>
+                       ) : (
+                         <p className="text-sm text-muted-foreground py-6 text-center">Sem vendas neste período.</p>
+                       )}
+                     </div>
+                   </section>
+                   <section>
+                     <h2 className="text-sm font-bold text-foreground mb-3">Horário de pico</h2>
+                     <div className="bg-card rounded-2xl border border-border p-4">
+                       <Suspense fallback={null}>
+                         <HourlyChart data={adminChartData.hourlyData} />
+                       </Suspense>
+                     </div>
+                   </section>
                  </div>
+
+                 {/* Visitas + onde olham */}
+                 <PageViewsCardTeste />
                </div>
              )}
           </div>
