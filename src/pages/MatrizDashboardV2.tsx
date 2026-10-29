@@ -21,6 +21,14 @@
  *  - Herança de cardápio (Fase 3): por subloja, "Sincronizar cardápio"
  *    abre a divergência (preço próprio nunca sobrescrito sem aviso) e
  *    sincroniza da loja-matriz por código estável — sem duplicar.
+ *  - Gestor de Redes (protótipo aprovado em 29/10/2026): o painel ganha
+ *    4 abas — Visão geral (desempenho por período + ranking + pedidos
+ *    recentes), Financeiro (breakdown da mensalidade, gratuidade,
+ *    repasse por unidade, histórico e CSV), Operação (central de
+ *    pendências + ações em massa) e Unidades (o conteúdo que já existia,
+ *    com cartões enriquecidos e pausa individual de unidade). As abas
+ *    novas moram em src/components/matriz/ e os helpers puros em
+ *    src/lib/networkGestor.ts.
  */
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
@@ -41,11 +49,16 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
-  Store, Plus, LogOut, Building2, TrendingUp, DollarSign,
-  ShoppingBag, MapPin, ChevronRight, Loader2, Users, X,
+  Store, Plus, LogOut, Building2, DollarSign,
+  MapPin, Loader2, Users, X,
   AlertCircle, CheckCircle2, Pause, Play, UserPlus, UserX,
   ExternalLink, Copy, Link as LinkIcon, Clock, RefreshCw,
+  BarChart3, ClipboardList,
 } from "lucide-react";
+import NetworkOverviewTab from "@/components/matriz/NetworkOverviewTab";
+import NetworkFinanceTab from "@/components/matriz/NetworkFinanceTab";
+import NetworkOpsTab from "@/components/matriz/NetworkOpsTab";
+import { usePeriodStats, useUnitsOpenStatus } from "@/components/matriz/useGestorData";
 import {
   CHECKLIST_LABELS,
   CHECKLIST_KEYS,
@@ -69,7 +82,7 @@ import {
   type CreateUnitForm,
   type MenuDivergenceItem,
 } from "@/lib/networkUnits";
-import { calcNetworkMonthlyFee } from "@/lib/networkLinkRules";
+
 
 interface Network {
   id: string;
@@ -81,6 +94,7 @@ interface Network {
   is_approved: boolean;
   is_paused?: boolean | null;
   matriz_store_id?: string | null;
+  next_billing_date?: string | null;
 }
 
 interface Unit {
@@ -95,6 +109,9 @@ interface Unit {
   is_draft?: boolean | null;
   force_closed?: boolean | null;
   delivery_fee?: number | null;
+  is_open?: boolean | null;
+  plan_type?: string | null;
+  created_at?: string | null;
 }
 
 interface ManagerRow {
@@ -135,7 +152,9 @@ const MatrizDashboardV2 = () => {
   const [publishUnit, setPublishUnit] = useState<Unit | null>(null);
   const [syncUnit, setSyncUnit] = useState<Unit | null>(null);
   const [pauseConfirmOpen, setPauseConfirmOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<"unidades" | "financeiro" | "relatorios">("unidades");
+  const [unitPauseTarget, setUnitPauseTarget] = useState<Unit | null>(null);
+  const [highlightUnitId, setHighlightUnitId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"visao" | "financeiro" | "operacao" | "unidades">("visao");
 
   // Buscar rede da matriz
   const { data: network, isLoading: loadingNetwork } = useQuery({
@@ -157,7 +176,7 @@ const MatrizDashboardV2 = () => {
     queryFn: async (): Promise<Unit[]> => {
       const { data } = await (supabase as any)
         .from("stores")
-        .select("id, name, slug, category, status, address_city, address_neighborhood, image_url, is_draft, force_closed, delivery_fee, is_matriz")
+        .select("id, name, slug, category, status, address_city, address_neighborhood, image_url, is_draft, force_closed, delivery_fee, is_matriz, is_open, plan_type, created_at")
         .eq("network_id", network!.id)
         .order("created_at", { ascending: true });
       return (data as any) || [];
@@ -266,12 +285,36 @@ const MatrizDashboardV2 = () => {
     enabled: !!network?.id,
   });
 
+  // Gestor: vendas/pedidos de hoje por unidade (cartões da aba Unidades)
+  const { data: todayStats } = usePeriodStats(sublojaIds, "hoje");
+  // Gestor: aberta/fechada agora por unidade (header, Visão geral, cartões)
+  const { data: openStatus } = useUnitsOpenStatus(sublojas);
+  const publishedUnits = sublojas.filter((u) => !u.is_draft);
+  const openNowCount = publishedUnits.filter((u) => openStatus?.get(u.id)?.isOpen).length;
+
+  // Gestor: levar o dono até uma unidade específica (alertas da Operação)
+  const showUnit = (unitId: string) => {
+    setActiveTab("unidades");
+    setHighlightUnitId(unitId);
+  };
+
+  useEffect(() => {
+    if (!highlightUnitId || activeTab !== "unidades") return;
+    const scroll = setTimeout(() => {
+      document.getElementById(`unit-card-${highlightUnitId}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 80);
+    const clear = setTimeout(() => setHighlightUnitId(null), 3000);
+    return () => { clearTimeout(scroll); clearTimeout(clear); };
+  }, [highlightUnitId, activeTab]);
+
   const invalidateAll = () => {
     queryClient.invalidateQueries({ queryKey: ["matriz-v2-stores"] });
     queryClient.invalidateQueries({ queryKey: ["matriz-v2-managers"] });
     queryClient.invalidateQueries({ queryKey: ["matriz-v2-invites"] });
     queryClient.invalidateQueries({ queryKey: ["matriz-v2-checklists"] });
     queryClient.invalidateQueries({ queryKey: ["matriz-v2-financials"] });
+    queryClient.invalidateQueries({ queryKey: ["matriz-gestor-period"] });
+    queryClient.invalidateQueries({ queryKey: ["matriz-gestor-open-status"] });
   };
 
   const publishMutation = useMutation({
@@ -315,6 +358,32 @@ const MatrizDashboardV2 = () => {
     onError: (err: any) => toast.error(err.message || "Erro ao pausar rede."),
   });
 
+  // Gestor: pausar/retomar UMA unidade (RPC nova da migration do Gestor,
+  // com checagem de dono no banco; sem ela, o erro é explicado no toast)
+  const unitPauseMutation = useMutation({
+    mutationFn: async ({ unit, paused }: { unit: Unit; paused: boolean }) => {
+      const { error } = await (supabase as any).rpc("set_network_unit_paused", {
+        _store_id: unit.id,
+        _paused: paused,
+      });
+      if (error) throw error;
+      return paused;
+    },
+    onSuccess: (paused) => {
+      toast.success(paused ? "Unidade pausada — só ela, a rede continua vendendo." : "Unidade retomada.");
+      invalidateAll();
+      setUnitPauseTarget(null);
+    },
+    onError: (err: any) => {
+      const msg = String(err?.message || "");
+      if (err?.code === "PGRST202" || /does not exist|schema cache/i.test(msg)) {
+        toast.error("A pausa individual entra no ar com a atualização do Gestor (migration ainda não aplicada).");
+      } else {
+        toast.error(msg || "Erro ao pausar a unidade.");
+      }
+    },
+  });
+
   if (loadingNetwork) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -337,14 +406,6 @@ const MatrizDashboardV2 = () => {
       </div>
     );
   }
-
-  const deliveryUnitCount = sublojas.length;
-  const effectiveFee = calcNetworkMonthlyFee({
-    baseMonthlyFee: Number(network.monthly_fee || 0),
-    deliveryUnitCount,
-    gmv60d: financials?.gmv60d || 0,
-  });
-  const onGratuity = (financials?.gmv60d || 0) <= 5000;
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -384,12 +445,25 @@ const MatrizDashboardV2 = () => {
           </div>
         )}
 
+        {/* Gestor: situação da rede agora */}
+        {publishedUnits.length > 0 && (
+          <div className="px-4 py-2 border-t border-border flex items-center gap-2">
+            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase text-white ${network.is_paused ? "bg-red-500" : "bg-green-600"}`}>
+              {network.is_paused ? "Rede pausada" : "Rede ativa"}
+            </span>
+            <span className="text-[11px] text-muted-foreground">
+              {openNowCount} de {publishedUnits.length} {publishedUnits.length === 1 ? "unidade aberta" : "unidades abertas"} agora
+            </span>
+          </div>
+        )}
+
         {/* Tabs */}
         <div className="flex border-t border-border">
           {[
-            { id: "unidades", label: "Sublojas", icon: Store },
+            { id: "visao", label: "Visão geral", icon: BarChart3 },
             { id: "financeiro", label: "Financeiro", icon: DollarSign },
-            { id: "relatorios", label: "Relatórios", icon: TrendingUp },
+            { id: "operacao", label: "Operação", icon: ClipboardList },
+            { id: "unidades", label: "Unidades", icon: Store },
           ].map(tab => {
             const Icon = tab.icon;
             const active = activeTab === tab.id;
@@ -408,6 +482,34 @@ const MatrizDashboardV2 = () => {
 
       {/* Tab content */}
       <div className="p-4">
+        {activeTab === "visao" && (
+          <NetworkOverviewTab sublojas={sublojas} openStatus={openStatus} />
+        )}
+
+        {activeTab === "financeiro" && (
+          <NetworkFinanceTab
+            network={network}
+            sublojas={sublojas}
+            financials={financials}
+            guideStoreId={matrizStore?.id ?? null}
+          />
+        )}
+
+        {activeTab === "operacao" && (
+          <NetworkOpsTab
+            network={network}
+            sublojas={sublojas}
+            checklists={checklists}
+            financials={financials}
+            onShowUnit={showUnit}
+            onSyncUnit={(u) => {
+              const unit = sublojas.find((x) => x.id === u.id);
+              if (unit) setSyncUnit(unit);
+            }}
+            onGoFinance={() => setActiveTab("financeiro")}
+          />
+        )}
+
         {activeTab === "unidades" && (
           <div className="space-y-3">
             {/* Página do grupo (matriz-guia): só apresenta, não vende */}
@@ -465,8 +567,26 @@ const MatrizDashboardV2 = () => {
                   const manager = managerByStore.get(unit.id);
                   const invite = inviteByStore.get(unit.id);
                   const canPublish = checklist ? canPublishUnit(unit, checklist) : false;
+                  // Gestor: números de hoje, repasse e aberta/fechada agora
+                  const today = todayStats?.perStore.get(unit.id);
+                  const unitRepasse = financials?.repasseByStore.find((r) => r.store_id === unit.id)?.repasse || 0;
+                  const openNow = openStatus?.get(unit.id);
+                  const pillLabel = status === "active" && openNow
+                    ? (openNow.isOpen ? "ABERTA" : "FECHADA")
+                    : UNIT_STATUS_LABELS[status];
+                  const pillCls = status === "active" && openNow
+                    ? (openNow.isOpen ? "bg-green-500/10 text-green-600" : "bg-slate-500/10 text-slate-600")
+                    : status === "active" ? "bg-green-500/10 text-green-600"
+                    : status === "draft" ? "bg-slate-500/10 text-slate-600"
+                    : "bg-amber-500/10 text-amber-600";
                   return (
-                    <div key={unit.id} className="bg-card border border-border rounded-2xl p-3.5">
+                    <div
+                      key={unit.id}
+                      id={`unit-card-${unit.id}`}
+                      className={`bg-card border rounded-2xl p-3.5 transition-shadow ${
+                        highlightUnitId === unit.id ? "border-primary ring-2 ring-primary/40" : "border-border"
+                      }`}
+                    >
                       <div className="flex items-center gap-3">
                         {unit.image_url ? (
                           <img src={unit.image_url} alt={unit.name} loading="lazy" decoding="async" className="w-12 h-12 rounded-xl object-cover" />
@@ -484,13 +604,8 @@ const MatrizDashboardV2 = () => {
                                 {unit.address_neighborhood ? ` · ${unit.address_neighborhood}` : ""}
                               </span>
                             )}
-                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
-                              status === "active" ? "bg-green-500/10 text-green-600"
-                              : status === "draft" ? "bg-slate-500/10 text-slate-600"
-                              : status === "paused" ? "bg-amber-500/10 text-amber-600"
-                              : "bg-amber-500/10 text-amber-600"
-                            }`}>
-                              {UNIT_STATUS_LABELS[status]}
+                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${pillCls}`}>
+                              {pillLabel}
                             </span>
                           </div>
                         </div>
@@ -498,6 +613,37 @@ const MatrizDashboardV2 = () => {
                           <ExternalLink className="h-4 w-4" />
                         </button>
                       </div>
+
+                      {/* Gestor: números da unidade hoje + repasse */}
+                      {!unit.is_draft && (
+                        <div className="mt-3 grid grid-cols-3 gap-2">
+                          <div className="bg-muted/40 rounded-xl p-2 text-center">
+                            <p className="text-[10px] text-muted-foreground uppercase">Vendas hoje</p>
+                            <p className="text-sm font-black">{today ? formatBRL(today.sales) : "—"}</p>
+                          </div>
+                          <div className="bg-muted/40 rounded-xl p-2 text-center">
+                            <p className="text-[10px] text-muted-foreground uppercase">Pedidos hoje</p>
+                            <p className="text-sm font-black">{today ? today.orders : "—"}</p>
+                          </div>
+                          <div className="bg-muted/40 rounded-xl p-2 text-center">
+                            <p className="text-[10px] text-muted-foreground uppercase">Repasse pend.</p>
+                            <p className="text-sm font-black">{formatBRL(unitRepasse)}</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Gestor: progresso do checklist das publicadas */}
+                      {!unit.is_draft && checklist && (
+                        <div className="mt-3">
+                          <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                            <span className="font-bold uppercase">Checklist</span>
+                            <span>{done}/4{checklist.ready ? " · completo" : ` · falta: ${checklistMissingLabels(checklist).join(", ").toLowerCase()}`}</span>
+                          </div>
+                          <div className="h-2 bg-muted rounded-full overflow-hidden mt-1.5">
+                            <div className="h-full bg-green-600 rounded-full" style={{ width: `${(done / 4) * 100}%` }} />
+                          </div>
+                        </div>
+                      )}
 
                       {/* Checklist do rascunho */}
                       {unit.is_draft && checklist && (
@@ -570,6 +716,16 @@ const MatrizDashboardV2 = () => {
                             <RefreshCw className="h-3.5 w-3.5" /> Sincronizar cardápio
                           </button>
                         )}
+                        {!unit.is_draft && (
+                          <button
+                            onClick={() => setUnitPauseTarget(unit)}
+                            className={`flex-1 bg-card border border-border rounded-xl py-2.5 font-bold text-xs flex items-center justify-center gap-1.5 ${unit.force_closed ? "text-green-600" : "text-red-600"}`}
+                          >
+                            {unit.force_closed
+                              ? <><Play className="h-3.5 w-3.5" /> Retomar</>
+                              : <><Pause className="h-3.5 w-3.5" /> Pausar</>}
+                          </button>
+                        )}
                       </div>
                     </div>
                   );
@@ -579,83 +735,6 @@ const MatrizDashboardV2 = () => {
           </div>
         )}
 
-        {activeTab === "financeiro" && (
-          <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
-              <div className="bg-card border border-border rounded-2xl p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <DollarSign className="h-4 w-4 text-emerald-500" />
-                  <p className="text-[11px] font-bold text-muted-foreground uppercase">Faturamento</p>
-                </div>
-                <p className="text-xl font-black">{formatBRL(financials?.totalRevenue || 0)}</p>
-                <p className="text-[10px] text-muted-foreground">Este mês · todas sublojas</p>
-              </div>
-              <div className="bg-card border border-border rounded-2xl p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <ShoppingBag className="h-4 w-4 text-blue-500" />
-                  <p className="text-[11px] font-bold text-muted-foreground uppercase">Pedidos</p>
-                </div>
-                <p className="text-xl font-black">{financials?.totalOrders || 0}</p>
-                <p className="text-[10px] text-muted-foreground">Este mês · consolidado</p>
-              </div>
-            </div>
-
-            <div className="bg-card border border-border rounded-2xl p-4">
-              <p className="text-sm font-bold mb-1">Repasse das sublojas — só leitura</p>
-              <p className="text-[11px] text-muted-foreground mb-3">Cada subloja paga o seu repasse (R$ 0,99 por entrega). Aqui você acompanha o total.</p>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Total pendente</span>
-                <span className="font-black">{formatBRL(financials?.pendingPayout || 0)}</span>
-              </div>
-              {(financials?.repasseByStore || []).map(r => {
-                const unit = sublojas.find(u => u.id === r.store_id);
-                if (!unit || r.repasse <= 0) return null;
-                return (
-                  <div key={r.store_id} className="flex items-center justify-between text-sm mt-1.5">
-                    <span className="text-muted-foreground truncate">{unit.name}</span>
-                    <span className="font-bold">{formatBRL(r.repasse)}</span>
-                  </div>
-                );
-              })}
-            </div>
-
-            <div className="bg-card border border-border rounded-2xl p-4">
-              <p className="text-sm font-bold mb-3">Plano da Rede</p>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Mensalidade base</span>
-                <span className="font-bold">{formatBRL(network.monthly_fee)}</span>
-              </div>
-              <div className="flex items-center justify-between text-sm mt-1.5">
-                <span className="text-muted-foreground">Mensalidade efetiva</span>
-                <span className="font-bold">{formatBRL(effectiveFee)}{onGratuity ? " (gratuita — GMV 60d até R$ 5.000)" : ""}</span>
-              </div>
-              <div className="flex items-center justify-between text-sm mt-1.5">
-                <span className="text-muted-foreground">GMV 60 dias</span>
-                <span className="font-bold">{formatBRL(financials?.gmv60d || 0)}</span>
-              </div>
-              <div className="flex items-center justify-between text-sm mt-1.5">
-                <span className="text-muted-foreground">Tipo</span>
-                <span className="font-bold uppercase text-xs">{network.plan_type}</span>
-              </div>
-              <div className="flex items-center justify-between text-sm mt-1.5">
-                <span className="text-muted-foreground">Sublojas</span>
-                <span className="font-bold">{sublojas.length} / {network.max_units}</span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {activeTab === "relatorios" && (
-          <div className="space-y-3">
-            <p className="text-xs text-muted-foreground text-center py-2">Performance por subloja neste mês</p>
-            {sublojas.filter(u => !u.is_draft).map(unit => (
-              <UnitReport key={unit.id} unit={unit} />
-            ))}
-            {sublojas.filter(u => !u.is_draft).length === 0 && (
-              <p className="text-sm text-muted-foreground text-center py-8">Publique uma subloja para ver relatórios</p>
-            )}
-          </div>
-        )}
       </div>
 
       {/* Modal: Criar subloja */}
@@ -744,11 +823,36 @@ const MatrizDashboardV2 = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Gestor: confirmar pausar / retomar UMA unidade */}
+      <AlertDialog open={unitPauseTarget !== null} onOpenChange={(open) => { if (!open) setUnitPauseTarget(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {unitPauseTarget?.force_closed ? "Retomar esta unidade?" : "Pausar esta unidade?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {unitPauseTarget
+                ? unitPauseTarget.force_closed
+                  ? `A ${unitPauseTarget.name} volta a vender. O resto da rede não muda.`
+                  : `A ${unitPauseTarget.name} fecha para pedidos agora — só ela. O resto da rede continua vendendo.`
+                : ""}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => unitPauseTarget && unitPauseMutation.mutate({ unit: unitPauseTarget, paused: !unitPauseTarget.force_closed })}
+            >
+              {unitPauseTarget?.force_closed ? "Retomar unidade" : "Pausar unidade"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
 
-// ─── COMPONENTE: Card de relatório por unidade ─────────────────────────────
 // ─── MODAL: Sincronizar cardápio (Fase 3) ───────────────────────────────
 // Mostra a divergência entre a loja-fonte (subloja publicada mais antiga
 // da rede, resolvida por network_menu_source — o guia nunca tem
@@ -946,44 +1050,6 @@ const MenuSyncModal = ({ unit, networkId, onClose, onSynced }: {
   );
 };
 
-const UnitReport = ({ unit }: { unit: Unit }) => {
-  const { data: stats } = useQuery({
-    queryKey: ["matriz-v2-unit-stats", unit.id],
-    queryFn: async () => {
-      const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
-      const { data } = await supabase
-        .from("orders")
-        .select("total_price, status")
-        .eq("store_id", unit.id)
-        .gte("created_at", monthStart);
-      const finalized = (data || []).filter((o: any) => o.status === "finalizado");
-      const revenue = finalized.reduce((s, o: any) => s + Number(o.total_price || 0), 0);
-      return { orders: finalized.length, revenue };
-    },
-  });
-
-  return (
-    <div className="bg-card border border-border rounded-2xl p-3.5">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm font-bold">{unit.name}</p>
-          {unit.address_city && <p className="text-[11px] text-muted-foreground">{unit.address_city}</p>}
-        </div>
-        <ChevronRight className="h-4 w-4 text-muted-foreground" />
-      </div>
-      <div className="mt-3 grid grid-cols-2 gap-2">
-        <div className="bg-muted/40 rounded-xl p-2 text-center">
-          <p className="text-[10px] text-muted-foreground uppercase">Pedidos</p>
-          <p className="text-sm font-black">{stats?.orders ?? "—"}</p>
-        </div>
-        <div className="bg-muted/40 rounded-xl p-2 text-center">
-          <p className="text-[10px] text-muted-foreground uppercase">Faturamento</p>
-          <p className="text-sm font-black">{stats ? formatBRL(stats.revenue) : "—"}</p>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 // ─── MODAL: Criar nova subloja (nasce rascunho) ───────────────────────────
 const CreateUnitModal = ({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) => {
