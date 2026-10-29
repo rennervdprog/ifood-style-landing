@@ -10,9 +10,12 @@
  * Nenhum destino, campo ou fluxo muda: o salvar continua sendo o upsert
  * em store_whatsapp_config do WhatsAppSetupTeste.
  */
-import { Zap, MessageCircle } from "lucide-react";
+import { Zap, MessageCircle, AlertTriangle } from "lucide-react";
 
 interface Props {
+  /** Conexão WhatsApp ativa? Quando false, as preferências exibidas estão
+   *  salvas mas nada é enviado — a tela precisa dizer isso. */
+  connected?: boolean;
   storeSlug: string;
   notifyAccepted: boolean;
   setNotifyAccepted: (v: boolean) => void;
@@ -41,6 +44,7 @@ const Toggle = ({ value, onChange, label }: { value: boolean; onChange: () => vo
 );
 
 export default function WhatsAppNotificationsTeste({
+  connected,
   storeSlug,
   notifyAccepted, setNotifyAccepted,
   notifyReady, setNotifyReady,
@@ -58,6 +62,14 @@ export default function WhatsAppNotificationsTeste({
 
   return (
     <div className="space-y-4">
+      {connected === false && (
+        <div className="rounded-2xl border border-amber-300/60 bg-amber-50 dark:bg-amber-500/10 px-4 py-3 flex items-start gap-2" role="status">
+          <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+          <p className="text-xs text-amber-800 dark:text-amber-300 leading-relaxed">
+            <strong>WhatsApp desconectado.</strong> As preferências abaixo ficam salvas, mas nenhuma mensagem é enviada enquanto a conexão estiver caída. Reconecte na aba <strong>Conexão</strong> para voltar a notificar os clientes.
+          </p>
+        </div>
+      )}
       <div className="rounded-2xl border border-border p-4 space-y-3">
         <div className="flex items-center gap-2">
           <Zap className="h-4 w-4 text-primary" />

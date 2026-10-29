@@ -87,10 +87,18 @@ function formatWhen(iso: string): string {
 }
 
 function initials(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return "?";
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  const letterParts = name
+    .trim()
+    .split(/\s+/)
+    .map((p) => p.replace(/[^\p{L}]/gu, ""))
+    .filter(Boolean);
+  if (letterParts.length === 1) return letterParts[0].slice(0, 2).toUpperCase();
+  if (letterParts.length > 1) return (letterParts[0][0] + letterParts[letterParts.length - 1][0]).toUpperCase();
+  // Sem letras (conversa sem nome, identificada pelo telefone formatado):
+  // usa o DDD em vez de "(" + primeiro dígito, que gerava o avatar "(9".
+  const digits = name.replace(/\D/g, "");
+  const local = digits.startsWith("55") && digits.length >= 12 ? digits.slice(2) : digits;
+  return local.slice(0, 2) || "?";
 }
 
 /** O webhook grava este texto quando a mensagem é só mídia, sem legenda. */

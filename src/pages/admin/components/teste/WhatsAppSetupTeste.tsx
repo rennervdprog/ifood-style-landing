@@ -204,6 +204,7 @@ export default function WhatsAppSetupTeste({ storeId, storeSlug, storeName, expe
 
       {tab === "notifications" && (
         <WhatsAppNotificationsTeste
+          connected={config?.status === "connected"}
           storeSlug={storeSlug}
           notifyAccepted={notifyAccepted} setNotifyAccepted={setNotifyAccepted}
           notifyReady={notifyReady} setNotifyReady={setNotifyReady}

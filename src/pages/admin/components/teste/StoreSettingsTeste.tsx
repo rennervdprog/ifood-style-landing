@@ -1070,7 +1070,7 @@ const SectionSaveButtonTeste = ({ section, savingSection, onSave, label }: {
            🚚 Frete grátis acima de um valor
          </label>
          <p className="text-[11px] text-muted-foreground -mt-1">
-           Quando o cliente atingir o subtotal definido, o frete fica <strong>R$ 0,00</strong> para ele. A taxa da entrega (motoboy/bairro) fica por sua conta como cortesia. A <strong>taxa da plataforma (R$ 2)</strong> continua sendo cobrada normalmente.
+           Quando o cliente atingir o subtotal definido, o frete fica <strong>R$ 0,00</strong> para ele. A taxa da entrega (motoboy/bairro) fica por sua conta como cortesia. A <strong>taxa da plataforma (R$ 0,99)</strong> continua sendo cobrada normalmente.
          </p>
          <label className="flex items-center gap-2 cursor-pointer select-none">
            <input
