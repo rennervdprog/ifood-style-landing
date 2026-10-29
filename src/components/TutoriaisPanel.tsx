@@ -644,7 +644,7 @@ const FAQ = [
     a: "Diferença pode ser troco errado, sangria não registrada ou retirada sem motivo. Use o relatório do PDV para conferir cada movimento. Sempre registre sangrias com motivo.",
   },
   {
-    q: "Como mudar de plano (Fixo, Comissão, Híbrido)?",
+    q: "Como mudar de plano (Essencial, Crescimento, Comissão, Somente PDV)?",
     a: "Vá em Assinatura → Mudar Plano. A administração analisa em 1-2 dias. Você continua usando o plano atual até a aprovação.",
   },
   {

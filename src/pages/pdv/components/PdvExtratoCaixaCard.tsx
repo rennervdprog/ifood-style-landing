@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Receipt, ArrowDownLeft, ArrowUpRight } from "lucide-react";
 import { formatBRL } from "@/lib/utils";
+import { paymentMethodLabel } from "@/lib/orderLabels";
 import { startOfMonth, endOfMonth } from "date-fns";
 import QueryErrorState from "@/components/QueryErrorState";
 
@@ -12,13 +13,7 @@ const TYPE_LABELS: Record<string, string> = {
   sangria: "Sangria",
   suprimento: "Suprimento",
   refund: "Reembolso",
-};
-
-const PAYMENT_LABELS: Record<string, string> = {
-  dinheiro: "Dinheiro",
-  maquininha_credito: "Crédito",
-  maquininha_debito: "Débito",
-  maquininha_pix: "PIX maquininha",
+  cancellation: "Cancelamento",
 };
 
 /** Tipos que representam entrada de caixa (verde). */
@@ -96,7 +91,7 @@ export default function PdvExtratoCaixaCard({ storeId }: { storeId: string }) {
                           {m.payment_method && (
                             <span className="font-normal text-muted-foreground">
                               {" · "}
-                              {PAYMENT_LABELS[m.payment_method as string] ?? m.payment_method}
+                              {paymentMethodLabel(m.payment_method as string)}
                             </span>
                           )}
                         </div>
@@ -113,7 +108,7 @@ export default function PdvExtratoCaixaCard({ storeId }: { storeId: string }) {
                       }`}
                     >
                       {inflow ? "+" : "−"}
-                      {formatBRL(Number(m.amount ?? 0))}
+                      {formatBRL(Math.abs(Number(m.amount ?? 0)))}
                     </span>
                   </li>
                 );

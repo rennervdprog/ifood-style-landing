@@ -89,6 +89,38 @@ const GuestCheckoutPage = () => {
     }
   }, [store, navigate]);
 
+  // Disponibilidade de entrega (mesma fonte canônica da página da loja):
+  // loja com entrega própria e nenhum motoboy disponível = só retirada.
+  const isOwnDeliveryStore = (store as any)?.delivery_mode === "own";
+  const { data: deliveryAvailability, isSuccess: availabilityChecked } = useQuery({
+    queryKey: ["store-delivery-availability", storeId],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).rpc(
+        "store_delivery_availability",
+        { _store_id: storeId! }
+      ).maybeSingle();
+      if (error) throw error;
+      return data as {
+        can_accept_delivery_orders: boolean;
+        available_drivers_count: number;
+        reason_code: string;
+        reason_message: string;
+        checked_at: string;
+      } | null;
+    },
+    enabled: !!storeId && isOwnDeliveryStore,
+    refetchInterval: 30_000,
+    staleTime: 15_000,
+  });
+  const deliveryUnavailable = isOwnDeliveryStore
+    && availabilityChecked
+    && deliveryAvailability?.can_accept_delivery_orders === false;
+
+  // Entrega indisponível → força retirada (não pede endereço de entrega).
+  useEffect(() => {
+    if (deliveryUnavailable) setIsPickup(true);
+  }, [deliveryUnavailable]);
+
   // Fase 4: mesmo padrão do checkout logado — busca o horário da loja e usa
   // getStoreOpenStatus para travar loja fechada e pedido mínimo no front.
   // O servidor (RPC create_order_with_items) continua sendo o trava final.
@@ -513,14 +545,15 @@ const GuestCheckoutPage = () => {
             <div className="flex gap-2">
               <button
                 onClick={() => setIsPickup(false)}
-                className={`flex-1 flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
+                disabled={deliveryUnavailable}
+                className={`flex-1 flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
                   !isPickup ? "border-primary bg-primary/5" : "border-transparent bg-muted/50"
                 }`}
               >
                 <Truck className={`h-6 w-6 ${!isPickup ? "text-primary" : "text-muted-foreground"}`} />
                 <div className="text-center">
                   <span className={`text-sm font-bold block ${!isPickup ? "text-primary" : "text-foreground"}`}>Entrega</span>
-                  <span className="text-[10px] text-muted-foreground">Receba em casa</span>
+                  <span className="text-[10px] text-muted-foreground">{deliveryUnavailable ? "Indisponível no momento" : "Receba em casa"}</span>
                 </div>
               </button>
               <button
@@ -536,7 +569,18 @@ const GuestCheckoutPage = () => {
                 </div>
               </button>
             </div>
-            {isPickup && (
+            {deliveryUnavailable && (
+              <div className="mt-3 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-xl p-3 flex items-start gap-2">
+                <Truck className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-xs font-bold text-foreground">Entrega indisponível no momento</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                    {deliveryAvailability?.reason_message || "Nenhum motoboy disponível agora."} Por enquanto, apenas retirada na loja.
+                  </p>
+                </div>
+              </div>
+            )}
+            {isPickup && !deliveryUnavailable && (
               <div className="mt-3 bg-primary/5 border border-primary/10 rounded-xl p-3 flex items-start gap-2">
                 <Store className="h-4 w-4 text-primary mt-0.5 shrink-0" />
                 <div>
@@ -722,7 +766,7 @@ const GuestCheckoutPage = () => {
             )}
             {!isPickup && quoteBreakdown && <p className="text-[11px] text-muted-foreground">{quoteBreakdown}</p>}
             {!isPickup && quoteFailureMessage && <p className="text-[11px] text-destructive">{quoteFailureMessage}</p>}
-            <div className="flex justify-between text-base font-bold pt-2 border-t border-border"><span>Total</span><span className="text-primary">{quoteReady ? formatBRL(total) : "A calcular"}</span></div>
+            <div className="flex justify-between text-base font-bold pt-2 border-t border-border"><span>Total</span><span className="text-primary">{formatBRL(total)}</span></div>
           </div>
         </section>
 

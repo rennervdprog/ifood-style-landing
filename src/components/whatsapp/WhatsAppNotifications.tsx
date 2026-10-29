@@ -4,6 +4,9 @@
 import { Zap, MessageCircle, Gauge, AlertTriangle } from "lucide-react";
 
 interface Props {
+  /** Conexão WhatsApp ativa? Quando false, as preferências exibidas estão
+   *  salvas mas nada é enviado — a tela precisa dizer isso. */
+  connected?: boolean;
   storeSlug: string;
   notifyAccepted: boolean;
   setNotifyAccepted: (v: boolean) => void;
@@ -33,6 +36,7 @@ const Toggle = ({ value, onChange }: { value: boolean; onChange: () => void }) =
 );
 
 export default function WhatsAppNotifications({
+  connected,
   storeSlug,
   notifyAccepted, setNotifyAccepted,
   notifyReady, setNotifyReady,
@@ -68,6 +72,14 @@ export default function WhatsAppNotifications({
 
   return (
     <div className="space-y-4">
+      {connected === false && (
+        <div className="rounded-2xl border border-amber-300/60 bg-amber-50 dark:bg-amber-500/10 px-4 py-3 flex items-start gap-2" role="status">
+          <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+          <p className="text-xs text-amber-800 dark:text-amber-300 leading-relaxed">
+            <strong>WhatsApp desconectado.</strong> As preferências abaixo ficam salvas, mas nenhuma mensagem é enviada enquanto a conexão estiver caída. Reconecte na aba <strong>Conexão</strong> para voltar a notificar os clientes.
+          </p>
+        </div>
+      )}
       <div className="rounded-2xl border border-border p-4 space-y-3">
         <div className="flex items-center gap-2">
           <Zap className="h-4 w-4 text-primary" />
@@ -121,7 +133,7 @@ export default function WhatsAppNotifications({
             step={1}
             value={dailyLimitOverride}
             onChange={(e) => setDailyLimitOverride(e.target.value)}
-            placeholder={String(baseDailyLimit)}
+            placeholder={String(Math.min(baseDailyLimit + 100, 500))}
             className="w-24 rounded-lg border border-border bg-background px-2.5 py-2 text-sm font-bold text-foreground outline-none focus:border-primary"
           />
           <span className="text-xs text-muted-foreground">envios por dia (máx. 500)</span>

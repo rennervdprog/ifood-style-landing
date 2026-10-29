@@ -121,6 +121,39 @@ const CheckoutPage = () => {
     staleTime: 1000 * 60 * 3,
   });
 
+  // Disponibilidade de entrega (mesma fonte canônica da página da loja):
+  // loja com entrega própria e nenhum motoboy disponível = só retirada.
+  // Sem isso, o checkout pré-selecionava "Entrega" numa loja só-retirada.
+  const isOwnDeliveryStore = (storeData as any)?.delivery_mode === "own";
+  const { data: deliveryAvailability, isSuccess: availabilityChecked } = useQuery({
+    queryKey: ["store-delivery-availability", storeId],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).rpc(
+        "store_delivery_availability",
+        { _store_id: storeId! }
+      ).maybeSingle();
+      if (error) throw error;
+      return data as {
+        can_accept_delivery_orders: boolean;
+        available_drivers_count: number;
+        reason_code: string;
+        reason_message: string;
+        checked_at: string;
+      } | null;
+    },
+    enabled: !!storeId && isOwnDeliveryStore,
+    refetchInterval: 30_000,
+    staleTime: 15_000,
+  });
+  const deliveryUnavailable = isOwnDeliveryStore
+    && availabilityChecked
+    && deliveryAvailability?.can_accept_delivery_orders === false;
+
+  // Entrega indisponível → força retirada (não pede endereço de entrega).
+  useEffect(() => {
+    if (deliveryUnavailable) setIsPickup(true);
+  }, [deliveryUnavailable]);
+
   // Ler quais métodos a loja aceita via settings — DEVE ficar após storeData
   const storePaymentSettings = useMemo(() => {
     const s = (storeData as any)?.settings || {};
@@ -787,14 +820,15 @@ const CheckoutPage = () => {
             <div className="flex gap-2">
               <button
                 onClick={() => setIsPickup(false)}
-                className={`flex-1 flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
+                disabled={deliveryUnavailable}
+                className={`flex-1 flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
                   !isPickup ? "border-primary bg-primary/5" : "border-transparent bg-muted/50"
                 }`}
               >
                 <Truck className={`h-6 w-6 ${!isPickup ? "text-primary" : "text-muted-foreground"}`} />
                 <div className="text-center">
                 <span className={`text-sm font-bold block ${!isPickup ? "text-primary" : "text-foreground"}`}>Entrega</span>
-                  <span className="text-[10px] text-muted-foreground">Receba em casa</span>
+                  <span className="text-[10px] text-muted-foreground">{deliveryUnavailable ? "Indisponível no momento" : "Receba em casa"}</span>
                 </div>
               </button>
               <button
@@ -810,7 +844,18 @@ const CheckoutPage = () => {
                 </div>
               </button>
             </div>
-            {isPickup && (
+            {deliveryUnavailable && (
+              <div className="mt-3 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-xl p-3 flex items-start gap-2">
+                <Truck className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-xs font-bold text-foreground">Entrega indisponível no momento</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                    {deliveryAvailability?.reason_message || "Nenhum motoboy disponível agora."} Por enquanto, apenas retirada na loja.
+                  </p>
+                </div>
+              </div>
+            )}
+            {isPickup && !deliveryUnavailable && (
               <div className="mt-3 bg-primary/5 border border-primary/10 rounded-xl p-3 flex items-start gap-2">
                 <Store className="h-4 w-4 text-primary mt-0.5 shrink-0" />
                 <div>
@@ -1398,7 +1443,7 @@ const CheckoutPage = () => {
         {/* Total */}
         <div className="flex items-center justify-between py-1" aria-live="polite" aria-atomic="true">
           <span className="text-base font-bold text-foreground">Total</span>
-          <span className="text-2xl font-black text-primary" aria-label={quoteReady ? `Total ${formatBRL(finalTotal)}` : "Total será calculado após validar a entrega"}>{quoteReady ? formatBRL(finalTotal) : "A calcular"}</span>
+          <span className="text-2xl font-black text-primary" aria-label={`Total ${formatBRL(finalTotal)}`}>{formatBRL(finalTotal)}</span>
         </div>
 
         {belowMinimum && (

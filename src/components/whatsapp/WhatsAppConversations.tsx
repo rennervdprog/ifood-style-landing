@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Loader2, MessagesSquare, RefreshCw, Search, Trash2 } from "lucide-react";
+import { ArrowLeft, Image as ImageIcon, Loader2, MessagesSquare, RefreshCw, Search, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -47,10 +47,42 @@ function formatWhen(iso: string): string {
 }
 
 function initials(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return "?";
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  const letterParts = name
+    .trim()
+    .split(/\s+/)
+    .map((p) => p.replace(/[^\p{L}]/gu, ""))
+    .filter(Boolean);
+  if (letterParts.length === 1) return letterParts[0].slice(0, 2).toUpperCase();
+  if (letterParts.length > 1) return (letterParts[0][0] + letterParts[letterParts.length - 1][0]).toUpperCase();
+  // Sem letras (conversa sem nome, identificada pelo telefone formatado):
+  // usa o DDD em vez de "(" + primeiro dígito, que gerava o avatar "(9".
+  const digits = name.replace(/\D/g, "");
+  const local = digits.startsWith("55") && digits.length >= 12 ? digits.slice(2) : digits;
+  return local.slice(0, 2) || "?";
+}
+
+/** O webhook grava este texto quando a mensagem é só mídia, sem legenda. */
+const MEDIA_SENTINEL = "[mensagem sem texto]";
+const isMediaOnly = (m: InboundRow) =>
+  !m.message || m.message.trim() === "" || m.message.trim() === MEDIA_SENTINEL;
+
+/** Corpo da mensagem: texto, ou cartão amigável para mídia sem legenda
+ *  (o registro não guarda o conteúdo da mídia — só o texto). */
+function MessageBody({ m, outgoing }: { m: InboundRow; outgoing: boolean }) {
+  if (isMediaOnly(m)) {
+    return (
+      <div className="flex items-start gap-2">
+        <ImageIcon className="h-4 w-4 shrink-0 mt-0.5 opacity-70" />
+        <p className="text-sm">
+          Mensagem de mídia (foto, áudio ou documento).
+          <span className={`block text-xs mt-0.5 ${outgoing ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
+            O conteúdo não fica salvo no registro da conversa — só o texto. Abra o WhatsApp para ver.
+          </span>
+        </p>
+      </div>
+    );
+  }
+  return <p className="text-sm whitespace-pre-wrap break-words">{m.message}</p>;
 }
 
 const WhatsAppConversations = ({ storeId }: Props) => {
@@ -97,7 +129,7 @@ const WhatsAppConversations = ({ storeId }: Props) => {
       list.push({
         phone,
         name: named?.push_name?.trim() || formatPhone(phone),
-        lastMessage: last?.message || "",
+        lastMessage: last && isMediaOnly(last) ? "Mensagem de mídia" : (last?.message || ""),
         lastAt: last?.received_at || "",
         count: msgs.length,
         messages: sorted,
@@ -216,7 +248,7 @@ const WhatsAppConversations = ({ storeId }: Props) => {
                               : "bg-muted text-foreground rounded-bl-md"
                           }`}
                         >
-                          <p className="text-sm whitespace-pre-wrap break-words">{m.message || ""}</p>
+                          <MessageBody m={m} outgoing={out} />
                           <div className="flex items-center justify-end gap-1.5 mt-1">
                             {m.deleted_at ? (
                               <span

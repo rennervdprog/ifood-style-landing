@@ -195,9 +195,6 @@ export default function RepasseAlert({ storeId, storeName, onGoToFinance }: Prop
         )}
 
         <p className="text-[10px] text-muted-foreground text-center leading-relaxed">
-          {belowMin && !isBlocked && (
-            <>Cobrança PIX gerada automaticamente toda segunda-feira a partir de <strong>{formatBRL(REPASSE_RULES.MIN_AUTO_CHARGE_BRL)}</strong>.<br /></>
-          )}
           A cobrança automática ocorre toda segunda-feira a partir de <strong>{formatBRL(REPASSE_RULES.MIN_AUTO_CHARGE_BRL)}</strong>.<br />
           Saldo acima de <strong>{formatBRL(REPASSE_RULES.BLOCK_THRESHOLD_BRL)}</strong> bloqueia novos pedidos imediatamente.
           {" "}A cobrança pendente mais antiga bloqueia a loja após <strong>{REPASSE_RULES.SUSPENSION_DAYS} dias</strong>.

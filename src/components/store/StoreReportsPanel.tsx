@@ -18,25 +18,9 @@ const PaymentPieChart = lazy(() =>
 
 type SubTab = "overview" | "sales" | "products" | "hours";
 
-const PAYMENT_LABELS: Record<string, string> = {
-  pix: "PIX",
-  pix_online: "PIX Online",
-  pix_machine: "PIX Maquineta",
-  dinheiro: "Dinheiro",
-  cartao: "Cartão",
-  cartao_credito: "Crédito",
-  cartao_debito: "Débito",
-  cartao_maquineta: "Cartão Maquineta",
-  online: "Online",
-  outros: "Outros",
-};
-
-const SOURCE_LABELS: Record<string, string> = {
-  delivery: "Delivery",
-  pdv: "PDV",
-  manual: "Manual",
-  balcao: "Balcão",
-};
+// Mapas únicos de rótulos (o mapa local antigo não cobria os valores reais
+// do banco — cash, maquininha_pix, whatsapp_bot etc. vazavam crus na tela).
+import { PAYMENT_METHOD_LABELS as PAYMENT_LABELS, ORDER_SOURCE_LABELS as SOURCE_LABELS } from "@/lib/orderLabels";
 
 const WEEKDAYS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 

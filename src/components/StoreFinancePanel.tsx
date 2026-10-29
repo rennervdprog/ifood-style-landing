@@ -595,7 +595,7 @@ const DONUT_COLORS = [NEON_COLORS.pink, NEON_COLORS.blue, NEON_COLORS.amber];
       `--- Vendas Físicas (Cobrança Manual) ---\n` +
       `Vendas Dinheiro/Cartão: ${formatBRL(physicalSales)}\n` +
       `Comissão ${commissionPct}%: ${formatBRL(commissionOnPhysical)}\n` +
-      (ordersWithPlatformDelivery.length > 0 ? `Taxa entrega plataforma (${ordersWithPlatformDelivery.length}x R$${platformDeliverySplit.toFixed(2)}): ${formatBRL(platformDeliveryTotal)}\n` : ``) +
+      (ordersWithPlatformDelivery.length > 0 ? `Taxa entrega plataforma (${ordersWithPlatformDelivery.length}x ${formatBRL(platformDeliverySplit)}): ${formatBRL(platformDeliveryTotal)}\n` : ``) +
       `Total a repassar: ${formatBRL(commissionDue)}`;
     navigator.clipboard.writeText(text);
     toast.success("Resumo copiado!");
@@ -617,7 +617,7 @@ const DONUT_COLORS = [NEON_COLORS.pink, NEON_COLORS.blue, NEON_COLORS.amber];
       `--- VENDAS FÍSICAS (COBRANÇA MANUAL) ---`,
       `VENDAS DINHEIRO/CARTÃO: ${formatBRL(physicalSales)}`,
       `COMISSÃO ${commissionPct}%: ${formatBRL(commissionOnPhysical)}`,
-      ...(ordersWithPlatformDelivery.length > 0 ? [`TAXA ENTREGA PLATAFORMA (${ordersWithPlatformDelivery.length}x R$${platformDeliverySplit.toFixed(2)}): ${formatBRL(platformDeliveryTotal)}`] : []),
+      ...(ordersWithPlatformDelivery.length > 0 ? [`TAXA ENTREGA PLATAFORMA (${ordersWithPlatformDelivery.length}x ${formatBRL(platformDeliverySplit)}): ${formatBRL(platformDeliveryTotal)}`] : []),
       `TOTAL A REPASSAR: ${formatBRL(commissionDue)}`,
       ``,
       `--- PEDIDOS ---`,
@@ -990,14 +990,14 @@ const DONUT_COLORS = [NEON_COLORS.pink, NEON_COLORS.blue, NEON_COLORS.amber];
             Você recebeu o valor na hora (dinheiro/cartão). Repasse pendente:{" "}
             <strong className="text-foreground">{commissionPct}% sobre vendas físicas</strong>
             {ordersWithPlatformDelivery.length > 0 && (
-              <> + <strong className="text-foreground">R${platformDeliverySplit.toFixed(2)}/entrega ({ordersWithPlatformDelivery.length}x)</strong> da plataforma.</>
+              <> + <strong className="text-foreground">{formatBRL(platformDeliverySplit)}/entrega ({ordersWithPlatformDelivery.length}x)</strong> da plataforma.</>
             )}
           </p>
           <p className="text-2xl font-black text-red-400">
             {formatBRL((dbComissaoPendente > 0 ? dbComissaoPendente : commissionDue))}
           </p>
 
-          {/* Breakdown: % comissão + R$2/entrega */}
+          {/* Breakdown: % comissão + taxa de entrega da plataforma */}
           {ordersWithPlatformDelivery.length > 0 && dbComissaoPendente <= 0 && (
             <div className="mt-2 rounded-xl bg-red-500/5 border border-red-500/10 p-3 space-y-1.5">
               <div className="flex items-center justify-between text-xs">
@@ -1005,7 +1005,7 @@ const DONUT_COLORS = [NEON_COLORS.pink, NEON_COLORS.blue, NEON_COLORS.amber];
                 <span className="font-semibold text-foreground">{formatBRL(commissionOnPhysical)}</span>
               </div>
               <div className="flex items-center justify-between text-xs">
-                <span className="text-muted-foreground">Taxa entrega plataforma ({ordersWithPlatformDelivery.length}× R${platformDeliverySplit.toFixed(2)})</span>
+                <span className="text-muted-foreground">Taxa entrega plataforma ({ordersWithPlatformDelivery.length}× {formatBRL(platformDeliverySplit)})</span>
                 <span className="font-semibold text-foreground">{formatBRL(platformDeliveryTotal)}</span>
               </div>
               <div className="h-px bg-red-500/20" />

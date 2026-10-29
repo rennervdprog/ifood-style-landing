@@ -210,6 +210,7 @@ export default function WhatsAppSetup({ storeId, storeSlug, storeName, expectedP
 
       {tab === "notifications" && (
         <WhatsAppNotifications
+          connected={config?.status === "connected"}
           storeSlug={storeSlug}
           notifyAccepted={notifyAccepted} setNotifyAccepted={setNotifyAccepted}
           notifyReady={notifyReady} setNotifyReady={setNotifyReady}
