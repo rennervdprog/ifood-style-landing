@@ -126,6 +126,9 @@ async function createWooviCharge(params: {
 
 const BodySchema = z.object({
   store_id: z.string().uuid().optional(),
+  // Fase 4: cobrança de UMA rede (sandbox). Sem network_id, o cron cobra
+  // só redes com billing_enabled ligado; com network_id, só aquela rede.
+  network_id: z.string().uuid().optional(),
   force: z.boolean().optional(),
   dry_run: z.boolean().optional(),
 }).partial();
@@ -226,6 +229,7 @@ Deno.serve(async (req) => {
 
     // Disparo manual restrito ou cron. dry_run lista elegíveis sem criar PIX.
     let manualStoreId: string | null = null;
+    let manualNetworkId: string | null = null;
     let force = false;
     let dryRun = false;
     if (req.method === "POST") {
@@ -236,6 +240,7 @@ Deno.serve(async (req) => {
           return json({ error: parsed.error.flatten().fieldErrors }, 400);
         }
         manualStoreId = parsed.data.store_id ?? null;
+        manualNetworkId = parsed.data.network_id ?? null;
         force = !!parsed.data.force;
         dryRun = !!parsed.data.dry_run;
       } catch (_) {
@@ -269,7 +274,7 @@ Deno.serve(async (req) => {
     }
     let query = supabase
       .from("store_plans")
-      .select("*, stores!inner(id, name, owner_id, status)")
+      .select("*, stores!inner(id, name, owner_id, status, network_id, is_matriz)")
       .or(orClauses.join(","))
       .eq("is_active", true);
 
@@ -293,18 +298,45 @@ Deno.serve(async (req) => {
       return json({ error: "Failed to fetch plans" }, 500);
     }
 
-    if (!duePlans || duePlans.length === 0) {
-      return json({ message: "No plans due for billing", billed: 0 });
-    }
+    // Fase 4: a cobrança da rede roda mesmo sem plano de loja vencido —
+    // por isso não há mais retorno antecipado quando duePlans está vazio.
+    const duePlansList = duePlans || [];
 
     let billed = 0;
     let failed = 0;
     const results: any[] = [];
 
-    // Load plan templates to detect VIP (personalized) conditions per store
+    // Fase 4 — mapa rede → billing_enabled (flag por rede). A cobrança
+    // viva NÃO muda: rede sem flag segue o caminho antigo, e rede com
+    // flag tem o plano das lojas zerado no loop abaixo + cobrança única
+    // da rede no bloco ao fim desta função.
+    const networkBillingById = new Map<string, boolean>();
+    {
+      const networkIds = Array.from(new Set(
+        duePlansList
+          .map((p: any) => p?.stores?.network_id)
+          .filter((id: unknown): id is string => typeof id === "string" && id.length > 0),
+      ));
+      if (manualNetworkId) networkIds.push(manualNetworkId);
+      if (networkIds.length) {
+        const { data: flagRows } = await supabase
+          .from("store_networks")
+          .select("id, billing_enabled")
+          .in("id", networkIds);
+        (flagRows || []).forEach((r: any) => networkBillingById.set(r.id, !!r.billing_enabled));
+      }
+    }
+
+    // Load plan templates to detect VIP (personalized) conditions per store.
+    // Fase 4b (B4): plan_templates NÃO tem pix_fee, delivery_split nem
+    // pdv_fixed no schema real — o select antigo pedia colunas fantasmas
+    // (a comparação resultante era sempre divergente e marcava VIP à toa).
+    // Colunas reais: monthly_fee, commission_rate, pdv_commission_rate,
+    // revenue_threshold, platform_fee_included (+ metadados). Os eixos
+    // PIX/entrega/PDV usam os padrões operacionais do editor VIP.
     const { data: templates } = await supabase
       .from("plan_templates")
-      .select("plan_type, monthly_fee, commission_rate, pix_fee, delivery_split, pdv_fixed");
+      .select("plan_type, monthly_fee, commission_rate, pdv_commission_rate, revenue_threshold, platform_fee_included");
     const templateByType = new Map<string, any>();
     (templates || []).forEach((t: any) => templateByType.set(t.plan_type, t));
 
@@ -336,7 +368,7 @@ Deno.serve(async (req) => {
       return Math.round(priceReais * (remaining / daysInMonth) * 100) / 100;
     };
 
-    for (const plan of duePlans) {
+    for (const plan of duePlansList) {
       const store = (plan as any).stores;
       if (!store || store.status !== "ativo") continue;
 
@@ -432,6 +464,15 @@ Deno.serve(async (req) => {
 
         // Proração da mensalidade do próprio plano pdv_only na 1ª cobrança.
         let planMonthly = Number(plan.monthly_fee);
+        // Fase 4: loja em rede com a flag ligada NÃO tem mensalidade
+        // própria (subloja ou guia-matriz) — a rede é cobrada 1 vez no
+        // bloco ao fim. Exceção: só-PDV paga o próprio plano por loja.
+        const inNetwork = !!store.network_id;
+        const networkBillingEnabled = inNetwork &&
+          !!networkBillingById.get(store.network_id);
+        const networkUnitMonthlyZeroed = inNetwork && networkBillingEnabled &&
+          plan.plan_type !== "pdv_only";
+        if (networkUnitMonthlyZeroed) planMonthly = 0;
         let pdvOnlyFirst = false;
         if (plan.plan_type === "pdv_only" && !(plan as any).pdv_only_first_charge_done && planMonthly > 0) {
           planMonthly = prorate(planMonthly, now);
@@ -448,20 +489,45 @@ Deno.serve(async (req) => {
           totalAmount = Math.max(0, Math.round((totalAmount - creditApplied) * 100) / 100);
         }
 
-        // Detect VIP: any store_plans value diverges from plan_templates default
+        // Detect VIP por DIVERGÊNCIA DE VALOR (Fase 4b, espelho de
+        // src/lib/vipDetection.ts — edges são self-contained, por isso a
+        // lógica é inline aqui e não importada). Override igual ao padrão
+        // NÃO é VIP. Eixos: mensalidade/comissão vs template; PIX vs
+        // R$ 1,99, entrega vs R$ 0,99, PDV fixo vs padrão do plano
+        // (R$ 1,00 fixed/autonomy, R$ 0 demais).
         const tpl = templateByType.get(plan.plan_type);
+        const defaultPdvFixed = (plan.plan_type === "fixed" || plan.plan_type === "autonomy") ? 1 : 0;
         const isVip = !!tpl && (
           Number(tpl.monthly_fee ?? 0) !== Number(plan.monthly_fee ?? 0) ||
           Number(tpl.commission_rate ?? 0) !== Number(plan.commission_rate ?? 0) ||
-          Number(tpl.pix_fee ?? 0) !== Number(plan.pix_operational_fee_override ?? tpl.pix_fee ?? 0) ||
-          Number(tpl.delivery_split ?? 0) !== Number(plan.platform_delivery_split_override ?? tpl.delivery_split ?? 0) ||
-          Number(tpl.pdv_fixed ?? 0) !== Number(plan.pdv_fixed_fee_per_sale ?? tpl.pdv_fixed ?? 0)
+          (plan.pix_operational_fee_override != null && Number(plan.pix_operational_fee_override) !== 1.99) ||
+          (plan.platform_delivery_split_override != null && Number(plan.platform_delivery_split_override) !== 0.99) ||
+          (plan.pdv_fixed_fee_per_sale != null && Number(plan.pdv_fixed_fee_per_sale) !== defaultPdvFixed)
         );
-        const vipTag = isVip ? " (condição VIP)" : "";
+        // Distinção concedido x sistêmico: mensalidade zerada pela rede
+        // (ou PDV grátis sistêmico) NÃO é VIP concedido — é regra do
+        // sistema. O selo só aparece para VIP concedido.
+        const vipKind = networkUnitMonthlyZeroed ? "systemic" : isVip ? "granted" : "none";
+        const vipTag = vipKind === "granted" ? " (condição VIP)" : "";
         const addonsDesc = addonLines.length ? ` + ${addonLines.join(" + ")}` : "";
         const proratedTag = pdvOnlyFirst ? " (proporcional 1º mês)" : "";
         const creditTag = creditApplied > 0 ? ` (- crédito R$${creditApplied.toFixed(2)})` : "";
-        const description = `${planLabel}${vipTag}${proratedTag}${pdvLine}${addonsDesc}${creditTag} - ${store.name} - ${resolvedReferenceCode}`;
+        const networkTag = networkUnitMonthlyZeroed
+          ? " (subloja — mensalidade cobrada na rede)"
+          : "";
+        const description = `${planLabel}${vipTag}${proratedTag}${pdvLine}${addonsDesc}${creditTag}${networkTag} - ${store.name} - ${resolvedReferenceCode}`;
+
+        // Fase 4: mensalidade zerada pela rede e sem mais nada a cobrar
+        // (sem comissão PDV, sem add-on, sem crédito) → pula a fatura da
+        // loja sem transação e sem PIX. Com add-on, a fatura sai só com ele.
+        if (networkUnitMonthlyZeroed && totalAmount <= 0 && creditCents <= 0) {
+          results.push({
+            store: store.name,
+            network_id: store.network_id,
+            status: "skipped_network_unit",
+          });
+          continue;
+        }
 
         // Se totalAmount == 0 (crédito zerou tudo), pula cobrança Asaas mas registra e consome crédito.
         if (totalAmount <= 0) {
@@ -500,7 +566,7 @@ Deno.serve(async (req) => {
         }
 
         if (dryRun) {
-          results.push({ store: store.name, reference: resolvedReferenceCode, status: "would_bill", amount: totalAmount, due_date: dueDateStr });
+          results.push({ store: store.name, reference: resolvedReferenceCode, status: "would_bill", amount: totalAmount, due_date: dueDateStr, vip_kind: vipKind });
           continue;
         }
 
@@ -586,7 +652,249 @@ Deno.serve(async (req) => {
       }
     }
 
-    return json({ billed, failed, results });
+    // ── Fase 4 — cobrança única por rede (atrás da flag billing_enabled).
+    // Uma falha aqui NUNCA derruba a cobrança das lojas acima: o bloco
+    // é isolado em try/catch e só soma resultados em `networks`.
+    const networkResults: any[] = [];
+    try {
+      // Chamada manual para UMA loja não cobra redes; manual para uma
+      // rede cobra só ela (caminho do teste em sandbox).
+      if (!manualStoreId) {
+        let netQuery = supabase
+          .from("store_networks")
+          .select("id, name, owner_id, plan_type, matriz_store_id, is_approved, is_paused, next_billing_date, last_billing_attempt_at, billing_enabled, monthly_fee_override");
+        if (manualNetworkId) {
+          netQuery = netQuery.eq("id", manualNetworkId);
+        } else {
+          netQuery = netQuery.eq("billing_enabled", true);
+        }
+        if (!force) {
+          const cooldown = new Date(now.getTime() - 20 * 60 * 60 * 1000).toISOString();
+          netQuery = netQuery
+            .or(`next_billing_date.is.null,next_billing_date.lte.${now.toISOString()}`)
+            .or(`last_billing_attempt_at.is.null,last_billing_attempt_at.lte.${cooldown}`);
+        }
+        const { data: dueNetworks, error: netError } = await netQuery;
+        if (netError) {
+          console.error("[monthly-billing] networks fetch error", netError);
+          networkResults.push({ status: "networks_fetch_error", error: String(netError.message || netError) });
+        } else {
+          for (const net of dueNetworks || []) {
+            try {
+              // Flag desligada só aparece em chamada manual (dry_run mostra
+              // o que faltaria ligar; cobrança real pula sem erro).
+              if (!net.billing_enabled) {
+                networkResults.push({
+                  network: net.name, network_id: net.id,
+                  status: dryRun ? "would_require_flag" : "skipped_flag_disabled",
+                });
+                continue;
+              }
+              if (!net.is_approved) {
+                networkResults.push({ network: net.name, network_id: net.id, status: "skipped_not_approved" });
+                continue;
+              }
+              if (net.is_paused) {
+                networkResults.push({ network: net.name, network_id: net.id, status: "skipped_paused" });
+                continue;
+              }
+              // Sem loja-matriz não há âncora para a transação financeira
+              // (caso ao vivo da "Rede Maristela", matriz_store_id NULL).
+              if (!net.matriz_store_id) {
+                networkResults.push({ network: net.name, network_id: net.id, status: "skipped_no_matriz_store" });
+                continue;
+              }
+              const { data: anchor } = await supabase
+                .from("stores")
+                .select("id, name")
+                .eq("id", net.matriz_store_id)
+                .maybeSingle();
+              if (!anchor) {
+                networkResults.push({ network: net.name, network_id: net.id, status: "skipped_no_matriz_store" });
+                continue;
+              }
+
+              if (!dryRun) {
+                const prevAttempt = net.last_billing_attempt_at ?? null;
+                let lockQ = supabase
+                  .from("store_networks")
+                  .update({ last_billing_attempt_at: now.toISOString() })
+                  .eq("id", net.id);
+                lockQ = prevAttempt === null
+                  ? lockQ.is("last_billing_attempt_at", null)
+                  : lockQ.eq("last_billing_attempt_at", prevAttempt);
+                const { data: lockRows, error: lockErr } = await lockQ.select("id");
+                if (lockErr) {
+                  console.error(`[monthly-billing] network lock error for ${net.name}:`, lockErr);
+                  continue;
+                }
+                if (!lockRows || lockRows.length === 0) continue;
+              }
+
+              // A regra vive na RPC (mesma do front e do relatório):
+              // base do template + R$ 39,90 por delivery além de 3, ou 0
+              // quando o GMV 60d das sublojas é <= R$ 5.000.
+              const { data: calc, error: calcError } = await supabase
+                .rpc("calculate_network_monthly_fee", { _network_id: net.id });
+              if (calcError || !calc) {
+                throw new Error(`calculate_network_monthly_fee: ${calcError?.message || "sem retorno"}`);
+              }
+              const breakdown = calc as Record<string, unknown>;
+              const total = Number(breakdown.total_monthly_fee || 0);
+              const baseFee = Number(breakdown.base_monthly_fee || 0);
+              const extraFee = Number(breakdown.extra_fee || 0);
+              const freeByGmv = !!breakdown.free_by_gmv;
+              // Fase 4b: a base vem da RPC (override > template > guardado,
+              // P1 base 0 para rede só-PDV); a edge só repassa o breakdown
+              // e o selo VIP por divergência — nunca recomputa a base.
+              const netVipKind = String(breakdown.vip_kind || "none");
+              const netVipTag = netVipKind === "granted" ? " (condição VIP)" : "";
+
+              const netReferenceCode = dryRun
+                ? `#REDE-DRY-${String(net.id).slice(0, 8).toUpperCase()}`
+                : (() => null)();
+              let resolvedNetReference = netReferenceCode;
+              if (!resolvedNetReference) {
+                const { data: refData } = await supabase.rpc("generate_financial_reference", { _prefix: "REDE" });
+                resolvedNetReference = typeof refData === "string" && refData
+                  ? refData
+                  : `#REDE-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
+              }
+              const netDueDateStr = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000)
+                .toISOString().split("T")[0];
+
+              if (total <= 0) {
+                if (dryRun) {
+                  networkResults.push({
+                    network: net.name, network_id: net.id,
+                    reference: resolvedNetReference,
+                    status: freeByGmv ? "would_free_gmv" : "would_zero",
+                    breakdown,
+                  });
+                  continue;
+                }
+                // Mês gratuito (ou base zero, ex.: Comissão): registra a
+                // mensalidade zerada paga e avança o vencimento, sem PIX.
+                // Não passa pelo webhook — a liquidação já está feita aqui.
+                await supabase.from("financial_transactions").insert({
+                  store_id: anchor.id,
+                  transaction_kind: "commission_charge",
+                  reference_code: resolvedNetReference,
+                  amount: 0,
+                  status: "paid",
+                  provider: "network_free",
+                  metadata: {
+                    charge_family: "network_monthly_subscription",
+                    network_id: net.id,
+                    network_name: net.name,
+                    plan_type: net.plan_type,
+                    billing_period: now.toISOString(),
+                    breakdown,
+                    note: freeByGmv
+                      ? "Gratuidade por GMV 60d <= R$ 5.000."
+                      : "Mensalidade da rede zerada (base zero, sem extras).",
+                  },
+                });
+                await supabase.from("store_networks").update({
+                  next_billing_date: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+                  last_billing_attempt_at: null,
+                }).eq("id", net.id);
+                billed++;
+                networkResults.push({
+                  network: net.name, network_id: net.id,
+                  reference: resolvedNetReference,
+                  status: freeByGmv ? "free_gmv" : "zero",
+                  breakdown,
+                  vip_kind: netVipKind,
+                  base_reason: breakdown.base_reason,
+                });
+                continue;
+              }
+
+              if (dryRun) {
+                networkResults.push({
+                  network: net.name, network_id: net.id,
+                  reference: resolvedNetReference,
+                  status: "would_bill", amount: total, due_date: netDueDateStr,
+                  breakdown,
+                  vip_kind: netVipKind,
+                  base_reason: breakdown.base_reason,
+                });
+                continue;
+              }
+
+              const { data: ownerProfile } = await supabase
+                .from("profiles")
+                .select("full_name, email, document")
+                .eq("user_id", net.owner_id)
+                .maybeSingle();
+
+              // Prefixo #REDE- (não #MENS-): o webhook NÃO roteia esta
+              // cobrança para settle_monthly_subscription_payment (que
+              // avançaria o plano da loja-guia); ela liquida pela RPC
+              // própria settle_network_monthly_payment.
+              const fmt = (v: number) => `R$${v.toFixed(2)}`;
+              const extrasDesc = extraFee > 0 ? ` + extras ${fmt(extraFee)}` : "";
+              const netDescription =
+                `Mensalidade rede ${net.name}${netVipTag} (${fmt(baseFee)}${extrasDesc}) - ${resolvedNetReference}`.substring(0, 140);
+              const wooviCharge = await createWooviCharge({
+                amount: total,
+                description: netDescription,
+                externalId: resolvedNetReference,
+                expiresInSeconds: 3 * 24 * 60 * 60,
+                customer: {
+                  name: ownerProfile?.full_name || net.name || "Lojista",
+                  email: ownerProfile?.email || `lojista-${(net.owner_id || "").substring(0, 8)}@itasuper.com`,
+                  taxId: String(ownerProfile?.document || ""),
+                },
+              });
+
+              await supabase.from("financial_transactions").insert({
+                store_id: anchor.id,
+                transaction_kind: "commission_charge",
+                reference_code: resolvedNetReference,
+                amount: total,
+                status: "pending",
+                provider: "woovi",
+                mercado_pago_payment_id: wooviCharge.id,
+                pix_qr_code: wooviCharge.brCode,
+                pix_qr_code_base64: wooviCharge.brCodeBase64,
+                pix_copy_paste: wooviCharge.brCode,
+                metadata: {
+                  charge_family: "network_monthly_subscription",
+                  network_id: net.id,
+                  network_name: net.name,
+                  plan_type: net.plan_type,
+                  billing_period: now.toISOString(),
+                  charge_family_note: "Mensalidade da rede (não é plano de loja).",
+                  due_date: netDueDateStr,
+                  breakdown,
+                },
+              });
+
+              billed++;
+              networkResults.push({
+                network: net.name, network_id: net.id,
+                reference: resolvedNetReference, status: "billed",
+                breakdown,
+                vip_kind: netVipKind,
+                base_reason: breakdown.base_reason,
+              });
+              console.log(`Monthly billing created for network ${net.name}: ${resolvedNetReference}`);
+            } catch (netErr) {
+              console.error(`Error billing network ${net.name}:`, netErr);
+              failed++;
+              networkResults.push({ network: net.name, network_id: net.id, error: String(netErr) });
+            }
+          }
+        }
+      }
+    } catch (netBlockErr) {
+      console.error("[monthly-billing] network billing block error", netBlockErr);
+      networkResults.push({ status: "network_block_error", error: String(netBlockErr) });
+    }
+
+    return json({ billed, failed, results, networks: networkResults });
   } catch (err) {
     console.error("Monthly billing error:", err);
     return json({ error: "Internal error" }, 500);

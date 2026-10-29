@@ -214,7 +214,7 @@ const DeliveryFeeConfigPanel = () => {
           {/* Platform Split */}
           <div className="space-y-1 mb-3">
             <label className="text-xs font-bold text-muted-foreground">Plataforma (por corrida)</label>
-            <BRLInput value={platformSplit} onChange={setPlatformSplit} placeholder="2,00" />
+            <BRLInput value={platformSplit} onChange={setPlatformSplit} placeholder="0,99" />
           </div>
 
           {/* PIX Operational Fee */}
