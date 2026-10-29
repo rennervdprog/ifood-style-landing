@@ -41,7 +41,7 @@ interface Props {
    hybrid: "Mensalidade reduzida + taxa por venda",
    commission_only: "Sem mensalidade, paga só quando vende",
    supporter: "Plano exclusivo de lançamento",
-   autonomy: "Sem comissão e sem taxa de R$2 da plataforma",
+   autonomy: "Sem comissão e sem taxa da plataforma",
    pdv_only: "Só balcão — sem delivery, sem vitrine",
  };
 
@@ -110,6 +110,12 @@ const formatDateBR = (d: string | null | undefined) =>
 
 export default function StoreSubscription({ storeId, storeName }: Props) {
   const plan = useStorePlan(storeId);
+  // Durante o período grátis, a próxima cobrança real é o FIM do trial —
+  // o next_billing_date cru pode estar no passado/desatualizado (o trial foi
+  // estendido sem mover a data) e a tela mostrava duas histórias ao mesmo
+  // tempo (banner 21/jan × cobrança 15/nov). Exibição apenas; nada muda no banco.
+  const effectiveNextBilling = plan.isInTrial && plan.trialEndsAt ? plan.trialEndsAt : plan.nextBillingDate;
+  const nextBillingLabel = plan.isInTrial ? "Primeira cobrança (fim do período grátis)" : "Próxima cobrança";
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [selectedPlan, setSelectedPlan] = useState<StorePlanType | null>(null);
@@ -272,7 +278,7 @@ export default function StoreSubscription({ storeId, storeName }: Props) {
             </div>
             <div className="flex flex-col items-end gap-1 shrink-0">
               <Badge className="bg-background text-foreground border border-border/60">
-                {plan.isInTrial ? `Trial · ${plan.trialDaysLeft}d` : "Ativo"}
+                {plan.isInTrial ? `Período grátis · ${plan.trialDaysLeft} ${plan.trialDaysLeft === 1 ? "dia" : "dias"}` : "Ativo"}
               </Badge>
               {plan.isVip && (
                 <Badge className="bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30 gap-1">
@@ -361,15 +367,15 @@ export default function StoreSubscription({ storeId, storeName }: Props) {
           )}
 
           {/* Next billing callout */}
-          {plan.monthlyFee > 0 && plan.nextBillingDate && (
+          {plan.monthlyFee > 0 && effectiveNextBilling && (
             <div className="flex items-center justify-between gap-3 rounded-xl border border-border/60 bg-card p-3">
               <div className="flex items-center gap-3 min-w-0">
                 <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
                   <Calendar className="h-4 w-4 text-primary" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs font-semibold text-foreground">Próxima cobrança</p>
-                  <p className="text-[11px] text-muted-foreground truncate">{formatDateBR(plan.nextBillingDate)}</p>
+                  <p className="text-xs font-semibold text-foreground">{nextBillingLabel}</p>
+                  <p className="text-[11px] text-muted-foreground truncate">{formatDateBR(effectiveNextBilling)}</p>
                 </div>
               </div>
               <p className="text-base font-bold text-foreground shrink-0">{formatBRL(plan.monthlyFee)}</p>
@@ -529,8 +535,8 @@ export default function StoreSubscription({ storeId, storeName }: Props) {
                 <span className="font-medium text-foreground">{formatDateBR(plan.lastBilledAt)}</span>
               </div>
               <div className="flex flex-col">
-                <span className="text-muted-foreground">Próxima cobrança</span>
-                <span className="font-medium text-foreground">{formatDateBR(plan.nextBillingDate)}</span>
+                <span className="text-muted-foreground">{nextBillingLabel}</span>
+                <span className="font-medium text-foreground">{formatDateBR(effectiveNextBilling)}</span>
               </div>
             </div>
           </CardContent>

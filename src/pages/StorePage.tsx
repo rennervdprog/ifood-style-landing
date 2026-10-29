@@ -938,6 +938,41 @@ const StorePage = () => {
     return <NotFound />;
   }
 
+  // Carregando: a loja ainda não chegou (bootstrap/query em voo) — mostra um
+  // esqueleto NEUTRO, sem nome, sem selo "Fechado" e sem estatísticas zeradas.
+  // Antes, este intervalo renderizava a página inteira como se fosse uma loja
+  // vazia e fechada (o "fantasma" da varredura UI/UX).
+  if (!store && (id || slug) && (!bootstrapDone || storeLoading)) {
+    return (
+      <div className="min-h-screen bg-background" role="status" aria-label="Carregando loja">
+        <div className="h-44 sm:h-56 bg-muted animate-pulse" />
+        <div className="px-4 pt-4 space-y-4 max-w-3xl mx-auto w-full">
+          <div className="flex items-center gap-3">
+            <div className="w-16 h-16 rounded-2xl bg-muted animate-pulse shrink-0" />
+            <div className="flex-1 space-y-2">
+              <div className="h-5 w-2/3 rounded bg-muted animate-pulse" />
+              <div className="h-3.5 w-1/3 rounded bg-muted animate-pulse" />
+            </div>
+          </div>
+          <div className="h-10 rounded-xl bg-muted animate-pulse" />
+          <div className="space-y-3 pt-2">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="flex gap-3">
+                <div className="w-20 h-20 rounded-xl bg-muted animate-pulse shrink-0" />
+                <div className="flex-1 space-y-2 py-1">
+                  <div className="h-4 w-1/2 rounded bg-muted animate-pulse" />
+                  <div className="h-3 w-3/4 rounded bg-muted animate-pulse" />
+                  <div className="h-4 w-1/4 rounded bg-muted animate-pulse" />
+                </div>
+              </div>
+            ))}
+          </div>
+          <p className="text-center text-xs text-muted-foreground pt-2">Carregando loja…</p>
+        </div>
+      </div>
+    );
+  }
+
   if (bootstrapDone && !storeLoading && !store && (id || slug)) {
     // Acessou via slug e não existe → tratar como rota inválida (evita catch-all confuso)
     if (slug && !id) {
@@ -1834,6 +1869,7 @@ const StorePage = () => {
             storeCategory={store?.category}
             singleSize={!!(store?.settings as any)?.pizza_single_size}
             storeSettings={(store?.settings as any) || null}
+            closedNotice={!storeStatus.isOpen ? (isSuspended ? "temporariamente" : storeStatus.reason || "no momento") : null}
             open={!!selectedProduct}
             onClose={() => setSelectedProduct(null)}
             onAdd={handleAddToCart}

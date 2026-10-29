@@ -4,15 +4,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ShoppingBag } from "lucide-react";
 import { formatBRL } from "@/lib/utils";
+import { paymentMethodLabel } from "@/lib/orderLabels";
 import { startOfMonth, endOfMonth } from "date-fns";
 import QueryErrorState from "@/components/QueryErrorState";
-
-const PAYMENT_LABELS: Record<string, string> = {
-  dinheiro: "Dinheiro",
-  maquininha_credito: "Crédito",
-  maquininha_debito: "Débito",
-  maquininha_pix: "PIX maquininha",
-};
 
 /**
  * Recebido no mês (PDV) — soma das vendas do balcão no mês corrente.
@@ -94,7 +88,7 @@ export default function PdvRecebidoMesCard({ storeId }: { storeId: string }) {
                 {data!.top.map(([method, value]) => (
                   <div key={method} className="flex items-center justify-between text-[11px]">
                     <span className="text-muted-foreground">
-                      {PAYMENT_LABELS[method] ?? method}
+                      {paymentMethodLabel(method)}
                     </span>
                     <span className="font-bold tabular-nums text-foreground">
                       {formatBRL(value)}

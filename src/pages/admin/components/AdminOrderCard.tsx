@@ -4,6 +4,7 @@ import {
   Store, Loader2, Truck, Banknote, MessageCircle, Copy, Printer
 } from "lucide-react";
 import { formatBRL } from "@/lib/utils";
+import { formatElapsedMinutes } from "@/lib/elapsedTime";
 import { getOrderItemDisplayName } from "@/lib/orderItemName";
 import { openWhatsApp } from "@/lib/whatsapp";
 import WhatsAppButton from "@/components/WhatsAppButton";
@@ -194,7 +195,7 @@ const AdminOrderCardImpl = (props: AdminOrderCardProps) => {
               "bg-muted text-muted-foreground"
             }`}>
               <Timer className="h-2.5 w-2.5" />
-              {elapsedMin}min
+              {formatElapsedMinutes(elapsedMin)}
             </span>
           )}
           <span className="text-[10px] text-muted-foreground">

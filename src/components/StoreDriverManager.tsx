@@ -26,6 +26,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import StoreDriverFinance from "@/components/StoreDriverFinance";
+import { getStoreOpenStatus, type OpeningHour } from "@/lib/storeStatus";
 
 interface StoreDriverManagerProps {
   storeId: string;
@@ -68,14 +69,34 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("stores")
-        .select("address_city")
+        .select("address_city, is_open, force_closed")
         .eq("id", storeId)
         .maybeSingle();
       if (error) throw error;
-      return data as { address_city?: string | null } | null;
+      return data as { address_city?: string | null; is_open?: boolean | null; force_closed?: boolean | null } | null;
     },
     staleTime: 1000 * 60 * 10,
   });
+
+  // Estado aberto/fechado da loja (mesma regra da vitrine/página da loja)
+  // para o selo "Entrega disponível agora" não afirmar disponibilidade
+  // com a loja fechada.
+  const { data: storeHours } = useQuery({
+    queryKey: ["store-driver-opening-hours", storeId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("opening_hours")
+        .select("day_of_week, open_time, close_time, is_closed_all_day")
+        .eq("store_id", storeId);
+      if (error) throw error;
+      return (data || []) as OpeningHour[];
+    },
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const storeOpenNow = storeLocation
+    ? getStoreOpenStatus(storeHours || [], !!storeLocation.force_closed, !!storeLocation.is_open).isOpen
+    : null;
 
   const { data: storeDrivers, isLoading } = useQuery({
     queryKey: ["store-drivers", storeId],
@@ -379,10 +400,20 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
         </div>
         <div className="px-1 py-3 sm:px-4">
           <div className="flex items-center gap-2">
-            <span className={`h-2.5 w-2.5 rounded-full ${hasOperationalDriver ? "bg-emerald-500" : "bg-muted-foreground/50"}`} />
-            <p className="text-sm font-black text-foreground">{hasOperationalDriver ? "Entrega disponível agora" : "Entrega indisponível agora"}</p>
+            <span className={`h-2.5 w-2.5 rounded-full ${hasOperationalDriver ? (storeOpenNow === false ? "bg-amber-500" : "bg-emerald-500") : "bg-muted-foreground/50"}`} />
+            <p className="text-sm font-black text-foreground">
+              {hasOperationalDriver
+                ? storeOpenNow === false
+                  ? "Motoboy online, mas a loja está fechada"
+                  : "Entrega disponível agora"
+                : "Entrega indisponível agora"}
+            </p>
           </div>
-          <p className="mt-1 text-xs text-muted-foreground">Baseado na presença atual da equipe.</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {hasOperationalDriver && storeOpenNow === false
+              ? "A entrega volta quando a loja abrir."
+              : "Baseado na presença atual da equipe."}
+          </p>
         </div>
       </section>
 

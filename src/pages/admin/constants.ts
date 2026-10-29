@@ -34,8 +34,14 @@ export const orderTabs: { status: OrderStatus | "delivery"; label: string; icon:
 // Métodos de pagamento exibidos em TODOS os contextos (delivery + PDV)
 export const paymentLabels: Record<string, string> = {
   pix: "PIX Online",
+  pix_direto: "PIX Direto",
+  pix_machine: "PIX Maquininha",
   cartao: "Cartão na Entrega",
+  card: "Cartão",
+  cartao_credito: "Crédito",
+  cartao_debito: "Débito",
   dinheiro: "Dinheiro",
+  cash: "Dinheiro",
   // PDV — nunca aparecem no checkout do cliente
   maquininha_credito: "Crédito",
   maquininha_debito: "Débito",
