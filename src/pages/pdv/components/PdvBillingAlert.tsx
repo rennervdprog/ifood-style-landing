@@ -15,8 +15,8 @@ interface Props {
  * mensalidade via query própria. Não renderiza nada quando não há pendência.
  */
 export default function PdvBillingAlert({ storeId, onOpenFinanceiro }: Props) {
-  const { total: operationalTotal } = usePendingRepasse(storeId);
-  const { data: mensalidadeData } = useQuery({
+  const { total: operationalTotal, isLoading: repasseLoading } = usePendingRepasse(storeId);
+  const { data: mensalidadeData, isLoading: mensalidadeLoading } = useQuery({
     queryKey: ["valor-a-pagar-mensalidade", storeId],
     queryFn: async () => {
       const { data: monthlyCharges } = await (supabase as any).from("financial_transactions").select("amount").eq("store_id", storeId).eq("transaction_kind", "commission_charge").or("reference_code.like.#MENS-*,reference_code.like.#ASSIN-*").eq("status", "pending").limit(50);
@@ -24,6 +24,12 @@ export default function PdvBillingAlert({ storeId, onOpenFinanceiro }: Props) {
     },
     refetchInterval: 60_000,
   });
+
+  // Enquanto qualquer fonte carrega, o hook devolve totais parciais (plano
+  // presumido "commission_only" = 0) e o banner piscava um valor errado/
+  // contradizia o card "A pagar". Só renderiza com as duas fontes prontas —
+  // mesma regra do ValorAPagarCard.
+  if (repasseLoading || mensalidadeLoading) return null;
 
   const total = operationalTotal + (mensalidadeData ?? 0);
   if (total <= 0) return null;

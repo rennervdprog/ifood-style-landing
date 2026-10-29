@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { formatBRL } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import TabHeader from "@/components/TabHeader";
 import { Button } from "@/components/ui/button";
@@ -403,7 +404,7 @@ export default function StockTab({ storeId }: Props) {
                 </div>
                 <span className="text-xs text-muted-foreground font-medium">Valor em estoque</span>
               </div>
-              <p className="text-2xl font-bold">R$ {stockValue.toFixed(2)}</p>
+              <p className="text-2xl font-bold">{formatBRL(stockValue)}</p>
             </CardContent>
           </Card>
         </div>
@@ -662,7 +663,7 @@ export default function StockTab({ storeId }: Props) {
                     <div className="flex-1 min-w-0">
                       <p className="font-medium truncate">{item.product_name}</p>
                       <p className="text-xs text-muted-foreground">
-                        R$ {item.product_price.toFixed(2)}
+                        {formatBRL(item.product_price)}
                       </p>
                     </div>
                     <Button size="sm" onClick={() => setActivateDialog(item)}>

@@ -1579,6 +1579,8 @@ const AdminDashboard = () => {
 
   const hasLinkedDrivers = (linkedStoreDrivers?.length || 0) > 0;
 
+  const delayedPreparingCount = delayedOrders.filter(o => o.status === "preparando").length;
+
   const avisosCount = useAvisosCount({
     store,
     storePlan,
@@ -1586,7 +1588,19 @@ const AdminDashboard = () => {
     isOwnDelivery,
     hasLinkedDrivers,
     driversLoading,
+    pendingOrdersCount: pendingCount,
+    delayedOrdersCount: delayedOrders.length,
   });
+
+  // Lateral "Entregadores": a contagem é a EQUIPE vinculada (mesma fonte do
+  // card "Motoboys na equipe" da aba Motoboys) — antes mostrava só quem
+  // estava com presença recente e contradizia a equipe (0 × 1).
+  const sidebarTeamCount = isOwnDelivery
+    ? (linkedStoreDrivers?.length || 0)
+    : (onlineDrivers?.length || 0);
+  const sidebarAnyDriverAvailable = isOwnDelivery
+    ? (storeDeliveryAvailability?.available_drivers_count || 0) > 0
+    : (onlineDrivers?.length || 0) > 0;
 
   const repassePending = useRepassePending(store?.id);
 
@@ -1865,12 +1879,12 @@ const AdminDashboard = () => {
 
         {/* Bottom controls */}
         <div className="p-2 border-t border-border space-y-1.5">
-          <div className="flex items-center gap-2 px-1">
+          <div className="flex items-center gap-2 px-1" title="Motoboys vinculados à loja (equipe)">
             <Bike className="h-4 w-4 text-muted-foreground" />
             <span className="text-xs text-muted-foreground flex-1">Entregadores</span>
-            <span className={`flex items-center gap-1 text-xs font-bold ${(onlineDrivers?.length || 0) > 0 ? "text-emerald-500" : "text-muted-foreground"}`}>
-              <span className={`w-2 h-2 rounded-full ${(onlineDrivers?.length || 0) > 0 ? "bg-emerald-500 animate-pulse" : "bg-muted"}`} />
-              {(store as any)?.delivery_mode === "own" ? (storeDeliveryAvailability?.available_drivers_count || 0) : (onlineDrivers?.length || 0)}
+            <span className={`flex items-center gap-1 text-xs font-bold ${sidebarAnyDriverAvailable ? "text-emerald-500" : "text-muted-foreground"}`}>
+              <span className={`w-2 h-2 rounded-full ${sidebarAnyDriverAvailable ? "bg-emerald-500 animate-pulse" : "bg-muted"}`} />
+              {sidebarTeamCount}
             </span>
           </div>
           <div className="grid grid-cols-4 gap-1">
@@ -1887,9 +1901,10 @@ const AdminDashboard = () => {
             </button>
             <div className="col-span-2 space-y-1">
               <button onClick={toggleStoreOpen}
+                title="Liga/desliga o recebimento de pedidos (interruptor manual da loja)"
                 className={`w-full py-2 rounded-xl text-xs font-bold border transition-colors ${store?.is_open ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/30" : "bg-destructive/10 text-destructive border-destructive/30"}`}
                 data-tour="loja-status">
-                {store?.is_open ? "✓ Online" : "✕ Offline"}
+                {store?.is_open ? "✓ Ativa" : "✕ Pausada"}
               </button>
               <div className={`text-[10px] font-black text-center uppercase tracking-tighter py-1 rounded-lg ${isStoreReallyOpen ? "text-emerald-500 bg-emerald-500/5" : "text-red-500 bg-red-500/5"}`}>
                 {isStoreReallyOpen ? "Loja Aberta" : "Loja Fechada"}
@@ -1912,13 +1927,14 @@ const AdminDashboard = () => {
               <h2 className="font-bold text-foreground text-base truncate">{store?.name || "Painel"}</h2>
               <div className="flex items-center gap-2 mt-0.5 lg:hidden">
                 <button onClick={toggleStoreOpen}
+                  title="Liga/desliga o recebimento de pedidos (interruptor manual da loja)"
                   className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-bold transition-colors ${
                     store?.is_open
                       ? "bg-emerald-500/10 text-emerald-600"
                       : "bg-red-500/10 text-red-500"
                   }`}>
                   <span className={`w-1.5 h-1.5 rounded-full ${store?.is_open ? "bg-emerald-500" : "bg-red-500"}`} />
-                  {store?.is_open ? "Online" : "Offline"}
+                  {store?.is_open ? "Ativa" : "Pausada"}
                 </button>
                 <div className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${isStoreReallyOpen ? "text-emerald-500 bg-emerald-500/5" : "text-red-500 bg-red-500/5"}`}>
                   {isStoreReallyOpen ? "Aberta" : "Fechada"}
@@ -1928,7 +1944,7 @@ const AdminDashboard = () => {
               <p className="text-xs text-muted-foreground hidden lg:block">
                 {dashboardTab === "dashboard" && "Resumo do dia em tempo real"}
                 {dashboardTab === "avisos" && (avisosCount > 0 ? `${avisosCount} pendência${avisosCount > 1 ? "s" : ""} para resolver` : "Sem pendências")}
-                {dashboardTab === "orders" && `${orders?.length || 0} pedidos ativos`}
+                {dashboardTab === "orders" && `${orderCounters.total} pedidos ativos`}
                 {dashboardTab === "clients" && `${clientAnalytics.length} clientes registrados`}
                 {dashboardTab === "menu" && "Gerencie seu cardápio"}
                 {dashboardTab === "addons" && "Grupos de adicionais do cardápio"}
@@ -1949,10 +1965,25 @@ const AdminDashboard = () => {
           </div>
           <div className="flex items-center gap-1.5">
             <DashboardSearch groups={visibleGroups} isPdvOnly={isPdvOnly} onNavigate={handleTabChange} />
+            {/* Sino = pendências: abre a aba Avisos (antes o sino chamava
+                "Alertas" mas só ativava o som e não abria lista nenhuma).
+                O som ganhou botão próprio, ao lado. */}
+            <button onClick={() => handleTabChange("avisos")}
+              title="Avisos e pendências"
+              aria-label={avisosCount > 0 ? `Avisos: ${avisosCount} pendências` : "Avisos"}
+              className="relative p-2 rounded-xl border border-border text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
+              <Bell className="h-4 w-4" />
+              {avisosCount > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-0.5 rounded-full bg-amber-400 text-amber-900 text-[10px] font-black flex items-center justify-center">
+                  {avisosCount}
+                </span>
+              )}
+            </button>
             {showSoundPrompt && !soundEnabled && !Capacitor.isNativePlatform() && (
               <button onClick={activateSound}
+                title="Ativar alertas sonoros de novos pedidos"
                 className="flex items-center gap-1 bg-amber-400/10 border border-amber-400/30 text-amber-500 px-2.5 py-1.5 rounded-xl text-[11px] font-bold animate-pulse">
-                <Bell className="h-3.5 w-3.5" /> Alertas
+                <VolumeX className="h-3.5 w-3.5" /> Som
               </button>
             )}
             {pendingCount > 0 && dashboardTab !== "orders" && !isPdvOnly && (
@@ -2119,6 +2150,10 @@ const AdminDashboard = () => {
                 hasLinkedDrivers={hasLinkedDrivers}
                 setDashboardTab={setDashboardTab}
                 count={avisosCount}
+                pendingOrdersCount={pendingCount}
+                delayedOrdersCount={delayedOrders.length}
+                delayedPreparingCount={delayedPreparingCount}
+                onGoToOrders={(tab) => { setDashboardTab("orders"); setActiveTab(tab); }}
               />
             </Suspense>
             </ErrorBoundary>

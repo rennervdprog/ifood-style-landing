@@ -12,6 +12,9 @@ export default function WhatsAppBotConfig({ storeId, storeName }: Props) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [enabled, setEnabled] = useState(false);
+  // Status real da conexão WhatsApp da loja — o selo "Ativo" sozinho mentia
+  // quando a conexão estava caída (bot ligado no papel, mudo na prática).
+  const [connectionStatus, setConnectionStatus] = useState<string | null>(null);
   const [welcome, setWelcome] = useState("");
   const [triggers, setTriggers] = useState<string>(DEFAULT_TRIGGERS.join(", "));
   const [escapes, setEscapes] = useState<string>(DEFAULT_ESCAPE.join(", "));
@@ -21,6 +24,9 @@ export default function WhatsAppBotConfig({ storeId, storeName }: Props) {
 
   useEffect(() => {
     (async () => {
+      const { data: conn } = await supabase.from("store_whatsapp_config" as any)
+        .select("status").eq("store_id", storeId).maybeSingle();
+      setConnectionStatus((conn as any)?.status ?? null);
       const { data } = await supabase.from("whatsapp_bot_config" as any)
         .select("*").eq("store_id", storeId).maybeSingle();
       if (data) {
@@ -79,12 +85,19 @@ export default function WhatsAppBotConfig({ storeId, storeName }: Props) {
         </div>
         <label className="inline-flex items-center gap-2 cursor-pointer">
           <input type="checkbox" checked={enabled} onChange={e => setEnabled(e.target.checked)} className="h-4 w-4" />
-          <span className="text-sm font-bold">{enabled ? "Ativo" : "Inativo"}</span>
+          <span className={`text-sm font-bold ${enabled && connectionStatus !== "connected" ? "text-amber-600 dark:text-amber-400" : ""}`}>
+            {enabled ? (connectionStatus === "connected" ? "Ativo" : "Ativo, mas sem conexão") : "Inativo"}
+          </span>
         </label>
       </div>
       <p className="text-xs text-muted-foreground">
         Quando ativo, o bot responde automaticamente palavras-gatilho e conduz o cliente pelo menu, adicionais e pagamento — o pedido cai direto no seu painel. Se o cliente digitar uma palavra de escape, o bot para e você assume a conversa.
       </p>
+      {enabled && connectionStatus !== "connected" && (
+        <div className="rounded-xl border border-amber-300/60 bg-amber-50 dark:bg-amber-500/10 px-3 py-2.5 text-xs text-amber-800 dark:text-amber-300" role="status">
+          <strong>Sem efeito no momento:</strong> a configuração está salva como ativa, mas o WhatsApp da loja está desconectado — o bot não responde ninguém até a conexão ser restabelecida no card de conexão, acima.
+        </div>
+      )}
 
       <div className="space-y-1">
         <label className="text-xs font-bold text-foreground">Mensagem de boas-vindas</label>

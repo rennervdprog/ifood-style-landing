@@ -550,7 +550,7 @@ const PIE_COLORS = [COLORS.green, COLORS.blue, COLORS.amber];
           </div>
           {storePlan.isInTrial && (
             <span className="bg-amber-500/20 text-amber-600 dark:text-amber-400 text-[10px] font-bold px-2 py-1 rounded-full">
-              Trial {storePlan.trialDaysLeft}d
+              Período grátis · {storePlan.trialDaysLeft} {storePlan.trialDaysLeft === 1 ? "dia" : "dias"}
             </span>
           )}
         </div>
@@ -909,7 +909,7 @@ const PIE_COLORS = [COLORS.green, COLORS.blue, COLORS.amber];
               </div>
               {ordersWithDelivery.length > 0 && (
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground">Split entrega plataforma ({ordersWithDelivery.length}x R${storePlan.platformDeliverySplit || 2})</span>
+                  <span className="text-xs text-muted-foreground">Split entrega plataforma ({ordersWithDelivery.length}x {formatBRL(storePlan.platformDeliverySplit ?? 0.99)})</span>
                   <span className="text-sm font-bold text-red-400">-{formatBRL(deliveryPlatformCost)}</span>
                 </div>
               )}

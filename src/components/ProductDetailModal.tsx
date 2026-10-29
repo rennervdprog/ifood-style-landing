@@ -30,6 +30,9 @@ interface Props {
   storeCategory?: string;
   singleSize?: boolean;
   storeSettings?: Record<string, any> | null;
+  /** Quando a loja está fechada, motivo exibido num banner no topo do modal
+   *  (ex.: "Abre às 18:00"). Não bloqueia a montagem do pedido. */
+  closedNotice?: string | null;
   open: boolean;
   onClose: () => void;
   onAdd: (product: Product, addons: CartAddon[], observations: string, quantity: number, totalUnitPrice: number) => void;
@@ -48,7 +51,7 @@ const categoryEmoji: Record<string, string> = {
   saudavel: "🥗",
 };
 
-const ProductDetailModal = ({ product, storeName, storeCategory, singleSize = false, storeSettings, open, onClose, onAdd }: Props) => {
+const ProductDetailModal = ({ product, storeName, storeCategory, singleSize = false, storeSettings, closedNotice, open, onClose, onAdd }: Props) => {
   // itemId → quantidade (0 = não selecionado)
   const [selectedAddons, setSelectedAddons] = useState<Record<string, Record<string, number>>>({});
   const [observations, setObservations] = useState("");
@@ -436,9 +439,13 @@ const ProductDetailModal = ({ product, storeName, storeCategory, singleSize = fa
                 Borda e outros adicionais sempre somam e não precisam da linha. */}
             {group.price_replaces_base && (
               <p className="mt-1 text-xs font-semibold text-primary">
-                {useHighestFlavor
-                  ? "A pizza custa o preço do sabor mais caro."
-                  : "Os sabores somam no preço da pizza."}
+                {isPizza
+                  ? useHighestFlavor
+                    ? "A pizza custa o preço do sabor mais caro."
+                    : "Os sabores somam no preço da pizza."
+                  : useHighestFlavor
+                    ? "O preço final é o do sabor mais caro escolhido."
+                    : "Os sabores escolhidos somam no preço final."}
               </p>
             )}
           </div>
@@ -975,6 +982,14 @@ const ProductDetailModal = ({ product, storeName, storeCategory, singleSize = fa
         </header>
 
         <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 pb-6 sm:px-6 sm:py-6">
+          {closedNotice && (
+            <div className="mb-4 flex items-start gap-2 rounded-xl border border-amber-300/60 bg-amber-50 dark:bg-amber-500/10 px-3 py-2.5" role="status">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+              <p className="text-xs font-semibold text-amber-800 dark:text-amber-300">
+                Loja fechada{closedNotice ? ` · ${closedNotice}` : ""}. Você pode montar o pedido, mas ele só poderá ser enviado quando a loja abrir.
+              </p>
+            </div>
+          )}
           <div key={step} className="animate-in fade-in slide-in-from-right-2 duration-150">
             {step === 1 ? Step1Content : Step2Content}
           </div>
