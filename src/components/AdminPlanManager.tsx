@@ -9,6 +9,13 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { AdminStoreAddonsPanel } from "@/components/admin/AdminStoreAddonsPanel";
 import {
+  detectVipDivergence,
+  defaultPdvFixedFee,
+  classifyVipKind,
+  vipKindLabel,
+  resolveVipReason,
+} from "@/lib/vipDetection";
+import {
   Store, Crown, Search, Loader2, Check, X,
   CreditCard, TrendingUp, Zap, Truck, Heart,
   Image, Clock, BarChart3, Ticket, ChevronDown, ChevronUp,
@@ -85,6 +92,25 @@ export default function AdminPlanManager() {
   const [search, setSearch] = useState("");
   const [expandedStore, setExpandedStore] = useState<string | null>(null);
   const [saving, setSaving] = useState<string | null>(null);
+  // Aviso persistente por loja quando uma troca de plano preserva um
+  // override VIP negociado (Fase 4b: nunca apagar silenciosamente).
+  const [vipPreservedWarning, setVipPreservedWarning] = useState<Record<string, string>>({});
+
+  // Log de plano (mesmo padrão do logVip do editor): registra em
+  // admin_logs sem nunca falhar a operação principal.
+  const logPlanVip = async (storeId: string, action: string, details: any) => {
+    try {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) return;
+      await supabase.from("admin_logs" as any).insert({
+        admin_user_id: u.user.id,
+        action,
+        target_type: "store_plan_vip",
+        target_id: storeId,
+        details,
+      } as any);
+    } catch (err) { console.warn("admin_logs insert failed:", err); }
+  };
 
   // Buscar plan_templates do banco (com fallback para constantes locais se falhar)
   const { data: planTemplates } = useQuery({
@@ -195,9 +221,12 @@ export default function AdminPlanManager() {
     setSaving(storeId);
     try {
       // Preserva overrides VIP, PDV e trial — UPDATE quando já existe, INSERT caso contrário.
+      // Fase 4b: busca também os valores atuais para re-rodar a detecção
+      // VIP após a troca (um override preservado pode divergir do NOVO
+      // plano mesmo que fosse padrão no antigo — e nunca é apagado aqui).
       const { data: existing } = await supabase
         .from("store_plans")
-        .select("id")
+        .select("id, plan_type, monthly_fee, commission_rate, pix_operational_fee_override, platform_delivery_split_override, pdv_fixed_fee_per_sale")
         .eq("store_id", storeId)
         .maybeSingle();
 
@@ -241,6 +270,55 @@ export default function AdminPlanManager() {
         .from("stores")
         .update({ commission_rate: commissionRate } as any)
         .eq("id", storeId);
+
+      // Fase 4b — re-detecção VIP pós-troca: os overrides preservados
+      // (PIX, entrega, PDV fixo) divergem do NOVO plano? Se sim, NÃO
+      // apaga: sinaliza na UI + registra em admin_logs.
+      if (existing) {
+        const preserved = detectVipDivergence(
+          {
+            monthly_fee: monthlyFee,
+            commission_rate: commissionRate,
+            pix_operational_fee_override: (existing as any).pix_operational_fee_override,
+            platform_delivery_split_override: (existing as any).platform_delivery_split_override,
+            pdv_fixed_fee_per_sale: (existing as any).pdv_fixed_fee_per_sale,
+          },
+          { monthly_fee: monthlyFee, commission_rate: commissionRate },
+          defaultPdvFixedFee(planType),
+        );
+        if (preserved.isVip) {
+          const fields = preserved.divergedFields.join(", ");
+          const warning = `Override VIP preservado nesta troca (${fields}) — valores negociados mantidos, não apagados. Revise no editor VIP se o novo plano deveria resetá-los.`;
+          setVipPreservedWarning((prev) => ({ ...prev, [storeId]: warning }));
+          await logPlanVip(storeId, "vip_preserved_on_plan_change", {
+            before: {
+              plan_type: (existing as any).plan_type,
+              monthly_fee: (existing as any).monthly_fee,
+              commission_rate: (existing as any).commission_rate,
+              pix_operational_fee_override: (existing as any).pix_operational_fee_override,
+              platform_delivery_split_override: (existing as any).platform_delivery_split_override,
+              pdv_fixed_fee_per_sale: (existing as any).pdv_fixed_fee_per_sale,
+            },
+            after: {
+              plan_type: planType,
+              monthly_fee: monthlyFee,
+              commission_rate: commissionRate,
+              pix_operational_fee_override: (existing as any).pix_operational_fee_override,
+              platform_delivery_split_override: (existing as any).platform_delivery_split_override,
+              pdv_fixed_fee_per_sale: (existing as any).pdv_fixed_fee_per_sale,
+            },
+            diverged_fields: preserved.divergedFields,
+            motivo: "troca de plano — override negociado preservado (não apagado)",
+          });
+          toast.warning(warning);
+        } else {
+          setVipPreservedWarning((prev) => {
+            const next = { ...prev };
+            delete next[storeId];
+            return next;
+          });
+        }
+      }
 
       toast.success(`Plano atualizado com sucesso!`);
       queryClient.invalidateQueries({ queryKey: ["admin-store-plans"] });
@@ -553,6 +631,13 @@ export default function AdminPlanManager() {
                     </div>
                   </div>
 
+                  {/* Fase 4b: aviso quando a troca de plano preservou override VIP */}
+                  {vipPreservedWarning[store.id] && (
+                    <p className="text-[11px] font-semibold text-amber-600 bg-amber-500/10 border border-amber-500/25 rounded-xl px-3 py-2">
+                      ⚠️ {vipPreservedWarning[store.id]}
+                    </p>
+                  )}
+
                   {/* Custom values */}
                   {plan && (
                     <CustomPlanEditor
@@ -683,6 +768,11 @@ function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride
       } as any);
     } catch (err) { console.warn("admin_logs insert failed:", err); }
   };
+  // Fase 4b (B2): "vitalício" = SÓ "sem upgrade automático". O flag
+  // NÃO afeta a cobrança: o cron de monthly-billing continua faturando
+  // a loja normalmente (ex.: o R$ 9/mês do Pastelão Carioca, teste VIP
+  // intencional do Renner, continua sendo cobrado). Nada aqui zera,
+  // isenta ou pula fatura.
   const toggleLifetimeFree = async () => {
     setLifetimeSaving(true);
     try {
@@ -729,8 +819,11 @@ function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride
 
   const [pixOverride, setPixOverride] = useState(currentPixOverride ?? 1.99);
   const [deliveryOverrideEnabled, setDeliveryOverrideEnabled] = useState(currentDeliveryOverride != null);
-  const [deliveryOverride, setDeliveryOverride] = useState(currentDeliveryOverride ?? 2.00);
+  const [deliveryOverride, setDeliveryOverride] = useState(currentDeliveryOverride ?? 0.99);
   const [saving, setSaving] = useState(false);
+  // Fase 4b: motivo da condição VIP, exibido quando os valores editados
+  // divergem do template (opcional; vazio grava "sem motivo informado").
+  const [vipReason, setVipReason] = useState("");
   const [expanded, setExpanded] = useState(false);
 
   // Toggle operacional: preenchimento automático do PIN de entrega (por loja)
@@ -778,13 +871,38 @@ function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride
     finalPix !== (currentPixOverride ?? null) ||
     finalDelivery !== (currentDeliveryOverride ?? null);
 
-  // Detectar valores VIP comparando com o default REAL do plano (vindo de plan_templates).
-  const isVip =
-    Number(currentFee) !== Number(planDefault.monthly_fee) ||
-    Number(currentRate) !== Number(planDefault.commission_rate) ||
-    currentPixOverride != null ||
-    currentDeliveryOverride != null ||
-    (currentPdvFixedFee != null && Number(currentPdvFixedFee) !== defaultPdvFixed);
+  // Fase 4b — VIP por DIVERGÊNCIA DE VALOR vs o default REAL do plano
+  // (plan_templates), nunca por não-nulidade: override igual ao padrão
+  // NÃO é VIP. `isVip` = valores SALVOS; `pendingVip` = valores EDITADOS
+  // (o que o salvar vai criar/manter — é ele que exibe o campo motivo).
+  const savedVip = detectVipDivergence(
+    {
+      monthly_fee: currentFee, commission_rate: currentRate,
+      pix_operational_fee_override: currentPixOverride,
+      platform_delivery_split_override: currentDeliveryOverride,
+      pdv_fixed_fee_per_sale: currentPdvFixedFee,
+    },
+    { monthly_fee: planDefault.monthly_fee, commission_rate: planDefault.commission_rate },
+    defaultPdvFixed,
+  );
+  const isVip = savedVip.isVip;
+  const pendingVip = detectVipDivergence(
+    {
+      monthly_fee: fee, commission_rate: rate,
+      pix_operational_fee_override: finalPix,
+      platform_delivery_split_override: finalDelivery,
+      pdv_fixed_fee_per_sale: pdvFixedFee,
+    },
+    { monthly_fee: planDefault.monthly_fee, commission_rate: planDefault.commission_rate },
+    defaultPdvFixed,
+  );
+  // Concedido (divergência negociada) x sistêmico (entrada dinâmica
+  // fee=0 de plano só-PDV, que é regra do sistema e não negociação).
+  const vipKind = classifyVipKind({
+    diverges: isVip,
+    isSystemicFree: (displayPlan as string) === "pdv_only" && Number(currentFee) === 0,
+  });
+  const vipBadgeLabel = vipKindLabel(vipKind);
 
   const handleSave = async () => {
     setSaving(true);
@@ -802,6 +920,9 @@ function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride
         .eq("is_active", true);
       if (error) throw error;
       await supabase.from("stores").update({ commission_rate: rate } as any).eq("id", storeId);
+      // Fase 4b: o log identifica a condição VIP por divergência de
+      // valor e grava o motivo (opcional; vazio = "sem motivo informado").
+      // Sem divergência, o motivo registra que os valores são o padrão.
       await logVip("vip_settings_saved", {
         before: {
           monthly_fee: currentFee, commission_rate: currentRate,
@@ -815,6 +936,11 @@ function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride
           pix_operational_fee_override: finalPix,
           platform_delivery_split_override: finalDelivery,
         },
+        vip: pendingVip.isVip,
+        diverged_fields: pendingVip.divergedFields,
+        motivo: pendingVip.isVip
+          ? resolveVipReason(vipReason)
+          : "sem divergência — valores iguais ao padrão",
       });
       toast.success("Configuração VIP salva!");
       onSave();
@@ -854,9 +980,9 @@ function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride
         <div className="flex items-center gap-2">
           <Crown className="h-4 w-4 text-amber-500" />
           <span className="text-xs font-black text-foreground">Configuração VIP</span>
-          {isVip && (
+          {vipBadgeLabel && (
             <span className="text-[10px] font-black bg-amber-500/15 text-amber-600 border border-amber-500/25 px-1.5 py-0.5 rounded-full">
-              Personalizado
+              {vipBadgeLabel}
             </span>
           )}
         </div>
@@ -931,9 +1057,9 @@ function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride
                   <div className="min-w-0">
                     <p className="text-xs font-bold text-foreground flex items-center gap-1.5">
                       <Crown className="h-3 w-3 text-amber-500" />
-                      Essencial vitalício R$ 0
+                      Vitalício (sem upgrade automático)
                     </p>
-                    <p className="text-[10px] text-muted-foreground">Bloqueia o upgrade automático para R$ 89,90 ao atingir R$ 5.000 em vendas. Nenhuma cobrança será gerada.</p>
+                    <p className="text-[10px] text-muted-foreground">Bloqueia o upgrade automático para R$ 89,90 ao atingir R$ 5.000 em vendas. Não isenta a cobrança mensal — a fatura continua normal.</p>
                   </div>
                   <button
                     onClick={toggleLifetimeFree}
@@ -949,9 +1075,9 @@ function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride
                   <div className="min-w-0">
                     <p className="text-xs font-bold text-foreground flex items-center gap-1.5">
                       <Crown className="h-3 w-3 text-purple-500" />
-                      Autonomia vitalícia R$ 0
+                      Vitalício (sem upgrade automático)
                     </p>
-                    <p className="text-[10px] text-muted-foreground">Bloqueia o upgrade automático para R$ 199,90 ao atingir R$ 2.500 em vendas. Nenhuma cobrança será gerada.</p>
+                    <p className="text-[10px] text-muted-foreground">Bloqueia o upgrade automático para R$ 199,90 ao atingir R$ 2.500 em vendas. Não isenta a cobrança mensal — a fatura continua normal.</p>
                   </div>
                   <button
                     onClick={toggleAutonomyLifetime}
@@ -1002,7 +1128,7 @@ function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride
                 <label className="flex items-center justify-between cursor-pointer">
                   <div>
                     <p className="text-xs font-bold text-foreground">Taxa de entrega personalizada</p>
-                    <p className="text-[10px] text-muted-foreground">Padrão: R$ 2,00 por entrega — só cobrada quando a loja absorve a taxa (split ≠ cliente)</p>
+                    <p className="text-[10px] text-muted-foreground">Padrão: R$ 0,99 por entrega — só cobrada quando a loja absorve a taxa (split ≠ cliente)</p>
                   </div>
                   <button
                     onClick={() => setDeliveryOverrideEnabled(!deliveryOverrideEnabled)}
@@ -1055,7 +1181,7 @@ function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride
               <div className="flex justify-between text-xs">
                 <span className="text-muted-foreground">Taxa entrega</span>
                 <span className="font-bold text-foreground">
-                  {finalDelivery === null ? "R$ 2,00 (padrão)" : `R$ ${Number(finalDelivery).toFixed(2).replace(".", ",")}`}
+                  {finalDelivery === null ? "R$ 0,99 (padrão)" : `R$ ${Number(finalDelivery).toFixed(2).replace(".", ",")}`}
                 </span>
               </div>
               <div className="flex justify-between text-xs">
@@ -1069,6 +1195,27 @@ function CustomPlanEditor({ storeId, currentFee, currentRate, currentPixOverride
               </p>
             </div>
           </div>
+
+          {/* Fase 4b: motivo da condição VIP — aparece quando os valores
+              editados divergem do template; opcional, vazio = "sem motivo
+              informado" no log. */}
+          {pendingVip.isVip && (
+            <div>
+              <label className="text-[11px] text-muted-foreground font-semibold block mb-1">
+                Motivo da condição VIP (opcional)
+              </label>
+              <input
+                type="text"
+                value={vipReason}
+                onChange={(e) => setVipReason(e.target.value)}
+                placeholder="Ex.: negociação fechada com o lojista em 28/10"
+                className="w-full bg-muted/40 border border-border rounded-xl px-3 py-2 text-sm font-semibold text-foreground focus:outline-none"
+              />
+              <p className="text-[10px] text-muted-foreground mt-1">
+                Campos divergentes do padrão: {pendingVip.divergedFields.join(", ")}. O motivo fica registrado no histórico VIP.
+              </p>
+            </div>
+          )}
 
           {/* Botões */}
           <div className="flex gap-2">
@@ -1106,6 +1253,7 @@ function VipHistoryPanel({ storeId }: { storeId: string }) {
           "vip_settings_reset",
           "vip_essencial_lifetime_toggled",
           "vip_autonomy_lifetime_toggled",
+          "vip_preserved_on_plan_change",
         ])
         .order("created_at", { ascending: false })
         .limit(30);
@@ -1142,11 +1290,17 @@ function VipHistoryPanel({ storeId }: { storeId: string }) {
                   {l.action === "vip_settings_reset" && "Resetado ao padrão"}
                   {l.action === "vip_essencial_lifetime_toggled" && `Essencial vitalício ${l.details?.enabled ? "ativado" : "removido"}`}
                   {l.action === "vip_autonomy_lifetime_toggled" && `Autonomia vitalícia ${l.details?.enabled ? "ativada" : "removida"}`}
+                  {l.action === "vip_preserved_on_plan_change" && "Override VIP preservado na troca de plano"}
                 </span>
                 <span className="text-[10px] text-muted-foreground shrink-0">
                   {new Date(l.created_at).toLocaleString("pt-BR")}
                 </span>
               </div>
+              {l.details?.motivo && (
+                <p className="mt-1 text-[10px] text-muted-foreground">
+                  <span className="font-semibold">Motivo:</span> {String(l.details.motivo)}
+                </p>
+              )}
               {l.details?.before && l.details?.after && (
                 <div className="mt-1.5 text-[10px] text-muted-foreground space-y-0.5">
                   {Object.keys(l.details.after).map((k) => {
