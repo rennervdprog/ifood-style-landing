@@ -19,11 +19,16 @@
  *  c. ABRIR CONVERSA DE FORA: aceita initialPhone e escuta o evento
  *     `itasuper:open-conversation` (detalhe = telefone), usado pelo botão
  *     Chat do pedido no /admin-teste.
+ *  d. SELO "APAGADA" (teste, 29/10/2026): mensagem com deleted_at no
+ *     registro (apagada "para todos" no WhatsApp, detectada pela cópia de
+ *     teste do webhook) continua VISÍVEL aqui, com uma pílula "Apagada"
+ *     ao lado do horário — o lojista vê o conteúdo e sabe que foi apagada.
+ *     O texto nunca é riscado nem escondido.
  * Nada de conexão, QR ou fluxo muda; a leitura continua sendo a tabela
- * whatsapp_inbound_log, nas mesmas colunas de antes.
+ * whatsapp_inbound_log (agora trazendo também a coluna deleted_at).
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, FileText, Image as ImageIcon, Loader2, MessagesSquare, Mic, RefreshCw, Search, Send } from "lucide-react";
+import { ArrowLeft, FileText, Image as ImageIcon, Loader2, MessagesSquare, Mic, RefreshCw, Search, Send, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -42,6 +47,9 @@ type InboundRow = {
   message: string | null;
   direction: string;
   received_at: string;
+  /** Preenchido quando a mensagem foi apagada "para todos" no WhatsApp;
+   *  o conteúdo continua no registro e ganha o selo "Apagada". */
+  deleted_at?: string | null;
   /** Campos opcionais de mídia — hoje o registro não os guarda; se um dia
    *  guardar, a prévia abaixo os usa sem mudar mais nada. */
   media_type?: string | null;
@@ -154,7 +162,7 @@ const WhatsAppConversationsTeste = ({ storeId, initialPhone }: Props) => {
     setLoading(true);
     try {
       const { data, error } = await (supabase.from("whatsapp_inbound_log" as any) as any)
-        .select("id, phone, push_name, message, direction, received_at")
+        .select("id, phone, push_name, message, direction, received_at, deleted_at")
         .eq("store_id", storeId)
         .order("received_at", { ascending: false })
         .limit(1000);
@@ -354,9 +362,22 @@ const WhatsAppConversationsTeste = ({ storeId, initialPhone }: Props) => {
                           }`}
                         >
                           <MessageBodyTeste m={m} outgoing={out} />
-                          <p className={`text-xs mt-1 text-right ${out ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
-                            {formatWhen(m.received_at)}
-                          </p>
+                          <div className="flex items-center justify-end gap-1.5 mt-1">
+                            {m.deleted_at ? (
+                              <span
+                                title={`Apagada no WhatsApp em ${formatWhen(m.deleted_at)} — o conteúdo continua salvo no registro`}
+                                className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
+                                  out ? "bg-primary-foreground/25 text-primary-foreground" : "bg-muted-foreground text-background"
+                                }`}
+                              >
+                                <Trash2 className="h-3 w-3" />
+                                Apagada
+                              </span>
+                            ) : null}
+                            <p className={`text-xs ${out ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
+                              {formatWhen(m.received_at)}
+                            </p>
+                          </div>
                         </div>
                       </div>
                     );

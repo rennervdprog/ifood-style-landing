@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Loader2, MessagesSquare, RefreshCw, Search } from "lucide-react";
+import { ArrowLeft, Loader2, MessagesSquare, RefreshCw, Search, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -14,6 +14,9 @@ type InboundRow = {
   message: string | null;
   direction: string;
   received_at: string;
+  /** Preenchido quando a mensagem foi apagada "para todos" no WhatsApp;
+   *  o conteúdo continua no registro e ganha o selo "Apagada". */
+  deleted_at?: string | null;
 };
 
 type Conversation = {
@@ -60,7 +63,7 @@ const WhatsAppConversations = ({ storeId }: Props) => {
     setLoading(true);
     try {
       const { data, error } = await (supabase.from("whatsapp_inbound_log" as any) as any)
-        .select("id, phone, push_name, message, direction, received_at")
+        .select("id, phone, push_name, message, direction, received_at, deleted_at")
         .eq("store_id", storeId)
         .order("received_at", { ascending: false })
         .limit(1000);
@@ -214,9 +217,22 @@ const WhatsAppConversations = ({ storeId }: Props) => {
                           }`}
                         >
                           <p className="text-sm whitespace-pre-wrap break-words">{m.message || ""}</p>
-                          <p className={`text-[10px] mt-1 text-right ${out ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
-                            {formatWhen(m.received_at)}
-                          </p>
+                          <div className="flex items-center justify-end gap-1.5 mt-1">
+                            {m.deleted_at ? (
+                              <span
+                                title={`Apagada no WhatsApp em ${formatWhen(m.deleted_at)} — o conteúdo continua salvo no registro`}
+                                className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
+                                  out ? "bg-primary-foreground/25 text-primary-foreground" : "bg-muted-foreground text-background"
+                                }`}
+                              >
+                                <Trash2 className="h-3 w-3" />
+                                Apagada
+                              </span>
+                            ) : null}
+                            <p className={`text-[10px] ${out ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
+                              {formatWhen(m.received_at)}
+                            </p>
+                          </div>
                         </div>
                       </div>
                     );

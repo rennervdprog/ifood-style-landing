@@ -1,14 +1,21 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
+interface EvolutionProtocolKey {
+  id?: string; remoteJid?: string; fromMe?: boolean;
+}
 interface EvolutionMessage {
   conversation?: string; extendedTextMessage?: { text?: string };
   imageMessage?: { caption?: string; mimetype?: string }; videoMessage?: { caption?: string };
-  protocolMessage?: unknown; reactionMessage?: unknown; senderKeyDistributionMessage?: unknown;
+  // protocolMessage.type 0 = REVOKE ("apagar para todos"); key.id = id da
+  // mensagem original apagada. Baileys pode serializar o tipo como número
+  // ou como nome do enum ("REVOKE").
+  protocolMessage?: { type?: number | string; key?: EvolutionProtocolKey };
+  reactionMessage?: unknown; senderKeyDistributionMessage?: unknown;
   audioMessage?: unknown; documentMessage?: unknown; stickerMessage?: unknown;
 }
 interface EvolutionIncoming {
   messageTimestamp?: number | string; timestamp?: number | string; date_time?: number | string;
   message?: EvolutionMessage;
-  key?: { remoteJid?: string; remoteJidAlt?: string; participant?: string; fromMe?: boolean };
+  key?: { id?: string; remoteJid?: string; remoteJidAlt?: string; participant?: string; fromMe?: boolean };
   messages?: EvolutionIncoming[];
 }
 interface ConnectionPatch {
@@ -86,6 +93,26 @@ const incomingPhone = (data: EvolutionIncoming)=>{
 const hasImageMessage = (data: EvolutionIncoming)=>{
   const msg = data?.message || data?.messages?.[0]?.message || {};
   return Boolean(msg.imageMessage);
+};
+// ID da mensagem no WhatsApp (key.id) — gravado junto do registro para a
+// mensagem poder ser localizada depois (ex.: quando for apagada).
+const incomingMessageId = (data: EvolutionIncoming)=>{
+  const key = data?.key || data?.messages?.[0]?.key;
+  const id = key?.id;
+  return typeof id === "string" && id.length > 0 ? id : null;
+};
+// "Apagar para todos" chega como messages.upsert com
+// message.protocolMessage (type REVOKE) apontando para a mensagem original
+// em protocolMessage.key.id. Retorna esse id, ou null se não for revoke.
+const extractRevokeId = (data: EvolutionIncoming)=>{
+  const msg = data?.message || data?.messages?.[0]?.message;
+  const proto = msg?.protocolMessage;
+  if (!proto) return null;
+  const t = proto.type;
+  const isRevoke = t === 0 || t === "0" || (typeof t === "string" && t.toUpperCase() === "REVOKE");
+  if (!isRevoke) return null;
+  const rid = proto.key?.id;
+  return typeof rid === "string" && rid.length > 0 ? rid : null;
 };
 // Baixa imagem via Evolution API (base64) — usado para comprovantes Pix Direto do bot.
 const fetchImageBase64 = async (instance: string, data: EvolutionIncoming)=>{
@@ -328,6 +355,31 @@ Deno.serve(async (req)=>{
     }
     // MESSAGES_UPSERT
     if (/messages.?upsert/i.test(event)) {
+      // "Apagar para todos" (REVOKE) — inclusive quando é a própria loja
+      // (fromMe) apagando uma mensagem que ela enviou: marca deleted_at no
+      // registro já salvo, SEM apagar o texto. O lojista continua vendo a
+      // mensagem, com o selo "Apagada". Se a mensagem original não estiver
+      // no registro (antiga, sem ID), responde ok e segue sem erro.
+      const revokedId = extractRevokeId(data);
+      if (revokedId) {
+        const { data: marked, error: revokeError } = await admin.from("whatsapp_inbound_log")
+          .update({ deleted_at: new Date().toISOString() })
+          .eq("store_id", cfg.store_id)
+          .eq("wa_message_id", revokedId)
+          .is("deleted_at", null)
+          .select("id");
+        if (revokeError) console.warn("[evolution-webhook] revoke mark failed", revokeError.message);
+        console.log("[evolution-webhook] revoke handled", {
+          store: cfg.store_id,
+          wa_message_id: revokedId,
+          marked: marked?.length ?? 0
+        });
+        return json({
+          ok: true,
+          revoked: revokedId,
+          marked: marked?.length ?? 0
+        });
+      }
       const key = data?.key || data?.messages?.[0]?.key || {};
       const fromMe = key?.fromMe;
       const remoteJid = key?.remoteJid || "";
@@ -342,7 +394,8 @@ Deno.serve(async (req)=>{
             phone: number,
             message: outText || "[mensagem sem texto]",
             push_name: "",
-            direction: "out"
+            direction: "out",
+            wa_message_id: incomingMessageId(data)
           });
           if (outLogError) console.warn("[evolution-webhook] outbound log skipped", outLogError.message);
         }
@@ -361,7 +414,8 @@ Deno.serve(async (req)=>{
           store_id: cfg.store_id,
           phone: number,
           message: text || "[mensagem sem texto]",
-          push_name: String((data as any)?.pushName || "")
+          push_name: String((data as any)?.pushName || ""),
+          wa_message_id: incomingMessageId(data)
         });
         if (inboundLogError) console.warn("[evolution-webhook] inbound log skipped", inboundLogError.message);
         // Modo observação (send_disabled): registra e NÃO dispara nada —
