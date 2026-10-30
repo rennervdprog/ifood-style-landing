@@ -25,14 +25,12 @@ import {
   Send,
   AlertTriangle,
 } from "lucide-react";
-import StoreDriverFinance from "@/components/StoreDriverFinance";
-
 interface StoreDriverManagerProps {
   storeId: string;
 }
 
 type PaymentMode = "instantaneo" | "fim_do_dia";
-type DriverTab = "team" | "directory" | "invites" | "finance";
+type DriverTab = "team" | "directory" | "invites";
 
 type ManualDriver = {
   user_id: string;
@@ -120,24 +118,30 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
     queryKey: ["store-driver-delivery-stats", storeId, driverIds.join(",")],
     enabled: driverIds.length > 0,
     queryFn: async () => {
+      // Histórico operacional de entregas: a fonte é `orders` (pedidos
+      // entregues/finalizados pela equipe desta loja). O antigo livro
+      // `store_driver_earnings` era o controle de acerto lojista×motoboy e foi
+      // aposentado — acerto é acordo entre as duas partes, fora da plataforma
+      // (ver "Não vinculação" nos Termos de Uso). Só contagem de entregas:
+      // nenhum valor nem status de acerto é lido aqui.
       const { data, error } = await supabase
-        .from("store_driver_earnings" as any)
-        .select("driver_user_id, status, created_at")
+        .from("orders")
+        .select("driver_id, delivered_at, created_at")
         .eq("store_id", storeId)
-        .in("driver_user_id", driverIds);
+        .in("driver_id", driverIds)
+        .in("status", ["entregue", "finalizado"]);
       if (error) throw error;
 
       const now = new Date();
       const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-      // Só contagem de entregas. O valor combinado entre lojista e motoboy não
-      // passa pela plataforma — ver "Não vinculação" nos Termos de Uso.
-      const stats: Record<string, { total: number; today: number; pending: number }> = {};
-      (data as any[] || []).forEach((earning) => {
-        const key = earning.driver_user_id;
-        if (!stats[key]) stats[key] = { total: 0, today: 0, pending: 0 };
+      const stats: Record<string, { total: number; today: number }> = {};
+      (data as any[] || []).forEach((order) => {
+        const key = order.driver_id;
+        if (!key) return;
+        if (!stats[key]) stats[key] = { total: 0, today: 0 };
         stats[key].total += 1;
-        if (new Date(earning.created_at).getTime() >= startOfToday) stats[key].today += 1;
-        if (earning.status !== "pago") stats[key].pending += 1;
+        const when = new Date(order.delivered_at || order.created_at).getTime();
+        if (when >= startOfToday) stats[key].today += 1;
       });
       return stats;
     },
@@ -390,7 +394,6 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
         <button onClick={() => setActiveTab("team")} className={tabClass("team")}>Equipe ({acceptedDrivers.length})</button>
         <button onClick={() => setActiveTab("directory")} className={tabClass("directory")}>Base em {cityName}</button>
         <button onClick={() => setActiveTab("invites")} className={tabClass("invites")}>Convites{pendingInvites.length ? ` (${pendingInvites.length})` : ""}</button>
-        <button onClick={() => setActiveTab("finance")} className={tabClass("finance")}>Financeiro</button>
       </nav>
 
       {activeTab === "team" && (
@@ -508,7 +511,6 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
         </section>
       )}
 
-      {activeTab === "finance" && <StoreDriverFinance storeId={storeId} />}
     </div>
   );
 };
