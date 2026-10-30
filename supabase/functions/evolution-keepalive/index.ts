@@ -1,4 +1,4 @@
-import { createClient } from "npm:@supabase/supabase-js@2.49.4";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -229,6 +229,6 @@ Deno.serve(async (req) => {
     return json({ success: true, count: results.length, results });
   } catch (e) {
     console.error("evolution-keepalive error:", e);
-    return json({ error: "Internal error", message: e.message, stack: e.stack }, 500);
+    return json({ error: "Internal error", message: e instanceof Error ? e.message : String(e), stack: e instanceof Error ? e.stack : undefined }, 500);
   }
 });

@@ -73,13 +73,28 @@ export function PdvQuickGridEditor({ storeId }: { storeId: string }) {
   };
 
   const save = async () => {
+    // Valida unicidade dos códigos curtos (submitCode pega o primeiro match).
+    const merged = products.map(getProduct);
+    const seen = new Map<string, string>();
+    const dupes: string[] = [];
+    for (const p of merged) {
+      const code = (p.pdv_short_code || "").trim().toLowerCase();
+      if (!code) continue;
+      if (seen.has(code)) dupes.push(`"${p.pdv_short_code}" (${seen.get(code)} × ${p.name})`);
+      else seen.set(code, p.name);
+    }
+    if (dupes.length > 0) {
+      toast.error(`Código duplicado: ${dupes[0]}. Cada tecla precisa de um código único.`);
+      return;
+    }
     setSaving(true);
     try {
       const sUpdates = Object.entries(localSections);
       for (const [id, patch] of sUpdates) {
-        await (supabase.from("menu_sections") as any)
+        const { error } = await (supabase.from("menu_sections") as any)
           .update({ pdv_color: patch.pdv_color ?? null })
           .eq("id", id);
+        if (error) throw error;
       }
       const pUpdates = Object.entries(localProducts);
       for (const [id, patch] of pUpdates) {
@@ -87,7 +102,8 @@ export function PdvQuickGridEditor({ storeId }: { storeId: string }) {
         if ("pdv_short_code" in patch) payload.pdv_short_code = (patch.pdv_short_code || null) as any;
         if ("pdv_sort_order" in patch) payload.pdv_sort_order = patch.pdv_sort_order ?? null;
         if (Object.keys(payload).length) {
-          await (supabase.from("products") as any).update(payload).eq("id", id);
+          const { error } = await (supabase.from("products") as any).update(payload).eq("id", id);
+          if (error) throw error;
         }
       }
       toast.success("Teclas PDV salvas.");

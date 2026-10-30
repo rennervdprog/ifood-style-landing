@@ -35,6 +35,7 @@ type SortDir = "asc" | "desc";
 
 // Maps each transaction_kind to a UX-friendly description, flow type and status mapping
 const KIND_INFO: Record<string, { label: string; flow: FlowType }> = {
+  order_sale:         { label: "Venda entregue",                         flow: "income"  },
   store_payout:       { label: "Repasse de venda PIX online",            flow: "income"  },
   commission_charge:  { label: "Cobrança semanal de taxas e comissões",  flow: "expense" },
   physical_fee:       { label: "Taxas de vendas pagas fora do PIX online", flow: "expense" },
@@ -77,7 +78,7 @@ export default function FinancialStatement({ storeId, storeName }: Props) {
   const [sortKey, setSortKey] = useState<SortKey>("date");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
 
-  const { data: txs, isLoading } = useQuery({
+  const { data: financialTxs, isLoading: txsLoading } = useQuery({
     queryKey: ["financial-statement", storeId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -92,6 +93,46 @@ export default function FinancialStatement({ storeId, storeName }: Props) {
     enabled: !!storeId,
     refetchInterval: 30000,
   });
+
+  // Vendas entregues da loja, na MESMA base do Resumo/Relatórios (orders com
+  // status entregue/finalizado). Antes o Extrato lia só financial_transactions
+  // — tabela de taxas/repasses da plataforma, vazia para a maioria das lojas —
+  // e mostrava tudo R$ 0,00 enquanto o Resumo mostrava as vendas reais.
+  // Aqui as vendas entram como linhas de receita (só exibição; nenhum dado
+  // ou regra de dinheiro muda).
+  const { data: saleOrders, isLoading: ordersLoading } = useQuery({
+    queryKey: ["financial-statement-orders", storeId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("orders")
+        .select("id, total_price, created_at")
+        .eq("store_id", storeId)
+        .in("status", ["entregue", "finalizado"])
+        .order("created_at", { ascending: false })
+        .limit(500);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!storeId,
+    refetchInterval: 30000,
+  });
+
+  const isLoading = txsLoading || ordersLoading;
+
+  const txs = useMemo(() => {
+    const sales = (saleOrders || []).map((o: any) => ({
+      id: `order-${o.id}`,
+      reference_code: `#${String(o.id).slice(0, 8).toUpperCase()}`,
+      amount: Number(o.total_price) || 0,
+      status: "paid",
+      transaction_kind: "order_sale",
+      created_at: o.created_at,
+      settled_at: null,
+      provider: null,
+      metadata: null,
+    }));
+    return [...(financialTxs || []), ...sales];
+  }, [financialTxs, saleOrders]);
 
   const range = useMemo(() => resolvePeriod(period, custom), [period, custom]);
 
@@ -164,7 +205,8 @@ export default function FinancialStatement({ storeId, storeName }: Props) {
       const flowLbl = info?.flow === "income" ? "Receita" : info?.flow === "expense" ? "Despesa" : "—";
       return `"${date}","${info?.label || t.transaction_kind}","${flowLbl}","${Number(t.amount).toFixed(2)}","${sm}","${t.reference_code}"`;
     }).join("\n");
-    const blob = new Blob([header + rows], { type: "text/csv;charset=utf-8;" });
+    // 4.8: BOM para acentos não corromperem no Excel Windows (igual ao CSV de Relatórios)
+    const blob = new Blob(["\uFEFF" + header + rows], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -304,6 +346,10 @@ export default function FinancialStatement({ storeId, storeName }: Props) {
           </div>
         </CardContent>
       </Card>
+
+      <p className="text-[11px] text-muted-foreground px-1">
+        O extrato reúne as vendas entregues da loja (mesma base do Resumo) e os lançamentos da plataforma — taxas, mensalidade e repasses.
+      </p>
 
       {/* Table (desktop) */}
       <Card className="hidden md:block">

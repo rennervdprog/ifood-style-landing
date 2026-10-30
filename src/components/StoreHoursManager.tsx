@@ -404,6 +404,8 @@ const StoreHoursManager = ({ storeId, forceClosed }: { storeId: string; forceClo
           onClick={toggleForceClosed}
           variant="outline"
           size="sm"
+          disabled={!localForceClosed && !storeStatus.isOpen}
+          title={!localForceClosed && !storeStatus.isOpen ? "A loja já está fechada pelo horário de funcionamento" : undefined}
           className={cn(
             "rounded-xl font-bold text-xs gap-1.5 min-h-[40px]",
             localForceClosed
@@ -412,7 +414,7 @@ const StoreHoursManager = ({ storeId, forceClosed }: { storeId: string; forceClo
           )}
         >
           <Power className="h-3.5 w-3.5" />
-          {localForceClosed ? "Reabrir" : "Fechar Agora"}
+          {localForceClosed ? "Reabrir" : !storeStatus.isOpen ? "Fechada pelo horário" : "Fechar Agora"}
         </Button>
       </div>
 

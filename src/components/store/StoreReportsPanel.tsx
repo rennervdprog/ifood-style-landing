@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { formatCurrency } from "@/lib/utils";
 import { Calendar as CalIcon, Download, ArrowUpRight, ArrowDownRight, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import TutorialHelpButton from "@/components/TutorialHelp";
 
 const DailyRevenueChart = lazy(() =>
   import("@/components/admin/AdminCharts").then((m) => ({ default: m.DailyRevenueChart }))
@@ -17,25 +18,9 @@ const PaymentPieChart = lazy(() =>
 
 type SubTab = "overview" | "sales" | "products" | "hours";
 
-const PAYMENT_LABELS: Record<string, string> = {
-  pix: "PIX",
-  pix_online: "PIX Online",
-  pix_machine: "PIX Maquineta",
-  dinheiro: "Dinheiro",
-  cartao: "Cartão",
-  cartao_credito: "Crédito",
-  cartao_debito: "Débito",
-  cartao_maquineta: "Cartão Maquineta",
-  online: "Online",
-  outros: "Outros",
-};
-
-const SOURCE_LABELS: Record<string, string> = {
-  delivery: "Delivery",
-  pdv: "PDV",
-  manual: "Manual",
-  balcao: "Balcão",
-};
+// Mapas únicos de rótulos (o mapa local antigo não cobria os valores reais
+// do banco — cash, maquininha_pix, whatsapp_bot etc. vazavam crus na tela).
+import { PAYMENT_METHOD_LABELS as PAYMENT_LABELS, ORDER_SOURCE_LABELS as SOURCE_LABELS } from "@/lib/orderLabels";
 
 const WEEKDAYS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 
@@ -187,6 +172,8 @@ export default function StoreReportsPanel({ storeId, storeName }: { storeId: str
     <div className="space-y-5">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <h3 className="text-lg font-bold text-foreground">Relatórios Detalhados</h3>
+        <div className="flex items-center gap-2">
+        <TutorialHelpButton tutorialId="reports" />
         <button
           onClick={exportCSV}
           disabled={!data || isLoading}
@@ -194,6 +181,7 @@ export default function StoreReportsPanel({ storeId, storeName }: { storeId: str
         >
           <Download className="h-3.5 w-3.5" /> Exportar CSV
         </button>
+        </div>
       </div>
 
       {/* Preset chips */}

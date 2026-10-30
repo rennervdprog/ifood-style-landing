@@ -22,6 +22,9 @@ interface Payload {
   phone: string;
   name: string;
   store_id: string;
+  // Fase 3: chave de idempotência gerada pela página (um UUID por tentativa
+  // de checkout). Sem ela, o retry geraria chave nova na edge e duplicaria.
+  idempotency_key?: string;
   items: Array<{ product_id: string; quantity: number; unit_price: number; addons?: unknown; observations?: string | null }>;
   subtotal: number;
   delivery_fee: number;
@@ -86,6 +89,24 @@ Deno.serve(async (req) => {
   if (!Array.isArray(p?.items) || p.items.length === 0) return json({ error: "empty_items" }, 400);
   if (!p.is_pickup && !p.address) return json({ error: "missing_address" }, 400);
 
+  // Cópia de teste (`guest-checkout-teste`): allowlist no topo — só a loja
+  // de teste e só os telefones de teste (Renner + os 3 brickados 8888).
+  // A função original (`guest-checkout`, v34) fica intacta; o redeploy
+  // v34→v35 de produção só acontece na publicação, com a palavra do Renner.
+  // O modo teste é detectado pela URL de invocação, então o código é o
+  // mesmo nos dois deploys.
+  const TEST_STORE_ID = "8197bdd8-f041-410d-acc0-af9ecb448f55";
+  const TEST_PHONES = new Set([
+    "5514991624997", // Renner
+    "5514988885555", // brickado 05/07/2026
+    "5514988886666", // brickado 05/07/2026
+    "5514988887777", // brickado 05/07/2026
+  ]);
+  const isTestFunction = new URL(req.url).pathname.endsWith("-teste");
+  if (isTestFunction && (p.store_id !== TEST_STORE_ID || !TEST_PHONES.has(phone))) {
+    return json({ error: "forbidden", reason: "test_function_allowlist" }, 403);
+  }
+
   try {
     const sb = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -117,9 +138,26 @@ Deno.serve(async (req) => {
       }
     }
 
-    // 1) Reutilizar ou criar auth.user sintético
+    // 1) Cotação ANTES de criar o usuário (Fase 2 / P0-1): a cotação não
+    // precisa do usuário — e é ela que mais falha (fora da área, sem
+    // entregador). Antes, a falha de cotação deixava um usuário órfão: o
+    // cadastro fantasma era criado no passo 1 e o retry morria em
+    // user_create_failed. Agora a falha volta antes de qualquer escrita.
+    const quote = await quoteGuestDelivery(p);
+    if (!quote?.ok) {
+      return json({ error: "delivery_quote_failed", reason: quote?.reason || "delivery_quote_failed" }, 400);
+    }
+    const deliverySnapshot: any = quote.destination || null;
+    const addressString = deliverySnapshot?.normalized_address || "Retirada na loja";
+    const neighborhood = p.is_pickup ? "RETIRADA" : deliverySnapshot?.neighborhood;
+    if (!p.is_pickup && (!deliverySnapshot || !Number.isFinite(Number(deliverySnapshot.lat)) || !Number.isFinite(Number(deliverySnapshot.lng)))) {
+      return json({ error: "address_not_resolved", reason: "address_not_resolved" }, 400);
+    }
+
+    // 2) Reutilizar ou criar auth.user sintético
     let userId: string | null = null;
     let isNewUser = false;
+    let healedViaEmail = false;
     if (existing?.user_id) {
       userId = existing.user_id;
     } else {
@@ -133,29 +171,36 @@ Deno.serve(async (req) => {
       if (createErr || !created?.user?.id) {
         // race: procura em profiles pelo phone (evita listUsers full-scan)
         const { data: prof } = await sb.from("profiles").select("user_id").eq("phone", phone).maybeSingle();
-        if (!prof?.user_id) {
-          console.error("[guest-checkout] createUser error:", createErr);
-          return json({ error: "user_create_failed" }, 500);
+        if (prof?.user_id) {
+          userId = (prof as any).user_id;
+          isNewUser = false;
+        } else {
+          // Fallback de e-mail duplicado (Fase 2 / mesmo padrão do bot):
+          // o usuário sintético pode já existir (a 1ª tentativa falhou
+          // depois de criar) — resolver pelo e-mail em vez de desistir.
+          // 163 usuários no total: uma varredura paginada basta.
+          console.warn("[guest-checkout] createUser failed, trying email fallback", createErr?.message || createErr);
+          try {
+            const { data: listed } = await sb.auth.admin.listUsers({ page: 1, perPage: 1000 });
+            const found = (listed?.users ?? []).find((u) => u.email === email);
+            if (found?.id) {
+              console.warn("[guest-checkout] email fallback healed", { phone });
+              userId = found.id;
+              isNewUser = false;
+              healedViaEmail = true;
+            }
+          } catch (listErr) {
+            console.error("[guest-checkout] email fallback failed", listErr);
+          }
+          if (!userId) {
+            console.error("[guest-checkout] createUser error:", createErr);
+            return json({ error: "user_create_failed" }, 500);
+          }
         }
-        userId = (prof as any).user_id;
-        isNewUser = false;
       } else {
         userId = created.user.id;
       }
     }
-
-      // 2) Cotação única antes do INSERT. Entrega só segue com endereço,
-      // distância, elegibilidade e taxa retornados pelo backend central.
-      const quote = await quoteGuestDelivery(p);
-      if (!quote?.ok) {
-        return json({ error: "delivery_quote_failed", reason: quote?.reason || "delivery_quote_failed" }, 400);
-      }
-      const deliverySnapshot: any = quote.destination || null;
-      const addressString = deliverySnapshot?.normalized_address || "Retirada na loja";
-      const neighborhood = p.is_pickup ? "RETIRADA" : deliverySnapshot?.neighborhood;
-      if (!p.is_pickup && (!deliverySnapshot || !Number.isFinite(Number(deliverySnapshot.lat)) || !Number.isFinite(Number(deliverySnapshot.lng)))) {
-        return json({ error: "address_not_resolved", reason: "address_not_resolved" }, 400);
-      }
 
     const { data: pinProfile } = await sb.from("profiles")
       .select("delivery_pin")
@@ -163,63 +208,72 @@ Deno.serve(async (req) => {
       .maybeSingle();
     const deliveryPin = (pinProfile as any)?.delivery_pin || String(Math.floor(1000 + Math.random() * 9000));
 
-    // 3) Pedido (crítico — bloqueia a resposta)
-    const { data: order, error: orderErr } = await sb.from("orders").insert({
-      client_id: userId,
-      store_id: p.store_id,
-      subtotal: p.subtotal,
+    // 3) Pedido transacional (Fase 3): a RPC `create_order_with_items`
+    // cria pedido + itens numa transação só, com idempotência. Se a RPC
+    // falhar, o pedido FALHA — nunca retorna sucesso com órfão (era o P0-7
+    // do guest: o insert dos itens falhava, o erro era só logado e a função
+    // retornava sucesso). O guest não usa cupom/fidelidade/carteira/
+    // vasilhames; o subtotal e o total são recalculados no servidor.
+    const idempotencyKey = p.idempotency_key || crypto.randomUUID();
+    const deliveryQuoteSnapshot = p.is_pickup ? null : {
+      policy_version: (quote as any)?.policy_version || 1,
+      distance_km: Number((quote as any)?.distance?.km || 0),
+      distance_source: (quote as any)?.distance?.source || "haversine",
+      max_delivery_km: (quote as any)?.distance?.max_km ?? null,
+      destination_precision: (deliverySnapshot as any)?.precision || "cep",
+      store_delivery_base: Number((quote as any)?.pricing?.store_delivery_base || 0),
+      platform_fee_customer: Number((quote as any)?.pricing?.platform_fee_customer || 0),
+      platform_fee_store_absorbed: Number((quote as any)?.pricing?.platform_fee_store_absorbed || 0),
       delivery_fee: Number((quote as any)?.pricing?.delivery_fee || 0),
-      delivery_fee_absorbed_by_store: Number((quote as any)?.pricing?.platform_fee_store_absorbed || 0),
-      total_price: Number(p.subtotal || 0) + Number((quote as any)?.pricing?.delivery_fee || 0),
-      commission_rate: p.commission_rate ?? 0,
-      payment_method: p.payment_method,
-      neighborhood: deliverySnapshot?.neighborhood || neighborhood,
-      address_details: deliverySnapshot?.normalized_address || addressString,
-      delivery_cep: deliverySnapshot?.cep || null,
-      delivery_city: deliverySnapshot?.city || null,
-      delivery_state: deliverySnapshot?.state || null,
-      client_lat: deliverySnapshot?.lat ?? null,
-      client_lng: deliverySnapshot?.lng ?? null,
-      needs_change: !!p.needs_change,
-      change_for: p.change_for || 0,
-      status: isPixDireto ? "aguardando_comprovante" : "pendente",
-      scheduled_for: p.scheduled_for || null,
-      is_guest: true,
-      delivery_pin: deliveryPin,
-      metadata: p.is_pickup ? null : { delivery_quote: {
-        policy_version: (quote as any)?.policy_version || 1,
-        distance_km: Number((quote as any)?.distance?.km || 0),
-        distance_source: (quote as any)?.distance?.source || "haversine",
-        max_delivery_km: (quote as any)?.distance?.max_km ?? null,
-        destination_precision: (deliverySnapshot as any)?.precision || "cep",
-        store_delivery_base: Number((quote as any)?.pricing?.store_delivery_base || 0),
-        platform_fee_customer: Number((quote as any)?.pricing?.platform_fee_customer || 0),
-        platform_fee_store_absorbed: Number((quote as any)?.pricing?.platform_fee_store_absorbed || 0),
-        delivery_fee: Number((quote as any)?.pricing?.delivery_fee || 0),
-        vip_override_applied: (quote as any)?.pricing?.vip_override_applied ?? null,
-        split_mode: (quote as any)?.pricing?.split_mode ?? null,
-        plan_type: (quote as any)?.pricing?.plan_type ?? null,
-      } },
-    } as any).select("id").single();
-
-    if (orderErr || !order?.id) {
-      console.error("[guest-checkout] order insert error:", orderErr);
-      return json({ error: "order_create_failed", detail: orderErr?.message }, 500);
+      vip_override_applied: (quote as any)?.pricing?.vip_override_applied ?? null,
+      split_mode: (quote as any)?.pricing?.split_mode ?? null,
+      plan_type: (quote as any)?.pricing?.plan_type ?? null,
+    };
+    const { data: created, error: orderErr } = await sb.rpc("create_order_with_items", {
+      p_client_id: userId,
+      p_store_id: p.store_id,
+      p_idempotency_key: idempotencyKey,
+      p_items: p.items.map((it) => ({
+        product_id: it.product_id,
+        quantity: it.quantity,
+        unit_price: it.unit_price,
+        addons: it.addons ?? null,
+        observations: it.observations || null,
+      })),
+      p_delivery_fee: Number((quote as any)?.pricing?.delivery_fee || 0),
+      p_delivery_fee_absorbed: Number((quote as any)?.pricing?.platform_fee_store_absorbed || 0),
+      p_payment_method: p.payment_method,
+      p_neighborhood: deliverySnapshot?.neighborhood || neighborhood,
+      p_address_details: deliverySnapshot?.normalized_address || addressString,
+      p_delivery_cep: deliverySnapshot?.cep || null,
+      p_delivery_city: deliverySnapshot?.city || null,
+      p_delivery_state: deliverySnapshot?.state || null,
+      p_client_lat: deliverySnapshot?.lat ?? null,
+      p_client_lng: deliverySnapshot?.lng ?? null,
+      p_needs_change: !!p.needs_change,
+      p_change_for: p.change_for || 0,
+      p_is_pickup: p.is_pickup,
+      p_is_preorder: false,
+      p_scheduled_for: p.scheduled_for || null,
+      p_coupon_id: null,
+      p_coupon_discount: 0,
+      p_loyalty_points: 0,
+      p_loyalty_discount: 0,
+      p_wallet_discount: 0,
+      p_empties_discount: 0,
+      p_empties: [],
+      p_delivery_quote: deliveryQuoteSnapshot,
+      p_is_guest: true,
+      p_delivery_pin: deliveryPin,
+      p_order_source: "delivery",
+    });
+    if (orderErr || !(created as any)?.order_id) {
+      console.error("[guest-checkout] create_order_with_items error:", orderErr);
+      return json({ error: "order_create_failed", detail: orderErr?.message || "Falha ao criar pedido" }, 500);
     }
+    const order = { id: (created as any).order_id };
 
-    // 4) Itens (crítico)
-    const rows = p.items.map((it) => ({
-      order_id: order.id,
-      product_id: it.product_id,
-      quantity: it.quantity,
-      unit_price: it.unit_price,
-      addons: it.addons ?? null,
-      observations: it.observations || null,
-    }));
-    const { error: itemsErr } = await sb.from("order_items").insert(rows);
-    if (itemsErr) console.error("[guest-checkout] items insert error:", itemsErr);
-
-    // 5) Dados mínimos do guest necessários para a tela pública validar e mostrar o PIN.
+    // 4) Dados mínimos do guest necessários para a tela pública validar e mostrar o PIN.
     //    Mantém esta parte síncrona para evitar a página /p/:orderId abrir antes do vínculo existir.
     const { error: guestErr } = await sb.from("guest_customers").upsert({
       phone, user_id: userId, name,
@@ -229,14 +283,17 @@ Deno.serve(async (req) => {
     } as any, { onConflict: "phone" });
     if (guestErr) {
       console.error("[guest-checkout] guest upsert error:", guestErr);
-      return json({ error: "guest_link_failed" }, 500);
+      // Fase 6B (P2-5): o pedido JÁ foi criado pela RPC — devolver o
+      // order_id (e os últimos 4 do telefone) para o front mostrar "pedido
+      // criado" com o link de acompanhamento, em vez do erro genérico.
+      return json({ error: "guest_link_failed", order_id: order.id, phone_last4: phone.slice(-4) }, 500);
     }
 
-    // 6) Trabalho não-crítico → em background (não bloqueia a resposta).
+    // 5) Trabalho não-crítico → em background (não bloqueia a resposta).
     //    Profile pin e saved_addresses.
     const bgTask = (async () => {
       try {
-        if (isNewUser) {
+        if (isNewUser || healedViaEmail) {
           await sb.from("profiles").upsert(
             { user_id: userId, full_name: name, phone, delivery_pin: deliveryPin } as any,
             { onConflict: "user_id" },

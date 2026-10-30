@@ -30,7 +30,9 @@ export type DashboardTab =
   | "cash_register"
   | "suporte"
   | "coupons"
-  | "promotions";
+  | "promotions"
+  | "stock"
+  | "reviews";
 
 export type StoreAddonGroup = {
   id: string;

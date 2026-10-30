@@ -1,5 +1,5 @@
-import { createClient } from "npm:@supabase/supabase-js@2";
-import { corsHeaders as baseCorsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { corsHeaders as baseCorsHeaders } from "https://esm.sh/@supabase/supabase-js@2/cors";
 import { z } from "https://esm.sh/zod@3.23.8";
 
 /* ── inline de _shared/abacatepay.ts (deploy externo nao sobe subpastas) ── */
@@ -100,13 +100,17 @@ export async function createWooviPix(params: {
       name: params.customer?.name || "Lojista",
       email: params.customer?.email || `lojista-${params.externalId}@itasuper.com`,
       ...(taxId.length === 11 || taxId.length === 14
-        ? { taxID: { taxID: taxId, type: taxId.length === 11 ? "BR:CPF" : "BR:CNPJ" } }
+        ? { taxID: taxId }
         : {}),
     };
   }
-  const res = await fetch("https://api.openpix.com.br/api/v1/charge", {
+  const res = await fetch("https://api.woovi.com/api/v1/charge", {
     method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: appId },
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: appId,
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
+    },
     body: JSON.stringify(body),
   });
   const payload = await res.json().catch(() => ({}));

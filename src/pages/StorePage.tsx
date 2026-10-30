@@ -116,7 +116,7 @@ const StorePage = () => {
   // ⚡ Bootstrap: 1 round-trip que pré-popula store + hours + sections + products +
   // owner_profile + online_drivers_count. As useQuery() abaixo continuam existindo
   // como fallback / refetch — mas pegam initialData do cache e não mostram loading.
-  const { isFetched: bootstrapDone } = useQuery({
+  const { data: bootstrap, isFetched: bootstrapDone } = useQuery({
     queryKey: ["store-bootstrap", id || slug, isSandbox],
     queryFn: async () => {
       const key = id || slug || "";
@@ -130,8 +130,8 @@ const StorePage = () => {
         queryClient.setQueryData(["store-hours", sid], boot.hours || []);
         queryClient.setQueryData(["menu-sections", sid], boot.sections || []);
         queryClient.setQueryData(["products", sid], boot.products || []);
-        if (s.owner_id && boot.owner_profile) {
-          queryClient.setQueryData(["store-owner", s.owner_id], boot.owner_profile);
+        if (boot.owner_profile) {
+          queryClient.setQueryData(["store-owner", boot.owner_profile.id], boot.owner_profile);
         }
         if (s.delivery_mode === "own") {
           queryClient.setQueryData(["store-online-drivers", sid], boot.online_drivers_count || 0);
@@ -148,7 +148,12 @@ const StorePage = () => {
      queryKey: ["store", id || slug, isSandbox],
     queryFn: async () => {
       const baseTable = isSandbox ? "stores" : "stores_public";
-      let query = ((supabase as any).from(baseTable)).select("id, name, slug, slug_aliases, image_url, category, categories, rating, is_open, force_closed, status, delivery_mode, own_delivery_fee, delivery_fee, minimum_order_value, estimated_delivery_time, owner_id, address_cep, address_city, address_complement, address_neighborhood, address_number, address_reference, address_state, address_street, latitude, longitude, max_delivery_km, delivery_radius, settings, network_id, is_matriz, free_delivery_threshold").in("status", ["ativo", "bloqueado"]);
+      // owner_id só existe na tabela `stores` (sandbox) — a vista pública
+      // não devolve mais (Fase 5). No público o id do dono vem do bootstrap.
+      const storeSelect =
+        "id, name, slug, slug_aliases, image_url, category, categories, rating, is_open, force_closed, status, delivery_mode, own_delivery_fee, delivery_fee, delivery_fee_type, delivery_fee_base, minimum_order_value, estimated_delivery_time, address_cep, address_city, address_complement, address_neighborhood, address_number, address_reference, address_state, address_street, latitude, longitude, max_delivery_km, delivery_radius, settings, network_id, is_matriz, free_delivery_threshold" +
+        (isSandbox ? ", owner_id" : ", platform_split_effective");
+      let query = ((supabase as any).from(baseTable)).select(storeSelect).in("status", ["ativo", "bloqueado"]);
       if (id) query = query.eq("id", id);
       else if (slug) query = query.or(`slug.eq.${slug},slug_aliases.cs.{${slug}}`);
       const { data, error } = await query.maybeSingle();
@@ -285,18 +290,24 @@ const StorePage = () => {
     staleTime: 1000 * 60 * 5,
   });
 
+  // Fase 5 — owner_id saiu de stores_public: o id do dono vem do bootstrap
+  // (owner_profile, semeado na query acima) e, no sandbox, da tabela
+  // stores. O botão de WhatsApp da loja continua igual.
+  const bootstrapOwnerId = (bootstrap as any)?.owner_profile?.id as string | undefined;
+  const storeOwnerId = (store as any)?.owner_id as string | undefined;
+  const ownerId = bootstrapOwnerId ?? storeOwnerId;
   const { data: ownerProfile } = useQuery({
-    queryKey: ["store-owner", store?.owner_id],
+    queryKey: ["store-owner", ownerId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
         .select("whatsapp_number")
-        .eq("user_id", store!.owner_id!)
+        .eq("user_id", ownerId!)
         .maybeSingle();
       if (error) throw error;
       return data;
     },
-    enabled: !!store?.owner_id,
+    enabled: !!ownerId,
     staleTime: 1000 * 60 * 10,
   });
 
@@ -435,10 +446,13 @@ const StorePage = () => {
   });
 
   // Produtos visíveis no cardápio (oculta itens marcados como "apenas no modal" de pastel)
+  // Fase 2: produto indisponível (is_available=false) não aparece na vitrine.
+  // A RPC store_bootstrap já filtra; isto cobre o cache antigo.
   const displayProducts = useMemo(
     () =>
       (products || []).filter(
         (p) =>
+          (p as any).is_available !== false &&
           !((p.metadata as any)?.modal_only && (p.metadata as any)?.is_pastel_flavor) &&
           !(p as any).sold_by_weight &&
           !((p.metadata as any)?.pdv_only) &&
@@ -808,6 +822,13 @@ const StorePage = () => {
       toast.error("Produto esgotado");
       return;
     }
+    // Fase 2: produto indisponível ou com preço zero não pode ser vendido
+    // na vitrine (o preço aqui é o do item — base + adicionais — para não
+    // bloquear pizza cujo preço vem do sabor escolhido).
+    if ((product as any)?.is_available === false || Number(unitPrice) <= 0) {
+      toast.error("Produto esgotado");
+      return;
+    }
     addItem(
       {
         id: product.id,
@@ -872,6 +893,11 @@ const StorePage = () => {
       return;
     }
     const effective = getEffectivePrice(product as any);
+    // Fase 2: produto indisponível ou com preço zero não pode ser vendido.
+    if ((product as any)?.is_available === false || Number(effective) <= 0) {
+      toast.error("Produto esgotado");
+      return;
+    }
     addItem(
       {
         id: product.id,
@@ -905,10 +931,46 @@ const StorePage = () => {
     }
   }, [store]);
 
-  const totalProducts = products?.length || 0;
+  // Fase 2 (P2-10): o contador conta o que está listado, não o payload todo.
+  const totalProducts = displayProducts?.length || 0;
 
   if (isReservedRoute) {
     return <NotFound />;
+  }
+
+  // Carregando: a loja ainda não chegou (bootstrap/query em voo) — mostra um
+  // esqueleto NEUTRO, sem nome, sem selo "Fechado" e sem estatísticas zeradas.
+  // Antes, este intervalo renderizava a página inteira como se fosse uma loja
+  // vazia e fechada (o "fantasma" da varredura UI/UX).
+  if (!store && (id || slug) && (!bootstrapDone || storeLoading)) {
+    return (
+      <div className="min-h-screen bg-background" role="status" aria-label="Carregando loja">
+        <div className="h-44 sm:h-56 bg-muted animate-pulse" />
+        <div className="px-4 pt-4 space-y-4 max-w-3xl mx-auto w-full">
+          <div className="flex items-center gap-3">
+            <div className="w-16 h-16 rounded-2xl bg-muted animate-pulse shrink-0" />
+            <div className="flex-1 space-y-2">
+              <div className="h-5 w-2/3 rounded bg-muted animate-pulse" />
+              <div className="h-3.5 w-1/3 rounded bg-muted animate-pulse" />
+            </div>
+          </div>
+          <div className="h-10 rounded-xl bg-muted animate-pulse" />
+          <div className="space-y-3 pt-2">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="flex gap-3">
+                <div className="w-20 h-20 rounded-xl bg-muted animate-pulse shrink-0" />
+                <div className="flex-1 space-y-2 py-1">
+                  <div className="h-4 w-1/2 rounded bg-muted animate-pulse" />
+                  <div className="h-3 w-3/4 rounded bg-muted animate-pulse" />
+                  <div className="h-4 w-1/4 rounded bg-muted animate-pulse" />
+                </div>
+              </div>
+            ))}
+          </div>
+          <p className="text-center text-xs text-muted-foreground pt-2">Carregando loja…</p>
+        </div>
+      </div>
+    );
   }
 
   if (bootstrapDone && !storeLoading && !store && (id || slug)) {
@@ -1172,11 +1234,23 @@ const StorePage = () => {
                   <span className="text-[11px] font-semibold text-muted-foreground uppercase">Taxa</span>
                   <span className="text-[11px] font-black text-foreground mt-0.5">
                     {(() => {
+                      // Loja por km: o piso exibido é a base do km + split (o total da RPC
+                      // usa own_delivery_fee e não vale para km). Checkout continua via quote-delivery.
+                      if ((store as any)?.delivery_fee_type === "km" && (store as any)?.delivery_fee_base != null) {
+                        const add =
+                          platformInfo && typeof platformInfo.platform_add_customer === "number"
+                            ? platformInfo.platform_add_customer
+                            : describeStoreFee(store as any).platformAddCustomer;
+                        const total = Number((store as any).delivery_fee_base) + add;
+                        return total <= 0 ? "Grátis" : `A partir de ${formatBRL(total)}`;
+                      }
                       // Prefere RPC (fonte de verdade), com fallback ao helper caso ainda não carregou.
+                      // O total da RPC e exato (so km e piso) — sem "A partir de" aqui;
+                      // o ramo do km acima e o unico que usa o prefixo.
                       if (platformInfo && typeof platformInfo.customer_total === "number") {
                         return platformInfo.customer_total === 0
                           ? "Grátis"
-                          : `A partir de ${formatBRL(platformInfo.customer_total)}`;
+                          : formatBRL(platformInfo.customer_total);
                       }
                       const d = describeStoreFee(store as any);
                       return d.free ? "Grátis" : `${d.prefix ?? ""} ${d.label}`.trim();
@@ -1795,6 +1869,7 @@ const StorePage = () => {
             storeCategory={store?.category}
             singleSize={!!(store?.settings as any)?.pizza_single_size}
             storeSettings={(store?.settings as any) || null}
+            closedNotice={!storeStatus.isOpen ? (isSuspended ? "temporariamente" : storeStatus.reason || "no momento") : null}
             open={!!selectedProduct}
             onClose={() => setSelectedProduct(null)}
             onAdd={handleAddToCart}
@@ -1885,7 +1960,12 @@ const ProductCard = memo(({ product, disabled, onClick, onPrefetch, storeCategor
   const isBeverage = !!meta.is_beverage;
   const emoji = categoryEmoji[cat] || "🍴";
   const isOutOfStock = !!meta.out_of_stock;
-  const isBlocked = disabled || isOutOfStock;
+  // Fase 2: indisponível ou preço zero não pode ser comprado. O preço é o
+  // efetivo do produto (chamada direta aqui porque `effective` só é
+  // calculado abaixo); pizza com sabor tem base > 0, então não é afetada.
+  const isUnavailable = (product as any).is_available === false || getEffectivePrice(product as any) <= 0;
+  const isUnbuyable = isOutOfStock || isUnavailable;
+  const isBlocked = disabled || isUnbuyable;
   // Layout de adega agora usa o mesmo card horizontal das demais categorias
   const isAdegaCard = false;
   const isAdega = cat === "adegas";
@@ -1910,6 +1990,7 @@ const ProductCard = memo(({ product, disabled, onClick, onPrefetch, storeCategor
   // CTA label
   const ctaLabel = (() => {
     if (isOutOfStock) return "Esgotado";
+    if (isUnavailable) return "Indisponível";
     if (disabled) return "Indisponível";
     if (requiresPharmacyValidation) return "Ver detalhes";
     return "Adicionar";
@@ -1924,11 +2005,11 @@ const ProductCard = memo(({ product, disabled, onClick, onPrefetch, storeCategor
 
   return (
     <button
-      onClick={isOutOfStock ? undefined : onClick}
-      onPointerDown={isOutOfStock ? undefined : onPrefetch}
-      onMouseEnter={isOutOfStock ? undefined : onPrefetch}
-      onFocus={isOutOfStock ? undefined : onPrefetch}
-      disabled={isOutOfStock}
+      onClick={isUnbuyable ? undefined : onClick}
+      onPointerDown={isUnbuyable ? undefined : onPrefetch}
+      onMouseEnter={isUnbuyable ? undefined : onPrefetch}
+      onFocus={isUnbuyable ? undefined : onPrefetch}
+      disabled={isUnbuyable}
       className={`w-full text-left transition-all group rounded-2xl ${
         isAdegaCard
           ? `flex flex-col-reverse bg-card border border-border p-2.5 gap-2 ${isBlocked ? "opacity-60" : "hover:border-primary/40 active:scale-[0.98]"}`

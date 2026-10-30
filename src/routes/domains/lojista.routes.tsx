@@ -5,8 +5,11 @@ import { PdvAccessLayout } from "@/routes/layouts/PdvAccessLayout";
 import { ScopedNotFound } from "@/components/ScopedNotFound";
 import {
   AdminDashboardV2,
+  AdminDashboardV2Teste,
   MatrizDashboard,
+  MatrizDashboardV2,
   PdvPage,
+  PdvPageTeste,
   PdvKdsPage,
   PdvCardapioPage,
 } from "@/routes/lazyPages";
@@ -26,12 +29,18 @@ export const lojistaRoutes = (
       <Route element={<LojistaHomeLayout />}>
         <Route path="/admin" element={<AdminDashboardV2 />} />
       </Route>
+      {/* /admin-teste — cópia de teste do painel (PREVIEW; publicação depende da palavra do Renner) */}
+      <Route element={<LojistaHomeLayout />}>
+        <Route path="/admin-teste" element={<AdminDashboardV2Teste />} />
+      </Route>
     </Route>
     <Route path="/admin2" element={<Navigate to="/admin" replace />} />
 
     {/* /matriz — dashboard multi-unidade */}
     <Route element={<GuardedLayout allowedRoles={["lojista_matriz", "admin"]} redirectTo="/" />}>
       <Route path="/matriz" element={<MatrizDashboard />} />
+      {/* /matriz-v2 — painel da matriz refeito (Fase 2); o antigo fica intacto */}
+      <Route path="/matriz-v2" element={<MatrizDashboardV2 />} />
     </Route>
 
     {/* PDV + Cardápio — mesmo guard */}
@@ -42,6 +51,7 @@ export const lojistaRoutes = (
     >
       <Route element={<PdvAccessLayout />}>
         <Route path="/admin/pdv" element={<PdvPage />} />
+        <Route path="/admin-teste/pdv" element={<PdvPageTeste />} />
         <Route path="/admin/pdv/kds" element={<PdvKdsPage />} />
         <Route path="/admin/cardapio" element={<PdvCardapioPage />} />
       </Route>
@@ -55,3 +65,4 @@ export const lojistaRoutes = (
     />
   </>
 );
+

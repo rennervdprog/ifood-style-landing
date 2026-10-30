@@ -83,7 +83,15 @@ export function deliveryQuoteFailureMessage(value: DeliveryQuoteFailure | null |
       ? `O endereço de entrega está a ${km.toFixed(1)} km da loja. Limite de ${maxKm} km.`
       : "O endereço informado está fora da área de entrega da loja.";
   }
-  if (reason === "address_unavailable") return "Não localizamos esse endereço. Revise rua, número, bairro, cidade/UF e CEP.";
+  // Fase 6B (P2-7): quando a cotação falha por não resolver o endereço, a
+  // mensagem orienta preencher o CEP — é ele que localiza a rua
+  // automaticamente (o campo é opcional no formulário, então o cliente pode
+  // nem saber que ele resolve a entrega). `address_not_resolved` é o erro da
+  // edge guest-checkout no submit; `delivery_quote_failed` / `delivery_quote_unavailable`
+  // são a falha genérica da cotação no mesmo caminho.
+  if (reason === "address_unavailable") return "Não localizamos esse endereço. Preencha o CEP — ele encontra sua rua automaticamente — e confira rua, número e bairro.";
+  if (reason === "address_not_resolved") return "Não conseguimos localizar esse endereço. Preencha o CEP (ele localiza sua rua automaticamente) e confira rua, número e bairro.";
+  if (reason === "delivery_quote_failed" || reason === "delivery_quote_unavailable") return "Não foi possível calcular a entrega para esse endereço. Preencha o CEP e confira rua, número e bairro, depois tente novamente.";
   if (reason === "unauthorized") return "Sua sessão expirou. Entre novamente para confirmar o endereço.";
   if (reason === "invalid_cep") return "Informe um CEP válido com 8 dígitos para calcular a entrega.";
   return "Não foi possível calcular a entrega agora. Seu carrinho foi preservado — tente novamente em instantes.";

@@ -66,7 +66,12 @@ export interface CheckoutContext {
   operatorId?: string | null;
   /** Callbacks de UI após sucesso. Recebe o `orderId` gerado (ou placeholder offline). */
   onSuccess: (info: { orderId: string | null }) => void;
-  onClearScheduled: () => void;
+  /**
+   * Agendado 2s após o sucesso. Recebe o carrinho finalizado para que o
+   * chamador só limpe se ele não mudou (evita apagar nova venda iniciada
+   * no intervalo — item 2.7 da auditoria).
+   */
+  onClearScheduled: (finalizedCart: CartItem[]) => void;
   onEmptiesFlowStart: (args: {
     orderId: string;
     items: { product_id: string; quantity: number }[];
@@ -104,6 +109,28 @@ export function usePdvCheckout() {
       if (cart.length === 0) {
         toast.error("Carrinho vazio.");
         return;
+      }
+
+      // ── Validação de estoque (bloqueia venda sem estoque) ──
+      // CartItem usa `id` como id do produto (não existe `product_id` no tipo).
+      const stockCheckItems = cart.filter(
+        (i: any) => !(i.metadata as any)?.apparel_variant_id && i.id
+      );
+      if (stockCheckItems.length > 0) {
+        const productIds = stockCheckItems.map((i: any) => i.id);
+        // Tabela fora dos tipos gerados — cast para evitar TS2589.
+        const { data: stocks } = await (supabase as any)
+          .from("product_stock")
+          .select("product_id, quantity, track_stock")
+          .in("product_id", productIds);
+        const stockMap = new Map<string, any>((stocks || []).map((s: any) => [s.product_id, s]));
+        for (const item of stockCheckItems) {
+          const s = stockMap.get(item.id);
+          if (s && s.track_stock && Number(s.quantity) < Math.abs(item.quantity)) {
+            toast.error(`Estoque insuficiente: ${item.name} (tem ${s.quantity})`);
+            return;
+          }
+        }
       }
 
       // ── Validação de pagamento ──
@@ -303,8 +330,17 @@ export function usePdvCheckout() {
         queryClient.invalidateQueries({
           queryKey: ["pdv-movements", session.id],
         });
+        queryClient.invalidateQueries({
+          queryKey: ["pdv-stock"],
+        });
         onSuccess({ orderId });
-        if (!offlineQueued) toast.success("✅ Venda finalizada!");
+        // SEM toast de sucesso aqui: a tela "Venda concluída!" já é a
+        // confirmação visual da venda. O toast antigo ("✅ Venda
+        // finalizada!") renderizava no rodapé bem sobre o botão
+        // "Nova venda" e não sumia — o operador ficava preso na tela
+        // de sucesso sem conseguir iniciar a próxima venda
+        // (bug de 2026-10-20). Avisos importantes (offline, cupom
+        // manual) continuam existindo nos seus próprios fluxos.
 
         // 4) Empties (garrafas retornáveis) — best-effort
         if (!offlineQueued && !browserOffline) {
@@ -407,7 +443,7 @@ export function usePdvCheckout() {
           }
         } catch (e) { console.warn("[PDV] cash drawer skipped:", e); }
 
-        setTimeout(onClearScheduled, 2000);
+        setTimeout(() => onClearScheduled(cart), 2000);
       } catch (e: any) {
         toast.error(e.message || "Erro ao finalizar.");
       } finally {

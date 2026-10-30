@@ -22,7 +22,7 @@ export default function PdvFluxoCaixaCard({ storeId }: { storeId: string }) {
         .from("pdv_movements")
         .select("amount, type")
         .eq("store_id", storeId)
-        .in("type", ["sale", "sangria", "suprimento"])
+        .in("type", ["sale", "sangria", "suprimento", "cancellation"])
         .gte("created_at", start)
         .lte("created_at", end);
       if (error) throw error;
@@ -32,6 +32,7 @@ export default function PdvFluxoCaixaCard({ storeId }: { storeId: string }) {
       (data ?? []).forEach((m) => {
         const v = Number(m.amount ?? 0);
         if (m.type === "sale") vendas += v;
+        else if (m.type === "cancellation") vendas += v; // valor negativo, abate das vendas
         else if (m.type === "sangria") sangrias += v;
         else if (m.type === "suprimento") suprimentos += v;
       });

@@ -5,7 +5,7 @@
  * com tempo desde recebimento e um clique para avançar status:
  *   pendente → preparando → pronto_para_entrega/finalizado
  *
- * Atualiza via Realtime + polling backup de 10s (à prova de falha de socket).
+ * Atualiza via Realtime + polling backup de 60s (à prova de falha de socket).
  * Multi-terminal: qualquer PDV/tablet aberto na mesma URL vê o mesmo estado.
  */
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -104,9 +104,9 @@ export default function PdvKdsPage() {
       .select("id, status, created_at, confirmed_at, order_source, address_details, order_items(id, quantity, observations, addons, products(name))")
       .eq("store_id", storeId)
       .in("status", ACTIVE_STATUSES as any)
-      .order("created_at", { ascending: true })
+      .order("created_at", { ascending: false })
       .limit(80);
-    if (error) { console.error("[KDS] fetch:", error); return; }
+    if (error) { console.error("[KDS] fetch:", error); setLoading(false); return; }
     setOrders((data as any[])?.map((o) => ({ ...o, order_items: o.order_items || [] })) || []);
     setLoading(false);
   }, [storeId]);
@@ -114,8 +114,8 @@ export default function PdvKdsPage() {
   useEffect(() => {
     if (!storeId) return;
     fetchOrders();
-    // Polling backup — 10s.
-    pollRef.current = window.setInterval(fetchOrders, 10000);
+    // Polling backup — 60s (o realtime acima é a fonte principal).
+    pollRef.current = window.setInterval(fetchOrders, 60000);
     // Realtime — pode falhar silenciosamente; o polling cobre.
     const ch = supabase
       .channel(`kds-${storeId}`)

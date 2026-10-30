@@ -6,6 +6,7 @@
 
 import { useMemo } from "react";
 import { formatBRL } from "@/lib/utils";
+import { paymentMethodLabel } from "@/lib/orderLabels";
 import {
   AreaChart, Area, BarChart, Bar, LineChart, Line,
   XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -394,7 +395,7 @@ export function useFinanceChartData(orders: any[], pdvMovements?: any[]) {
     const paymentData: PaymentData[] = Object.entries(paymentMap)
       .filter(([, v]) => v > 0)
       .map(([k, v]) => ({
-        name: paymentLabels[k] || k,
+        name: paymentLabels[k] || paymentMethodLabel(k),
         value: v,
         color: paymentColors[k] || CHART_COLORS.neutral,
       }))

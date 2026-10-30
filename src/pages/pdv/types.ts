@@ -1,4 +1,5 @@
 import type { CartAddon } from "@/contexts/CartContext";
+import type { SplitPayment } from "@/components/pdv/PdvSplitPayment";
 
 /** Produto exibido no catálogo do PDV. */
 export interface Product {
@@ -60,6 +61,9 @@ export interface PdvSession {
   status: string;
 }
 
+/** Passos do checkout: carrinho → pagamento → venda concluída. */
+export type PdvCheckoutStep = "cart" | "payment" | "success";
+
 /** Telas principais do PDV. */
 export type PdvScreen = "loading" | "abertura" | "venda" | "fechamento";
 
@@ -67,4 +71,21 @@ export type PdvScreen = "loading" | "abertura" | "venda" | "fechamento";
 export type PdvMobileStep = "catalog" | "cart";
 
 /** Abas dentro da tela de venda. */
-export type PdvTab = "venda" | "mesas" | "historico" | "turnos" | "relatorios" | "financeiro" | "meu_plano" | "configuracoes";
+export type PdvTab = "venda" | "mesas" | "historico" | "turnos" | "relatorios" | "financeiro" | "meu_plano" | "configuracoes" | "operadores" | "estoque" | "auditoria";
+
+/**
+ * Snapshot completo do estado de venda — usado pelo "Desfazer" do "Limpar venda".
+ * Restaura itens + desconto + pagamento + mesa + split + valor recebido.
+ */
+export interface SaleSnapshot {
+  items: CartItem[];
+  paymentMethod: string;
+  tableId: string;
+  selectedTable: { id: string; label: string } | null;
+  selectedTabId: string | null;
+  discountType: "R$" | "%";
+  discountInput: string;
+  cashReceived: string;
+  splitMode: boolean;
+  splitPayments: SplitPayment[];
+}

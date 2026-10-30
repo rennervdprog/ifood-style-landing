@@ -94,7 +94,8 @@ const LiveTrackingMap = ({ orderId, driverId, storeId, clientAddress, clientLat,
       return data;
     },
     enabled: !!driverId,
-    refetchInterval: 5000,
+    // 30s como fallback — o realtime abaixo já entrega atualização instantânea.
+    refetchInterval: 30000,
   });
 
   // Subscribe to Realtime changes on driver_locations for instant updates
@@ -146,7 +147,7 @@ const LiveTrackingMap = ({ orderId, driverId, storeId, clientAddress, clientLat,
     queryKey: ["store-geo", storeId],
     queryFn: async () => {
       const { data } = await supabase
-        .from("stores_public")
+        .from("stores")
         .select("name, latitude, longitude, address_street, address_number, address_neighborhood, address_city, address_state, address_cep")
         .eq("id", storeId)
         .maybeSingle();

@@ -7,14 +7,14 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useUserLocation } from "@/hooks/useUserLocation";
 import { useBatchStoreDistances } from "@/hooks/useBatchStoreDistances";
 import { mapStoresWithHours } from "../utils/mapStores";
-import { filterStoresWithOnlineDrivers } from "@/lib/storeVisibility";
+import { filterStoresWithOnlineDrivers, resolveSearchStores } from "@/lib/storeVisibility";
 import { formatBRL } from "@/lib/utils";
 import { describeStoreFee } from "@/lib/deliveryFeeDisplay";
 import { formatDistanceKm } from "@/lib/formatDistance";
 import BottomNav from "@/components/BottomNav";
 
-const PUBLIC_STORE_SELECT_FULL = "id, name, image_url, slug, category, categories, is_open, force_closed, rating, status, delivery_mode, own_delivery_fee, delivery_fee, delivery_fee_type, delivery_fee_base, delivery_fee_per_km, estimated_delivery_time, minimum_order_value, free_delivery_threshold, address_cep, address_city, address_complement, address_neighborhood, address_number, address_reference, address_state, address_street, latitude, longitude, settings, platform_fee_split, created_at";
-const PUBLIC_STORE_SELECT_VIEW = "id, name, image_url, slug, category, categories, is_open, force_closed, rating, status, delivery_mode, own_delivery_fee, delivery_fee, estimated_delivery_time, address_cep, address_city, address_complement, address_neighborhood, address_number, address_reference, address_state, address_street, latitude, longitude, settings, platform_fee_split, plan_type, platform_delivery_split_override, autonomy_lifetime_free, created_at";
+const PUBLIC_STORE_SELECT_FULL = "id, name, image_url, slug, category, categories, is_open, force_closed, rating, status, delivery_mode, delivery_enabled, own_delivery_fee, delivery_fee, delivery_fee_type, delivery_fee_base, delivery_fee_per_km, estimated_delivery_time, minimum_order_value, free_delivery_threshold, address_cep, address_city, address_complement, address_neighborhood, address_number, address_reference, address_state, address_street, latitude, longitude, settings, platform_fee_split, created_at";
+const PUBLIC_STORE_SELECT_VIEW = "id, name, image_url, slug, category, categories, is_open, force_closed, rating, status, delivery_mode, delivery_enabled, own_delivery_fee, delivery_fee, estimated_delivery_time, address_cep, address_city, address_complement, address_neighborhood, address_number, address_reference, address_state, address_street, latitude, longitude, settings, platform_fee_split, plan_type, platform_split_effective, created_at";
 
 const norm = (v?: string | null) =>
   (v || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
@@ -138,9 +138,16 @@ const StoreRow = ({ store, onClick, badge }: { store: any; onClick: () => void; 
           </span>
         </div>
         {!isOpen && (
-          <span className="inline-block mt-1 px-1.5 py-0.5 text-[9px] font-black tracking-wider rounded bg-rose-100 text-rose-700">
-            FECHADA
-          </span>
+          <>
+            <span className="inline-block mt-1 px-1.5 py-0.5 text-[9px] font-black tracking-wider rounded bg-rose-100 text-rose-700">
+              FECHADA
+            </span>
+            {typeof store.statusReason === "string" && store.statusReason.startsWith("Abre") && (
+              <span className="ml-1.5 text-[11px] font-semibold text-muted-foreground">
+                {store.statusReason}
+              </span>
+            )}
+          </>
         )}
       </div>
       <ChevronRight className="w-4 h-4 shrink-0 text-muted-foreground" />
@@ -178,7 +185,11 @@ const ClientBuscaPage = () => {
         .eq("status", "ativo")
         .limit(100);
       if (error) throw error;
-      const rows = await filterStoresWithOnlineDrivers(Array.isArray(data) ? data : []);
+      const all = Array.isArray(data) ? data : [];
+      const withDrivers = await filterStoresWithOnlineDrivers(all);
+      // Só-retirada sempre passa; entrega exige motoboy online, com fallback
+      // para todas quando ninguém está online (senão a busca fica vazia).
+      const rows = resolveSearchStores(all, withDrivers);
       if (rows.length === 0) return [];
       const storeIds = rows.map((s: any) => s.id);
       const { data: allHours } = await supabase

@@ -88,7 +88,10 @@ export const PdvHistorico = ({
   });
 
   const kpis = useMemo(() => {
-    const sales = movements.filter((m: any) => m.type === "sale");
+    // Exclui vendas canceladas (continuam com type='sale' no movimento).
+    const sales = movements.filter(
+      (m: any) => m.type === "sale" && ordersMap[m.order_id]?.status !== "cancelado"
+    );
     const total = sales.reduce((s: number, m: any) => s + Number(m.amount), 0);
     const cash = sales.filter((m: any) => m.payment_method === "dinheiro")
       .reduce((s: number, m: any) => s + Number(m.amount), 0);
@@ -96,8 +99,14 @@ export const PdvHistorico = ({
       .reduce((s: number, m: any) => s + Number(m.amount), 0);
     const suprimento = movements.filter((m: any) => m.type === "suprimento")
       .reduce((s: number, m: any) => s + Number(m.amount), 0);
-    return { count: sales.length, total, avg: sales.length ? total / sales.length : 0, cash, sangria, suprimento };
-  }, [movements]);
+    // Vendas = pedidos distintos, não movimentos (venda dividida gera um
+    // movimento por forma de pagamento, mas é uma venda só).
+    const saleOrderIds = new Set<string>();
+    let salesSemPedido = 0;
+    sales.forEach((m: any) => { if (m.order_id) saleOrderIds.add(m.order_id); else salesSemPedido += 1; });
+    const salesCount = saleOrderIds.size + salesSemPedido;
+    return { count: salesCount, total, avg: salesCount ? total / salesCount : 0, cash, sangria, suprimento };
+  }, [movements, ordersMap]);
 
   const openedAt = session?.opened_at ? new Date(session.opened_at) : null;
   const durMin = openedAt ? Math.max(0, Math.round((Date.now() - openedAt.getTime()) / 60000)) : 0;
@@ -161,12 +170,25 @@ export const PdvHistorico = ({
           )}
 
           <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar -mx-3 px-3 pb-0.5">
-            <Kpi label="Vendas" value={String(kpis.count)} />
-            <Kpi label="Total" value={formatBRL(kpis.total)} tone="emerald" />
-            <Kpi label="Ticket" value={formatBRL(kpis.avg)} />
-            <Kpi label="Dinheiro" value={formatBRL(kpis.cash)} />
-            {kpis.sangria > 0 && <Kpi label="Sangria" value={`−${formatBRL(kpis.sangria)}`} tone="red" />}
-            {kpis.suprimento > 0 && <Kpi label="Supr." value={`+${formatBRL(kpis.suprimento)}`} tone="blue" />}
+            {isLoading ? (
+              <>
+                {[0, 1, 2, 3].map(i => (
+                  <div key={i} className="shrink-0 bg-card border border-border/50 rounded-xl px-2.5 py-1.5 min-w-[74px] animate-pulse">
+                    <div className="h-2 w-10 rounded bg-muted/60" />
+                    <div className="h-3.5 w-14 rounded bg-muted/60 mt-1.5" />
+                  </div>
+                ))}
+              </>
+            ) : (
+              <>
+                <Kpi label="Vendas" value={String(kpis.count)} />
+                <Kpi label="Total" value={formatBRL(kpis.total)} tone="emerald" />
+                <Kpi label="Ticket" value={formatBRL(kpis.avg)} />
+                <Kpi label="Dinheiro" value={formatBRL(kpis.cash)} />
+                {kpis.sangria > 0 && <Kpi label="Sangria" value={`−${formatBRL(kpis.sangria)}`} tone="red" />}
+                {kpis.suprimento > 0 && <Kpi label="Supr." value={`+${formatBRL(kpis.suprimento)}`} tone="blue" />}
+              </>
+            )}
           </div>
         </div>
 
@@ -188,7 +210,7 @@ export const PdvHistorico = ({
               { id: "suprimento", label: "Suprimentos" },
               { id: "canceladas", label: "Canceladas" },
             ] as { id: FilterType; label: string }[]).map(f => (
-              <button key={f.id} onClick={() => setFilter(f.id)}
+              <button key={f.id} onClick={() => { setFilter(f.id); if (f.id !== "all" && f.id !== "sale") setMethodFilter(null); }}
                 className={`shrink-0 text-[10px] font-bold px-2.5 py-1 rounded-full border transition-colors ${
                   filter === f.id
                     ? "bg-primary text-primary-foreground border-primary"
@@ -461,6 +483,11 @@ const PdvSessionDetail = ({ session, storeId }: { session: any; storeId: string 
   if (movL || ordL) return <div className="flex items-center justify-center py-6"><Loader2 className="h-4 w-4 animate-spin text-primary" /></div>;
 
   // Conferência de caixa — mesma lógica do relatório do turno (usePdvTurnoResumo).
+  // Vendas canceladas: excluídas dos totais (continuam com type='sale' no movimento).
+  const canceledOrderIds = useMemo(
+    () => new Set((orders || []).filter((o: any) => o.status === "cancelado").map((o: any) => o.id)),
+    [orders]
+  );
   const {
     opening,
     closing,
@@ -471,12 +498,15 @@ const PdvSessionDetail = ({ session, storeId }: { session: any; storeId: string 
     diff,
     isOk,
     byPayment,
-  } = calcPdvTurnoResumo(session, movements);
-  const sales = movements.filter((m: any) => m.type === "sale");
+  } = calcPdvTurnoResumo(session, movements, canceledOrderIds);
+  const sales = movements.filter(
+    (m: any) => m.type === "sale" && !canceledOrderIds.has(m.order_id)
+  );
 
-  // Produtos
+  // Produtos (só de pedidos não cancelados)
   const productMap: Record<string, { name: string; qty: number; revenue: number }> = {};
   orders.forEach((o: any) => {
+    if (o.status === "cancelado") return;
     (o.order_items || []).forEach((item: any) => {
       const name = item.products?.name || "Item";
       if (!productMap[name]) productMap[name] = { name, qty: 0, revenue: 0 };

@@ -51,6 +51,11 @@ export const ROUTE_META: Record<string, RouteMetaEntry> = {
     title: "Seja Revendedor — ItaSuper",
     description: "Ganhe comissão indicando lojistas para o ItaSuper. Programa oficial de revenda.",
   },
+  [ROUTES.public.pdv]: {
+    title: "Sistema PDV para Restaurante e Comércio | R$ 120/mês",
+    description:
+      "PDV online para restaurante, lanchonete e loja: frente de caixa no navegador, estoque automático e fechamento de caixa em 1 clique. R$ 120/mês fixos, R$ 0 por venda. Teste grátis.",
+  },
 };
 
 interface Props {

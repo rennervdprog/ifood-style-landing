@@ -34,8 +34,14 @@ export const orderTabs: { status: OrderStatus | "delivery"; label: string; icon:
 // Métodos de pagamento exibidos em TODOS os contextos (delivery + PDV)
 export const paymentLabels: Record<string, string> = {
   pix: "PIX Online",
+  pix_direto: "PIX Direto",
+  pix_machine: "PIX Maquininha",
   cartao: "Cartão na Entrega",
+  card: "Cartão",
+  cartao_credito: "Crédito",
+  cartao_debito: "Débito",
   dinheiro: "Dinheiro",
+  cash: "Dinheiro",
   // PDV — nunca aparecem no checkout do cliente
   maquininha_credito: "Crédito",
   maquininha_debito: "Débito",
@@ -122,6 +128,7 @@ export const dashboardGroups: DashboardGroup[] = [
     icon: UtensilsCrossed,
     subTabs: [
       { key: "menu", label: "Produtos", icon: UtensilsCrossed },
+      { key: "stock", label: "Estoque", icon: Package },
       { key: "addons", label: "Adicionais", icon: Plus },
       { key: "promotions", label: "Promoções", icon: Flame, hideOnPdvOnly: true },
       { key: "bordas", label: "Pizzaria/Pastel", icon: CircleDot, pizzaOnly: true },
@@ -133,6 +140,7 @@ export const dashboardGroups: DashboardGroup[] = [
     icon: Users,
     subTabs: [
       { key: "clients", label: "Clientes", icon: Users, requiresFullReports: true, hideOnPdvOnly: true },
+      { key: "reviews", label: "Avaliações", icon: MessageCircle, hideOnPdvOnly: true },
       { key: "loyalty", label: "Fidelidade", icon: Star, hideOnPdvOnly: true },
       { key: "coupons", label: "Cupons", icon: Tag, hideOnPdvOnly: true },
     ],

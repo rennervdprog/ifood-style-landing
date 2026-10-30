@@ -19,7 +19,8 @@ export const PdvNowCard = ({ sessionId, vendasTotal, vendasCount, ticketMedio }:
   const { data } = useQuery({
     queryKey: ["pdv-now", sessionId],
     enabled: !!sessionId,
-    refetchInterval: 20_000,
+    // 60s: o card é resumo do turno, não precisa de atualização agressiva.
+    refetchInterval: 60_000,
     queryFn: async () => {
       const { data: orders } = await supabase
         .from("orders")

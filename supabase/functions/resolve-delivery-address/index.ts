@@ -1,6 +1,6 @@
 // Fase 3a — resolução estruturada do endereço de entrega.
 // Uso: cliente autenticado no checkout web. Só escreve no cache de geocodificação.
-import { createClient } from "npm:@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 // --- CORS: allowlist explícita (sem "*") ---
 const ALLOWED_ORIGINS = new Set([
@@ -16,7 +16,7 @@ const ALLOWED_ORIGINS = new Set([
 function cors(origin: string | null): Record<string, string> {
   return {
     "Access-Control-Allow-Origin": origin && ALLOWED_ORIGINS.has(origin) ? origin : "null",
-    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, baggage, sentry-trace",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
     "Vary": "Origin",
   };
@@ -144,6 +144,125 @@ async function brasilApiCep(cep: string): Promise<Geo | null> {
   });
 }
 
+/**
+ * PontoFato — API gratuita com dados do CNEFE/IBGE (Censo 2022).
+ * ~111M endereços brasileiros com coordenadas oficiais, nível de porta.
+ * Sem chave, sem cota (v1). Usado como complemento antes do Nominatim.
+ */
+async function pontoFatoBuscar(
+  street: string,
+  number: string,
+  city: string,
+  state: string,
+): Promise<Geo | null> {
+  const q = `${street} ${number}`.trim();
+  const key = `geo|v2|pontofato|buscar|${state}|${city}|${q}`;
+  const cached = await cacheGet(key);
+  if (cached) return { lat: Number(cached.lat), lng: Number(cached.lng), precision: "address" };
+  return await withTimeout(async (signal) => {
+    const qs = new URLSearchParams({ q, uf: state, cidade: city });
+    const r = await fetch(`https://pontofato.com/api/buscar?${qs.toString()}`, {
+      signal,
+      headers: { "User-Agent": UA, "Accept-Language": "pt-BR" },
+    });
+    if (!r.ok) return null;
+    const payload = await r.json();
+    const results = Array.isArray(payload) ? payload : payload?.items || payload?.resultados || payload?.data || [];
+    const hit = Array.isArray(results) ? results[0] : null;
+    if (!hit) return null;
+    const lat = Number(hit.lat ?? hit.latitude);
+    const lng = Number(hit.lon ?? hit.lng ?? hit.longitude);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+    await cacheSet(key, lat, lng, "pontofato:buscar");
+    return { lat, lng, precision: "address" };
+  });
+}
+
+/**
+ * PontoFato por CEP — retorna todos os pontos CNEFE do CEP.
+ * Filtra por rua+número para precisão de endereço; se só achar a rua,
+ * interpola; senão usa o centróide do resumo.
+ */
+async function pontoFatoCep(
+  cep: string,
+  street: string,
+  number: string,
+): Promise<Geo | null> {
+  const key = `geo|v2|pontofato|cep|${cep}|${street}|${number}`;
+  const cached = await cacheGet(key);
+  if (cached) {
+    const precision = cached.source === "pontofato:cep:address" ? "address"
+      : cached.source === "pontofato:cep:street" ? "street" : "cep";
+    return { lat: Number(cached.lat), lng: Number(cached.lng), precision };
+  }
+  return await withTimeout(async (signal) => {
+    const r = await fetch(`https://pontofato.com/api/cep/${cep}`, {
+      signal,
+      headers: { "User-Agent": UA, "Accept-Language": "pt-BR" },
+    });
+    if (!r.ok) return null;
+    const payload = await r.json();
+    const pontos = Array.isArray(payload?.pontos) ? payload.pontos
+      : Array.isArray(payload) ? payload : [];
+    if (pontos.length === 0) return null;
+
+    const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const streetNorm = norm(street);
+    const numberNum = parseInt(number.replace(/\D/g, ""), 10);
+
+    // 1. Match exato: mesma rua + mesmo número
+    const exact = pontos.find((p: any) => {
+      const pStreet = norm(String(p.logradouro || p.street || ""));
+      const pNum = parseInt(String(p.numero || p.number || "").replace(/\D/g, ""), 10);
+      return pStreet === streetNorm && pNum === numberNum;
+    });
+    if (exact) {
+      const lat = Number(exact.lat ?? exact.latitude);
+      const lng = Number(exact.lon ?? exact.lng ?? exact.longitude);
+      if (Number.isFinite(lat) && Number.isFinite(lng)) {
+        await cacheSet(key, lat, lng, "pontofato:cep:address");
+        return { lat, lng, precision: "address" };
+      }
+    }
+
+    // 2. Mesma rua: interpola entre os números ou usa o ponto médio
+    const sameStreet = pontos.filter((p: any) =>
+      norm(String(p.logradouro || p.street || "")) === streetNorm
+    );
+    if (sameStreet.length > 0) {
+      const withCoords = sameStreet
+        .map((p: any) => ({
+          num: parseInt(String(p.numero || p.number || "").replace(/\D/g, ""), 10),
+          lat: Number(p.lat ?? p.latitude),
+          lng: Number(p.lon ?? p.lng ?? p.longitude),
+        }))
+        .filter((p: any) => Number.isFinite(p.num) && Number.isFinite(p.lat) && Number.isFinite(p.lng))
+        .sort((a: any, b: any) => a.num - b.num);
+      if (withCoords.length > 0) {
+        // Interpolação simples: encontra os dois pontos mais próximos do número
+        let best = withCoords[0];
+        let bestDist = Math.abs(best.num - numberNum);
+        for (const p of withCoords) {
+          const d = Math.abs(p.num - numberNum);
+          if (d < bestDist) { bestDist = d; best = p; }
+        }
+        await cacheSet(key, best.lat, best.lng, "pontofato:cep:street");
+        return { lat: best.lat, lng: best.lng, precision: "street" };
+      }
+    }
+
+    // 3. Fallback: centróide do resumo
+    const resumo = payload?.resumo || {};
+    const lat = Number(resumo.lat ?? resumo.latitude ?? payload?.lat);
+    const lng = Number(resumo.lon ?? resumo.lng ?? resumo.longitude ?? payload?.lng);
+    if (Number.isFinite(lat) && Number.isFinite(lng)) {
+      await cacheSet(key, lat, lng, "pontofato:cep:centroid");
+      return { lat, lng, precision: "cep" };
+    }
+    return null;
+  });
+}
+
 async function nominatim(params: Record<string, string>, precision: Geo["precision"]): Promise<Geo | null> {
   const qs = new URLSearchParams({ format: "jsonv2", limit: "1", countrycodes: "br", ...params });
   const key = `geo|v2|${precision}|${qs.toString()}`;
@@ -226,7 +345,11 @@ Deno.serve(async (req) => {
   if (!/^[A-Z]{2}$/.test(state)) return json({ ok: false, reason: "invalid_state" }, 400);
 
   // --- Geocodificação estruturada, do mais preciso ao menos preciso ---
+  // PontoFato (CNEFE/IBGE) primeiro: dados oficiais nível de porta, gratuitos.
+  // Se não achar, cai para a cascata original (Nominatim → BrasilAPI).
   let geo =
+    (await pontoFatoBuscar(street, number, city, state)) ??
+    (await pontoFatoCep(cep, street, number)) ??
     (await nominatim({ street: `${number} ${street}`, city, state, postalcode: cep }, "address")) ??
     (await nominatim({ street, city, state }, "street")) ??
     (await nominatim({ postalcode: cep, country: "Brasil" }, "cep")) ??

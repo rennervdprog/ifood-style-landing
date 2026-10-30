@@ -608,6 +608,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
     const items = order.order_items?.map((i: any) => `${i.quantity}x ${getOrderItemDisplayName(i)}`).join("\n") || "";
     const evolutionConnected = whatsappConfigs?.some((cfg: any) => cfg.store_id === order.store_id && cfg.status === "connected") || false;
 
+    // WhatsApp de status é do servidor (order-status-whatsapp); aqui só push.
     notifyOrderStatusChange(status, {
       orderId: order.id,
       storeName,
@@ -620,7 +621,7 @@ const StoreDriverView = ({ linkedStoreIds }: StoreDriverViewProps) => {
       items,
       paymentMethod: order.payment_method,
       deliveryPin: order.delivery_pin,
-    }, { evolutionEnabled: evolutionConnected });
+    }, { evolutionEnabled: evolutionConnected, skipWhatsApp: true });
   };
 
   /** Also notify the store owner */

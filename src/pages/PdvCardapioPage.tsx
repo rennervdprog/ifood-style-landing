@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, lazy, Suspense } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Loader2, BookOpen, Layers, Pizza, Shirt, Package2, UtensilsCrossed } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,12 +23,28 @@ type SubTab = "cardapio" | "adicionais" | "pizza_pastel" | "boutique" | "combos"
 const PdvCardapioPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const selectedAdminStoreId = useMemo(() => {
-    try { return localStorage.getItem("pdv_admin_selected_store"); } catch { return null; }
-  }, []);
+  const [searchParams] = useSearchParams();
+  const urlStoreId = searchParams.get("storeId");
+
+  const ADMIN_STORE_KEY = "pdv_admin_selected_store";
+  const [adminStoreId, setAdminStoreId] = useState<string | null>(() => {
+    try { return urlStoreId || localStorage.getItem(ADMIN_STORE_KEY); } catch { return urlStoreId || null; }
+  });
+
+  // Super-admin vindo de /admin/cardapio?storeId=...: a loja da URL deve
+  // vencer qualquer seleção anterior, senão abre o cardápio da última
+  // loja operada (mesmo padrão do /admin/pdv).
+  useEffect(() => {
+    if (!urlStoreId) return;
+    try {
+      localStorage.setItem(ADMIN_STORE_KEY, urlStoreId);
+      localStorage.removeItem("pdv_store_v1");
+    } catch {}
+    setAdminStoreId((prev) => (prev === urlStoreId ? prev : urlStoreId));
+  }, [urlStoreId]);
 
   const { data: store, isFetched } = useQuery({
-    queryKey: ["pdv-cardapio-store", user?.id, selectedAdminStoreId],
+    queryKey: ["pdv-cardapio-store", user?.id, adminStoreId],
     enabled: !!user?.id,
     queryFn: async () => {
       const { data: adminRole } = await supabase
@@ -38,10 +54,9 @@ const PdvCardapioPage = () => {
         .eq("role", "admin")
         .maybeSingle();
 
-      // 1) Super-admin operando loja fake/sandbox: respeitar seleção do PDV.
+      // 1) Super-admin: loja da URL (?storeId=) ou seleção do PDV.
       if (adminRole) {
         try {
-          const adminStoreId = selectedAdminStoreId;
           if (adminStoreId) {
             const { data } = await supabase
               .from("stores").select("id, name, category, categories, store_type")

@@ -19,6 +19,20 @@ interface Props {
 
 const EVOLUTION_URL = "";
 
+// Escada do teto diário de envios (mesma de dailyLimitForAge em
+// supabase/functions/evolution-send-message/index.ts). O limite sobe
+// sozinho com o tempo de uso do número (dias após connected_at);
+// established_number trata o número como se tivesse 20 dias.
+const dailyLimitForAge = (days: number) => {
+  if (days < 7) return 60; // semana 1
+  if (days < 14) return 120; // semana 2
+  if (days < 30) return 200; // semana 3-4
+  if (days < 60) return 300; // mês 2
+  return 300; // mês 3+
+};
+
+const DAILY_LIMIT_OVERRIDE_MAX = 500;
+
 type TabKey = "connection" | "notifications" | "templates";
 
 export default function WhatsAppSetup({ storeId, storeSlug, storeName, expectedPhone }: Props) {
@@ -34,6 +48,8 @@ export default function WhatsAppSetup({ storeId, storeSlug, storeName, expectedP
   const [notifyDelivered, setNotifyDelivered] = useState(true);
   const [notifyCancelled, setNotifyCancelled] = useState(true);
   const [autoReply, setAutoReply] = useState(true);
+  // Override do teto diário de envios ("" = sem override, vale o teto da idade).
+  const [dailyLimitOverride, setDailyLimitOverride] = useState("");
 
   const loadConfig = useCallback(async () => {
     const { data: raw } = await (supabase as any)
@@ -50,6 +66,7 @@ export default function WhatsAppSetup({ storeId, storeSlug, storeName, expectedP
       setNotifyDelivered(data.notify_order_delivered ?? true);
       setNotifyCancelled(data.notify_order_cancelled ?? true);
       setAutoReply(data.auto_reply_enabled ?? true);
+      setDailyLimitOverride(data.daily_limit_override != null ? String(data.daily_limit_override) : "");
       setTemplates((data.message_templates as Record<string, string>) || {});
     }
   }, [storeId]);
@@ -98,8 +115,24 @@ export default function WhatsAppSetup({ storeId, storeSlug, storeName, expectedP
     };
   }, [storeId, loadConfig]);
 
+  // Teto da idade do número (sem override): base do limite diário atual.
+  const ageDays = config?.connected_at
+    ? (Date.now() - new Date(config.connected_at).getTime()) / 86_400_000
+    : 999;
+  const effAgeDays = config?.established_number ? Math.max(ageDays, 20) : ageDays;
+  const baseDailyLimit = dailyLimitForAge(effAgeDays);
+
   const saveConfig = async () => {
     setSaving(true);
+    // Override só vale se for MAIOR que o teto da idade e até 500;
+    // qualquer outro valor (vazio, menor, inválido) limpa o override
+    // e volta a valer só o teto da idade.
+    const parsedOverride = dailyLimitOverride.trim() === "" ? null : Number(dailyLimitOverride);
+    const validOverride =
+      parsedOverride !== null && Number.isFinite(parsedOverride) &&
+      parsedOverride > baseDailyLimit && parsedOverride <= DAILY_LIMIT_OVERRIDE_MAX
+        ? Math.floor(parsedOverride)
+        : null;
     const payload = {
       store_id: storeId,
       evolution_api_url: config?.evolution_api_url ?? EVOLUTION_URL,
@@ -110,6 +143,7 @@ export default function WhatsAppSetup({ storeId, storeSlug, storeName, expectedP
       notify_order_delivered: notifyDelivered,
       notify_order_cancelled: notifyCancelled,
       auto_reply_enabled: autoReply,
+      daily_limit_override: validOverride,
       message_templates: templates,
       updated_at: new Date().toISOString(),
     };
@@ -176,6 +210,7 @@ export default function WhatsAppSetup({ storeId, storeSlug, storeName, expectedP
 
       {tab === "notifications" && (
         <WhatsAppNotifications
+          connected={config?.status === "connected"}
           storeSlug={storeSlug}
           notifyAccepted={notifyAccepted} setNotifyAccepted={setNotifyAccepted}
           notifyReady={notifyReady} setNotifyReady={setNotifyReady}
@@ -183,6 +218,8 @@ export default function WhatsAppSetup({ storeId, storeSlug, storeName, expectedP
           notifyDelivered={notifyDelivered} setNotifyDelivered={setNotifyDelivered}
           notifyCancelled={notifyCancelled} setNotifyCancelled={setNotifyCancelled}
           autoReply={autoReply} setAutoReply={setAutoReply}
+          baseDailyLimit={baseDailyLimit}
+          dailyLimitOverride={dailyLimitOverride} setDailyLimitOverride={setDailyLimitOverride}
         />
       )}
 

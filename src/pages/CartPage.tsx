@@ -49,29 +49,40 @@ const CartPage = () => {
     }
   };
 
-  const { data: storeInfo } = useQuery({
-    queryKey: ["cart-store-status", storeId],
+  // Duas queries independentes: a barra de pedido mínimo só precisa da loja
+  // (não pode esperar os horários, que chegam depois e faziam a barra
+  // "surgir com atraso" na tela do carrinho).
+  const { data: cartStore } = useQuery({
+    queryKey: ["cart-store-minimum", storeId],
     queryFn: async () => {
-      const { data: store } = await supabase
+      const { data } = await supabase
         .from("stores_public")
         .select("is_open, force_closed, minimum_order_value")
         .eq("id", storeId!)
         .maybeSingle() as { data: any };
-      const { data: hours } = await supabase
+      return data;
+    },
+    enabled: !!storeId,
+    staleTime: 60_000,
+  });
+  const { data: cartHours } = useQuery({
+    queryKey: ["cart-store-hours", storeId],
+    queryFn: async () => {
+      const { data } = await supabase
         .from("opening_hours")
         .select("day_of_week, open_time, close_time, is_closed_all_day")
         .eq("store_id", storeId!);
-      return { store, hours: (hours || []) as OpeningHour[] };
+      return (data || []) as OpeningHour[];
     },
     enabled: !!storeId,
     refetchInterval: 60_000,
   });
 
-  const storeStatus = storeInfo
-    ? getStoreOpenStatus(storeInfo.hours, storeInfo.store?.force_closed ?? false, storeInfo.store?.is_open ?? true)
+  const storeStatus = cartStore
+    ? getStoreOpenStatus(cartHours || [], cartStore.force_closed ?? false, cartStore.is_open ?? true)
     : null;
   const isClosed = storeStatus ? !storeStatus.isOpen : false;
-  const storeMinimumOrderValue = Number(storeInfo?.store?.minimum_order_value || 0);
+  const storeMinimumOrderValue = Number(cartStore?.minimum_order_value || 0);
   const belowMinimum = storeMinimumOrderValue > 0 && subtotal < storeMinimumOrderValue;
   const minimumMissing = belowMinimum ? storeMinimumOrderValue - subtotal : 0;
 

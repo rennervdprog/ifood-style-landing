@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { formatBRL } from "@/lib/utils";
+import { parseBRL } from "@/hooks/useBRLInput";
 import { Loader2, Plus, Pencil, Trash2, Layers, X, GripVertical } from "lucide-react";
 
 interface Slot { name: string; product_ids: string[] }
@@ -164,7 +165,7 @@ function ComboForm({ storeId, combo, products, onClose, onSaved }: {
 
   const save = async () => {
     if (!name.trim()) return toast.error("Dê um nome ao combo");
-    const priceNum = parseFloat(price.replace(",", "."));
+    const priceNum = parseBRL(price);
     if (!priceNum || priceNum <= 0) return toast.error("Informe um preço válido");
     setSaving(true);
     const payload: any = {

@@ -32,12 +32,15 @@ const PixDiretoPaymentPage = () => {
       .maybeSingle();
     if (!o) { toast.error("Pedido não encontrado"); navigate("/pedidos"); return; }
     setOrder(o);
-    const { data: s } = await supabase
-      .from("stores_public")
-      .select("name, pix_direto_key, pix_direto_key_type, pix_direto_beneficiary, pix_direto_instructions")
-      .eq("id", (o as any).store_id)
-      .maybeSingle();
-    setStore(s);
+    // O cliente nao pode ler a tabela stores direto (RLS: so dono/gestor/admin),
+    // e stores_public nao traz mais loja oculta (ex.: demo). A RPC estreita
+    // get_store_pix_direto devolve so os campos do Pix Direto da loja do
+    // pedido dele (cliente do pedido, dono, gestor ou admin).
+    const { data: storeRows } = await supabase.rpc(
+      "get_store_pix_direto" as any,
+      { p_order_id: (o as any).id },
+    );
+    setStore(((storeRows as any[]) || [])[0] ?? null);
     setLoading(false);
   };
 

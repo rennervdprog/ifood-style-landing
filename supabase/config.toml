@@ -30,6 +30,9 @@ verify_jwt = false
 [functions.evolution-webhook]
 verify_jwt = false
 
+[functions.evolution-webhook-teste]
+verify_jwt = false
+
 [functions.evolution-send-message]
 verify_jwt = false
 
@@ -67,4 +70,20 @@ verify_jwt = false
 
 [functions.quote-delivery]
 # A cotação valida a sessão no código e aceita chamadas internas somente com service_role.
+verify_jwt = false
+
+# API oficial do WhatsApp (migração): webhooks da Meta não mandam JWT do
+# Supabase — meta-webhook valida a assinatura HMAC da Meta no código, e as
+# demais validam token interno/Cron no código (mesmo padrão das functions
+# Evolution acima).
+[functions.meta-webhook]
+verify_jwt = false
+
+[functions.official-whatsapp-send]
+verify_jwt = false
+
+[functions.order-status-whatsapp]
+verify_jwt = false
+
+[functions.whatsapp-send-worker]
 verify_jwt = false

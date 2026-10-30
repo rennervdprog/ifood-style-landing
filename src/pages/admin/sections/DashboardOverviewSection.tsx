@@ -5,9 +5,11 @@ type OrderStatus = any;
 type DashboardTab = any;
 import { CreditCard, AlertTriangle, ChevronRight, Clock, Bike, Monitor, ShoppingBag, DollarSign, Timer, Users, GraduationCap, ChevronUp, ChevronDown, User, MapPin, CheckCircle2, ArrowUpRight, UtensilsCrossed, Coins, Settings, Store, XCircle, Download, TrendingUp, Bell } from "lucide-react";
 import { formatBRL } from "@/lib/utils";
+import { formatElapsedMinutes } from "@/lib/elapsedTime";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import PlatformFeeExplainerCard from "@/components/PlatformFeeExplainerCard";
 import EssencialProgressCard from "@/components/EssencialProgressCard";
+import TabHeader from "@/components/TabHeader";
 import { GlanceCard } from "../components/GlanceCard";
 import DriverDeliveriesCard from "../components/DriverDeliveriesCard";
 import { CalendarClock } from "lucide-react";
@@ -154,6 +156,8 @@ export default function DashboardOverviewSection(props: Props) {
 
   return (
 <div className="p-4 lg:p-6 max-w-6xl mx-auto space-y-5 lg:space-y-6">
+
+  <TabHeader title="Visão Geral" subtitle="Como sua loja está hoje: pedidos, vendas e o que precisa da sua atenção" tutorialId="dashboard" />
 
   {avisosCount > 0 && (
     <button
@@ -408,17 +412,7 @@ export default function DashboardOverviewSection(props: Props) {
         <div className="px-4 pb-4 space-y-2">
           {delayedOrders.map((order: any) => {
             const elapsedMin = Math.floor((Date.now() - new Date(order.created_at).getTime()) / 60000);
-            const formatElapsed = (m: number) => {
-              if (m < 60) return `${m} min`;
-              if (m < 1440) {
-                const h = Math.floor(m / 60);
-                const r = m % 60;
-                return r ? `${h}h ${r}min` : `${h}h`;
-              }
-              const d = Math.floor(m / 1440);
-              const h = Math.floor((m % 1440) / 60);
-              return h ? `${d}d ${h}h` : `${d}d`;
-            };
+            const formatElapsed = formatElapsedMinutes;
             const sc = statusColors[order.status] || statusColors.pendente;
             return (
               <div key={order.id} className="bg-card border border-destructive/20 rounded-xl p-3 space-y-2">

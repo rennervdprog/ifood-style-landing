@@ -41,7 +41,7 @@ interface Props {
    hybrid: "Mensalidade reduzida + taxa por venda",
    commission_only: "Sem mensalidade, paga só quando vende",
    supporter: "Plano exclusivo de lançamento",
-   autonomy: "Sem comissão e sem taxa de R$2 da plataforma",
+   autonomy: "Sem comissão e sem taxa da plataforma",
    pdv_only: "Só balcão — sem delivery, sem vitrine",
  };
 
@@ -110,6 +110,12 @@ const formatDateBR = (d: string | null | undefined) =>
 
 export default function StoreSubscription({ storeId, storeName }: Props) {
   const plan = useStorePlan(storeId);
+  // Durante o período grátis, a próxima cobrança real é o FIM do trial —
+  // o next_billing_date cru pode estar no passado/desatualizado (o trial foi
+  // estendido sem mover a data) e a tela mostrava duas histórias ao mesmo
+  // tempo (banner 21/jan × cobrança 15/nov). Exibição apenas; nada muda no banco.
+  const effectiveNextBilling = plan.isInTrial && plan.trialEndsAt ? plan.trialEndsAt : plan.nextBillingDate;
+  const nextBillingLabel = plan.isInTrial ? "Primeira cobrança (fim do período grátis)" : "Próxima cobrança";
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [selectedPlan, setSelectedPlan] = useState<StorePlanType | null>(null);
@@ -225,16 +231,26 @@ export default function StoreSubscription({ storeId, storeName }: Props) {
               Como cobramos no seu plano
             </p>
           </div>
-          <PlanFeeBreakdown
-            planId={plan.planType}
-            orderValue={50}
-            viaPix
-            monthlyFeeOverride={plan.monthlyFee}
-            commissionRateOverride={plan.commissionRate}
-            pixFeeOverride={plan.pixOperationalFee}
-            isVip={plan.isVip}
-          />
-          <DeliveryFeeExplainer mode="store" platformFee={plan.platformDeliverySplit} />
+          {plan.planType === "pdv_only" ? (
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              No Somente PDV você paga só a mensalidade de{" "}
+              <strong className="text-foreground">{formatBRL(plan.monthlyFee)}/mês</strong> —
+              sem comissão, sem taxa por venda e sem taxa de entrega.
+            </p>
+          ) : (
+            <>
+              <PlanFeeBreakdown
+                planId={plan.planType}
+                orderValue={50}
+                viaPix
+                monthlyFeeOverride={plan.monthlyFee}
+                commissionRateOverride={plan.commissionRate}
+                pixFeeOverride={plan.pixOperationalFee}
+                isVip={plan.isVip}
+              />
+              <DeliveryFeeExplainer mode="store" platformFee={plan.platformDeliverySplit} />
+            </>
+          )}
           {plan.isVip && (
             <div className="flex items-start gap-2 rounded-lg bg-amber-500/10 border border-amber-500/25 p-2.5">
               <Crown className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
@@ -262,7 +278,7 @@ export default function StoreSubscription({ storeId, storeName }: Props) {
             </div>
             <div className="flex flex-col items-end gap-1 shrink-0">
               <Badge className="bg-background text-foreground border border-border/60">
-                {plan.isInTrial ? `Trial · ${plan.trialDaysLeft}d` : "Ativo"}
+                {plan.isInTrial ? `Período grátis · ${plan.trialDaysLeft} ${plan.trialDaysLeft === 1 ? "dia" : "dias"}` : "Ativo"}
               </Badge>
               {plan.isVip && (
                 <Badge className="bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30 gap-1">
@@ -283,7 +299,8 @@ export default function StoreSubscription({ storeId, storeName }: Props) {
                   Período grátis · {plan.trialDaysLeft} {plan.trialDaysLeft === 1 ? "dia restante" : "dias restantes"}
                 </p>
               </div>
-              <Progress value={((7 - plan.trialDaysLeft) / 7) * 100} className="h-1.5" />
+              {/* 4.10: trial real é de 60 dias (estava hardcoded 7) */}
+              <Progress value={Math.min(100, Math.max(0, ((60 - plan.trialDaysLeft) / 60) * 100))} className="h-1.5" />
             </div>
           )}
 
@@ -350,15 +367,15 @@ export default function StoreSubscription({ storeId, storeName }: Props) {
           )}
 
           {/* Next billing callout */}
-          {plan.monthlyFee > 0 && plan.nextBillingDate && (
+          {plan.monthlyFee > 0 && effectiveNextBilling && (
             <div className="flex items-center justify-between gap-3 rounded-xl border border-border/60 bg-card p-3">
               <div className="flex items-center gap-3 min-w-0">
                 <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
                   <Calendar className="h-4 w-4 text-primary" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs font-semibold text-foreground">Próxima cobrança</p>
-                  <p className="text-[11px] text-muted-foreground truncate">{formatDateBR(plan.nextBillingDate)}</p>
+                  <p className="text-xs font-semibold text-foreground">{nextBillingLabel}</p>
+                  <p className="text-[11px] text-muted-foreground truncate">{formatDateBR(effectiveNextBilling)}</p>
                 </div>
               </div>
               <p className="text-base font-bold text-foreground shrink-0">{formatBRL(plan.monthlyFee)}</p>
@@ -441,11 +458,6 @@ export default function StoreSubscription({ storeId, storeName }: Props) {
                     Nota: {pendingRequest.admin_notes}
                   </p>
                 )}
-                {pendingRequest.prorata_credit > 0 && (
-                  <p className="text-[11px] font-semibold text-primary mt-1">
-                    Crédito aplicado: {formatBRL(Number(pendingRequest.prorata_credit))}
-                  </p>
-                )}
               </div>
             </div>
           </CardContent>
@@ -523,8 +535,8 @@ export default function StoreSubscription({ storeId, storeName }: Props) {
                 <span className="font-medium text-foreground">{formatDateBR(plan.lastBilledAt)}</span>
               </div>
               <div className="flex flex-col">
-                <span className="text-muted-foreground">Próxima cobrança</span>
-                <span className="font-medium text-foreground">{formatDateBR(plan.nextBillingDate)}</span>
+                <span className="text-muted-foreground">{nextBillingLabel}</span>
+                <span className="font-medium text-foreground">{formatDateBR(effectiveNextBilling)}</span>
               </div>
             </div>
           </CardContent>
@@ -533,9 +545,6 @@ export default function StoreSubscription({ storeId, storeName }: Props) {
 
       {/* ───────── BILLING HISTORY ───────── */}
       {plan.isFixedPlan && <FixedPlanBillingHistory storeId={storeId} storeName={storeName} />}
-
-      {/* ───────── APP ADDON ───────── */}
-      <AppAddonCard storeId={storeId} />
 
       {/* ───────── MÓDULOS (PDV etc.) ───────── */}
       <StoreAddonsPanel storeId={storeId} />
@@ -680,110 +689,3 @@ export default function StoreSubscription({ storeId, storeName }: Props) {
   );
 }
 
-/* ─── App Addon Card ─── */
-function AppAddonCard({ storeId }: { storeId: string }) {
-  const [subscribing, setSubscribing] = useState(false);
-  const queryClient = useQueryClient();
-
-  const { data: store } = useQuery({
-    queryKey: ["store-app-status", storeId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("stores")
-        .select("app_enabled, app_subscribed")
-        .eq("id", storeId)
-        .single();
-      if (error) throw error;
-      return data as { app_enabled: boolean; app_subscribed: boolean };
-    },
-    enabled: !!storeId,
-  });
-
-  if (!store?.app_enabled) return null;
-
-  const handleToggleSubscription = async () => {
-    setSubscribing(true);
-    try {
-      const { error } = await supabase
-        .from("stores")
-        .update({ app_subscribed: !store.app_subscribed })
-        .eq("id", storeId);
-      if (error) throw error;
-
-      await supabase
-        .from("store_plans")
-        .update({ app_addon_fee: !store.app_subscribed ? 99 : 0 })
-        .eq("store_id", storeId);
-
-      toast.success(store.app_subscribed ? "App cancelado." : "App ativado com sucesso! 🚀");
-      queryClient.invalidateQueries({ queryKey: ["store-app-status", storeId] });
-      queryClient.invalidateQueries({ queryKey: ["store-plan", storeId] });
-    } catch (err: any) {
-      toast.error(err.message || "Erro ao alterar assinatura do app.");
-    } finally {
-      setSubscribing(false);
-    }
-  };
-
-  return (
-    <Card className="overflow-hidden border-2 border-primary/20">
-      <div className="bg-primary/5 p-4">
-        <div className="flex items-center gap-3">
-          <div className="h-11 w-11 rounded-2xl bg-primary/15 flex items-center justify-center shrink-0">
-            <Smartphone className="h-5 w-5 text-primary" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <h3 className="text-base font-bold text-foreground">App próprio</h3>
-              {store.app_subscribed && (
-                <Badge className="text-[10px] bg-primary/15 text-primary border-primary/20">Ativo</Badge>
-              )}
-            </div>
-            <p className="text-xs text-muted-foreground">Seu app exclusivo na Play Store</p>
-          </div>
-          <p className="text-base font-bold text-foreground shrink-0">R$ 99<span className="text-[10px] text-muted-foreground">/mês</span></p>
-        </div>
-      </div>
-      <CardContent className="p-4 space-y-3">
-        <div className="grid grid-cols-2 gap-1.5">
-          {[
-            "App com sua marca",
-            "Push ilimitadas",
-            "Só sua loja",
-            "Sem WhatsApp API",
-          ].map((item) => (
-            <div key={item} className="flex items-center gap-1.5">
-              <Check className="h-3 w-3 text-primary shrink-0" />
-              <span className="text-[11px] text-foreground">{item}</span>
-            </div>
-          ))}
-        </div>
-
-        <Button
-          className="w-full"
-          variant={store.app_subscribed ? "outline" : "default"}
-          onClick={handleToggleSubscription}
-          disabled={subscribing}
-        >
-          {subscribing ? (
-            <Loader2 className="h-4 w-4 animate-spin mr-2" />
-          ) : store.app_subscribed ? (
-            <XCircle className="h-4 w-4 mr-2" />
-          ) : (
-            <Rocket className="h-4 w-4 mr-2" />
-          )}
-          {store.app_subscribed ? "Cancelar app" : "Assinar — R$ 99/mês"}
-        </Button>
-
-        {store.app_subscribed && (
-          <div className="flex items-start gap-2 p-2.5 rounded-lg bg-primary/5 border border-primary/15">
-            <CheckCircle2 className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
-            <p className="text-[11px] text-muted-foreground leading-relaxed">
-              App ativo! O administrador gerará o APK com a identidade da sua loja.
-            </p>
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-}

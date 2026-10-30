@@ -11,6 +11,7 @@ import {
   DownloadApp,
   SejaRevendedor,
   VagaPromoPage,
+  PdvLandingPage,
   BlogIndex,
   BlogPost,
   KdsPage,
@@ -68,6 +69,15 @@ export const publicRoutes = (
       }
     />
     <Route path="/vaga/:cidade" element={<VagaPromoPage />} />
+    <Route
+      path="/pdv"
+      element={
+        <>
+          <RouteMeta path={ROUTES.public.pdv} />
+          <PdvLandingPage />
+        </>
+      }
+    />
     <Route path="/blog" element={<BlogIndex />} />
     <Route path="/blog/:slug" element={<BlogPost />} />
     <Route path="/kds/:token" element={<KdsPage />} />

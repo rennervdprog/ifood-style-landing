@@ -1,7 +1,14 @@
 /**
  * Detecta novo build publicado comparando o BUILD_ID embutido no bundle
- * com o /version.json servido no domínio. Se mudou, força reload — mas
- * NUNCA no meio de checkout, PDV com sessão aberta ou app do motoboy em rota.
+ * com o /version.json servido no domínio. Avisa com um toast
+ * "Nova versão disponível" — o reload só acontece quando o usuário toca
+ * em "Atualizar".
+ *
+ * O aviso NÃO é guardado no painel do lojista (/admin e /admin-teste):
+ * o toast não interrompe nada (não recarrega sozinho), então o lojista
+ * pode decidir quando atualizar. Nas demais rotas críticas (checkout,
+ * carrinho, PDV público, motoboy em rota) ele continua guardado e só
+ * aparece ao sair da rota, para não atrapalhar venda/atendimento.
  *
  * Não roda em: dev, preview Lovable, iframe.
  */
@@ -10,6 +17,9 @@ import { Capacitor } from "@capacitor/core";
 import { toast } from "sonner";
 
 const POLL_MS = 60_000;
+// Rotas em que o aviso fica GUARDADO até sair da rota (não interromper
+// venda/atendimento em andamento). O painel NÃO está aqui: o toast não
+// interrompe nada — o reload só acontece no toque em "Atualizar".
 const CRITICAL_ROUTES = [
   /^\/checkout/,
   /^\/cart/,
@@ -17,6 +27,11 @@ const CRITICAL_ROUTES = [
   /^\/motoboy/,
   /^\/driver/,
 ];
+// Painel do lojista (original e /admin-teste — mesmo watcher, sem variante
+// Teste): o aviso aparece aqui também, e fica na tela até o usuário decidir
+// (não some sozinho em 15 s). Inclui o /admin/pdv — o toast não interrompe
+// a venda, só o toque em "Atualizar" recarrega.
+const PANEL_ROUTES = [/^\/admin/];
 
 function isBlockedContext(): boolean {
   if (!import.meta.env.PROD) return true;
@@ -38,6 +53,11 @@ function isOnCriticalRoute(): boolean {
   return CRITICAL_ROUTES.some((re) => re.test(p));
 }
 
+function isOnPanelRoute(): boolean {
+  const p = window.location.pathname;
+  return PANEL_ROUTES.some((re) => re.test(p));
+}
+
 let started = false;
 let pendingBuildId: string | null = null;
 
@@ -55,7 +75,7 @@ async function fetchRemoteBuildId(): Promise<string | null> {
 
 let notifiedForBuild: string | null = null;
 
-async function applyUpdate(remoteId: string) {
+async function applyUpdate(remoteId: string, opts?: { persistent?: boolean }) {
   // Anti-loop persistente (entre reloads): se já tentamos este build
   // recentemente e ainda estamos no BUILD_ID antigo, não força reload
   // — apenas avisa o usuário para evitar tela preta/laranja em loop.
@@ -69,12 +89,15 @@ async function applyUpdate(remoteId: string) {
   if (notifiedForBuild === remoteId) return;
   notifiedForBuild = remoteId;
 
-  console.info(`[VersionWatcher] Nova versão detectada: ${BUILD_ID} → ${remoteId}${alreadyTried ? " (já tentada)" : ""}`);
+  console.info(`[VersionWatcher] Nova versão detectada: ${BUILD_ID} → ${remoteId}${alreadyTried ? " (já tentada)" : ""}${opts?.persistent ? " (painel — aviso fixo)" : ""}`);
 
   // Notificação não-bloqueante — o usuário decide quando atualizar.
+  // No painel o toast é persistente (duration: Infinity, documentado no
+  // Sonner): não some sozinho sem o usuário ver/decidir. Se ele dispensar
+  // no X, respeitamos — o aviso volta no próximo carregamento da página.
   toast("Nova versão disponível", {
     description: "Toque em Atualizar quando quiser recarregar.",
-    duration: 15_000,
+    duration: opts?.persistent ? Infinity : 15_000,
     action: {
       label: "Atualizar",
       onClick: async () => {
@@ -99,7 +122,13 @@ async function tick() {
   const remote = await fetchRemoteBuildId();
   if (!remote || remote === BUILD_ID) return;
 
-  // Em rota crítica: guarda pra aplicar quando sair
+  // No painel o aviso aparece e fica até o usuário decidir.
+  if (isOnPanelRoute()) {
+    await applyUpdate(remote, { persistent: true });
+    return;
+  }
+
+  // Nas demais rotas críticas: guarda pra aplicar quando sair
   if (isOnCriticalRoute()) {
     pendingBuildId = remote;
     return;
@@ -129,7 +158,8 @@ export function initVersionWatcher() {
     if (pendingBuildId && !isOnCriticalRoute()) {
       const id = pendingBuildId;
       pendingBuildId = null;
-      applyUpdate(id);
+      // Se voltou para o painel, o aviso é fixo; fora dele, 15 s.
+      applyUpdate(id, { persistent: isOnPanelRoute() });
     }
   });
 

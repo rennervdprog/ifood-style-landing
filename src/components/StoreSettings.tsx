@@ -11,6 +11,7 @@ import { isCapacitorNative, registerCapacitorPush } from "@/lib/capacitorNative"
 import { maskWhatsApp } from "@/lib/whatsapp";
 import { formatCep, fetchCep, resolveAddress } from "@/lib/location";
 import { formatBRL } from "@/lib/utils";
+import { parseBRL } from "@/hooks/useBRLInput";
 import { useStorePlan } from "@/hooks/useStorePlan";
 import { RefreshCw } from "lucide-react";
 import { copyToClipboard } from "@/lib/clipboard";
@@ -194,8 +195,12 @@ type PizzaPriceMode = "maior" | "media" | "soma";
   const [autoPrintPdv, setAutoPrintPdv] = useState<boolean>(
     storeSettings?.auto_print_pdv !== false
   );
-  const [autoPrintDelivery, setAutoPrintDelivery] = useState<boolean>(
-    storeSettings?.auto_print_delivery !== false
+  // Modo de impressão do delivery: 'auto' (ao chegar) | 'on_accept' (só ao
+  // aceitar) | 'manual' (só no botão Imprimir). Sem a chave nova, herda do
+  // auto_print_delivery: ligado -> 'auto', desligado -> 'on_accept'.
+  const [printModeDelivery, setPrintModeDelivery] = useState<"auto" | "on_accept" | "manual">(
+    (storeSettings as any)?.print_mode_delivery ??
+      (storeSettings?.auto_print_delivery === false ? "on_accept" : "auto")
   );
 
   // Z-API foi substituído pela aba WhatsApp (Evolution API) — bloco removido.
@@ -328,6 +333,41 @@ type PizzaPriceMode = "maior" | "media" | "soma";
     // Ensure primary category is always present in the list, and primary equals first selected
     const finalCategories = Array.from(new Set([category, ...categories].filter(Boolean)));
     const primaryCategory = finalCategories[0] || category;
+
+    // 4.4: slug curto não pode ser salvo (a UI só avisa, mas o save permitia).
+    if (cleanSlug && cleanSlug.length < 3) {
+      toast.error("Link da loja muito curto. Mínimo 3 caracteres.");
+      setSaving(false);
+      return;
+    }
+
+    // 4.2: Pix Direto ligado sem chave não pode salvar silenciosamente.
+    if (pixDiretoEnabled && !pixDiretoKey.trim()) {
+      toast.error("Preencha a chave PIX para ativar o Pix Direto.");
+      setSaving(false);
+      return;
+    }
+
+    // 4.1/4.6: parse correto de valores pt-BR ("1.234,56" → 1234.56) + rejeita negativos.
+    const parsedOwnFee = parseBRL(ownDeliveryFee.toString());
+    const parsedBaseKm = parseBRL(deliveryBaseKm.toString());
+    const parsedFeeBase = parseBRL(deliveryFeeBase.toString());
+    const parsedFeePerKm = parseBRL(deliveryFeePerKm.toString());
+    const parsedMinOrder = parseBRL(minimumOrderValue.toString());
+    const parsedFreeThreshold = parseBRL(freeDeliveryThreshold.toString());
+    const monetaryValues = [parsedOwnFee, parsedBaseKm, parsedFeeBase, parsedFeePerKm, parsedMinOrder, parsedFreeThreshold];
+    if (monetaryValues.some((v) => !Number.isFinite(v) || v < 0)) {
+      toast.error("Valores inválidos. Verifique as taxas e valores informados.");
+      setSaving(false);
+      return;
+    }
+
+    // 4.3: frete grátis ativado exige limiar > 0 (antes gravava null e desligava sozinho).
+    if (freeDeliveryEnabled && parsedFreeThreshold <= 0) {
+      toast.error("Informe um valor maior que zero para o frete grátis.");
+      setSaving(false);
+      return;
+    }
     const updateData = {
       name: name.trim(),
       category: primaryCategory as any,
@@ -339,9 +379,9 @@ type PizzaPriceMode = "maior" | "media" | "soma";
         pizza_half_enabled: pizzaHalfEnabled,
         pizza_price_mode: pizzaPriceMode,
         delivery_fee_type: deliveryFeeType,
-        delivery_base_km: parseFloat(deliveryBaseKm.toString().replace(",", ".")) || 0,
-        delivery_fee_base: parseFloat(deliveryFeeBase.toString().replace(",", ".")) || 0,
-        delivery_fee_per_km: parseFloat(deliveryFeePerKm.toString().replace(",", ".")) || 0,
+        delivery_base_km: parsedBaseKm,
+        delivery_fee_base: parsedFeeBase,
+        delivery_fee_per_km: parsedFeePerKm,
         // Métodos de pagamento aceitos
         // PIX online e PIX na maquininha não são oferecidos ao Cliente.
         // O Cliente usa PIX Direto por comprovante quando a loja habilita sua chave.
@@ -355,20 +395,20 @@ type PizzaPriceMode = "maior" | "media" | "soma";
         print_paper_width: printPaperWidth,
         // Impressão automática — se false, o lojista imprime manualmente.
         auto_print_pdv: autoPrintPdv,
-        auto_print_delivery: autoPrintDelivery,
+        // Modo do delivery + espelho booleano (leitores antigos usam o boolean).
+        print_mode_delivery: printModeDelivery,
+        auto_print_delivery: printModeDelivery === "auto",
       },
       delivery_mode: deliveryMode,
-      own_delivery_fee: parseFloat(ownDeliveryFee.toString().replace(",", ".")) || 0,
+      own_delivery_fee: parsedOwnFee,
       platform_fee_split: platformFeeSplit,
       delivery_fee_type: deliveryFeeType,
-      delivery_base_km: parseFloat(deliveryBaseKm.toString().replace(",", ".")) || 0,
-      delivery_fee_base: parseFloat(deliveryFeeBase.toString().replace(",", ".")) || 0,
-      delivery_fee_per_km: parseFloat(deliveryFeePerKm.toString().replace(",", ".")) || 0,
-      minimum_order_value: parseFloat(minimumOrderValue.toString().replace(",", ".")) || 0,
+      delivery_base_km: parsedBaseKm,
+      delivery_fee_base: parsedFeeBase,
+      delivery_fee_per_km: parsedFeePerKm,
+      minimum_order_value: parsedMinOrder,
       estimated_delivery_time: estimatedDeliveryTime.trim() || null,
-      free_delivery_threshold: freeDeliveryEnabled
-        ? (parseFloat(freeDeliveryThreshold.toString().replace(",", ".")) || 0) || null
-        : null,
+      free_delivery_threshold: freeDeliveryEnabled ? parsedFreeThreshold : null,
       address_street: addressStreet.trim() || null,
       address_number: addressNumber.trim() || null,
       address_complement: addressComplement.trim() || null,
@@ -384,8 +424,6 @@ type PizzaPriceMode = "maior" | "media" | "soma";
       pix_direto_beneficiary: pixDiretoBeneficiary.trim() || null,
       pix_direto_instructions: pixDiretoInstructions.trim() || null,
     };
-
-    console.log("[DEBUG] Salvando configurações da loja:", { storeId, updateData });
 
     // Geocoda endereço para gravar latitude/longitude (não-bloqueante).
     try {
@@ -438,115 +476,11 @@ type PizzaPriceMode = "maior" | "media" | "soma";
     setSaving(false);
   };
 
-const NotificationSection = () => {
-  const [notifStatus, setNotifStatus] = useState<"checking" | "granted" | "denied" | "default" | "unsupported">("checking");
-  const [enabling, setEnabling] = useState(false);
-  const native = isGoNative();
-  const capacitorNative = isCapacitorNative();
-
-  useEffect(() => {
-    if (native) {
-      // In GoNative, notifications are always available via OneSignal
-      setNotifStatus("granted");
-      return;
-    }
-    if (capacitorNative) {
-      import("@capacitor/push-notifications").then(({ PushNotifications }) => {
-        PushNotifications.checkPermissions().then((result) => {
-          if (result.receive === "prompt" || result.receive === "prompt-with-rationale") {
-            setNotifStatus("default");
-            return;
-          }
-          setNotifStatus(result.receive === "granted" ? "granted" : "denied");
-        }).catch(() => setNotifStatus("default"));
-      }).catch(() => setNotifStatus("default"));
-      return;
-    }
-    if (!("Notification" in window)) {
-      setNotifStatus("unsupported");
-      return;
-    }
-    setNotifStatus(Notification.permission as any);
-  }, [native, capacitorNative]);
-
-  const handleEnable = async () => {
-    setEnabling(true);
-    try {
-      if (native) {
-        await registerGoNativePlayer();
-        toast.success("Notificações nativas ativadas!");
-        setNotifStatus("granted");
-      } else if (capacitorNative) {
-        const token = await registerCapacitorPush();
-        if (token) {
-          toast.success("Notificações ativadas!");
-          setNotifStatus("granted");
-        } else {
-          setNotifStatus("denied");
-          toast.error("Permissão negada. Ative nas configurações do app.");
-        }
-      } else {
-        const token = await requestPushPermissionAndRegister();
-        const result = Notification.permission;
-        setNotifStatus(result as any);
-        if (result === "granted" && token) {
-          toast.success("Notificações ativadas!");
-        } else {
-          toast.error("Permissão negada. Ative nas configurações do navegador.");
-        }
-      }
-    } catch (e) {
-      console.error("Notification enable error:", e);
-      toast.error("Erro ao ativar notificações.");
-    }
-    setEnabling(false);
-  };
-
-  return (
-    <div className="bg-muted/50 border border-border rounded-2xl p-4 space-y-3">
-      <label className="text-sm font-bold text-foreground/80 flex items-center gap-2">
-        <Bell className="h-4 w-4 text-primary" />
-        Notificações
-      </label>
-
-      {notifStatus === "granted" ? (
-        <div className="flex items-center gap-2 bg-primary/10 border border-primary/30 rounded-xl p-3">
-          <CheckCircle2 className="h-4 w-4 text-primary flex-shrink-0" />
-          <div>
-            <p className="text-xs font-bold text-primary">Notificações ativas</p>
-          <p className="text-[10px] text-muted-foreground">Você receberá alertas de novos pedidos.</p>
-          </div>
-        </div>
-      ) : notifStatus === "denied" ? (
-        <div className="flex items-center gap-2 bg-destructive/10 border border-destructive/30 rounded-xl p-3">
-          <XCircle className="h-4 w-4 text-destructive flex-shrink-0" />
-          <div>
-            <p className="text-xs font-bold text-destructive">Notificações bloqueadas</p>
-            <p className="text-[10px] text-muted-foreground">Acesse as configurações do navegador ou do app para desbloquear.</p>
-          </div>
-        </div>
-      ) : notifStatus === "unsupported" ? (
-        <p className="text-xs text-muted-foreground">Notificações não suportadas neste navegador.</p>
-      ) : notifStatus === "checking" ? (
-        <p className="text-xs text-muted-foreground">Verificando...</p>
-      ) : (
-        <button
-          onClick={handleEnable}
-          disabled={enabling}
-          className="w-full bg-primary text-primary-foreground font-bold py-3 rounded-xl text-sm flex items-center justify-center gap-2 active:scale-[0.98] transition-transform disabled:opacity-50"
-        >
-          <Bell className="h-4 w-4" />
-          {enabling ? "Ativando..." : "Ativar Notificações"}
-        </button>
-      )}
-    </div>
-  );
-};
 
   return (
     <div className="space-y-6 pb-32">
       {/* Logo Upload */}
-      <div className="flex flex-col items-center gap-4">
+      <div id="config-loja" className="flex flex-col items-center gap-4 scroll-mt-24">
         <div className="relative">
           <div className="w-28 h-28 rounded-full bg-muted border-4 border-border overflow-hidden flex items-center justify-center">
             {imageUrl ? (
@@ -779,7 +713,7 @@ const NotificationSection = () => {
       )}
 
       {/* Store Address */}
-      <div className="space-y-3">
+      <div id="config-endereco" className="space-y-3 scroll-mt-24">
         <label className="text-sm font-bold text-muted-foreground flex items-center gap-2">
           <MapPin className="h-4 w-4 text-primary" />
           Endereço da Loja
@@ -902,7 +836,7 @@ const NotificationSection = () => {
 
       {/* Delivery Mode — motoboy da plataforma oculto, forçar "own" */}
       {!pdvOnly && (<>
-      <div className="bg-muted/50 border border-border rounded-2xl p-4 space-y-3">
+      <div id="config-entrega" className="bg-muted/50 border border-border rounded-2xl p-4 space-y-3 scroll-mt-24">
         <label className="text-sm font-bold text-foreground/80 flex items-center gap-2">
           <Truck className="h-4 w-4 text-primary" />
           Modo de Entrega
@@ -982,7 +916,7 @@ const NotificationSection = () => {
                       onChange={(e) => setDeliveryFeePerKm(e.target.value.replace(/[^0-9.,]/g, ""))}
                        className="w-full bg-card border border-border rounded-lg px-3 py-2 text-sm"
                    />
-                   <p className="text-[10px] text-muted-foreground mt-1">Ex: {formatBRL(parseFloat(deliveryFeeBase.replace(",", ".")) || 0)} até {deliveryBaseKm}km, depois +{formatBRL(parseFloat(deliveryFeePerKm.replace(",", ".")) || 0)} p/ cada km extra.</p>
+                   <p className="text-[10px] text-muted-foreground mt-1">Ex: {formatBRL(parseBRL(deliveryFeeBase) || 0)} até {deliveryBaseKm}km, depois +{formatBRL(parseBRL(deliveryFeePerKm) || 0)} p/ cada km extra.</p>
                  </div>
                </div>
              )}
@@ -993,9 +927,9 @@ const NotificationSection = () => {
                let previewLabel = "Sua taxa de entrega:";
                
                if (deliveryFeeType === "fixed") {
-                 lojistaFee = parseFloat(ownDeliveryFee.replace(",", ".")) || 0;
+                 lojistaFee = parseBRL(ownDeliveryFee) || 0;
                } else {
-                 lojistaFee = parseFloat(deliveryFeeBase.replace(",", ".")) || 0;
+                 lojistaFee = parseBRL(deliveryFeeBase) || 0;
                  previewLabel = `Sua taxa base (até ${deliveryBaseKm}km):`;
                }
  
@@ -1020,7 +954,7 @@ const NotificationSection = () => {
                      {deliveryFeeType === "km" && (
                        <div className="flex justify-between text-muted-foreground italic opacity-70">
                          <span>Km adicional:</span>
-                         <span>+{formatBRL(parseFloat(deliveryFeePerKm.replace(",", ".")) || 0)}/km</span>
+                         <span>+{formatBRL(parseBRL(deliveryFeePerKm) || 0)}/km</span>
                        </div>
                      )}
                      {platformFee > 0 && (
@@ -1152,7 +1086,7 @@ const NotificationSection = () => {
            🚚 Frete grátis acima de um valor
          </label>
          <p className="text-[11px] text-muted-foreground -mt-1">
-           Quando o cliente atingir o subtotal definido, o frete fica <strong>R$ 0,00</strong> para ele. A taxa da entrega (motoboy/bairro) fica por sua conta como cortesia. A <strong>taxa da plataforma (R$ 2)</strong> continua sendo cobrada normalmente.
+           Quando o cliente atingir o subtotal definido, o frete fica <strong>R$ 0,00</strong> para ele. A taxa da entrega (motoboy/bairro) fica por sua conta como cortesia. A <strong>taxa da plataforma (R$ 0,99)</strong> continua sendo cobrada normalmente.
          </p>
          <label className="flex items-center gap-2 cursor-pointer select-none">
            <input
@@ -1198,8 +1132,9 @@ const NotificationSection = () => {
       )}
 
 
-      {/* ─── Métodos de Pagamento ──────────────────────────────────── */}
-      <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
+      {/* ─── Métodos de Pagamento (loja online/delivery) — oculto no PDV Only ─── */}
+      {!pdvOnly && (
+      <div id="config-pagamentos" className="rounded-2xl border border-border bg-card p-5 space-y-4 scroll-mt-24">
         <div>
           <h3 className="text-sm font-black text-foreground flex items-center gap-2">
             <QrCode className="h-4 w-4 text-primary" />
@@ -1320,16 +1255,17 @@ const NotificationSection = () => {
           </div>
         </div>
 
-        {/* Aviso mínimo */}
-        {!acceptCard && !acceptCash && (
+        {/* Aviso mínimo — 4.12: Pix Direto também conta como método ativo */}
+        {!acceptCard && !acceptCash && !pixDiretoEnabled && (
           <div className="bg-destructive/10 border border-destructive/20 rounded-xl px-3 py-2.5">
             <p className="text-xs font-bold text-destructive">⚠️ Nenhum método ativo — os clientes não conseguirão finalizar pedidos.</p>
           </div>
         )}
       </div>
+      )}
 
-      {/* Notifications Section */}
-      <NotificationSection />
+      {/* Notifications Section — avisos de pedidos online; oculto no PDV Only */}
+      {!pdvOnly && <NotificationSection />}
 
       {/* Impressão térmica */}
       <div className="space-y-3">
@@ -1420,20 +1356,33 @@ const NotificationSection = () => {
           </label>
 
           {!pdvOnly && (
-          <label className="flex items-start gap-3 rounded-xl border border-border bg-muted/20 p-3 cursor-pointer">
-            <input
-              type="checkbox"
-              className="mt-1 h-4 w-4 accent-primary"
-              checked={autoPrintDelivery}
-              onChange={(e) => setAutoPrintDelivery(e.target.checked)}
-            />
+          <div className="rounded-xl border border-border bg-muted/20 p-3 space-y-3">
             <div>
-              <p className="text-sm font-bold text-foreground">Delivery — imprimir ao chegar pedido novo</p>
+              <p className="text-sm font-bold text-foreground">Delivery — quando a notinha imprime</p>
               <p className="text-[11px] text-muted-foreground">
-                Assim que um pedido entra no painel, o cupom sai sozinho na térmica.
+                Escolha se o cupom do pedido sai sozinho, só quando você aceita, ou só no botão Imprimir.
               </p>
             </div>
-          </label>
+            {[
+              { v: "auto", t: "Ao chegar o pedido", d: "Assim que um pedido entra no painel, o cupom sai sozinho na térmica." },
+              { v: "on_accept", t: "Somente ao aceitar", d: "Nada sai na chegada. A notinha imprime uma vez, quando você clica em Aceitar pedido." },
+              { v: "manual", t: "Manual", d: "Nunca imprime sozinha. Só sai quando você clica em Imprimir no pedido." },
+            ].map((o) => (
+              <label key={o.v} className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="radio"
+                  name="print-mode-delivery"
+                  className="mt-1 h-4 w-4 accent-primary"
+                  checked={printModeDelivery === o.v}
+                  onChange={() => setPrintModeDelivery(o.v as "auto" | "on_accept" | "manual")}
+                />
+                <div>
+                  <p className="text-sm font-bold text-foreground">{o.t}</p>
+                  <p className="text-[11px] text-muted-foreground">{o.d}</p>
+                </div>
+              </label>
+            ))}
+          </div>
           )}
         </div>
       </div>
@@ -1447,6 +1396,112 @@ const NotificationSection = () => {
         <Save className="h-5 w-5" />
         {saving ? "Salvando..." : "Salvar Alterações"}
       </button>
+    </div>
+  );
+};
+
+
+const NotificationSection = () => {
+  const [notifStatus, setNotifStatus] = useState<"checking" | "granted" | "denied" | "default" | "unsupported">("checking");
+  const [enabling, setEnabling] = useState(false);
+  const native = isGoNative();
+  const capacitorNative = isCapacitorNative();
+
+  useEffect(() => {
+    if (native) {
+      // In GoNative, notifications are always available via OneSignal
+      setNotifStatus("granted");
+      return;
+    }
+    if (capacitorNative) {
+      import("@capacitor/push-notifications").then(({ PushNotifications }) => {
+        PushNotifications.checkPermissions().then((result) => {
+          if (result.receive === "prompt" || result.receive === "prompt-with-rationale") {
+            setNotifStatus("default");
+            return;
+          }
+          setNotifStatus(result.receive === "granted" ? "granted" : "denied");
+        }).catch(() => setNotifStatus("default"));
+      }).catch(() => setNotifStatus("default"));
+      return;
+    }
+    if (!("Notification" in window)) {
+      setNotifStatus("unsupported");
+      return;
+    }
+    setNotifStatus(Notification.permission as any);
+  }, [native, capacitorNative]);
+
+  const handleEnable = async () => {
+    setEnabling(true);
+    try {
+      if (native) {
+        await registerGoNativePlayer();
+        toast.success("Notificações nativas ativadas!");
+        setNotifStatus("granted");
+      } else if (capacitorNative) {
+        const token = await registerCapacitorPush();
+        if (token) {
+          toast.success("Notificações ativadas!");
+          setNotifStatus("granted");
+        } else {
+          setNotifStatus("denied");
+          toast.error("Permissão negada. Ative nas configurações do app.");
+        }
+      } else {
+        const token = await requestPushPermissionAndRegister();
+        const result = Notification.permission;
+        setNotifStatus(result as any);
+        if (result === "granted" && token) {
+          toast.success("Notificações ativadas!");
+        } else {
+          toast.error("Permissão negada. Ative nas configurações do navegador.");
+        }
+      }
+    } catch (e) {
+      console.error("Notification enable error:", e);
+      toast.error("Erro ao ativar notificações.");
+    }
+    setEnabling(false);
+  };
+
+  return (
+    <div className="bg-muted/50 border border-border rounded-2xl p-4 space-y-3">
+      <label className="text-sm font-bold text-foreground/80 flex items-center gap-2">
+        <Bell className="h-4 w-4 text-primary" />
+        Notificações
+      </label>
+
+      {notifStatus === "granted" ? (
+        <div className="flex items-center gap-2 bg-primary/10 border border-primary/30 rounded-xl p-3">
+          <CheckCircle2 className="h-4 w-4 text-primary flex-shrink-0" />
+          <div>
+            <p className="text-xs font-bold text-primary">Notificações ativas</p>
+          <p className="text-[10px] text-muted-foreground">Você receberá alertas de novos pedidos.</p>
+          </div>
+        </div>
+      ) : notifStatus === "denied" ? (
+        <div className="flex items-center gap-2 bg-destructive/10 border border-destructive/30 rounded-xl p-3">
+          <XCircle className="h-4 w-4 text-destructive flex-shrink-0" />
+          <div>
+            <p className="text-xs font-bold text-destructive">Notificações bloqueadas</p>
+            <p className="text-[10px] text-muted-foreground">Acesse as configurações do navegador ou do app para desbloquear.</p>
+          </div>
+        </div>
+      ) : notifStatus === "unsupported" ? (
+        <p className="text-xs text-muted-foreground">Notificações não suportadas neste navegador.</p>
+      ) : notifStatus === "checking" ? (
+        <p className="text-xs text-muted-foreground">Verificando...</p>
+      ) : (
+        <button
+          onClick={handleEnable}
+          disabled={enabling}
+          className="w-full bg-primary text-primary-foreground font-bold py-3 rounded-xl text-sm flex items-center justify-center gap-2 active:scale-[0.98] transition-transform disabled:opacity-50"
+        >
+          <Bell className="h-4 w-4" />
+          {enabling ? "Ativando..." : "Ativar Notificações"}
+        </button>
+      )}
     </div>
   );
 };

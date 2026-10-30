@@ -21,7 +21,7 @@ interface TutorialStep {
 
 type TutorialCategory = "essencial" | "vendas" | "financeiro" | "operacao";
 
-interface TutorialSection {
+export interface TutorialSection {
   id: string;
   icon: React.ElementType;
   title: string;
@@ -41,7 +41,7 @@ const CATEGORIES: { id: TutorialCategory | "all"; label: string; icon: React.Ele
   { id: "operacao", label: "Operação", icon: Settings },
 ];
 
-const TUTORIAIS: TutorialSection[] = [
+export const TUTORIAIS: TutorialSection[] = [
   {
     id: "dashboard",
     icon: LayoutDashboard,
@@ -644,7 +644,7 @@ const FAQ = [
     a: "Diferença pode ser troco errado, sangria não registrada ou retirada sem motivo. Use o relatório do PDV para conferir cada movimento. Sempre registre sangrias com motivo.",
   },
   {
-    q: "Como mudar de plano (Fixo, Comissão, Híbrido)?",
+    q: "Como mudar de plano (Essencial, Crescimento, Comissão, Somente PDV)?",
     a: "Vá em Assinatura → Mudar Plano. A administração analisa em 1-2 dias. Você continua usando o plano atual até a aprovação.",
   },
   {
@@ -659,12 +659,65 @@ const FAQ = [
 
 const STORAGE_KEY_BASE = "tutorials_completed";
 
+/**
+ * Lista de etapas de um tutorial (acordeão). Extraída do TutoriaisPanel
+ * para ser reutilizada pelo modal "Como funciona" das abas (Fase 4) sem
+ * duplicar conteúdo nem renderização.
+ */
+export function TutorialStepsList({ section }: { section: TutorialSection }) {
+  const [openStep, setOpenStep] = useState<string | null>(null);
+  return (
+    <>
+      {section.steps.map((step, idx) => {
+        const stepKey = `${section.id}-${idx}`;
+        const stepOpen = openStep === stepKey;
+        return (
+          <div key={stepKey} className="bg-card rounded-xl border border-border overflow-hidden">
+            <button
+              onClick={() => setOpenStep(stepOpen ? null : stepKey)}
+              className={`w-full flex items-center gap-3 p-4 text-left transition-all ${
+                stepOpen ? "bg-primary/5" : "hover:bg-muted/20"
+              }`}
+            >
+              <div className={`w-8 h-8 rounded-xl ${section.bgColor} ${section.color} flex items-center justify-center text-xs font-black flex-shrink-0 shadow-sm`}>
+                {idx + 1}
+              </div>
+              <span className={`flex-1 text-sm font-black tracking-tight ${stepOpen ? "text-primary" : "text-foreground"}`}>
+                {step.title}
+              </span>
+              {stepOpen ? (
+                <ChevronUp className="h-4 w-4 text-primary flex-shrink-0" />
+              ) : (
+                <ChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+              )}
+            </button>
+            {stepOpen && (
+              <div className="px-4 pb-4 pt-1 space-y-2 border-t border-border/50">
+                <p className="text-sm text-foreground/90 leading-relaxed pt-3">
+                  {step.content}
+                </p>
+                {step.tip && (
+                  <div className="bg-muted border border-border rounded-lg p-2.5 flex gap-2 mt-2">
+                    <span className="text-base flex-shrink-0">💡</span>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      <strong>Dica:</strong> {step.tip}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </>
+  );
+}
+
 const TutoriaisPanel = () => {
   const { user } = useAuth();
   const storageKey = user?.id ? `${STORAGE_KEY_BASE}:${user.id}` : STORAGE_KEY_BASE;
   const [search, setSearch] = useState("");
   const [openSection, setOpenSection] = useState<string | null>(null);
-  const [openStep, setOpenStep] = useState<string | null>(null);
   const [activeCategory, setActiveCategory] = useState<TutorialCategory | "all">("all");
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [completed, setCompleted] = useState<Set<string>>(new Set());
@@ -711,7 +764,6 @@ const TutoriaisPanel = () => {
 
   const openSectionById = (id: string) => {
     setOpenSection(id);
-    setOpenStep(null);
     // scroll to section
     setTimeout(() => {
       const el = document.getElementById(`tutorial-section-${id}`);
@@ -859,7 +911,6 @@ const TutoriaisPanel = () => {
               <button
                 onClick={() => {
                   setOpenSection(isOpen ? null : section.id);
-                  setOpenStep(null);
                 }}
                 className="w-full flex items-center gap-3 p-4 hover:bg-muted/30 transition-colors text-left"
               >
@@ -896,47 +947,7 @@ const TutoriaisPanel = () => {
 
               {isOpen && (
                 <div className="border-t border-border bg-muted/20 p-3 space-y-2">
-                  {section.steps.map((step, idx) => {
-                    const stepKey = `${section.id}-${idx}`;
-                    const stepOpen = openStep === stepKey;
-                    return (
-                      <div key={stepKey} className="bg-card rounded-xl border border-border overflow-hidden">
-                        <button
-                          onClick={() => setOpenStep(stepOpen ? null : stepKey)}
-                          className={`w-full flex items-center gap-3 p-4 text-left transition-all ${
-                            stepOpen ? "bg-primary/5" : "hover:bg-muted/20"
-                          }`}
-                        >
-                          <div className={`w-8 h-8 rounded-xl ${section.bgColor} ${section.color} flex items-center justify-center text-xs font-black flex-shrink-0 shadow-sm`}>
-                            {idx + 1}
-                          </div>
-                          <span className={`flex-1 text-sm font-black tracking-tight ${stepOpen ? "text-primary" : "text-foreground"}`}>
-                            {step.title}
-                          </span>
-                          {stepOpen ? (
-                            <ChevronUp className="h-4 w-4 text-primary flex-shrink-0" />
-                          ) : (
-                            <ChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                          )}
-                        </button>
-                        {stepOpen && (
-                          <div className="px-4 pb-4 pt-1 space-y-2 border-t border-border/50">
-                            <p className="text-sm text-foreground/90 leading-relaxed pt-3">
-                              {step.content}
-                            </p>
-                            {step.tip && (
-                              <div className="bg-muted border border-border rounded-lg p-2.5 flex gap-2 mt-2">
-                                <span className="text-base flex-shrink-0">💡</span>
-                                <p className="text-xs text-muted-foreground leading-relaxed">
-                                  <strong>Dica:</strong> {step.tip}
-                                </p>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
+                  <TutorialStepsList section={section} />
 
                   {/* Botão marcar como concluído */}
                   <button

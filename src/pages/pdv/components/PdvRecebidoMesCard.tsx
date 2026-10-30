@@ -4,15 +4,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ShoppingBag } from "lucide-react";
 import { formatBRL } from "@/lib/utils";
+import { paymentMethodLabel } from "@/lib/orderLabels";
 import { startOfMonth, endOfMonth } from "date-fns";
 import QueryErrorState from "@/components/QueryErrorState";
-
-const PAYMENT_LABELS: Record<string, string> = {
-  dinheiro: "Dinheiro",
-  maquininha_credito: "Crédito",
-  maquininha_debito: "Débito",
-  maquininha_pix: "PIX maquininha",
-};
 
 /**
  * Recebido no mês (PDV) — soma das vendas do balcão no mês corrente.
@@ -36,11 +30,30 @@ export default function PdvRecebidoMesCard({ storeId }: { storeId: string }) {
       if (error) throw error;
       const orders = data ?? [];
       const total = orders.reduce((s, o) => s + Number(o.total_price ?? 0), 0);
+      // Repartição por forma: usa os movimentos do caixa (um por forma de
+      // pagamento) — assim a venda dividida entra repartida, igual aos
+      // Relatórios. Sem movimentos no mês, cai na forma principal do pedido.
       const byPayment: Record<string, number> = {};
-      orders.forEach((o) => {
-        const k = (o.payment_method as string | null) || "outros";
-        byPayment[k] = (byPayment[k] ?? 0) + Number(o.total_price ?? 0);
-      });
+      const { data: movs } = await (supabase.from("pdv_movements" as any) as any)
+        .select("amount, payment_method, orders!inner(status, order_source)")
+        .eq("store_id", storeId)
+        .eq("type", "sale")
+        .eq("orders.status", "finalizado")
+        .eq("orders.order_source", "pdv")
+        .gte("created_at", start)
+        .lte("created_at", end);
+      const movRows = (movs ?? []) as any[];
+      if (movRows.length > 0) {
+        movRows.forEach((m) => {
+          const k = (m.payment_method as string | null) || "outros";
+          byPayment[k] = (byPayment[k] ?? 0) + Number(m.amount ?? 0);
+        });
+      } else {
+        orders.forEach((o) => {
+          const k = (o.payment_method as string | null) || "outros";
+          byPayment[k] = (byPayment[k] ?? 0) + Number(o.total_price ?? 0);
+        });
+      }
       const top = Object.entries(byPayment)
         .sort((a, b) => b[1] - a[1])
         .slice(0, 3);
@@ -75,7 +88,7 @@ export default function PdvRecebidoMesCard({ storeId }: { storeId: string }) {
                 {data!.top.map(([method, value]) => (
                   <div key={method} className="flex items-center justify-between text-[11px]">
                     <span className="text-muted-foreground">
-                      {PAYMENT_LABELS[method] ?? method}
+                      {paymentMethodLabel(method)}
                     </span>
                     <span className="font-bold tabular-nums text-foreground">
                       {formatBRL(value)}

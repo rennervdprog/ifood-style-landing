@@ -1,0 +1,159 @@
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+import { toast } from "sonner";
+import { Loader2, CheckCircle2, Landmark } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { cn } from "@/lib/utils";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
+/** Provedores suportados pelo `payment-router`. */
+export const GATEWAYS = [
+  { id: "WOOVI", label: "Woovi", hint: "PIX (OpenPix)" },
+  { id: "ABACATEPAY", label: "AbacatePay", hint: "PIX barato" },
+  { id: "ASAAS", label: "Asaas", hint: "PIX + split" },
+  { id: "MERCADO_PAGO", label: "Mercado Pago", hint: "PIX" },
+  { id: "SIMULATED", label: "Simulado", hint: "Somente testes" },
+] as const;
+
+export type GatewayId = (typeof GATEWAYS)[number]["id"];
+
+/**
+ * Seletor do gateway de pagamento ativo da plataforma — cópia TESTE.
+ * Idêntico ao original, com UMA diferença: trocar o gateway pede
+ * confirmação antes de salvar (Fase 2 do super-admin-teste). Um toque
+ * muda como TODAS as lojas recebem — não pode ser acidental.
+ * Persiste em `admin_settings.payment_gateway` = { provider: "<ID>" },
+ * lido pelas edge functions (payment-router, mensalidade e repasse).
+ */
+const GatewaySelectorTeste = () => {
+  const queryClient = useQueryClient();
+  const [saving, setSaving] = useState<string | null>(null);
+  // Gateway aguardando confirmação no diálogo (null = sem diálogo aberto).
+  const [pendingGateway, setPendingGateway] = useState<GatewayId | null>(null);
+
+  const { data: current, isLoading } = useQuery({
+    queryKey: ["admin-payment-gateway"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("admin_settings")
+        .select("value")
+        .eq("key", "payment_gateway")
+        .maybeSingle();
+      if (error) throw error;
+      const provider = (data?.value as { provider?: string } | null)?.provider;
+      return (provider || "ASAAS").toUpperCase();
+    },
+  });
+
+  const selectGateway = async (id: GatewayId) => {
+    if (id === current) return;
+    setSaving(id);
+    try {
+      const { error } = await supabase
+        .from("admin_settings")
+        .upsert({ key: "payment_gateway", value: { provider: id } }, { onConflict: "key" });
+      if (error) throw error;
+      await queryClient.invalidateQueries({ queryKey: ["admin-payment-gateway"] });
+      toast.success(`Gateway ativo: ${GATEWAYS.find((g) => g.id === id)?.label}`);
+    } catch (err) {
+      console.error("[GatewaySelectorTeste] erro ao salvar:", err);
+      toast.error("Não foi possível trocar o gateway.");
+    } finally {
+      setSaving(null);
+      setPendingGateway(null);
+    }
+  };
+
+  const pendingLabel = GATEWAYS.find((g) => g.id === pendingGateway)?.label;
+  const currentLabel = GATEWAYS.find((g) => g.id === current)?.label;
+
+  return (
+    <section className="bg-card rounded-2xl border border-border p-4">
+      <div className="flex items-center gap-2 mb-1">
+        <Landmark className="h-4 w-4 text-primary" />
+        <h3 className="text-sm font-black text-foreground">Gateway ativo</h3>
+        {!isLoading && currentLabel && (
+          <span className="text-[11px] font-black rounded-full px-2 py-0.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+            {currentLabel}
+          </span>
+        )}
+      </div>
+      <p className="text-xs text-muted-foreground mb-3">
+        Trocar o gateway muda como todas as lojas recebem. A troca pede confirmação antes de valer.
+      </p>
+
+      {isLoading ? (
+        <div className="h-16 rounded-xl bg-muted animate-pulse" />
+      ) : (
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-2">
+          {GATEWAYS.map((g) => {
+            const active = current === g.id;
+            return (
+              <button
+                key={g.id}
+                type="button"
+                aria-pressed={active}
+                disabled={!!saving}
+                onClick={() => {
+                  if (g.id === current) return;
+                  // Fase 2 — trocar o gateway pede confirmação (não salva direto).
+                  setPendingGateway(g.id);
+                }}
+                className={cn(
+                  "rounded-xl border p-3 text-left transition-all active:scale-95 disabled:opacity-60",
+                  active
+                    ? "border-primary bg-primary/10"
+                    : "border-border bg-muted/40 hover:bg-muted"
+                )}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-sm font-bold text-foreground">{g.label}</span>
+                  {saving === g.id ? (
+                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                  ) : active ? (
+                    <CheckCircle2 className="h-4 w-4 text-primary" />
+                  ) : null}
+                </div>
+                <span className="text-[11px] text-muted-foreground">{g.hint}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Fase 2 — confirmação antes de trocar o gateway (muda como todas as lojas recebem). */}
+      <AlertDialog open={pendingGateway !== null} onOpenChange={(open) => { if (!open) setPendingGateway(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Trocar o gateway de pagamento?</AlertDialogTitle>
+            <AlertDialogDescription>
+              O gateway ativo vai de <strong>{currentLabel ?? current}</strong> para{" "}
+              <strong>{pendingLabel ?? pendingGateway}</strong>. Isso muda quem processa os PIX de
+              mensalidade, comissão e pedidos de <strong>todas as lojas</strong>. O histórico não se perde.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={saving !== null}
+              onClick={() => { if (pendingGateway) selectGateway(pendingGateway); }}
+            >
+              Trocar gateway
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </section>
+  );
+};
+
+export default GatewaySelectorTeste;

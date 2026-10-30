@@ -4,6 +4,7 @@ import {
   Store, Loader2, Truck, Banknote, MessageCircle, Copy, Printer
 } from "lucide-react";
 import { formatBRL } from "@/lib/utils";
+import { formatElapsedMinutes } from "@/lib/elapsedTime";
 import { getOrderItemDisplayName } from "@/lib/orderItemName";
 import { openWhatsApp } from "@/lib/whatsapp";
 import WhatsAppButton from "@/components/WhatsAppButton";
@@ -11,6 +12,7 @@ import { statusColors, paymentIcons } from "../constants";
 import { parseOrderAddons } from "../helpers";
 import type { OrderStatus, RequiredAddonHighlight } from "../types";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchWhatsappMode } from "@/lib/orderNotifications";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
@@ -76,7 +78,7 @@ const AdminOrderCardImpl = (props: AdminOrderCardProps) => {
     handleAcceptOrder, handleCancelOrder, handlePrint, invalidateOrders,
   } = props;
 
-  const sendOrOpenWhatsApp = (phone: string, msg: string) => {
+  const sendViaEvolutionOrManual = (phone: string, msg: string) => {
     if (evolutionConnected && storeId) {
       supabase.functions.invoke("evolution-send-message", {
         body: { store_id: storeId, phone, message: msg, kind: "order_status" },
@@ -91,6 +93,34 @@ const AdminOrderCardImpl = (props: AdminOrderCardProps) => {
     } else {
       openWhatsApp(phone, msg);
     }
+  };
+
+  const sendOrOpenWhatsApp = (phone: string, msg: string) => {
+    if (!storeId) {
+      sendViaEvolutionOrManual(phone, msg);
+      return;
+    }
+    // Migração API oficial: loja no canal oficial envia pelo
+    // official-whatsapp-send (texto livre) em vez da Evolution. Em qualquer
+    // outro caso — ou se a checagem falhar — segue o fluxo atual.
+    fetchWhatsappMode(storeId)
+      .then((mode) => {
+        if (mode !== "official") {
+          sendViaEvolutionOrManual(phone, msg);
+          return;
+        }
+        supabase.functions.invoke("official-whatsapp-send", {
+          body: { store_id: storeId, phone, text: msg, kind: "order_status" },
+        }).then(({ data, error }) => {
+          if (error || (data as any)?.ok === false) {
+            toast.error("Falha ao enviar via WhatsApp automático. Abrindo manual...");
+            openWhatsApp(phone, msg);
+          } else {
+            toast.success("Mensagem enviada via WhatsApp automático ✅");
+          }
+        }).catch(() => openWhatsApp(phone, msg));
+      })
+      .catch(() => sendViaEvolutionOrManual(phone, msg));
   };
 
   const sc = statusColors[order.status] || statusColors.pendente;
@@ -165,7 +195,7 @@ const AdminOrderCardImpl = (props: AdminOrderCardProps) => {
               "bg-muted text-muted-foreground"
             }`}>
               <Timer className="h-2.5 w-2.5" />
-              {elapsedMin}min
+              {formatElapsedMinutes(elapsedMin)}
             </span>
           )}
           <span className="text-[10px] text-muted-foreground">
@@ -431,6 +461,10 @@ const AdminOrderCardImpl = (props: AdminOrderCardProps) => {
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={async (e) => {
+                  // Fase 7 (L16): trava de duplo clique
+                  const btn = e.currentTarget as HTMLAnchorElement;
+                  if (btn.dataset.processing === "1") return;
+                  btn.dataset.processing = "1";
                   // Sempre controlamos a ordem: 1) grava status, 2) imprime, 3) WhatsApp.
                   // A navegação nativa do <a> podia cancelar o request em andamento.
                   e.preventDefault();
@@ -441,6 +475,7 @@ const AdminOrderCardImpl = (props: AdminOrderCardProps) => {
                   } finally {
                     void waWindow;
                     handleAcceptOrder(order);
+                    btn.dataset.processing = "";
                   }
                 }}
                 className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-black py-3 rounded-xl text-sm active:scale-[0.98] transition-transform h-12 flex items-center justify-center no-underline"

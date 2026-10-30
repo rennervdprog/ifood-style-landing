@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
+    PostgrestVersion: "14.4"
   }
   public: {
     Tables: {
@@ -1799,6 +1799,64 @@ export type Database = {
         }
         Relationships: []
       }
+      // Fase 1 matriz — manual, regenerar com `supabase gen types`.
+      network_invites: {
+        Row: {
+          accepted_at: string | null
+          code: string
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          invited_by: string | null
+          network_id: string
+          status: string
+          store_id: string
+          updated_at: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          code?: string
+          created_at?: string
+          email: string
+          expires_at?: string
+          id?: string
+          invited_by?: string | null
+          network_id: string
+          status?: string
+          store_id: string
+          updated_at?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          code?: string
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          invited_by?: string | null
+          network_id?: string
+          status?: string
+          store_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "network_invites_network_id_fkey"
+            columns: ["network_id"]
+            isOneToOne: false
+            referencedRelation: "store_networks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "network_invites_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       newsletter_subscribers: {
         Row: {
           confirmation_token: string
@@ -2740,6 +2798,7 @@ export type Database = {
           id: string
           is_approved: boolean
           neighborhood: string | null
+          network_id: string | null
           number: string | null
           phone: string | null
           pix_key: string | null
@@ -2750,6 +2809,7 @@ export type Database = {
           selfie_url: string | null
           street: string | null
           terms_accepted_at: string | null
+          unit_store_id: string | null
           user_id: string
           vehicle: string | null
           whatsapp_number: string | null
@@ -2774,6 +2834,7 @@ export type Database = {
           id?: string
           is_approved?: boolean
           neighborhood?: string | null
+          network_id?: string | null
           number?: string | null
           phone?: string | null
           pix_key?: string | null
@@ -2784,6 +2845,7 @@ export type Database = {
           selfie_url?: string | null
           street?: string | null
           terms_accepted_at?: string | null
+          unit_store_id?: string | null
           user_id: string
           vehicle?: string | null
           whatsapp_number?: string | null
@@ -2808,6 +2870,7 @@ export type Database = {
           id?: string
           is_approved?: boolean
           neighborhood?: string | null
+          network_id?: string | null
           number?: string | null
           phone?: string | null
           pix_key?: string | null
@@ -2818,6 +2881,7 @@ export type Database = {
           selfie_url?: string | null
           street?: string | null
           terms_accepted_at?: string | null
+          unit_store_id?: string | null
           user_id?: string
           vehicle?: string | null
           whatsapp_number?: string | null
@@ -3196,6 +3260,105 @@ export type Database = {
             columns: ["store_id"]
             isOneToOne: false
             referencedRelation: "stores_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      // Fase 1 matriz — manual, regenerar com `supabase gen types`.
+      store_managers: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          linked_at: string
+          linked_by: string | null
+          role: string
+          store_id: string
+          unlinked_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          linked_at?: string
+          linked_by?: string | null
+          role?: string
+          store_id: string
+          unlinked_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          linked_at?: string
+          linked_by?: string | null
+          role?: string
+          store_id?: string
+          unlinked_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_managers_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      // Fase 1 matriz — manual, regenerar com `supabase gen types`.
+      store_networks: {
+        Row: {
+          created_at: string
+          id: string
+          is_approved: boolean
+          logo_url: string | null
+          matriz_store_id: string | null
+          max_units: number
+          monthly_fee: number
+          name: string
+          owner_id: string
+          plan_type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_approved?: boolean
+          logo_url?: string | null
+          matriz_store_id?: string | null
+          max_units?: number
+          monthly_fee?: number
+          name: string
+          owner_id: string
+          plan_type?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_approved?: boolean
+          logo_url?: string | null
+          matriz_store_id?: string | null
+          max_units?: number
+          monthly_fee?: number
+          name?: string
+          owner_id?: string
+          plan_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_networks_matriz_store_id_fkey"
+            columns: ["matriz_store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
             referencedColumns: ["id"]
           },
         ]
@@ -4261,7 +4424,13 @@ export type Database = {
         | "saiu_entrega"
         | "finalizado"
         | "cancelado"
-      partner_role: "cliente" | "lojista" | "motoboy"
+      partner_role:
+        | "cliente"
+        | "lojista"
+        | "motoboy"
+        | "suporte"
+        | "lojista_matriz"
+        | "lojista_unidade"
       pix_type: "cpf" | "cnpj" | "email" | "phone" | "random"
       refund_reason:
         | "wrong_product"
@@ -4445,7 +4614,14 @@ export const Constants = {
         "finalizado",
         "cancelado",
       ],
-      partner_role: ["cliente", "lojista", "motoboy"],
+      partner_role: [
+        "cliente",
+        "lojista",
+        "motoboy",
+        "suporte",
+        "lojista_matriz",
+        "lojista_unidade",
+      ],
       pix_type: ["cpf", "cnpj", "email", "phone", "random"],
       refund_reason: [
         "wrong_product",

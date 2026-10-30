@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useCart } from "@/contexts/CartContext";
@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { pushNotifyNewOrder } from "@/lib/notifications";
 import { ArrowLeft, MapPin, CreditCard, Banknote, QrCode, Edit3, Loader2, Truck, CheckCircle2, ShoppingBag, Tag, ChevronRight, Clock, AlertTriangle, Star, Wallet, Calendar, Store } from "lucide-react";
 import { getStoreOpenStatus, type OpeningHour } from "@/lib/storeStatus";
+import { isPixDiretoAvailable } from "@/lib/pixDiretoAvailability";
 import confetti from "canvas-confetti";
 import AddressModal from "@/components/AddressModal";
 import SavedAddressPicker from "@/components/SavedAddressPicker";
@@ -16,7 +17,7 @@ import CouponInput from "@/components/CouponInput";
 import { asDeliveryAddress, deliveryQuoteBreakdown, deliveryQuoteFailureMessage, hasUsableCoordinates, isSuccessfulDeliveryQuote, quoteErrorFromUnknown, quoteRequestKey, requestAuthenticatedDeliveryQuote, serializeDeliveryQuote, snapshotFromDeliveryQuote, type DeliveryQuote, type DeliveryQuoteFailure } from "@/lib/deliveryQuote";
 import WhyThisCharge from "@/components/fees/WhyThisCharge";
 import { addMoney, multiplyMoney, sumMoney, formatBRL } from "@/lib/utils";
-import { useStorePlan } from "@/hooks/useStorePlan";
+import { buildCreateOrderPayload, isCreateOrderResult } from "@/lib/createOrder";
 import LoyaltyRedemption from "@/components/LoyaltyRedemption";
 import DeliveryTimeEstimate from "@/components/DeliveryTimeEstimate";
 import { formatCep, fetchCep, reverseGeocode, readGpsFromGesture, type Coordinates, type ReverseResult } from "@/lib/location";
@@ -98,7 +99,10 @@ const CheckoutPage = () => {
   });
 
   const storeId = items[0]?.store_id;
-  const storePlan = useStorePlan(storeId);
+  // Fase 3: chave de idempotência do checkout — gerada UMA vez por montagem
+  // da página e reutilizada no retry do mesmo submit. É ela que faz o
+  // segundo submit devolver o pedido já criado, sem duplicar.
+  const idempotencyKeyRef = useRef<string>(crypto.randomUUID());
   const lastPaymentKey = user && storeId ? `last_payment_method:${user.id}:${storeId}` : null;
 
 
@@ -108,7 +112,7 @@ const CheckoutPage = () => {
       const { data } = await supabase
          .from("stores_public")
          // 🔒 Inclui campos de km para cálculo correto da taxa de entrega
-           .select("name, address_cep, address_city, latitude, longitude, delivery_mode, own_delivery_fee, settings, is_open, force_closed, delivery_fee_type, delivery_base_km, delivery_fee_base, delivery_fee_per_km, minimum_order_value, free_delivery_threshold, preorder_enabled, preorder_minutes_before, pix_direto_enabled, pix_direto_key")
+           .select("name, address_cep, address_city, latitude, longitude, delivery_mode, own_delivery_fee, settings, is_open, force_closed, delivery_fee_type, delivery_base_km, delivery_fee_base, delivery_fee_per_km, minimum_order_value, free_delivery_threshold, preorder_enabled, preorder_minutes_before, pix_direto_enabled, pix_direto_key_configured")
          .eq("id", storeId!)
         .maybeSingle();
       return data;
@@ -116,6 +120,39 @@ const CheckoutPage = () => {
     enabled: !!storeId,
     staleTime: 1000 * 60 * 3,
   });
+
+  // Disponibilidade de entrega (mesma fonte canônica da página da loja):
+  // loja com entrega própria e nenhum motoboy disponível = só retirada.
+  // Sem isso, o checkout pré-selecionava "Entrega" numa loja só-retirada.
+  const isOwnDeliveryStore = (storeData as any)?.delivery_mode === "own";
+  const { data: deliveryAvailability, isSuccess: availabilityChecked } = useQuery({
+    queryKey: ["store-delivery-availability", storeId],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).rpc(
+        "store_delivery_availability",
+        { _store_id: storeId! }
+      ).maybeSingle();
+      if (error) throw error;
+      return data as {
+        can_accept_delivery_orders: boolean;
+        available_drivers_count: number;
+        reason_code: string;
+        reason_message: string;
+        checked_at: string;
+      } | null;
+    },
+    enabled: !!storeId && isOwnDeliveryStore,
+    refetchInterval: 30_000,
+    staleTime: 15_000,
+  });
+  const deliveryUnavailable = isOwnDeliveryStore
+    && availabilityChecked
+    && deliveryAvailability?.can_accept_delivery_orders === false;
+
+  // Entrega indisponível → força retirada (não pede endereço de entrega).
+  useEffect(() => {
+    if (deliveryUnavailable) setIsPickup(true);
+  }, [deliveryUnavailable]);
 
   // Ler quais métodos a loja aceita via settings — DEVE ficar após storeData
   const storePaymentSettings = useMemo(() => {
@@ -130,7 +167,7 @@ const CheckoutPage = () => {
   // PIX online fica reservado à relação financeira Lojista–ItaSuper.
   const filteredPaymentMethods = useMemo(() => {
     return allPaymentMethods.filter(pm => {
-      if (pm.id === "pix_direto") return !!(storeData as any)?.pix_direto_enabled && !!(storeData as any)?.pix_direto_key;
+      if (pm.id === "pix_direto") return isPixDiretoAvailable(storeData as any);
       if (pm.id === "cartao") return storePaymentSettings.accept_card;
       if (pm.id === "dinheiro") return storePaymentSettings.accept_cash;
       return true;
@@ -576,113 +613,60 @@ const CheckoutPage = () => {
 
       const createdOrders: Array<{ storeId: string; orderId: string }> = [];
 
+      // O carrinho só tem itens de uma loja — o loop roda 1x na prática.
       for (const [storeId, storeItems] of Object.entries(storeGroups)) {
-        const storeSubtotal = sumMoney(storeItems.map((item) => item.price * item.quantity));
-        const appFee = 0; // Calculated by DB trigger using store's commission_rate
         const storeEmpties = emptiesSelections.filter(s =>
           storeItems.some(it => (it.metadata as any)?.returnable_group === s.group)
         );
         const storeEmptiesDiscount = storeEmpties.reduce((sum, s) => sum + s.qty * s.unit_price, 0);
-        const storeTotalPrice = Math.max(0, addMoney(storeSubtotal, quotedDeliveryFee, -effectiveCouponDiscount, -loyaltyDiscount, -storeEmptiesDiscount));
 
         const changeValue = paymentMethod === "dinheiro" && needsChange ? addMoney(parseFloat(changeFor)) : 0;
-        // Pré-pedido: se a loja ainda não abriu mas aceita pedidos agendados,
-        // grava com status `scheduled` e `release_at`. O cron
-        // `release_scheduled_orders()` migra para `pendente` no horário.
-        const orderStatus = paymentMethod === "pix_direto"
-          ? "aguardando_comprovante"
-          : (isPreorder ? "scheduled" : "pendente");
-        const releaseAt = isPreorder ? storeStatus?.releaseAt : null;
-        const { data: order, error: orderError } = await supabase
-          .from("orders")
-          .insert({
-            client_id: user.id,
-            store_id: storeId,
-            subtotal: storeSubtotal,
-            delivery_fee: quotedDeliveryFee,
-            delivery_fee_absorbed_by_store: quotedStoreAbsorbedFee,
-            commission_rate: storePlan.commissionRate ?? 0,
-            total_price: storeTotalPrice,
-            wallet_discount: walletDiscount,
-            app_fee: appFee,
-            payment_method: paymentMethod,
-            neighborhood: deliverySnapshot?.neighborhood ?? finalNeighborhood,
-            address_details: deliverySnapshot?.address_details ?? finalAddress,
-            delivery_cep: deliverySnapshot?.delivery_cep ?? null,
-            delivery_city: deliverySnapshot?.delivery_city ?? null,
-            delivery_state: deliverySnapshot?.delivery_state ?? null,
-            client_lat: deliverySnapshot?.client_lat ?? null,
-            client_lng: deliverySnapshot?.client_lng ?? null,
-            needs_change: paymentMethod === "dinheiro" && needsChange,
-            change_for: changeValue,
-            status: orderStatus,
-            scheduled_for: scheduledFor ? new Date(scheduledFor).toISOString() : null,
-            release_at: releaseAt,
-            metadata: deliveryQuoteSnapshot || storeEmpties.length > 0
-              ? {
-                  ...(deliveryQuoteSnapshot ? { delivery_quote: deliveryQuoteSnapshot } : {}),
-                  ...(storeEmpties.length > 0 ? { empties_exchange: storeEmpties } : {}),
-                }
-              : null,
-          } as any)
-          .select("id")
-          .single();
 
+        // Fase 3: pedido transacional — a RPC `create_order_with_items`
+        // cria pedido + itens + descontos numa transação só, com
+        // idempotência. Some o insert direto em orders/order_items e as
+        // chamadas avulsas de fidelidade/carteira/cupom (agora tudo dentro
+        // da RPC). Status, release_at e totais são calculados no servidor.
+        const payload = buildCreateOrderPayload({
+          clientId: user.id,
+          storeId,
+          idempotencyKey: idempotencyKeyRef.current,
+          items: storeItems,
+          deliveryFee: quotedDeliveryFee,
+          deliveryFeeAbsorbed: quotedStoreAbsorbedFee,
+          paymentMethod,
+          neighborhood: deliverySnapshot?.neighborhood ?? finalNeighborhood,
+          addressDetails: deliverySnapshot?.address_details ?? finalAddress,
+          deliveryCep: deliverySnapshot?.delivery_cep ?? null,
+          deliveryCity: deliverySnapshot?.delivery_city ?? null,
+          deliveryState: deliverySnapshot?.delivery_state ?? null,
+          clientLat: deliverySnapshot?.client_lat ?? null,
+          clientLng: deliverySnapshot?.client_lng ?? null,
+          needsChange: paymentMethod === "dinheiro" && needsChange,
+          changeFor: changeValue,
+          isPickup,
+          isPreorder,
+          scheduledFor: scheduledFor ? new Date(scheduledFor).toISOString() : null,
+          couponId,
+          couponDiscount: effectiveCouponDiscount,
+          loyaltyPoints: loyaltyPointsUsed,
+          loyaltyDiscount,
+          walletDiscount,
+          emptiesDiscount: storeEmptiesDiscount,
+          empties: storeEmpties,
+          deliveryQuote: deliveryQuoteSnapshot,
+        });
+
+        const { data: created, error: orderError } = await (supabase as any).rpc(
+          "create_order_with_items",
+          payload,
+        );
         if (orderError) throw orderError;
-
-        createdOrders.push({ storeId, orderId: order.id });
-
-        // Resgatar pontos de fidelidade se foram aplicados
-        if (loyaltyPointsUsed > 0 && loyaltyDiscount > 0) {
-          const { error: loyaltyErr } = await (supabase as any).rpc("redeem_loyalty_points", {
-            _order_id: order.id,
-            _store_id: storeId,
-            _points_to_use: loyaltyPointsUsed,
-          });
-          if (loyaltyErr) {
-            console.warn("[loyalty] Erro ao resgatar pontos:", loyaltyErr.message);
-            // Não bloqueia o pedido — pontos podem ser ajustados manualmente
-          }
+        if (!isCreateOrderResult(created)) {
+          throw new Error("Resposta inesperada ao criar o pedido.");
         }
 
-        const orderItems = storeItems.map((item) => ({
-          order_id: order.id,
-          product_id: item.id,
-          quantity: item.quantity,
-          unit_price: item.price,
-          addons: item.addons && item.addons.length > 0 ? JSON.stringify(item.addons) : null,
-          observations: item.observations || null,
-        }));
-
-        const { error: itemsError } = await supabase
-          .from("order_items")
-          .insert(orderItems);
-
-        if (itemsError) throw itemsError;
-
-        // FIX: Debitar wallet se cliente usou crédito
-        if (walletDiscount > 0 && user) {
-          const { error: walletErr } = await supabase.rpc("apply_wallet_discount" as any, {
-            _order_id: order.id,
-            _user_id: user.id,
-            _discount_amount: walletDiscount,
-          });
-          if (walletErr) {
-            // Não bloquear o pedido — logar e seguir
-            console.error("[checkout] wallet debit error:", walletErr.message);
-          }
-        }
-
-        if (couponId && user) {
-          // Fire-and-forget: don't block UI on coupon registration
-          supabase.rpc("use_coupon" as any, {
-            _coupon_id: couponId,
-            _user_id: user.id,
-            _order_id: order.id,
-          }).then(({ error: couponError }) => {
-            if (couponError) console.warn("Coupon usage error:", couponError.message);
-          });
-        }
+        createdOrders.push({ storeId, orderId: created.order_id });
       }
 
       // Clear cart + navigate IMMEDIATELY — push notifications and geocoding patching happen in background
@@ -701,13 +685,13 @@ const CheckoutPage = () => {
       (async () => {
         for (const { storeId, orderId } of createdOrders) {
             try {
-              const { data: storeData } = await supabase
-                .from("stores_public")
-                .select("owner_id")
-                .eq("id", storeId)
-                .single();
-              if (storeData?.owner_id) {
-                pushNotifyNewOrder([storeData.owner_id], orderId).catch(console.error);
+              // Fase 5 — owner_id saiu de stores_public: a RPC estreita
+              // get_order_store_owner só devolve o dono se quem chama for
+              // o cliente do pedido (mesmo padrão de get_store_pix_direto).
+              const { data: ownerRows } = await supabase.rpc("get_order_store_owner" as any, { p_order_id: orderId });
+              const ownerId = ((ownerRows as any[]) || [])[0]?.owner_id;
+              if (ownerId) {
+                pushNotifyNewOrder([ownerId], orderId).catch(console.error);
               }
             } catch (e) {
               console.warn("notify store owner error:", e);
@@ -836,14 +820,15 @@ const CheckoutPage = () => {
             <div className="flex gap-2">
               <button
                 onClick={() => setIsPickup(false)}
-                className={`flex-1 flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
+                disabled={deliveryUnavailable}
+                className={`flex-1 flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
                   !isPickup ? "border-primary bg-primary/5" : "border-transparent bg-muted/50"
                 }`}
               >
                 <Truck className={`h-6 w-6 ${!isPickup ? "text-primary" : "text-muted-foreground"}`} />
                 <div className="text-center">
                 <span className={`text-sm font-bold block ${!isPickup ? "text-primary" : "text-foreground"}`}>Entrega</span>
-                  <span className="text-[10px] text-muted-foreground">Receba em casa</span>
+                  <span className="text-[10px] text-muted-foreground">{deliveryUnavailable ? "Indisponível no momento" : "Receba em casa"}</span>
                 </div>
               </button>
               <button
@@ -859,7 +844,18 @@ const CheckoutPage = () => {
                 </div>
               </button>
             </div>
-            {isPickup && (
+            {deliveryUnavailable && (
+              <div className="mt-3 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-xl p-3 flex items-start gap-2">
+                <Truck className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-xs font-bold text-foreground">Entrega indisponível no momento</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                    {deliveryAvailability?.reason_message || "Nenhum motoboy disponível agora."} Por enquanto, apenas retirada na loja.
+                  </p>
+                </div>
+              </div>
+            )}
+            {isPickup && !deliveryUnavailable && (
               <div className="mt-3 bg-primary/5 border border-primary/10 rounded-xl p-3 flex items-start gap-2">
                 <Store className="h-4 w-4 text-primary mt-0.5 shrink-0" />
                 <div>
@@ -1447,7 +1443,7 @@ const CheckoutPage = () => {
         {/* Total */}
         <div className="flex items-center justify-between py-1" aria-live="polite" aria-atomic="true">
           <span className="text-base font-bold text-foreground">Total</span>
-          <span className="text-2xl font-black text-primary" aria-label={quoteReady ? `Total ${formatBRL(finalTotal)}` : "Total será calculado após validar a entrega"}>{quoteReady ? formatBRL(finalTotal) : "A calcular"}</span>
+          <span className="text-2xl font-black text-primary" aria-label={`Total ${formatBRL(finalTotal)}`}>{formatBRL(finalTotal)}</span>
         </div>
 
         {belowMinimum && (

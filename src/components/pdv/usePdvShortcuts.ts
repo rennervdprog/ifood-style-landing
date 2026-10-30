@@ -50,10 +50,16 @@ export function usePdvShortcuts({
     };
 
     const handler = (e: KeyboardEvent) => {
+      // F8/F10/F1 também respeitam o `enabled` (antes disparavam em qualquer aba).
+      if (!enabled) return;
+
       // F8 finaliza venda — mas NÃO dispara enquanto o operador digita
       // em um campo marcado com `data-pdv-no-hotkey` (ex.: valor recebido).
       // Bug do relatório: F8 podia finalizar prematuramente durante a digitação.
       if (e.key === "F8") {
+        // Segurar a tecla NÃO pode finalizar várias vendas: o SO repete o
+        // keydown ~30x/s. Só a primeira pressão conta.
+        if (e.repeat) return;
         const t = e.target as HTMLElement | null;
         if (t?.hasAttribute?.("data-pdv-no-hotkey")) return;
         e.preventDefault();
@@ -61,22 +67,19 @@ export function usePdvShortcuts({
         return;
       }
 
-      // F10 sempre funciona (fechar caixa) — operação sagrada
+      // F10 fecha o caixa — respeita o enabled como os demais
       if (e.key === "F10") {
         e.preventDefault();
         onCloseSession?.();
         return;
       }
 
-      // F1 (ajuda) sempre funciona — atalho global
+      // F1 (ajuda) — respeita o enabled como os demais
       if (e.key === "F1") {
         e.preventDefault();
         onHelp?.();
         return;
       }
-
-      // Demais atalhos exigem contexto de venda ativo
-      if (!enabled) return;
 
       // Demais atalhos não funcionam enquanto está digitando
       if (isTyping(e) && e.key !== "Escape") return;

@@ -268,7 +268,7 @@ export function PdvDeliveryManualDialog({
         .single();
       if (oe) throw oe;
 
-      await supabase.from("order_items").insert(
+      const { error: itemsError } = await supabase.from("order_items").insert(
         cart.map((item) => ({
           order_id: order.id,
           product_id: item.id,
@@ -279,6 +279,12 @@ export function PdvDeliveryManualDialog({
           metadata: item.metadata && Object.keys(item.metadata).length > 0 ? item.metadata : null,
         })) as any,
       );
+      if (itemsError) {
+        // Nunca deixar um pedido oco na cozinha: desfaz o pedido (best-effort)
+        // e avisa — sem toast de sucesso se os itens não gravaram.
+        await supabase.from("orders").delete().eq("id", order.id);
+        throw new Error("Não foi possível salvar os itens do pedido. Tente de novo.");
+      }
 
       queryClient.invalidateQueries({ queryKey: ["store-orders", storeId] });
 

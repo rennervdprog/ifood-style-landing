@@ -1,9 +1,10 @@
-import { Banknote, CheckCircle2, Crown, CalendarClock } from "lucide-react";
+import { Banknote, CheckCircle2, Crown, CalendarClock, Info } from "lucide-react";
 import RepasseAlert from "@/components/repasse/RepasseAlert";
 import RepassePendingCharges from "@/components/RepassePendingCharges";
 import { formatBRL } from "@/lib/utils";
 import { usePendingRepasse } from "@/hooks/usePendingRepasse";
 import { REPASSE_RULES } from "@/lib/repasseRules";
+import TutorialHelpButton from "@/components/TutorialHelp";
 
 interface Props {
   store: any;
@@ -69,6 +70,32 @@ export default function RepasseSection({ store, storePlan, setDashboardTab, pend
               ? "Você tem valor acumulado a repassar à plataforma"
               : "Nenhum repasse pendente no momento"}
           </p>
+        </div>
+        <div className="ml-auto">
+          <TutorialHelpButton tutorialId="finance" />
+        </div>
+      </div>
+
+      <p className="text-sm text-muted-foreground">
+        O que sua loja deve repassar ao ItaSuper e quando a cobrança acontece
+      </p>
+
+      {/* Como funciona o repasse */}
+      <div className="rounded-2xl border border-border bg-card p-4">
+        <div className="flex items-start gap-3">
+          <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+            <Info className="h-4 w-4 text-primary" />
+          </div>
+          <div>
+            <p className="text-sm font-bold text-foreground">Como funciona</p>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              Durante a semana, tudo que você vende fica com você. Toda segunda-feira, o ItaSuper
+              cobra via PIX o que acumulou: R$ 0,99 por entrega + R$ 1,99 por pedido pago em PIX —
+              só quando o acumulado passa de R$ 150. Se a dívida chegar a R$ 500, as vendas pausam
+              até quitar. Hoje sua loja tem{" "}
+              <strong className="text-foreground">{formatBRL(displayTotal)}</strong> a repassar.
+            </p>
+          </div>
         </div>
       </div>
 

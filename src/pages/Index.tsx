@@ -115,7 +115,7 @@ const painPoints = [
 
 const plans = [
   { name: "Essencial", price: "R$0", sub: "/mês", desc: "0% comissão", icon: Crown, tags: ["Grátis pra começar", "R$ 89,90 após o gatilho de R$ 5.000"], subtitle: "Comece sem pagar mensalidade. Taxa PIX R$ 1,99 + entrega R$ 0,99 quando aplicável.", popular: true },
-  { name: "Somente PDV", price: "R$69", sub: "/mês", desc: "Só o caixa presencial", icon: CreditCard, tags: ["Sem delivery", "Sem vitrine pública"], subtitle: "Para loja física que não quer delivery: PDV completo no balcão.", popular: false },
+  { name: "Somente PDV", price: "R$120", sub: "/mês", desc: "Só o caixa presencial", icon: CreditCard, tags: ["Sem delivery", "Sem vitrine pública"], subtitle: "Para loja física que não quer delivery: PDV completo no balcão.", popular: false },
 ];
 
 const testimonials = [
@@ -182,9 +182,11 @@ const Index = () => {
   });
 
   const { data: products } = useQuery({
-    queryKey: ["all-products-search"],
+    queryKey: ["products-search", search],
     queryFn: async () => {
-      const { data, error } = await supabase.from("products").select("id, name, store_id").eq("is_available", true);
+      // Busca server-side com limite: evita baixar a tabela products inteira
+      // a cada tecla digitada. O filtro client-side abaixo continua valendo.
+      const { data, error } = await supabase.from("products").select("id, name, store_id").eq("is_available", true).ilike("name", `%${search}%`).limit(50);
       if (error) throw error;
       return data || [];
     },
@@ -692,7 +694,7 @@ const Index = () => {
            <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
              <div className="col-span-1 md:col-span-2">
                <div className="flex items-center gap-3 mb-6">
-                 <img loading="lazy" decoding="async" src="/logo-itasuper-128.webp" alt="ItaSuper" className="w-12 h-12 rounded-2xl" />
+                 <img loading="lazy" decoding="async" src="/logo-itasuper-128.webp?v=2" alt="ItaSuper" className="w-12 h-12 rounded-2xl" />
                  <span className="text-2xl font-black text-primary">ItaSuper</span>
                </div>
                <p className="text-muted-foreground text-lg font-medium leading-relaxed max-w-md">

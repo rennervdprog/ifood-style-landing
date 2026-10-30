@@ -8,7 +8,7 @@
 //
 // Apenas admin pode chamar. Não interfere na sessão do usuário no preview.
 
-import { createClient } from "npm:@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",

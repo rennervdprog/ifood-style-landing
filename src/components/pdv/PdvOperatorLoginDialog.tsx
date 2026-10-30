@@ -27,6 +27,47 @@ interface Props {
  * - Se não há operadores, permite criar o primeiro inline (dono da loja).
  * - Nunca guarda o PIN em memória além do submit.
  */
+
+/* ── Fase 3: bloqueio após 5 PINs errados (15 min) ── */
+const MAX_PIN_FAILS = 5;
+const PIN_BLOCK_MS = 15 * 60 * 1000;
+const failKey = (id: string) => `pdv_pin_fail_${id}`;
+
+interface PinFailState { fails: number; blockedUntil: number | null }
+
+function getPinFailState(id: string): PinFailState {
+  try {
+    const raw = localStorage.getItem(failKey(id));
+    if (!raw) return { fails: 0, blockedUntil: null };
+    return JSON.parse(raw) as PinFailState;
+  } catch { return { fails: 0, blockedUntil: null }; }
+}
+
+function isPinBlocked(id: string): boolean {
+  const s = getPinFailState(id);
+  if (s.blockedUntil && Date.now() < s.blockedUntil) return true;
+  if (s.blockedUntil && Date.now() >= s.blockedUntil) {
+    try { localStorage.removeItem(failKey(id)); } catch {}
+  }
+  return false;
+}
+
+function recordPinFail(id: string): PinFailState {
+  const s = getPinFailState(id);
+  s.fails += 1;
+  if (s.fails >= MAX_PIN_FAILS) s.blockedUntil = Date.now() + PIN_BLOCK_MS;
+  try { localStorage.setItem(failKey(id), JSON.stringify(s)); } catch {}
+  return s;
+}
+
+function clearPinFails(id: string) {
+  try { localStorage.removeItem(failKey(id)); } catch {}
+}
+
+function blockMessage(): string {
+  return "Operador bloqueado por 15 minutos após 5 tentativas";
+}
+
 export function PdvOperatorLoginDialog({ open, storeId, onClose, onLogin, requiredRole, title }: Props) {
   const [ops, setOps] = useState<Op[]>([]);
   const [loading, setLoading] = useState(false);
@@ -71,15 +112,24 @@ export function PdvOperatorLoginDialog({ open, storeId, onClose, onLogin, requir
 
   const verifyManagerAndOpenCreate = async () => {
     if (managerPin.length < 4) { toast.error("PIN de 4 a 8 dígitos"); return; }
+    // Fase 3: o gate de gerente também respeita o bloqueio (chave por loja).
+    const mgrFailId = `manager_${storeId}`;
+    if (isPinBlocked(mgrFailId)) { toast.error(blockMessage()); return; }
     setBusy(true);
     try {
       const { data, error } = await supabase.rpc("pdv_verify_manager_pin" as any, { _store_id: storeId, _pin: managerPin } as any);
       if (error) throw error;
       const r = data as any;
       if (!r?.ok) {
-        toast.error(r?.error === "not_manager" ? "PIN não pertence a um gerente" : "PIN incorreto");
+        const st = recordPinFail(mgrFailId);
+        if (st.blockedUntil && Date.now() < st.blockedUntil) {
+          toast.error(blockMessage());
+        } else {
+          toast.error(r?.error === "not_manager" ? "PIN não pertence a um gerente" : "PIN incorreto");
+        }
         setManagerPin(""); return;
       }
+      clearPinFails(mgrFailId);
       setManagerPin(""); setStep("create");
     } catch (e: any) {
       toast.error(e.message || "Erro ao validar PIN");
@@ -89,6 +139,8 @@ export function PdvOperatorLoginDialog({ open, storeId, onClose, onLogin, requir
   const tryLogin = async () => {
     if (!selected) return;
     if (pin.length < 4) { toast.error("PIN de 4 a 8 dígitos"); return; }
+    // Fase 3: bloqueia após 5 PINs errados (15 min).
+    if (isPinBlocked(selected.id)) { toast.error(blockMessage()); return; }
     setBusy(true);
     try {
       const rpc = requiredRole === "gerente" ? "pdv_verify_manager_pin" : "pdv_verify_operator_pin";
@@ -96,11 +148,20 @@ export function PdvOperatorLoginDialog({ open, storeId, onClose, onLogin, requir
       if (error) throw error;
       const r = data as any;
       if (!r?.ok) {
-        const msg = r?.error === "pin_mismatch" ? "PIN incorreto"
-          : r?.error === "not_manager" ? "PIN não pertence a um gerente"
-          : "Falha no login";
-        toast.error(msg); setPin(""); return;
+        // Fase 3: conta a tentativa errada; a partir da 5ª, bloqueia 15 min.
+        const st = recordPinFail(selected.id);
+        if (st.blockedUntil && Date.now() < st.blockedUntil) {
+          toast.error(blockMessage());
+        } else {
+          const restantes = MAX_PIN_FAILS - st.fails;
+          const msg = r?.error === "pin_mismatch" ? `PIN incorreto (${restantes} tentativa(s) restante(s))`
+            : r?.error === "not_manager" ? "PIN não pertence a um gerente"
+            : "Falha no login";
+          toast.error(msg);
+        }
+        setPin(""); return;
       }
+      clearPinFails(selected.id);
       onLogin({ id: r.operator_id, name: r.operator_name, loggedAt: Date.now() });
     } catch (e: any) {
       toast.error(e.message || "Erro ao validar PIN");
@@ -216,15 +277,29 @@ export function PdvOperatorLoginDialog({ open, storeId, onClose, onLogin, requir
           </div>
         ) : step === "pick" ? (
           <div className="p-4 space-y-2 max-h-[60vh] overflow-y-auto">
-            {ops.length === 0 && (
+            {ops.length === 0 && requiredRole === "gerente" && (
+              <div className="py-6 space-y-3">
+                <p className="text-xs text-center text-muted-foreground">
+                  Nenhum gerente cadastrado nesta loja. Cadastre o gerente agora para continuar.
+                </p>
+                <button
+                  onClick={() => { setNewRole("gerente"); setStep("create"); }}
+                  className="w-full h-11 bg-primary text-primary-foreground rounded-xl text-sm font-black flex items-center justify-center gap-2"
+                >
+                  <Shield className="h-4 w-4" /> Cadastrar gerente agora
+                </button>
+              </div>
+            )}
+            {ops.length === 0 && requiredRole !== "gerente" && (
               <p className="text-xs text-center text-muted-foreground py-6">
-                {requiredRole === "gerente"
-                  ? "Nenhum gerente cadastrado. Cadastre um em Perfil → Operadores."
-                  : "Nenhum operador ativo."}
+                Nenhum operador ativo.
               </p>
             )}
             {ops.map(o => (
-              <button key={o.id} onClick={() => { setSelected(o); setStep("pin"); setPin(""); }}
+              <button key={o.id} onClick={() => {
+                if (isPinBlocked(o.id)) { toast.error(blockMessage()); return; }
+                setSelected(o); setStep("pin"); setPin("");
+              }}
                 className="w-full flex items-center gap-3 p-3 rounded-xl bg-muted/30 hover:bg-muted/60 transition-colors text-left">
                 <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
                   {o.role === "gerente" ? <Shield className="h-4 w-4 text-primary" /> : <User className="h-4 w-4 text-primary" />}

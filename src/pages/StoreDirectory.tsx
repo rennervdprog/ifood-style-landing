@@ -141,7 +141,7 @@ function Navbar({ onNavigate, isLoggedIn }: { onNavigate: (path: string) => void
     <nav className={`sticky top-0 z-[70] transition-all duration-200 ${scrolled ? "border-b border-border bg-background/95 shadow-[0_8px_28px_-22px_hsl(var(--foreground)/0.36)] backdrop-blur-xl" : "bg-background/75 backdrop-blur-md"}`}>
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5 md:px-6">
         <button onClick={() => scrollTo("#hero")} aria-label="Início ItaSuper" className="shrink-0">
-          <img src="/itasuper-logo-horizontal.webp" alt="ItaSuper" width={170} height={40} className="h-7 w-auto md:h-8" decoding="async" />
+          <img src="/itasuper-logo-horizontal.webp?v=2" alt="ItaSuper" width={170} height={40} className="h-7 w-auto md:h-8" decoding="async" />
         </button>
 
         <div className="hidden items-center gap-1 md:flex">
@@ -203,7 +203,7 @@ function SectionHeading({ eyebrow, title, description, centered = false }: { eye
 
 function DashboardPreview() {
   return (
-    <div className="relative mx-auto w-full max-w-[650px]">
+    <div className="relative mx-auto w-full max-w-[650px] overflow-hidden">
       <div className="overflow-hidden rounded-[1.65rem] border border-border bg-card shadow-[0_28px_80px_-38px_hsl(var(--foreground)/0.38)]">
         <div className="flex h-10 items-center gap-2 border-b border-border bg-muted/40 px-4">
           <span className="h-2.5 w-2.5 rounded-full bg-primary/70" />
@@ -211,29 +211,29 @@ function DashboardPreview() {
           <span className="h-2.5 w-2.5 rounded-full bg-muted-foreground/20" />
           <div className="ml-3 h-5 w-36 rounded-full bg-background" />
         </div>
-        <div className="grid min-h-[330px] grid-cols-[108px,1fr] bg-card sm:grid-cols-[126px,1fr]">
+        <div className="grid min-h-[330px] grid-cols-1 bg-card sm:grid-cols-[126px,1fr]">
           <aside className="hidden border-r border-border bg-muted/30 px-3 py-4 sm:block">
-            <img src="/itasuper-logo-horizontal.webp" alt="" className="mb-7 h-5 w-auto" />
+            <img src="/itasuper-logo-horizontal.webp?v=2" alt="" className="mb-7 h-5 w-auto" />
             {["Resumo", "Pedidos", "Cardápio", "Clientes", "Entregas", "Relatórios"].map((item, index) => (
               <div key={item} className={`mb-1 rounded-lg px-2.5 py-2 text-[10px] font-bold ${index === 0 ? "bg-primary/10 text-primary" : "text-muted-foreground"}`}>{item}</div>
             ))}
           </aside>
-          <div className="p-4 sm:p-5">
-            <div className="mb-4 flex items-start justify-between gap-3">
-              <div>
+          <div className="p-3 sm:p-5">
+            <div className="mb-4 flex flex-wrap items-start justify-between gap-2">
+              <div className="min-w-0">
                 <p className="text-xs font-black text-foreground sm:text-sm">Pedidos</p>
-                <div className="mt-2 flex gap-3 text-[9px] font-semibold text-muted-foreground sm:text-[10px]">
+                <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[9px] font-semibold text-muted-foreground sm:text-[10px]">
                   <span className="border-b-2 border-primary pb-1 text-primary">Todos</span><span>Novos 3</span><span className="hidden sm:inline">Em preparo 2</span><span className="hidden sm:inline">Concluídos</span>
                 </div>
               </div>
-              <div className="flex items-center gap-1.5 text-[9px] font-bold text-emerald-600"><span className="h-2 w-2 rounded-full bg-emerald-500" /> Loja ativa</div>
+              <div className="flex shrink-0 items-center gap-1.5 text-[9px] font-bold text-emerald-600"><span className="h-2 w-2 rounded-full bg-emerald-500" /> Loja ativa</div>
             </div>
             <div className="grid gap-3 md:grid-cols-[1.35fr,0.8fr]">
-              <div className="rounded-xl border border-border bg-background p-3 shadow-sm">
-                <div className="mb-3 flex items-center justify-between"><div><span className="text-sm font-black">#1257</span><span className="ml-2 rounded-full bg-primary/10 px-1.5 py-0.5 text-[8px] font-black text-primary">NOVO</span></div><span className="text-[9px] text-muted-foreground">há 2 min</span></div>
+              <div className="min-w-0 rounded-xl border border-border bg-background p-3 shadow-sm">
+                <div className="mb-3 flex flex-wrap items-center justify-between gap-2"><div className="flex items-center gap-2"><span className="text-sm font-black">#1257</span><span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[8px] font-black text-primary">NOVO</span></div><span className="shrink-0 text-[9px] text-muted-foreground">há 2 min</span></div>
                 <p className="text-[10px] font-semibold">João Silva</p>
                 <p className="mt-1 text-[9px] text-muted-foreground">1× Pizza Calabresa · 1× Refrigerante</p>
-                <div className="mt-3 flex items-center justify-between border-t border-border pt-3"><span className="text-sm font-black">R$ 59,80</span><Button size="sm" className="h-7 rounded-lg px-2 text-[9px] font-black">Aceitar pedido</Button></div>
+                <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3"><span className="text-sm font-black">R$ 59,80</span><Button size="sm" className="h-7 shrink-0 rounded-lg px-3 text-[9px] font-black">Aceitar pedido</Button></div>
               </div>
               <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3">
                 <p className="text-[9px] font-black uppercase tracking-wider text-emerald-700">Pagamento registrado</p>
@@ -242,7 +242,7 @@ function DashboardPreview() {
               </div>
             </div>
             <div className="mt-3 grid grid-cols-3 gap-2">
-              {["28 pedidos", "R$ 1.284,50", "Ticket R$ 45,88"].map((metric) => <div key={metric} className="rounded-lg bg-muted/55 px-2 py-2 text-center text-[8px] font-black text-muted-foreground sm:text-[9px]">{metric}</div>)}
+              {["28 pedidos", "R$ 1.284,50", "Ticket R$ 45,88"].map((metric) => <div key={metric} className="min-w-0 rounded-lg bg-muted/55 px-2 py-2 text-center text-[8px] font-black text-muted-foreground sm:text-[9px]"><span className="block truncate">{metric}</span></div>)}
             </div>
           </div>
         </div>
@@ -379,14 +379,14 @@ const StoreDirectory = () => {
 
         <section className="border-y border-border bg-muted/20 px-5 py-16 md:px-6 md:py-24"><div className="mx-auto max-w-5xl"><SectionHeading eyebrow="Comparativo" title={<>Mais controle que marketplace.<br /><span className="text-primary">Mais simples que planilha.</span></>} /><div className="mt-10 overflow-x-auto rounded-3xl border border-border bg-card"><div className="min-w-[620px]"><div className="grid grid-cols-[1.45fr,1fr,1fr,1fr] border-b border-border bg-muted/50 text-[10px] font-black uppercase tracking-wider"><div className="p-4 text-muted-foreground">Recurso</div><div className="p-4 text-primary">ItaSuper</div><div className="p-4 text-muted-foreground">Marketplace</div><div className="p-4 text-muted-foreground">WhatsApp</div></div>{COMPARISON.map(([name, us, marketplace, whatsapp], index) => <div key={name} className={`grid grid-cols-[1.45fr,1fr,1fr,1fr] border-b border-border text-xs last:border-0 md:text-sm ${index % 2 ? "bg-muted/20" : ""}`}><p className="p-4 font-bold">{name}</p><p className="p-4 font-black text-emerald-700">{us}</p><p className="p-4 text-muted-foreground">{marketplace}</p><p className="p-4 text-muted-foreground">{whatsapp}</p></div>)}</div></div></div></section>
 
-        <section id="planos" className="px-5 py-16 md:px-6 md:py-24"><div className="mx-auto max-w-6xl"><div className="flex flex-col justify-between gap-6 md:flex-row md:items-end"><SectionHeading eyebrow="Planos" title={<>Planos feitos para<br />cada <span className="text-primary">momento.</span></>} /><Button variant="outline" onClick={() => navigate("/planos")} className="h-11 rounded-xl border-2 bg-card font-black">Ver todos os planos <ArrowRight className="ml-2 h-4 w-4" /></Button></div><div className="mt-10 grid gap-3 md:grid-cols-2">{[essential, pdvOnly].map((plan) => { const isEssential = plan.id === "fixed"; const value = isEssential ? "R$ 89,90/mês" : "R$ 69/mês"; const trigger = isEssential ? "após o gatilho de faturamento" : "PDV completo, sem delivery"; return <article key={plan.id} className={`rounded-3xl border p-6 md:p-7 ${isEssential ? "border-primary/35 bg-primary/[0.045]" : "border-border bg-card"}`}><div className="flex items-center justify-between"><span className={`grid h-11 w-11 place-items-center rounded-2xl ${plan.accentBg} ${plan.accent}`}><plan.icon className="h-5 w-5" /></span>{isEssential && <span className="rounded-full bg-primary px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-primary-foreground">Mais escolhido</span>}</div><h3 className="mt-6 text-2xl font-black">{plan.name}</h3><p className="mt-1 text-sm text-muted-foreground">{plan.forWho}</p><p className="mt-6 text-3xl font-black">{value}</p><p className="mt-1 text-xs font-bold text-primary">{trigger}</p><ul className="mt-6 space-y-2">{plan.features.slice(0, 4).map((feature) => <li key={feature} className="flex gap-2 text-sm"><Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" />{feature}</li>)}</ul><Button onClick={handleCTA} variant={isEssential ? "default" : "outline"} className="mt-7 h-11 w-full rounded-xl font-black">{isEssential ? "Começar grátis" : "Escolher Somente PDV"} <ArrowRight className="ml-2 h-4 w-4" /></Button></article>; })}</div></div></section>
+        <section id="planos" className="px-5 py-16 md:px-6 md:py-24"><div className="mx-auto max-w-6xl"><div className="flex flex-col justify-between gap-6 md:flex-row md:items-end"><SectionHeading eyebrow="Planos" title={<>Planos feitos para<br />cada <span className="text-primary">momento.</span></>} /><Button variant="outline" onClick={() => navigate("/planos")} className="h-11 rounded-xl border-2 bg-card font-black">Ver todos os planos <ArrowRight className="ml-2 h-4 w-4" /></Button></div><div className="mt-10 grid gap-3 md:grid-cols-2">{[essential, pdvOnly].map((plan) => { const isEssential = plan.id === "fixed"; const value = isEssential ? "R$ 89,90/mês" : "R$ 120/mês"; const trigger = isEssential ? "após o gatilho de faturamento" : "PDV completo, sem delivery"; return <article key={plan.id} className={`rounded-3xl border p-6 md:p-7 ${isEssential ? "border-primary/35 bg-primary/[0.045]" : "border-border bg-card"}`}><div className="flex items-center justify-between"><span className={`grid h-11 w-11 place-items-center rounded-2xl ${plan.accentBg} ${plan.accent}`}><plan.icon className="h-5 w-5" /></span>{isEssential && <span className="rounded-full bg-primary px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-primary-foreground">Mais escolhido</span>}</div><h3 className="mt-6 text-2xl font-black">{plan.name}</h3><p className="mt-1 text-sm text-muted-foreground">{plan.forWho}</p><p className="mt-6 text-3xl font-black">{value}</p><p className="mt-1 text-xs font-bold text-primary">{trigger}</p><ul className="mt-6 space-y-2">{plan.features.slice(0, 4).map((feature) => <li key={feature} className="flex gap-2 text-sm"><Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" />{feature}</li>)}</ul><Button onClick={handleCTA} variant={isEssential ? "default" : "outline"} className="mt-7 h-11 w-full rounded-xl font-black">{isEssential ? "Começar grátis" : "Escolher Somente PDV"} <ArrowRight className="ml-2 h-4 w-4" /></Button></article>; })}</div></div></section>
 
         <section id="faq" className="border-y border-border bg-muted/20 px-5 py-16 md:px-6 md:py-24"><div className="mx-auto max-w-4xl"><SectionHeading centered eyebrow="Dúvidas" title="Perguntas frequentes" /><div className="mt-10 overflow-hidden rounded-3xl border border-border bg-card">{FAQS.map((faq, index) => { const open = openFaq === index; return <div key={faq.question} className="border-b border-border last:border-0"><button onClick={() => setOpenFaq(open ? null : index)} aria-expanded={open} className="flex w-full items-center justify-between gap-4 px-5 py-5 text-left hover:bg-muted/40 md:px-6"><span className="text-sm font-black md:text-base">{faq.question}</span><ChevronDown className={`h-5 w-5 shrink-0 text-muted-foreground transition-transform ${open ? "rotate-180 text-primary" : ""}`} /></button>{open && <p className="px-5 pb-5 text-sm leading-relaxed text-muted-foreground md:px-6 md:pb-6">{faq.answer}</p>}</div>; })}</div></div></section>
 
         <section className="px-5 py-16 md:px-6 md:py-24"><div className="mx-auto grid max-w-6xl items-center gap-7 rounded-[2rem] border border-primary/20 bg-card p-7 shadow-[0_26px_72px_-45px_hsl(var(--foreground)/0.5)] md:grid-cols-[1fr,auto] md:p-12"><div><p className="text-[11px] font-black uppercase tracking-[0.18em] text-primary">Comece hoje</p><h2 className="mt-3 text-3xl font-black leading-[1.03] tracking-tight md:text-5xl">Crie sua loja e comece a vender hoje.</h2><p className="mt-4 max-w-xl text-base text-muted-foreground">Seu canal, sua marca e seus resultados. Sem cartão para começar e sem fidelidade.</p></div><div className="flex flex-col gap-3"><Button size="lg" onClick={handleCTA} className="h-14 rounded-2xl px-7 font-black">Criar loja grátis <ArrowRight className="ml-2 h-5 w-5" /></Button><Button size="lg" variant="outline" onClick={handleWhatsApp} className="h-12 rounded-2xl border-2 bg-card font-bold"><MessageCircle className="mr-2 h-4 w-4" /> Falar no WhatsApp</Button></div></div></section>
       </main>
 
-      <footer className="border-t border-border bg-card px-5 py-10 md:px-6"><div className="mx-auto flex max-w-6xl flex-col justify-between gap-6 md:flex-row md:items-center"><div><img src="/itasuper-logo-horizontal.webp" alt="ItaSuper" width={140} height={32} className="h-7 w-auto" /><p className="mt-2 text-xs text-muted-foreground">Plataforma independente para delivery e loja física.</p></div><div className="flex flex-wrap gap-x-6 gap-y-2 text-sm font-semibold text-muted-foreground"><button onClick={() => navigate("/planos")} className="hover:text-foreground">Planos</button><button onClick={() => navigate("/termos-de-uso")} className="hover:text-foreground">Termos</button><button onClick={() => navigate("/politica-de-privacidade")} className="hover:text-foreground">Privacidade</button><button onClick={handleWhatsApp} className="hover:text-foreground">Contato</button></div></div></footer>
+      <footer className="border-t border-border bg-card px-5 py-10 md:px-6"><div className="mx-auto flex max-w-6xl flex-col justify-between gap-6 md:flex-row md:items-center"><div><img src="/itasuper-logo-horizontal.webp?v=2" alt="ItaSuper" width={140} height={32} className="h-7 w-auto" /><p className="mt-2 text-xs text-muted-foreground">Plataforma independente para delivery e loja física.</p></div><div className="flex flex-wrap gap-x-6 gap-y-2 text-sm font-semibold text-muted-foreground"><button onClick={() => navigate("/planos")} className="hover:text-foreground">Planos</button><button onClick={() => navigate("/termos-de-uso")} className="hover:text-foreground">Termos</button><button onClick={() => navigate("/politica-de-privacidade")} className="hover:text-foreground">Privacidade</button><button onClick={handleWhatsApp} className="hover:text-foreground">Contato</button></div></div></footer>
 
       <div className="fixed inset-x-0 bottom-0 z-50 bg-gradient-to-t from-[#FAFAFA] via-[#FAFAFA]/95 to-transparent px-4 pb-[max(12px,env(safe-area-inset-bottom))] pt-5 md:hidden"><Button onClick={handleCTA} {...prefetchHandlers("/cadastro-lojista")} className="h-[52px] w-full rounded-2xl text-base font-black shadow-[0_18px_36px_-18px_hsl(var(--primary)/0.85)]"><Store className="mr-2 h-5 w-5" /> Criar minha loja grátis <ArrowRight className="ml-2 h-5 w-5" /></Button></div>
     </div>

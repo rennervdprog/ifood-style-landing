@@ -6,10 +6,22 @@ import { toast } from "sonner";
 import { Plus, Trash2, Edit2, Save, X, ChevronDown, ChevronUp, Package, FileText, Layers, Link2, Sparkles, Copy, Eye, Search } from "lucide-react";
 import { formatBRLDisplay, parseBRLCentsInput } from "@/hooks/useBRLInput";
 import { useConfirmDialog } from "@/hooks/useConfirmDialog";
+import AddonGroupPreview from "@/components/AddonGroupPreview";
 
 interface AddonManagerProps {
   storeId: string;
 }
+
+// Frase da regra do grupo em linguagem simples, exibida sob os campos de mín/máx.
+// min só assume 0 ou 1 na UI (toggle Opcional/Obrigatório); o parse espelha o salvamento.
+const addonRulePhrase = (minRaw: string, maxRaw: string) => {
+  const min = parseInt(minRaw) || 0;
+  const max = parseInt(maxRaw) || 1;
+  const noun = max === 1 ? "item" : "itens";
+  if (min >= 1 && max === 1) return "O cliente escolhe exatamente 1 item deste grupo.";
+  if (min >= 1) return `O cliente escolhe de ${min} até ${max} ${noun} deste grupo.`;
+  return `O cliente pode pular este grupo ou escolher até ${max} ${noun}.`;
+};
 
 const AddonManager = ({ storeId }: AddonManagerProps) => {
   const queryClient = useQueryClient();
@@ -413,6 +425,7 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
               min="1"
             />
           </div>
+          <p className="text-[11px] text-muted-foreground">{addonRulePhrase(groupForm.min_select, groupForm.max_select)}</p>
 
           {/* Toggle: Define preço final */}
           <button
@@ -474,6 +487,14 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
               </div>
             )}
           </div>
+
+          <AddonGroupPreview
+            name={groupForm.name}
+            minSelect={parseInt(groupForm.min_select) || 0}
+            maxSelect={parseInt(groupForm.max_select) || 1}
+            priceReplacesBase={groupForm.price_replaces_base}
+            items={bulkParsed}
+          />
 
           <div className="flex gap-2">
             <button onClick={addGroup} className="flex-1 bg-primary text-primary-foreground py-2.5 rounded-xl text-sm font-bold">
@@ -541,6 +562,7 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
                           className="w-full bg-secondary text-foreground px-2 py-1 rounded text-xs border border-border"
                         />
                       </div>
+                      <p className="text-[11px] text-muted-foreground">{addonRulePhrase(editGroupForm.min_select, editGroupForm.max_select)}</p>
                       <button
                         type="button"
                         onClick={() => setEditGroupForm({ ...editGroupForm, price_replaces_base: !editGroupForm.price_replaces_base, min_select: !editGroupForm.price_replaces_base ? "1" : editGroupForm.min_select, max_select: !editGroupForm.price_replaces_base ? "1" : editGroupForm.max_select })}
@@ -555,6 +577,15 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
                           <div className={`w-4 h-4 bg-white rounded-full absolute top-0.5 transition-transform shadow ${editGroupForm.price_replaces_base ? "translate-x-4" : "translate-x-0.5"}`} />
                         </div>
                       </button>
+                      <AddonGroupPreview
+                        name={editGroupForm.name}
+                        minSelect={parseInt(editGroupForm.min_select) || 0}
+                        maxSelect={parseInt(editGroupForm.max_select) || 1}
+                        priceReplacesBase={editGroupForm.price_replaces_base}
+                        items={[...((group.addon_items as any[]) || [])]
+                          .sort((a: any, b: any) => a.sort_order - b.sort_order)
+                          .map((it: any) => ({ name: it.name, price: Number(it.price) || 0 }))}
+                      />
                       <div className="flex gap-1">
                         <button onClick={() => updateGroup(group.id)} className="bg-primary text-primary-foreground px-3 py-1.5 rounded-lg text-xs font-bold">
                           <Save className="h-3 w-3" />

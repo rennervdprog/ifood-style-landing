@@ -57,6 +57,24 @@ export function getStoreOpenStatus(
 
   const todayHours = hours.find(h => h.day_of_week === currentDay);
 
+  // Fase 7 (L18): verifica se o horário de ONTEM (overnight) ainda está válido hoje
+  // Ex: terça 18h-02h, à 00:30 de quarta a loja está aberta pelo horário da terça
+  const yesterdayDay = (currentDay + 6) % 7;
+  const yesterdayHours = hours.find(h => h.day_of_week === yesterdayDay);
+  if (yesterdayHours && !yesterdayHours.is_closed_all_day) {
+    const [yOpenH, yOpenM] = yesterdayHours.open_time.split(":").map(Number);
+    const [yCloseH, yCloseM] = yesterdayHours.close_time.split(":").map(Number);
+    const yOpenMinutes = yOpenH * 60 + yOpenM;
+    const yCloseMinutes = yCloseH * 60 + yCloseM;
+    // Overnight: fecha depois da meia-noite
+    if (yCloseMinutes <= yOpenMinutes && currentMinutes < yCloseMinutes) {
+      return {
+        isOpen: true,
+        reason: `Aberto até ${yesterdayHours.close_time.slice(0, 5)}`,
+      };
+    }
+  }
+
   if (todayHours && !todayHours.is_closed_all_day) {
     const [openH, openM] = todayHours.open_time.split(":").map(Number);
     const [closeH, closeM] = todayHours.close_time.split(":").map(Number);

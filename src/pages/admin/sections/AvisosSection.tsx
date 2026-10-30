@@ -1,4 +1,4 @@
-import { AlertTriangle, ChevronRight, Clock, Bike, Bell, CheckCircle2 } from "lucide-react";
+import { AlertTriangle, Clock, Bike, Bell, CheckCircle2, Timer, ClipboardList } from "lucide-react";
 
 interface Props {
   store: any;
@@ -9,6 +9,14 @@ interface Props {
   hasLinkedDrivers: boolean;
   setDashboardTab: (t: any) => void;
   count: number;
+  /** Pedidos aguardando aceite (status "pendente"). */
+  pendingOrdersCount?: number;
+  /** Pedidos em atraso (> 20 min, pendente/preparando) — mesma regra da Visão Geral. */
+  delayedOrdersCount?: number;
+  /** Desses atrasados, quantos estão em "preparando" (o restante está pendente). */
+  delayedPreparingCount?: number;
+  /** Navega para a aba Pedidos já na fila indicada. */
+  onGoToOrders?: (tab: "pendente" | "preparando") => void;
 }
 
 export default function AvisosSection({
@@ -20,6 +28,10 @@ export default function AvisosSection({
   hasLinkedDrivers,
   setDashboardTab,
   count,
+  pendingOrdersCount = 0,
+  delayedOrdersCount = 0,
+  delayedPreparingCount = 0,
+  onGoToOrders,
 }: Props) {
   return (
     <div className="p-4 lg:p-6 max-w-6xl mx-auto space-y-4">
@@ -49,26 +61,45 @@ export default function AvisosSection({
         </div>
       )}
 
-      {!store.asaas_wallet_id && (
-        <button
-          onClick={() => setDashboardTab("finance")}
-          className="w-full text-left bg-destructive/10 border-2 border-destructive/40 rounded-2xl p-4 flex items-start gap-3 active:scale-[0.99] transition-transform"
-        >
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-destructive text-destructive-foreground flex-shrink-0">
-            <AlertTriangle className="h-5 w-5" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <h3 className="font-black text-destructive text-sm">
-              Configure sua conta de recebimento (prioridade)
+
+      {pendingOrdersCount > 0 && (
+        <div className="bg-amber-500/10 border-2 border-amber-500/30 rounded-2xl p-4 flex items-start gap-3">
+          <ClipboardList className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <h3 className="font-bold text-foreground text-sm">
+              {pendingOrdersCount} pedido{pendingOrdersCount > 1 ? "s" : ""} aguardando aceite
             </h3>
-            <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-              Você ainda não criou sua subconta Asaas. <strong>Sem ela, você não recebe os pagamentos PIX</strong> dos pedidos. Leva 2 minutos e é gratuito.
+            <p className="text-xs text-muted-foreground mt-1">
+              Pedidos novos esperando a sua confirmação para entrar em preparo.
             </p>
-            <span className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-destructive-foreground bg-destructive px-3 py-1.5 rounded-lg">
-              Configurar agora <ChevronRight className="h-3 w-3" />
-            </span>
+            <button
+              onClick={() => onGoToOrders?.("pendente")}
+              className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-primary-foreground bg-primary hover:bg-primary/90 px-3 py-1.5 rounded-lg transition-colors"
+            >
+              <ClipboardList className="inline h-3 w-3 mr-1" /> Ver pedidos
+            </button>
           </div>
-        </button>
+        </div>
+      )}
+
+      {delayedOrdersCount > 0 && (
+        <div className="bg-destructive/10 border-2 border-destructive/30 rounded-2xl p-4 flex items-start gap-3">
+          <Timer className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <h3 className="font-bold text-destructive text-sm">
+              {delayedOrdersCount} pedido{delayedOrdersCount > 1 ? "s" : ""} em atraso
+            </h3>
+            <p className="text-xs text-muted-foreground mt-1">
+              Pedidos há mais de 20 minutos sem avançar (aguardando aceite ou em preparo).
+            </p>
+            <button
+              onClick={() => onGoToOrders?.(delayedPreparingCount > 0 ? "preparando" : "pendente")}
+              className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-destructive-foreground bg-destructive hover:bg-destructive/90 px-3 py-1.5 rounded-lg transition-colors"
+            >
+              <Timer className="inline h-3 w-3 mr-1" /> Ver pedidos
+            </button>
+          </div>
+        </div>
       )}
 
       {allHoursClosed && (

@@ -8,7 +8,7 @@ import { Minus, Plus, ShoppingCart, Pizza, AlertTriangle, X, ArrowLeft } from "l
 import type { CartAddon } from "@/contexts/CartContext";
 import { getEffectivePrice, isPromoActive, getPromoDiscountPct } from "@/lib/promoPrice";
 import { readPizzaCatalogConfig, hasPizzaCatalog } from "@/types/pizza";
-import { priceForFlavorInSize, isFlavorAvailableInSize } from "@/lib/pizzaPricing";
+import { priceForFlavorInSize, isFlavorAvailableInSize, combinePricesByMode } from "@/lib/pizzaPricing";
 import { fetchProductAddons, type ProductAddonGroup, type ProductAddonItem } from "@/lib/productAddons";
 
 interface Product {
@@ -30,6 +30,9 @@ interface Props {
   storeCategory?: string;
   singleSize?: boolean;
   storeSettings?: Record<string, any> | null;
+  /** Quando a loja está fechada, motivo exibido num banner no topo do modal
+   *  (ex.: "Abre às 18:00"). Não bloqueia a montagem do pedido. */
+  closedNotice?: string | null;
   open: boolean;
   onClose: () => void;
   onAdd: (product: Product, addons: CartAddon[], observations: string, quantity: number, totalUnitPrice: number) => void;
@@ -48,7 +51,7 @@ const categoryEmoji: Record<string, string> = {
   saudavel: "🥗",
 };
 
-const ProductDetailModal = ({ product, storeName, storeCategory, singleSize = false, storeSettings, open, onClose, onAdd }: Props) => {
+const ProductDetailModal = ({ product, storeName, storeCategory, singleSize = false, storeSettings, closedNotice, open, onClose, onAdd }: Props) => {
   // itemId → quantidade (0 = não selecionado)
   const [selectedAddons, setSelectedAddons] = useState<Record<string, Record<string, number>>>({});
   const [observations, setObservations] = useState("");
@@ -280,11 +283,32 @@ const ProductDetailModal = ({ product, storeName, storeCategory, singleSize = fa
     return map;
   }, [selectedAddonRows]);
 
+  // Lojas com pizza_price_mode="maior" (ex.: Bittenca's — igual ao Anota AI):
+  // o sabor vale o MAIOR escolhido, e um sabor duplicado conta uma vez só.
+  const useHighestFlavor = (storeSettings as any)?.pizza_price_mode === "maior";
+
   const priceSummary = useMemo(() => {
     const hasPriceReplacingGroup = addonGroups.some((g) => g.price_replaces_base);
     const replacementRows = selectedAddonRows.filter((row) => row.replacesBasePrice);
     const normalRows = selectedAddonRows.filter((row) => !row.replacesBasePrice);
-    const replacementTotal = sumMoney(replacementRows.map((row) => row.lineTotal));
+    // Lojas com pizza_price_mode="maior" (ex.: Bittenca's — igual ao Anota AI):
+    // cada grupo que substitui a base vale o MAIOR item escolhido, não a soma.
+    // O mesmo sabor 2x conta UMA vez só (só ocupa mais frações da pizza): por
+    // isso o "maior" recebe o preço UNITÁRIO de cada item distinto, e não o
+    // lineTotal (unitPrice × qty) — 2x Calabresa 79,99 vale 79,99, não 159,98.
+    // Lojas sem o modo (ou com outro valor): soma, exatamente como antes.
+    const replacementTotal = useHighestFlavor
+      ? sumMoney(
+          addonGroups
+            .filter((g) => g.price_replaces_base)
+            .map((g) =>
+              combinePricesByMode(
+                replacementRows.filter((row) => row.groupId === g.id).map((row) => row.unitPrice),
+                "maior",
+              ),
+            ),
+        )
+      : sumMoney(replacementRows.map((row) => row.lineTotal));
     const normalAddonsTotal = sumMoney(normalRows.map((row) => row.lineTotal));
     const hasReplacementSelected = replacementRows.length > 0;
     const effectiveProductPrice = product ? getEffectivePrice(product as any) || 0 : 0;
@@ -301,13 +325,21 @@ const ProductDetailModal = ({ product, storeName, storeCategory, singleSize = fa
       unitPrice,
       lineTotal: multiplyMoney(unitPrice, quantity),
     };
-  }, [addonGroups, hasSizes, product, quantity, selectedAddonRows, selectedSize, sizes]);
+  }, [addonGroups, hasSizes, product, quantity, selectedAddonRows, selectedSize, sizes, useHighestFlavor]);
 
   const { unitPrice, lineTotal } = priceSummary;
 
   if (!product) return null;
 
   const isOutOfStock = !!(product as any).metadata?.out_of_stock;
+  // Fase 2: produto indisponível não pode ser comprado. Preço zero só vale
+  // na hora de adicionar (passo final): antes de escolher o sabor, a pizza
+  // com grupo substituidor tem unitPrice 0 transitório — bloquear ali
+  // travaria o botão "Próximo: Personalizar".
+  const isUnavailable = (product as any).is_available === false;
+  const isFinalStep = totalSteps !== 2 || step === 2;
+  const isZeroPrice = isFinalStep && unitPrice <= 0;
+  const isUnbuyable = isOutOfStock || isUnavailable || isZeroPrice;
 
   const closeAndReset = () => {
     onClose();
@@ -401,6 +433,21 @@ const ProductDetailModal = ({ product, storeName, storeCategory, singleSize = fa
               {isRequired ? `Escolha ${group.min_select}` : "Opcional"}
               {group.max_select > 1 ? ` • máximo ${group.max_select}` : ""}
             </p>
+            {/* Grupo de sabor (price_replaces_base): o preço do sabor É o preço
+                da pizza, não um adicional — mostrar a regra que a loja configurou,
+                na mesma linguagem da tela de configuração (aba Pizzaria).
+                Borda e outros adicionais sempre somam e não precisam da linha. */}
+            {group.price_replaces_base && (
+              <p className="mt-1 text-xs font-semibold text-primary">
+                {isPizza
+                  ? useHighestFlavor
+                    ? "A pizza custa o preço do sabor mais caro."
+                    : "Os sabores somam no preço da pizza."
+                  : useHighestFlavor
+                    ? "O preço final é o do sabor mais caro escolhido."
+                    : "Os sabores escolhidos somam no preço final."}
+              </p>
+            )}
           </div>
           {isRequired && (
             <span className={cn("shrink-0 rounded-full px-2 py-1 text-[11px] font-bold", currentSelected >= group.min_select ? "bg-primary/10 text-primary" : "bg-destructive/10 text-destructive")}>
@@ -417,7 +464,15 @@ const ProductDetailModal = ({ product, storeName, storeCategory, singleSize = fa
             const groupCap = group.max_select && group.max_select > 0 ? group.max_select : Infinity;
             const atCap = groupTotal(group.id) >= groupCap;
             const selectedRow = selectedRowsByItem.get(`${group.id}:${item.id}`);
-            const itemLineTotal = selectedRow?.lineTotal ?? Number(item.price || 0);
+            // Grupo de sabor (price_replaces_base): o preço do item NÃO é um
+            // acréscimo — ele É o preço da pizza. Por isso o item não mostra
+            // "+ R$ ..." (que faria parecer soma): mostra só o preço.
+            // No modo "maior", o sabor duplicado conta uma vez só no total — o
+            // valor da linha é o preço unitário, não o lineTotal.
+            const isFlavorItem = !!group.price_replaces_base;
+            const itemLineTotal = selectedRow
+              ? (selectedRow.replacesBasePrice && useHighestFlavor ? selectedRow.unitPrice : selectedRow.lineTotal)
+              : Number(item.price || 0);
             return (
               <div
                 key={item.id}
@@ -486,9 +541,9 @@ const ProductDetailModal = ({ product, storeName, storeCategory, singleSize = fa
                     {qty > 1 ? (
                       <>
                         <span className="block text-[11px] font-bold text-muted-foreground">{formatBRL(Number(item.price || 0))} × {qty}</span>
-                        <span className="block">+ {formatBRL(itemLineTotal)}</span>
+                        <span className="block">{isFlavorItem ? formatBRL(itemLineTotal) : `+ ${formatBRL(itemLineTotal)}`}</span>
                       </>
-                    ) : `+ ${formatBRL(Number(item.price || 0))}`}
+                    ) : isFlavorItem ? formatBRL(Number(item.price || 0)) : `+ ${formatBRL(Number(item.price || 0))}`}
                   </span>
                 )}
 
@@ -848,7 +903,7 @@ const ProductDetailModal = ({ product, storeName, storeCategory, singleSize = fa
   );
 
   const handlePrimary = () => {
-    if (isOutOfStock || requiresPharmacyValidation) return;
+    if (isUnbuyable || requiresPharmacyValidation) return;
     if (totalSteps === 2 && step === 1) {
       setStep(2);
       return;
@@ -877,14 +932,18 @@ const ProductDetailModal = ({ product, storeName, storeCategory, singleSize = fa
   const primaryLabel = requiresPharmacyValidation
     ? "Validação pela farmácia necessária"
     : totalSteps === 2 && step === 1
-    ? "Próximo: Personalizar"
+    ? isUnbuyable
+      ? "Indisponível"
+      : "Próximo: Personalizar"
     : isOutOfStock
       ? "Esgotado"
-      : addonsPending
-        ? "Carregando opções..."
-      : `Adicionar • ${formatBRL(lineTotal)}`;
+      : isUnbuyable
+        ? "Indisponível"
+        : addonsPending
+          ? "Carregando opções..."
+          : `Adicionar • ${formatBRL(lineTotal)}`;
 
-  const primaryEnabled = !requiresPharmacyValidation && (totalSteps === 2 && step === 1 ? !isOutOfStock : !addonsPending && allRequiredMet && !isOutOfStock);
+  const primaryEnabled = !requiresPharmacyValidation && (totalSteps === 2 && step === 1 ? !isUnbuyable : !addonsPending && allRequiredMet && !isUnbuyable);
 
   return (
     <Dialog open={open} onOpenChange={(nextOpen) => { if (!nextOpen) closeAndReset(); }}>
@@ -923,6 +982,14 @@ const ProductDetailModal = ({ product, storeName, storeCategory, singleSize = fa
         </header>
 
         <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 pb-6 sm:px-6 sm:py-6">
+          {closedNotice && (
+            <div className="mb-4 flex items-start gap-2 rounded-xl border border-amber-300/60 bg-amber-50 dark:bg-amber-500/10 px-3 py-2.5" role="status">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+              <p className="text-xs font-semibold text-amber-800 dark:text-amber-300">
+                Loja fechada{closedNotice ? ` · ${closedNotice}` : ""}. Você pode montar o pedido, mas ele só poderá ser enviado quando a loja abrir.
+              </p>
+            </div>
+          )}
           <div key={step} className="animate-in fade-in slide-in-from-right-2 duration-150">
             {step === 1 ? Step1Content : Step2Content}
           </div>

@@ -17,7 +17,7 @@ import {
   ArrowDownCircle, ArrowUpCircle, Lock, Unlock,
   Receipt, ChevronDown, ChevronRight, RotateCcw,
   Layers, ShoppingCart, ChevronLeft, Calculator, Wallet,
-  History, Printer, BarChart3, Split, EyeOff, Eye, Keyboard, BookOpen,
+  History, Printer, BarChart3, Split, EyeOff, Eye, Keyboard, BookOpen, LayoutGrid,
 } from "lucide-react";
 import { PdvHistorico, PdvSessionsList } from "@/components/pdv/PdvHistorico";
 import ProductDetailModal from "@/components/ProductDetailModal";
@@ -46,6 +46,7 @@ import type {
   PdvScreen as Screen,
   PdvMobileStep as MobileStep,
   PdvTab as Tab,
+  PdvCheckoutStep,
 } from "@/pages/pdv/types";
 import { PDV_METHODS, COLOR_MAP } from "@/pages/pdv/constants";
 import { usePdvCatalog } from "@/pages/pdv/state/usePdvCatalog";
@@ -54,6 +55,9 @@ import { usePdvCart } from "@/pages/pdv/state/usePdvCart";
 import { usePdvCheckout } from "@/pages/pdv/state/usePdvCheckout";
 import { usePdvOutbox } from "@/pages/pdv/state/usePdvOutbox";
 import { PdvCatalogSection } from "@/pages/pdv/components/PdvCatalogSection";
+import { PdvQuickSearch } from "@/pages/pdv/components/PdvQuickSearch";
+import { PdvPaymentScreen } from "@/pages/pdv/components/PdvPaymentScreen";
+import { PdvSaleSuccessScreen } from "@/pages/pdv/components/PdvSaleSuccessScreen";
 import ApparelCatalogGrid from "@/pages/pdv/apparel/ApparelCatalogGrid";
 import ApparelCustomerPanel, { type ApparelCustomer, type ApparelCredit } from "@/pages/pdv/apparel/ApparelCustomerPanel";
 import SnackBarCombosBar from "@/pages/pdv/snackbar/SnackBarCombosBar";
@@ -74,12 +78,16 @@ import { PdvShortcutsDialog } from "@/pages/pdv/components/PdvShortcutsDialog";
 import { PdvTopbar } from "@/pages/pdv/components/PdvTopbar";
 import { PdvTabs } from "@/pages/pdv/components/PdvTabs";
 import { PdvMobileBottomNav } from "@/pages/pdv/components/PdvMobileBottomNav";
+import StockTab from "@/pages/admin/tabs/StockTab";
+import { PdvOperatorsManager } from "@/pages/pdv/components/PdvOperatorsManager";
+import { PdvAuditReport } from "@/pages/pdv/components/PdvAuditReport";
 import { PdvStatusBar } from "@/pages/pdv/components/PdvStatusBar";
 import { PdvSessionCard } from "@/pages/pdv/components/PdvSessionCard";
 import { PdvMesasView } from "@/pages/pdv/components/PdvMesasView";
 import StoreSubscription from "@/components/StoreSubscription";
 import { PdvStoreSettingsPanel } from "@/pages/pdv/components/PdvStoreSettingsPanel";
 import PdvFinanceiro from "@/pages/pdv/components/PdvFinanceiro";
+import PdvMigratePlanCard from "@/pages/pdv/components/PdvMigratePlanCard";
 import PdvBillingAlert from "@/pages/pdv/components/PdvBillingAlert";
 
 // Detecta se está em tela mobile (< 768px)
@@ -119,13 +127,24 @@ const PdvPage = () => {
   const isMobile = useIsMobile();
   const urlStoreId = searchParams.get("storeId");
 
-  // Quando entra em mobile, voltar sempre para o catálogo
+  // Quando entra em mobile, ir para o caixa (tela principal)
   useEffect(() => {
-    if (isMobile) setMobileStep("catalog");
+    if (isMobile) setMobileStep("cart");
   }, [isMobile]);
 
   // Mobile: etapas de venda
-  const [mobileStep, setMobileStep] = useState<MobileStep>("catalog");
+  const [mobileStep, setMobileStep] = useState<MobileStep>("cart");
+  // Drawer de produtos (caixa em destaque — produtos abrem por cima)
+  const [showProductsDrawer, setShowProductsDrawer] = useState(false);
+
+  // Checkout em estágios (UI/UX): carrinho → pagamento → venda concluída
+  const [checkoutStep, setCheckoutStep] = useState<PdvCheckoutStep>("cart");
+  const [lastSale, setLastSale] = useState<{
+    total: number;
+    paymentMethodLabel: string;
+    cashReceived: number | null;
+    troco: number | null;
+  } | null>(null);
 
   // Abas da tela de venda
   const [tab, setTab] = useState<Tab>("venda");
@@ -205,18 +224,12 @@ const PdvPage = () => {
     subtotal, totalItems, discountAmount, finalTotal, cashVal, troco, trocoNegativo,
     getQty,
     openProduct, handleModalAdd, addScannedProduct, decItem, removeItem,
-    clearSale: clearSaleCart,
+    clearSale: clearSaleCart, restoreCart, clearSaleIfUnchanged, setCartScope,
   } = usePdvCart();
 
-  // Fix v1.20.20 — em mobile, ao remover o último item do carrinho (em modo
-  // comanda ou balcão), voltar automaticamente para o catálogo. Sem isso o
-  // usuário ficava travado na tela do carrinho com botões desabilitados e
-  // sem conseguir selecionar novos itens.
-  useEffect(() => {
-    if (isMobile && mobileStep === "cart" && cart.length === 0) {
-      setMobileStep("catalog");
-    }
-  }, [isMobile, mobileStep, cart.length]);
+  // (Removido o retorno automático ao catálogo com carrinho vazio: com o caixa
+  // em destaque, o usuário permanece no caixa e usa o botão "Ver produtos"
+  // para adicionar itens.)
 
   // Fluxo de troca de casquinhas no PDV
   const [emptiesFlow, setEmptiesFlow] = useState<{
@@ -252,6 +265,7 @@ const PdvPage = () => {
   const [movReason, setMovReason] = useState("");
   // Fase 2 item 8 — alçada de gerente para sangria acima do limite.
   const [managerGateOpen, setManagerGateOpen] = useState(false);
+  const [clearGateOpen, setClearGateOpen] = useState(false);
   const pendingSangria = useRef<null | ((mgrId: string) => void)>(null);
 
   // Fechamento
@@ -331,10 +345,16 @@ const PdvPage = () => {
     initialDataUpdatedAt: 0,
   });
 
+  // Fallback por categoria (igual ao PdvCardapioPage): lojas com categoria
+  // "lanches"/"restaurante" também vendem combos/prato do dia no caixa.
+  const storeCats = useMemo(() => {
+    if (!store) return [] as string[];
+    return [store.category, ...(((store as any).categories || []) as string[])].filter(Boolean);
+  }, [store]);
   const isApparel = (store as any)?.store_type === "apparel";
-  const isSnackBar = (store as any)?.store_type === "snack_bar";
+  const isSnackBar = (store as any)?.store_type === "snack_bar" || storeCats.includes("lanches");
   const isPizzeria = (store as any)?.store_type === "pizzeria";
-  const isRestaurant = (store as any)?.store_type === "restaurant";
+  const isRestaurant = (store as any)?.store_type === "restaurant" || storeCats.includes("restaurante");
 
   // Fase 4.2 Boutique — cliente + vale-crédito da venda atual
   const [apparelCustomer, setApparelCustomer] = useState<ApparelCustomer>({ phone: "", name: "" });
@@ -384,12 +404,16 @@ const PdvPage = () => {
   const pdvAccess = useStorePdvAccess(store?.id);
   const addonsFlag = useAddonsFlag();
   // Operador logado por PIN (Fase 1) — usado como operator_id nas movimentações.
-  const { operator: pdvOperator } = usePdvOperator(store?.id);
-  // Limite de sangria sem alçada de gerente (Fase 2 item 8). Default R$ 200.
+  const { operator: pdvOperator, setOperator: setPdvOperator } = usePdvOperator(store?.id);
+  // Limite de sangria sem alçada de gerente. Default R$ 200.
+  // Fase 2: limite por loja (stores.settings.pdv_sangria_manager_limit)
+  // tem prioridade sobre o global (admin_settings).
   const { data: sangriaLimit } = useQuery({
-    queryKey: ["pdv-sangria-manager-limit"],
+    queryKey: ["pdv-sangria-manager-limit", store?.id, (store as any)?.settings?.pdv_sangria_manager_limit],
     staleTime: 5 * 60_000,
     queryFn: async () => {
+      const storeVal = Number((store as any)?.settings?.pdv_sangria_manager_limit);
+      if (Number.isFinite(storeVal) && storeVal >= 0) return storeVal;
       const { data } = await supabase.from("admin_settings")
         .select("value").eq("key", "pdv_sangria_manager_limit").maybeSingle();
       const v = Number((data?.value as any) ?? 200);
@@ -412,6 +436,14 @@ const PdvPage = () => {
     loading: sessionLoading,
   } = usePdvSession({ storeId: store?.id, userId: user?.id });
 
+  // Escopo do rascunho da venda (loja + turno): o carrinho salva a venda em
+  // andamento nesse escopo e a restaura se a página recarregar.
+  useEffect(() => {
+    setCartScope(
+      store?.id ? `${store.id}:${currentSession?.id ?? "sem-turno"}` : null,
+    );
+  }, [store?.id, currentSession?.id, setCartScope]);
+
   // Hook de finalização de venda.
   const { handleVenda: runCheckout, checkoutLoading } = usePdvCheckout();
   const {
@@ -428,6 +460,7 @@ const PdvPage = () => {
     sectionMap,
     filtered,
     grouped,
+    stockMap,
   } = usePdvCatalog({
     storeId: store?.id,
     search,
@@ -479,16 +512,37 @@ const PdvPage = () => {
   };
   const clearSale = () => {
     clearSaleCart();
+    setCheckoutStep("cart");
+    setOrderDone(false);
+    setLastSale(null);
     if (isMobile) setMobileStep("catalog");
   };
 
+  // Vai para a tela de pagamento (fluxo: carrinho → pagamento)
+  const handleGoToPayment = () => {
+    if (cart.length === 0) return;
+    setCheckoutStep("payment");
+  };
+
+  // Volta do pagamento para o carrinho
+  const handleBackToCart = () => setCheckoutStep("cart");
+
+  // "Nova venda" na tela de sucesso: limpa tudo e recomeça
+  const handleNewSale = () => {
+    clearSale();
+  };
+
   // ── Enviar itens do carrinho para a comanda selecionada (Mesa/Comanda) ──
-  const handleSendToTab = async () => {
-    if (!selectedTabId || cart.length === 0) return;
+  const handleSendToTab = async (): Promise<boolean> => {
+    if (!selectedTabId || cart.length === 0) return true;
     setLoading(true);
+    // Snapshot do carrinho no início — o que for enviado com sucesso sai do
+    // carrinho; o que falhar permanece (retry não duplica).
+    const snapshot = [...cart];
+    let sentCount = 0;
     try {
       const { rpcAddTabItem } = await import("@/pages/pdv/state/usePdvTables");
-      for (const item of cart) {
+      for (const item of snapshot) {
         await rpcAddTabItem({
           tabId: selectedTabId,
           productId: item.id,
@@ -499,10 +553,11 @@ const PdvPage = () => {
           observations: item.observations ?? null,
           metadata: item.metadata ?? null,
         });
+        sentCount++;
       }
       queryClient.invalidateQueries({ queryKey: ["pdv-tabs-open", store?.id] });
       queryClient.invalidateQueries({ queryKey: ["pdv-tab-items", selectedTabId] });
-      toast.success(`${cart.length} ${cart.length === 1 ? "item enviado" : "itens enviados"} à comanda`);
+      toast.success(`${snapshot.length} ${snapshot.length === 1 ? "item enviado" : "itens enviados"} à comanda`);
       // Mantém a comanda selecionada para próximos envios; limpa só os itens.
       setCart([]);
       setPaymentMethod("");
@@ -510,8 +565,21 @@ const PdvPage = () => {
       setSplitMode(false);
       setSplitPayments([]);
       if (isMobile) setMobileStep("catalog");
+      return true;
     } catch (e: any) {
-      toast.error(`Falha ao enviar: ${e?.message ?? "erro"}`);
+      // Falha parcial: remove do carrinho só o que foi enviado; o resto fica
+      // para retry sem duplicar.
+      if (sentCount > 0) {
+        setCart(snapshot.slice(sentCount));
+        toast.error(
+          `Falha ao enviar: ${e?.message ?? "erro"}. ` +
+          `${sentCount} ${sentCount === 1 ? "item foi enviado" : "itens foram enviados"}; ` +
+          `o restante continua no carrinho.`
+        );
+      } else {
+        toast.error(`Falha ao enviar: ${e?.message ?? "erro"}`);
+      }
+      return false;
     } finally {
       setLoading(false);
     }
@@ -521,8 +589,10 @@ const PdvPage = () => {
   const handleCloseTab = async () => {
     if (!selectedTabId || !currentSession?.id) return;
     // Se ainda há itens no carrinho, envia-os primeiro para a comanda.
+    // Aborta o fechamento se o envio falhar (evita perder itens).
     if (cart.length > 0) {
-      await handleSendToTab();
+      const sent = await handleSendToTab();
+      if (!sent) return;
     }
     const payments = splitMode && splitPayments.length > 0
       ? splitPayments.map((p) => ({ method: p.method, amount: Number(p.amount) }))
@@ -555,12 +625,22 @@ const PdvPage = () => {
   };
 
   // ── Abrir caixa (delegado a usePdvSession) ──
+  // Fase 2: registra o operador (PIN) que abriu o caixa.
   const handleAbrirCaixa = async () => {
-    await openSession(parseBRL(openingAmount));
+    await openSession(parseBRL(openingAmount), pdvOperator?.id ?? null);
   };
 
   // ── Finalizar venda (delegado a usePdvCheckout) ──
+  // Trava anti-duplicidade: enquanto uma finalização está em andamento,
+  // novas chamadas são ignoradas NA HORA. Sem isso, uma rajada de cliques
+  // ou a repetição automática da tecla F8 executava a venda várias vezes
+  // em frações de segundo — vendas duplicadas e a janela de impressão
+  // abrindo sem parar (bug de 2026-10-20: 5 vendas iguais em 0,2s).
+  const finalizingRef = useRef(false);
   const handleVenda = async () => {
+    if (finalizingRef.current) return;
+    finalizingRef.current = true;
+    try {
     // Se há comanda ativa: fecha a comanda em vez de criar venda avulsa.
     if (selectedTabId) {
       await handleCloseTab();
@@ -582,25 +662,95 @@ const PdvPage = () => {
       tableId,
       pdvCommissionRate: storePlan.pdvCommissionRate ?? 0,
       operatorId: pdvOperator?.id ?? null,
-    onSuccess: ({ orderId }) => {
+    onSuccess: async ({ orderId }) => {
+      // UI/UX: vai para a tela de "Venda concluída" (o carrinho só limpa no "Nova venda")
+      const pmLabel = splitMode
+        ? "Dividido"
+        : (PDV_METHODS.find(p => p.id === paymentMethod)?.label || paymentMethod || "—");
+      setLastSale({
+        total: finalTotal,
+        paymentMethodLabel: pmLabel,
+        cashReceived: paymentMethod === "dinheiro" && !splitMode ? (parseBRL(cashReceived) || null) : null,
+        troco: paymentMethod === "dinheiro" && !splitMode && !trocoNegativo ? troco : null,
+      });
+      setCheckoutStep("success");
       setOrderDone(true);
       // Refresca o dashboard "Agora" após cada venda concluída.
       queryClient.invalidateQueries({ queryKey: ["pdv-now", currentSession?.id] });
+      // Fase 6 (L14): baixa de estoque com retry — antes era fire-and-forget,
+      // se a rede caísse o estoque nunca baixava.
+      const decrementWithRetry = async (
+        rpcName: string,
+        params: Record<string, any>,
+        itemName: string
+      ): Promise<boolean> => {
+        for (let attempt = 1; attempt <= 3; attempt++) {
+          try {
+            const { data: ok, error } = await supabase.rpc(rpcName as any, params);
+            if (error) throw error;
+            if (ok === false) {
+              toast.warning(`Estoque insuficiente: ${itemName}`);
+              return true; // sem estoque é resposta válida, não retry
+            }
+            return true;
+          } catch (e) {
+            console.error(`[PDV] Falha na baixa de estoque (tentativa ${attempt}/3):`, itemName, e);
+            if (attempt === 3) {
+              toast.error(`Não foi possível baixar o estoque de "${itemName}". Verifique manualmente.`);
+              return false;
+            }
+            await new Promise((r) => setTimeout(r, 500 * attempt));
+          }
+        }
+        return false;
+      };
       // Boutique: decrementa estoque de cada variante vendida
       const apparelItems = cart.filter((i) => (i.metadata as any)?.apparel_variant_id);
+      for (const it of apparelItems) {
+        await decrementWithRetry(
+          "apparel_adjust_stock",
+          {
+            _variant_id: (it.metadata as any).apparel_variant_id,
+            _delta: -Math.abs(it.quantity),
+            _reason: "sale",
+          },
+          it.name
+        );
+      }
       if (apparelItems.length) {
-        (async () => {
-          for (const it of apparelItems) {
-            try {
-              await supabase.rpc("apparel_adjust_stock" as any, {
-                _variant_id: (it.metadata as any).apparel_variant_id,
-                _delta: -Math.abs(it.quantity),
-                _reason: "sale",
-              });
-            } catch {}
+        queryClient.invalidateQueries({ queryKey: ["apparel-variants", store?.id] });
+      }
+      // Controle de estoque: decrementa estoque de produtos normais vendidos
+      // (CartItem usa `id` como id do produto.)
+      const regularItems = cart.filter((i) => !(i.metadata as any)?.apparel_variant_id && i.id);
+      for (const it of regularItems) {
+        await decrementWithRetry(
+          "stock_decrement_sale",
+          {
+            _product_id: it.id,
+            _quantity: Math.abs(it.quantity),
+            _order_id: orderId || null,
+          },
+          it.name
+        );
+      }
+      if (regularItems.length) {
+        queryClient.invalidateQueries({ queryKey: ["stock-list"] });
+        queryClient.invalidateQueries({ queryKey: ["low-stock"] });
+        // Fase 3 ficha técnica: avisa se algum ingrediente zerou/ficou baixo
+        try {
+          const { data: alerts } = await (supabase as any).rpc("get_recipe_stock_alerts", {
+            _product_ids: regularItems.map((i) => i.id),
+          });
+          if (alerts && alerts.length > 0) {
+            const nomes = alerts.map((a: any) =>
+              `${a.ingredient_name} (${a.is_zero ? "zerou" : `${a.quantity} ${a.unit} restantes`})`
+            ).join(", ");
+            toast.warning(`Estoque de ingrediente: ${nomes}`, { duration: 6000 });
           }
-          queryClient.invalidateQueries({ queryKey: ["apparel-variants", store?.id] });
-        })();
+        } catch {
+          // Não bloqueia a venda se o alerta falhar
+        }
       }
       // Fase 4.2 Boutique — CRM + vale-crédito
       if (isApparel && store?.id && orderId) {
@@ -638,11 +788,24 @@ const PdvPage = () => {
         })();
       }
     },
-      onClearScheduled: clearSale,
+      onClearScheduled: () => {
+        // UI/UX: o carrinho NÃO limpa sozinho — a tela de "Venda concluída"
+        // fica visível até o operador tocar em "Nova venda".
+      },
       onEmptiesFlowStart: ({ orderId, items }) =>
         setEmptiesFlow({ step: "lookup", orderId, items }),
     });
+    } finally {
+      finalizingRef.current = false;
+    }
   };
+
+  // UI/UX: pode confirmar o pagamento? (lógica era do PdvCartSection)
+  const splitTotalConfirm = (splitPayments || []).reduce((s, p) => s + Number(p.amount || 0), 0);
+  const splitCompleteConfirm = splitMode && Math.abs(splitTotalConfirm - finalTotal) < 0.01;
+  const canConfirmPayment =
+    !loading && !checkoutLoading && !orderDone && cart.length > 0 &&
+    (splitMode ? splitCompleteConfirm : (!!paymentMethod && !trocoNegativo));
 
   // ── Movimentação ──
   const handleMoviment = async (type: "sangria" | "suprimento") => {
@@ -788,6 +951,8 @@ const PdvPage = () => {
       setLastClosedSession({ sessionId: snapshot.sessionId, zInput });
       setSessionSummary(null);
       clearSale();
+      // Fase 3: fechar o caixa encerra a sessão do operador (exige novo PIN na próxima abertura).
+      setPdvOperator(null);
       setBlindClose(false);
       setDenominationCounts({});
       setClosingAmount("");
@@ -795,14 +960,27 @@ const PdvPage = () => {
   };
 
   // ── Totais do turno ──
-  const turnoVendido = sumMoney(movements.filter(m => m.type === "sale").map(m => m.amount));
-  const turnoDinheiro = sumMoney(movements.filter(m => m.type === "sale" && m.payment_method === "dinheiro").map(m => m.amount));
+  // Pedidos cancelados: excluir seus movimentos dos totais (evita "falta" fantasma no caixa)
+  const canceledOrderIds = new Set(movements.filter(m => m.type === "cancellation").map((m: any) => m.order_id));
+  const turnoVendido = sumMoney(movements.filter(m => m.type === "sale" && !canceledOrderIds.has((m as any).order_id)).map(m => m.amount));
+  const turnoDinheiro = sumMoney(movements.filter(m => m.type === "sale" && m.payment_method === "dinheiro" && !canceledOrderIds.has((m as any).order_id)).map(m => m.amount));
   const turnoSangrias = sumMoney(movements.filter(m => m.type === "sangria").map(m => m.amount));
   const turnoSuprimentos = sumMoney(movements.filter(m => m.type === "suprimento").map(m => m.amount));
   const saldoEsperado = addMoney((currentSession?.opening_amount ?? 0), turnoDinheiro, turnoSuprimentos, -turnoSangrias);
 
   // ── Ticket médio do turno ──
-  const turnoVendasCount = movements.filter(m => m.type === "sale").length;
+  // Conta VENDAS (pedidos distintos), não movimentos: a venda dividida gera
+  // um movimento por forma de pagamento, mas é uma venda só.
+  const turnoVendasCount = (() => {
+    const saleMovs = movements.filter(m => m.type === "sale" && !canceledOrderIds.has((m as any).order_id));
+    const orderIds = new Set<string>();
+    let semPedido = 0;
+    saleMovs.forEach(m => {
+      const oid = (m as any).order_id as string | null;
+      if (oid) orderIds.add(oid); else semPedido += 1;
+    });
+    return orderIds.size + semPedido;
+  })();
   const ticketMedio = turnoVendasCount > 0 ? turnoVendido / turnoVendasCount : 0;
 
   // ── Atalhos de teclado (PDV profissional) ──
@@ -826,9 +1004,7 @@ const PdvPage = () => {
       if (cart.length > 0 && !loading && !orderDone) handleVenda();
     },
     onClearSale: () => {
-      if (cart.length > 0) {
-        if (window.confirm("Limpar venda atual?")) clearSale();
-      }
+      if (cart.length > 0) setClearGateOpen(true);
     },
     onHelp: () => setShowShortcuts(true),
     onSangria: () => setMovModal("sangria"),
@@ -837,20 +1013,29 @@ const PdvPage = () => {
   });
 
   // ── Leitor de código de barras (USB HID) ──
-  // Busca produto por nome (substring) — fácil de evoluir pra coluna SKU/barcode no futuro
+  // Match exato primeiro (id ou código curto); startsWith só como fallback
+  // para não casar o produto errado quando dois ids compartilham prefixo.
   const handleBarcodeScan = useCallback((code: string) => {
-    const found = products.find(p =>
-      p.name.toLowerCase().includes(code.toLowerCase()) ||
-      p.id.startsWith(code)
-    );
+    const normalized = code.trim().toLowerCase();
+    const found = products.find(p => p.id.toLowerCase() === normalized)
+      ?? products.find(p =>
+        p.name.toLowerCase().includes(normalized) ||
+        p.id.toLowerCase().startsWith(normalized)
+      );
     if (found) {
+      // Mesma trava de esgotado do card (PdvProductCard.handleAdd).
+      const stock = stockMap?.get(found.id);
+      if (stock?.track_stock === true && Number(stock.quantity) <= 0) {
+        toast.error(`${found.name} está esgotado`);
+        return;
+      }
       // Adiciona direto ao carrinho (sem abrir modal de adicionais)
       addScannedProduct(found);
       toast.success(`+ ${found.name}`, { duration: 1200 });
     } else {
       toast.warning(`Código não encontrado: ${code}`);
     }
-  }, [products, addScannedProduct]);
+  }, [products, addScannedProduct, stockMap]);
 
   usePdvBarcodeScanner(handleBarcodeScan, screen === "venda" && tab === "venda");
 
@@ -859,7 +1044,7 @@ const PdvPage = () => {
   // ─────────────────────────────────────────────────────────────────────────
 
   if (screen === "loading") return (
-    <div className="min-h-screen bg-background flex items-center justify-center">
+    <div className="min-h-dvh bg-background flex items-center justify-center">
       {storeFetched && !store ? (
         isAdmin ? (
           <div className="max-w-sm w-full px-6 py-8">
@@ -933,7 +1118,7 @@ const PdvPage = () => {
 
   if (screen === "abertura") return (
     planNoSession && store?.id ? (
-      <div className="pdv-shell min-h-screen bg-background flex flex-col">
+      <div className="pdv-shell min-h-dvh bg-background flex flex-col">
         <header className="h-14 border-b border-border flex items-center px-4 gap-3 bg-card shrink-0">
           <button onClick={() => setPlanNoSession(false)} className="p-1.5 rounded-xl hover:bg-muted transition-colors">
             <ArrowLeft className="h-5 w-5" />
@@ -949,7 +1134,7 @@ const PdvPage = () => {
         </div>
       </div>
     ) : reportsNoSession && store?.id ? (
-      <div className="pdv-shell min-h-screen bg-background flex flex-col">
+      <div className="pdv-shell min-h-dvh bg-background flex flex-col">
         <header className="h-14 border-b border-border flex items-center px-4 gap-3 bg-card shrink-0">
           <button onClick={() => { setReportsNoSession(false); setSelectedSessionId(null); }} className="p-1.5 rounded-xl hover:bg-muted transition-colors">
             <ArrowLeft className="h-5 w-5" />
@@ -1005,6 +1190,8 @@ const PdvPage = () => {
           loading={sessionLoading || loading}
           onViewReports={() => { setSelectedSessionId(null); setReportsNoSession(true); }}
           onViewPlan={pdvAccess.source === "pdv_only" ? () => setPlanNoSession(true) : undefined}
+          showSignOut={pdvAccess.source === "pdv_only"}
+          isPdvOnly={pdvAccess.source === "pdv_only"}
         />
       </>
     )
@@ -1017,6 +1204,7 @@ const PdvPage = () => {
   if (screen === "fechamento") return (
     <PdvFechamentoScreen
       currentSession={currentSession}
+      storeId={store?.id}
       sessionSummary={sessionSummary}
       closingAmount={closingAmount}
       setClosingAmount={setClosingAmount}
@@ -1046,10 +1234,6 @@ const PdvPage = () => {
   if (typeof window !== "undefined") {
     (window as any).__pdvScaleEnabled = storeSettings.pdv_scale_enabled === true;
   }
-  const storeCats: string[] = [
-    (store as any)?.category,
-    ...(((store as any)?.categories || []) as string[]),
-  ].filter(Boolean);
   const isPizzaria =
     storeCats.includes("pizzas") ||
     (store as any)?.store_type === "pizzeria";
@@ -1156,7 +1340,7 @@ const PdvPage = () => {
   );
 
   return (
-    <div className="pdv-shell h-screen bg-background flex flex-col overflow-hidden">
+    <div className="pdv-shell fixed inset-0 bg-background flex flex-col overflow-hidden">
 
       {store?.id && <PdvDeliveryAlerts storeId={store.id} />}
 
@@ -1167,7 +1351,7 @@ const PdvPage = () => {
 
       <PdvTopbar
         storeName={store?.name}
-        operatorName={operatorName}
+        operatorName={pdvOperator?.name || operatorName}
         turnoVendasCount={turnoVendasCount}
         turnoVendido={turnoVendido}
         ticketMedio={ticketMedio}
@@ -1183,12 +1367,17 @@ const PdvPage = () => {
         onOpenMeuPlano={
           pdvAccess.source === "pdv_only" ? () => setTab("meu_plano") : undefined
         }
+        onOpenConfiguracoes={
+          pdvAccess.source === "pdv_only" ? () => setTab("configuracoes") : undefined
+        }
       />
 
       <PdvTabs
         tab={tab}
         onChange={(t) => {
           if (t === "relatorios") setSelectedSessionId(null);
+          // UI/UX: ao trocar de aba, volta o checkout para o carrinho
+          if (t !== "venda") { setCheckoutStep("cart"); setOrderDone(false); }
           setTab(t);
         }}
         showMeuPlano={pdvAccess.source === "pdv_only"}
@@ -1265,9 +1454,31 @@ const PdvPage = () => {
         </div>
       )}
 
+      {/* ── ESTOQUE ── */}
+      {tab === "estoque" && store?.id && (
+        <div className="flex-1 overflow-y-auto">
+          <StockTab storeId={store.id} />
+        </div>
+      )}
+
+      {/* ── OPERADORES (gerente) ── */}
+      {tab === "operadores" && store?.id && (
+        <div className="flex-1 overflow-y-auto">
+          <PdvOperatorsManager storeId={store.id} />
+        </div>
+      )}
+
+      {/* ── AUDITORIA (gerente) ── */}
+      {tab === "auditoria" && store?.id && (
+        <div className="flex-1 overflow-y-auto">
+          <PdvAuditReport storeId={store.id} />
+        </div>
+      )}
+
       {/* ── MEU PLANO (PDV Only) ── */}
       {tab === "meu_plano" && store?.id && (
         <div className="flex-1 overflow-y-auto">
+          <PdvMigratePlanCard storeId={store.id} />
           <StoreSubscription storeId={store.id} storeName={store.name || ""} />
         </div>
       )}
@@ -1282,61 +1493,11 @@ const PdvPage = () => {
       {/* ── VENDA ── */}
       {tab === "venda" && (
         <>
-          {/* DESKTOP — 2 colunas lado a lado */}
+          {/* DESKTOP — caixa em destaque, produtos em drawer */}
           {!isMobile && (
-            <div className="flex flex-1 overflow-hidden">
-              {/* Sidebar de categorias (3ª coluna à esquerda) */}
-              <PdvCategoriesRail
-                sections={sections}
-                activeSection={activeSection}
-                setActiveSection={setActiveSection}
-              />
-              {/* Catálogo */}
-              <div className="flex flex-col flex-1 min-w-0 overflow-hidden border-r border-border">
-                <PdvNowCard
-                  sessionId={currentSession?.id}
-                  vendasTotal={turnoVendido}
-                  vendasCount={turnoVendasCount}
-                  ticketMedio={ticketMedio}
-                />
-                {isApparel ? (
-                  <ApparelCatalogGrid
-                    storeId={store!.id}
-                    products={products}
-                    addItem={addItem}
-                    getQty={getQty}
-                  />
-                ) : (
-                  <PdvCatalogSection
-                    search={search} setSearch={setSearch}
-                    sections={sections} activeSection={activeSection} setActiveSection={setActiveSection}
-                    grouped={grouped} prodLoading={prodLoading}
-                    getQty={getQty} addItem={addItem} decItem={decItem}
-                    searchInputRef={searchInputRef}
-                    hideSectionTabs
-                    allProducts={products}
-                    scrollTopSlot={
-                      <>
-                        {isSnackBar && (
-                          <SnackBarCombosBar storeId={store?.id} addItem={addItem} />
-                        )}
-                        {isRestaurant && (
-                          <RestaurantDailyMenuBar storeId={store?.id} addItem={addItem} />
-                        )}
-                        <PdvFavoritesBar
-                          storeId={store?.id}
-                          products={products}
-                          addItem={addItem}
-                          getQty={getQty}
-                        />
-                        {builderActions}
-                      </>
-                    }
-                  />
-                )}
-              </div>
-              {/* Caixa */}
-              <aside className="w-72 lg:w-80 xl:w-96 flex flex-col bg-card shrink-0 overflow-hidden">
+            <div className="flex flex-1 overflow-hidden relative">
+              {/* Caixa — área principal */}
+              <div className="flex flex-col flex-1 min-w-0 bg-card overflow-hidden">
                 <PdvSessionCard
                   openingAmount={currentSession?.opening_amount ?? 0}
                   vendasTotal={turnoVendido}
@@ -1347,6 +1508,27 @@ const PdvPage = () => {
                   saldoEsperado={saldoEsperado}
                   drawerEnabled={drawerEnabled}
                 />
+                {/* Busca rápida fixa no caixa (busca + código sem abrir a gaveta) */}
+                {checkoutStep === "cart" && !isApparel && (
+                  <PdvQuickSearch
+                    products={products}
+                    getQty={getQty}
+                    addItem={addItem}
+                    decItem={decItem}
+                    stockMap={stockMap}
+                  />
+                )}
+                {/* Botão Ver produtos */}
+                <div className="px-3 py-2.5 border-b border-border shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setShowProductsDrawer(true)}
+                    className="w-full h-12 bg-primary text-primary-foreground font-black text-sm rounded-2xl flex items-center justify-center gap-2 active:scale-[0.98] transition-all shadow-lg shadow-primary/25"
+                  >
+                    <LayoutGrid className="h-4 w-4" />
+                    Ver produtos
+                  </button>
+                </div>
                 {isApparel && !selectedTabId && (
                   <ApparelCustomerPanel
                     storeId={store?.id}
@@ -1357,26 +1539,121 @@ const PdvPage = () => {
                     finalTotal={finalTotal}
                   />
                 )}
+                {/* UI/UX: checkout em estágios — carrinho → pagamento → concluída */}
+                {checkoutStep === "cart" && (
                 <PdvCartSection
                   cart={cart} storeId={store?.id}
                   tableId={tableId} setTableId={setTableId}
                   selectedTable={selectedTable} setSelectedTable={setSelectedTable}
                   selectedTabId={selectedTabId} setSelectedTabId={setSelectedTabId}
                   onSendToTab={handleSendToTab}
-                  totalItems={totalItems} clearSale={clearSale}
+                  totalItems={totalItems} clearSale={clearSale} restoreCart={restoreCart}
                   subtotal={subtotal} discountAmount={discountAmount} finalTotal={finalTotal}
                   showDiscount={showDiscount} setShowDiscount={setShowDiscount}
                   discountType={discountType} setDiscountType={setDiscountType}
                   discountInput={discountInput} setDiscountInput={setDiscountInput}
-                  paymentMethod={paymentMethod} setPaymentMethod={setPaymentMethod}
-                  setCashReceived={setCashReceived} cashReceived={cashReceived}
-                  troco={troco} trocoNegativo={trocoNegativo} finalTotal_={finalTotal}
-                  removeItem={removeItem} onFinalize={handleVenda}
+                  removeItem={removeItem}
                   loading={loading || checkoutLoading} orderDone={orderDone}
+                  onGoToPayment={handleGoToPayment}
+                />
+                )}
+                {checkoutStep === "payment" && (
+                <PdvPaymentScreen
+                  finalTotal={finalTotal}
+                  paymentMethod={paymentMethod} setPaymentMethod={setPaymentMethod}
+                  cashReceived={cashReceived} setCashReceived={setCashReceived}
+                  troco={troco} trocoNegativo={trocoNegativo}
                   splitMode={splitMode} setSplitMode={setSplitMode}
                   splitPayments={splitPayments} setSplitPayments={setSplitPayments}
+                  onBack={handleBackToCart}
+                  onConfirm={handleVenda}
+                  loading={loading || checkoutLoading}
+                  canConfirm={canConfirmPayment}
                 />
-              </aside>
+                )}
+                {checkoutStep === "success" && lastSale && (
+                <PdvSaleSuccessScreen
+                  total={lastSale.total}
+                  paymentMethodLabel={lastSale.paymentMethodLabel}
+                  cashReceived={lastSale.cashReceived}
+                  troco={lastSale.troco}
+                  onNewSale={handleNewSale}
+                />
+                )}
+              </div>
+              {/* Drawer de produtos */}
+              {showProductsDrawer && (
+                <>
+                  <div
+                    className="absolute inset-0 bg-black/40 z-10"
+                    onClick={() => setShowProductsDrawer(false)}
+                  />
+                  <div className="absolute top-0 right-0 bottom-0 z-20 flex bg-card shadow-2xl animate-in slide-in-from-right duration-200" style={{ width: "min(620px, 92%)" }}>
+                    {/* Sidebar de categorias */}
+                    <PdvCategoriesRail
+                      sections={sections}
+                      activeSection={activeSection}
+                      setActiveSection={setActiveSection}
+                    />
+                    {/* Catálogo */}
+                    <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
+                      <div className="flex items-center justify-between px-3 py-2.5 border-b border-border shrink-0">
+                        <span className="text-sm font-black text-foreground">Produtos</span>
+                        <button
+                          type="button"
+                          onClick={() => setShowProductsDrawer(false)}
+                          aria-label="Fechar produtos"
+                          className="p-1.5 rounded-lg hover:bg-muted transition-colors"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                      <PdvNowCard
+                        sessionId={currentSession?.id}
+                        vendasTotal={turnoVendido}
+                        vendasCount={turnoVendasCount}
+                        ticketMedio={ticketMedio}
+                      />
+                      {isApparel ? (
+                        <ApparelCatalogGrid
+                          storeId={store!.id}
+                          products={products}
+                          addItem={addItem}
+                          getQty={getQty}
+                        />
+                      ) : (
+                        <PdvCatalogSection
+                          search={search} setSearch={setSearch}
+                          sections={sections} activeSection={activeSection} setActiveSection={setActiveSection}
+                          grouped={grouped} prodLoading={prodLoading}
+                          getQty={getQty} addItem={addItem} decItem={decItem}
+                          searchInputRef={searchInputRef}
+                          hideSectionTabs
+                          allProducts={products}
+                          stockMap={stockMap}
+                          scrollTopSlot={
+                            <>
+                              {isSnackBar && (
+                                <SnackBarCombosBar storeId={store?.id} addItem={addItem} />
+                              )}
+                              {isRestaurant && (
+                                <RestaurantDailyMenuBar storeId={store?.id} addItem={addItem} />
+                              )}
+                              <PdvFavoritesBar
+                                storeId={store?.id}
+                                products={products}
+                                addItem={addItem}
+                                getQty={getQty}
+                              />
+                              {builderActions}
+                            </>
+                          }
+                        />
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           )}
 
@@ -1402,6 +1679,7 @@ const PdvPage = () => {
                       getQty={getQty} addItem={addItem} decItem={decItem}
                       searchInputRef={searchInputRef}
                       allProducts={products}
+                    stockMap={stockMap}
                       scrollTopSlot={
                         <>
                           <PdvNowCard
@@ -1428,26 +1706,24 @@ const PdvPage = () => {
                     />
                     )}
                   </div>
-                  {/* Bottom bar — ir ao carrinho */}
-                  {cart.length > 0 && (
-                    <div className="border-t border-border bg-card px-3 py-2.5 shrink-0">
-                      <button
-                        onClick={() => setMobileStep("cart")}
-                        className="w-full h-12 bg-primary text-primary-foreground font-black text-sm rounded-2xl flex items-center justify-between px-4 active:scale-[0.98] transition-all shadow-lg shadow-primary/25"
-                      >
-                        <span className="flex items-center gap-2">
-                          <span className="bg-white/20 rounded-lg w-7 h-7 flex items-center justify-center text-xs font-black">{totalItems}</span>
-                          Ver carrinho
-                        </span>
-                        <span className="flex items-center gap-1">{formatBRL(subtotal)} <ChevronRight className="h-4 w-4" /></span>
-                      </button>
-                    </div>
-                  )}
+                  {/* Bottom bar — voltar ao caixa */}
+                  <div className="border-t border-border bg-card px-3 py-2.5 shrink-0">
+                    <button
+                      onClick={() => setMobileStep("cart")}
+                      className="w-full h-12 bg-primary text-primary-foreground font-black text-sm rounded-2xl flex items-center justify-between px-4 active:scale-[0.98] transition-all shadow-lg shadow-primary/25"
+                    >
+                      <span className="flex items-center gap-2">
+                        <span className="bg-white/20 rounded-lg w-7 h-7 flex items-center justify-center text-xs font-black">{totalItems}</span>
+                        Voltar ao caixa
+                      </span>
+                      <span className="flex items-center gap-1">{formatBRL(subtotal)} <ChevronRight className="h-4 w-4" /></span>
+                    </button>
+                  </div>
                 </>
               )}
 
-              {/* Etapa: carrinho + pagamento */}
-              {mobileStep === "cart" && (
+              {/* Etapa: carrinho → pagamento → concluída (UI/UX) */}
+              {mobileStep === "cart" && checkoutStep === "cart" && (
                 <>
                   {/* Total fixo no topo (PDV de mão — Fase 5) */}
                   <div className="border-b border-border bg-primary/5 px-3 py-2 flex items-center justify-between shrink-0">
@@ -1473,32 +1749,60 @@ const PdvPage = () => {
                       selectedTable={selectedTable} setSelectedTable={setSelectedTable}
                       selectedTabId={selectedTabId} setSelectedTabId={setSelectedTabId}
                       onSendToTab={handleSendToTab}
-                      totalItems={totalItems} clearSale={clearSale}
+                      totalItems={totalItems} clearSale={clearSale} restoreCart={restoreCart}
                       subtotal={subtotal} discountAmount={discountAmount} finalTotal={finalTotal}
                       showDiscount={showDiscount} setShowDiscount={setShowDiscount}
                       discountType={discountType} setDiscountType={setDiscountType}
                       discountInput={discountInput} setDiscountInput={setDiscountInput}
-                      paymentMethod={paymentMethod} setPaymentMethod={setPaymentMethod}
-                      setCashReceived={setCashReceived} cashReceived={cashReceived}
-                      troco={troco} trocoNegativo={trocoNegativo} finalTotal_={finalTotal}
-                      removeItem={removeItem} onFinalize={handleVenda}
+                      removeItem={removeItem}
                       loading={loading || checkoutLoading} orderDone={orderDone}
-                      splitMode={splitMode} setSplitMode={setSplitMode}
-                      splitPayments={splitPayments} setSplitPayments={setSplitPayments}
+                      onGoToPayment={handleGoToPayment}
                       mobileScroll
                     />
                   </div>
-                  {/* Barra de voltar ao catálogo */}
+                  {/* Barra — ver produtos */}
                   <div className="border-t border-border bg-card px-3 py-2 flex items-center gap-2 shrink-0">
                     <button
                       onClick={() => setMobileStep("catalog")}
-                      className="flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-bold bg-muted/60 hover:bg-muted text-foreground transition-colors"
+                      className="flex-1 h-12 bg-primary text-primary-foreground font-black text-sm rounded-2xl flex items-center justify-center gap-2 active:scale-[0.98] transition-all shadow-lg shadow-primary/25"
                     >
-                      <ChevronLeft className="h-3.5 w-3.5" /> Adicionar mais
+                      <LayoutGrid className="h-4 w-4" />
+                      Ver produtos
                     </button>
-                    <p className="text-[10px] text-muted-foreground ml-auto">{totalItems} itens · {formatBRL(subtotal)}</p>
+                    <p className="text-[10px] text-muted-foreground ml-auto hidden">{totalItems} itens · {formatBRL(subtotal)}</p>
                   </div>
                 </>
+              )}
+
+              {/* Etapa: pagamento (UI/UX) */}
+              {mobileStep === "cart" && checkoutStep === "payment" && (
+                <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
+                  <PdvPaymentScreen
+                    finalTotal={finalTotal}
+                    paymentMethod={paymentMethod} setPaymentMethod={setPaymentMethod}
+                    cashReceived={cashReceived} setCashReceived={setCashReceived}
+                    troco={troco} trocoNegativo={trocoNegativo}
+                    splitMode={splitMode} setSplitMode={setSplitMode}
+                    splitPayments={splitPayments} setSplitPayments={setSplitPayments}
+                    onBack={handleBackToCart}
+                    onConfirm={handleVenda}
+                    loading={loading || checkoutLoading}
+                    canConfirm={canConfirmPayment}
+                  />
+                </div>
+              )}
+
+              {/* Etapa: venda concluída (UI/UX) */}
+              {checkoutStep === "success" && lastSale && (
+                <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
+                  <PdvSaleSuccessScreen
+                    total={lastSale.total}
+                    paymentMethodLabel={lastSale.paymentMethodLabel}
+                    cashReceived={lastSale.cashReceived}
+                    troco={lastSale.troco}
+                    onNewSale={handleNewSale}
+                  />
+                </div>
               )}
             </div>
           )}
@@ -1510,6 +1814,8 @@ const PdvPage = () => {
         tab={tab}
         onChange={(t) => {
           if (t === "relatorios") setSelectedSessionId(null);
+          // UI/UX: ao trocar de aba, volta o checkout para o carrinho
+          if (t !== "venda") { setCheckoutStep("cart"); setOrderDone(false); }
           setTab(t);
         }}
         showMeuPlano={pdvAccess.source === "pdv_only"}
@@ -1519,6 +1825,7 @@ const PdvPage = () => {
       <ProductDetailModal
         product={productModal}
         storeName={store?.name || ""}
+        storeSettings={storeSettings}
         open={!!productModal}
         onClose={() => setProductModal(null)}
         onAdd={handleModalAdd}
@@ -1627,6 +1934,21 @@ const PdvPage = () => {
         />
       )}
 
+      {/* Limpar a venda (ESC) exige autorização do gerente. */}
+      {clearGateOpen && store?.id && (
+        <PdvOperatorLoginDialog
+          open
+          storeId={store.id}
+          requiredRole="gerente"
+          title="Autorização de gerente"
+          onClose={() => setClearGateOpen(false)}
+          onLogin={() => {
+            setClearGateOpen(false);
+            clearSale();
+          }}
+        />
+      )}
+
       {/* ── MODAL ATALHOS DE TECLADO ── */}
       {showShortcuts && <PdvShortcutsDialog onClose={() => setShowShortcuts(false)} />}
 
@@ -1649,9 +1971,11 @@ const PdvPage = () => {
         />
       )}
 
-      {/* FAB — gerenciar cardápio. No mobile já existe atalho no menu (☰) do topbar
-          e no bottom-nav, então mostramos só em telas ≥ md pra evitar sobreposição
-          com FABs específicos (ex.: "criar mesa" na aba Mesas). */}
+      {/* FAB — gerenciar cardápio. No mobile o atalho está no "Mais" da barra
+          inferior (PdvMobileBottomNav → /admin/cardapio), então mostramos o FAB
+          só em telas ≥ md pra evitar sobreposição com FABs específicos
+          (ex.: "criar mesa" na aba Mesas). */}
+      {checkoutStep === "cart" && (
       <button
         type="button"
         onClick={() => navigate("/admin/cardapio")}
@@ -1661,6 +1985,7 @@ const PdvPage = () => {
       >
         <Plus className="h-6 w-6" />
       </button>
+      )}
     </div>
   );
 };

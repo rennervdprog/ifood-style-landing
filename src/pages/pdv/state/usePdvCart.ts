@@ -1,8 +1,8 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { sumMoney, subtractMoney } from "@/lib/utils";
 import { parseBRL } from "@/hooks/useBRLInput";
 import type { CartAddon } from "@/contexts/CartContext";
-import type { CartItem, Product } from "../types";
+import type { CartItem, Product, SaleSnapshot } from "../types";
 import type { SplitPayment } from "@/components/pdv/PdvSplitPayment";
 
 /** Chave de agrupamento de carrinho por addons normalizada. */
@@ -10,6 +10,11 @@ function addonKeyOf(addons?: CartAddon[]): string {
   if (!addons || addons.length === 0) return "";
   return addons.map((a) => a.name).sort().join(",");
 }
+
+/** Chave do rascunho da venda em andamento (persistido por loja+turno). */
+const DRAFT_KEY = (scope: string) => `pdv_cart_draft_v1:${scope}`;
+/** Rascunho mais velho que isso é ignorado (venda abandonada de outro dia). */
+const DRAFT_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 
 /**
  * Estado do carrinho do PDV (itens, desconto, pagamento, troco, split).
@@ -64,7 +69,7 @@ export function usePdvCart() {
   const trocoNegativo = !!cashReceived && cashVal < finalTotal;
 
   const getQty = useCallback(
-    (id: string) => cart.find((i) => i.id === id)?.quantity ?? 0,
+    (id: string) => cart.filter((i) => i.id === id).reduce((sum, i) => sum + i.quantity, 0),
     [cart],
   );
 
@@ -171,10 +176,14 @@ export function usePdvCart() {
 
   const decItem = useCallback((id: string) => {
     setCart((prev) => {
-      const it = prev.find((i) => i.id === id);
-      if (!it) return prev;
-      if (it.quantity === 1) return prev.filter((i) => i.id !== id);
-      return prev.map((i) => (i.id === id ? { ...i, quantity: i.quantity - 1 } : i));
+      // Decrementa UMA linha por vez (a mais recente com esse produto).
+      // Antes usava find + filter por id, o que apagava TODAS as linhas
+      // do mesmo produto quando a quantidade chegava a 1.
+      const idx = prev.map((i) => i.id).lastIndexOf(id);
+      if (idx === -1) return prev;
+      const it = prev[idx];
+      if (it.quantity === 1) return prev.filter((_, i) => i !== idx);
+      return prev.map((i, index) => (index === idx ? { ...i, quantity: i.quantity - 1 } : i));
     });
   }, []);
 
@@ -202,6 +211,123 @@ export function usePdvCart() {
     setSplitMode(false);
     setSplitPayments([]);
   }, []);
+
+  /** Restaura a venda completa (para desfazer "limpar venda"). */
+  const restoreCart = useCallback((snapshot: SaleSnapshot) => {
+    setCart(snapshot.items);
+    setPaymentMethod(snapshot.paymentMethod);
+    setTableId(snapshot.tableId);
+    setSelectedTable(snapshot.selectedTable);
+    setSelectedTabId(snapshot.selectedTabId);
+    setDiscountType(snapshot.discountType);
+    setDiscountInput(snapshot.discountInput);
+    setShowDiscount(!!snapshot.discountInput);
+    setCashReceived(snapshot.cashReceived);
+    setSplitMode(snapshot.splitMode);
+    setSplitPayments(snapshot.splitPayments);
+    setOrderDone(false);
+  }, []);
+
+  // Ref síncrona do carrinho — permite decidir sem depender de closure stale.
+  const cartRef = useRef<CartItem[]>([]);
+  cartRef.current = cart;
+
+  /**
+   * Limpa a venda somente se o carrinho não mudou desde `expected`
+   * (snapshot do carrinho no momento da finalização).
+   * Evita que o timeout pós-venda apague uma nova venda iniciada no intervalo.
+   */
+  const clearSaleIfUnchanged = useCallback((expected: CartItem[]) => {
+    const current = cartRef.current;
+    const same =
+      current.length === expected.length &&
+      current.every(
+        (it, idx) => it.id === expected[idx]?.id && it.quantity === expected[idx]?.quantity
+      );
+    if (same) clearSale();
+    return same;
+  }, [clearSale]);
+
+  // ── Persistência do rascunho (venda à prova de reload) ──
+  // A venda em andamento é salva no navegador a cada mudança e restaurada
+  // se a página recarregar (deploy, queda de luz, navegador travando).
+  // Escopo = "lojaId:turnoId" informado pelo PdvPage via setCartScope —
+  // rascunho de um turno nunca vaza para outro.
+  const [cartScope, setCartScopeState] = useState<string | null>(null);
+  const hydratedScopeRef = useRef<string | null>(null);
+
+  const setCartScope = useCallback((scope: string | null) => {
+    setCartScopeState(scope);
+  }, []);
+
+  // Hidrata 1x por escopo, só com o carrinho ainda vazio (nunca sobrescreve
+  // uma venda que o operador já começou nesta montagem).
+  useEffect(() => {
+    if (!cartScope || hydratedScopeRef.current === cartScope) return;
+    hydratedScopeRef.current = cartScope;
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY(cartScope));
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      const d = parsed?.data as SaleSnapshot | undefined;
+      if (!d || !Array.isArray(d.items) || d.items.length === 0) return;
+      if (Date.now() - Number(parsed?.savedAt || 0) > DRAFT_MAX_AGE_MS) {
+        localStorage.removeItem(DRAFT_KEY(cartScope));
+        return;
+      }
+      if (cartRef.current.length > 0) return;
+      restoreCart({
+        items: d.items,
+        paymentMethod: d.paymentMethod ?? "",
+        tableId: d.tableId ?? "",
+        selectedTable: d.selectedTable ?? null,
+        selectedTabId: d.selectedTabId ?? null,
+        discountType: d.discountType === "%" ? "%" : "R$",
+        discountInput: d.discountInput ?? "",
+        cashReceived: d.cashReceived ?? "",
+        splitMode: !!d.splitMode,
+        splitPayments: Array.isArray(d.splitPayments) ? d.splitPayments : [],
+      });
+    } catch {}
+  }, [cartScope, restoreCart]);
+
+  // Salva a cada mudança (após hidratar). Carrinho vazio = apaga o rascunho
+  // — é o que limpa o rascunho ao finalizar/cancelar (clearSale zera tudo).
+  useEffect(() => {
+    if (!cartScope || hydratedScopeRef.current !== cartScope) return;
+    try {
+      const hasContent =
+        cart.length > 0 ||
+        !!paymentMethod ||
+        !!discountInput ||
+        !!cashReceived ||
+        splitPayments.length > 0 ||
+        !!selectedTabId;
+      if (!hasContent) {
+        localStorage.removeItem(DRAFT_KEY(cartScope));
+        return;
+      }
+      const data: SaleSnapshot = {
+        items: cart,
+        paymentMethod,
+        tableId,
+        selectedTable,
+        selectedTabId,
+        discountType,
+        discountInput,
+        cashReceived,
+        splitMode,
+        splitPayments,
+      };
+      localStorage.setItem(
+        DRAFT_KEY(cartScope),
+        JSON.stringify({ v: 1, savedAt: Date.now(), data }),
+      );
+    } catch {}
+  }, [
+    cartScope, cart, paymentMethod, tableId, selectedTable, selectedTabId,
+    discountType, discountInput, cashReceived, splitMode, splitPayments,
+  ]);
 
   return {
     // estado
@@ -247,5 +373,8 @@ export function usePdvCart() {
     decItem,
     removeItem,
     clearSale,
+    restoreCart,
+    clearSaleIfUnchanged,
+    setCartScope,
   };
 }

@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AlertTriangle, ArrowRight } from "lucide-react";
 import { formatBRL } from "@/lib/utils";
+import { usePendingRepasse } from "@/hooks/usePendingRepasse";
 
 interface Props {
   storeId: string;
@@ -10,32 +11,27 @@ interface Props {
 
 /**
  * Faixa de alerta "cobrança em aberto" no topo do PDV.
- * Usa a MESMA query do ValorAPagarCard (queryKey idêntica) — o React Query
- * compartilha o cache entre os dois, sem requisição duplicada.
- * Não renderiza nada quando não há pendência.
+ * Operacional via hook canônico `usePendingRepasse` (filtra por tipo de plano);
+ * mensalidade via query própria. Não renderiza nada quando não há pendência.
  */
 export default function PdvBillingAlert({ storeId, onOpenFinanceiro }: Props) {
-  const { data } = useQuery({
-    queryKey: ["valor-a-pagar", storeId],
+  const { total: operationalTotal, isLoading: repasseLoading } = usePendingRepasse(storeId);
+  const { data: mensalidadeData, isLoading: mensalidadeLoading } = useQuery({
+    queryKey: ["valor-a-pagar-mensalidade", storeId],
     queryFn: async () => {
-      const [{ data: bal }, { data: plan }, { data: monthlyCharges }] = await Promise.all([
-        (supabase as any).from("store_balances").select("repasse_pendente, comissao_pendente").eq("store_id", storeId).maybeSingle(),
-        (supabase as any).from("store_plans").select("pdv_commission_pending").eq("store_id", storeId).eq("is_active", true).maybeSingle(),
-        (supabase as any).from("financial_transactions").select("amount").eq("store_id", storeId).eq("transaction_kind", "monthly_fee").eq("status", "pending").limit(50),
-      ]);
-
-      const repasse = Number(bal?.repasse_pendente || 0);
-      const comissao = Number(bal?.comissao_pendente || 0);
-      const pdv = Number(plan?.pdv_commission_pending || 0);
-      const mensalidade = (monthlyCharges || []).reduce((sum: number, charge: any) => sum + Number(charge.amount || 0), 0);
-      const operationalTotal = repasse + comissao + pdv;
-      const total = operationalTotal + mensalidade;
-      return { repasse, comissao, pdv, mensalidade, operationalTotal, total };
+      const { data: monthlyCharges } = await (supabase as any).from("financial_transactions").select("amount").eq("store_id", storeId).eq("transaction_kind", "commission_charge").or("reference_code.like.#MENS-*,reference_code.like.#ASSIN-*").eq("status", "pending").limit(50);
+      return (monthlyCharges || []).reduce((sum: number, charge: any) => sum + Number(charge.amount || 0), 0);
     },
     refetchInterval: 60_000,
   });
 
-  const total = data?.total ?? 0;
+  // Enquanto qualquer fonte carrega, o hook devolve totais parciais (plano
+  // presumido "commission_only" = 0) e o banner piscava um valor errado/
+  // contradizia o card "A pagar". Só renderiza com as duas fontes prontas —
+  // mesma regra do ValorAPagarCard.
+  if (repasseLoading || mensalidadeLoading) return null;
+
+  const total = operationalTotal + (mensalidadeData ?? 0);
   if (total <= 0) return null;
 
   return (

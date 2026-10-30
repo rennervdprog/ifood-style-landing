@@ -27,7 +27,9 @@ export const initSentry = () => {
     integrations: isNative
       ? []
       : [Sentry.browserTracingIntegration(), Sentry.replayIntegration()],
-    tracePropagationTargets: ["localhost", /^https:\/\/qkjhguziuchqsbxzruea\.supabase\.co/],
+    // Não propagar para o Supabase: os headers baggage/sentry-trace não estão
+    // no CORS das edge functions e o navegador bloqueava a chamada (ex.: taxa de entrega).
+    tracePropagationTargets: ["localhost"],
     replaysSessionSampleRate: 0.1,
     replaysOnErrorSampleRate: 1.0,
     // Ruído conhecido: falhas transientes de update do Service Worker

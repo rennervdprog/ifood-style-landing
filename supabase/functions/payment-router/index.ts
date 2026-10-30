@@ -85,13 +85,17 @@ async function createWooviPixInline(params: {
       name: params.customer?.name || "Lojista",
       email: params.customer?.email || `lojista-${params.externalId}@itasuper.com`,
       ...(taxId.length === 11 || taxId.length === 14
-        ? { taxID: { taxID: taxId, type: taxId.length === 11 ? "BR:CPF" : "BR:CNPJ" } }
+        ? { taxID: taxId }
         : {}),
     };
   }
-  const res = await fetch("https://api.openpix.com.br/api/v1/charge", {
+  const res = await fetch("https://api.woovi.com/api/v1/charge", {
     method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: appId },
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: appId,
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
+    },
     body: JSON.stringify(body),
   });
   const payload = await res.json().catch(() => ({}));
@@ -914,7 +918,7 @@ async function handleOrderPix(
 
   const { data: order, error: orderError } = await supabase
     .from("orders")
-    .select("id, client_id, total_price, subtotal, delivery_fee, status, store_id")
+    .select("id, client_id, total_price, subtotal, delivery_fee, status, store_id, wallet_discount, loyalty_discount")
     .eq("id", order_id)
     .eq("client_id", userId)
     .single();
@@ -922,6 +926,16 @@ async function handleOrderPix(
   if (orderError || !order) {
     console.warn(`[OrderPix] ❌ Order not found: ${orderError?.message}`);
     return json({ error: "Pedido não encontrado" }, 404);
+  }
+  // L12: Bloqueia PIX se a loja está fechada forçadamente
+  const { data: storeCheck } = await supabase
+    .from("stores")
+    .select("force_closed")
+    .eq("id", order.store_id)
+    .single();
+  if (storeCheck?.force_closed) {
+    console.warn(`[OrderPix] ❌ Loja fechada forçadamente: ${order.store_id}`);
+    return json({ error: "Loja temporariamente indisponível" }, 400);
   }
   console.log(`[OrderPix] ✅ Order ok: status=${order.status} total=${order.total_price} store=${order.store_id}`);
   if (order.status !== "aguardando_pagamento") {
@@ -937,11 +951,80 @@ async function handleOrderPix(
     return json({ error: "CPF inválido. Informe um CPF com 11 dígitos." }, 400);
   }
 
+  // Idempotência: reutiliza cobrança pendente existente para o mesmo pedido
+  const { data: existingPix } = await supabase
+    .from("financial_transactions")
+    .select("id, pix_copy_paste, pix_qr_code_base64, reference_code, amount")
+    .eq("store_id", order.store_id)
+    .eq("status", "pending")
+    .like("reference_code", `PIX-ORDER-${order_id.substring(0, 8).toUpperCase()}%`)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (existingPix?.pix_copy_paste) {
+    console.log(`[OrderPix] ♻️ Reutilizando PIX existente: ${existingPix.reference_code}`);
+    return json({
+      status: "pending",
+      pix_code: existingPix.pix_copy_paste,
+      qr_code_url: existingPix.pix_qr_code_base64,
+      reference_code: existingPix.reference_code,
+      amount: Number(existingPix.amount),
+      reused: true,
+    });
+  }
+
+  // Validação Fase 2b: recalcula o total a partir dos preços reais do catálogo
+  // para impedir que um cliente manipulado pague valor menor que o real.
+  const { data: items, error: itemsError } = await supabase
+    .from("order_items")
+    .select("product_id, quantity, unit_price")
+    .eq("order_id", order_id);
+
+  if (itemsError) {
+    console.error(`[OrderPix] ❌ Erro ao buscar itens: ${itemsError.message}`);
+    return json({ error: "Erro ao validar o pedido" }, 500);
+  }
+
+  if (items && items.length > 0) {
+    const productIds = [...new Set(items.map((i: any) => i.product_id).filter(Boolean))];
+    if (productIds.length > 0) {
+      const { data: products, error: prodError } = await supabase
+        .from("products")
+        .select("id, price")
+        .in("id", productIds);
+
+      if (prodError) {
+        console.error(`[OrderPix] ❌ Erro ao buscar produtos: ${prodError.message}`);
+        return json({ error: "Erro ao validar o pedido" }, 500);
+      }
+
+      const priceMap = new Map((products || []).map((p: any) => [p.id, Number(p.price || 0)]));
+      let calcSubtotal = 0;
+      for (const item of items) {
+        const realPrice = priceMap.get(item.product_id);
+        if (realPrice === undefined) {
+          console.error(`[OrderPix] ❌ Produto não encontrado: ${item.product_id}`);
+          return json({ error: "Produto do pedido não encontrado no cardápio" }, 400);
+        }
+        calcSubtotal += realPrice * Number(item.quantity || 1);
+      }
+      const calcTotal = calcSubtotal + Number(order.delivery_fee || 0) - Number(order.wallet_discount || 0) - Number(order.loyalty_discount || 0);
+      // Tolerância de R$ 0,01 para arredondamentos
+      if (Math.abs(calcTotal - amount) > 0.01) {
+        console.error(`[Router Security] Price manipulation: calculado=${calcTotal}, recebido=${amount}, pedido=${order_id}`);
+        return json({ error: "O valor do pagamento não coincide com o total real do pedido." }, 400);
+      }
+      console.log(`[OrderPix] ✅ Preços validados: calculado=${calcTotal}`);
+    }
+  }
+
   // Payment goes 100% to main account. Store share transferred via webhook on confirmation.
 
   const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
   const desc = String(description || `Pedido ItaSuper #${order_id.substring(0, 6).toUpperCase()}`).substring(0, 256);
-  const idempotencyKey = `pix-${order_id}-${Date.now()}`;
+  // Chave determinística por pedido (sem Date.now) para idempotência real
+  const idempotencyKey = `pix-${order_id}`;
   console.log(`[OrderPix] 🚀 Routing to provider…`);
 
   // Security check: Verify amount matches order total in DB
@@ -1196,6 +1279,40 @@ async function handleStorePayout(
 
   if (storeError || !store) return json({ error: "Loja não encontrada" }, 404);
 
+    // ── FASE 2 (2026-10-14): valida o valor contra a dívida real da loja
+    // ANTES de gerar a cobrança e reserva o valor atomicamente.
+    // Fecha: cobrança acima da dívida + duplicada por duplo clique/race (bug L4).
+    const payoutAmount = Number(Number(amount).toFixed(2));
+    const { data: bal } = await serviceClient
+      .from("store_balances")
+      .select("repasse_pendente, comissao_pendente, pending_commission")
+      .eq("store_id", store_id)
+      .maybeSingle();
+    const dividaTotal = Number(bal?.repasse_pendente || 0)
+      + Number(bal?.comissao_pendente || 0)
+      + Number(bal?.pending_commission || 0);
+    if (payoutAmount > dividaTotal + 0.005) {
+      return json({
+        error: "Valor acima da dívida da loja.",
+        divida_total: Number(dividaTotal.toFixed(2)),
+        solicitado: payoutAmount,
+      }, 400);
+    }
+    const { error: reserveErr } = await serviceClient.rpc("debit_store_repasse", {
+      _store_id: store_id,
+      _amount: payoutAmount,
+    });
+    if (reserveErr) {
+      return json({ error: "Saldo insuficiente para este valor.", detail: reserveErr.message }, 409);
+    }
+    // Devolve a reserva se a cobrança falhar adiante (crédito atômico).
+    const devolverReserva = async () => {
+      await serviceClient.rpc("credit_store_repasse", {
+        _store_id: store_id,
+        _amount: payoutAmount,
+      });
+    };
+
   const { data: refData } = await serviceClient.rpc("generate_financial_reference", { _prefix: "REP" });
   const referenceCode = refData || `#REP-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
   const desc = `Repasse ItaSuper - ${store.name} - ${referenceCode}`;
@@ -1232,7 +1349,11 @@ async function handleStorePayout(
       provider: "asaas",
       mercado_pago_payment_id: String(transferData?.transfer_id || ""),
       settled_at: new Date().toISOString(),
-      metadata: { store_name: store.name, pix_key, pix_type, description: desc, transfer_type: "asaas_transfer" },
+      metadata: {
+        store_name: store.name,
+        pix_key_masked: pix_key ? `${String(pix_key).slice(0, 3)}***${String(pix_key).slice(-2)}` : null,
+        pix_type, description: desc, transfer_type: "asaas_transfer"
+      },
     };
     await serviceClient.from("financial_transactions").insert(txRecord);
 
@@ -1243,15 +1364,12 @@ async function handleStorePayout(
       entity_name: store.name,
       amount: Number(amount.toFixed(2)),
       payout_type: "auto_asaas",
-      notes: `Transferência automática Asaas: ${referenceCode} | PIX: ${pix_key} (${pix_type})`,
+      notes: `Transferência automática Asaas: ${referenceCode} | PIX: ${pix_key ? String(pix_key).slice(0, 3) + "***" : "n/a"} (${pix_type})`,
       admin_user_id: userId,
     });
 
-    // Zero balances
-    await serviceClient
-      .from("store_balances")
-      .update({ repasse_pendente: 0, comissao_pendente: 0, pending_commission: 0 })
-      .eq("store_id", store_id);
+    // FASE 2: débito já feito de forma atômica via debit_store_repasse ANTES da
+    // transferência. Zeramento total removido (bug: apagava a dívida restante).
 
     return json({
       success: true,
@@ -1296,6 +1414,7 @@ async function handleStorePayout(
   await serviceClient.from("financial_transactions").insert(txRecord);
 
   if (!result.ok) {
+    await devolverReserva();
     return json({
       reference_code: referenceCode,
       status: "manual_required",
@@ -1307,10 +1426,7 @@ async function handleStorePayout(
     });
   }
 
-  await serviceClient
-    .from("store_balances")
-    .update({ repasse_pendente: 0 })
-    .eq("store_id", store_id);
+  // FASE 2: débito já feito via debit_store_repasse. Zeramento removido.
 
   return result;
 }

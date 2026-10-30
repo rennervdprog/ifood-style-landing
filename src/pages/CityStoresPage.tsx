@@ -5,6 +5,7 @@ import { Store as StoreIcon, ArrowLeft, Heart, TrendingUp, Flame } from "lucide-
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { citySlug, cityDisplay } from "@/lib/citySlug";
+import { getStoreOpenStatus, type OpeningHour } from "@/lib/storeStatus";
 
 interface StoreRow {
   id: string;
@@ -26,6 +27,7 @@ export default function CityStoresPage() {
   const navigate = useNavigate();
   const slug = (cidade || "").toLowerCase();
   const [stores, setStores] = useState<StoreRow[]>([]);
+  const [hoursByStore, setHoursByStore] = useState<Map<string, OpeningHour[]>>(new Map());
   const [loading, setLoading] = useState(true);
   const [cityName, setCityName] = useState<string>("");
 
@@ -45,6 +47,23 @@ export default function CityStoresPage() {
       const cityRaw = filtered[0]?.address_city || slug.replace(/-/g, " ");
       setCityName(cityDisplay(cityRaw));
       setStores(filtered);
+      // Mesma regra de aberto/fechado da página da loja: cruza opening_hours
+      // (antes a vitrine usava só is_open/force_closed e marcava "Aberto"
+      // para loja fora do horário de funcionamento).
+      if (filtered.length > 0) {
+        const { data: hoursData } = await supabase
+          .from("opening_hours")
+          .select("store_id, day_of_week, open_time, close_time, is_closed_all_day")
+          .in("store_id", filtered.map((s) => s.id));
+        if (cancelled) return;
+        const map = new Map<string, OpeningHour[]>();
+        for (const h of (hoursData || []) as Array<OpeningHour & { store_id: string }>) {
+          const list = map.get(h.store_id) || [];
+          list.push(h);
+          map.set(h.store_id, list);
+        }
+        setHoursByStore(map);
+      }
       setLoading(false);
     })();
     return () => { cancelled = true; };
@@ -84,7 +103,10 @@ export default function CityStoresPage() {
     return Array.from(set).slice(0, 6);
   }, [stores]);
 
-  const openCount = stores.filter((s) => !s.force_closed && !!s.is_open).length;
+  const isStoreOpen = (s: StoreRow) =>
+    getStoreOpenStatus(hoursByStore.get(s.id) || [], !!s.force_closed, !!s.is_open).isOpen;
+
+  const openCount = stores.filter(isStoreOpen).length;
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -156,7 +178,7 @@ export default function CityStoresPage() {
 
         <ul className="flex flex-col gap-3 pb-6">
           {stores.map((s) => {
-            const open = !s.force_closed && !!s.is_open;
+            const open = isStoreOpen(s);
             const target = s.slug ? `/${s.slug}` : `/loja/${s.id}`;
             return (
               <li key={s.id}>

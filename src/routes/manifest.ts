@@ -22,10 +22,12 @@ export const ROUTES = {
     sejaRevendedor: "/seja-revendedor",
     vaga: (cidade: string) => `/vaga/${encodeURIComponent(cidade)}`,
     links: "/links",
+    pdv: "/pdv",
   },
   auth: {
     login: "/auth",
     portalParceiro: "/portal-parceiro",
+    conviteRede: (code: string) => `/convite-rede/${code}`,
   },
   cliente: {
     home: "/cliente",
@@ -45,6 +47,7 @@ export const ROUTES = {
   lojista: {
     admin: "/admin",
     matriz: "/matriz",
+    matrizV2: "/matriz-v2",
     pdv: "/admin/pdv",
     pdvKds: "/admin/pdv/kds",
     cardapio: "/admin/cardapio",
@@ -57,6 +60,7 @@ export const ROUTES = {
   },
   admin: {
     superAdmin: "/super-admin",
+    superAdminTeste: "/super-admin-teste",
     sandbox: "/super-admin/sandbox-tests",
     moderador: "/moderador",
     suporte: "/suporte",

@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { compressImage } from "@/lib/compressImage";
 import {
-  Trash2, Edit2, Package, PackageX, Pause, Play, ArrowRightLeft, Link2, X, Upload, Loader2, MoreVertical, ChevronDown, Link as LinkIcon, Copy,
+  Trash2, Edit2, Package, PackageX, Pause, Play, ArrowRightLeft, Link2, X, Upload, Loader2, MoreVertical, ChevronDown, Link as LinkIcon, Copy, ChefHat,
 } from "lucide-react";
 import CategoryProductFields from "@/components/CategoryProductFields";
 import {
@@ -269,7 +269,7 @@ export const ProductFormInline = ({ initial, onSave, onCancel, storeCategory, st
       </div>
       <input
         type="text"
-        placeholder="Descrição (opcional)"
+        placeholder="Ex.: Açaí 500ml com leite ninho e morango"
         value={form.description}
         onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
         className="w-full bg-background text-foreground px-3 py-2.5 rounded-lg text-sm border border-border focus:border-primary focus:outline-none"
@@ -308,6 +308,77 @@ export const ProductFormInline = ({ initial, onSave, onCancel, storeCategory, st
 
       {/* Vender por peso agora é exclusivo do PDV — criar pela tela do PDV (botão "Novo produto por peso"). */}
 
+      {/* Controle de estoque - simples */}
+      <div className="bg-muted/50 rounded-lg p-3 space-y-2">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-bold">Controlar estoque?</p>
+            <p className="text-xs text-muted-foreground">Baixa sozinho a cada venda</p>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={!!(form.metadata as any)?.track_stock}
+            onClick={() => setForm((p) => ({
+              ...p,
+              metadata: { ...(p.metadata || {}), track_stock: !(p.metadata as any)?.track_stock }
+            }))}
+            className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors shrink-0 ${!!(form.metadata as any)?.track_stock ? "bg-green-600" : "bg-gray-300"}`}
+          >
+            <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${!!(form.metadata as any)?.track_stock ? "translate-x-6" : "translate-x-1"}`} />
+          </button>
+        </div>
+        {!!(form.metadata as any)?.track_stock && (
+          <div className="space-y-2 pt-1">
+            {(form.metadata as any)?.current_stock !== undefined ? (
+              /* Modo edição: mostra estoque atual (somente leitura) */
+              <div className="bg-background rounded-lg p-3 border">
+                <p className="text-xs text-muted-foreground">Estoque atual</p>
+                <p className="text-2xl font-bold">
+                  {(form.metadata as any).current_stock} <span className="text-sm font-normal">unidades</span>
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Para ajustar, use a aba <strong>Estoque</strong> no menu Cardápio
+                </p>
+              </div>
+            ) : (
+              /* Modo criação: permite definir estoque inicial */
+              <div>
+                <label className="text-xs font-medium">Quantas tem agora?</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={(form.metadata as any)?.initial_stock || ""}
+                  onChange={(e) => setForm((p) => ({
+                    ...p,
+                    metadata: { ...(p.metadata || {}), initial_stock: e.target.value }
+                  }))}
+                  placeholder="Ex: 50"
+                  className="w-full bg-background px-3 py-2.5 rounded-lg text-base border border-border focus:border-primary focus:outline-none"
+                />
+              </div>
+            )}
+            <div>
+              <label className="text-xs font-medium">Avisar quando chegar em</label>
+              <input
+                type="number"
+                min="0"
+                value={(form.metadata as any)?.min_stock || ""}
+                onChange={(e) => setForm((p) => ({
+                  ...p,
+                  metadata: { ...(p.metadata || {}), min_stock: e.target.value }
+                }))}
+                placeholder="Ex: 10"
+                className="w-full bg-background px-3 py-2.5 rounded-lg text-base border border-border focus:border-primary focus:outline-none"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Vamos avisar quando faltar pouco
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
+
       <div className="flex gap-2 pt-1">
         <button type="button" onClick={() => onSave(form)} className="flex-1 bg-primary text-primary-foreground py-2.5 rounded-lg text-sm font-bold hover:bg-primary/90 transition-colors">
           Salvar Produto
@@ -340,6 +411,7 @@ interface ProductCardProps {
   onEdit: () => void;
   onDuplicate?: () => void;
   onCopyLink?: () => void;
+  onOpenRecipe?: () => void;
   isEditing: boolean;
   initialEditForm?: ProductFormData;
   onSaveEdit: (data: ProductFormData) => void;
@@ -369,7 +441,7 @@ const ProductCardImpl = (props: ProductCardProps) => {
   const {
     product, sections, addonGroups, linkedGroups, storeAddonGroups, linkedGroupIds,
     selected, onToggleSelect, onLinkGroup, onUnlinkGroup, showLinkAddon, setShowLinkAddon,
-    onToggleAvailable, onToggleOutOfStock, onDelete, onEdit, onDuplicate, isEditing, initialEditForm, onSaveEdit, onCancelEdit,
+    onToggleAvailable, onToggleOutOfStock, onDelete, onEdit, onDuplicate, onOpenRecipe, isEditing, initialEditForm, onSaveEdit, onCancelEdit,
     onCopyLink,
     showAddonForm, setShowAddonForm, addonGroupForm, setAddonGroupForm,
     onAddAddonGroup, onDeleteAddonGroup, showAddonItemForm, setShowAddonItemForm,
@@ -448,6 +520,11 @@ const ProductCardImpl = (props: ProductCardProps) => {
                   <DropdownMenuItem onClick={onStartMove}>
                     <ArrowRightLeft className="h-4 w-4 mr-2 text-muted-foreground" /> Mover de seção
                   </DropdownMenuItem>
+                  {onOpenRecipe && (
+                    <DropdownMenuItem onClick={onOpenRecipe}>
+                      <ChefHat className="h-4 w-4 mr-2 text-orange-600" /> Ficha técnica
+                    </DropdownMenuItem>
+                  )}
                   {onDuplicate && (
                     <DropdownMenuItem onClick={onDuplicate}>
                       <Copy className="h-4 w-4 mr-2 text-muted-foreground" /> Duplicar produto

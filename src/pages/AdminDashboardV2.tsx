@@ -48,6 +48,7 @@ const SubscriptionTab = lazy(() => import("./admin/tabs/SubscriptionTab"));
 const LoyaltyTab = lazy(() => import("./admin/tabs/LoyaltyTab"));
 const RefundsTab = lazy(() => import("./admin/tabs/RefundsTab"));
 const MenuTab = lazy(() => import("./admin/tabs/MenuTab"));
+const StockTab = lazy(() => import("./admin/tabs/StockTab"));
 const CashRegisterTab = lazy(() => import("./admin/tabs/CashRegisterTab"));
 const AddonsTab = lazy(() => import("./admin/tabs/AddonsTab"));
 const BordasTab = lazy(() => import("./admin/tabs/BordasTab"));
@@ -57,6 +58,7 @@ const DriversTab = lazy(() => import("./admin/tabs/DriversTab"));
 const SettingsTab = lazy(() => import("./admin/tabs/SettingsTab"));
 const CouponsTab = lazy(() => import("./admin/tabs/CouponsTab"));
 const PromotionsTab = lazy(() => import("./admin/tabs/PromotionsTab"));
+const ReviewsTab = lazy(() => import("./admin/tabs/ReviewsTab"));
 const DashboardOverviewSection = lazy(() => import("./admin/sections/DashboardOverviewSection"));
 const AvisosSection = lazy(() => import("./admin/sections/AvisosSection"));
 const RepasseSection = lazy(() => import("./admin/sections/RepasseSection"));
@@ -97,6 +99,8 @@ import {
   type DashboardGroupKey,
 } from "./admin/constants";
 import GroupTabsBar from "./admin/components/GroupTabsBar";
+import SetupChecklist, { buildSetupSteps } from "./admin/components/SetupChecklist";
+import DashboardSearch from "./admin/components/DashboardSearch";
 import {
   parseOrderAddons,
   normalizeAddonName,
@@ -554,8 +558,15 @@ const AdminDashboard = () => {
     queryFn: async () => {
       const { data: allOnline, error } = await supabase.from("drivers").select("id, name, user_id").eq("is_online", true).eq("is_active", true);
       if (error) throw error;
-      const { data: busyDriverIds } = await supabase.from("orders").select("driver_id").in("status", ["pronto_para_entrega", "em_transito", "saiu_entrega", "entregue"] as any[]).not("driver_id", "is", null);
-      const busySet = new Set((busyDriverIds || []).map((o: any) => o.driver_id));
+      // Só consulta os pedidos dos entregadores online (usa idx_orders_driver_status)
+      // em vez de escanear todos os pedidos da plataforma. Resultado idêntico:
+      // um entregador fora da lista de online nunca entraria no retorno de qualquer forma.
+      const onlineUserIds = (allOnline || []).map((d: any) => d.user_id).filter(Boolean);
+      let busySet = new Set<string>();
+      if (onlineUserIds.length > 0) {
+        const { data: busyDriverIds } = await supabase.from("orders").select("driver_id").in("status", ["pronto_para_entrega", "em_transito", "saiu_entrega", "entregue"] as any[]).not("driver_id", "is", null).in("driver_id", onlineUserIds);
+        busySet = new Set((busyDriverIds || []).map((o: any) => o.driver_id));
+      }
       return (allOnline || []).filter((d: any) => !busySet.has(d.user_id));
     },
     staleTime: 1000 * 30,
@@ -914,9 +925,13 @@ const AdminDashboard = () => {
       console.info("[auto-print] pulado: motivo=pdv", orderId);
       return;
     }
-    const storeAutoDelivery = (store?.settings as any)?.auto_print_delivery !== false;
-    if (!storeAutoDelivery) {
-      console.info("[auto-print] pulado: motivo=settings-off", orderId);
+    // Modo de impressão do delivery: 'auto' | 'on_accept' | 'manual'.
+    // A impressão automática (chegada, confirmação de Pix, varredura) só roda
+    // no modo 'auto'. Sem a chave nova, herda do auto_print_delivery.
+    const sAuto = (store?.settings as any) || {};
+    const modeAuto = sAuto.print_mode_delivery ?? (sAuto.auto_print_delivery === false ? "on_accept" : "auto");
+    if (modeAuto !== "auto") {
+      console.info("[auto-print] pulado: motivo=mode-" + modeAuto, orderId);
       return;
     }
     try {
@@ -1184,7 +1199,33 @@ const AdminDashboard = () => {
    * O WhatsApp é aberto via link <a> no JSX (não via window.open).
    */
   const handleAcceptOrder = useCallback(async (order: any) => {
-    // Se a notinha já foi disparada automaticamente (auto-print), pergunta
+    const sAcc = (store?.settings as any) || {};
+    const modeAcc = sAcc.print_mode_delivery ?? (sAcc.auto_print_delivery === false ? "on_accept" : "auto");
+    // Modo manual: aceitar nunca imprime (só o botão Imprimir).
+    if (modeAcc === "manual") return;
+    const copies = (store?.settings as any)?.print_copies === 1 ? 1 : 2;
+    const paperWidth = (store?.settings as any)?.print_paper_width === 58 ? 58 : 80;
+    if (modeAcc === "on_accept") {
+      // Imprime uma única vez: reivindica o printed_at no servidor (a mesma
+      // trava da impressão automática). Se outro dispositivo já imprimiu,
+      // o claim falha e nada sai duplicado.
+      try {
+        const { data: claim, error: claimError } = await (supabase as any).rpc("store_claim_order_print", {
+          _order_id: order.id,
+        });
+        if (claimError || !claim) return;
+        try {
+          await doPrintOrder(order, copies, paperWidth);
+        } catch (e) {
+          await (supabase as any).rpc("store_clear_order_print_claim", { _order_id: order.id });
+          throw e;
+        }
+      } catch (e) {
+        console.warn("print error", e);
+      }
+      return;
+    }
+    // Modo 'auto': se a notinha já foi disparada automaticamente, pergunta
     // ao lojista se quer reimprimir em vez de imprimir silenciosamente.
     if ((order as any)?.printed_at) {
       const ok = await confirmReprint({
@@ -1197,16 +1238,18 @@ const AdminDashboard = () => {
     }
     // Print da notinha
     try {
-      const copies = (store?.settings as any)?.print_copies === 1 ? 1 : 2;
-      const paperWidth = (store?.settings as any)?.print_paper_width === 58 ? 58 : 80;
       doPrintOrder(order, copies, paperWidth);
     } catch (e) {
       console.warn("print error", e);
     }
   }, [store?.name, store?.settings, doPrintOrder, confirmReprint]);
 
-  // Deriva do banco (fonte única). Default ON.
-  const autoPrint = (store?.settings as any)?.auto_print_delivery !== false;
+  // Modo de impressão do delivery — deriva do banco (fonte única).
+  // Sem a chave nova: auto_print_delivery ligado -> 'auto', desligado -> 'on_accept'.
+  const settingsAny = (store?.settings as any) || {};
+  const printMode: "auto" | "on_accept" | "manual" =
+    settingsAny.print_mode_delivery ?? (settingsAny.auto_print_delivery === false ? "on_accept" : "auto");
+  const autoPrint = printMode === "auto";
 
   const toggleAutoPrint = async () => {
     if (!store?.id || autoPrintSaving) return;
@@ -1215,9 +1258,9 @@ const AdminDashboard = () => {
     // Optimistic update no cache do react-query.
     queryClient.setQueryData(["my-store", user?.id, activeSimulateStoreId], (old: any) => {
       if (!old) return old;
-      return { ...old, settings: { ...(old.settings || {}), auto_print_delivery: next } };
+      return { ...old, settings: { ...(old.settings || {}), auto_print_delivery: next, print_mode_delivery: next ? "auto" : "on_accept" } };
     });
-    const merged = { ...((store.settings as any) || {}), auto_print_delivery: next };
+    const merged = { ...((store.settings as any) || {}), auto_print_delivery: next, print_mode_delivery: next ? "auto" : "on_accept" };
     const { error } = await supabase.from("stores").update({ settings: merged }).eq("id", store.id);
     setAutoPrintSaving(false);
     if (error) {
@@ -1297,6 +1340,8 @@ const AdminDashboard = () => {
         const paymentLabel = paymentLabels?.[order.payment_method] || String(order.payment_method || "").toUpperCase();
         // Fire-and-forget — never await notification dispatch
         try {
+          // WhatsApp de status (aceito/saiu/cancelado) é enviado pelo servidor
+          // (order-status-whatsapp, via trigger no banco). Aqui vai só o push.
           notifyOrderStatusChange(newStatus, {
             orderId: order.id,
             storeName: store?.name || "Loja",
@@ -1315,6 +1360,7 @@ const AdminDashboard = () => {
             etaText,
             neighborhood: order.neighborhood,
           }, {
+            skipWhatsApp: true,
             evolutionEnabled: evolutionConnected,
             zapiEnabled: !!storeSettings.zapi_enabled,
           });
@@ -1410,6 +1456,7 @@ const AdminDashboard = () => {
 
       const clientPhone = getClientWhatsApp(order.client_id);
       const cancelSettings = (store?.settings || {}) as Record<string, any>;
+      // Cancelamento: o aviso de WhatsApp sai pelo servidor; aqui só push.
       notifyOrderStatusChange("cancelado", {
         orderId: order.id,
         storeName: store?.name || "Loja",
@@ -1420,6 +1467,7 @@ const AdminDashboard = () => {
         totalPrice: Number(order.total_price),
         paymentMethod: order.payment_method,
       }, {
+        skipWhatsApp: true,
         evolutionEnabled: evolutionConnected,
         zapiEnabled: !!cancelSettings.zapi_enabled,
       });
@@ -1531,6 +1579,8 @@ const AdminDashboard = () => {
 
   const hasLinkedDrivers = (linkedStoreDrivers?.length || 0) > 0;
 
+  const delayedPreparingCount = delayedOrders.filter(o => o.status === "preparando").length;
+
   const avisosCount = useAvisosCount({
     store,
     storePlan,
@@ -1538,7 +1588,19 @@ const AdminDashboard = () => {
     isOwnDelivery,
     hasLinkedDrivers,
     driversLoading,
+    pendingOrdersCount: pendingCount,
+    delayedOrdersCount: delayedOrders.length,
   });
+
+  // Lateral "Entregadores": a contagem é a EQUIPE vinculada (mesma fonte do
+  // card "Motoboys na equipe" da aba Motoboys) — antes mostrava só quem
+  // estava com presença recente e contradizia a equipe (0 × 1).
+  const sidebarTeamCount = isOwnDelivery
+    ? (linkedStoreDrivers?.length || 0)
+    : (onlineDrivers?.length || 0);
+  const sidebarAnyDriverAvailable = isOwnDelivery
+    ? (storeDeliveryAvailability?.available_drivers_count || 0) > 0
+    : (onlineDrivers?.length || 0) > 0;
 
   const repassePending = useRepassePending(store?.id);
 
@@ -1555,8 +1617,7 @@ const AdminDashboard = () => {
         if (isPickupOrder) {
           return { label: "CLIENTE RETIROU", next: "finalizado" as OrderStatus, emoji: "✅" };
         }
-        // Para delivery, o lojista apenas disponibiliza o pedido. A saída deve
-        // ser confirmada exclusivamente pelo entregador na tela dele.
+        // A saída para entrega é marcada no app do entregador (botão legado removido).
         return null;
       case "saiu_entrega":
         // A conclusão da entrega também pertence ao fluxo do entregador/cliente.
@@ -1665,6 +1726,24 @@ const AdminDashboard = () => {
   const isBottomNavMore = activeGroupKey
     ? !bottomNavGroupKeys.includes(activeGroupKey)
     : false;
+
+  // ── Checklist "Configurar Loja" (Fase 2) ──
+  // Passos calculados aqui porque o selo de pendências vai na barra de
+  // sub-abas (GroupTabsBar) e o cartão vai na Visão Geral — mesma conta.
+  const setupSteps = buildSetupSteps({
+    imageUrl: store?.image_url,
+    storeHours,
+    menuProductCount,
+    deliveryMode: (store as any)?.delivery_mode,
+    maxDeliveryKm: (store as any)?.max_delivery_km,
+    deliveryRadius: (store as any)?.delivery_radius,
+    estimatedDeliveryTime: (store as any)?.estimated_delivery_time,
+    isOwnDelivery,
+    hasLinkedDrivers,
+    driversLoading,
+    whatsappConnected: evolutionConnected,
+  });
+  const setupPendingCount = setupSteps.filter((s) => !s.done).length;
 
   // ── RENDER ──
   // PDV-only: enquanto o plano carrega OU quando é pdv_only, não renderizar
@@ -1800,12 +1879,12 @@ const AdminDashboard = () => {
 
         {/* Bottom controls */}
         <div className="p-2 border-t border-border space-y-1.5">
-          <div className="flex items-center gap-2 px-1">
+          <div className="flex items-center gap-2 px-1" title="Motoboys vinculados à loja (equipe)">
             <Bike className="h-4 w-4 text-muted-foreground" />
             <span className="text-xs text-muted-foreground flex-1">Entregadores</span>
-            <span className={`flex items-center gap-1 text-xs font-bold ${(onlineDrivers?.length || 0) > 0 ? "text-emerald-500" : "text-muted-foreground"}`}>
-              <span className={`w-2 h-2 rounded-full ${(onlineDrivers?.length || 0) > 0 ? "bg-emerald-500 animate-pulse" : "bg-muted"}`} />
-              {(store as any)?.delivery_mode === "own" ? (storeDeliveryAvailability?.available_drivers_count || 0) : (onlineDrivers?.length || 0)}
+            <span className={`flex items-center gap-1 text-xs font-bold ${sidebarAnyDriverAvailable ? "text-emerald-500" : "text-muted-foreground"}`}>
+              <span className={`w-2 h-2 rounded-full ${sidebarAnyDriverAvailable ? "bg-emerald-500 animate-pulse" : "bg-muted"}`} />
+              {sidebarTeamCount}
             </span>
           </div>
           <div className="grid grid-cols-4 gap-1">
@@ -1822,9 +1901,10 @@ const AdminDashboard = () => {
             </button>
             <div className="col-span-2 space-y-1">
               <button onClick={toggleStoreOpen}
+                title="Liga/desliga o recebimento de pedidos (interruptor manual da loja)"
                 className={`w-full py-2 rounded-xl text-xs font-bold border transition-colors ${store?.is_open ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/30" : "bg-destructive/10 text-destructive border-destructive/30"}`}
                 data-tour="loja-status">
-                {store?.is_open ? "✓ Online" : "✕ Offline"}
+                {store?.is_open ? "✓ Ativa" : "✕ Pausada"}
               </button>
               <div className={`text-[10px] font-black text-center uppercase tracking-tighter py-1 rounded-lg ${isStoreReallyOpen ? "text-emerald-500 bg-emerald-500/5" : "text-red-500 bg-red-500/5"}`}>
                 {isStoreReallyOpen ? "Loja Aberta" : "Loja Fechada"}
@@ -1847,13 +1927,14 @@ const AdminDashboard = () => {
               <h2 className="font-bold text-foreground text-base truncate">{store?.name || "Painel"}</h2>
               <div className="flex items-center gap-2 mt-0.5 lg:hidden">
                 <button onClick={toggleStoreOpen}
+                  title="Liga/desliga o recebimento de pedidos (interruptor manual da loja)"
                   className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-bold transition-colors ${
                     store?.is_open
                       ? "bg-emerald-500/10 text-emerald-600"
                       : "bg-red-500/10 text-red-500"
                   }`}>
                   <span className={`w-1.5 h-1.5 rounded-full ${store?.is_open ? "bg-emerald-500" : "bg-red-500"}`} />
-                  {store?.is_open ? "Online" : "Offline"}
+                  {store?.is_open ? "Ativa" : "Pausada"}
                 </button>
                 <div className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${isStoreReallyOpen ? "text-emerald-500 bg-emerald-500/5" : "text-red-500 bg-red-500/5"}`}>
                   {isStoreReallyOpen ? "Aberta" : "Fechada"}
@@ -1863,7 +1944,7 @@ const AdminDashboard = () => {
               <p className="text-xs text-muted-foreground hidden lg:block">
                 {dashboardTab === "dashboard" && "Resumo do dia em tempo real"}
                 {dashboardTab === "avisos" && (avisosCount > 0 ? `${avisosCount} pendência${avisosCount > 1 ? "s" : ""} para resolver` : "Sem pendências")}
-                {dashboardTab === "orders" && `${orders?.length || 0} pedidos ativos`}
+                {dashboardTab === "orders" && `${orderCounters.total} pedidos ativos`}
                 {dashboardTab === "clients" && `${clientAnalytics.length} clientes registrados`}
                 {dashboardTab === "menu" && "Gerencie seu cardápio"}
                 {dashboardTab === "addons" && "Grupos de adicionais do cardápio"}
@@ -1874,6 +1955,7 @@ const AdminDashboard = () => {
                 {dashboardTab === "settings" && "Configurações da loja"}
                 {dashboardTab === "subscription" && "Seu plano e mensalidade"}
                 {dashboardTab === "loyalty" && "Programa de pontos para clientes"}
+                {dashboardTab === "reviews" && "O que seus clientes estão achando"}
                 {dashboardTab === "drivers" && "Seus entregadores vinculados"}
                 {dashboardTab === "reports" && "Relatórios e estatísticas"}
                 {dashboardTab === "cash_register" && "Caixa presencial — PDV"}
@@ -1882,10 +1964,26 @@ const AdminDashboard = () => {
             </div>
           </div>
           <div className="flex items-center gap-1.5">
+            <DashboardSearch groups={visibleGroups} isPdvOnly={isPdvOnly} onNavigate={handleTabChange} />
+            {/* Sino = pendências: abre a aba Avisos (antes o sino chamava
+                "Alertas" mas só ativava o som e não abria lista nenhuma).
+                O som ganhou botão próprio, ao lado. */}
+            <button onClick={() => handleTabChange("avisos")}
+              title="Avisos e pendências"
+              aria-label={avisosCount > 0 ? `Avisos: ${avisosCount} pendências` : "Avisos"}
+              className="relative p-2 rounded-xl border border-border text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
+              <Bell className="h-4 w-4" />
+              {avisosCount > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-0.5 rounded-full bg-amber-400 text-amber-900 text-[10px] font-black flex items-center justify-center">
+                  {avisosCount}
+                </span>
+              )}
+            </button>
             {showSoundPrompt && !soundEnabled && !Capacitor.isNativePlatform() && (
               <button onClick={activateSound}
+                title="Ativar alertas sonoros de novos pedidos"
                 className="flex items-center gap-1 bg-amber-400/10 border border-amber-400/30 text-amber-500 px-2.5 py-1.5 rounded-xl text-[11px] font-bold animate-pulse">
-                <Bell className="h-3.5 w-3.5" /> Alertas
+                <VolumeX className="h-3.5 w-3.5" /> Som
               </button>
             )}
             {pendingCount > 0 && dashboardTab !== "orders" && !isPdvOnly && (
@@ -1931,7 +2029,7 @@ const AdminDashboard = () => {
               onSelect={handleTabChange}
               isPizza={isPizza}
               allowFullReports={allowFullReports}
-              badges={{ avisos: avisosCount }}
+              badges={{ avisos: avisosCount, dashboard: setupPendingCount }}
               pulseTabs={{ repasse: repassePending > 0 }}
             />
           )}
@@ -1987,55 +2085,8 @@ const AdminDashboard = () => {
           )}
           {dashboardTab === "dashboard" && isApproved && store && (
             <>
-              {/* ── BANNER SETUP INCOMPLETO ── */}
-              {(() => {
-                const missingMenu   = menuProductCount === 0;
-                const missingHours  = !storeHours || storeHours.length === 0 || (storeHours as any[]).every((h: any) => h.is_closed_all_day === true);
-                const missingLogo   = !store.image_url;
-                const missingDriver = isOwnDelivery && !hasLinkedDrivers && !driversLoading;
-                const items = [
-                  missingDriver && { key: "driver", label: "Vincular entregador",         desc: "Sem motoboy cadastrado clientes não conseguem pedir", tab: "drivers", urgente: true },
-                  missingMenu   && { key: "menu",   label: "Adicionar produtos",          desc: "Seu cardápio está vazio — clientes não conseguem pedir", tab: "menu", urgente: true },
-                  missingHours  && { key: "hours",  label: "Configurar horários",         desc: "Sem horários a loja aparece sempre fechada", tab: "hours", urgente: false },
-                  missingLogo   && { key: "logo",   label: "Adicionar logo da loja",      desc: "Uma boa foto aumenta a conversão de clientes", tab: "settings", urgente: false },
-                ].filter(Boolean) as { key: string; label: string; desc: string; tab: string; urgente: boolean }[];
-                if (items.length === 0) return null;
-                const temUrgente = items.some(i => i.urgente);
-                return (
-                  <div className="px-4 pt-4 pb-0">
-                    <div className={`rounded-2xl border p-4 ${temUrgente ? "bg-amber-50 dark:bg-amber-500/8 border-amber-200 dark:border-amber-500/20" : "bg-blue-50 dark:bg-blue-500/8 border-blue-200 dark:border-blue-500/20"}`}>
-                      <div className="flex items-center gap-2 mb-3">
-                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-base ${temUrgente ? "bg-amber-500/15" : "bg-blue-500/15"}`}>
-                          {temUrgente ? "⚠️" : "💡"}
-                        </div>
-                        <div>
-                          <p className={`text-xs font-black ${temUrgente ? "text-amber-700 dark:text-amber-400" : "text-blue-700 dark:text-blue-400"}`}>
-                            {temUrgente ? "Configure para começar a receber pedidos" : "Complete a configuração da sua loja"}
-                          </p>
-                          <p className="text-[10px] text-muted-foreground">{items.length} pendência{items.length > 1 ? "s" : ""}</p>
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        {items.map(item => (
-                          <button key={item.key} onClick={() => setDashboardTab(item.tab as any)}
-                            className={`w-full flex items-center gap-3 p-3 rounded-xl text-left transition-all active:scale-[0.98] ${
-                              item.urgente ? "bg-amber-100/70 dark:bg-amber-500/10 hover:bg-amber-100 dark:hover:bg-amber-500/15" : "bg-blue-100/70 dark:bg-blue-500/10 hover:bg-blue-100 dark:hover:bg-blue-500/15"
-                            }`}>
-                            <div className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 text-[11px] font-black text-white ${item.urgente ? "bg-amber-500" : "bg-blue-500"}`}>
-                              {item.urgente ? "!" : "→"}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className={`text-xs font-bold ${item.urgente ? "text-amber-800 dark:text-amber-300" : "text-blue-800 dark:text-blue-300"}`}>{item.label}</p>
-                              <p className="text-[10px] text-muted-foreground truncate">{item.desc}</p>
-                            </div>
-                            <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })()}
+              {/* ── CHECKLIST CONFIGURAR LOJA (Fase 2) ── */}
+              <SetupChecklist storeId={store.id} steps={setupSteps} onNavigate={setDashboardTab} />
               <ErrorBoundary>
               <Suspense fallback={<TabFallback />}>
                 <DashboardOverviewSection
@@ -2099,6 +2150,10 @@ const AdminDashboard = () => {
                 hasLinkedDrivers={hasLinkedDrivers}
                 setDashboardTab={setDashboardTab}
                 count={avisosCount}
+                pendingOrdersCount={pendingCount}
+                delayedOrdersCount={delayedOrders.length}
+                delayedPreparingCount={delayedPreparingCount}
+                onGoToOrders={(tab) => { setDashboardTab("orders"); setActiveTab(tab); }}
               />
             </Suspense>
             </ErrorBoundary>
@@ -2188,6 +2243,7 @@ const AdminDashboard = () => {
               <ErrorBoundary key={dashboardTab}>
               <Suspense fallback={<TabFallback />}>
                 {dashboardTab === "menu" && <MenuTab storeId={store.id} storeCategory={store.category} />}
+                {dashboardTab === "stock" && <StockTab storeId={store.id} />}
                 {dashboardTab === "cash_register" && <CashRegisterTab storeId={store.id} />}
                 {dashboardTab === "tutoriais" && <TutoriaisTab />}
                 {dashboardTab === "addons" && <AddonsTab storeId={store.id} />}
@@ -2210,6 +2266,7 @@ const AdminDashboard = () => {
                 )}
                 {dashboardTab === "coupons" && <CouponsTab storeId={store.id} />}
                 {dashboardTab === "promotions" && <PromotionsTab storeId={store.id} />}
+                {dashboardTab === "reviews" && <ReviewsTab storeId={store.id} />}
                 {dashboardTab === "drivers" && store && <DriversTab storeId={store.id} />}
                 {dashboardTab === "refunds" && store && <RefundsTab storeId={store.id} />}
               </Suspense>

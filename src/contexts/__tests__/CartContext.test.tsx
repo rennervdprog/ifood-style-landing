@@ -45,6 +45,20 @@ describe("CartContext", () => {
     expect(result.current.subtotal).toBe(0);
   });
 
+  it("carrinho corrompido no localStorage não derruba o app (Fase 2, P0-8)", () => {
+    localStorage.setItem("cart_items", "{corrompido");
+    const { result } = renderHook(() => useCart(), { wrapper });
+    expect(result.current.items).toEqual([]);
+    expect(result.current.totalItems).toBe(0);
+    expect(localStorage.getItem("cart_items")).toBeNull();
+  });
+
+  it("carrinho com formato inválido (não-array) começa vazio", () => {
+    localStorage.setItem("cart_items", JSON.stringify({ id: "p1" }));
+    const { result } = renderHook(() => useCart(), { wrapper });
+    expect(result.current.items).toEqual([]);
+  });
+
   it("adiciona item e soma subtotal", () => {
     const { result } = renderHook(() => useCart(), { wrapper });
     act(() => result.current.addItem(itemA, 2));

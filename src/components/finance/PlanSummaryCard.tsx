@@ -14,6 +14,7 @@ const PLAN_LABEL: Record<string, string> = {
   commission_only: "Comissão (sem mensalidade)",
   autonomy: "Autonomia (sem taxa por entrega)",
   supporter: "Apoiador",
+  pdv_only: "Somente PDV",
 };
 
 export default function PlanSummaryCard({ storeId }: Props) {
@@ -22,7 +23,7 @@ export default function PlanSummaryCard({ storeId }: Props) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("store_plans")
-        .select("plan_type, monthly_fee, commission_rate, pdv_enabled, pdv_fixed_fee_per_sale, next_billing_date, platform_delivery_split_override")
+        .select("plan_type, monthly_fee, commission_rate, pdv_enabled, pdv_fixed_fee_per_sale, next_billing_date, trial_ends_at, platform_delivery_split_override")
         .eq("store_id", storeId)
         .eq("is_active", true)
         .maybeSingle();
@@ -42,8 +43,12 @@ export default function PlanSummaryCard({ storeId }: Props) {
 
   if (!plan) return null;
 
+  // Durante o período grátis, a próxima cobrança real é o fim do trial
+  // (o next_billing_date cru pode estar desatualizado — mesma regra do Meu Plano).
+  const inTrial = !!(plan as any).trial_ends_at && new Date((plan as any).trial_ends_at).getTime() > Date.now();
+  const effectiveNextBilling = inTrial ? (plan as any).trial_ends_at : plan.next_billing_date;
   const deliverySplit = plan.platform_delivery_split_override ?? globalSplit ?? 0.99;
-  const showDelivery = plan.plan_type !== "autonomy";
+  const showDelivery = plan.plan_type !== "autonomy" && (plan.plan_type as string) !== "pdv_only";
   const isFixedPlan = ["fixed", "supporter", "autonomy"].includes(plan.plan_type);
   const pixFeePerOrder = isFixedPlan ? 1.99 : 0;
 
@@ -74,9 +79,10 @@ export default function PlanSummaryCard({ storeId }: Props) {
           )}
         </div>
 
-        {plan.next_billing_date && Number(plan.monthly_fee) > 0 && (
+        {effectiveNextBilling && Number(plan.monthly_fee) > 0 && (
           <div className="text-[11px] text-muted-foreground border-t pt-2">
-            Próximo vencimento: <strong className="text-foreground">{format(new Date(plan.next_billing_date), "dd 'de' MMMM", { locale: ptBR })}</strong>
+            {inTrial ? "Primeira cobrança (fim do período grátis): " : "Próximo vencimento: "}
+            <strong className="text-foreground">{format(new Date(effectiveNextBilling), "dd 'de' MMMM", { locale: ptBR })}</strong>
           </div>
         )}
       </CardContent>

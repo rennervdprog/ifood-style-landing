@@ -1,4 +1,5 @@
 import MenuBuilder from "@/components/MenuBuilder";
+import TutorialHelpButton from "@/components/TutorialHelp";
 
 interface Props {
   storeId: string;
@@ -6,7 +7,12 @@ interface Props {
 }
 
 const MenuTab = ({ storeId, storeCategory }: Props) => (
-  <MenuBuilder storeId={storeId} storeCategory={storeCategory} />
+  <div className="space-y-2">
+    <div className="flex justify-end">
+      <TutorialHelpButton tutorialId="menu" />
+    </div>
+    <MenuBuilder storeId={storeId} storeCategory={storeCategory} />
+  </div>
 );
 
 export default MenuTab;

@@ -9,6 +9,7 @@ import OrdersStatusPills from "../components/orders/OrdersStatusPills";
 import PixDirectAlert from "../components/orders/PixDirectAlert";
 import OrdersEmptyState from "../components/orders/OrdersEmptyState";
 import OrderCardSkeleton from "../components/orders/OrderCardSkeleton";
+import TutorialHelpButton from "@/components/TutorialHelp";
 
 interface Props {
   store: any;
@@ -66,7 +67,7 @@ export default function OrdersSection(props: Props) {
   const [sourceFilter, setSourceFilter] = useState<SourceKey>("all");
 
   const pixPending = useMemo(
-    () => (orders || []).filter((o: any) => o.status === "comprovante_enviado" || o.status === "aguardando_comprovante"),
+    () => (orders || []).filter((o: any) => o.status === "comprovante_enviado"),
     [orders]
   );
   const [pixBusyId, setPixBusyId] = useState<string | null>(null);
@@ -147,8 +148,16 @@ export default function OrdersSection(props: Props) {
 
   const finalOrders = useMemo(() => {
     return filteredOrders.filter((o: any) => {
-      const t = new Date(o.created_at).getTime();
-      if (t < periodRange.from || t >= periodRange.to) return false;
+      // Pedidos PIX direto aguardando comprovante ficam invisíveis pro lojista
+      // até o cliente enviar o comprovante.
+      if (o.status === "aguardando_comprovante") return false;
+      // Pedido pendente (aguardando aceite) NUNCA é escondido pelo filtro de
+      // período: um pendente antigo com o filtro "Hoje" sumia da lista e o
+      // botão "Ver pendentes" parecia não fazer nada.
+      if (o.status !== "pendente") {
+        const t = new Date(o.created_at).getTime();
+        if (t < periodRange.from || t >= periodRange.to) return false;
+      }
       if (sourceFilter !== "all") {
         const src = o.order_source || "delivery";
         if (src !== sourceFilter) return false;
@@ -156,6 +165,13 @@ export default function OrdersSection(props: Props) {
       return true;
     });
   }, [filteredOrders, periodRange, sourceFilter]);
+
+  // "Ver pendentes": além de trocar a aba, abre o período para "Tudo" —
+  // pendentes de dias anteriores continuam visíveis e acionáveis.
+  const goToPending = () => {
+    setPeriod("all");
+    setActiveTab("pendente");
+  };
 
   const periodSummary = useMemo(() => {
     const base = (orders || []).filter((o: any) => {
@@ -179,6 +195,9 @@ export default function OrdersSection(props: Props) {
 
   return (
     <>
+      <div className="flex justify-end px-4 lg:px-6 pt-4 max-w-6xl mx-auto w-full">
+        <TutorialHelpButton tutorialId="orders" />
+      </div>
       <OrdersToolbar
         period={period}
         setPeriod={setPeriod}
@@ -199,7 +218,7 @@ export default function OrdersSection(props: Props) {
               <p className="mt-0.5 text-xs text-muted-foreground">Revise novos pedidos e confirmações de PIX antes de iniciar o preparo.</p>
             </div>
           </div>
-          <button onClick={() => setActiveTab("pendente")} className="inline-flex items-center justify-center gap-2 self-start rounded-lg bg-primary px-3 py-2 text-xs font-black text-primary-foreground hover:bg-primary/90 sm:self-auto">Ver pendentes <ArrowRight className="h-4 w-4" /></button>
+          <button onClick={goToPending} className="inline-flex items-center justify-center gap-2 self-start rounded-lg bg-primary px-3 py-2 text-xs font-black text-primary-foreground hover:bg-primary/90 sm:self-auto">Ver pendentes <ArrowRight className="h-4 w-4" /></button>
         </section>
       )}
 
@@ -270,7 +289,7 @@ export default function OrdersSection(props: Props) {
 
       {pendingCount > 0 && activeTab !== "pendente" && (
         <button
-          onClick={() => setActiveTab("pendente")}
+          onClick={goToPending}
           style={{ bottom: "calc(env(safe-area-inset-bottom) + 5rem)" }}
           className="fixed right-6 z-30 flex items-center gap-2 rounded-lg bg-primary px-5 py-3 text-sm font-black text-primary-foreground shadow-xl ring-4 ring-primary/30 lg:!bottom-6"
         >

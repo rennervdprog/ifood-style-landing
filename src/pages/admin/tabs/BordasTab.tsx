@@ -4,6 +4,7 @@ import PizzaFlavorManager from "@/components/PizzaFlavorManager";
 import PastelBorderManager from "@/components/PastelBorderManager";
 import PastelFlavorManager from "@/components/PastelFlavorManager";
 import { Pizza, Circle, UtensilsCrossed } from "lucide-react";
+import TutorialHelpButton from "@/components/TutorialHelp";
 
 interface Props {
   storeId: string;
@@ -34,9 +35,12 @@ const BordasTab = ({ storeId, category, categories }: Props) => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-lg font-black text-foreground">{title}</h1>
-        <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-lg font-black text-foreground">{title}</h1>
+          <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>
+        </div>
+        <TutorialHelpButton tutorialId="bordas" />
       </div>
 
       {isPizza && isPastel && (

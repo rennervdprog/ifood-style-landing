@@ -1,11 +1,14 @@
+// @ts-nocheck — tabelas/RPCs de estoque vivem no banco externo e não estão nos tipos gerados
 import { useState, useMemo, useCallback, useEffect } from "react";
 import DailyMenuManager from "@/components/DailyMenuManager";
 import MenuImportCSV from "@/components/MenuImportCSV";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Plus, Loader2, Package, Sparkles, ArrowLeft } from "lucide-react";
+import { Plus, Loader2, Package, Sparkles, ArrowLeft, ChefHat } from "lucide-react";
 import { ProductCard, ProductFormData } from "@/components/menu/ProductCard";
+import ProductRecipe from "@/components/ProductRecipe";
+import RecipeManager from "@/components/RecipeManager";
 import { ConfirmDialog } from "@/components/menu/ConfirmDialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetClose } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -44,6 +47,7 @@ const MenuBuilder = ({ storeId, storeCategory, storeCategories }: MenuBuilderPro
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkBusy, setBulkBusy] = useState(false);
 
+  const [recipeProduct, setRecipeProduct] = useState<any | null>(null);
   const [productSheet, setProductSheet] = useState<
     | { mode: "create"; sectionId: string | null }
     | { mode: "edit"; id: string; initial: ProductFormData; sectionName: string | null }
@@ -85,7 +89,8 @@ const MenuBuilder = ({ storeId, storeCategory, storeCategories }: MenuBuilderPro
           !p?.metadata?.pdv_only &&
           !p?.sold_by_weight &&
           !p?.metadata?.sold_by_weight &&
-          !p?.metadata?.hidden
+          !p?.metadata?.hidden &&
+          !p?.metadata?.is_ingredient
       );
     },
   });
@@ -100,6 +105,38 @@ const MenuBuilder = ({ storeId, storeCategory, storeCategories }: MenuBuilderPro
   });
 
   const productIds = useMemo(() => (products || []).map((p: any) => p.id), [products]);
+
+  // ---------- Fichas técnicas (aba) ----------
+  const [cardapioView, setCardapioView] = useState<"produtos" | "fichas">("produtos");
+
+  const { data: recipes = [] } = useQuery({
+    queryKey: ["store-recipes", storeId],
+    queryFn: async () => {
+      if (productIds.length === 0) return [];
+      const { data, error } = await supabase
+        .from("product_recipes")
+        .select("id, product_id, quantity, unit, ingredient_product_id, products!product_recipes_ingredient_product_id_fkey(name)")
+        .in("product_id", productIds);
+      if (error) throw error;
+      return (data || []) as any[];
+    },
+    enabled: productIds.length > 0,
+  });
+
+  const recipesByProduct = useMemo(() => {
+    const map = new Map<string, any[]>();
+    (recipes as any[]).forEach((r) => {
+      const list = map.get(r.product_id) || [];
+      list.push(r);
+      map.set(r.product_id, list);
+    });
+    return map;
+  }, [recipes]);
+
+  const semFichaCount = useMemo(
+    () => (products || []).filter((p: any) => !recipesByProduct.has(p.id)).length,
+    [products, recipesByProduct],
+  );
 
   const { data: addonGroups } = useQuery({
     queryKey: ["addon-groups", storeId, productIds.length],
@@ -352,7 +389,7 @@ const MenuBuilder = ({ storeId, storeCategory, storeCategories }: MenuBuilderPro
     if (!validated) return;
     const { finalPrice, soldByWeight, pricePerKg } = validated;
 
-    const { error } = await supabase.from("products").insert({
+    const { data: inserted, error } = await supabase.from("products").insert({
       store_id: storeId,
       section_id: sectionId,
       name: formData.name.trim(),
@@ -363,13 +400,41 @@ const MenuBuilder = ({ storeId, storeCategory, storeCategories }: MenuBuilderPro
       sold_by_weight: soldByWeight,
       price_per_kg: soldByWeight ? pricePerKg : null,
       weight_unit: "kg",
-    } as any);
+    } as any).select("id").single();
     if (error) {
       console.error("[MenuBuilder] insert products failed:", error);
       toast.error(`Erro ao adicionar produto: ${error.message || error.code || "desconhecido"}`);
       return;
     }
+    // Controle de estoque: cria registro se ativado no formulário
+    const meta = formData.metadata as any;
+    if (inserted?.id && meta?.track_stock) {
+      try {
+        await supabase.rpc("stock_toggle_tracking" as any, {
+          _product_id: inserted.id,
+          _track: true,
+        });
+        const initialQty = Number(meta?.initial_stock) || 0;
+        if (initialQty > 0) {
+          await supabase.rpc("stock_adjust" as any, {
+            _product_id: inserted.id,
+            _quantity: initialQty,
+            _type: "in",
+            _reason: "Estoque inicial",
+          });
+        }
+        const minQty = Number(meta?.min_stock) || 0;
+        if (minQty > 0) {
+          await supabase.rpc("stock_set_min" as any, {
+            _product_id: inserted.id,
+            _min_quantity: minQty,
+          });
+        }
+      } catch {}
+    }
     toast.success("Produto adicionado!");
+    queryClient.invalidateQueries({ queryKey: ["store-products", storeId] });
+    queryClient.invalidateQueries({ queryKey: ["menu-sections", storeId] });
     setProductSheet(null);
     invalidateProducts();
   };
@@ -395,6 +460,20 @@ const MenuBuilder = ({ storeId, storeCategory, storeCategories }: MenuBuilderPro
       toast.error("Erro ao atualizar");
       return;
     }
+    // Controle de estoque: atualiza toggle e mínimo
+    const meta = formData.metadata as any;
+    try {
+      await supabase.rpc("stock_toggle_tracking" as any, {
+        _product_id: id,
+        _track: !!meta?.track_stock,
+      });
+      if (meta?.track_stock && meta?.min_stock !== undefined) {
+        await supabase.rpc("stock_set_min" as any, {
+          _product_id: id,
+          _min_quantity: Number(meta.min_stock) || 0,
+        });
+      }
+    } catch {}
     toast.success("Produto atualizado!");
     setProductSheet(null);
     invalidateProducts();
@@ -800,9 +879,21 @@ const MenuBuilder = ({ storeId, storeCategory, storeCategories }: MenuBuilderPro
     setProductSheet({ mode: "create", sectionId: null });
   };
 
-  const openEdit = (product: any) => {
+  const openEdit = async (product: any) => {
     const sectionName =
       product.section_id ? (sections || []).find((s: any) => s.id === product.section_id)?.name || null : null;
+
+    // Busca o estoque REAL atual (não o valor antigo do metadata)
+    let realStock: any = null;
+    try {
+      const { data } = await supabase
+        .from("product_stock")
+        .select("quantity, min_quantity, track_stock")
+        .eq("product_id", product.id)
+        .single();
+      realStock = data;
+    } catch {}
+
     setProductSheet({
       mode: "edit",
       id: product.id,
@@ -814,6 +905,10 @@ const MenuBuilder = ({ storeId, storeCategory, storeCategories }: MenuBuilderPro
         image_url: product.image_url || "",
         metadata: {
           ...((product as any).metadata || {}),
+          // Usa o estoque real, não o valor desatualizado do metadata
+          track_stock: realStock?.track_stock ?? (product as any).metadata?.track_stock ?? false,
+          current_stock: realStock ? Number(realStock.quantity) : undefined,
+          min_stock: realStock ? Number(realStock.min_quantity) : (product as any).metadata?.min_stock,
           ...((product as any).sold_by_weight
             ? {
                 sold_by_weight: true,
@@ -856,6 +951,7 @@ const MenuBuilder = ({ storeId, storeCategory, storeCategories }: MenuBuilderPro
       onDuplicate={() => duplicateProduct(product)}
       onCopyLink={() => copyProductLink(product)}
       onEdit={() => openEdit(product)}
+      onOpenRecipe={() => setRecipeProduct(product)}
       isEditing={false}
       onSaveEdit={() => {}}
       onCancelEdit={() => {}}
@@ -913,6 +1009,41 @@ const MenuBuilder = ({ storeId, storeCategory, storeCategories }: MenuBuilderPro
           <p className="text-xs font-bold text-muted-foreground"><span className="text-primary">{activeCount} ativos</span>{pausedCount > 0 ? ` · ${pausedCount} pausados` : ""} · {sections?.length || 0} {(sections?.length || 0) === 1 ? "seção" : "seções"}</p>
         </div>
       </header>
+
+      {/* Alternância Produtos × Fichas técnicas */}
+      <div className="mb-4 flex gap-1 rounded-xl border border-border bg-card p-1">
+        <button
+          onClick={() => setCardapioView("produtos")}
+          className={`flex-1 rounded-lg px-3 py-2 text-[13px] font-bold transition-colors ${
+            cardapioView === "produtos" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          Produtos
+        </button>
+        <button
+          onClick={() => setCardapioView("fichas")}
+          className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-[13px] font-bold transition-colors ${
+            cardapioView === "fichas" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <ChefHat className="h-4 w-4" />
+          Fichas técnicas
+          {semFichaCount > 0 && (
+            <span className="rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-extrabold text-primary-foreground">
+              {semFichaCount} sem ficha
+            </span>
+          )}
+        </button>
+      </div>
+
+      {cardapioView === "fichas" ? (
+        <RecipeManager
+          products={products || []}
+          recipesByProduct={recipesByProduct}
+          onOpenRecipe={(p) => setRecipeProduct(p)}
+        />
+      ) : (
+      <>
 
       {(noImageCount > 0 || outOfStockCount > 0 || unsectionedProducts.length > 0) && (
         <section className="mb-4 grid divide-y divide-border border border-border bg-card sm:grid-cols-3 sm:divide-x sm:divide-y-0">
@@ -1046,9 +1177,11 @@ const MenuBuilder = ({ storeId, storeCategory, storeCategories }: MenuBuilderPro
           </div>
         </div>
       )}
+      </>
+      )}
 
       {/* Mobile FAB */}
-      {!showFullEmpty && productSheet === null && selectedIds.size === 0 && (
+      {cardapioView === "produtos" && !showFullEmpty && productSheet === null && selectedIds.size === 0 && (
         <button
           onClick={openCreate}
           className="lg:hidden fixed bottom-20 right-4 z-30 bg-primary text-primary-foreground rounded-full shadow-lg hover:bg-primary/90 transition-all active:scale-95 flex items-center gap-2 px-5 py-3 font-bold text-sm"
@@ -1139,6 +1272,18 @@ const MenuBuilder = ({ storeId, storeCategory, storeCategories }: MenuBuilderPro
           destructive={confirmState.destructive}
           confirmText={confirmState.confirmText}
           onConfirm={confirmState.onConfirm}
+        />
+      )}
+      {/* Ficha técnica do produto */}
+      {recipeProduct && (
+        <ProductRecipe
+          productId={recipeProduct.id}
+          productName={recipeProduct.name}
+          storeId={storeId}
+          onClose={() => {
+            setRecipeProduct(null);
+            queryClient.invalidateQueries({ queryKey: ["store-recipes", storeId] });
+          }}
         />
       )}
     </div>

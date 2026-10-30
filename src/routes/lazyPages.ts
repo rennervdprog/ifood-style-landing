@@ -8,6 +8,7 @@
 import { lazy } from "react";
 import { registerRoutePrefetch } from "@/lib/prefetchRoute";
 import { ROUTES } from "@/routes/manifest";
+import { loadLazyOnce } from "@/routes/lazyLoadOnce";
 
 export const Index = lazy(() => import("@/pages/Index"));
 export const StoreDirectory = lazy(() => import("@/pages/StoreDirectory"));
@@ -25,16 +26,22 @@ export const PerfilPage = lazy(() => import("@/pages/PerfilPage"));
 export const AuthPage = lazy(() => import("@/pages/AuthPage"));
 export const PartnerLogin = lazy(() => import("@/pages/PartnerLogin"));
 export const AdminDashboardV2 = lazy(() => import("@/pages/AdminDashboardV2"));
+export const AdminDashboardV2Teste = lazy(() => import("@/pages/AdminDashboardV2Teste"));
 export const MatrizDashboard = lazy(() => import("@/pages/MatrizDashboard"));
+export const MatrizDashboardV2 = lazy(() => import("@/pages/MatrizDashboardV2"));
+export const ConviteRede = lazy(() => import("@/pages/ConviteRede"));
 export const PdvPage = lazy(() => import("@/pages/PdvPage"));
+export const PdvPageTeste = lazy(() => import("@/pages/PdvPageTeste"));
 export const PdvKdsPage = lazy(() => import("@/pages/PdvKdsPage"));
 export const PdvCardapioPage = lazy(() => import("@/pages/PdvCardapioPage"));
 export const DriverDashboardV2 = lazy(() => import("@/pages/DriverDashboardV2"));
-export const SuperAdminDashboardV2 = lazy(() =>
-  import("@/pages/SuperAdminDashboardV2").catch(() => {
-    window.location.reload();
-    return { default: () => null };
-  }),
+// O carregamento usa loadLazyOnce (UMA recarga; na 2ª falha mostra a tela
+// de erro com botão — nunca loop infinito; ver src/routes/lazyLoadOnce.tsx).
+export const SuperAdminDashboardV2 = loadLazyOnce("super-admin", () =>
+  import("@/pages/SuperAdminDashboardV2"),
+);
+export const SuperAdminDashboardV2Teste = loadLazyOnce("super-admin-teste", () =>
+  import("@/pages/SuperAdminDashboardV2Teste"),
 );
 export const PartnerOnboarding = lazy(() => import("@/pages/PartnerOnboarding"));
 export const CadastroLojista = lazy(() => import("@/pages/CadastroLojista"));
@@ -57,18 +64,22 @@ export const BlogPost = lazy(() => import("@/pages/blog/BlogPost"));
 export const BlogAdmin = lazy(() => import("@/pages/admin/BlogAdmin"));
 export const BlogAdminEditor = lazy(() => import("@/pages/admin/BlogAdminEditor"));
 export const VagaPromoPage = lazy(() => import("@/pages/VagaPromoPage"));
+export const PdvLandingPage = lazy(() => import("@/pages/PdvLandingPage"));
 
 // Fase 6 — prefetch tipado pelo manifest (paths não são mais strings mágicas).
 const PREFETCH_MAP: Record<string, () => Promise<unknown>> = {
   [ROUTES.admin.superAdmin]: () => import("@/pages/SuperAdminDashboardV2"),
+  [ROUTES.admin.superAdminTeste]: () => import("@/pages/SuperAdminDashboardV2Teste"),
   [ROUTES.lojista.admin]: () => import("@/pages/AdminDashboardV2"),
   [ROUTES.lojista.pdv]: () => import("@/pages/PdvPage"),
   [ROUTES.lojista.matriz]: () => import("@/pages/MatrizDashboard"),
+  [ROUTES.lojista.matrizV2]: () => import("@/pages/MatrizDashboardV2"),
   [ROUTES.entregador.home]: () => import("@/pages/DriverDashboardV2"),
   [ROUTES.revendedor.home]: () => import("@/pages/ResellerDashboard"),
   [ROUTES.revendedor.entrar]: () => import("@/pages/ResellerAuth"),
   [ROUTES.auth.portalParceiro]: () => import("@/pages/PartnerLogin"),
   [ROUTES.public.planos]: () => import("@/pages/PlanosPage"),
+  [ROUTES.public.pdv]: () => import("@/pages/PdvLandingPage"),
   [ROUTES.cliente.home]: () => import("@/pages/ClientHome"),
   [ROUTES.cliente.busca]: () => import("@/pages/cliente/busca/ClientBuscaPage"),
   [ROUTES.lojista.cadastroLojista]: () => import("@/pages/CadastroLojista"),
@@ -76,3 +87,4 @@ const PREFETCH_MAP: Record<string, () => Promise<unknown>> = {
 for (const [path, loader] of Object.entries(PREFETCH_MAP)) {
   registerRoutePrefetch(path, loader);
 }
+

@@ -11,7 +11,6 @@ import { StoreProvider } from "@/contexts/StoreContext";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import InstallPrompt from "@/components/InstallPrompt";
 import NotificationPrompt from "@/components/NotificationPrompt";
-import DownloadAppPrompt from "@/components/DownloadAppPrompt";
 import CapacitorPermissionsOnboarding from "@/components/CapacitorPermissionsOnboarding";
 import DebugOverlay from "@/components/DebugOverlay";
 import { initCapacitorNative, isCapacitorNative, consumePendingPushNavigation } from "@/lib/capacitorNative";
@@ -241,8 +240,12 @@ const App = () => {
     return () => clearTimeout(t);
   }, []);
 
-  // Anti-cache: força atualização completa quando a versão do app muda.
-  // Limpa localStorage, caches do Service Worker e recarrega a página.
+  // Anti-cache: quando a versão do app muda, registra a nova versão e
+  // limpa o cache do React Query. NÃO recarrega nem apaga caches do SW
+  // aqui: com registerType "prompt" o SW novo fica em "waiting" até o
+  // usuário aceitar via versionWatcher, que já limpa caches e recarrega
+  // no momento seguro. Recarregar/apagar caches no mount causava reload
+  // duplo a cada deploy (e apagava o precache do SW novo).
   useEffect(() => {
     // Em Capacitor o plugin @capgo/capacitor-updater cuida de baixar bundle
     // novo em background e aplicar no próximo cold start.
@@ -255,22 +258,7 @@ const App = () => {
 
       // Salvar nova versão ANTES de qualquer operação para evitar loop
       localStorage.setItem("app_version", APP_VERSION);
-      // Marcar que o reload de versão já foi feito (evita conflito com SW controllerchange)
-      localStorage.setItem("sw-update-reload-ts", String(Date.now()));
       queryClient.clear();
-
-      // Limpar caches do SW e recarregar só se havia versão anterior
-      if (storedVersion) {
-        const reload = () => { (globalThis as any).location.reload(); };
-        if (typeof caches !== "undefined") {
-          caches.keys()
-            .then(keys => Promise.all(keys.map(k => caches.delete(k))))
-            .catch(() => {})
-            .finally(reload);
-        } else {
-          reload();
-        }
-      }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -375,7 +363,6 @@ const App = () => {
             {showAncillary && !partnerNative && <StoreAppGuard />}
             {showAncillary && <TermsChecker />}
             {showAncillary && !partnerNative && <ClientPinChecker />}
-            {showAncillary && !partnerNative && <DownloadAppPrompt />}
             <ErrorBoundary>
             <Suspense fallback={<PageLoader />}>
               <AppRoutes />
