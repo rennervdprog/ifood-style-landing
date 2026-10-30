@@ -23,6 +23,47 @@ const addonRulePhrase = (minRaw: string, maxRaw: string) => {
   return `O cliente pode pular este grupo ou escolher até ${max} ${noun}.`;
 };
 
+// Input de preço do adicional (máscara de centavos de @/hooks/useBRLInput).
+// PRECISA viver em nível de módulo: definido dentro do componente pai, ele
+// ganhava identidade nova a cada render e o React remontava o <input> a cada
+// tecla — o campo perdia o foco após o 1º dígito e só ele era salvo
+// (digitar 2,00 gravava R$ 0,02; item 3 do plano de correções).
+// O useEffect espelha o BRLInput de DeliveryFeeConfig: sincroniza o display
+// quando o valor muda por fora (abrir a edição de outro item, reset do form).
+export const AddonPriceInput = ({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder?: string }) => {
+  const [display, setDisplay] = useState(value && parseFloat(value) > 0 ? formatBRLDisplay(parseFloat(value)) : "");
+
+  useEffect(() => {
+    setDisplay(value && parseFloat(value) > 0 ? formatBRLDisplay(parseFloat(value)) : "");
+  }, [value]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value;
+    if (!raw.replace(/\D/g, "")) {
+      setDisplay("");
+      onChange("0");
+      return;
+    }
+    const n = parseBRLCentsInput(raw);
+    setDisplay(formatBRLDisplay(n));
+    onChange(n.toFixed(2));
+  };
+
+  return (
+    <div className="relative flex-1">
+      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] font-bold text-muted-foreground/60">R$</span>
+      <input
+        type="text"
+        inputMode="numeric"
+        value={display}
+        onChange={handleChange}
+        placeholder={placeholder || "0,00"}
+        className="w-full bg-secondary text-foreground pl-7 pr-2 py-2 rounded-lg text-xs border border-border focus:outline-none focus:border-primary"
+      />
+    </div>
+  );
+};
+
 const AddonManager = ({ storeId }: AddonManagerProps) => {
   const queryClient = useQueryClient();
   const { confirm, ConfirmDialog } = useConfirmDialog();
@@ -168,36 +209,6 @@ const AddonManager = ({ storeId }: AddonManagerProps) => {
     if (error) { toast.error("Erro ao excluir grupo"); return; }
     toast.success("Grupo excluído!");
     invalidate();
-  };
-
-  const AddonPriceInput = ({ value, onChange, placeholder }: { value: string, onChange: (v: string) => void, placeholder?: string }) => {
-    const [display, setDisplay] = useState(value && parseFloat(value) > 0 ? formatBRLDisplay(parseFloat(value)) : "");
-    
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      const raw = e.target.value;
-      if (!raw.replace(/\D/g, "")) {
-        setDisplay("");
-        onChange("0");
-        return;
-      }
-      const n = parseBRLCentsInput(raw);
-      setDisplay(formatBRLDisplay(n));
-      onChange(n.toFixed(2));
-    };
-
-    return (
-      <div className="relative flex-1">
-        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] font-bold text-muted-foreground/60">R$</span>
-        <input
-          type="text"
-          inputMode="numeric"
-          value={display}
-          onChange={handleChange}
-          placeholder={placeholder || "0,00"}
-          className="w-full bg-secondary text-foreground pl-7 pr-2 py-2 rounded-lg text-xs border border-border focus:outline-none focus:border-primary"
-        />
-      </div>
-    );
   };
 
   const addItem = async (groupId: string) => {
