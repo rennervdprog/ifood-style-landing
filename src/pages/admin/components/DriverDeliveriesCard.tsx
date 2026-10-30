@@ -10,7 +10,10 @@ interface Props {
 /**
  * Card compacto para o Início do painel do lojista:
  * lista quantas entregas cada motoboy da equipe fez hoje e no total.
- * Fonte: store_driver_earnings (inclui delivery normal e manual).
+ * Fonte: orders (pedidos entregues/finalizados, inclui delivery normal e
+ * manual). O antigo livro `store_driver_earnings` era o controle de acerto
+ * lojista×motoboy e foi aposentado — acerto é acordo entre as duas partes,
+ * fora da plataforma.
  */
 export default function DriverDeliveriesCard({ storeId, onClick }: Props) {
   const { data: drivers } = useQuery({
@@ -47,19 +50,21 @@ export default function DriverDeliveriesCard({ storeId, onClick }: Props) {
     queryFn: async () => {
       if (!ids.length) return {} as Record<string, { today: number; total: number }>;
       const { data } = await supabase
-        .from("store_driver_earnings" as any)
-        .select("driver_user_id, created_at")
+        .from("orders")
+        .select("driver_id, delivered_at, created_at")
         .eq("store_id", storeId)
-        .in("driver_user_id", ids);
+        .in("driver_id", ids)
+        .in("status", ["entregue", "finalizado"]);
       const start = new Date();
       start.setHours(0, 0, 0, 0);
       const startMs = start.getTime();
       const map: Record<string, { today: number; total: number }> = {};
       (data as any[] || []).forEach((r) => {
-        const k = r.driver_user_id;
+        const k = r.driver_id;
+        if (!k) return;
         if (!map[k]) map[k] = { today: 0, total: 0 };
         map[k].total += 1;
-        if (new Date(r.created_at).getTime() >= startMs) map[k].today += 1;
+        if (new Date(r.delivered_at || r.created_at).getTime() >= startMs) map[k].today += 1;
       });
       return map;
     },
