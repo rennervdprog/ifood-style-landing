@@ -1076,6 +1076,7 @@ const MenuBuilderTeste = ({ storeId, storeCategory, storeCategories }: MenuBuild
           onCreateProduct={openFirstProduct}
           onCreateSection={() => setSectionSheetOpen(true)}
           onOpenImport={() => setImportOpen(true)}
+          onOpenDailyMenu={storeCategory !== "adegas" ? () => setDailyMenuOpen(true) : undefined}
         />
       ) : (
         <div className="flex flex-col lg:flex-row gap-4">
@@ -1313,10 +1314,12 @@ const EmptyState = ({
   onCreateProduct,
   onCreateSection,
   onOpenImport,
+  onOpenDailyMenu,
 }: {
   onCreateProduct: () => void;
   onCreateSection: () => void;
   onOpenImport: () => void;
+  onOpenDailyMenu?: () => void;
 }) => (
   <div className="bg-card border border-border rounded-2xl p-8 text-center max-w-lg mx-auto">
     <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-primary/10 flex items-center justify-center">
@@ -1345,6 +1348,14 @@ const EmptyState = ({
       >
         Importar CSV
       </button>
+      {onOpenDailyMenu && (
+        <button
+          onClick={onOpenDailyMenu}
+          className="bg-card border border-border text-foreground px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-muted transition-colors"
+        >
+          Cardápio do dia
+        </button>
+      )}
     </div>
   </div>
 );

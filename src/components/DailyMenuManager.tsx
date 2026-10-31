@@ -118,6 +118,16 @@
          </button>
        </div>
  
+       {products.length === 0 ? (
+         <div className="p-4">
+           <div className="flex items-start gap-2 bg-card border border-primary/20 rounded-xl p-3">
+             <Info className="h-4 w-4 shrink-0 mt-0.5 text-primary" />
+             <p className="text-sm text-muted-foreground">
+               Nenhum produto cadastrado ainda — cadastre produtos ou importe o cardápio para montar o cardápio do dia.
+             </p>
+           </div>
+         </div>
+       ) : (
        <div className="p-4 space-y-4">
          <div className="space-y-2">
            <label className="text-xs font-bold text-primary flex items-center gap-1">
@@ -183,6 +193,7 @@
            </p>
          </div>
        </div>
+       )}
      </div>
    );
  };
