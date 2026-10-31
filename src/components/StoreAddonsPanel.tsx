@@ -7,6 +7,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useStorePdvAccess, useAddonsFlag } from "@/hooks/useStorePdvAccess";
+import { getFunctionErrorMessage } from "@/lib/functionError";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
@@ -42,7 +43,7 @@ export default function StoreAddonsPanel({ storeId }: Props) {
       );
       qc.invalidateQueries({ queryKey: ["store-pdv-access", storeId] });
     } catch (e: any) {
-      toast.error(e?.message || "Falha ao atualizar módulo.");
+      toast.error(await getFunctionErrorMessage(e, "Falha ao atualizar módulo."));
     } finally {
       setLoading(false);
     }

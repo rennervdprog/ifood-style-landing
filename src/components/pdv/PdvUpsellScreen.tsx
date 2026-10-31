@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { getFunctionErrorMessage } from "@/lib/functionError";
 import { useQueryClient } from "@tanstack/react-query";
 
 interface Props {
@@ -26,7 +27,7 @@ export default function PdvUpsellScreen({ storeId, monthlyPrice, onBack }: Props
       toast.success("PDV ativado! A cobrança proporcional entra na próxima fatura.");
       qc.invalidateQueries({ queryKey: ["store-pdv-access", storeId] });
     } catch (e: any) {
-      toast.error(e?.message || "Falha ao ativar PDV.");
+      toast.error(await getFunctionErrorMessage(e, "Falha ao ativar PDV."));
     } finally {
       setLoading(false);
     }
