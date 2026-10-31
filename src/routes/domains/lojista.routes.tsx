@@ -4,11 +4,9 @@ import { LojistaHomeLayout } from "@/routes/layouts/LojistaLayout";
 import { PdvAccessLayout } from "@/routes/layouts/PdvAccessLayout";
 import { ScopedNotFound } from "@/components/ScopedNotFound";
 import {
-  AdminDashboardV2,
   AdminDashboardV2Teste,
   MatrizDashboard,
   MatrizDashboardV2,
-  PdvPage,
   PdvPageTeste,
   PdvKdsPage,
   PdvCardapioPage,
@@ -16,7 +14,9 @@ import {
 
 export const lojistaRoutes = (
   <>
-    {/* /admin — dashboard raiz do lojista (com LojistaHomeRedirect) */}
+    {/* /admin — dashboard raiz do lojista (com LojistaHomeRedirect).
+        Alinhamento 2026-11-02: monta a árvore Teste (AdminDashboardV2Teste),
+        a mesma de /admin-teste — árvore única, dois mounts. */}
     <Route
       element={
         <GuardedLayout
@@ -27,9 +27,9 @@ export const lojistaRoutes = (
       }
     >
       <Route element={<LojistaHomeLayout />}>
-        <Route path="/admin" element={<AdminDashboardV2 />} />
+        <Route path="/admin" element={<AdminDashboardV2Teste />} />
       </Route>
-      {/* /admin-teste — cópia de teste do painel (PREVIEW; publicação depende da palavra do Renner) */}
+      {/* /admin-teste — mesmo painel, mesma árvore (mount permanente) */}
       <Route element={<LojistaHomeLayout />}>
         <Route path="/admin-teste" element={<AdminDashboardV2Teste />} />
       </Route>
@@ -50,7 +50,7 @@ export const lojistaRoutes = (
       }
     >
       <Route element={<PdvAccessLayout />}>
-        <Route path="/admin/pdv" element={<PdvPage />} />
+        <Route path="/admin/pdv" element={<PdvPageTeste />} />
         <Route path="/admin-teste/pdv" element={<PdvPageTeste />} />
         <Route path="/admin/pdv/kds" element={<PdvKdsPage />} />
         <Route path="/admin/cardapio" element={<PdvCardapioPage />} />

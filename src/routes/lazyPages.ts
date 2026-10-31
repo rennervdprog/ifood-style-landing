@@ -70,8 +70,8 @@ export const PdvLandingPage = lazy(() => import("@/pages/PdvLandingPage"));
 const PREFETCH_MAP: Record<string, () => Promise<unknown>> = {
   [ROUTES.admin.superAdmin]: () => import("@/pages/SuperAdminDashboardV2"),
   [ROUTES.admin.superAdminTeste]: () => import("@/pages/SuperAdminDashboardV2Teste"),
-  [ROUTES.lojista.admin]: () => import("@/pages/AdminDashboardV2"),
-  [ROUTES.lojista.pdv]: () => import("@/pages/PdvPage"),
+  [ROUTES.lojista.admin]: () => import("@/pages/AdminDashboardV2Teste"),
+  [ROUTES.lojista.pdv]: () => import("@/pages/PdvPageTeste"),
   [ROUTES.lojista.matriz]: () => import("@/pages/MatrizDashboard"),
   [ROUTES.lojista.matrizV2]: () => import("@/pages/MatrizDashboardV2"),
   [ROUTES.entregador.home]: () => import("@/pages/DriverDashboardV2"),
