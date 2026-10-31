@@ -20,9 +20,13 @@ export const PdvSaleSuccessScreen = ({
   const isDinheiro = troco !== null;
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-white">
-      {/* Conteúdo central */}
-      <div className="flex flex-1 flex-col items-center justify-center px-7 py-8 text-center">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-white">
+      {/* Conteúdo central — min-h-0 + overflow-y-auto (item 12): em janelas
+          baixas quem cede é o miolo (encolhe/rola), nunca o rodapé. Sem
+          isso a altura mínima intrínseca do miolo empurrava o botão
+          "Nova venda" para além da coluna do caixa (overflow-hidden) e
+          ele ficava cortado/inalcançável no layout desktop. */}
+      <div className="flex flex-1 min-h-0 flex-col items-center justify-center overflow-y-auto px-7 py-8 text-center">
         <div
           className="mb-5 flex items-center justify-center rounded-full"
           style={{
@@ -72,8 +76,8 @@ export const PdvSaleSuccessScreen = ({
         </div>
       </div>
 
-      {/* CTA fixo no rodapé */}
-      <div className="px-4 pb-5">
+      {/* CTA fixo no rodapé — shrink-0: o botão nunca encolhe nem é cortado */}
+      <div className="shrink-0 px-4 pb-5">
         <button
           type="button"
           onClick={onNewSale}
