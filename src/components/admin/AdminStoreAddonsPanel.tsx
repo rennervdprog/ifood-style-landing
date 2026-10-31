@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { Loader2, Crown, Package } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { getFunctionErrorMessage } from "@/lib/functionError";
 import { toast } from "sonner";
 
 export function AdminStoreAddonsPanel({ storeId }: { storeId: string }) {
@@ -51,7 +52,8 @@ export function AdminStoreAddonsPanel({ storeId }: { storeId: string }) {
           price_override: override === "" ? null : Number(override),
         },
       });
-      if (error || (res as any)?.error) throw new Error((res as any)?.error || error?.message);
+      if (error) throw new Error(await getFunctionErrorMessage(error, "Falha ao atualizar add-on."));
+      if ((res as any)?.error) throw new Error((res as any).error);
       toast.success("Add-on atualizado");
       qc.invalidateQueries({ queryKey: ["admin-store-addons", storeId] });
       qc.invalidateQueries({ queryKey: ["store-pdv-access", storeId] });
