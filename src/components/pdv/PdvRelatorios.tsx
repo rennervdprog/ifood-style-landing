@@ -1,5 +1,4 @@
 import { useState, useMemo } from "react";
-import { createPortal } from "react-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { formatBRL } from "@/lib/utils";
@@ -13,8 +12,8 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, PieChart, Pie, Cell,
 } from "recharts";
-import PdvRelatorioPrint from "@/components/pdv/PdvRelatorioPrint";
-import type { PdvPrintStats, PdvPrintOperator, PdvPrintConferencia } from "@/components/pdv/PdvRelatorioPrint";
+import { downloadPdvReportPdf } from "@/lib/pdvReportPdf";
+import type { PdvReportStats, PdvReportOperator } from "@/lib/pdvReportPdf";
 import PdvTurnoConferenciaCard from "@/components/pdv/PdvTurnoConferenciaCard";
 import {
   usePdvSession,
@@ -289,6 +288,20 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
     enabled: !!storeId && !sessionId,
   });
 
+  // ── Nome da loja (cabeçalho do PDF exportado) ──
+  const { data: storeName } = useQuery({
+    queryKey: ["pdv-print-store-name", storeId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("stores")
+        .select("name")
+        .eq("id", storeId)
+        .maybeSingle();
+      return data?.name ?? "Loja";
+    },
+    enabled: !!storeId,
+  });
+
   // ── Cálculos principais ──
   const stats = useMemo(() => {
     // Vendas canceladas continuam com type='sale' no movimento — excluir dos totais.
@@ -529,12 +542,6 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
     URL.revokeObjectURL(url);
   };
 
-  /** Exportar PDF: limpa resíduo do cupom térmico e imprime a visão A4 do relatório. */
-  const handlePrintPdf = () => {
-    document.getElementById("thermal-print-container")?.replaceChildren();
-    window.print();
-  };
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -560,7 +567,7 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
       }))
     : [];
 
-  const printStats: PdvPrintStats | null = stats
+  const printStats: PdvReportStats | null = stats
     ? {
         totalSales: stats.totalSales,
         totalDiscount: stats.totalDiscount,
@@ -588,12 +595,30 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
             : null,
       }
     : null;
-  const printOperators: PdvPrintOperator[] = operatorStats.map((o) => ({
+  const printOperators: PdvReportOperator[] = operatorStats.map((o) => ({
     user_id: o.user_id,
     name: o.name,
     count: o.count,
     total: o.total,
   }));
+
+  /**
+   * Exportar PDF (item 13): gera o arquivo de verdade e baixa via Blob —
+   * mesmo padrão do CSV. O caminho antigo usava a impressão do navegador,
+   * cujo preview é um modal que prendia a página (e paginava o relatório
+   * A4 na largura térmica de 80mm da sessão). Ver `@/lib/pdvReportPdf`.
+   */
+  const handleExportPdf = () => {
+    if (!printStats) return;
+    downloadPdvReportPdf({
+      storeName: storeName ?? "Loja",
+      periodLabel: sessionId ? "Relatório do turno" : periodLabels[period],
+      dateRangeLabel: drillPeriodLabel,
+      stats: printStats,
+      operators: printOperators,
+      filename: `pdv-relatorio-${period}-${new Date().toISOString().slice(0, 10)}.pdf`,
+    });
+  };
 
   return (
     <>
@@ -610,9 +635,9 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
             {stats && (
               <div className="ml-auto flex gap-1.5">
                 <button
-                  onClick={handlePrintPdf}
+                  onClick={handleExportPdf}
                   className="px-3 py-1.5 rounded-full text-[11px] font-bold border border-border bg-muted/50 text-muted-foreground hover:bg-muted transition-colors flex items-center gap-1"
-                  title="Exportar PDF (imprimir)"
+                  title="Exportar PDF"
                 >
                   <Printer className="h-3 w-3" /> PDF
                 </button>
@@ -958,20 +983,6 @@ export const PdvRelatorios = ({ storeId, sessionId }: Props) => {
           </>
         )}
       </div>
-
-      {/* Visão de impressão (PDF/A4) — portal no body, visível só na impressão */}
-      {printStats && typeof document !== "undefined" && createPortal(
-        <div className="pdv-report-print-zone">
-          <PdvRelatorioPrint
-            storeId={storeId}
-            periodLabel={sessionId ? "Relatório do turno" : periodLabels[period]}
-            dateRangeLabel={drillPeriodLabel}
-            stats={printStats}
-            operators={printOperators}
-          />
-        </div>,
-        document.body
-      )}
     </>
   );
 };
