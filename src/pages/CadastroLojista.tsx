@@ -85,6 +85,7 @@ const CadastroLojista = () => {
   const [street, setStreet] = useState("");
   const [addressNumber, setAddressNumber] = useState("");
   const [neighborhood, setNeighborhood] = useState("");
+  const [addressState, setAddressState] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loadingCep, setLoadingCep] = useState(false);
@@ -123,6 +124,7 @@ const CadastroLojista = () => {
     const digits = value.replace(/\D/g, "").slice(0, 8);
     const formatted = formatCep(digits);
     setCep(formatted);
+    if (digits.length < 8) setAddressState("");
     if (digits.length === 8) {
       handleCepLookup(digits);
     }
@@ -145,6 +147,7 @@ const CadastroLojista = () => {
       setNeighborhood(result.bairro || "");
       const detectedCity = result.localidade || "";
       setCity(detectedCity);
+      setAddressState(result.uf || "");
       toast.success(`Cidade identificada: ${detectedCity} - ${result.uf}`);
     } catch {
       toast.error("Erro ao buscar CEP.");
@@ -364,17 +367,25 @@ const CadastroLojista = () => {
           console.warn("[CadastroLojista] terms_acceptance insert falhou:", termsErr.message);
           toast.warning("Não foi possível registrar o aceite dos Termos de Uso. Seu cadastro continua, mas confira depois em Configurações.");
         }
-         await supabase.from("profiles").update({
+         // ATENÇÃO: profiles NÃO tem colunas birth_date nem address_number.
+         // Um payload com coluna inexistente faz o PostgREST rejeitar o update
+         // INTEIRO — e sem checar o erro, cep/rua/número/bairro/cidade nunca
+         // gravavam (a cidade ficava no default 'itatinga' da coluna).
+         // A coluna do número é `number`; birth_date fica só nos metadados.
+         const { error: profileUpdateErr } = await supabase.from("profiles").update({
            terms_accepted_at: new Date().toISOString(),
-           birth_date: birthDate,
            cep: cep.replace(/\D/g, ""),
            street: street,
-           address_number: addressNumber.trim(),
+           number: addressNumber.trim(),
            neighborhood: neighborhood,
            city: normalizedCity,
+           state: addressState || null,
            phone: formatWhatsAppNumber(whatsapp),
            whatsapp_number: formatWhatsAppNumber(whatsapp),
          } as any).eq("user_id", signUpData.user.id);
+         if (profileUpdateErr) {
+           console.warn("[CadastroLojista] atualização do perfil falhou:", profileUpdateErr.message);
+         }
 
         // Busca a loja (criada via RPC ou via trigger, dependendo do ambiente)
         let storeRow: { id: string } | null = createdStoreId ? { id: createdStoreId } : null;
@@ -417,6 +428,7 @@ const CadastroLojista = () => {
             address_neighborhood: neighborhood.trim(),
             address_cep: cep.replace(/\D/g, ""),
             address_city: city,
+            ...(addressState ? { address_state: addressState } : {}),
             ...(storeLat !== null && storeLng !== null
               ? { latitude: storeLat, longitude: storeLng }
               : {}),
@@ -430,10 +442,12 @@ const CadastroLojista = () => {
                 is_open: false,
                 plan_type: "pdv_only",
               } as any).eq("id", storeRow.id);
-              // Garante que store_plans reflita pdv_only (fallback caso a RPC tenha caído no ELSE)
+              // Garante que store_plans reflita pdv_only (fallback caso a RPC tenha caído no ELSE).
+              // SEM monthly_fee aqui: quem define o valor é a RPC/template
+              // (R$ 120). Um 69.00 legado neste patch sobrescrevia o plano
+              // que o lojista acabou de escolher.
               await (supabase as any).from("store_plans").update({
                 plan_type: "pdv_only",
-                monthly_fee: 69.00,
                 commission_rate: 0,
                 pdv_enabled: true,
                 pdv_commission_rate: 0,
