@@ -68,6 +68,10 @@ import { usePdvSession } from "@/pages/pdv/state/usePdvSession";
 import { usePdvCart } from "@/pages/pdv/state/usePdvCart";
 import { usePdvCheckout } from "@/pages/pdv/state/usePdvCheckout";
 import { usePdvOutbox } from "@/pages/pdv/state/usePdvOutbox";
+import {
+  stashPendingReceipt,
+  flushPendingReceipt,
+} from "@/pages/pdv/state/pendingReceipt";
 import { PdvCatalogSection } from "@/pages/pdv/components/PdvCatalogSection";
 import { PdvQuickSearch } from "@/pages/pdv/components/PdvQuickSearch";
 import { PdvPaymentScreenTeste } from "@/pages/pdv/components/PdvPaymentScreenTeste";
@@ -458,6 +462,14 @@ const PdvPageTeste = () => {
     );
   }, [store?.id, currentSession?.id, setCartScope]);
 
+  // Item 12 (reaberto): cupom adiado de uma vida anterior da página
+  // (ex.: reload entre concluir e sair da tela de sucesso) é impresso
+  // já na montagem, antes de qualquer interação — nenhum cupom se
+  // perde por causa do adiamento.
+  useEffect(() => {
+    flushPendingReceipt();
+  }, []);
+
   // Hook de finalização de venda.
   const { handleVenda: runCheckout, checkoutLoading } = usePdvCheckout();
   const {
@@ -544,6 +556,11 @@ const PdvPageTeste = () => {
   // "Nova venda" na tela de sucesso: limpa tudo e recomeça
   const handleNewSale = () => {
     clearSale();
+    // Item 12 (reaberto): a impressão automática da venda concluída foi
+    // adiada pelo checkout (o preview de impressão do navegador é modal
+    // e prendia esta tela). A transição acontece PRIMEIRO; o cupom sai
+    // em seguida, já sobre a venda limpa.
+    flushPendingReceipt();
   };
 
   // ── Enviar itens do carrinho para a comanda selecionada (Mesa/Comanda) ──
@@ -814,6 +831,10 @@ const PdvPageTeste = () => {
         // A venda já foi limpa no onSuccess (item 11) — nada a fazer aqui;
         // o timer do checkout nunca apaga uma venda nova.
       },
+      // Item 12 (reaberto): o checkout entrega o cupom em vez de abrir
+      // o preview de impressão sobre a tela de sucesso; guardamos o job
+      // e imprimimos na saída da tela (handleNewSale/montagem/aba).
+      onAutoPrintReady: (job) => stashPendingReceipt(job),
       onEmptiesFlowStart: ({ orderId, items }) =>
         setEmptiesFlow({ step: "lookup", orderId, items }),
     });
@@ -1433,7 +1454,7 @@ const PdvPageTeste = () => {
         onChange={(t) => {
           if (t === "relatorios") setSelectedSessionId(null);
           // UI/UX: ao trocar de aba, volta o checkout para o carrinho
-          if (t !== "venda") { setCheckoutStep("cart"); setOrderDone(false); }
+          if (t !== "venda") { setCheckoutStep("cart"); setOrderDone(false); flushPendingReceipt(); }
           setTab(t);
         }}
         showMeuPlano={pdvAccess.source === "pdv_only"}
@@ -1820,7 +1841,7 @@ const PdvPageTeste = () => {
         onChange={(t) => {
           if (t === "relatorios") setSelectedSessionId(null);
           // UI/UX: ao trocar de aba, volta o checkout para o carrinho
-          if (t !== "venda") { setCheckoutStep("cart"); setOrderDone(false); }
+          if (t !== "venda") { setCheckoutStep("cart"); setOrderDone(false); flushPendingReceipt(); }
           setTab(t);
         }}
         showMeuPlano={pdvAccess.source === "pdv_only"}
@@ -1950,6 +1971,9 @@ const PdvPageTeste = () => {
           onLogin={() => {
             setClearGateOpen(false);
             clearSale();
+            // Item 12 (reaberto): sair do sucesso por aqui também
+            // dispara o cupom adiado da venda concluída.
+            flushPendingReceipt();
           }}
         />
       )}
