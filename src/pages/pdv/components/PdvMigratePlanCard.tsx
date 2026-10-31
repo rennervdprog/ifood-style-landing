@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Truck, Check, Loader2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { getFunctionErrorMessage } from "@/lib/functionError";
 import { formatBRL } from "@/lib/utils";
 import { PdvOperatorLoginDialog } from "@/components/pdv/PdvOperatorLoginDialog";
 
@@ -69,7 +70,7 @@ export default function PdvMigratePlanCard({ storeId }: { storeId: string }) {
       qc.invalidateQueries({ queryKey: ["store-subscription", storeId] });
       qc.invalidateQueries({ queryKey: ["store-plan", storeId] });
     } catch (e: any) {
-      toast.error(e?.message || "Não foi possível migrar agora. Tente de novo.");
+      toast.error(await getFunctionErrorMessage(e, "Não foi possível migrar agora. Tente de novo."));
     } finally {
       setMigrating(false);
     }
