@@ -8,6 +8,7 @@ import { printPdvReceipt } from "@/lib/thermalPrint";
 import type { CartItem, PdvSession } from "../types";
 import type { SplitPayment } from "@/components/pdv/PdvSplitPayment";
 import { enqueue as outboxEnqueue, isOfflineQueueEnabled } from "./pdvOutbox";
+import type { PendingReceiptJob } from "./pendingReceipt";
 
 /** Timeout de rede para a RPC (Fase 3). */
 const RPC_TIMEOUT_MS = 1500;
@@ -72,6 +73,19 @@ export interface CheckoutContext {
    * no intervalo — item 2.7 da auditoria).
    */
   onClearScheduled: (finalizedCart: CartItem[]) => void;
+  /**
+   * Impressão automática ADIADA (item 12, diagnóstico reaberto em
+   * 2026-10-31). Quando a página fornece este callback, o hook NÃO chama
+   * `window.print()` durante a conclusão: entrega o job de impressão
+   * pronto para a página disparar DEPOIS que o operador sair da tela de
+   * sucesso. Motivo: o preview de impressão do navegador é modal e
+   * suspende todos os cliques na página — imprimir com a tela de
+   * sucesso montada prendia o operador nela (o botão "Nova venda", a
+   * única saída, parecia morto até o preview ser resolvido ou a página
+   * recarregar). Sem o callback, mantém o comportamento antigo
+   * (imprime na conclusão).
+   */
+  onAutoPrintReady?: (job: PendingReceiptJob) => void;
   onEmptiesFlowStart: (args: {
     orderId: string;
     items: { product_id: string; quantity: number }[];
@@ -103,6 +117,7 @@ export function usePdvCheckout() {
         onSuccess,
         onClearScheduled,
         onEmptiesFlowStart,
+        onAutoPrintReady,
       } = ctx;
 
       if (!store?.id || !session) return;
@@ -421,6 +436,18 @@ export function usePdvCheckout() {
                 },
               },
               duration: 8000,
+            });
+          } else if (onAutoPrintReady) {
+            // Item 12 (reaberto): NÃO imprimir agora. A tela de sucesso
+            // acabou de montar e a única saída dela é um clique na
+            // página — window.print() abriria o preview modal do
+            // navegador por cima e prenderia o operador na tela.
+            // Entregamos o job pronto; a página imprime DEPOIS da
+            // transição (ver pendingReceipt.ts).
+            onAutoPrintReady({
+              order: buildReceiptPayload(),
+              storeName: store?.name || "Loja",
+              options: { ...printOpts },
             });
           } else {
             printPdvReceipt(buildReceiptPayload(), store?.name || "Loja", printOpts);
