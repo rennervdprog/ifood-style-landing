@@ -663,7 +663,15 @@ const PdvPage = () => {
       pdvCommissionRate: storePlan.pdvCommissionRate ?? 0,
       operatorId: pdvOperator?.id ?? null,
     onSuccess: async ({ orderId }) => {
-      // UI/UX: vai para a tela de "Venda concluída" (o carrinho só limpa no "Nova venda")
+      // Item 11 (varredura 2026-10-30): limpa o estado da venda JÁ na
+      // conclusão. A tela de sucesso usa só `lastSale` (não lê o carrinho);
+      // manter os itens no estado fazia o rascunho persistido
+      // (pdv_cart_draft_v1) continuar sendo a venda concluída — um reload
+      // restaurava a venda já paga com "Receber" ativo (cobrança dupla).
+      // clearSale zera o estado e o efeito de persistência apaga o
+      // rascunho; "Nova venda" segue funcionando (limpeza idempotente).
+      clearSaleCart();
+      // UI/UX: vai para a tela de "Venda concluída"
       const pmLabel = splitMode
         ? "Dividido"
         : (PDV_METHODS.find(p => p.id === paymentMethod)?.label || paymentMethod || "—");
@@ -789,8 +797,8 @@ const PdvPage = () => {
       }
     },
       onClearScheduled: () => {
-        // UI/UX: o carrinho NÃO limpa sozinho — a tela de "Venda concluída"
-        // fica visível até o operador tocar em "Nova venda".
+        // A venda já foi limpa no onSuccess (item 11) — nada a fazer aqui;
+        // o timer do checkout nunca apaga uma venda nova.
       },
       onEmptiesFlowStart: ({ orderId, items }) =>
         setEmptiesFlow({ step: "lookup", orderId, items }),
