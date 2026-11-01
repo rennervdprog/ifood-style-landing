@@ -76,6 +76,7 @@ const TabFallback = () => (
 
 import { printThermalReceipt } from "@/lib/thermalPrint";
 import { requestNotificationPermission, notifyNewOrder, pushNotifyDeliveryAvailable } from "@/lib/notifications";
+import { AUTO_PRINT_SWEEP_STATUSES } from "@/lib/printAgent";
 import { sendPushNotification } from "@/lib/firebase";
 import { addMoney, averageMoney, formatBRL, formatCurrency, sumMoney } from "@/lib/utils";
 import ProductTour, { lojistaTourSteps } from "@/components/ProductTour";
@@ -1078,7 +1079,7 @@ const AdminDashboard = () => {
         .from("orders")
         .select("id, order_source, status, created_at, printed_at" as any)
         .eq("store_id", store.id)
-        .eq("status", "pendente")
+        .in("status", [...AUTO_PRINT_SWEEP_STATUSES])
         .is("printed_at" as any, null)
         .gte("created_at", cutoff);
       (data || []).forEach((o: any) => {
