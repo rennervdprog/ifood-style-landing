@@ -17,6 +17,8 @@ interface Params {
   pendingOrdersCount?: number;
   /** Pedidos pendente/preparando há mais de 20 min (mesma regra da Visão Geral). */
   delayedOrdersCount?: number;
+  /** Chamados de atendimento humano abertos (1 card por chamado em Avisos). */
+  attendantCount?: number;
 }
 
 export function useAvisosCount({
@@ -28,6 +30,7 @@ export function useAvisosCount({
   driversLoading,
   pendingOrdersCount = 0,
   delayedOrdersCount = 0,
+  attendantCount = 0,
 }: Params): number {
   if (!store) return 0;
 
@@ -37,6 +40,7 @@ export function useAvisosCount({
   if (isOwnDelivery && !driversLoading && !hasLinkedDrivers) count++;
   if (pendingOrdersCount > 0) count++;
   if (delayedOrdersCount > 0) count++;
+  count += attendantCount;
 
   return count;
 }
