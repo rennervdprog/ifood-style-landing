@@ -7,6 +7,13 @@ export interface OpeningHour {
   is_closed_all_day: boolean;
 }
 
+/** Feriado/fechamento em data específica cadastrado pelo lojista (store_holidays). */
+export interface StoreHoliday {
+  /** Data no formato yyyy-MM-dd (calendário de America/Sao_Paulo). */
+  date: string;
+  reason?: string | null;
+}
+
 export interface StoreStatusResult {
   isOpen: boolean;
   reason: string; // e.g. "Abre às 15:00" or "Aberto até 22:00"
@@ -20,14 +27,43 @@ export interface StoreStatusResult {
 
 const dayNames = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
 
+const brDayFmt = new Intl.DateTimeFormat("en-CA", {
+  timeZone: "America/Sao_Paulo",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+
+/** Data de hoje (yyyy-MM-dd) no fuso America/Sao_Paulo. */
+export function todayInBrazil(now: Date = new Date()): string {
+  return brDayFmt.format(now);
+}
+
+function dateStrOf(d: Date): string {
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${d.getFullYear()}-${m}-${day}`;
+}
+
 export function getStoreOpenStatus(
   hours: OpeningHour[],
   forceClosed: boolean,
   isOpenManual: boolean,
-  preorder?: { enabled: boolean; minutesBefore: number }
+  preorder?: { enabled: boolean; minutesBefore: number },
+  holidays?: StoreHoliday[]
 ): StoreStatusResult {
   if (forceClosed) {
     return { isOpen: false, reason: "Fechado temporariamente" };
+  }
+
+  // Feriado cadastrado pelo lojista fecha a loja o dia inteiro, mesmo sem
+  // horário semanal configurado (a data é uma decisão explícita da loja).
+  const todayHoliday = holidays?.find((h) => h.date === todayInBrazil());
+  if (todayHoliday) {
+    return {
+      isOpen: false,
+      reason: todayHoliday.reason ? `Fechado — ${todayHoliday.reason}` : "Fechado — Feriado",
+    };
   }
 
   // If no hours configured, fall back to manual is_open
@@ -118,11 +154,14 @@ export function getStoreOpenStatus(
     }
   }
 
-  // Find next open day
-  for (let offset = 1; offset <= 7; offset++) {
+  // Find next open day (pula dias fechados na semana E feriados cadastrados)
+  for (let offset = 1; offset <= 14; offset++) {
     const nextDay = (currentDay + offset) % 7;
     const nextHours = hours.find(h => h.day_of_week === nextDay);
-    if (nextHours && !nextHours.is_closed_all_day) {
+    const candidate = new Date(brDate);
+    candidate.setDate(candidate.getDate() + offset);
+    const isHoliday = holidays?.some((h) => h.date === dateStrOf(candidate));
+    if (nextHours && !nextHours.is_closed_all_day && !isHoliday) {
       const dayLabel = offset === 1 ? "Amanhã" : dayNames[nextDay];
       return {
         isOpen: false,

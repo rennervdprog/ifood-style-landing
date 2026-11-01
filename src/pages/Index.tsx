@@ -174,9 +174,21 @@ const Index = () => {
         hoursByStore.set(hour.store_id, current);
       });
 
+      const { data: holidays } = await (supabase as any)
+        .from("store_holidays")
+        .select("store_id, date, reason")
+        .in("store_id", storeIds);
+      const holidaysByStore = new Map<string, any[]>();
+      (holidays || []).forEach((h: any) => {
+        const current = holidaysByStore.get(h.store_id) || [];
+        current.push(h);
+        holidaysByStore.set(h.store_id, current);
+      });
+
       return visibleStores.map((store: any) => ({
         ...store,
         opening_hours: hoursByStore.get(store.id) || [],
+        holidays: holidaysByStore.get(store.id) || [],
       }));
     },
   });
@@ -197,7 +209,7 @@ const Index = () => {
     if (!stores) return undefined;
     const withStatus = stores.map(store => {
       const hours = (store as any).opening_hours || [];
-      const status = getStoreOpenStatus(hours as OpeningHour[], (store as any).force_closed || false, store.is_open);
+      const status = getStoreOpenStatus(hours as OpeningHour[], (store as any).force_closed || false, store.is_open, undefined, (store as any).holidays || []);
       const lat = (store as any).latitude;
       const lng = (store as any).longitude;
       const distanceKm =

@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
   Clock, Save, Power, Plus, Trash2, Copy, CalendarOff,
-  CalendarPlus, ChevronDown, ChevronUp, Zap, Pause, MoonStar,
+  CalendarPlus, ChevronDown, ChevronUp, Zap, Pause, MoonStar, Flag, X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { PreorderSettingsCard } from "@/components/PreorderSettingsCard";
+import { pendingBrazilHolidays, type BrazilHoliday } from "@/lib/brazilHolidays";
 
 const dayLabels = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 const dayLabelsFull = ["Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado"];
@@ -96,6 +97,17 @@ const StoreHoursManager = ({ storeId, forceClosed }: { storeId: string; forceClo
   const [showHolidays, setShowHolidays] = useState(false);
   const [holidayDate, setHolidayDate] = useState<Date | undefined>();
   const [holidayLabel, setHolidayLabel] = useState("");
+  const [holidayBannerDismissed, setHolidayBannerDismissed] = useState<boolean>(
+    () => typeof window !== "undefined" &&
+      window.localStorage.getItem(`feriados-nacionais-dismiss-${storeId}`) === "1"
+  );
+  // Início de hoje (00:00 local): dias ANTERIORES a hoje não são selecionáveis;
+  // hoje é — fechar a loja hoje por um feriado/imprevisto é um uso real.
+  const todayStart = useMemo(() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }, []);
   const [pauses, setPauses] = useState<ScheduledPause[]>([]);
   const [showPauses, setShowPauses] = useState(false);
   const [pauseForm, setPauseForm] = useState({ date: format(new Date(), "yyyy-MM-dd"), starts: "14:00", ends: "16:00", reason: "" });
@@ -216,8 +228,9 @@ const StoreHoursManager = ({ storeId, forceClosed }: { storeId: string; forceClo
             is_closed_all_day: false,
           }))
     );
-    return getStoreOpenStatus(openingHours, localForceClosed, true);
-  }, [schedule, localForceClosed]);
+    return getStoreOpenStatus(openingHours, localForceClosed, true, undefined,
+      holidays.map((h) => ({ date: h.date, reason: h.label })));
+  }, [schedule, localForceClosed, holidays]);
 
   const updateDay = (dayIndex: number, update: Partial<DaySchedule>) => {
     setSchedule((prev) =>
@@ -267,6 +280,18 @@ const StoreHoursManager = ({ storeId, forceClosed }: { storeId: string; forceClo
     toast.success(`Horário de ${dayLabelsFull[sourceDay]} aplicado a todos os dias!`);
   };
 
+  const insertHoliday = async (dateStr: string, reason: string): Promise<boolean> => {
+    const { data, error } = await (supabase as any)
+      .from("store_holidays")
+      .insert({ store_id: storeId, date: dateStr, reason })
+      .select("id")
+      .single();
+    if (error) { toast.error("Erro ao salvar feriado."); return false; }
+    setHolidays((prev) => [...prev, { id: data?.id, date: dateStr, label: reason }]);
+    queryClient.invalidateQueries({ queryKey: ["store-holidays", storeId] });
+    return true;
+  };
+
   const addHoliday = async () => {
     if (!holidayDate) return;
     const dateStr = format(holidayDate, "yyyy-MM-dd");
@@ -274,18 +299,39 @@ const StoreHoursManager = ({ storeId, forceClosed }: { storeId: string; forceClo
       toast.error("Data já adicionada.");
       return;
     }
-    const reason = holidayLabel || "Feriado";
-    const { data, error } = await (supabase as any)
-      .from("store_holidays")
-      .insert({ store_id: storeId, date: dateStr, reason })
-      .select("id")
-      .single();
-    if (error) { toast.error("Erro ao salvar feriado."); return; }
-    setHolidays((prev) => [...prev, { id: data?.id, date: dateStr, label: reason }]);
+    if (!(await insertHoliday(dateStr, holidayLabel || "Feriado"))) return;
     setHolidayDate(undefined);
     setHolidayLabel("");
     toast.success("Feriado salvo!");
-    queryClient.invalidateQueries({ queryKey: ["store-holidays", storeId] });
+  };
+
+  // Sugestões da base de feriados nacionais ainda não cadastradas pela loja
+  const pendingSuggestions = useMemo(
+    () => pendingBrazilHolidays(holidays.map((h) => h.date)),
+    [holidays]
+  );
+
+  const addSuggestion = async (h: BrazilHoliday) => {
+    if (await insertHoliday(h.date, h.name)) toast.success("Feriado salvo!");
+  };
+
+  const addAllSuggestions = async () => {
+    let added = 0;
+    for (const h of pendingSuggestions) {
+      if (await insertHoliday(h.date, h.name)) added++;
+    }
+    if (added > 0) {
+      toast.success(added === 1 ? "Feriado salvo!" : `${added} feriados salvos!`);
+    }
+  };
+
+  const dismissHolidayBanner = () => {
+    setHolidayBannerDismissed(true);
+    try {
+      window.localStorage.setItem(`feriados-nacionais-dismiss-${storeId}`, "1");
+    } catch {
+      // sem storage disponível, a tarja só some nesta sessão
+    }
   };
 
   const removeHoliday = async (h: HolidayClosure) => {
@@ -578,6 +624,62 @@ const StoreHoursManager = ({ storeId, forceClosed }: { storeId: string; forceClo
               Programe fechamentos em datas específicas sem alterar a rotina semanal.
             </p>
 
+            {/* Tarja: base de feriados nacionais como sugestão — a loja define */}
+            {pendingSuggestions.length > 0 && !holidayBannerDismissed && (
+              <div className="rounded-xl border border-amber-300/70 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800/50 p-3 space-y-2">
+                <div className="flex items-start gap-2">
+                  <Flag className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+                  <p className="text-[11px] leading-snug text-amber-900 dark:text-amber-200 flex-1">
+                    <span className="font-bold">Feriados nacionais:</span> sua loja só fecha nos
+                    feriados que você adicionar. Defina abaixo os dias em que não vai abrir:
+                  </p>
+                  <button
+                    onClick={dismissHolidayBanner}
+                    aria-label="Dispensar aviso de feriados nacionais"
+                    className="text-amber-700/70 hover:text-amber-900 dark:text-amber-300/70 dark:hover:text-amber-100 p-0.5"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+                <div className="space-y-1">
+                  {pendingSuggestions.map((h) => (
+                    <div
+                      key={h.date}
+                      className="flex items-center justify-between gap-2 bg-white/60 dark:bg-black/20 rounded-lg px-2 py-1.5"
+                    >
+                      <span className="text-[11px] text-amber-950 dark:text-amber-100">
+                        <span className="font-semibold">
+                          {format(new Date(h.date + "T12:00:00"), "dd/MM/yyyy (EEEE)", { locale: ptBR })}
+                        </span>
+                        {" — "}
+                        {h.name}
+                        {h.kind === "facultativo" && (
+                          <span className="ml-1 text-[9px] font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-300">
+                            ponto facultativo
+                          </span>
+                        )}
+                      </span>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => addSuggestion(h)}
+                        className="h-7 text-[11px] rounded-lg shrink-0"
+                      >
+                        Adicionar
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+                <Button
+                  size="sm"
+                  onClick={addAllSuggestions}
+                  className="w-full rounded-lg bg-amber-500 hover:bg-amber-600 text-white"
+                >
+                  Adicionar todos
+                </Button>
+              </div>
+            )}
+
             {/* Add holiday */}
             <div className="flex items-end gap-2">
               <div className="flex-1 space-y-1">
@@ -601,7 +703,7 @@ const StoreHoursManager = ({ storeId, forceClosed }: { storeId: string; forceClo
                       mode="single"
                       selected={holidayDate}
                       onSelect={setHolidayDate}
-                      disabled={(date) => date < new Date()}
+                      disabled={(date) => date < todayStart}
                       className={cn("p-3 pointer-events-auto")}
                     />
                   </PopoverContent>

@@ -83,6 +83,15 @@ const PartnerClientView = memo(() => {
     staleTime: 1000 * 60 * 5,
   });
 
+  const { data: allHolidays } = useQuery({
+    queryKey: ["store-holidays-all"],
+    queryFn: async () => {
+      const { data } = await (supabase as any).from("store_holidays").select("store_id, date, reason");
+      return (data || []) as { store_id: string; date: string; reason: string | null }[];
+    },
+    staleTime: 1000 * 60 * 5,
+  });
+
   const filteredStores = useMemo(() => {
     return (stores || [])
       .filter((s: any) => {
@@ -92,12 +101,13 @@ const PartnerClientView = memo(() => {
       })
       .map((s: any) => {
         const storeHours = (allHours || []).filter((h: any) => h.store_id === s.id);
-        const status = getStoreOpenStatus(storeHours as OpeningHour[], s.force_closed, s.is_open);
+        const storeHolidays = (allHolidays || []).filter((h) => h.store_id === s.id);
+        const status = getStoreOpenStatus(storeHours as OpeningHour[], s.force_closed, s.is_open, undefined, storeHolidays);
         const isSuspended = s.status === "bloqueado";
         return { ...s, is_open: isSuspended ? false : status.isOpen, statusReason: isSuspended ? "Loja temporariamente fechada" : status.reason };
       })
       .sort((a: any, b: any) => (a.is_open === b.is_open ? 0 : a.is_open ? -1 : 1));
-  }, [stores, allHours, selectedCategory, searchQuery]);
+  }, [stores, allHours, allHolidays, selectedCategory, searchQuery]);
 
   return (
     <div className="min-h-screen bg-background pb-20">

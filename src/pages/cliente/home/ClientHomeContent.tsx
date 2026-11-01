@@ -212,7 +212,11 @@ const ClientHomeContent = () => {
         .from("opening_hours")
         .select("store_id, day_of_week, open_time, close_time, is_closed_all_day")
         .in("store_id", storeIds);
-      return mapStoresWithHours(rows, allHours, activeCoords, effectiveCity);
+      const { data: allHolidays } = await (supabase as any)
+        .from("store_holidays")
+        .select("store_id, date, reason")
+        .in("store_id", storeIds);
+      return mapStoresWithHours(rows, allHours, activeCoords, effectiveCity, allHolidays);
     },
     enabled: true,
     // Vitrine depende de entregador online: cache curto + refetch ao voltar à tela.
@@ -237,7 +241,11 @@ const ClientHomeContent = () => {
         .from("opening_hours")
         .select("store_id, day_of_week, open_time, close_time, is_closed_all_day")
         .in("store_id", storeIds);
-      return mapStoresWithHours(stores, allHours, activeCoords, effectiveCity);
+      const { data: allHolidays } = await (supabase as any)
+        .from("store_holidays")
+        .select("store_id, date, reason")
+        .in("store_id", storeIds);
+      return mapStoresWithHours(stores, allHours, activeCoords, effectiveCity, allHolidays);
     },
     enabled: searchQuery.length >= 2,
     staleTime: 1000 * 60,
