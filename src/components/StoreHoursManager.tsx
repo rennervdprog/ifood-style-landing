@@ -624,10 +624,12 @@ const StoreHoursManager = ({ storeId, forceClosed }: { storeId: string; forceClo
               Programe fechamentos em datas específicas sem alterar a rotina semanal.
             </p>
 
-            {/* Tarja: base de feriados nacionais como sugestão — a loja define */}
+            {/* Tarja: base de feriados nacionais como sugestão — a loja define.
+                Visual v2 (aprovado pelo Renner em preview, 2026-11-01): cartão branco,
+                lista com altura limitada e rolagem, Adicionar em pílula sólida da marca. */}
             {pendingSuggestions.length > 0 && !holidayBannerDismissed && (
-              <div className="rounded-xl border border-amber-300/70 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800/50 p-3 space-y-2">
-                <div className="flex items-start gap-2">
+              <div className="rounded-xl border border-border bg-card overflow-hidden">
+                <div className="flex items-start gap-2 bg-amber-50 dark:bg-amber-950/40 border-b border-amber-200 dark:border-amber-800/60 px-3 py-2.5">
                   <Flag className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
                   <p className="text-[11px] leading-snug text-amber-900 dark:text-amber-200 flex-1">
                     <span className="font-bold">Feriados nacionais:</span> sua loja só fecha nos
@@ -641,42 +643,52 @@ const StoreHoursManager = ({ storeId, forceClosed }: { storeId: string; forceClo
                     <X className="h-3.5 w-3.5" />
                   </button>
                 </div>
-                <div className="space-y-1">
+                <div className="max-h-[262px] overflow-y-auto">
                   {pendingSuggestions.map((h) => (
                     <div
                       key={h.date}
-                      className="flex items-center justify-between gap-2 bg-white/60 dark:bg-black/20 rounded-lg px-2 py-1.5"
+                      className="flex items-center justify-between gap-2 px-3 py-2.5 border-b border-border/40 last:border-b-0"
                     >
-                      <span className="text-[11px] text-amber-950 dark:text-amber-100">
-                        <span className="font-semibold">
-                          {format(new Date(h.date + "T12:00:00"), "dd/MM/yyyy (EEEE)", { locale: ptBR })}
-                        </span>
-                        {" — "}
-                        {h.name}
-                        {h.kind === "facultativo" && (
-                          <span className="ml-1 text-[9px] font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-300">
-                            ponto facultativo
+                      <div className="min-w-0">
+                        <p className="text-xs font-bold text-foreground">
+                          {format(new Date(h.date + "T12:00:00"), "dd/MM/yyyy", { locale: ptBR })}
+                          <span className="font-medium text-muted-foreground">
+                            {" "}
+                            ({format(new Date(h.date + "T12:00:00"), "EEEE", { locale: ptBR })})
                           </span>
-                        )}
-                      </span>
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {h.name}
+                          {h.kind === "facultativo" && (
+                            <span className="ml-1.5 inline-block rounded-full border border-orange-200 bg-orange-50 px-1.5 py-px align-[2px] text-[8.5px] font-extrabold uppercase tracking-wide text-orange-600 dark:border-orange-800/60 dark:bg-orange-950/40 dark:text-orange-400">
+                              Ponto facultativo
+                            </span>
+                          )}
+                        </p>
+                      </div>
                       <Button
                         size="sm"
-                        variant="outline"
                         onClick={() => addSuggestion(h)}
-                        className="h-7 text-[11px] rounded-lg shrink-0"
+                        className="h-7 shrink-0 rounded-full bg-primary px-3.5 text-[11px] font-extrabold text-primary-foreground hover:bg-primary/90"
                       >
                         Adicionar
                       </Button>
                     </div>
                   ))}
                 </div>
-                <Button
-                  size="sm"
-                  onClick={addAllSuggestions}
-                  className="w-full rounded-lg bg-amber-500 hover:bg-amber-600 text-white"
-                >
-                  Adicionar todos
-                </Button>
+                <div className="border-t border-border/40 p-3">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={addAllSuggestions}
+                    className="w-full rounded-lg border-primary/60 font-bold text-primary hover:bg-primary/5"
+                  >
+                    Adicionar todos
+                  </Button>
+                  <p className="mt-2 text-center text-[10px] text-muted-foreground">
+                    Role a lista para ver todos os {pendingSuggestions.length} feriados
+                  </p>
+                </div>
               </div>
             )}
 
