@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import type { DashboardTab, OrderStatus } from "./types";
 
-export const ALERT_SOUND_URL = "https://actions.google.com/sounds/v1/alarms/beep_short.ogg";
+export const ALERT_SOUND_URL = "/sounds/new-order-bell.mp3";
 export const CASH_REGISTER_SOUND_URL = "https://actions.google.com/sounds/v1/office/cash_register.ogg";
 
 export const statusColors: Record<string, { bg: string; text: string; border: string; label: string }> = {
