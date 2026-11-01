@@ -1203,7 +1203,7 @@ const StorePage = () => {
             )}
 
             {/* Ver informações: endereço, taxa, horários e pagamento começam recolhidos */}
-            <div className="mt-4 flex items-center gap-3">
+            <div className={`mt-4 flex items-center gap-3 ${showStoreInfo ? "" : "pb-5"}`}>
               <div className="h-px flex-1 bg-border/60" />
               <button
                 type="button"
