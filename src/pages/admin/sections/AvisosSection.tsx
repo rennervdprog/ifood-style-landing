@@ -1,4 +1,4 @@
-import { AlertTriangle, Clock, Bike, Bell, CheckCircle2, Timer, ClipboardList, MessageCircle, Check } from "lucide-react";
+import { AlertTriangle, Clock, Bike, Bell, CheckCircle2, Timer, ClipboardList, MessageCircle, Check, VolumeX, Volume2 } from "lucide-react";
 import {
   attendantContextLabel,
   attendantWaLink,
@@ -27,6 +27,10 @@ interface Props {
   attendantRequests?: AttendantRequest[];
   /** Baixa um chamado quando o lojista já respondeu o cliente. */
   onResolveAttendant?: (id: string) => void;
+  /** Som de alerta ainda não ativado (o navegador exige um toque pra liberar). */
+  soundOff?: boolean;
+  /** Ativa o som de alerta (mesma ação do botão "Som" do topo). */
+  onActivateSound?: () => void;
 }
 
 function attendantAgo(iso: string): string {
@@ -52,6 +56,8 @@ export default function AvisosSection({
   onGoToOrders,
   attendantRequests = [],
   onResolveAttendant,
+  soundOff = false,
+  onActivateSound,
 }: Props) {
   return (
     <div className="p-4 lg:p-6 max-w-6xl mx-auto space-y-4">
@@ -81,6 +87,30 @@ export default function AvisosSection({
         </div>
       )}
 
+
+      {soundOff && (
+        <div className="bg-primary/5 border-2 border-primary/40 rounded-2xl p-4 flex items-start gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground flex-shrink-0">
+            <VolumeX className="h-5 w-5" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="font-black text-foreground text-sm">
+              Alertas sonoros desativados
+            </h3>
+            <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+              Sem ativar o som, você <strong>não ouve o sino</strong> quando chega pedido
+              novo nem quando um cliente chama um atendente no WhatsApp. O navegador
+              pede esse toque toda vez que o painel abre — leva um segundo.
+            </p>
+            <button
+              onClick={() => onActivateSound?.()}
+              className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-primary-foreground bg-primary hover:bg-primary/90 px-3 py-1.5 rounded-lg transition-colors"
+            >
+              <Volume2 className="inline h-3 w-3 mr-1" /> Ativar som agora
+            </button>
+          </div>
+        </div>
+      )}
 
       {attendantRequests.map((req) => (
         <div

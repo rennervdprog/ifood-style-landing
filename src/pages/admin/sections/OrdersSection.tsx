@@ -63,7 +63,7 @@ export default function OrdersSection(props: Props) {
     handleCancelOrder, handlePrint, invalidateOrders, evolutionConnected,
   } = props;
 
-  const [period, setPeriod] = useState<PeriodKey>("today");
+  const [period, setPeriod] = useState<PeriodKey>("all");
   const [sourceFilter, setSourceFilter] = useState<SourceKey>("all");
 
   const pixPending = useMemo(
