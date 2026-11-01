@@ -7,6 +7,28 @@ import { useQuery } from "@tanstack/react-query";
  import { isPartnerCapacitorApp } from "@/lib/capacitorAppMode";
 import { Bike, ClipboardList, Home, LayoutDashboard, Search, Store, User } from "lucide-react";
 
+// Páginas ambíguas (/pedidos e /perfil existem nas DUAS barras — a da loja e
+// a do cliente): quem decide qual barra aparece é a última barra usada, não
+// a rota. Sem isso, tocar "Pedidos" dentro da loja trocava a barra inteira
+// pra do /cliente e a aba "Loja" sumia debaixo do dedo (relato do Renner,
+// 2026-11-01). O toque numa aba grava o contexto da barra atual; páginas
+// inequívocas (a própria loja, /cliente, /carrinho...) seguem pela rota.
+const NAV_CTX_KEY = "itasuper-nav-context";
+function readNavContext(): string | null {
+  try {
+    return sessionStorage.getItem(NAV_CTX_KEY);
+  } catch {
+    return null;
+  }
+}
+function writeNavContext(value: string) {
+  try {
+    sessionStorage.setItem(NAV_CTX_KEY, value);
+  } catch {
+    // Sem sessionStorage (modo privado etc.): a barra segue só pela rota.
+  }
+}
+
 const BottomNav = memo(() => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -54,7 +76,11 @@ const BottomNav = memo(() => {
       path.startsWith(`/${currentStoreSlug}/`) ||
       path.startsWith("/loja/") ||
       path === "/carrinho" ||
-      path.startsWith("/checkout"));
+      path.startsWith("/checkout") ||
+      // Página ambígua vinda da barra da loja: mantém a barra da loja.
+      ((path === "/pedidos" || path === "/perfil") &&
+        !!currentStoreId &&
+        readNavContext() === `store:${currentStoreId}`));
   const isStoreContext = onStoreRoute;
 
   const tabs = useMemo(() => {
@@ -122,7 +148,12 @@ const BottomNav = memo(() => {
           return (
             <button
               key={tab.path}
-              onClick={() => navigate(tab.path)}
+              onClick={() => {
+                // Grava o contexto da barra atual: nas páginas ambíguas
+                // (/pedidos, /perfil) a próxima renderização mantém esta barra.
+                writeNavContext(isStoreContext && currentStoreId ? `store:${currentStoreId}` : "client");
+                navigate(tab.path);
+              }}
               data-tour={tab.label === "Pedidos" ? "nav-pedidos" : undefined}
               className={`relative flex-1 flex flex-col items-center justify-center transition-all duration-200 group active:scale-95 ${
                 active 
