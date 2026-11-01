@@ -16,7 +16,7 @@
  * Todo o resto (campos, rótulos, fluxos de CEP, slug, impressão) é idêntico.
  */
 import { compressImage } from "@/lib/compressImage";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -27,6 +27,14 @@ import { isGoNative, registerGoNativePlayer } from "@/lib/gonative";
 import { isCapacitorNative, registerCapacitorPush } from "@/lib/capacitorNative";
 import { maskWhatsApp } from "@/lib/whatsapp";
 import { formatCep, fetchCep, resolveAddress } from "@/lib/location";
+import { generatePairingCode, pairingExpiryISO, printAgentStatus, type PrintAgentStatus } from "@/lib/printAgent";
+
+const AGENT_STATUS_LABEL: Record<PrintAgentStatus, string> = {
+  aguardando: "Aguardando pareamento",
+  conectado: "Conectado agora",
+  offline: "Desconectado",
+  revogado: "Revogado",
+};
 import { formatBRL } from "@/lib/utils";
 import { parseBRL } from "@/hooks/useBRLInput";
 import { useStorePlan } from "@/hooks/useStorePlan";
@@ -254,6 +262,56 @@ const SectionSaveButtonTeste = ({ section, savingSection, onSave, label }: {
       (storeSettings?.auto_print_delivery === false ? "on_accept" : "auto")
   );
 
+  // Aceite automático do delivery (settings.auto_accept_orders). O avanço
+  // pendente -> preparando acontece no servidor (trigger no banco); aqui só
+  // mora o interruptor. (Espelho de StoreSettings.tsx.)
+  const [autoAcceptOrders, setAutoAcceptOrders] = useState<boolean>(
+    (storeSettings as any)?.auto_accept_orders === true
+  );
+
+  // Agente de impressão (programa instalado no PC da loja): pareamento por
+  // código de 6 dígitos e status dos agentes desta loja.
+  const [printAgents, setPrintAgents] = useState<any[]>([]);
+  const [pairingCode, setPairingCode] = useState<string | null>(null);
+  const [pairingBusy, setPairingBusy] = useState(false);
+  const loadPrintAgents = useCallback(async () => {
+    const { data } = await (supabase as any)
+      .from("print_agents")
+      .select("id, pairing_code, token_hash, printer_name, last_seen_at, revoked_at, created_at")
+      .eq("store_id", storeId)
+      .order("created_at", { ascending: false });
+    setPrintAgents(data || []);
+  }, [storeId]);
+  useEffect(() => { loadPrintAgents(); }, [loadPrintAgents]);
+
+  const handleGeneratePairing = async () => {
+    setPairingBusy(true);
+    try {
+      const code = generatePairingCode();
+      const { error } = await (supabase as any).from("print_agents").insert({
+        store_id: storeId,
+        pairing_code: code,
+        pairing_expires_at: pairingExpiryISO(),
+      });
+      if (error) {
+        toast.error("Não foi possível gerar o código de pareamento.");
+        return;
+      }
+      setPairingCode(code);
+      await loadPrintAgents();
+    } finally {
+      setPairingBusy(false);
+    }
+  };
+
+  const handleRevokeAgent = async (id: string) => {
+    await (supabase as any)
+      .from("print_agents")
+      .update({ revoked_at: new Date().toISOString() })
+      .eq("id", id);
+    await loadPrintAgents();
+  };
+
   // Z-API foi substituído pela aba WhatsApp (Evolution API) — bloco removido.
 
   // Load whatsapp from profile
@@ -450,7 +508,8 @@ const SectionSaveButtonTeste = ({ section, savingSection, onSave, label }: {
     const { error } = await supabase.from("stores").update({
       settings: { ...(storeSettings || {}), print_copies: printCopies, print_paper_width: printPaperWidth,
         auto_print_pdv: autoPrintPdv, print_mode_delivery: printModeDelivery,
-        auto_print_delivery: printModeDelivery === "auto" },
+        auto_print_delivery: printModeDelivery === "auto",
+        auto_accept_orders: autoAcceptOrders },
     } as any).eq("id", storeId);
     if (error) { toast.error(`Erro ao salvar: ${error.message || "Verifique os dados"}`); setSavingSection(null); return; }
     finishSection("impressao", true, "Impressão salva!");
@@ -1353,6 +1412,83 @@ const SectionSaveButtonTeste = ({ section, savingSection, onSave, label }: {
               </label>
             ))}
           </div>
+          )}
+
+          {!pdvOnly && (
+          <>
+          <label className="flex items-start gap-3 rounded-xl border border-border bg-muted/20 p-3 cursor-pointer">
+            <input
+              type="checkbox"
+              className="mt-1 h-4 w-4 accent-primary"
+              checked={autoAcceptOrders}
+              onChange={(e) => setAutoAcceptOrders(e.target.checked)}
+            />
+            <div>
+              <p className="text-sm font-bold text-foreground">Delivery — aceitar pedidos automaticamente</p>
+              <p className="text-[11px] text-muted-foreground">
+                O pedido já entra aceito e em preparo, sem clicar em Aceitar — e o cliente recebe o aviso no WhatsApp. Se algo der errado, o cancelamento continua disponível.
+              </p>
+            </div>
+          </label>
+
+          <div className="rounded-xl border border-border bg-muted/20 p-3 space-y-3">
+            <div>
+              <p className="text-sm font-bold text-foreground">Agente de impressão — imprime sem o painel aberto</p>
+              <p className="text-[11px] text-muted-foreground">
+                Programa gratuito instalado no computador da loja. Com ele, a notinha sai sozinha quando o pedido chega — mesmo com o painel fechado ou você em outra aba. Ele segue o modo de impressão escolhido acima.
+              </p>
+            </div>
+
+            {printAgents.filter((a) => !a.revoked_at).length > 0 && (
+              <div className="space-y-2">
+                {printAgents.filter((a) => !a.revoked_at).map((a) => {
+                  const st = printAgentStatus(a);
+                  return (
+                    <div key={a.id} className="flex items-center justify-between gap-2 rounded-lg border border-border/60 bg-background px-3 py-2">
+                      <div className="min-w-0">
+                        <p className="text-xs font-bold text-foreground">
+                          {AGENT_STATUS_LABEL[st]}
+                          {a.printer_name ? <span className="font-normal text-muted-foreground"> · {a.printer_name}</span> : null}
+                        </p>
+                        {a.last_seen_at && st !== "aguardando" && (
+                          <p className="text-[11px] text-muted-foreground">
+                            Último contato: {new Date(a.last_seen_at).toLocaleString("pt-BR")}
+                          </p>
+                        )}
+                      </div>
+                      {a.token_hash && (
+                        <button
+                          type="button"
+                          onClick={() => handleRevokeAgent(a.id)}
+                          className="shrink-0 text-[11px] font-bold text-destructive"
+                        >
+                          Desconectar
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {pairingCode ? (
+              <div className="rounded-lg border border-primary/40 bg-primary/5 px-3 py-3 text-center">
+                <p className="text-[11px] text-muted-foreground">Digite este código no agente instalado no computador da loja:</p>
+                <p className="text-3xl font-black tracking-[0.35em] text-primary">{pairingCode}</p>
+                <p className="text-[11px] text-muted-foreground">Vale por 30 minutos e só pode ser usado uma vez.</p>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={handleGeneratePairing}
+                disabled={pairingBusy}
+                className="w-full rounded-xl border border-primary py-2.5 text-sm font-bold text-primary transition active:scale-[0.98] disabled:opacity-50"
+              >
+                {pairingBusy ? "Gerando..." : "Gerar código de pareamento"}
+              </button>
+            )}
+          </div>
+          </>
           )}
         </div>
       </div>
