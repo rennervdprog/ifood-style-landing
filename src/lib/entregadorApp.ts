@@ -9,12 +9,12 @@
 export const ENTREGADOR_APP = {
   name: "ItaSuper Entregador",
   developer: "ItaSuper",
-  version: "2.4.6",
+  version: "2.4.7",
   sizeLabel: "19,3 MB",
-  apkPath: "/apps/itasuper-entregador-2.4.6.apk",
+  apkPath: "/apps/itasuper-entregador-2.4.7.apk",
   minAndroid: "7.0",
   whatsNew: [
-    "A tela de aviso agora abre a entrega no app: toque em Ver entrega e aceite lá dentro — sem erro, mesmo com o app fechado",
-    "Inclui as melhorias da 2.4.4: nome e endereço da loja corretos no aviso e a entrega na rota sem precisar recarregar",
+    "Uma rota é de uma loja só: pedidos de lojas diferentes não se misturam mais na mesma rota — filtre por uma loja para aceitar todos os pedidos dela de uma vez",
+    "A tela de aviso abre a entrega no app: toque em Ver entrega e aceite lá dentro — sem erro, mesmo com o app fechado",
   ],
 } as const;
