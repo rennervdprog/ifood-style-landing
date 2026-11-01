@@ -4,13 +4,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Camera, Upload, Save, Store, Phone, Tag, MapPin, Link, Copy, Wallet, Search, Loader2, Bell, CreditCard, QrCode, Banknote, CheckCircle2, XCircle, Truck, Bike, MessageSquare, Eye, EyeOff, ExternalLink } from "lucide-react";
+import { Camera, Upload, Save, Store, Phone, Tag, MapPin, Link, Copy, Wallet, Search, Loader2, Bell, CreditCard, QrCode, Banknote, CheckCircle2, XCircle, Truck, Bike, MessageSquare, Eye, EyeOff, ExternalLink, Star } from "lucide-react";
 import { requestPushPermissionAndRegister } from "@/lib/firebase";
 import { isGoNative, registerGoNativePlayer } from "@/lib/gonative";
 import { isCapacitorNative, registerCapacitorPush } from "@/lib/capacitorNative";
 import { maskWhatsApp } from "@/lib/whatsapp";
 import { formatCep, fetchCep, resolveAddress } from "@/lib/location";
 import { generatePairingCode, pairingExpiryISO, printAgentStatus, type PrintAgentStatus } from "@/lib/printAgent";
+import { isValidGoogleReviewUrl } from "@/lib/googleReview";
 
 const AGENT_STATUS_LABEL: Record<PrintAgentStatus, string> = {
   aguardando: "Aguardando pareamento",
@@ -92,6 +93,10 @@ type PizzaPriceMode = "maior" | "media" | "soma";
   });
   const [slug, setSlug] = useState(storeSlug || storeName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""));
   const [slugStatus, setSlugStatus] = useState<"idle" | "checking" | "available" | "taken" | "invalid">("idle");
+  // Link de avaliação no Google (settings.google_review_url) — vazio = recurso desligado.
+  const [googleReviewUrl, setGoogleReviewUrl] = useState<string>(
+    (storeSettings as any)?.google_review_url || ""
+  );
   const [whatsapp, setWhatsapp] = useState("");
   const [imageUrl, setImageUrl] = useState(storeImageUrl || "");
   const [addressStreet, setAddressStreet] = useState(storeAddressStreet || "");
@@ -426,6 +431,11 @@ type PizzaPriceMode = "maior" | "media" | "soma";
       setSaving(false);
       return;
     }
+    if (googleReviewUrl.trim() && !isValidGoogleReviewUrl(googleReviewUrl)) {
+      toast.error("Link de avaliação do Google inválido. Cole o link completo, começando com https://");
+      setSaving(false);
+      return;
+    }
     const updateData = {
       name: name.trim(),
       category: primaryCategory as any,
@@ -458,6 +468,8 @@ type PizzaPriceMode = "maior" | "media" | "soma";
         auto_print_delivery: printModeDelivery === "auto",
         // Aceite automático do delivery (o avanço é feito no servidor).
         auto_accept_orders: autoAcceptOrders,
+        // Link de avaliação no Google (vazio/null = convite desligado).
+        google_review_url: googleReviewUrl.trim() || null,
       },
       delivery_mode: deliveryMode,
       own_delivery_fee: parsedOwnFee,
@@ -728,6 +740,25 @@ type PizzaPriceMode = "maior" | "media" | "soma";
         <p className="text-[10px] text-muted-foreground/70">Compartilhe esse link para clientes acessarem direto seu cardápio.</p>
       </div>
       )}
+
+      {/* Avaliação no Google */}
+      <div className="space-y-2">
+        <label className="text-sm font-bold text-foreground/80 flex items-center gap-2">
+          <Star className="h-4 w-4 text-primary" />
+          Link de avaliação no Google
+        </label>
+        <input
+          type="url"
+          inputMode="url"
+          value={googleReviewUrl}
+          onChange={(e) => setGoogleReviewUrl(e.target.value)}
+          placeholder="https://g.page/r/..."
+          className="w-full bg-secondary border border-border rounded-xl px-4 py-3 text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
+        />
+        <p className="text-[10px] text-muted-foreground/70">
+          Opcional. Com o link preenchido, ao concluir o pedido o cliente recebe no WhatsApp o convite para avaliar sua loja no Google, e o botão "Avaliar no Google" aparece no app após a avaliação. Pegue o link no Perfil da Empresa no Google, em "Solicitar avaliações".
+        </p>
+      </div>
 
       {/* Slugs alias — anti-spam WhatsApp */}
       {!pdvOnly && (
