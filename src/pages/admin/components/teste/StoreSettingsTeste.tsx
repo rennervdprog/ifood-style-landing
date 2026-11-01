@@ -240,6 +240,8 @@ const SectionSaveButtonTeste = ({ section, savingSection, onSave, label }: {
 
   // Pix Direto (chave PIX do lojista, comprovante manual). Campos top-level em `stores`.
   const [pixDiretoEnabled, setPixDiretoEnabled] = useState<boolean>(false);
+  // Compra sem cadastro (guest): coluna guest_checkout_enabled da loja.
+  const [guestCheckoutEnabled, setGuestCheckoutEnabled] = useState<boolean>(false);
   const [pixDiretoKey, setPixDiretoKey] = useState<string>("");
   const [pixDiretoKeyType, setPixDiretoKeyType] = useState<string>("cpf");
   const [pixDiretoBeneficiary, setPixDiretoBeneficiary] = useState<string>("");
@@ -337,7 +339,7 @@ const SectionSaveButtonTeste = ({ section, savingSection, onSave, label }: {
     if (!storeId) return;
     (supabase as any)
       .from("stores")
-      .select("free_delivery_threshold, platform_fee_split, pix_direto_enabled, pix_direto_key, pix_direto_key_type, pix_direto_beneficiary, pix_direto_instructions")
+      .select("free_delivery_threshold, platform_fee_split, pix_direto_enabled, pix_direto_key, pix_direto_key_type, pix_direto_beneficiary, pix_direto_instructions, guest_checkout_enabled")
       .eq("id", storeId)
       .maybeSingle()
       .then(({ data }: any) => {
@@ -351,6 +353,7 @@ const SectionSaveButtonTeste = ({ section, savingSection, onSave, label }: {
           setPlatformFeeSplit(s);
         }
         setPixDiretoEnabled(!!data?.pix_direto_enabled);
+        setGuestCheckoutEnabled(!!data?.guest_checkout_enabled);
         if (data?.pix_direto_key) setPixDiretoKey(String(data.pix_direto_key));
         if (data?.pix_direto_key_type) setPixDiretoKeyType(String(data.pix_direto_key_type));
         if (data?.pix_direto_beneficiary) setPixDiretoBeneficiary(String(data.pix_direto_beneficiary));
@@ -501,6 +504,8 @@ const SectionSaveButtonTeste = ({ section, savingSection, onSave, label }: {
       settings: { ...(storeSettings || {}), accept_pix_online: false, accept_pix_machine: false,
         accept_card: acceptCard, accept_cash: acceptCash },
       pix_direto_enabled: pixDiretoEnabled && !!pixDiretoKey.trim(),
+      // Compra sem cadastro (guest) ligada/desligada pela loja.
+      guest_checkout_enabled: guestCheckoutEnabled,
       pix_direto_key: pixDiretoKey.trim() || null,
       pix_direto_key_type: pixDiretoKey.trim() ? pixDiretoKeyType : null,
       pix_direto_beneficiary: pixDiretoBeneficiary.trim() || null,
@@ -1462,6 +1467,21 @@ const SectionSaveButtonTeste = ({ section, savingSection, onSave, label }: {
               <p className="text-sm font-bold text-foreground">Delivery — aceitar pedidos automaticamente</p>
               <p className="text-[11px] text-muted-foreground">
                 O pedido já entra aceito e em preparo, sem clicar em Aceitar — e o cliente recebe o aviso no WhatsApp. Se algo der errado, o cancelamento continua disponível.
+              </p>
+            </div>
+          </label>
+
+          <label className="flex items-start gap-3 rounded-xl border border-border bg-muted/20 p-3 cursor-pointer">
+            <input
+              type="checkbox"
+              className="mt-1 h-4 w-4 accent-primary"
+              checked={guestCheckoutEnabled}
+              onChange={(e) => setGuestCheckoutEnabled(e.target.checked)}
+            />
+            <div>
+              <p className="text-sm font-bold text-foreground">Delivery — compra sem cadastro (guest)</p>
+              <p className="text-[11px] text-muted-foreground">
+                O cliente compra só com nome e WhatsApp, sem criar conta nem senha. Quem já pediu é reconhecido pelo número e o último endereço preenche sozinho. Desligado, ele precisa entrar ou criar conta para comprar.
               </p>
             </div>
           </label>
