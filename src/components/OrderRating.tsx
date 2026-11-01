@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Star } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import confetti from "canvas-confetti";
+import { googleReviewUrlFromSettings } from "@/lib/googleReview";
 
 interface OrderRatingProps {
   orderId: string;
@@ -18,6 +19,24 @@ const OrderRating = ({ orderId, storeId, storeName, userId, onRated }: OrderRati
   const [comment, setComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  // Link de avaliação no Google da loja (settings.google_review_url);
+  // vazio = botão não aparece. O convite é mostrado a todos, sem
+  // filtro pela nota dada (regra do Google contra review gating).
+  const [googleReviewUrl, setGoogleReviewUrl] = useState("");
+  useEffect(() => {
+    let cancelled = false;
+    (supabase as any)
+      .from("stores")
+      .select("settings")
+      .eq("id", storeId)
+      .maybeSingle()
+      .then(({ data }: any) => {
+        if (!cancelled) setGoogleReviewUrl(googleReviewUrlFromSettings(data?.settings));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [storeId]);
 
   const handleSubmit = async () => {
     if (rating === 0) {
@@ -56,8 +75,18 @@ const OrderRating = ({ orderId, storeId, storeName, userId, onRated }: OrderRati
 
   if (submitted) {
     return (
-      <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 text-center">
+      <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 text-center space-y-2">
         <p className="text-xs font-bold text-primary">⭐ Obrigado pela sua avaliação!</p>
+        {googleReviewUrl && (
+          <a
+            href={googleReviewUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="block w-full bg-primary text-primary-foreground font-bold py-2 rounded-xl text-xs"
+          >
+            Avaliar {storeName} no Google também
+          </a>
+        )}
       </div>
     );
   }
