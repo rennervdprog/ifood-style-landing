@@ -1422,6 +1422,11 @@ type PizzaPriceMode = "maior" | "media" | "soma";
               <p className="text-[11px] text-muted-foreground">
                 Escolha se o cupom do pedido sai sozinho, só quando você aceita, ou só no botão Imprimir.
               </p>
+              {autoAcceptOrders && (
+                <p className="text-[11px] font-semibold text-primary">
+                  Aceite automático ligado: a notinha sai assim que o pedido chega.
+                </p>
+              )}
             </div>
             {[
               { v: "auto", t: "Ao chegar o pedido", d: "Assim que um pedido entra no painel, o cupom sai sozinho na térmica." },
@@ -1433,7 +1438,8 @@ type PizzaPriceMode = "maior" | "media" | "soma";
                   type="radio"
                   name="print-mode-delivery"
                   className="mt-1 h-4 w-4 accent-primary"
-                  checked={printModeDelivery === o.v}
+                  disabled={autoAcceptOrders && o.v !== "auto"}
+                  checked={(autoAcceptOrders ? "auto" : printModeDelivery) === o.v}
                   onChange={() => setPrintModeDelivery(o.v as "auto" | "on_accept" | "manual")}
                 />
                 <div>
@@ -1452,7 +1458,10 @@ type PizzaPriceMode = "maior" | "media" | "soma";
               type="checkbox"
               className="mt-1 h-4 w-4 accent-primary"
               checked={autoAcceptOrders}
-              onChange={(e) => setAutoAcceptOrders(e.target.checked)}
+              onChange={(e) => {
+                setAutoAcceptOrders(e.target.checked);
+                if (e.target.checked) setPrintModeDelivery("auto");
+              }}
             />
             <div>
               <p className="text-sm font-bold text-foreground">Delivery — aceitar pedidos automaticamente</p>
