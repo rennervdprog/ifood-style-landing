@@ -100,6 +100,7 @@ const StorePage = () => {
   }, []);
   const [showSearch, setShowSearch] = useState(false);
   const [showHours, setShowHours] = useState(false);
+  const [showStoreInfo, setShowStoreInfo] = useState(false);
    const [showHalfHalf, setShowHalfHalf] = useState(false);
    const [showPastelBuilder, setShowPastelBuilder] = useState(false);
    const [scrolled, setScrolled] = useState(false);
@@ -1201,9 +1202,26 @@ const StorePage = () => {
               </div>
             )}
 
+            {/* Ver informações: endereço, taxa, horários e pagamento começam recolhidos */}
+            <div className="mt-4 flex items-center gap-3">
+              <div className="h-px flex-1 bg-border/60" />
+              <button
+                type="button"
+                onClick={() => setShowStoreInfo(v => !v)}
+                aria-expanded={showStoreInfo}
+                className="inline-flex items-center gap-1.5 rounded-full border border-primary/60 px-3.5 py-1.5 text-[11px] font-black text-primary transition-colors hover:bg-primary/5 flex-shrink-0"
+              >
+                {showStoreInfo ? "Ocultar informações" : "Ver informações"}
+                <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-300 ${showStoreInfo ? "rotate-180" : ""}`} />
+              </button>
+              <div className="h-px flex-1 bg-border/60" />
+            </div>
+
+            {showStoreInfo && (
+            <div className="animate-in fade-in slide-in-from-top-1 duration-300">
             {/* Address + Maps button */}
             {store?.address_neighborhood && (
-              <div className="mt-4 pt-4 border-t border-border/50">
+              <div className="mt-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-start gap-2.5 min-w-0">
                     <div className="mt-0.5 w-7 h-7 rounded-full bg-primary/5 flex items-center justify-center flex-shrink-0">
@@ -1377,17 +1395,20 @@ const StorePage = () => {
                 );
               })()}
             </div>
+            </div>
+            )}
           </div>
 
           {/* Loyalty */}
-          {store && <div className="px-5"><LoyaltyBanner storeId={store.id} storeName={store.name} /></div>}
+          {store && showStoreInfo && <div className="px-5"><LoyaltyBanner storeId={store.id} storeName={store.name} /></div>}
 
           {/* Outras unidades da rede (matriz) */}
-          {store && (store as any).network_id && (store as any).is_matriz && (
+          {store && showStoreInfo && (store as any).network_id && (store as any).is_matriz && (
             <NetworkUnitsCarousel networkId={(store as any).network_id} currentStoreId={store.id} />
           )}
 
           {/* Stats bar */}
+          {showStoreInfo && (
           <div className="mt-2 px-5 py-4 flex items-center justify-around border-t bg-muted/50 border-border/50">
             <div className="flex flex-col items-center">
               <span className="text-lg font-black text-foreground leading-none">{totalProducts}</span>
@@ -1411,6 +1432,7 @@ const StorePage = () => {
               </>
             )}
           </div>
+          )}
         </div>
       </div>
 
