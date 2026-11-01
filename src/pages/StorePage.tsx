@@ -107,6 +107,20 @@ const StorePage = () => {
    const [showHalfHalf, setShowHalfHalf] = useState(false);
    const [showPastelBuilder, setShowPastelBuilder] = useState(false);
    const [scrolled, setScrolled] = useState(false);
+  // Altura REAL da barra superior fixa (inclui o safe-area do aparelho).
+  // A barra de categorias fixa logo abaixo dela usando esta medida — antes
+  // era um 63px chutado, que desalinhava conforme o aparelho/navegador
+  // (0 de safe-area no navegador comum, 24px+ no PWA de celular com notch).
+  const [topBarEl, setTopBarEl] = useState<HTMLDivElement | null>(null);
+  const [headerHeight, setHeaderHeight] = useState(60);
+  useEffect(() => {
+    if (!topBarEl) return;
+    const update = () => setHeaderHeight(Math.round(topBarEl.getBoundingClientRect().height));
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(topBarEl);
+    return () => ro.disconnect();
+  }, [topBarEl]);
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const pageRef = useRef<HTMLDivElement>(null);
   const navRef = useRef<HTMLDivElement>(null);
@@ -750,8 +764,9 @@ const StorePage = () => {
       },
       {
         root: isWindow ? null : scrollElement,
-        // Ajustamos a margem para detectar melhor quando o título da seção chega no topo
-        rootMargin: "-120px 0px -70% 0px",
+        // Margem do topo = altura medida da barra superior + a barra de
+        // categorias (~53px) + folga: a seção ativa é a que encosta nas barras.
+        rootMargin: `-${headerHeight + 53 + 8}px 0px -70% 0px`,
         threshold: [0, 0.1, 0.5]
       }
     );
@@ -762,7 +777,7 @@ const StorePage = () => {
     });
 
     return () => observer.disconnect();
-  }, [visibleSections]);
+  }, [visibleSections, headerHeight]);
  
    // Scroll active category chip into view in the sticky nav
    useEffect(() => {
@@ -790,7 +805,8 @@ const StorePage = () => {
       const scrollElement = getPageScrollElement();
       const isWindow = scrollElement === document.documentElement || scrollElement === document.body || scrollElement === document.scrollingElement;
       
-      const navHeight = navRef.current?.offsetHeight || 60;
+      // Desconto = barra superior fixa (medida) + a própria barra de categorias.
+      const navHeight = headerHeight + (navRef.current?.offsetHeight || 60);
       const extraGap = 16;
       
       const currentScrollTop = isWindow ? window.pageYOffset : scrollElement.scrollTop;
@@ -814,7 +830,7 @@ const StorePage = () => {
         });
       }
     });
-  }, []);
+  }, [headerHeight]);
 
   const isAdega = store?.category === "adegas";
 
@@ -1185,7 +1201,7 @@ const StorePage = () => {
   return (
     <div ref={pageRef} className={`min-h-screen bg-background pb-24 ${isAdega ? "adega-theme" : ""}`}>
       {fraudBlock && (
-        <div className="sticky top-0 z-40 bg-amber-500/95 text-white text-center text-xs px-4 py-2 shadow">
+        <div className="sticky top-0 z-40 bg-neutral-900/95 text-white text-center text-xs px-4 py-2 shadow">
           📍 Você está a <span className="font-bold">{fraudBlock.distanceKm.toFixed(1)} km</span> desta loja
           {fraudBlock.storeCity ? <> em <span className="font-bold">{fraudBlock.storeCity}</span></> : null}.
           O limite desta loja é de até {fraudBlock.maxDistanceKm} km. Escolha um endereço compatível para continuar.
@@ -1210,6 +1226,7 @@ const StorePage = () => {
          {/* Sticky Header Top Bar */}
          {!showHalfHalf && !showPastelBuilder && (
            <div
+             ref={setTopBarEl}
              style={{ paddingTop: "calc(env(safe-area-inset-top) + 0.75rem)" }}
              className={`fixed top-0 left-0 right-0 flex items-center justify-between px-4 pb-3 z-[70] transition-all duration-300 ${
                scrolled ? "bg-background border-b border-border shadow-sm" : "bg-transparent"
@@ -1622,9 +1639,8 @@ const StorePage = () => {
        {visibleSections.length > 0 && !filteredProducts && !showHalfHalf && (
         <div
           ref={navRef}
-          className={`sticky z-[60] border-b mt-4 shadow-sm transition-all duration-300 ${
-            scrolled ? "top-[63px]" : "top-0"
-          } bg-background border-border`}
+          style={{ top: headerHeight }}
+          className="sticky z-[60] border-b mt-4 shadow-sm bg-background border-border"
         >
           <div className="flex overflow-x-auto gap-1.5 px-4 py-2.5 no-scrollbar">
             {visibleSections.map(s => (
