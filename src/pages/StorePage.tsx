@@ -5,7 +5,9 @@ import NotFound from "@/pages/NotFound";
 import { useQuery, keepPreviousData, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCart, type CartAddon } from "@/contexts/CartContext";
-import { Star, Clock, ChevronRight, ChevronDown, ChevronUp, MapPin, Search, X, Navigation, CreditCard, Banknote, Smartphone, QrCode, RotateCcw, TrendingUp, ArrowLeft, Bike, Timer, Wallet } from "lucide-react";
+import { Clock, ChevronRight, Search, X, RotateCcw, TrendingUp, ArrowLeft, Bike, Timer, Heart, Plus } from "lucide-react";
+import StoreInfoView, { type RatingAggregate } from "@/components/store/StoreInfoView";
+import { loadFavoriteStores, toggleFavoriteStore } from "@/lib/favoriteStores";
 import LoyaltyBanner from "@/components/LoyaltyBanner";
 import NetworkUnitsCarousel from "@/components/NetworkUnitsCarousel";
 import { toast } from "sonner";
@@ -99,8 +101,9 @@ const StorePage = () => {
     searchTimerRef.current = setTimeout(() => setDebouncedSearch(value), 300);
   }, []);
   const [showSearch, setShowSearch] = useState(false);
-  const [showHours, setShowHours] = useState(false);
-  const [showStoreInfo, setShowStoreInfo] = useState(false);
+  // Tela "Sobre a loja" (layout do app): null = vitrine; "info"/"aval" = aba inicial.
+  const [infoView, setInfoView] = useState<null | "info" | "aval">(null);
+  const [favoriteIds, setFavoriteIds] = useState<string[]>(() => loadFavoriteStores());
    const [showHalfHalf, setShowHalfHalf] = useState(false);
    const [showPastelBuilder, setShowPastelBuilder] = useState(false);
    const [scrolled, setScrolled] = useState(false);
@@ -198,6 +201,41 @@ const StorePage = () => {
   // IMPORTANTE: nunca usar `id` (param de rota = slug) como storeId.
   // Isso disparava queries Supabase com slug onde se espera UUID (400 22P02).
   const storeId = store?.id ?? null;
+
+  // Favorito local (mesma lógica do app: persiste no aparelho, sem conta).
+  const isFavorite = !!storeId && favoriteIds.includes(storeId);
+  const toggleFavorite = useCallback(() => {
+    if (!storeId) return;
+    setFavoriteIds(toggleFavoriteStore(storeId));
+  }, [storeId]);
+
+  // Agregado de avaliações (mesma fonte do app: store_rating_aggregates, 90d).
+  const { data: ratingAggregate } = useQuery({
+    queryKey: ["store-rating-aggregate", storeId],
+    queryFn: async () => {
+      const { data } = await (supabase as any)
+        .from("store_rating_aggregates")
+        .select("avg_rating, review_count, dist_5, dist_4, dist_3, dist_2, dist_1")
+        .eq("store_id", storeId!)
+        .eq("period", "90d")
+        .maybeSingle();
+      if (!data) return null;
+      return {
+        avg: Number(data.avg_rating) || 0,
+        count: Number(data.review_count) || 0,
+        dist: [data.dist_5, data.dist_4, data.dist_3, data.dist_2, data.dist_1].map(
+          (n: any) => Number(n) || 0
+        ),
+      } as RatingAggregate;
+    },
+    enabled: !!storeId,
+    staleTime: 1000 * 60 * 3,
+  });
+
+  // Ao abrir a tela de informações, começa do topo (comportamento de navegação do app).
+  useEffect(() => {
+    if (infoView) window.scrollTo(0, 0);
+  }, [infoView]);
   const [loadEnhancements, setLoadEnhancements] = useState(false);
 
   // O catálogo essencial já vem no bootstrap. Recursos complementares são
@@ -641,6 +679,12 @@ const StorePage = () => {
     ? `${storeStatus.reason || (storeStatus.isOpen ? "Aberto" : "Fechado")}`
     : "Horário não informado";
 
+  // Destaques (layout do app): os 6 primeiros produtos visíveis da loja.
+  const featuredProducts = useMemo(
+    () => (displayProducts || []).slice(0, 6),
+    [displayProducts]
+  );
+
   const reorderProductsList = useMemo(
     () => displayProducts?.filter((p) => reorderProducts?.includes(p.id)) || [],
     [displayProducts, reorderProducts]
@@ -948,7 +992,6 @@ const StorePage = () => {
   }, [store]);
 
   // Fase 2 (P2-10): o contador conta o que está listado, não o payload todo.
-  const totalProducts = displayProducts?.length || 0;
 
   if (isReservedRoute) {
     return <NotFound />;
@@ -1081,6 +1124,64 @@ const StorePage = () => {
     );
   }
 
+  // Linha de entrega do layout do app: "Padrão • tempo • Taxa - X" — a taxa usa
+  // a MESMA conta da antiga grade (km: base + split; senão o total da RPC;
+  // fallback describeStoreFee).
+  const feeLineText = !store
+    ? ""
+    : (() => {
+        if ((store as any)?.delivery_fee_type === "km" && (store as any)?.delivery_fee_base != null) {
+          const add =
+            platformInfo && typeof platformInfo.platform_add_customer === "number"
+              ? platformInfo.platform_add_customer
+              : describeStoreFee(store as any).platformAddCustomer;
+          const total = Number((store as any).delivery_fee_base) + add;
+          return total <= 0 ? "Grátis" : `a partir de ${formatBRL(total)}`;
+        }
+        if (platformInfo && typeof platformInfo.customer_total === "number") {
+          return platformInfo.customer_total === 0 ? "Grátis" : formatBRL(platformInfo.customer_total);
+        }
+        const d = describeStoreFee(store as any);
+        return d.free ? "Grátis" : `${d.prefix ?? ""} ${d.label}`.trim().replace(/^A partir de/, "a partir de");
+      })();
+
+  // Linha de avaliação clicável (layout do app): agregado 90d manda; sem
+  // avaliações, "★ Novo".
+  const ratingRowText = (() => {
+    const agg = ratingAggregate;
+    if (agg && agg.count > 0) {
+      return `★ ${agg.avg.toFixed(1).replace(".", ",")} (${agg.count} ${agg.count === 1 ? "avaliação" : "avaliações"})`;
+    }
+    if ((store as any)?.rating > 0) return `★ ${String((store as any).rating).replace(".", ",")}`;
+    return "★ Novo";
+  })();
+
+  // Selo de status da folha: "Aberta · até 15:00" quando aberta.
+  const todayCloseLabel = (() => {
+    if (!storeStatus.isOpen || !Array.isArray(storeHours)) return "";
+    const today = (storeHours as any[]).find((h) => Number(h.day_of_week) === new Date().getDay());
+    if (!today || today.is_closed_all_day || !today.close_time) return "";
+    return ` · até ${String(today.close_time).slice(0, 5)}`;
+  })();
+
+  // Tela "Sobre a loja" (layout do app) — substitui a vitrine enquanto aberta.
+  if (infoView && store) {
+    return (
+      <StoreInfoView
+        store={store}
+        hours={(storeHours as any[]) || []}
+        isOpen={storeStatus.isOpen}
+        statusReason={storeStatus.reason || ""}
+        initialTab={infoView}
+        aggregate={ratingAggregate ?? null}
+        isFavorite={isFavorite}
+        onToggleFavorite={toggleFavorite}
+        onBack={() => setInfoView(null)}
+        onOpenMaps={openMaps}
+      />
+    );
+  }
+
   return (
     <div ref={pageRef} className={`min-h-screen bg-background pb-24 ${isAdega ? "adega-theme" : ""}`}>
       {fraudBlock && (
@@ -1138,6 +1239,15 @@ const StorePage = () => {
            </div>
            <div className="flex items-center gap-2">
             <button
+              onClick={toggleFavorite}
+              aria-label={isFavorite ? "Remover dos favoritos" : "Favoritar loja"}
+              className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${
+                scrolled ? "bg-muted text-foreground" : "bg-card/90 backdrop-blur-md shadow-lg border border-border/50 text-foreground"
+              }`}
+            >
+              <Heart className={`h-4 w-4 ${isFavorite ? "fill-[#FF5252] text-[#FF5252]" : ""}`} />
+            </button>
+            <button
               onClick={() => setShowSearch(!showSearch)}
               aria-label="Buscar produtos"
               className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${
@@ -1159,282 +1269,130 @@ const StorePage = () => {
          )}
       </div>
 
-      {/* ===== STORE INFO ===== */}
-      <div className="relative -mt-12 mx-4 z-10">
-        <div className="rounded-2xl border shadow-xl overflow-visible bg-card border-border">
-          <div className="p-5 pb-0 relative">
-            <div className="flex flex-col items-center gap-3 sm:flex-row sm:items-start sm:gap-4">
-              <div className="w-[100px] h-[100px] rounded-full bg-card border-[4px] border-card shadow-2xl flex-shrink-0 overflow-hidden -mt-[70px] relative z-[55] mx-auto sm:mx-0">
-                {store?.image_url ? (
-                  <img loading="lazy" decoding="async" src={store.image_url} alt={store?.name} className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-primary/10">
-                    <span className="text-3xl">🍽️</span>
-                  </div>
-                )}
+      {/* ===== FOLHA DA LOJA (layout do app/KMP) =====
+          Capa + logo quadrada sobreposta; nome, categoria/status e avaliação
+          são LINHAS DE NAVEGAÇÃO que abrem a tela "Sobre a loja"
+          (StoreInfoView). Endereço, horários e pagamento moram lá agora —
+          o antigo "Ver informações" sai de cena. */}
+      <div className="relative -mt-9 z-10 bg-card rounded-t-[28px]">
+        <div className="flex justify-center">
+          <div className="w-[82px] h-[82px] -mt-[41px] rounded-[20px] border-2 border-white shadow-md overflow-hidden bg-primary/10 flex-shrink-0">
+            {store?.image_url ? (
+              <img loading="lazy" decoding="async" src={store.image_url} alt={store?.name} className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <span className="text-3xl font-black text-primary">{(store?.name || "?").charAt(0).toUpperCase()}</span>
               </div>
-              <div className="flex-1 min-w-0 flex flex-col pt-1 text-center sm:text-left">
-                <h1 className="text-xl sm:text-2xl font-black text-foreground break-words leading-tight mt-1 sm:mt-0">{store?.name}</h1>
-                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mt-1.5">
-                  <span className="text-[10px] font-black text-muted-foreground uppercase tracking-wider bg-muted/80 px-2.5 py-1 rounded-md border border-border/50">
-                    {store?.category}
-                  </span>
-                  {store?.rating && store.rating > 0 && (
-                    <div className="flex items-center gap-1 bg-amber-400/10 px-2 py-0.5 rounded-md border border-amber-400/20">
-                      <Star className="h-2.5 w-2.5 fill-amber-400 text-amber-400" />
-                      <span className="text-[10px] font-black text-amber-600 dark:text-amber-400">{store.rating}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {hasConfiguredHours && (
-              <div className="mt-4 flex justify-center sm:justify-start">
-                <span className={`inline-flex items-center gap-1.5 text-[11px] font-black px-3 py-1 rounded-full border ${
-                  storeStatus.isOpen
-                    ? "bg-green-500/10 text-green-600 border-green-500/20"
-                    : "bg-destructive/10 text-destructive border-destructive/20"
-                }`}>
-                  <span className={`w-1.5 h-1.5 rounded-full ${storeStatus.isOpen ? "bg-green-500 animate-pulse" : "bg-destructive"}`} />
-                  {statusLabel}
-                </span>
-              </div>
-            )}
-
-            {/* Ver informações: endereço, taxa, horários e pagamento começam recolhidos */}
-            <div className={`mt-4 flex items-center gap-3 ${showStoreInfo ? "" : "pb-5"}`}>
-              <div className="h-px flex-1 bg-border/60" />
-              <button
-                type="button"
-                onClick={() => setShowStoreInfo(v => !v)}
-                aria-expanded={showStoreInfo}
-                className="inline-flex items-center gap-1.5 rounded-full border border-primary/60 px-3.5 py-1.5 text-[11px] font-black text-primary transition-colors hover:bg-primary/5 flex-shrink-0"
-              >
-                {showStoreInfo ? "Ocultar informações" : "Ver informações"}
-                <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-300 ${showStoreInfo ? "rotate-180" : ""}`} />
-              </button>
-              <div className="h-px flex-1 bg-border/60" />
-            </div>
-
-            {showStoreInfo && (
-            <div className="animate-in fade-in slide-in-from-top-1 duration-300">
-            {/* Address + Maps button */}
-            {store?.address_neighborhood && (
-              <div className="mt-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-start gap-2.5 min-w-0">
-                    <div className="mt-0.5 w-7 h-7 rounded-full bg-primary/5 flex items-center justify-center flex-shrink-0">
-                      <MapPin className="h-3.5 w-3.5 text-primary" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-tight">Endereço</p>
-                      <p className="text-[11px] text-foreground font-medium leading-relaxed truncate">
-                        {[store.address_street, store.address_number, store.address_neighborhood, store.address_city]
-                          .filter(Boolean)
-                          .join(", ")}
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); openMaps(); }}
-                    aria-label="Abrir endereço no Google Maps"
-                    className="flex items-center gap-1.5 bg-primary text-primary-foreground px-3 py-1.5 rounded-lg text-[10px] font-black hover:bg-primary/90 transition-all shadow-sm flex-shrink-0"
-                  >
-                    <Navigation className="h-3 w-3" />
-                    MAPS
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Delivery info row: taxa, tempo, pedido mínimo */}
-            {Number((store as any)?.free_delivery_threshold) > 0 && (
-              <div className="mt-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 flex items-center gap-2">
-                <Bike className="h-4 w-4 text-emerald-500 shrink-0" />
-                <p className="text-[12px] font-bold text-emerald-700 dark:text-emerald-400 leading-tight">
-                  🚚 Frete grátis acima de {formatBRL(Number((store as any).free_delivery_threshold))}
-                </p>
-              </div>
-            )}
-            {((store as any)?.own_delivery_fee != null ||
-              (store as any)?.delivery_fee != null ||
-              (store as any)?.estimated_delivery_time ||
-              (store as any)?.minimum_order_value) && (
-              <div className="mt-3 grid grid-cols-3 gap-2">
-                <div className="bg-muted/30 rounded-xl p-2.5 border border-border/30 flex flex-col items-center text-center">
-                  <Bike className="h-3.5 w-3.5 text-primary mb-1" />
-                  <span className="text-[11px] font-semibold text-muted-foreground uppercase">Taxa</span>
-                  <span className="text-[11px] font-black text-foreground mt-0.5">
-                    {(() => {
-                      // Loja por km: o piso exibido é a base do km + split (o total da RPC
-                      // usa own_delivery_fee e não vale para km). Checkout continua via quote-delivery.
-                      if ((store as any)?.delivery_fee_type === "km" && (store as any)?.delivery_fee_base != null) {
-                        const add =
-                          platformInfo && typeof platformInfo.platform_add_customer === "number"
-                            ? platformInfo.platform_add_customer
-                            : describeStoreFee(store as any).platformAddCustomer;
-                        const total = Number((store as any).delivery_fee_base) + add;
-                        return total <= 0 ? "Grátis" : `A partir de ${formatBRL(total)}`;
-                      }
-                      // Prefere RPC (fonte de verdade), com fallback ao helper caso ainda não carregou.
-                      // O total da RPC e exato (so km e piso) — sem "A partir de" aqui;
-                      // o ramo do km acima e o unico que usa o prefixo.
-                      if (platformInfo && typeof platformInfo.customer_total === "number") {
-                        return platformInfo.customer_total === 0
-                          ? "Grátis"
-                          : formatBRL(platformInfo.customer_total);
-                      }
-                      const d = describeStoreFee(store as any);
-                      return d.free ? "Grátis" : `${d.prefix ?? ""} ${d.label}`.trim();
-                    })()}
-                  </span>
-                </div>
-                <div className="bg-muted/30 rounded-xl p-2.5 border border-border/30 flex flex-col items-center text-center">
-                  <Timer className="h-3.5 w-3.5 text-primary mb-1" />
-                  <span className="text-[11px] font-semibold text-muted-foreground uppercase">Tempo</span>
-                  <span className="text-[11px] font-black text-foreground mt-0.5">
-                    {(store as any)?.estimated_delivery_time || "—"}
-                  </span>
-                </div>
-                <div className="bg-muted/30 rounded-xl p-2.5 border border-border/30 flex flex-col items-center text-center">
-                  <Wallet className="h-3.5 w-3.5 text-primary mb-1" />
-                  <span className="text-[11px] font-semibold text-muted-foreground uppercase">Pedido mín.</span>
-                  <span className="text-[11px] font-black text-foreground mt-0.5">
-                    {(store as any)?.minimum_order_value
-                      ? formatBRL(Number((store as any).minimum_order_value))
-                      : "—"}
-                  </span>
-                </div>
-              </div>
-            )}
-
-            {/* Info Tabs / Expandables */}
-            <div className="mt-4 space-y-2 pb-4">
-              {/* Opening Hours */}
-              <div className="bg-muted/30 rounded-xl overflow-hidden border border-border/30">
-                <button
-                  onClick={() => setShowHours(!showHours)}
-                  className="flex items-center justify-between w-full p-3 transition-colors hover:bg-muted/50"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <Clock className="h-3.5 w-3.5 text-primary" />
-                    <span className="text-[11px] font-black text-foreground uppercase tracking-wider">Horários</span>
-                  </div>
-                  {showHours ? <ChevronUp className="h-3.5 w-3.5 text-muted-foreground" /> : <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />}
-                </button>
-                {showHours && (
-                  <div className="px-3 pb-3 animate-in fade-in slide-in-from-top-1 duration-200">
-                    {hasConfiguredHours ? (
-                      <div className="grid grid-cols-1 gap-0.5">
-                        {[0, 1, 2, 3, 4, 5, 6].map(day => {
-                          const dayNames = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
-                          const h = storeHours.find((hr: any) => hr.day_of_week === day);
-                          const now = new Date();
-                          const isToday = now.getDay() === day;
-                          return (
-                            <div key={day} className={`flex items-center justify-between px-2 py-1.5 rounded-lg text-[11px] ${isToday ? "bg-primary/10 font-bold" : ""}`}>
-                              <span className={`${isToday ? "text-primary" : "text-muted-foreground"} w-10`}>{dayNames[day]}</span>
-                              {h && !h.is_closed_all_day ? (
-                                <span className={isToday ? "text-foreground" : "text-muted-foreground font-medium"}>
-                                  {String(h.open_time).slice(0, 5)} - {String(h.close_time).slice(0, 5)}
-                                </span>
-                              ) : (
-                                <span className="text-destructive/70 font-medium italic">Fechado</span>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    ) : (
-                      <p className="text-[11px] text-muted-foreground text-center py-2 italic">
-                        Horários não informados.
-                      </p>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* Payment Methods — dinâmico baseado nas configurações da loja */}
-              {(() => {
-                const s = (store?.settings || {}) as Record<string, any>;
-                const pixOnline   = s.accept_pix_online  !== false && s.accept_pix_online !== undefined ? s.accept_pix_online : false;
-                const pixMachine  = s.accept_pix_machine === true;
-                const card        = s.accept_card        !== false;
-                const cash        = s.accept_cash        !== false;
-                const hasPix      = pixOnline || pixMachine;
-                const methods = [
-                  { show: pixOnline,  icon: <QrCode className="h-3 w-3 text-emerald-500" />,  label: "PIX Online",     badge: "bg-emerald-500/10 border-emerald-500/20 text-emerald-700 dark:text-emerald-400" },
-                  { show: pixMachine, icon: <QrCode className="h-3 w-3 text-primary" />,       label: "PIX",            badge: "" },
-                  { show: card,       icon: <CreditCard className="h-3 w-3 text-primary" />,   label: "Cartão",         badge: "" },
-                  { show: cash,       icon: <Banknote className="h-3 w-3 text-primary" />,     label: "Dinheiro",       badge: "" },
-                ];
-                const active = methods.filter(m => m.show);
-                return (
-                  <div className="bg-muted/30 rounded-xl p-3 border border-border/30">
-                    <div className="flex items-center gap-2.5 mb-2.5">
-                      <CreditCard className="h-3.5 w-3.5 text-primary" />
-                      <span className="text-[11px] font-black text-foreground uppercase tracking-wider">Pagamento</span>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {active.length === 0 ? (
-                        <span className="text-[10px] text-muted-foreground">Consulte a loja</span>
-                      ) : active.map(m => (
-                        <span
-                          key={m.label}
-                          className={`flex items-center gap-1.5 bg-card px-2.5 py-1.5 rounded-lg text-[10px] font-bold border shadow-sm ${
-                            m.badge || "text-muted-foreground border-border/50"
-                          }`}
-                        >
-                          {m.icon}
-                          {m.label}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })()}
-            </div>
-            </div>
             )}
           </div>
+        </div>
 
-          {/* Loyalty */}
-          {store && showStoreInfo && <div className="px-5"><LoyaltyBanner storeId={store.id} storeName={store.name} /></div>}
+        <div className="px-4 pt-3 pb-[18px]">
+          {/* Nome → Informações */}
+          <button
+            type="button"
+            onClick={() => setInfoView("info")}
+            className="flex items-center w-full text-left"
+            aria-label="Ver informações da loja"
+          >
+            <span className="flex-1 min-w-0 truncate text-[22px] font-extrabold text-foreground leading-tight">
+              {store?.name}
+            </span>
+            <ChevronRight className="h-[26px] w-[26px] text-[#4A4A4A] dark:text-muted-foreground flex-shrink-0" />
+          </button>
 
-          {/* Outras unidades da rede (matriz) */}
-          {store && showStoreInfo && (store as any).network_id && (store as any).is_matriz && (
-            <NetworkUnitsCarousel networkId={(store as any).network_id} currentStoreId={store.id} />
+          <div className="h-px bg-[#F0F0F0] dark:bg-border/60 my-1" />
+
+          {/* Categoria + status → Informações */}
+          <button
+            type="button"
+            onClick={() => setInfoView("info")}
+            className="flex items-center w-full text-left py-2.5"
+            aria-label="Ver horários e informações da loja"
+          >
+            <span className="flex-1 min-w-0 truncate text-[15px] text-[#686868] dark:text-muted-foreground">
+              {store?.category ? store.category.charAt(0).toUpperCase() + store.category.slice(1) : "Alimentação"}
+            </span>
+            {hasConfiguredHours && (
+              <span
+                className={`inline-flex items-center gap-[5px] rounded-[14px] px-[9px] py-[5px] mr-1.5 text-xs font-semibold ${
+                  storeStatus.isOpen
+                    ? "bg-[#F1FAF3] text-[#16803A] dark:bg-green-500/10 dark:text-green-400"
+                    : "bg-[#FFF3F3] text-[#C9343C] dark:bg-destructive/10 dark:text-destructive"
+                }`}
+              >
+                <span className={`w-2 h-2 rounded-full ${storeStatus.isOpen ? "bg-[#16A34A]" : "bg-[#E5484D]"}`} />
+                {storeStatus.isOpen ? `Aberta${todayCloseLabel}` : "Fechada"}
+              </span>
+            )}
+            <ChevronRight className="h-[22px] w-[22px] text-[#BDBDBD] flex-shrink-0" />
+          </button>
+
+          <div className="h-px bg-[#F0F0F0] dark:bg-border/60" />
+
+          {/* Avaliação → Avaliações */}
+          <button
+            type="button"
+            onClick={() => setInfoView("aval")}
+            className="flex items-center w-full text-left py-2.5"
+            aria-label="Ver avaliações da loja"
+          >
+            <span className="flex-1 min-w-0 truncate text-sm font-semibold text-[#1F1F1F] dark:text-foreground">
+              {ratingRowText}
+            </span>
+            <ChevronRight className="h-[22px] w-[22px] text-[#BDBDBD] flex-shrink-0" />
+          </button>
+
+          <div className="h-px bg-[#F0F0F0] dark:bg-border/60" />
+
+          {/* Entrega (informativo, não navega) */}
+          {((store as any)?.own_delivery_fee != null ||
+            (store as any)?.delivery_fee != null ||
+            (store as any)?.estimated_delivery_time ||
+            (store as any)?.minimum_order_value) && (
+            <div className="pt-2.5">
+              <p className="text-sm font-semibold text-[#1F1F1F] dark:text-foreground">
+                Padrão
+                {(store as any)?.estimated_delivery_time ? ` • ${(store as any).estimated_delivery_time}` : ""}
+                {feeLineText ? (
+                  <>
+                    {" • Taxa - "}
+                    <span className="text-primary font-bold">{feeLineText}</span>
+                  </>
+                ) : null}
+              </p>
+              <p className="text-[13px] text-[#888888] dark:text-muted-foreground mt-0.5">
+                Entrega pela loja
+                {Number((store as any)?.minimum_order_value) > 0
+                  ? ` • Pedido mín. ${formatBRL(Number((store as any).minimum_order_value))}`
+                  : ""}
+              </p>
+            </div>
           )}
 
-          {/* Stats bar */}
-          {showStoreInfo && (
-          <div className="mt-2 px-5 py-4 flex items-center justify-around border-t bg-muted/50 border-border/50">
-            <div className="flex flex-col items-center">
-              <span className="text-lg font-black text-foreground leading-none">{totalProducts}</span>
-              <span className="text-[11px] font-semibold text-muted-foreground mt-1">Produtos</span>
+          {/* Frete grátis (segue visível na folha) */}
+          {Number((store as any)?.free_delivery_threshold) > 0 && (
+            <div className="mt-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 flex items-center gap-2">
+              <Bike className="h-4 w-4 text-emerald-500 shrink-0" />
+              <p className="text-[12px] font-bold text-emerald-700 dark:text-emerald-400 leading-tight">
+                🚚 Frete grátis acima de {formatBRL(Number((store as any).free_delivery_threshold))}
+              </p>
             </div>
-            <div className="w-px h-6 bg-border/80" />
-            <div className="flex flex-col items-center">
-              <span className="text-lg font-black text-foreground leading-none">{sections?.length || 0}</span>
-              <span className="text-[11px] font-semibold text-muted-foreground mt-1">Categorias</span>
-            </div>
-            {store?.rating && store.rating > 0 && (
-              <>
-                <div className="w-px h-6 bg-border/80" />
-                <div className="flex flex-col items-center">
-                  <span className="text-lg font-black text-amber-500 leading-none flex items-center gap-1">
-                    {store.rating}
-                    <Star className="h-3 w-3 fill-amber-500" />
-                  </span>
-                  <span className="text-[11px] font-semibold text-muted-foreground mt-1">Avaliação</span>
-                </div>
-              </>
-            )}
-          </div>
           )}
         </div>
       </div>
+
+      {/* Loyalty (visível na página, fora da folha) */}
+      {store && (
+        <div className="px-4 mt-3">
+          <LoyaltyBanner storeId={store.id} storeName={store.name} />
+        </div>
+      )}
+
+      {/* Outras unidades da rede (matriz) */}
+      {store && (store as any).network_id && (store as any).is_matriz && (
+        <NetworkUnitsCarousel networkId={(store as any).network_id} currentStoreId={store.id} />
+      )}
 
       {/* Suspended banner */}
       {isSuspended && (
@@ -1450,11 +1408,11 @@ const StorePage = () => {
       {/* Closed banner (only when not suspended) */}
       {/* Banner: sem entregador vinculado */}
       {isOwnDeliveryStore && hasNoDrivers && storeStatus.isOpen && (
-        <div className="mx-4 mt-3 bg-amber-500/10 border border-amber-500/30 rounded-2xl px-4 py-3 flex items-start gap-3">
-          <Bike className="h-5 w-5 text-amber-700 shrink-0 mt-0.5" />
+        <div className="mx-4 mt-3 bg-destructive/5 border border-destructive/20 rounded-2xl px-4 py-3 flex items-start gap-3">
+          <Bike className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
           <div>
-            <p className="text-sm font-bold text-amber-900">Entrega temporariamente indisponível</p>
-            <p className="text-xs text-amber-900/75 mt-0.5">
+            <p className="text-sm font-bold text-foreground">Entrega temporariamente indisponível</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
               {deliveryAvailability?.reason_message || "Esta loja está sem entregador disponível no momento."} Você ainda pode fazer seu pedido para retirada.
             </p>
           </div>
@@ -1742,6 +1700,76 @@ const StorePage = () => {
                 {o.l}
               </button>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* ===== DESTAQUES (layout do app: 6 primeiros produtos, grade 3×2) ===== */}
+      {!filteredProducts && featuredProducts.length > 0 && (
+        <div className="px-4 mt-5">
+          <h2 className="text-base font-extrabold text-foreground mb-2.5">Destaques</h2>
+          <div className="grid grid-cols-3 gap-2.5">
+            {featuredProducts.map((product) => {
+              const effective = getEffectivePrice(product as any);
+              const promo = isPromoActive(product as any) && effective < Number(product.price);
+              const outOfStock = !!(product as any).metadata?.out_of_stock;
+              return (
+                <div
+                  key={`destaque-${product.id}`}
+                  className={!storeStatus.isOpen || outOfStock ? "opacity-60" : ""}
+                >
+                  <div
+                    className="relative rounded-xl overflow-hidden bg-muted aspect-square cursor-pointer"
+                    onClick={() => openProduct(product)}
+                  >
+                    {product.image_url ? (
+                      <img
+                        loading="lazy"
+                        decoding="async"
+                        src={product.image_url}
+                        alt={product.name}
+                        className={`w-full h-full object-cover ${outOfStock ? "grayscale" : ""}`}
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-primary/10">
+                        <span className="text-2xl font-black text-primary">
+                          {(product.name || "?").charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                    )}
+                    {outOfStock && (
+                      <div className="absolute inset-0 z-10 bg-black/55 flex items-center justify-center">
+                        <span className="text-[9px] font-black uppercase text-white bg-destructive px-1.5 py-0.5 rounded tracking-wider">
+                          Esgotado
+                        </span>
+                      </div>
+                    )}
+                    <button
+                      type="button"
+                      aria-label={`Ver ${product.name}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openProduct(product);
+                      }}
+                      className="absolute bottom-1.5 right-1.5 z-20 w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-md active:scale-95 transition-transform"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <p className="text-xs font-semibold text-foreground line-clamp-2 mt-1.5 leading-snug min-h-8">
+                    {product.name}
+                  </p>
+                  <p className="text-[13px] font-extrabold text-primary mt-0.5 flex items-baseline gap-1.5 flex-wrap">
+                    {formatBRL(effective)}
+                    {promo && (
+                      <span className="text-[11px] font-semibold text-muted-foreground line-through">
+                        {formatBRL(Number(product.price))}
+                      </span>
+                    )}
+                  </p>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
