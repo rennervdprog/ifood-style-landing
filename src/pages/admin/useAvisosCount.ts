@@ -19,6 +19,8 @@ interface Params {
   delayedOrdersCount?: number;
   /** Chamados de atendimento humano abertos (1 card por chamado em Avisos). */
   attendantCount?: number;
+  /** Som de alerta ainda não ativado neste aparelho/navegador. */
+  soundOff?: boolean;
 }
 
 export function useAvisosCount({
@@ -31,6 +33,7 @@ export function useAvisosCount({
   pendingOrdersCount = 0,
   delayedOrdersCount = 0,
   attendantCount = 0,
+  soundOff = false,
 }: Params): number {
   if (!store) return 0;
 
@@ -41,6 +44,7 @@ export function useAvisosCount({
   if (pendingOrdersCount > 0) count++;
   if (delayedOrdersCount > 0) count++;
   count += attendantCount;
+  if (soundOff) count++;
 
   return count;
 }
