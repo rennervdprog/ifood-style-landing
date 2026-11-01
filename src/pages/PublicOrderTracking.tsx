@@ -95,8 +95,8 @@ const PublicOrderTracking = () => {
     }
   };
 
-  const load = async () => {
-    setLoading(true);
+  const load = async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
       const url = `${(supabase as any).supabaseUrl}/functions/v1/guest-order-status?order_id=${orderId}&last4=${last4}`;
       const res = await fetch(url, {
@@ -106,14 +106,29 @@ const PublicOrderTracking = () => {
       if (!res.ok) { setError(j?.error || "not_found"); setData((prev: any) => prev?.delivery_pin ? prev : null); }
       else { setData({ ...j, delivery_pin: j?.delivery_pin || navPin }); setError(null); }
     } catch (e: any) { setError(e?.message || "erro"); }
-    finally { setLoading(false); }
+    finally { if (!silent) setLoading(false); }
   };
 
   useEffect(() => {
     if (!orderId || last4.length !== 4) { setError("invalid"); setLoading(false); return; }
     load();
-    const t = setInterval(load, 20_000);
-    return () => clearInterval(t);
+    // Reserva: se o tempo real falhar, a tela continua atualizando.
+    const t = setInterval(() => load(true), 20_000);
+    // Tempo real: o banco avisa na hora quando o status deste pedido muda
+    // (gatilho notify_guest_order_status → broadcast público só com o
+    // status; os dados continuam vindo da função protegida pelos 4 dígitos).
+    const channel = supabase
+      .channel(`guest-order:${orderId}`)
+      .on("broadcast", { event: "status_changed" }, () => { load(true); })
+      .subscribe();
+    // Voltou pra aba: confere na hora (o navegador estrangula abas de fundo).
+    const onVisible = () => { if (document.visibilityState === "visible") load(true); };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      clearInterval(t);
+      document.removeEventListener("visibilitychange", onVisible);
+      supabase.removeChannel(channel);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orderId, last4, navPin]);
 
