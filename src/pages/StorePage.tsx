@@ -290,6 +290,19 @@ const StorePage = () => {
     staleTime: 1000 * 60 * 5,
   });
 
+  const { data: storeHolidays } = useQuery({
+    queryKey: ["store-holidays", storeId],
+    queryFn: async () => {
+      const { data } = await (supabase as any)
+        .from("store_holidays")
+        .select("date, reason")
+        .eq("store_id", storeId!);
+      return (data || []) as { date: string; reason: string | null }[];
+    },
+    enabled: !!storeId && bootstrapDone,
+    staleTime: 1000 * 60 * 5,
+  });
+
   // Fase 5 — owner_id saiu de stores_public: o id do dono vem do bootstrap
   // (owner_profile, semeado na query acima) e, no sandbox, da tabela
   // stores. O botão de WhatsApp da loja continua igual.
@@ -581,7 +594,9 @@ const StorePage = () => {
     ? getStoreOpenStatus(
         (storeHours as any as OpeningHour[]) || [],
         (store as any).force_closed || false,
-        store.is_open
+        store.is_open,
+        undefined,
+        storeHolidays || []
       )
     : { isOpen: false, reason: "" };
 

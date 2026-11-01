@@ -28,6 +28,7 @@ export default function CityStoresPage() {
   const slug = (cidade || "").toLowerCase();
   const [stores, setStores] = useState<StoreRow[]>([]);
   const [hoursByStore, setHoursByStore] = useState<Map<string, OpeningHour[]>>(new Map());
+  const [holidaysByStore, setHolidaysByStore] = useState<Map<string, { date: string; reason: string | null }[]>>(new Map());
   const [loading, setLoading] = useState(true);
   const [cityName, setCityName] = useState<string>("");
 
@@ -63,6 +64,18 @@ export default function CityStoresPage() {
           map.set(h.store_id, list);
         }
         setHoursByStore(map);
+        const { data: holidaysData } = await (supabase as any)
+          .from("store_holidays")
+          .select("store_id, date, reason")
+          .in("store_id", filtered.map((s) => s.id));
+        if (cancelled) return;
+        const hMap = new Map<string, { date: string; reason: string | null }[]>();
+        for (const h of (holidaysData || []) as Array<{ store_id: string; date: string; reason: string | null }>) {
+          const list = hMap.get(h.store_id) || [];
+          list.push({ date: h.date, reason: h.reason });
+          hMap.set(h.store_id, list);
+        }
+        setHolidaysByStore(hMap);
       }
       setLoading(false);
     })();
@@ -104,7 +117,7 @@ export default function CityStoresPage() {
   }, [stores]);
 
   const isStoreOpen = (s: StoreRow) =>
-    getStoreOpenStatus(hoursByStore.get(s.id) || [], !!s.force_closed, !!s.is_open).isOpen;
+    getStoreOpenStatus(hoursByStore.get(s.id) || [], !!s.force_closed, !!s.is_open, undefined, holidaysByStore.get(s.id) || []).isOpen;
 
   const openCount = stores.filter(isStoreOpen).length;
 

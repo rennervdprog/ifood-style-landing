@@ -137,6 +137,19 @@ const GuestCheckoutPage = () => {
     refetchInterval: 60_000,
   });
 
+  const { data: storeHolidays } = useQuery({
+    queryKey: ["guest-store-holidays", storeId],
+    queryFn: async () => {
+      const { data } = await (supabase as any)
+        .from("store_holidays")
+        .select("date, reason")
+        .eq("store_id", storeId!);
+      return (data || []) as { date: string; reason: string | null }[];
+    },
+    enabled: !!storeId,
+    refetchInterval: 60_000,
+  });
+
   const storeStatus = store && storeHours
     ? getStoreOpenStatus(
         storeHours,
@@ -146,6 +159,7 @@ const GuestCheckoutPage = () => {
           enabled: !!(store as any).preorder_enabled,
           minutesBefore: Number((store as any).preorder_minutes_before ?? 0),
         },
+        storeHolidays || [],
       )
     : null;
   const storeMinimumOrderValue = Number((store as any)?.minimum_order_value || 0);

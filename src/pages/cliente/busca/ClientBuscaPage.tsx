@@ -196,7 +196,11 @@ const ClientBuscaPage = () => {
         .from("opening_hours")
         .select("store_id, day_of_week, open_time, close_time, is_closed_all_day")
         .in("store_id", storeIds);
-      return mapStoresWithHours(rows, allHours, userLocation.coords, userLocation.city);
+      const { data: allHolidays } = await (supabase as any)
+        .from("store_holidays")
+        .select("store_id, date, reason")
+        .in("store_id", storeIds);
+      return mapStoresWithHours(rows, allHours, userLocation.coords, userLocation.city, allHolidays);
     },
     staleTime: 1000 * 60,
   });
