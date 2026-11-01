@@ -629,16 +629,16 @@ const StoreHoursManager = ({ storeId, forceClosed }: { storeId: string; forceClo
                 lista com altura limitada e rolagem, Adicionar em pílula sólida da marca. */}
             {pendingSuggestions.length > 0 && !holidayBannerDismissed && (
               <div className="rounded-xl border border-border bg-card overflow-hidden">
-                <div className="flex items-start gap-2 bg-amber-50 dark:bg-amber-950/40 border-b border-amber-200 dark:border-amber-800/60 px-3 py-2.5">
-                  <Flag className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
-                  <p className="text-[11px] leading-snug text-amber-900 dark:text-amber-200 flex-1">
+                <div className="flex items-start gap-2 bg-muted/50 border-b border-border/60 px-3 py-2.5">
+                  <Flag className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                  <p className="text-[11px] leading-snug text-foreground flex-1">
                     <span className="font-bold">Feriados nacionais:</span> sua loja só fecha nos
                     feriados que você adicionar. Defina abaixo os dias em que não vai abrir:
                   </p>
                   <button
                     onClick={dismissHolidayBanner}
                     aria-label="Dispensar aviso de feriados nacionais"
-                    className="text-amber-700/70 hover:text-amber-900 dark:text-amber-300/70 dark:hover:text-amber-100 p-0.5"
+                    className="text-muted-foreground hover:text-foreground p-0.5"
                   >
                     <X className="h-3.5 w-3.5" />
                   </button>
@@ -660,7 +660,7 @@ const StoreHoursManager = ({ storeId, forceClosed }: { storeId: string; forceClo
                         <p className="text-xs text-muted-foreground">
                           {h.name}
                           {h.kind === "facultativo" && (
-                            <span className="ml-1.5 inline-block rounded-full border border-orange-200 bg-orange-50 px-1.5 py-px align-[2px] text-[8.5px] font-extrabold uppercase tracking-wide text-orange-600 dark:border-orange-800/60 dark:bg-orange-950/40 dark:text-orange-400">
+                            <span className="ml-1.5 inline-block rounded-full bg-primary px-1.5 py-px align-[2px] text-[8.5px] font-extrabold uppercase tracking-wide text-primary-foreground">
                               Ponto facultativo
                             </span>
                           )}
