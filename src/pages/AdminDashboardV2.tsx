@@ -1598,6 +1598,7 @@ const AdminDashboard = () => {
     pendingOrdersCount: pendingCount,
     delayedOrdersCount: delayedOrders.length,
     attendantCount: attendantRequests.length,
+    soundOff: !soundEnabled && !Capacitor.isNativePlatform(),
   });
 
   // Lateral "Entregadores": a contagem é a EQUIPE vinculada (mesma fonte do
@@ -1990,8 +1991,8 @@ const AdminDashboard = () => {
             {showSoundPrompt && !soundEnabled && !Capacitor.isNativePlatform() && (
               <button onClick={activateSound}
                 title="Ativar alertas sonoros de novos pedidos"
-                className="flex items-center gap-1 bg-amber-400/10 border border-amber-400/30 text-amber-500 px-2.5 py-1.5 rounded-xl text-[11px] font-bold animate-pulse">
-                <VolumeX className="h-3.5 w-3.5" /> Som
+                className="flex items-center gap-1 bg-primary/10 border border-primary/30 text-primary px-2.5 py-1.5 rounded-xl text-[11px] font-bold animate-pulse">
+                <VolumeX className="h-3.5 w-3.5" /> Ativar som
               </button>
             )}
             {pendingCount > 0 && dashboardTab !== "orders" && !isPdvOnly && (
@@ -2164,6 +2165,8 @@ const AdminDashboard = () => {
                 onGoToOrders={(tab) => { setDashboardTab("orders"); setActiveTab(tab); }}
                 attendantRequests={attendantRequests}
                 onResolveAttendant={resolveAttendant}
+                soundOff={!soundEnabled && !Capacitor.isNativePlatform()}
+                onActivateSound={activateSound}
               />
             </Suspense>
             </ErrorBoundary>
