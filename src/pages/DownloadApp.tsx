@@ -124,8 +124,8 @@ const DownloadApp = () => {
               },
               {
                 icon: Zap,
-                title: "Aceite em um toque",
-                desc: "Veja loja, endereço de retirada e destino e aceite sem sair da tela do aviso.",
+                title: "Aceite no app",
+                desc: "Toque em Ver entrega no aviso e aceite dentro do app, com a oferta já carregada na tela.",
               },
               {
                 icon: MapPin,
