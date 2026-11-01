@@ -1,4 +1,10 @@
-import { AlertTriangle, Clock, Bike, Bell, CheckCircle2, Timer, ClipboardList } from "lucide-react";
+import { AlertTriangle, Clock, Bike, Bell, CheckCircle2, Timer, ClipboardList, MessageCircle, Check } from "lucide-react";
+import {
+  attendantContextLabel,
+  attendantWaLink,
+  formatAttendantPhone,
+  type AttendantRequest,
+} from "../useAttendantRequests";
 
 interface Props {
   store: any;
@@ -17,6 +23,18 @@ interface Props {
   delayedPreparingCount?: number;
   /** Navega para a aba Pedidos já na fila indicada. */
   onGoToOrders?: (tab: "pendente" | "preparando") => void;
+  /** Chamados de atendimento humano abertos (cliente pediu atendente no WhatsApp). */
+  attendantRequests?: AttendantRequest[];
+  /** Baixa um chamado quando o lojista já respondeu o cliente. */
+  onResolveAttendant?: (id: string) => void;
+}
+
+function attendantAgo(iso: string): string {
+  const mins = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 60000));
+  if (mins < 1) return "agora mesmo";
+  if (mins < 60) return `há ${mins} min`;
+  const hours = Math.floor(mins / 60);
+  return `há ${hours}h${mins % 60 > 0 ? ` ${mins % 60}min` : ""}`;
 }
 
 export default function AvisosSection({
@@ -32,6 +50,8 @@ export default function AvisosSection({
   delayedOrdersCount = 0,
   delayedPreparingCount = 0,
   onGoToOrders,
+  attendantRequests = [],
+  onResolveAttendant,
 }: Props) {
   return (
     <div className="p-4 lg:p-6 max-w-6xl mx-auto space-y-4">
@@ -61,6 +81,46 @@ export default function AvisosSection({
         </div>
       )}
 
+
+      {attendantRequests.map((req) => (
+        <div
+          key={req.id}
+          className="bg-primary/5 border-2 border-primary/40 rounded-2xl p-4 flex items-start gap-3"
+        >
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground flex-shrink-0">
+            <MessageCircle className="h-5 w-5" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="font-black text-foreground text-sm">
+              Cliente solicitando atendimento no WhatsApp
+            </h3>
+            <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+              <strong className="text-foreground">
+                {req.customer_name || formatAttendantPhone(req.phone)}
+              </strong>
+              {req.customer_name ? ` • ${formatAttendantPhone(req.phone)}` : ""} —{" "}
+              {attendantContextLabel(req.context)} Olhe o WhatsApp da loja e responda o
+              cliente ({attendantAgo(req.created_at)}).
+            </p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <a
+                href={attendantWaLink(req.phone)}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1 text-xs font-bold text-primary-foreground bg-primary hover:bg-primary/90 px-3 py-1.5 rounded-lg transition-colors"
+              >
+                <MessageCircle className="inline h-3 w-3 mr-1" /> Abrir WhatsApp
+              </a>
+              <button
+                onClick={() => onResolveAttendant?.(req.id)}
+                className="inline-flex items-center gap-1 text-xs font-bold text-foreground bg-background border border-border hover:bg-muted px-3 py-1.5 rounded-lg transition-colors"
+              >
+                <Check className="inline h-3 w-3 mr-1" /> Já atendi
+              </button>
+            </div>
+          </div>
+        </div>
+      ))}
 
       {pendingOrdersCount > 0 && (
         <div className="bg-amber-500/10 border-2 border-amber-500/30 rounded-2xl p-4 flex items-start gap-3">
