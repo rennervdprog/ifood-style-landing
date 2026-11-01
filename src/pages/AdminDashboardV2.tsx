@@ -82,6 +82,7 @@ import { addMoney, averageMoney, formatBRL, formatCurrency, sumMoney } from "@/l
 import ProductTour, { lojistaTourSteps } from "@/components/ProductTour";
 import { useStorePlan } from "@/hooks/useStorePlan";
 import { useAvisosCount } from "./admin/useAvisosCount";
+import { useAttendantRequests } from "./admin/useAttendantRequests";
 import { useRepassePending } from "./admin/useRepassePending";
 import TrialExpiredGuard from "@/components/TrialExpiredGuard";
 import {
@@ -1582,6 +1583,11 @@ const AdminDashboard = () => {
 
   const delayedPreparingCount = delayedOrders.filter(o => o.status === "preparando").length;
 
+  // Chamados de atendimento humano (bot do WhatsApp): o som de alerta
+  // toca quando um chamado novo chega com o painel aberto.
+  const { requests: attendantRequests, resolve: resolveAttendant } =
+    useAttendantRequests(store?.id, playAlert);
+
   const avisosCount = useAvisosCount({
     store,
     storePlan,
@@ -1591,6 +1597,7 @@ const AdminDashboard = () => {
     driversLoading,
     pendingOrdersCount: pendingCount,
     delayedOrdersCount: delayedOrders.length,
+    attendantCount: attendantRequests.length,
   });
 
   // Lateral "Entregadores": a contagem é a EQUIPE vinculada (mesma fonte do
@@ -2155,6 +2162,8 @@ const AdminDashboard = () => {
                 delayedOrdersCount={delayedOrders.length}
                 delayedPreparingCount={delayedPreparingCount}
                 onGoToOrders={(tab) => { setDashboardTab("orders"); setActiveTab(tab); }}
+                attendantRequests={attendantRequests}
+                onResolveAttendant={resolveAttendant}
               />
             </Suspense>
             </ErrorBoundary>
