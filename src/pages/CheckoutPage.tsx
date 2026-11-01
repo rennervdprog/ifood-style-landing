@@ -205,6 +205,19 @@ const CheckoutPage = () => {
     refetchInterval: 60_000,
   });
 
+  const { data: storeHolidays } = useQuery({
+    queryKey: ["store-holidays-checkout", storeId],
+    queryFn: async () => {
+      const { data } = await (supabase as any)
+        .from("store_holidays")
+        .select("date, reason")
+        .eq("store_id", storeId!);
+      return (data || []) as { date: string; reason: string | null }[];
+    },
+    enabled: !!storeId,
+    refetchInterval: 60_000,
+  });
+
    const storeStatus = storeData && storeHours && !('error' in storeData)
      ? getStoreOpenStatus(
          storeHours,
@@ -214,6 +227,7 @@ const CheckoutPage = () => {
            enabled: !!(storeData as any).preorder_enabled,
            minutesBefore: Number((storeData as any).preorder_minutes_before ?? 0),
          },
+         storeHolidays || [],
        )
      : null;
   const isPreorder = !!(storeStatus?.acceptingPreorder && storeStatus.releaseAt);

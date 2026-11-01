@@ -12,12 +12,14 @@ export const mapStoresWithHours = (
   allHours: any[] | null | undefined,
   userCoords?: { lat: number; lng: number } | null,
   userCity?: string | null,
+  allHolidays?: any[] | null,
 ) => {
   const cityNorm = userCity?.toLowerCase().trim() || null;
   return stores
     .map((store: any) => {
       const hours = (allHours || []).filter((h: any) => h.store_id === store.id) as OpeningHour[];
-      const status = getStoreOpenStatus(hours, store.force_closed || false, store.is_open);
+      const storeHolidays = (allHolidays || []).filter((h: any) => h.store_id === store.id);
+      const status = getStoreOpenStatus(hours, store.force_closed || false, store.is_open, undefined, storeHolidays);
       const lat = store.latitude;
       const lng = store.longitude;
       const distanceKm =

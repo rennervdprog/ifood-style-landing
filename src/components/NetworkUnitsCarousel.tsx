@@ -42,6 +42,23 @@ export default function NetworkUnitsCarousel({
   });
 
   const unitIds = (units || []).map((u) => u.id);
+  const { data: holidaysMap } = useQuery({
+    queryKey: ["network-units-holidays", unitIds],
+    queryFn: async () => {
+      const { data } = await (supabase as any)
+        .from("store_holidays")
+        .select("store_id, date, reason")
+        .in("store_id", unitIds);
+      const map: Record<string, { date: string; reason: string | null }[]> = {};
+      (data || []).forEach((h: any) => {
+        (map[h.store_id] ||= []).push({ date: h.date, reason: h.reason });
+      });
+      return map;
+    },
+    enabled: unitIds.length > 0,
+    staleTime: 1000 * 60 * 5,
+  });
+
   const { data: hoursMap } = useQuery({
     queryKey: ["network-units-hours", unitIds],
     queryFn: async () => {
@@ -77,7 +94,7 @@ export default function NetworkUnitsCarousel({
       <div className="flex flex-col gap-2.5">
         {units.map((u) => {
           const hours = hoursMap?.[u.id] || [];
-          const status = getStoreOpenStatus(hours, !!u.force_closed, !!u.is_open);
+          const status = getStoreOpenStatus(hours, !!u.force_closed, !!u.is_open, undefined, holidaysMap?.[u.id] || []);
           const methods = deliveryLabels(u.delivery_mode);
           return (
             <button

@@ -4,7 +4,7 @@ import { ArrowLeft, Minus, Plus, Trash2, MapPin, ShoppingBag, ChevronRight, Truc
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { getStoreOpenStatus, type OpeningHour } from "@/lib/storeStatus";
+import { getStoreOpenStatus, type OpeningHour, type StoreHoliday } from "@/lib/storeStatus";
 import BottomNav from "@/components/BottomNav";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEffect } from "react";
@@ -78,8 +78,21 @@ const CartPage = () => {
     refetchInterval: 60_000,
   });
 
+  const { data: cartHolidays } = useQuery({
+    queryKey: ["cart-store-holidays", storeId],
+    queryFn: async () => {
+      const { data } = await (supabase as any)
+        .from("store_holidays")
+        .select("date, reason")
+        .eq("store_id", storeId!);
+      return (data || []) as StoreHoliday[];
+    },
+    enabled: !!storeId,
+    refetchInterval: 60_000,
+  });
+
   const storeStatus = cartStore
-    ? getStoreOpenStatus(cartHours || [], cartStore.force_closed ?? false, cartStore.is_open ?? true)
+    ? getStoreOpenStatus(cartHours || [], cartStore.force_closed ?? false, cartStore.is_open ?? true, undefined, cartHolidays || [])
     : null;
   const isClosed = storeStatus ? !storeStatus.isOpen : false;
   const storeMinimumOrderValue = Number(cartStore?.minimum_order_value || 0);
