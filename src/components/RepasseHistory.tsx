@@ -19,6 +19,7 @@ import {
 import { toast } from "sonner";
 import { REPASSE_RULES } from "@/lib/repasseRules";
 import { FINANCE_COPY, weeklyChargeRuleText } from "@/lib/financeCommunication";
+import { usePendingRepasse } from "@/hooks/usePendingRepasse";
 
 interface RepasseHistoryProps {
   storeId: string;
@@ -215,20 +216,14 @@ export default function RepasseHistory({ storeId }: RepasseHistoryProps) {
     }
   };
 
-  const { data: balance } = useQuery({
-    queryKey: ["store-balance-repasse", storeId],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("store_balances")
-        .select("repasse_pendente, comissao_pendente")
-        .eq("store_id", storeId)
-        .maybeSingle();
-      return data;
-    },
-    enabled: !!storeId,
-  });
-
-  const pendingAmount = Number(balance?.repasse_pendente || 0) + Number(balance?.comissao_pendente || 0);
+  // Fonte ÚNICA do "a pagar" operacional (item 14): o mesmo hook canônico
+  // do card "A pagar à plataforma" (aba Financeiro do PDV e Resumo) e do
+  // contexto de cobrança do backend — repasse/comissão filtrados pelo tipo
+  // de plano + `pdv_commission_pending` acumulado. A soma própria anterior
+  // (só repasse + comissão de store_balances) omitia a parcela do PDV e a
+  // sub-aba Cobranças mostrava um total menor que o das outras telas
+  // (na varredura: R$ 8,91 aqui × R$ 9,91 no Resumo/Repasse).
+  const { total: pendingAmount, isLoading: pendingLoading } = usePendingRepasse(storeId);
   const pendingCount = records?.filter(r => r.status === "charged").length || 0;
 
   return (
@@ -245,14 +240,14 @@ export default function RepasseHistory({ storeId }: RepasseHistoryProps) {
                 {FINANCE_COPY.outstandingTitle}
               </p>
               <p className="text-lg font-black text-foreground">
-                {formatBRL(pendingAmount)}
+                {pendingLoading ? "—" : formatBRL(pendingAmount)}
               </p>
               <p className="text-[10px] text-muted-foreground leading-tight">
                 {weeklyChargeRuleText()}
               </p>
             </div>
           </div>
-          {pendingAmount >= REPASSE_RULES.MIN_AUTO_CHARGE_BRL && (
+          {!pendingLoading && pendingAmount >= REPASSE_RULES.MIN_AUTO_CHARGE_BRL && (
             <Button
               size="sm"
               variant="outline"
