@@ -185,9 +185,16 @@ export default function WhatsAppSetupTeste({ storeId, storeSlug, storeName, expe
           para o cliente chamar a loja (edita em Configurações → Loja).
         </p>
         <p className="text-xs text-muted-foreground leading-relaxed">
-          <strong className="text-foreground">Número conectado para avisos:</strong>{" "}
-          {config?.phone_number ? String(config.phone_number) : "nenhum número conectado ainda"} — é o
-          chip conectado por QR abaixo, de onde saem os avisos automáticos de pedido.
+          <strong className="text-foreground">
+            {config?.status === "connected" ? "Número conectado para avisos:" : "Número dos avisos:"}
+          </strong>{" "}
+          {config?.status === "connected" ? (
+            <>{String(config?.phone_number || "")} — é o chip conectado por QR abaixo, de onde saem os avisos automáticos de pedido.</>
+          ) : config?.phone_number ? (
+            <>{String(config.phone_number)} — esse chip ainda <strong className="text-foreground">não está conectado</strong>: enquanto não conectar na aba Conexão, os avisos automáticos não saem.</>
+          ) : (
+            <>nenhum número conectado ainda — conecte o chip na aba Conexão pra os avisos automáticos saírem.</>
+          )}{" "}
           Um pode estar preenchido e o outro desconectado: são coisas diferentes.
         </p>
       </div>
