@@ -1928,7 +1928,7 @@ const AdminDashboardTeste = () => {
         <header className="sticky top-0 z-30 bg-card/95 backdrop-blur border-b border-border px-3 py-2.5 sm:px-4 flex items-center justify-between gap-2">
           <div className="flex items-center gap-3 min-w-0">
             {/* Desktop: hamburger for sidebar */}
-            <button onClick={() => { setSidebarOpen(true); toggleSidebarCollapsed(false); }} title="Abrir menu" className={`${sidebarCollapsed ? "" : "lg:hidden"} p-2 -ml-2 rounded-xl hover:bg-accent`}>
+            <button onClick={() => { setSidebarOpen(true); toggleSidebarCollapsed(false); }} title="Abrir menu" className={`${sidebarCollapsed ? "hidden lg:block" : "hidden"} p-2 -ml-2 rounded-xl hover:bg-accent`}>
               <Menu className="h-5 w-5 text-foreground" />
             </button>
             <div className="min-w-0">
