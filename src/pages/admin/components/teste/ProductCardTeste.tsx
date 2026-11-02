@@ -367,6 +367,28 @@ export const ProductFormInlineTeste = ({ initial, onSave, onCancel, storeCategor
 
       {/* Vender por peso agora é exclusivo do PDV — criar pela tela do PDV (botão "Novo produto por peso"). */}
 
+      {/* Somente PDV (F1): aparece so no caixa, some da loja online e dos apps */}
+      <div className="bg-muted/50 rounded-lg p-3 space-y-2">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-bold">Somente PDV</p>
+            <p className="text-xs text-muted-foreground">Aparece só no caixa — some da loja online e dos apps</p>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={!!(form.metadata as any)?.pdv_only}
+            onClick={() => setForm((p) => ({
+              ...p,
+              metadata: { ...(p.metadata || {}), pdv_only: !(p.metadata as any)?.pdv_only }
+            }))}
+            className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors shrink-0 ${!!(form.metadata as any)?.pdv_only ? "bg-green-600" : "bg-gray-300"}`}
+          >
+            <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${!!(form.metadata as any)?.pdv_only ? "translate-x-6" : "translate-x-1"}`} />
+          </button>
+        </div>
+      </div>
+
       {/* Controle de estoque - simples */}
       <div className="bg-muted/50 rounded-lg p-3 space-y-2">
         <div className="flex items-center justify-between">
@@ -566,6 +588,9 @@ const ProductCardTesteImpl = (props: ProductCardProps) => {
               const status = getProductStatusTeste(product);
               return <AdminBadgeTeste variant={status.variant}>{status.label}</AdminBadgeTeste>;
             })()}
+            {(product.metadata as any)?.pdv_only && (
+              <span className="text-[10px] font-bold uppercase bg-primary/10 text-primary px-1.5 py-0.5 rounded">Somente PDV</span>
+            )}
           </div>
           {product.description && <p className="text-xs text-muted-foreground line-clamp-1">{product.description}</p>}
           {/* Tela 3, item 6: o card mostra a seção do produto. */}
