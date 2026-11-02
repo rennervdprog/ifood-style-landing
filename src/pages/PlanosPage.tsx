@@ -137,10 +137,10 @@ const faqs = [
     setMeta("description", desc);
     setMeta("og:title", "Planos e Preços — ItaSuper", "property");
     setMeta("og:description", desc, "property");
-    setMeta("og:url", "https://itasuper.com.br/planos", "property");
+    setMeta("og:url", "https://www.itasuper.com.br/planos", "property");
     let canonical = document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]');
     if (!canonical) { canonical = document.createElement("link"); canonical.rel = "canonical"; document.head.appendChild(canonical); }
-    canonical.href = "https://itasuper.com.br/planos";
+    canonical.href = "https://www.itasuper.com.br/planos";
 
     const SCRIPT_ID = "faq-jsonld-planos";
     let s = document.getElementById(SCRIPT_ID) as HTMLScriptElement | null;

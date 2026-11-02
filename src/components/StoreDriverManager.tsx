@@ -305,22 +305,22 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
   };
 
   const copyDriverRegistration = () => {
-    navigator.clipboard.writeText("https://itasuper.com.br/cadastro-motoboy-loja");
+    navigator.clipboard.writeText("https://www.itasuper.com.br/cadastro-motoboy-loja");
     toast.success("Link de cadastro copiado!");
   };
 
   const shareDriverRegistration = () => {
-    const message = "Cadastre-se como motoboy da nossa loja: https://itasuper.com.br/cadastro-motoboy-loja";
+    const message = "Cadastre-se como motoboy da nossa loja: https://www.itasuper.com.br/cadastro-motoboy-loja";
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, "_blank");
   };
 
   const copyDriverApp = () => {
-    navigator.clipboard.writeText("https://itasuper.com.br/download");
+    navigator.clipboard.writeText("https://www.itasuper.com.br/download");
     toast.success("Link do app copiado!");
   };
 
   const shareDriverApp = () => {
-    const message = "Baixe o app ItaSuper Parceiro para receber e entregar pedidos: https://itasuper.com.br/download";
+    const message = "Baixe o app ItaSuper Parceiro para receber e entregar pedidos: https://www.itasuper.com.br/download";
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, "_blank");
   };
 
@@ -530,8 +530,8 @@ const StoreDriverManager = ({ storeId }: StoreDriverManagerProps) => {
       {activeTab === "invites" && (
         <section className="space-y-4">
           <div className="grid gap-4 lg:grid-cols-2">
-            <InviteLinkCard icon={<UserPlus className="h-5 w-5" />} title="Convide um motoboy para se cadastrar" description="Compartilhe o link para ele criar a conta de entregador na plataforma." url="https://itasuper.com.br/cadastro-motoboy-loja" onCopy={copyDriverRegistration} onShare={shareDriverRegistration} />
-            <InviteLinkCard icon={<Smartphone className="h-5 w-5" />} title="Envie o app Parceiro" description="Depois do cadastro, o motoboy instala o app para receber e entregar pedidos." url="https://itasuper.com.br/download" onCopy={copyDriverApp} onShare={shareDriverApp} />
+            <InviteLinkCard icon={<UserPlus className="h-5 w-5" />} title="Convide um motoboy para se cadastrar" description="Compartilhe o link para ele criar a conta de entregador na plataforma." url="https://www.itasuper.com.br/cadastro-motoboy-loja" onCopy={copyDriverRegistration} onShare={shareDriverRegistration} />
+            <InviteLinkCard icon={<Smartphone className="h-5 w-5" />} title="Envie o app Parceiro" description="Depois do cadastro, o motoboy instala o app para receber e entregar pedidos." url="https://www.itasuper.com.br/download" onCopy={copyDriverApp} onShare={shareDriverApp} />
           </div>
           <div className="border border-border bg-card p-5">
             <h3 className="flex items-center gap-2 text-base font-black text-foreground"><Search className="h-4 w-4 text-primary" /> Buscar e convidar alguém conhecido</h3>

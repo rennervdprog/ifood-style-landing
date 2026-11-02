@@ -10,7 +10,7 @@ import { ENTREGADOR_APP } from "@/lib/entregadorApp";
 // assinado em public/apps/ — atualizar os dois juntos a cada versão.
 const DownloadApp = () => {
   const app = ENTREGADOR_APP;
-  const apkUrl = `https://itasuper.com.br${app.apkPath}`;
+  const apkUrl = `https://www.itasuper.com.br${app.apkPath}`;
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -20,10 +20,10 @@ const DownloadApp = () => {
           name="description"
           content={`Baixe grátis o ${app.name}: o app oficial do entregador ItaSuper. APK Android oficial, versão ${app.version}, ${app.sizeLabel}.`}
         />
-        <link rel="canonical" href="https://itasuper.com.br/download" />
+        <link rel="canonical" href="https://www.itasuper.com.br/download" />
         <meta property="og:title" content={`Baixar ${app.name} — ItaSuper`} />
         <meta property="og:description" content="O app oficial do entregador ItaSuper: receba ofertas, aceite na tela do aviso e acompanhe sua rota." />
-        <meta property="og:url" content="https://itasuper.com.br/download" />
+        <meta property="og:url" content="https://www.itasuper.com.br/download" />
         <meta property="og:type" content="website" />
         <script type="application/ld+json">{JSON.stringify({
           "@context": "https://schema.org",
@@ -34,7 +34,7 @@ const DownloadApp = () => {
           softwareVersion: app.version,
           fileSize: app.sizeLabel,
           downloadUrl: apkUrl,
-          installUrl: "https://itasuper.com.br/download",
+          installUrl: "https://www.itasuper.com.br/download",
           author: { "@type": "Organization", name: app.developer },
           offers: { "@type": "Offer", price: "0", priceCurrency: "BRL" },
         })}</script>

@@ -38,7 +38,7 @@ interface RelatedPost {
   reading_minutes: number | null;
 }
 
-const SITE_URL = "https://itasuper.com.br";
+const SITE_URL = "https://www.itasuper.com.br";
 
 function slugify(s: string) {
   return s

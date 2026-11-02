@@ -452,7 +452,7 @@ const PerfilPage = () => {
   };
 
   const handleShareApp = async () => {
-    const url = "https://itasuper.com.br";
+    const url = "https://www.itasuper.com.br";
     const shareData = { title: "ItaSuper", text: "Peça no ItaSuper — delivery rápido e sem taxas absurdas.", url };
     try {
       if (navigator.share) { await navigator.share(shareData); }
