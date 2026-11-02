@@ -394,7 +394,7 @@ const StorePage = () => {
     const desc = `Peça ${store.category || "delivery"} online de ${store.name}${cityPart}. Cardápio, preços, pagamento PIX e entrega rápida pelo ItaSuper.`;
     const img = store.image_url || "";
     const storeSlug = (store as any).slug || slug || id;
-    const url = `https://itasuper.com.br/${storeSlug}`;
+    const url = `https://www.itasuper.com.br/${storeSlug}`;
 
     document.title = title;
     if (ogTitle) ogTitle.setAttribute("content", title);

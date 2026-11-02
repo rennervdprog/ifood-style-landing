@@ -11,7 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
  * Complementa o toast `checkAppVersion` (que só aparece 1x por versão) — este
  * fica visível o tempo todo até o entregador atualizar.
  */
-const DOWNLOAD_URL = "https://itasuper.com.br/download";
+const DOWNLOAD_URL = "https://www.itasuper.com.br/download";
 
 function parseVersion(v: string): number[] {
   return v.split(".").map((n) => parseInt(n, 10) || 0);

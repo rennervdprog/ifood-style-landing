@@ -60,10 +60,10 @@ export default function LandingPage() {
       <Helmet>
         <title>ItaSuper — Sistema de delivery e cardápio digital</title>
         <meta name="description" content="Sistema de delivery e cardápio digital para restaurantes, pizzarias, adegas e mercados. Pedidos online, PDV e integração com o motoboy contratado pelo Lojista." />
-        <link rel="canonical" href="https://itasuper.com.br/" />
+        <link rel="canonical" href="https://www.itasuper.com.br/" />
         <meta property="og:title" content="ItaSuper — Sistema de delivery e cardápio digital" />
         <meta property="og:description" content="Atendente IA no WhatsApp, cardápio digital, PDV, KDS e integração com o motoboy contratado pelo Lojista." />
-        <meta property="og:url" content="https://itasuper.com.br/" />
+        <meta property="og:url" content="https://www.itasuper.com.br/" />
         <meta property="og:type" content="website" />
         <script type="application/ld+json">{JSON.stringify(softwareJsonLd)}</script>
         <script type="application/ld+json">{JSON.stringify(faqJsonLd)}</script>
