@@ -547,8 +547,11 @@ const ProductDetailModal = ({ product, storeName, storeCategory, singleSize = fa
                   </span>
                 )}
 
-                {/* Stepper de quantidade para grupos de escolha única, após selecionado (ex: 2x Coca) */}
-                {!allowMultiple && isChecked && (
+                {/* Stepper de quantidade para grupos de escolha única, após selecionado (ex: 2x Coca).
+                    NÃO aparece em grupo que substitui o preço (price_replaces_base — ex: Tamanho):
+                    o item escolhido define o produto; repetir "Grande" 25x não faz sentido,
+                    não muda o preço e polui o pedido da cozinha. */}
+                {!allowMultiple && isChecked && !group.price_replaces_base && (
                   <div className="flex items-center gap-1.5 shrink-0">
                     <button
                       type="button"
