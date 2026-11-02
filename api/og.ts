@@ -36,10 +36,15 @@ export default async function handler(req: Request): Promise<Response> {
   let name = "ItaSuper";
   let description = "Cardápio digital — peça online com entrega rápida.";
   let image = `${SITE}/icon-512.png`;
+  let pageTitle: string | null = null;
 
   try {
+    // Correção S7: a coluna stores.description NÃO existe — a consulta com
+    // ela voltava 400 e TODA loja caía na prévia genérica. O select usa só
+    // colunas reais, e título/descrição seguem a mesma fórmula da vitrine
+    // (StorePage.tsx), pra prévia do robô e a da página dizerem o mesmo.
     const upstream = await fetch(
-      `${SUPABASE_URL}/rest/v1/stores?slug=eq.${encodeURIComponent(slug)}&select=name,description,image_url&limit=1`,
+      `${SUPABASE_URL}/rest/v1/stores?slug=eq.${encodeURIComponent(slug)}&select=name,image_url,category,address_city&limit=1`,
       {
         headers: {
           apikey: SUPABASE_ANON_KEY,
@@ -50,19 +55,24 @@ export default async function handler(req: Request): Promise<Response> {
     if (upstream.ok) {
       const rows = (await upstream.json()) as Array<{
         name?: string;
-        description?: string | null;
         image_url?: string | null;
+        category?: string | null;
+        address_city?: string | null;
       }>;
       const s = rows?.[0];
-      if (s?.name) name = s.name;
-      if (s?.description) description = s.description;
+      if (s?.name) {
+        name = s.name;
+        const cityPart = s.address_city ? ` em ${s.address_city}` : "";
+        pageTitle = `${name}${cityPart} — Delivery online | ItaSuper`;
+        description = `Peça ${s.category || "delivery"} online de ${name}${cityPart}. Cardápio, preços, pagamento PIX e entrega rápida pelo ItaSuper.`;
+      }
       if (s?.image_url) image = s.image_url;
     }
   } catch {
     // segue com fallback
   }
 
-  const title = `${name} — Cardápio Digital`;
+  const title = pageTitle ?? `${name} — Cardápio Digital`;
   const desc = description.length > 200 ? description.slice(0, 197) + "..." : description;
 
   const html = `<!doctype html>
