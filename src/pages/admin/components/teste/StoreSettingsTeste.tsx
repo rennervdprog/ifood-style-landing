@@ -39,7 +39,7 @@ const AGENT_STATUS_LABEL: Record<PrintAgentStatus, string> = {
 import { formatBRL } from "@/lib/utils";
 import { parseBRL } from "@/hooks/useBRLInput";
 import { useStorePlan } from "@/hooks/useStorePlan";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, Download } from "lucide-react";
 import { copyToClipboard } from "@/lib/clipboard";
 const CATEGORY_OPTIONS = [
   { value: "lanches", label: "Lanches" },
@@ -1491,6 +1491,16 @@ const SectionSaveButtonTeste = ({ section, savingSection, onSave, label }: {
               <p className="text-sm font-bold text-foreground">Agente de impressão — imprime sem o painel aberto</p>
               <p className="text-[11px] text-muted-foreground">
                 Programa gratuito instalado no computador da loja. Com ele, a notinha sai sozinha quando o pedido chega — mesmo com o painel fechado ou você em outra aba. Ele segue o modo de impressão escolhido acima.
+              </p>
+              <a
+                href="/downloads/ItaSuperAgente.exe"
+                download
+                className="mt-2 inline-flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-xs font-bold text-primary-foreground transition-colors hover:bg-primary/90"
+              >
+                <Download className="h-4 w-4" /> Baixar o agente (Windows)
+              </a>
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                Baixe no computador da loja, abra o programa e digite o código de pareamento gerado abaixo. Tamanho: 14,6 MB.
               </p>
             </div>
 
