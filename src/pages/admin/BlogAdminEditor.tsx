@@ -158,9 +158,9 @@ export default function BlogAdminEditor() {
     setUploading(true);
     const ext = file.name.split(".").pop() || "jpg";
     const path = `covers/${Date.now()}-${slugify(file.name.replace(/\.[^.]+$/, ""))}.${ext}`;
-    const { error } = await supabase.storage.from("blog-media").upload(path, file, { upsert: false, contentType: file.type });
+    const { error } = await supabase.storage.from("blog").upload(path, file, { upsert: false, contentType: file.type });
     if (error) { setUploading(false); return toast.error("Falha no upload"); }
-    const { data } = supabase.storage.from("blog-media").getPublicUrl(path);
+    const { data } = supabase.storage.from("blog").getPublicUrl(path);
     update("cover_url", data.publicUrl);
     setUploading(false);
     toast.success("Imagem enviada");
