@@ -252,10 +252,10 @@ export default function FinancialStatement({ storeId, storeName }: Props) {
         <Card>
           <CardContent className="p-3 sm:p-4">
             <div className="flex items-center gap-2 mb-1">
-              <Receipt className="h-4 w-4 text-amber-600" />
-              <p className="text-[10px] sm:text-xs text-muted-foreground font-medium">Pendente</p>
+              <Receipt className="h-4 w-4 text-primary" />
+              <p className="text-[10px] sm:text-xs text-muted-foreground font-medium">Pendente no extrato</p>
             </div>
-            <p className="text-base sm:text-xl font-black text-amber-600 tabular-nums">{formatBRL(totals.pending)}</p>
+            <p className="text-base sm:text-xl font-black text-primary tabular-nums">{formatBRL(totals.pending)}</p>
           </CardContent>
         </Card>
       </div>
