@@ -186,6 +186,7 @@ export default function LandingPage() {
           <nav className="flex flex-wrap gap-4">
             <Link to="/cliente" className="hover:text-foreground">Lojas</Link>
             <Link to="/planos" className="hover:text-foreground">Planos</Link>
+            <Link to="/blog" className="hover:text-foreground">Blog</Link>
             <Link to="/cadastro-lojista" className="hover:text-foreground">Cadastrar loja</Link>
             <Link to="/portal-parceiro" className="hover:text-foreground">Portal do parceiro</Link>
             <Link to="/termos-de-uso" className="hover:text-foreground">Termos</Link>
