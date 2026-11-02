@@ -76,7 +76,7 @@ const OrderRating = ({ orderId, storeId, storeName, userId, onRated }: OrderRati
   if (submitted) {
     return (
       <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 text-center space-y-2">
-        <p className="text-xs font-bold text-primary">⭐ Obrigado pela sua avaliação!</p>
+        <p className="text-xs font-bold text-primary">Obrigado pela sua avaliação!</p>
         {googleReviewUrl && (
           <a
             href={googleReviewUrl}
@@ -106,7 +106,7 @@ const OrderRating = ({ orderId, storeId, storeName, userId, onRated }: OrderRati
             <Star
               className={`h-7 w-7 ${
                 star <= (hoveredRating || rating)
-                  ? "text-yellow-400 fill-yellow-400"
+                  ? "text-primary fill-primary"
                   : "text-muted-foreground"
               }`}
             />

@@ -6,6 +6,7 @@ interface DeliveryTimeEstimateProps {
   confirmedAt?: string | null;
   pendingOrdersCount?: number;
   distanceKm?: number;
+  variant?: "brand" | "neutral";
 }
 
 const getEstimateMinutes = (
@@ -47,6 +48,7 @@ const DeliveryTimeEstimate = ({
   confirmedAt,
   pendingOrdersCount = 0,
   distanceKm = 0,
+  variant = "brand",
 }: DeliveryTimeEstimateProps) => {
   const estimate = getEstimateMinutes(status, pendingOrdersCount, distanceKm);
   if (!estimate) return null;
@@ -58,9 +60,11 @@ const DeliveryTimeEstimate = ({
   if (remaining === 0 && status !== "pendente") return null;
 
   return (
-    <div className="flex items-center gap-1.5 bg-primary/5 border border-primary/20 rounded-lg px-2.5 py-1.5">
-      <Clock className="h-3.5 w-3.5 text-primary" />
-      <span className="text-[10px] font-bold text-primary">
+    <div className={variant === "neutral"
+      ? "flex items-center gap-1.5 bg-muted border border-border rounded-full px-2.5 py-1.5"
+      : "flex items-center gap-1.5 bg-primary/5 border border-primary/20 rounded-lg px-2.5 py-1.5"}>
+      <Clock className={`h-3.5 w-3.5 ${variant === "neutral" ? "text-muted-foreground" : "text-primary"}`} />
+      <span className={variant === "neutral" ? "text-[11px] font-bold text-foreground" : "text-[10px] font-bold text-primary"}>
         {remaining > 0
           ? `≈ ${Math.max(estimate.min - elapsed, 5)}–${remaining} min`
           : `≈ ${estimate.min}–${estimate.max} min`
