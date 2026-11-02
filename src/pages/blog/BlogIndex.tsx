@@ -19,7 +19,7 @@ interface BlogPost {
   featured: boolean;
 }
 
-const SITE_URL = "https://itasuper.com.br";
+const SITE_URL = "https://www.itasuper.com.br";
 
 function fmtDate(s: string | null) {
   if (!s) return "";

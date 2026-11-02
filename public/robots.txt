@@ -105,4 +105,4 @@ Allow: /
 User-agent: YouBot
 Allow: /
 
-Sitemap: https://itasuper.com.br/sitemap.xml
+Sitemap: https://www.itasuper.com.br/sitemap.xml

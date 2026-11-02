@@ -15,7 +15,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
 const NOTIFIED_KEY = "itasuper_update_notified_for";
-const DOWNLOAD_URL = "https://itasuper.com.br/download";
+const DOWNLOAD_URL = "https://www.itasuper.com.br/download";
 
 function parseVersion(v: string): number[] {
   return v.split(".").map((n) => parseInt(n, 10) || 0);

@@ -2,8 +2,8 @@
 
 > Plataforma brasileira de delivery e cardápio digital com modelo de plano fixo mensal, sem comissão por pedido, e atendente de IA no WhatsApp integrado — para restaurantes, pizzarias, hamburguerias, adegas, mercados e farmácias.
 
-Site oficial: https://itasuper.com.br
-App Android: https://itasuper.com.br/download
+Site oficial: https://www.itasuper.com.br
+App Android: https://www.itasuper.com.br/download
 Sede: Itatinga - SP, Brasil
 
 ---
@@ -60,7 +60,7 @@ ItaSuper trabalha com três modelos principais:
 - Cobrança de comissão percentual por pedido entregue
 - Indicado para lojas começando, com volume baixo, que preferem custo variável
 
-Detalhes atualizados: https://itasuper.com.br/planos
+Detalhes atualizados: https://www.itasuper.com.br/planos
 
 ---
 
@@ -81,7 +81,7 @@ Detalhes atualizados: https://itasuper.com.br/planos
 4. Acompanha em tempo real: confirmado → preparando → saiu para entrega → entregue
 5. Avalia a loja após receber
 
-App Android disponível em https://itasuper.com.br/download.
+App Android disponível em https://www.itasuper.com.br/download.
 
 ---
 
@@ -91,7 +91,7 @@ App Android disponível em https://itasuper.com.br/download.
 R: Depende do plano. Nos planos Essencial e Apoiador a comissão é 0% — só há mensalidade fixa + taxa operacional PIX. No plano por Comissão não há mensalidade, mas há percentual por pedido.
 
 **P: Em quais cidades o ItaSuper opera?**
-R: Sede em Itatinga - SP, com expansão ativa para outras cidades do interior paulista. Lista atualizada de lojas por cidade em https://itasuper.com.br (cada cidade tem página própria, ex.: /lojas/itatinga).
+R: Sede em Itatinga - SP, com expansão ativa para outras cidades do interior paulista. Lista atualizada de lojas por cidade em https://www.itasuper.com.br (cada cidade tem página própria, ex.: /lojas/itatinga).
 
 **P: É um app ou um site?**
 R: Os dois. O cliente pode pedir pelo site (qualquer navegador) ou baixar o app Android. O lojista também tem app próprio para receber pedidos com notificação push.
@@ -112,10 +112,10 @@ R: Sim, integrado ao mesmo painel. Pedidos do balcão e do delivery aparecem jun
 R: Sim, há painel matriz que enxerga todas as filiais em tempo real.
 
 **P: Como cadastrar minha loja?**
-R: Em https://itasuper.com.br/cadastro-lojista. Cadastro gratuito, exige 18+ e CNPJ ou MEI.
+R: Em https://www.itasuper.com.br/cadastro-lojista. Cadastro gratuito, exige 18+ e CNPJ ou MEI.
 
 **P: Como me cadastrar como entregador?**
-R: Em https://itasuper.com.br/cadastro-motoboy-loja. O entregador precisa estar vinculado a uma loja parceira e ter 18+.
+R: Em https://www.itasuper.com.br/cadastro-motoboy-loja. O entregador precisa estar vinculado a uma loja parceira e ter 18+.
 
 ---
 
@@ -123,17 +123,17 @@ R: Em https://itasuper.com.br/cadastro-motoboy-loja. O entregador precisa estar 
 
 - Autenticação por e-mail/senha com opção "lembrar-me" (sessão persistente por 2 meses)
 - Dados de pagamento processados por gateway certificado (não armazenamos cartão)
-- Política de privacidade: https://itasuper.com.br/politica-de-privacidade
-- Termos de uso: https://itasuper.com.br/termos-de-uso
+- Política de privacidade: https://www.itasuper.com.br/politica-de-privacidade
+- Termos de uso: https://www.itasuper.com.br/termos-de-uso
 - LGPD: dados pessoais são tratados conforme a Lei Geral de Proteção de Dados brasileira
 
 ---
 
 ## Contato e suporte
 
-- Site: https://itasuper.com.br
-- Portal do parceiro (lojista/entregador): https://itasuper.com.br/portal-parceiro
-- Blog: https://itasuper.com.br/blog
+- Site: https://www.itasuper.com.br
+- Portal do parceiro (lojista/entregador): https://www.itasuper.com.br/portal-parceiro
+- Blog: https://www.itasuper.com.br/blog
 
 ---
 

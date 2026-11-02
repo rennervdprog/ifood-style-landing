@@ -706,7 +706,7 @@ const SectionSaveButtonTeste = ({ section, savingSection, onSave, label }: {
             </span>
             <button
               onClick={async () => {
-                const ok = await copyToClipboard(`https://itasuper.com.br/${slug}`);
+                const ok = await copyToClipboard(`https://www.itasuper.com.br/${slug}`);
                 ok ? toast.success("Link copiado!") : toast.error("Não foi possível copiar");
               }}
               className="ml-auto flex items-center gap-1 bg-primary/20 text-primary font-bold px-2.5 py-1.5 rounded-lg text-xs active:scale-95 transition-transform"
@@ -760,7 +760,7 @@ const SectionSaveButtonTeste = ({ section, savingSection, onSave, label }: {
               <button
                 type="button"
                 onClick={async () => {
-                  const ok = await copyToClipboard(`https://itasuper.com.br/${a}`);
+                  const ok = await copyToClipboard(`https://www.itasuper.com.br/${a}`);
                   ok ? toast.success("Link copiado!") : toast.error("Não foi possível copiar");
                 }}
                 className="ml-auto text-primary text-[11px] font-bold active:scale-95"

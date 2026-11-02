@@ -1,237 +1,237 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://itasuper.com.br/</loc>
+    <loc>https://www.itasuper.com.br/</loc>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://itasuper.com.br/cliente</loc>
+    <loc>https://www.itasuper.com.br/cliente</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://itasuper.com.br/planos</loc>
+    <loc>https://www.itasuper.com.br/planos</loc>
     <changefreq>monthly</changefreq>
     <priority>0.85</priority>
   </url>
   <url>
-    <loc>https://itasuper.com.br/cadastro-lojista</loc>
+    <loc>https://www.itasuper.com.br/cadastro-lojista</loc>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://itasuper.com.br/cadastro-entregador</loc>
+    <loc>https://www.itasuper.com.br/cadastro-entregador</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://itasuper.com.br/cadastro-motoboy-loja</loc>
+    <loc>https://www.itasuper.com.br/cadastro-motoboy-loja</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://itasuper.com.br/download</loc>
+    <loc>https://www.itasuper.com.br/download</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://itasuper.com.br/links</loc>
+    <loc>https://www.itasuper.com.br/links</loc>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://itasuper.com.br/portal-parceiro</loc>
+    <loc>https://www.itasuper.com.br/portal-parceiro</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://itasuper.com.br/auth</loc>
+    <loc>https://www.itasuper.com.br/auth</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://itasuper.com.br/termos-de-uso</loc>
+    <loc>https://www.itasuper.com.br/termos-de-uso</loc>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://itasuper.com.br/politica-de-privacidade</loc>
+    <loc>https://www.itasuper.com.br/politica-de-privacidade</loc>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://itasuper.com.br/lojas/itatinga</loc>
+    <loc>https://www.itasuper.com.br/lojas/itatinga</loc>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://itasuper.com.br/blog</loc>
+    <loc>https://www.itasuper.com.br/blog</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://itasuper.com.br/blog/quanto-custa-vender-delivery-2026</loc>
+    <loc>https://www.itasuper.com.br/blog/quanto-custa-vender-delivery-2026</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://itasuper.com.br/blog/delivery-proprio-vs-marketplace-restaurante</loc>
+    <loc>https://www.itasuper.com.br/blog/delivery-proprio-vs-marketplace-restaurante</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://itasuper.com.br/blog/como-abrir-delivery-itatinga</loc>
+    <loc>https://www.itasuper.com.br/blog/como-abrir-delivery-itatinga</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://itasuper.com.br/blog/cardapio-digital-que-vende-sozinho</loc>
+    <loc>https://www.itasuper.com.br/blog/cardapio-digital-que-vende-sozinho</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://itasuper.com.br/blog/pdv-gratis-no-delivery-caixa-integrado</loc>
+    <loc>https://www.itasuper.com.br/blog/pdv-gratis-no-delivery-caixa-integrado</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://itasuper.com.br/blog/zero-comissao-por-pedido-restaurante-bairro</loc>
+    <loc>https://www.itasuper.com.br/blog/zero-comissao-por-pedido-restaurante-bairro</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://itasuper.com.br/blog/kds-cozinha-tela-pedido-perdido</loc>
+    <loc>https://www.itasuper.com.br/blog/kds-cozinha-tela-pedido-perdido</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://itasuper.com.br/blog/motoboy-proprio-vs-plataforma</loc>
+    <loc>https://www.itasuper.com.br/blog/motoboy-proprio-vs-plataforma</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://itasuper.com.br/blog/fidelidade-cashback-cliente-recorrente</loc>
+    <loc>https://www.itasuper.com.br/blog/fidelidade-cashback-cliente-recorrente</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://itasuper.com.br/blog/cupons-que-funcionam-dia-parado</loc>
+    <loc>https://www.itasuper.com.br/blog/cupons-que-funcionam-dia-parado</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://itasuper.com.br/blog/saque-pix-mesmo-dia-fluxo-caixa</loc>
+    <loc>https://www.itasuper.com.br/blog/saque-pix-mesmo-dia-fluxo-caixa</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://itasuper.com.br/blog/precificar-pratos-delivery-margem</loc>
+    <loc>https://www.itasuper.com.br/blog/precificar-pratos-delivery-margem</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://itasuper.com.br/blog/fotos-de-prato-que-convertem</loc>
+    <loc>https://www.itasuper.com.br/blog/fotos-de-prato-que-convertem</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://itasuper.com.br/blog/pizza-meio-a-meio-bordas-configurar</loc>
+    <loc>https://www.itasuper.com.br/blog/pizza-meio-a-meio-bordas-configurar</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://itasuper.com.br/blog/complementos-adicionais-aumentar-ticket</loc>
+    <loc>https://www.itasuper.com.br/blog/complementos-adicionais-aumentar-ticket</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://itasuper.com.br/blog/horario-funcionamento-inteligente-pausar-pedido</loc>
+    <loc>https://www.itasuper.com.br/blog/horario-funcionamento-inteligente-pausar-pedido</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://itasuper.com.br/blog/fechamento-cego-caixa-pdv</loc>
+    <loc>https://www.itasuper.com.br/blog/fechamento-cego-caixa-pdv</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://itasuper.com.br/blog/whatsapp-app-mesmo-painel-pedidos</loc>
+    <loc>https://www.itasuper.com.br/blog/whatsapp-app-mesmo-painel-pedidos</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://itasuper.com.br/blog/notificacao-push-pedido-horario-pico</loc>
+    <loc>https://www.itasuper.com.br/blog/notificacao-push-pedido-horario-pico</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://itasuper.com.br/blog/multiloja-matriz-filial-tempo-real</loc>
+    <loc>https://www.itasuper.com.br/blog/multiloja-matriz-filial-tempo-real</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://itasuper.com.br/blog/relatorios-cinco-numeros-toda-semana</loc>
+    <loc>https://www.itasuper.com.br/blog/relatorios-cinco-numeros-toda-semana</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://itasuper.com.br/blog/taxa-entrega-por-bairro-configurar</loc>
+    <loc>https://www.itasuper.com.br/blog/taxa-entrega-por-bairro-configurar</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://itasuper.com.br/blog/pedido-minimo-raio-tempo-equilibrar</loc>
+    <loc>https://www.itasuper.com.br/blog/pedido-minimo-raio-tempo-equilibrar</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://itasuper.com.br/blog/reembolso-cancelamento-tratar</loc>
+    <loc>https://www.itasuper.com.br/blog/reembolso-cancelamento-tratar</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://itasuper.com.br/blog/avaliacao-cliente-pedir-nota-favor-loja</loc>
+    <loc>https://www.itasuper.com.br/blog/avaliacao-cliente-pedir-nota-favor-loja</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://itasuper.com.br/blog/cardapio-almoco-executivo-organizar</loc>
+    <loc>https://www.itasuper.com.br/blog/cardapio-almoco-executivo-organizar</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://itasuper.com.br/blog/lanchonete-bairro-comecar-vender-online-um-dia</loc>
+    <loc>https://www.itasuper.com.br/blog/lanchonete-bairro-comecar-vender-online-um-dia</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://itasuper.com.br/blog/adega-bebidas-delivery-responsabilidade</loc>
+    <loc>https://www.itasuper.com.br/blog/adega-bebidas-delivery-responsabilidade</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://itasuper.com.br/blog/mercado-bairro-delivery-pedido-grande</loc>
+    <loc>https://www.itasuper.com.br/blog/mercado-bairro-delivery-pedido-grande</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://itasuper.com.br/blog/farmacia-delivery-requisitos</loc>
+    <loc>https://www.itasuper.com.br/blog/farmacia-delivery-requisitos</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://itasuper.com.br/blog/pesquisa-local-google-delivery-perto-de-mim</loc>
+    <loc>https://www.itasuper.com.br/blog/pesquisa-local-google-delivery-perto-de-mim</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://itasuper.com.br/blog/whatsapp-business-delivery-cliente-quente</loc>
+    <loc>https://www.itasuper.com.br/blog/whatsapp-business-delivery-cliente-quente</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://itasuper.com.br/blog/plano-fixo-vs-comissao-simulacao-300-600-1000</loc>
+    <loc>https://www.itasuper.com.br/blog/plano-fixo-vs-comissao-simulacao-300-600-1000</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>

@@ -790,7 +790,7 @@ const MenuBuilder = ({ storeId, storeCategory, storeCategories }: MenuBuilderPro
   // ---------- Copiar link público ----------
   const copyProductLink = async (product: any) => {
     const slug = storeSlug || storeId;
-    const base = typeof window !== "undefined" ? window.location.origin : "https://itasuper.com.br";
+    const base = typeof window !== "undefined" ? window.location.origin : "https://www.itasuper.com.br";
     const url = `${base}/${slug}?p=${product.id}`;
     try {
       await navigator.clipboard.writeText(url);
