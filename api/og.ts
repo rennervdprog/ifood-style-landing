@@ -39,27 +39,31 @@ export default async function handler(req: Request): Promise<Response> {
   let pageTitle: string | null = null;
 
   try {
-    // Correção S7: a coluna stores.description NÃO existe — a consulta com
-    // ela voltava 400 e TODA loja caía na prévia genérica. O select usa só
-    // colunas reais, e título/descrição seguem a mesma fórmula da vitrine
-    // (StorePage.tsx), pra prévia do robô e a da página dizerem o mesmo.
-    const upstream = await fetch(
-      `${SUPABASE_URL}/rest/v1/stores?slug=eq.${encodeURIComponent(slug)}&select=name,image_url,category,address_city&limit=1`,
-      {
-        headers: {
-          apikey: SUPABASE_ANON_KEY,
-          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-        },
+    // Correção S7 (causa raiz): o papel anônimo NÃO tem SELECT direto na
+    // tabela stores (toda consulta volta 401) — e a versão antiga ainda
+    // pedia a coluna description, que nem existe (400). Resultado: TODA
+    // loja caía na prévia genérica desde sempre. A via pública certa é a
+    // RPC store_bootstrap, a mesma que a api/store.ts usa pra vitrine.
+    // Título/descrição seguem a fórmula da StorePage.tsx.
+    const upstream = await fetch(`${SUPABASE_URL}/rest/v1/rpc/store_bootstrap`, {
+      method: "POST",
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        "Content-Type": "application/json",
       },
-    );
+      body: JSON.stringify({ _slug: slug }),
+    });
     if (upstream.ok) {
-      const rows = (await upstream.json()) as Array<{
-        name?: string;
-        image_url?: string | null;
-        category?: string | null;
-        address_city?: string | null;
-      }>;
-      const s = rows?.[0];
+      const data = (await upstream.json()) as {
+        store?: {
+          name?: string;
+          image_url?: string | null;
+          category?: string | null;
+          address_city?: string | null;
+        } | null;
+      };
+      const s = data?.store ?? null;
       if (s?.name) {
         name = s.name;
         const cityPart = s.address_city ? ` em ${s.address_city}` : "";
