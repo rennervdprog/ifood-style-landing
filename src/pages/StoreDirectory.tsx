@@ -337,8 +337,10 @@ const StoreDirectory = () => {
     return <div className="flex min-h-screen items-center justify-center bg-background"><div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" /></div>;
   }
 
-  const storesCount = liveStats?.stores ?? 35;
-  const citiesCount = liveStats?.cities ?? 6;
+  // F4: sem numeros inventados — enquanto a contagem viva nao chega (ou
+  // se a consulta falhar), selo e faixa mostram placeholder neutro.
+  const storesCount = liveStats?.stores;
+  const citiesCount = liveStats?.cities;
   const essential = PLANS.fixed;
   const pdvOnly = PLANS.pdv_only;
 
@@ -352,7 +354,7 @@ const StoreDirectory = () => {
           <div aria-hidden className="absolute inset-0 -z-10"><div className="absolute -right-44 -top-40 h-[540px] w-[540px] rounded-full bg-primary/[0.09] blur-3xl" /><div className="absolute -left-52 bottom-0 h-[430px] w-[430px] rounded-full bg-primary/[0.06] blur-3xl" /></div>
           <div className="mx-auto grid max-w-6xl items-center gap-12 lg:grid-cols-[0.9fr,1.1fr] lg:gap-16">
             <div className="max-w-xl">
-              <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-[11px] font-bold text-muted-foreground"><span className="relative flex h-2 w-2"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-70" /><span className="relative inline-flex h-2 w-2 rounded-full bg-primary" /></span>{storesCount}+ lojas ativas em {citiesCount} cidades</div>
+              <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-[11px] font-bold text-muted-foreground"><span className="relative flex h-2 w-2"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-70" /><span className="relative inline-flex h-2 w-2 rounded-full bg-primary" /></span>{liveStats ? `${storesCount}+ lojas ativas em ${citiesCount} cidades` : "Delivery, Pix Direto e PDV para sua loja"}</div>
               <h1 className="text-[2.85rem] font-black leading-[0.94] tracking-[-0.055em] text-foreground sm:text-6xl lg:text-7xl">Seu delivery.<br />Sua marca.<br /><span className="text-primary">Seu cliente.</span></h1>
               <p className="mt-6 max-w-lg text-base leading-relaxed text-muted-foreground md:text-lg">Tenha seu cardápio digital, receba pedidos com formas de pagamento claras, atenda pelo WhatsApp e tenha controle real das suas entregas.</p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row"><Button size="lg" onClick={handleCTA} {...prefetchHandlers("/cadastro-lojista")} className="h-14 rounded-2xl px-7 text-base font-black shadow-[0_18px_36px_-18px_hsl(var(--primary)/0.9)]">Criar minha loja grátis <ArrowRight className="ml-2 h-5 w-5" /></Button><Button size="lg" variant="outline" onClick={handleWhatsApp} className="h-14 rounded-2xl border-2 bg-card px-6 text-base font-bold"><MessageCircle className="mr-2 h-5 w-5" /> Falar no WhatsApp</Button></div>
@@ -363,7 +365,7 @@ const StoreDirectory = () => {
           </div>
         </section>
 
-        <section className="border-y border-border bg-card px-5 py-6 md:px-6 md:py-8"><div className="mx-auto grid max-w-6xl grid-cols-3 divide-x divide-border"><Metric value={`${storesCount}+`} label="lojas ativas" /><Metric value={String(citiesCount)} label="cidades" /><Metric value="0%" label="comissão por pedido" /></div></section>
+        <section className="border-y border-border bg-card px-5 py-6 md:px-6 md:py-8"><div className="mx-auto grid max-w-6xl grid-cols-3 divide-x divide-border"><Metric value={liveStats ? `${storesCount}+` : "—"} label="lojas ativas" /><Metric value={liveStats ? String(citiesCount) : "—"} label="cidades" /><Metric value="0%" label="comissão por pedido" /></div></section>
 
         <section className="px-5 py-12 md:px-6 md:py-16"><div className="mx-auto max-w-6xl"><div className="grid grid-cols-3 divide-x divide-border overflow-hidden rounded-2xl border border-border bg-card md:grid-cols-6">{SEGMENTS.map(({ icon: Icon, title }) => <div key={title} className="flex flex-col items-center gap-2 px-2 py-4 text-center md:py-5"><Icon className="h-5 w-5 text-primary" /><span className="text-[10px] font-black md:text-xs">{title}</span></div>)}</div></div></section>
 
