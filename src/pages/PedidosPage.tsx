@@ -6,9 +6,10 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { subscribeWithRejoin, cleanupChannel } from "@/lib/realtimeChannel";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCart } from "@/contexts/CartContext";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import BottomNav from "@/components/BottomNav";
- import { ClipboardList, Clock, ChefHat, Truck, CheckCircle2, Lock, Copy, QrCode, XCircle, X, Loader2, Trash2, ShieldAlert, AlertCircle, TimerReset, RefreshCw, MessageCircle, Bell, AlertTriangle, Wallet, Zap } from "lucide-react";
+ import { ClipboardList, Clock, ChefHat, Truck, CheckCircle2, Lock, Copy, QrCode, XCircle, X, Loader2, Trash2, ShieldAlert, AlertCircle, TimerReset, RefreshCw, MessageCircle, Bell, AlertTriangle, Wallet, Zap, ChevronDown, MoreVertical, Store, Star } from "lucide-react";
 import { toast } from "sonner";
 import { notifyOrderPreparing, notifyOrderOnTheWay, notifyOrderDelivered, pushNotifyNewOrder } from "@/lib/notifications";
 import OrderRating from "@/components/OrderRating";
@@ -33,15 +34,28 @@ import {
 } from "@/lib/pixSafeGuard";
 
 const statusConfig: Record<string, { label: string; icon: React.ElementType; color: string; bg: string; border: string }> = {
-   aguardando_pagamento: { label: "Aguardando Pagamento", icon: Clock, color: "text-amber-700 dark:text-amber-400", bg: "bg-amber-50 dark:bg-amber-900/20", border: "border-amber-200 dark:border-amber-800" },
-   pendente: { label: "Pedido Recebido", icon: Clock, color: "text-blue-700 dark:text-blue-400", bg: "bg-blue-50 dark:bg-blue-950/20", border: "border-blue-200 dark:border-blue-900/50" },
-   preparando: { label: "Preparando", icon: ChefHat, color: "text-orange-700 dark:text-orange-400", bg: "bg-orange-50 dark:bg-orange-950/20", border: "border-orange-200 dark:border-orange-900/50" },
-   pronto_para_entrega: { label: "Pronto p/ Entrega", icon: CheckCircle2, color: "text-indigo-700 dark:text-indigo-400", bg: "bg-indigo-50 dark:bg-indigo-950/20", border: "border-indigo-200 dark:border-indigo-900/50" },
-   saiu_entrega: { label: "Saiu p/ Entrega", icon: Truck, color: "text-[#6A3B1F] dark:text-[#8B5E3C]", bg: "bg-[#6A3B1F]/5 dark:bg-[#6A3B1F]/10", border: "border-[#6A3B1F]/20 dark:border-[#6A3B1F]/30" },
-   em_transito: { label: "Em Trânsito", icon: Truck, color: "text-[#6A3B1F] dark:text-[#8B5E3C]", bg: "bg-[#6A3B1F]/5 dark:bg-[#6A3B1F]/10", border: "border-[#6A3B1F]/20 dark:border-[#6A3B1F]/30" },
+   aguardando_pagamento: { label: "Aguardando Pagamento", icon: Clock, color: "text-muted-foreground", bg: "bg-muted", border: "border-border" },
+   pendente: { label: "Pedido Recebido", icon: Clock, color: "text-primary", bg: "bg-primary/10", border: "border-primary/20" },
+   preparando: { label: "Preparando", icon: ChefHat, color: "text-primary", bg: "bg-primary/10", border: "border-primary/20" },
+   pronto_para_entrega: { label: "Pronto p/ Entrega", icon: CheckCircle2, color: "text-primary", bg: "bg-primary/10", border: "border-primary/20" },
+   saiu_entrega: { label: "Saiu p/ Entrega", icon: Truck, color: "text-primary", bg: "bg-primary/10", border: "border-primary/20" },
+   em_transito: { label: "Em Trânsito", icon: Truck, color: "text-primary", bg: "bg-primary/10", border: "border-primary/20" },
    entregue: { label: "Entregue", icon: CheckCircle2, color: "text-emerald-700 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-900/20", border: "border-emerald-200 dark:border-emerald-800" },
    finalizado: { label: "Finalizado", icon: CheckCircle2, color: "text-emerald-700 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-900/20", border: "border-emerald-200 dark:border-emerald-800" },
    cancelado: { label: "Cancelado", icon: XCircle, color: "text-red-700 dark:text-red-400", bg: "bg-red-50 dark:bg-red-950/20", border: "border-red-200 dark:border-red-900/50" },
+};
+
+const formatFriendlyDate = (iso: string) => {
+  const d = new Date(iso);
+  const today = new Date();
+  const yest = new Date();
+  yest.setDate(today.getDate() - 1);
+  const sameDay = (a: Date, b: Date) =>
+    a.getDate() === b.getDate() && a.getMonth() === b.getMonth() && a.getFullYear() === b.getFullYear();
+  const time = d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  if (sameDay(d, today)) return `Hoje às ${time}`;
+  if (sameDay(d, yest)) return `Ontem às ${time}`;
+  return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit" });
 };
 
 /* Status timeline steps for visual progress */
@@ -88,9 +102,9 @@ const StatusTimeline = ({ status, isPickup = false }: { status: string; isPickup
                   : "bg-muted text-muted-foreground"
               }`}
             >
-              <Icon className="h-3 w-3" />
+              <Icon className="h-3.5 w-3.5" />
             </div>
-            <span className={`text-[9px] font-bold leading-tight text-center ${active ? "text-primary" : done ? "text-foreground" : "text-muted-foreground"}`}>
+            <span className={`text-[11px] font-bold leading-tight text-center ${active ? "text-primary" : done ? "text-foreground" : "text-muted-foreground"}`}>
               {label}
             </span>
           </div>
@@ -105,6 +119,7 @@ const PedidosPage = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const queryClient = useQueryClient();
+  const { addItem } = useCart();
 
   // Check if user is lojista
   const { data: userProfile } = useQuery({
@@ -228,7 +243,7 @@ const PedidosPage = () => {
     queryFn: async () => {
       let query = supabase
         .from("orders")
-        .select("id, created_at, status, store_id, client_id, total_price, subtotal, delivery_fee, app_fee, payment_method, neighborhood, address_details, delivery_pin, collection_code, settlement_code, visible_to_client, return_to_store_confirmed, delivery_confirmed_by_client, confirmed_at, refund_request_expires_at, driver_id, scheduled_for, change_for, needs_change, stores(name, delivery_mode, slug, owner_id), order_items(id, quantity, unit_price, observations, addons, products(name))")
+        .select("id, created_at, status, store_id, client_id, total_price, subtotal, delivery_fee, app_fee, payment_method, neighborhood, address_details, delivery_pin, collection_code, settlement_code, visible_to_client, return_to_store_confirmed, delivery_confirmed_by_client, confirmed_at, refund_request_expires_at, driver_id, scheduled_for, change_for, needs_change, stores(name, delivery_mode, slug, owner_id, image_url), order_items(id, product_id, quantity, unit_price, observations, addons, products(name))")
         .eq("client_id", user!.id)
         .eq("visible_to_client", true)
         .order("created_at", { ascending: false })
@@ -304,56 +319,68 @@ const PedidosPage = () => {
     }
   };
 
-  // 🔧 Diagnóstico: revela pedidos "sumidos" (visibilidade ou client_id divergente)
-  const [diagnosticOpen, setDiagnosticOpen] = useState(false);
-  const [diagnosticData, setDiagnosticData] = useState<any>(null);
-  const [diagnosticLoading, setDiagnosticLoading] = useState(false);
-  const runDiagnostic = useCallback(async () => {
-    if (!user) { toast.error("Faça login primeiro."); return; }
-    setDiagnosticLoading(true);
-    setDiagnosticOpen(true);
-    try {
-      const { data: all, error } = await supabase
-        .from("orders")
-        .select("id, created_at, status, store_id, client_id, visible_to_client, total_price, payment_method, stores(name)")
-        .eq("client_id", user.id)
-        .order("created_at", { ascending: false })
-        .limit(20);
-      if (error) throw error;
-      const hidden = (all || []).filter((o: any) => o.visible_to_client === false);
-      setDiagnosticData({
-        userId: user.id,
-        email: user.email,
-        total: all?.length || 0,
-        hidden: hidden.length,
-        list: all || [],
-      });
-    } catch (e: any) {
-      toast.error("Erro: " + (e?.message || "falha"));
-      setDiagnosticData({ error: e?.message });
-    } finally {
-      setDiagnosticLoading(false);
-    }
-  }, [user]);
-
-  const restoreOrderVisibility = async (orderId: string) => {
-    try {
-      const { error } = await (supabase as any).rpc("client_set_order_visibility", {
-        _order_id: orderId,
-        _visible: true,
-      });
-      if (error) throw error;
-      toast.success("Pedido restaurado!");
-      queryClient.invalidateQueries({ queryKey: ["orders", user?.id] });
-      runDiagnostic();
-    } catch (e: any) {
-      toast.error("Erro: " + (e?.message || "falha"));
-    }
-  };
-
    const hasCompletedOrders = orders?.some((o: any) =>
      ["entregue", "finalizado", "cancelado"].includes(o.status)
    );
+
+  // Pedir de novo: repõe os itens do pedido no carrinho (preço atual da
+  // loja; adicionais voltam como foram pedidos) e abre a loja.
+  const reorder = async (order: any) => {
+    if (reorderingId) return;
+    setReorderingId(order.id);
+    try {
+      const items = (order.order_items || []).filter((i: any) => i.product_id);
+      if (!items.length) {
+        toast.error("Os itens deste pedido não estão mais disponíveis.");
+        return;
+      }
+      const { data: prods } = await supabase
+        .from("products")
+        .select("id, name, price, image_url, is_available")
+        .in("id", items.map((i: any) => i.product_id));
+      const byId = new Map((prods || []).map((pr: any) => [pr.id, pr]));
+      let added = 0;
+      let skipped = 0;
+      for (const item of items) {
+        const prod: any = byId.get(item.product_id);
+        if (!prod || prod.is_available === false) { skipped++; continue; }
+        const addons = Array.isArray(item.addons)
+          ? item.addons
+              .filter((a: any) => a && (a.name || a.title))
+              .map((a: any) => ({ name: a.name || a.title, price: Number(a.price) || 0 }))
+          : [];
+        const addonsTotal = addons.reduce((sum: number, a: any) => sum + a.price, 0);
+        addItem(
+          {
+            id: prod.id,
+            store_id: order.store_id,
+            store_name: order.stores?.name || "Loja",
+            name: prod.name,
+            price: Number(prod.price) + addonsTotal,
+            basePrice: Number(prod.price),
+            image_url: prod.image_url,
+            addons,
+            observations: item.observations || undefined,
+          },
+          item.quantity,
+        );
+        added++;
+      }
+      if (!added) {
+        toast.error("Nenhum item deste pedido está disponível hoje.");
+        return;
+      }
+      toast.success(added === 1 ? "Item adicionado ao carrinho!" : `${added} itens adicionados ao carrinho!`);
+      if (skipped) {
+        toast.info(skipped === 1 ? "1 item não está mais disponível e ficou de fora." : `${skipped} itens não estão mais disponíveis e ficaram de fora.`);
+      }
+      navigate(order.stores?.slug ? `/${order.stores.slug}` : `/loja/${order.store_id}`);
+    } catch (e: any) {
+      toast.error("Erro ao montar o carrinho: " + (e?.message || "tente novamente"));
+    } finally {
+      setReorderingId(null);
+    }
+  };
 
   // Realtime subscription for CLIENT orders
   useEffect(() => {
@@ -477,6 +504,16 @@ const PedidosPage = () => {
   const [showCancelModal, setShowCancelModal] = useState<any>(null);
   const [showRefundModal, setShowRefundModal] = useState<any>(null);
   const [detailsOrder, setDetailsOrder] = useState<any>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
+  const [ratingOpenId, setRatingOpenId] = useState<string | null>(null);
+  const [reorderingId, setReorderingId] = useState<string | null>(null);
+  const toggleItems = (orderId: string) =>
+    setExpandedItems((prev) => {
+      const next = new Set(prev);
+      if (next.has(orderId)) next.delete(orderId); else next.add(orderId);
+      return next;
+    });
 
   // Fechar modal de detalhes ao usar o botão voltar (Android/navegador)
   useEffect(() => {
@@ -870,76 +907,36 @@ const PedidosPage = () => {
             <ClipboardList className="h-5 w-5 text-primary" />
             <h1 className="font-black text-foreground">Meus Pedidos</h1>
           </div>
-          {hasCompletedOrders && (
+          <div className="relative">
             <button
-              onClick={clearHistory}
-              disabled={clearingHistory}
-              className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50 bg-muted/50 px-3 py-1.5 rounded-full"
+              onClick={() => setMenuOpen((v) => !v)}
+              className="w-9 h-9 rounded-full border border-border bg-card flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+              aria-label="Mais opções"
             >
-              <Trash2 className="h-3.5 w-3.5" />
-              Limpar histórico
+              <MoreVertical className="h-5 w-5" />
             </button>
-          )}
-          <button
-            onClick={runDiagnostic}
-            className="flex items-center gap-1.5 text-xs font-semibold text-amber-700 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/30 px-3 py-1.5 rounded-full hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-colors"
-            title="Diagnosticar pedidos sumidos"
-          >
-            <ShieldAlert className="h-3.5 w-3.5" />
-            Diag
-          </button>
-        </div>
-      </header>
-
-      {diagnosticOpen && (
-        <div className="fixed inset-0 z-[100] bg-black/60 flex items-center justify-center p-4" onClick={() => setDiagnosticOpen(false)}>
-          <div className="bg-card rounded-2xl max-w-lg w-full max-h-[85vh] overflow-y-auto p-5 space-y-3" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between">
-              <h3 className="font-black text-foreground">🔍 Diagnóstico de Pedidos</h3>
-              <button onClick={() => setDiagnosticOpen(false)}><X className="h-5 w-5" /></button>
-            </div>
-            {diagnosticLoading ? (
-              <div className="py-8 text-center"><Loader2 className="h-6 w-6 animate-spin mx-auto" /></div>
-            ) : diagnosticData?.error ? (
-              <div className="text-destructive text-sm">{diagnosticData.error}</div>
-            ) : diagnosticData ? (
+            {menuOpen && (
               <>
-                <div className="bg-muted/50 rounded-xl p-3 text-xs space-y-1 font-mono">
-                  <div><b>Email:</b> {diagnosticData.email}</div>
-                  <div><b>User ID:</b> {diagnosticData.userId}</div>
-                  <div><b>Total pedidos (últimos 20):</b> {diagnosticData.total}</div>
-                  <div><b>Ocultos (visible=false):</b> {diagnosticData.hidden}</div>
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  Se o pedido que você procura <b>não aparece nesta lista</b>, ele foi criado com <b>outra conta</b> (login diferente no checkout). Se aparecer com 🔒 oculto, clique em "Restaurar".
-                </div>
-                <div className="space-y-2">
-                  {diagnosticData.list.map((o: any) => (
-                    <div key={o.id} className={`border rounded-lg p-2.5 text-xs ${o.visible_to_client ? "border-emerald-300 bg-emerald-50 dark:bg-emerald-900/10" : "border-amber-300 bg-amber-50 dark:bg-amber-900/10"}`}>
-                      <div className="flex justify-between items-start gap-2">
-                        <div className="min-w-0 flex-1">
-                          <div className="font-bold">#{o.id.slice(0, 8).toUpperCase()} {o.visible_to_client ? "✅" : "🔒 oculto"}</div>
-                          <div className="text-muted-foreground">{o.stores?.name || "—"} · {o.status} · {formatBRL(o.total_price)}</div>
-                          <div className="text-muted-foreground">{new Date(o.created_at).toLocaleString("pt-BR")}</div>
-                        </div>
-                        {!o.visible_to_client && (
-                          <button onClick={() => restoreOrderVisibility(o.id)} className="text-[10px] font-bold bg-primary text-primary-foreground px-2 py-1 rounded shrink-0">Restaurar</button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                  {diagnosticData.list.length === 0 && (
-                    <div className="text-center py-6 text-sm text-muted-foreground">
-                      Nenhum pedido encontrado para esta conta.<br/>
-                      Provavelmente você fez o pedido logado em outra conta.
-                    </div>
+                <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
+                <div className="absolute right-0 top-11 z-20 w-52 bg-card border border-border rounded-xl shadow-lg p-1.5">
+                  {hasCompletedOrders ? (
+                    <button
+                      onClick={() => { setMenuOpen(false); clearHistory(); }}
+                      disabled={clearingHistory}
+                      className="w-full flex items-center gap-2 text-sm font-semibold text-foreground hover:bg-muted rounded-lg px-3 py-2.5 disabled:opacity-50 text-left"
+                    >
+                      <Trash2 className="h-4 w-4 text-muted-foreground" />
+                      Limpar histórico
+                    </button>
+                  ) : (
+                    <p className="text-xs text-muted-foreground px-3 py-2.5">Nenhuma ação disponível</p>
                   )}
                 </div>
               </>
-            ) : null}
+            )}
           </div>
         </div>
-      )}
+      </header>
 
       <div className="px-4 py-4 space-y-4">
         {/* Wallet Banner */}
@@ -984,18 +981,25 @@ const PedidosPage = () => {
                            </span>
                          </div>
                          <div className="flex items-center gap-2 min-w-0">
-                           <DeliveryTimeEstimate status={order.status} createdAt={order.created_at} confirmedAt={order.confirmed_at} />
-                           <span className="text-[10px] text-muted-foreground font-mono tabular-nums truncate">
-                             #{order.id.substring(0, 6).toUpperCase()}
-                           </span>
+                           <DeliveryTimeEstimate status={order.status} createdAt={order.created_at} confirmedAt={order.confirmed_at} variant="neutral" />
                          </div>
                        </div>
 
                       <div className="p-4 space-y-3">
                         {/* Store name */}
-                        <div className="flex items-center justify-between">
-                          <h3 className="font-bold text-foreground text-sm">{order.stores?.name || "Loja"}</h3>
-                          <span className="text-sm font-black text-primary">
+                        <div className="flex items-center gap-3">
+                          {order.stores?.image_url ? (
+                            <img src={order.stores.image_url} alt={order.stores?.name || "Loja"} className="w-10 h-10 rounded-xl object-cover shrink-0" loading="lazy" />
+                          ) : (
+                            <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-black text-base shrink-0">
+                              {(order.stores?.name || "L").charAt(0).toUpperCase()}
+                            </div>
+                          )}
+                          <div className="min-w-0">
+                            <h3 className="font-bold text-foreground text-sm truncate">{order.stores?.name || "Loja"}</h3>
+                            <p className="text-[11px] text-muted-foreground">{formatFriendlyDate(order.created_at)} · #{order.id.substring(0, 6).toUpperCase()}</p>
+                          </div>
+                          <span className="text-sm font-black text-primary ml-auto shrink-0">
                             {formatBRL(Number(order.total_price))}
                           </span>
                         </div>
@@ -1007,11 +1011,11 @@ const PedidosPage = () => {
                         {isWaitingPayment && (() => {
                           const hasSavedPix = savedPixData[order.id];
                           return (
-                            <div className="bg-white dark:bg-card border border-amber-200 rounded-xl p-3">
+                            <div className="bg-white dark:bg-card border border-border rounded-xl p-3">
                               <div className="flex items-center justify-between mb-2">
                                 <div className="flex items-center gap-2">
-                                  <Loader2 className="h-4 w-4 text-amber-500 animate-spin" />
-                                  <span className="text-xs font-semibold text-amber-600">Aguardando Pagamento</span>
+                                  <Loader2 className="h-4 w-4 text-primary animate-spin" />
+                                  <span className="text-xs font-bold text-foreground">Aguardando Pagamento</span>
                                 </div>
                                 <button
                                   onClick={() => cancelOrder(order.id)}
@@ -1044,16 +1048,16 @@ const PedidosPage = () => {
                                   )}
                                   <div className="bg-card rounded-lg p-2 text-center">
                                     <p className="text-[10px] text-muted-foreground">
-                                      📱 Escaneie o QR Code ou cole o código no app do seu banco.
+                                      Escaneie o QR Code ou cole o código no app do seu banco.
                                     </p>
                                     <p className="text-[10px] text-primary font-bold mt-1">
-                                      ✅ Após pagar, seu pedido será liberado automaticamente!
+                                      Após pagar, seu pedido será liberado automaticamente!
                                     </p>
                                   </div>
                                   <button
                                     onClick={() => generatePix(order)}
                                     disabled={payingOrderId === order.id || isPixBlocked}
-                                    className="w-full flex items-center justify-center gap-2 text-muted-foreground font-medium py-1.5 text-[10px] hover:text-foreground transition-colors"
+                                    className="w-full flex items-center justify-center gap-2 text-primary font-bold py-2 text-xs border border-border rounded-xl bg-card hover:bg-muted/50 transition-colors"
                                   >
                                     <RefreshCw className="h-3 w-3" />
                                     Gerar novo QR Code
@@ -1064,17 +1068,17 @@ const PedidosPage = () => {
                               {!hasSavedPix && (
                                 <>
                                   {safetyModeMs > 0 && (
-                                    <div className="rounded-lg border border-amber-300 bg-amber-50 p-2 mb-2 flex items-start gap-2">
-                                      <ShieldAlert className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
-                                      <p className="text-[10px] text-amber-600">
+                                    <div className="rounded-lg border border-border bg-muted/60 p-2 mb-2 flex items-start gap-2">
+                                      <ShieldAlert className="h-4 w-4 text-foreground shrink-0 mt-0.5" />
+                                      <p className="text-[11px] text-muted-foreground">
                                         Manutenção temporária. Voltará em {formatCooldownTime(safetyModeMs)}.
                                       </p>
                                     </div>
                                   )}
                                   {!safetyModeMs && pixCooldownMs > 0 && (
-                                    <div className="rounded-lg border border-amber-300 bg-amber-50 p-2 mb-2 flex items-start gap-2">
-                                      <AlertCircle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
-                                      <p className="text-[10px] text-amber-600">
+                                    <div className="rounded-lg border border-border bg-muted/60 p-2 mb-2 flex items-start gap-2">
+                                      <AlertCircle className="h-4 w-4 text-foreground shrink-0 mt-0.5" />
+                                      <p className="text-[11px] text-muted-foreground">
                                         Muitas tentativas. Aguarde {formatCooldownTime(pixCooldownMs)}.
                                       </p>
                                     </div>
@@ -1105,7 +1109,7 @@ const PedidosPage = () => {
                         {/* Pickup badge (background changed to white) */}
                         {order.neighborhood === "RETIRADA" && order.status === "pronto_para_entrega" && (
                           <div className="bg-white dark:bg-card border border-primary/20 rounded-xl p-3 flex items-center gap-2">
-                            <span className="text-lg">🏪</span>
+                            <Store className="h-5 w-5 text-primary shrink-0" />
                             <div>
                               <span className="text-xs font-bold text-primary">Pronto para retirada!</span>
                               <p className="text-[10px] text-muted-foreground mt-0.5">Dirija-se à loja para retirar seu pedido.</p>
@@ -1115,24 +1119,28 @@ const PedidosPage = () => {
 
                         {/* Delivery PIN (not for pickup) (background changed to white) */}
                         {order.neighborhood !== "RETIRADA" && showPin && (
-                          <div className="bg-white dark:bg-card border border-primary/20 rounded-xl p-3">
-                            <div className="flex items-center gap-2 mb-1">
+                          <div className="bg-white dark:bg-card border border-border rounded-xl p-3">
+                            <div className="flex items-center gap-2 mb-2">
                               <Lock className="h-4 w-4 text-primary" />
-                              <span className="text-xs font-bold text-primary">Código de Entrega</span>
+                              <span className="text-xs font-bold text-foreground">Código de Entrega</span>
                             </div>
-                            <div className="flex items-center justify-between">
-                              <span className="text-2xl font-black text-foreground tracking-[0.3em]">
-                                {order.delivery_pin}
-                              </span>
+                            <div className="flex items-center gap-2">
+                              <div className="flex gap-1.5">
+                                {String(order.delivery_pin).split("").map((digit: string, i: number) => (
+                                  <span key={i} className="w-10 h-12 rounded-lg border border-border bg-muted/40 flex items-center justify-center text-xl font-black text-foreground">
+                                    {digit}
+                                  </span>
+                                ))}
+                              </div>
                               <button
                                 onClick={() => copyPin(order.delivery_pin)}
-                                className="flex items-center gap-1 text-xs text-primary font-bold px-3 py-1.5 rounded-lg bg-primary/10"
+                                className="ml-auto flex items-center gap-1 text-xs text-primary font-bold px-3 py-2 rounded-lg bg-primary/10"
                               >
-                                <Copy className="h-3 w-3" />
+                                <Copy className="h-3.5 w-3.5" />
                                 Copiar
                               </button>
                             </div>
-                            <p className="text-[10px] text-muted-foreground mt-1">
+                            <p className="text-[11px] text-muted-foreground mt-2">
                               Informe ao motoboy apenas quando receber seu pedido.
                             </p>
                           </div>
@@ -1152,15 +1160,15 @@ const PedidosPage = () => {
 
                         {/* Confirm Delivery (not for pickup orders) (background changed to white) */}
                         {order.neighborhood !== "RETIRADA" && ["saiu_entrega", "em_transito"].includes(order.status) && !(order as any).delivery_confirmed_by_client && (
-                          <div className="bg-white dark:bg-card border border-emerald-200 rounded-xl p-3">
+                          <div className="bg-white dark:bg-card border border-border rounded-xl p-3">
                             <div className="flex items-center gap-2 mb-2">
-                              <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                              <span className="text-xs font-bold text-emerald-600">Recebeu seu pedido?</span>
+                              <CheckCircle2 className="h-4 w-4 text-primary" />
+                              <span className="text-xs font-bold text-foreground">Recebeu seu pedido?</span>
                             </div>
                             <button
                               onClick={() => handleConfirmDelivery(order.id)}
                               disabled={confirmingDelivery === order.id}
-                              className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2.5 rounded-xl text-xs disabled:opacity-50 transition-colors"
+                              className="w-full bg-primary hover:opacity-90 text-primary-foreground font-bold py-2.5 rounded-xl text-xs disabled:opacity-50 transition-opacity"
                             >
                               {confirmingDelivery === order.id ? (
                                 <span className="flex items-center justify-center gap-2">
@@ -1168,13 +1176,29 @@ const PedidosPage = () => {
                                   Confirmando...
                                 </span>
                               ) : (
-                                "✅ Sim, recebi meu pedido!"
+                                "Sim, recebi meu pedido"
                               )}
                             </button>
                           </div>
                         )}
 
-                        {/* Items + financial breakdown (background changed to white) */}
+                        {/* Items + financial breakdown — colapsado por padrão */}
+                        <button
+                          type="button"
+                          onClick={() => toggleItems(order.id)}
+                          className="w-full flex items-center gap-2 border border-border/60 rounded-xl px-3 py-2.5 text-xs font-semibold text-foreground bg-white dark:bg-card"
+                        >
+                          <ClipboardList className="h-4 w-4 text-primary shrink-0" />
+                          <span>
+                            {(order.order_items || []).reduce((sum: number, i: any) => sum + (i.quantity || 0), 0)}{" "}
+                            {(order.order_items || []).reduce((sum: number, i: any) => sum + (i.quantity || 0), 0) === 1 ? "item" : "itens"} · {formatBRL(Number(order.total_price))}
+                          </span>
+                          <span className="ml-auto flex items-center gap-1 text-muted-foreground font-bold">
+                            {expandedItems.has(order.id) ? "ocultar" : "ver itens e valores"}
+                            <ChevronDown className={`h-4 w-4 transition-transform ${expandedItems.has(order.id) ? "rotate-180" : ""}`} />
+                          </span>
+                        </button>
+                        {expandedItems.has(order.id) && (
                         <div className="bg-white dark:bg-card border border-border/40 rounded-xl p-3 space-y-2">
                           <div className="text-xs text-foreground/80 space-y-1">
                             {order.order_items?.map((item: any) => (
@@ -1201,24 +1225,20 @@ const PedidosPage = () => {
                             </div>
                           </div>
                         </div>
+                        )}
 
                         {/* Footer: date + cancel as subtle link */}
-                        <div className="flex items-center justify-between pt-1">
-                          <span className="text-[10px] text-muted-foreground">
-                            {new Date(order.created_at).toLocaleDateString("pt-BR", {
-                              day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit",
-                            })}
-                          </span>
-                          {["pendente", "preparando", "pronto_para_entrega"].includes(order.status) && (
+                        {["pendente", "preparando", "pronto_para_entrega"].includes(order.status) && (
+                          <div className="flex justify-end pt-1">
                             <button
                               onClick={() => cancelOrder(order.id)}
-                              className="text-[10px] font-semibold text-muted-foreground hover:text-destructive transition-colors flex items-center gap-1"
+                              className="text-xs font-bold text-destructive bg-destructive/10 hover:bg-destructive/15 transition-colors flex items-center gap-1.5 px-3 py-2 rounded-lg"
                             >
-                              <X className="h-3 w-3" />
+                              <X className="h-3.5 w-3.5" />
                               Cancelar pedido
                             </button>
-                          )}
-                        </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   );
@@ -1238,7 +1258,7 @@ const PedidosPage = () => {
                   const isCancelled = order.status === "cancelado";
 
                   return (
-                    <div key={order.id} className={`bg-white dark:bg-card rounded-2xl border overflow-hidden ${isCancelled ? "border-red-200 opacity-60" : "border-border"}`}>
+                    <div key={order.id} className={`bg-white dark:bg-card rounded-2xl border overflow-hidden ${isCancelled ? "border-red-200" : "border-border"}`}>
                       {isCancelled && order.cancel_reason && (
                         <div className="px-4 py-2 bg-red-500/8 border-b border-red-200 dark:border-red-900/40 flex items-center gap-2">
                           <XCircle className="h-3 w-3 text-red-500 shrink-0" />
@@ -1260,15 +1280,17 @@ const PedidosPage = () => {
                         className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-muted/40 active:bg-muted/60 transition-colors"
                       >
                         <div className="flex items-center gap-3">
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${config.bg}`}>
-                            <StatusIcon className={`h-4 w-4 ${config.color}`} />
-                          </div>
+                          {order.stores?.image_url ? (
+                            <img src={order.stores.image_url} alt={order.stores?.name || "Loja"} className="w-9 h-9 rounded-full object-cover shrink-0" loading="lazy" />
+                          ) : (
+                            <div className="w-9 h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center font-black text-sm shrink-0">
+                              {(order.stores?.name || "L").charAt(0).toUpperCase()}
+                            </div>
+                          )}
                           <div>
                             <h3 className="font-bold text-sm text-foreground">{order.stores?.name || "Loja"}</h3>
-                            <span className="text-[10px] text-muted-foreground">
-                              {new Date(order.created_at).toLocaleDateString("pt-BR", {
-                                day: "2-digit", month: "2-digit", year: "2-digit",
-                              })} · {config.label}
+                            <span className="text-[11px] text-muted-foreground">
+                              {formatFriendlyDate(order.created_at)} · {config.label}
                             </span>
                           </div>
                         </div>
@@ -1278,63 +1300,66 @@ const PedidosPage = () => {
                       </button>
 
                        {/* Items summary — also clickable */}
-                       <button
-                         type="button"
-                         onClick={() => setDetailsOrder(order)}
-                         className="w-full px-4 pb-2 text-left"
-                       >
-                         <p className="text-xs text-muted-foreground truncate">
-                           {order.order_items?.map((item: any) => `${item.quantity}x ${getOrderItemDisplayName(item)}`).join(", ")}
-                         </p>
-                       </button>
-
-                       {/* Show details CTA */}
-                       <div className="px-4 pb-2">
-                         <button
-                           type="button"
-                           onClick={() => setDetailsOrder(order)}
-                           className="w-full flex items-center justify-center gap-1.5 text-xs font-bold text-primary-foreground bg-primary px-3 py-2 rounded-full hover:opacity-90 active:scale-[0.98] transition"
-                         >
-                           Mostrar detalhes do pedido →
-                         </button>
-                       </div>
+                       <p className="px-4 pb-2 text-xs text-muted-foreground line-clamp-2">
+                         {order.order_items?.map((item: any) => `${item.quantity}x ${getOrderItemDisplayName(item)}`).join(", ")}
+                       </p>
 
                       {/* Actions */}
-                      <div className="px-4 pb-3 flex items-center gap-2">
+                      <div className="px-4 pb-3 flex items-center gap-2 flex-wrap">
                         {["entregue", "finalizado"].includes(order.status) && (
                           <button
-                            onClick={() => {
-                              navigate(order.stores?.slug ? `/${order.stores.slug}` : `/loja/${order.store_id}`);
-                              toast.info("Adicione os mesmos itens ao carrinho!");
-                            }}
-                            className="flex items-center gap-1.5 text-xs font-bold text-primary bg-primary/10 px-3 py-1.5 rounded-full hover:bg-primary/20 transition-colors"
+                            onClick={() => reorder(order)}
+                            disabled={reorderingId === order.id}
+                            className="flex items-center gap-1.5 text-xs font-bold text-primary bg-primary/10 px-3 py-2 rounded-full hover:bg-primary/20 transition-colors disabled:opacity-50"
                           >
                             <RefreshCw className="h-3 w-3" />
-                            Pedir novamente
+                            {reorderingId === order.id ? "Adicionando..." : "Pedir de novo"}
                           </button>
                         )}
+                        <button
+                          type="button"
+                          onClick={() => setDetailsOrder(order)}
+                          className="flex items-center gap-1.5 text-xs font-bold text-foreground bg-muted px-3 py-2 rounded-full hover:bg-muted/70 transition-colors"
+                        >
+                          Detalhes
+                        </button>
                         {canOpenPixDiretoRefundCase(order.payment_method, order.status, order.refund_request_expires_at) && (
                           <button
                             onClick={() => setShowRefundModal(order)}
-                            className="flex items-center gap-1.5 text-xs font-bold text-amber-600 bg-amber-50 dark:bg-amber-950/30 px-3 py-1.5 rounded-full hover:bg-amber-100 dark:hover:bg-amber-950/50 transition-colors"
+                            className="flex items-center gap-1.5 text-xs font-bold text-foreground bg-muted px-3 py-2 rounded-full hover:bg-muted/70 transition-colors"
                           >
                             <AlertTriangle className="h-3 w-3" />
-                            Analisar reembolso
+                            Reembolso
                           </button>
                         )}
                       </div>
 
                       {/* Rating */}
                       {["entregue", "finalizado"].includes(order.status) && user && !existingRatings?.has(order.id) && (
-                        <div className="px-4 pb-4 border-t border-border pt-3">
-                          <OrderRating
-                            orderId={order.id}
-                            storeId={order.store_id}
-                            storeName={order.stores?.name || "Loja"}
-                            userId={user.id}
-                            onRated={() => refetchRatings()}
-                          />
-                        </div>
+                        ratingOpenId === order.id ? (
+                          <div className="px-4 pb-4 border-t border-border pt-3">
+                            <OrderRating
+                              orderId={order.id}
+                              storeId={order.store_id}
+                              storeName={order.stores?.name || "Loja"}
+                              userId={user.id}
+                              onRated={() => refetchRatings()}
+                            />
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setRatingOpenId(order.id)}
+                            className="w-full px-4 py-3 border-t border-border flex items-center gap-2 text-left"
+                          >
+                            <span className="text-xs font-bold text-foreground">Como foi seu pedido?</span>
+                            <span className="ml-auto flex gap-0.5">
+                              {[1, 2, 3, 4, 5].map((star) => (
+                                <Star key={star} className="h-4 w-4 text-muted-foreground" />
+                              ))}
+                            </span>
+                          </button>
+                        )
                       )}
                     </div>
                   );
@@ -1350,20 +1375,20 @@ const PedidosPage = () => {
             <h2 className="text-lg font-bold text-foreground mb-1">Nenhum pedido ainda</h2>
             <p className="text-sm text-muted-foreground mb-6">Explore as lojas e faça seu primeiro pedido!</p>
              <button
-               onClick={() => navigate("/lojas")}
+               onClick={() => navigate("/")}
                className="bg-primary text-primary-foreground font-bold px-8 py-3 rounded-2xl text-sm shadow-lg active:scale-95 transition-transform"
              >
                Ver Restaurantes
              </button>
              <div className="mt-8 pt-8 border-t border-border w-full">
                <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold mb-4">Recomendado para você</p>
-               <div className="bg-primary/5 rounded-2xl p-4 border border-primary/10 flex items-center gap-4 text-left" onClick={() => navigate("/lojas")}>
+               <div className="bg-primary/5 rounded-2xl p-4 border border-primary/10 flex items-center gap-4 text-left" onClick={() => navigate("/")}>
                  <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center shrink-0 shadow-lg shadow-primary/20">
                    <Zap className="h-6 w-6 text-primary-foreground" />
                  </div>
                  <div>
                    <h4 className="text-sm font-bold text-foreground">Primeira fome do dia?</h4>
-                   <p className="text-[11px] text-muted-foreground">Confira as lojas abertas agora em Itatinga.</p>
+                   <p className="text-[11px] text-muted-foreground">Confira as lojas abertas agora na sua cidade.</p>
                  </div>
                </div>
              </div>
@@ -1419,7 +1444,7 @@ const PedidosPage = () => {
                     Abra o app do seu banco, escolha Pagar com PIX e escaneie o QR Code ou cole o código copiado.
                   </p>
                   <p className="text-xs text-primary font-bold mt-2">
-                    ✅ Após pagar, seu pedido será liberado automaticamente!
+                    Após pagar, seu pedido será liberado automaticamente!
                   </p>
                 </div>
               </div>
