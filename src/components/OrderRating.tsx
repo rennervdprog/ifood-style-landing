@@ -62,6 +62,39 @@ const OrderRating = ({ orderId, storeId, storeName, userId, onRated }: OrderRati
         }
         throw error;
       }
+      // Grava também na tabela `reviews`: é dela que a página da loja e os
+      // apps leem os totais (store_rating_aggregates). Best-effort — se a
+      // política recusar (ex.: pedido antigo sem delivered_at), a avaliação
+      // principal acima já valeu e o fluxo não quebra.
+      try {
+        const reviewPayload = {
+          order_id: orderId,
+          author_id: userId,
+          target_type: "store",
+          target_id: storeId,
+          rating,
+          comment: comment.trim() || null,
+        };
+        const { error: reviewError } = await supabase
+          .from("reviews" as any)
+          .insert(reviewPayload);
+        if (reviewError?.code === "23505") {
+          // Já existe avaliação deste cliente nesta loja (a tabela guarda
+          // UMA por cliente/loja): atualiza com a nota mais recente.
+          await supabase
+            .from("reviews" as any)
+            .update({
+              order_id: orderId,
+              rating,
+              comment: comment.trim() || null,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("author_id", userId)
+            .eq("target_id", storeId);
+        }
+      } catch {
+        // silencioso de propósito: ver comentário acima
+      }
       confetti({ particleCount: 60, spread: 50, origin: { y: 0.8 } });
       toast.success("Avaliação enviada! Obrigado 🎉");
       setSubmitted(true);
