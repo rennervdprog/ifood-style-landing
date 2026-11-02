@@ -272,6 +272,15 @@ const AdminDashboardTeste = () => {
   const [expandedAddresses, setExpandedAddresses] = useState<Set<string>>(new Set());
   const [settlementSearch, setSettlementSearch] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  // Recolher a sidebar no desktop (pedido do Renner, 2026-11-02): fica
+  // salva no aparelho; no celular a sidebar continua sendo gaveta.
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    try { return localStorage.getItem("itasuper-admin-sidebar-collapsed") === "1"; } catch { return false; }
+  });
+  const toggleSidebarCollapsed = (collapsed: boolean) => {
+    setSidebarCollapsed(collapsed);
+    try { localStorage.setItem("itasuper-admin-sidebar-collapsed", collapsed ? "1" : "0"); } catch { /* sem persistencia */ }
+  };
   const [clientFilter, setClientFilter] = useState<ClientFilter>("all");
   const [clientSearch, setClientSearch] = useState("");
   const [expandedClient, setExpandedClient] = useState<string | null>(null);
@@ -1805,7 +1814,7 @@ const AdminDashboardTeste = () => {
       )}
 
       {/* ── SIDEBAR (desktop only) ── */}
-      <aside className={`fixed lg:sticky top-0 left-0 z-50 h-screen w-64 bg-card border-r border-border flex flex-col transition-transform duration-300 ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}>
+      <aside className={`fixed lg:sticky top-0 left-0 z-50 h-screen w-64 bg-card border-r border-border flex flex-col transition-transform duration-300 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} ${sidebarCollapsed ? "lg:-translate-x-full lg:absolute" : "lg:translate-x-0"}`}>
         <div className="p-4 border-b border-border">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3 min-w-0">
@@ -1820,7 +1829,7 @@ const AdminDashboardTeste = () => {
                 </div>
               </div>
             </div>
-            <button onClick={() => setSidebarOpen(false)} className="lg:hidden p-1 text-muted-foreground hover:text-foreground">
+            <button onClick={() => { setSidebarOpen(false); toggleSidebarCollapsed(true); }} title="Fechar menu" className="p-1 text-muted-foreground hover:text-foreground">
               <X className="h-5 w-5" />
             </button>
           </div>
@@ -1919,7 +1928,7 @@ const AdminDashboardTeste = () => {
         <header className="sticky top-0 z-30 bg-card/95 backdrop-blur border-b border-border px-3 py-2.5 sm:px-4 flex items-center justify-between gap-2">
           <div className="flex items-center gap-3 min-w-0">
             {/* Desktop: hamburger for sidebar */}
-            <button onClick={() => setSidebarOpen(true)} className="hidden lg:hidden p-2 -ml-2 rounded-xl hover:bg-accent">
+            <button onClick={() => { setSidebarOpen(true); toggleSidebarCollapsed(false); }} title="Abrir menu" className={`${sidebarCollapsed ? "" : "lg:hidden"} p-2 -ml-2 rounded-xl hover:bg-accent`}>
               <Menu className="h-5 w-5 text-foreground" />
             </button>
             <div className="min-w-0">
