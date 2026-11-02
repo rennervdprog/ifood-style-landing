@@ -1679,6 +1679,23 @@ const PdvPage = () => {
                           }
                         />
                       )}
+                      {/* F6: a venda nunca some atras do catalogo — faixa fixa com o total e a volta pro caixa */}
+                      {totalItems > 0 && (
+                        <div className="border-t border-border bg-card px-3 py-2.5 flex items-center gap-3 shrink-0">
+                          <div className="min-w-0">
+                            <p className="text-sm font-black text-foreground leading-tight">{formatBRL(finalTotal)}</p>
+                            <p className="text-[11px] text-muted-foreground leading-tight">{totalItems} {totalItems === 1 ? "item na venda" : "itens na venda"}</p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setShowProductsDrawer(false)}
+                            className="ml-auto h-11 px-5 bg-primary text-primary-foreground font-black text-sm rounded-2xl flex items-center gap-2 active:scale-[0.98] transition-all"
+                          >
+                            Ver venda
+                            <ChevronRight className="h-4 w-4" />
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </>
