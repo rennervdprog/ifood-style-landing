@@ -26,6 +26,20 @@
       ],
       "destination": "/api/og?slug=:slug"
     },
+    {
+      "source": "/blog/:slug",
+      "has": [
+        { "type": "header", "key": "user-agent", "value": "(?i).*(facebookexternalhit|WhatsApp|Twitterbot|TelegramBot|Slackbot|LinkedInBot|Discordbot|SkypeUriPreview|redditbot|Embedly|Applebot|Pinterest|Googlebot|bingbot|DuckDuckBot|Baiduspider|YandexBot|Slurp|GPTBot|ClaudeBot|PerplexityBot).*" }
+      ],
+      "destination": "/api/og-blog?slug=:slug"
+    },
+    {
+      "source": "/blog",
+      "has": [
+        { "type": "header", "key": "user-agent", "value": "(?i).*(facebookexternalhit|WhatsApp|Twitterbot|TelegramBot|Slackbot|LinkedInBot|Discordbot|SkypeUriPreview|redditbot|Embedly|Applebot|Pinterest|Googlebot|bingbot|DuckDuckBot|Baiduspider|YandexBot|Slurp|GPTBot|ClaudeBot|PerplexityBot).*" }
+      ],
+      "destination": "/api/og-blog?type=index"
+    },
     { "source": "/((?!api/|assets/|icon-|favicon|robots|sitemap|manifest|sw\\.js|registerSW\\.js|firebase-messaging-sw\\.js).*)", "destination": "/index.html" }
   ],
   "headers": [
