@@ -73,7 +73,7 @@ export const MenuToolbar = ({
             )}
           >
             {item.label}
-            {filterCounts?.[item.id] ? <span className="ml-1.5 text-[10px] tabular-nums">{filterCounts[item.id]}</span> : null}
+            {filterCounts?.[item.id] !== undefined && filterCounts?.[item.id] !== null ? <span className="ml-1.5 text-[10px] tabular-nums">{filterCounts[item.id]}</span> : null}
           </button>
         ))}
       </div>
