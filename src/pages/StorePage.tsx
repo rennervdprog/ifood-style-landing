@@ -1454,11 +1454,11 @@ const StorePage = () => {
             type="text"
             placeholder="Buscar produtos..."
             value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
+            onChange={e => handleSearchChange(e.target.value)}
             className="w-full pl-10 pr-10 py-3 rounded-xl border text-sm focus:outline-none focus:ring-2 bg-card border-border text-foreground placeholder:text-muted-foreground focus:ring-primary/30"
           />
           {searchQuery && (
-            <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2">
+            <button onClick={() => handleSearchChange("")} className="absolute right-3 top-1/2 -translate-y-1/2">
               <X className="h-4 w-4 text-muted-foreground" />
             </button>
           )}
