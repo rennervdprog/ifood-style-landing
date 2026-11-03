@@ -1755,6 +1755,9 @@ const AdminDashboardTeste = () => {
     const g = visibleGroupMap.get(groupKey);
     if (!g || g.subTabs.length === 0) return;
     setPreferredGroupKey(groupKey);
+    // Desktop: tocar numa secao esconde a lateral junto (pedido do Renner,
+    // 2026-11-03) — a tela ganha a largura toda pra trabalhar na secao.
+    if (typeof window !== "undefined" && window.matchMedia("(min-width: 1024px)").matches) toggleSidebarCollapsed(true);
     // Se já estou no grupo, mantém a sub-tab atual; senão abre a primeira
     const inGroup = g.subTabs.some(s => s.key === dashboardTab);
     handleTabChange(inGroup ? dashboardTab : g.subTabs[0].key);
@@ -1814,7 +1817,7 @@ const AdminDashboardTeste = () => {
       )}
 
       {/* ── SIDEBAR (desktop only) ── */}
-      <aside className={`fixed lg:sticky top-0 left-0 z-50 h-screen w-64 bg-card border-r border-border flex flex-col transition-transform duration-300 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} ${sidebarCollapsed ? "lg:-translate-x-full lg:absolute" : "lg:translate-x-0"}`}>
+      <aside className={`fixed ${sidebarCollapsed ? "lg:absolute" : "lg:sticky"} top-0 left-0 z-50 h-screen w-64 bg-card border-r border-border flex flex-col transition-transform duration-300 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} ${sidebarCollapsed ? "lg:-translate-x-full" : "lg:translate-x-0"}`}>
         <div className="p-4 border-b border-border">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3 min-w-0">
@@ -1829,7 +1832,7 @@ const AdminDashboardTeste = () => {
                 </div>
               </div>
             </div>
-            <button onClick={() => { setSidebarOpen(false); toggleSidebarCollapsed(true); }} title="Fechar menu" className="p-1 text-muted-foreground hover:text-foreground">
+            <button onClick={() => { setSidebarOpen(false); toggleSidebarCollapsed(true); }} title="Fechar menu" className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent">
               <X className="h-5 w-5" />
             </button>
           </div>
