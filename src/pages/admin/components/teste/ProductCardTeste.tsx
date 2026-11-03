@@ -606,13 +606,14 @@ interface ProductCardProps {
 }
 
 /** Selo de status do produto (Tela 3, item 1) no vocabulário da Tela 1:
- *  Ativo = "entregue" (verde), Pausado = "aviso" (âmbar),
+ *  Ativo = "entregue" (verde), Pausado = "neutro" (cinza — regra do
+ *  Renner 2026-11-01: nada de âmbar/amarelo em layout),
  *  Esgotado = "novo" (vermelho). Precedência igual à original: pausado
  *  vence esgotado quando os dois estão marcados. */
-const getProductStatusTeste = (product: any): { variant: "entregue" | "aviso" | "novo"; label: string } => {
+const getProductStatusTeste = (product: any): { variant: "entregue" | "neutro" | "novo"; label: string } => {
   const isOOS = !!product?.metadata?.out_of_stock;
   if (isOOS && product.is_available) return { variant: "novo", label: "Esgotado" };
-  if (!product.is_available) return { variant: "aviso", label: "Pausado" };
+  if (!product.is_available) return { variant: "neutro", label: "Pausado" };
   return { variant: "entregue", label: "Ativo" };
 };
 
@@ -656,21 +657,21 @@ const ProductCardTesteImpl = (props: ProductCardProps) => {
           aria-label="Selecionar produto"
         />
         {product.image_url ? (
-          <img loading="lazy" decoding="async" src={product.image_url} alt={product.name} className="w-14 h-14 rounded-lg object-cover flex-shrink-0" />
+          <img loading="lazy" decoding="async" src={product.image_url} alt={product.name} className="w-[72px] h-[72px] rounded-lg object-cover flex-shrink-0" />
         ) : (
           <button
             type="button"
             onClick={onEdit}
             aria-label="Adicionar foto"
             title="Adicionar foto"
-            className="w-14 h-14 rounded-lg bg-muted flex items-center justify-center flex-shrink-0 border border-dashed border-border hover:bg-muted/70 transition-colors"
+            className="w-[72px] h-[72px] rounded-lg bg-muted flex items-center justify-center flex-shrink-0 border border-dashed border-border hover:bg-muted/70 transition-colors"
           >
-            <Package className="h-5 w-5 text-muted-foreground/50" />
+            <Package className="h-6 w-6 text-muted-foreground/50" />
           </button>
         )}
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <h4 className="text-sm font-bold text-foreground truncate">{product.name}</h4>
+          <h4 className="text-sm font-bold text-foreground line-clamp-2">{product.name}</h4>
+          <div className="flex items-center gap-1.5 flex-wrap mt-1">
             {(() => {
               const status = getProductStatusTeste(product);
               return <AdminBadgeTeste variant={status.variant}>{status.label}</AdminBadgeTeste>;
@@ -678,22 +679,47 @@ const ProductCardTesteImpl = (props: ProductCardProps) => {
             {(product.metadata as any)?.pdv_only && (
               <span className="text-[10px] font-bold uppercase bg-primary/10 text-primary px-1.5 py-0.5 rounded">Somente PDV</span>
             )}
+            {product.promo_active && Number(product.promo_price) > 0 && (
+              <span className="text-[10px] font-bold uppercase bg-primary text-primary-foreground px-1.5 py-0.5 rounded">Promoção</span>
+            )}
           </div>
           {product.description && <p className="text-xs text-muted-foreground line-clamp-1">{product.description}</p>}
           {/* Tela 3, item 6: o card mostra a seção do produto. */}
           <p className="text-xs text-muted-foreground">
             Seção:{" "}
-            <span className={sections?.find((s: any) => s.id === product.section_id) ? "font-bold text-foreground" : "font-bold text-amber-600"}>
+            <span className="font-bold text-foreground">
               {sections?.find((s: any) => s.id === product.section_id)?.name || "Sem seção"}
             </span>
           </p>
+          {(() => {
+            const st = (product as any)._stock;
+            if (!st?.track_stock) return null;
+            const q = Number(st.quantity ?? 0);
+            const low = q <= Number(st.min_quantity ?? 0);
+            return (
+              <p className={`text-xs ${low ? "font-bold text-destructive" : "text-muted-foreground"}`}>
+                Estoque: <span className="font-bold">{q} un</span>{low ? " — acabando" : ""}
+              </p>
+            );
+          })()}
           {!product.image_url && (
             <button type="button" onClick={onEdit} className="mt-0.5 text-xs font-bold text-primary hover:underline">
               Adicionar foto
             </button>
           )}
-          <div className="flex items-center justify-between mt-1">
-            <AdminMoneyTeste value={formatBRL(Number(product.price))} className="text-primary font-black" />
+        </div>
+      </div>
+      {/* Preço + ações em linha própria, na largura toda do card: a linha
+          antiga dividia espaço com a foto e o botão ⋮ ficava cortado. */}
+      <div className="flex items-center justify-between mt-2">
+            {product.promo_active && Number(product.promo_price) > 0 ? (
+              <span className="flex items-baseline gap-1.5 min-w-0">
+                <AdminMoneyTeste value={formatBRL(Number(product.promo_price))} className="text-primary font-black" />
+                <span className="text-xs text-muted-foreground line-through">{formatBRL(Number(product.price))}</span>
+              </span>
+            ) : (
+              <AdminMoneyTeste value={formatBRL(Number(product.price))} className="text-primary font-black" />
+            )}
             <div className="flex items-center gap-0.5 flex-shrink-0">
               {/* Tela 3, item 2: pausar em 1 toque, sem abrir o menu. */}
               <button
@@ -702,7 +728,7 @@ const ProductCardTesteImpl = (props: ProductCardProps) => {
                 title={product.is_available ? "Pausar produto" : "Reativar produto"}
               >
                 {product.is_available ? (
-                  <><Pause className="h-4 w-4 text-amber-600" /> Pausar</>
+                  <><Pause className="h-4 w-4" /> Pausar</>
                 ) : (
                   <><Play className="h-4 w-4 text-primary" /> Reativar</>
                 )}
@@ -718,11 +744,8 @@ const ProductCardTesteImpl = (props: ProductCardProps) => {
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-52">
-                  <DropdownMenuItem onClick={onToggleAvailable}>
-                    {product.is_available
-                      ? <><Pause className="h-4 w-4 mr-2 text-yellow-500" /> Pausar produto</>
-                      : <><Play className="h-4 w-4 mr-2 text-primary" /> Reativar produto</>}
-                  </DropdownMenuItem>
+                  {/* Pausar/Reativar já é botão direto no card — fora do menu
+                      para não duplicar a mesma ação. */}
                   <DropdownMenuItem onClick={onToggleOutOfStock}>
                     {isOOS
                       ? <><Package className="h-4 w-4 mr-2 text-primary" /> Repor estoque</>
@@ -752,8 +775,6 @@ const ProductCardTesteImpl = (props: ProductCardProps) => {
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
-          </div>
-        </div>
       </div>
 
       {/* Move to section picker */}
@@ -779,14 +800,14 @@ const ProductCardTesteImpl = (props: ProductCardProps) => {
       {/* Linked addon groups */}
       {linkedGroups && linkedGroups.length > 0 && (
         <div className="mt-2 pl-2 border-l-2 border-primary/30 space-y-1">
-          <span className="text-[10px] text-primary font-bold uppercase">🔗 Vinculados</span>
+          <span className="text-[10px] text-primary font-bold uppercase inline-flex items-center gap-1"><Link2 className="h-3 w-3" /> Vinculados</span>
           {linkedGroups.map((group: any) => (
             <div key={group.id} className="text-xs">
               <div className="flex items-center justify-between">
                 <span className="text-foreground/80 font-bold">{group.name}</span>
                 <div className="flex items-center gap-1">
                   <span className="text-muted-foreground/70">{group.min_select > 0 ? `mín ${group.min_select}` : "opcional"}, máx {group.max_select}</span>
-                  <button onClick={() => onUnlinkGroup(group.id)} className="text-yellow-500 p-0.5"><X className="h-3 w-3" /></button>
+                  <button onClick={() => onUnlinkGroup(group.id)} className="text-muted-foreground hover:text-destructive p-0.5"><X className="h-3 w-3" /></button>
                 </div>
               </div>
               {group.addon_items?.map((item: any) => (
@@ -854,7 +875,7 @@ const ProductCardTesteImpl = (props: ProductCardProps) => {
       {/* Link / Create addon */}
       {showLinkAddon ? (
         <div className="mt-2 bg-primary/5 border border-primary/20 rounded-lg p-2 space-y-1">
-          <p className="text-xs text-primary font-bold">🔗 Vincular Grupo</p>
+          <p className="text-xs text-primary font-bold flex items-center gap-1"><Link2 className="h-3 w-3" /> Vincular Grupo</p>
           {storeAddonGroups.filter((g: any) => !linkedGroupIds.includes(g.id)).length > 0 ? (
             storeAddonGroups.filter((g: any) => !linkedGroupIds.includes(g.id)).map((g: any) => (
               <button key={g.id} onClick={() => { onLinkGroup(g.id); setShowLinkAddon(false); }}

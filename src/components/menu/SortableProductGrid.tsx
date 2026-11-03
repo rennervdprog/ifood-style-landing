@@ -46,7 +46,7 @@ export const SortableProductGrid = ({ items, onReorder, renderItem, enabled }: S
 
   if (!enabled) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-3">
         {items.map((it) => (
           <div key={it.id}>{renderItem(it)}</div>
         ))}
@@ -57,7 +57,7 @@ export const SortableProductGrid = ({ items, onReorder, renderItem, enabled }: S
   return (
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
       <SortableContext items={ids} strategy={rectSortingStrategy}>
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-3">
           {items.map((it) => (
             <SortableItem key={it.id} id={it.id}>{renderItem(it)}</SortableItem>
           ))}
@@ -81,7 +81,7 @@ const SortableItem = ({ id, children }: { id: string; children: ReactNode }) => 
         type="button"
         {...attributes}
         {...listeners}
-        className="absolute -left-1 top-1/2 -translate-y-1/2 z-10 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity p-1 rounded bg-background/80 border border-border cursor-grab active:cursor-grabbing touch-none"
+        className="absolute -left-1 top-1/2 -translate-y-1/2 z-10 opacity-40 group-hover:opacity-100 focus:opacity-100 transition-opacity p-1 rounded bg-background/80 border border-border cursor-grab active:cursor-grabbing touch-none"
         aria-label="Arrastar para reordenar"
         title="Arrastar para reordenar"
       >
