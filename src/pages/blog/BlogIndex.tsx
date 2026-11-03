@@ -2,7 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import Fuse from "fuse.js";
-import { Search, Clock, ArrowRight } from "lucide-react";
+import { Search, ArrowRight, Rocket, Bike, TrendingUp } from "lucide-react";
+import NewsletterSignup from "@/components/blog/NewsletterSignup";
+import { BlogCard, BlogCover, blogCategoryStyle, formatBlogDate } from "@/components/blog/BlogCover";
 import { supabase } from "@/integrations/supabase/client";
 
 interface BlogPost {
@@ -21,6 +23,35 @@ interface BlogPost {
 
 const SITE_URL = "https://www.itasuper.com.br";
 
+/**
+ * Trilhas por intenção (padrão "Jornadas" do blog de parceiros do iFood):
+ * o lojista se reconhece na hora, em vez de encarar 10 categorias soltas.
+ * Cada trilha filtra a grade pelas categorias do tema.
+ */
+const JOURNEYS = [
+  {
+    id: "comecar",
+    title: "Começar um negócio",
+    desc: "Do zero ao primeiro pedido: abertura, cardápio e os erros que custam caro no começo.",
+    cats: ["Guias", "Guia", "Lojistas"],
+    icon: Rocket,
+  },
+  {
+    id: "delivery",
+    title: "Começar no delivery",
+    desc: "Delivery próprio ou marketplace? Taxas, raio, pedido mínimo e o combo com WhatsApp.",
+    cats: ["Delivery", "Entregas", "Financeiro"],
+    icon: Bike,
+  },
+  {
+    id: "vender",
+    title: "Vender mais todo dia",
+    desc: "Google, avaliações, almoço executivo e os ajustes finos de quem já vende.",
+    cats: ["Marketing", "SEO", "Cardápio", "Operação", "Nichos"],
+    icon: TrendingUp,
+  },
+] as const;
+
 function fmtDate(s: string | null) {
   if (!s) return "";
   return new Date(s).toLocaleDateString("pt-BR", {
@@ -35,6 +66,7 @@ export default function BlogIndex() {
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
   const [activeCat, setActiveCat] = useState<string>("Todos");
+  const [journey, setJourney] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -71,6 +103,10 @@ export default function BlogIndex() {
 
   const filtered = useMemo(() => {
     let list = posts;
+    const activeJourney = JOURNEYS.find((j) => j.id === journey);
+    if (activeJourney) {
+      list = list.filter((p) => p.category && (activeJourney.cats as readonly string[]).includes(p.category));
+    }
     if (activeCat !== "Todos") list = list.filter((p) => p.category === activeCat);
     if (q.trim()) {
       const hits = fuse.search(q.trim()).map((r) => r.item);
@@ -78,10 +114,36 @@ export default function BlogIndex() {
       list = list.filter((p) => ids.has(p.id));
     }
     return list;
-  }, [posts, activeCat, q, fuse]);
+  }, [posts, activeCat, q, fuse, journey]);
 
   const featured = filtered.find((p) => p.featured) ?? filtered[0];
   const rest = filtered.filter((p) => p.id !== featured?.id);
+
+  // O destaque editorial só aparece na home "limpa" — com busca, categoria
+  // ou trilha ativa, tudo vai pra grade, sem post duplicado em cima.
+  const anyFilter = journey !== null || activeCat !== "Todos" || q.trim() !== "";
+  const showFeatured = !anyFilter && !!featured;
+  const gridPosts = showFeatured ? rest : filtered;
+  const activeJourney = JOURNEYS.find((j) => j.id === journey);
+  const sectionTitle = activeJourney
+    ? activeJourney.title
+    : activeCat !== "Todos"
+      ? activeCat
+      : "Últimos artigos";
+
+  const clearFilters = () => {
+    setJourney(null);
+    setActiveCat("Todos");
+    setQ("");
+  };
+
+  const selectJourney = (id: string) => {
+    setJourney((cur) => (cur === id ? null : id));
+    setActiveCat("Todos");
+    requestAnimationFrame(() => {
+      document.getElementById("ultimos")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  };
 
   const websiteLd = {
     "@context": "https://schema.org",
@@ -125,26 +187,26 @@ export default function BlogIndex() {
 
       <main className="min-h-screen bg-background">
         {/* HERO */}
-        <section className="border-b border-border bg-gradient-to-b from-accent/30 via-background to-background">
-          <div className="container mx-auto max-w-5xl px-4 py-12 md:py-16">
+        <section className="border-b border-border">
+          <div className="container mx-auto max-w-5xl px-4 pt-10 pb-10 md:pt-14 md:pb-12">
             <Link
               to="/"
               className="text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
               ← Início
             </Link>
-            <h1 className="font-editorial mt-5 text-4xl md:text-6xl font-bold leading-[1.05] tracking-tight">
-              O blog do delivery
-              <br />
-              <span className="text-primary">de bairro.</span>
-            </h1>
-            <p className="mt-5 max-w-2xl text-base md:text-lg text-muted-foreground">
-              Guias práticos, comparativos honestos e bastidores de quem vende
-              comida em Itatinga e cidades vizinhas — sem enrolação.
+            <p className="mt-7 text-xs font-extrabold uppercase tracking-[0.18em] text-primary">
+              Blog ItaSuper
             </p>
-
-            {/* search */}
-            <div className="mt-8 flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2.5 shadow-sm max-w-md focus-within:ring-2 focus-within:ring-primary/30">
+            <h1 className="mt-3 max-w-2xl text-4xl md:text-[3.4rem] font-extrabold leading-[1.08] tracking-tight">
+              Ideias práticas pra sua loja{" "}
+              <span className="text-primary">vender mais</span> — sem enrolação.
+            </h1>
+            <p className="mt-4 max-w-xl text-base md:text-lg text-muted-foreground">
+              Guias, comparativos honestos e bastidores de quem vende comida
+              de bairro, escritos pra quem tem pouco tempo e muito boleto.
+            </p>
+            <div className="mt-7 flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2.5 shadow-sm max-w-md focus-within:ring-2 focus-within:ring-primary/30">
               <Search className="h-4 w-4 text-muted-foreground shrink-0" />
               <input
                 type="search"
@@ -155,28 +217,46 @@ export default function BlogIndex() {
                 aria-label="Buscar no blog"
               />
             </div>
-
-            {/* categories */}
-            <div className="mt-5 flex flex-wrap gap-2">
-              {categories.map((c) => (
-                <button
-                  key={c}
-                  onClick={() => setActiveCat(c)}
-                  className={`rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors border ${
-                    activeCat === c
-                      ? "bg-foreground text-background border-foreground"
-                      : "bg-card text-muted-foreground border-border hover:text-foreground"
-                  }`}
-                >
-                  {c}
-                </button>
-              ))}
-            </div>
           </div>
         </section>
 
-        {/* CONTENT */}
-        <section className="container mx-auto max-w-5xl px-4 py-10 md:py-14">
+        {/* TRILHAS POR INTENÇÃO */}
+        <section className="container mx-auto max-w-5xl px-4 pt-8">
+          <div className="grid gap-4 md:grid-cols-3">
+            {JOURNEYS.map((j) => {
+              const Icon = j.icon;
+              const active = journey === j.id;
+              return (
+                <button
+                  key={j.id}
+                  onClick={() => selectJourney(j.id)}
+                  aria-pressed={active}
+                  className={`rounded-2xl border bg-card p-5 text-left transition-all hover:-translate-y-0.5 hover:shadow-md ${
+                    active
+                      ? "border-primary ring-1 ring-primary"
+                      : "border-border"
+                  }`}
+                >
+                  <span className="inline-flex rounded-[10px] bg-primary p-2 text-primary-foreground">
+                    <Icon className="h-[18px] w-[18px]" />
+                  </span>
+                  <span className="mt-3.5 block text-[1.05rem] font-extrabold tracking-tight">
+                    {j.title}
+                  </span>
+                  <span className="mt-1 block text-[13px] leading-relaxed text-muted-foreground">
+                    {j.desc}
+                  </span>
+                  <span className="mt-3 block text-[13px] font-bold text-primary">
+                    {active ? "Vendo esta trilha ✓" : "Ver a trilha →"}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* CONTEÚDO */}
+        <section className="container mx-auto max-w-5xl px-4 py-10 md:py-12">
           {loading ? (
             <div className="grid gap-6 md:grid-cols-2">
               {[0, 1, 2, 3].map((i) => (
@@ -193,126 +273,124 @@ export default function BlogIndex() {
           ) : filtered.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-border p-10 text-center">
               <p className="text-muted-foreground">
-                Nenhum post encontrado. Tente outra busca ou categoria.
+                Nenhum artigo encontrado.{" "}
+                <button onClick={clearFilters} className="font-semibold text-primary hover:underline">
+                  Limpar a busca
+                </button>
               </p>
             </div>
           ) : (
             <>
-              {/* FEATURED */}
-              {featured && (
-                <Link
-                  to={`/blog/${featured.slug}`}
-                  className="group block overflow-hidden rounded-3xl border border-border bg-card transition-all hover:shadow-xl hover:-translate-y-0.5"
-                >
-                  <div className="grid md:grid-cols-2">
-                    {featured.cover_url && (
-                      <div className="aspect-video md:aspect-auto md:h-full overflow-hidden bg-muted">
-                        <img
-                          src={featured.cover_url}
-                          alt={featured.title}
-                          width={1280}
-                          height={720}
-                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+              {/* DESTAQUE EDITORIAL */}
+              {showFeatured && featured && (
+                <>
+                  <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-primary">
+                    Em destaque
+                  </p>
+                  <Link
+                    to={`/blog/${featured.slug}`}
+                    className="group mt-3 block overflow-hidden rounded-3xl border border-border bg-card transition-all hover:shadow-xl"
+                  >
+                    <div className="grid md:grid-cols-[1.25fr_1fr]">
+                      <div className="aspect-video overflow-hidden bg-muted md:aspect-auto md:h-full">
+                        <BlogCover
+                          title={featured.title}
+                          category={featured.category}
+                          coverUrl={featured.cover_url}
                         />
                       </div>
-                    )}
-                    <div className="p-6 md:p-8 flex flex-col justify-center">
-                      <div className="flex items-center gap-2 text-xs">
-                        <span className="rounded-full bg-primary/10 px-2.5 py-1 font-semibold text-primary">
-                          Em destaque
-                        </span>
+                      <div className="flex flex-col justify-center p-6 md:p-8">
                         {featured.category && (
-                          <span className="text-muted-foreground">
-                            • {featured.category}
+                          <span
+                            className="self-start rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide text-white"
+                            style={{ backgroundColor: blogCategoryStyle(featured.category).bg }}
+                          >
+                            {featured.category}
                           </span>
                         )}
-                      </div>
-                      <h2 className="font-editorial mt-4 text-2xl md:text-3xl font-bold leading-tight tracking-tight">
-                        {featured.title}
-                      </h2>
-                      {featured.excerpt && (
-                        <p className="mt-3 text-muted-foreground line-clamp-3">
-                          {featured.excerpt}
-                        </p>
-                      )}
-                      <div className="mt-5 flex items-center gap-3 text-xs text-muted-foreground">
-                        <span>{featured.author ?? "Equipe ItaSuper"}</span>
-                        <span>•</span>
-                        <span>{fmtDate(featured.published_at)}</span>
-                        {featured.reading_minutes && (
-                          <>
-                            <span>•</span>
-                            <span className="inline-flex items-center gap-1">
-                              <Clock className="h-3 w-3" />
-                              {featured.reading_minutes} min
-                            </span>
-                          </>
-                        )}
-                      </div>
-                      <div className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-primary group-hover:gap-2.5 transition-all">
-                        Ler artigo <ArrowRight className="h-4 w-4" />
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-              )}
-
-              {/* GRID */}
-              {rest.length > 0 && (
-                <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                  {rest.map((p) => (
-                    <Link
-                      key={p.id}
-                      to={`/blog/${p.slug}`}
-                      className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card transition-all hover:shadow-lg hover:-translate-y-0.5"
-                    >
-                      {p.cover_url ? (
-                        <div className="aspect-video overflow-hidden bg-muted">
-                          <img
-                            src={p.cover_url}
-                            alt={p.title}
-                            loading="lazy"
-                            width={1280}
-                            height={720}
-                            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.05]"
-                          />
-                        </div>
-                      ) : (
-                        <div className="aspect-video bg-gradient-to-br from-primary/15 to-accent" />
-                      )}
-                      <div className="flex flex-1 flex-col p-5">
-                        {p.category && (
-                          <span className="text-[11px] font-semibold uppercase tracking-wide text-primary">
-                            {p.category}
-                          </span>
-                        )}
-                        <h3 className="font-editorial mt-2 text-lg font-bold leading-snug line-clamp-2">
-                          {p.title}
-                        </h3>
-                        {p.excerpt && (
-                          <p className="mt-2 text-sm text-muted-foreground line-clamp-2">
-                            {p.excerpt}
+                        <h2 className="mt-4 text-2xl md:text-[1.7rem] font-extrabold leading-tight tracking-tight">
+                          {featured.title}
+                        </h2>
+                        {featured.excerpt && (
+                          <p className="mt-3 text-muted-foreground line-clamp-3">
+                            {featured.excerpt}
                           </p>
                         )}
-                        <div className="mt-auto pt-4 flex items-center gap-2 text-xs text-muted-foreground">
-                          <span>{fmtDate(p.published_at)}</span>
-                          {p.reading_minutes && (
+                        <div className="mt-5 flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                          <span className="text-foreground">{featured.author ?? "Equipe ItaSuper"}</span>
+                          <span>·</span>
+                          <span>{formatBlogDate(featured.published_at)}</span>
+                          {featured.reading_minutes ? (
                             <>
-                              <span>•</span>
-                              <span className="inline-flex items-center gap-1">
-                                <Clock className="h-3 w-3" />
-                                {p.reading_minutes} min
-                              </span>
+                              <span>·</span>
+                              <span>{featured.reading_minutes} min de leitura</span>
                             </>
-                          )}
+                          ) : null}
                         </div>
+                        <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-bold text-primary">
+                          Ler artigo{" "}
+                          <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                        </span>
                       </div>
-                    </Link>
+                    </div>
+                  </Link>
+                </>
+              )}
+
+              {/* GRADE */}
+              <div id="ultimos" className={`${showFeatured ? "mt-12" : ""} scroll-mt-24`}>
+                <div className="flex flex-wrap items-end justify-between gap-3">
+                  <h2 className="text-sm font-extrabold uppercase tracking-[0.14em]">
+                    {sectionTitle}
+                  </h2>
+                  {anyFilter && (
+                    <button
+                      onClick={clearFilters}
+                      className="text-xs font-bold text-primary hover:underline"
+                    >
+                      Limpar filtros ×
+                    </button>
+                  )}
+                </div>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {categories.map((c) => (
+                    <button
+                      key={c}
+                      onClick={() => setActiveCat(c)}
+                      className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors border ${
+                        activeCat === c
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "bg-card text-muted-foreground border-border hover:text-foreground"
+                      }`}
+                    >
+                      {c}
+                    </button>
                   ))}
                 </div>
-              )}
+                <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                  {gridPosts.map((p) => (
+                    <BlogCard key={p.id} post={p} />
+                  ))}
+                </div>
+              </div>
             </>
           )}
+        </section>
+
+        {/* NEWSLETTER — produto nomeado */}
+        <section className="container mx-auto max-w-5xl px-4 pb-14">
+          <div className="grid items-center gap-6 rounded-3xl bg-neutral-900 px-6 py-8 md:grid-cols-[1.2fr_1fr] md:p-10">
+            <div>
+              <h2 className="text-2xl font-extrabold tracking-tight text-white">
+                ItaSuper <span className="text-primary">na Prática</span>
+              </h2>
+              <p className="mt-2 text-sm leading-relaxed text-neutral-300 md:text-base">
+                Uma ideia por semana pra vender mais no seu bairro. Sem spam,
+                sem enrolação — e você sai quando quiser.
+              </p>
+            </div>
+            <NewsletterSignup variant="inline" source="blog-index" />
+          </div>
         </section>
       </main>
     </>
