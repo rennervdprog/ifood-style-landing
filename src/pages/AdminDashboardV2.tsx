@@ -2026,7 +2026,7 @@ const AdminDashboard = () => {
         {/* Content */}
         <div className="flex-1 overflow-y-auto pb-20 lg:pb-0">
           {isDeliveryUnavailable && isStoreReallyOpen && (
-            <div className="mx-4 mt-4 lg:mx-6 max-w-6xl border border-amber-500/35 bg-amber-500/10 rounded-xl px-4 py-3 flex items-start gap-3" role="status">
+            <div className="mx-4 mt-4 lg:mx-6 border border-amber-500/35 bg-amber-500/10 rounded-xl px-4 py-3 flex items-start gap-3" role="status">
               <Bike className="h-5 w-5 text-amber-700 shrink-0 mt-0.5" />
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-bold text-amber-950">Entrega indisponível: nenhum motoboy com presença ativa</p>
@@ -2264,7 +2264,7 @@ const AdminDashboard = () => {
 
           {/* ══════ OTHER TABS ══════ */}
           {!["dashboard", "avisos", "repasse", "orders", "clients"].includes(dashboardTab) && store && (
-            <div className="p-4 lg:p-6 max-w-6xl mx-auto">
+            <div className="p-4 lg:p-6 w-full">
               <ErrorBoundary key={dashboardTab}>
               <Suspense fallback={<TabFallback />}>
                 {dashboardTab === "menu" && <MenuTab storeId={store.id} storeCategory={store.category} />}
