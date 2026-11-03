@@ -22,7 +22,7 @@ export default function FinanceCenter({ storeId, storeName, hasCommission }: Fin
   const [activeTab, setActiveTab] = useState("summary");
 
   return (
-    <div className="mx-auto max-w-6xl space-y-5 px-4 pb-6 pt-5 lg:px-6">
+    <div className="w-full space-y-5 px-4 pb-6 pt-5 lg:px-6">
       <header className="flex flex-col gap-4 border-b border-border pb-5 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="text-xs font-semibold text-muted-foreground">Gestão / Financeiro</p>

@@ -358,7 +358,7 @@ export default function StockTab({ storeId }: Props) {
   const stockValue = allTracked.reduce((sum, i) => sum + Number(i.quantity || 0) * Number(i.product_price || 0), 0);
 
   return (
-    <div className="space-y-4 p-4 max-w-3xl mx-auto">
+    <div className="space-y-4 p-4 w-full">
       <TabHeader title="Estoque" subtitle="Quantidades dos produtos e insumos — a venda baixa daqui automaticamente" />
       {/* KPIs - resumo do estoque */}
       {allTracked.length > 0 && (
