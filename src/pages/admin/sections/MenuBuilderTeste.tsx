@@ -52,7 +52,7 @@ type ConfirmState = {
 } | null;
 
 const PRODUCT_FIELDS =
-  "id, store_id, section_id, name, price, description, image_url, is_available, metadata, sold_by_weight, price_per_kg, weight_unit, sort_order, created_at";
+  "id, store_id, section_id, name, price, description, image_url, is_available, metadata, sold_by_weight, price_per_kg, weight_unit, sort_order, created_at, promo_active, promo_price";
 
 const MenuBuilderTeste = ({ storeId, storeCategory, storeCategories }: MenuBuilderProps) => {
   const queryClient = useQueryClient();
@@ -121,6 +121,26 @@ const MenuBuilderTeste = ({ storeId, storeCategory, storeCategories }: MenuBuild
       return (data as any)?.slug || null;
     },
   });
+
+  // Estoque real (product_stock) para o card mostrar a quantidade sem
+  // precisar abrir o editor — só de produtos com controle ligado.
+  const { data: stockRows } = useQuery({
+    queryKey: ["product-stock", storeId],
+    queryFn: async () => {
+      if (!storeId) return [];
+      const { data } = await supabase
+        .from("product_stock")
+        .select("product_id, quantity, min_quantity, track_stock")
+        .eq("store_id", storeId);
+      return data || [];
+    },
+    enabled: !!storeId,
+  });
+  const stockByProduct = useMemo(() => {
+    const map = new Map<string, any>();
+    (stockRows || []).forEach((r: any) => map.set(r.product_id, r));
+    return map;
+  }, [stockRows]);
 
   const productIds = useMemo(() => (products || []).map((p: any) => p.id), [products]);
 
@@ -286,8 +306,10 @@ const MenuBuilderTeste = ({ storeId, storeCategory, storeCategories }: MenuBuild
   }, [activeSection, products, unsectionedProducts, productsBySection, filter, search]);
 
   // ---------- Invalidation helpers ----------
-  const invalidateProducts = () =>
+  const invalidateProducts = () => {
     queryClient.invalidateQueries({ queryKey: ["store-products", storeId] });
+    queryClient.invalidateQueries({ queryKey: ["product-stock", storeId] });
+  };
   const invalidateSections = () =>
     queryClient.invalidateQueries({ queryKey: ["menu-sections", storeId] });
   const invalidateAddons = () => {
@@ -1025,9 +1047,9 @@ const MenuBuilderTeste = ({ storeId, storeCategory, storeCategories }: MenuBuild
   // ---------- Loading state ----------
   if (loadingSections || (loadingProducts && !products)) {
     return (
-      <div className="max-w-6xl mx-auto w-full space-y-3">
+      <div className="w-full space-y-3">
         <Skeleton className="h-10 w-full rounded-xl" />
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-3">
           {[...Array(6)].map((_, i) => (
             <Skeleton key={i} className="h-24 rounded-xl" />
           ))}
@@ -1040,7 +1062,7 @@ const MenuBuilderTeste = ({ storeId, storeCategory, storeCategories }: MenuBuild
   const showFullEmpty = totalProducts === 0 && (sections?.length || 0) === 0;
 
   return (
-    <div className="max-w-6xl mx-auto w-full">
+    <div className="w-full">
       <header className="mb-4 border-b border-border px-1 pb-4">
         <p className={adminTextRoles.caption}>Operação / Cardápio</p>
         <div className="mt-1 flex flex-wrap items-end justify-between gap-3">
@@ -1091,7 +1113,7 @@ const MenuBuilderTeste = ({ storeId, storeCategory, storeCategories }: MenuBuild
         <section className="mb-4 grid divide-y divide-border border border-border bg-card sm:grid-cols-3 sm:divide-x sm:divide-y-0">
           <button onClick={() => { setFilter("no_image"); setActiveSection("all"); }} className="flex items-center gap-2 px-4 py-3 text-left hover:bg-muted"><Package className="h-4 w-4 text-primary" /><span className="text-xs text-muted-foreground"><strong className="text-foreground">{noImageCount}</strong> item{noImageCount === 1 ? "" : "s"} sem imagem</span></button>
           <button onClick={() => { setFilter("out_of_stock"); setActiveSection("all"); }} className="flex items-center gap-2 px-4 py-3 text-left hover:bg-muted"><Package className="h-4 w-4 text-destructive" /><span className="text-xs text-muted-foreground"><strong className="text-foreground">{outOfStockCount}</strong> produto{outOfStockCount === 1 ? "" : "s"} esgotado{outOfStockCount === 1 ? "" : "s"}</span></button>
-          <button onClick={() => { setFilter("all"); setActiveSection("none"); }} className="flex items-center gap-2 px-4 py-3 text-left hover:bg-muted"><Package className="h-4 w-4 text-amber-500" /><span className="text-xs text-muted-foreground"><strong className="text-foreground">{unsectionedProducts.length}</strong> produto{unsectionedProducts.length === 1 ? "" : "s"} sem seção</span></button>
+          <button onClick={() => { setFilter("all"); setActiveSection("none"); }} className="flex items-center gap-2 px-4 py-3 text-left hover:bg-muted"><Package className="h-4 w-4 text-primary" /><span className="text-xs text-muted-foreground"><strong className="text-foreground">{unsectionedProducts.length}</strong> produto{unsectionedProducts.length === 1 ? "" : "s"} sem seção</span></button>
         </section>
       )}
 
@@ -1166,7 +1188,11 @@ const MenuBuilderTeste = ({ storeId, storeCategory, storeCategories }: MenuBuild
                   activeSection !== "all"
                 }
                 onReorder={reorderProducts}
-                renderItem={(p) => renderProductCard(p)}
+                renderItem={(p) =>
+                  renderProductCard(
+                    stockByProduct.get(p.id) ? { ...p, _stock: stockByProduct.get(p.id) } : p
+                  )
+                }
               />
             )}
 
