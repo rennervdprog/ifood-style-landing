@@ -221,7 +221,7 @@ export default function StoreSubscription({ storeId, storeName }: Props) {
   const disabledFeatures = features.filter(f => !(plan as any)[f.key]);
 
   return (
-    <div className="space-y-4 max-w-2xl mx-auto pb-6">
+    <div className="space-y-4 w-full pb-6">
       {/* Explicador rápido de taxas — uma fonte de verdade */}
       <Card className="border-0 shadow-sm bg-card">
         <CardContent className="p-4 space-y-3">
