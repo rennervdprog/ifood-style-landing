@@ -509,7 +509,7 @@ const ProductCardImpl = (props: ProductCardProps) => {
           <div className="flex items-center gap-1.5 flex-wrap">
             <h4 className="text-sm font-bold text-foreground truncate">{product.name}</h4>
             {!product.is_available && (
-              <span className="text-[10px] font-bold uppercase bg-yellow-500/20 text-yellow-700 dark:text-yellow-400 px-1.5 py-0.5 rounded">Pausado</span>
+              <span className="text-[10px] font-bold uppercase bg-muted text-muted-foreground px-1.5 py-0.5 rounded">Pausado</span>
             )}
             {(product.metadata as any)?.pdv_only && (
               <span className="text-[10px] font-bold uppercase bg-primary/10 text-primary px-1.5 py-0.5 rounded">Somente PDV</span>
@@ -518,7 +518,7 @@ const ProductCardImpl = (props: ProductCardProps) => {
               <span className="text-[10px] font-bold uppercase bg-destructive text-destructive-foreground px-1.5 py-0.5 rounded">Esgotado</span>
             )}
           </div>
-          {product.description && <p className="text-xs text-muted-foreground line-clamp-1">{product.description}</p>}
+          {product.description && <p className="text-xs text-muted-foreground line-clamp-2">{product.description}</p>}
           <div className="flex items-center justify-between mt-1">
             <span className="text-sm font-black text-primary">{formatBRL(Number(product.price))}</span>
             <div className="flex items-center gap-0.5 flex-shrink-0">
@@ -534,7 +534,7 @@ const ProductCardImpl = (props: ProductCardProps) => {
                 <DropdownMenuContent align="end" className="w-52">
                   <DropdownMenuItem onClick={onToggleAvailable}>
                     {product.is_available
-                      ? <><Pause className="h-4 w-4 mr-2 text-yellow-500" /> Pausar produto</>
+                      ? <><Pause className="h-4 w-4 mr-2 text-muted-foreground" /> Pausar produto</>
                       : <><Play className="h-4 w-4 mr-2 text-primary" /> Reativar produto</>}
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={onToggleOutOfStock}>
