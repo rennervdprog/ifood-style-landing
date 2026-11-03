@@ -8,6 +8,7 @@ import { Clock, Share2, Link as LinkIcon, ArrowRight, ListOrdered } from "lucide
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import NewsletterSignup from "@/components/blog/NewsletterSignup";
+import { BlogCard, BlogCover, blogCategoryStyle } from "@/components/blog/BlogCover";
 
 const BlogComments = lazy(() => import("@/components/blog/BlogComments"));
 
@@ -36,6 +37,7 @@ interface RelatedPost {
   cover_url: string | null;
   category: string | null;
   reading_minutes: number | null;
+  published_at: string | null;
 }
 
 const SITE_URL = "https://www.itasuper.com.br";
@@ -118,7 +120,7 @@ export default function BlogPostPage() {
     (async () => {
       const { data } = await (supabase as any)
         .from("blog_posts")
-        .select("id, slug, title, excerpt, cover_url, category, reading_minutes")
+        .select("id, slug, title, excerpt, cover_url, category, reading_minutes, published_at")
         .eq("published", true)
         .lte("published_at", new Date().toISOString())
         .neq("id", post.id)
@@ -147,6 +149,13 @@ export default function BlogPostPage() {
   const headings = useMemo(
     () => (post ? extractHeadings(post.content_md) : []),
     [post]
+  );
+
+  // "Pontos principais" do topo: os próprios títulos de seção do artigo
+  // (o que o leitor vai ver), sem conteúdo inventado.
+  const mainPoints = useMemo(
+    () => headings.filter((h) => h.level === 2).slice(0, 4),
+    [headings]
   );
 
   if (loading) {
@@ -260,11 +269,14 @@ export default function BlogPostPage() {
               )}
             </nav>
             {post.category && (
-              <span className="mt-5 inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-primary">
+              <span
+                className="mt-5 inline-block rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide text-white"
+                style={{ backgroundColor: blogCategoryStyle(post.category).bg }}
+              >
                 {post.category}
               </span>
             )}
-            <h1 className="font-editorial mt-4 text-3xl md:text-5xl font-bold leading-[1.1] tracking-tight">
+            <h1 className="mt-4 text-3xl md:text-5xl font-extrabold leading-[1.1] tracking-tight">
               {post.title}
             </h1>
             {post.excerpt && (
@@ -294,29 +306,38 @@ export default function BlogPostPage() {
           </div>
         </header>
 
-        {/* COVER */}
-        {post.cover_url && (
-          <div className="container mx-auto max-w-4xl px-4 -mt-2">
-            <img
-              src={post.cover_url}
-              alt={post.title}
-              width={1280}
-              height={720}
-              className="aspect-video w-full rounded-2xl object-cover shadow-lg"
-            />
+        {/* CAPA — foto real ou capa gerada do sistema (nunca some) */}
+        <div className="container mx-auto max-w-4xl px-4 -mt-2">
+          <div className="aspect-video w-full overflow-hidden rounded-2xl shadow-lg">
+            <BlogCover title={post.title} category={post.category} coverUrl={post.cover_url} />
           </div>
-        )}
+        </div>
 
         {/* BODY + SIDEBAR */}
-        <div className="container mx-auto max-w-6xl px-4 py-10 md:py-14 grid gap-10 lg:grid-cols-[1fr_240px]">
+        <div className="container mx-auto max-w-5xl px-4 py-10 md:py-14 grid gap-10 lg:grid-cols-[1fr_220px]">
           <article ref={articleRef} className="blog-prose min-w-0">
+            {mainPoints.length >= 2 && (
+              <div className="not-prose mb-9 rounded-2xl border border-primary/25 bg-primary/5 p-5 md:p-6">
+                <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-primary">
+                  Pontos principais
+                </p>
+                <ul className="mt-3 space-y-1.5">
+                  {mainPoints.map((h) => (
+                    <li key={h.id} className="flex gap-2.5 text-[15px] leading-relaxed text-foreground/85">
+                      <span className="mt-[9px] h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
+                      {h.text}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
             <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSlug]}>
               {post.content_md}
             </ReactMarkdown>
 
             {/* CTA inline */}
-            <div className="not-prose mt-12 rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/10 to-accent p-6 md:p-8">
-              <h3 className="font-editorial text-xl md:text-2xl font-bold">
+            <div className="not-prose mt-12 rounded-2xl border border-primary/20 bg-primary/5 p-6 md:p-8">
+              <h3 className="text-xl md:text-2xl font-extrabold tracking-tight">
                 Quer vender mais com taxa justa?
               </h3>
               <p className="mt-2 text-sm md:text-base text-muted-foreground">
@@ -389,46 +410,12 @@ export default function BlogPostPage() {
         {related.length > 0 && (
           <section className="border-t border-border bg-muted/30">
             <div className="container mx-auto max-w-5xl px-4 py-12">
-              <h2 className="font-editorial text-2xl md:text-3xl font-bold tracking-tight">
+              <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight">
                 Leia também
               </h2>
               <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
                 {related.map((r) => (
-                  <Link
-                    key={r.id}
-                    to={`/blog/${r.slug}`}
-                    className="group overflow-hidden rounded-2xl border border-border bg-card transition-all hover:shadow-lg hover:-translate-y-0.5"
-                  >
-                    {r.cover_url ? (
-                      <div className="aspect-video overflow-hidden bg-muted">
-                        <img
-                          src={r.cover_url}
-                          alt={r.title}
-                          loading="lazy"
-                          width={1280}
-                          height={720}
-                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.05]"
-                        />
-                      </div>
-                    ) : (
-                      <div className="aspect-video bg-gradient-to-br from-primary/15 to-accent" />
-                    )}
-                    <div className="p-4">
-                      {r.category && (
-                        <span className="text-[11px] font-semibold uppercase tracking-wide text-primary">
-                          {r.category}
-                        </span>
-                      )}
-                      <h3 className="font-editorial mt-1.5 text-base font-bold leading-snug line-clamp-2">
-                        {r.title}
-                      </h3>
-                      {r.reading_minutes && (
-                        <p className="mt-2 text-xs text-muted-foreground inline-flex items-center gap-1">
-                          <Clock className="h-3 w-3" /> {r.reading_minutes} min
-                        </p>
-                      )}
-                    </div>
-                  </Link>
+                  <BlogCard key={r.id} post={r} />
                 ))}
               </div>
             </div>

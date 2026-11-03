@@ -57,14 +57,14 @@ export default function NewsletterSignup({ source = "blog", variant = "card" }: 
     >
       {variant === "card" && (
         <div className="mb-4">
-          <div className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-primary">
-            <Mail className="h-3 w-3" /> Newsletter
+          <div className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-primary">
+            <Mail className="h-3 w-3" /> ItaSuper na Prática
           </div>
-          <h3 className="font-editorial mt-3 text-lg md:text-xl font-bold leading-snug">
-            Receba o melhor do blog ItaSuper
+          <h3 className="mt-3 text-lg md:text-xl font-extrabold leading-snug tracking-tight">
+            Uma ideia por semana pra vender mais
           </h3>
           <p className="mt-1.5 text-sm text-muted-foreground">
-            1 e-mail por semana com dicas reais de delivery. Sem spam, cancele quando quiser.
+            Os melhores guias e comparativos do blog, direto no seu e-mail. Sem spam, cancele quando quiser.
           </p>
         </div>
       )}
