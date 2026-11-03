@@ -15,10 +15,15 @@
  *     no formulário abaixo."
  *  4. Modo editar sem seção explica onde organizar ("Mover de seção"
  *     no card do produto) em vez de só constatar.
+ *  5. EDIÇÃO MAIS FÁCIL (2026-11-03, pedido do Renner): o seletor de
+ *     seção aparece TAMBÉM na edição (pré-marcado) e a troca é salva
+ *     junto — o item 4 virou histórico; rodapé fixo com Salvar sempre
+ *     visível (o formulário registra o seu salvar via onRegisterSave);
+ *     pré-visualização mostra o preço promocional com o antigo riscado.
  * Nada muda em dados, cálculos, preços ou no fluxo de salvar do produto
  * em si (o gate de nome/preço continua no MenuBuilderTeste).
  */
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Package, ArrowLeft, Plus } from "lucide-react";
 import { formatBRL } from "@/lib/utils";
 import { useQueryClient } from "@tanstack/react-query";
@@ -53,7 +58,6 @@ export const ProductSheetTeste = ({
   mode,
   initial,
   sectionId,
-  sectionName,
   sections = [],
   onSave,
   storeCategory,
@@ -61,6 +65,9 @@ export const ProductSheetTeste = ({
   storeCategories,
 }: ProductSheetProps) => {
   const queryClient = useQueryClient();
+  // Salvar do formulário, registrado pelo ProductFormInlineTeste para o
+  // rodapé fixo deste painel (o botão fica sempre visível, sem rolar).
+  const saveFnRef = useRef<(() => void) | null>(null);
   const [live, setLive] = useState<ProductFormData | undefined>(initial);
   const [targetSectionId, setTargetSectionId] = useState(sectionId || "");
   // Tela 3, item 6: erro inline de seção + criação inline de seção.
@@ -99,13 +106,15 @@ export const ProductSheetTeste = ({
     queryClient.invalidateQueries({ queryKey: ["menu-sections", storeId] });
   };
 
-  // Tela 3, item 6: sem seção, o produto NÃO é salvo.
+  // Tela 3, item 6: sem seção, o produto NÃO é salvo (na criação).
+  // Na edição, a seção escolhida aqui também é salva — antes a troca só
+  // era possível pelo "Mover de seção" escondido no card.
   const handleSave = (data: ProductFormData) => {
     if (mode === "create" && !targetSectionId) {
       setSectionError("Escolha uma seção para o produto");
       return;
     }
-    onSave(data, mode === "create" ? targetSectionId || null : undefined);
+    onSave(data, targetSectionId || null);
   };
   const preview = live || initial;
   const price = Number(preview?.price || 0);
@@ -140,9 +149,9 @@ export const ProductSheetTeste = ({
             <SheetTitle className="text-base leading-tight truncate">
               {mode === "create" ? "Novo produto" : "Editar produto"}
             </SheetTitle>
-            {mode === "edit" && sectionName !== undefined && (
+            {mode === "edit" && (
               <SheetDescription className="text-xs truncate">
-                {sectionName ? <>Seção atual: <span className="font-semibold text-foreground">{sectionName}</span></> : "Este produto está sem seção — use “Mover de seção” no card do produto para organizá-lo"}
+                Troque a seção no campo logo abaixo, se precisar
               </SheetDescription>
             )}
           </div>
@@ -166,21 +175,27 @@ export const ProductSheetTeste = ({
               {preview?.description && (
                 <p className="text-xs text-muted-foreground line-clamp-2">{preview.description}</p>
               )}
-              <p className="text-sm font-black text-primary mt-1">
-                {price > 0 ? formatBRL(price) : "R$ 0,00"}
-              </p>
+              {preview?.promo_active && Number(preview?.promo_price || 0) > 0 ? (
+                <p className="text-sm mt-1">
+                  <span className="line-through text-muted-foreground text-xs mr-1.5">{formatBRL(price)}</span>
+                  <span className="font-black text-primary">{formatBRL(Number(preview.promo_price))}</span>
+                </p>
+              ) : (
+                <p className="text-sm font-black text-primary mt-1">
+                  {price > 0 ? formatBRL(price) : "R$ 0,00"}
+                </p>
+              )}
             </div>
           </div>
           {!preview?.image_url && (
-            <p className="mt-2 text-xs font-bold text-amber-600">Sem foto — adicione uma foto no formulário abaixo.</p>
+            <p className="mt-2 text-xs font-bold text-primary">Sem foto — adicione uma foto no formulário abaixo.</p>
           )}
         </div>
 
-        {mode === "create" && (
-          <div className="px-5 pt-4">
+        <div className="px-5 pt-4">
             <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 space-y-1.5">
               <label htmlFor="product-section-teste" className="text-sm font-bold text-foreground">
-                Seção *
+                {mode === "create" ? "Seção *" : "Seção"}
               </label>
               <select
                 id="product-section-teste"
@@ -245,8 +260,7 @@ export const ProductSheetTeste = ({
                 </div>
               )}
             </div>
-          </div>
-        )}
+        </div>
 
         <div className="p-5">
           <ProductFormInlineTeste
@@ -257,7 +271,27 @@ export const ProductSheetTeste = ({
             storeId={storeId}
             storeCategories={storeCategories}
             onChange={setLive}
+            hideFooter
+            onRegisterSave={(fn) => { saveFnRef.current = fn; }}
           />
+        </div>
+
+        {/* Rodapé fixo: Salvar sempre visível, sem precisar rolar o form. */}
+        <div className="sticky bottom-0 z-20 bg-background border-t border-border px-5 py-3 flex gap-2">
+          <button
+            type="button"
+            onClick={() => onOpenChange(false)}
+            className="px-4 py-2.5 rounded-lg text-sm font-semibold text-foreground hover:bg-muted"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={() => saveFnRef.current?.()}
+            className="flex-1 bg-primary text-primary-foreground px-4 py-2.5 rounded-lg text-sm font-bold hover:bg-primary/90"
+          >
+            {mode === "create" ? "Criar produto" : "Salvar produto"}
+          </button>
         </div>
       </SheetContent>
     </Sheet>

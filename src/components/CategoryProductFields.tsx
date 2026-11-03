@@ -383,6 +383,9 @@ const CategoryProductFields = ({ category, metadata, onChange, onNameChange, sto
       <label className="text-xs font-bold text-foreground/70">{label}</label>
       <button
         type="button"
+        role="switch"
+        aria-checked={!!metadata[fieldKey]}
+        aria-label={label}
         onClick={() => set(fieldKey, !metadata[fieldKey])}
         className={`w-10 h-5 rounded-full transition-colors relative ${metadata[fieldKey] ? "bg-primary" : "bg-muted-foreground/30"}`}
       >
