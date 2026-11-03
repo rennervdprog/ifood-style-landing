@@ -25,6 +25,10 @@ export default function PixDirectAlert({
   const [confirmOrder, setConfirmOrder] = useState<any | null>(null);
   const [waOrder, setWaOrder] = useState<any | null>(null);
 
+  // Comprovante em PDF nao renderiza em <img>: a previa precisa abrir o
+  // documento de verdade (iframe), senao o lojista ve um icone quebrado.
+  const proofIsPdf = (pixProofPreview?.order?.pix_proof_url || "").toLowerCase().endsWith(".pdf");
+
   if (pixPending.length === 0 && !pixProofPreview) return null;
 
   return (
@@ -50,7 +54,15 @@ export default function PixDirectAlert({
             </button>
           </div>
           <div className="flex-1 flex items-center justify-center p-4 overflow-auto" onClick={(e) => e.stopPropagation()}>
-            <img src={pixProofPreview.url} alt="Comprovante Pix" className="max-w-full max-h-full object-contain rounded-xl shadow-2xl" />
+            {proofIsPdf ? (
+              <iframe
+                src={pixProofPreview.url}
+                title="Comprovante Pix em PDF"
+                className="w-full h-full max-w-3xl rounded-xl bg-white shadow-2xl"
+              />
+            ) : (
+              <img src={pixProofPreview.url} alt="Comprovante Pix" className="max-w-full max-h-full object-contain rounded-xl shadow-2xl" />
+            )}
           </div>
           <div className="flex items-center justify-center gap-2 px-4 py-3 bg-black/60" onClick={(e) => e.stopPropagation()}>
             <a href={pixProofPreview.url} target="_blank" rel="noopener noreferrer"
