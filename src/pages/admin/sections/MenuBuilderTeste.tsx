@@ -68,7 +68,7 @@ const MenuBuilderTeste = ({ storeId, storeCategory, storeCategories }: MenuBuild
   const [recipeProduct, setRecipeProduct] = useState<any | null>(null);
   const [productSheet, setProductSheet] = useState<
     | { mode: "create"; sectionId: string | null }
-    | { mode: "edit"; id: string; initial: ProductFormData; sectionName: string | null }
+    | { mode: "edit"; id: string; initial: ProductFormData; sectionName: string | null; sectionId: string | null }
     | null
   >(null);
 
@@ -399,13 +399,25 @@ const MenuBuilderTeste = ({ storeId, storeCategory, storeCategories }: MenuBuild
       return null;
     }
 
-    return { finalPrice, soldByWeight, pricePerKg };
+    // Promoção do formulário: preço promocional válido e menor que o normal.
+    // Produto por peso não entra em promoção por este caminho.
+    let promoPrice: number | null = null;
+    if (formData.promo_active && !soldByWeight) {
+      const pp = Number(formData.promo_price || 0);
+      if (!(pp > 0) || pp >= finalPrice) {
+        toast.error("O preço da promoção precisa ser menor que o preço normal");
+        return null;
+      }
+      promoPrice = pp;
+    }
+
+    return { finalPrice, soldByWeight, pricePerKg, promoPrice };
   };
 
   const addProduct = async (sectionId: string | null, formData: ProductFormData) => {
     const validated = validateProductForm(formData);
     if (!validated) return;
-    const { finalPrice, soldByWeight, pricePerKg } = validated;
+    const { finalPrice, soldByWeight, pricePerKg, promoPrice } = validated;
 
     const { data: inserted, error } = await supabase.from("products").insert({
       store_id: storeId,
@@ -418,6 +430,8 @@ const MenuBuilderTeste = ({ storeId, storeCategory, storeCategories }: MenuBuild
       sold_by_weight: soldByWeight,
       price_per_kg: soldByWeight ? pricePerKg : null,
       weight_unit: "kg",
+      promo_active: promoPrice !== null,
+      promo_price: promoPrice,
     } as any).select("id").single();
     if (error) {
       console.error("[MenuBuilder] insert products failed:", error);
@@ -457,10 +471,10 @@ const MenuBuilderTeste = ({ storeId, storeCategory, storeCategories }: MenuBuild
     invalidateProducts();
   };
 
-  const updateProduct = async (id: string, formData: ProductFormData) => {
+  const updateProduct = async (id: string, formData: ProductFormData, targetSectionId?: string | null) => {
     const validated = validateProductForm(formData);
     if (!validated) return;
-    const { finalPrice, soldByWeight, pricePerKg } = validated;
+    const { finalPrice, soldByWeight, pricePerKg, promoPrice } = validated;
 
     const { error } = await supabase
       .from("products")
@@ -472,6 +486,10 @@ const MenuBuilderTeste = ({ storeId, storeCategory, storeCategories }: MenuBuild
         metadata: formData.metadata || {},
         sold_by_weight: soldByWeight,
         price_per_kg: soldByWeight ? pricePerKg : null,
+        promo_active: promoPrice !== null,
+        promo_price: promoPrice,
+        // Seção vinda do seletor do painel de edição (quando presente).
+        ...(targetSectionId !== undefined ? { section_id: targetSectionId } : {}),
       } as any)
       .eq("id", id);
     if (error) {
@@ -494,6 +512,9 @@ const MenuBuilderTeste = ({ storeId, storeCategory, storeCategories }: MenuBuild
     } catch {}
     toast.success("Produto atualizado!");
     setProductSheet(null);
+    if (targetSectionId !== undefined) {
+      queryClient.invalidateQueries({ queryKey: ["menu-sections", storeId] });
+    }
     invalidateProducts();
   };
 
@@ -916,11 +937,14 @@ const MenuBuilderTeste = ({ storeId, storeCategory, storeCategories }: MenuBuild
       mode: "edit",
       id: product.id,
       sectionName,
+      sectionId: product.section_id || null,
       initial: {
         name: product.name,
         price: Number(product.price).toFixed(2),
         description: product.description || "",
         image_url: product.image_url || "",
+        promo_active: !!(product as any).promo_active,
+        promo_price: (product as any).promo_price ? Number((product as any).promo_price).toFixed(2) : "",
         metadata: {
           ...((product as any).metadata || {}),
           // Usa o estoque real, não o valor desatualizado do metadata
@@ -1217,13 +1241,13 @@ const MenuBuilderTeste = ({ storeId, storeCategory, storeCategories }: MenuBuild
           onOpenChange={(v) => !v && setProductSheet(null)}
           mode={productSheet.mode}
           initial={productSheet.mode === "edit" ? productSheet.initial : undefined}
-          sectionId={productSheet.mode === "create" ? productSheet.sectionId : undefined}
+          sectionId={productSheet.sectionId}
           sectionName={productSheet.mode === "edit" ? productSheet.sectionName : undefined}
           sections={(sections || []).map((section: any) => ({ id: section.id, name: section.name }))}
           onSave={(data, targetSectionId) =>
             productSheet.mode === "create"
               ? addProduct(targetSectionId ?? productSheet.sectionId, data)
-              : updateProduct(productSheet.id, data)
+              : updateProduct(productSheet.id, data, targetSectionId)
           }
           storeCategory={storeCategory}
           storeId={storeId}
