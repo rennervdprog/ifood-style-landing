@@ -69,6 +69,10 @@ export interface ProductFormData {
   description: string;
   image_url: string;
   metadata: Record<string, any>;
+  // Promoção editável no próprio formulário (antes só na aba Promoções).
+  // Espelha as colunas promo_active/promo_price que a aba grava.
+  promo_active?: boolean;
+  promo_price?: string;
 }
 const EMPTY_FORM: ProductFormData = { name: "", price: "", description: "", image_url: "", metadata: {} };
 
@@ -155,6 +159,10 @@ interface ProductFormInlineProps {
   storeId?: string;
   storeCategories?: string[];
   onChange?: (data: ProductFormData) => void;
+  // No painel lateral (ProductSheetTeste), o Salvar mora num rodapé fixo:
+  // o formulário esconde os próprios botões e registra o seu salvar.
+  hideFooter?: boolean;
+  onRegisterSave?: (fn: () => void) => void;
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -176,7 +184,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   roupas: "👗 Roupas",
 };
 
-export const ProductFormInlineTeste = ({ initial, onSave, onCancel, storeCategory, storeId, storeCategories, onChange }: ProductFormInlineProps) => {
+export const ProductFormInlineTeste = ({ initial, onSave, onCancel, storeCategory, storeId, storeCategories, onChange, hideFooter, onRegisterSave }: ProductFormInlineProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [form, setForm] = useState<ProductFormData>(initial || EMPTY_FORM);
@@ -194,6 +202,39 @@ export const ProductFormInlineTeste = ({ initial, onSave, onCancel, storeCategor
     setAttempted(true);
     onSave(form);
   };
+
+  // Promoção no formulário: mesmo padrão de máscara de centavos do preço.
+  const [promoDisplay, setPromoDisplay] = useState(
+    initial?.promo_price ? formatBRLDisplay(Number(initial.promo_price)) : ""
+  );
+  const promoOn = !!form.promo_active;
+  const promoValue = Number(form.promo_price || 0);
+  const baseValue = Number(form.price || 0);
+  const promoError =
+    attempted && promoOn && (!(promoValue > 0) || (baseValue > 0 && promoValue >= baseValue))
+      ? "O preço da promoção precisa ser menor que o preço normal"
+      : undefined;
+  const promoDiscount =
+    promoOn && promoValue > 0 && baseValue > promoValue
+      ? Math.round((1 - promoValue / baseValue) * 100)
+      : 0;
+  const handlePromoPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value;
+    if (!raw.replace(/\D/g, "")) {
+      setPromoDisplay("");
+      setForm((p) => ({ ...p, promo_price: "" }));
+      return;
+    }
+    const n = parseBRLCentsInput(raw);
+    setPromoDisplay(formatBRLDisplay(n));
+    setForm((p) => ({ ...p, promo_price: n.toFixed(2) }));
+  };
+
+  // Registra o salvar para o rodapé fixo do painel lateral, sempre com o
+  // estado mais recente do formulário.
+  useEffect(() => {
+    onRegisterSave?.(handleSave);
+  });
 
   const availableCategories = (storeCategories && storeCategories.length > 0)
     ? Array.from(new Set(storeCategories.filter(Boolean)))
@@ -320,6 +361,50 @@ export const ProductFormInlineTeste = ({ initial, onSave, onCancel, storeCategor
           />
         </div>
         {priceError && <p role="alert" className="text-sm font-medium text-destructive">{priceError}</p>}
+      </div>
+      {/* Promoção: liga/desliga e preço promocional aqui mesmo (antes era
+          preciso sair do produto e caçar a aba Promoções). */}
+      <div className="bg-muted/50 rounded-lg p-3 space-y-2">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-bold">Produto em promoção</p>
+            <p className="text-xs text-muted-foreground">O cliente vê o preço novo e o antigo riscado</p>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={promoOn}
+            aria-label="Produto em promoção"
+            onClick={() => setForm((p) => ({ ...p, promo_active: !p.promo_active }))}
+            className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors shrink-0 ${promoOn ? "bg-green-600" : "bg-gray-300"}`}
+          >
+            <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${promoOn ? "translate-x-6" : "translate-x-1"}`} />
+          </button>
+        </div>
+        {promoOn && (
+          <div className="space-y-1.5 pt-1">
+            <label htmlFor="product-promo-price-teste" className="text-xs font-medium">Preço da promoção</label>
+            <div className={`flex items-center gap-1.5 bg-background text-foreground px-3 py-2.5 rounded-lg text-sm border focus-within:border-primary ${promoError ? "border-destructive" : "border-border"}`}>
+              <span className="text-muted-foreground font-bold">R$</span>
+              <input
+                id="product-promo-price-teste"
+                type="text"
+                placeholder="0,00"
+                value={promoDisplay}
+                onChange={handlePromoPriceChange}
+                aria-invalid={!!promoError}
+                className="flex-1 min-w-0 bg-transparent focus:outline-none"
+                inputMode="numeric"
+              />
+            </div>
+            {promoError && <p role="alert" className="text-sm font-medium text-destructive">{promoError}</p>}
+            {promoDiscount > 0 && (
+              <p className="text-xs text-muted-foreground">
+                Desconto de <b className="text-foreground">{promoDiscount}%</b> — o cliente economiza <b className="text-foreground">{formatBRL(baseValue - promoValue)}</b>
+              </p>
+            )}
+          </div>
+        )}
       </div>
       <div className="space-y-1.5">
         <label htmlFor="product-description-teste" className="text-sm font-bold text-foreground">Descrição</label>
@@ -460,14 +545,16 @@ export const ProductFormInlineTeste = ({ initial, onSave, onCancel, storeCategor
         )}
       </div>
 
-      <div className="flex gap-2 pt-1">
-        <AdminButtonTeste type="button" onClick={handleSave} className="flex-1">
-          Salvar Produto
-        </AdminButtonTeste>
-        <AdminButtonTeste type="button" variant="ghost" onClick={onCancel}>
-          Cancelar
-        </AdminButtonTeste>
-      </div>
+      {!hideFooter && (
+        <div className="flex gap-2 pt-1">
+          <AdminButtonTeste type="button" onClick={handleSave} className="flex-1">
+            Salvar Produto
+          </AdminButtonTeste>
+          <AdminButtonTeste type="button" variant="ghost" onClick={onCancel}>
+            Cancelar
+          </AdminButtonTeste>
+        </div>
+      )}
     </div>
   );
 };
