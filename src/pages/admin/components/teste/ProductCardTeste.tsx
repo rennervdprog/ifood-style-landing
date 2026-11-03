@@ -647,7 +647,7 @@ const ProductCardTesteImpl = (props: ProductCardProps) => {
   }
 
   return (
-    <div className={`bg-background rounded-xl p-3 border transition-all ${selected ? "border-primary ring-1 ring-primary" : isOOS ? "border-destructive/40" : "border-border"} ${!product.is_available ? "opacity-60" : ""} ${isMoving ? "ring-2 ring-primary" : ""}`}>
+    <div className={`bg-background rounded-xl p-3 border transition-all ${selected ? "border-primary ring-1 ring-primary" : isOOS ? "border-destructive/40" : "border-border"} ${!product.is_available ? "bg-muted/40" : ""} ${isMoving ? "ring-2 ring-primary" : ""}`}>
       <div className="flex items-start gap-2">
         <input
           type="checkbox"
@@ -657,19 +657,19 @@ const ProductCardTesteImpl = (props: ProductCardProps) => {
           aria-label="Selecionar produto"
         />
         {product.image_url ? (
-          <img loading="lazy" decoding="async" src={product.image_url} alt={product.name} className="w-[72px] h-[72px] rounded-lg object-cover flex-shrink-0" />
+          <img loading="lazy" decoding="async" src={product.image_url} alt={product.name} className={`w-[72px] h-[72px] rounded-lg object-cover flex-shrink-0${!product.is_available ? " opacity-60 grayscale" : ""}`} />
         ) : (
           <button
             type="button"
             onClick={onEdit}
             aria-label="Adicionar foto"
             title="Adicionar foto"
-            className="w-[72px] h-[72px] rounded-lg bg-muted flex items-center justify-center flex-shrink-0 border border-dashed border-border hover:bg-muted/70 transition-colors"
+            className={`w-[72px] h-[72px] rounded-lg bg-muted flex items-center justify-center flex-shrink-0 border border-dashed border-border hover:bg-muted/70 transition-colors${!product.is_available ? " opacity-60" : ""}`}
           >
             <Package className="h-6 w-6 text-muted-foreground/50" />
           </button>
         )}
-        <div className="flex-1 min-w-0">
+        <div className={`flex-1 min-w-0${!product.is_available ? " opacity-60" : ""}`}>
           <h4 className="text-sm font-bold text-foreground line-clamp-2">{product.name}</h4>
           <div className="flex items-center gap-1.5 flex-wrap mt-1">
             {(() => {
@@ -683,7 +683,7 @@ const ProductCardTesteImpl = (props: ProductCardProps) => {
               <span className="text-[10px] font-bold uppercase bg-primary text-primary-foreground px-1.5 py-0.5 rounded">Promoção</span>
             )}
           </div>
-          {product.description && <p className="text-xs text-muted-foreground line-clamp-1">{product.description}</p>}
+          {product.description && <p className="text-xs text-muted-foreground line-clamp-2">{product.description}</p>}
           {/* Tela 3, item 6: o card mostra a seção do produto. */}
           <p className="text-xs text-muted-foreground">
             Seção:{" "}
@@ -702,16 +702,12 @@ const ProductCardTesteImpl = (props: ProductCardProps) => {
               </p>
             );
           })()}
-          {!product.image_url && (
-            <button type="button" onClick={onEdit} className="mt-0.5 text-xs font-bold text-primary hover:underline">
-              Adicionar foto
-            </button>
-          )}
         </div>
       </div>
       {/* Preço + ações em linha própria, na largura toda do card: a linha
           antiga dividia espaço com a foto e o botão ⋮ ficava cortado. */}
       <div className="flex items-center justify-between mt-2">
+            <span className={!product.is_available ? "opacity-60" : undefined}>
             {product.promo_active && Number(product.promo_price) > 0 ? (
               <span className="flex items-baseline gap-1.5 min-w-0">
                 <AdminMoneyTeste value={formatBRL(Number(product.promo_price))} className="text-primary font-black" />
@@ -720,6 +716,7 @@ const ProductCardTesteImpl = (props: ProductCardProps) => {
             ) : (
               <AdminMoneyTeste value={formatBRL(Number(product.price))} className="text-primary font-black" />
             )}
+            </span>
             <div className="flex items-center gap-0.5 flex-shrink-0">
               {/* Tela 3, item 2: pausar em 1 toque, sem abrir o menu. */}
               <button
