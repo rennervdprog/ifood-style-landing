@@ -30,7 +30,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { compressImage } from "@/lib/compressImage";
 import {
-  Trash2, Edit2, Package, PackageX, Pause, Play, ArrowRightLeft, Link2, X, Upload, Loader2, MoreVertical, ChevronDown, Link as LinkIcon, Copy, ChefHat,
+  Trash2, Edit2, Package, PackageX, Pause, Play, ArrowRightLeft, Link2, X, Upload, Loader2, MoreVertical, ChevronDown, ChevronUp, Link as LinkIcon, Copy, ChefHat,
 } from "lucide-react";
 import CategoryProductFields from "@/components/CategoryProductFields";
 import {
@@ -632,6 +632,14 @@ const ProductCardTesteImpl = (props: ProductCardProps) => {
   const isOOS = !!product?.metadata?.out_of_stock;
   const [showAddonActions, setShowAddonActions] = useState(false);
   const hasAnyAddons = (linkedGroups?.length || 0) + (addonGroups?.length || 0) > 0;
+  // Adicionais recolhidos por padrão: a lista sempre expandida deixava o
+  // cartão 2-3x mais alto que os vizinhos e quebrava a grade.
+  const [addonsOpen, setAddonsOpen] = useState(false);
+  const totalAddonGroups = (linkedGroups?.length || 0) + (addonGroups?.length || 0);
+  const totalAddonItems = [...(linkedGroups || []), ...(addonGroups || [])].reduce(
+    (acc: number, g: any) => acc + (g.addon_items?.length || 0),
+    0,
+  );
 
   if (isEditing) {
     return (
@@ -794,21 +802,47 @@ const ProductCardTesteImpl = (props: ProductCardProps) => {
         </div>
       )}
 
+      {/* Resumo dos adicionais: recolhido por padrão, com a contagem.
+          Um toque abre a edição (blocos abaixo). */}
+      {hasAnyAddons && (
+        <button
+          type="button"
+          onClick={() => setAddonsOpen((v) => !v)}
+          aria-expanded={addonsOpen}
+          className="mt-2 flex w-full items-center justify-between rounded-lg border border-border bg-muted/40 px-3 py-2 text-xs font-bold text-foreground transition-colors hover:bg-muted"
+        >
+          <span>
+            Adicionais{" "}
+            <span className="font-semibold text-muted-foreground">
+              · {totalAddonGroups} grupo{totalAddonGroups === 1 ? "" : "s"} · {totalAddonItems} ite{totalAddonItems === 1 ? "m" : "ns"}
+            </span>
+          </span>
+          <span className="inline-flex items-center gap-1 text-primary">
+            {addonsOpen ? (
+              <>Recolher <ChevronUp className="h-3.5 w-3.5" /></>
+            ) : (
+              <>Ver <ChevronDown className="h-3.5 w-3.5" /></>
+            )}
+          </span>
+        </button>
+      )}
+      {(!hasAnyAddons || addonsOpen) && (
+      <>
       {/* Linked addon groups */}
       {linkedGroups && linkedGroups.length > 0 && (
-        <div className="mt-2 pl-2 border-l-2 border-primary/30 space-y-1">
-          <span className="text-[10px] text-primary font-bold uppercase inline-flex items-center gap-1"><Link2 className="h-3 w-3" /> Vinculados</span>
+        <div className="mt-2 space-y-2">
           {linkedGroups.map((group: any) => (
-            <div key={group.id} className="text-xs">
-              <div className="flex items-center justify-between">
+            <div key={group.id} className="rounded-xl border border-primary/25 bg-primary/5 p-2.5 text-xs">
+              <div className="flex items-center justify-between gap-2">
                 <span className="text-foreground/80 font-bold">{group.name}</span>
-                <div className="flex items-center gap-1">
-                  <span className="text-muted-foreground/70">{group.min_select > 0 ? `mín ${group.min_select}` : "opcional"}, máx {group.max_select}</span>
-                  <button onClick={() => onUnlinkGroup(group.id)} className="text-muted-foreground hover:text-destructive p-0.5"><X className="h-3 w-3" /></button>
-                </div>
+                <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold uppercase text-primary"><Link2 className="h-3 w-3" /> Vinculado</span>
+              </div>
+              <div className="mt-0.5 flex items-center justify-between gap-2">
+                <span className="text-muted-foreground/70">{group.min_select > 0 ? `mín ${group.min_select}` : "opcional"}, máx {group.max_select} · {(group.addon_items?.length || 0) === 1 ? "1 item" : `${group.addon_items?.length || 0} itens`}</span>
+                <button onClick={() => onUnlinkGroup(group.id)} className="shrink-0 font-bold text-muted-foreground transition-colors hover:text-destructive">Desvincular</button>
               </div>
               {group.addon_items?.map((item: any) => (
-                <div key={item.id} className="flex items-center justify-between pl-2 py-0.5">
+                <div key={item.id} className="flex items-center justify-between py-0.5 pl-2">
                   <span className="text-muted-foreground">{item.name}</span>
                   <span className="text-muted-foreground/70">+{formatBRL(Number(item.price))}</span>
                 </div>
@@ -820,22 +854,20 @@ const ProductCardTesteImpl = (props: ProductCardProps) => {
 
       {/* Direct addon groups */}
       {addonGroups.length > 0 && (
-        <div className="mt-2 pl-2 border-l-2 border-border space-y-1">
+        <div className="mt-2 space-y-2">
           {addonGroups.map((group: any) => (
-            <div key={group.id} className="text-xs">
-              <div className="flex items-center justify-between">
+            <div key={group.id} className="rounded-xl border border-border bg-muted/30 p-2.5 text-xs">
+              <div className="flex items-center justify-between gap-2">
                 <span className="text-foreground/80 font-bold">{group.name}</span>
-                <div className="flex items-center gap-1">
-                  <span className="text-muted-foreground/70">{group.min_select > 0 ? `mín ${group.min_select}` : "opcional"}, máx {group.max_select}</span>
-                  <button onClick={() => onDeleteAddonGroup(group.id)} className="text-destructive/70 p-0.5"><Trash2 className="h-3 w-3" /></button>
-                </div>
+                <button onClick={() => onDeleteAddonGroup(group.id)} className="inline-flex shrink-0 items-center gap-1 font-bold text-muted-foreground transition-colors hover:text-destructive"><Trash2 className="h-3.5 w-3.5" /> Excluir grupo</button>
               </div>
+              <p className="mt-0.5 text-muted-foreground/70">{group.min_select > 0 ? `mín ${group.min_select}` : "opcional"}, máx {group.max_select} · {(group.addon_items?.length || 0) === 1 ? "1 item" : `${group.addon_items?.length || 0} itens`}</p>
               {group.addon_items?.map((item: any) => (
-                <div key={item.id} className="flex items-center justify-between pl-2 py-0.5">
+                <div key={item.id} className="flex items-center justify-between py-0.5 pl-2">
                   <span className="text-muted-foreground">{item.name}</span>
                   <div className="flex items-center gap-1">
                     <span className="text-muted-foreground/70">+{formatBRL(Number(item.price))}</span>
-                    <button onClick={() => onDeleteAddonItem?.(item.id)} className="text-destructive/70 p-0.5"><X className="h-2.5 w-2.5" /></button>
+                    <button onClick={() => onDeleteAddonItem?.(item.id)} className="rounded p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-destructive" title="Excluir item"><X className="h-3.5 w-3.5" /></button>
                   </div>
                 </div>
               ))}
@@ -862,7 +894,7 @@ const ProductCardTesteImpl = (props: ProductCardProps) => {
                   <button onClick={() => setShowAddonItemForm(null)} className="text-muted-foreground px-1 text-xs">✕</button>
                 </div>
               ) : (
-                <button onClick={() => setShowAddonItemForm(group.id)} className="text-primary text-xs mt-0.5 hover:underline">+ adicional</button>
+                <button onClick={() => setShowAddonItemForm(group.id)} className="mt-1 w-full rounded-lg border border-dashed border-primary/40 px-2 py-1.5 text-xs font-bold text-primary transition-colors hover:bg-primary/5">+ Adicionar item</button>
               )}
             </div>
           ))}
@@ -887,6 +919,8 @@ const ProductCardTesteImpl = (props: ProductCardProps) => {
           <button onClick={() => setShowLinkAddon(false)} className="text-muted-foreground text-xs">Cancelar</button>
         </div>
       ) : null}
+      </>
+      )}
 
       {/* Action row */}
       {!hasAnyAddons && !showAddonActions && !showLinkAddon && !showAddonForm && (
@@ -897,9 +931,9 @@ const ProductCardTesteImpl = (props: ProductCardProps) => {
           <ChevronDown className="h-3 w-3" /> Adicionais deste produto
         </button>
       )}
-      {(hasAnyAddons || showAddonActions || showLinkAddon || showAddonForm) && (
-      <div className="mt-2 flex flex-wrap gap-3">
-        <button onClick={() => setShowLinkAddon(true)} className="text-xs text-primary hover:underline flex items-center gap-1" title="Reutiliza um grupo de adicionais já criado em outro produto">
+      {((hasAnyAddons && addonsOpen) || showAddonActions || showLinkAddon || showAddonForm) && (
+      <div className="mt-2 flex flex-wrap gap-2">
+        <button onClick={() => { setAddonsOpen(true); setShowLinkAddon(true); }} className="inline-flex items-center gap-1 rounded-lg border border-primary/40 px-2.5 py-1.5 text-xs font-bold text-primary transition-colors hover:bg-primary/5" title="Reutiliza um grupo de adicionais já criado em outro produto">
           <Link2 className="h-3 w-3" /> Usar adicional existente
         </button>
         {showAddonForm ? (
@@ -927,7 +961,7 @@ const ProductCardTesteImpl = (props: ProductCardProps) => {
             </div>
           </div>
         ) : (
-          <button onClick={() => setShowAddonForm(true)} className="text-xs text-muted-foreground hover:underline" title="Cria adicionais que só aparecem neste produto">+ Criar adicional só deste produto</button>
+          <button onClick={() => setShowAddonForm(true)} className="inline-flex items-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-xs font-bold text-foreground transition-colors hover:bg-muted" title="Cria adicionais que só aparecem neste produto">+ Criar adicional só deste produto</button>
         )}
       </div>
       )}
