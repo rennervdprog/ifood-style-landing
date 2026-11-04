@@ -9,11 +9,12 @@
 export const ENTREGADOR_APP = {
   name: "ItaSuper Entregador",
   developer: "ItaSuper",
-  version: "2.4.8",
+  version: "2.4.9",
   sizeLabel: "19,3 MB",
-  apkPath: "/apps/itasuper-entregador-2.4.8.apk",
+  apkPath: "/apps/itasuper-entregador-2.4.9.apk",
   minAndroid: "7.0",
   whatsNew: [
+    "Fluxo da rota corrigido: primeiro Sair para entrega — o botão Navegar rota aparece depois da saída e navega só as entregas que já estão na rua",
     "Rota otimizada de verdade: as paradas são ordenadas automaticamente pela menor distância — quem já saiu é sequenciado a partir da sua posição, e cada parada mostra a distância do trecho",
     "Botão Navegar rota: abre o Google Maps com a rota inteira, todas as paradas na ordem certa",
     "Uma rota é de uma loja só: pedidos de lojas diferentes não se misturam mais na mesma rota — filtre por uma loja para aceitar todos os pedidos dela de uma vez",
