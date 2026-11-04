@@ -1524,6 +1524,25 @@ type PizzaPriceMode = "maior" | "media" | "soma";
 
           <div className="rounded-xl border border-border bg-muted/20 p-3 space-y-3">
             <div>
+              <p className="text-sm font-bold text-foreground">ItaSuper Painel — o painel como programa (Windows)</p>
+              <p className="text-[11px] text-muted-foreground">
+                Programa gratuito para o computador da loja: as telas são as mesmas do painel, mas a notinha sai direto na impressora quando o pedido chega, sem abrir a janela de impressão do navegador. Na primeira abertura, é só escolher a impressora e imprimir o teste.
+              </p>
+              <a
+                href="https://qkjhguziuchqsbxzruea.supabase.co/storage/v1/object/public/downloads/ItaSuper-Painel-1.0.0.exe"
+                download
+                className="mt-2 inline-flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-xs font-bold text-primary-foreground transition-colors hover:bg-primary/90"
+              >
+                <Download className="h-4 w-4" /> Baixar o ItaSuper Painel (Windows)
+              </a>
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                Baixe no computador da loja e abra o programa — ele não precisa instalar. Se o Windows mostrar um aviso de segurança, toque em "Mais informações" e depois em "Executar assim mesmo". Tamanho: 74 MB.
+              </p>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-border bg-muted/20 p-3 space-y-3">
+            <div>
               <p className="text-sm font-bold text-foreground">Agente de impressão — imprime sem o painel aberto</p>
               <p className="text-[11px] text-muted-foreground">
                 Programa gratuito instalado no computador da loja. Com ele, a notinha sai sozinha quando o pedido chega — mesmo com o painel fechado ou você em outra aba. Ele segue o modo de impressão escolhido acima.
