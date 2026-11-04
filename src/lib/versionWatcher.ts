@@ -92,12 +92,15 @@ async function applyUpdate(remoteId: string, opts?: { persistent?: boolean }) {
   console.info(`[VersionWatcher] Nova versão detectada: ${BUILD_ID} → ${remoteId}${alreadyTried ? " (já tentada)" : ""}${opts?.persistent ? " (painel — aviso fixo)" : ""}`);
 
   // Notificação não-bloqueante — o usuário decide quando atualizar.
-  // No painel o toast é persistente (duration: Infinity, documentado no
-  // Sonner): não some sozinho sem o usuário ver/decidir. Se ele dispensar
-  // no X, respeitamos — o aviso volta no próximo carregamento da página.
+  // O toast é persistente EM TODO O SITE (duration: Infinity, documentado
+  // no Sonner): não some sozinho sem o usuário ver/decidir. Antes ele só
+  // ficava fixo no painel e nas demais páginas durava 15 s, uma vez por
+  // sessão — fácil de perder, e a página seguia na versão velha (visto na
+  // prática na /download em 2026-11-04). Se ele dispensar no X,
+  // respeitamos — o aviso volta no próximo carregamento da página.
   toast("Nova versão disponível", {
     description: "Toque em Atualizar quando quiser recarregar.",
-    duration: opts?.persistent ? Infinity : 15_000,
+    duration: Infinity,
     action: {
       label: "Atualizar",
       onClick: async () => {
