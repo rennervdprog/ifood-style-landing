@@ -11,6 +11,7 @@ import { ENTREGADOR_APP } from "@/lib/entregadorApp";
 const DownloadApp = () => {
   const app = ENTREGADOR_APP;
   const apkUrl = `https://www.itasuper.com.br${app.apkPath}`;
+  const apkFileName = app.apkPath.split("/").pop() ?? "itasuper-entregador.apk";
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -149,25 +150,71 @@ const DownloadApp = () => {
           </div>
         </div>
 
-        {/* ── Como instalar ── */}
+        {/* ── Como instalar (tutorial visual com prints reais) ── */}
         <div className="px-4 py-6 border-b border-border/40">
           <h2 className="text-base font-black text-foreground mb-4">Como instalar</h2>
-          <div className="space-y-2.5">
-            {[
-              { n: "01", title: "Baixe o APK", desc: `Toque no botão de download acima para baixar o arquivo (${app.sizeLabel}).` },
-              { n: "02", title: "Permita a instalação", desc: "O Android vai pedir permissão para instalar de fontes externas. Toque em Configurações e autorize — é o app oficial do ItaSuper." },
-              { n: "03", title: "Instale e entre", desc: "Conclua a instalação, abra o app e faça login com sua conta de entregador. Pronto para receber ofertas!" },
-            ].map((step) => (
-              <div key={step.n} className="flex gap-3 p-3.5 rounded-2xl bg-muted/30 border border-border/40">
-                <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center text-sm font-black shrink-0">
-                  {step.n}
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-foreground">{step.title}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{step.desc}</p>
-                </div>
+          <div className="space-y-7">
+            <div>
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center text-sm font-black shrink-0">1</div>
+                <p className="text-sm font-bold text-foreground">Baixe e abra o arquivo</p>
               </div>
-            ))}
+              <p className="text-xs text-muted-foreground mt-2.5 leading-relaxed">
+                Toque em <span className="font-bold text-foreground">Baixar o app</span> aqui em cima. Depois, abra o arquivo{" "}
+                <span className="font-bold text-foreground">{apkFileName}</span> na pasta <span className="font-bold text-foreground">Downloads</span>{" "}
+                do celular (ou toque na notificação de download concluído).
+              </p>
+              <img src="/download/passo1-downloads.jpg" alt="Pasta Downloads do celular com o arquivo do app ItaSuper Entregador no topo da lista" loading="lazy" className="mt-3 w-full rounded-2xl border border-border/40" />
+              <p className="text-xs text-muted-foreground mt-2.5 leading-relaxed">
+                Na primeira vez, o Android pode pedir para <span className="font-bold text-foreground">permitir a instalação pelo navegador</span> —
+                toque em Configurações/Permitir e ligue a opção. É rápido e só acontece uma vez.
+              </p>
+            </div>
+
+            <div>
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center text-sm font-black shrink-0">2</div>
+                <p className="text-sm font-bold text-foreground">Se o Play Protect bloquear, toque em "Mais detalhes"</p>
+              </div>
+              <p className="text-xs text-muted-foreground mt-2.5 leading-relaxed">
+                Pode aparecer o aviso <span className="font-bold text-foreground">"O app foi bloqueado para proteger seu dispositivo"</span>.
+                Não toque em "Entendi" (ele cancela a instalação). Toque em <span className="font-bold text-foreground">Mais detalhes</span>.
+              </p>
+              <img src="/download/passo2-playprotect.jpg" alt="Aviso do Google Play Protect mostrando a opção Mais detalhes" loading="lazy" className="mt-3 w-full rounded-2xl border border-border/40" />
+            </div>
+
+            <div>
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center text-sm font-black shrink-0">3</div>
+                <p className="text-sm font-bold text-foreground">Toque em "Instalar assim mesmo"</p>
+              </div>
+              <p className="text-xs text-muted-foreground mt-2.5 leading-relaxed">
+                Vai aparecer a opção <span className="font-bold text-foreground">Instalar assim mesmo</span>. Toque nela e aguarde a instalação terminar.
+              </p>
+              <img src="/download/passo3-instalar-assim-mesmo.jpg" alt="Aviso do Google Play Protect expandido, com a opção Instalar assim mesmo" loading="lazy" className="mt-3 w-full rounded-2xl border border-border/40" />
+            </div>
+
+            <div>
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center text-sm font-black shrink-0">4</div>
+                <p className="text-sm font-bold text-foreground">Pronto: abra e entre</p>
+              </div>
+              <p className="text-xs text-muted-foreground mt-2.5 leading-relaxed">
+                Com o <span className="font-bold text-foreground">"App instalado"</span> na tela, toque em{" "}
+                <span className="font-bold text-foreground">Abrir</span> e entre com a sua conta de entregador. Boas entregas!
+              </p>
+              <img src="/download/passo4-instalado.jpg" alt="Tela de confirmação App instalado, com os botões Concluído e Abrir" loading="lazy" className="mt-3 w-full rounded-2xl border border-border/40" />
+            </div>
+          </div>
+
+          <div className="mt-7 flex gap-3 rounded-2xl border border-primary/20 bg-primary/5 p-4">
+            <ShieldCheck className="h-5 w-5 shrink-0 text-primary" />
+            <p className="text-xs leading-relaxed text-foreground/80">
+              <span className="font-bold text-foreground">Por que esse aviso aparece?</span>{" "}
+              O Google Play Protect mostra esse alerta para qualquer app instalado fora da Play Store, porque ele ainda não conhece o
+              desenvolvedor. O app {app.name} é distribuído pelo site oficial <span className="font-bold text-foreground">itasuper.com.br</span>,
+              com arquivo assinado — pode instalar sem medo.
+            </p>
           </div>
         </div>
 
