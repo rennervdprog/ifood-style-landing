@@ -22,6 +22,8 @@ interface Props {
   subtotal: number;
   discountAmount: number;
   onSuccess: () => void;
+  /** Tela cheia (fluxo da tela de Pedidos). Padrão: janela central (PDV). */
+  fullscreen?: boolean;
 }
 
 function genPin() {
@@ -38,7 +40,7 @@ function formatPhoneBR(raw: string) {
 }
 
 export function PdvDeliveryManualDialog({
-  open, onClose, storeId, storeName, storeSettings, cart, subtotal, discountAmount, onSuccess,
+  open, onClose, storeId, storeName, storeSettings, cart, subtotal, discountAmount, onSuccess, fullscreen,
 }: Props) {
   const queryClient = useQueryClient();
 
@@ -351,7 +353,8 @@ export function PdvDeliveryManualDialog({
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className={fullscreen ? "h-[100dvh] w-[100vw] max-w-none rounded-none border-0 overflow-y-auto p-0" : "max-w-2xl max-h-[90vh] overflow-y-auto"}>
+        <div className={fullscreen ? "mx-auto w-full max-w-2xl px-4 py-4" : undefined}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Truck className="h-5 w-5 text-primary" />
@@ -570,6 +573,7 @@ export function PdvDeliveryManualDialog({
             </div>
           </div>
         )}
+        </div>
       </DialogContent>
     </Dialog>
   );
