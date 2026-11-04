@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { AlertTriangle, ArrowRight, Bell } from "lucide-react";
+import { AlertTriangle, ArrowRight, Bell, Plus } from "lucide-react";
 import { AdminOrderCardTeste } from "../components/AdminOrderCardTeste";
 import type { OrderStatus, OrderTabKey } from "../types";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,6 +10,7 @@ import PixDirectAlert from "../components/orders/PixDirectAlert";
 import OrdersEmptyStateTeste from "../components/orders/OrdersEmptyStateTeste";
 import OrderCardSkeleton from "../components/orders/OrderCardSkeleton";
 import TutorialHelpButton from "@/components/TutorialHelp";
+import ManualOrderFlow from "@/components/orders/ManualOrderFlow";
 
 interface Props {
   store: any;
@@ -88,6 +89,7 @@ export default function OrdersSectionTeste(props: Props) {
 
   const [period, setPeriod] = useState<PeriodKey>("all");
   const [sourceFilter, setSourceFilter] = useState<SourceKey>("all");
+  const [manualOpen, setManualOpen] = useState(false);
 
   const pixPending = useMemo(
     () => (orders || []).filter((o: any) => o.status === "comprovante_enviado"),
@@ -217,7 +219,17 @@ export default function OrdersSectionTeste(props: Props) {
 
   return (
     <>
-      <div className="flex justify-end px-4 lg:px-6 pt-4 max-w-6xl mx-auto w-full">
+      <div className="flex items-center justify-between px-4 lg:px-6 pt-4 max-w-6xl mx-auto w-full">
+        {store?.plan_type !== "pdv_only" ? (
+          <button
+            onClick={() => setManualOpen(true)}
+            className="inline-flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-xs font-black text-primary-foreground transition-colors hover:bg-primary/90"
+          >
+            <Plus className="h-4 w-4" /> Pedido manual
+          </button>
+        ) : (
+          <span />
+        )}
         <TutorialHelpButton tutorialId="orders" />
       </div>
       <OrdersToolbar
@@ -310,6 +322,17 @@ export default function OrdersSectionTeste(props: Props) {
           <OrdersEmptyStateTeste activeTab={activeTab} />
         )}
       </div>
+
+      {store?.id && (
+        <ManualOrderFlow
+          open={manualOpen}
+          onClose={() => setManualOpen(false)}
+          storeId={store.id}
+          storeName={store?.name}
+          storeSettings={(store as any)?.settings || null}
+          onCreated={invalidateOrders}
+        />
+      )}
 
       {pendingCount > 0 && activeTab !== "pendente" && (
         <button
