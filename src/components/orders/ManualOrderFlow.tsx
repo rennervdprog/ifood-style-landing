@@ -134,21 +134,25 @@ export default function ManualOrderFlow({ open, onClose, storeId, storeName, sto
         subtotal={subtotal}
         discountAmount={0}
         onSuccess={() => onCreated?.()}
+        fullscreen
       />
     );
   }
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Truck className="h-5 w-5 text-primary" />
-            Pedido Delivery Manual
-          </DialogTitle>
-        </DialogHeader>
+      <DialogContent className="flex h-[100dvh] w-[100vw] max-w-none flex-col gap-0 overflow-hidden rounded-none border-0 p-0">
+        <div className="border-b border-border px-4 py-3">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Truck className="h-5 w-5 text-primary" />
+              Pedido Delivery Manual
+            </DialogTitle>
+          </DialogHeader>
+        </div>
 
-        <div className="space-y-4">
+        <div className="flex-1 overflow-y-auto">
+        <div className="mx-auto w-full max-w-3xl space-y-4 px-4 py-4">
           {/* Stepper — mesmo desenho do diálogo do PDV */}
           <div className="flex items-center justify-center gap-2 text-xs font-semibold">
             <span className="flex items-center gap-1 text-primary">
@@ -253,7 +257,11 @@ export default function ManualOrderFlow({ open, onClose, storeId, storeName, sto
             </p>
           )}
 
-          <div className="flex items-center justify-between border-t border-border pt-3">
+        </div>
+        </div>
+
+        <div className="border-t border-border bg-background px-4 py-3">
+          <div className="mx-auto flex w-full max-w-3xl items-center justify-between">
             <p className="text-sm text-muted-foreground">
               Subtotal: <span className="text-base font-black text-foreground">{formatBRL(subtotal)}</span>
             </p>
