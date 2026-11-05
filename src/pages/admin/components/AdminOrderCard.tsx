@@ -66,6 +66,9 @@ export interface AdminOrderCardProps {
   handleCancelOrder: (order: any) => void;
   handlePrint: (order: any) => void;
   invalidateOrders: () => void;
+  groupSelectable?: boolean;
+  groupChecked?: boolean;
+  onToggleGroup?: (id: string) => void;
 }
 
 const AdminOrderCardImpl = (props: AdminOrderCardProps) => {
@@ -76,6 +79,7 @@ const AdminOrderCardImpl = (props: AdminOrderCardProps) => {
     highlights, clientName, clientWhatsApp, driverName, mainAction, acceptHref, readyHref,
     toggleAddress, setActiveTab, setCancelConfirm, updateOrderStatus,
     handleAcceptOrder, handleCancelOrder, handlePrint, invalidateOrders,
+    groupSelectable, groupChecked, onToggleGroup,
   } = props;
 
   const sendViaEvolutionOrManual = (phone: string, msg: string) => {
@@ -172,15 +176,21 @@ const AdminOrderCardImpl = (props: AdminOrderCardProps) => {
 
   return (
     <div
+      onClick={groupSelectable && onToggleGroup ? () => onToggleGroup(order.id) : undefined}
       style={{ animationDelay: `${index * 50}ms` }}
       className={`bg-card rounded-2xl overflow-hidden border transition-all duration-300 animate-in fade-in slide-in-from-bottom-4 duration-500 ${
         isDelayed ? "border-destructive/50 shadow-[0_0_12px_-4px] shadow-destructive/20" :
         order.status === "pendente" ? "border-primary/40 shadow-primary/5 animate-pulse-border" : "border-border"
-      } hover:shadow-md`}
+      } ${groupChecked ? "ring-2 ring-primary border-primary" : ""} hover:shadow-md`}
     >
       <div className={`px-3 py-1.5 ${sc.bg} flex items-center justify-between`}>
         <div className="flex items-center gap-2">
-          <span className={`text-[10px] font-bold uppercase ${sc.text}`}>{sc.label}</span>
+{groupSelectable && (
+            <span className={`flex h-5 w-5 items-center justify-center rounded-md border-2 ${groupChecked ? "border-primary bg-primary text-primary-foreground" : "border-muted-foreground/40 bg-background"}`}>
+              {groupChecked && <Check className="h-3.5 w-3.5" strokeWidth={3.5} />}
+            </span>
+          )}
+                    <span className={`text-[10px] font-bold uppercase ${sc.text}`}>{sc.label}</span>
           {isDelayed && (
             <span className="flex items-center gap-1 text-[10px] font-bold text-destructive bg-destructive/10 px-1.5 py-0.5 rounded-full">
               <AlertTriangle className="h-2.5 w-2.5" /> Atrasado
@@ -229,7 +239,13 @@ const AdminOrderCardImpl = (props: AdminOrderCardProps) => {
         </div>
       </div>
 
-      <RequiredAddonHighlights highlights={highlights} />
+{groupChecked && (
+        <div className="mx-3 mb-2 flex items-center gap-1.5 rounded-lg bg-primary/10 px-2.5 py-1.5 text-[11px] font-bold text-primary">
+          <Bike className="h-3.5 w-3.5" /> Vai junto nessa viagem — sai com os outros pedidos do grupo
+        </div>
+      )}
+
+            <RequiredAddonHighlights highlights={highlights} />
 
       <div className="mx-3 mb-2 bg-muted/50 rounded-xl px-3 py-2 space-y-0.5">
         {order.order_items?.map((item: any) => (
@@ -749,6 +765,8 @@ const areEqual = (prev: AdminOrderCardProps, next: AdminOrderCardProps) => {
   // mainAction muda quando status/role muda — segurança extra
   if (prev.mainAction?.next !== next.mainAction?.next) return false;
   if (prev.mainAction?.label !== next.mainAction?.label) return false;
+  if (prev.groupSelectable !== next.groupSelectable) return false;
+  if (prev.groupChecked !== next.groupChecked) return false;
   return true;
 };
 
