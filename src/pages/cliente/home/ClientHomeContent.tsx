@@ -107,15 +107,15 @@ const getStoreAccessPreview = (store: any, coords: { lat: number; lng: number } 
 // ── Categorias da home (mesmas do app KMP): baldes fixos com ícone 3D próprio.
 // `keys` = valores normalizados de stores.category que caem em cada balde.
 const CATEGORY_BUCKETS: { id: string; label: string; icon: string; keys: string[] }[] = [
-  { id: "lanches", label: "Lanches", icon: "/categorias/ic_cat_lanches_3d.webp", keys: ["lanches", "lanchonete", "hamburgueria", "hamburguer"] },
-  { id: "pizzaria", label: "Pizzaria", icon: "/categorias/ic_cat_pizzaria_3d.webp", keys: ["pizzas", "pizzaria", "pizza"] },
-  { id: "marmita", label: "Marmita", icon: "/categorias/ic_cat_marmita_3d.webp", keys: ["restaurante", "marmitaria", "marmita"] },
-  { id: "pastel", label: "Pastel", icon: "/categorias/ic_cat_pastel_3d.webp", keys: ["pasteis", "pastel"] },
-  { id: "acai", label: "Açaí", icon: "/categorias/ic_cat_acai_3d.webp", keys: ["acai"] },
-  { id: "bebidas", label: "Bebidas", icon: "/categorias/ic_cat_bebidas_3d.webp", keys: ["adegas", "adega", "bebidas"] },
-  { id: "mercado", label: "Mercado", icon: "/categorias/ic_cat_mercado_3d.webp", keys: ["mercado", "supermercado", "mercados"] },
-  { id: "farmacias", label: "Farmácias", icon: "/categorias/ic_cat_farmacia_3d.webp", keys: ["farmacias", "farmacia"] },
-  { id: "churrasco", label: "Churrasco", icon: "/categorias/ic_cat_churrasco_3d.webp", keys: ["churrascaria", "churrasco"] },
+  { id: "lanches", label: "Lanches", icon: "https://qkjhguziuchqsbxzruea.supabase.co/storage/v1/object/public/store-assets/categorias/ic_cat_lanches_3d.webp", keys: ["lanches", "lanchonete", "hamburgueria", "hamburguer"] },
+  { id: "pizzaria", label: "Pizzaria", icon: "https://qkjhguziuchqsbxzruea.supabase.co/storage/v1/object/public/store-assets/categorias/ic_cat_pizzaria_3d.webp", keys: ["pizzas", "pizzaria", "pizza"] },
+  { id: "marmita", label: "Marmita", icon: "https://qkjhguziuchqsbxzruea.supabase.co/storage/v1/object/public/store-assets/categorias/ic_cat_marmita_3d.webp", keys: ["restaurante", "marmitaria", "marmita"] },
+  { id: "pastel", label: "Pastel", icon: "https://qkjhguziuchqsbxzruea.supabase.co/storage/v1/object/public/store-assets/categorias/ic_cat_pastel_3d.webp", keys: ["pasteis", "pastel"] },
+  { id: "acai", label: "Açaí", icon: "https://qkjhguziuchqsbxzruea.supabase.co/storage/v1/object/public/store-assets/categorias/ic_cat_acai_3d.webp", keys: ["acai"] },
+  { id: "bebidas", label: "Bebidas", icon: "https://qkjhguziuchqsbxzruea.supabase.co/storage/v1/object/public/store-assets/categorias/ic_cat_bebidas_3d.webp", keys: ["adegas", "adega", "bebidas"] },
+  { id: "mercado", label: "Mercado", icon: "https://qkjhguziuchqsbxzruea.supabase.co/storage/v1/object/public/store-assets/categorias/ic_cat_mercado_3d.webp", keys: ["mercado", "supermercado", "mercados"] },
+  { id: "farmacias", label: "Farmácias", icon: "https://qkjhguziuchqsbxzruea.supabase.co/storage/v1/object/public/store-assets/categorias/ic_cat_farmacia_3d.webp", keys: ["farmacias", "farmacia"] },
+  { id: "churrasco", label: "Churrasco", icon: "https://qkjhguziuchqsbxzruea.supabase.co/storage/v1/object/public/store-assets/categorias/ic_cat_churrasco_3d.webp", keys: ["churrascaria", "churrasco"] },
 ];
 
 const bucketOfCategoryKey = (key?: string | null): string | null => {
@@ -797,7 +797,7 @@ const ClientHomeContent = () => {
                 aria-pressed={activeCategory === null}
               >
                 <span className={`w-[50px] h-[50px] rounded-full overflow-hidden bg-[#FFF8F3] ${activeCategory === null ? "border-[1.5px] border-primary" : "border border-border"}`}>
-                  <img src="/categorias/ic_cat_todos_3d.webp" alt="" className="w-full h-full object-cover" />
+                  <img src="https://qkjhguziuchqsbxzruea.supabase.co/storage/v1/object/public/store-assets/categorias/ic_cat_todos_3d.webp" alt="" className="w-full h-full object-cover" />
                 </span>
                 <span className={`text-xs ${activeCategory === null ? "text-primary font-semibold" : "text-foreground/80 font-medium"}`}>Todos</span>
               </button>
