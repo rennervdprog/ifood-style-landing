@@ -138,7 +138,7 @@ const CartPage = () => {
   const itemCount = items.reduce((sum, i) => sum + i.quantity, 0);
 
   return (
-    <div className="min-h-screen bg-background pb-60 overflow-y-auto">
+    <div className="min-h-screen bg-background overflow-y-auto" style={{ paddingBottom: "calc(15rem + env(safe-area-inset-bottom))" }}>
       {/* Header */}
       <header className="sticky top-0 z-50 bg-card/95 backdrop-blur-sm border-b border-border flex items-center justify-between h-14 px-4">
         <div className="flex items-center gap-3">
@@ -238,8 +238,11 @@ const CartPage = () => {
         ))}
       </div>
 
-      {/* Fixed bottom summary + CTA */}
-      <div className="fixed bottom-16 left-0 right-0 bg-card/95 backdrop-blur-sm border-t border-border z-40">
+      {/* Fixed bottom summary + CTA — senta ACIMA da BottomNav (h-16) MAIS a
+          safe-area do aparelho: a barra de abas cresce com env(safe-area-inset-bottom)
+          (iPhone/gestos), e com bottom-16 fixo ela cobria o rodapé desta barra e o
+          botão "Finalizar pedido" nesses aparelhos. */}
+      <div className="fixed left-0 right-0 bg-card/95 backdrop-blur-sm border-t border-border z-40" style={{ bottom: "calc(4rem + env(safe-area-inset-bottom))" }}>
         <div className="px-4 pt-3 pb-1 space-y-1.5">
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Subtotal</span>
